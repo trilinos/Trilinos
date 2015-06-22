@@ -143,7 +143,7 @@ namespace MueLu {
     RCP<const Map> rowMap = A->getRowMap();
 
     // NOTE: Teuchos::MPIComm::duplicate() calls MPI_Bcast inside, so this is
-    // a synchronization point. However, as we do sumAll afterwards anyway, it
+    // a synchronization point. However, as we do MueLu_sumAll afterwards anyway, it
     // does not matter.
     RCP<const Teuchos::Comm<int> > origComm = rowMap->getComm();
     RCP<const Teuchos::Comm<int> > comm     = origComm->duplicate();
@@ -153,7 +153,7 @@ namespace MueLu {
     // TODO: further improvements could be achieved when we use subcommunicator for the active set. Then we only need to check its size
     {
       int numActiveProcesses = 0;
-      sumAll(comm, Teuchos::as<int>((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
+      MueLu_sumAll(comm, Teuchos::as<int>((A->getNodeNumRows() > 0) ? 1 : 0), numActiveProcesses);
 
       if (numActiveProcesses == 1) {
         GetOStream(Statistics0) << "Repartitioning?  NO:" <<
@@ -172,8 +172,8 @@ namespace MueLu {
     if (minRowsPerProcessor > 0) {
       LO numMyRows = Teuchos::as<LO>(A->getNodeNumRows()), minNumRows, LOMAX = Teuchos::OrdinalTraits<LO>::max();
       LO haveFewRows = (numMyRows < minRowsPerProcessor ? 1 : 0), numWithFewRows = 0;
-      sumAll(comm, haveFewRows, numWithFewRows);
-      minAll(comm, (numMyRows > 0 ? numMyRows : LOMAX), minNumRows);
+      MueLu_sumAll(comm, haveFewRows, numWithFewRows);
+      MueLu_minAll(comm, (numMyRows > 0 ? numMyRows : LOMAX), minNumRows);
 
       // TODO: we could change it to repartition only if the number of processors with numRows < minNumRows is larger than some
       // percentage of the total number. This way, we won't repartition if 2 out of 1000 processors don't have enough elements.
@@ -187,8 +187,8 @@ namespace MueLu {
     // Test4: check whether the balance in the number of nonzeros per processor is greater than threshold
     if (!test3) {
       GO minNnz, maxNnz, numMyNnz = Teuchos::as<GO>(A->getNodeNumEntries());
-      maxAll(comm, numMyNnz,                           maxNnz);
-      minAll(comm, (numMyNnz > 0 ? numMyNnz : maxNnz), minNnz); // min nnz over all active processors
+      MueLu_maxAll(comm, numMyNnz,                           maxNnz);
+      MueLu_minAll(comm, (numMyNnz > 0 ? numMyNnz : maxNnz), minNnz); // min nnz over all active processors
       double imbalance = Teuchos::as<double>(maxNnz)/minNnz;
 
       if (imbalance > nonzeroImbalance)
@@ -327,7 +327,7 @@ namespace MueLu {
       }
 
     int incorrectGlobalRank = -1;
-    maxAll(comm, incorrectRank, incorrectGlobalRank);
+    MueLu_maxAll(comm, incorrectRank, incorrectGlobalRank);
     TEUCHOS_TEST_FOR_EXCEPTION(incorrectGlobalRank >- 1, Exceptions::RuntimeError, "pid " + Teuchos::toString(incorrectGlobalRank) + " encountered a partition number is that out-of-range");
 #endif
 
@@ -352,7 +352,7 @@ namespace MueLu {
 
     if (IsPrint(Statistics2)) {
       GO numLocalKept = myGIDs.size(), numGlobalKept, numGlobalRows = A->getGlobalNumRows();
-      sumAll(comm,numLocalKept, numGlobalKept);
+      MueLu_sumAll(comm,numLocalKept, numGlobalKept);
       GetOStream(Statistics2) << "Unmoved rows: " << numGlobalKept << " / " << numGlobalRows << " (" << 100*Teuchos::as<double>(numGlobalKept)/numGlobalRows << "%)" << std::endl;
     }
 

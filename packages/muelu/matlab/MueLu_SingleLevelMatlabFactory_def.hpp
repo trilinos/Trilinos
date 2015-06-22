@@ -45,22 +45,13 @@
 // @HEADER
 #ifndef MUELU_SINGLELEVELMATLABFACTORY_DEF_HPP
 #define MUELU_SINGLELEVELMATLABFACTORY_DEF_HPP
-
-
-#include <sstream>
-#include <cstring>
-
 #include <Xpetra_Matrix.hpp>
-#include <Xpetra_MatrixFactory.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_MultiVector.hpp>
 
-#include "MueLu_MasterList.hpp"
-#include "MueLu_Monitor.hpp"
-#include "MueLu_PerfUtils.hpp"
+#include "MueLu_Aggregates.hpp"
+#include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_SingleLevelMatlabFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
-#include "muemexTypes_decl.hpp"
+#include "MueLu_MatlabUtils_decl.hpp"
 
 #ifdef HAVE_MUELU_MATLAB
 #include "mex.h"
@@ -90,42 +81,48 @@ namespace MueLu {
     const std::string str = pL.get<std::string>("Needs");
 
     // Tokenize the strings
-    TokenizeStringAndStripWhiteSpace(str,needs_);
+    TokenizeStringAndStripWhiteSpace(str, needs_);
 
     // Declare inputs
-    for(size_t i=0; i<needs_.size(); i++)
-      Input(currentLevel,needs_[i]);
+    for(size_t i = 0; i < needs_.size(); i++)
+      Input(currentLevel, needs_[i]);
 
-    hasDeclaredInput_=true;
-  
+    hasDeclaredInput_ = true;
+
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
     const Teuchos::ParameterList& pL = GetParameterList();
+    using Teuchos::rcp;
+    using Teuchos::rcp;
 
     /* NOTE: We need types to call Get functions.  For the moment, I'm just going to infer types from names.
        We'll need to replace this wby modifying the needs list with strings that define types and adding some kind of lookup function instead */
 
     // NOTE: mexOutput[0] is the "Provides."  Might want to modify to allow for additional outputs
-    std::vector<RCP<MuemexArg> > InputArgs;
+    std::vector<RCP<MuemexArg>> InputArgs;
 
     // Fine needs
     for(size_t i=0; needs_.size(); i++) {
       if(needs_[i] == "A" || needs_[i] == "P" || needs_[i] == "R" || needs_[i]=="Ptent") {
-	InputArgs.push_back(rcp(new MuemexData(Get<RCP<Matrix> >(currentLevel,name))));
+	RCP<Matrix> mydata = Get<RCP<Matrix>>(currentLevel,needs_[i]);
+	InputArgs.push_back(rcp(new MuemexData<RCP<Matrix>>(mydata)));
       }
 
       if(needs_[i] == "Nullspace" || needs_[i] == "Coordinates") {
-	InputArgs.push_back(rcp(new MuemexData(Get<RCP<MultiVector> >(currentLevel,name))));
+	RCP<MultiVector> mydata = Get<RCP<MultiVector>>(currentLevel, needs_[i]);
+	InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> >(mydata)));
       }
 
       if(needs_[i] == "Aggregates") {
-	InputArgs.push_back(rcp(new MuemexData(Get<RCP<Aggregates> >(currentLevel,name))));
+	RCP<Aggregates> mydata = Get<RCP<Aggregates>>(currentLevel, needs_[i]);
+	InputArgs.push_back(rcp(new MuemexData<RCP<Aggregates> >(mydata)));
       }
 
       if(needs_[i] == "UnAmalgamationInfo") {
-	InputArgs.push_back(rcp(new MuemexData(Get<RCP<AmalgamationInfo> >(currentLevel,name))));
+	RCP<AmalgamationInfo> mydata = Get<RCP<AmalgamationInfo> >(currentLevel,needs_[i]);
+	InputArgs.push_back(rcp(new MuemexData<RCP<AmalgamationInfo>>(mydata)));
       }
     }
 
@@ -138,31 +135,32 @@ namespace MueLu {
     // Call mex function
     std::string matlabFunction = pL.get<std::string>("Function");
     if(!matlabFunction.length()) throw std::runtime_error("Invalid matlab function name");
-    std::vector<Teuchos::RCP<MuemexArg> > mexOutput = Muemexcallback::callMatlab(matlabFunction,provides.size(),InputArgs);
+    std::vector<Teuchos::RCP<MuemexArg> > mexOutput = callMatlab(matlabFunction,provides.size(),InputArgs);
 
 
     // Set output
     if(mexOutput.size()!=provides.size()) throw std::runtime_error("Invalid matlab output");
     for(size_t i=0; provides.size(); i++)  {
       if(provides[i] == "A" || provides[i] == "P" || provides[i] == "R" || provides[i]=="Ptent") {
-	currentLevel.Set(provides[i],dynamic_cast<MuemexData<RCP<Matrix> > >(mexOutput[i])->getData());
+	RCP<MuemexData<RCP<Matrix> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<Matrix> > >(mexOutput[i]);
+	currentLevel.Set(provides[i],mydata->getData());
       }
 
       if(provides[i] == "Nullspace" || provides[i] == "Coordinates") {
-	currentLevel.Set(provides[i],mexOutput[i]->getData());
+	RCP<MuemexData<RCP<MultiVector> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<MultiVector> > >(mexOutput[i]);
+	currentLevel.Set(provides[i],mydata->getData());
       }
 
       if(provides[i] == "Aggregates") {
-	currentLevel.Set(provides[i],mexOutput[i]->getData());
+	RCP<MuemexData<RCP<Aggregates> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<Aggregates> > >(mexOutput[i]);
+	currentLevel.Set(provides[i], mydata->getData());
       }
 
       if(provides[i] == "UnAmalgamationInfo") {
-	currentLevel.Set(provides[i],mexOutput[i]->getData());
+	RCP<MuemexData<RCP<AmalgamationInfo> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<AmalgamationInfo> > >(mexOutput[i]);
+	currentLevel.Set(provides[i], mydata->getData());
       }
     }
-
-
-
   }
 
 } //namespace MueLu

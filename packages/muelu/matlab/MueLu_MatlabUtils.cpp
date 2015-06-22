@@ -50,288 +50,48 @@
 #error "Muemex types require MATLAB, Epetra and Tpetra."
 #else
 
-
 /* Stuff for MATLAB R2006b vs. previous versions */
 #if(defined(MX_API_VER) && MX_API_VER >= 0x07030000)
 #else
 typedef int mwIndex;
 #endif
 
+using namespace std;
+using namespace Teuchos;
+
+namespace MueLu {
+
+/* Explicit instantiation of Muemexdata */
+  template class MuemexData<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; 
+  template class MuemexData<RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+  template class MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; 
+  template class MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+  template class MuemexData<RCP<MAggregates>>;
+  template class MuemexData<RCP<MAmalInfo>>;
+  /*  
+  template class MuemexData<int>;
+
+template<> class MuemexData<complex_t>;	  
+  template<> class MuemexData<std::string>; 
+  template<> class MuemexData<double>;					
+  template<> class MuemexData<RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; 
+  template<> class MuemexData<RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; 
+  template<> class MuemexData<RCP<Epetra_MultiVector> >;			
+  template<> class MuemexData<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; 
+  template<> class MuemexData<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; 
+
+  */
+
 //Flag set to true if MATLAB's CSC matrix index type is not int (usually false)
 bool rewrap_ints = sizeof(int) != sizeof(mwIndex);
 
 int* mwIndex_to_int(int N, mwIndex* mwi_array)
 {
-  int* rv;
-  rv = new int[N];
+  int* rv = (int*) malloc(N * sizeof(int));
   for(int i = 0; i < N; i++)
     rv[i] = (int) mwi_array[i];
   return rv;
 }
-
-
-/******************************/
-/* getMueMexType              */
-/******************************/
-template<>
-MUEMEX_TYPE getMueMexType(const int & data) {return INT;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const double & data) {return DOUBLE;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const std::string & data) {return STRING;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const std::complex<double> & data) {return COMPLEX;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Xpetra_ordinal_vector> & data) {return XPETRA_ORDINAL_VECTOR;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > & data) {return TPETRA_MULTIVECTOR_DOUBLE;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> >& data) {return TPETRA_MULTIVECTOR_COMPLEX;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Tpetra_CrsMatrix_double> & data) {return TPETRA_MATRIX_DOUBLE;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Tpetra_CrsMatrix_complex> & data) {return TPETRA_MATRIX_COMPLEX;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Xpetra_MultiVector_double> & data) {return XPETRA_MULTIVECTOR_DOUBLE;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Xpetra_MultiVector_complex> & data) {return XPETRA_MULTIVECTOR_COMPLEX;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Xpetra_Matrix_double> & data) {return XPETRA_MATRIX_DOUBLE;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Xpetra_Matrix_complex> & data) {return XPETRA_MATRIX_COMPLEX;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Epetra_CrsMatrix> & data) {return EPETRA_CRSMATRIX;}
-
-template<>
-MUEMEX_TYPE getMueMexType(const RCP<Epetra_MultiVector> & data) {return EPETRA_MULTIVECTOR;}
-
-/******************************/
-/* MueMexData                 */
-/******************************/
-
-//string specializations
-template<>
-MuemexData<std::string>::MuemexData(const mxArray* mxa) : MuemexArg(STRING)
-{
-  data = "";
-  if(!mxGetClassID(mxa) != mxCHAR_CLASS)
-    {
-      throw std::runtime_error("Can't construct string from anything but a char array.");
-    }
-  data = std::string(mxArrayToString(mxa));
-}
-
-template<>
-mxArray* MuemexData<std::string>::convertToMatlab()
-{
-  return mxCreateString(data.c_str());
-}
-
-//int
-template<>
-MuemexData<int>::MuemexData(const mxArray* mxa) : MuemexArg(INT)
-{
-  data = parseInt(mxa);
-}
-
-template<>
-mxArray* MuemexData<int>::convertToMatlab()
-{
-  mxArray* output = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
-  int* ptr = (int*) mxGetData(output);
-  *ptr = data;
-  return output;
-}
-
-//double
-template<>
-MuemexData<double>::MuemexData(const mxArray* mxa) : MuemexArg(DOUBLE)
-{
-  data = *((double*) mxGetPr(mxa));
-}
-
-template<>
-mxArray* MuemexData<double>::convertToMatlab()
-{
-  return mxCreateDoubleScalar(data);
-}
-
-//complex scalar
-template<>
-MuemexData<complex_t>::MuemexData(const mxArray* mxa) : MuemexArg(COMPLEX)
-{
-  double* realPart = mxGetPr(mxa);
-  double* imagPart = mxGetPi(mxa);
-  data = complex_t(*realPart, *imagPart);
-}
-
-template<>
-mxArray* MuemexData<complex_t>::convertToMatlab()
-{
-  mxArray* output = mxCreateDoubleMatrix(1, 1, mxCOMPLEX);
-  double* realPart = mxGetPr(output);
-  double* imagPart = mxGetPi(output);
-  *realPart = std::real<double>(data);
-  *imagPart = std::imag<double>(data);
-  return output;
-}
-
-//Epetra_Crs
-template<>
-MuemexData<RCP<Epetra_CrsMatrix>>::MuemexData(const mxArray* mxa) : MuemexArg(EPETRA_CRSMATRIX)
-{
-  data = epetraLoadMatrix(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Epetra_CrsMatrix>>::convertToMatlab()
-{
-  return saveEpetraMatrix(data);
-}
-
-//Tpetra_Crs double
-template<>
-MuemexData<RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(TPETRA_MATRIX_DOUBLE)
-{
-  data = tpetraLoadMatrix<double>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveMatrixToMatlab<double>(MueLu::TpetraCrs_To_XpetraMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(data));
-}
-
-//Tpetra_Crs complex
-template<>
-MuemexData<RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(TPETRA_MATRIX_COMPLEX)
-{
-  data = tpetraLoadMatrix<complex_t>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveMatrixToMatlab<complex_t>(MueLu::TpetraCrs_To_XpetraMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(data));
-}
-
-//Xpetra matrix double
-template<>
-MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_MATRIX_DOUBLE)
-{
-  data = xpetraLoadMatrix<double>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveMatrixToMatlab<double>(data);
-}
-
-//Xpetra matrix complex
-template<>
-MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_MATRIX_COMPLEX)
-{
-  data = xpetraLoadMatrix<complex_t>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveMatrixToMatlab<complex_t>(data);
-}
-
-//Epetra MV
-template<>
-MuemexData<RCP<Epetra_MultiVector>>::MuemexData(const mxArray* mxa) : MuemexArg(EPETRA_MULTIVECTOR)
-{
-  data = loadEpetraMV(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Epetra_MultiVector>>::convertToMatlab()
-{
-  return saveEpetraMV(data);
-}
-
-//Tpetra MV double
-template<>
-MuemexData<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(TPETRA_MULTIVECTOR_DOUBLE)
-{
-  data = loadTpetraMV<double>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveTpetraMV<double>(data);
-}
-
-//Tpetra MV complex
-template<>
-MuemexData<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(TPETRA_MULTIVECTOR_COMPLEX)
-{
-  data = loadTpetraMV<complex_t>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveTpetraMV<complex_t>(data);
-}
-
-//Xpetra ordinal vector
-template<>
-MuemexData<RCP<Xpetra_ordinal_vector>>::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_ORDINAL_VECTOR)
-{
-  data = loadLOVector(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Xpetra_ordinal_vector>>::convertToMatlab()
-{
-  return createMatlabLOVector(data);
-}
-
-//Xpetra multivector double
-template<>
-MuemexData<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_MULTIVECTOR_DOUBLE)
-{
-  data = loadXpetraMV<double>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveMultiVectorToMatlab<double>(data);
-}
-
-//Xpetra multivector complex
-template<>
-MuemexData<RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::MuemexData(const mxArray* mxa) : MuemexArg(XPETRA_MULTIVECTOR_COMPLEX)
-{
-  data = loadXpetraMV<complex_t>(mxa);
-}
-
-template<>
-mxArray* MuemexData<RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>::convertToMatlab()
-{
-  return saveMultiVectorToMatlab<complex_t>(data);
-}
-
 
 /* ******************************* */
 /* Specializations                 */
@@ -363,26 +123,22 @@ template<> void fillMatlabArray<complex_t>(complex_t* array, const mxArray* mxa,
     }
 }
 
-
 /******************************/
 /* callback functions         */
 /******************************/
 
-
-void MuemexCallback::callMatlabNoArgs(std::string function)
+void callMatlabNoArgs(std::string function)
 {
   int result = mexEvalString(function.c_str());
   if(result != 0)
     mexPrintf("An error occurred while running a MATLAB command.");\
 }
 
-
-std::vector<RCP<MuemexArg>> MuemexCallback::callMatlab(std::string function, int numOutputs, std::vector<RCP<MuemexArg>> args)
+std::vector<RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std::vector<RCP<MuemexArg>> args)
 {
   using Teuchos::rcp_static_cast;
-
-  mxArray** matlabArgs = new mxArray*[args.size()];
-  mxArray** matlabOutput = new mxArray*[numOutputs];
+  mxArray** matlabArgs = new mxArray* [args.size()];
+  mxArray** matlabOutput = new mxArray* [numOutputs];
   std::vector<RCP<MuemexArg>> output;
   for(int i = 0; i < int(args.size()); i++)
     {
@@ -435,6 +191,12 @@ std::vector<RCP<MuemexArg>> MuemexCallback::callMatlab(std::string function, int
             case EPETRA_MULTIVECTOR:
               matlabArgs[i] = rcp_static_cast<MuemexData<RCP<Epetra_MultiVector>>, MuemexArg>(args[i])->convertToMatlab();
               break;
+            case AGGREGATES:
+              matlabArgs[i] = rcp_static_cast<MuemexData<RCP<MAggregates>>, MuemexArg>(args[i])->convertToMatlab();
+              break;
+            case AMALGAMATION_INFO:
+              matlabArgs[i] = rcp_static_cast<MuemexData<RCP<MAmalInfo>>, MuemexArg>(args[i])->convertToMatlab();
+              break;
             }
         }
       catch (std::exception& e)
@@ -464,7 +226,7 @@ std::vector<RCP<MuemexArg>> MuemexCallback::callMatlab(std::string function, int
               break;
             case mxINT32_CLASS:
               if(mxGetM(item) == 1 && mxGetN(item) == 1)
-                //single int
+                //individual integer
                 output.push_back(rcp(new MuemexData<int>(item)));
               else if(mxGetM(item) != 1 || mxGetN(item) != 1)
                 //ordinal vector
@@ -481,9 +243,9 @@ std::vector<RCP<MuemexArg>> MuemexCallback::callMatlab(std::string function, int
                   else
                     //single complex scalar
                     output.push_back(rcp(new MuemexData<complex_t>(item)));
-                }
+              }
               else if(mxIsSparse(item))
-                {
+              {
                   //Default to Tpetra matrix for this
                   if(mxIsComplex(item))
                     //complex Tpetra matrix (sparse)
@@ -491,21 +253,32 @@ std::vector<RCP<MuemexArg>> MuemexCallback::callMatlab(std::string function, int
                   else
                     //real Tpetra matrix
                     output.push_back(rcp(new MuemexData<RCP<Tpetra_CrsMatrix_complex>>(item)));
-                }
+              }
               else
-                {
+              {
                   //Default to Tpetra multivector for this case
                   if(mxIsComplex(item))
                     output.push_back(rcp(new MuemexData<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(item)));
                   else
                     output.push_back(rcp(new MuemexData<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(item)));
-                }
+              }
               break;
+            case mxSTRUCT_CLASS:
+            {
+              //the only thing that should get here currently is an Aggregates struct
+              //verify that is has the correct fields with the correct types
+              //also assume that aggregates data will not be stored in an array of more than 1 element.
+              if(isValidMatlabAggregates(item))
+                output.push_back(rcp(new MuemexData<RCP<MAggregates>>(item)));
+              else
+                throw runtime_error("Invalid aggregates struct passed in from MATLAB.");
+              break;
+            }
             default:
 	        throw std::runtime_error("MATLAB returned an unsupported type as a function output.\n");
             }
         }
-	      catch(std::exception& e)
+	catch(std::exception& e)
         {
           mexPrintf("An error occurred while converting output #%d from MATLAB:\n", i);
 	  std::cout << e.what() << std::endl;
@@ -547,7 +320,7 @@ RCP<Epetra_CrsMatrix> epetraLoadMatrix(const mxArray* mxa)
         {
           for(int j = colptr[i]; j < colptr[i + 1]; j++)
             {
-              //                global row, # of entries, value array, column indices array
+              //global row, # of entries, value array, column indices array
               matrix->InsertGlobalValues(rowind[j], 1, &vals[j], &i);
             }
         }
@@ -566,9 +339,7 @@ RCP<Epetra_CrsMatrix> epetraLoadMatrix(const mxArray* mxa)
   return matrix;
 }
 
-
-
-mxArray* createMatlabLOVector(RCP<Xpetra_ordinal_vector> vec)
+mxArray* createMatlabLOVector(RCP<Xpetra_ordinal_vector>& vec)
 {
   //this value might be a 64 bit int but it should never overflow a 32
   mwSize len = vec->getGlobalLength();
@@ -576,7 +347,6 @@ mxArray* createMatlabLOVector(RCP<Xpetra_ordinal_vector> vec)
   mwSize dimensions[] = {len, 1};
   return mxCreateNumericArray(2, dimensions, mxINT32_CLASS, mxREAL);
 }
-
 
 RCP<Epetra_MultiVector> loadEpetraMV(const mxArray* mxa)
 {
@@ -597,16 +367,13 @@ template<> mxArray* createMatlabMultiVector<complex_t>(int numRows, int numCols)
   return mxCreateDoubleMatrix(numRows, numCols, mxCOMPLEX);
 }
 
-
-mxArray* saveEpetraMV(RCP<Epetra_MultiVector> mv)
+mxArray* saveEpetraMV(RCP<Epetra_MultiVector>& mv)
 {
   mxArray* output = mxCreateDoubleMatrix(mv->GlobalLength(), mv->NumVectors(), mxREAL);
   double* dataPtr = mxGetPr(output);
   mv->ExtractCopy(dataPtr, mv->GlobalLength());
   return output;
 }
-
-
 
 int parseInt(const mxArray* mxa)
 {
@@ -632,9 +399,10 @@ int parseInt(const mxArray* mxa)
   return rv;
 }
 
-mxArray* saveEpetraMatrix(RCP<Epetra_CrsMatrix> mat)
+mxArray* saveEpetraMatrix(RCP<Epetra_CrsMatrix>& mat)
 {
-  return saveMatrixToMatlab<double>(MueLu::EpetraCrs_To_XpetraMatrix<double, mm_LocalOrd, mm_GlobalOrd,mm_node_t>(mat));
+  RCP<Xpetra_Matrix_double> xmat = MueLu::EpetraCrs_To_XpetraMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(mat);
+  return saveMatrixToMatlab<double>(xmat);
 }
 
 RCP<Xpetra_ordinal_vector> loadLOVector(const mxArray* mxa)
@@ -650,6 +418,191 @@ RCP<Xpetra_ordinal_vector> loadLOVector(const mxArray* mxa)
   return Xpetra::toXpetra<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(loVec);
 }
 
+template<typename Scalar = double>
+RCP<Xpetra::Matrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> xpetraLoadMatrix(const mxArray* mxa)
+{
+  return MueLu::TpetraCrs_To_XpetraMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tpetraLoadMatrix<Scalar>(mxa));
+}
 
+//Aggregates structs in MATLAB either have to be constructed with constructAggregates() or at least have the same fields
+RCP<MAggregates> loadAggregates(const mxArray* mxa)
+{
+  if(mxGetNumberOfElements(mxa) != 1)
+    throw runtime_error("Aggregates must be individual structs in MATLAB.");
+  if(!mxIsStruct(mxa))
+    throw runtime_error("Trying to pull aggregates from non-struct MATLAB object.");
+  //assume that in matlab aggregate structs will only be stored in a 1x1 array
+  //mxa must have the same fields as the ones declared in constructAggregates function in muelu.m for this to work
+  const int correctNumFields = 5; //change if more fields are added to the aggregates representation in constructAggregates in muelu.m
+  if(mxGetNumberOfFields(mxa) != correctNumFields)
+    throw runtime_error("Aggregates structure has wrong number of fields.");
+  //Pull MuemexData types back out
+  int nVert;
+  int nAgg;
+  RCP<Xpetra_ordinal_vector> vertToAggIdLOV;
+  RCP<Xpetra_ordinal_vector> aggSizesLOV;
+  RCP<Xpetra_ordinal_vector> rootNodesIn; //roots are stored in MATLAB struct as list of ints (representing nodeids)
+  { //scope this so variable names can be simpler, and extra MuemexData wrappers are disposed of immediately
+    RCP<MuemexData<int>> mmData = rcp(new MuemexData<int>(mxGetField(mxa, 0, "nVertices")));
+    nVert = mmData->getData();
+  }
+  {
+    RCP<MuemexData<int>> mmData = rcp(new MuemexData<int>(mxGetField(mxa, 0, "nAggregates")));
+    nAgg = mmData->getData();
+  }
+  {
+    RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> mmData = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(mxGetField(mxa, 0, "vertexToAggID")));
+    vertToAggIdLOV = mmData->getData();
+  }
+  {
+    RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> mmData = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(mxGetField(mxa, 0, "aggSizes")));
+    aggSizesLOV = mmData->getData();
+  }
+  {
+    RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> mmData = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(mxGetField(mxa, 0, "rootNodes")));
+    rootNodesIn = mmData->getData();
+  }
+  //Now have all the data needed to fully reconstruct the aggregate
+  //Use similar approach as UserAggregationFactory (which is written for >1 thread but will just be serial here)
+  RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
+  int myRank = comm->getRank();
+  Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
+  RCP<Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t>> map = Xpetra::MapFactory<mm_LocalOrd, mm_GlobalOrd, mm_node_t>::Build(lib, nVert, 0, comm);
+  RCP<MAggregates> agg = rcp(new MAggregates(map));
+  agg->SetNumAggregates(nAgg);
+  //Get handles for the vertex2AggId and procwinner arrays in reconstituted aggregates object
+  //this is serial so all procwinner values will be same (0)
+  ArrayRCP<mm_LocalOrd> vertex2AggId = agg->GetVertex2AggId()->getDataNonConst(0);  //the '0' means first (and only) column of multivector, since is just vector
+  ArrayRCP<mm_LocalOrd> procWinner = agg->GetProcWinner()->getDataNonConst(0);
+  //Also get const ArrayRCP views into vert2AggId and aggSizes vectors (of LOVectors extracted from matlab struct)
+  ArrayRCP<const mm_LocalOrd> vertex2AggIDToCopy = vertToAggIdLOV->getData(0);
+  ArrayRCP<const mm_LocalOrd> aggSizesToCopy = aggSizesLOV->getData(0);
+  ArrayRCP<const mm_LocalOrd> rootNodesToCopy = rootNodesIn->getData(0);
+  //mm_LocalOrd and int are equivalent, so is ok to talk about aggSize with just 'int'
+  //Deep copy the entire vertex2AggID and isRoot arrays, which are both nVert items long
+  //At the same time, set ProcWinner
+  for(int i = 0; i < nVert; i++)
+  {
+    vertex2AggId[i] = vertex2AggIDToCopy[i];
+    procWinner[i] = myRank; //all nodes are going to be on the same proc
+    agg->SetIsRoot(i, false); //the ones that are root will be set in next loop
+  }
+  for(int i = 0; i < nAgg; i++) //rootNodesToCopy is an array of node IDs which are the roots of their aggs
+  {
+    agg->SetIsRoot(rootNodesToCopy[i], true);
+  }
+  //Now recompute the aggSize array and cache the results in the object
+  agg->ComputeAggregateSizes(true, true);
+  agg->AggregatesCrossProcessors(false);
+  return agg;
+}
 
+mxArray* saveAggregates(RCP<MAggregates>& agg)
+{
+  //Grab data from agg
+  mm_LocalOrd nAgg = agg->GetNumAggregates();
+  RCP<Xpetra_ordinal_vector> vertexToAggID = (RCP<Xpetra_ordinal_vector>) agg->GetVertex2AggId();
+  mm_LocalOrd nVert = vertexToAggID->getLocalLength();
+  //Construct Matlab objects to use in struct
+  vector<RCP<MuemexArg>> structMembers; //input to the matlab callback
+  vector<RCP<MuemexArg>> builtStruct;   //output
+  mwSize arrLen[] = {1}; //array of one element to hold dimensions of 1-D array for mxCreateNumArr
+  mxArray* nVertices = mxCreateNumericArray(1, arrLen, mxINT32_CLASS, mxREAL);
+  mxArray* nAggregates = mxCreateNumericArray(1, arrLen, mxINT32_CLASS, mxREAL);
+  *((int*) mxGetData(nVertices)) = (int) nVert;
+  *((int*) mxGetData(nAggregates)) = (int) nAgg;
+  //agg sizes
+  ArrayRCP<mm_LocalOrd> rawAggSizes = agg->ComputeAggregateSizes(false, true);
+  mm_LocalOrd* rawAggSizeArray = rawAggSizes.getRawPtr();
+  ArrayView<mm_LocalOrd> aggSizeArrayView(rawAggSizeArray, nAgg);
+  RCP<const Teuchos::Comm<int>> comm = rcp(new Teuchos::SerialComm<int>());
+  const Tpetra::global_size_t numGlobalIndices = nAgg;
+  RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, (mm_GlobalOrd) 0, comm));
+  RCP<Tpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> aggSizeTempLOVec = rcp(new Tpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(rowMap, aggSizeArrayView));
+  RCP<Xpetra_ordinal_vector> aggSizes = Xpetra::toXpetra<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(aggSizeTempLOVec);
+  //Place matlab objects in MuemexData objects
+  RCP<MuemexData<int>> nVertArg = rcp(new MuemexData<int>(nVert));
+  RCP<MuemexData<int>> nAggArg = rcp(new MuemexData<int>(nAgg));
+  RCP<Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetraVecMap = rcp(new Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t>(nAgg, (mm_GlobalOrd) 0, comm));
+  RCP<Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t>> vecMap = rcp_implicit_cast<Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t>, Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(tpetraVecMap);
+  //now have the Xpetra::Map that we need to construct rootnode ordinal vector
+  mm_LocalOrd* rawRootNodes = (mm_LocalOrd*) malloc(sizeof(mm_LocalOrd) * nAgg);
+  int iter = 0;
+  for(int i = 0; i < nVert; i++)
+  {
+    if(iter > nAgg)
+      throw runtime_error("Number of root nodes and number of aggregates don't match!");
+    if(agg->IsRoot(i))
+    {
+      rawRootNodes[iter] = i;
+      iter++;
+    }
+  }
+  ArrayView<mm_LocalOrd> rootNodeArrayView(rawRootNodes, nAgg);
+  RCP<Xpetra::TpetraVector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetraRootNodeVec = rcp(new Xpetra::TpetraVector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(vecMap, rootNodeArrayView));
+  if(rawRootNodes == NULL)
+    throw runtime_error("Malloc failed!");
+  RCP<Xpetra_ordinal_vector> rootNodes = rcp_implicit_cast<Xpetra_ordinal_vector, Xpetra::TpetraVector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(tpetraRootNodeVec);
+  RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> vertexToAggIDArg = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(vertexToAggID));
+  RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> rootNodesArg = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(rootNodes));
+  RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> aggSizesArg = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(aggSizes));
+  //Finally, upcast the inputs to MuemexArg and put in arg vector (order matters here!)
+  structMembers.push_back(rcp_implicit_cast<MuemexArg, MuemexData<int>>(nVertArg));
+  structMembers.push_back(rcp_implicit_cast<MuemexArg, MuemexData<int>>(nAggArg));
+  structMembers.push_back(rcp_implicit_cast<MuemexArg, MuemexData<RCP<Xpetra_ordinal_vector>>>(vertexToAggIDArg));
+  structMembers.push_back(rcp_implicit_cast<MuemexArg, MuemexData<RCP<Xpetra_ordinal_vector>>>(rootNodesArg));
+  structMembers.push_back(rcp_implicit_cast<MuemexArg, MuemexData<RCP<Xpetra_ordinal_vector>>>(aggSizesArg));
+  builtStruct = callMatlab("constructAggregates", 1, structMembers);
+  //builtStruct[0] should be a MuemexArg wrapping the MAggregates object. Get that, convert to matlab struct and return
+  //avoid buffer overrun, throw if builtStruct[0] doesn't exist
+  if(builtStruct.size() == 0)
+    throw runtime_error("Matlab aggregates struct builder didn't return the struct.");
+  free(rawRootNodes); //have to free this, the ArrayView doesn't automatically
+  RCP<MuemexData<RCP<MAggregates>>> outData = rcp_static_cast<MuemexData<RCP<MAggregates>>, MuemexArg>(builtStruct[0]);
+  return outData->convertToMatlab();
+}
+
+RCP<MAmalInfo> loadAmalInfo(const mxArray* mxa)
+{
+  RCP<MAmalInfo> amal;
+  throw runtime_error("AmalgamationInfo not supported in Muemex yet.");
+  return amal;
+}
+
+mxArray* saveAmalInfo(RCP<MAmalInfo>& amalInfo)
+{
+  throw runtime_error("AmalgamationInfo not supported in MueMex yet.");
+  return mxCreateDoubleScalar(0);
+}
+
+bool isValidMatlabAggregates(const mxArray* mxa)
+{
+  bool isValidAggregates = true;
+  if(!mxIsStruct(mxa))
+    return false;
+  int numFields = mxGetNumberOfFields(mxa); //check that struct has correct # of fields
+  if(numFields != 5)
+    isValidAggregates = false;
+  if(isValidAggregates)
+  {
+    const char* mem1 = mxGetFieldNameByNumber(mxa, 0);
+    if(mem1 == NULL || strcmp(mem1, "nVertices") != 0)
+      isValidAggregates = false;
+    const char* mem2 = mxGetFieldNameByNumber(mxa, 1);
+    if(mem2 == NULL || strcmp(mem2, "nAggregates") != 0)
+      isValidAggregates = false;
+    const char* mem3 = mxGetFieldNameByNumber(mxa, 2);
+    if(mem3 == NULL || strcmp(mem3, "vertexToAggID") != 0)
+      isValidAggregates = false;
+    const char* mem4 = mxGetFieldNameByNumber(mxa, 3);
+    if(mem3 == NULL || strcmp(mem4, "rootNodes") != 0)
+      isValidAggregates = false;
+    const char* mem5 = mxGetFieldNameByNumber(mxa, 4);
+    if(mem4 == NULL || strcmp(mem5, "aggSizes") != 0)
+      isValidAggregates = false;
+  }
+  return isValidAggregates;
+}
+
+}//end namespace
 #endif // HAVE_MUELU_MATLAB

@@ -1497,6 +1497,7 @@ inline
 void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorTypeIn & functor_in
                     , const ViewType    & result_view
+                    , const std::string& str = "" 
                     , typename Impl::enable_if<
                       ( Impl::is_view<ViewType>::value && ! Impl::is_integral< ExecPolicy >::value &&
                         Impl::is_same<typename ExecPolicy::execution_space,Kokkos::Cuda>::value
@@ -1506,7 +1507,11 @@ void parallel_reduce( const ExecPolicy  & policy
   typedef typename Kokkos::Impl::if_c<FunctorHasValueType, FunctorTypeIn, Impl::CudaFunctorAdapter<FunctorTypeIn,ExecPolicy,typename ViewType::value_type> >::type FunctorType;
   FunctorType functor = Impl::if_c<FunctorHasValueType,FunctorTypeIn,FunctorType>::select(functor_in,FunctorType(functor_in));
 
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,ExecPolicy>(1,str);
+
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,ExecPolicy>(1,str);
 }
 
 // general policy and pod or array of pod output
@@ -1515,6 +1520,7 @@ inline
 void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorTypeIn & functor_in
                     , ResultType& result_ref
+                    , const std::string& str = "" 
                     , typename Impl::enable_if<
                       ( ! Impl::is_view<ResultType>::value &&
                         ! Impl::IsNonTrivialReduceFunctor<FunctorTypeIn>::value &&
@@ -1541,7 +1547,11 @@ void parallel_reduce( const ExecPolicy  & policy
                , 1
                );
 
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,ExecPolicy>(1,str);
+
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( FunctorType(functor_in) , policy , result_view );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,ExecPolicy>(1,str);
 }
 
 // general policy and pod or array of pod output
@@ -1550,6 +1560,7 @@ inline
 void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorType & functor
                     , typename Kokkos::Impl::FunctorValueTraits< FunctorType , typename ExecPolicy::work_tag >::reference_type result_ref
+                    , const std::string& str = "" 
                     , typename Impl::enable_if<
                       (   Impl::IsNonTrivialReduceFunctor<FunctorType>::value &&
                         ! Impl::is_integral< ExecPolicy >::value  &&
@@ -1574,7 +1585,11 @@ void parallel_reduce( const ExecPolicy  & policy
                , ValueTraits::value_count( functor )
                );
 
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,ExecPolicy>(1,str);
+
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,ExecPolicy>(1,str);
 }
 
 // integral range policy and view ouput
@@ -1583,6 +1598,7 @@ inline
 void parallel_reduce( const size_t        work_count
                     , const FunctorTypeIn & functor_in
                     , const ViewType    & result_view
+                    , const std::string& str = "" 
                     , typename Impl::enable_if<( Impl::is_view<ViewType>::value &&
                                                  Impl::is_same<
                           typename Impl::FunctorPolicyExecutionSpace< FunctorTypeIn , void >::execution_space,
@@ -1600,7 +1616,12 @@ void parallel_reduce( const size_t        work_count
 
   FunctorType functor = Impl::if_c<FunctorHasValueType,FunctorTypeIn,FunctorType>::select(functor_in,FunctorType(functor_in));
 
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,ExecPolicy>(1,str);
+
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , ExecPolicy(0,work_count) , result_view );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,ExecPolicy>(1,str);
+
 }
 
 // integral range policy and pod or array of pod output
@@ -1609,6 +1630,7 @@ inline
 void parallel_reduce( const size_t        work_count
                     , const FunctorTypeIn & functor_in
                     , ResultType& result
+                    , const std::string& str = "" 
                     , typename Impl::enable_if< ! Impl::is_view<ResultType>::value &&
                                                 ! Impl::IsNonTrivialReduceFunctor<FunctorTypeIn>::value &&
                                                 Impl::is_same<
@@ -1643,7 +1665,11 @@ void parallel_reduce( const size_t        work_count
                , 1
                );
 
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,ExecPolicy>(1,str);
+
   (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( FunctorType(functor_in) , ExecPolicy(0,work_count) , result_view );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,ExecPolicy>(1,str);
 }
 
 template< class FunctorType>
@@ -1651,6 +1677,7 @@ inline
 void parallel_reduce( const size_t        work_count
                     , const FunctorType & functor
                     , typename Kokkos::Impl::FunctorValueTraits< FunctorType , void >::reference_type result
+                    , const std::string& str = "" 
                     , typename Impl::enable_if< Impl::IsNonTrivialReduceFunctor<FunctorType>::value &&
                                                 Impl::is_same<
                              typename Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space,
@@ -1684,7 +1711,11 @@ void parallel_reduce( const size_t        work_count
                , ValueTraits::value_count( functor )
                );
 
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,ExecPolicy>(1,str);
+
   (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( functor , ExecPolicy(0,work_count) , result_view );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,ExecPolicy>(1,str);
 }
 
 } // namespace Kokkos

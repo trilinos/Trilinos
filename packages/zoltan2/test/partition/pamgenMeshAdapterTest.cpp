@@ -130,7 +130,7 @@ int main(int narg, char *arg[]) {
 
   // default values for command-line arguments
   std::string xmlMeshInFileName("Poisson.xml");
-  std::string action("mj");
+  std::string action("parma");
   int nParts = CommT->getSize();
 
   // Read run-time options.
@@ -138,7 +138,7 @@ int main(int narg, char *arg[]) {
   cmdp.setOption("xmlfile", &xmlMeshInFileName,
                  "XML file with PamGen specifications");
   cmdp.setOption("action", &action,
-                 "Method to use:  mj, scotch, zoltan_rcb or color");
+                 "Method to use:  mj, scotch, zoltan_rcb, parma or color");
   cmdp.setOption("nparts", &nParts,
                  "Number of parts to create");
   cmdp.parse(narg, arg);
@@ -222,6 +222,14 @@ int main(int narg, char *arg[]) {
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "zoltan");
+  }
+  else if (action == "parma") {
+    do_partitioning = true;
+    params.set("debug_level", "basic_status");
+    params.set("imbalance_tolerance", 1.05);
+    params.set("algorithm", "parma");
+    Teuchos::ParameterList &pparams = params.sublist("parma_parameters",false);
+    pparams.set("parma_method","VtxElm");
   }
   else if (action == "color") {
     params.set("debug_level", "verbose_detailed_status");

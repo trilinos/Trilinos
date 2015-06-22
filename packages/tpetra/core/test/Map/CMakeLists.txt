@@ -40,6 +40,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   COMM mpi
   NUM_MPI_PROCS 2
+  ARGS "--globally-reduce-test-result --output-show-proc-rank --output-to-root-rank-only=-1"
   STANDARD_PASS_OUTPUT
   )
 

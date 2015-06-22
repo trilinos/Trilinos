@@ -84,6 +84,7 @@ public:
                  const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
                  const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> >& lof,
                  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+                 const std::vector<Teuchos::RCP<Teuchos::Array<double> > >& p_values,
                  const Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > & solverFactory,
                  const Teuchos::RCP<panzer::GlobalData>& global_data,
                  bool build_transient_support,double t_init);
@@ -152,11 +153,12 @@ public:
       passed into the model evaluator object through the GlobalData.
 
       \param[in]  name Name of the parameter
+      \param[in]  initial Initial (default) condition for this parameter
 
       \return The index associated with this parameter for accessing it through the ModelEvaluator interface.
       \note The implementation for this is a call to the Array version of <code>addParameter</code>
   */
-  int addParameter(const std::string & name);
+  int addParameter(const std::string & name,const Scalar & initial);
 
   /** Add a simple (i.e. nondistributed) parameter to the model evaluator.
 
@@ -164,10 +166,12 @@ public:
       passed into the model evaluator object through the GlobalData.
 
       \param[in]  names Names of the parameter
+      \param[in]  initialValues Initial values for the parameters
 
       \return The index associated with this parameter for accessing it through the ModelEvaluator interface.
   */
-  int addParameter(const Teuchos::Array<std::string> & names);
+  int addParameter(const Teuchos::Array<std::string> & names,
+                   const Teuchos::Array<Scalar> & initialValues);
 
   /** Add a distributed parameter to the model evaluator
 
@@ -456,7 +460,8 @@ private: // data members
     };
   };
 
-  Teuchos::RCP<ParameterObject> createScalarParameter(const Teuchos::Array<std::string> & names) const;
+  Teuchos::RCP<ParameterObject> createScalarParameter(const Teuchos::Array<std::string> & names,
+                                                      const Teuchos::Array<Scalar> & in_values) const;
   Teuchos::RCP<ParameterObject> createDistributedParameter(const std::string & key,
                         const Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > & vs,
                         const Teuchos::RCP<const Thyra::VectorBase<Scalar> > & initial,

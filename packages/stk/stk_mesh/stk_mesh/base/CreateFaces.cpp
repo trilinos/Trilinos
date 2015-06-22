@@ -197,7 +197,7 @@ struct create_face_impl
                   stk::mesh::Entity elem = m_bucket[ielem];
                   stk::mesh::Part & face_topology_part = mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( faceTopology));
                   stk::mesh::Entity new_face = stk::mesh::impl::get_or_create_face_at_element_side(
-                          mesh, elem, side_ordinal, m_available_ids[m_count_faces], face_topology_part);
+                          mesh, elem, side_ordinal, m_available_ids[m_count_faces], stk::mesh::PartVector(1,&face_topology_part));
                   if (mesh.identifier(new_face) == m_available_ids[m_count_faces]) {
                       stk::mesh::impl::connect_face_to_other_elements(mesh, new_face, elem,side_ordinal);
                       m_count_faces++;

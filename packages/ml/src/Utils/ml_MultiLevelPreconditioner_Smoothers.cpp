@@ -38,6 +38,7 @@
 #include "ml_epetra_utils.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_viz_stats.h"
+#include "ml_utils.h"
 
 #ifdef HAVE_ML_IFPACK
 #include "Ifpack_Preconditioner.h"

@@ -1017,6 +1017,7 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
 // For ETI
 #include "Ifpack2_DenseContainer_decl.hpp"
 #include "Ifpack2_SparseContainer_decl.hpp"
+#include "Ifpack2_TriDiContainer_decl.hpp"
 #include "Ifpack2_ILUT_decl.hpp"
 
 // FIXME (mfh 16 Sep 2014) We should really only use RowMatrix here!
@@ -1039,6 +1040,12 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
       S > >; \
   template \
   class Ifpack2::BlockRelaxation<      \
+    Tpetra::RowMatrix<S, LO, GO, N>, \
+    Ifpack2::TriDiContainer<        \
+      Tpetra::RowMatrix<S, LO, GO, N>, \
+      S > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
     Tpetra::CrsMatrix<S, LO, GO, N>, \
     Ifpack2::SparseContainer<       \
       Tpetra::CrsMatrix<S, LO, GO, N>, \
@@ -1048,8 +1055,13 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
     Tpetra::CrsMatrix<S, LO, GO, N>, \
     Ifpack2::DenseContainer<        \
       Tpetra::CrsMatrix<S, LO, GO, N>, \
+      S > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::CrsMatrix<S, LO, GO, N>, \
+    Ifpack2::TriDiContainer<        \
+      Tpetra::CrsMatrix<S, LO, GO, N>, \
       S > >;
-
 
 
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION

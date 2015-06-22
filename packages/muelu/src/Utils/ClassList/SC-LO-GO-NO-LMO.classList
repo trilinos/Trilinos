@@ -71,6 +71,7 @@ SteepestDescentSolver
 SubBlockAFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 TentativePFactory
 ThresholdAFilterFactory
+TogglePFactory
 TpetraOperator
 TransPFactory
 TrilinosSmoother

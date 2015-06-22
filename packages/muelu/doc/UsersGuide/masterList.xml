@@ -439,6 +439,30 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>aggregation: output filename</name>
+      <type>string</type>
+      <default>AggViz.vtp</default>
+      <description>Filename to write VTK visualization data to.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+    
+    <parameter>
+      <name>aggregation: output file: time step</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Time step ID for non-linear problems.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: iter</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Iteration for non-linear problems.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
   </aggregation>
 
   <misc>
@@ -503,11 +527,30 @@
     </parameter>
 
     <parameter>
+      <name>toggle: mode</name>
+      <type>string</type>
+      <default>semicoarsen</default>
+      <description>Toggling strategy for transfer operators (default=semicoarsen)</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>semicoarsen: coarsen rate</name>
       <type>int</type>
       <default>3</default>
       <description>Rate at which to coarsen unknowns in the z direction.</description>
       <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>semicoarsen: number of levels</name>
+      <type>int</type>
+      <default>3</default>
+      <description>Determines the maximum number of times that semicoarsening is applied.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
     </parameter>
 
     <parameter>

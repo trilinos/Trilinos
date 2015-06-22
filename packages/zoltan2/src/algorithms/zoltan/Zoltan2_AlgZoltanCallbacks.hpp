@@ -156,7 +156,30 @@ static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// ZOLTAN_HG_SIZE_CS_FN
+template <typename Adapter>
+static void zoltanHGSizeCS(void *data, int *nEdges, int *nPins,
+                           int *format, int *ierr)
+{
+  *ierr = ZOLTAN_FATAL;
+  cout << "Hypergraph callbacks are not ready yet" << endl;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// ZOLTAN_HG_CS_FN
+template <typename Adapter>
+static void zoltanHGCS(void *data, int nGidEnt, int nEdges, int nPins,
+                       int format, ZOLTAN_ID_PTR edgeIds, 
+                       int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr)
+{
+  *ierr = ZOLTAN_FATAL;
+  cout << "Hypergraph callbacks are not ready yet" << endl;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // TODO:  OTHER CALLBACKS
+
+
 
 }
 #endif

@@ -50,18 +50,23 @@
 
 #define NUM_GLOBAL_ELEMENTS 100
 
-using Teuchos::RCP;
-using Teuchos::Array;
-using Teuchos::ArrayView;
-typedef int LO;
-typedef int GO;
-typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
-typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-typedef Tpetra::Map<LO, GO, Node> Map;
-typedef Tpetra::Directory<LO, GO, Node> Directory;
 
 
 namespace {
+
+  using Teuchos::Array;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  typedef Tpetra::Map<> Map;
+  typedef Tpetra::Directory<> Directory;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
+
+  typedef Map::local_ordinal_type LO;
+  typedef Map::global_ordinal_type GO;
+  typedef Map::node_type NT;
+  typedef Tpetra::global_size_t GST;
 
   // If shared, GID goes to rank GID%2.  If not shared (e.g.,
   // pid_and_lid.size()==1), do not change PID assignment.
@@ -98,7 +103,6 @@ namespace {
     // and 51; rank 0 should have the rest.
     Platform& platform = Tpetra::DefaultPlatform::getDefaultPlatform ();
     RCP<const Teuchos::Comm<int> > comm = platform.getComm ();
-    RCP<Node> node = platform.getNode ();
     const int myRank = comm->getRank ();
 
     out << "Creating global index lists" << endl;
@@ -122,12 +126,14 @@ namespace {
     }
 
     out << "Building non-one-to-one Map" << endl;
+    const GO indexBase = 0;
     RCP<const Map> map =
-      Tpetra::createNonContigMapWithNode<LO, GO> (gidList, comm, node);
+      rcp (new Map (Teuchos::OrdinalTraits<GST>::invalid (), gidList (),
+                    indexBase, comm));
 
     out << "Calling createOneToOne" << endl;
     ModTwoTieBreak<LO,GO> tie_break;
-    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,Node> (map, tie_break);
+    RCP<const Map> new_map = Tpetra::createOneToOne<LO,GO,NT> (map, tie_break);
 
     out << "Print the new map" << endl;
     // The "Teuchos::" stuff turns std::cout into a FancyOStream.
@@ -158,11 +164,15 @@ namespace {
     }
     else {
       TEST_EQUALITY(my_num_owned, 2);
-      if (my_num_owned > 0) {
-        TEST_EQUALITY(my_owned[0], 41);
-      }
-      if (my_num_owned > 1) {
-        TEST_EQUALITY(my_owned[1], 51);
+
+      if (my_num_owned == static_cast<LO> (2)) {
+        // Make a deep copy, so we can sort.  Order of the indices
+        // doesn't matter; all that matters is that Proc 1 actually
+        // got the indices it was supposed to get.
+        Array<GO> myOwnedCopy (my_owned.begin (), my_owned.end ());
+        std::sort (myOwnedCopy.begin (), myOwnedCopy.end ());
+        TEST_EQUALITY(myOwnedCopy[0], 41);
+        TEST_EQUALITY(myOwnedCopy[1], 51);
       }
     }
 

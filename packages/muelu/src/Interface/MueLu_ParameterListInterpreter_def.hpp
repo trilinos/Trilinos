@@ -88,6 +88,11 @@
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 
+#ifdef HAVE_MUELU_MATLAB
+#include "../matlab/MueLu_MatlabSmoother_decl.hpp"
+#include "../matlab/MueLu_MatlabSmoother_def.hpp"
+#endif
+
 // These code chunks should only be enabled once Tpetra supports proper graph
 // reuse in MMM. At the moment, only Epetra does, while Tpetra throws
 // #define REUSE_MATRIX_GRAPHS
@@ -95,7 +100,7 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int>> comm, Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
+  ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ParameterListInterpreter(ParameterList& paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm, Teuchos::RCP<FactoryFactory> factFact) : factFact_(factFact) {
 
     if(paramList.isParameter("xml parameter file")){
       std::string filename = paramList.get("xml parameter file","");
@@ -244,19 +249,21 @@ namespace MueLu {
     useCoordinates_ = false;
     if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "repartition: enable",      bool,        true) ||
         MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "distance laplacian") ||
-        MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: type",        std::string, "brick")) {
+        MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: type",        std::string, "brick") ||
+        MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: export visualization data", bool, true)) {
       useCoordinates_ = true;
 
     } else {
       for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
-        std::string levelStr = "level" + toString(levelID);
+        std::string levelStr = "level " + toString(levelID);
 
         if (paramList.isSublist(levelStr)) {
           const ParameterList& levelList = paramList.sublist(levelStr);
 
           if (MUELU_TEST_PARAM_2LIST(levelList, paramList, "repartition: enable",      bool,        true) ||
               MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: drop scheme", std::string, "distance laplacian") ||
-              MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: type",        std::string, "brick")) {
+              MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: type",        std::string, "brick") ||
+              MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: export visualization data", bool, true)) {
             useCoordinates_ = true;
             break;
           }
@@ -388,7 +395,6 @@ namespace MueLu {
     if (paramList.isParameter("Nullspace")   && !paramList.get<RCP<MultiVector> >("Nullspace")  .is_null()) have_userNS = true;
     if (paramList.isParameter("Coordinates") && !paramList.get<RCP<MultiVector> >("Coordinates").is_null()) have_userCO = true;
 
-
     // === Smoothing ===
     // FIXME: should custom smoother check default list too?
     bool isCustomSmoother =
@@ -455,7 +461,11 @@ namespace MueLu {
           preSmootherParams = defaultList.sublist("smoother: params");
         else if (preSmootherType == "RELAXATION")
           preSmootherParams = defaultSmootherParams;
-
+#ifdef HAVE_MUELU_MATLAB
+	if(preSmootherType == "matlab") 
+	  preSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(preSmootherParams))));
+	else
+#endif
         preSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(preSmootherType, preSmootherParams, overlap))));
       }
 
@@ -481,6 +491,11 @@ namespace MueLu {
         if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
           postSmoother = preSmoother;
         else
+#ifdef HAVE_MUELU_MATLAB
+	if(postSmootherType == "matlab") 
+	  postSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>(postSmootherParams))));
+	else
+#endif
           postSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap))));
       }
 
@@ -534,6 +549,11 @@ namespace MueLu {
           coarseType == "Amesos")
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       else
+#ifdef HAVE_MUELU_MATLAB
+	if(coarseType == "matlab") 
+	  coarseSmoother = rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(coarseParams));
+	else
+#endif
         coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
 
       manager.SetFactory("CoarseSolver", rcp(new SmootherFactory(coarseSmoother)));

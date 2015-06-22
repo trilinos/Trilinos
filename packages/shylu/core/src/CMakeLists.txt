@@ -57,12 +57,12 @@ APPEND_SET(HEADERS
   epetra/shylu_local_schur_operator.h
   epetra/shylu_internal.h
   epetra/shylu_config.h
-  interfaces/shylu_partition_interface.hpp
-  interfaces/shylu_partition_interface_def.hpp
-  interfaces/shylu_partition_interface_decl.hpp
-  interfaces/shylu_directsolver_interface.hpp
-  interfaces/shylu_directsolver_interface_def.hpp
-  interfaces/shylu_directsolver_interface_decl.hpp
+  epetra/shylu_partition_interface.hpp
+  epetra/shylu_partition_interface_def.hpp
+  epetra/shylu_partition_interface_decl.hpp
+  epetra/shylu_directsolver_interface.hpp
+  epetra/shylu_directsolver_interface_def.hpp
+  epetra/shylu_directsolver_interface_decl.hpp
   )
 
 # Set sources
@@ -77,8 +77,8 @@ APPEND_SET(SOURCES
   epetra/shylu_util.cpp
   epetra/shylu_solve.cpp
   epetra/shylu_schur.cpp
-  interfaces/shylu_partition_interface.cpp
-  interfaces/shylu_directsolver_interface.cpp
+  epetra/shylu_partition_interface.cpp
+  epetra/shylu_directsolver_interface.cpp
   )
 
 TRIBITS_ADD_LIBRARY(shylu

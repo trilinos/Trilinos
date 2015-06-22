@@ -71,7 +71,8 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("semicoarsen: coarsen rate");
 #undef  SET_VALID_ENTRY
-    validParamList->set<ArrayRCP<LO> >("SemiCoarsenInfo",  Teuchos::null, "Generating factory of the array SemiCoarsenInfo");
+    // TODO find a better way to feed the SemiCaorsenPFactory with the variable information...
+    //validParamList->set<ArrayRCP<LO> >("SemiCoarsenInfo",  Teuchos::null, "Generating factory of the array SemiCoarsenInfo");
 
     validParamList->set< RCP<const FactoryBase> >("A",            Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Nullspace",    Teuchos::null, "Generating factory of the nullspace");
@@ -85,8 +86,8 @@ namespace MueLu {
   void SemiCoarsenPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(fineLevel, "A");
     Input(fineLevel, "Nullspace");
-    //    Input(fineLevel, "Coordinates");   // rst: this didn't work last time I tried?
-    //    Input(fineLevel, "SemiCoarsenInfo");    // rst: this didn't work last time I tried?
+    //    Input(fineLevel, "Coordinates");        // taw: this cannot work as Coordinates are usually (?) not provided by a factory
+    //    Input(fineLevel, "SemiCoarsenInfo");    // taw: this cannot work as there is no Factory which produces SemiCoarsenInfo...
 
   }
 
@@ -112,7 +113,7 @@ namespace MueLu {
       NumZDir      = FineSemiInfo[NUM_ZPTS];
       Zorientation = FineSemiInfo[ORIENTATION];
     }
-    if (Zorientation == GRID_SUPPLIED) {
+    if (Zorientation == GRID_SUPPLIED) { // On finest level, fetch user-provided coordinates if available...
       bool CoordsAvail = fineLevel.IsAvailable("Coordinates");
 
       if (CoordsAvail == false) {
@@ -788,7 +789,7 @@ namespace MueLu {
         printf("Warning: did not assign %d to a Layer?????\n",i);
       }
     }
-    maxAll(&comm, NumNodesPerVertLine, i);
+    MueLu_maxAll(&comm, NumNodesPerVertLine, i);
     if (NumNodesPerVertLine == -1)  NumNodesPerVertLine = i;
 
     TEUCHOS_TEST_FOR_EXCEPTION(NumNodesPerVertLine != i,Exceptions::RuntimeError, "Different processors have different z direction line lengths?\n");

@@ -1544,3 +1544,24 @@ GENERATE_LEGEND        = YES
 # the various graphs.
 
 DOT_CLEANUP            = YES
+
+#---------------------------------------------------------------------------
+# Configuration: additions related to MathJax   
+#---------------------------------------------------------------------------
+
+USE_MATHJAX            = YES
+
+MATHJAX_EXTENSIONS     = TeX/AMSmath TeX/AMSsymbols
+
+MATHJAX_RELPATH        = https://cdn.mathjax.org/mathjax/latest
+
+#---------------------------------------------------------------------------
+# Configuration: additions related to the search engine   
+#---------------------------------------------------------------------------
+
+# The SEARCHENGINE tag specifies whether or not a search engine should be 
+# used. If set to NO the values of all tags below this one will be ignored.
+
+SEARCHENGINE           = NO
+
+
