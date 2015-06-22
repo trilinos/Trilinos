@@ -71,6 +71,10 @@ SET(Trilinos_PACKAGES Amesos Epetra Ifpack Teuchos Tpetra ML MueLu Zoltan)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+  "-D TPL_ENABLE_SuperLU:BOOL=ON"
+  "-D SuperLU_LIBRARY_DIRS=/usr/local/SuperLU_4.3/lib"
+  "-D SuperLU_INCLUDE_DIRS=/usr/local/SuperLU_4.3/SRC"
+  "-D SuperLU_LIBRARIES=superlu_4.3"
 )
 
 #
