@@ -25,7 +25,7 @@
 // Questions? Contact Todd S. Coffey (tscoffe@sandia.gov)
 //
 // ***********************************************************************
-//@HEADER 
+//@HEADER
 
 
 #include "EpetraExt_DiagonalTransientModel.hpp"
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 
   using std::endl;
   typedef double Scalar;
-  typedef double ScalarMag;
+  // typedef double ScalarMag; // unused
   using Teuchos::describe;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
   typedef Thyra::ModelEvaluatorBase MEB;
   using Thyra::createMember;
   using Thyra::createMembers;
-  
+
   bool success = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
@@ -155,12 +155,12 @@ int main(int argc, char *argv[])
     double maxStateError = 1e-6;
     clp.setOption( "max-state-error", &maxStateError,
       "The maximum allowed error in the integrated state in relation to the exact state solution" );
-    
+
     // ToDo: Read in more parameters
 
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
-    
+
     if ( Teuchos::VERB_DEFAULT == verbLevel )
       verbLevel = Teuchos::VERB_LOW;
 
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
     // B) Get the base parameter list that all other parameter lists will be
     // read from.
     //
-    
+
     RCP<ParameterList> paramList = Teuchos::parameterList();
     if (paramsFileName.length())
       updateParametersFromXmlFile( paramsFileName, paramList.ptr() );
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
     overallLinearSolverBuilder.setParameterList(sublist(paramList,OverallLinearSolver_name));
     RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> >
       overallLOWSF = createLinearSolveStrategy(overallLinearSolverBuilder);
-    
+
     //
     // D) Create the underlying EpetraExt::ModelEvaluator
     //
@@ -212,25 +212,25 @@ int main(int argc, char *argv[])
     epetraDaeModel->getValidParameters()->print(
       *out, PLPrintOptions().indent(2).showTypes(true).showDoc(true)
       );
-    
+
     //
     // E) Create the Thyra-wrapped ModelEvaluator
     //
-    
+
     RCP<Thyra::ModelEvaluator<double> > daeModel =
       epetraModelEvaluator(epetraDaeModel,daeLOWSF);
 
     //
     // F) Create the TimeDiscretizedBackwardEulerModelEvaluator
     //
-    
+
     MEB::InArgs<Scalar> initCond = daeModel->createInArgs();
     initCond.setArgs(daeModel->getNominalValues());
 
     RCP<Thyra::ModelEvaluator<Scalar> >
       discretizedModel = Rythmos::timeDiscretizedBackwardEulerModelEvaluator<Scalar>(
         daeModel, initCond, finalTime, numTimeSteps, overallLOWSF );
-    
+
     *out << "\ndiscretizedModel = " << describe(*discretizedModel,verbLevel);
 
     //
@@ -249,7 +249,7 @@ int main(int argc, char *argv[])
 
     // F.2) Solve the system
 
-    RCP<Thyra::VectorBase<Scalar> > 
+    RCP<Thyra::VectorBase<Scalar> >
       x_bar = createMember(discretizedModel->get_x_space());
     V_S( x_bar.ptr(), 0.0 );
 
@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
     *out << "\nsolveStatus:\n" << solveStatus;
 
     *out << "\nx_bar = " << describe(*x_bar,solnVerbLevel);
-    
+
     //
     // G) Verify that the solution is correct???
     //
@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
 
     RCP<const Thyra::VectorBase<Scalar> > solved_x_final
       = rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(x_bar,true)->getVectorBlock(numTimeSteps-1);
-    
+
     const bool result = Thyra::testRelNormDiffErr(
       "exact_x_final", *exact_x_final, "solved_x_final", *solved_x_final,
       "maxStateError", maxStateError, "warningTol", 1.0, // Don't warn
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
     *out << "\nEnd Result: TEST PASSED" << endl;
   else
     *out << "\nEnd Result: TEST FAILED" << endl;
-  
+
   return ( success ? 0 : 1 );
 
 } // end main() [Doxygen looks for this!]

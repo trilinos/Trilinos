@@ -732,7 +732,7 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar> StepperValidator<Scalar>::getSomeIC_(
 template<class Scalar>
 void StepperValidator<Scalar>::validateIC_() const
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  // typedef Teuchos::ScalarTraits<Scalar> ST; // unused
   // Determine if the stepper is implicit or not:
   bool isImplicit = this->isImplicitStepper_();
   RCP<StepperValidatorMockModel<Scalar> > model =
@@ -787,7 +787,7 @@ void StepperValidator<Scalar>::validateIC_() const
 template<class Scalar>
 void StepperValidator<Scalar>::validateStates_() const
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  // typedef Teuchos::ScalarTraits<Scalar> ST; // unused
   RCP<const StepperBuilder<Scalar> > sb =
     integratorBuilder_->getStepperBuilder();
   RCP<StepperBase<Scalar> > stepper = sb->create(stepperName_);
@@ -871,7 +871,7 @@ void StepperValidator<Scalar>::validateStates_() const
 template<class Scalar>
 void StepperValidator<Scalar>::validateGetIC_() const
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  // typedef Teuchos::ScalarTraits<Scalar> ST; // unused
   typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
   // Determine if the stepper is implicit or not:
   bool isImplicit = this->isImplicitStepper_();
@@ -943,8 +943,8 @@ void StepperValidator<Scalar>::validateGetIC_() const
 template<class Scalar>
 void StepperValidator<Scalar>::validateGetIC2_() const
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  // typedef Teuchos::ScalarTraits<Scalar> ST; // unused
+  // typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag; // unused
   // Determine if the stepper is implicit or not:
   bool isImplicit = this->isImplicitStepper_();
   RCP<StepperValidatorMockModel<Scalar> > model =
@@ -977,7 +977,7 @@ void StepperValidator<Scalar>::validateGetIC2_() const
 template<class Scalar>
 void StepperValidator<Scalar>::validateGetNodes_() const
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  // typedef Teuchos::ScalarTraits<Scalar> ST; // unused
   // Create uninitialized stepper and verify we get no nodes back
   {
     RCP<const StepperBuilder<Scalar> > sb = integratorBuilder_->getStepperBuilder();

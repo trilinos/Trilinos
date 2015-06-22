@@ -74,8 +74,8 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
   "-DTrilinos_ENABLE_Amesos:BOOL=ON"
   "-DTrilinos_ENABLE_Amesos2:BOOL=ON"
-  "-DXpetra_ENABLE_Experimental:BOOL=ON"
-  "-DMueLu_ENABLE_Experimental:BOOL=ON"
+  "-DXpetra_ENABLE_Experimental:BOOL=OFF"
+  "-DMueLu_ENABLE_Experimental:BOOL=OFF"
 )
 
 #"-DAmesos2_ENABLE_KLU2:BOOL=ON"

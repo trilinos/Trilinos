@@ -201,7 +201,7 @@ void TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::initialize(
         daeModel_->get_W_factory()
         );
   }
-  
+
 }
 
 
@@ -299,7 +299,7 @@ void TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::evalModelImpl(
 
 
   using Teuchos::rcp_dynamic_cast;
-  typedef ScalarTraits<Scalar> ST;
+  // typedef ScalarTraits<Scalar> ST; // unused
   typedef Thyra::ModelEvaluatorBase MEB;
   typedef Thyra::VectorBase<Scalar> VB;
   typedef Thyra::ProductVectorBase<Scalar> PVB;
@@ -330,7 +330,7 @@ void TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::evalModelImpl(
   MEB::OutArgs<Scalar> daeOutArgs = daeModel_->createOutArgs();
   const RCP<VB> x_dot_i = createMember(daeModel_->get_x_space());
   daeInArgs.setArgs(initCond_);
-  
+
   Scalar t_i = initTime_; // ToDo: Define t_init!
 
   const Scalar oneOverDeltaT = 1.0/delta_t_;
@@ -342,7 +342,7 @@ void TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::evalModelImpl(
       x_i = x_bar->getVectorBlock(i),
       x_im1 = ( i==0 ? initCond_.get_x() : x_bar->getVectorBlock(i-1) );
     V_VmV( x_dot_i.ptr(), *x_i, *x_im1 ); // x_dot_i = 1/dt * ( x[i] - x[i-1] )
-    Vt_S( x_dot_i.ptr(), oneOverDeltaT ); // ... 
+    Vt_S( x_dot_i.ptr(), oneOverDeltaT ); // ...
     daeInArgs.set_x_dot( x_dot_i );
     daeInArgs.set_x( x_i );
     daeInArgs.set_t( t_i );
@@ -359,7 +359,7 @@ void TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::evalModelImpl(
     daeModel_->evalModel( daeInArgs, daeOutArgs );
     daeOutArgs.set_f(Teuchos::null);
     daeOutArgs.set_W_op(Teuchos::null);
-    
+
     // B.4) Evaluate W_op_bar(i,i-1)
     if ( !is_null(W_op_bar) && i > 0 ) {
       daeInArgs.set_alpha( -oneOverDeltaT );
@@ -374,7 +374,7 @@ void TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::evalModelImpl(
 
   }
 
-/*  
+/*
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
 */
 
