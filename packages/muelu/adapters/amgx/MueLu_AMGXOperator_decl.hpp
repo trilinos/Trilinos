@@ -51,14 +51,14 @@
  #include <Tpetra_MultiVector_decl.hpp>
  #include <amgx_c.h>
  #include "cuda_runtime.h"
-
- /*! @class AMGXOperator
- * -    Wraps an existing MueLuOperator as a AMGX::Operator.
- *       */
-
-
+ #include <Teuchos_ParameterList.cpp>
 
 namespace MueLu {
+  
+
+  /*! @class TemplatedAMGXOperator
+      This templated version of the class throws errors in all methods as AmgX is not implemented for datatypes where scalar!=double/float and ordinal !=int
+ */
   template <class Scalar = Tpetra::Operator<>::scalar_type,
             class LocalOrdinal = typename Tpetra::Operator<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
@@ -87,19 +87,20 @@ namespace MueLu {
       throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
     }
 
-    //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
+    //! Returns a solution for the linear system AX=Y in the  Tpetra::MultiVector X.
     /*!
-      \param[in]  X - Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
-      \param[out] Y -Tpetra::MultiVector of dimension NumVectors containing result.
+      \param[in]  X - Tpetra::MultiVector of dimension NumVectors that contains the solution to the linear system.
+      \param[out] Y -Tpetra::MultiVector of dimension NumVectors containing the RHS of the linear system.
     */
     void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                                          Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                                          Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                                         SC alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                                         SC beta  = Teuchos::ScalarTraits<Scalar>::one()) const{
+                                         Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+                                         Scalar beta  = Teuchos::ScalarTraits<Scalar>::one()) const{
       throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
     }
 
+    //! Indicates whether this operator supports applying the adjoint operator
     bool hasTransposeApply() const{
       throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
     }
@@ -112,8 +113,11 @@ namespace MueLu {
     int N_;
   };
 
+  /*! @class AMGXOperator
+      Creates and AmgX Solver object with a Tpetra Matrix. Partial specialization of the template for data types supported by AmgX.
+  */
   template <class Node = typename Tpetra::Operator<double, int, int>::node_type>
-  class AMGXOperator<double, int, int, Node>  : public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+  class AMGXOperator<double, int, int, Node>  : public Tpetra::Operator<double, int, int, Node> {
    public:
 
     typedef double SC;
@@ -175,19 +179,18 @@ namespace MueLu {
      //! Destructor.
      virtual ~AMGXOperator() { }
 
-     /*Delete these functions?*/
      //! Returns the Tpetra::Map object associated with the domain of this operator.
-     Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > getDomainMap() const;
+     Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > getDomainMap() const;
      
      //! Returns the Tpetra::Map object associated with the range of this operator.
-     Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > getRangeMap() const;
+     Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > getRangeMap() const;
      
-    //! Returns in Y the result of a Tpetra::Operator applied to a Tpetra::MultiVector X.
+    //! Returns in X the solution to the linear system AX=Y.
      /*!
-        \param[in]  X - Tpetra::MultiVector of dimension NumVectors to multiply with matrix
-        \param[out] Y -Tpetra::MultiVector of dimension NumVectors containing result.                                       */
-     void apply(const Tpetra::MultiVector<SC,LO,GO,NO>& X,
-                Tpetra::MultiVector<SC,LO,GO,NO>& Y,
+        \param[in]  X - Tpetra::MultiVector of dimension NumVectors containing the solution to the linear system
+        \param[out] Y -Tpetra::MultiVector of dimension NumVectors containing the RHS of the linear system.                 */
+     void apply(const Tpetra::MultiVector<SC,LO,GO,Node>& X,
+                Tpetra::MultiVector<SC,LO,GO,Node>& Y,
                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
                 SC alpha = Teuchos::ScalarTraits<SC>::one(),                                                                           SC beta  = Teuchos::ScalarTraits<SC>::one()) const;
 
@@ -202,8 +205,8 @@ namespace MueLu {
      AMGX_vector_handle X_;
      AMGX_vector_handle Y_;
      int N;
-     Teuchos::RCP<const Tpetra::Map<LO, GO, NO> > domainMap_;
-     Teuchos::RCP<const Tpetra::Map<LO, GO, NO> > rangeMap_;
+     Teuchos::RCP<const Tpetra::Map<LO, GO, Node> > domainMap_;
+     Teuchos::RCP<const Tpetra::Map<LO, GO, Node> > rangeMap_;
   };
 
 } // namespace

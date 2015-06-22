@@ -123,7 +123,8 @@ namespace MueLuTests {
 
       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
 
-      RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName);
+      RCP<Tpetra::Operator<SC,LO,GO,NO> > tpOp = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName);
+      RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH =Teuchos::rcp_dynamic_cast<MueLu::TpetraOperator<SC,LO,GO,NO> >(tpOp);
 
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
@@ -135,14 +136,16 @@ namespace MueLuTests {
       RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpcoordinates = Utils::MV2NonConstTpetraMV(coordinates);
       RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpnullspace   = Utils::MV2NonConstTpetraMV(nullspace);
 
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates);
+      tpOp = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates);
+      tH = Teuchos::rcp_dynamic_cast<MueLu::TpetraOperator<SC,LO,GO,NO> >(tpOp);
 
       X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
           Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates, tpnullspace);
+      tpOp = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates);
+      tH = Teuchos::rcp_dynamic_cast<MueLu::TpetraOperator<SC,LO,GO,NO> >(tpOp);
 
       X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
@@ -240,7 +243,8 @@ namespace MueLuTests {
 
       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
 
-      RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA,mylist);
+      RCP<Tpetra::Operator<SC,LO,GO,NO> > tpOp = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA,mylist);
+      RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = Teuchos::rcp_dynamic_cast<MueLu::TpetraOperator<SC,LO,GO,NO> >(tpOp);
 
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
@@ -252,14 +256,16 @@ namespace MueLuTests {
       RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpcoordinates = Utils::MV2NonConstTpetraMV(coordinates);
       RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpnullspace   = Utils::MV2NonConstTpetraMV(nullspace);
 
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, mylist, tpcoordinates);
+      tpOp = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, mylist, tpcoordinates);
+      tH = Teuchos::rcp_dynamic_cast<MueLu::TpetraOperator<SC,LO,GO,NO> >(tpOp);
 
       X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
           Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
-      tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, mylist, tpcoordinates, tpnullspace);
+      tpOp = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, mylist, tpcoordinates, tpnullspace);
+      tH = Teuchos::rcp_dynamic_cast<MueLu::TpetraOperator<SC,LO,GO,NO> >(tpOp);
 
       X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
@@ -364,13 +370,16 @@ namespace MueLuTests {
         RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpcoordinates = Utils::MV2NonConstTpetraMV(coordinates);
         RCP<Tpetra::MultiVector<SC,LO,GO,NO> > tpnullspace   = Utils::MV2NonConstTpetraMV(nullspace);
 
-        RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates);
+
+        RCP<Tpetra::Operator<SC,LO,GO,NO> > tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates);
+        RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = Teuchos::rcp_dynamic_cast<MueLu::TpetraOperator<SC,LO,GO,NO> >(tpOp);
 
         tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
         out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<
             Utils::ResidualNorm(*Op, *X1, *RHS1) << std::endl;
 
-        tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates, tpnullspace);
+        tpOP = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName, tpcoordinates, tpnullspace);
+        tH = Teuchos::rcp_dynamic_cast<MueLu::TpetraOperator<SC,LO,GO,NO> >(tpOp);
 
         X1->putScalar(Teuchos::ScalarTraits<SC>::zero());
         tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
@@ -440,7 +449,8 @@ namespace MueLuTests {
 #ifdef HAVE_MUELU_TPETRA
       RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > tpA = MueLu::Utils<SC,LO,GO,NO>::Op2NonConstTpetraCrs(Op);
 
-      RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName);
+      RCP<Tpetra::Operator<SC,LO,GO,NO> > tpOp = MueLu::CreateTpetraPreconditioner<SC,LO,GO,NO>(tpA, xmlFileName);
+      RCP<MueLu::TpetraOperator<SC,LO,GO,NO> > tH = Teuchos::rcp_dynamic_cast<MueLu::TpetraOperator<SC,LO,GO,NO> >(tpOp);
 
       tH->apply(*(Utils::MV2TpetraMV(RHS1)), *(Utils::MV2NonConstTpetraMV(X1)));
       out << "after apply, ||b-A*x||_2 = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) <<

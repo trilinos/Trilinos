@@ -1,4 +1,4 @@
-#ifndef MUELU_CREATE_TPETRA_PRECONDITIONER_HPP
+fndef MUELU_CREATE_TPETRA_PRECONDITIONER_HPP
 #define MUELU_CREATE_TPETRA_PRECONDITIONER_HPP
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
@@ -17,7 +17,9 @@
 #include <MueLu_Utilities.hpp>
 #include <MueLu_HierarchyHelpers.hpp>
 
-#if defined (HAVE_MUELU_EXPERIMENTAL) and defined (HAVE_MUELU_AMGX)
+
+#if defined(HAVE_MUELU_EXPERIMENTAL) and defined(HAVE_MUELU_AMGX)
+#include <MueLu_AMGXOperator.hpp>
 #include <amgx_c.h>
 #include "cuda_runtime.h"
 #endif
@@ -36,6 +38,7 @@ namespace MueLu {
     @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
     @param[in] inNullspace (optional) Near nullspace of the matrix.
     */
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix  <Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inA,
@@ -59,11 +62,11 @@ namespace MueLu {
 
     RCP<HierarchyManager> mueLuFactory;
     ParameterList paramList = paramListIn;
-  
-#if defined (HAVE_MUELU_EXPERIMENTAL) && defined (HAVE_MUELU_AMGX)  
+
+#if defined(HAVE_MUELU_EXPERIMENTAL) and defined(HAVE_MUELU_AMGX)
     std::string externalMG = "use external multigrid package";
-    if(hasParamList && paramList.isParameter(externalMG) && paramList.get<std::string>(externalMG) == "amgx"){
-      return CreateTpetraPreconditionerAMGX(inA, paramListIn);
+    if (hasParamList && paramList.isParameter(externalMG) && paramList.get<std::string>(externalMG) == "amgx"){
+      return rcp(new AMGXOperator<SC,LO,GO,NO>(inA,paramListIn));
     }
 #endif
     std::string syntaxStr = "parameterlist: syntax";
@@ -126,7 +129,7 @@ namespace MueLu {
 
     
     Teuchos::ParameterList nonSerialList,dummyList;
-    ExtractNonSerializableData(paramList, dummyList, nonSerialList);    
+    ExtractNonSerializableData(paramList, dummyList, nonSerialList);
     HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
     
     mueLuFactory->SetupHierarchy(*H);
@@ -145,7 +148,7 @@ namespace MueLu {
     @param[in] inNullspace (optional) Near nullspace of the matrix.
     */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix  <Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inA,
                              const Teuchos::RCP<Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> >& inCoords    = Teuchos::null,
                              const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inNullspace = Teuchos::null) {
@@ -164,18 +167,17 @@ namespace MueLu {
     @param[in] inNullspace (optional) Near nullspace of the matrix.
     */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix  <Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inA,
                              const std::string& xmlFileName,
                              const Teuchos::RCP<Tpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> >& inCoords    = Teuchos::null,
                              const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inNullspace = Teuchos::null)
   {
     Teuchos::ParameterList paramList;
-    Teuchos::updateParametersFromXmlFileAndBroadcast(XMLFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *inA->getComm());
+    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *inA->getComm());
 
     return CreateTpetraPreconditioner<Scalar, LocalOrdinal, GlobalOrdinal, Node>(inA, paramList, inCoords, inNullspace);
   }
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ReuseTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inA,
@@ -215,3 +217,4 @@ namespace MueLu {
 } //namespace
 
 #endif //ifndef MUELU_CREATE_TPETRA_PRECONDITIONER_HPP
+
