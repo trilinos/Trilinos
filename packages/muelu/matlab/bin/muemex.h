@@ -108,6 +108,7 @@ typedef enum
     MULTIVECTOR,
     LOVECTOR,
     SCALAR,
+    HIER_AGGREGATES,
     UNKNOWN
   } HierAttribType;
 

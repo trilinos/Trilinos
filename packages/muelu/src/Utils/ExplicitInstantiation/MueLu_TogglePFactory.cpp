@@ -43,82 +43,19 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_SINGLELEVELMATLABFACTORY_DECL_HPP
-#define MUELU_SINGLELEVELMATLABFACTORY_DECL_HPP
-
-#include <string>
-
-#include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_CrsMatrix_fwd.hpp>
-#include <Xpetra_MatrixFactory_fwd.hpp>
-#include <Xpetra_Vector_fwd.hpp>
-#include <Xpetra_VectorFactory_fwd.hpp>
-
-#include "MueLu_ConfigDefs.hpp"
-#include "MueLu_SingleLevelMatlabFactory_fwd.hpp"
-
-#include "MueLu_FactoryBase_fwd.hpp"
-#include "MueLu_Level_fwd.hpp"
-#include "MueLu_PerfUtils_fwd.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_Utilities_fwd.hpp"
-
-#ifdef HAVE_MUELU_MATLAB
-#include "mex.h"
 
 
-namespace MueLu {
-  /*!
-    @class SingleLevelMatlabFactory
-    @brief Factory for interacting with Matlab
-  */
-  template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class SingleLevelMatlabFactory : public SingleLevelFactoryBase {
-#undef MUELU_SINGLELEVELMATLABFACTORY_SHORT
-#include "MueLu_UseShortNames.hpp"
+#include "MueLu_ExplicitInstantiation.hpp"
 
-  public:
-    //! @name Constructors/Destructors.
-    //@{
+#include "MueLu_TogglePFactory_def.hpp"
 
-    SingleLevelMatlabFactory();
+#include "TpetraCore_ETIHelperMacros.h"
 
-    virtual ~SingleLevelMatlabFactory() { }
+#define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
+        template class MueLu::TogglePFactory<S,LO,GO,N>;
 
-    //@}
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-    //! @name Input
-    //@{
-    RCP<const ParameterList> GetValidParameterList() const;
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
 
-    void DeclareInput(Level& currentLevel) const;
 
-    //@}
-
-    //! @name Build methods.
-    //@{
-    void Build(Level& currentLevel) const;
-    //@}
-
-  private:
-    //@{
-
-    mutable bool hasDeclaredInput_;
-
-    //@}
-
-    //@{
-
-    //! List of arguments to the MATLAB function, in order.  These args must correspond to MueLu "Needs" objects.
-    mutable std::vector<std::string> needs_;
-
-    //@}
-
-  }; //class SingleLevelMatlabFactory
-
-} //namespace MueLu
-
-#define MUELU_SINGLELEVELMATLABFACTORY_SHORT
-
-#endif // HAVE_MUELU_MATLAB
-#endif // MUELU SINGLELEVELMATLABFACTORY_DECL_HPP
