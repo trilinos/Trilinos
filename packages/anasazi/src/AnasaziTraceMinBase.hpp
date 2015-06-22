@@ -263,7 +263,7 @@ namespace Experimental {
      * Note, for any pointer in \c newstate which directly points to the multivectors in
      * the solver, the data is not copied.
      */
-    void initialize(TraceMinBaseState<ScalarType,MV> newstate);
+    void initialize(TraceMinBaseState<ScalarType,MV>& newstate);
 
     void harmonicInitialize(TraceMinBaseState<ScalarType,MV> newstate);
 
@@ -1151,7 +1151,7 @@ namespace Experimental {
    *
    */
   template <class ScalarType, class MV, class OP>
-  void TraceMinBase<ScalarType,MV,OP>::initialize(TraceMinBaseState<ScalarType,MV> newstate)
+  void TraceMinBase<ScalarType,MV,OP>::initialize(TraceMinBaseState<ScalarType,MV>& newstate)
   {
     // TODO: Check for bad input
     // NOTE: memory has been allocated by setBlockSize(). Use setBlock below; do not Clone
