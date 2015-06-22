@@ -199,6 +199,23 @@ public:
   //! Type of the template parameter of this class.
   typedef T value_type;
 
+  /// \brief Type of a pointer to T.
+  ///
+  /// This is only needed for C++98, not for C++11 and newer.
+  typedef T* pointer;
+  /// \brief Type of a pointer to const T.
+  ///
+  /// This is only needed for C++98, not for C++11 and newer.
+  typedef const T* const_pointer;
+  /// \brief Type of a reference to T.
+  ///
+  /// This is only needed for C++98, not for C++11 and newer.
+  typedef T& reference;
+  /// \brief Type of a reference to const T.
+  ///
+  /// This is only needed for C++98, not for C++11 and newer.
+  typedef const T& const_reference;
+
   /// \brief Type of the size of an allocation or deallocation.
   ///
   /// This must match AllocationLogger::size_type (see above).  If we
