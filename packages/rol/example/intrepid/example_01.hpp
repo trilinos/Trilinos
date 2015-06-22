@@ -54,7 +54,7 @@
 #include "Teuchos_SerialDenseSolver.hpp"
 
 
-#define MANUAL_UPDATE
+//#define MANUAL_UPDATE
 
 
 // Quadratic tracking objective class
@@ -562,7 +562,11 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
       update(u,z,true);
 #endif
       Teuchos::SerialDenseSolver<int,Real> solver;
-      solver.setMatrix(Ju_);
+
+      // Must use a temporary matrix because LAPACK overwrites the original with factors.
+      RCP<Matrix> Ju_temp = Teuchos::rcp(new Matrix(*Ju_));
+
+      solver.setMatrix(Ju_temp);
       solver.factorWithEquilibration(true);
       solver.factor();
 
@@ -585,7 +589,11 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
       update(u,z,true);
 #endif
       Teuchos::SerialDenseSolver<int,Real> solver;
-      solver.setMatrix(Ju_);
+
+      // Must use a temporary matrix because LAPACK overwrites the original with factors.
+      RCP<Matrix> Ju_temp = Teuchos::rcp(new Matrix(*Ju_));
+
+      solver.setMatrix(Ju_temp);
       solver.factorWithEquilibration(true);
       solver.factor();
 

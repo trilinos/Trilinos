@@ -86,7 +86,7 @@ void FixedStepControlStrategy<Scalar>::setRequestedStepSize(
   const Scalar& stepSize,
   const StepSizeType& stepSizeType)
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  // typedef Teuchos::ScalarTraits<Scalar> ST; // unused
   TEUCHOS_TEST_FOR_EXCEPTION(
     !((stepControlState_ == UNINITIALIZED) ||
       (stepControlState_ == BEFORE_FIRST_STEP) ||
@@ -184,7 +184,7 @@ template<class Scalar>
 void FixedStepControlStrategy<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList)
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  // typedef Teuchos::ScalarTraits<Scalar> ST; // unused
   TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParameters(*getValidParameters());
 }

@@ -288,7 +288,7 @@ namespace Anasazi {
      * state (i.e., KX) not given to initialize() will be generated.
      *
      */
-    void initialize(LOBPCGState<ScalarType,MV> newstate);
+    void initialize(LOBPCGState<ScalarType,MV>& newstate);
 
     /*! \brief Initialize the solver with the initial vectors from the eigenproblem
      *  or random data.
@@ -958,7 +958,7 @@ namespace Anasazi {
    *   MP = M*P
    */
   template <class ScalarType, class MV, class OP>
-  void LOBPCG<ScalarType,MV,OP>::initialize(LOBPCGState<ScalarType,MV> newstate)
+  void LOBPCG<ScalarType,MV,OP>::initialize(LOBPCGState<ScalarType,MV>& newstate)
   {
     // NOTE: memory has been allocated by setBlockSize(). Use SetBlock below; do not Clone
     // NOTE: Overall time spent in this routine is counted to timerInit_; portions will also be counted towards other primitives
