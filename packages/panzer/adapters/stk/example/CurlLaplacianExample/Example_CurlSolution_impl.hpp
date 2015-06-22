@@ -8,11 +8,11 @@
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
+// Redistribution and use in solution and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
 //
-// 1. Redistributions of source code must retain the above copyright
+// 1. Redistributions of solution code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //
 // 2. Redistributions in binary form must reproduce the above copyright
@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef EXAMPLE_SIMPLE_SOURCE_IMPL_HPP
-#define EXAMPLE_SIMPLE_SOURCE_IMPL_HPP
+#ifndef __Example_CurlSolution_impl_hpp__
+#define __Example_CurlSolution_impl_hpp__
 
 #include <cmath>
 
@@ -53,7 +53,7 @@ namespace Example {
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-SimpleSource<EvalT,Traits>::SimpleSource(const std::string & name,
+CurlSolution<EvalT,Traits>::CurlSolution(const std::string & name,
                                          const panzer::IntegrationRule & ir)
 {
   using Teuchos::RCP;
@@ -61,41 +61,40 @@ SimpleSource<EvalT,Traits>::SimpleSource(const std::string & name,
   Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_vector;
   ir_degree = ir.cubature_degree;
 
-  source = PHX::MDField<ScalarT,Cell,Point,Dim>(name, data_layout);
+  solution = PHX::MDField<ScalarT,Cell,Point,Dim>(name, data_layout);
 
-  this->addEvaluatedField(source);
+  this->addEvaluatedField(solution);
   
-  std::string n = "Simple Source";
+  std::string n = "Curl Solution";
   this->setName(n);
 }
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-void SimpleSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
+void CurlSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
                                                        PHX::FieldManager<Traits>& fm)
 {
 
-  this->utils.setFieldData(source,fm);
+  this->utils.setFieldData(solution,fm);
 
   ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0]);
 }
 
 //**********************************************************************
 template <typename EvalT,typename Traits>
-void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
+void CurlSolution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int point = 0; point < source.dimension(1); ++point) {
+    for (int point = 0; point < solution.dimension(1); ++point) {
 
       const double & x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
       const double & y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
 
-      source(cell,point,0) = 2.0+y-y*y;
-      source(cell,point,1) = 2.0+x-x*x;
+      solution(cell,point,0) = -(y-1.0)*y;
+      solution(cell,point,1) = -(x-1.0)*x;
 
-      // if three d
-      if(source.dimension(2)==3)
-        source(cell,point,2) = 0.0;
+      if(solution.dimension(2)==3)
+        solution(cell,point,2) = 0.0;
     }
   }
 }
