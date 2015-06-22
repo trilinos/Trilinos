@@ -308,7 +308,6 @@ namespace MueLu {
           pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
 
           // extract striding information
-          GO offset = 0;                           //< the global dof offset for a strided map
           LO blkSize = A->GetFixedBlockSize();     //< the full block size (number of dofs per node in strided map)
           LO blkId   = -1;                         //< the block id within the strided map (or -1 if it is a full block map)
           LO blkPartSize = A->GetFixedBlockSize(); //< stores the size of the block within the strided map
@@ -316,7 +315,6 @@ namespace MueLu {
             Teuchos::RCP<const Map> myMap = A->getRowMap("stridedMaps");
             Teuchos::RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);
             TEUCHOS_TEST_FOR_EXCEPTION(strMap == null, Exceptions::RuntimeError, "Map is not of type StridedMap");
-            offset = strMap->getOffset();
             blkSize = Teuchos::as<const LO>(strMap->getFixedBlockSize());
             blkId   = strMap->getStridedBlockId();
             if (blkId > -1)
@@ -431,7 +429,6 @@ namespace MueLu {
           pointBoundaryNodes = MueLu::Utils<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
 
           // extract striding information
-          GO offset = 0;                           //< the global dof offset for a strided map
           LO blkSize = A->GetFixedBlockSize();     //< the full block size (number of dofs per node in strided map)
           LO blkId   = -1;                         //< the block id within the strided map (or -1 if it is a full block map)
           LO blkPartSize = A->GetFixedBlockSize(); //< stores the size of the block within the strided map
@@ -439,7 +436,6 @@ namespace MueLu {
             Teuchos::RCP<const Map> myMap = A->getRowMap("stridedMaps");
             Teuchos::RCP<const StridedMap> strMap = Teuchos::rcp_dynamic_cast<const StridedMap>(myMap);
             TEUCHOS_TEST_FOR_EXCEPTION(strMap == null, Exceptions::RuntimeError, "Map is not of type StridedMap");
-            offset = strMap->getOffset();
             blkSize = Teuchos::as<const LO>(strMap->getFixedBlockSize());
             blkId   = strMap->getStridedBlockId();
             if (blkId > -1)
