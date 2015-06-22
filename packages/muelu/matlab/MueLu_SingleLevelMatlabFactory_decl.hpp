@@ -112,7 +112,6 @@ namespace MueLu {
     //! List of arguments to the MATLAB function, in order.  These args must correspond to MueLu "Needs" objects.
     mutable std::vector<std::string> needs_;
 
-
     //@}
 
   }; //class SingleLevelMatlabFactory

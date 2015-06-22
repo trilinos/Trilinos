@@ -185,7 +185,7 @@ void RampingIntegrationControlStrategy<Scalar>::setParameterList(
 {
   using Teuchos::as;
   using Teuchos::get;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  // typedef Teuchos::ScalarTraits<Scalar> ST; // unused
   TEUCHOS_TEST_FOR_EXCEPT(is_null(paramList));
   paramList->validateParametersAndSetDefaults(*getValidParameters());
   this->setMyParamList(paramList);
@@ -232,16 +232,16 @@ RampingIntegrationControlStrategy<Scalar>::getValidParameters() const
       "variable stepper if '" + take_variable_steps_name_ +
       "' is set to true.  Otherwise take fixed-time steps.");
     pl->set(initial_dt_name_, initial_dt_default_,
-	    "Initial time step.");
+            "Initial time step.");
     pl->set(min_dt_name_, min_dt_default_,
-	    "Minimum time step.");
+            "Minimum time step.");
     pl->set(max_dt_name_, max_dt_default_,
-	    "Maximum time step.");
+            "Maximum time step.");
     pl->set(ramping_factor_name_, ramping_factor_default_,
-	    "Time step growth factor used during ramping phase. dt_{n+1} = "
+            "Time step growth factor used during ramping phase. dt_{n+1} = "
       "(ramping factor) * dt_n");
     pl->set(max_step_failures_name_, max_step_failures_default_,
-	    "The maximum number of step failures before exiting with error.");
+            "The maximum number of step failures before exiting with error.");
     Teuchos::setupVerboseObjectSublist(&*pl);
     validPL = pl;
   }

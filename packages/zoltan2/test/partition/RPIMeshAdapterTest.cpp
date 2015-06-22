@@ -107,7 +107,7 @@ int main(int narg, char *arg[]) {
   cout 
     << "====================================================================\n" 
     << "|                                                                  |\n" 
-    << "|          Example: Partition ParMA Mesh                           |\n" 
+    << "|                  Example: Partition APF Mesh                     |\n" 
     << "|                                                                  |\n"
     << "|  Questions? Contact  Karen Devine      (kddevin@sandia.gov),     |\n"
     << "|                      Erik Boman        (egboman@sandia.gov),     |\n"
@@ -132,13 +132,14 @@ int main(int narg, char *arg[]) {
 #endif
 
   /***************************************************************************/
-  /*************************** GET XML INPUTS ********************************/
+  /******************************* GET INPUTS ********************************/
   /***************************************************************************/
 
   // default values for command-line arguments
   std::string meshFileName("4/");
   std::string modelFileName("torus.dmg");
   std::string action("parma");
+  std::string parma_method("VtxElm");
   int nParts = CommT->getSize();
 
   // Read run-time options.
@@ -149,6 +150,8 @@ int main(int narg, char *arg[]) {
 		 "Model file with APF specifications (.dmg file)");
   cmdp.setOption("action", &action,
                  "Method to use:  mj, scotch, zoltan_rcb, parma or color");
+  cmdp.setOption("parma_method", &action,
+                 "Method to use: Vertex, Edge, Element, VtxElm, VtxEdgeElm, ElmLtVtx, Ghost, or Shape ");
   cmdp.setOption("nparts", &nParts,
                  "Number of parts to create");
   cmdp.parse(narg, arg);
@@ -221,7 +224,14 @@ int main(int narg, char *arg[]) {
     params.set("imbalance_tolerance", 1.05);
     params.set("algorithm", "parma");
     Teuchos::ParameterList &pparams = params.sublist("parma_parameters",false);
-    pparams.set("parma_method","VtxElm");
+    pparams.set("parma_method",parma_method);
+    pparams.set("step_size",1.1);
+    if (parma_method=="Ghost") {
+      pparams.set("ghost_layers",3);
+      pparams.set("ghost_bridge",m->getDimension()-1);
+    }
+    params.set("compute_metrics","yes");
+
   }
   else if (action == "color") {
     params.set("debug_level", "verbose_detailed_status");

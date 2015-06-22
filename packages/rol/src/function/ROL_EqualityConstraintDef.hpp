@@ -63,6 +63,7 @@ void EqualityConstraint<Real>::applyJacobian(Vector<Real> &jv,
 
   // Compute constraint at x.
   Teuchos::RCP<Vector<Real> > c = jv.clone();
+  this->update(x);
   this->value(*c,x,ctol);
 
   // Compute perturbation x + h*v.
@@ -112,7 +113,9 @@ void EqualityConstraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,
   Teuchos::RCP<Vector<Real> > eajv = ajv.clone();
   Teuchos::RCP<Vector<Real> > cnew = dualv.clone();  // in general, should be in the constraint space
   Teuchos::RCP<Vector<Real> > c0   = dualv.clone();  // in general, should be in the constraint space
+  this->update(x);
   this->value(*c0,x,ctol);
+  
   ajv.zero();
   for ( int i = 0; i < ajv.dimension(); i++ ) {
     ex = x.basis(i);

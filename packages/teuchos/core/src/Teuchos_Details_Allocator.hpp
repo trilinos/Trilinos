@@ -53,6 +53,10 @@
 #include <Teuchos_ConfigDefs.hpp>
 //#include <memory> // Teuchos_ConfigDefs.hpp includes it
 //#include <iostream> // Teuchos_ConfigDefs.hpp includes it
+#ifdef HAVE_TEUCHOSCORE_CXX11
+#  include <type_traits>
+#endif // HAVE_TEUCHOSCORE_CXX11
+
 
 namespace Teuchos {
 namespace Details {
@@ -223,6 +227,19 @@ public:
   /// need this typedef.
   typedef AllocationLogger::size_type size_type;
 
+  /// \typedef difference_type
+  /// \brief Integer type representing the difference between two pointers.
+  ///
+  /// This is only needed for C++98, not for C++11 and newer.
+  /// However, we want this typedef to exist in both cases.  Thus, if
+  /// C++11 is enabled, we use size_type above to compute this, in
+  /// order to ensure consistency.
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  typedef std::make_signed<size_type>::type difference_type;
+#else
+  typedef std::ptrdiff_t difference_type;
+#endif // HAVE_TEUCHOSCORE_CXX11
+
   //! Default constructor.
   Allocator () :
     track_ (true), verbose_ (false)
@@ -298,6 +315,38 @@ public:
   size_type maxAllocInBytes () {
     return AllocationLogger::maxAllocInBytes ();
   }
+
+#ifndef HAVE_TEUCHOSCORE_CXX11
+  /// \brief Invoke the constructor of an instance of \c T, without
+  ///   allocating.
+  ///
+  /// \warning This variant only exists if C++11 is OFF.  C++11
+  ///   requires a method with a different signature, but it also
+  ///   supplies a good default implementation if this method is
+  ///   missing.
+  ///
+  /// \param p [in] Pointer to an area of memory in which to construct
+  ///   a T instance, using placement new.
+  /// \param val [in] Argument to T's (copy) constructor.
+  void construct (pointer p, const_reference val) {
+    new ((void*) p) T (val);
+  }
+#endif // HAVE_TEUCHOSCORE_CXX11
+
+#ifndef HAVE_TEUCHOSCORE_CXX11
+  /// \brief Invoke the destructor of an instance of \c T, without
+  ///   deallocating.
+  ///
+  /// \warning This variant only exists if C++11 is OFF.  C++11
+  ///   requires a method with a different signature, but it also
+  ///   supplies a good default implementation if this method is
+  ///   missing.
+  ///
+  /// \param p [in] Pointer to an instance of \c T to destroy.
+  void destroy (pointer p) {
+    ((T*)p)->~T ();
+  }
+#endif // HAVE_TEUCHOSCORE_CXX11
 
 private:
   bool track_;

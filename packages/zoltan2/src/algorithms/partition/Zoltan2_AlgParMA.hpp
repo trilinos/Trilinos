@@ -340,6 +340,8 @@ void AlgParMA<Adapter>::partition(
   std::string alg_name = "VtxElm";
   double imbalance = 1.1;
   double step = .1;
+  int ghost_layers=3;
+  int ghost_bridge=m->getDimension()-1;
  
   const Teuchos::ParameterList &pl = env->getParameters();
   try {
@@ -348,9 +350,21 @@ void AlgParMA<Adapter>::partition(
 	 iter != ppl.end(); iter++) {
       const std::string &zname = pl.name(iter);
       // Convert the value to a string to pass to Zoltan
-      std::string &zval = pl.entry(iter).getValue(&zval);
-      if (zname == "parma_method")
+      if (zname == "parma_method") {
+	std::string &zval = pl.entry(iter).getValue(&zval);
 	alg_name = zval;
+      }
+      else if (zname == "step_size") {
+	double &zval = pl.entry(iter).getValue(&zval);
+	step = zval;
+      }
+      else if (zname=="ghost_layers" || zname=="ghost_bridge") {
+	int &zval = pl.entry(iter).getValue(&zval);
+	if (zname=="ghost_layers")
+	  ghost_layers = zval;
+	else
+	  ghost_bridge = zval;
+      }
     }
   }
   catch (std::exception &e) {
@@ -396,9 +410,7 @@ void AlgParMA<Adapter>::partition(
     throw "Not incorporated yet due to circular dependency";
   }
   else if (alg_name=="Ghost") {
-    int layers = 3;
-    int bridge = m->getDimension()-1;
-    balancer = Parma_MakeGhostDiffuser(m, layers, bridge, step, verbose);
+    balancer = Parma_MakeGhostDiffuser(m, ghost_layers, ghost_bridge, step, verbose);
     weightVertex = true;
   }
   else if (alg_name=="Welder") {
