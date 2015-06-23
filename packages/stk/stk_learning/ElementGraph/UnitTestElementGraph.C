@@ -139,6 +139,12 @@ public:
 using namespace stk::mesh::impl;
 using namespace stk::mesh;
 
+bool is_valid_graph_elem(const ElementGraph& elem_graph, LocalId elem_id)
+{
+    LocalId max_elem_id = static_cast<LocalId>(elem_graph.size());
+    return (elem_id >= 0 && elem_id < max_elem_id);
+}
+
 void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const std::vector<int> &internal_sides,
         std::vector<ElementSidePair>& element_side_pairs)
 {
@@ -197,6 +203,142 @@ stk::mesh::Entity get_element_side(stk::mesh::BulkData& bulkData, stk::mesh::Ent
     }
 
     return side;
+}
+
+int check_connectivity(const ElementGraph& elem_graph, const SidesForElementGraph &via_side,
+        LocalId element_id1, LocalId element_id2)
+{
+    int side=-1;
+    LocalId elemGraphSize = elem_graph.size();
+    if(element_id1 >=0 && element_id1 < elemGraphSize && element_id2 >=0 && element_id2 < elemGraphSize)
+    {
+        side = get_side_from_element1_to_element2(elem_graph, via_side, element_id1, element_id2);
+    }
+    return side;
+}
+
+void change_local_id_to_negative_global_id(ElementGraph &elem_graph, LocalId elem_local_id, stk::mesh::EntityId elem_global_id)
+{
+    ThrowRequire(is_valid_graph_elem(elem_graph, elem_local_id));
+    for(unsigned id = 0; id < elem_graph.size(); ++id)
+    {
+        std::vector <LocalId>::iterator pos_of_move_elem_in_current_id = std::find(elem_graph[id].begin(), elem_graph[id].end(), elem_local_id);
+        if (pos_of_move_elem_in_current_id != elem_graph[id].end())
+        {
+            int index_of_move_elem_in_current_id = pos_of_move_elem_in_current_id - elem_graph[id].begin();
+            elem_graph[id][index_of_move_elem_in_current_id] = -elem_global_id;
+        }
+    }
+}
+
+void change_negative_global_id_to_local_id(ElementGraph &elem_graph, stk::mesh::EntityId elem_global_id, LocalId elem_local_id)
+{
+    ThrowRequire(is_valid_graph_elem(elem_graph, elem_local_id));
+    for(unsigned id = 0; id < elem_graph.size(); ++id)
+    {
+        LocalId negative_elem_global_id = -elem_global_id;
+        std::vector <LocalId>::iterator pos_of_negative_global_id = std::find(elem_graph[id].begin(), elem_graph[id].end(), negative_elem_global_id);
+        if (pos_of_negative_global_id != elem_graph[id].end())
+        {
+            int index_of_move_elem_in_current_id = pos_of_negative_global_id - elem_graph[id].begin();
+            elem_graph[id][index_of_move_elem_in_current_id] = elem_local_id;
+        }
+    }
+}
+
+TEST(ElementGraph, move_elem_to_remote_proc)
+{
+    stk::ParallelMachine comm(MPI_COMM_WORLD);
+    if (stk::parallel_machine_size(comm) != 2)
+    {
+        return;
+    }
+
+    int proc = stk::parallel_machine_rank(comm);
+
+    if (proc == 0)
+    {
+        ElementGraph elem_graph = {
+            {1,2},
+            {0,3,-6},
+            {0,3},
+            {1,2,-8}
+        };
+        SidesForElementGraph via_side = {
+            {5,3},
+            {1,3,5},
+            {0,2},
+            {0,3,5}
+        };
+
+        EXPECT_EQ(5, check_connectivity(elem_graph, via_side, 0, 1));
+        EXPECT_EQ(1, check_connectivity(elem_graph, via_side, 1, 0));
+        EXPECT_EQ(3, check_connectivity(elem_graph, via_side, 0, 2));
+        EXPECT_EQ(0, check_connectivity(elem_graph, via_side, 2, 0));
+        EXPECT_EQ(3, check_connectivity(elem_graph, via_side, 1, 3));
+        EXPECT_EQ(0, check_connectivity(elem_graph, via_side, 3, 1));
+        EXPECT_EQ(2, check_connectivity(elem_graph, via_side, 2, 3));
+        EXPECT_EQ(3, check_connectivity(elem_graph, via_side, 3, 2));
+
+        EXPECT_EQ(-1, check_connectivity(elem_graph, via_side, 2, 1));
+        EXPECT_EQ(-1, check_connectivity(elem_graph, via_side, 0, 3));
+        EXPECT_EQ(-1, check_connectivity(elem_graph, via_side, 0, 0));
+
+        // move element 2 to proc 1
+
+        LocalId elem_to_move_id = 1;
+        ThrowRequire(is_valid_graph_elem(elem_graph, elem_to_move_id));
+
+        stk::mesh::EntityId elem_global_id = 33;
+        change_local_id_to_negative_global_id(elem_graph, elem_to_move_id, elem_global_id);
+
+        elem_graph[elem_to_move_id].clear();
+        via_side[elem_to_move_id].clear();
+
+        EXPECT_EQ(elem_graph.size(), via_side.size());
+}
+
+    else if (proc == 1)
+    {
+        ElementGraph elem_graph = {
+                                   {-5,1,2},
+                                   {-2,0,3},
+                                   {0,3},
+                                   {1,2}
+        };
+        SidesForElementGraph via_side = {
+            {5,3,0},
+            {1,3,5},
+            {0,2},
+            {0,3}
+        };
+
+        EXPECT_EQ(3, check_connectivity(elem_graph, via_side, 0, 1));
+        EXPECT_EQ(3, check_connectivity(elem_graph, via_side, 1, 0));
+        EXPECT_EQ(5, check_connectivity(elem_graph, via_side, 1, 3));
+        EXPECT_EQ(0, check_connectivity(elem_graph, via_side, 3, 1));
+        EXPECT_EQ(3, check_connectivity(elem_graph, via_side, 3, 2));
+        EXPECT_EQ(2, check_connectivity(elem_graph, via_side, 2, 3));
+        EXPECT_EQ(0, check_connectivity(elem_graph, via_side, 0, 2));
+        EXPECT_EQ(0, check_connectivity(elem_graph, via_side, 2, 0));
+
+        EXPECT_EQ(-1, check_connectivity(elem_graph, via_side, 1, 2));
+        EXPECT_EQ(-1, check_connectivity(elem_graph, via_side, 3, 0));
+        EXPECT_EQ(-1, check_connectivity(elem_graph, via_side, 1, 1));
+
+        LocalId elem_to_move_id = elem_graph.size();
+        std::vector<LocalId> elem_to_move_connectivity = {0,3,-6};
+        elem_graph.push_back(elem_to_move_connectivity);
+
+        stk::mesh::EntityId elem_global_id = 33;
+
+        change_negative_global_id_to_local_id(elem_graph, elem_global_id, elem_to_move_id);
+
+        std::vector<int> elem_to_move_via_sides = {1,3,5};
+        via_side.push_back(elem_to_move_via_sides);
+
+        EXPECT_EQ(elem_graph.size(), via_side.size());
+    }
 }
 
 void test_parallel_graph_info(const ElementGraph& elem_graph, const ParallelGraphInfo& parallel_graph_info,
@@ -364,17 +506,6 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
         std::cerr << "create faces time: " << create_faces_time << std::endl;
         std::cerr << "mod end time: " << mod_end_time << std::endl;
     }
-}
-
-int check_connectivity(const ElementGraph& elem_graph, const SidesForElementGraph &via_side,
-        LocalId element_id1, LocalId element_id2)
-{
-    int side=-1;
-    if(element_id1 >=0 && element_id1 <=2 && element_id2 >=0 && element_id2 <=2)
-    {
-        side = get_side_from_element1_to_element2(elem_graph, via_side, element_id1, element_id2);
-    }
-    return side;
 }
 
 //BeginDocExample1
@@ -824,6 +955,108 @@ TEST(ElementGraph, skin_mesh_using_element_graph_serial)
                 std::cerr << "Memory usage " << msgs[i] << ":\t" << mem_usage[i] - mem_usage[0] << std::endl;
             }
         }
+    }
+}
+
+TEST(ElementGraph, move_elem_to_remote_proc_with_mesh)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int proc = stk::parallel_machine_rank(comm);
+    std::vector<double> wall_times;
+    wall_times.reserve(10);
+    std::vector<std::string> msgs;
+    msgs.reserve(10);
+
+    std::vector<size_t> mem_usage;
+
+    wall_times.push_back(stk::wall_time());
+    msgs.push_back("program-start");
+    mem_usage.push_back(stk::get_memory_usage_now());
+
+    if(stk::parallel_machine_size(comm) == 2)
+    {
+        stk::mesh::MetaData meta;
+        stk::mesh::BulkData bulkData(meta, comm);
+
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+
+        wall_times.push_back(stk::wall_time());
+        msgs.push_back("after mesh-read");
+        mem_usage.push_back(stk::get_memory_usage_now());
+
+        std::vector<unsigned> counts;
+        stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
+        int numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
+        EXPECT_EQ(2, numLocallyOwnedElems);
+
+        stk::mesh::ElemElemGraph elem_graph(bulkData);
+
+        wall_times.push_back(stk::wall_time());
+        msgs.push_back("after fill-graph");
+        mem_usage.push_back(stk::get_memory_usage_now());
+
+        // Create a vector of the elements to be moved
+        std::vector <stk::mesh::Entity> elems_to_move;
+        stk::mesh::EntityId elem_global_id = 2;
+        stk::mesh::Entity elem_to_move = bulkData.get_entity(stk::topology::ELEM_RANK, elem_global_id);
+        elems_to_move.push_back(elem_to_move);
+
+        //bulkData.dump_all_mesh_info(std::cout, true);
+
+        for (unsigned i=0; i<elems_to_move.size(); i++)
+        {
+        	EXPECT_TRUE(bulkData.is_valid(elems_to_move[i]));
+        	EXPECT_EQ(0, bulkData.parallel_owner_rank(elems_to_move[i]));
+        }
+
+        std::vector< std::pair< stk::mesh::Entity, int > > elem_proc_pairs_to_move;
+        if (proc == 0)
+        {
+            int other_proc = 1;
+            for (unsigned i=0; i<elems_to_move.size(); i++)
+            {
+            	elem_proc_pairs_to_move.push_back(std::make_pair(elems_to_move[i], other_proc));
+            }
+        }
+
+        bulkData.change_entity_owner(elem_proc_pairs_to_move);
+
+        elem_graph.change_entity_owner(elem_proc_pairs_to_move);
+
+        elem_to_move = bulkData.get_entity(stk::topology::ELEM_RANK, elem_global_id);
+
+        if (proc == 1)
+        {
+            EXPECT_EQ(2u, elem_graph.get_num_connected_elems(elem_to_move));
+
+            stk::mesh::Entity elem = elem_graph.get_connected_element(elem_to_move, 1);
+            ASSERT_TRUE(elem_graph.is_connected_elem_locally_owned(elem_to_move, 1));
+            EXPECT_EQ(3u, bulkData.identifier(elem));
+
+            stk::mesh::EntityId connected_elem_global_id = elem_graph.get_entity_id_of_remote_element(elem_to_move, 0);
+            ASSERT_FALSE(elem_graph.is_connected_elem_locally_owned(elem_to_move, 0));
+            EXPECT_EQ(1u, connected_elem_global_id);
+        }
+        else
+        {
+            //ASSERT_THROW(elem_graph.get_num_connected_elems(elem_to_move), std::runtime_error);
+        }
+
+        EXPECT_TRUE(bulkData.is_valid(elem_to_move));
+        EXPECT_EQ(1, bulkData.parallel_owner_rank(elem_to_move));
+
+        //if (proc == 0)
+        //{
+        //  for(size_t i=0;i<wall_times.size();++i)
+        //    {
+        //        std::cerr << "Wall time " << msgs[i] << ":\t" << wall_times[i] - wall_times[0] << std::endl;
+        //    }
+
+        //    for(size_t i=0;i<mem_usage.size();++i)
+        //    {
+        //        std::cerr << "Memory usage " << msgs[i] << ":\t" << mem_usage[i] - mem_usage[0] << std::endl;
+        //    }
+        //}
     }
 }
 

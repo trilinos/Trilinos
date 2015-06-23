@@ -514,5 +514,172 @@ void ElemElemGraph::add_local_elements_to_connected_list(const stk::mesh::Entity
     }
 }
 
+void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move)
+{
+    stk::CommSparse comm(m_bulk_data.parallel());
+    for(int phase=0; phase <2; ++phase) {
+        for (size_t i=0; i<elem_proc_pairs_to_move.size(); i++)
+        {
+            stk::mesh::Entity elem_to_send = elem_proc_pairs_to_move[i].first;
+            int destination_proc = elem_proc_pairs_to_move[i].second;
+            stk::CommBuffer &buff = comm.send_buffer(destination_proc);
+            stk::mesh::EntityId elem_global_id = m_bulk_data.identifier(elem_to_send);
+
+            buff.pack<stk::mesh::EntityId>(elem_global_id);
+            impl::LocalId elem_local_id = m_entity_to_local_id[elem_to_send.local_offset()];
+            std::vector <impl::LocalId> &connected_elements = m_elem_graph[elem_local_id];
+            size_t num_connected_elements = connected_elements.size();
+            buff.pack<size_t>(num_connected_elements);
+            for (size_t k=0; k<num_connected_elements; k++)
+            {
+                impl::LocalId local_id = connected_elements[k];
+                stk::mesh::EntityId connected_global_id;
+                bool local_connection = local_id >= 0;
+                buff.pack<bool>(local_connection);
+                if (!local_connection)
+                {
+                    connected_global_id = -local_id;
+                }
+                else
+                {
+                    stk::mesh::Entity connected_element = m_local_id_to_element_entity[local_id];
+                    connected_global_id = m_bulk_data.identifier(connected_element);
+                }
+                buff.pack<stk::mesh::EntityId>(connected_global_id);
+                if (!local_connection)
+                {
+                    std::pair<impl::LocalId, stk::mesh::EntityId> key(elem_local_id, connected_global_id);
+                    auto iter = m_parallel_graph_info.find(key);
+                    ThrowRequire(iter != m_parallel_graph_info.end());
+                    impl::parallel_info &p_info = iter->second;
+                    buff.pack<int>(p_info.m_other_proc);
+                    buff.pack<int>(p_info.m_other_side_ord);
+                    buff.pack<int>(p_info.m_permutation);
+                    buff.pack<bool>(p_info.m_in_part);
+                    buff.pack<stk::mesh::EntityId>(p_info.m_chosen_face_id);
+                }
+                else
+                {
+                    int side_id = m_via_sides[elem_local_id][k];
+                    stk::mesh::Entity connected_element = m_local_id_to_element_entity[local_id];
+                    buff.pack<int>(side_id);
+                    stk::topology elem_topology = m_bulk_data.bucket(connected_element).topology();
+                    stk::topology side_topology = elem_topology.side_topology(side_id);
+                    std::vector<stk::mesh::Entity> side_nodes(side_topology.num_nodes());
+                    const stk::mesh::Entity *elem_nodes = m_bulk_data.begin_nodes(connected_element);
+                    stk::mesh::EntityRank side_rank = m_bulk_data.mesh_meta_data().side_rank();
+                    elem_topology.side_nodes(elem_nodes, side_id, side_nodes.begin());
+                    stk::mesh::OrdinalAndPermutation ordperm = get_ordinal_and_permutation(m_bulk_data, connected_element, side_rank, side_nodes);
+
+                    buff.pack<int>(ordperm.second);
+                    buff.pack<bool>(true);//fake data, need to check actual part membership
+                    buff.pack<stk::mesh::EntityId>(999); //fake data, need to get actual face id
+                }
+            }
+
+            if (phase == 1)
+            {
+                for (size_t j=0; j<m_elem_graph.size(); j++)
+                {
+                    if (j == static_cast <size_t> (elem_local_id))
+                    {
+                        continue;
+                    }
+                    std::vector <impl::LocalId> &connected_elements = m_elem_graph[j];
+                    auto iter = std::find(connected_elements.begin(), connected_elements.end(), elem_local_id);
+                    if (iter != connected_elements.end())
+                    {
+                        int index = iter - connected_elements.begin();
+                        connected_elements[index] = -elem_global_id;
+                    }
+                }
+                m_elem_graph[elem_local_id].clear();
+                m_deleted_elem_pool.push_back(elem_local_id);
+            }
+        }
+
+        if (phase == 0)
+        {
+            comm.allocate_buffers();
+        }
+        else
+        {
+            comm.communicate();
+        }
+    }
+
+    for(int p = 0; p < m_bulk_data.parallel_size(); ++p)
+    {
+        stk::CommBuffer & buf = comm.recv_buffer(p);
+        while(buf.remaining())
+        {
+            stk::mesh::EntityId recvd_elem_global_id;
+            buf.unpack<stk::mesh::EntityId>(recvd_elem_global_id);
+            stk::mesh::Entity recvd_elem = m_bulk_data.get_entity(stk::topology::ELEM_RANK, recvd_elem_global_id);
+            impl::LocalId recvd_elem_local_id = m_elem_graph.size();
+            if (m_deleted_elem_pool.size() > 0)
+            {
+                recvd_elem_local_id = m_deleted_elem_pool.back();
+                m_deleted_elem_pool.pop_back();
+            }
+            else
+            {
+                if (m_local_id_to_element_entity.size() <= static_cast<size_t> (recvd_elem_local_id))
+                {
+                    m_local_id_to_element_entity.resize(recvd_elem_local_id+1);
+                }
+                if (m_entity_to_local_id.size() <= recvd_elem.local_offset())
+                {
+                    m_entity_to_local_id.resize(recvd_elem.local_offset()+1);
+                }
+                m_elem_graph.push_back(std::vector<impl::LocalId>());
+                m_via_sides.push_back(std::vector<int>());
+            }
+            m_local_id_to_element_entity[recvd_elem_local_id] = recvd_elem;
+            m_entity_to_local_id[recvd_elem.local_offset()] = recvd_elem_local_id;
+            size_t num_connected_elements;
+            buf.unpack<size_t>(num_connected_elements);
+            for (size_t k=0; k<num_connected_elements; k++)
+            {
+                bool local_connection_on_source_proc;
+                buf.unpack<bool>(local_connection_on_source_proc);
+                stk::mesh::EntityId connected_elem_global_id;
+                buf.unpack<stk::mesh::EntityId>(connected_elem_global_id);
+                stk::mesh::Entity connected_elem = m_bulk_data.get_entity(stk::topology::ELEM_RANK, connected_elem_global_id);
+                int other_proc, other_side_ord, other_permutation;
+                bool in_part;
+                stk::mesh::EntityId chosen_face_id;
+                if (!local_connection_on_source_proc)
+                {
+
+                    buf.unpack<int>(other_proc);
+                }
+                else
+                {
+                    other_proc = p;
+                }
+                buf.unpack<int>(other_side_ord);
+                buf.unpack<int>(other_permutation);
+                buf.unpack<bool>(in_part);
+                buf.unpack<stk::mesh::EntityId>(chosen_face_id);
+                impl::parallel_info p_info(other_proc, other_side_ord, other_permutation, chosen_face_id);
+                p_info.m_in_part = in_part;
+                impl::LocalId connected_elem_local_id = get_local_element_id(connected_elem);
+                if (p_info.m_other_proc == m_bulk_data.parallel_rank())
+                {
+                    m_elem_graph[recvd_elem_local_id].push_back(connected_elem_local_id);
+                }
+                else
+                {
+                    m_elem_graph[recvd_elem_local_id].push_back(-connected_elem_global_id);
+                    std::pair<impl::LocalId, stk::mesh::EntityId> recvd_elem_key(recvd_elem_local_id, connected_elem_global_id);
+                    m_parallel_graph_info.insert(std::make_pair(recvd_elem_key, p_info));
+                }
+                m_via_sides[recvd_elem_local_id].push_back(p_info.m_other_side_ord);
+            }
+        }
+    }
+}
+
 }} // end namespaces stk mesh
 

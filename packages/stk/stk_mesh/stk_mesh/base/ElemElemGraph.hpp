@@ -47,6 +47,7 @@ public:
 
     void set_num_face_ids_used(size_t num_used);
 
+    void change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move);
 protected:
     void fill_graph();
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
@@ -69,6 +70,7 @@ protected:
     std::vector<unsigned> m_entity_to_local_id;
     std::vector<stk::topology> m_element_topologies;
     std::vector<stk::mesh::EntityId> m_suggested_face_ids;
+    std::vector<int> m_deleted_elem_pool;
     size_t m_num_edges;
     size_t m_num_parallel_edges;
 };
