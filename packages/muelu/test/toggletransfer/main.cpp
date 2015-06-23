@@ -182,12 +182,12 @@ int main(int argc, char *argv[]) {
 
     for (int l=0; l<H->GetNumLevels(); l++) {
       Teuchos::RCP<MueLu::Level> level = H->GetLevel(l);
-      if(level->IsAvailable("A", MueLu::NoFactory::get()) == false) { success = false; }
-      if(level->IsAvailable("P", MueLu::NoFactory::get()) == false && l>0) { success = false; }
-      if(level->IsAvailable("R", MueLu::NoFactory::get()) == false && l>0) { success = false; }
-      if(level->IsAvailable("PreSmoother",  MueLu::NoFactory::get()) == false) { success = false; }
-      if(level->IsAvailable("PostSmoother", MueLu::NoFactory::get()) == false && l<H->GetNumLevels()-1) { success = false; }
-      if(level->IsAvailable("NumZLayers",   MueLu::NoFactory::get()) == true) {  success = false; }
+      if(level->IsAvailable("A", MueLu::NoFactory::get()) == false) { success = false; H->GetLevel(l)->print(std::cout, MueLu::Debug);}
+      if(level->IsAvailable("P", MueLu::NoFactory::get()) == false && l>0) { success = false; H->GetLevel(l)->print(std::cout, MueLu::Debug);}
+      if(level->IsAvailable("R", MueLu::NoFactory::get()) == false && l>0) { success = false; H->GetLevel(l)->print(std::cout, MueLu::Debug);}
+      if(level->IsAvailable("PreSmoother",  MueLu::NoFactory::get()) == false) { success = false; H->GetLevel(l)->print(std::cout, MueLu::Debug);}
+      if(level->IsAvailable("PostSmoother", MueLu::NoFactory::get()) == false && l<H->GetNumLevels()-1) { success = false; H->GetLevel(l)->print(std::cout, MueLu::Debug);}
+      if(level->IsAvailable("NumZLayers",   MueLu::NoFactory::get()) == true && l>0) {  success = false; H->GetLevel(l)->print(std::cout, MueLu::Debug);}
       //H->GetLevel(l)->print(std::cout, MueLu::Debug);
     }
     ///////////////////////////////////////////////////////////
