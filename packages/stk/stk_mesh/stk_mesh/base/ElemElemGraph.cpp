@@ -170,6 +170,7 @@ int ElemElemGraph::size_data_members()
     m_element_topologies.resize(numElems);
     m_num_edges = 0;
     m_num_parallel_edges = 0;
+    m_local_id_in_pool.resize(numElems, false);
     return numElems;
 }
 
@@ -621,7 +622,8 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
                     }
                 }
                 m_elem_graph[elem_local_id].clear();
-                m_deleted_elem_pool.push_back(elem_local_id);
+                m_deleted_element_local_id_pool.push_back(elem_local_id);
+                m_local_id_in_pool[elem_local_id] = true;
             }
         }
 
@@ -644,10 +646,11 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
             buf.unpack<stk::mesh::EntityId>(recvd_elem_global_id);
             stk::mesh::Entity recvd_elem = m_bulk_data.get_entity(stk::topology::ELEM_RANK, recvd_elem_global_id);
             impl::LocalId recvd_elem_local_id = m_elem_graph.size();
-            if (m_deleted_elem_pool.size() > 0)
+            if (m_deleted_element_local_id_pool.size() > 0)
             {
-                recvd_elem_local_id = m_deleted_elem_pool.back();
-                m_deleted_elem_pool.pop_back();
+                recvd_elem_local_id = m_deleted_element_local_id_pool.back();
+                m_local_id_in_pool[recvd_elem_local_id] = false;
+                m_deleted_element_local_id_pool.pop_back();
             }
             else
             {
@@ -711,10 +714,11 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
 impl::LocalId ElemElemGraph::get_new_local_element_id_from_pool()
 {
     impl::LocalId new_local_id;
-    if (!m_element_local_id_pool.empty())
+    if (!m_deleted_element_local_id_pool.empty())
     {
-        new_local_id = *m_element_local_id_pool.begin();
-        m_element_local_id_pool.erase(new_local_id);
+        new_local_id = m_deleted_element_local_id_pool.back();
+        m_deleted_element_local_id_pool.pop_back();
+        m_local_id_in_pool[new_local_id] = false;
     }
     else
     {
@@ -723,9 +727,9 @@ impl::LocalId ElemElemGraph::get_new_local_element_id_from_pool()
         std::vector<int> new_element_via_sides;
         m_elem_graph.push_back(new_element_connectivity);
         m_via_sides.push_back(new_element_via_sides);
-        size_t new_size = m_local_id_to_element_entity.size()+1;
-        m_local_id_to_element_entity.resize(new_size, Entity());
-        m_element_topologies.resize(new_size, stk::topology::INVALID_TOPOLOGY);
+        m_local_id_in_pool.push_back(false);
+        m_local_id_to_element_entity.push_back(Entity());
+        m_element_topologies.push_back(stk::topology::INVALID_TOPOLOGY);
     }
     return new_local_id;
 }
@@ -734,8 +738,7 @@ bool ElemElemGraph::is_valid_graph_element(stk::mesh::Entity local_element)
 {
     impl::LocalId max_elem_id = static_cast<impl::LocalId>(m_elem_graph.size());
     impl::LocalId elem_id = get_local_element_id(local_element);
-    std::set<impl::LocalId>::iterator it = m_element_local_id_pool.find(elem_id);
-    return (elem_id >= 0 && elem_id < max_elem_id && it == m_element_local_id_pool.end());
+    return (elem_id >= 0 && elem_id < max_elem_id && !m_local_id_in_pool[elem_id]);
 }
 
 void ElemElemGraph::delete_elements_from_graph(std::vector<stk::mesh::Entity> &elements_to_delete)
@@ -749,8 +752,8 @@ void ElemElemGraph::delete_elements_from_graph(std::vector<stk::mesh::Entity> &e
         {
             impl::LocalId elem_to_delete_id = get_local_element_id(elem_to_delete);
             ThrowRequireMsg(is_valid_graph_element(elem_to_delete), "Program error. Not valid graph element. Contact sierra-help@sandia.gov for support.");
-            auto ret = m_element_local_id_pool.insert(elem_to_delete_id);
-            ThrowRequireMsg(ret.second, "Program error. Element already deleted. Contact sierra-help@sandia.gov for support.");
+            m_deleted_element_local_id_pool.push_back(elem_to_delete_id);
+            m_local_id_in_pool[elem_to_delete_id] = true;
 
             size_t num_connected_elems = get_num_connected_elems(elem_to_delete);
             for (int conn_elem_index = num_connected_elems-1; conn_elem_index >= 0; --conn_elem_index)

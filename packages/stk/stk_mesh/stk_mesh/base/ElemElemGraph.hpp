@@ -55,7 +55,7 @@ public:
 
     bool is_valid_graph_element(stk::mesh::Entity local_element);
 
-    size_t size() {return m_elem_graph.size() - m_element_local_id_pool.size();}
+    size_t size() {return m_elem_graph.size() - m_deleted_element_local_id_pool.size();}
 
 protected:
     void fill_graph();
@@ -85,7 +85,8 @@ protected:
     impl::ParallelGraphInfo m_parallel_graph_info;
     stk::mesh::EntityVector m_local_id_to_element_entity;
     std::vector<unsigned> m_entity_to_local_id;
-    std::set<impl::LocalId> m_element_local_id_pool;
+    std::vector<impl::LocalId> m_deleted_element_local_id_pool;
+    std::vector<bool> m_local_id_in_pool;
     std::vector<stk::topology> m_element_topologies;
     std::vector<stk::mesh::EntityId> m_suggested_face_ids;
     std::vector<int> m_deleted_elem_pool;
