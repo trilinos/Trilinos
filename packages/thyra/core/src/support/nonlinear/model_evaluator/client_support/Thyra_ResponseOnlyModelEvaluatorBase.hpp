@@ -71,6 +71,8 @@ public:
   RCP<const VectorSpaceBase<Scalar> > get_x_space() const;
   /** \brief Returns null. */
   RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  /** \brief Returns null. */
+  RCP<const Teuchos::ArrayView<std::string> > get_g_names(int j) const;
   /** \brief Throws exception. */
   RCP<const VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief Returns this->createInArgs(). */
@@ -119,6 +121,17 @@ ResponseOnlyModelEvaluatorBase<Scalar>::get_p_names(int l) const
 {
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, this->Np() );
+#endif
+  return Teuchos::null;
+}
+
+
+template<class Scalar>
+RCP<const Teuchos::ArrayView<std::string> >
+ResponseOnlyModelEvaluatorBase<Scalar>::get_g_names(int j) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, this->Ng() );
 #endif
   return Teuchos::null;
 }

@@ -54,8 +54,6 @@
 #include "Teuchos_SerialDenseSolver.hpp"
 
 
-#define MANUAL_UPDATE
-
 
 // Quadratic tracking objective class
 
@@ -222,6 +220,7 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
 
     RCP<Matrix> Ju_;            // Constraint Jacobian w.r.t. u
     RCP<Matrix> Jz_;            // Constraint Jacobian w.r.t. z
+    RCP<Matrix> JuFactors_;     // LU factors of the Sim Jacobian 
 
     vec dif_param_;             // Parameters passed to coefficient functions. Currently unused
     vec adv_param_;
@@ -310,26 +309,20 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
 
     void applyJac(V &jv, const V &v, var comp, bool transpose = false) {
 
-       using Teuchos::dyn_cast;
-       using Teuchos::rcp_const_cast;
-
        RCP<Matrix> J = (comp==sim) ? Ju_ : Jz_;
 
-       // Downcast and extract RCPs to std::vectors
-       RCP<vec> jvp = rcp_const_cast<vec>((dyn_cast<SV>(jv)).getVector()); 
+       RCP<Matrix> vmat = Teuchos::rcp( new Matrix(nDoF_,1,true) );
+       RCP<Matrix> jvmat = Teuchos::rcp( new Matrix(nDoF_,1,true) );
 
-       std::fill(jvp->begin(),jvp->end(),0.0);
-       RCP<const vec> vp = (dyn_cast<SV>(const_cast<V &>(v))).getVector();
+       vec2mat(vmat, v);
 
-       for(int row=0;row<nDoF_;++row) {
-         for(int col=0;col<nDoF_;++col) {
-           if(transpose) {
-             (*jvp)[row] += (*J)(col,row)*(*vp)[col];
-           } else {
-             (*jvp)[row] += (*J)(row,col)*(*vp)[col];
-           }
-         } 
+       if(transpose) {
+         jvmat->multiply(Teuchos::TRANS,Teuchos::NO_TRANS,1.0,*J,*vmat,0);
        }
+       else {
+         jvmat->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,1.0,*J,*vmat,0);
+       }
+       mat2vec(jv,jvmat);
     }
 
     void applyAdjointHessian(V &ahwv, const V &w, const V &v, 
@@ -433,7 +426,8 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
       wtdTranVals_(disc_->getWeightedTransformedVals()),
       wtdTranGrad_(disc_->getWeightedTransformedGrad()),
       Ju_(Teuchos::rcp(new Matrix(nDoF_,nDoF_,true))),
-      Jz_(Teuchos::rcp(new Matrix(nDoF_,nDoF_,true))) {
+      Jz_(Teuchos::rcp(new Matrix(nDoF_,nDoF_,true))),
+      JuFactors_(Teuchos::rcp(new Matrix(nDoF_,nDoF_,true))) {
      
     }
 
@@ -485,14 +479,11 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
           } 
         }       
 
+        JuFactors_->assign(*Ju_);
     }
 
 
     void value(V &c, const V &u, const V &z, Real &tol=0) {
-
-#ifdef MANUAL_UPDATE      
-      update(u,z,true);
-#endif
 
       using Teuchos::rcp_const_cast;
       using Teuchos::dyn_cast;
@@ -522,47 +513,33 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
 
 
     void applyJacobian_1(V &jv, const V &v, const V &u, const V &z, Real &tol) {
-#ifdef MANUAL_UPDATE
-      update(u,z,true);
-#endif
       applyJac(jv,v,sim,false);
 
     } // applyJacobian_1()
 
    
     void applyJacobian_2(V &jv, const V &v, const V &u, const V &z, Real &tol) {
-#ifdef MANUAL_UPDATE
-      update(u,z,true);
-#endif
       applyJac(jv,v,opt,false);
 
     }  // applyJacobian_2()
 
       
     void applyAdjointJacobian_1(V &jv, const V &v, const V &u, const V &z, Real &tol) {
-#ifdef MANUAL_UPDATE
-      update(u,z,true);
-#endif
       applyJac(jv,v,sim,true);
 
     } // applyAdjointJacobian_1()
 
    
     void applyAdjointJacobian_2(V &jv, const V &v, const V &u, const V &z, Real &tol) {
-#ifdef MANUAL_UPDATE
-      update(u,z,true);
-#endif
       applyJac(jv,v,opt,true);
 
     }  // applyAdjointJacobian_2()
 
 
     void applyInverseJacobian_1(V &ijv, const V &v, const V &u, const V &z, Real &tol) {
-#ifdef MANUAL_UPDATE
-      update(u,z,true);
-#endif
       Teuchos::SerialDenseSolver<int,Real> solver;
-      solver.setMatrix(Ju_);
+
+      solver.setMatrix(JuFactors_);
       solver.factorWithEquilibration(true);
       solver.factor();
 
@@ -581,11 +558,9 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
 
 
     void applyInverseAdjointJacobian_1(V &iajv, const V &v, const V &u, const V &z, Real &tol) {
-#ifdef MANUAL_UPDATE
-      update(u,z,true);
-#endif
       Teuchos::SerialDenseSolver<int,Real> solver;
-      solver.setMatrix(Ju_);
+
+      solver.setMatrix(JuFactors_);
       solver.factorWithEquilibration(true);
       solver.factor();
 
@@ -606,9 +581,6 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
 
     void applyAdjointHessian_11(V &ahwv, const V &w, const V &v, 
                                 const V  &u, const V &z, Real &tol ) {
-#ifdef MANUAL_UPDATE
-      update(u,z,true);
-#endif
       applyAdjointHessian(ahwv, w, v, u, z, sim, sim);
 
     } // applyAdjointHessian_11()
@@ -616,26 +588,17 @@ class BVPConstraint : public EqualityConstraint_SimOpt<Real> {
 
     void applyAdjointHessian_12(V &ahwv, const V &w, const V &v, 
                                 const V  &u, const V &z, Real &tol ) {
-#ifdef MANUAL_UPDATE
-      update(u,z,true);
-#endif
       applyAdjointHessian(ahwv, w, v, u, z, sim, opt);
      
     } // applyAdjointHessian_11()
 
     void applyAdjointHessian_21(V &ahwv, const V &w, const V &v, 
                                 const V  &u, const V &z, Real &tol ) {
-#ifdef MANUAL_UPDATE
-      update(u,z,true);
-#endif
       applyAdjointHessian(ahwv, w, v, u, z, opt, sim);
     } // applyAdjointHessian_22()
 
     void applyAdjointHessian_22(V &ahwv, const V &w, const V &v, 
                                 const V  &u, const V &z, Real &tol ) {
-#ifdef MANUAL_UPDATE
-      update(u,z,true);
-#endif
       applyAdjointHessian(ahwv, w, v, u, z, opt, opt);
     } // applyAdjointHessian_22()
 

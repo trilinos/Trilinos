@@ -109,7 +109,7 @@ namespace MueLu {
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
       std::cout << "\n\n\n\n\nInvoking AggregationExportFactory build!\n\n\n\n\n";
     const ParameterList & pL = GetParameterList();
-      std::cout << "Master filename is: " << pL.get<std::string>("aggregation: output filename");
+std::cout << "Master filename is: " << pL.get<std::string>("aggregation: output filename");
     FactoryMonitor m(*this, "AggregationExportFactory", coarseLevel);
     std::cout << "Fine level is " << fineLevel.GetLevelID() << " and coarse level is " << coarseLevel.GetLevelID() << std::endl;
 
@@ -197,7 +197,7 @@ namespace MueLu {
     }
     else
     {
-      //Note: For now, this is only gonna work with real scalars.
+      //Note: For now, this will only work with real scalars.
       using namespace std;
       if(sizeof(Scalar) != sizeof(double))
         throw runtime_error("Complex scalars not supported in aggregate visualization.");
@@ -226,7 +226,7 @@ namespace MueLu {
       if(dims == 3)
         zCoords = coords->getData(2);
       //Get the sizes of the aggregates to speed up grabbing node IDs
-      Teuchos::ArrayRCP<GlobalOrdinal> aggSizes = aggregates->ComputeAggregateSizes();
+      Teuchos::ArrayRCP<LocalOrdinal> aggSizes = aggregates->ComputeAggregateSizes();
       string aggStyle = "Point Cloud";
       try
       {
@@ -242,34 +242,34 @@ namespace MueLu {
         fout << "  <PolyData>" << std::endl;
         //Number of points in each "piece" will be the number of nodes in each aggregate
         fout << "    <Piece NumberOfPoints=\"" << numNodes << "\" NumberOfVerts=\"0\" NumberOfLines=\"0\" NumberOfStrips=\"0\" NumberOfPolys=\"0\">" << endl;
-        fout << "      <PointData Scalars=\"Node\" \"Aggregate\" \"Processor\">" << endl;
+        fout << "      <PointData Scalars=\"Node Aggregate Processor\">" << endl;
         indent = "          ";
-        fout << "        <DataArray type=\"Int32\" Name=\"Node\" format=\"ascii\"" << endl;
+        fout << "        <DataArray type=\"Int32\" Name=\"Node\" format=\"ascii\">" << endl;
         fout << indent;
         for(int node = 0; node < numNodes; node++)
         {
           fout << node << " ";
-          if(node % 8 == 7)
+          if(node % 10 == 9)
             fout << endl << indent;
         }
         fout << endl;
         fout << "        </DataArray>" << endl;
-        fout << "        <DataArray type=\"Int32\" Name=\"Aggregate\" format=\"ascii\"" << endl;
+        fout << "        <DataArray type=\"Int32\" Name=\"Aggregate\" format=\"ascii\">" << endl;
         fout << indent;
         for(int node = 0; node < numNodes; node++)
         {
           fout << vertex2AggId[node] << " ";
-          if(node % 8 == 7)
+          if(node % 10 == 9)
             fout << endl << indent;
         }
         fout << endl;
         fout << "        </DataArray>" << endl;
-        fout << "        <DataArray type=\"Int32\" Name=\"Processor\" format=\"ascii\"" << endl;
+        fout << "        <DataArray type=\"Int32\" Name=\"Processor\" format=\"ascii\">" << endl;
         fout << indent;
         for(int node = 0; node < numNodes; node++)
         {
           fout << procWinners[node] << " ";
-          if(node % 8 == 7)
+          if(node % 10 == 9)
             fout << endl << indent;
         }
         fout << endl;
@@ -277,41 +277,19 @@ namespace MueLu {
         fout << "      </PointData>" << endl;
         //Write the point coordinates
         fout << "      <Points>" << endl;
-        fout << "        <Coordinates>" << endl;
         indent = "          ";
-        fout << "          <DataArray type=\"Float64\" format=\"ascii\">" << endl;  //x coordinates
+        fout << "        <DataArray type=\"Float64\" NumberOfComponents=\"" << dims << "\" format=\"ascii\">" << endl;
         fout << indent;
         for(int node = 0; node < numNodes; node++)
         {
-          fout << xCoords[node] << " ";
-          if(node % 8 == 7)
-            fout << endl << indent;
-        }
-        fout << endl;
-        fout << "          </DataArray>" << endl;
-        fout << "          <DataArray type=\"Float64\" format=\"ascii\">" << endl;
-        fout << indent;
-        for(int node = 0; node < numNodes; node++)
-        {
-          fout << yCoords[node] << " ";
-          if(node % 8 == 7)
-            fout << endl << indent;
-        }
-        fout << endl;
-        fout << "          </DataArray>" << endl;
-        if(dims == 3)
-        {
-          fout << "          <DataArray type=\"Float64\" format=\"ascii\">" << endl;
-          for(int node = 0; node < numNodes; node++)
-          {
+          fout << xCoords[node] << " " << yCoords[node] << " ";
+          if(dims == 3)
             fout << zCoords[node] << " ";
-            if(node % 8 == 7)
-              fout << endl << indent;
-          }
-          fout << endl;
-          fout << "          </DataArray>" << endl;
+          if(node % 4 == 3)
+            fout << endl << indent;
         }
-        fout << "        </Coordinates>" << endl;
+        fout << endl;
+        fout << "        </DataArray>" << endl;
         fout << "      </Points>" << endl;
         fout << "    </Piece>" << endl << endl;
         fout << "  </PolyData>" << std::endl;

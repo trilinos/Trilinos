@@ -43,6 +43,7 @@
 #include "Ifpack2_Parameters.hpp"
 
 #include <Teuchos_ArrayRCP.hpp>
+#include <Tpetra_MultiVector.hpp>
 
 namespace Ifpack2 {
 
@@ -145,6 +146,12 @@ void getValidParameters(Teuchos::ParameterList& params)
   // Ifpack2_Details_UserPartitioner.hpp
   Teuchos::ArrayRCP<int> tmp;
   params.set("partitioner: map", tmp);
+
+  // Ifpack2_LinePartitioner.hpp (FIXME)
+  params.set("partitioner: line detection threshold",(double)0.0);
+  params.set("partitioner: PDE equations",(int)1);
+  Teuchos::RCP<Tpetra::MultiVector<> > dummy;
+  params.set("partitioner: coordinates",dummy);
 }
 
 }//namespace Ifpack2
