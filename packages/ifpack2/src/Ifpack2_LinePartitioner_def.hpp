@@ -48,6 +48,11 @@
 
 namespace Ifpack2 {
 
+template<class T>
+inline typename Teuchos::ScalarTraits<T>::magnitudeType square(T x) {
+  return Teuchos::ScalarTraits<T>::magnitude(x) * Teuchos::ScalarTraits<T>::magnitude(x);
+}
+
 //==============================================================================
 // Constructor
 template<class GraphType,class Scalar>
@@ -142,15 +147,15 @@ int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayVie
       MT mydist = mzero;
       LO nn = cols[j] / NumEqns_;
       if(cols[j] >=(LO)N) continue; // Check for off-proc entries
-      if(!xvals.is_null()) mydist += (x0 - xvals[nn]) * (x0 - xvals[nn]);// Fix for complex
-      if(!yvals.is_null()) mydist += (y0 - yvals[nn]) * (y0 - yvals[nn]);
-      if(!zvals.is_null()) mydist += (z0 - zvals[nn]) * (z0 - zvals[nn]);
+      if(!xvals.is_null()) mydist += square(x0 - xvals[nn]);
+      if(!yvals.is_null()) mydist += square(y0 - yvals[nn]);
+      if(!zvals.is_null()) mydist += square(z0 - zvals[nn]);
       dist[neighbor_len] = Teuchos::ScalarTraits<MT>::squareroot(mydist);
       indices[neighbor_len]=cols[j];
       neighbor_len++;
     }
     
-    Teuchos::ArrayView<Scalar> dist_view = dist(0,neighbor_len);
+    Teuchos::ArrayView<MT> dist_view = dist(0,neighbor_len);
     Tpetra::sort2(dist_view.begin(),dist_view.end(),indices.begin());
 
     // Number myself
@@ -187,7 +192,7 @@ void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns,
   size_t allocated_space = this->Graph_->getNodeMaxNumRowEntries();
   Teuchos::ArrayView<LO> cols    = itemp();
   Teuchos::ArrayView<LO> indices = itemp.view(allocated_space,allocated_space);
-  Teuchos::ArrayView<Scalar> dist= dtemp();
+  Teuchos::ArrayView<MT> dist= dtemp();
 
   while (blockIndices[next] == invalid) {
     // Get the next row
@@ -206,9 +211,9 @@ void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns,
       if(cols[i] >=(LO)N) continue; // Check for off-proc entries
       LO nn = cols[i] / NumEqns;
       if(blockIndices[nn]==LineID) neighbors_in_line++;
-      if(!xvals.is_null()) mydist += (x0 - xvals[nn]) * (x0 - xvals[nn]);// Fix for complex
-      if(!yvals.is_null()) mydist += (y0 - yvals[nn]) * (y0 - yvals[nn]);
-      if(!zvals.is_null()) mydist += (z0 - zvals[nn]) * (z0 - zvals[nn]);
+      if(!xvals.is_null()) mydist += square(x0 - xvals[nn]);
+      if(!yvals.is_null()) mydist += square(y0 - yvals[nn]);
+      if(!zvals.is_null()) mydist += square(z0 - zvals[nn]);
       dist[neighbor_len] = Teuchos::ScalarTraits<MT>::squareroot(mydist);
       indices[neighbor_len]=cols[i];
       neighbor_len++;
@@ -222,7 +227,7 @@ void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns,
       blockIndices[next + k] = LineID;
     
     // Try to find the next guy in the line (only check the closest two that aren't element 0 (diagonal))
-    Teuchos::ArrayView<Scalar> dist_view = dist(0,neighbor_len);
+    Teuchos::ArrayView<MT> dist_view = dist(0,neighbor_len);
     Tpetra::sort2(dist_view.begin(),dist_view.end(),indices.begin());
 
     if(neighbor_len > 2 && indices[1] != last && blockIndices[indices[1]] == -1 && dist[1]/dist[neighbor_len-1] < tol) {
