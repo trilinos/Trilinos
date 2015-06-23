@@ -55,8 +55,8 @@
 #include <Zoltan2_TPLTraits.hpp>
 #include <zoltan_cpp.h>
 
-#include <Zoltan2_PamgenMeshAdapter.hpp>
-#include "Tpetra_DefaultPlatform.hpp"
+//#include <Zoltan2_PamgenMeshAdapter.hpp>
+//#include "Tpetra_DefaultPlatform.hpp"
 
 #ifdef HAVE_ZOLTAN2_PARMA
 #include <Zoltan2_RPIMeshAdapter.hpp>
@@ -174,12 +174,12 @@ static void zoltanHGSizeCS(void *data, int *nEdges, int *nPins,
   if (adp->adapterType()==MeshAdapterType) {
     //temporary hack (there must be a way to do this typing)
     
-    if (dynamic_cast<const PamgenMeshAdapter<ztMVector_t>* >(adp)) {
+    /*if (dynamic_cast<const PamgenMeshAdapter<ztMVector_t>* >(adp)) {
       const PamgenMeshAdapter<ztMVector_t>* madp = static_cast<PamgenMeshAdapter<ztMVector_t>*>(data);
       *nEdges = madp->getLocalNumOf(madp->getAdjacencyEntityType());
       *nPins = madp->getLocalNumAdjs(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType());
       *format = ZOLTAN_COMPRESSED_EDGE;
-    }
+      }*/
 #ifdef HAVE_ZOLTAN2_PARMA
     if (dynamic_cast<const RPIMeshAdapter<apf::Mesh2*>*>(adp))  {
       const RPIMeshAdapter<apf::Mesh2*>* madp = static_cast<RPIMeshAdapter<apf::Mesh2*>*>(data);
