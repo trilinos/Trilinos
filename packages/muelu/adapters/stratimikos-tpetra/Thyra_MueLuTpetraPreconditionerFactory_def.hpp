@@ -181,25 +181,19 @@ namespace Thyra {
 
     // Get the embedded MueLu::TpetraOperator object if it exists
     RCP<MueLuOperator> muelu_precOp;
-    RCP<TpetraLinOp> tpOp;
     if (tpetra_precOp.get())
-      //muelu_precOp = rcp_dynamic_cast<MueLuOperator>(tpetra_precOp->getTpetraOperator(), true);
-      tpOp = tpetra_precOp->getTpetraOperator();
+      muelu_precOp = rcp_dynamic_cast<MueLuOperator>(tpetra_precOp->getTpetraOperator(), true);
     // Do the magic (init/setup/reuse)
     // FIXME: the check for starting over needs more work
     // For instance, what should happen if a user called the first setup with
     // one parameter list, and the second setup with a different one?
-    //const bool startingOver = (muelu_precOp.is_null() || !paramList.isParameter("reuse: type") || paramList.get<std::string>("reuse: type") == "none");
-    const bool startingOver = (tpOp.is_null() || !paramList.isParameter("reuse: type") || paramList.get<std::string>("reuse: type") == "none");
+    const bool startingOver = (muelu_precOp.is_null() || !paramList.isParameter("reuse: type") || paramList.get<std::string>("reuse: type") == "none");
     if (startingOver)
-      //muelu_precOp = MueLu::CreateTpetraPreconditioner(tpetraFwdCrsMatNonConst, paramList, doubleCoords, null_space);
-      tpOp = MueLu::CreateTpetraPreconditioner(tpetraFwdCrsMatNonConst, paramList, doubleCoords, null_space);
+      muelu_precOp = MueLu::CreateTpetraPreconditioner(tpetraFwdCrsMatNonConst, paramList, doubleCoords, null_space);
     else
-      muelu_precOp = rcp_dynamic_cast<MueLuOperator>(tpOp);
       MueLu::ReuseTpetraPreconditioner(tpetraFwdCrsMatNonConst, *muelu_precOp);
 
-    //const RCP<LinearOpBase<Scalar> > thyraPrecOp = Thyra::createLinearOp(RCP<TpetraLinOp>(muelu_precOp));
-    const RCP<LinearOpBase<Scalar> > thyraPrecOp = Thyra::createLinearOp(RCP<TpetraLinOp>(tpOp));
+    const RCP<LinearOpBase<Scalar> > thyraPrecOp = Thyra::createLinearOp(RCP<TpetraLinOp>(muelu_precOp));
     defaultPrec->initializeUnspecified(thyraPrecOp);
   }
 
