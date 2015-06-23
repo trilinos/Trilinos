@@ -55,12 +55,21 @@
 #include <Zoltan2_TPLTraits.hpp>
 #include <zoltan_cpp.h>
 
+#include <Zoltan2_PamgenMeshAdapter.hpp>
+#include "Tpetra_DefaultPlatform.hpp"
+
+#ifdef HAVE_ZOLTAN2_PARMA
+#include <Zoltan2_RPIMeshAdapter.hpp>
+#include <apfMesh2.h>
+#endif
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgZoltanCallbacks.hpp
 //! \brief callback functions for the Zoltan package (templated on Adapter)
 //  Callbacks based on Adapter; specializations provided where needed
 
 namespace Zoltan2 {
+
+typedef Tpetra::MultiVector<double, int, int>     ztMVector_t;
 
 /////////////////////////////////////////////////////////////////////////////
 // ZOLTAN_NUM_OBJ_FN
@@ -159,11 +168,48 @@ static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
 // ZOLTAN_HG_SIZE_CS_FN
 template <typename Adapter>
 static void zoltanHGSizeCS(void *data, int *nEdges, int *nPins,
+                           int *format, int *ierr) {
+  const Adapter *adp = static_cast<Adapter *>(data);
+  *ierr = ZOLTAN_OK;
+  if (adp->adapterType()==MeshAdapterType) {
+    //temporary hack (there must be a way to do this typing)
+    
+    if (dynamic_cast<const PamgenMeshAdapter<ztMVector_t>* >(adp)) {
+      const PamgenMeshAdapter<ztMVector_t>* madp = static_cast<PamgenMeshAdapter<ztMVector_t>*>(data);
+      *nEdges = madp->getLocalNumOf(madp->getAdjacencyEntityType());
+      *nPins = madp->getLocalNumAdjs(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType());
+      *format = ZOLTAN_COMPRESSED_EDGE;
+    }
+#ifdef HAVE_ZOLTAN2_PARMA
+    if (dynamic_cast<const RPIMeshAdapter<apf::Mesh2*>*>(adp))  {
+      const RPIMeshAdapter<apf::Mesh2*>* madp = static_cast<RPIMeshAdapter<apf::Mesh2*>*>(data);
+      *nEdges = madp->getLocalNumOf(madp->getAdjacencyEntityType());
+      *nPins = madp->getLocalNumAdjs(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType());
+      *format = ZOLTAN_COMPRESSED_EDGE;
+    }
+#endif
+  }
+  else {
+    *ierr = ZOLTAN_FATAL;
+    cout << "Hypergraph callbacks are not ready yet" << endl;
+  }
+}
+
+/*
+
+template <>
+void zoltanHGSizeCS<RPIMeshAdapter<apf::Mesh2*> >(void *data, int *nEdges, int *nPins,
                            int *format, int *ierr)
 {
-  *ierr = ZOLTAN_FATAL;
-  cout << "Hypergraph callbacks are not ready yet" << endl;
+  const RPIMeshAdapter<apf::Mesh2*> *adp = static_cast<RPIMeshAdapter<apf::Mesh2*> *>(data);
+  *ierr = ZOLTAN_OK;
+  *nEdges = adp->getLocalNumOf(adp->getAdjacencyEntityType());
+  *nPins = adp->getLocalNumAdjs(adp->getAdjacencyEntityType(),adp->getPrimaryEntityType());
+  *format = ZOLTAN_COMPRESSED_EDGE;
+  std::cout<<"MEOW!!!!!!!!!!!!!!!!!!!!!!\n";
 }
+*/
+
 
 /////////////////////////////////////////////////////////////////////////////
 // ZOLTAN_HG_CS_FN
@@ -172,8 +218,29 @@ static void zoltanHGCS(void *data, int nGidEnt, int nEdges, int nPins,
                        int format, ZOLTAN_ID_PTR edgeIds, 
                        int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr)
 {
-  *ierr = ZOLTAN_FATAL;
-  cout << "Hypergraph callbacks are not ready yet" << endl;
+  const Adapter *adp = static_cast<Adapter *>(data);
+  *ierr = ZOLTAN_OK;
+  if (adp->adapterType()==MeshAdapterType) {
+#ifdef HAVE_ZOLTAN2_PARMA
+    const RPIMeshAdapter<apf::Mesh2*>* madp = static_cast<RPIMeshAdapter<apf::Mesh2*>*>(data);
+    const typename Adapter::zgid_t *Ids;
+    madp->getIDsViewOf(madp->getAdjacencyEntityType(),Ids);
+    const typename Adapter::lno_t* offsets;
+    const typename Adapter::zgid_t* adjIds;
+    madp->getAdjsView(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType(),offsets,adjIds);
+    for (int i=0;i<nEdges;i++) {
+      edgeIds[i]=Ids[i];
+      edgeIdx[i]=offsets[i];
+    }
+    for (int i=0;i<nPins;i++)
+      pinIds[i] = adjIds[i];
+#endif
+  }
+  else {
+    *ierr = ZOLTAN_FATAL;
+    cout << "Hypergraph callbacks are not ready yet" << endl;
+  }
+
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -182,4 +249,6 @@ static void zoltanHGCS(void *data, int nGidEnt, int nEdges, int nPins,
 
 
 }
+
+
 #endif

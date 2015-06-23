@@ -46,7 +46,7 @@
 /*! \file RPIMeshAdapterTest.cpp
     \brief An example of partitioning a SCOREC mesh with RCB.
 
-    \author Created by V. Leung, K. Devine.
+    \author Created by G. Diamond, K. Devine.
 
 */
 
@@ -69,6 +69,7 @@
 
 // SCOREC includes
 #ifdef HAVE_ZOLTAN2_PARMA
+#include <parma.h>
 #include <apf.h>
 #include <apfMesh.h>
 #include <apfMDS.h>
@@ -136,9 +137,9 @@ int main(int narg, char *arg[]) {
   /***************************************************************************/
 
   // default values for command-line arguments
-  std::string meshFileName("4/");
+  std::string meshFileName("4imb/torus.smb");
   std::string modelFileName("torus.dmg");
-  std::string action("parma");
+  std::string action("zoltan_hg");
   std::string parma_method("VtxElm");
   int nParts = CommT->getSize();
 
@@ -233,12 +234,23 @@ int main(int narg, char *arg[]) {
     params.set("compute_metrics","yes");
 
   }
+  else if (action=="zoltan_hg") {
+    do_partitioning = true;
+    params.set("debug_level", "no_status");
+    params.set("imbalance_tolerance", 1.1);
+    params.set("algorithm", "zoltan");
+    params.set("num_global_parts", nParts);
+    Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
+    zparams.set("LB_METHOD","HYPERGRAPH");
+    //params.set("compute_metrics","yes");
+
+  }
   else if (action == "color") {
     params.set("debug_level", "verbose_detailed_status");
     params.set("debug_output_file", "kdd");
     params.set("debug_procs", "all");
   }
-
+  Parma_PrintPtnStats(m,"before");
   // create Partitioning problem
   if (do_partitioning) {
     if (me == 0) cout << "Creating partitioning problem ... \n\n";
@@ -274,6 +286,7 @@ int main(int narg, char *arg[]) {
 
 
   }
+  Parma_PrintPtnStats(m,"after");
 
 
   // delete mesh
