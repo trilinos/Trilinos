@@ -958,7 +958,7 @@ TEST(ElementGraph, skin_mesh_using_element_graph_serial)
     }
 }
 
-TEST(ElementGraph, move_elem_to_remote_proc_with_mesh)
+void move_element_test_1(bool aura_on)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
     int proc = stk::parallel_machine_rank(comm);
@@ -976,7 +976,12 @@ TEST(ElementGraph, move_elem_to_remote_proc_with_mesh)
     if(stk::parallel_machine_size(comm) == 2)
     {
         stk::mesh::MetaData meta;
-        stk::mesh::BulkData bulkData(meta, comm);
+        stk::mesh::BulkData::AutomaticAuraOption aura_option = stk::mesh::BulkData::AUTO_AURA;
+        if (!aura_on)
+        {
+            aura_option = stk::mesh::BulkData::NO_AUTO_AURA;
+        }
+        stk::mesh::BulkData bulkData(meta, comm, aura_option);
 
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
 
@@ -997,24 +1002,19 @@ TEST(ElementGraph, move_elem_to_remote_proc_with_mesh)
 
         // Create a vector of the elements to be moved
         std::vector <stk::mesh::Entity> elems_to_move;
+
         stk::mesh::EntityId elem_global_id = 2;
-        stk::mesh::Entity elem_to_move = bulkData.get_entity(stk::topology::ELEM_RANK, elem_global_id);
-        elems_to_move.push_back(elem_to_move);
-
-        //bulkData.dump_all_mesh_info(std::cout, true);
-
-        for (unsigned i=0; i<elems_to_move.size(); i++)
-        {
-        	EXPECT_TRUE(bulkData.is_valid(elems_to_move[i]));
-        	EXPECT_EQ(0, bulkData.parallel_owner_rank(elems_to_move[i]));
-        }
-
         std::vector< std::pair< stk::mesh::Entity, int > > elem_proc_pairs_to_move;
+        stk::mesh::Entity elem_to_move = bulkData.get_entity(stk::topology::ELEM_RANK, elem_global_id);
         if (proc == 0)
         {
+            elems_to_move.push_back(elem_to_move);
+
             int other_proc = 1;
             for (unsigned i=0; i<elems_to_move.size(); i++)
             {
+                EXPECT_TRUE(bulkData.is_valid(elems_to_move[i]));
+                EXPECT_EQ(0, bulkData.parallel_owner_rank(elems_to_move[i]));
             	elem_proc_pairs_to_move.push_back(std::make_pair(elems_to_move[i], other_proc));
             }
         }
@@ -1027,6 +1027,9 @@ TEST(ElementGraph, move_elem_to_remote_proc_with_mesh)
 
         if (proc == 1)
         {
+            EXPECT_TRUE(bulkData.is_valid(elem_to_move));
+            EXPECT_EQ(1, bulkData.parallel_owner_rank(elem_to_move));
+
             EXPECT_EQ(2u, elem_graph.get_num_connected_elems(elem_to_move));
 
             stk::mesh::Entity elem = elem_graph.get_connected_element(elem_to_move, 1);
@@ -1037,27 +1040,19 @@ TEST(ElementGraph, move_elem_to_remote_proc_with_mesh)
             ASSERT_FALSE(elem_graph.is_connected_elem_locally_owned(elem_to_move, 0));
             EXPECT_EQ(1u, connected_elem_global_id);
         }
-        else
-        {
-            //ASSERT_THROW(elem_graph.get_num_connected_elems(elem_to_move), std::runtime_error);
-        }
-
-        EXPECT_TRUE(bulkData.is_valid(elem_to_move));
-        EXPECT_EQ(1, bulkData.parallel_owner_rank(elem_to_move));
-
-        //if (proc == 0)
-        //{
-        //  for(size_t i=0;i<wall_times.size();++i)
-        //    {
-        //        std::cerr << "Wall time " << msgs[i] << ":\t" << wall_times[i] - wall_times[0] << std::endl;
-        //    }
-
-        //    for(size_t i=0;i<mem_usage.size();++i)
-        //    {
-        //        std::cerr << "Memory usage " << msgs[i] << ":\t" << mem_usage[i] - mem_usage[0] << std::endl;
-        //    }
-        //}
     }
+}
+
+TEST(ElementGraph, move_element_to_remote_proc_with_mesh_with_aura)
+{
+    bool aura_on = true;
+    move_element_test_1(aura_on);
+}
+
+TEST(ElementGraph, move_element_to_remote_proc_with_mesh_without_aura)
+{
+    bool aura_on = false;
+    move_element_test_1(aura_on);
 }
 
 TEST(ElementGraph, skin_mesh_using_element_graph_parallel)

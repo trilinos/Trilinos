@@ -664,9 +664,9 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
                 buf.unpack<stk::mesh::EntityId>(chosen_face_id);
                 impl::parallel_info p_info(other_proc, other_side_ord, other_permutation, chosen_face_id);
                 p_info.m_in_part = in_part;
-                impl::LocalId connected_elem_local_id = get_local_element_id(connected_elem);
                 if (p_info.m_other_proc == m_bulk_data.parallel_rank())
                 {
+                    impl::LocalId connected_elem_local_id = get_local_element_id(connected_elem);
                     m_elem_graph[recvd_elem_local_id].push_back(connected_elem_local_id);
                 }
                 else
