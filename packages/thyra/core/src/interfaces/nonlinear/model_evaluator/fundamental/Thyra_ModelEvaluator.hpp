@@ -767,6 +767,21 @@ public:
    */
   virtual RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const = 0;
 
+  /** \brief Get the names of the response functions associated with
+   * subvector j if available.
+   *
+   * \return Returns an RCP to a Teuchos::Array<std::string> object that
+   * contains the names of the responses.   If returnVal == Teuchos::null,
+   * then there are no names available for the response subvector g(j).
+   * If returnVal->size() == 1, then a single name is given to the entire
+   * response subvector.  If returnVal->size() == get_g_space(l)->dim(),
+   * then a name is given to every parameter scalar entry.
+   *
+   * The default implementation return returnVal==Teuchos::null which means
+   * by default, responses have no names associated with them.
+   */
+  virtual RCP<const Teuchos::ArrayView<std::string> > get_g_names(int j) const = 0;
+
   //@}
 
   /** \name Initial guess and upper and lower bounds */

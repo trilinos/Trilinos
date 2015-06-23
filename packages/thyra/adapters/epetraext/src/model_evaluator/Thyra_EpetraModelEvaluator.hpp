@@ -294,6 +294,8 @@ public:
   /** \brief . */
   RCP<const VectorSpaceBase<double> > get_g_space(int j) const;
   /** \brief . */
+  RCP<const Teuchos::ArrayView<std::string> > get_g_names(int j) const;
+  /** \brief . */
   ModelEvaluatorBase::InArgs<double> getNominalValues() const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<double> getLowerBounds() const;
