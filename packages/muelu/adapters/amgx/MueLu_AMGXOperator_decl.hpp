@@ -63,7 +63,8 @@ namespace MueLu {
             class LocalOrdinal = typename Tpetra::Operator<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
             class Node = typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-  class AMGXOperator : public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+  class AMGXOperator : public TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+  //class AMGXOperator : public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
   public:
 
     //! @name Constructor/Destructor
@@ -104,6 +105,10 @@ namespace MueLu {
     bool hasTransposeApply() const{
       throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
     }
+   
+    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > GetHierarchy const {
+      throw Exceptions:::RuntimeError("AMGXOperator does not hold a MueLu::Hierarchy object \n");
+    }
 
   private:
     AMGX_solver_handle Solver_;
@@ -117,7 +122,7 @@ namespace MueLu {
       Creates and AmgX Solver object with a Tpetra Matrix. Partial specialization of the template for data types supported by AmgX.
   */
   template <class Node = typename Tpetra::Operator<double, int, int>::node_type>
-  class AMGXOperator<double, int, int, Node>  : public Tpetra::Operator<double, int, int, Node> {
+  class AMGXOperator<double, int, int, Node>  : public TpetraOperator<double, int, int, Node> {
    public:
 
     typedef double SC;
@@ -197,6 +202,10 @@ namespace MueLu {
      //! Indicates whether this operator supports applying the adjoint operator.
      bool hasTransposeApply() const;
     
+     RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > GetHierarchy const {
+       throw Exceptions:::RuntimeError("AMGXOperator does not hold a MueLu::Hierarchy object \n");
+     }
+
    private:
      AMGX_solver_handle Solver_;
      AMGX_resources_handle Resources_;
