@@ -543,7 +543,7 @@ TEST(Verify, selectorContainsPart)
     EXPECT_FALSE(selector(partC));
     EXPECT_TRUE(selector(partD));
 
-    selector = partA | (!((partA & partB) | partC) & (!partD | partB));
+    selector = partA | (!((partA & partB) | partC) & ((!partD) | partB));
     EXPECT_TRUE(selector(partA));
     EXPECT_TRUE(selector(partB));
     EXPECT_FALSE(selector(partC));

@@ -503,7 +503,7 @@ TEST(PartToBucket, hexWithThreeSidesets)
     stk::mesh::EntityId expectedGlobalId = 1;
     checkNodeInSelectedBucket(selectNode1, expectedGlobalId, stkMeshBulkData);
 
-    stk::mesh::Selector selectNode2 = !surface1Part & !surface2Part & surface3Part;
+    stk::mesh::Selector selectNode2 = (!surface1Part) & (!surface2Part) & surface3Part;
     expectedGlobalId = 2;
     checkNodeInSelectedBucket(selectNode2, expectedGlobalId, stkMeshBulkData);
 
