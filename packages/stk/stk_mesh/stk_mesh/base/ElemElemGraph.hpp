@@ -55,7 +55,7 @@ public:
 
     size_t size() {return m_elem_graph.size() - m_deleted_element_local_id_pool.size();}
 
-    void change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &parallel_graph_info);
+    void change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &parallel_graph_info, stk::mesh::Part *active_part=NULL);
 
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element) const;
 

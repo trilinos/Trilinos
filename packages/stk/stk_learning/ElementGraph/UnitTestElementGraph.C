@@ -1062,10 +1062,14 @@ TEST(ElementGraph, skin_mesh_using_element_graph_serial)
     }
 }
 
-void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph, std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move)
+void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph, std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move, stk::mesh::Part *active_part=NULL)
 {
     stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
     impl::ParallelGraphInfo parallel_graph;
+
+    const std::vector<stk::mesh::EntityId> &suggested_face_id_vector = elem_graph.get_suggested_face_ids();
+    size_t num_suggested_face_ids_used = 0;
+
     for (size_t i=0; i<elem_proc_pairs_to_move.size(); i++)
     {
         stk::mesh::Entity elem_to_send = elem_proc_pairs_to_move[i].first;
@@ -1089,11 +1093,19 @@ void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph
                 stk::mesh::OrdinalAndPermutation ordperm = get_ordinal_and_permutation(bulkData, elem_to_send, side_rank, side_nodes);
 
                 std::pair<impl::LocalId, stk::mesh::EntityId> key(local_id, elem_global_id);
-                impl::parallel_info p_info(destination_proc, side_id, ordperm.second, 999);
+                stk::mesh::EntityId face_id = suggested_face_id_vector[num_suggested_face_ids_used];
+                num_suggested_face_ids_used++;
+                impl::parallel_info p_info(destination_proc, side_id, ordperm.second, face_id);
+                if(active_part != NULL)
+                {
+                    p_info.m_in_part = bulkData.bucket(connected_element).member(*active_part);
+                }
                 parallel_graph.insert(std::make_pair(key, p_info));
             }
         }
     }
+
+    elem_graph.set_num_face_ids_used(num_suggested_face_ids_used);
 
     bulkData.change_entity_owner(elem_proc_pairs_to_move);
 

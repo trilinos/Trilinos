@@ -549,9 +549,12 @@ struct moved_parallel_graph_info {
     int destination_proc;
 };
 
-void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &new_parallel_graph_entries)
+void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &new_parallel_graph_entries, stk::mesh::Part *active_part)
 {
     std::vector <moved_parallel_graph_info> moved_graph_info_vector;
+
+    const std::vector<stk::mesh::EntityId>& suggested_face_ids = get_suggested_face_ids();
+    size_t num_face_ids_used = 0;
 
     stk::CommSparse comm(m_bulk_data.parallel());
     for(int phase=0; phase <2; ++phase) {
@@ -621,8 +624,15 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
                     stk::mesh::OrdinalAndPermutation ordperm = get_ordinal_and_permutation(m_bulk_data, connected_element, side_rank, side_nodes);
 
                     buff.pack<int>(ordperm.second);
-                    buff.pack<bool>(true);//fake data, need to check actual part membership
-                    buff.pack<stk::mesh::EntityId>(999); //fake data, need to get actual face id
+                    bool in_part = true;
+                    if (active_part != NULL)
+                    {
+                        in_part = m_bulk_data.bucket(connected_element).member(*active_part);
+                    }
+                    buff.pack<bool>(in_part);
+                    stk::mesh::EntityId face_id = suggested_face_ids[num_face_ids_used];
+                    num_face_ids_used++;
+                    buff.pack<stk::mesh::EntityId>(face_id);
                 }
             }
 
@@ -657,6 +667,8 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
             comm.communicate();
         }
     }
+
+    set_num_face_ids_used(num_face_ids_used);
 
     for(int p = 0; p < m_bulk_data.parallel_size(); ++p)
     {
