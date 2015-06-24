@@ -582,6 +582,11 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
                     buff.pack<int>(p_info.m_permutation);
                     buff.pack<bool>(p_info.m_in_part);
                     buff.pack<stk::mesh::EntityId>(p_info.m_chosen_face_id);
+
+                    if (phase == 1)
+                    {
+                        m_parallel_graph_info.erase(iter);
+                    }
                 }
                 else
                 {
@@ -690,6 +695,12 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
                 {
                     impl::LocalId connected_elem_local_id = get_local_element_id(connected_elem);
                     m_elem_graph[recvd_elem_local_id].push_back(connected_elem_local_id);
+                    std::pair<impl::LocalId, stk::mesh::EntityId> key(connected_elem_local_id, recvd_elem_global_id);
+                    auto iter = m_parallel_graph_info.find(key);
+                    if (iter != m_parallel_graph_info.end())
+                    {
+                        m_parallel_graph_info.erase(iter);
+                    }
                 }
                 else
                 {
