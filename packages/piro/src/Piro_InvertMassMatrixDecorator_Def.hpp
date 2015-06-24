@@ -154,7 +154,7 @@ Piro::InvertMassMatrixDecorator<Scalar>::get_g_space(int j) const
 }
 
 template<typename Scalar>
-Teuchos::RCP<const Teuchos::ArrayView<std::string> > 
+Teuchos::ArrayView<const std::string> 
 Piro::InvertMassMatrixDecorator<Scalar>::get_g_names(int j) const
 {
   return model->get_g_names(j);
