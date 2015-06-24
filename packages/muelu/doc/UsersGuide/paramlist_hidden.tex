@@ -81,17 +81,13 @@
 \cbb{aggregation: allow user-specified singletons}{bool}{false}{Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)}
 
 \cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
-<<<<<<< HEAD
-
-=======
-        
+       
 \cbb{aggregation: output filename}{string}{AggViz.vtp}{Filename to write VTK visualization data to.}
         
 \cbb{aggregation: output file: time step}{int}{0}{Time step ID for non-linear problems.}
         
 \cbb{aggregation: iter}{int}{0}{Iteration for non-linear problems.}
         
->>>>>>> MueLu: Working on Matlab tests & viz
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", ``P'', ``R'') of type \texttt{string} and value ``\{levels separated by commas\}''. A matrix with a name ``X'' is saved in three MatrixMarket files: a) data is saved in \textit{X\_level.mm}; b) its row map is saved in \textit{rowmap\_X\_level.mm}; c) its column map is saved in \textit{colmap\_X\_level.mm}.}
 
 \cbb{print initial parameters}{bool}{true}{Print parameters provided for a hierarchy construction.}
@@ -155,5 +151,7 @@
 \cbb{repartition: use subcommunicators}{bool}{true}{Use subcommunicators on coarser levels.}
 
 \cbb{reuse: type}{string}{"none"}{Reuse options for consecutive hierarchy construction. This speeds up the setup phase, but may lead to poorer convergence. Possible values: see Table~\ref{t:reuse_types}.}
+
+\cbb{use external multigrid package}{string}{"none"}{Option to utilize external multigrid package for computations, for example allows for use of AMGX}
 
 \cbb{debug: graph level}{int}{-1}{Output dependency graph.}

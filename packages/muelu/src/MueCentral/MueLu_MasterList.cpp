@@ -131,7 +131,8 @@ namespace MueLu {
     if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }
     if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }
     if (name == "repartition: max imbalance") { ss << "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    return "";
+    if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); } 
+   return "";
   }
 
   Teuchos::RCP<Teuchos::ParameterList> MasterList::masterList_ = Teuchos::null;
@@ -214,6 +215,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
+  "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
   "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-1\"/>"
 "</ParameterList>"
 ;
@@ -474,6 +476,8 @@ namespace MueLu {
          ("repartition: use subcommunicators","repartition: use subcommunicators")
 
          ("reuse: type","reuse: type")
+
+         ("use external multigrid package","use external multigrid package")
 
          ("debug: graph level","debug: graph level")
       ;

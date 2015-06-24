@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
-  bool success = false;
+  bool success = true;
   bool verbose = true;
   try {
     Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -172,17 +172,23 @@ int main(int argc, char *argv[]) {
     nullspace->putScalar(1.0);
     H->GetLevel(0)->Set("Nullspace", nullspace);
 
-    Teuchos::ArrayRCP<LO> SemiCoarsenInfo = Teuchos::arcp<LO>(3);
-    SemiCoarsenInfo[NUM_ZPTS] = matrixParameters.GetParameterList().get<GO>("nz");
-    SemiCoarsenInfo[ORIENTATION] = VERTICAL;
-    H->GetLevel(0)->Set("SemiCoarsenInfo",SemiCoarsenInfo);
+    // set minimal information about number of layers for semicoarsening...
+    // This information can also be provided as a user parameter in the xml file using the
+    // parameter: "semicoarsen: num layers"
+    H->GetLevel(0)->Set("NumZLayers",matrixParameters.GetParameterList().get<GO>("nz"));
+
 
     mueluFactory->SetupHierarchy(*H);
 
-
-    std::cout << "Level content:" << std::endl;
     for (int l=0; l<H->GetNumLevels(); l++) {
-      H->GetLevel(l)->print(std::cout, MueLu::Debug);
+      Teuchos::RCP<MueLu::Level> level = H->GetLevel(l);
+      if(level->IsAvailable("A", MueLu::NoFactory::get()) == false) { success = false; H->GetLevel(l)->print(std::cout, MueLu::Debug);}
+      if(level->IsAvailable("P", MueLu::NoFactory::get()) == false && l>0) { success = false; H->GetLevel(l)->print(std::cout, MueLu::Debug);}
+      if(level->IsAvailable("R", MueLu::NoFactory::get()) == false && l>0) { success = false; H->GetLevel(l)->print(std::cout, MueLu::Debug);}
+      if(level->IsAvailable("PreSmoother",  MueLu::NoFactory::get()) == false) { success = false; H->GetLevel(l)->print(std::cout, MueLu::Debug);}
+      if(level->IsAvailable("PostSmoother", MueLu::NoFactory::get()) == false && l<H->GetNumLevels()-1) { success = false; H->GetLevel(l)->print(std::cout, MueLu::Debug);}
+      if(level->IsAvailable("NumZLayers",   MueLu::NoFactory::get()) == true && l>0) {  success = false; H->GetLevel(l)->print(std::cout, MueLu::Debug);}
+      //H->GetLevel(l)->print(std::cout, MueLu::Debug);
     }
     ///////////////////////////////////////////////////////////
 
@@ -191,8 +197,6 @@ int main(int argc, char *argv[]) {
 
     if (printTimings)
       Teuchos::TimeMonitor::summarize();
-
-    success = true;
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

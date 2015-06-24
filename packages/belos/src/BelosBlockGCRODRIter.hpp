@@ -254,7 +254,7 @@ namespace Belos{
 	/*! \brief Initialize the solver with empty data. Calling this method will result in error,
 	*  as GCRODRIter must be initialized with a valid state.
 	*/
-       void initialize(BlockGCRODRIterState<ScalarType,MV> newstate);
+       void initialize(BlockGCRODRIterState<ScalarType,MV>& newstate);
        
 	/*! \brief Get the current state of the linear solver.
 	*
@@ -648,7 +648,7 @@ namespace Belos{
    //////////////////////////////////////////////////////////////////////////////////////////////////
    //Initialize this iteration object.
    template <class ScalarType, class MV, class OP>
-   void BlockGCRODRIter<ScalarType,MV,OP>::initialize(BlockGCRODRIterState<ScalarType,MV> newstate) {
+   void BlockGCRODRIter<ScalarType,MV,OP>::initialize(BlockGCRODRIterState<ScalarType,MV>& newstate) {
 	if (newstate.V != Teuchos::null &&  newstate.H != Teuchos::null) {
       		curDim_ = newstate.curDim;
       		V_      = newstate.V;

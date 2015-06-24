@@ -25,7 +25,7 @@ try:
     else:
       filename = '%s%d' % (file_prefix,res)
 
-    print "openning \"" + filename +"\""
+    print "opening \"" + filename +"\""
     f = open(filename);
 
     # look for the "Error = ..." line
@@ -45,7 +45,9 @@ try:
   # other reasons that lead to imperfect convergence rates. But its close
   # enough to give a quadratic convergence order.
   if (rate-0.25)/0.25 > 0.05:
-    raise 'Convergence rate of %f, is not within 5 percent bounds of 0.25' % rate
+    raise 'Convergence rate of %f, is not within 5 percent bounds of 0.25: FAILED' % rate
+
+  print 'Convergence rate of %f is within 5 percent of 0.25: PASSED' % rate 
 
 except Exception, e:
   print "Test Failed: "

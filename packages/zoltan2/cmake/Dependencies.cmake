@@ -1,4 +1,4 @@
-SET(LIB_REQUIRED_DEP_PACKAGES Tpetra Epetra Teuchos Xpetra Zoltan)
+SET(LIB_REQUIRED_DEP_PACKAGES Tpetra Epetra Teuchos Xpetra Zoltan Pamgen)
 SET(LIB_OPTIONAL_DEP_PACKAGES )
 SET(TEST_REQUIRED_DEP_PACKAGES Tpetra Epetra Teuchos Xpetra Galeri Pamgen Zoltan)
 SET(TEST_OPTIONAL_DEP_PACKAGES )

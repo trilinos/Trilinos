@@ -40,6 +40,7 @@
 // @HEADER
 
 #include <Teuchos_Details_Allocator.hpp>
+#include <sstream>
 
 namespace Teuchos {
 namespace Details {
