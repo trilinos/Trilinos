@@ -47,8 +47,6 @@ public:
 
     void set_num_face_ids_used(size_t num_used);
 
-    void change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move);
-
     void add_elements_to_graph(std::vector<stk::mesh::Entity> &elements_to_add);
 
     void delete_elements_from_graph(std::vector<stk::mesh::Entity> &elements_to_delete);
@@ -56,6 +54,10 @@ public:
     bool is_valid_graph_element(stk::mesh::Entity local_element);
 
     size_t size() {return m_elem_graph.size() - m_deleted_element_local_id_pool.size();}
+
+    void change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &parallel_graph_info);
+
+    impl::LocalId get_local_element_id(stk::mesh::Entity local_element) const;
 
 protected:
     void fill_graph();
@@ -73,7 +75,6 @@ protected:
     stk::mesh::ConnectivityOrdinal get_neighboring_side_ordinal(const stk::mesh::BulkData &mesh, stk::mesh::Entity currentElem,
                                                                 stk::mesh::ConnectivityOrdinal currentOrdinal, stk::mesh::Entity neighborElem);
 
-    impl::LocalId get_local_element_id(stk::mesh::Entity local_element) const;
     impl::LocalId get_new_local_element_id_from_pool();
     int size_data_members();
     void ensure_space_in_entity_to_local_id(size_t max_index);

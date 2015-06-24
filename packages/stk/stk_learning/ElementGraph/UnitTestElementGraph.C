@@ -1104,7 +1104,45 @@ TEST(ElementGraph, skin_mesh_using_element_graph_serial)
     }
 }
 
-void move_element_test_1(bool aura_on)
+void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph, std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move)
+{
+    stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
+    impl::ParallelGraphInfo parallel_graph;
+    for (size_t i=0; i<elem_proc_pairs_to_move.size(); i++)
+    {
+        stk::mesh::Entity elem_to_send = elem_proc_pairs_to_move[i].first;
+        int destination_proc = elem_proc_pairs_to_move[i].second;
+        stk::mesh::EntityId elem_global_id = bulkData.identifier(elem_to_send);
+
+        size_t num_connected_elements = elem_graph.get_num_connected_elems(elem_to_send);
+        stk::topology elem_topology = bulkData.bucket(elem_to_send).topology();
+        const stk::mesh::Entity *elem_nodes = bulkData.begin_nodes(elem_to_send);
+        for (size_t k=0; k<num_connected_elements; k++)
+        {
+            if (elem_graph.is_connected_elem_locally_owned(elem_to_send, k))
+            {
+                int side_id = elem_graph.get_side_id_to_connected_element(elem_to_send, k);
+                stk::mesh::Entity connected_element = elem_graph.get_connected_element(elem_to_send, k);
+                impl::LocalId local_id = elem_graph.get_local_element_id(connected_element);
+                stk::topology side_topology = elem_topology.side_topology(side_id);
+                std::vector<stk::mesh::Entity> side_nodes(side_topology.num_nodes());
+
+                elem_topology.side_nodes(elem_nodes, side_id, side_nodes.begin());
+                stk::mesh::OrdinalAndPermutation ordperm = get_ordinal_and_permutation(bulkData, elem_to_send, side_rank, side_nodes);
+
+                std::pair<impl::LocalId, stk::mesh::EntityId> key(local_id, elem_global_id);
+                impl::parallel_info p_info(destination_proc, side_id, ordperm.second, 999);
+                parallel_graph.insert(std::make_pair(key, p_info));
+            }
+        }
+    }
+
+    bulkData.change_entity_owner(elem_proc_pairs_to_move);
+
+    elem_graph.change_entity_owner(elem_proc_pairs_to_move, parallel_graph);
+}
+
+void change_entity_owner_test_2_procs(bool aura_on)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
     int proc = stk::parallel_machine_rank(comm);
@@ -1152,8 +1190,15 @@ void move_element_test_1(bool aura_on)
         stk::mesh::EntityId elem_global_id = 2;
         std::vector< std::pair< stk::mesh::Entity, int > > elem_proc_pairs_to_move;
         stk::mesh::Entity elem_to_move = bulkData.get_entity(stk::topology::ELEM_RANK, elem_global_id);
+
         if (proc == 0)
         {
+            int side_from_elem2_to_elem3 = elem_graph.get_side_from_element1_to_remote_element2(elem_to_move, stk::mesh::EntityId(3));
+            int side_from_elem2_to_elem1 = elem_graph.get_side_from_element1_to_locally_owned_element2(elem_to_move, bulkData.get_entity(stk::topology::ELEM_RANK,1));
+
+            EXPECT_EQ(5, side_from_elem2_to_elem3);
+            EXPECT_EQ(4, side_from_elem2_to_elem1);
+
             elems_to_move.push_back(elem_to_move);
 
             int other_proc = 1;
@@ -1165,9 +1210,7 @@ void move_element_test_1(bool aura_on)
             }
         }
 
-        bulkData.change_entity_owner(elem_proc_pairs_to_move);
-
-        elem_graph.change_entity_owner(elem_proc_pairs_to_move);
+        change_entity_owner(bulkData, elem_graph, elem_proc_pairs_to_move);
 
         elem_to_move = bulkData.get_entity(stk::topology::ELEM_RANK, elem_global_id);
 
@@ -1185,20 +1228,134 @@ void move_element_test_1(bool aura_on)
             stk::mesh::EntityId connected_elem_global_id = elem_graph.get_entity_id_of_remote_element(elem_to_move, 0);
             ASSERT_FALSE(elem_graph.is_connected_elem_locally_owned(elem_to_move, 0));
             EXPECT_EQ(1u, connected_elem_global_id);
+
+
+            int side_from_elem2_to_elem3 = elem_graph.get_side_from_element1_to_locally_owned_element2(elem_to_move, bulkData.get_entity(stk::topology::ELEM_RANK, 3));
+            EXPECT_EQ(5, side_from_elem2_to_elem3);
+
+            int side_from_elem2_to_elem1 = elem_graph.get_side_from_element1_to_remote_element2(elem_to_move, stk::mesh::EntityId(1));
+            EXPECT_EQ(4, side_from_elem2_to_elem1);
+
+            impl::parallel_info &p_info = elem_graph.get_parallel_edge_info(elem_to_move, stk::mesh::EntityId(1));
+            int other_side_ord = p_info.m_other_side_ord;
+            EXPECT_EQ(5, other_side_ord);
+        }
+        if (proc == 0)
+        {
+            stk::mesh::Entity elem_1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
+            impl::parallel_info &p_info = elem_graph.get_parallel_edge_info(elem_1, stk::mesh::EntityId(2));
+            int other_side_ord = p_info.m_other_side_ord;
+            EXPECT_EQ(4, other_side_ord);
+
         }
     }
 }
 
-TEST(ElementGraph, move_element_to_remote_proc_with_mesh_with_aura)
+TEST(ElementGraph, test_change_entity_owner_2_procs_with_mesh_with_aura)
 {
     bool aura_on = true;
-    move_element_test_1(aura_on);
+    change_entity_owner_test_2_procs(aura_on);
 }
 
-TEST(ElementGraph, move_element_to_remote_proc_with_mesh_without_aura)
+TEST(ElementGraph, test_change_entity_owner_2_procs_with_mesh_without_aura)
 {
     bool aura_on = false;
-    move_element_test_1(aura_on);
+    change_entity_owner_test_2_procs(aura_on);
+}
+
+void change_entity_owner_test_4_procs(bool aura_on)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int proc = stk::parallel_machine_rank(comm);
+    std::vector<double> wall_times;
+    wall_times.reserve(10);
+    std::vector<std::string> msgs;
+    msgs.reserve(10);
+
+    std::vector<size_t> mem_usage;
+
+    wall_times.push_back(stk::wall_time());
+    msgs.push_back("program-start");
+    mem_usage.push_back(stk::get_memory_usage_now());
+
+    if(stk::parallel_machine_size(comm) == 4)
+    {
+        stk::mesh::MetaData meta;
+        stk::mesh::BulkData::AutomaticAuraOption aura_option = stk::mesh::BulkData::AUTO_AURA;
+        if (!aura_on)
+        {
+            aura_option = stk::mesh::BulkData::NO_AUTO_AURA;
+        }
+        stk::mesh::BulkData bulkData(meta, comm, aura_option);
+
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+
+        wall_times.push_back(stk::wall_time());
+        msgs.push_back("after mesh-read");
+        mem_usage.push_back(stk::get_memory_usage_now());
+
+        std::vector<unsigned> counts;
+        stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
+        int numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
+        EXPECT_EQ(1, numLocallyOwnedElems);
+
+        stk::mesh::ElemElemGraph elem_graph(bulkData);
+
+        wall_times.push_back(stk::wall_time());
+        msgs.push_back("after fill-graph");
+        mem_usage.push_back(stk::get_memory_usage_now());
+
+        // Create a vector of the elements to be moved
+        std::vector <stk::mesh::Entity> elems_to_move;
+
+        stk::mesh::EntityId elem_global_id = 2;
+        std::vector< std::pair< stk::mesh::Entity, int > > elem_proc_pairs_to_move;
+        stk::mesh::Entity elem_to_move = bulkData.get_entity(stk::topology::ELEM_RANK, elem_global_id);
+        if (proc == 1)
+        {
+            elems_to_move.push_back(elem_to_move);
+
+            int other_proc = 2;
+            for (unsigned i=0; i<elems_to_move.size(); i++)
+            {
+                EXPECT_TRUE(bulkData.is_valid(elems_to_move[i]));
+                EXPECT_EQ(1, bulkData.parallel_owner_rank(elems_to_move[i]));
+                elem_proc_pairs_to_move.push_back(std::make_pair(elems_to_move[i], other_proc));
+            }
+        }
+
+        change_entity_owner(bulkData, elem_graph, elem_proc_pairs_to_move);
+
+        elem_to_move = bulkData.get_entity(stk::topology::ELEM_RANK, elem_global_id);
+
+        if (proc == 2)
+        {
+            EXPECT_TRUE(bulkData.is_valid(elem_to_move));
+            EXPECT_EQ(2, bulkData.parallel_owner_rank(elem_to_move));
+
+            EXPECT_EQ(2u, elem_graph.get_num_connected_elems(elem_to_move));
+
+            stk::mesh::Entity elem = elem_graph.get_connected_element(elem_to_move, 1);
+            ASSERT_TRUE(elem_graph.is_connected_elem_locally_owned(elem_to_move, 1));
+            EXPECT_EQ(3u, bulkData.identifier(elem));
+
+            stk::mesh::EntityId connected_elem_global_id = elem_graph.get_entity_id_of_remote_element(elem_to_move, 0);
+            ASSERT_FALSE(elem_graph.is_connected_elem_locally_owned(elem_to_move, 0));
+            EXPECT_EQ(1u, connected_elem_global_id);
+        }
+    }
+}
+
+TEST(ElementGraph, test_change_entity_owner_4_procs_with_mesh_with_aura)
+{
+    bool aura_on = true;
+    change_entity_owner_test_4_procs(aura_on);
+}
+
+TEST(ElementGraph, test_change_entity_owner_4_procs_with_mesh_without_aura)
+{
+    bool aura_on = false;
+    change_entity_owner_test_4_procs(aura_on);
 }
 
 TEST(ElementGraph, skin_mesh_using_element_graph_parallel)
