@@ -63,9 +63,17 @@ namespace Details {
 
 /// \brief Logging implementation used by Allocator (see below).
 ///
-/// \warning This is an implementation detail of Allocator, which in
-///   turn is an implementation detail of Teuchos.  DO NOT USE THIS
-///   CLASS DIRECTLY IN YOUR CODE.
+/// \warning This is an implementation detail of Teuchos.  We make no
+///   promises of backwards compatibility for this header file or this
+///   class.  They may change or disappear at any time.
+///
+/// Please refer to
+/// <tt> teuchos/core/test/HashTable/Allocator_atexit.cpp </tt>
+/// for an example of how to register an atexit() hook that reports
+/// current and maximum memory usage at exit from main().  It would
+/// be easy to adapt this example to register an MPI_Finalize() hook,
+/// using the MPI standard idiom of attaching an attribute to
+/// MPI_COMM_SELF.
 class AllocationLogger {
 public:
   /// \brief Type of the size of an allocation or deallocation.
