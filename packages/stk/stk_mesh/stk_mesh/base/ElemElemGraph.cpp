@@ -538,8 +538,21 @@ void ElemElemGraph::add_local_elements_to_connected_list(const stk::mesh::Entity
     }
 }
 
+struct moved_parallel_graph_info {
+
+    moved_parallel_graph_info(int in_proc_to_tell, stk::mesh::EntityId in_elem_id, stk::mesh::EntityId in_moved_elem_id, int in_destination_proc)
+     : proc_to_tell(in_proc_to_tell), elem_id(in_elem_id), moved_elem_id(in_moved_elem_id), destination_proc(in_destination_proc) {};
+
+    int proc_to_tell;
+    stk::mesh::EntityId elem_id;
+    stk::mesh::EntityId moved_elem_id;
+    int destination_proc;
+};
+
 void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &new_parallel_graph_entries)
 {
+    std::vector <moved_parallel_graph_info> moved_graph_info_vector;
+
     stk::CommSparse comm(m_bulk_data.parallel());
     for(int phase=0; phase <2; ++phase) {
         for (size_t i=0; i<elem_proc_pairs_to_move.size(); i++)
@@ -582,6 +595,11 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
                     buff.pack<int>(p_info.m_permutation);
                     buff.pack<bool>(p_info.m_in_part);
                     buff.pack<stk::mesh::EntityId>(p_info.m_chosen_face_id);
+
+                    if (phase == 0 && p_info.m_other_proc != destination_proc)
+                    {
+                        moved_graph_info_vector.push_back(moved_parallel_graph_info(p_info.m_other_proc, connected_global_id, elem_global_id, destination_proc));
+                    }
 
                     if (phase == 1)
                     {
@@ -717,6 +735,49 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
     for (auto iter=iter_begin; iter!=iter_end; ++iter)
     {
         m_parallel_graph_info.insert(std::make_pair(iter->first, iter->second));
+    }
+
+    stk::CommSparse comm2(m_bulk_data.parallel());
+    for(int phase=0; phase <2; ++phase) {
+        for (size_t i=0; i<moved_graph_info_vector.size(); ++i)
+        {
+            moved_parallel_graph_info &info = moved_graph_info_vector[i];
+            stk::CommBuffer &buf = comm2.send_buffer(info.proc_to_tell);
+
+            buf.pack<stk::mesh::EntityId>(info.elem_id);
+            buf.pack<stk::mesh::EntityId>(info.moved_elem_id);
+            buf.pack<int>(info.destination_proc);
+        }
+        if (phase == 0)
+        {
+            comm2.allocate_buffers();
+        }
+        else
+        {
+            comm2.communicate();
+        }
+    }
+
+    for(int p = 0; p < m_bulk_data.parallel_size(); ++p)
+    {
+        stk::CommBuffer & buf = comm2.recv_buffer(p);
+        while(buf.remaining())
+        {
+            stk::mesh::EntityId elem_id, moved_elem_id;
+            int destination_proc;
+            buf.unpack<stk::mesh::EntityId>(elem_id);
+            buf.unpack<stk::mesh::EntityId>(moved_elem_id);
+            buf.unpack<int>(destination_proc);
+
+            stk::mesh::Entity local_elem = m_bulk_data.get_entity(stk::topology::ELEM_RANK, elem_id);
+            impl::LocalId elem_local_id = get_local_element_id(local_elem);
+            std::pair<impl::LocalId, stk::mesh::EntityId> key(elem_local_id, moved_elem_id);
+            auto iter = m_parallel_graph_info.find(key);
+            if (iter != m_parallel_graph_info.end())
+            {
+                iter->second.m_other_proc = destination_proc;
+            }
+        }
     }
 }
 

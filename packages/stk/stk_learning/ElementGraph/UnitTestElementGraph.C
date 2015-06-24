@@ -1345,6 +1345,15 @@ void change_entity_owner_test_4_procs(bool aura_on)
             stk::mesh::EntityId connected_elem_global_id = elem_graph.get_entity_id_of_remote_element(elem_to_move, 0);
             ASSERT_FALSE(elem_graph.is_connected_elem_locally_owned(elem_to_move, 0));
             EXPECT_EQ(1u, connected_elem_global_id);
+
+            stk::mesh::Entity elem_3 = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
+            ASSERT_THROW(elem_graph.get_parallel_edge_info(elem_3, stk::mesh::EntityId(2)), std::logic_error);
+        }
+        else if (proc == 0)
+        {
+            stk::mesh::Entity elem_1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
+            impl::parallel_info &elem_1_to_2_p_info = elem_graph.get_parallel_edge_info(elem_1, stk::mesh::EntityId(2));
+            EXPECT_EQ(2, elem_1_to_2_p_info.m_other_proc);
         }
     }
 }
