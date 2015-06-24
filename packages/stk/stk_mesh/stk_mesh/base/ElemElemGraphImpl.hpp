@@ -33,11 +33,11 @@ struct parallel_info
     int m_other_side_ord;
     int m_permutation;
     bool m_in_part;
-    stk::mesh::EntityId m_chosen_face_id;
+    stk::mesh::EntityId m_chosen_side_id;
 
     parallel_info(int proc, int side_ord, int perm, stk::mesh::EntityId chosen_face_id) :
         m_other_proc(proc), m_other_side_ord(side_ord), m_permutation(perm), m_in_part(true),
-        m_chosen_face_id(chosen_face_id) {}
+        m_chosen_side_id(chosen_face_id) {}
 };
 
 struct ConnectedElementData
@@ -58,7 +58,7 @@ typedef std::vector<ConnectedElementData> ConnectedElementDataVector;
 
 
 NAMED_PAIR( EntitySidePair , stk::mesh::Entity , entity , unsigned , side_id )
-NAMED_PAIR( ProcFaceIdPair , int , proc , stk::mesh::EntityId , face_id )
+NAMED_PAIR( ProcFaceIdPair , int , proc , stk::mesh::EntityId , side_id )
 
 typedef std::multimap<EntitySidePair, ProcFaceIdPair>  ElemSideToProcAndFaceId;
 
@@ -87,14 +87,14 @@ void communicate_killed_entities(stk::mesh::BulkData& bulkData, const std::vecto
 
 void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<graphEdgeProc>& elements_to_comm);
 
-void create_or_delete_shared_face(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
+bool create_or_delete_shared_side(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
         stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, bool create_face, const stk::mesh::PartVector& face_parts,
         std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities,
         size_t &id_counter, stk::mesh::EntityId suggested_local_face_id, stk::mesh::Part& faces_created_during_death);
 
-stk::mesh::Entity get_face_for_element_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity this_elem_entity, int side_id);
+stk::mesh::Entity get_side_for_element(const stk::mesh::BulkData& bulkData, stk::mesh::Entity this_elem_entity, int side_id);
 
-int get_element_face_multiplier();
+int get_element_side_multiplier();
 
 bool is_id_already_in_use_locally(stk::mesh::BulkData& bulkData, stk::mesh::EntityRank rank, stk::mesh::EntityId id);
 
@@ -103,11 +103,11 @@ bool does_side_exist_with_different_permutation(stk::mesh::BulkData& bulkData, s
 
 bool does_element_side_exist(stk::mesh::BulkData& bulkData, stk::mesh::Entity element, stk::mesh::ConnectivityOrdinal side_ordinal);
 
-stk::mesh::Entity connect_face_to_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity element,
+stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity element,
         stk::mesh::EntityId side_global_id, stk::mesh::ConnectivityOrdinal side_ordinal,
         stk::mesh::Permutation side_permutation, const stk::mesh::PartVector& parts);
 
-stk::mesh::EntityId get_face_global_id(const stk::mesh::BulkData &bulkData, const ElemElemGraph& elementGraph, stk::mesh::Entity element1, stk::mesh::Entity element2,
+stk::mesh::EntityId get_side_global_id(const stk::mesh::BulkData &bulkData, const ElemElemGraph& elementGraph, stk::mesh::Entity element1, stk::mesh::Entity element2,
         int element1_side_id);
 
 void filter_for_candidate_elements_to_connect(const stk::mesh::BulkData & mesh,

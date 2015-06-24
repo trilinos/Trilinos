@@ -5057,7 +5057,6 @@ void BulkData::internal_change_entity_parts(
 {
     require_ok_to_modify();
     m_modSummary.track_change_entity_parts(entity, add_parts, remove_parts);
-
     Bucket * const bucket_old = bucket_ptr(entity);
     bool needToChangeParts = bucket_old == NULL
             || !bucket_old->member_all(add_parts)
@@ -6341,7 +6340,7 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
 
     for(size_t i = 0; i < deletedEntities.size(); ++i)
     {
-        ThrowAssertMsg(this->entity_rank(deletedEntities[i]) == stk::topology::FACE_RANK, "ERROR, modification_end_for_face_deletion only handles faces");
+        ThrowAssertMsg(this->entity_rank(deletedEntities[i]) == mesh_meta_data().side_rank(), "ERROR, modification_end_for_face_deletion only handles faces");
     }
 
     ThrowAssertMsg(stk::mesh::impl::check_for_connected_nodes(*this)==0, "BulkData::modification_end ERROR, all entities with rank higher than node are required to have connected nodes.");
@@ -6358,8 +6357,8 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
         {
             for(size_t i = 0; i < deletedEntities.size(); ++i)
             {
-                stk::mesh::Entity face = deletedEntities[i];
-                stk::mesh::EntityKey key = this->entity_key(face);
+                stk::mesh::Entity side = deletedEntities[i];
+                stk::mesh::EntityKey key = this->entity_key(side);
                 const bool is_comm_entity_and_locally_owned = this->m_entity_comm_map.owner_rank(key) == this->parallel_rank();
                 if(is_comm_entity_and_locally_owned)
                 {
@@ -6378,12 +6377,12 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
                     {
                         const int proc = procs[proc_index];
                         stk::CommBuffer & buf = comm.send_buffer(proc);
-                        buf.pack<stk::mesh::EntityKey>(entity_key(face));
+                        buf.pack<stk::mesh::EntityKey>(entity_key(side));
                     }
 
                     if(phase == 1)
                     {
-                        this->entity_comm_map_clear(this->entity_key(face));
+                        this->entity_comm_map_clear(this->entity_key(side));
                     }
                 }
             }
@@ -6398,7 +6397,7 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
             }
         }
 
-        stk::mesh::EntityVector recvdFacesToDelete;
+        stk::mesh::EntityVector recvSidesToDelete;
         for(int p = 0; p < this->parallel_size(); ++p)
         {
             stk::CommBuffer & buf = comm.recv_buffer(p);
@@ -6407,15 +6406,15 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
                 stk::mesh::EntityKey key;
                 buf.unpack<stk::mesh::EntityKey>(key);
                 this->entity_comm_map_clear(key);
-                stk::mesh::Entity face = this->get_entity(key);
-                if(this->is_valid(face))
+                stk::mesh::Entity side = this->get_entity(key);
+                if(this->is_valid(side))
                 {
-                    recvdFacesToDelete.push_back(face);
+                    recvSidesToDelete.push_back(side);
                 }
             }
         }
 
-        stk::mesh::impl::delete_entities_and_upward_relations(*this, recvdFacesToDelete);
+        stk::mesh::impl::delete_entities_and_upward_relations(*this, recvSidesToDelete);
 
         this->update_comm_list_based_on_changes_in_comm_map();
 

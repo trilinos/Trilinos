@@ -528,7 +528,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
         {
             if(this_element < connected_elements[j] && connected_elements[j] >= 0)
             {
-                stk::mesh::EntityId face_global_id = impl::get_element_face_multiplier() * bulkData.identifier(element1) + via_sides[i][j];
+                stk::mesh::EntityId face_global_id = impl::get_element_side_multiplier() * bulkData.identifier(element1) + via_sides[i][j];
                 if ( impl::is_id_already_in_use_locally(bulkData, side_rank, face_global_id) )
                 {
 
@@ -560,12 +560,12 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
                 if(owning_proc == this_proc)
                 {
                     stk::mesh::EntityId id = bulkData.identifier(element1);
-                    face_global_id = impl::get_element_face_multiplier() * id + via_sides[i][j];
+                    face_global_id = impl::get_element_side_multiplier() * id + via_sides[i][j];
                     perm = static_cast<stk::mesh::Permutation>(0);
                 }
                 else
                 {
-                    face_global_id = impl::get_element_face_multiplier() * other_element + other_side;
+                    face_global_id = impl::get_element_side_multiplier() * other_element + other_side;
                     perm = static_cast<stk::mesh::Permutation>(iter->second.m_permutation);
                 }
 
@@ -577,7 +577,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
                 ThrowRequireMsg(!impl::does_side_exist_with_different_permutation(bulkData, element1, side_ord, perm), msg);
                 ThrowRequireMsg(!impl::does_element_side_exist(bulkData, element1, side_ord), msg);
 
-                stk::mesh::Entity face = impl::connect_face_to_element(bulkData, element1, face_global_id, side_ord, perm, parts);
+                stk::mesh::Entity face = impl::connect_side_to_element(bulkData, element1, face_global_id, side_ord, perm, parts);
 
                 shared_modified.push_back(stk::mesh::sharing_info(face, other_proc, owning_proc));
             }
@@ -588,7 +588,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
 
         for(size_t j = 0; j < element_side_pairs.size(); j++)
         {
-            stk::mesh::EntityId face_global_id = impl::get_element_face_multiplier() * bulkData.identifier(element1) + element_side_pairs[j].second;
+            stk::mesh::EntityId face_global_id = impl::get_element_side_multiplier() * bulkData.identifier(element1) + element_side_pairs[j].second;
             stk::mesh::impl::get_or_create_face_at_element_side(bulkData, element1, element_side_pairs[j].second,
                     face_global_id, stk::mesh::PartVector(1,&part));
 
@@ -1067,7 +1067,7 @@ void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph
     stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
     impl::ParallelGraphInfo parallel_graph;
 
-    const std::vector<stk::mesh::EntityId> &suggested_face_id_vector = elem_graph.get_suggested_face_ids();
+    const std::vector<stk::mesh::EntityId> &suggested_face_id_vector = elem_graph.get_suggested_side_ids();
     size_t num_suggested_face_ids_used = 0;
 
     for (size_t i=0; i<elem_proc_pairs_to_move.size(); i++)
@@ -1105,7 +1105,7 @@ void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph
         }
     }
 
-    elem_graph.set_num_face_ids_used(num_suggested_face_ids_used);
+    elem_graph.set_num_side_ids_used(num_suggested_face_ids_used);
 
     bulkData.change_entity_owner(elem_proc_pairs_to_move);
 
@@ -1457,7 +1457,7 @@ TEST(ElementSide, get_or_create_element_side_with_permutation)
         EXPECT_FALSE(impl::does_side_exist_with_different_permutation(bulkData, element1, side_ordinal, side_permutation));
         EXPECT_FALSE(impl::does_element_side_exist(bulkData, element1, side_ordinal));
 
-        impl::connect_face_to_element(bulkData, element1, side_global_id, side_ordinal, side_permutation, face_parts);
+        impl::connect_side_to_element(bulkData, element1, side_global_id, side_ordinal, side_permutation, face_parts);
 
         bulkData.modification_end();
 

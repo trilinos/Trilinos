@@ -55,9 +55,9 @@ public:
 
     size_t num_parallel_edges() const { return m_num_parallel_edges; }
 
-    const std::vector<stk::mesh::EntityId>& get_suggested_face_ids() const;
+    const std::vector<stk::mesh::EntityId>& get_suggested_side_ids() const;
 
-    void set_num_face_ids_used(size_t num_used);
+    void set_num_side_ids_used(size_t num_used);
 
     void add_elements_to_graph(std::vector<stk::mesh::Entity> &elements_to_add);
 
@@ -115,14 +115,15 @@ protected:
     std::vector<impl::LocalId> m_deleted_element_local_id_pool;
     std::vector<bool> m_local_id_in_pool;
     std::vector<stk::topology> m_element_topologies;
-    std::vector<stk::mesh::EntityId> m_suggested_face_ids;
+    std::vector<stk::mesh::EntityId> m_suggested_side_ids;
+    std::vector<int> m_deleted_elem_pool;
     size_t m_num_edges;
     size_t m_num_parallel_edges;
 
     enum ElemGraphLocalId { INVALID_ID = ~0U };
 };
 
-void perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
+bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
         const stk::mesh::PartVector& boundary_mesh_parts);
 
 }} // end stk mesh namespaces
