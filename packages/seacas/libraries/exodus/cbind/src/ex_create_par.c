@@ -251,6 +251,7 @@ int ex_create_par_int (const char *path,
 
   if ((status = nc_create_par (path, mode|pariomode, comm, info, &exoid)) != NC_NOERR) {
     exerrval = status;
+#if !defined(NC_HAS_HDF5)	  
     if (my_mode & EX_NETCDF4) {
       sprintf(errmsg,
 	      "Error: file create failed for %s in NETCDF4 and %s mode.\n\tThis library probably does not support netcdf-4 files.",
@@ -260,6 +261,11 @@ int ex_create_par_int (const char *path,
 	      "Error: file create failed for %s, mode: %s",
 	      path, mode_name);
     }
+#else
+    sprintf(errmsg,
+	    "Error: file create failed for %s, mode: %s",
+	    path, mode_name);
+#endif
     ex_err("ex_create",errmsg,exerrval);
     return (EX_FATAL);
   }

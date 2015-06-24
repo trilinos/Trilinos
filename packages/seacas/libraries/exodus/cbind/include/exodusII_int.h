@@ -42,6 +42,9 @@
 #define EXODUS_II_INT_HDR
 
 #include "netcdf.h"
+#if defined(NC_HAVE_META_H)
+#include "netcdf_meta.h"
+#endif
 
 #ifdef _WIN32
 #define PRId64 "I64d"
