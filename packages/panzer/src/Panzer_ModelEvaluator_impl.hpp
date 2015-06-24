@@ -217,6 +217,16 @@ panzer::ModelEvaluator<Scalar>::get_p_space(int i) const
 }
 
 template<typename Scalar>
+Teuchos::ArrayView<const std::string> 
+panzer::ModelEvaluator<Scalar>::get_g_names(int i) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(!(i>=0 && i<Teuchos::as<int>(responses_.size())),std::runtime_error,
+                             "panzer::ModelEvaluator::get_g_names: Requested response index out of range.");
+
+  return Teuchos::ArrayView<const std::string>(&(responses_[i]->name),1);
+}
+
+template<typename Scalar>
 const std::string & 
 panzer::ModelEvaluator<Scalar>::get_g_name(int i) const
 {
