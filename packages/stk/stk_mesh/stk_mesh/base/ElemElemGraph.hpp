@@ -103,6 +103,9 @@ protected:
                                                      const std::vector<stk::mesh::EntityId> &suggested_face_ids,
                                                      size_t &num_face_ids_used,
                                                      stk::mesh::Part *active_part);
+
+    void unpack_and_store_connected_element(stk::CommBuffer &buf, impl::LocalId recvd_elem_local_id,
+                                                           stk::mesh::EntityId recvd_elem_global_id);
     stk::mesh::BulkData &m_bulk_data;
     impl::ElementGraph m_elem_graph;
     impl::SidesForElementGraph m_via_sides;
