@@ -693,6 +693,52 @@ void ElemElemGraph::unpack_and_store_connected_element(stk::CommBuffer &buf, imp
     m_via_sides[recvd_elem_local_id].push_back(side_from_recvd_elem_to_connected_elem);
 }
 
+void ElemElemGraph::communicate_moved_graph_info(std::vector <moved_parallel_graph_info> &moved_graph_info_vector)
+{
+    stk::CommSparse comm2(m_bulk_data.parallel());
+    for(int phase=0; phase <2; ++phase) {
+        for (size_t i=0; i<moved_graph_info_vector.size(); ++i)
+        {
+            moved_parallel_graph_info &info = moved_graph_info_vector[i];
+            stk::CommBuffer &buf = comm2.send_buffer(info.proc_to_tell);
+
+            buf.pack<stk::mesh::EntityId>(info.elem_id);
+            buf.pack<stk::mesh::EntityId>(info.moved_elem_id);
+            buf.pack<int>(info.destination_proc);
+        }
+        if (phase == 0)
+        {
+            comm2.allocate_buffers();
+        }
+        else
+        {
+            comm2.communicate();
+        }
+    }
+
+    for(int p = 0; p < m_bulk_data.parallel_size(); ++p)
+    {
+        stk::CommBuffer & buf = comm2.recv_buffer(p);
+        while(buf.remaining())
+        {
+            stk::mesh::EntityId elem_id, moved_elem_id;
+            int destination_proc;
+            buf.unpack<stk::mesh::EntityId>(elem_id);
+            buf.unpack<stk::mesh::EntityId>(moved_elem_id);
+            buf.unpack<int>(destination_proc);
+
+            stk::mesh::Entity local_elem = m_bulk_data.get_entity(stk::topology::ELEM_RANK, elem_id);
+            impl::LocalId elem_local_id = get_local_element_id(local_elem);
+            std::pair<impl::LocalId, stk::mesh::EntityId> key(elem_local_id, moved_elem_id);
+            auto iter = m_parallel_graph_info.find(key);
+            if (iter != m_parallel_graph_info.end())
+            {
+                iter->second.m_other_proc = destination_proc;
+            }
+        }
+    }
+}
+
 void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &new_parallel_graph_entries, stk::mesh::Part *active_part)
 {
     std::vector <moved_parallel_graph_info> moved_graph_info_vector;
@@ -825,48 +871,7 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
         m_parallel_graph_info.insert(std::make_pair(iter->first, iter->second));
     }
 
-    stk::CommSparse comm2(m_bulk_data.parallel());
-    for(int phase=0; phase <2; ++phase) {
-        for (size_t i=0; i<moved_graph_info_vector.size(); ++i)
-        {
-            moved_parallel_graph_info &info = moved_graph_info_vector[i];
-            stk::CommBuffer &buf = comm2.send_buffer(info.proc_to_tell);
-
-            buf.pack<stk::mesh::EntityId>(info.elem_id);
-            buf.pack<stk::mesh::EntityId>(info.moved_elem_id);
-            buf.pack<int>(info.destination_proc);
-        }
-        if (phase == 0)
-        {
-            comm2.allocate_buffers();
-        }
-        else
-        {
-            comm2.communicate();
-        }
-    }
-
-    for(int p = 0; p < m_bulk_data.parallel_size(); ++p)
-    {
-        stk::CommBuffer & buf = comm2.recv_buffer(p);
-        while(buf.remaining())
-        {
-            stk::mesh::EntityId elem_id, moved_elem_id;
-            int destination_proc;
-            buf.unpack<stk::mesh::EntityId>(elem_id);
-            buf.unpack<stk::mesh::EntityId>(moved_elem_id);
-            buf.unpack<int>(destination_proc);
-
-            stk::mesh::Entity local_elem = m_bulk_data.get_entity(stk::topology::ELEM_RANK, elem_id);
-            impl::LocalId elem_local_id = get_local_element_id(local_elem);
-            std::pair<impl::LocalId, stk::mesh::EntityId> key(elem_local_id, moved_elem_id);
-            auto iter = m_parallel_graph_info.find(key);
-            if (iter != m_parallel_graph_info.end())
-            {
-                iter->second.m_other_proc = destination_proc;
-            }
-        }
-    }
+    communicate_moved_graph_info(moved_graph_info_vector);
 }
 
 impl::LocalId ElemElemGraph::get_new_local_element_id_from_pool()

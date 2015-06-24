@@ -106,6 +106,9 @@ protected:
 
     void unpack_and_store_connected_element(stk::CommBuffer &buf, impl::LocalId recvd_elem_local_id,
                                                            stk::mesh::EntityId recvd_elem_global_id);
+
+    void communicate_moved_graph_info(std::vector <moved_parallel_graph_info> &moved_graph_info_vector);
+
     stk::mesh::BulkData &m_bulk_data;
     impl::ElementGraph m_elem_graph;
     impl::SidesForElementGraph m_via_sides;
