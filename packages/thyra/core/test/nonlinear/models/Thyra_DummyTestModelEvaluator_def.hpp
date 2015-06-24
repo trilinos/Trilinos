@@ -171,10 +171,10 @@ DummyTestModelEvaluator<Scalar>::get_g_space(int j) const
 
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::ArrayView<std::string> >
+Teuchos::ArrayView<const std::string>
 DummyTestModelEvaluator<Scalar>::get_g_names(int j) const
 {
-  return Teuchos::null;
+  return g_names_;
 }
 
 

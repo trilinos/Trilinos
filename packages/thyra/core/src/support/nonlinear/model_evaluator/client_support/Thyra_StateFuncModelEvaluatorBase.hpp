@@ -72,7 +72,7 @@ public:
   /** \brief Throws exception. */
   RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief Throws exception. */
-  RCP<const Teuchos::ArrayView<std::string> > get_g_names(int j) const;
+  Teuchos::ArrayView<const std::string> get_g_names(int j) const;
   /** \brief Returns this->createInArgs(). */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief Returns this->createInArgs(). */
@@ -144,7 +144,7 @@ StateFuncModelEvaluatorBase<Scalar>::get_g_space(int j) const
 
 
 template<class Scalar>
-RCP<const Teuchos::ArrayView<std::string> >
+Teuchos::ArrayView<const std::string>
 StateFuncModelEvaluatorBase<Scalar>::get_g_names(int j) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -152,7 +152,7 @@ StateFuncModelEvaluatorBase<Scalar>::get_g_names(int j) const
     ,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_g_names(j): "
     "Error, this function was not overridden in *this = \'"<<this->description()<<"\'!"
     );
-  return Teuchos::null; // Should never be called!
+  return Teuchos::ArrayView<const std::string>(Teuchos::null); // Should never be called!
 }
 
 

@@ -234,9 +234,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, setArgs, Scalar )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Responses, get_g_names, Scalar )
 {
-  typedef ModelEvaluatorBase MEB;
   const RCP<const ModelEvaluator<Scalar> > model = getXGTestModel<Scalar>(2, 1);
-  TEST_ASSERT( model->get_g_names(0) == Teuchos::null);
+  TEST_ASSERT( model->get_g_names(0).size() == 0);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, setArgs )

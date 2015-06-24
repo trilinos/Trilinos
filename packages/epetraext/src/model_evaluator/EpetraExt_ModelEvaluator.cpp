@@ -939,7 +939,7 @@ Teuchos::RCP<const Epetra_Map>
 ModelEvaluator::get_g_map(int j) const
 { return Teuchos::null; }
 
-Teuchos::RCP<const Teuchos::ArrayView<std::string> >
+Teuchos::ArrayView<const std::string>
 ModelEvaluator::get_g_names(int j) const
 { return Teuchos::null; }
 

@@ -255,7 +255,7 @@ public:
   /** \brief . */
   RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief . */
-  RCP<const ArrayView<std::string> > get_g_names(int j) const;
+  ArrayView<const std::string> get_g_names(int j) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
@@ -563,7 +563,7 @@ DefaultMultiPeriodModelEvaluator<Scalar>::get_g_space(int j) const
 
 
 template<class Scalar>
-RCP<const ArrayView<std::string> >
+ArrayView<const std::string>
 DefaultMultiPeriodModelEvaluator<Scalar>::get_g_names(int j) const
 {
   return  periodModel_->get_g_names(j);

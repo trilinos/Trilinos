@@ -454,7 +454,7 @@ EpetraModelEvaluator::get_g_space(int j) const
 }
 
 
-RCP<const Teuchos::ArrayView<std::string> >
+Teuchos::ArrayView<const std::string>
 EpetraModelEvaluator::get_g_names(int j) const
 {
 #ifdef TEUCHOS_DEBUG

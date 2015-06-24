@@ -104,7 +104,7 @@ public:
   /** \brief . */
   RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief . */
-  RCP<const Teuchos::ArrayView<std::string> > get_g_names(int j) const;
+  Teuchos::ArrayView<const std::string> get_g_names(int j) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
@@ -148,6 +148,7 @@ private: // data members
   Array<RCP<const VectorSpaceBase<Scalar> > > p_space_;
   RCP<const VectorSpaceBase<Scalar> > f_space_;
   Array<RCP<const VectorSpaceBase<Scalar> > > g_space_;
+  Array<std::string> g_names_;
   RCP<const LinearOpWithSolveFactoryBase<Scalar> > W_factory_;
   ModelEvaluatorBase::InArgs<Scalar> nominalValues_;
   RCP<VectorBase<Scalar> > x0_;

@@ -1170,7 +1170,7 @@ public:
    * The default implementation return returnVal==Teuchos::null which means
    * by default, responses have no names associated with them.
    */
-  virtual Teuchos::RCP<const Teuchos::ArrayView<std::string> > get_g_names(int j) const;
+  virtual Teuchos::ArrayView<const std::string> get_g_names(int j) const;
 
   //@}
 
