@@ -62,10 +62,8 @@ SET(PyTrilinos_VERSION 12.1 (Dev))
 SET(PyTrilinos_PACKAGES "")
 SET(PyTrilinos_MODULES  "")
 
-IF(PyTrilinos_ENABLE_Teuchos)
-  APPEND_SET(PyTrilinos_PACKAGES Teuchos)
-  APPEND_SET(PyTrilinos_MODULES  Teuchos)
-ENDIF(PyTrilinos_ENABLE_Teuchos)
+APPEND_SET(PyTrilinos_PACKAGES Teuchos)
+APPEND_SET(PyTrilinos_MODULES  Teuchos)
 
 IF(PyTrilinos_ENABLE_Epetra)
   APPEND_SET(PyTrilinos_PACKAGES Epetra)
@@ -81,6 +79,9 @@ IF(PyTrilinos_ENABLE_Tpetra)
   APPEND_SET(PyTrilinos_PACKAGES Tpetra)
   APPEND_SET(PyTrilinos_MODULES  Tpetra)
 ENDIF(PyTrilinos_ENABLE_Tpetra)
+
+APPEND_SET(PyTrilinos_PACKAGES Domi)
+APPEND_SET(PyTrilinos_MODULES  Domi)
 
 IF(PyTrilinos_ENABLE_EpetraExt)
   APPEND_SET(PyTrilinos_PACKAGES EpetraExt)
@@ -183,11 +184,6 @@ IF(NOX_ENABLE_LOCA)
     APPEND_SET(PyTrilinos_MODULES  LOCA.Epetra.Interface)
   ENDIF(NOX_ENABLE_Epetra)
 ENDIF(NOX_ENABLE_LOCA)
-
-IF(PyTrilinos_ENABLE_Domi)
-  APPEND_SET(PyTrilinos_PACKAGES Domi)
-  APPEND_SET(PyTrilinos_MODULES  Domi)
-ENDIF(PyTrilinos_ENABLE_Domi)
 
 # Python interpreter, library, and header files are required.
 FIND_PACKAGE(PythonInterp 2.5 REQUIRED)
