@@ -794,18 +794,15 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
 
             if (phase == 1)
             {
-                for (size_t j=0; j<m_elem_graph.size(); j++)
+                for (size_t j=0; j<connected_elements.size(); j++)
                 {
-                    if (j == static_cast <size_t> (elem_local_id))
+                    if (connected_elements[j]>0)
                     {
-                        continue;
-                    }
-                    std::vector <impl::LocalId> &connected_elements = m_elem_graph[j];
-                    auto iter = std::find(connected_elements.begin(), connected_elements.end(), elem_local_id);
-                    if (iter != connected_elements.end())
-                    {
-                        int index = iter - connected_elements.begin();
-                        connected_elements[index] = -elem_global_id;
+                        std::vector <impl::LocalId> &elements_connected = m_elem_graph[connected_elements[j]];
+                        auto iter = std::find(elements_connected.begin(), elements_connected.end(), elem_local_id);
+                        ThrowRequireMsg(iter != elements_connected.end(), "Program error. Please contact sierra-help@sandia.gov for support.");
+                        int index = iter - elements_connected.begin();
+                        elements_connected[index] = -elem_global_id;
                     }
                 }
                 m_elem_graph[elem_local_id].clear();
