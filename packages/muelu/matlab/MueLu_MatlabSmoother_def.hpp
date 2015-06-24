@@ -57,7 +57,8 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MatlabSmoother(const Teuchos::ParameterList& paramList)
   {
-    SetParameterList(paramList);  }
+    SetParameterList(paramList);  
+  }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetParameterList(const Teuchos::ParameterList& paramList) {
@@ -76,8 +77,8 @@ namespace MueLu {
     ParameterList& pL = const_cast<ParameterList&>(this->GetParameterList());
     const std::string str = pL.get<std::string>("Needs");
     TokenizeStringAndStripWhiteSpace(str,needsSetup_);
-    for(size_t i=0; i<needsSetup_.size(); i++)
-      this->Input(currentLevel,needsSetup_[i]);
+    for(size_t i = 0; i < needsSetup_.size(); i++)
+      this->Input(currentLevel, needsSetup_[i]);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -93,31 +94,31 @@ namespace MueLu {
     InputArgs.push_back(rcp(new MuemexData<RCP<Matrix> >(A_)));
 
     // Additional Needs
-    for(size_t i=0; needsSetup_.size(); i++) {
-      if(needsSetup_[i] == "P" || needsSetup_[i] == "R" || needsSetup_[i]=="Ptent") {
-	RCP<Matrix> mydata = Factory::Get<RCP<Matrix> >(currentLevel,needsSetup_[i]);
+    for(size_t i = 0; needsSetup_.size(); i++) {
+      if(needsSetup_[i] == "P" || needsSetup_[i] == "R" || needsSetup_[i] == "Ptent") {
+	RCP<Matrix> mydata = Factory::Get<RCP<Matrix> >(currentLevel, needsSetup_[i]);
 	InputArgs.push_back(rcp(new MuemexData<RCP<Matrix> >(mydata)));
       }
 
       if(needsSetup_[i] == "Nullspace" || needsSetup_[i] == "Coordinates") {
-	RCP<MultiVector> mydata = Factory::Get<RCP<MultiVector> >(currentLevel,needsSetup_[i]);
+	RCP<MultiVector> mydata = Factory::Get<RCP<MultiVector> >(currentLevel, needsSetup_[i]);
 	InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> >(mydata)));
       }
 
       if(needsSetup_[i] == "Aggregates") {
-	//	RCP<Aggregates> mydata =Factory::Get<RCP<Aggregates> >(currentLevel,needsSetup_[i]);
-	//	InputArgs.push_back(rcp(new MuemexData<RCP<Aggregates> >(mydata)));
+	RCP<Aggregates> mydata = Factory::Get<RCP<Aggregates> >(currentLevel, needsSetup_[i]);
+	InputArgs.push_back(rcp(new MuemexData<RCP<Aggregates> >(mydata)));
       }
 
       if(needsSetup_[i] == "UnAmalgamationInfo") {
-	//	RCP<AmalgamationInfo> mydata=Factory::Get<RCP<AmalgamationInfo> >(currentLevel,needsSetup_[i]);
-	//	InputArgs.push_back(rcp(new MuemexData<RCP<AmalgamationInfo> >(mydata)));
+	RCP<AmalgamationInfo> mydata = Factory::Get<RCP<AmalgamationInfo> >(currentLevel, needsSetup_[i]);
+	InputArgs.push_back(rcp(new MuemexData<RCP<AmalgamationInfo> >(mydata)));
       }
     }
 
     // Call mex function
     if(!setupFunction_.length()) throw std::runtime_error("Invalid matlab function name");
-    solveData_= callMatlab(setupFunction_,solveDataSize_,InputArgs);
+    solveData_= callMatlab(setupFunction_, solveDataSize_, InputArgs);
    
 
     this->GetOStream(Statistics0) << description() << std::endl;
@@ -134,15 +135,15 @@ namespace MueLu {
     // Push on LHS & RHS
     Teuchos::RCP<MultiVector> Xrcp(&X,false);
     Teuchos::RCP<MultiVector> Brcp(const_cast<MultiVector*>(&X),false);
-    InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> >(Xrcp)));
-    InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> > (Brcp)));
+    InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector>>(Xrcp)));
+    InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector>>(Brcp)));
 
-    for(size_t i=0; solveData_.size(); i++)
+    for(size_t i = 0; solveData_.size(); i++)
       InputArgs.push_back(solveData_[i]);
 
 
     if(!solveFunction_.length()) throw std::runtime_error("Invalid matlab function name");
-    std::vector<Teuchos::RCP<MuemexArg> > mexOutput = callMatlab(solveFunction_,1,InputArgs);
+    std::vector<Teuchos::RCP<MuemexArg> > mexOutput = callMatlab(solveFunction_, 1, InputArgs);
     RCP<MuemexData<RCP<MultiVector> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<MultiVector> > >(mexOutput[0]);
     X = *(mydata->getData());
   }

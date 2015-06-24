@@ -81,7 +81,7 @@ namespace MueLu {
     const std::string str = pL.get<std::string>("Needs");
 
     // Tokenize the strings
-    TokenizeStringAndStripWhiteSpace(str, needs_);
+    TokenizeStringAndStripWhiteSpace(str, needs_, " ,;");
 
     // Declare inputs
     for(size_t i = 0; i < needs_.size(); i++)
@@ -129,14 +129,12 @@ namespace MueLu {
     // Determine output
     const std::string str_prov = pL.get<std::string>("Provides");
     std::vector<std::string> provides;
-    TokenizeStringAndStripWhiteSpace(str_prov,provides);
+    TokenizeStringAndStripWhiteSpace(str_prov, provides, " ,;");
 
-   
     // Call mex function
     std::string matlabFunction = pL.get<std::string>("Function");
     if(!matlabFunction.length()) throw std::runtime_error("Invalid matlab function name");
     std::vector<Teuchos::RCP<MuemexArg> > mexOutput = callMatlab(matlabFunction,provides.size(),InputArgs);
-
 
     // Set output
     if(mexOutput.size()!=provides.size()) throw std::runtime_error("Invalid matlab output");

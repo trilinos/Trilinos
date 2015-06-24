@@ -1,0 +1,21 @@
+<!--MueLu parameters to run Jacobi smoother/coarse solver test-->
+<!--These parameters tell MueLu to do exactly the same thing-->
+<!--as the matlab version, so that results can be compared-->
+<ParameterList name="MueLu">
+  <ParameterList name="Factories">
+    <ParameterList name="myJacobiSmoother">
+      <!--This taken from page 37 of MueLu tutorial pdf-->
+      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+      <Parameter name="type" type="string" value="RELAXATION"/>
+      <Parameter name="relaxation: type" type="string" value="Jacobi"/>
+      <!--Do 5 iterations when smoothing-->
+      <Parameter name="relaxation: sweeps" type="int" value="5"/>
+      <Parameter name="relaxation: damping factor" type="double" value="0.9"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Hierarchy">
+    <ParameterList name="level 1">
+      <Parameter name="P" type="string" value="myMatlabTwoLevelFactory"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

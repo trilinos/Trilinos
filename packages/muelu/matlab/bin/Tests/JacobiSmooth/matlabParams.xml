@@ -1,0 +1,20 @@
+<!--MueLu parameters to run Jacobi smoother test-->
+<!--These parameters tell MueLu to use a MATLAB function as smoother-->
+<ParameterList name="MueLu">
+  <ParameterList name="Factories">
+    <ParameterList name="myMatlabSmoother">
+      <Parameter name="factory" type="string" value="MatlabSmoother"/>
+      <Parameter name="Provides" type="string" value="P"/>
+      <Parameter name="Needs Fine" type="string" value="A, Aggregates"/>
+      <Parameter name="Needs Coarse" type="string" value=""/>
+      <Parameter name="Setup Function" type="string" value="getDiag"/>
+      <Parameter name="Solve Function" type="string" value="jacobi"/>
+      <Parameter name="Number of Solver Args", type="int", value="4"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Hierarchy">
+    <ParameterList name="level 1">
+      <Parameter name="P" type="string" value="myMatlabTwoLevelFactory"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

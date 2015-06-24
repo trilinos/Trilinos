@@ -442,7 +442,7 @@
     <parameter>
       <name>aggregation: output filename</name>
       <type>string</type>
-      <default>AggViz.vtp</default>
+      <default>""</default>
       <description>Filename to write VTK visualization data to.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
@@ -456,10 +456,18 @@
     </parameter>
 
     <parameter>
-      <name>aggregation: iter</name>
+      <name>aggregation: output file: iter</name>
       <type>int</type>
       <default>0</default>
       <description>Iteration for non-linear problems.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: output file: agg style</name>
+      <type>string</type>
+      <default>Point Cloud</default>
+      <description>Style of aggregate visualization.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 

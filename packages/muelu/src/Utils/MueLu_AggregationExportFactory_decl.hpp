@@ -111,8 +111,29 @@ namespace MueLu {
   private:
 
     std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
-
   }; // class AggregationExportFactory
+
+  typedef struct
+  {
+    int v1;
+    int v2;
+    int v3; 
+  } Triangle_;
+  class vec3_
+  {
+    public:
+      vec3_(double xin, double yin, double zin) : x(xin), y(yin), z(zin) {}
+      ~vec3_() {}
+      double x;
+      double y;
+      double z;
+  };
+  vec3_ crossProduct_(vec3_ v1, vec3_ v2);
+  double dotProduct_(vec3_ v1, vec3_ v2);
+  bool isInFront_(vec3_ point, vec3_ inPlane, vec3_ n);
+  double magnitude_(vec3_ vec);
+  double distance_(vec3_ p1, vec3_ p2);
+  vec3_ vecSubtract_(vec3_ v1, vec3_ v2);
 
 } // namespace MueLu
 

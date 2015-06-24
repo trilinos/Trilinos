@@ -53,6 +53,9 @@
 #include "MueLu_TwoLevelMatlabFactory_decl.hpp"
 #include "MueLu_MatlabUtils_decl.hpp"
 
+#include <iostream>
+
+
 #ifdef HAVE_MUELU_MATLAB
 #include "mex.h"
 
@@ -76,29 +79,31 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void TwoLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+    std::cout << "Just entered DeclareInput.\n";
     const Teuchos::ParameterList& pL = GetParameterList();
-
+    std::cout << "just called GetParameterList.\n";
     // Get needs strings
     const std::string str_nf = pL.get<std::string>("Needs Fine");
     const std::string str_nc = pL.get<std::string>("Needs Coarse");
-
+    std::cout << "Just grabbed needs parameters from TPL.\n";
     // Tokenize the strings
-    printf("str_nf = %s\n",str_nf.c_str());
-    TokenizeStringAndStripWhiteSpace(str_nf,needsFine_,",");
-    TokenizeStringAndStripWhiteSpace(str_nc,needsCoarse_,",");
-
+    TokenizeStringAndStripWhiteSpace(str_nf, needsFine_, " ,;");
+    TokenizeStringAndStripWhiteSpace(str_nc, needsCoarse_, " ,;");
+    std::cout << "Just tokenized the strings.\n";
     // Declare inputs
-    for(size_t i = 0; i < needsFine_.size(); i++) {
-          printf("needsFine_[%d] = %s\n",(int)i,needsFine_[i].c_str());
-          Input(fineLevel, needsFine_[i]);
+    for(auto fineNeed : needsFine_)
+    {
+      std::cout << "Inputting " << fineNeed << " from fine level.\n";
+      Input(fineLevel, fineNeed);
     }
 
-    for(size_t i = 0; i < needsCoarse_.size(); i++) {
-          printf("needsCoarse_[%d] = %s\n",(int)i,needsCoarse_[i].c_str());
-      Input(coarseLevel, needsCoarse_[i]);
-  }
+    for(auto coarseNeed : needsCoarse_)
+    {
+      std::cout << "Inputting " << coarseNeed << " from the coarse level.\n";
+      Input(coarseLevel, coarseNeed);
+    }
 
-    hasDeclaredInput_=true;
+    hasDeclaredInput_ = true;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -106,16 +111,17 @@ namespace MueLu {
     const Teuchos::ParameterList& pL = GetParameterList();
     using Teuchos::rcp;
     using Teuchos::RCP;
+          std::cout << "2LevelMatlabFactory: Build Called."<<std::endl;
 
     /* NOTE: We need types to call Get functions.  For the moment, I'm just going to infer types from names.
-       We'll need to replace this wby modifying the needs list with strings that define types and adding some kind of lookup function instead */
+       We'll need to replace this by modifying the needs list with strings that define types and adding some kind of lookup function instead */
 
     // NOTE: mexOutput[0] is the "Provides."  Might want to modify to allow for additional outputs
     std::vector<RCP<MuemexArg> > InputArgs;
 
     // Fine needs
     for(size_t i = 0; needsFine_.size(); i++) {
-      if(needsFine_[i] == "A" || needsFine_[i] == "P" || needsFine_[i] == "R" || needsFine_[i]=="Ptent") {
+      if(needsFine_[i] == "A" || needsFine_[i] == "P" || needsFine_[i] == "R" || needsFine_[i] == "Ptent") {
 	RCP<Matrix> mydata = Get<RCP<Matrix> >(fineLevel, needsFine_[i]);
 	InputArgs.push_back(rcp(new MuemexData<RCP<Matrix> >(mydata)));
       }
@@ -126,6 +132,7 @@ namespace MueLu {
       }
 
       if(needsFine_[i] == "Aggregates") {
+        std::cout << "Calling Get on the factory manager for aggregates."<<std::endl;
 	RCP<Aggregates> mydata = Get<RCP<Aggregates>> (fineLevel, needsFine_[i]);
 	InputArgs.push_back(rcp(new MuemexData<RCP<Aggregates>>(mydata)));
       }
@@ -162,7 +169,7 @@ namespace MueLu {
     // Determine output
     const std::string str_prov = pL.get<std::string>("Provides");
     std::vector<std::string> provides;
-    TokenizeStringAndStripWhiteSpace(str_prov,provides);
+    TokenizeStringAndStripWhiteSpace(str_prov, provides, " ,;");
 
    
     // Call mex function
