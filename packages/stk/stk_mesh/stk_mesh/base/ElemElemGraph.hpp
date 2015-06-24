@@ -69,7 +69,7 @@ public:
 
     void change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &parallel_graph_info, stk::mesh::Part *active_part=NULL);
 
-    impl::LocalId get_local_element_id(stk::mesh::Entity local_element) const;
+    impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
 
 protected:
     void fill_graph();
@@ -114,7 +114,7 @@ protected:
     impl::SidesForElementGraph m_via_sides;
     impl::ParallelGraphInfo m_parallel_graph_info;
     stk::mesh::EntityVector m_local_id_to_element_entity;
-    std::vector<unsigned> m_entity_to_local_id;
+    std::vector<impl::LocalId> m_entity_to_local_id;
     std::vector<impl::LocalId> m_deleted_element_local_id_pool;
     std::vector<bool> m_local_id_in_pool;
     std::vector<stk::topology> m_element_topologies;
@@ -123,7 +123,7 @@ protected:
     size_t m_num_edges;
     size_t m_num_parallel_edges;
 
-    enum ElemGraphLocalId { INVALID_ID = ~0U };
+    static const impl::LocalId INVALID_LOCAL_ID;
 };
 
 bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,

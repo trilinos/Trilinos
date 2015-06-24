@@ -17,6 +17,7 @@
 
 namespace stk { namespace mesh {
 
+const impl::LocalId ElemElemGraph::INVALID_LOCAL_ID = std::numeric_limits<impl::LocalId>::max();
 
 ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData) : m_bulk_data(bulkData)
 {
@@ -163,11 +164,14 @@ impl::parallel_info& ElemElemGraph::get_parallel_edge_info(stk::mesh::Entity ele
     return iter->second;
 }
 
-impl::LocalId ElemElemGraph::get_local_element_id(stk::mesh::Entity local_element) const
+impl::LocalId ElemElemGraph::get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id) const
 {
     ThrowRequireMsg(m_entity_to_local_id.size() > local_element.local_offset(),"Program error. Contact sierra-help@sandia.gov for support.");
     impl::LocalId local_id = m_entity_to_local_id[local_element.local_offset()];
-    ThrowRequireMsg(local_id != std::numeric_limits<impl::LocalId>::max(), "Program error. Contact sierra-help@sandia.gov for support.");
+    if (require_valid_id)
+    {
+        ThrowRequireMsg(local_id != INVALID_LOCAL_ID, "Program error. Contact sierra-help@sandia.gov for support.");
+    }
     return local_id;
 }
 
@@ -180,7 +184,7 @@ int ElemElemGraph::size_data_members()
     m_elem_graph.resize(numElems);
     m_via_sides.resize(numElems);
     m_local_id_to_element_entity.resize(numElems, Entity());
-    m_entity_to_local_id.resize(m_bulk_data.m_entity_keys.size(), ElemGraphLocalId::INVALID_ID);
+    m_entity_to_local_id.resize(m_bulk_data.m_entity_keys.size(), INVALID_LOCAL_ID);
     m_element_topologies.resize(numElems);
     m_num_edges = 0;
     m_num_parallel_edges = 0;
@@ -194,7 +198,7 @@ void ElemElemGraph::ensure_space_in_entity_to_local_id(size_t max_index)
 
     if (m_elem_graph.size() < needed)
     {
-        m_entity_to_local_id.resize(needed, ElemGraphLocalId::INVALID_ID);
+        m_entity_to_local_id.resize(needed, INVALID_LOCAL_ID);
     }
 }
 
@@ -580,8 +584,8 @@ void ElemElemGraph::add_local_elements_to_connected_list(const stk::mesh::Entity
         const stk::mesh::Entity* connectedElemNodes = m_bulk_data.begin_nodes(connectedElem);
 
         elemData.m_procId = m_bulk_data.parallel_rank();
-        elemData.m_elementId = get_local_element_id(connectedElem);
-        if (elemData.m_elementId == ElemGraphLocalId::INVALID_ID)
+        elemData.m_elementId = get_local_element_id(connectedElem, false);
+        if (elemData.m_elementId == INVALID_LOCAL_ID)
         {
             continue;
         }
@@ -898,9 +902,14 @@ impl::LocalId ElemElemGraph::get_new_local_element_id_from_pool()
 
 bool ElemElemGraph::is_valid_graph_element(stk::mesh::Entity local_element)
 {
-    impl::LocalId max_elem_id = static_cast<impl::LocalId>(m_elem_graph.size());
-    impl::LocalId elem_id = get_local_element_id(local_element);
-    return (elem_id >= 0 && elem_id < max_elem_id && !m_local_id_in_pool[elem_id]);
+    bool value = false;
+    if (m_bulk_data.is_valid(local_element))
+    {
+        impl::LocalId max_elem_id = static_cast<impl::LocalId>(m_elem_graph.size());
+        impl::LocalId elem_id = get_local_element_id(local_element, false);
+        value = elem_id >= 0 && elem_id < max_elem_id && !m_local_id_in_pool[elem_id];
+    }
+    return value;
 }
 
 void ElemElemGraph::pack_deleted_element_comm(stk::CommSparse &comm,
@@ -993,7 +1002,7 @@ void ElemElemGraph::delete_elements_from_graph(std::vector<stk::mesh::Entity> &e
             m_elem_graph[elem_to_delete_id].clear();
             m_via_sides[elem_to_delete_id].clear();
             m_element_topologies[elem_to_delete_id] = stk::topology::INVALID_TOPOLOGY;
-            m_entity_to_local_id[elem_to_delete.local_offset()] = ElemGraphLocalId::INVALID_ID;
+            m_entity_to_local_id[elem_to_delete.local_offset()] = INVALID_LOCAL_ID;
             m_local_id_to_element_entity[elem_to_delete_id] = stk::mesh::Entity::InvalidEntity;
         }
         else

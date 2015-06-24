@@ -61,6 +61,15 @@ public:
         }
         return side;
     }
+
+    int check_remote_connectivity(stk::mesh::Entity elem, stk::mesh::EntityId other_elem_id)
+    {
+        int side=-1;
+        if (is_valid_graph_element(elem)) {
+            side = get_side_from_element1_to_remote_element2(elem, other_elem_id);
+        }
+        return side;
+    }
 };
 
 class BulkDataElementGraphTester : public stk::mesh::BulkData
@@ -211,6 +220,7 @@ TEST(ElementGraph, add_elements_to_graph_serial)
         elem_graph.add_elements_to_graph(elements_to_add);
 
         EXPECT_EQ(4u, elem_graph.size());
+        EXPECT_EQ(6u, elem_graph.num_edges());
 
         EXPECT_EQ(5, elem_graph.check_local_connectivity(elem1, elem2));
         EXPECT_EQ(4, elem_graph.check_local_connectivity(elem2, elem1));
@@ -220,6 +230,92 @@ TEST(ElementGraph, add_elements_to_graph_serial)
         EXPECT_EQ(4, elem_graph.check_local_connectivity(elem4, elem3));
         EXPECT_EQ(-1, elem_graph.check_local_connectivity(elem1, elem3));
         EXPECT_EQ(-1, elem_graph.check_local_connectivity(elem2, elem4));
+    }
+}
+
+TEST(ElementGraph, DISABLED_add_elements_to_graph_parallel)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int p_rank = stk::parallel_machine_rank(comm);
+
+    std::vector<size_t> mem_usage;
+
+    if(stk::parallel_machine_size(comm) == 2)
+    {
+        stk::mesh::MetaData meta;
+        stk::mesh::BulkData bulkData(meta, comm);
+
+        ElemElemGraphTester elem_graph(bulkData);
+
+        EXPECT_EQ(0u, elem_graph.size());
+
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+
+        std::vector<unsigned> counts;
+        stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
+        int numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
+        EXPECT_EQ(2, numLocallyOwnedElems);
+
+        stk::mesh::Entity elem1 = stk::mesh::Entity();
+        stk::mesh::Entity elem2 = stk::mesh::Entity();
+        stk::mesh::Entity elem3 = stk::mesh::Entity();
+        stk::mesh::Entity elem4 = stk::mesh::Entity();
+
+        stk::mesh::EntityVector elements_to_add;
+
+        if (p_rank == 0)
+        {
+            elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
+            elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
+
+            elements_to_add.push_back(elem1);
+            elements_to_add.push_back(elem2);
+        }
+        else
+        {
+            elem3 = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
+            elem4 = bulkData.get_entity(stk::topology::ELEM_RANK, 4);
+
+            elements_to_add.push_back(elem3);
+            elements_to_add.push_back(elem4);
+        }
+
+        if (p_rank == 0)
+        {
+            EXPECT_TRUE(bulkData.is_valid(elem1));
+            EXPECT_EQ(0, bulkData.parallel_owner_rank(elem1));
+            EXPECT_TRUE(bulkData.is_valid(elem2));
+            EXPECT_EQ(0, bulkData.parallel_owner_rank(elem2));
+        }
+        else
+        {
+            EXPECT_TRUE(bulkData.is_valid(elem3));
+            EXPECT_EQ(1, bulkData.parallel_owner_rank(elem3));
+            EXPECT_TRUE(bulkData.is_valid(elem4));
+            EXPECT_EQ(1, bulkData.parallel_owner_rank(elem4));
+        }
+
+        elem_graph.add_elements_to_graph(elements_to_add);
+
+        EXPECT_EQ(2u, elem_graph.size());
+        EXPECT_EQ(3u, elem_graph.num_edges());
+
+        if (p_rank ==0)
+        {
+            const stk::mesh::EntityId elem3_global_id = 3;
+            EXPECT_EQ(5, elem_graph.check_local_connectivity(elem1, elem2));
+            EXPECT_EQ(4, elem_graph.check_local_connectivity(elem2, elem1));
+            EXPECT_EQ(5, elem_graph.check_remote_connectivity(elem2, elem3_global_id));
+            EXPECT_EQ(-1, elem_graph.check_local_connectivity(elem1, elem3));
+        }
+        else
+        {
+            const stk::mesh::EntityId elem2_global_id = 2;
+            EXPECT_EQ(4, elem_graph.check_remote_connectivity(elem3, elem2_global_id));
+            EXPECT_EQ(5, elem_graph.check_local_connectivity(elem3, elem4));
+            EXPECT_EQ(4, elem_graph.check_local_connectivity(elem4, elem3));
+            EXPECT_EQ(-1, elem_graph.check_local_connectivity(elem2, elem4));
+        }
     }
 }
 
@@ -247,6 +343,7 @@ TEST(ElementGraph, delete_elements_from_graph_serial)
         ElemElemGraphTester elem_graph(bulkData);
 
         EXPECT_EQ(4u, elem_graph.size());
+        EXPECT_EQ(6u, elem_graph.num_edges());
 
         EXPECT_EQ(5, elem_graph.check_local_connectivity(elem1, elem2));
         EXPECT_EQ(4, elem_graph.check_local_connectivity(elem2, elem1));
@@ -324,6 +421,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         elem_graph.add_elements_to_graph(elements_to_add);
 
         EXPECT_EQ(4u, elem_graph.size());
+        EXPECT_EQ(6u, elem_graph.num_edges());
 
         EXPECT_EQ(5, elem_graph.check_local_connectivity(elem1, elem2));
         EXPECT_EQ(4, elem_graph.check_local_connectivity(elem2, elem1));
@@ -359,6 +457,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         elem_graph.add_elements_to_graph(elements_to_add);
 
         EXPECT_EQ(4u, elem_graph.size());
+        EXPECT_EQ(6u, elem_graph.num_edges());
 
         EXPECT_EQ(5, elem_graph.check_local_connectivity(elem1, elem2));
         EXPECT_EQ(4, elem_graph.check_local_connectivity(elem2, elem1));
@@ -1264,6 +1363,8 @@ TEST(ElementGraph, create_element_graph_parallel)
         int side_id = -1;
         int left_side_id = 4;
         int right_side_id = 5;
+
+        EXPECT_EQ(2u, elem_graph.size());
 
         if (stk::parallel_machine_rank(comm) == 0)
         {
