@@ -147,9 +147,9 @@ int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayVie
       MT mydist = mzero;
       LO nn = cols[j] / NumEqns_;
       if(cols[j] >=(LO)N) continue; // Check for off-proc entries
-      if(!xvals.is_null()) mydist += square(x0 - xvals[nn]);
-      if(!yvals.is_null()) mydist += square(y0 - yvals[nn]);
-      if(!zvals.is_null()) mydist += square(z0 - zvals[nn]);
+      if(!xvals.is_null()) mydist += square<Scalar>(x0 - xvals[nn]);
+      if(!yvals.is_null()) mydist += square<Scalar>(y0 - yvals[nn]);
+      if(!zvals.is_null()) mydist += square<Scalar>(z0 - zvals[nn]);
       dist[neighbor_len] = Teuchos::ScalarTraits<MT>::squareroot(mydist);
       indices[neighbor_len]=cols[j];
       neighbor_len++;
@@ -211,9 +211,9 @@ void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns,
       if(cols[i] >=(LO)N) continue; // Check for off-proc entries
       LO nn = cols[i] / NumEqns;
       if(blockIndices[nn]==LineID) neighbors_in_line++;
-      if(!xvals.is_null()) mydist += square(x0 - xvals[nn]);
-      if(!yvals.is_null()) mydist += square(y0 - yvals[nn]);
-      if(!zvals.is_null()) mydist += square(z0 - zvals[nn]);
+      if(!xvals.is_null()) mydist += square<Scalar>(x0 - xvals[nn]);
+      if(!yvals.is_null()) mydist += square<Scalar>(y0 - yvals[nn]);
+      if(!zvals.is_null()) mydist += square<Scalar>(z0 - zvals[nn]);
       dist[neighbor_len] = Teuchos::ScalarTraits<MT>::squareroot(mydist);
       indices[neighbor_len]=cols[i];
       neighbor_len++;
@@ -249,8 +249,8 @@ void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns,
 
 }// namespace Ifpack2
 
-#define IFPACK2_LINEPARTITIONER_INSTANT(LO,GO,N) \
-  template class Ifpack2::LinePartitioner<Tpetra::CrsGraph< LO, GO, N > >; \
-  template class Ifpack2::LinePartitioner<Tpetra::RowGraph< LO, GO, N > >;
+#define IFPACK2_LINEPARTITIONER_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::LinePartitioner<Tpetra::CrsGraph< LO, GO, N >,S >; \
+  template class Ifpack2::LinePartitioner<Tpetra::RowGraph< LO, GO, N >,S >;
 
 #endif // IFPACK2_LINEPARTITIONER_DEF_HPP
