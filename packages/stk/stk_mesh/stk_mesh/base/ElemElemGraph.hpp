@@ -9,10 +9,22 @@
 
 #include "ElemElemGraphImpl.hpp"
 
+namespace stk { class CommBuffer; }
+
 namespace stk { namespace mesh { class BulkData; } }
 
 namespace stk { namespace mesh {
 
+struct moved_parallel_graph_info {
+
+    moved_parallel_graph_info(int in_proc_to_tell, stk::mesh::EntityId in_elem_id, stk::mesh::EntityId in_moved_elem_id, int in_destination_proc)
+     : proc_to_tell(in_proc_to_tell), elem_id(in_elem_id), moved_elem_id(in_moved_elem_id), destination_proc(in_destination_proc) {};
+
+    int proc_to_tell;
+    stk::mesh::EntityId elem_id;
+    stk::mesh::EntityId moved_elem_id;
+    int destination_proc;
+};
 
 class ElemElemGraph
 {
@@ -83,6 +95,14 @@ protected:
     void pack_deleted_element_comm(stk::CommSparse &comm,
                                    const std::vector<std::pair<impl::LocalId,stk::mesh::EntityId>> &local_elem_and_remote_connected_elem);
 
+    void pack_remote_connected_element(impl::LocalId elem_local_id, stk::mesh::EntityId connected_global_id,
+                                                      stk::CommBuffer &buff, std::vector<moved_parallel_graph_info> &moved_graph_info_vector,
+                                                      int destination_proc, int phase);
+
+    void pack_local_connected_element(impl::LocalId local_id, int side_id, stk::CommBuffer &buff,
+                                                     const std::vector<stk::mesh::EntityId> &suggested_face_ids,
+                                                     size_t &num_face_ids_used,
+                                                     stk::mesh::Part *active_part);
     stk::mesh::BulkData &m_bulk_data;
     impl::ElementGraph m_elem_graph;
     impl::SidesForElementGraph m_via_sides;
