@@ -79,6 +79,9 @@ protected:
     int size_data_members();
     void ensure_space_in_entity_to_local_id(size_t max_index);
     size_t find_max_local_offset_in_neighborhood(stk::mesh::Entity element);
+    void break_elem_elem_connectivity(stk::mesh::Entity elem_to_delete);
+    void pack_deleted_element_comm(stk::CommSparse &comm,
+                                   const std::vector<std::pair<impl::LocalId,stk::mesh::EntityId>> &local_elem_and_remote_connected_elem);
 
     stk::mesh::BulkData &m_bulk_data;
     impl::ElementGraph m_elem_graph;
@@ -90,7 +93,6 @@ protected:
     std::vector<bool> m_local_id_in_pool;
     std::vector<stk::topology> m_element_topologies;
     std::vector<stk::mesh::EntityId> m_suggested_face_ids;
-    std::vector<int> m_deleted_elem_pool;
     size_t m_num_edges;
     size_t m_num_parallel_edges;
 
