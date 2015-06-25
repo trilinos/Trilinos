@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
   elements[0] = numElements;
   elements[1] = numElements;
   // Create problem
-  Teuchos::RCP<ModalProblem> testCase = 
+  Teuchos::RCP<ModalProblem> testCase =
     Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
   // Get the stiffness and mass matrices
   Teuchos::RCP<Epetra_CrsMatrix> K = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
     IFPACK_CHK_ERR(prec->Initialize());
     IFPACK_CHK_ERR(prec->Compute());
     //
-    printer.stream(Errors) 
+    printer.stream(Errors)
       << " done." << std::endl;
     // encapsulate this preconditioner into a IFPACKPrecOp class
     PrecOp = Teuchos::rcp( new Epetra_InvOperator(&*prec) );
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
   //
-  Teuchos::RCP<Epetra_MultiVector> ivec 
+  Teuchos::RCP<Epetra_MultiVector> ivec
     = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
   // Create the eigenproblem.
@@ -230,12 +230,12 @@ int main(int argc, char *argv[]) {
     Teuchos::SerialDenseMatrix<int,double> T(sol.numVecs, sol.numVecs);
     Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
     Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
-    T.putScalar(0.0); 
+    T.putScalar(0.0);
     for (int i=0; i<sol.numVecs; i++) {
       T(i,i) = evals[i].realpart;
     }
     K->Apply( *evecs, Kvec );
-    M->Apply( *evecs, Mvec );  
+    M->Apply( *evecs, Mvec );
     MVT::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
     MVT::MvNorm( Kvec, normR );
   }
