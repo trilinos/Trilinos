@@ -59,9 +59,9 @@ public:
 
     void set_num_side_ids_used(size_t num_used);
 
-    void add_elements_to_graph(std::vector<stk::mesh::Entity> &elements_to_add);
+    void add_elements_to_graph(const stk::mesh::EntityVector &elements_to_add);
 
-    void delete_elements_from_graph(std::vector<stk::mesh::Entity> &elements_to_delete);
+    void delete_elements_from_graph(const stk::mesh::EntityVector &elements_to_delete);
 
     bool is_valid_graph_element(stk::mesh::Entity local_element);
 
@@ -73,6 +73,7 @@ public:
 
 protected:
     void fill_graph();
+    void update_number_of_parallel_edges();
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
 
     void add_possibly_connected_elements_to_graph_using_side_nodes( const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideComm,

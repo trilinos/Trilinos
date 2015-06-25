@@ -199,29 +199,15 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
 
 ElemElemGraphTester create_base_1x1x4_elem_graph(stk::ParallelMachine &comm, stk::mesh::BulkData &bulk);
 
-TEST(ElementGraph, add_elements_to_graph_serial)
+TEST(ElementGraph, add_elements_to_graph)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
+    int p_size = stk::parallel_machine_size(comm);
 
-    if(stk::parallel_machine_size(comm) == 1)
+    if (p_size == 1 || p_size == 2 || p_size == 4)
     {
         stk::mesh::MetaData meta(3);
         stk::mesh::BulkData bulkData(meta, comm);
-        create_base_1x1x4_elem_graph(comm, bulkData);
-    }
-}
-
-TEST(ElementGraph, DISABLED_add_elements_to_graph_parallel)
-{
-    MPI_Comm comm = MPI_COMM_WORLD;
-
-    std::vector<size_t> mem_usage;
-
-    if(stk::parallel_machine_size(comm) == 2)
-    {
-        stk::mesh::MetaData meta(3);
-        stk::mesh::BulkData bulkData(meta, comm);
-
         create_base_1x1x4_elem_graph(comm, bulkData);
     }
 }

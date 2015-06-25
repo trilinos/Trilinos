@@ -42,9 +42,17 @@ ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData) : m_bulk_data(bulkDa
 
     fill_parallel_graph(elem_side_comm);
 
+    update_number_of_parallel_edges();
+
+    set_num_side_ids_used(m_num_parallel_edges);
+    m_num_edges += m_num_parallel_edges;
+}
+
+void ElemElemGraph::update_number_of_parallel_edges()
+{
     // Figure out the real number of sides that can be generated, using
     // the rule of one side entity per element side (with multiple
-    // coincident elements each being connedted to the same side)
+    // coincident elements each being connected to the same side)
     m_num_parallel_edges = 0;
     for (size_t i = 0; i < m_elem_graph.size(); ++i) {
         std::set<int> uniqueRemoteOrdinals;
@@ -57,9 +65,6 @@ ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData) : m_bulk_data(bulkDa
         }
         m_num_parallel_edges += uniqueRemoteOrdinals.size();
     }
-
-    set_num_side_ids_used(m_num_parallel_edges);
-    m_num_edges += m_num_parallel_edges;
 }
 
 const std::vector<stk::mesh::EntityId>& ElemElemGraph::get_suggested_side_ids() const
@@ -931,7 +936,7 @@ void ElemElemGraph::pack_deleted_element_comm(stk::CommSparse &comm,
     }
 }
 
-void ElemElemGraph::delete_elements_from_graph(std::vector<stk::mesh::Entity> &elements_to_delete)
+void ElemElemGraph::delete_elements_from_graph(const stk::mesh::EntityVector &elements_to_delete)
 {
     std::vector< std::pair< impl::LocalId, stk::mesh::EntityId > > local_elem_and_remote_connected_elem;
     std::vector< std::pair< stk::mesh::EntityId, stk::mesh::EntityId > > remote_edges;
@@ -1110,10 +1115,10 @@ size_t ElemElemGraph::find_max_local_offset_in_neighborhood(stk::mesh::Entity el
     return max_local_offset;
 }
 
-void ElemElemGraph::add_elements_to_graph(std::vector <stk::mesh::Entity> &elements_to_add)
+void ElemElemGraph::add_elements_to_graph(const stk::mesh::EntityVector &elements_to_add)
 {
     size_t max_offset = 0;
-    for (stk::mesh::Entity & element_to_add : elements_to_add)
+    for (const stk::mesh::Entity & element_to_add : elements_to_add)
     {
         size_t local_max = find_max_local_offset_in_neighborhood(element_to_add);
         if (local_max > max_offset)
@@ -1160,7 +1165,21 @@ void ElemElemGraph::add_elements_to_graph(std::vector <stk::mesh::Entity> &eleme
         }
         impl::break_volume_element_connections_across_shells(localElementsConnectedToNewShell, m_elem_graph, m_via_sides);
     }
-    m_bulk_data.generate_new_ids(m_bulk_data.mesh_meta_data().side_rank(), m_num_edges, m_suggested_side_ids);
+
+    impl::ElemSideToProcAndFaceId elem_side_comm;
+    elem_side_comm = impl::get_element_side_ids_to_communicate(m_bulk_data, elements_to_add);
+
+    size_t num_side_ids_needed = elem_side_comm.size();
+    num_side_ids_needed += m_num_edges;
+
+    m_bulk_data.generate_new_ids(m_bulk_data.mesh_meta_data().side_rank(), num_side_ids_needed, m_suggested_side_ids);
+
+    fill_parallel_graph(elem_side_comm);
+
+    update_number_of_parallel_edges();
+
+    set_num_side_ids_used(m_num_parallel_edges);
+    m_num_edges += m_num_parallel_edges;
 }
 
 }} // end namespaces stk mesh

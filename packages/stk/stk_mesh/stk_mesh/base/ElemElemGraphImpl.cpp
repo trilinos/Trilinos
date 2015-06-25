@@ -79,6 +79,37 @@ ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::Bul
     }
     elements_to_communicate.assign(element_set.begin(), element_set.end());
 
+    return build_element_side_ids_to_proc_map(bulkData, elements_to_communicate);
+}
+
+
+ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &element_list)
+{
+    stk::mesh::EntityVector elements_to_communicate;
+
+    for(const stk::mesh::Entity &element : element_list )
+    {
+        const stk::mesh::Entity* nodes = bulkData.begin_nodes(element);
+        int numNodes = bulkData.num_nodes(element);
+
+        for(int i=0; i<numNodes; ++i)
+        {
+            stk::mesh::Entity node = nodes[i];
+
+            if(bulkData.bucket(node).shared())
+            {
+                elements_to_communicate.push_back(element);
+                break;
+            }
+        }
+    }
+
+    return build_element_side_ids_to_proc_map(bulkData, elements_to_communicate);
+}
+
+
+ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate)
+{
     ElemSideToProcAndFaceId elem_side_comm;
 
     for(size_t i=0;i<elements_to_communicate.size();++i)
