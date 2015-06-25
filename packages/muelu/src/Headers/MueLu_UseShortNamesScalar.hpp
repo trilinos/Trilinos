@@ -18,8 +18,8 @@ typedef MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Amalg
 typedef MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Amesos2Smoother;
 #endif
 
-#ifdef MUELU_AMGX_OPERATOR_SHORT
-typedef MueLu::AMGXOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> AMGXOperator
+#ifdef MUELU_AMGXOPERATOR_SHORT
+typedef MueLu::AMGXOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> AMGXOperator;
 #endif
 
 #ifdef MUELU_ALGEBRAICPERMUTATIONSTRATEGY_SHORT
@@ -333,16 +333,4 @@ typedef MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node> Zoltan2I
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2;
-#endif
-
-#ifdef MUELU_TWOLEVELMATLABFACTORY_SHORT
-typedef MueLu::TwoLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TwoLevelMatlabFactory;
-#endif
-
-#ifdef MUELU_SINGLELEVELMATLABFACTORY_SHORT
-typedef MueLu::SingleLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SingleLevelMatlabFactory;
-#endif
-
-#ifdef MUELU_MATLABSMOOTHER_SHORT
-typedef MueLu::MatlabSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> MatlabSmoother;
 #endif
