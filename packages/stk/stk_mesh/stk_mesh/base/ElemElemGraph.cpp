@@ -21,42 +21,44 @@ namespace stk { namespace mesh {
 ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData) : m_bulk_data(bulkData)
 {
     int numElems = size_data_members();
-    if (numElems > 0)
-    {
+
+    impl::ElemSideToProcAndFaceId elem_side_comm;
+    if (numElems > 0) {
         impl::fill_local_ids_and_fill_element_entities_and_topologies(m_bulk_data, m_local_id_to_element_entity, m_entity_to_local_id, m_element_topologies);
         fill_graph();
 
-        impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_element_side_ids_to_communicate(bulkData);
-        size_t num_side_ids_needed = elem_side_comm.size();
-        for(size_t i=0;i<m_via_sides.size();++i)
-        {
-            m_num_edges += m_via_sides[i].size();
-        }
-        num_side_ids_needed += m_num_edges;
-
-        bulkData.generate_new_ids(bulkData.mesh_meta_data().side_rank(), num_side_ids_needed, m_suggested_side_ids);
-
-        fill_parallel_graph(elem_side_comm);
-
-        // Figure out the real number of sides that can be generated, using
-        // the rule of one side entity per element side (with multiple
-        // coincident elements each being connedted to the same side)
-        m_num_parallel_edges = 0;
-        for (size_t i = 0; i < m_elem_graph.size(); ++i) {
-            std::set<int> uniqueRemoteOrdinals;
-            const std::vector<impl::LocalId> & localElement = m_elem_graph[i];
-            for (size_t j = 0; j < localElement.size(); ++j) {
-                if (localElement[j] < 0) {
-                    // Connected to remote element through this side
-                    uniqueRemoteOrdinals.insert(m_via_sides[i][j]);
-                }
-            }
-            m_num_parallel_edges += uniqueRemoteOrdinals.size();
-        }
-
-        set_num_side_ids_used(m_num_parallel_edges);
-        m_num_edges += m_num_parallel_edges;
+        elem_side_comm = impl::get_element_side_ids_to_communicate(bulkData);
     }
+
+    size_t num_side_ids_needed = elem_side_comm.size();
+    for(size_t i=0;i<m_via_sides.size();++i)
+    {
+        m_num_edges += m_via_sides[i].size();
+    }
+    num_side_ids_needed += m_num_edges;
+
+    bulkData.generate_new_ids(bulkData.mesh_meta_data().side_rank(), num_side_ids_needed, m_suggested_side_ids);
+
+    fill_parallel_graph(elem_side_comm);
+
+    // Figure out the real number of sides that can be generated, using
+    // the rule of one side entity per element side (with multiple
+    // coincident elements each being connedted to the same side)
+    m_num_parallel_edges = 0;
+    for (size_t i = 0; i < m_elem_graph.size(); ++i) {
+        std::set<int> uniqueRemoteOrdinals;
+        const std::vector<impl::LocalId> & localElement = m_elem_graph[i];
+        for (size_t j = 0; j < localElement.size(); ++j) {
+            if (localElement[j] < 0) {
+                // Connected to remote element through this side
+                uniqueRemoteOrdinals.insert(m_via_sides[i][j]);
+            }
+        }
+        m_num_parallel_edges += uniqueRemoteOrdinals.size();
+    }
+
+    set_num_side_ids_used(m_num_parallel_edges);
+    m_num_edges += m_num_parallel_edges;
 }
 
 const std::vector<stk::mesh::EntityId>& ElemElemGraph::get_suggested_side_ids() const

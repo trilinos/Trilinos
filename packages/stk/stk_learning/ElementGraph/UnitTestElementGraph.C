@@ -4091,6 +4091,151 @@ TEST( ElementGraph, Hex1Shell0Shell0Hex1Parallel )
 }
 
 
+// element ids / proc_id:
+// |-------|-------|-------|
+// |       |       |       |
+// |  1/0  |  4/2  |  7/2  |
+// |       |       |       |
+// |-------|-------|-------|
+// |       |       |       |
+// |  2/0  |  5/1  |  8/2  |
+// |       |       |       |
+// |-------|-------|-------|
+// |       |       |       |
+// |  3/0  |  6/2  |  9/2  |
+// |       |       |       |
+// |-------|-------|-------|
+
+
+TEST(ElementGraph, TestKeyHoleSimilarProblemAInParallel)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+
+    if(stk::parallel_machine_size(comm) == 3)
+    {
+        const int procRank = stk::parallel_machine_rank(comm);
+        unsigned spatialDim = 3;
+
+        stk::mesh::MetaData meta(spatialDim);
+        stk::mesh::BulkData bulkData(meta, comm, stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:3x1x3", bulkData, comm);
+
+        stk::mesh::EntityProcVec elementProcChanges;
+        if (procRank == 1) {
+            elementProcChanges.push_back(stk::mesh::EntityProc(bulkData.get_entity(stk::topology::ELEM_RANK,4),2));
+            elementProcChanges.push_back(stk::mesh::EntityProc(bulkData.get_entity(stk::topology::ELEM_RANK,6),2));
+        }
+        bulkData.change_entity_owner(elementProcChanges);
+
+        stk::mesh::ElemElemGraph graph(bulkData);
+        if (procRank == 0) {
+            stk::mesh::Entity local_element = bulkData.get_entity(stk::topology::ELEM_RANK,2);
+            ASSERT_TRUE(bulkData.bucket(local_element).owned());
+            ASSERT_EQ(3u, graph.get_num_connected_elems(local_element));
+
+            EXPECT_EQ( 3, graph.get_side_id_to_connected_element(local_element,0));
+            EXPECT_EQ( 1, graph.get_side_id_to_connected_element(local_element,1));
+            EXPECT_EQ( 5, graph.get_side_id_to_connected_element(local_element,2));
+
+            EXPECT_TRUE(graph.is_connected_elem_locally_owned(local_element, 0));
+            EXPECT_TRUE(graph.is_connected_elem_locally_owned(local_element, 1));
+            EXPECT_FALSE(graph.is_connected_elem_locally_owned(local_element, 2));
+
+            EXPECT_EQ( 1u, bulkData.identifier(graph.get_connected_element(local_element, 0)));
+            EXPECT_EQ( 3u, bulkData.identifier(graph.get_connected_element(local_element, 1)));
+            EXPECT_EQ( 5u, graph.get_entity_id_of_remote_element(local_element, 2));
+
+            EXPECT_EQ( 1, graph.get_owning_proc_id_of_remote_element(local_element, 5));
+        }
+        if (procRank == 1) {
+            stk::mesh::Entity local_element = bulkData.get_entity(stk::topology::ELEM_RANK,5);
+            ASSERT_TRUE(bulkData.bucket(local_element).owned());
+            size_t numConnectedElems = graph.get_num_connected_elems(local_element);
+            ASSERT_EQ(4u, numConnectedElems);
+
+            EXPECT_EQ( 4, graph.get_side_id_to_connected_element(local_element,0));
+            EXPECT_EQ( 3, graph.get_side_id_to_connected_element(local_element,1));
+            EXPECT_EQ( 1, graph.get_side_id_to_connected_element(local_element,2));
+            EXPECT_EQ( 5, graph.get_side_id_to_connected_element(local_element,3));
+
+            EXPECT_FALSE(graph.is_connected_elem_locally_owned(local_element, 0));
+            EXPECT_FALSE(graph.is_connected_elem_locally_owned(local_element, 1));
+            EXPECT_FALSE(graph.is_connected_elem_locally_owned(local_element, 2));
+            EXPECT_FALSE(graph.is_connected_elem_locally_owned(local_element, 3));
+
+            EXPECT_EQ( 2u, graph.get_entity_id_of_remote_element(local_element, 0));
+            EXPECT_EQ( 4u, graph.get_entity_id_of_remote_element(local_element, 1));
+            EXPECT_EQ( 6u, graph.get_entity_id_of_remote_element(local_element, 2));
+            EXPECT_EQ( 8u, graph.get_entity_id_of_remote_element(local_element, 3));
+
+            EXPECT_EQ( 0, graph.get_owning_proc_id_of_remote_element(local_element, 2));
+            EXPECT_EQ( 2, graph.get_owning_proc_id_of_remote_element(local_element, 8));
+            EXPECT_EQ( 2, graph.get_owning_proc_id_of_remote_element(local_element, 4));
+            EXPECT_EQ( 2, graph.get_owning_proc_id_of_remote_element(local_element, 6));
+        }
+    }
+}
+
+// element ids / proc_id:
+// |-------|-------|-------|
+// |       |       |       |
+// |  1/0  |  4/2  |  7/2  |
+// |       |       |       |
+// |-------|-------|-------|
+// |       |       |       |
+// |  2/0  |  n/a  |  8/2  |
+// |       |       |       |
+// |-------|-------|-------|
+// |       |       |       |
+// |  3/0  |  6/2  |  9/2  |
+// |       |       |       |
+// |-------|-------|-------|
+// The element in the middle has been deleted
+
+TEST(ElementGraph, TestKeyHoleSimilarProblemBInParallel)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+
+    if(stk::parallel_machine_size(comm) == 3)
+    {
+        const int procRank = stk::parallel_machine_rank(comm);
+        unsigned spatialDim = 3;
+
+        stk::mesh::MetaData meta(spatialDim);
+        stk::mesh::BulkData bulkData(meta, comm);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:3x1x3", bulkData, comm);
+
+        stk::mesh::EntityProcVec elementProcChanges;
+        if (procRank == 1) {
+            elementProcChanges.push_back(stk::mesh::EntityProc(bulkData.get_entity(stk::topology::ELEM_RANK,4),2));
+            elementProcChanges.push_back(stk::mesh::EntityProc(bulkData.get_entity(stk::topology::ELEM_RANK,6),2));
+        }
+        bulkData.change_entity_owner(elementProcChanges);
+        bulkData.modification_begin();
+        if (procRank == 1) {
+            stk::mesh::Entity local_element5 = bulkData.get_entity(stk::topology::ELEM_RANK,5);
+            bulkData.destroy_entity(local_element5);
+        }
+        bulkData.modification_end();
+
+        stk::mesh::ElemElemGraph graph(bulkData);
+        if (procRank == 0) {
+            EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,1)));
+            EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,2)));
+            EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,3)));
+        }
+        if (procRank == 2) {
+            EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,4)));
+            EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,6)));
+            EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,7)));
+            EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,8)));
+            EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,9)));
+        }
+    }
+}
+
+
+
 bool is_valid_graph_element(const impl::ElementGraph &elem_graph, stk::mesh::impl::LocalId elem_id)
 {
     stk::mesh::impl::LocalId max_elem_id = static_cast<stk::mesh::impl::LocalId>(elem_graph.size());

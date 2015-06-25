@@ -959,7 +959,13 @@ bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
 void BulkData::generate_new_ids(stk::topology::rank_t rank, size_t numIdsNeeded, std::vector<stk::mesh::EntityId>& requestedIds) const
 {
     size_t maxNumNeeded = 0;
-    MPI_Allreduce(&numIdsNeeded, &maxNumNeeded, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_MAX, this->parallel());
+    int mpiResult = MPI_SUCCESS ;
+    mpiResult = MPI_Allreduce(&numIdsNeeded, &maxNumNeeded, 1, sierra::MPI::Datatype<size_t>::type(), MPI_MAX, this->parallel());
+    if(mpiResult != MPI_SUCCESS) {
+        throw std::runtime_error("MPI_Allreduce failed");
+        return;
+    }
+
     if ( maxNumNeeded == 0 ) return;
 
     std::vector<uint64_t> ids_in_use;
