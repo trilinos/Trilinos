@@ -438,7 +438,7 @@ protected:
   int SubdomainId_;
 #endif
   //! Contains the label of \c this object.
-  string Label_;
+  std::string Label_;
   //! If true, the preconditioner has been successfully initialized.
   bool IsInitialized_;
   //! If true, the preconditioner has been successfully computed.
@@ -460,7 +460,7 @@ protected:
   //! If \c true, reorder the local matrix.
   bool UseReordering_;
   //! Type of reordering of the local matrix.
-  string ReorderingType_;
+  std::string ReorderingType_;
   //! Pointer to a reordering object.
   Teuchos::RefCountPtr<Ifpack_Reordering> Reordering_;
   //! Pointer to the reorderd matrix.
@@ -769,7 +769,7 @@ int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List_in)
   }
   else
   {
-    // Make the default be a string to be consistent with the valid parameters!
+    // Make the default be a std::string to be consistent with the valid parameters!
     List_in.get("schwarz: combine mode","Zero");
   }
   // type of reordering
@@ -863,7 +863,7 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
   if (UseTranspose())
     Label_ += ", transp";
   Label_ += ", ov = " + Ifpack_toString(OverlapLevel_)
-    + ", local solver = \n\t\t***** `" + string(Inverse_->Label()) + "'";
+    + ", local solver = \n\t\t***** `" + std::string(Inverse_->Label()) + "'";
 
   IsInitialized_ = true;
   ++NumInitialize_;
@@ -908,7 +908,7 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
 #endif
 
   // reset the Label
-  string R = "";
+  std::string R = "";
   if (UseReordering_)
     R = ReorderingType_ + " reord, ";
 
@@ -917,7 +917,7 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
   
   // add Condest() to label
   Label_ = "Ifpack_AdditiveSchwarz, ov = " + Ifpack_toString(OverlapLevel_)
-    + ", local solver = \n\t\t***** `" + string(Inverse_->Label()) + "'"
+    + ", local solver = \n\t\t***** `" + std::string(Inverse_->Label()) + "'"
     + "\n\t\t***** " + R + "Condition number estimate = "
     + Ifpack_toString(Condest_);
 

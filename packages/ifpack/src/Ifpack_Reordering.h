@@ -106,10 +106,10 @@ public:
   virtual ~Ifpack_Reordering() {};
   
   //! Sets integer parameters `Name'.
-  virtual int SetParameter(const string Name, const int Value) = 0;
+  virtual int SetParameter(const std::string Name, const int Value) = 0;
  
   //! Sets double parameters `Name'.
-  virtual int SetParameter(const string Name, const double Value) = 0;
+  virtual int SetParameter(const std::string Name, const double Value) = 0;
 
   //! Sets all parameters.
   virtual int SetParameters(Teuchos::ParameterList& List) = 0;

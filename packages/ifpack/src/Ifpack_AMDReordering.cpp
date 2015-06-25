@@ -99,14 +99,14 @@ operator=(const Ifpack_AMDReordering& RHS)
 
 //==============================================================================
 int Ifpack_AMDReordering::
-SetParameter(const string Name, const int Value)
+SetParameter(const std::string Name, const int Value)
 {
   return(0);
 }
 
 //==============================================================================
 int Ifpack_AMDReordering::
-SetParameter(const string Name, const double Value)
+SetParameter(const std::string Name, const double Value)
 {
   return(0);
 }

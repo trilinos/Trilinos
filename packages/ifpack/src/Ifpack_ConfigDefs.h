@@ -119,7 +119,6 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
-using std::string;
 using std::istream;
 using std::ostream;
 using std::cerr;

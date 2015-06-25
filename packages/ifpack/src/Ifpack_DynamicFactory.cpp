@@ -178,7 +178,7 @@ void Ifpack_DynamicFactory::Print(std::ostream& os)
 }
 
 //==============================================================================
-Ifpack_Preconditioner* Ifpack_DynamicFactory::Create(const string PrecType,
+Ifpack_Preconditioner* Ifpack_DynamicFactory::Create(const std::string PrecType,
                                       Epetra_RowMatrix* Matrix,
                                       const int Overlap,
                                       bool overrideSerialDefault)

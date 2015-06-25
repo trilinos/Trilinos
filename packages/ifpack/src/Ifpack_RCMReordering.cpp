@@ -98,7 +98,7 @@ operator=(const Ifpack_RCMReordering& RHS)
 
 //==============================================================================
 int Ifpack_RCMReordering::
-SetParameter(const string Name, const int Value)
+SetParameter(const std::string Name, const int Value)
 {
   if (Name == "reorder: root node")
     RootNode_ = Value;
@@ -107,7 +107,7 @@ SetParameter(const string Name, const int Value)
 
 //==============================================================================
 int Ifpack_RCMReordering::
-SetParameter(const string Name, const double Value)
+SetParameter(const std::string Name, const double Value)
 {
   return(0);
 }

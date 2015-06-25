@@ -368,7 +368,7 @@ private:
   //! If \c true, the container has been successfully computed.
   bool IsComputed_;
   //! Label for \c this object
-  string Label_;
+  std::string Label_;
 
   //! Flops in Compute().
   double ComputeFlops_;

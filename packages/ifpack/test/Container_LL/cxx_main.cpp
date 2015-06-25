@@ -62,7 +62,7 @@
 static bool verbose = false;
 
 // ======================================================================
-bool TestContainer(string Type, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A)
+bool TestContainer(std::string Type, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A)
 {
   int NumVectors = 3;
   int NumMyRows = A->NumMyRows();

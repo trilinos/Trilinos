@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 
   // create the preconditioner. For valid PrecType values,
   // please check the documentation
-  string PrecType = "Amesos";
+  std::string PrecType = "Amesos";
   int OverlapLevel = 2; // must be >= 0. If Comm.NumProc() == 1,
                         // it is ignored.
 

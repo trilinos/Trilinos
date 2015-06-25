@@ -43,7 +43,7 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Trilinos_version.h"
 
-string Ifpack_Version() { 
+std::string Ifpack_Version() { 
   return("Ifpack in Trilinos " TRILINOS_VERSION_STRING); 
 }
 

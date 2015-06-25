@@ -68,7 +68,7 @@ public:
   virtual ~Ifpack_METISReordering() {};
 
   //! Sets integer parameters `Name'.
-  virtual int SetParameter(const string Name, const int Value)
+  virtual int SetParameter(const std::string Name, const int Value)
   {
     if (Name == "partitioner: use symmetric graph")
       UseSymmetricGraph_ = (bool)Value;
@@ -76,7 +76,7 @@ public:
   }
  
   //! Sets double parameters `Name'.
-  virtual int SetParameter(const string Name, const double Value)
+  virtual int SetParameter(const std::string Name, const double Value)
   {
     return(0);
   };

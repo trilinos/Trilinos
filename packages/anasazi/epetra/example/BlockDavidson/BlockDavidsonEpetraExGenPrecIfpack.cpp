@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
     printer.stream(Errors) << "Constructing Incomplete Cholesky preconditioner..." << std::flush;
     Ifpack precFactory;
     // additive-Schwartz incomplete Cholesky with thresholding; see IFPACK documentation
-    string precType = "IC stand-alone";
+    std::string precType = "IC stand-alone";
     int overlapLevel = 0;
     prec = Teuchos::rcp( precFactory.Create(precType,K.get(),overlapLevel) );
     // parameters for preconditioner

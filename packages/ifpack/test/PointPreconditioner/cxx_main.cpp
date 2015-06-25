@@ -104,7 +104,7 @@ int CompareBlockOverlap(CrsMatrixGallery& Gallery, int Overlap)
 }
 
 // ====================================================================== 
-int CompareBlockSizes(string PrecType,
+int CompareBlockSizes(std::string PrecType,
                       CrsMatrixGallery& Gallery, int NumParts)
 {
 
@@ -143,7 +143,7 @@ int CompareBlockSizes(string PrecType,
 }
 
 // ====================================================================== 
-bool ComparePointAndBlock(string PrecType,
+bool ComparePointAndBlock(std::string PrecType,
                           CrsMatrixGallery& Gallery, int sweeps)
 {
 
@@ -240,7 +240,7 @@ bool ComparePointAndBlock(string PrecType,
 }
 
 // ====================================================================== 
-bool KrylovTest(string PrecType,
+bool KrylovTest(std::string PrecType,
                 CrsMatrixGallery& Gallery)
 {
 
@@ -328,7 +328,7 @@ bool KrylovTest(string PrecType,
 }
 
 // ====================================================================== 
-bool BasicTest(string PrecType,
+bool BasicTest(std::string PrecType,
                CrsMatrixGallery& Gallery)
 {
 

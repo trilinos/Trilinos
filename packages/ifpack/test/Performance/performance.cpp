@@ -71,7 +71,7 @@ static bool Solver = AZ_gmres;
 const int NumVectors = 3;
 
 // ====================================================================== 
-bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int sweeps)
+bool ComparePointAndBlock(std::string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int sweeps)
 {
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);

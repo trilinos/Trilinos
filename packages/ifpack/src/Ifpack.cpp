@@ -382,13 +382,13 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
       TEUCHOS_TEST_FOR_EXCEPT(true);
       // The only way to get here is if some code developer does a cast like
       // (EPrecType)(anyNumber).  You can never get here by passing in a
-      // string value for the preconditioner!
+      // std::string value for the preconditioner!
   } // end switch
   return 0; // This will never ever be executed!
 }
 
 //==============================================================================
-Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
+Ifpack_Preconditioner* Ifpack::Create(const std::string PrecType,
                                       Epetra_RowMatrix* Matrix,
                                       const int Overlap,
                                       bool overrideSerialDefault)
@@ -409,7 +409,7 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
 
 // ======================================================================
 int Ifpack::SetParameters(int argc, char* argv[],
-                          Teuchos::ParameterList& List, string& PrecType,
+                          Teuchos::ParameterList& List, std::string& PrecType,
                           int& Overlap)
 {
   // THIS FUNCTION IS VERY INCOMPLETE...
@@ -417,13 +417,13 @@ int Ifpack::SetParameters(int argc, char* argv[],
   Teuchos::CommandLineProcessor CLP;
 
   // prec type
-  string ifp_prec_type = "ILU";
+  std::string ifp_prec_type = "ILU";
   CLP.setOption("ifp-prec-type",&ifp_prec_type,"Preconditioner type");
   // overlap among the processors
   int ifp_overlap = 0;
   CLP.setOption("ifp-overlap",&ifp_overlap,"Overlap among processors");
   // relaxation type
-  string ifp_relax_type = "Jacobi";
+  std::string ifp_relax_type = "Jacobi";
   CLP.setOption("ifp-relax-type",&ifp_relax_type,"Relaxation type");
   // sweeps (for relax only)
   int ifp_relax_sweeps = 1;
@@ -434,7 +434,7 @@ int Ifpack::SetParameters(int argc, char* argv[],
   CLP.setOption("ifp-relax-damping",
                 &ifp_relax_damping,"Damping for relaxation");
   // partitioner type (for block relaxation only)
-  string ifp_part_type = "greedy";
+  std::string ifp_part_type = "greedy";
   CLP.setOption("ifp-part-type",&ifp_part_type,"Partitioner type");
   // number of local parts (for block relaxation only)
   int ifp_part_local = 1;

@@ -50,7 +50,7 @@
 #include "Epetra_Map.h"
 #include "Teuchos_ParameterList.hpp"
 
-static const string PrintMsg_ = "(Ifpack_OvPartitioner) ";
+static const std::string PrintMsg_ = "(Ifpack_OvPartitioner) ";
 
 //==============================================================================
 Ifpack_OverlappingPartitioner::

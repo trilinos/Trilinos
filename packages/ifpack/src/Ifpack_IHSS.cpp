@@ -157,7 +157,7 @@ int Ifpack_IHSS::Compute(){
 
   // Compute preconditioner for Aherm
   Teuchos::ParameterList PLh=List_.sublist("ihss: hermetian list");
-  string htype=List_.get("ihss: hermetian type","ILU");
+  std::string htype=List_.get("ihss: hermetian type","ILU");
   Pherm= Factory.Create(htype, Aherm);
   Pherm->SetParameters(PLh);
   IFPACK_CHK_ERR(Pherm->Compute());
@@ -165,7 +165,7 @@ int Ifpack_IHSS::Compute(){
 
   // Compute preconditoner for Askew 
   Teuchos::ParameterList PLs=List_.sublist("ihss: skew hermetian list");
-  string stype=List_.get("ihss: skew hermetian type","ILU");
+  std::string stype=List_.get("ihss: skew hermetian type","ILU");
   Pskew= Factory.Create(stype, Askew);
   Pskew->SetParameters(PLs);
   IFPACK_CHK_ERR(Pskew->Compute());

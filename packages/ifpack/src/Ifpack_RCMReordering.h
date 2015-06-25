@@ -72,10 +72,10 @@ public:
   virtual ~Ifpack_RCMReordering() {};
   
   //! Sets integer parameters `Name'.
-  virtual int SetParameter(const string Name, const int Value);
+  virtual int SetParameter(const std::string Name, const int Value);
 
   //! Sets double parameters `Name'.
-  virtual int SetParameter(const string Name, const double Value);
+  virtual int SetParameter(const std::string Name, const double Value);
   
   //! Sets all parameters.
   virtual int SetParameters(Teuchos::ParameterList& List);

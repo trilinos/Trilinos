@@ -381,7 +381,7 @@ private:
   Teuchos::ParameterList List_;
 
   //! Contains the label of \c this object.
-  string Label_;
+  std::string Label_;
   //! If true, the linear system on this processor is empty, thus the preconditioner is null operation.
   bool IsEmpty_;
   //! If true, the preconditioner has been successfully initialized.

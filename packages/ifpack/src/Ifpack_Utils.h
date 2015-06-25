@@ -72,11 +72,11 @@ Epetra_CrsMatrix* Ifpack_CreateOverlappingCrsMatrix(const Epetra_RowMatrix* Matr
 Epetra_CrsGraph* Ifpack_CreateOverlappingCrsMatrix(const Epetra_CrsGraph* Graph,
 						   const int OverlappingLevel);
 
-//! Convertes an integer to string.
-string Ifpack_toString(const int& x);
+//! Convertes an integer to std::string.
+std::string Ifpack_toString(const int& x);
 
-//! Convertes a double to string.
-string Ifpack_toString(const double& x);
+//! Convertes a double to std::string.
+std::string Ifpack_toString(const double& x);
 
 //! Prints on cout the true residual.
 int Ifpack_PrintResidual(char* Label,  const Epetra_RowMatrix& A,
@@ -121,7 +121,7 @@ int Ifpack_AnalyzeVectorElements(const Epetra_Vector& Diagonal,
 /*!
  \param A (In) - Epetra_RowMatrix whose sparsity pattern will be plotted.
 
- \param FileName (In) - char string containing the filename.
+ \param FileName (In) - char std::string containing the filename.
                         If 0, then the matrix label is used as file name,
                         after appending .ps.
 

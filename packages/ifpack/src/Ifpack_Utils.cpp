@@ -236,19 +236,19 @@ Epetra_CrsGraph* Ifpack_CreateOverlappingCrsMatrix(const Epetra_CrsGraph* Graph,
 }
 
 //============================================================================
-string Ifpack_toString(const int& x)
+std::string Ifpack_toString(const int& x)
 {
   char s[100];
   sprintf(s, "%d", x);
-  return string(s);
+  return std::string(s);
 }
 
 //============================================================================
-string Ifpack_toString(const double& x)
+std::string Ifpack_toString(const double& x)
 {
   char s[100];
   sprintf(s, "%g", x);
-  return string(s);
+  return std::string(s);
 }
 
 //============================================================================
@@ -1083,7 +1083,7 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName,
     fprintf(fp,"%s","%%EndComments\n");
     fprintf(fp,"%s","/cm {72 mul 2.54 div} def\n");
     fprintf(fp,"%s","/mc {72 div 2.54 mul} def\n");
-    fprintf(fp,"%s","/pnum { 72 div 2.54 mul 20 string ");
+    fprintf(fp,"%s","/pnum { 72 div 2.54 mul 20 std::string ");
     fprintf(fp,"%s","cvs print ( ) print} def\n");
     fprintf(fp,"%s","/Cshow {dup stringwidth pop -2 div 0 rmoveto show} def\n");
 

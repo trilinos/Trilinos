@@ -337,7 +337,7 @@ private:
   bool ComputeCondest_;
 #endif // 0
   //! Contains the label of this object.
-  string Label_;
+  std::string Label_;
 
   // @{ Other data
   //! Number of local rows.

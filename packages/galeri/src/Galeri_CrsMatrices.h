@@ -52,7 +52,7 @@
 namespace Galeri {
 
 // Matrix creation function, contained in galeri/src/Maps
-Epetra_CrsMatrix* CreateCrsMatrix(string MatrixType,
+Epetra_CrsMatrix* CreateCrsMatrix(std::string MatrixType,
                                   const Epetra_Map* Map,
                                   Teuchos::ParameterList& List);
 

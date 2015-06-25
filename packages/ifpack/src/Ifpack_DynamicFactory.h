@@ -31,7 +31,7 @@
 #define IFPACK_DYNAMIC_FACTORY_H
 
 #include <ostream>
-#include <string>
+#include <std::string>
 #include <map>
 #include <algorithm>
 
@@ -59,7 +59,7 @@ public:
   // The prototype of the preconditioner builder function
   typedef Ifpack_Preconditioner* (*builderFunction)(Epetra_RowMatrix*, int, bool, bool);
 
-  /** \brief Creates an instance of Ifpack_Preconditioner given the string
+  /** \brief Creates an instance of Ifpack_Preconditioner given the std::string
    * name of the preconditioner type (can fail with bad input).
    *
    * \param PrecType (In) - String name of preconditioner type to be created. 
@@ -73,7 +73,7 @@ public:
    * that the client is responsible for calling <tt>delete</tt> on the
    * returned object once it is finished using it!
    */
-  Ifpack_Preconditioner* Create(const string PrecType,
+  Ifpack_Preconditioner* Create(const std::string PrecType,
 								Epetra_RowMatrix* Matrix,
 								const int overlap = 0,
                                 bool overrideSerialDefault = false);

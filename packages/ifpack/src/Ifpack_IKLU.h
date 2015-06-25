@@ -353,7 +353,7 @@ private:
   //! Discards all elements below this tolerance
   double DropTolerance_;
   //! Label for \c this object
-  string Label_;
+  std::string Label_;
   //! \c true if \c this object has been initialized
   bool IsInitialized_;
   //! \c true if \c this object has been computed

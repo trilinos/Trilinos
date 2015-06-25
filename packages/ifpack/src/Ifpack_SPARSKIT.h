@@ -78,11 +78,11 @@ class Ifpack_SPARSKIT: public Ifpack_Preconditioner {
   */
   int SetParameters(Teuchos::ParameterList& parameterlis);
 
-  int SetParameter(const string Name, const int Value)
+  int SetParameter(const std::string Name, const int Value)
   {
     IFPACK_CHK_ERR(-98);
   }
-  int SetParameter(const string Name, const double Value)
+  int SetParameter(const std::string Name, const double Value)
   {
     IFPACK_CHK_ERR(-98);
   }
@@ -264,14 +264,14 @@ private:
   double permtol_;
   double alph_;
   int mbloc_;
-  string Type_;
+  std::string Type_;
 
   // Factorization in MSR format.
   std::vector<double> alu_;
   std::vector<int> jlu_;
   std::vector<int> ju_;
 
-  string Label_;
+  std::string Label_;
   // Permutation vector if required by ILUTP and ILUDP.
   std::vector<int> iperm_;
 

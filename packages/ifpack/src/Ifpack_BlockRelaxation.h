@@ -431,10 +431,10 @@ private:
 
   //! Contains information about non-overlapping partitions.
   Teuchos::RefCountPtr<Ifpack_Partitioner> Partitioner_;
-  string PartitionerType_;
+  std::string PartitionerType_;
   int PrecType_;
   //! Label for \c this object
-  string Label_;
+  std::string Label_;
   //! If \c true, starting solution is the zero vector.
   bool ZeroStartingSolution_;
   Teuchos::RefCountPtr<Ifpack_Graph> Graph_;
@@ -1106,7 +1106,7 @@ template<typename T>
 ostream& Ifpack_BlockRelaxation<T>::Print(ostream & os) const
 {
 
-  string PT;
+  std::string PT;
   if (PrecType_ == IFPACK_JACOBI)
     PT = "Jacobi";
   else if (PrecType_ == IFPACK_GS)
@@ -1163,7 +1163,7 @@ template<typename T>
 int Ifpack_BlockRelaxation<T>::SetParameters(Teuchos::ParameterList& List)
 {
 
-  string PT;
+  std::string PT;
   if (PrecType_ == IFPACK_JACOBI)
     PT = "Jacobi";
   else if (PrecType_ == IFPACK_GS)
@@ -1213,7 +1213,7 @@ int Ifpack_BlockRelaxation<T>::SetParameters(Teuchos::ParameterList& List)
   List_ = List;
 
   // set the label
-  string PT2;
+  std::string PT2;
   if (PrecType_ == IFPACK_JACOBI)
     PT2 = "BJ";
   else if (PrecType_ == IFPACK_GS)
@@ -1278,7 +1278,7 @@ int Ifpack_BlockRelaxation<T>::Initialize()
   // Update Label_ if line smoothing
   if (PartitionerType_ == "line") {
     // set the label
-    string PT2;
+    std::string PT2;
     if (PrecType_ == IFPACK_JACOBI)
       PT2 = "BJ";
     else if (PrecType_ == IFPACK_GS)

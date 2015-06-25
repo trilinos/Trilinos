@@ -470,7 +470,7 @@ private:
   Teuchos::RefCountPtr<Epetra_Import> ExtImporter_;
 
   int OverlapLevel_;
-  string Label_;
+  std::string Label_;
 
   template<typename int_type>
   void BuildMap(int OverlapLevel_in);

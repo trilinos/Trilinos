@@ -133,7 +133,7 @@ public:
 
   \return Integer error code, set to 0 if successful.
  */
-  int SetParameter(string name, int Value);
+  int SetParameter(std::string name, int Value);
 
   //! Set a parameter that takes a single double.
   /*!
@@ -142,7 +142,7 @@ public:
 
   \return Integer error code, set to 0 if successful.
   */
-  int SetParameter(string name, double Value);
+  int SetParameter(std::string name, double Value);
 
   //! If parameter is true, will use transpose operations.
   int SetUseTranspose(bool UseTranspose_in) {UseTranspose_ = UseTranspose_in; return(0);};

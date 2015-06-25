@@ -57,7 +57,7 @@ namespace Teuchos {
 namespace Galeri {
 
 Epetra_MultiVector* 
-CreateCartesianCoordinates(const string CoordType,
+CreateCartesianCoordinates(const std::string CoordType,
                            const Epetra_BlockMap* BlockMap,
                            Teuchos::ParameterList& List);
 
@@ -72,25 +72,25 @@ double ComputeNorm(const Epetra_MultiVector* LHS,
 double ComputeNorm(const Epetra_RowMatrix* A,
                    const Epetra_MultiVector* LHS, const Epetra_MultiVector* RHS);
 
-string toString(const int& x);
+std::string toString(const int& x);
 
-string toString(const unsigned int& x);
+std::string toString(const unsigned int& x);
 
-string toString(const long int& x);
+std::string toString(const long int& x);
 
-string toString(const unsigned long int& x);
+std::string toString(const unsigned long int& x);
 
-string toString(const double& x);
+std::string toString(const double& x);
 
-string toString(const long long& x);
+std::string toString(const long long& x);
 
-string toString(const unsigned long long& x);
+std::string toString(const unsigned long long& x);
 
 // printf for size_t is not cleanly possible on all platforms and
 // different size_t sizes.  It is also not required since we
 // already have overloads for unsigned {int,long,long long}.
 // Hence commenting it out.
-//string toString(const size_t & x);
+//std::string toString(const size_t & x);
 
 void 
 GetNeighboursCartesian2d(const int i, const int nx, const int ny,

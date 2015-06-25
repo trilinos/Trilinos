@@ -362,7 +362,7 @@ private:
   //! Relaxation value.
   double Relax_;
   //! Label of \c this object.
-  string Label_;
+  std::string Label_;
   //! If \c true, the preconditioner has been successfully initialized.
   bool IsInitialized_;
   //! If \c true, the preconditioner has been successfully computed.

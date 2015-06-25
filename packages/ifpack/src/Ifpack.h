@@ -61,7 +61,7 @@ Create(). Using Create(), users can easily define a variety of
 IFPACK preconditioners. 
 
 Create requires 3 arguments:
-- a string, indicating the preconditioner to be built;
+- a std::string, indicating the preconditioner to be built;
 - a pointer to an Epetra_RowMatrix, representing the matrix
   to be used to define the preconditioner;
 - an interger (defaulted to 0), that specifies the amount of
@@ -97,7 +97,7 @@ basic usage of this class.
 Ifpack Factory;
 
 Epetra_RowMatrix* A; // A is FillComplete()'d.
-string PrecType = "ILU"; // use incomplete LU on each process
+std::string PrecType = "ILU"; // use incomplete LU on each process
 int OverlapLevel = 1; // one row of overlap among the processes
 Ifpack_Preconditioner* Prec = Factory.Create(PrecType, A, OverlapLevel);
 assert (Prec != 0);
@@ -222,14 +222,14 @@ public:
   /** \brief List of the preconditioner types as enum values . */
   static const EPrecType precTypeValues[numPrecTypes];
 
-  /** \brief List of preconditioner types as string values. */
+  /** \brief List of preconditioner types as std::string values. */
   static const char* precTypeNames[numPrecTypes];
 
   /** \brief List of bools that determines if the preconditioner type supports
    * unsymmetric matrices. */
   static const bool supportsUnsymmetric[numPrecTypes];
 
-  /** \brief Function that gives the string name for preconditioner given its
+  /** \brief Function that gives the std::string name for preconditioner given its
    * enumerication value. */
   static const char* toString(const EPrecType precType)
       { return precTypeNames[precType]; }
@@ -247,7 +247,7 @@ public:
     EPrecType PrecType, Epetra_RowMatrix* Matrix, const int overlap = 0, bool overrideSerialDefault = false
     );
 
-  /** \brief Creates an instance of Ifpack_Preconditioner given the string
+  /** \brief Creates an instance of Ifpack_Preconditioner given the std::string
    * name of the preconditioner type (can fail with bad input).
    *
    * \param PrecType (In) - String name of preconditioner type to be created. 
@@ -261,7 +261,7 @@ public:
    * that the client is responsible for calling <tt>delete</tt> on the
    * returned object once it is finished using it!
    */
-  Ifpack_Preconditioner* Create(const string PrecType,
+  Ifpack_Preconditioner* Create(const std::string PrecType,
 				Epetra_RowMatrix* Matrix,
 				const int overlap = 0,
                                 bool overrideSerialDefault = false);
@@ -274,7 +274,7 @@ public:
    * <tt>Teuchos::updateParametersFromXmlStream()</tt>.
    */
   int SetParameters(int argc, char* argv[],
-                    Teuchos::ParameterList& List, string& PrecType,
+                    Teuchos::ParameterList& List, std::string& PrecType,
                     int& Overlap);
 
 };

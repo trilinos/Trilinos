@@ -393,7 +393,7 @@ private:
   //! Max number of iterations to use in eigenvalue estimation (if automatic).
   int EigMaxIters_;
   //! Contains the label of this object.
-  string Label_;
+  std::string Label_;
   //! Contains an approximation to the smallest eigenvalue.
   double LambdaMin_;
   //! Contains an approximation to the largest eigenvalue.

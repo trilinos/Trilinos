@@ -72,10 +72,10 @@ public:
   virtual ~Ifpack_AMDReordering() {};
   
   //! Sets integer parameters `Name'.
-  int SetParameter(const string Name, const int Value);
+  int SetParameter(const std::string Name, const int Value);
 
   //! Sets double parameters `Name'.
-  int SetParameter(const string Name, const double Value);
+  int SetParameter(const std::string Name, const double Value);
   
   //! Sets all parameters.
   int SetParameters(Teuchos::ParameterList& List);

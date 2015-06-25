@@ -184,9 +184,9 @@ int Ifpack_Chebyshev::SetParameters(Teuchos::ParameterList& List)
     // w/"invert" if it's set to multiply
     Teuchos::ParameterList Blist;
     Blist=BlockList_.get("blockdiagmatrix: list",Blist);
-    string dummy("invert");
-    string ApplyMode=Blist.get("apply mode",dummy);
-    if(ApplyMode==string("multiply")){
+    std::string dummy("invert");
+    std::string ApplyMode=Blist.get("apply mode",dummy);
+    if(ApplyMode==std::string("multiply")){
       Blist.set("apply mode","invert");
       BlockList_.set("blockdiagmatrix: list",Blist);
     }

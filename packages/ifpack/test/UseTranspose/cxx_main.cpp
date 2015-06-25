@@ -56,7 +56,7 @@
 #include "Ifpack_AdditiveSchwarz.h"
 
 template<class T>
-void Test(const string what, Epetra_RowMatrix& A)
+void Test(const std::string what, Epetra_RowMatrix& A)
 {
   T Prec(&A);
 

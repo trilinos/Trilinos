@@ -302,7 +302,7 @@ private:
   //! Pointer to an Ifpack_Preconditioner object whose ApplyInverse() defined the action of the inverse of the local matrix.
   Teuchos::RefCountPtr<T> Inverse_;
   //! Label for \c this object
-  string Label_;
+  std::string Label_;
   Teuchos::ParameterList List_;
   double ApplyFlops_;
 

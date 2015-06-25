@@ -86,11 +86,11 @@ struct param_struct {
   Epetra_CombineMode overlap_mode;
 };
 
-Teuchos::map<string,parameter>& key_map();
+Teuchos::map<std::string,parameter>& key_map();
 
 IFPACK_DEPRECATED void initialize_string_map();
 
-string upper_case(const string& s);
+std::string upper_case(const std::string& s);
 
 IFPACK_DEPRECATED void set_parameters(const Teuchos::ParameterList& parameterlist,
                     param_struct& params,
