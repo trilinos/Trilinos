@@ -153,7 +153,7 @@ public:
 
   //! Set the matrix element (row,col) to \c value.
   virtual int SetMatrixElement(const int row, const int col,
-			       const double value);
+                               const double value);
 
 
   //! Returns \c true is the container has been successfully initialized.
@@ -272,7 +272,7 @@ public:
   }
 
   //! Prints basic information on iostream. This function is used by operator<<.
-  virtual ostream& Print(std::ostream& os) const;
+  virtual std::ostream& Print(std::ostream& os) const;
 
 private:
 
@@ -578,7 +578,7 @@ int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix& Matrix_in)
 
     int ierr =
       Matrix_in.ExtractMyRowCopy(LRID, Length, NumEntries,
-			       &Values[0], &Indices[0]);
+                               &Values[0], &Indices[0]);
     IFPACK_CHK_ERR(ierr);
 
     for (int k = 0 ; k < NumEntries ; ++k) {
@@ -587,18 +587,18 @@ int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix& Matrix_in)
 
       // skip off-processor elements
       if (LCID >= Matrix_in.NumMyRows())
-	continue;
+        continue;
 
       // for local column IDs, look for each ID in the list
       // of columns hosted by this object
       // FIXME: use STL
       int jj = -1;
       for (int kk = 0 ; kk < NumRows_ ; ++kk)
-	if (ID(kk) == LCID)
-	  jj = kk;
+        if (ID(kk) == LCID)
+          jj = kk;
 
       if (jj != -1)
-	SetMatrixElement(j,jj,Values[k]);
+        SetMatrixElement(j,jj,Values[k]);
 
     }
   }
@@ -610,8 +610,10 @@ int Ifpack_SparseContainer<T>::Extract(const Epetra_RowMatrix& Matrix_in)
 
 //==============================================================================
 template<typename T>
-ostream& Ifpack_SparseContainer<T>::Print(ostream & os) const
+std::ostream& Ifpack_SparseContainer<T>::Print(std::ostream & os) const
 {
+  using std::endl;
+
   os << "================================================================================" << endl;
   os << "Ifpack_SparseContainer" << endl;
   os << "Number of rows          = " << NumRows() << endl;

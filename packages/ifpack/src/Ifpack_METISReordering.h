@@ -74,7 +74,7 @@ public:
       UseSymmetricGraph_ = (bool)Value;
     return(0);
   }
- 
+
   //! Sets double parameters `Name'.
   virtual int SetParameter(const std::string Name, const double Value)
   {
@@ -84,8 +84,8 @@ public:
   //! Sets all the parameters for the partitioner (none at moment).
   virtual int SetParameters(Teuchos::ParameterList& List)
   {
-    UseSymmetricGraph_ = List.get("partitioner: use symmetric graph", 
-				  UseSymmetricGraph_);
+    UseSymmetricGraph_ = List.get("partitioner: use symmetric graph",
+                                  UseSymmetricGraph_);
 
     return(0);
   }
@@ -110,14 +110,14 @@ public:
 
   //! Applies reordering to multivector Xorig, whose local length equals the number of local rows, stores result in X.
   virtual int P(const Epetra_MultiVector& Xorig,
-		Epetra_MultiVector& X) const;
+                Epetra_MultiVector& X) const;
 
   //! Applies inverse reordering to multivector Xorig, whose local length equals the number of local rows, stores result in X.
   virtual int Pinv(const Epetra_MultiVector& Xorig,
-		   Epetra_MultiVector& X) const;
+                   Epetra_MultiVector& X) const;
 
   //! Prints basic information on iostream. This function is used by operator<<.
-  virtual ostream& Print(std::ostream& os) const;
+  virtual std::ostream& Print(std::ostream& os) const;
 
 private:
   //! If \c true, the graph has to be symmetrized before calling METIS.

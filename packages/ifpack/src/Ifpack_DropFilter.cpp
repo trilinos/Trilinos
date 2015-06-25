@@ -51,13 +51,16 @@
 
 //==============================================================================
 Ifpack_DropFilter::Ifpack_DropFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix,
-				     double DropTol) :
+                                     double DropTol) :
   A_(Matrix),
   DropTol_(DropTol),
   MaxNumEntries_(0),
   MaxNumEntriesA_(0),
   NumNonzeros_(0)
 {
+  using std::cerr;
+  using std::endl;
+
   // use this filter only on serial matrices
   if (A_->Comm().NumProc() != 1) {
     cerr << "Ifpack_DropFilter can be used with Comm().NumProc() == 1" << endl;
@@ -65,7 +68,7 @@ Ifpack_DropFilter::Ifpack_DropFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix
     cerr << "and it is not meant to be used otherwise." << endl;
     exit(EXIT_FAILURE);
   }
-  
+
   if ((A_->NumMyRows() != A_->NumGlobalRows64()) ||
       (A_->NumMyRows() != A_->NumMyCols()))
     IFPACK_CHK_ERRV(-2);
@@ -84,8 +87,8 @@ Ifpack_DropFilter::Ifpack_DropFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix
     NumEntries_[i] = MaxNumEntriesA_;
     int Nnz;
     IFPACK_CHK_ERRV(ExtractMyRowCopy(i,MaxNumEntriesA_,Nnz,
-				     &Val[0], &Ind[0]));
- 
+                                     &Val[0], &Ind[0]));
+
     NumEntries_[i] = Nnz;
     NumNonzeros_ += Nnz;
     if (Nnz > MaxNumEntries_)
@@ -96,8 +99,8 @@ Ifpack_DropFilter::Ifpack_DropFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix
 
 //==============================================================================
 int Ifpack_DropFilter::
-ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, 
-		 double *Values, int * Indices) const
+ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
+                 double *Values, int * Indices) const
 {
   if (Length < NumEntries_[MyRow])
     IFPACK_CHK_ERR(-1);
@@ -105,7 +108,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
   int Nnz;
 
   IFPACK_CHK_ERR(A_->ExtractMyRowCopy(MyRow,MaxNumEntriesA_,Nnz,
-				     &Values_[0],&Indices_[0]));
+                                     &Values_[0],&Indices_[0]));
 
   // loop over all nonzero elements of row MyRow,
   // and drop elements below specified threshold.
@@ -118,7 +121,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
     // exceeding allocated space. Do not drop any diagonal entry.
     if ((Indices_[i] == MyRow) || (IFPACK_ABS(Values_[i]) >= DropTol_)) {
       if (count == Length)
-	IFPACK_CHK_ERR(-1);
+        IFPACK_CHK_ERR(-1);
       Values[count] = Values_[i];
       Indices[count] = Indices_[i];
       count++;
@@ -139,8 +142,8 @@ ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 
 //==============================================================================
 int Ifpack_DropFilter::
-Multiply(bool TransA, const Epetra_MultiVector& X, 
-	 Epetra_MultiVector& Y) const
+Multiply(bool TransA, const Epetra_MultiVector& X,
+         Epetra_MultiVector& Y) const
 {
   // NOTE: I suppose that the matrix has been localized,
   // hence all maps are trivial.
@@ -157,21 +160,21 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
 
     int Nnz;
     ExtractMyRowCopy(i,MaxNumEntries_,Nnz,
-		     &Values[0], &Indices[0]);
+                     &Values[0], &Indices[0]);
     if (!TransA) {
       // no transpose first
       for (int j = 0 ; j < NumVectors ; ++j) {
-	for (int k = 0 ; k < Nnz ; ++k) {
-	  Y[j][i] += Values[k] * X[j][Indices[k]];
-	}
+        for (int k = 0 ; k < Nnz ; ++k) {
+          Y[j][i] += Values[k] * X[j][Indices[k]];
+        }
       }
     }
     else {
       // transpose here
       for (int j = 0 ; j < NumVectors ; ++j) {
-	for (int k = 0 ; k < Nnz ; ++k) {
-	  Y[j][Indices[k]] += Values[k] * X[j][i];
-	}
+        for (int k = 0 ; k < Nnz ; ++k) {
+          Y[j][Indices[k]] += Values[k] * X[j][i];
+        }
       }
     }
   }
@@ -181,7 +184,7 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
 
 //==============================================================================
 int Ifpack_DropFilter::
-Solve(bool Upper, bool Trans, bool UnitDiagonal, 
+Solve(bool Upper, bool Trans, bool UnitDiagonal,
       const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   IFPACK_CHK_ERR(-99);

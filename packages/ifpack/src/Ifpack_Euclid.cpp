@@ -174,7 +174,10 @@ int Ifpack_Euclid::SetParameter(std::string name, int value){
   } else if(name.compare("setrowscale") == 0){
     SetRowScale_ = value;
   } else {
-    cout << "\nThe std::string " << name << " is not an available option.\n";
+    using std::cout;
+    using std::endl;
+
+    cout << "\nThe string " << name << " is not an available option." << endl;
     IFPACK_CHK_ERR(-1);
   }
   return 0;
@@ -192,7 +195,10 @@ int Ifpack_Euclid::SetParameter(std::string name, double value){
   } else if(name.compare("setilut") == 0){
     SetILUT_ = value;
   } else {
-    cout << "\nThe std::string " << name << " is not an available option.\n";
+    using std::cout;
+    using std::endl;
+
+    cout << "\nThe string " << name << " is not an available option." << endl;
     IFPACK_CHK_ERR(-1);
   }
   return 0;
@@ -264,7 +270,7 @@ int Ifpack_Euclid::CallEuclid(double *x, double *y) const{
 } //CallEuclid()
 
 //==============================================================================
-ostream& operator << (ostream& os, const Ifpack_Euclid& A){
+std::ostream& operator << (std::ostream& os, const Ifpack_Euclid& A){
   if (!A.Comm().MyPID()) {
     os << endl;
     os << "================================================================================" << endl;
@@ -300,7 +306,7 @@ ostream& operator << (ostream& os, const Ifpack_Euclid& A){
 } // <<
 
 //==============================================================================
-double Ifpack_Euclid::Condest(const Ifpack_CondestType CT, 
+double Ifpack_Euclid::Condest(const Ifpack_CondestType CT,
                              const int MaxIters,
                              const double Tol,
                              Epetra_RowMatrix* Matrix_in){

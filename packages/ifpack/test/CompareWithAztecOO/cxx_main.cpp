@@ -68,6 +68,8 @@ bool verbose = false;
 bool CompareWithAztecOO(Epetra_LinearProblem& Problem, const std::string what,
                        int Overlap, int ival)
 {
+  using std::cout;
+  using std::endl;
 
   AztecOO AztecOOSolver(Problem);
   AztecOOSolver.SetAztecOption(AZ_solver,AZ_gmres);
@@ -91,14 +93,14 @@ bool CompareWithAztecOO(Epetra_LinearProblem& Problem, const std::string what,
   List.set("relaxation: sweeps", ival);
   List.set("relaxation: damping factor", 1.0);
   List.set("relaxation: zero starting solution", true);
- 
+
   //default combine mode is as for AztecOO
   List.set("schwarz: combine mode", Zero);
 
   Epetra_Time Time(A->Comm());
 
   Teuchos::RefCountPtr<Ifpack_Preconditioner> Prec;
-  
+
   if (what == "Jacobi") {
     Prec = Teuchos::rcp( new Ifpack_PointRelaxation(&*A) );
     List.set("relaxation: type", "Jacobi");
@@ -170,7 +172,7 @@ bool CompareWithAztecOO(Epetra_LinearProblem& Problem, const std::string what,
   // =========================================== //
   // Create the IFPACK preconditioner and solver //
   // =========================================== //
- 
+
   Epetra_Time Time2(A->Comm());
   assert(Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->SetParameters(List));
@@ -205,7 +207,7 @@ bool CompareWithAztecOO(Epetra_LinearProblem& Problem, const std::string what,
   int IFPACKPrecIters = AztecOOSolver.NumIters();
 
   if (IFPACK_ABS(AztecOOPrecIters - IFPACKPrecIters) > 3) {
-    cerr << "TEST FAILED (" << AztecOOPrecIters << " != " 
+    cerr << "TEST FAILED (" << AztecOOPrecIters << " != "
          << IFPACKPrecIters << ")" << endl;
     return(false);
   }
@@ -214,7 +216,7 @@ bool CompareWithAztecOO(Epetra_LinearProblem& Problem, const std::string what,
 
 }
 
-// ====================================================================== 
+// ======================================================================
 int main(int argc, char *argv[])
 {
 
@@ -241,16 +243,16 @@ int main(int argc, char *argv[])
 
   // Jacobi as in AztecOO (no overlap)
   for (int ival = 1 ; ival < 10 ; ival += 3) {
-    TestPassed = TestPassed && 
+    TestPassed = TestPassed &&
       CompareWithAztecOO(Problem,"Jacobi",0,ival);
   }
 
 #if 0
   // AztecOO with IC and overlap complains, also with
   // large fill-ins (in parallel)
-  TestPassed = TestPassed && 
+  TestPassed = TestPassed &&
     CompareWithAztecOO(Problem,"IC no reord",0,0);
-  TestPassed = TestPassed && 
+  TestPassed = TestPassed &&
     CompareWithAztecOO(Problem,"IC reord",0,0);
 
   vector<std::string> Tests;
@@ -265,7 +267,7 @@ int main(int argc, char *argv[])
   for (unsigned int i = 0 ; i < Tests.size() ; ++i) {
     for (int overlap = 0 ; overlap < 1 ; overlap += 2) {
       for (int ival = 0 ; ival < 10 ; ival += 4)
-        TestPassed = TestPassed && 
+        TestPassed = TestPassed &&
           CompareWithAztecOO(Problem,Tests[i],overlap,ival);
     }
   }
@@ -277,7 +279,7 @@ int main(int argc, char *argv[])
   }
 
 #ifdef HAVE_MPI
-  MPI_Finalize() ; 
+  MPI_Finalize() ;
 #endif
   cout << "Test `CompareWithAztecOO.exe' passed!" << endl;
 

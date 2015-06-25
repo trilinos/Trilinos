@@ -119,11 +119,6 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
-using std::istream;
-using std::ostream;
-using std::cerr;
-using std::cout;
-using std::endl;
 
 // prints out an error message if variable is not zero,
 // and returns this value.
@@ -145,7 +140,7 @@ using std::endl;
 { if (ifpack_err < 0) { \
   std::cerr << "IFPACK ERROR " << ifpack_err << ", " \
     << __FILE__ << ", line " << __LINE__ << std::endl; \
-		       } return(ifpack_err); }
+                       } return(ifpack_err); }
 
 #define IFPACK_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)  /* sign function */
 #define IFPACK_ABS(x) (((x) > 0.0) ? (x) : (-x))  /* abs function */

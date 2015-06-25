@@ -212,7 +212,7 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
   ,true // block relaxation stand-alone (Amesos)
   ,true // block relaxation (Amesos)
   ,true // Amesos
-  ,true // Amesos stand-alone 
+  ,true // Amesos stand-alone
 #endif
   ,false // IC
   ,false // IC stand-alone
@@ -227,7 +227,7 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
 #endif
 #ifdef HAVE_IFPACK_HIPS
   ,true // HIPS
-#endif  
+#endif
 #ifdef HAVE_HYPRE
   ,true
 #endif
@@ -330,9 +330,9 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
       return(new Ifpack_SPARSKIT(Matrix));
 #endif
 #ifdef HAVE_IFPACK_HIPS
-    case HIPS:      
+    case HIPS:
       return(new Ifpack_HIPS(Matrix));
-#endif      
+#endif
 #ifdef HAVE_HYPRE
     case HYPRE:
       return(new Ifpack_Hypre(Matrix));
@@ -344,16 +344,16 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
 #if defined (HAVE_IFPACK_SUPPORTGRAPH) && defined (HAVE_IFPACK_AMESOS)
     case MSF_AMESOS:
       if (serial && !overrideSerialDefault)
-	return(new Ifpack_SupportGraph<Ifpack_Amesos>(Matrix));
+        return(new Ifpack_SupportGraph<Ifpack_Amesos>(Matrix));
       else
-	return(new Ifpack_AdditiveSchwarz<Ifpack_SupportGraph<Ifpack_Amesos> >(Matrix,Overlap));
+        return(new Ifpack_AdditiveSchwarz<Ifpack_SupportGraph<Ifpack_Amesos> >(Matrix,Overlap));
 #endif
 #ifdef HAVE_IFPACK_SUPPORTGRAPH
     case MSF_IC:
       if (serial && !overrideSerialDefault)
-	return(new Ifpack_SupportGraph<Ifpack_SupportGraph<Ifpack_IC> >(Matrix));
+        return(new Ifpack_SupportGraph<Ifpack_SupportGraph<Ifpack_IC> >(Matrix));
       else
-	return(new Ifpack_AdditiveSchwarz<Ifpack_SupportGraph<Ifpack_IC> >(Matrix,Overlap));
+        return(new Ifpack_AdditiveSchwarz<Ifpack_SupportGraph<Ifpack_IC> >(Matrix,Overlap));
 #endif
     case CHEBYSHEV:
       return(new Ifpack_Chebyshev(Matrix));
@@ -366,9 +366,9 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
         return(new Ifpack_AdditiveSchwarz<Ifpack_Krylov>(Matrix, Overlap));
 #ifdef HAVE_IFPACK_EPETRAEXT
     case IHSS:
-      return(new Ifpack_IHSS(Matrix));  
+      return(new Ifpack_IHSS(Matrix));
     case SORA:
-      return(new Ifpack_SORa(Matrix));  
+      return(new Ifpack_SORa(Matrix));
 #endif
     case TRIDI_RELAXATION:
      if (serial && !overrideSerialDefault)

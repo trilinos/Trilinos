@@ -66,16 +66,16 @@ void Ifpack_BreakForDebugger(Epetra_Comm& Comm);
 
 //! Creates an overlapping Epetra_CrsMatrix. Returns 0 if OverlappingLevel is 0.
 Epetra_CrsMatrix* Ifpack_CreateOverlappingCrsMatrix(const Epetra_RowMatrix* Matrix,
-						    const int OverlappingLevel);
+                                                    const int OverlappingLevel);
 
 //! Creates an overlapping Epetra_CrsGraph. Returns 0 if OverlappingLevel is 0.
 Epetra_CrsGraph* Ifpack_CreateOverlappingCrsMatrix(const Epetra_CrsGraph* Graph,
-						   const int OverlappingLevel);
+                                                   const int OverlappingLevel);
 
-//! Convertes an integer to std::string.
+//! Converts an integer to std::string.
 std::string Ifpack_toString(const int& x);
 
-//! Convertes a double to std::string.
+//! Converts a double to std::string.
 std::string Ifpack_toString(const double& x);
 
 //! Prints on cout the true residual.
@@ -101,7 +101,7 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap = false,
  An example of output is reported \ref ifp_matrix.
  */
 int Ifpack_AnalyzeMatrixElements(const Epetra_RowMatrix& A,
-                                 const bool abs = false, 
+                                 const bool abs = false,
                                  const int steps = 10);
 
 //! Analyzes the distribution of values of the input vector Diagonal.
@@ -114,7 +114,7 @@ int Ifpack_AnalyzeMatrixElements(const Epetra_RowMatrix& A,
  An example of output is reported \ref ifp_vector.
  */
 int Ifpack_AnalyzeVectorElements(const Epetra_Vector& Diagonal,
-                                 const bool abs = false, 
+                                 const bool abs = false,
                                  const int steps = 10);
 
 //! Plots the sparsity pattern of an Epetra_RowMatrix into a PS file.
@@ -128,9 +128,9 @@ int Ifpack_AnalyzeVectorElements(const Epetra_Vector& Diagonal,
  \param NumPDEEqns (In) - number of PDE equations. The function will plot
                the block structure of the matrix if NumPDEEqns > 1
 
- \name Largely inspired from Yousef Saad's SPARSKIT plot function. 
+ \name Largely inspired from Yousef Saad's SPARSKIT plot function.
  */
-int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* FileName = 0, 
+int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* FileName = 0,
                          const int NumPDEEqns = 1);
 
 //==============================================================================
@@ -168,7 +168,7 @@ public:
     aval_ = IFPACK_ABS(val_);
   }
 
-  inline bool operator <(const Ifpack_Element& rhs) const 
+  inline bool operator <(const Ifpack_Element& rhs) const
   {
     if (rhs.AbsValue() > AbsValue())
       return(false);

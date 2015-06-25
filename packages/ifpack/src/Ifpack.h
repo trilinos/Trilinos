@@ -57,8 +57,8 @@
 //! Ifpack: a function class to define Ifpack preconditioners.
 /*!
 Class Ifpack is a function class, that contains just one method:
-Create(). Using Create(), users can easily define a variety of 
-IFPACK preconditioners. 
+Create(). Using Create(), users can easily define a variety of
+IFPACK preconditioners.
 
 Create requires 3 arguments:
 - a std::string, indicating the preconditioner to be built;
@@ -85,7 +85,7 @@ The first argument can assume the following values:
 - otherwise, Create() returns 0.
 
 \note Objects in stand-alone mode cannot use reordering, variable overlap, and singleton filters.
-However, their construction can be slightly faster than the non stand-alone counterpart. 
+However, their construction can be slightly faster than the non stand-alone counterpart.
 
 <P> The following fragment of code shows the
 basic usage of this class.
@@ -203,7 +203,7 @@ public:
 #endif
 #ifdef HAVE_IFPACK_HIPS
     +1
-#endif    
+#endif
 #ifdef HAVE_HYPRE
     +1
 #endif
@@ -237,7 +237,7 @@ public:
   /** \brief Creates an instance of Ifpack_Preconditioner given the enum value
    * of the preconditioner type (can not fail, no bad input possible).
    *
-   * \param PrecType (In) - Enum value of preconditioner type to be created. 
+   * \param PrecType (In) - Enum value of preconditioner type to be created.
    *
    * \param Matrix (In) - Matrix used to define the preconditioner
    *
@@ -250,7 +250,7 @@ public:
   /** \brief Creates an instance of Ifpack_Preconditioner given the std::string
    * name of the preconditioner type (can fail with bad input).
    *
-   * \param PrecType (In) - String name of preconditioner type to be created. 
+   * \param PrecType (In) - String name of preconditioner type to be created.
    *
    * \param Matrix (In) - Matrix used to define the preconditioner
    *
@@ -262,8 +262,8 @@ public:
    * returned object once it is finished using it!
    */
   Ifpack_Preconditioner* Create(const std::string PrecType,
-				Epetra_RowMatrix* Matrix,
-				const int overlap = 0,
+                                Epetra_RowMatrix* Matrix,
+                                const int overlap = 0,
                                 bool overrideSerialDefault = false);
 
   /** \brief Sets the options in List from the command line.

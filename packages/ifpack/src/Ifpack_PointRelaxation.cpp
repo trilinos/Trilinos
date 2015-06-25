@@ -96,6 +96,8 @@ Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix_in) :
 //==============================================================================
 int Ifpack_PointRelaxation::SetParameters(Teuchos::ParameterList& List)
 {
+  using std::cout;
+  using std::endl;
 
   std::string PT;
   if (PrecType_ == IFPACK_JACOBI)
@@ -294,8 +296,9 @@ int Ifpack_PointRelaxation::Compute()
 }
 
 //==============================================================================
-ostream& Ifpack_PointRelaxation::Print(ostream & os) const
+std::ostream& Ifpack_PointRelaxation::Print(std::ostream & os) const
 {
+  using std::endl;
 
   double MyMinVal, MyMaxVal;
   double MinVal, MaxVal;

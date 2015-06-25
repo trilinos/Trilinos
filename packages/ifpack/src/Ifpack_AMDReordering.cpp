@@ -86,7 +86,7 @@ operator=(const Ifpack_AMDReordering& RHS)
   NumMyRows_ = RHS.NumMyRows(); // set number of local rows
   IsComputed_ = RHS.IsComputed();
   // resize vectors, and copy values from RHS
-  Reorder_.resize(NumMyRows()); 
+  Reorder_.resize(NumMyRows());
   InvReorder_.resize(NumMyRows());
   if (IsComputed()) {
     for (int i = 0 ; i < NumMyRows_ ; ++i) {
@@ -131,13 +131,16 @@ int Ifpack_AMDReordering::Compute(const Epetra_RowMatrix& Matrix)
 //==============================================================================
 int Ifpack_AMDReordering::Compute(const Ifpack_Graph& Graph)
 {
+  using std::cout;
+  using std::endl;
+
   IsComputed_ = false;
   NumMyRows_ = Graph.NumMyRows();
   int NumNz = Graph.NumMyNonzeros();
-  
+
   if (NumMyRows_ == 0)
     IFPACK_CHK_ERR(-1); // strange graph this one
-  
+
   // Extract CRS format
   std::vector<int> ia(NumMyRows_+1,0);
   std::vector<int> ja(NumNz);
@@ -161,7 +164,7 @@ int Ifpack_AMDReordering::Compute(const Ifpack_Graph& Graph)
       if( ja[j] < NumMyRows_ )
         jat[loc++] = ja[j];
       else
-	break;
+        break;
     }
   }
   iat[NumMyRows_] = loc;
@@ -173,9 +176,9 @@ int Ifpack_AMDReordering::Compute(const Ifpack_Graph& Graph)
   amesos_amd_order( NumMyRows_, &iat[0], &jat[0], &Reorder_[0], NULL, &info[0] );
 
   if( info[AMD_STATUS] == AMD_INVALID )
-    cout << "AMD ORDERING: Invalid!!!!\n";
+    cout << "AMD ORDERING: Invalid!!!!" << endl;
 
-  // Build inverse reorder (will be used by ExtractMyRowCopy() 
+  // Build inverse reorder (will be used by ExtractMyRowCopy()
   InvReorder_.resize(NumMyRows_);
 
   for (int i = 0 ; i < NumMyRows_ ; ++i)
@@ -220,8 +223,8 @@ int Ifpack_AMDReordering::InvReorder(const int i) const
 }
 //==============================================================================
 int Ifpack_AMDReordering::P(const Epetra_MultiVector& Xorig,
-			    Epetra_MultiVector& X) const
-{  
+                            Epetra_MultiVector& X) const
+{
   int NumVectors = X.NumVectors();
 
   for (int j = 0 ; j < NumVectors ; ++j) {
@@ -236,7 +239,7 @@ int Ifpack_AMDReordering::P(const Epetra_MultiVector& Xorig,
 
 //==============================================================================
 int Ifpack_AMDReordering::Pinv(const Epetra_MultiVector& Xorig,
-			       Epetra_MultiVector& X) const
+                               Epetra_MultiVector& X) const
 {
   int NumVectors = X.NumVectors();
 
@@ -251,18 +254,20 @@ int Ifpack_AMDReordering::Pinv(const Epetra_MultiVector& Xorig,
 }
 
 //==============================================================================
-ostream& Ifpack_AMDReordering::Print(std::ostream& os) const
+std::ostream& Ifpack_AMDReordering::Print(std::ostream& os) const
 {
+  using std::endl;
+
   os << "*** Ifpack_AMDReordering" << endl << endl;
   if (!IsComputed())
     os << "*** Reordering not yet computed." << endl;
-  
+
   os << "*** Number of local rows = " << NumMyRows_ << endl;
   os << endl;
   os << "Local Row\tReorder[i]\tInvReorder[i]" << endl;
   for (int i = 0 ; i < NumMyRows_ ; ++i) {
     os << '\t' << i << "\t\t" << Reorder_[i] << "\t\t" << InvReorder_[i] << endl;
   }
-   
+
   return(os);
 }

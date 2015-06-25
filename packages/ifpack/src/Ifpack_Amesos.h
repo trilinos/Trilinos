@@ -58,7 +58,7 @@ class Epetra_RowMatrix;
 
 //! Ifpack_Amesos: a class to use Amesos' factorizations as preconditioners.
 /*!
-Class Ifpack_Amesos enables the use of Amesos' factorizations as 
+Class Ifpack_Amesos enables the use of Amesos' factorizations as
 Ifpack_Preconditioners.
 
 Ifpack_Amesos is just a bare-bone wrap to Amesos. Currently, the
@@ -79,7 +79,7 @@ process, that is, either serial matrices, or Ifpack_LocalFilter'd matrices.
 
 */
 class Ifpack_Amesos : public Ifpack_Preconditioner {
-      
+
 public:
 
   //@{ \name Constructors/Destructors.
@@ -102,26 +102,26 @@ public:
   //@{ \name Attribute set methods.
 
    //! If set true, transpose of this operator will be applied (not implemented).
-    /*! This flag allows the transpose of the given operator to be used 
-     * implicitly.  
-      
-    \param 
-	   UseTranspose_in - (In) If true, multiply by the transpose of operator, 
-	   otherwise just use operator.
+    /*! This flag allows the transpose of the given operator to be used
+     * implicitly.
+
+    \param
+           UseTranspose_in - (In) If true, multiply by the transpose of operator,
+           otherwise just use operator.
 
     \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.
   */
 
   virtual int SetUseTranspose(bool UseTranspose_in);
   //@}
-  
+
   //@{ \name Mathematical functions.
 
     //! Applies the matrix to an Epetra_MultiVector.
-  /*! 
+  /*!
     \param
     X - (In) A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
-    \param 
+    \param
     Y - (Out) A Epetra_MultiVector of dimension NumVectors containing the result.
 
     \return Integer error code, set to 0 if successful.
@@ -129,15 +129,15 @@ public:
     virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
     //! Applies the preconditioner to X, returns the result in Y.
-  /*! 
-    \param 
+  /*!
+    \param
     X - (In) A Epetra_MultiVector of dimension NumVectors to be preconditioned.
-    \param 
+    \param
     Y - (Out) A Epetra_MultiVector of dimension NumVectors containing result.
 
     \return Integer error code, set to 0 if successful.
 
-    \warning In order to work with AztecOO, any implementation of this method 
+    \warning In order to work with AztecOO, any implementation of this method
     must support the case where X and Y are the same object.
     */
     virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
@@ -145,7 +145,7 @@ public:
     //! Returns the infinity norm of the global matrix (not implemented)
     virtual double NormInf() const;
   //@}
-  
+
   //@{ \name Attribute access functions
 
     //! Returns a character string describing the operator
@@ -169,7 +169,7 @@ public:
   //@}
 
   //@{ \name Construction and application methods.
- 
+
   //! Returns \c true is the preconditioner has been successfully initialized.
   virtual bool IsInitialized() const
   {
@@ -201,7 +201,7 @@ public:
    *
    * The input list will be copied, then passed to the Amesos
    * object through Amesos::SetParameters().
-   */   
+   */
   virtual int SetParameters(Teuchos::ParameterList& List);
 
   //@}
@@ -218,8 +218,8 @@ public:
   virtual double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
                          const int MaxIters = 1550,
                          const double Tol = 1e-9,
-			 Epetra_RowMatrix* Matrix_in= 0);
-  
+                         Epetra_RowMatrix* Matrix_in= 0);
+
   //! Returns the estimated condition number, never computes it.
   virtual double Condest() const
   {
@@ -280,8 +280,8 @@ public:
     return(ApplyInverseFlops_);
   }
 
-  // Returns a constant reference to the internally stored 
-  virtual const Teuchos::ParameterList& List() const 
+  // Returns a constant reference to the internally stored
+  virtual const Teuchos::ParameterList& List() const
   {
     return(List_);
   }
@@ -292,11 +292,11 @@ public:
   //@}
 
 protected:
-  
+
   //@{ \name Methods to get/set private data
 
   //! Sets the label.
-  inline void SetLabel(const char* Label_in) 
+  inline void SetLabel(const char* Label_in)
   {
     Label_ = Label_in;
   }
@@ -367,7 +367,7 @@ protected:
     List_ = List_in;
   }
   //@}
-  
+
 private:
 
   //! Pointers to the matrix to be preconditioned.

@@ -100,6 +100,9 @@ void set_parameters(const Teuchos::ParameterList& parameterlist,
                     param_struct& params,
                     bool cerr_warning_if_unused)
 {
+  using std::cerr;
+  using std::endl;
+
   initialize_string_map();
 
   Teuchos::map<std::string,parameter>& ifp_key_map = key_map();

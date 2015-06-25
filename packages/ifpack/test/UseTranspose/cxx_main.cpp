@@ -58,6 +58,9 @@
 template<class T>
 void Test(const std::string what, Epetra_RowMatrix& A)
 {
+  using std::cout;
+  using std::endl;
+
   T Prec(&A);
 
   bool UseTranspose = true;
@@ -95,7 +98,7 @@ void Test(const std::string what, Epetra_RowMatrix& A)
 // main driver //
 // =========== //
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);

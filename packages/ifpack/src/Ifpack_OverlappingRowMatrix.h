@@ -96,10 +96,10 @@ public:
   //@{ \name Matrix data extraction routines
 
   //! Returns the number of nonzero entries in MyRow.
-  /*! 
-    \param 
+  /*!
+    \param
     MyRow - (In) Local row.
-    \param 
+    \param
     NumEntries - (Out) Number of nonzero values present.
 
     \return Integer error code, set to 0 if successful.
@@ -113,7 +113,7 @@ public:
   }
 
   //! Returns a copy of the specified local row in user-provided arrays.
-  /*! 
+  /*!
     \param
     MyRow - (In) Local row to extract.
     \param
@@ -122,7 +122,7 @@ public:
     NumEntries - (Out) Number of nonzero entries extracted.
     \param
     Values - (Out) Extracted values for this row.
-    \param 
+    \param
     Indices - (Out) Extracted global column indices for the corresponding values.
 
     \return Integer error code, set to 0 if successful.
@@ -137,7 +137,7 @@ public:
 #endif
 
   //! Returns a copy of the main diagonal in a user-provided vector.
-  /*! 
+  /*!
     \param
     Diagonal - (Out) Extracted main diagonal.
 
@@ -149,12 +149,12 @@ public:
   //@{ \name Mathematical functions.
 
   //! Returns the result of a Epetra_RowMatrix multiplied by a Epetra_MultiVector X in Y.
-  /*! 
-    \param 
+  /*!
+    \param
     TransA -(In) If true, multiply by the transpose of matrix, otherwise just use matrix.
-    \param 
+    \param
     X - (In) A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
-    \param 
+    \param
     Y -(Out) A Epetra_MultiVector of dimension NumVectorscontaining result.
 
     \return Integer error code, set to 0 if successful.
@@ -162,17 +162,17 @@ public:
   virtual int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   //! Returns result of a local-only solve using a triangular Epetra_RowMatrix with Epetra_MultiVectors X and Y (NOT IMPLEMENTED).
-  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, 
-		    Epetra_MultiVector& Y) const
+  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X,
+                    Epetra_MultiVector& Y) const
   {
-    IFPACK_RETURN(-1); // not implemented 
+    IFPACK_RETURN(-1); // not implemented
   }
 
   virtual int Apply(const Epetra_MultiVector& X,
-		    Epetra_MultiVector& Y) const;
+                    Epetra_MultiVector& Y) const;
 
   virtual int ApplyInverse(const Epetra_MultiVector& X,
-			   Epetra_MultiVector& Y) const;
+                           Epetra_MultiVector& Y) const;
   //! Computes the sum of absolute values of the rows of the Epetra_RowMatrix, results returned in x (NOT IMPLEMENTED).
   virtual int InvRowSums(Epetra_Vector& x) const
   {
@@ -193,7 +193,7 @@ public:
 
 
   //! Scales the Epetra_RowMatrix on the right with a Epetra_Vector x (NOT IMPLEMENTED).
-  virtual int RightScale(const Epetra_Vector& x) 
+  virtual int RightScale(const Epetra_Vector& x)
   {
     IFPACK_RETURN(-1); // not implemented
   }
@@ -211,7 +211,7 @@ public:
   //! Returns the infinity norm of the global matrix.
   /* Returns the quantity \f$ \| A \|_\infty\f$ such that
      \f[\| A \|_\infty = \max_{1\lei\len} \sum_{i=1}^m |a_{ij}| \f].
-     */ 
+     */
   virtual double NormInf() const
   {
     return(A().NormInf());
@@ -220,7 +220,7 @@ public:
   //! Returns the one norm of the global matrix.
   /* Returns the quantity \f$ \| A \|_1\f$ such that
      \f[\| A \|_1= \max_{1\lej\len} \sum_{j=1}^n |a_{ij}| \f].
-     */ 
+     */
   virtual double NormOne() const
   {
     return(A().NormOne());
@@ -357,7 +357,7 @@ public:
   }
 
   //! Returns the current UseTranspose setting.
-  bool UseTranspose() const 
+  bool UseTranspose() const
   {
     return(UseTranspose_);
   }
@@ -375,13 +375,13 @@ public:
   }
 
   //! Returns the Epetra_Map object associated with the domain of this operator.
-  const Epetra_Map & OperatorDomainMap() const 
+  const Epetra_Map & OperatorDomainMap() const
   {
     return(*Map_);
   }
 
   //! Returns the Epetra_Map object associated with the range of this operator.
-  const Epetra_Map & OperatorRangeMap() const 
+  const Epetra_Map & OperatorRangeMap() const
   {
     return(*Map_);
   }
@@ -406,7 +406,7 @@ int ExportMultiVector(const Epetra_MultiVector& OvX,
                       Epetra_MultiVector& X,
                       Epetra_CombineMode CM = Add);
 #ifdef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
-  inline const Epetra_RowMatrix& A() const 
+  inline const Epetra_RowMatrix& A() const
   {
     return(*Matrix_);
   }
@@ -417,7 +417,7 @@ int ExportMultiVector(const Epetra_MultiVector& OvX,
   }
 #else
 # ifdef IFPACK_NODE_AWARE_CODE
-  inline const Epetra_RowMatrix& A() const 
+  inline const Epetra_RowMatrix& A() const
   {
     return(*Matrix_);
   }
@@ -429,10 +429,10 @@ int ExportMultiVector(const Epetra_MultiVector& OvX,
 # endif
 #endif
 
-private: 
+private:
 #ifndef HAVE_IFPACK_PARALLEL_SUBDOMAIN_SOLVERS
 # ifndef IFPACK_NODE_AWARE_CODE
-  inline const Epetra_RowMatrix& A() const 
+  inline const Epetra_RowMatrix& A() const
   {
     return(*Matrix_);
   }

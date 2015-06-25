@@ -70,13 +70,13 @@ public:
 
   //! Destructor.
   virtual ~Ifpack_RCMReordering() {};
-  
+
   //! Sets integer parameters `Name'.
   virtual int SetParameter(const std::string Name, const int Value);
 
   //! Sets double parameters `Name'.
   virtual int SetParameter(const std::string Name, const double Value);
-  
+
   //! Sets all parameters.
   virtual int SetParameters(Teuchos::ParameterList& List);
 
@@ -100,24 +100,24 @@ public:
 
   //! Applies reordering to multivector X, whose local length equals the number of local rows.
   virtual int P(const Epetra_MultiVector& Xorig,
-		Epetra_MultiVector& Xreord) const;
+                Epetra_MultiVector& Xreord) const;
 
   //! Applies inverse reordering to multivector X, whose local length equals the number of local rows.
   virtual int Pinv(const Epetra_MultiVector& Xorig,
-		   Epetra_MultiVector& Xinvreord) const;
+                   Epetra_MultiVector& Xinvreord) const;
 
-  
+
   //! Prints basic information on iostream. This function is used by operator<<.
-  virtual ostream& Print(std::ostream& os) const;
+  virtual std::ostream& Print(std::ostream& os) const;
 
   //! Returns the number of local rows.
-  virtual int NumMyRows() const 
+  virtual int NumMyRows() const
   {
     return(NumMyRows_);
   }
 
   //! Returns the root node.
-  virtual int RootNode() const 
+  virtual int RootNode() const
   {
     return(RootNode_);
   }
@@ -133,6 +133,6 @@ private:
   std::vector<int> Reorder_;
   //! Contains the inverse reordering.
   std::vector<int> InvReorder_;
-}; 
+};
 
 #endif

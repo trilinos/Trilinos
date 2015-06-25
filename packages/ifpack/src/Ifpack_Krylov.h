@@ -210,7 +210,7 @@ public:
   virtual int SetParameters(Teuchos::ParameterList& List);
 
   //! Prints object to an output stream
-  virtual ostream& Print(ostream & os) const;
+  virtual std::ostream& Print(std::ostream & os) const;
 
   //@}
 

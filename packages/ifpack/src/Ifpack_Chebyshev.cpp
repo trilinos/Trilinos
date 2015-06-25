@@ -373,8 +373,9 @@ int Ifpack_Chebyshev::Compute()
 }
 
 //==============================================================================
-ostream& Ifpack_Chebyshev::Print(ostream & os) const
+std::ostream& Ifpack_Chebyshev::Print(std::ostream & os) const
 {
+  using std::endl;
 
   double MyMinVal, MyMaxVal;
   double MinVal, MaxVal;
@@ -785,6 +786,9 @@ CG(const Epetra_Operator& Operator,
 
   return(0);
 #else
+  using std::cout;
+  using std::endl;
+
   cout << "You need to configure IFPACK with support for AztecOO" << endl;
   cout << "to use the CG estimator. This may require --enable-aztecoo" << endl;
   cout << "in your configure script." << endl;
@@ -864,6 +868,9 @@ CG(const int MaximumIterations,
 
   return(0);
 #else
+  using std::cout;
+  using std::endl;
+
   cout << "You need to configure IFPACK with support for AztecOO" << endl;
   cout << "to use the CG estimator. This may require --enable-aztecoo" << endl;
   cout << "in your configure script." << endl;

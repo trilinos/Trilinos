@@ -69,6 +69,8 @@
 template <class T>
 bool Test(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix, Teuchos::ParameterList& List)
 {
+  using std::cout;
+  using std::endl;
 
   int NumVectors = 1;
   bool UseTranspose = false;
@@ -84,7 +86,7 @@ bool Test(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix, Teuchos::Paramet
   Epetra_LinearProblem Problem(&*Matrix,&LHS,&RHS);
 
   Teuchos::RefCountPtr<T> Prec;
-  
+
   Prec = Teuchos::rcp( new T(&*Matrix) );
   assert(Prec != Teuchos::null);
 
@@ -106,7 +108,7 @@ bool Test(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix, Teuchos::Paramet
   AztecOOSolver.Iterate(1550,1e-8);
 
   cout << *Prec;
-  
+
   std::vector<double> Norm(NumVectors);
   LHS.Update(1.0,LHSexact,-1.0);
   LHS.Norm2(&Norm[0]);
@@ -144,7 +146,7 @@ int main(int argc, char *argv[])
   // test the preconditioner
   int TestPassed = true;
 
-  if (!Test<Ifpack_Chebyshev>(Matrix,List)) 
+  if (!Test<Ifpack_Chebyshev>(Matrix,List))
   {
     TestPassed = false;
   }
@@ -170,7 +172,7 @@ int main(int argc, char *argv[])
     TestPassed = false;
   }
 
-  if (!Test<Ifpack_Amesos>(Matrix,List)) 
+  if (!Test<Ifpack_Amesos>(Matrix,List))
   {
     TestPassed = false;
   }
@@ -198,7 +200,7 @@ int main(int argc, char *argv[])
   if (!Test<Ifpack_BlockRelaxation<Ifpack_DenseContainer> >(Matrix,List)) {
     TestPassed = false;
   }
- 
+
   // this is ok as long as just one sweep is applied
   List = DefaultList;
   List.set("relaxation: type", "symmetric Gauss-Seidel");
@@ -222,7 +224,7 @@ int main(int argc, char *argv[])
   }
 
 #ifdef HAVE_MPI
-  MPI_Finalize(); 
+  MPI_Finalize();
 #endif
   if (verbose)
     cout << "Test `TestAll.exe' passed!" << endl;

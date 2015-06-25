@@ -58,123 +58,123 @@
 #include "Epetra_CrsMatrix.h"
 
 std::map<std::string, Ifpack_DynamicFactory::builderFunction>
-	Ifpack_DynamicFactory::PreconditionerMap_;
+        Ifpack_DynamicFactory::PreconditionerMap_;
 bool Ifpack_DynamicFactory::Initialized_ = false;
 int Ifpack_DynamicFactory::NumPreconditioners_ = 0;
 
 bool Ifpack_DynamicFactory::Initialize()
 {
-	if (! Initialized_) {
-		PreconditionerMap_["point relaxation"]
-			  = &buildPreconditioner<Ifpack_PointRelaxation, false>;
-		PreconditionerMap_["point relaxation stand-alone"]
-			  = &buildPreconditioner<Ifpack_PointRelaxation, true>;
-		PreconditionerMap_["block relaxation"]
+        if (! Initialized_) {
+                PreconditionerMap_["point relaxation"]
+                          = &buildPreconditioner<Ifpack_PointRelaxation, false>;
+                PreconditionerMap_["point relaxation stand-alone"]
+                          = &buildPreconditioner<Ifpack_PointRelaxation, true>;
+                PreconditionerMap_["block relaxation"]
               = &buildPreconditioner<Ifpack_BlockRelaxation<Ifpack_DenseContainer>, false>;
-		PreconditionerMap_["block relaxation stand-alone"]
-			  = &buildPreconditioner<Ifpack_BlockRelaxation<Ifpack_DenseContainer>, true>;
-		PreconditionerMap_["block relaxation stand-alone (ILU)"]
+                PreconditionerMap_["block relaxation stand-alone"]
+                          = &buildPreconditioner<Ifpack_BlockRelaxation<Ifpack_DenseContainer>, true>;
+                PreconditionerMap_["block relaxation stand-alone (ILU)"]
               = &buildPreconditioner<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_ILU> >, true>;
 
 #ifdef HAVE_IFPACK_AMESOS
-		PreconditionerMap_["block relaxation stand-alone (Amesos)"]
+                PreconditionerMap_["block relaxation stand-alone (Amesos)"]
               = &buildPreconditioner<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> >, true>;
-		PreconditionerMap_["block relaxation (Amesos)"]
+                PreconditionerMap_["block relaxation (Amesos)"]
               = &buildPreconditioner<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> >, false>;
-		PreconditionerMap_["Amesos"]
+                PreconditionerMap_["Amesos"]
               = &buildPreconditioner<Ifpack_Amesos, false>;
-		PreconditionerMap_["Amesos stand-alone"]
+                PreconditionerMap_["Amesos stand-alone"]
               = &buildPreconditioner<Ifpack_Amesos, true>;
 #endif // HAVE_IFPACK_AMESOS
 
-		PreconditionerMap_["IC"] = &buildPreconditioner<Ifpack_IC, false>;
-		PreconditionerMap_["IC stand-alone"] = &buildPreconditioner<Ifpack_IC, true>;
-		PreconditionerMap_["ICT"] = &buildPreconditioner<Ifpack_ICT, false>;
-		PreconditionerMap_["ICT stand-alone"] = &buildPreconditioner<Ifpack_ICT, true>;
-		PreconditionerMap_["ILU"] = &buildPreconditioner<Ifpack_ILU, false>;
-		PreconditionerMap_["ILU stand-alone"] = &buildPreconditioner<Ifpack_ILU, true>;
-		PreconditionerMap_["ILUT"] = &buildPreconditioner<Ifpack_ILUT, false>;
-		PreconditionerMap_["ILUT stand-alone"] = &buildPreconditioner<Ifpack_ILUT, true>;
+                PreconditionerMap_["IC"] = &buildPreconditioner<Ifpack_IC, false>;
+                PreconditionerMap_["IC stand-alone"] = &buildPreconditioner<Ifpack_IC, true>;
+                PreconditionerMap_["ICT"] = &buildPreconditioner<Ifpack_ICT, false>;
+                PreconditionerMap_["ICT stand-alone"] = &buildPreconditioner<Ifpack_ICT, true>;
+                PreconditionerMap_["ILU"] = &buildPreconditioner<Ifpack_ILU, false>;
+                PreconditionerMap_["ILU stand-alone"] = &buildPreconditioner<Ifpack_ILU, true>;
+                PreconditionerMap_["ILUT"] = &buildPreconditioner<Ifpack_ILUT, false>;
+                PreconditionerMap_["ILUT stand-alone"] = &buildPreconditioner<Ifpack_ILUT, true>;
 
 #ifdef HAVE_IFPACK_SPARSKIT
-		PreconditionerMap_["SPARSKIT"]
-			  = &buildPreconditioner<Ifpack_SPARSKIT, true>;
+                PreconditionerMap_["SPARSKIT"]
+                          = &buildPreconditioner<Ifpack_SPARSKIT, true>;
 #endif
 
 #ifdef HAVE_IFPACK_HIPS
-		PreconditionerMap_["HIPS"]
-			  = &buildPreconditioner<Ifpack_HIPS, true>;
+                PreconditionerMap_["HIPS"]
+                          = &buildPreconditioner<Ifpack_HIPS, true>;
 #endif
 
 #ifdef HAVE_HYPRE
-		PreconditionerMap_["Hypre"]
-			  = &buildPreconditioner<Ifpack_Hypre, true>;
+                PreconditionerMap_["Hypre"]
+                          = &buildPreconditioner<Ifpack_Hypre, true>;
 #endif
 
 #ifdef HAVE_IFPACK_SUPERLU
-		PreconditionerMap_["SILU"]
-			  = &buildPreconditioner<Ifpack_SILU, true>;
+                PreconditionerMap_["SILU"]
+                          = &buildPreconditioner<Ifpack_SILU, true>;
 #endif
 
-		PreconditionerMap_["Chebyshev"]
+                PreconditionerMap_["Chebyshev"]
               = &buildPreconditioner<Ifpack_Chebyshev, true>;
 
 #ifdef HAVE_IFPACK_EPETRAEXT
-		PreconditionerMap_["IHSS"]
+                PreconditionerMap_["IHSS"]
               = &buildPreconditioner<Ifpack_IHSS, true>;
-		PreconditionerMap_["SORa"]
+                PreconditionerMap_["SORa"]
               = &buildPreconditioner<Ifpack_SORa, true>;
 #endif
 
-		NumPreconditioners_ =
-			    +5
-		#ifdef HAVE_IFPACK_AMESOS
-			    +4
-		#endif
-			    +8
-		#ifdef HAVE_IFPACK_SPARSKIT
-			    +1
-		#endif
-		#ifdef HAVE_IFPACK_HIPS
-			    +1
-		#endif
-		#ifdef HAVE_HYPRE
-			    +1
-		#endif
-		#ifdef HAVE_IFPACK_SUPERLU
-			    +1
-		#endif
-			    +1
-		#ifdef HAVE_IFPACK_EPETRAEXT
-			    +2
-		#endif
-			    ;
+                NumPreconditioners_ =
+                            +5
+                #ifdef HAVE_IFPACK_AMESOS
+                            +4
+                #endif
+                            +8
+                #ifdef HAVE_IFPACK_SPARSKIT
+                            +1
+                #endif
+                #ifdef HAVE_IFPACK_HIPS
+                            +1
+                #endif
+                #ifdef HAVE_HYPRE
+                            +1
+                #endif
+                #ifdef HAVE_IFPACK_SUPERLU
+                            +1
+                #endif
+                            +1
+                #ifdef HAVE_IFPACK_EPETRAEXT
+                            +2
+                #endif
+                            ;
 
-		Initialized_ = true;
-	}
+                Initialized_ = true;
+        }
 
-	return true;
+        return true;
 }
 
 int Ifpack_DynamicFactory::RegisterPreconditioner(
-		const std::string PrecName,
-	    Ifpack_DynamicFactory::builderFunction PrecBuilder)
+                const std::string PrecName,
+            Ifpack_DynamicFactory::builderFunction PrecBuilder)
 {
-	if (PreconditionerMap_.find(PrecName) == PreconditionerMap_.end()) {
-		PreconditionerMap_[PrecName] = PrecBuilder;
-		NumPreconditioners_++;
-		return 0;
-	}
-	return 1;
+        if (PreconditionerMap_.find(PrecName) == PreconditionerMap_.end()) {
+                PreconditionerMap_[PrecName] = PrecBuilder;
+                NumPreconditioners_++;
+                return 0;
+        }
+        return 1;
 }
 
 void Ifpack_DynamicFactory::Print(std::ostream& os)
 {
-	os << "Ifpack_DynamicFactory registered preconditioners: " << std::endl;
-	for (std::map<std::string, builderFunction>::const_iterator it = PreconditionerMap_.begin();
-		 it != PreconditionerMap_.end(); ++it) {
-		os << it->first << std::endl;
-	}
+        os << "Ifpack_DynamicFactory registered preconditioners: " << std::endl;
+        for (std::map<std::string, builderFunction>::const_iterator it = PreconditionerMap_.begin();
+                 it != PreconditionerMap_.end(); ++it) {
+                os << it->first << std::endl;
+        }
 }
 
 //==============================================================================
@@ -186,11 +186,11 @@ Ifpack_Preconditioner* Ifpack_DynamicFactory::Create(const std::string PrecType,
   bool serial = (Matrix->Comm().NumProc() == 1);
 
   std::map<std::string, builderFunction>::const_iterator it
-  		= PreconditionerMap_.find(PrecType);
+                = PreconditionerMap_.find(PrecType);
   bool found = it != PreconditionerMap_.end();
   if (found) {
-	builderFunction f = it->second;
-	return f(Matrix, Overlap, serial, overrideSerialDefault);
+        builderFunction f = it->second;
+        return f(Matrix, Overlap, serial, overrideSerialDefault);
   }
 
   return 0;

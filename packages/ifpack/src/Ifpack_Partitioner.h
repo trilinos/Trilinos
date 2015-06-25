@@ -55,16 +55,16 @@ class Epetra_Import;
 //! Ifpack_Partitioner: A class to decompose local Ifpack_Graph's.
 
 /*!
- 
+
   Class Ifpack_Partitioner enables the decomposition of a local
   Ifpack_Graph's. It is supposed that the graph refers to
   a localized matrix (that is, a matrix that has been filtered
   through Ifpack_LocalFilter).
-  
+
   The overloaded operator (int i) can be used to extract the local partition
-  ID of local row i.  
-  
-  The partitions created by Ifpack_Partitioner derived clased 
+  ID of local row i.
+
+  The partitions created by Ifpack_Partitioner derived clased
   are non-overlapping in graph sense. This means that each row
   (or, more approriately, vertex)
   of \c G is assigned to exactly one partition.
@@ -84,18 +84,18 @@ class Epetra_Import;
   - Ifpack_GreedyPartitioner, a simple greedy algorith;
   - Ifpack_EquationPartitioner, which creates \c NumPDEEqns parts
     (where \c NumPDEEqns is the number of equations in the linear
-    system). It is supposed that all the equations referring to the 
-    same grid node are ordered consecutively. Besides, the 
+    system). It is supposed that all the equations referring to the
+    same grid node are ordered consecutively. Besides, the
     number of equations per node must be constant in the domain.
 
-  Generically, a constructor requires an Ifpack_Graph object. 
+  Generically, a constructor requires an Ifpack_Graph object.
   Ifpack_Graph is a pure virtual class. Concrete implentations are:
-  - Ifpack_Graph_Epetra_CrsGraph, a light-weight class to wrap 
+  - Ifpack_Graph_Epetra_CrsGraph, a light-weight class to wrap
     Epetra_CrsGraph objects as Ifpack_Graph objects;
   - Ifpack_Graph_Epetra_RowMatrix, a light-weight class to
     wrap Epetra_RowMatrix objects as Ifpack_Graph objects.
-  
-  <P>An example of use is an Ifpack_Partitioner derived class is as follows:  
+
+  <P>An example of use is an Ifpack_Partitioner derived class is as follows:
   \code
 #include "Ifpack_Partitioner.h"
 #include "Ifpack_LinearPartitioner.h"
@@ -130,16 +130,16 @@ int NumParts = Partitioner.NumParts();
 // ... and the number of rows in each of them
 for (int i = 0 ; i < NumParts ; ++i) {
   cout << "rows in " << i << "=" << Partitioner.RowsInPart(i);
-}  
+}
 
-// .. and, for non-overlapping partitions only, the partition ID 
+// .. and, for non-overlapping partitions only, the partition ID
 // for each local row simply using:
 for (int i = 0 ; i < A->NumMyRows() ; ++i)
   cout << "Partition[" << i <<"] = " << Partitioner(i) << endl;
 
 \endcode
-  
-When overlapping partitiones are created, the user can get the 
+
+When overlapping partitiones are created, the user can get the
 row ID contained in each partition as follows:
 \code
 for (int i = 0 ; i < NumParts ; ++i) {
@@ -147,18 +147,18 @@ for (int i = 0 ; i < NumParts ; ++i) {
     cout << "Partition " << i << ", contains local row "
          << Partitioner(i,j) << endl;
   }
-}  
+}
 \endcode
-  
-Ifpack_Partitioner is used to create the subblocks in 
-Ifpack_BlockJacobi, Ifpack_BlockGaussSeidel, and 
+
+Ifpack_Partitioner is used to create the subblocks in
+Ifpack_BlockJacobi, Ifpack_BlockGaussSeidel, and
 Ifpack_BlockSymGaussSeidel.
 
 \author Marzio Sala, SNL 9214.
 
 \date Last modified on Nov-04.
 
-*/  
+*/
 class Ifpack_Partitioner {
 
 public:
@@ -174,7 +174,7 @@ public:
 
   //! Returns the local non-overlapping partition ID of the specified row.
   /*! Returns the non-overlapping partition ID of the specified row.
-   \param 
+   \param
    MyRow - (In) local row numbe
 
    \return
@@ -187,10 +187,10 @@ public:
 
   //! Returns the number of rows contained in specified partition.
   virtual int NumRowsInPart(const int Part) const = 0;
-    
+
   //! Copies into List the rows in the (overlapping) partition Part.
   virtual int RowsInPart(const int Part, int* List) const = 0;
-  
+
   //! Returns a pointer to the integer vector containing the non-overlapping partition ID of each local row.
   virtual const int* NonOverlappingPartition() const = 0;
 
@@ -204,11 +204,11 @@ public:
   virtual bool IsComputed() = 0;
 
   //! Prints basic information about the partitioning object.
-  virtual ostream& Print(std::ostream& os) const = 0;
+  virtual std::ostream& Print(std::ostream& os) const = 0;
 
 }; // class Ifpack_Partitioner
 
-inline ostream& operator<<(ostream& os, const Ifpack_Partitioner& obj)
+inline std::ostream& operator<<(std::ostream& os, const Ifpack_Partitioner& obj)
 {
   return(obj.Print(os));
 }

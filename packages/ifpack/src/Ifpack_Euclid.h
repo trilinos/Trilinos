@@ -75,30 +75,30 @@ namespace Teuchos {
 
 //! Ifpack_Euclid: A class for constructing and using an ILU factorization of a given Epetra_CrsMatrix, using the Euclid library by Argonne National Laboratories.
 
-/*! 
+/*!
   Class Ifpack_Euclid can use the euclid preconditioner as used in Hypre library.
 */
 
   //The other files that were modified for Trilinos are getRow.c, call_epetra.{cpp,h}.
 
 class Ifpack_Euclid: public Epetra_Object, public Epetra_CompObject, public virtual Epetra_Operator {
-      
-  friend ostream& operator << (ostream& os, const Ifpack_Euclid& A);
+
+  friend std::ostream& operator << (std::ostream& os, const Ifpack_Euclid& A);
 
 public:
   // @{ Constructors and destructors.
   //! Constructor
   Ifpack_Euclid(Epetra_CrsMatrix* A);
-  
+
   //! Destructor
   ~Ifpack_Euclid(){ Destroy();}
 
   // @}
   // @{ Construction methods
-  
+
   //! Initialize the preconditioner, does not touch matrix values.
   int Initialize();
-  
+
   //! Returns \c true if the preconditioner has been successfully initialized.
   bool IsInitialized() const{ return(IsInitialized_);}
 
@@ -150,17 +150,17 @@ public:
 
   // @{ Mathematical functions.
   // Applies the matrix to X, returns the result in Y.
-  int Apply(const Epetra_MultiVector& X, 
-	       Epetra_MultiVector& Y) const{ return(Multiply(false,X,Y));}
+  int Apply(const Epetra_MultiVector& X,
+               Epetra_MultiVector& Y) const{ return(Multiply(false,X,Y));}
 
   //! Returns the result of a Epetra_Operator multiplied with an Epetra_MultiVector X in Y.
   /*! This calls the multiply function on the stored matrix.
 
-    \param 
+    \param
       trans - (In) If true, use do a transpose multiply.
-	   X - (In) A Epetra_MultiVector of dimension NumVectors to multiply with.
+           X - (In) A Epetra_MultiVector of dimension NumVectors to multiply with.
     \param Out
-	   Y - (Out) A Epetra_MultiVector of dimension NumVectors containing result.
+           Y - (Out) A Epetra_MultiVector of dimension NumVectors containing result.
 
     \return Integer error code, set to 0 if successful. -1 if compute() hasn't been called. -2 if the multivectors have differing numbers of vectors.
   */
@@ -168,15 +168,15 @@ public:
 
   //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
   /*! In this implementation, we use several existing attributes to determine how virtual
-      method ApplyInverse() should call the concrete method Solve().  We pass in the UpperTriangular(), 
+      method ApplyInverse() should call the concrete method Solve().  We pass in the UpperTriangular(),
       the Epetra_CrsMatrix::UseTranspose(), and NoDiagonal() methods. The most notable warning is that
       if a matrix has no diagonal values we assume that there is an implicit unit diagonal that should
       be accounted for when doing a triangular solve.
 
-    \param 
-	   X - (In) A Epetra_MultiVector of dimension NumVectors to solve for.
+    \param
+           X - (In) A Epetra_MultiVector of dimension NumVectors to solve for.
     \param Out
-	   Y - (Out) A Epetra_MultiVector of dimension NumVectors containing result.
+           Y - (Out) A Epetra_MultiVector of dimension NumVectors containing result.
 
     \return Integer error code, set to 0 if successful. -1 if compute() hasn't been called. -2 if the multivectors have differing numbers of vectors.
   */
@@ -191,13 +191,13 @@ public:
 
   // @}
   // @{ Query methods
-  
+
   //! Returns a character string describing the operator
   const char* Label() const {return(Label_);}
 
   //! Sets label for \c this object.
   void SetLabel(const char* Label_in){ strcpy(Label_,Label_in);}
-  
+
   //! Returns the domain map from the creating matrix.
   const Epetra_Map &OperatorDomainMap() const{return A_->DomainMap();}
 
@@ -267,40 +267,40 @@ private:
   int CallEuclid(double *x, double *y) const;
 
   //! Returns the result of a Ifpack_ILU forward/back solve on a Epetra_MultiVector X in Y.
-  /*! 
+  /*!
     \param In
     Trans -If true, solve transpose problem.
-    \param 
+    \param
     X - (In) A Epetra_MultiVector of dimension NumVectors to solve for.
     \param Out
     Y - (Out) A Epetra_MultiVector of dimension NumVectorscontaining result.
-    
+
     \return Integer error code, set to 0 if successful.
   */
   int Solve(bool Trans, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   //! Returns the number of global matrix rows.
   int NumGlobalRows() const {return(A_->NumGlobalRows());};
-  
+
   //! Returns the number of global matrix columns.
   int NumGlobalCols() const {return(A_->NumGlobalCols());};
-  
+
   //! Returns the number of local matrix rows.
   int NumMyRows() const {return(A_->NumMyRows());};
-  
+
   //! Returns the number of local matrix columns.
   int NumMyCols() const {return(A_->NumMyCols());};
-  
+
   // @}
   // @{ Internal data
-  
+
   //! Pointer to the Epetra_CrsMatrix to factorize
   Teuchos::RefCountPtr<Epetra_CrsMatrix> A_;
   //! This objects copy of the ParamterList.
   Teuchos::ParameterList List_;
   //! If true, use transpose operator operations.
   bool UseTranspose_;
-  //! The condition estimate for this preconditioner, will be -1 for now. 
+  //! The condition estimate for this preconditioner, will be -1 for now.
   double Condest_;
   //! If \c true, the preconditioner has been successfully initialized.
   bool IsInitialized_;
@@ -345,7 +345,7 @@ private:
 };
 
 //! This is the print function.
-ostream& operator << (ostream& os, const Ifpack_Euclid& A);
+std::ostream& operator << (std::ostream& os, const Ifpack_Euclid& A);
 
 #endif // HAVE_EUCLID
 #endif /* IFPACK_EUCLID_H */
