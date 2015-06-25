@@ -71,6 +71,10 @@
 
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* A format string for outputting size_t ... */
 #if defined(__STDC_VERSION__)
 #  if (__STDC_VERSION__ >= 199901L)
@@ -614,6 +618,8 @@ struct ex_file_item {
   unsigned int          shuffle:1;               /* 1 true, 0 false */                   
   unsigned int          file_type:2;             /* 0 - classic, 1 -- 64 bit classic, 2 --netcdf4,  3 --netcdf4 classic */
   unsigned int          is_parallel:1;            /* 1 true, 0 false */
+  unsigned int          is_mpiio:1;               /* 1 true, 0 false */
+  unsigned int          is_pnetcdf:1;             /* 1 true, 0 false */
   struct ex_file_item*     next;
 };
 
@@ -656,7 +662,8 @@ char* ex_dim_num_objects(ex_entity_type obj_type);
 char* ex_name_var_of_object( ex_entity_type, int, int );
 char* ex_name_of_map( ex_entity_type, int );
 
-int ex_conv_ini  (int exoid, int* comp_wordsize, int* io_wordsize, int file_wordsize, int int64_status, int is_parallel);
+int ex_conv_ini  (int exoid, int* comp_wordsize, int* io_wordsize, int file_wordsize, int int64_status,
+		  int is_parallel, int is_mpiio, int is_pnetcdf);
 void ex_conv_exit  (int exoid);
 
 nc_type nc_flt_code  (int exoid);
@@ -753,4 +760,8 @@ int ne_id_lkup(int            neid,		/* NetCDF/Exodus file ID */
   extern int ex_default_max_name_length; 
 				    
   void *ex_safe_free(void *array);
+#ifdef __cplusplus
+}
+#endif
+
 #endif

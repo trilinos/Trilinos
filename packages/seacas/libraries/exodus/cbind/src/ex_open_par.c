@@ -135,6 +135,8 @@ int ex_open_par_int (const char  *path,
   int dim_str_name;
   int int64_status = 0;
   int pariomode = NC_MPIPOSIX;
+  int is_mpiio = 0;
+  int is_pnetcdf = 0;
   
   char errmsg[MAX_ERR_LENGTH];
 
@@ -164,12 +166,17 @@ int ex_open_par_int (const char  *path,
   /* Check parallel io mode.  Valid is NC_MPIPOSIX or NC_MPIIO or NC_PNETCDF
    * Exodus uses different flag values; map to netcdf values
    */
-  if (mode & EX_MPIPOSIX)
+  if (mode & EX_MPIPOSIX) {
     pariomode = NC_MPIPOSIX;
-  else if (mode & EX_MPIIO)
+  }
+  else if (mode & EX_MPIIO) {
     pariomode = NC_MPIIO;
-  else if (mode & EX_PNETCDF)
+    is_mpiio = 1;
+  }
+  else if (mode & EX_PNETCDF) {
     pariomode = NC_PNETCDF;
+    is_pnetcdf = 1;
+  }
   
   
   /* The EX_READ mode is the default if EX_WRITE is not specified... */
@@ -306,7 +313,7 @@ int ex_open_par_int (const char  *path,
   int64_status |= (mode & EX_ALL_INT64_API);
   
   /* initialize floating point and integer size conversion. */
-  if (ex_conv_ini(exoid, comp_ws, io_ws, file_wordsize, int64_status, 1) != EX_NOERR ) {
+  if (ex_conv_ini(exoid, comp_ws, io_ws, file_wordsize, int64_status, 1, is_mpiio, is_pnetcdf) != EX_NOERR ) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
 	    "Error: failed to initialize conversion routines in file id %d",

@@ -56,6 +56,7 @@
 #include "exodusII.h"                   // for ex_init_params, ex_err, etc
 #include "exodusII_int.h"               // for nc_flt_code, EX_FATAL, etc
 #include "netcdf.h"                     // for NC_NOERR, nc_def_dim, etc
+#include "netcdf_par.h"
 
 static void write_dummy_names(int exoid, ex_entity_type obj_type)
 {
