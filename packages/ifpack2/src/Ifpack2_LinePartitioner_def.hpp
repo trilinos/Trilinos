@@ -113,10 +113,11 @@ int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayVie
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
   const MT mzero    = Teuchos::ScalarTraits<MT>::zero();
 
+  Teuchos::ArrayRCP<const Scalar>  xvalsRCP, yvalsRCP, zvalsRCP;
   Teuchos::ArrayView<const Scalar> xvals, yvals, zvals;
-  xvals = coord_->getData(0)();
-  if(coord_->getNumVectors() > 1) yvals = coord_->getData(1)();
-  if(coord_->getNumVectors() > 2) zvals = coord_->getData(2)();
+  xvalsRCP = coord_->getData(0); xvals = xvalsRCP();
+  if(coord_->getNumVectors() > 1) { yvalsRCP = coord_->getData(1); yvals = yvalsRCP(); }
+  if(coord_->getNumVectors() > 2) { zvalsRCP = coord_->getData(2); zvals = zvalsRCP(); }
 
   MT tol                 = threshold_;
   size_t N               = this->Graph_->getNodeNumRows();
@@ -183,10 +184,11 @@ void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns,
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
   const MT mzero    = Teuchos::ScalarTraits<MT>::zero();
 
+  Teuchos::ArrayRCP<const Scalar>  xvalsRCP, yvalsRCP, zvalsRCP;
   Teuchos::ArrayView<const Scalar> xvals, yvals, zvals;
-  xvals = coord_->getData(0)();
-  if(coord_->getNumVectors() > 1) yvals = coord_->getData(1)();
-  if(coord_->getNumVectors() > 2) zvals = coord_->getData(2)();
+  xvalsRCP = coord_->getData(0); xvals = xvalsRCP();
+  if(coord_->getNumVectors() > 1) { yvalsRCP = coord_->getData(1); yvals = yvalsRCP(); }
+  if(coord_->getNumVectors() > 2) { zvalsRCP = coord_->getData(2); zvals = zvalsRCP(); }
  
   size_t N               = this->Graph_->getNodeNumRows();
   size_t allocated_space = this->Graph_->getNodeMaxNumRowEntries();
