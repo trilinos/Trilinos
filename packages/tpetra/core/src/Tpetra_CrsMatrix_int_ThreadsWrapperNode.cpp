@@ -42,28 +42,28 @@
 */
 
 // Including this is the easy way to get access to all the Node types.
-#include "Kokkos_DefaultNode.hpp"
-#include "Tpetra_ConfigDefs.hpp"
+#include <Kokkos_DefaultNode.hpp>
+#include <Tpetra_ConfigDefs.hpp>
 
 // Don't bother compiling anything, or even including anything else,
 // unless KokkosThreadsWrapperNode is enabled.
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_PTHREAD) && defined(TPETRA_HAVE_KOKKOS_REFACTOR) && defined(HAVE_TPETRA_INST_INT_INT)
 
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrix_def.hpp"
 
-#define TPETRA_CRSMATRIX_THREADSWRAPPERNODE_INSTANT( SCALAR, LO, GO ) \
-  TPETRA_CRSMATRIX_INSTANT( SCALAR, LO, GO, Kokkos::Compat::KokkosThreadsWrapperNode )
-
 namespace Tpetra {
 
  TPETRA_ETI_MANGLING_TYPEDEFS()
 
- TPETRA_INSTANTIATE_SLG(TPETRA_CRSMATRIX_THREADSWRAPPERNODE_INSTANT)
+#define TPETRA_CRSMATRIX_INT_THREADSWRAPPERNODE_INSTANT( SCALAR, LO ) \
+  TPETRA_CRSMATRIX_INSTANT( SCALAR, LO, int, Kokkos::Compat::KokkosThreadsWrapperNode )
+
+ TPETRA_INSTANTIATE_SL(TPETRA_CRSMATRIX_INT_THREADSWRAPPERNODE_INSTANT)
 
  // convert() gets instantiated in a separate file, Tpetra_CrsMatrix_convert.cpp
 
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION && HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT && KOKKOS_HAVE_PTHREAD
+#endif
