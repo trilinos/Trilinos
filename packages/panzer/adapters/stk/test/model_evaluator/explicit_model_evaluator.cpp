@@ -125,6 +125,7 @@ namespace panzer {
       typedef panzer::ExplicitModelEvaluator<double> ExpPME;
 
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
       bool build_transient_support = true;
 
       Stratimikos::DefaultLinearSolverBuilder builder;
@@ -132,7 +133,7 @@ namespace panzer {
       builder.setParameterList(validList);
       RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = builder.createLinearSolveStrategy("Amesos");
     
-      RCP<PME> me = Teuchos::rcp(new PME(fmb,rLibrary,lof,p_names,lowsFactory,gd,build_transient_support,0.0));
+      RCP<PME> me = Teuchos::rcp(new PME(fmb,rLibrary,lof,p_names,p_values,lowsFactory,gd,build_transient_support,0.0));
       RCP<ExpPME> exp_me = Teuchos::rcp(new ExpPME(me,true,false)); // constant mass, use lumped
 
       RCP<VectorType> exp_f, f;
@@ -379,7 +380,9 @@ namespace panzer {
     Teuchos::ParameterList closure_models("Closure Models");
     if(parameter_on)
        closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<std::string>("Type","Parameter");
-    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
+    else
+      closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
+
     closure_models.sublist("solid").sublist("DENSITY").set<double>("Value",1.0);
     closure_models.sublist("solid").sublist("HEAT_CAPACITY").set<double>("Value",1.0);
     closure_models.sublist("ion solid").sublist("SOURCE_ION_TEMPERATURE").set<double>("Value",1.0);

@@ -118,16 +118,16 @@ public:
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-        for(size_t j=0; j<buckets.size(); j++)
+        for(size_t bucketI=0; bucketI<buckets.size(); ++bucketI)
         {
-            stk::mesh::Bucket *bucket = buckets[j];
-            for(size_t i=0; i<bucket->size(); i++)
+            stk::mesh::Bucket *bucket = buckets[bucketI];
+            for(size_t entityI=0; entityI<bucket->size(); entityI++)
             {
-                stk::mesh::Entity entity = (*bucket)[i];
+                stk::mesh::Entity entity = (*bucket)[entityI];
 
-                const unsigned numNodesThisEntity = bucket->num_nodes(i);
-                const stk::mesh::Entity* nodes = bucket->begin_nodes(i);
-                functor(*this, entity, stk::mesh::MeshIndex({bucket,i}), numNodesThisEntity, nodes);
+                const unsigned numNodesThisEntity = bucket->num_nodes(entityI);
+                const stk::mesh::Entity* nodes = bucket->begin_nodes(entityI);
+                functor(*this, entity, stk::mesh::MeshIndex({bucket,entityI}), numNodesThisEntity, nodes);
             }
         }
     }
@@ -158,16 +158,16 @@ public:
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:localVarToReduceInto)
 #endif
-        for(size_t j=0; j<buckets.size(); j++)
+        for(size_t bucketI=0; bucketI<buckets.size(); ++bucketI)
         {
-            stk::mesh::Bucket *bucket = buckets[j];
-            for(size_t i=0; i<bucket->size(); i++)
+            stk::mesh::Bucket *bucket = buckets[bucketI];
+            for(size_t entityI=0; entityI<bucket->size(); entityI++)
             {
-                stk::mesh::Entity entity = (*bucket)[i];
+                stk::mesh::Entity entity = (*bucket)[entityI];
 
-                const unsigned numNodesThisEntity = bucket->num_nodes(i);
-                const stk::mesh::Entity* nodes = bucket->begin_nodes(i);
-                functor(localVarToReduceInto, *this, entity, stk::mesh::MeshIndex({bucket,i}), numNodesThisEntity, nodes);
+                const unsigned numNodesThisEntity = bucket->num_nodes(entityI);
+                const stk::mesh::Entity* nodes = bucket->begin_nodes(entityI);
+                functor(localVarToReduceInto, *this, entity, stk::mesh::MeshIndex({bucket,entityI}), numNodesThisEntity, nodes);
             }
         }
         reductionVar = localVarToReduceInto;
@@ -292,7 +292,7 @@ TEST(ForEntityFunction, test_for_each_node_run_using_lambda)
 
         //BEGIN_LAMBDA_USAGE_EXAMPLE
         unsigned numNodes = 0;
-        bulkData.for_each_node_run(
+        bulkData.for_each_node_run_non_threadsafe(
             [&numNodes](const stk::mesh::BulkData& mesh, stk::mesh::Entity node, ...)
             {
                 if(mesh.is_valid(node))

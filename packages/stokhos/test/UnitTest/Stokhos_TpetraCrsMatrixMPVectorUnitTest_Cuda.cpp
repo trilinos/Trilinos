@@ -63,6 +63,7 @@ int main( int argc, char* argv[] ) {
   Kokkos::Cuda::print_configuration(std::cout);
 
   // Run tests
+  Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up

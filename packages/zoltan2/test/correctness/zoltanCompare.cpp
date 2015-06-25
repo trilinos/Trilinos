@@ -64,52 +64,47 @@ using Teuchos::Comm;
 // A few of the tests done by Zoltan in nightly testing.
 //
 
-#define NUMTESTS 22
 enum testFields {
   TESTNAMEOFFSET = 0,
   TESTMETHODOFFSET,
   TESTOBJWGTOFFSET,
+  TESTNUMPROCS,
   TESTNUMARGS
 };
 
-static int testNumProcs[] = {
-2,2,
-3,3,3,3,3,3,
-4,4,4,4,4,4,4,4,
-5,
-6,6,6,6,
-8
-};
 
+#define NUMTESTS 24
 static string testArgs[] = {
-// Filename  LB_Method   ObjWeightDim
-"simple",       "rcb",          "0",
-"vwgt2",        "rcb",          "2",
+// Filename  LB_Method   ObjWeightDim   NumProcs
+"simple",       "rcb",          "0",      "2",
+"vwgt2",        "rcb",          "2",      "2",
 
-"bug",          "rcb",          "1",
-"drake",        "rcb",          "0",
-"onedbug",      "rcb",          "0",
-"simple",       "rcb",          "0",
-"vwgt",         "rcb",          "1",
-"vwgt2",        "rcb",          "2",
+"bug",          "rcb",          "1",      "3",
+"drake",        "rcb",          "0",      "3",
+"onedbug",      "rcb",          "0",      "3",
+"simple",       "rcb",          "0",      "3",
+"vwgt",         "rcb",          "1",      "3",
+"vwgt2",        "rcb",          "2",      "3",
 
-"ewgt",         "rcb",          "0", 
-"grid20x19",    "rcb",          "0", 
-"grid20x19",    "rcb",          "0",
-"grid20x19",    "rcb",          "0",
-"nograph",      "rcb",          "0", 
-"simple",       "rcb",          "0", 
-"simple",       "rcb",          "0",
-"vwgt2",        "rcb",          "2",
+"simple",       "default",      "0",      "4",
+"ewgt",         "hsfc",         "0",      "4",
+"grid20x19",    "hsfc",         "0",      "4",
+"grid20x19",    "hsfc",         "0",      "4",
+"grid20x19",    "hsfc",         "0",      "4",
+"nograph",      "rib",          "0",      "4",
+"simple",       "rib",          "0",      "4",
+"simple",       "rib",          "0",      "4",
+"vwgt2",        "rib",          "2",      "4",
 
-"brack2_3",     "rcb",          "2",
+"brack2_3",     "rcb",          "3",      "5",
 
-"hammond2",     "rcb",          "2",
-"degenerateAA", "rcb",          "0",
-"degenerate",   "rcb",          "0",
-"degenerate",   "rcb",          "0",
+"hammond2",     "rcb",          "2",      "6",
+"degenerateAA", "rcb",          "0",      "6",
+"degenerate",   "rcb",          "0",      "6",
+"degenerate",   "rcb",          "0",      "6",
 
-"hammond",      "rcb",          "0"
+"hammond",      "rcb",          "0",      "8",
+"vwgt2",        "rcb",          "2",      "8"
 };
 
 typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tMatrix_t;
@@ -173,9 +168,17 @@ static void zgeom(void *data, int ngid, int nlid, int nobj,
 int run(
   const RCP<const Comm<int> > &comm,
   int numGlobalParts,
-  int testCnt
+  int testCnt,
+  std::string *thisTest
 )
 {
+#ifdef HAVE_ZOLTAN2_MPI
+  // Zoltan needs an MPI comm
+  const Teuchos::MpiComm<int> *tmpicomm =
+               dynamic_cast<const Teuchos::MpiComm<int> *>(comm.getRawPtr());
+  MPI_Comm mpiComm = *(tmpicomm->getRawMpiComm());
+#endif
+
   int me = comm->getRank();
   int np = comm->getSize();
   double tolerance = 1.05;
@@ -187,7 +190,7 @@ int run(
   UserInputForTests *uinput;
   try{
     uinput = new UserInputForTests(zoltanTestDirectory,
-                                   testArgs[testCnt*TESTNUMARGS+TESTNAMEOFFSET],
+                                   thisTest[TESTNAMEOFFSET],
                                    comm, true);
   }
   catch(std::exception &e){
@@ -231,15 +234,15 @@ int run(
            << e.what() << endl;
     return 1;
   }
-  int nWeights = atoi(testArgs[testCnt*TESTNUMARGS + TESTOBJWGTOFFSET].c_str());
+  int nWeights = atoi(thisTest[TESTOBJWGTOFFSET].c_str());
 
   if (me == 0) {
     cout << "Test " << testCnt << " filename            = "
-         << testArgs[testCnt*TESTNUMARGS+TESTNAMEOFFSET] << endl;
+         << thisTest[TESTNAMEOFFSET] << endl;
     cout << "Test " << testCnt << " num processors      = "
          << np << endl;
-    cout << "Test " << testCnt << " algorithm           = zoltan"
-         << endl;
+    cout << "Test " << testCnt << " zoltan method       = "
+         << thisTest[TESTMETHODOFFSET] << endl;
     cout << "Test " << testCnt << " num_global_parts    = "
          << numGlobalParts << endl;
     cout << "Test " << testCnt << " imbalance_tolerance = "
@@ -248,10 +251,58 @@ int run(
          << nWeights << endl;
   }
 
+  /////////////////////////////////////////
+  // PARTITION USING ZOLTAN DIRECTLY
+  /////////////////////////////////////////
+
+  if (me == 0) cout << "Calling Zoltan directly" << endl;
+
+# ifdef HAVE_ZOLTAN2_MPI
+    Zoltan zz(mpiComm);
+# else
+    Zoltan zz;
+# endif
+
+  char tmp[56];
+  zz.Set_Param("LB_METHOD", thisTest[TESTMETHODOFFSET]);
+  
+  sprintf(tmp, "%d", numGlobalParts);
+  zz.Set_Param("NUM_GLOBAL_PARTS", tmp);
+  sprintf(tmp, "%d", nWeights);
+  zz.Set_Param("OBJ_WEIGHT_DIM", tmp);
+  sprintf(tmp, "%f", tolerance);
+  zz.Set_Param("IMBALANCE_TOL", tmp);
+  zz.Set_Param("RETURN_LISTS", "PART");
+  zz.Set_Param("FINAL_OUTPUT", "1");
+
+  zz.Set_Num_Obj_Fn(znumobj, (void *) coords.getRawPtr());
+  if (nWeights)
+    zz.Set_Obj_List_Fn(zobjlist, (void *) weights.getRawPtr());
+  else
+    zz.Set_Obj_List_Fn(zobjlist, (void *) coords.getRawPtr());
+  zz.Set_Num_Geom_Fn(znumgeom, (void *) coords.getRawPtr());
+  zz.Set_Geom_Multi_Fn(zgeom, (void *) coords.getRawPtr());
+
+  int changes, ngid, nlid;
+  int numd, nump;
+  ZOLTAN_ID_PTR dgid = NULL, dlid = NULL, pgid = NULL, plid = NULL;
+  int *dproc = NULL, *dpart = NULL, *pproc = NULL, *ppart = NULL;
+
+  int ierr = zz.LB_Partition(changes, ngid, nlid,
+                             numd, dgid, dlid, dproc, dpart,
+                             nump, pgid, plid, pproc, ppart);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    if (me == 0)
+      cout << "Test " << testCnt << ":  FAIL: direct Zoltan call" << endl;
+    zz.LB_Free_Part(&pgid, &plid, &pproc, &ppart);
+    return 1;
+  }
 
   /////////////////////////////////////////
   // PARTITION USING ZOLTAN THROUGH ZOLTAN2
   /////////////////////////////////////////
+
+  if (me == 0) cout << "Calling Zoltan through Zoltan2" << endl;
 
   matrixAdapter_t *ia;
   try{
@@ -287,13 +338,14 @@ int run(
   params.set("imbalance_tolerance", tolerance );
   params.set("num_global_parts", numGlobalParts);
 
+  if (thisTest[TESTMETHODOFFSET] != "default") {
+    // "default" tests case of no Zoltan parameter sublist
+    Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
+    zparams.set("LB_METHOD",thisTest[TESTMETHODOFFSET]);
+  }
+
   Zoltan2::PartitioningProblem<matrixAdapter_t> *problem;
 # ifdef HAVE_ZOLTAN2_MPI
-    // TPLs may want an MPI communicator
-    const Teuchos::MpiComm<int> *tmpicomm =
-                 dynamic_cast<const Teuchos::MpiComm<int> *>(comm.getRawPtr());
-    MPI_Comm mpiComm = *(tmpicomm->getRawMpiComm());
-
     try{
       problem = new Zoltan2::PartitioningProblem<matrixAdapter_t>(ia, &params,
                                                                   mpiComm);
@@ -320,44 +372,6 @@ int run(
     problem->printMetrics(cout);
   }
   problem->printTimers();
-
-  /////////////////////////////////////////
-  // PARTITION USING ZOLTAN DIRECTLY
-  /////////////////////////////////////////
-
-# ifdef HAVE_ZOLTAN2_MPI
-    Zoltan zz(mpiComm);
-# else
-    Zoltan zz;
-# endif
-
-  char tmp[56];
-  zz.Set_Param("LB_METHOD", testArgs[testCnt*TESTNUMARGS+TESTMETHODOFFSET]);
-  
-  sprintf(tmp, "%d", numGlobalParts);
-  zz.Set_Param("NUM_GLOBAL_PARTS", tmp);
-  sprintf(tmp, "%d", nWeights);
-  zz.Set_Param("OBJ_WEIGHT_DIM", tmp);
-  sprintf(tmp, "%f", tolerance);
-  zz.Set_Param("IMBALANCE_TOL", tmp);
-  zz.Set_Param("RETURN_LISTS", "PART");
-  zz.Set_Param("FINAL_OUTPUT", "1");
-  zz.Set_Param("CHECK_GEOM", "0");
-
-  zz.Set_Num_Obj_Fn(znumobj, (void *) coords.getRawPtr());
-  if (nWeights)
-    zz.Set_Obj_List_Fn(zobjlist, (void *) weights.getRawPtr());
-  else
-    zz.Set_Obj_List_Fn(zobjlist, (void *) coords.getRawPtr());
-  zz.Set_Num_Geom_Fn(znumgeom, (void *) coords.getRawPtr());
-  zz.Set_Geom_Multi_Fn(zgeom, (void *) coords.getRawPtr());
-
-  int changes, ngid, nlid;
-  int numd, nump;
-  ZOLTAN_ID_PTR dgid = NULL, dlid = NULL, pgid = NULL, plid = NULL;
-  int *dproc = NULL, *dpart = NULL, *pproc = NULL, *ppart = NULL;
-  zz.LB_Partition(changes, ngid, nlid, numd, dgid, dlid, dproc, dpart,
-                                       nump, pgid, plid, pproc, ppart);
 
   /////////////////////////////////////////
   // COMPARE RESULTS
@@ -387,9 +401,9 @@ int run(
   if (gdiffcnt > 0) {
     if (me == 0) 
       cout << "Test " << testCnt << " "
-           << testArgs[testCnt*TESTNUMARGS + TESTNAMEOFFSET] << " "
-           << testArgs[testCnt*TESTNUMARGS + TESTMETHODOFFSET] << " "
-           << testArgs[testCnt*TESTNUMARGS + TESTOBJWGTOFFSET] << " "
+           << thisTest[TESTNAMEOFFSET] << " "
+           << thisTest[TESTMETHODOFFSET] << " "
+           << thisTest[TESTOBJWGTOFFSET] << " "
            << " FAIL: comparison " << endl;
     return 1;
   }
@@ -403,6 +417,7 @@ int main(int argc, char *argv[])
 {
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+
   int me = comm->getRank();
   int np = comm->getSize();
 
@@ -412,11 +427,12 @@ int main(int argc, char *argv[])
   for (int i = 0; i < np; i++) ranks[i] = i;
 
   for (int i=0; i < NUMTESTS; i++) {
-    int nTestProcs = testNumProcs[i];
+    std::string *thisTest = &(testArgs[i*TESTNUMARGS]);
+    int nTestProcs = atoi(thisTest[TESTNUMPROCS].c_str());
     if (nTestProcs > np) {
       if (me == 0) {
         cout << "Skipping test " << i << " on "
-             << testArgs[i*TESTNUMARGS+TESTNAMEOFFSET]
+             << thisTest[TESTNAMEOFFSET]
              << "; required number of procs " << nTestProcs 
              << " is greater than available procs " << np << endl;
       }
@@ -432,7 +448,7 @@ int main(int argc, char *argv[])
 
     // Run the test if in the communicator
     if (me < nTestProcs) {
-      fail += run(testcomm, nTestProcs, i);
+      fail += run(testcomm, nTestProcs, i, thisTest);
     }
   }
   

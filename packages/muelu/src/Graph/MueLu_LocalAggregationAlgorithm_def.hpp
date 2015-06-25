@@ -289,7 +289,7 @@ namespace MueLu {
           if (aggStat[i] == CA_READY) localReady++;
 
         // Compute 'globalReady'
-        sumAll(comm, localReady, globalReady);
+        MueLu_sumAll(comm, localReady, globalReady);
 
         if(globalReady > 0)
           GetOStream(Warnings0) << globalReady << " CA_READY nodes left" << std::endl;
@@ -302,16 +302,16 @@ namespace MueLu {
           if ( aggStat[i] == CA_SELECTED ) localSelected++;
 
         // Compute 'globalSelected'
-        GO globalSelected; sumAll(comm, (GO)localSelected, globalSelected);
+        GO globalSelected; MueLu_sumAll(comm, (GO)localSelected, globalSelected);
 
         // Compute 'globalNRows'
-        GO globalNRows; sumAll(comm, (GO)nRows, globalNRows);
+        GO globalNRows; MueLu_sumAll(comm, (GO)nRows, globalNRows);
 
         GetOStream(Statistics1) << "Nodes aggregated = " << globalSelected << " (" << globalNRows << ")" << std::endl;
       }
 
       if (IsPrint(Statistics1)) {
-        GO nAggregatesGlobal; sumAll(comm, (GO)nAggregates, nAggregatesGlobal);
+        GO nAggregatesGlobal; MueLu_sumAll(comm, (GO)nAggregates, nAggregatesGlobal);
         GetOStream(Statistics1) << "Total aggregates = " << nAggregatesGlobal << std::endl;
       }
 

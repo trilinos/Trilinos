@@ -386,7 +386,7 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
 #ifndef _MSC_VER
   using Teuchos::Describable;
 #endif
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  // typedef Teuchos::ScalarTraits<Scalar> ST; // unused
   typedef InterpolationBufferBase<Scalar> IBB;
   typedef Teuchos::VerboseObjectTempState<IBB> VOTSIBB;
 

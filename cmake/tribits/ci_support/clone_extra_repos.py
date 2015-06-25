@@ -289,7 +289,7 @@ def getExtraReposDictListFromCmakefile(projectDir, extraReposFile, withCmake,
     " -DEXTRA_REPOS_FILE="+extraReposFile+ \
     " -DENABLE_KNOWN_EXTERNAL_REPOS_TYPE="+extraReposType+ \
     " -DEXTRA_REPOS="+extraRepos+\
-    " -DNO_CHECK_FOR_MISSING_EXTRA_REPOS=TRUE"
+    " -DCHECK_EXTRAREPOS_EXIST=FALSE"
 #  " -DTRIBITS_PROCESS_EXTRAREPOS_LISTS_DEBUG=TRUE"
   cmnd += \
     " -P "+ciSupportDir+"/TribitsGetExtraReposForCheckinTest.cmake"

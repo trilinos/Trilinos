@@ -52,6 +52,10 @@ public:
     {
     }
 
+    void track_set_global_id(stk::mesh::Entity entity, stk::mesh::EntityId newId)
+    {
+    }
+
     void track_change_entity_id(stk::mesh::EntityId newId, stk::mesh::Entity entity)
     {
     }
@@ -117,6 +121,8 @@ public:
     void track_change_entity_owner(const std::vector<stk::mesh::EntityProc> &changes);
 
     void track_change_entity_id(stk::mesh::EntityId newId, stk::mesh::Entity entity);
+
+    void track_set_global_id(stk::mesh::Entity entity, stk::mesh::EntityId newId);
 
     void track_destroy_entity(stk::mesh::Entity entity);
 

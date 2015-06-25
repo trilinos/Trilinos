@@ -52,7 +52,7 @@
 
 #include "MueLu_Aggregates_decl.hpp"
 #include "MueLu_Graph.hpp"
-#include "MueLu_Utilities_decl.hpp" // sumAll
+#include "MueLu_Utilities_decl.hpp" // MueLu_sumAll
 
 namespace MueLu {
 
@@ -143,7 +143,7 @@ namespace MueLu {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   GlobalOrdinal Aggregates<LocalOrdinal, GlobalOrdinal, Node>::GetNumGlobalAggregates() const {
     LO nAggregates = GetNumAggregates();
-    GO nGlobalAggregates; sumAll(vertex2AggId_->getMap()->getComm(), (GO)nAggregates, nGlobalAggregates);
+    GO nGlobalAggregates; MueLu_sumAll(vertex2AggId_->getMap()->getComm(), (GO)nAggregates, nGlobalAggregates);
     return nGlobalAggregates;
   }
 

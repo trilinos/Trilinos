@@ -67,6 +67,28 @@ enum MeshEntityType {
   MESH_EDGE,
   MESH_VERTEX
 };
+
+  /*!  \brief Enumerate entity topology types for meshes: 
+   *          points,lines,polygons,triangles,quadrilaterals,
+   *          polyhedrons, tetrahedrons, hexhedrons, prisms, or pyramids
+   */
+
+enum EntityTopologyType {
+  POINT,         // a 0D entity (e.g. a vertex)
+  LINE_SEGMENT,  // a 1D entity (e.g. an edge)
+  POLYGON,       // a general 2D entity
+  TRIANGLE,      // a specific 2D entity bounded by 3 edge entities
+  QUADRILATERAL, // a specific 2D entity bounded by 4 edge entities
+  POLYHEDRON,    // a general 3D entity
+  TETRAHEDRON,   // a specific 3D entity bounded by 4 triangle entities
+  HEXAHEDRON,    // a specific 3D entity bounded by 6 quadrilateral
+                 // entities
+  PRISM,         // a specific 3D entity bounded by a combination of 3
+                 //quadrilateral entities and 2 triangle entities
+  PYRAMID        // a specific 3D entity bounded by a combination of 1
+                 // quadrilateral entity and 4 triangle entities
+};
+
 /*!  \brief MeshAdapter defines the interface for mesh input.
 
     Adapter objects provide access for Zoltan2 to the user's data.
@@ -152,6 +174,13 @@ public:
   virtual void getIDsViewOf(MeshEntityType etype,
                             zgid_t const *&Ids) const = 0;
 
+
+  /*! \brief Provide a pointer to the entity topology types
+      \param Types will on return point to the list of entity topology types
+      for this process.
+  */
+  virtual void getTopologyViewOf(MeshEntityType etype, 
+				     enum EntityTopologyType const *&Types) const = 0;
 
   /*! \brief Return the number of weights per entity.
    *  \return the count of weights, zero or more per entity.

@@ -167,6 +167,31 @@ TRIBITS_ADD_TEST(
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
 )
+IF (${PACKAGE_NAME}_ENABLE_SCOREC)
+  TRIBITS_ADD_TEST(
+    pamgenMeshAdapterTest
+    NAME pamgenMeshAdapterTest_ParMA
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "--action=parma"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+  IF (1)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    RPIMeshAdapterTest
+    NAME RPIMeshAdapterTest_ParMA
+    SOURCES RPIMeshAdapterTest.cpp
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "--action=parma --meshfile=4/ --modelfile=torus.dmg"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+  ENDIF()
+ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Scotch)
   TRIBITS_ADD_TEST(

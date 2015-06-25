@@ -211,7 +211,7 @@ public:
   void operator()(const Initialize,const unsigned cell) const
   {
     for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp) 
-      scratch(cell,qp) *= vectorField(cell,qp);  
+      scratch(cell,qp) = multiplier*vectorField(cell,qp);  
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -267,8 +267,6 @@ public:
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
 { 
-  // residual.deep_copy(ScalarT(0.0));
-
   const BasisValues2<double> & bv = *workset.bases[basis_index];
 
   if(!useScalarField) {
@@ -324,13 +322,17 @@ PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
     Kokkos::parallel_for(workset.num_cells, intValues);
   }
 
-/*
+#if 0
+  residual.deep_copy(ScalarT(0.0));
+
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
   {
     for (std::size_t qp = 0; qp < num_qp; ++qp)
     {
       ScalarT tmpVar = 1.0;
-      for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+      // for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
+      //      field != field_multipliers.end(); ++field)
+      for (typename std::vector<PHX::MDField<const ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
            field != field_multipliers.end(); ++field)
         tmpVar = tmpVar * (*field)(cell,qp);  
 
@@ -345,27 +347,31 @@ PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
       }
     }
   }
-*/
 
-/*
   if(!useScalarField) {
     auto weighted_curl_basis_vector = bv.weighted_curl_basis_vector;
 
     for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
-      for (std::size_t basis = 0; basis < num_nodes; ++basis)
+      for (std::size_t basis = 0; basis < num_nodes; ++basis) {
+        residual(cell,basis) = 0.0;
         for (std::size_t qp = 0; qp < num_qp; ++qp)
           for (std::size_t dim = 0; dim < num_dim; ++dim)
-            residual(cell,basis) += scratch_vector(cell,qp,dim)*weighted_curl_basis_vector(cell,basis,qp,dim);
+            // residual(cell,basis) += scratch_vector(cell,qp,dim)*weighted_curl_basis_vector(cell,basis,qp,dim);
+            residual(cell,basis) += multiplier*flux_vector(cell,qp,dim)*weighted_curl_basis_vector(cell,basis,qp,dim);
+      }
   }
   else { // useScalarField
     auto weighted_curl_basis_scalar = bv.weighted_curl_basis_scalar;
 
     for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
-      for (std::size_t basis = 0; basis < num_nodes; ++basis)
+      for (std::size_t basis = 0; basis < num_nodes; ++basis) {
+       residual(cell,basis) = 0.0;
         for (std::size_t qp = 0; qp < num_qp; ++qp)
-          residual(cell,basis) += scratch_scalar(cell,qp)*weighted_curl_basis_scalar(cell,basis,qp);
+          // residual(cell,basis) += scratch_scalar(cell,qp)*weighted_curl_basis_scalar(cell,basis,qp);
+          residual(cell,basis) += multiplier*flux_scalar(cell,qp)*weighted_curl_basis_scalar(cell,basis,qp);
+      }
   }
-*/
+#endif
 }
 
 //**********************************************************************

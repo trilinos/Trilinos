@@ -2,6 +2,7 @@ AdaptiveSaMLParameterListInterpreter
 AggregationExportFactory
 AmalgamationFactory
 Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+AMGXOperator - #if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_AMGX)
 AlgebraicPermutationStrategy
 BlockedCoarseMapFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 BlockedDirectSolver - #ifdef HAVE_MUELU_EXPERIMENTAL
@@ -71,6 +72,7 @@ SteepestDescentSolver
 SubBlockAFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 TentativePFactory
 ThresholdAFilterFactory
+TogglePFactory
 TpetraOperator
 TransPFactory
 TrilinosSmoother

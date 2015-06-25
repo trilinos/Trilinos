@@ -17,12 +17,19 @@
 #include <MueLu_Utilities.hpp>
 #include <MueLu_HierarchyHelpers.hpp>
 
+
+#if defined(HAVE_MUELU_EXPERIMENTAL) and defined(HAVE_MUELU_AMGX)
+#include <MueLu_AMGXOperator.hpp>
+#include <amgx_c.h>
+#include "cuda_runtime.h"
+#endif
+
 //! @file MueLu_CreateTpetraPreconditioner.hpp
 
 namespace MueLu {
 
   /*! \fn CreateTpetraPreconditioner
-    @brief Helper function to create a MueLu preconditioner that can be used by Tpetra.
+    @brief Helper function to create a MueLu or AMGX preconditioner that can be used by Tpetra.
 
     Given a Tpetra matrix, this function returns a constructed MueLu preconditioner.
 
@@ -31,6 +38,7 @@ namespace MueLu {
     @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
     @param[in] inNullspace (optional) Near nullspace of the matrix.
     */
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix  <Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inA,
@@ -55,6 +63,12 @@ namespace MueLu {
     RCP<HierarchyManager> mueLuFactory;
     ParameterList paramList = paramListIn;
 
+#if defined(HAVE_MUELU_EXPERIMENTAL) and defined(HAVE_MUELU_AMGX)
+    std::string externalMG = "use external multigrid package";
+    if (hasParamList && paramList.isParameter(externalMG) && paramList.get<std::string>(externalMG) == "amgx"){
+      return rcp(new AMGXOperator<SC,LO,GO,NO>(inA,paramListIn));
+    }
+#endif
     std::string syntaxStr = "parameterlist: syntax";
     if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
       paramList.remove(syntaxStr);
@@ -115,7 +129,7 @@ namespace MueLu {
 
     
     Teuchos::ParameterList nonSerialList,dummyList;
-    ExtractNonSerializableData(paramList, dummyList, nonSerialList);    
+    ExtractNonSerializableData(paramList, dummyList, nonSerialList);
     HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
     
     mueLuFactory->SetupHierarchy(*H);
@@ -203,3 +217,4 @@ namespace MueLu {
 } //namespace
 
 #endif //ifndef MUELU_CREATE_TPETRA_PRECONDITIONER_HPP
+

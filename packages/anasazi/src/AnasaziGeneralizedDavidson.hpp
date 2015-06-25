@@ -182,7 +182,7 @@ class GeneralizedDavidson : public Eigensolver<ScalarType,MV,OP>
     /*!
      * \brief Initialize solver from state
      */
-    void initialize( GeneralizedDavidsonState<ScalarType,MV> state );
+    void initialize( GeneralizedDavidsonState<ScalarType,MV>& state );
 
     /*!
      * \brief Get number of iterations
@@ -703,7 +703,7 @@ void GeneralizedDavidson<ScalarType,MV,OP>::setSize(int blockSize, int maxSubDim
  */
 //---------------------------------------------------------------------------//
 template <class ScalarType, class MV, class OP>
-void GeneralizedDavidson<ScalarType,MV,OP>::initialize( GeneralizedDavidsonState<ScalarType,MV> state )
+void GeneralizedDavidson<ScalarType,MV,OP>::initialize( GeneralizedDavidsonState<ScalarType,MV>& state )
 {
     // If state has nonzero dimension, we initialize from that, otherwise
     //  we'll pick d_blockSize vectors to start with

@@ -98,11 +98,11 @@ class Epetra_Vector;
 
 namespace MueLu {
 // MPI helpers
-#define sumAll(rcpComm, in, out)                                        \
+#define MueLu_sumAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out))
-#define minAll(rcpComm, in, out)                                        \
+#define MueLu_minAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out))
-#define maxAll(rcpComm, in, out)                                        \
+#define MueLu_maxAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out))
 
 #ifdef HAVE_MUELU_EPETRA
@@ -434,6 +434,11 @@ namespace MueLu {
   */
   long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList);
 
+
+  /*! Tokenizes a (comma)-separated string, removing all leading and trailing whitespace 
+    WARNING: This routine is not threadsafe on most architectures 
+  */
+  void TokenizeStringAndStripWhiteSpace(const std::string & stream, std::vector<std::string> & tokenList, const char* token = ",");
 
 
 #ifdef HAVE_MUELU_EPETRA

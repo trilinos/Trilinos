@@ -84,7 +84,7 @@ namespace Sacado {
   //! Specialization of %IsADType to Vector types
   template <typename S>
   struct IsScalarType< MP::Vector<S> > {
-    static const bool value = false;
+    static const bool value = S::is_static;
   };
 
   //! Specialization of %Value to Vector types

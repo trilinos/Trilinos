@@ -1,4 +1,5 @@
-
+#ifndef MUELU_CONFIG_HPP
+#define MUELU_CONFIG_HPP
 #cmakedefine F77_BLAS_MANGLE@F77_BLAS_MANGLE@
 
 /* Options */
@@ -60,3 +61,5 @@
 #cmakedefine HAVE_MUELU_TIMER_SYNCHRONIZATION
 
 #cmakedefine HAVE_MUELU_MATLAB
+
+#endif /* MUELU_CONFIG_HPP */

@@ -150,7 +150,7 @@ Int KLU_rgrowth         /* return TRUE if successful, FALSE otherwise */
                     aik = Aentry [k] ;
                 }
                 /* temp = ABS (aik) */
-                ABS (temp, aik) ;
+                KLU2_ABS (temp, aik) ;
                 if (temp > max_ai)
                 {
                     max_ai = temp ;
@@ -161,14 +161,14 @@ Int KLU_rgrowth         /* return TRUE if successful, FALSE otherwise */
             for (k = 0 ; k < len ; k++)
             {
                 /* temp = ABS (Ux [k]) */
-                ABS (temp, Ux [k]) ;
+                KLU2_ABS (temp, Ux [k]) ;
                 if (temp > max_ui)
                 {
                     max_ui = temp ;
                 }
             }
             /* consider the diagonal element */
-            ABS (temp, Ukk [j]) ;
+            KLU2_ABS (temp, Ukk [j]) ;
             if (temp > max_ui)
             {
                 max_ui = temp ;
@@ -260,7 +260,7 @@ Int KLU_condest         /* return TRUE if successful, FALSE otherwise */
 
     for (i = 0 ; i < n ; i++)
     {
-        ABS (abs_value, Udiag [i]) ;
+        KLU2_ABS (abs_value, Udiag [i]) ;
         if (SCALAR_IS_ZERO (abs_value))
         {
             Common->condest = 1 / abs_value ;
@@ -281,7 +281,7 @@ Int KLU_condest         /* return TRUE if successful, FALSE otherwise */
         csum = 0.0 ;
         for (j = Ap [i] ; j < pend ; j++)
         {
-            ABS (abs_value, Aentry [j]) ;
+            KLU2_ABS (abs_value, Aentry [j]) ;
             csum += abs_value ;
         }
         if (csum > anorm)
@@ -332,7 +332,7 @@ Int KLU_condest         /* return TRUE if successful, FALSE otherwise */
         for (j = 0 ; j < n ; j++)
         {
             /* ainv_norm += ABS (X [j]) ;*/
-            ABS (abs_value, X [j]) ;
+            KLU2_ABS (abs_value, X [j]) ;
             ainv_norm += abs_value ;
         }
 
@@ -358,7 +358,7 @@ Int KLU_condest         /* return TRUE if successful, FALSE otherwise */
         {
             if (IS_NONZERO (X [j]))
             {
-                ABS (abs_value, X [j]) ;
+                KLU2_ABS (abs_value, X [j]) ;
                 SCALE_DIV_ASSIGN (S [j], X [j], abs_value) ;
             }
             else
@@ -395,7 +395,7 @@ Int KLU_condest         /* return TRUE if successful, FALSE otherwise */
         for (j = 0 ; j < n ; j++)
         {
             /* xj = ABS (X [j]) ;*/
-            ABS (xj, X [j]) ;
+            KLU2_ABS (xj, X [j]) ;
             if (xj > Xmax)
             {
                 Xmax = xj ;
@@ -438,7 +438,7 @@ Int KLU_condest         /* return TRUE if successful, FALSE otherwise */
     for (j = 0 ; j < n ; j++)
     {
         /* est_new += ABS (X [j]) ;*/
-        ABS (abs_value, X [j]) ;
+        KLU2_ABS (abs_value, X [j]) ;
         est_new += abs_value ;
     }
     est_new = 2 * est_new / (3 * n) ;
@@ -587,7 +587,7 @@ Int KLU_rcond           /* return TRUE if successful, FALSE otherwise */
     for (j = 0 ; j < n ; j++)
     {
         /* get the magnitude of the pivot */
-        ABS (ukk, Udiag [j]) ;
+        KLU2_ABS (ukk, Udiag [j]) ;
         if (SCALAR_IS_NAN (ukk) || SCALAR_IS_ZERO (ukk))
         {
             /* if NaN, or zero, the rcond is zero */

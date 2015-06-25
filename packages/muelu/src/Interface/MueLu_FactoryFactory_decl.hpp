@@ -112,6 +112,7 @@
 #include "MueLu_SubBlockAFactory.hpp"
 #endif
 #include "MueLu_TentativePFactory.hpp"
+#include "MueLu_TogglePFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
@@ -123,6 +124,14 @@
 #endif
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
+
+#ifdef HAVE_MUELU_MATLAB
+// This is distasteful, but (sadly) neccesary due to peculiarities in MueLu's build system.
+#include "../matlab/MueLu_SingleLevelMatlabFactory_decl.hpp"
+#include "../matlab/MueLu_SingleLevelMatlabFactory_def.hpp"
+#include "../matlab/MueLu_TwoLevelMatlabFactory_decl.hpp"
+#include "../matlab/MueLu_TwoLevelMatlabFactory_def.hpp"
+#endif
 
 namespace MueLu {
 
@@ -198,6 +207,7 @@ namespace MueLu {
       if (factoryName == "SubBlockAFactory")                return Build2<SubBlockAFactory>             (paramList, factoryMapIn, factoryManagersIn);
 #endif
       if (factoryName == "TentativePFactory")               return Build2<TentativePFactory>            (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "TogglePFactory")                  return BuildTogglePFactory<TogglePFactory>  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TransPFactory")                   return Build2<TransPFactory>                (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TrilinosSmoother")                return BuildTrilinosSmoother                (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory")     return BuildUncoupledAggregationFactory     (paramList, factoryMapIn, factoryManagersIn);
@@ -246,6 +256,13 @@ namespace MueLu {
       if (factoryName == "SchurComplementFactory")          return Build2<SchurComplementFactory> (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UzawaSmoother")                   return BuildBlockedSmoother<UzawaSmoother>(paramList, factoryMapIn, factoryManagersIn);
 #endif
+
+      // Matlab factories
+#ifdef HAVE_MUELU_MATLAB
+      if (factoryName == "TwoLevelMatlabFactory")           return Build2<TwoLevelMatlabFactory>        (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SingleLevelMatlabFactory")        return Build2<SingleLevelMatlabFactory>     (paramList, factoryMapIn, factoryManagersIn);
+#endif
+
       // Use a user defined factories (in <Factories> node)
       if (factoryMapIn.find(factoryName) != factoryMapIn.end()) {
         TEUCHOS_TEST_FOR_EXCEPTION((param.isList() && (++paramList.begin() != paramList.end())), Exceptions::RuntimeError,
@@ -352,6 +369,77 @@ namespace MueLu {
         }
       }
 
+      return factory;
+    }
+
+    template <class T> // T must implement the Factory interface
+    RCP<T> BuildTogglePFactory(const Teuchos::ParameterList & paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+      RCP<T> factory;
+      if (paramList.isSublist("TransferFactories") == false) {
+    	  //TODO put in an error message: the TogglePFactory needs a TransferFactories sublist!
+        factory = Build2<T>(paramList, factoryMapIn, factoryManagersIn);
+
+      } else {
+        RCP<Teuchos::ParameterList>       paramListNonConst = rcp(new Teuchos::ParameterList(paramList));
+        RCP<const Teuchos::ParameterList> transferFactories = rcp(new Teuchos::ParameterList(*sublist(paramListNonConst, "TransferFactories")));
+
+        paramListNonConst->remove("TransferFactories");
+
+        // build TogglePFactory
+        factory = Build2<T>(*paramListNonConst, factoryMapIn, factoryManagersIn);
+
+        // count how many prolongation factories and how many coarse null space factories have been declared.
+        // the numbers must match!
+        int numProlongatorFactories = 0;
+        int numCoarseNspFactories   = 0;
+        for (Teuchos::ParameterList::ConstIterator param = transferFactories->begin(); param != transferFactories->end(); ++param) {
+          size_t foundNsp = transferFactories->name(param).find("Nullspace");
+          if (foundNsp != std::string::npos && foundNsp == 0 && transferFactories->name(param).length()==10) {
+            numCoarseNspFactories++;
+            continue;
+          }
+          size_t foundP   = transferFactories->name(param).find("P");
+          if (foundP != std::string::npos && foundP == 0 && transferFactories->name(param).length()==2) {
+            numProlongatorFactories++;
+            continue;
+          }
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION(numProlongatorFactories!=numCoarseNspFactories, Exceptions::RuntimeError, "FactoryFactory::BuildToggleP: The user has to provide the same number of prolongator and coarse nullspace factories!");
+        TEUCHOS_TEST_FOR_EXCEPTION(numProlongatorFactories < 2, Exceptions::RuntimeError, "FactoryFactory::BuildToggleP: The TogglePFactory needs at least two different prolongation operators. The factories have to be provided using the names P%i and Nullspace %i, where %i denotes a number between 1 and 9.");
+
+        // create empty vectors with data
+        std::vector<Teuchos::ParameterEntry> prolongatorFactoryNames(numProlongatorFactories);
+        std::vector<Teuchos::ParameterEntry> coarseNspFactoryNames(numProlongatorFactories);
+
+        for (Teuchos::ParameterList::ConstIterator param = transferFactories->begin(); param != transferFactories->end(); ++param) {
+          size_t foundNsp = transferFactories->name(param).find("Nullspace");
+          if (foundNsp != std::string::npos && foundNsp == 0 && transferFactories->name(param).length()==10) {
+            int number = atoi(&(transferFactories->name(param).at(9)));
+                TEUCHOS_TEST_FOR_EXCEPTION(number < 1 || number > numProlongatorFactories, Exceptions::RuntimeError, "FactoryFactory::BuildToggleP: Please use the format Nullspace%i with %i an integer between 1 and the maximum number of prolongation operators in TogglePFactory!");
+                coarseNspFactoryNames[number-1] = transferFactories->entry(param);
+                continue;
+          }
+          size_t foundP   = transferFactories->name(param).find("P");
+          if (foundP != std::string::npos && foundP == 0 && transferFactories->name(param).length()==2) {
+            int number = atoi(&(transferFactories->name(param).at(1)));
+                TEUCHOS_TEST_FOR_EXCEPTION(number < 1 || number > numProlongatorFactories, Exceptions::RuntimeError, "FactoryFactory::BuildToggleP: Please use the format Nullspace%i with %i an integer between 1 and the maximum number of prolongation operators in TogglePFactory!");
+                prolongatorFactoryNames[number-1] = transferFactories->entry(param);
+                continue;
+          }
+        }
+
+        // register all prolongation factories in TogglePFactory
+        for (std::vector<Teuchos::ParameterEntry>::const_iterator it = prolongatorFactoryNames.begin(); it != prolongatorFactoryNames.end(); ++it) {
+          RCP<const FactoryBase> p = BuildFactory(*it, factoryMapIn, factoryManagersIn);
+          factory->AddProlongatorFactory(p);
+        }
+
+        // register all coarse nullspace factories in TogglePFactory
+        for (std::vector<Teuchos::ParameterEntry>::const_iterator it = coarseNspFactoryNames.begin(); it != coarseNspFactoryNames.end(); ++it) {
+          RCP<const FactoryBase> p = BuildFactory(*it, factoryMapIn, factoryManagersIn);
+          factory->AddCoarseNullspaceFactory(p);
+        }
+      }
       return factory;
     }
 

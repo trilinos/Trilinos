@@ -454,6 +454,16 @@ EpetraModelEvaluator::get_g_space(int j) const
 }
 
 
+Teuchos::ArrayView<const std::string>
+EpetraModelEvaluator::get_g_names(int j) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, this->Ng() );
+#endif
+  return epetraModel_->get_g_names(j);
+}
+
+
 ModelEvaluatorBase::InArgs<double>
 EpetraModelEvaluator::getNominalValues() const
 {
@@ -809,9 +819,21 @@ void EpetraModelEvaluator::convertInArgsFromEpetraToThyra(
     inArgs->set_x_dot( create_Vector( epetraInArgs.get_x_dot(), x_space_ ) );
   }
 
+  if(inArgs->supports(MEB::IN_ARG_x_mp)) {
+    inArgs->set_x_mp( epetraInArgs.get_x_mp() );
+  }
+
+  if(inArgs->supports(MEB::IN_ARG_x_dot_mp)) {
+    inArgs->set_x_dot_mp( epetraInArgs.get_x_dot_mp() );
+  }
+
   const int l_Np = inArgs->Np();
   for( int l = 0; l < l_Np; ++l ) {
     inArgs->set_p( l, create_Vector( epetraInArgs.get_p(l), p_space_[l] ) );
+  }
+  for( int l = 0; l < l_Np; ++l ) {
+    if(inArgs->supports(MEB::IN_ARG_p_mp, l))
+      inArgs->set_p_mp( l, epetraInArgs.get_p_mp(l) );
   }
 
   if(inArgs->supports(MEB::IN_ARG_t)) {
@@ -841,17 +863,32 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
     RCP<const Epetra_Vector> e_x_dot = get_Epetra_Vector(*x_map_,x_dot);
     epetraInArgs->set_x_dot(e_x_dot);
   }
+  RCP<const Stokhos::ProductEpetraVector > x_dot_mp;
+  if( inArgs.supports(IN_ARG_x_dot_mp) && (x_dot_mp = inArgs.get_x_dot_mp()).get() ) {
+    epetraInArgs->set_x_dot_mp(x_dot_mp);
+  }
 
   RCP<const VectorBase<double> > x;
   if( inArgs.supports(IN_ARG_x) && (x = inArgs.get_x()).get() ) {
     RCP<const Epetra_Vector> e_x = get_Epetra_Vector(*x_map_,x);
     epetraInArgs->set_x(e_x);
   }
+  RCP<const Stokhos::ProductEpetraVector > x_mp;
+  if( inArgs.supports(IN_ARG_x_mp) && (x_mp = inArgs.get_x_mp()).get() ) {
+    epetraInArgs->set_x_mp(x_mp);
+  }
 
   RCP<const VectorBase<double> > p_l;
   for(int l = 0;  l < inArgs.Np(); ++l ) {
     p_l = inArgs.get_p(l);
     if(p_l.get()) epetraInArgs->set_p(l,get_Epetra_Vector(*p_map_[l],p_l));
+  }
+  RCP<const Stokhos::ProductEpetraVector > p_mp_l;
+  for(int l = 0;  l < inArgs.Np(); ++l ) {
+    if (inArgs.supports(IN_ARG_p_mp,l)) {
+      p_mp_l = inArgs.get_p_mp(l);
+      if(p_mp_l.get()) epetraInArgs->set_p_mp(l,p_mp_l);
+    }
   }
 
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
@@ -939,6 +976,9 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
     RCP<VectorBase<double> > f;
     if( outArgs.supports(OUT_ARG_f) && (f = outArgs.get_f()).get() )
       epetraUnscaledOutArgs.set_f(get_Epetra_Vector(*f_map_,f));
+    RCP<Stokhos::ProductEpetraVector > f_mp;
+    if( outArgs.supports(OUT_ARG_f_mp) && (f_mp = outArgs.get_f_mp()).get() )
+      epetraUnscaledOutArgs.set_f_mp(f_mp);
   }
 
   // g
@@ -948,6 +988,20 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
       g_j = outArgs.get_g(j);
       if(g_j.get()) epetraUnscaledOutArgs.set_g(j,get_Epetra_Vector(*g_map_[j],g_j));
     }
+    RCP<Stokhos::ProductEpetraVector > g_mp_j;
+    for(int j = 0;  j < outArgs.Ng(); ++j ) {
+      if (outArgs.supports(OUT_ARG_g_mp,j)) {
+        g_mp_j = outArgs.get_g_mp(j);
+        if(g_mp_j.get()) epetraUnscaledOutArgs.set_g_mp(j,g_mp_j);
+      }
+    }
+  }
+
+  // W_op
+  {
+    RCP<Stokhos::ProductEpetraOperator > W_mp;
+    if( outArgs.supports(OUT_ARG_W_mp) && (W_mp = outArgs.get_W_mp()).get() )
+      epetraUnscaledOutArgs.set_W_mp(W_mp);
   }
 
   // W_op
@@ -983,6 +1037,14 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
         epetraUnscaledOutArgs.set_DfDp(l,convert(DfDp_l,f_map_,p_map_[l]));
       }
     }
+    MPDerivative DfDp_mp_l;
+    for(int l = 0;  l < outArgs.Np(); ++l ) {
+      if( !outArgs.supports(OUT_ARG_DfDp_mp,l).none()
+        && !(DfDp_mp_l = outArgs.get_DfDp_mp(l)).isEmpty() )
+      {
+        epetraUnscaledOutArgs.set_DfDp_mp(l,convert(DfDp_mp_l,f_map_,p_map_[l]));
+      }
+    }
   }
 
   // DgDx_dot
@@ -993,6 +1055,14 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
         && !(DgDx_dot_j = outArgs.get_DgDx_dot(j)).isEmpty() )
       {
         epetraUnscaledOutArgs.set_DgDx_dot(j,convert(DgDx_dot_j,g_map_[j],x_map_));
+      }
+    }
+    MPDerivative DgDx_dot_mp_j;
+    for(int j = 0;  j < outArgs.Ng(); ++j ) {
+      if( !outArgs.supports(OUT_ARG_DgDx_dot_mp,j).none()
+        && !(DgDx_dot_mp_j = outArgs.get_DgDx_dot_mp(j)).isEmpty() )
+      {
+        epetraUnscaledOutArgs.set_DgDx_dot_mp(j,convert(DgDx_dot_mp_j,g_map_[j],x_map_));
       }
     }
   }
@@ -1007,6 +1077,14 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
         epetraUnscaledOutArgs.set_DgDx(j,convert(DgDx_j,g_map_[j],x_map_));
       }
     }
+    MPDerivative DgDx_mp_j;
+    for(int j = 0;  j < outArgs.Ng(); ++j ) {
+      if( !outArgs.supports(OUT_ARG_DgDx_mp,j).none()
+        && !(DgDx_mp_j = outArgs.get_DgDx_mp(j)).isEmpty() )
+      {
+        epetraUnscaledOutArgs.set_DgDx_mp(j,convert(DgDx_mp_j,g_map_[j],x_map_));
+      }
+    }
   }
 
   // DgDp
@@ -1019,6 +1097,17 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
           && !(DgDp_j_l = outArgs.get_DgDp(j,l)).isEmpty() )
         {
           epetraUnscaledOutArgs.set_DgDp(j,l,convert(DgDp_j_l,g_map_[j],p_map_[l]));
+        }
+      }
+    }
+    DerivativeSupport DgDp_mp_j_l_support;
+    MPDerivative DgDp_mp_j_l;
+    for (int j = 0;  j < outArgs.Ng(); ++j ) {
+      for (int l = 0;  l < outArgs.Np(); ++l ) {
+        if (!(DgDp_mp_j_l_support = outArgs.supports(OUT_ARG_DgDp_mp,j,l)).none()
+          && !(DgDp_mp_j_l = outArgs.get_DgDp_mp(j,l)).isEmpty() )
+        {
+          epetraUnscaledOutArgs.set_DgDp_mp(j,l,convert(DgDp_mp_j_l,g_map_[j],p_map_[l]));
         }
       }
     }
@@ -1294,6 +1383,8 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
   inArgs.set_Np(epetraInArgs.Np());
   inArgs.setSupports(IN_ARG_x_dot, epetraInArgs.supports(EME::IN_ARG_x_dot));
   inArgs.setSupports(IN_ARG_x, epetraInArgs.supports(EME::IN_ARG_x));
+  inArgs.setSupports(IN_ARG_x_dot_mp, epetraInArgs.supports(EME::IN_ARG_x_dot_mp));
+  inArgs.setSupports(IN_ARG_x_mp, epetraInArgs.supports(EME::IN_ARG_x_mp));
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
   inArgs.setSupports(IN_ARG_x_dot_poly,
     epetraInArgs.supports(EME::IN_ARG_x_dot_poly));
@@ -1302,6 +1393,9 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
   inArgs.setSupports(IN_ARG_t, epetraInArgs.supports(EME::IN_ARG_t));
   inArgs.setSupports(IN_ARG_alpha, epetraInArgs.supports(EME::IN_ARG_alpha));
   inArgs.setSupports(IN_ARG_beta, epetraInArgs.supports(EME::IN_ARG_beta));
+  for(int l=0; l<l_Np; ++l) {
+    inArgs.setSupports(IN_ARG_p_mp, l, epetraInArgs.supports(EME::IN_ARG_p_mp, l));
+  }
   prototypeInArgs_ = inArgs;
 
   //
@@ -1313,6 +1407,7 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
   outArgs.set_Np_Ng(l_Np, l_Ng);
   // f
   outArgs.setSupports(OUT_ARG_f, epetraOutArgs.supports(EME::OUT_ARG_f));
+  outArgs.setSupports(OUT_ARG_f_mp, epetraOutArgs.supports(EME::OUT_ARG_f_mp));
   if (outArgs.supports(OUT_ARG_f)) {
     // W_op
     outArgs.setSupports(OUT_ARG_W_op,  epetraOutArgs.supports(EME::OUT_ARG_W));
@@ -1324,6 +1419,14 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
       if(!outArgs.supports(OUT_ARG_DfDp, l).none())
         outArgs.set_DfDp_properties(l,
           convert(epetraOutArgs.get_DfDp_properties(l)));
+      if (outArgs.supports(OUT_ARG_f_mp))
+      {
+        outArgs.setSupports(OUT_ARG_DfDp_mp, l,
+          convert(epetraOutArgs.supports(EME::OUT_ARG_DfDp_mp, l)));
+        if(!outArgs.supports(OUT_ARG_DfDp_mp, l).none())
+          outArgs.set_DfDp_mp_properties(l,
+            convert(epetraOutArgs.get_DfDp_mp_properties(l)));
+      }
     }
   }
   // DgDx_dot and DgDx
@@ -1340,6 +1443,18 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
     if(!outArgs.supports(OUT_ARG_DgDx, j).none())
       outArgs.set_DgDx_properties(j,
         convert(epetraOutArgs.get_DgDx_properties(j)));
+    if (inArgs.supports(IN_ARG_x_dot_mp))
+      outArgs.setSupports(OUT_ARG_DgDx_dot_mp, j,
+        convert(epetraOutArgs.supports(EME::OUT_ARG_DgDx_dot_mp, j)));
+    if(!outArgs.supports(OUT_ARG_DgDx_dot_mp, j).none())
+      outArgs.set_DgDx_dot_mp_properties(j,
+        convert(epetraOutArgs.get_DgDx_dot_mp_properties(j)));
+    if (inArgs.supports(IN_ARG_x_mp))
+      outArgs.setSupports(OUT_ARG_DgDx_mp, j,
+        convert(epetraOutArgs.supports(EME::OUT_ARG_DgDx_mp, j)));
+    if(!outArgs.supports(OUT_ARG_DgDx_mp, j).none())
+      outArgs.set_DgDx_mp_properties(j,
+        convert(epetraOutArgs.get_DgDx_mp_properties(j)));
   }
   // DgDp
   for(int j=0; j < l_Ng; ++j) for(int l=0; l < l_Np; ++l) {
@@ -1350,6 +1465,16 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
     if(!outArgs.supports(OUT_ARG_DgDp, j, l).none())
       outArgs.set_DgDp_properties(j, l,
         convert(epetraOutArgs.get_DgDp_properties(j, l)));
+    const EME::DerivativeSupport epetra_DgDp_mp_j_l_support =
+      epetraOutArgs.supports(EME::OUT_ARG_DgDp_mp, j, l);
+    outArgs.setSupports(OUT_ARG_DgDp_mp, j, l,
+      convert(epetra_DgDp_mp_j_l_support));
+    if(!outArgs.supports(OUT_ARG_DgDp_mp, j, l).none())
+      outArgs.set_DgDp_mp_properties(j, l,
+        convert(epetraOutArgs.get_DgDp_mp_properties(j, l)));
+  }
+  for(int j=0; j<l_Ng; ++j) {
+    outArgs.setSupports(OUT_ARG_g_mp, j, epetraOutArgs.supports(EME::OUT_ARG_g_mp, j));
   }
 #ifdef HAVE_THYRA_ME_POLYNOMIAL
   outArgs.setSupports(OUT_ARG_f_poly,
@@ -1509,4 +1634,27 @@ Thyra::convert(
       );
   }
   return EpetraExt::ModelEvaluator::Derivative();
+}
+EpetraExt::ModelEvaluator::MPDerivative
+Thyra::convert(
+  const ModelEvaluatorBase::MPDerivative &derivative,
+  const RCP<const Epetra_Map> &fnc_map,
+  const RCP<const Epetra_Map> &var_map
+  )
+{
+  typedef ModelEvaluatorBase MEB;
+  if(derivative.getLinearOp().get()) {
+    return EpetraExt::ModelEvaluator::MPDerivative(
+        derivative.getLinearOp()
+      );
+  }
+  else if(derivative.getDerivativeMultiVector().getMultiVector().get()) {
+    return EpetraExt::ModelEvaluator::MPDerivative(
+      EpetraExt::ModelEvaluator::MPDerivativeMultiVector(
+          derivative.getDerivativeMultiVector().getMultiVector()
+        ,convert(derivative.getDerivativeMultiVector().getOrientation())
+        )
+      );
+  }
+  return EpetraExt::ModelEvaluator::MPDerivative();
 }

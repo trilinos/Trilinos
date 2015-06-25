@@ -107,6 +107,12 @@ bool TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply()
   return false;
 }
 
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetHierarchy() const {
+  return Hierarchy_;
+}
+
 } // namespace
 #endif //ifdef HAVE_MUELU_TPETRA
 

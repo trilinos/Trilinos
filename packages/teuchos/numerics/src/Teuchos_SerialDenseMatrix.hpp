@@ -203,7 +203,7 @@ public:
 
   //! Copies values from one matrix to another.
   /*!
-    The operator= copies the values from one existing SerialDenseMatrix to another
+    Copies the values from one existing SerialDenseMatrix to another
     if the dimension of both matrices are the same.  If not, \e this matrix
     will be returned unchanged.
   */

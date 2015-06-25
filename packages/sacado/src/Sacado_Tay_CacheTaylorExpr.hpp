@@ -389,6 +389,16 @@ namespace Sacado {
 
   } // namespace Tay
 
+  template <typename T>
+  struct IsExpr< Tay::Expr<T> > {
+    static const bool value = true;
+  };
+
+  template <typename T>
+  struct BaseExprType< Tay::Expr<T> > {
+    typedef typename Tay::Expr<T>::base_expr_type type;
+  };
+
 } // namespace Sacado
 
 #endif // SACADO_TAY_CACHETAYLOREXPR_HPP

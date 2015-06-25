@@ -1,0 +1,21 @@
+#
+# TribitsExampleProjectAddons Documentation
+#
+
+WARNING: WORK IN PROGRESS!  This TriBITS example project will get fleshed out
+more in the future to be more complete.
+
+The project TribitsExampleProjectAddons defines a TriBITS CMake project
+designed to provide a simple example to demonstrate how to use extra
+repositories with the TriBITS system.
+
+To get started building you can create a directory structure like:
+
+    ~/TribitsExampleProjectAddons.base/
+        TribitsExampleProjectAddons/   # This directory
+          TribitsExampleProject/       # Copied in TribitsExampleProject/ dir
+        BUILDS/
+            GCC-<X.Y.Z>/
+                MPI_DEBUG/
+
+ToDo: Finish documentation!
