@@ -313,8 +313,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, LinePartition, Scalar,
 
   /* Generate some fake coordinates */
   Teuchos::RCP<MultiVector> coord = rcp(new MultiVector(rowmap,2));
-  Teuchos::ArrayView<Scalar> x0 = coord->getDataNonConst(0)();
-  Teuchos::ArrayView<Scalar> x1 = coord->getDataNonConst(1)();
+  Teuchos::ArrayRCP<Scalar> x0rcp = coord->getDataNonConst(0);
+  Teuchos::ArrayRCP<Scalar> x1rcp = coord->getDataNonConst(1);
+
+  Teuchos::ArrayView<Scalar> x0 = x0rcp();
+  Teuchos::ArrayView<Scalar> x1 = x1rcp();
   x0[0]=0; x0[1]=1;   x0[2]=10;  x0[3]=11;  x0[4]=12;
   x1[0]=0; x1[1]=1;   x1[2]=2;   x1[3]=3;   x1[4]=4;
 
