@@ -55,7 +55,6 @@
 #include "Ifpack2_BandedContainer.hpp"
 #include "Ifpack2_DenseContainer.hpp"
 #include "Ifpack2_TriDiContainer.hpp"
-#include "Ifpack2_BandedContainer.hpp"
 #include "Ifpack2_Details_OneLevelFactory.hpp"
 
 #ifdef HAVE_IFPACK2_AMESOS2
