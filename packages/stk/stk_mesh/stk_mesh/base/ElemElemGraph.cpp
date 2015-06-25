@@ -1125,7 +1125,6 @@ void ElemElemGraph::add_elements_to_graph(std::vector <stk::mesh::Entity> &eleme
 
     std::vector<impl::ElementSidePair> elem_side_pairs;
 
-    size_t numNewEdges = 0;
     for(unsigned i=0; i<elements_to_add.size(); ++i)
     {
         std::set<EntityId> localElementsConnectedToNewShell;
@@ -1157,14 +1156,11 @@ void ElemElemGraph::add_elements_to_graph(std::vector <stk::mesh::Entity> &eleme
                 if (elem_topology.is_shell()) {
                     localElementsConnectedToNewShell.insert(neighbor_id);
                 }
-                numNewEdges+=2;
             }
         }
         impl::break_volume_element_connections_across_shells(localElementsConnectedToNewShell, m_elem_graph, m_via_sides);
     }
-    std::vector<stk::mesh::EntityId> newSuggestedIds(numNewEdges,0);
-    m_bulk_data.generate_new_ids(m_bulk_data.mesh_meta_data().side_rank(), numNewEdges, newSuggestedIds);
-    m_suggested_side_ids.insert(m_suggested_side_ids.end(), newSuggestedIds.begin(), newSuggestedIds.end());
+    m_bulk_data.generate_new_ids(m_bulk_data.mesh_meta_data().side_rank(), m_num_edges, m_suggested_side_ids);
 }
 
 }} // end namespaces stk mesh
