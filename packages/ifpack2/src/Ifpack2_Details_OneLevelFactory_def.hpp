@@ -125,6 +125,16 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
     typedef DenseContainer<MatrixType, scalar_type> container_type;
     prec = rcp (new BlockRelaxation<MatrixType, container_type> (matrix));
   }
+  else if (precTypeUpper == "TRIDI_RELAXATION" ||
+           precTypeUpper == "TRIDI RELAXATION" ||
+           precTypeUpper == "TRIDIRELAXATION" ||
+           precTypeUpper == "TRIDIAGONAL_RELAXATION" ||
+           precTypeUpper == "TRIDIAGONAL RELAXATION" ||
+           precTypeUpper == "TRIDIAGONALRELAXATION") {
+    typedef TriDiContainer<MatrixType, scalar_type> container_type;
+    prec = rcp (new BlockRelaxation<MatrixType, container_type> (matrix));
+
+  }
   else if (precTypeUpper == "IDENTITY" || precTypeUpper == "IDENTITY_SOLVER") {
     prec = rcp (new IdentitySolver<MatrixType> (matrix));
   }
