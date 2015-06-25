@@ -211,7 +211,7 @@ TEST(ElementGraph, add_elements_to_graph_serial)
     }
 }
 
-TEST(ElementGraph, add_elements_to_graph_parallel)
+TEST(ElementGraph, DISABLED_add_elements_to_graph_parallel)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
 
