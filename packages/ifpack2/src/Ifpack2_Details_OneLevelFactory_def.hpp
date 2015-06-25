@@ -52,6 +52,7 @@
 #include "Ifpack2_RILUK.hpp"
 #include "Ifpack2_Krylov.hpp"
 #include "Ifpack2_BlockRelaxation.hpp"
+#include "Ifpack2_BandedContainer.hpp"
 #include "Ifpack2_DenseContainer.hpp"
 #include "Ifpack2_TriDiContainer.hpp"
 #include "Ifpack2_BandedContainer.hpp"
@@ -134,6 +135,13 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
            precTypeUpper == "TRIDIAGONAL RELAXATION" ||
            precTypeUpper == "TRIDIAGONALRELAXATION") {
     typedef TriDiContainer<MatrixType, scalar_type> container_type;
+    prec = rcp (new BlockRelaxation<MatrixType, container_type> (matrix));
+
+  }
+  else if (precTypeUpper == "BANDED_RELAXATION" ||
+           precTypeUpper == "BANDED RELAXATION" ||
+           precTypeUpper == "BANDEDRELAXATION") {
+    typedef BandedContainer<MatrixType, scalar_type> container_type;
     prec = rcp (new BlockRelaxation<MatrixType, container_type> (matrix));
 
   }
