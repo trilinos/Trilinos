@@ -26,6 +26,10 @@ struct moved_parallel_graph_info {
     int destination_proc;
 };
 
+void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph,
+                         std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move,
+                         stk::mesh::Part *active_part=NULL);
+
 class ElemElemGraph
 {
 public:
@@ -72,6 +76,13 @@ public:
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
 
 protected:
+    friend void stk::mesh::change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph,
+                                    std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move,
+                                    stk::mesh::Part *active_part);
+
+    //this member method is not the public API for change-entity-owner. see the free-standing function above
+    void change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &parallel_graph_info, stk::mesh::Part *active_part=NULL);
+
     void fill_graph();
     void update_number_of_parallel_edges();
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
