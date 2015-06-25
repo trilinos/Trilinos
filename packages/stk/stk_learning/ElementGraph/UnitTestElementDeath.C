@@ -34,21 +34,7 @@
 namespace
 {
 
-void deactivate_elements(const stk::mesh::EntityVector &deactivated_elems, stk::mesh::BulkData &bulkData, stk::mesh::Part& active)
-{
-    active.set_primary_entity_rank(stk::topology::ELEM_RANK);
 
-    bulkData.modification_begin();
-
-    for(size_t i = 0; i < deactivated_elems.size(); ++i)
-    {
-        bulkData.change_entity_parts(deactivated_elems[i], stk::mesh::PartVector(), stk::mesh::PartVector(1, &active));
-    }
-
-    bulkData.modification_end();
-
-    active.set_primary_entity_rank(stk::topology::INVALID_RANK);
-}
 
 void test_active_part_membership(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& skin_faces_of_elem2, stk::mesh::Part& active)
 {
@@ -106,37 +92,6 @@ void test_face_membership_for_death(stk::mesh::BulkData& bulkData, stk::mesh::En
             }
         }
     }
-}
-
-stk::mesh::Entity get_face_between_element_ids(stk::mesh::ElemElemGraph& graph, stk::mesh::BulkData& bulkData, stk::mesh::EntityId elem1Id, stk::mesh::EntityId elem2Id)
-{
-    stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, elem1Id);
-    stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, elem2Id);
-
-    bool isElem1LocallyOwnedAndValid = bulkData.is_valid(elem1) && bulkData.bucket(elem1).owned();
-    bool isElem2LocallyOwnedAndValid = bulkData.is_valid(elem2) && bulkData.bucket(elem2).owned();
-
-    stk::mesh::Entity face_between_elem1_and_elem2;
-
-    if(isElem1LocallyOwnedAndValid && isElem2LocallyOwnedAndValid)
-    {
-        int side = graph.get_side_from_element1_to_locally_owned_element2(elem1, elem2);
-        EXPECT_TRUE(side != -1);
-        face_between_elem1_and_elem2 = stk::mesh::impl::get_side_for_element(bulkData, elem1, side);
-    }
-    else if(isElem1LocallyOwnedAndValid)
-    {
-        int side = graph.get_side_from_element1_to_remote_element2(elem1, elem2Id);
-        EXPECT_TRUE(side != -1);
-        face_between_elem1_and_elem2 = stk::mesh::impl::get_side_for_element(bulkData, elem1, side);
-    }
-    else if(isElem2LocallyOwnedAndValid)
-    {
-        int side = graph.get_side_from_element1_to_remote_element2(elem2, elem1Id);
-        EXPECT_TRUE(side != -1);
-        face_between_elem1_and_elem2 = stk::mesh::impl::get_side_for_element(bulkData, elem2, side);
-    }
-    return face_between_elem1_and_elem2;
 }
 
 TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
@@ -201,13 +156,13 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
                 }
             }
 
-            deactivate_elements(deactivated_elems, bulkData,  active);
+            ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
             test_active_part_membership(bulkData, skin_faces_of_elem2, active);
 
             stk::mesh::perform_element_death(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
 
-            stk::mesh::Entity face_between_elem2_and_elem3 = get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
+            stk::mesh::Entity face_between_elem2_and_elem3 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
 
             ASSERT_TRUE(bulkData.is_valid(face_between_elem2_and_elem3));
 
@@ -243,9 +198,9 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
                 }
             }
 
-            deactivate_elements(deactivated_elems, bulkData,  active);
+            ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
-            stk::mesh::Entity face_between_elem2_and_elem3 = get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
+            stk::mesh::Entity face_between_elem2_and_elem3 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
 
             stk::mesh::EntityId face_id;
 
@@ -324,13 +279,13 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
                 }
             }
 
-            deactivate_elements(deactivated_elems, bulkData,  active);
+            ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
             test_active_part_membership(bulkData, skin_faces_of_elem2, active);
 
             stk::mesh::perform_element_death(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
 
-            stk::mesh::Entity face_between_elem2_and_elem3 = get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
+            stk::mesh::Entity face_between_elem2_and_elem3 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
 
             ASSERT_TRUE(bulkData.is_valid(face_between_elem2_and_elem3));
         }
@@ -364,9 +319,9 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
                 }
             }
 
-            deactivate_elements(deactivated_elems, bulkData,  active);
+            ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
-            stk::mesh::Entity face_between_elem2_and_elem3 = get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
+            stk::mesh::Entity face_between_elem2_and_elem3 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
 
             stk::mesh::perform_element_death(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
 
