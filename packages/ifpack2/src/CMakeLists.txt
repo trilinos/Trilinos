@@ -76,6 +76,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     BlockRelaxation
     BorderedOperator
     Chebyshev
+    BandedContainer
     DenseContainer
     TriDiContainer
     Diagonal

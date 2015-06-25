@@ -40,10 +40,10 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_TRIDICONTAINER_DEF_HPP
-#define IFPACK2_TRIDICONTAINER_DEF_HPP
+#ifndef IFPACK2_BANDEDCONTAINER_DEF_HPP
+#define IFPACK2_BANDEDCONTAINER_DEF_HPP
 
-#include "Ifpack2_TriDiContainer_decl.hpp"
+#include "Ifpack2_BandedContainer_decl.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 #ifdef HAVE_MPI
@@ -58,12 +58,12 @@ namespace Ifpack2 {
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-TriDiContainer<MatrixType, LocalScalarType>::
-TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                 const Teuchos::ArrayView<const local_ordinal_type>& localRows) :
   Container<MatrixType> (matrix, localRows),
   numRows_ (localRows.size ()),
-  diagBlock_ (numRows_, numRows_),
+  //  diagBlock_ (numRows_, numRows_),
   ipiv_ (numRows_, 0)
 {
   using Teuchos::Array;
@@ -74,7 +74,7 @@ TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef typename ArrayView<const local_ordinal_type>::size_type size_type;
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! matrix->hasColMap (), std::invalid_argument, "Ifpack2::TriDiContainer: "
+    ! matrix->hasColMap (), std::invalid_argument, "Ifpack2::BandedContainer: "
     "The constructor's input matrix must have a column Map.");
 
   // Check whether the input set of local row indices is correct.
@@ -90,7 +90,7 @@ TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
     }
   }
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! rowIndicesValid, std::invalid_argument, "Ifpack2::TriDiContainer: "
+    ! rowIndicesValid, std::invalid_argument, "Ifpack2::BandedContainer: "
     "On process " << rowMap.getComm ()->getRank () << " of "
     << rowMap.getComm ()->getSize () << ", in the given set of local row "
     "indices localRows = " << toString (localRows) << ", the following "
@@ -113,33 +113,33 @@ TriDiContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-TriDiContainer<MatrixType, LocalScalarType>::~TriDiContainer()
+BandedContainer<MatrixType, LocalScalarType>::~BandedContainer()
 {}
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-size_t TriDiContainer<MatrixType, LocalScalarType>::getNumRows () const
+size_t BandedContainer<MatrixType, LocalScalarType>::getNumRows () const
 {
   return numRows_;
 }
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-bool TriDiContainer<MatrixType, LocalScalarType>::isInitialized () const
+bool BandedContainer<MatrixType, LocalScalarType>::isInitialized () const
 {
   return IsInitialized_;
 }
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-bool TriDiContainer<MatrixType, LocalScalarType>::isComputed() const
+bool BandedContainer<MatrixType, LocalScalarType>::isComputed() const
 {
   return IsComputed_;
 }
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType, LocalScalarType>::
+void BandedContainer<MatrixType, LocalScalarType>::
 setParameters (const Teuchos::ParameterList& List)
 {
   (void) List; // the solver doesn't currently take any parameters
@@ -147,7 +147,7 @@ setParameters (const Teuchos::ParameterList& List)
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType, LocalScalarType>::initialize ()
+void BandedContainer<MatrixType, LocalScalarType>::initialize ()
 {
   using Teuchos::null;
   using Teuchos::rcp;
@@ -166,11 +166,11 @@ void TriDiContainer<MatrixType, LocalScalarType>::initialize ()
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType, LocalScalarType>::compute ()
+void BandedContainer<MatrixType, LocalScalarType>::compute ()
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     static_cast<size_t> (ipiv_.size ()) != numRows_, std::logic_error,
-    "Ifpack2::TriDiContainer::compute: ipiv_ array has the wrong size.  "
+    "Ifpack2::BandedContainer::compute: ipiv_ array has the wrong size.  "
     "Please report this bug to the Ifpack2 developers.");
 
   IsComputed_ = false;
@@ -186,19 +186,22 @@ void TriDiContainer<MatrixType, LocalScalarType>::compute ()
 }
 
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType, LocalScalarType>::factor ()
+void BandedContainer<MatrixType, LocalScalarType>::factor ()
 {
+  /*
   Teuchos::LAPACK<int, local_scalar_type> lapack;
   int INFO = 0;
+
   lapack.GTTRF (diagBlock_.numRowsCols (),
                 diagBlock_.DL(),
                 diagBlock_.D(),
                 diagBlock_.DU(),
                 diagBlock_.DU2(),
                 ipiv_.getRawPtr (), &INFO);
+  
   // INFO < 0 is a bug.
   TEUCHOS_TEST_FOR_EXCEPTION(
-    INFO < 0, std::logic_error, "Ifpack2::TriDiContainer::factor: "
+    INFO < 0, std::logic_error, "Ifpack2::BandedContainer::factor: "
     "LAPACK's _GTTRF (LU factorization with partial pivoting) was called "
     "incorrectly.  INFO = " << INFO << " < 0.  "
     "Please report this bug to the Ifpack2 developers.");
@@ -206,16 +209,20 @@ void TriDiContainer<MatrixType, LocalScalarType>::factor ()
   // either with the choice of rows the rows we extracted, or with the
   // input matrix itself.
   TEUCHOS_TEST_FOR_EXCEPTION(
-    INFO > 0, std::runtime_error, "Ifpack2::TriDiContainer::factor: "
+    INFO > 0, std::runtime_error, "Ifpack2::BandedContainer::factor: "
     "LAPACK's _GTTRF (LU factorization with partial pivoting) reports that the "
     "computed U factor is exactly singular.  U(" << INFO << "," << INFO << ") "
     "(one-based index i) is exactly zero.  This probably means that the input "
     "matrix has a singular diagonal block.");
+  */
+
+  // Placeholder
+  TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"Ifpack2::BandedContainer::factor: Not yet implemented");
 }
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType, LocalScalarType>::
+void BandedContainer<MatrixType, LocalScalarType>::
 applyImpl (const local_mv_type& X,
            local_mv_type& Y,
            Teuchos::ETransp mode,
@@ -229,37 +236,37 @@ applyImpl (const local_mv_type& X,
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     X.getLocalLength () != Y.getLocalLength (),
-    std::logic_error, "Ifpack2::TriDiContainer::applyImpl: X and Y have "
+    std::logic_error, "Ifpack2::BandedContainer::applyImpl: X and Y have "
     "incompatible dimensions (" << X.getLocalLength () << " resp. "
     << Y.getLocalLength () << ").  Please report this bug to "
     "the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(
     localMap_->getNodeNumElements () != X.getLocalLength (),
-    std::logic_error, "Ifpack2::TriDiContainer::applyImpl: The inverse "
+    std::logic_error, "Ifpack2::BandedContainer::applyImpl: The inverse "
     "operator and X have incompatible dimensions (" <<
     localMap_->getNodeNumElements () << " resp. "
     << X.getLocalLength () << ").  Please report this bug to "
     "the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(
     localMap_->getNodeNumElements () != Y.getLocalLength (),
-    std::logic_error, "Ifpack2::TriDiContainer::applyImpl: The inverse "
+    std::logic_error, "Ifpack2::BandedContainer::applyImpl: The inverse "
     "operator and Y have incompatible dimensions (" <<
     localMap_->getNodeNumElements () << " resp. "
     << Y.getLocalLength () << ").  Please report this bug to "
     "the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.getLocalLength () != static_cast<size_t> (diagBlock_.numRowsCols()),
-    std::logic_error, "Ifpack2::TriDiContainer::applyImpl: The input "
+    X.getLocalLength() != static_cast<size_t> (mode == Teuchos::NO_TRANS ? diagBlock_.numCols() : diagBlock_.numRows()),
+    std::logic_error, "Ifpack2::BandedContainer::applyImpl: The input "
     "multivector X has incompatible dimensions from those of the "
     "inverse operator (" << X.getLocalLength () << " vs. "
-    << (mode == Teuchos::NO_TRANS ? diagBlock_.numRowsCols () : diagBlock_.numRowsCols())
+    << (mode == Teuchos::NO_TRANS ? diagBlock_.numCols() : diagBlock_.numRows())
     << ").  Please report this bug to the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    Y.getLocalLength () != static_cast<size_t> (diagBlock_.numRowsCols()),
-    std::logic_error, "Ifpack2::TriDiContainer::applyImpl: The output "
+    Y.getLocalLength() != static_cast<size_t> (mode == Teuchos::NO_TRANS ? diagBlock_.numRows() : diagBlock_.numCols()),
+    std::logic_error, "Ifpack2::BandedContainer::applyImpl: The output "
     "multivector Y has incompatible dimensions from those of the "
     "inverse operator (" << Y.getLocalLength () << " vs. "
-    << (mode == Teuchos::NO_TRANS ? diagBlock_.numRowsCols() : diagBlock_.numRowsCols ())
+    << (mode == Teuchos::NO_TRANS ? diagBlock_.numRows() : diagBlock_.numCols())
     << ").  Please report this bug to the Ifpack2 developers.");
 
   typedef Teuchos::ScalarTraits<local_scalar_type> STS;
@@ -295,6 +302,8 @@ applyImpl (const local_mv_type& X,
     int INFO = 0;
     const char trans =
       (mode == Teuchos::CONJ_TRANS ? 'C' : (mode == Teuchos::TRANS ? 'T' : 'N'));
+    /*
+
     lapack.GTTRS (trans, diagBlock_.numRowsCols(),numVecs,
                   diagBlock_.DL(),
                   diagBlock_.D(),
@@ -302,9 +311,11 @@ applyImpl (const local_mv_type& X,
                   diagBlock_.DU2(),
                   ipiv_.getRawPtr (), Y_ptr, Y_stride, &INFO);
     TEUCHOS_TEST_FOR_EXCEPTION(
-      INFO != 0, std::runtime_error, "Ifpack2::TriDiContainer::applyImpl: "
+      INFO != 0, std::runtime_error, "Ifpack2::BandedContainer::applyImpl: "
       "LAPACK's _GETRS (solve using LU factorization with partial pivoting) "
       "failed with INFO = " << INFO << " != 0.");
+    */
+  TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"Ifpack2::BandedContainer::applyImpl Not yet implemented");
 
     if (beta != STS::zero ()) {
       Y.update (alpha, *Y_tmp, beta);
@@ -317,7 +328,7 @@ applyImpl (const local_mv_type& X,
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType, LocalScalarType>::
+void BandedContainer<MatrixType, LocalScalarType>::
 apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
        Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
        Teuchos::ETransp mode,
@@ -342,13 +353,13 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   const size_t numVecs = X.getNumVectors ();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! IsComputed_, std::runtime_error, "Ifpack2::TriDiContainer::apply: "
+    ! IsComputed_, std::runtime_error, "Ifpack2::BandedContainer::apply: "
     "You must have called the compute() method before you may call apply().  "
     "You may call the apply() method as many times as you want after calling "
     "compute() once, but you must have called compute() at least once.");
   TEUCHOS_TEST_FOR_EXCEPTION(
     numVecs != Y.getNumVectors (), std::runtime_error,
-    "Ifpack2::TriDiContainer::apply: X and Y have different numbers of "
+    "Ifpack2::BandedContainer::apply: X and Y have different numbers of "
     "vectors.  X has " << X.getNumVectors ()
     << ", but Y has " << X.getNumVectors () << ".");
 
@@ -387,7 +398,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   RCP<local_mv_type> X_local = X_;
   TEUCHOS_TEST_FOR_EXCEPTION(
     X_local->getLocalLength () != numRows_, std::logic_error,
-    "Ifpack2::TriDiContainer::apply: "
+    "Ifpack2::BandedContainer::apply: "
     "X_local has length " << X_local->getLocalLength () << ", which does "
     "not match numRows_ = " << numRows_ << ".  Please report this bug to "
     "the Ifpack2 developers.");
@@ -405,7 +416,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   RCP<local_mv_type> Y_local = Y_;
   TEUCHOS_TEST_FOR_EXCEPTION(
     Y_local->getLocalLength () != numRows_, std::logic_error,
-    "Ifpack2::TriDiContainer::apply: "
+    "Ifpack2::BandedContainer::apply: "
     "Y_local has length " << X_local->getLocalLength () << ", which does "
     "not match numRows_ = " << numRows_ << ".  Please report this bug to "
     "the Ifpack2 developers.");
@@ -423,7 +434,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType,LocalScalarType>::
+void BandedContainer<MatrixType,LocalScalarType>::
 weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
                const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
@@ -461,14 +472,14 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   const size_t numVecs = X.getNumVectors ();
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! IsComputed_, std::runtime_error, "Ifpack2::TriDiContainer::"
+    ! IsComputed_, std::runtime_error, "Ifpack2::BandedContainer::"
     "weightedApply: You must have called the compute() method before you may "
     "call apply().  You may call the apply() method as many times as you want "
     "after calling compute() once, but you must have called compute() at least "
     "once.");
   TEUCHOS_TEST_FOR_EXCEPTION(
     numVecs != Y.getNumVectors (), std::runtime_error,
-    "Ifpack2::TriDiContainer::weightedApply: X and Y have different numbers "
+    "Ifpack2::BandedContainer::weightedApply: X and Y have different numbers "
     "of vectors.  X has " << X.getNumVectors () << ", but Y has "
     << X.getNumVectors () << ".");
 
@@ -506,7 +517,7 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   RCP<local_mv_type> X_local = X_;
   TEUCHOS_TEST_FOR_EXCEPTION(
     X_local->getLocalLength () != numRows_, std::logic_error,
-    "Ifpack2::TriDiContainer::weightedApply: "
+    "Ifpack2::BandedContainer::weightedApply: "
     "X_local has length " << X_local->getLocalLength () << ", which does "
     "not match numRows_ = " << numRows_ << ".  Please report this bug to "
     "the Ifpack2 developers.");
@@ -524,7 +535,7 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   RCP<local_mv_type> Y_local = Y_;
   TEUCHOS_TEST_FOR_EXCEPTION(
     Y_local->getLocalLength () != numRows_, std::logic_error,
-    "Ifpack2::TriDiContainer::weightedApply: "
+    "Ifpack2::BandedContainer::weightedApply: "
     "Y_local has length " << X_local->getLocalLength () << ", which does "
     "not match numRows_ = " << numRows_ << ".  Please report this bug to "
     "the Ifpack2 developers.");
@@ -543,7 +554,7 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   RCP<local_vec_type> D_local = rcp (new local_vec_type (localMap_));
   TEUCHOS_TEST_FOR_EXCEPTION(
     D_local->getLocalLength () != numRows_, std::logic_error,
-    "Ifpack2::TriDiContainer::weightedApply: "
+    "Ifpack2::BandedContainer::weightedApply: "
     "D_local has length " << X_local->getLocalLength () << ", which does "
     "not match numRows_ = " << numRows_ << ".  Please report this bug to "
     "the Ifpack2 developers.");
@@ -579,7 +590,7 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-std::ostream& TriDiContainer<MatrixType,LocalScalarType>::print(std::ostream& os) const
+std::ostream& BandedContainer<MatrixType,LocalScalarType>::print(std::ostream& os) const
 {
   Teuchos::FancyOStream fos(Teuchos::rcp(&os,false));
   fos.setOutputToRootOnly(0);
@@ -589,7 +600,7 @@ std::ostream& TriDiContainer<MatrixType,LocalScalarType>::print(std::ostream& os
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-std::string TriDiContainer<MatrixType,LocalScalarType>::description() const
+std::string BandedContainer<MatrixType,LocalScalarType>::description() const
 {
   std::ostringstream oss;
   oss << Teuchos::Describable::description();
@@ -611,12 +622,12 @@ std::string TriDiContainer<MatrixType,LocalScalarType>::description() const
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType,LocalScalarType>::describe(Teuchos::FancyOStream &os, const Teuchos::EVerbosityLevel verbLevel) const
+void BandedContainer<MatrixType,LocalScalarType>::describe(Teuchos::FancyOStream &os, const Teuchos::EVerbosityLevel verbLevel) const
 {
   using std::endl;
   if(verbLevel==Teuchos::VERB_NONE) return;
   os << "================================================================================" << endl;
-  os << "Ifpack2::TriDiContainer" << endl;
+  os << "Ifpack2::BandedContainer" << endl;
   os << "Number of rows          = " << numRows_ << endl;
   os << "isInitialized()         = " << IsInitialized_ << endl;
   os << "isComputed()            = " << IsComputed_ << endl;
@@ -626,7 +637,7 @@ void TriDiContainer<MatrixType,LocalScalarType>::describe(Teuchos::FancyOStream 
 
 //==============================================================================
 template<class MatrixType, class LocalScalarType>
-void TriDiContainer<MatrixType,LocalScalarType>::
+void BandedContainer<MatrixType,LocalScalarType>::
 extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
 {
   using Teuchos::Array;
@@ -649,7 +660,7 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
     TEUCHOS_TEST_FOR_EXCEPTION(
       localRows[j] < 0 ||
       static_cast<size_t> (localRows[j]) >= inputMatrixNumRows,
-      std::runtime_error, "Ifpack2::TriDiContainer::extract: On process " <<
+      std::runtime_error, "Ifpack2::BandedContainer::extract: On process " <<
       myRank << " of " << numProcs << ", localRows[j=" << j << "] = " <<
       localRows[j] << ", which is out of the valid range of local row indices "
       "indices [0, " << (inputMatrixNumRows - 1) << "] for the input matrix.");
@@ -715,7 +726,7 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
     }
   }
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! rowIndsValid, std::logic_error, "Ifpack2::TriDiContainer::extract: "
+    ! rowIndsValid, std::logic_error, "Ifpack2::BandedContainer::extract: "
     "On process " << myRank << ", at least one row index in the set of local "
     "row indices given to the constructor is not a valid local row index in "
     "the input matrix's row Map on this process.  This should be impossible "
@@ -723,7 +734,7 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
     "of invalid local row indices: " << toString (invalidLocalRowInds) << ".  "
     "Please report this bug to the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    ! colIndsValid, std::runtime_error, "Ifpack2::TriDiContainer::extract: "
+    ! colIndsValid, std::runtime_error, "Ifpack2::BandedContainer::extract: "
     "On process " << myRank << ", "
     "At least one row index in the set of row indices given to the constructor "
     "does not have a corresponding column index in the input matrix's column "
@@ -777,7 +788,7 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
 } // namespace Ifpack2
 
 #define IFPACK2_TRIDICONTAINER_INSTANT(S,LO,GO,N) \
-  template class Ifpack2::TriDiContainer< Tpetra::CrsMatrix<S, LO, GO, N>, S >; \
-  template class Ifpack2::TriDiContainer< Tpetra::RowMatrix<S, LO, GO, N>, S >;
+  template class Ifpack2::BandedContainer< Tpetra::CrsMatrix<S, LO, GO, N>, S >; \
+  template class Ifpack2::BandedContainer< Tpetra::RowMatrix<S, LO, GO, N>, S >;
 
 #endif // IFPACK2_SPARSECONTAINER_HPP
