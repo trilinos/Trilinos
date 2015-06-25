@@ -45,22 +45,21 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 
-// Don't bother compiling anything, or even including anything else,
-// unless KokkosSerialWrapperNode is enabled.
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
-#  include "Tpetra_MultiVector_decl.hpp"
-#  include "TpetraCore_ETIHelperMacros.h"
-#  include "Tpetra_MultiVector_def.hpp"
+#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL) && defined(TPETRA_HAVE_KOKKOS_REFACTOR) && defined(HAVE_TPETRA_INST_INT_LONG)
 
-#  define TPETRA_MULTIVECTOR_KOKKOSSERIALWRAPPERNODE_INSTANT( SCALAR, LO, GO ) \
-  TPETRA_MULTIVECTOR_INSTANT( SCALAR, LO, GO, Kokkos::Compat::KokkosSerialWrapperNode )
+#include "Tpetra_MultiVector_decl.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
+#include "Tpetra_MultiVector_def.hpp"
 
 namespace Tpetra {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_SLG(TPETRA_MULTIVECTOR_KOKKOSSERIALWRAPPERNODE_INSTANT)
+#define TPETRA_MULTIVECTOR_LONG_KOKKOSSERIALWRAPPERNODE_INSTANT( SCALAR, LO ) \
+  TPETRA_MULTIVECTOR_INSTANT( SCALAR, LO, long, Kokkos::Compat::KokkosSerialWrapperNode )
+
+  TPETRA_INSTANTIATE_SL(TPETRA_MULTIVECTOR_LONG_KOKKOSSERIALWRAPPERNODE_INSTANT)
 
 } // namespace Tpetra
 
-#endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_SERIAL)
+#endif
