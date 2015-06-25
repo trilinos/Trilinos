@@ -11,6 +11,8 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
+#include <stk_mesh/base/FieldTraits.hpp>
+#include <stk_mesh/base/Field.hpp>
 
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stk_mesh/base/CreateFaces.hpp>
@@ -1112,7 +1114,7 @@ void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph
     elem_graph.change_entity_owner(elem_proc_pairs_to_move, parallel_graph);
 }
 
-void change_entity_owner_test_2_procs(bool aura_on)
+void change_entity_owner_hex_test_2_procs(bool aura_on)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
     int proc = stk::parallel_machine_rank(comm);
@@ -1224,19 +1226,19 @@ void change_entity_owner_test_2_procs(bool aura_on)
     }
 }
 
-TEST(ElementGraph, test_change_entity_owner_2_procs_with_mesh_with_aura)
+TEST(ElementGraph, test_change_entity_owner_2_procs_hex_mesh_with_aura)
 {
     bool aura_on = true;
-    change_entity_owner_test_2_procs(aura_on);
+    change_entity_owner_hex_test_2_procs(aura_on);
 }
 
-TEST(ElementGraph, test_change_entity_owner_2_procs_with_mesh_without_aura)
+TEST(ElementGraph, test_change_entity_owner_2_procs_hex_mesh_without_aura)
 {
     bool aura_on = false;
-    change_entity_owner_test_2_procs(aura_on);
+    change_entity_owner_hex_test_2_procs(aura_on);
 }
 
-void change_entity_owner_test_4_procs(bool aura_on)
+void change_entity_owner_hex_test_4_procs(bool aura_on)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
     int proc = stk::parallel_machine_rank(comm);
@@ -1328,16 +1330,215 @@ void change_entity_owner_test_4_procs(bool aura_on)
     }
 }
 
-TEST(ElementGraph, test_change_entity_owner_4_procs_with_mesh_with_aura)
+TEST(ElementGraph, test_change_entity_owner_4_procs_hex_mesh_with_aura)
 {
     bool aura_on = true;
-    change_entity_owner_test_4_procs(aura_on);
+    change_entity_owner_hex_test_4_procs(aura_on);
 }
 
-TEST(ElementGraph, test_change_entity_owner_4_procs_with_mesh_without_aura)
+TEST(ElementGraph, test_change_entity_owner_4_procs_hex_mesh_without_aura)
 {
     bool aura_on = false;
-    change_entity_owner_test_4_procs(aura_on);
+    change_entity_owner_hex_test_4_procs(aura_on);
+}
+
+void setup_hex_shell_hex_mesh(stk::mesh::BulkData& bulkData)
+{
+//
+//                proc 0               proc 1           proc 2
+//
+//               block_1          |   block_2  |      block_3
+//
+//          3---------------7        7            7-------------11
+//          /|             /|       /|           /|             /|
+//         / |            / |      / |          / |            / |
+//        /  |           /  |     /  |         /  |           /  |
+//       4--------------8   |    8   |        8--------------12  |
+//       |   |          |   |    |   |        |   |          |   |
+//       |   |   1      |   |    | 2 |        |   |   3      |   |
+//       |   |          |   |    |   |        |   |          |   |
+//       |   2----------|---6    |   6        |   6----------|---10
+//       |  /           |  /     |  /         |  /           |  /
+//       | /            | /      | /          | /            | /
+//       |/             |/       |/           |/             |/
+//       1--------------5        5            5--------------9
+
+    stk::mesh::MetaData& meta = bulkData.mesh_meta_data();
+    unsigned spatial_dimension = 3;
+    meta.initialize(spatial_dimension, stk::mesh::entity_rank_names());
+
+    stk::mesh::Field<double>& field = meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field1");
+    stk::mesh::put_field(field, meta.universal_part());
+
+    stk::mesh::Part& block_1 = meta.declare_part_with_topology("block_1", stk::topology::HEX_8);
+    stk::mesh::Part& block_2 = meta.declare_part_with_topology("block_2", stk::topology::SHELL_QUAD_4);
+    stk::mesh::Part& block_3 = meta.declare_part_with_topology("block_3", stk::topology::HEX_8);
+    meta.commit();
+
+    bulkData.modification_begin();
+
+    stk::mesh::EntityIdVector elem1_nodes {1, 2, 3, 4, 5, 6, 7, 8};
+    stk::mesh::EntityIdVector elem2_nodes {5, 6, 7, 8};
+    stk::mesh::EntityIdVector elem3_nodes {5, 6, 7, 8, 9, 10, 11, 12};
+
+    stk::mesh::EntityId elemId = 1;
+    if (bulkData.parallel_rank() == 0) {
+        stk::mesh::declare_element(bulkData, block_1, elemId, elem1_nodes);
+        stk::mesh::Entity node5 = bulkData.get_entity(stk::topology::NODE_RANK, 5);
+        stk::mesh::Entity node6 = bulkData.get_entity(stk::topology::NODE_RANK, 6);
+        stk::mesh::Entity node7 = bulkData.get_entity(stk::topology::NODE_RANK, 7);
+        stk::mesh::Entity node8 = bulkData.get_entity(stk::topology::NODE_RANK, 8);
+        bulkData.add_node_sharing(node5, 1);
+        bulkData.add_node_sharing(node6, 1);
+        bulkData.add_node_sharing(node7, 1);
+        bulkData.add_node_sharing(node8, 1);
+        bulkData.add_node_sharing(node5, 2);
+        bulkData.add_node_sharing(node6, 2);
+        bulkData.add_node_sharing(node7, 2);
+        bulkData.add_node_sharing(node8, 2);
+    }
+    else if (bulkData.parallel_rank() == 1) {
+        elemId = 2;
+        stk::mesh::declare_element(bulkData, block_2, elemId, elem2_nodes);
+        stk::mesh::Entity node5 = bulkData.get_entity(stk::topology::NODE_RANK, 5);
+        stk::mesh::Entity node6 = bulkData.get_entity(stk::topology::NODE_RANK, 6);
+        stk::mesh::Entity node7 = bulkData.get_entity(stk::topology::NODE_RANK, 7);
+        stk::mesh::Entity node8 = bulkData.get_entity(stk::topology::NODE_RANK, 8);
+        bulkData.add_node_sharing(node5, 0);
+        bulkData.add_node_sharing(node6, 0);
+        bulkData.add_node_sharing(node7, 0);
+        bulkData.add_node_sharing(node8, 0);
+        bulkData.add_node_sharing(node5, 2);
+        bulkData.add_node_sharing(node6, 2);
+        bulkData.add_node_sharing(node7, 2);
+        bulkData.add_node_sharing(node8, 2);
+    }
+    else if (bulkData.parallel_rank() == 2) {
+        elemId = 3;
+        stk::mesh::declare_element(bulkData, block_3, elemId, elem3_nodes);
+        stk::mesh::Entity node5 = bulkData.get_entity(stk::topology::NODE_RANK, 5);
+        stk::mesh::Entity node6 = bulkData.get_entity(stk::topology::NODE_RANK, 6);
+        stk::mesh::Entity node7 = bulkData.get_entity(stk::topology::NODE_RANK, 7);
+        stk::mesh::Entity node8 = bulkData.get_entity(stk::topology::NODE_RANK, 8);
+        bulkData.add_node_sharing(node5, 0);
+        bulkData.add_node_sharing(node6, 0);
+        bulkData.add_node_sharing(node7, 0);
+        bulkData.add_node_sharing(node8, 0);
+        bulkData.add_node_sharing(node5, 1);
+        bulkData.add_node_sharing(node6, 1);
+        bulkData.add_node_sharing(node7, 1);
+        bulkData.add_node_sharing(node8, 1);
+    }
+
+    bulkData.modification_end();
+}
+
+void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int proc = stk::parallel_machine_rank(comm);
+    if(stk::parallel_machine_size(comm) == 3)
+    {
+        stk::mesh::MetaData meta;
+        stk::mesh::BulkData::AutomaticAuraOption aura_option = stk::mesh::BulkData::AUTO_AURA;
+        if (!aura_on)
+        {
+            aura_option = stk::mesh::BulkData::NO_AUTO_AURA;
+        }
+        stk::mesh::BulkData bulkData(meta, comm, aura_option);
+
+        setup_hex_shell_hex_mesh(bulkData);
+
+        stk::mesh::ElemElemGraph elem_graph(bulkData);
+
+        const Entity hex1   = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
+        const Entity hex3   = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
+        const Entity shell2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
+
+        if (proc == 0) {
+            // Connectivity for Hex Element 1
+            EXPECT_EQ(1u, elem_graph.get_num_connected_elems(hex1));
+            EXPECT_EQ(5,  elem_graph.get_side_id_to_connected_element(hex1, 0));
+            EXPECT_EQ(2u, elem_graph.get_entity_id_of_remote_element(hex1, 0));
+            EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(hex1, 0));
+        }
+        else if (proc == 1) {
+            // Connectivity for Shell Element 3
+            EXPECT_EQ(2u, elem_graph.get_num_connected_elems(shell2));
+            EXPECT_EQ(0,  elem_graph.get_side_id_to_connected_element(shell2, 0));
+            EXPECT_EQ(1,  elem_graph.get_side_id_to_connected_element(shell2, 1));
+            EXPECT_EQ(3u, elem_graph.get_entity_id_of_remote_element(shell2, 0));
+            EXPECT_EQ(1u, elem_graph.get_entity_id_of_remote_element(shell2, 1));
+            EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(shell2, 0));
+            EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(shell2, 1));
+        }
+        else if (proc == 2) {
+            // Connectivity for Hex Element 2
+            EXPECT_EQ(1u, elem_graph.get_num_connected_elems(hex3));
+            EXPECT_EQ(4,  elem_graph.get_side_id_to_connected_element(hex3, 0));
+            EXPECT_EQ(2u, elem_graph.get_entity_id_of_remote_element(hex3, 0));
+            EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(hex3, 0));
+        }
+
+        stk::mesh::EntityId elem_to_move_global_id = 2;
+        std::vector< std::pair< stk::mesh::Entity, int > > elem_proc_pairs_to_move;
+        stk::mesh::Entity elem_to_move = bulkData.get_entity(stk::topology::ELEM_RANK, elem_to_move_global_id);
+
+        if (proc == 1)
+        {
+            int destination_proc = 2;
+            elem_proc_pairs_to_move.push_back(std::make_pair(elem_to_move, destination_proc));
+        }
+
+        change_entity_owner(bulkData, elem_graph, elem_proc_pairs_to_move);
+
+        std::vector<unsigned> counts;
+        stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
+        int numLocallyOwnedElemsInMesh = counts[stk::topology::ELEM_RANK];
+
+        size_t size_of_elem_graph = elem_graph.size();
+
+        if (proc == 0)
+        {
+            EXPECT_EQ(1, numLocallyOwnedElemsInMesh);
+            EXPECT_EQ(1u, size_of_elem_graph);
+
+            stk::mesh::Entity elem_1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
+            impl::parallel_info& elem1_to_elem2_info = elem_graph.get_parallel_edge_info(elem_1, stk::mesh::EntityId(2));
+            EXPECT_EQ(2, elem1_to_elem2_info.m_other_proc);
+        }
+        if (proc == 1)
+        {
+            EXPECT_EQ(0, numLocallyOwnedElemsInMesh);
+            EXPECT_EQ(0u, size_of_elem_graph);
+
+            stk::mesh::Entity elem_2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
+            ASSERT_THROW(elem_graph.get_parallel_edge_info(elem_2, stk::mesh::EntityId(1)), std::logic_error);
+
+            ASSERT_THROW(elem_graph.get_parallel_edge_info(elem_2, stk::mesh::EntityId(3)), std::logic_error);
+        }
+        if (proc == 2)
+        {
+            EXPECT_EQ(2, numLocallyOwnedElemsInMesh);
+            EXPECT_EQ(2u, size_of_elem_graph);
+
+            stk::mesh::Entity elem_2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
+            impl::parallel_info& elem2_to_elem1_info = elem_graph.get_parallel_edge_info(elem_2, stk::mesh::EntityId(1));
+            EXPECT_EQ(0, elem2_to_elem1_info.m_other_proc);
+        }
+    }
+}
+
+TEST(ElementGraph, test_change_entity_owner_3_procs_hex_shell_hex_mesh_with_aura)
+{
+    bool aura_on = true;
+    change_entity_owner_hex_shell_hex_test_3_procs(aura_on);
+}
+
+TEST(ElementGraph, test_change_entity_owner_3_procs_hex_shell_hex_mesh_without_aura)
+{
+    bool aura_on = false;
+    change_entity_owner_hex_shell_hex_test_3_procs(aura_on);
 }
 
 TEST(ElementGraph, skin_mesh_using_element_graph_parallel)
