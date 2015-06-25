@@ -38,7 +38,6 @@
 #include "exodusII.h"                   // for exerrval, ex_err, etc
 #include "exodusII_int.h"               // for EX_FATAL, ex_comp_ws, etc
 #include "netcdf.h"                     // for NC_NOERR, nc_inq_varid, etc
-#include "netcdf_par.h"                     // for NC_NOERR, nc_inq_varid, etc
 
 /*!
 
@@ -101,7 +100,6 @@ int ex_put_time (int   exoid,
   if (ex_comp_ws(exoid) == 4) {
     status = nc_put_var1_float(exoid, varid, start, time_value);
   } else {
-    nc_var_par_access(exoid, varid, NC_COLLECTIVE);
     status = nc_put_var1_double(exoid, varid, start, time_value);
   }
 
