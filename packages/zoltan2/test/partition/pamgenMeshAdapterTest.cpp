@@ -130,7 +130,7 @@ int main(int narg, char *arg[]) {
 
   // default values for command-line arguments
   std::string xmlMeshInFileName("Poisson.xml");
-  std::string action("mj");
+  std::string action("zoltan_hg");
   int nParts = CommT->getSize();
 
   // Read run-time options.

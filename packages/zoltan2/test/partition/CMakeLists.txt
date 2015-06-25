@@ -178,6 +178,7 @@ IF (${PACKAGE_NAME}_ENABLE_SCOREC)
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
+  IF (1)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     RPIMeshAdapterTest
     NAME RPIMeshAdapterTest_ParMA
@@ -189,47 +190,7 @@ IF (${PACKAGE_NAME}_ENABLE_SCOREC)
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
-  TRIBITS_ADD_TEST(
-    RPIMeshAdapterTest
-    NAME RPIMeshAdapterTest_ParMA_Vtx_Edge_Elm
-    NUM_MPI_PROCS 4
-    COMM serial mpi
-    ARGS
-    "--action=parma --parma_method=VtxEdgeElm --meshfile=4/ --modelfile=torus.dmg"
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-  TRIBITS_ADD_TEST(
-    RPIMeshAdapterTest
-    NAME RPIMeshAdapterTest_ParMA_Ghost
-    NUM_MPI_PROCS 4
-    COMM serial mpi
-    ARGS
-    "--action=parma --parma_method=Ghost --meshfile=4/ --modelfile=torus.dmg"
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-  TRIBITS_ADD_TEST(
-    RPIMeshAdapterTest
-    NAME RPIMeshAdapterTest_ParMA_Shape
-    NUM_MPI_PROCS 4
-    COMM serial mpi
-    ARGS
-    "--action=parma --parma_method=Shape --meshfile=4/ --modelfile=torus.dmg"
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-  
-  TRIBITS_ADD_TEST(
-    RPIMeshAdapterTest
-    NAME RPIMeshAdapterTest_ZOLTAN_HG
-    NUM_MPI_PROCS 4
-    COMM serial mpi
-    ARGS
-    "--action=zoltan_hg --meshfile=4/ --modelfile=torus.dmg"
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-  )
+  ENDIF()
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Scotch)
@@ -419,16 +380,6 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_partition_tests
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_more_files_for_partition_tests
   SOURCE_FILES
     Poisson.xml
-    torus.dmg
-    4/0.smb
-    4/1.smb	
-    4/2.smb
-    4/3.smb
-    torus16k0.smb
-    pumiTri14/plate.dmg
-    pumiTri14/plate0.smb
-    pumiTri14/2/0.smb
-    pumiTri14/2/1.smb
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )

@@ -305,7 +305,7 @@ public:
 #endif
 
 private:
-  int entityZ2toAPF(enum MeshEntityType etype) const {return static_cast<int>(etype);}
+  int entityZ2toAPF(enum MeshEntityType etype) const {return -static_cast<int>(etype)+3;}
   enum EntityTopologyType topologyAPFtoZ2(enum apf::Mesh::Type ttype) const {
     if (ttype==apf::Mesh::VERTEX)
       return POINT;

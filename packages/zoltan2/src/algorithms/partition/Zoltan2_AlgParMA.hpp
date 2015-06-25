@@ -144,7 +144,7 @@ private:
 #   endif
   }
 
-  enum MeshEntityType entityAPFtoZ2(int dimension) const {return static_cast<MeshEntityType>(dimension);}
+  enum MeshEntityType entityAPFtoZ2(int dimension) const {return static_cast<MeshEntityType>(-dimension+3);}
 
   enum apf::Mesh::Type topologyZ2toAPF(enum EntityTopologyType ttype) const {
     if (ttype==POINT)

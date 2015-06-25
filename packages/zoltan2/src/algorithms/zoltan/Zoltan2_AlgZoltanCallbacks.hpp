@@ -55,6 +55,13 @@
 #include <Zoltan2_TPLTraits.hpp>
 #include <zoltan_cpp.h>
 
+//#include <Zoltan2_PamgenMeshAdapter.hpp>
+//#include "Tpetra_DefaultPlatform.hpp"
+
+#ifdef HAVE_ZOLTAN2_PARMA
+#include <Zoltan2_RPIMeshAdapter.hpp>
+#include <apfMesh2.h>
+#endif
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgZoltanCallbacks.hpp
 //! \brief callback functions for the Zoltan package (templated on Adapter)
@@ -164,20 +171,44 @@ static void zoltanHGSizeCS(void *data, int *nEdges, int *nPins,
                            int *format, int *ierr) {
   const Adapter *adp = static_cast<Adapter *>(data);
   *ierr = ZOLTAN_OK;
-  typedef typename Adapter::user_t user_t;
   if (adp->adapterType()==MeshAdapterType) {
-    const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>* >(data);
-    *nEdges = madp->getLocalNumOf(madp->getAdjacencyEntityType());
-    *nPins = madp->getLocalNumAdjs(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType());
-    *format = ZOLTAN_COMPRESSED_EDGE;
-  
+    //temporary hack (there must be a way to do this typing)
+    
+    /*if (dynamic_cast<const PamgenMeshAdapter<ztMVector_t>* >(adp)) {
+      const PamgenMeshAdapter<ztMVector_t>* madp = static_cast<PamgenMeshAdapter<ztMVector_t>*>(data);
+      *nEdges = madp->getLocalNumOf(madp->getAdjacencyEntityType());
+      *nPins = madp->getLocalNumAdjs(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType());
+      *format = ZOLTAN_COMPRESSED_EDGE;
+      }*/
+#ifdef HAVE_ZOLTAN2_PARMA
+    if (dynamic_cast<const RPIMeshAdapter<apf::Mesh2*>*>(adp))  {
+      const RPIMeshAdapter<apf::Mesh2*>* madp = static_cast<RPIMeshAdapter<apf::Mesh2*>*>(data);
+      *nEdges = madp->getLocalNumOf(madp->getAdjacencyEntityType());
+      *nPins = madp->getLocalNumAdjs(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType());
+      *format = ZOLTAN_COMPRESSED_EDGE;
+    }
+#endif
   }
   else {
     *ierr = ZOLTAN_FATAL;
-    cout << "Hypergraph callbacks are not ready yet for this Adapter" << endl;
+    cout << "Hypergraph callbacks are not ready yet" << endl;
   }
 }
 
+/*
+
+template <>
+void zoltanHGSizeCS<RPIMeshAdapter<apf::Mesh2*> >(void *data, int *nEdges, int *nPins,
+                           int *format, int *ierr)
+{
+  const RPIMeshAdapter<apf::Mesh2*> *adp = static_cast<RPIMeshAdapter<apf::Mesh2*> *>(data);
+  *ierr = ZOLTAN_OK;
+  *nEdges = adp->getLocalNumOf(adp->getAdjacencyEntityType());
+  *nPins = adp->getLocalNumAdjs(adp->getAdjacencyEntityType(),adp->getPrimaryEntityType());
+  *format = ZOLTAN_COMPRESSED_EDGE;
+  std::cout<<"MEOW!!!!!!!!!!!!!!!!!!!!!!\n";
+}
+*/
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -189,9 +220,9 @@ static void zoltanHGCS(void *data, int nGidEnt, int nEdges, int nPins,
 {
   const Adapter *adp = static_cast<Adapter *>(data);
   *ierr = ZOLTAN_OK;
-  typedef typename Adapter::user_t user_t;
   if (adp->adapterType()==MeshAdapterType) {
-    const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>*>(data);
+#ifdef HAVE_ZOLTAN2_PARMA
+    const RPIMeshAdapter<apf::Mesh2*>* madp = static_cast<RPIMeshAdapter<apf::Mesh2*>*>(data);
     const typename Adapter::zgid_t *Ids;
     madp->getIDsViewOf(madp->getAdjacencyEntityType(),Ids);
     const typename Adapter::lno_t* offsets;
@@ -203,6 +234,7 @@ static void zoltanHGCS(void *data, int nGidEnt, int nEdges, int nPins,
     }
     for (int i=0;i<nPins;i++)
       pinIds[i] = adjIds[i];
+#endif
   }
   else {
     *ierr = ZOLTAN_FATAL;
