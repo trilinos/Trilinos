@@ -180,10 +180,12 @@ void pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
     }
 }
 
-void fix_conflicting_shell_connections(const std::set<EntityId> & localElementsConnectedToRemoteShell, ElementGraph & elem_graph, SidesForElementGraph & via_sides)
+void break_volume_element_connections_across_shells(const std::set<EntityId> & localElementsConnectedToRemoteShell, ElementGraph & elem_graph, SidesForElementGraph & via_sides)
 {
     // Fix the case where the serial graph connected two volume elements together before
     // it was known that there was a remote shell wedged between them (the "sandwich" conundrum).
+    // Also, cover the case where the mesh is modified after the graph is created to
+    // add a shell between existing volume elements.
     //
     if (localElementsConnectedToRemoteShell.size() > 1) {
         for (LocalId localElemId: localElementsConnectedToRemoteShell) {

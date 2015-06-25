@@ -370,7 +370,7 @@ void ElemElemGraph::add_possibly_connected_elements_to_graph_using_side_nodes( c
         }
     }
 
-    impl::fix_conflicting_shell_connections(localElementsConnectedToRemoteShell, m_elem_graph, m_via_sides);
+    impl::break_volume_element_connections_across_shells(localElementsConnectedToRemoteShell, m_elem_graph, m_via_sides);
 }
 
 bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
@@ -1118,6 +1118,7 @@ void ElemElemGraph::add_elements_to_graph(std::vector <stk::mesh::Entity> &eleme
 
     for(unsigned i=0; i<elements_to_add.size(); ++i)
     {
+        std::set<EntityId> localElementsConnectedToNewShell;
         stk::mesh::Entity elem_to_add = elements_to_add[i];
         if (!m_bulk_data.bucket(elem_to_add).owned())
         {
@@ -1143,9 +1144,14 @@ void ElemElemGraph::add_elements_to_graph(std::vector <stk::mesh::Entity> &eleme
                 m_elem_graph[neighbor_id].push_back(new_elem_id);
                 m_via_sides[neighbor_id].push_back(neighborOrdinal);
                 m_num_edges+=2;
+                if (elem_topology.is_shell()) {
+                    localElementsConnectedToNewShell.insert(neighbor_id);
+                }
             }
         }
+        impl::break_volume_element_connections_across_shells(localElementsConnectedToNewShell, m_elem_graph, m_via_sides);
     }
+
 }
 
 }} // end namespaces stk mesh

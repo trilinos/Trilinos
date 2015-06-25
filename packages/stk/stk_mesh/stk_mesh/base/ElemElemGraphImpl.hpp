@@ -115,7 +115,7 @@ void filter_for_candidate_elements_to_connect(const stk::mesh::BulkData & mesh,
                                           const unsigned sideOrdinal,
                                           ConnectedElementDataVector & connectedElementData);
 
-void fix_conflicting_shell_connections(const std::set<EntityId> & localElementsConnectedToRemoteShell,
+void break_volume_element_connections_across_shells(const std::set<EntityId> & localElementsConnectedToRemoteShell,
                                        ElementGraph & elem_graph,
                                        SidesForElementGraph & via_sides);
 }
