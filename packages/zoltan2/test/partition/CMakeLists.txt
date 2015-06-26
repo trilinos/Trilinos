@@ -230,6 +230,18 @@ IF (${PACKAGE_NAME}_ENABLE_SCOREC)
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    PartitionAndParMATest
+    NAME ZoltanHGAndParMA_VtxElm
+    SOURCES PartitionAndParMATest.cpp
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "--action=zoltan_hg --meshfile=4/ --modelfile=torus.dmg"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Scotch)
