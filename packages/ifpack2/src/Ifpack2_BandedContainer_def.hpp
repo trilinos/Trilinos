@@ -60,10 +60,9 @@ namespace Ifpack2 {
 template<class MatrixType, class LocalScalarType>
 BandedContainer<MatrixType, LocalScalarType>::
 BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                const Teuchos::ArrayView<const local_ordinal_type>& localRows) :
+                 const Teuchos::ArrayView<const local_ordinal_type>& localRows) :
   Container<MatrixType> (matrix, localRows),
   numRows_ (localRows.size ()),
-  //  diagBlock_ (numRows_, numRows_),
   ipiv_ (numRows_, 0)
 {
   using Teuchos::Array;
@@ -76,6 +75,35 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! matrix->hasColMap (), std::invalid_argument, "Ifpack2::BandedContainer: "
     "The constructor's input matrix must have a column Map.");
+
+  // determine upper and lower bandwith on current processor
+  // TODO improve me: do not distinguish between kl and ku but choose maximum?
+  // Can we use number of Neighbors from Tpetra::CrsMatrix?
+  local_ordinal_type maxku = 0;
+  local_ordinal_type maxkl = 0;
+
+  const size_t numLocalRows = matrix->getNodeNumRows ();
+  for (size_t localRow = 0; localRow < numLocalRows; ++localRow) {
+    const global_ordinal_type globalRow = matrix->getRowMap()->getGlobalElement(localRow);
+    // Determine local column id for diagonal entry
+    const local_ordinal_type rlcidx = matrix->getRowMap()->getLocalElement (globalRow);
+    ArrayView< const local_ordinal_type > indices;
+    ArrayView< const scalar_type > values;
+    matrix->getLocalRowView (localRow, indices, values);
+    typename ArrayView<const local_ordinal_type>::iterator cur;
+    local_ordinal_type min_col_idx = 0;
+    local_ordinal_type max_col_idx = -1;
+    for (cur = indices.begin(); cur != indices.end(); ++cur) {
+      if(min_col_idx > *cur) min_col_idx = *cur;
+      if(max_col_idx < *cur) max_col_idx = *cur;
+    }
+
+    local_ordinal_type ku = max_col_idx - rlcidx;
+    local_ordinal_type kl = rlcidx - min_col_idx;
+    if(ku > maxku) maxku = ku;
+    if(kl > maxkl) maxkl = kl;
+  }
+  diagBlock_ = Teuchos::SerialBandDenseMatrix<int, local_scalar_type>(numRows_, numRows_, maxkl /* lower bandwith */, maxkl + maxku /* upper bandwith. Don't forget to store kl extra superdiagonals for LU decomposition! */);
 
   // Check whether the input set of local row indices is correct.
   const map_type& rowMap = * (matrix->getRowMap ());
@@ -188,21 +216,28 @@ void BandedContainer<MatrixType, LocalScalarType>::compute ()
 template<class MatrixType, class LocalScalarType>
 void BandedContainer<MatrixType, LocalScalarType>::factor ()
 {
-  /*
   Teuchos::LAPACK<int, local_scalar_type> lapack;
   int INFO = 0;
 
-  lapack.GTTRF (diagBlock_.numRowsCols (),
-                diagBlock_.DL(),
-                diagBlock_.D(),
-                diagBlock_.DU(),
-                diagBlock_.DU2(),
-                ipiv_.getRawPtr (), &INFO);
-  
+  // Plausibility checks for matrix
+  TEUCHOS_TEST_FOR_EXCEPTION(diagBlock_.values()==0, std::invalid_argument,
+                     "BandedContainer<T>::factor: Diagonal block is an empty SerialBandDenseMatrix<T>!");
+  TEUCHOS_TEST_FOR_EXCEPTION(diagBlock_.upperBandwidth()<diagBlock_.lowerBandwidth(), std::invalid_argument,
+                     "BandedContainer<T>::factor: Diagonal block needs kl additional superdiagonals for factorization! However, the number of superdiagonals is smaller than the number of subdiagonals!");
+
+  lapack.GBTRF (diagBlock_.numRows(),
+      diagBlock_.numCols(),
+      diagBlock_.lowerBandwidth(),
+      diagBlock_.upperBandwidth()-diagBlock_.lowerBandwidth(), /* enter the real number of superdiagonals (see Teuchos_SerialBandDenseSolver)*/
+      diagBlock_.values(),
+      diagBlock_.stride(),
+      ipiv_.getRawPtr (),
+      &INFO);
+
   // INFO < 0 is a bug.
   TEUCHOS_TEST_FOR_EXCEPTION(
     INFO < 0, std::logic_error, "Ifpack2::BandedContainer::factor: "
-    "LAPACK's _GTTRF (LU factorization with partial pivoting) was called "
+    "LAPACK's _GBTRF (LU factorization with partial pivoting) was called "
     "incorrectly.  INFO = " << INFO << " < 0.  "
     "Please report this bug to the Ifpack2 developers.");
   // INFO > 0 means the matrix is singular.  This is probably an issue
@@ -210,14 +245,10 @@ void BandedContainer<MatrixType, LocalScalarType>::factor ()
   // input matrix itself.
   TEUCHOS_TEST_FOR_EXCEPTION(
     INFO > 0, std::runtime_error, "Ifpack2::BandedContainer::factor: "
-    "LAPACK's _GTTRF (LU factorization with partial pivoting) reports that the "
+    "LAPACK's _GBTRF (LU factorization with partial pivoting) reports that the "
     "computed U factor is exactly singular.  U(" << INFO << "," << INFO << ") "
     "(one-based index i) is exactly zero.  This probably means that the input "
     "matrix has a singular diagonal block.");
-  */
-
-  // Placeholder
-  TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"Ifpack2::BandedContainer::factor: Not yet implemented");
 }
 
 //==============================================================================
@@ -270,7 +301,7 @@ applyImpl (const local_mv_type& X,
     << ").  Please report this bug to the Ifpack2 developers.");
 
   typedef Teuchos::ScalarTraits<local_scalar_type> STS;
-  //  const int numVecs = static_cast<int> (X.getNumVectors ());
+  const int numVecs = static_cast<int> (X.getNumVectors ());
   if (alpha == STS::zero ()) { // don't need to solve the linear system
     if (beta == STS::zero ()) {
       // Use BLAS AXPY semantics for beta == 0: overwrite, clobbering
@@ -286,7 +317,7 @@ applyImpl (const local_mv_type& X,
     Teuchos::LAPACK<int, local_scalar_type> lapack;
     // If beta is nonzero or Y is not constant stride, we have to use
     // a temporary output multivector.  It gets a copy of X, since
-    // GETRS overwrites its (multi)vector input with its output.
+    // GBTRS overwrites its (multi)vector input with its output.
     RCP<local_mv_type> Y_tmp;
     if (beta == STS::zero () ){
       Y = X;
@@ -295,26 +326,26 @@ applyImpl (const local_mv_type& X,
     else {
       Y_tmp = rcp (new local_mv_type (X)); // constructor copies X
     }
-    //    const int Y_stride = static_cast<int> (Y_tmp->getStride ());
-    //ArrayRCP<local_scalar_type> Y_view = Y_tmp->get1dViewNonConst ();
-    //   local_scalar_type* const Y_ptr = Y_view.getRawPtr ();
+    const int Y_stride = static_cast<int> (Y_tmp->getStride ());
+    ArrayRCP<local_scalar_type> Y_view = Y_tmp->get1dViewNonConst ();
+    local_scalar_type* const Y_ptr = Y_view.getRawPtr ();
 
-    //int INFO = 0;
-    //    const char trans =(mode == Teuchos::CONJ_TRANS ? 'C' : (mode == Teuchos::TRANS ? 'T' : 'N'));
-    /*
+    int INFO = 0;
+    const char trans =(mode == Teuchos::CONJ_TRANS ? 'C' : (mode == Teuchos::TRANS ? 'T' : 'N'));
 
-    lapack.GTTRS (trans, diagBlock_.numRowsCols(),numVecs,
-                  diagBlock_.DL(),
-                  diagBlock_.D(),
-                  diagBlock_.DU(),
-                  diagBlock_.DU2(),
-                  ipiv_.getRawPtr (), Y_ptr, Y_stride, &INFO);
+    lapack.GBTRS(trans,
+        diagBlock_.numCols(),
+        diagBlock_.lowerBandwidth(),
+        diagBlock_.upperBandwidth()-diagBlock_.lowerBandwidth(), // /* enter the real number of superdiagonals (see Teuchos_SerialBandDenseSolver)*/
+        numVecs,
+        diagBlock_.values(),
+        diagBlock_.stride(),
+        ipiv_.getRawPtr (), Y_ptr, Y_stride, &INFO);
+
     TEUCHOS_TEST_FOR_EXCEPTION(
       INFO != 0, std::runtime_error, "Ifpack2::BandedContainer::applyImpl: "
-      "LAPACK's _GETRS (solve using LU factorization with partial pivoting) "
+      "LAPACK's _GBTRS (solve using LU factorization with partial pivoting) "
       "failed with INFO = " << INFO << " != 0.");
-    */
-  TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"Ifpack2::BandedContainer::applyImpl Not yet implemented");
 
     if (beta != STS::zero ()) {
       Y.update (alpha, *Y_tmp, beta);
@@ -576,6 +607,7 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   // Apply the local operator: Y_temp := M^{-1} * X_scaled
   applyImpl (*X_scaled, *Y_temp, mode, STS::one (), STS::zero ());
   // Y_local := beta * Y_local + alpha * diag(D_local) * Y_temp.
+
   //
   // Note that we still use the permuted subset scaling D_local here,
   // because Y_temp has the same permuted subset Map.  That's good, in
@@ -623,15 +655,16 @@ std::string BandedContainer<MatrixType,LocalScalarType>::description() const
 template<class MatrixType, class LocalScalarType>
 void BandedContainer<MatrixType,LocalScalarType>::describe(Teuchos::FancyOStream &os, const Teuchos::EVerbosityLevel verbLevel) const
 {
-  using std::endl;
   if(verbLevel==Teuchos::VERB_NONE) return;
-  os << "================================================================================" << endl;
-  os << "Ifpack2::BandedContainer" << endl;
-  os << "Number of rows          = " << numRows_ << endl;
-  os << "isInitialized()         = " << IsInitialized_ << endl;
-  os << "isComputed()            = " << IsComputed_ << endl;
-  os << "================================================================================" << endl;
-  os << endl;
+  os << "================================================================================" << std::endl;
+  os << "Ifpack2::BandedContainer" << std::endl;
+  os << "Number of rows           = " << numRows_ << std::endl;
+  os << "Number of subdiagonals   = " << diagBlock_.lowerBandwidth() << std::endl;
+  os << "Number of superdiagonals = " << diagBlock_.upperBandwidth() << std::endl;
+  os << "isInitialized()          = " << IsInitialized_ << std::endl;
+  os << "isComputed()             = " << IsComputed_ << std::endl;
+  os << "================================================================================" << std::endl;
+  os << std::endl;
 }
 
 //==============================================================================

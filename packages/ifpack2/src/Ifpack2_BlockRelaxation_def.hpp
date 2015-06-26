@@ -377,7 +377,7 @@ void BlockRelaxation<MatrixType,ContainerType>::initialize() {
 
   if (PartitionerType_ == "linear") {
     Partitioner_ =
-      rcp (new Ifpack2::LinearPartitioner<row_graph_type> (A_->getGraph ())); 
+      rcp (new Ifpack2::LinearPartitioner<row_graph_type> (A_->getGraph ()));
   } else if (PartitionerType_ == "line") {
     Partitioner_ =
       rcp (new Ifpack2::LinePartitioner<row_graph_type,typename MatrixType::scalar_type> (A_->getGraph ()));
