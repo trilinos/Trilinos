@@ -51,9 +51,6 @@
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_TPLTraits.hpp>
 
-#include <Zoltan2_AlgZoltanCallbacks.hpp>
-#include <zoltan_cpp.h>
-
 //////////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgParMA.hpp
 //! \brief interface to the ParMA library
