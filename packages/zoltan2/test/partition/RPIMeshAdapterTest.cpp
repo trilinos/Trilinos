@@ -87,7 +87,6 @@ using Teuchos::RCP;
 /*********************************************************/
 //Tpetra typedefs
 typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
-typedef Tpetra::MultiVector<double, int, int>     tMVector_t;
 
 
 
@@ -137,10 +136,11 @@ int main(int narg, char *arg[]) {
   /***************************************************************************/
 
   // default values for command-line arguments
-  std::string meshFileName("4imb/torus.smb");
+  std::string meshFileName("4/");
   std::string modelFileName("torus.dmg");
-  std::string action("zoltan_hg");
+  std::string action("parma");
   std::string parma_method("VtxElm");
+  std::string output_loc("");
   int nParts = CommT->getSize();
 
   // Read run-time options.
@@ -151,10 +151,12 @@ int main(int narg, char *arg[]) {
 		 "Model file with APF specifications (.dmg file)");
   cmdp.setOption("action", &action,
                  "Method to use:  mj, scotch, zoltan_rcb, parma or color");
-  cmdp.setOption("parma_method", &action,
+  cmdp.setOption("parma_method", &parma_method,
                  "Method to use: Vertex, Edge, Element, VtxElm, VtxEdgeElm, ElmLtVtx, Ghost, or Shape ");
   cmdp.setOption("nparts", &nParts,
                  "Number of parts to create");
+  cmdp.setOption("output", &output_loc,
+                 "Location of new partitioned apf mesh. Ex: 4/torus.smb");
   cmdp.parse(narg, arg);
 
   
@@ -222,7 +224,7 @@ int main(int narg, char *arg[]) {
   else if (action == "parma") {
     do_partitioning = true;
     params.set("debug_level", "basic_status");
-    params.set("imbalance_tolerance", 1.05);
+    params.set("imbalance_tolerance", 1.01);
     params.set("algorithm", "parma");
     Teuchos::ParameterList &pparams = params.sublist("parma_parameters",false);
     pparams.set("parma_method",parma_method);
@@ -237,7 +239,7 @@ int main(int narg, char *arg[]) {
   else if (action=="zoltan_hg") {
     do_partitioning = true;
     params.set("debug_level", "no_status");
-    params.set("imbalance_tolerance", 1.1);
+    params.set("imbalance_tolerance", 1.01);
     params.set("algorithm", "zoltan");
     params.set("num_global_parts", nParts);
     Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
@@ -270,7 +272,7 @@ int main(int narg, char *arg[]) {
     
     
 
-    if (me) problem.printMetrics(cout);
+    if (!me) problem.printMetrics(cout);
   }
   else {
     if (me == 0) cout << "Creating coloring problem ... \n\n";
@@ -286,8 +288,11 @@ int main(int narg, char *arg[]) {
 
 
   }
+  //if (!me)
   Parma_PrintPtnStats(m,"after");
-
+  if (output_loc!="") {
+    m->writeNative(output_loc.c_str());
+  }
 
   // delete mesh
   if (me == 0) cout << "Deleting the mesh ... \n\n";
