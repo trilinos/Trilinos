@@ -29,6 +29,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Helmholtz2D
       SOURCES Helmholtz2D.cpp
+      CATEGORIES NIGHTLY
       COMM serial
     )
 
@@ -47,6 +48,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       HelmholtzFEM3D
       SOURCES HelmholtzFEM3D.cpp
+      CATEGORIES NIGHTLY
       COMM serial
     )
 
