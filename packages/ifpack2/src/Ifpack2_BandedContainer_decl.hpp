@@ -39,8 +39,8 @@
 // ***********************************************************************
 //@HEADER
 */
-#ifndef IFPACK2_TRIDICONTAINER_DECL_HPP
-#define IFPACK2_TRIDICONTAINER_DECL_HPP
+#ifndef IFPACK2_BANDEDCONTAINER_DECL_HPP
+#define IFPACK2_BANDEDCONTAINER_DECL_HPP
 
 /// \file Ifpack2_BandedContainer_decl.hpp
 /// \brief Ifpack2::BandedContainer class declaration
@@ -283,4 +283,4 @@ private:
 
 }// namespace Ifpack2
 
-#endif // IFPACK2_TRIDICONTAINER_DECL_HPP
+#endif // IFPACK2_BANDEDCONTAINER_DECL_HPP

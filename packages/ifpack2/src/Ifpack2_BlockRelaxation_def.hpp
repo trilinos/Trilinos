@@ -1022,6 +1022,7 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
 #include "Ifpack2_DenseContainer_decl.hpp"
 #include "Ifpack2_SparseContainer_decl.hpp"
 #include "Ifpack2_TriDiContainer_decl.hpp"
+#include "Ifpack2_BandedContainer_decl.hpp"
 #include "Ifpack2_ILUT_decl.hpp"
 
 // FIXME (mfh 16 Sep 2014) We should really only use RowMatrix here!

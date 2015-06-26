@@ -270,7 +270,7 @@ applyImpl (const local_mv_type& X,
     << ").  Please report this bug to the Ifpack2 developers.");
 
   typedef Teuchos::ScalarTraits<local_scalar_type> STS;
-  const int numVecs = static_cast<int> (X.getNumVectors ());
+  //  const int numVecs = static_cast<int> (X.getNumVectors ());
   if (alpha == STS::zero ()) { // don't need to solve the linear system
     if (beta == STS::zero ()) {
       // Use BLAS AXPY semantics for beta == 0: overwrite, clobbering
@@ -295,13 +295,12 @@ applyImpl (const local_mv_type& X,
     else {
       Y_tmp = rcp (new local_mv_type (X)); // constructor copies X
     }
-    const int Y_stride = static_cast<int> (Y_tmp->getStride ());
-    ArrayRCP<local_scalar_type> Y_view = Y_tmp->get1dViewNonConst ();
-    local_scalar_type* const Y_ptr = Y_view.getRawPtr ();
+    //    const int Y_stride = static_cast<int> (Y_tmp->getStride ());
+    //ArrayRCP<local_scalar_type> Y_view = Y_tmp->get1dViewNonConst ();
+    //   local_scalar_type* const Y_ptr = Y_view.getRawPtr ();
 
-    int INFO = 0;
-    const char trans =
-      (mode == Teuchos::CONJ_TRANS ? 'C' : (mode == Teuchos::TRANS ? 'T' : 'N'));
+    //int INFO = 0;
+    //    const char trans =(mode == Teuchos::CONJ_TRANS ? 'C' : (mode == Teuchos::TRANS ? 'T' : 'N'));
     /*
 
     lapack.GTTRS (trans, diagBlock_.numRowsCols(),numVecs,
@@ -787,8 +786,8 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
 
 } // namespace Ifpack2
 
-#define IFPACK2_TRIDICONTAINER_INSTANT(S,LO,GO,N) \
+#define IFPACK2_BANDEDCONTAINER_INSTANT(S,LO,GO,N) \
   template class Ifpack2::BandedContainer< Tpetra::CrsMatrix<S, LO, GO, N>, S >; \
   template class Ifpack2::BandedContainer< Tpetra::RowMatrix<S, LO, GO, N>, S >;
 
-#endif // IFPACK2_SPARSECONTAINER_HPP
+#endif // IFPACK2_BANDEDCONTAINER_HPP

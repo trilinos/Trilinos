@@ -780,4 +780,4 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
   template class Ifpack2::TriDiContainer< Tpetra::CrsMatrix<S, LO, GO, N>, S >; \
   template class Ifpack2::TriDiContainer< Tpetra::RowMatrix<S, LO, GO, N>, S >;
 
-#endif // IFPACK2_SPARSECONTAINER_HPP
+#endif // IFPACK2_TRIDICONTAINER_HPP

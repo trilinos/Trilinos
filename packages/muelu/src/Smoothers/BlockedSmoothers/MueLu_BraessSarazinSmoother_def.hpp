@@ -197,7 +197,7 @@ namespace MueLu {
     SC one = Teuchos::ScalarTraits<SC>::one();
 
     ArrayRCP<SC> Ddata = D_->getDataNonConst(0);
-    for (size_t i = 0; i < Ddata.size(); i++)
+    for (GO i = 0; i < Ddata.size(); i++)
       Ddata[i] = one / (Ddata[i]*omega);
 
     // Set the Smoother
