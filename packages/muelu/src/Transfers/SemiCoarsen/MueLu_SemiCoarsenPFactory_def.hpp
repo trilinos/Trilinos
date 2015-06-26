@@ -75,9 +75,13 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("Nullspace",       Teuchos::null, "Generating factory of the nullspace");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",     Teuchos::null, "Generating factory for coorindates");
 
+    validParamList->set< RCP<const FactoryBase> >("LineDetection_VertLineIds", Teuchos::null, "Generating factory for LineDetection information");
+    validParamList->set< RCP<const FactoryBase> >("LineDetection_Layers",      Teuchos::null, "Generating factory for LineDetection information");
+    validParamList->set< RCP<const FactoryBase> >("CoarseNumZLayers",          Teuchos::null, "Generating factory for LineDetection information");
+
     // TODO fix this: introduce entries in MasterList
-    validParamList->set< LO > ("semicoarsen: num layers", 10, "Line orientation: number of layers on finest level. Alternatively, set the number of layers on the finest level as \"NumZLayers\" in the finest level container class.");
-    validParamList->set< std::string > ("semicoarsen: line orientation", "vertical", "Line orientation: can be either 'vertical', 'horizontal' or 'coordinates'");
+    //validParamList->set< LO > ("semicoarsen: num layers", 10, "Line orientation: number of layers on finest level. Alternatively, set the number of layers on the finest level as \"NumZLayers\" in the finest level container class.");
+    //validParamList->set< std::string > ("semicoarsen: line orientation", "vertical", "Line orientation: can be either 'vertical', 'horizontal' or 'coordinates'");
 
     return validParamList;
   }
@@ -88,6 +92,10 @@ namespace MueLu {
     Input(fineLevel, "Nullspace");
     //    Input(fineLevel, "Coordinates");        // taw: this cannot work as Coordinates are usually (?) not provided by a factory
 
+    Input(fineLevel, "LineDetection_VertLineIds");
+    Input(fineLevel, "LineDetection_Layers");
+    Input(fineLevel, "CoarseNumZLayers");
+
     // The factory needs the information about the number of z-layers. While this information is
     // provided by the user for the finest level, the factory itself is responsible to provide the
     // corresponding information on the coarser levels. Since a factory cannot be dependent on itself
@@ -95,8 +103,8 @@ namespace MueLu {
     // "NumZLayers" is part of the request/release mechanism.
     // Please note, that this prevents us from having several (independent) CoarsePFactory instances!
     // TODO: allow factory to dependent on self-generated data for TwoLevelFactories -> introduce ExpertRequest/Release in Level
-    fineLevel.DeclareInput("NumZLayers", NoFactory::get(), this);
-    fineLevel.RemoveKeepFlag("NumZLayers", NoFactory::get(), MueLu::UserData);
+    //fineLevel.DeclareInput("NumZLayers", NoFactory::get(), this);
+    //fineLevel.RemoveKeepFlag("NumZLayers", NoFactory::get(), MueLu::UserData);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -108,76 +116,15 @@ namespace MueLu {
   void SemiCoarsenPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    LO               NumZDir = 0, Zorientation = GRID_SUPPLIED;
-    RCP<MultiVector> fineCoords;
-    ArrayRCP<Scalar> x, y, z;
-    Scalar           *xptr = NULL, *yptr = NULL, *zptr = NULL;
-
     // obtain general variables
     RCP<Matrix>      A             = Get< RCP<Matrix> >      (fineLevel, "A");
     RCP<MultiVector> fineNullspace = Get< RCP<MultiVector> > (fineLevel, "Nullspace");
 
-    const ParameterList& pL = GetParameterList();
-    const std::string lineOrientation = pL.get<std::string>("semicoarsen: line orientation");
-
     // get user-provided coarsening rate parameter (constant over all levels)
+    const ParameterList& pL = GetParameterList();
     LO CoarsenRate = as<LO>(pL.get<int>("semicoarsen: coarsen rate"));
 
-    // interpret "line orientation" parameter provided by the user on the finest level
-    if(fineLevel.GetLevelID() == 0) {
-      if(lineOrientation=="vertical")
-        Zorientation = VERTICAL;
-      else if (lineOrientation=="horizontal")
-        Zorientation = HORIZONTAL;
-      else if (lineOrientation=="coordinates")
-        Zorientation = GRID_SUPPLIED;
-      else
-        TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "SemiCoarsenPFactory: The parameter 'semicoarsen: line orientation' must be either 'vertical', 'horizontal' or 'coordinates'.");
-    } else {
-      // on coarse levels the line orientation is internally fixed to be vertical
-      Zorientation = VERTICAL;
-    }
-
-    // obtain number of z layers (variable over levels)
-    // This information is user-provided on the finest level and transferred to the coarser
-    // levels by the CoarsenPFactory using the internal "NumZLayers" variable.
-    if(fineLevel.GetLevelID() == 0) {
-      if(fineLevel.IsAvailable("NumZLayers", NoFactory::get())) {
-        NumZDir = fineLevel.Get<LO>("NumZLayers", NoFactory::get()); //obtain info
-        GetOStream(Runtime1) << "Number of layers for semicoarsening: " << NumZDir << " (information from Level(0))" << std::endl;
-      } else {
-        NumZDir = pL.get<LO>("semicoarsen: num layers");
-        GetOStream(Runtime1) << "Number of layers for semicoarsening: " << NumZDir << " (information provided by user through 'semicoarsen: num layers')" << std::endl;
-      }
-    } else {
-      if(fineLevel.IsAvailable("NumZLayers", NoFactory::get())) {
-        NumZDir = fineLevel.Get<LO>("NumZLayers", NoFactory::get()); //obtain info
-        GetOStream(Runtime1) << "Number of layers for semicoarsening: " << NumZDir << std::endl;
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "SemiCoarsenPFactory: BuildP: No NumZLayers variable found. This cannot be.");
-      }
-    }
-
-    // plausibility check and further variable collection
-    if (Zorientation == GRID_SUPPLIED) { // On finest level, fetch user-provided coordinates if available...
-      bool CoordsAvail = fineLevel.IsAvailable("Coordinates");
-
-      if (CoordsAvail == false) {
-        if (fineLevel.GetLevelID() == 0)
-          throw Exceptions::RuntimeError("Coordinates must be supplied if semicoarsen orientation not given.");
-        else
-          throw Exceptions::RuntimeError("Coordinates not generated by previous invocation of SemiCoarsenPFactory's BuildP() method.");
-      }
-      fineCoords = Get< RCP<MultiVector> > (fineLevel, "Coordinates");
-      TEUCHOS_TEST_FOR_EXCEPTION(fineCoords->getNumVectors() != 3, Exceptions::RuntimeError, "Three coordinates arrays must be supplied if semicoarsen orientation not given.");
-      x = fineCoords->getDataNonConst(0);
-      y = fineCoords->getDataNonConst(1);
-      z = fineCoords->getDataNonConst(2);
-      xptr = x.getRawPtr();
-      yptr = y.getRawPtr();
-      zptr = z.getRawPtr();
-    }
-
+    // collect general input data
     LO BlkSize = A->GetFixedBlockSize();
     TEUCHOS_TEST_FOR_EXCEPTION(BlkSize != 1, Exceptions::RuntimeError, "Block size > 1 has not been implemented");
 
@@ -185,31 +132,32 @@ namespace MueLu {
     LO Ndofs   = rowMap->getNodeNumElements();
     LO Nnodes  = Ndofs/BlkSize;
 
-    // perform line detection
-    LO   *LayerId, *VertLineId;
-    Teuchos::ArrayRCP<LO>     TLayerId   = Teuchos::arcp<LO>(Nnodes+1);  LayerId   = TLayerId.getRawPtr();
-    Teuchos::ArrayRCP<LO>     TVertLineId= Teuchos::arcp<LO>(Nnodes+1);  VertLineId= TVertLineId.getRawPtr();
-    NumZDir = ML_compute_line_info(LayerId, VertLineId, Ndofs, BlkSize,
-                                   Zorientation, NumZDir,xptr,yptr,zptr, *(rowMap->getComm()));
+    // collect line detection information generated by the LineDetectionFactory instance
+    LO CoarseNumZLayers = Get< LO >(fineLevel, "CoarseNumZLayers");
+    Teuchos::ArrayRCP<LO>     TVertLineId = Get< Teuchos::ArrayRCP<LO> > (fineLevel, "LineDetection_VertLineIds");
+    Teuchos::ArrayRCP<LO>     TLayerId    = Get< Teuchos::ArrayRCP<LO> > (fineLevel, "LineDetection_Layers");
+    LO* VertLineId = TVertLineId.getRawPtr();
+    LO* LayerId    = TLayerId.getRawPtr();
 
     // generate transfer operator with semicoarsening
     RCP<const Map> theCoarseMap;
     RCP<Matrix>    P;
-    GO Ncoarse = MakeSemiCoarsenP(Nnodes,NumZDir,CoarsenRate,LayerId,VertLineId,
+    GO Ncoarse = MakeSemiCoarsenP(Nnodes,CoarseNumZLayers,CoarsenRate,LayerId,VertLineId,
                                BlkSize, A, P, theCoarseMap);
+
+    // Store number of coarse z-layers on the coarse level container
+    // This information is used by the LineDetectionAlgorithm
+    // TODO get rid of the NoFactory
+    coarseLevel.Set("NumZLayers", CoarseNumZLayers * Ncoarse/Ndofs, MueLu::NoFactory::get());
 
     //Set(coarseLevel, "CoarseMap", P->getDomainMap()); // we don't need this information.
     Set(coarseLevel, "P", P);
 
-    coarseLevel.Set("NumZLayers", NumZDir * Ncoarse/Ndofs, MueLu::NoFactory::get());
-
     // rst: null space might get scaled here ... do we care. We could just inject at the cpoints, but I don't
     //  feel that this is needed.
-
     RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(P->getDomainMap(), fineNullspace->getNumVectors());
     P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, Teuchos::ScalarTraits<SC>::one(), Teuchos::ScalarTraits<SC>::zero());
     Set(coarseLevel, "Nullspace", coarseNullspace);
-
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>

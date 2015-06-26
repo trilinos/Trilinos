@@ -66,6 +66,7 @@
 
 #include "MueLu_Ifpack2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"
+#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 
@@ -98,12 +99,34 @@ namespace MueLu {
 
     prec_->setParameters(*precList);
 
-    paramList.setParameters(*precList);
+    paramList.setParameters(*precList); // what about that??
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     this->Input(currentLevel, "A");
+
+    if (type_ == "BANDED_RELAXATION" ||
+        type_ == "BANDED RELAXATION" ||
+        type_ == "BANDEDRELAXATION" ) {
+      ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+
+      //std::string partName  = "partitioner: type";
+      //if (paramList.isParameter(partName) && paramList.get<std::string>(partName) == "user") {
+
+      // TODO check whether line relaxation is possible. otherwise switch to point relaxation?
+
+      this->Input(currentLevel, "CoarseNumZLayers");
+      this->Input(currentLevel, "LineDetection_Layers");
+      this->Input(currentLevel, "LineDetection_VertLineIds");
+      currentLevel.print(std::cout,MueLu::Debug);
+
+      // TODO make sure that the partitioner map is correctly set
+
+        //type_ = "RELAXATION";
+      //}
+
+    } // if (type_ == "BANDEDRELAXATION")
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -183,6 +206,31 @@ namespace MueLu {
         }
       }
     } // if (type_ == "SCHWARZ")
+
+    if (type_ == "BANDED_RELAXATION" ||
+        type_ == "BANDED RELAXATION" ||
+        type_ == "BANDEDRELAXATION" ) {
+      ParameterList& myparamList = const_cast<ParameterList&>(this->GetParameterList());
+
+      LO CoarseNumZLayers = Factory::Get<LO>(currentLevel,"CoarseNumZLayers");
+      if (CoarseNumZLayers > 0) { // && currentLevel.GetLevelID() > 0) {
+        Teuchos::ArrayRCP<LO> TVertLineId = Factory::Get< Teuchos::ArrayRCP<LO> >(currentLevel, "LineDetection_VertLineIds");
+        Teuchos::ArrayRCP<LO> TLayerId    = Factory::Get< Teuchos::ArrayRCP<LO> >(currentLevel, "LineDetection_Layers");
+
+        myparamList.set("partitioner: type","user");
+        myparamList.set("partitioner: map",TVertLineId);
+        myparamList.set("partitioner: local parts",TVertLineId[TVertLineId.size()-1]+1);
+
+      } else {
+        // line detection failed -> fallback to point-wise relaxation
+        this->GetOStream(Runtime0) << "Line detection failed: fall back to point-wise relaxation" << std::endl;
+        myparamList.remove("partitioner: type",false);
+        myparamList.remove("partitioner: map", false);
+        myparamList.remove("partitioner: local parts",false);
+        type_ = "RELAXATION";
+      }
+
+    } // if (type_ == "BANDEDRELAXATION")
 
     if (type_ == "CHEBYSHEV") {
       std::string maxEigString   = "chebyshev: max eigenvalue";

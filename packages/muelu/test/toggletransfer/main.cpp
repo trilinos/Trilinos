@@ -188,9 +188,36 @@ int main(int argc, char *argv[]) {
       if(level->IsAvailable("PreSmoother",  MueLu::NoFactory::get()) == false) { success = false; H->GetLevel(l)->print(std::cout, MueLu::Debug);}
       if(level->IsAvailable("PostSmoother", MueLu::NoFactory::get()) == false && l<H->GetNumLevels()-1) { success = false; H->GetLevel(l)->print(std::cout, MueLu::Debug);}
       if(level->IsAvailable("NumZLayers",   MueLu::NoFactory::get()) == true && l>0) {  success = false; H->GetLevel(l)->print(std::cout, MueLu::Debug);}
-      //H->GetLevel(l)->print(std::cout, MueLu::Debug);
+      H->GetLevel(l)->print(std::cout, MueLu::Debug);
     }
     ///////////////////////////////////////////////////////////
+
+    // =========================================================================
+    // System solution (Ax = b)
+    // =========================================================================
+    comm->barrier();
+    typedef Teuchos::ScalarTraits<SC> STS;
+    SC zero = STS::zero(), one = STS::one();
+
+    Teuchos::RCP<Vector> X = VectorFactory::Build(A->getRowMap());
+    Teuchos::RCP<Vector> B = VectorFactory::Build(A->getRowMap());
+
+    {
+      // we set seed for reproducibility
+      Utils::SetRandomSeed(*comm);
+      X->randomize();
+      A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
+
+      Teuchos::Array<STS::magnitudeType> norms(1);
+      B->norm2(norms);
+      B->scale(one/norms[0]);
+      X->putScalar(zero);
+    }
+
+    comm->barrier();
+
+    H->IsPreconditioner(false);
+    H->Iterate(*B, *X, 20);
 
     // Timer final summaries
     globalTimeMonitor = Teuchos::null; // stop this timer before summary
