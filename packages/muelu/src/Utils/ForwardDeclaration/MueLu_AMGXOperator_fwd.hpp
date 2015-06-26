@@ -43,55 +43,21 @@
 // ***********************************************************************
 //
 // @HEADER
+#ifndef MUELU_AMGXOPERATOR_FWD_HPP
+#define MUELU_AMGXOPERATOR_FWD_HPP
 
-#ifndef MUELU_AMGXOPERATOR_DEF_HPP
-#define MUELU_AMGXOPERATOR_DEF_HPP
-
-
-#if defined (HAVE_MUELU_EXPERIMENTAL) and defined (HAVE_MUELU_AMGX)
-#include "MueLu_AMGXOperator_decl.hpp"
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_AMGX)
 
 namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class AMGXOperator;
+}
 
-  template<class Node>
-  Teuchos::RCP<const Tpetra::Map<int,int,Node> >
-  AMGXOperator<double,int,int,Node>::getDomainMap() const {
-     return domainMap_;
-  }
+#ifndef MUELU_AMGXOPERATOR_SHORT
+#define MUELU_AMGXOPERATOR_SHORT
+#endif
 
-  template<class Node>
-  Teuchos::RCP<const Tpetra::Map<int,int,Node> > AMGXOperator<double,int,int,Node>::getRangeMap() const {
-     return rangeMap_;
-  }
+#endif
 
-  template<class Node>
-  void AMGXOperator<double,int,int,Node>::apply(const Tpetra::MultiVector<double,int,int,Node>& X,
-                                                Tpetra::MultiVector<double,int,int,Node>& Y,
-                                                Teuchos::ETransp mode, double alpha, double beta) const {
-    try {
-      Teuchos::ArrayRCP<const double> xdata;
-      Teuchos::ArrayRCP<double> ydata;
-      for(int i = 0; i < Y.getNumVectors(); i++){
-      xdata = X.getData(i);
-      ydata = Y.getDataNonConst(i);
-      AMGX_vector_upload(X_, N, 1, &xdata[0]);
-      AMGX_vector_upload(Y_, N, 1, &ydata[0]);
-      AMGX_solver_solve(Solver_, Y_, X_);
-      AMGX_vector_download(Y_, &ydata[0]);
-      }
-    } catch (std::exception& e) {
-        std::string eW = e.what();
-        std::string errMsg = "Caught an exception in MueLu::AMGXOperator::Apply():\n" + eW + "\n";
-        throw Exceptions::RuntimeError(errMsg);
-    }
-  }
-
-  template<class Node>
-  bool AMGXOperator<double,int,int,Node>::hasTransposeApply() const {
-    return false;
-  }
-
-} // namespace
-#endif //ifdef HAVE_MUELU_EXPERIMENTAL and defined(HAVE_MUELU_AMGX)
-
-#endif //ifdef MUELU_AMGXOPERATOR_DEF_HPP
+#endif // MUELU_AMGXOPERATOR_FWD_HPP

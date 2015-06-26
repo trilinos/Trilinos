@@ -43,55 +43,19 @@
 // ***********************************************************************
 //
 // @HEADER
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_AMGX)
+#include "MueLu_ExplicitInstantiation.hpp"
 
-#ifndef MUELU_AMGXOPERATOR_DEF_HPP
-#define MUELU_AMGXOPERATOR_DEF_HPP
+#include "MueLu_AMGXOperator_def.hpp"
 
+#include "TpetraCore_ETIHelperMacros.h"
 
-#if defined (HAVE_MUELU_EXPERIMENTAL) and defined (HAVE_MUELU_AMGX)
-#include "MueLu_AMGXOperator_decl.hpp"
+#define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
+        template class MueLu::AMGXOperator<S,LO,GO,N>;
 
-namespace MueLu {
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  template<class Node>
-  Teuchos::RCP<const Tpetra::Map<int,int,Node> >
-  AMGXOperator<double,int,int,Node>::getDomainMap() const {
-     return domainMap_;
-  }
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
 
-  template<class Node>
-  Teuchos::RCP<const Tpetra::Map<int,int,Node> > AMGXOperator<double,int,int,Node>::getRangeMap() const {
-     return rangeMap_;
-  }
-
-  template<class Node>
-  void AMGXOperator<double,int,int,Node>::apply(const Tpetra::MultiVector<double,int,int,Node>& X,
-                                                Tpetra::MultiVector<double,int,int,Node>& Y,
-                                                Teuchos::ETransp mode, double alpha, double beta) const {
-    try {
-      Teuchos::ArrayRCP<const double> xdata;
-      Teuchos::ArrayRCP<double> ydata;
-      for(int i = 0; i < Y.getNumVectors(); i++){
-      xdata = X.getData(i);
-      ydata = Y.getDataNonConst(i);
-      AMGX_vector_upload(X_, N, 1, &xdata[0]);
-      AMGX_vector_upload(Y_, N, 1, &ydata[0]);
-      AMGX_solver_solve(Solver_, Y_, X_);
-      AMGX_vector_download(Y_, &ydata[0]);
-      }
-    } catch (std::exception& e) {
-        std::string eW = e.what();
-        std::string errMsg = "Caught an exception in MueLu::AMGXOperator::Apply():\n" + eW + "\n";
-        throw Exceptions::RuntimeError(errMsg);
-    }
-  }
-
-  template<class Node>
-  bool AMGXOperator<double,int,int,Node>::hasTransposeApply() const {
-    return false;
-  }
-
-} // namespace
-#endif //ifdef HAVE_MUELU_EXPERIMENTAL and defined(HAVE_MUELU_AMGX)
-
-#endif //ifdef MUELU_AMGXOPERATOR_DEF_HPP
+#endif
