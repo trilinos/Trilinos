@@ -110,6 +110,8 @@ protected:
 
     void communicate_moved_graph_info(std::vector <moved_parallel_graph_info> &moved_graph_info_vector);
 
+    void filter_for_elements_in_graph(stk::mesh::EntityVector &localElements);
+
     stk::mesh::BulkData &m_bulk_data;
     impl::ElementGraph m_elem_graph;
     impl::SidesForElementGraph m_via_sides;

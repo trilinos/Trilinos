@@ -309,6 +309,19 @@ void ElemElemGraph::fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side
     }
 }
 
+void ElemElemGraph::filter_for_elements_in_graph(stk::mesh::EntityVector &localElements)
+{
+    stk::mesh::EntityVector filteredElements;
+    for (stk::mesh::Entity &element : localElements)
+    {
+        if (is_valid_graph_element(element))
+        {
+            filteredElements.push_back(element);
+        }
+    }
+    localElements.swap(filteredElements);
+}
+
 void ElemElemGraph::add_possibly_connected_elements_to_graph_using_side_nodes( const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideComm,
                                                                                stk::mesh::impl::ConnectedElementDataVector & communicatedElementDataVector)
 {
@@ -939,128 +952,132 @@ void ElemElemGraph::pack_deleted_element_comm(stk::CommSparse &comm,
 void ElemElemGraph::delete_elements_from_graph(const stk::mesh::EntityVector &elements_to_delete)
 {
     std::vector< std::pair< impl::LocalId, stk::mesh::EntityId > > local_elem_and_remote_connected_elem;
-    std::vector< std::pair< stk::mesh::EntityId, stk::mesh::EntityId > > remote_edges;
-    for (size_t elem_index = 0; elem_index < elements_to_delete.size(); ++elem_index)
+    for (const stk::mesh::Entity &elem_to_delete : elements_to_delete)
     {
-        stk::CommSparse comm;
-        bool remote_edges_exist = false;
-        stk::mesh::Entity elem_to_delete = elements_to_delete[elem_index];
         stk::topology elem_to_delete_topology = m_bulk_data.bucket(elem_to_delete).topology();
         ThrowRequireMsg(m_bulk_data.is_valid(elem_to_delete), "Program error. Not valid mesh element. Contact sierra-help@sandia.gov for support.");
 
-        if (m_bulk_data.bucket(elem_to_delete).owned())
+        std::vector<std::pair<impl::LocalId, int> > elementsThatUsedToBeConnectedToShell;
+        impl::LocalId elem_to_delete_id = get_local_element_id(elem_to_delete);
+        ThrowRequireMsg(is_valid_graph_element(elem_to_delete), "Program error. Not valid graph element. Contact sierra-help@sandia.gov for support.");
+
+        if (!m_bulk_data.bucket(elem_to_delete).owned())
         {
-            std::vector<std::pair<impl::LocalId, int> > elementsThatUsedToBeConnectedToShell;
-            local_elem_and_remote_connected_elem.clear();
-            impl::LocalId elem_to_delete_id = get_local_element_id(elem_to_delete);
-            ThrowRequireMsg(is_valid_graph_element(elem_to_delete), "Program error. Not valid graph element. Contact sierra-help@sandia.gov for support.");
+            continue;
+        }
 
-            size_t num_connected_elems = get_num_connected_elems(elem_to_delete);
-            for (int conn_elem_index = num_connected_elems-1; conn_elem_index >= 0; --conn_elem_index)
+        size_t num_connected_elems = get_num_connected_elems(elem_to_delete);
+        for (int conn_elem_index = num_connected_elems-1; conn_elem_index >= 0; --conn_elem_index)
+        {
+            impl::LocalId connected_elem_id = m_elem_graph[elem_to_delete_id][conn_elem_index];
+            bool local_connection = connected_elem_id >= 0;
+            if (local_connection)
             {
-                impl::LocalId connected_elem_id = m_elem_graph[elem_to_delete_id][conn_elem_index];
-                bool local_connection = connected_elem_id >= 0;
-                if (local_connection)
-                {
-                    std::vector <impl::LocalId>::iterator pos_of_elem2_in_elem1 = std::find(m_elem_graph[elem_to_delete_id].begin(), m_elem_graph[elem_to_delete_id].end(), connected_elem_id);
-                    ThrowRequire(pos_of_elem2_in_elem1 != m_elem_graph[elem_to_delete_id].end());
-                    int index_of_elem2_in_elem1 = pos_of_elem2_in_elem1 - m_elem_graph[elem_to_delete_id].begin();
-                    m_via_sides[elem_to_delete_id].erase(m_via_sides[elem_to_delete_id].begin() + index_of_elem2_in_elem1);
-                    m_num_edges--;
+                m_via_sides[elem_to_delete_id].erase(m_via_sides[elem_to_delete_id].begin() + conn_elem_index);
+                --m_num_edges;
 
-                    std::vector <impl::LocalId>::iterator pos_of_elem1_in_elem2 = std::find(m_elem_graph[connected_elem_id].begin(), m_elem_graph[connected_elem_id].end(), elem_to_delete_id);
-                    ThrowRequire(pos_of_elem1_in_elem2 != m_elem_graph[connected_elem_id].end());
-                    int index_of_elem1_in_elem2 = pos_of_elem1_in_elem2 - m_elem_graph[connected_elem_id].begin();
-                    if (elem_to_delete_topology.is_shell()) {
-                        elementsThatUsedToBeConnectedToShell.push_back(std::make_pair(connected_elem_id, m_via_sides[connected_elem_id][index_of_elem1_in_elem2]));
-                    }
-                    m_via_sides[connected_elem_id].erase(m_via_sides[connected_elem_id].begin() + index_of_elem1_in_elem2);
-                    m_num_edges--;
+                std::vector <impl::LocalId>::iterator pos_of_elem1_in_elem2 = std::find(m_elem_graph[connected_elem_id].begin(), m_elem_graph[connected_elem_id].end(), elem_to_delete_id);
+                ThrowRequire(pos_of_elem1_in_elem2 != m_elem_graph[connected_elem_id].end());
+                int index_of_elem1_in_elem2 = pos_of_elem1_in_elem2 - m_elem_graph[connected_elem_id].begin();
+                if (elem_to_delete_topology.is_shell()) {
+                    elementsThatUsedToBeConnectedToShell.push_back(std::make_pair(connected_elem_id, m_via_sides[connected_elem_id][index_of_elem1_in_elem2]));
+                }
+                m_via_sides[connected_elem_id].erase(m_via_sides[connected_elem_id].begin() + index_of_elem1_in_elem2);
+                --m_num_edges;
 
-                }
-                else
-                {
-                    remote_edges_exist = true;
-                    stk::mesh::EntityId connected_global_id = -connected_elem_id;
-                    local_elem_and_remote_connected_elem.push_back(std::make_pair(elem_to_delete_id, connected_global_id));
-                }
             }
-
-            if (remote_edges_exist)
+            else
             {
-                pack_deleted_element_comm(comm,local_elem_and_remote_connected_elem);
-                comm.allocate_buffers();
-                pack_deleted_element_comm(comm,local_elem_and_remote_connected_elem);
-                comm.communicate();
-            }
-
-            ThrowRequire(m_via_sides[elem_to_delete_id].empty());
-            for (size_t id = 0; id < m_elem_graph.size(); ++id)
-            {
-                if (id != static_cast<size_t>(elem_to_delete_id) && !m_local_id_in_pool[id])
-                {
-                    std::vector <impl::LocalId>::iterator pos_of_deleted_elem_in_current_id = std::find(m_elem_graph[id].begin(), m_elem_graph[id].end(), elem_to_delete_id);
-                    if (pos_of_deleted_elem_in_current_id != m_elem_graph[id].end())
-                    {
-                        int index_of_deleted_elem_in_current_id = pos_of_deleted_elem_in_current_id - m_elem_graph[id].begin();
-                        m_elem_graph[id].erase(m_elem_graph[id].begin() + index_of_deleted_elem_in_current_id);
-                    }
-                }
-            }
-
-            m_deleted_element_local_id_pool.push_back(elem_to_delete_id);
-            m_local_id_in_pool[elem_to_delete_id] = true;
-            m_elem_graph[elem_to_delete_id].clear();
-            m_via_sides[elem_to_delete_id].clear();
-            m_element_topologies[elem_to_delete_id] = stk::topology::INVALID_TOPOLOGY;
-            m_entity_to_local_id[elem_to_delete.local_offset()] = INVALID_LOCAL_ID;
-            m_local_id_to_element_entity[elem_to_delete_id] = stk::mesh::Entity::InvalidEntity;
-
-            if (elementsThatUsedToBeConnectedToShell.size() == 2) {
-                const impl::LocalId elem1_id = elementsThatUsedToBeConnectedToShell[0].first;
-                const impl::LocalId elem2_id = elementsThatUsedToBeConnectedToShell[1].first;
-                const int elem1_side = elementsThatUsedToBeConnectedToShell[0].second;
-                const int elem2_side = elementsThatUsedToBeConnectedToShell[1].second;
-
-                m_elem_graph[elem1_id].push_back(elem2_id);
-                m_via_sides[elem1_id].push_back(elem1_side);
-                m_elem_graph[elem2_id].push_back(elem1_id);
-                m_via_sides[elem2_id].push_back(elem2_side);
+                stk::mesh::EntityId connected_global_id = -connected_elem_id;
+                local_elem_and_remote_connected_elem.push_back(std::make_pair(elem_to_delete_id, connected_global_id));
+                m_via_sides[elem_to_delete_id].erase(m_via_sides[elem_to_delete_id].begin() + conn_elem_index);
+                --m_num_edges;
             }
         }
-        else
+
+       ThrowRequire(m_via_sides[elem_to_delete_id].empty());
+        for (size_t id = 0; id < m_elem_graph.size(); ++id)
         {
-            remote_edges.clear();
-            for(int proc = 0; proc < m_bulk_data.parallel_size(); ++proc)
+            if (id != static_cast<size_t>(elem_to_delete_id) && !m_local_id_in_pool[id])
             {
-                while(comm.recv_buffer(proc).remaining())
+                std::vector <impl::LocalId>::iterator pos_of_deleted_elem_in_current_id = std::find(m_elem_graph[id].begin(), m_elem_graph[id].end(), elem_to_delete_id);
+                if (pos_of_deleted_elem_in_current_id != m_elem_graph[id].end())
                 {
-                    stk::mesh::EntityId remote_deleted_elem_global_id;
-                    stk::mesh::EntityId local_connected_elem_global_id;
-                    comm.recv_buffer(proc).unpack<stk::mesh::EntityId>(remote_deleted_elem_global_id);
-                    comm.recv_buffer(proc).unpack<stk::mesh::EntityId>(local_connected_elem_global_id);
-                    remote_edges.push_back(std::make_pair(remote_deleted_elem_global_id, local_connected_elem_global_id));
-                }
-            }
-
-            for (auto & edge : remote_edges)
-            {
-                stk::mesh::EntityId deleted_elem_global_id = edge.first;
-                stk::mesh::EntityId local_connected_elem_global_id = edge.second;
-                stk::mesh::Entity local_connected_elem = m_bulk_data.get_entity(stk::topology::ELEM_RANK, local_connected_elem_global_id);
-                impl::LocalId local_connected_elem_id = m_entity_to_local_id[local_connected_elem.local_offset()];
-
-                size_t num_conn_elem = get_num_connected_elems(local_connected_elem);
-                for (size_t conn_elem_index = 0; conn_elem_index < num_conn_elem; ++conn_elem_index)
-                {
-                    if (m_elem_graph[local_connected_elem_id][conn_elem_index] == static_cast<int64_t>(-deleted_elem_global_id))
-                    {
-                        m_elem_graph[local_connected_elem_id].erase(m_elem_graph[local_connected_elem_id].begin() + conn_elem_index);
-                        m_via_sides[local_connected_elem_id].erase(m_via_sides[local_connected_elem_id].begin() + conn_elem_index);
-                    }
+                    int index_of_deleted_elem_in_current_id = pos_of_deleted_elem_in_current_id - m_elem_graph[id].begin();
+                    m_elem_graph[id].erase(m_elem_graph[id].begin() + index_of_deleted_elem_in_current_id);
                 }
             }
         }
+
+        if (elementsThatUsedToBeConnectedToShell.size() == 2) {
+            const impl::LocalId elem1_id = elementsThatUsedToBeConnectedToShell[0].first;
+            const impl::LocalId elem2_id = elementsThatUsedToBeConnectedToShell[1].first;
+            const int elem1_side = elementsThatUsedToBeConnectedToShell[0].second;
+            const int elem2_side = elementsThatUsedToBeConnectedToShell[1].second;
+
+            m_elem_graph[elem1_id].push_back(elem2_id);
+            m_via_sides[elem1_id].push_back(elem1_side);
+            m_elem_graph[elem2_id].push_back(elem1_id);
+            m_via_sides[elem2_id].push_back(elem2_side);
+        }
+    }
+
+    stk::CommSparse comm(m_bulk_data.parallel());
+    pack_deleted_element_comm(comm,local_elem_and_remote_connected_elem);
+    comm.allocate_buffers();
+    pack_deleted_element_comm(comm,local_elem_and_remote_connected_elem);
+    comm.communicate();
+
+    for (auto & elem : elements_to_delete)
+    {
+        impl::LocalId elem_to_delete_id = m_entity_to_local_id[elem.local_offset()];
+        m_deleted_element_local_id_pool.push_back(elem_to_delete_id);
+        m_local_id_in_pool[elem_to_delete_id] = true;
+        m_elem_graph[elem_to_delete_id].clear();
+        m_via_sides[elem_to_delete_id].clear();
+        m_element_topologies[elem_to_delete_id] = stk::topology::INVALID_TOPOLOGY;
+        m_entity_to_local_id[elem.local_offset()] = INVALID_LOCAL_ID;
+        m_local_id_to_element_entity[elem_to_delete_id] = stk::mesh::Entity::InvalidEntity;
+    }
+
+    std::vector< std::pair< stk::mesh::EntityId, stk::mesh::EntityId > > remote_edges;
+    for(int proc = 0; proc < m_bulk_data.parallel_size(); ++proc)
+    {
+        while(comm.recv_buffer(proc).remaining())
+        {
+            stk::mesh::EntityId deleted_elem_global_id;
+            stk::mesh::EntityId connected_elem_global_id;
+            comm.recv_buffer(proc).unpack<stk::mesh::EntityId>(deleted_elem_global_id);
+            comm.recv_buffer(proc).unpack<stk::mesh::EntityId>(connected_elem_global_id);
+            remote_edges.push_back(std::make_pair(deleted_elem_global_id, connected_elem_global_id));
+        }
+    }
+
+    for (auto & edge : remote_edges)
+    {
+        stk::mesh::EntityId deleted_elem_global_id = edge.first;
+        stk::mesh::EntityId connected_elem_global_id = edge.second;
+        stk::mesh::Entity connected_elem = m_bulk_data.get_entity(stk::topology::ELEM_RANK, connected_elem_global_id);
+        impl::LocalId connected_elem_id = m_entity_to_local_id[connected_elem.local_offset()];
+        if (!is_valid_graph_element(connected_elem))
+        {
+            continue;
+        }
+
+        size_t num_conn_elem = get_num_connected_elems(connected_elem);
+        bool found_deleted_elem = false;
+        for (size_t conn_elem_index = 0; conn_elem_index < num_conn_elem; ++conn_elem_index)
+        {
+            if (m_elem_graph[connected_elem_id][conn_elem_index] == static_cast<int64_t>(-deleted_elem_global_id))
+            {
+                m_elem_graph[connected_elem_id].erase(m_elem_graph[connected_elem_id].begin() + conn_elem_index);
+                m_via_sides[connected_elem_id].erase(m_via_sides[connected_elem_id].begin() + conn_elem_index);
+                --m_num_edges;
+                found_deleted_elem = true;
+                break;
+            }
+        }
+        ThrowRequireMsg(found_deleted_elem, "Error. Contact sierra-help@sandia.gov for support.");
     }
 }
 
