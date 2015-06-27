@@ -62,9 +62,9 @@
 
 namespace Zoltan2 {
 
-typedef Tpetra::MultiVector<double, int, int>     ztMVector_t;
-
 /////////////////////////////////////////////////////////////////////////////
+// CALLBACKS SHARED BY ALL ADAPTERS
+
 // ZOLTAN_NUM_OBJ_FN
 template <typename Adapter>
 static int zoltanNumObj(void *data, int *ierr) {
@@ -73,7 +73,6 @@ static int zoltanNumObj(void *data, int *ierr) {
   return int(adp->getLocalNumIDs());
 }
 
-/////////////////////////////////////////////////////////////////////////////
 // ZOLTAN_OBJ_LIST_FN
 template <typename Adapter>
 static void zoltanObjList(void *data, int nGidEnt, int nLidEnt, 
@@ -112,7 +111,6 @@ static void zoltanObjList(void *data, int nGidEnt, int nLidEnt,
   }
 }
 
-/////////////////////////////////////////////////////////////////////////////
 // ZOLTAN_PART_MULTI_FN
 template <typename Adapter>
 static void zoltanParts(void *data, int nGidEnt, int nLidEnt, int nObj,
@@ -128,7 +126,6 @@ static void zoltanParts(void *data, int nGidEnt, int nLidEnt, int nObj,
     parts[i] = int(myparts[lids[i]]);
 }
 
-/////////////////////////////////////////////////////////////////////////////
 // ZOLTAN_NUM_GEOM_FN
 template <typename Adapter>
 static int zoltanNumGeom(void *data, int *ierr) 
@@ -138,7 +135,6 @@ static int zoltanNumGeom(void *data, int *ierr)
   return adp->getDimension();
 }
 
-/////////////////////////////////////////////////////////////////////////////
 // ZOLTAN_GEOM_MULTI_FN
 template <typename Adapter>
 static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
@@ -158,63 +154,75 @@ static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// MESH ADAPTER CALLBACKS
+
 // ZOLTAN_HG_SIZE_CS_FN
 template <typename Adapter>
-static void zoltanHGSizeCS(void *data, int *nEdges, int *nPins,
-                           int *format, int *ierr) {
-  const Adapter *adp = static_cast<Adapter *>(data);
+static void zoltanHGSizeCSForMeshAdapter(
+  void *data, int *nEdges, int *nPins,
+  int *format, int *ierr
+) 
+{
   *ierr = ZOLTAN_OK;
   typedef typename Adapter::user_t user_t;
-  if (adp->adapterType()==MeshAdapterType) {
-    const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>* >(data);
-    *nEdges = madp->getLocalNumOf(madp->getAdjacencyEntityType());
-    *nPins = madp->getLocalNumAdjs(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType());
-    *format = ZOLTAN_COMPRESSED_EDGE;
-  
-  }
-  else {
-    *ierr = ZOLTAN_FATAL;
-    cout << "Hypergraph callbacks are not ready yet for this Adapter" << endl;
-  }
+  const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>* >(data);
+  *nEdges = madp->getLocalNumOf(madp->getAdjacencyEntityType());
+  *nPins = madp->getLocalNumAdjs(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType());
+  *format = ZOLTAN_COMPRESSED_EDGE;
 }
 
-
-
-/////////////////////////////////////////////////////////////////////////////
 // ZOLTAN_HG_CS_FN
 template <typename Adapter>
-static void zoltanHGCS(void *data, int nGidEnt, int nEdges, int nPins,
-                       int format, ZOLTAN_ID_PTR edgeIds, 
-                       int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr)
+static void zoltanHGCSForMeshAdapter(
+  void *data, int nGidEnt, int nEdges, int nPins,
+  int format, ZOLTAN_ID_PTR edgeIds, 
+  int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr
+)
 {
-  const Adapter *adp = static_cast<Adapter *>(data);
   *ierr = ZOLTAN_OK;
   typedef typename Adapter::user_t user_t;
-  if (adp->adapterType()==MeshAdapterType) {
-    const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>*>(data);
-    const typename Adapter::zgid_t *Ids;
-    madp->getIDsViewOf(madp->getAdjacencyEntityType(),Ids);
-    const typename Adapter::lno_t* offsets;
-    const typename Adapter::zgid_t* adjIds;
-    madp->getAdjsView(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType(),offsets,adjIds);
-    for (int i=0;i<nEdges;i++) {
-      edgeIds[i]=Ids[i];
-      edgeIdx[i]=offsets[i];
-    }
-    for (int i=0;i<nPins;i++)
-      pinIds[i] = adjIds[i];
+  const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>*>(data);
+  const typename Adapter::zgid_t *Ids;
+  madp->getIDsViewOf(madp->getAdjacencyEntityType(),Ids);
+  const typename Adapter::lno_t* offsets;
+  const typename Adapter::zgid_t* adjIds;
+  madp->getAdjsView(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType(),offsets,adjIds);
+  for (int i=0;i<nEdges;i++) {
+    edgeIds[i]=Ids[i];
+    edgeIdx[i]=offsets[i];
   }
-  else {
-    *ierr = ZOLTAN_FATAL;
-    cout << "Hypergraph callbacks are not ready yet" << endl;
-  }
+  for (int i=0;i<nPins;i++)
+    pinIds[i] = adjIds[i];
+}
 
+/////////////////////////////////////////////////////////////////////////////
+// MATRIX ADAPTER CALLBACKS
+
+// ZOLTAN_HG_SIZE_CS_FN
+template <typename Adapter>
+static void zoltanHGSizeCSForMatrixAdapter(
+  void *data, int *nEdges, int *nPins,
+  int *format, int *ierr
+) 
+{
+  cout << "HELLO FROM HGSizeCS with MATRIX ADAPTER" << endl;
+  *ierr = ZOLTAN_FATAL;
+}
+
+// ZOLTAN_HG_CS_FN
+template <typename Adapter>
+static void zoltanHGCSForMatrixAdapter(
+  void *data, int nGidEnt, int nEdges, int nPins,
+  int format, ZOLTAN_ID_PTR edgeIds, 
+  int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr
+)
+{
+  cout << "HELLO FROM HGCS with MATRIX ADAPTER" << endl;
+  *ierr = ZOLTAN_FATAL;
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // TODO:  OTHER CALLBACKS
-
-
 
 }
 

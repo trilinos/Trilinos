@@ -167,6 +167,18 @@ TRIBITS_ADD_TEST(
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
 )
+
+TRIBITS_ADD_TEST(
+  pamgenMeshAdapterTest
+  NAME pamgenMeshAdapterTest_zoltanhg
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+    "--action=zoltan_hg --nparts=6"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
 IF (${PACKAGE_NAME}_ENABLE_SCOREC)
   TRIBITS_ADD_TEST(
     pamgenMeshAdapterTest

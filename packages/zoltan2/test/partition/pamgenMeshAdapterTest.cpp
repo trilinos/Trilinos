@@ -138,7 +138,8 @@ int main(int narg, char *arg[]) {
   cmdp.setOption("xmlfile", &xmlMeshInFileName,
                  "XML file with PamGen specifications");
   cmdp.setOption("action", &action,
-                 "Method to use:  mj, scotch, zoltan_rcb, parma or color");
+                 "Method to use:  mj, scotch, zoltan_rcb, zoltan_hg, "
+                 "parma or color");
   cmdp.setOption("nparts", &nParts,
                  "Number of parts to create");
   cmdp.parse(narg, arg);
@@ -222,6 +223,17 @@ int main(int narg, char *arg[]) {
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "zoltan");
+  }
+  else if (action == "zoltan_hg") {
+    do_partitioning = true;
+    params.set("debug_level", "verbose_detailed_status");
+    params.set("imbalance_tolerance", 1.1);
+    params.set("num_global_parts", nParts);
+    params.set("partitioning_approach", "partition");
+    params.set("algorithm", "zoltan");
+    Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
+    zparams.set("LB_METHOD","phg");
+    zparams.set("FINAL_OUTPUT", "1");
   }
   else if (action == "parma") {
     do_partitioning = true;
