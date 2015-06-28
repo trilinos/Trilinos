@@ -80,8 +80,11 @@ class InvertMassMatrixDecorator
 
   /** \name Overridden from Thyra::ModelEvaluator . */
   //@{
-
+  
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
+
+  Teuchos::ArrayView<const std::string> get_g_names(int j) const;
+
   /** \brief . */
   //Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;

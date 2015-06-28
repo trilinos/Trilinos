@@ -1,0 +1,14 @@
+INCLUDE(TribitsAddExecutableAndTest)
+
+IF(${PROJECT_NAME}_ENABLE_Intrepid AND 
+   ${PROJECT_NAME}_ENABLE_Shards AND
+   ${PROJECT_NAME}_ENABLE_Sacado )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    example_01
+    SOURCES example_01.cpp
+    ARGS PrintItAll
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+  )
+ENDIF()

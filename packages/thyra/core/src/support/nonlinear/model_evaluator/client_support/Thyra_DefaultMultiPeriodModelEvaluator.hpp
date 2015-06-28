@@ -255,6 +255,8 @@ public:
   /** \brief . */
   RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief . */
+  ArrayView<const std::string> get_g_names(int j) const;
+  /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const;
@@ -557,6 +559,14 @@ DefaultMultiPeriodModelEvaluator<Scalar>::get_g_space(int j) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(j!=0);
   return periodModel_->get_g_space(g_index_);
+}
+
+
+template<class Scalar>
+ArrayView<const std::string>
+DefaultMultiPeriodModelEvaluator<Scalar>::get_g_names(int j) const
+{
+  return  periodModel_->get_g_names(j);
 }
 
 

@@ -309,6 +309,9 @@ public:
             Teuchos::Describable::verbLevel_default) const;
 
   //@}
+  
+  //! For diagnostic purposes
+  Teuchos::RCP<Ifpack2::Partitioner<Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > > getPartitioner(){return Partitioner_;}
 
 private:
   //! \name Internal typedefs (handy for brevity and code clarity)

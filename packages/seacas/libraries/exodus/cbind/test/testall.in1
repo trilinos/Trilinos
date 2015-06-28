@@ -37,10 +37,10 @@
 # following line. Can also define other prefixes if wanted.
 
 #set PREFIX = "valgrind --tool=memcheck"
-set PREFIX = ""
-set SRCDIR = .
-set NCDUMP = @<BINDIR>@/ncdump
-set DIFF = "diff -w"
+PREFIX=""
+SRCDIR=.
+NCDUMP=@<BINDIR>@/ncdump
+DIFF="diff -w"
 echo "************************************************************************"
 echo "************************************************************************"
 rm -f test.output

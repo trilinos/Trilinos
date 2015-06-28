@@ -245,7 +245,7 @@ TEST(CommunicateFieldData, communicateMultipleGhostings)
     }
   }
 
-  stk::mesh::Selector select_ghosted = !meta.locally_owned_part() & !meta.globally_shared_part();
+  stk::mesh::Selector select_ghosted = (!meta.locally_owned_part()) & (!meta.globally_shared_part());
   const stk::mesh::BucketVector& ghosted_buckets = bulk.get_buckets(stk::topology::NODE_RANK,select_ghosted);
 
   int num_ghosted_nodes = 0;

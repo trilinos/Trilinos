@@ -68,7 +68,7 @@ public:
     return(Comm_);
   }
 
-  void Write(const AbstractGrid& data, const string& BaseName,
+  void Write(const AbstractGrid& data, const std::string& BaseName,
              const Epetra_MultiVector& Field)
   {
     ///int zzz = data.NumMyVertices();
@@ -102,7 +102,7 @@ public:
 
     if (Comm().MyPID() == 0)
     {
-      string FileName = BaseName + ".mesh";
+      std::string FileName = BaseName + ".mesh";
       std::ofstream medit;
 
       medit.open(FileName.c_str());
@@ -139,11 +139,11 @@ public:
 
       if (Comm().MyPID() == ProcID) {
 
-        string FileName = BaseName + ".mesh";
+        std::string FileName = BaseName + ".mesh";
         std::ofstream medit(FileName.c_str(),ios::app);
 
         if (ProcID == 0) {
-          string type = data.ElementType();
+          std::string type = data.ElementType();
 
           if (type == "GALERI_TRIANGLE")
             medit << "Triangles " << data.NumGlobalElements() << endl;
@@ -183,7 +183,7 @@ public:
 
     if (Comm().MyPID() == 0) {
 
-      string BBName = BaseName + ".bb";    
+      std::string BBName = BaseName + ".bb";    
       std::ofstream bb;
 
         bb.open(BBName.c_str());

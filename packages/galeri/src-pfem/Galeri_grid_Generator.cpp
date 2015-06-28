@@ -73,7 +73,7 @@ getSquare(Epetra_Comm& comm,
           const int numGlobalElementsX, const int numGlobalElementsY,
           const int numDomainsX, const int numDomainsY,
           Galeri::grid::Loadable& domain, Galeri::grid::Loadable& boundary,
-          const string what)
+          const std::string what)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(numDomainsX * numDomainsY != comm.NumProc(), std::logic_error,
                      "the number of processor should equal numDomainsX * numDomainsY"

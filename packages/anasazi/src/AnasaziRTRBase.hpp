@@ -261,7 +261,7 @@ namespace Anasazi {
      * must be B-orthonormal and it must partially diagonalize A.
      *
      */
-    void initialize(RTRState<ScalarType,MV> newstate);
+    void initialize(RTRState<ScalarType,MV>& newstate);
 
     /*! \brief Initialize the solver with the initial vectors from the eigenproblem
      *  or random data.
@@ -1055,7 +1055,7 @@ namespace Anasazi {
    * R = AX - BX*diag(theta_)
    */
   template <class ScalarType, class MV, class OP>
-  void RTRBase<ScalarType,MV,OP>::initialize(RTRState<ScalarType,MV> newstate)
+  void RTRBase<ScalarType,MV,OP>::initialize(RTRState<ScalarType,MV>& newstate)
   {
     // NOTE: memory has been allocated by setBlockSize(). Use SetBlock below; do not Clone
     // NOTE: Overall time spent in this routine is counted to timerInit_; portions will also be counted towards other primitives

@@ -97,3 +97,11 @@ else
 	fprintf('[x, its] = muelu(h, b[, paramName, paramValue, ...]) to solve problem #h with loaded matrix\n');
 	fprintf('muelu(''cleanup''[, id]) to free memory associated with all problems, or a specific one.\n');
 end
+end
+
+%This function could be called externally, as long as the types are correct.
+%nVertices, nAggregates are single ints. vertexToAggID, aggSizes and procWinner and rootNodes are ordinal vectors, or arrays of ints.
+
+function agg = constructAggregates(nVertices, nAggregates, vertexToAggID, rootNodes, aggSizes)
+  agg = struct('nVertices', nVertices, 'nAggregates', nAggregates, 'vertexToAggID', vertexToAggID, 'rootNodes', rootNodes, 'aggSizes', aggSizes);
+end

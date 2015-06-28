@@ -187,7 +187,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, Test0, Scalar, LO
   try {
     xmap = Xpetra::MapFactory<LO, GO>::Build (xpetraParameters.GetLib (), INVALID,
                                               numElementsPerProc, 0, comm);
-    Pr = Galeri::Xpetra::BuildProblem<Scalar, LO, GO, XMapType, XCrsType, XMVectorType> (string ("Laplace2D"), xmap, GaleriList);
+    Pr = Galeri::Xpetra::BuildProblem<Scalar, LO, GO, XMapType, XCrsType, XMVectorType> (std::string ("Laplace2D"), xmap, GaleriList);
     XA = Pr->BuildMatrix ();
     A = XA->getTpetra_CrsMatrixNonConst ();
   } catch (std::exception& e) {

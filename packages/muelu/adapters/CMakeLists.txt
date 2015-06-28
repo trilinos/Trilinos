@@ -43,7 +43,25 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
 
    SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
 
-   APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+   APPEND_SET(HEADERS
+     tpetra/MueLu_CreateTpetraPreconditioner.hpp
+     tpetra/MueLu_RefMaxwell_decl.hpp
+     tpetra/MueLu_RefMaxwell_def.hpp
+     tpetra/MueLu_TpetraOperator_decl.hpp
+     tpetra/MueLu_TpetraOperator_def.hpp
+   )
+
+   IF (${PACKAGE_NAME}_ENABLE_Belos)
+
+     APPEND_SET(HEADERS
+       tpetra/MueLu_ShiftedLaplacian_decl.hpp
+       tpetra/MueLu_ShiftedLaplacian_def.hpp
+       tpetra/MueLu_ShiftedLaplacianOperator_decl.hpp
+       tpetra/MueLu_ShiftedLaplacianOperator_def.hpp
+     )
+
+   ENDIF()
+
    APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
    TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
@@ -84,6 +102,17 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Stratimikos)
   APPEND_SET(SOURCES
     stratimikos/Thyra_MueLuPreconditionerFactory.cpp
     )
+
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_AmgX)
+
+  SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/amgx)
+  
+  APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+  APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+
+  TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
 ENDIF()
 

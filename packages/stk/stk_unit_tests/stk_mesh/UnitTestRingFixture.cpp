@@ -237,7 +237,7 @@ void test_shift_ring( RingFixture& ring )
   recv_element_1 = Entity();
   recv_element_2 = Entity();
 
-  bulk.change_entity_owner( change, BulkData::MOD_END_COMPRESS_AND_SORT );
+  bulk.change_entity_owner( change );
 
   send_element_1 = bulk.get_entity( stk::topology::ELEMENT_RANK , ring.m_element_ids[ id_send ] );
   send_element_2 = bulk.get_entity( stk::topology::ELEMENT_RANK , ring.m_element_ids[ id_send + 1 ] );

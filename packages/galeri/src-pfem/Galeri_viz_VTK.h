@@ -57,12 +57,12 @@ public:
 
   static
   void write(Galeri::grid::Loadable& patch,
-             const string& BaseName,
+             const std::string& BaseName,
              const Epetra_MultiVector& vector)
   {
     const Epetra_Comm& comm = patch.getComm();
 
-    string FileName = BaseName + ".vtu";
+    std::string FileName = BaseName + ".vtu";
     std::ofstream vtkFile;
 
     const Epetra_Map& nonOverlappingVertexMap = patch.getNonOverlappingVertexMap();
@@ -149,7 +149,7 @@ public:
       vtkFile << "</DataArray>" << endl;
       vtkFile << "<DataArray type=\"UInt8\"  Name=\"types\" NumberOfComponents=\"1\" format=\"ascii\">" << endl;
 
-      string what;
+      std::string what;
       if (patch.getElement().getLabel() == "Galeri::grid::Quad")
         what = "9 ";
       else if (patch.getElement().getLabel() == "Galeri::grid::Triangle")

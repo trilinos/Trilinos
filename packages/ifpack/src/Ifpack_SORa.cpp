@@ -121,6 +121,9 @@ int Ifpack_SORa::SetParameters(Teuchos::ParameterList& parameterlist){
 
 template<typename int_type>
 int Ifpack_SORa::TCompute(){
+  using std::cout;
+  using std::endl;
+
   Epetra_Map *RowMap=const_cast<Epetra_Map*>(&A_->RowMatrixRowMap());
   Epetra_Vector Adiag(*RowMap);
   Epetra_CrsMatrix *Askew2=0, *Aherm2=0,*W=0;
@@ -383,7 +386,9 @@ int Ifpack_SORa::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y
 }
 
 
-ostream& Ifpack_SORa::Print(ostream& os) const{
+std::ostream& Ifpack_SORa::Print(std::ostream& os) const{
+  using std::endl;
+
   os<<"Ifpack_SORa"<<endl;
   os<<" alpha = "<<Alpha_<<endl;
   os<<" gamma = "<<Gamma_<<endl;

@@ -2816,8 +2816,10 @@ namespace {
     /* Clean up */
     Zoltan_LB_Free_Part(&zgids, &zlids, &zprocs, &zparts);
     Zoltan_Destroy(&zz);
-    MPI_Finalize();
-    if (ierr) exit(-1);
+    if (ierr) {
+      MPI_Finalize();
+      exit(-1);
+    } 
     return 0;
   }
 #endif

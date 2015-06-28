@@ -1,0 +1,112 @@
+<ParameterList name="MueLu">
+
+  <!-- Configuration of the Xpetra operator (fine level) -->
+  <ParameterList name="Matrix">
+    <Parameter name="number of equations"                   type="int" value="1"/> <!-- Number of PDE equations at each grid node.-->
+  </ParameterList>
+
+  <!-- Factory collection -->
+  <ParameterList name="Factories">
+
+    <!-- Note that ParameterLists must be defined prior to being used -->
+
+    <!-- =======================  PART I  ======================= -->
+
+    <ParameterList name="UncoupledAggregationFact1">
+      <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/>
+      <Parameter name="aggregation: ordering"                            type="string" value="graph"/>
+      <Parameter name="aggregation: max selected neighbors"             type="int"    value="0"/>
+      <!--<Parameter name="aggregation: min agg size"           type="int"    value="9"/>-->
+      <Parameter name="aggregation: max agg size"           type="int"    value="12"/>
+    </ParameterList>
+
+    <ParameterList name="MyCoarseMap1">
+      <Parameter name="factory"                             type="string" value="CoarseMapFactory"/>
+      <Parameter name="Aggregates"                             type="string" value="UncoupledAggregationFact1"/>
+    </ParameterList>
+
+    <ParameterList name="myTentativePFact1">
+      <Parameter name="factory"                             type="string" value="TentativePFactory"/>
+      <Parameter name="Aggregates"                          type="string" value="UncoupledAggregationFact1"/>
+      <Parameter name="CoarseMap"                           type="string" value="MyCoarseMap1"/>
+    </ParameterList>
+
+    <ParameterList name="mySaPFact1">
+      <Parameter name="factory"                             type="string" value="SaPFactory"/>
+      <Parameter name="P"                                   type="string" value="myTentativePFact1"/>
+      <Parameter name="sa: damping factor"                  type="double" value="1.333"/>
+    </ParameterList>
+
+    <!-- =======================  PART II  ======================= -->
+
+
+    <ParameterList name="UncoupledAggregationFact2">
+      <Parameter name="factory"                             type="string" value="UncoupledAggregationFactory"/>
+      <Parameter name="aggregation: ordering"                            type="string" value="graph"/>
+      <Parameter name="aggregation: max selected neighbors"             type="int"    value="0"/>
+      <Parameter name="aggregation: min agg size"           type="int"    value="9"/>
+      <!--<Parameter name="aggregation: max agg size"           type="int"    value="12"/>-->
+    </ParameterList>
+
+    <ParameterList name="MyCoarseMap2">
+      <Parameter name="factory"                             type="string" value="CoarseMapFactory"/>
+      <Parameter name="Aggregates"                             type="string" value="UncoupledAggregationFact2"/>
+    </ParameterList>
+
+
+    <ParameterList name="myTentativePFact2">
+      <Parameter name="factory"                             type="string" value="TentativePFactory"/>
+      <Parameter name="Aggregates"                          type="string" value="UncoupledAggregationFact2"/>
+      <Parameter name="CoarseMap"                           type="string" value="MyCoarseMap2"/>
+    </ParameterList>
+
+    <!-- =======================  PART III  ======================= -->
+
+    <ParameterList name="myTogglePFact">
+      <Parameter name="factory"                             type="string" value="TogglePFactory"/>
+      <ParameterList name="TransferFactories">
+        <!-- The entries must be Nullspace%i and P%i with %i integers between 1 and 9 -->
+        <Parameter name="P1"                type="string" value="mySaPFact1"/>
+        <Parameter name="P2"                type="string" value="myTentativePFact2"/>
+        <Parameter name="Nullspace1"        type="string" value="myTentativePFact1"/>
+        <Parameter name="Nullspace2"        type="string" value="myTentativePFact2"/>
+      </ParameterList>
+    </ParameterList>
+
+
+    <!-- <ParameterList name="MyNullspace">
+      <Parameter name="factory"                             type="string" value="NullspaceFactory"/>
+      <Parameter name="Nullspace"                          type="string" value="myTogglePFact"/>
+    </ParameterList> -->
+
+    <!-- =======================  SMOOTHERS  ======================= -->
+
+    <ParameterList name="myJacobi">
+      <Parameter name="factory"                             type="string" value="TrilinosSmoother"/>
+      <Parameter name="type"                                type="string" value="RELAXATION"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type"                  type="string" value="Jacobi"/>
+        <Parameter name="relaxation: sweeps"                type="int"    value="1"/>
+        <Parameter name="relaxation: damping factor"        type="double" value="0.9"/>
+      </ParameterList>
+    </ParameterList>
+
+  </ParameterList>
+
+  <!-- Definition of the multigrid preconditioner -->
+  <ParameterList name="Hierarchy">
+
+    <Parameter name="max levels"                            type="int"      value="8"/> <!-- Max number of levels -->
+    <Parameter name="coarse: max size"                      type="int"      value="10"/> <!-- Min number of rows on coarsest level -->
+    <Parameter name="verbosity"                             type="string"   value="High"/>
+
+    <ParameterList name="All">
+      <Parameter name="Smoother"                            type="string"   value="myJacobi"/>
+
+      <Parameter name="P"                                   type="string"   value="myTogglePFact"/>
+      <Parameter name="Nullspace"                           type="string"   value="myTogglePFact"/>
+      <Parameter name="CoarseSolver"                        type="string"   value="DirectSolver"/>
+    </ParameterList>
+
+  </ParameterList>
+</ParameterList>

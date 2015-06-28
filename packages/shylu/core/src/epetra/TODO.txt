@@ -21,6 +21,8 @@ guided probing into something manageable.
 Start using the debug manager correctly.
 
 Tpetra version - started.
+       ** Interative solver interface
+       ** Amesos2 schur ??
 
 Basker - started.
 

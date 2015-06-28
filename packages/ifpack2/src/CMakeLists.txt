@@ -76,6 +76,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     BlockRelaxation
     BorderedOperator
     Chebyshev
+    BandedContainer
     DenseContainer
     TriDiContainer
     Diagonal
@@ -93,6 +94,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     SingletonFilter
     SparseContainer
     SparsityFilter
+    LinePartitioner
     Details::Chebyshev
     Details::DenseSolver
     Details::OneLevelFactory

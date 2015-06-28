@@ -287,6 +287,9 @@ int Ifpack_Krylov::Compute()
     AztecSolver_ -> SetPrecOperator(&*IfpackPrec_);
   }
 #else
+  using std::cout;
+  using std::endl;
+
   cout << "You need to configure IFPACK with support for AztecOO" << endl;
   cout << "to use this preconditioner. This may require --enable-aztecoo" << endl;
   cout << "in your configure script." << endl;
@@ -304,8 +307,9 @@ int Ifpack_Krylov::Compute()
 }
 
 //==============================================================================
-ostream& Ifpack_Krylov::Print(ostream & os) const
+std::ostream& Ifpack_Krylov::Print(std::ostream & os) const
 {
+  using std::endl;
 
   if (!Comm().MyPID()) {
     os << endl;
@@ -400,6 +404,9 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   AztecSolver_ -> SetRHS(&*Xcopy);
   AztecSolver_ -> Iterate(Iterations_,Tolerance_);
 #else
+  using std::cout;
+  using std::endl;
+
   cout << "You need to configure IFPACK with support for AztecOO" << endl;
   cout << "to use this preconditioner. This may require --enable-aztecoo" << endl;
   cout << "in your configure script." << endl;

@@ -193,7 +193,7 @@ namespace MueLu {
   LocalOrdinal globalMultColRequests = 0;
 
   // sum up all entries in multipleColRequests over all processors
-  sumAll(gDomVec->getMap()->getComm(), (LocalOrdinal)localMultColRequests, globalMultColRequests);
+  MueLu_sumAll(gDomVec->getMap()->getComm(), (LocalOrdinal)localMultColRequests, globalMultColRequests);
 
   if(globalMultColRequests > 0) {
     // special handling: two processors request the same global column id.
@@ -474,7 +474,7 @@ namespace MueLu {
 
   GlobalOrdinal global_cntFreeColIdx = 0;
   LocalOrdinal  local_cntFreeColIdx = cntFreeColIdx;
-  sumAll(comm, Teuchos::as<GlobalOrdinal>(local_cntFreeColIdx), global_cntFreeColIdx);
+  MueLu_sumAll(comm, Teuchos::as<GlobalOrdinal>(local_cntFreeColIdx), global_cntFreeColIdx);
 #ifdef DEBUG_OUTPUT
   std::cout << "global # of empty column idx entries in Qperm: " << global_cntFreeColIdx << std::endl;
 #endif
@@ -485,7 +485,7 @@ namespace MueLu {
     // 1) count how many unused column ids are left
     GlobalOrdinal global_cntUnusedColIdx = 0;
     LocalOrdinal  local_cntUnusedColIdx = cntUnusedColIdx;
-    sumAll(comm, Teuchos::as<GlobalOrdinal>(local_cntUnusedColIdx), global_cntUnusedColIdx);
+    MueLu_sumAll(comm, Teuchos::as<GlobalOrdinal>(local_cntUnusedColIdx), global_cntUnusedColIdx);
 #ifdef DEBUG_OUTPUT
     std::cout << "global # of unused column idx: " << global_cntUnusedColIdx << std::endl;
 #endif
@@ -659,7 +659,7 @@ namespace MueLu {
   }
 
   // sum up all entries in multipleColRequests over all processors
-  sumAll(diagPVec->getMap()->getComm(), Teuchos::as<GlobalOrdinal>(lNumRowPermutations), gNumRowPermutations);
+  MueLu_sumAll(diagPVec->getMap()->getComm(), Teuchos::as<GlobalOrdinal>(lNumRowPermutations), gNumRowPermutations);
 
   //// count column permutations
   // count zeros on diagonal in Q^T -> number of column permutations
@@ -675,7 +675,7 @@ namespace MueLu {
   }
 
   // sum up all entries in multipleColRequests over all processors
-  sumAll(diagQTVec->getMap()->getComm(), Teuchos::as<GlobalOrdinal>(lNumColPermutations), gNumColPermutations);
+  MueLu_sumAll(diagQTVec->getMap()->getComm(), Teuchos::as<GlobalOrdinal>(lNumColPermutations), gNumColPermutations);
 
   currentLevel.Set("#RowPermutations", gNumRowPermutations, genFactory/*this*/);
   currentLevel.Set("#ColPermutations", gNumColPermutations, genFactory/*this*/);

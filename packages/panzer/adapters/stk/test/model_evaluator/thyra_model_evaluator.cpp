@@ -235,6 +235,9 @@ namespace panzer {
                      ap.closure_models,
                      ap.user_data,false,"");
 
+      TEST_EQUALITY(me->get_g_name(0), "TEMPERATURE");
+      TEST_EQUALITY(me->get_g_names(0)[0], "TEMPERATURE");
+
       InArgs nomValues = me->getNominalValues();
       RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
       Thyra::assign(x.ptr(),0.0);

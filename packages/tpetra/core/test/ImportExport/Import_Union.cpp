@@ -41,34 +41,23 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-
 #include "Teuchos_UnitTestHarness.hpp"
 
-#include <Tpetra_ConfigDefs.hpp>
+#include <TpetraCore_ETIHelperMacros.h>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Distributor.hpp>
 #include <Tpetra_Import.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_Vector.hpp>
+#include <Tpetra_Details_gathervPrint.hpp>
 
-#include <Teuchos_ConfigDefs.hpp>
+#include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_as.hpp>
 
 #include <algorithm>
 
 
 namespace {
-
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::as;
-  using Teuchos::Comm;
-  using Teuchos::OSTab;
-  using Teuchos::RCP;
-  using std::endl;
-  typedef Tpetra::global_size_t GST;
 
   TEUCHOS_STATIC_SETUP()
   {
@@ -76,31 +65,81 @@ namespace {
     clp.addOutputSetupOptions (true);
   }
 
+#define TPETRA_IMPORT_UNION_RUN_AND_CATCH_EXCEPTION( CODE, NAME ) \
+  do { \
+    std::ostringstream os; \
+    try { \
+      CODE; \
+    } catch (std::exception& e) { \
+      lclSuccess = 0; \
+      os << "Proc " << comm->getRank () << ": " << NAME << " threw exception: " << e.what () << endl; \
+    } \
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess)); \
+    if (gblSuccess != 1) { \
+      out << NAME << " FAILED!" << endl; \
+      Tpetra::Details::gathervPrint (out, os.str (), *comm); \
+      success = false; \
+      return; \
+    } \
+  } while (false)
+
+#define TPETRA_IMPORT_UNION_TEST_EQUALITY( THING1, THING2, FAIL_MSG, STOP_ON_FAIL )  \
+  do { \
+    const int R = comm->getRank (); \
+    std::ostringstream os; \
+    if (THING1 != THING2) { \
+      lclSuccess = 0; \
+      os << "Proc " << comm->getRank () << ": " << FAIL_MSG << endl; \
+    } \
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess)); \
+    if (gblSuccess != 1) { \
+      out << "Equality test FAILED on one or more processes!" << endl; \
+      Tpetra::Details::gathervPrint (out, os.str (), *comm); \
+      success = false; \
+      if (STOP_ON_FAIL) { \
+        return; \
+      } \
+    } \
+  } while (false)
+
   //
   // UNIT TESTS
   //
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ImportUnion, ContigPlusContig, LocalOrdinalType, GlobalOrdinalType )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( ImportUnion, ContigPlusContig, LocalOrdinalType, GlobalOrdinalType, NodeType )
   {
+    using Teuchos::Array;
+    using Teuchos::ArrayView;
+    using Teuchos::as;
+    using Teuchos::Comm;
     using Teuchos::getFancyOStream;
     using Teuchos::FancyOStream;
+    using Teuchos::OSTab;
+    using Teuchos::outArg;
+    using Teuchos::RCP;
     using Teuchos::rcpFromRef;
-    //using std::cerr;
-    //typedef double ST;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    using std::cerr;
+    using std::cout;
+    using std::endl;
+    typedef Tpetra::global_size_t GST;
     typedef LocalOrdinalType LO;
     typedef GlobalOrdinalType GO;
-    typedef Tpetra::Details::DefaultTypes::node_type NT;
+    typedef NodeType NT;
     typedef Tpetra::Map<LO, GO, NT> map_type;
     typedef Tpetra::Import<LO, GO, NT> import_type;
-    typedef Tpetra::Vector<double, LO, GO, NT> vector_type;
-    //    typedef typename Array<GO>::size_type size_type;
+    typedef Tpetra::Vector<>::scalar_type ST;
+    typedef Tpetra::Vector<ST, LO, GO, NT> vector_type;
+
+    int lclSuccess = 1; // local error flag
+    int gblSuccess = 1; // global error flag (result of all-reduce on lclSuccess)
 
     out << "Tpetra::Import::setUnion test" << endl;
     OSTab tab1 (out);
     out << "Both target Maps contiguous" << endl;
 
     RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
-    RCP<NT> node = Tpetra::DefaultPlatform::getDefaultPlatform ().getNode ();
     const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     const GO indexBase = 0;
     const int myRank = comm->getRank ();
@@ -109,55 +148,67 @@ namespace {
     const GO n = 10;
     // Let r = comm->getRank() and P = comm->getSize().  Then:
     //
-    // Source Map (for both): indexBase + {n*r, ..., n*r + n - 1}.
-    // Target Map 1: indexBase + {max(n*r - 1, 0), ..., min(n*r + n, n*P - 1)}.
-    // Target Map 2: indexBase + {max(n*r - 2, 0), ..., min(n*r + n + 1, n*P - 1)}.
+    // Source Map (for both): indexBase + {n*r, ..., n*(r + 1) - 1}.
+    // Target Map 1: indexBase + {max(n*r - 1, 0), ..., min(n(r + 1), n*P - 1)}.
+    // Target Map 2: indexBase + {max(n*r - 2, 0), ..., min(n(r + 1) + 1, n*P - 1)}.
     //
     // Expected union target Map happens to be target Map 2 in this
     // case, except that the "remote" GIDs go at the end of the GID
     // list on each process.
 
     Array<GO> srcMapGids;
-    for (GO k = n * myRank; k < std::min (n*myRank + n, n*numProcs); ++k) {
+    for (GO k = n * myRank; k < n*(myRank + 1); ++k) {
       srcMapGids.push_back (indexBase + k);
     }
     Array<GO> tgtMap1Gids;
-    // WARNING (mfh 24 Apr 2013) This ONLY works if GO is signed.
-    for (GO k = std::max (n*myRank - 1, as<GO> (0));
-         k < std::min (n*myRank + n + 1, n*numProcs); ++k) {
-      tgtMap1Gids.push_back (indexBase + k);
+    {
+      // std::max(n*myRank - 1, 0) doesn't work if GO is unsigned.
+      const GO lower = (n*myRank < 1) ?
+        static_cast<GO> (0) :
+        static_cast<GO> (n*myRank - 1);
+      const GO upper = std::min (n*(myRank + 1) + 1, n * numProcs);
+      for (GO k = lower; k < upper; ++k) {
+        tgtMap1Gids.push_back (indexBase + k);
+      }
     }
     Array<GO> tgtMap2Gids;
-    for (GO k = std::max (n*myRank - 2, as<GO> (0));
-         k < std::min (n*myRank + n + 2, n*numProcs); ++k) {
-      tgtMap2Gids.push_back (indexBase + k);
+    {
+      // std::max(n*myRank - 2, 0) doesn't work if GO is unsigned.
+      const GO lower = (n*myRank < 2) ?
+        static_cast<GO> (0) :
+        static_cast<GO> (n*myRank - 2);
+      const GO upper = std::min (n*(myRank + 1) + 2, n * numProcs);
+      for (GO k = lower; k < upper; ++k) {
+        tgtMap2Gids.push_back (indexBase + k);
+      }
     }
 
     Array<GO> unionTgtMapGids;
     // Non-remote GIDs first.
-    for (GO k = n * myRank; k < std::min (n*myRank + n, n*numProcs); ++k) {
-      unionTgtMapGids.push_back (indexBase + k);
-    }
+    std::copy (srcMapGids.begin (), srcMapGids.end (), std::back_inserter (unionTgtMapGids));
     // Remote GIDs last.
-    if (n * myRank - 2 >= 0) {
-      unionTgtMapGids.push_back (n * myRank - 2);
+    //
+    // Don't test (n * myRank - 2 >= 0), because GO might be unsigned.
+    if (n * myRank >= 2) {
+      unionTgtMapGids.push_back (indexBase + n * myRank - 2);
     }
-    if (n * myRank - 1 >= 0) {
-      unionTgtMapGids.push_back (n * myRank - 1);
+    // Don't test (n * myRank - 1 >= 0), because GO might be unsigned.
+    if (n * myRank >= 1) {
+      unionTgtMapGids.push_back (indexBase + n * myRank - 1);
     }
     if (n * myRank + n < n*numProcs) {
-      unionTgtMapGids.push_back (n * myRank + n);
+      unionTgtMapGids.push_back (indexBase + n * myRank + n);
     }
     if (n * myRank + n + 1 < n*numProcs) {
-      unionTgtMapGids.push_back (n * myRank + n + 1);
+      unionTgtMapGids.push_back (indexBase + n * myRank + n + 1);
     }
 
     out << "Making the Maps" << endl;
 
-    RCP<const map_type> srcMap (new map_type (INVALID, srcMapGids (), indexBase, comm, node));
-    RCP<const map_type> tgtMap1 (new map_type (INVALID, tgtMap1Gids (), indexBase, comm, node));
-    RCP<const map_type> tgtMap2 (new map_type (INVALID, tgtMap2Gids (), indexBase, comm, node));
-    RCP<const map_type> expectedUnionMap (new map_type (INVALID, unionTgtMapGids (), indexBase, comm, node));
+    RCP<const map_type> srcMap (new map_type (INVALID, srcMapGids (), indexBase, comm));
+    RCP<const map_type> tgtMap1 (new map_type (INVALID, tgtMap1Gids (), indexBase, comm));
+    RCP<const map_type> tgtMap2 (new map_type (INVALID, tgtMap2Gids (), indexBase, comm));
+    RCP<const map_type> expectedUnionMap (new map_type (INVALID, unionTgtMapGids (), indexBase, comm));
 
     out << "Making the Import objects" << endl;
 
@@ -166,10 +217,31 @@ namespace {
     RCP<const import_type> expectedUnionImp (new import_type (srcMap, expectedUnionMap));
 
     out << "Computing setUnion using first, second" << endl;
-    RCP<const import_type> unionImp1 = imp1->setUnion (*imp2);
+    RCP<const import_type> unionImp1;
+
+    TPETRA_IMPORT_UNION_RUN_AND_CATCH_EXCEPTION( unionImp1 = imp1->setUnion (*imp2), "First setUnion call" );
+
+    if (unionImp1.is_null ()) {
+      lclSuccess = 0;
+    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    if (gblSuccess != 1) {
+      out << "First setUnion call returned null on some process!" << endl;
+      return; // no sense in continuing
+    }
 
     out << "Computing setUnion using second, first" << endl;
     RCP<const import_type> unionImp2 = imp2->setUnion (*imp1);
+    TPETRA_IMPORT_UNION_RUN_AND_CATCH_EXCEPTION( unionImp2 = imp2->setUnion (*imp1), "Second setUnion call" );
+
+    if (unionImp2.is_null ()) {
+      lclSuccess = 0;
+    }
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    if (gblSuccess != 1) {
+      out << "Second setUnion call returned null on some process!" << endl;
+      return; // no sense in continuing
+    }
 
     out << "Running tests" << endl;
 
@@ -212,7 +284,7 @@ namespace {
       vector_type z_12 (y_expected);
       z_12 = Tpetra::createCopy(y_expected);
       z_12.update (1.0, y_actual_12, -1.0);
-      const double z_12_norm = z_12.norm2 ();
+      const typename vector_type::mag_type z_12_norm = z_12.norm2 ();
       out << "||y_expected - y_actual_12||_2 = " << z_12_norm << endl;
       TEST_EQUALITY( z_12_norm, 0.0 );
     }
@@ -225,12 +297,39 @@ namespace {
       z_21 = Tpetra::createCopy(y_expected);
 
       z_21.update (1.0, y_actual_21, -1.0);
-      const double z_21_norm = z_21.norm2 ();
+      const typename vector_type::mag_type z_21_norm = z_21.norm2 ();
       out << "||y_expected - y_actual_21||_2 = " << z_21_norm << endl;
       TEST_EQUALITY( z_21_norm, 0.0 );
     }
 
     out << "Test whether the Imports actually represent the same communication pattern" << endl;
+
+    {
+      std::ostringstream os;
+      os << "Proc " << myRank << ":" << endl
+         << "  unionImp1: {numSameIDs: " << unionImp1->getNumSameIDs ()
+         << ", numPermuteIDs: " << unionImp1->getNumPermuteIDs ()
+         << ", numRemoteIDs: " << unionImp1->getNumRemoteIDs ()
+         << ", numExportIDs: " << unionImp1->getNumExportIDs ()
+         << ", permuteFromLIDs: " << unionImp1->getPermuteFromLIDs ()
+         << ", permuteToLIDs: " << unionImp1->getPermuteToLIDs ()
+         << "}" << endl
+         << "  unionImp2: {numSameIDs: " << unionImp2->getNumSameIDs ()
+         << ", numPermuteIDs: " << unionImp2->getNumPermuteIDs ()
+         << ", numRemoteIDs: " << unionImp2->getNumRemoteIDs ()
+         << ", numExportIDs: " << unionImp2->getNumExportIDs ()
+         << ", permuteFromLIDs: " << unionImp2->getPermuteFromLIDs ()
+         << ", permuteToLIDs: " << unionImp2->getPermuteToLIDs ()
+         << "}" << endl
+         << "  expected:  {numSameIDs: " << expectedUnionImp->getNumSameIDs ()
+         << ", numPermuteIDs: " << expectedUnionImp->getNumPermuteIDs ()
+         << ", numRemoteIDs: " << expectedUnionImp->getNumRemoteIDs ()
+         << ", numExportIDs: " << expectedUnionImp->getNumExportIDs ()
+         << ", permuteFromLIDs: " << expectedUnionImp->getPermuteFromLIDs ()
+         << ", permuteToLIDs: " << expectedUnionImp->getPermuteToLIDs ()
+         << "}" << endl;
+      Tpetra::Details::gathervPrint (out, os.str (), *comm);
+    }
 
     const bool numSameIDsSame1 = unionImp1->getNumSameIDs () == expectedUnionImp->getNumSameIDs ();
     TEST_EQUALITY( numSameIDsSame1, true );
@@ -259,6 +358,7 @@ namespace {
     ArrayView<const LO> permuteFromLIDs_actual1 = unionImp1->getPermuteFromLIDs ();
     ArrayView<const LO> permuteFromLIDs_actual2 = unionImp2->getPermuteFromLIDs ();
     ArrayView<const LO> permuteFromLIDs_expected = expectedUnionImp->getPermuteFromLIDs ();
+
     const bool permuteFromLIDsSame1 =
       numPermuteIDsSame1 &&
       permuteFromLIDs_actual1.size () == permuteFromLIDs_expected.size () &&
@@ -402,28 +502,12 @@ namespace {
   // anonymous namespace as where the tests were defined)
   //
 
-#define UNIT_TEST_GROUP(LOCAL_ORDINAL, GLOBAL_ORDINAL) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ImportUnion, ContigPlusContig, LOCAL_ORDINAL, GLOBAL_ORDINAL )
+#define UNIT_TEST_GROUP(LOCAL_ORDINAL, GLOBAL_ORDINAL, NODE_TYPE) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( ImportUnion, ContigPlusContig, LOCAL_ORDINAL, GLOBAL_ORDINAL, NODE_TYPE )
 
-//UNIT_TEST_GROUP(int, int)
-#ifdef HAVE_TPETRA_INST_INT_INT
-UNIT_TEST_GROUP(int, int)
-#endif
-#ifdef HAVE_TPETRA_INST_INT_LONG
-UNIT_TEST_GROUP(int, long)
-#endif
-#ifdef HAVE_TPETRA_INST_INT_UNSIGNED
-UNIT_TEST_GROUP(int, unsigned)
-#endif
+  TPETRA_ETI_MANGLING_TYPEDEFS()
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-
-// Macros don't like spaces in their arguments.
-// typedef long long long_long_type;
-
-// UNIT_TEST_GROUP(int, long_long_type)
-
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
+  TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP )
 
 } // namespace (anonymous)
 

@@ -50,7 +50,7 @@
 #include "Epetra_Map.h"
 #include "Teuchos_ParameterList.hpp"
 
-static const string PrintMsg_ = "(Ifpack_OvPartitioner) ";
+static const std::string PrintMsg_ = "(Ifpack_OvPartitioner) ";
 
 //==============================================================================
 Ifpack_OverlappingPartitioner::
@@ -96,6 +96,8 @@ int Ifpack_OverlappingPartitioner::SetParameters(Teuchos::ParameterList& List)
 //==============================================================================
 int Ifpack_OverlappingPartitioner::Compute()
 {
+  using std::cout;
+  using std::endl;
 
   if (NumLocalParts_ < 1)
     IFPACK_CHK_ERR(-1); // incorrect value
@@ -107,18 +109,18 @@ int Ifpack_OverlappingPartitioner::Compute()
 
   if (verbose_ && (Comm().MyPID() == 0)) {
     cout << PrintMsg_ << "Number of local parts  = " << NumLocalParts_ << endl;
-    cout << PrintMsg_ << "Number of global parts = " 
+    cout << PrintMsg_ << "Number of global parts = "
          << NumLocalParts_ * Comm().NumProc() << endl;
     cout << PrintMsg_ << "Amount of overlap      = " << OverlappingLevel_ << endl;
   }
 
-  // 1.- allocate memory 
+  // 1.- allocate memory
 
   Partition_.resize(NumMyRows());
   Parts_.resize(NumLocalParts());
 
   // 2.- sanity checks on input graph
- 
+
   if (Graph_->Filled() == false)
     IFPACK_CHK_ERR(-4); // need FillComplete() called
 
@@ -127,17 +129,17 @@ int Ifpack_OverlappingPartitioner::Compute()
 
   if (NumLocalParts_ < 1)
     IFPACK_CHK_ERR(-2); // value not valid
- 
+
   // 3.- perform non-overlapping partition
- 
+
   IFPACK_CHK_ERR(ComputePartitions());
 
   // 4.- compute the partitions with overlapping
-  
+
   IFPACK_CHK_ERR(ComputeOverlappingPartitions());
 
   // 5.- return to the user
- 
+
   IsComputed_ = true;
 
   return(0);
@@ -146,6 +148,8 @@ int Ifpack_OverlappingPartitioner::Compute()
 // ======================================================================
 int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
 {
+  using std::cerr;
+  using std::endl;
 
   // FIXME: the first part of this function should be elsewhere
   // start defining the subgraphs for no overlap
@@ -159,8 +163,8 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
 
   for (int i = 0 ; i < NumMyRows() ; ++i) {
     if (Partition_[i] >= NumLocalParts_) {
-      cerr << "ERROR: Partition[" << i << "] = "<< Partition_[i] 
-	   << ", NumLocalParts = " << NumLocalParts_ << endl;
+      cerr << "ERROR: Partition[" << i << "] = "<< Partition_[i]
+           << ", NumLocalParts = " << NumLocalParts_ << endl;
       cerr << "(file = " << __FILE__ << ", line = "
            << __LINE__ << ")" << endl;
       IFPACK_CHK_ERR(-10);
@@ -207,29 +211,29 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
 
     for (int part = 0 ; part < NumLocalParts_ ; ++part) {
 
-      for (int i = 0; i < (int)Parts_[part].size() ; ++i) {  
+      for (int i = 0; i < (int)Parts_[part].size() ; ++i) {
 
-	int LRID = Parts_[part][i];
-	int NumIndices;
-	int ierr = Graph_->ExtractMyRowCopy(LRID, MaxNumEntries_tmp, 
+        int LRID = Parts_[part][i];
+        int NumIndices;
+        int ierr = Graph_->ExtractMyRowCopy(LRID, MaxNumEntries_tmp,
                                             NumIndices, &Indices[0]);
-	IFPACK_CHK_ERR(ierr);
+        IFPACK_CHK_ERR(ierr);
 
-	for (int j = 0 ; j < NumIndices ; ++j) {
+        for (int j = 0 ; j < NumIndices ; ++j) {
 
-	  // use *local* indices
-	  int col = Indices[j];
+          // use *local* indices
+          int col = Indices[j];
           if (col >= NumMyRows())
             continue;
 
-	  // has this column already been inserted?
-	  std::vector<int>::iterator
-	    where = find(tmp[part].begin(), tmp[part].end(), col);
+          // has this column already been inserted?
+          std::vector<int>::iterator
+            where = find(tmp[part].begin(), tmp[part].end(), col);
 
-	  if (where == tmp[part].end()) {
-	    tmp[part].push_back(col);
-	  }
-	}
+          if (where == tmp[part].end()) {
+            tmp[part].push_back(col);
+          }
+        }
       }
     }
 
@@ -237,7 +241,7 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
     for (int i = 0 ; i < NumLocalParts_ ; ++i) {
       Parts_[i].resize(tmp[i].size());
       for (int j = 0 ; j < (int)tmp[i].size() ; ++j)
-	Parts_[i][j] = tmp[i][j];
+        Parts_[i][j] = tmp[i][j];
     }
   }
 
@@ -282,10 +286,11 @@ const Epetra_Comm& Ifpack_OverlappingPartitioner::Comm() const
 }
 
 // ======================================================================
-ostream& Ifpack_OverlappingPartitioner::Print(ostream & os) const
+std::ostream& Ifpack_OverlappingPartitioner::Print(std::ostream & os) const
 {
+  using std::endl;
 
-  if (Comm().MyPID()) 
+  if (Comm().MyPID())
     return(os);
 
   os << "================================================================================" << endl;

@@ -73,7 +73,7 @@
 namespace Galeri {
 
 Epetra_CrsMatrix*
-CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
+CreateCrsMatrix(const std::string MatrixType, const Epetra_Map* Map,
                 Teuchos::ParameterList& List)
 {
   // =============== //

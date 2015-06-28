@@ -67,12 +67,14 @@
 #include "Ifpack_IlukGraph.h"
 #include "Ifpack_CrsRiluk.h"
 
-void BiCGSTAB(Epetra_CrsMatrix &A, Epetra_Vector &x, Epetra_Vector &b, 
-	      Ifpack_CrsRiluk *M, 
-	      int Maxiter, double Tolerance, 
-	      double *residual, bool verbose);
+void BiCGSTAB(Epetra_CrsMatrix &A, Epetra_Vector &x, Epetra_Vector &b,
+              Ifpack_CrsRiluk *M,
+              int Maxiter, double Tolerance,
+              double *residual, bool verbose);
 
 int main(int argc, char *argv[]) {
+  using std::cout;
+  using std::endl;
 
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
@@ -85,22 +87,22 @@ int main(int argc, char *argv[]) {
 
   int MyPID = Comm.MyPID();
 
-  bool verbose = false; 
+  bool verbose = false;
   if (MyPID==0) verbose = true;
 
   if(argc < 2 && verbose) {
-    cerr << "Usage: " << argv[0] 
-	 << " HB_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
-	 << "where:" << endl
-	 << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
-	 << "level_fill         - The amount of fill to use for ILU(k) preconditioner (default 0)" << endl
-	 << "level_overlap      - The amount of overlap used for overlapping Schwarz subdomains (default 0)" << endl
-	 << "absolute_threshold - The minimum value to place on the diagonal prior to factorization (default 0.0)" << endl
-	 << "relative_threshold - The relative amount to perturb the diagonal prior to factorization (default 1.0)" << endl << endl
-	 << "To specify a non-default value for one of these parameters, you must specify all" << endl
-	 << " preceding values but not any subsequent parameters. Example:" << endl
-	 << "ifpackHbSerialMsr.exe mymatrix.hb 1  - loads mymatrix.hb, uses level fill of one, all other values are defaults" << endl
-	 << endl;
+    cerr << "Usage: " << argv[0]
+         << " HB_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
+         << "where:" << endl
+         << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
+         << "level_fill         - The amount of fill to use for ILU(k) preconditioner (default 0)" << endl
+         << "level_overlap      - The amount of overlap used for overlapping Schwarz subdomains (default 0)" << endl
+         << "absolute_threshold - The minimum value to place on the diagonal prior to factorization (default 0.0)" << endl
+         << "relative_threshold - The relative amount to perturb the diagonal prior to factorization (default 1.0)" << endl << endl
+         << "To specify a non-default value for one of these parameters, you must specify all" << endl
+         << " preceding values but not any subsequent parameters. Example:" << endl
+         << "ifpackHbSerialMsr.exe mymatrix.hb 1  - loads mymatrix.hb, uses level fill of one, all other values are defaults" << endl
+         << endl;
     return(1);
 
   }
@@ -111,11 +113,11 @@ int main(int argc, char *argv[]) {
   //Comm.Barrier();
 
   Epetra_Map * readMap;
-  Epetra_CrsMatrix * readA; 
-  Epetra_Vector * readx; 
+  Epetra_CrsMatrix * readA;
+  Epetra_Vector * readx;
   Epetra_Vector * readb;
   Epetra_Vector * readxexact;
-   
+
   // Call routine to read in HB problem
   Trilinos_Util_ReadHb2Epetra(argv[1], Comm, readMap, readA, readx, readb, readxexact);
 
@@ -139,10 +141,10 @@ int main(int argc, char *argv[]) {
   A.Export(*readA, exporter, Add);
   Comm.Barrier();
   double matrixRedistributeTime = FillTimer.ElapsedTime() - vectorRedistributeTime;
-  assert(A.FillComplete()==0);    
+  assert(A.FillComplete()==0);
   Comm.Barrier();
   double fillCompleteTime = FillTimer.ElapsedTime() - matrixRedistributeTime;
-  if (Comm.MyPID()==0)	{
+  if (Comm.MyPID()==0)  {
     cout << "\n\n****************************************************" << endl;
     cout << "\n Vector redistribute  time (sec) = " << vectorRedistributeTime<< endl;
     cout << "    Matrix redistribute time (sec) = " << matrixRedistributeTime << endl;
@@ -202,7 +204,7 @@ int main(int argc, char *argv[]) {
 
 
     Epetra_Flops fact_counter;
-  
+
     elapsed_time = timer.ElapsedTime();
     ILUK = new Ifpack_CrsRiluk(*IlukGraph);
     ILUK->SetFlopCounter(fact_counter);
@@ -215,9 +217,9 @@ int main(int argc, char *argv[]) {
     elapsed_time = timer.ElapsedTime() - elapsed_time;
     total_flops = ILUK->Flops();
     MFLOPs = total_flops/elapsed_time/1000000.0;
-    if (verbose) cout << "Time to compute preconditioner values = " 
-		    << elapsed_time << endl
-		    << "MFLOPS for Factorization = " << MFLOPs << endl;
+    if (verbose) cout << "Time to compute preconditioner values = "
+                    << elapsed_time << endl
+                    << "MFLOPS for Factorization = " << MFLOPs << endl;
     //cout << *ILUK << endl;
   }
   double Condest;
@@ -244,10 +246,10 @@ int main(int argc, char *argv[]) {
   elapsed_time = timer.ElapsedTime() - elapsed_time;
   total_flops = counter.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
-  if (verbose) cout << "Time to compute solution = " 
-		    << elapsed_time << endl
-		    << "Number of operations in solve = " << total_flops << endl
-		    << "MFLOPS for Solve = " << MFLOPs<< endl << endl;
+  if (verbose) cout << "Time to compute solution = "
+                    << elapsed_time << endl
+                    << "Number of operations in solve = " << total_flops << endl
+                    << "MFLOPS for Solve = " << MFLOPs<< endl << endl;
 
   resid.Update(1.0, xcomp, -1.0, xexact, 0.0); // resid = xcomp - xexact
 
@@ -255,25 +257,25 @@ int main(int argc, char *argv[]) {
 
   if (verbose) cout << "Norm of the difference between exact and computed solutions = " << residual << endl;
 
-  
+
 
 
   if (ILUK!=0) delete ILUK;
   if (IlukGraph!=0) delete IlukGraph;
-				       
+
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
 
 return 0 ;
 }
-void BiCGSTAB(Epetra_CrsMatrix &A, 
-	      Epetra_Vector &x, 
-	      Epetra_Vector &b, 
-	      Ifpack_CrsRiluk *M, 
-	      int Maxiter, 
-	      double Tolerance, 
-	      double *residual, bool verbose) {
+void BiCGSTAB(Epetra_CrsMatrix &A,
+              Epetra_Vector &x,
+              Epetra_Vector &b,
+              Ifpack_CrsRiluk *M,
+              int Maxiter,
+              double Tolerance,
+              double *residual, bool verbose) {
 
   // Allocate vectors needed for iterations
   Epetra_Vector phat(x.Map()); phat.SetFlopCounter(x);
@@ -283,7 +285,7 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
   Epetra_Vector r(x.Map()); r.SetFlopCounter(x);
   Epetra_Vector rtilde(x.Map()); rtilde.Random(); rtilde.SetFlopCounter(x);
   Epetra_Vector v(x.Map()); v.SetFlopCounter(x);
-  
+
 
   A.Multiply(false, x, r); // r = A*x
 
@@ -298,10 +300,10 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
   r.Dot(rtilde,&rhon);
 
   if (verbose) cout << "Initial residual = " << r_norm
-		    << " Scaled residual = " << scaled_r_norm << endl;
+                    << " Scaled residual = " << scaled_r_norm << endl;
 
 
-  for (int i=0; i<Maxiter; i++) { // Main iteration loop   
+  for (int i=0; i<Maxiter; i++) { // Main iteration loop
 
     double beta = (rhon/rhonm1) * (alpha/omega);
     rhonm1 = rhon;
@@ -313,22 +315,22 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
     double dtemp = - beta*omega;
 
     p.Update(1.0, r, dtemp, v, beta);
-    if (M==0) 
+    if (M==0)
       phat.Scale(1.0, p);
     else
       M->Solve(false, p, phat);
     A.Multiply(false, phat, v);
 
-    
+
     rtilde.Dot(v,&sigma);
-    alpha = rhon/sigma;    
+    alpha = rhon/sigma;
 
     /* s = r - alpha*v                     */
     /* shat = M^-1 s                       */
     /* r = A shat (r is a tmp here for t ) */
 
     s.Update(-alpha, v, 1.0, r, 0.0);
-    if (M==0) 
+    if (M==0)
       shat.Scale(1.0, s);
     else
       M->Solve(false, s, shat);
@@ -342,14 +344,14 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
     /* r = s - omega*r */
 
     x.Update(alpha, phat, omega, shat, 1.0);
-    r.Update(1.0, s, -omega); 
-    
+    r.Update(1.0, s, -omega);
+
     r.Norm2(&r_norm);
     scaled_r_norm = r_norm/b_norm;
     r.Dot(rtilde,&rhon);
 
     if (verbose) cout << "Iter "<< i << " residual = " << r_norm
-		      << " Scaled residual = " << scaled_r_norm << endl;
+                      << " Scaled residual = " << scaled_r_norm << endl;
 
     if (scaled_r_norm < Tolerance) break;
   }

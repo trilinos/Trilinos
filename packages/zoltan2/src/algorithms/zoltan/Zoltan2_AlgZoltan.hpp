@@ -119,24 +119,59 @@ private:
     zz->Set_Geom_Multi_Fn(zoltanGeom<AdapterWithCoords>, (void *) ia);
   }
 
-  void setCallbacksGraph()
+  void setCallbacksGraph(
+    const RCP<const GraphAdapter<user_t,userCoord_t> > &adp)
   {
     cout << "NotReadyForGraphYet" << endl;
     // TODO
   }
 
-  void setCallbacksHypergraph()
+  void setCallbacksGraph(
+    const RCP<const MatrixAdapter<user_t,userCoord_t> > &adp)
   {
-    if (adapter->adapterType() != MeshAdapterType) {
-      cout << "Not Ready For Hypergraph Yet With Adapter Type " << adapter->adapterType() << endl;
-      // TODO
-    }
-    else {
-      zz->Set_HG_Size_CS_Fn(zoltanHGSizeCS<Adapter>, (void *) &(*adapter));
-      zz->Set_HG_CS_Fn(zoltanHGCS<Adapter>, (void *) &(*adapter));
-      // zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWts<Adapter>, (void *) &(*adapter));
-      // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWts<Adapter>, (void *) &(*adapter));
-    }
+    cout << "NotReadyForGraphYet" << endl;
+    // TODO
+  }
+
+  void setCallbacksGraph(
+    const RCP<const MeshAdapter<user_t> > &adp)
+  {
+    cout << "NotReadyForGraphYet" << endl;
+    // TODO
+  }
+
+  void setCallbacksHypergraph(
+    const RCP<const MatrixAdapter<user_t,userCoord_t> > &adp)
+  {
+    // TODO:  If add parameter list to this function, can register 
+    // TODO:  different callbacks depending on the hypergraph model to use
+
+    zz->Set_HG_Size_CS_Fn(zoltanHGSizeCSForMatrixAdapter<Adapter>,
+                          (void *) &(*adp));
+    zz->Set_HG_CS_Fn(zoltanHGCSForMatrixAdapter<Adapter>,
+                     (void *) &(*adp));
+
+    // zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMatrixAdapter<Adapter>,
+    //                             (void *) &(*adapter));
+    // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMatrixAdapter<Adapter>,
+    //                             (void *) &(*adapter));
+  }
+
+  void setCallbacksHypergraph(
+    const RCP<const MeshAdapter<user_t> > &adp)
+  {
+    // TODO:  If add parameter list to this function, can register 
+    // TODO:  different callbacks depending on the hypergraph model to use
+
+    zz->Set_HG_Size_CS_Fn(zoltanHGSizeCSForMeshAdapter<Adapter>,
+                          (void *) &(*adp));
+    zz->Set_HG_CS_Fn(zoltanHGCSForMeshAdapter<Adapter>,
+                     (void *) &(*adp));
+
+    // zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMeshAdapter<Adapter>,
+    //                             (void *) &(*adapter));
+    // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMeshAdapter<Adapter>,
+    //                             (void *) &(*adapter));
   }
 
 public:
@@ -175,7 +210,7 @@ public:
     setMPIComm(problemComm__);
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
-    setCallbacksGraph();
+    setCallbacksGraph(adapter);
     if (adapter->coordinatesAvailable()) {
       setCallbacksGeom(adapter->getCoordinateInput());
     }
@@ -189,8 +224,8 @@ public:
     setMPIComm(problemComm__);
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
-    setCallbacksGraph();
-    setCallbacksHypergraph();
+    setCallbacksGraph(adapter);
+    setCallbacksHypergraph(adapter);
     if (adapter->coordinatesAvailable()) {
       setCallbacksGeom(adapter->getCoordinateInput());
     }
@@ -204,8 +239,8 @@ public:
     setMPIComm(problemComm__);
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
-    setCallbacksGraph();
-    setCallbacksHypergraph();
+    setCallbacksGraph(adapter);
+    setCallbacksHypergraph(adapter);
     setCallbacksGeom(&(*adapter));
   }
 

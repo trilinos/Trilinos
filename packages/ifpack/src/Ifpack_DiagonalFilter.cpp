@@ -57,6 +57,9 @@ Ifpack_DiagonalFilter::Ifpack_DiagonalFilter(const Teuchos::RefCountPtr<Epetra_R
   AbsoluteThreshold_(AbsoluteThreshold),
   RelativeThreshold_(RelativeThreshold)
 {
+  using std::cout;
+  using std::endl;
+
   Epetra_Time Time(Comm());
 
   pos_.resize(NumMyRows());

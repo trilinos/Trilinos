@@ -117,7 +117,7 @@ testall: testall.in1 $(CONFIGDIR)/$(MACROFILE)
 
 test:  check
 check: $(PROGS) testall
-	csh -f ./testall
+	sh  ./testall
 
 ExtraStuffToClean(*.res)
 ExtraStuffToClean(*.exo)

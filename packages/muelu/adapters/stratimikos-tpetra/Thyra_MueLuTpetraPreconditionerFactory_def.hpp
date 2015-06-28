@@ -183,7 +183,6 @@ namespace Thyra {
     RCP<MueLuOperator> muelu_precOp;
     if (tpetra_precOp.get())
       muelu_precOp = rcp_dynamic_cast<MueLuOperator>(tpetra_precOp->getTpetraOperator(), true);
-
     // Do the magic (init/setup/reuse)
     // FIXME: the check for starting over needs more work
     // For instance, what should happen if a user called the first setup with

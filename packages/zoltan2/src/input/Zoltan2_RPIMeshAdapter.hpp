@@ -207,8 +207,8 @@ public:
     if (coordDim>=0 && coordDim<3) {
       int dim = entityZ2toAPF(etype);
       if (dim<=m_dimension&&dim>=0) {
-	coords = ent_coords[dim] + coordDim*num_local[dim];
-	stride = 1;
+	coords = ent_coords[dim]+coordDim;
+	stride = 3;
       }
     }
     else {
@@ -305,7 +305,7 @@ public:
 #endif
 
 private:
-  int entityZ2toAPF(enum MeshEntityType etype) const {return -static_cast<int>(etype)+3;}
+  int entityZ2toAPF(enum MeshEntityType etype) const {return static_cast<int>(etype);}
   enum EntityTopologyType topologyAPFtoZ2(enum apf::Mesh::Type ttype) const {
     if (ttype==apf::Mesh::VERTEX)
       return POINT;
@@ -353,7 +353,7 @@ template <typename User>
 RPIMeshAdapter<User>::RPIMeshAdapter(const Comm<int> &comm,
 				     apf::Mesh* m) {
   this->setEntityTypes("region","vertex","vertex");
-  
+
   //mesh dimension
   m_dimension = m->getDimension();
   
@@ -454,8 +454,9 @@ RPIMeshAdapter<User>::RPIMeshAdapter(const Comm<int> &comm,
       else {
 	point = apf::getLinearCentroid(m,ent);
       }
-      for (int k=0;k<3;k++)
-	ent_coords[i][j+k*num_local[i]] = point[k];
+      for (int k=0;k<3;k++) 
+	ent_coords[i][j*3+k] = point[k];
+      j++;
     }
     m->end(itr);
   }

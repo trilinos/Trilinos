@@ -53,15 +53,27 @@
 #include <Teuchos_ConfigDefs.hpp>
 //#include <memory> // Teuchos_ConfigDefs.hpp includes it
 //#include <iostream> // Teuchos_ConfigDefs.hpp includes it
+#ifdef HAVE_TEUCHOSCORE_CXX11
+#  include <type_traits>
+#endif // HAVE_TEUCHOSCORE_CXX11
+
 
 namespace Teuchos {
 namespace Details {
 
 /// \brief Logging implementation used by Allocator (see below).
 ///
-/// \warning This is an implementation detail of Allocator, which in
-///   turn is an implementation detail of Teuchos.  DO NOT USE THIS
-///   CLASS DIRECTLY IN YOUR CODE.
+/// \warning This is an implementation detail of Teuchos.  We make no
+///   promises of backwards compatibility for this header file or this
+///   class.  They may change or disappear at any time.
+///
+/// Please refer to
+/// <tt> teuchos/core/test/HashTable/Allocator_atexit.cpp </tt>
+/// for an example of how to register an atexit() hook that reports
+/// current and maximum memory usage at exit from main().  It would
+/// be easy to adapt this example to register an MPI_Finalize() hook,
+/// using the MPI standard idiom of attaching an attribute to
+/// MPI_COMM_SELF.
 class AllocationLogger {
 public:
   /// \brief Type of the size of an allocation or deallocation.
@@ -198,22 +210,43 @@ private:
 public:
   //! Type of the template parameter of this class.
   typedef T value_type;
-  //! Type of a pointer to T.
+
+  /// \brief Type of a pointer to T.
+  ///
+  /// This is only needed for C++98, not for C++11 and newer.
   typedef T* pointer;
-  //! Type of a pointer to const T.
+  /// \brief Type of a pointer to const T.
+  ///
+  /// This is only needed for C++98, not for C++11 and newer.
   typedef const T* const_pointer;
-  //! Type of a reference to T.
+  /// \brief Type of a reference to T.
+  ///
+  /// This is only needed for C++98, not for C++11 and newer.
   typedef T& reference;
-  //! Type of a reference to const T.
+  /// \brief Type of a reference to const T.
+  ///
+  /// This is only needed for C++98, not for C++11 and newer.
   typedef const T& const_reference;
 
   /// \brief Type of the size of an allocation or deallocation.
   ///
-  /// This must match AllocationLogger::size_type (see above).
-  typedef std::size_t size_type;
+  /// This must match AllocationLogger::size_type (see above).  If we
+  /// didn't need this to have the same type as that, then we wouldn't
+  /// need this typedef.
+  typedef AllocationLogger::size_type size_type;
 
-  //! Signed integer type representing the difference of two pointers.
+  /// \typedef difference_type
+  /// \brief Integer type representing the difference between two pointers.
+  ///
+  /// This is only needed for C++98, not for C++11 and newer.
+  /// However, we want this typedef to exist in both cases.  Thus, if
+  /// C++11 is enabled, we use size_type above to compute this, in
+  /// order to ensure consistency.
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  typedef std::make_signed<size_type>::type difference_type;
+#else
   typedef std::ptrdiff_t difference_type;
+#endif // HAVE_TEUCHOSCORE_CXX11
 
   //! Default constructor.
   Allocator () :
@@ -238,6 +271,18 @@ public:
     track_ (src.tracking ()), verbose_ (src.verbose ())
   {}
 
+  /// \brief Mapping to an Allocator for a different type \c U.
+  ///
+  /// Most users do not need this.
+  ///
+  /// \note To Teuchos developers: This is only optional if the
+  ///   Allocator has the form Allocator<T, Args>, where Args is zero
+  ///   or more additional template parameters.  I don't want to make
+  ///   Allocator require C++11, so it does not have this form.  Thus,
+  ///   the rebind struct is required.
+  template<class U>
+  struct rebind { typedef Allocator<U> other; };
+
   /// \brief Allocate an array of n instances of value_type.
   ///
   /// \param n [in] Number of entries in the array.
@@ -248,9 +293,10 @@ public:
   /// \return The allocated but uninitialized array.
   value_type* allocate (const size_type& n, const void* = 0) {
     if (tracking ()) {
-      AllocationLogger::logAllocation (std::cerr, n, n * sizeof (value_type), typeid (value_type).name (), verbose_);
+      AllocationLogger::logAllocation (std::cerr, n, n * sizeof (value_type),
+                                       typeid (value_type).name (), verbose_);
     }
-    return (pointer) (::operator new (n * sizeof (T)));
+    return (value_type*) (::operator new (n * sizeof (T)));
   }
 
   /// \brief Deallocate n instances of value_type.
@@ -262,74 +308,11 @@ public:
       // Thankfully, this method accepts the array size.  Thus, we don't
       // have to do tricks like allocating extra space and stashing the
       // size in the array.
-      AllocationLogger::logDeallocation (std::cerr, n, n * sizeof (value_type), typeid (value_type).name (), verbose_);
+      AllocationLogger::logDeallocation (std::cerr, n, n * sizeof (value_type),
+                                         typeid (value_type).name (), verbose_);
     }
     ::operator delete ((void*) p);
   }
-
-#ifdef HAVE_TEUCHOSCORE_CXX11
-  /// \brief Invoke the constructor of an instance of \c U, without
-  ///   allocating.
-  /// \tparam U The type of the object to construct.
-  ///
-  /// \warning This variant only works with >= C++11.  The C++98
-  ///   version is different (see below).
-  ///
-  /// \param p [in] Pointer to an area of memory in which to construct
-  ///   a \c U instance, using placement new.
-  /// \param args [in] Zero or more arguments to U's constructor.
-  ///
-  /// The "class..." thing and std::forward are C++11 syntax for
-  /// handling a variable number of arguments corresponding to
-  /// possibly different template parameters.  That lets this method
-  /// deal with any kind of constructor that \c U might have.
-  template<class U, class... Args>
-  void construct (U* p, Args&&... args) {
-    new ((void*) p) U (std::forward<Args> (args)...);
-  }
-#else
-  /// \brief Invoke the constructor of an instance of \c T, without
-  ///   allocating.
-  ///
-  /// \warning This variant only works with C++98.  The C++11 version
-  ///   is different (see above).
-  ///
-  /// \param p [in] Pointer to an area of memory in which to construct
-  ///   a T instance, using placement new.
-  /// \param val [in] Argument to T's (copy) constructor.
-  void construct (pointer p, const_reference val) {
-    new ((void*) p) T (val);
-  }
-#endif // HAVE_TEUCHOSCORE_CXX11
-
-#ifdef HAVE_TEUCHOSCORE_CXX11
-  /// \brief Invoke the destructor of an instance of \c U, without
-  ///   deallocating.
-  /// \tparam U The type of the object to destroy.
-  ///
-  /// \warning This variant only works with >= C++11.  The C++98
-  ///   version is different (see below).
-  ///
-  /// \param p [in] Pointer to an instance of \c U to destroy.
-  template<class U>
-  void destroy (U* p) {
-    p->~U ();
-  }
-#else
-  /// \brief Invoke the destructor of an instance of \c T, without
-  ///   deallocating.
-  ///
-  /// \warning This variant only works with C++98.  The C++11 version
-  ///   is different (see above).
-  ///
-  /// \param p [in] Pointer to an instance of \c T to destroy.
-  void destroy (pointer p) {
-    ((T*)p)->~T ()
-  }
-#endif // HAVE_TEUCHOSCORE_CXX11
-
-  template<class U>
-  struct rebind { typedef Allocator<U> other; };
 
   //! Current total allocation in bytes, over all Allocator<U>.
   size_type curAllocInBytes () {
@@ -340,6 +323,38 @@ public:
   size_type maxAllocInBytes () {
     return AllocationLogger::maxAllocInBytes ();
   }
+
+#ifndef HAVE_TEUCHOSCORE_CXX11
+  /// \brief Invoke the constructor of an instance of \c T, without
+  ///   allocating.
+  ///
+  /// \warning This variant only exists if C++11 is OFF.  C++11
+  ///   requires a method with a different signature, but it also
+  ///   supplies a good default implementation if this method is
+  ///   missing.
+  ///
+  /// \param p [in] Pointer to an area of memory in which to construct
+  ///   a T instance, using placement new.
+  /// \param val [in] Argument to T's (copy) constructor.
+  void construct (pointer p, const_reference val) {
+    new ((void*) p) T (val);
+  }
+#endif // HAVE_TEUCHOSCORE_CXX11
+
+#ifndef HAVE_TEUCHOSCORE_CXX11
+  /// \brief Invoke the destructor of an instance of \c T, without
+  ///   deallocating.
+  ///
+  /// \warning This variant only exists if C++11 is OFF.  C++11
+  ///   requires a method with a different signature, but it also
+  ///   supplies a good default implementation if this method is
+  ///   missing.
+  ///
+  /// \param p [in] Pointer to an instance of \c T to destroy.
+  void destroy (pointer p) {
+    ((T*)p)->~T ();
+  }
+#endif // HAVE_TEUCHOSCORE_CXX11
 
 private:
   bool track_;
@@ -364,8 +379,6 @@ template<class T, class U>
 bool operator!= (const Allocator<T>& a_t, const Allocator<U>& a_u) {
   return ! (a_t == a_u);
 }
-
-
 
 } // namespace Details
 } // namespace Teuchos

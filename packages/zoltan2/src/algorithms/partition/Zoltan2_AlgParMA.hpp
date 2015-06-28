@@ -45,14 +45,10 @@
 #ifndef _ZOLTAN2_ALGPARMA_HPP_
 #define _ZOLTAN2_ALGPARMA_HPP_
 
-#include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_TPLTraits.hpp>
-
-#include <Zoltan2_AlgZoltanCallbacks.hpp>
-#include <zoltan_cpp.h>
 
 //////////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgParMA.hpp
@@ -63,9 +59,14 @@
 //  This approach allows development closer to that of PUMI setup but at the 
 //  cost of creating an extra mesh representation.
 // 
-//  Another approach might be to provide callbacks to modify the adapter 
-//  in each iteration of a ParMA algorithm. This may be able to remove the 
-//  need for an intermediate structure.
+//!  Available ParMA algorithms are given by setting the parma_method parameter 
+//!  of the sublist parma_paramaters to one of the following:
+//!  Vertex       - Balances targeting vertex imbalance
+//!  Element      - Balances targeting element imbalance
+//!  VtxElm       - Balances targeting vertex and element imbalance
+//!  VtxEdgeElm   - Balances targeting vertex, edge, and element imbalance
+//!  Ghost        - Balances using ghost element aware diffusion      
+//!  Shape        - Optimizes shape of parts by increasing the size of small part boundaries
 //////////////////////////////////////////////////////////////////////////////
 
 #ifndef HAVE_ZOLTAN2_PARMA
@@ -144,7 +145,7 @@ private:
 #   endif
   }
 
-  enum MeshEntityType entityAPFtoZ2(int dimension) const {return static_cast<MeshEntityType>(-dimension+3);}
+  enum MeshEntityType entityAPFtoZ2(int dimension) const {return static_cast<MeshEntityType>(dimension);}
 
   enum apf::Mesh::Type topologyZ2toAPF(enum EntityTopologyType ttype) const {
     if (ttype==POINT)
@@ -164,7 +165,7 @@ private:
     else if (ttype==PYRAMID)
       return apf::Mesh::PYRAMID;
     else 
-      throw "APF does not support this topology type";
+      throw std::runtime_error("APF does not support this topology type");
     
   }
 
@@ -186,8 +187,9 @@ private:
       setEntWeights(0,tag);
     if (edge)
       setEntWeights(1,tag);
-    if (elm)
+    if (elm) {
       setEntWeights(m->getDimension(),tag);
+    }
     return tag;
   }
 
@@ -226,7 +228,7 @@ public:
     throw std::runtime_error("ParMA needs a MeshAdapter but you haven't given it one");
     
   }
-  
+  void phi() {std::cout<<"hi"<<std::endl;}
   AlgParMA(const RCP<const Environment> &env__,
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const MeshAdapter<user_t> > &adapter__) :
@@ -249,12 +251,6 @@ public:
     enum MeshEntityType primary_type = entityAPFtoZ2(dim);
     m = apf::makeEmptyMdsMesh(g,dim,false);
     
-    //Array of all vertices in order not to make duplicates
-    /*apf::MeshEntity** all_vertices = new apf::MeshEntity*[adapter->getLocalNumOf(MESH_VERTEX)];
-    for (size_t i=0;i<adapter->getLocalNumOf(primary_type);i++)
-      all_vertices[i] = NULL;
-    */
-
     //Get element global ids and part ids
     const zgid_t* element_gids;
     const part_t* part_ids;
@@ -289,8 +285,9 @@ public:
     for (size_t i=0;i<adapter->getLocalNumOf(MESH_VERTEX);i++) {
       apf::MeshEntity* vtx = m->createVert(0);
       scalar_t temp_coords[3];
-      for (int k=0;k<dim;k++)
+      for (int k=0;k<dim;k++) 
 	temp_coords[k] = vertex_coords[k][i*strides[k]];
+
       for (int k=dim;k<3;k++)
 	temp_coords[k] = 0;  
       apf::Vector3 point(temp_coords[0],temp_coords[1],temp_coords[2]);    
@@ -316,7 +313,7 @@ public:
       i++; 
     }
     m->end(itr);
-    
+
     //final setup for apf mesh
     apf::alignMdsRemotes(m);
     apf::deriveMdsModel(m);
@@ -340,6 +337,8 @@ void AlgParMA<Adapter>::partition(
   std::string alg_name = "VtxElm";
   double imbalance = 1.1;
   double step = .1;
+  int ghost_layers=3;
+  int ghost_bridge=m->getDimension()-1;
  
   const Teuchos::ParameterList &pl = env->getParameters();
   try {
@@ -348,9 +347,21 @@ void AlgParMA<Adapter>::partition(
 	 iter != ppl.end(); iter++) {
       const std::string &zname = pl.name(iter);
       // Convert the value to a string to pass to Zoltan
-      std::string &zval = pl.entry(iter).getValue(&zval);
-      if (zname == "parma_method")
+      if (zname == "parma_method") {
+	std::string &zval = pl.entry(iter).getValue(&zval);
 	alg_name = zval;
+      }
+      else if (zname == "step_size") {
+	double &zval = pl.entry(iter).getValue(&zval);
+	step = zval;
+      }
+      else if (zname=="ghost_layers" || zname=="ghost_bridge") {
+	int &zval = pl.entry(iter).getValue(&zval);
+	if (zname=="ghost_layers")
+	  ghost_layers = zval;
+	else
+	  ghost_bridge = zval;
+      }
     }
   }
   catch (std::exception &e) {
@@ -371,10 +382,6 @@ void AlgParMA<Adapter>::partition(
     balancer = Parma_MakeVtxBalancer(m, step, verbose);
     weightVertex = true;
   }
-  else if (alg_name=="Edge") {
-    balancer = Parma_MakeEdgeBalancer(m, step, verbose);
-    weightEdge = true;
-  }
   else if (alg_name=="Element") {
     balancer = Parma_MakeElmBalancer(m, step, verbose);
     weightElement=true;
@@ -387,27 +394,9 @@ void AlgParMA<Adapter>::partition(
     balancer = Parma_MakeVtxEdgeElmBalancer(m, step, verbose);
     weightVertex=weightEdge=weightElement=true;    
   }
-  else if (alg_name=="ElmLtVtx") {
-    balancer = Parma_MakeElmLtVtxBalancer(m, step, verbose);
-    weightElement=weightVertex=true;
-  }
-  else if (alg_name=="Hps") {
-    //balancer = Parma_MakeHpsBalancer(m, verbose);
-    throw "Not incorporated yet due to circular dependency";
-  }
   else if (alg_name=="Ghost") {
-    int layers = 3;
-    int bridge = m->getDimension()-1;
-    balancer = Parma_MakeGhostDiffuser(m, layers, bridge, step, verbose);
+    balancer = Parma_MakeGhostDiffuser(m, ghost_layers, ghost_bridge, step, verbose);
     weightVertex = true;
-  }
-  else if (alg_name=="Welder") {
-    //balancer = Parma_MakeWelder(m,step,verbose);
-    throw "Not incorporated yet";
-  }
-  else if (alg_name=="Centroid") {
-    balancer = Parma_MakeCentroidDiffuser(m,step,verbose);
-    throw "Not incorporated yet";
   }
   else if (alg_name=="Shape") {
     balancer = Parma_MakeShapeOptimizer(m,step,verbose);
@@ -415,7 +404,7 @@ void AlgParMA<Adapter>::partition(
   }
   else  {
     //Should be caught by the validator
-    throw "No such parma method defined";
+    throw std::runtime_error("No such parma method defined");
   }
   apf::MeshTag* weights = setWeights(weightVertex,weightEdge,weightElement);
 

@@ -249,19 +249,21 @@ namespace MueLu {
     useCoordinates_ = false;
     if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "repartition: enable",      bool,        true) ||
         MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "distance laplacian") ||
-        MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: type",        std::string, "brick")) {
+        MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: type",        std::string, "brick") ||
+        MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: export visualization data", bool, true)) {
       useCoordinates_ = true;
 
     } else {
       for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
-        std::string levelStr = "level" + toString(levelID);
+        std::string levelStr = "level " + toString(levelID);
 
         if (paramList.isSublist(levelStr)) {
           const ParameterList& levelList = paramList.sublist(levelStr);
 
           if (MUELU_TEST_PARAM_2LIST(levelList, paramList, "repartition: enable",      bool,        true) ||
               MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: drop scheme", std::string, "distance laplacian") ||
-              MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: type",        std::string, "brick")) {
+              MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: type",        std::string, "brick") ||
+              MUELU_TEST_PARAM_2LIST(levelList, paramList, "aggregation: export visualization data", bool, true)) {
             useCoordinates_ = true;
             break;
           }
@@ -393,7 +395,6 @@ namespace MueLu {
     if (paramList.isParameter("Nullspace")   && !paramList.get<RCP<MultiVector> >("Nullspace")  .is_null()) have_userNS = true;
     if (paramList.isParameter("Coordinates") && !paramList.get<RCP<MultiVector> >("Coordinates").is_null()) have_userCO = true;
 
-
     // === Smoothing ===
     // FIXME: should custom smoother check default list too?
     bool isCustomSmoother =
@@ -492,7 +493,7 @@ namespace MueLu {
         else
 #ifdef HAVE_MUELU_MATLAB
 	if(postSmootherType == "matlab") 
-	  postSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(postSmootherParams))));
+	  postSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>(postSmootherParams))));
 	else
 #endif
           postSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap))));

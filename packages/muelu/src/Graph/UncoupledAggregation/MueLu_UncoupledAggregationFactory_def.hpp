@@ -196,7 +196,7 @@ namespace MueLu {
     const RCP<const Teuchos::Comm<int> > comm = graph->GetComm();
     GO numGlobalRows = 0;
     if (IsPrint(Statistics1))
-      sumAll(comm, as<GO>(numRows), numGlobalRows);
+      MueLu_sumAll(comm, as<GO>(numRows), numGlobalRows);
 
     LO numNonAggregatedNodes = numRows;
     GO numGlobalAggregatedPrev = 0, numGlobalAggsPrev = 0;
@@ -211,8 +211,8 @@ namespace MueLu {
       if (IsPrint(Statistics1)) {
         GO numLocalAggregated = numRows - numNonAggregatedNodes, numGlobalAggregated = 0;
         GO numLocalAggs       = aggregates->GetNumAggregates(),  numGlobalAggs = 0;
-        sumAll(comm, numLocalAggregated, numGlobalAggregated);
-        sumAll(comm, numLocalAggs,       numGlobalAggs);
+        MueLu_sumAll(comm, numLocalAggregated, numGlobalAggregated);
+        MueLu_sumAll(comm, numLocalAggs,       numGlobalAggs);
 
         double aggPercent = 100*as<double>(numGlobalAggregated)/as<double>(numGlobalRows);
         if (aggPercent > 99.99 && aggPercent < 100.00) {
