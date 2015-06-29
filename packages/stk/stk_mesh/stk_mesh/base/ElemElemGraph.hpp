@@ -71,12 +71,10 @@ public:
 
     size_t size() {return m_elem_graph.size() - m_deleted_element_local_id_pool.size();}
 
-    void change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &parallel_graph_info, stk::mesh::Part *active_part=NULL);
-
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
 
 protected:
-    friend void stk::mesh::change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph,
+    friend void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph,
                                     std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move,
                                     stk::mesh::Part *active_part);
 
@@ -99,6 +97,8 @@ protected:
     stk::mesh::ConnectivityOrdinal get_neighboring_side_ordinal(const stk::mesh::BulkData &mesh, stk::mesh::Entity currentElem,
                                                                 stk::mesh::ConnectivityOrdinal currentOrdinal, stk::mesh::Entity neighborElem);
 
+    impl::LocalId create_new_local_id(stk::mesh::Entity new_elem);
+
     impl::LocalId get_new_local_element_id_from_pool();
     int size_data_members();
     void ensure_space_in_entity_to_local_id(size_t max_index);
@@ -112,8 +112,7 @@ protected:
                                                       int destination_proc, int phase);
 
     void pack_local_connected_element(impl::LocalId local_id, int side_id, stk::CommBuffer &buff,
-                                                     const std::vector<stk::mesh::EntityId> &suggested_face_ids,
-                                                     size_t &num_face_ids_used,
+                                                     stk::mesh::EntityId suggested_face_id,
                                                      stk::mesh::Part *active_part);
 
     void unpack_and_store_connected_element(stk::CommBuffer &buf, impl::LocalId recvd_elem_local_id,

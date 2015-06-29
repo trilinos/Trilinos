@@ -1811,8 +1811,7 @@ void BulkData::require_valid_relation( const char action[] ,
     std::ostringstream msg ;
 
     msg << "Could not " << action << " relation from entity "
-        << print_entity_key(MetaData::get(mesh), mesh.entity_key(e_from)) << " to entity "
-        << print_entity_key(MetaData::get(mesh), mesh.entity_key(e_to)) << "\n";
+        << mesh.entity_key(e_from) << " to entity " << mesh.entity_key(e_to) << "\n";
 
     ThrowErrorMsgIf( error_nil_from  || error_nil_to,
                      msg.str() << ", entity was destroyed");
@@ -3432,7 +3431,7 @@ EntityCommListInfo find_entity(const BulkData& mesh,
 {
   EntityCommListInfoVector::const_iterator lb_itr = std::lower_bound(entities.begin(), entities.end(), key);
   ThrowAssertMsg(lb_itr != entities.end() && lb_itr->key == key,
-                 "Cannot find id: " << key.id() << " in comm-list" );
+                 "proc " << mesh.parallel_rank() << " Cannot find entity-key " << key << " in comm-list" );
   return *lb_itr;
 }
 
