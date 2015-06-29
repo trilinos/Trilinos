@@ -596,7 +596,7 @@ TEST(Verify, printingOfGeneralSelector)
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Part & partC = fix.m_partC ;
   stk::mesh::Part & partD = fix.m_partD ;
-  stk::mesh::Selector selector =  partA | ( (!((partA & partB) | partC))  & (!partD | partB));
+  stk::mesh::Selector selector =  partA | ( (!((partA & partB) | partC))  & ((!partD) | partB));
   std::cout << "complicated selector = " << selector << std::endl;
   std::ostringstream msg;
   msg << selector;
