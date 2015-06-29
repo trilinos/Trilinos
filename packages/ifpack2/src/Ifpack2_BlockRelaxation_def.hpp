@@ -1051,6 +1051,12 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
       S > >; \
   template \
   class Ifpack2::BlockRelaxation<      \
+    Tpetra::RowMatrix<S, LO, GO, N>, \
+    Ifpack2::BandedContainer<        \
+      Tpetra::RowMatrix<S, LO, GO, N>, \
+      S > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
     Tpetra::CrsMatrix<S, LO, GO, N>, \
     Ifpack2::SparseContainer<       \
       Tpetra::CrsMatrix<S, LO, GO, N>, \
@@ -1065,6 +1071,12 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
   class Ifpack2::BlockRelaxation<      \
     Tpetra::CrsMatrix<S, LO, GO, N>, \
     Ifpack2::TriDiContainer<        \
+      Tpetra::CrsMatrix<S, LO, GO, N>, \
+      S > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::CrsMatrix<S, LO, GO, N>, \
+    Ifpack2::BandedContainer<        \
       Tpetra::CrsMatrix<S, LO, GO, N>, \
       S > >;
 
