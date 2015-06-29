@@ -11524,7 +11524,7 @@ void SandiaRules::laguerre_ss_compute ( int order, double x[], double w[] )
 {
   double *b;
   double *c;
-  double cc;
+  //double cc;
   double dp2;
   int i;
   int j;
@@ -11560,7 +11560,7 @@ void SandiaRules::laguerre_ss_compute ( int order, double x[], double w[] )
   {
     prod = prod * c[i];
   }
-  cc = prod;
+  //cc = prod;
 
   for ( i = 0; i < order; i++ )
   {
@@ -13857,7 +13857,7 @@ double *SandiaRules::legendre_zeros ( int order )
   double dp;
   double dpn;
   double e1;
-  double fx;
+  //double fx;
   double h;
   int i;
   int iback;
@@ -13933,8 +13933,8 @@ double *SandiaRules::legendre_zeros ( int order )
 
     xtab[mp1mi-1] = xtemp;
 
-    fx = d1 - h * e1 * ( pk + 0.5 * h * ( dpn + h / 3.0 
-      * ( d2pn + 0.25 * h * ( d3pn + 0.2 * h * d4pn ) ) ) );
+    //fx = d1 - h * e1 * ( pk + 0.5 * h * ( dpn + h / 3.0 
+    //  * ( d2pn + 0.25 * h * ( d3pn + 0.2 * h * d4pn ) ) ) );
   }
 
   if ( ( order % 2 ) == 1 )
@@ -25659,13 +25659,14 @@ void SandiaRules::timestamp ( )
 
   static char time_buffer[TIME_SIZE];
   const struct std::tm *tm_ptr;
-  size_t len;
+  //size_t len;
   std::time_t now;
 
   now = std::time ( NULL );
   tm_ptr = std::localtime ( &now );
 
-  len = std::strftime ( time_buffer, TIME_SIZE, "%d %B %Y %I:%M:%S %p", tm_ptr );
+  //len = std::strftime ( time_buffer, TIME_SIZE, "%d %B %Y %I:%M:%S %p", tm_ptr );
+  std::strftime ( time_buffer, TIME_SIZE, "%d %B %Y %I:%M:%S %p", tm_ptr );
 
   std::cout << time_buffer << "\n";
 

@@ -652,24 +652,28 @@ public:
   virtual void applyPreconditioner(Vector<Real> &pv,
                                    const Vector<Real> &v,
                                    const Vector<Real> &x,
+                                   const Vector<Real> &g,
                                    Real &tol) {
-    const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(
-      Teuchos::dyn_cast<const Vector<Real> >(x));
+    const Vector_SimOpt<Real> &xs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(x);
     Teuchos::RCP<ROL::Vector<Real> > ijv = (xs.get_1())->clone();
 
     try {
       applyInverseJacobian_1(*ijv, v, *(xs.get_1()), *(xs.get_2()), tol);
     }
     catch (const std::logic_error &e) {
-      EqualityConstraint<Real>::applyPreconditioner(pv, v, x, tol);
+      EqualityConstraint<Real>::applyPreconditioner(pv, v, x, g, tol);
       return;
     }
 
+    const Vector_SimOpt<Real> &gs = Teuchos::dyn_cast<const Vector_SimOpt<Real> >(g);
+    Teuchos::RCP<ROL::Vector<Real> > ijv_dual = (gs.get_1())->clone();
+    ijv_dual->set(ijv->dual());
+
     try {
-      applyInverseAdjointJacobian_1(pv, ijv->dual(), *(xs.get_1()), *(xs.get_2()), tol);
+      applyInverseAdjointJacobian_1(pv, *ijv_dual, *(xs.get_1()), *(xs.get_2()), tol);
     }
     catch (const std::logic_error &e) {
-      EqualityConstraint<Real>::applyPreconditioner(pv, v, x, tol);
+      EqualityConstraint<Real>::applyPreconditioner(pv, v, x, g, tol);
       return;
     }
 
@@ -774,6 +778,7 @@ public:
     solve(*s,z,tol);
     // Evaluate equality constraint residual at (u,z).
     Teuchos::RCP<ROL::Vector<Real> > cs = c.clone();
+    update(*s,z);
     value(*cs,*s,z,tol);
     // Output norm of residual.
     Real cnorm = cs->norm();
@@ -834,9 +839,11 @@ public:
                                                  std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
     Teuchos::RCP<Vector<Real> > Jv = dualw.clone();
+    update(u,z);
     applyJacobian_1(*Jv,v,u,z,tol);
     Real wJv = w.dot(Jv->dual());
     Teuchos::RCP<Vector<Real> > Jw = dualv.clone();
+    update(u,z);
     applyAdjointJacobian_1(*Jw,w,u,z,tol);
     Real vJw = v.dot(Jw->dual());
     Real diff = std::abs(wJv-vJw);
@@ -899,9 +906,11 @@ public:
                                                  std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
     Teuchos::RCP<Vector<Real> > Jv = dualw.clone();
+    update(u,z);
     applyJacobian_2(*Jv,v,u,z,tol);
     Real wJv = w.dot(Jv->dual());
     Teuchos::RCP<Vector<Real> > Jw = dualv.clone();
+    update(u,z);
     applyAdjointJacobian_2(*Jw,w,u,z,tol);
     Real vJw = v.dot(Jw->dual());
     Real diff = std::abs(wJv-vJw);
@@ -925,8 +934,10 @@ public:
                                       std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
     Teuchos::RCP<Vector<Real> > Jv = jv.clone();
+    update(u,z);
     applyJacobian_1(*Jv,v,u,z,tol);
     Teuchos::RCP<Vector<Real> > iJJv = u.clone();
+    update(u,z);
     applyInverseJacobian_1(*iJJv,*Jv,u,z,tol);
     Teuchos::RCP<Vector<Real> > diff = v.clone();
     diff->set(v);
@@ -953,8 +964,10 @@ public:
                                              std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
     Teuchos::RCP<Vector<Real> > Jv = jv.clone();
+    update(u,z);
     applyAdjointJacobian_1(*Jv,v,u,z,tol);
     Teuchos::RCP<Vector<Real> > iJJv = v.clone();
+    update(u,z);
     applyInverseAdjointJacobian_1(*iJJv,*Jv,u,z,tol);
     Teuchos::RCP<Vector<Real> > diff = v.clone();
     diff->set(v);

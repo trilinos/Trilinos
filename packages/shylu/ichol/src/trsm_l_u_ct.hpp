@@ -22,7 +22,8 @@ namespace Example {
   int
   Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
        AlgoTrsm::ForFactorBlockedVar1>
-  ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
+  ::invoke(typename CrsExecViewTypeA::policy_type &policy,
+           const typename CrsExecViewTypeA::policy_type::member_type &member,
            const int diagA,
            const ScalarType alpha,
            CrsExecViewTypeA &A,
@@ -100,7 +101,8 @@ namespace Example {
   int
   Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
        AlgoTrsm::ForFactorBlockedVar2>
-  ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
+  ::invoke(typename CrsExecViewTypeA::policy_type &policy,
+           const typename CrsExecViewTypeA::policy_type::member_type &member,
            const int diagA,
            const ScalarType alpha,
            CrsExecViewTypeA &A,
@@ -179,7 +181,8 @@ namespace Example {
   int
   Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
        AlgoTrsm::ForTriSolveBlockedVar1>
-  ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
+  ::invoke(typename CrsExecViewTypeA::policy_type &policy,
+           const typename CrsExecViewTypeA::policy_type::member_type &member,
            const int diagA,
            const ScalarType alpha,
            CrsExecViewTypeA &A,
@@ -248,7 +251,8 @@ namespace Example {
   int
   Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,
        AlgoTrsm::ForTriSolveBlockedVar2>
-  ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
+  ::invoke(typename CrsExecViewTypeA::policy_type &policy,
+           const typename CrsExecViewTypeA::policy_type::member_type &member,
            const int diagA,
            const ScalarType alpha,
            CrsExecViewTypeA &A,

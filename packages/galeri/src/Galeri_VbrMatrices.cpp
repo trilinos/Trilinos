@@ -49,7 +49,7 @@
 
 namespace Galeri {
 
-Epetra_VbrMatrix* 
+Epetra_VbrMatrix*
 CreateVbrMatrix(const Epetra_CrsMatrix* CrsMatrix, const int NumPDEs)
 {
 #ifdef EPETRA_NO_32BIT_GLOBAL_INDICES // FIXME
@@ -108,18 +108,21 @@ CreateVbrMatrix(const Epetra_CrsMatrix* CrsMatrix, const int NumPDEs)
   std::vector<int>    VbrIndices(MaxNnzPerRow);
   std::vector<double> VbrValues(MaxBlockSize);
   int BlockRows = NumPDEs;
-  int ierr;
 
-  // cycle over all the local rows. 
+  // cycle over all the local rows.
 
-  for (int i = 0 ; i < NumMyElements ; ++i) 
+  for (int i = 0 ; i < NumMyElements ; ++i)
   {
     long long GlobalNode = MyGlobalElements_int ? MyGlobalElements_int[i] : MyGlobalElements_LL[i];
 
-    ierr = CrsMatrix->ExtractMyRowView(i, CrsNumEntries, CrsValues, CrsIndices);
+    // FIXME (mfh 25 May 2015) When I found this code, it assigned the
+    // return value of the CrsMatrix method to ierr, but didn't bother
+    // checking ierr.  I got rid of ierr to avoid build warnings for
+    // "variable set but not used."
+    (void) CrsMatrix->ExtractMyRowView(i, CrsNumEntries, CrsValues, CrsIndices);
 
     // CJ TODO FIXME : Change this when Epetra VBR matrix is changed for long long
-	// Commenting out right now so the package builds when 32 bit GIDs are disabled.
+        // Commenting out right now so the package builds when 32 bit GIDs are disabled.
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     for (int kk = 0 ; kk < CrsNumEntries ; ++kk)
       VbrIndices[kk] = CrsMatrix->GCID(CrsIndices[kk]);
@@ -129,9 +132,9 @@ CreateVbrMatrix(const Epetra_CrsMatrix* CrsMatrix, const int NumPDEs)
     throw "Galeri::CreateVbrMatrix: not implemented fully";
 #endif
 
-    for (int i = 0 ; i < CrsNumEntries ; ++i) 
+    for (int i = 0 ; i < CrsNumEntries ; ++i)
     {
-      for (int k = 0 ; k < BlockRows ; ++k) 
+      for (int k = 0 ; k < BlockRows ; ++k)
       {
         for (int h = 0 ; h < BlockRows ; ++h)
         {

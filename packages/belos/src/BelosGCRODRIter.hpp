@@ -232,7 +232,7 @@ namespace Belos {
      * \note For any pointer in \c newstate which directly points to the multivectors in 
      * the solver, the data is not copied.
      */
-    void initialize(GCRODRIterState<ScalarType,MV> newstate);
+    void initialize(GCRODRIterState<ScalarType,MV>& newstate);
     
     /*! \brief Initialize the solver with empty data. Calling this method will result in error,
      *  as GCRODRIter must be initialized with a valid state.
@@ -517,7 +517,7 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void GCRODRIter<ScalarType,MV,OP>::initialize(GCRODRIterState<ScalarType,MV> newstate) {
+  void GCRODRIter<ScalarType,MV,OP>::initialize(GCRODRIterState<ScalarType,MV>& newstate) {
     
     if (newstate.V != Teuchos::null &&  newstate.H != Teuchos::null) {
       curDim_ = newstate.curDim;

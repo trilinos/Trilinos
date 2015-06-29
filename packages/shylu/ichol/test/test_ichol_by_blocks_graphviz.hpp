@@ -92,17 +92,18 @@ namespace Example {
     }
 
     cout << "testICholByBlocksGraphviz::Begin - " << r_val << endl;
-    typedef typename CrsTaskViewType::policy_type policy_type;
+    typename TaskFactoryType::policy_type policy;
+    TaskFactoryType::setPolicy(&policy);
+
     {
       CrsHierTaskViewType H(&HU);
       for (ordinal_type k=0;k<HU.NumNonZeros();++k)
         HU.Value(k).fillRowViewArray();
 
       int r_val_ichol = 0;
-      policy_type policy;
 
       IChol<Uplo::Upper,AlgoIChol::ByBlocks>::
-        TaskFunctor<ForType,CrsHierTaskViewType>(H).apply(policy_type::member_null(), r_val_ichol);
+        TaskFunctor<ForType,CrsHierTaskViewType>(H).apply(r_val_ichol);
     }  
     
     {
@@ -113,9 +114,8 @@ namespace Example {
         return -1;
       }
       
-      policy_type policy;
-      policy.graphviz(out);
-      policy.clear();
+      TaskFactoryType::Policy().graphviz(out);
+      TaskFactoryType::Policy().clear();
     }
     cout << "testICholByBlocksGraphviz::End - " << r_val << endl;  
 

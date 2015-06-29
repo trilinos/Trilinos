@@ -1,0 +1,16 @@
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+IF ((${PACKAGE_NAME}_ENABLE_Tpetra                                      AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2) OR
+      (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos))
+
+    TRIBITS_ADD_EXECUTABLE(
+      SemiCoarsening
+      SOURCES driver.cpp
+      COMM serial mpi
+      )
+
+    TRIBITS_COPY_FILES_TO_BINARY_DIR(semicoarsening_cp
+      SOURCE_FILES driver1.xml
+      )
+ENDIF()
+

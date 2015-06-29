@@ -180,7 +180,7 @@ Quadrature<Real>::Quadrature(int dim, int maxLevel, std::vector<EROLBurkardt> ru
 
     std::vector<int> growth(dim,0);
     std::vector<int> rule(dim,0);
-    for( unsigned i = 0; i < dim; i++ ) {
+    for( int i = 0; i < dim; i++ ) {
       switch( rule1D[i] ) {
         case BURK_CLENSHAWCURTIS: rule[i] = 1;  break;
         case BURK_FEJER2:         rule[i] = 2;  break;

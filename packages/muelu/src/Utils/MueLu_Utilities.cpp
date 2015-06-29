@@ -81,8 +81,8 @@ namespace MueLu {
 
         // Compute the transpose A of the Tpetra matrix tpetraOp.
         RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > A;
-	Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp),label);
-	A = transposer.createTranspose();
+        Tpetra::RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(rcpFromRef(tpetraOp),label);
+        A = transposer.createTranspose();
         RCP<Xpetra::TpetraCrsMatrix<SC> > AA   = rcp(new Xpetra::TpetraCrsMatrix<SC>(A));
         RCP<Xpetra::CrsMatrix<SC> >       AAA  = rcp_implicit_cast<Xpetra::CrsMatrix<SC> >(AA);
         RCP<Xpetra::CrsMatrixWrap<SC> >   AAAA = rcp( new Xpetra::CrsMatrixWrap<SC> (AAA));
@@ -412,6 +412,31 @@ namespace MueLu {
     }
 
     return maxLevel;
+  }
+
+  void TokenizeStringAndStripWhiteSpace(const std::string & stream, std::vector<std::string> & tokenList, const char* token) {
+    // Take a comma-separated list and tokenize it, stripping out leading & trailing whitespace.  Then add to tokenList
+    char * s = new char[stream.length()];
+    char * buffer = new char[stream.length()];
+    strcpy(s,stream.c_str());
+    char * p = strtok(s,token);
+    while (p) {
+      // p now points to first token
+      // strip whitespace
+// printf("Temp:-%s-\n",p);
+      int start=0, stop=strlen(p)-1;
+      while(start<=stop && p[start]==' ') ++start;
+      while(start<=stop && p[stop]==' ')  --stop;
+  //  printf("    : start = %d start = %d\n",start,stop);
+      // If somebody didn't use consecutive commas...
+      if(start<=stop) {
+	strncpy(buffer,&p[start],stop-start+1);	
+	tokenList.push_back(buffer);
+      }
+      p = strtok(NULL, token);
+    }
+    delete [] s;
+    delete [] buffer;
   }
 
 

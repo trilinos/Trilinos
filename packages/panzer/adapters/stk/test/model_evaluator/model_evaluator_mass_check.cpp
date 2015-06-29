@@ -135,6 +135,7 @@ namespace panzer {
       typedef panzer::ExplicitModelEvaluator<double> ExpPME;
 
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+      std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
       bool build_transient_support = true;
 
       Stratimikos::DefaultLinearSolverBuilder builder;
@@ -142,7 +143,7 @@ namespace panzer {
       builder.setParameterList(validList);
       RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = builder.createLinearSolveStrategy("Amesos");
     
-      RCP<PME> me = Teuchos::rcp(new PME(fmb,rLibrary,lof,p_names,lowsFactory,gd,build_transient_support,0.0));
+      RCP<PME> me = Teuchos::rcp(new PME(fmb,rLibrary,lof,p_names,p_values,lowsFactory,gd,build_transient_support,0.0));
 
       // implicit evaluation
       RCP<VectorType> f;

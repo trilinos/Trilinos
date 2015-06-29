@@ -452,7 +452,6 @@ namespace {
 template <typename INT>
 void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk, INT /*dummy*/, stk::io::StkMeshIoBroker::SideSetFaceCreationBehavior behavior)
 {
-    typedef std::vector<stk::mesh::EntityId>  EntityIdVector;
     assert(sset->type() == Ioss::SIDESET);
 
     const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
@@ -511,7 +510,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                             bulk.change_entity_parts( side, add_parts );
                         }
                         else if (behavior == stk::io::StkMeshIoBroker::STK_IO_SIDESET_FACE_CREATION_CURRENT) {
-                            stk::mesh::Entity new_face = stk::mesh::impl::get_or_create_face_at_element_side(bulk,elem,side_ordinal,side_ids[is],*sb_part);
+                            stk::mesh::Entity new_face = stk::mesh::impl::get_or_create_face_at_element_side(bulk,elem,side_ordinal,side_ids[is],stk::mesh::PartVector(1,sb_part));
                             stk::mesh::impl::connect_face_to_other_elements(bulk,new_face,elem,side_ordinal);
                         }
                     }
@@ -816,13 +815,13 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
       size_t element_count = elem_ids.size();
       int nodes_per_elem = topo.num_nodes();
 
-      std::vector<stk::mesh::EntityId> id_vec(nodes_per_elem);
+      stk::mesh::EntityIdVector id_vec(nodes_per_elem);
 
       size_t offset = entity->get_offset();
       for(size_t i=0; i<element_count; ++i) {
         INT *conn = &connectivity[i*nodes_per_elem];
         std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
-        stk::mesh::Entity element = stk::mesh::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
+        stk::mesh::Entity element = stk::mesh::declare_element(bulk, *part, elem_ids[i], id_vec);
 
         bulk.set_local_id(element, offset + i);
       }

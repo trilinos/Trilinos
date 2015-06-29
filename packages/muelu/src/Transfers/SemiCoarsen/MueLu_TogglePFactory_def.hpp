@@ -1,0 +1,162 @@
+// @HEADER
+//
+// ***********************************************************************
+//
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
+//
+// ***********************************************************************
+//
+// @HEADER
+#ifndef MUELU_TOGGLEPFACTORY_DEF_HPP
+#define MUELU_TOGGLEPFACTORY_DEF_HPP
+
+#include <Xpetra_Matrix.hpp>
+#include <sstream>
+
+#include "MueLu_TogglePFactory_decl.hpp"
+
+#include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_Level.hpp"
+#include "MueLu_MasterList.hpp"
+#include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_Utilities.hpp"
+
+namespace MueLu {
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<const ParameterList> TogglePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+    RCP<ParameterList> validParamList = rcp(new ParameterList());
+
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("toggle: mode");
+    SET_VALID_ENTRY("semicoarsen: number of levels");
+#undef  SET_VALID_ENTRY
+    return validParamList;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void TogglePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+    // request/release "P" and coarse level "Nullspace"
+    for (std::vector<RCP<const FactoryBase> >::const_iterator it = prolongatorFacts_.begin(); it != prolongatorFacts_.end(); ++it) {
+      coarseLevel.DeclareInput("P", (*it).get(), this); // request/release "P" (dependencies are not affected)
+      (*it)->CallDeclareInput(coarseLevel); // request dependencies
+    }
+    for (std::vector<RCP<const FactoryBase> >::const_iterator it = nspFacts_.begin(); it != nspFacts_.end(); ++it) {
+      coarseLevel.DeclareInput("Nullspace", (*it).get(), this);  // request/release coarse "Nullspace" (dependencies are not affected)
+      (*it)->CallDeclareInput(coarseLevel); // request dependencies
+    }
+    hasDeclaredInput_ = true;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void TogglePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level &coarseLevel) const {
+    FactoryMonitor m(*this, "Prolongator toggle", coarseLevel);
+    std::ostringstream levelstr;
+    levelstr << coarseLevel.GetLevelID();
+
+    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
+
+    TEUCHOS_TEST_FOR_EXCEPTION(nspFacts_.size() != prolongatorFacts_.size(), Exceptions::RuntimeError, "MueLu::TogglePFactory::Build: The number of provided prolongator factories and coarse nullspace factories must be identical.");
+    TEUCHOS_TEST_FOR_EXCEPTION(nspFacts_.size() != 2, Exceptions::RuntimeError, "MueLu::TogglePFactory::Build: TogglePFactory needs two different transfer operator strategies for toggling."); // TODO adapt this/weaken this as soon as other toggling strategies are introduced.
+
+    // decision routine which prolongator factory to be used
+    int nProlongatorFactory = 0; // default behavior: use first prolongator in list
+
+    // extract user parameters
+    const Teuchos::ParameterList & pL = GetParameterList();
+    std::string mode = Teuchos::as<std::string>(pL.get<std::string>("toggle: mode"));
+    int semicoarsen_levels = Teuchos::as<int>(pL.get<int>("semicoarsen: number of levels"));
+
+    TEUCHOS_TEST_FOR_EXCEPTION(mode!="semicoarsen", Exceptions::RuntimeError, "MueLu::TogglePFactory::Build: The 'toggle: mode' parameter must be set to 'semicoarsen'. No other mode supported, yet.");
+
+    // Make a decision which prolongator to be used.
+    if(fineLevel.GetLevelID() >= semicoarsen_levels) {
+      nProlongatorFactory = 1;
+    } else {
+      nProlongatorFactory = 0;
+    }
+
+    RCP<Matrix> P = Teuchos::null;
+    RCP<MultiVector> coarseNullspace = Teuchos::null;
+
+    // call Build for selected transfer operator
+    GetOStream(Runtime0) << "TogglePFactory: call transfer factory: " << (prolongatorFacts_[nProlongatorFactory])->description() << std::endl;
+    prolongatorFacts_[nProlongatorFactory]->CallBuild(coarseLevel);
+    P = coarseLevel.Get< RCP<Matrix> >("P", (prolongatorFacts_[nProlongatorFactory]).get());
+    coarseNullspace = coarseLevel.Get< RCP<MultiVector> >("Nullspace", (nspFacts_[nProlongatorFactory]).get());
+
+    // Release dependencies of all prolongator and coarse level null spaces
+    for(size_t t=0; t<nspFacts_.size(); ++t) {
+      coarseLevel.Release(*(prolongatorFacts_[t]));
+      coarseLevel.Release(*(nspFacts_[t]));
+    }
+
+    // store prolongator with this factory identification.
+    Set(coarseLevel, "P", P);
+    Set(coarseLevel, "Nullspace", coarseNullspace);
+
+  } //Build()
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void TogglePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddProlongatorFactory(const RCP<const FactoryBase>& factory) {
+    // check if it's a TwoLevelFactoryBase based transfer factory
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast,
+                               "MueLu::TogglePFactory::AddProlongatorFactory: Transfer factory is not derived from TwoLevelFactoryBase. "
+                               "This is very strange. (Note: you can remove this exception if there's a good reason for)");
+    TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_, Exceptions::RuntimeError, "MueLu::TogglePFactory::AddProlongatorFactory: Factory is being added after we have already declared input");
+    prolongatorFacts_.push_back(factory);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void TogglePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddCoarseNullspaceFactory(const RCP<const FactoryBase>& factory) {
+    // check if it's a TwoLevelFactoryBase based transfer factory
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast,
+                               "MueLu::TogglePFactory::AddCoarseNullspaceFactory: Transfer factory is not derived from TwoLevelFactoryBase. Make sure you provide the factory which generates the coarse level nullspace information. Usually this is a prolongator factory."
+                               "This is very strange. (Note: you can remove this exception if there's a good reason for)");
+    TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_, Exceptions::RuntimeError, "MueLu::TogglePFactory::AddCoarseNullspaceFactory: Factory is being added after we have already declared input");
+    nspFacts_.push_back(factory);
+  }
+
+
+} //namespace MueLu
+
+#endif // MUELU_TOGGLEPFACTORY_DEF_HPP

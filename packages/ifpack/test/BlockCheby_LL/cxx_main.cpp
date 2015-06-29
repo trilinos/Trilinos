@@ -73,6 +73,9 @@ static bool Solver = AZ_gmres;
 //=============================================
 // Test the BlockDiagMatrix
 bool TestBlockDiagMatrix(const Epetra_Comm& Comm){
+  using std::cout;
+  using std::endl;
+
   const int NUM_BLOCKS=30;
   bool TestPassed=true;
   long long my_blockgids[NUM_BLOCKS];
@@ -388,6 +391,9 @@ double Test_PTBDP_C(const Epetra_CrsMatrix& MAT,int BlockSize){
 
 //=============================================
 bool TestPointToBlockDiagPermute(const Epetra_Comm & Comm){
+  using std::cout;
+  using std::endl;
+
   const int NUM_ROWS=64;
 
   bool TestPassed=true;
@@ -501,6 +507,9 @@ double Test_Cheby_C(const Epetra_CrsMatrix& MAT, int BlockSize,int maxits){
 
 //=============================================
 bool TestBlockChebyshev(const Epetra_Comm & Comm){
+  using std::cout;
+  using std::endl;
+
   const int NUM_ROWS=100;
 
   bool TestPassed=true;
@@ -580,6 +589,8 @@ bool TestBlockChebyshev(const Epetra_Comm & Comm){
 //=============================================
 int main(int argc, char *argv[])
 {
+  using std::cout;
+  using std::endl;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);

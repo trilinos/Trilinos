@@ -90,16 +90,17 @@ namespace Example {
     }
 
     cout << "testICholByBlocks::Begin - " << r_val << endl;
+    typename TaskFactoryType::policy_type policy;
+    TaskFactoryType::setPolicy(&policy);
+
     {
       CrsTaskViewType U(&UU_Unblocked);
       U.fillRowViewArray();
     
-      typedef typename CrsTaskViewType::policy_type policy_type;
-      policy_type policy;
-      auto future = policy.create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
-                                       ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
-      policy.spawn(future);
-      Kokkos::Experimental::wait(policy);
+      auto future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
+                                                          ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+      TaskFactoryType::Policy().spawn(future);
+      Kokkos::Experimental::wait(TaskFactoryType::Policy());
     
       cout << UU_Unblocked << endl;
     }
@@ -108,12 +109,10 @@ namespace Example {
       for (ordinal_type k=0;k<HU.NumNonZeros();++k)
         HU.Value(k).fillRowViewArray();
 
-      typedef typename CrsTaskViewType::policy_type policy_type;
-      policy_type policy;
-      auto future = policy.create_team(IChol<Uplo::Upper,AlgoIChol::ByBlocks>::
-                                       TaskFunctor<ForType,CrsHierTaskViewType>(H), 0);
-      policy.spawn(future);
-      Kokkos::Experimental::wait(policy);
+      auto future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::ByBlocks>::
+                                                          TaskFunctor<ForType,CrsHierTaskViewType>(H), 0);
+      TaskFactoryType::Policy().spawn(future);
+      Kokkos::Experimental::wait(TaskFactoryType::Policy());
 
       cout << UU_ByBlocks << endl;
     }  

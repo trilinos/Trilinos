@@ -18,8 +18,11 @@ ADD_SUBDIRECTORIES(
   TestAll
   BlockCheby
   #UseTranspose
-  SupportGraph
   )
+
+IF (${PACKAGE_NAME}_ENABLE_SUPPORTGRAPH)
+  ADD_SUBDIRECTORY(SupportGraph)
+ENDIF ()
 IF (${PACKAGE_NAME}_ENABLE_AztecOO)
   ADD_SUBDIRECTORY(AztecOO)
 ENDIF()

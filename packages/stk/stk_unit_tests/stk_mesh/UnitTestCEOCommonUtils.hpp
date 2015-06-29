@@ -595,7 +595,10 @@ inline void fillMeshfor2Elem2ProcMoveAndTest(stk::mesh::unit_test::BulkDataTeste
     //   2/0---3/0---6/0      2/0---3/0---6/1
 
     stk::mesh::EntityId element_ids[2] = {1, 2};
-    stk::mesh::EntityId elem_node_ids[][4] = { {1, 2, 3, 4}, {4, 3, 6, 5}};
+    stk::mesh::EntityIdVector elem_node_ids[] {
+        {1, 2, 3, 4},
+        {4, 3, 6, 5}
+    };
 
     stk::mesh::Part * elem_part = &meta.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
     stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
@@ -1031,7 +1034,10 @@ inline void fillMeshfor2Elem2ProcFlipAndTest(stk::mesh::unit_test::BulkDataTeste
     //   2/0---3/0---6/1        2/1---3/0---6/0
 
     stk::mesh::EntityId element_ids[2] = {1, 2};
-    stk::mesh::EntityId elem_node_ids[][4] = { {1, 2, 3, 4}, {4, 3, 6, 5}};
+    stk::mesh::EntityIdVector elem_node_ids[] {
+        {1, 2, 3, 4},
+        {4, 3, 6, 5}
+    };
 
     stk::mesh::Part * elem_part = &meta.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
     stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));
@@ -6511,12 +6517,11 @@ inline void fillMeshfor4Elem4ProcRotateAndTest(stk::mesh::unit_test::BulkDataTes
     stk::mesh::EntityId proc_elemIDs[] = {1, 2, 3, 4};
 
 // list of node-ids for each element
-    const int nodesPerElem = 4;
-    stk::mesh::EntityId elem_nodeIDs[][nodesPerElem] = {
-            {1, 2, 5, 4},
-            {2, 3, 6, 5},
-            {5, 6, 9, 8},
-            {4, 5, 8, 7}
+    stk::mesh::EntityIdVector elem_nodeIDs[] {
+        {1, 2, 5, 4},
+        {2, 3, 6, 5},
+        {5, 6, 9, 8},
+        {4, 5, 8, 7}
     };
 
 // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
@@ -7820,12 +7825,10 @@ inline void fillMeshfor3Elem4Proc1Edge3DAndTest(stk::mesh::unit_test::BulkDataTe
     {   1, 2, 3};
 
 // list of node-ids for each element
-    const int nodesPerElem = 8;
-    stk::mesh::EntityId elem_nodeIDs[][nodesPerElem] =
-    {
-        {   1, 2, 5, 4, 9, 10, 13, 12},
-        {   2, 3, 6, 5, 10, 11, 14, 13},
-        {   5, 6, 8, 7, 13, 14, 16, 15}
+    stk::mesh::EntityIdVector elem_nodeIDs[] {
+        {1, 2, 5, 4, 9, 10, 13, 12},
+        {2, 3, 6, 5, 10, 11, 14, 13},
+        {5, 6, 8, 7, 13, 14, 16, 15}
     };
 
 // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
@@ -9107,7 +9110,10 @@ inline void fillMeshfor2Elem2ProcFlipAndTest_no_ghost(stk::mesh::unit_test::Bulk
     //   2/0---3/0---6/1        2/1---3/0---6/0
 
     stk::mesh::EntityId element_ids[2] = {1, 2};
-    stk::mesh::EntityId elem_node_ids[][4] = { {1, 2, 3, 4}, {4, 3, 6, 5}};
+    stk::mesh::EntityIdVector elem_node_ids[] {
+        {1, 2, 3, 4},
+        {4, 3, 6, 5}
+    };
 
     stk::mesh::Part * elem_part = &meta.declare_part_with_topology("elem_part", stk::topology::QUAD_4_2D);
     stk::mesh::Part * topo_part = &meta.get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::QUAD_4_2D));

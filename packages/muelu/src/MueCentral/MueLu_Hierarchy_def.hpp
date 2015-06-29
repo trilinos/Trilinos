@@ -625,6 +625,10 @@ namespace MueLu {
         // On intermediate levels, we do cycles
         RCP<Level> Coarse = Levels_[startLevel+1];
 
+        // Utils::Write("X_before.mm", X);
+        // Utils::Write("B_before.mm", B);
+
+
         {
           // ============== PRESMOOTHING ==============
           RCP<TimeMonitor> STime      = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing (total)"      , Timings0));
@@ -637,6 +641,8 @@ namespace MueLu {
             GetOStream(Warnings1) << "Level " <<  startLevel << ": No PreSmoother!" << std::endl;
           }
         }
+        // Utils::Write("X_after.mm", X);
+        // Utils::Write("B_after.mm", B);
 
         RCP<MultiVector> residual;
         {
@@ -644,6 +650,9 @@ namespace MueLu {
           RCP<TimeMonitor> ALevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation" + levelSuffix, Timings0));
           residual = Utils::Residual(*A, X, B);
         }
+        // Utils::Write("R_after.mm", *residual);
+        // if (startLevel == 0)
+          // exit(1);
 
         RCP<Operator>    P = Coarse->Get< RCP<Operator> >("P");
         RCP<MultiVector> coarseRhs, coarseX;

@@ -110,6 +110,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::null;
   using Teuchos::as;
+  using Teuchos::TimeMonitor;
   using Tpetra::MatrixMarket::Reader;
   using Thyra::tpetraVectorSpace;
 
@@ -138,6 +139,7 @@ int main(int argc, char *argv[]) {
     int         n            = 17;             clp.setOption("n",        &n,             "problem size (1D)");
     int         maxLevels    = 4;              clp.setOption("nlevels",  &maxLevels,     "max num levels");
     std::string type         = "structured";   clp.setOption("type",     &type,          "structured/unstructured");
+    bool        printTimings = false;          clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
 
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -163,7 +165,9 @@ int main(int argc, char *argv[]) {
     RCP<TP_Mv> Vcoords = Reader<TP_Crs>::readDenseFile ((prefix + "VelCoords.mm").c_str(),  comm, node, cmap1);
     RCP<TP_Mv> Pcoords = Reader<TP_Crs>::readDenseFile ((prefix + "PresCoords.mm").c_str(), comm, node, cmap2);
 
-    ArrayRCP<const SC> slop = Utils2::ReadMultiVector((prefix + "p2vMap.mm").c_str(), Xpetra::toXpetra(A21->getRangeMap()))->getData(0);
+    // For now, we assume that p2v maps local pressure DOF to a local x-velocity DOF
+    ArrayRCP<const SC> slop = Utils2::ReadMultiVector((prefix + "p2vMap.mm").c_str(),
+                                                      Xpetra::toXpetra(A21->getRangeMap()))->getData(0);
     ArrayRCP<LO> p2vMap(n*n);
     for (int i = 0; i < n*n; i++)
       p2vMap[i] = as<LO>(slop[i]);
@@ -192,7 +196,7 @@ int main(int argc, char *argv[]) {
     stratimikosList->set("Preconditioner Type", "MueLu-TpetraQ2Q1");
 
     ParameterList& BelosList = stratimikosList->sublist("Linear Solver Types").sublist("Belos");
-    BelosList.set("Solver Type", "Block GMRES");
+    BelosList.set("Solver Type", "Block GMRES"); // FIXME: should it be "Pseudo Block GMRES"?
     BelosList.sublist("VerboseObject").set("Verbosity Level", "low"); // this is needed, as otherwise Stratimikos ignores Belos output
 
     ParameterList& GmresDetails = BelosList.sublist("Solver Types").sublist("Block GMRES");
@@ -242,16 +246,32 @@ int main(int argc, char *argv[]) {
     Thyra::initializeOp<SC>(*lowsFactory, thA, nsA.ptr());
 
     RCP<TP_Mv> tX = Tpetra::createVector<SC>(fullMap);
+#if 1
     tX->randomize();
 
     RCP<TP_Mv> tB = Tpetra::createVector<SC>(fullMap);
     A->apply(*tX, *tB);
+#else
+    typedef Tpetra::MatrixMarket::Reader<TP_Crs> reader_type;
+    RCP<TP_Mv> tB = reader_type::readDenseFile((prefix + "rhs.mm").c_str(), fullMap->getComm(), fullMap->getNode(), fullMap);
+#endif
+
     tX->putScalar(0.0);
 
     RCP<TH_Mvb> sX = Thyra::createMultiVector(tX);
     RCP<TH_Mvb> sB = Thyra::createMultiVector(tB);
 
     Thyra::SolveStatus<SC> solveStatus = Thyra::solve(*nsA, Thyra::NOTRANS, *sB, sX.ptr());
+
+    if (printTimings) {
+      const bool alwaysWriteLocal = false;
+      const bool writeGlobalStats = true;
+      const bool writeZeroTimers  = false;
+      const bool ignoreZeroTimers = true;
+      const std::string filter    = "";
+      TimeMonitor::summarize(comm.ptr(), std::cout, alwaysWriteLocal, writeGlobalStats,
+                             writeZeroTimers, Teuchos::Union, filter, ignoreZeroTimers);
+    }
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

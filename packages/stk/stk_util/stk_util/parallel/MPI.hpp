@@ -359,6 +359,14 @@ struct Datatype<double>
 };
 
 template <>
+struct Datatype<long double>
+{
+  static MPI_Datatype type() {
+    return MPI_LONG_DOUBLE;
+  }
+};
+
+template <>
 struct Datatype<std::complex<float> >
 {
   static MPI_Datatype type() {

@@ -52,6 +52,8 @@
 #include <Kokkos_View.hpp>
 #include <Kokkos_ExecPolicy.hpp>
 
+#include <Kokkos_Profiler.hpp>
+
 #include <impl/Kokkos_AllocationTracker.hpp>
 #include <impl/Kokkos_Tags.hpp>
 #include <impl/Kokkos_Traits.hpp>
@@ -190,22 +192,34 @@ template< class ExecPolicy , class FunctorType >
 inline
 void parallel_for( const ExecPolicy  & policy
                  , const FunctorType & functor
+                 , const std::string& str = ""
                  , typename Impl::enable_if< ! Impl::is_integral< ExecPolicy >::value >::type * = 0
                  )
 {
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,ExecPolicy>(0,str);
+
   (void) Impl::ParallelFor< FunctorType , ExecPolicy >( Impl::CopyWithoutTracking::apply(functor) , policy );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,ExecPolicy>(0,str);
 }
 
 template< class FunctorType >
 inline
-void parallel_for( const size_t        work_count ,
-                   const FunctorType & functor )
+void parallel_for( const size_t        work_count
+                 , const FunctorType & functor
+                 , const std::string& str = ""
+                 )
 {
   typedef typename
     Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space
       execution_space ;
   typedef RangePolicy< execution_space > policy ;
+
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,policy>(0,str);
+
   (void) Impl::ParallelFor< FunctorType , policy >( Impl::CopyWithoutTracking::apply(functor) , policy(0,work_count) );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,policy>(0,str);
 }
 
 template< class ExecPolicy , class FunctorType >
@@ -214,12 +228,16 @@ void parallel_for( const std::string & str
                  , const ExecPolicy  & policy
                  , const FunctorType & functor )
 {
-  #ifdef KOKKOS_HAVE_DEBUG
-  std::cout << "Starting parallel_for kernel: " << str << std::endl;
+  #if KOKKOS_ENABLE_DEBUG_PRINT_KERNEL_NAMES
+  Kokkos::fence();
+  std::cout << "KOKKOS_DEBUG Start parallel_for kernel: " << str << std::endl;
   #endif
-  parallel_for(policy,functor);
-  #ifdef KOKKOS_HAVE_DEBUG
-  std::cout << "End (dispatch) parallel_for kernel: " << str << std::endl;
+
+  parallel_for(policy,functor,str);
+
+  #if KOKKOS_ENABLE_DEBUG_PRINT_KERNEL_NAMES
+  Kokkos::fence();
+  std::cout << "KOKKOS_DEBUG End   parallel_for kernel: " << str << std::endl;
   #endif
   (void) str;
 }
@@ -265,6 +283,7 @@ template< class ExecPolicy , class FunctorType >
 inline
 void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorType & functor
+                    , const std::string& str = ""
                     , typename Impl::enable_if< ! Impl::is_integral< ExecPolicy >::value >::type * = 0
                     )
 {
@@ -285,7 +304,11 @@ void parallel_reduce( const ExecPolicy  & policy
               >
     result_view ;
 
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,ExecPolicy>(1,str);
+
   (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( Impl::CopyWithoutTracking::apply(functor) , policy , result_view );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,ExecPolicy>(1,str);
 }
 
 // integral range policy
@@ -293,6 +316,7 @@ template< class FunctorType >
 inline
 void parallel_reduce( const size_t        work_count
                     , const FunctorType & functor
+                    , const std::string& str = ""
                     )
 {
   typedef typename
@@ -314,7 +338,12 @@ void parallel_reduce( const size_t        work_count
               >
     result_view ;
 
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,policy>(1,str);
+
   (void) Impl::ParallelReduce< FunctorType , policy >( Impl::CopyWithoutTracking::apply(functor) , policy(0,work_count) , result_view );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,policy>(1,str);
+
 }
 
 // general policy and view ouput
@@ -323,6 +352,7 @@ inline
 void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorType & functor
                     , const ViewType    & result_view
+                    , const std::string& str = ""
                     , typename Impl::enable_if<
                       ( Impl::is_view<ViewType>::value && ! Impl::is_integral< ExecPolicy >::value
 #ifdef KOKKOS_HAVE_CUDA
@@ -330,7 +360,12 @@ void parallel_reduce( const ExecPolicy  & policy
 #endif
                       )>::type * = 0 )
 {
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,ExecPolicy>(1,str);
+
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( Impl::CopyWithoutTracking::apply(functor) , policy , Impl::CopyWithoutTracking::apply(result_view) );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,ExecPolicy>(1,str);
+
 }
 
 // general policy and pod or array of pod output
@@ -342,13 +377,16 @@ void parallel_reduce( const ExecPolicy  & policy
                       ( ! Impl::is_integral< ExecPolicy >::value &&
                         ! Impl::is_same<typename ExecPolicy::execution_space,Kokkos::Cuda>::value )
                       , typename Kokkos::Impl::FunctorValueTraits< FunctorType , typename ExecPolicy::work_tag >::reference_type>::type result_ref
+                      , const std::string& str = ""
                       , typename Impl::enable_if<! Impl::is_same<typename ExecPolicy::execution_space,Kokkos::Cuda>::value >::type* = 0
                       )
 #else
                       , typename Impl::enable_if<
                         ( ! Impl::is_integral< ExecPolicy >::value)
                         , typename Kokkos::Impl::FunctorValueTraits< FunctorType , typename ExecPolicy::work_tag >::reference_type
-                        >::type result_ref )
+                        >::type result_ref
+                      , const std::string& str = ""
+                        )
 #endif
 {
   typedef Kokkos::Impl::FunctorValueTraits< FunctorType , typename ExecPolicy::work_tag >  ValueTraits ;
@@ -370,7 +408,12 @@ void parallel_reduce( const ExecPolicy  & policy
                , ValueTraits::value_count( functor )
                );
 
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,ExecPolicy>(1,str);
+
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( Impl::CopyWithoutTracking::apply(functor) , policy , Impl::CopyWithoutTracking::apply(result_view) );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,ExecPolicy>(1,str);
+
 }
 
 // integral range policy and view ouput
@@ -379,6 +422,7 @@ inline
 void parallel_reduce( const size_t        work_count
                     , const FunctorType & functor
                     , const ViewType    & result_view
+                    , const std::string& str = ""
                     , typename Impl::enable_if<( Impl::is_view<ViewType>::value
 #ifdef KOKKOS_HAVE_CUDA
                         && ! Impl::is_same<
@@ -393,7 +437,12 @@ void parallel_reduce( const size_t        work_count
 
   typedef RangePolicy< execution_space > ExecPolicy ;
 
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,ExecPolicy>(1,str);
+
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( Impl::CopyWithoutTracking::apply(functor) , ExecPolicy(0,work_count) , Impl::CopyWithoutTracking::apply(result_view) );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,ExecPolicy>(1,str);
+
 }
 
 // integral range policy and pod or array of pod output
@@ -406,6 +455,7 @@ void parallel_reduce( const size_t        work_count
                                              Impl::is_integral<FunctorType>::value,
                             void,FunctorType>::type
                          , void >::reference_type result
+                    , const std::string& str = ""
                     , typename Impl::enable_if< true
 #ifdef KOKKOS_HAVE_CUDA
                               && ! Impl::is_same<
@@ -439,7 +489,12 @@ void parallel_reduce( const size_t        work_count
                , ValueTraits::value_count( functor )
                );
 
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,policy>(1,str);
+
   (void) Impl::ParallelReduce< FunctorType , policy >( Impl::CopyWithoutTracking::apply(functor) , policy(0,work_count) , Impl::CopyWithoutTracking::apply(result_view) );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,policy>(1,str);
+
 }
 
 template< class ExecPolicy , class FunctorType , class ResultType >
@@ -449,12 +504,16 @@ void parallel_reduce( const std::string & str
                     , const FunctorType & functor
                     , ResultType * result)
 {
-  #ifdef KOKKOS_HAVE_DEBUG
-  std::cout << "Starting parallel_reduce kernel: " << str << std::endl;
+  #if KOKKOS_ENABLE_DEBUG_PRINT_KERNEL_NAMES
+  Kokkos::fence();
+  std::cout << "KOKKOS_DEBUG Start parallel_reduce kernel: " << str << std::endl;
   #endif
-  parallel_reduce(policy,functor,result);
-  #ifdef KOKKOS_HAVE_DEBUG
-  std::cout << "End (dispatch) parallel_reduce kernel: " << str << std::endl;
+
+  parallel_reduce(policy,functor,result,str);
+
+  #if KOKKOS_ENABLE_DEBUG_PRINT_KERNEL_NAMES
+  Kokkos::fence();
+  std::cout << "KOKKOS_DEBUG End   parallel_reduce kernel: " << str << std::endl;
   #endif
   (void) str;
 }
@@ -466,12 +525,16 @@ void parallel_reduce( const std::string & str
                     , const FunctorType & functor
                     , ResultType & result)
 {
-  #ifdef KOKKOS_HAVE_DEBUG
-  std::cout << "Starting parallel_reduce kernel: " << str << std::endl;
+  #if KOKKOS_ENABLE_DEBUG_PRINT_KERNEL_NAMES
+  Kokkos::fence();
+  std::cout << "KOKKOS_DEBUG Start parallel_reduce kernel: " << str << std::endl;
   #endif
-  parallel_reduce(policy,functor,result);
-  #ifdef KOKKOS_HAVE_DEBUG
-  std::cout << "End (dispatch) parallel_reduce kernel: " << str << std::endl;
+
+  parallel_reduce(policy,functor,result,str);
+
+  #if KOKKOS_ENABLE_DEBUG_PRINT_KERNEL_NAMES
+  Kokkos::fence();
+  std::cout << "KOKKOS_DEBUG End   parallel_reduce kernel: " << str << std::endl;
   #endif
   (void) str;
 }
@@ -482,12 +545,16 @@ void parallel_reduce( const std::string & str
                     , const ExecPolicy  & policy
                     , const FunctorType & functor)
 {
-  #ifdef KOKKOS_HAVE_DEBUG
-  std::cout << "Starting parallel_reduce kernel: " << str << std::endl;
+  #if KOKKOS_ENABLE_DEBUG_PRINT_KERNEL_NAMES
+  Kokkos::fence();
+  std::cout << "KOKKOS_DEBUG Start parallel_reduce kernel: " << str << std::endl;
   #endif
-  parallel_reduce(policy,functor);
-  #ifdef KOKKOS_HAVE_DEBUG
-  std::cout << "End (dispatch) parallel_reduce kernel: " << str << std::endl;
+
+  parallel_reduce(policy,functor,str);
+
+  #if KOKKOS_ENABLE_DEBUG_PRINT_KERNEL_NAMES
+  Kokkos::fence();
+  std::cout << "KOKKOS_DEBUG End   parallel_reduce kernel: " << str << std::endl;
   #endif
   (void) str;
 }
@@ -658,16 +725,23 @@ template< class ExecutionPolicy , class FunctorType >
 inline
 void parallel_scan( const ExecutionPolicy & policy
                   , const FunctorType     & functor
+                  , const std::string& str = ""
                   , typename Impl::enable_if< ! Impl::is_integral< ExecutionPolicy >::value >::type * = 0
                   )
 {
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,ExecutionPolicy>(2,str);
+
   Impl::ParallelScan< FunctorType , ExecutionPolicy > scan( Impl::CopyWithoutTracking::apply(functor) , policy );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,ExecutionPolicy>(2,str);
+
 }
 
 template< class FunctorType >
 inline
-void parallel_scan( const size_t        work_count ,
-                    const FunctorType & functor )
+void parallel_scan( const size_t        work_count
+                  , const FunctorType & functor
+                  , const std::string& str = "" )
 {
   typedef typename
     Kokkos::Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space
@@ -675,7 +749,12 @@ void parallel_scan( const size_t        work_count ,
 
   typedef Kokkos::RangePolicy< execution_space > policy ;
 
+  Kokkos::Experimental::Profiler::begin_kernel<FunctorType,policy>(2,str);
+
   (void) Impl::ParallelScan< FunctorType , policy >( Impl::CopyWithoutTracking::apply(functor) , policy(0,work_count) );
+
+  Kokkos::Experimental::Profiler::end_kernel<FunctorType,policy>(2,str);
+
 }
 
 template< class ExecutionPolicy , class FunctorType >
@@ -684,12 +763,16 @@ void parallel_scan( const std::string& str
                   , const ExecutionPolicy & policy
                   , const FunctorType     & functor)
 {
-  #ifdef KOKKOS_HAVE_DEBUG
-  std::cout << "Starting parallel_scan kernel: " << str << std::endl;
+  #if KOKKOS_ENABLE_DEBUG_PRINT_KERNEL_NAMES
+  Kokkos::fence();
+  std::cout << "KOKKOS_DEBUG Start parallel_scan kernel: " << str << std::endl;
   #endif
-  parallel_scan(policy,functor);
-  #ifdef KOKKOS_HAVE_DEBUG
-  std::cout << "End (dispatch) parallel_scan kernel: " << str << std::endl;
+
+  parallel_scan(policy,functor,str);
+
+  #if KOKKOS_ENABLE_DEBUG_PRINT_KERNEL_NAMES
+  Kokkos::fence();
+  std::cout << "KOKKOS_DEBUG End   parallel_scan kernel: " << str << std::endl;
   #endif
   (void) str;
 }

@@ -18,6 +18,10 @@ typedef MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Amalg
 typedef MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Amesos2Smoother;
 #endif
 
+#ifdef MUELU_AMGXOPERATOR_SHORT
+typedef MueLu::AMGXOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> AMGXOperator;
+#endif
+
 #ifdef MUELU_ALGEBRAICPERMUTATIONSTRATEGY_SHORT
 typedef MueLu::AlgebraicPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node> AlgebraicPermutationStrategy;
 #endif
@@ -292,6 +296,10 @@ typedef MueLu::TentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tentati
 
 #ifdef MUELU_THRESHOLDAFILTERFACTORY_SHORT
 typedef MueLu::ThresholdAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThresholdAFilterFactory;
+#endif
+
+#ifdef MUELU_TOGGLEPFACTORY_SHORT
+typedef MueLu::TogglePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TogglePFactory;
 #endif
 
 #ifdef MUELU_TPETRAOPERATOR_SHORT

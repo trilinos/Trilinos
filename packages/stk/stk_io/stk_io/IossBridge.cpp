@@ -1268,6 +1268,11 @@ namespace stk {
         ns->property_add(Ioss::Property(internal_selector_name, select, false));
         ns->property_add(Ioss::Property(base_stk_part_name, part.name()));
 
+        if (part.id() != stk::mesh::Part::INVALID_ID)
+        {
+            ns->property_add(Ioss::Property("id", part.id()));
+        }
+
         // Add the attribute fields.
         ioss_add_fields(part, stk::topology::NODE_RANK, ns, Ioss::Field::ATTRIBUTE);
       }
@@ -1305,6 +1310,11 @@ namespace stk {
         {
             int ordinal = part.mesh_meta_data_ordinal();
             eb->property_add(Ioss::Property("original_block_order", ordinal));
+        }
+
+        if (part.id() != stk::mesh::Part::INVALID_ID)
+        {
+            eb->property_add(Ioss::Property("id", part.id()));
         }
 
         io_region.add(eb);
@@ -1389,6 +1399,11 @@ namespace stk {
 
         if (create_sideset) {
           Ioss::SideSet * const ss = new Ioss::SideSet(io_region.get_database(), part.name());
+
+          if (part.id() != stk::mesh::Part::INVALID_ID)
+          {
+              ss->property_add(Ioss::Property("id",part.id()));
+          }
 
           io_region.add(ss);
           int spatial_dim = io_region.get_property("spatial_dimension").get_int();

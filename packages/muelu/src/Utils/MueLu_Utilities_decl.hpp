@@ -98,11 +98,11 @@ class Epetra_Vector;
 
 namespace MueLu {
 // MPI helpers
-#define sumAll(rcpComm, in, out)                                        \
+#define MueLu_sumAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out))
-#define minAll(rcpComm, in, out)                                        \
+#define MueLu_minAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out))
-#define maxAll(rcpComm, in, out)                                        \
+#define MueLu_maxAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out))
 
 #ifdef HAVE_MUELU_EPETRA
@@ -178,18 +178,20 @@ namespace MueLu {
     static const Tpetra::MultiVector<SC,LO,GO,NO>&          MV2TpetraMV(const MultiVector& Vec);
     static       Tpetra::MultiVector<SC,LO,GO,NO>&          MV2NonConstTpetraMV(MultiVector& Vec);
 
-    static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO> >   Op2TpetraCrs(RCP<const Matrix> Op);
-    static RCP<      Tpetra::CrsMatrix<SC,LO,GO,NO> >   Op2NonConstTpetraCrs(RCP<Matrix> Op);
+    static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO> >       Op2TpetraCrs(RCP<const Matrix> Op);
+    static RCP<      Tpetra::CrsMatrix<SC,LO,GO,NO> >       Op2NonConstTpetraCrs(RCP<Matrix> Op);
 
-    static const Tpetra::CrsMatrix<SC,LO,GO,NO>&        Op2TpetraCrs(const Matrix& Op);
-    static       Tpetra::CrsMatrix<SC,LO,GO,NO>&        Op2NonConstTpetraCrs(Matrix& Op);
+    static const Tpetra::CrsMatrix<SC,LO,GO,NO>&            Op2TpetraCrs(const Matrix& Op);
+    static       Tpetra::CrsMatrix<SC,LO,GO,NO>&            Op2NonConstTpetraCrs(Matrix& Op);
 
-    static RCP<const Tpetra::RowMatrix<SC,LO,GO,NO> >   Op2TpetraRow(RCP<const Matrix> Op);
-    static RCP<      Tpetra::RowMatrix<SC,LO,GO,NO> >   Op2NonConstTpetraRow(RCP<Matrix> Op);
+    static RCP<const Tpetra::RowMatrix<SC,LO,GO,NO> >       Op2TpetraRow(RCP<const Matrix> Op);
+    static RCP<      Tpetra::RowMatrix<SC,LO,GO,NO> >       Op2NonConstTpetraRow(RCP<Matrix> Op);
 
 
     static const RCP<const Tpetra::Map<LO, GO, NO> >        Map2TpetraMap(const Map& map);
 #endif
+
+    static RCP<Xpetra::Matrix<SC,LO,GO,NO> >                Crs2Op(RCP<CrsMatrix> Op);
 
     /*! @brief Helper function to do matrix-matrix multiply
 
@@ -209,7 +211,7 @@ namespace MueLu {
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
                                 bool doOptimizeStorage        = true,
-				const std::string & label     = std::string()){
+                                const std::string & label     = std::string()){
       return Utils<SC,LO,GO,NO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage,label);
     }
 
@@ -219,7 +221,7 @@ namespace MueLu {
                               const Matrix& B,
                               RCP<Matrix> C_in,
                               Teuchos::FancyOStream &fos,
-			      const std::string & label     = std::string());
+                              const std::string & label     = std::string());
 
 
     /*! @brief Helper function to do matrix-matrix multiply
@@ -247,7 +249,7 @@ namespace MueLu {
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
                                 bool doOptimizeStorage        = true,
-				const std::string & label     = std::string());
+                                const std::string & label     = std::string());
 
 #ifdef HAVE_MUELU_EPETRAEXT
     // Michael Gee's MLMultiply
@@ -432,6 +434,11 @@ namespace MueLu {
   */
   long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList);
 
+
+  /*! Tokenizes a (comma)-separated string, removing all leading and trailing whitespace 
+    WARNING: This routine is not threadsafe on most architectures 
+  */
+  void TokenizeStringAndStripWhiteSpace(const std::string & stream, std::vector<std::string> & tokenList, const char* token = ",");
 
 
 #ifdef HAVE_MUELU_EPETRA

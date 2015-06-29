@@ -291,7 +291,7 @@ void OpenMP::finalize()
   Impl::OpenMPexec::m_pool_topo[1] = 0 ;
   Impl::OpenMPexec::m_pool_topo[2] = 0 ;
 
-  omp_set_num_threads(0);
+  omp_set_num_threads(1);
 
   if ( Impl::s_using_hwloc ) {
     hwloc::unbind_this_thread();
@@ -311,11 +311,11 @@ void OpenMP::print_configuration( std::ostream & s , const bool detail )
 #endif
 #if defined( KOKKOS_HAVE_HWLOC )
 
-  const unsigned numa_count       = Kokkos::hwloc::get_available_numa_count();
+  const unsigned numa_count_       = Kokkos::hwloc::get_available_numa_count();
   const unsigned cores_per_numa   = Kokkos::hwloc::get_available_cores_per_numa();
   const unsigned threads_per_core = Kokkos::hwloc::get_available_threads_per_core();
 
-  s << " hwloc[" << numa_count << "x" << cores_per_numa << "x" << threads_per_core << "]"
+  s << " hwloc[" << numa_count_ << "x" << cores_per_numa << "x" << threads_per_core << "]"
     << " hwloc_binding_" << ( Impl::s_using_hwloc ? "enabled" : "disabled" )
     ;
 #endif

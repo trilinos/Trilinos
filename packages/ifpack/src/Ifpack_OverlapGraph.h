@@ -64,7 +64,7 @@ class Ifpack_OverlapGraph: public Epetra_Object {
  public:
   //@{ \name Constructors/Destructor
   //! Constructor using Epetra_CrsGraph.
-  /*! Creates an Ifpack_OverlapGraph object from the user graph. 
+  /*! Creates an Ifpack_OverlapGraph object from the user graph.
     \param In
            UserMatrixGraph_in - Graph from user matrix.
   */
@@ -72,12 +72,12 @@ class Ifpack_OverlapGraph: public Epetra_Object {
 
   //! Constructor using Epetra_RowMatrix.
   /*! Creates an Ifpack_OverlapGraph object from the user graph implicitly defined by the
-	 Epetra_RowMatrix interface. 
+         Epetra_RowMatrix interface.
     \param In
             RowMatrix - An object that has implemented the Epetra_RowMatrix interface.
   */
   Ifpack_OverlapGraph(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& UserMatrix_in, int OverlapLevel_in);
-  
+
   //! Copy constructor.
   Ifpack_OverlapGraph(const Ifpack_OverlapGraph & Source);
 
@@ -86,7 +86,7 @@ class Ifpack_OverlapGraph: public Epetra_Object {
   //@}
 
   //@{ \name Attribute access methods.
-    
+
   //! Set parameters using a Teuchos::ParameterList object.
   /* This method is only available if the configure argument
      '--enable-ifpack-teuchos' was used.
@@ -98,13 +98,13 @@ class Ifpack_OverlapGraph: public Epetra_Object {
 
   //! Returns the overlap graph object.
   const Epetra_CrsGraph & OverlapGraph() const {return(*OverlapGraph_);}
-    
+
   //! Returns the RowMap associated with the overlap graph.
   const Epetra_BlockMap & OverlapRowMap() const {return(*OverlapRowMap_);}
-    
+
   //! Returns the overlap graph object.
   const Epetra_Import & OverlapImporter() const {return(*OverlapImporter_);}
-    
+
   //! Returns the level of overlap used to create this graph.
   /*! The graph created by this class uses a recursive definition 0f overlap.
       Level one overlap is created by copying all off-processor rows that are
@@ -116,13 +116,15 @@ class Ifpack_OverlapGraph: public Epetra_Object {
 
   //@{ \name Epetra_Object print method (allows use of << operator with this class).
 
-  void Print(ostream& os) const {
+  void Print(std::ostream& os) const {
+    using std::endl;
+
     os << endl;
-    if (UserMatrix_!=Teuchos::null) 
+    if (UserMatrix_!=Teuchos::null)
       os << "Overlap Graph created using the user's Epetra_RowMatrix object" << endl;
     else
       os << "Overlap Graph created using the user's Epetra_CrsGraph object" << endl;
-    
+
     os << " Level of Overlap = " << OverlapLevel_ << endl;
     OverlapGraph_->Print(os);
     return;

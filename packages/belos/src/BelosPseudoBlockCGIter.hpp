@@ -146,7 +146,7 @@ namespace Belos {
      * \note For any pointer in \c newstate which directly points to the multivectors in 
      * the solver, the data is not copied.
      */
-    void initializeCG(CGIterationState<ScalarType,MV> newstate);
+    void initializeCG(CGIterationState<ScalarType,MV>& newstate);
     
     /*! \brief Initialize the solver with the initial vectors from the linear problem
      *  or random data.
@@ -283,7 +283,7 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void PseudoBlockCGIter<ScalarType,MV,OP>::initializeCG(CGIterationState<ScalarType,MV> newstate)
+  void PseudoBlockCGIter<ScalarType,MV,OP>::initializeCG(CGIterationState<ScalarType,MV>& newstate)
   {
     // Check if there is any multivector to clone from.
     Teuchos::RCP<const MV> lhsMV = lp_->getCurrLHSVec();

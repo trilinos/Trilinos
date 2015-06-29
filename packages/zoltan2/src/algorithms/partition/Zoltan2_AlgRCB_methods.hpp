@@ -458,16 +458,14 @@ template <typename mvector_t>
 
   recvCount.clear();
 
-  RCP<const mvector_t> newMultiVector;
-  RCP<const mvector_t> constInput = rcp_const_cast<const mvector_t>(vectors);
-
+  RCP<mvector_t> newMultiVector;
   try{
     newMultiVector = XpetraTraits<mvector_t>::doMigration(
-      constInput, numMyNewGnos, recvBuf.getRawPtr());
+      *vectors, numMyNewGnos, recvBuf.getRawPtr());
   }
   Z2_FORWARD_EXCEPTIONS
 
-  vectors = rcp_const_cast<mvector_t>(newMultiVector);
+  vectors = newMultiVector;
   env->memory("Former problem data replaced with new data");
   env->debug(DETAILED_STATUS, "Exiting migrateData");
 }

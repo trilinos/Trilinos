@@ -47,8 +47,8 @@
 static char *qainfo[] =
 {
   "Aprepro",
-  "Date: 2014/04/09",
-  "Revision: 3.04"
+  "Date: 2015/06/03",
+  "Revision: 3.05"
 };
 
 #include <ctype.h>                      // for isdigit

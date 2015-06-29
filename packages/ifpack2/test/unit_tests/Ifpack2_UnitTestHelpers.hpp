@@ -679,6 +679,64 @@ Teuchos::RCP<const Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,Glob
   return bcrsmatrix;
 }
 
+
+// ///////////////////////////////////////////////////////////////////////
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > create_test_matrix_variable_blocking(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowmap) {
+  // Basically each processor gets this 5x5 block lower-triangular matrix:
+  //
+  // [ 2 -1  0  0  0 ;...
+  // [-1  2  0  0  0 ;...
+  // [ 0 -1  3 -1  0 ;...
+  // [ 0  0 -1  3 -1 ;...
+  // [ 0  0  0 -1  2  ];
+  //
+  // Beyond this the matrix is diagonal.  We also explicitly stick in some hard zeros for the line partitioning test
+
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap, 0));
+  
+  Teuchos::Array<GlobalOrdinal> indices(4);
+  Teuchos::Array<Scalar> values(4);
+  GlobalOrdinal rb = rowmap->getGlobalElement(0);
+
+  /*** Fill Matrix ****/
+  // Row 0 
+  indices[0]=rb; indices[1]=rb+1; indices[2]=rb+2;
+  values[0] =2;  values[1] =-1;   values[2] = 0;
+  crsmatrix->insertGlobalValues(rb, indices(0,3), values(0,3));
+
+  // Row 1
+  indices[0]=rb; indices[1]=rb+1; indices[2]=rb+2;
+  values[0] =-1; values[1] =2;    values[2] = 0;
+  crsmatrix->insertGlobalValues(rb+1, indices(0,3), values(0,3));
+
+  // Row 2
+  indices[0]=rb+1; indices[1]=rb+2; indices[2]=rb+3; indices[3]=rb+4;
+  values[0] =-1;   values[1] = 3;   values[2] =-1;   values[3] = 0;
+  crsmatrix->insertGlobalValues(rb+2, indices(0,4), values(0,4));
+
+  // Row 3
+  indices[0]=rb+2; indices[1]=rb+3; indices[2]=rb+4; indices[3]=rb+1;
+  values[0] =-1;   values[1] = 3;   values[2] =-1;   values[3] =0.0;
+  crsmatrix->insertGlobalValues(rb+3, indices(0,4), values(0,4));
+
+  // Row 4
+  indices[0]=rb+3; indices[1]=rb+4;
+  values[0] =-1;   values[1] = 2;
+  crsmatrix->insertGlobalValues(rb+4, indices(0,2), values(0,2));
+
+  // All other rows
+  for(size_t i=5; i<rowmap->getNodeNumElements(); i++) {
+    indices[0]=rb+i;
+    values[0] = 1;
+    crsmatrix->insertGlobalValues(rb+i, indices(0,1), values(0,1));
+  }
+  crsmatrix->fillComplete();
+
+  return crsmatrix;
+}
+
+
   template<class Scalar = Tpetra::RowMatrix<>::scalar_type,
            class LocalOrdinal =
              typename Tpetra::RowMatrix<Scalar>::local_ordinal_type,

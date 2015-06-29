@@ -1494,9 +1494,12 @@ namespace Tpetra {
       this->storageStatus_ = Details::STORAGE_1D_PACKED;
     }
 
-    // Build the local sparse matrix object.
+    // Build the local sparse matrix object.  At this point, the local
+    // matrix certainly has a column Map.  Remember that the local
+    // matrix's number of columns comes from the column Map, not the
+    // domain Map.
     lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
-                                    getDomainMap ()->getNodeNumElements (),
+                                    getColMap ()->getNodeNumElements (),
                                     k_vals,
                                     staticGraph_->getLocalGraph ());
   }
@@ -5360,11 +5363,21 @@ namespace Tpetra {
       return; // all done!
     }
 
-    // Describe the Map Map.
+    // Describe the row Map.
     if (myRank == 0) {
       out << endl << "Row Map:" << endl;
     }
-    getRowMap ()->describe (out, vl);
+    if (getRowMap ().is_null ()) {
+      if (myRank == 0) {
+        out << "null" << endl;
+      }
+    }
+    else {
+      if (myRank == 0) {
+        out << endl;
+      }
+      getRowMap ()->describe (out, vl);
+    }
 
     // Describe the column Map.
     if (myRank == 0) {
@@ -5405,7 +5418,7 @@ namespace Tpetra {
       if (myRank == 0) {
         out << endl;
       }
-      getColMap ()->describe (out, vl);
+      getDomainMap ()->describe (out, vl);
     }
 
     // Describe the range Map.
@@ -5428,7 +5441,7 @@ namespace Tpetra {
       if (myRank == 0) {
         out << endl;
       }
-      getColMap ()->describe (out, vl);
+      getRangeMap ()->describe (out, vl);
     }
 
     // O(P) data

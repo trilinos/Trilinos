@@ -55,9 +55,11 @@
 #include "stk_unit_test_utils/getOption.h"
 #include "Ioss_Region.h"
 #include "Ioss_ElementBlock.h"
+#include "Ioss_NodeSet.h"
 
 namespace {
 
+//BeginDocTest1
 TEST(StkMeshIoBroker, outputEqualsInput)
 {
     // A simple test for reading and writing an exodus file, to make sure
@@ -116,12 +118,27 @@ TEST(StkMeshIoBroker, outputEqualsInput)
             std::string new_name = new_iobroker_elem_blocks[i]->name();
             EXPECT_EQ(input_name, new_name);
         }
+
+        //now also compare names/ids of nodesets
+        const Ioss::NodeSetContainer input_broker_node_sets = ioBroker.get_output_io_region(output_file_index)->get_nodesets();
+        const Ioss::NodeSetContainer new_iobroker_node_sets = new_iobroker.get_output_io_region(output_file_index)->get_nodesets();
+        EXPECT_EQ(input_broker_node_sets.size(), new_iobroker_node_sets.size());
+        for(size_t i=0; i<input_broker_node_sets.size(); ++i)
+        {
+            std::string input_name = input_broker_node_sets[i]->name();
+            std::string new_name = new_iobroker_node_sets[i]->name();
+            EXPECT_EQ(input_name, new_name);
+            int input_id = input_broker_node_sets[i]->get_property("id").get_int();
+            int new_id = new_iobroker_node_sets[i]->get_property("id").get_int();
+            EXPECT_EQ(input_id, new_id);
+        }
     }
     else
     {
-        std::cerr << "test StkMeshIoBroker.outputEqualsInput, no mesh specified" << std::endl;
+        std::cout << "test StkMeshIoBroker.outputEqualsInput, no mesh specified" << std::endl;
     }
 }
+//BeginDocTest1
 
 }
 

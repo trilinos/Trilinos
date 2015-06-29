@@ -252,7 +252,7 @@ namespace MueLu {
 #if 0
     GO gCntZeroDiagonals  = 0;
     GO glCntZeroDiagonals = Teuchos::as<GlobalOrdinal>(lCntZeroDiagonals);  /* LO->GO conversion */
-    sumAll(comm,glCntZeroDiagonals,gCntZeroDiagonals);
+    MueLu_sumAll(comm,glCntZeroDiagonals,gCntZeroDiagonals);
     GetOStream(Statistics0) << "MueLu::LocalPermutationStrategy: found " << gCntZeroDiagonals << " zeros on diagonal" << std::endl;
 #endif
 
@@ -287,7 +287,7 @@ namespace MueLu {
     }
 
     // sum up all entries in multipleColRequests over all processors
-    sumAll(diagPVec->getMap()->getComm(), lNumRowPermutations, gNumRowPermutations);
+    MueLu_sumAll(diagPVec->getMap()->getComm(), lNumRowPermutations, gNumRowPermutations);
 
     //// count column permutations
     // count zeros on diagonal in Q^T -> number of column permutations
@@ -303,7 +303,7 @@ namespace MueLu {
     }
 
     // sum up all entries in multipleColRequests over all processors
-    sumAll(diagQTVec->getMap()->getComm(), lNumColPermutations, gNumColPermutations);
+    MueLu_sumAll(diagQTVec->getMap()->getComm(), lNumColPermutations, gNumColPermutations);
 
     currentLevel.Set("#RowPermutations", gNumRowPermutations, genFactory/*this*/);
     currentLevel.Set("#ColPermutations", gNumColPermutations, genFactory/*this*/);

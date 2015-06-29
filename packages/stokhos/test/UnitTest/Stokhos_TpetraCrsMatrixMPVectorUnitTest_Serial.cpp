@@ -61,6 +61,7 @@ int main( int argc, char* argv[] ) {
   Kokkos::Serial::initialize();
 
   // Run tests
+  Teuchos::UnitTestRepository::setGloballyReduceTestResult(true);
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   // Finish up

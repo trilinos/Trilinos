@@ -121,7 +121,7 @@ TEST(UnitTestingOfRelation, testRelationNoGhosting)
   mesh.generate_mesh( );
   ASSERT_TRUE(stk::unit_test::modification_end_wrapper(ring_bulk));
 
-  mesh.fixup_node_ownership(BulkData::MOD_END_COMPRESS_AND_SORT);
+  mesh.fixup_node_ownership();
 
   // This process' first element in the loop
   // if a parallel mesh has a shared node

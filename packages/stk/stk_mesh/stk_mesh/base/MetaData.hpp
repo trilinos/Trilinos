@@ -584,7 +584,7 @@ private:
   void add_new_part_in_part_fields();
   void synchronize_part_fields_with_parts();
 
-  Part & declare_internal_part( const std::string & p_name, EntityRank rank);
+  virtual Part & declare_internal_part( const std::string & p_name, EntityRank rank);
 
   void internal_declare_known_cell_topology_parts();
 
@@ -790,6 +790,7 @@ field_type & put_field_on_entire_mesh(field_type & field)
 namespace stk {
 namespace mesh {
 
+// TODO: bounds check in debug!
 inline
 Part & MetaData::get_part( unsigned ord ) const
 { return * m_part_repo.get_all_parts()[ord] ; }

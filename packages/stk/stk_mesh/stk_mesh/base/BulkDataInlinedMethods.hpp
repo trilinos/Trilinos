@@ -409,11 +409,6 @@ bool BulkData::has_permutation(Entity entity, EntityRank rank) const
 }
 
 inline
-int BulkData::entity_comm_map_owner(const EntityKey & key) const
-{
-    return internal_entity_comm_map_owner(key);
-}
-inline
 int BulkData::internal_entity_comm_map_owner(const EntityKey & key) const
 {
   const int owner_rank = m_entity_comm_map.owner_rank(key);
@@ -821,6 +816,8 @@ inline RelationVector& BulkData::aux_relations(Entity entity)
 inline void BulkData::set_global_id(stk::mesh::Entity entity, int id)
 {
   entity_setter_debug_check(entity);
+
+  m_modSummary.track_set_global_id(entity, id);
 
   m_fmwk_global_ids[entity.local_offset()] = id;
 }

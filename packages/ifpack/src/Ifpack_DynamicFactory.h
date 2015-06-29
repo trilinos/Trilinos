@@ -31,7 +31,7 @@
 #define IFPACK_DYNAMIC_FACTORY_H
 
 #include <ostream>
-#include <string>
+#include <std::string>
 #include <map>
 #include <algorithm>
 
@@ -59,10 +59,10 @@ public:
   // The prototype of the preconditioner builder function
   typedef Ifpack_Preconditioner* (*builderFunction)(Epetra_RowMatrix*, int, bool, bool);
 
-  /** \brief Creates an instance of Ifpack_Preconditioner given the string
+  /** \brief Creates an instance of Ifpack_Preconditioner given the std::string
    * name of the preconditioner type (can fail with bad input).
    *
-   * \param PrecType (In) - String name of preconditioner type to be created. 
+   * \param PrecType (In) - String name of preconditioner type to be created.
    *
    * \param Matrix (In) - Matrix used to define the preconditioner
    *
@@ -73,9 +73,9 @@ public:
    * that the client is responsible for calling <tt>delete</tt> on the
    * returned object once it is finished using it!
    */
-  Ifpack_Preconditioner* Create(const string PrecType,
-								Epetra_RowMatrix* Matrix,
-								const int overlap = 0,
+  Ifpack_Preconditioner* Create(const std::string PrecType,
+                                Epetra_RowMatrix* Matrix,
+                                const int overlap = 0,
                                 bool overrideSerialDefault = false);
 
   // Static methods
@@ -95,7 +95,7 @@ public:
    * Returns <tt>0</tt> if ok, otherwise <tt>1</tt>
    */
   static int RegisterPreconditioner(const std::string PrecName,
-		  	  	  	  	  	  	    builderFunction PrecBuilder);
+                                                                    builderFunction PrecBuilder);
 
   // Static methods
   /** \brief Prints the current list of registered preconditioners
@@ -106,9 +106,9 @@ public:
   // Templated build function
   template <typename PrecType, bool StandAlone>
   static Ifpack_Preconditioner* buildPreconditioner(Epetra_RowMatrix* Matrix,
-		  	  	  	  	  	  	  	  	  	  	    int Overlap,
-		  	  	  	  	  	  	  	  	  	  	    bool Serial,
-		  	  	  	  	  	  	  	  	  	  	    bool OverrideSerialDefault);
+                                                                                                    int Overlap,
+                                                                                                    bool Serial,
+                                                                                                    bool OverrideSerialDefault);
 
 private:
   static std::map<std::string, builderFunction> PreconditionerMap_;
@@ -120,15 +120,15 @@ private:
 template <typename PrecType, bool StandAlone>
 Ifpack_Preconditioner*
 Ifpack_DynamicFactory::buildPreconditioner(Epetra_RowMatrix* Matrix,
-										   int Overlap,
-										   bool Serial,
-										   bool OverrideSerialDefault)
+                                                                                   int Overlap,
+                                                                                   bool Serial,
+                                                                                   bool OverrideSerialDefault)
 {
-	if (StandAlone || (Serial && !OverrideSerialDefault)) {
-		return new PrecType(Matrix);
-	} else {
-		return new Ifpack_AdditiveSchwarz<PrecType>(Matrix, Overlap);
-	}
+        if (StandAlone || (Serial && !OverrideSerialDefault)) {
+                return new PrecType(Matrix);
+        } else {
+                return new Ifpack_AdditiveSchwarz<PrecType>(Matrix, Overlap);
+        }
 }
 
 #endif // IFPACK_DYNAMIC_FACTORY_H

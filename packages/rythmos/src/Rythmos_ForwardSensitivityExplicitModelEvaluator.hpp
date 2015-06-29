@@ -57,7 +57,7 @@ namespace Rythmos {
 
  \verbatim
 
-   x_dot(t) = f(x(t),{p_l},t), over t = [t0,tf] 
+   x_dot(t) = f(x(t),{p_l},t), over t = [t0,tf]
 
    x(t0) = x_init(p)
 
@@ -144,7 +144,7 @@ public:
     const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index
     );
-  
+
   /** \brief . */
   void initializeStructureInitCondOnly(
     const RCP<const Thyra::ModelEvaluator<Scalar> >& stateModel,
@@ -158,14 +158,14 @@ public:
   /** \brief . */
   RCP<Thyra::ModelEvaluator<Scalar> >
   getNonconstStateModel() const;
-  
+
   /** \brief . */
   int get_p_index() const;
-  
+
   /** \brief . */
   RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> >
   get_s_bar_space() const;
-  
+
   /** \brief . */
   RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_sens_space() const;
 
@@ -239,7 +239,7 @@ private:
   void computeDerivativeMatrices(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &point
     ) const;
-  
+
 };
 
 
@@ -395,7 +395,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializePointState(
 #ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPT( Teuchos::is_null(x) );
 #endif // HAVE_RYTHMOS_DEBUG
-      
+
   stateBasePoint_ = stateStepper->getInitialCondition(); // set parameters
   stateBasePoint_.set_x( x );
   stateBasePoint_.set_t( curr_t );
@@ -405,7 +405,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::initializePointState(
   // just in time.
 
   wrapNominalValuesAndBounds();
-  
+
 }
 
 
@@ -492,7 +492,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::evalModelImpl(
 
   using Teuchos::rcp_dynamic_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef Thyra::ModelEvaluatorBase MEB;
+  // typedef Thyra::ModelEvaluatorBase MEB; // unused
   typedef Teuchos::VerboseObjectTempState<Thyra::ModelEvaluatorBase> VOTSME;
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(
@@ -502,7 +502,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::evalModelImpl(
   // Update the derivative matrices if they are not already updated for the
   // given time!.
   //
-  
+
   {
     RYTHMOS_FUNC_TIME_MONITOR_DIFF(
         "Rythmos:ForwardSensitivityExplicitModelEvaluator::evalModel: computeMatrices",
@@ -521,7 +521,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::evalModelImpl(
       );
   RCP<const Thyra::MultiVectorBase<Scalar> >
     S = s_bar->getMultiVector();
-  
+
   //
   // OutArgs
   //
@@ -544,7 +544,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::evalModelImpl(
         "Rythmos:ForwardSensitivityExplicitModelEvaluator::evalModel: computeSens",
         Rythmos_FSEME
         );
-    
+
     // Form the residual:  df/dx * S + df/dp
     // F_sens = df/dx * S
     Thyra::apply(
@@ -555,7 +555,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::evalModelImpl(
     // F_sens += d(f)/d(p)
     Vp_V( F_sens.ptr(), *DfDp_ );
   }
-  
+
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
 
 }
@@ -569,14 +569,14 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::wrapNominalValuesAndBound
 {
   TEUCHOS_ASSERT( !is_null(stateModel_) );
 
-  using Teuchos::rcp_dynamic_cast;
-  typedef Thyra::ModelEvaluatorBase MEB;
+  // using Teuchos::rcp_dynamic_cast; // unused
+  // typedef Thyra::ModelEvaluatorBase MEB; // unused
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   // nominalValues_.clear(); // ToDo: Implement this!
 
   nominalValues_.set_t(stateModel_->getNominalValues().get_t());
-  
+
   // 2007/05/22: rabartl: Note: Currently there is not much of a reason to set
   // an initial condition here since the initial condition for the
   // sensitivities is really being set in the ForwardSensitivityStepper
@@ -606,7 +606,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::computeDerivativeMatrices
 
   MEB::InArgs<Scalar> inArgs = stateBasePoint_;
   MEB::OutArgs<Scalar> outArgs = stateModel_->createOutArgs();
-  
+
   if (is_null(DfDx_)) {
     DfDx_ = stateModel_->create_W_op();
   }
@@ -625,10 +625,10 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::computeDerivativeMatrices
     p_index_,
     MEB::Derivative<Scalar>(DfDp_,MEB::DERIV_MV_BY_COL)
     );
-  
+
   VOTSME stateModel_outputTempState(stateModel_,out,verbLevel);
   stateModel_->evalModel(inArgs,outArgs);
-  
+
 
 }
 

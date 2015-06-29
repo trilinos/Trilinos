@@ -130,7 +130,7 @@ main (int argc, char *argv[])
     // Set up Ifpack to use incomplete Cholesky with thresholding on
     // each MPI process and additive Schwarz domain decomposition
     // across MPI processes.  See Ifpack's documentation for details.
-    string precType = "IC stand-alone";
+    std::string precType = "IC stand-alone";
     int overlapLevel = 0;
     prec = rcp (precFactory.Create (precType, K.get (), overlapLevel));
     // parameters for preconditioner

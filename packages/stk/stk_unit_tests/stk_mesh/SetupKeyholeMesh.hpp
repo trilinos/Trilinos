@@ -86,11 +86,10 @@ void setupKeyholeMesh2D_case1(stk::mesh::BulkData& bulk)
 
   bulk.modification_begin();
 
-  const int nodesPerElem = 4;
-  stk::mesh::EntityId elem1_nodes[nodesPerElem] = {1, 2, 3, 4};
-  stk::mesh::EntityId elem2_nodes[nodesPerElem] = {5, 6, 7, 2};
-  stk::mesh::EntityId elem3_nodes[nodesPerElem] = {3, 8, 9, 10};
-  stk::mesh::EntityId elem4_nodes[nodesPerElem] = {8, 11, 12, 9};
+  stk::mesh::EntityIdVector elem1_nodes {1, 2, 3, 4};
+  stk::mesh::EntityIdVector elem2_nodes {5, 6, 7, 2};
+  stk::mesh::EntityIdVector elem3_nodes {3, 8, 9, 10};
+  stk::mesh::EntityIdVector elem4_nodes {8, 11, 12, 9};
 
   stk::mesh::EntityId elemId = 1;
   if (bulk.parallel_rank() == 0) {
@@ -148,11 +147,10 @@ void setupKeyholeMesh2D_case2(stk::mesh::BulkData& bulk)
 
   bulk.modification_begin();
 
-  const int nodesPerElem = 4;
-  stk::mesh::EntityId elem1_nodes[nodesPerElem] = {1, 2, 3, 4};
-  stk::mesh::EntityId elem2_nodes[nodesPerElem] = {2, 5, 6, 3};
-  stk::mesh::EntityId elem3_nodes[nodesPerElem] = {7, 8, 9, 5};
-  stk::mesh::EntityId elem4_nodes[nodesPerElem] = {6, 10, 11, 12};
+  stk::mesh::EntityIdVector elem1_nodes {1, 2, 3, 4};
+  stk::mesh::EntityIdVector elem2_nodes {2, 5, 6, 3};
+  stk::mesh::EntityIdVector elem3_nodes {7, 8, 9, 5};
+  stk::mesh::EntityIdVector elem4_nodes {6, 10, 11, 12};
 
   stk::mesh::EntityId elemId = 1;
   if (bulk.parallel_rank() == 0) {

@@ -64,10 +64,14 @@ namespace Teuchos {
  *
  * \param paramList [in/out] On input, <tt>*paramList</tt> may be empty or
  * contain some parameters and sublists. On output, parameters and sublist
- * from the file <tt>xmlFileName</tt> will be set or overide those in
- * <tt>*paramList</tt>.
+ * from the file <tt>xmlFileName</tt> will be set or override (or not) those in
+ * <tt>*paramList</tt> depending on the <tt>overwrite</tt> parameter.
  *
  * \param comm [in] A Comm object used to broadcast the xml.
+ *
+ * \param overwrite [in] If true, parameters and sublists in the <tt>xmlStr</tt> 
+ * will override those in <tt>paramList</tt>.  If false, any value set in 
+ * <tt>paramList</tt> will be kept, only values not set will be updated.
  *
  * \relates ParameterList
  */
@@ -75,7 +79,8 @@ TEUCHOSCOMM_LIB_DLL_EXPORT
 void updateParametersFromXmlFileAndBroadcast(
   const std::string &xmlFileName,
   const Ptr<ParameterList> &paramList,
-  const Comm<int> &comm
+  const Comm<int> &comm,
+  bool overwrite = true
   );
 
 

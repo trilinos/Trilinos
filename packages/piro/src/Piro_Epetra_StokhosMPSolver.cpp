@@ -83,58 +83,60 @@ setup(const Teuchos::RCP<EpetraExt::ModelEvaluator>& model,
     Teuchos::rcp(new Stokhos::MPModelEvaluator(mp_model, product_comm,
 					       mp_block_map, mpParams));
 
-  bool use_mpbd_solver = mpParams->get("Use MPBD Solver", false);
-  Teuchos::RCP<NOX::Epetra::LinearSystem> linsys;
-  Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> nox_interface;
-  if (use_mpbd_solver) {
-    nox_interface = 
-      Teuchos::rcp(new NOX::Epetra::ModelEvaluatorInterface(mp_nonlin_model));
-    Teuchos::RCP<Epetra_Operator> A = 
-      mp_nonlin_model->create_W();
-    Teuchos::RCP<Epetra_Operator> M = 
-      mp_nonlin_model->create_WPrec()->PrecOp;
-    Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = 
-      nox_interface;
-    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = 
-      nox_interface;
-    Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = 
-      nox_interface;
-
-    Teuchos::ParameterList& noxParams = piroParams->sublist("NOX");
-    Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
-    Teuchos::ParameterList& newtonParams = 
-      noxParams.sublist("Direction").sublist("Newton");
-    Teuchos::ParameterList& noxstratlsParams = 
-      newtonParams.sublist("Stratimikos Linear Solver");
-    Teuchos::ParameterList& mpbdParams = 
-      mpParams->sublist("MPBD Linear Solver");
-    mpbdParams.sublist("Deterministic Solver Parameters") = 
-      noxstratlsParams;
-    Teuchos::RCP<Epetra_Operator> inner_A = model->create_W();
-    Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> inner_nox_interface = 
-      Teuchos::rcp(new NOX::Epetra::ModelEvaluatorInterface(model));
-    Teuchos::RCP<NOX::Epetra::Interface::Required> inner_iReq = 
-      inner_nox_interface;
-    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> inner_iJac = 
-      inner_nox_interface;
-    Teuchos::RCP<const Epetra_Vector> inner_u = model->get_x_init();
-    Teuchos::RCP<NOX::Epetra::LinearSystem> inner_linsys = 
-      Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
-		     printParams, 
-		     noxstratlsParams,
-		     inner_iJac, inner_A, *inner_u));
-    linsys = 
-      Teuchos::rcp(new NOX::Epetra::LinearSystemMPBD(printParams, 
-						     mpbdParams,
-						     inner_linsys,
-						     iReq, iJac, A,
-						     model->get_x_map()));
-  }
-
   Piro::Epetra::SolverFactory solverFactory;
-  solverFactory.setSource<NOX::Epetra::ModelEvaluatorInterface>(nox_interface);
-  solverFactory.setSource<NOX::Epetra::LinearSystem>(linsys);
+  if (piroParams->get<std::string>("Solver Type") == "NOX")
+  {
+    bool use_mpbd_solver = mpParams->get("Use MPBD Solver", false);
+    Teuchos::RCP<NOX::Epetra::LinearSystem> linsys;
+    Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> nox_interface;
+    if (use_mpbd_solver) {
+      nox_interface = 
+        Teuchos::rcp(new NOX::Epetra::ModelEvaluatorInterface(mp_nonlin_model));
+      Teuchos::RCP<Epetra_Operator> A = 
+        mp_nonlin_model->create_W();
+      Teuchos::RCP<Epetra_Operator> M = 
+        mp_nonlin_model->create_WPrec()->PrecOp;
+      Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = 
+        nox_interface;
+      Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = 
+        nox_interface;
+      Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = 
+        nox_interface;
 
+      Teuchos::ParameterList& noxParams = piroParams->sublist("NOX");
+      Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
+      Teuchos::ParameterList& newtonParams = 
+        noxParams.sublist("Direction").sublist("Newton");
+      Teuchos::ParameterList& noxstratlsParams = 
+        newtonParams.sublist("Stratimikos Linear Solver");
+      Teuchos::ParameterList& mpbdParams = 
+        mpParams->sublist("MPBD Linear Solver");
+      mpbdParams.sublist("Deterministic Solver Parameters") = 
+        noxstratlsParams;
+      Teuchos::RCP<Epetra_Operator> inner_A = model->create_W();
+      Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> inner_nox_interface = 
+        Teuchos::rcp(new NOX::Epetra::ModelEvaluatorInterface(model));
+      Teuchos::RCP<NOX::Epetra::Interface::Required> inner_iReq = 
+        inner_nox_interface;
+      Teuchos::RCP<NOX::Epetra::Interface::Jacobian> inner_iJac = 
+        inner_nox_interface;
+      Teuchos::RCP<const Epetra_Vector> inner_u = model->get_x_init();
+      Teuchos::RCP<NOX::Epetra::LinearSystem> inner_linsys = 
+        Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
+	  	     printParams, 
+	  	     noxstratlsParams,
+		     inner_iJac, inner_A, *inner_u));
+      linsys = 
+        Teuchos::rcp(new NOX::Epetra::LinearSystemMPBD(printParams, 
+						       mpbdParams,
+						       inner_linsys,
+						       iReq, iJac, A,
+						       model->get_x_map()));
+    }
+
+    solverFactory.setSource<NOX::Epetra::ModelEvaluatorInterface>(nox_interface);
+    solverFactory.setSource<NOX::Epetra::LinearSystem>(linsys);
+  }
   // Create solver to map p -> g
   mp_solver = solverFactory.createSolver(piroParams, mp_nonlin_model);
 
@@ -236,7 +238,8 @@ Piro::Epetra::StokhosMPSolver::create_g_mp(int l, Epetra_DataAccess CV,
 {
   OutArgs outargs = mp_nonlin_model->createOutArgs();
   int ng = outargs.Ng();
-  if (piroParams->get<std::string>("Solver Type") == "NOX" && l == ng) {
+  //if (piroParams->get<std::string>("Solver Type") == "NOX" && l == ng) {
+  if (l == ng) {
     return mp_nonlin_model->create_x_mp(CV, v);
   }
   else
@@ -250,7 +253,8 @@ Piro::Epetra::StokhosMPSolver::create_g_mv_mp(int l, int num_vecs,
 {
   OutArgs outargs = mp_nonlin_model->createOutArgs();
   int ng = outargs.Ng();
-  if (piroParams->get<std::string>("Solver Type") == "NOX" && l == ng) {
+  //if (piroParams->get<std::string>("Solver Type") == "NOX" && l == ng) {
+  if (l == ng) {
     return mp_nonlin_model->create_x_mv_mp(num_vecs, CV, v);
   }
   else

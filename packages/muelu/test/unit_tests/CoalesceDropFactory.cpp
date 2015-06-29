@@ -143,9 +143,11 @@ namespace MueLuTests {
     Level fineLevel;
     TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
 
-    int nx = 3*comm->getSize();
+    int blockSize=3;
+
+    int nx = blockSize*comm->getSize();
     RCP<Matrix> A = TestHelpers::TestFactory<SC,LO,GO,NO>::Build1DPoisson(nx);
-    A->SetFixedBlockSize(3, 0);
+    A->SetFixedBlockSize(blockSize, 0);
     fineLevel.Set("A", A);
     CoalesceDropFactory dropFact = CoalesceDropFactory();
     dropFact.SetParameter("lightweight wrap",Teuchos::ParameterEntry(false));
@@ -158,7 +160,7 @@ namespace MueLuTests {
     RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
     LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
     TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
-    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 3, true);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == blockSize, true);
     bool bCorrectGraph = false;
     if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
       bCorrectGraph = true;
@@ -167,7 +169,7 @@ namespace MueLuTests {
         if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
       }
       else {
-        if (graph->getNeighborVertices(0).size() == 3) bCorrectGraph = true;
+        if (graph->getNeighborVertices(0).size() == blockSize) bCorrectGraph = true;
       }
     }
     TEST_EQUALITY(bCorrectGraph, true);
@@ -178,9 +180,25 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
-    TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getNodeNumElements()==2) || comm->getSize() == 1, true);
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getMaxLocalIndex()==1 || comm->getSize() == 1), true);
+    TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1))); //u,v and p
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
+      }
+    }
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t maxLocalIndex = myImportMap->getMaxLocalIndex();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-2), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-1), true);
+      }
+    }
 
     TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
@@ -201,11 +219,12 @@ namespace MueLuTests {
     Level fineLevel;
     TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
 
-    int nx = 3*comm->getSize();
+    int blockSize = 3;
+    int nx = blockSize*comm->getSize();
     RCP<Matrix> A = TestHelpers::TestFactory<SC,LO,GO,NO>::Build1DPoisson(nx);
 
     std::vector<size_t> stridingInfo;
-    stridingInfo.push_back(Teuchos::as<size_t>(3));
+    stridingInfo.push_back(Teuchos::as<size_t>(blockSize));
     LocalOrdinal stridedBlockId = -1;
 
     RCP<const Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node> > stridedRangeMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
@@ -236,7 +255,7 @@ namespace MueLuTests {
     RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
     LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
     TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
-    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 3, true);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == blockSize, true);
     bool bCorrectGraph = false;
     if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
       bCorrectGraph = true;
@@ -245,7 +264,7 @@ namespace MueLuTests {
         if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
       }
       else {
-        if (graph->getNeighborVertices(0).size() == 3) bCorrectGraph = true;
+        if (graph->getNeighborVertices(0).size() == blockSize) bCorrectGraph = true;
       }
     }
     TEST_EQUALITY(bCorrectGraph, true);
@@ -257,8 +276,24 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getNodeNumElements()==2) || comm->getSize() == 1, true);
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getMaxLocalIndex()==1 || comm->getSize() == 1), true);
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
+      }
+    }
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t maxLocalIndex = myImportMap->getMaxLocalIndex();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-2), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-1), true);
+      }
+    }
 
     TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
@@ -308,7 +343,7 @@ namespace MueLuTests {
                                             );
 
     if(mtx->IsView("stridedMaps") == true) mtx->RemoveView("stridedMaps");
-    mtx->CreateView("stridedMaps", stridedRangeMap, stridedDomainMap);
+    mtx->CreateView("stridedMaps", stridedRangeMap, stridedDomainMap);     // should have holes in these maps
 
     fineLevel.Set("A", mtx);
     CoalesceDropFactory dropFact = CoalesceDropFactory();
@@ -344,8 +379,24 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getNodeNumElements()==2) || comm->getSize() == 1, true);
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getMaxLocalIndex()==1 || comm->getSize() == 1), true);
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
+      }
+    }
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t maxLocalIndex = myImportMap->getMaxLocalIndex();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*3-2), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*3-1), true);
+      }
+    }
 
     TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
@@ -433,8 +484,24 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getNodeNumElements()==2) || comm->getSize() == 1, true);
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getMaxLocalIndex()==1 || comm->getSize() == 1), true);
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
+      }
+    }
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t maxLocalIndex = myImportMap->getMaxLocalIndex();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*3-2), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*3-1), true);
+      }
+    }
 
     TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
@@ -456,9 +523,11 @@ namespace MueLuTests {
     Level fineLevel;
     TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
 
-    RCP<const Map> dofMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 3*comm->getSize(), 0, comm);
+    int blockSize=3;
+
+    RCP<const Map> dofMap = Xpetra::MapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, blockSize*comm->getSize(), 0, comm);
     Teuchos::RCP<Matrix> mtx = TestHelpers::TestFactory<SC,LO,GO,NO>::BuildTridiag(dofMap, 2.0, -1.0, -1.0);
-    mtx->SetFixedBlockSize(3, 0);
+    mtx->SetFixedBlockSize(blockSize, 0);
     fineLevel.Set("A", mtx);
 
     CoalesceDropFactory dropFact = CoalesceDropFactory();
@@ -471,7 +540,7 @@ namespace MueLuTests {
     RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
     LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
     TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
-    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 3, true);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == blockSize, true);
     bool bCorrectGraph = false;
     if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
       bCorrectGraph = true;
@@ -480,7 +549,7 @@ namespace MueLuTests {
         if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
       }
       else {
-        if (graph->getNeighborVertices(0).size() == 3) bCorrectGraph = true;
+        if (graph->getNeighborVertices(0).size() == blockSize) bCorrectGraph = true;
       }
     }
     TEST_EQUALITY(bCorrectGraph, true);
@@ -492,8 +561,24 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getNodeNumElements()==2) || comm->getSize() == 1, true);
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getMaxLocalIndex()==1 || comm->getSize() == 1), true);
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
+      }
+    }
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t maxLocalIndex = myImportMap->getMaxLocalIndex();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-2), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-1), true);
+      }
+    }
 
     TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
@@ -541,7 +626,7 @@ namespace MueLuTests {
         if (graph->getNeighborVertices(0).size() == 1) bCorrectGraph = true;
       }
       else {
-        if (graph->getNeighborVertices(0).size() == 3) bCorrectGraph = true;
+        if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
       }
     }
     TEST_EQUALITY(bCorrectGraph, true);
@@ -572,11 +657,13 @@ namespace MueLuTests {
     Level fineLevel;
     TestHelpers::TestFactory<SC,LO,GO,NO>::createSingleLevelHierarchy(fineLevel);
 
-    int nx = 3*comm->getSize();
+    int blockSize=3;
+
+    int nx = blockSize*comm->getSize();
     RCP<Matrix> A = TestHelpers::TestFactory<SC,LO,GO,NO>::Build1DPoisson(nx);
 
     std::vector<size_t> stridingInfo;
-    stridingInfo.push_back(Teuchos::as<size_t>(3));
+    stridingInfo.push_back(Teuchos::as<size_t>(blockSize));
     LocalOrdinal stridedBlockId = -1;
 
     RCP<const Xpetra::StridedMap<LocalOrdinal, GlobalOrdinal, Node> > stridedRangeMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(
@@ -607,7 +694,7 @@ namespace MueLuTests {
     RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &dropFact);
     LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
     TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
-    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 3, true);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == blockSize, true);
     bool bCorrectGraph = false;
     if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
       bCorrectGraph = true;
@@ -616,7 +703,7 @@ namespace MueLuTests {
         if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
       }
       else {
-        if (graph->getNeighborVertices(0).size() == 3) bCorrectGraph = true;
+        if (graph->getNeighborVertices(0).size() == blockSize) bCorrectGraph = true;
       }
     }
     TEST_EQUALITY(bCorrectGraph, true);
@@ -628,8 +715,24 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getNodeNumElements()==2) || comm->getSize() == 1, true);
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getMaxLocalIndex()==1 || comm->getSize() == 1), true);
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
+      }
+    }
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t maxLocalIndex = myImportMap->getMaxLocalIndex();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-2), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-1), true);
+      }
+    }
 
     TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
@@ -654,7 +757,9 @@ namespace MueLuTests {
     stridingInfo.push_back(Teuchos::as<size_t>(1));
     LocalOrdinal stridedBlockId = 0;
 
-    RCP<const StridedMap> dofMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 3*comm->getSize(), 0,
+    int blockSize=3;
+
+    RCP<const StridedMap> dofMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, blockSize*comm->getSize(), 0,
                                   stridingInfo, comm,
                                   stridedBlockId /*blockId*/, 0 /*offset*/);
 
@@ -693,7 +798,7 @@ namespace MueLuTests {
 
     LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
     TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
-    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 3, true);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == blockSize, true);
     bool bCorrectGraph = false;
     if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
       bCorrectGraph = true;
@@ -702,7 +807,7 @@ namespace MueLuTests {
         if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
       }
       else {
-        if (graph->getNeighborVertices(0).size() == 3) bCorrectGraph = true;
+        if (graph->getNeighborVertices(0).size() == blockSize) bCorrectGraph = true;
       }
     }
     TEST_EQUALITY(bCorrectGraph, true);
@@ -714,8 +819,24 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getNodeNumElements()==2) || comm->getSize() == 1, true);
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getMaxLocalIndex()==1 || comm->getSize() == 1), true);
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
+      }
+    }
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t maxLocalIndex = myImportMap->getMaxLocalIndex();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-2), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(maxLocalIndex==numLocalRowMapElts*blockSize-1), true);
+      }
+    }
 
     TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
@@ -742,7 +863,9 @@ namespace MueLuTests {
     LocalOrdinal stridedBlockId = 1;
     GlobalOrdinal offset = 19;
 
-    RCP<const StridedMap> dofMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, 9*comm->getSize(), 0,
+    int blockSize=9;
+
+    RCP<const StridedMap> dofMap = Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(lib, blockSize*comm->getSize(), 0,
                                   stridingInfo, comm,
                                   stridedBlockId, offset);
 
@@ -782,7 +905,7 @@ namespace MueLuTests {
 
     LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &dropFact);
     TEST_EQUALITY(Teuchos::as<int>(graph->GetDomainMap()->getGlobalNumElements()) == comm->getSize(), true);
-    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 9, true);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == blockSize, true);
     bool bCorrectGraph = false;
     if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
       bCorrectGraph = true;
@@ -803,8 +926,15 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getNodeNumElements()==2) || comm->getSize() == 1, true);
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getMaxLocalIndex()==1 || comm->getSize() == 1), true);
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
+      }
+    }
 
     TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
@@ -855,8 +985,15 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getNodeNumElements()==2) || comm->getSize() == 1, true);
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getMaxLocalIndex()==1 || comm->getSize() == 1), true);
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
+      }
+    }
 
     TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
@@ -932,11 +1069,11 @@ namespace MueLuTests {
     if (comm->getSize() == 1 && graph->getNeighborVertices(0).size() == 1) {
       bCorrectGraph = true;
     } else {
-      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+      if (comm->getRank() == 0) {
         if (graph->getNeighborVertices(0).size() == 1) bCorrectGraph = true;
       }
       else {
-        if (graph->getNeighborVertices(0).size() == 3) bCorrectGraph = true;
+        if (graph->getNeighborVertices(0).size() == 2) bCorrectGraph = true;
       }
     }
     TEST_EQUALITY(bCorrectGraph, true);
@@ -948,9 +1085,15 @@ namespace MueLuTests {
     TEST_EQUALITY(myImportMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myImportMap->getMinLocalIndex(),0);
     TEST_EQUALITY(myImportMap->getGlobalNumElements(),Teuchos::as<size_t>(comm->getSize()+2*(comm->getSize()-1)));
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getNodeNumElements()==2) || comm->getSize() == 1, true);
-    TEST_EQUALITY(Teuchos::as<bool>(myImportMap->getMaxLocalIndex()==1 || comm->getSize() == 1), true);
-
+    if (comm->getSize()>1) {
+      size_t numLocalRowMapElts = graph->GetNodeNumVertices();
+      size_t numLocalImportElts = myImportMap->getNodeNumElements();
+      if (comm->getRank() == 0 || comm->getRank() == comm->getSize()-1) {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+1), true);
+      } else {
+        TEST_EQUALITY(Teuchos::as<bool>(numLocalImportElts==numLocalRowMapElts+2), true);
+      }
+    }
     TEST_EQUALITY(myDomainMap->getMaxAllGlobalIndex(), comm->getSize()-1);
     TEST_EQUALITY(myDomainMap->getMinAllGlobalIndex(), 0);
     TEST_EQUALITY(myDomainMap->getMinLocalIndex(),0);

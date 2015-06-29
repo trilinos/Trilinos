@@ -62,15 +62,15 @@ class SerialXML
     ~SerialXML() {}
 
     static
-    map<string, Galeri::grid::Loadable>
-    read(const Epetra_Comm& comm, const string& XMLFileName)
+    map<std::string, Galeri::grid::Loadable>
+    read(const Epetra_Comm& comm, const std::string& XMLFileName)
     {
       // read only on processor 0
       
       FileInputSource fileSrc(XMLFileName);
       Teuchos::XMLObject fileXML(fileSrc.getObject());
 
-      map<string, Galeri::grid::Loadable> patches;
+      map<std::string, Galeri::grid::Loadable> patches;
 
       int NumDimensions = fileXML.getRequiredInt("NumDimensions");
       Galeri::core::Workspace::setNumDimensions(NumDimensions);
@@ -78,18 +78,18 @@ class SerialXML
       for (int i = 0; i < fileXML.numChildren(); ++i)
       {
         const XMLObject& child = fileXML.getChild(i);
-        string tag = child.getTag();
+        std::string tag = child.getTag();
 
         if (tag == "Patch")
         {
-          string Label = child.getRequired("Label");
-          string ElementType = child.getRequired("ElementType");
+          std::string Label = child.getRequired("Label");
+          std::string ElementType = child.getRequired("ElementType");
           Galeri::grid::Loadable patch;
 
           for (int j = 0; j < child.numChildren(); ++j)
           {
             const XMLObject& newChild = child.getChild(j);
-            string tag = newChild.getTag();
+            std::string tag = newChild.getTag();
             if (tag == "Elements")
             {
               int rows = newChild.getRequiredInt("rows");
@@ -105,8 +105,8 @@ class SerialXML
               {
                 for (int k = 0; k < newChild.numContentLines(); ++k)
                 {
-                  const string& line = newChild.getContentLine(k);
-                  Array<string> tokens = Teuchos::StrUtils::stringTokenizer(line);
+                  const std::string& line = newChild.getContentLine(k);
+                  Array<std::string> tokens = Teuchos::StrUtils::stringTokenizer(line);
                   if (tokens.size() != cols) continue;
                   for (int kk = 0; kk < cols; ++kk)
                   {
@@ -127,8 +127,8 @@ class SerialXML
               {
                 for (int k = 0; k < newChild.numContentLines(); ++k)
                 {
-                  const string& line = newChild.getContentLine(k);
-                  Array<string> tokens = Teuchos::StrUtils::stringTokenizer(line);
+                  const std::string& line = newChild.getContentLine(k);
+                  Array<std::string> tokens = Teuchos::StrUtils::stringTokenizer(line);
                   if (tokens.size() != NumDimensions + 1) continue;
                   int GVID = Teuchos::StrUtils::atoi(tokens[0]);
                   for (int kk = 0; kk < NumDimensions; ++kk)

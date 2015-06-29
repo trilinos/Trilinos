@@ -2719,7 +2719,7 @@ order listed in the ``TribitsExampleProject/PackagesList.cmake`` file:
 From this file, we get the list of top-level packages ``SimpleCxx``,
 ``MixedLang``, ``WithSubpackages``, and ``WrapExternal`` (and their base
 package directories and testing group, see `<repoDir>/PackagesList.cmake`_).
-(NOTE: By default the package ``ExternalPkg`` is not defined because its
+(NOTE: By default the package ``InsertedPkg`` is not defined because its
 directory is missing, see `How to insert a package into an upstream repo`_.)
 
 A full listing of package files in `TribitsExampleProject Files and
@@ -5290,39 +5290,63 @@ behave consistently between all the various TriBITS TPLs (and allow the
 standard TriBITS TPL find overrides) one must use the TriBITS function
 `TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE()`_ in combination with the function
 `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_.  The basic form of the
-resulting ``FindTPL<tplName>.cmake`` looks like::
+resulting TriBITS TPL module file ``FindTPL<tplName>.cmake`` looks like::
 
-  TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE( <tplName>  <tplName>_ALLOW_PREFIND )
+  # First, set up the variables for the (backward-compatible) TriBITS way of
+  # finding <tplName>.  These are used in case FIND_PACKAGE(<tplName> ...) is
+  # not called or does not find <tplName>.  Also, these variables need to be
+  # non-null in order to trigger the right behavior in the function
+  # TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES().
+  SET(REQUIRED_HEADERS <header0> <header1> ...)
+  SET(REQUIRED_LIBS_NAMES <libname0> <libname1> ...)
+  
+  # Second, search for <tplName> components (if allowed) using the standard
+  # FIND_PACKAGE(<tplName> ...).
+  TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE(<tplName>  <tplName>_ALLOW_PREFIND)
   IF (<tplName>_ALLOW_PREFIND)
-    FIND_PACKAGE(<tplName> ...)
-    IF(<tplName>_FOUND)
+    MESSAGE("-- Using FIND_PACKAGE(<tplName> ...) ...") 
+    FIND_PACKAGE(<tplName>)
+    IF (<tplName>_FOUND)
+      # Tell TriBITS that we found <tplName> and there no need to look any further!
       SET(TPL_<tplName>_INCLUDE_DIRS ${<tplName>_INCLUDE_DIRS} CACHE PATH "...")
       SET(TPL_<tplName>_LIBRARIES ${<tplName>_LIBRARIES} CACHE FILEPATH "...")
       SET(TPL_<tplName>_LIBRARY_DIRS ${<tplName>_LIBRARY_DIRS} CACHE PATH "...")
-      ENDIF()
+    ENDIF()
   ENDIF()
-
+  
+  # Third, call TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()
   TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( <tplName>
-    REQUIRED_HEADERS ...
-    REQUIRED_LIBS_NAMES ...
+    REQUIRED_HEADERS ${REQUIRED_HEADERS}
+    REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES}
     )
+  # NOTE: If FIND_PACKAGE(<tplName> ...) was called and successfully found
+  # <tplName>, then TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES() will use the
+  # already-set variables and just print them out.  This is the final "hook"
+  # into the TriBITS TPL system.
 
-With this approach, we the ``FindTPL<tplName>.cmake`` module preserves all of
-the user behavior described in `Enabling support for an optional Third-Party
-Library (TPL)`_.
+With this approach, the ``FindTPL<tplName>.cmake`` module preserves all of the
+user behavior described in `Enabling support for an optional Third-Party
+Library (TPL)`_ for overriding what TPL componets to look for, where to look
+and finally to override what is actually used.  That is, if the user sets the
+cache variables ``TPL_<tplName>_INCLUDE_DIRS``, ``TPL_<tplName>_LIBRARIES``,
+or ``TPL_<tplName>_LIBRARY_DIRS``, then they should be used without question
+(which is why the ``SET( ... CACHE ...)`` calls in the above example do not
+use ``FORCE``).
 
-If one wants to skip the overrides ``<tplName>_INCLUDE_DIRS``,
-``<tplName>_LIBRARY_NAMES``, or ``<tplName>_LIBRARY_DIRS``, then one can
-set::
+If one wants to skip and ignore the standard TriBITS TPL override variables
+``<tplName>_INCLUDE_DIRS``, ``<tplName>_LIBRARY_NAMES``, or
+``<tplName>_LIBRARY_DIRS``, then one can set::
 
   SET(<tplName>_FORCE_PRE_FIND_PACKAGE TRUE CACHE BOOL
     "Always first call FIND_PACKAGE(<tplName> ...) unless explicit override")
 
-This avoid name classes with the variables ``<tplName>_INCLUDE_DIRS`` and
-``<tplName>_LIBRARY_DIRS`` which are often used in concrete
-``Find<tplName>.cmake`` modules.
+at the top of the ``FindTPL<tplName>.cmake`` and it will ignore these
+variables.  This avoids name classes with the variables
+``<tplName>_INCLUDE_DIRS`` and ``<tplName>_LIBRARY_DIRS`` which are often used
+in the concrete CMake ``Find<tplName>.cmake`` module files themselves.
 
-For a slightly more complex example, see ``FindTPLHDF5.cmake``:
+For a slightly more complex (but real-life) example, see ``FindTPLHDF5.cmake``
+which is:
 
 .. include:: ../../common_tpls/FindTPLHDF5.cmake
    :literal:
@@ -5330,11 +5354,11 @@ For a slightly more complex example, see ``FindTPLHDF5.cmake``:
 Note that some specialized ``Find<tplName>.cmake`` modules do more than just
 return a list of include directories and libraries.  Some, like
 ``FindQt4.cmake`` also return other variables that are used in downstream
-packages and therefore ``FIND_PACKAGE(Qt4 ...)`` must be called on every
-configure.  In specialized cases such as this, one must write a more
+packages. therefore, in these cases, ``FIND_PACKAGE(Qt4 ...)`` must be called
+on every configure.  In specialized cases such as this, one must write a more
 specialized ``FindTPL<tplName>.cmake`` file and can't use the
-`TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE()`_ function as shown above.  Such find
-modules cannot completely adhere to the standard behavior described in
+`TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE()`_ function like shown shown above.  Such
+find modules cannot completely adhere to the standard behavior described in
 `Enabling support for an optional Third-Party Library (TPL)`_.
 
 How to add a new TriBITS Repository
@@ -5516,37 +5540,37 @@ supported in TriBITS is to just list the inserted package into the
 depends on and before the packages that will use it then call the
 `TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_ function to allow the package to
 be missing.  This is demonstrated in `TribitsExampleProject`_ with the package
-``ExternalPkg`` which is **not** included in the default
+``InsertedPkg`` which is **not** included in the default
 ``TribitsExampleProject`` source tree.  The
 `TribitsExampleProject`_/``PackagesList.cmake`` file looks like:
 
 .. include:: ../../examples/TribitsExampleProject/PackagesList.cmake
    :literal:
 
-In this example, the subpackage ``ExternalPkg`` has a required dependency on
+In this example, the subpackage ``InsertedPkg`` has a required dependency on
 ``SimpleCxx`` and ``WithSubpackagesB`` has an optional dependency on
-``ExternalPkg``.  Therefore, the inserted package ``ExternalPkg`` has upstream
+``InsertedPkg``.  Therefore, the inserted package ``InsertedPkg`` has upstream
 and downstream dependencies.
 
 What the function ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`` does is to
-tell TriBITS to treat ``ExternalPkg`` the same as any other package if the
-directory ``TribitsExampleProject/ExternalPkg`` exists and to otherwise
-complete ignore the package ``ExternalPkg`` if the source for the package does
+tell TriBITS to treat ``InsertedPkg`` the same as any other package if the
+directory ``TribitsExampleProject/InsertedPkg`` exists and to otherwise
+complete ignore the package ``InsertedPkg`` if the source for the package does
 not exist.  In addition, TriBITS will automatically disable of all downstream
 package dependencies for the missing package.
 
-The way one would set up ``TribitsExampleProject`` to enable ``ExternalPkg``,
+The way one would set up ``TribitsExampleProject`` to enable ``InsertedPkg``,
 if these were in separate VC (e.g. git) repos for example, would be to do::
 
   $ git clone <some-url-base>/TribitsExampleProject
   $ cd TribitsExampleProject
   $ git clone <some-other-url-base>/ExteranlPkg
-  $ echo /ExternalPkg/ >> .git/info/excludes
+  $ echo /InsertedPkg/ >> .git/info/excludes
 
 Then, when you configure ``TribitsExampleProject``, the package
-``ExternalPkg`` would automatically appear and could then be enabled or
+``InsertedPkg`` would automatically appear and could then be enabled or
 disabled like any other TriBITS package.  The TriBITS test
-``Tribits_TribitsExampleProject_ExternalPkg`` demonstrates this.
+``Tribits_TribitsExampleProject_InsertedPkg`` demonstrates this.
 
 Assuming that one would put the (new) external package in a separate VC repo,
 one would perform the following steps:
@@ -7300,7 +7324,8 @@ These options are described below.
     SET(${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME_DEFAULT ON)
 
   The implementation of this feature currently uses ``EXECUTE_PROCESS(date)``
-  and therefore will only on Linux/Unix/Mac systems and not Windows systems.
+  and therefore will only work on Linux/Unix/Mac systems and not Windows
+  systems.
 
   NOTE: In a future version of CTest, this option may turn on start and end
   date/time for regular tests added with `TRIBITS_ADD_TEST()`_ (which uses a

@@ -353,7 +353,7 @@ public:
         nc += coords[i][k];
       }
       nc /= this->heapSize;
-      moved = (ABS(center[i] - nc) > this->_EPSILON || moved );
+      moved = (ZOLTAN2_ABS(center[i] - nc) > this->_EPSILON || moved );
       center[i] = nc;
 
     }
@@ -664,7 +664,7 @@ public:
    */
   virtual void getMapping(
       int myRank,
-      RCP<const Environment> env,
+      const RCP<const Environment> &env,
       ArrayRCP <part_t> &proc_to_task_xadj, //  = allocMemory<part_t> (this->no_procs+1); //holds the pointer to the task array
       ArrayRCP <part_t> &proc_to_task_adj, // = allocMemory<part_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
       ArrayRCP <part_t> &task_to_proc //allocMemory<part_t>(this->no_tasks); //holds the processors mapped to tasks.
@@ -783,7 +783,7 @@ public:
   virtual double getProcDistance(int procId1, int procId2) const{
     double distance = 0;
     for (int i = 0 ; i < this->proc_coord_dim; ++i){
-      distance += ABS(proc_coords[i][procId1] - proc_coords[i][procId2]);
+      distance += ZOLTAN2_ABS(proc_coords[i][procId1] - proc_coords[i][procId2]);
     }
     return distance;
   }
@@ -837,7 +837,7 @@ public:
    */
   virtual void getMapping(
       int myRank,
-      RCP<const Environment> env,
+      const RCP<const Environment> &env,
       ArrayRCP <part_t> &rcp_proc_to_task_xadj, //  = allocMemory<part_t> (this->no_procs+1); //holds the pointer to the task array
       ArrayRCP <part_t> &rcp_proc_to_task_adj, // = allocMemory<part_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
       ArrayRCP <part_t> &rcp_task_to_proc //allocMemory<part_t>(this->no_tasks); //holds the processors mapped to tasks.

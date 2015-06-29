@@ -85,7 +85,7 @@ operator=(const Ifpack_RCMReordering& RHS)
   RootNode_ = RHS.RootNode(); // set root node
   IsComputed_ = RHS.IsComputed();
   // resize vectors, and copy values from RHS
-  Reorder_.resize(NumMyRows()); 
+  Reorder_.resize(NumMyRows());
   InvReorder_.resize(NumMyRows());
   if (IsComputed()) {
     for (int i = 0 ; i < NumMyRows_ ; ++i) {
@@ -98,7 +98,7 @@ operator=(const Ifpack_RCMReordering& RHS)
 
 //==============================================================================
 int Ifpack_RCMReordering::
-SetParameter(const string Name, const int Value)
+SetParameter(const std::string Name, const int Value)
 {
   if (Name == "reorder: root node")
     RootNode_ = Value;
@@ -107,7 +107,7 @@ SetParameter(const string Name, const int Value)
 
 //==============================================================================
 int Ifpack_RCMReordering::
-SetParameter(const string Name, const double Value)
+SetParameter(const std::string Name, const double Value)
 {
   return(0);
 }
@@ -135,10 +135,10 @@ int Ifpack_RCMReordering::Compute(const Ifpack_Graph& Graph)
 {
   IsComputed_ = false;
   NumMyRows_ = Graph.NumMyRows();
-  
+
   if ((RootNode_ < 0) || (RootNode_ >= NumMyRows_))
     RootNode_ = 0;
-    
+
   Reorder_.resize(NumMyRows_);
 
   // the case where one processor holds no chunk of the graph happens...
@@ -157,7 +157,7 @@ int Ifpack_RCMReordering::Compute(const Ifpack_Graph& Graph)
   int count = NumMyRows_ - 1;
   int Length = Graph.MaxMyNumEntries();
   std::vector<int> Indices(Length);
-  
+
   Reorder_[RootNode_] = count;
   count--;
 
@@ -168,41 +168,41 @@ int Ifpack_RCMReordering::Compute(const Ifpack_Graph& Graph)
     std::vector<int> tmp2;
 
     // for each node in the previous level, look for non-marked
-    // neighbors. 
+    // neighbors.
     for (int i = 0 ; i < (int)tmp.size() ; ++i) {
       int NumEntries;
       IFPACK_CHK_ERR(Graph.ExtractMyRowCopy(tmp[i], Length,
-					     NumEntries, &Indices[0]));
+                                             NumEntries, &Indices[0]));
 
       if (Length > 1)
-	std::sort(Indices.begin(), Indices.begin() + Length);
+        std::sort(Indices.begin(), Indices.begin() + Length);
 
       for (int j = 0 ; j < NumEntries ; ++j) {
-	int col = Indices[j];
-	if (col >= NumMyRows_) 
-	  continue;
+        int col = Indices[j];
+        if (col >= NumMyRows_)
+          continue;
 
-	if (Reorder_[col] == -1) {
-	  Reorder_[col] = count;
-	  count--;
-	  if (col != tmp[i]) {
-	    tmp2.push_back(col);
-	  }
-	}
+        if (Reorder_[col] == -1) {
+          Reorder_[col] = count;
+          count--;
+          if (col != tmp[i]) {
+            tmp2.push_back(col);
+          }
+        }
       }
     }
 
     // if no nodes have been found but we still have
-    // rows to walk through, to localize the next -1 
+    // rows to walk through, to localize the next -1
     // and restart.
     // FIXME: I can replace with STL
     if ((tmp2.size() == 0) && (count != -1)) {
       for (int i = 0 ; i < NumMyRows_ ; ++i)
-	if (Reorder_[i] == -1) {
-	  tmp2.push_back(i);
-	  Reorder_[i] = count--;
-	  break;
-	}
+        if (Reorder_[i] == -1) {
+          tmp2.push_back(i);
+          Reorder_[i] = count--;
+          break;
+        }
     }
 
     // prepare for the next level
@@ -214,8 +214,8 @@ int Ifpack_RCMReordering::Compute(const Ifpack_Graph& Graph)
     if (Reorder_[i] == -1)
       IFPACK_CHK_ERR(-1);
   }
-  
-  // build inverse reorder (will be used by ExtractMyRowCopy() 
+
+  // build inverse reorder (will be used by ExtractMyRowCopy()
   InvReorder_.resize(NumMyRows_);
 
   for (int i = 0 ; i < NumMyRows_ ; ++i)
@@ -260,8 +260,8 @@ int Ifpack_RCMReordering::InvReorder(const int i) const
 }
 //==============================================================================
 int Ifpack_RCMReordering::P(const Epetra_MultiVector& Xorig,
-			    Epetra_MultiVector& X) const
-{  
+                            Epetra_MultiVector& X) const
+{
   int NumVectors = X.NumVectors();
 
   for (int j = 0 ; j < NumVectors ; ++j) {
@@ -276,7 +276,7 @@ int Ifpack_RCMReordering::P(const Epetra_MultiVector& Xorig,
 
 //==============================================================================
 int Ifpack_RCMReordering::Pinv(const Epetra_MultiVector& Xorig,
-			       Epetra_MultiVector& X) const
+                               Epetra_MultiVector& X) const
 {
   int NumVectors = X.NumVectors();
 
@@ -291,12 +291,14 @@ int Ifpack_RCMReordering::Pinv(const Epetra_MultiVector& Xorig,
 }
 
 //==============================================================================
-ostream& Ifpack_RCMReordering::Print(std::ostream& os) const
+std::ostream& Ifpack_RCMReordering::Print(std::ostream& os) const
 {
+  using std::endl;
+
   os << "*** Ifpack_RCMReordering" << endl << endl;
   if (!IsComputed())
     os << "*** Reordering not yet computed." << endl;
-  
+
   os << "*** Number of local rows = " << NumMyRows_ << endl;
   os << "*** Root node = " << RootNode_ << endl;
   os << endl;
@@ -304,6 +306,6 @@ ostream& Ifpack_RCMReordering::Print(std::ostream& os) const
   for (int i = 0 ; i < NumMyRows_ ; ++i) {
     os << '\t' << i << "\t\t" << Reorder_[i] << "\t\t" << InvReorder_[i] << endl;
   }
-   
+
   return(os);
 }

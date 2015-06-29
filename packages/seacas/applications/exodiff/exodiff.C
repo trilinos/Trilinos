@@ -103,6 +103,7 @@ string Date() {
 }
 
 bool Invalid_Values(const double *values, size_t count);
+bool Equal_Values(const double *values, size_t count, double *value);
 
 void Print_Banner(const char *prefix)
 {
@@ -1060,6 +1061,24 @@ namespace {
     return !valid;
   }
 
+bool Equal_Values(const double *values, size_t count, double *value)
+  {
+    SMART_ASSERT(values != NULL);
+    
+    bool all_same = true;
+    if (count > 0) {
+      *value = values[0];
+    }
+
+    for (size_t i=1; i < count; i++) {
+      if (values[i] != *value) {
+	all_same = false;
+	break;
+      }
+    }
+    return all_same;
+  }
+
   template <typename INT>
   const double *get_nodal_values(ExoII_Read<INT> &filen, int time_step, size_t idx,
 				 int fno, const string &name, bool *diff_flag)
@@ -1911,25 +1930,43 @@ bool diff_sideset_df(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *
     
     const double* vals1 = sset1->Distribution_Factors();
         
+    double value1 = 0.0;
+    double value2 = 0.0;
+    bool same1 = false;
+    bool same2 = false;
+	
+    size_t ecount = sset1->Size();
+
     if (vals1 != NULL) {
-      if (Invalid_Values(vals1, sset1->Size())) {
+      std::pair<INT,INT> range1 = sset1->Distribution_Factor_Range(ecount-1);
+      if (Invalid_Values(vals1, range1.second)) {
 	std::cout << "\tERROR: NaN found for distribution factors in sideset "
 		  << sset1->Id() << ", file 1\n";
 	diff_flag = true;
       }
+
+	  // See if all df are the same value:
+	  same1 = Equal_Values(vals1, range1.second, &value1);
     }
 
     double* vals2 = (double*)sset2->Distribution_Factors();
 
     if (vals2 != NULL) {
-      if (Invalid_Values(vals2, sset2->Size())) {
+      std::pair<INT,INT> range2 = sset2->Distribution_Factor_Range(sset2->Size()-1);
+      if (Invalid_Values(vals2, range2.second)) {
 	std::cout << "\tERROR: NaN found for distribution factors in sideset "
 		  << sset2->Id() << ", file 2\n";
 	diff_flag = true;
       }
+	
+      // See if all df are the same value:
+      same2 = Equal_Values(vals2, range2.second, &value2);
     }
         
-    size_t ecount = sset1->Size();
+    if (same1 && same2 && (value1 == value2)) {
+      continue;
+    }
+    
     if (sset2->Size() == ecount) {
       for (size_t e = 0; e < ecount; ++e) {
 	std::pair<INT,INT> range1 = sset1->Distribution_Factor_Range(e);

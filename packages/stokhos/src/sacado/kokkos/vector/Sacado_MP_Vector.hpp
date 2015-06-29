@@ -47,6 +47,7 @@
 #ifdef HAVE_STOKHOS_SACADO
 
 #include <ostream>      // for std::ostream
+#include <initializer_list>
 
 #include "Kokkos_Macros.hpp"
 
@@ -198,10 +199,10 @@ namespace Sacado {
 
       //! Default constructor
       /*!
-       * Sets size to 1 and first coefficient to 0 (represents a constant).
+       * May not intialize the coefficient array.
        */
       KOKKOS_INLINE_FUNCTION
-      Vector() : s(1) {}
+      Vector() = default;
 
       //! Constructor with supplied value \c x
       /*!
@@ -231,7 +232,7 @@ namespace Sacado {
 
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
-      Vector(const Vector& x) : s(x.s) {}
+      Vector(const Vector& x) = default;
 
       //! Copy constructor
       KOKKOS_INLINE_FUNCTION
@@ -266,9 +267,15 @@ namespace Sacado {
         }
       }
 
+      //! Intialize from initializer_list
+      /*!
+       * No KOKKOS_INLINE_FUNCTION as it is not callable from the device
+       */
+      Vector(std::initializer_list<value_type> l) : s(l.size(), l.begin()) {}
+
       //! Destructor
       KOKKOS_INLINE_FUNCTION
-      ~Vector() {}
+      ~Vector() = default;
 
       //! Initialize coefficients to value
       KOKKOS_INLINE_FUNCTION
@@ -388,6 +395,31 @@ namespace Sacado {
        */
       //@{
 
+      //! Assignment from initializer_list
+      /*!
+       * No KOKKOS_INLINE_FUNCTION as it is not callable from the device
+       */
+      Vector& operator=(std::initializer_list<value_type> l) {
+        const ordinal_type lsz = l.size();
+        if (lsz != s.size())
+          s.resize(lsz);
+        s.init(l.begin(), lsz);
+        return *this;
+      }
+
+      //! Assignment from initializer_list
+      /*!
+       * No KOKKOS_INLINE_FUNCTION as it is not callable from the device
+       */
+      /*volatile*/ Vector&
+      operator=(std::initializer_list<value_type> l) volatile {
+        const ordinal_type lsz = l.size();
+        if (lsz != s.size())
+          s.resize(lsz);
+        s.init(l.begin(), lsz);
+        return const_cast<Vector&>(*this);
+      }
+
       //! Assignment operator with constant right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator=(const value_type& x) {
@@ -411,6 +443,13 @@ namespace Sacado {
           // For DyamicStorage as a view (is_owned=false), we need to set
           // the trailing entries when assigning a constant vector (because
           // the copy constructor in this case doesn't reset the size of this)
+          //
+          // Note:  supporting this technically makes the Vector non-POD, even
+          // with a static storage type where this branch will get optimized
+          // out.  We would have to remove DynamicStorage-as-a view as an option
+          // or partial specialize on StaticFixedStorage to fix this.  However
+          // the volatile operator=() and copy constructor overloads make
+          // Vector non-POD anyway.
           if (s.size() > x.s.size())
             for (ordinal_type i=x.s.size(); i<s.size(); i++)
               s[i] = s[0];
@@ -428,6 +467,13 @@ namespace Sacado {
           // For DyamicStorage as a view (is_owned=false), we need to set
           // the trailing entries when assigning a constant vector (because
           // the copy constructor in this case doesn't reset the size of this)
+          //
+          // Note:  supporting this technically makes the Vector non-POD, even
+          // with a static storage type where this branch will get optimized
+          // out.  We would have to remove DynamicStorage-as-a view as an option
+          // or partial specialize on StaticFixedStorage to fix this.  However
+          // the volatile operator=() and copy constructor overloads make
+          // Vector non-POD anyway.
           if (s.size() > x.s.size())
             for (ordinal_type i=x.s.size(); i<s.size(); i++)
               s[i] = s[0];
@@ -445,6 +491,13 @@ namespace Sacado {
           // For DyamicStorage as a view (is_owned=false), we need to set
           // the trailing entries when assigning a constant vector (because
           // the copy constructor in this case doesn't reset the size of this)
+          //
+          // Note:  supporting this technically makes the Vector non-POD, even
+          // with a static storage type where this branch will get optimized
+          // out.  We would have to remove DynamicStorage-as-a view as an option
+          // or partial specialize on StaticFixedStorage to fix this.  However
+          // the volatile operator=() and copy constructor overloads make
+          // Vector non-POD anyway.
           if (s.size() > x.s.size())
             for (ordinal_type i=x.s.size(); i<s.size(); i++)
               s[i] = s[0];
@@ -462,6 +515,13 @@ namespace Sacado {
           // For DyamicStorage as a view (is_owned=false), we need to set
           // the trailing entries when assigning a constant vector (because
           // the copy constructor in this case doesn't reset the size of this)
+          //
+          // Note:  supporting this technically makes the Vector non-POD, even
+          // with a static storage type where this branch will get optimized
+          // out.  We would have to remove DynamicStorage-as-a view as an option
+          // or partial specialize on StaticFixedStorage to fix this.  However
+          // the volatile operator=() and copy constructor overloads make
+          // Vector non-POD anyway.
           if (s.size() > x.s.size())
             for (ordinal_type i=x.s.size(); i<s.size(); i++)
               s[i] = s[0];
@@ -704,6 +764,54 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       reference getCoeff() {
         return s.template getCoeff<i>(); }
+
+      //! Return iterator to first element of coefficient array
+      KOKKOS_INLINE_FUNCTION
+      pointer begin() { return s.coeff(); }
+
+      //! Return iterator to first element of coefficient array
+      KOKKOS_INLINE_FUNCTION
+      const_pointer begin() const { return s.coeff(); }
+
+      //! Return iterator to first element of coefficient array
+      KOKKOS_INLINE_FUNCTION
+      volatile_pointer begin() volatile { return s.coeff(); }
+
+      //! Return iterator to first element of coefficient array
+      KOKKOS_INLINE_FUNCTION
+      const_volatile_pointer begin() const volatile { return s.coeff(); }
+
+      //! Return iterator to first element of coefficient array
+      KOKKOS_INLINE_FUNCTION
+      const_pointer cbegin() const { return s.coeff(); }
+
+      //! Return iterator to first element of coefficient array
+      KOKKOS_INLINE_FUNCTION
+      const_volatile_pointer cbegin() const volatile { return s.coeff(); }
+
+      //! Return iterator following last element of coefficient array
+      KOKKOS_INLINE_FUNCTION
+      pointer end() { return s.coeff() + s.size(); }
+
+      //! Return iterator following last element of coefficient array
+      KOKKOS_INLINE_FUNCTION
+      const_pointer end() const { return s.coeff() + s.size(); }
+
+      //! Return iterator following last element of coefficient array
+      KOKKOS_INLINE_FUNCTION
+      volatile_pointer end() volatile { return s.coeff() + s.size(); }
+
+      //! Return iterator following last element of coefficient array
+      KOKKOS_INLINE_FUNCTION
+      const_volatile_pointer end() const volatile { return s.coeff() + s.size(); }
+
+      //! Return iterator following last element of coefficient array
+      KOKKOS_INLINE_FUNCTION
+      const_pointer cend() const { return s.coeff()+ s.size(); }
+
+      //! Return iterator following last element of coefficient array
+      KOKKOS_INLINE_FUNCTION
+      const_volatile_pointer cend() const volatile { return s.coeff()+ s.size(); }
 
       //@}
 

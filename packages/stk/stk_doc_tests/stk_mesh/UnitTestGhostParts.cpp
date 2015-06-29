@@ -89,7 +89,7 @@ TEST(UnitTestGhostParts, Aura)
   stk::mesh::Ghosting& aura_ghosting = stkMeshBulkData.aura_ghosting();
   EXPECT_EQ(aura_part.mesh_meta_data_ordinal(), stkMeshBulkData.ghosting_part(aura_ghosting).mesh_meta_data_ordinal());
 
-  stk::mesh::Selector not_owned_nor_shared = !stkMeshMetaData.locally_owned_part() & !stkMeshMetaData.globally_shared_part();
+  stk::mesh::Selector not_owned_nor_shared = (!stkMeshMetaData.locally_owned_part()) & (!stkMeshMetaData.globally_shared_part());
 
   const stk::mesh::BucketVector& not_owned_nor_shared_node_buckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, not_owned_nor_shared);
   size_t expected_num_not_owned_nor_shared_node_buckets = 1;

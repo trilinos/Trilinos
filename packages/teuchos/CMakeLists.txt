@@ -233,6 +233,13 @@ IF (HAVE_TEUCHOS_DOUBLE_TO_ARPREC AND HAVE_TEUCHOS_DOUBLE_TO_QD)
     SET(HAVE_TEUCHOS_DOUBLE_TO_QD OFF)
 ENDIF()
 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_GLOBALLY_REDUCE_UNITTEST_RESULTS
+  HAVE_TEUCHOS_GLOBALLY_REDUCE_UNITTEST_RESULTS
+  "Set the Teuchos::UnitTestRepository to globally reduce test pass/fail results across all MPI ranks."
+  OFF
+  )
+
 #
 # D) Process the subpackages for Teuchos
 #

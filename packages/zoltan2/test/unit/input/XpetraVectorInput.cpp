@@ -179,7 +179,6 @@ int main(int argc, char *argv[])
 
   tV = uinput->getUITpetraVector();
   size_t vlen = tV->getLocalLength();
-  Teuchos::ArrayView<const zgno_t> rowGids = tV->getMap()->getNodeElementList();
 
   // To test migration in the input adapter we need a Solution
   // object.  The Solution needs an IdentifierMap.
@@ -187,9 +186,6 @@ int main(int argc, char *argv[])
   typedef Zoltan2::IdentifierMap<tvector_t> idmap_t;
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
-
-  ArrayRCP<const zgno_t> gidArray = arcpFromArrayView(rowGids);
-  RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));
 
   int nWeights = 1;
 
@@ -204,7 +200,7 @@ int main(int argc, char *argv[])
   std::vector<int> emptyStrides;
 
   Zoltan2::PartitioningSolution<adapter_t> solution(
-    env, comm, idMap, nWeights);
+    env, comm, nWeights);
   solution.setParts(solnParts);
 
   /////////////////////////////////////////////////////////////

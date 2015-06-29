@@ -73,6 +73,9 @@ int power_method(Epetra_CrsMatrix& A,
 
 int main(int argc, char *argv[])
 {
+  using std::cout;
+  using std::endl;
+
   int ierr = 0, i;
 
 #ifdef EPETRA_MPI
@@ -337,6 +340,8 @@ int power_method(Epetra_CrsMatrix& A,
                  Epetra_Vector& resid,
                  double * lambda, int niters, double tolerance,
                  bool verbose) {
+  using std::cout;
+  using std::endl;
 
   // Fill z with random Numbers
   z.Random();

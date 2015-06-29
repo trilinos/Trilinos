@@ -38,7 +38,7 @@ namespace Example {
   
 #undef CHKERR
 #define CHKERR(ierr)                                                    \
-  if (ierr != 0) { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << endl; }
+  if (ierr != 0) { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << " : " << ierr << endl; }
 
 #define MSG_NOT_YET_IMPLEMENTED ">> Not yet implemented"
 #define MSG_INVALID_INPUT(what) ">> Invaid input argument: " #what

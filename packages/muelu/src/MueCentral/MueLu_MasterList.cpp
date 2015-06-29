@@ -131,7 +131,8 @@ namespace MueLu {
     if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }
     if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }
     if (name == "repartition: max imbalance") { ss << "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=" << value << "/>"; return ss.str(); }
-    return "";
+    if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); } 
+   return "";
   }
 
   Teuchos::RCP<Teuchos::ParameterList> MasterList::masterList_ = Teuchos::null;
@@ -145,6 +146,7 @@ namespace MueLu {
   "<Parameter name=\"max levels\" type=\"int\" value=\"10\"/>"
   "<Parameter name=\"cycle type\" type=\"string\" value=\"V\"/>"
   "<Parameter name=\"problem: symmetric\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"xml parameter file\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"parameterlist: syntax\" type=\"string\" value=\"muelu\"/>"
   "<Parameter name=\"smoother: pre or post\" type=\"string\" value=\"both\"/>"
   "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
@@ -178,12 +180,17 @@ namespace MueLu {
   "<Parameter name=\"aggregation: preserve Dirichlet points\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: allow user-specified singletons\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: export visualization data\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: output filename\" type=\"string\" value=\"AggViz.vtp\"/>"
+  "<Parameter name=\"aggregation: output file: time step\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"aggregation: iter\" type=\"int\" value=\"0\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
+  "<Parameter name=\"toggle: mode\" type=\"string\" value=\"semicoarsen\"/>"
   "<Parameter name=\"semicoarsen: coarsen rate\" type=\"int\" value=\"3\"/>"
+  "<Parameter name=\"semicoarsen: number of levels\" type=\"int\" value=\"3\"/>"
   "<Parameter name=\"sa: damping factor\" type=\"double\" value=\"1.33\"/>"
   "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"sa: calculate eigenvalue estimate\" type=\"bool\" value=\"false\"/>"
@@ -208,6 +215,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
+  "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
   "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-1\"/>"
 "</ParameterList>"
 ;
@@ -331,6 +339,8 @@ namespace MueLu {
 
          ("problem: symmetric","problem: symmetric")
 
+         ("xml parameter file","xml parameter file")
+
          ("parameterlist: syntax","parameterlist: syntax")
 
          ("smoother: pre or post","smoother: pre or post")
@@ -396,7 +406,13 @@ namespace MueLu {
          ("aggregation: allow user-specified singletons","aggregation: allow user-specified singletons")
 
          ("aggregation: export visualization data","aggregation: export visualization data")
-
+      
+         ("aggregation: output filename","aggregation: output filename")
+      
+         ("aggregation: output file: time step","aggregation: output file: time step")
+      
+         ("aggregation: iter","aggregation: iter")
+      
          ("export data","export data")
 
          ("ML print initial list","print initial parameters")
@@ -407,7 +423,11 @@ namespace MueLu {
 
          ("energy minimization: enable","multigrid algorithm")
 
+         ("toggle: mode","toggle: mode")
+
          ("semicoarsen: coarsen rate","semicoarsen: coarsen rate")
+
+         ("semicoarsen: number of levels","semicoarsen: number of levels")
 
          ("aggregation: damping factor","sa: damping factor")
 
@@ -456,6 +476,8 @@ namespace MueLu {
          ("repartition: use subcommunicators","repartition: use subcommunicators")
 
          ("reuse: type","reuse: type")
+
+         ("use external multigrid package","use external multigrid package")
 
          ("debug: graph level","debug: graph level")
       ;
