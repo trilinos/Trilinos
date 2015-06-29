@@ -730,7 +730,7 @@ private:
   }
 
 public:
-  unsigned solveDual(const Real t, const unsigned maxit = 1000, const Real tol = 1.e-8) {
+  virtual unsigned solveDual(const Real t, const unsigned maxit = 1000, const Real tol = 1.e-8) {
     unsigned iter = 0;
     if (size_ == 1) {
       iter = solveDual_dim1(t,maxit,tol);
