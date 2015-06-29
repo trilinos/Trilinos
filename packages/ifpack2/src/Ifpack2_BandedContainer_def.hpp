@@ -63,7 +63,9 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                  const Teuchos::ArrayView<const local_ordinal_type>& localRows) :
   Container<MatrixType> (matrix, localRows),
   numRows_ (localRows.size ()),
-  ipiv_ (numRows_, 0)
+  ipiv_ (numRows_, 0),
+  kl_(-1),
+  ku_(-1)
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
@@ -75,35 +77,6 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! matrix->hasColMap (), std::invalid_argument, "Ifpack2::BandedContainer: "
     "The constructor's input matrix must have a column Map.");
-
-  // determine upper and lower bandwith on current processor
-  // TODO improve me: do not distinguish between kl and ku but choose maximum?
-  // Can we use number of Neighbors from Tpetra::CrsMatrix?
-  local_ordinal_type maxku = 0;
-  local_ordinal_type maxkl = 0;
-
-  const size_t numLocalRows = matrix->getNodeNumRows ();
-  for (size_t localRow = 0; localRow < numLocalRows; ++localRow) {
-    const global_ordinal_type globalRow = matrix->getRowMap()->getGlobalElement(localRow);
-    // Determine local column id for diagonal entry
-    const local_ordinal_type rlcidx = matrix->getRowMap()->getLocalElement (globalRow);
-    ArrayView< const local_ordinal_type > indices;
-    ArrayView< const scalar_type > values;
-    matrix->getLocalRowView (localRow, indices, values);
-    typename ArrayView<const local_ordinal_type>::iterator cur;
-    local_ordinal_type min_col_idx = 0;
-    local_ordinal_type max_col_idx = -1;
-    for (cur = indices.begin(); cur != indices.end(); ++cur) {
-      if(min_col_idx > *cur) min_col_idx = *cur;
-      if(max_col_idx < *cur) max_col_idx = *cur;
-    }
-
-    local_ordinal_type ku = max_col_idx - rlcidx;
-    local_ordinal_type kl = rlcidx - min_col_idx;
-    if(ku > maxku) maxku = ku;
-    if(kl > maxkl) maxkl = kl;
-  }
-  diagBlock_ = Teuchos::SerialBandDenseMatrix<int, local_scalar_type>(numRows_, numRows_, maxkl /* lower bandwith */, maxkl + maxku /* upper bandwith. Don't forget to store kl extra superdiagonals for LU decomposition! */);
 
   // Check whether the input set of local row indices is correct.
   const map_type& rowMap = * (matrix->getRowMap ());
@@ -121,9 +94,9 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
     ! rowIndicesValid, std::invalid_argument, "Ifpack2::BandedContainer: "
     "On process " << rowMap.getComm ()->getRank () << " of "
     << rowMap.getComm ()->getSize () << ", in the given set of local row "
-    "indices localRows = " << toString (localRows) << ", the following "
+    "indices localRows = " << Teuchos::toString (localRows) << ", the following "
     "entries are not valid local row indices on the calling process: "
-    << toString (invalidLocalRowIndices) << ".");
+    << Teuchos::toString (invalidLocalRowIndices) << ".");
 
 #ifdef HAVE_MPI
   RCP<const Teuchos::Comm<int> > localComm =
@@ -170,7 +143,12 @@ template<class MatrixType, class LocalScalarType>
 void BandedContainer<MatrixType, LocalScalarType>::
 setParameters (const Teuchos::ParameterList& List)
 {
-  (void) List; // the solver doesn't currently take any parameters
+  TEUCHOS_TEST_FOR_EXCEPTION(!List.isParameter("relaxation: banded container subdiagonals"), std::invalid_argument,
+                       "BandedContainer<T>::setParameters: the user must provide the number of subdiagonals in the 'relaxation: banded container subdiagonals' parameter.");
+  TEUCHOS_TEST_FOR_EXCEPTION(!List.isParameter("relaxation: banded container superdiagonals"), std::invalid_argument,
+                       "BandedContainer<T>::setParameters: the user must provide the number of superdiagonals in the 'relaxation: banded container superdiagonals' parameter.");
+  kl_ = List.get<int>("relaxation: banded container superdiagonals");
+  ku_ = List.get<int>("relaxation: banded container subdiagonals");
 }
 
 //==============================================================================
@@ -179,6 +157,11 @@ void BandedContainer<MatrixType, LocalScalarType>::initialize ()
 {
   using Teuchos::null;
   using Teuchos::rcp;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(kl_==-1 || ku_==-1, std::invalid_argument,
+                       "BandedContainer<T>::setParameters: the user must provide the number of sub- and superdiagonals in the 'kl' and 'ku' parameters.");
+
+  diagBlock_ = Teuchos::SerialBandDenseMatrix<int, local_scalar_type>(numRows_, numRows_, kl_ /* lower bandwith */, kl_+ku_ /* upper bandwith. Don't forget to store kl extra superdiagonals for LU decomposition! */);
 
   // We assume that if you called this method, you intend to recompute
   // everything.
@@ -481,6 +464,10 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   using std::cerr;
   using std::endl;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::runtime_error, "Ifpack2::BandedContainer::"
+      "weightedApply: This code is not tested and not used. Expect bugs.");
 
   // The local operator template parameter might have a different
   // Scalar type than MatrixType.  This means that we might have to
