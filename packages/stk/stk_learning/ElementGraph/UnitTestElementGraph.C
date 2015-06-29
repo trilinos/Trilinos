@@ -1013,35 +1013,6 @@ stk::mesh::Entity get_element_side(stk::mesh::BulkData& bulkData, stk::mesh::Ent
     return side;
 }
 
-void change_local_id_to_negative_global_id(ElementGraph &elem_graph, LocalId elem_local_id, stk::mesh::EntityId elem_global_id)
-{
-    ThrowRequire(is_valid_graph_element(elem_graph, elem_local_id));
-    for(unsigned id = 0; id < elem_graph.size(); ++id)
-    {
-        std::vector <LocalId>::iterator pos_of_move_elem_in_current_id = std::find(elem_graph[id].begin(), elem_graph[id].end(), elem_local_id);
-        if (pos_of_move_elem_in_current_id != elem_graph[id].end())
-        {
-            int index_of_move_elem_in_current_id = pos_of_move_elem_in_current_id - elem_graph[id].begin();
-            elem_graph[id][index_of_move_elem_in_current_id] = -elem_global_id;
-        }
-    }
-}
-
-void change_negative_global_id_to_local_id(ElementGraph &elem_graph, stk::mesh::EntityId elem_global_id, LocalId elem_local_id)
-{
-    ThrowRequire(is_valid_graph_element(elem_graph, elem_local_id));
-    for(unsigned id = 0; id < elem_graph.size(); ++id)
-    {
-        LocalId negative_elem_global_id = -elem_global_id;
-        std::vector <LocalId>::iterator pos_of_negative_global_id = std::find(elem_graph[id].begin(), elem_graph[id].end(), negative_elem_global_id);
-        if (pos_of_negative_global_id != elem_graph[id].end())
-        {
-            int index_of_move_elem_in_current_id = pos_of_negative_global_id - elem_graph[id].begin();
-            elem_graph[id][index_of_move_elem_in_current_id] = elem_local_id;
-        }
-    }
-}
-
 void test_parallel_graph_info(const ElementGraph& elem_graph, const ParallelGraphInfo& parallel_graph_info,
         LocalId this_element, LocalId other_element, int other_proc, int other_side_ord, int permutation)
 {
