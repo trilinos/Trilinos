@@ -228,7 +228,7 @@ public:
     throw std::runtime_error("ParMA needs a MeshAdapter but you haven't given it one");
     
   }
-  void phi() {std::cout<<"hi"<<std::endl;}
+
   AlgParMA(const RCP<const Environment> &env__,
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const MeshAdapter<user_t> > &adapter__) :
@@ -244,12 +244,23 @@ public:
       pcu_outside=true;
     PCU_Switch_Comm(mpicomm);
 
+    int dim;
+    //Get region topology types if its NULL then we have a 2D mesh
+    const EntityTopologyType* tops;
+    adapter->getTopologyViewOf(MESH_REGION,tops);
+    if (tops==NULL)
+      dim=2;
+    else 
+      dim=3;
+
     //Create empty apf mesh
     gmi_register_null();
     gmi_model* g = gmi_load(".null");
-    int dim = adapter->getDimension();
     enum MeshEntityType primary_type = entityAPFtoZ2(dim);
     m = apf::makeEmptyMdsMesh(g,dim,false);
+
+    //Get entity topology types
+    adapter->getTopologyViewOf(primary_type,tops);
     
     //Get element global ids and part ids
     const zgid_t* element_gids;
@@ -263,10 +274,7 @@ public:
     const zgid_t* vertex_gids;
     adapter->getIDsViewOf(MESH_VERTEX,vertex_gids);
     
-    //Get entity topology types
-    const EntityTopologyType* tops;
-    adapter->getTopologyViewOf(primary_type,tops);
-
+    
     //Get vertex coordinates
     const scalar_t ** vertex_coords = new const scalar_t*[dim];
     int* strides = new int[dim];

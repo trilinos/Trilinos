@@ -352,11 +352,16 @@ private:
 template <typename User>
 RPIMeshAdapter<User>::RPIMeshAdapter(const Comm<int> &comm,
 				     apf::Mesh* m) {
-  this->setEntityTypes("region","vertex","vertex");
-
+  
+  
   //mesh dimension
   m_dimension = m->getDimension();
-  
+
+  if (m_dimension==3)
+    this->setEntityTypes("region","vertex","vertex");
+  else
+    this->setEntityTypes("face","vertex","vertex");
+
   //count the local and global numbers as well as assign ids and map local to global
   lids = new apf::Numbering*[m_dimension+1];
   gids = new apf::GlobalNumbering*[m_dimension+1];

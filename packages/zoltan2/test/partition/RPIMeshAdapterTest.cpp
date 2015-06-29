@@ -142,6 +142,7 @@ int main(int narg, char *arg[]) {
   std::string parma_method("VtxElm");
   std::string output_loc("");
   int nParts = CommT->getSize();
+  double imbalance = 1.1;
 
   // Read run-time options.
   Teuchos::CommandLineProcessor cmdp (false, false);
@@ -155,6 +156,8 @@ int main(int narg, char *arg[]) {
                  "Method to use: Vertex, Element, VtxElm, VtxEdgeElm, Ghost, or Shape ");
   cmdp.setOption("nparts", &nParts,
                  "Number of parts to create");
+  cmdp.setOption("imbalance", &imbalance,
+                 "Target imbalance for the partitioning method");
   cmdp.setOption("output", &output_loc,
                  "Location of new partitioned apf mesh. Ex: 4/torus.smb");
   cmdp.parse(narg, arg);
@@ -200,7 +203,7 @@ int main(int narg, char *arg[]) {
   if (action == "mj") {
     do_partitioning = true;
     params.set("debug_level", "basic_status");
-    params.set("imbalance_tolerance", 1.1);
+    params.set("imbalance_tolerance", imbalance);
     params.set("num_global_parts", nParts);
     params.set("algorithm", "multijagged");
     params.set("rectilinear", "yes");
@@ -208,7 +211,7 @@ int main(int narg, char *arg[]) {
   else if (action == "scotch") {
     do_partitioning = true;
     params.set("debug_level", "verbose_detailed_status");
-    params.set("imbalance_tolerance", 1.1);
+    params.set("imbalance_tolerance", imbalance);
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "scotch");
@@ -216,7 +219,7 @@ int main(int narg, char *arg[]) {
   else if (action == "zoltan_rcb") {
     do_partitioning = true;
     params.set("debug_level", "verbose_detailed_status");
-    params.set("imbalance_tolerance", 1.1);
+    params.set("imbalance_tolerance", imbalance);
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "zoltan");
@@ -224,7 +227,7 @@ int main(int narg, char *arg[]) {
   else if (action == "parma") {
     do_partitioning = true;
     params.set("debug_level", "basic_status");
-    params.set("imbalance_tolerance", 1.01);
+    params.set("imbalance_tolerance", imbalance);
     params.set("algorithm", "parma");
     Teuchos::ParameterList &pparams = params.sublist("parma_parameters",false);
     pparams.set("parma_method",parma_method);
@@ -239,7 +242,7 @@ int main(int narg, char *arg[]) {
   else if (action=="zoltan_hg") {
     do_partitioning = true;
     params.set("debug_level", "no_status");
-    params.set("imbalance_tolerance", 1.01);
+    params.set("imbalance_tolerance", imbalance);
     params.set("algorithm", "zoltan");
     params.set("num_global_parts", nParts);
     Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
