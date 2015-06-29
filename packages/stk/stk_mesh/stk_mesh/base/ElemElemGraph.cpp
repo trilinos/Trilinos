@@ -381,6 +381,14 @@ void ElemElemGraph::add_possibly_connected_elements_to_graph_using_side_nodes( c
                             localElementsConnectedToRemoteShell.insert(get_local_element_id(localElem));  // Store connection to error-check later
                         }
                         impl::LocalId local_elem_id = get_local_element_id(localElem);
+                        impl::LocalId negSgnRemoteElemId = -1*elemData.m_elementId;
+                        std::vector<impl::LocalId> &thisElemGraphEdges = m_elem_graph[local_elem_id];
+                        if (std::find(thisElemGraphEdges.begin(), thisElemGraphEdges.end(), negSgnRemoteElemId)
+                            != thisElemGraphEdges.end())
+                        {
+                            continue;
+                        }
+
                         m_elem_graph[local_elem_id].push_back(-1*elemData.m_elementId);
                         m_via_sides[local_elem_id].push_back(side_index);
 
@@ -388,16 +396,16 @@ void ElemElemGraph::add_possibly_connected_elements_to_graph_using_side_nodes( c
                         if(m_bulk_data.identifier(localElem) < static_cast<stk::mesh::EntityId>(elemData.m_elementId))
                         {
                             const auto iterRange = elemSideComm.equal_range(impl::EntitySidePair(localElem, side_index));
-                            bool found = false;
+//                            bool found = false;
                             for (impl::ElemSideToProcAndFaceId::const_iterator iter = iterRange.first; iter != iterRange.second; ++iter) {
                                 if ((iter->second.proc != elemData.m_procId) && (iter->first.side_id != elemData.m_sideIndex)) {
                                     continue;
                                 }
-                                found = true;
+//                                 found = true;
                                 chosen_side_id = iter->second.side_id;
                                 break;
                             }
-                            ThrowRequireMsg(found, "Program error. Please contact sierra-help@sandia.gov for support.");
+                            // ThrowRequireMsg(found, "Program error. Please contact sierra-help@sandia.gov for support.");
                         }
                         else
                         {
@@ -1431,13 +1439,18 @@ void ElemElemGraph::add_elements_to_graph(const stk::mesh::EntityVector &element
     }
 
     impl::ElemSideToProcAndFaceId elem_side_comm;
-    elem_side_comm = impl::get_element_side_ids_to_communicate(m_bulk_data, elements_to_add);
+    stk::mesh::Selector ownedSelector = m_bulk_data.mesh_meta_data().locally_owned_part();
+    stk::mesh::EntityVector ownedElements;
+    m_bulk_data.get_entities(stk::topology::ELEMENT_RANK, ownedSelector, ownedElements);
+    elem_side_comm = impl::get_element_side_ids_to_communicate(m_bulk_data, ownedElements);
 
     size_t num_side_ids_needed = elem_side_comm.size();
     num_side_ids_needed += m_num_edges;
 
     m_bulk_data.generate_new_ids(m_bulk_data.mesh_meta_data().side_rank(), num_side_ids_needed, m_suggested_side_ids);
 
+    // Remove the old parallel count since we are redoing the parallel edges
+    m_num_edges -= m_num_parallel_edges;
     fill_parallel_graph(elem_side_comm);
 
     update_number_of_parallel_edges();

@@ -208,6 +208,8 @@ ElemElemGraphTester create_base_1x1x4_elem_graph_for_addition(stk::ParallelMachi
 
 ElemElemGraphTester create_base_1x1x4_elem_graph_for_deletion(stk::ParallelMachine &comm, stk::mesh::BulkData &bulk);
 
+void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vector<unsigned> > & shared_nodeIDs_and_procs );
+
 void test_element_graph_add_elements_to_graph(stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
@@ -231,68 +233,102 @@ TEST(ElementGraph, add_elements_to_graph_aura_off)
     test_element_graph_add_elements_to_graph(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
-void test_add_elements_to_graph_with_manual_mesh_creation(stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
+void test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
 {
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
     const unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
-    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, auto_aura_option);
-    const int p_rank = mesh.parallel_rank();
-    const int p_size = mesh.parallel_size();
+    stk::mesh::BulkData bulkData(meta, comm, auto_aura_option);
 
-    stk::mesh::EntityRank side_rank = meta.side_rank();
+    const int p_size  = stk::parallel_machine_size(comm);
+    const int p_rank = stk::parallel_machine_rank(comm);
 
-    stk::mesh::Part & locally_owned = meta.locally_owned_part();
+    if (2 != p_size)
+    {
+        return;
+    }
 
     stk::mesh::Part * hexPart = &meta.declare_part_with_topology("hex_part", stk::topology::HEX_8);
-    meta.commit();
 
-    const std::vector<size_t> numHex{2,2};
+    stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulkData, comm);
+
+    std::vector<unsigned> counts;
+    stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
+
+    ElemElemGraphTester elem_graph(bulkData);
+
+    EXPECT_EQ(1u, elem_graph.size());
+
+    const std::vector<size_t> numHex{1,1};
     stk::mesh::EntityIdVector hexNodeIDs[] {
-        {  1,  2,  3,  4,
-           5,  6,  7,  8,
-           9, 10, 11, 12
-        },
-        {
-           9, 10, 11, 12,
-          13, 14, 15, 16,
-          17, 18, 19, 20
-        }
+        { 8, 7, 16, 15, 12, 11, 18, 17 },
+        { 4, 3, 14, 13,  8,  7, 16, 15 }
     };
-    stk::mesh::EntityIdVector hexElemIDs[] {
-        {1,2},
-        {3,4}
-    };
+    stk::mesh::EntityIdVector hexElemIDs {3, 4};
 
     // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
     std::vector< std::vector<unsigned> > shared_nodeIDs_and_procs
     {
-        { 0,  9, 1 },  // proc 0
-        { 0, 10, 1 },
+        { 0,  3, 1 },  // proc 0
+        { 0,  4, 1 },
         { 0, 11, 1 },
         { 0, 12, 1 },
-        { 1,  9, 0 },  // proc 1
-        { 1, 10, 0 },
+        { 0, 15, 1 },
+        { 0, 16, 1 },
+        { 1,  3, 0 },  // proc 1
+        { 1,  4, 0 },
         { 1, 11, 0 },
         { 1, 12, 0 },
+        { 1, 15, 0 },
+        { 1, 16, 0 },
     };
 
-    mesh.modification_begin();
+    bulkData.modification_begin();
+    stk::mesh::declare_element(bulkData, *hexPart, hexElemIDs[p_rank], hexNodeIDs[p_rank]);
+    setup_node_sharing(bulkData, shared_nodeIDs_and_procs );
+    bulkData.modification_end();
 
-    for (size_t i = 0; i < numHex[p_rank]; ++i) {
-        stk::mesh::declare_element(mesh, *hexPart, hexElemIDs[p_rank][i], hexNodeIDs[p_rank][i]);
-    }
+    stk::mesh::EntityVector elements_to_add;
 
-    if (p_size > 1)
+    if (0 == p_rank)
     {
-      setup_node_sharing(mesh, shared_nodeIDs_and_procs );
+        stk::mesh::Entity elem3 = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
+        elements_to_add.push_back(elem3);
+    }
+    else
+    {
+        stk::mesh::Entity elem4 = bulkData.get_entity(stk::topology::ELEM_RANK, 4);
+        elements_to_add.push_back(elem4);
     }
 
-    mesh.modification_end();
+    elem_graph.add_elements_to_graph(elements_to_add);
+
+    if (0 == p_rank)
+    {
+        EXPECT_EQ(5, elem_graph.check_connectivity(1, 2));
+        EXPECT_EQ(2, elem_graph.check_connectivity(1, 4));
+        EXPECT_EQ(0, elem_graph.check_connectivity(3, 2));
+        EXPECT_EQ(4, elem_graph.check_connectivity(3, 4));
+    }
+    else
+    {
+        EXPECT_EQ(4, elem_graph.check_connectivity(2, 1));
+        EXPECT_EQ(2, elem_graph.check_connectivity(2, 3));
+        EXPECT_EQ(0, elem_graph.check_connectivity(4, 1));
+        EXPECT_EQ(5, elem_graph.check_connectivity(4, 3));
+    }
+    EXPECT_EQ(2u, elem_graph.size());
+    EXPECT_EQ(4u, elem_graph.num_edges());
 }
 
-TEST(ElementGraph, add_elements_to_graph_using_manual_mesh_creation_aura_on)
+TEST(ElementGraph, add_elements_to_pre_existing_graph_and_mesh_aura_on)
 {
+    test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::BulkData::AUTO_AURA);
+}
 
+TEST(ElementGraph, add_elements_to_pre_existing_graph_and_mesh_aura_off)
+{
+    test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 void test_delete_elements_from_graph(ElemElemGraphTester &elem_graph, std::vector<stk::mesh::EntityId> &ids_to_delete)
