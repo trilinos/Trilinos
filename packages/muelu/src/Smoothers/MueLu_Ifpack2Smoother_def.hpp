@@ -106,27 +106,16 @@ namespace MueLu {
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     this->Input(currentLevel, "A");
 
-    if (type_ == "BANDED_RELAXATION" ||
-        type_ == "BANDED RELAXATION" ||
-        type_ == "BANDEDRELAXATION" ) {
-      ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
-
-      //std::string partName  = "partitioner: type";
-      //if (paramList.isParameter(partName) && paramList.get<std::string>(partName) == "user") {
-
-      // TODO check whether line relaxation is possible. otherwise switch to point relaxation?
-
+    if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
+        type_ == "LINESMOOTHING_BANDED RELAXATION" ||
+        type_ == "LINESMOOTHING_BANDEDRELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCKRELAXATION") {
       this->Input(currentLevel, "CoarseNumZLayers");
       this->Input(currentLevel, "LineDetection_Layers");
       this->Input(currentLevel, "LineDetection_VertLineIds");
-      currentLevel.print(std::cout,MueLu::Debug);
-
-      // TODO make sure that the partitioner map is correctly set
-
-        //type_ = "RELAXATION";
-      //}
-
-    } // if (type_ == "BANDEDRELAXATION")
+    } // if (type_ == "LINESMOOTHING_BANDEDRELAXATION")
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -207,19 +196,53 @@ namespace MueLu {
       }
     } // if (type_ == "SCHWARZ")
 
-    if (type_ == "BANDED_RELAXATION" ||
-        type_ == "BANDED RELAXATION" ||
-        type_ == "BANDEDRELAXATION" ) {
+    if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
+        type_ == "LINESMOOTHING_BANDED RELAXATION" ||
+        type_ == "LINESMOOTHING_BANDEDRELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCKRELAXATION" ) {
       ParameterList& myparamList = const_cast<ParameterList&>(this->GetParameterList());
 
       LO CoarseNumZLayers = Factory::Get<LO>(currentLevel,"CoarseNumZLayers");
-      if (CoarseNumZLayers > 0) { // && currentLevel.GetLevelID() > 0) {
+      if (CoarseNumZLayers > 0) {
         Teuchos::ArrayRCP<LO> TVertLineId = Factory::Get< Teuchos::ArrayRCP<LO> >(currentLevel, "LineDetection_VertLineIds");
         Teuchos::ArrayRCP<LO> TLayerId    = Factory::Get< Teuchos::ArrayRCP<LO> >(currentLevel, "LineDetection_Layers");
 
-        myparamList.set("partitioner: type","user");
-        myparamList.set("partitioner: map",TVertLineId);
-        myparamList.set("partitioner: local parts",TVertLineId[TVertLineId.size()-1]+1);
+        size_t numLocalRows = A_->getNodeNumRows();
+        TEUCHOS_TEST_FOR_EXCEPTION(numLocalRows % TVertLineId.size() != 0, Exceptions::RuntimeError, "MueLu::Ifpack2Smoother::Setup(): the number of local nodes is incompatible with the TVertLineIds.");
+
+        if (numLocalRows == TVertLineId.size()) {
+          myparamList.set("partitioner: type","user");
+          myparamList.set("partitioner: map",TVertLineId);
+          myparamList.set("partitioner: local parts",TVertLineId[TVertLineId.size()-1]+1);
+          // determine upper and lower bandwith on current processor:
+          // Choosing kl=matrix->getNodeNumDiags() is an extremely conservative but the most safe choice.
+          // We choose kl=0.5*matrix->getNodeNumDiags()+1 assuming that the graph of the matrix is symmetric
+          // ku is chosen to be twice kl as we need the additional number of off-diagonals for the LU decomposition
+          // TODO: this is subject for improvements
+          myparamList.set("relaxation: banded container superdiagonals",Teuchos::as<int>(0.5*A_->getNodeNumDiags())+1);
+          myparamList.set("relaxation: banded container subdiagonals",Teuchos::as<int>(A_->getNodeNumDiags())+2);
+        } else {
+          // we assume a constant number of DOFs per node
+          size_t numDofsPerNode = numLocalRows / TVertLineId.size();
+
+          // Create a new Teuchos::ArrayRCP<LO> of size numLocalRows and fill it with the corresponding information
+          Teuchos::ArrayRCP<LO> partitionerMap(numLocalRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
+          for (size_t blockRow = 0; blockRow < TVertLineId.size(); ++blockRow)
+            for (size_t dof = 0; dof < numDofsPerNode; dof++)
+              partitionerMap[blockRow * numDofsPerNode + dof] = TVertLineId[blockRow];
+          myparamList.set("partitioner: type","user");
+          myparamList.set("partitioner: map",partitionerMap);
+          myparamList.set("partitioner: local parts",TVertLineId[TVertLineId.size()-1]+1);
+          // determine upper and lower bandwith on current processor:
+          // Choosing kl=matrix->getNodeNumDiags() is an extremely conservative but the most safe choice.
+          // We choose kl=0.5*matrix->getNodeNumDiags()+1 assuming that the graph of the matrix is symmetric
+          // ku is chosen to be twice kl as we need the additional number of off-diagonals for the LU decomposition
+          // TODO: this is subject for improvements
+          myparamList.set("relaxation: banded container superdiagonals",Teuchos::as<int>(0.5*A_->getNodeNumDiags())+1);
+          myparamList.set("relaxation: banded container subdiagonals",Teuchos::as<int>(A_->getNodeNumDiags())+2);
+        }
 
       } else {
         // line detection failed -> fallback to point-wise relaxation
@@ -230,7 +253,7 @@ namespace MueLu {
         type_ = "RELAXATION";
       }
 
-    } // if (type_ == "BANDEDRELAXATION")
+    } // if (type_ == "LINESMOOTHING_BANDEDRELAXATION")
 
     if (type_ == "CHEBYSHEV") {
       std::string maxEigString   = "chebyshev: max eigenvalue";
