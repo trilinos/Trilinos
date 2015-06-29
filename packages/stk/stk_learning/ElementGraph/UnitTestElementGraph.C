@@ -231,6 +231,70 @@ TEST(ElementGraph, add_elements_to_graph_aura_off)
     test_element_graph_add_elements_to_graph(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
+void test_add_elements_to_graph_with_manual_mesh_creation(stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
+{
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD, auto_aura_option);
+    const int p_rank = mesh.parallel_rank();
+    const int p_size = mesh.parallel_size();
+
+    stk::mesh::EntityRank side_rank = meta.side_rank();
+
+    stk::mesh::Part & locally_owned = meta.locally_owned_part();
+
+    stk::mesh::Part * hexPart = &meta.declare_part_with_topology("hex_part", stk::topology::HEX_8);
+    meta.commit();
+
+    const std::vector<size_t> numHex{2,2};
+    stk::mesh::EntityIdVector hexNodeIDs[] {
+        {  1,  2,  3,  4,
+           5,  6,  7,  8,
+           9, 10, 11, 12
+        },
+        {
+           9, 10, 11, 12,
+          13, 14, 15, 16,
+          17, 18, 19, 20
+        }
+    };
+    stk::mesh::EntityIdVector hexElemIDs[] {
+        {1,2},
+        {3,4}
+    };
+
+    // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
+    std::vector< std::vector<unsigned> > shared_nodeIDs_and_procs
+    {
+        { 0,  9, 1 },  // proc 0
+        { 0, 10, 1 },
+        { 0, 11, 1 },
+        { 0, 12, 1 },
+        { 1,  9, 0 },  // proc 1
+        { 1, 10, 0 },
+        { 1, 11, 0 },
+        { 1, 12, 0 },
+    };
+
+    mesh.modification_begin();
+
+    for (size_t i = 0; i < numHex[p_rank]; ++i) {
+        stk::mesh::declare_element(mesh, *hexPart, hexElemIDs[p_rank][i], hexNodeIDs[p_rank][i]);
+    }
+
+    if (p_size > 1)
+    {
+      setup_node_sharing(mesh, shared_nodeIDs_and_procs );
+    }
+
+    mesh.modification_end();
+}
+
+TEST(ElementGraph, add_elements_to_graph_using_manual_mesh_creation_aura_on)
+{
+
+}
+
 void test_delete_elements_from_graph(ElemElemGraphTester &elem_graph, std::vector<stk::mesh::EntityId> &ids_to_delete)
 {
     std::set<stk::mesh::EntityId> currentElements = {1,2,3,4};
