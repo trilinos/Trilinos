@@ -58,7 +58,7 @@ namespace Example {
 
     ordinal_type NumBlocks() const { return _cblk; }
 
-    GraphHelper_Scotch(CrsMatrixType& A) {
+    GraphHelper_Scotch(const CrsMatrixType& A) {
 
       _label = "GraphHelper_Scotch::" + A.Label();
 

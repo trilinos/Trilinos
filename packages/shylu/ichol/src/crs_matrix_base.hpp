@@ -301,6 +301,32 @@ namespace Example {
       return 0;
     }
 
+    /// \brief add the matrix b into this non-zero entires
+    template<typename VT,
+             typename OT,
+             typename ST,
+             typename SpT,
+             typename MT>
+    int 
+    add(const CrsMatrixBase<VT,OT,ST,SpT,MT> &b) { 
+
+      const ordinal_type m = min(b._m, _m);
+      for (ordinal_type i=0;i<m;++i) {
+        const ordinal_type jaend = _ap[i+1];
+        const ordinal_type jbend = b._ap[i+1];
+
+        ordinal_type ja = _ap[i];
+        ordinal_type jb = b._ap[i];
+        
+        for ( ;jb<jbend;++jb) {
+          for ( ;(_aj[ja]<b._aj[jb] && ja<jaend);++ja);
+          _ax[ja] += (_aj[ja] == b._aj[jb])*b._ax[jb];
+        }
+      }
+
+      return 0;
+    }
+
     ostream& showMe(ostream &os) const {
       streamsize prec = os.precision();
       os.precision(8);
