@@ -50,6 +50,15 @@ struct ConnectedElementData
     stk::mesh::EntityVector m_sideNodes;
 };
 
+struct ShellConnectivityData
+{
+    stk::mesh::EntityId m_nearElementId;
+    int                 m_nearElementSide;
+    stk::mesh::EntityId m_shellElementId;
+    stk::mesh::EntityId m_farElementId;
+    bool                m_farElementIsRemote;
+};
+
 typedef std::pair<LocalId,int> ElementSidePair;
 typedef std::map<std::pair<LocalId,stk::mesh::EntityId>, parallel_info > ParallelGraphInfo;
 typedef std::vector<std::vector<LocalId> > ElementGraph;

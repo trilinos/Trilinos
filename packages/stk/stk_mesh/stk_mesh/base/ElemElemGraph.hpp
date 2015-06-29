@@ -115,6 +115,8 @@ protected:
                                                      stk::mesh::EntityId suggested_face_id,
                                                      stk::mesh::Part *active_part);
 
+    void pack_shell_connectivity(stk::CommSparse & comm, const std::vector<impl::ShellConnectivityData> & shellConnectivityList);
+
     void unpack_and_store_connected_element(stk::CommBuffer &buf, impl::LocalId recvd_elem_local_id,
                                                            stk::mesh::EntityId recvd_elem_global_id);
 

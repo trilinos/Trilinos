@@ -1006,17 +1006,119 @@ void ElemElemGraph::pack_deleted_element_comm(stk::CommSparse &comm,
     }
 }
 
+void ElemElemGraph::pack_shell_connectivity(stk::CommSparse & comm,
+                                            const std::vector<impl::ShellConnectivityData> & shellConnectivityList)
+{
+    for(const impl::ShellConnectivityData & shellConnectivityData: shellConnectivityList)
+    {
+        if (shellConnectivityData.m_farElementIsRemote) {
+            stk::mesh::Entity deletedElement = m_bulk_data.get_entity(stk::topology::ELEM_RANK, shellConnectivityData.m_shellElementId);
+            impl::LocalId deletedElementId = get_local_element_id(deletedElement);
+            auto iter = m_parallel_graph_info.find( std::make_pair(deletedElementId, shellConnectivityData.m_farElementId) );
+            ThrowRequire(iter != m_parallel_graph_info.end());
+            int remote_proc = iter->second.m_other_proc;
+
+            comm.send_buffer(remote_proc).pack<stk::mesh::EntityId>(shellConnectivityData.m_nearElementId);
+            comm.send_buffer(remote_proc).pack<stk::mesh::EntityId>(shellConnectivityData.m_shellElementId);
+            comm.send_buffer(remote_proc).pack<stk::mesh::EntityId>(shellConnectivityData.m_farElementId);
+        }
+    }
+}
+
 void ElemElemGraph::delete_elements_from_graph(const stk::mesh::EntityVector &elements_to_delete)
 {
+    std::vector<impl::ShellConnectivityData> shellConnectivityList;
+
+    // Shell hooey
+    for (const stk::mesh::Entity &elem_to_delete : elements_to_delete)
+    {
+        ThrowRequireMsg(m_bulk_data.is_valid(elem_to_delete), "Program error. Not valid mesh element. Contact sierra-help@sandia.gov for support.");
+        ThrowRequireMsg(is_valid_graph_element(elem_to_delete), "Program error. Not valid graph element. Contact sierra-help@sandia.gov for support.");
+
+        if (!m_bulk_data.bucket(elem_to_delete).owned())
+        {
+            continue;
+        }
+
+        stk::topology elem_to_delete_topology = m_bulk_data.bucket(elem_to_delete).topology();
+        if (elem_to_delete_topology.is_shell()) {
+            impl::LocalId shell_to_delete_id = get_local_element_id(elem_to_delete);
+            size_t num_connected_elems = get_num_connected_elems(elem_to_delete);
+            for (int near_elem_index = num_connected_elems-1; near_elem_index >= 0; --near_elem_index)
+            {
+                impl::LocalId near_elem_id = m_elem_graph[shell_to_delete_id][near_elem_index];
+                if (near_elem_id < 0) {
+                    continue;
+                }
+
+                std::vector <impl::LocalId>::iterator pos_of_shell_in_near_elem = std::find(m_elem_graph[near_elem_id].begin(), m_elem_graph[near_elem_id].end(), shell_to_delete_id);
+                ThrowRequire(pos_of_shell_in_near_elem != m_elem_graph[near_elem_id].end());
+                int index_of_shell_in_near_elem = pos_of_shell_in_near_elem - m_elem_graph[near_elem_id].begin();
+
+                impl::ShellConnectivityData shellConnectivityData;
+                stk::mesh::Entity nearElem = m_local_id_to_element_entity[near_elem_id];
+                shellConnectivityData.m_nearElementId   = m_bulk_data.identifier(nearElem);
+                shellConnectivityData.m_nearElementSide = m_via_sides[near_elem_id][index_of_shell_in_near_elem];
+                shellConnectivityData.m_shellElementId = m_bulk_data.identifier(elem_to_delete);
+
+                std::vector<impl::LocalId> & graphElemIds = m_elem_graph[shell_to_delete_id];
+                ThrowAssertMsg(graphElemIds.size() <= 2, "Coincident shells detected.  Please call (505)844-3041 for support.");
+                for (impl::LocalId graphElemId: graphElemIds) {
+                    if (graphElemId != near_elem_id) {
+                        if (graphElemId < 0) {
+                            // Remote Element
+                            shellConnectivityData.m_farElementId = -graphElemId;
+                            shellConnectivityData.m_farElementIsRemote = true;
+                        }
+                        else {
+                            // Local Element
+                            stk::mesh::Entity remoteElement = m_local_id_to_element_entity[graphElemId];
+                            shellConnectivityData.m_farElementId = m_bulk_data.identifier(remoteElement);
+                            shellConnectivityData.m_farElementIsRemote = false;
+                        }
+                        // Only add to list if there *is* something connected on the back-side of the shell
+                        shellConnectivityList.push_back(shellConnectivityData);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    stk::CommSparse shellComm(m_bulk_data.parallel());
+    pack_shell_connectivity(shellComm, shellConnectivityList);
+    shellComm.allocate_buffers();
+    pack_shell_connectivity(shellComm, shellConnectivityList);
+    shellComm.communicate();
+
+    for (int proc = 0; proc < m_bulk_data.parallel_size(); ++proc)
+    {
+        while(shellComm.recv_buffer(proc).remaining())
+        {
+            impl::ShellConnectivityData shellConnectivityData;
+            shellComm.recv_buffer(proc).unpack<stk::mesh::EntityId>(shellConnectivityData.m_farElementId);  // Flip remote and local
+            shellComm.recv_buffer(proc).unpack<stk::mesh::EntityId>(shellConnectivityData.m_shellElementId);
+            shellComm.recv_buffer(proc).unpack<stk::mesh::EntityId>(shellConnectivityData.m_nearElementId);  // Flip remote and local
+
+            stk::mesh::Entity nearElement = m_bulk_data.get_entity(stk::topology::ELEM_RANK, shellConnectivityData.m_nearElementId);
+            impl::LocalId nearElementId = get_local_element_id(nearElement);
+            std::vector<impl::LocalId> & graphElemIds = m_elem_graph[nearElementId];
+            for (size_t i = 0; i < graphElemIds.size(); ++i) {
+                impl::LocalId shellElementId = -shellConnectivityData.m_shellElementId;
+                if (graphElemIds[i] == shellElementId) {
+                    shellConnectivityData.m_nearElementSide = m_via_sides[nearElementId][i];
+                    break;
+                }
+            }
+
+            shellConnectivityList.push_back(shellConnectivityData);
+        }
+    }
+
     std::vector< std::pair< impl::LocalId, stk::mesh::EntityId > > local_elem_and_remote_connected_elem;
     for (const stk::mesh::Entity &elem_to_delete : elements_to_delete)
     {
-        stk::topology elem_to_delete_topology = m_bulk_data.bucket(elem_to_delete).topology();
-        ThrowRequireMsg(m_bulk_data.is_valid(elem_to_delete), "Program error. Not valid mesh element. Contact sierra-help@sandia.gov for support.");
-
-        std::vector<std::pair<impl::LocalId, int> > elementsThatUsedToBeConnectedToShell;
         impl::LocalId elem_to_delete_id = get_local_element_id(elem_to_delete);
-        ThrowRequireMsg(is_valid_graph_element(elem_to_delete), "Program error. Not valid graph element. Contact sierra-help@sandia.gov for support.");
 
         if (!m_bulk_data.bucket(elem_to_delete).owned())
         {
@@ -1036,9 +1138,7 @@ void ElemElemGraph::delete_elements_from_graph(const stk::mesh::EntityVector &el
                 std::vector <impl::LocalId>::iterator pos_of_elem1_in_elem2 = std::find(m_elem_graph[connected_elem_id].begin(), m_elem_graph[connected_elem_id].end(), elem_to_delete_id);
                 ThrowRequire(pos_of_elem1_in_elem2 != m_elem_graph[connected_elem_id].end());
                 int index_of_elem1_in_elem2 = pos_of_elem1_in_elem2 - m_elem_graph[connected_elem_id].begin();
-                if (elem_to_delete_topology.is_shell()) {
-                    elementsThatUsedToBeConnectedToShell.push_back(std::make_pair(connected_elem_id, m_via_sides[connected_elem_id][index_of_elem1_in_elem2]));
-                }
+
                 m_via_sides[connected_elem_id].erase(m_via_sides[connected_elem_id].begin() + index_of_elem1_in_elem2);
                 --m_num_edges;
 
@@ -1066,17 +1166,6 @@ void ElemElemGraph::delete_elements_from_graph(const stk::mesh::EntityVector &el
             }
         }
 
-        if (elementsThatUsedToBeConnectedToShell.size() == 2) {
-            const impl::LocalId elem1_id = elementsThatUsedToBeConnectedToShell[0].first;
-            const impl::LocalId elem2_id = elementsThatUsedToBeConnectedToShell[1].first;
-            const int elem1_side = elementsThatUsedToBeConnectedToShell[0].second;
-            const int elem2_side = elementsThatUsedToBeConnectedToShell[1].second;
-
-            m_elem_graph[elem1_id].push_back(elem2_id);
-            m_via_sides[elem1_id].push_back(elem1_side);
-            m_elem_graph[elem2_id].push_back(elem1_id);
-            m_via_sides[elem2_id].push_back(elem2_side);
-        }
     }
 
     stk::CommSparse comm(m_bulk_data.parallel());
@@ -1136,6 +1225,26 @@ void ElemElemGraph::delete_elements_from_graph(const stk::mesh::EntityVector &el
         }
         ThrowRequireMsg(found_deleted_elem, "Error. Contact sierra-help@sandia.gov for support.");
     }
+
+
+
+    for(const impl::ShellConnectivityData & data: shellConnectivityList)
+    {
+        stk::mesh::Entity localElement = m_bulk_data.get_entity(stk::topology::ELEM_RANK, data.m_nearElementId);
+        impl::LocalId localElementId = get_local_element_id(localElement);
+        stk::mesh::Entity remoteElement = m_bulk_data.get_entity(stk::topology::ELEM_RANK, data.m_farElementId);
+        impl::LocalId remoteElementId;
+        if (m_bulk_data.is_valid(remoteElement) && m_bulk_data.bucket(remoteElement).owned()) {
+            remoteElementId = get_local_element_id(remoteElement);
+        }
+        else {
+            remoteElementId = -data.m_farElementId;
+        }
+
+        m_elem_graph[localElementId].push_back(remoteElementId);
+        m_via_sides[localElementId].push_back(data.m_nearElementSide);
+    }
+
 }
 
 stk::mesh::ConnectivityOrdinal ElemElemGraph::get_neighboring_side_ordinal(const stk::mesh::BulkData &mesh,

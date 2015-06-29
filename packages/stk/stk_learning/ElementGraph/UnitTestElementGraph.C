@@ -3927,6 +3927,110 @@ TEST( ElementGraph, Hex0Shell1Parallel )
     }
 }
 
+TEST( ElementGraph, Hex0DelShell1Parallel )
+{
+    //  ID.proc
+    //
+    //          3.0------------7.0
+    //          /|             /|
+    //         / |            / |
+    //        /  |           /  |
+    //      4.0------------8.0  |
+    //       |   |          |   |
+    //       |   |   1.0    |2.1|
+    //       |   |          |   |
+    //       |  2.0---------|--6.0
+    //       |  /           |  /
+    //       | /            | /
+    //       |/             |/
+    //      1.0------------5.0
+    //                      ^
+    //                      |
+    //                       ---- Deleted single shell element
+
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    unsigned p_size = stk::parallel_machine_size(pm);
+    unsigned p_rank = stk::parallel_machine_rank(pm);
+
+    if(p_size != 2u)
+    {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+
+    stk::mesh::Part * hexPart   = &meta.declare_part_with_topology("hex_part",   stk::topology::HEX_8);
+    stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_QUAD_4);
+    meta.commit();
+
+    std::vector<stk::mesh::EntityIdVector> hexNodeIDs {
+        { 1, 2, 3, 4, 5,  6,  7,  8 }
+    };
+    stk::mesh::EntityId hexElemIDs[] = { 1 };
+    stk::mesh::EntityId hexElemOwningProc[] = { 0 };
+
+    std::vector<stk::mesh::EntityIdVector> shellNodeIDs {
+        { 5, 6, 7, 8 }
+    };
+    stk::mesh::EntityId shellElemIDs[] = { 2 };
+    stk::mesh::EntityId shellElemOwningProc[] = { 1 };
+
+    // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
+    std::vector< std::vector<unsigned> > shared_nodeIDs_and_procs
+    {
+        { 0, 5, 1 },  // proc 0
+        { 0, 6, 1 },
+        { 0, 7, 1 },
+        { 0, 8, 1 },
+        { 1, 5, 0 },  // proc 1
+        { 1, 6, 0 },
+        { 1, 7, 0 },
+        { 1, 8, 0 }
+    };
+
+    mesh.modification_begin();
+    for (size_t i = 0; i < hexNodeIDs.size(); ++i) {
+        if (hexElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *hexPart, hexElemIDs[i], hexNodeIDs[i]);
+        }
+    }
+    for (size_t i = 0; i < shellNodeIDs.size(); ++i) {
+        if (shellElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *shellPart, shellElemIDs[i], shellNodeIDs[i]);
+        }
+    }
+    setup_node_sharing(mesh, shared_nodeIDs_and_procs );
+    mesh.modification_end();
+
+    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+
+    const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+    const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
+
+    stk::mesh::EntityVector elements_to_delete;
+    if (p_rank == 1) {
+        elements_to_delete.push_back(shell2);
+    }
+
+    elemElemGraph.delete_elements_from_graph( elements_to_delete );
+
+    mesh.modification_begin();
+    if (p_rank == 1) {
+        mesh.destroy_entity(shell2);
+    }
+    mesh.modification_end();
+
+    if (p_rank == 0) {
+        // Connectivity for Hex Element 1
+        EXPECT_EQ(0u, elemElemGraph.get_num_connected_elems(hex1));
+    }
+    else if (p_rank == 1) {
+        EXPECT_EQ(0u, elemElemGraph.size());
+    }
+}
+
 TEST( ElementGraph, AdjacentHex0Shell1Parallel )
 {
     //  ID.proc
@@ -4381,6 +4485,119 @@ TEST( ElementGraph, Hex0Shell0Hex1Parallel )
         EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(hex2));
         EXPECT_EQ(4,  elemElemGraph.get_side_id_to_connected_element(hex2, 0));
         EXPECT_EQ(3u, elemElemGraph.get_entity_id_of_remote_element(hex2, 0));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
+    }
+}
+
+TEST( ElementGraph, Hex0DelShell0Hex1Parallel )
+{
+    //  ID.proc
+    //
+    //          3.0------------7.0-----------11.1
+    //          /|             /|             /|
+    //         / |            / |            / |
+    //        /  |           /  |           /  |
+    //      4.0------------8.0-----------12.1  |
+    //       |   |          |   |          |   |
+    //       |   |   1.0    |3.0|   2.1    |   |
+    //       |   |          |   |          |   |
+    //       |  2.0---------|--6.0---------|-10.1
+    //       |  /           |  /           |  /
+    //       | /            | /            | /
+    //       |/             |/             |/
+    //      1.0------------5.0------------9.1
+    //                      ^
+    //                      |
+    //                       ---- Deleted single shell element
+
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    unsigned p_size = stk::parallel_machine_size(pm);
+    unsigned p_rank = stk::parallel_machine_rank(pm);
+
+    if(p_size != 2u)
+    {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+
+    stk::mesh::Part * hexPart   = &meta.declare_part_with_topology("hex_part",   stk::topology::HEX_8);
+    stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_QUAD_4);
+    meta.commit();
+
+    std::vector<stk::mesh::EntityIdVector> hexNodeIDs {
+        { 1, 2, 3, 4, 5,  6,  7,  8 },
+        { 5, 6, 7, 8, 9, 10, 11, 12 }
+    };
+    stk::mesh::EntityId hexElemIDs[] = { 1, 2 };
+    stk::mesh::EntityId hexElemOwningProc[] = { 0, 1 };
+
+    std::vector<stk::mesh::EntityIdVector> shellNodeIDs {
+        { 5, 6, 7, 8 }
+    };
+    stk::mesh::EntityId shellElemIDs[] = { 3 };
+    stk::mesh::EntityId shellElemOwningProc[] = { 0 };
+
+    // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
+    std::vector< std::vector<unsigned> > shared_nodeIDs_and_procs
+    {
+        { 0, 5, 1 },  // proc 0
+        { 0, 6, 1 },
+        { 0, 7, 1 },
+        { 0, 8, 1 },
+        { 1, 5, 0 },  // proc 1
+        { 1, 6, 0 },
+        { 1, 7, 0 },
+        { 1, 8, 0 }
+    };
+
+    mesh.modification_begin();
+    for (size_t i = 0; i < hexNodeIDs.size(); ++i) {
+        if (hexElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *hexPart, hexElemIDs[i], hexNodeIDs[i]);
+        }
+    }
+    for (size_t i = 0; i < shellNodeIDs.size(); ++i) {
+        if (shellElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *shellPart, shellElemIDs[i], shellNodeIDs[i]);
+        }
+    }
+    setup_node_sharing(mesh, shared_nodeIDs_and_procs );
+    mesh.modification_end();
+
+    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+
+    const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+    const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
+    const Entity shell3 = mesh.get_entity(stk::topology::ELEM_RANK, 3);
+
+    stk::mesh::EntityVector elements_to_delete;
+    if (p_rank == 0) {
+        elements_to_delete.push_back(shell3);
+    }
+
+    elemElemGraph.delete_elements_from_graph( elements_to_delete );
+
+    mesh.modification_begin();
+    if (p_rank == 0) {
+        mesh.destroy_entity(shell3);
+    }
+    mesh.modification_end();
+
+    if (p_rank == 0) {
+        // Connectivity for Hex Element 1
+        EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(hex1));
+        EXPECT_EQ(5,  elemElemGraph.get_side_id_to_connected_element(hex1, 0));
+        EXPECT_EQ(2u, elemElemGraph.get_entity_id_of_remote_element(hex1, 0));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
+    }
+    else if (p_rank == 1) {
+        // Connectivity for Hex Element 2
+        EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(hex2));
+        EXPECT_EQ(4,  elemElemGraph.get_side_id_to_connected_element(hex2, 0));
+        EXPECT_EQ(1u, elemElemGraph.get_entity_id_of_remote_element(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
     }
 }
