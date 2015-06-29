@@ -50,12 +50,15 @@
 
 namespace Ifpack2 {
 
-  #define LCLINST(S,LO,GO) \
-          IFPACK2_INST(LocalFilter,S,LO,GO)
+  // Don't use IFPACK2_INST here, because it instantiates over
+  // Tpetra::CrsMatrix, not over Tpetra::RowMatrix as we want.
+
+#define LCLINST( S, LO, GO ) \
+  template class Ifpack2::LocalFilter< Tpetra::RowMatrix<S, LO, GO> >;
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-  IFPACK2_INSTANTIATE_SLG(LCLINST)
+  IFPACK2_INSTANTIATE_SLG( LCLINST )
 
 }
 

@@ -116,7 +116,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // ====================================== //
   // create a new matrix, locally filtered  //
   // ====================================== //
-  Ifpack2::LocalFilter<CRS> LocalA(Matrix);
+  Ifpack2::LocalFilter<ROW> LocalA(Matrix);
   RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > localrowmap =
     LocalA.getRowMap ();
   Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> lx(rowmap),
