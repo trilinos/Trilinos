@@ -53,7 +53,7 @@ int Ifpack_TriDiContainer::NumRows() const
 //==============================================================================
 int Ifpack_TriDiContainer::Initialize()
 {
-  
+
   IsInitialized_ = false;
 
   IFPACK_CHK_ERR(LHS_.Reshape(NumRows_,NumVectors_));
@@ -79,7 +79,7 @@ int Ifpack_TriDiContainer::Initialize()
 
   // Set to -1 ID_'s
   for (int i = 0 ; i < NumRows_ ; ++i)
-    ID_(i) = -1;  
+    ID_(i) = -1;
 
   if (NumRows_ != 0) {
     IFPACK_CHK_ERR(Solver_.SetMatrix(Matrix_));
@@ -88,7 +88,7 @@ int Ifpack_TriDiContainer::Initialize()
 
   IsInitialized_ = true;
   return(0);
-  
+
 }
 
 //==============================================================================
@@ -96,7 +96,7 @@ double& Ifpack_TriDiContainer::LHS(const int i, const int Vector)
 {
   return(LHS_.A()[Vector * NumRows_ + i]);
 }
-  
+
 //==============================================================================
 double& Ifpack_TriDiContainer::RHS(const int i, const int Vector)
 {
@@ -131,7 +131,7 @@ int Ifpack_TriDiContainer::ApplyInverse()
   if (!IsComputed()) {
     IFPACK_CHK_ERR(-1);
   }
-  
+
   if (NumRows_ != 0)
     IFPACK_CHK_ERR(Solver_.Solve());
 
@@ -174,9 +174,9 @@ int Ifpack_TriDiContainer::Extract(const Epetra_RowMatrix& Matrix_in)
 
     int NumEntries;
 
-    int ierr = 
-      Matrix_in.ExtractMyRowCopy(LRID, Length, NumEntries, 
-			      &Values[0], &Indices[0]);
+    int ierr =
+      Matrix_in.ExtractMyRowCopy(LRID, Length, NumEntries,
+                              &Values[0], &Indices[0]);
     IFPACK_CHK_ERR(ierr);
 
     for (int k = 0 ; k < NumEntries ; ++k) {
@@ -184,19 +184,19 @@ int Ifpack_TriDiContainer::Extract(const Epetra_RowMatrix& Matrix_in)
       int LCID = Indices[k];
 
       // skip off-processor elements
-      if (LCID >= Matrix_in.NumMyRows()) 
-	continue;
+      if (LCID >= Matrix_in.NumMyRows())
+        continue;
 
       // for local column IDs, look for each ID in the list
       // of columns hosted by this object
       // FIXME: use STL
       int jj = -1;
       for (int kk = 0 ; kk < NumRows_ ; ++kk)
-	if (ID(kk) == LCID)
-	  jj = kk;
+        if (ID(kk) == LCID)
+          jj = kk;
 
       if (jj != -1)
-	SetMatrixElement(j,jj,Values[k]);
+        SetMatrixElement(j,jj,Values[k]);
 
     }
   }
@@ -256,8 +256,10 @@ int Ifpack_TriDiContainer::Compute(const Epetra_RowMatrix& Matrix_in)
  }
 
 //==============================================================================
-ostream& Ifpack_TriDiContainer::Print(ostream & os) const
+std::ostream& Ifpack_TriDiContainer::Print(std::ostream & os) const
 {
+  using std::endl;
+
     os << "================================================================================" << endl;
   os << "Ifpack_TriDiContainer" << endl;
   os << "Number of rows          = " << NumRows() << endl;
@@ -265,8 +267,8 @@ ostream& Ifpack_TriDiContainer::Print(ostream & os) const
   os << "IsInitialized()         = " << IsInitialized() << endl;
   os << "IsComputed()            = " << IsComputed() << endl;
 #ifdef IFPACK_FLOPCOUNTERS
-  os << "Flops in Compute()      = " << ComputeFlops() << endl; 
-  os << "Flops in ApplyInverse() = " << ApplyInverseFlops() << endl; 
+  os << "Flops in Compute()      = " << ComputeFlops() << endl;
+  os << "Flops in ApplyInverse() = " << ApplyInverseFlops() << endl;
 #endif
   os << "================================================================================" << endl;
   os << endl;

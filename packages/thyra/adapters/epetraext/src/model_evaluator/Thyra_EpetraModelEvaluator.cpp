@@ -454,6 +454,16 @@ EpetraModelEvaluator::get_g_space(int j) const
 }
 
 
+Teuchos::ArrayView<const std::string>
+EpetraModelEvaluator::get_g_names(int j) const
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, this->Ng() );
+#endif
+  return epetraModel_->get_g_names(j);
+}
+
+
 ModelEvaluatorBase::InArgs<double>
 EpetraModelEvaluator::getNominalValues() const
 {

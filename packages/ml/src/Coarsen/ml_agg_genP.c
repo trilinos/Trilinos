@@ -3889,7 +3889,7 @@ int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data)
   struct SemiCoarsen_Struct  *widget;
   struct  ML_CSR_MSRdata *csr_data;
   ML_Operator *Pmatrix;
-  double *Pvals;
+  double *Pvals, *cnull = NULL;
   int    *Pptr, *Pcols, Nglobal, Ncglobal;
 
   ML_Aggregate * ag = (ML_Aggregate *) data;
@@ -3907,7 +3907,10 @@ int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data)
   /* int NVertLines = Amat->invec_leng/(ag->num_PDE_eqns*widget->nz); */
   Ncoarse = MakeSemiCoarsenP(Amat->invec_leng/ag->num_PDE_eqns, widget->nz,
                    widget->CoarsenRate, widget->LayerId, widget->VertLineId,
-                   ag->num_PDE_eqns, Amat, &Pptr, &Pcols, &Pvals);
+                   ag->num_PDE_eqns, ag->nullspace_dim, ag->nullspace_vect, Amat, &Pptr, &Pcols, &Pvals, &cnull);
+   ML_Aggregate_Set_NullSpace(ag, ag->num_PDE_eqns, ag->nullspace_dim,
+                              cnull, Ncoarse);
+   if (cnull != NULL) { free(cnull); cnull = NULL; }
 
   csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
   csr_data->rowptr  = Pptr;
@@ -4013,12 +4016,14 @@ int FindCpts(int PtsPerLine, int CoarsenRate, int Thin, int **LayerCpts)
 
 int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
                      int VertLineId[], int DofsPerNode,
+                     int nullspace_dim, double *fnull, 
 #ifdef HOOKED_TO_ML
                      ML_Operator *Amat,
 #else
                      int *OrigARowPtr, int *OrigAcols, double *OrigAvals,
 #endif
-                     int **ParamPptr, int **ParamPcols, double **ParamPvals)
+                     int **ParamPptr, int **ParamPcols, double **ParamPvals,
+                     double **Paramcnull)
 {
 /*
  * Given a CSR matrix (OrigARowPtr, OrigAcols, OrigAvals), information
@@ -4069,6 +4074,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
  *    ParamPptr,   CSR arrays corresponding to the final prolongation matrix.
  *    ParamPcols,
  *    ParamsPvals
+ *    ParamsCnull  coarse null space array
  */
  int    NLayers, NVertLines, MaxNnz, NCLayers, MyLine, MyLayer;
  int    *InvLineLayer=NULL, *CptLayers=NULL, StartLayer, NStencilNodes;
@@ -4077,13 +4083,14 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
  double *Avals=NULL, *BandSol=NULL, *BandMat=NULL, TheSum;
  int    *IPIV=NULL, KL, KU, KLU, N, NRHS, LDAB,INFO;
  int    *Pcols, *Pptr;
- double *Pvals, *dtemp = NULL;
+ double *Pvals, *dtemp = NULL, *cnull = NULL;
  int    MaxStencilSize, MaxNnzPerRow;
  int    *LayDiff=NULL;
  int    CurRow, LastGuy = -1, NewPtr;
  int    allocated = 0, Ndofs;
  int    Nghost;
  int    *Layerdofs = NULL, *Col2Dof = NULL;
+ int    FineStride, CoarseStride, k;
 
 
   MaxNnzPerRow = MaxHorNeighborNodes*DofsPerNode*3;
@@ -4092,6 +4099,8 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
   *ParamPptr = NULL;
   *ParamPcols= NULL;
   *ParamPvals= NULL;
+  *Paramcnull= NULL;
+  
 
    Nghost = 0;
 #ifdef HOOKED_TO_ML
@@ -4143,6 +4152,13 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
   */
 
   NCLayers = FindCpts(nz,CoarsenRate,0, &CptLayers);
+
+  /* initialize coarse null space */
+
+  cnull = (double *) malloc(sizeof(double)*nullspace_dim*
+                                        (NCLayers*DofsPerNode*NVertLines+1));
+  for (i = 0; i < NCLayers*DofsPerNode*NVertLines*nullspace_dim; i++) 
+     cnull[i] = 0.;
 
  /*
   * Compute the largest possible interpolation stencil width based
@@ -4213,6 +4229,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
      if (Col2Dof      != NULL) free(Col2Dof);
      if (Pvals        != NULL) free(Pvals);
      if (Pptr         != NULL) free(Pptr);
+     if (cnull        != NULL) free(cnull);
      return -1;
   }
 
@@ -4325,6 +4342,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
                     if (Pvals        != NULL) free(Pvals);
                     if (Pptr         != NULL) free(Pptr);
                     if (Pcols        != NULL) free(Pcols);
+                    if (cnull        != NULL) free(cnull);
                     return -1;
                 }
 
@@ -4379,6 +4397,23 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
             }
          }
          else {
+             /* inject the null space */
+             FineStride  = Ntotal*DofsPerNode;
+             CoarseStride= NVertLines*NCLayers*DofsPerNode;
+             if (fnull == NULL) {
+                for (dof_i = 0; dof_i < DofsPerNode; dof_i++) {
+                   cnull[dof_i*CoarseStride+(col-1)*DofsPerNode+dof_i]=1.0;
+                }
+             }
+             else {
+               for (k = 0; k < nullspace_dim; k++) {
+                 for (dof_i = 0; dof_i < DofsPerNode; dof_i++) {
+                   cnull[k*CoarseStride + (   col-1)*DofsPerNode+dof_i] = 
+                      fnull[k * FineStride + (BlkRow-1)*DofsPerNode+dof_i];
+                 }
+               }
+             }
+
              for (dof_i = 0; dof_i < DofsPerNode; dof_i++) {
                 /* Stick Mat(PtRow,PtRow) and Rhs(PtRow,dof_i+1) */
                 /* see dgbsv() comments for matrix format.     */
@@ -4462,6 +4497,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
   *ParamPptr  = Pptr;
   *ParamPcols = Pcols;
   *ParamPvals = Pvals;
+  *Paramcnull = cnull;
 
   return NCLayers*NVertLines*DofsPerNode;
 }

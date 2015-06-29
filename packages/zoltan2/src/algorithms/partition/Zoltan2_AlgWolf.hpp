@@ -48,7 +48,7 @@
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_Algorithm.hpp>
-#include <Zoltan2_AlgRCB.hpp>
+#include <Zoltan2_AlgZoltan.hpp>
 
 #include <sstream>
 #include <string>
@@ -96,13 +96,17 @@ private:
   const RCP<const GraphModel<typename Adapter::base_adapter_t> > mGraphModel;
   const RCP<const CoordinateModel<typename Adapter::base_adapter_t> > mIds;
 
+  const RCP<const typename Adapter::base_adapter_t> mBaseInputAdapter;
+
 public:
   // Constructor
   AlgWolf(const RCP<const Environment> &env_,
 	  const RCP<Comm<int> > &problemComm_,
 	  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &gModel_,
-	  const RCP<const CoordinateModel<typename Adapter::base_adapter_t> > &cModel_)
-    :mEnv(env_), mProblemComm(problemComm_), mGraphModel(gModel_), mIds(cModel_)
+	  const RCP<const CoordinateModel<typename Adapter::base_adapter_t> > &cModel_,
+	  const RCP<const typename Adapter::base_adapter_t> baseInputAdapter_)
+    :mEnv(env_), mProblemComm(problemComm_), mGraphModel(gModel_), mIds(cModel_), 
+     mBaseInputAdapter(baseInputAdapter_)
   {
 #ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
     Z2_THROW_EXPERIMENTAL("Zoltan2 Wolf is strictly experimental software ")
@@ -111,6 +115,11 @@ public:
 #ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
     Z2_THROW_EXPERIMENTAL_WOLF("Zoltan2 Wolf is strictly experimental software ")
 #endif
+
+    if(mProblemComm->getSize()!=1)
+    {
+      Z2_THROW_SERIAL("Zoltan2 Wolf is strictly serial!");
+    }
 
   }
 
@@ -165,8 +174,8 @@ void AlgWolf<Adapter>::partition(
     //    For now using the one passed into alg
 
     {
-    AlgRCB<Adapter> algrcb(this->mEnv, mProblemComm, this->mIds);
-    algrcb.partition(solution_);
+      AlgZoltan<Adapter> algZoltan(this->mEnv, mProblemComm, this->mBaseInputAdapter);
+      algZoltan.partition(solution_);
     }
 
 

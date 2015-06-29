@@ -66,7 +66,7 @@ template<class T>
 class ScalarLaplacian : public Base
 {
   public:
-  ScalarLaplacian(const string& elementType,
+  ScalarLaplacian(const std::string& elementType,
                   const int integrationDegree = Galeri::core::Workspace::MIN, 
                   const int normDegree = Galeri::core::Workspace::MAX) 
   {

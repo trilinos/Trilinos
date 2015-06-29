@@ -67,7 +67,7 @@ using namespace Teuchos;
 Galeri::grid::Loadable::Loadable(const Epetra_Comm& comm,
                                  const int numGlobalElements,
                                  const int numMyElements,
-                                 const string& elementType,
+                                 const std::string& elementType,
                                  const int* myGlobalElements,
                                  const int numElementData,
                                  const int numVertexData) :

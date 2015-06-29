@@ -42,12 +42,10 @@
 
 #include <CJ_Internals.h>
 
-extern "C" {
 #define NO_NETCDF_2
 #include <netcdf.h>
 #include <exodusII.h>
 #include <exodusII_int.h>
-}
 
 #include <CJ_ExodusEntity.h>
 

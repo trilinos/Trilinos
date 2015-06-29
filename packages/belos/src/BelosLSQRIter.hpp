@@ -134,7 +134,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
    * \note For any pointer in \c newstate which directly points to the multivectors in
    * the solver, the data is not copied.
    */
-  void initializeLSQR(LSQRIterationState<ScalarType,MV> newstate);
+  void initializeLSQR(LSQRIterationState<ScalarType,MV>& newstate);
 
   /*! \brief The solver is initialized using initializeLSQR.
    */
@@ -343,7 +343,7 @@ class LSQRIter : virtual public Belos::Iteration<ScalarType,MV,OP> {
   /////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void LSQRIter<ScalarType,MV,OP>::initializeLSQR(LSQRIterationState<ScalarType,MV> newstate)
+  void LSQRIter<ScalarType,MV,OP>::initializeLSQR(LSQRIterationState<ScalarType,MV>& newstate)
   {
     using Teuchos::RCP;
 

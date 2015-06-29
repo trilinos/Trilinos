@@ -255,7 +255,7 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
     }
 
     // Clear
-    m_targets[index] = Entity::InvalidEntity;
+    m_targets[index] = Entity();
     if (has_permutation()) {
       m_permutations[index] = INVALID_PERMUTATION;
     }
@@ -274,7 +274,7 @@ class BucketConnectivity<TargetRank, FIXED_CONNECTIVITY>
   void add_entity()
   {
     const unsigned new_conn_size = m_targets.size() + m_num_connectivity;
-    Entity invalid = {Entity::InvalidEntity};
+    Entity invalid;
     m_targets.resize(new_conn_size, invalid); // Not a perf issue: vectors are smart when resizing
     if (has_permutation()) {
       m_permutations.resize(new_conn_size, INVALID_PERMUTATION);
@@ -1045,7 +1045,7 @@ private:
 
     const bool last_entity_by_index = (chunks_used_by_entity > 0) &&
       (m_indices[bucket_ordinal] + chunks_used_by_entity*chunk_size == m_targets.size());
-    Entity invalid = {Entity::InvalidEntity};
+    Entity invalid;
 
     //copy to end
     if (!last_entity_by_index)

@@ -154,6 +154,13 @@ Piro::InvertMassMatrixDecorator<Scalar>::get_g_space(int j) const
 }
 
 template<typename Scalar>
+Teuchos::ArrayView<const std::string> 
+Piro::InvertMassMatrixDecorator<Scalar>::get_g_names(int j) const
+{
+  return model->get_g_names(j);
+}
+
+template<typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::InvertMassMatrixDecorator<Scalar>::getNominalValues() const
 {

@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     int nLocalDofs = (int) globalNumDofs / nProcs;
     nLocalDofs = nLocalDofs - (nLocalDofs % nDofsPerNode);
     int nCumulatedDofs = 0;
-    sumAll(comm,nLocalDofs, nCumulatedDofs);
+    MueLu_sumAll(comm,nLocalDofs, nCumulatedDofs);
     //Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM, 1, nLocalDofs, &nCumulatedDofs );
 
     if(comm->getRank() == nProcs-1) {

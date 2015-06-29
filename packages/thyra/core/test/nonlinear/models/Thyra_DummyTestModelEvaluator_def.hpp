@@ -171,6 +171,14 @@ DummyTestModelEvaluator<Scalar>::get_g_space(int j) const
 
 
 template<class Scalar>
+Teuchos::ArrayView<const std::string>
+DummyTestModelEvaluator<Scalar>::get_g_names(int j) const
+{
+  return g_names_;
+}
+
+
+template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 DummyTestModelEvaluator<Scalar>::getNominalValues() const
 {

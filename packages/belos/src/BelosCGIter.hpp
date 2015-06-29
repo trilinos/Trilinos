@@ -136,7 +136,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
    * \note For any pointer in \c newstate which directly points to the multivectors in 
    * the solver, the data is not copied.
    */
-  void initializeCG(CGIterationState<ScalarType,MV> newstate);
+  void initializeCG(CGIterationState<ScalarType,MV>& newstate);
 
   /*! \brief Initialize the solver with the initial vectors from the linear problem
    *  or random data.
@@ -308,7 +308,7 @@ class CGIter : virtual public CGIteration<ScalarType,MV,OP> {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
   template <class ScalarType, class MV, class OP>
-  void CGIter<ScalarType,MV,OP>::initializeCG(CGIterationState<ScalarType,MV> newstate)
+  void CGIter<ScalarType,MV,OP>::initializeCG(CGIterationState<ScalarType,MV>& newstate)
   {
     // Initialize the state storage if it isn't already.
     if (!stateStorageInitialized_) 

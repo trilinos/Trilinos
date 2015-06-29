@@ -82,7 +82,6 @@
 
             <ParameterList name="SOURCE_TEMPERATURE">
                 <Parameter name="Type" type="string" value="Parameter"/>
-                <Parameter name="Value" type="double" value="1.0"/>
             </ParameterList>
             <ParameterList name="Heat Capacity">
                 <Parameter name="Value" type="double" value="1.0"/>
@@ -157,6 +156,7 @@
         <ParameterList name="Parameter Vector 0">
             <Parameter name="Number" type="int" value="1"/>
             <Parameter name="Parameter 0" type="string" value="SOURCE_TEMPERATURE"/>
+            <Parameter name="Initial Value 0" type="double" value="1.0"/>
         </ParameterList>
     </ParameterList>
 

@@ -276,7 +276,7 @@ data:
 
  elem_ss9 = 8, 8 ;
 
- side_ss9 = 1, 2 ;
+ side_ss9 = 1, 3 ;
 
  qa_records =
   "TESTWT",

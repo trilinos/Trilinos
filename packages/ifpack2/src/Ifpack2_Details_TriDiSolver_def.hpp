@@ -241,7 +241,7 @@ void TriDiSolver<MatrixType, false>::initialize ()
 
     // Make the local filter of the input matrix A.
     if (A_->getComm ()->getSize () > 1) {
-      A_local_ = rcp (new LocalFilter<MatrixType> (A_));
+      A_local_ = rcp (new LocalFilter<row_matrix_type> (A_));
     } else {
       A_local_ = A_;
     }

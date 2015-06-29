@@ -254,7 +254,7 @@ namespace Rythmos {
     S_dot = coeff_x_dot * S_tilde + B_x_dot
 
     S_dot = coeff_x * S_tilde
-    
+
  \endverbatim
 
  * In this type of method we see that :
@@ -263,18 +263,18 @@ namespace Rythmos {
 
     S_dot - (coeff_x_dot/coeff_x) * S
 
-    ==> 
+    ==>
 
     coeff_x_dot * S_tilde + B_x_dot - (coeff_x_dot/coeff_x) * ( coeff_x * S_tilde )
 
-    ==> 
+    ==>
 
     coeff_x_dot * S_tilde - coeff_x_dot *  S_tilde + B_x_dot
 
     ==>
 
     B_x_dot
-    
+
  \endverbatim
 
  * Therefore, in this type of method, the term involving
@@ -289,7 +289,7 @@ namespace Rythmos {
     d(f)/d(x_dot) * B_x_dot
 
  \endverbatim
- 
+
  * and is independent of the unknown quantity <tt>S_tilde</tt>.  What this
  * means is that if the residual for the sensitivity equaitions is to be
  * computed multiple times for different values of <tt>S_tilde</tt>, the term
@@ -329,7 +329,7 @@ public:
     const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index
     );
-  
+
   /** \brief . */
   RCP<const Thyra::ModelEvaluator<Scalar> >
   getStateModel() const;
@@ -337,7 +337,7 @@ public:
   /** \brief . */
   RCP<Thyra::ModelEvaluator<Scalar> >
   getNonconstStateModel() const;
-  
+
   /** \brief . */
   int get_p_index() const;
 
@@ -459,7 +459,7 @@ public:
   // logic to recompute all of the needed matrices if t != t_base (as passed
   // in through stateBasePoint).  The values of x(t) and xdot(t) can then be
   // gotten from the stateInterpBuffer object!
-  
+
   //@}
 
   /** \name Public functions overridden from ForwardSensitivityModelEvaluatorBase. */
@@ -470,11 +470,11 @@ public:
     const RCP<const Thyra::ModelEvaluator<Scalar> >& stateModel,
     const RCP<const Thyra::VectorSpaceBase<Scalar> >& p_space
     );
-  
+
   /** \brief . */
   RCP<const Thyra::DefaultMultiVectorProductVectorSpace<Scalar> >
   get_s_bar_space() const;
-  
+
   /** \brief . */
   RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_sens_space() const;
 
@@ -559,7 +559,7 @@ private:
   // Private member functions
 
   bool hasStateFuncParams() const { return p_index_ >= 0; }
-  
+
   void initializeStructureCommon(
     const RCP<const Thyra::ModelEvaluator<Scalar> > &stateModel,
     const int p_index,
@@ -571,7 +571,7 @@ private:
   void computeDerivativeMatrices(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &point
     ) const;
-  
+
 };
 
 
@@ -647,7 +647,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializePointState(
   // objects at these points.
   RCP<const Thyra::VectorBase<Scalar> > x, x_dot;
   get_x_and_x_dot(*stateStepper,curr_t,&x,&x_dot);
-      
+
   stateBasePoint_ = stateStepper->getInitialCondition();
   stateBasePoint_.set_x_dot( x_dot );
   stateBasePoint_.set_x( x );
@@ -655,11 +655,11 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializePointState(
 
   // Grab the SingleResidualModel that was used to compute the state timestep.
   // From this, we can get the constants that where used to compute W!
-  RCP<SolverAcceptingStepperBase<Scalar> > 
+  RCP<SolverAcceptingStepperBase<Scalar> >
     sasStepper = Teuchos::rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(
         Teuchos::rcpFromRef(*stateStepper),true
         );
-  RCP<Thyra::NonlinearSolverBase<Scalar> > 
+  RCP<Thyra::NonlinearSolverBase<Scalar> >
     stateTimeStepSolver = sasStepper->getNonconstSolver();
   RCP<const SingleResidualModelEvaluatorBase<Scalar> >
     singleResidualModel
@@ -723,7 +723,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::initializeState(
   )
 {
 
-  typedef Thyra::ModelEvaluatorBase MEB;
+  // typedef Thyra::ModelEvaluatorBase MEB; // unused
 
 #ifdef HAVE_RYTHMOS_DEBUG
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -900,7 +900,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
   using Teuchos::as;
   using Teuchos::rcp_dynamic_cast;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef Thyra::ModelEvaluatorBase MEB;
+  // typedef Thyra::ModelEvaluatorBase MEB; // unused
   typedef Teuchos::VerboseObjectTempState<Thyra::ModelEvaluatorBase> VOTSME;
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_GEN_BEGIN(
@@ -910,7 +910,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
   // Update the derivative matrices if they are not already updated for the
   // given time!.
   //
-  
+
   {
     RYTHMOS_FUNC_TIME_MONITOR_DIFF(
       "Rythmos:ForwardSensitivityImplicitModelEvaluator::evalModel: computeMatrices",
@@ -940,7 +940,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
     S = s_bar->getMultiVector();
   RCP<const Thyra::MultiVectorBase<Scalar> >
     S_dot = s_bar_dot->getMultiVector();
-  
+
   //
   // OutArgs
   //
@@ -987,7 +987,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
     if (hasStateFuncParams())
       Vp_V( F_sens.ptr(), *DfDp_ );
   }
-  
+
   if(nonnull(W_sens)) {
     TEUCHOS_TEST_FOR_EXCEPTION(
       alpha != coeff_x_dot_, std::logic_error,
@@ -998,7 +998,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
       "Error, beta="<<beta<<" != coeff_x="<<coeff_x_
       <<" with difference = "<<(beta-coeff_x_)<<"!" );
     W_sens->initialize( W_tilde_, s_bar_space_, f_sens_space_ );
-    
+
   }
 
   THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
@@ -1087,13 +1087,13 @@ template<class Scalar>
 void ForwardSensitivityImplicitModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
 {
 
-  using Teuchos::rcp_dynamic_cast;
-  typedef Thyra::ModelEvaluatorBase MEB;
+  // using Teuchos::rcp_dynamic_cast; // unused
+  // typedef Thyra::ModelEvaluatorBase MEB; // unused
 
   // nominalValues_.clear(); // ToDo: Implement this!
 
   nominalValues_.set_t(stateModel_->getNominalValues().get_t());
-  
+
   // 2007/05/22: rabartl: Note: Currently there is not much of a reason to set
   // an initial condition here since the initial condition for the
   // sensitivities is really being set in the ForwardSensitivityStepper
@@ -1124,12 +1124,12 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
   if (is_null(W_tilde_)) {
     TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "ToDo: compute W_tilde from scratch!");
   }
-  
+
   if ( is_null(DfDx_dot_) || is_null(DfDp_) ) {
 
     MEB::InArgs<Scalar> inArgs = stateBasePoint_;
     MEB::OutArgs<Scalar> outArgs = stateModel_->createOutArgs();
-    
+
     Teuchos::RCP<Thyra::LinearOpBase<Scalar> > DfDx_dot_compute;
     if (is_null(DfDx_dot_)) {
       DfDx_dot_compute = stateModel_->create_W_op();
@@ -1149,14 +1149,14 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
         MEB::Derivative<Scalar>(DfDp_compute,MEB::DERIV_MV_BY_COL)
         );
     }
-    
+
     VOTSME stateModel_outputTempState(stateModel_,out,verbLevel);
     stateModel_->evalModel(inArgs,outArgs);
     if (nonnull(DfDx_dot_compute))
       DfDx_dot_ = DfDx_dot_compute;
     if (nonnull(DfDp_compute))
       DfDp_ = DfDp_compute;
-  
+
   }
 
   TEUCHOS_TEST_FOR_EXCEPT_MSG( nonnull(stateIntegrator_),
@@ -1173,7 +1173,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  
+
   const Scalar t = point.get_t();
 
   //
@@ -1230,7 +1230,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
 
     MEB::InArgs<Scalar> inArgs = stateBasePoint_;
     MEB::OutArgs<Scalar> outArgs = stateModel_->createOutArgs();
-    
+
     if (update_DfDx_dot) {
       inArgs.set_alpha(1.0);
       inArgs.set_beta(0.0);
@@ -1251,7 +1251,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
     }
 
     // B.3) Evaluate the outputs
-    
+
     VOTSME stateModel_outputTempState(stateModel_,out,verbLevel);
     stateModel_->evalModel(inArgs,outArgs);
 
@@ -1262,7 +1262,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
 
     if (nonnull(DfDp_compute_))
       DfDp_ = DfDp_compute_;
-  
+
   }
 
   //
@@ -1281,7 +1281,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
 
     MEB::InArgs<Scalar> inArgs = stateBasePoint_;
     MEB::OutArgs<Scalar> outArgs = stateModel_->createOutArgs();
-    
+
     if (is_null(W_tilde_)) {
       coeff_x_dot_ = point.get_alpha();
       coeff_x_ = point.get_beta();
@@ -1291,7 +1291,7 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::computeDerivativeMatrices
     }
 
     // C.3) Evaluate the outputs
-    
+
     VOTSME stateModel_outputTempState(stateModel_,out,verbLevel);
     stateModel_->evalModel(inArgs,outArgs);
 

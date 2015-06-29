@@ -494,7 +494,7 @@ SupportGraph<MatrixType>::
 makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A)
 {
   if (A->getComm()->getSize() > 1) {
-    return Teuchos::rcp (new LocalFilter<MatrixType> (A));
+    return Teuchos::rcp (new LocalFilter<row_matrix_type> (A));
   } else {
     return A;
   }

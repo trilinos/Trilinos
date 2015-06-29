@@ -75,7 +75,7 @@ Ifpack_IlukGraph::Ifpack_IlukGraph(const Epetra_CrsGraph & Graph_in, int LevelFi
 }
 
 //==============================================================================
-Ifpack_IlukGraph::Ifpack_IlukGraph(const Ifpack_IlukGraph & Graph_in) 
+Ifpack_IlukGraph::Ifpack_IlukGraph(const Ifpack_IlukGraph & Graph_in)
   : Graph_(Graph_in.Graph_),
     DomainMap_(Graph_in.DomainMap()),
     RangeMap_(Graph_in.RangeMap()),
@@ -132,7 +132,7 @@ int Ifpack_IlukGraph::ConstructOverlapGraph() {
 
   OverlapGraph_ = Teuchos::rcp( (Epetra_CrsGraph *) &Graph_, false );
   OverlapRowMap_ = Teuchos::rcp( (Epetra_BlockMap *) &Graph_.RowMap(), false );
-  
+
   if (LevelOverlap_==0 || !Graph_.DomainMap().DistributedGlobal()) return(0); // Nothing to do
 
   Teuchos::RefCountPtr<Epetra_CrsGraph> OldGraph;
@@ -140,13 +140,13 @@ int Ifpack_IlukGraph::ConstructOverlapGraph() {
   Epetra_BlockMap * DomainMap_tmp = (Epetra_BlockMap *) &Graph_.DomainMap();
   Epetra_BlockMap * RangeMap_tmp = (Epetra_BlockMap *) &Graph_.RangeMap();
   for (int level=1; level <= LevelOverlap_; level++) {
-    OldGraph = OverlapGraph_; 
+    OldGraph = OverlapGraph_;
     OldRowMap = OverlapRowMap_;
 
     OverlapImporter_ = Teuchos::rcp( (Epetra_Import *) OldGraph->Importer(), false );
     OverlapRowMap_ = Teuchos::rcp( new Epetra_BlockMap(OverlapImporter_->TargetMap()) );
 
-    
+
     if (level<LevelOverlap_)
       OverlapGraph_ = Teuchos::rcp( new Epetra_CrsGraph(Copy, *OverlapRowMap_, 0) );
     else
@@ -175,13 +175,16 @@ int Ifpack_IlukGraph::ConstructOverlapGraph() {
 
 //==============================================================================
 int Ifpack_IlukGraph::ConstructFilledGraph() {
+  using std::cout;
+  using std::endl;
+
   int ierr = 0;
   int i, j;
   int * In=0;
   int NumIn, NumL, NumU;
   bool DiagFound;
 
-  
+
   EPETRA_CHK_ERR(ConstructOverlapGraph());
 
   L_Graph_ = Teuchos::rcp( new Epetra_CrsGraph(Copy, OverlapGraph_->RowMap(), OverlapGraph_->RowMap(),  0) );
@@ -201,37 +204,37 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
 
     OverlapGraph_->ExtractMyRowView(i, NumIn, In); // Get Indices
 
-    
+
     // Split into L and U (we don't assume that indices are ordered).
-    
-    NumL = 0; 
-    NumU = 0; 
+
+    NumL = 0;
+    NumU = 0;
     DiagFound = false;
-    
+
     for (j=0; j< NumIn; j++) {
       int k = In[j];
 
       if (k<NumMyBlockRows_) { // Ignore column elements that are not in the square matrix
 
-	if (k==i) DiagFound = true;
+        if (k==i) DiagFound = true;
 
-	else if (k < i) {
-	  L[NumL] = k;
-	  NumL++;
-	}
-	else {
-	  U[NumU] = k;
-	  NumU++;
-	}
+        else if (k < i) {
+          L[NumL] = k;
+          NumL++;
+        }
+        else {
+          U[NumU] = k;
+          NumU++;
+        }
       }
     }
-    
+
     // Check in things for this row of L and U
 
     if (DiagFound) NumMyBlockDiagonals_++;
     if (NumL) L_Graph_->InsertMyIndices(i, NumL, &L[0]);
     if (NumU) U_Graph_->InsertMyIndices(i, NumU, &U[0]);
-    
+
   }
 
   if (LevelFill_ > 0) {
@@ -244,7 +247,7 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
     EPETRA_CHK_ERR(L_Graph_->FillComplete(*L_DomainMap, *L_RangeMap));
     EPETRA_CHK_ERR(U_Graph_->FillComplete(*U_DomainMap, *U_RangeMap));
 
-    // At this point L_Graph and U_Graph are filled with the pattern of input graph, 
+    // At this point L_Graph and U_Graph are filled with the pattern of input graph,
     // sorted and have redundant indices (if any) removed.  Indices are zero based.
     // LevelFill is greater than zero, so continue...
 
@@ -258,13 +261,13 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
     for (i=0; i<NumMyBlockRows_; i++)
     {
       int First, Next;
-      
+
       // copy column indices of row into workspace and sort them
-      
+
       int LenL = L_Graph_->NumMyIndices(i);
       int LenU = U_Graph_->NumMyIndices(i);
       int Len = LenL + LenU + 1;
-      
+
       EPETRA_CHK_ERR(L_Graph_->ExtractMyRowCopy(i, LenL, LenL, &CurrentRow[0]));      // Get L Indices
       CurrentRow[LenL] = i;                                     // Put in Diagonal
       //EPETRA_CHK_ERR(U_Graph_->ExtractMyRowCopy(i, LenU, LenU, CurrentRow+LenL+1)); // Get U Indices
@@ -278,79 +281,79 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
         cout << "i = " << i << endl;
         cout << "NumMyBlockRows_ = " << U_Graph_->NumMyBlockRows() << endl;
       }
-      
+
       // Construct linked list for current row
-      
+
       for (j=0; j<Len-1; j++) {
         LinkList[CurrentRow[j]] = CurrentRow[j+1];
         CurrentLevel[CurrentRow[j]] = 0;
       }
-      
+
       LinkList[CurrentRow[Len-1]] = NumMyBlockRows_;
       CurrentLevel[CurrentRow[Len-1]] = 0;
-      
+
       // Merge List with rows in U
-      
+
       First = CurrentRow[0];
       Next = First;
       while (Next < i)
         {
-	  int PrevInList = Next;
-	  int NextInList = LinkList[Next];
-	  int RowU = Next;
-	  int LengthRowU;
-	  int * IndicesU;
-	  // Get Indices for this row of U
-	  EPETRA_CHK_ERR(U_Graph_->ExtractMyRowView(RowU, LengthRowU, IndicesU));
+          int PrevInList = Next;
+          int NextInList = LinkList[Next];
+          int RowU = Next;
+          int LengthRowU;
+          int * IndicesU;
+          // Get Indices for this row of U
+          EPETRA_CHK_ERR(U_Graph_->ExtractMyRowView(RowU, LengthRowU, IndicesU));
 
-	  int ii;
-	  
-	  // Scan RowU
-	  
-	  for (ii=0; ii<LengthRowU; /*nop*/)
+          int ii;
+
+          // Scan RowU
+
+          for (ii=0; ii<LengthRowU; /*nop*/)
             {
-	      int CurInList = IndicesU[ii];
-	      if (CurInList < NextInList)
+              int CurInList = IndicesU[ii];
+              if (CurInList < NextInList)
                 {
-		  // new fill-in
-		  int NewLevel = CurrentLevel[RowU] + Levels[RowU][ii+1] + 1;
-		  if (NewLevel <= LevelFill_)
+                  // new fill-in
+                  int NewLevel = CurrentLevel[RowU] + Levels[RowU][ii+1] + 1;
+                  if (NewLevel <= LevelFill_)
                     {
-		      LinkList[PrevInList]  = CurInList;
-		      LinkList[CurInList] = NextInList;
-		      PrevInList = CurInList;
-		      CurrentLevel[CurInList] = NewLevel;
+                      LinkList[PrevInList]  = CurInList;
+                      LinkList[CurInList] = NextInList;
+                      PrevInList = CurInList;
+                      CurrentLevel[CurInList] = NewLevel;
                     }
-		  ii++;
+                  ii++;
                 }
-	      else if (CurInList == NextInList)
+              else if (CurInList == NextInList)
                 {
-		  PrevInList = NextInList;
-		  NextInList = LinkList[PrevInList];
-		  int NewLevel = CurrentLevel[RowU] + Levels[RowU][ii+1] + 1;
-		  CurrentLevel[CurInList] = EPETRA_MIN(CurrentLevel[CurInList], NewLevel);
-		  ii++;
+                  PrevInList = NextInList;
+                  NextInList = LinkList[PrevInList];
+                  int NewLevel = CurrentLevel[RowU] + Levels[RowU][ii+1] + 1;
+                  CurrentLevel[CurInList] = EPETRA_MIN(CurrentLevel[CurInList], NewLevel);
+                  ii++;
                 }
-	      else // (CurInList > NextInList)
+              else // (CurInList > NextInList)
                 {
-		  PrevInList = NextInList;
-		  NextInList = LinkList[PrevInList];
+                  PrevInList = NextInList;
+                  NextInList = LinkList[PrevInList];
                 }
             }
-	  Next = LinkList[Next];
+          Next = LinkList[Next];
         }
-      
+
       // Put pattern into L and U
-      
+
       LenL = 0;
 
       Next = First;
-      
+
       // Lower
 
-      while (Next < i) {	  
-	CurrentRow[LenL++] = Next;
-	Next = LinkList[Next];
+      while (Next < i) {
+        CurrentRow[LenL++] = Next;
+        Next = LinkList[Next];
       }
 
       EPETRA_CHK_ERR(L_Graph_->RemoveMyIndices(i)); // Delete current set of Indices
@@ -361,8 +364,8 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
 
       if (Next != i) return(-2); // Fatal:  U has zero diagonal.
       else {
-	LevelsRowU[0] = CurrentLevel[Next];
-	Next = LinkList[Next];
+        LevelsRowU[0] = CurrentLevel[Next];
+        Next = LinkList[Next];
       }
 
       // Upper
@@ -371,9 +374,9 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
 
       while (Next < NumMyBlockRows_) // Should be "Next < NumMyBlockRows_"?
         {
-	  LevelsRowU[LenU+1] = CurrentLevel[Next];
-	  CurrentRow[LenU++] = Next;
-	  Next = LinkList[Next];
+          LevelsRowU[LenU+1] = CurrentLevel[Next];
+          CurrentRow[LenU++] = Next;
+          Next = LinkList[Next];
         }
 
       EPETRA_CHK_ERR(U_Graph_->RemoveMyIndices(i)); // Delete current set of Indices
@@ -385,7 +388,7 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
       for (int jj=0; jj<LenU+1; jj++) Levels[i][jj] = LevelsRowU[jj];
 
     }
-  }    
+  }
 
   // Complete Fill steps
   Epetra_BlockMap L_DomainMap = (Epetra_BlockMap) OverlapGraph_->RowMap();
@@ -394,9 +397,9 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
   Epetra_BlockMap U_RangeMap = (Epetra_BlockMap) OverlapGraph_->RowMap();
   EPETRA_CHK_ERR(L_Graph_->FillComplete(L_DomainMap, L_RangeMap));
   EPETRA_CHK_ERR(U_Graph_->FillComplete(U_DomainMap, U_RangeMap));
-      
+
   // Optimize graph storage
-  
+
   EPETRA_CHK_ERR(L_Graph_->OptimizeStorage());
   EPETRA_CHK_ERR(U_Graph_->OptimizeStorage());
 
@@ -416,8 +419,10 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
 
 // Non-member functions
 
-ostream& operator << (ostream& os, const Ifpack_IlukGraph& A)
+std::ostream& operator << (std::ostream& os, const Ifpack_IlukGraph& A)
 {
+  using std::endl;
+
 /*  Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
   Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
   int oldp = os.precision(12); */
@@ -429,15 +434,15 @@ ostream& operator << (ostream& os, const Ifpack_IlukGraph& A)
   os << endl;
 
   os.width(14);
-  os <<  "     Graph of L = "; 
+  os <<  "     Graph of L = ";
   os << endl;
   os << L; // Let Epetra_CrsGraph handle the rest.
 
   os.width(14);
-  os <<  "     Graph of U = "; 
+  os <<  "     Graph of U = ";
   os << endl;
   os << U; // Let Epetra_CrsGraph handle the rest.
- 
+
   // Reset os flags
 
 /*  os.setf(olda,ios::adjustfield);

@@ -45,7 +45,7 @@
 #include "Galeri_ConfigDefs.h"
 #include "Trilinos_version.h"
 
-string Galeri_Version() { 
+std::string Galeri_Version() { 
 	return("Galeri in Trilinos " TRILINOS_VERSION_STRING); 
 };
 

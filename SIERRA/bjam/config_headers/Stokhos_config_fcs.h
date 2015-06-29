@@ -10,7 +10,7 @@
 /* #undef HAVE_STOKHOS_TESTS */
 
 /* Define if explicit instantiation is turned on */
-/* #undef HAVE_STOKHOS_EXPLICIT_INSTANTIATION */
+#define HAVE_STOKHOS_EXPLICIT_INSTANTIATION
 
 /* Define to enable extra debugging checks */
 /* #undef STOKHOS_DEBUG */

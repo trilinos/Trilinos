@@ -71,6 +71,7 @@ SET(Trilinos_PACKAGES Amesos Epetra Ifpack Teuchos Tpetra ML MueLu Zoltan)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+  "-DAmesos2_ENABLE_Basker:BOOL=ON"
 )
 
 #

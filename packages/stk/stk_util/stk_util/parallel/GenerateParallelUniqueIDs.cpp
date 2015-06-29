@@ -32,6 +32,7 @@
 // 
 
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
+#include <stk_util/parallel/MPI.hpp>
 
 namespace stk {
 
@@ -71,7 +72,7 @@ namespace stk {
     }
 
     int mpiResult = MPI_SUCCESS ;  
-    mpiResult = MPI_Allreduce(&localMaxId, &globalMaxId, 1, MPI_UNSIGNED_LONG, MPI_MAX, comm);
+    mpiResult = MPI_Allreduce(&localMaxId, &globalMaxId, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_MAX, comm);
     if(mpiResult != MPI_SUCCESS) {
       throw std::runtime_error("MPI_Allreduce failed");
       return newIds;
@@ -86,8 +87,8 @@ namespace stk {
     MPI_Op myOp;
     MPI_Op_create((MPI_User_function *)MpiSumMax, true, &myOp);
 
-    uint64_t numGlobalReduce[2];
-    mpiResult = MPI_Allreduce(numLocalReduce, numGlobalReduce, 2, MPI_UNSIGNED_LONG, myOp, comm);
+    uint64_t numGlobalReduce[2] = {0u, 0u};
+    mpiResult = MPI_Allreduce(numLocalReduce, numGlobalReduce, 2, sierra::MPI::Datatype<uint64_t>::type(), myOp, comm);
     MPI_Op_free(&myOp);
 
     uint64_t globalNumIdsRequested = numGlobalReduce[0];
@@ -116,7 +117,7 @@ namespace stk {
       //
 
       uint64_t myFirstNewId;
-      mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm);
+      mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_SUM, comm);
       myFirstNewId -= numNewIdsLocal;
 
       int returnCode = parallel_index_gap_finder_global(comm, 0, maxAllowedId, 
@@ -145,7 +146,7 @@ namespace stk {
         //  Otherwise still use a very cheap algorithm, densely pack the reultant ids
         //
         uint64_t myFirstNewId;
-        mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm);
+        mpiResult = MPI_Scan(&numNewIdsLocal, &myFirstNewId, 1, sierra::MPI::Datatype<uint64_t>::type(), MPI_SUM, comm);
         myFirstNewId -= numNewIdsLocal;
         //
         //  Run basic cheap algorithm.  Start counting new ids at end.

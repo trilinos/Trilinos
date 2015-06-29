@@ -55,8 +55,8 @@
 typedef int idxtype;
 #ifdef HAVE_IFPACK_METIS
 extern "C" {
-  void METIS_NodeND(int *n, idxtype *xadj, idxtype *adjncy, 
-		    int *numflag, int *options, int *perm, int *iperm);
+  void METIS_NodeND(int *n, idxtype *xadj, idxtype *adjncy,
+                    int *numflag, int *options, int *perm, int *iperm);
 }
 #endif
 
@@ -73,7 +73,7 @@ Ifpack_METISReordering::Ifpack_METISReordering() :
 // NOTE:
 // - matrix is supposed to be localized, and passes through the
 // singleton filter. This means that I do not have to look
-// for Dirichlet nodes (singletons). Also, all rows and columns are 
+// for Dirichlet nodes (singletons). Also, all rows and columns are
 // local.
 int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
 {
@@ -98,14 +98,14 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
   options.resize(8);
   options[0] = 0; // default values
 
-#ifdef HAVE_IFPACK_METIS  
+#ifdef HAVE_IFPACK_METIS
   int numflag = 0; // C style
 #endif
 
   if (UseSymmetricGraph_) {
 
 #if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
-    // need to build a symmetric graph. 
+    // need to build a symmetric graph.
     // I do this in two stages:
     // 1.- construct an Epetra_CrsMatrix, symmetric
     // 2.- convert the Epetra_CrsMatrix into METIS format
@@ -117,42 +117,42 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
     if(SymGraph->RowMap().GlobalIndicesInt()) {
     for (int i = 0; i < NumMyRows_ ; ++i) {
 
-      ierr = Graph.ExtractMyRowCopy(i, Length, NumIndices, 
-				      &Indices[0]);
+      ierr = Graph.ExtractMyRowCopy(i, Length, NumIndices,
+                                      &Indices[0]);
       IFPACK_CHK_ERR(ierr);
 
       for (int j = 0 ; j < NumIndices ; ++j) {
-	int jj = Indices[j];
-	if (jj != i) {
+        int jj = Indices[j];
+        if (jj != i) {
           // insert A(i,j), then A(j,i)
-	  SymGraph->InsertGlobalIndices(i,1,&jj);
-	  SymGraph->InsertGlobalIndices(jj,1,&i);
-	}
-      }      
+          SymGraph->InsertGlobalIndices(i,1,&jj);
+          SymGraph->InsertGlobalIndices(jj,1,&i);
+        }
+      }
     }
-	}
-	else
+        }
+        else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     if(SymGraph->RowMap().GlobalIndicesLongLong()) {
     for (int i = 0; i < NumMyRows_ ; ++i) {
       long long i_LL = i;
 
-      ierr = Graph.ExtractMyRowCopy(i, Length, NumIndices, 
-				      &Indices[0]);
+      ierr = Graph.ExtractMyRowCopy(i, Length, NumIndices,
+                                      &Indices[0]);
       IFPACK_CHK_ERR(ierr);
 
       for (int j = 0 ; j < NumIndices ; ++j) {
-	long long jj = Indices[j];
-	if (jj != i) {
+        long long jj = Indices[j];
+        if (jj != i) {
           // insert A(i,j), then A(j,i)
-	  SymGraph->InsertGlobalIndices(i_LL,1,&jj);
-	  SymGraph->InsertGlobalIndices(jj,1,&i_LL);
-	}
-      }      
+          SymGraph->InsertGlobalIndices(i_LL,1,&jj);
+          SymGraph->InsertGlobalIndices(jj,1,&i_LL);
+        }
+      }
     }
     }
-	else
+        else
 #endif
     throw "Ifpack_METISReordering::Compute: GlobalIndices type unknown";
 
@@ -168,11 +168,11 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
 
   std::vector<idxtype> adjncy;
   adjncy.resize(Graph.NumMyNonzeros());
-   
-  int count = 0; 
-  int count2 = 0; 
+
+  int count = 0;
+  int count2 = 0;
   xadj[0] = 0;
-  
+
   for (int i = 0; i < NumMyRows_ ; ++i) {
 
     xadj[count2+1] = xadj[count2]; /* nonzeros in row i-1 */
@@ -183,8 +183,8 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
     for (int j = 0 ; j < NumIndices ; ++j) {
       int jj = Indices[j];
       if (jj != i) {
-	adjncy[count++] = jj;
-	xadj[count2+1]++;
+        adjncy[count++] = jj;
+        xadj[count2+1]++;
       }
     }
     count2++;
@@ -198,16 +198,19 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
   // if the perm[i] row (col) of A, and row (column) i of A is the
   // iperm[i] row (column) of A'. The numbering starts from 0 in our case.
   METIS_NodeND(&NumMyRows_, &xadj[0], &adjncy[0],
-	       &numflag, &options[0],
-	       &InvReorder_[0], &Reorder_[0]);
+               &numflag, &options[0],
+               &InvReorder_[0], &Reorder_[0]);
 #else
+  using std::cerr;
+  using std::endl;
+
   cerr << "Please configure with --enable-ifpack-metis" << endl;
   cerr << "to use METIS Reordering." << endl;
   exit(EXIT_FAILURE);
 #endif
-      
+
   return(0);
-} 
+}
 
 //==============================================================================
 int Ifpack_METISReordering::Compute(const Epetra_RowMatrix& Matrix)
@@ -246,8 +249,8 @@ int Ifpack_METISReordering::InvReorder(const int i) const
 }
 //==============================================================================
 int Ifpack_METISReordering::P(const Epetra_MultiVector& Xorig,
-			    Epetra_MultiVector& X) const
-{  
+                            Epetra_MultiVector& X) const
+{
   int NumVectors = X.NumVectors();
 
   for (int j = 0 ; j < NumVectors ; ++j) {
@@ -262,7 +265,7 @@ int Ifpack_METISReordering::P(const Epetra_MultiVector& Xorig,
 
 //==============================================================================
 int Ifpack_METISReordering::Pinv(const Epetra_MultiVector& Xorig,
-				 Epetra_MultiVector& X) const
+                                 Epetra_MultiVector& X) const
 {
   int NumVectors = X.NumVectors();
 
@@ -277,18 +280,20 @@ int Ifpack_METISReordering::Pinv(const Epetra_MultiVector& Xorig,
 }
 
 //==============================================================================
-ostream& Ifpack_METISReordering::Print(std::ostream& os) const
+std::ostream& Ifpack_METISReordering::Print(std::ostream& os) const
 {
+  using std::endl;
+
   os << "*** Ifpack_METISReordering" << endl << endl;
   if (!IsComputed())
     os << "*** Reordering not yet computed." << endl;
-  
+
   os << "*** Number of local rows = " << NumMyRows_ << endl;
   os << "Local Row\tReorder[i]\tInvReorder[i]" << endl;
   for (int i = 0 ; i < NumMyRows_ ; ++i) {
     os << '\t' << i << "\t\t" << Reorder_[i] << "\t\t" << InvReorder_[i] << endl;
   }
-   
+
   return(os);
 }
 

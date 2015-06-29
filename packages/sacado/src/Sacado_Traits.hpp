@@ -72,47 +72,6 @@ namespace Sacado {
     InitDerivArray        //!< Initialize the derivative array
   };
 
-  //! Base template specification for %Promote
-  /*!
-   * The %Promote classes provide a mechanism for computing the
-   * promoted type of a binary operation.
-   */
-  template <typename A, typename B, typename Enabled = void> struct Promote {};
-
-  //! Specialize this for a given type T to disable default Promote rules
-  template <typename T> struct OverrideDefaultPromote {
-    static const bool value = false;
-  };
-
-  //! Specialization of %Promote for a single type
-  template <typename A>
-  struct Promote< A, A,
-                  typename mpl::enable_if_c< !OverrideDefaultPromote<A>::value >::type > {
-    typedef A type;
-  };
-
-  //! Specialization of %Promote when A is convertible to B but not vice-versa
-  template <typename A, typename B>
-  struct Promote< A, B,
-                  typename mpl::enable_if_c< mpl::is_convertible<A,B>::value &&
-                                            !mpl::is_convertible<B,A>::value &&
-                                            !OverrideDefaultPromote<A>::value &&
-                                            !OverrideDefaultPromote<B>::value
-                                           >::type > {
-    typedef B type;
-  };
-
-  //! Specialization of %Promote when B is convertible to A but not vice-versa
-  template <typename A, typename B>
-  struct Promote< A, B,
-                  typename mpl::enable_if_c< mpl::is_convertible<B,A>::value &&
-                                            !mpl::is_convertible<A,B>::value &&
-                                            !OverrideDefaultPromote<A>::value &&
-                                            !OverrideDefaultPromote<B>::value
-                                           >::type > {
-    typedef A type;
-  };
-
   //! Is a type an expression
   template <typename T>
   struct IsExpr {
@@ -134,29 +93,114 @@ namespace Sacado {
   //! Get view type for any Fad type
   template <typename T,unsigned,unsigned> struct ViewFadType {};
 
-  //! Specialization of %Promote for View-types
-  template <typename A, typename B>
-  struct Promote< A, B,
-                  typename mpl::enable_if_c< IsView<A>::value ||
-                                             IsView<B>::value >::type > {
-    typedef typename BaseExprType<A>::type base_fad_type_A;
-    typedef typename BaseExprType<B>::type base_fad_type_B;
-    typedef typename Promote<base_fad_type_A,base_fad_type_B>::type type;
+  //! Specialize this for a given type T to disable default Promote rules
+  template <typename T> struct OverrideDefaultPromote {
+    static const bool value = false;
   };
 
+  //! Base template specification for %Promote
+  /*!
+   * The %Promote classes provide a mechanism for computing the
+   * promoted type of a binary operation.
+   */
+  template <typename A, typename B, typename Enabled = void> struct Promote {};
+
+  //! Specialization of %Promote for a single type
+  template <typename A>
+  struct Promote< A, A,
+                  typename mpl::enable_if_c< !OverrideDefaultPromote<A>::value >::type > {
+    typedef typename BaseExprType<A>::type type;
+  };
+
+  //! Specialization of %Promote when A is convertible to B but not vice-versa
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< mpl::is_convertible<A,B>::value &&
+                                            !mpl::is_convertible<B,A>::value &&
+                                            !OverrideDefaultPromote<A>::value &&
+                                            !OverrideDefaultPromote<B>::value
+                                           >::type > {
+    typedef typename BaseExprType<B>::type type;
+  };
+
+  //! Specialization of %Promote when B is convertible to A but not vice-versa
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< mpl::is_convertible<B,A>::value &&
+                                            !mpl::is_convertible<A,B>::value &&
+                                            !OverrideDefaultPromote<A>::value &&
+                                            !OverrideDefaultPromote<B>::value
+                                           >::type > {
+    typedef typename BaseExprType<A>::type type;
+  };
+
+ /*!
+  * \brief Specialization of Promote when A and B are convertible to each
+  * other, and one of them is an expression.
+  */
   template <typename A, typename B>
   struct Promote< A, B,
                   typename mpl::enable_if_c< mpl::is_convertible<A,B>::value &&
                                              mpl::is_convertible<B,A>::value &&
                                              !mpl::is_same<A,B>::value &&
-                                             !IsView<A>::value &&
-                                             !IsView<B>::value &&
                                              ( IsExpr<A>::value ||
                                                IsExpr<B>::value ) >::type >
   {
     typedef typename BaseExprType<A>::type A_base_fad_type;
     typedef typename BaseExprType<B>::type B_base_fad_type;
     typedef typename Promote< A_base_fad_type, B_base_fad_type >::type type;
+  };
+
+  /*!
+   * \brief Specialization of Promote when A is an expression and B is
+   * convertible to its value-type, e.g., Promote< fad-expression, double >
+   * (using BaseExprType to remove ViewFad)
+   */
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< !mpl::is_convertible<A,B>::value &&
+                                             !mpl::is_convertible<B,A>::value &&
+                                             IsExpr<A>::value &&
+                                             mpl::is_convertible< B, typename BaseExprType< typename A::value_type >::type >::value
+                                             >::type >
+  {
+    typedef typename BaseExprType<A>::type type;
+  };
+
+  /*!
+   * \brief Specialization of Promote when B is an expression and A is
+   * convertible to its value-type, e.g., Promote< double, fad-expression >
+   * (using BaseExprType to remove ViewFad)
+   */
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< !mpl::is_convertible<A,B>::value &&
+                                             !mpl::is_convertible<B,A>::value &&
+                                             IsExpr<B>::value &&
+                                              mpl::is_convertible< A, typename BaseExprType< typename B::value_type >::type >::value
+                                             >::type >
+  {
+    typedef typename BaseExprType<B>::type type;
+  };
+
+  /*!
+   * \brief Specialization of Promote when A and B are (different) expressions,
+   * with the same value type, e.g, Promote< fad-expr1, fad-expr2 >
+   * (using BaseExprType to remove ViewFad)
+   */
+  template <typename A, typename B>
+  struct Promote< A, B,
+                  typename mpl::enable_if_c< !mpl::is_convertible<A,B>::value &&
+                                             !mpl::is_convertible<B,A>::value &&
+                                             IsExpr<A>::value &&
+                                             IsExpr<B>::value &&
+                                             mpl::is_same< typename BaseExprType< typename A::value_type >::type,
+                                                           typename BaseExprType< typename B::value_type >::type >::value
+                                             >::type >
+  {
+    typedef typename BaseExprType<A>::type A_base_expr_type;
+    typedef typename BaseExprType<B>::type B_base_expr_type;
+    typedef typename Promote< A_base_expr_type, B_base_expr_type >::type type;
   };
 
   //! Specialization of %Promote to builtin types
@@ -196,30 +240,9 @@ namespace Sacado {
 
 #define SACADO_SFAD_PROMOTE_SPEC(NS, FAD) /* */
 
-#define SACADO_EXPR_PROMOTE_SPEC(NS)                                    \
-  template <typename T, typename U>                                     \
-  struct Promote< NS :: Expr <T>, U,                                    \
-                  typename mpl::enable_if_c<                            \
-                    mpl::is_convertible< U, typename BaseExprType< typename NS :: Expr <T>::value_type >::type >::value && \
-                   !IsView<U>::value >::type > {                        \
-    typedef typename NS :: Expr <T>::base_expr_type type;               \
-  };                                                                    \
-  template <typename T, typename U>                                     \
-  struct Promote< U, NS :: Expr <T>,                                    \
-                  typename mpl::enable_if_c<                            \
-                    mpl::is_convertible< U, typename BaseExprType< typename NS :: Expr <T>::value_type >::type >::value && \
-                  !IsView<U>::value >::type > {                         \
-    typedef typename NS :: Expr <T>::base_expr_type type;               \
-  };
+#define SACADO_EXPR_PROMOTE_SPEC(NS) /* */
 
-#define SACADO_VFAD_PROMOTE_SPEC(NS)                                    \
-  namespace NS {                                                        \
-    template <typename,unsigned,unsigned,typename> class ViewFad;       \
-  }                                                                     \
-  template <typename T, unsigned l, unsigned s, typename U>             \
-  struct OverrideDefaultPromote< NS :: ViewFad<T,l,s,U> > {             \
-    static const bool value = true;                                     \
-  };                                                                    \
+#define SACADO_VFAD_PROMOTE_SPEC(NS) /* */
 
 #define SACADO_RAD_PROMOTE_SPEC(NS)                                     \
   namespace NS {                                                        \

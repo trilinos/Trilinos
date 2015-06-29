@@ -68,7 +68,7 @@ namespace MueLuTests {
         std::string dirEntryS(dirEntry->d_name);
 
         size_t pos = dirEntryS.rfind(filter);
-        if (pos != string::npos && pos+filter.size() == dirEntryS.size())
+        if (pos != std::string::npos && pos+filter.size() == dirEntryS.size())
           files->push_back(std::string(dirEntryS));
       }
 

@@ -1,15 +1,18 @@
 # Default settings common options
 
 #Options: OpenMP,Serial,Pthreads,Cuda
-KOKKOS_DEVICES ?= "OpenMP"
-#Options: KNC,SNB,HSW,Kepler,Kepler30,Kepler35,Kepler37,Maxwell,Maxwell50,ARMv8,BGQ,Power7,Power8
+#KOKKOS_DEVICES ?= "OpenMP"
+KOKKOS_DEVICES ?= "Pthreads"
+#Options: KNC,SNB,HSW,Kepler,Kepler30,Kepler32,Kepler35,Kepler37,Maxwell,Maxwell50,Maxwell52,Maxwell53,ARMv8,BGQ,Power7,Power8
 KOKKOS_ARCH ?= ""
 #Options: yes,no
 KOKKOS_DEBUG ?= "no"
 #Options: hwloc,librt
 KOKKOS_USE_TPLS ?= ""
-#Options: c++98,c++11
+#Options: c++11
 KOKKOS_CXX_STANDARD ?= "c++11"
+#Options: kernel_times,aggregate_mpi
+KOKKOS_PROFILING ?= ""
 
 #Default settings specific options
 #Options: force_uvm,use_ldg,rdc
@@ -18,6 +21,8 @@ KOKKOS_CUDA_OPTIONS ?= ""
 # Check for general settings
 
 KOKKOS_INTERNAL_ENABLE_DEBUG := $(strip $(shell echo $(KOKKOS_DEBUG) | grep "yes" | wc -l))
+KOKKOS_INTERNAL_ENABLE_PROFILING_COLLECT_KERNEL_DATA := $(strip $(shell echo $(KOKKOS_PROFILING) | grep "kernel_times" | wc -l))
+KOKKOS_INTERNAL_ENABLE_PROFILING_AGGREGATE_MPI := $(strip $(shell echo $(KOKKOS_PROFILING) | grep "aggregate_mpi" | wc -l))
 KOKKOS_INTERNAL_ENABLE_CXX11 := $(strip $(shell echo $(KOKKOS_CXX_STANDARD) | grep "c++11" | wc -l))
 
 # Check for external libraries
@@ -67,15 +72,30 @@ KOKKOS_INTERNAL_USE_ARCH_HSW := $(strip $(shell echo $(KOKKOS_ARCH) | grep HSW |
 
 #NVIDIA based
 KOKKOS_INTERNAL_USE_ARCH_KEPLER30 := $(strip $(shell echo $(KOKKOS_ARCH) | grep Kepler30 | wc -l))
+KOKKOS_INTERNAL_USE_ARCH_KEPLER32 := $(strip $(shell echo $(KOKKOS_ARCH) | grep Kepler32 | wc -l))
 KOKKOS_INTERNAL_USE_ARCH_KEPLER35 := $(strip $(shell echo $(KOKKOS_ARCH) | grep Kepler35 | wc -l))
 KOKKOS_INTERNAL_USE_ARCH_KEPLER37 := $(strip $(shell echo $(KOKKOS_ARCH) | grep Kepler37 | wc -l))
 KOKKOS_INTERNAL_USE_ARCH_MAXWELL50 := $(strip $(shell echo $(KOKKOS_ARCH) | grep Maxwell50 | wc -l))
-KOKKOS_INTERNAL_USE_ARCH_NVIDIA := $(strip $(shell echo $(KOKKOS_INTERNAL_USE_ARCH_KEPLER30)+$(KOKKOS_INTERNAL_USE_ARCH_KEPLER35)+$(KOKKOS_INTERNAL_USE_ARCH_KEPLER37)+$(KOKKOS_INTERNAL_USE_ARCH_MAXWELL50) | bc))
+KOKKOS_INTERNAL_USE_ARCH_MAXWELL52 := $(strip $(shell echo $(KOKKOS_ARCH) | grep Maxwell52 | wc -l))
+KOKKOS_INTERNAL_USE_ARCH_MAXWELL53 := $(strip $(shell echo $(KOKKOS_ARCH) | grep Maxwell53 | wc -l))
+KOKKOS_INTERNAL_USE_ARCH_NVIDIA := $(strip $(shell echo $(KOKKOS_INTERNAL_USE_ARCH_KEPLER30)  \
+                                                      + $(KOKKOS_INTERNAL_USE_ARCH_KEPLER32)  \
+                                                      + $(KOKKOS_INTERNAL_USE_ARCH_KEPLER35)  \
+                                                      + $(KOKKOS_INTERNAL_USE_ARCH_KEPLER37)  \
+                                                      + $(KOKKOS_INTERNAL_USE_ARCH_MAXWELL50) \
+                                                      + $(KOKKOS_INTERNAL_USE_ARCH_MAXWELL52) \
+                                                      + $(KOKKOS_INTERNAL_USE_ARCH_MAXWELL53) | bc))
 
 ifeq ($(KOKKOS_INTERNAL_USE_ARCH_NVIDIA), 0)
 KOKKOS_INTERNAL_USE_ARCH_MAXWELL50 := $(strip $(shell echo $(KOKKOS_ARCH) | grep Maxwell | wc -l))
 KOKKOS_INTERNAL_USE_ARCH_KEPLER35 := $(strip $(shell echo $(KOKKOS_ARCH) | grep Kepler | wc -l))
-KOKKOS_INTERNAL_USE_ARCH_NVIDIA := $(strip $(shell echo $(KOKKOS_INTERNAL_USE_ARCH_KEPLER30)+$(KOKKOS_INTERNAL_USE_ARCH_KEPLER35)+$(KOKKOS_INTERNAL_USE_ARCH_KEPLER37)+$(KOKKOS_INTERNAL_USE_ARCH_MAXWELL50) | bc))
+KOKKOS_INTERNAL_USE_ARCH_NVIDIA := $(strip $(shell echo $(KOKKOS_INTERNAL_USE_ARCH_KEPLER30)  \
+                                                      + $(KOKKOS_INTERNAL_USE_ARCH_KEPLER32)  \
+                                                      + $(KOKKOS_INTERNAL_USE_ARCH_KEPLER35)  \
+                                                      + $(KOKKOS_INTERNAL_USE_ARCH_KEPLER37)  \
+                                                      + $(KOKKOS_INTERNAL_USE_ARCH_MAXWELL50) \
+                                                      + $(KOKKOS_INTERNAL_USE_ARCH_MAXWELL52) \
+                                                      + $(KOKKOS_INTERNAL_USE_ARCH_MAXWELL53) | bc))
 endif
 
 #ARM based
@@ -91,10 +111,11 @@ KOKKOS_INTERNAL_USE_ARCH_IBM := $(strip $(shell echo $(KOKKOS_INTERNAL_USE_ARCH_
 KOKKOS_INTERNAL_USE_ARCH_AMDAVX := $(strip $(shell echo $(KOKKOS_ARCH) | grep AMDAVX | wc -l))
 
 #Any AVX?
-KOKKOS_INTERNAL_USE_ARCH_AVX := $(strip $(shell echo $(KOKKOS_INTERNAL_USE_ARCH_SNB)+$(KOKKOS_INTERNAL_USE_ARCH_HSW)+$(KOKKOS_INTERNAL_USE_ARCH_AMDAVX) | bc ))
+KOKKOS_INTERNAL_USE_ARCH_AVX  := $(strip $(shell echo $(KOKKOS_INTERNAL_USE_ARCH_SNB)+$(KOKKOS_INTERNAL_USE_ARCH_AMDAVX) | bc ))
+KOKKOS_INTERNAL_USE_ARCH_AVX2 := $(strip $(shell echo $(KOKKOS_INTERNAL_USE_ARCH_HSW) | bc ))
 
 #Incompatible flags?
-KOKKOS_INTERNAL_USE_ARCH_MULTIHOST := $(strip $(shell echo "$(KOKKOS_INTERNAL_USE_ARCH_AVX)+$(KOKKOS_INTERNAL_USE_ARCH_KNC)+$(KOKKOS_INTERNAL_USE_ARCH_IBM)+$(KOKKOS_INTERNAL_USE_ARCH_AMDAVX)+$(KOKKOS_INTERNAL_USE_ARCH_ARMV80)>1" | bc ))
+KOKKOS_INTERNAL_USE_ARCH_MULTIHOST := $(strip $(shell echo "$(KOKKOS_INTERNAL_USE_ARCH_AVX)+$(KOKKOS_INTERNAL_USE_ARCH_AVX2)+$(KOKKOS_INTERNAL_USE_ARCH_KNC)+$(KOKKOS_INTERNAL_USE_ARCH_IBM)+$(KOKKOS_INTERNAL_USE_ARCH_AMDAVX)+$(KOKKOS_INTERNAL_USE_ARCH_ARMV80)>1" | bc ))
 KOKKOS_INTERNAL_USE_ARCH_MULTIGPU := $(strip $(shell echo "$(KOKKOS_INTERNAL_USE_ARCH_NVIDIA)>1" | bc))
 
 ifeq ($(KOKKOS_INTERNAL_USE_ARCH_MULTIHOST), 1)
@@ -110,6 +131,8 @@ KOKKOS_CPPFLAGS = -I./ -I$(KOKKOS_PATH)/core/src -I$(KOKKOS_PATH)/containers/src
 KOKKOS_CXXFLAGS =
 KOKKOS_LIBS = -lkokkos 
 KOKKOS_LDFLAGS = -L$(shell pwd)
+KOKKOS_SRC = 
+KOKKOS_HEADERS =
 
 #Generating the KokkosCore_config.h file
 
@@ -118,6 +141,11 @@ tmp := $(shell echo "Makefile constructed configuration:" >> KokkosCore_config.t
 tmp := $(shell date >> KokkosCore_config.tmp)
 tmp := $(shell echo "----------------------------------------------*/" >> KokkosCore_config.tmp)
 
+
+tmp := $(shell echo "/* ---------------------------------------------" > KokkosProfiler_config.tmp)
+tmp := $(shell echo "Makefile constructed configuration:" >> KokkosProfiler_config.tmp)
+tmp := $(shell date >> KokkosProfiler_config.tmp)
+tmp := $(shell echo "----------------------------------------------*/" >> KokkosProfiler_config.tmp)
 
 tmp := $(shell echo "/* Execution Spaces */" >> KokkosCore_config.tmp)
 ifeq ($(KOKKOS_INTERNAL_USE_OPENMP), 1)
@@ -148,8 +176,17 @@ ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
 endif
 	KOKKOS_CXXFLAGS += -g 
 	KOKKOS_LDFLAGS += -g -ldl
-	tmp := $(shell echo "\#define KOKKOS_EXPRESSION_CHECK 1" >> KokkosCore_config.tmp )
+	tmp := $(shell echo "\#define KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK 1" >> KokkosCore_config.tmp )
 	tmp := $(shell echo "\#define KOKKOS_HAVE_DEBUG 1" >> KokkosCore_config.tmp )
+endif
+ifeq ($(KOKKOS_INTERNAL_ENABLE_PROFILING_COLLECT_KERNEL_DATA), 1)
+  tmp := $(shell echo "\#define KOKKOS_ENABLE_PROFILING_COLLECT_KERNEL_DATA 1" >> KokkosCore_config.tmp )
+  KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/profiler/src/*.hpp)
+  KOKKOS_SRC += $(wildcard $(KOKKOS_PATH)/profiler/src/*.cpp)
+  KOKKOS_CPPFLAGS += -I$(KOKKOS_PATH)/profiler/src
+endif
+ifeq ($(KOKKOS_INTERNAL_ENABLE_PROFILING_AGGREGATE_MPI), 1)
+  tmp := $(shell echo "\#define KOKKOSP_ENABLE_PROFILING_AGGREGATE_MPI 1" >> KokkosProfiler_config.tmp )
 endif
 
 ifeq ($(KOKKOS_INTERNAL_USE_HWLOC), 1)
@@ -162,6 +199,7 @@ endif
 ifeq ($(KOKKOS_INTERNAL_USE_LIBRT), 1)
 	tmp := $(shell echo "\#define KOKKOS_USE_LIBRT 1" >> KokkosCore_config.tmp )
 	tmp := $(shell echo "\#define PREC_TIMER 1" >> KokkosCore_config.tmp )
+  tmp := $(shell echo "\#define KOKKOSP_ENABLE_RTLIB 1" >> KokkosCore_config.tmp )
 	KOKKOS_LIBS += -lrt
 endif
 
@@ -187,23 +225,38 @@ ifeq ($(KOKKOS_INTERNAL_USE_ARCH_AVX), 1)
 	KOKKOS_CXXFLAGS += -mavx
 	KOKKOS_LDFLAGS += -mavx
 endif
+
+ifeq ($(KOKKOS_INTERNAL_USE_ARCH_AVX2), 1)
+	KOKKOS_CXXFLAGS += -xcore-avx2
+	KOKKOS_LDFLAGS += -xcore-avx2
+endif
+
 ifeq ($(KOKKOS_INTERNAL_USE_ARCH_KNC), 1)
 	KOKKOS_CXXFLAGS += -mmic
 	KOKKOS_LDFLAGS += -mmic
 endif
 
 ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
-ifeq ($(KOKKOS_INTERNAL_USE_KEPLER30), 1)
+ifeq ($(KOKKOS_INTERNAL_USE_ARCH_KEPLER30), 1)
 	KOKKOS_CXXFLAGS += -arch=sm_30
 endif
-ifeq ($(KOKKOS_INTERNAL_USE_KEPLER35), 1)
+ifeq ($(KOKKOS_INTERNAL_USE_ARCH_KEPLER32), 1)
+	KOKKOS_CXXFLAGS += -arch=sm_32
+endif
+ifeq ($(KOKKOS_INTERNAL_USE_ARCH_KEPLER35), 1)
 	KOKKOS_CXXFLAGS += -arch=sm_35
 endif
-ifeq ($(KOKKOS_INTERNAL_USE_KEPLER37), 1)
+ifeq ($(KOKKOS_INTERNAL_USE_ARCH_KEPLER37), 1)
 	KOKKOS_CXXFLAGS += -arch=sm_37
 endif
-ifeq ($(KOKKOS_INTERNAL_USE_MAXWELL50), 1)
+ifeq ($(KOKKOS_INTERNAL_USE_ARCH_MAXWELL50), 1)
 	KOKKOS_CXXFLAGS += -arch=sm_50
+endif
+ifeq ($(KOKKOS_INTERNAL_USE_ARCH_MAXWELL52), 1)
+	KOKKOS_CXXFLAGS += -arch=sm_52
+endif
+ifeq ($(KOKKOS_INTERNAL_USE_ARCH_MAXWELL53), 1)
+	KOKKOS_CXXFLAGS += -arch=sm_53
 endif
 endif
  
@@ -218,14 +271,25 @@ ifneq ($(KOKKOS_INTERNAL_NEW_CONFIG), 0)
 	tmp := $(shell cp KokkosCore_config.tmp KokkosCore_config.h)
 endif
 
+KOKKOS_INTERNAL_LS_PROFILERCONFIG := $(shell ls KokkosProfiler_config.h)
+ifeq ($(KOKKOS_INTERNAL_LS_PROFILERCONFIG), KokkosProfiler_config.h)
+KOKKOS_INTERNAL_NEW_PROFILERCONFIG := $(strip $(shell diff KokkosProfiler_config.h KokkosProfiler_config.tmp | grep define | wc -l))
+else
+KOKKOS_INTERNAL_NEW_PROFILERCONFIG := 1
+endif
 
-KOKKOS_HEADERS = $(wildcard $(KOKKOS_PATH)/core/src/*.hpp)
+ifneq ($(KOKKOS_INTERNAL_NEW_PROFILERCONFIG), 0)
+        tmp := $(shell cp KokkosProfiler_config.tmp KokkosProfiler_config.h)
+endif
+
+
+KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/core/src/*.hpp)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/core/src/impl/*.hpp)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/containers/src/*.hpp)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/containers/src/impl/*.hpp)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/algorithms/src/*.hpp)
 
-KOKKOS_SRC = $(wildcard $(KOKKOS_PATH)/core/src/impl/*.cpp)
+KOKKOS_SRC += $(wildcard $(KOKKOS_PATH)/core/src/impl/*.cpp)
 KOKKOS_SRC += $(wildcard $(KOKKOS_PATH)/containers/src/impl/*.cpp)
 
 ifeq ($(KOKKOS_INTERNAL_USE_CUDA), 1)
@@ -265,7 +329,7 @@ KOKKOS_OBJ_LINK = $(notdir $(KOKKOS_OBJ))
 include $(KOKKOS_PATH)/Makefile.targets
 
 kokkos-clean:
-	rm -f $(KOKKOS_OBJ_LINK) KokkosCore_config.h KokkosCore_config.tmp libkokkos.a
+	rm -f $(KOKKOS_OBJ_LINK) KokkosCore_config.h KokkosProfiler_config.h KokkosCore_config.tmp libkokkos.a
 
 libkokkos.a: $(KOKKOS_OBJ_LINK) $(KOKKOS_SRC) $(KOKKOS_HEADERS)
 	ar cr libkokkos.a $(KOKKOS_OBJ_LINK)

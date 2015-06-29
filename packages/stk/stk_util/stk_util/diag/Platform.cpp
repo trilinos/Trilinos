@@ -69,7 +69,7 @@
 #include <cstdlib>
 #include <sys/time.h>
 #include <sys/resource.h>
-#if __GNUC__ == 3 || __GNUC__ == 4
+#if __GNUC__ == 3 || __GNUC__ == 4 || __GNUC__ == 5
 #include <cxxabi.h>
 #endif
 

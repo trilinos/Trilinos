@@ -489,15 +489,17 @@ C     element block and a 'SHELL' element block.
         CALL PROCHS(A, IA, NELBLK, IA(KIDELB), IA(KIDSCR), IA(KNELB), 
      &    IA(KNLNKE), IA(KNATR), KLINKE, KATRIB, C(KNMLB),
      &    IA(KLPTR), ISHEX, IA(KHEXID), *170)
-      ENDIF
+
 C     Reset number of element blocks
-      NELBLK = NELBLK + ISHEX
+        NELBLK = NELBLK + ISHEX
 C     Reset number of elements
-      INEL = 0
-      do 20 I = 1, nelblk
-        INEL = INEL + IA(KNELB+I-1)
- 20   CONTINUE
-      NUMEL = INEL
+        INEL = 0
+        do 20 I = 1, nelblk
+          INEL = INEL + IA(KNELB+I-1)
+ 20     CONTINUE
+        NUMEL = INEL
+
+      ENDIF
 
 C   --Scan element number map (global id)
       CALL MDRSRV ('MAPEL', KMAPEL, NUMEL)

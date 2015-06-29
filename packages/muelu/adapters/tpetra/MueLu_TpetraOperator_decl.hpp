@@ -108,7 +108,7 @@ namespace MueLu {
     //@{
 
     //! Direct access to the underlying MueLu::Hierarchy.
-    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > GetHierarchy() const { return Hierarchy_; }
+    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > GetHierarchy() const;
 
     //@}
 

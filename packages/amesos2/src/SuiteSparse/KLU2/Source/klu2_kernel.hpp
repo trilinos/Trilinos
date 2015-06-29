@@ -466,7 +466,7 @@ static Int lpivot
 
         Lx [p] = x ;
         /* xabs = ABS (x) ; */
-        ABS (xabs, x) ;
+        KLU2_ABS (xabs, x) ;
 
         /* find the diagonal */
         if (i == diagrow)
@@ -483,7 +483,7 @@ static Int lpivot
     }
 
     /* xabs = ABS (X [last_row_index]) ;*/
-    ABS (xabs, X [last_row_index]) ;
+    KLU2_ABS (xabs, X [last_row_index]) ;
     if (xabs > abs_pivot)
     {
         abs_pivot = xabs ;
@@ -502,7 +502,7 @@ static Int lpivot
     else if (pdiag != EMPTY)
     {
         /* xabs = ABS (Lx [pdiag]) ;*/
-        ABS (xabs, Lx [pdiag]) ;
+        KLU2_ABS (xabs, Lx [pdiag]) ;
         if (xabs >= tol * abs_pivot)
         {
             /* the diagonal is large enough */

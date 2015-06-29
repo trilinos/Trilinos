@@ -163,7 +163,7 @@ Int KLU_scale           /* return TRUE if successful, FALSE otherwise */
                 W [row] = col ;
             }
             /* a = ABS (Az [p]) ;*/
-            ABS (a, Az [p]) ;
+            KLU2_ABS (a, Az [p]) ;
             if (scale == 1)
             {
                 /* accumulate the abs. row sum */

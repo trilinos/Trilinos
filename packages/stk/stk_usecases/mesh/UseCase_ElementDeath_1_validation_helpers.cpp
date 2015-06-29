@@ -660,7 +660,7 @@ bool validate_iteration( stk::ParallelMachine pm, stk::mesh::fixtures::GridFixtu
   stk::mesh::Part & dead_part = *fixture.dead_part();
 
   stk::mesh::Selector select_dead = dead_part & fem_meta.locally_owned_part();
-  stk::mesh::Selector select_live = !dead_part & fem_meta.locally_owned_part();
+  stk::mesh::Selector select_live = (!dead_part) & fem_meta.locally_owned_part();
 
   int num_dead[NUM_RANK] = {0, 0, 0, 0};
   int num_live[NUM_RANK] = {0, 0, 0, 0};

@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList GaleriList;
 
   // The problem is defined on a 2D grid, global size is nx * nx.
-  int nx = 30; 
+  int nx = 30;
   GaleriList.set("n", nx * nx);
   GaleriList.set("nx", nx);
   GaleriList.set("ny", nx);
@@ -83,13 +83,13 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList List;
 
-  // allocates an IFPACK factory. No data is associated 
+  // allocates an IFPACK factory. No data is associated
   // to this object (only method Create()).
   Ifpack Factory;
 
   // create the preconditioner. For valid PrecType values,
   // please check the documentation
-  string PrecType = "ILU"; // incomplete LU
+  std::string PrecType = "ILU"; // incomplete LU
   int OverlapLevel = 1; // must be >= 0. If Comm.NumProc() == 1,
                         // it is ignored.
 
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
   List.set("fact: level-of-fill", 1);
   // the combine mode is on the following:
   // "Add", "Zero", "Insert", "InsertAdd", "Average", "AbsMax"
-  // Their meaning is as defined in file Epetra_CombineMode.h   
+  // Their meaning is as defined in file Epetra_CombineMode.h
   List.set("schwarz: combine mode", "Add");
   // sets the parameters
   IFPACK_CHK_ERR(Prec->SetParameters(List));
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
   // have been FillComplete()'d, but actual values are ignored.
   IFPACK_CHK_ERR(Prec->Initialize());
 
-  // Builds the preconditioners, by looking for the values of 
+  // Builds the preconditioners, by looking for the values of
   // the matrix.
   IFPACK_CHK_ERR(Prec->Compute());
 
@@ -149,10 +149,10 @@ int main(int argc, char *argv[])
   // .. and here we solve
   Solver.Iterate(1550,1e-8);
 
-  cout << *Prec;
+  std::cout << *Prec;
 
 #ifdef HAVE_MPI
-  MPI_Finalize() ; 
+  MPI_Finalize() ;
 #endif
 
   return(EXIT_SUCCESS);

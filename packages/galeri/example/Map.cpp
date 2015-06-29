@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
   // Pointer to the object to be created
   Epetra_Map* Map = 0; 
   // Type of the object
-  string MapType = "Cartesian2D";
+  std::string MapType = "Cartesian2D";
   // Container for parameters
   Teuchos::ParameterList GaleriList;
   GaleriList.set("nx", 2 * Comm.NumProc()); 

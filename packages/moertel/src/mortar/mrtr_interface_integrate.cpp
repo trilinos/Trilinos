@@ -349,7 +349,12 @@ bool MOERTEL::Interface::Integrate_2D()
 #endif
       // if there is an overlap, integrate the pair
       // (whether there is an overlap or not will be checked inside)
-      Integrate_2D_Section(*actsseg,*actmseg);
+      try {
+        Integrate_2D_Section(*actsseg, *actmseg);
+      } catch (...) {
+        // Do nothing. The likeliest cause of this exception is the "Unknown
+        // overlap case found" error. Don't treat this as fatal.
+      }
 
     } // for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)
   } // for (scurr=rseg_[sside].begin(); scurr!=rseg_[sside].end(); ++scurr)
@@ -470,15 +475,21 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   // project master nodes onto slave segment
   std::vector<double> mxi(mseg.Nnode());
   std::vector<double> mgap(mseg.Nnode());
-  for (int i=0; i<mseg.Nnode(); ++i)
-    projector.ProjectNodetoSegment_SegmentNormal(*mnodes[i],sseg,&mxi[i],mgap[i]);
+  for (int i = 0; i < mseg.Nnode(); ++i) {
+    const bool ok = projector.ProjectNodetoSegment_SegmentNormal(
+      *mnodes[i], sseg, &mxi[i], mgap[i]);
+    if ( ! ok) mxi[i] = 10; // Large enough to be out of bounds below.
+  }
   //std::cout << mxi[0] << " " << mxi[1] << std::endl;
 
   // project slave nodes onto master segment
   std::vector<double> sxi(sseg.Nnode());
   std::vector<double> sgap(sseg.Nnode());
-  for (int i=0; i<sseg.Nnode(); ++i)
-    projector.ProjectNodetoSegment_NodalNormal(*snodes[i],mseg,&sxi[i],sgap[i]);
+  for (int i = 0; i < sseg.Nnode(); ++i) {
+    const bool ok = projector.ProjectNodetoSegment_NodalNormal(
+      *snodes[i], mseg, &sxi[i], sgap[i]);
+    if ( ! ok) sxi[i] = 10; // Large enough to be out of bounds below.
+  }
   //std::cout << sxi[0] << " " << sxi[1] << std::endl;
 
   // Depending on mxi and sxi decide on the overlap

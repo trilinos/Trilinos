@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList GaleriList;
 
   // The problem is defined on a 2D grid, global size is nx * nx.
-  int nx = 30; 
+  int nx = 30;
   GaleriList.set("nx", nx);
   GaleriList.set("ny", nx * Comm.NumProc());
   GaleriList.set("mx", 1);
@@ -115,8 +115,8 @@ int main(int argc, char *argv[])
   // have been FillComplete()'d, but actual values are ignored.
   IFPACK_CHK_ERR(Prec.Initialize());
 
-  // Builds the preconditioners, by looking for the values of 
-  // the matrix. 
+  // Builds the preconditioners, by looking for the values of
+  // the matrix.
   IFPACK_CHK_ERR(Prec.Compute());
 
   // =================================================== //
@@ -152,10 +152,10 @@ int main(int argc, char *argv[])
   Solver.Iterate(1550,1e-5);
 
   // Prints out some information about the preconditioner
-  cout << Prec;
+  std::cout << Prec;
 
 #ifdef HAVE_MPI
-  MPI_Finalize(); 
+  MPI_Finalize();
 #endif
 
   return (EXIT_SUCCESS);

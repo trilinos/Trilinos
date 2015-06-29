@@ -51,6 +51,13 @@
 #include "ml_utils.h"
 #include "ml_op_utils.h"
 #include "ml_ifpack_wrap.h"
+#ifdef ML_WITH_EPETRA
+#ifdef __cplusplus
+//extern "C" {
+#include "ml_epetra_utils.h"
+//}
+#endif
+#endif
 
 /* A special version of dgetrs which is supposed to be optimized. */
 /* NOTE: it is assumed that ML_permute_for_dgetrs_special() has   */
@@ -8714,8 +8721,8 @@ int ML_Smoother_Petsc(ML_Smoother *sm, int inlen, double x[], int outlen,
 
   /* Set up the necessary PETSc data structures.*/
 # ifdef HAVE_MPI
-  ierr=VecCreateMPIWithArray(comm->USR_comm,inlen,PETSC_DECIDE,x2,&petscX); CHKERRQ(ierr);
-  ierr=VecCreateMPIWithArray(comm->USR_comm,outlen,PETSC_DECIDE,rhs,&petscB); CHKERRQ(ierr);
+  ierr=VecCreateMPIWithArray(comm->USR_comm,1,inlen,PETSC_DECIDE,x2,&petscX); CHKERRQ(ierr);
+  ierr=VecCreateMPIWithArray(comm->USR_comm,1,outlen,PETSC_DECIDE,rhs,&petscB); CHKERRQ(ierr);
 # else /*FIXME  this is untested */
   ierr=VecCreateSeqWithArray(comm->USR_comm,inlen,x2,&petscX); CHKERRQ(ierr);
   ierr=VecCreateSeqWithArray(comm->USR_comm,outlen,rhs,&petscB); CHKERRQ(ierr);
@@ -8729,8 +8736,8 @@ int ML_Smoother_Petsc(ML_Smoother *sm, int inlen, double x[], int outlen,
   }
 
   /* Clean up. */
-  ierr=VecDestroy(petscX);CHKERRQ(ierr);
-  ierr=VecDestroy(petscB);CHKERRQ(ierr);
+  ierr=VecDestroy(&petscX);CHKERRQ(ierr);
+  ierr=VecDestroy(&petscB);CHKERRQ(ierr);
 
   if (getrow_comm != NULL) {
     for (i = 0; i < inlen; i++) x[i] = x2[i];

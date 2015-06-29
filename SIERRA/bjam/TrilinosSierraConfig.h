@@ -102,10 +102,10 @@
 #  define HAS_C99_TR1_CMATH
 #endif
 
-#if (defined(__GNUC__) && !defined(__INTEL_COMPILER)) || defined(__PGI)
+/* #if (defined(__GNUC__) && !defined(__INTEL_COMPILER)) || defined(__PGI)
 #  define HAVE_RTOP_EXPLICIT_INSTANTIATION
 #  define HAVE_THYRA_EXPLICIT_INSTANTIATION
-#endif
+#endif */
 
 #if ! (defined(WIN32) || defined(ICL))
 #  ifndef __APPLE__

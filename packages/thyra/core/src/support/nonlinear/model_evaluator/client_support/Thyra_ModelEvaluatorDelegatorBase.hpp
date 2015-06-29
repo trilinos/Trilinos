@@ -143,6 +143,8 @@ public:
   /** \brief . */
   RCP<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief . */
+  Teuchos::ArrayView<const std::string> get_g_names(int j) const;
+  /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const;
@@ -429,6 +431,14 @@ RCP<const VectorSpaceBase<Scalar> >
 ModelEvaluatorDelegatorBase<Scalar>::get_g_space(int j) const
 {
   return getUnderlyingModel()->get_g_space(j);
+}
+
+
+template<class Scalar>
+Teuchos::ArrayView<const std::string>
+ModelEvaluatorDelegatorBase<Scalar>::get_g_names(int j) const
+{
+  return getUnderlyingModel()->get_g_names(j);
 }
 
 
