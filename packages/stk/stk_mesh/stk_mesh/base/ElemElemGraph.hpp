@@ -84,11 +84,13 @@ protected:
     void fill_graph();
     void update_number_of_parallel_edges();
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
+
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm, const stk::mesh::EntityVector & elements_to_ignore);
 
     void add_possibly_connected_elements_to_graph_using_side_nodes( const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideComm,
                                                                     stk::mesh::impl::ConnectedElementDataVector & communicatedElementDataVector,
-                                                                    const stk::mesh::EntityVector & elements_to_ignore);
+                                                                    const stk::mesh::EntityVector & elements_to_ignore,
+                                                                    std::vector<impl::SharedEdgeInfo> *newlySharedEdges = nullptr);
 
     void add_local_elements_to_connected_list(const stk::mesh::EntityVector & connected_elements,
                                               const stk::mesh::EntityVector & sideNodes,
@@ -125,6 +127,11 @@ protected:
     void communicate_moved_graph_info(std::vector <moved_parallel_graph_info> &moved_graph_info_vector);
 
     void filter_for_elements_in_graph(stk::mesh::EntityVector &localElements);
+
+    void communicate_remote_edges_for_pre_existing_graph_nodes(const std::vector<impl::SharedEdgeInfo> &newlySharedEdges,
+                                                          std::vector<impl::SharedEdgeInfo> &receivedSharedEdges);
+
+    void connect_remote_element_to_existing_graph(const impl::SharedEdgeInfo &receivedSharedEdge);
 
     stk::mesh::BulkData &m_bulk_data;
     impl::ElementGraph m_elem_graph;

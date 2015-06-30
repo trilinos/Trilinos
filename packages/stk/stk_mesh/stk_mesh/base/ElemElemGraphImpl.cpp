@@ -584,5 +584,37 @@ void filter_for_candidate_elements_to_connect(const stk::mesh::BulkData & mesh,
     }
 }
 
+void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::BulkData &m_bulk_data, const std::vector<SharedEdgeInfo> &newlySharedEdges)
+{
+    std::vector<SharedEdgeInfo>::const_iterator iter = newlySharedEdges.begin();
+    std::vector<SharedEdgeInfo>::const_iterator endIter = newlySharedEdges.end();
+
+    for(; iter!= endIter; ++iter)
+    {
+        stk::mesh::EntityId localId = iter->m_locaElementlId;
+        stk::mesh::EntityId remoteId = iter->m_remoteElementId;
+        unsigned side_index    = iter->m_sideIndex;
+        int sharing_proc       = iter->m_procId;
+        stk::mesh::EntityId chosenId = iter->m_chosenSideId;
+
+        size_t numNodes= iter->m_sharedNodes.size();
+        std::vector<stk::mesh::EntityKey> side_node_entity_keys(numNodes);
+        for(size_t i=0; i<numNodes; ++i)
+        {
+            side_node_entity_keys[i] = m_bulk_data.entity_key(iter->m_sharedNodes[i]);
+        }
+
+        comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(localId);
+        comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(remoteId);
+        comm.send_buffer(sharing_proc).pack<unsigned>(side_index);
+        comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(chosenId);
+        comm.send_buffer(sharing_proc).pack<unsigned>(numNodes);
+        for(size_t i=0; i<numNodes; ++i)
+        {
+            comm.send_buffer(sharing_proc).pack<stk::mesh::EntityKey>(side_node_entity_keys[i]);
+        }
+    }
+}
+
 }}} // end namespaces stk mesh impl
 

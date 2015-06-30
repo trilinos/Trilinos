@@ -28,6 +28,7 @@
 #include <stk_util/environment/ReportHandler.hpp>
 
 #include <stk_io/IossBridge.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/getOption.h>
@@ -210,6 +211,33 @@ ElemElemGraphTester create_base_1x1x4_elem_graph_for_deletion(stk::ParallelMachi
 
 void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vector<unsigned> > & shared_nodeIDs_and_procs );
 
+void put_all_faces_in_io_part(stk::mesh::BulkData &mesh, stk::mesh::Selector locally_owned, stk::mesh::Part& face_output_part)
+{
+    mesh.modification_begin();
+    stk::mesh::PartVector part_vector;
+    part_vector.push_back(&face_output_part);
+    stk::mesh::EntityVector stk_faces;
+    stk::mesh::get_entities(mesh, stk::topology::FACE_RANK, stk_faces);
+    for(size_t count = 0; count < stk_faces.size(); ++count)
+    {
+        if(locally_owned(mesh.bucket(stk_faces[count])))
+        {
+            mesh.change_entity_parts(stk_faces[count], part_vector);
+        }
+    }
+    mesh.modification_end();
+}
+
+void writeStkDebuggingFile(stk::io::StkMeshIoBroker &stkMeshIoBroker, stk::mesh::BulkData &mesh, const std::string &output_name)
+{
+    stk::mesh::Part & face_output_part = mesh.mesh_meta_data().declare_part_with_topology("output_face_name", stk::topology::TRI_3);
+    stk::io::put_io_part_attribute(face_output_part);
+    put_all_faces_in_io_part(mesh, mesh.mesh_meta_data().locally_owned_part(), face_output_part);
+
+    size_t resultFileIndex = stkMeshIoBroker.create_output_mesh(output_name, stk::io::WRITE_RESULTS);
+    stkMeshIoBroker.write_output_mesh(resultFileIndex);
+}
+
 void test_element_graph_add_elements_to_graph(stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
@@ -251,6 +279,10 @@ void test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::BulkData::Autom
     stk::mesh::Part * hexPart = &meta.declare_part_with_topology("hex_part", stk::topology::HEX_8);
 
     stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulkData, comm);
+
+//    stk::io::StkMeshIoBroker stkio(comm);
+//    stkio.set_bulk_data(bulkData);
+//    writeStkDebuggingFile(stkio, bulkData, "hex1x2x2.exo");
 
     std::vector<unsigned> counts;
     stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);

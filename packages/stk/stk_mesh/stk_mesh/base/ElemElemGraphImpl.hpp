@@ -48,6 +48,24 @@ struct ConnectedElementData
     unsigned m_sideIndex;
     stk::mesh::EntityId m_suggestedFaceId;
     stk::mesh::EntityVector m_sideNodes;
+
+    ConnectedElementData()
+    : m_procId(-1),
+      m_elementId(std::numeric_limits<impl::LocalId>::max()),
+      m_elementTopology(stk::topology::INVALID_TOPOLOGY),
+      m_sideIndex(std::numeric_limits<impl::LocalId>::max()),
+      m_suggestedFaceId(std::numeric_limits<impl::LocalId>::max())
+    {}
+};
+
+struct SharedEdgeInfo
+{
+    stk::mesh::EntityId m_locaElementlId;
+    stk::mesh::EntityId m_remoteElementId;
+    int m_procId;
+    unsigned m_sideIndex;
+    stk::mesh::EntityId m_chosenSideId;
+    stk::mesh::EntityVector m_sharedNodes;
 };
 
 struct ShellConnectivityData
@@ -73,7 +91,6 @@ typedef std::map<std::pair<LocalId,stk::mesh::EntityId>, parallel_info > Paralle
 typedef std::vector<std::vector<LocalId> > ElementGraph;
 typedef std::vector<std::vector<int> > SidesForElementGraph;
 typedef std::vector<ConnectedElementData> ConnectedElementDataVector;
-
 
 NAMED_PAIR( EntitySidePair , stk::mesh::Entity , entity , unsigned , side_id )
 NAMED_PAIR( ProcFaceIdPair , int , proc , stk::mesh::EntityId , side_id )
@@ -139,6 +156,10 @@ void filter_for_candidate_elements_to_connect(const stk::mesh::BulkData & mesh,
 void break_volume_element_connections_across_shells(const std::set<EntityId> & localElementsConnectedToRemoteShell,
                                        ElementGraph & elem_graph,
                                        SidesForElementGraph & via_sides);
+
+
+void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::BulkData &m_bulk_data, const std::vector<SharedEdgeInfo> &newlySharedEdges);
+
 }
 }} // end namespaces stk mesh
 
