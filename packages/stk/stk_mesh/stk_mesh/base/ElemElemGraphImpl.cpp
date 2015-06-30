@@ -37,7 +37,8 @@ void set_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData&
     }
 }
 
-void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity, std::vector<unsigned>& entity_to_local_id, std::vector<stk::topology>& element_topologies)
+void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData& bulkData, stk::mesh::EntityVector& local_id_to_element_entity,
+                                                             std::vector<impl::LocalId>& entity_to_local_id, std::vector<stk::topology>& element_topologies)
 {
     const stk::mesh::BucketVector & elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
     size_t local_id = 0;
@@ -78,6 +79,37 @@ ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::Bul
     }
     elements_to_communicate.assign(element_set.begin(), element_set.end());
 
+    return build_element_side_ids_to_proc_map(bulkData, elements_to_communicate);
+}
+
+
+ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &element_list)
+{
+    stk::mesh::EntityVector elements_to_communicate;
+
+    for(const stk::mesh::Entity &element : element_list )
+    {
+        const stk::mesh::Entity* nodes = bulkData.begin_nodes(element);
+        int numNodes = bulkData.num_nodes(element);
+
+        for(int i=0; i<numNodes; ++i)
+        {
+            stk::mesh::Entity node = nodes[i];
+
+            if(bulkData.bucket(node).shared())
+            {
+                elements_to_communicate.push_back(element);
+                break;
+            }
+        }
+    }
+
+    return build_element_side_ids_to_proc_map(bulkData, elements_to_communicate);
+}
+
+
+ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate)
+{
     ElemSideToProcAndFaceId elem_side_comm;
 
     for(size_t i=0;i<elements_to_communicate.size();++i)
@@ -180,10 +212,12 @@ void pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
     }
 }
 
-void fix_conflicting_shell_connections(const std::set<EntityId> & localElementsConnectedToRemoteShell, ElementGraph & elem_graph, SidesForElementGraph & via_sides)
+void break_volume_element_connections_across_shells(const std::set<EntityId> & localElementsConnectedToRemoteShell, ElementGraph & elem_graph, SidesForElementGraph & via_sides)
 {
     // Fix the case where the serial graph connected two volume elements together before
     // it was known that there was a remote shell wedged between them (the "sandwich" conundrum).
+    // Also, cover the case where the mesh is modified after the graph is created to
+    // add a shell between existing volume elements.
     //
     if (localElementsConnectedToRemoteShell.size() > 1) {
         for (LocalId localElemId: localElementsConnectedToRemoteShell) {

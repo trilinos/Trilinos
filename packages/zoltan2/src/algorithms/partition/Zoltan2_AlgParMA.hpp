@@ -193,6 +193,130 @@ private:
     return tag;
   }
 
+
+  //APF Mesh construction helper functions
+  void constructVerts(const zgid_t* conn, lno_t num_adj, apf::GlobalToVert& result) {
+    apf::ModelEntity* interior = m->findModelEntity(m->getDimension(), 0);
+    for (lno_t i=0;i<num_adj;i++) 
+      if ( ! result.count(conn[i])) 
+        result[conn[i]] = m->createVert_(interior);
+  }
+  void constructElements(const zgid_t* conn, lno_t nelem, const lno_t* offsets, 
+                         const EntityTopologyType* tops, apf::GlobalToVert& globalToVert)
+  {
+    apf::ModelEntity* interior = m->findModelEntity(m->getDimension(), 0);
+    for (lno_t i = 0; i < nelem; ++i) {
+      apf::Mesh::Type etype = topologyZ2toAPF(tops[i]);
+      apf::Downward verts;
+      for (int j = offsets[i]; j < offsets[i+1]; ++j)
+	verts[j-offsets[i]] = globalToVert[conn[j]];
+      buildElement(m, interior, etype, verts);
+    }
+  }
+  int getMax(const apf::GlobalToVert& globalToVert)
+  {
+    int max = -1;
+    APF_CONST_ITERATE(apf::GlobalToVert, globalToVert, it)
+      max = std::max(max, it->first);
+    PCU_Max_Ints(&max, 1); // this is type-dependent
+    return max;
+  }
+  void constructResidence(apf::GlobalToVert& globalToVert)
+  {
+    int max = getMax(globalToVert);
+    int total = max + 1;
+    int peers = PCU_Comm_Peers();
+    int quotient = total / peers;
+    int remainder = total % peers;
+    int mySize = quotient;
+    int self = PCU_Comm_Self();
+    if (self == (peers - 1))
+      mySize += remainder;
+    typedef std::vector< std::vector<int> > TmpParts;
+    TmpParts tmpParts(mySize);
+    /* if we have a vertex, send its global id to the
+       broker for that global id */
+    PCU_Comm_Begin();
+    APF_ITERATE(apf::GlobalToVert, globalToVert, it) {
+      int gid = it->first;
+      int to = std::min(peers - 1, gid / quotient);
+      PCU_COMM_PACK(to, gid);
+    }
+    PCU_Comm_Send();
+    int myOffset = self * quotient;
+    /* brokers store all the part ids that sent messages
+       for each global id */
+    while (PCU_Comm_Receive()) {
+      int gid;
+      PCU_COMM_UNPACK(gid);
+      int from = PCU_Comm_Sender();
+      tmpParts.at(gid - myOffset).push_back(from);
+    }
+    /* for each global id, send all associated part ids
+       to all associated parts */
+    PCU_Comm_Begin();
+    for (int i = 0; i < mySize; ++i) {
+      std::vector<int>& parts = tmpParts[i];
+      for (size_t j = 0; j < parts.size(); ++j) {
+	int to = parts[j];
+	int gid = i + myOffset;
+	int nparts = parts.size();
+	PCU_COMM_PACK(to, gid);
+	PCU_COMM_PACK(to, nparts);
+	for (size_t k = 0; k < parts.size(); ++k)
+	  PCU_COMM_PACK(to, parts[k]);
+      }
+    }
+    PCU_Comm_Send();
+    /* receiving a global id and associated parts,
+     lookup the vertex and classify it on the partition
+     model entity for that set of parts */
+    while (PCU_Comm_Receive()) {
+      int gid;
+      PCU_COMM_UNPACK(gid);
+      int nparts;
+      PCU_COMM_UNPACK(nparts);
+      apf::Parts residence;
+      for (int i = 0; i < nparts; ++i) {
+	int part;
+	PCU_COMM_UNPACK(part);
+	residence.insert(part);
+      }
+      apf::MeshEntity* vert = globalToVert[gid];
+      m->setResidence(vert, residence);
+    }
+  }
+
+  /* given correct residence from the above algorithm,
+   negotiate remote copies by exchanging (gid,pointer)
+   pairs with parts in the residence of the vertex */
+  void constructRemotes(apf::GlobalToVert& globalToVert)
+  {
+    int self = PCU_Comm_Self();
+    PCU_Comm_Begin();
+    APF_ITERATE(apf::GlobalToVert, globalToVert, it) {
+      int gid = it->first;
+      apf::MeshEntity* vert = it->second;
+      apf::Parts residence;
+      m->getResidence(vert, residence);
+      APF_ITERATE(apf::Parts, residence, rit)
+	if (*rit != self) {
+	  PCU_COMM_PACK(*rit, gid);
+	  PCU_COMM_PACK(*rit, vert);
+	}
+    }
+    PCU_Comm_Send();
+    while (PCU_Comm_Receive()) {
+      int gid;
+      PCU_COMM_UNPACK(gid);
+      apf::MeshEntity* remote;
+      PCU_COMM_UNPACK(remote);
+      int from = PCU_Comm_Sender();
+      apf::MeshEntity* vert = globalToVert[gid];
+      m->addRemote(vert, from, remote);
+    }
+  }
+
 public:
 
   /*! ParMA constructor
@@ -245,13 +369,12 @@ public:
     PCU_Switch_Comm(mpicomm);
 
     int dim;
-    //Get region topology types if its NULL then we have a 2D mesh
-    const EntityTopologyType* tops;
-    adapter->getTopologyViewOf(MESH_REGION,tops);
-    if (tops==NULL)
-      dim=2;
-    else 
+    if (adapter->getLocalNumOf(MESH_REGION)>0)
       dim=3;
+    else if (adapter->getLocalNumOf(MESH_FACE)>0)
+      dim=2;
+    else
+      throw std::runtime_error("ParMA neeeds faces or region information");
 
     //Create empty apf mesh
     gmi_register_null();
@@ -260,6 +383,7 @@ public:
     m = apf::makeEmptyMdsMesh(g,dim,false);
 
     //Get entity topology types
+    const EntityTopologyType* tops;
     adapter->getTopologyViewOf(primary_type,tops);
     
     //Get element global ids and part ids
@@ -290,8 +414,9 @@ public:
     
     //build the apf mesh
     apf::GlobalToVert vertex_mapping;
+    apf::ModelEntity* interior = m->findModelEntity(m->getDimension(), 0);
     for (size_t i=0;i<adapter->getLocalNumOf(MESH_VERTEX);i++) {
-      apf::MeshEntity* vtx = m->createVert(0);
+      apf::MeshEntity* vtx = m->createVert_(interior);
       scalar_t temp_coords[3];
       for (int k=0;k<dim;k++) 
 	temp_coords[k] = vertex_coords[k][i*strides[k]];
@@ -302,8 +427,12 @@ public:
       m->setPoint(vtx,0,point);
       vertex_mapping[vertex_gids[i]] = vtx;
     }
-    apf::Mesh::Type t = topologyZ2toAPF(tops[0]);
-    apf::construct(m,adjacent_vertex_gids,adapter->getLocalNumOf(primary_type),t,vertex_mapping);
+    //constructVerts(adjacent_vertex_gids, offsets[adapter->getLocalNumOf(primary_type)],vertex_mapping);
+    constructElements(adjacent_vertex_gids, adapter->getLocalNumOf(primary_type), offsets, tops, vertex_mapping);
+    constructResidence(vertex_mapping);
+    constructRemotes(vertex_mapping);
+    stitchMesh(m);
+    m->acceptChanges();
     
     
     //Setup numberings

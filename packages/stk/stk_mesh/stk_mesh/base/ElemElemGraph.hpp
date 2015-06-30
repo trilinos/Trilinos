@@ -26,6 +26,10 @@ struct moved_parallel_graph_info {
     int destination_proc;
 };
 
+void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph,
+                         std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move,
+                         stk::mesh::Part *active_part=NULL);
+
 class ElemElemGraph
 {
 public:
@@ -59,20 +63,26 @@ public:
 
     void set_num_side_ids_used(size_t num_used);
 
-    void add_elements_to_graph(std::vector<stk::mesh::Entity> &elements_to_add);
+    void add_elements_to_graph(const stk::mesh::EntityVector &elements_to_add);
 
-    void delete_elements_from_graph(std::vector<stk::mesh::Entity> &elements_to_delete);
+    void delete_elements_from_graph(const stk::mesh::EntityVector &elements_to_delete);
 
     bool is_valid_graph_element(stk::mesh::Entity local_element);
 
     size_t size() {return m_elem_graph.size() - m_deleted_element_local_id_pool.size();}
 
-    void change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &parallel_graph_info, stk::mesh::Part *active_part=NULL);
-
-    impl::LocalId get_local_element_id(stk::mesh::Entity local_element) const;
+    impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
 
 protected:
+    friend void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph,
+                                    std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move,
+                                    stk::mesh::Part *active_part);
+
+    //this member method is not the public API for change-entity-owner. see the free-standing function above
+    void change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &parallel_graph_info, stk::mesh::Part *active_part=NULL);
+
     void fill_graph();
+    void update_number_of_parallel_edges();
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
 
     void add_possibly_connected_elements_to_graph_using_side_nodes( const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideComm,
@@ -87,6 +97,8 @@ protected:
     stk::mesh::ConnectivityOrdinal get_neighboring_side_ordinal(const stk::mesh::BulkData &mesh, stk::mesh::Entity currentElem,
                                                                 stk::mesh::ConnectivityOrdinal currentOrdinal, stk::mesh::Entity neighborElem);
 
+    impl::LocalId create_new_local_id(stk::mesh::Entity new_elem);
+
     impl::LocalId get_new_local_element_id_from_pool();
     int size_data_members();
     void ensure_space_in_entity_to_local_id(size_t max_index);
@@ -100,8 +112,7 @@ protected:
                                                       int destination_proc, int phase);
 
     void pack_local_connected_element(impl::LocalId local_id, int side_id, stk::CommBuffer &buff,
-                                                     const std::vector<stk::mesh::EntityId> &suggested_face_ids,
-                                                     size_t &num_face_ids_used,
+                                                     stk::mesh::EntityId suggested_face_id,
                                                      stk::mesh::Part *active_part);
 
     void unpack_and_store_connected_element(stk::CommBuffer &buf, impl::LocalId recvd_elem_local_id,
@@ -109,12 +120,14 @@ protected:
 
     void communicate_moved_graph_info(std::vector <moved_parallel_graph_info> &moved_graph_info_vector);
 
+    void filter_for_elements_in_graph(stk::mesh::EntityVector &localElements);
+
     stk::mesh::BulkData &m_bulk_data;
     impl::ElementGraph m_elem_graph;
     impl::SidesForElementGraph m_via_sides;
     impl::ParallelGraphInfo m_parallel_graph_info;
     stk::mesh::EntityVector m_local_id_to_element_entity;
-    std::vector<unsigned> m_entity_to_local_id;
+    std::vector<impl::LocalId> m_entity_to_local_id;
     std::vector<impl::LocalId> m_deleted_element_local_id_pool;
     std::vector<bool> m_local_id_in_pool;
     std::vector<stk::topology> m_element_topologies;
@@ -123,7 +136,7 @@ protected:
     size_t m_num_edges;
     size_t m_num_parallel_edges;
 
-    enum ElemGraphLocalId { INVALID_ID = ~0U };
+    static const impl::LocalId INVALID_LOCAL_ID;
 };
 
 bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,

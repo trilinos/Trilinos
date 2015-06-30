@@ -55,6 +55,7 @@
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_ConstraintFactory_fwd.hpp"
 #include "MueLu_DirectSolver_fwd.hpp"
+#include "MueLu_LineDetectionFactory_fwd.hpp"
 #include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_PatternFactory_fwd.hpp"
 #include "MueLu_RAPFactory_fwd.hpp"

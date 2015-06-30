@@ -68,7 +68,7 @@ void verify_declare_element_side(
 
     ThrowErrorMsgIf( elem_top!=stk::topology::INVALID_TOPOLOGY && local_side_id >= elem_top.num_sides(),
             "For elem " << mesh.identifier(elem) << ", local_side_id " << local_side_id << ", " <<
-            "local_side_id exceeds " << elem_top.name() << ".num_sies() = " << elem_top.num_sides());
+            "local_side_id exceeds " << elem_top.name() << ".num_sides() = " << elem_top.num_sides());
 
     ThrowErrorMsgIf( side_top == stk::topology::INVALID_TOPOLOGY,
             "For elem " << mesh.identifier(elem) << ", local_side_id " << local_side_id << ", " <<

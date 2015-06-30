@@ -91,6 +91,7 @@
 #include "MueLu_IndefBlockedDiagonalSmoother.hpp"
 #endif
 #include "MueLu_IsorropiaInterface.hpp"
+#include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_RepartitionInterface.hpp"
 #include "MueLu_MapTransferFactory.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
@@ -192,6 +193,7 @@ namespace MueLu {
       if (factoryName == "EminPFactory")                    return Build2<EminPFactory>                 (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "FilteredAFactory")                return Build2<FilteredAFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GenericRFactory")                 return Build2<GenericRFactory>              (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "LineDetectionFactory")            return Build2<LineDetectionFactory>         (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MapTransferFactory")              return Build2<MapTransferFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MultiVectorTransferFactory")      return Build2<MultiVectorTransferFactory>   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NoFactory")                       return Teuchos::null;
@@ -523,7 +525,26 @@ namespace MueLu {
       // std::string verbose;         if(paramList.isParameter("verbose"))       verbose = paramList.get<std::string>("verbose");
       Teuchos::ParameterList params;  if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
 
-      return rcp(new SmootherFactory(rcp(new TrilinosSmoother(type, params, overlap))));
+      // Read in factory information for smoothers (if available...)
+      // NOTE: only a selected number of factories can be used with the Trilinos smoother
+      //       smoothers usually work with the global data available (which is A and the transfers P and R)
+
+      Teuchos::RCP<TrilinosSmoother> trilSmoo = Teuchos::rcp(new TrilinosSmoother(type, params, overlap));
+
+      if (paramList.isParameter("LineDetection_Layers")) {
+        RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry("LineDetection_Layers"), factoryMapIn, factoryManagersIn);
+        trilSmoo->SetFactory("LineDetection_Layers", generatingFact);
+      }
+      if (paramList.isParameter("LineDetection_VertLineIds")) {
+        RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry("LineDetection_Layers"), factoryMapIn, factoryManagersIn);
+        trilSmoo->SetFactory("LineDetection_Layers", generatingFact);
+      }
+      if (paramList.isParameter("CoarseNumZLayers")) {
+        RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry("CoarseNumZLayers"), factoryMapIn, factoryManagersIn);
+        trilSmoo->SetFactory("CoarseNumZLayers", generatingFact);
+      }
+
+      return rcp(new SmootherFactory(trilSmoo));
     }
 
     RCP<FactoryBase> BuildDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {

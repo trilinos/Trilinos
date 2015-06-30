@@ -151,6 +151,9 @@ public:
   ///   <tt>localRows.size()</tt> gives the number of rows in the
   ///   local matrix on each process.  This may be different on
   ///   different processes.
+  ///   <tt>number of subdiagonals
+  ///   <tt>number of superdiagonals. Note: Internally, we store a Teuchos::SerialBandedMatrix
+  ///       with kl+ku superdiagonals, as we need the addtional storage for the LU decomposition.
   BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                   const Teuchos::ArrayView<const local_ordinal_type>& localRows);
 
@@ -279,6 +282,9 @@ private:
 
   //! If \c true, the container has been successfully computed.
   bool IsComputed_;
+
+  local_ordinal_type kl_; //< number of subdiagonals
+  local_ordinal_type ku_; //< number of superdiagonals
 };
 
 }// namespace Ifpack2
