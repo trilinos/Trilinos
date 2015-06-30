@@ -148,7 +148,7 @@ namespace MueLu {
     static vec3_ vecSubtract_(vec3_ v1, vec3_ v2);
     static vec3_ getNorm_(vec3_ v1, vec3_ v2, vec3_ v3);
     static double pointDistFromTri_(vec3_ point, vec3_ v1, vec3_ v2, vec3_ v3);
-    static void processTriangle_(std::list<Triangle_>& tris, std::list<Triangle_>::iterator& tri, std::list<int>& pointsInFront, ArrayRCP<const double>& xCoords, ArrayRCP<const double>& yCoords, ArrayRCP<const double>& zCoords);
+    static void processTriangle_(std::list<Triangle_>& tris, std::list<Triangle_>::iterator& tri, std::list<int>& pointsInFront, vec3_& barycenter, ArrayRCP<const double>& xCoords, ArrayRCP<const double>& yCoords, ArrayRCP<const double>& zCoords);
     
   }; // class AggregationExportFactory
 } // namespace MueLu

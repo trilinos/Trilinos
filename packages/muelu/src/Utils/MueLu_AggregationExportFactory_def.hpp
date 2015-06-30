@@ -66,6 +66,7 @@
 #include "MueLu_Utilities.hpp"
 #include <vector>
 #include <list>
+#include <algorithm>
 #include <string>
 #include <stdexcept>
 #include <cmath>
@@ -1010,6 +1011,24 @@ cout << "Have the fourth point to complete the tetrahedron: " << fourthVertex <<
       tri = hullBuilding.front();
       tri.v3 = fourthVertex;
       hullBuilding.push_back(tri);
+/*
+//////DEBBUGGINGGG///////////
+for(Triangle_ t : hullBuilding)
+{
+  vertIndices.push_back(t.v1);
+  vertIndices.push_back(t.v2);
+  vertIndices.push_back(t.v3);
+  geomSizes.push_back(3);
+}
+for(int v : aggNodes)
+{
+  vertIndices.push_back(v);
+  geomSizes.push_back(1);
+}
+continue;
+*/
+////////////////////////////
+      
       //now orient all four triangles so that the vertices are oriented clockwise (so getNorm_ points outward for each)
       vec3_ barycenter((b1.x + b2.x + b3.x + b4.x) / 4.0, (b1.y + b2.y + b3.y + b4.y) / 4.0, (b1.z + b2.z + b3.z + b4.z) / 4.0);
       for(list<Triangle_>::iterator tetTri = hullBuilding.begin(); tetTri != hullBuilding.end(); tetTri++)
@@ -1095,13 +1114,13 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
       //kick off depth-first recursive filling of hullBuilding list with all triangles in the convex hull
       cout << "About to begin recursive method on triangle 1." << endl;
       if(!startPoints1.empty())
-        processTriangle_(hullBuilding, startIter1, startPoints1, xCoords, yCoords, zCoords);
+        processTriangle_(hullBuilding, startIter1, startPoints1, barycenter, xCoords, yCoords, zCoords);
       if(!startPoints2.empty())
-        processTriangle_(hullBuilding, startIter2, startPoints2, xCoords, yCoords, zCoords);
+        processTriangle_(hullBuilding, startIter2, startPoints2, barycenter, xCoords, yCoords, zCoords);
       if(!startPoints3.empty())
-        processTriangle_(hullBuilding, startIter3, startPoints3, xCoords, yCoords, zCoords);
+        processTriangle_(hullBuilding, startIter3, startPoints3, barycenter, xCoords, yCoords, zCoords);
       if(!startPoints4.empty())
-        processTriangle_(hullBuilding, startIter4, startPoints4, xCoords, yCoords, zCoords);
+        processTriangle_(hullBuilding, startIter4, startPoints4, barycenter, xCoords, yCoords, zCoords);
       //hullBuilding now has all triangles that make up this hull.
       //Dump hullBuilding info into the list of all triangles for the scene.
       for(TriIter hullTri = hullBuilding.begin(); hullTri != hullBuilding.end(); hullTri++)
@@ -1162,7 +1181,8 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
     fout << "        </DataArray>" << endl;
     fout << "      </PointData>" << endl;
     fout << "      <Points>" << endl;
-    indent = "        ";
+    fout << "        <DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">" << endl;
+    indent = "          ";
     fout << indent;
     for(int i = 0; i < uniquePoints; i++)
     {
@@ -1171,6 +1191,7 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
         fout << endl << indent;
     }
     fout << endl;
+    fout << "        </DataArray>" << endl;
     fout << "      </Points>" << endl;
     fout << "      <Cells>" << endl;
     fout << "        <DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">" << endl;
@@ -1199,7 +1220,7 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
     fout << indent;
     for(int i = 0; i < int(geomSizes.size()); i++)
     {
-      switch(geomSizes.size())
+      switch(geomSizes[i])
       {
         case 1:
           fout << "1 ";
@@ -1245,9 +1266,7 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   vec3_ AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::crossProduct_(vec3_ v1, vec3_ v2)
   {
-    vec3_ rv(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x);
-    std::cout << "<" << v1.x << "," << v1.y << "," << v1.z << "> X <" << v2.x << "," << v2.y << "," << v2.z << "> = <" << rv.x <<"," << rv.y << "," << rv.z << ">" << std::endl;
-    return rv;
+    return vec3_(v1.y * v2.z - v1.z * v2.y, v1.z * v2.x - v1.x * v2.z, v1.x * v2.y - v1.y * v2.x);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1260,7 +1279,7 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
   bool AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isInFront_(vec3_ point, vec3_ inPlane, vec3_ n)
   {
     vec3_ rel(point.x - inPlane.x, point.y - inPlane.y, point.z - inPlane.z); //position of the point relative to the plane
-    return dotProduct_(rel, n) > 0 ? true : false;
+    return dotProduct_(rel, n) > 1e-12 ? true : false;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1278,8 +1297,7 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   vec3_ AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::vecSubtract_(vec3_ v1, vec3_ v2)
   {
-    vec3_ rv(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
-    return rv;
+    return vec3_(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);    
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1299,16 +1317,16 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
     norm.x /= normScl;
     norm.y /= normScl;
     norm.z /= normScl;
-    cout << "Have a normal vector <" << norm.x << "," << norm.y << "," << norm.z << ">" << endl;
-    cout << "The distance from the point (" << point.x << "," << point.y << "," << point.z << ")" << endl;
-    cout << "to the triangle containing points (" << v1.x << "," << v1.y << "," << v1.z << "), (" << v2.x << "," << v2.y << "," << v2.z << "), and (" << v3.x << "," << v3.y << "," << v3.z << ") is ";
+    //cout << "Have a normal vector <" << norm.x << "," << norm.y << "," << norm.z << ">" << endl;
+    //cout << "The distance from the point (" << point.x << "," << point.y << "," << point.z << ")" << endl;
+    //cout << "to the triangle containing points (" << v1.x << "," << v1.y << "," << v1.z << "), (" << v2.x << "," << v2.y << "," << v2.z << "), and (" << v3.x << "," << v3.y << "," << v3.z << ") is ";
     double rv = fabs(dotProduct_(norm, vecSubtract_(point, v1)));
-    cout << rv << endl;
+    //cout << rv << endl;
     return rv;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::processTriangle_(std::list<Triangle_>& tris, std::list<Triangle_>::iterator& tri, std::list<int>& pointsInFront, ArrayRCP<const double>& xCoords, ArrayRCP<const double>& yCoords, ArrayRCP<const double>& zCoords)
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::processTriangle_(std::list<Triangle_>& tris, std::list<Triangle_>::iterator& tri, std::list<int>& pointsInFront, vec3_& barycenter, ArrayRCP<const double>& xCoords, ArrayRCP<const double>& yCoords, ArrayRCP<const double>& zCoords)
   {
     //*tri is in the tris list, and is the triangle to process here. tris is a complete list of all triangles in the hull so far. pointsInFront is only a list of the nodes in front of tri. Need coords also.
     //precondition: each triangle is already oriented so that getNorm_(v1, v2, v3) points outward (away from interior of hull)
@@ -1316,6 +1334,7 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
     using namespace std;
     typedef std::list<int>::iterator Iter;
     typedef std::list<Triangle_>::iterator TriIter;
+    typedef list<pair<int, int> >::iterator EdgeIter;
     cout << "Processing triangle with nodes: " << tri->v1 << ", " << tri->v2 << ", " << tri->v3 << "." << endl;
     cout << "Nodes in front of this triangle: ";
     for(Iter it = pointsInFront.begin(); it != pointsInFront.end() ;it++)
@@ -1339,80 +1358,116 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
         farPoint = point;
       }
     }
-    //Construct the three new triangles that replace tri in the hull
-    //Note: vertices already ordered CCW so they are already oriented outwards
-    Triangle_ t1(tri->v1, *farPoint, tri->v3);
-    Triangle_ t2(tri->v3, *farPoint, tri->v2);
-    Triangle_ t3(tri->v2, *farPoint, tri->v1);
-    //Remove tri from tris, and add the three new triangles that replaced it
-    tris.erase(tri);
-    //Also keep iterators to each new triangle. They will not be invalidated until
-    //they are replaced with new triangles.
-    tris.push_back(t1);
-    TriIter t1iter = tris.end();
-    t1iter--;
-    tris.push_back(t2);
-    TriIter t2iter = tris.end();
-    t2iter--;
-    tris.push_back(t3);
-    TriIter t3iter = tris.end();
-    t3iter--;
-    //Don't need farPoint anymore in list of points, is accounted for
-    pointsInFront.erase(farPoint);
-    //outward normal to t1, magnitude doesn't matter
-    vec3_ t1v1(xCoords[t1.v1], yCoords[t1.v1], zCoords[t1.v1]);
-    vec3_ t1v2(xCoords[t1.v2], yCoords[t1.v2], zCoords[t1.v2]);
-    vec3_ t1v3(xCoords[t1.v3], yCoords[t1.v3], zCoords[t1.v3]);
-    vec3_ t2v1(xCoords[t2.v1], yCoords[t2.v1], zCoords[t2.v1]);
-    vec3_ t2v2(xCoords[t2.v2], yCoords[t2.v2], zCoords[t2.v2]);
-    vec3_ t2v3(xCoords[t2.v3], yCoords[t2.v3], zCoords[t2.v3]);
-    vec3_ t3v1(xCoords[t3.v1], yCoords[t3.v1], zCoords[t3.v1]);
-    vec3_ t3v2(xCoords[t3.v2], yCoords[t3.v2], zCoords[t3.v3]);
-    vec3_ t3v3(xCoords[t3.v3], yCoords[t3.v3], zCoords[t3.v3]);
-    vec3_ norm1 = getNorm_(t1v1, t1v2, t1v3);
-    vec3_ norm2 = getNorm_(t2v1, t2v2, t2v3);
-    vec3_ norm3 = getNorm_(t3v1, t3v2, t3v3);
-    //Eliminate from list all points which are newly enclosed in the hull
-    //Since pointsInFront are already in front of tri, just check if they are not in front of t1, t2, t3
+    //Find all the triangles that the point is in front of (can be more than 1)
+    //At the same time, remove them from tris, as every one will be replaced later
+    list<Triangle_> visible; //use a list of iterators so that the underlying object is still in tris
+    for(TriIter it = tris.begin(); it != tris.end();)
     {
-      Iter point = pointsInFront.begin();
-      while(point != pointsInFront.end())
+      vec3_ vec1(xCoords[it->v1], yCoords[it->v1], zCoords[it->v1]);
+      vec3_ vec2(xCoords[it->v2], yCoords[it->v2], zCoords[it->v2]);
+      vec3_ vec3(xCoords[it->v3], yCoords[it->v3], zCoords[it->v3]);
+      vec3_ norm = getNorm_(vec1, vec2, vec3);
+      if(isInFront_(farPointVec, vec1, norm))
       {
-        vec3_ pointVec(xCoords[*point], yCoords[*point], zCoords[*point]);
-        if(!isInFront_(pointVec, t1v1, norm1) && !isInFront_(pointVec, t2v1, norm2) && !isInFront_(pointVec, t3v1, norm3))
-          point = pointsInFront.erase(point);
+        visible.push_back(*it);
+        it = tris.erase(it);
+      }
+      else
+        it++;
+    }
+    //Figure out what triangles need to be destroyed/created
+    //First create a list of edges (as std::pair<int, int>, where the two ints are the node endpoints)
+    list<pair<int, int> > horizon;
+    //For each triangle, add edges to the list iff the edge only appears once in the set of all
+    //Have members of horizon have the lower node # first, and the higher one second
+    for(TriIter it = visible.begin(); it != visible.end(); it++)
+    {
+      pair<int, int> e1(it->v1, it->v2);
+      pair<int, int> e2(it->v2, it->v3);
+      pair<int, int> e3(it->v1, it->v3);
+      //"sort" the pair values
+      if(e1.first > e1.second)
+      {
+        int temp = e1.first;
+        e1.first = e1.second;
+        e1.second = temp;
+      }
+      if(e2.first > e2.second)
+      {
+        int temp = e2.first;
+        e2.first = e2.second;
+        e2.second = temp;
+      }      
+      if(e3.first > e3.second)
+      {
+        int temp = e3.first;
+        e3.first = e3.second;
+        e3.second = temp;
+      }
+      horizon.push_back(e1);
+      horizon.push_back(e2);
+      horizon.push_back(e3);
+    }
+    //sort based on lower node first, then higher node (lexicographical ordering built in to pair)
+    horizon.sort();
+    //Remove all edges from horizon, except those that appear exactly once
+    {
+      EdgeIter it = horizon.begin();
+      while(it != horizon.end())
+      {
+        int occur = count(horizon.begin(), horizon.end(), *it);
+        if(occur > 1)
+        {
+          pair<int, int> removeVal = *it;
+          while(removeVal == *it && !(it == horizon.end()))
+            it = horizon.erase(it);
+        }
         else
-          point++;
+          it++;
       }
     }
-    //Now make lists of points in front of t1, t2, t3 and recursively call this function if the list isn't empty
-    std::list<int> inFront1;
-    std::list<int> inFront2;
-    std::list<int> inFront3;
-    for(Iter point = pointsInFront.begin(); point != pointsInFront.end(); point++)
+    //Now make a list of new triangles being created, each of which take 2 vertices from an edge and one from farPoint
+    list<Triangle_> newTris;
+    for(EdgeIter it = horizon.begin(); it != horizon.end(); it++)
     {
-      vec3_ pointVec(xCoords[*point], yCoords[*point], zCoords[*point]);
-      if(isInFront_(pointVec, t1v1, norm1))
-        inFront1.push_back(*point);
-      if(isInFront_(pointVec, t2v1, norm2))
-        inFront2.push_back(*point);
-      if(isInFront_(pointVec, t3v1, norm3))
-        inFront3.push_back(*point);
+      Triangle_ t(it->first, it->second, *farPoint);
+      newTris.push_back(t);
     }
-    //The points that are still in front of t1, t2 or t3 are now the responsiblity of those triangles
-    //and will be processed in the following recursive calls. Free the list of points for this triangle
-    //to avoid redundant information.
-    pointsInFront.clear();
-    //Note: If the list is empty then there are no points in front of that triangle, so that portion of the hull
-    //is complete.
-    if(!inFront1.empty())
-      processTriangle_(tris, t1iter, inFront1, xCoords, yCoords, zCoords);
-    if(!inFront2.empty())
-      processTriangle_(tris, t2iter, inFront2, xCoords, yCoords, zCoords);
-    if(!inFront3.empty())
-      processTriangle_(tris, t3iter, inFront3, xCoords, yCoords, zCoords);
+    //Ensure every new triangle is oriented outwards, using the barycenter of the initial tetrahedron
+    for(TriIter it = newTris.begin(); it != newTris.end(); it++)
+    {
+      vec3_ t1(xCoords[it->v1], yCoords[it->v1], zCoords[it->v1]);
+      vec3_ t2(xCoords[it->v2], yCoords[it->v2], zCoords[it->v2]);
+      vec3_ t3(xCoords[it->v3], yCoords[it->v3], zCoords[it->v3]);
+      if(isInFront_(barycenter, t1, getNorm_(t1, t2, t3)))
+      {
+        //need to swap two vertices to flip orientation of triangle
+        int temp = it->v1;
+        vec3_ tempVec = t1;
+        it->v1 = it->v2;
+        t1 = t2;
+        it->v2 = temp;
+        t2 = tempVec;
+      }
+      vec3_ outwardNorm = getNorm_(t1, t2, t3); //now definitely points outwards
+      //Add the triangle to tris
+      tris.push_back(*it);
+      //Get an iterator to the just-added item in tris
+      TriIter nextToProcess = --tris.end();
+      //Make a list of the points that are in front of nextToProcess, to be passed in for processing
+      list<int> newInFront;
+      for(Iter point = pointsInFront.begin(); point != pointsInFront.end(); point++)
+      {
+        vec3_ pointVec(xCoords[*point], yCoords[*point], zCoords[*point]);
+        if(isInFront_(pointVec, t1, outwardNorm))
+          newInFront.push_back(*point);
+      }
+      if(!newInFront.empty())
+      {
+        processTriangle_(tris, nextToProcess, newInFront, barycenter, xCoords, yCoords, zCoords);
+      }
+    }
   }
-
 } // namespace MueLu
 
 #endif /* MUELU_AGGREGATIONEXPORTFACTORY_DEF_HPP_ */
