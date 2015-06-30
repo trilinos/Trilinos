@@ -49,7 +49,7 @@
     Command line argument is the data file of test definitions.
     If omitted, we use "./driver.xml".
 
-    The goal of this test is to test algorithms.  Components like
+    The goal of this test is to test all of the algorithms.  Components like
     InputAdapter and Model classes are tested in unit tests. 
 
     \todo There are no defaults.  Everything about the test has to
