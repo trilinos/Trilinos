@@ -67,13 +67,8 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   kl_(-1),
   ku_(-1)
 {
-  using Teuchos::Array;
-  using Teuchos::ArrayView;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-  using Teuchos::toString;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
-  typedef typename ArrayView<const local_ordinal_type>::size_type size_type;
+  typedef typename Teuchos::ArrayView<const local_ordinal_type>::size_type size_type;
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! matrix->hasColMap (), std::invalid_argument, "Ifpack2::BandedContainer: "
     "The constructor's input matrix must have a column Map.");
@@ -82,7 +77,7 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   const map_type& rowMap = * (matrix->getRowMap ());
   const size_type numRows = localRows.size ();
   bool rowIndicesValid = true;
-  Array<local_ordinal_type> invalidLocalRowIndices;
+  Teuchos::Array<local_ordinal_type> invalidLocalRowIndices;
   for (size_type i = 0; i < numRows; ++i) {
     if (! rowMap.isNodeLocalElement (localRows[i])) {
       rowIndicesValid = false;
@@ -98,12 +93,36 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
     "entries are not valid local row indices on the calling process: "
     << Teuchos::toString (invalidLocalRowIndices) << ".");
 
+  // calculate optimal bandwith
+  const map_type& domMap = * (matrix->getDomainMap ());
+  for (size_type i = 0; i < numRows; ++i) {
+    Teuchos::ArrayView< const local_ordinal_type > indices;
+    Teuchos::ArrayView< const scalar_type > values;
+    matrix->getLocalRowView(localRows[i], indices, values);
+    typename Teuchos::ArrayView<const local_ordinal_type>::iterator cur;
+    local_ordinal_type min_col_idx = Teuchos::OrdinalTraits< local_ordinal_type >::max();
+    local_ordinal_type max_col_idx = 0;
+    for(cur = indices.begin(); cur!=indices.end(); ++cur) {
+      if (! domMap.isNodeLocalElement (*cur)) continue;
+      for (size_type j=0; j<numRows; ++j) {
+        if (localRows[j] == *cur) {
+          if (min_col_idx > *cur) min_col_idx = *cur;
+          if (max_col_idx < *cur) max_col_idx = *cur;
+        }
+      }
+    }
+    local_ordinal_type ku = max_col_idx - localRows[i];
+    local_ordinal_type kl = localRows[i] - min_col_idx;
+    if (ku > ku_) ku_ = ku;  // update internal kl and ku with maximal values
+    if (kl > kl_) kl_ = kl;
+  }
+
 #ifdef HAVE_MPI
-  RCP<const Teuchos::Comm<int> > localComm =
-    rcp (new Teuchos::MpiComm<int> (MPI_COMM_SELF));
+  Teuchos::RCP<const Teuchos::Comm<int> > localComm =
+      Teuchos::rcp (new Teuchos::MpiComm<int> (MPI_COMM_SELF));
 #else
-  RCP<const Teuchos::Comm<int> > localComm =
-    rcp (new Teuchos::SerialComm<int> ());
+  Teuchos::RCP<const Teuchos::Comm<int> > localComm =
+      Teuchos::rcp (new Teuchos::SerialComm<int> ());
 #endif // HAVE_MPI
 
   // FIXME (mfh 25 Aug 2013) What if the matrix's row Map has a
@@ -143,12 +162,12 @@ template<class MatrixType, class LocalScalarType>
 void BandedContainer<MatrixType, LocalScalarType>::
 setParameters (const Teuchos::ParameterList& List)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(!List.isParameter("relaxation: banded container subdiagonals"), std::invalid_argument,
-                       "BandedContainer<T>::setParameters: the user must provide the number of subdiagonals in the 'relaxation: banded container subdiagonals' parameter.");
-  TEUCHOS_TEST_FOR_EXCEPTION(!List.isParameter("relaxation: banded container superdiagonals"), std::invalid_argument,
-                       "BandedContainer<T>::setParameters: the user must provide the number of superdiagonals in the 'relaxation: banded container superdiagonals' parameter.");
-  kl_ = List.get<int>("relaxation: banded container superdiagonals");
-  ku_ = List.get<int>("relaxation: banded container subdiagonals");
+  if(List.isParameter("relaxation: banded container superdiagonals")) {
+    kl_ = List.get<int>("relaxation: banded container superdiagonals");
+  }
+  if(List.isParameter("relaxation: banded container subdiagonals")) {
+    ku_ = List.get<int>("relaxation: banded container subdiagonals");
+  }
 }
 
 //==============================================================================

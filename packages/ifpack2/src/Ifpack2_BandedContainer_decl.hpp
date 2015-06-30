@@ -283,8 +283,8 @@ private:
   //! If \c true, the container has been successfully computed.
   bool IsComputed_;
 
-  mutable int kl_; //< number of subdiagonals
-  mutable int ku_; //< number of superdiagonals
+  local_ordinal_type kl_; //< number of subdiagonals
+  local_ordinal_type ku_; //< number of superdiagonals
 };
 
 }// namespace Ifpack2

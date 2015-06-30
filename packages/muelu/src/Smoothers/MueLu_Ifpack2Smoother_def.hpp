@@ -216,13 +216,14 @@ namespace MueLu {
           myparamList.set("partitioner: type","user");
           myparamList.set("partitioner: map",TVertLineId);
           myparamList.set("partitioner: local parts",TVertLineId[TVertLineId.size()-1]+1);
+
           // determine upper and lower bandwith on current processor:
           // Choosing kl=matrix->getNodeNumDiags() is an extremely conservative but the most safe choice.
           // We choose kl=0.5*matrix->getNodeNumDiags()+1 assuming that the graph of the matrix is symmetric
           // ku is chosen to be twice kl as we need the additional number of off-diagonals for the LU decomposition
           // TODO: this is subject for improvements
-          myparamList.set("relaxation: banded container superdiagonals",Teuchos::as<int>(0.5*A_->getNodeNumDiags())+1);
-          myparamList.set("relaxation: banded container subdiagonals",Teuchos::as<int>(A_->getNodeNumDiags())+2);
+          //myparamList.set("relaxation: banded container superdiagonals",Teuchos::as<int>(0.5*A_->getNodeNumDiags())+1);
+          //myparamList.set("relaxation: banded container subdiagonals",Teuchos::as<int>(A_->getNodeNumDiags())+2);
         } else {
           // we assume a constant number of DOFs per node
           size_t numDofsPerNode = numLocalRows / TVertLineId.size();
@@ -240,10 +241,16 @@ namespace MueLu {
           // We choose kl=0.5*matrix->getNodeNumDiags()+1 assuming that the graph of the matrix is symmetric
           // ku is chosen to be twice kl as we need the additional number of off-diagonals for the LU decomposition
           // TODO: this is subject for improvements
-          myparamList.set("relaxation: banded container superdiagonals",Teuchos::as<int>(0.5*A_->getNodeNumDiags())+1);
-          myparamList.set("relaxation: banded container subdiagonals",Teuchos::as<int>(A_->getNodeNumDiags())+2);
+          //myparamList.set("relaxation: banded container superdiagonals",Teuchos::as<int>(0.5*A_->getNodeNumDiags())+1);
+          //myparamList.set("relaxation: banded container subdiagonals",Teuchos::as<int>(A_->getNodeNumDiags())+2);
         }
 
+        if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
+            type_ == "LINESMOOTHING_BANDED RELAXATION" ||
+            type_ == "LINESMOOTHING_BANDEDRELAXATION")
+          type_ = "BANDEDRELAXATION";
+        else
+          type_ = "BLOCKRELAXATION";
       } else {
         // line detection failed -> fallback to point-wise relaxation
         this->GetOStream(Runtime0) << "Line detection failed: fall back to point-wise relaxation" << std::endl;
