@@ -31,7 +31,7 @@
 #define IFPACK_DYNAMIC_FACTORY_H
 
 #include <ostream>
-#include <std::string>
+#include <string>
 #include <map>
 #include <algorithm>
 
