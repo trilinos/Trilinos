@@ -67,13 +67,33 @@
 namespace MueLu {
 
   class Level;
+  //Utility classes used in convex hull algorithm
 
   /*!
     @class AggregationExportFactory class.
     @brief Factory for exporting aggregates data
 
   */
-
+  class Triangle_
+  {
+    public:
+      Triangle_() : v1(0), v2(0), v3(0) {}
+      Triangle_(int v1in, int v2in, int v3in) : v1(v1in), v2(v2in), v3(v3in) {}
+      ~Triangle_() {}
+      int v1;
+      int v2;
+      int v3; 
+  };
+  class vec3_
+  {
+    public:
+      vec3_() : x(0), y(0), z(0) {}
+      vec3_(double xin, double yin, double zin) : x(xin), y(yin), z(zin) {}
+      ~vec3_() {}
+      double x;
+      double y;
+      double z;
+  };
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class AggregationExportFactory : public TwoLevelFactoryBase {
 #undef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
@@ -107,34 +127,30 @@ namespace MueLu {
 
     //@}
 
-
   private:
-
     std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
+    //Break different viz styles into separate functions for organization:
+    static void doPointCloud_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates);
+    static void doJacks_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates);
+    static void doJacksPlus_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates);
+    static void doConvexHulls_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates);
+    //The 2D and 3D convex hull algorithms are both long and completely different, so they deserve their own functions as well
+    static void doConvexHulls2D_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates);
+    static void doConvexHulls3D_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates);
+    static void doAlphaHulls_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates);
+
+    //Utility functions for convex hulls
+    static vec3_ crossProduct_(vec3_ v1, vec3_ v2);
+    static double dotProduct_(vec3_ v1, vec3_ v2);
+    static bool isInFront_(vec3_ point, vec3_ inPlane, vec3_ n);
+    static double magnitude_(vec3_ vec);
+    static double distance_(vec3_ p1, vec3_ p2);
+    static vec3_ vecSubtract_(vec3_ v1, vec3_ v2);
+    static vec3_ getNorm_(vec3_ v1, vec3_ v2, vec3_ v3);
+    static double pointDistFromTri_(vec3_ point, vec3_ v1, vec3_ v2, vec3_ v3);
+    static void processTriangle_(std::list<Triangle_>& tris, std::list<Triangle_>::iterator& tri, std::list<int>& pointsInFront, ArrayRCP<const double>& xCoords, ArrayRCP<const double>& yCoords, ArrayRCP<const double>& zCoords);
+    
   }; // class AggregationExportFactory
-
-  typedef struct
-  {
-    int v1;
-    int v2;
-    int v3; 
-  } Triangle_;
-  class vec3_
-  {
-    public:
-      vec3_(double xin, double yin, double zin) : x(xin), y(yin), z(zin) {}
-      ~vec3_() {}
-      double x;
-      double y;
-      double z;
-  };
-  vec3_ crossProduct_(vec3_ v1, vec3_ v2);
-  double dotProduct_(vec3_ v1, vec3_ v2);
-  bool isInFront_(vec3_ point, vec3_ inPlane, vec3_ n);
-  double magnitude_(vec3_ vec);
-  double distance_(vec3_ p1, vec3_ p2);
-  vec3_ vecSubtract_(vec3_ v1, vec3_ v2);
-
 } // namespace MueLu
 
 #define MUELU_AGGREGATIONEXPORTFACTORY_SHORT

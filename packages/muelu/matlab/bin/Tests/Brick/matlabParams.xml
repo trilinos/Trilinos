@@ -1,0 +1,21 @@
+<!--MueLu parameters to run Jacobi smoother test-->
+<!--These parameters tell MueLu to use a MATLAB function as smoother-->
+
+<ParameterList name="MueLu">
+  <!--Note: fine A is already much smaller than this so there will only be one level-->
+  <ParameterList name="Factories">
+    <ParameterList name="mySimpleAggregation">
+      <Parameter name="factory" type="string" value="TwoLevelMatlabFactory"/>
+      <Parameter name="Provides" type="string" value="Aggregates"/>
+      <Parameter name="Needs Fine" type="string" value="A"/>
+      <Parameter name="Needs Coarse" type="string" value=""/>
+      <Parameter name="Function" type="string" value="simpleAggregation"/>
+    </ParameterList>
+  </ParameterList>
+  
+  <ParameterList name="Hierarchy">
+    <ParameterList name="All">
+      <Parameter name="Aggregates" type="string" value="mySimpleAggregation"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

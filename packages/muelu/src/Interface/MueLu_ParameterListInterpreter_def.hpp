@@ -787,6 +787,12 @@ namespace MueLu {
         RAP->SetFactory("R", manager.GetFactory("R"));
       if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: export visualization data", bool, true)) {
         RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
+        ParameterList aggExportParams;
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output filename", std::string, aggExportParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: agg style", std::string, aggExportParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: iter", int, aggExportParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: time step", int, aggExportParams);
+        aggExport->SetParameterList(aggExportParams);
         aggExport->SetFactory("DofsPerNode", manager.GetFactory("DofsPerNode"));
         RAP->AddTransferFactory(aggExport);
       }

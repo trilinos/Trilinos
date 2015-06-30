@@ -15,26 +15,24 @@
 % resrnm= Norm of the residual from the solution sol
 %
 
-%Use getDiag() as "setup" function for MatlabSmoother
-function D = getDiag(A)
-	D = diag(diag(A));
-end
-
 %Use jacobi() as "solve" function for MatlabSmoother
 % CMS: First time through
-function [sol]=jacobi(A,x0,b,D)
-omega=1; nits=2;
+function [sol] = jacobi(A, x0, b, D)
+omega = 0.9;
+nits = 5;
 % CMS: Later interface
 %function [sol]=jacobi2(A,x0,b,D,omega,nits)
 
 % Initializations
-sol=x0;
-n=size(A,1);
+sol = x0;
+n = size(A, 1);
 
 % Compute Initial Residual Norm
-resnrm(1)=norm(b-A*x0);
+resnrm(1) = norm(b - A * x0);
 
-for I=1:nits,
+for I = 1:nits,
+  %disp(['MATLAB: Running Jacobi iteration #', I]);
   % Next iterate
-  sol = sol + omega*(D\(b-A*sol));  
+  sol = sol + omega * (D \ (b - A * sol));  
+end
 end

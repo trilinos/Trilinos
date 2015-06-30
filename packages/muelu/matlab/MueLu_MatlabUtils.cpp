@@ -239,28 +239,28 @@ std::vector<RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std
                 {
                   if(mxIsComplex(item))
                     //single double (scalar, real)
-                    output.push_back(rcp(new MuemexData<double>(item)));
+                    output.push_back(rcp(new MuemexData<complex_t>(item)));
                   else
                     //single complex scalar
-                    output.push_back(rcp(new MuemexData<complex_t>(item)));
+                    output.push_back(rcp(new MuemexData<double>(item)));
               }
-              else if(mxIsSparse(item))
+              else if(mxIsSparse(item)) //use a CRS matrix
               {
                   //Default to Tpetra matrix for this
                   if(mxIsComplex(item))
-                    //complex Tpetra matrix (sparse)
-                    output.push_back(rcp(new MuemexData<RCP<Tpetra_CrsMatrix_double>>(item)));
+                    //complex matrix
+                    output.push_back(rcp(new MuemexData<RCP<Xpetra_Matrix_complex>>(item)));
                   else
-                    //real Tpetra matrix
-                    output.push_back(rcp(new MuemexData<RCP<Tpetra_CrsMatrix_complex>>(item)));
+                    //real-valued matrix
+                    output.push_back(rcp(new MuemexData<RCP<Xpetra_Matrix_double>>(item)));
               }
               else
               {
-                  //Default to Tpetra multivector for this case
+                  //Default to Xpetra multivector for this case
                   if(mxIsComplex(item))
-                    output.push_back(rcp(new MuemexData<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(item)));
+                    output.push_back(rcp(new MuemexData<RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(item)));
                   else
-                    output.push_back(rcp(new MuemexData<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(item)));
+                    output.push_back(rcp(new MuemexData<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(item)));
               }
               break;
             case mxSTRUCT_CLASS:
