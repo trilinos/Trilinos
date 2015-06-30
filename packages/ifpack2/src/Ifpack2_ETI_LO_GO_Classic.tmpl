@@ -1,4 +1,5 @@
-/*@HEADER
+/*
+//@HEADER
 // ***********************************************************************
 //
 //       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
@@ -40,23 +41,26 @@
 //@HEADER
 */
 
-#include "Ifpack2_OverlappingRowMatrix_decl.hpp"
-
+#include "Ifpack2_ConfigDefs.hpp"
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-#include "Ifpack2_OverlappingRowMatrix_def.hpp"
-#include "Ifpack2_ExplicitInstantiationHelpers.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
 #include "Ifpack2_ETIHelperMacros.h"
+#include "Ifpack2_@CLASS_FILE_NAME@_decl.hpp"
+#include "Ifpack2_@CLASS_FILE_NAME@_def.hpp"
+#include "Tpetra_CrsGraph.hpp"
 
-namespace Ifpack2 {
+#if defined(HAVE_TPETRA_SERIALCLASSIC) 
+// Because Tpetra's ETI system doesn't work right for TpetraClassic
 
-  #define LCLINST(S,LO,GO) \
-          IFPACK2_INST(OverlappingRowMatrix,S,LO,GO)
+// Need this for the mangling of the Node typedef.
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  IFPACK2_ETI_MANGLING_TYPEDEFS()
+#define LCLINST(LO, GO) \
+  IFPACK2_@UPPER_CASE_CLASS@_INSTANT(LO, GO, KokkosClassic_DoNotUse_SerialNode)
 
-  IFPACK2_INSTANTIATE_SLG(LCLINST)
-
-}
+IFPACK2_INSTANTIATE_LG(LCLINST)
 
 #endif
+
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION

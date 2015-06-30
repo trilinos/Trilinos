@@ -1,7 +1,8 @@
-/*@HEADER
+/*
+//@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -41,31 +42,25 @@
 */
 
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Details_DenseSolver_decl.hpp"
-
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-#include "Ifpack2_Details_DenseSolver_def.hpp"
-#include "Ifpack2_ExplicitInstantiationHelpers.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
 #include "Ifpack2_ETIHelperMacros.h"
+#include "Ifpack2_@CLASS_FILE_NAME@_decl.hpp"
+#include "Ifpack2_@CLASS_FILE_NAME@_def.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
-namespace Ifpack2 {
-namespace Details {
+#if defined(HAVE_TPETRA_SERIALCLASSIC)
+// Because Tpetra's ETI system doesn't work right for TpetraClassic
 
-// mfh 15 Nov 2013: Since we defined a stub implementation for
-// unsupported Scalar (S) types, we don't have to go through any
-// trouble to exclude unsupported Scalar types here.
-//
-// mfh 12 Dec 2013: For some reason, this all has to be on one line,
-// otherwise the macro definition includes the whole rest of the file.
-#define IFPACK2_INST_DETAILS_DENSE_SOLVER(S,LO,GO) template class DenseSolver<Tpetra::CrsMatrix< S , LO , GO > >; template class DenseSolver<Tpetra::RowMatrix< S , LO , GO > >;
+// Need this for the mangling of the Node typedef.
+IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-  IFPACK2_ETI_MANGLING_TYPEDEFS()
+#define LCLINST(SC, LO, GO) \
+  IFPACK2_@UPPER_CASE_CLASS@_INSTANT(SC, LO, GO, KokkosClassic_DoNotUse_SerialNode)
 
-  IFPACK2_INSTANTIATE_SLG(IFPACK2_INST_DETAILS_DENSE_SOLVER)
+IFPACK2_INSTANTIATE_SLG(LCLINST)
 
-} // namespace Details
-} // namespace Ifpack2
+#endif
 
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-
