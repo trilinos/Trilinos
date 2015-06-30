@@ -54,9 +54,18 @@ struct ShellConnectivityData
 {
     stk::mesh::EntityId m_nearElementId;
     int                 m_nearElementSide;
+    int                 m_nearElementProc;
     stk::mesh::EntityId m_shellElementId;
     stk::mesh::EntityId m_farElementId;
+    int                 m_farElementProc;
     bool                m_farElementIsRemote;
+};
+
+struct DeletedElementData
+{
+    impl::LocalId       m_deletedElement;
+    stk::mesh::EntityId m_remoteElement;
+    int                 m_remoteProc;
 };
 
 typedef std::pair<LocalId,int> ElementSidePair;
