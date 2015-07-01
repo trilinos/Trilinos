@@ -69,15 +69,13 @@ public:
   }
 
   void minAll(Real* input, Real* output, int dim) {
-    std::vector<Ordinal> recvCounts(numBatches(),0);
-    Teuchos::reduceAllAndScatter<Ordinal,Real>(*comm_,Teuchos::REDUCE_MIN,
-      dim, input, &recvCounts[0], output);
+    Teuchos::reduceAll<Ordinal,Real>(*comm_,Teuchos::REDUCE_MIN,
+      dim, input, output);
   }
 
   void maxAll(Real* input, Real* output, int dim) {
-    std::vector<Ordinal> recvCounts(numBatches(),0);
-    Teuchos::reduceAllAndScatter<Ordinal,Real>(*comm_,Teuchos::REDUCE_MAX,
-      dim, input, &recvCounts[0], output);
+    Teuchos::reduceAll<Ordinal,Real>(*comm_,Teuchos::REDUCE_MAX,
+      dim, input, output);
   }
 
   void sumAll(Real* input, Real* output, int dim) {

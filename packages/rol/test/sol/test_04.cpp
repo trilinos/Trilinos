@@ -128,6 +128,17 @@ public:
   }
 };
 
+
+template<class Real>
+Real random(const Teuchos::RCP<Epetra_Comm> &comm) {
+  Real val = 0.0;
+  if ( comm->MyPID()==0 ) {
+    val = (Real)rand()/(Real)RAND_MAX;
+  }
+  comm->Broadcast(&val,1,0);
+  return val;
+}
+
 int main(int argc, char* argv[]) {
   Teuchos::RCP<Epetra_Comm> comm;
 #ifdef HAVE_MPI
@@ -179,8 +190,8 @@ int main(int argc, char* argv[]) {
     ROL::StdVector<double> d(d_rcp);
     for ( unsigned i = 0; i < dim; i++ ) {
       (*x0_rcp)[i] = 1.0/(double)dim;
-      (*xr_rcp)[i]  = (double)rand()/(double)RAND_MAX;
-      (*d_rcp)[i]  = (double)rand()/(double)RAND_MAX;
+      (*xr_rcp)[i] = random<double>(comm);
+      (*d_rcp)[i]  = random<double>(comm);
     }
     // Build samplers
     int nSamp = 1000;
@@ -191,7 +202,6 @@ int main(int argc, char* argv[]) {
     for (unsigned i = 0; i < dim; i++) {
       tmp[0] = val-inc; tmp[1] = val+inc;
       bounds[i] = tmp;
-      *outStream << val-inc << "  " << val+inc << "\n";
       inc *= 2.0;
     }
     Teuchos::RCP<ROL::BatchManager<double> > bman =
@@ -201,7 +211,7 @@ int main(int argc, char* argv[]) {
     // Build risk-averse objective function
     bool storage = true;
     Teuchos::RCP<ROL::ParametrizedObjective<double> > pObj =
-      Teuchos::rcp(new ParametrizedObjectiveEx1<double>(1.e2));
+      Teuchos::rcp(new ParametrizedObjectiveEx1<double>(1.e1));
     Teuchos::RCP<ROL::RiskMeasure<double> > rm;
     Teuchos::RCP<ROL::Objective<double> > obj;
     // Build bound constraints
@@ -498,7 +508,8 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::BoundConstraint<double> > CVaRcon = 
       Teuchos::rcp( new ROL::CVaRBoundConstraint<double>(con) );
     // Test objective functions
-    double xv = 10.0*(double)rand()/(double)RAND_MAX-5.0, dv = 10.0*(double)rand()/(double)RAND_MAX-5.0;
+    double xv = 10.0*random<double>(comm)-5.0;
+    double dv = 10.0*random<double>(comm)-5.0;
     Teuchos::RCP<ROL::Vector<double> > xp = Teuchos::rcp(&x,false);
     Teuchos::RCP<ROL::Vector<double> > dp = Teuchos::rcp(&d,false);
     ROL::CVaRVector<double> xc(xv,xp);
@@ -531,9 +542,8 @@ int main(int argc, char* argv[]) {
     rm  = Teuchos::rcp(&scq,false);
     obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
     // Test objective functions
-    xv = 10.0*(double)rand()/(double)RAND_MAX-5.0;
-    dv = 10.0*(double)rand()/(double)RAND_MAX-5.0;
-    dv = 0.0;
+    xv = 10.0*random<double>(comm)-5.0;
+    dv = 10.0*random<double>(comm)-5.0;
     xp = Teuchos::rcp(&x,false);
     dp = Teuchos::rcp(&d,false);
     ROL::CVaRVector<double> xq(xv,xp);
