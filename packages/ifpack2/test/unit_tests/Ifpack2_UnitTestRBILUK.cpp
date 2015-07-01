@@ -549,8 +549,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
     lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
     "lapackInfo = " << lapackInfo << " which indicates an error in the matrix inverse GETRI.");
 
+#if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
   typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type ImplMagnitudeType;
   ImplMagnitudeType worksize = Kokkos::Details::ArithTraits<Scalar>::magnitude(work[0]);
+#else
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ImplMagnitudeType;
+  ImplMagnitudeType worksize = Teuchos::ScalarTraits<Scalar>::magnitude(work[0]);
+#endif // defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+
   lwork = static_cast<int>(worksize);
   work.resize(lwork);
   lapack.GETRI(blockSize, d_raw, blockSize, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
