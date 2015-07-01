@@ -212,7 +212,7 @@ namespace MueLu {
         size_t numLocalRows = A_->getNodeNumRows();
         TEUCHOS_TEST_FOR_EXCEPTION(numLocalRows % TVertLineId.size() != 0, Exceptions::RuntimeError, "MueLu::Ifpack2Smoother::Setup(): the number of local nodes is incompatible with the TVertLineIds.");
 
-        if (numLocalRows == TVertLineId.size()) {
+        if (numLocalRows == Teuchos::as<size_t>(TVertLineId.size())) {
           myparamList.set("partitioner: type","user");
           myparamList.set("partitioner: map",TVertLineId);
           myparamList.set("partitioner: local parts",TVertLineId[TVertLineId.size()-1]+1);
@@ -230,7 +230,7 @@ namespace MueLu {
 
           // Create a new Teuchos::ArrayRCP<LO> of size numLocalRows and fill it with the corresponding information
           Teuchos::ArrayRCP<LO> partitionerMap(numLocalRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
-          for (size_t blockRow = 0; blockRow < TVertLineId.size(); ++blockRow)
+          for (size_t blockRow = 0; blockRow < Teuchos::as<size_t>(TVertLineId.size()); ++blockRow)
             for (size_t dof = 0; dof < numDofsPerNode; dof++)
               partitionerMap[blockRow * numDofsPerNode + dof] = TVertLineId[blockRow];
           myparamList.set("partitioner: type","user");
