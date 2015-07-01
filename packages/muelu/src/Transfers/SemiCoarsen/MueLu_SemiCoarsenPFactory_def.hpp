@@ -126,7 +126,7 @@ namespace MueLu {
 
     // collect general input data
     LO BlkSize = A->GetFixedBlockSize();
-    TEUCHOS_TEST_FOR_EXCEPTION(BlkSize != 1, Exceptions::RuntimeError, "Block size > 1 has not been implemented");
+    //TEUCHOS_TEST_FOR_EXCEPTION(BlkSize != 1, Exceptions::RuntimeError, "Block size > 1 has not been implemented");
 
     RCP<const Map> rowMap = A->getRowMap();
     LO Ndofs   = rowMap->getNodeNumElements();
@@ -193,7 +193,8 @@ namespace MueLu {
     if  (Thin == 1) NCpts = (LO) ceil(temp);
     else            NCpts = (LO) floor(temp);
 
-    if (PtsPerLine == 1) { printf("cannot coarsen further\n"); return -1; }
+    TEUCHOS_TEST_FOR_EXCEPTION(PtsPerLine == 1, Exceptions::RuntimeError, "SemiCoarsenPFactory::FindCpts: cannot coarsen further.");
+
     if (NCpts < 1) NCpts = 1;
 
     FirstStride= (LO) ceil( ((double) PtsPerLine+1)/( (double) (NCpts+1)));

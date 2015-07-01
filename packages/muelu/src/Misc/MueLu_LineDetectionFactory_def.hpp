@@ -167,7 +167,7 @@ namespace MueLu {
 
     // collect common information
     LO BlkSize = A->GetFixedBlockSize();
-    TEUCHOS_TEST_FOR_EXCEPTION(BlkSize != 1, Exceptions::RuntimeError, "Block size > 1 has not been implemented");
+    //TEUCHOS_TEST_FOR_EXCEPTION(BlkSize != 1, Exceptions::RuntimeError, "Block size > 1 has not been implemented");
 
     RCP<const Map> rowMap = A->getRowMap();
     LO Ndofs   = rowMap->getNodeNumElements();
