@@ -49,79 +49,35 @@
 //********************************************************
 // @HEADER
 
-#ifndef SACADO_FAD_EXPRESSION_HPP
-#define SACADO_FAD_EXPRESSION_HPP
+#ifndef SACADO_FAD_EXPR_MP_VECTOR_HPP
+#define SACADO_FAD_EXPR_MP_VECTOR_HPP
 
-#include "Sacado_Traits.hpp"
-#include "Sacado_Fad_ExpressionFwd.hpp"
+#include "Sacado_Fad_Expression.hpp"
+
+namespace Stokhos {
+  template <typename Ord, typename Val, int Num, typename Dev>
+  class StaticFixedStorage;
+}
 
 namespace Sacado {
 
+  namespace MP {
+    template <typename S> class Vector;
+  }
+
   namespace Fad {
-
-    //! Meta-function for determining concrete base expression
-    /*!
-     * This determines the concrete base expression type of each leaf in
-     * an expression tree.  The Promote meta-function is then used to promote
-     * all of the leaves to a single expression type that the whole expression
-     * can be assigned/promoted to.  This allows Promote to operate on
-     * expressions as well as AD types.
-     */
-    template <typename> struct BaseExpr {};
-
-    struct ExprSpecDefault {};
-    template <typename ExprT> struct ExprSpec {
-      typedef ExprSpecDefault type;
-    };
-
-    //! Wrapper for a generic expression template
-    /*!
-     * This template class serves as a wrapper for all Fad expression
-     * template classes.
-     */
-    template <typename ExprT, typename Spec> class Expr {};
-
-    template <typename ExprT, typename Spec>
-    struct ExprSpec< Expr<ExprT,Spec> > {
-      typedef Spec type;
-    };
-
-    //! Meta-function for determining nesting with an expression
-    /*!
-     * This determines the level of nesting within nested Fad types.
-     * The default implementation works for any type that isn't a Fad type
-     * or an expression of Fad types.
-     */
-    template <typename T>
-    struct ExprLevel {
-      static const unsigned value = 0;
-    };
-
-    template <typename T>
-    struct ExprLevel< Expr<T> > {
-      static const unsigned value =
-        ExprLevel< typename Expr<T>::value_type >::value + 1;
-    };
-
-    //! Determine whether a given type is an expression
-    template <typename T>
-    struct IsFadExpr {
-      static const bool value = false;
-    };
-
-    template <typename T>
-    struct IsFadExpr< Expr<T> > {
-      static const bool value = true;
-    };
 
     //! Constant expression template
     /*!
      * This template class represents a constant expression.
      */
-    template <typename ConstT>
-    class ConstExpr {
+    template <typename Ord, typename Val, int VecNum, typename Dev>
+    class ConstExpr< Sacado::MP::Vector< Stokhos::StaticFixedStorage<Ord,Val,VecNum,Dev> > > {
 
     public:
+
+      typedef Sacado::MP::Vector< Stokhos::StaticFixedStorage<Ord,Val,VecNum,Dev> > ConstT;
+      typedef typename ConstT::value_type val_type;
 
       //! Typename of argument values
       typedef ConstT value_type;
@@ -142,7 +98,7 @@ namespace Sacado {
 
       //! Return value of operation
       KOKKOS_INLINE_FUNCTION
-      const ConstT& val(int j) const { return constant_; }
+      const val_type& val(int j) const { return constant_.fastAccessCoeff(j); }
 
     protected:
 
@@ -153,23 +109,6 @@ namespace Sacado {
 
   } // namespace Fad
 
-  template <typename T>
-  struct IsExpr< Fad::Expr<T> > {
-    static const bool value = true;
-  };
-
-  template <typename T>
-  struct BaseExprType< Fad::Expr<T> > {
-    typedef typename Fad::Expr<T>::base_expr_type type;
-  };
-
-  template <typename T>
-  struct ValueType< Fad::ConstExpr<T> > {
-    typedef typename Fad::ConstExpr<T>::value_type type;
-  };
-
 } // namespace Sacado
 
-#include "Sacado_SFINAE_Macros.hpp"
-
-#endif // SACADO_FAD_EXPRESSION_HPP
+#endif // SACADO_FAD_EXPR_MP_VECTOR_HPP

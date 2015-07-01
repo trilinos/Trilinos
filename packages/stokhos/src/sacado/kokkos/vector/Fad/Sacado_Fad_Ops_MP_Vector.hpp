@@ -49,32 +49,26 @@
 //********************************************************
 // @HEADER
 
-#ifndef SACADO_FAD_OPS_HPP
-#define SACADO_FAD_OPS_HPP
+#ifndef SACADO_FAD_OPS_MP_VECTOR_HPP
+#define SACADO_FAD_OPS_MP_VECTOR_HPP
 
-#include "Sacado_Fad_Expression.hpp"
-#include "Sacado_cmath.hpp"
-#include <ostream>      // for std::ostream
+#include "Sacado_Fad_Ops.hpp"
+#include "Sacado_mpl_enable_if.hpp"
+#include "Sacado_Fad_Expr_MP_Vector.hpp"
 
-#define FAD_UNARYOP_MACRO(OPNAME,OP,VALUE,DX,FASTACCESSDX)              \
+#define FAD_UNARYOP_MACRO(OPNAME,OP,MPVALUE,VALUE,DX,FASTACCESSDX)      \
 namespace Sacado {                                                      \
   namespace Fad {                                                       \
                                                                         \
     template <typename ExprT>                                           \
-    class OP {};                                                        \
-                                                                        \
-    template <typename ExprT>                                           \
-    struct ExprSpec< OP<ExprT> > {                                      \
-      typedef typename ExprSpec<ExprT>::type type;                      \
-    };                                                                  \
-                                                                        \
-    template <typename ExprT>                                           \
-    class Expr< OP<ExprT>,ExprSpecDefault > {                           \
+    class Expr< OP<ExprT>,ExprSpecMPVector > {                          \
     public:                                                             \
                                                                         \
       typedef typename ExprT::value_type value_type;                    \
       typedef typename ExprT::scalar_type scalar_type;                  \
       typedef typename ExprT::base_expr_type base_expr_type;            \
+                                                                        \
+      typedef typename value_type::value_type val_type;                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       Expr(const ExprT& expr_) : expr(expr_)  {}                        \
@@ -93,16 +87,21 @@ namespace Sacado {                                                      \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       value_type val() const {                                          \
+        return MPVALUE;                                                 \
+      }                                                                 \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
+      val_type val(int j) const {                                       \
         return VALUE;                                                   \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      value_type dx(int i) const {                                      \
+      val_type dx(int i, int j) const {                                 \
         return DX;                                                      \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      value_type fastAccessDx(int i) const {                            \
+      val_type fastAccessDx(int i, int j) const {                       \
         return FASTACCESSDX;                                            \
       }                                                                 \
                                                                         \
@@ -111,156 +110,159 @@ namespace Sacado {                                                      \
       const ExprT& expr;                                                \
     };                                                                  \
                                                                         \
-    template <typename T>                                               \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Expr< OP< Expr<T> > >                                               \
-    OPNAME (const Expr<T>& expr)                                        \
-    {                                                                   \
-      typedef OP< Expr<T> > expr_t;                                     \
-                                                                        \
-      return Expr<expr_t>(expr);                                        \
-    }                                                                   \
   }                                                                     \
-                                                                        \
 }
 
 FAD_UNARYOP_MACRO(operator+,
                   UnaryPlusOp,
                   expr.val(),
-                  expr.dx(i),
-                  expr.fastAccessDx(i))
+                  expr.val(j),
+                  expr.dx(i,j),
+                  expr.fastAccessDx(i,j))
 FAD_UNARYOP_MACRO(operator-,
                   UnaryMinusOp,
                   -expr.val(),
-                  -expr.dx(i),
-                  -expr.fastAccessDx(i))
+                  -expr.val(j),
+                  -expr.dx(i,j),
+                  -expr.fastAccessDx(i,j))
 FAD_UNARYOP_MACRO(exp,
                   ExpOp,
                   std::exp(expr.val()),
-                  std::exp(expr.val())*expr.dx(i),
-                  std::exp(expr.val())*expr.fastAccessDx(i))
+                  std::exp(expr.val(j)),
+                  std::exp(expr.val(j))*expr.dx(i,j),
+                  std::exp(expr.val(j))*expr.fastAccessDx(i,j))
 FAD_UNARYOP_MACRO(log,
                   LogOp,
                   std::log(expr.val()),
-                  expr.dx(i)/expr.val(),
-                  expr.fastAccessDx(i)/expr.val())
+                  std::log(expr.val(j)),
+                  expr.dx(i,j)/expr.val(j),
+                  expr.fastAccessDx(i,j)/expr.val(j))
 FAD_UNARYOP_MACRO(log10,
                   Log10Op,
                   std::log10(expr.val()),
-                  expr.dx(i)/( std::log(value_type(10))*expr.val()),
-                  expr.fastAccessDx(i) / ( std::log(value_type(10))*expr.val()))
+                  std::log10(expr.val(j)),
+                  expr.dx(i,j)/( std::log(val_type(10))*expr.val(j)),
+                  expr.fastAccessDx(i,j) / ( std::log(val_type(10))*expr.val(j)))
 FAD_UNARYOP_MACRO(sqrt,
                   SqrtOp,
                   std::sqrt(expr.val()),
-                  expr.dx(i)/(value_type(2)* std::sqrt(expr.val())),
-                  expr.fastAccessDx(i)/(value_type(2)* std::sqrt(expr.val())))
+                  std::sqrt(expr.val(j)),
+                  expr.dx(i,j)/(val_type(2)* std::sqrt(expr.val(j))),
+                  expr.fastAccessDx(i,j)/(val_type(2)* std::sqrt(expr.val(j))))
 FAD_UNARYOP_MACRO(cos,
                   CosOp,
                   std::cos(expr.val()),
-                  -expr.dx(i)* std::sin(expr.val()),
-                  -expr.fastAccessDx(i)* std::sin(expr.val()))
+                  std::cos(expr.val(j)),
+                  -expr.dx(i,j)* std::sin(expr.val(j)),
+                  -expr.fastAccessDx(i,j)* std::sin(expr.val(j)))
 FAD_UNARYOP_MACRO(sin,
                   SinOp,
                   std::sin(expr.val()),
-                  expr.dx(i)* std::cos(expr.val()),
-                  expr.fastAccessDx(i)* std::cos(expr.val()))
+                  std::sin(expr.val(j)),
+                  expr.dx(i,j)* std::cos(expr.val(j)),
+                  expr.fastAccessDx(i,j)* std::cos(expr.val(j)))
 FAD_UNARYOP_MACRO(tan,
                   TanOp,
                   std::tan(expr.val()),
-                  expr.dx(i)*
-                    (value_type(1)+ std::tan(expr.val())* std::tan(expr.val())),
-                  expr.fastAccessDx(i)*
-                    (value_type(1)+ std::tan(expr.val())* std::tan(expr.val())))
+                  std::tan(expr.val(j)),
+                  expr.dx(i,j)*
+                    (val_type(1)+ std::tan(expr.val(j))* std::tan(expr.val(j))),
+                  expr.fastAccessDx(i,j)*
+                    (val_type(1)+ std::tan(expr.val(j))* std::tan(expr.val(j))))
 FAD_UNARYOP_MACRO(acos,
                   ACosOp,
                   std::acos(expr.val()),
-                  -expr.dx(i)/ std::sqrt(value_type(1)-expr.val()*expr.val()),
-                  -expr.fastAccessDx(i) /
-                    std::sqrt(value_type(1)-expr.val()*expr.val()))
+                  std::acos(expr.val(j)),
+                  -expr.dx(i,j)/ std::sqrt(val_type(1)-expr.val(j)*expr.val(j)),
+                  -expr.fastAccessDx(i,j) /
+                    std::sqrt(val_type(1)-expr.val(j)*expr.val(j)))
 FAD_UNARYOP_MACRO(asin,
                   ASinOp,
                   std::asin(expr.val()),
-                  expr.dx(i)/ std::sqrt(value_type(1)-expr.val()*expr.val()),
-                  expr.fastAccessDx(i) /
-                    std::sqrt(value_type(1)-expr.val()*expr.val()))
+                  std::asin(expr.val(j)),
+                  expr.dx(i,j)/ std::sqrt(val_type(1)-expr.val(j)*expr.val(j)),
+                  expr.fastAccessDx(i,j) /
+                    std::sqrt(val_type(1)-expr.val(j)*expr.val(j)))
 FAD_UNARYOP_MACRO(atan,
                   ATanOp,
                   std::atan(expr.val()),
-                  expr.dx(i)/(value_type(1)+expr.val()*expr.val()),
-                  expr.fastAccessDx(i)/(value_type(1)+expr.val()*expr.val()))
+                  std::atan(expr.val(j)),
+                  expr.dx(i,j)/(val_type(1)+expr.val(j)*expr.val(j)),
+                  expr.fastAccessDx(i,j)/(val_type(1)+expr.val(j)*expr.val(j)))
 FAD_UNARYOP_MACRO(cosh,
                   CoshOp,
                   std::cosh(expr.val()),
-                  expr.dx(i)* std::sinh(expr.val()),
-                  expr.fastAccessDx(i)* std::sinh(expr.val()))
+                  std::cosh(expr.val(j)),
+                  expr.dx(i,j)* std::sinh(expr.val(j)),
+                  expr.fastAccessDx(i,j)* std::sinh(expr.val(j)))
 FAD_UNARYOP_MACRO(sinh,
                   SinhOp,
                   std::sinh(expr.val()),
-                  expr.dx(i)* std::cosh(expr.val()),
-                  expr.fastAccessDx(i)* std::cosh(expr.val()))
+                  std::sinh(expr.val(j)),
+                  expr.dx(i,j)* std::cosh(expr.val(j)),
+                  expr.fastAccessDx(i,j)* std::cosh(expr.val(j)))
 FAD_UNARYOP_MACRO(tanh,
                   TanhOp,
                   std::tanh(expr.val()),
-                  expr.dx(i)/( std::cosh(expr.val())* std::cosh(expr.val())),
-                  expr.fastAccessDx(i) /
-                    ( std::cosh(expr.val())* std::cosh(expr.val())))
+                  std::tanh(expr.val(j)),
+                  expr.dx(i,j)/( std::cosh(expr.val(j))* std::cosh(expr.val(j))),
+                  expr.fastAccessDx(i,j) /
+                    ( std::cosh(expr.val(j))* std::cosh(expr.val(j))))
 FAD_UNARYOP_MACRO(acosh,
                   ACoshOp,
                   std::acosh(expr.val()),
-                  expr.dx(i)/ std::sqrt((expr.val()-value_type(1)) *
-                                       (expr.val()+value_type(1))),
-                  expr.fastAccessDx(i)/ std::sqrt((expr.val()-value_type(1)) *
-                                                 (expr.val()+value_type(1))))
+                  std::acosh(expr.val(j)),
+                  expr.dx(i,j)/ std::sqrt((expr.val(j)-val_type(1)) *
+                                       (expr.val(j)+val_type(1))),
+                  expr.fastAccessDx(i,j)/ std::sqrt((expr.val(j)-val_type(1)) *
+                                                 (expr.val(j)+val_type(1))))
 FAD_UNARYOP_MACRO(asinh,
                   ASinhOp,
                   std::asinh(expr.val()),
-                  expr.dx(i)/ std::sqrt(value_type(1)+expr.val()*expr.val()),
-                  expr.fastAccessDx(i)/ std::sqrt(value_type(1)+
-                                                 expr.val()*expr.val()))
+                  std::asinh(expr.val(j)),
+                  expr.dx(i,j)/ std::sqrt(val_type(1)+expr.val(j)*expr.val(j)),
+                  expr.fastAccessDx(i,j)/ std::sqrt(val_type(1)+
+                                                 expr.val(j)*expr.val(j)))
 FAD_UNARYOP_MACRO(atanh,
                   ATanhOp,
                   std::atanh(expr.val()),
-                  expr.dx(i)/(value_type(1)-expr.val()*expr.val()),
-                  expr.fastAccessDx(i)/(value_type(1)-
-                                                 expr.val()*expr.val()))
+                  std::atanh(expr.val(j)),
+                  expr.dx(i,j)/(val_type(1)-expr.val(j)*expr.val(j)),
+                  expr.fastAccessDx(i,j)/(val_type(1)-
+                                                 expr.val(j)*expr.val(j)))
 FAD_UNARYOP_MACRO(abs,
                   AbsOp,
                   std::abs(expr.val()),
-                  expr.val() >= 0 ? value_type(+expr.dx(i)) :
-                    value_type(-expr.dx(i)),
-                  expr.val() >= 0 ? value_type(+expr.fastAccessDx(i)) :
-                    value_type(-expr.fastAccessDx(i)))
+                  std::abs(expr.val(j)),
+                  expr.val(j) >= 0 ? val_type(+expr.dx(i,j)) :
+                    val_type(-expr.dx(i,j)),
+                  expr.val(j) >= 0 ? val_type(+expr.fastAccessDx(i,j)) :
+                    val_type(-expr.fastAccessDx(i,j)))
 FAD_UNARYOP_MACRO(fabs,
                   FAbsOp,
                   std::fabs(expr.val()),
-                  expr.val() >= 0 ? value_type(+expr.dx(i)) :
-                    value_type(-expr.dx(i)),
-                  expr.val() >= 0 ? value_type(+expr.fastAccessDx(i)) :
-                    value_type(-expr.fastAccessDx(i)))
+                  std::fabs(expr.val(j)),
+                  expr.val(j) >= 0 ? val_type(+expr.dx(i,j)) :
+                    val_type(-expr.dx(i,j)),
+                  expr.val(j) >= 0 ? val_type(+expr.fastAccessDx(i,j)) :
+                    val_type(-expr.fastAccessDx(i,j)))
 #ifdef HAVE_SACADO_CXX11
 FAD_UNARYOP_MACRO(cbrt,
                   CbrtOp,
                   std::cbrt(expr.val()),
-                  expr.dx(i)/(value_type(3)*std::cbrt(expr.val()*expr.val())),
-                  expr.fastAccessDx(i)/(value_type(3)*std::cbrt(expr.val()*expr.val())))
+                  std::cbrt(expr.val(j)),
+                  expr.dx(i,j)/(val_type(3)*std::cbrt(expr.val(j)*expr.val(j))),
+                  expr.fastAccessDx(i,j)/(val_type(3)*std::cbrt(expr.val(j)*expr.val(j))))
 #endif
 
 #undef FAD_UNARYOP_MACRO
 
-#define FAD_BINARYOP_MACRO(OPNAME,OP,VALUE,DX,FASTACCESSDX,VAL_CONST_DX_1,VAL_CONST_DX_2,CONST_DX_1,CONST_DX_2,CONST_FASTACCESSDX_1,CONST_FASTACCESSDX_2) \
+#define FAD_BINARYOP_MACRO(OPNAME,OP,MPVALUE,VALUE,DX,FASTACCESSDX,MPVAL_CONST_DX_1,MPVAL_CONST_DX_2,VAL_CONST_DX_1,VAL_CONST_DX_2,CONST_DX_1,CONST_DX_2,CONST_FASTACCESSDX_1,CONST_FASTACCESSDX_2) \
 namespace Sacado {                                                      \
   namespace Fad {                                                       \
                                                                         \
     template <typename ExprT1, typename ExprT2>                         \
-    class OP {};                                                        \
-                                                                        \
-    template <typename ExprT1, typename ExprT2>                         \
-    struct ExprSpec< OP< ExprT1, ExprT2 > > {                           \
-      typedef typename ExprSpec<ExprT1>::type type;                     \
-    };                                                                  \
-                                                                        \
-    template <typename ExprT1, typename ExprT2>                         \
-    class Expr< OP< ExprT1, ExprT2 >,ExprSpecDefault > {                \
+    class Expr< OP< ExprT1, ExprT2 >,ExprSpecMPVector > {               \
                                                                         \
     public:                                                             \
                                                                         \
@@ -278,6 +280,8 @@ namespace Sacado {                                                      \
       typedef typename ExprT2::base_expr_type base_expr_type_2;         \
       typedef typename Sacado::Promote<base_expr_type_1,                \
                                        base_expr_type_2>::type base_expr_type; \
+                                                                        \
+      typedef typename value_type::value_type val_type;                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :                \
@@ -306,16 +310,21 @@ namespace Sacado {                                                      \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       const value_type val() const {                                    \
+        return MPVALUE;                                                 \
+      }                                                                 \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
+      const val_type val(int j) const {                                 \
         return VALUE;                                                   \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      const value_type dx(int i) const {                                \
+      const val_type dx(int i, int j) const {                           \
         return DX;                                                      \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      const value_type fastAccessDx(int i) const {                      \
+      const val_type fastAccessDx(int i, int j) const {                 \
         return FASTACCESSDX;                                            \
       }                                                                 \
                                                                         \
@@ -327,12 +336,7 @@ namespace Sacado {                                                      \
     };                                                                  \
                                                                         \
     template <typename ExprT1, typename T2>                             \
-    struct ExprSpec< OP< ExprT1, ConstExpr<T2> > > {                    \
-      typedef typename ExprSpec<ExprT1>::type type;                     \
-    };                                                                  \
-                                                                        \
-    template <typename ExprT1, typename T2>                             \
-    class Expr< OP< ExprT1, ConstExpr<T2> >,ExprSpecDefault > {         \
+    class Expr< OP< ExprT1, ConstExpr<T2> >,ExprSpecMPVector > {        \
                                                                         \
     public:                                                             \
                                                                         \
@@ -352,6 +356,8 @@ namespace Sacado {                                                      \
       typedef typename ExprT2::base_expr_type base_expr_type_2;         \
       typedef typename Sacado::Promote<base_expr_type_1,                \
                                        base_expr_type_2>::type base_expr_type; \
+                                                                        \
+      typedef typename value_type::value_type val_type;                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       Expr(const ExprT1& expr1_, const ConstT& c_) :                    \
@@ -377,16 +383,21 @@ namespace Sacado {                                                      \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       const value_type val() const {                                    \
+        return MPVAL_CONST_DX_2;                                        \
+      }                                                                 \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
+      const val_type val(int j) const {                                 \
         return VAL_CONST_DX_2;                                          \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      const value_type dx(int i) const {                                \
+      const val_type dx(int i, int j) const {                           \
         return CONST_DX_2;                                              \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      const value_type fastAccessDx(int i) const {                      \
+      const val_type fastAccessDx(int i, int j) const {                 \
         return CONST_FASTACCESSDX_2;                                    \
       }                                                                 \
                                                                         \
@@ -397,12 +408,7 @@ namespace Sacado {                                                      \
     };                                                                  \
                                                                         \
     template <typename T1, typename ExprT2>                             \
-    struct ExprSpec< OP< ConstExpr<T1>, ExprT2 > > {                    \
-      typedef typename ExprSpec<ExprT2>::type type;                     \
-    };                                                                  \
-                                                                        \
-    template <typename T1, typename ExprT2>                             \
-    class Expr< OP< ConstExpr<T1>, ExprT2 >,ExprSpecDefault > {         \
+    class Expr< OP< ConstExpr<T1>, ExprT2 >,ExprSpecMPVector > {        \
                                                                         \
     public:                                                             \
                                                                         \
@@ -423,6 +429,7 @@ namespace Sacado {                                                      \
       typedef typename Sacado::Promote<base_expr_type_1,                \
                                        base_expr_type_2>::type base_expr_type; \
                                                                         \
+      typedef typename value_type::value_type val_type;                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       Expr(const ConstT& c_, const ExprT2& expr2_) :                    \
@@ -448,16 +455,21 @@ namespace Sacado {                                                      \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
       const value_type val() const {                                    \
+        return MPVAL_CONST_DX_1;                                        \
+      }                                                                 \
+                                                                        \
+      KOKKOS_INLINE_FUNCTION                                            \
+      const val_type val(int j) const {                                 \
         return VAL_CONST_DX_1;                                          \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      const value_type dx(int i) const {                                \
+      const val_type dx(int i, int j) const {                           \
         return CONST_DX_1;                                              \
       }                                                                 \
                                                                         \
       KOKKOS_INLINE_FUNCTION                                            \
-      const value_type fastAccessDx(int i) const {                      \
+      const val_type fastAccessDx(int i, int j) const {                 \
         return CONST_FASTACCESSDX_1;                                    \
       }                                                                 \
                                                                         \
@@ -467,176 +479,130 @@ namespace Sacado {                                                      \
       const ExprT2& expr2;                                              \
     };                                                                  \
                                                                         \
-    template <typename T1, typename T2>                                 \
-    KOKKOS_INLINE_FUNCTION                                              \
-    SACADO_FAD_OP_ENABLE_EXPR_EXPR(OP)                                  \
-    OPNAME (const T1& expr1, const T2& expr2)                           \
-    {                                                                   \
-      typedef OP< T1, T2 > expr_t;                                      \
-                                                                        \
-      return Expr<expr_t>(expr1, expr2);                                \
-    }                                                                   \
-                                                                        \
-    template <typename T>                                               \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Expr< OP< Expr<T>, Expr<T> > >                                      \
-    OPNAME (const Expr<T>& expr1, const Expr<T>& expr2)                 \
-    {                                                                   \
-      typedef OP< Expr<T>, Expr<T> > expr_t;                            \
-                                                                        \
-      return Expr<expr_t>(expr1, expr2);                                \
-    }                                                                   \
-                                                                        \
-    template <typename T>                                               \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Expr< OP< ConstExpr<typename Expr<T>::value_type>,                  \
-              Expr<T> > >                                               \
-    OPNAME (const typename Expr<T>::value_type& c,                      \
-            const Expr<T>& expr)                                        \
-    {                                                                   \
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;           \
-      typedef OP< ConstT, Expr<T> > expr_t;                             \
-                                                                        \
-      return Expr<expr_t>(ConstT(c), expr);                             \
-    }                                                                   \
-                                                                        \
-    template <typename T>                                               \
-    KOKKOS_INLINE_FUNCTION                                              \
-    Expr< OP< Expr<T>,                                                  \
-              ConstExpr<typename Expr<T>::value_type> > >               \
-    OPNAME (const Expr<T>& expr,                                        \
-            const typename Expr<T>::value_type& c)                      \
-    {                                                                   \
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;           \
-      typedef OP< Expr<T>, ConstT > expr_t;                             \
-                                                                        \
-      return Expr<expr_t>(expr, ConstT(c));                             \
-    }                                                                   \
-                                                                        \
-    template <typename T>                                               \
-    KOKKOS_INLINE_FUNCTION                                              \
-    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(OP)                                \
-    OPNAME (const typename Expr<T>::scalar_type& c,                     \
-            const Expr<T>& expr)                                        \
-    {                                                                   \
-      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;          \
-      typedef OP< ConstT, Expr<T> > expr_t;                             \
-                                                                        \
-      return Expr<expr_t>(ConstT(c), expr);                             \
-    }                                                                   \
-                                                                        \
-    template <typename T>                                               \
-    KOKKOS_INLINE_FUNCTION                                              \
-    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(OP)                                \
-    OPNAME (const Expr<T>& expr,                                        \
-            const typename Expr<T>::scalar_type& c)                     \
-    {                                                                   \
-      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;          \
-      typedef OP< Expr<T>, ConstT > expr_t;                             \
-                                                                        \
-      return Expr<expr_t>(expr, ConstT(c));                             \
-    }                                                                   \
   }                                                                     \
-                                                                        \
 }
 
 
 FAD_BINARYOP_MACRO(operator+,
                    AdditionOp,
                    expr1.val() + expr2.val(),
-                   expr1.dx(i) + expr2.dx(i),
-                   expr1.fastAccessDx(i) + expr2.fastAccessDx(i),
+                   expr1.val(j) + expr2.val(j),
+                   expr1.dx(i,j) + expr2.dx(i,j),
+                   expr1.fastAccessDx(i,j) + expr2.fastAccessDx(i,j),
                    c.val() + expr2.val(),
                    expr1.val() + c.val(),
-                   expr2.dx(i),
-                   expr1.dx(i),
-                   expr2.fastAccessDx(i),
-                   expr1.fastAccessDx(i))
+                   c.val(j) + expr2.val(j),
+                   expr1.val(j) + c.val(j),
+                   expr2.dx(i,j),
+                   expr1.dx(i,j),
+                   expr2.fastAccessDx(i,j),
+                   expr1.fastAccessDx(i,j))
 FAD_BINARYOP_MACRO(operator-,
                    SubtractionOp,
                    expr1.val() - expr2.val(),
-                   expr1.dx(i) - expr2.dx(i),
-                   expr1.fastAccessDx(i) - expr2.fastAccessDx(i),
+                   expr1.val(j) - expr2.val(j),
+                   expr1.dx(i,j) - expr2.dx(i,j),
+                   expr1.fastAccessDx(i,j) - expr2.fastAccessDx(i,j),
                    c.val() - expr2.val(),
                    expr1.val() - c.val(),
-                   -expr2.dx(i),
-                   expr1.dx(i),
-                   -expr2.fastAccessDx(i),
-                   expr1.fastAccessDx(i))
+                   c.val(j) - expr2.val(j),
+                   expr1.val(j) - c.val(j),
+                   -expr2.dx(i,j),
+                   expr1.dx(i,j),
+                   -expr2.fastAccessDx(i,j),
+                   expr1.fastAccessDx(i,j))
 // FAD_BINARYOP_MACRO(operator*,
 //                 MultiplicationOp,
 //                 expr1.val() * expr2.val(),
-//                 expr1.val()*expr2.dx(i) + expr1.dx(i)*expr2.val(),
-//                 expr1.val()*expr2.fastAccessDx(i) +
-//                   expr1.fastAccessDx(i)*expr2.val(),
+//                 expr1.val(j) * expr2.val(j),
+//                 expr1.val(j)*expr2.dx(i,j) + expr1.dx(i,j)*expr2.val(j),
+//                 expr1.val(j)*expr2.fastAccessDx(i,j) +
+//                   expr1.fastAccessDx(i,j)*expr2.val(j),
 //                 c.val() * expr2.val(),
 //                 expr1.val() * c.val(),
-//                 c.val()*expr2.dx(i),
-//                 expr1.dx(i)*c.val(),
-//                 c.val()*expr2.fastAccessDx(i),
-//                 expr1.fastAccessDx(i)*c.val())
+//                 c.val(j) * expr2.val(j),
+//                 expr1.val(j) * c.val(j),
+//                 c.val(j)*expr2.dx(i,j),
+//                 expr1.dx(i,j)*c.val(j),
+//                 c.val(j)*expr2.fastAccessDx(i,j),
+//                 expr1.fastAccessDx(i,j)*c.val(j))
 FAD_BINARYOP_MACRO(operator/,
                    DivisionOp,
                    expr1.val() / expr2.val(),
-                   (expr1.dx(i)*expr2.val() - expr2.dx(i)*expr1.val()) /
-                     (expr2.val()*expr2.val()),
-                   (expr1.fastAccessDx(i)*expr2.val() -
-                      expr2.fastAccessDx(i)*expr1.val()) /
-                      (expr2.val()*expr2.val()),
+                   expr1.val(j) / expr2.val(j),
+                   (expr1.dx(i,j)*expr2.val(j) - expr2.dx(i,j)*expr1.val(j)) /
+                     (expr2.val(j)*expr2.val(j)),
+                   (expr1.fastAccessDx(i,j)*expr2.val(j) -
+                      expr2.fastAccessDx(i,j)*expr1.val(j)) /
+                      (expr2.val(j)*expr2.val(j)),
                    c.val() / expr2.val(),
                    expr1.val() / c.val(),
-                   -expr2.dx(i)*c.val() / (expr2.val()*expr2.val()),
-                   expr1.dx(i)/c.val(),
-                   -expr2.fastAccessDx(i)*c.val() / (expr2.val()*expr2.val()),
-                   expr1.fastAccessDx(i)/c.val())
+                   c.val(j) / expr2.val(j),
+                   expr1.val(j) / c.val(j),
+                   -expr2.dx(i,j)*c.val(j) / (expr2.val(j)*expr2.val(j)),
+                   expr1.dx(i,j)/c.val(j),
+                   -expr2.fastAccessDx(i,j)*c.val(j) / (expr2.val(j)*expr2.val(j)),
+                   expr1.fastAccessDx(i,j)/c.val(j))
 FAD_BINARYOP_MACRO(atan2,
                    Atan2Op,
                    std::atan2(expr1.val(), expr2.val()),
-                   (expr2.val()*expr1.dx(i) - expr1.val()*expr2.dx(i))/
-                        (expr1.val()*expr1.val() + expr2.val()*expr2.val()),
-                   (expr2.val()*expr1.fastAccessDx(i) - expr1.val()*expr2.fastAccessDx(i))/
-                        (expr1.val()*expr1.val() + expr2.val()*expr2.val()),
+                   std::atan2(expr1.val(j), expr2.val(j)),
+                   (expr2.val(j)*expr1.dx(i,j) - expr1.val(j)*expr2.dx(i,j))/
+                        (expr1.val(j)*expr1.val(j) + expr2.val(j)*expr2.val(j)),
+                   (expr2.val(j)*expr1.fastAccessDx(i,j) - expr1.val(j)*expr2.fastAccessDx(i,j))/
+                        (expr1.val(j)*expr1.val(j) + expr2.val(j)*expr2.val(j)),
                    std::atan2(c.val(), expr2.val()),
                    std::atan2(expr1.val(), c.val()),
-                   (-c.val()*expr2.dx(i)) / (c.val()*c.val() + expr2.val()*expr2.val()),
-                   (c.val()*expr1.dx(i))/ (expr1.val()*expr1.val() + c.val()*c.val()),
-                   (-c.val()*expr2.fastAccessDx(i))/ (c.val()*c.val() + expr2.val()*expr2.val()),
-                   (c.val()*expr1.fastAccessDx(i))/ (expr1.val()*expr1.val() + c.val()*c.val()))
+                   std::atan2(c.val(j), expr2.val(j)),
+                   std::atan2(expr1.val(j), c.val(j)),
+                   (-c.val(j)*expr2.dx(i,j)) / (c.val(j)*c.val(j) + expr2.val(j)*expr2.val(j)),
+                   (c.val(j)*expr1.dx(i,j))/ (expr1.val(j)*expr1.val(j) + c.val(j)*c.val(j)),
+                   (-c.val(j)*expr2.fastAccessDx(i,j))/ (c.val(j)*c.val(j) + expr2.val(j)*expr2.val(j)),
+                   (c.val(j)*expr1.fastAccessDx(i,j))/ (expr1.val(j)*expr1.val(j) + c.val(j)*c.val(j)))
 FAD_BINARYOP_MACRO(pow,
                    PowerOp,
                    std::pow(expr1.val(), expr2.val()),
-                   expr1.val() == value_type(0) ? value_type(0) : value_type((expr2.dx(i)*std::log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*std::pow(expr1.val(),expr2.val())),
-                   expr1.val() == value_type(0) ? value_type(0.0) : value_type((expr2.fastAccessDx(i)*std::log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*std::pow(expr1.val(),expr2.val())),
+                   std::pow(expr1.val(j), expr2.val(j)),
+                   expr1.val(j) == val_type(0) ? val_type(0) : val_type((expr2.dx(i,j)*std::log(expr1.val(j))+expr2.val(j)*expr1.dx(i,j)/expr1.val(j))*std::pow(expr1.val(j),expr2.val(j))),
+                   expr1.val(j) == val_type(0) ? val_type(0.0) : val_type((expr2.fastAccessDx(i,j)*std::log(expr1.val(j))+expr2.val(j)*expr1.fastAccessDx(i,j)/expr1.val(j))*std::pow(expr1.val(j),expr2.val(j))),
                    std::pow(c.val(), expr2.val()),
                    std::pow(expr1.val(), c.val()),
-                   c.val() == value_type(0) ? value_type(0) : value_type(expr2.dx(i)*std::log(c.val())*std::pow(c.val(),expr2.val())),
-                   expr1.val() == value_type(0) ? value_type(0.0) : value_type(c.val()*expr1.dx(i)/expr1.val()*std::pow(expr1.val(),c.val())),
-                   c.val() == value_type(0) ? value_type(0) : value_type(expr2.fastAccessDx(i)*std::log(c.val())*std::pow(c.val(),expr2.val())),
-                   expr1.val() == value_type(0) ? value_type(0.0) : value_type(c.val()*expr1.fastAccessDx(i)/expr1.val()*std::pow(expr1.val(),c.val())))
+                   std::pow(c.val(j), expr2.val(j)),
+                   std::pow(expr1.val(j), c.val(j)),
+                   c.val(j) == val_type(0) ? val_type(0) : val_type(expr2.dx(i,j)*std::log(c.val(j))*std::pow(c.val(j),expr2.val(j))),
+                   expr1.val(j) == val_type(0) ? val_type(0.0) : val_type(c.val(j)*expr1.dx(i,j)/expr1.val(j)*std::pow(expr1.val(j),c.val(j))),
+                   c.val(j) == val_type(0) ? val_type(0) : val_type(expr2.fastAccessDx(i,j)*std::log(c.val(j))*std::pow(c.val(j),expr2.val(j))),
+                   expr1.val(j) == val_type(0) ? val_type(0.0) : val_type(c.val(j)*expr1.fastAccessDx(i,j)/expr1.val(j)*std::pow(expr1.val(j),c.val(j))))
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
                    std::max(expr1.val(), expr2.val()),
-                   expr1.val() >= expr2.val() ? expr1.dx(i) : expr2.dx(i),
-                   expr1.val() >= expr2.val() ? expr1.fastAccessDx(i) :
-                                                expr2.fastAccessDx(i),
+                   std::max(expr1.val(j), expr2.val(j)),
+                   expr1.val(j) >= expr2.val(j) ? expr1.dx(i,j) : expr2.dx(i,j),
+                   expr1.val(j) >= expr2.val(j) ? expr1.fastAccessDx(i,j) :
+                                                expr2.fastAccessDx(i,j),
                    std::max(c.val(), expr2.val()),
                    std::max(expr1.val(), c.val()),
-                   c.val() >= expr2.val() ? value_type(0) : expr2.dx(i),
-                   expr1.val() >= c.val() ? expr1.dx(i) : value_type(0),
-                   c.val() >= expr2.val() ? value_type(0) : expr2.fastAccessDx(i),
-                   expr1.val() >= c.val() ? expr1.fastAccessDx(i) : value_type(0))
+                   std::max(c.val(j), expr2.val(j)),
+                   std::max(expr1.val(j), c.val(j)),
+                   c.val(j) >= expr2.val(j) ? val_type(0) : expr2.dx(i,j),
+                   expr1.val(j) >= c.val(j) ? expr1.dx(i,j) : val_type(0),
+                   c.val(j) >= expr2.val(j) ? val_type(0) : expr2.fastAccessDx(i,j),
+                   expr1.val(j) >= c.val(j) ? expr1.fastAccessDx(i,j) : val_type(0))
 FAD_BINARYOP_MACRO(min,
                    MinOp,
                    std::min(expr1.val(), expr2.val()),
-                   expr1.val() <= expr2.val() ? expr1.dx(i) : expr2.dx(i),
-                   expr1.val() <= expr2.val() ? expr1.fastAccessDx(i) :
-                                                expr2.fastAccessDx(i),
+                   std::min(expr1.val(j), expr2.val(j)),
+                   expr1.val(j) <= expr2.val(j) ? expr1.dx(i,j) : expr2.dx(i,j),
+                   expr1.val(j) <= expr2.val(j) ? expr1.fastAccessDx(i,j) :
+                                                expr2.fastAccessDx(i,j),
                    std::min(c.val(), expr2.val()),
                    std::min(expr1.val(), c.val()),
-                   c.val() <= expr2.val() ? value_type(0) : expr2.dx(i),
-                   expr1.val() <= c.val() ? expr1.dx(i) : value_type(0),
-                   c.val() <= expr2.val() ? value_type(0) : expr2.fastAccessDx(i),
-                   expr1.val() <= c.val() ? expr1.fastAccessDx(i) : value_type(0))
+                   std::min(c.val(j), expr2.val(j)),
+                   std::min(expr1.val(j), c.val(j)),
+                   c.val(j) <= expr2.val(j) ? val_type(0) : expr2.dx(i,j),
+                   expr1.val(j) <= c.val(j) ? expr1.dx(i,j) : val_type(0),
+                   c.val(j) <= expr2.val(j) ? val_type(0) : expr2.fastAccessDx(i,j),
+                   expr1.val(j) <= c.val(j) ? expr1.fastAccessDx(i,j) : val_type(0))
 
 
 #undef FAD_BINARYOP_MACRO
@@ -645,15 +611,7 @@ namespace Sacado {
   namespace Fad {
 
     template <typename ExprT1, typename ExprT2>
-    class MultiplicationOp {};
-
-    template <typename ExprT1, typename ExprT2>
-    struct ExprSpec< MultiplicationOp< ExprT1, ExprT2 > > {
-      typedef typename ExprSpec<ExprT1>::type type;
-    };
-
-    template <typename ExprT1, typename ExprT2>
-    class Expr< MultiplicationOp< ExprT1, ExprT2 >,ExprSpecDefault > {
+    class Expr< MultiplicationOp< ExprT1, ExprT2 >,ExprSpecMPVector > {
 
     public:
 
@@ -671,6 +629,8 @@ namespace Sacado {
       typedef typename ExprT2::base_expr_type base_expr_type_2;
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
+
+      typedef typename value_type::value_type val_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
@@ -703,19 +663,24 @@ namespace Sacado {
       }
 
       KOKKOS_INLINE_FUNCTION
-      const value_type dx(int i) const {
-        if (expr1.size() > 0 && expr2.size() > 0)
-          return expr1.val()*expr2.dx(i) + expr1.dx(i)*expr2.val();
-        else if (expr1.size() > 0)
-          return expr1.dx(i)*expr2.val();
-        else
-          return expr1.val()*expr2.dx(i);
+      const val_type val(int j) const {
+        return expr1.val(j)*expr2.val(j);
       }
 
       KOKKOS_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
-        return expr1.val()*expr2.fastAccessDx(i) +
-          expr1.fastAccessDx(i)*expr2.val();
+      const val_type dx(int i, int j) const {
+        if (expr1.size() > 0 && expr2.size() > 0)
+          return expr1.val(j)*expr2.dx(i,j) + expr1.dx(i,j)*expr2.val(j);
+        else if (expr1.size() > 0)
+          return expr1.dx(i,j)*expr2.val(j);
+        else
+          return expr1.val(j)*expr2.dx(i,j);
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      const val_type fastAccessDx(int i, int j) const {
+        return expr1.val(j)*expr2.fastAccessDx(i,j) +
+          expr1.fastAccessDx(i,j)*expr2.val(j);
       }
 
     protected:
@@ -726,12 +691,7 @@ namespace Sacado {
     };
 
     template <typename ExprT1, typename T2>
-    struct ExprSpec< MultiplicationOp< ExprT1, ConstExpr<T2> > > {
-      typedef typename ExprSpec<ExprT1>::type type;
-    };
-
-    template <typename ExprT1, typename T2>
-    class Expr< MultiplicationOp< ExprT1, ConstExpr<T2> >,ExprSpecDefault > {
+    class Expr< MultiplicationOp< ExprT1, ConstExpr<T2> >,ExprSpecMPVector > {
 
     public:
 
@@ -751,6 +711,8 @@ namespace Sacado {
       typedef typename ExprT2::base_expr_type base_expr_type_2;
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
+
+      typedef typename value_type::value_type val_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ExprT1& expr1_, const ConstT& c_) :
@@ -774,19 +736,24 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       bool updateValue() const { return expr1.updateValue(); }
 
-      KOKKOS_INLINE_FUNCTION
+       KOKKOS_INLINE_FUNCTION
       const value_type val() const {
         return expr1.val()*c.val();
       }
 
       KOKKOS_INLINE_FUNCTION
-      const value_type dx(int i) const {
-        return expr1.dx(i)*c.val();
+      const val_type val(int j) const {
+        return expr1.val(j)*c.val(j);
       }
 
       KOKKOS_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
-        return expr1.fastAccessDx(i)*c.val();
+      const val_type dx(int i, int j) const {
+        return expr1.dx(i,j)*c.val(j);
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      const val_type fastAccessDx(int i, int j) const {
+        return expr1.fastAccessDx(i,j)*c.val(j);
       }
 
     protected:
@@ -796,12 +763,7 @@ namespace Sacado {
     };
 
     template <typename T1, typename ExprT2>
-    struct ExprSpec< MultiplicationOp< ConstExpr<T1>, ExprT2 > > {
-      typedef typename ExprSpec<ExprT2>::type type;
-    };
-
-    template <typename T1, typename ExprT2>
-    class Expr< MultiplicationOp< ConstExpr<T1>, ExprT2 >,ExprSpecDefault > {
+    class Expr< MultiplicationOp< ConstExpr<T1>, ExprT2 >,ExprSpecMPVector > {
 
     public:
 
@@ -821,6 +783,8 @@ namespace Sacado {
       typedef typename ExprT2::base_expr_type base_expr_type_2;
       typedef typename Sacado::Promote<base_expr_type_1,
                                        base_expr_type_2>::type base_expr_type;
+
+      typedef typename value_type::value_type val_type;
 
       KOKKOS_INLINE_FUNCTION
       Expr(const ConstT& c_, const ExprT2& expr2_) :
@@ -850,13 +814,18 @@ namespace Sacado {
       }
 
       KOKKOS_INLINE_FUNCTION
-      const value_type dx(int i) const {
-        return c.val()*expr2.dx(i);
+      const val_type val(int j) const {
+        return c.val(j)*expr2.val(j);
       }
 
       KOKKOS_INLINE_FUNCTION
-      const value_type fastAccessDx(int i) const {
-        return c.val()*expr2.fastAccessDx(i);
+      const val_type dx(int i, int j) const {
+        return c.val(j)*expr2.dx(i,j);
+      }
+
+      KOKKOS_INLINE_FUNCTION
+      const val_type fastAccessDx(int i, int j) const {
+        return c.val(j)*expr2.fastAccessDx(i,j);
       }
 
     protected:
@@ -865,214 +834,32 @@ namespace Sacado {
       const ExprT2& expr2;
     };
 
-    template <typename T1, typename T2>
-    KOKKOS_INLINE_FUNCTION
-    SACADO_FAD_OP_ENABLE_EXPR_EXPR(MultiplicationOp)
-    operator* (const T1& expr1, const T2& expr2)
-    {
-      typedef MultiplicationOp< T1, T2 > expr_t;
-
-      return Expr<expr_t>(expr1, expr2);
-    }
-
-    template <typename T>
-    KOKKOS_INLINE_FUNCTION
-    Expr< MultiplicationOp< Expr<T>, Expr<T> > >
-    operator* (const Expr<T>& expr1, const Expr<T>& expr2)
-    {
-      typedef MultiplicationOp< Expr<T>, Expr<T> > expr_t;
-
-      return Expr<expr_t>(expr1, expr2);
-    }
-
-    template <typename T>
-    KOKKOS_INLINE_FUNCTION
-    Expr< MultiplicationOp< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >
-    operator* (const typename Expr<T>::value_type& c,
-               const Expr<T>& expr)
-    {
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;
-      typedef MultiplicationOp< ConstT, Expr<T> > expr_t;
-
-      return Expr<expr_t>(ConstT(c), expr);
-    }
-
-    template <typename T>
-    KOKKOS_INLINE_FUNCTION
-    Expr< MultiplicationOp< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >
-    operator* (const Expr<T>& expr,
-               const typename Expr<T>::value_type& c)
-    {
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;
-      typedef MultiplicationOp< Expr<T>, ConstT > expr_t;
-
-      return Expr<expr_t>(expr, ConstT(c));
-    }
-
-    template <typename T>
-    KOKKOS_INLINE_FUNCTION
-    SACADO_FAD_OP_ENABLE_SCALAR_EXPR(MultiplicationOp)
-    operator* (const typename Expr<T>::scalar_type& c,
-               const Expr<T>& expr)
-    {
-      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;
-      typedef MultiplicationOp< ConstT, Expr<T> > expr_t;
-
-      return Expr<expr_t>(ConstT(c), expr);
-    }
-
-    template <typename T>
-    KOKKOS_INLINE_FUNCTION
-    SACADO_FAD_OP_ENABLE_EXPR_SCALAR(MultiplicationOp)
-    operator* (const Expr<T>& expr,
-               const typename Expr<T>::scalar_type& c)
-    {
-      typedef ConstExpr<typename Expr<T>::scalar_type> ConstT;
-      typedef MultiplicationOp< Expr<T>, ConstT > expr_t;
-
-      return Expr<expr_t>(expr, ConstT(c));
-    }
-  }
-}
-
-//-------------------------- Relational Operators -----------------------
-
-#define FAD_RELOP_MACRO(OP)                                             \
-namespace Sacado {                                                      \
-  namespace Fad {                                                       \
-    template <typename ExprT1, typename ExprT2>                         \
-    KOKKOS_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const Expr<ExprT1>& expr1,                             \
-                 const Expr<ExprT2>& expr2)                             \
-    {                                                                   \
-      return expr1.val() OP expr2.val();                                \
-    }                                                                   \
-                                                                        \
-    template <typename ExprT2>                                          \
-    KOKKOS_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const typename Expr<ExprT2>::value_type& a,            \
-                 const Expr<ExprT2>& expr2)                             \
-    {                                                                   \
-      return a OP expr2.val();                                          \
-    }                                                                   \
-                                                                        \
-    template <typename ExprT1>                                          \
-    KOKKOS_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const Expr<ExprT1>& expr1,                             \
-                 const typename Expr<ExprT1>::value_type& b)            \
-    {                                                                   \
-      return expr1.val() OP b;                                          \
-    }                                                                   \
-  }                                                                     \
-}
-
-FAD_RELOP_MACRO(==)
-FAD_RELOP_MACRO(!=)
-FAD_RELOP_MACRO(<)
-FAD_RELOP_MACRO(>)
-FAD_RELOP_MACRO(<=)
-FAD_RELOP_MACRO(>=)
-FAD_RELOP_MACRO(<<=)
-FAD_RELOP_MACRO(>>=)
-FAD_RELOP_MACRO(&)
-FAD_RELOP_MACRO(|)
-
-#undef FAD_RELOP_MACRO
-
-namespace Sacado {
-
-  namespace Fad {
-
     template <typename ExprT>
     KOKKOS_INLINE_FUNCTION
-    bool operator ! (const Expr<ExprT>& expr)
-    {
-      return ! expr.val();
-    }
-
-  } // namespace Fad
-
-} // namespace Sacado
-
-//-------------------------- Boolean Operators -----------------------
-namespace Sacado {
-
-  namespace Fad {
-
-    template <typename ExprT>
-    KOKKOS_INLINE_FUNCTION
-    bool toBool(const Expr<ExprT>& x) {
+    bool toBool(const Expr<ExprT,ExprSpecMPVector>& x) {
       bool is_zero = (x.val() == 0.0);
       for (int i=0; i<x.size(); i++)
-        is_zero = is_zero && (x.dx(i) == 0.0);
+        for (int j=0; j<x.val().size(); ++j)
+          is_zero = is_zero && (x.dx(i,j) == 0.0);
       return !is_zero;
     }
 
-  } // namespace Fad
-
-} // namespace Sacado
-
-#define FAD_BOOL_MACRO(OP)                                              \
-namespace Sacado {                                                      \
-  namespace Fad {                                                       \
-    template <typename ExprT1, typename ExprT2>                         \
-    KOKKOS_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const Expr<ExprT1>& expr1,                             \
-                 const Expr<ExprT2>& expr2)                             \
-    {                                                                   \
-      return toBool(expr1) OP toBool(expr2);                            \
-    }                                                                   \
-                                                                        \
-    template <typename ExprT2>                                          \
-    KOKKOS_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const typename Expr<ExprT2>::value_type& a,            \
-                 const Expr<ExprT2>& expr2)                             \
-    {                                                                   \
-      return a OP toBool(expr2);                                        \
-    }                                                                   \
-                                                                        \
-    template <typename ExprT1>                                          \
-    KOKKOS_INLINE_FUNCTION                                              \
-    bool                                                                \
-    operator OP (const Expr<ExprT1>& expr1,                             \
-                 const typename Expr<ExprT1>::value_type& b)            \
-    {                                                                   \
-      return toBool(expr1) OP b;                                        \
-    }                                                                   \
-  }                                                                     \
-}
-
-FAD_BOOL_MACRO(&&)
-FAD_BOOL_MACRO(||)
-
-#undef FAD_BOOL_MACRO
-
-//-------------------------- I/O Operators -----------------------
-
-namespace Sacado {
-
-  namespace Fad {
-
     template <typename ExprT>
-    std::ostream& operator << (std::ostream& os, const Expr<ExprT>& x) {
+    std::ostream& operator << (std::ostream& os, const Expr<ExprT,ExprSpecMPVector>& x) {
       os << x.val() << " [";
 
       for (int i=0; i< x.size(); i++) {
-        os << " " << x.dx(i);
+        os << " [";
+        for (int j=0; j<x.val().size(); ++j) {
+          os << " " << x.dx(i,j);
+        }
+        os << " ]";
       }
 
       os << " ]";
       return os;
     }
+  }
+}
 
-  } // namespace Fad
-
-} // namespace Sacado
-
-
-#endif // SACADO_FAD_OPS_HPP
+#endif // SACADO_FAD_OPS_MP_VECTOR_HPP

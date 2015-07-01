@@ -49,15 +49,30 @@
 //********************************************************
 // @HEADER
 
-#ifndef SACADO_FAD_GENERALFAD_HPP
-#define SACADO_FAD_GENERALFAD_HPP
+#ifndef SACADO_FAD_GENERALFAD_MP_VECTOR_HPP
+#define SACADO_FAD_GENERALFAD_MP_VECTOR_HPP
 
-#include "Sacado_Fad_Expression.hpp"
+#include "Sacado_Fad_GeneralFad.hpp"
+#include "Sacado_Fad_ExprSpec_MP_Vector.hpp"
+
+namespace Stokhos {
+  template <typename Ord, typename Val, int Num, typename Dev>
+  class StaticFixedStorage;
+}
 
 namespace Sacado {
 
-  //! Namespace for forward-mode AD classes
+  namespace MP {
+    template <typename S> class Vector;
+  }
+
   namespace Fad {
+
+    template <typename Ord, typename Val, int VecNum, typename Dev,
+              typename Storage>
+    struct ExprSpec< GeneralFad< Sacado::MP::Vector< Stokhos::StaticFixedStorage<Ord,Val,VecNum,Dev> >, Storage > > {
+      typedef ExprSpecMPVector type;
+    };
 
     //! Forward-mode AD class templated on the storage for the derivative array
     /*!
@@ -65,16 +80,21 @@ namespace Sacado {
      * type of derivative array storage.  It does not incorporate expression
      * templates.
      */
-    template <typename T, typename Storage>
-    class GeneralFad : public Storage {
+    template <typename Ord, typename Val, int VecNum, typename Dev,
+              typename Storage>
+    class GeneralFad< Sacado::MP::Vector< Stokhos::StaticFixedStorage<Ord,Val,VecNum,Dev> >, Storage> : public Storage {
 
     public:
+
+      typedef Sacado::MP::Vector< Stokhos::StaticFixedStorage<Ord,Val,VecNum,Dev> > T;
 
       //! Typename of values
       typedef typename RemoveConst<T>::type value_type;
 
       //! Typename of scalar's (which may be different from T)
       typedef typename ScalarType<value_type>::type scalar_type;
+
+      typedef typename value_type::value_type val_type;
 
       /*!
        * @name Initialization methods
@@ -134,13 +154,16 @@ namespace Sacado {
         if (sz) {
           if (x.hasFastAccess())
             for(int i=0; i<sz; ++i)
-              this->fastAccessDx(i) = x.fastAccessDx(i);
+              for (int j=0; j<VecNum; ++j)
+                fastAccessDx(i,j) = x.fastAccessDx(i,j);
           else
             for(int i=0; i<sz; ++i)
-              this->fastAccessDx(i) = x.dx(i);
+              for (int j=0; j<VecNum; ++j)
+                fastAccessDx(i,j) = x.dx(i,j);
         }
 
-        this->val() = x.val();
+        for (int j=0; j<VecNum; ++j)
+          val(j) = x.val(j);
       }
 
       //! Destructor
@@ -186,6 +209,29 @@ namespace Sacado {
       //@}
 
       /*!
+       * @name Value accessor methods
+       */
+      //@{
+
+      //! Returns value
+      KOKKOS_INLINE_FUNCTION
+      const T& val() const { return Storage::val();}
+
+      //! Returns value
+      KOKKOS_INLINE_FUNCTION
+      T& val() { return Storage::val();}
+
+      //! Returns value
+      KOKKOS_INLINE_FUNCTION
+      const val_type& val(int j) const { return Storage::val().fastAccessCoeff(j);}
+
+      //! Returns value
+      KOKKOS_INLINE_FUNCTION
+      val_type& val(int j) { return Storage::val().fastAccessCoeff(j);}
+
+      //@}
+
+      /*!
        * @name Derivative accessor methods
        */
       //@{
@@ -210,6 +256,38 @@ namespace Sacado {
       void setIsConstant(bool is_const) {
         if (is_const && this->size()!=0)
           this->resize(0);
+      }
+
+     //! Returns derivative array
+      KOKKOS_INLINE_FUNCTION
+      const T* dx() const { return this->dx_; }
+
+      //! Returns derivative component \c i with bounds checking
+      KOKKOS_INLINE_FUNCTION
+      T dx(int i) const { return this->size() ? this->dx_[i] : T(0.); }
+
+      //! Returns derivative component \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      T& fastAccessDx(int i) { return this->dx_[i];}
+
+      //! Returns derivative component \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      const T& fastAccessDx(int i) const { return this->dx_[i];}
+
+      //! Returns derivative component \c i with bounds checking
+      KOKKOS_INLINE_FUNCTION
+      val_type dx(int i, int j) const { return this->size() ? this->dx_[i].fastAccessCoeff(j) : val_type(0.0); }
+
+      //! Returns derivative component \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      val_type& fastAccessDx(int i, int j) {
+        return this->dx_[i].fastAccessCoeff(j);
+      }
+
+      //! Returns derivative component \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      const val_type& fastAccessDx(int i, int j) const {
+        return this->dx_[i].fastAccessCoeff(j);
       }
 
       //@}
@@ -256,13 +334,16 @@ namespace Sacado {
         if (sz) {
           if (x.hasFastAccess())
             for(int i=0; i<sz; ++i)
-              this->fastAccessDx(i) = x.fastAccessDx(i);
+              for (int j=0; j<VecNum; ++j)
+                fastAccessDx(i,j) = x.fastAccessDx(i,j);
           else
             for(int i=0; i<sz; ++i)
-              this->fastAccessDx(i) = x.dx(i);
+              for (int j=0; j<VecNum; ++j)
+                fastAccessDx(i,j) = x.dx(i,j);
         }
 
-        this->val() = x.val();
+        for (int j=0; j<VecNum; ++j)
+          val(j) = x.val(j);
 
         return *this;
       }
@@ -335,8 +416,6 @@ namespace Sacado {
         }
 
         this->val() += x.val();
-
-        return *this;
       }
 
       //! Subtraction-assignment operator with GeneralFad right-hand-side
@@ -349,7 +428,7 @@ namespace Sacado {
           throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
 
-        if (xsz) {
+       if (xsz) {
           if (sz) {
             for(int i=0; i<sz; ++i)
               this->fastAccessDx(i) -= x.fastAccessDx(i);
@@ -362,7 +441,6 @@ namespace Sacado {
         }
 
         this->val() -= x.val();
-
 
         return *this;
       }
@@ -442,34 +520,32 @@ namespace Sacado {
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(GeneralFad&) operator += (const Expr<S>& x) {
-        const int xsz = x.size(), sz = this->size();
+        const int xsz = x.size();
+        int sz = this->size();
 
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if ((xsz != sz) && (xsz != 0) && (sz != 0))
           throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
 
-        if (xsz) {
-          if (sz) {
-            if (x.hasFastAccess())
-              for (int i=0; i<sz; ++i)
-                this->fastAccessDx(i) += x.fastAccessDx(i);
-            else
-              for (int i=0; i<sz; ++i)
-                this->fastAccessDx(i) += x.dx(i);
-          }
-          else {
-            this->resizeAndZero(xsz);
-            if (x.hasFastAccess())
-              for (int i=0; i<xsz; ++i)
-                this->fastAccessDx(i) = x.fastAccessDx(i);
-            else
-              for (int i=0; i<xsz; ++i)
-                this->fastAccessDx(i) = x.dx(i);
-          }
+        if (xsz > sz) {
+          this->resizeAndZero(xsz);
+          sz = this->size();
         }
 
-        this->val() += x.val();
+        if (sz) {
+          if (x.hasFastAccess())
+            for(int i=0; i<sz; ++i)
+              for (int j=0; j<VecNum; ++j)
+                fastAccessDx(i,j) += x.fastAccessDx(i,j);
+          else
+            for(int i=0; i<sz; ++i)
+              for (int j=0; j<VecNum; ++j)
+                fastAccessDx(i,j) += x.dx(i,j);
+        }
+
+        for (int j=0; j<VecNum; ++j)
+          val(j) += x.val(j);
 
         return *this;
       }
@@ -489,24 +565,28 @@ namespace Sacado {
           if (sz) {
             if (x.hasFastAccess())
               for(int i=0; i<sz; ++i)
-                this->fastAccessDx(i) -= x.fastAccessDx(i);
+                for (int j=0; j<VecNum; ++j)
+                  fastAccessDx(i,j) -= x.fastAccessDx(i,j);
             else
               for (int i=0; i<sz; ++i)
-                this->fastAccessDx(i) -= x.dx(i);
+                for (int j=0; j<VecNum; ++j)
+                  fastAccessDx(i,j) -= x.dx(i,j);
           }
           else {
             this->resizeAndZero(xsz);
             if (x.hasFastAccess())
               for(int i=0; i<xsz; ++i)
-                this->fastAccessDx(i) = -x.fastAccessDx(i);
+                for (int j=0; j<VecNum; ++j)
+                  fastAccessDx(i,j) = -x.fastAccessDx(i,j);
             else
               for (int i=0; i<xsz; ++i)
-                this->fastAccessDx(i) = -x.dx(i);
+                for (int j=0; j<VecNum; ++j)
+                  fastAccessDx(i,j) = -x.dx(i,j);
           }
         }
 
-        this->val() -= x.val();
-
+        for (int j=0; j<VecNum; ++j)
+          val(j) -= x.val(j);
 
         return *this;
       }
@@ -528,29 +608,35 @@ namespace Sacado {
           if (sz) {
             if (x.hasFastAccess())
               for(int i=0; i<sz; ++i)
-                this->fastAccessDx(i) = v*x.fastAccessDx(i) + this->fastAccessDx(i)*xval;
+                for (int j=0; j<VecNum; ++j)
+                  fastAccessDx(i,j) = v.fastAccessCoeff(j)*x.fastAccessDx(i,j) + fastAccessDx(i,j)*xval.fastAccessCoeff(j);
             else
               for (int i=0; i<sz; ++i)
-                this->fastAccessDx(i) = v*x.dx(i) + this->fastAccessDx(i)*xval;
+                for (int j=0; j<VecNum; ++j)
+                  fastAccessDx(i,j) = v.fastAccessCoeff(j)*x.dx(i,j) + fastAccessDx(i,j)*xval.fastAccessCoeff(j);
           }
           else {
             this->resizeAndZero(xsz);
             if (x.hasFastAccess())
               for(int i=0; i<xsz; ++i)
-                this->fastAccessDx(i) = v*x.fastAccessDx(i);
+                for (int j=0; j<VecNum; ++j)
+                  fastAccessDx(i,j) = v.fastAccessCoeff(j)*x.fastAccessDx(i,j);
             else
               for (int i=0; i<xsz; ++i)
-                this->fastAccessDx(i) = v*x.dx(i);
+                for (int j=0; j<VecNum; ++j)
+                  fastAccessDx(i,j) = v.fastAccessCoeff(j)*x.dx(i,j);
           }
         }
         else {
           if (sz) {
             for (int i=0; i<sz; ++i)
-              this->fastAccessDx(i) *= xval;
+              for (int j=0; j<VecNum; ++j)
+                fastAccessDx(i,j) *= xval.fastAccessCoeff(j);
           }
         }
 
-        this->val() *= xval;
+        for (int j=0; j<VecNum; ++j)
+          val(j) *= xval.fastAccessCoeff(j);
 
         return *this;
       }
@@ -569,37 +655,72 @@ namespace Sacado {
 #endif
 
         if (xsz) {
+          T xval2 = xval*xval;
           if (sz) {
             if (x.hasFastAccess())
               for(int i=0; i<sz; ++i)
-                this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - v*x.fastAccessDx(i) )/ (xval*xval);
+                for (int j=0; j<VecNum; ++j)
+                  fastAccessDx(i,j) = ( fastAccessDx(i,j)*xval.fastAccessCoeff(j) - v.fastAccessCoeff(j)*x.fastAccessDx(i,j) )/ (xval2.fastAccessCoeff(j));
             else
               for (int i=0; i<sz; ++i)
-                this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - v*x.dx(i) )/ (xval*xval);
+                for (int j=0; j<VecNum; ++j)
+                  fastAccessDx(i,j) = ( fastAccessDx(i,j)*xval.fastAccessCoeff(j) - v.fastAccessCoeff(j)*x.dx(i,j) )/ (xval2.fastAccessCoeff(j));
           }
           else {
             this->resizeAndZero(xsz);
             if (x.hasFastAccess())
               for(int i=0; i<xsz; ++i)
-                this->fastAccessDx(i) = - v*x.fastAccessDx(i) / (xval*xval);
+                for (int j=0; j<VecNum; ++j)
+                  fastAccessDx(i,j) = - v.fastAccessCoeff(j)*x.fastAccessDx(i,j) / (xval2.fastAccessCoeff(j));
             else
               for (int i=0; i<xsz; ++i)
-                this->fastAccessDx(i) = -v*x.dx(i) / (xval*xval);
+                for (int j=0; j<VecNum; ++j)
+                  fastAccessDx(i,j) = -v.fastAccessCoeff(j)*x.dx(i,j) / (xval2.fastAccessCoeff(j));
           }
         }
         else {
           if (sz) {
             for (int i=0; i<sz; ++i)
-              this->fastAccessDx(i) /= xval;
+              for (int j=0; j<VecNum; ++j)
+                this->fastAccessDx(i,j) /= xval.fastAccessCoeff(j);
           }
         }
 
-        this->val() /= xval;
+        for (int j=0; j<VecNum; ++j)
+          val(j) /= xval.fastAccessCoeff(j);
 
         return *this;
       }
 
       //@}
+
+    private:
+
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      void
+      fastAssign(const Expr<S>& x) {
+        const int sz = this->size();
+        for(int i=0; i<sz; ++i)
+          for (int j=0; j<VecNum; ++j)
+            fastAccessDx(i,j) = x.fastAccessDx(i,j);
+
+        for (int j=0; j<VecNum; ++j)
+          val(j) = x.val(j);
+      }
+
+      template <typename S>
+      KOKKOS_INLINE_FUNCTION
+      void
+      slowAssign(const Expr<S>& x) {
+        const int sz = this->size();
+        for(int i=0; i<sz; ++i)
+          for (int j=0; j<VecNum; ++j)
+            fastAccessDx(i,j) = x.dx(i,j);
+
+        for (int j=0; j<VecNum; ++j)
+          val(j) = x.val(j);
+      }
 
     }; // class GeneralFad
 

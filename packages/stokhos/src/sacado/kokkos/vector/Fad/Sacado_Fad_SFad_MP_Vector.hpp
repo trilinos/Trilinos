@@ -49,24 +49,33 @@
 //********************************************************
 // @HEADER
 
-#ifndef SACADO_FAD_SFAD_HPP
-#define SACADO_FAD_SFAD_HPP
+#ifndef SACADO_FAD_SFAD_MP_VECTOR_HPP
+#define SACADO_FAD_SFAD_MP_VECTOR_HPP
 
-#include "Sacado_Fad_SFadTraits.hpp"
-#include "Sacado_Fad_Expression.hpp"
-#include "Sacado_StaticArrayTraits.hpp"
+#include "Sacado_Fad_SFad.hpp"
+#include "Sacado_Fad_ExprSpec_MP_Vector.hpp"
+
+namespace Stokhos {
+  template <typename Ord, typename Val, int Num, typename Dev>
+  class StaticFixedStorage;
+}
 
 namespace Sacado {
 
-  //! Namespace for forward-mode AD classes
+  namespace MP {
+    template <typename S> class Vector;
+  }
+
   namespace Fad {
 
-    //! A tag for specializing Expr for SFad expressions
-    template <typename T, int Num>
-    struct SFadExprTag {};
-
-    // Forward declaration
-    template <typename T, int Num> class SFad;
+    template <typename Ord, typename Val, int VecNum, typename Dev, int Num>
+    struct ExprSpec< SFadExprTag< Sacado::MP::Vector< Stokhos::StaticFixedStorage<Ord,Val,VecNum,Dev> >, Num > > {
+      typedef ExprSpecMPVector type;
+    };
+    template <typename Ord, typename Val, int VecNum, typename Dev, int Num>
+    struct ExprSpec< SFad< Sacado::MP::Vector< Stokhos::StaticFixedStorage<Ord,Val,VecNum,Dev> >, Num > > {
+      typedef ExprSpecMPVector type;
+    };
 
     /*!
      * \brief Expression template forward-mode AD class with static memory
@@ -75,10 +84,12 @@ namespace Sacado {
     /*!
      * This classes specializes Expr to SFad expressions.
      */
-    template <typename T, int Num>
-    class Expr< SFadExprTag<T,Num>, ExprSpecDefault > {
+    template <typename Ord, typename Val, int VecNum, typename Dev, int Num>
+    class Expr< SFadExprTag< Sacado::MP::Vector< Stokhos::StaticFixedStorage<Ord,Val,VecNum,Dev> >,Num >,ExprSpecMPVector > {
 
     public:
+
+      typedef Sacado::MP::Vector< Stokhos::StaticFixedStorage<Ord,Val,VecNum,Dev> > T;
 
       //! Typename of values
       typedef typename RemoveConst<T>::type value_type;
@@ -88,6 +99,8 @@ namespace Sacado {
 
       //! Typename of base-expressions
       typedef SFad<value_type,Num> base_expr_type;
+
+      typedef typename value_type::value_type val_type;
 
       /*!
        * @name Initialization methods
@@ -161,10 +174,13 @@ namespace Sacado {
           throw "SFad::SFad() Error:  Attempt to assign with incompatible sizes";
 #endif
 
-        for(int i=0; i<Num; ++i)
-          dx_[i] = x.fastAccessDx(i);
+        for(int i=0; i<Num; ++i) {
+          for (int j=0; j<VecNum; ++j)
+            dx_[i].fastAccessCoeff(j) = x.fastAccessDx(i,j);
+        }
 
-        this->val() = x.val();
+        for (int j=0; j<VecNum; ++j)
+          this->val(j) = x.val(j);
       }
 
       //! Destructor
@@ -249,6 +265,14 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       T& val() { return val_;}
 
+      //! Returns value
+      KOKKOS_INLINE_FUNCTION
+      const val_type& val(int j) const { return val_.fastAccessCoeff(j);}
+
+      //! Returns value
+      KOKKOS_INLINE_FUNCTION
+      val_type& val(int j) { return val_.fastAccessCoeff(j);}
+
       //@}
 
       /*!
@@ -295,6 +319,18 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       const T& fastAccessDx(int i) const { return dx_[i];}
 
+      //! Returns derivative component \c i with bounds checking
+      KOKKOS_INLINE_FUNCTION
+      const val_type& dx(int i, int j) const { return dx_[i].fastAccessCoeff(j); }
+
+      //! Returns derivative component \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      val_type& fastAccessDx(int i, int j) { return dx_[i].fastAccessCoeff(j);}
+
+      //! Returns derivative component \c i without bounds checking
+      KOKKOS_INLINE_FUNCTION
+      const val_type& fastAccessDx(int i, int j) const { return dx_[i].fastAccessCoeff(j);}
+
       //@}
 
       /*!
@@ -334,10 +370,13 @@ namespace Sacado {
           throw "SFad::operator=() Error:  Attempt to assign with incompatible sizes";
 #endif
 
-        for(int i=0; i<Num; ++i)
-          dx_[i] = x.fastAccessDx(i);
+       for(int i=0; i<Num; ++i) {
+          for (int j=0; j<VecNum; ++j)
+            dx_[i].fastAccessCoeff(j) = x.fastAccessDx(i,j);
+        }
 
-        val_ = x.val();
+        for (int j=0; j<VecNum; ++j)
+          this->val(j) = x.val(j);
 
         return *this;
       }
@@ -394,10 +433,13 @@ namespace Sacado {
           throw "SFad::operator+=() Error:  Attempt to assign with incompatible sizes";
 #endif
 
-        for (int i=0; i<Num; ++i)
-          dx_[i] += x.fastAccessDx(i);
+        for(int i=0; i<Num; ++i) {
+          for (int j=0; j<VecNum; ++j)
+            dx_[i].fastAccessCoeff(j) += x.fastAccessDx(i,j);
+        }
 
-        val_ += x.val();
+        for (int j=0; j<VecNum; ++j)
+          this->val(j) += x.val(j);
 
         return *this;
       }
@@ -411,10 +453,13 @@ namespace Sacado {
           throw "SFad::operator-=() Error:  Attempt to assign with incompatible sizes";
 #endif
 
-        for(int i=0; i<Num; ++i)
-          dx_[i] -= x.fastAccessDx(i);
+        for(int i=0; i<Num; ++i) {
+          for (int j=0; j<VecNum; ++j)
+            dx_[i].fastAccessCoeff(j) -= x.fastAccessDx(i,j);
+        }
 
-        val_ -= x.val();
+        for (int j=0; j<VecNum; ++j)
+          this->val(j) -= x.val(j);
 
         return *this;
       }
@@ -423,7 +468,9 @@ namespace Sacado {
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(Expr&) operator *= (const Expr<S>& x) {
-        T xval = x.val();
+        T xval;
+        for (int j=0; j<VecNum; ++j)
+          xval.fastAccessCoeff(j) = x.val(j);
 
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (x.size() != Num)
@@ -431,7 +478,8 @@ namespace Sacado {
 #endif
 
         for(int i=0; i<Num; ++i)
-          dx_[i] = val_ * x.fastAccessDx(i) + dx_[i] * xval;
+          for (int j=0; j<VecNum; ++j)
+            dx_[i].fastAccessCoeff(j) = val_.fastAccessCoeff(j) * x.fastAccessDx(i,j) + dx_[i] * xval.fastAccessCoeff(j);
 
         val_ *= xval;
 
@@ -442,7 +490,10 @@ namespace Sacado {
       template <typename S>
       KOKKOS_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(Expr&) operator /= (const Expr<S>& x) {
-        T xval = x.val();
+        T xval;
+        for (int j=0; j<VecNum; ++j)
+          xval.fastAccessCoeff(j) = x.val(j);
+        T xval2 = xval*xval;
 
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
         if (x.size() != Num)
@@ -450,7 +501,8 @@ namespace Sacado {
 #endif
 
         for(int i=0; i<Num; ++i)
-          dx_[i] = ( dx_[i]*xval - val_*x.fastAccessDx(i) )/ (xval*xval);
+          for (int j=0; j<VecNum; ++j)
+            dx_[i].fastAccessCoeff(j) = ( dx_[i].fastAccessCoeff(j)*xval.fastAccessCoeff(j) - val_.fastAccessCoeff(j)*x.fastAccessDx(i,j) )/ (xval2.fastAccessCoeff(j));
 
         val_ /= xval;
 
@@ -473,11 +525,6 @@ namespace Sacado {
 
 } // namespace Sacado
 
-#define FAD_NS Fad
-#include "Sacado_Fad_SFad_tmpl.hpp"
-#undef FAD_NS
+#include "Sacado_Fad_Ops_MP_Vector.hpp"
 
-#include "Sacado_Fad_ViewFad.hpp"
-#include "Sacado_Fad_Ops.hpp"
-
-#endif // SACADO_FAD_SFAD_HPP
+#endif // SACADO_FAD_SFAD_MP_VECTOR_HPP
