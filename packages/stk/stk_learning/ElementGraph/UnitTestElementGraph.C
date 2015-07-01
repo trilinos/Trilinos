@@ -20,6 +20,7 @@
 #include <stk_mesh/base/ElemElemGraphImpl.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/memory_util.hpp>
@@ -40,9 +41,9 @@ class ElemElemGraphTester : public stk::mesh::ElemElemGraph
 {
 public:
     ElemElemGraphTester(stk::mesh::BulkData& bulkData)
-      : ElemElemGraph(bulkData) {};
+      : ElemElemGraph(bulkData) {}
 
-    virtual ~ElemElemGraphTester() {};
+    virtual ~ElemElemGraphTester() {}
 
     void fill_graph() { ElemElemGraph::fill_graph(); }
 
@@ -176,6 +177,10 @@ public:
         return m_entity_keys.size();
     }
 
+    std::vector<uint64_t> my_internal_get_ids_in_use_this_proc_for_locally_owned(stk::topology::rank_t rank) const
+    {
+        return internal_get_ids_in_use(rank);
+    }
 };
 
 using namespace stk::mesh::impl;
@@ -5725,6 +5730,69 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemBInParallel)
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,8)));
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,9)));
         }
+    }
+}
+
+std::vector<stk::mesh::EntityId> get_ids_in_use(stk::mesh::BulkData& bulkData)
+{
+    std::vector<stk::mesh::EntityId> ids_in_use;
+
+    const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
+    for(size_t i = 0; i < buckets.size(); ++i)
+    {
+        const stk::mesh::Bucket& bucket = *buckets[i];
+        for(size_t j = 0; j < bucket.size(); ++j)
+        {
+            stk::mesh::Entity element = bucket[j];
+            ids_in_use.push_back(bulkData.identifier(element));
+        }
+    }
+    return ids_in_use;
+}
+
+void test_parallel_uniqueness(const std::vector<stk::mesh::EntityId> &ids_in_use, const std::vector<stk::mesh::EntityId>& requested_ids, stk::ParallelMachine comm)
+{
+    std::vector<stk::mesh::EntityId> global_ids_in_use;
+    stk::parallel_vector_concat(comm, ids_in_use, global_ids_in_use);
+    std::sort(global_ids_in_use.begin(), global_ids_in_use.end());
+
+    std::vector<stk::mesh::EntityId> global_requested_ids;
+    stk::parallel_vector_concat(comm, requested_ids, global_requested_ids);
+    std::sort(global_requested_ids.begin(), global_requested_ids.end());
+
+    std::vector<stk::mesh::EntityId> intersection;
+
+    std::set_intersection(global_ids_in_use.begin(), global_ids_in_use.end(),
+            global_requested_ids.begin(), global_requested_ids.end(),
+            std::back_inserter(intersection));
+
+    EXPECT_TRUE(intersection.empty());
+}
+
+TEST(ElemGraph, test_id_reservation)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    if(stk::parallel_machine_size(comm)==2)
+    {
+        unsigned spatialDim = 3;
+
+        stk::mesh::MetaData meta(spatialDim);
+        BulkDataElementGraphTester bulkData(meta, comm);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+
+        std::vector<stk::mesh::EntityId> ids_in_use = bulkData.my_internal_get_ids_in_use_this_proc_for_locally_owned(stk::topology::ELEM_RANK);
+
+        size_t num_ids_requested_per_proc = 10;
+        std::vector<stk::mesh::EntityId> requested_ids;
+        bulkData.generate_new_ids(stk::topology::ELEM_RANK, num_ids_requested_per_proc, requested_ids);
+
+        test_parallel_uniqueness(ids_in_use, requested_ids, comm);
+
+        std::vector<stk::mesh::EntityId> requested_ids_again;
+        bulkData.generate_new_ids_given_reserved_ids(stk::topology::ELEM_RANK, num_ids_requested_per_proc, requested_ids, requested_ids_again);
+
+        test_parallel_uniqueness(ids_in_use, requested_ids_again, comm);
+        test_parallel_uniqueness(requested_ids, requested_ids_again, comm);
     }
 }
 
