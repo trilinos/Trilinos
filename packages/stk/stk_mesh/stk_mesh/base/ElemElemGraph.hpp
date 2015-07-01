@@ -137,6 +137,24 @@ protected:
 
     void generate_additional_ids_collective(size_t num_additional_ids_needed);
 
+    void collect_local_shell_connectivity_data(const stk::mesh::EntityVector& elements_to_delete,
+                                               std::vector<impl::ShellConnectivityData>& shellConnectivityList);
+
+    void communicate_shell_connectivity(std::vector<impl::ShellConnectivityData>& shellConnectivityList);
+
+    void delete_local_connections_and_collect_remote(const stk::mesh::EntityVector& elements_to_delete,
+                                                     std::vector<impl::DeletedElementData>& local_elem_and_remote_connected_elem);
+
+    void communicate_remote_connections_to_delete(const std::vector<impl::DeletedElementData>& local_elem_and_remote_connected_elem,
+                                                  std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> >& remote_edges);
+
+    void clear_deleted_element_connections(const stk::mesh::EntityVector& elements_to_delete);
+
+    void delete_remote_connections(const std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> >& remote_edges);
+
+    void reconnect_volume_elements_across_deleted_shells(std::vector<impl::ShellConnectivityData> & shellConnectivityList,
+                                                         const stk::mesh::EntityVector& elements_to_delete);
+
     stk::mesh::BulkData &m_bulk_data;
     impl::ElementGraph m_elem_graph;
     impl::SidesForElementGraph m_via_sides;
