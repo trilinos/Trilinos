@@ -92,6 +92,8 @@ protected:
                                                                     const stk::mesh::EntityVector & elements_to_ignore,
                                                                     std::vector<impl::SharedEdgeInfo> *newlySharedEdges = nullptr);
 
+    void  break_volume_element_connections_across_shells(const std::set<stk::mesh::EntityId> & localElementsConnectedToRemoteShell);
+
     void add_local_elements_to_connected_list(const stk::mesh::EntityVector & connected_elements,
                                               const stk::mesh::EntityVector & sideNodes,
                                               impl::ConnectedElementDataVector & connectedElementDataVector) const;

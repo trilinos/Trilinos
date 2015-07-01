@@ -528,7 +528,33 @@ void ElemElemGraph::add_possibly_connected_elements_to_graph_using_side_nodes( c
         }
     }
 
-    impl::break_volume_element_connections_across_shells(localElementsConnectedToRemoteShell, m_elem_graph, m_via_sides);
+    break_volume_element_connections_across_shells(localElementsConnectedToRemoteShell);
+}
+
+void ElemElemGraph::break_volume_element_connections_across_shells(const std::set<stk::mesh::EntityId> & localElementsConnectedToRemoteShell)
+{
+    // Fix the case where the serial graph connected two volume elements together before
+    // it was known that there was a remote shell wedged between them (the "sandwich" conundrum).
+    // Also, cover the case where the mesh is modified after the graph is created to
+    // add a shell between existing volume elements.
+    //
+    if (localElementsConnectedToRemoteShell.size() > 1) {
+        for (impl::LocalId localElemId: localElementsConnectedToRemoteShell) {
+            std::vector<impl::LocalId>::iterator it = m_elem_graph[localElemId].begin();
+            while (it != m_elem_graph[localElemId].end()) {
+                const impl::LocalId connectedElemId = *it;
+                if (localElementsConnectedToRemoteShell.find(connectedElemId) != localElementsConnectedToRemoteShell.end()) {
+                    const int offset = (it - m_elem_graph[localElemId].begin());
+                    it = m_elem_graph[localElemId].erase(it);
+                    m_via_sides[localElemId].erase(m_via_sides[localElemId].begin() + offset);
+                    --m_num_edges;
+                }
+                else {
+                    ++it;
+                }
+            }
+        }
+    }
 }
 
 bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
@@ -1549,7 +1575,7 @@ void ElemElemGraph::add_elements_to_graph(const stk::mesh::EntityVector &element
                 }
             }
         }
-        impl::break_volume_element_connections_across_shells(localElementsConnectedToNewShell, m_elem_graph, m_via_sides);
+        break_volume_element_connections_across_shells(localElementsConnectedToNewShell);
     }
 
 //    stk::mesh::Selector ownedSelector = m_bulk_data.mesh_meta_data().locally_owned_part();

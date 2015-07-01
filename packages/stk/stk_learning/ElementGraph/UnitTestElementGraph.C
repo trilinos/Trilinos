@@ -5207,9 +5207,8 @@ TEST( ElementGraph, Hex0DelShell1Hex0Parallel )
 
     stk::mesh::ElemElemGraph elemElemGraph(mesh);
 
-// FIXME: These fail with current master
-//    EXPECT_EQ(2u, elemElemGraph.num_edges());
-//    EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
+    EXPECT_EQ(2u, elemElemGraph.num_edges());
+    EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -5229,9 +5228,8 @@ TEST( ElementGraph, Hex0DelShell1Hex0Parallel )
     mesh.modification_end();
 
     if (p_rank == 0) {
-// FIXME: These fail with current master
-//        EXPECT_EQ(2u, elemElemGraph.num_edges());
-//        EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 
         // Connectivity for Hex Element 1
         EXPECT_EQ(1u,   elemElemGraph.get_num_connected_elems(hex1));

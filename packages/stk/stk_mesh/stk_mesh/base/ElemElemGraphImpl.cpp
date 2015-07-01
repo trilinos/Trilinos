@@ -212,30 +212,7 @@ void pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
     }
 }
 
-void break_volume_element_connections_across_shells(const std::set<EntityId> & localElementsConnectedToRemoteShell, ElementGraph & elem_graph, SidesForElementGraph & via_sides)
-{
-    // Fix the case where the serial graph connected two volume elements together before
-    // it was known that there was a remote shell wedged between them (the "sandwich" conundrum).
-    // Also, cover the case where the mesh is modified after the graph is created to
-    // add a shell between existing volume elements.
-    //
-    if (localElementsConnectedToRemoteShell.size() > 1) {
-        for (LocalId localElemId: localElementsConnectedToRemoteShell) {
-            std::vector<LocalId>::iterator it = elem_graph[localElemId].begin();
-            while (it != elem_graph[localElemId].end()) {
-                const LocalId connectedElemId = *it;
-                if (localElementsConnectedToRemoteShell.find(connectedElemId) != localElementsConnectedToRemoteShell.end()) {
-                    const int offset = (it - elem_graph[localElemId].begin());
-                    it = elem_graph[localElemId].erase(it);
-                    via_sides[localElemId].erase(via_sides[localElemId].begin() + offset);
-                }
-                else {
-                    ++it;
-                }
-            }
-        }
-    }
-}
+
 
 std::vector<graphEdgeProc> get_elements_to_communicate(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
         const ElemElemGraph& elem_graph)
