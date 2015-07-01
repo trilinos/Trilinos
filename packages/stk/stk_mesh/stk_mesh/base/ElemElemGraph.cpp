@@ -1494,6 +1494,13 @@ size_t ElemElemGraph::find_max_local_offset_in_neighborhood(stk::mesh::Entity el
     return max_local_offset;
 }
 
+void ElemElemGraph::generate_additional_ids_collective(size_t num_additional_ids_needed)
+{
+    std::vector<stk::mesh::EntityId> new_ids;
+    m_bulk_data.generate_new_ids_given_reserved_ids(m_bulk_data.mesh_meta_data().side_rank(), num_additional_ids_needed, m_suggested_side_ids, new_ids);
+    m_suggested_side_ids.insert(m_suggested_side_ids.end(), new_ids.begin(), new_ids.end());
+}
+
 void ElemElemGraph::add_elements_to_graph(const stk::mesh::EntityVector &elements_to_add)
 {
     size_t max_offset = 0;

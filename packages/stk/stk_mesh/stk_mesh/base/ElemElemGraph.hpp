@@ -133,6 +133,8 @@ protected:
 
     void connect_remote_element_to_existing_graph(const impl::SharedEdgeInfo &receivedSharedEdge);
 
+    void generate_additional_ids_collective(size_t num_additional_ids_needed);
+
     stk::mesh::BulkData &m_bulk_data;
     impl::ElementGraph m_elem_graph;
     impl::SidesForElementGraph m_via_sides;
