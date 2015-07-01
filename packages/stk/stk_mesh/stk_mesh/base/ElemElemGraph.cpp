@@ -44,7 +44,6 @@ ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData) : m_bulk_data(bulkDa
 
     update_number_of_parallel_edges();
 
-    set_num_side_ids_used(m_num_parallel_edges);
     m_num_edges += m_num_parallel_edges;
 }
 
@@ -283,7 +282,8 @@ void ElemElemGraph::fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side
     impl::pack_shared_side_nodes_of_elements(comm, m_bulk_data, elem_side_comm, this->get_suggested_side_ids());
     comm.allocate_buffers();
 
-    impl::pack_shared_side_nodes_of_elements(comm, m_bulk_data, elem_side_comm, this->get_suggested_side_ids());
+    size_t num_edge_ids_used = impl::pack_shared_side_nodes_of_elements(comm, m_bulk_data, elem_side_comm, this->get_suggested_side_ids());
+    this->set_num_side_ids_used(num_edge_ids_used);
     comm.communicate();
 
     stk::mesh::impl::ConnectedElementDataVector communicatedElementDataVector;
@@ -764,7 +764,7 @@ void ElemElemGraph::add_local_elements_to_connected_list(const stk::mesh::Entity
     for (const stk::mesh::Entity & connectedElem: connected_elements) {
         impl::ConnectedElementData elemData;
         stk::mesh::EntityVector connectedSideNodes;
-        stk::mesh::OrdinalAndPermutation connectedOrdAndPerm = stk::mesh::get_ordinal_and_permutation(m_bulk_data, connectedElem, stk::topology::FACE_RANK, sideNodes);
+        stk::mesh::OrdinalAndPermutation connectedOrdAndPerm = stk::mesh::get_ordinal_and_permutation(m_bulk_data, connectedElem, m_bulk_data.mesh_meta_data().side_rank(), sideNodes);
         const stk::mesh::Bucket & connectedBucket = m_bulk_data.bucket(connectedElem);
         const stk::mesh::Entity* connectedElemNodes = m_bulk_data.begin_nodes(connectedElem);
 
@@ -1450,14 +1450,14 @@ void ElemElemGraph::reconnect_volume_elements_across_deleted_shells(std::vector<
             m_via_sides[localElementId].push_back(data.m_nearElementSide);
         }
         else {
-            int newFaceId = 0; // FIXME: What?
             shellNeighborsToReconnect.insert(
                     std::pair<impl::EntitySidePair, impl::ProcFaceIdPair>(impl::EntitySidePair(localElement, data.m_nearElementSide),
-                            impl::ProcFaceIdPair(data.m_farElementProc, newFaceId)));
+                            impl::ProcFaceIdPair(data.m_farElementProc, 0)));
         }
         ++m_num_edges;
     }
 
+    this->generate_additional_ids_collective(m_num_edges);
     fill_parallel_graph(shellNeighborsToReconnect, elements_to_delete);
 
     update_number_of_parallel_edges();
@@ -1640,8 +1640,6 @@ void ElemElemGraph::add_elements_to_graph(const stk::mesh::EntityVector &element
     fill_parallel_graph(only_added_elements);
 
     m_num_parallel_edges += num_additional_parallel_edges;
-
-    set_num_side_ids_used(num_additional_parallel_edges);
     m_num_edges += num_additional_side_ids_needed;
 }
 

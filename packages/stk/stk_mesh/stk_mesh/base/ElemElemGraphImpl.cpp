@@ -168,7 +168,7 @@ stk::mesh::EntityVector get_elements_to_communicate(const stk::mesh::BulkData& b
     return elements_to_communicate;
 }
 
-void pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
+size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
                                         const stk::mesh::BulkData& bulkData,
                                         ElemSideToProcAndFaceId &elements_to_communicate,
                                         const std::vector<stk::mesh::EntityId>& suggested_side_ids)
@@ -210,6 +210,7 @@ void pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
             comm.send_buffer(sharing_proc).pack<stk::mesh::EntityKey>(side_node_entity_keys[i]);
         }
     }
+    return counter;
 }
 
 
