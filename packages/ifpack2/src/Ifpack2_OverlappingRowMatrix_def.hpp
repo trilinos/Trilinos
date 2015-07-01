@@ -896,6 +896,13 @@ void OverlappingRowMatrix<MatrixType>::describe(Teuchos::FancyOStream &out,
     }
 }
 
+template<class MatrixType>
+Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
+OverlappingRowMatrix<MatrixType>::getUnderlyingMatrix() const
+{
+  return A_;
+}
+
 
 } // namespace Ifpack2
 

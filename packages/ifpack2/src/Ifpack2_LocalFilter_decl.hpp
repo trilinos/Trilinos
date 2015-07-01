@@ -463,6 +463,9 @@ public:
   //! Whether this operator supports applying the transpose or conjugate transpose.
   virtual bool hasTransposeApply() const;
 
+  //! Return matrix that LocalFilter was built on.
+  virtual Teuchos::RCP<const row_matrix_type> getUnderlyingMatrix() const;
+
   //@}
 private:
   //! Type of a read-only interface to a graph.

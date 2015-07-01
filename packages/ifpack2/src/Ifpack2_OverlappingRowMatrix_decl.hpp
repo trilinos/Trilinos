@@ -354,6 +354,8 @@ public:
 
   void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const;
 
+  virtual Teuchos::RCP<const row_matrix_type> getUnderlyingMatrix() const;
+
 private:
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
