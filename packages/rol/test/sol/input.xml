@@ -37,5 +37,5 @@
   <Parameter name="Use Projected Gradient Criticality Measure"        type="bool"   value="false"                   />
   <Parameter name="Gradient Tolerance"                                type="double" value="1.e-8"                   />
   <Parameter name="Step Tolerance"                                    type="double" value="1.e-12"                  />
-  <Parameter name="Maximum Number of Iterations"                      type="int"    value="100"                   />
+  <Parameter name="Maximum Number of Iterations"                      type="int"    value="500"                     />
 </ParameterList>
