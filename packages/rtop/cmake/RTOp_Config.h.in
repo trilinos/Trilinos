@@ -1,3 +1,6 @@
+#ifndef RTOP_CONFIG_H
+#define RTOP_CONFIG_H
+
 #cmakedefine HAVE_MPI
 
 #cmakedefine HAVE_RTOP_DEBUG
@@ -5,3 +8,5 @@
 #cmakedefine HAVE_RTOP_EXPLICIT_INSTANTIATION
 
 @RTOP_DEPRECATED_DECLARATIONS@
+
+#endif
