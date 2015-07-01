@@ -2410,6 +2410,21 @@ cholesky(Tensor<T, N> const & A)
   return std::make_pair(G, true);
 }
 
+//
+// Solve linear system of equations.
+// This is means for the solution of small linear systems of equations
+// typically found in constitutive updates.
+// Right now the implementation is very inefficient (but accurate)
+// as it just uses the inverse function. It is intended to be used in
+// conjunction with Kokkos to take advantage of thread parallelism.
+//
+template<typename T, Index N>
+Vector<T, N>
+solve(Tensor<T, N> const & A, Vector<T, N> const & b)
+{
+  return dot(inverse(A), b);
+}
+
 } // namespace Intrepid
 
 #endif // Intrepid_MiniTensor_LinearAlgebra_t_h
