@@ -54,11 +54,14 @@ void ElemElemGraph::update_number_of_parallel_edges()
     // the rule of one side entity per element side (with multiple
     // coincident elements each being connected to the same side)
     m_num_parallel_edges = 0;
-    for (size_t i = 0; i < m_elem_graph.size(); ++i) {
+    for(size_t i = 0; i < m_elem_graph.size(); ++i)
+    {
         std::set<int> uniqueRemoteOrdinals;
         const std::vector<impl::LocalId> & localElement = m_elem_graph[i];
-        for (size_t j = 0; j < localElement.size(); ++j) {
-            if (localElement[j] < 0) {
+        for(size_t j = 0; j < localElement.size(); ++j)
+        {
+            if(localElement[j] < 0)
+            {
                 // Connected to remote element through this side
                 uniqueRemoteOrdinals.insert(m_via_sides[i][j]);
             }
@@ -277,10 +280,10 @@ void ElemElemGraph::fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side
 {
     stk::CommSparse comm(m_bulk_data.parallel());
 
-    impl::pack_shared_side_nodes_of_elements(comm, m_bulk_data, elem_side_comm, m_suggested_side_ids);
+    impl::pack_shared_side_nodes_of_elements(comm, m_bulk_data, elem_side_comm, this->get_suggested_side_ids());
     comm.allocate_buffers();
 
-    impl::pack_shared_side_nodes_of_elements(comm, m_bulk_data, elem_side_comm, m_suggested_side_ids);
+    impl::pack_shared_side_nodes_of_elements(comm, m_bulk_data, elem_side_comm, this->get_suggested_side_ids());
     comm.communicate();
 
     stk::mesh::impl::ConnectedElementDataVector communicatedElementDataVector;
@@ -1570,6 +1573,7 @@ void ElemElemGraph::add_elements_to_graph(const stk::mesh::EntityVector &element
     ensure_space_in_entity_to_local_id(max_offset);
 
     std::vector<impl::ElementSidePair> elem_side_pairs;
+    size_t num_local_edges_needed = 0;
 
     for(unsigned i=0; i<elements_to_add.size(); ++i)
     {
@@ -1598,7 +1602,7 @@ void ElemElemGraph::add_elements_to_graph(const stk::mesh::EntityVector &element
                 stk::mesh::ConnectivityOrdinal neighborOrdinal = get_neighboring_side_ordinal(m_bulk_data, elem_to_add, currentOrdinal, neighbor);
                 m_elem_graph[neighbor_id].push_back(new_elem_id);
                 m_via_sides[neighbor_id].push_back(neighborOrdinal);
-                m_num_edges+=2;
+                num_local_edges_needed+=2;
                 if (elem_topology.is_shell()) {
                     localElementsConnectedToNewShell.insert(neighbor_id);
                 }
@@ -1611,22 +1615,34 @@ void ElemElemGraph::add_elements_to_graph(const stk::mesh::EntityVector &element
 //    stk::mesh::EntityVector ownedElements;
 //    m_bulk_data.get_entities(stk::topology::ELEMENT_RANK, ownedSelector, ownedElements);
 //    elem_side_comm = impl::get_element_side_ids_to_communicate(m_bulk_data, ownedElements);
-    impl::ElemSideToProcAndFaceId elem_side_comm;
-    elem_side_comm = impl::get_element_side_ids_to_communicate(m_bulk_data, elements_to_add);
+    impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_element_side_ids_to_communicate(m_bulk_data);
 
-    size_t num_side_ids_needed = 2*elem_side_comm.size();
-    num_side_ids_needed += m_num_edges;
+    size_t num_additional_parallel_edges = elem_side_comm.size() - m_num_parallel_edges;
+    size_t num_additional_side_ids_needed =  num_additional_parallel_edges + num_local_edges_needed;
+    this->generate_additional_ids_collective(num_additional_side_ids_needed);
 
-    m_bulk_data.generate_new_ids(m_bulk_data.mesh_meta_data().side_rank(), num_side_ids_needed, m_suggested_side_ids);
+    // m_num_edges -= m_num_parallel_edges;
+    stk::mesh::EntityVector elements_to_add_copy = elements_to_add;
+    std::sort(elements_to_add_copy.begin(), elements_to_add_copy.end());
 
-    // Remove the old parallel count since we are redoing the parallel edges
-    m_num_edges -= m_num_parallel_edges;
-    fill_parallel_graph(elem_side_comm);
+    impl::ElemSideToProcAndFaceId only_added_elements;
+    impl::ElemSideToProcAndFaceId::iterator iter = elem_side_comm.begin();
+    for(;iter!=elem_side_comm.end();++iter)
+    {
+        stk::mesh::Entity element = iter->first.entity;
+        stk::mesh::EntityVector::iterator elem_iter = std::lower_bound(elements_to_add_copy.begin(), elements_to_add_copy.end(), element);
+        if(elem_iter!=elements_to_add_copy.end() && *elem_iter==element)
+        {
+            only_added_elements.insert(*iter);
+        }
+    }
 
-    update_number_of_parallel_edges();
+    fill_parallel_graph(only_added_elements);
 
-    set_num_side_ids_used(m_num_parallel_edges);
-    m_num_edges += m_num_parallel_edges;
+    m_num_parallel_edges += num_additional_parallel_edges;
+
+    set_num_side_ids_used(num_additional_parallel_edges);
+    m_num_edges += num_additional_side_ids_needed;
 }
 
 void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph, std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move, stk::mesh::Part *active_part)
