@@ -5029,12 +5029,16 @@ TEST( ElementGraph, Hex0DelShell1Hex2Parallel )
         EXPECT_EQ(2u, elemElemGraph.get_entity_id_of_remote_element(hex1, 0));
         EXPECT_EQ(2,  elemElemGraph.get_owning_proc_id_of_remote_element(hex1, 2));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Shell Element 3
         EXPECT_EQ(0u, elemElemGraph.num_edges());
         EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
         EXPECT_EQ(0u, elemElemGraph.size());
+        EXPECT_EQ(0u, elemElemGraph.num_edges());
+        EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 2) {
         // Connectivity for Hex Element 2
@@ -5045,10 +5049,9 @@ TEST( ElementGraph, Hex0DelShell1Hex2Parallel )
         EXPECT_EQ(1u, elemElemGraph.get_entity_id_of_remote_element(hex2, 0));
         EXPECT_EQ(0,  elemElemGraph.get_owning_proc_id_of_remote_element(hex2, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
-
-    EXPECT_EQ(1u, elemElemGraph.num_edges());
-    EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, Hex0Shell1Hex2Parallel )
@@ -5157,6 +5160,8 @@ TEST( ElementGraph, Hex0Shell1Hex2Parallel )
         EXPECT_EQ(5,  elemElemGraph.get_side_id_to_connected_element(hex1, 0));
         EXPECT_EQ(3u, elemElemGraph.get_entity_id_of_remote_element(hex1, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Shell Element 3
@@ -5167,6 +5172,8 @@ TEST( ElementGraph, Hex0Shell1Hex2Parallel )
         EXPECT_EQ(1u, elemElemGraph.get_entity_id_of_remote_element(shell3, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 1));
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 2) {
         // Connectivity for Hex Element 2
@@ -5174,6 +5181,8 @@ TEST( ElementGraph, Hex0Shell1Hex2Parallel )
         EXPECT_EQ(4,  elemElemGraph.get_side_id_to_connected_element(hex2, 0));
         EXPECT_EQ(3u, elemElemGraph.get_entity_id_of_remote_element(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -5284,6 +5293,9 @@ TEST( ElementGraph, Hex0Shell1Hex0Parallel )
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 1));
     }
+
+    EXPECT_EQ(2u, elemElemGraph.num_edges());
+    EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, Hex0DelShell1Hex0Parallel )
@@ -5403,6 +5415,7 @@ TEST( ElementGraph, Hex0DelShell1Hex0Parallel )
         EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
     }
     else if (p_rank == 1) {
+        EXPECT_EQ(0u, elemElemGraph.size());
         EXPECT_EQ(0u, elemElemGraph.num_edges());
         EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
     }
@@ -5521,6 +5534,9 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell0Hex1Parallel )
         EXPECT_EQ(2u,   elemElemGraph.get_entity_id_of_remote_element(shell4, 1));
         EXPECT_TRUE (elemElemGraph.is_connected_elem_locally_owned(shell4, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell4, 1));
+
+        EXPECT_EQ(6u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Hex Element 2
@@ -5531,6 +5547,9 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell0Hex1Parallel )
         EXPECT_EQ(4u,   elemElemGraph.get_entity_id_of_remote_element(hex2, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
+
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -5658,6 +5677,9 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell1Hex1Parallel )
         EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
     }
+
+    EXPECT_EQ(4u, elemElemGraph.num_edges());
+    EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, DISABLED_Hex0Shell0ReversedShell0Hex1Parallel )
@@ -5773,6 +5795,8 @@ TEST( ElementGraph, DISABLED_Hex0Shell0ReversedShell0Hex1Parallel )
         EXPECT_EQ(2u,   elemElemGraph.get_entity_id_of_remote_element(shell4, 1));
         EXPECT_TRUE (elemElemGraph.is_connected_elem_locally_owned(shell4, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell4, 1));
+        EXPECT_EQ(6u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Hex Element 2
@@ -5783,6 +5807,8 @@ TEST( ElementGraph, DISABLED_Hex0Shell0ReversedShell0Hex1Parallel )
         EXPECT_EQ(4u, elemElemGraph.get_entity_id_of_remote_element(hex2, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -5910,6 +5936,9 @@ TEST( ElementGraph, DISABLED_Hex1Shell0Shell0Hex1Parallel )
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
     }
+
+    EXPECT_EQ(4u, elemElemGraph.num_edges());
+    EXPECT_EQ(4u, elemElemGraph.num_parallel_edges());
 }
 
 TEST(ElementGraph, test_modifiable_graph_with_element_death_serial)
@@ -5955,6 +5984,9 @@ TEST(ElementGraph, test_modifiable_graph_with_element_death_serial)
 
         stk::mesh::comm_mesh_counts(bulkData, entity_counts);
         ASSERT_TRUE(entity_counts[stk::topology::FACE_RANK] == 1);
+
+        EXPECT_EQ(6u, graph.num_edges());
+        EXPECT_EQ(0u, graph.num_parallel_edges());
     }
 }
 
@@ -6289,6 +6321,9 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemAInParallel)
             EXPECT_EQ( 5u, graph.get_entity_id_of_remote_element(local_element, 2));
 
             EXPECT_EQ( 1, graph.get_owning_proc_id_of_remote_element(local_element, 5));
+
+            EXPECT_EQ(7u, graph.num_edges());
+            EXPECT_EQ(3u, graph.num_parallel_edges());
         }
         if (procRank == 1) {
             stk::mesh::Entity local_element = bulkData.get_entity(stk::topology::ELEM_RANK,5);
@@ -6315,6 +6350,13 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemAInParallel)
             EXPECT_EQ( 2, graph.get_owning_proc_id_of_remote_element(local_element, 8));
             EXPECT_EQ( 2, graph.get_owning_proc_id_of_remote_element(local_element, 4));
             EXPECT_EQ( 2, graph.get_owning_proc_id_of_remote_element(local_element, 6));
+
+            EXPECT_EQ(4u, graph.num_edges());
+            EXPECT_EQ(4u, graph.num_parallel_edges());
+        }
+        if (procRank == 2) {
+            EXPECT_EQ(13u, graph.num_edges());
+            EXPECT_EQ( 5u, graph.num_parallel_edges());
         }
     }
 }
@@ -6366,6 +6408,13 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemBInParallel)
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,1)));
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,2)));
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,3)));
+            EXPECT_EQ(6u, graph.num_edges());
+            EXPECT_EQ(2u, graph.num_parallel_edges());
+        }
+        if (procRank == 1) {
+            EXPECT_EQ(0u, graph.size());
+            EXPECT_EQ(0u, graph.num_edges());
+            EXPECT_EQ(0u, graph.num_parallel_edges());
         }
         if (procRank == 2) {
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,4)));
@@ -6373,6 +6422,8 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemBInParallel)
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,7)));
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,8)));
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,9)));
+            EXPECT_EQ(10u, graph.num_edges());
+            EXPECT_EQ( 2u, graph.num_parallel_edges());
         }
     }
 }

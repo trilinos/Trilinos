@@ -334,16 +334,8 @@ void ElemElemGraph::fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side
 
 void ElemElemGraph::communicate_remote_edges_for_pre_existing_graph_nodes(const std::vector<impl::SharedEdgeInfo> &newlySharedEdges,
                                                                           std::vector<impl::SharedEdgeInfo> &receivedSharedEdges)
-    for (auto & elementData: communicatedElementDataMap) {
-        add_possibly_connected_elements_to_graph_using_side_nodes(elem_side_comm, elementData.second, &newlySharedEdges);
-    }
-
-    update_remote_edges_for_pre_existing_graph_nodes(newlySharedEdges);
-}
-
-void ElemElemGraph::update_remote_edges_for_pre_existing_graph_nodes(const std::vector<impl::SharedEdgeInfo> &newlySharedEdges)
 {
-     stk::CommSparse comm(m_bulk_data.parallel());
+    stk::CommSparse comm(m_bulk_data.parallel());
 
     impl::pack_newly_shared_remote_edges(comm, m_bulk_data, newlySharedEdges);
     comm.allocate_buffers();
@@ -366,7 +358,6 @@ void ElemElemGraph::update_remote_edges_for_pre_existing_graph_nodes(const std::
                 comm.recv_buffer(proc_id).unpack<stk::mesh::EntityId>(remoteEdgeInfo.m_chosenSideId);
 
                 unsigned numNodes = 0;
-
                 comm.recv_buffer(proc_id).unpack<unsigned>(numNodes);
                 stk::mesh::EntityVector nodes;
                 for(unsigned i=0; i<numNodes; ++i)

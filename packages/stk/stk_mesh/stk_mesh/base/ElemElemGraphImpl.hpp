@@ -153,14 +153,10 @@ void filter_for_candidate_elements_to_connect(const stk::mesh::BulkData & mesh,
                                           const unsigned sideOrdinal,
                                           ConnectedElementDataVector & connectedElementData);
 
-<<<<<<< HEAD
-=======
 void break_volume_element_connections_across_shells(const std::set<EntityId> & localElementsConnectedToRemoteShell,
                                        ElementGraph & elem_graph,
                                        SidesForElementGraph & via_sides);
 
-
->>>>>>> Checkpoint: Fix add new elements to existing graph unit test.
 void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::BulkData &m_bulk_data, const std::vector<SharedEdgeInfo> &newlySharedEdges);
 
 }
