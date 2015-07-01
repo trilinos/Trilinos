@@ -290,6 +290,7 @@ void test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::BulkData::Autom
     ElemElemGraphTester elem_graph(bulkData);
 
     EXPECT_EQ(1u, elem_graph.size());
+    EXPECT_EQ(1u, counts[stk::topology::ELEM_RANK]);
 
     const std::vector<size_t> numHex{1,1};
     stk::mesh::EntityIdVector hexNodeIDs[] {
@@ -351,6 +352,7 @@ void test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::BulkData::Autom
     }
     EXPECT_EQ(2u, elem_graph.size());
     EXPECT_EQ(4u, elem_graph.num_edges());
+    EXPECT_EQ(4u, elem_graph.num_parallel_edges());
 }
 
 TEST(ElementGraph, add_elements_to_pre_existing_graph_and_mesh_aura_on)
@@ -399,6 +401,7 @@ void test_delete_elements_from_graph(ElemElemGraphTester &elem_graph, std::vecto
     EXPECT_EQ(numLocallyOwnedElems, elem_graph.size());
 
     unsigned numEdges = 0;
+    unsigned numParallelEdges = 0;
     for (stk::mesh::EntityId elem_id : currentElements)
     {
         stk::mesh::Entity elem = bulkData.get_entity(stk::topology::ELEM_RANK, elem_id);
@@ -411,20 +414,33 @@ void test_delete_elements_from_graph(ElemElemGraphTester &elem_graph, std::vecto
         stk::mesh::EntityId leftNeighbor = elem_id - 1;
         if (currentElements.find(leftNeighbor) != currentElements.end())
         {
-
             EXPECT_EQ(4, elem_graph.check_connectivity(elem_id, leftNeighbor));
             ++numEdges;
+
+            stk::mesh::Entity leftElem = bulkData.get_entity(stk::topology::ELEM_RANK, leftNeighbor);
+            bool ownedLeftNeighbor = bulkData.is_valid(leftElem) && bulkData.bucket(leftElem).owned();
+            if(!ownedLeftNeighbor)
+            {
+                numParallelEdges++;
+            }
         }
 
         stk::mesh::EntityId rightNeighbor = elem_id + 1;
         if (currentElements.find(rightNeighbor) != currentElements.end())
         {
-
             EXPECT_EQ(5, elem_graph.check_connectivity(elem_id, rightNeighbor));
             ++numEdges;
+
+            stk::mesh::Entity rightElem = bulkData.get_entity(stk::topology::ELEM_RANK, rightNeighbor);
+            bool ownedRightNeighbor = bulkData.is_valid(rightElem) && bulkData.bucket(rightElem).owned();
+            if(!ownedRightNeighbor)
+            {
+                numParallelEdges++;
+            }
         }
     }
     EXPECT_EQ(numEdges, elem_graph.num_edges());
+    EXPECT_EQ(numParallelEdges, elem_graph.num_parallel_edges());
 }
 
 void test_element_graph_delete_elements_from_graph(stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
@@ -490,6 +506,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
 
         EXPECT_EQ(0u, elem_graph.size());
         EXPECT_EQ(0u, elem_graph.num_edges());
+        EXPECT_EQ(0u, elem_graph.num_parallel_edges());
 
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
 
@@ -519,6 +536,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
 
         EXPECT_EQ(4u, elem_graph.size());
         EXPECT_EQ(6u, elem_graph.num_edges());
+        EXPECT_EQ(0u, elem_graph.num_parallel_edges());
 
         EXPECT_EQ(5, elem_graph.check_local_connectivity(elem1, elem2));
         EXPECT_EQ(4, elem_graph.check_local_connectivity(elem2, elem1));
@@ -537,6 +555,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
 
         EXPECT_EQ(2u, elem_graph.size());
         EXPECT_EQ(0u, elem_graph.num_edges());
+        EXPECT_EQ(0u, elem_graph.num_parallel_edges());
 
         EXPECT_EQ(-1, elem_graph.check_local_connectivity(elem1, elem2));
         EXPECT_EQ(-1, elem_graph.check_local_connectivity(elem2, elem1));
@@ -555,6 +574,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
 
         EXPECT_EQ(4u, elem_graph.size());
         EXPECT_EQ(6u, elem_graph.num_edges());
+        EXPECT_EQ(0u, elem_graph.num_parallel_edges());
 
         EXPECT_EQ(5, elem_graph.check_local_connectivity(elem1, elem2));
         EXPECT_EQ(4, elem_graph.check_local_connectivity(elem2, elem1));
@@ -564,6 +584,27 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         EXPECT_EQ(4, elem_graph.check_local_connectivity(elem4, elem3));
         EXPECT_EQ(-1, elem_graph.check_local_connectivity(elem1, elem3));
         EXPECT_EQ(-1, elem_graph.check_local_connectivity(elem2, elem4));
+
+        elems_to_delete.clear();
+        elems_to_delete.push_back(elem4);
+        elems_to_delete.push_back(elem2);
+        elems_to_delete.push_back(elem1);
+        elems_to_delete.push_back(elem3);
+
+        elem_graph.delete_elements_from_graph(elems_to_delete);
+
+        EXPECT_EQ(0u, elem_graph.size());
+        const stk::mesh::impl::ElementGraph &e_graph = elem_graph.get_element_graph();
+        for(unsigned i=0; i<e_graph.size(); ++i)
+        {
+            EXPECT_EQ(0u, e_graph[i].size());
+        }
+
+        const stk::mesh::impl::SidesForElementGraph &via_sides = elem_graph.get_via_sides();
+        for(unsigned i=0; i<via_sides.size(); ++i)
+        {
+            EXPECT_EQ(0u, via_sides[i].size());
+        }
     }
 }
 
@@ -635,6 +676,7 @@ TEST(ElementGraph, HexAddShellSerial)
     elem_graph.add_elements_to_graph(added_shells);
 
     EXPECT_EQ(2u, elem_graph.size());
+    EXPECT_EQ(0u, elem_graph.num_parallel_edges());
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -651,6 +693,7 @@ TEST(ElementGraph, HexAddShellSerial)
     EXPECT_EQ(hex1, elem_graph.get_connected_element(shell2, 0));
     EXPECT_TRUE(elem_graph.is_connected_elem_locally_owned(shell2, 0));
 
+    EXPECT_EQ(0u, elem_graph.num_parallel_edges());
 }
 
 TEST( ElementGraph, HexDelShellSerial )
@@ -725,6 +768,7 @@ TEST( ElementGraph, HexDelShellSerial )
 
     // Connectivity for Hex Element 1
     EXPECT_EQ(0u, elemElemGraph.get_num_connected_elems(hex1));
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, HexDelShellHexSerial )
@@ -810,6 +854,8 @@ TEST( ElementGraph, HexDelShellHexSerial )
     EXPECT_EQ(4,    elemElemGraph.get_side_id_to_connected_element(hex2, 0));
     EXPECT_EQ(hex1, elemElemGraph.get_connected_element(hex2, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
+
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, DISABLED_HexAddShellAddShellSerial )
@@ -901,6 +947,8 @@ TEST( ElementGraph, DISABLED_HexAddShellAddShellSerial )
     EXPECT_EQ(1,    elemElemGraph.get_side_id_to_connected_element(shell3, 0));
     EXPECT_EQ(hex1, elemElemGraph.get_connected_element(shell3, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
+
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, HexAddShellHexSerial )
@@ -992,6 +1040,8 @@ TEST( ElementGraph, HexAddShellHexSerial )
     EXPECT_EQ(hex2, elemElemGraph.get_connected_element(shell3, 1));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell3, 1));
+
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, DISABLED_HexAddShellAddShellHexSerial )
@@ -1100,6 +1150,8 @@ TEST( ElementGraph, DISABLED_HexAddShellAddShellHexSerial )
     EXPECT_EQ(hex2, elemElemGraph.get_connected_element(shell4, 1));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell4, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell4, 1));
+
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 
@@ -1529,6 +1581,8 @@ TEST(ElementGraph, create_element_graph_serial)
             }
         }
 
+        EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
+
         if (stk::parallel_machine_rank(comm) == 0)
         {
             for(size_t i=0;i<wall_times.size();++i)
@@ -1588,6 +1642,7 @@ TEST(ElementGraph, create_element_graph_parallel)
         int right_side_id = 5;
 
         EXPECT_EQ(2u, elem_graph.size());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
 
         if (stk::parallel_machine_rank(comm) == 0)
         {
@@ -1748,6 +1803,8 @@ TEST(ElementGraph, skin_mesh_using_element_graph_serial)
                     EXPECT_EQ(right_side_id, via_sides[i][1]);
                 }
             }
+
+            EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
         }
 
         if (stk::parallel_machine_rank(comm) == 0)
@@ -1861,6 +1918,8 @@ void change_entity_owner_hex_test_2_procs(bool aura_on)
 
             ASSERT_THROW(elem_graph.get_parallel_edge_info(elem_3, stk::mesh::EntityId(2)), std::logic_error);
         }
+
+        EXPECT_EQ(1u, elem_graph.num_parallel_edges());
     }
 }
 
@@ -1989,6 +2048,8 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
 
             ASSERT_THROW(elem_graph.get_parallel_edge_info(elem_2, stk::mesh::EntityId(3)), std::logic_error);
        }
+
+        EXPECT_EQ(1u, elem_graph.num_parallel_edges());
     }
 }
 
@@ -2086,12 +2147,25 @@ void change_entity_owner_hex_test_4_procs(bool aura_on)
 
             stk::mesh::Entity elem_3 = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
             ASSERT_THROW(elem_graph.get_parallel_edge_info(elem_3, stk::mesh::EntityId(2)), std::logic_error);
+
+            EXPECT_EQ(2u, elem_graph.num_parallel_edges());
         }
         else if (proc == 0)
         {
             stk::mesh::Entity elem_1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
             impl::parallel_info &elem_1_to_2_p_info = elem_graph.get_parallel_edge_info(elem_1, stk::mesh::EntityId(2));
             EXPECT_EQ(2, elem_1_to_2_p_info.m_other_proc);
+            EXPECT_EQ(1u, elem_graph.num_parallel_edges());
+        }
+        else if (proc == 1)
+        {
+            EXPECT_EQ(0u, elem_graph.size());
+            EXPECT_EQ(0u, elem_graph.num_edges());
+            EXPECT_EQ(0u, elem_graph.num_parallel_edges());
+        }
+        else if (proc == 3)
+        {
+            EXPECT_EQ(1u, elem_graph.num_parallel_edges());
         }
     }
 }
@@ -2227,9 +2301,11 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
             EXPECT_EQ(5,  elem_graph.get_side_id_to_connected_element(hex1, 0));
             EXPECT_EQ(2u, elem_graph.get_entity_id_of_remote_element(hex1, 0));
             EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(hex1, 0));
+            EXPECT_EQ(1u, elem_graph.num_edges());
+            EXPECT_EQ(1u, elem_graph.num_parallel_edges());
         }
         else if (proc == 1) {
-            // Connectivity for Shell Element 3
+            // Connectivity for Shell Element 2
             EXPECT_EQ(2u, elem_graph.get_num_connected_elems(shell2));
             EXPECT_EQ(0,  elem_graph.get_side_id_to_connected_element(shell2, 0));
             EXPECT_EQ(1,  elem_graph.get_side_id_to_connected_element(shell2, 1));
@@ -2237,13 +2313,17 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
             EXPECT_EQ(1u, elem_graph.get_entity_id_of_remote_element(shell2, 1));
             EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(shell2, 0));
             EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(shell2, 1));
+            EXPECT_EQ(2u, elem_graph.num_edges());
+            EXPECT_EQ(2u, elem_graph.num_parallel_edges());
         }
         else if (proc == 2) {
-            // Connectivity for Hex Element 2
+            // Connectivity for Hex Element 3
             EXPECT_EQ(1u, elem_graph.get_num_connected_elems(hex3));
             EXPECT_EQ(4,  elem_graph.get_side_id_to_connected_element(hex3, 0));
             EXPECT_EQ(2u, elem_graph.get_entity_id_of_remote_element(hex3, 0));
             EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(hex3, 0));
+            EXPECT_EQ(1u, elem_graph.num_edges());
+            EXPECT_EQ(1u, elem_graph.num_parallel_edges());
         }
 
         stk::mesh::EntityId elem_to_move_global_id = 2;
@@ -2272,6 +2352,8 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
             stk::mesh::Entity elem_1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
             impl::parallel_info& elem1_to_elem2_info = elem_graph.get_parallel_edge_info(elem_1, stk::mesh::EntityId(2));
             EXPECT_EQ(2, elem1_to_elem2_info.m_other_proc);
+            EXPECT_EQ(1u, elem_graph.num_edges());
+            EXPECT_EQ(1u, elem_graph.num_parallel_edges());
         }
         if (proc == 1)
         {
@@ -2282,6 +2364,8 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
             ASSERT_THROW(elem_graph.get_parallel_edge_info(elem_2, stk::mesh::EntityId(1)), std::logic_error);
 
             ASSERT_THROW(elem_graph.get_parallel_edge_info(elem_2, stk::mesh::EntityId(3)), std::logic_error);
+            EXPECT_EQ(0u, elem_graph.num_edges());
+            EXPECT_EQ(0u, elem_graph.num_parallel_edges());
         }
         if (proc == 2)
         {
@@ -2291,6 +2375,8 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
             stk::mesh::Entity elem_2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
             impl::parallel_info& elem2_to_elem1_info = elem_graph.get_parallel_edge_info(elem_2, stk::mesh::EntityId(1));
             EXPECT_EQ(0, elem2_to_elem1_info.m_other_proc);
+            EXPECT_EQ(3u, elem_graph.num_edges());
+            EXPECT_EQ(1u, elem_graph.num_parallel_edges());
         }
     }
 }
@@ -2321,7 +2407,8 @@ TEST(ElementGraph, skin_mesh_using_element_graph_parallel)
     msgs.push_back("program-start");
     mem_usage.push_back(stk::get_memory_usage_now());
 
-    if(stk::parallel_machine_size(comm) <= 2)
+    unsigned nProc = stk::parallel_machine_size(comm);
+    if(nProc <= 2)
     {
         unsigned spatialDim = 3;
         stk::mesh::MetaData meta(spatialDim);
@@ -2379,6 +2466,9 @@ TEST(ElementGraph, skin_mesh_using_element_graph_parallel)
 
         size_t num_faces = counts[stk::topology::FACE_RANK];
         EXPECT_EQ(18u, num_faces);
+
+        EXPECT_EQ(6u/nProc, elemElemGraph.num_edges());
+        EXPECT_EQ((nProc-1), elemElemGraph.num_parallel_edges());
 
         if (stk::parallel_machine_rank(comm) == 0)
         {
@@ -2521,6 +2611,9 @@ TEST(ElementGraph, test_parallel_graph_info_with_parallel_element_graph)
 
             test_parallel_graph_info(elem_graph, parallel_graph_info, local_element, other_element, other_proc, other_side_ord, permutation);
         }
+
+        EXPECT_EQ(3u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -2851,7 +2944,9 @@ TEST(ElementGraph, make_items_inactive)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-    if(stk::parallel_machine_size(comm) <= 2)
+    unsigned nProc = stk::parallel_machine_size(comm);
+
+    if(nProc <= 2)
     {
         unsigned spatialDim = 3;
 
@@ -2873,6 +2968,7 @@ TEST(ElementGraph, make_items_inactive)
 
         size_t num_gold_edges =  6/bulkData.parallel_size();
         ASSERT_EQ(num_gold_edges, graph.num_edges());
+        ASSERT_EQ((nProc-1), graph.num_parallel_edges());
 
         stk::mesh::EntityVector deactivated_elems;
 
@@ -2922,6 +3018,8 @@ TEST(ElementGraph, make_items_inactive)
                 }
             }
         }
+
+        ASSERT_EQ((nProc-1), graph.num_parallel_edges());
    }
 }
 
@@ -3093,6 +3191,9 @@ TEST( ElementGraph, HexHexHexSerial )
     EXPECT_EQ(4,    elemElemGraph.get_side_id_to_connected_element(hex3, 0));
     EXPECT_EQ(hex2, elemElemGraph.get_connected_element(hex3, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex3, 0));
+
+    EXPECT_EQ(4u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, HexShellSerial )
@@ -3167,6 +3268,9 @@ TEST( ElementGraph, HexShellSerial )
     EXPECT_EQ(1,              elemElemGraph.get_side_id_to_connected_element(shell2, 0));
     EXPECT_EQ(hex1, elemElemGraph.get_connected_element(shell2, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell2, 0));
+
+    EXPECT_EQ(2u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, AdjacentHexShellSerial )
@@ -3271,6 +3375,9 @@ TEST( ElementGraph, AdjacentHexShellSerial )
     EXPECT_EQ(1,    elemElemGraph.get_side_id_to_connected_element(shell4, 0));
     EXPECT_EQ(hex2, elemElemGraph.get_connected_element(shell4, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell4, 0));
+
+    EXPECT_EQ(6u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, DISABLED_HexShellShellSerial )
@@ -3356,6 +3463,9 @@ TEST( ElementGraph, DISABLED_HexShellShellSerial )
     EXPECT_EQ(1,    elemElemGraph.get_side_id_to_connected_element(shell3, 0));
     EXPECT_EQ(hex1, elemElemGraph.get_connected_element(shell3, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
+
+    EXPECT_EQ(4u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, HexShellHexSerial )
@@ -3441,6 +3551,9 @@ TEST( ElementGraph, HexShellHexSerial )
     EXPECT_EQ(hex2, elemElemGraph.get_connected_element(shell3, 1));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell3, 1));
+
+    EXPECT_EQ(4u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, DISABLED_HexShellShellHexSerial )
@@ -3543,6 +3656,9 @@ TEST( ElementGraph, DISABLED_HexShellShellHexSerial )
     EXPECT_EQ(hex2, elemElemGraph.get_connected_element(shell4, 1));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell4, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell4, 1));
+
+    EXPECT_EQ(8u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, DISABLED_HexShellReversedShellHexSerial )
@@ -3645,6 +3761,9 @@ TEST( ElementGraph, DISABLED_HexShellReversedShellHexSerial )
     EXPECT_EQ(hex2, elemElemGraph.get_connected_element(shell4, 1));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell4, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell4, 1));
+
+    EXPECT_EQ(8u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vector<unsigned> > & shared_nodeIDs_and_procs )
@@ -3661,7 +3780,7 @@ void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vecto
     }
 }
 
-TEST( ElementGraph, Hex0Hex0Hex1Serial )
+TEST( ElementGraph, Hex0Hex0Hex1Parallel )
 {
     //  ID.proc
     //
@@ -3747,6 +3866,9 @@ TEST( ElementGraph, Hex0Hex0Hex1Serial )
         EXPECT_EQ(3u,   elemElemGraph.get_entity_id_of_remote_element(hex2, 1));
         EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
+
+        EXPECT_EQ(3u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Hex Element 3
@@ -3754,10 +3876,13 @@ TEST( ElementGraph, Hex0Hex0Hex1Serial )
         EXPECT_EQ(4,    elemElemGraph.get_side_id_to_connected_element(hex3, 0));
         EXPECT_EQ(2u,   elemElemGraph.get_entity_id_of_remote_element(hex3, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex3, 0));
+
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
 }
 
-TEST( ElementGraph, Hex0Hex1Hex0Serial )
+TEST( ElementGraph, Hex0Hex1Hex0Parallel )
 {
     //  ID.proc
     //
@@ -3859,9 +3984,12 @@ TEST( ElementGraph, Hex0Hex1Hex0Serial )
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
     }
+
+    EXPECT_EQ(2u, elemElemGraph.num_edges());
+    EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
 }
 
-TEST( ElementGraph, Hex0Hex1Hex2Serial )
+TEST( ElementGraph, Hex0Hex1Hex2Parallel )
 {
     //  ID.proc
     //
@@ -3946,6 +4074,8 @@ TEST( ElementGraph, Hex0Hex1Hex2Serial )
         EXPECT_EQ(5,  elemElemGraph.get_side_id_to_connected_element(hex1, 0));
         EXPECT_EQ(2u, elemElemGraph.get_entity_id_of_remote_element(hex1, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Hex Element 2
@@ -3956,6 +4086,8 @@ TEST( ElementGraph, Hex0Hex1Hex2Serial )
         EXPECT_EQ(3u, elemElemGraph.get_entity_id_of_remote_element(hex2, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 2) {
         // Connectivity for Hex Element 3
@@ -3963,6 +4095,8 @@ TEST( ElementGraph, Hex0Hex1Hex2Serial )
         EXPECT_EQ(4,  elemElemGraph.get_side_id_to_connected_element(hex3, 0));
         EXPECT_EQ(2u, elemElemGraph.get_entity_id_of_remote_element(hex3, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex3, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -4068,6 +4202,9 @@ TEST( ElementGraph, Hex0Shell1Parallel )
         EXPECT_EQ(0,  elemElemGraph.get_owning_proc_id_of_remote_element(shell2, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell2, 0));
     }
+
+    EXPECT_EQ(1u, elemElemGraph.num_edges());
+    EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, Hex0DelShell1Parallel )
@@ -4176,6 +4313,9 @@ TEST( ElementGraph, Hex0DelShell1Parallel )
         EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
         EXPECT_EQ(0u, elemElemGraph.size());
     }
+
+    EXPECT_EQ(0u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, AdjacentHex0Shell1Parallel )
@@ -4294,6 +4434,8 @@ TEST( ElementGraph, AdjacentHex0Shell1Parallel )
         EXPECT_EQ(4u,   elemElemGraph.get_entity_id_of_remote_element(hex2, 1));
         EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
+        EXPECT_EQ(4u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1u) {
         // Connectivity for Shell Element 3
@@ -4307,6 +4449,8 @@ TEST( ElementGraph, AdjacentHex0Shell1Parallel )
         EXPECT_EQ(1,    elemElemGraph.get_side_id_to_connected_element(shell4, 0));
         EXPECT_EQ(2u,   elemElemGraph.get_entity_id_of_remote_element(shell4, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell4, 0));
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -4408,6 +4552,8 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell1Parallel )
         EXPECT_EQ(1,    elemElemGraph.get_side_id_to_connected_element(shell2, 0));
         EXPECT_EQ(hex1, elemElemGraph.get_connected_element(shell2, 0));
         EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell2, 0));
+        EXPECT_EQ(3u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Shell Element 3
@@ -4415,6 +4561,8 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell1Parallel )
         EXPECT_EQ(1,  elemElemGraph.get_side_id_to_connected_element(shell3, 0));
         EXPECT_EQ(1u, elemElemGraph.get_entity_id_of_remote_element(shell3, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -4511,6 +4659,8 @@ TEST( ElementGraph, DISABLED_Hex0Shell1Shell1Parallel )
         EXPECT_EQ(3u, elemElemGraph.get_entity_id_of_remote_element(hex1, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 1));
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Shell Element 2
@@ -4524,6 +4674,8 @@ TEST( ElementGraph, DISABLED_Hex0Shell1Shell1Parallel )
         EXPECT_EQ(1,  elemElemGraph.get_side_id_to_connected_element(shell3, 0));
         EXPECT_EQ(1u, elemElemGraph.get_entity_id_of_remote_element(shell3, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -4626,6 +4778,8 @@ TEST( ElementGraph, Hex0Shell0Hex1Parallel )
         EXPECT_EQ(2u,   elemElemGraph.get_entity_id_of_remote_element(shell3, 1));
         EXPECT_TRUE (elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 1));
+        EXPECT_EQ(3u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Hex Element 2
@@ -4633,6 +4787,8 @@ TEST( ElementGraph, Hex0Shell0Hex1Parallel )
         EXPECT_EQ(4,  elemElemGraph.get_side_id_to_connected_element(hex2, 0));
         EXPECT_EQ(3u, elemElemGraph.get_entity_id_of_remote_element(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -4890,6 +5046,9 @@ TEST( ElementGraph, Hex0DelShell1Hex2Parallel )
         EXPECT_EQ(0,  elemElemGraph.get_owning_proc_id_of_remote_element(hex2, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
     }
+
+    EXPECT_EQ(1u, elemElemGraph.num_edges());
+    EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, Hex0Shell1Hex2Parallel )
@@ -5869,15 +6028,53 @@ ElemElemGraphTester create_base_1x1x4_elem_graph_for_addition(stk::ParallelMachi
         ownedElem4 = true;
     }
 
+    unsigned numParallelEdges = 0;
+    if(ownedElem1)
+    {
+        if(!ownedElem2)
+        {
+            numParallelEdges++;
+        }
+    }
+    if(ownedElem2)
+    {
+        if(!ownedElem1)
+        {
+            numParallelEdges++;
+        }
+        if(!ownedElem3)
+        {
+            numParallelEdges++;
+        }
+    }
+    if(ownedElem3)
+    {
+        if(!ownedElem2)
+        {
+            numParallelEdges++;
+        }
+        if(!ownedElem4)
+        {
+            numParallelEdges++;
+        }
+    }
+    if(ownedElem4)
+    {
+        if(!ownedElem3)
+        {
+            numParallelEdges++;
+        }
+    }
+
     EXPECT_EQ(elements_to_add.size(), elem_graph.size());
     EXPECT_EQ(numEdges, elem_graph.num_edges());
+    EXPECT_EQ(numParallelEdges, elem_graph.num_parallel_edges());
 
     if (ownedElem1)
     {
         EXPECT_EQ(5, elem_graph.check_connectivity(1, 2));
         EXPECT_EQ(-1, elem_graph.check_connectivity(1, 3));
         EXPECT_EQ(-1, elem_graph.check_connectivity(1, 4));
-
     }
     if (ownedElem2)
     {
@@ -5942,6 +6139,7 @@ ElemElemGraphTester create_base_1x1x4_elem_graph_for_deletion(stk::ParallelMachi
     bool ownedElem4 = false;
 
     unsigned numEdges = 0;
+
     if(bulkData.is_valid(elem1) && bulkData.bucket(elem1).owned())
     {
         numEdges += 1;
@@ -5964,8 +6162,47 @@ ElemElemGraphTester create_base_1x1x4_elem_graph_for_deletion(stk::ParallelMachi
         ownedElem4 = true;
     }
 
+    unsigned numParallelEdges = 0;
+    if(ownedElem1)
+    {
+        if(!ownedElem2)
+        {
+            numParallelEdges++;
+        }
+    }
+    if(ownedElem2)
+    {
+        if(!ownedElem1)
+        {
+            numParallelEdges++;
+        }
+        if(!ownedElem3)
+        {
+            numParallelEdges++;
+        }
+    }
+    if(ownedElem3)
+    {
+        if(!ownedElem2)
+        {
+            numParallelEdges++;
+        }
+        if(!ownedElem4)
+        {
+            numParallelEdges++;
+        }
+    }
+    if(ownedElem4)
+    {
+        if(!ownedElem3)
+        {
+            numParallelEdges++;
+        }
+    }
+
     EXPECT_EQ(numLocallyOwnedElems, elem_graph.size());
     EXPECT_EQ(numEdges, elem_graph.num_edges());
+    EXPECT_EQ(numParallelEdges, elem_graph.num_parallel_edges());
 
     if (ownedElem1)
     {

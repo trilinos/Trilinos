@@ -909,6 +909,9 @@ void ElemElemGraph::unpack_and_store_connected_element(stk::CommBuffer &buf, imp
         {
             m_parallel_graph_info.erase(iter);
         }
+
+        m_num_edges++;  // conversion of parallel edge to internal edge
+        m_num_parallel_edges--;
     }
     else
     {
@@ -920,6 +923,9 @@ void ElemElemGraph::unpack_and_store_connected_element(stk::CommBuffer &buf, imp
         m_elem_graph[recvd_elem_local_id].push_back(-connected_elem_global_id);
         std::pair<impl::LocalId, stk::mesh::EntityId> recvd_elem_key(recvd_elem_local_id, connected_elem_global_id);
         m_parallel_graph_info.insert(std::make_pair(recvd_elem_key, p_info));
+
+        m_num_edges++;  // addition of parallel edge
+        m_num_parallel_edges++;
     }
     m_via_sides[recvd_elem_local_id].push_back(side_from_recvd_elem_to_connected_elem);
 }
@@ -1078,7 +1084,19 @@ void ElemElemGraph::change_entity_owner(const stk::mesh::EntityProcVec &elem_pro
                         elements_connected[index] = -elem_global_id;
                     }
                 }
+
+                for(size_t k=0; k<m_elem_graph[elem_local_id].size(); ++k)
+                {
+                    if(m_elem_graph[elem_local_id][k] < 0)
+                        m_num_parallel_edges--;
+                    else
+                        m_num_parallel_edges++;
+                }
+
+                m_num_edges -= m_elem_graph[elem_local_id].size();
+
                 m_elem_graph[elem_local_id].clear();
+                m_via_sides[elem_local_id].clear();
                 m_deleted_element_local_id_pool.push_back(elem_local_id);
                 m_local_id_in_pool[elem_local_id] = true;
             }
@@ -1448,6 +1466,7 @@ void ElemElemGraph::reconnect_volume_elements_across_deleted_shells(std::vector<
     }
 
     fill_parallel_graph(shellNeighborsToReconnect, elements_to_delete);
+
     update_number_of_parallel_edges();
 }
 
@@ -1668,6 +1687,7 @@ void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph
     bulkData.change_entity_owner(elem_proc_pairs_to_move);
 
     elem_graph.change_entity_owner(elem_proc_pairs_to_move, new_parallel_graph_entries);
+
 }
 
 }} // end namespaces stk mesh
