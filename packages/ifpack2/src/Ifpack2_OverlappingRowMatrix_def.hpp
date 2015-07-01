@@ -55,8 +55,7 @@ OverlappingRowMatrix<MatrixType>::
 OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
                       const int overlapLevel) :
   A_ (A),
-  OverlapLevel_ (overlapLevel),
-  UseSubComm_ (false)
+  OverlapLevel_ (overlapLevel)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -222,19 +221,6 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
   // Resize temp arrays
   Indices_.resize (MaxNumEntries_);
   Values_.resize (MaxNumEntries_);
-}
-
-
-template<class MatrixType>
-OverlappingRowMatrix<MatrixType>::
-OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
-                      const int overlapLevel,
-                      const int subdomainID)
-{
-  //FIXME
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    true, std::logic_error,
-    "Ifpack2::OverlappingRowMatrix: Subdomain code not implemented yet.");
 }
 
 

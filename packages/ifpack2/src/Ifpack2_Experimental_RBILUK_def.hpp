@@ -44,7 +44,10 @@
 #define IFPACK2_EXPERIMENTAL_CRSRBILUK_DEF_HPP
 
 #include <Tpetra_Experimental_BlockMultiVector.hpp>
+#include<Ifpack2_OverlappingRowMatrix.hpp>
+#include<Ifpack2_LocalFilter.hpp>
 #include <Ifpack2_Experimental_RBILUK.hpp>
+#include <Ifpack2_Utilities.hpp>
 #include <Ifpack2_RILUK.hpp>
 // Need to include this if using the "classic" version of Tpetra,
 // since it may not get included in that case.
@@ -57,7 +60,7 @@ namespace Experimental {
 template<class MatrixType>
 RBILUK<MatrixType>::RBILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
   : RILUK<row_matrix_type>(Teuchos::rcp_dynamic_cast<const row_matrix_type>(Matrix_in) ),
-    A_block_(Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(Matrix_in))
+    A_(Matrix_in)
 {}
 
 template<class MatrixType>
@@ -84,7 +87,6 @@ RBILUK<MatrixType>::setMatrix (const Teuchos::RCP<const block_crs_matrix_type>& 
     this->isAllocated_ = false;
     this->isInitialized_ = false;
     this->isComputed_ = false;
-    A_local_block_crs_ = Teuchos::null;
     this->Graph_ = Teuchos::null;
     L_block_ = Teuchos::null;
     U_block_ = Teuchos::null;
@@ -154,11 +156,10 @@ void RBILUK<MatrixType>::allocate_L_and_U_blocks ()
     D_block_ = null;
 
     // Allocate Matrix using ILUK graphs
-    const local_ordinal_type blockSize = A_block_->getBlockSize ();
-    L_block_ = rcp(new block_crs_matrix_type(*this->Graph_->getL_Graph (), blockSize) );
-    U_block_ = rcp(new block_crs_matrix_type(*this->Graph_->getU_Graph (), blockSize) );
-    if (!A_block_->isComputedDiagonalGraph() ) Teuchos::rcp_const_cast<block_crs_matrix_type>(A_block_)->computeDiagonalGraph();
-    D_block_ = rcp(new block_crs_matrix_type(*(A_block_->getDiagonalGraph ()), blockSize) );
+    L_block_ = rcp(new block_crs_matrix_type(*this->Graph_->getL_Graph (), blockSize_) );
+    U_block_ = rcp(new block_crs_matrix_type(*this->Graph_->getU_Graph (), blockSize_) );
+    D_block_ = rcp(new block_crs_matrix_type(*(Ifpack2::Details::computeDiagonalGraph(*(this->Graph_->getOverlapGraph()))),
+                                             blockSize_) );
     L_block_->setAllToScalar (STM::zero ()); // Zero out L and U matrices
     U_block_->setAllToScalar (STM::zero ());
     D_block_->setAllToScalar (STM::zero ());
@@ -178,14 +179,29 @@ void RBILUK<MatrixType>::initialize ()
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
-  using Teuchos::rcp_implicit_cast;
+
+  if (A_block_.is_null()) {
+    TEUCHOS_TEST_FOR_EXCEPTION(A_.is_null(), std::runtime_error, "Ifpack2::Experimental::RBILUK::initialize: "
+      "The matrix is null.  Please call setMatrix() with a nonnull input before calling this method.");
+    RCP<const LocalFilter<row_matrix_type> > filteredA = rcp_dynamic_cast<const LocalFilter<row_matrix_type> >(A_);
+    TEUCHOS_TEST_FOR_EXCEPTION(filteredA.is_null(), std::runtime_error, "Ifpack2::Experimental::RBILUK::initialize: "
+      "Cannot cast to filtered matrix.");
+    RCP<const OverlappingRowMatrix<row_matrix_type> > overlappedA = rcp_dynamic_cast<const OverlappingRowMatrix<row_matrix_type> >(filteredA->getUnderlyingMatrix());
+    if (overlappedA != Teuchos::null) {
+      A_block_ = rcp_dynamic_cast<const block_crs_matrix_type>(overlappedA->getUnderlyingMatrix());
+    } else {
+      //If there is no overlap, filteredA could be the block CRS matrix
+      A_block_ = rcp_dynamic_cast<const block_crs_matrix_type>(filteredA->getUnderlyingMatrix());
+    }
+  }
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_block_.is_null (), std::runtime_error, "Ifpack2::Experimental::RBILUK::initialize: "
     "The matrix is null.  Please call setMatrix() with a nonnull input "
     "before calling this method.");
+
+  blockSize_ = A_block_->getBlockSize();
 
   Teuchos::Time timer ("RBILUK::initialize");
   { // Start timing
@@ -207,7 +223,7 @@ void RBILUK<MatrixType>::initialize ()
                              global_ordinal_type,
                              node_type> crs_graph_type;
 
-    Teuchos::RCP<const crs_graph_type> matrixCrsGraph = Teuchos::rcpFromRef(A_block_->getCrsGraph() );
+    RCP<const crs_graph_type> matrixCrsGraph = Teuchos::rcpFromRef(A_block_->getCrsGraph() );
     this->Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type> (matrixCrsGraph,
         this->LevelOfFill_, 0));
 
@@ -227,20 +243,15 @@ void
 RBILUK<MatrixType>::
 initAllValues (const block_crs_matrix_type& A)
 {
-  using Teuchos::ArrayRCP;
-  using Teuchos::Comm;
-  using Teuchos::ptr;
+  //using Teuchos::ArrayRCP;
   using Teuchos::RCP;
-  using Teuchos::REDUCE_SUM;
-  using Teuchos::reduceAll;
   typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> map_type;
 
   local_ordinal_type NumIn = 0, NumL = 0, NumU = 0;
   bool DiagFound = false;
   size_t NumNonzeroDiags = 0;
   size_t MaxNumEntries = A.getNodeMaxNumRowEntries();
-  local_ordinal_type blockSize = A.getBlockSize();
-  local_ordinal_type blockMatSize = blockSize*blockSize;
+  local_ordinal_type blockMatSize = blockSize_*blockSize_;
 
   // First check that the local row map ordering is the same as the local portion of the column map.
   // The extraction of the strictly lower/upper parts of A, as well as the factorization,
@@ -285,7 +296,6 @@ initAllValues (const block_crs_matrix_type& A)
   // This is ok, as the *order* of the GIDs in the rowmap is a better
   // expression of the user's intent than the GIDs themselves.
 
-  Teuchos::ArrayView<const global_ordinal_type> nodeGIDs = rowMap->getNodeElementList();
   for (size_t myRow=0; myRow<A.getNodeNumRows(); ++myRow) {
     local_ordinal_type local_row = myRow;
 
@@ -343,8 +353,8 @@ initAllValues (const block_crs_matrix_type& A)
       ++NumNonzeroDiags;
     } else
     {
-      for (local_ordinal_type jj = 0; jj < blockSize; ++jj)
-        diagValues[jj*(blockSize+1)] = this->Athresh_;
+      for (local_ordinal_type jj = 0; jj < blockSize_; ++jj)
+        diagValues[jj*(blockSize_+1)] = this->Athresh_;
       D_block_->replaceLocalValues(local_row, &local_row, diagValues.getRawPtr(), 1);
     }
 
@@ -399,24 +409,23 @@ void RBILUK<MatrixType>::compute ()
     const size_t MaxNumEntries =
       L_block_->getNodeMaxNumRowEntries () + U_block_->getNodeMaxNumRowEntries () + 1;
 
-    const local_ordinal_type blockSize = A_block_->getBlockSize();
-    const local_ordinal_type blockMatSize = blockSize*blockSize;
+    const local_ordinal_type blockMatSize = blockSize_*blockSize_;
 
-    const local_ordinal_type rowStride = blockSize;
+    const local_ordinal_type rowStride = blockSize_;
     const local_ordinal_type colStride = 1;
 
-    Teuchos::Array<int> ipiv(blockSize);
+    Teuchos::Array<int> ipiv(blockSize_);
     Teuchos::Array<LST> work(1);
 
     size_t num_cols = U_block_->getColMap()->getNodeNumElements();
     Teuchos::Array<int> colflag(num_cols);
 
     Teuchos::Array<impl_scalar_type> diagMod(blockMatSize,STM::zero());
-    little_block_type diagModBlock(&diagMod[0], blockSize, rowStride, colStride);
+    little_block_type diagModBlock(&diagMod[0], blockSize_, rowStride, colStride);
     Teuchos::Array<impl_scalar_type> matTmpArray(blockMatSize,STM::zero());
-    little_block_type matTmp(&matTmpArray[0], blockSize, rowStride, colStride);
+    little_block_type matTmp(&matTmpArray[0], blockSize_, rowStride, colStride);
     Teuchos::Array<impl_scalar_type> multiplierArray(blockMatSize, STM::zero());
-    little_block_type multiplier(&multiplierArray[0], blockSize, rowStride, colStride);
+    little_block_type multiplier(&multiplierArray[0], blockSize_, rowStride, colStride);
 
 //    Teuchos::ArrayRCP<scalar_type> DV = D_->get1dViewNonConst(); // Get view of diagonal
 
@@ -443,14 +452,14 @@ void RBILUK<MatrixType>::compute ()
       for (local_ordinal_type j = 0; j < NumL; ++j)
       {
         const local_ordinal_type matOffset = blockMatSize*j;
-        little_block_type lmat(&valsL[matOffset],blockSize,rowStride, colStride);
-        little_block_type lmatV(&InV[matOffset],blockSize,rowStride, colStride);
+        little_block_type lmat(&valsL[matOffset],blockSize_,rowStride, colStride);
+        little_block_type lmatV(&InV[matOffset],blockSize_,rowStride, colStride);
         lmatV.assign(lmat);
         InI[j] = colValsL[j];
       }
 
       little_block_type dmat = D_block_->getLocalBlock(local_row, local_row);
-      little_block_type dmatV(&InV[NumL*blockMatSize], blockSize, rowStride, colStride);
+      little_block_type dmatV(&InV[NumL*blockMatSize], blockSize_, rowStride, colStride);
       dmatV.assign(dmat);
       InI[NumL] = local_row;
 
@@ -463,8 +472,8 @@ void RBILUK<MatrixType>::compute ()
         if (!(colValsU[j] < numLocalRows)) continue;
         InI[NumL+1+j] = colValsU[j];
         const local_ordinal_type matOffset = blockMatSize*(NumL+1+j);
-        little_block_type umat(&valsU[blockMatSize*j], blockSize, rowStride, colStride);
-        little_block_type umatV(&InV[matOffset], blockSize, rowStride, colStride);
+        little_block_type umat(&valsU[blockMatSize*j], blockSize_, rowStride, colStride);
+        little_block_type umatV(&InV[matOffset], blockSize_, rowStride, colStride);
         umatV.assign(umat);
         NumU += 1;
       }
@@ -481,11 +490,11 @@ void RBILUK<MatrixType>::compute ()
 
       for (local_ordinal_type jj = 0; jj < NumL; ++jj) {
         local_ordinal_type j = InI[jj];
-        little_block_type currentVal(&InV[jj*blockMatSize], blockSize, rowStride, colStride); // current_mults++;
+        little_block_type currentVal(&InV[jj*blockMatSize], blockSize_, rowStride, colStride); // current_mults++;
         multiplier.assign(currentVal);
 
         const little_block_type dmatInverse = D_block_->getLocalBlock(j,j);
-        blockMatOpts.square_matrix_matrix_multiply(currentVal.getRawPtr(), dmatInverse.getRawPtr(), matTmp.getRawPtr(), blockSize);
+        blockMatOpts.square_matrix_matrix_multiply(currentVal.getRawPtr(), dmatInverse.getRawPtr(), matTmp.getRawPtr(), blockSize_);
         currentVal.assign(matTmp);
 
         const local_ordinal_type * UUI;
@@ -497,9 +506,9 @@ void RBILUK<MatrixType>::compute ()
             if (!(UUI[k] < numLocalRows)) continue;
             const int kk = colflag[UUI[k]];
             if (kk > -1) {
-              little_block_type kkval(&InV[kk*blockMatSize], blockSize, rowStride, colStride);
-              little_block_type uumat(&UUV[k*blockMatSize], blockSize, rowStride, colStride);
-              blockMatOpts.square_matrix_matrix_multiply(multiplier.getRawPtr(), uumat.getRawPtr(), kkval.getRawPtr(), blockSize, -STM::one(), STM::one());
+              little_block_type kkval(&InV[kk*blockMatSize], blockSize_, rowStride, colStride);
+              little_block_type uumat(&UUV[k*blockMatSize], blockSize_, rowStride, colStride);
+              blockMatOpts.square_matrix_matrix_multiply(multiplier.getRawPtr(), uumat.getRawPtr(), kkval.getRawPtr(), blockSize_, -STM::one(), STM::one());
             }
           }
         }
@@ -507,13 +516,13 @@ void RBILUK<MatrixType>::compute ()
           for (local_ordinal_type k = 0; k < NumUU; ++k) {
             if (!(UUI[k] < numLocalRows)) continue;
             const int kk = colflag[UUI[k]];
-            little_block_type uumat(&UUV[k*blockMatSize], blockSize, rowStride, colStride);
+            little_block_type uumat(&UUV[k*blockMatSize], blockSize_, rowStride, colStride);
             if (kk > -1) {
-              little_block_type kkval(&InV[kk*blockMatSize], blockSize, rowStride, colStride);
-              blockMatOpts.square_matrix_matrix_multiply(multiplier.getRawPtr(), uumat.getRawPtr(), kkval.getRawPtr(), blockSize, -STM::one(), STM::one());
+              little_block_type kkval(&InV[kk*blockMatSize], blockSize_, rowStride, colStride);
+              blockMatOpts.square_matrix_matrix_multiply(multiplier.getRawPtr(), uumat.getRawPtr(), kkval.getRawPtr(), blockSize_, -STM::one(), STM::one());
             }
             else {
-              blockMatOpts.square_matrix_matrix_multiply(multiplier.getRawPtr(), uumat.getRawPtr(), diagModBlock.getRawPtr(), blockSize, -STM::one(), STM::one());
+              blockMatOpts.square_matrix_matrix_multiply(multiplier.getRawPtr(), uumat.getRawPtr(), diagModBlock.getRawPtr(), blockSize_, -STM::one(), STM::one());
             }
           }
         }
@@ -542,17 +551,17 @@ void RBILUK<MatrixType>::compute ()
 
         LST* const d_raw = reinterpret_cast<LST*> (dmat.getRawPtr());
         int lapackInfo;
-        for (int k = 0; k < blockSize; ++k) {
+        for (int k = 0; k < blockSize_; ++k) {
           ipiv[k] = 0;
         }
 
-        lapack.GETRF(blockSize, blockSize, d_raw, blockSize, ipiv.getRawPtr(), &lapackInfo);
+        lapack.GETRF(blockSize_, blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), &lapackInfo);
         TEUCHOS_TEST_FOR_EXCEPTION(
           lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
           "lapackInfo = " << lapackInfo << " which indicates an error in the factorization GETRF.");
 
         int lwork = -1;
-        lapack.GETRI(blockSize, d_raw, blockSize, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
+        lapack.GETRI(blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
         TEUCHOS_TEST_FOR_EXCEPTION(
           lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
           "lapackInfo = " << lapackInfo << " which indicates an error in the matrix inverse GETRI.");
@@ -561,16 +570,16 @@ void RBILUK<MatrixType>::compute ()
         ImplMagnitudeType worksize = Kokkos::Details::ArithTraits<impl_scalar_type>::magnitude(work[0]);
         lwork = static_cast<int>(worksize);
         work.resize(lwork);
-        lapack.GETRI(blockSize, d_raw, blockSize, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
+        lapack.GETRI(blockSize_, d_raw, blockSize_, ipiv.getRawPtr(), work.getRawPtr(), lwork, &lapackInfo);
         TEUCHOS_TEST_FOR_EXCEPTION(
           lapackInfo != 0, std::runtime_error, "Ifpack2::Experimental::RBILUK::compute: "
           "lapackInfo = " << lapackInfo << " which indicates an error in the matrix inverse GETRI.");
       }
 
       for (local_ordinal_type j = 0; j < NumU; ++j) {
-        little_block_type currentVal(&InV[(NumL+1+j)*blockMatSize], blockSize, rowStride, colStride); // current_mults++;
+        little_block_type currentVal(&InV[(NumL+1+j)*blockMatSize], blockSize_, rowStride, colStride); // current_mults++;
         // scale U by the diagonal inverse
-        blockMatOpts.square_matrix_matrix_multiply(dmat.getRawPtr(), currentVal.getRawPtr(), matTmp.getRawPtr(), blockSize);
+        blockMatOpts.square_matrix_matrix_multiply(dmat.getRawPtr(), currentVal.getRawPtr(), matTmp.getRawPtr(), blockSize_);
         currentVal.assign(matTmp);
       }
 
@@ -603,7 +612,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
        scalar_type beta) const
 {
   using Teuchos::RCP;
-  using Teuchos::rcpFromRef;
   typedef Tpetra::Experimental::BlockMultiVector<scalar_type,
     local_ordinal_type, global_ordinal_type, node_type> BMV;
   typedef Tpetra::MultiVector<scalar_type,
@@ -628,17 +636,16 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     "complex Scalar type.  Please talk to the Ifpack2 developers to get this "
     "fixed.  There is a FIXME in this file about this very issue.");
 
-  const local_ordinal_type blockSize = A_block_->getBlockSize();
-  const local_ordinal_type blockMatSize = blockSize*blockSize;
+  const local_ordinal_type blockMatSize = blockSize_*blockSize_;
 
-  const local_ordinal_type rowStride = blockSize;
+  const local_ordinal_type rowStride = blockSize_;
   const local_ordinal_type colStride = 1;
 
-  BMV yBlock (Y, * (A_block_->getGraph ()->getDomainMap ()), blockSize);
-  const BMV xBlock (X, * (A_block_->getColMap ()), blockSize);
+  BMV yBlock (Y, * (A_block_->getGraph ()->getDomainMap ()), blockSize_);
+  const BMV xBlock (X, * (A_block_->getColMap ()), blockSize_);
 
-  Teuchos::Array<scalar_type> lclarray(blockSize);
-  little_vec_type lclvec(&lclarray[0], blockSize, colStride);
+  Teuchos::Array<scalar_type> lclarray(blockSize_);
+  little_vec_type lclvec(&lclarray[0], blockSize_, colStride);
   const scalar_type one = STM::one ();
   const scalar_type zero = STM::zero ();
 
@@ -654,8 +661,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         //
         // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
         const local_ordinal_type numVectors = xBlock.getNumVectors();
-        BMV cBlock (* (A_block_->getGraph ()->getDomainMap ()), blockSize, numVectors);
-        BMV rBlock (* (A_block_->getGraph ()->getDomainMap ()), blockSize, numVectors);
+        BMV cBlock (* (A_block_->getGraph ()->getDomainMap ()), blockSize_, numVectors);
+        BMV rBlock (* (A_block_->getGraph ()->getDomainMap ()), blockSize_, numVectors);
         for (local_ordinal_type imv = 0; imv < numVectors; ++imv)
         {
           for (size_t i = 0; i < D_block_->getNodeNumRows(); ++i)
@@ -677,7 +684,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
               little_vec_type prevVal = cBlock.getLocalBlock(col, imv);
 
               const local_ordinal_type matOffset = blockMatSize*j;
-              little_block_type lij(&valsL[matOffset],blockSize,rowStride, colStride);
+              little_block_type lij(&valsL[matOffset],blockSize_,rowStride, colStride);
 
               cval.matvecUpdate(-one, lij, prevVal);
             }
@@ -710,7 +717,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
               little_vec_type prevVal = yBlock.getLocalBlock(col, imv);
 
               const local_ordinal_type matOffset = blockMatSize*(NumU-1-j);
-              little_block_type uij(&valsU[matOffset], blockSize, rowStride, colStride);
+              little_block_type uij(&valsU[matOffset], blockSize_, rowStride, colStride);
 
               yval.matvecUpdate(-one, uij, prevVal);
             }

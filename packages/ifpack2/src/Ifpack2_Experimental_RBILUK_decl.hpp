@@ -353,18 +353,13 @@ private:
   void initAllValues (const block_crs_matrix_type& A);
 
   //! The (original) input matrix for which to compute ILU(k).
+  Teuchos::RCP<const row_matrix_type> A_;
+
+  //! The underlying constant block matrix.
   Teuchos::RCP<const block_crs_matrix_type> A_block_;
 
-  /// \brief The matrix used to to compute ILU(k).
-  ///
-  /// If A_local (the local filter of the original input matrix) is a
-  /// Tpetra::CrsMatrix, then this is just A_local.  Otherwise, this
-  /// class reserves the right for A_local_crs_ to be a copy of
-  /// A_local.  This is because the current implementation of ILU(k)
-  /// only knows how to factor a Tpetra::CrsMatrix.  That may change
-  /// in the future.
-  Teuchos::RCP<const block_crs_matrix_type> A_local_block_crs_;
-
+  //! The block size of the input matrix.
+  local_ordinal_type blockSize_;
 
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<block_crs_matrix_type> L_block_;

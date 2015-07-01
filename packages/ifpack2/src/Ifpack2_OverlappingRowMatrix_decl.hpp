@@ -91,10 +91,6 @@ public:
   OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
                         const int overlapLevel);
 
-  //! Subdomain constructor (NOT CURRENTLY IMPLEMENTED).
-  OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
-                        const int overlapLevel,
-                        const int subdomainID);
   //! Destructor
   ~OverlappingRowMatrix ();
 
@@ -370,10 +366,6 @@ private:
   Tpetra::global_size_t NumGlobalNonzeros_;
   size_t MaxNumEntries_;
   int OverlapLevel_;
-
-  // Subcommunicator stuff
-  bool UseSubComm_;
-  int subdomainID_;
 
   // Wrapper matrix objects
   Teuchos::RCP<const map_type> RowMap_;
