@@ -59,7 +59,7 @@ public:
 
     size_t num_parallel_edges() const { return m_num_parallel_edges; }
 
-    const std::vector<stk::mesh::EntityId>& get_suggested_side_ids() const;
+    std::vector<stk::mesh::EntityId> get_suggested_side_ids() const;
 
     void set_num_side_ids_used(size_t num_used);
 
@@ -139,6 +139,7 @@ protected:
     std::vector<int> m_deleted_elem_pool;
     size_t m_num_edges;
     size_t m_num_parallel_edges;
+    size_t m_num_ids_used;
 
     static const impl::LocalId INVALID_LOCAL_ID;
 };

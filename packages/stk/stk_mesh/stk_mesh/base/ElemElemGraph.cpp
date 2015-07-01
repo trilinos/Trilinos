@@ -67,14 +67,17 @@ void ElemElemGraph::update_number_of_parallel_edges()
     }
 }
 
-const std::vector<stk::mesh::EntityId>& ElemElemGraph::get_suggested_side_ids() const
+std::vector<stk::mesh::EntityId> ElemElemGraph::get_suggested_side_ids() const
 {
-    return m_suggested_side_ids;
+    std::vector<stk::mesh::EntityId> available_ids;
+    available_ids.assign(m_suggested_side_ids.begin()+m_num_ids_used, m_suggested_side_ids.end());
+    return available_ids;
 }
 
 void ElemElemGraph::set_num_side_ids_used(size_t num_used)
 {
-    m_suggested_side_ids.erase(m_suggested_side_ids.begin(), m_suggested_side_ids.begin()+num_used);
+    m_num_ids_used += num_used;
+    ThrowRequireMsg(m_suggested_side_ids.size() >= m_num_ids_used, "Program error (exceeded available ids). Contact sierra-help@sandia.gov for support.");
 }
 
 ElemElemGraph::~ElemElemGraph() {}
@@ -195,6 +198,8 @@ int ElemElemGraph::size_data_members()
     m_num_edges = 0;
     m_num_parallel_edges = 0;
     m_local_id_in_pool.resize(numElems, false);
+    m_num_ids_used = 0;
+
     return numElems;
 }
 
@@ -416,7 +421,7 @@ bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& element
 {
     bool topology_modified = false;
 
-    const std::vector<stk::mesh::EntityId>& requestedIds = elementGraph.get_suggested_side_ids();
+    const std::vector<stk::mesh::EntityId> requestedIds = elementGraph.get_suggested_side_ids();
     size_t id_counter = 0;
 
     std::vector<stk::mesh::sharing_info> shared_modified;
@@ -1446,7 +1451,7 @@ void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph
     stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
     impl::ParallelGraphInfo new_parallel_graph_entries;
 
-    const std::vector<stk::mesh::EntityId> &suggested_face_id_vector = elem_graph.get_suggested_side_ids();
+    const std::vector<stk::mesh::EntityId> suggested_face_id_vector = elem_graph.get_suggested_side_ids();
     size_t num_suggested_face_ids_used = 0;
 
     for (size_t i=0; i<elem_proc_pairs_to_move.size(); i++)
