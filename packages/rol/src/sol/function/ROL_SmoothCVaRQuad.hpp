@@ -50,15 +50,21 @@
 namespace ROL {
 
 template<class Real>
-class SmoothCVaRQuad : public ExpectationQuad<Real> {
+class CVaRQuadrangle : public ExpectationQuad<Real> {
 private:
-  Real prob_;
-  Real eps_;
+
   Teuchos::RCP<PlusFunction<Real> > pf_;
 
+  Real prob_;
+  Real eps_;
+
 public:
-  SmoothCVaRQuad(Real prob, Real eps, Teuchos::RCP<PlusFunction<Real> > &pf ) 
-    : ExpectationQuad<Real>(), prob_(prob), eps_(eps), pf_(pf) {}
+
+  CVaRQuadrangle(Real prob, Real eps, Teuchos::RCP<PlusFunction<Real> > &pf ) 
+    : ExpectationQuad<Real>(), pf_(pf) {
+    prob_ = ((prob >= 0.0) ? ((prob <= 1.0) ? prob : 0.5) : 0.5);
+    eps_  = ((eps > 0.0) ? eps : 1.0);
+  }
 
   Real error(Real x, int deriv = 0) {
     Real err = (prob_/(1.0-prob_))*pf_->evaluate(x,deriv) 

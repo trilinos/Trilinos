@@ -51,27 +51,34 @@ namespace ROL {
 template<class Real>
 class ExpUtility : public RiskMeasure<Real> {
 private:
-  Teuchos::RCP<Vector<Real> > eg_;
+  Teuchos::RCP<Vector<Real> > scaledGradient_;
+  Teuchos::RCP<Vector<Real> > dualVector_;
+  bool firstReset_;
 
 public:
+  ExpUtility(void) : RiskMeasure<Real>(), firstReset_(true) {}
+
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
-    RiskMeasure<Real>::val_ = 0.0;
-    RiskMeasure<Real>::gv_ = 0.0;
-    RiskMeasure<Real>::g_  = x.clone(); RiskMeasure<Real>::g_->zero();
-    RiskMeasure<Real>::hv_ = x.clone(); RiskMeasure<Real>::hv_->zero();
-    this->eg_ = x.clone(); this->eg_->zero();
-    x0 = Teuchos::rcp(&const_cast<Vector<Real> &>(x),false);
+    RiskMeasure<Real>::reset(x0,x);
+    if ( firstReset_ ) {
+      scaledGradient_ = (x.dual()).clone();
+      dualVector_ = (x.dual()).clone();
+      firstReset_ = false;
+    }
+    scaledGradient_->zero();
+    dualVector_->zero();
   }
 
-  void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x, 
+  void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
              Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
-    RiskMeasure<Real>::val_ = 0.0;
-    RiskMeasure<Real>::gv_ = 0.0;
-    RiskMeasure<Real>::g_  = x.clone(); RiskMeasure<Real>::g_->zero();
-    RiskMeasure<Real>::hv_ = x.clone(); RiskMeasure<Real>::hv_->zero();
-    this->eg_ = x.clone(); this->eg_->zero();
-    x0 = Teuchos::rcp(&const_cast<Vector<Real> &>(x),false);
-    v0 = Teuchos::rcp(&const_cast<Vector<Real> &>(v),false);
+    RiskMeasure<Real>::reset(x0,x,v0,v);
+    if ( firstReset_ ) {
+      scaledGradient_ = (x.dual()).clone();
+      dualVector_ = (x.dual()).clone();
+      firstReset_ = false;
+    }
+    scaledGradient_->zero();
+    dualVector_->zero();
   }
 
   void update(const Real val, const Real weight) {
@@ -84,14 +91,14 @@ public:
     RiskMeasure<Real>::g_->axpy(weight*ev,g);
   }
 
-  void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv, 
+  void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
                       const Real weight) {
     Real ev = std::exp(val);
     RiskMeasure<Real>::val_ += weight * ev;
     RiskMeasure<Real>::gv_  -= weight * ev * gv;
     RiskMeasure<Real>::g_->axpy(weight*ev,g);
     RiskMeasure<Real>::hv_->axpy(weight*ev,hv);
-    this->eg_->axpy(weight*ev*gv,g);
+    scaledGradient_->axpy(weight*ev*gv,g);
   }
 
   Real getValue(SampleGenerator<Real> &sampler) {
@@ -120,15 +127,14 @@ public:
 
     sampler.sumAll(*(RiskMeasure<Real>::hv_),hv);
 
-    Teuchos::RCP<Vector<Real> > g = hv.clone();
-    sampler.sumAll(*(this->eg_),*g);
-    hv.plus(*g);
+    sampler.sumAll(*scaledGradient_,*dualVector_);
+    hv.plus(*dualVector_);
     hv.scale(1.0/ev);
-    
-    g = hv.clone();
-    sampler.sumAll(*(RiskMeasure<Real>::g_),*g);
-    g->scale(egv/(ev*ev));
-    hv.plus(*g);
+
+    dualVector_->zero();
+    sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector_);
+    dualVector_->scale(egv/(ev*ev));
+    hv.plus(*dualVector_);
   }
 };
 
