@@ -68,7 +68,7 @@
 #include "ROL_MeanDeviationFromTarget.hpp"
 #include "ROL_MeanVarianceFromTarget.hpp"
 #include "ROL_CVaR.hpp"
-#include "ROL_SmoothCVaRQuad.hpp"
+#include "ROL_CVaRQuadrangle.hpp"
 #include "ROL_ExpUtility.hpp"
 #include "ROL_RiskAverseObjective.hpp"
 #include "ROL_RiskNeutralObjective.hpp"

@@ -87,6 +87,9 @@ private:
         value_storage_.insert(std::pair<std::vector<Real>,Real>(param,val));
       }
     }
+//std::cout << "BATCH ID: " << ValueSampler_->batchID() << "  "
+//          << "POINT: (" << param[0] << ", " << param[1] << ", " << param[2] << ", " << param[3] << ")  "
+//          << "VALUE: " << val << "\n";
   }
  
   // Evaluate gradient of objective function at current parameter
@@ -104,6 +107,9 @@ private:
         gradient_storage_[param]->set(g);
       }
     }
+//std::cout << "BATCH ID: " << GradientSampler_->batchID() << "  "
+//          << "POINT: (" << param[0] << ", " << param[1] << ", " << param[2] << ", " << param[3] << ")  "
+//          << "GNORM: " << g.norm() << "\n";
   }
 
   // Evaluate Hessian-times-a-vector at current parameter
