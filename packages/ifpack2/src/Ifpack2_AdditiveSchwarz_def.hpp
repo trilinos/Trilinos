@@ -1533,26 +1533,16 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
   // Create localized matrix.
   if (! OverlappingMatrix_.is_null ()) {
     if (UseSubdomain_) {
-      //      int sid = List_.get("subdomain id",-1);
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Ifpack2::AdditiveSchwarz::setup: subdomain code not yet supported.");
-      //
-      // FIXME (mfh 18 Nov 2013) btw what's the difference between
-      // Ifpack_NodeFilter and Ifpack_LocalFilter?  The former's
-      // documentation sounds a lot like what Ifpack2::LocalFilter
-      // does.
-      //
-      //Ifpack2_NodeFilter *tt = new Ifpack2_NodeFilter(OverlappingMatrix_,nodeID); //FIXME
-      //LocalizedMatrix = Teuchos::rcp(tt);
+        "Ifpack2::AdditiveSchwarz::setup: subdomain code not supported.");
     }
     else
       LocalizedMatrix = rcp (new LocalFilter<row_matrix_type> (OverlappingMatrix_));
   }
   else {
     if (UseSubdomain_) {
-      //      int sid = List_.get("subdomain id",-1);
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Ifpack2::AdditiveSchwarz::setup: subdomain code not yet supported.");
+        "Ifpack2::AdditiveSchwarz::setup: subdomain code not supported.");
     }
     else {
       LocalizedMatrix = rcp (new LocalFilter<row_matrix_type> (Matrix_));

@@ -850,9 +850,20 @@ namespace Experimental {
                    const Teuchos::ArrayView<Scalar>& Values,
                    size_t &NumEntries) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
-      "getLocalRowCopy: Copying is not implemented. You should use a view.");
+    const LO *colInds;
+    Scalar *vals;
+    LO numInds;
+    getLocalRowView(LocalRow,colInds,vals,numInds);
+    if (numInds > Indices.size() || numInds > Values.size()) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                  "Tpetra::BlockCrsMatrix::getLocalRowCopy : Column and/or values array is not large enough to hold "
+                  << numInds << " row entries");
+    }
+    for (LO i=0; i<numInds; ++i) {
+      Indices[i] = colInds[i];
+      Values[i] = vals[i];
+    }
+    NumEntries = numInds;
   }
 
   template<class Scalar, class LO, class GO, class Node>
