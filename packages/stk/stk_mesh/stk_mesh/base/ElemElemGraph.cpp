@@ -418,51 +418,6 @@ void ElemElemGraph::connect_remote_element_to_existing_graph( const impl::Shared
     // impl::break_volume_element_connections_across_shells(localElementsConnectedToRemoteShell, m_elem_graph, m_via_sides);
 }
 
-void ElemElemGraph::connect_remote_element_to_existing_graph( const impl::SharedEdgeInfo &receivedSharedEdge)
-{
-    // If received element is a shell, it was pre-existing.  Thus, we don't have to unhook the local element graph
-    // node from any remote element that has a face that shell is coincident with.
-
-    const stk::mesh::EntityVector &sideNodes = receivedSharedEdge.m_sharedNodes;  // Pick a convenient set of side nodes (same for all elems)
-    unsigned num_side_nodes = sideNodes.size();
-
-
-    stk::mesh::Entity localElem = m_bulk_data.get_entity(stk::topology::ELEM_RANK, receivedSharedEdge.m_locaElementlId);
-    stk::topology localElemTopology = m_bulk_data.bucket(localElem).topology();
-
-    const stk::mesh::Entity* localElemNodes = m_bulk_data.begin_nodes(localElem);
-    unsigned localElemNumSides = localElemTopology.num_sides();
-    for(unsigned side_index=0; side_index<localElemNumSides; ++side_index)
-    {
-        unsigned num_nodes_this_side = localElemTopology.side_topology(side_index).num_nodes();
-        if (num_nodes_this_side != num_side_nodes)
-        {
-            continue;
-        }
-        stk::mesh::EntityVector localElemSideNodes(num_nodes_this_side);
-        localElemTopology.side_nodes(localElemNodes, side_index, localElemSideNodes.begin());
-
-        std::pair<bool,unsigned> result = localElemTopology.side_topology(side_index).equivalent(localElemSideNodes, sideNodes);
-
-        if (result.first)
-        {
-            impl::LocalId local_elem_id = get_local_element_id(localElem);
-            impl::LocalId negSgnRemoteElemId = -1*receivedSharedEdge.m_remoteElementId;
-
-            m_elem_graph[local_elem_id].push_back(negSgnRemoteElemId);
-            m_via_sides[local_elem_id].push_back(side_index);
-
-            stk::mesh::EntityId chosen_side_id = receivedSharedEdge.m_chosenSideId;
-
-            m_parallel_graph_info.insert(std::make_pair(std::make_pair(local_elem_id, receivedSharedEdge.m_remoteElementId),
-                                                        impl::parallel_info(receivedSharedEdge.m_procId, receivedSharedEdge.m_sideIndex, result.second, chosen_side_id)));
-            break;
-        }
-    }
-
-    // impl::break_volume_element_connections_across_shells(localElementsConnectedToRemoteShell, m_elem_graph, m_via_sides);
-}
-
 void ElemElemGraph::filter_for_elements_in_graph(stk::mesh::EntityVector &localElements)
 {
     stk::mesh::EntityVector filteredElements;
