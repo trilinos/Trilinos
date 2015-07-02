@@ -58,7 +58,7 @@ namespace Example {
 
     ordinal_type NumBlocks() const { return _cblk; }
 
-    GraphHelper_Scotch(const CrsMatrixType& A) {
+    GraphHelper_Scotch(const CrsMatrixType& A, const int seed = -1) {
 
       _label = "GraphHelper_Scotch::" + A.Label();
 
@@ -84,7 +84,12 @@ namespace Example {
       int ierr = 0;
       ordinal_type *rptr = reinterpret_cast<ordinal_type*>(_rptr.ptr_on_device());
       ordinal_type *cidx = reinterpret_cast<ordinal_type*>(_cidx.ptr_on_device());
-      
+
+      if (seed >= 0) {
+        SCOTCH_randomSeed(seed);
+        SCOTCH_randomReset();
+      }
+
       ierr = SCOTCH_graphInit(&_graph);CHKERR(ierr);
       ierr = SCOTCH_graphBuild(&_graph,             // scotch graph
                                _base,               // base value

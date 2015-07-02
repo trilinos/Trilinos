@@ -37,6 +37,12 @@ int main (int argc, char *argv[]) {
   int team_size = 1;
   clp.setOption("team-size", &team_size, "Team size");
 
+  int fill_level = 0;
+  clp.setOption("fill-level", &fill_level, "Fill level");
+
+  int league_size = 1;
+  clp.setOption("league-size", &league_size, "League size");
+
   bool team_interface = true;
   clp.setOption("enable-team-interface", "disable-team-interface", 
                 &team_interface, "Flag for team interface");
@@ -46,6 +52,9 @@ int main (int argc, char *argv[]) {
 
   string file_input = "test.mtx";
   clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
+
+  int seed = 0;
+  clp.setOption("seed", &seed, "Seed for random number generator in graph partition");
 
   int niter = 10;
   clp.setOption("niter", &niter, "Number of iterations for testing");
@@ -65,7 +74,14 @@ int main (int argc, char *argv[]) {
     
     r_val = exampleICholPerformance
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, niter, nthreads, max_task_dependence, team_size, team_interface, (nthreads != 1), verbose);
+      (file_input,
+       seed,
+       niter, 
+       nthreads, max_task_dependence, team_size, 
+       fill_level, league_size, 
+       team_interface, 
+       (nthreads != 1), 
+       verbose);
 
     exec_space::finalize();
   }
