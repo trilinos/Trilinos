@@ -116,7 +116,7 @@ private:
 /***************** BUNDLE MODIFICATION AND ACCESS ROUTINES *************************************/
 /***********************************************************************************************/
 public:
-  ~Bundle(void) {}
+  virtual ~Bundle(void) {}
   Bundle(const unsigned maxSize = 10, const Real coeff = 0.0, const unsigned remSize = 2) 
     : size_(0), maxSize_(maxSize), remSize_(remSize), coeff_(coeff), isInitialized_(false) {
     remSize_ = ((remSize_ < 2) ? 2 : ((remSize_ > maxSize_-1) ? maxSize_-1 : remSize_));
