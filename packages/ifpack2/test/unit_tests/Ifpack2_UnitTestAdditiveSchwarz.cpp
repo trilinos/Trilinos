@@ -451,7 +451,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, RBILUK, Scalar, LocalO
 
   RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
 
-  for (int overlapLevel=0; overlapLevel<2; ++overlapLevel) {
+  int overlapLimit=1;
+
+  for (int overlapLevel=0; overlapLevel<overlapLimit; ++overlapLevel) {
 
     out << "overlap = " << overlapLevel << std::endl;
     out << "Creating AdditiveSchwarz instance" << endl;
