@@ -2425,6 +2425,35 @@ solve(Tensor<T, N> const & A, Vector<T, N> const & b)
   return dot(inverse(A), b);
 }
 
+template<typename T, Index N, Index P>
+Matrix<T, N, P>
+solve(Tensor<T, N> const & A, Matrix<T, N, P> const & B)
+{
+  auto const
+  I = inverse(A);
+
+  auto
+  X = B;
+
+  Vector<T, N>
+  b(A.get_dimension());
+
+  Vector<T, N>
+  x(A.get_dimension());
+
+  for (auto j = 0; j < B.get_num_cols(); ++j) {
+    b = col(B, j);
+
+    x = dot(I, b);
+
+    for (auto i = 0; i < B.get_num_rows(); ++i) {
+      X(i, j) = x(i);
+    }
+  }
+
+  return X;
+}
+
 } // namespace Intrepid
 
 #endif // Intrepid_MiniTensor_LinearAlgebra_t_h

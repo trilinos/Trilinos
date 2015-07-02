@@ -39,17 +39,69 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_h)
-#define Intrepid_MiniTensor_h
+#if !defined(Intrepid_MiniTensor_Matrix_t_h)
+#define Intrepid_MiniTensor_Matrix_t_h
 
-#include "Intrepid_MiniTensor_Vector.h"
-#include "Intrepid_MiniTensor_Tensor.h"
-#include "Intrepid_MiniTensor_Tensor3.h"
-#include "Intrepid_MiniTensor_Tensor4.h"
-#include "Intrepid_MiniTensor_Matrix.h"
+namespace Intrepid {
 
-#include "Intrepid_MiniTensor_Geometry.h"
-#include "Intrepid_MiniTensor_LinearAlgebra.h"
-#include "Intrepid_MiniTensor_Mechanics.h"
+//
+// Matrix input
+//
+template<typename T, Index M, Index N>
+std::istream &
+operator>>(std::istream & is, Matrix<T, M, N> & A)
+{
+  Index const
+  num_rows = A.get_num_rows();
 
-#endif //Intrepid_MiniTensor_h
+  Index const
+  num_cols = A.get_num_cols();
+
+  for (Index i = 0; i < num_rows; ++i) {
+    for (Index j = 0; j < num_cols; ++j) {
+      is >> A(i,j);
+    }
+  }
+
+  return is;
+}
+
+//
+// Matrix output
+//
+template<typename T, Index M, Index N>
+std::ostream &
+operator<<(std::ostream & os, Matrix<T, M, N> const & A)
+{
+  Index const
+  num_rows = A.get_num_rows();
+
+  Index const
+  num_cols = A.get_num_cols();
+
+  Index const
+  dimension = num_rows * num_cols;
+
+  if (dimension == 0) {
+    return os;
+  }
+
+  os << std::scientific << std::setw(24) << std::setprecision(16);
+
+  for (Index i = 0; i < num_rows; ++i) {
+
+    os << A(i,0);
+
+    for (Index j = 1; j < num_cols; ++j) {
+      os << "," << std::setw(24) << A(i,j);
+    }
+
+    os << std::endl;
+  }
+
+  return os;
+}
+
+} // namespace Intrepid
+
+#endif // Intrepid_MiniTensor_Matrix_t_h

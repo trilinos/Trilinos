@@ -636,6 +636,7 @@ Tensor<T, N>::fill(
   return;
 }
 #endif
+
 template<typename T, Index N>
 inline
 void
@@ -722,171 +723,6 @@ Tensor<T, N>::fill(T const * data_ptr, ComponentOrder const component_order)
   return;
 }
 
-//
-// Tensor addition
-//
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-operator+(Tensor<S, N> const & A, Tensor<T, N> const & B)
-{
-  Tensor<typename Promote<S, T>::type, N>
-  C(A.get_dimension());
-
-  add(A, B, C);
-
-  return C;
-}
-
-//
-// Tensor subtraction
-//
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-operator-(Tensor<S, N> const & A, Tensor<T, N> const & B)
-{
-  Tensor<typename Promote<S, T>::type, N>
-  C(A.get_dimension());
-
-  subtract(A, B, C);
-
-  return C;
-}
-
-//
-// Tensor minus
-//
-template<typename T, Index N>
-inline
-Tensor<T, N>
-operator-(Tensor<T, N> const & A)
-{
-  Tensor<T, N>
-  B(A.get_dimension());
-
-  minus(A, B);
-
-  return B;
-}
-
-//
-// Tensor equality
-//
-template<typename T, Index N>
-inline
-bool
-operator==(Tensor<T, N> const & A, Tensor<T, N> const & B)
-{
-  return equal(A, B);
-}
-
-//
-// Tensor inequality
-//
-template<typename T, Index N>
-inline
-bool
-operator!=(Tensor<T, N> const & A, Tensor<T, N> const & B)
-{
-  return not_equal(A, B);
-}
-
-//
-// Scalar tensor product
-//
-template<typename S, typename T, Index N>
-inline typename
-lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N> >::type
-operator*(S const & s, Tensor<T, N> const & A)
-{
-  Tensor<typename Promote<S, T>::type, N>
-  B(A.get_dimension());
-
-  scale(A, s, B);
-
-  return B;
-}
-
-//
-// Tensor scalar product
-//
-template<typename S, typename T, Index N>
-inline typename
-lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N> >::type
-operator*(Tensor<T, N> const & A, S const & s)
-{
-  Tensor<typename Promote<S, T>::type, N>
-  B(A.get_dimension());
-
-  scale(A, s, B);
-
-  return B;
-}
-
-//
-// Tensor scalar division
-//
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-operator/(Tensor<T, N> const & A, S const & s)
-{
-  Tensor<typename Promote<S, T>::type, N>
-  B(A.get_dimension());
-
-  divide(A, s, B);
-
-  return B;
-}
-
-//
-// Scalar tensor division
-//
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-operator/(S const & s, Tensor<T, N> const & A)
-{
-  Tensor<typename Promote<S, T>::type, N>
-  B(A.get_dimension());
-
-  split(A, s, B);
-
-  return B;
-}
-
-//
-// Tensor vector product v = A u
-//
-template<typename S, typename T, Index N>
-inline Vector<typename Promote<S, T>::type, N>
-operator*(Tensor<T, N> const & A, Vector<S, N> const & u)
-{
-  return dot(A, u);
-}
-
-//
-// Vector tensor product v = u A
-//
-template<typename S, typename T, Index N>
-inline Vector<typename Promote<S, T>::type, N>
-operator*(Vector<S, N> const & u, Tensor<T, N> const & A)
-{
-  return dot(u, A);
-}
-
-//
-// Tensor dot product C = A B
-//
-template<typename S, typename T, Index N>
-inline
-Tensor<typename Promote<S, T>::type, N>
-operator*(Tensor<S, N> const & A, Tensor<T, N> const & B)
-{
-  return dot(A, B);
-}
-
 namespace {
 
 template<typename S>
@@ -903,14 +739,14 @@ greater_than(S const & a, S const & b)
 // and eigenvalues and corresponding vectors in the respective decompositions.
 //
 template<typename T, Index N>
-std::pair<Vector<T, N>, Tensor<T, N> >
+std::pair<Vector<T, N>, Tensor<T, N>>
 sort_permutation(Vector<T, N> const & u)
 {
 
   Index const
   dimension = u.get_dimension();
 
-  std::vector <std::pair<T, Index> >
+  std::vector <std::pair<T, Index>>
   s(dimension);
 
   for (Index i = 0; i < dimension; ++i) {
@@ -918,7 +754,7 @@ sort_permutation(Vector<T, N> const & u)
     s[i].second = i;
   }
 
-  std::sort(s.begin(), s.end(), greater_than<std::pair<T, Index> >);
+  std::sort(s.begin(), s.end(), greater_than<std::pair<T, Index>>);
 
   Vector<T, N> v(dimension);
 
@@ -1005,10 +841,172 @@ col(Tensor<T, N> const & A, Index const j)
 }
 
 //
-// R^N tensor vector product v = A u
-// \param A tensor
-// \param u vector
-// \return \f$ A u \f$
+// Tensor addition
+//
+template<typename S, typename T, Index N>
+inline
+Tensor<typename Promote<S, T>::type, N>
+operator+(Tensor<S, N> const & A, Tensor<T, N> const & B)
+{
+  Tensor<typename Promote<S, T>::type, N>
+  C(A.get_dimension());
+
+  add(A, B, C);
+
+  return C;
+}
+
+//
+// Tensor subtraction
+//
+template<typename S, typename T, Index N>
+inline
+Tensor<typename Promote<S, T>::type, N>
+operator-(Tensor<S, N> const & A, Tensor<T, N> const & B)
+{
+  Tensor<typename Promote<S, T>::type, N>
+  C(A.get_dimension());
+
+  subtract(A, B, C);
+
+  return C;
+}
+
+//
+// Tensor minus
+//
+template<typename T, Index N>
+inline
+Tensor<T, N>
+operator-(Tensor<T, N> const & A)
+{
+  Tensor<T, N>
+  B(A.get_dimension());
+
+  minus(A, B);
+
+  return B;
+}
+
+//
+// Tensor equality
+//
+template<typename T, Index N>
+inline
+bool
+operator==(Tensor<T, N> const & A, Tensor<T, N> const & B)
+{
+  return equal(A, B);
+}
+
+//
+// Tensor inequality
+//
+template<typename T, Index N>
+inline
+bool
+operator!=(Tensor<T, N> const & A, Tensor<T, N> const & B)
+{
+  return not_equal(A, B);
+}
+
+//
+// Scalar tensor product
+//
+template<typename S, typename T, Index N>
+inline typename
+lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N>>::type
+operator*(S const & s, Tensor<T, N> const & A)
+{
+  Tensor<typename Promote<S, T>::type, N>
+  B(A.get_dimension());
+
+  scale(A, s, B);
+
+  return B;
+}
+
+//
+// Tensor scalar product
+//
+template<typename S, typename T, Index N>
+inline typename
+lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N>>::type
+operator*(Tensor<T, N> const & A, S const & s)
+{
+  Tensor<typename Promote<S, T>::type, N>
+  B(A.get_dimension());
+
+  scale(A, s, B);
+
+  return B;
+}
+
+//
+// Tensor scalar division
+//
+template<typename S, typename T, Index N>
+inline
+Tensor<typename Promote<S, T>::type, N>
+operator/(Tensor<T, N> const & A, S const & s)
+{
+  Tensor<typename Promote<S, T>::type, N>
+  B(A.get_dimension());
+
+  divide(A, s, B);
+
+  return B;
+}
+
+//
+// Scalar tensor division
+//
+template<typename S, typename T, Index N>
+inline
+Tensor<typename Promote<S, T>::type, N>
+operator/(S const & s, Tensor<T, N> const & A)
+{
+  Tensor<typename Promote<S, T>::type, N>
+  B(A.get_dimension());
+
+  split(A, s, B);
+
+  return B;
+}
+
+//
+// Tensor vector product v = A u
+//
+template<typename S, typename T, Index N>
+inline Vector<typename Promote<S, T>::type, N>
+operator*(Tensor<T, N> const & A, Vector<S, N> const & u)
+{
+  return dot(A, u);
+}
+
+//
+// Vector tensor product v = u A
+//
+template<typename S, typename T, Index N>
+inline Vector<typename Promote<S, T>::type, N>
+operator*(Vector<S, N> const & u, Tensor<T, N> const & A)
+{
+  return dot(u, A);
+}
+
+//
+// Tensor dot product C = A B
+//
+template<typename S, typename T, Index N>
+inline
+Tensor<typename Promote<S, T>::type, N>
+operator*(Tensor<S, N> const & A, Tensor<T, N> const & B)
+{
+  return dot(A, B);
+}
+
+//
+// Tensor vector product v = A u
 //
 template<typename S, typename T, Index N>
 inline Vector<typename Promote<S, T>::type, N>
@@ -1054,10 +1052,7 @@ dot(Tensor<T, N> const & A, Vector<S, N> const & u)
 }
 
 //
-// R^N vector tensor product v = u A
-// \param A tensor
-// \param u vector
-// \return \f$ u A = A^T u \f$
+// Vector tensor product v = u A
 //
 template<typename S, typename T, Index N>
 inline Vector<typename Promote<S, T>::type, N>
@@ -1103,10 +1098,7 @@ dot(Vector<S, N> const & u, Tensor<T, N> const & A)
 }
 
 //
-// R^N tensor tensor product C = A B
-// \param A tensor
-// \param B tensor
-// \return a tensor \f$ A \cdot B \f$
+// Tensor tensor product C = A B
 //
 template<typename S, typename T, Index N>
 inline
@@ -1166,10 +1158,7 @@ dot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 }
 
 //
-// R^N tensor tensor product C = A^T B
-// \param A tensor
-// \param B tensor
-// \return a tensor \f$ A^T \cdot B \f$
+// Tensor tensor product C = A^T B
 //
 template<typename S, typename T, Index N>
 inline
@@ -1229,10 +1218,7 @@ t_dot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 }
 
 //
-// R^N tensor tensor product C = A B^T
-// \param A tensor
-// \param B tensor
-// \return a tensor \f$ A \cdot B^T \f$
+// Tensor tensor product C = A B^T
 //
 template<typename S, typename T, Index N>
 inline
@@ -1292,10 +1278,7 @@ dot_t(Tensor<S, N> const & A, Tensor<T, N> const & B)
 }
 
 //
-// R^N tensor tensor product C = A^T B^T
-// \param A tensor
-// \param B tensor
-// \return a tensor \f$ A^T \cdot B^T \f$
+// Tensor tensor product C = A^T B^T
 //
 template<typename S, typename T, Index N>
 inline
@@ -1355,13 +1338,11 @@ t_dot_t(Tensor<S, N> const & A, Tensor<T, N> const & B)
 }
 
 //
-// R^N tensor tensor double dot product (contraction)
-// \param A tensor
-// \param B tensor
-// \return a scalar \f$ A : B \f$
+// Tensor tensor double dot product (contraction)
 //
 template<typename S, typename T, Index N>
-inline typename Promote<S, T>::type
+inline
+typename Promote<S, T>::type
 dotdot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 {
   Index const
@@ -1399,10 +1380,7 @@ dotdot(Tensor<S, N> const & A, Tensor<T, N> const & B)
 }
 
 //
-// R^N dyad
-// \param u vector
-// \param v vector
-// \return \f$ u \otimes v \f$
+// dyad
 //
 template<typename S, typename T, Index N>
 inline
@@ -1459,10 +1437,7 @@ dyad(Vector<S, N> const & u, Vector<T, N> const & v)
 }
 
 //
-// R^N bun operator, just for Jay, and now Reese too.
-// \param u vector
-// \param v vector
-// \return \f$ u \otimes v \f$
+// bun operator, just for Jay, and now Reese too.
 //
 template<typename S, typename T, Index N>
 inline
@@ -1473,10 +1448,7 @@ bun(Vector<S, N> const & u, Vector<T, N> const & v)
 }
 
 //
-// R^N tensor product
-// \param u vector
-// \param v vector
-// \return \f$ u \otimes v \f$
+// tensor product
 //
 template<typename S, typename T, Index N>
 inline
@@ -1487,9 +1459,7 @@ tensor(Vector<S, N> const & u, Vector<T, N> const & v)
 }
 
 //
-// R^N diagonal tensor from vector
-// \param v vector
-// \return A = diag(v)
+// diagonal tensor from vector
 //
 template<typename T, Index N>
 Tensor<T, N>
@@ -1526,9 +1496,7 @@ diag(Vector<T, N> const & v)
 }
 
 //
-// R^N diagonal of tensor in a vector
-// \param A tensor
-// \return v = diag(A)
+// diagonal of tensor in a vector
 //
 template<typename T, Index N>
 Vector<T, N>
@@ -1646,7 +1614,7 @@ void fill_levi_civita(Tensor<T, N> & A)
 } // anonymous namespace
 
 //
-// R^N 2nd-order identity tensor
+// 2nd-order identity tensor
 //
 template<typename T, Index N>
 inline
@@ -1690,7 +1658,7 @@ identity(Index const dimension)
 }
 
 //
-// R^N 2nd-order identity tensor, à la Matlab
+// 2nd-order identity tensor, à la Matlab
 //
 template<typename T, Index N>
 inline
@@ -1816,7 +1784,7 @@ alternator_2(Index const dimension)
 }
 
 //
-// R^N 2nd-order tensor transpose
+// 2nd-order tensor transpose
 //
 template<typename T, Index N>
 inline
@@ -1858,7 +1826,7 @@ transpose(Tensor<T, N> const & A)
 }
 
 //
-// R^N symmetric part of 2nd-order tensor
+// symmetric part of 2nd-order tensor
 // \return \f$ \frac{1}{2}(A + A^T) \f$
 //
 template<typename T, Index N>
@@ -1923,7 +1891,7 @@ sym(Tensor<T, N> const & A)
 }
 
 //
-// R^N skew symmetric part of 2nd-order tensor
+// skew symmetric part of 2nd-order tensor
 // \return \f$ \frac{1}{2}(A - A^T) \f$
 //
 template<typename T, Index N>
@@ -1981,7 +1949,7 @@ skew(Tensor<T, N> const & A)
 }
 
 //
-// R^N skew symmetric 2nd-order tensor from vector, undefined
+// skew symmetric 2nd-order tensor from vector, undefined
 // for N!=3.
 // \param u vector
 //

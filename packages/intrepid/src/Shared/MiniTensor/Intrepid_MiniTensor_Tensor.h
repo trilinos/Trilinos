@@ -126,6 +126,7 @@ public:
 
   explicit
   Tensor(Index const dimension, ComponentValue const value);
+
   ///
   /// Create tensor from array
   /// \param dimension the space dimension
@@ -227,6 +228,7 @@ public:
 
   explicit
   Tensor(Index const dimension, T const * data_ptr);
+
   ///
   /// Copy constructor
   ///
@@ -261,8 +263,11 @@ public:
   Tensor(T const * data_ptr, ComponentOrder const component_order);
 
   explicit
-  Tensor(Index const dimension, T const * data_ptr,
+  Tensor(
+      Index const dimension,
+      T const * data_ptr,
       ComponentOrder const component_order);
+
   ///
   /// Simple destructor
   ///
@@ -353,6 +358,7 @@ public:
       iType index5,
       iType index6);
 #endif
+
   void
   fill(T const * data_ptr);
 
@@ -443,7 +449,7 @@ operator*(Tensor<S, N> const & A, Tensor<T, N> const & B);
 /// \return \f$ s A \f$
 ///
 template<typename S, typename T, Index N>
-typename lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N> >::type
+typename lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N>>::type
 operator*(S const & s, Tensor<T, N> const & A);
 
 ///
@@ -453,7 +459,7 @@ operator*(S const & s, Tensor<T, N> const & A);
 /// \return \f$ s A \f$
 ///
 template<typename S, typename T, Index N>
-typename lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N> >::type
+typename lazy_disable_if<order_1234<S>, apply_tensor<Promote<S, T>, N>>::type
 operator*(Tensor<T, N> const & A, S const & s);
 
 ///
@@ -726,7 +732,7 @@ Tensor<T, N> const
 alternator_2(Index const dimension);
 
 ///
-/// R^N 2nd-order tensor transpose
+/// 2nd-order tensor transpose
 ///
 template<typename T, Index N>
 Tensor<T, N>

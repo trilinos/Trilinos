@@ -480,6 +480,9 @@ template<typename T, Index N>
 Vector<T, N>
 solve(Tensor<T, N> const & A, Vector<T, N> const & b);
 
+template<typename T, Index N, Index P>
+Matrix<T, N, P>
+solve(Tensor<T, N> const & A, Matrix<T, N, P> const & B);
 
 } // namespace Intrepid
 
