@@ -274,7 +274,7 @@ void test_similarity_on_both_procs(const std::vector<stk::mesh::EntityId> &ids_i
 
     std::vector<stk::mesh::EntityId>::iterator iter = std::unique(global_ids_in_use.begin(), global_ids_in_use.end());
     size_t num_unique = iter - global_ids_in_use.begin();
-    EXPECT_EQ(num_unique, ids_in_use.size());
+    EXPECT_GE(num_unique, ids_in_use.size());
 }
 
 void test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
@@ -806,6 +806,7 @@ TEST( ElementGraph, HexDelShellSerial )
     // Connectivity for Hex Element 1
     EXPECT_EQ(0u, elemElemGraph.get_num_connected_elems(hex1));
     EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
+
 }
 
 TEST( ElementGraph, HexDelShellHexSerial )
@@ -4355,6 +4356,123 @@ TEST( ElementGraph, Hex0DelShell1Parallel )
     EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
+TEST( ElementGraph, DISABLED_Hex0AddShell1Parallel )
+{
+    //  ID.proc
+    //
+    //          3.0------------7.0
+    //          /|             /|
+    //         / |            / |
+    //        /  |           /  |
+    //      4.0------------8.0  |
+    //       |   |          |   |
+    //       |   |   1.0    |2.1|
+    //       |   |          |   |
+    //       |  2.0---------|--6.0
+    //       |  /           |  /
+    //       | /            | /
+    //       |/             |/
+    //      1.0------------5.0
+    //                      ^
+    //                      |
+    //                       ---- Add a single shell element
+
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    unsigned p_size = stk::parallel_machine_size(pm);
+    unsigned p_rank = stk::parallel_machine_rank(pm);
+
+    if(p_size != 2u)
+    {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+
+    stk::mesh::Part * hexPart   = &meta.declare_part_with_topology("hex_part",   stk::topology::HEX_8);
+    stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_QUAD_4);
+    meta.commit();
+
+    std::vector<stk::mesh::EntityIdVector> hexNodeIDs {
+        { 1, 2, 3, 4, 5,  6,  7,  8 }
+    };
+    stk::mesh::EntityId hexElemIDs[] = { 1 };
+    stk::mesh::EntityId hexElemOwningProc[] = { 0 };
+
+    std::vector<stk::mesh::EntityIdVector> shellNodeIDs {
+        { 5, 6, 7, 8 }
+    };
+    stk::mesh::EntityId shellElemIDs[] = { 2 };
+    stk::mesh::EntityId shellElemOwningProc[] = { 1 };
+
+    // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
+    std::vector< std::vector<unsigned> > shared_nodeIDs_and_procs
+    {
+        { 0, 5, 1 },  // proc 0
+        { 0, 6, 1 },
+        { 0, 7, 1 },
+        { 0, 8, 1 },
+        { 1, 5, 0 },  // proc 1
+        { 1, 6, 0 },
+        { 1, 7, 0 },
+        { 1, 8, 0 }
+    };
+
+    mesh.modification_begin();
+    for (size_t i = 0; i < hexNodeIDs.size(); ++i) {
+        if (hexElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *hexPart, hexElemIDs[i], hexNodeIDs[i]);
+        }
+    }
+    mesh.modification_end();
+
+    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+
+    EXPECT_EQ(0u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
+
+    mesh.modification_begin();
+    for (size_t i = 0; i < shellNodeIDs.size(); ++i) {
+        if (shellElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *shellPart, shellElemIDs[i], shellNodeIDs[i]);
+        }
+    }
+    setup_node_sharing(mesh, shared_nodeIDs_and_procs);
+    mesh.modification_end();
+
+    const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+    const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
+
+
+    stk::mesh::EntityVector elements_to_add;
+    if (p_rank == 1) {
+        elements_to_add.push_back(shell2);
+    }
+    elemElemGraph.add_elements_to_graph(elements_to_add);
+
+    if (p_rank == 0) {
+        // Connectivity for Hex Element 1
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
+        EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(hex1));
+        EXPECT_EQ(5,  elemElemGraph.get_side_id_to_connected_element(hex1, 0));
+        EXPECT_EQ(2u, elemElemGraph.get_entity_id_of_remote_element(hex1, 0));
+        EXPECT_EQ(1,  elemElemGraph.get_owning_proc_id_of_remote_element(hex1, 2));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
+    }
+    else if (p_rank == 1) {
+        // Connectivity for Shell Element 2
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
+        EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(shell2));
+        EXPECT_EQ(1,  elemElemGraph.get_side_id_to_connected_element(shell2, 0));
+        EXPECT_EQ(1u, elemElemGraph.get_entity_id_of_remote_element(shell2, 0));
+        EXPECT_EQ(0,  elemElemGraph.get_owning_proc_id_of_remote_element(shell2, 1));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell2, 0));
+    }
+}
+
 TEST( ElementGraph, AdjacentHex0Shell1Parallel )
 {
     //  ID.proc
@@ -4829,6 +4947,23 @@ TEST( ElementGraph, Hex0Shell0Hex1Parallel )
     }
 }
 
+void test_chosen_face_ids(ElemElemGraphTester & elemElemGraph, stk::mesh::BulkData & mesh)
+{
+    stk::mesh::impl::ParallelGraphInfo p_graph_info = elemElemGraph.get_parallel_graph_info();
+    std::vector<stk::mesh::EntityId> chosen_ids;
+    stk::mesh::impl::ParallelGraphInfo::iterator pgraph_iter = p_graph_info.begin();
+    for(;pgraph_iter!=p_graph_info.end();++pgraph_iter)
+    {
+        chosen_ids.push_back(pgraph_iter->second.m_chosen_side_id);
+    }
+    std::sort(chosen_ids.begin(), chosen_ids.end());
+    auto unique_iter = std::unique(chosen_ids.begin(), chosen_ids.end());
+    bool ids_are_unique = unique_iter == chosen_ids.end();
+    EXPECT_TRUE(ids_are_unique);
+
+    test_similarity_on_both_procs(chosen_ids, mesh.parallel());
+}
+
 TEST( ElementGraph, Hex0DelShell0Hex1Parallel )
 {
     //  ID.proc
@@ -4907,7 +5042,7 @@ TEST( ElementGraph, Hex0DelShell0Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4942,6 +5077,7 @@ TEST( ElementGraph, Hex0DelShell0Hex1Parallel )
         EXPECT_EQ(0,  elemElemGraph.get_owning_proc_id_of_remote_element(hex2, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
     }
+    test_chosen_face_ids(elemElemGraph, mesh);
 }
 
 TEST( ElementGraph, Hex0DelShell1Hex2Parallel )
@@ -5038,7 +5174,7 @@ TEST( ElementGraph, Hex0DelShell1Hex2Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -5089,6 +5225,7 @@ TEST( ElementGraph, Hex0DelShell1Hex2Parallel )
         EXPECT_EQ(1u, elemElemGraph.num_edges());
         EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
+    test_chosen_face_ids(elemElemGraph, mesh);
 }
 
 TEST( ElementGraph, Hex0Shell1Hex2Parallel )
@@ -5415,9 +5552,8 @@ TEST( ElementGraph, Hex0DelShell1Hex0Parallel )
 
     stk::mesh::ElemElemGraph elemElemGraph(mesh);
 
-// FIXME: These fail with current master
-//    EXPECT_EQ(2u, elemElemGraph.num_edges());
-//    EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
+    EXPECT_EQ(2u, elemElemGraph.num_edges());
+    EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -5437,9 +5573,8 @@ TEST( ElementGraph, Hex0DelShell1Hex0Parallel )
     mesh.modification_end();
 
     if (p_rank == 0) {
-// FIXME: These fail with current master
-//        EXPECT_EQ(2u, elemElemGraph.num_edges());
-//        EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 
         // Connectivity for Hex Element 1
         EXPECT_EQ(1u,   elemElemGraph.get_num_connected_elems(hex1));
