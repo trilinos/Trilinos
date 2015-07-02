@@ -148,7 +148,7 @@ namespace MueLu {
     // Store number of coarse z-layers on the coarse level container
     // This information is used by the LineDetectionAlgorithm
     // TODO get rid of the NoFactory
-    coarseLevel.Set("NumZLayers", CoarseNumZLayers * Ncoarse/Ndofs, MueLu::NoFactory::get());
+    coarseLevel.Set("NumZLayers", Teuchos::as<LO>(CoarseNumZLayers * Ncoarse/Ndofs), MueLu::NoFactory::get());
 
     //Set(coarseLevel, "CoarseMap", P->getDomainMap()); // we don't need this information.
     Set(coarseLevel, "P", P);
