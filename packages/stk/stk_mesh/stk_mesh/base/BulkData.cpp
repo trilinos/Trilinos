@@ -1561,9 +1561,10 @@ void BulkData::internal_dump_all_mesh_info(std::ostream& out) const
               if (r != stk::topology::NODE_RANK) {
                 out << this->bucket(target_entity).topology();
                 if (b_rank != stk::topology::NODE_RANK) {
-                    Permutation const *permutations = bucket->begin_permutations(b_ord, r);
-                    ThrowAssert(permutations);
+                  Permutation const *permutations = bucket->begin_permutations(b_ord, r);
+                  if (permutations) {
                     out << " permutation index " << permutations[c_itr];
+                  }
                 }
               }
               out << ", state = " << state(target_entity);
