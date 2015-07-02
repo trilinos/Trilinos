@@ -69,6 +69,7 @@ struct SharedEdgeInfo
     stk::mesh::EntityId m_chosenSideId;
     stk::mesh::EntityVector m_sharedNodes;
     bool m_isInPart;
+    stk::topology m_remoteElementTopology;
 };
 
 struct ShellConnectivityData

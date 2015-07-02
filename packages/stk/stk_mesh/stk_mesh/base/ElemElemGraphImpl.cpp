@@ -132,11 +132,8 @@ ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::Bulk
             }
             std::vector<int> sharing_procs;
             bulkData.shared_procs_intersection(keys, sharing_procs);
-            if(!sharing_procs.empty())
-            {
-                for (int proc: sharing_procs) {
-                    elem_side_comm.insert(std::pair<EntitySidePair, ProcFaceIdPair>(EntitySidePair(elem, side), ProcFaceIdPair(proc,0)));
-                }
+            for (int proc: sharing_procs) {
+                elem_side_comm.insert(std::pair<EntitySidePair, ProcFaceIdPair>(EntitySidePair(elem, side), ProcFaceIdPair(proc,0)));
             }
         }
     }
@@ -580,6 +577,7 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
     for(; iter!= endIter; ++iter)
     {
         stk::mesh::EntityId localId = iter->m_locaElementlId;
+        stk::mesh::Entity localEntity = bulk_data.get_entity(stk::topology::ELEM_RANK, localId);
         stk::mesh::EntityId remoteId = iter->m_remoteElementId;
         unsigned side_index    = iter->m_sideIndex;
         int sharing_proc       = iter->m_procId;
@@ -598,6 +596,7 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
         comm.send_buffer(sharing_proc).pack<unsigned>(side_index);
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(chosenId);
         comm.send_buffer(sharing_proc).pack<bool>(isInPart);
+        comm.send_buffer(sharing_proc).pack<stk::topology>(bulk_data.bucket(localEntity).topology());
         comm.send_buffer(sharing_proc).pack<unsigned>(numNodes);
         for(size_t i=0; i<numNodes; ++i)
         {
