@@ -48,7 +48,7 @@
 #include "discretization.hpp"
 #include <vector>
 
-/* Abstract BVP Coefficient class for problems of the form 
+/* Abstract BVP Coefficient class for problems of the form
  *
  * -[(diff(u,z,x)u'] + advec(u,z,x)u' + react(u,z,x) = 0
  *
@@ -65,17 +65,17 @@ class Coefficient {
   public:
  
     virtual ~Coefficient() {}
-   
+
     virtual void reaction(FCT &result, const FC &x, const FCT &u, const FCT &z, const vec &param)  = 0;
-     
+ 
     virtual void advection(FCT &result, const FC &x, const FCT &u, const FCT &z, const vec &param) = 0;
 
     virtual void diffusion(FCT &result, const FC &x, const FCT &u, const FCT &z, const vec &param) = 0;
-    
-}; 
+
+};
 
 
-// A particular instance of a coefficient class where 
+// A particular instance of a coefficient class where
 //
 // diff(u,z,x) = 1
 // advec(u,z,x) = 0
@@ -91,7 +91,7 @@ class ExampleCoefficient : public Coefficient<Real,ScalarT> {
 
   public:
 
-    ExampleCoefficient() {}  
+    ExampleCoefficient() {}
     ~ExampleCoefficient() {}
 
     void reaction(FCT &result, const FC &x, const FCT &u, const FCT &z, const vec &param) {
@@ -103,14 +103,14 @@ class ExampleCoefficient : public Coefficient<Real,ScalarT> {
         for(int p=0; p<numCubPts; ++p) {
           result(c,p) = z(c,p)*z(c,p)*u(c,p)*u(c,p)-1.0;
         }
-      }      
+      }
     }
 
-    void advection(FCT &result, const FC &x, const FCT &u, const FCT &z, const vec &param) { 
-      
+    void advection(FCT &result, const FC &x, const FCT &u, const FCT &z, const vec &param) {
+
       int numCells  = x.dimension(0);
       int numCubPts = x.dimension(1);
-      int spaceDim  = x.dimension(2);   
+      int spaceDim  = x.dimension(2);
 
       for(int c=0; c<numCells; ++c) {
         for(int p=0; p<numCubPts; ++p) {
@@ -118,7 +118,7 @@ class ExampleCoefficient : public Coefficient<Real,ScalarT> {
             result(c,p,d) = ScalarT(0.0);
           }
         }
-      }      
+      }
     }
 
     void diffusion(FCT &result, const FC &x, const FCT &u, const FCT &z, const vec &param) {
@@ -130,7 +130,7 @@ class ExampleCoefficient : public Coefficient<Real,ScalarT> {
         for(int p=0; p<numCubPts; ++p) {
           result(c,p) = ScalarT(1.0);
         }
-      }      
+      }
     }
 
 };
