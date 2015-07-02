@@ -386,7 +386,7 @@ stk::mesh::Entity get_side_for_element(const stk::mesh::BulkData& bulkData, stk:
 bool create_or_delete_shared_side(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
         stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, bool create_shared_side, const stk::mesh::PartVector& side_parts,
         std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities,
-        size_t &id_counter, stk::mesh::EntityId suggested_local_side_id, stk::mesh::Part& sides_created_during_death)
+        size_t &id_counter, stk::mesh::Part& sides_created_during_death)
 {
     bool topology_modified = false;
 

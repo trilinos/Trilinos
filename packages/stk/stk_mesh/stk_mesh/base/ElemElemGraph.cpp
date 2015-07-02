@@ -610,7 +610,7 @@ bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& element
         parallel_edge_info.m_in_part = false;
 
         topology_modified = impl::create_or_delete_shared_side(bulkData, parallel_edge_info, elementGraph, element, remote_id, create_side, add_parts_for_shared_sides,
-                shared_modified, deletedEntities, id_counter, requestedIds[id_counter], sides_created_during_death) || topology_modified;
+                shared_modified, deletedEntities, id_counter, sides_created_during_death) || topology_modified;
     }
 
     std::vector<impl::ElementSidePair> element_side_pairs;
@@ -745,7 +745,7 @@ bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& element
                 }
 
                 topology_modified = impl::create_or_delete_shared_side(bulkData, parallel_edge_info, elementGraph, this_elem_entity, remote_id, create_side, add_parts,
-                        shared_modified, deletedEntities, id_counter, requestedIds[id_counter], sides_created_during_death) || topology_modified;
+                        shared_modified, deletedEntities, id_counter, sides_created_during_death) || topology_modified;
             }
         }
     }
