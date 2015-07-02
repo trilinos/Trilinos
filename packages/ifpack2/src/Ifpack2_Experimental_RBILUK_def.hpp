@@ -782,6 +782,8 @@ std::string RBILUK<MatrixType>::description () const
 } // namespace Ifpack2
 
 #define IFPACK2_EXPERIMENTAL_RBILUK_INSTANT(S,LO,GO,N)                            \
-  template class Ifpack2::Experimental::RBILUK< Tpetra::Experimental::BlockCrsMatrix<S, LO, GO, N> >;
+  template class Ifpack2::Experimental::RBILUK< Tpetra::Experimental::BlockCrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::Experimental::RBILUK< Tpetra::RowMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::Experimental::RBILUK< Tpetra::CrsMatrix<S, LO, GO, N> >;
 
 #endif
