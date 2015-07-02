@@ -48,14 +48,6 @@ struct ConnectedElementData
     unsigned m_sideIndex;
     stk::mesh::EntityId m_suggestedFaceId;
     stk::mesh::EntityVector m_sideNodes;
-
-    ConnectedElementData()
-    : m_procId(-1),
-      m_elementId(std::numeric_limits<impl::LocalId>::max()),
-      m_elementTopology(stk::topology::INVALID_TOPOLOGY),
-      m_sideIndex(std::numeric_limits<impl::LocalId>::max()),
-      m_suggestedFaceId(std::numeric_limits<impl::LocalId>::max())
-    {}
 };
 
 struct SharedEdgeInfo

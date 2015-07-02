@@ -453,8 +453,8 @@ void ElemElemGraph::add_possibly_connected_elements_to_graph_using_side_nodes( c
     stk::mesh::EntityVector localElementsToConsider(localElements.size());
     stk::mesh::EntityVector sortedElementsToIgnore(elements_to_ignore);
     std::sort(sortedElementsToIgnore.begin(), sortedElementsToIgnore.end());  // localElements should already be sorted
-    stk::mesh::EntityVector::iterator result = std::set_difference(localElements.begin(), localElements.end(), sortedElementsToIgnore.begin(), sortedElementsToIgnore.end(), localElementsToConsider.begin());
-    localElementsToConsider.resize(result - localElementsToConsider.begin());
+    stk::mesh::EntityVector::iterator resultIter = std::set_difference(localElements.begin(), localElements.end(), sortedElementsToIgnore.begin(), sortedElementsToIgnore.end(), localElementsToConsider.begin());
+    localElementsToConsider.resize(resultIter - localElementsToConsider.begin());
 
     add_local_elements_to_connected_list(localElementsToConsider, sideNodes, communicatedElementDataVector);
 
