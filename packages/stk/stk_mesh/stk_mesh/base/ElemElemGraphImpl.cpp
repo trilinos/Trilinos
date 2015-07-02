@@ -13,6 +13,7 @@
 #include <stk_mesh/baseImpl/MeshImplUtils.hpp>
 
 #include <stk_util/parallel/CommSparse.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
 
 namespace stk { namespace mesh {
@@ -171,7 +172,8 @@ stk::mesh::EntityVector get_elements_to_communicate(const stk::mesh::BulkData& b
 size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
                                         const stk::mesh::BulkData& bulkData,
                                         ElemSideToProcAndFaceId &elements_to_communicate,
-                                        const std::vector<stk::mesh::EntityId>& suggested_side_ids)
+                                        const std::vector<stk::mesh::EntityId>& suggested_side_ids,
+                                        const stk::mesh::Part &part)
 {
     ElemSideToProcAndFaceId::iterator iter = elements_to_communicate.begin();
     ElemSideToProcAndFaceId::const_iterator end = elements_to_communicate.end();
@@ -188,6 +190,7 @@ size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
         iter->second.side_id = suggested_side_id;
 
         stk::topology topology = bulkData.bucket(elem).topology();
+        const bool isInPart = bulkData.bucket(elem).member(part);
         const stk::mesh::Entity* elem_nodes = bulkData.begin_nodes(elem);
 
         unsigned num_nodes_this_side = topology.side_topology(side_index).num_nodes();
@@ -204,6 +207,7 @@ size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
         comm.send_buffer(sharing_proc).pack<stk::topology>(topology);
         comm.send_buffer(sharing_proc).pack<unsigned>(side_index);
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(suggested_side_id);
+        comm.send_buffer(sharing_proc).pack<bool>(isInPart);
         comm.send_buffer(sharing_proc).pack<unsigned>(num_nodes_this_side);
         for(size_t i=0; i<num_nodes_this_side; ++i)
         {
@@ -385,7 +389,8 @@ stk::mesh::Entity get_side_for_element(const stk::mesh::BulkData& bulkData, stk:
 
 bool create_or_delete_shared_side(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
         stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, bool create_shared_side, const stk::mesh::PartVector& side_parts,
-        std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities,
+        stk::mesh::Part &activePart, std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities,
+        stk::mesh::EntityVector & facesWithNodesToBeMarkedInactive,
         size_t &id_counter, stk::mesh::EntityId suggested_local_side_id, stk::mesh::Part& sides_created_during_death)
 {
     bool topology_modified = false;
@@ -440,10 +445,15 @@ bool create_or_delete_shared_side(stk::mesh::BulkData& bulkData, const parallel_
     else
     {
         stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(bulkData, local_element, side_id);
+        facesWithNodesToBeMarkedInactive.push_back(side);
         if(bulkData.is_valid(side) && bulkData.bucket(side).member(sides_created_during_death))
         {
             deletedEntities.push_back(side);
             topology_modified = true;
+        }
+        else if(bulkData.is_valid(side) && bulkData.bucket(side).owned())
+        {
+            bulkData.change_entity_parts(side, {}, {&activePart});
         }
     }
     return topology_modified;
@@ -562,7 +572,7 @@ void filter_for_candidate_elements_to_connect(const stk::mesh::BulkData & mesh,
     }
 }
 
-void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::BulkData &m_bulk_data, const std::vector<SharedEdgeInfo> &newlySharedEdges)
+void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::BulkData &bulkData, const std::vector<SharedEdgeInfo> &newlySharedEdges)
 {
     std::vector<SharedEdgeInfo>::const_iterator iter = newlySharedEdges.begin();
     std::vector<SharedEdgeInfo>::const_iterator endIter = newlySharedEdges.end();
@@ -574,18 +584,20 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
         unsigned side_index    = iter->m_sideIndex;
         int sharing_proc       = iter->m_procId;
         stk::mesh::EntityId chosenId = iter->m_chosenSideId;
+        const bool isInPart = iter->m_isInPart;
 
         size_t numNodes= iter->m_sharedNodes.size();
         std::vector<stk::mesh::EntityKey> side_node_entity_keys(numNodes);
         for(size_t i=0; i<numNodes; ++i)
         {
-            side_node_entity_keys[i] = m_bulk_data.entity_key(iter->m_sharedNodes[i]);
+            side_node_entity_keys[i] = bulkData.entity_key(iter->m_sharedNodes[i]);
         }
 
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(localId);
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(remoteId);
         comm.send_buffer(sharing_proc).pack<unsigned>(side_index);
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(chosenId);
+        comm.send_buffer(sharing_proc).pack<bool>(isInPart);
         comm.send_buffer(sharing_proc).pack<unsigned>(numNodes);
         for(size_t i=0; i<numNodes; ++i)
         {

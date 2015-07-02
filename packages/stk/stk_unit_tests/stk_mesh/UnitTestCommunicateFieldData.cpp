@@ -78,7 +78,7 @@
 //
 //  stk::mesh::BulkData bulk(meta, communicator);
 //
-//  setupKeyholeMesh2D_case1(bulk);
+//  stk::mesh::unit_test::setupKeyholeMesh2D_case1(bulk);
 //
 //  stk::mesh::Part& aura_part = meta.aura_part();
 //  const stk::mesh::BucketVector& aura_node_buckets = bulk.get_buckets(stk::topology::NODE_RANK, aura_part);
@@ -154,7 +154,7 @@ TEST(CommunicateFieldData, communicate)
 
   stk::mesh::BulkData bulk(meta, communicator);
 
-  setupKeyholeMesh2D_case1(bulk);
+  stk::mesh::unit_test::setupKeyholeMesh2D_case1(bulk);
 
   stk::mesh::Part& owned_part = meta.locally_owned_part();
   const stk::mesh::BucketVector& owned_node_buckets = bulk.get_buckets(stk::topology::NODE_RANK,owned_part);
@@ -208,7 +208,7 @@ TEST(CommunicateFieldData, communicateMultipleGhostings)
 
   stk::mesh::BulkData bulk(meta, communicator);
 
-  setupKeyholeMesh2D_case2(bulk);
+  stk::mesh::unit_test::setupKeyholeMesh2D_case2(bulk);
 
   bulk.modification_begin();
   // Create ghosting

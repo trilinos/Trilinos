@@ -34,6 +34,7 @@
 #include <stk_unit_test_utils/getOption.h>
 
 #include "UnitTestElementDeathUtils.hpp"
+#include <stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp>
 
 namespace
 {
@@ -42,13 +43,13 @@ class ElemElemGraphTester : public stk::mesh::ElemElemGraph
 {
 public:
     ElemElemGraphTester(stk::mesh::BulkData& bulkData)
-      : ElemElemGraph(bulkData) {}
+      : ElemElemGraph(bulkData, bulkData.mesh_meta_data().universal_part()) {};
 
     virtual ~ElemElemGraphTester() {}
 
     void fill_graph() { ElemElemGraph::fill_graph(); }
 
-    void fill_parallel_graph(stk::mesh::impl::ElemSideToProcAndFaceId& elem_side_comm) { ElemElemGraph::fill_parallel_graph(elem_side_comm); }
+    void fill_parallel_graph(stk::mesh::impl::ElemSideToProcAndFaceId& elem_side_comm) { ElemElemGraph::fill_parallel_graph(elem_side_comm, m_bulk_data.mesh_meta_data().universal_part()); }
 
     stk::mesh::impl::ElementGraph & get_element_graph() { return m_elem_graph; }
     stk::mesh::impl::SidesForElementGraph & get_via_sides() { return m_via_sides; }
@@ -789,7 +790,7 @@ TEST( ElementGraph, HexDelShellSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -866,7 +867,7 @@ TEST( ElementGraph, HexDelShellHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -950,7 +951,7 @@ TEST( ElementGraph, DISABLED_HexAddShellAddShellSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     mesh.modification_begin();
     stk::mesh::EntityVector added_shells;
@@ -1043,7 +1044,7 @@ TEST( ElementGraph, HexAddShellHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     mesh.modification_begin();
     stk::mesh::EntityVector added_shells;
@@ -1137,7 +1138,7 @@ TEST( ElementGraph, DISABLED_HexAddShellAddShellHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     mesh.modification_begin();
     stk::mesh::EntityVector added_shells;
@@ -1882,7 +1883,7 @@ void change_entity_owner_hex_test_2_procs(bool aura_on)
         int numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
         EXPECT_EQ(2, numLocallyOwnedElems);
 
-        stk::mesh::ElemElemGraph elem_graph(bulkData);
+        ElemElemGraphTester elem_graph(bulkData);
 
         // Create a vector of the elements to be moved
         std::vector <stk::mesh::Entity> elems_to_move;
@@ -2003,7 +2004,7 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
         int numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
         EXPECT_EQ(2, numLocallyOwnedElems);
 
-        stk::mesh::ElemElemGraph elem_graph(bulkData);
+        ElemElemGraphTester elem_graph(bulkData);
 
         // Create a vector of the elements to be moved
         std::vector <stk::mesh::Entity> elems_to_move;
@@ -2139,7 +2140,7 @@ void change_entity_owner_hex_test_4_procs(bool aura_on)
         int numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
         EXPECT_EQ(1, numLocallyOwnedElems);
 
-        stk::mesh::ElemElemGraph elem_graph(bulkData);
+        ElemElemGraphTester elem_graph(bulkData);
 
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after fill-graph");
@@ -2327,7 +2328,7 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
 
         setup_hex_shell_hex_mesh(bulkData);
 
-        stk::mesh::ElemElemGraph elem_graph(bulkData);
+        ElemElemGraphTester elem_graph(bulkData);
 
         const Entity hex1   = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
         const Entity hex3   = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
@@ -2592,8 +2593,9 @@ TEST(ElementGraph, test_parallel_graph_info_data_structure)
         int permutation = 0;
         stk::mesh::EntityId chosen_face_id = 1;
 
+        const bool inActivePart = true;
         parallel_graph_info.insert(std::make_pair(std::make_pair(local_element, other_element), parallel_info(other_proc, other_side_ord, permutation,
-                chosen_face_id)));
+                chosen_face_id,inActivePart)));
 
         size_t num_elems_this_proc = elem_graph.size();
         EXPECT_EQ(2u, num_elems_this_proc);
@@ -3002,7 +3004,7 @@ TEST(ElementGraph, make_items_inactive)
 
         ElementDeathUtils::put_mesh_into_part(bulkData, active);
 
-        stk::mesh::ElemElemGraph graph(bulkData);
+        ElemElemGraphTester graph(bulkData);
 
         size_t num_gold_edges =  6/bulkData.parallel_size();
         ASSERT_EQ(num_gold_edges, graph.num_edges());
@@ -3104,7 +3106,7 @@ TEST(ElementGraph, test_element_death)
             std::ostringstream os;
             os << "Proc id: " << bulkData.parallel_rank() << std::endl;
 
-            stk::mesh::ElemElemGraph elementGraph(bulkData);
+            ElemElemGraphTester elementGraph(bulkData);
 
             double elapsed_graph_time = stk::wall_time() - start_graph;
             os << "Time to create graph: " << elapsed_graph_time << std::endl;
@@ -3203,7 +3205,7 @@ TEST( ElementGraph, HexHexHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1 = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3290,7 +3292,7 @@ TEST( ElementGraph, HexShellSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3377,7 +3379,7 @@ TEST( ElementGraph, AdjacentHexShellSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3475,7 +3477,7 @@ TEST( ElementGraph, DISABLED_HexShellShellSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3563,7 +3565,7 @@ TEST( ElementGraph, HexShellHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3652,7 +3654,7 @@ TEST( ElementGraph, DISABLED_HexShellShellHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3757,7 +3759,7 @@ TEST( ElementGraph, DISABLED_HexShellReversedShellHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3883,7 +3885,7 @@ TEST( ElementGraph, Hex0Hex0Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1 = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3993,7 +3995,7 @@ TEST( ElementGraph, Hex0Hex1Hex0Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1 = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4100,7 +4102,7 @@ TEST( ElementGraph, Hex0Hex1Hex2Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1 = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4215,7 +4217,7 @@ TEST( ElementGraph, Hex0Shell1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4322,7 +4324,7 @@ TEST( ElementGraph, Hex0DelShell1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4427,7 +4429,7 @@ TEST( ElementGraph, DISABLED_Hex0AddShell1Parallel )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     EXPECT_EQ(0u, elemElemGraph.num_edges());
     EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
@@ -4564,7 +4566,7 @@ TEST( ElementGraph, AdjacentHex0Shell1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4687,7 +4689,7 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4799,7 +4801,7 @@ TEST( ElementGraph, DISABLED_Hex0Shell1Shell1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4912,7 +4914,7 @@ TEST( ElementGraph, Hex0Shell0Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -5322,7 +5324,7 @@ TEST( ElementGraph, Hex0Shell1Hex2Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -5438,7 +5440,7 @@ TEST( ElementGraph, Hex0Shell1Hex0Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -5550,7 +5552,7 @@ TEST( ElementGraph, Hex0DelShell1Hex0Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     EXPECT_EQ(2u, elemElemGraph.num_edges());
     EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
@@ -5674,7 +5676,7 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell0Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -5806,7 +5808,7 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell1Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -5935,7 +5937,7 @@ TEST( ElementGraph, DISABLED_Hex0Shell0ReversedShell0Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -6065,7 +6067,7 @@ TEST( ElementGraph, DISABLED_Hex1Shell0Shell0Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -6476,7 +6478,7 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemAInParallel)
         }
         bulkData.change_entity_owner(elementProcChanges);
 
-        stk::mesh::ElemElemGraph graph(bulkData);
+        ElemElemGraphTester graph(bulkData);
         if (procRank == 0) {
             stk::mesh::Entity local_element = bulkData.get_entity(stk::topology::ELEM_RANK,2);
             ASSERT_TRUE(bulkData.bucket(local_element).owned());
@@ -6577,7 +6579,7 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemBInParallel)
         }
         bulkData.modification_end();
 
-        stk::mesh::ElemElemGraph graph(bulkData);
+        ElemElemGraphTester graph(bulkData);
         if (procRank == 0) {
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,1)));
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,2)));

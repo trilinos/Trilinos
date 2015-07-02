@@ -33,7 +33,7 @@ void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph
 class ElemElemGraph
 {
 public:
-    ElemElemGraph(stk::mesh::BulkData& bulkData);
+    ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Part &part);
 
     virtual ~ElemElemGraph();
 
@@ -52,6 +52,8 @@ public:
     int get_side_from_element1_to_remote_element2(stk::mesh::Entity local_element, stk::mesh::EntityId other_element_id) const;
 
     int get_side_from_element1_to_locally_owned_element2(stk::mesh::Entity local_element, stk::mesh::Entity other_element) const;
+
+    bool is_connected_to_other_element_via_side_ordinal(stk::mesh::Entity element, int sideOrdinal) const;
 
     impl::parallel_info& get_parallel_edge_info(stk::mesh::Entity element, stk::mesh::EntityId remote_id);
 
@@ -83,7 +85,7 @@ protected:
 
     void fill_graph();
     void update_number_of_parallel_edges();
-    void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
+    void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm, const stk::mesh::Part &part);
 
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm, const stk::mesh::EntityVector & elements_to_ignore);
 
@@ -156,6 +158,7 @@ protected:
                                                          const stk::mesh::EntityVector& elements_to_delete);
 
     stk::mesh::BulkData &m_bulk_data;
+    const stk::mesh::Part &m_part;
     impl::ElementGraph m_elem_graph;
     impl::SidesForElementGraph m_via_sides;
     impl::ParallelGraphInfo m_parallel_graph_info;
