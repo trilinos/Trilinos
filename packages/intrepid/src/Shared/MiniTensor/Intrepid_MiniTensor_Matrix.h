@@ -81,7 +81,7 @@ public:
   ///
   static
   bool const
-  IS_DYNAMIC = (M = DYNAMIC || N == DYNAMIC);
+  IS_DYNAMIC = (M == DYNAMIC || N == DYNAMIC);
 
   ///
   /// Storage type
