@@ -46,7 +46,7 @@
 /*! \file RPIMeshAdapterTest.cpp
     \brief An example of partitioning a SCOREC mesh with RCB.
 
-    \author Created by V. Leung, K. Devine.
+    \author Created by G. Diamond, K. Devine.
 
 */
 
@@ -69,6 +69,7 @@
 
 // SCOREC includes
 #ifdef HAVE_ZOLTAN2_PARMA
+#include <parma.h>
 #include <apf.h>
 #include <apfMesh.h>
 #include <apfMDS.h>
@@ -86,7 +87,6 @@ using Teuchos::RCP;
 /*********************************************************/
 //Tpetra typedefs
 typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
-typedef Tpetra::MultiVector<double, int, int>     tMVector_t;
 
 
 
@@ -140,7 +140,9 @@ int main(int narg, char *arg[]) {
   std::string modelFileName("torus.dmg");
   std::string action("parma");
   std::string parma_method("VtxElm");
+  std::string output_loc("");
   int nParts = CommT->getSize();
+  double imbalance = 1.1;
 
   // Read run-time options.
   Teuchos::CommandLineProcessor cmdp (false, false);
@@ -150,10 +152,14 @@ int main(int narg, char *arg[]) {
 		 "Model file with APF specifications (.dmg file)");
   cmdp.setOption("action", &action,
                  "Method to use:  mj, scotch, zoltan_rcb, parma or color");
-  cmdp.setOption("parma_method", &action,
-                 "Method to use: Vertex, Edge, Element, VtxElm, VtxEdgeElm, ElmLtVtx, Ghost, or Shape ");
+  cmdp.setOption("parma_method", &parma_method,
+                 "Method to use: Vertex, Element, VtxElm, VtxEdgeElm, Ghost, or Shape ");
   cmdp.setOption("nparts", &nParts,
                  "Number of parts to create");
+  cmdp.setOption("imbalance", &imbalance,
+                 "Target imbalance for the partitioning method");
+  cmdp.setOption("output", &output_loc,
+                 "Location of new partitioned apf mesh. Ex: 4/torus.smb");
   cmdp.parse(narg, arg);
 
   
@@ -178,7 +184,7 @@ int main(int narg, char *arg[]) {
   // Generate mesh with MDS
   gmi_register_mesh();
   apf::Mesh2* m = apf::loadMdsMesh(modelFileName.c_str(),meshFileName.c_str());
-  
+  apf::verify(m);
   // Creating mesh adapter
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
 
@@ -197,7 +203,7 @@ int main(int narg, char *arg[]) {
   if (action == "mj") {
     do_partitioning = true;
     params.set("debug_level", "basic_status");
-    params.set("imbalance_tolerance", 1.1);
+    params.set("imbalance_tolerance", imbalance);
     params.set("num_global_parts", nParts);
     params.set("algorithm", "multijagged");
     params.set("rectilinear", "yes");
@@ -205,7 +211,7 @@ int main(int narg, char *arg[]) {
   else if (action == "scotch") {
     do_partitioning = true;
     params.set("debug_level", "verbose_detailed_status");
-    params.set("imbalance_tolerance", 1.1);
+    params.set("imbalance_tolerance", imbalance);
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "scotch");
@@ -213,7 +219,7 @@ int main(int narg, char *arg[]) {
   else if (action == "zoltan_rcb") {
     do_partitioning = true;
     params.set("debug_level", "verbose_detailed_status");
-    params.set("imbalance_tolerance", 1.1);
+    params.set("imbalance_tolerance", imbalance);
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "zoltan");
@@ -221,7 +227,7 @@ int main(int narg, char *arg[]) {
   else if (action == "parma") {
     do_partitioning = true;
     params.set("debug_level", "basic_status");
-    params.set("imbalance_tolerance", 1.05);
+    params.set("imbalance_tolerance", imbalance);
     params.set("algorithm", "parma");
     Teuchos::ParameterList &pparams = params.sublist("parma_parameters",false);
     pparams.set("parma_method",parma_method);
@@ -233,12 +239,23 @@ int main(int narg, char *arg[]) {
     params.set("compute_metrics","yes");
 
   }
+  else if (action=="zoltan_hg") {
+    do_partitioning = true;
+    params.set("debug_level", "no_status");
+    params.set("imbalance_tolerance", imbalance);
+    params.set("algorithm", "zoltan");
+    params.set("num_global_parts", nParts);
+    Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
+    zparams.set("LB_METHOD","HYPERGRAPH");
+    //params.set("compute_metrics","yes");
+
+  }
   else if (action == "color") {
     params.set("debug_level", "verbose_detailed_status");
     params.set("debug_output_file", "kdd");
     params.set("debug_procs", "all");
   }
-
+  Parma_PrintPtnStats(m,"before");
   // create Partitioning problem
   if (do_partitioning) {
     if (me == 0) cout << "Creating partitioning problem ... \n\n";
@@ -258,7 +275,7 @@ int main(int narg, char *arg[]) {
     
     
 
-    if (me) problem.printMetrics(cout);
+    if (!me) problem.printMetrics(cout);
   }
   else {
     if (me == 0) cout << "Creating coloring problem ... \n\n";
@@ -274,7 +291,11 @@ int main(int narg, char *arg[]) {
 
 
   }
-
+  //if (!me)
+  Parma_PrintPtnStats(m,"after");
+  if (output_loc!="") {
+    m->writeNative(output_loc.c_str());
+  }
 
   // delete mesh
   if (me == 0) cout << "Deleting the mesh ... \n\n";

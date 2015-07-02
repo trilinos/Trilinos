@@ -106,6 +106,8 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("relaxation: backward mode",false);
   params.set("relaxation: use l1",false);
   params.set("relaxation: l1 eta",(double)1.5);
+  params.set("relaxation: banded container superdiagonals", -1);
+  params.set("relaxation: banded container subdiagonals", -1);
 
   // Ifpack2_SPARSKIT.cpp
   params.set("fact: sparskit: lfil", (int)0);

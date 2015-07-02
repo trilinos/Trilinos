@@ -75,6 +75,9 @@
 //
 int main(int argc, char *argv[])
 {
+  using std::cout;
+  using std::endl;
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
@@ -83,11 +86,11 @@ int main(int argc, char *argv[])
 #endif
 
   Teuchos::ParameterList GaleriList;
-  const int n = 9; 
+  const int n = 9;
   GaleriList.set("n", n);
   Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( Galeri::CreateMap64("Linear", Comm, GaleriList) );
   Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( Galeri::CreateCrsMatrix("Minij", &*Map, GaleriList) );
-  
+
   Ifpack Factory;
   Teuchos::RefCountPtr<Ifpack_Preconditioner> Prec;
 
@@ -176,7 +179,7 @@ int main(int argc, char *argv[])
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
 #endif
-  
+
   Prec = Teuchos::rcp( Factory.Create("Chebyshev", &*A) );
   assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
@@ -195,8 +198,8 @@ int main(int argc, char *argv[])
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
 
-  
-  
+
+
 
 
 #if defined (HAVE_IFPACK_SUPPORTGRAPH) && defined (HAVE_IFPACK_AMESOS)
@@ -227,7 +230,7 @@ int main(int argc, char *argv[])
 
 
 #ifdef HAVE_MPI
-  MPI_Finalize() ; 
+  MPI_Finalize() ;
 #endif
 
   return(EXIT_SUCCESS);

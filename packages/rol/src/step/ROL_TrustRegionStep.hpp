@@ -352,9 +352,6 @@ public:
 
     trustRegion_->initialize(x,s,g);
 
-    algo_state.nfval = 0;
-    algo_state.ngrad = 0;
-
     Real htol = std::sqrt(ROL_EPSILON);
     Real ftol = 0.1*ROL_OVERFLOW; 
 

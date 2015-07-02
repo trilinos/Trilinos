@@ -113,7 +113,7 @@ namespace {
       //+ Only the newest state will be output.
       stkIo.add_field(results_fh, field); 
 
-      //+ Output the field to the retart database also.
+      //+ Output the field to the restart database also.
       //+ The two newest states will be output.
       stkIo.add_field(restart_fh, field); 
 
@@ -152,6 +152,52 @@ namespace {
       }
       //-END      
     }
+
+    {
+        //Demonstrate reading a restart database after adding an extra multistate field to
+        //the io-broker "foo" which we know is missing from the database. We confirm that
+        //passing the 'missingFields' argument to stkIo.read_defined_input_fields allows
+        //the code to continue without throwing an exception due to not finding the field.
+      stk::io::StkMeshIoBroker stkIo(communicator);
+      size_t rs = stkIo.add_mesh_database(restart_name, stk::io::READ_RESTART);
+
+      //+ "Restart" the calculation...
+      double time = 1.0;
+      stkIo.set_active_mesh(rs);
+      stkIo.create_input_mesh();
+
+      //create a 3-state field
+      stk::mesh::Field<double> &foo = stkIo.meta_data().
+              declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "foo", 3);
+            stk::mesh::put_field(foo, stkIo.meta_data().universal_part());
+
+      //add the new field to the stk-io-broker, even though we know it isn't present
+      //in the restart database. This is to test the 'missing-fields' argument below.
+      stk::io::MeshField meshfield(&foo, "FOO");
+      meshfield.set_single_state(false);
+      meshfield.add_part(stk::topology::NODE_RANK, stkIo.meta_data().universal_part(),
+                         stkIo.get_input_io_region().get()->get_node_blocks()[0]);
+      stkIo.add_input_field(meshfield);
+
+      stk::io::set_field_role(foo, Ioss::Field::TRANSIENT);
+
+      stkIo.add_all_mesh_fields_as_input_fields();
+
+      stkIo.populate_bulk_data();
+
+      std::vector<stk::mesh::Entity> nodes;
+      stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
+
+      std::vector<stk::io::MeshField> missingFields;
+      //+ Read restart data
+      stkIo.read_defined_input_fields(time, &missingFields);
+
+      EXPECT_EQ(1u, missingFields.size());
+      const stk::io::MeshField& missingField = missingFields[0];
+      const std::string& name = missingField.db_name();
+      EXPECT_EQ("FOO", name);
+    }
+
     // ============================================================
     //+ VERIFICATION
     {

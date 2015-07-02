@@ -149,6 +149,8 @@ struct MeshIndex
 {
   Bucket* bucket;
   size_t bucket_ordinal;
+
+  MeshIndex(Bucket *bucketIn, size_t ordinal) : bucket(bucketIn), bucket_ordinal(ordinal) {}
 };
 
 // Smaller than MeshIndex and replaces bucket pointer with bucket_id to

@@ -52,7 +52,9 @@
 #include "Ifpack2_RILUK.hpp"
 #include "Ifpack2_Krylov.hpp"
 #include "Ifpack2_BlockRelaxation.hpp"
+#include "Ifpack2_BandedContainer.hpp"
 #include "Ifpack2_DenseContainer.hpp"
+#include "Ifpack2_TriDiContainer.hpp"
 #include "Ifpack2_Details_OneLevelFactory.hpp"
 
 #ifdef HAVE_IFPACK2_AMESOS2
@@ -123,6 +125,22 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
     // that the "container type" is not a template parameter.  For
     // now, we default to use dense blocks.
     typedef DenseContainer<MatrixType, scalar_type> container_type;
+    prec = rcp (new BlockRelaxation<MatrixType, container_type> (matrix));
+  }
+  else if (precTypeUpper == "TRIDI_RELAXATION" ||
+           precTypeUpper == "TRIDI RELAXATION" ||
+           precTypeUpper == "TRIDIRELAXATION" ||
+           precTypeUpper == "TRIDIAGONAL_RELAXATION" ||
+           precTypeUpper == "TRIDIAGONAL RELAXATION" ||
+           precTypeUpper == "TRIDIAGONALRELAXATION") {
+    typedef TriDiContainer<MatrixType, scalar_type> container_type;
+    prec = rcp (new BlockRelaxation<MatrixType, container_type> (matrix));
+
+  }
+  else if (precTypeUpper == "BANDED_RELAXATION" ||
+           precTypeUpper == "BANDED RELAXATION" ||
+           precTypeUpper == "BANDEDRELAXATION") {
+    typedef BandedContainer<MatrixType, scalar_type> container_type;
     prec = rcp (new BlockRelaxation<MatrixType, container_type> (matrix));
   }
   else if (precTypeUpper == "IDENTITY" || precTypeUpper == "IDENTITY_SOLVER") {

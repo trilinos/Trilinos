@@ -56,8 +56,6 @@
 #include <stdio.h>                      // for sprintf, fprintf, stderr
 #include "exodusII.h"                   // for exerrval, ex_err, etc
 #include "exodusII_int.h"               // for EX_FATAL, etc
-#include "netcdf.h"                     // for NC_NOERR, NC_GLOBAL, etc
-
 /*!  
 
 The function ex_open() opens an existing exodus file and returns
@@ -169,26 +167,37 @@ int ex_open_int (const char  *path,
 	   netcdf library, so the netcdf4 capabilities aren't known
 	   until runtime...
 	  
-	   Netcdf-4.X does not (yet?) have a function that can be
+	   Later versions of netcdf-4.X have a function that can be
 	   queried to determine whether the library being used was
-	   compiled with --enable-netcdf4, so that isn't very
-	   helpful.. 
+	   compiled with --enable-netcdf4, but not everyone is using that
+	   version yet, so we may have to do some guessing...
 
 	   At this time, query the beginning of the file and see if it
 	   is an HDF-5 file and if it is assume that the open failure
-	   is due to the netcdf library not enabling netcdf4 features...
+	   is due to the netcdf library not enabling netcdf4 features unless
+	   we have the define that shows it is enabled, then assume other error...
 	*/
 	int type = 0;
 	ex_check_file_type(path, &type);
 	  
 	if (type == 5) {
-	  /* This is an hdf5 (netcdf4) file. Since the nc_open failed,
-	     the assumption is that the netcdf doesn't have netcdf4
-	     capabilities enabled.  Tell the user...
+#if !defined(NC_HAS_HDF5)	  
+	  /* This is an hdf5 (netcdf4) file. If NC_HAS_HDF5 is not defined,
+	     then we either don't have hdf5 support in this netcdf version, 
+	     OR this is an older netcdf version that doesn't provide that define.
+
+	     In either case, we don't have enough information, so we
+	     assume that the netcdf doesn't have netcdf4 capabilities
+	     enabled.  Tell the user...
 	  */
 	  fprintf(stderr,
-		  "EXODUS: Error: Attempting to open the netcdf-4 file:\n\t'%s'\n\twith a netcdf library that does not support netcdf-4\n",
+		  "EXODUS: Error: Attempting to open the netcdf-4 file:\n\t'%s'\n\t. Either the netcdf library does not support netcdf-4 or there is a filesystem or some other issue \n",
 		  path);
+#else
+	  fprintf(stderr,
+		  "EXODUS: Error: Attempting to open the netcdf-4 file:\n\t'%s'\n\t failed. The netcdf library supports netcdf-4 so there must be a filesystem or some other issue \n",
+		  path);
+#endif
 	  exerrval = status;
 	}
 	sprintf(errmsg,"Error: failed to open %s read only",path);
@@ -297,7 +306,7 @@ int ex_open_int (const char  *path,
   int64_status |= (mode & EX_ALL_INT64_API);
   
   /* initialize floating point and integer size conversion. */
-  if (ex_conv_ini(exoid, comp_ws, io_ws, file_wordsize, int64_status, 0) != EX_NOERR ) {
+  if (ex_conv_ini(exoid, comp_ws, io_ws, file_wordsize, int64_status, 0, 0, 0) != EX_NOERR ) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
 	    "Error: failed to initialize conversion routines in file id %d",

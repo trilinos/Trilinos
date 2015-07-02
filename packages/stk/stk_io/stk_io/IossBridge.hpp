@@ -321,7 +321,8 @@ void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                           std::vector<stk::mesh::Entity> &entity_list,
                           Ioss::GroupingEntity *io_entity,
                           const std::string &name,
-                          const size_t state_count);
+                          const size_t state_count,
+                          bool ignore_missing_fields = false);
 
 void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
 					       const stk::mesh::FieldBase *field,
@@ -329,7 +330,8 @@ void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
 					       Ioss::GroupingEntity *io_entity,
 					       const stk::mesh::Part *stk_part,
 					       const std::string &name,
-					       const size_t state_count);
+					       const size_t state_count,
+					       bool ignore_missing_fields = false);
 
 /**
  * Fill the specified 'field' with data from the Ioss field named

@@ -101,7 +101,6 @@
 
 #include <iomanip>
 
-using std::string;
 using std::istream;
 using std::ostream;
 using std::cerr;

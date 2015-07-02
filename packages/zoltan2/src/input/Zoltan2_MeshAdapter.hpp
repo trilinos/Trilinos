@@ -62,10 +62,10 @@ namespace Zoltan2 {
    */
 
 enum MeshEntityType {
-  MESH_REGION,
-  MESH_FACE,
+  MESH_VERTEX,
   MESH_EDGE,
-  MESH_VERTEX
+  MESH_FACE,
+  MESH_REGION
 };
 
   /*!  \brief Enumerate entity topology types for meshes: 

@@ -14,11 +14,10 @@ using Teuchos::RCP;
 using Teuchos::Comm;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
-using std::string;
 
 
 template <typename lno_t, typename gno_t, typename scalar_t>
-int buildCrsMatrix(int xdim, int ydim, int zdim, string problemType,
+int buildCrsMatrix(int xdim, int ydim, int zdim, std::string problemType,
                    RCP<const Teuchos::Comm<int> > &comm)
 {
   if (comm->getRank() == 0){
@@ -84,12 +83,12 @@ int main(int narg, char **arg)
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   if (comm->getRank() == 0) cout << "TESTING WITH scalar_t == DOUBLE" << endl;
-  ierr = buildCrsMatrix<int, long, double>(10, 10, 10, string("Laplace3D"), comm);
+  ierr = buildCrsMatrix<int, long, double>(10, 10, 10, std::string("Laplace3D"), comm);
   if (comm->getRank() == 0 && !ierr)
     cout << "SUCCESS for scalar_t == DOUBLE" << endl << endl << endl;
 
   if (comm->getRank() == 0) cout << "TESTING WITH scalar_t == FLOAT" << endl;
-  jerr = buildCrsMatrix<int, long, float>(10, 10, 10, string("Laplace3D"), comm);
+  jerr = buildCrsMatrix<int, long, float>(10, 10, 10, std::string("Laplace3D"), comm);
   if (comm->getRank() == 0 && !jerr)
     cout << "SUCCESS for scalar_t == FLOAT" << endl << endl << endl;
 

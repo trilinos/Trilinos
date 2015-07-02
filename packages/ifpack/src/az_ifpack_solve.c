@@ -43,7 +43,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <string.h>
+#include <std::string.h>
 #include "az_aztec.h"
 #include "az_ifpack.h"
 

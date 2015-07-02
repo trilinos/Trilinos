@@ -50,9 +50,9 @@
 namespace Ifpack {
 
 //----------------------------------------------------------------------------
-Teuchos::map<string,parameter>& key_map()
+Teuchos::map<std::string,parameter>& key_map()
 {
-  static Teuchos::map<string,parameter> ifpack_key_map;
+  static Teuchos::map<std::string,parameter> ifpack_key_map;
   return( ifpack_key_map );
 }
 
@@ -64,7 +64,7 @@ void initialize_string_map()
     return;
   }
 
-  Teuchos::map<string,parameter>& ifp_key_map = key_map();
+  Teuchos::map<std::string,parameter>& ifp_key_map = key_map();
 
   ifp_key_map["LEVEL_FILL"]    = level_fill;
   ifp_key_map["LEVEL_OVERLAP"] = level_overlap;
@@ -81,12 +81,12 @@ void initialize_string_map()
 }
 
 //----------------------------------------------------------------------------
-string upper_case(const string& s)
+std::string upper_case(const std::string& s)
 {
 #ifdef HAVE_TEUCHOS_EXTENDED
-  string upp = Teuchos::StrUtils::allCaps(s);
+  std::string upp = Teuchos::StrUtils::allCaps(s);
 #else
-  string upp(s);
+  std::string upp(s);
   for(unsigned i=0; i<upp.length(); ++i) {
     upp[i] = toupper(upp[i]);
   }
@@ -100,21 +100,24 @@ void set_parameters(const Teuchos::ParameterList& parameterlist,
                     param_struct& params,
                     bool cerr_warning_if_unused)
 {
+  using std::cerr;
+  using std::endl;
+
   initialize_string_map();
 
-  Teuchos::map<string,parameter>& ifp_key_map = key_map();
+  Teuchos::map<std::string,parameter>& ifp_key_map = key_map();
 
   Teuchos::ParameterList::ConstIterator
     pl_iter = parameterlist.begin(),
     pl_end  = parameterlist.end();
 
   for(; pl_iter != pl_end; ++pl_iter) {
-    string name = upper_case((*pl_iter).first);
+    std::string name = upper_case((*pl_iter).first);
 
     const Teuchos::ParameterEntry& entry = (*pl_iter).second;
     bool entry_used = false;
 
-    Teuchos::map<string,parameter>::iterator result = ifp_key_map.find(name);
+    Teuchos::map<std::string,parameter>::iterator result = ifp_key_map.find(name);
     if (result != ifp_key_map.end()) {
       int dummy_int = -1;
       double dummy_double = -99.9;

@@ -13,6 +13,10 @@ IF ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSIO
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
 ENDIF()
 
+IF (NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
+  MESSAGE(FATAL_ERROR "Neither Epetra nor Tpetra are enabled.  MueLu requires at least one of them to be enabled.")
+ENDIF()
+
 
 # The following Tribits macro sets MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # to be true if Trilinos_ENABLE_EXPLICIT_INSTANTIATION is true.

@@ -74,17 +74,18 @@ class Poisson2dOperator: public virtual Epetra_Operator {
 
   //@{ \name Attribute set methods.
 
-    //! If set true, transpose of this operator will be applied.
-    /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
-        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface
-        does not support transpose use, this method should return a value of -1.
-
-    \param In
-           UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
-
-    \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.
-  */
-  int SetUseTranspose(bool UseTranspose){useTranspose_ = UseTranspose; return(0);};
+  /// \brief If \c useTranspose = true, apply the transpose from now on.
+  ///
+  /// This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
+  /// affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface
+  /// does not support transpose use, this method should return a value of -1.
+  ///
+  /// \param useTranspose [in] If true, this operator from now on
+  ///   switches to use its transpose.  Otherwise, this operator from
+  ///   now on does not use its transpose.
+  ///
+  /// \return -1 if this class does not implement the transpose, 0 if successful.
+  int SetUseTranspose(bool useTranspose){useTranspose_ = useTranspose; return(0);};
   //@}
 
   //@{ \name Mathematical functions.

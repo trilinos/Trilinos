@@ -527,12 +527,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
 
   RCP<XMapType > xmap = Galeri::Xpetra::CreateMap<LocalOrdinal, GlobalOrdinal, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, GaleriList);
   RCP<Galeri::Xpetra::Problem<XMapType,XCrsType,XMVectorType> > Pr = Galeri::Xpetra::BuildProblem<Scalar,LocalOrdinal,GlobalOrdinal,XMapType,XCrsType,XMVectorType>
-      (string("Laplace2D"),xmap,GaleriList);
+    (std::string("Laplace2D"),xmap,GaleriList);
 
   RCP<XCrsType> XA = Pr->BuildMatrix();
   RCP<CrsType> A = XA->getTpetra_CrsMatrixNonConst();
   TEST_INEQUALITY(A,Teuchos::null);
-  
+
   RCP<const MapType > rowmap = A->getRowMap();
 
   out << "Creating AdditiveSchwarz instance" << std::endl;

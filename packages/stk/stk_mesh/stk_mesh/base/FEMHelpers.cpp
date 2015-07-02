@@ -68,7 +68,7 @@ void verify_declare_element_side(
 
     ThrowErrorMsgIf( elem_top!=stk::topology::INVALID_TOPOLOGY && local_side_id >= elem_top.num_sides(),
             "For elem " << mesh.identifier(elem) << ", local_side_id " << local_side_id << ", " <<
-            "local_side_id exceeds " << elem_top.name() << ".num_sies() = " << elem_top.num_sides());
+            "local_side_id exceeds " << elem_top.name() << ".num_sides() = " << elem_top.num_sides());
 
     ThrowErrorMsgIf( side_top == stk::topology::INVALID_TOPOLOGY,
             "For elem " << mesh.identifier(elem) << ", local_side_id " << local_side_id << ", " <<
@@ -365,9 +365,8 @@ Entity declare_element_edge(
     return edge;
 }
 
-
-std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation>
-get_ordinal_and_permutation(stk::mesh::BulkData& mesh, stk::mesh::Entity parent_entity, stk::mesh::EntityRank to_rank, stk::mesh::EntityVector &nodes_of_sub_rank)
+OrdinalAndPermutation
+get_ordinal_and_permutation(const stk::mesh::BulkData& mesh, stk::mesh::Entity parent_entity, stk::mesh::EntityRank to_rank, const stk::mesh::EntityVector &nodes_of_sub_rank)
 {
     std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> ordinalAndPermutation = std::make_pair(stk::mesh::INVALID_CONNECTIVITY_ORDINAL,
             stk::mesh::INVALID_PERMUTATION);

@@ -40,8 +40,8 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_DENSECONTAINER_DEF_HPP
-#define IFPACK2_DENSECONTAINER_DEF_HPP
+#ifndef IFPACK2_TRIDICONTAINER_DEF_HPP
+#define IFPACK2_TRIDICONTAINER_DEF_HPP
 
 #include "Ifpack2_TriDiContainer_decl.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -255,7 +255,7 @@ applyImpl (const local_mv_type& X,
     << (mode == Teuchos::NO_TRANS ? diagBlock_.numRowsCols () : diagBlock_.numRowsCols())
     << ").  Please report this bug to the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.getLocalLength () != static_cast<size_t> (diagBlock_.numRowsCols()),
+    Y.getLocalLength () != static_cast<size_t> (diagBlock_.numRowsCols()),
     std::logic_error, "Ifpack2::TriDiContainer::applyImpl: The output "
     "multivector Y has incompatible dimensions from those of the "
     "inverse operator (" << Y.getLocalLength () << " vs. "
@@ -780,4 +780,4 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
   template class Ifpack2::TriDiContainer< Tpetra::CrsMatrix<S, LO, GO, N>, S >; \
   template class Ifpack2::TriDiContainer< Tpetra::RowMatrix<S, LO, GO, N>, S >;
 
-#endif // IFPACK2_SPARSECONTAINER_HPP
+#endif // IFPACK2_TRIDICONTAINER_HPP

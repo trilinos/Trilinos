@@ -65,11 +65,14 @@
 
 // Prototype
 
-int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU, 
-	  long long NumGlobalRows1, int NumMyRows1, int LevelFill1, bool verbose);
+int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
+          long long NumGlobalRows1, int NumMyRows1, int LevelFill1, bool verbose);
 
  int main(int argc, char *argv[])
 {
+  using std::cout;
+  using std::endl;
+
   int ierr = 0, i, j;
   int nx, ny;
 
@@ -134,13 +137,13 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
     ny = atoi(argv[nextarg++]);
     if (ny<3) {cout << "ny = " << ny << ": Must be greater than 2 for meaningful graph." << endl; exit(1);}
   }
-  
+
   long long NumGlobalPoints = nx*ny;
   long long IndexBase = 0;
 
   if (verbose)
     cout << "\n\n*****Building 5 point matrix, Level 1 and 2 filled matrices for" << endl
-	 << "  nx = " << nx << ",  ny = " << ny << endl<< endl;
+         << "  nx = " << nx << ",  ny = " << ny << endl<< endl;
 
 
   // Create a 5 point stencil graph, level 1 fill of it and level 2 fill of it
@@ -156,71 +159,71 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
   Epetra_CrsGraph U1(Copy, Map, Map, 3);
   Epetra_CrsGraph L2(Copy, Map, Map, 4);
   Epetra_CrsGraph U2(Copy, Map, Map, 4);
-  
+
   // Add  rows one-at-a-time
 
   std::vector<long long> Indices(4); // Work space
-  
+
   for (j=0; j<ny; j++) {
     for (i=0; i<nx; i++) {
       long long Row = i+j*nx;
       if (Map.MyGID(Row)) { // Only work on rows I own
-	
-	//**** Work on lower triangle of all three matrices ****
-	
-	// Define entries (i-1,j), (i,j-1)
-	
-	int k = 0;
-	if (i>0)    Indices[k++] = i-1 + j   *nx;
-	if (j>0)    Indices[k++] = i   +(j-1)*nx;
-	
-	// Define lower triangular terms of original matrix and L(0)
-	assert(A.InsertGlobalIndices(Row, k, &Indices[0])>=0);
-	assert(L0.InsertGlobalIndices(Row, k, &Indices[0])>=0);
-	
-	// Define entry (i+1,j-1)
-	if ((i<nx-1) && (j>0   )) Indices[k++] = i+1 +(j-1)*nx;
-	
-	
-	// Define lower triangle of level(1) fill matrix
-	assert(L1.InsertGlobalIndices(Row, k, &Indices[0])>=0);
-	
-	// Define entry (i+2, j-1)
-	
-	if ((i<nx-2) && (j>0   )) Indices[k++] = i+2 +(j-1)*nx;
-	
-	// Define lower triangle of level(2) fill matrix
-	assert(L2.InsertGlobalIndices(Row, k, &Indices[0])>=0);
-	
-	// Define main diagonal of original matrix
-	assert(A.InsertGlobalIndices(Row, 1, &Row)>=0);
-	
-	k = 0; // Reset index counter
-	
-	//**** Work on upper triangle of all three matrices ****
-	
-	// Define entries (i+1,j), ( i,j+1)
-	
-	if (i<nx-1) Indices[k++] = i+1 + j   *nx;
-	if (j<ny-1) Indices[k++] = i   +(j+1)*nx;
-	
-	// Define upper  triangular terms of original matrix and L(0)
-	assert(A.InsertGlobalIndices(Row, k, &Indices[0])>=0);
-	assert(U0.InsertGlobalIndices(Row, k, &Indices[0])>=0);
-	
-	// Define entry (i-1,j+1)
-	
-	if ((i>0   ) && (j<ny-1)) Indices[k++] = i-1 +(j+1)*nx;
-	
-	// Define upper triangle of level(1) fill matrix
-	assert(U1.InsertGlobalIndices(Row, k, &Indices[0])>=0);
-	
-	// Define entry (i-2, j+1)
-	
-	if ((i>1   ) && (j<ny-1)) Indices[k++] = i-2 +(j+1)*nx;
-	
-	// Define upper triangle of level(2) fill matrix
-	assert(U2.InsertGlobalIndices(Row, k, &Indices[0])>=0);
+
+        //**** Work on lower triangle of all three matrices ****
+
+        // Define entries (i-1,j), (i,j-1)
+
+        int k = 0;
+        if (i>0)    Indices[k++] = i-1 + j   *nx;
+        if (j>0)    Indices[k++] = i   +(j-1)*nx;
+
+        // Define lower triangular terms of original matrix and L(0)
+        assert(A.InsertGlobalIndices(Row, k, &Indices[0])>=0);
+        assert(L0.InsertGlobalIndices(Row, k, &Indices[0])>=0);
+
+        // Define entry (i+1,j-1)
+        if ((i<nx-1) && (j>0   )) Indices[k++] = i+1 +(j-1)*nx;
+
+
+        // Define lower triangle of level(1) fill matrix
+        assert(L1.InsertGlobalIndices(Row, k, &Indices[0])>=0);
+
+        // Define entry (i+2, j-1)
+
+        if ((i<nx-2) && (j>0   )) Indices[k++] = i+2 +(j-1)*nx;
+
+        // Define lower triangle of level(2) fill matrix
+        assert(L2.InsertGlobalIndices(Row, k, &Indices[0])>=0);
+
+        // Define main diagonal of original matrix
+        assert(A.InsertGlobalIndices(Row, 1, &Row)>=0);
+
+        k = 0; // Reset index counter
+
+        //**** Work on upper triangle of all three matrices ****
+
+        // Define entries (i+1,j), ( i,j+1)
+
+        if (i<nx-1) Indices[k++] = i+1 + j   *nx;
+        if (j<ny-1) Indices[k++] = i   +(j+1)*nx;
+
+        // Define upper  triangular terms of original matrix and L(0)
+        assert(A.InsertGlobalIndices(Row, k, &Indices[0])>=0);
+        assert(U0.InsertGlobalIndices(Row, k, &Indices[0])>=0);
+
+        // Define entry (i-1,j+1)
+
+        if ((i>0   ) && (j<ny-1)) Indices[k++] = i-1 +(j+1)*nx;
+
+        // Define upper triangle of level(1) fill matrix
+        assert(U1.InsertGlobalIndices(Row, k, &Indices[0])>=0);
+
+        // Define entry (i-2, j+1)
+
+        if ((i>1   ) && (j<ny-1)) Indices[k++] = i-2 +(j+1)*nx;
+
+        // Define upper triangle of level(2) fill matrix
+        assert(U2.InsertGlobalIndices(Row, k, &Indices[0])>=0);
       }
     }
   }
@@ -265,7 +268,7 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
   if (verbose) cout << "\n\n*****Testing copy constructor" << endl<< endl;
 
   Ifpack_IlukGraph ILUC(ILU2);
-  
+
   assert(check(L2, U2, ILUC, NumGlobalPoints, NumMyPoints, 2, verbose)==0);
 
   if (verbose) cout << "\n\n*****Testing copy constructor" << endl<< endl;
@@ -274,10 +277,10 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
   for (int overlap = 1; overlap < 4; overlap++) {
     if (verbose) cout << "\n\n*********************************************" << endl;
     if (verbose) cout << "\n\nConstruct Level 1 fill with Overlap = " << overlap << ".\n\n" << endl;
-    
+
     OverlapGraph = Teuchos::rcp( new Ifpack_IlukGraph(A, 1, overlap) );
     assert(OverlapGraph->ConstructFilledGraph()==0);
-    
+
     if (verbose) {
       cout << "Number of Global Rows     = " << OverlapGraph->NumGlobalRows64() << endl;
       cout << "Number of Global Nonzeros = " << OverlapGraph->NumGlobalNonzeros64() << endl;
@@ -285,67 +288,67 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
       cout << "Number of Local Nonzeros = " << OverlapGraph->NumMyNonzeros() << endl;
     }
   }
-    
+
   if (verbose1) {
     // Test ostream << operator (if verbose1)
     // Construct a Map that puts 6 equations on each PE
-    
+
     int NumElements1 = 6;
     long long NumPoints1 = NumElements1;
 
     // Create an integer vector NumNz that is used to build the Petra Matrix.
     // NumNz[i] is the Number of terms for the ith global equation on this processor
-    
+
     std::vector<int> NumNz1(NumPoints1);
-    
+
     // We are building a tridiagonal matrix where each row has (-1 2 -1)
     // So we need 2 off-diagonal terms (except for the first and last equation)
-    
+
     for (i=0; i<NumPoints1; i++)
       if (i==0 || i == NumPoints1-1)
-	NumNz1[i] = 2;
+        NumNz1[i] = 2;
       else
-	NumNz1[i] = 3;
-    
+        NumNz1[i] = 3;
+
     // Create a Epetra_Matrix
-    
+
     Epetra_Map Map1(NumPoints1, NumPoints1, 1, Comm);
     Epetra_CrsGraph A1(Copy, Map1, &NumNz1[0]);
-    
+
     // Add  rows one-at-a-time
     // Need some vectors to help
     // Off diagonal Values will always be -1
-    
-    
+
+
     std::vector<long long> Indices1(2);
     int NumEntries1;
-    
+
     for (i=0; i<NumPoints1; i++)
       {
-	if (i==0)
-	  {
-	    Indices1[0] = 2;
-	    NumEntries1 = 1;
-	  }
-	else if (i == NumPoints1-1)
-	  {
-	    Indices1[0] = NumPoints1-1;
-	    NumEntries1 = 1;
-	  }
-	else
-	  {
-	    Indices1[0] = i;
-	    Indices1[1] = i+2;
-	    NumEntries1 = 2;
-	  }
-	assert(A1.InsertGlobalIndices(i+1, NumEntries1, &Indices1[0])==0);
-	long long ip1 = i+1;
-	assert(A1.InsertGlobalIndices(ip1, 1, &ip1)==0); // Put in the diagonal entry
+        if (i==0)
+          {
+            Indices1[0] = 2;
+            NumEntries1 = 1;
+          }
+        else if (i == NumPoints1-1)
+          {
+            Indices1[0] = NumPoints1-1;
+            NumEntries1 = 1;
+          }
+        else
+          {
+            Indices1[0] = i;
+            Indices1[1] = i+2;
+            NumEntries1 = 2;
+          }
+        assert(A1.InsertGlobalIndices(i+1, NumEntries1, &Indices1[0])==0);
+        long long ip1 = i+1;
+        assert(A1.InsertGlobalIndices(ip1, 1, &ip1)==0); // Put in the diagonal entry
       }
-    
+
     // Finish up
     assert(A1.FillComplete()==0);
-    
+
     if (verbose) cout << "\n\nPrint out tridiagonal matrix with IndexBase = 1.\n\n" << endl;
     cout << A1 << endl;
 
@@ -369,8 +372,10 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
 return ierr ;
 }
 
-int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU, 
-	  long long NumGlobalRows1, int NumMyRows1, int LevelFill1, bool verbose) {  
+int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
+          long long NumGlobalRows1, int NumMyRows1, int LevelFill1, bool verbose) {
+  using std::cout;
+  using std::endl;
 
   int i, j;
   int NumIndices, * Indices;
@@ -392,11 +397,11 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
     assert(NumIndices==NumIndices1);
     for (j=0; j<NumIndices1; j++) {
       if (debug &&(Indices[j]!=Indices1[j])) {
-	int MyPID = L.RowMap().Comm().MyPID();
-	cout << "Proc " << MyPID
-	     << " Local Row = " << i
-	     << "  L.Indices["<< j <<"]  = " << Indices[j]
-	     << " L1.Indices["<< j <<"] = " << Indices1[j] << endl;
+        int MyPID = L.RowMap().Comm().MyPID();
+        cout << "Proc " << MyPID
+             << " Local Row = " << i
+             << "  L.Indices["<< j <<"]  = " << Indices[j]
+             << " L1.Indices["<< j <<"] = " << Indices1[j] << endl;
       }
       assert(Indices[j]==Indices1[j]);
     }
@@ -407,11 +412,11 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
     assert(NumIndices==NumIndices1);
     for (j=0; j<NumIndices1; j++)  {
       if (debug &&(Indices[j]!=Indices1[j])) {
-	int MyPID = L.RowMap().Comm().MyPID();
-	cout << "Proc " << MyPID
-	     << " Local Row = " << i
-	     << "  U.Indices["<< j <<"]  = " << Indices[j]
-	     << " U1.Indices["<< j <<"] = " << Indices1[j] << endl;
+        int MyPID = L.RowMap().Comm().MyPID();
+        cout << "Proc " << MyPID
+             << " Local Row = " << i
+             << "  U.Indices["<< j <<"]  = " << Indices[j]
+             << " U1.Indices["<< j <<"] = " << Indices1[j] << endl;
       }
       assert(Indices[j]==Indices1[j]);
     }
@@ -426,8 +431,8 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
   assert(NumGlobalRows==NumGlobalRows1);
 
   long long NumGlobalNonzeros = LU.NumGlobalNonzeros64();
-  if (verbose) cout << "\n\nNumber of Global Nonzero entries = " 
-		    << NumGlobalNonzeros << endl<< endl;
+  if (verbose) cout << "\n\nNumber of Global Nonzero entries = "
+                    << NumGlobalNonzeros << endl<< endl;
 
   int NoutG = 0;
 

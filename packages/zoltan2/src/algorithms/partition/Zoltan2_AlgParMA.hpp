@@ -45,14 +45,10 @@
 #ifndef _ZOLTAN2_ALGPARMA_HPP_
 #define _ZOLTAN2_ALGPARMA_HPP_
 
-#include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_TPLTraits.hpp>
-
-#include <Zoltan2_AlgZoltanCallbacks.hpp>
-#include <zoltan_cpp.h>
 
 //////////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgParMA.hpp
@@ -63,9 +59,14 @@
 //  This approach allows development closer to that of PUMI setup but at the 
 //  cost of creating an extra mesh representation.
 // 
-//  Another approach might be to provide callbacks to modify the adapter 
-//  in each iteration of a ParMA algorithm. This may be able to remove the 
-//  need for an intermediate structure.
+//!  Available ParMA algorithms are given by setting the parma_method parameter 
+//!  of the sublist parma_paramaters to one of the following:
+//!  Vertex       - Balances targeting vertex imbalance
+//!  Element      - Balances targeting element imbalance
+//!  VtxElm       - Balances targeting vertex and element imbalance
+//!  VtxEdgeElm   - Balances targeting vertex, edge, and element imbalance
+//!  Ghost        - Balances using ghost element aware diffusion      
+//!  Shape        - Optimizes shape of parts by increasing the size of small part boundaries
 //////////////////////////////////////////////////////////////////////////////
 
 #ifndef HAVE_ZOLTAN2_PARMA
@@ -144,7 +145,7 @@ private:
 #   endif
   }
 
-  enum MeshEntityType entityAPFtoZ2(int dimension) const {return static_cast<MeshEntityType>(-dimension+3);}
+  enum MeshEntityType entityAPFtoZ2(int dimension) const {return static_cast<MeshEntityType>(dimension);}
 
   enum apf::Mesh::Type topologyZ2toAPF(enum EntityTopologyType ttype) const {
     if (ttype==POINT)
@@ -164,7 +165,7 @@ private:
     else if (ttype==PYRAMID)
       return apf::Mesh::PYRAMID;
     else 
-      throw "APF does not support this topology type";
+      throw std::runtime_error("APF does not support this topology type");
     
   }
 
@@ -186,9 +187,134 @@ private:
       setEntWeights(0,tag);
     if (edge)
       setEntWeights(1,tag);
-    if (elm)
+    if (elm) {
       setEntWeights(m->getDimension(),tag);
+    }
     return tag;
+  }
+
+
+  //APF Mesh construction helper functions
+  void constructVerts(const zgid_t* conn, lno_t num_adj, apf::GlobalToVert& result) {
+    apf::ModelEntity* interior = m->findModelEntity(m->getDimension(), 0);
+    for (lno_t i=0;i<num_adj;i++) 
+      if ( ! result.count(conn[i])) 
+        result[conn[i]] = m->createVert_(interior);
+  }
+  void constructElements(const zgid_t* conn, lno_t nelem, const lno_t* offsets, 
+                         const EntityTopologyType* tops, apf::GlobalToVert& globalToVert)
+  {
+    apf::ModelEntity* interior = m->findModelEntity(m->getDimension(), 0);
+    for (lno_t i = 0; i < nelem; ++i) {
+      apf::Mesh::Type etype = topologyZ2toAPF(tops[i]);
+      apf::Downward verts;
+      for (int j = offsets[i]; j < offsets[i+1]; ++j)
+	verts[j-offsets[i]] = globalToVert[conn[j]];
+      buildElement(m, interior, etype, verts);
+    }
+  }
+  int getMax(const apf::GlobalToVert& globalToVert)
+  {
+    int max = -1;
+    APF_CONST_ITERATE(apf::GlobalToVert, globalToVert, it)
+      max = std::max(max, it->first);
+    PCU_Max_Ints(&max, 1); // this is type-dependent
+    return max;
+  }
+  void constructResidence(apf::GlobalToVert& globalToVert)
+  {
+    int max = getMax(globalToVert);
+    int total = max + 1;
+    int peers = PCU_Comm_Peers();
+    int quotient = total / peers;
+    int remainder = total % peers;
+    int mySize = quotient;
+    int self = PCU_Comm_Self();
+    if (self == (peers - 1))
+      mySize += remainder;
+    typedef std::vector< std::vector<int> > TmpParts;
+    TmpParts tmpParts(mySize);
+    /* if we have a vertex, send its global id to the
+       broker for that global id */
+    PCU_Comm_Begin();
+    APF_ITERATE(apf::GlobalToVert, globalToVert, it) {
+      int gid = it->first;
+      int to = std::min(peers - 1, gid / quotient);
+      PCU_COMM_PACK(to, gid);
+    }
+    PCU_Comm_Send();
+    int myOffset = self * quotient;
+    /* brokers store all the part ids that sent messages
+       for each global id */
+    while (PCU_Comm_Receive()) {
+      int gid;
+      PCU_COMM_UNPACK(gid);
+      int from = PCU_Comm_Sender();
+      tmpParts.at(gid - myOffset).push_back(from);
+    }
+    /* for each global id, send all associated part ids
+       to all associated parts */
+    PCU_Comm_Begin();
+    for (int i = 0; i < mySize; ++i) {
+      std::vector<int>& parts = tmpParts[i];
+      for (size_t j = 0; j < parts.size(); ++j) {
+	int to = parts[j];
+	int gid = i + myOffset;
+	int nparts = parts.size();
+	PCU_COMM_PACK(to, gid);
+	PCU_COMM_PACK(to, nparts);
+	for (size_t k = 0; k < parts.size(); ++k)
+	  PCU_COMM_PACK(to, parts[k]);
+      }
+    }
+    PCU_Comm_Send();
+    /* receiving a global id and associated parts,
+     lookup the vertex and classify it on the partition
+     model entity for that set of parts */
+    while (PCU_Comm_Receive()) {
+      int gid;
+      PCU_COMM_UNPACK(gid);
+      int nparts;
+      PCU_COMM_UNPACK(nparts);
+      apf::Parts residence;
+      for (int i = 0; i < nparts; ++i) {
+	int part;
+	PCU_COMM_UNPACK(part);
+	residence.insert(part);
+      }
+      apf::MeshEntity* vert = globalToVert[gid];
+      m->setResidence(vert, residence);
+    }
+  }
+
+  /* given correct residence from the above algorithm,
+   negotiate remote copies by exchanging (gid,pointer)
+   pairs with parts in the residence of the vertex */
+  void constructRemotes(apf::GlobalToVert& globalToVert)
+  {
+    int self = PCU_Comm_Self();
+    PCU_Comm_Begin();
+    APF_ITERATE(apf::GlobalToVert, globalToVert, it) {
+      int gid = it->first;
+      apf::MeshEntity* vert = it->second;
+      apf::Parts residence;
+      m->getResidence(vert, residence);
+      APF_ITERATE(apf::Parts, residence, rit)
+	if (*rit != self) {
+	  PCU_COMM_PACK(*rit, gid);
+	  PCU_COMM_PACK(*rit, vert);
+	}
+    }
+    PCU_Comm_Send();
+    while (PCU_Comm_Receive()) {
+      int gid;
+      PCU_COMM_UNPACK(gid);
+      apf::MeshEntity* remote;
+      PCU_COMM_UNPACK(remote);
+      int from = PCU_Comm_Sender();
+      apf::MeshEntity* vert = globalToVert[gid];
+      m->addRemote(vert, from, remote);
+    }
   }
 
 public:
@@ -226,7 +352,7 @@ public:
     throw std::runtime_error("ParMA needs a MeshAdapter but you haven't given it one");
     
   }
-  
+
   AlgParMA(const RCP<const Environment> &env__,
             const RCP<const Comm<int> > &problemComm__,
             const RCP<const MeshAdapter<user_t> > &adapter__) :
@@ -242,19 +368,24 @@ public:
       pcu_outside=true;
     PCU_Switch_Comm(mpicomm);
 
+    int dim;
+    if (adapter->getLocalNumOf(MESH_REGION)>0)
+      dim=3;
+    else if (adapter->getLocalNumOf(MESH_FACE)>0)
+      dim=2;
+    else
+      throw std::runtime_error("ParMA neeeds faces or region information");
+
     //Create empty apf mesh
     gmi_register_null();
     gmi_model* g = gmi_load(".null");
-    int dim = adapter->getDimension();
     enum MeshEntityType primary_type = entityAPFtoZ2(dim);
     m = apf::makeEmptyMdsMesh(g,dim,false);
-    
-    //Array of all vertices in order not to make duplicates
-    /*apf::MeshEntity** all_vertices = new apf::MeshEntity*[adapter->getLocalNumOf(MESH_VERTEX)];
-    for (size_t i=0;i<adapter->getLocalNumOf(primary_type);i++)
-      all_vertices[i] = NULL;
-    */
 
+    //Get entity topology types
+    const EntityTopologyType* tops;
+    adapter->getTopologyViewOf(primary_type,tops);
+    
     //Get element global ids and part ids
     const zgid_t* element_gids;
     const part_t* part_ids;
@@ -267,10 +398,7 @@ public:
     const zgid_t* vertex_gids;
     adapter->getIDsViewOf(MESH_VERTEX,vertex_gids);
     
-    //Get entity topology types
-    const EntityTopologyType* tops;
-    adapter->getTopologyViewOf(primary_type,tops);
-
+    
     //Get vertex coordinates
     const scalar_t ** vertex_coords = new const scalar_t*[dim];
     int* strides = new int[dim];
@@ -286,19 +414,25 @@ public:
     
     //build the apf mesh
     apf::GlobalToVert vertex_mapping;
+    apf::ModelEntity* interior = m->findModelEntity(m->getDimension(), 0);
     for (size_t i=0;i<adapter->getLocalNumOf(MESH_VERTEX);i++) {
-      apf::MeshEntity* vtx = m->createVert(0);
+      apf::MeshEntity* vtx = m->createVert_(interior);
       scalar_t temp_coords[3];
-      for (int k=0;k<dim;k++)
+      for (int k=0;k<dim;k++) 
 	temp_coords[k] = vertex_coords[k][i*strides[k]];
+
       for (int k=dim;k<3;k++)
 	temp_coords[k] = 0;  
       apf::Vector3 point(temp_coords[0],temp_coords[1],temp_coords[2]);    
       m->setPoint(vtx,0,point);
       vertex_mapping[vertex_gids[i]] = vtx;
     }
-    apf::Mesh::Type t = topologyZ2toAPF(tops[0]);
-    apf::construct(m,adjacent_vertex_gids,adapter->getLocalNumOf(primary_type),t,vertex_mapping);
+    //constructVerts(adjacent_vertex_gids, offsets[adapter->getLocalNumOf(primary_type)],vertex_mapping);
+    constructElements(adjacent_vertex_gids, adapter->getLocalNumOf(primary_type), offsets, tops, vertex_mapping);
+    constructResidence(vertex_mapping);
+    constructRemotes(vertex_mapping);
+    stitchMesh(m);
+    m->acceptChanges();
     
     
     //Setup numberings
@@ -316,7 +450,7 @@ public:
       i++; 
     }
     m->end(itr);
-    
+
     //final setup for apf mesh
     apf::alignMdsRemotes(m);
     apf::deriveMdsModel(m);
@@ -385,10 +519,6 @@ void AlgParMA<Adapter>::partition(
     balancer = Parma_MakeVtxBalancer(m, step, verbose);
     weightVertex = true;
   }
-  else if (alg_name=="Edge") {
-    balancer = Parma_MakeEdgeBalancer(m, step, verbose);
-    weightEdge = true;
-  }
   else if (alg_name=="Element") {
     balancer = Parma_MakeElmBalancer(m, step, verbose);
     weightElement=true;
@@ -401,25 +531,9 @@ void AlgParMA<Adapter>::partition(
     balancer = Parma_MakeVtxEdgeElmBalancer(m, step, verbose);
     weightVertex=weightEdge=weightElement=true;    
   }
-  else if (alg_name=="ElmLtVtx") {
-    balancer = Parma_MakeElmLtVtxBalancer(m, step, verbose);
-    weightElement=weightVertex=true;
-  }
-  else if (alg_name=="Hps") {
-    //balancer = Parma_MakeHpsBalancer(m, verbose);
-    throw "Not incorporated yet due to circular dependency";
-  }
   else if (alg_name=="Ghost") {
     balancer = Parma_MakeGhostDiffuser(m, ghost_layers, ghost_bridge, step, verbose);
     weightVertex = true;
-  }
-  else if (alg_name=="Welder") {
-    //balancer = Parma_MakeWelder(m,step,verbose);
-    throw "Not incorporated yet";
-  }
-  else if (alg_name=="Centroid") {
-    balancer = Parma_MakeCentroidDiffuser(m,step,verbose);
-    throw "Not incorporated yet";
   }
   else if (alg_name=="Shape") {
     balancer = Parma_MakeShapeOptimizer(m,step,verbose);
@@ -427,7 +541,7 @@ void AlgParMA<Adapter>::partition(
   }
   else  {
     //Should be caught by the validator
-    throw "No such parma method defined";
+    throw std::runtime_error("No such parma method defined");
   }
   apf::MeshTag* weights = setWeights(weightVertex,weightEdge,weightElement);
 

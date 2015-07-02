@@ -194,7 +194,7 @@ void donate_one_element(stk::mesh::unit_test::BulkDataTester & mesh)
         }
     }
 
-    mesh.change_entity_owner(change, BulkData::MOD_END_COMPRESS_AND_SORT);
+    mesh.change_entity_owner(change);
 
     count_entities(select_owned, mesh, after_count);
 
@@ -237,7 +237,7 @@ void donate_all_shared_nodes(stk::mesh::unit_test::BulkDataTester & mesh)
         }
     }
 
-    mesh.change_entity_owner(change, BulkData::MOD_END_COMPRESS_AND_SORT);
+    mesh.change_entity_owner(change);
 
     count_entities(select_used, mesh, after_count);
 
@@ -773,7 +773,7 @@ TEST(BulkData, testChangeOwner_ring)
         ring_mesh.generate_mesh();
         ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
 
-        ring_mesh.fixup_node_ownership(BulkData::MOD_END_COMPRESS_AND_SORT);
+        ring_mesh.fixup_node_ownership();
 
         const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() | ring_mesh.m_meta_data.globally_shared_part();
         const Selector select_all = ring_mesh.m_meta_data.universal_part();
@@ -957,7 +957,7 @@ TEST(BulkData, testChangeOwner_ring)
             change.push_back(entry);
         }
 
-        ring_mesh.m_bulk_data.change_entity_owner(change, BulkData::MOD_END_COMPRESS_AND_SORT);
+        ring_mesh.m_bulk_data.change_entity_owner(change);
 
         count_entities(select_owned, ring_mesh.m_bulk_data, local_count);
         const unsigned n_node = p_rank == 0 ? nPerProc + 1 : (p_rank + 1 == p_size ? nPerProc - 1 : nPerProc );

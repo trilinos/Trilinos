@@ -91,6 +91,10 @@
 #ifdef HAVE_MUELU_MATLAB
 #include "../matlab/MueLu_MatlabSmoother_decl.hpp"
 #include "../matlab/MueLu_MatlabSmoother_def.hpp"
+#include "../matlab/MueLu_TwoLevelMatlabFactory_decl.hpp"
+#include "../matlab/MueLu_TwoLevelMatlabFactory_def.hpp"
+#include "../matlab/MueLu_SingleLevelMatlabFactory_decl.hpp"
+#include "../matlab/MueLu_SingleLevelMatlabFactory_def.hpp"
 #endif
 
 // These code chunks should only be enabled once Tpetra supports proper graph
@@ -605,7 +609,6 @@ namespace MueLu {
       //       CoalesceDropFactory
       aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
       aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
-
     } else if (aggType == "coupled") {
       aggFactory = rcp(new CoupledAggregationFactory());
       aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
@@ -624,6 +627,11 @@ namespace MueLu {
         aggFactory->SetFactory("Coordinates", this->GetFactoryManager(levelID-1)->GetFactory("Coordinates"));
       }
     }
+#ifdef HAVE_MUELU_MATLAB
+    else if(aggType == "matlab") {
+      aggFactory = rcp(new SingleLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
+    }
+#endif
     manager.SetFactory("Aggregates", aggFactory);
 
     // Coarse map
@@ -640,7 +648,7 @@ namespace MueLu {
     if (reuseType == "tP") {
       keeps.push_back(keep_pair("Nullspace", manager.GetFactory("Ptent").get()));
       keeps.push_back(keep_pair("P",         manager.GetFactory("Ptent").get()));
-    }
+    }    
 
     // Nullspace
     RCP<NullspaceFactory> nullSpace = rcp(new NullspaceFactory());
@@ -726,6 +734,12 @@ namespace MueLu {
       P->SetFactory("P", manager.GetFactory("Ptent"));
       manager.SetFactory("P", P);
     }
+#ifdef HAVE_MUELU_MATLAB
+    else if(multigridAlgo == "matlab") {
+      RCP<TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node> > P = rcp(new TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
+      manager.SetFactory("P", P);
+    }
+#endif
 
     // === Restriction ===
     if (!this->implicitTranspose_) {

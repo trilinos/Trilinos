@@ -52,9 +52,7 @@ namespace Ifpack2 {
 
 /// \class LocalFilter
 /// \brief Access only local rows and columns of a sparse matrix.
-/// \tparam MatrixType A specialization of either Tpetra::RowMatrix
-///   (preferred) or Tpetra::CrsMatrix (which is a subclass of
-///   Tpetra::RowMatrix).
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
 ///
 /// \section Ifpack2_LocalFilter_Summary Summary
 ///
@@ -165,6 +163,18 @@ class LocalFilter :
                                      typename MatrixType::node_type>,
     virtual public Teuchos::Describable
 {
+private:
+  // Tpetra needs C++11 now because Kokkos needs C++11 now.
+  // Thus, Ifpack2 needs C++11.
+  static_assert (std::is_same<
+                   MatrixType,
+                   Tpetra::RowMatrix<
+                     typename MatrixType::scalar_type,
+                     typename MatrixType::local_ordinal_type,
+                     typename MatrixType::global_ordinal_type,
+                     typename MatrixType::node_type> >::value,
+                 "Ifpack2::LocalFilter: MatrixType must be a Tpetra::RowMatrix specialization.");
+
 public:
   //! \name Typedefs
   //@{

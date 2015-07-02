@@ -55,6 +55,9 @@
 
 int main(int argc, char *argv[])
 {
+  using std::cerr;
+  using std::cout;
+  using std::endl;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -71,7 +74,7 @@ int main(int argc, char *argv[])
 #endif
     exit(EXIT_SUCCESS);
   }
-  
+
   int NumPoints = 5;
 #if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   Epetra_Map Map(NumPoints,0,Comm);
@@ -105,7 +108,7 @@ int main(int argc, char *argv[])
   // ================================= //
   // print sparsity of original matrix //
   // ================================= //
- 
+
   cout << "Sparsity, non-dropped matrix" << endl;
   Ifpack_PrintSparsity_Simple(*Matrix);
 
@@ -137,7 +140,7 @@ int main(int argc, char *argv[])
   // create new matrices, dropping singletons //
   // ======================================== //
   //
-  // If we apply this filter NumPoints - 1 times, 
+  // If we apply this filter NumPoints - 1 times,
   // we end up with a one-row matrix
   Ifpack_SingletonFilter Filter1(Matrix);
   Ifpack_SingletonFilter Filter2(Teuchos::rcp(&Filter1, false));

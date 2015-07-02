@@ -1,28 +1,28 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                IFPACK
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -42,6 +42,9 @@
 
 int main(int argc, char *argv[])
 {
+  using std::cerr;
+  using std::cout;
+  using std::endl;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -58,7 +61,7 @@ int main(int argc, char *argv[])
 #endif
     exit(EXIT_SUCCESS);
   }
-  
+
   long long NumPoints = 5;
 #if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   Epetra_Map Map(NumPoints,0LL,Comm);
@@ -92,7 +95,7 @@ int main(int argc, char *argv[])
   // ================================= //
   // print sparsity of original matrix //
   // ================================= //
- 
+
   cout << "Sparsity, non-dropped matrix" << endl;
   Ifpack_PrintSparsity_Simple(*Matrix);
 
@@ -124,7 +127,7 @@ int main(int argc, char *argv[])
   // create new matrices, dropping singletons //
   // ======================================== //
   //
-  // If we apply this filter NumPoints - 1 times, 
+  // If we apply this filter NumPoints - 1 times,
   // we end up with a one-row matrix
   Ifpack_SingletonFilter Filter1(Matrix);
   Ifpack_SingletonFilter Filter2(Teuchos::rcp(&Filter1, false));

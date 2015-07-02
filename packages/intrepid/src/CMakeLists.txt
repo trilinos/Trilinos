@@ -120,6 +120,9 @@ IF (Intrepid_ENABLE_Boost)
     Shared/MiniTensor/Intrepid_MiniTensor_Mechanics.h
     Shared/MiniTensor/Intrepid_MiniTensor_Mechanics.i.h
     Shared/MiniTensor/Intrepid_MiniTensor_Mechanics.t.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Matrix.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Matrix.i.h
+    Shared/MiniTensor/Intrepid_MiniTensor_Matrix.t.h
     Shared/MiniTensor/Intrepid_MiniTensor_Storage.h
     Shared/MiniTensor/Intrepid_MiniTensor_Storage.i.h
     Shared/MiniTensor/Intrepid_MiniTensor_Tensor.h

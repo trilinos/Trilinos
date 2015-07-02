@@ -53,11 +53,11 @@ typedef struct
                                 // only used if schurApproxMethod == 2
     int inner_maxiters;         // maximum iterations for inner solver
     double inner_tolerance;     // relative residual tolerance for inner solver
-    string libName;             // library for the outer solver
-    string schurSolver;         // Solver for the Schur complement
-    string schurAmesosSolver;   // Amesos solver for the Schur complement
-    string diagonalBlockSolver; // Solver to use to factorize the diagonal blocks
-    string schurPreconditioner; // Preconditioner for the inner iterations on Sbar (AztecOO-Exact)
+    std::string libName;             // library for the outer solver
+    std::string schurSolver;         // Solver for the Schur complement
+    std::string schurAmesosSolver;   // Amesos solver for the Schur complement
+    std::string diagonalBlockSolver; // Solver to use to factorize the diagonal blocks
+    std::string schurPreconditioner; // Preconditioner for the inner iterations on Sbar (AztecOO-Exact)
     bool silent_subiter;
     int sep_type;
     int debug_level;
