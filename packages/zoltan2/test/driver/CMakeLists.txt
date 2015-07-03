@@ -14,4 +14,8 @@
 #  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 #  NOEXEPREFIX
 #)
-
+TRIBITS_ADD_EXECUTABLE(
+  test_driver
+  SOURCES test_driver.cpp
+  COMM serial mpi
+  )
