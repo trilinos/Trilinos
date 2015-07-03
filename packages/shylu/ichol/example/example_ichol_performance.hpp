@@ -37,6 +37,7 @@ namespace Example {
            typename MemoryTraits = void>
   KOKKOS_INLINE_FUNCTION
   int exampleICholPerformance(const string file_input,
+                              const int treecut,
                               const int seed,
                               const int niter,
                               const int nthreads,
@@ -110,7 +111,7 @@ namespace Example {
       {
         timer.reset();
         
-        S.computeOrdering();
+        S.computeOrdering(treecut);
         
         PA.copy(S.PermVector(), S.InvPermVector(), AA);
         

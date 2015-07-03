@@ -107,8 +107,8 @@ namespace Example {
       SCOTCH_graphFree(&_graph);
     }
 
-    int computeOrdering() {
-      int ierr = 0, level = max(1, int(log2(_m)-15)); // level = log2(_nnz)+10; 
+    int computeOrdering(const int treecut = 15) {
+      int ierr = 0, level = max(1, int(log2(_m)-treecut)); // level = log2(_nnz)+10; 
 
       SCOTCH_Strat stradat;
 
