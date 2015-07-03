@@ -31,9 +31,9 @@ namespace Example {
     ordinal_type _m, _n;             // matrix dimension
 
     struct crs_graph {
-      ordinal_type_array _cidx;      // col index array
+      size_type_array _ap;           // row ptr array
+      ordinal_type_array _aj;        // col index array
       size_type _nnz;                // # of nonzeros
-      size_type_array _rptr;         // row ptr array
     };
     typedef struct crs_graph crs_graph_type;
     crs_graph_type _in, _out;
@@ -75,16 +75,21 @@ namespace Example {
 
       // allocate memory for input crs matrix
       _in._nnz   = _A.NumNonZeros();
-      _in._rptr  = size_type_array(_label+"::Input::RowPtrArray", _m+1);
-      _in._cidx  = ordinal_type_array(_label+"::Input::ColIndexArray", _in._nnz);
+      _in._ap  = size_type_array(_label+"::Input::RowPtrArray", _m+1);
+      _in._aj  = ordinal_type_array(_label+"::Input::ColIndexArray", _in._nnz);
 
       // adjust graph structure; A is assumed to have a graph without its diagonal
-      A.convertGraph(_in._nnz, _in._rptr, _in._cidx);
+      A.convertGraph(_in._nnz, _in._ap, _in._aj);
 
       // league size
       _lsize = lsize;
+
+      // create workspace per league
+      createInternalWorkSpace();
     }
-    virtual~SymbolicFactorHelper() { }
+    virtual~SymbolicFactorHelper() { 
+      freeInternalWorkSpace();
+    }
 
     class Queue {
     private:
@@ -115,8 +120,8 @@ namespace Example {
       league_specific_ordinal_type_array _visited;
       league_specific_ordinal_type_array _distance;
 
-      size_type_array _rptr;
-      ordinal_type_array _cidx;
+      size_type_array _ap;
+      ordinal_type_array _aj;
 
       ordinal_type _phase;
 
@@ -127,11 +132,11 @@ namespace Example {
                                         league_specific_ordinal_type_array &queue,
                                         league_specific_ordinal_type_array &visited,
                                         league_specific_ordinal_type_array &distance,
-                                        size_type_array &rptr,
-                                        ordinal_type_array &cidx)
+                                        size_type_array &ap,
+                                        ordinal_type_array &aj)
         : _level(level), _m(m), _graph(graph),
           _queue(queue), _visited(visited), _distance(distance),
-          _rptr(rptr), _cidx(cidx), _phase(0)
+          _ap(ap), _aj(aj), _phase(0)
       { }
 
       void setPhaseCountNumNonZeros() { _phase = 0; }
@@ -157,8 +162,8 @@ namespace Example {
             cnt = 1;
             break;
           case 1:
-            cnt = _rptr[i];
-            _cidx[cnt++] = i;
+            cnt = _ap[i];
+            _aj[cnt++] = i;
             break;
           }
 
@@ -176,9 +181,9 @@ namespace Example {
             while (!q.empty()) {
               const ordinal_type h = q.pop();
               // loop over j adjancy
-              const ordinal_type jbegin = _graph._rptr[h], jend = _graph._rptr[h+1];
+              const ordinal_type jbegin = _graph._ap[h], jend = _graph._ap[h+1];
               for (ordinal_type j=jbegin;j<jend;++j) {
-                const ordinal_type t = _graph._cidx[j];
+                const ordinal_type t = _graph._aj[j];
                 if (visited[t] != id) {
                   visited[t] = id;
 
@@ -192,7 +197,7 @@ namespace Example {
                       ++cnt;
                       break;
                     case 1:
-                      _cidx[cnt++] = t;
+                      _aj[cnt++] = t;
                       break;
                     }
                   }
@@ -209,10 +214,10 @@ namespace Example {
           }
           switch (_phase) {
           case 0:
-            _rptr[i+1] = cnt;
+            _ap[i+1] = cnt;
             break;
           case 1:
-            sort(&_cidx[_rptr[i]], &_cidx[_rptr[i+1]]);
+            sort(&_aj[_ap[i]], &_aj[_ap[i+1]]);
             break;
           }
         }
@@ -254,46 +259,56 @@ namespace Example {
     int createNonZeroPattern(const ordinal_type level,
                              const int uplo,
                              CrsMatrixType &F) {
-      _out._nnz  = 0;
-      _out._rptr = size_type_array(_label+"::Output::RowPtrArray", _m+1);
 
-      createInternalWorkSpace();
+      // all output array should be local and rcp in Kokkos::View manage memory (de)allocation
+      size_type_array ap = size_type_array(_label+"::Output::RowPtrArray", _m+1);
+
+      // later determined
+      ordinal_type_array aj;
+      value_type_array ax;
+      size_type nnz  = 0;
+
       {
         FunctorComputeNonZeroPatternInRow functor(level, _m, _in,
                                                   _queue,
                                                   _visited,
                                                   _distance,
-                                                  _out._rptr,
-                                                  _out._cidx);
+                                                  ap,
+                                                  aj);
 
         functor.setPhaseCountNumNonZeros();
         Kokkos::parallel_for(typename FunctorComputeNonZeroPatternInRow::policy_type(_lsize, 1), functor);
       }
       {
-        FunctorCountOffsetsInRow functor(_out._rptr);
+        FunctorCountOffsetsInRow functor(ap);
         Kokkos::parallel_scan(typename FunctorCountOffsetsInRow::policy_type(0, _m+1), functor);
-
-        _out._nnz  = _out._rptr[_m];
-        _out._cidx = ordinal_type_array(_label+"::Output::ColIndexArray", _out._nnz);
       }
+
+      nnz  = ap[_m];
+      aj = ordinal_type_array(_label+"::Output::ColIndexArray", nnz);
+      ax = value_type_array(_label+"::Output::ValueArray", nnz);
+
       {
         FunctorComputeNonZeroPatternInRow functor(level, _m, _in,
                                                   _queue,
                                                   _visited,
                                                   _distance,
-                                                  _out._rptr,
-                                                  _out._cidx);
+                                                  ap,
+                                                  aj);
 
         functor.setPhaseComputeColIndex();
         Kokkos::parallel_for(typename FunctorComputeNonZeroPatternInRow::policy_type(_lsize, 1), functor);
       }
-      freeInternalWorkSpace();
 
       {
-        value_type_array ax = value_type_array(_label+"::Output::ValueArray", _out._nnz);
-        F = CrsMatrixType(_label+"::Output::Matrix", _m, _n, _out._nnz, _out._rptr, _out._cidx, ax);
+        F = CrsMatrixType(F.Label(), _m, _n, nnz, ap, aj, ax);
         F.add(_A);
       }
+
+      // record the symbolic factors
+      _out._nnz = nnz;
+      _out._ap = ap;
+      _out._aj = aj;
 
       return 0;
     }
@@ -315,9 +330,9 @@ namespace Example {
          << "    # of NonZeros  = " << _in._nnz << endl ;
 
       os << " -- Input Graph :: RowPtr -- " << endl;
-      for (ordinal_type i=0;i<_in._rptr.dimension_0();++i)
+      for (ordinal_type i=0;i<_in._ap.dimension_0();++i)
         os << setw(w) << i
-           << setw(w) << _in._rptr[i]
+           << setw(w) << _in._ap[i]
            << endl;
 
       os << endl;
@@ -326,9 +341,9 @@ namespace Example {
          << "    # of NonZeros  = " << _out._nnz << endl ;
 
       os << " -- Output Graph :: RowPtr -- " << endl;
-      for (ordinal_type i=0;i<_out._rptr.dimension_0();++i)
+      for (ordinal_type i=0;i<_out._ap.dimension_0();++i)
         os << setw(w) << i
-           << setw(w) << _out._rptr[i]
+           << setw(w) << _out._ap[i]
            << endl;
 
       os.unsetf(ios::scientific);

@@ -115,13 +115,18 @@ namespace Example {
         PA.copy(S.PermVector(), S.InvPermVector(), AA);
         
         t_reorder = timer.seconds();
+
+        if (verbose)
+          cout << S << endl
+               << PA << endl;
       }
+
       cout << "ICholPerformance:: reorder the matrix::time = " << t_reorder << endl;            
       {
+        SymbolicFactorHelperType F(PA, league_size);
         for (int i=start;i<niter;++i) {
           timer.reset();
         
-          SymbolicFactorHelperType F(PA, league_size);
           F.createNonZeroPattern(fill_level, Uplo::Upper, UU);
 
           // UU.copy(Uplo::Upper, PA);
@@ -133,7 +138,8 @@ namespace Example {
         cout << "ICholPerformance:: AA (nnz) = " << AA.NumNonZeros() << ", UU (nnz) = " << UU.NumNonZeros() << endl;
 
         if (verbose)
-          cout << UU << endl;
+          cout << F << endl
+               << UU << endl;
       }
       cout << "ICholPerformance:: symbolic factorization::time = " << t_symbolic << endl;            
       {
