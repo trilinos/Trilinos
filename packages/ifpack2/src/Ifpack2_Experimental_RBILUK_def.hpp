@@ -494,7 +494,7 @@ void RBILUK<MatrixType>::compute ()
         multiplier.assign(currentVal);
 
         const little_block_type dmatInverse = D_block_->getLocalBlock(j,j);
-        blockMatOpts.square_matrix_matrix_multiply(currentVal.getRawPtr(), dmatInverse.getRawPtr(), matTmp.getRawPtr(), blockSize_);
+        blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(currentVal.getRawPtr()), reinterpret_cast<impl_scalar_type*>(dmatInverse.getRawPtr()), reinterpret_cast<impl_scalar_type*>(matTmp.getRawPtr()), blockSize_);
         currentVal.assign(matTmp);
 
         const local_ordinal_type * UUI;
@@ -508,7 +508,7 @@ void RBILUK<MatrixType>::compute ()
             if (kk > -1) {
               little_block_type kkval(&InV[kk*blockMatSize], blockSize_, rowStride, colStride);
               little_block_type uumat(&UUV[k*blockMatSize], blockSize_, rowStride, colStride);
-              blockMatOpts.square_matrix_matrix_multiply(multiplier.getRawPtr(), uumat.getRawPtr(), kkval.getRawPtr(), blockSize_, -STM::one(), STM::one());
+              blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.getRawPtr()), reinterpret_cast<impl_scalar_type*>(uumat.getRawPtr()), reinterpret_cast<impl_scalar_type*>(kkval.getRawPtr()), blockSize_, -STM::one(), STM::one());
             }
           }
         }
@@ -519,10 +519,10 @@ void RBILUK<MatrixType>::compute ()
             little_block_type uumat(&UUV[k*blockMatSize], blockSize_, rowStride, colStride);
             if (kk > -1) {
               little_block_type kkval(&InV[kk*blockMatSize], blockSize_, rowStride, colStride);
-              blockMatOpts.square_matrix_matrix_multiply(multiplier.getRawPtr(), uumat.getRawPtr(), kkval.getRawPtr(), blockSize_, -STM::one(), STM::one());
+              blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.getRawPtr()), reinterpret_cast<impl_scalar_type*>(uumat.getRawPtr()), reinterpret_cast<impl_scalar_type*>(kkval.getRawPtr()), blockSize_, -STM::one(), STM::one());
             }
             else {
-              blockMatOpts.square_matrix_matrix_multiply(multiplier.getRawPtr(), uumat.getRawPtr(), diagModBlock.getRawPtr(), blockSize_, -STM::one(), STM::one());
+              blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(multiplier.getRawPtr()), reinterpret_cast<impl_scalar_type*>(uumat.getRawPtr()), reinterpret_cast<impl_scalar_type*>(diagModBlock.getRawPtr()), blockSize_, -STM::one(), STM::one());
             }
           }
         }
@@ -579,7 +579,7 @@ void RBILUK<MatrixType>::compute ()
       for (local_ordinal_type j = 0; j < NumU; ++j) {
         little_block_type currentVal(&InV[(NumL+1+j)*blockMatSize], blockSize_, rowStride, colStride); // current_mults++;
         // scale U by the diagonal inverse
-        blockMatOpts.square_matrix_matrix_multiply(dmat.getRawPtr(), currentVal.getRawPtr(), matTmp.getRawPtr(), blockSize_);
+        blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*>(dmat.getRawPtr()), reinterpret_cast<impl_scalar_type*>(currentVal.getRawPtr()), reinterpret_cast<impl_scalar_type*>(matTmp.getRawPtr()), blockSize_);
         currentVal.assign(matTmp);
       }
 
