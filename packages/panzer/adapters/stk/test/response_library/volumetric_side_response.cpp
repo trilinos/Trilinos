@@ -129,7 +129,7 @@ namespace panzer_stk_classic {
 
     Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(); 
 
-    RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
+    RCP<panzer::WorksetFactoryBase> wkstFactory 
        = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
 
     buildPhysicsBlocks(*mesh,physics_blocks,cm_factory,closure_models,user_data);
@@ -207,7 +207,7 @@ namespace panzer_stk_classic {
 
     Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(true); 
 
-    RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
+    RCP<panzer::WorksetFactoryBase> wkstFactory 
        = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
 
     buildPhysicsBlocks(*mesh,physics_blocks,cm_factory,closure_models,user_data);
