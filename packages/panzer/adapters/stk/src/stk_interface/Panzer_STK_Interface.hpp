@@ -341,7 +341,7 @@ public:
      * in lexiographic order (uses the sorting built into the std::map).
      * This method can only be called after <code>initialize</code>.
      *
-     * \param[in,out] names Vector of names of the element blocks.
+     * \param[in,out] names Vector of names of the side sets
      */
    void getSidesetNames(std::vector<std::string> & name) const;
 
