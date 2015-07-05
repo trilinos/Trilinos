@@ -190,7 +190,7 @@ __version__ = version()
 ////////////////////////
 // Tpetra Map support //
 ////////////////////////
-%extend Tpetra::Map
+%extend Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >
 {
   Map(Tpetra::global_size_t numGlobalElements,
       GlobalOrdinal indexBase,
