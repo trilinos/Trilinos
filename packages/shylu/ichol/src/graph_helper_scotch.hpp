@@ -108,8 +108,8 @@ namespace Example {
       SCOTCH_graphFree(&_graph);
     }
 
-    int computeOrdering(const int treecut = 15,
-                        const int minblksize = 0) {
+    int computeOrdering(const ordinal_type treecut = 15,
+                        const ordinal_type minblksize = 0) {
       int ierr = 0;
 
       // pointers for global graph ordering
@@ -140,7 +140,7 @@ namespace Example {
       }
 
       // provided blksize is greater than 0, reorder internally
-      if (treecut != 0 && minblksize > 0) {
+      if (treecut > 0 && minblksize > 0) {
         // graph array
         ordinal_type *rptr = reinterpret_cast<ordinal_type*>(_rptr.ptr_on_device());
         ordinal_type *cidx = reinterpret_cast<ordinal_type*>(_cidx.ptr_on_device());
@@ -188,7 +188,7 @@ namespace Example {
           ordinal_type *tree_blk  = tree_work.ptr_on_device()  + ibegin;
           
           // if each blk is greater than the given minblksize, reorder internally
-          if (m < minblksize) {
+          if (m > minblksize) {
             for (int i=ibegin;i<iend;++i) {
               const ordinal_type ii = peri[i];
               const ordinal_type jbegin = rptr[ii];
@@ -202,7 +202,7 @@ namespace Example {
               rptr_blk[i+1] = nnz;
             }
             const size_type nnz_blk = nnz - rptr_blk[ibegin];
-
+            
             ierr = SCOTCH_graphBuild(&graph,             // scotch graph
                                      0,                  // base value
                                      m,                  // # of vertices
@@ -229,10 +229,10 @@ namespace Example {
             range_blk[1] = m;
             tree_blk[0] = -1;
           }
-
+          
           SCOTCH_stratExit(&stradat);
           SCOTCH_graphFree(&graph);
-
+          
           for (ordinal_type i=0;i<m;++i) {
             const ordinal_type ii = peri_blk[i] + ibegin;
             peri_blk[i] = peri[ii];
@@ -243,13 +243,13 @@ namespace Example {
           }
           
         }
-
+        
         for (ordinal_type i=0;i<_m;++i) 
           perm[peri[i]] = i;
       }
-    
+      
       _is_ordered = true;
-
+      
       //cout << "SCOTCH level = " << level << endl;
       //cout << "Range   Tree " << endl;
       //for (int i=0;i<_cblk;++i)
@@ -257,7 +257,7 @@ namespace Example {
 
       return 0;
     }
-
+    
     ostream& showMe(ostream &os) const {
       streamsize prec = os.precision();
       os.precision(15);

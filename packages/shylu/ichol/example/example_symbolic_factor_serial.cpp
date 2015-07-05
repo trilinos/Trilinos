@@ -38,7 +38,7 @@ int main (int argc, char *argv[]) {
   clp.setOption("treecut", &treecut, "Level to cut tree from bottom");
 
   int minblksize = 0;
-  clp.setOption("minblksize", &treecut, "Minimum block size for internal reordering");
+  clp.setOption("minblksize", &minblksize, "Minimum block size for internal reordering");
 
   int seed = 0;
   clp.setOption("seed", &seed, "Seed for random number generator in graph partition");
