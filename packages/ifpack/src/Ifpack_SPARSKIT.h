@@ -60,11 +60,11 @@ namespace Teuchos {
 //! Ifpack_SPARSKIT: A class for constructing and using an SPARSKIT's incomplete factorizations.
 
 class Ifpack_SPARSKIT: public Ifpack_Preconditioner {
-      
+
  public:
   //! Ifpack_SPARSKIT constuctor with variable number of indices per row.
   Ifpack_SPARSKIT(Epetra_RowMatrix* A);
-  
+
   //! Ifpack_SPARSKIT Destructor
   virtual ~Ifpack_SPARSKIT();
 
@@ -72,17 +72,17 @@ class Ifpack_SPARSKIT: public Ifpack_Preconditioner {
   /* This method is only available if the Teuchos package is enabled.
      This method recognizes five parameter names: level_fill, drop_tolerance,
      absolute_threshold, relative_threshold and overlap_mode. These names are
-     case insensitive. For level_fill the ParameterEntry must have type int, the 
+     case insensitive. For level_fill the ParameterEntry must have type int, the
      threshold entries must have type double and overlap_mode must have type
      Epetra_CombineMode.
   */
   int SetParameters(Teuchos::ParameterList& parameterlis);
 
-  int SetParameter(const string Name, const int Value)
+  int SetParameter(const std::string Name, const int Value)
   {
     IFPACK_CHK_ERR(-98);
   }
-  int SetParameter(const string Name, const double Value)
+  int SetParameter(const std::string Name, const double Value)
   {
     IFPACK_CHK_ERR(-98);
   }
@@ -109,22 +109,22 @@ class Ifpack_SPARSKIT: public Ifpack_Preconditioner {
   int Compute();
 
   //! If factor is completed, this query returns true, otherwise it returns false.
-  bool IsComputed() const 
+  bool IsComputed() const
   {
     return(IsComputed_);
   }
 
   // Mathematical functions.
-  
+
   //! Returns the result of a forward/back solve on a Epetra_MultiVector X in Y.
-  /*! 
+  /*!
     \param In
     Trans -If true, solve transpose problem.
     \param In
     X - A Epetra_MultiVector of dimension NumVectors to solve for.
     \param Out
     Y -A Epetra_MultiVector of dimension NumVectorscontaining result.
-    
+
     \return Integer error code, set to 0 if successful.
   */
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
@@ -140,13 +140,13 @@ class Ifpack_SPARSKIT: public Ifpack_Preconditioner {
    \param In
     Trans -If true, solve transpose problem.
     \param Out
-    ConditionNumberEstimate - The maximum across all processors of 
+    ConditionNumberEstimate - The maximum across all processors of
     the infinity-norm estimate of the condition number of the inverse of LDU.
   */
-  double Condest(const Ifpack_CondestType CT = Ifpack_Cheap, 
-                 const int MaxIters = 1550, 
+  double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
+                 const int MaxIters = 1550,
                  const double Tol = 1e-9,
-		 Epetra_RowMatrix* Matrix = 0);
+                 Epetra_RowMatrix* Matrix = 0);
 
   double Condest() const
   {
@@ -154,16 +154,16 @@ class Ifpack_SPARSKIT: public Ifpack_Preconditioner {
   }
 
   // Attribute access functions
-  
+
   //@{ \name Additional methods required to support the Epetra_Operator interface.
 
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
-        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
-	does not support transpose use, this method should return a value of -1.
-      
+        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface
+        does not support transpose use, this method should return a value of -1.
+
     \param In
-	   UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
+           UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
 
     \return Always returns 0.
   */
@@ -198,9 +198,9 @@ class Ifpack_SPARSKIT: public Ifpack_Preconditioner {
       Label_ = Label;
       return(0);
     }
- 
+
   //! Prints basic information on iostream. This function is used by operator<<.
-  virtual ostream& Print(std::ostream& os) const;
+  virtual std::ostream& Print(std::ostream& os) const;
 
   //! Returns the number of calls to Initialize().
   virtual int NumInitialize() const
@@ -264,14 +264,14 @@ private:
   double permtol_;
   double alph_;
   int mbloc_;
-  string Type_;
+  std::string Type_;
 
   // Factorization in MSR format.
   std::vector<double> alu_;
   std::vector<int> jlu_;
   std::vector<int> ju_;
 
-  string Label_;
+  std::string Label_;
   // Permutation vector if required by ILUTP and ILUDP.
   std::vector<int> iperm_;
 
@@ -279,7 +279,7 @@ private:
 
   bool IsInitialized_;
   bool IsComputed_;
- 
+
   //! Contains the number of successful calls to Initialize().
   int NumInitialize_;
   //! Contains the number of successful call to Compute().

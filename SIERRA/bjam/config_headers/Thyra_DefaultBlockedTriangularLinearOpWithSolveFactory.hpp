@@ -1,2 +1,1 @@
 #include "Thyra_DefaultBlockedTriangularLinearOpWithSolveFactory_decl.hpp"
-#include "Thyra_DefaultBlockedTriangularLinearOpWithSolveFactory_def.hpp"

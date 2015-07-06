@@ -118,16 +118,16 @@ public:
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-        for(size_t j=0; j<buckets.size(); j++)
+        for(size_t bucketI=0; bucketI<buckets.size(); ++bucketI)
         {
-            stk::mesh::Bucket *bucket = buckets[j];
-            for(size_t i=0; i<bucket->size(); i++)
+            stk::mesh::Bucket *bucket = buckets[bucketI];
+            for(size_t entityI=0; entityI<bucket->size(); entityI++)
             {
-                stk::mesh::Entity entity = (*bucket)[i];
+                stk::mesh::Entity entity = (*bucket)[entityI];
 
-                const unsigned numNodesThisEntity = bucket->num_nodes(i);
-                const stk::mesh::Entity* nodes = bucket->begin_nodes(i);
-                functor(*this, entity, stk::mesh::MeshIndex({bucket,i}), numNodesThisEntity, nodes);
+                const unsigned numNodesThisEntity = bucket->num_nodes(entityI);
+                const stk::mesh::Entity* nodes = bucket->begin_nodes(entityI);
+                functor(*this, entity, stk::mesh::MeshIndex({bucket,entityI}), numNodesThisEntity, nodes);
             }
         }
     }
@@ -158,16 +158,16 @@ public:
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:localVarToReduceInto)
 #endif
-        for(size_t j=0; j<buckets.size(); j++)
+        for(size_t bucketI=0; bucketI<buckets.size(); ++bucketI)
         {
-            stk::mesh::Bucket *bucket = buckets[j];
-            for(size_t i=0; i<bucket->size(); i++)
+            stk::mesh::Bucket *bucket = buckets[bucketI];
+            for(size_t entityI=0; entityI<bucket->size(); entityI++)
             {
-                stk::mesh::Entity entity = (*bucket)[i];
+                stk::mesh::Entity entity = (*bucket)[entityI];
 
-                const unsigned numNodesThisEntity = bucket->num_nodes(i);
-                const stk::mesh::Entity* nodes = bucket->begin_nodes(i);
-                functor(localVarToReduceInto, *this, entity, stk::mesh::MeshIndex({bucket,i}), numNodesThisEntity, nodes);
+                const unsigned numNodesThisEntity = bucket->num_nodes(entityI);
+                const stk::mesh::Entity* nodes = bucket->begin_nodes(entityI);
+                functor(localVarToReduceInto, *this, entity, stk::mesh::MeshIndex({bucket,entityI}), numNodesThisEntity, nodes);
             }
         }
         reductionVar = localVarToReduceInto;
@@ -212,7 +212,7 @@ public:
         // MUST call non_threadsafe version because BulkData entity access has debug checks that
         // are not thread safe because they set member data to avoid an infinite recursion.
         for_each_element_run_non_threadsafe(
-            [this](stk::mesh::BulkData &mesh, stk::mesh::Entity element, ...)
+            [this](stk::mesh::BulkData &mesh, stk::mesh::Entity element, stk::mesh::MeshIndex meshIndex, ...)
             {
                 mFastNumNodes[element.local_offset()] = mesh.num_nodes(element);
                 mFastBeginNodes[element.local_offset()] = mesh.begin_nodes(element);
@@ -292,10 +292,10 @@ TEST(ForEntityFunction, test_for_each_node_run_using_lambda)
 
         //BEGIN_LAMBDA_USAGE_EXAMPLE
         unsigned numNodes = 0;
-        bulkData.for_each_node_run(
-            [&numNodes](const stk::mesh::BulkData& mesh, stk::mesh::Entity node, ...)
+        bulkData.for_each_node_run_non_threadsafe(
+            [&numNodes](const stk::mesh::BulkData& mesh, stk::mesh::Entity node, stk::mesh::MeshIndex meshIndex, ...)
             {
-                if(mesh.is_valid(node))
+                if(mesh.is_valid(node) )
                 {
                     ++numNodes;
                 }
@@ -430,7 +430,7 @@ TEST(ForEntityFunction, test_for_communicated_entities_run)
 struct CountNumNodesAlgorithmFunctor
 {
     CountNumNodesAlgorithmFunctor(unsigned &numNodes) : mNumNodes(numNodes) {}
-    inline void operator()(const stk::mesh::BulkData& mesh, stk::mesh::Entity node, ...) const
+    inline void operator()(const stk::mesh::BulkData& mesh, stk::mesh::Entity node, stk::mesh::MeshIndex meshIndex, ...) const
     {
         if(mesh.is_valid(node))
         {
@@ -442,7 +442,7 @@ struct CountNumNodesAlgorithmFunctor
 
 struct CountNumNodesAlgorithmFunctorWithSum
 {
-    inline void operator()(unsigned &numNodes, const stk::mesh::BulkData& mesh, stk::mesh::Entity node, ...) const
+    inline void operator()(unsigned &numNodes, const stk::mesh::BulkData& mesh, stk::mesh::Entity node, stk::mesh::MeshIndex meshIndex, ...) const
     {
         if(mesh.is_valid(node))
         {
@@ -485,7 +485,7 @@ TEST(ForEntityFunction, test_for_each_node_run_using_templates_and_lambdas)
 
         unsigned numNodes = 0;
         bulkData.for_each_node_run_and_sum(numNodes,
-            [](unsigned &numNodes, const stk::mesh::BulkData &mesh, stk::mesh::Entity node, ...)
+            [](unsigned &numNodes, const stk::mesh::BulkData &mesh, stk::mesh::Entity node, stk::mesh::MeshIndex meshIndex, ...)
             {
                 ++numNodes;
             }
@@ -800,7 +800,7 @@ double test_count_nodes_lambda_functor(const unsigned numIterations)
         //BEGIN_LOOP_ABSTRACTION_NON_THREADSAFE
         numNodes = 0;
         bulkData.for_each_node_run_non_threadsafe(
-            [&numNodes](const stk::mesh::BulkData& mesh, stk::mesh::Entity node, ...)
+            [&numNodes](const stk::mesh::BulkData& mesh, stk::mesh::Entity node, stk::mesh::MeshIndex meshIndex, ...)
             {
                 if(mesh.is_valid(node))
                 {
@@ -1055,7 +1055,7 @@ unsigned count_num_nodes_using_lamda_for_entity_loops_using_entity_index(BulkDat
     {
         numNodes = 0;
         bulkData.for_each_element_run_non_threadsafe(
-            [&numNodes](const stk::mesh::BulkData& mesh, stk::mesh::Entity element, ...)
+            [&numNodes](const stk::mesh::BulkData& mesh, stk::mesh::Entity element, stk::mesh::MeshIndex meshIndex, ...)
             {
                 stk::topology topology = mesh.bucket(element).topology();
                 if(mesh.is_valid(element) && topology == stk::topology::HEX_8)
@@ -1338,7 +1338,7 @@ void calculate_acceleration_using_lambda_access_field_using_entity(unsigned numI
     {
         //BEGIN_COUNT_NODES_ENTITY_FUNCTOR_LOOP
         bulkData.for_each_node_run(
-            [&massField, &forceField, &accelerationField](const stk::mesh::BulkData& mesh, stk::mesh::Entity node, ...)
+            [&massField, &forceField, &accelerationField](const stk::mesh::BulkData& mesh, stk::mesh::Entity node, stk::mesh::MeshIndex meshIndex, ...)
             {
                 double *f_con = stk::mesh::field_data(forceField, node);
                 double *mass = stk::mesh::field_data(massField, node);
@@ -1386,7 +1386,8 @@ void checkAccelerationAndZeroOut(BulkDataForEntityTemplatedTester &bulkData,
                                  const double tolerance)
 {
     bulkData.for_each_node_run(
-        [goldAcceleration, tolerance, &accelerationField](stk::mesh::BulkData &mesh, stk::mesh::Entity node, ...)
+        [goldAcceleration, tolerance, &accelerationField](stk::mesh::BulkData &mesh, stk::mesh::Entity node,
+                stk::mesh::MeshIndex meshIndex, ...)
         {
             double *accelerationForNode = stk::mesh::field_data(accelerationField, node);
             EXPECT_NEAR(goldAcceleration, accelerationForNode[0], tolerance);
@@ -1576,7 +1577,7 @@ void checkCentroidAndZeroOut(BulkDataForEntityTemplatedTester &bulkData,
                              stk::mesh::Field<double, stk::mesh::Cartesian3d> &centroidField)
 {
     bulkData.for_each_element_run(
-        [&centroidField](stk::mesh::BulkData &mesh, stk::mesh::Entity element, ...)
+        [&centroidField](stk::mesh::BulkData &mesh, stk::mesh::Entity element, stk::mesh::MeshIndex meshIndex, ...)
         {
             double *centroid = stk::mesh::field_data(centroidField, element);
             EXPECT_GT(centroid[0], 0);
@@ -1678,7 +1679,7 @@ unsigned traverse_nodes_using_bulk_data_api(BulkDataForEntityTemplatedTester &bu
         numNodes = 0;
 
         bulkData.for_each_element_run_non_threadsafe(
-            [&numNodes](const stk::mesh::BulkData &mesh, stk::mesh::Entity element, ...)
+            [&numNodes](const stk::mesh::BulkData &mesh, stk::mesh::Entity element, stk::mesh::MeshIndex meshIndex, ...)
             {
                 const stk::mesh::Entity* nodes = mesh.begin_nodes(element);
                 const unsigned numNodesThisEntity = mesh.num_nodes(element);
@@ -1739,7 +1740,7 @@ unsigned traverse_nodes_using_bulk_data_new_fast_api(BulkDataForEntityTemplatedT
         numNodes = 0;
 
         bulkData.for_each_element_run_non_threadsafe(
-            [&numNodes](const BulkDataForEntityTemplatedTester &mesh, stk::mesh::Entity element, ...)
+            [&numNodes](const BulkDataForEntityTemplatedTester &mesh, stk::mesh::Entity element, stk::mesh::MeshIndex meshIndex, ...)
             {
                 const stk::mesh::Entity* nodes = mesh.fast_begin_nodes(element);
                 const unsigned numNodesThisEntity = mesh.fast_num_nodes(element);
@@ -1850,7 +1851,7 @@ unsigned test_node_to_element_connectivity_bulk_data_api(BulkDataForEntityTempla
         numElements = 0;
 
         bulkData.for_each_node_run_non_threadsafe(
-            [&numElements](const stk::mesh::BulkData &mesh, stk::mesh::Entity node, ...)
+            [&numElements](const stk::mesh::BulkData &mesh, stk::mesh::Entity node, stk::mesh::MeshIndex meshIndex, ...)
             {
                 const unsigned numElementsThisNode = mesh.num_elements(node);
                 const stk::mesh::Entity* elements = mesh.begin_elements(node);
@@ -1955,7 +1956,7 @@ TEST(ForEntityFunction, test_free_function_versions_of_for_each_entity_abstracti
         unsigned numNodes = 0;
 
         for_each_node_run(bulkData,
-            [&numNodes](stk::mesh::BulkData &mesh, stk::mesh::Entity node, ...)
+            [&numNodes](stk::mesh::BulkData &mesh, stk::mesh::Entity node, stk::mesh::MeshIndex meshIndex, ...)
             {
                 numNodes++;
             }

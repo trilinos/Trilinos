@@ -92,9 +92,10 @@ void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workse
 
       source(cell,point,0) = 2.0+y-y*y;
       source(cell,point,1) = 2.0+x-x*x;
-      // source(cell,point,0) = -(-1.0+y)* y;
-      // source(cell,point,1) = -(-1.0+x)* x;
 
+      // if three d
+      if(source.dimension(2)==3)
+        source(cell,point,2) = 0.0;
     }
   }
 }

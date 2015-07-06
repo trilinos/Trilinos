@@ -121,6 +121,20 @@
   throw std::runtime_error(oss.str()); \
   }
 
+/*! \brief Throw an error when code is run on more than one processor
+ *
+ */
+
+#define Z2_THROW_SERIAL(mystr) \
+  { \
+  std::ostringstream oss; \
+  oss << (mystr) << std::endl \
+      << "This algorithm only runs in serial (Comm_Serial or MPI_Comm with worldsize=1). " \
+      << std::endl; \
+  throw std::runtime_error(oss.str()); \
+  }
+
+
 /*! \brief Throw an error when actual value is not equal to expected value.
  *
  *  Check if the two arguments passed are equal and throw a runtime error if

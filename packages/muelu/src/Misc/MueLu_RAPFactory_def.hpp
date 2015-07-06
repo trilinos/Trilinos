@@ -246,7 +246,7 @@ namespace MueLu {
       }
     }
     GO gZeroDiags;
-    sumAll(rowMap->getComm(), Teuchos::as<GO>(lZeroDiags), gZeroDiags);
+    MueLu_sumAll(rowMap->getComm(), Teuchos::as<GO>(lZeroDiags), gZeroDiags);
 
     if (repairZeroDiagonals && gZeroDiags > 0) {
       // TAW: If Ac has empty rows, put a 1 on the diagonal of Ac. Be aware that Ac might have empty rows AND columns.

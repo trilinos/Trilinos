@@ -56,6 +56,7 @@
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
+#include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_NoFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
@@ -69,6 +70,7 @@
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
+
 
 namespace MueLu {
 
@@ -132,6 +134,9 @@ namespace MueLu {
       if (varName == "CoarseMap")                       return SetAndReturnDefaultFactory(varName, rcp(new CoarseMapFactory()));
       if (varName == "DofsPerNode")                     return GetFactory("Graph");
       if (varName == "Filtering")                       return GetFactory("Graph");
+      if (varName == "LineDetection_VertLineIds")       return SetAndReturnDefaultFactory(varName, rcp(new LineDetectionFactory()));
+      if (varName == "LineDetection_Layers")            return GetFactory("LineDetection_VertLineIds");
+      if (varName == "CoarseNumZLayers")                return GetFactory("LineDetection_VertLineIds");
 
       // Same factory for both Pre and Post Smoother. Factory for key "Smoother" can be set by users.
       if (varName == "PreSmoother")                     return GetFactory("Smoother");

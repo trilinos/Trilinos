@@ -155,10 +155,8 @@ namespace panzer {
       typedef Thyra::LinearOpBase<double> OperatorType;
       typedef panzer::ModelEvaluator<double> PME;
 
-      //std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = true;
     
-      // RCP<PME> me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
       RCP<PME> me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,build_transient_support,0.0));
       me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
                      *ap.eqset_factory,
@@ -213,9 +211,7 @@ namespace panzer {
       typedef Thyra::LinearOpBase<double> OperatorType;
       typedef panzer::ModelEvaluator<double> PME;
 
-      // std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
       bool build_transient_support = false;
-      // RCP<PME> me = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
       RCP<PME> me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,build_transient_support,0.0));
  
       // parameterize the builder
@@ -238,6 +234,9 @@ namespace panzer {
                      ap.cm_factory,
                      ap.closure_models,
                      ap.user_data,false,"");
+
+      TEST_EQUALITY(me->get_g_name(0), "TEMPERATURE");
+      TEST_EQUALITY(me->get_g_names(0)[0], "TEMPERATURE");
 
       InArgs nomValues = me->getNominalValues();
       RCP<VectorType> x = Thyra::createMember(*me->get_x_space());
@@ -295,7 +294,7 @@ namespace panzer {
 
       bool build_transient_support = false;
       RCP<PME> me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,build_transient_support,0.0));
-      me->addParameter("SOURCE_TEMPERATURE");
+      me->addParameter("SOURCE_TEMPERATURE",1.0);
       me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
                      *ap.eqset_factory,
                      *ap.bc_factory,
@@ -307,9 +306,12 @@ namespace panzer {
       Teuchos::Array<std::string> params;
       params.push_back("DUMMY_A");
       params.push_back("DUMMY_B");
+      Teuchos::Array<double> params_values;
+      params_values.push_back(4.0);
+      params_values.push_back(5.0);
 
-      int index_dummy = me->addParameter("DUMMY");
-      int index_dummy_pair = me->addParameter(params);
+      int index_dummy = me->addParameter("DUMMY",3.0);
+      int index_dummy_pair = me->addParameter(params,params_values);
 
       InArgs inArgs = me->createInArgs();
 
@@ -417,7 +419,7 @@ namespace panzer {
 
       bool build_transient_support = false;
       RCP<PME> me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,build_transient_support,0.0));
-      me->addParameter("SOURCE_TEMPERATURE");
+      me->addParameter("SOURCE_TEMPERATURE",1.0);
       me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
                      *ap.eqset_factory,
                      *ap.bc_factory,
@@ -534,7 +536,7 @@ namespace panzer {
     {
       bool build_transient_support = false;
       me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,build_transient_support,0.0));
-      me->addParameter("SOURCE_TEMPERATURE");
+      me->addParameter("SOURCE_TEMPERATURE",1.0);
       
       // add a distributed parameter
       {
@@ -676,9 +678,10 @@ namespace panzer {
     int rIndex = -1;
 
     std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
     bool build_transient_support = true;
     RCP<PME> me 
-        = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,Teuchos::null,ap.gd,build_transient_support,0.0));
+        = Teuchos::rcp(new PME(ap.fmb,ap.rLibrary,ap.lof,p_names,p_values,Teuchos::null,ap.gd,build_transient_support,0.0));
 
     // add in a flexible response
     {
@@ -800,8 +803,6 @@ namespace panzer {
     Teuchos::RCP<panzer::LOCPair_GlobalEvaluationData> dataObject;
     RCP<PME> me;
 
-    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
-
     me = Teuchos::rcp(new PME(ap.lof,Teuchos::null,ap.gd,true,0.0));
     me->setupModel(ap.wkstContainer,ap.physicsBlocks,ap.bcs,
                    *ap.eqset_factory,
@@ -840,7 +841,7 @@ namespace panzer {
  
     // add normal parameter
     /////////////////////////////////////////////////////////////
-    int index_dummy = me->addParameter("SOURCE_TEMPERATURE");
+    int index_dummy = me->addParameter("SOURCE_TEMPERATURE",1.0);
 
     // check the initial conditions
     {
@@ -1165,7 +1166,8 @@ namespace panzer {
     Teuchos::ParameterList closure_models("Closure Models");
     if(parameter_on)
        closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<std::string>("Type","Parameter");
-    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
+    else
+       closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE").set<double>("Value",1.0);
     if(distr_parameter_on)
       closure_models.sublist("solid").sublist("DENSITY").set("Type","Distributed Parameter");
     else

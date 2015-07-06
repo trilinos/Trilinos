@@ -47,6 +47,8 @@
  */
 /* #undef HAVE_ZOLTAN2_LONG_LONG */
 
-/* Zoltan (1) is included in the Trilinos build.
- */
+/* Zoltan is included in the Trilinos build.  */
 #define HAVE_ZOLTAN2_ZOLTAN
+
+/* Use Zoltan's Comm package instead of Tpetra for migration */
+/* #undef ZOLTAN2_USEZOLTANCOMM */

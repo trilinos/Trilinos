@@ -84,7 +84,7 @@ public:
    *
    * \param FileName - (In) Name of grid file.
    */
-  FileGrid(const Epetra_Comm& Comm, const string FileName) :
+  FileGrid(const Epetra_Comm& Comm, const std::string FileName) :
     Comm_(Comm),
     FileName_(FileName),
     NumDimensions_(-1),
@@ -117,7 +117,7 @@ public:
     bool IsFaceVerticesRead = false;
 
     // STILL TO DO: ELEMENT TAG, VERTEX TAG, FACE TAG
-    string what;
+    std::string what;
     while (!GridFile.eof())
     {
       GridFile >> what;
@@ -356,7 +356,7 @@ public:
     return(NumVerticesPerFace_);
   }
 
-  virtual string ElementType() const
+  virtual std::string ElementType() const
   {
     return(ElementType_);
   }
@@ -545,7 +545,7 @@ public:
 
 private:
   const Epetra_Comm& Comm_;
-  string FileName_;
+  std::string FileName_;
 
   int NumDimensions_;
   int NumVerticesPerElement_;
@@ -561,7 +561,7 @@ private:
   int NumMyBoundaryFaces_;
   int NumGlobalBoundaryFaces_;
 
-  string ElementType_;
+  std::string ElementType_;
 
   Epetra_SerialDenseMatrix VertexCoord_;
   Epetra_IntSerialDenseMatrix ElementVertices_;

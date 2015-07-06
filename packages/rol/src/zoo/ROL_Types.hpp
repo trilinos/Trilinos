@@ -84,6 +84,9 @@ namespace ROL {
     Real gnorm;
     Real cnorm;
     Real snorm;
+    Real aggregateGradientNorm;
+    Real aggregateModelError;
+    bool flag;
     Teuchos::RCP<Vector<Real> > iterateVec;
     Teuchos::RCP<Vector<Real> > lagmultVec;
     Teuchos::RCP<Vector<Real> > minIterVec;
@@ -91,6 +94,9 @@ namespace ROL {
       gnorm(std::numeric_limits<Real>::max()),
       cnorm(std::numeric_limits<Real>::max()),
       snorm(std::numeric_limits<Real>::max()), 
+      aggregateGradientNorm(std::numeric_limits<Real>::max()),
+      aggregateModelError(std::numeric_limits<Real>::max()),
+      flag(false),
       iterateVec(Teuchos::null), lagmultVec(Teuchos::null), minIterVec(Teuchos::null) {}
   };  
   
@@ -1091,7 +1097,7 @@ namespace ROL {
     ROL is used for the numerical solution of smooth optimization problems
     \f[
       \begin{array}{rl}
-        \min_{x} & f(x) \\
+        \displaystyle \min_{x} & f(x) \\
         \mbox{subject to} & c(x) = 0 \,, \\
                           & a \le x \le b \,,
       \end{array}
@@ -1117,7 +1123,7 @@ namespace ROL {
       \li @b Type-U. No constraints (where \f$c(x) = 0\f$ and \f$a \le x \le b\f$ are absent):
           \f[
             \begin{array}{rl}
-              \min_{x} & f(x)
+              \displaystyle \min_{x} & f(x)
             \end{array}
           \f]
           These problems are known as unconstrained optimization problems.
@@ -1125,7 +1131,7 @@ namespace ROL {
       \li @b Type-B. Bound constraints (where \f$c(x) = 0\f$ is absent):
           \f[
             \begin{array}{rl}
-              \min_{x} & f(x) \\
+              \displaystyle \min_{x} & f(x) \\
               \mbox{subject to} & a \le x \le b \,.
             \end{array}
           \f]
@@ -1136,7 +1142,7 @@ namespace ROL {
       \li @b Type-E. Equality constraints, generally nonlinear and nonconvex (where \f$a \le x \le b\f$ is absent):
           \f[
             \begin{array}{rl}
-              \min_{x} & f(x) \\
+              \displaystyle \min_{x} & f(x) \\
               \mbox{subject to} & c(x) = 0 \,.
             \end{array}
           \f]
@@ -1145,7 +1151,7 @@ namespace ROL {
       \li @b Type-EB. Equality and bound constraints:
           \f[
             \begin{array}{rl}
-              \min_{x} & f(x) \\
+              \displaystyle \min_{x} & f(x) \\
               \mbox{subject to} & c(x) = 0 \\
                                 & a \le x \le b \,.
             \end{array}
@@ -1154,7 +1160,7 @@ namespace ROL {
           For example, we can consider the reformulation:
           \f[
             \begin{array}{rlcccrl}
-              \min_{x} & f(x) &&&& \min_{x,s} & f(x) \\
+              \displaystyle \min_{x} & f(x) &&&& \displaystyle \min_{x,s} & f(x) \\
               \mbox{subject to} & c(x) \le 0 & & \quad \longleftrightarrow \quad & & \mbox{subject to} & c(x) + s = 0 \,, \\
               &&&&&& s \ge 0 \,.
             \end{array}

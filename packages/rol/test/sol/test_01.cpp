@@ -57,7 +57,7 @@
 #include "ROL_CVaRVector.hpp"
 #include "ROL_CVaRBoundConstraint.hpp"
 #include "ROL_ParametrizedObjective.hpp"
-#include "ROL_MonteCarloGenerator.hpp"
+#include "ROL_BatchManager.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_SparseGridGenerator.hpp"
 #include "ROL_AbsoluteValue.hpp"
@@ -68,11 +68,10 @@
 #include "ROL_MeanDeviationFromTarget.hpp"
 #include "ROL_MeanVarianceFromTarget.hpp"
 #include "ROL_CVaR.hpp"
-#include "ROL_SmoothCVaRQuad.hpp"
+#include "ROL_CVaRQuadrangle.hpp"
 #include "ROL_ExpUtility.hpp"
 #include "ROL_RiskAverseObjective.hpp"
 #include "ROL_RiskNeutralObjective.hpp"
-#include "ROL_StdEpetraBatchManager.hpp"
 #include "ROL_Quadrature.hpp"
 
 
@@ -184,9 +183,12 @@ int main(int argc, char* argv[]) {
     }
     Teuchos::RCP<ROL::BatchManager<double> > bman =
       Teuchos::rcp(new ROL::BatchManager<double>());
-    ROL::MonteCarloGenerator<double> vsampler(nSamp,bounds,bman,false,false,100);
+    Teuchos::RCP<ROL::SampleGenerator<double> > sampler =
+      Teuchos::rcp(new ROL::MonteCarloGenerator<double>(nSamp,bounds,bman,false,false,100));
     // Build risk-averse objective function
-    ParametrizedObjectiveEx1<double> pObj;
+    bool storage = true;
+    Teuchos::RCP<ROL::ParametrizedObjective<double> > pObj =
+      Teuchos::rcp(new ParametrizedObjectiveEx1<double>(1.e3));
     Teuchos::RCP<ROL::RiskMeasure<double> > rm;
     Teuchos::RCP<ROL::Objective<double> > obj;
     // Build bound constraints
@@ -196,15 +198,15 @@ int main(int argc, char* argv[]) {
       Teuchos::rcp( new ROL::StdBoundConstraint<double>(l,u) );
     // Test parametrized objective functions
     *outStream << "Check Derivatives of Parametrized Objective Function\n";
-    pObj.setParameter(vsampler.getMyPoint(0));
-    pObj.checkGradient(x,d,true,*outStream);
-    pObj.checkHessVec(x,d,true,*outStream);
+    pObj->setParameter(sampler->getMyPoint(0));
+    pObj->checkGradient(x,d,true,*outStream);
+    pObj->checkHessVec(x,d,true,*outStream);
     /**********************************************************************************************/
     /************************* RISK NEUTRAL *******************************************************/
     /**********************************************************************************************/
     *outStream << "\nRISK NEUTRAL\n";
     rm  = Teuchos::rcp( new ROL::RiskMeasure<double>() );
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
+    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
     // Test objective functions
     for ( unsigned i = 0; i < dim; i++ ) {
       (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
@@ -226,7 +228,7 @@ int main(int argc, char* argv[]) {
     /************************* RISK NEUTRAL *******************************************************/
     /**********************************************************************************************/
     *outStream << "\nRISK NEUTRAL\n";
-    obj = Teuchos::rcp( new ROL::RiskNeutralObjective<double>(pObj,vsampler,vsampler) );
+    obj = Teuchos::rcp( new ROL::RiskNeutralObjective<double>(pObj,sampler,storage) );
     // Test objective functions
     for ( unsigned i = 0; i < dim; i++ ) {
       (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
@@ -257,7 +259,7 @@ int main(int argc, char* argv[]) {
     // Moment coefficients
     std::vector<double> coeff(2,0.1);
     rm  = Teuchos::rcp( new ROL::MeanDeviation<double>(order,coeff,pf) );
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
+    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
     // Test objective functions
     for ( unsigned i = 0; i < dim; i++ ) {
       (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
@@ -280,7 +282,7 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     *outStream << "\nMEAN PLUS VARIANCE\n";
     rm  = Teuchos::rcp( new ROL::MeanVariance<double>(order,coeff,pf) );
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
+    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
     // Test objective functions
     for ( unsigned i = 0; i < dim; i++ ) {
       (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
@@ -307,7 +309,7 @@ int main(int argc, char* argv[]) {
     // Risk measure
     rm  = Teuchos::rcp( new ROL::MeanDeviationFromTarget<double>(target,order,coeff,pf) );
     // Risk averse objective
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
+    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
     // Test objective functions
     for ( unsigned i = 0; i < dim; i++ ) {
       (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
@@ -334,7 +336,7 @@ int main(int argc, char* argv[]) {
     rm  = Teuchos::rcp( new ROL::MeanVarianceFromTarget<double>(target,order,coeff,pf) );
     coeff[1] = 0.1;
     // Risk averse objective
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
+    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
     // Test objective functions
     for ( unsigned i = 0; i < dim; i++ ) {
       (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
@@ -368,7 +370,7 @@ int main(int argc, char* argv[]) {
     // Risk measure
     rm  = Teuchos::rcp( new ROL::MeanDeviation<double>(order,coeff,pf) );
     // Risk averse objective
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
+    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
     // Test objective functions
     for ( unsigned i = 0; i < dim; i++ ) {
       (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
@@ -393,7 +395,7 @@ int main(int argc, char* argv[]) {
     // Risk measure
     rm  = Teuchos::rcp( new ROL::MeanVariance<double>(order,coeff,pf) );
     // Risk averse objective
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
+    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
     // Test objective functions
     for ( unsigned i = 0; i < dim; i++ ) {
       (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
@@ -418,7 +420,7 @@ int main(int argc, char* argv[]) {
     // Risk measure
     rm  = Teuchos::rcp( new ROL::MeanDeviationFromTarget<double>(target,order,coeff,pf) );
     // Risk averse objective
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
+    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
     // Test objective functions
     for ( unsigned i = 0; i < dim; i++ ) {
       (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
@@ -443,7 +445,7 @@ int main(int argc, char* argv[]) {
     // Risk measure
     rm  = Teuchos::rcp( new ROL::MeanVarianceFromTarget<double>(target,order,coeff,pf) );
     // Risk averse objective
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
+    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
     // Test objective functions
     for ( unsigned i = 0; i < dim; i++ ) {
       (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
@@ -468,7 +470,7 @@ int main(int argc, char* argv[]) {
     double prob = 0.8;
     double c = 0.8;
     rm  = Teuchos::rcp( new ROL::CVaR<double>(prob,c,plusf) );
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
+    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
     Teuchos::RCP<ROL::BoundConstraint<double> > CVaRcon = 
       Teuchos::rcp( new ROL::CVaRBoundConstraint<double>(con) );
     // Test objective functions
@@ -499,10 +501,10 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     *outStream << "\nSMOOTHED CONDITIONAL VALUE AT RISK \n";
     prob = 0.9;
-    ROL::SmoothCVaRQuad<double> scq(prob,1.0/gamma,plusf);
+    ROL::CVaRQuadrangle<double> scq(prob,1.0/gamma,plusf);
     //scq.checkRegret();
     rm  = Teuchos::rcp(&scq,false);
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
+    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
     // Test objective functions
     for ( unsigned i = 0; i < dim; i++ ) {
       (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;
@@ -534,7 +536,7 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     *outStream << "\nEXPONENTIAL UTILITY FUNCTION\n";
     rm  = Teuchos::rcp( new ROL::ExpUtility<double> );
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,*rm,vsampler,vsampler) );
+    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
     // Test objective functions
     for ( unsigned i = 0; i < dim; i++ ) {
       (*x_rcp)[i] = (double)rand()/(double)RAND_MAX;

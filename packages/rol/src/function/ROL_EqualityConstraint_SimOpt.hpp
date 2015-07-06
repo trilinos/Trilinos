@@ -778,6 +778,7 @@ public:
     solve(*s,z,tol);
     // Evaluate equality constraint residual at (u,z).
     Teuchos::RCP<ROL::Vector<Real> > cs = c.clone();
+    update(*s,z);
     value(*cs,*s,z,tol);
     // Output norm of residual.
     Real cnorm = cs->norm();
@@ -838,9 +839,11 @@ public:
                                                  std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
     Teuchos::RCP<Vector<Real> > Jv = dualw.clone();
+    update(u,z);
     applyJacobian_1(*Jv,v,u,z,tol);
     Real wJv = w.dot(Jv->dual());
     Teuchos::RCP<Vector<Real> > Jw = dualv.clone();
+    update(u,z);
     applyAdjointJacobian_1(*Jw,w,u,z,tol);
     Real vJw = v.dot(Jw->dual());
     Real diff = std::abs(wJv-vJw);
@@ -903,9 +906,11 @@ public:
                                                  std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
     Teuchos::RCP<Vector<Real> > Jv = dualw.clone();
+    update(u,z);
     applyJacobian_2(*Jv,v,u,z,tol);
     Real wJv = w.dot(Jv->dual());
     Teuchos::RCP<Vector<Real> > Jw = dualv.clone();
+    update(u,z);
     applyAdjointJacobian_2(*Jw,w,u,z,tol);
     Real vJw = v.dot(Jw->dual());
     Real diff = std::abs(wJv-vJw);
@@ -929,8 +934,10 @@ public:
                                       std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
     Teuchos::RCP<Vector<Real> > Jv = jv.clone();
+    update(u,z);
     applyJacobian_1(*Jv,v,u,z,tol);
     Teuchos::RCP<Vector<Real> > iJJv = u.clone();
+    update(u,z);
     applyInverseJacobian_1(*iJJv,*Jv,u,z,tol);
     Teuchos::RCP<Vector<Real> > diff = v.clone();
     diff->set(v);
@@ -957,8 +964,10 @@ public:
                                              std::ostream & outStream = std::cout) {
     Real tol = ROL_EPSILON;
     Teuchos::RCP<Vector<Real> > Jv = jv.clone();
+    update(u,z);
     applyAdjointJacobian_1(*Jv,v,u,z,tol);
     Teuchos::RCP<Vector<Real> > iJJv = v.clone();
+    update(u,z);
     applyInverseAdjointJacobian_1(*iJJv,*Jv,u,z,tol);
     Teuchos::RCP<Vector<Real> > diff = v.clone();
     diff->set(v);

@@ -414,7 +414,7 @@ TEST( UnitTestPartition, Partition_testInitialize )
   selector = fix.m_partB & fix.m_partC;
   EXPECT_TRUE(areAllEntitiesSelected(fix.m_bulk_data, selector, ec3));
 
-  selector = !fix.m_partB & fix.m_partC;
+  selector = (!fix.m_partB) & fix.m_partC;
   EXPECT_TRUE(areAllEntitiesSelected(fix.m_bulk_data, selector, ec4));
 
   selector = !(fix.m_partA | fix.m_partB | fix.m_partC | fix.m_partD);

@@ -137,7 +137,7 @@ public:
    *  - "GALERI_HEX"
    *  - "GALERI_TET"
    */
-  virtual string ElementType() const = 0;
+  virtual std::string ElementType() const = 0;
 
   //! Returns the number of neighboring elements.
   virtual int NumNeighborsPerElement() const = 0;

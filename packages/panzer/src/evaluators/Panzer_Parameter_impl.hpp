@@ -61,17 +61,15 @@ template<typename EvalT, typename TRAITS>
 Parameter<EvalT, TRAITS>::
 Parameter(const std::string name,
 	  const Teuchos::RCP<PHX::DataLayout>& data_layout,
-	  const double in_initial_value,
 	  panzer::ParamLib& param_lib)
 { 
-  initial_value = ScalarT(in_initial_value);
-
   target_field = PHX::MDField<ScalarT, Cell, Point>(name, data_layout);
   
   this->addEvaluatedField(target_field);
  
-  param = panzer::createAndRegisterScalarParameter<EvalT>(name,param_lib);
-  param->setRealValue(in_initial_value);
+  // param = panzer::accessScalarParameter<EvalT>(name,param_lib);
+  param = panzer::createAndRegisterScalarParameter<EvalT>(name,param_lib); 
+    // no initialization, this will be done by someone else (possibly the ME) later
 
   std::string n = "Parameter Evaluator";
   this->setName(n);

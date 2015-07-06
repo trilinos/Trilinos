@@ -107,3 +107,10 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   DEFINES -DTEUCHOSCORE_LIB_EXPORTS_MODE
   )
+
+#
+# Make a trivial change to this comment if you add a file either to
+# this directory, or to the impl/ subdirectory.  Otherwise, users who 
+# pull the latest version of Trilinos may get build errors, because
+# their Makefile won't know to rerun CMake.
+#

@@ -74,6 +74,7 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(overlap_ < 0, Exceptions::RuntimeError, "Overlap parameter is negative (" << overlap << ")");
 
+    // paramList contains only parameters which are understood by Ifpack/Ifpack2
     ParameterList paramList = paramListIn;
 
 

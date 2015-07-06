@@ -100,8 +100,6 @@ double switch_condition = 0.0; /* Value specified in "switch(condition)" */
 
 %}
 
-%option nounput
-
 qstring	\"[^\"\n]*[\"\n]
 mlstring \'[^\']*[\']
 D     [0-9]
@@ -286,6 +284,35 @@ integer {D}+({E})?
     yyerror("endswitch statement found without matching switch.");
   }
   switch_active = 0;
+}
+
+<INITIAL>{
+  /* This restores the old behavior of ifdef and ifndef
+   * where they would eat up any leading whitespace on
+   * a line.
+   */
+  {WS}"{"[Ii]"fdef"{WS}"(" { 
+    unput('(');
+    unput('f');
+    unput('e');
+    unput('d');
+    unput('f');
+    unput('i');
+    unput('_');
+    unput('{');
+  }
+
+  {WS}"{"[Ii]"fndef"{WS}"(" {
+    unput('(');
+    unput('f');
+    unput('e');
+    unput('d');
+    unput('n');
+    unput('f');
+    unput('i');
+    unput('_');
+    unput('{');
+  }
 }
 
 <IF_WHILE_SKIP>{

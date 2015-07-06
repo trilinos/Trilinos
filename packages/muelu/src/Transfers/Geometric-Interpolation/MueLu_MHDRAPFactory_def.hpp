@@ -246,21 +246,21 @@ namespace MueLu {
     size_t numMyNnz  = Ac.getNodeNumEntries();
     GO maxNnz, minNnz;
     RCP<const Teuchos::Comm<int> > comm = Ac.getRowMap()->getComm();
-    maxAll(comm,(GO)numMyNnz,maxNnz);
+    MueLu_maxAll(comm,(GO)numMyNnz,maxNnz);
     //min nnz over all proc (disallow any processors with 0 nnz)
-    minAll(comm, (GO)((numMyNnz > 0) ? numMyNnz : maxNnz), minNnz);
+    MueLu_minAll(comm, (GO)((numMyNnz > 0) ? numMyNnz : maxNnz), minNnz);
     double imbalance = ((double) maxNnz) / minNnz;
 
     size_t numMyRows = Ac.getNodeNumRows();
     //Check whether Ac is spread over more than one process.
     GO numActiveProcesses=0;
-    sumAll(comm, (GO)((numMyRows > 0) ? 1 : 0), numActiveProcesses);
+    MueLu_sumAll(comm, (GO)((numMyRows > 0) ? 1 : 0), numActiveProcesses);
 
     //min, max, and avg # rows per proc
     GO minNumRows, maxNumRows;
     double avgNumRows;
-    maxAll(comm, (GO)numMyRows, maxNumRows);
-    minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
+    MueLu_maxAll(comm, (GO)numMyRows, maxNumRows);
+    MueLu_minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
     assert(numActiveProcesses > 0);
     avgNumRows = Ac.getGlobalNumRows() / numActiveProcesses;
 

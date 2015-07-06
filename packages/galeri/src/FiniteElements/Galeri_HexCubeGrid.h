@@ -185,7 +185,7 @@ public:
   }
 
   //! Returns \c GALERI_HEX
-  virtual string ElementType() const
+  virtual std::string ElementType() const
   {
     return("GALERI_HEX");
   }

@@ -67,16 +67,16 @@
 
 // function for fancy output
 
-string toString(const int& x) {
+std::string toString(const int& x) {
   char s[100];
   sprintf(s, "%d", x);
-  return string(s);
+  return std::string(s);
 }
 
-string toString(const double& x) {
+std::string toString(const double& x) {
   char s[100];
   sprintf(s, "%g", x);
-  return string(s);
+  return std::string(s);
 }
 
 // main driver
@@ -89,10 +89,6 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm Comm;
 #endif
-
-  int MyPID = Comm.MyPID();
-  bool verbose = false; 
-  if (MyPID==0) verbose = true;
 
   Teuchos::ParameterList GaleriList;
   int nx = 30; 

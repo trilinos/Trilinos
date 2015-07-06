@@ -8,6 +8,25 @@ FILE(GLOB SOURCES *.cpp)
 
 SET(LIBRARIES shyluichol)
 
+# Symbolic Factorization
+# ======================
+
+IF(Kokkos_ENABLE_Serial)
+  TRIBITS_ADD_EXECUTABLE(
+    symbolic_factor_serial
+    SOURCES example_symbolic_factor_serial.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
+IF(Kokkos_ENABLE_Pthread)
+  TRIBITS_ADD_EXECUTABLE(
+    symbolic_factor_pthread
+    SOURCES example_symbolic_factor_pthread.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
 # Sparse IChol
 # ============
 

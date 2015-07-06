@@ -71,7 +71,7 @@ static bool Solver = AZ_gmres;
 const int NumVectors = 3;
 
 // ====================================================================== 
-bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int sweeps)
+bool ComparePointAndBlock(std::string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int sweeps)
 {
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
@@ -210,8 +210,8 @@ int main(int argc, char *argv[])
   int TestPassed = true;
   int who = RUSAGE_SELF;
   struct rusage usage;
-  int ret;
-  ret = getrusage(who, &usage);
+  //int ret;
+  //ret = getrusage(who, &usage);
   struct timeval ru_utime;
   //  struct timeval ru_stime;
   ru_utime = usage.ru_utime;
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
     ComparePointAndBlock("Jacobi",A,10);
   if(verbose) printf(" Jacobi Finished \n");
 
-  ret = getrusage(who, &usage);
+  //ret = getrusage(who, &usage);
   int sec =  usage.ru_utime.tv_sec -ru_utime.tv_sec;
   int usec = usage.ru_utime.tv_usec -ru_utime.tv_usec;
   double tt = (double)sec + 1e-6*(double)usec;
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
     ComparePointAndBlock("symmetric Gauss-Seidel",A,10);
   if(verbose) printf(" sGS finished \n");
 
-  ret = getrusage(who, &usage);
+  //ret = getrusage(who, &usage);
   sec =  usage.ru_utime.tv_sec -ru_utime.tv_sec;
   usec = usage.ru_utime.tv_usec -ru_utime.tv_usec;
   tt = (double)sec + 1e-6*(double)usec;
@@ -246,7 +246,7 @@ int main(int argc, char *argv[])
   if (!SymmetricGallery) {
     TestPassed = TestPassed && 
       ComparePointAndBlock("Gauss-Seidel",A,10);
-    ret = getrusage(who, &usage);
+    //ret = getrusage(who, &usage);
     sec =  usage.ru_utime.tv_sec -ru_utime.tv_sec;
     usec = usage.ru_utime.tv_usec -ru_utime.tv_usec; 
     tt = (double)sec + 1e-6*(double)usec;

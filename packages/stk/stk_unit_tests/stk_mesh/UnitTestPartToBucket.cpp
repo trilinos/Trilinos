@@ -499,11 +499,11 @@ TEST(PartToBucket, hexWithThreeSidesets)
     size_t expectedSurface1NodeBuckets = 4;
     EXPECT_EQ(expectedSurface1NodeBuckets, surface1NodeBuckets.size());
 
-    stk::mesh::Selector selectNode1 = surface1Part & !surface2Part & surface3Part;
+    stk::mesh::Selector selectNode1 = surface1Part & (!surface2Part) & surface3Part;
     stk::mesh::EntityId expectedGlobalId = 1;
     checkNodeInSelectedBucket(selectNode1, expectedGlobalId, stkMeshBulkData);
 
-    stk::mesh::Selector selectNode2 = !surface1Part & !surface2Part & surface3Part;
+    stk::mesh::Selector selectNode2 = (!surface1Part) & (!surface2Part) & surface3Part;
     expectedGlobalId = 2;
     checkNodeInSelectedBucket(selectNode2, expectedGlobalId, stkMeshBulkData);
 
@@ -511,25 +511,25 @@ TEST(PartToBucket, hexWithThreeSidesets)
     expectedGlobalId = 3;
     checkNodeInSelectedBucket(selectNode3, expectedGlobalId, stkMeshBulkData);
 
-    stk::mesh::Selector selectNode4 = !surface1Part & surface2Part & surface3Part;
+    stk::mesh::Selector selectNode4 = (!surface1Part) & surface2Part & surface3Part;
     expectedGlobalId = 4;
     checkNodeInSelectedBucket(selectNode4, expectedGlobalId, stkMeshBulkData);
 
-    stk::mesh::Selector selectNode5 = surface1Part & !surface2Part & !surface3Part;
+    stk::mesh::Selector selectNode5 = surface1Part & (!surface2Part) & (!surface3Part);
     expectedGlobalId = 5;
     checkNodeInSelectedBucket(selectNode5, expectedGlobalId, stkMeshBulkData);
 
     stk::mesh::Part &block1Part = *stkMeshMetaData.get_part("block_1");
     EXPECT_TRUE(&block1Part != NULL);
-    stk::mesh::Selector selectNode6 = block1Part & !surface1Part & !surface2Part & !surface3Part;
+    stk::mesh::Selector selectNode6 = block1Part & (!surface1Part) & (!surface2Part) & (!surface3Part);
     expectedGlobalId = 6;
     checkNodeInSelectedBucket(selectNode6, expectedGlobalId, stkMeshBulkData);
 
-    stk::mesh::Selector selectNode7 = surface1Part & surface2Part & !surface3Part;
+    stk::mesh::Selector selectNode7 = surface1Part & surface2Part & (!surface3Part);
     expectedGlobalId = 7;
     checkNodeInSelectedBucket(selectNode7, expectedGlobalId, stkMeshBulkData);
 
-    stk::mesh::Selector selectNode8 = !surface1Part & surface2Part & !surface3Part;
+    stk::mesh::Selector selectNode8 = (!surface1Part) & surface2Part & (!surface3Part);
     expectedGlobalId = 8;
     checkNodeInSelectedBucket(selectNode8, expectedGlobalId, stkMeshBulkData);
 

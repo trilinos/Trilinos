@@ -133,8 +133,8 @@ int main(int argc, char** argv)
 #endif
 
     bool success = true;
-    string pass = "End Result: TEST PASSED";
-    string fail = "End Result: TEST FAILED";
+    std::string pass = "End Result: TEST PASSED";
+    std::string fail = "End Result: TEST FAILED";
 
     int nProcs = Comm.NumProc();
     int myPID = Comm.MyPID();
@@ -160,7 +160,7 @@ int main(int argc, char** argv)
                 std::cout << "!!! Error registering preconditioner ShyLU with"
                           << " Ifpack_DynamicFactory. Exiting." << std::endl;
             }
-            cout << fail << endl;
+            std::cout << fail << std::endl;
 #ifdef HAVE_MPI
             MPI_Finalize();
 #endif
@@ -186,14 +186,14 @@ int main(int argc, char** argv)
         Teuchos::CommandLineProcessor::EParseCommandLineReturn parseReturn =
                                                      cl.parse (argc, argv);
         if ( parseReturn == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
-          cout << fail << endl;
+          std::cout << fail << std::endl;
 #ifdef HAVE_MPI
             MPI_Finalize();
 #endif
             return 0;
         }
         if( parseReturn != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL   ) {
-          cout << fail << endl;
+          std::cout << fail << std::endl;
 #ifdef HAVE_MPI
             MPI_Finalize();
 #endif
@@ -245,7 +245,7 @@ int main(int argc, char** argv)
                 std::cout << "!!! Matrix file could not be read in, info = "<<
                      err << std::endl;
             }
-            cout << fail << endl;
+            std::cout << fail << std::endl;
 #ifdef HAVE_MPI
             MPI_Finalize();
 #endif
@@ -280,7 +280,7 @@ int main(int argc, char** argv)
             std::cout << "!!! Matrix file could not be read in, info = "<<
              err << std::endl;
         }
-        cout << fail << endl;
+        std::cout << fail << std::endl;
 #ifdef HAVE_MPI
         MPI_Finalize();
 #endif
@@ -378,7 +378,7 @@ int main(int argc, char** argv)
             std::cout << "!!! ML parameter list not found. Exiting."
                 << std::endl;
         }
-        cout << fail << endl;
+        std::cout << fail << std::endl;
 #ifdef HAVE_MPI
         MPI_Finalize();
 #endif
@@ -391,7 +391,7 @@ int main(int argc, char** argv)
             std::cout << "!!! Belos parameter list not found. Exiting." <<
                      std::endl;
         }
-        cout << fail << endl;
+        std::cout << fail << std::endl;
 #ifdef HAVE_MPI
         MPI_Finalize();
 #endif
@@ -468,7 +468,7 @@ int main(int argc, char** argv)
           std::cout << "!!! Belos::LinearProblem failed to set up correctly."
           << " Exiting." << std::endl;
         }
-        cout << fail << endl;
+        std::cout << fail << std::endl;
 #ifdef HAVE_MPI
         MPI_Finalize();
 #endif
@@ -487,7 +487,7 @@ int main(int argc, char** argv)
             std::cout << "!!! Linear solver did not converge to prescribed"
             <<" precision. Test failed." << std::endl;
         }
-        cout << fail << endl;
+        std::cout << fail << std::endl;
 #ifdef HAVE_MPI
         MPI_Finalize();
 #endif
@@ -532,7 +532,7 @@ int main(int argc, char** argv)
                         iterA);
         }
         if (err != 0) {
-          if (myPID == 0) cout << "Could not open file: "<< file_name << endl;
+          if (myPID == 0) std::cout << "Could not open file: "<< file_name << std::endl;
           success = false;
         }
         else
@@ -565,7 +565,7 @@ int main(int argc, char** argv)
             }
             if (err != 0) {
                 if (myPID==0)
-                    cout << "Could not open file: "<< file_name << endl;
+                    std::cout << "Could not open file: "<< file_name << std::endl;
                 success = false;
             }
             else {
@@ -590,9 +590,9 @@ int main(int argc, char** argv)
 
 
     if(success)
-      cout << pass << endl;
+      std::cout << pass << std::endl;
     else
-      cout << fail << endl;
+      std::cout << fail << std::endl;
 
 
 

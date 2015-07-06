@@ -56,46 +56,23 @@ XCOMM Building ExodusII libraries for installation
 #define ExtraOptions "CCOPTIONS=$(CCOPTIONS)"
 
 INCLIST1 = exodusII.h exodusII_int.h 
-INCLIST2 = exodusII_int.inc exodusII.inc
 
 SUBDIRS = cbind/include \
 	  cbind/src \
-	  forbind/include \
-	  forbind/src \
-	  cbind/test \
-	  forbind/test
+	  cbind/test
 
-#if Build64BitAccess == YES
-AllTarget(libexodus.a libexoIIv2for.a libexoIIv2for32.a)
-#else
-AllTarget(libexodus.a libexoIIv2for.a)
-#endif
+AllTarget(libexodus.a)
 
 InstallSubdirIncludeList(makeincludes,cbind/include,$(INCLIST1),$(INCDIR))
-
-InstallSubdirIncludeList(makeincludes,forbind/include,$(INCLIST2),$(INCDIR))
 
 /* Directory for exodusII c library */
 NamedTargetSubdirs(libexodus.a,cbind/src,"making exodus ",PassDebugFlags ExtraOptions,all)
 
-/* Directory for exodusII fortran wrappers */
-NamedTargetSubdirs(libexoIIv2for.a,forbind/src,"making exoIIv2for ",PassDebugFlags ExtraOptions,libexoIIv2for.a)
-
-#if Build64BitAccess == YES
-NamedTargetSubdirs(libexoIIv2for32.a,forbind/src,"making exoIIv2for32 ",PassDebugFlags ExtraOptions,libexoIIv2for32.a)
-#endif
-
 InstallLibrary(exodus,$(LIBDIR))
-InstallLibrary(exoIIv2for,$(LIBDIR))
 InstallLibraryAlias(exodus,exoIIv2c,$(LIBDIR))
 
-#if Build64BitAccess == YES
-InstallLibrary(exoIIv2for32,$(LIBDIR))
-#endif
-
 check: test
-test:: libexodus.a libexoIIv2for.a
+test:: libexodus.a
 
 NamedMakeSubdirs(test,cbind/test)
-NamedMakeSubdirs(test,forbind/test)
 DependSubdirs($(SUBDIRS))

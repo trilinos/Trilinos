@@ -58,9 +58,12 @@ TEST(stkMeshHowTo, useSimpleFields)
     typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> VectorField;
     ScalarField& pressureField = metaData.declare_field<ScalarField>(stk::topology::ELEM_RANK, "pressure");
     VectorField& displacementsField = metaData.declare_field<VectorField>(stk::topology::NODE_RANK, "displacements");
+    ScalarField& nodePressureField = metaData.declare_field<ScalarField>(stk::topology::NODE_RANK, "pressure");
 
     double initialPressureValue = 4.4;
     stk::mesh::put_field_on_entire_mesh_with_initial_value(pressureField, &initialPressureValue);
+    double initialNodePressureValue = 2.7;
+    stk::mesh::put_field_on_entire_mesh_with_initial_value(nodePressureField, &initialNodePressureValue);
     stk::mesh::put_field_on_entire_mesh(displacementsField);
 
     stk::mesh::Part &tetPart = metaData.declare_part_with_topology("tetElementPart", stk::topology::TET_4);
@@ -101,6 +104,10 @@ TEST(stkMeshHowTo, useSimpleFields)
 
     double* pressureFieldDataForElem2 = stk::mesh::field_data(pressureField, elem2);
     EXPECT_EQ(initialPressureValue, *pressureFieldDataForElem2);
+
+    stk::mesh::Entity node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
+    double* pressureFieldDataForNode1 = stk::mesh::field_data(nodePressureField, node1);
+    EXPECT_EQ(initialNodePressureValue, *pressureFieldDataForNode1);
 }
 //END
 

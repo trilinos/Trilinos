@@ -220,6 +220,7 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       SACADO_ENABLE_EXPR_FUNC(SLFad&) operator += (const Expr<S>& x) {
         GeneralFadType::operator+=(x);
+        //*this = *this + x;
         return *this;
       }
 

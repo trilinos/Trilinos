@@ -1,28 +1,28 @@
 /*@HEADER
 // ***********************************************************************
-// 
+//
 //       Ifpack: Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 //@HEADER
 */
@@ -55,16 +55,19 @@
 #define perror(str) { fprintf(stderr,"%s\n",str);   exit(-1); }
 #define perror1(str,ierr) { fprintf(stderr,"%s %d\n",str,ierr);   exit(-1); }
 #define double_quote '"'
-void BiCGSTAB(Petra_RDP_CRS_Matrix &A, 
-	      Petra_RDP_Vector &x, 
-	      Petra_RDP_Vector &b, 
-	      Ifpack_RDP_CRS_RILUK *M, 
-	      int Maxiter, 
-	      double Tolerance, 
-	      double *residual, double & FLOPS, bool verbose);
+void BiCGSTAB(Petra_RDP_CRS_Matrix &A,
+              Petra_RDP_Vector &x,
+              Petra_RDP_Vector &b,
+              Ifpack_RDP_CRS_RILUK *M,
+              int Maxiter,
+              double Tolerance,
+              double *residual, double & FLOPS, bool verbose);
 
 int main(int argc, char *argv[])
 {
+  using std::cout;
+  using std::endl;
+
   int    *update;                  /* vector elements updated on this node. */
   int    *indx;   /* MSR format of real and imag parts */
   int    *bindx;
@@ -89,7 +92,7 @@ int main(int argc, char *argv[])
 
   double *val_msr;
   int *bindx_msr;
-  
+
   double norm, d ;
 
   int matrix_type;
@@ -105,7 +108,7 @@ int main(int argc, char *argv[])
 #endif
 
   /* get number of processors and the name of this processor */
- 
+
 #ifdef PETRA_MPI
   Petra_Comm& Comm = *new Petra_Comm(MPI_COMM_WORLD);
 #else
@@ -120,7 +123,7 @@ int main(int argc, char *argv[])
   bool verbose = false;
   if (MyPID==0) verbose = true;
 
-  
+
 /* Still need Aztec proc info for the HB routines, can switch to Petra later */
 
 #ifdef PETRA_MPI
@@ -132,28 +135,28 @@ int main(int argc, char *argv[])
   Comm.Barrier();
 
 #ifdef VBRMATRIX
-  if(argc != 6) 
-    perror("error: enter name of data and partition file on command line, followed by levelfill and shift value") ; 
+  if(argc != 6)
+    perror("error: enter name of data and partition file on command line, followed by levelfill and shift value") ;
 #else
-  if(argc != 5) perror("error: enter name of data file on command line, followed by levelfill and shift value") ; 
+  if(argc != 5) perror("error: enter name of data file on command line, followed by levelfill and shift value") ;
 #endif
   /* Set exact solution to NULL */
   xexact = NULL;
 
-  /* Read matrix file and distribute among processors.  
-     Returns with this processor's set of rows */ 
+  /* Read matrix file and distribute among processors.
+     Returns with this processor's set of rows */
 
 #ifdef VBRMATRIX
-  if (Comm.MyPID()==0) 
-    read_hb(argv[1], &numGlobalEquations, &n_nonzeros, 
-	    &val_msr,  &bindx_msr, &xguess, &b, &bt, &xexact);
-  
-  create_vbr(argv[2], proc_config, &numGlobalEquations, &numGlobalBlocks,
-	     &n_nonzeros, &n_blk_nonzeros, &N_update, &update,
-	     bindx_msr, val_msr, &val, &indx, 
-	     &rpntr, &cpntr, &bpntr, &bindx);
+  if (Comm.MyPID()==0)
+    read_hb(argv[1], &numGlobalEquations, &n_nonzeros,
+            &val_msr,  &bindx_msr, &xguess, &b, &bt, &xexact);
 
-  if(proc_config[PAZ_node] == 0) 
+  create_vbr(argv[2], proc_config, &numGlobalEquations, &numGlobalBlocks,
+             &n_nonzeros, &n_blk_nonzeros, &N_update, &update,
+             bindx_msr, val_msr, &val, &indx,
+             &rpntr, &cpntr, &bpntr, &bindx);
+
+  if(proc_config[PAZ_node] == 0)
     {
       free ((void *) val_msr);
       free ((void *) bindx_msr);
@@ -163,21 +166,21 @@ int main(int argc, char *argv[])
 
   Comm.Barrier();
 
-  distrib_vbr_matrix( proc_config, numGlobalEquations, numGlobalBlocks, 
-		      &n_nonzeros, &n_blk_nonzeros,
-		      &N_update, &update, 
-		      &val, &indx, &rpntr, &cpntr, &bpntr, &bindx, 
-		      &xguess, &b, &bt, &xexact);
+  distrib_vbr_matrix( proc_config, numGlobalEquations, numGlobalBlocks,
+                      &n_nonzeros, &n_blk_nonzeros,
+                      &N_update, &update,
+                      &val, &indx, &rpntr, &cpntr, &bpntr, &bindx,
+                      &xguess, &b, &bt, &xexact);
 
 #else
-  if (Comm.MyPID()==0) 
+  if (Comm.MyPID()==0)
     read_hb(argv[1], &numGlobalEquations, &n_nonzeros,
              &val,  &bindx, &xguess, &b, &bt, &xexact);
 
   Comm.Barrier();
 
   distrib_msr_matrix(proc_config, &numGlobalEquations, &n_nonzeros, &N_update,
-		  &update, &val, &bindx, &xguess, &b, &bt, &xexact);
+                  &update, &val, &bindx, &xguess, &b, &bt, &xexact);
 
 #ifdef DEBUG
   for (i = 0; i<N_update; i++)
@@ -212,31 +215,31 @@ int main(int argc, char *argv[])
 
   /* Make blkColInds - Exactly bindx (just copy pointer) */
   blkColInds = bindx;
-  
 
-  Petra_BlockMap& map = *new Petra_BlockMap(numGlobalEquations, numLocalEquations, 
-			update, indexBase, Comm, numGlobalBlocks, numLocalBlocks,
-			blockSizes);
+
+  Petra_BlockMap& map = *new Petra_BlockMap(numGlobalEquations, numLocalEquations,
+                        update, indexBase, Comm, numGlobalBlocks, numLocalBlocks,
+                        blockSizes);
 
   Petra_RDP_DVBR_Matrix& A = *new Petra_RDP_DVBR_Matrix(map);
-  
+
   if ((ierr=A.allocate(numNzBlks, blkColInds)))
      perror1("Error in DVBR_Matrix_allocate:",ierr);
- 
+
   /* Add block rows one-at-a-time */
 
   for (blk_row=0; blk_row<numLocalBlocks; blk_row++)
     {
       row_vals = val + indx[bpntr[blk_row]];
       blk_col_inds = bindx + bpntr[blk_row];
-      if ((ierr=A.putBlockRow(update[blk_row], numNzBlks[blk_row], row_vals, 
-				      blk_col_inds)))
+      if ((ierr=A.putBlockRow(update[blk_row], numNzBlks[blk_row], row_vals,
+                                      blk_col_inds)))
        {
          printf("Row %d:",update[row]);
          perror1("Error putting block row:",ierr);
        }
     }
-  
+
   if ((ierr=A.FillComplete()))
       perror1("Error in DVBR_Matrix_FillComplete:",ierr);
 
@@ -249,13 +252,13 @@ int main(int argc, char *argv[])
   /* Make ColInds - Exactly bindx, offset by diag (just copy pointer) */
   ColInds = bindx+numLocalEquations+1;
 
-  Petra_Map& map = *new Petra_Map(numGlobalEquations, numLocalEquations, 
-			update, 0, Comm);
- 
+  Petra_Map& map = *new Petra_Map(numGlobalEquations, numLocalEquations,
+                        update, 0, Comm);
+
   Comm.Barrier();
   Petra_Time & FillTimer = *new Petra_Time(Comm);
   Petra_RDP_CRS_Matrix& A = *new Petra_RDP_CRS_Matrix(Copy, map, numNz);
-  
+
   /* Add  rows one-at-a-time */
 
   for (row=0; row<numLocalEquations; row++)
@@ -273,20 +276,20 @@ int main(int argc, char *argv[])
     }
    Comm.Barrier();
    double FillTime = FillTimer.ElapsedTime();
-    if ((ierr=A.FillComplete()))    
+    if ((ierr=A.FillComplete()))
     perror1("Error in Petra_RDP_Vector_fillComplete",ierr);
    double FillCompleteTime = FillTimer.ElapsedTime() - FillTime;
-   if (Comm.MyPID()==0)	{
+   if (Comm.MyPID()==0) {
      cout << "\n\n****************************************************" << endl;
      cout << "\n\nMatrix construction time (sec) = " << FillTime<< endl;
      cout << "    Matrix FillComplete time (sec) = " << FillCompleteTime << endl;
      cout << "    Total construction time (sec) = " << FillTime+FillCompleteTime << endl<< endl;
    }
 
-  
-   
+
+
 #endif
-  
+
 #ifdef MULTI_VECTOR
 
   // Make a second x and b vector that are 2x original x and b; make into a 2-vector.
@@ -322,7 +325,7 @@ int main(int argc, char *argv[])
   Petra_RDP_Vector& bcomp = *new Petra_RDP_Vector(map);
   Petra_RDP_Vector& xcomp = *new Petra_RDP_Vector(map);
   Petra_RDP_Vector& resid = *new Petra_RDP_Vector(map);
-    
+
 #endif /* MULTI_VECTOR */
 
   Comm.Barrier();
@@ -348,9 +351,9 @@ int main(int argc, char *argv[])
     assert(ILUK_Graph->ComputeLevels(NumThreads)==0);
     elapsed_time = timer.ElapsedTime() - elapsed_time;
     if (verbose) cout << "Time to construct ILUK graph = " << elapsed_time << endl;
-    
+
     return 0;
-    
+
     elapsed_time = timer.ElapsedTime();
     ILUK = new Ifpack_RDP_CRS_RILUK(A, *ILUK_Graph);
     ILUK->SetShiftValue(ShiftValue);
@@ -359,9 +362,9 @@ int main(int argc, char *argv[])
     elapsed_time = timer.ElapsedTime() - elapsed_time;
     total_flops = ILUK->Flops();
     MFLOPs = total_flops/elapsed_time/1000000.0;
-    if (verbose) cout << "Time to compute preconditioner values = " 
-		      << elapsed_time << endl
-		      << "MFLOPS for Factorization = " << MFLOPs << endl;
+    if (verbose) cout << "Time to compute preconditioner values = "
+                      << elapsed_time << endl
+                      << "MFLOPS for Factorization = " << MFLOPs << endl;
   }
 
   int Maxiter = 500;
@@ -375,11 +378,11 @@ int main(int argc, char *argv[])
 
   elapsed_time = timer.ElapsedTime() - elapsed_time;
   MFLOPs = total_flops/elapsed_time/1000000.0;
-  if (verbose) cout << "Time to compute solution = " 
-		    << elapsed_time << endl 
-		    << "Number of operations in solve = " << total_flops << endl
-		    << "MFLOPS for Solve = " << MFLOPs<< endl << endl;
-  
+  if (verbose) cout << "Time to compute solution = "
+                    << elapsed_time << endl
+                    << "Number of operations in solve = " << total_flops << endl
+                    << "MFLOPS for Solve = " << MFLOPs<< endl << endl;
+
 
   int NumMVs = 100;
   int ii, iii;
@@ -395,33 +398,33 @@ int main(int argc, char *argv[])
     MFLOPs = total_flops/elapsed_time/1000000.0;
     if (Comm.MyPID()==0) {
       if (TransA) {
-	cout << "\n\n****************************************************" << endl;
-	cout << "\n\nResults for transpose multiply with standard storage" << endl;
+        cout << "\n\n****************************************************" << endl;
+        cout << "\n\nResults for transpose multiply with standard storage" << endl;
       }
       else {
-	cout << "\n\nMatrix Fill cost = " << (FillTime+FillCompleteTime)/elapsed_time*NumMVs 
-	     << " Matrix-Multiplies " << endl;
-	cout << "\n\n*******************************************************" << endl;
-	cout << "\n\nResults for no transpose multiply with standard storage" << endl;
+        cout << "\n\nMatrix Fill cost = " << (FillTime+FillCompleteTime)/elapsed_time*NumMVs
+             << " Matrix-Multiplies " << endl;
+        cout << "\n\n*******************************************************" << endl;
+        cout << "\n\nResults for no transpose multiply with standard storage" << endl;
       }
-      
-      cout << "\n\nMatrix Fill cost = " << (FillTime+FillCompleteTime)/elapsed_time*NumMVs 
-	   << " Matrix-Multiplies " << endl;
-      cout << "\n\nTotal FLOPS for standard Storage (" <<NumMVs<< " Multiplies) = " 
-	   << total_flops<< endl;
+
+      cout << "\n\nMatrix Fill cost = " << (FillTime+FillCompleteTime)/elapsed_time*NumMVs
+           << " Matrix-Multiplies " << endl;
+      cout << "\n\nTotal FLOPS for standard Storage (" <<NumMVs<< " Multiplies) = "
+           << total_flops<< endl;
       cout << "    Total time for standard Storage = " << elapsed_time<< endl;
       cout << "    Total MFLOPs for standard matrix multiply = " << MFLOPs << endl<< endl;
     }
-    
+
     // cout << "Vector bcomp" << bcomp << endl;
-    
+
     if (TransA) {
       if ((ierr=resid.Update(-1.0, btexact, 1.0, bcomp, 0.0))) perror1("Error in Update",ierr);}
     else {
       if ((ierr=resid.Update(-1.0, bexact, 1.0, bcomp, 0.0))) perror1("Error in Update",ierr);}
-    
+
     if ((ierr = resid.Norm2(residual))) perror1("Error in Norm2",ierr);
-    
+
     if (Comm.MyPID()==0)
       for (i=0; i< nrhs; i++) printf("Residual[%d]    = %22.16g\n",i,residual[i]);
 
@@ -437,7 +440,7 @@ int main(int argc, char *argv[])
     elapsed_time = timer.ElapsedTime();
     for (iii=0; iii<NumMVs; iii++)
       if ((ierr=A.Multiply(TransA, xcomp, bcomp)))
-	perror1("Error in Multiply",ierr);
+        perror1("Error in Multiply",ierr);
     elapsed_time = timer.ElapsedTime() - elapsed_time;
     total_flops = A.Flops();
     MFLOPs = total_flops/elapsed_time/1000000.0;
@@ -445,12 +448,12 @@ int main(int argc, char *argv[])
       cout << "\n\n****************************************************" << endl;
       if (TransA) cout << "\n\nResults for transpose multiply with optimized storage" << endl;
       else cout << "\n\nResults for no transpose multiply with optimized storage"<< endl;
-      cout << "\n\nTotal FLOPS for optimized storage (" <<NumMVs<< " Multiplies) = " 
-	   << total_flops<< endl;
+      cout << "\n\nTotal FLOPS for optimized storage (" <<NumMVs<< " Multiplies) = "
+           << total_flops<< endl;
       cout << "    Total time for optimized Storage = " << elapsed_time<< endl;
       cout << "    Total MFLOPs for optimized matrix multiply = " << MFLOPs << endl<< endl;
     }
-    
+
     if (TransA) {
       if ((ierr=resid.Update(-1.0, btexact, 1.0, bcomp, 0.0))) perror1("Error in Update",ierr);}
     else {
@@ -501,20 +504,20 @@ int main(int argc, char *argv[])
   delete &Comm;
 
   delete proc_config;
-				       
+
 #ifdef PETRA_MPI
   MPI_Finalize() ;
 #endif
 
 return 0 ;
 }
-void BiCGSTAB(Petra_RDP_CRS_Matrix &A, 
-	      Petra_RDP_Vector &x, 
-	      Petra_RDP_Vector &b, 
-	      Ifpack_RDP_CRS_RILUK *M, 
-	      int Maxiter, 
-	      double Tolerance, 
-	      double *residual, double & FLOPS, bool verbose) {
+void BiCGSTAB(Petra_RDP_CRS_Matrix &A,
+              Petra_RDP_Vector &x,
+              Petra_RDP_Vector &b,
+              Ifpack_RDP_CRS_RILUK *M,
+              int Maxiter,
+              double Tolerance,
+              double *residual, double & FLOPS, bool verbose) {
 
   // Allocate vectors needed for iterations
   Petra_RDP_Vector& phat = *new Petra_RDP_Vector(x); phat.PutScalar(0.0);
@@ -524,7 +527,7 @@ void BiCGSTAB(Petra_RDP_CRS_Matrix &A,
   Petra_RDP_Vector& r = *new Petra_RDP_Vector(x); r.PutScalar(0.0);
   Petra_RDP_Vector& rtilde = *new Petra_RDP_Vector(x); rtilde.Random();
   Petra_RDP_Vector& v = *new Petra_RDP_Vector(x); v.PutScalar(0.0);
-  
+
 
   A.Multiply(false, x, r); // r = A*x
 
@@ -539,10 +542,10 @@ void BiCGSTAB(Petra_RDP_CRS_Matrix &A,
   r.Dot(rtilde,&rhon);
 
   if (verbose) cout << "Initial residual = " << r_norm
-		    << " Scaled residual = " << scaled_r_norm << endl;
+                    << " Scaled residual = " << scaled_r_norm << endl;
 
 
-  for (int i=0; i<Maxiter; i++) { // Main iteration loop   
+  for (int i=0; i<Maxiter; i++) { // Main iteration loop
 
     double beta = (rhon/rhonm1) * (alpha/omega);
     rhonm1 = rhon;
@@ -554,22 +557,22 @@ void BiCGSTAB(Petra_RDP_CRS_Matrix &A,
     double dtemp = - beta*omega;
 
     p.Update(1.0, r, dtemp, v, beta);
-    if (M==0) 
+    if (M==0)
       phat.Scale(1.0, p);
     else
       M->LevelSolve(false, p, phat);
     A.Multiply(false, phat, v);
 
-    
+
     rtilde.Dot(v,&sigma);
-    alpha = rhon/sigma;    
+    alpha = rhon/sigma;
 
     /* s = r - alpha*v                     */
     /* shat = M^-1 s                       */
     /* r = A shat (r is a tmp here for t ) */
 
     s.Update(-alpha, v, 1.0, r, 0.0);
-    if (M==0) 
+    if (M==0)
       shat.Scale(1.0, s);
     else
       M->LevelSolve(false, s, shat);
@@ -583,14 +586,14 @@ void BiCGSTAB(Petra_RDP_CRS_Matrix &A,
     /* r = s - omega*r */
 
     x.Update(alpha, phat, omega, shat, 1.0);
-    r.Update(1.0, s, -omega); 
-    
+    r.Update(1.0, s, -omega);
+
     r.Norm2(&r_norm);
     scaled_r_norm = r_norm/b_norm;
     r.Dot(rtilde,&rhon);
 
     if (verbose) cout << "Iter "<< i << " residual = " << r_norm
-		      << " Scaled residual = " << scaled_r_norm << endl;
+                      << " Scaled residual = " << scaled_r_norm << endl;
 
     if (scaled_r_norm < Tolerance) break;
   }

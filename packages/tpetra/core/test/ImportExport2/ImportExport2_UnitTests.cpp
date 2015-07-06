@@ -93,7 +93,6 @@ namespace {
   using Tpetra::DefaultPlatform;
   using Tpetra::DynamicProfile;
   using Tpetra::Export;
-  using Tpetra::global_size_t;
   using Tpetra::Import;
   using Tpetra::INSERT;
   using Tpetra::Map;
@@ -207,8 +206,10 @@ namespace {
   {
     using Teuchos::VERB_EXTREME;
     using Teuchos::VERB_NONE;
+    typedef Tpetra::global_size_t GST;
+    typedef typename Map<Ordinal>::global_ordinal_type GO;
 
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     // get a comm and node
     const RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
@@ -364,8 +365,18 @@ namespace {
           ArrayView<const Ordinal> rowview;
           tgt_graph->getLocalRowView (localrow, rowview);
           TEST_EQUALITY(rowview.size(), globalrow+1);
-          for (Ordinal j = 0; j < globalrow+1; ++j) {
-            TEST_EQUALITY(colmap->getGlobalElement(rowview[j]), j);
+
+          // The target graph doesn't necessarily promise sorted
+          // order.  Thus, we copy out the local row view, convert to
+          // global, sort, and test the sorted result.
+          Array<GO> curEntries (rowview.size ());
+          for (GO j = static_cast<GO> (0); j < static_cast<GO> (rowview.size ()); ++j) {
+            curEntries[j] = colmap->getGlobalElement(rowview[j]);
+          }
+          std::sort (curEntries.begin (), curEntries.end ());
+
+          for (GO j = static_cast<GO> (0); j < static_cast<GO> (globalrow + 1); ++j) {
+            TEST_EQUALITY(curEntries[j], j);
           }
         }
       }
@@ -392,7 +403,12 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrixImportExport, doImport, Ordinal, Scalar )
   {
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    typedef Tpetra::global_size_t GST;
+    typedef Map<Ordinal> map_type;
+    typedef typename map_type::local_ordinal_type LO;
+    typedef typename map_type::global_ordinal_type GO;
+
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
@@ -411,18 +427,26 @@ namespace {
     int lclErr = 0;
     int gblErr = 0;
 
-    // First test: Import from a source Map that has all elements on
-    // process 0, to a target Map that is evenly distributed.
+    // First test: Import a diagonal CrsMatrix from a source row Map
+    // that has all indices on Process 0, to a target row Map that is
+    // uniformly distributed over processes.
     try {
-      const Ordinal tgt_num_local_elements = 3;
-      const Ordinal src_num_local_elements =
-        (myImageID == 0) ? numImages*tgt_num_local_elements : 0;
+      const GO indexBase = 0;
+      const LO tgt_num_local_elements = 3;
+      const LO src_num_local_elements = (myImageID == 0) ?
+        static_cast<LO> (numImages*tgt_num_local_elements) :
+        static_cast<LO> (0);
 
+      // Create row Maps for the source and target
       // Create Maps.
-      RCP<const Map<Ordinal> > src_map =
-        createContigMap<Ordinal,Ordinal> (INVALID,src_num_local_elements,comm);
-      RCP<const Map<Ordinal> > tgt_map =
-        createContigMap<Ordinal,Ordinal> (INVALID,tgt_num_local_elements,comm);
+      RCP<const map_type> src_map =
+        rcp (new map_type (INVALID,
+                           static_cast<size_t> (src_num_local_elements),
+                           indexBase, comm));
+      RCP<const map_type> tgt_map =
+        rcp (new map_type (INVALID,
+                           static_cast<size_t> (tgt_num_local_elements),
+                           indexBase, comm));
 
       // Create CrsMatrix objects.
       RCP<CrsMatrix<Scalar,Ordinal> > src_mat =
@@ -433,12 +457,14 @@ namespace {
                                             crsMatPlist));
 
       // Create a simple diagonal source graph.
-      for (Ordinal globalrow = src_map->getMinGlobalIndex();
-           globalrow <= src_map->getMaxGlobalIndex();
-           ++globalrow) {
-        src_mat->insertGlobalValues (globalrow,
-                                     tuple<Ordinal> (globalrow),
-                                     tuple<Scalar> (globalrow));
+      if (src_num_local_elements != 0) {
+        for (GO globalrow = src_map->getMinGlobalIndex();
+             globalrow <= src_map->getMaxGlobalIndex();
+             ++globalrow) {
+          src_mat->insertGlobalValues (globalrow,
+                                       tuple<GO> (globalrow),
+                                       tuple<Scalar> (globalrow));
+        }
       }
       src_mat->fillComplete ();
 
@@ -449,17 +475,25 @@ namespace {
       tgt_mat->fillComplete ();
 
       // Loop through tgt_mat and make sure it is diagonal.
-      for (Ordinal localrow = tgt_map->getMinLocalIndex();
-           localrow <= tgt_map->getMaxLocalIndex();
-           ++localrow)
-      {
-        ArrayView<const Ordinal> rowinds;
-        ArrayView<const Scalar>  rowvals;
-        tgt_mat->getLocalRowView(localrow, rowinds, rowvals);
-        TEST_EQUALITY_CONST(rowinds.size(), 1);
-        TEST_EQUALITY(rowinds[0], as<Ordinal>(localrow));
-        TEST_EQUALITY_CONST(rowvals.size(), 1);
-        TEST_EQUALITY(rowvals[0], as<Scalar>(localrow));
+      if (tgt_num_local_elements != 0) {
+        for (GO gblRow = tgt_map->getMinGlobalIndex ();
+             gblRow <= tgt_map->getMaxGlobalIndex ();
+             ++gblRow) {
+          const LO lclRow = tgt_map->getLocalElement (gblRow);
+
+          ArrayView<const LO> lclInds;
+          ArrayView<const Scalar> lclVals;
+          tgt_mat->getLocalRowView (lclRow, lclInds, lclVals);
+          TEST_EQUALITY_CONST(lclInds.size(), 1);
+          TEST_EQUALITY_CONST(lclVals.size(), 1);
+
+          if (lclInds.size () != 0) { // don't segfault in error case
+            TEST_EQUALITY(tgt_mat->getColMap ()->getGlobalElement (lclInds[0]), gblRow);
+          }
+          if (lclVals.size () != 0) { // don't segfault in error case
+            TEST_EQUALITY(lclVals[0], as<Scalar> (gblRow));
+          }
+        }
       }
 
       // Test the all-in-one import and fill complete nonmember
@@ -569,9 +603,9 @@ namespace {
         const Ordinal src_num_local = (myImageID%2 == 0 ? 3 : 5);
         const Ordinal tgt_num_local = 4;
 
-        RCP<const Map<Ordinal> > src_map =
+        RCP<const map_type> src_map =
           createContigMap<Ordinal,Ordinal> (INVALID, src_num_local, comm);
-        RCP<const Map<Ordinal> > tgt_map =
+        RCP<const map_type> tgt_map =
           createContigMap<Ordinal,Ordinal> (INVALID, tgt_num_local, comm);
 
         RCP<CrsMatrix<Scalar,Ordinal> > src_mat =
@@ -604,7 +638,7 @@ namespace {
 
         // now we're going to loop through tgt_mat and make sure that
         // each row has length 'globalrow' and has the correct contents:
-        const Teuchos::RCP<const Map<Ordinal> > colmap = tgt_mat->getColMap();
+        const Teuchos::RCP<const map_type> colmap = tgt_mat->getColMap();
 
         for (Ordinal globalrow=tgt_map->getMinGlobalIndex(); globalrow<=tgt_map->getMaxGlobalIndex(); ++globalrow) {
           Ordinal localrow = tgt_map->getLocalElement(globalrow);
@@ -613,9 +647,25 @@ namespace {
           tgt_mat->getLocalRowView(localrow, rowinds, rowvals);
           TEST_EQUALITY(rowinds.size(), globalrow);
           TEST_EQUALITY(rowvals.size(), globalrow);
+
+          // The target graph doesn't necessarily promise sorted
+          // order.  Thus, we copy out the local row view, convert to
+          // global, sort, and test the sorted result.  Since this is
+          // a matrix, not just a graph, we have to sort the two views
+          // jointly -- that is, sort curInds and apply the resulting
+          // permutation to curVals.
+          Array<GO> curInds (rowinds.size ());
+          Array<Scalar> curVals (rowvals.size ());
+
           for (Teuchos_Ordinal j=0; j<rowinds.size(); ++j) {
-            TEST_EQUALITY( colmap->getGlobalElement(rowinds[j]), as<Ordinal>(j) );
-            TEST_EQUALITY( rowvals[j], as<Scalar>(j)  );
+            curInds[j] = colmap->getGlobalElement (rowinds[j]);
+            curVals[j] = rowvals[j];
+          }
+          Tpetra::sort2 (curInds.begin (), curInds.end (), curVals.begin ());
+
+          for (Teuchos_Ordinal j=0; j<rowinds.size(); ++j) {
+            TEST_EQUALITY( curInds[j], as<GO> (j) );
+            TEST_EQUALITY( curVals[j], as<Scalar> (j)  );
           }
         }
       }
@@ -1102,6 +1152,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, doImport, Ordinal, Scalar 
   typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
   typedef Tpetra::Export<Ordinal,Ordinal> ExportType;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MagType;
+  typedef Tpetra::global_size_t GST;
 
   RCP<CrsMatrixType> A, B, C;
   RCP<const MapType> Map1, Map2;
@@ -1143,7 +1194,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, doImport, Ordinal, Scalar 
   // Test #1: Tridiagonal Matrix; Migrate to Proc 0
   /////////////////////////////////////////////////////////
   try {
-    global_size_t num_global = A->getRowMap()->getGlobalNumElements();
+    GST num_global = A->getRowMap()->getGlobalNumElements();
 
     // New map with all on Proc1
     if(MyPID==0) Map1 = rcp(new MapType(num_global,(size_t)num_global,0,Comm));
@@ -1391,7 +1442,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( FusedImportExport, doImport, Ordinal, Scalar 
   // Test 7: Tridiagonal Matrix; Migrate to Proc 0, Reverse Mode
   /////////////////////////////////////////////////////////
   try {
-    global_size_t num_global = A->getRowMap()->getGlobalNumElements();
+    GST num_global = A->getRowMap()->getGlobalNumElements();
 
     // New map with all on Proc1
     if(MyPID==0) Map1 = rcp(new MapType(num_global,(size_t)num_global,0,Comm));
@@ -1503,6 +1554,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ReverseImportExport, doImport, Ordinal, Scala
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MagType;
   typedef Tpetra::Vector<Scalar,Ordinal,Ordinal, Node> VectorType;
   typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal> CrsMatrixType;
+  typedef Tpetra::global_size_t GST;
 
   RCP<CrsMatrixType> A;
 
@@ -1518,7 +1570,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ReverseImportExport, doImport, Ordinal, Scala
   // Get the source map from a sample matrix
   build_test_matrix<CrsMatrixType>(Comm,A);
   MapSource=A->getRowMap();
-  global_size_t num_global = A->getRowMap()->getGlobalNumElements();
+  GST num_global = A->getRowMap()->getGlobalNumElements();
 
   // Target Map - all on one proc
   size_t num_local = MyPID==0 ? num_global : 0;
@@ -1588,6 +1640,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import_Util, GetPids, Ordinal )  {
   typedef Tpetra::Export<Ordinal,Ordinal> ExportType;
   typedef Tpetra::Vector<int,Ordinal,Ordinal, Node> IntVectorType;
   typedef Tpetra::CrsMatrix<double,Ordinal,Ordinal> CrsMatrixType;
+  typedef Tpetra::global_size_t GST;
 
   RCP<CrsMatrixType> A;
 
@@ -1602,7 +1655,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import_Util, GetPids, Ordinal )  {
   // Get the source map from a sample matrix
   build_test_matrix<CrsMatrixType>(Comm,A);
   MapSource=A->getRowMap();
-  global_size_t num_global = A->getRowMap()->getGlobalNumElements();
+  GST num_global = A->getRowMap()->getGlobalNumElements();
 
   // Target Map - all on one proc
   size_t num_local = MyPID==0 ? num_global : 0;
@@ -1752,16 +1805,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Import_Util, PackAndPrepareWithOwningPIDs, Or
 
 
 
-
+// Unit Test the functionality in Tpetra_Import_Util
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, Ordinal, Scalar)  {
-  // Unit Test the functionality in Tpetra_Import_Util
-  RCP<const Comm<int> > Comm = getDefaultComm();
+  using Teuchos::av_reinterpret_cast;
   typedef Tpetra::Map<Ordinal,Ordinal> MapType;
   typedef Tpetra::Import<Ordinal,Ordinal> ImportType;
   typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal> CrsMatrixType;
   typedef typename Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal>::packet_type PacketType;
-  using Teuchos::av_reinterpret_cast;
+  typedef Tpetra::global_size_t GST;
 
+  RCP<const Comm<int> > Comm = getDefaultComm();
   RCP<CrsMatrixType> A,B;
   int total_err=0;
   int test_err=0;
@@ -1773,7 +1826,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import_Util, UnpackAndCombineWithOwningPIDs, 
 
   // Build sample matrix & sourceMap
   build_test_matrix<CrsMatrixType>(Comm,A);
-  global_size_t num_global = A->getRowMap()->getGlobalNumElements();
+  GST num_global = A->getRowMap()->getGlobalNumElements();
   MapSource = A->getRowMap();
 
   // Target Map - all on one proc

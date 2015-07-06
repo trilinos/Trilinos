@@ -45,7 +45,7 @@
 #ifndef _ZOLTAN2_ALGZOLTAN_HPP_
 #define _ZOLTAN2_ALGZOLTAN_HPP_
 
-#include <Zoltan2_GraphModel.hpp>
+#include <Zoltan2_Standards.hpp>
 #include <Zoltan2_Algorithm.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_Util.hpp>
@@ -119,16 +119,59 @@ private:
     zz->Set_Geom_Multi_Fn(zoltanGeom<AdapterWithCoords>, (void *) ia);
   }
 
-  void setCallbacksGraph()
+  void setCallbacksGraph(
+    const RCP<const GraphAdapter<user_t,userCoord_t> > &adp)
   {
-    cout << "NotReadForGraphYet" << endl;
+    cout << "NotReadyForGraphYet" << endl;
     // TODO
   }
 
-  void setCallbacksHypergraph()
+  void setCallbacksGraph(
+    const RCP<const MatrixAdapter<user_t,userCoord_t> > &adp)
   {
-    cout << "NotReadForHypergraphYet" << endl;
+    cout << "NotReadyForGraphYet" << endl;
     // TODO
+  }
+
+  void setCallbacksGraph(
+    const RCP<const MeshAdapter<user_t> > &adp)
+  {
+    cout << "NotReadyForGraphYet" << endl;
+    // TODO
+  }
+
+  void setCallbacksHypergraph(
+    const RCP<const MatrixAdapter<user_t,userCoord_t> > &adp)
+  {
+    // TODO:  If add parameter list to this function, can register 
+    // TODO:  different callbacks depending on the hypergraph model to use
+
+    zz->Set_HG_Size_CS_Fn(zoltanHGSizeCSForMatrixAdapter<Adapter>,
+                          (void *) &(*adp));
+    zz->Set_HG_CS_Fn(zoltanHGCSForMatrixAdapter<Adapter>,
+                     (void *) &(*adp));
+
+    // zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMatrixAdapter<Adapter>,
+    //                             (void *) &(*adapter));
+    // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMatrixAdapter<Adapter>,
+    //                             (void *) &(*adapter));
+  }
+
+  void setCallbacksHypergraph(
+    const RCP<const MeshAdapter<user_t> > &adp)
+  {
+    // TODO:  If add parameter list to this function, can register 
+    // TODO:  different callbacks depending on the hypergraph model to use
+
+    zz->Set_HG_Size_CS_Fn(zoltanHGSizeCSForMeshAdapter<Adapter>,
+                          (void *) &(*adp));
+    zz->Set_HG_CS_Fn(zoltanHGCSForMeshAdapter<Adapter>,
+                     (void *) &(*adp));
+
+    // zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMeshAdapter<Adapter>,
+    //                             (void *) &(*adapter));
+    // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMeshAdapter<Adapter>,
+    //                             (void *) &(*adapter));
   }
 
 public:
@@ -167,7 +210,7 @@ public:
     setMPIComm(problemComm__);
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
-    setCallbacksGraph();
+    setCallbacksGraph(adapter);
     if (adapter->coordinatesAvailable()) {
       setCallbacksGeom(adapter->getCoordinateInput());
     }
@@ -181,8 +224,8 @@ public:
     setMPIComm(problemComm__);
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
-    setCallbacksGraph();
-    setCallbacksHypergraph();
+    setCallbacksGraph(adapter);
+    setCallbacksHypergraph(adapter);
     if (adapter->coordinatesAvailable()) {
       setCallbacksGeom(adapter->getCoordinateInput());
     }
@@ -196,8 +239,8 @@ public:
     setMPIComm(problemComm__);
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
-    setCallbacksGraph();
-    setCallbacksHypergraph();
+    setCallbacksGraph(adapter);
+    setCallbacksHypergraph(adapter);
     setCallbacksGeom(&(*adapter));
   }
 
@@ -224,10 +267,31 @@ void AlgZoltan<Adapter>::partition(
   sprintf(paramstr, "%d", wdim);
   zz->Set_Param("OBJ_WEIGHT_DIM", paramstr);
 
-  // TODO  Add a way to set Zoltan parameters directly from parameter list here
-  // TODO  Exclude ones like RETURN_LISTS, AUTOMIGRATE, NUM_GLOBAL_PARTS, etc.
+  const Teuchos::ParameterList &pl = env->getParameters();
 
-  int ierr = 0;
+  double tolerance;
+  const Teuchos::ParameterEntry *pe = pl.getEntryPtr("imbalance_tolerance");
+  if (pe){
+    char str[30];
+    tolerance = pe->getValue<double>(&tolerance);
+    sprintf(str, "%f", tolerance);
+    zz->Set_Param("IMBALANCE_TOL", str);
+  }
+
+  // Look for zoltan_parameters sublist; pass all zoltan parameters to Zoltan
+  try {
+    const Teuchos::ParameterList &zpl = pl.sublist("zoltan_parameters");
+    for (ParameterList::ConstIterator iter =  zpl.begin();
+                                      iter != zpl.end(); iter++) {
+      const std::string &zname = pl.name(iter);
+      // Convert the value to a string to pass to Zoltan
+      std::string &zval = pl.entry(iter).getValue(&zval);
+      zz->Set_Param(zname.c_str(), zval.c_str());
+    }
+  }
+  catch (std::exception &e) {
+    // No zoltan_parameters sublist found; no Zoltan parameters to register
+  }
 
   // Get target part sizes
   int pdim = (wdim > 1 ? wdim : 1);
@@ -247,32 +311,32 @@ void AlgZoltan<Adapter>::partition(
     }
   }
 
+  // Make the call to LB_Partition
   int changed = 0;
   int nGidEnt = 1, nLidEnt = 1;
-  int nImport = -1;
-  ZOLTAN_ID_PTR iGids = NULL, iLids = NULL;
-  int *iProcs = NULL, *iParts = NULL;
-  int nExport = -1;
-  ZOLTAN_ID_PTR eGids = NULL, eLids = NULL;
-  int *eProcs = NULL, *eParts = NULL;
+  int nDummy = -1;                         // Dummy vars to satisfy arglist
+  ZOLTAN_ID_PTR dGids = NULL, dLids = NULL;
+  int *dProcs = NULL, *dParts = NULL;
+  int nObj = -1;                           // Output vars with new part info
+  ZOLTAN_ID_PTR oGids = NULL, oLids = NULL;
+  int *oProcs = NULL, *oParts = NULL;
 
-  zz->Set_Param("RETURN_LISTS", "PARTS");  // Best format for Zoltan2;
-                                           // results in export lists
-
-  ierr = zz->LB_Partition(changed, nGidEnt, nLidEnt,
-                          nImport, iGids, iLids, iProcs, iParts,
-                          nExport, eGids, eLids, eProcs, eParts);
+  zz->Set_Param("RETURN_LISTS", "PARTS");  // required format for Zoltan2;
+                                           // results in last five arguments
+  int ierr = zz->LB_Partition(changed, nGidEnt, nLidEnt,
+                              nDummy, dGids, dLids, dProcs, dParts,
+                              nObj,   oGids, oLids, oProcs, oParts);
 
   env->globalInputAssertion(__FILE__, __LINE__, "Zoltan LB_Partition", 
     (ierr==ZOLTAN_OK || ierr==ZOLTAN_WARN), BASIC_ASSERTION, problemComm);
 
   // Load answer into the solution.
-  ArrayRCP<part_t> partList(new part_t[nExport], 0, nExport, true);
-  for (int i = 0; i < nExport; i++) partList[i] = eParts[eLids[i]];
+  ArrayRCP<part_t> partList(new part_t[nObj], 0, nObj, true);
+  for (int i = 0; i < nObj; i++) partList[i] = oParts[oLids[i]];
   solution->setParts(partList);
 
   // Clean up
-  zz->LB_Free_Part(&eGids, &eLids, &eProcs, &eParts);
+  zz->LB_Free_Part(&oGids, &oLids, &oProcs, &oParts);
 }
 
 } // namespace Zoltan2

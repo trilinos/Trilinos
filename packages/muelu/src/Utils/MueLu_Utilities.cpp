@@ -423,9 +423,11 @@ namespace MueLu {
     while (p) {
       // p now points to first token
       // strip whitespace
+// printf("Temp:-%s-\n",p);
       int start=0, stop=strlen(p)-1;
       while(start<=stop && p[start]==' ') ++start;
       while(start<=stop && p[stop]==' ')  --stop;
+  //  printf("    : start = %d start = %d\n",start,stop);
       // If somebody didn't use consecutive commas...
       if(start<=stop) {
 	strncpy(buffer,&p[start],stop-start+1);	

@@ -117,6 +117,29 @@ enum EntityState { Unchanged = 0 ,
                    Modified = 2 ,
                    Deleted  = 3 };
 
+inline std::ostream & operator<<(std::ostream &out, EntityState state)
+{
+  switch (state)
+  {
+      case EntityState::Unchanged:
+          out << "Unchanged";
+          break;
+      case EntityState::Created:
+          out << "Created  ";
+          break;
+      case EntityState::Modified:
+          out << "Modified ";
+          break;
+      case EntityState::Deleted:
+          out << "Deleted  ";
+          break;
+      default:
+          out << "Unknown  ";
+  }
+  return out;
+}
+
+
 template< class FieldType > struct FieldTraits ;
 
 //MeshIndex describes an Entity's location in the mesh, specifying which bucket,
@@ -126,6 +149,8 @@ struct MeshIndex
 {
   Bucket* bucket;
   size_t bucket_ordinal;
+
+  MeshIndex(Bucket *bucketIn, size_t ordinal) : bucket(bucketIn), bucket_ordinal(ordinal) {}
 };
 
 // Smaller than MeshIndex and replaces bucket pointer with bucket_id to

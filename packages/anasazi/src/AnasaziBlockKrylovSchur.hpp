@@ -207,7 +207,7 @@ namespace Anasazi {
      * Note, for any pointer in \c newstate which directly points to the multivectors in 
      * the solver, the data is not copied.
      */
-    void initialize(BlockKrylovSchurState<ScalarType,MV> state);
+    void initialize(BlockKrylovSchurState<ScalarType,MV>& state);
 
     /*! \brief Initialize the solver with the initial vectors from the eigenproblem
      *  or random data.
@@ -769,7 +769,7 @@ namespace Anasazi {
    */
 
   template <class ScalarType, class MV, class OP>
-  void BlockKrylovSchur<ScalarType,MV,OP>::initialize(BlockKrylovSchurState<ScalarType,MV> newstate)
+  void BlockKrylovSchur<ScalarType,MV,OP>::initialize(BlockKrylovSchurState<ScalarType,MV>& newstate)
   {
     // NOTE: memory has been allocated by setBlockSize(). Use SetBlock below; do not Clone
 

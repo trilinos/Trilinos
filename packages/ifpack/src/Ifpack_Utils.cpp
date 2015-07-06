@@ -54,12 +54,15 @@
 
 void Ifpack_PrintLine()
 {
-  cout << "================================================================================" << endl;
+  std::cout << "================================================================================" << std::endl;
 }
 
 //============================================================================
 void Ifpack_BreakForDebugger(Epetra_Comm& Comm)
 {
+  using std::cout;
+  using std::endl;
+
   char hostname[80];
   char buf[80];
   if (Comm.MyPID()  == 0) cout << "Host and Process Ids for tasks" << endl;
@@ -236,25 +239,28 @@ Epetra_CrsGraph* Ifpack_CreateOverlappingCrsMatrix(const Epetra_CrsGraph* Graph,
 }
 
 //============================================================================
-string Ifpack_toString(const int& x)
+std::string Ifpack_toString(const int& x)
 {
   char s[100];
   sprintf(s, "%d", x);
-  return string(s);
+  return std::string(s);
 }
 
 //============================================================================
-string Ifpack_toString(const double& x)
+std::string Ifpack_toString(const double& x)
 {
   char s[100];
   sprintf(s, "%g", x);
-  return string(s);
+  return std::string(s);
 }
 
 //============================================================================
 int Ifpack_PrintResidual(char* Label, const Epetra_RowMatrix& A,
                          const Epetra_MultiVector& X, const Epetra_MultiVector&Y)
 {
+  using std::cout;
+  using std::endl;
+
   if (X.Comm().MyPID() == 0) {
     cout << "***** " << Label << endl;
   }
@@ -267,6 +273,9 @@ int Ifpack_PrintResidual(char* Label, const Epetra_RowMatrix& A,
 int Ifpack_PrintResidual(const int iter, const Epetra_RowMatrix& A,
                          const Epetra_MultiVector& X, const Epetra_MultiVector&Y)
 {
+  using std::cout;
+  using std::endl;
+
   Epetra_MultiVector RHS(X);
   std::vector<double> Norm2;
   Norm2.resize(X.NumVectors());
@@ -289,6 +298,9 @@ int Ifpack_PrintResidual(const int iter, const Epetra_RowMatrix& A,
 // of the input matrix.
 void Ifpack_PrintSparsity_Simple(const Epetra_RowMatrix& A)
 {
+  using std::cout;
+  using std::endl;
+
   int MaxEntries = A.MaxNumEntries();
   std::vector<int> Indices(MaxEntries);
   std::vector<double> Values(MaxEntries);
@@ -381,6 +393,8 @@ static void print(const char str[], T val, double percentage)
 template<class T>
 static void print(const char str[], T one, T two, T three, bool equal = true)
 {
+  using std::endl;
+
   std::cout.width(30); std::cout.setf(std::ios::left);
   std::cout << str;
   if (equal)
@@ -827,6 +841,8 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap,
 int Ifpack_AnalyzeVectorElements(const Epetra_Vector& Diagonal,
                                  const bool abs, const int steps)
 {
+  using std::cout;
+  using std::endl;
 
   bool verbose = (Diagonal.Comm().MyPID() == 0);
   double min_val =  DBL_MAX;
@@ -884,6 +900,8 @@ int Ifpack_AnalyzeVectorElements(const Epetra_Vector& Diagonal,
 int Ifpack_AnalyzeMatrixElements(const Epetra_RowMatrix& A,
                                  const bool abs, const int steps)
 {
+  using std::cout;
+  using std::endl;
 
   bool verbose = (A.Comm().MyPID() == 0);
   double min_val =  DBL_MAX;
@@ -1083,7 +1101,7 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName,
     fprintf(fp,"%s","%%EndComments\n");
     fprintf(fp,"%s","/cm {72 mul 2.54 div} def\n");
     fprintf(fp,"%s","/mc {72 div 2.54 mul} def\n");
-    fprintf(fp,"%s","/pnum { 72 div 2.54 mul 20 string ");
+    fprintf(fp,"%s","/pnum { 72 div 2.54 mul 20 std::string ");
     fprintf(fp,"%s","cvs print ( ) print} def\n");
     fprintf(fp,"%s","/Cshow {dup stringwidth pop -2 div 0 rmoveto show} def\n");
 

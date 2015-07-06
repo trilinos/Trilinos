@@ -84,7 +84,7 @@ void Zoltan_Print_Sync_Start(MPI_Comm communicator, int do_print_line)
  * The do_print_line argument is a boolean variable.  If true, a line of # 
  * is printed to indicate the start of a Print_Sync I/O block.
  *
- * NOTE: THERE CAN BE NO COMMUNICATON BETWEEN THESE CALLS.
+ * NOTE: THERE CAN BE NO COMMUNICATION BETWEEN THESE CALLS.
  *
  * Author: John Shadid (9221, SNL)
  */
@@ -98,6 +98,10 @@ int proc;
 
   MPI_Comm_rank(communicator, &proc);
 
+  /* This strategy for computing the type assumes that all calls to 
+   * Zoltan_Print_Sync_Start and Zoltan_Print_Sync_End are made with
+   * the same sized communicator.
+   */
   offset = (offset + 1)%100;
   type   = PRINT_SYNC + offset;
 
@@ -136,7 +140,7 @@ void Zoltan_Print_Sync_End(MPI_Comm communicator, int do_print_line)
  * The do_print_line argument is a boolean variable.  If true, a line of # 
  * is printed to indicate the start of a Print_Sync I/O block.
  *
- * NOTE: THERE CAN BE NO COMMUNICATON BETWEEN THESE CALLS.
+ * NOTE: THERE CAN BE NO COMMUNICATION BETWEEN THESE CALLS.
  *
  * Author: John Shadid (9221, SNL)
  */
@@ -152,6 +156,10 @@ char msg[256];
 
   fflush(stdout);
 
+  /* This strategy for computing the type assumes that all calls to 
+   * Zoltan_Print_Sync_Start and Zoltan_Print_Sync_End are made with
+   * the same sized communicator.
+   */
   offset = (offset + 1)%100;
   type   = PRINT_SYNC + offset;
 

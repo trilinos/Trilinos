@@ -132,11 +132,6 @@ int main(int argc, char** argv)
   cout << "A length" << A->getGlobalNumRows() << " " << A->getGlobalNumCols() << endl;
   cout << "A local length" << A->getNodeNumRows() << " " << A->getNodeNumCols() << endl;
 
- 
-
- 
-
-
 
   /*-----------------have_interface-----------------*/
   /*---The have_interface checks is all the parameter list makes sense---*/
@@ -200,7 +195,8 @@ int main(int argc, char** argv)
 
 
   ShyLU::DirectSolverInterface<Matrix_t, Vector_t> directsolver2(A.get(), pLUList.get());
-directsolver2.solve(b.get(),x.get());
+  directsolver2.factor();
+  directsolver2.solve(b.get(),x.get());
 
 //Note: should multiple to set b and x for success
 

@@ -205,7 +205,7 @@ wait_local_evaluations(Dakota::PRPQueue& prp_queue)
       // Put in copies of last point for remainder
       if (block == num_blocks && remainder > 0) {
 	--iter;
-	for (unsigned int idx=remainder; idx<block_size-remainder; idx++) {
+	for (unsigned int idx=remainder; idx<block_size; idx++) {
 	  const Dakota::Variables& vars = iter->variables();
 	  const Dakota::RealVector& xC  = vars.continuous_variables();
 	  unsigned int numVars = xC.length();
