@@ -1,6 +1,23 @@
-A = laplacianfun([90, 90]);
+[A, coords] = laplacianfun([90, 90]);
 b = (1:(8100))';
 %Set up the problem using a Matlab TwoLevelFactory for Aggregates
-matlabProblem = muelu('setup', A, 'xml parameter file', 'Tests/Brick/matlabParams.xml');
+matlabProblem = muelu('setup', A, coords, 'xml parameter file', 'Tests/Brick/matlabParams.xml');
+mueluProblem = muelu('setup', A, coords, 'xml parameter file', 'Tests/Brick/mueluParams.xml');
 matlabP = muelu('get', matlabProblem, 1, 'P');
-disp('MATLAB brick aggregation test passed by running to completion.');
+mueluP = muelu('get', mueluProblem, 1, 'P');
+diff = nonzeros(matlabP - mueluP);
+passed = true(1);
+for i = 1:numel(diff)
+    elem = abs(diff(i));
+    if elem > 1e-12
+        passed = false(1);
+        break
+    end
+end
+if passed
+    disp('Brick aggregation test passed.');
+    exit(0);
+else
+    disp('Brick aggregation test failed.');
+    exit(1);
+end

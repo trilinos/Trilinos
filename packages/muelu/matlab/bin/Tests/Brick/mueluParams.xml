@@ -2,17 +2,8 @@
 <!--These parameters tell MueLu to use a MATLAB function as smoother-->
 
 <ParameterList name="MueLu">
-  <ParameterList name="Factories">
-    <ParameterList name="myBrickAggFactory">
-      <Parameter name="factory" type="string" value="BrickAggregationFactory"/>
-      <Parameter name="aggregation: brick x size" type="int" value="3"/>
-      <Parameter name="aggregation: brick y size" type="int" value="1"/>
-      <Parameter name="aggregation: brick z size" type="int" value="1"/>
-    </ParameterList>
-  </ParameterList>
-  <ParameterList name="Hierarchy">
-    <ParameterList name="All">
-      <Parameter name="Aggregates" type="string" value="myBrickAggFactory"/>
-    </ParameterList>
-  </ParameterList>
+  <Parameter name="aggregation: type" type="string" value="brick"/>
+  <Parameter name="aggregation: brick x size" type="int" value="3"/>
+  <Parameter name="aggregation: brick y size" type="int" value="1"/>
+  <Parameter name="aggregation: brick z size" type="int" value="1"/>
 </ParameterList>
