@@ -35,6 +35,12 @@ IF (ROL_ENABLE_Epetra)
   APPEND_SET(HEADERS 
     vector/ROL_EpetraMultiVector.hpp
   )
+
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sol)
+  APPEND_SET(HEADERS 
+    sol/ROL_EpetraBatchManager.hpp
+    sol/ROL_StdEpetraBatchManager.hpp
+  )
 ENDIF()
 
 INSTALL(FILES ${HEADERS} DESTINATION ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
