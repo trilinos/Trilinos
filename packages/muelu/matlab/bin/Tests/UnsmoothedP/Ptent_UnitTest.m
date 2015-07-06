@@ -29,6 +29,8 @@ for i = 1:numel(diff)
 end
 if areEqual
   disp('Test passed, MueLu tentative prolongator is correct.');
+  exit(0);
 else
   disp('Test failed, MueLu tentative prolongator did not match MATLAB one.');
+  exit(-1);
 end

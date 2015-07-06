@@ -70,6 +70,26 @@ if(TPL_ENABLE_MATLAB)
   # Copy these files over from src tree
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_Output_cp
     SOURCE_FILES muelu.m matlab setup.m constructAggregates.m
+RunBrickAggTest.m RunJacobiTest.m RunPtentTest.m
     )
+  # Copy the MATLAB unit tests, have to specify each file
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_Jacobi_Test_cp
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Tests/JacobiSmooth
+    SOURCE_FILES getDiag.m jacobi.m JacobiSmoother_UnitTest.m matlabParams.xml mueluParams.xml
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/Tests/JacobiSmooth
+    )
+  
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_Ptent_Tests_cp
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Tests/UnsmoothedP
+    SOURCE_FILES createP.m laplacianfun.m matlabParams.xml mueluParams.xml Ptent_UnitTest.m
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/Tests/UnsmoothedP
+    )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_BrickAgg_Tests_cp
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Tests/Brick
+    SOURCE_FILES simpleAggregation.m matlabParams.xml mueluParams.xml BrickAggregationUnitTest.m
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/Tests/Brick
+    )
+
 ENDIF()
 

@@ -26,8 +26,8 @@ for index = 1:numel(matlabSoln)
 end
 if areEqual
   disp('Test passed, MueLu produced same solution as gold standard in MATLAB.');
-  %exit(0);
+  exit(0);
 else
   disp('Test failed, MueLu''s solution did not match MATLAB''s.');
-  %exit(-1);
+  exit(-1);
 end

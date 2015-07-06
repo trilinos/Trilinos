@@ -676,9 +676,9 @@ namespace MueLu {
     }
     //Collapse set of points only to those that are used to define convex hull geometry
     vector<int> uniquePoints;
-    for(int i = 0; i < hulls.size(); i++)
+    for(int i = 0; i < int(hulls.size()); i++)
     {
-      for(int j = 0; j < hulls[i].size(); j++)
+      for(int j = 0; j < int(hulls[i].size()); j++)
       {
         uniquePoints.push_back(hulls[i][j]);
       }
@@ -686,9 +686,9 @@ namespace MueLu {
     sort(uniquePoints.begin(), uniquePoints.end());
     unique(uniquePoints.begin(), uniquePoints.end());
     //now go through each hull's set of nodes and replace global node values with indices in uniquePoints
-    for(int i = 0; i < hulls.size(); i++)
+    for(int i = 0; i < int(hulls.size()); i++)
     {
-      for(int j = 0; j < hulls[i].size(); j++)
+      for(int j = 0; j < int(hulls[i].size()); j++)
       {
         hulls[i][j] = distance(uniquePoints.begin(), find(uniquePoints.begin(), uniquePoints.end(), hulls[i][j]));
       }
