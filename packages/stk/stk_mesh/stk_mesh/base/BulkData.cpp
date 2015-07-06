@@ -954,20 +954,18 @@ bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
   return true ;
 }
 
-//----------------------------------------------------------------------
-
-void BulkData::generate_new_ids(stk::topology::rank_t rank, size_t numIdsNeeded, std::vector<stk::mesh::EntityId>& requestedIds) const
+size_t get_max_num_ids_needed_across_all_procs(const stk::mesh::BulkData& bulkData, size_t numIdsNeededThisProc)
 {
     size_t maxNumNeeded = 0;
-    int mpiResult = MPI_SUCCESS ;
-    mpiResult = MPI_Allreduce(&numIdsNeeded, &maxNumNeeded, 1, sierra::MPI::Datatype<size_t>::type(), MPI_MAX, this->parallel());
-    if(mpiResult != MPI_SUCCESS) {
-        throw std::runtime_error("MPI_Allreduce failed");
-        return;
-    }
+    ThrowRequireMsg(MPI_Allreduce(&numIdsNeededThisProc, &maxNumNeeded, 1, sierra::MPI::Datatype<size_t>::type(), MPI_MAX, bulkData.parallel()) == MPI_SUCCESS,
+            "Program error (MPI_Allreduce failure). Please contact sierra-help@sandia.gov for support.");
+    return maxNumNeeded;
+}
 
-    if ( maxNumNeeded == 0 ) return;
+//----------------------------------------------------------------------
 
+std::vector<uint64_t> BulkData::internal_get_ids_in_use(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId>& reserved_ids) const
+{
     std::vector<uint64_t> ids_in_use;
     ids_in_use.reserve(m_entity_keys.size() + m_deleted_entities_current_modification_cycle.size());
 
@@ -991,10 +989,30 @@ void BulkData::generate_new_ids(stk::topology::rank_t rank, size_t numIdsNeeded,
         }
     }
 
+    ids_in_use.insert(ids_in_use.end(), reserved_ids.begin(), reserved_ids.end());
+
     std::sort(ids_in_use.begin(), ids_in_use.end());
     std::vector<uint64_t>::iterator iter2 = std::unique(ids_in_use.begin(), ids_in_use.end());
     ids_in_use.resize(iter2-ids_in_use.begin());
+    return ids_in_use;
+}
 
+void BulkData::generate_new_ids_given_reserved_ids(stk::topology::rank_t rank, size_t numIdsNeeded, const std::vector<stk::mesh::EntityId>& reserved_ids, std::vector<stk::mesh::EntityId>& requestedIds) const
+{
+    size_t maxNumNeeded = get_max_num_ids_needed_across_all_procs(*this, numIdsNeeded);
+    if ( maxNumNeeded == 0 ) return;
+    std::vector<uint64_t> ids_in_use = this->internal_get_ids_in_use(rank, reserved_ids);
+
+    uint64_t maxAllowedId = stk::mesh::EntityKey::MAX_ID;
+    requestedIds = generate_parallel_unique_ids(maxAllowedId, ids_in_use, numIdsNeeded, this->parallel());
+}
+
+void BulkData::generate_new_ids(stk::topology::rank_t rank, size_t numIdsNeeded, std::vector<stk::mesh::EntityId>& requestedIds) const
+{
+    size_t maxNumNeeded = get_max_num_ids_needed_across_all_procs(*this, numIdsNeeded);
+    if ( maxNumNeeded == 0 ) return;
+
+    std::vector<uint64_t> ids_in_use = this->internal_get_ids_in_use(rank);
     uint64_t maxAllowedId = stk::mesh::EntityKey::MAX_ID;
     requestedIds = generate_parallel_unique_ids(maxAllowedId, ids_in_use, numIdsNeeded, this->parallel());
 }
@@ -1543,9 +1561,10 @@ void BulkData::internal_dump_all_mesh_info(std::ostream& out) const
               if (r != stk::topology::NODE_RANK) {
                 out << this->bucket(target_entity).topology();
                 if (b_rank != stk::topology::NODE_RANK) {
-                    Permutation const *permutations = bucket->begin_permutations(b_ord, r);
-                    ThrowAssert(permutations);
+                  Permutation const *permutations = bucket->begin_permutations(b_ord, r);
+                  if (permutations) {
                     out << " permutation index " << permutations[c_itr];
+                  }
                 }
               }
               out << ", state = " << state(target_entity);
