@@ -601,11 +601,6 @@ namespace Sacado {
 
       //@}
 
-    protected:
-
-      //! Update value
-      bool update_val_;
-
     }; // class GeneralFad
 
   } // namespace Fad

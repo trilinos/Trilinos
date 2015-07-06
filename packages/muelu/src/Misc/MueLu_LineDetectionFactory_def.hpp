@@ -66,18 +66,16 @@ namespace MueLu {
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",               Teuchos::null, "Generating factory of the matrix A");
-    //validParamList->set< RCP<const FactoryBase> >("Nullspace",       Teuchos::null, "Generating factory of the nullspace");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",     Teuchos::null, "Generating factory for coorindates");
 
     validParamList->set< std::string > ("linedetection: orientation", "vertical", "Line orientation: can be either 'vertical', 'horizontal' or 'coordinates'");
-    validParamList->set< LO > ("linedetection: num layers", 10, "Line detection: number of layers on finest level. Alternatively, set the number of layers on the finest level as \"NumZLayers\" in the finest level container class.");
+    validParamList->set< LO > ("linedetection: num layers", -1, "Line detection: number of layers on finest level. Alternatively, set the number of layers on the finest level as \"NumZLayers\" in the finest level container class.");
     return validParamList;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void LineDetectionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
-    // what about Coordinates
 
     // The factory needs the information about the number of z-layers. While this information is
     // provided by the user for the finest level, the factory itself is responsible to provide the
@@ -94,32 +92,35 @@ namespace MueLu {
   void LineDetectionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
     FactoryMonitor m(*this, "Line detection (Ray style)", currentLevel);
 
-    LO               NumZDir = 0, Zorientation = GRID_SUPPLIED;
+    LO               NumZDir = 0;
     RCP<MultiVector> fineCoords;
     ArrayRCP<Scalar> x, y, z;
     Scalar           *xptr = NULL, *yptr = NULL, *zptr = NULL;
 
     // obtain general variables
-    RCP<Matrix>      A             = Get< RCP<Matrix> >      (currentLevel, "A");
+    RCP<Matrix> A         = Get< RCP<Matrix> >      (currentLevel, "A");
+    LO BlkSize            = A->GetFixedBlockSize();
+    RCP<const Map> rowMap = A->getRowMap();
+    LO Ndofs              = rowMap->getNodeNumElements();
+    LO Nnodes             = Ndofs/BlkSize;
 
+    // collect information provided by user
     const ParameterList& pL = GetParameterList();
     const std::string lineOrientation = pL.get<std::string>("linedetection: orientation");
-    GetOStream(Runtime1) << "Line detection mode = " << lineOrientation << std::endl;
 
     // interpret "line orientation" parameter provided by the user on the finest level
     if(currentLevel.GetLevelID() == 0) {
       if(lineOrientation=="vertical")
-        Zorientation = VERTICAL;
+        Zorientation_ = VERTICAL;
       else if (lineOrientation=="horizontal")
-        Zorientation = HORIZONTAL;
+        Zorientation_ = HORIZONTAL;
       else if (lineOrientation=="coordinates")
-        Zorientation = GRID_SUPPLIED;
+        Zorientation_ = GRID_SUPPLIED;
       else
         TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "LineDetectionFactory: The parameter 'semicoarsen: line orientation' must be either 'vertical', 'horizontal' or 'coordinates'.");
-    } else {
-      // on coarse levels the line orientation is internally fixed to be vertical
-      Zorientation = VERTICAL;
     }
+
+    TEUCHOS_TEST_FOR_EXCEPTION(Zorientation_!=VERTICAL, Exceptions::RuntimeError, "LineDetectionFactory: The 'horizontal' or 'coordinates' have not been tested!!!. Please remove this exception check and carefully test these modes!");
 
     // obtain number of z layers (variable over levels)
     // This information is user-provided on the finest level and transferred to the coarser
@@ -129,10 +130,91 @@ namespace MueLu {
         NumZDir = currentLevel.Get<LO>("NumZLayers", NoFactory::get()); //obtain info
         GetOStream(Runtime1) << "Number of layers for line detection: " << NumZDir << " (information from Level(0))" << std::endl;
       } else {
+        // check whether user provides information or it can be reconstructed from coordinates
         NumZDir = pL.get<LO>("linedetection: num layers");
-        GetOStream(Runtime1) << "Number of layers for line detection: " << NumZDir << " (information provided by user through 'line detection: num layers')" << std::endl;
-      }
+        if(NumZDir == -1) {
+          bool CoordsAvail = currentLevel.IsAvailable("Coordinates");
+
+          if (CoordsAvail == true) {
+            // try to reconstruct the number of layers from coordinates
+            fineCoords = Get< RCP<MultiVector> > (currentLevel, "Coordinates");
+            TEUCHOS_TEST_FOR_EXCEPTION(fineCoords->getNumVectors() != 3, Exceptions::RuntimeError, "Three coordinates arrays must be supplied if line detection orientation not given.");
+            x = fineCoords->getDataNonConst(0);
+            y = fineCoords->getDataNonConst(1);
+            z = fineCoords->getDataNonConst(2);
+            xptr = x.getRawPtr();
+            yptr = y.getRawPtr();
+            zptr = z.getRawPtr();
+
+            LO NumCoords = Ndofs/BlkSize;
+            LO i, j, index, next, subindex, subnext;
+            SC xfirst, yfirst;
+
+            /* sort coordinates so that we can order things according to lines */
+            Teuchos::ArrayRCP<LO> TOrigLoc= Teuchos::arcp<LO>(NumCoords);   LO* OrigLoc= TOrigLoc.getRawPtr();
+            Teuchos::ArrayRCP<SC> Txtemp  = Teuchos::arcp<SC>(NumCoords);   SC* xtemp  = Txtemp.getRawPtr();
+            Teuchos::ArrayRCP<SC> Tytemp  = Teuchos::arcp<SC>(NumCoords);   SC* ytemp  = Tytemp.getRawPtr();
+            Teuchos::ArrayRCP<SC> Tztemp  = Teuchos::arcp<SC>(NumCoords);   SC* ztemp  = Tztemp.getRawPtr();
+
+            TEUCHOS_TEST_FOR_EXCEPTION(ztemp == NULL, Exceptions::RuntimeError, "Not enough memory for line algorithms");
+            for (i = 0; i < NumCoords; i++) ytemp[i]= yptr[i];
+            for (i = 0; i < NumCoords; i++) OrigLoc[i]= i;
+
+            ML_az_dsort2(ytemp,NumCoords,OrigLoc);
+            for (i = 0; i < NumCoords; i++) xtemp[i]= xptr[OrigLoc[i]];
+
+            index = 0;
+
+            while (index < NumCoords ) {
+              yfirst = ytemp[index];
+              next   = index+1;
+              while ( (next != NumCoords) && (ytemp[next] == yfirst))
+                next++;
+              ML_az_dsort2(&(xtemp[index]),next-index,&(OrigLoc[index]));
+              for (i = index; i < next; i++) ztemp[i]= zptr[OrigLoc[i]];
+              /* One final sort so that the ztemps are in order */
+              subindex = index;
+              while (subindex != next) {
+                xfirst = xtemp[subindex]; subnext = subindex+1;
+                while ( (subnext != next) && (xtemp[subnext] == xfirst)) subnext++;
+                ML_az_dsort2(&(ztemp[subindex]),subnext-subindex,&(OrigLoc[subindex]));
+                subindex = subnext;
+              }
+              index = next;
+            }
+
+            /* go through each vertical line and populate blockIndices so all   */
+            /* dofs within a PDE within a vertical line correspond to one block.*/
+
+            LO NumBlocks = 0;
+            LO NumNodesPerVertLine = 0;
+            index = 0;
+
+            while ( index < NumCoords ) {
+              xfirst = xtemp[index];  yfirst = ytemp[index];
+              next = index+1;
+              while ( (next != NumCoords) && (xtemp[next] == xfirst) &&
+                      (ytemp[next] == yfirst))
+                next++;
+              if (NumBlocks == 0) {
+                NumNodesPerVertLine = next-index;
+              }
+              TEUCHOS_TEST_FOR_EXCEPTION(next-index != NumNodesPerVertLine,Exceptions::RuntimeError, "Error code only works for constant block size now!!!\n");
+              NumBlocks++;
+              index = next;
+            }
+
+            NumZDir = NumNodesPerVertLine;
+            GetOStream(Runtime1) << "Number of layers for line detection: " << NumZDir << " (information reconstructed from provided node coordinates)" << std::endl;
+          } else {
+            TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "LineDetectionFactory: BuildP: User has to provide valid number of layers (e.g. using the 'line detection: num layers' parameter).");
+          }
+        } else {
+          GetOStream(Runtime1) << "Number of layers for line detection: " << NumZDir << " (information provided by user through 'line detection: num layers')" << std::endl;
+        }
+      } // end else (user provides information or can be reconstructed) on finest level
     } else {
+      // coarse level information
       // TODO get rid of NoFactory here and use SemiCoarsenPFactory as source of NumZLayers instead.
       if(currentLevel.IsAvailable("NumZLayers", NoFactory::get())) {
         NumZDir = currentLevel.Get<LO>("NumZLayers", NoFactory::get()); //obtain info
@@ -142,10 +224,8 @@ namespace MueLu {
       }
     }
 
-    GetOStream(Runtime1) << "Found " << NumZDir << " layers" << std::endl;
-
     // plausibility check and further variable collection
-    if (Zorientation == GRID_SUPPLIED) { // On finest level, fetch user-provided coordinates if available...
+    if (Zorientation_ == GRID_SUPPLIED) { // On finest level, fetch user-provided coordinates if available...
       // NOTE: this code ist not tested!
       bool CoordsAvail = currentLevel.IsAvailable("Coordinates");
 
@@ -165,24 +245,14 @@ namespace MueLu {
       zptr = z.getRawPtr();
     }
 
-    // collect common information
-    LO BlkSize = A->GetFixedBlockSize();
-    TEUCHOS_TEST_FOR_EXCEPTION(BlkSize != 1, Exceptions::RuntimeError, "Block size > 1 has not been implemented");
-
-    RCP<const Map> rowMap = A->getRowMap();
-    LO Ndofs   = rowMap->getNodeNumElements();
-    LO Nnodes  = Ndofs/BlkSize;
-
     // perform line detection
     if (NumZDir > 0) {
       LO   *LayerId, *VertLineId;
-      //Teuchos::ArrayRCP<LO>     TLayerId   = Teuchos::arcp<LO>(Nnodes+1);  LayerId   = TLayerId.getRawPtr();
-      //Teuchos::ArrayRCP<LO>     TVertLineId= Teuchos::arcp<LO>(Nnodes+1);  VertLineId= TVertLineId.getRawPtr();
       Teuchos::ArrayRCP<LO>     TLayerId   = Teuchos::arcp<LO>(Nnodes);  LayerId   = TLayerId.getRawPtr();
       Teuchos::ArrayRCP<LO>     TVertLineId= Teuchos::arcp<LO>(Nnodes);  VertLineId= TVertLineId.getRawPtr();
 
       NumZDir = ML_compute_line_info(LayerId, VertLineId, Ndofs, BlkSize,
-                                     Zorientation, NumZDir,xptr,yptr,zptr, *(rowMap->getComm()));
+                                     Zorientation_, NumZDir,xptr,yptr,zptr, *(rowMap->getComm()));
       //it is NumZDir=NCLayers*NVertLines*DofsPerNode;
 
       // store output data on current level
@@ -200,6 +270,10 @@ namespace MueLu {
       Set(currentLevel, "LineDetection_Layers", TLayerId);
       Set(currentLevel, "LineDetection_VertLineIds", TVertLineId);
     }
+
+    // automatically switch to vertical mode on the coarser levels
+    if(Zorientation_ != VERTICAL)
+      Zorientation_ = VERTICAL;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -250,16 +324,15 @@ namespace MueLu {
       }
     }
     else {
-
-
+      // NOTE: this code is not really tested
       NumCoords = Ndof/DofsPerNode;
 
       /* sort coordinates so that we can order things according to lines */
 
-      Teuchos::ArrayRCP<LO> TOrigLoc= Teuchos::arcp<LO>(NumCoords+1);       OrigLoc= TOrigLoc.getRawPtr();
-      Teuchos::ArrayRCP<SC> Txtemp  = Teuchos::arcp<SC>(NumCoords+1);       xtemp  = Txtemp.getRawPtr();
-      Teuchos::ArrayRCP<SC> Tytemp  = Teuchos::arcp<SC>(NumCoords+1);       ytemp  = Tytemp.getRawPtr();
-      Teuchos::ArrayRCP<SC> Tztemp  = Teuchos::arcp<SC>(NumCoords+1);       ztemp  = Tztemp.getRawPtr();
+      Teuchos::ArrayRCP<LO> TOrigLoc= Teuchos::arcp<LO>(NumCoords);       OrigLoc= TOrigLoc.getRawPtr();
+      Teuchos::ArrayRCP<SC> Txtemp  = Teuchos::arcp<SC>(NumCoords);       xtemp  = Txtemp.getRawPtr();
+      Teuchos::ArrayRCP<SC> Tytemp  = Teuchos::arcp<SC>(NumCoords);       ytemp  = Tytemp.getRawPtr();
+      Teuchos::ArrayRCP<SC> Tztemp  = Teuchos::arcp<SC>(NumCoords);       ztemp  = Tztemp.getRawPtr();
 
       TEUCHOS_TEST_FOR_EXCEPTION(ztemp == NULL, Exceptions::RuntimeError, "Not enough memory for line algorithms");
       for (i = 0; i < NumCoords; i++) ytemp[i]= yvals[i];
@@ -300,7 +373,9 @@ namespace MueLu {
         while ( (next != NumCoords) && (xtemp[next] == xfirst) &&
                 (ytemp[next] == yfirst))
           next++;
-        if (NumBlocks == 0) NumNodesPerVertLine = next-index;
+        if (NumBlocks == 0) {
+          NumNodesPerVertLine = next-index;
+        }
         TEUCHOS_TEST_FOR_EXCEPTION(next-index != NumNodesPerVertLine,Exceptions::RuntimeError, "Error code only works for constant block size now!!!\n");
         count = 0;
         for (j= index; j < next; j++) {
@@ -334,6 +409,8 @@ namespace MueLu {
     LO l, r, j, i, flag;
     LO RR2;
     SC       dRR, dK;
+
+    // note: we use that routine for sorting coordinates only. No complex coordinates are assumed...
     typedef Teuchos::ScalarTraits<SC> STS;
 
     if (N <= 1) return;
@@ -358,9 +435,9 @@ namespace MueLu {
             flag = 0;
           else {
             if (j < r + 1)
-              if (STS::magnitude(dlist[j]) > STS::magnitude(dlist[j - 1])) j = j + 1;
+              if (STS::real(dlist[j]) > STS::real(dlist[j - 1])) j = j + 1;
 
-            if (STS::magnitude(dlist[j - 1]) > STS::magnitude(dK)) {
+            if (STS::real(dlist[j - 1]) > STS::real(dK)) {
               dlist[ i - 1] = dlist[ j - 1];
               list2[i - 1] = list2[j - 1];
             }
@@ -401,8 +478,8 @@ namespace MueLu {
             flag = 0;
           else {
             if (j < r + 1)
-              if (STS::magnitude(dlist[j]) > STS::magnitude(dlist[j - 1])) j = j + 1;
-            if (STS::magnitude(dlist[j - 1]) > STS::magnitude(dK)) {
+              if (STS::real(dlist[j]) > STS::real(dlist[j - 1])) j = j + 1;
+            if (STS::real(dlist[j - 1]) > STS::real(dK)) {
               dlist[ i - 1] = dlist[ j - 1];
             }
             else {

@@ -84,6 +84,17 @@ namespace MueLu {
       coarseLevel.DeclareInput("Nullspace", (*it).get(), this);  // request/release coarse "Nullspace" (dependencies are not affected)
       (*it)->CallDeclareInput(coarseLevel); // request dependencies
     }
+
+    // The factory needs the information about the number of z-layers. While this information is
+    // provided by the user for the finest level, the factory itself is responsible to provide the
+    // corresponding information on the coarser levels. Since a factory cannot be dependent on itself
+    // we use the NoFactory class as generator class, but remove the UserData keep flag, such that
+    // "NumZLayers" is part of the request/release mechanism.
+    // Please note, that this prevents us from having several (independent) CoarsePFactory instances!
+    // TODO: allow factory to dependent on self-generated data for TwoLevelFactories -> introduce ExpertRequest/Release in Level
+    fineLevel.DeclareInput("NumZLayers", NoFactory::get(), this);
+    fineLevel.RemoveKeepFlag("NumZLayers", NoFactory::get(), MueLu::UserData);
+
     hasDeclaredInput_ = true;
   }
 
@@ -108,8 +119,14 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(mode!="semicoarsen", Exceptions::RuntimeError, "MueLu::TogglePFactory::Build: The 'toggle: mode' parameter must be set to 'semicoarsen'. No other mode supported, yet.");
 
+    LO NumZDir = -1;
+    if(fineLevel.IsAvailable("NumZLayers", NoFactory::get())) {
+      NumZDir = fineLevel.Get<LO>("NumZLayers", NoFactory::get()); //obtain info
+      GetOStream(Runtime1) << "Number of layers for semicoarsening: " << NumZDir << std::endl;
+    }
+
     // Make a decision which prolongator to be used.
-    if(fineLevel.GetLevelID() >= semicoarsen_levels) {
+    if(fineLevel.GetLevelID() >= semicoarsen_levels || NumZDir == 1) {
       nProlongatorFactory = 1;
     } else {
       nProlongatorFactory = 0;

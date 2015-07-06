@@ -129,7 +129,10 @@ public:
   ///
 #if defined(HAVE_INTREPID_KOKKOSCORE)
   template<class ArrayT, typename iType>
-  Matrix(ArrayT & data, iType index1);
+  Matrix(
+      typename Kokkos::Impl::enable_if<
+      !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+      iType index1);
 
   template<class ArrayT, typename iType>
   Matrix(

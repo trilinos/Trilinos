@@ -95,7 +95,10 @@ Matrix<T, M, N>::Matrix(
 template<typename T, Index M, Index N>
 template<class ArrayT, typename iType>
 inline
-Matrix<T, M, N>::Matrix(ArrayT & data, iType index1) :
+Matrix<T, M, N>::Matrix(
+    typename Kokkos::Impl::enable_if<
+    !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
+    iType index1) :
     TensorBase<T, Store>::TensorBase(M * N, ORDER, data, index1),
     rows_(M), cols_(N)
 {

@@ -150,7 +150,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestLowerTriangularBlockCrsMatr
 
   RCP<prec_type> prec;
   try {
-    prec = rcp (new prec_type (bcrsmatrix));
+    RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
+    prec = rcp (new prec_type (const_bcrsmatrix));
   } catch (std::exception& e) {
     lclSuccess = 0;
     errStrm << "Process " << myRank << ": Preconditioner constructor threw exception: "
@@ -242,7 +243,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestUpperTriangularBlockCrsMatr
     rcp_const_cast<block_crs_matrix_type> (tif_utest::create_triangular_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,false> (crsgraph, blockSize));
   bcrsmatrix->computeDiagonalGraph();
 
-  prec_type prec (bcrsmatrix);
+  RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
+  prec_type prec (const_bcrsmatrix);
 
   Teuchos::ParameterList params;
   params.set("fact: iluk level-of-fill", (LocalOrdinal) 0);
@@ -296,7 +298,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestFullLocalBlockCrsMatrix, Sc
     rcp_const_cast<block_crs_matrix_type> (tif_utest::create_full_local_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize));
   bcrsmatrix->computeDiagonalGraph();
 
-  prec_type prec (bcrsmatrix);
+  RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
+  prec_type prec (const_bcrsmatrix);
 
   Teuchos::ParameterList params;
   params.set("fact: iluk level-of-fill", (LocalOrdinal) 0);
@@ -354,7 +357,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBandedBlockCrsMatrixWithDro
     rcp_const_cast<block_crs_matrix_type> (tif_utest::create_banded_block_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize, rbandwidth));
   bcrsmatrix->computeDiagonalGraph();
 
-  Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec (bcrsmatrix);
+  RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
+  Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec (const_bcrsmatrix);
 
   Teuchos::ParameterList params;
   params.set("fact: iluk level-of-fill", (LocalOrdinal) lof);
@@ -614,7 +618,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestDiagonalBlockCrsMatrix, Sca
   bcrsmatrix = rcp_const_cast<block_crs_matrix_type> (tif_utest::create_block_diagonal_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize));
   bcrsmatrix->computeDiagonalGraph ();
 
-  Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec (bcrsmatrix);
+  RCP<const block_crs_matrix_type> const_bcrsmatrix(bcrsmatrix);
+  Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec (const_bcrsmatrix);
 
   Teuchos::ParameterList params;
   params.set("fact: iluk level-of-fill", (LocalOrdinal) 0);
