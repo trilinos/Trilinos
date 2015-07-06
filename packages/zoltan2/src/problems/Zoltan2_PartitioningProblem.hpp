@@ -552,7 +552,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     else if (algName_ == std::string("wolf")) {
       this->algorithm_ = rcp(new AlgWolf<Adapter>(this->envConst_,
                                         problemComm_,this->graphModel_,
-                                        this->coordinateModel_));
+					this->coordinateModel_,this->baseInputAdapter_));
     }
     else {
       throw std::logic_error("partitioning algorithm not supported");
@@ -739,7 +739,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       algName_ = algorithm;
       needConsecutiveGlobalIds = true;
     }
-    else if (algorithm == std::string("zoltan"))
+    else if (algorithm == std::string("zoltan") ||
+	     algorithm == std::string("parma"))
     {
       algName_ = algorithm;
     }

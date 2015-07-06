@@ -335,7 +335,7 @@ void internal_create_faces( BulkData & mesh, const Selector & element_selector, 
     bool oldOption = mesh.use_entity_ids_for_resolving_sharing();
     mesh.set_use_entity_ids_for_resolving_sharing(false);
     std::vector<EntityRank> entity_rank_vector = {stk::topology::FACE_RANK};
-    mesh.modification_end_for_entity_creation( entity_rank_vector, BulkData::MOD_END_COMPRESS_AND_SORT );
+    mesh.modification_end_for_entity_creation( entity_rank_vector );
     mesh.set_use_entity_ids_for_resolving_sharing(oldOption);
   }
 }

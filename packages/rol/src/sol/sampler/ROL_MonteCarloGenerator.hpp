@@ -92,9 +92,15 @@ private:
     int rank  = SampleGenerator<Real>::batchID();
     int nProc = SampleGenerator<Real>::numBatches();
     // Separate samples across processes
-    int frac = this->nSamp_ / nProc;
-    int rem  = this->nSamp_ % nProc;
-    unsigned N    = frac;
+    int frac = nSamp_ / nProc;
+    int rem  = nSamp_ % nProc;
+    unsigned N = (unsigned)frac;
+    unsigned sumN = N*(unsigned)rank;
+    for (int i = 0; i < rank; i++) {
+      if ( i < rem ) {
+        sumN++;
+      }
+    }
     if ( rank < rem ) {
       N++;
     }
@@ -103,16 +109,16 @@ private:
     std::vector<Real> p;
     //srand((rank+1)*(rank+1)*time(NULL));
     for ( unsigned i = 0; i < N; i++ ) {
-      srand(123456*(rank*N + (i+1)));
+      srand(123456*(sumN + i + 1));
       if ( !useDist_ ) {
-        p.resize(this->data_.size(),0.0);
-        for ( unsigned j = 0; j < this->data_.size(); j++ ) {
-          if ( this->use_normal_ ) {
-            p[j] = std::sqrt(2.0*(this->data_[j])[1])*this->ierf(2.0*((Real)rand())/((Real)RAND_MAX)-1.0) + 
-                   (this->data_[j])[0];
+        p.resize(data_.size(),0.0);
+        for ( unsigned j = 0; j < data_.size(); j++ ) {
+          if ( use_normal_ ) {
+            p[j] = std::sqrt(2.0*(data_[j])[1])*ierf(2.0*((Real)rand())/((Real)RAND_MAX)-1.0) + 
+                   (data_[j])[0];
           }
           else {
-            p[j] = ((this->data_[j])[1]-(this->data_[j])[0])*((Real)rand())/((Real)RAND_MAX)+(this->data_[j])[0];
+            p[j] = ((data_[j])[1]-(data_[j])[0])*((Real)rand())/((Real)RAND_MAX)+(data_[j])[0];
           }
         }
       }
@@ -127,7 +133,7 @@ private:
       }
       pts.push_back(p);
     }
-    std::vector<Real> wts(N,1.0/((Real)this->nSamp_));
+    std::vector<Real> wts(N,1.0/((Real)nSamp_));
     SampleGenerator<Real>::setPoints(pts);
     SampleGenerator<Real>::setWeights(wts);
   }
@@ -139,7 +145,13 @@ private:
     // Separate samples across processes
     int frac = nSamp / nProc;
     int rem  = nSamp % nProc;
-    unsigned N = frac;
+    unsigned N = (unsigned)frac;
+    unsigned sumN = N*(unsigned)rank;
+    for (int i = 0; i < rank; i++) {
+      if ( i < rem ) {
+        sumN++;
+      }
+    }
     if ( rank < rem ) {
       N++;
     }
@@ -148,16 +160,16 @@ private:
     std::vector<Real> p;
     //srand((rank+1)*(rank+1)*time(NULL));
     for ( unsigned i = 0; i < N; i++ ) {
-      srand(123456*(rank*N + (i+1)));
-      if ( !useDist_ ) { 
-        p.resize(this->data_.size(),0.0);
-        for ( unsigned j = 0; j < this->data_.size(); j++ ) {
-          if ( this->use_normal_ ) {
-            p[j] = std::sqrt(2.0*(this->data_[j])[1])*this->ierf(2.0*((Real)rand())/((Real)RAND_MAX)-1.0) + 
-                   (this->data_[j])[0];
+      srand(123456*(sumN + i + 1));
+      if ( !useDist_ ) {
+        p.resize(data_.size(),0.0);
+        for ( unsigned j = 0; j < data_.size(); j++ ) {
+          if ( use_normal_ ) {
+            p[j] = std::sqrt(2.0*(data_[j])[1])*ierf(2.0*((Real)rand())/((Real)RAND_MAX)-1.0) + 
+                   (data_[j])[0];
           }
           else {
-            p[j] = ((this->data_[j])[1]-(this->data_[j])[0])*((Real)rand())/((Real)RAND_MAX)+(this->data_[j])[0];
+            p[j] = ((data_[j])[1]-(data_[j])[0])*((Real)rand())/((Real)RAND_MAX)+(data_[j])[0];
           }
         }
       }
@@ -230,34 +242,34 @@ public:
 
   void update( const Vector<Real> &x ) {
     SampleGenerator<Real>::update(x);
-    this->sum_val_  = 0.0;
-    this->sum_val2_ = 0.0;
-    this->sum_ng_   = 0.0;
-    this->sum_ng_   = 0.0;
-    if ( this->use_SA_ ) {
-      this->sample();
+    sum_val_  = 0.0;
+    sum_val2_ = 0.0;
+    sum_ng_   = 0.0;
+    sum_ng_   = 0.0;
+    if ( use_SA_ ) {
+      sample();
     }
   }
 
   Real computeError( std::vector<Real> &vals ) {
-    if ( this->adaptive_ && !(this->use_SA_) ) {
+    if ( adaptive_ && !use_SA_ ) {
       // Compute unbiased sample variance
       int cnt = 0;
       for ( int i = SampleGenerator<Real>::start(); i < SampleGenerator<Real>::numMySamples(); i++ ) {
-        this->sum_val_  += vals[cnt];
-        this->sum_val2_ += vals[cnt]*vals[cnt];  
+        sum_val_  += vals[cnt];
+        sum_val2_ += vals[cnt]*vals[cnt];  
         cnt++;
       }
-      Real mymean = this->sum_val_ / this->nSamp_;
+      Real mymean = sum_val_ / nSamp_;
       Real mean   = 0.0;
       SampleGenerator<Real>::sumAll(&mymean,&mean,1);
 
-      Real myvar  = (this->sum_val2_ - mean*mean)/(this->nSamp_-1.0);
+      Real myvar  = (sum_val2_ - mean*mean)/(nSamp_-1.0);
       Real var    = 0.0;
       SampleGenerator<Real>::sumAll(&myvar,&var,1);
       // Return Monte Carlo error
       vals.clear();
-      return std::sqrt(var/(this->nSamp_))*1.e-8;
+      return std::sqrt(var/(nSamp_))*1.e-8;
     }
     else {
       vals.clear();
@@ -266,26 +278,26 @@ public:
   }
 
   Real computeError( std::vector<Teuchos::RCP<Vector<Real> > > &vals, const Vector<Real> &x ) {
-    if ( this->adaptive_ && !(this->use_SA_) ) {
+    if ( adaptive_ && !use_SA_ ) {
       // Compute unbiased sample variance
       int cnt = 0;
       Real ng = 0.0;
       for ( int i = SampleGenerator<Real>::start(); i < SampleGenerator<Real>::numMySamples(); i++ ) {
         ng = (vals[cnt])->norm();
-        this->sum_ng_  += ng;
-        this->sum_ng2_ += ng*ng;  
+        sum_ng_  += ng;
+        sum_ng2_ += ng*ng;  
         cnt++;
       }
-      Real mymean = this->sum_ng_ / this->nSamp_;
+      Real mymean = sum_ng_ / nSamp_;
       Real mean   = 0.0;
       SampleGenerator<Real>::sumAll(&mymean,&mean,1);
 
-      Real myvar  = (this->sum_ng2_ - mean*mean)/(this->nSamp_-1.0);
+      Real myvar  = (sum_ng2_ - mean*mean)/(nSamp_-1.0);
       Real var    = 0.0;
       SampleGenerator<Real>::sumAll(&myvar,&var,1);
       // Return Monte Carlo error
       vals.clear();
-      return std::sqrt(var/(this->nSamp_))*1.e-4;
+      return std::sqrt(var/(nSamp_))*1.e-4;
     }
     else {
       vals.clear();
@@ -294,17 +306,17 @@ public:
   }
 
   void refine(void) {
-    if ( this->adaptive_ && !(this->use_SA_) ) {
+    if ( adaptive_ && !use_SA_ ) {
       std::vector<std::vector<Real> > pts;
-      std::vector<Real> pt(this->data_.size(),0.0);
+      std::vector<Real> pt(data_.size(),0.0);
       for ( int i = 0; i < SampleGenerator<Real>::numMySamples(); i++ ) {
         pt = SampleGenerator<Real>::getMyPoint(i);
         pts.push_back(pt);
       }
-      std::vector<std::vector<Real> > pts_new = this->sample(this->numNewSamps_,false);
+      std::vector<std::vector<Real> > pts_new = sample(numNewSamps_,false);
       pts.insert(pts.end(),pts_new.begin(),pts_new.end());
-      this->nSamp_ += this->numNewSamps_;
-      std::vector<Real> wts(pts.size(),1.0/((Real)this->nSamp_));
+      nSamp_ += numNewSamps_;
+      std::vector<Real> wts(pts.size(),1.0/((Real)nSamp_));
       SampleGenerator<Real>::refine();
       SampleGenerator<Real>::setPoints(pts);
       SampleGenerator<Real>::setWeights(wts);

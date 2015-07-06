@@ -118,7 +118,7 @@ int Ifpack_IC::SetParameters(Teuchos::ParameterList& List)
 
   // set label
   sprintf(Label_, "IFPACK IC (fill=%f, drop=%f)",
-	  Lfil_, Droptol_);
+          Lfil_, Droptol_);
   return(0);
 }
 
@@ -129,7 +129,7 @@ int Ifpack_IC::Initialize()
   IsInitialized_ = false;
 
   // FIXME: construction of ILUK graph must be here
-  
+
   ++NumInitialize_;
   IsInitialized_ = true;
   return(0);
@@ -139,10 +139,10 @@ int Ifpack_IC::Initialize()
 int Ifpack_IC::ComputeSetup()
 {
   // (re)allocate memory for ICT factors
-  U_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(), 
+  U_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),
                                 Matrix().RowMatrixRowMap(), 0));
   D_ = rcp(new Epetra_Vector(Matrix().RowMatrixRowMap()));
-  
+
   if (U_.get() == 0 || D_.get() == 0)
     IFPACK_CHK_ERR(-5); // memory allocation error
 
@@ -170,69 +170,69 @@ int Ifpack_IC::ComputeSetup()
   for (i=0; i< NumRows; i++) {
 
     Matrix().ExtractMyRowCopy(i, MaxNumEntries, NumIn, &InV[0], &InI[0]); // Get Values and Indices
-    
+
     // Split into L and U (we don't assume that indices are ordered).
-    NumU = 0; 
+    NumU = 0;
     DiagFound = false;
-    
+
     for (j=0; j< NumIn; j++) {
       int k = InI[j];
 
       if (k==i) {
-	DiagFound = true;
-	// Store perturbed diagonal in Epetra_Vector D_
-	DV[i] += Rthresh_ * InV[j] + EPETRA_SGN(InV[j]) * Athresh_; 
+        DiagFound = true;
+        // Store perturbed diagonal in Epetra_Vector D_
+        DV[i] += Rthresh_ * InV[j] + EPETRA_SGN(InV[j]) * Athresh_;
       }
 
       else if (k < 0) return(-1); // Out of range
       else if (i<k && k<NumRows) {
-	UI[NumU] = k;
-	UV[NumU] = InV[j];
-	NumU++;
+        UI[NumU] = k;
+        UV[NumU] = InV[j];
+        NumU++;
       }
     }
-    
+
     // Check in things for this row of L and U
 
     if (DiagFound) NumNonzeroDiags++;
     if (NumU) U_->InsertMyValues(i, NumU, &UV[0], &UI[0]);
-    
+
   }
 
-  U_->FillComplete(Matrix().OperatorDomainMap(), 
-		   Matrix().OperatorRangeMap());
-  
+  U_->FillComplete(Matrix().OperatorDomainMap(),
+                   Matrix().OperatorRangeMap());
+
   int ierr1 = 0;
   if (NumNonzeroDiags<U_->NumMyRows()) ierr1 = 1;
   Matrix().Comm().MaxAll(&ierr1, &ierr, 1);
   IFPACK_CHK_ERR(ierr);
-  
+
   return(0);
 }
 
 //==========================================================================
 int Ifpack_IC::Compute() {
 
-  if (!IsInitialized()) 
+  if (!IsInitialized())
     IFPACK_CHK_ERR(Initialize());
 
   Time_.ResetStartTime();
   IsComputed_ = false;
-  
+
   // copy matrix into L and U.
   IFPACK_CHK_ERR(ComputeSetup());
-  
+
   int i;
-  
+
   int m, n, nz, Nrhs, ldrhs, ldlhs;
   int * ptr=0, * ind;
   double * val, * rhs, * lhs;
-  
+
   int ierr = Epetra_Util_ExtractHbData(U_.get(), 0, 0, m, n, nz, ptr, ind,
-				       val, Nrhs, rhs, ldrhs, lhs, ldlhs);
-  if (ierr < 0) 
+                                       val, Nrhs, rhs, ldrhs, lhs, ldlhs);
+  if (ierr < 0)
     IFPACK_CHK_ERR(ierr);
-  
+
   Ifpack_AIJMatrix * Aict;
   if (Aict_==0) {
     Aict = new Ifpack_AIJMatrix;
@@ -254,7 +254,7 @@ int Ifpack_IC::Compute() {
   Aict->ptr = ptr;
   double *DV;
   EPETRA_CHK_ERR(D_->ExtractView(&DV)); // Get view of diagonal
-    
+
   // lfil is average number of nonzeros per row times fill ratio.
   // Currently crout_ict keeps a constant number of nonzeros per row.
   // TODO: Pass Lfil_ and make crout_ict keep variable #nonzeros per row.
@@ -264,63 +264,63 @@ int Ifpack_IC::Compute() {
 
   // Get rid of unnecessary data
   delete [] ptr;
-  
+
   // Create Epetra View of L from crout_ict
   U_ = rcp(new Epetra_CrsMatrix(View, A_->RowMatrixRowMap(), A_->RowMatrixRowMap(),0));
   D_ = rcp(new Epetra_Vector(View, A_->RowMatrixRowMap(), Ldiag_));
-  
+
   ptr = Lict->ptr;
   ind = Lict->col;
   val = Lict->val;
-  
+
   for (i=0; i< m; i++) {
     int NumEntries = ptr[i+1]-ptr[i];
     int * Indices = ind+ptr[i];
     double * Values = val+ptr[i];
     U_->InsertMyValues(i, NumEntries, Values, Indices);
   }
-  
+
   U_->FillComplete(A_->OperatorDomainMap(), A_->OperatorRangeMap());
   D_->Reciprocal(*D_); // Put reciprocal of diagonal in this vector
-  
+
 #ifdef IFPACK_FLOPCOUNTERS
   double current_flops = 2 * nz; // Just an estimate
   double total_flops = 0;
-  
+
   A_->Comm().SumAll(&current_flops, &total_flops, 1); // Get total madds across all PEs
-  
-  ComputeFlops_ += total_flops; 
+
+  ComputeFlops_ += total_flops;
   // Now count the rest. NOTE: those flops are *global*
   ComputeFlops_ += (double) U_->NumGlobalNonzeros(); // Accounts for multiplier above
   ComputeFlops_ += (double) D_->GlobalLength(); // Accounts for reciprocal of diagonal
 #endif
   ++NumCompute_;
   ComputeTime_ += Time_.ElapsedTime();
- 
- 
+
+
   IsComputed_ = true;
-  
+
   return(0);
-  
+
 }
 
 //=============================================================================
 // This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Ifpack_IC::ApplyInverse(const Epetra_MultiVector& X, 
-			    Epetra_MultiVector& Y) const
+int Ifpack_IC::ApplyInverse(const Epetra_MultiVector& X,
+                            Epetra_MultiVector& Y) const
 {
-  
+
   if (!IsComputed())
     IFPACK_CHK_ERR(-3); // compute preconditioner first
-  
-  if (X.NumVectors() != Y.NumVectors()) 
+
+  if (X.NumVectors() != Y.NumVectors())
     IFPACK_CHK_ERR(-2); // Return error: X and Y not the same size
- 
-  Time_.ResetStartTime(); 
+
+  Time_.ResetStartTime();
 
   bool Upper = true;
   bool UnitDiagonal = true;
-  
+
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
   RefCountPtr< const Epetra_MultiVector > Xcopy;
@@ -328,11 +328,11 @@ int Ifpack_IC::ApplyInverse(const Epetra_MultiVector& X,
     Xcopy = rcp( new Epetra_MultiVector(X) );
   else
     Xcopy = rcp( &X, false );
-  
+
   U_->Solve(Upper, true, UnitDiagonal, *Xcopy, Y);
   Y.Multiply(1.0, *D_, Y, 0.0); // y = D*y (D_ has inverse of diagonal)
   U_->Solve(Upper, false, UnitDiagonal, Y, Y); // Solve Uy = y
-  
+
 #ifdef IFPACK_FLOPCOUNTERS
   ApplyInverseFlops_ += 4.0 * U_->NumGlobalNonzeros();
   ApplyInverseFlops_ += D_->GlobalLength();
@@ -347,16 +347,16 @@ int Ifpack_IC::ApplyInverse(const Epetra_MultiVector& X,
 
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Ifpack_IC::Apply(const Epetra_MultiVector& X, 
-		      Epetra_MultiVector& Y) const 
+int Ifpack_IC::Apply(const Epetra_MultiVector& X,
+                      Epetra_MultiVector& Y) const
 {
 
-  if (X.NumVectors() != Y.NumVectors()) 
+  if (X.NumVectors() != Y.NumVectors())
     IFPACK_CHK_ERR(-2); // Return error: X and Y not the same size
 
   Epetra_MultiVector * X1 = (Epetra_MultiVector *) &X;
   Epetra_MultiVector * Y1 = (Epetra_MultiVector *) &Y;
-  
+
   U_->Multiply(false, *X1, *Y1);
   Y1->Update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
   Y1->ReciprocalMultiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
@@ -367,16 +367,16 @@ int Ifpack_IC::Apply(const Epetra_MultiVector& X,
 }
 
 //=============================================================================
-double Ifpack_IC::Condest(const Ifpack_CondestType CT, 
-			  const int MaxIters, const double Tol,
-			  Epetra_RowMatrix* Matrix_in)
+double Ifpack_IC::Condest(const Ifpack_CondestType CT,
+                          const int MaxIters, const double Tol,
+                          Epetra_RowMatrix* Matrix_in)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
-  
+
   if (Condest_ == -1.0)
     Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix_in);
-  
+
   return(Condest_);
 }
 
@@ -384,6 +384,8 @@ double Ifpack_IC::Condest(const Ifpack_CondestType CT,
 std::ostream&
 Ifpack_IC::Print(std::ostream& os) const
 {
+  using std::endl;
+
   if (!Comm().MyPID()) {
     os << endl;
     os << "================================================================================" << endl;
@@ -396,26 +398,26 @@ Ifpack_IC::Print(std::ostream& os) const
     os << "Global number of rows            = " << A_->NumGlobalRows64() << endl;
     if (IsComputed_) {
       os << "Number of nonzeros of H         = " << U_->NumGlobalNonzeros64() << endl;
-      os << "nonzeros / rows                 = " 
+      os << "nonzeros / rows                 = "
          << 1.0 * U_->NumGlobalNonzeros64() / U_->NumGlobalRows64() << endl;
     }
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
     os << "-----           -------   --------------       ------------     --------" << endl;
-    os << "Initialize()    "   << std::setw(5) << NumInitialize() 
-       << "  " << std::setw(15) << InitializeTime() 
+    os << "Initialize()    "   << std::setw(5) << NumInitialize()
+       << "  " << std::setw(15) << InitializeTime()
        << "               0.0            0.0" << endl;
-    os << "Compute()       "   << std::setw(5) << NumCompute() 
+    os << "Compute()       "   << std::setw(5) << NumCompute()
        << "  " << std::setw(15) << ComputeTime()
        << "  " << std::setw(15) << 1.0e-6 * ComputeFlops();
     if (ComputeTime() != 0.0)
       os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() / ComputeTime() << endl;
     else
       os << "  " << std::setw(15) << 0.0 << endl;
-    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse() 
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse()
        << "  " << std::setw(15) << ApplyInverseTime()
        << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops();
-    if (ApplyInverseTime() != 0.0) 
+    if (ApplyInverseTime() != 0.0)
       os << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() / ApplyInverseTime() << endl;
     else
       os << "  " << std::setw(15) << 0.0 << endl;
@@ -423,6 +425,6 @@ Ifpack_IC::Print(std::ostream& os) const
     os << endl;
   }
 
-  
+
   return(os);
-} 
+}

@@ -53,7 +53,7 @@ namespace stk{
 
       Entity() : m_value(InvalidEntity) {}
 
-      Entity(uint64_t value) : m_value(value) {}
+      explicit Entity(uint64_t value) : m_value(value) {}
 
       Entity operator=(Entity_t val) { m_value = val; return *this;}
 

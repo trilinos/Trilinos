@@ -12,6 +12,7 @@
 #include "crs_row_view.hpp"
 
 #include "graph_helper_scotch.hpp"
+#include "symbolic_factor_helper.hpp"
 #include "crs_matrix_helper.hpp"
 
 #include "team_view.hpp"
@@ -36,10 +37,14 @@ namespace Example {
            typename MemoryTraits = void>
   KOKKOS_INLINE_FUNCTION
   int exampleICholPerformance(const string file_input,
+                              const int treecut,
+                              const int seed,
                               const int niter,
                               const int nthreads,
                               const int max_task_dependence,
                               const int team_size,
+                              const int fill_level,
+                              const int league_size,
                               const bool team_interface,
                               const bool skip_serial,
                               const bool verbose) {
@@ -54,6 +59,7 @@ namespace Example {
 
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,SpaceType,MemoryTraits> CrsMatrixBaseType;
     typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
+    typedef SymbolicFactorHelper<CrsMatrixBaseType> SymbolicFactorHelperType;
 
     typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
     typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
@@ -69,8 +75,9 @@ namespace Example {
     double 
       t_import = 0.0,
       t_reorder = 0.0,
+      t_symbolic = 0.0,
+      t_flat2hier = 0.0,
       t_factor_seq = 0.0,
-      //t_factor_team = 0.0,
       t_factor_task = 0.0;
     const int start = -2;
     
@@ -98,31 +105,61 @@ namespace Example {
     CrsMatrixBaseType PA("Permuted AA");
     CrsMatrixBaseType UU("UU");     // permuted base upper triangular matrix
     CrsHierMatrixBaseType HU("HU"); // hierarchical matrix of views
+
     {
-      timer.reset();
+      GraphHelperType S(AA, seed);
+      {
+        timer.reset();
+        
+        S.computeOrdering(treecut);
+        
+        PA.copy(S.PermVector(), S.InvPermVector(), AA);
+        
+        t_reorder = timer.seconds();
 
-      GraphHelperType S(AA);
-      S.computeOrdering();
+        if (verbose)
+          cout << S << endl
+               << PA << endl;
+      }
 
-      PA.copy(S.PermVector(), S.InvPermVector(), AA);
-      UU.copy(Uplo::Upper, PA);
+      cout << "ICholPerformance:: reorder the matrix::time = " << t_reorder << endl;            
+      {
+        SymbolicFactorHelperType F(PA, league_size);
+        for (int i=start;i<niter;++i) {
+          timer.reset();
+        
+          F.createNonZeroPattern(fill_level, Uplo::Upper, UU);
 
-      CrsMatrixHelper::flat2hier(Uplo::Upper, UU, HU,
-                                 S.NumBlocks(),
-                                 S.RangeVector(),
-                                 S.TreeVector());
-      
-      for (ordinal_type k=0;k<HU.NumNonZeros();++k)
-        HU.Value(k).fillRowViewArray();
-      
-      t_reorder = timer.seconds();
+          // UU.copy(Uplo::Upper, PA);
 
-      cout << "ICholPerformance:: Hier (dof, nnz) = " << HU.NumRows() << ", " << HU.NumNonZeros() << endl;
+          t_symbolic += timer.seconds() * (i>=0);
+        }
+        t_symbolic /= niter;
 
-      if (verbose)
-        cout << UU << endl;
+        cout << "ICholPerformance:: AA (nnz) = " << AA.NumNonZeros() << ", UU (nnz) = " << UU.NumNonZeros() << endl;
+
+        if (verbose)
+          cout << F << endl
+               << UU << endl;
+      }
+      cout << "ICholPerformance:: symbolic factorization::time = " << t_symbolic << endl;            
+      {
+        timer.reset();
+
+        CrsMatrixHelper::flat2hier(Uplo::Upper, UU, HU,
+                                   S.NumBlocks(),
+                                   S.RangeVector(),
+                                   S.TreeVector());
+        
+        for (ordinal_type k=0;k<HU.NumNonZeros();++k)
+          HU.Value(k).fillRowViewArray();
+        
+        t_flat2hier = timer.seconds();
+        
+        cout << "ICholPerformance:: Hier (dof, nnz) = " << HU.NumRows() << ", " << HU.NumNonZeros() << endl;
+      }
+      cout << "ICholPerformance:: construct hierarchical matrix::time = " << t_flat2hier << endl;            
     }
-    cout << "ICholPerformance:: reorder the matrix::time = " << t_reorder << endl;            
 
     // copy of UU
     CrsMatrixBaseType RR("RR");

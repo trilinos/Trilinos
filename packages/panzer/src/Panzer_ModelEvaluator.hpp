@@ -115,6 +115,9 @@ public:
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int i) const;
 
   /** \brief . */
+  Teuchos::ArrayView<const std::string> get_g_names(int i) const override;
+
+  /** \brief . */
   const std::string & get_g_name(int i) const;
 
   /** \brief . */

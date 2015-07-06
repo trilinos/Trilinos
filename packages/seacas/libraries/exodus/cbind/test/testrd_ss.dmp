@@ -392,21 +392,20 @@ element list for side set 38
   8
 side list for side set 38
   1
-  2
+  3
 node list for side set 38
   3 nodes for side   0
  30
  31
  32
-  3 nodes for side   1
- 32
- 31
+  2 nodes for side   1
  30
+ 31
 no dist factors for side set 38
 
 after ex_inquire: EX_INQ_SS_ELEM_LEN = 23,  error = 0
 
-after ex_inquire: EX_INQ_SS_NODE_LEN = 70,  error = 0
+after ex_inquire: EX_INQ_SS_NODE_LEN = 69,  error = 0
 
 after ex_inquire: EX_INQ_SS_DF_LEN = 8,  error = 0
 
@@ -509,7 +508,7 @@ side_list =
   5
   6
   1
-  2
+  3
 dist_fact = 
 30.000
 30.100

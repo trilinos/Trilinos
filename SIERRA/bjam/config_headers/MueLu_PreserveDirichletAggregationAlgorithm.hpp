@@ -1,2 +1,1 @@
 #include "MueLu_PreserveDirichletAggregationAlgorithm_decl.hpp"
-#include "MueLu_PreserveDirichletAggregationAlgorithm_def.hpp"

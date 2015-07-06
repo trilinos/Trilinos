@@ -822,8 +822,6 @@ private:
   bool UseReordering_;
   //! Record reordering for output purposes.
   std::string ReorderingAlgorithm_;
-  //! If true, subdomain filtering is used
-  bool UseSubdomain_;
   //! Whether to filter singleton rows.
   bool FilterSingletons_;
   //! Matrix from which singleton rows have been filtered.

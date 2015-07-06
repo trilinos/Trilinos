@@ -98,6 +98,7 @@ PseudoBlockMinres<Scalar,MV,OP>::PseudoBlockMinres(Teuchos::RCP<OP> A, Teuchos::
 
   A_ = A;
   Prec_ = Prec;
+  maxIt_ = 0;
 }
 
 

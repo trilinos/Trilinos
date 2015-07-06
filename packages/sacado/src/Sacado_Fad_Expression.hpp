@@ -53,6 +53,7 @@
 #define SACADO_FAD_EXPRESSION_HPP
 
 #include "Sacado_Traits.hpp"
+#include "Sacado_Fad_ExpressionFwd.hpp"
 
 namespace Sacado {
 
@@ -68,12 +69,22 @@ namespace Sacado {
      */
     template <typename> struct BaseExpr {};
 
+    struct ExprSpecDefault {};
+    template <typename ExprT> struct ExprSpec {
+      typedef ExprSpecDefault type;
+    };
+
     //! Wrapper for a generic expression template
     /*!
      * This template class serves as a wrapper for all Fad expression
      * template classes.
      */
-    template <typename ExprT> class Expr {};
+    template <typename ExprT, typename Spec> class Expr {};
+
+    template <typename ExprT, typename Spec>
+    struct ExprSpec< Expr<ExprT,Spec> > {
+      typedef Spec type;
+    };
 
     //! Meta-function for determining nesting with an expression
     /*!
@@ -129,6 +140,10 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       const ConstT& val() const { return constant_; }
 
+      //! Return value of operation
+      KOKKOS_INLINE_FUNCTION
+      const ConstT& val(int j) const { return constant_; }
+
     protected:
 
       //! The constant
@@ -146,6 +161,11 @@ namespace Sacado {
   template <typename T>
   struct BaseExprType< Fad::Expr<T> > {
     typedef typename Fad::Expr<T>::base_expr_type type;
+  };
+
+  template <typename T>
+  struct ValueType< Fad::ConstExpr<T> > {
+    typedef typename Fad::ConstExpr<T>::value_type type;
   };
 
 } // namespace Sacado

@@ -1007,10 +1007,20 @@ describe (Teuchos::FancyOStream &out,
   }
 }
 
+template<class MatrixType>
+Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                     typename MatrixType::local_ordinal_type,
+                                     typename MatrixType::global_ordinal_type,
+                                     typename MatrixType::node_type> >
+LocalFilter<MatrixType>::getUnderlyingMatrix() const
+{
+  return A_;
+}
+
 
 } // namespace Ifpack2
 
-#define IFPACK2_LOCALFILTER_INSTANT(S,LO,GO,N)                            \
-  template class Ifpack2::LocalFilter< Tpetra::CrsMatrix<S, LO, GO, N> >;
+#define IFPACK2_LOCALFILTER_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::LocalFilter< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif

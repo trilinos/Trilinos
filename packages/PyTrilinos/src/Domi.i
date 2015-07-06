@@ -57,7 +57,7 @@ other Trilinos solver technologies.
 "
 %enddef
 
-%module(package = "PyTrilinos",
+%module(package   = "PyTrilinos",
         autodoc   = "1",
         docstring = %domi_docstring) Domi
 
@@ -340,7 +340,7 @@ import numpy
 ////////////////////////
 %ignore Domi::MDMap::getTpetraMap;
 %ignore Domi::MDMap::getTpetraAxisMap;
-%extend Domi::MDMap
+%extend Domi::MDMap< Node >
 {
   Domi::MDMap< Node > __getitem__(PyObject * indexes)
   {
@@ -399,8 +399,8 @@ import numpy
   }
 }
 %include "Domi_MDMap.hpp"
-%teuchos_rcp(Domi::MDMap< KokkosClassic::DefaultNode::DefaultNodeType >)
-%template(MDMap_default) Domi::MDMap< KokkosClassic::DefaultNode::DefaultNodeType >;
+%teuchos_rcp(Domi::MDMap< Domi::DefaultNode::DefaultNodeType >)
+%template(MDMap_default) Domi::MDMap< Domi::DefaultNode::DefaultNodeType >;
 %pythoncode
 {
 MDMap = MDMap_default
@@ -415,7 +415,7 @@ MDMap = MDMap_default
 %ignore Domi::MDVector::getTpetraMultiVectorView;
 %ignore Domi::MDVector::getTpetraVectorCopy;
 %ignore Domi::MDVector::getTpetraMultiVectorCopy;
-%extend Domi::MDVector
+%extend Domi::MDVector< Scalar, Node >
 {
   Domi::MDVector< Scalar, Node > __getitem__(PyObject * indexes)
   {
@@ -491,14 +491,14 @@ MDMap = MDMap_default
 %ignore Domi::MDVector::getData;
 
 %include "Domi_MDVector.hpp"
-%teuchos_rcp(Domi::MDVector< int    >)
-%template(MDVector_int   ) Domi::MDVector< int    >;
-%teuchos_rcp(Domi::MDVector< long   >)
-%template(MDVector_long  ) Domi::MDVector< long   >;
-%teuchos_rcp(Domi::MDVector< float  >)
-%template(MDVector_float ) Domi::MDVector< float  >;
-%teuchos_rcp(Domi::MDVector< double >)
-%template(MDVector_double) Domi::MDVector< double >;
+%teuchos_rcp(Domi::MDVector< int   , Domi::DefaultNode::DefaultNodeType >)
+%teuchos_rcp(Domi::MDVector< long  , Domi::DefaultNode::DefaultNodeType >)
+%teuchos_rcp(Domi::MDVector< float , Domi::DefaultNode::DefaultNodeType >)
+%teuchos_rcp(Domi::MDVector< double, Domi::DefaultNode::DefaultNodeType >)
+%template(MDVector_int   ) Domi::MDVector< int   , Domi::DefaultNode::DefaultNodeType >;
+%template(MDVector_long  ) Domi::MDVector< long  , Domi::DefaultNode::DefaultNodeType >;
+%template(MDVector_float ) Domi::MDVector< float , Domi::DefaultNode::DefaultNodeType >;
+%template(MDVector_double) Domi::MDVector< double, Domi::DefaultNode::DefaultNodeType >;
 
 ////////////////////////////
 // from_DistArray support //
@@ -506,7 +506,7 @@ MDMap = MDMap_default
 %inline
 {
 template< class Scalar >
-Teuchos::RCP< Domi::MDVector< Scalar > >
+Teuchos::RCP< Domi::MDVector< Scalar, Domi::DefaultNode::DefaultNodeType > >
 from_DistArray(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                PyObject * distArrayObj)
 {

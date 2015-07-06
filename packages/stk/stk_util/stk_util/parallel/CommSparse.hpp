@@ -105,12 +105,6 @@ public:
   }
 
   //----------------------------------------
-  /** Construct for undefined communication.
-   *  No buffers are allocated.
-   */
-  CommSparse();
- 
-  //----------------------------------------
   /** Construct for a to-be-sized communication.
    *  Allocate surrogate send buffers to enable
    *  no-op packing for the purpose of send sizing.
@@ -152,6 +146,12 @@ public:
   ~CommSparse();
 
 private:
+
+  //----------------------------------------
+  /** Construct for undefined communication.
+   *  No buffers are allocated.
+   */
+  CommSparse();
 
   CommSparse( const CommAll & );
   CommSparse & operator = ( const CommAll & );

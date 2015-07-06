@@ -22,7 +22,7 @@
 /* define if we have the ParMETIS library*/
 #cmakedefine HAVE_ZOLTAN2_PARMETIS
 
-/* define if we have the Scotch library*/
+/* define if we have the ParMA library*/
 #cmakedefine HAVE_ZOLTAN2_PARMA
 
 /* define if we have the AMD library*/

@@ -57,7 +57,7 @@ namespace Galeri {
 
 template<typename int_type>
 Epetra_Map* 
-TCreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
+TCreateMap(std::string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
 {
   // global parameters
   int_type n = List.get("n", -1);
@@ -260,14 +260,14 @@ TCreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 Epetra_Map* 
-CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List) {
+CreateMap(std::string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List) {
   return TCreateMap<int>(MapType, Comm, List);
 }
 #endif
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 Epetra_Map* 
-CreateMap64(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List) {
+CreateMap64(std::string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List) {
   return TCreateMap<long long>(MapType, Comm, List);
 }
 #endif

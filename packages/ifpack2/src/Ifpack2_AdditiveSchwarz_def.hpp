@@ -190,6 +190,16 @@ public:
   }
 };
 
+#ifdef HAVE_IFPACK2_EXPERIMENTAL
+template<class MatrixType>
+class OneLevelPreconditionerNamer< ::Ifpack2::Experimental::RBILUK<MatrixType> > {
+public:
+  static std::string name () {
+    return "RBILUK";
+  }
+};
+#endif
+
 template<class MatrixType>
 class OneLevelPreconditionerNamer< ::Ifpack2::Krylov<MatrixType> > {
 public:
@@ -350,7 +360,6 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A) :
   CombineMode_ (Tpetra::ZERO),
   UseReordering_ (false),
   ReorderingAlgorithm_ ("none"),
-  UseSubdomain_ (false),
   FilterSingletons_ (false),
   NumIterations_(1),
   ZeroStartingSolution_(true),
@@ -377,7 +386,6 @@ AdditiveSchwarz (const Teuchos::RCP<const row_matrix_type>& A,
   CombineMode_ (Tpetra::ZERO),
   UseReordering_ (false),
   ReorderingAlgorithm_ ("none"),
-  UseSubdomain_ (false),
   FilterSingletons_ (false),
   NumIterations_(1),
   ZeroStartingSolution_(true),
@@ -1030,16 +1038,6 @@ setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist)
   // "schwarz: reordering list" parameter list.  Currently, that list
   // gets extracted in setup().
 
-  // Subdomain check
-  if (plist->isParameter ("schwarz: subdomain id") &&
-      plist->get ("schwarz: subdomain id", -1) > 0) {
-    UseSubdomain_ = true;
-  }
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    UseSubdomain_, std::logic_error, "Ifpack2::AdditiveSchwarz::"
-    "setParameters: You specified the \"schwarz: subdomain id\" parameter, "
-    "with a value other than -1.  This parameter is not yet supported.");
-
   // if true, filter singletons. NOTE: the filtered matrix can still have
   // singletons! A simple example: upper triangular matrix, if I remove
   // the lower node, I still get a matrix with a singleton! However, filter
@@ -1204,12 +1202,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
 
     // compute the overlapping matrix if necessary
     if (IsOverlapping_) {
-      if (UseSubdomain_) {
-        const int sid = List_.get ("subdomain id", -1);
-        OverlappingMatrix_ = rcp (new OverlappingRowMatrix<row_matrix_type> (Matrix_, OverlapLevel_, sid));
-      } else {
-        OverlappingMatrix_ = rcp (new OverlappingRowMatrix<row_matrix_type> (Matrix_, OverlapLevel_));
-      }
+      OverlappingMatrix_ = rcp (new OverlappingRowMatrix<row_matrix_type> (Matrix_, OverlapLevel_));
     }
 
     setup (); // This does a lot of the initialization work.
@@ -1532,31 +1525,10 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
 
   // Create localized matrix.
   if (! OverlappingMatrix_.is_null ()) {
-    if (UseSubdomain_) {
-      //      int sid = List_.get("subdomain id",-1);
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Ifpack2::AdditiveSchwarz::setup: subdomain code not yet supported.");
-      //
-      // FIXME (mfh 18 Nov 2013) btw what's the difference between
-      // Ifpack_NodeFilter and Ifpack_LocalFilter?  The former's
-      // documentation sounds a lot like what Ifpack2::LocalFilter
-      // does.
-      //
-      //Ifpack2_NodeFilter *tt = new Ifpack2_NodeFilter(OverlappingMatrix_,nodeID); //FIXME
-      //LocalizedMatrix = Teuchos::rcp(tt);
-    }
-    else
-      LocalizedMatrix = rcp (new LocalFilter<row_matrix_type> (OverlappingMatrix_));
+    LocalizedMatrix = rcp (new LocalFilter<row_matrix_type> (OverlappingMatrix_));
   }
   else {
-    if (UseSubdomain_) {
-      //      int sid = List_.get("subdomain id",-1);
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Ifpack2::AdditiveSchwarz::setup: subdomain code not yet supported.");
-    }
-    else {
-      LocalizedMatrix = rcp (new LocalFilter<row_matrix_type> (Matrix_));
-    }
+    LocalizedMatrix = rcp (new LocalFilter<row_matrix_type> (Matrix_));
   }
 
   // Sanity check; I don't trust the logic above to have created LocalizedMatrix.

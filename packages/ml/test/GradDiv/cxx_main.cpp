@@ -92,11 +92,13 @@ void gd_test_additive(Epetra_ActiveComm &Comm,
                        Epetra_CrsMatrix &K2,
                        const Epetra_CrsMatrix &FaceNode,
                        const Epetra_CrsMatrix &D1,
-		       const Epetra_CrsMatrix &D0,
-  		       const Epetra_CrsMatrix &K0,
+                       const Epetra_CrsMatrix &D0,
+                       const Epetra_CrsMatrix &K0,
                        const Epetra_Vector &x_exact,
                        const Epetra_Vector &x0,
                        const Epetra_Vector &b){
+  using std::cout;
+  using std::endl;
 
   cout<<"*************************************"<<endl;
   cout<<List<<endl;
@@ -168,7 +170,7 @@ void matrix_read(Epetra_ActiveComm &Comm){
   K0->OptimizeStorage();
 
   printf("size(K2)=%d size(D1)=%dx%d size(D0)=%dx%d size(K0)=%d\n",K2->NumGlobalRows(),D1->NumGlobalRows(),D0->NumGlobalRows(),
-	 D0->NumGlobalCols(),D1->NumGlobalCols(),K0->NumGlobalRows());
+         D0->NumGlobalCols(),D1->NumGlobalCols(),K0->NumGlobalRows());
 
   /* Build RHS */
   const Epetra_Map &FaceMap=K2->DomainMap();

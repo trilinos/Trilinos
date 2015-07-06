@@ -50,6 +50,7 @@
 
 // Domi includes
 #include "Domi_ConfigDefs.hpp"
+#include "Domi_DefaultNode.hpp"
 #include "Domi_Utils.hpp"
 #include "Domi_getValidParameters.hpp"
 #include "Domi_Slice.hpp"
@@ -139,7 +140,7 @@ namespace Domi
  * or communication padding is present.  This allows negative indexes
  * to represent reverse indexing from the end of a dimension.
  */
-template< class ExecSpace = Kokkos::DefaultExecutionSpace >
+template< class Node = DefaultNode::DefaultNodeType >
 class MDMap
 {
 public:
@@ -237,7 +238,7 @@ public:
    *
    * \param source [in] the source MDMap to be copied
    */
-  MDMap(const MDMap< ExecSpace > & source);
+  MDMap(const MDMap< Node > & source);
 
   /** \brief Parent/single global ordinal sub-map constructor
    *
@@ -252,7 +253,7 @@ public:
    * than the dimensions of the parent MDMap (unless the parent MDMap
    * is already one dimension).
    */
-  MDMap(const MDMap< ExecSpace > & parent,
+  MDMap(const MDMap< Node > & parent,
         int axis,
         dim_type index);
 
@@ -277,7 +278,7 @@ public:
    * along the given axis (unless the given Slice represents the
    * entire axis).
    */
-  MDMap(const MDMap< ExecSpace > & parent,
+  MDMap(const MDMap< Node > & parent,
         int axis,
         const Slice & slice,
         int bndryPad = 0);
@@ -295,7 +296,7 @@ public:
    *        These may include indexes from the boundary padding of the
    *        parent MDMap, but they do not have to.
    */
-  MDMap(const MDMap< ExecSpace > & parent,
+  MDMap(const MDMap< Node > & parent,
         const Teuchos::ArrayView< Slice > & slices,
         const Teuchos::ArrayView< int > & bndryPad =
           Teuchos::ArrayView< int >());
@@ -313,7 +314,7 @@ public:
    *
    * \param source [in] source MDComm
    */
-  MDMap< ExecSpace > & operator=(const MDMap< ExecSpace > & source);
+  MDMap< Node > & operator=(const MDMap< Node > & source);
 
   //@}
 
@@ -602,7 +603,7 @@ public:
    * and the commDim for the trailing dimension (if requested) will be
    * 1.
    */
-  Teuchos::RCP< const MDMap< ExecSpace > >
+  Teuchos::RCP< const MDMap< Node > >
   getAugmentedMDMap(const dim_type leadingDim,
                     const dim_type trailingDim=0) const;
 
@@ -646,12 +647,12 @@ public:
    * Note that the boundary padding is always included in the map
    */
   template< class LocalOrdinal >
-  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, LocalOrdinal, ExecSpace > >
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, LocalOrdinal, Node > >
   getTpetraMap(bool withCommPad=true) const;
 
   /** \brief Return an RCP to a Tpetra::Map that is equivalent to this
    *         MDMap, specifying the LocalOrdinal and GlobalOrdinal
-   *         types, but not the ExecSpace type
+   *         types, but not the Node type
    *
    * \param withCommPad [in] flag whether to include the communication
    *        padding in the map
@@ -660,12 +661,12 @@ public:
    */
   template< class LocalOrdinal,
             class GlobalOrdinal >
-  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, ExecSpace > >
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
   getTpetraMap(bool withCommPad=true) const;
 
   /** \brief Return an RCP to a Tpetra::Map that is equivalent to this
    *         MDMap, specifying the new LocalOrdinal, GlobalOrdinal and
-   *         ExecSpace types
+   *         Node types
    *
    * \param withCommPad [in] flag whether to include the communication
    *        padding in the map
@@ -674,8 +675,8 @@ public:
    */
   template< class LocalOrdinal,
             class GlobalOrdinal,
-            class ExecSpace2 >
-  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, ExecSpace2 > >
+            class Node2 >
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node2 > >
   getTpetraMap(bool withCommPad=true) const;
 
   /** \brief Return an RCP to a Tpetra::Map that represents the
@@ -690,7 +691,7 @@ public:
    * Note that the boundary padding is always included in the map
    */
   template< class LocalOrdinal >
-  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, LocalOrdinal, ExecSpace > >
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, LocalOrdinal, Node > >
   getTpetraAxisMap(int axis,
                    bool withCommPad=true) const;
 
@@ -707,13 +708,13 @@ public:
    */
   template< class LocalOrdinal,
             class GlobalOrdinal >
-  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, ExecSpace > >
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
   getTpetraAxisMap(int axis,
                    bool withCommPad=true) const;
 
   /** \brief Return an RCP to a Tpetra::Map that represents the
    *         decomposition of this MDMap along the given axis,
-   *         specifying the new LocalOrdinal, GlobalOrdinal and ExecSpace
+   *         specifying the new LocalOrdinal, GlobalOrdinal and Node
    *         types
    *
    * \param axis [in] the requested axis
@@ -725,8 +726,8 @@ public:
    */
   template< class LocalOrdinal,
             class GlobalOrdinal,
-            class ExecSpace2 >
-  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, ExecSpace2 > >
+            class Node2 >
+  Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node2 > >
   getTpetraAxisMap(int axis,
                    bool withCommPad=true) const;
 
@@ -799,7 +800,7 @@ public:
    *        identical.</li>
    * <ol>
    */
-  bool isCompatible(const MDMap< ExecSpace > & mdMap) const;
+  bool isCompatible(const MDMap< Node > & mdMap) const;
 
   /** \brief True if two MDMaps are "identical"
    *
@@ -822,7 +823,7 @@ public:
    *        identical.</li>
    * <ol>
    */
-  bool isSameAs(const MDMap< ExecSpace > & mdMap,
+  bool isSameAs(const MDMap< Node > & mdMap,
                 const int verbose = 0) const;
 
   /** \brief True if there are no stride gaps on any processor
@@ -957,8 +958,8 @@ private:
 // Implementations
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
-MDMap< ExecSpace >::
+template< class Node >
+MDMap< Node >::
 MDMap(const Teuchos::RCP< const MDComm > mdComm,
       const Teuchos::ArrayView< dim_type > & dimensions,
       const Teuchos::ArrayView< int > & commPad,
@@ -1033,8 +1034,8 @@ MDMap(const Teuchos::RCP< const MDComm > mdComm,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
-MDMap< ExecSpace >::
+template< class Node >
+MDMap< Node >::
 MDMap(Teuchos::ParameterList & plist) :
   _mdComm(Teuchos::rcp(new MDComm(plist))),
   _globalDims(),
@@ -1145,8 +1146,8 @@ MDMap(Teuchos::ParameterList & plist) :
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
-MDMap< ExecSpace >::
+template< class Node >
+MDMap< Node >::
 MDMap(Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
       Teuchos::ParameterList & plist) :
   _mdComm(Teuchos::rcp(new MDComm(teuchosComm, plist))),
@@ -1263,8 +1264,8 @@ MDMap(Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
-MDMap< ExecSpace >::
+template< class Node >
+MDMap< Node >::
 MDMap(const Teuchos::RCP< const MDComm > mdComm,
       const Teuchos::ArrayView< Slice > & myGlobalBounds,
       const Teuchos::ArrayView< padding_type > & padding,
@@ -1431,8 +1432,8 @@ MDMap(const Teuchos::RCP< const MDComm > mdComm,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
-MDMap< ExecSpace >::
+template< class Node >
+MDMap< Node >::
 MDMap(Teuchos::RCP< const MDComm > mdComm,
       Teuchos::ParameterList & plist) :
   _mdComm(mdComm),
@@ -1543,9 +1544,9 @@ MDMap(Teuchos::RCP< const MDComm > mdComm,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
-MDMap< ExecSpace >::
-MDMap(const MDMap< ExecSpace > & source) :
+template< class Node >
+MDMap< Node >::
+MDMap(const MDMap< Node > & source) :
   _mdComm(source._mdComm),
   _globalDims(source._globalDims),
   _globalBounds(source._globalBounds),
@@ -1568,9 +1569,9 @@ MDMap(const MDMap< ExecSpace > & source) :
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
-MDMap< ExecSpace >::
-MDMap(const MDMap< ExecSpace > & parent,
+template< class Node >
+MDMap< Node >::
+MDMap(const MDMap< Node > & parent,
       int axis,
       dim_type index) :
   _mdComm(parent._mdComm),
@@ -1690,9 +1691,9 @@ MDMap(const MDMap< ExecSpace > & parent,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
-MDMap< ExecSpace >::
-MDMap(const MDMap< ExecSpace > & parent,
+template< class Node >
+MDMap< Node >::
+MDMap(const MDMap< Node > & parent,
       int axis,
       const Slice & slice,
       int bndryPad) :
@@ -1865,9 +1866,9 @@ MDMap(const MDMap< ExecSpace > & parent,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
-MDMap< ExecSpace >::
-MDMap(const MDMap< ExecSpace > & parent,
+template< class Node >
+MDMap< Node >::
+MDMap(const MDMap< Node > & parent,
       const Teuchos::ArrayView< Slice > & slices,
       const Teuchos::ArrayView< int > & bndryPad)
 {
@@ -1882,11 +1883,11 @@ MDMap(const MDMap< ExecSpace > & parent,
     "dimensions = " << numDims);
 
   // Apply the single-Slice constructor to each axis in succession
-  MDMap< ExecSpace > tempMDMap1(parent);
+  MDMap< Node > tempMDMap1(parent);
   for (int axis = 0; axis < numDims; ++axis)
   {
     int bndryPadding = (axis < bndryPad.size()) ? bndryPad[axis] : 0;
-    MDMap< ExecSpace > tempMDMap2(tempMDMap1,
+    MDMap< Node > tempMDMap2(tempMDMap1,
                              axis,
                              slices[axis],
                              bndryPadding);
@@ -1897,16 +1898,16 @@ MDMap(const MDMap< ExecSpace > & parent,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
-MDMap< ExecSpace >::~MDMap()
+template< class Node >
+MDMap< Node >::~MDMap()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
-MDMap< ExecSpace > &
-MDMap< ExecSpace >::operator=(const MDMap< ExecSpace > & source)
+template< class Node >
+MDMap< Node > &
+MDMap< Node >::operator=(const MDMap< Node > & source)
 {
   _mdComm           = source._mdComm;
   _globalDims       = source._globalDims;
@@ -1930,81 +1931,81 @@ MDMap< ExecSpace >::operator=(const MDMap< ExecSpace > & source)
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 bool
-MDMap< ExecSpace >::onSubcommunicator() const
+MDMap< Node >::onSubcommunicator() const
 {
   return _mdComm->onSubcommunicator();
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 Teuchos::RCP< const Teuchos::Comm< int > >
-MDMap< ExecSpace >::getTeuchosComm() const
+MDMap< Node >::getTeuchosComm() const
 {
   return _mdComm->getTeuchosComm();
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 int
-MDMap< ExecSpace >::numDims() const
+MDMap< Node >::numDims() const
 {
   return _mdComm->numDims();
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 int
-MDMap< ExecSpace >::getCommDim(int axis) const
+MDMap< Node >::getCommDim(int axis) const
 {
   return _mdComm->getCommDim(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 bool
-MDMap< ExecSpace >::isPeriodic(int axis) const
+MDMap< Node >::isPeriodic(int axis) const
 {
   return _mdComm->isPeriodic(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 int
-MDMap< ExecSpace >::getCommIndex(int axis) const
+MDMap< Node >::getCommIndex(int axis) const
 {
   return _mdComm->getCommIndex(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 int
-MDMap< ExecSpace >::getLowerNeighbor(int axis) const
+MDMap< Node >::getLowerNeighbor(int axis) const
 {
   return _mdComm->getLowerNeighbor(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 int
-MDMap< ExecSpace >::getUpperNeighbor(int axis) const
+MDMap< Node >::getUpperNeighbor(int axis) const
 {
   return _mdComm->getUpperNeighbor(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 dim_type
-MDMap< ExecSpace >::
+MDMap< Node >::
 getGlobalDim(int axis,
              bool withBndryPad) const
 {
@@ -2023,9 +2024,9 @@ getGlobalDim(int axis,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 Slice
-MDMap< ExecSpace >::
+MDMap< Node >::
 getGlobalBounds(int axis,
                 bool withBndryPad) const
 {
@@ -2048,9 +2049,9 @@ getGlobalBounds(int axis,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 dim_type
-MDMap< ExecSpace >::
+MDMap< Node >::
 getLocalDim(int axis,
             bool withPad) const
 {
@@ -2069,9 +2070,9 @@ getLocalDim(int axis,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 Slice
-MDMap< ExecSpace >::
+MDMap< Node >::
 getGlobalRankBounds(int axis,
                     bool withBndryPad) const
 {
@@ -2099,9 +2100,9 @@ getGlobalRankBounds(int axis,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 Slice
-MDMap< ExecSpace >::
+MDMap< Node >::
 getLocalBounds(int axis,
                bool withPad) const
 {
@@ -2127,9 +2128,9 @@ getLocalBounds(int axis,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 bool
-MDMap< ExecSpace >::hasPadding() const
+MDMap< Node >::hasPadding() const
 {
   bool result = false;
   for (int axis = 0; axis < numDims(); ++axis)
@@ -2139,9 +2140,9 @@ MDMap< ExecSpace >::hasPadding() const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 int
-MDMap< ExecSpace >::getLowerPadSize(int axis) const
+MDMap< Node >::getLowerPadSize(int axis) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2155,9 +2156,9 @@ MDMap< ExecSpace >::getLowerPadSize(int axis) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 int
-MDMap< ExecSpace >::getUpperPadSize(int axis) const
+MDMap< Node >::getUpperPadSize(int axis) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2171,9 +2172,9 @@ MDMap< ExecSpace >::getUpperPadSize(int axis) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 int
-MDMap< ExecSpace >::getCommPadSize(int axis) const
+MDMap< Node >::getCommPadSize(int axis) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2187,9 +2188,9 @@ MDMap< ExecSpace >::getCommPadSize(int axis) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 int
-MDMap< ExecSpace >::getLowerBndryPad(int axis) const
+MDMap< Node >::getLowerBndryPad(int axis) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2203,9 +2204,9 @@ MDMap< ExecSpace >::getLowerBndryPad(int axis) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 int
-MDMap< ExecSpace >::getUpperBndryPad(int axis) const
+MDMap< Node >::getUpperBndryPad(int axis) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2219,9 +2220,9 @@ MDMap< ExecSpace >::getUpperBndryPad(int axis) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 int
-MDMap< ExecSpace >::getBndryPadSize(int axis) const
+MDMap< Node >::getBndryPadSize(int axis) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2235,9 +2236,9 @@ MDMap< ExecSpace >::getBndryPadSize(int axis) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 bool
-MDMap< ExecSpace >::
+MDMap< Node >::
 isPad(const Teuchos::ArrayView< dim_type > & index) const
 {
   bool result = false;
@@ -2253,9 +2254,9 @@ isPad(const Teuchos::ArrayView< dim_type > & index) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 bool
-MDMap< ExecSpace >::
+MDMap< Node >::
 isCommPad(const Teuchos::ArrayView< dim_type > & index) const
 {
   bool result = false;
@@ -2280,9 +2281,9 @@ isCommPad(const Teuchos::ArrayView< dim_type > & index) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 bool
-MDMap< ExecSpace >::
+MDMap< Node >::
 isBndryPad(const Teuchos::ArrayView< dim_type > & index) const
 {
   bool result = false;
@@ -2307,22 +2308,22 @@ isBndryPad(const Teuchos::ArrayView< dim_type > & index) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 Layout
-MDMap< ExecSpace >::getLayout() const
+MDMap< Node >::getLayout() const
 {
   return _layout;
 }
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
-Teuchos::RCP< const MDMap< ExecSpace > >
-MDMap< ExecSpace >::getAugmentedMDMap(const dim_type leadingDim,
+template< class Node >
+Teuchos::RCP< const MDMap< Node > >
+MDMap< Node >::getAugmentedMDMap(const dim_type leadingDim,
                                  const dim_type trailingDim) const
 {
   // Construct the new MDMap
-  MDMap< ExecSpace > * newMdMap = new MDMap< ExecSpace >(*this);
+  MDMap< Node > * newMdMap = new MDMap< Node >(*this);
 
   // Compute the number of new dimensions
   int newNumDims = 0;
@@ -2418,9 +2419,9 @@ MDMap< ExecSpace >::getAugmentedMDMap(const dim_type leadingDim,
 
 #ifdef HAVE_EPETRA
 
-template< class ExecSpace >
+template< class Node >
 Teuchos::RCP< const Epetra_Map >
-MDMap< ExecSpace >::getEpetraMap(bool withCommPad) const
+MDMap< Node >::getEpetraMap(bool withCommPad) const
 {
   if (withCommPad)
   {
@@ -2526,9 +2527,9 @@ MDMap< ExecSpace >::getEpetraMap(bool withCommPad) const
 
 #ifdef HAVE_EPETRA
 
-template< class ExecSpace >
+template< class Node >
 Teuchos::RCP< const Epetra_Map >
-MDMap< ExecSpace >::
+MDMap< Node >::
 getEpetraAxisMap(int axis,
                  bool withCommPad) const
 {
@@ -2584,29 +2585,29 @@ getEpetraAxisMap(int axis,
 
 #ifdef HAVE_TPETRA
 
-template< class ExecSpace >
+template< class Node >
 template< class LocalOrdinal >
-Teuchos::RCP< const Tpetra::Map< LocalOrdinal, LocalOrdinal, ExecSpace > >
-MDMap< ExecSpace >::getTpetraMap(bool withCommPad) const
+Teuchos::RCP< const Tpetra::Map< LocalOrdinal, LocalOrdinal, Node > >
+MDMap< Node >::getTpetraMap(bool withCommPad) const
 {
-  return getTpetraMap< LocalOrdinal, LocalOrdinal, ExecSpace >(withCommPad);
+  return getTpetraMap< LocalOrdinal, LocalOrdinal, Node >(withCommPad);
 }
 
-template< class ExecSpace >
+template< class Node >
 template< class LocalOrdinal,
           class GlobalOrdinal >
-Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, ExecSpace > >
-MDMap< ExecSpace >::getTpetraMap(bool withCommPad) const
+Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
+MDMap< Node >::getTpetraMap(bool withCommPad) const
 {
-  return getTpetraMap< LocalOrdinal, GlobalOrdinal, ExecSpace >(withCommPad);
+  return getTpetraMap< LocalOrdinal, GlobalOrdinal, Node >(withCommPad);
 }
 
-template< class ExecSpace >
+template< class Node >
 template< class LocalOrdinal,
           class GlobalOrdinal,
-          class ExecSpace2 >
-Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, ExecSpace2 > >
-MDMap< ExecSpace >::getTpetraMap(bool withCommPad) const
+          class Node2 >
+Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node2 > >
+MDMap< Node >::getTpetraMap(bool withCommPad) const
 {
   if (withCommPad)
   {
@@ -2641,7 +2642,7 @@ MDMap< ExecSpace >::getTpetraMap(bool withCommPad) const
     return
       Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
                                     GlobalOrdinal,
-                                    ExecSpace2 >(Teuchos::OrdinalTraits<
+                                    Node2 >(Teuchos::OrdinalTraits<
                                               Tpetra::global_size_t>::invalid(),
                                             myElements(),
                                             0,
@@ -2690,7 +2691,7 @@ MDMap< ExecSpace >::getTpetraMap(bool withCommPad) const
     return
       Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
                                     GlobalOrdinal,
-                                    ExecSpace >(Teuchos::OrdinalTraits<
+                                    Node >(Teuchos::OrdinalTraits<
                                              Tpetra::global_size_t>::invalid(),
                                            myElements(),
                                            0,
@@ -2703,33 +2704,33 @@ MDMap< ExecSpace >::getTpetraMap(bool withCommPad) const
 
 #ifdef HAVE_TPETRA
 
-template< class ExecSpace >
+template< class Node >
 template< class LocalOrdinal >
-Teuchos::RCP< const Tpetra::Map< LocalOrdinal, LocalOrdinal, ExecSpace > >
-MDMap< ExecSpace >::
+Teuchos::RCP< const Tpetra::Map< LocalOrdinal, LocalOrdinal, Node > >
+MDMap< Node >::
 getTpetraAxisMap(int axis,
                  bool withCommPad) const
 {
-  return getTpetraAxisMap< LocalOrdinal, LocalOrdinal, ExecSpace >(axis, withCommPad);
+  return getTpetraAxisMap< LocalOrdinal, LocalOrdinal, Node >(axis, withCommPad);
 }
 
-template< class ExecSpace >
+template< class Node >
 template< class LocalOrdinal,
           class GlobalOrdinal >
-Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, ExecSpace > >
-MDMap< ExecSpace >::
+Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node > >
+MDMap< Node >::
 getTpetraAxisMap(int axis,
                  bool withCommPad) const
 {
-  return getTpetraAxisMap< LocalOrdinal, LocalOrdinal, ExecSpace >(axis, withCommPad);
+  return getTpetraAxisMap< LocalOrdinal, LocalOrdinal, Node >(axis, withCommPad);
 }
 
-template< class ExecSpace >
+template< class Node >
 template< class LocalOrdinal,
           class GlobalOrdinal,
-          class ExecSpace2 >
-Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, ExecSpace2 > >
-MDMap< ExecSpace >::
+          class Node2 >
+Teuchos::RCP< const Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node2 > >
+MDMap< Node >::
 getTpetraAxisMap(int axis,
                  bool withCommPad) const
 {
@@ -2750,7 +2751,7 @@ getTpetraAxisMap(int axis,
     elements[i] = i + start;
   return Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
                                        GlobalOrdinal,
-                                       ExecSpace >(Teuchos::OrdinalTraits<
+                                       Node >(Teuchos::OrdinalTraits<
                                                    Tpetra::global_size_t>::invalid(),
                                                    elements,
                                                    0,
@@ -2760,9 +2761,9 @@ getTpetraAxisMap(int axis,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 Teuchos::Array< dim_type >
-MDMap< ExecSpace >::
+MDMap< Node >::
 getGlobalIndex(size_type globalID) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
@@ -2798,9 +2799,9 @@ getGlobalIndex(size_type globalID) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 Teuchos::Array< dim_type >
-MDMap< ExecSpace >::
+MDMap< Node >::
 getLocalIndex(size_type localID) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
@@ -2836,9 +2837,9 @@ getLocalIndex(size_type localID) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 size_type
-MDMap< ExecSpace >::
+MDMap< Node >::
 getGlobalID(size_type localID) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
@@ -2861,9 +2862,9 @@ getGlobalID(size_type localID) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 size_type
-MDMap< ExecSpace >::
+MDMap< Node >::
 getGlobalID(const Teuchos::ArrayView< dim_type > & globalIndex) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
@@ -2890,9 +2891,9 @@ getGlobalID(const Teuchos::ArrayView< dim_type > & globalIndex) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 size_type
-MDMap< ExecSpace >::
+MDMap< Node >::
 getLocalID(size_type globalID) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
@@ -2920,9 +2921,9 @@ getLocalID(size_type globalID) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 size_type
-MDMap< ExecSpace >::
+MDMap< Node >::
 getLocalID(const Teuchos::ArrayView< dim_type > & localIndex) const
 {
 #ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
@@ -2949,9 +2950,9 @@ getLocalID(const Teuchos::ArrayView< dim_type > & localIndex) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 bool
-MDMap< ExecSpace >::isCompatible(const MDMap< ExecSpace > & mdMap) const
+MDMap< Node >::isCompatible(const MDMap< Node > & mdMap) const
 {
   // Trivial comparison.  We assume that if the object pointers match
   // on this processor, then they match on all processors
@@ -2991,9 +2992,9 @@ MDMap< ExecSpace >::isCompatible(const MDMap< ExecSpace > & mdMap) const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 bool
-MDMap< ExecSpace >::isSameAs(const MDMap< ExecSpace > & mdMap,
+MDMap< Node >::isSameAs(const MDMap< Node > & mdMap,
                         const int verbose) const
 {
   // Trivial comparison.  We assume that if the object pointers match
@@ -3066,9 +3067,9 @@ MDMap< ExecSpace >::isSameAs(const MDMap< ExecSpace > & mdMap,
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 bool
-MDMap< ExecSpace >::isContiguous() const
+MDMap< Node >::isContiguous() const
 {
   // Compute the local strides if they were contiguous
   Teuchos::Array< size_type > contiguousStrides =
@@ -3089,9 +3090,9 @@ MDMap< ExecSpace >::isContiguous() const
 
 ////////////////////////////////////////////////////////////////////////
 
-template< class ExecSpace >
+template< class Node >
 void
-MDMap< ExecSpace >::computeBounds()
+MDMap< Node >::computeBounds()
 {
   // Initialization
   int num_dims = numDims();

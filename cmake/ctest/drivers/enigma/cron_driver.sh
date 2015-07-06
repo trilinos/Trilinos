@@ -14,8 +14,8 @@ export TDD_PARALLEL_LEVEL=2
 #
 
 # Submission mode for the *TrilinosDriver* dashboard
-#export TDD_CTEST_TEST_TYPE=Nightly
-export TDD_CTEST_TEST_TYPE=Experimental
+export TDD_CTEST_TEST_TYPE=Nightly
+#export TDD_CTEST_TEST_TYPE=Experimental
 
 export TDD_DEBUG_VERBOSE=1
 export TRIBITS_TDD_USE_SYSTEM_CTEST=1

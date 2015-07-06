@@ -93,8 +93,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-D MPI_EXEC:FILEPATH=/usr/lib64/openmpi/bin/mpirun"
 
     "-DTPL_ENABLE_MPI:BOOL=ON"
-    "-DTPL_ENABLE_SuperLU:BOOL=OFF"
-    "-DAmesos2_ENABLE_KLU2:BOOL=ON"
+    "-DTPL_ENABLE_SuperLU:BOOL=ON"
+    "-DAmesos2_ENABLE_KLU2:BOOL=OFF"
 
     "-DTPL_SuperLU_INCLUDE_DIRS=/home/tawiesn/software/SuperLU_4.3/SRC"
     "-DTPL_SuperLU_LIBRARY_DIRS=/home/tawiesn/software/SuperLU_4.3/lib"

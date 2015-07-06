@@ -148,6 +148,7 @@ namespace PHX {
     typedef typename array_type::array_layout layout_type;
     typedef typename array_type::device_type device_type;
     typedef typename PHX::Device::size_type size_type;
+    typedef typename array_type::execution_space execution_space;
  
     KOKKOS_FORCEINLINE_FUNCTION
     MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t);
@@ -329,6 +330,8 @@ namespace PHX {
       
     typedef typename PHX::Device::size_type size_type;
 
+    typedef typename array_type::execution_space execution_space;
+
     KOKKOS_FORCEINLINE_FUNCTION
     MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t);
     
@@ -423,6 +426,12 @@ namespace PHX {
     
     void print(std::ostream& os, bool printValues = false) const;
 
+/*    KOKKOS_FORCEINLINE_FUNCTION
+    array_type1 get_kokkos_view();
+
+    KOKKOS_FORCEINLINE_FUNCTION
+    const array_type1 get_kokkos_view()const;
+*/
     template<typename MDFieldType>
     void deep_copy(const MDFieldType& source);
 
@@ -431,6 +440,14 @@ namespace PHX {
     template<typename MDFieldType>
     void V_Multiply(const MDFieldType& source);
  
+    template<typename ArrayType>
+    KOKKOS_FORCEINLINE_FUNCTION
+    ArrayType get_kokkos_view();
+
+    template<typename ArrayType>
+    KOKKOS_FORCEINLINE_FUNCTION
+    const ArrayType get_kokkos_view() const;
+   
     private:
    
     PHX::Tag<DataT> m_tag;  

@@ -68,16 +68,16 @@
 
 // function for fancy output
 
-string toString(const int& x) {
+std::string toString(const int& x) {
   char s[100];
   sprintf(s, "%d", x);
-  return string(s);
+  return std::string(s);
 }
 
-string toString(const double& x) {
+std::string toString(const double& x) {
   char s[100];
   sprintf(s, "%g", x);
-  return string(s);
+  return std::string(s);
 }
 
 // main driver
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
   read_matrixmarket_file((char*) filename.c_str(), Comm, AK,
 			 useTwoD, npRows, npCols,
 			 randomize, false,
-			 (matrix.find("Laplacian")!=string::npos));
+			 (matrix.find("Laplacian")!=std::string::npos));
   Teuchos::RCP<Epetra_CrsMatrix> A(AK);
   const Epetra_Map *AMap = &(AK->DomainMap());
   Teuchos::RCP<const Epetra_Map> Map(AMap, false);*/

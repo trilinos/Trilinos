@@ -32,8 +32,8 @@
 # 
 
 
-/* Use *.h files in ../../cbind/include/ instead of installed *.h files  */
-INCLUDES = IncRef-I../../cbind/include
+/* Use *.h files in ../../../exodus/cbind/include/ instead of installed *.h files  */
+INCLUDES = IncRef-I../../../exodus/cbind/include
 F77EXTRAOPTIONS = IncRef-I../include
 
 F77CPPFLAGS = F77CppFlags

@@ -109,6 +109,8 @@
 
 #cmakedefine HAVE_TEUCHOS_DEFAULT_STACKTRACE
 
+#cmakedefine HAVE_TEUCHOS_GLOBALLY_REDUCE_UNITTEST_RESULTS
+
 /* template qualifier required for calling template methods from non-template
    code */
 #define INVALID_TEMPLATE_QUALIFIER @INVALID_TEMPLATE_QUALIFIER@

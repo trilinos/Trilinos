@@ -55,6 +55,7 @@ namespace Tpetra {
 namespace Experimental {
 
 /// \class BlockCrsMatrix
+/// \brief Constant block CRS matrix class.
 /// \author Mark Hoemmen
 /// \date 13 Feb 2014, 24 Feb 2014
 ///

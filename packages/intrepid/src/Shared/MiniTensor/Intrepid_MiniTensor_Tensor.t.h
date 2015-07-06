@@ -45,10 +45,7 @@
 namespace Intrepid {
 
 //
-// R^N tensor input
-// \param A tensor
-// \param is input stream
-// \return is input stream
+// tensor input
 //
 template<typename T, Index N>
 std::istream &
@@ -68,10 +65,7 @@ operator>>(std::istream & is, Tensor<T, N> & A)
 }
 
 //
-// R^N tensor output
-// \param A tensor
-// \param os output stream
-// \return os output stream
+// tensor output
 //
 template<typename T, Index N>
 std::ostream &

@@ -134,7 +134,8 @@ Entity declare_element_edge( BulkData & mesh ,
  *
  *
  */
-std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> get_ordinal_and_permutation(stk::mesh::BulkData& mesh, stk::mesh::Entity parent_entity, stk::mesh::EntityRank to_rank, stk::mesh::EntityVector &nodes_of_sub_rank);
+typedef std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> OrdinalAndPermutation;
+OrdinalAndPermutation get_ordinal_and_permutation(const stk::mesh::BulkData& mesh, stk::mesh::Entity parent_entity, stk::mesh::EntityRank to_rank, const stk::mesh::EntityVector &nodes_of_sub_rank);
 
 /** \brief declares relation from an element to an entity of lower rank based on nodes that the entity contains
  *

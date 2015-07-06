@@ -1,3 +1,5 @@
+#ifndef MUELU_CONFIG_H
+#define MUELU_CONFIG_H
 
 
 /* Options */
@@ -6,7 +8,7 @@
 
 /* #undef HAVE_MUELU_DEBUG */
 
-/* #undef HAVE_MUELU_EXPLICIT_INSTANTIATION */
+#define HAVE_MUELU_EXPLICIT_INSTANTIATION
 
 /* #undef HAVE_MUELU_PROFILING */
 
@@ -59,3 +61,5 @@
 /* #undef HAVE_MUELU_TIMER_SYNCHRONIZATION */
 
 /* #undef HAVE_MUELU_MATLAB */
+
+#endif

@@ -69,6 +69,7 @@
 #include <Ifpack2_Preconditioner.hpp>
 
 #include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_FactoryManagerBase_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities_fwd.hpp"

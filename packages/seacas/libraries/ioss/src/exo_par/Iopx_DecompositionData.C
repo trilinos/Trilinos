@@ -118,8 +118,8 @@ namespace {
       if ((int64_t)snd_cnt != sendcounts[i]) {
         std::ostringstream errmsg;
         errmsg << "ERROR: The number of items that must be communicated via MPI calls from\n"
-            << "       processor " << my_processor << " to processor " << i << " is " << sendcounts[i]
-                                                                                                    << "\n       which exceeds the storage capacity of the integers used by MPI functions.\n";
+	       << "       processor " << my_processor << " to processor " << i << " is " << sendcounts[i]
+	       << "\n       which exceeds the storage capacity of the integers used by MPI functions.\n";
         std::cerr << errmsg.str();
         exit(EXIT_FAILURE);
       }
@@ -147,7 +147,9 @@ namespace {
     }
 
     // Take care of this processor's data movement...
-    std::copy(&sendbuf[senddisp[my_processor]], &sendbuf[senddisp[my_processor]+sendcounts[my_processor]], &recvbuf[recvdisp[my_processor]]);
+    std::copy(&sendbuf[senddisp[my_processor]],
+	      &sendbuf[senddisp[my_processor]+sendcounts[my_processor]],
+	      &recvbuf[recvdisp[my_processor]]);
     return 0;
   }
 
@@ -216,18 +218,6 @@ namespace {
     vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
     // shrink-to-fit...
     std::vector<T>(vec).swap(vec);
-  }
-
-  template <typename T>
-  void assert_sorted(std::vector<T> &list)
-  {
-    size_t size = list.size();
-    if (size == 0)
-      return;
-
-    for (size_t i=1; i < size; i++) {
-      assert(list[i-1] <= list[i]);
-    }
   }
 
   template <typename T>
@@ -736,15 +726,11 @@ namespace Iopx {
 
   template <typename INT>
   void DecompositionData<INT>::internal_metis_decompose(const std::string &method,
-      idx_t *element_dist,
-      idx_t *pointer,
-      idx_t *adjacency,
-      idx_t *elem_partition)
-      {
-    // Determine whether sizeof(INT) matches sizeof(idx_t).
-    // If not, decide how to proceed...
-
-
+							idx_t *element_dist,
+							idx_t *pointer,
+							idx_t *adjacency,
+							idx_t *elem_partition)
+  {
     idx_t wgt_flag = 0; // No weights
     idx_t *elm_wgt = NULL;
     idx_t ncon = 1;

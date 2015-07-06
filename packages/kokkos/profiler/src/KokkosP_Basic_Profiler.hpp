@@ -41,20 +41,26 @@
 //@HEADER
 */
 
+#ifndef KOKKOSP_BASIC_PROFILER_HPP_
+#define KOKKOSP_BASIC_PROFILER_HPP_
+
 #include <iostream>
 #include <string>
-#include <impl/Kokkos_Timer.hpp>
 
 namespace KokkosP {
+
 namespace Experimental {
 
-void profile_begin_kernel(const std::string& kernel_name, const std::string& exec_space);
+extern void profiler_begin_kernel(const std::string& kernel_name, const std::string& exec_space);
 
-void profile_end_kernel(const std::string& kernel_name, const std::string& exec_space);
+extern void profiler_end_kernel(const std::string& kernel_name, const std::string& exec_space);
 
-void profile_initialize();
+extern void profiler_initialize();
 
-void profile_finalize();
+extern void profiler_finalize();
 
 }
 }
+
+#endif // KOKKOSP_BASIC_PROFILER_HPP_
+

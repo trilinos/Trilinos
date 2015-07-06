@@ -52,7 +52,7 @@
 #include <ifp_parameters.h>
 
 //==============================================================================
-Ifpack_CrsRick::Ifpack_CrsRick(const Epetra_CrsMatrix &A, const Ifpack_IlukGraph & Graph) 
+Ifpack_CrsRick::Ifpack_CrsRick(const Epetra_CrsMatrix &A, const Ifpack_IlukGraph & Graph)
   : A_(A),
     Graph_(Graph),
     UseTranspose_(false),
@@ -71,7 +71,7 @@ Ifpack_CrsRick::Ifpack_CrsRick(const Epetra_CrsMatrix &A, const Ifpack_IlukGraph
 }
 
 //==============================================================================
-Ifpack_CrsRick::Ifpack_CrsRick(const Ifpack_CrsRick & FactoredMatrix) 
+Ifpack_CrsRick::Ifpack_CrsRick(const Ifpack_CrsRick & FactoredMatrix)
   : A_(FactoredMatrix.A_),
     Graph_(FactoredMatrix.Graph_),
     UseTranspose_(FactoredMatrix.UseTranspose_),
@@ -88,7 +88,7 @@ Ifpack_CrsRick::Ifpack_CrsRick(const Ifpack_CrsRick & FactoredMatrix)
 {
   U_ = new Epetra_CrsMatrix(FactoredMatrix.U());
   D_ = new Epetra_Vector(Graph_.L_Graph().RowMap());
-  
+
 }
 
 //==============================================================================
@@ -97,8 +97,8 @@ int Ifpack_CrsRick::Allocate() {
   // Allocate Epetra_CrsMatrix using ILUK graphs
   U_ = new Epetra_CrsMatrix(Copy, Graph_.U_Graph());
   D_ = new Epetra_Vector(Graph_.L_Graph().RowMap());
-  
-  
+
+
     SetAllocated(true);
     return(0);
 }
@@ -119,7 +119,7 @@ Ifpack_CrsRick::~Ifpack_CrsRick(){
 
 //==========================================================================
 int Ifpack_CrsRick::SetParameters(const Teuchos::ParameterList& parameterlist,
-				  bool cerr_warning_if_unused)
+                                  bool cerr_warning_if_unused)
 {
   Ifpack::param_struct params;
   params.double_params[Ifpack::relax_value] = RelaxValue_;
@@ -153,7 +153,7 @@ int Ifpack_CrsRick::InitValues() {
   Epetra_CrsMatrix * OverlapA = (Epetra_CrsMatrix *) &A_;
 
   if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal()) {
-  
+
   OverlapA = new Epetra_CrsMatrix(Copy, *Graph_.OverlapGraph());
   OverlapA->Import(A_, *Graph_.OverlapImporter(), Insert);
   }
@@ -168,41 +168,41 @@ int Ifpack_CrsRick::InitValues() {
 
   double *DV;
   ierr = D_->ExtractView(&DV); // Get view of diagonal
-    
+
 
   // First we copy the user's matrix into diagonal vector and U, regardless of fill level
 
   for (i=0; i< NumMyRows(); i++) {
 
     OverlapA->ExtractMyRowCopy(i, MaxNumEntries, NumIn, InV, InI); // Get Values and Indices
-    
+
     // Split into L and U (we don't assume that indices are ordered).
-    
-    NumL = 0; 
-    NumU = 0; 
+
+    NumL = 0;
+    NumU = 0;
     DiagFound = false;
-    
+
     for (j=0; j< NumIn; j++) {
       int k = InI[j];
 
       if (k==i) {
-	DiagFound = true;
-	DV[i] += Rthresh_ * InV[j] + EPETRA_SGN(InV[j]) * Athresh_; // Store perturbed diagonal in Epetra_Vector D_
+        DiagFound = true;
+        DV[i] += Rthresh_ * InV[j] + EPETRA_SGN(InV[j]) * Athresh_; // Store perturbed diagonal in Epetra_Vector D_
       }
 
       else if (k < 0) return(-1); // Out of range
       else if (k<NumMyRows()) {
-	UI[NumU] = k;
-	UV[NumU] = InV[j];
-	NumU++;
+        UI[NumU] = k;
+        UV[NumU] = InV[j];
+        NumU++;
       }
     }
-    
+
     // Check in things for this row of L and U
 
     if (DiagFound) NumNonzeroDiags++;
     if (NumU) U_->ReplaceMyValues(i, NumU, UV, UI);
-    
+
   }
 
   delete [] UI;
@@ -223,7 +223,7 @@ int Ifpack_CrsRick::InitValues() {
   int TotalNonzeroDiags = 0;
   Graph_.U_Graph().RowMap().Comm().SumAll(&NumNonzeroDiags, &TotalNonzeroDiags, 1);
   if (Graph_.LevelOverlap()==0 &&
-      ((TotalNonzeroDiags!=NumGlobalRows()) || 
+      ((TotalNonzeroDiags!=NumGlobalRows()) ||
        (TotalNonzeroDiags!=NumGlobalDiagonals()))) ierr = 1;
   if (NumNonzeroDiags != NumMyDiagonals()) ierr = 1; // Diagonals are not right, warn user
 
@@ -239,7 +239,7 @@ int Ifpack_CrsRick::Factor() {
 
   SetValuesInitialized(false);
 
-  // MinMachNum should be officially defined, for now pick something a little 
+  // MinMachNum should be officially defined, for now pick something a little
   // bigger than IEEE underflow value
 
   double MinDiagonalValue = Epetra_MinDouble;
@@ -268,7 +268,7 @@ int Ifpack_CrsRick::Factor() {
   // Now start the factorization.
 
   // Need some integer workspace and pointers
-  int NumUU; 
+  int NumUU;
   int * UUI;
   double * UUV;
   for (j=0; j<NumMyCols(); j++) colflag[j] = - 1;
@@ -284,7 +284,7 @@ int Ifpack_CrsRick::Factor() {
 
     InV[NumL] = DV[i]; // Put in diagonal
     InI[NumL] = i;
-    
+
     IFPACK_CHK_ERR(U_->ExtractMyRowCopy(i, NumIn-NumL-1, NumU, InV+NumL+1, InI+NumL+1));
     NumIn = NumL+NumU+1;
     UV = InV+NumL+1;
@@ -300,33 +300,33 @@ int Ifpack_CrsRick::Factor() {
       double multiplier = InV[jj]; // current_mults++;
 
       InV[jj] *= DV[j];
-      
+
       IFPACK_CHK_ERR(U_->ExtractMyRowView(j, NumUU, UUV, UUI)); // View of row above
 
       if (RelaxValue_==0.0) {
-	for (k=0; k<NumUU; k++) {
-	  int kk = colflag[UUI[k]];
-	  if (kk>-1) {
-	    InV[kk] -= multiplier*UUV[k];
+        for (k=0; k<NumUU; k++) {
+          int kk = colflag[UUI[k]];
+          if (kk>-1) {
+            InV[kk] -= multiplier*UUV[k];
 #ifdef IFPACK_FLOPCOUNTERS
-	    current_madds++;
+            current_madds++;
 #endif
 #endif
-	  }
-	}
+          }
+        }
       }
       else {
-	for (k=0; k<NumUU; k++) {
-	  int kk = colflag[UUI[k]];
-	  if (kk>-1) InV[kk] -= multiplier*UUV[k];
-	  else diagmod -= multiplier*UUV[k];
+        for (k=0; k<NumUU; k++) {
+          int kk = colflag[UUI[k]];
+          if (kk>-1) InV[kk] -= multiplier*UUV[k];
+          else diagmod -= multiplier*UUV[k];
 #ifdef IFPACK_FLOPCOUNTERS
-	  current_madds++;
+          current_madds++;
 #endif
-	}
+        }
       }
      }
-    if (NumL) 
+    if (NumL)
       IFPACK_CHK_ERR(L_->ReplaceMyValues(i, NumL, LV, LI));  // Replace current row of L
 
     DV[i] = InV[NumL]; // Extract Diagonal value
@@ -345,7 +345,7 @@ int Ifpack_CrsRick::Factor() {
 
     for (j=0; j<NumU; j++) UV[j] *= DV[i]; // Scale U by inverse of diagonal
 
-    if (NumU) 
+    if (NumU)
       IFPACK_CHK_ERR(U_->ReplaceMyValues(i, NumU, UV, UI));  // Replace current row of L and U
 
 
@@ -353,13 +353,13 @@ int Ifpack_CrsRick::Factor() {
     for (j=0; j<NumIn; j++) colflag[InI[j]] = -1;
   }
 
-  
+
 #ifdef IFPACK_FLOPCOUNTERS
   // Add up flops
- 
+
   double current_flops = 2 * current_madds;
   double total_flops = 0;
-    
+
   Graph_.L_Graph().RowMap().Comm().SumAll(&current_flops, &total_flops, 1); // Get total madds across all PEs
 
   // Now count the rest
@@ -373,7 +373,7 @@ int Ifpack_CrsRick::Factor() {
   delete [] InI;
   delete [] InV;
   delete [] colflag;
-  
+
   SetFactored(true);
 
   return(ierr);
@@ -381,8 +381,8 @@ int Ifpack_CrsRick::Factor() {
 }
 
 //=============================================================================
-int Ifpack_CrsRick::Solve(bool Trans, const Epetra_Vector& X, 
-				Epetra_Vector& Y) const {
+int Ifpack_CrsRick::Solve(bool Trans, const Epetra_Vector& X,
+                                Epetra_Vector& Y) const {
 //
 // This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for a single RHS
 //
@@ -424,8 +424,8 @@ int Ifpack_CrsRick::Solve(bool Trans, const Epetra_Vector& X,
       U_->Solve(Upper, Trans, UnitDiagonal, *X1, *Y1); // Solve Uy = y
       Y1->Multiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
       L_->Solve(Lower, Trans, UnitDiagonal, *Y1, *Y1);
-      
-    } 
+
+    }
 
   // Export computed Y values as directed
   if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal())
@@ -435,8 +435,8 @@ int Ifpack_CrsRick::Solve(bool Trans, const Epetra_Vector& X,
 
 
 //=============================================================================
-int Ifpack_CrsRick::Solve(bool Trans, const Epetra_MultiVector& X, 
-				Epetra_MultiVector& Y) const {
+int Ifpack_CrsRick::Solve(bool Trans, const Epetra_MultiVector& X,
+                                Epetra_MultiVector& Y) const {
 //
 // This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 //
@@ -454,8 +454,8 @@ int Ifpack_CrsRick::Solve(bool Trans, const Epetra_MultiVector& X,
     // Make sure the number of vectors in the multivector is the same as before.
     if (OverlapX_!=0) {
       if (OverlapX_->NumVectors()!=X.NumVectors()) {
-	delete OverlapX_; OverlapX_ = 0;
-	delete OverlapY_; OverlapY_ = 0;
+        delete OverlapX_; OverlapX_ = 0;
+        delete OverlapY_; OverlapY_ = 0;
       }
     }
     if (OverlapX_==0) { // Need to allocate space for overlap X and Y
@@ -487,8 +487,8 @@ int Ifpack_CrsRick::Solve(bool Trans, const Epetra_MultiVector& X,
       U_->Solve(Upper, Trans, UnitDiagonal, *X1, *Y1); // Solve Uy = y
       Y1->Multiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
       L_->Solve(Lower, Trans, UnitDiagonal, *Y1, *Y1);
-      
-    } 
+
+    }
 
   // Export computed Y values as directed
   if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal())
@@ -496,8 +496,8 @@ int Ifpack_CrsRick::Solve(bool Trans, const Epetra_MultiVector& X,
   return(0);
 }
 //=============================================================================
-int Ifpack_CrsRick::Multiply(bool Trans, const Epetra_MultiVector& X, 
-				Epetra_MultiVector& Y) const {
+int Ifpack_CrsRick::Multiply(bool Trans, const Epetra_MultiVector& X,
+                                Epetra_MultiVector& Y) const {
 //
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 //
@@ -515,8 +515,8 @@ int Ifpack_CrsRick::Multiply(bool Trans, const Epetra_MultiVector& X,
     // Make sure the number of vectors in the multivector is the same as before.
     if (OverlapX_!=0) {
       if (OverlapX_->NumVectors()!=X.NumVectors()) {
-	delete OverlapX_; OverlapX_ = 0;
-	delete OverlapY_; OverlapY_ = 0;
+        delete OverlapX_; OverlapX_ = 0;
+        delete OverlapY_; OverlapY_ = 0;
       }
     }
     if (OverlapX_==0) { // Need to allocate space for overlap X and Y
@@ -547,13 +547,13 @@ int Ifpack_CrsRick::Multiply(bool Trans, const Epetra_MultiVector& X,
     Y1->Update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
   }
   else {
-    U_->Multiply(Trans, *X1, *Y1); // 
+    U_->Multiply(Trans, *X1, *Y1); //
     Y1->Update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
     Y1->ReciprocalMultiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
     Epetra_MultiVector Y1temp(*Y1); // Need a temp copy of Y1
     L_->Multiply(Trans, Y1temp, *Y1);
     Y1->Update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
-    } 
+    }
 
   // Export computed Y values as directed
   if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal())
@@ -581,7 +581,7 @@ int Ifpack_CrsRick::Condest(bool Trans, double & ConditionNumberEstimate) const 
 //=============================================================================
 // Non-member functions
 
-ostream& operator << (ostream& os, const Ifpack_CrsRick& A)
+std::ostream& operator << (std::ostream& os, const Ifpack_CrsRick& A)
 {
 /*  Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
   Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
@@ -617,7 +617,7 @@ ostream& operator << (ostream& os, const Ifpack_CrsRick& A)
   os << endl;
   os << U; // Let Epetra_CrsMatrix handle the rest.
   os << endl;
- 
+
   // Reset os flags
 
 /*  os.setf(olda,ios::adjustfield);

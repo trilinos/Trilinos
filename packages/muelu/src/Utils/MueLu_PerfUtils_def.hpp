@@ -69,10 +69,10 @@ namespace MueLu {
 
     Type sumVal, sum2Val;
 
-    sumAll(comm,   v, sumVal);
-    sumAll(comm, v*v, sum2Val);
-    minAll(comm,   v, minVal);
-    maxAll(comm,   v, maxVal);
+    MueLu_sumAll(comm,   v, sumVal);
+    MueLu_sumAll(comm, v*v, sum2Val);
+    MueLu_minAll(comm,   v, minVal);
+    MueLu_maxAll(comm,   v, maxVal);
 
     avgVal = as<double>(sumVal) / numProcs;
     devVal = (numProcs != 1 ? sqrt((sum2Val - sumVal*avgVal)/(numProcs-1)) : 0);

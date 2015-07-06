@@ -58,7 +58,7 @@ int main(int argc,char **args)
   PetscInt       i,j,Ii,J,Istart,Iend,its;
   PetscInt       m = 50,n = 50; /* #mesh points in x & y directions, resp. */
   PetscErrorCode ierr;
-  PetscTruth     flg;
+  PetscBool     flg;
   PetscScalar    v,one = 1.0,neg_one = -1.0;
   PetscInt rank=0;
   MPI_Comm comm;
@@ -106,7 +106,7 @@ int main(int argc,char **args)
     ierr = PetscRandomCreate(PETSC_COMM_WORLD,&rctx);CHKERRQ(ierr);
     ierr = PetscRandomSetFromOptions(rctx);CHKERRQ(ierr);
     ierr = VecSetRandom(u,rctx);CHKERRQ(ierr);
-    ierr = PetscRandomDestroy(rctx);CHKERRQ(ierr);
+    ierr = PetscRandomDestroy(&rctx);CHKERRQ(ierr);
   } else {
     ierr = VecSet(u,one);CHKERRQ(ierr);
   }
@@ -160,7 +160,7 @@ int main(int argc,char **args)
   ierr = PetscOptionsHasName(PETSC_NULL,"-petsc_smoother",&flg);CHKERRQ(ierr);
   if (flg) {
     ierr = KSPCreate(comm,&kspSmoother);CHKERRQ(ierr);
-    ierr = KSPSetOperators(kspSmoother,A,A,SAME_NONZERO_PATTERN);CHKERRQ(ierr);
+    ierr = KSPSetOperators(kspSmoother,A,A);CHKERRQ(ierr);
     ierr = KSPSetType(kspSmoother,KSPRICHARDSON);CHKERRQ(ierr);
     ierr = KSPSetTolerances(kspSmoother, 1e-12, 1e-50, 1e7,1);
     ierr = KSPSetInitialGuessNonzero(kspSmoother,PETSC_TRUE);CHKERRQ(ierr);
@@ -192,7 +192,7 @@ int main(int argc,char **args)
 
   /* PETSc CG */
   ierr = KSPCreate(PETSC_COMM_WORLD,&ksp);CHKERRQ(ierr);
-  ierr = KSPSetOperators(ksp,A,A,DIFFERENT_NONZERO_PATTERN);CHKERRQ(ierr);
+  ierr = KSPSetOperators(ksp,A,A);CHKERRQ(ierr);
   ierr = KSPSetTolerances(ksp,1e-12,1.e-50,PETSC_DEFAULT,
                           PETSC_DEFAULT);CHKERRQ(ierr);
   ierr = KSPSetType(ksp,KSPCG);CHKERRQ(ierr);
@@ -217,11 +217,11 @@ int main(int argc,char **args)
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %A iterations %D\n",
                      norm,its);CHKERRQ(ierr);
 
-  ierr = KSPDestroy(ksp);CHKERRQ(ierr);
-  ierr = VecDestroy(u);CHKERRQ(ierr);  ierr = VecDestroy(x);CHKERRQ(ierr);
-  ierr = VecDestroy(b);CHKERRQ(ierr);  ierr = MatDestroy(A);CHKERRQ(ierr);
+  ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
+  ierr = VecDestroy(&u);CHKERRQ(ierr);  ierr = VecDestroy(&x);CHKERRQ(ierr);
+  ierr = VecDestroy(&b);CHKERRQ(ierr);  ierr = MatDestroy(&A);CHKERRQ(ierr);
 
-  if (kspSmoother) {ierr = KSPDestroy(kspSmoother);CHKERRQ(ierr);}
+  if (kspSmoother) {ierr = KSPDestroy(&kspSmoother);CHKERRQ(ierr);}
   if (Prec) delete Prec;
 
   ierr = PetscFinalize();CHKERRQ(ierr);

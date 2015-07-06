@@ -50,8 +50,7 @@
 #include "Ifpack2_@CLASS_FILE_NAME@_def.hpp"
 #include "Tpetra_CrsGraph.hpp"
 
-// Ifpack2 already instantiates its classes for the default Node type.
-#if defined(HAVE_TPETRA_INST_OPENMP) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#if defined(HAVE_TPETRA_INST_OPENMP)
 
 // Need this for the mangling of the Node typedef.
 TPETRA_ETI_MANGLING_TYPEDEFS()

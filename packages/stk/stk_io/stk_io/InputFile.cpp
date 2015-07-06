@@ -484,6 +484,8 @@ namespace stk {
       // Sort fields to ensure they are iterated in the same order on all processors.
       std::sort(m_fields.begin(), m_fields.end(), meshFieldSort);
 
+      bool ignore_missing_fields = (missing != NULL);
+
       if (!m_fieldsInitialized) {
 	std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
 	while (I != m_fields.end()) {
@@ -494,6 +496,10 @@ namespace stk {
 	report_missing_fields(missing);
 	  
 	m_fieldsInitialized = true;
+//        I = m_fields.begin();
+//        while (I != m_fields.end()) {
+//          (*I).set_active(); ++I;
+//        }
       }
 
       if (time < m_startTime || time > m_stopTime)
@@ -517,7 +523,7 @@ namespace stk {
 
       std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
       while (I != m_fields.end()) {
-	(*I).restore_field_data(bulk, sti);
+	(*I).restore_field_data(bulk, sti, ignore_missing_fields);
 	++I;
       }
 

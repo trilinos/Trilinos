@@ -182,7 +182,7 @@ public:
   }
 
   //! Returns \c GALERI_TET
-  virtual string ElementType() const
+  virtual std::string ElementType() const
   {
     return("GALERI_TET");
   }

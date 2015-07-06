@@ -25,7 +25,7 @@
 // Questions? Contact Todd S. Coffey (tscoffe@sandia.gov)
 //
 // ***********************************************************************
-//@HEADER 
+//@HEADER
 
 #include "EpetraExt_DiagonalTransientModel.hpp"
 #include "Rythmos_BackwardEulerStepper.hpp"
@@ -59,7 +59,7 @@
 /** \file simpleAdjointMain.cpp
 
 \brief Simple example/test problem for basic adjoint solver
-    
+
 This simple test program provides the most basic test for the transient
 adjoint solver capability in Rythmos.  This example uses the notation of
 the SAND report "A derivation of forward and adjoint sensitivities for ODEs
@@ -88,11 +88,11 @@ The global response function is of the terminal type and takes the form:
 where <tt>x(p,t_final)</tt> is the solved-for state at time <tt>t_final</tt>
 which is an implicit function of the parameters <tt>p</tt> through the initial
 condition to the forward ODE.
-  
+
 the reverse-time adjoint ODE for this problem is:
 
 \verbatim
-    
+
   lambda_rev_dot(t_bar,i) - gamma(i) * lambda(t_bar,i) = 0,
      for i=0...n-1, t_bar in [0,t_final-t_0]
 
@@ -101,7 +101,7 @@ the reverse-time adjoint ODE for this problem is:
 \endverbatim
 
 The reduced response function derivative in terms of the adjoint is:
- 
+
 \verbatim
 
   d(d_hat)/d(p) = lambda(t=t_0)
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 
   using std::endl;
   typedef double Scalar;
-  typedef double ScalarMag;
+  // typedef double ScalarMag; // unused
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Teuchos::describe;
   using Teuchos::Array;
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
   using Teuchos::CommandLineProcessor;
   typedef Teuchos::ParameterList::PrintOptions PLPrintOptions;
   typedef Thyra::ModelEvaluatorBase MEB;
-  
+
   bool result, success = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
     //
     *out << "\nA) Get the base parameter list ...\n";
     //
-    
+
     RCP<ParameterList>
       paramList = Teuchos::parameterList();
     if (paramsFileName.length())
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
     //
     *out << "\nC) Create and initalize the forward model ...\n";
     //
-    
+
     // C.1) Create the underlying EpetraExt::ModelEvaluator
 
     RCP<EpetraExt::DiagonalTransientModel> epetraStateModel =
@@ -331,9 +331,9 @@ int main(int argc, char *argv[])
     epetraStateModel->getValidParameters()->print(
       *out, PLPrintOptions().indent(2).showTypes(true).showDoc(true)
       );
-    
+
     // C.2) Create the Thyra-wrapped ModelEvaluator
-    
+
     RCP<Thyra::ModelEvaluator<double> > fwdStateModel =
       epetraModelEvaluator(epetraStateModel, W_factory);
 
@@ -448,13 +448,13 @@ int main(int argc, char *argv[])
     // lambda(t_final) = x_final
     const RCP<Thyra::VectorBase<Scalar> > lambda_ic = createMember(f_space);
     V_V( outArg(*lambda_ic), *x_final_be_exact );
-    
+
     // lambda_dot(t_final,i) = - gamma(i) * lambda(t_final,i)
     const RCP<Thyra::VectorBase<Scalar> > lambda_dot_ic = createMember(f_space);
     Thyra::V_S<Scalar>( outArg(*lambda_dot_ic), ST::zero() );
     Thyra::ele_wise_prod<Scalar>( -ST::one(), *gamma, *lambda_ic,
       outArg(*lambda_dot_ic) );
-    
+
     MEB::InArgs<Scalar> adj_ic = adjModel->getNominalValues();
     adj_ic.set_x(lambda_ic);
     adj_ic.set_x_dot(lambda_dot_ic);
@@ -483,7 +483,7 @@ int main(int argc, char *argv[])
 
       const RCP<Thyra::VectorBase<Scalar> >
         lambda_final_be_exact = createMember(x_space);
-      
+
       {
         Thyra::ConstDetachedVectorView<Scalar> d_gamma(*gamma);
         Thyra::ConstDetachedVectorView<Scalar> d_x_final(*x_final);
@@ -494,9 +494,9 @@ int main(int argc, char *argv[])
           d_lambda_final_be_exact(i) = integralPow(d_x_beta(i), numTimeSteps) * d_x_final(i);
         }
       }
-      
+
       *out << "\nlambda_final_be_exact:\n" << describe(*lambda_final_be_exact, solnVerbLevel);
-      
+
       result = Thyra::testRelNormDiffErr<Scalar>(
         "lambda_final", *lambda_final,
         "lambda_final_be_exact", *lambda_final_be_exact,
@@ -519,7 +519,7 @@ int main(int argc, char *argv[])
 
       const RCP<Thyra::VectorBase<Scalar> >
         d_d_hat_d_p_be_exact = createMember(x_space);
-      
+
       {
         Thyra::ConstDetachedVectorView<Scalar> d_x_ic(*state_ic.get_x());
         Thyra::DetachedVectorView<Scalar> d_x_beta(*x_beta);
@@ -529,9 +529,9 @@ int main(int argc, char *argv[])
           d_d_d_hat_d_p_be_exact(i) = integralPow(d_x_beta(i), 2*numTimeSteps) * d_x_ic(i);
         }
       }
-      
+
       *out << "\nd_d_hat_d_p_be_exact:\n" << describe(*d_d_hat_d_p_be_exact, solnVerbLevel);
-      
+
       result = Thyra::testRelNormDiffErr<Scalar>(
         "d_d_hat_d_p_from_lambda", *d_d_hat_d_p_from_lambda,
         "d_d_hat_d_p_be_exact", *d_d_hat_d_p_be_exact,
@@ -542,7 +542,7 @@ int main(int argc, char *argv[])
       if (!result) success = false;
 
     }
-    
+
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success);
 
@@ -550,7 +550,7 @@ int main(int argc, char *argv[])
     *out << "\nEnd Result: TEST PASSED" << endl;
   else
     *out << "\nEnd Result: TEST FAILED" << endl;
-  
+
   return ( success ? 0 : 1 );
 
 } // end main() [Doxygen looks for this!]

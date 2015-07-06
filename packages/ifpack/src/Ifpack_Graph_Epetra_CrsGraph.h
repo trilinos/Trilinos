@@ -52,7 +52,7 @@ class Epetra_CrsGraph;
 
 //! Ifpack_Graph_Epetra_CrsGraph: a class to define Ifpack_Graph as a light-weight conversion of Epetra_CrsGraph's.
 
-/*! 
+/*!
 Class Ifpack_Graph_Epetra_CrsGraph enables the construction of an
 Ifpack_Graph based on the input Epetra_CrsGraph. Note that data are
 not copied to \e this object; instead, wrappers are furnished.
@@ -62,7 +62,7 @@ not copied to \e this object; instead, wrappers are furnished.
 class Ifpack_Graph_Epetra_CrsGraph : public Ifpack_Graph {
 
 public:
-    
+
   //! Constructor.
   Ifpack_Graph_Epetra_CrsGraph(const Teuchos::RefCountPtr<const Epetra_CrsGraph>& CrsGraph);
 
@@ -87,7 +87,7 @@ public:
   {
     if(CrsGraph_->RowMap().GlobalIndicesInt())
       return (int) (NumGlobalRows_);
-	else
+        else
       throw "Ifpack_Graph_Epetra_CrsGraph::NumGlobalRows: GlobalIndices not int.";
   }
 #endif
@@ -102,7 +102,7 @@ public:
   {
     if(CrsGraph_->ColMap().GlobalIndicesInt())
       return (int) (NumGlobalCols_);
-	else
+        else
       throw "Ifpack_Graph_Epetra_CrsGraph::NumGlobalCols: GlobalIndices not int.";
   }
 #endif
@@ -134,7 +134,7 @@ public:
   int GCID(int) const;
 #endif
   long long GCID64(int) const;
-  
+
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   //! Returns the local row ID of input global row.
   int LRID(int) const;
@@ -152,14 +152,14 @@ public:
 #endif
 
   //! Extracts a copy of input local row.
-  int ExtractMyRowCopy(int GlobalRow, int LenOfIndices, 
-		       int &NumIndices, int *Indices) const;
+  int ExtractMyRowCopy(int GlobalRow, int LenOfIndices,
+                       int &NumIndices, int *Indices) const;
 
   //! Returns the communicator object of the graph.
   const Epetra_Comm& Comm() const;
-  
+
   //! Prints basic information about the graph object.
-  virtual ostream& Print(std::ostream& os) const;
+  virtual std::ostream& Print(std::ostream& os) const;
 
 private:
 

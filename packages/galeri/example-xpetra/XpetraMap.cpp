@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
     // strips, so that the total number of subdomains is comm->getSize() x 1.
     
     // Type of the object
-    string mapType = "Cartesian2D";
+    std::string mapType = "Cartesian2D";
     
     // Container for parameters
     Teuchos::ParameterList galeriList;
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
     // Creates an Xpetra::Map corresponding to a 3D Cartesian grid
     
     // Type of the object
-    string mapType = "Cartesian3D";
+    std::string mapType = "Cartesian3D";
     
     // Container for parameters
     Teuchos::ParameterList galeriList;

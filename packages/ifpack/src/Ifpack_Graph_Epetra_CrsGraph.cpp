@@ -69,7 +69,7 @@ bool Ifpack_Graph_Epetra_CrsGraph::Filled() const
 {
   return(CrsGraph_->Filled());
 }
- 
+
 //==============================================================================
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Ifpack_Graph_Epetra_CrsGraph::GRID(int LRID_in) const
@@ -124,11 +124,11 @@ int Ifpack_Graph_Epetra_CrsGraph::LCID(long long GCID_in) const
 #endif
 //==============================================================================
 int Ifpack_Graph_Epetra_CrsGraph::
-ExtractMyRowCopy(int MyRow, int LenOfIndices, 
-		 int &NumIndices, int *Indices) const
+ExtractMyRowCopy(int MyRow, int LenOfIndices,
+                 int &NumIndices, int *Indices) const
 {
   return(CrsGraph_->ExtractMyRowCopy(MyRow, LenOfIndices,
-					 NumIndices, Indices));
+                                         NumIndices, Indices));
 }
 
 //==============================================================================
@@ -138,8 +138,9 @@ int Ifpack_Graph_Epetra_CrsGraph::NumMyNonzeros() const
 }
 
 // ======================================================================
-ostream& Ifpack_Graph_Epetra_CrsGraph::Print(std::ostream& os) const
+std::ostream& Ifpack_Graph_Epetra_CrsGraph::Print(std::ostream& os) const
 {
+  using std::endl;
 
   if (Comm().MyPID())
     return(os);

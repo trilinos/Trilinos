@@ -147,7 +147,8 @@ bool MeshField::operator==(const MeshField &other) const
 }
 
 void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
-				   const stk::io::DBStepTimeInterval &sti)
+				   const stk::io::DBStepTimeInterval &sti,
+				   bool ignore_missing_fields)
 {
   if (!is_active())
     return;
@@ -200,7 +201,8 @@ void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
 							     io_entity, stk_part, m_dbName, state_count);
 	} else {
 	  stk::io::multistate_field_data_from_ioss(bulk, m_field, entity_list,
-						   io_entity, m_dbName, state_count);
+						   io_entity, m_dbName, state_count,
+						   ignore_missing_fields);
 	}
       }
 
