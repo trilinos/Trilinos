@@ -62,7 +62,7 @@ namespace Example {
 
       // grow buffer dimension
       const size_type size = _m*_n;
-      if (_a.dimension_0() < size)
+      if (static_cast<size_type>(_a.dimension_0()) < size)
         _a = value_type_array(_label+"::ValuesArray", size);
     }
 
