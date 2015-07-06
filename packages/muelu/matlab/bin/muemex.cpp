@@ -274,8 +274,6 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, HierAttribType dataType
                   RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
                   RCP<MueLu::Level> level = hier->GetLevel(levelID);
                   RCP<Xpetra_Matrix_double> mat;
-
-                  std::cout<<"getHierarchyData getting "<<dataName<<std::endl;
                   level->Get(dataName, mat);
                   output = saveMatrixToMatlab<double>(mat);
                   break;

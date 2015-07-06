@@ -96,6 +96,7 @@ namespace MueLu {
     validParamList->set< int >                   ("aggregation: output file: time step",              0,          "time step variable for output file name");// Remove me?
     validParamList->set< int >                   ("aggregation: output file: iter",                  0,          "nonlinear iteration variable for output file name");//Remove me?
     validParamList->set<std::string>             ("aggregation: output file: agg style",             "Point Cloud",         "style of aggregate visualization for VTK output");
+    validParamList->set<bool>                    ("aggregation: output file: graph edges",           false,                 "Whether to draw all node connections along with the aggregates.");
     return validParamList;
   }
 
@@ -107,8 +108,12 @@ namespace MueLu {
 
     const ParameterList & pL = GetParameterList();
     //Only pull in coordinates if the user explicitly requests direct VTK output
-    if(pL.isParameter("aggregation: output filename") && !pL.get<std::string>("aggregation: output filename").length())
+    if(pL.isParameter("aggregation: output filename") && pL.get<std::string>("aggregation: output filename").length())
+    {
       Input(fineLevel, "Coordinates");
+      if(pL.isParameter("aggregation: output file: graph edges") && pL.get<bool>("aggregation: output file: graph edges"))
+        Input(fineLevel, "A");
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -116,13 +121,12 @@ namespace MueLu {
     using namespace std;
     //Decide which build function to follow, based on input params
     const ParameterList& pL = GetParameterList();
-    std::cout << "Parameter list into agg export:" << std::endl;
-    pL.print();
     FactoryMonitor m(*this, "AggregationExportFactory", coarseLevel);
     std::string masterFilename = pL.get<std::string>("aggregation: output filename"); //filename parameter from master list
     std::string localFilename = pL.get<std::string>("Output filename");
     std::string filenameToWrite;
     bool useVTK = false;
+    cout << "Master filename is \"" << masterFilename << "\"." << endl;
     if(masterFilename.length())
     {
       useVTK = true;
@@ -130,11 +134,10 @@ namespace MueLu {
     }
     else
       filenameToWrite = localFilename;
-
     if(useVTK)
-      std::cout << "Outputting VTK." << std::endl;
+      cout << "Using VTK." << endl;
     else
-      std::cout << "Outputting raw aggregates table." << std::endl;
+      cout << "Not using vtk." << endl;
     Teuchos::RCP<Aggregates> aggregates      = Get< Teuchos::RCP<Aggregates> >(fineLevel,"Aggregates");
     LocalOrdinal DofsPerNode                 = Get< LocalOrdinal >            (fineLevel,"DofsPerNode");
     Teuchos::RCP<AmalgamationInfo> amalgInfo = Get< RCP<AmalgamationInfo> >   (fineLevel,"UnAmalgamationInfo");
@@ -174,20 +177,18 @@ namespace MueLu {
     filenameToWrite = replaceAll(filenameToWrite, "%TIMESTEP", toString(timeStep));
     filenameToWrite = replaceAll(filenameToWrite, "%ITER",     toString(iter));
 
-std::cout << "final agg export filename is: " << filenameToWrite << std::endl;
-
     GetOStream(Runtime0) << "AggregationExportFactory: outputfile \"" << filenameToWrite << "\"" << std::endl;
     //does the user want a widely compatible .vtp file (xml formatted data) to visualize aggregates in ParaView?
     //If filename ends in .vtp (which it will have to be for an unstructured 'PolyData' VTK file), do that
     //This is the filename that VTK users will set, so check that for a valid filename
 
-    std::ofstream fout(filenameToWrite.c_str());
+    ofstream fout(filenameToWrite.c_str());
     GO numAggs = aggregates->GetNumAggregates();
     if(!useVTK)
     {
       GO indexBase = aggregates->GetMap()->getIndexBase(); // extract indexBase from overlapping map within aggregates structure. The indexBase is constant throughout the whole simulation (either 0 = C++ or 1 = Fortran)
       GO offset    = amalgInfo->GlobalOffset();            // extract offset for global dof ids
-      std::vector<GlobalOrdinal> nodeIds;
+      vector<GlobalOrdinal> nodeIds;
       for (int i = 0; i < numAggs; ++i) {
         fout << "Agg " << minGlobalAggId[myRank] + i << " Proc " << myRank << ":";
   
@@ -210,6 +211,9 @@ std::cout << "final agg export filename is: " << filenameToWrite << std::endl;
     }
     else
     {
+      //Only the main process will output anything
+      if(myRank != 0)
+        return;
       //Note: For now, this will only work with real scalars.
       using namespace std;
       if(sizeof(Scalar) != sizeof(double))
@@ -238,44 +242,54 @@ std::cout << "final agg export filename is: " << filenameToWrite << std::endl;
       fout << "<!--Aggregates Visualization-->" << endl;
       string indent = "";
       int numAggsInt = int(numAggs);
+      bool drawEdges = pL.get<bool>("aggregation: output file: graph edges");
+      Teuchos::RCP<Matrix> Amat = drawEdges ? Get<RCP<Matrix> >(fineLevel, "A") : Teuchos::null;
+      std::vector<int> graphEdges;
+      if(drawEdges)
+      {
+        //Add all (global) edges to graphEdges
+        graphEdges.reserve(2 * Amat->getGlobalNumEntries()); //two nodes for each edge, num edges = nonzeros in A
+        //todo: fill graphEdges with global data
+      }
       if(aggStyle == "Point Cloud")
       {
-        doPointCloud_(fout, xCoords, yCoords, zCoords, numNodes, numAggsInt, aggSizes, dims, vertex2AggId, procWinner, aggregates);
+        doPointCloud_(fout, xCoords, yCoords, zCoords, numNodes, numAggsInt, aggSizes, dims, vertex2AggId, procWinner, aggregates, drawEdges, graphEdges);
       }
       else if(aggStyle == "Jacks")
       {
-        doJacks_(fout, xCoords, yCoords, zCoords, numNodes, numAggsInt, aggSizes, dims, vertex2AggId, procWinner, aggregates);
+        doJacks_(fout, xCoords, yCoords, zCoords, numNodes, numAggsInt, aggSizes, dims, vertex2AggId, procWinner, aggregates, drawEdges, graphEdges);
       }
       else if(aggStyle == "Jacks++")
       {
-        doJacksPlus_(fout, xCoords, yCoords, zCoords, numNodes, numAggsInt, aggSizes, dims, vertex2AggId, procWinner, aggregates);
+        doJacksPlus_(fout, xCoords, yCoords, zCoords, numNodes, numAggsInt, aggSizes, dims, vertex2AggId, procWinner, aggregates, drawEdges, graphEdges);
       }
       else if(aggStyle == "Convex Hulls")
       {
-        doConvexHulls_(fout, xCoords, yCoords, zCoords, numNodes, numAggsInt, aggSizes, dims, vertex2AggId, procWinner, aggregates);
+        doConvexHulls_(fout, xCoords, yCoords, zCoords, numNodes, numAggsInt, aggSizes, dims, vertex2AggId, procWinner, aggregates, drawEdges, graphEdges);
       }
       else if(aggStyle == "Alpha Hulls")
       {
-        doAlphaHulls_(fout, xCoords, yCoords, zCoords, numNodes, numAggsInt, aggSizes, dims, vertex2AggId, procWinner, aggregates);
+        doAlphaHulls_(fout, xCoords, yCoords, zCoords, numNodes, numAggsInt, aggSizes, dims, vertex2AggId, procWinner, aggregates, drawEdges, graphEdges);
       }
       else
       {
         std::cout << "Warning: Unrecognized agg style.\nPossible values are Point Cloud, Jacks, Jacks++, Convex Hulls and Alpha Hulls.\nDefaulting to Point Cloud." << std::endl;
-        doPointCloud_(fout, xCoords, yCoords, zCoords, numNodes, numAggsInt, aggSizes, dims, vertex2AggId, procWinner, aggregates);
+        doPointCloud_(fout, xCoords, yCoords, zCoords, numNodes, numAggsInt, aggSizes, dims, vertex2AggId, procWinner, aggregates, drawEdges, graphEdges);
       }
     }
     fout.close();
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doPointCloud_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates)
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doPointCloud_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates, bool doGraphEdges, std::vector<int>& graphConnectionsA)
   {
     using namespace std;
     fout << "<!--Point Cloud-->" << endl;
     fout << "<VTKFile type=\"UnstructuredGrid\" byte_order=\"LittleEndian\">" << endl;
     fout << "  <UnstructuredGrid>" << endl;
     //Number of points in each "piece" will be the number of nodes in each aggregate
-    fout << "    <Piece NumberOfPoints=\"" << numNodes << "\" NumberOfCells=\"" << numNodes << "\">" << endl;
+    size_t numCells = (size_t) numNodes;
+    fout << "    <Piece NumberOfPoints=\"" << numNodes << "\" NumberOfCells=\"" << numCells << "\">" << endl;
     fout << "      <PointData Scalars=\"Node Aggregate Processor\">" << endl;
     string indent = "          ";
     fout << "        <DataArray type=\"Int32\" Name=\"Node\" format=\"ascii\">" << endl;
@@ -366,7 +380,7 @@ std::cout << "final agg export filename is: " << filenameToWrite << std::endl;
   }
       
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doJacks_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates)
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doJacks_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates, bool doGraphEdges, std::vector<int>& graphConnections)
   {
     using namespace std;
     fout << "<!--Jacks-->" << endl;
@@ -492,22 +506,22 @@ std::cout << "final agg export filename is: " << filenameToWrite << std::endl;
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doJacksPlus_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates)
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doJacksPlus_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates, bool doGraphEdges, std::vector<int>& graphConnections)
   {
     //TODO
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates)
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates, bool doGraphEdges, std::vector<int>& graphConnections)
   {
     if(dims == 2)
-      doConvexHulls2D_(fout, xCoords, yCoords, numNodes, numAggs, aggSizes, vertex2AggId, procWinners, aggregates);
+      doConvexHulls2D_(fout, xCoords, yCoords, numNodes, numAggs, aggSizes, vertex2AggId, procWinners, aggregates, doGraphEdges, graphConnections);
     else
-      doConvexHulls3D_(fout, xCoords, yCoords, zCoords, numNodes, numAggs, aggSizes, vertex2AggId, procWinners, aggregates);
+      doConvexHulls3D_(fout, xCoords, yCoords, zCoords, numNodes, numAggs, aggSizes, vertex2AggId, procWinners, aggregates, doGraphEdges, graphConnections);
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls2D_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates)
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls2D_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates, bool doGraphEdges, std::vector<int>& graphConnections)
   {
     using namespace std;
     vector<vector<int> > hulls; //outer vector contains aggregates, inner vector contains unique node IDs
@@ -648,9 +662,9 @@ std::cout << "final agg export filename is: " << filenameToWrite << std::endl;
         //if leftMost is min, then the loop is complete.
         if(leftMost == min)
         {
-          for(int i = 0; i < thisHull.size(); i++)
-            cout << thisHull[i] << " ";
-          cout << endl << endl;
+          //for(int i = 0; i < thisHull.size(); i++)
+            //cout << thisHull[i] << " ";
+          //cout << endl << endl;
           hulls.push_back(thisHull);
           break; //this goes to the next aggregate
         }
@@ -788,7 +802,7 @@ std::cout << "final agg export filename is: " << filenameToWrite << std::endl;
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls3D_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates)
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doConvexHulls3D_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates, bool doGraphEdges, std::vector<int>& graphConnections)
   {
     using namespace std;
     //Use 3D quickhull algo.
@@ -800,19 +814,12 @@ std::cout << "final agg export filename is: " << filenameToWrite << std::endl;
     typedef list<int>::iterator Iter;
     for(int agg = 0; agg < numAggs; agg++)
     {
-      cout << "Constructing convex hull for agg #" << agg << endl;
       list<int> aggNodes; //At first, list of all nodes in the aggregate. As nodes are enclosed or included by/in hull, remove them
       for(int i = 0; i < numNodes; i++)
       {
         if(vertex2AggId[i] == agg)
           aggNodes.push_back(i);
       }
-
-cout << "Making hull from nodes: " << endl;
-for(Iter i = aggNodes.begin(); i != aggNodes.end(); i++)
-{
-  cout << "#" << *i << " @ (" << xCoords[*i] << "," << yCoords[*i] << "," << zCoords[*i] << ")" << endl;
-}
       //First, check anomalous cases
       if(aggNodes.size() == 0)
         throw runtime_error("An aggregate has zero nodes in it!");
@@ -923,7 +930,6 @@ for(Iter i = aggNodes.begin(); i != aggNodes.end(); i++)
         if(zCoords[*it] > zCoords[extremeSix[5]] || (zCoords[*it] == zCoords[extremeSix[5]] && xCoords[*it] > xCoords[extremeSix[5]]) || (zCoords[*it] == zCoords[extremeSix[5]] && xCoords[*it] == xCoords[extremeSix[5]] && yCoords[*it] > zCoords[extremeSix[5]]))
           extremeSix[5] = *it;
       }
-      cout << "Have the six extreme points." << endl;
       vec3_ extremeVectors[6];
       for(int i = 0; i < 6; i++)
       {
@@ -946,7 +952,6 @@ for(Iter i = aggNodes.begin(); i != aggNodes.end(); i++)
           }
         }
       }
-      cout << "Have the first two points: " << extremeSix[base1] << " and " << extremeSix[base2] << endl;
       list<Triangle_> hullBuilding;    //each Triangle is a triplet of nodes (int IDs) that form a triangle
       //remove base1 and base2 iters from aggNodes, they are known to be in the hull
       aggNodes.remove(extremeSix[base1]);
@@ -961,12 +966,6 @@ for(Iter i = aggNodes.begin(); i != aggNodes.end(); i++)
       vec3_ b1 = extremeVectors[base1];
       vec3_ b2 = extremeVectors[base2];
       Iter thirdNode;
-cout << "About to calculate the third point based on distance from line to point formula." << endl;
-cout << "Choosing from nodes: " << endl;
-for(Iter i = aggNodes.begin(); i != aggNodes.end(); i++)
-{
-  cout << "#" << *i << " @ (" << xCoords[*i] << "," << yCoords[*i] << "," << zCoords[*i] << ")" << endl;
-}
       for(Iter node = aggNodes.begin(); node != aggNodes.end(); node++)
       {
         vec3_ nodePos(xCoords[*node], yCoords[*node], zCoords[*node]);
@@ -977,7 +976,6 @@ for(Iter i = aggNodes.begin(); i != aggNodes.end(); i++)
           thirdNode = node;
         }
       }
-cout << "Have the third point: " << *thirdNode << endl;
       //Now know the last node in the first triangle
       tri.v3 = *thirdNode;
       hullBuilding.push_back(tri);
@@ -986,7 +984,6 @@ cout << "Have the third point: " << *thirdNode << endl;
       //Find the fourth node (most distant from triangle) to form tetrahedron
       maxDist = 0;
       int fourthVertex = -1;
-      cout << "Choosing point most distant from starting triangle." << endl;
       for(Iter node = aggNodes.begin(); node != aggNodes.end(); node++)
       {
         vec3_ thisNode(xCoords[*node], yCoords[*node], zCoords[*node]);
@@ -997,7 +994,6 @@ cout << "Have the third point: " << *thirdNode << endl;
           fourthVertex = *node;
         }
       }
-cout << "Have the fourth point to complete the tetrahedron: " << fourthVertex << endl;
       aggNodes.remove(fourthVertex);
       vec3_ b4(xCoords[fourthVertex], yCoords[fourthVertex], zCoords[fourthVertex]);
       //Add three new triangles to hullBuilding to form the first tetrahedron
@@ -1011,24 +1007,6 @@ cout << "Have the fourth point to complete the tetrahedron: " << fourthVertex <<
       tri = hullBuilding.front();
       tri.v3 = fourthVertex;
       hullBuilding.push_back(tri);
-/*
-//////DEBBUGGINGGG///////////
-for(Triangle_ t : hullBuilding)
-{
-  vertIndices.push_back(t.v1);
-  vertIndices.push_back(t.v2);
-  vertIndices.push_back(t.v3);
-  geomSizes.push_back(3);
-}
-for(int v : aggNodes)
-{
-  vertIndices.push_back(v);
-  geomSizes.push_back(1);
-}
-continue;
-*/
-////////////////////////////
-      
       //now orient all four triangles so that the vertices are oriented clockwise (so getNorm_ points outward for each)
       vec3_ barycenter((b1.x + b2.x + b3.x + b4.x) / 4.0, (b1.y + b2.y + b3.y + b4.y) / 4.0, (b1.z + b2.z + b3.z + b4.z) / 4.0);
       for(list<Triangle_>::iterator tetTri = hullBuilding.begin(); tetTri != hullBuilding.end(); tetTri++)
@@ -1047,7 +1025,7 @@ continue;
           tetTri->v2 = temp;
         }
       }
-cout << "Done making the initial tetrahedron's faces face outward." << endl;
+//cout << "Done making the initial tetrahedron's faces face outward." << endl;
       //now, have starting polyhedron in hullBuilding (all faces are facing outwards according to getNorm_) and remaining nodes to process are in aggNodes
       //recursively, for each triangle, make a list of the points that are 'in front' of the triangle. Find the point with the maximum distance from the triangle.
       //Add three new triangles, each sharing one edge with the original triangle but now with the most distant point as a vertex. Remove the most distant point from
@@ -1104,25 +1082,26 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
         //Call processTriangle_ for each triangle in the initial tetrahedron, one at a time.
       }
       typedef list<Triangle_>::iterator TriIter;
-      TriIter startIter1 = hullBuilding.begin();
-      TriIter startIter2 = hullBuilding.begin();
-      advance(startIter2, 1);
-      TriIter startIter3 = hullBuilding.begin();
-      advance(startIter3, 2);
-      TriIter startIter4 = hullBuilding.begin();
-      advance(startIter4, 3);
+      TriIter firstTri = hullBuilding.begin();
+      Triangle_ start1 = *firstTri;
+      firstTri++;
+      Triangle_ start2 = *firstTri;
+      firstTri++;
+      Triangle_ start3 = *firstTri;
+      firstTri++;
+      Triangle_ start4 = *firstTri;
       //kick off depth-first recursive filling of hullBuilding list with all triangles in the convex hull
-      cout << "About to begin recursive method on triangle 1." << endl;
       if(!startPoints1.empty())
-        processTriangle_(hullBuilding, startIter1, startPoints1, barycenter, xCoords, yCoords, zCoords);
+        processTriangle_(hullBuilding, start1, startPoints1, barycenter, xCoords, yCoords, zCoords);
       if(!startPoints2.empty())
-        processTriangle_(hullBuilding, startIter2, startPoints2, barycenter, xCoords, yCoords, zCoords);
+        processTriangle_(hullBuilding, start2, startPoints2, barycenter, xCoords, yCoords, zCoords);
       if(!startPoints3.empty())
-        processTriangle_(hullBuilding, startIter3, startPoints3, barycenter, xCoords, yCoords, zCoords);
+        processTriangle_(hullBuilding, start3, startPoints3, barycenter, xCoords, yCoords, zCoords);
       if(!startPoints4.empty())
-        processTriangle_(hullBuilding, startIter4, startPoints4, barycenter, xCoords, yCoords, zCoords);
+        processTriangle_(hullBuilding, start4, startPoints4, barycenter, xCoords, yCoords, zCoords);
       //hullBuilding now has all triangles that make up this hull.
       //Dump hullBuilding info into the list of all triangles for the scene.
+      vertIndices.reserve(vertIndices.size() + 3 * hullBuilding.size());
       for(TriIter hullTri = hullBuilding.begin(); hullTri != hullBuilding.end(); hullTri++)
       {
         vertIndices.push_back(hullTri->v1);
@@ -1135,12 +1114,28 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
     //Interior points won't be in VTK file
     vector<int> includePoints = vertIndices;
     sort(includePoints.begin(), includePoints.end());
-    unique(includePoints.begin(), includePoints.end());
+    vector<int>::iterator uniqueEnd = unique(includePoints.begin(), includePoints.end());
+    includePoints.erase(uniqueEnd, includePoints.end());
     int uniquePoints = int(includePoints.size());
     //Replace actual node values in vertIndices by the equivalent unique point index
     for(int i = 0; i < int(vertIndices.size()); i++)
     {
-      vertIndices[i] = find(includePoints.begin(), includePoints.end(), vertIndices[i]) - includePoints.begin();
+      //binary search for vertIndices[i] in includePoints, and get that index in includePoints
+      int loInd = 0;
+      int hiInd = includePoints.size() - 1;
+      while(hiInd >= loInd)
+      {
+        int midInd = (loInd + hiInd) / 2;
+        if(includePoints[midInd] == vertIndices[i])
+        {
+          vertIndices[i] = midInd;
+          break;
+        }
+        else if(includePoints[midInd] < vertIndices[i]) //use upper half of previous range
+          loInd = midInd + 1;
+        else                                          //use lower half
+          hiInd = midInd - 1;
+      }
     }
     fout << "<!--3D Convex Hulls-->" << endl;
     fout << "<VTKFile type=\"UnstructuredGrid\" byte_order=\"LittleEndian\">" << endl;
@@ -1246,7 +1241,7 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinner, Teuchos::RCP<Aggregates>& aggregates)
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinner, Teuchos::RCP<Aggregates>& aggregates, bool doGraphEdges, std::vector<int>& graphConnections)
   {
     using namespace std;
     //TODO
@@ -1326,7 +1321,7 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::processTriangle_(std::list<Triangle_>& tris, std::list<Triangle_>::iterator& tri, std::list<int>& pointsInFront, vec3_& barycenter, ArrayRCP<const double>& xCoords, ArrayRCP<const double>& yCoords, ArrayRCP<const double>& zCoords)
+  std::vector<Triangle_> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::processTriangle_(std::list<Triangle_>& tris, Triangle_ tri, std::list<int>& pointsInFront, vec3_& barycenter, ArrayRCP<const double>& xCoords, ArrayRCP<const double>& yCoords, ArrayRCP<const double>& zCoords)
   {
     //*tri is in the tris list, and is the triangle to process here. tris is a complete list of all triangles in the hull so far. pointsInFront is only a list of the nodes in front of tri. Need coords also.
     //precondition: each triangle is already oriented so that getNorm_(v1, v2, v3) points outward (away from interior of hull)
@@ -1335,18 +1330,18 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
     typedef std::list<int>::iterator Iter;
     typedef std::list<Triangle_>::iterator TriIter;
     typedef list<pair<int, int> >::iterator EdgeIter;
-    cout << "Processing triangle with nodes: " << tri->v1 << ", " << tri->v2 << ", " << tri->v3 << "." << endl;
-    cout << "Nodes in front of this triangle: ";
-    for(Iter it = pointsInFront.begin(); it != pointsInFront.end() ;it++)
-      cout << *it << " ";
-    cout << endl;
+//    cout << "Processing triangle with nodes: " << tri->v1 << ", " << tri->v2 << ", " << tri->v3 << "." << endl;
+//    cout << "Nodes in front of this triangle: ";
+//    for(Iter it = pointsInFront.begin(); it != pointsInFront.end() ;it++)
+ //     cout << *it << " ";
+ //   cout << endl;
     double maxDist = 0;
     //Need vector representations of triangle's vertices
-    vec3_ v1(xCoords[tri->v1], yCoords[tri->v1], zCoords[tri->v1]);
-    vec3_ v2(xCoords[tri->v2], yCoords[tri->v2], zCoords[tri->v2]);
-    vec3_ v3(xCoords[tri->v3], yCoords[tri->v3], zCoords[tri->v3]);
+    vec3_ v1(xCoords[tri.v1], yCoords[tri.v1], zCoords[tri.v1]);
+    vec3_ v2(xCoords[tri.v2], yCoords[tri.v2], zCoords[tri.v2]);
+    vec3_ v3(xCoords[tri.v3], yCoords[tri.v3], zCoords[tri.v3]);
     vec3_ farPointVec; //useful to have both the point's coordinates and it's position in the list
-    Iter farPoint;
+    Iter farPoint = pointsInFront.begin();
     for(Iter point = pointsInFront.begin(); point != pointsInFront.end(); point++)
     {
       vec3_ pointVec(xCoords[*point], yCoords[*point], zCoords[*point]);
@@ -1360,7 +1355,7 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
     }
     //Find all the triangles that the point is in front of (can be more than 1)
     //At the same time, remove them from tris, as every one will be replaced later
-    list<Triangle_> visible; //use a list of iterators so that the underlying object is still in tris
+    vector<Triangle_> visible; //use a list of iterators so that the underlying object is still in tris
     for(TriIter it = tris.begin(); it != tris.end();)
     {
       vec3_ vec1(xCoords[it->v1], yCoords[it->v1], zCoords[it->v1]);
@@ -1380,7 +1375,7 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
     list<pair<int, int> > horizon;
     //For each triangle, add edges to the list iff the edge only appears once in the set of all
     //Have members of horizon have the lower node # first, and the higher one second
-    for(TriIter it = visible.begin(); it != visible.end(); it++)
+    for(vector<Triangle_>::iterator it = visible.begin(); it != visible.end(); it++)
     {
       pair<int, int> e1(it->v1, it->v2);
       pair<int, int> e2(it->v2, it->v3);
@@ -1434,6 +1429,8 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
       newTris.push_back(t);
     }
     //Ensure every new triangle is oriented outwards, using the barycenter of the initial tetrahedron
+    vector<Triangle_> trisToProcess;
+    vector<list<int> > newFrontPoints;
     for(TriIter it = newTris.begin(); it != newTris.end(); it++)
     {
       vec3_ t1(xCoords[it->v1], yCoords[it->v1], zCoords[it->v1]);
@@ -1452,21 +1449,39 @@ cout << "Done making the initial tetrahedron's faces face outward." << endl;
       vec3_ outwardNorm = getNorm_(t1, t2, t3); //now definitely points outwards
       //Add the triangle to tris
       tris.push_back(*it);
-      //Get an iterator to the just-added item in tris
-      TriIter nextToProcess = --tris.end();
+      trisToProcess.push_back(tris.back());
       //Make a list of the points that are in front of nextToProcess, to be passed in for processing
       list<int> newInFront;
-      for(Iter point = pointsInFront.begin(); point != pointsInFront.end(); point++)
+      for(Iter point = pointsInFront.begin(); point != pointsInFront.end();)
       {
         vec3_ pointVec(xCoords[*point], yCoords[*point], zCoords[*point]);
         if(isInFront_(pointVec, t1, outwardNorm))
+        {
           newInFront.push_back(*point);
+          point = pointsInFront.erase(point);
+        }
+        else
+          point++;
       }
-      if(!newInFront.empty())
+      newFrontPoints.push_back(newInFront);
+    }
+    vector<Triangle_> allRemoved; //list of all invalid iterators that were erased by calls to processTriangle_ below
+    for(int i = 0; i < int(trisToProcess.size()); i++)
+    {
+      if(!newFrontPoints[i].empty())
       {
-        processTriangle_(tris, nextToProcess, newInFront, barycenter, xCoords, yCoords, zCoords);
+        //Comparing the 'triangle to process' to the one for this call prevents infinite recursion/stack overflow.
+        //TODO: Why was it doing that? Rounding error? Make more robust fix. But this does work for the time being.
+        if(find(allRemoved.begin(), allRemoved.end(), trisToProcess[i]) == allRemoved.end() && !(trisToProcess[i] == tri))
+        {
+          //cout << "Going to process the nodes in front of triangle with vertices " << trisToProcess[i].v1 << ", " << trisToProcess[i].v2 << ", and " << trisToProcess[i].v3 << endl;
+          vector<Triangle_> removedList = processTriangle_(tris, trisToProcess[i], newFrontPoints[i], barycenter, xCoords, yCoords, zCoords);
+          for(int j = 0; j < int(removedList.size()); j++)
+            allRemoved.push_back(removedList[j]);
+        }
       }
     }
+    return visible;
   }
 } // namespace MueLu
 

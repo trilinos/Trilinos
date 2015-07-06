@@ -2,12 +2,17 @@
 <!--These parameters tell MueLu to use a MATLAB function as smoother-->
 
 <ParameterList name="MueLu">
-  <Parameter name="coarse: max size" type="int" value="1000"/>
-  <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
-  <Parameter name="smoother: type" type="string" value="RELAXATION"/>
-  <ParameterList name="smoother: params">
-    <Parameter name="relaxation: type" type="string" value="Jacobi"/>
-    <Parameter name="relaxation: sweeps" type="int" value="5"/>
-    <Parameter name="relaxation: damping factor" type="double" value="0.9"/>
+  <ParameterList name="Factories">
+    <ParameterList name="myBrickAggFactory">
+      <Parameter name="factory" type="string" value="BrickAggregationFactory"/>
+      <Parameter name="aggregation: brick x size" type="int" value="3"/>
+      <Parameter name="aggregation: brick y size" type="int" value="1"/>
+      <Parameter name="aggregation: brick z size" type="int" value="1"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Hierarchy">
+    <ParameterList name="All">
+      <Parameter name="Aggregates" type="string" value="myBrickAggFactory"/>
+    </ParameterList>
   </ParameterList>
 </ParameterList>

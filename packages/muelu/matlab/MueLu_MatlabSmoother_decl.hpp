@@ -176,9 +176,6 @@ namespace MueLu {
     //! Matrix, (maybe) used in apply 
     mutable RCP<Matrix> A_;
     
-    //! Diagonal of A_, in Jacobian smoother produced by setup function and passed to solve function
-    mutable RCP<Matrix> D_;
-
   }; // class MatlabSmoother
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

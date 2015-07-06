@@ -437,31 +437,8 @@ RCP<MAggregates> loadAggregates(const mxArray* mxa)
   if(mxGetNumberOfFields(mxa) != correctNumFields)
     throw runtime_error("Aggregates structure has wrong number of fields.");
   //Pull MuemexData types back out
-  int nVert;
-  int nAgg;
-  RCP<Xpetra_ordinal_vector> vertToAggIdLOV;
-  RCP<Xpetra_ordinal_vector> aggSizesLOV;
-  RCP<Xpetra_ordinal_vector> rootNodesIn; //roots are stored in MATLAB struct as list of ints (representing nodeids)
-  { //scope this so variable names can be simpler, and extra MuemexData wrappers are disposed of immediately
-    RCP<MuemexData<int>> mmData = rcp(new MuemexData<int>(mxGetField(mxa, 0, "nVertices")));
-    nVert = mmData->getData();
-  }
-  {
-    RCP<MuemexData<int>> mmData = rcp(new MuemexData<int>(mxGetField(mxa, 0, "nAggregates")));
-    nAgg = mmData->getData();
-  }
-  {
-    RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> mmData = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(mxGetField(mxa, 0, "vertexToAggID")));
-    vertToAggIdLOV = mmData->getData();
-  }
-  {
-    RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> mmData = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(mxGetField(mxa, 0, "aggSizes")));
-    aggSizesLOV = mmData->getData();
-  }
-  {
-    RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> mmData = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(mxGetField(mxa, 0, "rootNodes")));
-    rootNodesIn = mmData->getData();
-  }
+  int nVert = *(int*) mxGetData(mxGetField(mxa, 0, "nVertices"));
+  int nAgg = *(int*) mxGetData(mxGetField(mxa, 0, "nAggregates"));
   //Now have all the data needed to fully reconstruct the aggregate
   //Use similar approach as UserAggregationFactory (which is written for >1 thread but will just be serial here)
   RCP<const Teuchos::Comm<int>> comm = Teuchos::DefaultComm<int>::getComm();
@@ -474,22 +451,22 @@ RCP<MAggregates> loadAggregates(const mxArray* mxa)
   //this is serial so all procwinner values will be same (0)
   ArrayRCP<mm_LocalOrd> vertex2AggId = agg->GetVertex2AggId()->getDataNonConst(0);  //the '0' means first (and only) column of multivector, since is just vector
   ArrayRCP<mm_LocalOrd> procWinner = agg->GetProcWinner()->getDataNonConst(0);
-  //Also get const ArrayRCP views into vert2AggId and aggSizes vectors (of LOVectors extracted from matlab struct)
-  ArrayRCP<const mm_LocalOrd> vertex2AggIDToCopy = vertToAggIdLOV->getData(0);
-  ArrayRCP<const mm_LocalOrd> aggSizesToCopy = aggSizesLOV->getData(0);
-  ArrayRCP<const mm_LocalOrd> rootNodesToCopy = rootNodesIn->getData(0);
   //mm_LocalOrd and int are equivalent, so is ok to talk about aggSize with just 'int'
   //Deep copy the entire vertex2AggID and isRoot arrays, which are both nVert items long
   //At the same time, set ProcWinner
+  mxArray* vertToAggID_in = mxGetField(mxa, 0, "vertexToAggID");
+  int* vertToAggID_inArray = (int*) mxGetData(vertToAggID_in);
+  mxArray* rootNodes_in = mxGetField(mxa, 0, "rootNodes");
+  int* rootNodes_inArray = (int*) mxGetData(rootNodes_in);
   for(int i = 0; i < nVert; i++)
   {
-    vertex2AggId[i] = vertex2AggIDToCopy[i];
+    vertex2AggId[i] = vertToAggID_inArray[i];
     procWinner[i] = myRank; //all nodes are going to be on the same proc
     agg->SetIsRoot(i, false); //the ones that are root will be set in next loop
   }
   for(int i = 0; i < nAgg; i++) //rootNodesToCopy is an array of node IDs which are the roots of their aggs
   {
-    agg->SetIsRoot(rootNodesToCopy[i], true);
+    agg->SetIsRoot(rootNodes_inArray[i], true);
   }
   //Now recompute the aggSize array and cache the results in the object
   agg->ComputeAggregateSizes(true, true);
@@ -499,67 +476,53 @@ RCP<MAggregates> loadAggregates(const mxArray* mxa)
 
 mxArray* saveAggregates(RCP<MAggregates>& agg)
 {
-  //Grab data from agg
-  mm_LocalOrd nAgg = agg->GetNumAggregates();
-  RCP<Xpetra_ordinal_vector> vertexToAggID = (RCP<Xpetra_ordinal_vector>) agg->GetVertex2AggId();
-  mm_LocalOrd nVert = vertexToAggID->getLocalLength();
-  //Construct Matlab objects to use in struct
-  vector<RCP<MuemexArg>> structMembers; //input to the matlab callback
-  vector<RCP<MuemexArg>> builtStruct;   //output
-  mwSize arrLen[] = {1}; //array of one element to hold dimensions of 1-D array for mxCreateNumArr
-  mxArray* nVertices = mxCreateNumericArray(1, arrLen, mxINT32_CLASS, mxREAL);
-  mxArray* nAggregates = mxCreateNumericArray(1, arrLen, mxINT32_CLASS, mxREAL);
-  *((int*) mxGetData(nVertices)) = (int) nVert;
-  *((int*) mxGetData(nAggregates)) = (int) nAgg;
-  //agg sizes
-  ArrayRCP<mm_LocalOrd> rawAggSizes = agg->ComputeAggregateSizes(false, true);
-  mm_LocalOrd* rawAggSizeArray = rawAggSizes.getRawPtr();
-  ArrayView<mm_LocalOrd> aggSizeArrayView(rawAggSizeArray, nAgg);
-  RCP<const Teuchos::Comm<int>> comm = rcp(new Teuchos::SerialComm<int>());
-  const Tpetra::global_size_t numGlobalIndices = nAgg;
-  RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, (mm_GlobalOrd) 0, comm));
-  RCP<Tpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> aggSizeTempLOVec = rcp(new Tpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(rowMap, aggSizeArrayView));
-  RCP<Xpetra_ordinal_vector> aggSizes = Xpetra::toXpetra<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(aggSizeTempLOVec);
-  //Place matlab objects in MuemexData objects
-  RCP<MuemexData<int>> nVertArg = rcp(new MuemexData<int>(nVert));
-  RCP<MuemexData<int>> nAggArg = rcp(new MuemexData<int>(nAgg));
-  RCP<Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetraVecMap = rcp(new Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t>(nAgg, (mm_GlobalOrd) 0, comm));
-  RCP<Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t>> vecMap = rcp_implicit_cast<Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t>, Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(tpetraVecMap);
-  //now have the Xpetra::Map that we need to construct rootnode ordinal vector
-  mm_LocalOrd* rawRootNodes = (mm_LocalOrd*) malloc(sizeof(mm_LocalOrd) * nAgg);
-  int iter = 0;
-  for(int i = 0; i < nVert; i++)
+  //Set up array of inputs for matlab constructAggregates
+  int numNodes = agg->GetVertex2AggId()->getData(0).size();
+  int numAggs = agg->GetNumAggregates();
+  mxArray* dataIn[5];
+  mwSize singleton = 1;
+  dataIn[0] = mxCreateNumericArray(1, &singleton, mxINT32_CLASS, mxREAL);
+  *((int*) mxGetData(dataIn[0])) = numNodes;
+  dataIn[1] = mxCreateNumericArray(1, &singleton, mxINT32_CLASS, mxREAL);
+  *((int*) mxGetData(dataIn[1])) = numAggs;
+  mwSize nodeArrayDims[] = {(mwSize) numNodes};
+  dataIn[2] = mxCreateNumericArray(1, nodeArrayDims, mxINT32_CLASS, mxREAL);
+  int* vtaid = (int*) mxGetData(dataIn[2]);
+  ArrayRCP<const mm_LocalOrd> vertexToAggID = agg->GetVertex2AggId()->getData(0);
+  for(int i = 0; i < numNodes; i++)
   {
-    if(iter > nAgg)
-      throw runtime_error("Number of root nodes and number of aggregates don't match!");
-    if(agg->IsRoot(i))
-    {
-      rawRootNodes[iter] = i;
-      iter++;
-    }
+    vtaid[i] = vertexToAggID[i];
   }
-  ArrayView<mm_LocalOrd> rootNodeArrayView(rawRootNodes, nAgg);
-  RCP<Xpetra::TpetraVector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetraRootNodeVec = rcp(new Xpetra::TpetraVector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(vecMap, rootNodeArrayView));
-  if(rawRootNodes == NULL)
-    throw runtime_error("Malloc failed!");
-  RCP<Xpetra_ordinal_vector> rootNodes = rcp_implicit_cast<Xpetra_ordinal_vector, Xpetra::TpetraVector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(tpetraRootNodeVec);
-  RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> vertexToAggIDArg = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(vertexToAggID));
-  RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> rootNodesArg = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(rootNodes));
-  RCP<MuemexData<RCP<Xpetra_ordinal_vector>>> aggSizesArg = rcp(new MuemexData<RCP<Xpetra_ordinal_vector>>(aggSizes));
-  //Finally, upcast the inputs to MuemexArg and put in arg vector (order matters here!)
-  structMembers.push_back(rcp_implicit_cast<MuemexArg, MuemexData<int>>(nVertArg));
-  structMembers.push_back(rcp_implicit_cast<MuemexArg, MuemexData<int>>(nAggArg));
-  structMembers.push_back(rcp_implicit_cast<MuemexArg, MuemexData<RCP<Xpetra_ordinal_vector>>>(vertexToAggIDArg));
-  structMembers.push_back(rcp_implicit_cast<MuemexArg, MuemexData<RCP<Xpetra_ordinal_vector>>>(rootNodesArg));
-  structMembers.push_back(rcp_implicit_cast<MuemexArg, MuemexData<RCP<Xpetra_ordinal_vector>>>(aggSizesArg));
-  builtStruct = callMatlab("constructAggregates", 1, structMembers);
-  //builtStruct[0] should be a MuemexArg wrapping the MAggregates object. Get that, convert to matlab struct and return
-  //avoid buffer overrun, throw if builtStruct[0] doesn't exist
-  if(builtStruct.size() == 0)
-    throw runtime_error("Matlab aggregates struct builder didn't return the struct.");
-  free(rawRootNodes); //have to free this, the ArrayView doesn't automatically
-  RCP<MuemexData<RCP<MAggregates>>> outData = rcp_static_cast<MuemexData<RCP<MAggregates>>, MuemexArg>(builtStruct[0]);
-  return outData->convertToMatlab();
+  dataIn[3] = mxCreateNumericArray(1, nodeArrayDims, mxINT32_CLASS, mxREAL);
+  int* rn = (int*) mxGetData(dataIn[3]); //list of root nodes
+  {
+    int i = 0;
+    for(int j = 0; j < numNodes; j++)
+    {
+      if(agg->IsRoot(j))
+      {
+        if(i == numAggs)
+          throw runtime_error("Cannot store aggregates in MATLAB - more root nodes than aggregates.");
+        rn[i] = j; //now we know this won't go out of bounds
+        i++;
+      }
+    }
+    if(i + 1 < numAggs)
+      throw runtime_error("Cannot store aggregates in MATLAB - fewer root nodes than aggregates.");
+  }
+  mwSize aggArrayDims[] = {(mwSize) numAggs};
+  dataIn[4] = mxCreateNumericArray(1, aggArrayDims, mxINT32_CLASS, mxREAL);
+  int* as = (int*) mxGetData(dataIn[4]); //list of aggregate sizes
+  ArrayRCP<mm_LocalOrd> aggSizes = agg->ComputeAggregateSizes();
+  for(int i = 0; i < numAggs; i++)
+  {
+    as[i] = aggSizes[i];
+  }
+  mxArray* matlabAggs[1];
+  int result = mexCallMATLAB(1, matlabAggs, 5, dataIn, "constructAggregates");
+  if(result != 0)
+    throw runtime_error("Matlab encountered an error while constructing aggregates struct.");
+  return matlabAggs[0];
 }
 
 RCP<MAmalInfo> loadAmalInfo(const mxArray* mxa)

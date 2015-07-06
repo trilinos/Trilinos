@@ -471,6 +471,14 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>aggreation: output file: graph edges</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to draw all node connections along with the aggregates.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
   </aggregation>
 
   <misc>

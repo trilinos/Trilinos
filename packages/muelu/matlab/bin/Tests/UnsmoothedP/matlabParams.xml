@@ -1,22 +1,23 @@
 <!--MueLu parameters to run unsmoothed P MATLAB test-->
+
 <ParameterList name="MueLu">
-  <Parameter name="reuse: type" type="string" value="full"/>
   <ParameterList name="Factories">
-    <ParameterList name="myAggFactory">
+    <ParameterList name="myAggregationFactory">
       <Parameter name="factory" type="string" value="UncoupledAggregationFactory"/>
     </ParameterList>
     <ParameterList name="myMatlabPtentFactory">
       <Parameter name="factory" type="string" value="TwoLevelMatlabFactory"/> 
-      <Parameter name="Provides" type="string" value="Ptent"/>
+      <Parameter name="Provides" type="string" value="P, Nullspace"/>
       <Parameter name="Needs Fine" type="string" value="Aggregates"/>
       <Parameter name="Needs Coarse" type="string" value=""/>
-      <Parameter name="Function" type="string" value="matlabPtentTest"/>
+      <Parameter name="Function" type="string" value="createP"/>
     </ParameterList>
   </ParameterList>
   <ParameterList name="Hierarchy">
     <ParameterList name="All">
-      <Parameter name="Ptent" type="string" value="myMatlabPtentFactory"/>
-      <Parameter name="Aggregates" type="string" value="myAggFactory"/>
+      <Parameter name="Aggregates" type="string" value="myAggregationFactory"/>
+      <Parameter name="P" type="string" value="myMatlabPtentFactory"/>
+      <Parameter name="Nullspace" type="string" value="myMatlabPtentFactory"/>
     </ParameterList>
   </ParameterList>
 </ParameterList>

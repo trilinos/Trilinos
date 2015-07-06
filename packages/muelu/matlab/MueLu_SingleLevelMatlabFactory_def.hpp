@@ -66,6 +66,16 @@ namespace MueLu {
   RCP<const ParameterList> SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
     
+    //add all possible input ("needs") data factories as valid factory parameters
+    validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Factory for the matrix A.");
+    validParamList->set<RCP<const FactoryBase>>("P", Teuchos::null, "Factory for the prolongator.");
+    validParamList->set<RCP<const FactoryBase>>("R", Teuchos::null, "Factory for the restrictor.");
+    validParamList->set<RCP<const FactoryBase>>("Ptent", Teuchos::null, "Factory for the tentative (unsmoothed) prolongator.");
+    validParamList->set<RCP<const FactoryBase>>("Coordinates", Teuchos::null, "Factory for the node coordinates.");
+    validParamList->set<RCP<const FactoryBase>>("Nullspace", Teuchos::null, "Factory for the nullspace.");
+    validParamList->set<RCP<const FactoryBase>>("Aggregates",  Teuchos::null, "Factory for the aggregates.");
+    validParamList->set<RCP<const FactoryBase>>("UnamalgamationInfo", Teuchos::null, "Factory for amalgamation.");   
+
     validParamList->set<std::string>("Provides"     , "" ,"A comma-separated list of objects provided by the SingleLevelMatlabFactory");
     validParamList->set<std::string>("Needs"        , "", "A comma-separated list of objects needed by the SingleLevelMatlabFactory");
     validParamList->set<std::string>("Function"     , "" , "The name of the Matlab MEX function to call for Build()");
@@ -80,12 +90,13 @@ namespace MueLu {
     // Get needs strings
     const std::string str = pL.get<std::string>("Needs");
 
+    needs_.clear();
     // Tokenize the strings
     TokenizeStringAndStripWhiteSpace(str, needs_, " ,;");
 
     // Declare inputs
     for(size_t i = 0; i < needs_.size(); i++)
-      Input(currentLevel, needs_[i]);
+      this->Input(currentLevel, needs_[i]);
 
     hasDeclaredInput_ = true;
 
@@ -104,9 +115,9 @@ namespace MueLu {
     std::vector<RCP<MuemexArg>> InputArgs;
 
     // Fine needs
-    for(size_t i=0; needs_.size(); i++) {
+    for(size_t i = 0; i < needs_.size(); i++) {
       if(needs_[i] == "A" || needs_[i] == "P" || needs_[i] == "R" || needs_[i]=="Ptent") {
-	RCP<Matrix> mydata = Get<RCP<Matrix>>(currentLevel,needs_[i]);
+	RCP<Matrix> mydata = Get<RCP<Matrix>>(currentLevel, needs_[i]);
 	InputArgs.push_back(rcp(new MuemexData<RCP<Matrix>>(mydata)));
       }
 
@@ -133,30 +144,30 @@ namespace MueLu {
 
     // Call mex function
     std::string matlabFunction = pL.get<std::string>("Function");
-    if(!matlabFunction.length()) throw std::runtime_error("Invalid matlab function name");
-    std::vector<Teuchos::RCP<MuemexArg> > mexOutput = callMatlab(matlabFunction,provides.size(),InputArgs);
+    if(!matlabFunction.length())
+      throw std::runtime_error("Invalid matlab function name");
+    std::vector<Teuchos::RCP<MuemexArg> > mexOutput = callMatlab(matlabFunction, provides.size(), InputArgs);
 
     // Set output
-    if(mexOutput.size()!=provides.size()) throw std::runtime_error("Invalid matlab output");
-    for(size_t i=0; provides.size(); i++)  {
+    for(size_t i = 0; i < provides.size(); i++)  {
       if(provides[i] == "A" || provides[i] == "P" || provides[i] == "R" || provides[i]=="Ptent") {
 	RCP<MuemexData<RCP<Matrix> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<Matrix> > >(mexOutput[i]);
-	currentLevel.Set(provides[i],mydata->getData());
+	Set(currentLevel, provides[i], mydata->getData());
       }
 
       if(provides[i] == "Nullspace" || provides[i] == "Coordinates") {
 	RCP<MuemexData<RCP<MultiVector> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<MultiVector> > >(mexOutput[i]);
-	currentLevel.Set(provides[i],mydata->getData());
+	Set(currentLevel, provides[i], mydata->getData());
       }
 
       if(provides[i] == "Aggregates") {
 	RCP<MuemexData<RCP<Aggregates> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<Aggregates> > >(mexOutput[i]);
-	currentLevel.Set(provides[i], mydata->getData());
+	Set(currentLevel, provides[i], mydata->getData());
       }
 
       if(provides[i] == "UnAmalgamationInfo") {
 	RCP<MuemexData<RCP<AmalgamationInfo> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<AmalgamationInfo> > >(mexOutput[i]);
-	currentLevel.Set(provides[i], mydata->getData());
+	Set(currentLevel, provides[i], mydata->getData());
       }
     }
   }
