@@ -108,7 +108,9 @@ namespace MueLu {
     //@}
 
   private:
-    LO ML_compute_line_info(LO LayerId[], LO VertLineId[],
+    void sort_coordinates(LO numCoords, LO* OrigLoc, Scalar* xvals, Scalar* yvals, Scalar* zvals, Scalar* xtemp, Scalar* ytemp, Scalar* ztemp, bool flipXY = false) const;
+
+    LO ML_compute_line_info(LO LayerId[], LO VertLineId[], LO VertLineIdSmoo[],
                                       LO Ndof, LO DofsPerNode,
                                       LO MeshNumbering, LO NumNodesPerVertLine,
                                       SC *xvals, SC *yvals, SC *zvals,

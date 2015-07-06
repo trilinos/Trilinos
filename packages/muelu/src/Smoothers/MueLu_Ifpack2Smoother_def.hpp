@@ -112,9 +112,8 @@ namespace MueLu {
         type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
         type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
         type_ == "LINESMOOTHING_BLOCKRELAXATION") {
-      this->Input(currentLevel, "CoarseNumZLayers");
-      this->Input(currentLevel, "LineDetection_Layers");
-      this->Input(currentLevel, "LineDetection_VertLineIds");
+      this->Input(currentLevel, "CoarseNumZLayers");              // necessary for fallback criterion
+      this->Input(currentLevel, "LineDetection_VertLineIdsSmoo"); // necessary to feed block smoother
     } // if (type_ == "LINESMOOTHING_BANDEDRELAXATION")
   }
 
@@ -206,43 +205,33 @@ namespace MueLu {
 
       LO CoarseNumZLayers = Factory::Get<LO>(currentLevel,"CoarseNumZLayers");
       if (CoarseNumZLayers > 0) {
-        Teuchos::ArrayRCP<LO> TVertLineId = Factory::Get< Teuchos::ArrayRCP<LO> >(currentLevel, "LineDetection_VertLineIds");
-        Teuchos::ArrayRCP<LO> TLayerId    = Factory::Get< Teuchos::ArrayRCP<LO> >(currentLevel, "LineDetection_Layers");
+        Teuchos::ArrayRCP<LO> TVertLineIdSmoo = Factory::Get< Teuchos::ArrayRCP<LO> >(currentLevel, "LineDetection_VertLineIdsSmoo");
+
+        // determine number of local parts
+        LO maxPart = 0;
+        for(size_t k = 0; k < TVertLineIdSmoo.size(); k++) {
+          if(maxPart < TVertLineIdSmoo[k]) maxPart = TVertLineIdSmoo[k];
+        }
 
         size_t numLocalRows = A_->getNodeNumRows();
-        TEUCHOS_TEST_FOR_EXCEPTION(numLocalRows % TVertLineId.size() != 0, Exceptions::RuntimeError, "MueLu::Ifpack2Smoother::Setup(): the number of local nodes is incompatible with the TVertLineIds.");
+        TEUCHOS_TEST_FOR_EXCEPTION(numLocalRows % TVertLineIdSmoo.size() != 0, Exceptions::RuntimeError, "MueLu::Ifpack2Smoother::Setup(): the number of local nodes is incompatible with the TVertLineIdsSmoo.");
 
-        if (numLocalRows == Teuchos::as<size_t>(TVertLineId.size())) {
+        if (numLocalRows == Teuchos::as<size_t>(TVertLineIdSmoo.size())) {
           myparamList.set("partitioner: type","user");
-          myparamList.set("partitioner: map",TVertLineId);
-          myparamList.set("partitioner: local parts",TVertLineId[TVertLineId.size()-1]+1);
-
-          // determine upper and lower bandwith on current processor:
-          // Choosing kl=matrix->getNodeNumDiags() is an extremely conservative but the most safe choice.
-          // We choose kl=0.5*matrix->getNodeNumDiags()+1 assuming that the graph of the matrix is symmetric
-          // ku is chosen to be twice kl as we need the additional number of off-diagonals for the LU decomposition
-          // TODO: this is subject for improvements
-          //myparamList.set("relaxation: banded container superdiagonals",Teuchos::as<int>(0.5*A_->getNodeNumDiags())+1);
-          //myparamList.set("relaxation: banded container subdiagonals",Teuchos::as<int>(A_->getNodeNumDiags())+2);
+          myparamList.set("partitioner: map",TVertLineIdSmoo);
+          myparamList.set("partitioner: local parts",maxPart+1);
         } else {
           // we assume a constant number of DOFs per node
-          size_t numDofsPerNode = numLocalRows / TVertLineId.size();
+          size_t numDofsPerNode = numLocalRows / TVertLineIdSmoo.size();
 
           // Create a new Teuchos::ArrayRCP<LO> of size numLocalRows and fill it with the corresponding information
           Teuchos::ArrayRCP<LO> partitionerMap(numLocalRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
-          for (size_t blockRow = 0; blockRow < Teuchos::as<size_t>(TVertLineId.size()); ++blockRow)
+          for (size_t blockRow = 0; blockRow < Teuchos::as<size_t>(TVertLineIdSmoo.size()); ++blockRow)
             for (size_t dof = 0; dof < numDofsPerNode; dof++)
-              partitionerMap[blockRow * numDofsPerNode + dof] = TVertLineId[blockRow];
+              partitionerMap[blockRow * numDofsPerNode + dof] = TVertLineIdSmoo[blockRow];
           myparamList.set("partitioner: type","user");
           myparamList.set("partitioner: map",partitionerMap);
-          myparamList.set("partitioner: local parts",TVertLineId[TVertLineId.size()-1]+1);
-          // determine upper and lower bandwith on current processor:
-          // Choosing kl=matrix->getNodeNumDiags() is an extremely conservative but the most safe choice.
-          // We choose kl=0.5*matrix->getNodeNumDiags()+1 assuming that the graph of the matrix is symmetric
-          // ku is chosen to be twice kl as we need the additional number of off-diagonals for the LU decomposition
-          // TODO: this is subject for improvements
-          //myparamList.set("relaxation: banded container superdiagonals",Teuchos::as<int>(0.5*A_->getNodeNumDiags())+1);
-          //myparamList.set("relaxation: banded container subdiagonals",Teuchos::as<int>(A_->getNodeNumDiags())+2);
+          myparamList.set("partitioner: local parts",maxPart + 1);
         }
 
         if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
