@@ -94,7 +94,9 @@ protected:
                                                                     const stk::mesh::EntityVector & elements_to_ignore,
                                                                     std::vector<impl::SharedEdgeInfo> *newlySharedEdges = nullptr);
 
-    void  break_volume_element_connections_across_shells(const std::set<stk::mesh::EntityId> & localElementsConnectedToRemoteShell);
+    void  break_local_volume_element_connections_across_shells(const std::set<stk::mesh::EntityId> & localElementsConnectedToRemoteShell);
+
+    void break_remote_volume_element_connections_across_shells(const std::vector< std::pair< stk::mesh::Entity, stk::mesh::EntityId > > & localAndRemoteElementsConnectedToShell);
 
     void add_local_elements_to_connected_list(const stk::mesh::EntityVector & connected_elements,
                                               const stk::mesh::EntityVector & sideNodes,
@@ -111,7 +113,6 @@ protected:
     int size_data_members();
     void ensure_space_in_entity_to_local_id(size_t max_index);
     size_t find_max_local_offset_in_neighborhood(stk::mesh::Entity element);
-    void break_elem_elem_connectivity(stk::mesh::Entity elem_to_delete);
     void pack_deleted_element_comm(stk::CommSparse &comm,
                                    const std::vector<impl::DeletedElementData> &local_elem_and_remote_connected_elem);
 
@@ -124,6 +125,8 @@ protected:
                                                      stk::mesh::Part *active_part);
 
     void pack_shell_connectivity(stk::CommSparse & comm, const std::vector<impl::ShellConnectivityData> & shellConnectivityList);
+
+    void pack_remote_edge_across_shell(stk::CommSparse &comm, stk::mesh::EntityVector &addedShells, int phase);
 
     void unpack_and_store_connected_element(stk::CommBuffer &buf, impl::LocalId recvd_elem_local_id,
                                                            stk::mesh::EntityId recvd_elem_global_id);
@@ -157,6 +160,10 @@ protected:
     void reconnect_volume_elements_across_deleted_shells(std::vector<impl::ShellConnectivityData> & shellConnectivityList,
                                                          const stk::mesh::EntityVector& elements_to_delete);
 
+    void break_remote_shell_connectivity_and_pack(stk::CommSparse& comm, impl::LocalId leftId, impl::LocalId rightId, int phase);
+
+    void unpack_remote_edge_across_shell(stk::CommSparse &comm);
+
     stk::mesh::BulkData &m_bulk_data;
     const stk::mesh::Part &m_part;
     impl::ElementGraph m_elem_graph;
@@ -174,6 +181,7 @@ protected:
     size_t m_num_ids_used;
 
     static const impl::LocalId INVALID_LOCAL_ID;
+
 };
 
 bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,

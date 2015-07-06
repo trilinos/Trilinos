@@ -425,8 +425,6 @@ void ElemElemGraph::connect_remote_element_to_existing_graph( const impl::Shared
             break;
         }
     }
-
-    // impl::break_volume_element_connections_across_shells(localElementsConnectedToRemoteShell, m_elem_graph, m_via_sides);
 }
 
 void ElemElemGraph::filter_for_elements_in_graph(stk::mesh::EntityVector &localElements)
@@ -540,10 +538,10 @@ void ElemElemGraph::add_possibly_connected_elements_to_graph_using_side_nodes( c
         }
     }
 
-    break_volume_element_connections_across_shells(localElementsConnectedToRemoteShell);
+    break_local_volume_element_connections_across_shells(localElementsConnectedToRemoteShell);
 }
 
-void ElemElemGraph::break_volume_element_connections_across_shells(const std::set<stk::mesh::EntityId> & localElementsConnectedToRemoteShell)
+void ElemElemGraph::break_local_volume_element_connections_across_shells(const std::set<stk::mesh::EntityId> & localElementsConnectedToRemoteShell)
 {
     // Fix the case where the serial graph connected two volume elements together before
     // it was known that there was a remote shell wedged between them (the "sandwich" conundrum).
@@ -564,6 +562,27 @@ void ElemElemGraph::break_volume_element_connections_across_shells(const std::se
                 else {
                     ++it;
                 }
+            }
+        }
+    }
+}
+
+void ElemElemGraph::break_remote_volume_element_connections_across_shells(const std::vector< std::pair< stk::mesh::Entity, stk::mesh::EntityId > > & localAndRemoteElementsConnectedToShell)
+{
+    for (auto & localAndRemoteElemPair : localAndRemoteElementsConnectedToShell) {
+        impl::LocalId localElemId = m_entity_to_local_id[localAndRemoteElemPair.first.local_offset()];
+        impl::LocalId remoteElemId = -localAndRemoteElemPair.second;
+        std::vector<impl::LocalId>::iterator it = m_elem_graph[localElemId].begin();
+        while (it != m_elem_graph[localElemId].end()) {
+            if (*it == remoteElemId)
+            {
+                const int offset = (it - m_elem_graph[localElemId].begin());
+                it = m_elem_graph[localElemId].erase(it);
+                m_via_sides[localElemId].erase(m_via_sides[localElemId].begin() + offset);
+                --m_num_edges;
+            }
+            else {
+                ++it;
             }
         }
     }
@@ -1635,7 +1654,7 @@ void ElemElemGraph::add_elements_to_graph(const stk::mesh::EntityVector &element
                 }
             }
         }
-        break_volume_element_connections_across_shells(localElementsConnectedToNewShell);
+        break_local_volume_element_connections_across_shells(localElementsConnectedToNewShell);
     }
 
     impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_element_side_ids_to_communicate(m_bulk_data);
@@ -1647,6 +1666,7 @@ void ElemElemGraph::add_elements_to_graph(const stk::mesh::EntityVector &element
     stk::mesh::EntityVector elements_to_add_copy = elements_to_add;
     std::sort(elements_to_add_copy.begin(), elements_to_add_copy.end());
 
+    std::set< stk::mesh::Entity > addedShells;
     impl::ElemSideToProcAndFaceId only_added_elements;
     impl::ElemSideToProcAndFaceId::iterator iter = elem_side_comm.begin();
     for(;iter!=elem_side_comm.end();++iter)
@@ -1656,12 +1676,146 @@ void ElemElemGraph::add_elements_to_graph(const stk::mesh::EntityVector &element
         if(elem_iter!=elements_to_add_copy.end() && *elem_iter==element)
         {
             only_added_elements.insert(*iter);
+            if (m_bulk_data.bucket(element).topology().is_shell())
+            {
+                addedShells.insert(element);
+            }
         }
     }
 
     fill_parallel_graph(only_added_elements, m_part);
 
+    stk::mesh::EntityVector addedShellsVector;
+    for (auto &shell : addedShells)
+    {
+        addedShellsVector.push_back(shell);
+    }
+
+    stk::CommSparse comm(m_bulk_data.parallel());
+    for (int phase = 0; phase < 2; ++phase)
+    {
+        pack_remote_edge_across_shell(comm, addedShellsVector, phase);
+        if (0 == phase)
+        {
+            comm.allocate_buffers();
+        }
+        if (1 == phase)
+        {
+            comm.communicate();
+        }
+    }
+
+    unpack_remote_edge_across_shell(comm);
     update_number_of_parallel_edges();
+}
+
+void ElemElemGraph::break_remote_shell_connectivity_and_pack(stk::CommSparse &comm, impl::LocalId leftId, impl::LocalId rightId, int phase)
+{
+    size_t index = 0;
+    while(index < m_elem_graph[leftId].size())
+    {
+        if(m_elem_graph[leftId][index] == rightId)
+        {
+            if (phase == 1)
+            {
+                m_elem_graph[leftId].erase(m_elem_graph[leftId].begin() + index);
+                m_via_sides[leftId].erase(m_via_sides[leftId].begin() + index);
+                --m_num_edges;
+            }
+            else
+            {
+                ++index;
+            }
+
+            stk::mesh::Entity localElem = m_local_id_to_element_entity[leftId];
+            int sharingProc = get_owning_proc_id_of_remote_element(localElem, -rightId);
+            stk::mesh::EntityId localElemId = m_bulk_data.identifier(localElem);
+
+            comm.send_buffer(sharingProc).pack<stk::mesh::EntityId>(localElemId);
+            comm.send_buffer(sharingProc).pack<stk::mesh::EntityId>(-rightId);
+            break;
+        }
+        else
+        {
+            ++index;
+        }
+    }
+}
+
+void ElemElemGraph::pack_remote_edge_across_shell(stk::CommSparse &comm, stk::mesh::EntityVector &addedShells, int phase)
+{
+    for(stk::mesh::Entity &shell : addedShells)
+    {
+        impl::LocalId shellId = m_entity_to_local_id[shell.local_offset()];
+        impl::LocalId leftId = INVALID_LOCAL_ID;
+        impl::LocalId rightId = INVALID_LOCAL_ID;
+        for (impl::LocalId connectedId : m_elem_graph[shellId])
+        {
+            if (leftId == INVALID_LOCAL_ID)
+            {
+                leftId = connectedId;
+                continue;
+            }
+            if (rightId == INVALID_LOCAL_ID)
+            {
+                rightId = connectedId;
+                continue;
+            }
+        }
+        bool isLeftRemote = leftId < 0;
+        bool isRightRemote = rightId < 0;
+
+        if (leftId == INVALID_LOCAL_ID || rightId == INVALID_LOCAL_ID)
+        {
+            continue;
+        }
+
+        if (isLeftRemote == isRightRemote)
+        {
+            continue;
+        }
+
+        if (!isLeftRemote)
+        {
+            break_remote_shell_connectivity_and_pack(comm, leftId, rightId, phase);
+        }
+        else if (!isRightRemote)
+        {
+            break_remote_shell_connectivity_and_pack(comm, rightId, leftId, phase);
+        }
+    }
+}
+
+void ElemElemGraph::unpack_remote_edge_across_shell(stk::CommSparse &comm)
+{
+    for(int i=0;i<m_bulk_data.parallel_size();++i)
+    {
+        while(comm.recv_buffer(i).remaining())
+        {
+            stk::mesh::EntityId localElemId;
+            stk::mesh::EntityId remoteElemId;
+            comm.recv_buffer(i).unpack<stk::mesh::EntityId>(remoteElemId);
+            comm.recv_buffer(i).unpack<stk::mesh::EntityId>(localElemId);
+            stk::mesh::Entity localElem = m_bulk_data.get_entity(stk::topology::ELEM_RANK, localElemId);
+            impl::LocalId localId = m_entity_to_local_id[localElem.local_offset()];
+
+            size_t index = 0;
+            while(index < m_elem_graph[localId].size())
+            {
+                if(m_elem_graph[localId][index] == static_cast<impl::LocalId>(-1*remoteElemId))
+                {
+                    m_elem_graph[localId].erase(m_elem_graph[localId].begin() + index);
+                    m_via_sides[localId].erase(m_via_sides[localId].begin() + index);
+                    --m_num_edges;
+                    break;
+                }
+                else
+                {
+                    ++index;
+                }
+            }
+        }
+    }
 }
 
 void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph, std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move, stk::mesh::Part *active_part)

@@ -4550,7 +4550,7 @@ TEST( ElementGraph, Hex0AddShell0Hex1Parallel )
     mesh.modification_end();
 
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     EXPECT_EQ(1u, elemElemGraph.num_edges());
     EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
@@ -4603,7 +4603,7 @@ TEST( ElementGraph, Hex0AddShell0Hex1Parallel )
     }
 }
 
-TEST( ElementGraph, Hex0AddShell1Hex2Parallel )
+TEST( ElementGraph, DISABLED_Hex0AddShell1Hex2Parallel )
 {
     //  ID.proc
     //
@@ -4696,7 +4696,7 @@ TEST( ElementGraph, Hex0AddShell1Hex2Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs_before_add );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     if (0 == p_rank || 2 == p_rank) {
         EXPECT_EQ(1u, elemElemGraph.num_edges());
