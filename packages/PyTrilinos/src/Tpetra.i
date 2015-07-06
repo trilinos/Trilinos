@@ -190,7 +190,7 @@ __version__ = version()
 ////////////////////////
 // Tpetra Map support //
 ////////////////////////
-%extend Tpetra::Map< LocalOrdinal, GlobalOrdinal, Node >
+%extend Tpetra::Map
 {
   Map(Tpetra::global_size_t numGlobalElements,
       GlobalOrdinal indexBase,
@@ -502,6 +502,7 @@ protected:
 }
 // The refactor is making Tpetra::Vector difficult for SWIG to
 // parse, and so I provide a simplified prototype of the class here
+%feature("notabstract") Tpetra::MultiVector;
 namespace Tpetra
 {
 template< class Scalar = DefaultScalarType,
@@ -748,7 +749,6 @@ public:
   void assign(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >& src);
 };  // class MultiVector
 }   // namespace Tpetra
-// %feature("notabstract") Tpetra::MultiVector;
 // %include "Tpetra_MultiVector_decl.hpp"
 // %include "Tpetra_KokkosRefactor_MultiVector_decl.hpp"
 
@@ -757,6 +757,7 @@ public:
 ///////////////////////////
 // The refactor is making Tpetra::Vector difficult for SWIG to
 // parse, and so I provide a simplified prototype of the class here
+%feature("notabstract") Tpetra::Vector;
 namespace Tpetra
 {
 template< class Scalar = DefaultScalarType,
@@ -781,8 +782,8 @@ public:
   typedef typename base_type::map_type map_type;
   explicit Vector(const Teuchos::RCP<const map_type>& map,
                   const bool zeroOut = true);
-  Vector(const Vector<Scalar, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Node> >& source);
-  Vector(const Vector<Scalar, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Node> >& source,
+  Vector(const Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node >& source);
+  Vector(const Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node >& source,
          const Teuchos::DataAccess copyOrView);
   Vector(const Teuchos::RCP<const map_type>& map,
          const Teuchos::ArrayView<const Scalar>& A);
@@ -833,7 +834,6 @@ public:
 // %ignore Tpetra::Vector::getLocalMV;
 // %ignore Tpetra::Vector::getLocalMVNonConst;
 // %warnfilter(302) Tpetra::createVectorFromView;
-// %feature("notabstract") Tpetra::Vector;
 // %include "Tpetra_Vector_decl.hpp"
 // %include "Tpetra_KokkosRefactor_Vector_decl.hpp"
 
@@ -876,7 +876,7 @@ public:
       result = MultiVector_long(*args)
     elif dtype.type is numpy.float32:
       result = MultiVector_float(*args)
-    elif dtype.type is numpy.flat64:
+    elif dtype.type is numpy.float64:
       result = MultiVector_double(*args)
     else:
       raise TypeError("Unsupported or unrecognized dtype = %s" %
@@ -893,7 +893,7 @@ public:
       result = Vector_long(*args)
     elif dtype.type is numpy.float32:
       result = Vector_float(*args)
-    elif dtype.type is numpy.flat64:
+    elif dtype.type is numpy.float64:
       result = Vector_double(*args)
     else:
       raise TypeError("Unsupported or unrecognized dtype = %s" %
