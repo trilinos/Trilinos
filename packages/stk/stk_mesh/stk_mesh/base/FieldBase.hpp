@@ -286,6 +286,7 @@ inline unsigned field_bytes_per_entity(const FieldBase& f, const Bucket& b) {
 }
 
 inline unsigned field_bytes_per_entity(const FieldBase& f, unsigned bucket_id) {
+  ThrowAssert(bucket_id < f.get_meta_data_for_field().size());
   return f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity;
 }
 
@@ -297,7 +298,7 @@ inline unsigned field_bytes_per_entity(const FieldBase& f, Entity e) {
 
 inline bool is_matching_rank(const FieldBase& f, const Bucket& b) {
   ThrowAssert(&f.get_mesh() == &b.mesh());
-  return(b.entity_rank() == static_cast<unsigned>(f.entity_rank()));
+  return(b.entity_rank() == f.entity_rank());
 }
 
 inline bool is_matching_rank(const FieldBase& f, Entity e) {
