@@ -811,6 +811,7 @@ int Internals::put_metadata(const Mesh &mesh,
     ex_err(routine,errmsg,exerrval);
     return (EX_FATAL);
   }
+  ex_compress_variable(exodusFilePtr, varid, 2);
 
    if (mesh.nodeblocks[0].entityCount > 0) {
     status=nc_def_dim(exodusFilePtr, DIM_NUM_NODES, mesh.nodeblocks[0].entityCount, &numnoddim);
