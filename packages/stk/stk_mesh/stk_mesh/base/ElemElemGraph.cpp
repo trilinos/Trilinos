@@ -1818,6 +1818,30 @@ void ElemElemGraph::unpack_remote_edge_across_shell(stk::CommSparse &comm)
     }
 }
 
+void add_downward_connected_from_elements(stk::mesh::BulkData &bulkData,
+                                          std::vector<std::pair<stk::mesh::Entity, int> > &elem_proc_pairs_to_move,
+                                          std::vector<std::pair<stk::mesh::Entity, int> > &entity_proc_pairs_to_move)
+{
+    for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<stk::topology::ELEMENT_RANK; rank++)
+    {
+        for(size_t i=0; i<elem_proc_pairs_to_move.size(); i++)
+        {
+            entity_proc_pairs_to_move.push_back(elem_proc_pairs_to_move[i]);
+            stk::mesh::Entity elem = elem_proc_pairs_to_move[i].first;
+            int otherProc = elem_proc_pairs_to_move[i].second;
+            const unsigned numConnected = bulkData.num_connectivity(elem, rank);
+            const stk::mesh::Entity *connectedEntity = bulkData.begin(elem, rank);
+            for(unsigned j=0; j<numConnected; j++)
+            {
+                if(bulkData.bucket(connectedEntity[j]).owned())
+                {
+                    entity_proc_pairs_to_move.push_back(std::make_pair(connectedEntity[j], otherProc));
+                }
+            }
+        }
+    }
+}
+
 void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph, std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move, stk::mesh::Part *active_part)
 {
     stk::mesh::EntityRank side_rank = bulkData.mesh_meta_data().side_rank();
@@ -1864,7 +1888,10 @@ void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph
 
     elem_graph.set_num_side_ids_used(num_suggested_face_ids_used);
 
-    bulkData.change_entity_owner(elem_proc_pairs_to_move);
+    std::vector< std::pair< stk::mesh::Entity, int > > entity_proc_pairs_to_move;
+    add_downward_connected_from_elements(bulkData, elem_proc_pairs_to_move, entity_proc_pairs_to_move);
+
+    bulkData.change_entity_owner(entity_proc_pairs_to_move);
 
     elem_graph.change_entity_owner(elem_proc_pairs_to_move, new_parallel_graph_entries);
 
