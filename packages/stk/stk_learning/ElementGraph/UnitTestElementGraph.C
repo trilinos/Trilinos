@@ -34,6 +34,7 @@
 #include <stk_unit_test_utils/getOption.h>
 
 #include "UnitTestElementDeathUtils.hpp"
+#include "stk_unit_test_utils/unittestMeshUtils.hpp"
 #include <stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp>
 
 namespace
@@ -2142,7 +2143,7 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
 
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
 
-        ElementDeathUtils::put_mesh_into_part(bulkData, active);
+        stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
         std::vector<unsigned> counts;
         stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
@@ -3147,7 +3148,7 @@ TEST(ElementGraph, make_items_inactive)
 
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
 
-        ElementDeathUtils::put_mesh_into_part(bulkData, active);
+        stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
         ElemElemGraphTester graph(bulkData);
 
@@ -3246,7 +3247,7 @@ TEST(ElementGraph, test_element_death)
 
             stk::mesh::Part& block_1 = *meta.get_part("block_1");
 
-            ElementDeathUtils::put_mesh_into_part(bulkData, active);
+            stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
             std::ostringstream os;
             os << "Proc id: " << bulkData.parallel_rank() << std::endl;
@@ -6566,7 +6567,7 @@ void test_add_element_to_graph_with_element_death(stk::mesh::BulkData::Automatic
 
         ElemElemGraphTester graph = test_add_elements_to_pre_existing_graph_and_mesh(bulkData);
 
-        ElementDeathUtils::put_mesh_into_part(bulkData, active);
+        stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
         stk::mesh::EntityVector deactivated_elems;
 
@@ -6675,7 +6676,7 @@ void test_delete_element_from_graph_with_element_death(stk::mesh::BulkData::Auto
 
         ElemElemGraphTester graph(bulkData);
 
-        ElementDeathUtils::put_mesh_into_part(bulkData, active);
+        stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
         stk::mesh::EntityVector deactivated_elems;
 

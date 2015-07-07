@@ -30,6 +30,7 @@
 #include <stk_unit_test_utils/getOption.h>
 
 #include "UnitTestElementDeathUtils.hpp"
+#include "stk_unit_test_utils/unittestMeshUtils.hpp"
 
 namespace
 {
@@ -116,7 +117,7 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
 
         stk::mesh::create_faces(bulkData);
 
-        ElementDeathUtils::put_mesh_into_part(bulkData, active);
+        stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
         stk::mesh::ElemElemGraph graph(bulkData, active);
 
@@ -239,7 +240,7 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
 
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
 
-        ElementDeathUtils::put_mesh_into_part(bulkData, active);
+        stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
         stk::mesh::ElemElemGraph graph(bulkData, active);
 
