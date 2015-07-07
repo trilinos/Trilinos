@@ -201,21 +201,7 @@ ENDIF(PyTrilinos_ENABLE_Tpetra)
 
 #
 # PyTrilinos + Domi headers and sources
-<<<<<<< HEAD
-LIST(APPEND HEADERS
-  PyTrilinos_Domi_Util.hpp
-  )
-
-LIST(APPEND SOURCES
-  PyTrilinos_Domi_Util.cpp
-  )
-
-#
-# PyTrilinos + EpetraExt headers and sources
-IF(PyTrilinos_ENABLE_EpetraExt)
-=======
 IF(PyTrilinos_ENABLE_Domi)
->>>>>>> master
 
   LIST(APPEND HEADERS
     PyTrilinos_Domi_Util.hpp
@@ -228,8 +214,6 @@ IF(PyTrilinos_ENABLE_Domi)
 ENDIF(PyTrilinos_ENABLE_Domi)
 
 #
-<<<<<<< HEAD
-=======
 # PyTrilinos + EpetraExt headers and sources
 IF(PyTrilinos_ENABLE_EpetraExt)
 
@@ -244,7 +228,6 @@ IF(PyTrilinos_ENABLE_EpetraExt)
 ENDIF(PyTrilinos_ENABLE_EpetraExt)
 
 #
->>>>>>> master
 # PyTrilinos + ML headers and sources
 IF(PyTrilinos_ENABLE_ML)
 
