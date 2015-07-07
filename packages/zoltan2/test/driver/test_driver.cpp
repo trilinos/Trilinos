@@ -45,7 +45,7 @@
 
 // taking headers from existing driver template
 // will keep or remove as needed
-#include <Zoltan2_TestHelpers.hpp>
+#include "Zoltan2_Tests.hpp"
 #include <Zoltan2_Parameters.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_PartitioningSolutionQuality.hpp>
@@ -88,7 +88,6 @@ using std::stack;
 if (rank==0){ cerr << "FAIL: " << msg << endl << e.what() << endl;}
 
 // temporary methods for debugging and leanring
-void writePlist();
 void readXML(const XMLObject &xml, const string &title);
 void readPList(const ParameterList &plist,
                const string &title,
@@ -118,9 +117,9 @@ void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & pli
         zoltan2Parameters.setParameters(sub);
     }
     
-    // update zoltan 2 parameters
-    plist.remove("Zoltan2Parameters");
-    plist.set("Zoltan2Parameters", zoltan2Parameters);
+//    // update zoltan 2 parameters
+//    plist.remove("Zoltan2Parameters");
+//    plist.set("Zoltan2Parameters", zoltan2Parameters);
 }
 
 // this method takes the user input file and extracts all
@@ -150,26 +149,39 @@ vector<ParameterList> getProblems(const string &inputFileName, int rank)
     return problems;
 }
 
-void run(const ParameterList &problem)
+void run(const ParameterList &problem,const RCP<const Teuchos::Comm<int> > & comm)
 {
     // Major steps in running a problem in zoltan 2
-    // 1. Create an input adapter object
-    //      Zoltan2::MatrixInput
-    //      Zoltan2::GraphInput
-    //      Zoltan2::VectorInput
-    //      Zoltan2::IdentifierInput
-    //      Zoltan2::MeshInput
-    // 2. Create partioning problem templeated over adapter type
-    // 3. Solve
-    // 4. Get results
-    // 5. Check for pass/fail if test metrics are provided
-    cout << "\tPERFORMING TEST: " << problem.get<string>("Name") << endl;
+    // 1. Get a test object
+    // 2. Solve
+    // 3. Check for pass/fail if test metrics are provided
+    int rank = comm->getRank();
+    if(rank == 0)
+        cout << "\nPERFORMING TEST: " << problem.get<string>("Name") << endl;
+//    
+
+    // 1. get appropriate problem
+    if(!problem.isParameter("Name"))
+        std::runtime_error("no test name provided");
+    
+    Zoltan2Test * test = getZoltan2Test(problem.get<string>("Name"));
+    
+    if(test == nullptr)
+            std::runtime_error("no such test");
+    
+    // 2. solve
+    test->Run(problem, comm);
+    
+    // 3. pass
+    if (rank == 0)
+        std::cout << (test->didPass()? "PASS\n" : "FAIL\n") << std::endl;
+    
+    delete test;
 }
 
 
 int main(int argc, char *argv[])
 {
-    cout << "\nBEGINNING TEST DRIVER...." << endl;
     //------------------------------------------------>>
     // (0) Set up MPI environment
     //------------------------------------------------>>
@@ -177,13 +189,15 @@ int main(int argc, char *argv[])
     RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
     
     int rank = comm->getRank(); // get rank
+    if(rank ==0)
+        cout << "\nBEGINNING TEST DRIVER...." << endl;
     
-    //    if(rank == 0) // exit for rank 0
-    //    {
-    //        cout << "PASS" << endl;
-    //        cout << "FINISHING TEST DRIVER (RANK 0 EXIT)...." << endl;
-    //        return 0;
-    //    }
+//    if(rank == 0) // exit for rank 0
+//    {
+//        cout << "PASS" << endl;
+//        cout << "FINISHING TEST DRIVER (RANK 0 EXIT)...." << endl;
+//        return 0;
+//    }
     
     //------------------------------------------------>>
     // (1) Get and read the input file
@@ -201,11 +215,12 @@ int main(int argc, char *argv[])
     //------------------------------------------------>>
     // (3) Loop over all tests and execute them
     //------------------------------------------------>>
-    for(auto i = tests.begin(); i != tests.end(); ++i) run(*i);
+    for(auto i = tests.begin(); i != tests.end(); ++i) run(*i, comm);
 
     
+    if(rank == 0)
+        cout << "....FINISHING TEST DRIVER\n" << endl;
     
-    cout << "....FINISHING TEST DRIVER\n" << endl;
     return 0;
 }
 
@@ -228,93 +243,4 @@ void readPList(const ParameterList &plist, const string &title, bool doc, bool u
         cout << "\nUnused fields: " << title << " ...." << endl;
         plist.unused(cout);
     }
-}
-
-void writePList()
-{
-    
-    // just a method to get comfortable with plists
-    //create
-    ParameterList plist;
-    plist.set("Max Iters", 1550, "Max iterations for solver...");
-    
-    // add a number validator!
-    //    Teuchos::EnhancedNumberValidator<double>
-    RCP<Teuchos::EnhancedNumberValidator<double> >
-    tol_validator = Teuchos::rcp(
-                                 new Teuchos::EnhancedNumberValidator<double>(0.0,1e-3),"Tolerance");
-    plist.set("Tolerance", 1e-10, "The tolerance for the solver...", tol_validator);
-    readPList(plist, "toy plist", true);
-    
-    plist.set("Tolerance",Teuchos::as<double>(1e-9), "The tolerance for the solver...");
-    readPList(plist, "toy plist 1");
-    
-    // add some kind of validator thing....
-    RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
-    solver_validator = Teuchos::rcp(
-                                    new Teuchos::StringToIntegralParameterEntryValidator<int>(Teuchos::tuple<std::string>( "GMRES", "CG", "TFQMR"),"Solver"));
-    
-    plist.set("Solver", "GMRES", "The type of solver to use", solver_validator);
-    readPList(plist, "toy plist 2");
-    
-    // Can also pass reference counted pointers
-    plist.set<Teuchos::Array<double> >("Initial Guess",
-                                       Teuchos::tuple<double>(100,0.1), "The initial guess vector");
-    
-    // now add a sub list
-    ParameterList & sub = plist.sublist("box", false, "sublist for fun");
-    
-    // add some values
-    sub.set("height", 10.0);
-    sub.set("width", Teuchos::as<double>(5.13));
-    sub.set("depth", Teuchos::as<int>(1.13));
-    readPList(plist, "toy plist 3",false,true);
-    
-    // Can now query the lists
-    bool solver_defined, box_defined, tol_set;
-    solver_defined = box_defined = tol_set = false;
-    // has the solver been chosen
-    solver_defined = plist.isParameter("Solver");
-    TEUCHOS_ASSERT_EQUALITY(solver_defined, true);
-    
-    // tol defined?
-    tol_set = plist.isParameter("Tolerance");
-    TEUCHOS_ASSERT_EQUALITY(tol_set, true);
-    
-    // box defined?
-    box_defined = plist.isSublist("box");
-    TEUCHOS_ASSERT_EQUALITY(box_defined, true);
-    
-    // tol set and is it double?
-    bool is_int = false;
-    is_int = sub.isType<int>("depth");
-    TEUCHOS_ASSERT_EQUALITY(is_int, true);
-    
-    // Get some values out
-    int its = plist.get("Max Iters", 1200);
-    TEUCHOS_ASSERT_EQUALITY(its, 1550); // Was already set
-    
-    double tol = plist.get<double>("Tolerance");
-    TEUCHOS_ASSERT_EQUALITY(tol, Teuchos::as<double>(1e-9));
-    
-    // get solver name and validate it
-    string slvr = solver_validator->validateString(Teuchos::getParameter<string>(plist, "Solver"));
-    
-    // get the array
-    //    Teuchos::Array<double> arr = plist.get<Teuchos::Array<double> >("Initial Guess");
-    
-    readPList(plist, "final list", true,true);
-    
-    // What if we reset a value?
-    plist.set("Solver", "CG");
-    plist.set("Tolerance", -1e-6); // should be illegal!
-    readPList(plist, "final list reset", true,true);
-    
-    // can iterate over entries
-    for(auto i = plist.begin(); i != plist.end(); i++)
-    {
-        cout << "\nName: " << i->first << endl;
-        cout << "Entry: " << i->second << endl;
-    }
-    
 }

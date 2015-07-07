@@ -14,8 +14,15 @@
 #  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 #  NOEXEPREFIX
 #)
+
+set(HEADERS
+    Zoltan2_MeshCoordinateTest.hpp
+    Zoltan2_TestInterface.hpp
+    Zoltan2_Tests.hpp
+)
+
 TRIBITS_ADD_EXECUTABLE(
   test_driver
-  SOURCES test_driver.cpp
+  SOURCES ${HEADERS} test_driver.cpp
   COMM serial mpi
   )
