@@ -157,7 +157,7 @@ other Trilinos solver technologies.
 %include "Domi_ConfigDefs.hpp"
 
 // Include Domi documentation
-//%include "Domi_dox.i"
+%include "Domi_dox.i"
 
 // SWIG library includes
 %include "stl.i"
