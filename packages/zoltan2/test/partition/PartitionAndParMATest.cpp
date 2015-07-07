@@ -280,7 +280,7 @@ int main(int narg, char *arg[]) {
   Teuchos::ParameterList params2("test params");
   params2.set("timer_output_stream" , "std::cout");
   params2.set("debug_level", "basic_status");
-  params2.set("imbalance_tolerance", 1.01);
+  params2.set("imbalance_tolerance", imbalance);
   params2.set("algorithm", "parma");
   Teuchos::ParameterList &pparams = params2.sublist("parma_parameters",false);
   pparams.set("parma_method",parma_method);
@@ -304,7 +304,7 @@ int main(int narg, char *arg[]) {
   //apply the partitioning solution to the mesh
   if (me==0) cout << "Applying Solution to Mesh\n\n";
   apf::Mesh2** new_mesh_parma = &m;
-  ia.applyPartitioningSolution(m,new_mesh_parma,problem_parma.getSolution());
+  ia2.applyPartitioningSolution(m,new_mesh_parma,problem_parma.getSolution());
   new_mesh_parma=NULL;
   //Print the stats after parma cleanup
   Parma_PrintPtnStats(m,"post_parma");
