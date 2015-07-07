@@ -633,7 +633,6 @@ void test_element_graph_delete_elements_from_graph(stk::mesh::BulkData::Automati
     int pSize = stk::parallel_machine_size(comm);
 
     // Test designed for 1, 2, or 4 procs.
-//    if((pSize != 1) && (pSize != 2) && (pSize != 4))
     if (pSize > 4)
     {
         return;
@@ -6587,14 +6586,13 @@ void test_add_element_to_graph_with_element_death(stk::mesh::BulkData::Automatic
         ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
         stk::mesh::perform_element_death(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
-        stk::mesh::EntityVector faces;
 
         if (0 == pRank)
         {
             stk::mesh::EntityId elem1Id = 1;
             stk::mesh::EntityId elem2Id = 2;
             stk::mesh::Entity face_between_elem1_and_elem2 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem1Id, elem2Id);
-            faces.push_back(face_between_elem1_and_elem2);
+
             ASSERT_TRUE(bulkData.is_valid(face_between_elem1_and_elem2));
             EXPECT_TRUE(bulkData.bucket(face_between_elem1_and_elem2).member(active));
 
@@ -6608,7 +6606,7 @@ void test_add_element_to_graph_with_element_death(stk::mesh::BulkData::Automatic
             stk::mesh::EntityId elem3Id = 3;
             stk::mesh::EntityId elem4Id = 4;
             stk::mesh::Entity face_between_elem3_and_elem4 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem3Id, elem4Id);
-            faces.push_back(face_between_elem3_and_elem4);
+
             ASSERT_TRUE(bulkData.is_valid(face_between_elem3_and_elem4));
             EXPECT_TRUE(bulkData.bucket(face_between_elem3_and_elem4).member(active));
 
@@ -6637,8 +6635,7 @@ TEST(ElementGraph, add_element_to_graph_with_element_death_aura_off)
     test_add_element_to_graph_with_element_death(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
-
-void test_delete_element_to_graph_with_element_death(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
+void test_delete_element_from_graph_with_element_death(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     int pSize = stk::parallel_machine_size(comm);
@@ -6650,26 +6647,6 @@ void test_delete_element_to_graph_with_element_death(stk::mesh::BulkData::Automa
         unsigned spatialDim = 3;
 
         stk::mesh::MetaData meta(spatialDim);
-        stk::mesh::BulkData bulkData(meta, comm, autoAuraOption);
-        stk::ParallelMachine comm = bulkData.parallel();
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:3x1x3", bulkData, comm);
-
-        stk::mesh::EntityProcVec elementProcChanges;
-        if (procRank == 1) {
-            elementProcChanges.push_back(stk::mesh::EntityProc(bulkData.get_entity(stk::topology::ELEM_RANK,4),2));
-            elementProcChanges.push_back(stk::mesh::EntityProc(bulkData.get_entity(stk::topology::ELEM_RANK,6),2));
-        }
-        bulkData.change_entity_owner(elementProcChanges);
-        bulkData.modification_begin();
-        if (procRank == 1) {
-            stk::mesh::Entity local_element5 = bulkData.get_entity(stk::topology::ELEM_RANK,5);
-            bulkData.destroy_entity(local_element5);
-        }
-        bulkData.modification_end();
-
-        ElemElemGraphTester graph(bulkData);
-
-        stk::mesh::MetaData meta(3);
 
         stk::mesh::Part& faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
         stk::mesh::PartVector boundary_mesh_parts {&faces_part};
@@ -6678,20 +6655,33 @@ void test_delete_element_to_graph_with_element_death(stk::mesh::BulkData::Automa
         stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
 
         stk::mesh::BulkData bulkData(meta, comm, autoAuraOption);
+        stk::ParallelMachine comm = bulkData.parallel();
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:3x1x3", bulkData, comm);
 
-        ElemElemGraphTester graph = test_add_elements_to_pre_existing_graph_and_mesh(bulkData);
+        bulkData.modification_begin();
+        if (procRank == 0) {
+            stk::mesh::Entity element1 = bulkData.get_entity(stk::topology::ELEM_RANK,1);
+            stk::mesh::Entity element3 = bulkData.get_entity(stk::topology::ELEM_RANK,3);
+            bulkData.destroy_entity(element1);
+            bulkData.destroy_entity(element3);
+        }
+        if (procRank == 2) {
+            stk::mesh::Entity element7 = bulkData.get_entity(stk::topology::ELEM_RANK,7);
+            stk::mesh::Entity element9 = bulkData.get_entity(stk::topology::ELEM_RANK,9);
+            bulkData.destroy_entity(element7);
+            bulkData.destroy_entity(element9);
+        }
+        bulkData.modification_end();
+
+        ElemElemGraphTester graph(bulkData);
 
         ElementDeathUtils::put_mesh_into_part(bulkData, active);
 
         stk::mesh::EntityVector deactivated_elems;
 
-        if (0 == pRank)
+        if (1 == pRank)
         {
-            deactivated_elems.push_back(bulkData.get_entity(stk::topology::ELEM_RANK, 1));
-        }
-        else
-        {
-            deactivated_elems.push_back(bulkData.get_entity(stk::topology::ELEM_RANK, 4));
+            deactivated_elems.push_back(bulkData.get_entity(stk::topology::ELEM_RANK, 5));
         }
 
         std::vector<size_t> entity_counts;
@@ -6701,44 +6691,78 @@ void test_delete_element_to_graph_with_element_death(stk::mesh::BulkData::Automa
         ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
         stk::mesh::perform_element_death(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
-        stk::mesh::EntityVector faces;
+
+        stk::mesh::comm_mesh_counts(bulkData, entity_counts);
+
+        ASSERT_EQ(4u, entity_counts[stk::topology::FACE_RANK]);
 
         if (0 == pRank)
         {
-            stk::mesh::EntityId elem1Id = 1;
             stk::mesh::EntityId elem2Id = 2;
-            stk::mesh::Entity face_between_elem1_and_elem2 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem1Id, elem2Id);
-            faces.push_back(face_between_elem1_and_elem2);
-            ASSERT_TRUE(bulkData.is_valid(face_between_elem1_and_elem2));
-            EXPECT_TRUE(bulkData.bucket(face_between_elem1_and_elem2).member(active));
+            stk::mesh::EntityId elem5Id = 5;
+            stk::mesh::Entity face_between_elem2_and_elem5 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem5Id);
 
-            stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
-            stk::mesh::Entity elem3 = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
-            EXPECT_FALSE(bulkData.bucket(elem1).member(active));
-            EXPECT_TRUE(bulkData.bucket(elem3).member(active));
-        }
-        else
-        {
-            stk::mesh::EntityId elem3Id = 3;
-            stk::mesh::EntityId elem4Id = 4;
-            stk::mesh::Entity face_between_elem3_and_elem4 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem3Id, elem4Id);
-            faces.push_back(face_between_elem3_and_elem4);
-            ASSERT_TRUE(bulkData.is_valid(face_between_elem3_and_elem4));
-            EXPECT_TRUE(bulkData.bucket(face_between_elem3_and_elem4).member(active));
+            ASSERT_TRUE(bulkData.is_valid(face_between_elem2_and_elem5));
+            EXPECT_TRUE(bulkData.bucket(face_between_elem2_and_elem5).member(active));
 
             stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
-            stk::mesh::Entity elem4 = bulkData.get_entity(stk::topology::ELEM_RANK, 4);
             EXPECT_TRUE(bulkData.bucket(elem2).member(active));
-            EXPECT_FALSE(bulkData.bucket(elem4).member(active));
+
+            EXPECT_EQ(1u, graph.num_edges());
+            EXPECT_EQ(1u, graph.num_parallel_edges());
         }
+        else if(1 == pRank)
+        {
+            stk::mesh::EntityId elem4Id = 4;
+            stk::mesh::EntityId elem5Id = 5;
+            stk::mesh::EntityId elem6Id = 6;
+            stk::mesh::Entity face_between_elem4_and_elem5 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem4Id, elem5Id);
+            stk::mesh::Entity face_between_elem6_and_elem5 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem6Id, elem5Id);
 
-        // bulkData.dump_all_mesh_info(std::cout, true);
-        stk::mesh::comm_mesh_counts(bulkData, entity_counts);
-        ASSERT_TRUE(entity_counts[stk::topology::FACE_RANK] == 2);
+            ASSERT_TRUE(bulkData.is_valid(face_between_elem4_and_elem5));
+            EXPECT_TRUE(bulkData.bucket(face_between_elem4_and_elem5).member(active));
 
-        EXPECT_EQ(4u, graph.num_edges());
-        EXPECT_EQ(4u, graph.num_parallel_edges());
+            ASSERT_TRUE(bulkData.is_valid(face_between_elem6_and_elem5));
+            EXPECT_TRUE(bulkData.bucket(face_between_elem6_and_elem5).member(active));
+
+            stk::mesh::Entity elem4 = bulkData.get_entity(stk::topology::ELEM_RANK, 4);
+            stk::mesh::Entity elem5 = bulkData.get_entity(stk::topology::ELEM_RANK, 5);
+            stk::mesh::Entity elem6 = bulkData.get_entity(stk::topology::ELEM_RANK, 6);
+
+            EXPECT_TRUE(bulkData.bucket(elem4).member(active));
+            EXPECT_TRUE(bulkData.bucket(elem6).member(active));
+            EXPECT_FALSE(bulkData.bucket(elem5).member(active));
+
+            EXPECT_EQ(6u, graph.num_edges());
+            EXPECT_EQ(2u, graph.num_parallel_edges());
+        }
+        else if (2 == pRank)
+        {
+            stk::mesh::EntityId elem8Id = 8;
+            stk::mesh::EntityId elem5Id = 5;
+            stk::mesh::Entity face_between_elem8_and_elem5 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem8Id, elem5Id);
+
+            ASSERT_TRUE(bulkData.is_valid(face_between_elem8_and_elem5));
+            EXPECT_TRUE(bulkData.bucket(face_between_elem8_and_elem5).member(active));
+
+            stk::mesh::Entity elem8 = bulkData.get_entity(stk::topology::ELEM_RANK, 8);
+            EXPECT_TRUE(bulkData.bucket(elem8).member(active));
+
+            EXPECT_EQ(1u, graph.num_edges());
+            EXPECT_EQ(1u, graph.num_parallel_edges());
+        }
     }
+}
+
+
+TEST(ElementGraph, delete_element_from_graph_with_element_death_aura_on)
+{
+    test_delete_element_from_graph_with_element_death(stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(ElementGraph, delete_element_from_graph_with_element_death_aura_off)
+{
+    test_delete_element_from_graph_with_element_death(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 ElemElemGraphTester create_base_1x1x4_elem_graph(stk::ParallelMachine &comm, stk::mesh::BulkData &bulkData)
@@ -6746,7 +6770,6 @@ ElemElemGraphTester create_base_1x1x4_elem_graph(stk::ParallelMachine &comm, stk
     unsigned nProc  = stk::parallel_machine_size(comm);
     unsigned myProc = stk::parallel_machine_rank(comm);
 
-    // ThrowRequire((nProc == 1u) || (nProc == 2u) || (nProc == 4u));
     ThrowRequire(nProc <= 4);
 
     stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
@@ -6806,38 +6829,27 @@ ElemElemGraphTester create_base_1x1x4_elem_graph(stk::ParallelMachine &comm, stk
     }
 
     unsigned numParallelEdges = 0;
-    if(ownedElem1)
+    for(unsigned elem_id=1; elem_id<=4; ++elem_id)
     {
-        if(!ownedElem2)
+        stk::mesh::Entity elem = bulkData.get_entity(stk::topology::ELEM_RANK, elem_id);
+
+        if (!bulkData.is_valid(elem) || !bulkData.bucket(elem).owned())
+        {
+            continue;
+        }
+
+        stk::mesh::EntityId leftNeighbor = elem_id - 1;
+        stk::mesh::Entity leftElem = bulkData.get_entity(stk::topology::ELEM_RANK, leftNeighbor);
+        bool ownedLeftNeighbor = bulkData.is_valid(leftElem) && bulkData.bucket(leftElem).owned();
+        if(!ownedLeftNeighbor && (elem_id > 1))
         {
             numParallelEdges++;
         }
-    }
-    if(ownedElem2)
-    {
-        if(!ownedElem1)
-        {
-            numParallelEdges++;
-        }
-        if(!ownedElem3)
-        {
-            numParallelEdges++;
-        }
-    }
-    if(ownedElem3)
-    {
-        if(!ownedElem2)
-        {
-            numParallelEdges++;
-        }
-        if(!ownedElem4)
-        {
-            numParallelEdges++;
-        }
-    }
-    if(ownedElem4)
-    {
-        if(!ownedElem3)
+
+        stk::mesh::EntityId rightNeighbor = elem_id + 1;
+        stk::mesh::Entity rightElem = bulkData.get_entity(stk::topology::ELEM_RANK, rightNeighbor);
+        bool ownedRightNeighbor = bulkData.is_valid(rightElem) && bulkData.bucket(rightElem).owned();
+        if(!ownedRightNeighbor && (elem_id < 4))
         {
             numParallelEdges++;
         }
