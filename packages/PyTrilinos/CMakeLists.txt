@@ -80,8 +80,10 @@ IF(PyTrilinos_ENABLE_Tpetra)
   APPEND_SET(PyTrilinos_MODULES  Tpetra)
 ENDIF(PyTrilinos_ENABLE_Tpetra)
 
-APPEND_SET(PyTrilinos_PACKAGES Domi)
-APPEND_SET(PyTrilinos_MODULES  Domi)
+IF(PyTrilinos_ENABLE_Domi)
+  APPEND_SET(PyTrilinos_PACKAGES Domi)
+  APPEND_SET(PyTrilinos_MODULES  Domi)
+ENDIF(PyTrilinos_ENABLE_Domi)
 
 IF(PyTrilinos_ENABLE_EpetraExt)
   APPEND_SET(PyTrilinos_PACKAGES EpetraExt)
