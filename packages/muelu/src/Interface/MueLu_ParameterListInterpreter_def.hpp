@@ -373,9 +373,11 @@ namespace MueLu {
                                Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin",
-                               Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
-
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin"  && multigridAlgo != "matlab", Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
+    #ifndef HAVE_MUELU_MATLAB
+      if(multigridAlgo == "matlab")
+        throw std::runtime_error("Cannot use matlab for multigrid algorithm - MueLu was not configured with MATLAB support.");
+    #endif
     // Only some combinations of reuse and multigrid algorithms are tested, all
     // other are considered invalid at the moment
     if (reuseType == "none" || reuseType == "RP" || reuseType == "RAP") {
@@ -583,8 +585,12 @@ namespace MueLu {
 
     // Aggregation sheme
     MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
-    TEUCHOS_TEST_FOR_EXCEPTION(aggType != "uncoupled" && aggType != "coupled" && aggType != "brick", Exceptions::RuntimeError,
-                               "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
+    TEUCHOS_TEST_FOR_EXCEPTION(aggType != "uncoupled" && aggType != "coupled" && aggType != "brick" && aggType != "matlab", 
+    Exceptions::RuntimeError, "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
+    #ifndef HAVE_MUELU_MATLAB
+      if(aggType == "matlab")
+        throw std::runtime_error("Cannot use MATLAB aggregation - MueLu was not configured with MATLAB support.");
+    #endif
     RCP<Factory> aggFactory;
     if (aggType == "uncoupled") {
       aggFactory = rcp(new UncoupledAggregationFactory());
@@ -643,6 +649,7 @@ namespace MueLu {
     RCP<Factory> Ptent = rcp(new TentativePFactory());
     Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
     Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
+
     manager.SetFactory("Ptent",     Ptent);
 
     if (reuseType == "tP") {
@@ -658,8 +665,11 @@ namespace MueLu {
     }
 
     // === Prolongation ===
-    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin",
-                               Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
+    TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo != "unsmoothed" && multigridAlgo != "sa" && multigridAlgo != "pg" && multigridAlgo != "emin" && multigridAlgo != "matlab", Exceptions::RuntimeError, "Unknown multigrid algorithm: \"" << multigridAlgo << "\". Please consult User's Guide.");
+    #ifndef HAVE_MUELU_MATLAB
+      if(multigridAlgo == "matlab")
+        throw std::runtime_error("Cannot use MATLAB prolongator factory - MueLu was not configured with MATLAB support.");
+    #endif
     if (have_userP) {
       // User prolongator
       manager.SetFactory("P", NoFactory::getRCP());
@@ -787,6 +797,12 @@ namespace MueLu {
         RAP->SetFactory("R", manager.GetFactory("R"));
       if (MUELU_TEST_PARAM_2LIST(paramList, defaultList, "aggregation: export visualization data", bool, true)) {
         RCP<AggregationExportFactory> aggExport = rcp(new AggregationExportFactory());
+        ParameterList aggExportParams;
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output filename", std::string, aggExportParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: agg style", std::string, aggExportParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: iter", int, aggExportParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: output file: time step", int, aggExportParams);
+        aggExport->SetParameterList(aggExportParams);
         aggExport->SetFactory("DofsPerNode", manager.GetFactory("DofsPerNode"));
         RAP->AddTransferFactory(aggExport);
       }

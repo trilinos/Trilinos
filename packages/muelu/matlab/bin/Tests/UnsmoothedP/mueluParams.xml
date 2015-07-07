@@ -1,0 +1,19 @@
+<!--MueLu parameters to run unsmoothed P MATLAB test-->
+
+<ParameterList name="MueLu">
+  <ParameterList name="Factories">
+    <ParameterList name="myAggregationFactory">
+      <Parameter name="factory" type="string" value="UncoupledAggregationFactory"/>
+    </ParameterList>
+    <ParameterList name="myUnsmoothedPFactory">
+      <Parameter name="factory" type="string" value="TentativePFactory"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Hierarchy">
+    <ParameterList name="All">
+      <Parameter name="Aggregates" type="string" value="myAggregationFactory"/>
+      <Parameter name="P" type="string" value="myUnsmoothedPFactory"/>
+      <Parameter name="Nullspace" type="string" value="myUnsmoothedPFactory"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

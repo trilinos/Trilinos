@@ -23,25 +23,7 @@ IF(${PROJECT_NAME}_ENABLE_Epetra)
       solTeuchosBatchManager
       SOURCES test_03.cpp
       ARGS PrintItAll
-      NUM_MPI_PROCS 1
-      PASS_REGULAR_EXPRESSION "TEST PASSED"
-      ADD_DIR_TO_NAME
-      )
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      solEpetraBatchManager
-      SOURCES test_04.cpp
-      ARGS PrintItAll
-      NUM_MPI_PROCS 1
-      PASS_REGULAR_EXPRESSION "TEST PASSED"
-      ADD_DIR_TO_NAME
-      )
-
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      solCVaR
-      SOURCES test_05.cpp
-      ARGS PrintItAll
-      NUM_MPI_PROCS 1
+      NUM_MPI_PROCS 4
       PASS_REGULAR_EXPRESSION "TEST PASSED"
       ADD_DIR_TO_NAME
       )

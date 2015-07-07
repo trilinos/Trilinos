@@ -49,6 +49,8 @@
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 
+#if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
 #include <impl/Kokkos_StaticAssert.hpp>
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Shape.hpp>
@@ -57,6 +59,7 @@
 #include <impl/Kokkos_ViewSupport.hpp>
 #include <impl/Kokkos_Tags.hpp>
 #include <type_traits>
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -1477,9 +1480,10 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewDefault> & dst ,
   if ( dst.ptr_on_device() != src.ptr_on_device() ) {
 
     // Same shape (dimensions)
-    Impl::assert_shapes_are_equal( dst.shape() , src.shape() );
 
-    if ( is_contiguous && dst.capacity() == src.capacity() ) {
+    const bool shapes_are_equal = dst.shape() == src.shape();
+
+    if ( shapes_are_equal && is_contiguous && dst.capacity() == src.capacity() ) {
 
       // Views span equal length contiguous range.
       // Assuming can perform a straight memory copy over this range.
@@ -1501,7 +1505,7 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewDefault> & dst ,
         size_dim*=src.dimension(i);
       }
 
-      if(size_stride == size_dim) {
+      if( shapes_are_equal && size_stride == size_dim) {
         const size_t nbytes = sizeof(typename dst_type::value_type) * dst.capacity();
 
         Impl::DeepCopy< dst_memory_space , src_memory_space >( dst.ptr_on_device() , src.ptr_on_device() , nbytes );
@@ -1891,6 +1895,18 @@ subview( const View<D,A1,A2,A3,S> & src ,
 
 #include <impl/Kokkos_ViewDefault.hpp>
 #include <impl/Kokkos_Atomic_View.hpp>
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#else
+
+#include <impl/Kokkos_ViewOffset.hpp>
+#include <impl/Kokkos_ViewSupport.hpp>
+
+#endif /* #if defined( KOKKOS_USING_EXPERIMENTAL_VIEW ) */
+
+#include <KokkosExp_View.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

@@ -69,7 +69,7 @@ namespace MueLu {
             class LocalOrdinal = typename SmootherPrototype<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename SmootherPrototype<Scalar, LocalOrdinal>::global_ordinal_type,
             class Node = typename SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
-  class MatlabSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+  class MatlabSmoother : public SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node>
   {
 #undef MUELU_MATLABSMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
@@ -175,7 +175,7 @@ namespace MueLu {
 
     //! Matrix, (maybe) used in apply 
     mutable RCP<Matrix> A_;
-
+    
   }; // class MatlabSmoother
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

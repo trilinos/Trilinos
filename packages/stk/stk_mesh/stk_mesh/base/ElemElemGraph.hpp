@@ -59,7 +59,7 @@ public:
 
     size_t num_parallel_edges() const { return m_num_parallel_edges; }
 
-    const std::vector<stk::mesh::EntityId>& get_suggested_side_ids() const;
+    std::vector<stk::mesh::EntityId> get_suggested_side_ids() const;
 
     void set_num_side_ids_used(size_t num_used);
 
@@ -85,8 +85,14 @@ protected:
     void update_number_of_parallel_edges();
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
 
+    void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm, const stk::mesh::EntityVector & elements_to_ignore);
+
     void add_possibly_connected_elements_to_graph_using_side_nodes( const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideComm,
-                                                                    stk::mesh::impl::ConnectedElementDataVector & communicatedElementDataVector);
+                                                                    stk::mesh::impl::ConnectedElementDataVector & communicatedElementDataVector,
+                                                                    const stk::mesh::EntityVector & elements_to_ignore,
+                                                                    std::vector<impl::SharedEdgeInfo> *newlySharedEdges = nullptr);
+
+    void  break_volume_element_connections_across_shells(const std::set<stk::mesh::EntityId> & localElementsConnectedToRemoteShell);
 
     void add_local_elements_to_connected_list(const stk::mesh::EntityVector & connected_elements,
                                               const stk::mesh::EntityVector & sideNodes,
@@ -105,7 +111,7 @@ protected:
     size_t find_max_local_offset_in_neighborhood(stk::mesh::Entity element);
     void break_elem_elem_connectivity(stk::mesh::Entity elem_to_delete);
     void pack_deleted_element_comm(stk::CommSparse &comm,
-                                   const std::vector<std::pair<impl::LocalId,stk::mesh::EntityId>> &local_elem_and_remote_connected_elem);
+                                   const std::vector<impl::DeletedElementData> &local_elem_and_remote_connected_elem);
 
     void pack_remote_connected_element(impl::LocalId elem_local_id, stk::mesh::EntityId connected_global_id,
                                                       stk::CommBuffer &buff, std::vector<moved_parallel_graph_info> &moved_graph_info_vector,
@@ -124,6 +130,31 @@ protected:
 
     void filter_for_elements_in_graph(stk::mesh::EntityVector &localElements);
 
+    void communicate_remote_edges_for_pre_existing_graph_nodes(const std::vector<impl::SharedEdgeInfo> &newlySharedEdges,
+                                                          std::vector<impl::SharedEdgeInfo> &receivedSharedEdges);
+
+    void connect_remote_element_to_existing_graph(const impl::SharedEdgeInfo &receivedSharedEdge);
+
+    void generate_additional_ids_collective(size_t num_additional_ids_needed);
+
+    void collect_local_shell_connectivity_data(const stk::mesh::EntityVector& elements_to_delete,
+                                               std::vector<impl::ShellConnectivityData>& shellConnectivityList);
+
+    void communicate_shell_connectivity(std::vector<impl::ShellConnectivityData>& shellConnectivityList);
+
+    void delete_local_connections_and_collect_remote(const stk::mesh::EntityVector& elements_to_delete,
+                                                     std::vector<impl::DeletedElementData>& local_elem_and_remote_connected_elem);
+
+    void communicate_remote_connections_to_delete(const std::vector<impl::DeletedElementData>& local_elem_and_remote_connected_elem,
+                                                  std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> >& remote_edges);
+
+    void clear_deleted_element_connections(const stk::mesh::EntityVector& elements_to_delete);
+
+    void delete_remote_connections(const std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> >& remote_edges);
+
+    void reconnect_volume_elements_across_deleted_shells(std::vector<impl::ShellConnectivityData> & shellConnectivityList,
+                                                         const stk::mesh::EntityVector& elements_to_delete);
+
     stk::mesh::BulkData &m_bulk_data;
     impl::ElementGraph m_elem_graph;
     impl::SidesForElementGraph m_via_sides;
@@ -137,6 +168,7 @@ protected:
     std::vector<int> m_deleted_elem_pool;
     size_t m_num_edges;
     size_t m_num_parallel_edges;
+    size_t m_num_ids_used;
 
     static const impl::LocalId INVALID_LOCAL_ID;
 };

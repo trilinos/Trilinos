@@ -38,6 +38,7 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int exampleICholPerformance(const string file_input,
                               const int treecut,
+                              const int minblksize,
                               const int seed,
                               const int niter,
                               const int nthreads,
@@ -111,7 +112,7 @@ namespace Example {
       {
         timer.reset();
         
-        S.computeOrdering(treecut);
+        S.computeOrdering(treecut, minblksize);
         
         PA.copy(S.PermVector(), S.InvPermVector(), AA);
         

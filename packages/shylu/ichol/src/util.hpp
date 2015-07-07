@@ -46,6 +46,13 @@ namespace Example {
 #define ERROR(msg)                                                      \
   { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << endl << msg << endl; }
   
+  /// \class GraphHelper
+  class GraphHelper {
+  public:
+    static const int DefaultRandomSeed = -1;
+  };
+
+  
   /// \class Partition
   /// \brief Matrix partition parameters.
   class Partition { 

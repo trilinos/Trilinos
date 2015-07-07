@@ -42,8 +42,6 @@
 // ***********************************************************************
 // @HEADER
 
-#ifdef HAVE_TEUCHOS
-
 // The purpose of Teuchos_RCP.i is to provide a SWIG interface file
 // that provides all of the infrastructure necessary for proper
 // implementation of the Teuchos::RCP<> reference-counted pointer
@@ -190,12 +188,3 @@
   %teuchos_rcp_typemaps_overrides(SWIGEMPTYHACK, CLASS)
   %teuchos_rcp_typemaps_overrides(const, CLASS)
 %enddef
-
-#else
-
-// If HAVE_TEUCHOS is not defined, then define %teuchos_rcp() to be
-// an empty macro
-%define %teuchos_rcp(CLASS...)
-%enddef
-
-#endif
