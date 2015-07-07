@@ -5,6 +5,8 @@
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
+#include "ShyLUIChol_config.h"
+
 #include "util.hpp"
 
 #include "crs_matrix_base.hpp"
@@ -25,6 +27,10 @@
 #include "task_team_factory.hpp"
 
 #include "ichol.hpp"
+
+#ifdef HAVE_SHYLUICHOL_MKL
+#include "mkl_rci.h"
+#endif
 
 namespace Example {
 
@@ -62,6 +68,8 @@ namespace Example {
     typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
     typedef SymbolicFactorHelper<CrsMatrixBaseType> SymbolicFactorHelperType;
 
+    typedef typename CrsMatrixBaseType::value_type_array value_type_array;
+
     typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
     typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
     
@@ -78,6 +86,7 @@ namespace Example {
       t_reorder = 0.0,
       t_symbolic = 0.0,
       t_flat2hier = 0.0,
+      t_mkl_seq = 0.0,
       t_factor_seq = 0.0,
       t_factor_task = 0.0;
     const int start = -2;
@@ -165,6 +174,46 @@ namespace Example {
     // copy of UU
     CrsMatrixBaseType RR("RR");
     RR.copy(UU);
+
+#ifdef HAVE_SHYLUICHOL_MKL
+    if (!skip_serial) {
+      cout << "ICholPerformance:: MKL factorize the matrix" << endl;
+      CrsMatrixBaseType MM("MM");
+      for (int i=start;i<niter;++i) {
+        MM.copy(RR);
+        MM.hermitianize(Uplo::Upper);
+
+        MKL_INT  n  = static_cast<MKL_INT>(MM.NumRows());
+        double  *a  = static_cast<double*>(MM.ValuePtr());
+        MKL_INT *ia = static_cast<MKL_INT*>(MM.RowPtr());
+        MKL_INT *ja = static_cast<MKL_INT*>(MM.ColPtr());
+
+        // convert to 1-based matrix
+        {
+          for (ordinal_type k=0;k<(MM.NumRows()+1);++k)
+            ++ia[k];
+          
+          for (size_type k=0;k<MM.NumNonZeros();++k)
+            ++ja[k];
+        }
+        value_type_array mkl_result = value_type_array("mkl-ilu-values", MM.NumNonZeros());
+        double  *bilu0 = static_cast<double*>(&mkl_result[0]);
+        MKL_INT ipar[128];
+        double dpar[128];
+        MKL_INT ierr;
+        
+        // we provide ilu-k pattern 
+        timer.reset();
+        dcsrilu0(&n, a, ia, ja, bilu0, ipar, dpar, &ierr);
+        t_mkl_seq += timer.seconds() * (i>=0) * 0.5;
+        
+        if (ierr != 0) 
+          cout << " MKL Error = " << ierr << endl;
+      }
+      t_mkl_seq /= niter;
+      cout << "ICholPerformance:: MKL factorize the matrix::time = " << t_mkl_seq << endl;
+    }
+#endif
 
     if (!skip_serial) {
 #ifdef __USE_FIXED_TEAM_SIZE__
@@ -267,7 +316,12 @@ namespace Example {
     }
 
     if (!skip_serial) {
+#ifdef HAVE_SHYLUICHOL_MKL
+      cout << "ICholPerformance:: mkl/ichol scale [mkl/ichol] = " << t_mkl_seq/t_factor_seq << endl;    
+      cout << "ICholPerformance:: mkl/task  scale [mkl/task]  = " << t_mkl_seq/t_factor_task << endl;    
+#else
       cout << "ICholPerformance:: task scale [seq/task] = " << t_factor_seq/t_factor_task << endl;    
+#endif
       //cout << "ICholPerformance:: team scale [seq/team] = " << t_factor_seq/t_factor_team << endl;    
     }
 

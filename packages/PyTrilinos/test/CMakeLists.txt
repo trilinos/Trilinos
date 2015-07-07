@@ -54,12 +54,10 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
 ADD_CUSTOM_TARGET(test_testutil ALL
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/testutil.py)
 
-IF(PyTrilinos_ENABLE_Teuchos)
-  PyTrilinos_MAKE_TEST(testTeuchos              )
-  PyTrilinos_MAKE_TEST(testTeuchos_Comm         )
-  PyTrilinos_MAKE_TEST(testTeuchos_ParameterList)
-  PyTrilinos_MAKE_TEST(testTeuchos_ScalarTraits )
-ENDIF(PyTrilinos_ENABLE_Teuchos)
+PyTrilinos_MAKE_TEST(testTeuchos              )
+PyTrilinos_MAKE_TEST(testTeuchos_Comm         )
+PyTrilinos_MAKE_TEST(testTeuchos_ParameterList)
+PyTrilinos_MAKE_TEST(testTeuchos_ScalarTraits )
 
 IF(PyTrilinos_ENABLE_Epetra)
   PyTrilinos_MAKE_TEST(testEpetra_BlockMap      )

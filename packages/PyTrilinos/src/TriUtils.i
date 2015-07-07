@@ -88,9 +88,7 @@ example subdirectory of the PyTrilinos package:
 #endif
 
 // Trilinos includes
-#ifdef HAVE_TEUCHOS
 #include "Teuchos_RCP.hpp"
-#endif
 
 // Epetra includes
 #ifdef HAVE_EPETRA

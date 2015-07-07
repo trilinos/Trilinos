@@ -1,9 +1,10 @@
 function varargout = muelu(varargin)
 %
 % Call Syntax:
-% (1) [h,oc] = muelu('setup', A[, 'parameter', value,...]) - setup
+% (1) [h,oc] = muelu('setup', A, [Coordinates], [, 'parameter', value,...]) - setup
 %  Input:
 %  A               - Matrix to be solved with (must be sparse)
+%  Coordinates     - User-defined coordinates array (optional, dense array)
 %  parameter       - Teuchos parameter key (string)
 %  value           - Value for Teuchos parameter
 %  Output:

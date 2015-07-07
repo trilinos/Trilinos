@@ -113,7 +113,6 @@ package:
 #include "PyTrilinos_FILEstream.hpp"
 
 // Teuchos includes
-#ifdef HAVE_TEUCHOS
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
 #endif
@@ -126,7 +125,6 @@ package:
 #endif
 #include "Teuchos_ScalarTraits.hpp"
 #include "PyTrilinos_Teuchos_Util.hpp"
-#endif
 
 // Epetra includes
 #ifdef HAVE_EPETRA
@@ -232,9 +230,7 @@ package:
 %rename(_global) global;
 
 // Support for other Trilinos packages
-#ifdef HAVE_TEUCHOS
 %import "Teuchos.i"
-#endif
 
 #ifdef HAVE_EPETRA
 %include "numpy.i"

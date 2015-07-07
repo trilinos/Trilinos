@@ -153,7 +153,7 @@ namespace Example {
   /// \brief Interface for overloaded stream operators.
   template<typename T> 
   inline 
-  ostream& operator<<(ostream &os, const auto_ptr<T> &p) {
+  ostream& operator<<(ostream &os, const unique_ptr<T> &p) {
     return p->showMe(os);
   }
 

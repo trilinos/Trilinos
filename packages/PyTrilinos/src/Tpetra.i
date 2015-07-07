@@ -61,12 +61,6 @@ operators, and dense and sparse matrices.
         docstring = %tpetra_docstring) Tpetra
 
 %{
-// PyTrilinos includes
-#include "PyTrilinos_config.h"
-#include "PyTrilinos_PythonException.hpp"
-#include "PyTrilinos_Teuchos_Util.hpp"
-#include "PyTrilinos_NumPy_Util.hpp"
-
 // Import the numpy interface
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
@@ -87,6 +81,12 @@ using Teuchos::ArrayRCP;
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
+
+// PyTrilinos includes
+#include "PyTrilinos_config.h"
+#include "PyTrilinos_PythonException.hpp"
+#include "PyTrilinos_Teuchos_Util.hpp"
+#include "PyTrilinos_NumPy_Util.hpp"
 %}
 
 // Global swig features
@@ -142,12 +142,6 @@ import numpy
 %ignore *::operator++;
 %ignore *::operator--;
 
-// Define a shortcut for the default Kokkos node
-%inline
-%{
-  typedef KokkosClassic::DefaultNode::DefaultNodeType KokkosDefaultNode;
-%}
-
 ////////////////////////////////////////////////////////////
 // Tpetra configuration, enumerations and typedef support //
 ////////////////////////////////////////////////////////////
@@ -170,10 +164,22 @@ template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
 }
 %include "KokkosCore_config.h"
 %include "Kokkos_Macros.hpp"
+%ignore KokkosClassic::ESweepDirection;
+%include "Kokkos_ConfigDefs.hpp"
+%include "Kokkos_DefaultNode.cpp"
 %include "TpetraCore_config.h"
 %include "TpetraClassic_config.h"
 %include "Tpetra_ConfigDefs.hpp"
 %include "Tpetra_CombineMode.hpp"
+
+// Define shortcuts for the default Tpetra template types
+%inline
+%{
+  typedef Tpetra::Details::DefaultTypes::scalar_type         DefaultScalarType;
+  typedef Tpetra::Details::DefaultTypes::local_ordinal_type  DefaultLOType;
+  typedef Tpetra::Details::DefaultTypes::global_ordinal_type DefaultGOType;
+  typedef Tpetra::Details::DefaultTypes::node_type           DefaultNodeType;
+%}
 
 ////////////////////////////
 // Tpetra version support //
@@ -337,13 +343,16 @@ __version__ = version()
 // directives below are redundant, because it is the same as the
 // default template argument.  But SWIG is much more acurate when
 // comparing types when all template arguments are specified.
-%teuchos_rcp(Tpetra::Map< long, long, Tpetra::Details::DefaultTypes::node_type >)
-%template(Map_default)
-    Tpetra::Map< long, long, Tpetra::Details::DefaultTypes::node_type >;
+%teuchos_rcp(Tpetra::Map< long, long, DefaultNodeType >)
+%template(Map_default) Tpetra::Map< long, long, DefaultNodeType >;
 %pythoncode
 {
 Map = Map_default
 }
+%inline
+%{
+  typedef Tpetra::Map< long, long, DefaultNodeType > DefaultMapType;
+%}
 
 /////////////////////////////
 // Tpetra Transfer support //
@@ -360,9 +369,9 @@ namespace Tpetra
 class Distributor;
 namespace Details
 {
-template <class LO = Tpetra::Map<>::local_ordinal_type,
-          class GO = typename Tpetra::Map<LO>::global_ordinal_type,
-          class NT = typename Tpetra::Map<LO, GO>::node_type>
+template <class LO = DefaultLOType,
+          class GO = DefaultGOype,
+          class NT = DefaultNodeType>
 class Transfer : public Teuchos::Describable
 {
 public:
@@ -383,16 +392,16 @@ public:
 };
 } // namespace Details
 } // namespace Tpetra
-%teuchos_rcp(Tpetra::Details::Transfer< long, long, KokkosDefaultNode >)
+%teuchos_rcp(Tpetra::Details::Transfer< long, long, DefaultNodeType >)
 %template(Transfer_default)
-    Tpetra::Details::Transfer< long, long, KokkosDefaultNode >;
+    Tpetra::Details::Transfer< long, long, DefaultNodeType >;
 
 ///////////////////////////
 // Tpetra Export support //
 ///////////////////////////
 %include "Tpetra_Export_decl.hpp"
-%teuchos_rcp(Tpetra::Export< long, long, KokkosDefaultNode >)
-%template(Export_default) Tpetra::Export< long, long, KokkosDefaultNode >;
+%teuchos_rcp(Tpetra::Export< long, long, DefaultNodeType >)
+%template(Export_default) Tpetra::Export< long, long, DefaultNodeType >;
 %pythoncode
 {
 Export = Export_default
@@ -402,8 +411,8 @@ Export = Export_default
 // Tpetra Import support //
 ///////////////////////////
 %include "Tpetra_Import_decl.hpp"
-%teuchos_rcp(Tpetra::Import< long, long, KokkosDefaultNode >)
-%template(Import_default) Tpetra::Import< long, long, KokkosDefaultNode >;
+%teuchos_rcp(Tpetra::Import< long, long, DefaultNodeType >)
+%template(Import_default) Tpetra::Import< long, long, DefaultNodeType >;
 %pythoncode
 {
 Import = Import_default
@@ -423,9 +432,9 @@ Import = Import_default
 namespace Tpetra
 {
 template < class Packet,
-           class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
-           class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
-           class Node = Details::DefaultTypes::node_type>
+           class LocalOrdinal = DefaultLOType,
+           class GlobalOrdinal = DefaultGOType,
+           class Node = DefaultNodeType >
 class DistObject :
     virtual public SrcDistObject,
     virtual public Teuchos::Describable
@@ -436,30 +445,32 @@ public:
   typedef GlobalOrdinal global_ordinal_type;
   typedef DeviceType execution_space;
   typedef Kokkos::Compat::KokkosDeviceWrapperNode<execution_space> node_type;
-  typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
-  explicit DistObject(const Teuchos::RCP<const map_type>& map);
-  DistObject(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, node_type>& rhs);
+  typedef Map<local_ordinal_type, global_ordinal_type, Node> map_type;
+  explicit DistObject(const Teuchos::RCP<const DefaultMapType>& map);
+  DistObject(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>& rhs);
   virtual ~DistObject();
   void doImport(const SrcDistObject& source,
-                const Import<LocalOrdinal,GlobalOrdinal,node_type>& importer,
+                const Import<LocalOrdinal,GlobalOrdinal,Node>& importer,
                 CombineMode CM);
   void doExport(const SrcDistObject& source,
-                const Export<LocalOrdinal,GlobalOrdinal,node_type>& exporter,
+                const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter,
                 CombineMode CM);
   void doImport(const SrcDistObject& source,
-                const Export<LocalOrdinal,GlobalOrdinal,node_type>& exporter,
+                const Export<LocalOrdinal,GlobalOrdinal,Node>& exporter,
                 CombineMode CM);
   void doExport(const SrcDistObject& source,
-                const Import<LocalOrdinal,GlobalOrdinal,node_type>& importer,
+                const Import<LocalOrdinal,GlobalOrdinal,Node>& importer,
                 CombineMode CM);
   bool isDistributed() const;
-  virtual Teuchos::RCP<const map_type> getMap() const;
+  virtual Teuchos::RCP<const DefaultMapType> getMap() const;
   void print(std::ostream &os) const;
   virtual std::string description() const;
   virtual void
   describe(Teuchos::FancyOStream &out,
-           const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-  virtual void removeEmptyProcessesInPlace(const Teuchos::RCP<const map_type>& newMap);
+           const Teuchos::EVerbosityLevel verbLevel =
+             Teuchos::Describable::verbLevel_default) const;
+  virtual void
+  removeEmptyProcessesInPlace(const Teuchos::RCP<const DefaultMapType>& newMap);
 protected:
   virtual bool checkSizes(const SrcDistObject& source) = 0;
 }; // class DistObject
@@ -498,12 +509,13 @@ protected:
 }
 // The refactor is making Tpetra::Vector difficult for SWIG to
 // parse, and so I provide a simplified prototype of the class here
+%feature("notabstract") Tpetra::MultiVector;
 namespace Tpetra
 {
-template< class Scalar = Details::DefaultTypes::scalar_type,
-          class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
-          class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
-          class Node = Details::DefaultTypes::node_type >
+template< class Scalar = DefaultScalarType,
+          class LocalOrdinal = DefaultLOType,
+          class GlobalOrdinal = DefaultGOType,
+          class Node = DefaultNodeType >
 class MultiVector :
     public DistObject< Scalar,
                        LocalOrdinal,
@@ -522,32 +534,32 @@ public:
   typedef Kokkos::DualView<impl_scalar_type**,
                            Kokkos::LayoutLeft,
                            typename execution_space::execution_space> dual_view_type;
-  typedef Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
+  typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
   MultiVector();
-  MultiVector(const Teuchos::RCP<const map_type>& map,
+  MultiVector(const Teuchos::RCP<const DefaultMapType>& map,
               const size_t numVecs,
               const bool zeroOut = true);
-  MultiVector(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> &source);
-  MultiVector(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& source,
+  MultiVector(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
+  MultiVector(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source,
               const Teuchos::DataAccess copyOrView);
-  MultiVector(const Teuchos::RCP<const map_type>& map,
+  MultiVector(const Teuchos::RCP<const DefaultMapType>& map,
               const Teuchos::ArrayView<const Scalar>& A,
               const size_t LDA,
               const size_t NumVectors);
-  MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
+  MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
               const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >&ArrayOfPtrs,
               const size_t NumVectors);
-  MultiVector(const Teuchos::RCP<const map_type>& map,
+  MultiVector(const Teuchos::RCP<const DefaultMapType>& map,
               const dual_view_type& view);
-  MultiVector(const Teuchos::RCP<const map_type>& map,
+  MultiVector(const Teuchos::RCP<const DefaultMapType>& map,
               const typename dual_view_type::t_dev& d_view);
-  MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
+  MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
               const dual_view_type& view,
               const dual_view_type& origView);
-  MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
+  MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
               const dual_view_type& view,
               const Teuchos::ArrayView<const size_t>& whichVectors);
-  MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map,
+  MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
               const dual_view_type& view,
               const dual_view_type& origView,
               const Teuchos::ArrayView<const size_t>& whichVectors);
@@ -605,28 +617,28 @@ public:
                     const T& value);
   void putScalar(const Scalar &value);
   void randomize();
-  void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,node_type> >& map);
+  void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
   void reduce();
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type >&
-  operator=(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type >& source);
-  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >&
+  operator=(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >& source);
+  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > >
   subCopy(const Teuchos::Range1D &colRng) const;
-  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
+  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > >
   subCopy(const Teuchos::ArrayView<const size_t> &cols) const;
-  Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
+  Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > >
   subView(const Teuchos::Range1D &colRng) const;
-  Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
+  Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > >
   subView(const Teuchos::ArrayView<const size_t> &cols) const;
-  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
+  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > >
   subViewNonConst(const Teuchos::Range1D &colRng);
-  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
+  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > >
   subViewNonConst(const Teuchos::ArrayView<const size_t> &cols);
-  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> >
-  offsetViewNonConst(const Teuchos::RCP<const map_type>& subMap,
+  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > >
+  offsetViewNonConst(const Teuchos::RCP<const DefaultMapType>& subMap,
                      const size_t offset);
-  Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type > >
+  Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > >
   getVector(const size_t j) const;
-  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type > >
+  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > >
   getVectorNonConst(const size_t j);
   Teuchos::ArrayRCP<const Scalar> getData(size_t j) const;
   Teuchos::ArrayRCP<Scalar> getDataNonConst(size_t j);
@@ -637,8 +649,8 @@ public:
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > get2dView() const;
   Teuchos::ArrayRCP<Scalar> get1dViewNonConst();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst();
-  KokkosClassic::MultiVector<Scalar, node_type> getLocalMV() const;
-  // TEUCHOS_DEPRECATED KokkosClassic::MultiVector<Scalar, node_type>
+  // KokkosClassic::MultiVector<Scalar, Node > getLocalMV() const;
+  // TEUCHOS_DEPRECATED KokkosClassic::MultiVector<Scalar, Node>
   // getLocalMVNonConst();
   dual_view_type getDualView() const;
   template<class TargetDeviceType>
@@ -653,36 +665,36 @@ public:
       typename dual_view_type::t_dev,
       typename dual_view_type::t_host>::type
   getLocalView() const;
-  void dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
+  void dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& A,
            const Teuchos::ArrayView<dot_type>& dots) const;
   template <typename T>
   typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
-  dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
+  dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
       const Teuchos::ArrayView<T> &dots) const;
   template <typename T>
   typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
-  dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
+  dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& A,
       std::vector<T>& dots) const;
-  void dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
+  void dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& A,
            const Kokkos::View<dot_type*, execution_space>& dots) const;
   template <typename T>
   typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<dot_type, T>::value), void >::type
-  dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
+  dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& A,
       const Kokkos::View<T*, execution_space>& dots) const;
-  void abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A);
-  void reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A);
+  void abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& A);
+  void reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A);
   void scale(const Scalar& alpha);
   void scale(Teuchos::ArrayView<const Scalar> alpha);
   void scale(const Kokkos::View<const impl_scalar_type*, execution_space> alpha);
   void scale(const Scalar& alpha,
-             const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A);
+             const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& A);
   void update(const Scalar& alpha,
-              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
+              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& A,
               const Scalar& beta);
   void update(const Scalar& alpha,
-              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
+              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& A,
               const Scalar& beta,
-              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& B,
+              const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& B,
               const Scalar& gamma);
   void norm1(const Kokkos::View<mag_type*, execution_space>& norms) const;
   template <typename T>
@@ -705,13 +717,13 @@ public:
   typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type, T>::value), void >::type
   normInf(const Kokkos::View<T*, execution_space>& norms) const;
   void normInf(const Teuchos::ArrayView<mag_type>& norms) const;
-  typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
-  normInf(const Teuchos::ArrayView<T>& norms) const;
-  void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& weights,
+  // typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
+  // normInf(const Teuchos::ArrayView<T>& norms) const;
+  void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
                     const Teuchos::ArrayView<mag_type>& norms) const;
   template <typename T>
   typename Kokkos::Impl::enable_if< !(Kokkos::Impl::is_same<mag_type,T>::value), void >::type
-  normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& weights,
+  normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& weights,
                const Teuchos::ArrayView<T>& norms) const;
   void meanValue(const Teuchos::ArrayView<impl_scalar_type>& means) const;
   template <typename T>
@@ -720,12 +732,12 @@ public:
   void multiply(Teuchos::ETransp transA,
                 Teuchos::ETransp transB,
                 const Scalar& alpha,
-                const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& A,
-                const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>& B,
+                const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& A,
+                const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& B,
                 const Scalar& beta);
   void elementWiseMultiply(Scalar scalarAB,
-                           const Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type >& A,
-                           const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type >& B,
+                           const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node >& A,
+                           const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& B,
                            Scalar scalarThis);
   size_t getNumVectors() const;
   size_t getLocalLength() const;
@@ -738,13 +750,12 @@ public:
            const Teuchos::EVerbosityLevel verbLevel =
            Teuchos::Describable::verbLevel_default) const;
   virtual void
-  removeEmptyProcessesInPlace(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, node_type> >& newMap);
+  removeEmptyProcessesInPlace(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
   void setCopyOrView(const Teuchos::DataAccess copyOrView);
   Teuchos::DataAccess getCopyOrView() const;
-  void assign(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>& src);
+  void assign(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >& src);
 };  // class MultiVector
 }   // namespace Tpetra
-// %feature("notabstract") Tpetra::MultiVector;
 // %include "Tpetra_MultiVector_decl.hpp"
 // %include "Tpetra_KokkosRefactor_MultiVector_decl.hpp"
 
@@ -753,12 +764,13 @@ public:
 ///////////////////////////
 // The refactor is making Tpetra::Vector difficult for SWIG to
 // parse, and so I provide a simplified prototype of the class here
+%feature("notabstract") Tpetra::Vector;
 namespace Tpetra
 {
-template< class Scalar = Details::DefaultTypes::scalar_type,
-          class LocalOrdinal = Details::DefaultTypes::local_ordinal_type,
-          class GlobalOrdinal = Details::DefaultTypes::global_ordinal_type,
-          class Node = Details::DefaultTypes::node_type >
+template< class Scalar = DefaultScalarType,
+          class LocalOrdinal = DefaultLOType,
+          class GlobalOrdinal = DefaultGOType,
+          class Node = DefaultNodeType >
 class Vector :
     public MultiVector< Scalar,
                         LocalOrdinal,
@@ -775,16 +787,18 @@ public:
   typedef typename base_type::mag_type mag_type;
   typedef typename base_type::dual_view_type dual_view_type;
   typedef typename base_type::map_type map_type;
-  explicit Vector(const Teuchos::RCP<const map_type>& map,
+  // explicit Vector(const Teuchos::RCP<const map_type>& map,
+  //                 const bool zeroOut = true);
+  explicit Vector(const Teuchos::RCP<const DefaultMapType >& map,
                   const bool zeroOut = true);
-  Vector(const Vector<Scalar, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Node> >& source);
-  Vector(const Vector<Scalar, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<Node> >& source,
+  Vector(const Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node >& source);
+  Vector(const Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node >& source,
          const Teuchos::DataAccess copyOrView);
-  Vector(const Teuchos::RCP<const map_type>& map,
+  Vector(const Teuchos::RCP<const DefaultMapType>& map,
          const Teuchos::ArrayView<const Scalar>& A);
-  Vector(const Teuchos::RCP<const map_type>& map,
+  Vector(const Teuchos::RCP<const DefaultMapType>& map,
          const dual_view_type& view);
-  Vector(const Teuchos::RCP<const map_type>& map,
+  Vector(const Teuchos::RCP<const DefaultMapType>& map,
          const dual_view_type& view,
          const dual_view_type& origView);
   virtual ~Vector();
@@ -795,29 +809,29 @@ public:
   void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value);
   void replaceLocalValue(LocalOrdinal myRow, const Scalar &value);
   void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value);
-  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>::get1dCopy;
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get1dCopy;
   void get1dCopy(const Teuchos::ArrayView<Scalar>& A) const;
-  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>::getDataNonConst;
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getDataNonConst;
   Teuchos::ArrayRCP<Scalar> getDataNonConst() { return getDataNonConst(0); }
-  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type>::getData;
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getData;
   Teuchos::ArrayRCP<const Scalar> getData() const { return getData(0); }
-  Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false> >
-  offsetView(const Teuchos::RCP<const map_type>& subMap,
-             const size_t offset) const;
-  Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false> >
-  offsetViewNonConst(const Teuchos::RCP<const map_type>& subMap,
-                     const size_t offset);
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>::dot;
-  dot_type dot(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false>& y) const;
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>::norm1;
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>::norm2;
+  // Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false> >
+  // offsetView(const Teuchos::RCP<const map_type>& subMap,
+  //            const size_t offset) const;
+  // Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false> >
+  // offsetViewNonConst(const Teuchos::RCP<const map_type>& subMap,
+  //                    const size_t offset);
+  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot;
+  // dot_type dot(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false>& y) const;
+  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1;
+  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2;
   mag_type norm2() const;
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>::normInf;
+  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf;
   mag_type normInf() const;
-  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type>::normWeighted;
-  mag_type
-  normWeighted(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false>& weights) const;
-  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type, false>::meanValue;
+  using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted;
+  // mag_type
+  // normWeighted(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<Node>, false>& weights) const;
+  using MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node, false>::meanValue;
   Scalar meanValue() const;
   virtual std::string description() const;
   virtual void
@@ -829,7 +843,6 @@ public:
 // %ignore Tpetra::Vector::getLocalMV;
 // %ignore Tpetra::Vector::getLocalMVNonConst;
 // %warnfilter(302) Tpetra::createVectorFromView;
-// %feature("notabstract") Tpetra::Vector;
 // %include "Tpetra_Vector_decl.hpp"
 // %include "Tpetra_KokkosRefactor_Vector_decl.hpp"
 
@@ -837,10 +850,10 @@ public:
 // Explicit template instantiation //
 /////////////////////////////////////
 %define %tpetra_class( CLASS, SCALAR, SCALAR_NAME )
-    %warnfilter(315) Tpetra::CLASS< SCALAR, long, long, KokkosDefaultNode >;
-    %teuchos_rcp(Tpetra::CLASS< SCALAR, long, long, KokkosDefaultNode >)
+    %warnfilter(315) Tpetra::CLASS< SCALAR, long, long, DefaultNodeType >;
+    %teuchos_rcp(Tpetra::CLASS< SCALAR, long, long, DefaultNodeType >)
     %template(CLASS ## _ ## SCALAR_NAME)
-        Tpetra::CLASS< SCALAR, long, long, KokkosDefaultNode >;
+        Tpetra::CLASS< SCALAR, long, long, DefaultNodeType >;
 %enddef
 
 %define %tpetra_scalars( SCALAR, SCALAR_NAME)
@@ -872,7 +885,7 @@ public:
       result = MultiVector_long(*args)
     elif dtype.type is numpy.float32:
       result = MultiVector_float(*args)
-    elif dtype.type is numpy.flat64:
+    elif dtype.type is numpy.float64:
       result = MultiVector_double(*args)
     else:
       raise TypeError("Unsupported or unrecognized dtype = %s" %
@@ -889,7 +902,7 @@ public:
       result = Vector_long(*args)
     elif dtype.type is numpy.float32:
       result = Vector_float(*args)
-    elif dtype.type is numpy.flat64:
+    elif dtype.type is numpy.float64:
       result = Vector_double(*args)
     else:
       raise TypeError("Unsupported or unrecognized dtype = %s" %
