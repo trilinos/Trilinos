@@ -142,15 +142,6 @@ import numpy
 %ignore *::operator++;
 %ignore *::operator--;
 
-// Define shortcuts for the default Tpetra template types
-%inline
-%{
-  typedef Tpetra::Details::DefaultTypes::scalar_type         DefaultScalarType;
-  typedef Tpetra::Details::DefaultTypes::local_ordinal_type  DefaultLOType;
-  typedef Tpetra::Details::DefaultTypes::global_ordinal_type DefaultGOType;
-  typedef Tpetra::Details::DefaultTypes::node_type           DefaultNodeType;
-%}
-
 ////////////////////////////////////////////////////////////
 // Tpetra configuration, enumerations and typedef support //
 ////////////////////////////////////////////////////////////
@@ -173,10 +164,22 @@ template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
 }
 %include "KokkosCore_config.h"
 %include "Kokkos_Macros.hpp"
+%ignore KokkosClassic::ESweepDirection;
+%include "Kokkos_ConfigDefs.hpp"
+%include "Kokkos_DefaultNode.cpp"
 %include "TpetraCore_config.h"
 %include "TpetraClassic_config.h"
 %include "Tpetra_ConfigDefs.hpp"
 %include "Tpetra_CombineMode.hpp"
+
+// Define shortcuts for the default Tpetra template types
+%inline
+%{
+  typedef Tpetra::Details::DefaultTypes::scalar_type         DefaultScalarType;
+  typedef Tpetra::Details::DefaultTypes::local_ordinal_type  DefaultLOType;
+  typedef Tpetra::Details::DefaultTypes::global_ordinal_type DefaultGOType;
+  typedef Tpetra::Details::DefaultTypes::node_type           DefaultNodeType;
+%}
 
 ////////////////////////////
 // Tpetra version support //
@@ -346,6 +349,10 @@ __version__ = version()
 {
 Map = Map_default
 }
+%inline
+%{
+  typedef Tpetra::Map< long, long, DefaultNodeType > DefaultMapType;
+%}
 
 /////////////////////////////
 // Tpetra Transfer support //
@@ -780,7 +787,9 @@ public:
   typedef typename base_type::mag_type mag_type;
   typedef typename base_type::dual_view_type dual_view_type;
   typedef typename base_type::map_type map_type;
-  explicit Vector(const Teuchos::RCP<const map_type>& map,
+  // explicit Vector(const Teuchos::RCP<const map_type>& map,
+  //                 const bool zeroOut = true);
+  explicit Vector(const Teuchos::RCP<const DefaultMapType >& map,
                   const bool zeroOut = true);
   Vector(const Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node >& source);
   Vector(const Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node >& source,
