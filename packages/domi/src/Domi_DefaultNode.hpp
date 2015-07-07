@@ -47,7 +47,7 @@
 #include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
 
 #ifdef HAVE_TPETRA
-#include ""
+#include "Kokkos_DefaultNode.hpp"
 #endif
 
 namespace Domi
@@ -82,7 +82,7 @@ class DefaultNode
 {
 public:
 #ifdef HAVE_TPETRA
-  typedef KokkosClassic::DefaultNodeType DefaultNodeType;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
 #else
   typedef Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
 #endif
