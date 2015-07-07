@@ -44,7 +44,7 @@ int main (int argc, char *argv[]) {
   clp.setOption("league-size", &league_size, "League size");
 
   bool team_interface = true;
-  clp.setOption("enable-team-interface", "disable-team-interface", 
+  clp.setOption("enable-team-interface", "disable-team-interface",
                 &team_interface, "Flag for team interface");
 
   bool verbose = false;
@@ -55,6 +55,9 @@ int main (int argc, char *argv[]) {
 
   int treecut = 15;
   clp.setOption("treecut", &treecut, "Level to cut tree from bottom");
+
+  int minblksize = 0;
+  clp.setOption("minblksize", &minblksize, "Minimum block size for internal reordering");
 
   int seed = 0;
   clp.setOption("seed", &seed, "Seed for random number generator in graph partition");
@@ -74,17 +77,18 @@ int main (int argc, char *argv[]) {
   {
     exec_space::initialize(nthreads, numa, core_per_numa);
     exec_space::print_configuration(cout, true);
-    
+
     r_val = exampleICholPerformance
       <value_type,ordinal_type,size_type,exec_space,void>
       (file_input,
        treecut,
+       minblksize,
        seed,
-       niter, 
-       nthreads, max_task_dependence, team_size, 
-       fill_level, league_size, 
-       team_interface, 
-       (nthreads != 1), 
+       niter,
+       nthreads, max_task_dependence, team_size,
+       fill_level, league_size,
+       team_interface,
+       (nthreads != 1),
        verbose);
 
     exec_space::finalize();

@@ -142,15 +142,6 @@ import numpy
 %ignore *::operator++;
 %ignore *::operator--;
 
-// Define shortcuts for the default Tpetra template types
-%inline
-%{
-  typedef Tpetra::Details::DefaultTypes::scalar_type         DefaultScalarType;
-  typedef Tpetra::Details::DefaultTypes::local_ordinal_type  DefaultLOType;
-  typedef Tpetra::Details::DefaultTypes::global_ordinal_type DefaultGOType;
-  typedef Tpetra::Details::DefaultTypes::node_type           DefaultNodeType;
-%}
-
 ////////////////////////////////////////////////////////////
 // Tpetra configuration, enumerations and typedef support //
 ////////////////////////////////////////////////////////////
@@ -173,10 +164,22 @@ template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
 }
 %include "KokkosCore_config.h"
 %include "Kokkos_Macros.hpp"
+%ignore KokkosClassic::ESweepDirection;
+%include "Kokkos_ConfigDefs.hpp"
+%include "Kokkos_DefaultNode.cpp"
 %include "TpetraCore_config.h"
 %include "TpetraClassic_config.h"
 %include "Tpetra_ConfigDefs.hpp"
 %include "Tpetra_CombineMode.hpp"
+
+// Define shortcuts for the default Tpetra template types
+%inline
+%{
+  typedef Tpetra::Details::DefaultTypes::scalar_type         DefaultScalarType;
+  typedef Tpetra::Details::DefaultTypes::local_ordinal_type  DefaultLOType;
+  typedef Tpetra::Details::DefaultTypes::global_ordinal_type DefaultGOType;
+  typedef Tpetra::Details::DefaultTypes::node_type           DefaultNodeType;
+%}
 
 ////////////////////////////
 // Tpetra version support //
@@ -346,6 +349,10 @@ __version__ = version()
 {
 Map = Map_default
 }
+%inline
+%{
+  typedef Tpetra::Map< long, long, DefaultNodeType > DefaultMapType;
+%}
 
 /////////////////////////////
 // Tpetra Transfer support //
@@ -439,7 +446,7 @@ public:
   typedef DeviceType execution_space;
   typedef Kokkos::Compat::KokkosDeviceWrapperNode<execution_space> node_type;
   typedef Map<local_ordinal_type, global_ordinal_type, Node> map_type;
-  explicit DistObject(const Teuchos::RCP<const map_type>& map);
+  explicit DistObject(const Teuchos::RCP<const DefaultMapType>& map);
   DistObject(const DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>& rhs);
   virtual ~DistObject();
   void doImport(const SrcDistObject& source,
@@ -455,7 +462,7 @@ public:
                 const Import<LocalOrdinal,GlobalOrdinal,Node>& importer,
                 CombineMode CM);
   bool isDistributed() const;
-  virtual Teuchos::RCP<const map_type> getMap() const;
+  virtual Teuchos::RCP<const DefaultMapType> getMap() const;
   void print(std::ostream &os) const;
   virtual std::string description() const;
   virtual void
@@ -463,7 +470,7 @@ public:
            const Teuchos::EVerbosityLevel verbLevel =
              Teuchos::Describable::verbLevel_default) const;
   virtual void
-  removeEmptyProcessesInPlace(const Teuchos::RCP<const map_type>& newMap);
+  removeEmptyProcessesInPlace(const Teuchos::RCP<const DefaultMapType>& newMap);
 protected:
   virtual bool checkSizes(const SrcDistObject& source) = 0;
 }; // class DistObject
@@ -529,22 +536,22 @@ public:
                            typename execution_space::execution_space> dual_view_type;
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
   MultiVector();
-  MultiVector(const Teuchos::RCP<const map_type>& map,
+  MultiVector(const Teuchos::RCP<const DefaultMapType>& map,
               const size_t numVecs,
               const bool zeroOut = true);
   MultiVector(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
   MultiVector(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source,
               const Teuchos::DataAccess copyOrView);
-  MultiVector(const Teuchos::RCP<const map_type>& map,
+  MultiVector(const Teuchos::RCP<const DefaultMapType>& map,
               const Teuchos::ArrayView<const Scalar>& A,
               const size_t LDA,
               const size_t NumVectors);
   MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
               const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >&ArrayOfPtrs,
               const size_t NumVectors);
-  MultiVector(const Teuchos::RCP<const map_type>& map,
+  MultiVector(const Teuchos::RCP<const DefaultMapType>& map,
               const dual_view_type& view);
-  MultiVector(const Teuchos::RCP<const map_type>& map,
+  MultiVector(const Teuchos::RCP<const DefaultMapType>& map,
               const typename dual_view_type::t_dev& d_view);
   MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
               const dual_view_type& view,
@@ -627,7 +634,7 @@ public:
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > >
   subViewNonConst(const Teuchos::ArrayView<const size_t> &cols);
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > >
-  offsetViewNonConst(const Teuchos::RCP<const map_type>& subMap,
+  offsetViewNonConst(const Teuchos::RCP<const DefaultMapType>& subMap,
                      const size_t offset);
   Teuchos::RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > >
   getVector(const size_t j) const;
@@ -780,16 +787,18 @@ public:
   typedef typename base_type::mag_type mag_type;
   typedef typename base_type::dual_view_type dual_view_type;
   typedef typename base_type::map_type map_type;
-  explicit Vector(const Teuchos::RCP<const map_type>& map,
+  // explicit Vector(const Teuchos::RCP<const map_type>& map,
+  //                 const bool zeroOut = true);
+  explicit Vector(const Teuchos::RCP<const DefaultMapType >& map,
                   const bool zeroOut = true);
   Vector(const Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node >& source);
   Vector(const Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node >& source,
          const Teuchos::DataAccess copyOrView);
-  Vector(const Teuchos::RCP<const map_type>& map,
+  Vector(const Teuchos::RCP<const DefaultMapType>& map,
          const Teuchos::ArrayView<const Scalar>& A);
-  Vector(const Teuchos::RCP<const map_type>& map,
+  Vector(const Teuchos::RCP<const DefaultMapType>& map,
          const dual_view_type& view);
-  Vector(const Teuchos::RCP<const map_type>& map,
+  Vector(const Teuchos::RCP<const DefaultMapType>& map,
          const dual_view_type& view,
          const dual_view_type& origView);
   virtual ~Vector();

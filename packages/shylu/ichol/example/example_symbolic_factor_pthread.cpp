@@ -37,6 +37,18 @@ int main (int argc, char *argv[]) {
   string file_input = "test.mtx";
   clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
 
+  int treecut = 15;
+  clp.setOption("treecut", &treecut, "Level to cut tree from bottom");
+
+  int minblksize = 0;
+  clp.setOption("minblksize", &minblksize, "Minimum block size for internal reordering");
+
+  int seed = 0;
+  clp.setOption("seed", &seed, "Seed for random number generator in graph partition");
+
+  bool reorder = false;
+  clp.setOption("enable-reorder", "disable-reorder", &reorder, "Flag for reordering a matrix");
+
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
 
@@ -44,16 +56,16 @@ int main (int argc, char *argv[]) {
 
   if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) return 0;
   if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) return -1;
-  
+
   int r_val = 0;
   {
     exec_space::initialize(nthreads);
     exec_space::print_configuration(cout, true);
-    
+
     r_val = exampleSymbolicFactor
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, fill_level, league_size, verbose);
-    
+      (file_input, treecut, minblksize, seed, fill_level, league_size, reorder, verbose);
+
     exec_space::finalize();
   }
 

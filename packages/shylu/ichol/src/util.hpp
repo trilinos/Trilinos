@@ -46,6 +46,13 @@ namespace Example {
 #define ERROR(msg)                                                      \
   { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << endl << msg << endl; }
   
+  /// \class GraphHelper
+  class GraphHelper {
+  public:
+    static const int DefaultRandomSeed = -1;
+  };
+
+  
   /// \class Partition
   /// \brief Matrix partition parameters.
   class Partition { 
@@ -146,7 +153,7 @@ namespace Example {
   /// \brief Interface for overloaded stream operators.
   template<typename T> 
   inline 
-  ostream& operator<<(ostream &os, const auto_ptr<T> &p) {
+  ostream& operator<<(ostream &os, const unique_ptr<T> &p) {
     return p->showMe(os);
   }
 

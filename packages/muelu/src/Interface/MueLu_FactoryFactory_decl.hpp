@@ -181,9 +181,7 @@ namespace MueLu {
       if (factoryName == "BlockedCoarseMapFactory")         return Build2<BlockedCoarseMapFactory>      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedRAPFactory")               return BuildRAPFactory<BlockedRAPFactory>   (paramList, factoryMapIn, factoryManagersIn);
 #endif
-#if defined(HAVE_MPI)
       if (factoryName == "BrickAggregationFactory")         return Build2<BrickAggregationFactory>      (paramList, factoryMapIn, factoryManagersIn);
-#endif
       if (factoryName == "CoarseMapFactory")                return Build2<CoarseMapFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoalesceDropFactory")             return Build2<CoalesceDropFactory>          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ConstraintFactory")               return Build2<ConstraintFactory>            (paramList, factoryMapIn, factoryManagersIn);

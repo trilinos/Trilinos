@@ -433,14 +433,22 @@ int EpetraSystem::status()
   return IS_TRUE;
 }/*end status*/
 
-int EpetraSystem::setup(const mxArray* mxa)
+int EpetraSystem::setup(const mxArray* matlabA, bool haveCoords, const mxArray* matlabCoords)
 {
   bool success = false;
   try
     {
       /* Matrix Fill */
-      A = epetraLoadMatrix(mxa);
-      prec = MueLu::CreateEpetraPreconditioner(A, *List);
+      A = epetraLoadMatrix(matlabA);
+      if(haveCoords)
+      {
+        RCP<Epetra_MultiVector> coords = loadEpetraMV(matlabCoords);
+        prec = MueLu::CreateEpetraPreconditioner(A, *List, coords);
+      }
+      else
+      {
+        prec = MueLu::CreateEpetraPreconditioner(A, *List);
+      }
       //underlying the Epetra_Operator prec is a MueLu::EpetraOperator
       RCP<MueLu::EpetraOperator> meo = rcp_static_cast<MueLu::EpetraOperator, Epetra_Operator>(prec);
       operatorComplexity = meo->GetHierarchy()->GetOperatorComplexity();
@@ -527,15 +535,24 @@ RCP<Hierarchy_double> EpetraSystem::getHierarchy()
 template<> TpetraSystem<double>::TpetraSystem() : MuemexSystem(TPETRA) {}
 template<> TpetraSystem<double>::~TpetraSystem() {}
 
-template<typename Scalar>
-int TpetraSystem<Scalar>::setup(const mxArray* mxa)
+template<>
+int TpetraSystem<double>::setup(const mxArray* matlabA, bool haveCoords, const mxArray* matlabCoords)
 {
   bool success = false;
   try
     {
-      A = tpetraLoadMatrix<Scalar>(mxa);
-      RCP<MueLu::TpetraOperator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List);
-      prec = rcp_implicit_cast<Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(mop);
+      A = tpetraLoadMatrix<double>(matlabA);
+      RCP<MueLu::TpetraOperator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop;
+      if(haveCoords)
+      {
+        RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> coordArray = loadTpetraMV<double>(matlabCoords);
+        mop = MueLu::CreateTpetraPreconditioner<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List, coordArray);
+      }
+      else
+      {
+        mop = MueLu::CreateTpetraPreconditioner<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List);
+      }
+      prec = rcp_implicit_cast<Tpetra::Operator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(mop);
       operatorComplexity = mop->GetHierarchy()->GetOperatorComplexity();
       success = true;
     }
@@ -577,12 +594,15 @@ template<> TpetraSystem<complex_t>::TpetraSystem() : MuemexSystem(TPETRA_COMPLEX
 template<> TpetraSystem<complex_t>::~TpetraSystem() {}
 
 template<>
-int TpetraSystem<complex_t>::setup(const mxArray* mxa)
+int TpetraSystem<complex_t>::setup(const mxArray* matlabA, bool haveCoords, const mxArray* matlabCoords)
 {
   bool success = false;
   try
     {
-      A = tpetraLoadMatrix<complex_t>(mxa);
+      //TODO: Does a complex-scalar matrix mean complex-scalar coordinates?
+      if(haveCoords)
+        throw runtime_error("User coordinates is unsupported for complex scalars.");
+      A = tpetraLoadMatrix<complex_t>(matlabA);
       RCP<MueLu::TpetraOperator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop = MueLu::CreateTpetraPreconditioner<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List);
       prec = rcp_implicit_cast<Tpetra::Operator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(mop);
       operatorComplexity = mop->GetHierarchy()->GetOperatorComplexity();
@@ -1002,10 +1022,32 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         try
           {
             double oc = 0;
-            if(nrhs > 2)
-              List = build_teuchos_list(nrhs - 2, &(prhs[2]));
-            else
+            bool haveCoords = false;
+            if(nrhs == 2)
               List = rcp(new ParameterList);
+            else if(nrhs == 3)
+            {
+              if(!mxIsNumeric(prhs[2]) || mxIsSparse(prhs[2]) || mxIsComplex(prhs[2]))
+                throw std::runtime_error("Expected real-valued, dense Coordinates array as the third muelu argument");
+              else
+              {
+                haveCoords = true;
+                List = rcp(new ParameterList);
+              }
+            }
+            else
+            {
+              if(mxIsNumeric(prhs[2]) && !mxIsSparse(prhs[2]) && !mxIsComplex(prhs[2]))
+              {
+                List = build_teuchos_list(nrhs - 3, &(prhs[3]));
+                haveCoords = true;
+              }
+              else
+              {
+                //assume that the parameters start at third argument if it doesn't seem like coords are there
+                List = build_teuchos_list(nrhs - 2, &(prhs[2]));
+              }
+            }
             if(mxIsComplex(prhs[1]))
               {
                 //Abort if input is complex but complex isn't supported
@@ -1026,7 +1068,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
                   }
                 RCP<EpetraSystem> dp = rcp(new EpetraSystem());
                 dp->List = List;
-                dp->setup(prhs[1]);
+                dp->setup(prhs[1], haveCoords, haveCoords ? prhs[2] : (mxArray*) NULL);
                 oc = dp->operatorComplexity;
                 D = rcp_implicit_cast<MuemexSystem>(dp);
               }
@@ -1038,7 +1080,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 #ifdef HAVE_COMPLEX_SCALARS
                     RCP<TpetraSystem<complex_t>> dp = rcp(new TpetraSystem<complex_t>());
                     dp->List = List;
-                    dp->setup(prhs[1]);
+                    dp->setup(prhs[1], haveCoords, haveCoords ? prhs[2] : (mxArray*) NULL); //currently coords will cause exception
                     oc = dp->operatorComplexity;
                     D = rcp_implicit_cast<MuemexSystem>(dp);
 #else
@@ -1049,7 +1091,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
                   {
                     RCP<TpetraSystem<double>> dp = rcp(new TpetraSystem<double>());
                     dp->List = List;
-                    dp->setup(prhs[1]);
+                    dp->setup(prhs[1], haveCoords, haveCoords ? prhs[2] : (mxArray*) NULL);
                     oc = dp->operatorComplexity;
                     D = rcp_implicit_cast<MuemexSystem>(dp);
                   }

@@ -1,0 +1,2 @@
+addpath('Tests/Brick');
+BrickAggregationUnitTest

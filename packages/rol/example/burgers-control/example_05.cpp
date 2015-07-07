@@ -45,9 +45,11 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
-#include "Epetra_MpiComm.h"
-#include "Epetra_SerialComm.h"
 // ROL_Types contains predefined constants and objects
 #include "ROL_Types.hpp"
 // ROL algorithmic information
@@ -66,7 +68,7 @@
 #include "ROL_RiskAverseObjective.hpp"
 // ROL sample generators
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_StdEpetraBatchManager.hpp"
+#include "ROL_StdTeuchosBatchManager.hpp"
 // ROL CVaR definitions
 #include "ROL_PlusFunction.hpp"
 #include "ROL_CVaR.hpp"
@@ -618,31 +620,27 @@ public:
   }
 };
 
-
 template<class Real>
-Real random(const Teuchos::RCP<Epetra_Comm> &comm) {
+Real random(const Teuchos::RCP<const Teuchos::Comm<int> > &comm) {
   Real val = 0.0;
-  if ( comm->MyPID()==0 ) {
+  if ( Teuchos::rank<int>(*comm)==0 ) {
     val = (Real)rand()/(Real)RAND_MAX;
   }
-  comm->Broadcast(&val,1,0);
+  Teuchos::broadcast<int,Real>(*comm,0,1,&val);
   return val;
 }
 
 int main(int argc, char* argv[]) {
-  Teuchos::RCP<Epetra_Comm> comm;
-#ifdef HAVE_MPI
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-  comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
-  comm = Teuchos::rcp(new Epetra_SerialComm());
-#endif
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  Teuchos::RCP<const Teuchos::Comm<int> > comm
+    = Teuchos::DefaultComm<int>::getComm();
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
-  if (iprint > 0 && comm->MyPID()==0)
+  if (iprint > 0 && Teuchos::rank<int>(*comm)==0)
     outStream = Teuchos::rcp(&std::cout, false);
   else
     outStream = Teuchos::rcp(&bhs, false);
@@ -701,7 +699,7 @@ int main(int argc, char* argv[]) {
     std::vector<double> tmp(2,0.0); tmp[0] = -1.0; tmp[1] = 1.0;
     std::vector<std::vector<double> > bounds(dim,tmp);
     Teuchos::RCP<ROL::BatchManager<double> > bman
-      = Teuchos::rcp(new ROL::StdEpetraBatchManager<double>(comm));
+      = Teuchos::rcp(new ROL::StdTeuchosBatchManager<double,int>(comm));
     Teuchos::RCP<ROL::SampleGenerator<double> > sampler
       = Teuchos::rcp(new ROL::MonteCarloGenerator<double>(nSamp,bounds,bman,false,false,100));
     /**********************************************************************************************/

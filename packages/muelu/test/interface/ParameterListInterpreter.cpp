@@ -302,8 +302,10 @@ int main(int argc, char *argv[]) {
           if (ret)
             failed = true;
 
-          std::cout << xmlFile << " (" << std::setprecision(2) << std::setiosflags(std::ios::fixed)
+          std::streamsize oldPrecision = std::cout.precision(2);
+          std::cout << xmlFile << " (" << std::setiosflags(std::ios::fixed)
                     << timer.wallTime() - lastTime << " sec.) : " << (ret ? "failed" : "passed") << std::endl;
+          std::cout.precision(oldPrecision);
           lastTime = timer.wallTime();
         }
       }

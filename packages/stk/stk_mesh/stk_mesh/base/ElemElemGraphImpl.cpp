@@ -168,7 +168,7 @@ stk::mesh::EntityVector get_elements_to_communicate(const stk::mesh::BulkData& b
     return elements_to_communicate;
 }
 
-void pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
+size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
                                         const stk::mesh::BulkData& bulkData,
                                         ElemSideToProcAndFaceId &elements_to_communicate,
                                         const std::vector<stk::mesh::EntityId>& suggested_side_ids)
@@ -210,32 +210,10 @@ void pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
             comm.send_buffer(sharing_proc).pack<stk::mesh::EntityKey>(side_node_entity_keys[i]);
         }
     }
+    return counter;
 }
 
-void break_volume_element_connections_across_shells(const std::set<EntityId> & localElementsConnectedToRemoteShell, ElementGraph & elem_graph, SidesForElementGraph & via_sides)
-{
-    // Fix the case where the serial graph connected two volume elements together before
-    // it was known that there was a remote shell wedged between them (the "sandwich" conundrum).
-    // Also, cover the case where the mesh is modified after the graph is created to
-    // add a shell between existing volume elements.
-    //
-    if (localElementsConnectedToRemoteShell.size() > 1) {
-        for (LocalId localElemId: localElementsConnectedToRemoteShell) {
-            std::vector<LocalId>::iterator it = elem_graph[localElemId].begin();
-            while (it != elem_graph[localElemId].end()) {
-                const LocalId connectedElemId = *it;
-                if (localElementsConnectedToRemoteShell.find(connectedElemId) != localElementsConnectedToRemoteShell.end()) {
-                    const int offset = (it - elem_graph[localElemId].begin());
-                    it = elem_graph[localElemId].erase(it);
-                    via_sides[localElemId].erase(via_sides[localElemId].begin() + offset);
-                }
-                else {
-                    ++it;
-                }
-            }
-        }
-    }
-}
+
 
 std::vector<graphEdgeProc> get_elements_to_communicate(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
         const ElemElemGraph& elem_graph)
@@ -408,7 +386,7 @@ stk::mesh::Entity get_side_for_element(const stk::mesh::BulkData& bulkData, stk:
 bool create_or_delete_shared_side(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
         stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, bool create_shared_side, const stk::mesh::PartVector& side_parts,
         std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities,
-        size_t &id_counter, stk::mesh::EntityId suggested_local_side_id, stk::mesh::Part& sides_created_during_death)
+        size_t &id_counter, stk::mesh::Part& sides_created_during_death)
 {
     bool topology_modified = false;
 
@@ -580,6 +558,38 @@ void filter_for_candidate_elements_to_connect(const stk::mesh::BulkData & mesh,
         if (!foundEquivalent) {
             // Nothing matches at all, so flush the list of candidate elements
             connectedElementData.clear();
+        }
+    }
+}
+
+void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::BulkData &m_bulk_data, const std::vector<SharedEdgeInfo> &newlySharedEdges)
+{
+    std::vector<SharedEdgeInfo>::const_iterator iter = newlySharedEdges.begin();
+    std::vector<SharedEdgeInfo>::const_iterator endIter = newlySharedEdges.end();
+
+    for(; iter!= endIter; ++iter)
+    {
+        stk::mesh::EntityId localId = iter->m_locaElementlId;
+        stk::mesh::EntityId remoteId = iter->m_remoteElementId;
+        unsigned side_index    = iter->m_sideIndex;
+        int sharing_proc       = iter->m_procId;
+        stk::mesh::EntityId chosenId = iter->m_chosenSideId;
+
+        size_t numNodes= iter->m_sharedNodes.size();
+        std::vector<stk::mesh::EntityKey> side_node_entity_keys(numNodes);
+        for(size_t i=0; i<numNodes; ++i)
+        {
+            side_node_entity_keys[i] = m_bulk_data.entity_key(iter->m_sharedNodes[i]);
+        }
+
+        comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(localId);
+        comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(remoteId);
+        comm.send_buffer(sharing_proc).pack<unsigned>(side_index);
+        comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(chosenId);
+        comm.send_buffer(sharing_proc).pack<unsigned>(numNodes);
+        for(size_t i=0; i<numNodes; ++i)
+        {
+            comm.send_buffer(sharing_proc).pack<stk::mesh::EntityKey>(side_node_entity_keys[i]);
         }
     }
 }

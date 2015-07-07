@@ -57,7 +57,7 @@
 #include "ROL_CVaRVector.hpp"
 #include "ROL_CVaRBoundConstraint.hpp"
 #include "ROL_ParametrizedObjective.hpp"
-#include "ROL_MonteCarloGenerator.hpp"
+#include "ROL_BatchManager.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_SparseGridGenerator.hpp"
 #include "ROL_AbsoluteValue.hpp"
@@ -72,7 +72,6 @@
 #include "ROL_ExpUtility.hpp"
 #include "ROL_RiskAverseObjective.hpp"
 #include "ROL_RiskNeutralObjective.hpp"
-#include "ROL_StdEpetraBatchManager.hpp"
 #include "ROL_Quadrature.hpp"
 
 

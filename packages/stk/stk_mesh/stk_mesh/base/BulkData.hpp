@@ -393,6 +393,7 @@ public:
 
   //------------------------------------
 
+  void generate_new_ids_given_reserved_ids(stk::topology::rank_t rank, size_t numIdsNeeded, const std::vector<stk::mesh::EntityId>& reserved_ids, std::vector<stk::mesh::EntityId>& requestedIds) const;
   void generate_new_ids(stk::topology::rank_t rank, size_t numIdsNeeded, std::vector<stk::mesh::EntityId>& requestedIds) const;
 
   /** \brief Generate a set of entites with globally unique id's
@@ -961,6 +962,8 @@ protected: //functions
   void internal_finish_modification_end(impl::MeshModification::modification_optimization opt); // Mod Mark
 
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner); // Mod Mark
+
+  std::vector<uint64_t> internal_get_ids_in_use(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId>& reserved_ids = std::vector<stk::mesh::EntityId>()) const;
 
 private: //functions
 

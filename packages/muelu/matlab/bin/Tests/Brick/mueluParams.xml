@@ -1,0 +1,9 @@
+<!--MueLu parameters to run Jacobi smoother test-->
+<!--These parameters tell MueLu to use a MATLAB function as smoother-->
+
+<ParameterList name="MueLu">
+  <Parameter name="aggregation: type" type="string" value="brick"/>
+  <Parameter name="aggregation: brick x size" type="int" value="3"/>
+  <Parameter name="aggregation: brick y size" type="int" value="1"/>
+  <Parameter name="aggregation: brick z size" type="int" value="1"/>
+</ParameterList>
