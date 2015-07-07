@@ -48,6 +48,14 @@ IF(PyTrilinos_ENABLE_Epetra)
   SET(HAVE_EPETRA ON)
 ENDIF()
 
+IF(PyTrilinos_ENABLE_Tpetra)
+  SET(HAVE_TPETRA ON)
+ENDIF()
+
+IF(PyTrilinos_ENABLE_Domi)
+  SET(HAVE_DOMI ON)
+ENDIF()
+
 IF(PyTrilinos_ENABLE_STK)
   SET(HAVE_STK ON)
 ENDIF()
