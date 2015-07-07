@@ -209,7 +209,7 @@ namespace MueLu {
 
         // determine number of local parts
         LO maxPart = 0;
-        for(size_t k = 0; k < TVertLineIdSmoo.size(); k++) {
+        for(size_t k = 0; k < Teuchos::as<size_t>(TVertLineIdSmoo.size()); k++) {
           if(maxPart < TVertLineIdSmoo[k]) maxPart = TVertLineIdSmoo[k];
         }
 
