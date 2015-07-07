@@ -135,6 +135,7 @@ namespace MueLu {
       if (varName == "DofsPerNode")                     return GetFactory("Graph");
       if (varName == "Filtering")                       return GetFactory("Graph");
       if (varName == "LineDetection_VertLineIds")       return SetAndReturnDefaultFactory(varName, rcp(new LineDetectionFactory()));
+      if (varName == "LineDetection_VertLineIdsSmoo")   return GetFactory("LineDetection_VertLineIds");
       if (varName == "LineDetection_Layers")            return GetFactory("LineDetection_VertLineIds");
       if (varName == "CoarseNumZLayers")                return GetFactory("LineDetection_VertLineIds");
 
