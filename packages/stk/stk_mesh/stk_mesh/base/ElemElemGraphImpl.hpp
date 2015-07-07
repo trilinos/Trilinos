@@ -54,7 +54,7 @@ struct ConnectedElementData
     : m_procId(-1),
       m_elementId(std::numeric_limits<impl::LocalId>::max()),
       m_elementTopology(stk::topology::INVALID_TOPOLOGY),
-      m_sideIndex(std::numeric_limits<impl::LocalId>::max()),
+      m_sideIndex(std::numeric_limits<unsigned>::max()),
       m_suggestedFaceId(std::numeric_limits<impl::LocalId>::max()),
       m_isInPart(true)
     {}

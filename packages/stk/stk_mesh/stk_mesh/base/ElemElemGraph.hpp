@@ -162,6 +162,8 @@ protected:
 
     void break_remote_shell_connectivity_and_pack(stk::CommSparse& comm, impl::LocalId leftId, impl::LocalId rightId, int phase);
 
+    void pack_both_remote_shell_connectivity(stk::CommSparse &comm, impl::LocalId shellId, impl::LocalId leftId, impl::LocalId rightId);
+
     void unpack_remote_edge_across_shell(stk::CommSparse &comm);
 
     stk::mesh::BulkData &m_bulk_data;

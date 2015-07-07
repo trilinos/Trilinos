@@ -490,6 +490,21 @@ void ElemElemGraph::add_possibly_connected_elements_to_graph_using_side_nodes( c
                         impl::LocalId local_elem_id = get_local_element_id(localElem);
                         impl::LocalId negSgnRemoteElemId = -1*elemData.m_elementId;
 
+                        std::vector<int>::iterator sideIdIter = std::find(m_via_sides[local_elem_id].begin(), m_via_sides[local_elem_id].end(), side_index);
+                        if (sideIdIter != m_via_sides[local_elem_id].end())
+                        {
+                            if (elemData.m_elementTopology.is_shell())
+                            {
+                                const int sideIdOffset = (sideIdIter - m_via_sides[local_elem_id].begin());
+                                m_via_sides[local_elem_id].erase(sideIdIter);
+                                m_elem_graph[local_elem_id].erase(m_elem_graph[local_elem_id].begin() + sideIdOffset);
+                                --m_num_edges;
+                            }
+                            else
+                            {
+                                continue;
+                            }
+                        }
                         m_elem_graph[local_elem_id].push_back(negSgnRemoteElemId);
                         m_via_sides[local_elem_id].push_back(side_index);
                         ++m_num_edges;
@@ -1742,6 +1757,31 @@ void ElemElemGraph::break_remote_shell_connectivity_and_pack(stk::CommSparse &co
     }
 }
 
+void ElemElemGraph::pack_both_remote_shell_connectivity(stk::CommSparse &comm, impl::LocalId shellId, impl::LocalId leftId, impl::LocalId rightId)
+{
+    size_t index = 0;
+    while(index < m_elem_graph[shellId].size())
+    {
+        if (m_elem_graph[shellId][index] == rightId)
+        {
+            stk::mesh::Entity shellElem = m_local_id_to_element_entity[shellId];
+            int sharingProc = get_owning_proc_id_of_remote_element(shellElem, -rightId);
+
+            comm.send_buffer(sharingProc).pack<stk::mesh::EntityId>(-leftId);
+            comm.send_buffer(sharingProc).pack<stk::mesh::EntityId>(-rightId);
+        }
+        else if (m_elem_graph[shellId][index] == leftId)
+        {
+            stk::mesh::Entity shellElem = m_local_id_to_element_entity[shellId];
+            int sharingProc = get_owning_proc_id_of_remote_element(shellElem, -leftId);
+
+            comm.send_buffer(sharingProc).pack<stk::mesh::EntityId>(-rightId);
+            comm.send_buffer(sharingProc).pack<stk::mesh::EntityId>(-leftId);
+        }
+        ++index;
+    }
+}
+
 void ElemElemGraph::pack_remote_edge_across_shell(stk::CommSparse &comm, stk::mesh::EntityVector &addedShells, int phase)
 {
     for(stk::mesh::Entity &shell : addedShells)
@@ -1770,17 +1810,18 @@ void ElemElemGraph::pack_remote_edge_across_shell(stk::CommSparse &comm, stk::me
             continue;
         }
 
-        if (isLeftRemote == isRightRemote)
+        if (!isLeftRemote && !isRightRemote)
         {
             continue;
         }
 
-        if (!isLeftRemote)
-        {
+        if (isLeftRemote && isRightRemote) {
+            pack_both_remote_shell_connectivity(comm, shellId, leftId, rightId);
+        }
+        else if (!isLeftRemote) {
             break_remote_shell_connectivity_and_pack(comm, leftId, rightId, phase);
         }
-        else if (!isRightRemote)
-        {
+        else if (!isRightRemote) {
             break_remote_shell_connectivity_and_pack(comm, rightId, leftId, phase);
         }
     }
