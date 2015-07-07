@@ -45,8 +45,11 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
+#else
 #include "Epetra_SerialComm.h"
+#endif
 
 #include "ROL_StdVector.hpp"
 #include "ROL_StdBoundConstraint.hpp"
@@ -143,9 +146,9 @@ int main(int argc, char* argv[]) {
   Teuchos::RCP<Epetra_Comm> comm;
 #ifdef HAVE_MPI
   Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
-  comm     = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+  comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
-  comm     = Teuchos::rcp(new Epetra_SerialComm());
+  comm = Teuchos::rcp(new Epetra_SerialComm());
 #endif
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
