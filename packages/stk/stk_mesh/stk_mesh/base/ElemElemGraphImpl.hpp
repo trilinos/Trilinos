@@ -35,8 +35,8 @@ struct parallel_info
     bool m_in_part;
     stk::mesh::EntityId m_chosen_side_id;
 
-    parallel_info(int proc, int side_ord, int perm, stk::mesh::EntityId chosen_face_id) :
-        m_other_proc(proc), m_other_side_ord(side_ord), m_permutation(perm), m_in_part(true),
+    parallel_info(int proc, int side_ord, int perm, stk::mesh::EntityId chosen_face_id, bool inPart) :
+        m_other_proc(proc), m_other_side_ord(side_ord), m_permutation(perm), m_in_part(inPart),
         m_chosen_side_id(chosen_face_id) {}
 };
 
@@ -48,6 +48,16 @@ struct ConnectedElementData
     unsigned m_sideIndex;
     stk::mesh::EntityId m_suggestedFaceId;
     stk::mesh::EntityVector m_sideNodes;
+    bool m_isInPart;
+
+    ConnectedElementData()
+    : m_procId(-1),
+      m_elementId(std::numeric_limits<impl::LocalId>::max()),
+      m_elementTopology(stk::topology::INVALID_TOPOLOGY),
+      m_sideIndex(std::numeric_limits<impl::LocalId>::max()),
+      m_suggestedFaceId(std::numeric_limits<impl::LocalId>::max()),
+      m_isInPart(true)
+    {}
 };
 
 struct SharedEdgeInfo
@@ -58,6 +68,8 @@ struct SharedEdgeInfo
     unsigned m_sideIndex;
     stk::mesh::EntityId m_chosenSideId;
     stk::mesh::EntityVector m_sharedNodes;
+    bool m_isInPart;
+    stk::topology m_remoteElementTopology;
 };
 
 struct ShellConnectivityData
@@ -86,6 +98,7 @@ typedef std::vector<ConnectedElementData> ConnectedElementDataVector;
 
 NAMED_PAIR( EntitySidePair , stk::mesh::Entity , entity , unsigned , side_id )
 NAMED_PAIR( ProcFaceIdPair , int , proc , stk::mesh::EntityId , side_id )
+NAMED_PAIR( ProcVecFaceIdPair , std::vector<int> , proc_vec , stk::mesh::EntityId , side_id )
 
 typedef std::multimap<EntitySidePair, ProcFaceIdPair>  ElemSideToProcAndFaceId;
 
@@ -98,7 +111,7 @@ ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::Bul
 ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate);
 
 size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, ElemSideToProcAndFaceId& elements_to_communicate,
-        const std::vector<stk::mesh::EntityId>& suggested_face_ids);
+        const std::vector<stk::mesh::EntityId>& suggested_face_ids, const stk::mesh::Part &part);
 
 void add_possibly_connected_elements_to_graph_using_side_nodes(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
         SidesForElementGraph& via_sides, ParallelGraphInfo& parallel_graph_info,
@@ -107,7 +120,8 @@ void add_possibly_connected_elements_to_graph_using_side_nodes(const stk::mesh::
 
 void fill_parallel_graph(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
         SidesForElementGraph& via_sides, ParallelGraphInfo& parallel_graph_info,
-        ElemSideToProcAndFaceId& elem_side_comm, const std::vector<stk::mesh::EntityId>& suggested_face_ids);
+        ElemSideToProcAndFaceId& elem_side_comm, const std::vector<stk::mesh::EntityId>& suggested_face_ids,
+        const stk::mesh::Part &part);
 
 std::vector<graphEdgeProc> get_elements_to_communicate(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
         const ElemElemGraph& elem_graph);
@@ -119,8 +133,9 @@ void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<graphEdgePro
 
 bool create_or_delete_shared_side(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
         stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, bool create_face, const stk::mesh::PartVector& face_parts,
-        std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities,
-        size_t &id_counter, stk::mesh::Part& faces_created_during_death);
+        stk::mesh::Part &activePart, std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities,
+        stk::mesh::EntityVector &facesWithNodesToBeMarkedInactive,
+        size_t &id_counter, stk::mesh::EntityId suggested_local_face_id, stk::mesh::Part& faces_created_during_death);
 
 stk::mesh::Entity get_side_for_element(const stk::mesh::BulkData& bulkData, stk::mesh::Entity this_elem_entity, int side_id);
 

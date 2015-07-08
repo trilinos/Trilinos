@@ -1,11 +1,11 @@
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+IF(Kokkos_ENABLE_Serial)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     test_serial
     SOURCES main_serial.cpp 
     COMM serial mpi
     NUM_MPI_PROCS 1
     FAIL_REGULAR_EXPRESSION "FAILED"
-)
+  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     test_graphviz
@@ -14,14 +14,27 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     NUM_MPI_PROCS 1
     FAIL_REGULAR_EXPRESSION "FAILED"
 )
+ENDIF()
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
+IF(Kokkos_ENABLE_Pthread)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
     test_pthread
     SOURCES main_pthread.cpp 
     COMM serial mpi
     NUM_MPI_PROCS 1
     FAIL_REGULAR_EXPRESSION "FAILED"
-)
+  )
+ENDIF()
+
+IF(Kokkos_ENABLE_QTHREAD)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    test_qthread
+    SOURCES main_qthread.cpp 
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    FAIL_REGULAR_EXPRESSION "FAILED"
+  )
+ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(${PACKAGE_NAME}_Test_Files
         SOURCE_FILES mm_crs_input.mtx mm_crs_ichol.mtx

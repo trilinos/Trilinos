@@ -108,6 +108,16 @@ namespace MueLu {
 
   void IfpackSmoother::DeclareInput(Level &currentLevel) const {
     this->Input(currentLevel, "A");
+
+    if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
+        type_ == "LINESMOOTHING_BANDED RELAXATION" ||
+        type_ == "LINESMOOTHING_BANDEDRELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCKRELAXATION") {
+      this->Input(currentLevel, "CoarseNumZLayers");              // necessary for fallback criterion
+      this->Input(currentLevel, "LineDetection_VertLineIds"); // necessary to feed block smoother
+    } // if (type_ == "LINESMOOTHING_BANDEDRELAXATION")
   }
 
   void IfpackSmoother::Setup(Level &currentLevel) {
@@ -160,7 +170,63 @@ namespace MueLu {
         this->GetOStream(Statistics1) << eigRatioString << " (computed) = " << ratio << std::endl;
         this->SetParameter(eigRatioString, ParameterEntry(ratio));
       }
-    }
+    } // if (type_ == "Chebyshev")
+
+    if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
+        type_ == "LINESMOOTHING_BANDED RELAXATION" ||
+        type_ == "LINESMOOTHING_BANDEDRELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCKRELAXATION" ) {
+      ParameterList& myparamList = const_cast<ParameterList&>(this->GetParameterList());
+
+      LO CoarseNumZLayers = Factory::Get<LO>(currentLevel,"CoarseNumZLayers");
+      if (CoarseNumZLayers > 0) {
+        Teuchos::ArrayRCP<LO> TVertLineIdSmoo = Factory::Get< Teuchos::ArrayRCP<LO> >(currentLevel, "LineDetection_VertLineIds");
+
+        // determine number of local parts
+        LO maxPart = 0;
+        for(size_t k = 0; k < Teuchos::as<size_t>(TVertLineIdSmoo.size()); k++) {
+          if(maxPart < TVertLineIdSmoo[k]) maxPart = TVertLineIdSmoo[k];
+        }
+
+        size_t numLocalRows = A_->getNodeNumRows();
+        TEUCHOS_TEST_FOR_EXCEPTION(numLocalRows % TVertLineIdSmoo.size() != 0, Exceptions::RuntimeError, "MueLu::Ifpack2Smoother::Setup(): the number of local nodes is incompatible with the TVertLineIdsSmoo.");
+
+        if (numLocalRows == Teuchos::as<size_t>(TVertLineIdSmoo.size())) {
+          myparamList.set("partitioner: type","user");
+          myparamList.set("partitioner: map",&(TVertLineIdSmoo[0]));
+          myparamList.set("partitioner: local parts",maxPart+1);
+        } else {
+          // we assume a constant number of DOFs per node
+          size_t numDofsPerNode = numLocalRows / TVertLineIdSmoo.size();
+
+          // Create a new Teuchos::ArrayRCP<LO> of size numLocalRows and fill it with the corresponding information
+          Teuchos::ArrayRCP<LO> partitionerMap(numLocalRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
+          for (size_t blockRow = 0; blockRow < Teuchos::as<size_t>(TVertLineIdSmoo.size()); ++blockRow)
+            for (size_t dof = 0; dof < numDofsPerNode; dof++)
+              partitionerMap[blockRow * numDofsPerNode + dof] = TVertLineIdSmoo[blockRow];
+          myparamList.set("partitioner: type","user");
+          myparamList.set("partitioner: map",&(partitionerMap[0]));
+          myparamList.set("partitioner: local parts",maxPart + 1);
+        }
+
+        if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
+            type_ == "LINESMOOTHING_BANDED RELAXATION" ||
+            type_ == "LINESMOOTHING_BANDEDRELAXATION")
+          type_ = "block relaxation";
+        else
+          type_ = "block relaxation";
+      } else {
+        // line detection failed -> fallback to point-wise relaxation
+        this->GetOStream(Runtime0) << "Line detection failed: fall back to point-wise relaxation" << std::endl;
+        myparamList.remove("partitioner: type",false);
+        myparamList.remove("partitioner: map", false);
+        myparamList.remove("partitioner: local parts",false);
+        type_ = "point relaxation stand-alone";
+      }
+
+    } // if (type_ == "LINESMOOTHING_BANDEDRELAXATION")
 
     RCP<Epetra_CrsMatrix> epA = Utils::Op2NonConstEpetraCrs(A_);
 

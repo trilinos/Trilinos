@@ -220,12 +220,11 @@ namespace MueLu {
 
     // perform line detection
     if (NumZDir > 0) {
-      LO   *LayerId, *VertLineId, *VertLineIdSmoo;
+      LO   *LayerId, *VertLineId;
       Teuchos::ArrayRCP<LO>     TLayerId   = Teuchos::arcp<LO>(Nnodes);  LayerId       = TLayerId.getRawPtr();
       Teuchos::ArrayRCP<LO>     TVertLineId= Teuchos::arcp<LO>(Nnodes);  VertLineId    = TVertLineId.getRawPtr();
-      Teuchos::ArrayRCP<LO> TVertLineIdSmoo= Teuchos::arcp<LO>(Nnodes);  VertLineIdSmoo= TVertLineIdSmoo.getRawPtr();
 
-      NumZDir = ML_compute_line_info(LayerId, VertLineId, VertLineIdSmoo, Ndofs, BlkSize,
+      NumZDir = ML_compute_line_info(LayerId, VertLineId, Ndofs, BlkSize,
                                      Zorientation_, NumZDir,xptr,yptr,zptr, *(rowMap->getComm()));
       //it is NumZDir=NCLayers*NVertLines*DofsPerNode;
 
@@ -234,7 +233,6 @@ namespace MueLu {
       Set(currentLevel, "CoarseNumZLayers", NumZDir);
       Set(currentLevel, "LineDetection_Layers", TLayerId);
       Set(currentLevel, "LineDetection_VertLineIds", TVertLineId);
-      Set(currentLevel, "LineDetection_VertLineIdsSmoo", TVertLineIdSmoo);
     } else {
       Teuchos::ArrayRCP<LO>     TLayerId       = Teuchos::arcp<LO>(0);
       Teuchos::ArrayRCP<LO>     TVertLineId    = Teuchos::arcp<LO>(0);
@@ -245,7 +243,6 @@ namespace MueLu {
       Set(currentLevel, "CoarseNumZLayers", NumZDir);
       Set(currentLevel, "LineDetection_Layers", TLayerId);
       Set(currentLevel, "LineDetection_VertLineIds", TVertLineId);
-      Set(currentLevel, "LineDetection_VertLineIdsSmoo", TVertLineIdSmoo);
     }
 
     // automatically switch to vertical mode on the coarser levels
@@ -254,7 +251,7 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  LocalOrdinal LineDetectionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ML_compute_line_info(LocalOrdinal LayerId[], LocalOrdinal VertLineId[], LocalOrdinal VertLineIdSmoo[], LocalOrdinal Ndof, LocalOrdinal DofsPerNode, LocalOrdinal MeshNumbering, LocalOrdinal NumNodesPerVertLine, Scalar *xvals, Scalar *yvals, Scalar *zvals, const Teuchos::Comm<int>& comm) const {
+  LocalOrdinal LineDetectionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ML_compute_line_info(LocalOrdinal LayerId[], LocalOrdinal VertLineId[], LocalOrdinal Ndof, LocalOrdinal DofsPerNode, LocalOrdinal MeshNumbering, LocalOrdinal NumNodesPerVertLine, Scalar *xvals, Scalar *yvals, Scalar *zvals, const Teuchos::Comm<int>& comm) const {
 
     LO    Nnodes, NVertLines, MyNode;
     LO    NumCoords, next, subindex, subnext;
@@ -280,22 +277,19 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(RetVal == -2, Exceptions::RuntimeError, "Not semicoarsening as something is off with the number of degrees-of-freedom per node.\n");
 
     Nnodes = Ndof/DofsPerNode;
-    for (MyNode = 0; MyNode < Nnodes;  MyNode++) VertLineIdSmoo[MyNode]= -1;
     for (MyNode = 0; MyNode < Nnodes;  MyNode++) VertLineId[MyNode]    = -1;
     for (MyNode = 0; MyNode < Nnodes;  MyNode++) LayerId[MyNode]       = -1;
 
     if (MeshNumbering == VERTICAL) {
       for (MyNode = 0; MyNode < Nnodes; MyNode++) {
         LayerId[MyNode]= MyNode%NumNodesPerVertLine;
-        VertLineId[MyNode]= (MyNode- LayerId[MyNode])/NumNodesPerVertLine;  // vertical line numbering for semi-coarsening
-        VertLineIdSmoo[MyNode]= (MyNode- LayerId[MyNode])/NumNodesPerVertLine;// vertical line numbering for line smoothing
+        VertLineId[MyNode]= (MyNode- LayerId[MyNode])/NumNodesPerVertLine;
       }
     }
     else if (MeshNumbering == HORIZONTAL) {
       NVertLines = Nnodes/NumNodesPerVertLine;
       for (MyNode = 0; MyNode < Nnodes; MyNode++) {
-        VertLineId[MyNode]    = MyNode%NVertLines;  // vertical line numbering for semi-coarsening
-        VertLineIdSmoo[MyNode]= MyNode%NVertLines;  // vertical line numbering for line smoothing
+        VertLineId[MyNode]    = MyNode%NVertLines;
         LayerId[MyNode]   = (MyNode- VertLineId[MyNode])/NVertLines;
       }
     }
@@ -313,7 +307,7 @@ namespace MueLu {
 
       // sort coordinates in {x,y,z}vals (returned in {x,y,z}temp) so that we can order things according to lines
       // switch x and y coordinates for semi-coarsening...
-      sort_coordinates(NumCoords, OrigLoc, xvals, yvals, zvals, xtemp, ytemp, ztemp, true);
+      sort_coordinates(NumCoords, OrigLoc, xvals, yvals, zvals, xtemp, ytemp, ztemp, /*true*/ true);
 
       LO NumBlocks = 0;
       LO index = 0;
@@ -332,30 +326,6 @@ namespace MueLu {
         for (j= index; j < next; j++) {
           VertLineId[OrigLoc[j]] = NumBlocks;
           LayerId[OrigLoc[j]] = count++;
-        }
-        NumBlocks++;
-        index = next;
-      }
-
-      // build vertical line ordering for line smoothing:
-      // sort coordinates in {x,y,z}vals (returned in {x,y,z}temp)
-      sort_coordinates(NumCoords, OrigLoc, xvals, yvals, zvals, xtemp, ytemp, ztemp, false);
-
-      NumBlocks = 0;
-      index = 0;
-
-      while ( index < NumCoords ) {
-        xfirst = xtemp[index];  yfirst = ytemp[index];
-        next = index+1;
-        while ( (next != NumCoords) && (xtemp[next] == xfirst) &&
-                (ytemp[next] == yfirst))
-          next++;
-        if (NumBlocks == 0) {
-          NumNodesPerVertLine = next-index;
-        }
-        count = 0;
-        for (j= index; j < next; j++) {
-          VertLineIdSmoo[OrigLoc[j]] = NumBlocks;
         }
         NumBlocks++;
         index = next;

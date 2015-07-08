@@ -68,7 +68,9 @@ namespace Example {
     typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
     typedef SymbolicFactorHelper<CrsMatrixBaseType> SymbolicFactorHelperType;
 
+#ifdef HAVE_SHYLUICHOL_MKL 
     typedef typename CrsMatrixBaseType::value_type_array value_type_array;
+#endif
 
     typedef CrsMatrixView<CrsMatrixBaseType> CrsMatrixViewType;
     typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
@@ -86,7 +88,9 @@ namespace Example {
       t_reorder = 0.0,
       t_symbolic = 0.0,
       t_flat2hier = 0.0,
+#ifdef HAVE_SHYLUICHOL_MKL 
       t_mkl_seq = 0.0,
+#endif
       t_factor_seq = 0.0,
       t_factor_task = 0.0;
     const int start = -2;
