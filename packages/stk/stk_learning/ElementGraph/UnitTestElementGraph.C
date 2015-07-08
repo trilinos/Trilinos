@@ -6944,7 +6944,6 @@ void test_delete_element_from_graph_with_element_death(stk::mesh::BulkData::Auto
         stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
 
         stk::mesh::BulkData bulkData(meta, comm, autoAuraOption);
-        stk::ParallelMachine comm = bulkData.parallel();
         stk::unit_test_util::fill_mesh_using_stk_io("generated:3x1x3", bulkData, comm);
 
         bulkData.modification_begin();
