@@ -9,10 +9,32 @@
 namespace ElementDeathUtils
 {
 
+class ElementDeathBulkDataTester : public stk::mesh::BulkData
+{
+public:
+
+    ElementDeathBulkDataTester(stk::mesh::MetaData &mesh_meta_data,
+                               MPI_Comm comm,
+                               enum stk::mesh::BulkData::AutomaticAuraOption auraOption) :
+            stk::mesh::BulkData(mesh_meta_data, comm, auraOption)
+    {
+    }
+
+    void my_de_induce_unranked_part_from_nodes(const stk::mesh::EntityVector & deactivatedElements,
+                                               stk::mesh::Part & activePart)
+    {
+        this->de_induce_unranked_part_from_nodes(deactivatedElements, activePart);
+    }
+    void my_remove_boundary_faces_from_part(stk::mesh::ElemElemGraph &graph,
+                                            const stk::mesh::EntityVector & deactivatedElements,
+                                            stk::mesh::Part & activePart)
+    {
+        this->remove_boundary_faces_from_part(graph, deactivatedElements, activePart);
+    }
+};
+
 inline void deactivate_elements(const stk::mesh::EntityVector &deactivated_elems, stk::mesh::BulkData &bulkData, stk::mesh::Part& active)
 {
-    active.set_primary_entity_rank(stk::topology::ELEM_RANK);
-
     bulkData.modification_begin();
 
     for(size_t i = 0; i < deactivated_elems.size(); ++i)
@@ -21,8 +43,6 @@ inline void deactivate_elements(const stk::mesh::EntityVector &deactivated_elems
     }
 
     bulkData.modification_end();
-
-    active.set_primary_entity_rank(stk::topology::INVALID_RANK);
 }
 
 inline stk::mesh::Entity get_face_between_element_ids(stk::mesh::ElemElemGraph& graph, stk::mesh::BulkData& bulkData, stk::mesh::EntityId elem1Id, stk::mesh::EntityId elem2Id)

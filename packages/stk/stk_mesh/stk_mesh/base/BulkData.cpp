@@ -6542,7 +6542,7 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
         // entities are resolved along with previously existing shared entities.
 
         {
-            this->de_induce_unranked_part_from_nodes(elementGraph, killedElements, activePart);
+            this->de_induce_unranked_part_from_nodes(killedElements, activePart);
             this->remove_boundary_faces_from_part(elementGraph, killedElements, activePart);
 
             std::vector<EntityProc> sendList;
@@ -6554,6 +6554,10 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
         }
 
         this->check_mesh_consistency();
+    }
+    else
+    {
+        this->remove_boundary_faces_from_part(elementGraph, killedElements, activePart);
     }
 
     // -----------------------
@@ -6678,7 +6682,7 @@ std::ostream &operator<<(std::ostream &out, const stk::mesh::PartVector &partVec
 //    std::cerr << oss.str() << std::endl;
 //}
 
-void BulkData::de_induce_unranked_part_from_nodes(const stk::mesh::ElemElemGraph &graph, const stk::mesh::EntityVector & deactivatedElements, stk::mesh::Part & activePart)
+void BulkData::de_induce_unranked_part_from_nodes(const stk::mesh::EntityVector & deactivatedElements, stk::mesh::Part & activePart)
 {
     stk::mesh::EntityVector nodesToDeactivate;
 

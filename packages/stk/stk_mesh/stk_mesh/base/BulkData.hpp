@@ -970,8 +970,8 @@ protected: //functions
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner); // Mod Mark
 
   std::vector<uint64_t> internal_get_ids_in_use(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId>& reserved_ids = std::vector<stk::mesh::EntityId>()) const;
-  virtual void de_induce_unranked_part_from_nodes( const stk::mesh::ElemElemGraph &graph,
-                                            const stk::mesh::EntityVector & deactivatedElements,
+
+  virtual void de_induce_unranked_part_from_nodes(const stk::mesh::EntityVector & deactivatedElements,
                                             stk::mesh::Part & activePart);
   virtual void remove_boundary_faces_from_part(  stk::mesh::ElemElemGraph &graph,
                                          const stk::mesh::EntityVector & deactivatedElements,

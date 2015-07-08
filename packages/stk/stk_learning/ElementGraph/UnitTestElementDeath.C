@@ -159,12 +159,11 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
 
             ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
-            test_active_part_membership(bulkData, skin_faces_of_elem2, active);
-
             stk::mesh::perform_element_death(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
 
-            stk::mesh::Entity face_between_elem2_and_elem3 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
+            test_active_part_membership(bulkData, skin_faces_of_elem2, active);
 
+            stk::mesh::Entity face_between_elem2_and_elem3 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
             ASSERT_TRUE(bulkData.is_valid(face_between_elem2_and_elem3));
 
             test_face_membership_for_death(bulkData, internal_faces_of_elem2, boundary_mesh_parts);
@@ -201,15 +200,14 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
 
             ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
-            stk::mesh::Entity face_between_elem2_and_elem3 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
-
             stk::mesh::EntityId face_id;
 
+            stk::mesh::perform_element_death(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
+
+            stk::mesh::Entity face_between_elem2_and_elem3 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
             EXPECT_TRUE(bulkData.is_valid(face_between_elem2_and_elem3));
             face_id = bulkData.identifier(face_between_elem2_and_elem3);
             ASSERT_FALSE(bulkData.bucket(face_between_elem2_and_elem3).member(active));
-
-            stk::mesh::perform_element_death(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
 
             stk::mesh::Entity face_23 = bulkData.get_entity(stk::topology::FACE_RANK, face_id);
             EXPECT_TRUE(bulkData.is_valid(face_23));

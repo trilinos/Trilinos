@@ -3140,7 +3140,7 @@ TEST(ElementGraph, make_items_inactive)
         stk::mesh::Part& faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
         stk::mesh::PartVector boundary_mesh_parts { &faces_part };
         stk::io::put_io_part_attribute(faces_part);
-        stk::mesh::BulkData bulkData(meta, comm);
+        ElementDeathUtils::ElementDeathBulkDataTester bulkData(meta, comm, stk::mesh::BulkData::AUTO_AURA);
 
         stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
 
@@ -3169,18 +3169,9 @@ TEST(ElementGraph, make_items_inactive)
             deactivated_elems.push_back(elem3);
         }
 
-        active.set_primary_entity_rank(stk::topology::ELEM_RANK);
-
+        ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData, active);
         bulkData.modification_begin();
-
-        for(size_t i=0; i<deactivated_elems.size(); ++i)
-        {
-            bulkData.change_entity_parts(deactivated_elems[i], stk::mesh::PartVector(), stk::mesh::PartVector(1, &active));
-        }
-
-        bulkData.modification_end();
-
-        active.set_primary_entity_rank(stk::topology::INVALID_RANK);
+        bulkData.my_de_induce_unranked_part_from_nodes(deactivated_elems, active);
 
         for(size_t i=0; i<deactivated_elems.size(); ++i)
         {
@@ -3205,6 +3196,7 @@ TEST(ElementGraph, make_items_inactive)
             }
         }
 
+        bulkData.modification_end();
         ASSERT_EQ((nProc-1), graph.num_parallel_edges());
    }
 }
