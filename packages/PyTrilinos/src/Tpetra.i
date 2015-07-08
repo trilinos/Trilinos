@@ -619,8 +619,8 @@ public:
   void randomize();
   void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
   void reduce();
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >&
-  operator=(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >& source);
+  // MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >&
+  // operator=(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >& source);
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > >
   subCopy(const Teuchos::Range1D &colRng) const;
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > >
