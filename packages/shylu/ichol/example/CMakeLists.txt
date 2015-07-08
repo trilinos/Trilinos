@@ -132,6 +132,16 @@ IF(Kokkos_ENABLE_QTHREAD)
   )
 ENDIF()
 
+IF(TPL_ENABLE_HYPRE)
+  TRIBITS_ADD_EXECUTABLE(
+    hypre_euclid_performance
+    SOURCES example_hypre_euclid_performance.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
+
+
 # Temporary
 # =========
 
