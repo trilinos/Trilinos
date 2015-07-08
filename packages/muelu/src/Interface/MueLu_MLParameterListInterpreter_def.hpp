@@ -144,6 +144,7 @@ namespace MueLu {
     MUELU_READ_PARAM(paramList, "aggregation: nodes per aggregate",         int,                   1,       minPerAgg);
     MUELU_READ_PARAM(paramList, "aggregation: keep Dirichlet bcs",         bool,               false,       bKeepDirichletBcs); // This is a MueLu specific extension that does not exist in ML
     MUELU_READ_PARAM(paramList, "aggregation: max neighbours already aggregated", int,             0,       maxNbrAlreadySelected); // This is a MueLu specific extension that does not exist in ML
+    MUELU_READ_PARAM(paramList, "aggregation: aux enable",                 bool,               false,       agg_use_aux);
 
     MUELU_READ_PARAM(paramList, "null space: type",                 std::string,   "default vectors",       nullspaceType);
     MUELU_READ_PARAM(paramList, "null space: dimension",                    int,                  -1,       nullspaceDim); // TODO: ML default not in documentation
@@ -152,6 +153,8 @@ namespace MueLu {
     MUELU_READ_PARAM(paramList, "energy minimization: enable",             bool,               false,       bEnergyMinimization);
 
     MUELU_READ_PARAM(paramList, "RAP: fix diagonal",                       bool,               false,       bFixDiagonal); // This is a MueLu specific extension that does not exist in ML
+
+
 
     //
     // Move smoothers/aggregation/coarse parameters to sublists
@@ -218,6 +221,9 @@ namespace MueLu {
 
     // Create MueLu factories
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    if(agg_use_aux) {
+      dropFact->SetParameter("aggregation: drop scheme","distance laplacian");
+    }
 
     RCP<FactoryBase> AggFact = Teuchos::null;
     if(agg_type == "Uncoupled") {
