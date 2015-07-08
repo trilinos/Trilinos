@@ -7435,4 +7435,73 @@ int get_side_from_element1_to_element2(const impl::ElementGraph &elem_graph,
 }
 //EndDocExample1
 
+TEST(ElemGraph, test_initial_graph_creation_with_deactivated_elements)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    if(stk::parallel_machine_size(comm)==2)
+    {
+        stk::mesh::MetaData meta(3);
+        stk::mesh::Part &activePart = meta.declare_part("active");
+        BulkDataElementGraphTester bulkData(meta, comm);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+        stk::unit_test_util::put_mesh_into_part(bulkData, activePart);
+
+        bulkData.modification_begin();
+        if(bulkData.parallel_rank() == 0)
+        {
+            stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEMENT_RANK, 2);
+            bulkData.change_entity_parts(elem2, {}, {&activePart});
+        }
+        bulkData.modification_end();
+
+        stk::mesh::ElemElemGraph graph(bulkData, activePart);
+        if (bulkData.parallel_rank() == 0) {
+            stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK,1);
+            stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK,2);
+
+
+            ASSERT_EQ(1u, graph.get_num_connected_elems(elem1));
+
+            EXPECT_TRUE(graph.is_connected_elem_locally_owned(elem1, 0));
+            EXPECT_EQ(elem2, graph.get_connected_element(elem1, 0));
+
+
+            ASSERT_EQ(2u, graph.get_num_connected_elems(elem2));
+
+            EXPECT_TRUE(graph.is_connected_elem_locally_owned(elem2, 0));
+            EXPECT_EQ(elem1, graph.get_connected_element(elem2, 0));
+
+            EXPECT_TRUE(!graph.is_connected_elem_locally_owned(elem2, 1));
+            stk::mesh::EntityId remoteElemId = 3;
+            EXPECT_EQ(remoteElemId, graph.get_entity_id_of_remote_element(elem2, 1));
+            stk::mesh::impl::parallel_info &parallelInfo = graph.get_parallel_edge_info(elem2, remoteElemId);
+            EXPECT_EQ(1, parallelInfo.m_other_proc);
+            EXPECT_TRUE(parallelInfo.m_in_part);
+        }
+        else if (bulkData.parallel_rank() == 1) {
+            stk::mesh::Entity elem3 = bulkData.get_entity(stk::topology::ELEM_RANK,3);
+            stk::mesh::Entity elem4 = bulkData.get_entity(stk::topology::ELEM_RANK,4);
+
+
+            ASSERT_EQ(2u, graph.get_num_connected_elems(elem3));
+
+            EXPECT_TRUE(graph.is_connected_elem_locally_owned(elem3, 0));
+            EXPECT_EQ(elem4, graph.get_connected_element(elem3, 0));
+
+            EXPECT_TRUE(!graph.is_connected_elem_locally_owned(elem3, 1));
+            stk::mesh::EntityId remoteElemId = 2;
+            EXPECT_EQ(remoteElemId, graph.get_entity_id_of_remote_element(elem3, 1));
+            stk::mesh::impl::parallel_info &parallelInfo = graph.get_parallel_edge_info(elem3, remoteElemId);
+            EXPECT_EQ(0, parallelInfo.m_other_proc);
+            EXPECT_TRUE(!parallelInfo.m_in_part);
+
+
+            ASSERT_EQ(1u, graph.get_num_connected_elems(elem4));
+
+            EXPECT_TRUE(graph.is_connected_elem_locally_owned(elem4, 0));
+            EXPECT_EQ(elem3, graph.get_connected_element(elem4, 0));
+        }
+    }
+}
+
 }
