@@ -46,6 +46,7 @@
 #include "Panzer_config.hpp"
 
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
+#include "Thyra_BlockedLinearOpBase.hpp"
 
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
@@ -92,13 +93,11 @@ public:
   void applyInverseMassMatrix(const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > input, const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > output) const
   {
     Thyra::apply(*invMassMatrix_,Thyra::NOTRANS,*input,output.ptr());
-    //Thyra::scale(-1.0,output);
   }
 
   void applyMassMatrix(const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > input, const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > output) const
   {
     Thyra::apply(*mass_,Thyra::NOTRANS,*input,output.ptr());
-    //Thyra::scale(-1.0,output);
   }
 
 private: // data members
