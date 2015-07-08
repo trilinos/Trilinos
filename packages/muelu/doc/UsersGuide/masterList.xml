@@ -472,7 +472,7 @@
     </parameter>
 
     <parameter>
-      <name>aggreation: output file: graph edges</name>
+      <name>aggregation: output file: graph edges</name>
       <type>bool</type>
       <default>false</default>
       <description>Whether to draw all node connections along with the aggregates.</description>
