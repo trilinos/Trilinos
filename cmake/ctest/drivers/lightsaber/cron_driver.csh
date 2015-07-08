@@ -30,6 +30,9 @@ source ~/.cshrc
 
 module load gcc/4.7.2
 
+# Matlab goodies
+setenv LD_PRELOAD /usr/local/gcc/gcc-4.7.2/lib64/libstdc++.so.6 /usr/local/gcc/gcc-4.7.2/lib64/libgcc_s.so.1 /usr/local/gcc/gcc-4.7.2/lib64/libgfortran.so.3
+
 env
 
 # Machine independent cron_driver:

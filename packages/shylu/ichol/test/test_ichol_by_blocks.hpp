@@ -106,7 +106,7 @@ namespace Example {
     }
     {
       CrsHierTaskViewType H(&HU);
-      for (ordinal_type k=0;k<HU.NumNonZeros();++k)
+      for (size_type k=0;k<HU.NumNonZeros();++k)
         HU.Value(k).fillRowViewArray();
 
       auto future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::ByBlocks>::
@@ -119,7 +119,7 @@ namespace Example {
     
     {
       const auto epsilon = sqrt(NumericTraits<value_type>::epsilon());
-      for (ordinal_type k=0;k<UU_Unblocked.NumNonZeros();++k) {
+      for (size_type k=0;k<UU_Unblocked.NumNonZeros();++k) {
         auto tmp = abs(UU_Unblocked.Value(k) - UU_ByBlocks.Value(k));
         __ASSERT_TRUE__(tmp < epsilon);
       }

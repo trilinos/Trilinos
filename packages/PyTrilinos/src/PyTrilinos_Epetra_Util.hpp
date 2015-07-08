@@ -56,129 +56,207 @@
 
 // PyTrilinos include
 #include "PyTrilinos_config.h"
+#include "PyTrilinos_DAP.hpp"
 
 // Teuchos includes
-#ifdef HAVE_TEUCHOS
 #include "Teuchos_RCP.hpp"
-#endif
 
 // Epetra includes
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
+#include "Epetra_IntVector.h"
 #include "Epetra_Operator.h"
-
-
-////////////////////////////////////////////////////////////////////////
 
 namespace PyTrilinos
 {
 
 ////////////////////////////////////////////////////////////
 
-// Given a pointer to an Epetra_MultiVector, convert to a python
-// object and return the pointer.  Attempt to downcast to an
+// Given an RCP to an Epetra_MultiVector, convert to a python object
+// and return the pointer.  Attempt to downcast to an
 // Epetra_NumPyMultiVector.
-#ifdef HAVE_TEUCHOS
 PyObject *
 convertEpetraMultiVectorToPython(const Teuchos::RCP< Epetra_MultiVector > *emv);
-PyObject *
-convertEpetraMultiVectorToPython(const Teuchos::RCP< const Epetra_MultiVector > *emv);
-#else
-PyObject *
-convertEpetraMultiVectorToPython(const Epetra_MultiVector * emv);
-#endif
-
-// Given a pointer to an Epetra_Vector, convert to a python object and
-// return the pointer.  Attempt to downcast to an Epetra_NumPyVector.
-#ifdef HAVE_TEUCHOS
-PyObject *
-convertEpetraVectorToPython(const Teuchos::RCP< Epetra_Vector > *ev);
-PyObject *
-convertEpetraVectorToPython(const Teuchos::RCP< const Epetra_Vector > *ev);
-#else
-PyObject *
-convertEpetraVectorToPython(const Epetra_Vector * ev);
-#endif
-
-// Given a pointer to an Epetra_Operator, convert to a python
-// object and return the pointer.  Attempt to downcast to any one of
-// the many Epetra classes that derive from Epetra_Operator.
-#ifdef HAVE_TEUCHOS
-PyObject *
-convertEpetraOperatorToPython(const Teuchos::RCP< Epetra_Operator > *eo);
-PyObject *
-convertEpetraOperatorToPython(const Teuchos::RCP< const Epetra_Operator > *eo);
-#else
-PyObject *
-convertEpetraOperatorToPython(const Epetra_Operator * eo,
-                              int                     cnvt_flags=0);
-#endif
 
 ////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TEUCHOS
+// Given an RCP to a const Epetra_MultiVector, convert to a python
+// object and return the pointer.  Attempt to downcast to a const
+// Epetra_NumPyMultiVector.
+PyObject *
+convertEpetraMultiVectorToPython(const Teuchos::RCP< const Epetra_MultiVector > *emv);
 
-// Given a const Epetra_BlockMap, return a reference counted pointer
+////////////////////////////////////////////////////////////
+
+// Given an RCP to an Epetra_Vector, convert to a python object and
+// return the pointer.  Attempt to downcast to an Epetra_NumPyVector.
+PyObject *
+convertEpetraVectorToPython(const Teuchos::RCP< Epetra_Vector > *ev);
+
+////////////////////////////////////////////////////////////
+
+// Given an RCP to a const Epetra_Vector, convert to a python object
+// and return the pointer.  Attempt to downcast to a const
+// Epetra_NumPyVector.
+PyObject *
+convertEpetraVectorToPython(const Teuchos::RCP< const Epetra_Vector > *ev);
+
+////////////////////////////////////////////////////////////
+
+// Given an RCP to an Epetra_Operator, convert to a python object and
+// return the pointer.  Attempt to downcast to any one of the many
+// Epetra classes that derive from Epetra_Operator.
+PyObject *
+convertEpetraOperatorToPython(const Teuchos::RCP< Epetra_Operator > *eo);
+
+////////////////////////////////////////////////////////////
+
+// Given an RCP to a const Epetra_Operator, convert to a python object
+// and return the pointer.  Attempt to downcast to any one of the many
+// Epetra classes that derive from Epetra_Operator.
+PyObject *
+convertEpetraOperatorToPython(const Teuchos::RCP< const Epetra_Operator > *eo);
+
+////////////////////////////////////////////////////////////
+
+// Given a const Epetra_BlockMap &, return a reference counted pointer
 // to a const Epetra_Map.  If the downcast cannot be performed, throw a
 // PythonException.
-Teuchos::RCP<const Epetra_Map>
+Teuchos::RCP< const Epetra_Map >
 getEpetraMapPtrFromEpetraBlockMap(const Epetra_BlockMap & ebm);
+
+////////////////////////////////////////////////////////////
 
 // Given a python object and an attribute name, return a reference
 // counted pointer to the Epetra_Vector value of the attribute.  If
 // the attribute does not exist or the attribute is not an
 // Epetra_Vector, throw a PythonException.
-Teuchos::RCP<Epetra_Vector>
+Teuchos::RCP< Epetra_Vector >
 getEpetraVectorObjectAttr(PyObject   * object,
                           CONST char * name);
+
+////////////////////////////////////////////////////////////
 
 // Given a python object and an attribute name, return a reference
 // counted pointer to the const Epetra_Vector value of the attribute.
 // If the attribute does not exist or the attribute is not an
 // Epetra_Vector, throw a PythonException.
-Teuchos::RCP<const Epetra_Vector>
+Teuchos::RCP< const Epetra_Vector >
 getConstEpetraVectorObjectAttr(PyObject   * object,
                                CONST char * name);
+
+////////////////////////////////////////////////////////////
 
 // Given a python object and an attribute name, return a reference
 // counted pointer to the const Epetra_Vector value of the i-th item
 // of the attribute.  If the attribute does not exist or the attribute
 // is not a sequence of Epetra_Vectors, throw a PythonException.
-Teuchos::RCP<const Epetra_Vector>
+Teuchos::RCP< const Epetra_Vector >
 getConstEpetraVectorItemObjectAttr(PyObject   * object,
                                    CONST char * name,
                                    int          i);
+
+////////////////////////////////////////////////////////////
 
 // Given a python object and an attribute name, return a reference
 // counted pointer to the Epetra_MultiVector value of the attribute.
 // If the attribute does not exist or the attribute is not an
 // Epetra_MultiVector, throw a PythonException.
-Teuchos::RCP<Epetra_MultiVector>
+Teuchos::RCP< Epetra_MultiVector >
 getEpetraMultiVectorObjectAttr(PyObject   * object,
                                CONST char * name);
+
+////////////////////////////////////////////////////////////
 
 // Given a python object and an attribute name, return a reference
 // counted pointer to the const Epetra_MultiVector value of the
 // attribute.  If the attribute does not exist or the attribute is not
 // an Epetra_MultiVector, throw a PythonException.
-Teuchos::RCP<const Epetra_MultiVector>
+Teuchos::RCP< const Epetra_MultiVector >
 getConstEpetraMultiVectorObjectAttr(PyObject   * object,
                                     CONST char * name);
+
+////////////////////////////////////////////////////////////
 
 // Given a python object and an attribute name, return a reference
 // counted pointer to the Epetra_Operator value of the attribute.  If
 // the attribute does not exist or the attribute is not an
 // Epetra_Operator, throw a PythonException.
-Teuchos::RCP<Epetra_Operator>
+Teuchos::RCP< Epetra_Operator >
 getEpetraOperatorObjectAttr(PyObject   * object,
                             CONST char * name);
 
-#endif  // HAVE_TEUCHOS
+////////////////////////////////////////////////////////////
 
-// Given an Epetra_BlockMap, return a Python dimension data object,
-// which is a tuple of Python dimension data dictionaries that
+// Given a distributed array object, convert it to an RCP of a const
+// Epetra_Map.
+// Teuchos::RCP< const Epetra_Map >
+// convertToEpetraMap(const Epetra_Comm & epetraComm,
+//                    const DistArrayProtocol & distarray);
+
+////////////////////////////////////////////////////////////
+
+// Given a Python distributed array object, convert it to an RCP to an
+// Epetra_MultiVector.
+// Teuchos::RCP< Epetra_MultiVector >
+// convertDistArrayToEpetraMultiVector(PyObject * object);
+
+////////////////////////////////////////////////////////////
+
+// Given a Python distributed array object, convert it to an RCP to a
+// const Epetra_MultiVector.
+// Teuchos::RCP< const Epetra_MultiVector >
+// convertDistArrayToConstEpetraMultiVector(PyObject * object);
+
+////////////////////////////////////////////////////////////
+
+// Given a Python distributed array object, convert it to an RCP to an
+// Epetra_Vector.
+// Teuchos::RCP< Epetra_Vector >
+// convertDistArrayToEpetraVector(PyObject * object);
+
+////////////////////////////////////////////////////////////
+
+// Given a Python distributed array object, convert it to an RCP to a
+// const Epetra_Vector.
+// Teuchos::RCP< const Epetra_Vector >
+// convertDistArrayToConstEpetraVector(PyObject * object);
+
+////////////////////////////////////////////////////////////
+
+// Given a Python distributed array object, convert it to an RCP to an
+// Epetra_FEVector.
+// Teuchos::RCP< Epetra_FEVector >
+// convertDistArrayToEpetraFEVector(PyObject * object);
+
+////////////////////////////////////////////////////////////
+
+// Given a Python distributed array object, convert it to an RCP to a const
+// Epetra_FEVector.
+// Teuchos::RCP< const Epetra_FEVector >
+// convertDistArrayToConstEpetraFEVector(PyObject * object);
+
+////////////////////////////////////////////////////////////
+
+// Given a Python distributed array object, convert it to an RCP to an
+// Epetra_IntVector.
+// Teuchos::RCP< Epetra_IntVector >
+// convertDistArrayToEpetraIntVector(PyObject * object);
+
+////////////////////////////////////////////////////////////
+
+// Given a Python distributed array object, convert it to an RCP to a
+// const Epetra_IntVector.
+// Teuchos::RCP< const Epetra_IntVector >
+// convertDistArrayToConstEpetraIntVector(PyObject * object);
+
+////////////////////////////////////////////////////////////
+
+// Given a const Epetra_BlockMap &, return a Python dimension data
+// object, which is a tuple of Python dimension data dictionaries that
 // describe the Epetra_BlockMap, consistent with the DistArray
 // Protocol.  The extraDim argument is to allow for the multiple
 // vectors of an Epetra_MultiVector.  If an error occurs, return NULL.
@@ -188,10 +266,12 @@ PyObject *
 convertEpetraBlockMapToDimData(const Epetra_BlockMap & ebm,
                                int   extraDim=1);
 
+////////////////////////////////////////////////////////////
+
 // Given an Epetra_MultiVector, return a Python dictionary consistent
 // with the DistArray Protocol.  If an error occurs, return NULL.
-PyObject *
-convertEpetraMultiVectorToDAP(const Epetra_MultiVector & emv);
+// PyObject *
+// convertEpetraMultiVectorToDistArray(const Epetra_MultiVector & emv);
 
 ////////////////////////////////////////////////////////////////////////
 

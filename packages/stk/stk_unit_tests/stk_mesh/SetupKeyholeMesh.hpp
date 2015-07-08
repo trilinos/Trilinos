@@ -52,6 +52,10 @@
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include <stk_unit_test_utils/ioUtils.hpp>
+
+
+namespace stk { namespace mesh { namespace unit_test {
 
 inline
 void setupKeyholeMesh2D_case1(stk::mesh::BulkData& bulk)
@@ -176,3 +180,70 @@ void setupKeyholeMesh2D_case2(stk::mesh::BulkData& bulk)
   bulk.modification_end();
 }
 
+
+// element ids / proc_id:
+// |-------|-------|-------|
+// |       |       |       |
+// |  1/0  |  4/2  |  7/2  |
+// |       |       |       |
+// |-------|-------|-------|
+// |       |       |       |
+// |  2/0  |  5/1  |  8/2  |
+// |       |       |       |
+// |-------|-------|-------|
+// |       |       |       |
+// |  3/0  |  6/2  |  9/2  |
+// |       |       |       |
+// |-------|-------|-------|
+inline
+void setupKeyholeMesh3D_case1(stk::mesh::BulkData& bulk)
+{
+    ThrowRequire(bulk.parallel_size() == 3);
+    stk::unit_test_util::fill_mesh_using_stk_io("generated:3x1x3", bulk, bulk.parallel());
+
+    stk::mesh::EntityProcVec elementProcChanges;
+    if (bulk.parallel_rank() == 1) {
+        elementProcChanges.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::ELEM_RANK,4u),2));
+        elementProcChanges.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::ELEM_RANK,6u),2));
+    }
+    bulk.change_entity_owner(elementProcChanges);
+}
+
+// element ids / proc_id:
+// |-------|-------|-------|
+// |       |       |       |
+// |  1/0  |  4/2  |  7/2  |
+// |       |       |       |
+// |-------|-------|-------|
+// |       |       |       |
+// |  2/0  |  n/a  |  8/2  |
+// |       |       |       |
+// |-------|-------|-------|
+// |       |       |       |
+// |  3/0  |  6/2  |  9/2  |
+// |       |       |       |
+// |-------|-------|-------|
+// The element in the middle has been deleted
+
+inline
+void setupKeyholeMesh3D_case2(stk::mesh::BulkData& bulk)
+{
+    ThrowRequire(bulk.parallel_size() == 3);
+    stk::unit_test_util::fill_mesh_using_stk_io("generated:3x1x3", bulk, bulk.parallel());
+
+    stk::mesh::EntityProcVec elementProcChanges;
+    if (bulk.parallel_rank() == 1) {
+        elementProcChanges.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::ELEM_RANK,4),2));
+        elementProcChanges.push_back(stk::mesh::EntityProc(bulk.get_entity(stk::topology::ELEM_RANK,6),2));
+    }
+    bulk.change_entity_owner(elementProcChanges);
+    bulk.modification_begin();
+    if (bulk.parallel_rank() == 1) {
+        stk::mesh::Entity local_element5 = bulk.get_entity(stk::topology::ELEM_RANK,5);
+        const bool delete_success = bulk.destroy_entity(local_element5);
+        ThrowRequire(delete_success);
+    }
+    bulk.modification_end();
+}
+
+} } } // namespace stk mesh unit_test

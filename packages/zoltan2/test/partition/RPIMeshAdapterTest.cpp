@@ -214,6 +214,7 @@ int main(int narg, char *arg[]) {
     params.set("imbalance_tolerance", imbalance);
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
+    params.set("objects_to_partition","mesh_elements");
     params.set("algorithm", "scotch");
   }
   else if (action == "zoltan_rcb") {
@@ -247,6 +248,7 @@ int main(int narg, char *arg[]) {
     params.set("num_global_parts", nParts);
     Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
     zparams.set("LB_METHOD","HYPERGRAPH");
+    zparams.set("LB_APPROACH","REPARTITION");
     //params.set("compute_metrics","yes");
 
   }

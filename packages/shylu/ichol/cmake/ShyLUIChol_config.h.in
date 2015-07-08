@@ -1,1 +1,7 @@
-//
+#ifndef SHYLUICHOL_CONFIG_H
+#define SHYLUICHOL_CONFIG_H
+
+/* Define if want to build with MKL enabled */
+#cmakedefine HAVE_SHYLUICHOL_MKL
+
+#endif

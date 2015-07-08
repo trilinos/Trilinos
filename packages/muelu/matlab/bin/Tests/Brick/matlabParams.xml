@@ -1,0 +1,17 @@
+<!--MueLu parameters to run Jacobi smoother test-->
+
+<ParameterList name="MueLu">
+  <ParameterList name="Factories">
+    <ParameterList name="mySimpleAggregationFactory">
+      <Parameter name="factory" type="string" value="SingleLevelMatlabFactory"/>
+      <Parameter name="Provides" type="string" value="Aggregates"/>
+      <Parameter name="Needs" type="string" value="A"/>
+      <Parameter name="Function" type="string" value="simpleAggregation"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Hierarchy">
+    <ParameterList name="All">
+      <Parameter name="Aggregates" type="string" value="mySimpleAggregationFactory"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

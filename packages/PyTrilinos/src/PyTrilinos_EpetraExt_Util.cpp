@@ -49,9 +49,7 @@
 #include "swigpyrun.h"
 
 // Teuchos include
-#ifdef HAVE_TEUCHOS
 #include "Teuchos_Array.hpp"
-#endif
 
 // System includes
 #include <algorithm>
@@ -1160,8 +1158,6 @@ convertOutArgsFromPython(PyObject * source)
 
 ////////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_TEUCHOS
-
 namespace PyTrilinos
 {
 
@@ -1199,5 +1195,3 @@ PyObject * convertArrayOfIntToPython(const Teuchos::Array<int> & tai)
 }
 
 }  // Namespace PyTrilinos
-
-#endif   // HAVE_TEUCHOS

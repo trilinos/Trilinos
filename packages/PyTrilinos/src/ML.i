@@ -103,7 +103,6 @@ example subdirectory of the PyTrilinos package:
 #endif
 
 // Teuchos includes
-#ifdef HAVE_TEUCHOS
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
@@ -111,7 +110,6 @@ example subdirectory of the PyTrilinos package:
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
 #include "PyTrilinos_Teuchos_Util.hpp"
-#endif
 
 // Epetra includes
 #ifdef HAVE_EPETRA
@@ -189,9 +187,8 @@ example subdirectory of the PyTrilinos package:
 %ignore *::operator[];
 
 // External Trilinos package imports
-#ifdef HAVE_TEUCHOS
 %import "Teuchos.i"
-#endif
+
 #ifdef HAVE_EPETRA
 %include "Epetra_RowMatrix_Utils.i"
 %ignore Epetra_Version;
@@ -202,6 +199,7 @@ example subdirectory of the PyTrilinos package:
 import Epetra
 %}
 #endif
+
 #ifdef HAVE_IFPACK
 %ignore Ifpack_Version;
 %import  "IFPACK.i"
@@ -209,12 +207,10 @@ import Epetra
 #endif
 
 // Teuchos::RCP handling
-#ifdef HAVE_TEUCHOS
 %teuchos_rcp(MLAPI::DoubleVector)
 %teuchos_rcp(MLAPI::ML_Operator_Box)
 #ifdef HAVE_EPETRA
 %teuchos_rcp(ML_Epetra::MultiLevelPreconditioner)
-#endif
 #endif
 
 // General exception handling
@@ -791,7 +787,6 @@ namespace MLAPI
 // ml_MultiLevelPreconditioner support //
 /////////////////////////////////////////
 %include "ml_MultiLevelPreconditioner.h"
-#ifdef HAVE_TEUCHOS
 #ifdef HAVE_EPETRA
 namespace ML_Epetra
 {
@@ -818,13 +813,11 @@ namespace ML_Epetra
 }
 }
 #endif
-#endif
 
 ///////////////////////////////////
 // MLAPI_InverseOperator support //
 ///////////////////////////////////
 %include "MLAPI_InverseOperator.h"
-#ifdef HAVE_TEUCHOS
 namespace MLAPI
 {
   %extend InverseOperator
@@ -846,7 +839,6 @@ namespace MLAPI
     }
   }
 }
-#endif
 
 //////////////////////////////////
 // MLAPI_Operator_Utils support //
@@ -886,7 +878,6 @@ namespace MLAPI
 ///////////////////////////
 %include "MLAPI_Gallery.h"
 
-#ifdef HAVE_TEUCHOS
 %inline
 {
   MLAPI::Operator GetPNonSmoothed(const MLAPI::Operator& A,
@@ -912,7 +903,6 @@ namespace MLAPI
     return(true);
   }
 }
-#endif
 
 // Turn off the exception handling
 %exception;

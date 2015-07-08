@@ -118,7 +118,7 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
 
         ElementDeathUtils::put_mesh_into_part(bulkData, active);
 
-        stk::mesh::ElemElemGraph graph(bulkData);
+        stk::mesh::ElemElemGraph graph(bulkData, active);
 
         size_t num_gold_edges = 6 / bulkData.parallel_size();
         ASSERT_EQ(num_gold_edges, graph.num_edges());
@@ -241,7 +241,7 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
 
         ElementDeathUtils::put_mesh_into_part(bulkData, active);
 
-        stk::mesh::ElemElemGraph graph(bulkData);
+        stk::mesh::ElemElemGraph graph(bulkData, active);
 
         size_t num_gold_edges = 6 / bulkData.parallel_size();
         ASSERT_EQ(num_gold_edges, graph.num_edges());

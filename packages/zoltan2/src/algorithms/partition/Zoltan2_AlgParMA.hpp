@@ -59,14 +59,14 @@
 //  This approach allows development closer to that of PUMI setup but at the 
 //  cost of creating an extra mesh representation.
 // 
-//!  Available ParMA algorithms are given by setting the parma_method parameter 
-//!  of the sublist parma_paramaters to one of the following:
-//!  Vertex       - Balances targeting vertex imbalance
-//!  Element      - Balances targeting element imbalance
-//!  VtxElm       - Balances targeting vertex and element imbalance
-//!  VtxEdgeElm   - Balances targeting vertex, edge, and element imbalance
-//!  Ghost        - Balances using ghost element aware diffusion      
-//!  Shape        - Optimizes shape of parts by increasing the size of small part boundaries
+//  Available ParMA algorithms are given by setting the parma_method parameter 
+//  of the sublist parma_paramaters to one of the following:
+//  Vertex       - Balances targeting vertex imbalance
+//  Element      - Balances targeting element imbalance
+//  VtxElm       - Balances targeting vertex and element imbalance
+//  VtxEdgeElm   - Balances targeting vertex, edge, and element imbalance
+//  Ghost        - Balances using ghost element aware diffusion      
+//  Shape        - Optimizes shape of parts by increasing the size of small part boundaries
 //////////////////////////////////////////////////////////////////////////////
 
 #ifndef HAVE_ZOLTAN2_PARMA

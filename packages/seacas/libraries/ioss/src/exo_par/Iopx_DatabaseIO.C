@@ -4016,9 +4016,9 @@ namespace Iopx {
               out_data = TOPTR(i32data);
             } else {
               i64data.reserve(file_count);
-              assert(i64data.size() == file_count);
               map_nodeset_id_data(nodeOwningProcessor, nodesetOwnedNodes[ns], myProcessor,
                                   (int64_t*)data, num_to_get, i64data);
+              assert(i64data.size() == file_count);
               map_local_to_global_implicit(TOPTR(i64data), file_count, nodeGlobalImplicitMap);
               out_data = TOPTR(i64data);
             }

@@ -20,6 +20,7 @@
 #include <stk_mesh/base/ElemElemGraphImpl.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/memory_util.hpp>
@@ -27,11 +28,13 @@
 #include <stk_util/environment/ReportHandler.hpp>
 
 #include <stk_io/IossBridge.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_unit_test_utils/getOption.h>
 
 #include "UnitTestElementDeathUtils.hpp"
+#include <stk_unit_tests/stk_mesh/SetupKeyholeMesh.hpp>
 
 namespace
 {
@@ -40,13 +43,13 @@ class ElemElemGraphTester : public stk::mesh::ElemElemGraph
 {
 public:
     ElemElemGraphTester(stk::mesh::BulkData& bulkData)
-      : ElemElemGraph(bulkData) {};
+      : ElemElemGraph(bulkData, bulkData.mesh_meta_data().universal_part()) {};
 
-    virtual ~ElemElemGraphTester() {};
+    virtual ~ElemElemGraphTester() {}
 
     void fill_graph() { ElemElemGraph::fill_graph(); }
 
-    void fill_parallel_graph(stk::mesh::impl::ElemSideToProcAndFaceId& elem_side_comm) { ElemElemGraph::fill_parallel_graph(elem_side_comm); }
+    void fill_parallel_graph(stk::mesh::impl::ElemSideToProcAndFaceId& elem_side_comm) { ElemElemGraph::fill_parallel_graph(elem_side_comm, m_bulk_data.mesh_meta_data().universal_part()); }
 
     stk::mesh::impl::ElementGraph & get_element_graph() { return m_elem_graph; }
     stk::mesh::impl::SidesForElementGraph & get_via_sides() { return m_via_sides; }
@@ -91,6 +94,11 @@ public:
         }
 
         return side;
+    }
+
+    std::vector<stk::mesh::EntityId> get_copy_of_all_ids() const
+    {
+        return m_suggested_side_ids;
     }
 };
 
@@ -176,6 +184,10 @@ public:
         return m_entity_keys.size();
     }
 
+    std::vector<uint64_t> my_internal_get_ids_in_use_this_proc_for_locally_owned(stk::topology::rank_t rank) const
+    {
+        return internal_get_ids_in_use(rank);
+    }
 };
 
 using namespace stk::mesh::impl;
@@ -203,6 +215,35 @@ ElemElemGraphTester create_base_1x1x4_elem_graph_for_addition(stk::ParallelMachi
 
 ElemElemGraphTester create_base_1x1x4_elem_graph_for_deletion(stk::ParallelMachine &comm, stk::mesh::BulkData &bulk);
 
+void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vector<unsigned> > & shared_nodeIDs_and_procs );
+
+void put_all_faces_in_io_part(stk::mesh::BulkData &mesh, stk::mesh::Selector locally_owned, stk::mesh::Part& face_output_part)
+{
+    mesh.modification_begin();
+    stk::mesh::PartVector part_vector;
+    part_vector.push_back(&face_output_part);
+    stk::mesh::EntityVector stk_faces;
+    stk::mesh::get_entities(mesh, stk::topology::FACE_RANK, stk_faces);
+    for(size_t count = 0; count < stk_faces.size(); ++count)
+    {
+        if(locally_owned(mesh.bucket(stk_faces[count])))
+        {
+            mesh.change_entity_parts(stk_faces[count], part_vector);
+        }
+    }
+    mesh.modification_end();
+}
+
+void writeStkDebuggingFile(stk::io::StkMeshIoBroker &stkMeshIoBroker, stk::mesh::BulkData &mesh, const std::string &output_name)
+{
+    stk::mesh::Part & face_output_part = mesh.mesh_meta_data().declare_part_with_topology("output_face_name", stk::topology::TRI_3);
+    stk::io::put_io_part_attribute(face_output_part);
+    put_all_faces_in_io_part(mesh, mesh.mesh_meta_data().locally_owned_part(), face_output_part);
+
+    size_t resultFileIndex = stkMeshIoBroker.create_output_mesh(output_name, stk::io::WRITE_RESULTS);
+    stkMeshIoBroker.write_output_mesh(resultFileIndex);
+}
+
 void test_element_graph_add_elements_to_graph(stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
@@ -224,6 +265,142 @@ TEST(ElementGraph, add_elements_to_graph_aura_on)
 TEST(ElementGraph, add_elements_to_graph_aura_off)
 {
     test_element_graph_add_elements_to_graph(stk::mesh::BulkData::NO_AUTO_AURA);
+}
+
+void test_similarity_on_both_procs(const std::vector<stk::mesh::EntityId> &ids_in_use, stk::ParallelMachine comm)
+{
+    std::vector<stk::mesh::EntityId> global_ids_in_use;
+    stk::parallel_vector_concat(comm, ids_in_use, global_ids_in_use);
+    std::sort(global_ids_in_use.begin(), global_ids_in_use.end());
+
+    std::vector<stk::mesh::EntityId>::iterator iter = std::unique(global_ids_in_use.begin(), global_ids_in_use.end());
+    size_t num_unique = iter - global_ids_in_use.begin();
+    EXPECT_GE(num_unique, ids_in_use.size());
+}
+
+void test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData bulkData(meta, comm, auto_aura_option);
+
+    const int p_size  = stk::parallel_machine_size(comm);
+    const int p_rank = stk::parallel_machine_rank(comm);
+
+    if (2 != p_size)
+    {
+        return;
+    }
+
+    stk::mesh::Part * hexPart = &meta.declare_part_with_topology("hex_part", stk::topology::HEX_8);
+
+    stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulkData, comm);
+
+//    stk::io::StkMeshIoBroker stkio(comm);
+//    stkio.set_bulk_data(bulkData);
+//    writeStkDebuggingFile(stkio, bulkData, "hex1x2x2.exo");
+
+    std::vector<unsigned> counts;
+    stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
+
+    ElemElemGraphTester elem_graph(bulkData);
+
+    EXPECT_EQ(1u, elem_graph.size());
+    EXPECT_EQ(1u, counts[stk::topology::ELEM_RANK]);
+
+    const std::vector<size_t> numHex{1,1};
+    stk::mesh::EntityIdVector hexNodeIDs[] {
+        { 8, 7, 16, 15, 12, 11, 18, 17 },
+        { 4, 3, 14, 13,  8,  7, 16, 15 }
+    };
+    stk::mesh::EntityIdVector hexElemIDs {3, 4};
+
+    // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
+    std::vector< std::vector<unsigned> > shared_nodeIDs_and_procs
+    {
+        { 0,  3, 1 },  // proc 0
+        { 0,  4, 1 },
+        { 0, 11, 1 },
+        { 0, 12, 1 },
+        { 0, 15, 1 },
+        { 0, 16, 1 },
+        { 1,  3, 0 },  // proc 1
+        { 1,  4, 0 },
+        { 1, 11, 0 },
+        { 1, 12, 0 },
+        { 1, 15, 0 },
+        { 1, 16, 0 },
+    };
+
+    bulkData.modification_begin();
+    stk::mesh::declare_element(bulkData, *hexPart, hexElemIDs[p_rank], hexNodeIDs[p_rank]);
+    setup_node_sharing(bulkData, shared_nodeIDs_and_procs );
+    bulkData.modification_end();
+
+    stk::mesh::EntityVector elements_to_add;
+
+    if (0 == p_rank)
+    {
+        stk::mesh::Entity elem3 = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
+        elements_to_add.push_back(elem3);
+    }
+    else
+    {
+        stk::mesh::Entity elem4 = bulkData.get_entity(stk::topology::ELEM_RANK, 4);
+        elements_to_add.push_back(elem4);
+    }
+
+    elem_graph.add_elements_to_graph(elements_to_add);
+
+    if (0 == p_rank)
+    {
+        EXPECT_EQ(5, elem_graph.check_connectivity(1, 2));
+        EXPECT_EQ(2, elem_graph.check_connectivity(1, 4));
+        EXPECT_EQ(0, elem_graph.check_connectivity(3, 2));
+        EXPECT_EQ(4, elem_graph.check_connectivity(3, 4));
+    }
+    else
+    {
+        EXPECT_EQ(4, elem_graph.check_connectivity(2, 1));
+        EXPECT_EQ(2, elem_graph.check_connectivity(2, 3));
+        EXPECT_EQ(0, elem_graph.check_connectivity(4, 1));
+        EXPECT_EQ(5, elem_graph.check_connectivity(4, 3));
+    }
+    EXPECT_EQ(2u, elem_graph.size());
+    EXPECT_EQ(4u, elem_graph.num_edges());
+    EXPECT_EQ(4u, elem_graph.num_parallel_edges());
+
+    std::vector<stk::mesh::EntityId> ids = elem_graph.get_copy_of_all_ids();
+    std::sort(ids.begin(), ids.end());
+    std::vector<stk::mesh::EntityId>::iterator iter = std::unique(ids.begin(), ids.end());
+    bool ids_are_unique = iter == ids.end();
+    EXPECT_TRUE(ids_are_unique);
+
+    stk::mesh::impl::ParallelGraphInfo p_graph_info = elem_graph.get_parallel_graph_info();
+    std::vector<stk::mesh::EntityId> chosen_ids;
+    stk::mesh::impl::ParallelGraphInfo::iterator iter1 = p_graph_info.begin();
+    for(;iter1!=p_graph_info.end();++iter1)
+    {
+        chosen_ids.push_back(iter1->second.m_chosen_side_id);
+    }
+
+    std::sort(chosen_ids.begin(), chosen_ids.end());
+    iter = std::unique(chosen_ids.begin(), chosen_ids.end());
+    ids_are_unique = iter == chosen_ids.end();
+    EXPECT_TRUE(ids_are_unique);
+
+    test_similarity_on_both_procs(chosen_ids, bulkData.parallel());
+}
+
+TEST(ElementGraph, add_elements_to_pre_existing_graph_and_mesh_aura_on)
+{
+    test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(ElementGraph, add_elements_to_pre_existing_graph_and_mesh_aura_off)
+{
+    test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 void test_delete_elements_from_graph(ElemElemGraphTester &elem_graph, std::vector<stk::mesh::EntityId> &ids_to_delete)
@@ -262,6 +439,7 @@ void test_delete_elements_from_graph(ElemElemGraphTester &elem_graph, std::vecto
     EXPECT_EQ(numLocallyOwnedElems, elem_graph.size());
 
     unsigned numEdges = 0;
+    unsigned numParallelEdges = 0;
     for (stk::mesh::EntityId elem_id : currentElements)
     {
         stk::mesh::Entity elem = bulkData.get_entity(stk::topology::ELEM_RANK, elem_id);
@@ -274,20 +452,33 @@ void test_delete_elements_from_graph(ElemElemGraphTester &elem_graph, std::vecto
         stk::mesh::EntityId leftNeighbor = elem_id - 1;
         if (currentElements.find(leftNeighbor) != currentElements.end())
         {
-
             EXPECT_EQ(4, elem_graph.check_connectivity(elem_id, leftNeighbor));
             ++numEdges;
+
+            stk::mesh::Entity leftElem = bulkData.get_entity(stk::topology::ELEM_RANK, leftNeighbor);
+            bool ownedLeftNeighbor = bulkData.is_valid(leftElem) && bulkData.bucket(leftElem).owned();
+            if(!ownedLeftNeighbor)
+            {
+                numParallelEdges++;
+            }
         }
 
         stk::mesh::EntityId rightNeighbor = elem_id + 1;
         if (currentElements.find(rightNeighbor) != currentElements.end())
         {
-
             EXPECT_EQ(5, elem_graph.check_connectivity(elem_id, rightNeighbor));
             ++numEdges;
+
+            stk::mesh::Entity rightElem = bulkData.get_entity(stk::topology::ELEM_RANK, rightNeighbor);
+            bool ownedRightNeighbor = bulkData.is_valid(rightElem) && bulkData.bucket(rightElem).owned();
+            if(!ownedRightNeighbor)
+            {
+                numParallelEdges++;
+            }
         }
     }
     EXPECT_EQ(numEdges, elem_graph.num_edges());
+    EXPECT_EQ(numParallelEdges, elem_graph.num_parallel_edges());
 }
 
 void test_element_graph_delete_elements_from_graph(stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
@@ -353,6 +544,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
 
         EXPECT_EQ(0u, elem_graph.size());
         EXPECT_EQ(0u, elem_graph.num_edges());
+        EXPECT_EQ(0u, elem_graph.num_parallel_edges());
 
         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
 
@@ -382,6 +574,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
 
         EXPECT_EQ(4u, elem_graph.size());
         EXPECT_EQ(6u, elem_graph.num_edges());
+        EXPECT_EQ(0u, elem_graph.num_parallel_edges());
 
         EXPECT_EQ(5, elem_graph.check_local_connectivity(elem1, elem2));
         EXPECT_EQ(4, elem_graph.check_local_connectivity(elem2, elem1));
@@ -400,6 +593,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
 
         EXPECT_EQ(2u, elem_graph.size());
         EXPECT_EQ(0u, elem_graph.num_edges());
+        EXPECT_EQ(0u, elem_graph.num_parallel_edges());
 
         EXPECT_EQ(-1, elem_graph.check_local_connectivity(elem1, elem2));
         EXPECT_EQ(-1, elem_graph.check_local_connectivity(elem2, elem1));
@@ -418,6 +612,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
 
         EXPECT_EQ(4u, elem_graph.size());
         EXPECT_EQ(6u, elem_graph.num_edges());
+        EXPECT_EQ(0u, elem_graph.num_parallel_edges());
 
         EXPECT_EQ(5, elem_graph.check_local_connectivity(elem1, elem2));
         EXPECT_EQ(4, elem_graph.check_local_connectivity(elem2, elem1));
@@ -427,6 +622,27 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         EXPECT_EQ(4, elem_graph.check_local_connectivity(elem4, elem3));
         EXPECT_EQ(-1, elem_graph.check_local_connectivity(elem1, elem3));
         EXPECT_EQ(-1, elem_graph.check_local_connectivity(elem2, elem4));
+
+        elems_to_delete.clear();
+        elems_to_delete.push_back(elem4);
+        elems_to_delete.push_back(elem2);
+        elems_to_delete.push_back(elem1);
+        elems_to_delete.push_back(elem3);
+
+        elem_graph.delete_elements_from_graph(elems_to_delete);
+
+        EXPECT_EQ(0u, elem_graph.size());
+        const stk::mesh::impl::ElementGraph &e_graph = elem_graph.get_element_graph();
+        for(unsigned i=0; i<e_graph.size(); ++i)
+        {
+            EXPECT_EQ(0u, e_graph[i].size());
+        }
+
+        const stk::mesh::impl::SidesForElementGraph &via_sides = elem_graph.get_via_sides();
+        for(unsigned i=0; i<via_sides.size(); ++i)
+        {
+            EXPECT_EQ(0u, via_sides[i].size());
+        }
     }
 }
 
@@ -498,6 +714,7 @@ TEST(ElementGraph, HexAddShellSerial)
     elem_graph.add_elements_to_graph(added_shells);
 
     EXPECT_EQ(2u, elem_graph.size());
+    EXPECT_EQ(0u, elem_graph.num_parallel_edges());
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -514,6 +731,7 @@ TEST(ElementGraph, HexAddShellSerial)
     EXPECT_EQ(hex1, elem_graph.get_connected_element(shell2, 0));
     EXPECT_TRUE(elem_graph.is_connected_elem_locally_owned(shell2, 0));
 
+    EXPECT_EQ(0u, elem_graph.num_parallel_edges());
 }
 
 TEST( ElementGraph, HexDelShellSerial )
@@ -572,7 +790,7 @@ TEST( ElementGraph, HexDelShellSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -588,6 +806,8 @@ TEST( ElementGraph, HexDelShellSerial )
 
     // Connectivity for Hex Element 1
     EXPECT_EQ(0u, elemElemGraph.get_num_connected_elems(hex1));
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
+
 }
 
 TEST( ElementGraph, HexDelShellHexSerial )
@@ -647,7 +867,7 @@ TEST( ElementGraph, HexDelShellHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -673,6 +893,8 @@ TEST( ElementGraph, HexDelShellHexSerial )
     EXPECT_EQ(4,    elemElemGraph.get_side_id_to_connected_element(hex2, 0));
     EXPECT_EQ(hex1, elemElemGraph.get_connected_element(hex2, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
+
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, DISABLED_HexAddShellAddShellSerial )
@@ -729,7 +951,7 @@ TEST( ElementGraph, DISABLED_HexAddShellAddShellSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     mesh.modification_begin();
     stk::mesh::EntityVector added_shells;
@@ -764,6 +986,8 @@ TEST( ElementGraph, DISABLED_HexAddShellAddShellSerial )
     EXPECT_EQ(1,    elemElemGraph.get_side_id_to_connected_element(shell3, 0));
     EXPECT_EQ(hex1, elemElemGraph.get_connected_element(shell3, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
+
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, HexAddShellHexSerial )
@@ -820,7 +1044,7 @@ TEST( ElementGraph, HexAddShellHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     mesh.modification_begin();
     stk::mesh::EntityVector added_shells;
@@ -855,6 +1079,8 @@ TEST( ElementGraph, HexAddShellHexSerial )
     EXPECT_EQ(hex2, elemElemGraph.get_connected_element(shell3, 1));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell3, 1));
+
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, DISABLED_HexAddShellAddShellHexSerial )
@@ -912,7 +1138,7 @@ TEST( ElementGraph, DISABLED_HexAddShellAddShellHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     mesh.modification_begin();
     stk::mesh::EntityVector added_shells;
@@ -963,6 +1189,8 @@ TEST( ElementGraph, DISABLED_HexAddShellAddShellHexSerial )
     EXPECT_EQ(hex2, elemElemGraph.get_connected_element(shell4, 1));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell4, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell4, 1));
+
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 
@@ -1392,6 +1620,8 @@ TEST(ElementGraph, create_element_graph_serial)
             }
         }
 
+        EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
+
         if (stk::parallel_machine_rank(comm) == 0)
         {
             for(size_t i=0;i<wall_times.size();++i)
@@ -1451,6 +1681,7 @@ TEST(ElementGraph, create_element_graph_parallel)
         int right_side_id = 5;
 
         EXPECT_EQ(2u, elem_graph.size());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
 
         if (stk::parallel_machine_rank(comm) == 0)
         {
@@ -1611,6 +1842,8 @@ TEST(ElementGraph, skin_mesh_using_element_graph_serial)
                     EXPECT_EQ(right_side_id, via_sides[i][1]);
                 }
             }
+
+            EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
         }
 
         if (stk::parallel_machine_rank(comm) == 0)
@@ -1650,7 +1883,7 @@ void change_entity_owner_hex_test_2_procs(bool aura_on)
         int numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
         EXPECT_EQ(2, numLocallyOwnedElems);
 
-        stk::mesh::ElemElemGraph elem_graph(bulkData);
+        ElemElemGraphTester elem_graph(bulkData);
 
         // Create a vector of the elements to be moved
         std::vector <stk::mesh::Entity> elems_to_move;
@@ -1724,6 +1957,8 @@ void change_entity_owner_hex_test_2_procs(bool aura_on)
 
             ASSERT_THROW(elem_graph.get_parallel_edge_info(elem_3, stk::mesh::EntityId(2)), std::logic_error);
         }
+
+        EXPECT_EQ(1u, elem_graph.num_parallel_edges());
     }
 }
 
@@ -1769,7 +2004,7 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
         int numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
         EXPECT_EQ(2, numLocallyOwnedElems);
 
-        stk::mesh::ElemElemGraph elem_graph(bulkData);
+        ElemElemGraphTester elem_graph(bulkData);
 
         // Create a vector of the elements to be moved
         std::vector <stk::mesh::Entity> elems_to_move;
@@ -1852,6 +2087,8 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
 
             ASSERT_THROW(elem_graph.get_parallel_edge_info(elem_2, stk::mesh::EntityId(3)), std::logic_error);
        }
+
+        EXPECT_EQ(1u, elem_graph.num_parallel_edges());
     }
 }
 
@@ -1903,7 +2140,7 @@ void change_entity_owner_hex_test_4_procs(bool aura_on)
         int numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
         EXPECT_EQ(1, numLocallyOwnedElems);
 
-        stk::mesh::ElemElemGraph elem_graph(bulkData);
+        ElemElemGraphTester elem_graph(bulkData);
 
         wall_times.push_back(stk::wall_time());
         msgs.push_back("after fill-graph");
@@ -1949,12 +2186,25 @@ void change_entity_owner_hex_test_4_procs(bool aura_on)
 
             stk::mesh::Entity elem_3 = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
             ASSERT_THROW(elem_graph.get_parallel_edge_info(elem_3, stk::mesh::EntityId(2)), std::logic_error);
+
+            EXPECT_EQ(2u, elem_graph.num_parallel_edges());
         }
         else if (proc == 0)
         {
             stk::mesh::Entity elem_1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
             impl::parallel_info &elem_1_to_2_p_info = elem_graph.get_parallel_edge_info(elem_1, stk::mesh::EntityId(2));
             EXPECT_EQ(2, elem_1_to_2_p_info.m_other_proc);
+            EXPECT_EQ(1u, elem_graph.num_parallel_edges());
+        }
+        else if (proc == 1)
+        {
+            EXPECT_EQ(0u, elem_graph.size());
+            EXPECT_EQ(0u, elem_graph.num_edges());
+            EXPECT_EQ(0u, elem_graph.num_parallel_edges());
+        }
+        else if (proc == 3)
+        {
+            EXPECT_EQ(1u, elem_graph.num_parallel_edges());
         }
     }
 }
@@ -2078,7 +2328,7 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
 
         setup_hex_shell_hex_mesh(bulkData);
 
-        stk::mesh::ElemElemGraph elem_graph(bulkData);
+        ElemElemGraphTester elem_graph(bulkData);
 
         const Entity hex1   = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
         const Entity hex3   = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
@@ -2090,9 +2340,11 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
             EXPECT_EQ(5,  elem_graph.get_side_id_to_connected_element(hex1, 0));
             EXPECT_EQ(2u, elem_graph.get_entity_id_of_remote_element(hex1, 0));
             EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(hex1, 0));
+            EXPECT_EQ(1u, elem_graph.num_edges());
+            EXPECT_EQ(1u, elem_graph.num_parallel_edges());
         }
         else if (proc == 1) {
-            // Connectivity for Shell Element 3
+            // Connectivity for Shell Element 2
             EXPECT_EQ(2u, elem_graph.get_num_connected_elems(shell2));
             EXPECT_EQ(0,  elem_graph.get_side_id_to_connected_element(shell2, 0));
             EXPECT_EQ(1,  elem_graph.get_side_id_to_connected_element(shell2, 1));
@@ -2100,13 +2352,17 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
             EXPECT_EQ(1u, elem_graph.get_entity_id_of_remote_element(shell2, 1));
             EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(shell2, 0));
             EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(shell2, 1));
+            EXPECT_EQ(2u, elem_graph.num_edges());
+            EXPECT_EQ(2u, elem_graph.num_parallel_edges());
         }
         else if (proc == 2) {
-            // Connectivity for Hex Element 2
+            // Connectivity for Hex Element 3
             EXPECT_EQ(1u, elem_graph.get_num_connected_elems(hex3));
             EXPECT_EQ(4,  elem_graph.get_side_id_to_connected_element(hex3, 0));
             EXPECT_EQ(2u, elem_graph.get_entity_id_of_remote_element(hex3, 0));
             EXPECT_FALSE(elem_graph.is_connected_elem_locally_owned(hex3, 0));
+            EXPECT_EQ(1u, elem_graph.num_edges());
+            EXPECT_EQ(1u, elem_graph.num_parallel_edges());
         }
 
         stk::mesh::EntityId elem_to_move_global_id = 2;
@@ -2135,6 +2391,8 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
             stk::mesh::Entity elem_1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
             impl::parallel_info& elem1_to_elem2_info = elem_graph.get_parallel_edge_info(elem_1, stk::mesh::EntityId(2));
             EXPECT_EQ(2, elem1_to_elem2_info.m_other_proc);
+            EXPECT_EQ(1u, elem_graph.num_edges());
+            EXPECT_EQ(1u, elem_graph.num_parallel_edges());
         }
         if (proc == 1)
         {
@@ -2145,6 +2403,8 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
             ASSERT_THROW(elem_graph.get_parallel_edge_info(elem_2, stk::mesh::EntityId(1)), std::logic_error);
 
             ASSERT_THROW(elem_graph.get_parallel_edge_info(elem_2, stk::mesh::EntityId(3)), std::logic_error);
+            EXPECT_EQ(0u, elem_graph.num_edges());
+            EXPECT_EQ(0u, elem_graph.num_parallel_edges());
         }
         if (proc == 2)
         {
@@ -2154,6 +2414,8 @@ void change_entity_owner_hex_shell_hex_test_3_procs(bool aura_on)
             stk::mesh::Entity elem_2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
             impl::parallel_info& elem2_to_elem1_info = elem_graph.get_parallel_edge_info(elem_2, stk::mesh::EntityId(1));
             EXPECT_EQ(0, elem2_to_elem1_info.m_other_proc);
+            EXPECT_EQ(3u, elem_graph.num_edges());
+            EXPECT_EQ(1u, elem_graph.num_parallel_edges());
         }
     }
 }
@@ -2184,7 +2446,8 @@ TEST(ElementGraph, skin_mesh_using_element_graph_parallel)
     msgs.push_back("program-start");
     mem_usage.push_back(stk::get_memory_usage_now());
 
-    if(stk::parallel_machine_size(comm) <= 2)
+    unsigned nProc = stk::parallel_machine_size(comm);
+    if(nProc <= 2)
     {
         unsigned spatialDim = 3;
         stk::mesh::MetaData meta(spatialDim);
@@ -2242,6 +2505,9 @@ TEST(ElementGraph, skin_mesh_using_element_graph_parallel)
 
         size_t num_faces = counts[stk::topology::FACE_RANK];
         EXPECT_EQ(18u, num_faces);
+
+        EXPECT_EQ(6u/nProc, elemElemGraph.num_edges());
+        EXPECT_EQ((nProc-1), elemElemGraph.num_parallel_edges());
 
         if (stk::parallel_machine_rank(comm) == 0)
         {
@@ -2327,8 +2593,9 @@ TEST(ElementGraph, test_parallel_graph_info_data_structure)
         int permutation = 0;
         stk::mesh::EntityId chosen_face_id = 1;
 
+        const bool inActivePart = true;
         parallel_graph_info.insert(std::make_pair(std::make_pair(local_element, other_element), parallel_info(other_proc, other_side_ord, permutation,
-                chosen_face_id)));
+                chosen_face_id,inActivePart)));
 
         size_t num_elems_this_proc = elem_graph.size();
         EXPECT_EQ(2u, num_elems_this_proc);
@@ -2384,6 +2651,9 @@ TEST(ElementGraph, test_parallel_graph_info_with_parallel_element_graph)
 
             test_parallel_graph_info(elem_graph, parallel_graph_info, local_element, other_element, other_proc, other_side_ord, permutation);
         }
+
+        EXPECT_EQ(3u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -2714,7 +2984,9 @@ TEST(ElementGraph, make_items_inactive)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-    if(stk::parallel_machine_size(comm) <= 2)
+    unsigned nProc = stk::parallel_machine_size(comm);
+
+    if(nProc <= 2)
     {
         unsigned spatialDim = 3;
 
@@ -2732,10 +3004,11 @@ TEST(ElementGraph, make_items_inactive)
 
         ElementDeathUtils::put_mesh_into_part(bulkData, active);
 
-        stk::mesh::ElemElemGraph graph(bulkData);
+        ElemElemGraphTester graph(bulkData);
 
         size_t num_gold_edges =  6/bulkData.parallel_size();
         ASSERT_EQ(num_gold_edges, graph.num_edges());
+        ASSERT_EQ((nProc-1), graph.num_parallel_edges());
 
         stk::mesh::EntityVector deactivated_elems;
 
@@ -2785,6 +3058,8 @@ TEST(ElementGraph, make_items_inactive)
                 }
             }
         }
+
+        ASSERT_EQ((nProc-1), graph.num_parallel_edges());
    }
 }
 
@@ -2831,7 +3106,7 @@ TEST(ElementGraph, test_element_death)
             std::ostringstream os;
             os << "Proc id: " << bulkData.parallel_rank() << std::endl;
 
-            stk::mesh::ElemElemGraph elementGraph(bulkData);
+            ElemElemGraphTester elementGraph(bulkData);
 
             double elapsed_graph_time = stk::wall_time() - start_graph;
             os << "Time to create graph: " << elapsed_graph_time << std::endl;
@@ -2930,7 +3205,7 @@ TEST( ElementGraph, HexHexHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1 = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -2956,6 +3231,9 @@ TEST( ElementGraph, HexHexHexSerial )
     EXPECT_EQ(4,    elemElemGraph.get_side_id_to_connected_element(hex3, 0));
     EXPECT_EQ(hex2, elemElemGraph.get_connected_element(hex3, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex3, 0));
+
+    EXPECT_EQ(4u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, HexShellSerial )
@@ -3014,7 +3292,7 @@ TEST( ElementGraph, HexShellSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3030,6 +3308,9 @@ TEST( ElementGraph, HexShellSerial )
     EXPECT_EQ(1,              elemElemGraph.get_side_id_to_connected_element(shell2, 0));
     EXPECT_EQ(hex1, elemElemGraph.get_connected_element(shell2, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell2, 0));
+
+    EXPECT_EQ(2u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, AdjacentHexShellSerial )
@@ -3098,7 +3379,7 @@ TEST( ElementGraph, AdjacentHexShellSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3134,6 +3415,9 @@ TEST( ElementGraph, AdjacentHexShellSerial )
     EXPECT_EQ(1,    elemElemGraph.get_side_id_to_connected_element(shell4, 0));
     EXPECT_EQ(hex2, elemElemGraph.get_connected_element(shell4, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell4, 0));
+
+    EXPECT_EQ(6u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, DISABLED_HexShellShellSerial )
@@ -3193,7 +3477,7 @@ TEST( ElementGraph, DISABLED_HexShellShellSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3219,6 +3503,9 @@ TEST( ElementGraph, DISABLED_HexShellShellSerial )
     EXPECT_EQ(1,    elemElemGraph.get_side_id_to_connected_element(shell3, 0));
     EXPECT_EQ(hex1, elemElemGraph.get_connected_element(shell3, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
+
+    EXPECT_EQ(4u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, HexShellHexSerial )
@@ -3278,7 +3565,7 @@ TEST( ElementGraph, HexShellHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3304,6 +3591,9 @@ TEST( ElementGraph, HexShellHexSerial )
     EXPECT_EQ(hex2, elemElemGraph.get_connected_element(shell3, 1));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell3, 1));
+
+    EXPECT_EQ(4u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, DISABLED_HexShellShellHexSerial )
@@ -3364,7 +3654,7 @@ TEST( ElementGraph, DISABLED_HexShellShellHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3406,6 +3696,9 @@ TEST( ElementGraph, DISABLED_HexShellShellHexSerial )
     EXPECT_EQ(hex2, elemElemGraph.get_connected_element(shell4, 1));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell4, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell4, 1));
+
+    EXPECT_EQ(8u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, DISABLED_HexShellReversedShellHexSerial )
@@ -3466,7 +3759,7 @@ TEST( ElementGraph, DISABLED_HexShellReversedShellHexSerial )
     }
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3508,6 +3801,9 @@ TEST( ElementGraph, DISABLED_HexShellReversedShellHexSerial )
     EXPECT_EQ(hex2, elemElemGraph.get_connected_element(shell4, 1));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell4, 0));
     EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell4, 1));
+
+    EXPECT_EQ(8u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
 void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vector<unsigned> > & shared_nodeIDs_and_procs )
@@ -3524,7 +3820,7 @@ void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vecto
     }
 }
 
-TEST( ElementGraph, Hex0Hex0Hex1Serial )
+TEST( ElementGraph, Hex0Hex0Hex1Parallel )
 {
     //  ID.proc
     //
@@ -3589,7 +3885,7 @@ TEST( ElementGraph, Hex0Hex0Hex1Serial )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1 = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3610,6 +3906,9 @@ TEST( ElementGraph, Hex0Hex0Hex1Serial )
         EXPECT_EQ(3u,   elemElemGraph.get_entity_id_of_remote_element(hex2, 1));
         EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
+
+        EXPECT_EQ(3u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Hex Element 3
@@ -3617,10 +3916,13 @@ TEST( ElementGraph, Hex0Hex0Hex1Serial )
         EXPECT_EQ(4,    elemElemGraph.get_side_id_to_connected_element(hex3, 0));
         EXPECT_EQ(2u,   elemElemGraph.get_entity_id_of_remote_element(hex3, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex3, 0));
+
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
 }
 
-TEST( ElementGraph, Hex0Hex1Hex0Serial )
+TEST( ElementGraph, Hex0Hex1Hex0Parallel )
 {
     //  ID.proc
     //
@@ -3693,7 +3995,7 @@ TEST( ElementGraph, Hex0Hex1Hex0Serial )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1 = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3722,9 +4024,12 @@ TEST( ElementGraph, Hex0Hex1Hex0Serial )
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
     }
+
+    EXPECT_EQ(2u, elemElemGraph.num_edges());
+    EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
 }
 
-TEST( ElementGraph, Hex0Hex1Hex2Serial )
+TEST( ElementGraph, Hex0Hex1Hex2Parallel )
 {
     //  ID.proc
     //
@@ -3797,7 +4102,7 @@ TEST( ElementGraph, Hex0Hex1Hex2Serial )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1 = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -3809,6 +4114,8 @@ TEST( ElementGraph, Hex0Hex1Hex2Serial )
         EXPECT_EQ(5,  elemElemGraph.get_side_id_to_connected_element(hex1, 0));
         EXPECT_EQ(2u, elemElemGraph.get_entity_id_of_remote_element(hex1, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Hex Element 2
@@ -3819,6 +4126,8 @@ TEST( ElementGraph, Hex0Hex1Hex2Serial )
         EXPECT_EQ(3u, elemElemGraph.get_entity_id_of_remote_element(hex2, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 2) {
         // Connectivity for Hex Element 3
@@ -3826,6 +4135,8 @@ TEST( ElementGraph, Hex0Hex1Hex2Serial )
         EXPECT_EQ(4,  elemElemGraph.get_side_id_to_connected_element(hex3, 0));
         EXPECT_EQ(2u, elemElemGraph.get_entity_id_of_remote_element(hex3, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex3, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -3906,25 +4217,34 @@ TEST( ElementGraph, Hex0Shell1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
 
     if (p_rank == 0) {
         // Connectivity for Hex Element 1
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
         EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(hex1));
         EXPECT_EQ(5,  elemElemGraph.get_side_id_to_connected_element(hex1, 0));
         EXPECT_EQ(2u, elemElemGraph.get_entity_id_of_remote_element(hex1, 0));
+        EXPECT_EQ(1,  elemElemGraph.get_owning_proc_id_of_remote_element(hex1, 2));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
     }
     else if (p_rank == 1) {
         // Connectivity for Shell Element 2
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
         EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(shell2));
         EXPECT_EQ(1,  elemElemGraph.get_side_id_to_connected_element(shell2, 0));
         EXPECT_EQ(1u, elemElemGraph.get_entity_id_of_remote_element(shell2, 0));
+        EXPECT_EQ(0,  elemElemGraph.get_owning_proc_id_of_remote_element(shell2, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell2, 0));
     }
+
+    EXPECT_EQ(1u, elemElemGraph.num_edges());
+    EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, Hex0DelShell1Parallel )
@@ -4004,7 +4324,7 @@ TEST( ElementGraph, Hex0DelShell1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4024,10 +4344,418 @@ TEST( ElementGraph, Hex0DelShell1Parallel )
 
     if (p_rank == 0) {
         // Connectivity for Hex Element 1
+        EXPECT_EQ(0u, elemElemGraph.num_edges());
+        EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
         EXPECT_EQ(0u, elemElemGraph.get_num_connected_elems(hex1));
     }
     else if (p_rank == 1) {
+        EXPECT_EQ(0u, elemElemGraph.num_edges());
+        EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
         EXPECT_EQ(0u, elemElemGraph.size());
+    }
+
+    EXPECT_EQ(0u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
+}
+
+TEST( ElementGraph, Hex0AddShell1Parallel )
+{
+    //  ID.proc
+    //
+    //          3.0------------7.0
+    //          /|             /|
+    //         / |            / |
+    //        /  |           /  |
+    //      4.0------------8.0  |
+    //       |   |          |   |
+    //       |   |   1.0    |2.1|
+    //       |   |          |   |
+    //       |  2.0---------|--6.0
+    //       |  /           |  /
+    //       | /            | /
+    //       |/             |/
+    //      1.0------------5.0
+    //                      ^
+    //                      |
+    //                       ---- Add a single shell element
+
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    unsigned p_size = stk::parallel_machine_size(pm);
+    unsigned p_rank = stk::parallel_machine_rank(pm);
+
+    if(p_size != 2u)
+    {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+
+    stk::mesh::Part * hexPart   = &meta.declare_part_with_topology("hex_part",   stk::topology::HEX_8);
+    stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_QUAD_4);
+    meta.commit();
+
+    std::vector<stk::mesh::EntityIdVector> hexNodeIDs {
+        { 1, 2, 3, 4, 5,  6,  7,  8 }
+    };
+    stk::mesh::EntityId hexElemIDs[] = { 1 };
+    stk::mesh::EntityId hexElemOwningProc[] = { 0 };
+
+    std::vector<stk::mesh::EntityIdVector> shellNodeIDs {
+        { 5, 6, 7, 8 }
+    };
+    stk::mesh::EntityId shellElemIDs[] = { 2 };
+    stk::mesh::EntityId shellElemOwningProc[] = { 1 };
+
+    // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
+    std::vector< std::vector<unsigned> > shared_nodeIDs_and_procs
+    {
+        { 0, 5, 1 },  // proc 0
+        { 0, 6, 1 },
+        { 0, 7, 1 },
+        { 0, 8, 1 },
+        { 1, 5, 0 },  // proc 1
+        { 1, 6, 0 },
+        { 1, 7, 0 },
+        { 1, 8, 0 }
+    };
+
+    mesh.modification_begin();
+    for (size_t i = 0; i < hexNodeIDs.size(); ++i) {
+        if (hexElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *hexPart, hexElemIDs[i], hexNodeIDs[i]);
+        }
+    }
+    mesh.modification_end();
+
+    ElemElemGraphTester elemElemGraph(mesh);
+
+    EXPECT_EQ(0u, elemElemGraph.num_edges());
+    EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
+
+    mesh.modification_begin();
+    for (size_t i = 0; i < shellNodeIDs.size(); ++i) {
+        if (shellElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *shellPart, shellElemIDs[i], shellNodeIDs[i]);
+        }
+    }
+    setup_node_sharing(mesh, shared_nodeIDs_and_procs);
+    mesh.modification_end();
+
+    const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+    const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
+
+
+    stk::mesh::EntityVector elements_to_add;
+    if (p_rank == 1) {
+        elements_to_add.push_back(shell2);
+    }
+    elemElemGraph.add_elements_to_graph(elements_to_add);
+
+    if (p_rank == 0) {
+        // Connectivity for Hex Element 1
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
+        EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(hex1));
+        EXPECT_EQ(5,  elemElemGraph.get_side_id_to_connected_element(hex1, 0));
+        EXPECT_EQ(2u, elemElemGraph.get_entity_id_of_remote_element(hex1, 0));
+        EXPECT_EQ(1,  elemElemGraph.get_owning_proc_id_of_remote_element(hex1, 2));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
+    }
+    else if (p_rank == 1) {
+        // Connectivity for Shell Element 2
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
+        EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(shell2));
+        EXPECT_EQ(1,  elemElemGraph.get_side_id_to_connected_element(shell2, 0));
+        EXPECT_EQ(1u, elemElemGraph.get_entity_id_of_remote_element(shell2, 0));
+        EXPECT_EQ(0,  elemElemGraph.get_owning_proc_id_of_remote_element(shell2, 1));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell2, 0));
+    }
+}
+
+
+TEST( ElementGraph, Hex0AddShell0Hex1Parallel )
+{
+    //  ID.proc
+    //
+    //          3.0------------7.0-----------11.1
+    //          /|             /|             /|
+    //         / |            / |            / |
+    //        /  |           /  |           /  |
+    //      4.0------------8.0-----------12.1  |
+    //       |   |          |   |          |   |
+    //       |   |   1.0    |3.0|   2.1    |   |
+    //       |   |          |   |          |   |
+    //       |  2.0---------|--6.0---------|-10.1
+    //       |  /           |  /           |  /
+    //       | /            | /            | /
+    //       |/             |/             |/
+    //      1.0------------5.0------------9.1
+    //                      ^
+    //                      |
+    //                       ---- Add a Single shell element here
+
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    unsigned p_size = stk::parallel_machine_size(pm);
+    unsigned p_rank = stk::parallel_machine_rank(pm);
+
+    if(p_size != 2u)
+    {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+
+    stk::mesh::Part * hexPart   = &meta.declare_part_with_topology("hex_part",   stk::topology::HEX_8);
+    stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_QUAD_4);
+    meta.commit();
+
+    std::vector<stk::mesh::EntityIdVector> hexNodeIDs {
+        { 1, 2, 3, 4, 5,  6,  7,  8 },
+        { 5, 6, 7, 8, 9, 10, 11, 12 }
+    };
+    stk::mesh::EntityId hexElemIDs[] = { 1, 2 };
+    stk::mesh::EntityId hexElemOwningProc[] = { 0, 1 };
+
+    std::vector<stk::mesh::EntityIdVector> shellNodeIDs {
+        { 5, 6, 7, 8 }
+    };
+    stk::mesh::EntityId shellElemIDs[] = { 3 };
+    stk::mesh::EntityId shellElemOwningProc[] = { 0 };
+
+    // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
+    std::vector< std::vector<unsigned> > shared_nodeIDs_and_procs
+    {
+        { 0, 5, 1 },  // proc 0
+        { 0, 6, 1 },
+        { 0, 7, 1 },
+        { 0, 8, 1 },
+        { 1, 5, 0 },  // proc 1
+        { 1, 6, 0 },
+        { 1, 7, 0 },
+        { 1, 8, 0 }
+    };
+
+    mesh.modification_begin();
+    for (size_t i = 0; i < hexNodeIDs.size(); ++i) {
+        if (hexElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *hexPart, hexElemIDs[i], hexNodeIDs[i]);
+        }
+    }
+    setup_node_sharing(mesh, shared_nodeIDs_and_procs );
+    mesh.modification_end();
+
+
+    ElemElemGraphTester elemElemGraph(mesh);
+
+    EXPECT_EQ(1u, elemElemGraph.num_edges());
+    EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
+
+    mesh.modification_begin();
+    for (size_t i = 0; i < shellNodeIDs.size(); ++i) {
+        if (shellElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *shellPart, shellElemIDs[i], shellNodeIDs[i]);
+        }
+    }
+    mesh.modification_end();
+
+
+    const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+    const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
+    const Entity shell3 = mesh.get_entity(stk::topology::ELEM_RANK, 3);
+
+    stk::mesh::EntityVector addVector;
+    if (0 == p_rank) {
+        addVector.push_back(shell3);
+    }
+    elemElemGraph.add_elements_to_graph(addVector);
+
+    if (p_rank == 0) {
+        // Connectivity for Hex Element 1
+        EXPECT_EQ(1u,     elemElemGraph.get_num_connected_elems(hex1));
+        EXPECT_EQ(5,      elemElemGraph.get_side_id_to_connected_element(hex1, 0));
+        EXPECT_EQ(shell3, elemElemGraph.get_connected_element(hex1, 0));
+        EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
+
+        // Connectivity for Shell Element 3
+        EXPECT_EQ(2u,   elemElemGraph.get_num_connected_elems(shell3));
+        EXPECT_EQ(1,    elemElemGraph.get_side_id_to_connected_element(shell3, 0));
+        EXPECT_EQ(0,    elemElemGraph.get_side_id_to_connected_element(shell3, 1));
+        EXPECT_EQ(hex1, elemElemGraph.get_connected_element(shell3, 0));
+        EXPECT_EQ(2u,   elemElemGraph.get_entity_id_of_remote_element(shell3, 1));
+        EXPECT_TRUE (elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 1));
+        EXPECT_EQ(3u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
+    }
+    else if (p_rank == 1) {
+        // Connectivity for Hex Element 2
+        EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(hex2));
+        EXPECT_EQ(4,  elemElemGraph.get_side_id_to_connected_element(hex2, 0));
+        EXPECT_EQ(3u, elemElemGraph.get_entity_id_of_remote_element(hex2, 0));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
+    }
+}
+
+TEST( ElementGraph, DISABLED_Hex0AddShell1Hex2Parallel )
+{
+    //  ID.proc
+    //
+    //          3.0------------7.0-----------11.2
+    //          /|             /|             /|
+    //         / |            / |            / |
+    //        /  |           /  |           /  |
+    //      4.0------------8.0-----------12.2  |
+    //       |   |          |   |          |   |
+    //       |   |   1.0    |3.1|   2.2    |   |
+    //       |   |          |   |          |   |
+    //       |  2.0---------|--6.0---------|-10.2
+    //       |  /           |  /           |  /
+    //       | /            | /            | /
+    //       |/             |/             |/
+    //      1.0------------5.0------------9.2
+    //                      ^
+    //                      |
+    //                       ---- Add a Single shell element here
+
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    unsigned p_size = stk::parallel_machine_size(pm);
+    unsigned p_rank = stk::parallel_machine_rank(pm);
+
+    if(p_size != 3u)
+    {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+
+    stk::mesh::Part * hexPart   = &meta.declare_part_with_topology("hex_part",   stk::topology::HEX_8);
+    stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_QUAD_4);
+    meta.commit();
+
+    std::vector<stk::mesh::EntityIdVector> hexNodeIDs {
+        { 1, 2, 3, 4, 5,  6,  7,  8 },
+        { 5, 6, 7, 8, 9, 10, 11, 12 }
+    };
+    stk::mesh::EntityId hexElemIDs[] = { 1, 2 };
+    stk::mesh::EntityId hexElemOwningProc[] = { 0, 2 };
+
+    std::vector<stk::mesh::EntityIdVector> shellNodeIDs {
+        { 5, 6, 7, 8 }
+    };
+    stk::mesh::EntityId shellElemIDs[] = { 3 };
+    stk::mesh::EntityId shellElemOwningProc[] = { 1 };
+
+    // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
+    std::vector< std::vector<unsigned> > shared_nodeIDs_and_procs_before_add
+    {
+        { 0, 5, 2 },  // proc 0
+        { 0, 6, 2 },
+        { 0, 7, 2 },
+        { 0, 8, 2 },
+        { 2, 5, 0 },  // proc 2
+        { 2, 6, 0 },
+        { 2, 7, 0 },
+        { 2, 8, 0 }
+    };
+
+    // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
+    std::vector< std::vector<unsigned> > shared_nodeIDs_and_procs
+    {
+        { 0, 5, 1 },  // proc 0
+        { 0, 6, 1 },
+        { 0, 7, 1 },
+        { 0, 8, 1 },
+        { 1, 5, 0 },  // proc 1
+        { 1, 6, 0 },
+        { 1, 7, 0 },
+        { 1, 8, 0 },
+        { 1, 5, 2 },
+        { 1, 6, 2 },
+        { 1, 7, 2 },
+        { 1, 8, 2 },
+        { 2, 5, 1 },  // proc 2
+        { 2, 6, 1 },
+        { 2, 7, 1 },
+        { 2, 8, 1 }
+    };
+    mesh.modification_begin();
+    for (size_t i = 0; i < hexNodeIDs.size(); ++i) {
+        if (hexElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *hexPart, hexElemIDs[i], hexNodeIDs[i]);
+        }
+    }
+    setup_node_sharing(mesh, shared_nodeIDs_and_procs_before_add );
+    mesh.modification_end();
+
+    ElemElemGraphTester elemElemGraph(mesh);
+
+    if (0 == p_rank || 2 == p_rank) {
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
+    }
+    else {
+        EXPECT_EQ(0u, elemElemGraph.num_edges());
+        EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
+    }
+
+    mesh.modification_begin();
+    for (size_t i = 0; i < shellNodeIDs.size(); ++i) {
+        if (shellElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *shellPart, shellElemIDs[i], shellNodeIDs[i]);
+        }
+    }
+    setup_node_sharing(mesh, shared_nodeIDs_and_procs );
+    mesh.modification_end();
+
+    const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+    const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
+    const Entity shell3 = mesh.get_entity(stk::topology::ELEM_RANK, 3);
+
+    stk::mesh::EntityVector addVector;
+    if (1 == p_rank) {
+        addVector.push_back(shell3);
+    }
+
+    elemElemGraph.add_elements_to_graph(addVector);
+
+    if (p_rank == 0) {
+        // Connectivity for Hex Element 1
+        EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(hex1));
+        EXPECT_EQ(5,  elemElemGraph.get_side_id_to_connected_element(hex1, 0));
+        EXPECT_EQ(3u, elemElemGraph.get_entity_id_of_remote_element(hex1, 0));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
+    }
+    else if (p_rank == 1) {
+        // Connectivity for Shell Element 3
+        EXPECT_EQ(2u, elemElemGraph.get_num_connected_elems(shell3));
+        EXPECT_EQ(0,  elemElemGraph.get_side_id_to_connected_element(shell3, 0));
+        EXPECT_EQ(1,  elemElemGraph.get_side_id_to_connected_element(shell3, 1));
+        EXPECT_EQ(2u, elemElemGraph.get_entity_id_of_remote_element(shell3, 0));
+        EXPECT_EQ(1u, elemElemGraph.get_entity_id_of_remote_element(shell3, 1));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 1));
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
+    }
+    else if (p_rank == 2) {
+        // Connectivity for Hex Element 2
+        EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(hex2));
+        EXPECT_EQ(4,  elemElemGraph.get_side_id_to_connected_element(hex2, 0));
+        EXPECT_EQ(3u, elemElemGraph.get_entity_id_of_remote_element(hex2, 0));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -4122,7 +4850,7 @@ TEST( ElementGraph, AdjacentHex0Shell1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4147,6 +4875,8 @@ TEST( ElementGraph, AdjacentHex0Shell1Parallel )
         EXPECT_EQ(4u,   elemElemGraph.get_entity_id_of_remote_element(hex2, 1));
         EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
+        EXPECT_EQ(4u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1u) {
         // Connectivity for Shell Element 3
@@ -4160,6 +4890,8 @@ TEST( ElementGraph, AdjacentHex0Shell1Parallel )
         EXPECT_EQ(1,    elemElemGraph.get_side_id_to_connected_element(shell4, 0));
         EXPECT_EQ(2u,   elemElemGraph.get_entity_id_of_remote_element(shell4, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell4, 0));
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -4241,7 +4973,7 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4261,6 +4993,8 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell1Parallel )
         EXPECT_EQ(1,    elemElemGraph.get_side_id_to_connected_element(shell2, 0));
         EXPECT_EQ(hex1, elemElemGraph.get_connected_element(shell2, 0));
         EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(shell2, 0));
+        EXPECT_EQ(3u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Shell Element 3
@@ -4268,6 +5002,8 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell1Parallel )
         EXPECT_EQ(1,  elemElemGraph.get_side_id_to_connected_element(shell3, 0));
         EXPECT_EQ(1u, elemElemGraph.get_entity_id_of_remote_element(shell3, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -4349,7 +5085,7 @@ TEST( ElementGraph, DISABLED_Hex0Shell1Shell1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4364,6 +5100,8 @@ TEST( ElementGraph, DISABLED_Hex0Shell1Shell1Parallel )
         EXPECT_EQ(3u, elemElemGraph.get_entity_id_of_remote_element(hex1, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 1));
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Shell Element 2
@@ -4377,6 +5115,8 @@ TEST( ElementGraph, DISABLED_Hex0Shell1Shell1Parallel )
         EXPECT_EQ(1,  elemElemGraph.get_side_id_to_connected_element(shell3, 0));
         EXPECT_EQ(1u, elemElemGraph.get_entity_id_of_remote_element(shell3, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -4458,7 +5198,7 @@ TEST( ElementGraph, Hex0Shell0Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4479,6 +5219,8 @@ TEST( ElementGraph, Hex0Shell0Hex1Parallel )
         EXPECT_EQ(2u,   elemElemGraph.get_entity_id_of_remote_element(shell3, 1));
         EXPECT_TRUE (elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 1));
+        EXPECT_EQ(3u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Hex Element 2
@@ -4486,7 +5228,26 @@ TEST( ElementGraph, Hex0Shell0Hex1Parallel )
         EXPECT_EQ(4,  elemElemGraph.get_side_id_to_connected_element(hex2, 0));
         EXPECT_EQ(3u, elemElemGraph.get_entity_id_of_remote_element(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
+}
+
+void test_chosen_face_ids(ElemElemGraphTester & elemElemGraph, stk::mesh::BulkData & mesh)
+{
+    stk::mesh::impl::ParallelGraphInfo p_graph_info = elemElemGraph.get_parallel_graph_info();
+    std::vector<stk::mesh::EntityId> chosen_ids;
+    stk::mesh::impl::ParallelGraphInfo::iterator pgraph_iter = p_graph_info.begin();
+    for(;pgraph_iter!=p_graph_info.end();++pgraph_iter)
+    {
+        chosen_ids.push_back(pgraph_iter->second.m_chosen_side_id);
+    }
+    std::sort(chosen_ids.begin(), chosen_ids.end());
+    auto unique_iter = std::unique(chosen_ids.begin(), chosen_ids.end());
+    bool ids_are_unique = unique_iter == chosen_ids.end();
+    EXPECT_TRUE(ids_are_unique);
+
+    test_similarity_on_both_procs(chosen_ids, mesh.parallel());
 }
 
 TEST( ElementGraph, Hex0DelShell0Hex1Parallel )
@@ -4567,7 +5328,7 @@ TEST( ElementGraph, Hex0DelShell0Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4591,6 +5352,7 @@ TEST( ElementGraph, Hex0DelShell0Hex1Parallel )
         EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(hex1));
         EXPECT_EQ(5,  elemElemGraph.get_side_id_to_connected_element(hex1, 0));
         EXPECT_EQ(2u, elemElemGraph.get_entity_id_of_remote_element(hex1, 0));
+        EXPECT_EQ(1,  elemElemGraph.get_owning_proc_id_of_remote_element(hex1, 2));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
     }
     else if (p_rank == 1) {
@@ -4598,8 +5360,158 @@ TEST( ElementGraph, Hex0DelShell0Hex1Parallel )
         EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(hex2));
         EXPECT_EQ(4,  elemElemGraph.get_side_id_to_connected_element(hex2, 0));
         EXPECT_EQ(1u, elemElemGraph.get_entity_id_of_remote_element(hex2, 0));
+        EXPECT_EQ(0,  elemElemGraph.get_owning_proc_id_of_remote_element(hex2, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
     }
+    test_chosen_face_ids(elemElemGraph, mesh);
+}
+
+TEST( ElementGraph, Hex0DelShell1Hex2Parallel )
+{
+    //  ID.proc
+    //
+    //          3.0------------7.0-----------11.2
+    //          /|             /|             /|
+    //         / |            / |            / |
+    //        /  |           /  |           /  |
+    //      4.0------------8.0-----------12.2  |
+    //       |   |          |   |          |   |
+    //       |   |   1.0    |3.1|   2.2    |   |
+    //       |   |          |   |          |   |
+    //       |  2.0---------|--6.0---------|-10.2
+    //       |  /           |  /           |  /
+    //       | /            | /            | /
+    //       |/             |/             |/
+    //      1.0------------5.0------------9.2
+    //                      ^
+    //                      |
+    //                       ---- Delete this single shell element
+
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    unsigned p_size = stk::parallel_machine_size(pm);
+    unsigned p_rank = stk::parallel_machine_rank(pm);
+
+    if(p_size != 3u)
+    {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+
+    stk::mesh::Part * hexPart   = &meta.declare_part_with_topology("hex_part",   stk::topology::HEX_8);
+    stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_QUAD_4);
+    meta.commit();
+
+    std::vector<stk::mesh::EntityIdVector> hexNodeIDs {
+        { 1, 2, 3, 4, 5,  6,  7,  8 },
+        { 5, 6, 7, 8, 9, 10, 11, 12 }
+    };
+    stk::mesh::EntityId hexElemIDs[] = { 1, 2 };
+    stk::mesh::EntityId hexElemOwningProc[] = { 0, 2 };
+
+    std::vector<stk::mesh::EntityIdVector> shellNodeIDs {
+        { 5, 6, 7, 8 }
+    };
+    stk::mesh::EntityId shellElemIDs[] = { 3 };
+    stk::mesh::EntityId shellElemOwningProc[] = { 1 };
+
+    // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
+    std::vector< std::vector<unsigned> > shared_nodeIDs_and_procs
+    {
+        { 0, 5, 1 },  // proc 0
+        { 0, 6, 1 },
+        { 0, 7, 1 },
+        { 0, 8, 1 },
+        { 0, 5, 2 },
+        { 0, 6, 2 },
+        { 0, 7, 2 },
+        { 0, 8, 2 },
+        { 1, 5, 0 },  // proc 1
+        { 1, 6, 0 },
+        { 1, 7, 0 },
+        { 1, 8, 0 },
+        { 1, 5, 2 },
+        { 1, 6, 2 },
+        { 1, 7, 2 },
+        { 1, 8, 2 },
+        { 2, 5, 0 },  // proc 2
+        { 2, 6, 0 },
+        { 2, 7, 0 },
+        { 2, 8, 0 },
+        { 2, 5, 1 },
+        { 2, 6, 1 },
+        { 2, 7, 1 },
+        { 2, 8, 1 }
+    };
+
+    mesh.modification_begin();
+    for (size_t i = 0; i < hexNodeIDs.size(); ++i) {
+        if (hexElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *hexPart, hexElemIDs[i], hexNodeIDs[i]);
+        }
+    }
+    for (size_t i = 0; i < shellNodeIDs.size(); ++i) {
+        if (shellElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *shellPart, shellElemIDs[i], shellNodeIDs[i]);
+        }
+    }
+    setup_node_sharing(mesh, shared_nodeIDs_and_procs );
+    mesh.modification_end();
+
+    ElemElemGraphTester elemElemGraph(mesh);
+
+    const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+    const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
+    const Entity shell3 = mesh.get_entity(stk::topology::ELEM_RANK, 3);
+
+    stk::mesh::EntityVector elements_to_delete;
+    if (p_rank == 1) {
+        elements_to_delete.push_back(shell3);
+    }
+
+    elemElemGraph.delete_elements_from_graph( elements_to_delete );
+
+    mesh.modification_begin();
+    if (p_rank == 1) {
+        mesh.destroy_entity(shell3);
+    }
+    mesh.modification_end();
+
+    if (p_rank == 0) {
+        // Connectivity for Hex Element 1
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
+        EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(hex1));
+        EXPECT_EQ(5,  elemElemGraph.get_side_id_to_connected_element(hex1, 0));
+        EXPECT_EQ(2u, elemElemGraph.get_entity_id_of_remote_element(hex1, 0));
+        EXPECT_EQ(2,  elemElemGraph.get_owning_proc_id_of_remote_element(hex1, 2));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
+    }
+    else if (p_rank == 1) {
+        // Connectivity for Shell Element 3
+        EXPECT_EQ(0u, elemElemGraph.num_edges());
+        EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
+        EXPECT_EQ(0u, elemElemGraph.size());
+        EXPECT_EQ(0u, elemElemGraph.num_edges());
+        EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
+    }
+    else if (p_rank == 2) {
+        // Connectivity for Hex Element 2
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
+        EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(hex2));
+        EXPECT_EQ(4,  elemElemGraph.get_side_id_to_connected_element(hex2, 0));
+        EXPECT_EQ(1u, elemElemGraph.get_entity_id_of_remote_element(hex2, 0));
+        EXPECT_EQ(0,  elemElemGraph.get_owning_proc_id_of_remote_element(hex2, 1));
+        EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
+    }
+    test_chosen_face_ids(elemElemGraph, mesh);
 }
 
 TEST( ElementGraph, Hex0Shell1Hex2Parallel )
@@ -4696,7 +5608,7 @@ TEST( ElementGraph, Hex0Shell1Hex2Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4708,6 +5620,8 @@ TEST( ElementGraph, Hex0Shell1Hex2Parallel )
         EXPECT_EQ(5,  elemElemGraph.get_side_id_to_connected_element(hex1, 0));
         EXPECT_EQ(3u, elemElemGraph.get_entity_id_of_remote_element(hex1, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Shell Element 3
@@ -4718,6 +5632,8 @@ TEST( ElementGraph, Hex0Shell1Hex2Parallel )
         EXPECT_EQ(1u, elemElemGraph.get_entity_id_of_remote_element(shell3, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 1));
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 2) {
         // Connectivity for Hex Element 2
@@ -4725,6 +5641,8 @@ TEST( ElementGraph, Hex0Shell1Hex2Parallel )
         EXPECT_EQ(4,  elemElemGraph.get_side_id_to_connected_element(hex2, 0));
         EXPECT_EQ(3u, elemElemGraph.get_entity_id_of_remote_element(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
+        EXPECT_EQ(1u, elemElemGraph.num_edges());
+        EXPECT_EQ(1u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -4806,7 +5724,7 @@ TEST( ElementGraph, Hex0Shell1Hex0Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4834,6 +5752,132 @@ TEST( ElementGraph, Hex0Shell1Hex0Parallel )
         EXPECT_EQ(1u,   elemElemGraph.get_entity_id_of_remote_element(shell3, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell3, 1));
+    }
+
+    EXPECT_EQ(2u, elemElemGraph.num_edges());
+    EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
+}
+
+TEST( ElementGraph, Hex0DelShell1Hex0Parallel )
+{
+    //  ID.proc
+    //
+    //          3.0------------7.0-----------11.0
+    //          /|             /|             /|
+    //         / |            / |            / |
+    //        /  |           /  |           /  |
+    //      4.0------------8.0-----------12.0  |
+    //       |   |          |   |          |   |
+    //       |   |   1.0    |3.1|   2.0    |   |
+    //       |   |          |   |          |   |
+    //       |  2.0---------|--6.0---------|-10.0
+    //       |  /           |  /           |  /
+    //       | /            | /            | /
+    //       |/             |/             |/
+    //      1.0------------5.0------------9.0
+    //                      ^
+    //                      |
+    //                       ---- Deleted single shell element
+
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    unsigned p_size = stk::parallel_machine_size(pm);
+    unsigned p_rank = stk::parallel_machine_rank(pm);
+
+    if(p_size != 2u)
+    {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+
+    stk::mesh::Part * hexPart   = &meta.declare_part_with_topology("hex_part",   stk::topology::HEX_8);
+    stk::mesh::Part * shellPart = &meta.declare_part_with_topology("shell_part", stk::topology::SHELL_QUAD_4);
+    meta.commit();
+
+    std::vector<stk::mesh::EntityIdVector> hexNodeIDs {
+        { 1, 2, 3, 4, 5,  6,  7,  8 },
+        { 5, 6, 7, 8, 9, 10, 11, 12 }
+    };
+    stk::mesh::EntityId hexElemIDs[] = { 1, 2 };
+    stk::mesh::EntityId hexElemOwningProc[] = { 0, 0 };
+
+    std::vector<stk::mesh::EntityIdVector> shellNodeIDs {
+        { 5, 6, 7, 8 }
+    };
+    stk::mesh::EntityId shellElemIDs[] = { 3 };
+    stk::mesh::EntityId shellElemOwningProc[] = { 1 };
+
+    // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
+    std::vector< std::vector<unsigned> > shared_nodeIDs_and_procs
+    {
+        { 0, 5, 1 },  // proc 0
+        { 0, 6, 1 },
+        { 0, 7, 1 },
+        { 0, 8, 1 },
+        { 1, 5, 0 },  // proc 1
+        { 1, 6, 0 },
+        { 1, 7, 0 },
+        { 1, 8, 0 }
+    };
+
+    mesh.modification_begin();
+    for (size_t i = 0; i < hexNodeIDs.size(); ++i) {
+        if (hexElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *hexPart, hexElemIDs[i], hexNodeIDs[i]);
+        }
+    }
+    for (size_t i = 0; i < shellNodeIDs.size(); ++i) {
+        if (shellElemOwningProc[i] == p_rank) {
+            stk::mesh::declare_element(mesh, *shellPart, shellElemIDs[i], shellNodeIDs[i]);
+        }
+    }
+    setup_node_sharing(mesh, shared_nodeIDs_and_procs );
+    mesh.modification_end();
+
+    ElemElemGraphTester elemElemGraph(mesh);
+
+    EXPECT_EQ(2u, elemElemGraph.num_edges());
+    EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
+
+    const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
+    const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
+    const Entity shell3 = mesh.get_entity(stk::topology::ELEM_RANK, 3);
+
+    stk::mesh::EntityVector elements_to_delete;
+    if (p_rank == 1) {
+        elements_to_delete.push_back(shell3);
+    }
+
+    elemElemGraph.delete_elements_from_graph( elements_to_delete );
+
+    mesh.modification_begin();
+    if (p_rank == 1) {
+        mesh.destroy_entity(shell3);
+    }
+    mesh.modification_end();
+
+    if (p_rank == 0) {
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
+
+        // Connectivity for Hex Element 1
+        EXPECT_EQ(1u,   elemElemGraph.get_num_connected_elems(hex1));
+        EXPECT_EQ(5,    elemElemGraph.get_side_id_to_connected_element(hex1, 0));
+        EXPECT_EQ(hex2, elemElemGraph.get_connected_element(hex1, 0));
+        EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex1, 0));
+
+        // Connectivity for Hex Element 2
+        EXPECT_EQ(1u, elemElemGraph.get_num_connected_elems(hex2));
+        EXPECT_EQ(4,  elemElemGraph.get_side_id_to_connected_element(hex2, 0));
+        EXPECT_EQ(hex1, elemElemGraph.get_connected_element(hex2, 0));
+        EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
+    }
+    else if (p_rank == 1) {
+        EXPECT_EQ(0u, elemElemGraph.size());
+        EXPECT_EQ(0u, elemElemGraph.num_edges());
+        EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -4916,7 +5960,7 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell0Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4950,6 +5994,9 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell0Hex1Parallel )
         EXPECT_EQ(2u,   elemElemGraph.get_entity_id_of_remote_element(shell4, 1));
         EXPECT_TRUE (elemElemGraph.is_connected_elem_locally_owned(shell4, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell4, 1));
+
+        EXPECT_EQ(6u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Hex Element 2
@@ -4960,6 +6007,9 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell0Hex1Parallel )
         EXPECT_EQ(4u,   elemElemGraph.get_entity_id_of_remote_element(hex2, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
+
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -5042,7 +6092,7 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell1Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -5087,6 +6137,9 @@ TEST( ElementGraph, DISABLED_Hex0Shell0Shell1Hex1Parallel )
         EXPECT_TRUE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
     }
+
+    EXPECT_EQ(4u, elemElemGraph.num_edges());
+    EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
 }
 
 TEST( ElementGraph, DISABLED_Hex0Shell0ReversedShell0Hex1Parallel )
@@ -5168,7 +6221,7 @@ TEST( ElementGraph, DISABLED_Hex0Shell0ReversedShell0Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -5202,6 +6255,8 @@ TEST( ElementGraph, DISABLED_Hex0Shell0ReversedShell0Hex1Parallel )
         EXPECT_EQ(2u,   elemElemGraph.get_entity_id_of_remote_element(shell4, 1));
         EXPECT_TRUE (elemElemGraph.is_connected_elem_locally_owned(shell4, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(shell4, 1));
+        EXPECT_EQ(6u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
     else if (p_rank == 1) {
         // Connectivity for Hex Element 2
@@ -5212,6 +6267,8 @@ TEST( ElementGraph, DISABLED_Hex0Shell0ReversedShell0Hex1Parallel )
         EXPECT_EQ(4u, elemElemGraph.get_entity_id_of_remote_element(hex2, 1));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
+        EXPECT_EQ(2u, elemElemGraph.num_edges());
+        EXPECT_EQ(2u, elemElemGraph.num_parallel_edges());
     }
 }
 
@@ -5294,7 +6351,7 @@ TEST( ElementGraph, DISABLED_Hex1Shell0Shell0Hex1Parallel )
     setup_node_sharing(mesh, shared_nodeIDs_and_procs );
     mesh.modification_end();
 
-    stk::mesh::ElemElemGraph elemElemGraph(mesh);
+    ElemElemGraphTester elemElemGraph(mesh);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -5339,6 +6396,9 @@ TEST( ElementGraph, DISABLED_Hex1Shell0Shell0Hex1Parallel )
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 0));
         EXPECT_FALSE(elemElemGraph.is_connected_elem_locally_owned(hex2, 1));
     }
+
+    EXPECT_EQ(4u, elemElemGraph.num_edges());
+    EXPECT_EQ(4u, elemElemGraph.num_parallel_edges());
 }
 
 TEST(ElementGraph, test_modifiable_graph_with_element_death_serial)
@@ -5384,6 +6444,9 @@ TEST(ElementGraph, test_modifiable_graph_with_element_death_serial)
 
         stk::mesh::comm_mesh_counts(bulkData, entity_counts);
         ASSERT_TRUE(entity_counts[stk::topology::FACE_RANK] == 1);
+
+        EXPECT_EQ(6u, graph.num_edges());
+        EXPECT_EQ(0u, graph.num_parallel_edges());
     }
 }
 
@@ -5457,15 +6520,53 @@ ElemElemGraphTester create_base_1x1x4_elem_graph_for_addition(stk::ParallelMachi
         ownedElem4 = true;
     }
 
+    unsigned numParallelEdges = 0;
+    if(ownedElem1)
+    {
+        if(!ownedElem2)
+        {
+            numParallelEdges++;
+        }
+    }
+    if(ownedElem2)
+    {
+        if(!ownedElem1)
+        {
+            numParallelEdges++;
+        }
+        if(!ownedElem3)
+        {
+            numParallelEdges++;
+        }
+    }
+    if(ownedElem3)
+    {
+        if(!ownedElem2)
+        {
+            numParallelEdges++;
+        }
+        if(!ownedElem4)
+        {
+            numParallelEdges++;
+        }
+    }
+    if(ownedElem4)
+    {
+        if(!ownedElem3)
+        {
+            numParallelEdges++;
+        }
+    }
+
     EXPECT_EQ(elements_to_add.size(), elem_graph.size());
     EXPECT_EQ(numEdges, elem_graph.num_edges());
+    EXPECT_EQ(numParallelEdges, elem_graph.num_parallel_edges());
 
     if (ownedElem1)
     {
         EXPECT_EQ(5, elem_graph.check_connectivity(1, 2));
         EXPECT_EQ(-1, elem_graph.check_connectivity(1, 3));
         EXPECT_EQ(-1, elem_graph.check_connectivity(1, 4));
-
     }
     if (ownedElem2)
     {
@@ -5530,6 +6631,7 @@ ElemElemGraphTester create_base_1x1x4_elem_graph_for_deletion(stk::ParallelMachi
     bool ownedElem4 = false;
 
     unsigned numEdges = 0;
+
     if(bulkData.is_valid(elem1) && bulkData.bucket(elem1).owned())
     {
         numEdges += 1;
@@ -5552,8 +6654,47 @@ ElemElemGraphTester create_base_1x1x4_elem_graph_for_deletion(stk::ParallelMachi
         ownedElem4 = true;
     }
 
+    unsigned numParallelEdges = 0;
+    if(ownedElem1)
+    {
+        if(!ownedElem2)
+        {
+            numParallelEdges++;
+        }
+    }
+    if(ownedElem2)
+    {
+        if(!ownedElem1)
+        {
+            numParallelEdges++;
+        }
+        if(!ownedElem3)
+        {
+            numParallelEdges++;
+        }
+    }
+    if(ownedElem3)
+    {
+        if(!ownedElem2)
+        {
+            numParallelEdges++;
+        }
+        if(!ownedElem4)
+        {
+            numParallelEdges++;
+        }
+    }
+    if(ownedElem4)
+    {
+        if(!ownedElem3)
+        {
+            numParallelEdges++;
+        }
+    }
+
     EXPECT_EQ(numLocallyOwnedElems, elem_graph.size());
     EXPECT_EQ(numEdges, elem_graph.num_edges());
+    EXPECT_EQ(numParallelEdges, elem_graph.num_parallel_edges());
 
     if (ownedElem1)
     {
@@ -5621,7 +6762,7 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemAInParallel)
         }
         bulkData.change_entity_owner(elementProcChanges);
 
-        stk::mesh::ElemElemGraph graph(bulkData);
+        ElemElemGraphTester graph(bulkData);
         if (procRank == 0) {
             stk::mesh::Entity local_element = bulkData.get_entity(stk::topology::ELEM_RANK,2);
             ASSERT_TRUE(bulkData.bucket(local_element).owned());
@@ -5640,6 +6781,9 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemAInParallel)
             EXPECT_EQ( 5u, graph.get_entity_id_of_remote_element(local_element, 2));
 
             EXPECT_EQ( 1, graph.get_owning_proc_id_of_remote_element(local_element, 5));
+
+            EXPECT_EQ(7u, graph.num_edges());
+            EXPECT_EQ(3u, graph.num_parallel_edges());
         }
         if (procRank == 1) {
             stk::mesh::Entity local_element = bulkData.get_entity(stk::topology::ELEM_RANK,5);
@@ -5666,6 +6810,13 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemAInParallel)
             EXPECT_EQ( 2, graph.get_owning_proc_id_of_remote_element(local_element, 8));
             EXPECT_EQ( 2, graph.get_owning_proc_id_of_remote_element(local_element, 4));
             EXPECT_EQ( 2, graph.get_owning_proc_id_of_remote_element(local_element, 6));
+
+            EXPECT_EQ(4u, graph.num_edges());
+            EXPECT_EQ(4u, graph.num_parallel_edges());
+        }
+        if (procRank == 2) {
+            EXPECT_EQ(13u, graph.num_edges());
+            EXPECT_EQ( 5u, graph.num_parallel_edges());
         }
     }
 }
@@ -5712,11 +6863,18 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemBInParallel)
         }
         bulkData.modification_end();
 
-        stk::mesh::ElemElemGraph graph(bulkData);
+        ElemElemGraphTester graph(bulkData);
         if (procRank == 0) {
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,1)));
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,2)));
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,3)));
+            EXPECT_EQ(6u, graph.num_edges());
+            EXPECT_EQ(2u, graph.num_parallel_edges());
+        }
+        if (procRank == 1) {
+            EXPECT_EQ(0u, graph.size());
+            EXPECT_EQ(0u, graph.num_edges());
+            EXPECT_EQ(0u, graph.num_parallel_edges());
         }
         if (procRank == 2) {
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,4)));
@@ -5724,7 +6882,72 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemBInParallel)
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,7)));
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,8)));
             EXPECT_EQ(2u, graph.get_num_connected_elems(bulkData.get_entity(stk::topology::ELEM_RANK,9)));
+            EXPECT_EQ(10u, graph.num_edges());
+            EXPECT_EQ( 2u, graph.num_parallel_edges());
         }
+    }
+}
+
+std::vector<stk::mesh::EntityId> get_ids_in_use(stk::mesh::BulkData& bulkData)
+{
+    std::vector<stk::mesh::EntityId> ids_in_use;
+
+    const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
+    for(size_t i = 0; i < buckets.size(); ++i)
+    {
+        const stk::mesh::Bucket& bucket = *buckets[i];
+        for(size_t j = 0; j < bucket.size(); ++j)
+        {
+            stk::mesh::Entity element = bucket[j];
+            ids_in_use.push_back(bulkData.identifier(element));
+        }
+    }
+    return ids_in_use;
+}
+
+void test_parallel_uniqueness(const std::vector<stk::mesh::EntityId> &ids_in_use, const std::vector<stk::mesh::EntityId>& requested_ids, stk::ParallelMachine comm)
+{
+    std::vector<stk::mesh::EntityId> global_ids_in_use;
+    stk::parallel_vector_concat(comm, ids_in_use, global_ids_in_use);
+    std::sort(global_ids_in_use.begin(), global_ids_in_use.end());
+
+    std::vector<stk::mesh::EntityId> global_requested_ids;
+    stk::parallel_vector_concat(comm, requested_ids, global_requested_ids);
+    std::sort(global_requested_ids.begin(), global_requested_ids.end());
+
+    std::vector<stk::mesh::EntityId> intersection;
+
+    std::set_intersection(global_ids_in_use.begin(), global_ids_in_use.end(),
+            global_requested_ids.begin(), global_requested_ids.end(),
+            std::back_inserter(intersection));
+
+    EXPECT_TRUE(intersection.empty());
+}
+
+TEST(ElemGraph, test_id_reservation)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    if(stk::parallel_machine_size(comm)==2)
+    {
+        unsigned spatialDim = 3;
+
+        stk::mesh::MetaData meta(spatialDim);
+        BulkDataElementGraphTester bulkData(meta, comm);
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+
+        std::vector<stk::mesh::EntityId> ids_in_use = bulkData.my_internal_get_ids_in_use_this_proc_for_locally_owned(stk::topology::ELEM_RANK);
+
+        size_t num_ids_requested_per_proc = 10;
+        std::vector<stk::mesh::EntityId> requested_ids;
+        bulkData.generate_new_ids(stk::topology::ELEM_RANK, num_ids_requested_per_proc, requested_ids);
+
+        test_parallel_uniqueness(ids_in_use, requested_ids, comm);
+
+        std::vector<stk::mesh::EntityId> requested_ids_again;
+        bulkData.generate_new_ids_given_reserved_ids(stk::topology::ELEM_RANK, num_ids_requested_per_proc, requested_ids, requested_ids_again);
+
+        test_parallel_uniqueness(ids_in_use, requested_ids_again, comm);
+        test_parallel_uniqueness(requested_ids, requested_ids_again, comm);
     }
 }
 
