@@ -549,11 +549,13 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_, problemComm_,
                                                  this->coordinateModel_));
     }
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
     else if (algName_ == std::string("nd")) {
       this->algorithm_ = rcp(new AlgND<Adapter>(this->envConst_,
                                         problemComm_,this->graphModel_,
 					this->coordinateModel_,this->baseInputAdapter_));
     }
+#endif
     else {
       throw std::logic_error("partitioning algorithm not supported");
     }
@@ -781,12 +783,14 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       algName_ = algorithm;
       needConsecutiveGlobalIds = true;
     }
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
     else if (algorithm == std::string("nd"))
     {
       modelAvail_[GraphModelType]=true;
       modelAvail_[CoordinateModelType]=true;
       algName_ = algorithm;
     }
+#endif
     else
     {
       // Parameter list should ensure this does not happen.
