@@ -747,6 +747,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_MATLAB
     else if(multigridAlgo == "matlab") {
       RCP<TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node> > P = rcp(new TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
+      P->SetFactory("P",manager.GetFactory("Ptent"));
       manager.SetFactory("P", P);
     }
 #endif
