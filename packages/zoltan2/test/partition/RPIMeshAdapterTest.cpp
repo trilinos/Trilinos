@@ -182,6 +182,7 @@ int main(int narg, char *arg[]) {
   PCU_Comm_Init();
   
   // Generate mesh with MDS
+  double time_1=PCU_Time();
   gmi_register_mesh();
   apf::Mesh2* m = apf::loadMdsMesh(modelFileName.c_str(),meshFileName.c_str());
   apf::verify(m);
@@ -191,8 +192,8 @@ int main(int narg, char *arg[]) {
   typedef Zoltan2::RPIMeshAdapter<apf::Mesh2*> inputAdapter_t;
 
   inputAdapter_t ia(*CommT, m);
-  ia.print(me);
-
+  
+  double time_2=PCU_Time();
   // Set parameters for partitioning
   if (me == 0) cout << "Creating parameter list ... \n\n";
 
@@ -210,7 +211,7 @@ int main(int narg, char *arg[]) {
   }
   else if (action == "scotch") {
     do_partitioning = true;
-    params.set("debug_level", "verbose_detailed_status");
+    params.set("debug_level", "no_status");
     params.set("imbalance_tolerance", imbalance);
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
@@ -227,7 +228,7 @@ int main(int narg, char *arg[]) {
   }
   else if (action == "parma") {
     do_partitioning = true;
-    params.set("debug_level", "basic_status");
+    params.set("debug_level", "no_status");
     params.set("imbalance_tolerance", imbalance);
     params.set("algorithm", "parma");
     Teuchos::ParameterList &pparams = params.sublist("parma_parameters",false);
@@ -259,6 +260,7 @@ int main(int narg, char *arg[]) {
   }
   Parma_PrintPtnStats(m,"before");
   // create Partitioning problem
+  double time_3 = PCU_Time();
   if (do_partitioning) {
     if (me == 0) cout << "Creating partitioning problem ... \n\n";
 
@@ -293,6 +295,7 @@ int main(int narg, char *arg[]) {
 
 
   }
+  double time_4=PCU_Time();
   //if (!me)
   Parma_PrintPtnStats(m,"after");
   if (output_loc!="") {
@@ -301,7 +304,14 @@ int main(int narg, char *arg[]) {
 
   // delete mesh
   if (me == 0) cout << "Deleting the mesh ... \n\n";
-
+  time_4-=time_3;
+  time_2-=time_1;
+  PCU_Max_Doubles(&time_2,1);
+  PCU_Max_Doubles(&time_4,1);
+  if (!me) {
+    std::cout<<"\nConstruction time: "<<time_2<<"\n"
+	     <<"Problem time: " << time_4<<"\n\n";
+  }
   //Delete_APF_Mesh();
   ia.destroy();
   m->destroyNative();

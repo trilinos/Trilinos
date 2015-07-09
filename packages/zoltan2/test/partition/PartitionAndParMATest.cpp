@@ -88,7 +88,8 @@ using Teuchos::RCP;
 //Tpetra typedefs
 typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
 
-
+void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string action, 
+	     std::string parma_method,int nParts, double imbalance, std::string output_title );
 
 /*****************************************************************************/
 /******************************** MAIN ***************************************/
@@ -185,14 +186,50 @@ int main(int narg, char *arg[]) {
   gmi_register_mesh();
   apf::Mesh2* m = apf::loadMdsMesh(modelFileName.c_str(),meshFileName.c_str());
   
+  runTest(CommT,m,action,parma_method,nParts,imbalance,"partition");
+  
+  runTest(CommT,m,"parma",parma_method,nParts,imbalance,"parma");
+
+  
+
+
+  if (output_loc!="") {
+    m->writeNative(output_loc.c_str());
+  }
+
+  // delete mesh
+  if (me == 0) cout << "Deleting the mesh ... \n\n";
+
+  //Delete APF Mesh;
+  m->destroyNative();
+  apf::destroyMesh(m);
+  //End communications
+  PCU_Comm_Free();
+
+#endif
+  if (me == 0)
+    std::cout << "PASS" << std::endl;
+
+  return 0;
+
+}
+/*****************************************************************************/
+/********************************* END MAIN **********************************/
+/*****************************************************************************/
+
+void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string action,
+	     std::string parma_method,int nParts, double imbalance,std::string output_title) {
+  //Get rank
+  int me = CommT->getRank();
+  
   // Creating mesh adapter
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::RPIMeshAdapter<apf::Mesh2*> inputAdapter_t;
-
+  
+  double time_1 = PCU_Time();
   inputAdapter_t ia(*CommT, m);
-  ia.print(me);
-
+  double time_2 = PCU_Time();
   // Set parameters for partitioning
   if (me == 0) cout << "Creating parameter list ... \n\n";
 
@@ -207,7 +244,7 @@ int main(int narg, char *arg[]) {
     params.set("rectilinear", "yes");
   }
   else if (action == "scotch") {
-    params.set("debug_level", "verbose_detailed_status");
+    params.set("debug_level", "no_status");
     params.set("imbalance_tolerance", imbalance);
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
@@ -221,7 +258,7 @@ int main(int narg, char *arg[]) {
     params.set("algorithm", "zoltan");
   }
   else if (action == "parma") {
-    params.set("debug_level", "basic_status");
+    params.set("debug_level", "no_status");
     params.set("imbalance_tolerance", imbalance);
     params.set("algorithm", "parma");
     Teuchos::ParameterList &pparams = params.sublist("parma_parameters",false);
@@ -245,12 +282,12 @@ int main(int narg, char *arg[]) {
   }
 
   //Print the stats of original mesh
-  Parma_PrintPtnStats(m,"before");
+  Parma_PrintPtnStats(m,output_title+"_before");
 
 
   // create Partitioning problem
   if (me == 0) cout << "Creating partitioning problem ... \n\n";
-
+  double time_3=PCU_Time();
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, CommT);
 
   // call the partitioner
@@ -264,73 +301,20 @@ int main(int narg, char *arg[]) {
   apf::Mesh2** new_mesh = &m;
   ia.applyPartitioningSolution(m,new_mesh,problem.getSolution());
   new_mesh=NULL;
-    
+  double time_4=PCU_Time();
   if (!me) problem.printMetrics(cout);
  
   //Print the stats after partitioning
-  Parma_PrintPtnStats(m,"pre_parma");
+  Parma_PrintPtnStats(m,output_title+"_after");
   ia.destroy();
-
-  //Now run ParMA to cleanup partition
-  inputAdapter_t ia2(*CommT, m);
-
-  // Set parameters for partitioning
-  if (me == 0) cout << "Creating parameter list ... \n\n";
-
-  Teuchos::ParameterList params2("test params");
-  params2.set("timer_output_stream" , "std::cout");
-  params2.set("debug_level", "basic_status");
-  params2.set("imbalance_tolerance", imbalance);
-  params2.set("algorithm", "parma");
-  Teuchos::ParameterList &pparams = params2.sublist("parma_parameters",false);
-  pparams.set("parma_method",parma_method);
-  pparams.set("step_size",1.1);
-  if (parma_method=="Ghost") {
-    pparams.set("ghost_layers",3);
-    pparams.set("ghost_bridge",m->getDimension()-1);
+  
+  time_4-=time_3;
+  time_2-=time_1;
+  PCU_Max_Doubles(&time_2,1);
+  PCU_Max_Doubles(&time_4,1);
+  if (!me) {
+    std::cout<<"\n"<<output_title<<"Construction time: "<<time_2<<"\n"
+	     <<output_title<<"Problem time: " << time_4<<"\n\n";
   }
-
-  // create Partitioning problem
-  if (me == 0) cout << "Creating partitioning problem ... \n\n";
-
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem_parma(&ia2, &params2, CommT);
-
-  // call the partitioner
-  if (me == 0) cout << "Calling the partitioner ... \n\n";
-
-  problem_parma.solve();
-
-
-  //apply the partitioning solution to the mesh
-  if (me==0) cout << "Applying Solution to Mesh\n\n";
-  apf::Mesh2** new_mesh_parma = &m;
-  ia2.applyPartitioningSolution(m,new_mesh_parma,problem_parma.getSolution());
-  new_mesh_parma=NULL;
-  //Print the stats after parma cleanup
-  Parma_PrintPtnStats(m,"post_parma");
-
-
-  if (output_loc!="") {
-    m->writeNative(output_loc.c_str());
-  }
-
-  // delete mesh
-  if (me == 0) cout << "Deleting the mesh ... \n\n";
-
-  //Delete APF Mesh;
-  ia2.destroy();
-  m->destroyNative();
-  apf::destroyMesh(m);
-  //End communications
-  PCU_Comm_Free();
-
-#endif
-  if (me == 0)
-    std::cout << "PASS" << std::endl;
-
-  return 0;
-
+  
 }
-/*****************************************************************************/
-/********************************* END MAIN **********************************/
-/*****************************************************************************/
