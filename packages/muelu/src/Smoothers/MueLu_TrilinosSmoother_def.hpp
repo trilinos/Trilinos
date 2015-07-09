@@ -204,6 +204,16 @@ namespace MueLu {
     if (type == "ILU")        { return "ILU";                          }
     if (type == "Amesos")     { return "Amesos";                       }
 
+    // special types
+
+    // Note: for Ifpack there is no distinction between block and banded relaxation as there is no BandedContainer.
+    if (type == "LINESMOOTHING_BLOCKRELAXATION")     { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_BLOCK RELAXATION")    { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_BLOCK_RELAXATION")    { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_BANDEDRELAXATION")    { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_BANDED RELAXATION")   { return "LINESMOOTHING_BLOCKRELAXATION"; }
+    if (type == "LINESMOOTHING_BANDED_RELAXATION")   { return "LINESMOOTHING_BLOCKRELAXATION"; }
+
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unknown type: " + type);
   }
 

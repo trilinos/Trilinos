@@ -619,8 +619,8 @@ public:
   void randomize();
   void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map);
   void reduce();
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >&
-  operator=(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >& source);
+  // MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >&
+  // operator=(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >& source);
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > >
   subCopy(const Teuchos::Range1D &colRng) const;
   Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node > >
@@ -794,13 +794,24 @@ public:
   Vector(const Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node >& source);
   Vector(const Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node >& source,
          const Teuchos::DataAccess copyOrView);
-  Vector(const Teuchos::RCP<const DefaultMapType>& map,
-         const Teuchos::ArrayView<const Scalar>& A);
-  Vector(const Teuchos::RCP<const DefaultMapType>& map,
-         const dual_view_type& view);
-  Vector(const Teuchos::RCP<const DefaultMapType>& map,
-         const dual_view_type& view,
-         const dual_view_type& origView);
+
+  // This constructor is giving me the following error: "Error, an
+  // attempt has been made to dereference the underlying object from a
+  // weak smart pointer object where the underling object has already
+  // been deleted since the strong count has already gone to zero."  I
+  // don't currently thik it is a wrapper problem, but I could be
+  // wrong.
+  // Vector(const Teuchos::RCP<const DefaultMapType>& map,
+  //        const Teuchos::ArrayView<const Scalar>& A);
+
+  // I don't yet support Kokkos::DualView, so these constructors are
+  // not yet appropriate.
+  // Vector(const Teuchos::RCP<const DefaultMapType>& map,
+  //        const dual_view_type& view);
+  // Vector(const Teuchos::RCP<const DefaultMapType>& map,
+  //        const dual_view_type& view,
+  //        const dual_view_type& origView);
+
   virtual ~Vector();
   template <class Node2>
   Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
@@ -849,26 +860,37 @@ public:
 /////////////////////////////////////
 // Explicit template instantiation //
 /////////////////////////////////////
-%define %tpetra_class( CLASS, SCALAR, SCALAR_NAME )
+//
+// Macro names:
+//     CLASS        Class name (DistObject, Vector, ...)
+//     SCALAR       C/C++ scalar name ("in, long long, ...)
+//     SCALAR_NAME  Suffix name (int, longlong, ...)
+//     SCALAR_CODE  Numpy dtype code (i, l, f, d, ...)
+//
+%define %tpetra_class( CLASS, SCALAR, SCALAR_NAME, SCALAR_CODE )
     %warnfilter(315) Tpetra::CLASS< SCALAR, long, long, DefaultNodeType >;
     %teuchos_rcp(Tpetra::CLASS< SCALAR, long, long, DefaultNodeType >)
+    %extend Tpetra::CLASS< SCALAR, long, long, DefaultNodeType >
+    {
+      std::string dtype() { return std::string("SCALAR_CODE"); }
+    }
     %template(CLASS ## _ ## SCALAR_NAME)
         Tpetra::CLASS< SCALAR, long, long, DefaultNodeType >;
 %enddef
 
-%define %tpetra_scalars( SCALAR, SCALAR_NAME)
-    %tpetra_class( DistObject , SCALAR, SCALAR_NAME )
-    %tpetra_class( MultiVector, SCALAR, SCALAR_NAME )
-    %tpetra_class( Vector     , SCALAR, SCALAR_NAME )
+%define %tpetra_scalars( SCALAR, SCALAR_NAME, SCALAR_CODE )
+    %tpetra_class( DistObject , SCALAR, SCALAR_NAME, SCALAR_CODE )
+    %tpetra_class( MultiVector, SCALAR, SCALAR_NAME, SCALAR_CODE )
+    %tpetra_class( Vector     , SCALAR, SCALAR_NAME, SCALAR_CODE )
 %enddef
 
 //////////////////////////////////////////////
 // Concrete scalar types for Tpetra classes //
 //////////////////////////////////////////////
-%tpetra_scalars(int   , int   )
-%tpetra_scalars(long  , long  )
-%tpetra_scalars(float , float )
-%tpetra_scalars(double, double)
+%tpetra_scalars(int   , int   , i)
+%tpetra_scalars(long  , long  , l)
+%tpetra_scalars(float , float , f)
+%tpetra_scalars(double, double, d)
 
 /////////////////////////////////////////////////////
 // Python code that consolidates templated classes //
@@ -876,7 +898,14 @@ public:
 %pythoncode
 {
   def MultiVector(*args, **kwargs):
-    dtype = kwargs.get("dtype", "int64")
+    dtype = None
+    if len(args) > 0:
+      try:
+        dtype = args[0].dtype()
+      except AttributeError:
+        pass
+    dtype = kwargs.get("dtype", dtype)
+    if dtype is None: dtype = "int64"
     if type(dtype) == str:
       dtype = numpy.dtype(dtype)
     if dtype.type is numpy.int32:
@@ -893,7 +922,15 @@ public:
     return result
 
   def Vector(*args, **kwargs):
-    dtype = kwargs.get("dtype", "int64")
+    dtype = None
+    if len(args) > 0:
+      try:
+        dtype = args[0].dtype()
+        if dtype == "int": dtype = "i"
+      except AttributeError:
+        pass
+    dtype = kwargs.get("dtype", dtype)
+    if dtype is None: dtype = "int64"
     if type(dtype) == str:
       dtype = numpy.dtype(dtype)
     if dtype.type is numpy.int32:

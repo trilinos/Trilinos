@@ -43,7 +43,7 @@ if(TPL_ENABLE_MATLAB)
   # Fifth, add matlab-specific libs
   SET(LINK_LIBS ${LINK_LIBS} "mx" "mex" "mat")
 
-  # Last, add last_lib to get extra link options on the link line
+  # Last, add last_lib to get extra link options on the link linee
   IF (${PROJECT_NAME}_EXTRA_LINK_FLAGS)
     APPEND_SET(LINK_LIBS ${last_lib})
   ENDIF()
@@ -72,24 +72,14 @@ if(TPL_ENABLE_MATLAB)
     SOURCE_FILES muelu.m matlab setup.m constructAggregates.m
 RunBrickAggTest.m RunJacobiTest.m RunPtentTest.m
     )
-  # Copy the MATLAB unit tests, have to specify each file
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_Jacobi_Test_cp
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Tests/JacobiSmooth
-    SOURCE_FILES getDiag.m jacobi.m JacobiSmoother_UnitTest.m matlabParams.xml mueluParams.xml
-    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/Tests/JacobiSmooth
-    )
-  
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_Ptent_Tests_cp
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Tests/UnsmoothedP
-    SOURCE_FILES createP.m laplacianfun.m matlabParams.xml mueluParams.xml Ptent_UnitTest.m
-    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/Tests/UnsmoothedP
-    )
 
-  TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_BrickAgg_Tests_cp
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Tests/Brick
-    SOURCE_FILES simpleAggregation.m matlabParams.xml mueluParams.xml BrickAggregationUnitTest.m
-    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/Tests/Brick
-    )
+
+
+
+  
+  TRIBITS_ADD_TEST_DIRECTORIES(Tests/UnsmoothedP)
+  TRIBITS_ADD_TEST_DIRECTORIES(Tests/JacobiSmooth)
+  TRIBITS_ADD_TEST_DIRECTORIES(Tests/Brick)
 
 ENDIF()
 

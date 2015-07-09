@@ -113,7 +113,7 @@ namespace MueLu {
         type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
         type_ == "LINESMOOTHING_BLOCKRELAXATION") {
       this->Input(currentLevel, "CoarseNumZLayers");              // necessary for fallback criterion
-      this->Input(currentLevel, "LineDetection_VertLineIdsSmoo"); // necessary to feed block smoother
+      this->Input(currentLevel, "LineDetection_VertLineIds"); // necessary to feed block smoother
     } // if (type_ == "LINESMOOTHING_BANDEDRELAXATION")
   }
 
@@ -205,7 +205,7 @@ namespace MueLu {
 
       LO CoarseNumZLayers = Factory::Get<LO>(currentLevel,"CoarseNumZLayers");
       if (CoarseNumZLayers > 0) {
-        Teuchos::ArrayRCP<LO> TVertLineIdSmoo = Factory::Get< Teuchos::ArrayRCP<LO> >(currentLevel, "LineDetection_VertLineIdsSmoo");
+        Teuchos::ArrayRCP<LO> TVertLineIdSmoo = Factory::Get< Teuchos::ArrayRCP<LO> >(currentLevel, "LineDetection_VertLineIds");
 
         // determine number of local parts
         LO maxPart = 0;

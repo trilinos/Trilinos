@@ -157,7 +157,7 @@ other Trilinos solver technologies.
 %include "Domi_ConfigDefs.hpp"
 
 // Include Domi documentation
-//%include "Domi_dox.i"
+%include "Domi_dox.i"
 
 // SWIG library includes
 %include "stl.i"
@@ -415,7 +415,7 @@ MDMap = MDMap_default
 %ignore Domi::MDVector::getTpetraMultiVectorView;
 %ignore Domi::MDVector::getTpetraVectorCopy;
 %ignore Domi::MDVector::getTpetraMultiVectorCopy;
-%extend Domi::MDVector< Scalar, Node >
+%extend Domi::MDVector
 {
   Domi::MDVector< Scalar, Node > __getitem__(PyObject * indexes)
   {

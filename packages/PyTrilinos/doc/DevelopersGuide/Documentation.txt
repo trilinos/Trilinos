@@ -121,9 +121,10 @@ subdirectory::
     doc/Doxygen
 
 Within this subdirectory are a series of Doxygen control files, one
-for each package: ``Doxyfile_Teuchos``, ``Doxyfile_Epetra``, etc.
-These Doxyfiles have certain features in common: they all generate XML
-output:: 
+for each package: ``Doxyfile_Teuchos.in``, ``Doxyfile_Epetra.in``,
+etc.  These Doxyfiles get copied to the build directory (minus the .in
+suffix) and have certain features in common: they all generate XML
+output::
 
     GENERATE_XML = YES
 
@@ -133,15 +134,14 @@ to their own subdirectory::
     OUTPUT_DIRECTORY = Teuchos
     XML_OUTPUT = .
 
-If you add documentation for a new package, then add the package name
-to the ``PyTrilinos/doc/Doxygen/Makefile`` variable ``PACKAGES``.
-When you run ``make`` from the shell, this will cause ``doxygen`` to
-be run on the Doxyfile and the script ``doxy2swig.py`` (generously
-provided by Prabhu Ramachandran) to be run on the resulting output.
-This produces a file with a ``_dox.i`` suffix, e.g. ``Teuchos_dox.i``,
-intended to be included into the package interface file
-``src/Teuchos.i``.  To facilitate this inclusion, SWIG is invoked with
-``-I$(top_srcdir)/doc/Doxygen``.
+If you add documentation for a new package, then the CMakeLists.txt
+file in ``PyTrilinos/doc/Doxygen/Makefile`` will automatically detect
+it, causing ``doxygen`` to be run on the Doxyfile and the script
+``doxy2swig.py`` (generously provided by Prabhu Ramachandran) to be
+run on the resulting output.  This produces a file with a ``_dox.i``
+suffix, e.g. ``Teuchos_dox.i``, intended to be included into the
+package interface file ``src/Teuchos.i``.  To facilitate this
+inclusion, SWIG is invoked with ``-I$(top_srcdir)/doc/Doxygen``.
 
 Overriding Doxygen Documentation
 --------------------------------

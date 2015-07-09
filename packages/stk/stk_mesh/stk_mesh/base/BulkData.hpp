@@ -65,6 +65,8 @@
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_mesh/base/ModificationSummary.hpp"
 #include "stk_mesh/baseImpl/MeshModification.hpp"
+#include <stk_util/diag/Timer.hpp>
+#include <stk_util/diag/PrintTimer.hpp>
 
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
@@ -709,8 +711,10 @@ public:
 protected: //functions
 
   bool modification_end_for_face_creation_and_deletion(const std::vector<sharing_info>& shared_modified,
-                                                       const stk::mesh::EntityVector& deletedEntities,
-                                                       impl::MeshModification::modification_optimization opt = impl::MeshModification::MOD_END_SORT); // Mod Mark
+                                                         const stk::mesh::EntityVector& deletedEntities,
+                                                         stk::mesh::ElemElemGraph &elementGraph,
+                                                         const stk::mesh::EntityVector & killedElements,
+                                                         stk::mesh::Part & activePart);
 
   bool modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector,
                                              stk::mesh::impl::MeshModification::modification_optimization opt = stk::mesh::impl::MeshModification::MOD_END_SORT); // Mod Mark
@@ -834,6 +838,7 @@ protected: //functions
   void internal_resolve_shared_membership(); // Mod Mark
   void internal_resolve_parallel_create(); // Mod Mark
   void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new ); // Mod Mark
+  void internal_send_part_memberships_from_owner(const std::vector<EntityProc> &send_list);
   virtual void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(std::vector<stk::mesh::Entity> & shared_new );
   void extract_entity_from_shared_entity_type(const std::vector<shared_entity_type>& shared_entities, std::vector<Entity>& shared_new);
   void fill_shared_entities_of_rank(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new);
@@ -964,6 +969,12 @@ protected: //functions
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner); // Mod Mark
 
   std::vector<uint64_t> internal_get_ids_in_use(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId>& reserved_ids = std::vector<stk::mesh::EntityId>()) const;
+  virtual void de_induce_unranked_part_from_nodes( const stk::mesh::ElemElemGraph &graph,
+                                            const stk::mesh::EntityVector & deactivatedElements,
+                                            stk::mesh::Part & activePart);
+  virtual void remove_boundary_faces_from_part(  stk::mesh::ElemElemGraph &graph,
+                                         const stk::mesh::EntityVector & deactivatedElements,
+                                         stk::mesh::Part & activePart);
 
 private: //functions
 
@@ -1260,7 +1271,7 @@ private: // data
   bool m_use_identifiers_for_resolving_sharing;
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
-//   stk::ModificationSummary m_modSummary;
+  // stk::ModificationSummary m_modSummary;
 };
 
 

@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
 //
-//     Domi: Multi-dimensional Distributed Linear Albebra Services
-//                 Copyright (2014) Sandia Corporation
+//           Panzer: A partial differential equation assembly
+//       engine for strongly coupled complex multiphysics systems
+//                 Copyright (2011) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia
-// Corporation, the U.S. Government retains certain rights in this
-// software.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,63 +35,56 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact William F. Spotz (wfspotz@sandia.gov)
-//
+// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
+// Eric C. Cyr (eccyr@sandia.gov)
 // ***********************************************************************
 // @HEADER
-#ifndef DOMI_DEFAULTNODE_HPP
-#define DOMI_DEFAULTNODE_HPP
 
-#include "Teuchos_ParameterList.hpp"
+#ifndef PANZER_MASS_MATRIX_MODEL_EVALUATOR_DECL_HPP
+#define PANZER_MASS_MATRIX_MODEL_EVALUATOR_DECL_HPP
+
+#include "Panzer_config.hpp"
+
+#include "Panzer_Traits.hpp"
+#include "Panzer_AssemblyEngine_TemplateManager.hpp"
+#include "Panzer_ParameterLibrary.hpp"
+#include "Panzer_GlobalEvaluationData.hpp"
+#include "Panzer_ResponseLibrary.hpp"
+#include "Panzer_ResponseMESupportBase.hpp"
+#include "Panzer_ResponseMESupportBuilderBase.hpp"
+
 #include "Teuchos_RCP.hpp"
-#include "KokkosCompat_ClassicNodeAPI_Wrapper.hpp"
+#include "Teuchos_AbstractFactory.hpp"
 
-#ifdef HAVE_TPETRA
-#include "Kokkos_DefaultNode.hpp"
-#endif
+#include "Thyra_VectorBase.hpp"
+#include "Thyra_VectorSpaceBase.hpp"
+#include "Thyra_StateFuncModelEvaluatorBase.hpp"
+#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
-namespace Domi
-{
+#include <Panzer_NodeType.hpp>
 
-namespace Details
-{
+namespace panzer {
 
-template< class NodeType >
-Teuchos::RCP< NodeType >
-getNode(const Teuchos::RCP< Teuchos::ParameterList > & params = Teuchos::null)
-{
-  static Teuchos::RCP< NodeType > theNode;
-  if (theNode.is_null())
-  {
-    if (params.is_null())
-    {
-      Teuchos::ParameterList defaultParams;
-      theNode = Teuchos::rcp(new NodeType(defaultParams));
-    }
-    else
-    {
-      theNode = Teuchos::rcp(new NodeType(*params));
-    }
-  }
-  return theNode;
-}
-
-}    // namespace Details
-
-class DefaultNode
+template<typename Scalar>
+class MassMatrixModelEvaluator
+  : public Thyra::ModelEvaluatorBase
 {
 public:
-#ifdef HAVE_TPETRA
-  typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
-#else
-  typedef Kokkos::Compat::KokkosSerialWrapperNode DefaultNodeType;
-#endif
 
-  //! \brief Return a pointer to the default Node
-  static Teuchos::RCP< DefaultNodeType > getDefaultNode();
+public:
+
+virtual void applyMassMatrix(const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > input, const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > output) const = 0;
+virtual void applyInverseMassMatrix(const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > input, const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > output) const = 0;
+
+private:
+
+
+private:
 
 };
 
-}  // namespace Domi
 
-#endif
+}
+
+
+#endif 

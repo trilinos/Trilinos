@@ -69,8 +69,8 @@ Tpetra  = fromPyTrilinosImport('Tpetra' , options.testharness)
 
 ##########################################################################
 
-class TpetraVectorTestCase(unittest.TestCase):
-    "TestCase class for Vector objects"
+class TpetraMultiVectorTestCase(unittest.TestCase):
+    "TestCase class for MultiVector objects"
 
     def __init__(self, methodName="runTest"):
         unittest.TestCase.__init__(self, methodName)
@@ -112,53 +112,58 @@ class TpetraVectorTestCase(unittest.TestCase):
     def tearDown(self):
         self.comm.barrier()
 
-    def testConstructor1(self):
-        "Test Tpetra.Vector constructor for uniform, linear Map"
+    def testConstructor0(self):
+        "Test Tpetra.MultiVector constructor with no arguments"
         print >>sys.stderr, self.typeStr, "... ",
-        vector = Tpetra.Vector(self.map1, dtype=self.typeCode)
+        vector = Tpetra.MultiVector(dtype=self.typeCode)
+
+    def testConstructor1(self):
+        "Test Tpetra.MultiVector constructor for uniform, linear Map"
+        print >>sys.stderr, self.typeStr, "... ",
+        vector = Tpetra.MultiVector(self.map1, 2, dtype=self.typeCode)
 
     def testConstructor2(self):
-        "Test Tpetra.Vector constructor for uniform, linear Map, without zero-out"
+        "Test Tpetra.MultiVector constructor for uniform, linear Map, without zero-out"
         print >>sys.stderr, self.typeStr, "... ",
-        vector = Tpetra.Vector(self.map1, False, dtype=self.typeCode)
+        vector = Tpetra.MultiVector(self.map1, 3, False, dtype=self.typeCode)
 
     def testConstructor3(self):
-        "Test Tpetra.Vector copy constructors"
+        "Test Tpetra.MultiVector copy constructors"
         print >>sys.stderr, self.typeStr, "... ",
-        vector1 = Tpetra.Vector(self.map2, dtype=self.typeCode)
-        vector2 = Tpetra.Vector(vector1)
-        vector3 = Tpetra.Vector(vector1, Teuchos.Copy)
-        vector4 = Tpetra.Vector(vector1, Teuchos.View)
+        vector1 = Tpetra.MultiVector(self.map2, 4, dtype=self.typeCode)
+        vector2 = Tpetra.MultiVector(vector1)
+        vector3 = Tpetra.MultiVector(vector1, Teuchos.Copy)
+        vector4 = Tpetra.MultiVector(vector1, Teuchos.View)
 
 ##########################################################################
 
-class TpetraVectorTestCase_int(TpetraVectorTestCase):
+class TpetraMultiVectorTestCase_int(TpetraMultiVectorTestCase):
     def __init__(self, methodName="runTest"):
-        TpetraVectorTestCase.__init__(self, methodName)
+        TpetraMultiVectorTestCase.__init__(self, methodName)
         self.typeStr  = "int"
         self.typeCode = "i"
 
 ##########################################################################
 
-class TpetraVectorTestCase_long(TpetraVectorTestCase):
+class TpetraMultiVectorTestCase_long(TpetraMultiVectorTestCase):
     def __init__(self, methodName="runTest"):
-        TpetraVectorTestCase.__init__(self, methodName)
+        TpetraMultiVectorTestCase.__init__(self, methodName)
         self.typeStr  = "long"
         self.typeCode = "l"
 
 ##########################################################################
 
-class TpetraVectorTestCase_float(TpetraVectorTestCase):
+class TpetraMultiVectorTestCase_float(TpetraMultiVectorTestCase):
     def __init__(self, methodName="runTest"):
-        TpetraVectorTestCase.__init__(self, methodName)
+        TpetraMultiVectorTestCase.__init__(self, methodName)
         self.typeStr  = "float"
         self.typeCode = "f"
 
 ##########################################################################
 
-class TpetraVectorTestCase_double(TpetraVectorTestCase):
+class TpetraMultiVectorTestCase_double(TpetraMultiVectorTestCase):
     def __init__(self, methodName="runTest"):
-        TpetraVectorTestCase.__init__(self, methodName)
+        TpetraMultiVectorTestCase.__init__(self, methodName)
         self.typeStr  = "double"
         self.typeCode = "d"
 
@@ -170,10 +175,10 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
 
     # Add the test cases to the test suite
-    suite.addTest(unittest.makeSuite(TpetraVectorTestCase_int   ))
-    suite.addTest(unittest.makeSuite(TpetraVectorTestCase_long  ))
-    suite.addTest(unittest.makeSuite(TpetraVectorTestCase_float ))
-    suite.addTest(unittest.makeSuite(TpetraVectorTestCase_double))
+    suite.addTest(unittest.makeSuite(TpetraMultiVectorTestCase_int   ))
+    suite.addTest(unittest.makeSuite(TpetraMultiVectorTestCase_long  ))
+    suite.addTest(unittest.makeSuite(TpetraMultiVectorTestCase_float ))
+    suite.addTest(unittest.makeSuite(TpetraMultiVectorTestCase_double))
 
     # Create a communicator
     comm    = Teuchos.DefaultComm.getComm()
@@ -181,7 +186,7 @@ if __name__ == "__main__":
 
     # Run the test suite
     if iAmRoot: print >>sys.stderr, \
-       "\n*********************\nTesting Tpetra.Vector\n*********************\n"
+       "\n**************************\nTesting Tpetra.MultiVector\n**************************\n"
     v = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=v).run(suite)
 
