@@ -173,7 +173,7 @@ namespace MueLu {
 
     // transfer coordinates
     if(bTransferCoordinates_) {
-      RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      //Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
       typedef Xpetra::MultiVector<double,LO,GO,NO> xdMV;
       RCP<xdMV>    fineCoords = Teuchos::null;
       if (fineLevel.GetLevelID() == 0 &&
@@ -221,11 +221,11 @@ namespace MueLu {
       LO numVertLines = Nnodes / FineNumZLayers;
       LO numLocalCoarseNodes = numVertLines * myCoarseZLayers;
 
-      std::cout << "rowMap elements: " << rowMap->getNodeNumElements() << std::endl;
+      //std::cout << "rowMap elements: " << rowMap->getNodeNumElements() << std::endl;
       //std::cout << "fineCoords: " << fineCoords->getNodeNumElements() << std::endl;
-      std::cout << "TVertLineId.size(): " << TVertLineId.size() << std::endl;
-      std::cout << "numVertLines=" << numVertLines << std::endl;
-      std::cout << "numLocalCoarseNodes=" << numLocalCoarseNodes << std::endl;
+      //std::cout << "TVertLineId.size(): " << TVertLineId.size() << std::endl;
+      //std::cout << "numVertLines=" << numVertLines << std::endl;
+      //std::cout << "numLocalCoarseNodes=" << numLocalCoarseNodes << std::endl;
 
       RCP<const Map>   coarseCoordMap =
           MapFactory::Build (fineCoords->getMap()->lib(),
