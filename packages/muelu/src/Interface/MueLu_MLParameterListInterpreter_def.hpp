@@ -143,8 +143,9 @@ namespace MueLu {
     //MUELU_READ_PARAM(paramList, "aggregation: smoothing sweeps",            int,                   1,       agg_smoothingsweeps);
     MUELU_READ_PARAM(paramList, "aggregation: nodes per aggregate",         int,                   1,       minPerAgg);
     MUELU_READ_PARAM(paramList, "aggregation: keep Dirichlet bcs",         bool,               false,       bKeepDirichletBcs); // This is a MueLu specific extension that does not exist in ML
-    MUELU_READ_PARAM(paramList, "aggregation: max neighbours already aggregated", int,             0,       maxNbrAlreadySelected); // This is a MueLu specific extension that does not exist in ML
-    MUELU_READ_PARAM(paramList, "aggregation: aux enable",                 bool,               false,       agg_use_aux);
+    MUELU_READ_PARAM(paramList, "aggregation: max neighbours already aggregated", int,             0,       maxNbrAlreadySelected); // This is a MueLu specific extension that does not exist in M
+    MUELU_READ_PARAM(paramList, "aggregation: aux: enable",                bool,               false,       agg_use_aux);
+    MUELU_READ_PARAM(paramList, "aggregation: aux: threshold",           double,               false,       agg_aux_thresh);
 
     MUELU_READ_PARAM(paramList, "null space: type",                 std::string,   "default vectors",       nullspaceType);
     MUELU_READ_PARAM(paramList, "null space: dimension",                    int,                  -1,       nullspaceDim); // TODO: ML default not in documentation
@@ -222,7 +223,8 @@ namespace MueLu {
     // Create MueLu factories
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
     if(agg_use_aux) {
-      dropFact->SetParameter("aggregation: drop scheme","distance laplacian");
+      dropFact->SetParameter("aggregation: drop scheme",Teuchos::ParameterEntry(std::string("distance laplacian")));
+      dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(agg_aux_thresh));
     }
 
     RCP<FactoryBase> AggFact = Teuchos::null;
