@@ -38,6 +38,7 @@
 // Questions? Contact Karen Devine      (kddevin@sandia.gov)
 //                    Erik Boman        (egboman@sandia.gov)
 //                    Siva Rajamanickam (srajama@sandia.gov)
+//                    Michael Wolf (mmwolf@sandia.gov)
 //
 // ***********************************************************************
 //
@@ -175,7 +176,6 @@ void AlgWolf<Adapter>::partition(const RCP<PartitioningSolution<Adapter> > &solu
     const part_t *parts = solution_->getPartListView();
     //////////////////////////////////////////////////////////////////////
 
-
     //////////////////////////////////////////////////////////////////////
     // Build up tree that represents partitioning subproblems, which will 
     // be used for determining separators at each level
@@ -195,11 +195,11 @@ void AlgWolf<Adapter>::partition(const RCP<PartitioningSolution<Adapter> > &solu
     // the level of the hiearchy of the separator tree.  This allows us
     // to easily identify the boundary value vertices
     //////////////////////////////////////////////////////////////////////
-    int numLevels = partTree[4*(numSeparators-1)];
+    int numLevels = partTree[4*(numSeparators-1)]+1;
 
     std::vector<std::vector<int> > partLevelMap(numLevels,std::vector<int>(numGlobalParts));
 
-    std::vector<int> levIndx(numLevels,0);
+    std::vector<int> sepsInLev(numLevels,0);
 
     for(unsigned int i=0;i<numSeparators;i++)
     {
@@ -210,20 +210,56 @@ void AlgWolf<Adapter>::partition(const RCP<PartitioningSolution<Adapter> > &solu
       
       for(int part=leftPart; part<splitPart; part++)
       {
-        partLevelMap[level][part] = 2*levIndx[level];
+        partLevelMap[level][part] = 2*sepsInLev[level];
       }
 
       for(int part=splitPart; part<rightPart; part++)
       {
-        partLevelMap[level][part] = 2*levIndx[level]+1;
+        partLevelMap[level][part] = 2*sepsInLev[level]+1;
       }
 
-      levIndx[level]++;
+      sepsInLev[level]++;
     }
     //////////////////////////////////////////////////////////////////////
 
-    //TODO: loop over each cut, 
-    //TODO: build boundary layer, 
+    // Set of separator vertices.  Used to keep track of what vertices are
+    // already in previous calculated separators.  These vertices should be
+    // excluded from future separator calculations
+    const std::set<int> sepVerts;
+
+    //////////////////////////////////////////////////////////////////////
+    // Loop over each cut
+    //    1. Build boundary layer between parts
+    //    2. Build vertex separator from boundary layer
+    //////////////////////////////////////////////////////////////////////
+    for(unsigned int level=0;level<numLevels;level++)
+    {
+      for(unsigned int levIndx=0;levIndx<sepsInLev[level];levIndx++)
+      {
+
+	std::vector<int> boundVerts;
+	std::vector<std::vector<int> > boundVertsST(2);
+
+        ///////////////////////////////////////////////////////////////
+        // Build boundary layer between parts (edge separator)
+        ///////////////////////////////////////////////////////////////
+        getBoundLayerSep(levIndx, partLevelMap[level], parts, boundVerts,
+			 boundVertsST, sepVerts);
+        ///////////////////////////////////////////////////////////////
+
+        ///////////////////////////////////////////////////////////////
+        // Calculate vertex separator from boundary layer
+        ///////////////////////////////////////////////////////////////
+
+	//VCOfBoundLayer
+
+        ///////////////////////////////////////////////////////////////
+
+
+	}
+    }
+    //////////////////////////////////////////////////////////////////////
+
     //TODO: calculate vertex separator for each layer, 
     //TODO: using vertex separators, compute new ordering and store in solution
     //TODO: move to ordering directory
@@ -246,19 +282,29 @@ void AlgWolf<Adapter>::getBoundLayerSep(int levelIndx, const std::vector<part_t>
   typedef typename Adapter::scalar_t scalar_t;   // scalars
   typedef StridedData<lno_t, scalar_t> input_t;
 
-
-  int numVerts = mGraphModel.getLocalNumVertices();
+  int numVerts = mGraphModel->getLocalNumVertices();
 
   //Teuchos ArrayView
   ArrayView< const lno_t > eIDs;
   ArrayView< const lno_t > vOffsets;
+  ArrayView< const lno_t > procIDs;
   ArrayView< input_t > wgts;
 
-  size_t numEdges = mGraphModel.getLocalEdgeList(eIDs, vOffsets, wgts);
+  // For some reason getLocalEdgeList seems to be returning empty eIDs
+  //size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getLocalEdgeList(eIDs, vOffsets, wgts);
 
+  size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, procIDs, vOffsets, wgts);
 
-  for(int v1=0;v1<numEdges;v1++)
+//   size_t Zoltan2::GraphModel< Adapter >::getEdgeList(ArrayView< const gno_t > & edgeIds,
+// 						     ArrayView< const int > & procIds,
+// 						     ArrayView< const lno_t > & offsets,
+// 						     ArrayView< input_t > & wgts 
+//						     )
+
+  //  for(int v1=0;v1<numEdges;v1++)
+  for(int v1=0;v1<numVerts;v1++)
   {
+
     part_t vpart1 = partMap[parts[v1]];
 
     bool correctBL = (vpart1 >= 2*levelIndx && vpart1 < 2*(levelIndx+1) );
@@ -281,6 +327,7 @@ void AlgWolf<Adapter>::getBoundLayerSep(int levelIndx, const std::vector<part_t>
     //MMW figure out how to get this from Zoltan2
     for(int j=vOffsets[v1];j<vOffsets[v1+1];j++)
     {
+
       int v2 = eIDs[j];
 
       part_t vpart2 = partMap[parts[v2]];
