@@ -415,7 +415,7 @@ MDMap = MDMap_default
 %ignore Domi::MDVector::getTpetraMultiVectorView;
 %ignore Domi::MDVector::getTpetraVectorCopy;
 %ignore Domi::MDVector::getTpetraMultiVectorCopy;
-%extend Domi::MDVector< Scalar, Node >
+%extend Domi::MDVector
 {
   Domi::MDVector< Scalar, Node > __getitem__(PyObject * indexes)
   {
