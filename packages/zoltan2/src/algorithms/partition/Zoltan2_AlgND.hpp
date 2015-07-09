@@ -46,8 +46,8 @@
 
 //MMW need to specify that this requires Zoltan                  
 
-#ifndef _ZOLTAN2_ALGWOLF_HPP_
-#define _ZOLTAN2_ALGWOLF_HPP_
+#ifndef _ZOLTAN2_ALGND_HPP_
+#define _ZOLTAN2_ALGND_HPP_
 
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
@@ -58,8 +58,8 @@
 #include <string>
 #include <bitset>
 
-/*! \file Zoltan2_AlgWolf.hpp
- *  \brief The algorithm for Wolf partitioning.
+/*! \file Zoltan2_AlgND.hpp
+ *  \brief The algorithm for ND based ordering
  */
 
 
@@ -81,7 +81,7 @@ namespace Zoltan2
 // };
 
 ////////////////////////////////////////////////////////////////////////////////
-/*! Wolf partitioning method.
+/*! Nested dissection based ordering method.
  *
  *  \param env   library configuration and problem parameters
  *  \param problemComm  the communicator for the problem
@@ -94,7 +94,7 @@ namespace Zoltan2
  */
 ////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-class AlgWolf : public Algorithm<Adapter>
+class AlgND : public Algorithm<Adapter>
 {
 
 private:
@@ -118,7 +118,7 @@ private:
 
 public:
   // Constructor
-  AlgWolf(const RCP<const Environment> &env_,
+  AlgND(const RCP<const Environment> &env_,
 	  const RCP<Comm<int> > &problemComm_,
 	  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &gModel_,
 	  const RCP<const CoordinateModel<typename Adapter::base_adapter_t> > &cModel_,
@@ -127,16 +127,16 @@ public:
      mBaseInputAdapter(baseInputAdapter_)
   {
 #ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL
-    Z2_THROW_EXPERIMENTAL("Zoltan2 Wolf is strictly experimental software ")
+    Z2_THROW_EXPERIMENTAL("Zoltan2 AlgND is strictly experimental software ")
 #endif
 
 #ifndef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
-    Z2_THROW_EXPERIMENTAL_WOLF("Zoltan2 Wolf is strictly experimental software ")
+    Z2_THROW_EXPERIMENTAL_WOLF("Zoltan2 algND is strictly experimental software ")
 #endif
 
     if(mProblemComm->getSize()!=1)
     {
-      Z2_THROW_SERIAL("Zoltan2 Wolf is strictly serial!");
+      Z2_THROW_SERIAL("Zoltan2 AlgND is strictly serial!");
     }
 
   }
@@ -150,13 +150,13 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-void AlgWolf<Adapter>::partition(const RCP<PartitioningSolution<Adapter> > &solution_)
+void AlgND<Adapter>::partition(const RCP<PartitioningSolution<Adapter> > &solution_)
 {
     // typedef typename Adapter::lno_t lno_t;     // local ids
     // typedef typename Adapter::gno_t gno_t;     // global ids
     // typedef typename Adapter::scalar_t scalar_t;   // scalars
 
-    mEnv->debug(DETAILED_STATUS, std::string("Entering AlgWolf"));
+    mEnv->debug(DETAILED_STATUS, std::string("Entering AlgND"));
 
     //////////////////////////////////////////////////////////////////////
     // First, let's partition with RCB using Zoltan.  Eventually, we will change this
@@ -264,7 +264,7 @@ void AlgWolf<Adapter>::partition(const RCP<PartitioningSolution<Adapter> > &solu
     //TODO: using vertex separators, compute new ordering and store in solution
     //TODO: move to ordering directory
 
-    mEnv->debug(DETAILED_STATUS, std::string("Exiting AlgWolf"));
+    mEnv->debug(DETAILED_STATUS, std::string("Exiting AlgND"));
 }
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -272,7 +272,7 @@ void AlgWolf<Adapter>::partition(const RCP<PartitioningSolution<Adapter> > &solu
 // Create boundary layer of vertices between 2 partitions
 ////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-void AlgWolf<Adapter>::getBoundLayerSep(int levelIndx, const std::vector<part_t> &partMap,
+void AlgND<Adapter>::getBoundLayerSep(int levelIndx, const std::vector<part_t> &partMap,
 					const part_t * parts, 
 					std::vector<int> &boundVerts,
 					std::vector<std::vector<int> > &boundVertsST,

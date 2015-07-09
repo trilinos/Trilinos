@@ -410,7 +410,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental_Wolf)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Wolf
-  SOURCES wolf.cpp
+  SOURCES nd.cpp
   NUM_MPI_PROCS 1
   COMM serial mpi
   ARGS

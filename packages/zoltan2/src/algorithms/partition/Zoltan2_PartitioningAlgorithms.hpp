@@ -52,7 +52,7 @@
 #include <Zoltan2_AlgBlock.hpp>
 #include <Zoltan2_AlgRCB.hpp>
 #include <Zoltan2_AlgMultiJagged.hpp>
-#include <Zoltan2_AlgWolf.hpp>
+#include <Zoltan2_AlgND.hpp>
 #include <Zoltan2_AlgZoltan.hpp>
 
 #endif

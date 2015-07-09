@@ -549,8 +549,8 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_, problemComm_,
                                                  this->coordinateModel_));
     }
-    else if (algName_ == std::string("wolf")) {
-      this->algorithm_ = rcp(new AlgWolf<Adapter>(this->envConst_,
+    else if (algName_ == std::string("nd")) {
+      this->algorithm_ = rcp(new AlgND<Adapter>(this->envConst_,
                                         problemComm_,this->graphModel_,
 					this->coordinateModel_,this->baseInputAdapter_));
     }
@@ -781,7 +781,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       algName_ = algorithm;
       needConsecutiveGlobalIds = true;
     }
-    else if (algorithm == std::string("wolf"))
+    else if (algorithm == std::string("nd"))
     {
       modelAvail_[GraphModelType]=true;
       modelAvail_[CoordinateModelType]=true;
