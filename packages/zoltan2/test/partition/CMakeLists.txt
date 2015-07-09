@@ -402,14 +402,12 @@ TRIBITS_ADD_TEST(
   )
 
 ##########################################
-#IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Experimental_Wolf)
-
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental_Wolf)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Wolf
+  ND
   SOURCES nd.cpp
   NUM_MPI_PROCS 1
   COMM serial mpi
