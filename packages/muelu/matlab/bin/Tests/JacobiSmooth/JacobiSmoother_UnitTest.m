@@ -33,8 +33,8 @@ try
     disp('Test failed, MueLu''s solution did not match MATLAB''s.');
     exit(-1);
   end
-  
+
 catch me
-  disp('Test failed, on exception.');
+  fprintf('Test failed with exception "%s"\n', me.message);
   exit(-2)
 end

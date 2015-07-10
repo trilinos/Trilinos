@@ -3,7 +3,7 @@
 %of tentative prolongator from matlab function and muelu
 addpath('../..')
 
-try   
+try
   %Create a 2D laplacian problem (80x80 gets 2 MueLu levels)
   A = laplacianfun([80, 80]);
   %Note: In both of these problems, set reuse type to full so that P is not discarded
@@ -18,7 +18,7 @@ try
   %It's contrived but it will make the test pass without a more complicated
   %Ptent function in matlab.
   mueluP = double(mueluP ~= 0);
-  %Now compare the matrices 
+  %Now compare the matrices
   areEqual = true(1);
   diff = mueluP - matlabP;
   diff = nonzeros(diff);
@@ -36,8 +36,8 @@ try
     disp('Test failed, MueLu tentative prolongator did not match MATLAB one.');
     exit(-1);
   end
-  
+
 catch me
-  disp('Test failed, on exception.');
+  fprintf('Test failed with exception "%s"\n', me.message);
   exit(-2)
 end
