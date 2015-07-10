@@ -221,7 +221,7 @@ int cmd_line_arg_parse(
     case 'w':
       /* Weighting options */
       sub_opt = optarg;
-      while(*sub_opt != '\0')
+      while(sub_opt != NULL && *sub_opt != '\0')
       {
         switch(md_getsubopt(&sub_opt, weight_subopts, &value))
         {
@@ -416,7 +416,7 @@ int cmd_line_arg_parse(
 
     case 'm':
       /* Machine type */
-      sub_opt = optarg;
+      sub_opt = (optarg == NULL) ? '\0' : optarg;
       string_to_lower(sub_opt, '\0');
       while(*sub_opt != '\0')
       {
@@ -528,7 +528,7 @@ int cmd_line_arg_parse(
 
     case 'l':
       /* Load balance information */
-      sub_opt = optarg;
+      sub_opt = (optarg == NULL) ? '\0' : optarg;
       string_to_lower(sub_opt, '\0');
       while(*sub_opt != '\0')
       {
@@ -658,7 +658,7 @@ int cmd_line_arg_parse(
       
     case 's':
       /* Eigen solver options */
-      sub_opt = optarg;
+      sub_opt = (optarg == NULL) ? '\0' : optarg;
       string_to_lower(sub_opt, '\0');
       while(*sub_opt != '\0')
       {
@@ -718,8 +718,10 @@ value\n");
     case 'g':
       /* group designations */
       /* allocate string to hold designation */
-      prob->groups = (char*)malloc(strlen(optarg) + 1);
-      strcpy(prob->groups, optarg);
+      if (optarg != NULL) {
+	prob->groups = (char*)malloc(strlen(optarg) + 1);
+	strcpy(prob->groups, optarg);
+      }
       break;
 
     case 'h':

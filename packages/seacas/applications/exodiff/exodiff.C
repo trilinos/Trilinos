@@ -1987,7 +1987,7 @@ bool diff_sideset_df(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, const INT *
 		      v1, v2, d,
 		      (size_t)sset1->Id(),
 		      (size_t)id_map[sset1->Side_Id(e).first-1],
-		      (int)sset1->Side_Id(e).second,i+1);
+		      (int)sset1->Side_Id(e).second,(int)i+1);
 	      std::cout << buf << std::endl;
 	    }
 	  }

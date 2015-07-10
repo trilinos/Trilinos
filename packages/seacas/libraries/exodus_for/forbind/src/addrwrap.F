@@ -1206,17 +1206,18 @@ C
         POINTER (PINCNT4, INCNT4)
         INTEGER*4 IERR4         ! (W)
 
-        integer  nsess
-        integer  ndess
+        integer*4 nsess4
+        integer*4 ndess4
         INTEGER   NINCNT
 
         IDEXO4 = IDEXO
-        CALL EXGSP4 (IDEXO4, IDESS, NSESS, NDESS, IERR4)
-        CALL I4ALLOC (nsess, PINCNT4)
+        CALL EXGSP4 (IDEXO4, IDESS, NSESS4, NDESS4, IERR4)
+        NINCNT = NSESS4
+        CALL I4ALLOC (NINCNT, PINCNT4)
 
         CALL EXGSSC4 (IDEXO4, IDESS, INCNT4, IERR4)
 
-        CALL I4I8 (nsess, PINCNT4, INCNT)
+        CALL I4I8 (NINCNT, PINCNT4, INCNT)
         IERR = IERR4
         END
 

@@ -43,10 +43,10 @@ CXXETRA_DEFINES = -ptused -DNO_MPI ${IOPX}
 CXXEXTRA_DEFINES = -DNO_MPI ${IOPX}
 #endif
 
-SRCS =  Ioex_DatabaseIO.C  Ioex_IOFactory.C  Ioex_Internals.C   Ioex_SuperElement.C
+SRCS =  Iofx_DatabaseIO.C 
 
 OBJS = ${SRCS:.C=.o}
 
-LibraryTargetSubdirs(libIoex.a,$(OBJS),../)
+LibraryTargetSubdirs(libIofx.a,$(OBJS),../)
 DependTarget()
 
