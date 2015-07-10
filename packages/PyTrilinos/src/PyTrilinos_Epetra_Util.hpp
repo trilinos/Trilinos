@@ -106,6 +106,16 @@ convertEpetraVectorToPython(const Teuchos::RCP< const Epetra_Vector > *ev);
 
 ////////////////////////////////////////////////////////////
 
+// Attempt to convert a PyObject to a pointer to an
+// Epetra_MultiVector.  The input PyObject could be a wrapped
+// Epetra_NumPyMultiVector, or a wrapped Domi::MDVector, or an object
+// that supports the DistArray Protocol, or, if the environment is
+// serial, an object that simply supports the Buffer Protocol.
+Teuchos::RCP< Epetra_MultiVector > *
+convertPythonToEpetraMultiVector(PyObject * pyobj);
+
+////////////////////////////////////////////////////////////
+
 // Given an RCP to an Epetra_Operator, convert to a python object and
 // return the pointer.  Attempt to downcast to any one of the many
 // Epetra classes that derive from Epetra_Operator.
