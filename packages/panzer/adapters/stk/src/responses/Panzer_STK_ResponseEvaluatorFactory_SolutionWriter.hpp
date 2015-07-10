@@ -164,6 +164,9 @@ struct RespFactorySolnWriter_Builder {
     // disable/enable the solution fields
     ref->setAddSolutionFields(addSolutionFields_);
 
+    // disable/enable the coordinate fields
+    ref->setAddCoordinateFields(addCoordinateFields_);
+
     // add all additional fields
     for(std::size_t i=0;i<additionalFields_.size();i++)
       ref->addAdditionalField(additionalFields_[i].first,additionalFields_[i].second);
