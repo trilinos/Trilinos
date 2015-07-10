@@ -43,8 +43,8 @@
 //
 // @HEADER
 
-/*! \file RPIMeshAdapterTest.cpp
-    \brief An example of partitioning a SCOREC mesh with RCB.
+/*! \file PartitionAndParMA.cpp
+    \brief Runs a partitioning algorithm followed by ParMA for cleanup on a SCOREC mesh
 
     \author Created by G. Diamond, K. Devine.
 
@@ -222,14 +222,15 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
   //Get rank
   int me = CommT->getRank();
   
-  // Creating mesh adapter
-  if (me == 0) cout << "Creating mesh adapter ... \n\n";
-
-  typedef Zoltan2::RPIMeshAdapter<apf::Mesh2*> inputAdapter_t;
+  //Data for RPI MeshAdapter
+  std::string primary="region";
+  std::string adjacency="face";
+  if (m->getDimension()==2) {
+    primary="face";
+    adjacency="edge";
+  }
+  bool needSecondAdj=false;
   
-  double time_1 = PCU_Time();
-  inputAdapter_t ia(*CommT, m);
-  double time_2 = PCU_Time();
   // Set parameters for partitioning
   if (me == 0) cout << "Creating parameter list ... \n\n";
 
@@ -249,6 +250,7 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "scotch");
+    needSecondAdj=true;
   }
   else if (action == "zoltan_rcb") {
     params.set("debug_level", "verbose_detailed_status");
@@ -279,11 +281,20 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
     Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
     zparams.set("LB_METHOD","HYPERGRAPH");
     //params.set("compute_metrics","yes");
+    adjacency="vertex";
   }
-
+  
   //Print the stats of original mesh
   Parma_PrintPtnStats(m,output_title+"_before");
-
+  
+  // Creating mesh adapter
+  if (me == 0) cout << "Creating mesh adapter ... \n\n";
+  typedef Zoltan2::RPIMeshAdapter<apf::Mesh2*> inputAdapter_t;
+  
+  double time_1 = PCU_Time();
+  inputAdapter_t ia(*CommT, m,primary,adjacency,needSecondAdj);
+  double time_2 = PCU_Time();
+  
 
   // create Partitioning problem
   if (me == 0) cout << "Creating partitioning problem ... \n\n";

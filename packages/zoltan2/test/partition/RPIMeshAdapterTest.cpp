@@ -182,18 +182,19 @@ int main(int narg, char *arg[]) {
   PCU_Comm_Init();
   
   // Generate mesh with MDS
-  double time_1=PCU_Time();
   gmi_register_mesh();
   apf::Mesh2* m = apf::loadMdsMesh(modelFileName.c_str(),meshFileName.c_str());
   apf::verify(m);
-  // Creating mesh adapter
-  if (me == 0) cout << "Creating mesh adapter ... \n\n";
-
-  typedef Zoltan2::RPIMeshAdapter<apf::Mesh2*> inputAdapter_t;
-
-  inputAdapter_t ia(*CommT, m);
   
-  double time_2=PCU_Time();
+  //Data for RPI MeshAdapter
+  std::string primary="region";
+  std::string adjacency="face";
+  if (m->getDimension()==2) {
+    primary="face";
+    adjacency="edge";
+  }
+  bool needSecondAdj=false;
+  
   // Set parameters for partitioning
   if (me == 0) cout << "Creating parameter list ... \n\n";
 
@@ -217,6 +218,7 @@ int main(int narg, char *arg[]) {
     params.set("partitioning_approach", "partition");
     params.set("objects_to_partition","mesh_elements");
     params.set("algorithm", "scotch");
+    needSecondAdj=true;
   }
   else if (action == "zoltan_rcb") {
     do_partitioning = true;
@@ -251,6 +253,7 @@ int main(int narg, char *arg[]) {
     zparams.set("LB_METHOD","HYPERGRAPH");
     zparams.set("LB_APPROACH","REPARTITION");
     //params.set("compute_metrics","yes");
+    adjacency="vertex";
 
   }
   else if (action == "color") {
@@ -259,6 +262,14 @@ int main(int narg, char *arg[]) {
     params.set("debug_procs", "all");
   }
   Parma_PrintPtnStats(m,"before");
+
+  // Creating mesh adapter
+  if (me == 0) cout << "Creating mesh adapter ... \n\n";
+  typedef Zoltan2::RPIMeshAdapter<apf::Mesh2*> inputAdapter_t;
+  double time_1=PCU_Time();
+  inputAdapter_t ia(*CommT, m,primary,adjacency,needSecondAdj);  
+  double time_2=PCU_Time();
+
   // create Partitioning problem
   double time_3 = PCU_Time();
   if (do_partitioning) {

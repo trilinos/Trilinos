@@ -69,7 +69,7 @@ class RPIMeshAdapter : public MeshAdapter<User>
 public:
   
   
-  RPIMeshAdapter(const Comm<int> &comm, apf::Mesh* m)
+  RPIMeshAdapter(const Comm<int> &comm, apf::Mesh* m,std::string primary,std::string adjacency,bool needSecondAdj=false)
   {
     throw std::runtime_error(
           "BUILD ERROR:  ParMA requested but not compiled into Zoltan2.\n"
@@ -135,7 +135,8 @@ public:
    *  lifetime of this InputAdapter.
    */
 
-  RPIMeshAdapter(const Comm<int> &comm, apf::Mesh* m);
+  RPIMeshAdapter(const Comm<int> &comm, apf::Mesh* m,std::string primary,
+                 std::string adjacency,bool needSecondAdj=false);
   void destroy();
   void print(int);
   template <typename Adapter>
@@ -330,16 +331,20 @@ private:
 
 template <typename User>
 RPIMeshAdapter<User>::RPIMeshAdapter(const Comm<int> &comm,
-                                     apf::Mesh* m) {
+                                     apf::Mesh* m,
+                                     std::string primary,
+                                     std::string adjacency,
+                                     bool needSecondAdj) {
   
   
   //mesh dimension
   m_dimension = m->getDimension();
+  if (primary=="region"&&m_dimension<3)
+    throw std::runtime_error("primary type and mesh dimension mismatch");
+  if (adjacency=="region"&&m_dimension<3)
+    throw std::runtime_error("adjacency type and mesh dimension mismatch");
 
-  if (m_dimension==3)
-    this->setEntityTypes("region","face","face");
-  else
-    this->setEntityTypes("face","edge","edge");
+  this->setEntityTypes(primary,adjacency,adjacency);
   //count the local and global numbers as well as assign ids and map local to global
   lids = new apf::Numbering*[m_dimension+1];
   gids = new apf::GlobalNumbering*[m_dimension+1];
@@ -396,19 +401,27 @@ RPIMeshAdapter<User>::RPIMeshAdapter(const Comm<int> &comm,
   //First Adjacency and Second Adjacency data
   adj_gids = new std::vector<zgid_t>*[m_dimension+1];
   adj_offsets = new lno_t**[m_dimension+1];
-  adj2_gids = new std::vector<zgid_t>*[m_dimension+1];
-  adj2_offsets = new lno_t**[m_dimension+1];
-      
+  if (needSecondAdj) {
+    adj2_gids = new std::vector<zgid_t>*[m_dimension+1];
+    adj2_offsets = new lno_t**[m_dimension+1];
+  }
+  else {
+    adj2_gids=NULL;
+    adj2_offsets=NULL;
+  }
   for (int i=0;i<=m_dimension;i++) {
     adj_gids[i] = new std::vector<zgid_t>[m_dimension+1];
     adj_offsets[i] = new lno_t*[m_dimension+1];
-    adj2_gids[i] = new std::vector<zgid_t>[m_dimension+1];
-    adj2_offsets[i] = new lno_t*[m_dimension+1];
+    if (needSecondAdj) {
+      adj2_gids[i] = new std::vector<zgid_t>[m_dimension+1];
+      adj2_offsets[i] = new lno_t*[m_dimension+1];
+    }
     for (int j=0;j<=m_dimension;j++) {
       
       if (i==j) {
         adj_offsets[i][j]=NULL;
-        adj2_offsets[i][j]=NULL;
+        if (needSecondAdj)
+          adj2_offsets[i][j]=NULL;
         continue;
       }
       
@@ -418,13 +431,17 @@ RPIMeshAdapter<User>::RPIMeshAdapter(const Comm<int> &comm,
       
       adj_offsets[i][j] = new lno_t[num_local[i]+1];
       adj_offsets[i][j][0] =0;
-      adj2_offsets[i][j] = new lno_t[num_local[i]+1];
-      adj2_offsets[i][j][0] =0;
+      if (needSecondAdj) {
+        adj2_offsets[i][j] = new lno_t[num_local[i]+1];
+        adj2_offsets[i][j][0] =0;
+      }
       int k=1;
       
       //We need communication for second adjacency
-      PCU_Comm_Begin();
+      if (needSecondAdj)
+        PCU_Comm_Begin();
       std::map<zgid_t,apf::MeshEntity*> part_boundary_mapping;
+      
       while ((ent=m->iterate(itr))) {
         std::set<zgid_t> temp_adjs; //temp storage for second adjacency
         //Get First Adjacency
@@ -433,28 +450,30 @@ RPIMeshAdapter<User>::RPIMeshAdapter(const Comm<int> &comm,
         for (unsigned int l=0;l<adj.getSize();l++) {
           adj_gids[i][j].push_back(apf::getNumber(gids[j],apf::Node(adj[l],0)));
           //Now look at Second Adjacency
-          apf::Adjacent adj2;
-          m->getAdjacent(adj[l],i,adj2);
-          for (unsigned int o=0;o<adj2.getSize();o++)
-            temp_adjs.insert(apf::getNumber(gids[i],apf::Node(adj2[o],0)));
-	  if (i==m_dimension) {
-	    apf::Parts res;
-	    m->getResidence(adj[l],res);
-	     
-	    part_boundary_mapping[apf::getNumber(gids[j],apf::Node(adj[l],0))] = adj[l];
-	    for (apf::Parts::iterator it=res.begin();it!=res.end();it++) {
-	      zgid_t send_vals[2];
-	      send_vals[1]=apf::getNumber(gids[i],apf::Node(ent,0));
-	      send_vals[0]=apf::getNumber(gids[j],apf::Node(adj[l],0));
-	      
-	      PCU_Comm_Pack(*it,send_vals,2*sizeof(zgid_t));
-	    }
-	  }
+          if (needSecondAdj) {
+            apf::Adjacent adj2;
+            m->getAdjacent(adj[l],i,adj2);
+            for (unsigned int o=0;o<adj2.getSize();o++)
+              temp_adjs.insert(apf::getNumber(gids[i],apf::Node(adj2[o],0)));
+            if (i==m_dimension) {
+              apf::Parts res;
+              m->getResidence(adj[l],res);
+              
+              part_boundary_mapping[apf::getNumber(gids[j],apf::Node(adj[l],0))] = adj[l];
+              for (apf::Parts::iterator it=res.begin();it!=res.end();it++) {
+                zgid_t send_vals[2];
+                send_vals[1]=apf::getNumber(gids[i],apf::Node(ent,0));
+                send_vals[0]=apf::getNumber(gids[j],apf::Node(adj[l],0));
+                
+                PCU_Comm_Pack(*it,send_vals,2*sizeof(zgid_t));
+              }
+            }
+          }
         }
         adj_offsets[i][j][k] = adj_gids[i][j].size();
         k++;
         //Copy over local second adjacencies to copies
-	if (i!=m_dimension) {
+	if (needSecondAdj && i!=m_dimension) {
 	  apf::Parts res;
 	  m->getResidence(ent,res);
 	  typename std::set<zgid_t>::iterator adj_itr;
@@ -470,33 +489,35 @@ RPIMeshAdapter<User>::RPIMeshAdapter(const Comm<int> &comm,
         }
       }
       m->end(itr);
-      //Now capture mesh wide second adjacency locally
-      PCU_Comm_Send();
-      std::set<zgid_t>* adjs2 = new std::set<zgid_t>[num_local[i]];
-      while (PCU_Comm_Receive()) {
-        zgid_t adj2[2];
-        PCU_Comm_Unpack(adj2,2*sizeof(zgid_t));
-	
-	if (i==m_dimension) {
-	  apf::MeshEntity* through = part_boundary_mapping[adj2[0]];
-	  apf::Adjacent adj;
-	  m->getAdjacent(through,i,adj);
-	  for (unsigned int l=0;l<adj.getSize();l++) {
-	    if (apf::getNumber(gids[i],apf::Node(adj[l],0))!=adj2[1])
-	      adjs2[apf::getNumber(lids[i],adj[l],0,0)].insert(adj2[1]);
-	  }
-	}
-	else {
-	  lno_t index = lid_mapping[i][adj2[0]];
-	  adjs2[index].insert(adj2[1]);
-	}
-      }      
-      //And finally convert the second adjacency to a vector to be returned to user
-      for (size_t l=0;l<num_local[i];l++) {
-        for (typename std::set<zgid_t>::iterator sitr = adjs2[l].begin();sitr!=adjs2[l].end();sitr++) {
-          adj2_gids[i][j].push_back(*sitr);
+      if (needSecondAdj) {
+        //Now capture mesh wide second adjacency locally
+        PCU_Comm_Send();
+        std::set<zgid_t>* adjs2 = new std::set<zgid_t>[num_local[i]];
+        while (PCU_Comm_Receive()) {
+          zgid_t adj2[2];
+          PCU_Comm_Unpack(adj2,2*sizeof(zgid_t));
+          
+          if (i==m_dimension) {
+            apf::MeshEntity* through = part_boundary_mapping[adj2[0]];
+            apf::Adjacent adj;
+            m->getAdjacent(through,i,adj);
+            for (unsigned int l=0;l<adj.getSize();l++) {
+              if (apf::getNumber(gids[i],apf::Node(adj[l],0))!=adj2[1])
+                adjs2[apf::getNumber(lids[i],adj[l],0,0)].insert(adj2[1]);
+            }
+          }
+          else {
+            lno_t index = lid_mapping[i][adj2[0]];
+            adjs2[index].insert(adj2[1]);
+          }
+        }      
+        //And finally convert the second adjacency to a vector to be returned to user
+        for (size_t l=0;l<num_local[i];l++) {
+          for (typename std::set<zgid_t>::iterator sitr = adjs2[l].begin();sitr!=adjs2[l].end();sitr++) {
+            adj2_gids[i][j].push_back(*sitr);
+          }
+          adj2_offsets[i][j][l+1]=adj2_gids[i][j].size();
         }
-        adj2_offsets[i][j][l+1]=adj2_gids[i][j].size();
       }
     }
   }
@@ -529,14 +550,17 @@ void RPIMeshAdapter<User>::destroy() {
   for (int i=0;i<=m_dimension;i++) {
     delete [] ent_coords[i];
     delete [] adj_gids[i];
-    delete [] adj2_gids[i];
+    if (adj2_gids)
+      delete [] adj2_gids[i];
     for (int j=0;j<=m_dimension;j++) {
       if (i!=j) {
         delete [] adj_offsets[i][j];
-	delete [] adj2_offsets[i][j];
+        if (adj2_gids)
+          delete [] adj2_offsets[i][j];
       }
     }
-    delete [] adj2_offsets[i];
+    if (adj2_gids)
+      delete [] adj2_offsets[i];
     delete [] adj_offsets[i];
     delete [] gid_mapping[i];
     apf::destroyGlobalNumbering(gids[i]);
@@ -545,8 +569,10 @@ void RPIMeshAdapter<User>::destroy() {
   delete [] ent_coords;
   delete [] adj_gids;
   delete [] adj_offsets;
-  delete [] adj2_gids;
-  delete [] adj2_offsets;
+  if (adj2_gids) {
+     delete [] adj2_gids;
+   delete [] adj2_offsets;
+  }
   delete [] gid_mapping;
   delete [] gids;
   delete [] lids;
