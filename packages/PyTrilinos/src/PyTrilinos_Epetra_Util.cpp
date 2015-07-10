@@ -44,16 +44,22 @@
 // system header. This avoids compiler warnings about redefined variables
 // such as _POSIX_C_SOURCE.
 // Local includes
+#define NO_IMPORT_ARRAY
+#include "numpy_include.hpp"
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_Util.hpp"
 #include "PyTrilinos_Epetra_Util.hpp"
 #include "PyTrilinos_PythonException.hpp"
+#include "PyTrilinos_DAP.hpp"
 #include "swigpyrun.h"
 #include "Epetra_NumPyMultiVector.hpp"
 #include "Epetra_NumPyVector.hpp"
 
 // System includes
 #include <algorithm>
+
+// Teuchos includes
+#include "Teuchos_DefaultComm.hpp"
 
 // Epetra includes
 #include "Epetra_ConfigDefs.h"
@@ -70,6 +76,11 @@
 #include "Epetra_FEVbrMatrix.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_JadMatrix.h"
+
+#ifdef HAVE_DOMI
+#include "Domi_MDVector.hpp"
+#include "PyTrilinos_Domi_Util.hpp"
+#endif
 
 namespace PyTrilinos
 {
@@ -134,6 +145,91 @@ convertEpetraVectorToPython(const Teuchos::RCP< const Epetra_Vector > *cev)
   const Teuchos::RCP< Epetra_NumPyVector > *env = new
     Teuchos::RCP< Epetra_NumPyVector >(new Epetra_NumPyVector(View, **cev));
   return SWIG_NewPointerObj((void*)env, swig_ENV_ptr, 1);
+}
+
+////////////////////////////////////////////////////////////////////////
+
+Teuchos::RCP< Epetra_MultiVector > *
+convertPythonToEpetraMultiVector(PyObject * pyobj)
+{
+  // SWIG initialization
+  static swig_type_info * swig_EMV_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Epetra_MultiVector >*");
+  static swig_type_info * swig_DMDV_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<double> >*");
+  //
+  // Get the default communicator
+  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
+    Teuchos::DefaultComm<int>::getComm();
+  //
+  // Result objects
+  void *argp = 0;
+  Teuchos::RCP< Epetra_MultiVector > * result = 0;
+  Teuchos::RCP< Epetra_MultiVector > emv_rcp;
+  Teuchos::RCP< Domi::MDVector<double> > dmdv_rcp;
+  int newmem = 0;
+  //
+  // Check if the Python object is a wrapped Epetra_MultiVector
+  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_EMV_ptr, 0, &newmem);
+  if (SWIG_IsOK(res))
+  {
+    result =
+        reinterpret_cast< Teuchos::RCP< Epetra_MultiVector > * >(argp);
+    return result;
+  }
+
+#ifdef HAVE_DOMI
+  //
+  // Check if the Python object is a wrapped Domi::MDVector<double>
+  newmem = 0;
+  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, &newmem);
+  if (SWIG_IsOK(res))
+  {
+    if (newmem & SWIG_CAST_NEW_MEMORY)
+    {
+      dmdv_rcp =
+        *reinterpret_cast< Teuchos::RCP< Domi::MDVector<double> > * >(argp);
+      delete reinterpret_cast< Teuchos::RCP< Domi::MDVector<double> > * >(argp);
+      //** result = &(dmdv_rcp->getEpetraMultiVectorView());
+    }
+    else
+    {
+      dmdv_rcp =
+        *reinterpret_cast< Teuchos::RCP< Domi::MDVector<double> > * >(argp);
+      //** result = &(dmdv_rcp->getEpetraMultiVectorView());
+    }
+    return result;
+  }
+  //
+  // Check if the Python object supports the DistArray Protocol
+  if (PyObject_HasAttrString(pyobj, "__distarray__"))
+  {
+    DistArrayProtocol dap(pyobj);
+    dmdv_rcp = convertToMDVector<double>(comm, dap);
+    //** result = &(dmdv_rcp->getEpetraMultiVectorView());
+    return result;
+  }
+#endif
+
+  //
+  // Check if the environment is serial, and if so, check if the
+  // Python object is a NumPy array
+  if (comm->getSize() == 1)
+  {
+    if (PyArray_Check(pyobj))
+    {
+      //** result = new Teuchos::RCP< Epetra_NumPyMultiVector >(
+      //**           new Epetra_NumPyMultiVector(pyobj));
+      return result;
+    }
+  }
+  //
+  // If we get to this point, then none of our known converters will
+  // work, so it is time to throw an exception.
+  PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s' to "
+               "an Epetra_MultiVector",
+               PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
+  throw PythonException();
 }
 
 ////////////////////////////////////////////////////////////////////////
