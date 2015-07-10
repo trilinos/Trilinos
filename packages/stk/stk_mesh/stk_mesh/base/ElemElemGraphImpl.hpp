@@ -155,6 +155,8 @@ void break_volume_element_connections_across_shells(const std::set<EntityId> & l
 
 void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::BulkData &m_bulk_data, const std::vector<SharedEdgeInfo> &newlySharedEdges);
 
+bool does_element_have_side(stk::mesh::BulkData& bulkData, stk::mesh::Entity element);
+
 }
 }} // end namespaces stk mesh
 

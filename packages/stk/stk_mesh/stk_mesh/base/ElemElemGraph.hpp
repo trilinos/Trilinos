@@ -92,7 +92,7 @@ protected:
     void add_possibly_connected_elements_to_graph_using_side_nodes( const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideComm,
                                                                     stk::mesh::impl::ConnectedElementDataVector & communicatedElementDataVector,
                                                                     const stk::mesh::EntityVector & elements_to_ignore,
-                                                                    std::vector<impl::SharedEdgeInfo> *newlySharedEdges = nullptr);
+                                                                    std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
 
     void  break_local_volume_element_connections_across_shells(const std::set<stk::mesh::EntityId> & localElementsConnectedToRemoteShell);
 

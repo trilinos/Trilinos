@@ -189,6 +189,12 @@ size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
 }
 
 
+bool does_element_have_side(stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
+{
+    unsigned dimension_of_element = bulkData.bucket(element).topology().dimension();
+    unsigned dimension_of_mesh = bulkData.mesh_meta_data().spatial_dimension();
+    return dimension_of_element == dimension_of_mesh;
+}
 
 std::vector<graphEdgeProc> get_elements_to_communicate(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
         const ElemElemGraph& elem_graph)
@@ -200,7 +206,7 @@ std::vector<graphEdgeProc> get_elements_to_communicate(stk::mesh::BulkData& bulk
         stk::mesh::Entity this_elem_entity = killedElements[i];
         for(size_t j=0;j<elem_graph.get_num_connected_elems(this_elem_entity);++j)
         {
-            if(bulkData.bucket(this_elem_entity).topology().dimension() == bulkData.mesh_meta_data().spatial_dimension() && !elem_graph.is_connected_elem_locally_owned(this_elem_entity, j))
+            if(does_element_have_side(bulkData, this_elem_entity) && !elem_graph.is_connected_elem_locally_owned(this_elem_entity, j))
             {
                 stk::mesh::EntityId other_element_id = elem_graph.get_entity_id_of_remote_element(this_elem_entity,j);
                 int other_proc = elem_graph.get_owning_proc_id_of_remote_element(this_elem_entity, other_element_id);
