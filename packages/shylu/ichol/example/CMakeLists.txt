@@ -116,6 +116,12 @@ IF(Kokkos_ENABLE_Pthread)
     SOURCES example_tri_solve_performance_pthread.cpp
     COMM serial mpi
   )
+
+  TRIBITS_ADD_EXECUTABLE(
+    kokkos_task_data_pthread
+    SOURCES example_kokkos_task_data_pthread.cpp
+    COMM serial mpi
+  )
 ENDIF()
 
 IF(Kokkos_ENABLE_QTHREAD)
