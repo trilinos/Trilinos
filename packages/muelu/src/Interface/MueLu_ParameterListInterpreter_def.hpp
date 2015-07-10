@@ -109,13 +109,13 @@ namespace MueLu {
     if(paramList.isParameter("xml parameter file")){
       std::string filename = paramList.get("xml parameter file","");
       if(filename.length()!=0) {
-	if(comm.is_null()) throw Exceptions::RuntimeError("xml parameter file requires a valid comm");
-	Teuchos::ParameterList paramList2 = paramList;
-	Teuchos::updateParametersFromXmlFileAndBroadcast(filename, Teuchos::Ptr<Teuchos::ParameterList>(&paramList2),*comm);
-	SetParameterList(paramList2);	
+        if(comm.is_null()) throw Exceptions::RuntimeError("xml parameter file requires a valid comm");
+        Teuchos::ParameterList paramList2 = paramList;
+        Teuchos::updateParametersFromXmlFileAndBroadcast(filename, Teuchos::Ptr<Teuchos::ParameterList>(&paramList2),*comm);
+        SetParameterList(paramList2);
       }
-      else     
-	SetParameterList(paramList);
+      else
+        SetParameterList(paramList);
     }
     else
       SetParameterList(paramList);
@@ -468,9 +468,9 @@ namespace MueLu {
         else if (preSmootherType == "RELAXATION")
           preSmootherParams = defaultSmootherParams;
 #ifdef HAVE_MUELU_MATLAB
-	if(preSmootherType == "matlab") 
-	  preSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(preSmootherParams))));
-	else
+        if(preSmootherType == "matlab")
+          preSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(preSmootherParams))));
+        else
 #endif
         preSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(preSmootherType, preSmootherParams, overlap))));
       }
@@ -498,9 +498,9 @@ namespace MueLu {
           postSmoother = preSmoother;
         else
 #ifdef HAVE_MUELU_MATLAB
-	if(postSmootherType == "matlab") 
-	  postSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>(postSmootherParams))));
-	else
+          if(postSmootherType == "matlab")
+            postSmoother = rcp(new SmootherFactory(rcp(new MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>(postSmootherParams))));
+          else
 #endif
           postSmoother = rcp(new SmootherFactory(rcp(new TrilinosSmoother(postSmootherType, postSmootherParams, overlap))));
       }
@@ -556,9 +556,9 @@ namespace MueLu {
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       else
 #ifdef HAVE_MUELU_MATLAB
-	if(coarseType == "matlab") 
-	  coarseSmoother = rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(coarseParams));
-	else
+        if(coarseType == "matlab")
+          coarseSmoother = rcp(new MatlabSmoother<Scalar,LocalOrdinal, GlobalOrdinal, Node>(coarseParams));
+        else
 #endif
         coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
 
@@ -585,7 +585,7 @@ namespace MueLu {
 
     // Aggregation sheme
     MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
-    TEUCHOS_TEST_FOR_EXCEPTION(aggType != "uncoupled" && aggType != "coupled" && aggType != "brick" && aggType != "matlab", 
+    TEUCHOS_TEST_FOR_EXCEPTION(aggType != "uncoupled" && aggType != "coupled" && aggType != "brick" && aggType != "matlab",
     Exceptions::RuntimeError, "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
     #ifndef HAVE_MUELU_MATLAB
       if(aggType == "matlab")
@@ -606,19 +606,12 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: enable phase 3",            bool, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: preserve Dirichlet points", bool, aggParams);
       aggFactory->SetParameterList(aggParams);
-      // I'm not sure why we need this line, but without it we construct CoalesceDropFactory twice
-      // SaPFactory
-      //   FilteredAFactory
-      //     CoalesceDropFactory
-      //   TentativePFactory
-      //     UncoupledAggregationFactory
-      //       CoalesceDropFactory
+      // make sure that the aggregation factory has all necessary data
       aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
       aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
     } else if (aggType == "coupled") {
       aggFactory = rcp(new CoupledAggregationFactory());
       aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
-
     } else if (aggType == "brick") {
       aggFactory = rcp(new BrickAggregationFactory());
       ParameterList aggParams;
@@ -655,7 +648,7 @@ namespace MueLu {
     if (reuseType == "tP") {
       keeps.push_back(keep_pair("Nullspace", manager.GetFactory("Ptent").get()));
       keeps.push_back(keep_pair("P",         manager.GetFactory("Ptent").get()));
-    }    
+    }
 
     // Nullspace
     RCP<NullspaceFactory> nullSpace = rcp(new NullspaceFactory());
