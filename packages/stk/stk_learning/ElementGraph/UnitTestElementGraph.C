@@ -3953,7 +3953,6 @@ void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vecto
             stk::mesh::EntityId nodeID = shared_nodeIDs_and_procs[nodeIdx][1];
             int sharingProc = shared_nodeIDs_and_procs[nodeIdx][2];
             stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeID);
-            ThrowRequireMsg(mesh.is_valid(node), "Howdy");
             mesh.add_node_sharing(node, sharingProc);
         }
     }
@@ -4536,7 +4535,7 @@ TEST( ElementGraph, Hex0AddShell1Parallel )
     meta.commit();
 
     std::vector<stk::mesh::EntityIdVector> hexNodeIDs {
-        { 1, 2, 3, 4, 5,  6,  7,  8 }
+        { 1, 2, 3, 4, 5, 6, 7, 8 }
     };
     stk::mesh::EntityId hexElemIDs[] = { 1 };
     stk::mesh::EntityId hexElemOwningProc[] = { 0 };

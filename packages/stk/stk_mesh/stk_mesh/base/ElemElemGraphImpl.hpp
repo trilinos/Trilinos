@@ -113,16 +113,6 @@ ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::Bulk
 size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, ElemSideToProcAndFaceId& elements_to_communicate,
         const std::vector<stk::mesh::EntityId>& suggested_face_ids, const stk::mesh::Part &part);
 
-void add_possibly_connected_elements_to_graph_using_side_nodes(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
-        SidesForElementGraph& via_sides, ParallelGraphInfo& parallel_graph_info,
-        const ElemSideToProcAndFaceId& elemSideComm,
-        std::vector<ConnectedElementData> & communicatedElementDataVector);
-
-void fill_parallel_graph(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
-        SidesForElementGraph& via_sides, ParallelGraphInfo& parallel_graph_info,
-        ElemSideToProcAndFaceId& elem_side_comm, const std::vector<stk::mesh::EntityId>& suggested_face_ids,
-        const stk::mesh::Part &part);
-
 std::vector<graphEdgeProc> get_elements_to_communicate(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
         const ElemElemGraph& elem_graph);
 
