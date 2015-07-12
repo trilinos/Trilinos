@@ -6099,7 +6099,7 @@ bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std:
       error_log << __FILE__ << ":" << __LINE__ << ": ";
       error_log << "problem is sharing-consistency (entity in shared part iff it is in comm-list): "
                 << "has_shares_part: " << (has_shares_part?"true":"false") << ", "
-                << "in comm-list: " << (shares?"true":"false") << ", has entity key " << entity_key(entity) << std::endl;
+                << "in comm-list: " << (shares?"true":"false") << ", entity key " << entity_key(entity) <<" "<<this->bucket(entity).topology() << std::endl;
       this_result = false ;
     }
 
@@ -6156,8 +6156,8 @@ bool BulkData::verify_parallel_attributes_for_bucket( Bucket const& bucket, std:
     if ( ! this_result ) {
       result = false ;
       error_log << __FILE__ << ":" << __LINE__ << ": ";
-      error_log << "P" << parallel_rank() << ": " << " entity " << entity_rank(entity)<< ",id="<<identifier(entity);
-      error_log << " details: owner(" << p_owner<<"), ";
+      error_log << "P" << parallel_rank() << ": " << " entity " << this->entity_key(entity) << " " << this->bucket(entity).topology();
+      error_log << " details: owner(" << p_owner<<"), shared=" << (bucket.shared() ? "true, " : "false, ");
 
       for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<mesh_meta_data().entity_rank_count(); rank++)
       {
