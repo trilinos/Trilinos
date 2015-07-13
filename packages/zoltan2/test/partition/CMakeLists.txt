@@ -179,7 +179,8 @@ TRIBITS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
-IF (${PACKAGE_NAME}_ENABLE_SCOREC)
+IF (${PROJECT_NAME}_ENABLE_SCOREC)
+   MESSAGE("GFD HELLO") 
   TRIBITS_ADD_TEST(
     pamgenMeshAdapterTest
     NAME pamgenMeshAdapterTest_ParMA
@@ -402,15 +403,13 @@ TRIBITS_ADD_TEST(
   )
 
 ##########################################
-#IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Experimental_Wolf)
-
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental_Wolf)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Wolf
-  SOURCES wolf.cpp
+  ND
+  SOURCES nd.cpp
   NUM_MPI_PROCS 1
   COMM serial mpi
   ARGS

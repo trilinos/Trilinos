@@ -96,6 +96,10 @@ IF(PyTrilinos_ENABLE_EpetraExt)
   ENDIF(PyTrilinos_ENABLE_Epetra)
 ENDIF(PyTrilinos_ENABLE_EpetraExt)
 
+IF(PyTrilinos_ENABLE_Domi)
+  PyTrilinos_MAKE_TEST(exDomi_Simple)
+ENDIF(PyTrilinos_ENABLE_Domi)
+
 IF(PyTrilinos_ENABLE_Isorropia)
   IF(PyTrilinos_ENABLE_Epetra)
     PyTrilinos_MAKE_TEST(exIsorropia)

@@ -87,7 +87,7 @@ namespace Example {
       // create workspace per league
       createInternalWorkSpace();
     }
-    virtual~SymbolicFactorHelper() { 
+    virtual~SymbolicFactorHelper() {
       freeInternalWorkSpace();
     }
 
@@ -106,6 +106,7 @@ namespace Example {
       void push(const ordinal_type val) { _q[_end++] = val; }
       ordinal_type pop() { return _q[_begin++]; }
       ordinal_type end() { return _end; }
+      void reset() { _begin = 0; _end = 0; }
     };
 
     class FunctorComputeNonZeroPatternInRow {
@@ -147,12 +148,16 @@ namespace Example {
         const int lrank = member.league_rank();
         const int lsize = member.league_size();
 
+        league_specific_ordinal_type_array_ptr queue    = &_queue(0, lrank);
+        league_specific_ordinal_type_array_ptr distance = &_distance(0, lrank);
+        league_specific_ordinal_type_array_ptr visited  = &_visited(0, lrank);
+
+        for (ordinal_type i=0;i<_m;++i)
+          visited[i] = 0;
+
         // shuffle rows to get better load balance;
         // for instance, if ND is applied, more fills are generated in the last seperator.
         for (ordinal_type i=lrank;i<_m;i+=lsize) {
-          league_specific_ordinal_type_array_ptr queue    = &_queue(0, lrank);
-          league_specific_ordinal_type_array_ptr distance = &_distance(0, lrank);
-          league_specific_ordinal_type_array_ptr visited  = &_visited(0, lrank);
 
           size_type cnt = 0;
 
@@ -209,8 +214,8 @@ namespace Example {
             for (ordinal_type j=0;j<q.end();++j) {
               const ordinal_type jj = queue[j];
               distance[jj] = 0;
-              visited[jj] = 0;
             }
+            q.reset();
           }
           switch (_phase) {
           case 0:
@@ -259,7 +264,6 @@ namespace Example {
     int createNonZeroPattern(const ordinal_type level,
                              const int uplo,
                              CrsMatrixType &F) {
-
       // all output array should be local and rcp in Kokkos::View manage memory (de)allocation
       size_type_array ap = size_type_array(_label+"::Output::RowPtrArray", _m+1);
 

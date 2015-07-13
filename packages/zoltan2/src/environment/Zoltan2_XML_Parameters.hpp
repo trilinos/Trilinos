@@ -407,7 +407,7 @@
         <String value=\"block\"/> \
         <String value=\"cyclic\"/> \
         <String value=\"random\"/> \
-        <String value=\"wolf\"/> \
+        <String value=\"nd\"/> \
         <String value=\"zoltan\"/> \
       </Validator> \
       <Validator defaultParameterName=\"rectilinear\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"26\"> \

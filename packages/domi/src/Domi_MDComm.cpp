@@ -62,8 +62,8 @@ const Layout MDComm::commLayout = C_ORDER;
 
 ////////////////////////////////////////////////////////////////////////
 
-MDComm::MDComm(const Teuchos::ArrayView< int > & commDims,
-               const Teuchos::ArrayView< int > & periodic) :
+MDComm::MDComm(const Teuchos::ArrayView< const int > & commDims,
+               const Teuchos::ArrayView< const int > & periodic) :
   _teuchosComm(Teuchos::DefaultComm< int >::getComm()),
   _commDims(regularizeCommDims(_teuchosComm->getSize(),
                                commDims.size(),
@@ -79,8 +79,8 @@ MDComm::MDComm(const Teuchos::ArrayView< int > & commDims,
 ////////////////////////////////////////////////////////////////////////
 
 MDComm::MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
-               const Teuchos::ArrayView< int > & commDims,
-               const Teuchos::ArrayView< int > & periodic) :
+               const Teuchos::ArrayView< const int > & commDims,
+               const Teuchos::ArrayView< const int > & periodic) :
   _teuchosComm(teuchosComm),
   _commDims(regularizeCommDims(teuchosComm->getSize(),
                                commDims.size(),
@@ -200,8 +200,8 @@ MDComm::MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
 ////////////////////////////////////////////////////////////////////////
 
 MDComm::MDComm(int numDims,
-               const Teuchos::ArrayView< int > & commDims,
-               const Teuchos::ArrayView< int > & periodic) :
+               const Teuchos::ArrayView< const int > & commDims,
+               const Teuchos::ArrayView< const int > & periodic) :
   _teuchosComm(Teuchos::DefaultComm< int >::getComm()),
   _commDims(regularizeCommDims(_teuchosComm->getSize(),
                                numDims,
@@ -218,8 +218,8 @@ MDComm::MDComm(int numDims,
 
 MDComm::MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
                int numDims,
-               const Teuchos::ArrayView< int > & commDims,
-               const Teuchos::ArrayView< int > & periodic) :
+               const Teuchos::ArrayView< const int > & commDims,
+               const Teuchos::ArrayView< const int > & periodic) :
   _teuchosComm(teuchosComm),
   _commDims(regularizeCommDims(teuchosComm->getSize(),
                                numDims,

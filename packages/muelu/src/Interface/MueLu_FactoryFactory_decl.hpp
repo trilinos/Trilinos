@@ -113,6 +113,7 @@
 #include "MueLu_SubBlockAFactory.hpp"
 #endif
 #include "MueLu_TentativePFactory.hpp"
+#include "MueLu_ToggleCoordinatesTransferFactory.hpp"
 #include "MueLu_TogglePFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_TransPFactory.hpp"
@@ -207,6 +208,7 @@ namespace MueLu {
       if (factoryName == "SubBlockAFactory")                return Build2<SubBlockAFactory>             (paramList, factoryMapIn, factoryManagersIn);
 #endif
       if (factoryName == "TentativePFactory")               return Build2<TentativePFactory>            (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "ToggleCoordinatesTransferFactory")return BuildToggleCoordinatesTransferFactory(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TogglePFactory")                  return BuildTogglePFactory<TogglePFactory>  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TransPFactory")                   return Build2<TransPFactory>                (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TrilinosSmoother")                return BuildTrilinosSmoother                (paramList, factoryMapIn, factoryManagersIn);
@@ -440,6 +442,51 @@ namespace MueLu {
           factory->AddCoarseNullspaceFactory(p);
         }
       }
+      return factory;
+    }
+
+    RCP<ToggleCoordinatesTransferFactory> BuildToggleCoordinatesTransferFactory(const Teuchos::ParameterList & paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+      RCP<ToggleCoordinatesTransferFactory> factory;
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isSublist("TransferFactories") == false, Exceptions::RuntimeError, "FactoryFactory::BuildToggleCoordinatesTransferFactory: the ToggleCoordinatesTransferFactory needs a sublist 'TransferFactories' containing information about the subfactories for coordinate transfer!");
+
+      RCP<Teuchos::ParameterList>       paramListNonConst = rcp(new Teuchos::ParameterList(paramList));
+      RCP<const Teuchos::ParameterList> transferFactories = rcp(new Teuchos::ParameterList(*sublist(paramListNonConst, "TransferFactories")));
+      paramListNonConst->remove("TransferFactories");
+
+      // build CoordinatesTransferFactory
+      factory = Build2<ToggleCoordinatesTransferFactory>(*paramListNonConst, factoryMapIn, factoryManagersIn);
+
+      // count how many coordinate transfer factories have been declared.
+      // the numbers must match!
+      int numCoordTransferFactories = 0;
+      for (Teuchos::ParameterList::ConstIterator param = transferFactories->begin(); param != transferFactories->end(); ++param) {
+        size_t foundCoordinates = transferFactories->name(param).find("Coordinates");
+        if (foundCoordinates != std::string::npos && foundCoordinates == 0 && transferFactories->name(param).length()==12) {
+          numCoordTransferFactories++;
+          continue;
+        }
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(numCoordTransferFactories != 2, Exceptions::RuntimeError, "FactoryFactory::BuildToggleCoordinatesTransfer: The ToggleCoordinatesTransferFactory needs two (different) coordinate transfer factories. The factories have to be provided using the names Coordinates%i, where %i denotes a number between 1 and 9.");
+
+      // create empty vectors with data
+      std::vector<Teuchos::ParameterEntry> coarseCoordsFactoryNames(numCoordTransferFactories);
+
+      for (Teuchos::ParameterList::ConstIterator param = transferFactories->begin(); param != transferFactories->end(); ++param) {
+        size_t foundCoords = transferFactories->name(param).find("Coordinates");
+        if (foundCoords != std::string::npos && foundCoords == 0 && transferFactories->name(param).length()==12) {
+          int number = atoi(&(transferFactories->name(param).at(11)));
+              TEUCHOS_TEST_FOR_EXCEPTION(number < 1 || number > numCoordTransferFactories, Exceptions::RuntimeError, "FactoryFactory::BuildToggleCoordinatesTransfer: Please use the format Coordinates%i with %i an integer between 1 and the maximum number of coordinate transfer factories in ToggleCoordinatesTransferFactory!");
+              coarseCoordsFactoryNames[number-1] = transferFactories->entry(param);
+              continue;
+        }
+      }
+
+      // register all coarse nullspace factories in TogglePFactory
+      for (std::vector<Teuchos::ParameterEntry>::const_iterator it = coarseCoordsFactoryNames.begin(); it != coarseCoordsFactoryNames.end(); ++it) {
+        RCP<const FactoryBase> p = BuildFactory(*it, factoryMapIn, factoryManagersIn);
+        factory->AddCoordTransferFactory(p);
+      }
+
       return factory;
     }
 

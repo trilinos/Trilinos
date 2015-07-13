@@ -1,0 +1,38 @@
+{
+    "config_version": 2,
+    "solver": {
+        "preconditioner": {
+            "print_grid_stats": 1,
+            "print_vis_data": 1,
+            "solver": "AMG",
+            "algorithm": "AGGREGATION",
+	    "max_levels": 50,
+            "dense_lu_num_rows":1000,
+            "selector": "SIZE_8",
+            "smoother": {
+                "scope": "jacobi",
+                "solver": "BLOCK_JACOBI",
+                "monitor_residual": 1,
+                "print_solve_stats": 1
+            },
+            "print_solve_stats": 1,
+            "presweeps": 1,
+            "max_iters": 1,
+            "monitor_residual": 1,
+            "store_res_history": 0,
+            "scope": "amg",
+            "cycle": "CGF",
+            "postsweeps": 1
+        },
+        "solver": "PCG",
+        "print_solve_stats": 1,
+	"print_config": 1,
+        "obtain_timings": 1,
+        "max_iters": 450,
+        "monitor_residual": 1,
+        "convergence": "ABSOLUTE",
+        "scope": "main",
+        "tolerance": 1e-06,
+        "norm": "L2"
+    }
+}

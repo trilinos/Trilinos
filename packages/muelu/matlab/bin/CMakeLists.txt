@@ -70,13 +70,12 @@ if(TPL_ENABLE_MATLAB)
   # Copy these files over from src tree
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_Output_cp
     SOURCE_FILES muelu.m matlab setup.m constructAggregates.m
-RunBrickAggTest.m RunJacobiTest.m RunPtentTest.m
     )
 
 
 
 
-  
+
   TRIBITS_ADD_TEST_DIRECTORIES(Tests/UnsmoothedP)
   TRIBITS_ADD_TEST_DIRECTORIES(Tests/JacobiSmooth)
   TRIBITS_ADD_TEST_DIRECTORIES(Tests/Brick)

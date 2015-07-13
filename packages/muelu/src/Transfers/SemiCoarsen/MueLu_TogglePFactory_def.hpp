@@ -104,8 +104,6 @@ namespace MueLu {
     std::ostringstream levelstr;
     levelstr << coarseLevel.GetLevelID();
 
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
-
     TEUCHOS_TEST_FOR_EXCEPTION(nspFacts_.size() != prolongatorFacts_.size(), Exceptions::RuntimeError, "MueLu::TogglePFactory::Build: The number of provided prolongator factories and coarse nullspace factories must be identical.");
     TEUCHOS_TEST_FOR_EXCEPTION(nspFacts_.size() != 2, Exceptions::RuntimeError, "MueLu::TogglePFactory::Build: TogglePFactory needs two different transfer operator strategies for toggling."); // TODO adapt this/weaken this as soon as other toggling strategies are introduced.
 
@@ -150,7 +148,7 @@ namespace MueLu {
     // store prolongator with this factory identification.
     Set(coarseLevel, "P", P);
     Set(coarseLevel, "Nullspace", coarseNullspace);
-
+    Set(coarseLevel, "Chosen P", nProlongatorFactory);
   } //Build()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

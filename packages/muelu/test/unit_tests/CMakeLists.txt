@@ -85,6 +85,10 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   APPEND_SET(SOURCES Smoothers/Amesos2Smoother.cpp)
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_AmgX)
+  APPEND_SET(SOURCES Adapters/AmgxOperatorAdapter.cpp)
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_Belos)
   APPEND_SET(SOURCES Adapters/BelosAdapters.cpp)
 ENDIF()

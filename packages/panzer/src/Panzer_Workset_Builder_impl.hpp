@@ -69,6 +69,32 @@ panzer::buildWorksets(const panzer::PhysicsBlock& pb,
 		      const std::vector<std::size_t>& local_cell_ids,
 		      const ArrayT& vertex_coordinates)
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  WorksetNeeds needs;
+  needs.cellData = pb.cellData();
+
+  const std::map<int,RCP<panzer::IntegrationRule> >& int_rules = pb.getIntegrationRules();
+  for(std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules.begin();
+      ir_itr != int_rules.end(); ++ir_itr)
+    needs.int_rules.push_back(ir_itr->second);
+  
+  const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases= pb.getBases();
+  for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases.begin();
+      b_itr != bases.end(); ++b_itr)
+    needs.bases.push_back(b_itr->second);
+ 
+  return buildWorksets(needs,pb.elementBlockID(),local_cell_ids,vertex_coordinates);
+}
+
+template<typename ArrayT>
+Teuchos::RCP< std::vector<panzer::Workset> > 
+panzer::buildWorksets(const WorksetNeeds & needs,
+                      const std::string & elementBlock,
+		      const std::vector<std::size_t>& local_cell_ids,
+		      const ArrayT& vertex_coordinates)
+{
   using std::vector;
   using std::string;
   using Teuchos::RCP;
@@ -78,7 +104,7 @@ panzer::buildWorksets(const panzer::PhysicsBlock& pb,
 
   std::size_t total_num_cells = local_cell_ids.size();
 
-  std::size_t workset_size = pb.cellData().numCells();
+  std::size_t workset_size = needs.cellData.numCells();
 
   Teuchos::RCP< std::vector<panzer::Workset> > worksets_ptr = 
     Teuchos::rcp(new std::vector<panzer::Workset>);
@@ -94,37 +120,28 @@ panzer::buildWorksets(const panzer::PhysicsBlock& pb,
      worksets.resize(1);
      std::vector<panzer::Workset>::iterator i = worksets.begin();
      i->num_cells = 0;
-     i->block_id = pb.elementBlockID();
+     i->block_id = elementBlock;
      i->ir_degrees = ir_degrees;
      i->basis_names = basis_names;
 
-     const std::map<int,RCP<panzer::IntegrationRule> >& int_rules = pb.getIntegrationRules();
-     
-     for (std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules.begin();
-	  ir_itr != int_rules.end(); ++ir_itr) {
+     for (std::size_t j=0;j<needs.int_rules.size();j++) {
          
        RCP<panzer::IntegrationValues2<double> > iv2 = 
 	 rcp(new panzer::IntegrationValues2<double>("",true));
-       iv2->setupArrays(ir_itr->second);
+       iv2->setupArrays(needs.int_rules[j]);
 
-       ir_degrees->push_back(ir_itr->first);
-       // i->int_rules.push_back(iv);
+       ir_degrees->push_back(needs.int_rules[j]->cubature_degree);
        i->int_rules.push_back(iv2);
      }
 
-     const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases= pb.getBases();
-
      // Need to create all combinations of basis/ir pairings 
-     for (std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules.begin();
-	  ir_itr != int_rules.end(); ++ir_itr) {
-
-       for (std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases.begin();
-	    b_itr != bases.end(); ++b_itr) {
-
-	 RCP<panzer::BasisIRLayout> b_layout = rcp(new panzer::BasisIRLayout(b_itr->second,*ir_itr->second));
+     for (std::size_t j=0;j<needs.int_rules.size();j++) {
+       for (std::size_t b=0;b<needs.bases.size();b++) {
+	 RCP<panzer::BasisIRLayout> b_layout 
+             = rcp(new panzer::BasisIRLayout(needs.bases[b],*needs.int_rules[j]));
 	 
-	 RCP<panzer::BasisValues2<double> > bv2 = 
-	   rcp(new panzer::BasisValues2<double>("",true,true));
+	 RCP<panzer::BasisValues2<double> > bv2 
+             = rcp(new panzer::BasisValues2<double>("",true,true));
 	 bv2->setupArrays(b_layout);
 	 i->bases.push_back(bv2);
 
@@ -170,14 +187,11 @@ panzer::buildWorksets(const panzer::PhysicsBlock& pb,
       cell_local_ids_k(i) = wkst->cell_local_ids[i];
     wkst->cell_local_ids_k = cell_local_ids_k;
     
-    // wkst->cell_vertex_coordinates.resize(workset_size,
-    //                                     vertex_coordinates.dimension(1),
-    //                                     vertex_coordinates.dimension(2));
     wkst->cell_vertex_coordinates = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("cvc",workset_size,
 					 vertex_coordinates.dimension(1),
 					 vertex_coordinates.dimension(2));
-    wkst->block_id = pb.elementBlockID();
-    wkst->subcell_dim = pb.cellData().baseCellDimension();
+    wkst->block_id = elementBlock;
+    wkst->subcell_dim = needs.cellData.baseCellDimension();
     wkst->subcell_index = 0;
     wkst->details.push_back(Teuchos::rcpFromRef(*wkst));
   }
@@ -207,65 +221,9 @@ panzer::buildWorksets(const panzer::PhysicsBlock& pb,
     wkst->basis_names = basis_names;
   }
 
-  const std::map<int,RCP<panzer::IntegrationRule> >& int_rules = pb.getIntegrationRules();
-
-  for (std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules.begin();
-       ir_itr != int_rules.end(); ++ir_itr) {
-    
-    ir_degrees->push_back(ir_itr->first);
-
-    for (std::vector<panzer::Workset>::iterator wkst = worksets.begin(); wkst != worksets.end(); ++wkst) {
-      
-      RCP<panzer::IntegrationValues2<double> > iv2 = 
-        rcp(new panzer::IntegrationValues2<double>("",true));
-      iv2->setupArrays(ir_itr->second);
-      iv2->evaluateValues(wkst->cell_vertex_coordinates);
-      wkst->int_rules.push_back(iv2);
-
-    }
-  }
-
-  const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases= pb.getBases();
-     
-
-  // Need to create all combinations of basis/ir pairings 
-
-  // Loop over ir
-  for (std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules.begin();
-       ir_itr != int_rules.end(); ++ir_itr) {
-    
-    // Loop over basis
-    for (std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases.begin();
-	 b_itr != bases.end(); ++b_itr) {
-      
-      RCP<panzer::BasisIRLayout> b_layout = rcp(new panzer::BasisIRLayout(b_itr->second,*ir_itr->second));
-      basis_names->push_back(b_layout->name());
-      
-      // Loop over worksets
-      for (std::vector<panzer::Workset>::iterator wkst = worksets.begin(); wkst != worksets.end(); ++wkst) {
-
-	std::size_t int_degree_index = 
-	  std::distance(ir_degrees->begin(), 
-			std::find(ir_degrees->begin(), 
-				  ir_degrees->end(), 
-				  ir_itr->second->order()));
-	
-	RCP<panzer::BasisValues2<double> > bv2 = 
-	  rcp(new panzer::BasisValues2<double>("",true,true));
-	bv2->setupArrays(b_layout);
-	bv2->evaluateValues(wkst->int_rules[int_degree_index]->cub_points,
-			   wkst->int_rules[int_degree_index]->jac,
-			   wkst->int_rules[int_degree_index]->jac_det,
-			   wkst->int_rules[int_degree_index]->jac_inv,
-			   wkst->int_rules[int_degree_index]->weighted_measure,
-			   wkst->cell_vertex_coordinates);
-
-	wkst->bases.push_back(bv2);
-      }
-      
-    }
-    
-  }
+  // setup the integration rules and bases
+  for(std::vector<panzer::Workset>::iterator wkst = worksets.begin(); wkst != worksets.end(); ++wkst)
+    populateValueArrays(wkst->num_cells,false,needs,*wkst);
 
   return worksets_ptr;
 }
@@ -275,14 +233,38 @@ panzer::buildWorksets(const panzer::PhysicsBlock& pb,
 
 template<typename ArrayT>
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >
-panzer::buildBCWorkset(const panzer::PhysicsBlock & volume_pb,
+panzer::buildBCWorkset(const panzer::PhysicsBlock & pb,
 		       const std::vector<std::size_t>& local_cell_ids,
 		       const std::vector<std::size_t>& local_side_ids,
 		       const ArrayT& vertex_coordinates)
 {
-  using std::vector;
-  using std::map;
-  using std::string;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  WorksetNeeds needs;
+  needs.cellData = pb.cellData();
+
+  const std::map<int,RCP<panzer::IntegrationRule> >& int_rules = pb.getIntegrationRules();
+  for(std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules.begin();
+      ir_itr != int_rules.end(); ++ir_itr)
+    needs.int_rules.push_back(ir_itr->second);
+  
+ const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases= pb.getBases();
+ for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases.begin();
+     b_itr != bases.end(); ++b_itr)
+   needs.bases.push_back(b_itr->second);
+ 
+  return buildBCWorkset(needs,pb.elementBlockID(),local_cell_ids,local_side_ids,vertex_coordinates);
+}
+
+template<typename ArrayT>
+Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+panzer::buildBCWorkset(const WorksetNeeds & needs,
+                       const std::string & elementBlock,
+                       const std::vector<std::size_t>& local_cell_ids,
+                       const std::vector<std::size_t>& local_side_ids,
+                       const ArrayT& vertex_coordinates)
+{
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -299,9 +281,6 @@ panzer::buildBCWorkset(const panzer::PhysicsBlock & volume_pb,
   // index.  Each workset for a boundary condition is associated with
   // a local side for the element
   
-  // std::cout << "local_side_ids.size() = " << local_side_ids.size() 
-  // 	    << std::endl;
-
   TEUCHOS_ASSERT(local_side_ids.size() == local_cell_ids.size());
   TEUCHOS_ASSERT(local_side_ids.size() == static_cast<std::size_t>(vertex_coordinates.dimension(0)));
 
@@ -317,22 +296,19 @@ panzer::buildBCWorkset(const panzer::PhysicsBlock & volume_pb,
   for (side = element_list.begin(); side != element_list.end(); ++side) {
 
     std::vector<std::size_t>& cell_local_ids = worksets[side->first].cell_local_ids;
-    // Intrepid::FieldContainer<double> & coords = worksets[side->first].cell_vertex_coordinates;
-    // coords.resize(side->second.size(),vertex_coordinates.dimension(1),vertex_coordinates.dimension(2));
 
     worksets[side->first].cell_vertex_coordinates = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("cvc",
                                                           side->second.size(),
                                                           vertex_coordinates.dimension(1),
                                                           vertex_coordinates.dimension(2));
-    Workset::CellCoordArray coords2 = worksets[side->first].cell_vertex_coordinates;
+    Workset::CellCoordArray coords = worksets[side->first].cell_vertex_coordinates;
 
     for (std::size_t cell = 0; cell < side->second.size(); ++cell) {
       cell_local_ids.push_back(side->second[cell].second);
 
       for (std::size_t vertex = 0; vertex < Teuchos::as<std::size_t>(vertex_coordinates.dimension(1)); ++ vertex)
 	for (std::size_t dim = 0; dim < Teuchos::as<std::size_t>(vertex_coordinates.dimension(2)); ++ dim) {
-	  // coords(cell,vertex,dim) = vertex_coordinates(side->second[cell].first,vertex,dim);
-	  coords2(cell,vertex,dim) = vertex_coordinates(side->second[cell].first,vertex,dim);
+	  coords(cell,vertex,dim) = vertex_coordinates(side->second[cell].first,vertex,dim);
         }
     }
 
@@ -342,8 +318,8 @@ panzer::buildBCWorkset(const panzer::PhysicsBlock & volume_pb,
     worksets[side->first].cell_local_ids_k = cell_local_ids_k;
 
     worksets[side->first].num_cells = worksets[side->first].cell_local_ids.size();
-    worksets[side->first].block_id = volume_pb.elementBlockID();
-    worksets[side->first].subcell_dim = volume_pb.cellData().baseCellDimension() - 1;
+    worksets[side->first].block_id = elementBlock;
+    worksets[side->first].subcell_dim = needs.cellData.baseCellDimension() - 1;
     worksets[side->first].subcell_index = side->first;
     worksets[side->first].details.push_back(Teuchos::rcpFromRef(worksets[side->first]));
   }
@@ -352,7 +328,7 @@ panzer::buildBCWorkset(const panzer::PhysicsBlock & volume_pb,
   for (std::map<unsigned,panzer::Workset>::iterator wkst = worksets.begin();
        wkst != worksets.end(); ++wkst) {
 
-    populateValueArrays(wkst->second.num_cells,true,volume_pb,wkst->second); // populate "side" values
+    populateValueArrays(wkst->second.num_cells,true,needs,wkst->second); // populate "side" values
   }
 
   return worksets_ptr;
@@ -372,6 +348,38 @@ panzer::buildEdgeWorksets(const panzer::PhysicsBlock & pb_a,
 		          const std::vector<std::size_t>& local_side_ids_b,
 		          const ArrayT& vertex_coordinates_b)
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  WorksetNeeds needs_a;
+  needs_a.cellData = pb_a.cellData();
+
+  const std::map<int,RCP<panzer::IntegrationRule> >& int_rules_a  = pb_a.getIntegrationRules();
+  for(std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules_a.begin();
+      ir_itr != int_rules_a.end(); ++ir_itr)
+    needs_a.int_rules.push_back(ir_itr->second);
+  
+  const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases_a = pb_a.getBases();
+  for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases_a.begin();
+      b_itr != bases_a.end(); ++b_itr)
+    needs_a.bases.push_back(b_itr->second);
+
+  WorksetNeeds needs_b;
+  needs_b.cellData = pb_b.cellData();
+
+  const std::map<int,RCP<panzer::IntegrationRule> >& int_rules_b  = pb_b.getIntegrationRules();
+  for(std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules_b.begin();
+      ir_itr != int_rules_b.end(); ++ir_itr)
+    needs_b.int_rules.push_back(ir_itr->second);
+  
+  const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases_b = pb_b.getBases();
+  for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases_b.begin();
+      b_itr != bases_b.end(); ++b_itr)
+    needs_b.bases.push_back(b_itr->second);
+
+  return buildEdgeWorksets(needs_a,pb_a.elementBlockID(),local_cell_ids_a,local_side_ids_a,vertex_coordinates_a,
+                           needs_b,pb_b.elementBlockID(),local_cell_ids_b,local_side_ids_b,vertex_coordinates_b);
+/*
   using std::vector;
   using std::string;
   using Teuchos::RCP;
@@ -492,16 +500,144 @@ panzer::buildEdgeWorksets(const panzer::PhysicsBlock & pb_a,
   TEUCHOS_ASSERT(current_workset==worksets.end());
 
   return worksets_ptr;
+*/
+}
+
+template<typename ArrayT>
+Teuchos::RCP<std::vector<panzer::Workset> > 
+panzer::buildEdgeWorksets(const WorksetNeeds & needs_a,
+                   const std::string & eblock_a,
+	 	   const std::vector<std::size_t>& local_cell_ids_a,
+		   const std::vector<std::size_t>& local_side_ids_a,
+		   const ArrayT& vertex_coordinates_a,
+                   const WorksetNeeds & needs_b,
+                   const std::string & eblock_b,
+		   const std::vector<std::size_t>& local_cell_ids_b,
+		   const std::vector<std::size_t>& local_side_ids_b,
+		   const ArrayT& vertex_coordinates_b)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  panzer::MDFieldArrayFactory mdArrayFactory("",true);
+
+  std::size_t total_num_cells_a = local_cell_ids_a.size();
+  std::size_t total_num_cells_b = local_cell_ids_b.size();
+
+  TEUCHOS_ASSERT(total_num_cells_a==total_num_cells_b);
+  TEUCHOS_ASSERT(local_side_ids_a.size() == local_cell_ids_a.size());
+  TEUCHOS_ASSERT(local_side_ids_a.size() == static_cast<std::size_t>(vertex_coordinates_a.dimension(0)));
+  TEUCHOS_ASSERT(local_side_ids_b.size() == local_cell_ids_b.size());
+  TEUCHOS_ASSERT(local_side_ids_b.size() == static_cast<std::size_t>(vertex_coordinates_b.dimension(0)));
+
+  std::size_t total_num_cells = total_num_cells_a;
+
+  std::size_t workset_size = needs_a.cellData.numCells();
+
+  Teuchos::RCP< std::vector<panzer::Workset> > worksets_ptr = 
+    Teuchos::rcp(new std::vector<panzer::Workset>);
+  std::vector<panzer::Workset>& worksets = *worksets_ptr;
+   
+  // special case for 0 elements!
+  if(total_num_cells==0) {
+
+     // Setup integration rules and basis
+     RCP<std::vector<int> > ir_degrees = rcp(new std::vector<int>(0));
+     RCP<std::vector<std::string> > basis_names = rcp(new std::vector<std::string>(0));
+      
+     worksets.resize(1);
+     std::vector<panzer::Workset>::iterator i = worksets.begin();
+
+     i->details.resize(2);
+     i->details[0] = Teuchos::rcpFromRef(*i);
+     i->details[0]->block_id = eblock_a;
+     i->details[1] = Teuchos::rcp(new panzer::WorksetDetails);
+     i->details[1]->block_id = eblock_b;
+
+     i->num_cells = 0;
+     i->ir_degrees = ir_degrees;
+     i->basis_names = basis_names;
+
+     for(std::size_t j=0;j<needs_a.int_rules.size();j++) {
+         
+      RCP<panzer::IntegrationValues2<double> > iv2 = 
+         rcp(new panzer::IntegrationValues2<double>("",true));
+       iv2->setupArrays(needs_a.int_rules[j]);
+
+       ir_degrees->push_back(needs_a.int_rules[j]->cubature_degree);
+       i->int_rules.push_back(iv2);
+     }
+
+     // Need to create all combinations of basis/ir pairings 
+     for(std::size_t j=0;j<needs_a.int_rules.size();j++) {
+
+        for(std::size_t b=0;b<needs_a.bases.size();b++) {
+
+	 RCP<panzer::BasisIRLayout> b_layout = rcp(new panzer::BasisIRLayout(needs_a.bases[b],*needs_a.int_rules[j]));
+	 
+	 RCP<panzer::BasisValues2<double> > bv2 = 
+	   rcp(new panzer::BasisValues2<double>("",true,true));
+	 bv2->setupArrays(b_layout);
+	 i->bases.push_back(bv2);
+
+	 basis_names->push_back(b_layout->name());
+       }
+
+     }
+
+     return worksets_ptr;
+  } // end special case
+
+  // This collects all the elements that share the same sub cell pairs, this makes it easier to
+  // build the required worksets
+  // key is the pair of local face indices, value is a vector of cell indices that satisfy this pair
+  std::map<std::pair<unsigned,unsigned>,std::vector<std::size_t> > element_list;
+  for (std::size_t cell=0; cell < local_cell_ids_a.size(); ++cell)
+    element_list[std::make_pair(local_side_ids_a[cell],local_side_ids_b[cell])].push_back(cell);
+
+  // this is the lone iterator that will be used to loop over the element edge list
+  std::map<std::pair<unsigned,unsigned>,std::vector<std::size_t> >::const_iterator edge;
+
+  // figure out how many worksets will be needed, resize workset vector accordingly
+  std::size_t num_worksets = 0;
+  for(edge=element_list.begin(); edge!=element_list.end();++edge) {
+    std::size_t num_worksets_for_edge = edge->second.size() / workset_size;
+    std::size_t last_workset_size = edge->second.size() % workset_size;
+    if(last_workset_size!=0)
+      num_worksets_for_edge += 1;
+
+    num_worksets += num_worksets_for_edge;
+  }
+  worksets.resize(num_worksets);
+
+  // fill the worksets
+  std::vector<Workset>::iterator current_workset = worksets.begin();
+  for(edge=element_list.begin(); edge!=element_list.end();++edge) {
+    // loop over each workset
+    const std::vector<std::size_t> & cell_indices = edge->second;
+    
+    current_workset = buildEdgeWorksets(cell_indices,
+                                       needs_a,eblock_a,local_cell_ids_a,local_side_ids_a,vertex_coordinates_a,
+                                       needs_b,eblock_b,local_cell_ids_b,local_side_ids_b,vertex_coordinates_b,
+                                       current_workset);
+  }
+
+  // sanity check
+  TEUCHOS_ASSERT(current_workset==worksets.end());
+
+  return worksets_ptr;
 }
 
 template<typename ArrayT>
 std::vector<panzer::Workset>::iterator
 panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
-                          const panzer::PhysicsBlock & pb_a,
+                          const WorksetNeeds & needs_a,
+                          const std::string & eblock_a,
 	 	          const std::vector<std::size_t>& local_cell_ids_a,
 		          const std::vector<std::size_t>& local_side_ids_a,
 		          const ArrayT& vertex_coordinates_a,
-                          const panzer::PhysicsBlock & pb_b,
+                          const WorksetNeeds & needs_b,
+                          const std::string & eblock_b,
 	      	          const std::vector<std::size_t>& local_cell_ids_b,
 		          const std::vector<std::size_t>& local_side_ids_b,
 		          const ArrayT& vertex_coordinates_b,
@@ -513,7 +649,7 @@ panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
  
   std::size_t current_cell_index = 0;
   while (current_cell_index<cell_indices.size()) {
-    std::size_t workset_size = pb_a.cellData().numCells();
+    std::size_t workset_size = needs_a.cellData.numCells();
 
     // allocate workset details (associate one with the workset
     // object itself)
@@ -521,22 +657,16 @@ panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
     wkst->details[0] = Teuchos::rcpFromRef(*wkst);
     wkst->details[1] = Teuchos::rcp(new panzer::WorksetDetails);
 
-    wkst->subcell_dim = pb_a.cellData().baseCellDimension()-1;
+    wkst->subcell_dim = needs_a.cellData.baseCellDimension()-1;
 
     wkst->details[0]->subcell_index = local_side_ids_a[cell_indices[current_cell_index]];
-    wkst->details[0]->block_id = pb_a.elementBlockID();
-    // wkst->details[0]->cell_vertex_coordinates.resize(workset_size,
-    //                                                 vertex_coordinates_a.dimension(1),
-    //                                                 vertex_coordinates_a.dimension(2));
+    wkst->details[0]->block_id = eblock_a;
     wkst->details[0]->cell_vertex_coordinates = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("cvc",workset_size,
 					 vertex_coordinates_a.dimension(1),
 					 vertex_coordinates_a.dimension(2));
 
     wkst->details[1]->subcell_index = local_side_ids_b[cell_indices[current_cell_index]];
-    wkst->details[1]->block_id = pb_b.elementBlockID();
-    // wkst->details[1]->cell_vertex_coordinates.resize(workset_size,
-    //                                                 vertex_coordinates_a.dimension(1),
-    //                                                 vertex_coordinates_a.dimension(2));
+    wkst->details[1]->block_id = eblock_b; 
     wkst->details[1]->cell_vertex_coordinates = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("cvc",workset_size,
 					 vertex_coordinates_a.dimension(1),
 					 vertex_coordinates_a.dimension(2));
@@ -557,9 +687,6 @@ panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
 
       for (std::size_t vertex = 0; vertex < Teuchos::as<std::size_t>(vertex_coordinates_a.dimension(1)); ++ vertex) {
 	for (std::size_t dim = 0; dim < Teuchos::as<std::size_t>(vertex_coordinates_a.dimension(2)); ++ dim) {
-          // wkst->details[0]->cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates_a(cell_indices[current_cell_index],vertex,dim);
-          // wkst->details[1]->cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates_b(cell_indices[current_cell_index],vertex,dim);
-
           wkst->details[0]->cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates_a(cell_indices[current_cell_index],vertex,dim);
           wkst->details[1]->cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates_b(cell_indices[current_cell_index],vertex,dim);
         }
@@ -576,14 +703,62 @@ panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
     wkst->details[1]->cell_local_ids_k = cell_local_ids_k_1;
 
     // fill the BasisValues and IntegrationValues arrays
-    std::size_t max_workset_size = pb_a.cellData().numCells();
-    populateValueArrays(max_workset_size,true,pb_a,*wkst->details[0]); // populate "side" values
-    populateValueArrays(max_workset_size,true,pb_b,*wkst->details[1]);
+    std::size_t max_workset_size = needs_a.cellData.numCells();
+    populateValueArrays(max_workset_size,true,needs_a,*wkst->details[0]); // populate "side" values
+    populateValueArrays(max_workset_size,true,needs_b,*wkst->details[1]);
 
     wkst++;
   }
 
   return wkst;
+}
+
+template<typename ArrayT>
+std::vector<panzer::Workset>::iterator
+panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
+                          const panzer::PhysicsBlock & pb_a,
+	 	          const std::vector<std::size_t>& local_cell_ids_a,
+		          const std::vector<std::size_t>& local_side_ids_a,
+		          const ArrayT& vertex_coordinates_a,
+                          const panzer::PhysicsBlock & pb_b,
+	      	          const std::vector<std::size_t>& local_cell_ids_b,
+		          const std::vector<std::size_t>& local_side_ids_b,
+		          const ArrayT& vertex_coordinates_b,
+                          std::vector<Workset>::iterator beg)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  WorksetNeeds needs_a;
+  needs_a.cellData = pb_a.cellData();
+
+  const std::map<int,RCP<panzer::IntegrationRule> >& int_rules_a  = pb_a.getIntegrationRules();
+  for(std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules_a.begin();
+      ir_itr != int_rules_a.end(); ++ir_itr)
+    needs_a.int_rules.push_back(ir_itr->second);
+  
+  const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases_a = pb_a.getBases();
+  for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases_a.begin();
+      b_itr != bases_a.end(); ++b_itr)
+    needs_a.bases.push_back(b_itr->second);
+
+  WorksetNeeds needs_b;
+  needs_b.cellData = pb_b.cellData();
+
+  const std::map<int,RCP<panzer::IntegrationRule> >& int_rules_b  = pb_b.getIntegrationRules();
+  for(std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules_b.begin();
+      ir_itr != int_rules_b.end(); ++ir_itr)
+    needs_b.int_rules.push_back(ir_itr->second);
+  
+  const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases_b = pb_b.getBases();
+  for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases_b.begin();
+      b_itr != bases_b.end(); ++b_itr)
+    needs_b.bases.push_back(b_itr->second);
+
+  return buildEdgeWorksets(cell_indices,
+                           needs_a,pb_a.elementBlockID(),local_cell_ids_a,local_side_ids_a,vertex_coordinates_a,
+                           needs_b,pb_b.elementBlockID(),local_cell_ids_b,local_side_ids_b,vertex_coordinates_b,
+                           beg);
 }
 
 #endif

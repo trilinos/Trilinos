@@ -72,7 +72,7 @@ namespace MueLu {
     typedef LocalOrdinal LO;
 
   public:
-    MyCptList_(int n, int nnzPerRow) {
+    MyCptList_(int n, int nnzPerRow = 100) {
       TEUCHOS_TEST_FOR_EXCEPTION(nnzPerRow <= 0, Exceptions::RuntimeError, "Why is nnzPerRow " << nnzPerRow << "?");
 
       nnzPerRow_ = nnzPerRow;
@@ -233,7 +233,7 @@ namespace MueLu {
     RCP<Matrix>           A = Get< RCP<Matrix> >(fineLevel, "A");
     Xpetra::global_size_t N = A->getRowMap()->getGlobalNumElements();
 
-    RCP<MyCptList>    myCpts = rcp(new MyCptList(N, 30));
+    RCP<MyCptList>    myCpts = rcp(new MyCptList(N));
     std::vector<char> status(N, UNASSIGNED);
 
     RCP<MultiVector> coords;
@@ -344,7 +344,7 @@ namespace MueLu {
       GetOStream(Runtime1) << "Amalgamated velocity C-points: " << userCpts.size() << " " << userCpts << std::endl;
 
       // Now determine velocity CPOINTs for amalgamated system
-      RCP<MyCptList>    amalgCpts  = rcp(new MyCptList(NN, 30));
+      RCP<MyCptList>    amalgCpts  = rcp(new MyCptList(NN));
       std::vector<char> amalgStatus(NN, UNASSIGNED);
 
       FindDist4Cpts(*amalgA, *amalgCoords, userCpts, amalgStatus, *amalgCpts, fineLevelID);
@@ -1207,6 +1207,10 @@ namespace MueLu {
 
           if (sum == nnzPerRow[curF]) {
             lookedAt[curNeigh] = 'y';
+
+            // Make sure we have enough space
+            if (sameCGroup.size() <= numSameGrp)
+              sameCGroup.resize(2*numSameGrp);
 
             sameCGroup[numSameGrp++] = curNeigh;
             flag = 1;

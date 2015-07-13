@@ -3021,7 +3021,10 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
           if (phase == 1) {
             entity_comm_map_insert(entity, EntityCommInfo(ghosting.ordinal(), proc));
             const EntityComm* entity_comm = m_entity_comm_map.entity_comm(entity_key(entity));
-            EntityCommListInfo comm_info = {entity_key(entity), entity, parallel_owner_rank(entity), entity_comm};
+            const MeshIndex& mesh_index = this->mesh_index(entity);
+            EntityCommListInfo comm_info = {entity_key(entity), entity,
+                                            mesh_index.bucket, mesh_index.bucket_ordinal,
+                                            parallel_owner_rank(entity), entity_comm};
             m_entity_comm_list.push_back( comm_info );
           }
         }
@@ -3104,7 +3107,10 @@ void BulkData::ghost_entities_and_fields(Ghosting & ghosting, const std::set<Ent
 
           if ( entity_comm_map_insert(entity, tmp) ) {
             const EntityComm* entity_comm = m_entity_comm_map.entity_comm(entity_key(entity));
-            EntityCommListInfo comm_info = {entity_key(entity), entity, parallel_owner_rank(entity), entity_comm};
+            const MeshIndex& mesh_index = this->mesh_index(entity);
+            EntityCommListInfo comm_info = {entity_key(entity), entity,
+                                            mesh_index.bucket, mesh_index.bucket_ordinal,
+                                            parallel_owner_rank(entity), entity_comm};
             m_entity_comm_list.push_back( comm_info );
           }
         }
@@ -3892,8 +3898,11 @@ void BulkData::add_comm_list_entries_for_entities(const std::vector<stk::mesh::E
     for (size_t i = 0, e = sharedModifiedEntities.size(); i < e; ++i)
     {
       Entity entity = sharedModifiedEntities[i];
-      EntityCommListInfo new_comm = {entity_key(entity), entity, parallel_owner_rank(entity), NULL};
-      m_entity_comm_list.push_back(new_comm);
+      const MeshIndex& mesh_index = this->mesh_index(entity);
+      EntityCommListInfo comm_info = {entity_key(entity), entity,
+                                      mesh_index.bucket, mesh_index.bucket_ordinal,
+                                      parallel_owner_rank(entity), NULL};
+      m_entity_comm_list.push_back(comm_info);
     }
 
     std::sort( m_entity_comm_list.begin() + n_old , m_entity_comm_list.end() );
@@ -4025,12 +4034,14 @@ void BulkData::update_comm_list_based_on_changes_in_comm_map()
   EntityCommListInfoVector::iterator i = m_entity_comm_list.begin();
   bool changed = false ;
   for ( ; i != m_entity_comm_list.end() ; ++i ) {
-    const EntityComm* entity_comm = m_entity_comm_map.entity_comm(i->key);
-    if ( entity_comm == NULL || entity_comm->comm_map.empty() ) {
-      i->key = EntityKey();
-      changed = true;
-    }
-    i->entity_comm = entity_comm;
+      const EntityComm* entity_comm = m_entity_comm_map.entity_comm(i->key);
+      if ( entity_comm == NULL || entity_comm->comm_map.empty() ) {
+          i->key = EntityKey();
+          changed = true;
+      }
+      else {
+          i->entity_comm = entity_comm;
+      }
   }
   if ( changed ) {
     i = std::remove_if( m_entity_comm_list.begin() ,
@@ -4049,6 +4060,9 @@ void BulkData::internal_modification_end_for_change_ghosting()
     {
         check_mesh_consistency();
     }
+
+    m_bucket_repository.internal_modification_end();
+    internal_update_fast_comm_maps();
 
     m_meshModification.set_sync_state_synchronized();
 }
@@ -4072,6 +4086,9 @@ bool BulkData::internal_modification_end_for_change_parts()
     m_modSummary.write_summary(m_meshModification.synchronized_count());
 
     m_bucket_repository.internal_sort_bucket_entities();
+
+    m_bucket_repository.internal_modification_end();
+    internal_update_fast_comm_maps();
 
     m_meshModification.set_sync_state_synchronized();
     return true;
@@ -4266,7 +4283,7 @@ void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(stk
         EntityRank entity_rank, stk::mesh::Selector selected)
 {
     const stk::mesh::BucketVector& entity_buckets = mesh.buckets(entity_rank);
-    bool isedge = (entity_rank == stk::topology::EDGE_RANK);
+    bool isedge = (entity_rank == stk::topology::EDGE_RANK && mesh_meta_data().spatial_dimension() == 3);
 
     std::vector<stk::mesh::Entity> facesConnectedToNodes;
     std::vector<stk::mesh::Entity> elementsConnectedToNodes;
@@ -4310,7 +4327,7 @@ void BulkData::find_upward_connected_entities_to_ghost_onto_other_processors(stk
 
 void connect_ghosted_entities_received_to_ghosted_upwardly_connected_entities(stk::mesh::BulkData &mesh, EntityRank entity_rank, stk::mesh::Selector selectedToSkin)
 {
-    if (entity_rank == stk::topology::EDGE_RANK && !mesh.connectivity_map().valid(stk::topology::EDGE_RANK, stk::topology::FACE_RANK) )
+    if (entity_rank == stk::topology::EDGE_RANK && mesh.mesh_meta_data().spatial_dimension() == 3 && !mesh.connectivity_map().valid(stk::topology::EDGE_RANK, stk::topology::FACE_RANK) )
     {
         std::vector<stk::mesh::Entity> facesConnectedToNodes;
         const stk::mesh::BucketVector& entity_buckets = mesh.buckets(stk::topology::EDGE_RANK);
@@ -4794,7 +4811,7 @@ bool BulkData::should_sort_buckets_by_first_entity_identifier() const
 void BulkData::internal_update_fast_comm_maps()
 {
   if (parallel_size() > 1) {
-    EntityCommListInfoVector const& all_comm = internal_comm_list();
+    EntityCommListInfoVector& all_comm = m_entity_comm_list;
 
     // Flush previous map
     const EntityRank num_ranks = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
@@ -4811,6 +4828,9 @@ void BulkData::internal_update_fast_comm_maps()
       Entity const e        = all_comm[i].entity;
       EntityKey const key   = all_comm[i].key;
       MeshIndex const& idx  = mesh_index(e);
+      all_comm[i].bucket = idx.bucket;
+      all_comm[i].bucket_ordinal = idx.bucket_ordinal;
+
       EntityRank const rank = key.rank();
 
       FastMeshIndex fast_idx;
@@ -6522,7 +6542,7 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
         // entities are resolved along with previously existing shared entities.
 
         {
-            this->de_induce_unranked_part_from_nodes(elementGraph, killedElements, activePart);
+            this->de_induce_unranked_part_from_nodes(killedElements, activePart);
             this->remove_boundary_faces_from_part(elementGraph, killedElements, activePart);
 
             std::vector<EntityProc> sendList;
@@ -6535,6 +6555,11 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
 
         this->check_mesh_consistency();
     }
+    else
+    {
+        this->de_induce_unranked_part_from_nodes(killedElements, activePart);
+        this->remove_boundary_faces_from_part(elementGraph, killedElements, activePart);
+    }
 
     // -----------------------
     this->internal_finish_modification_end(impl::MeshModification::MOD_END_SORT);
@@ -6544,40 +6569,40 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
 
 void BulkData::remove_boundary_faces_from_part(stk::mesh::ElemElemGraph &graph, const stk::mesh::EntityVector & deactivatedElements, stk::mesh::Part & activePart)
 {
-    stk::mesh::EntityVector facesToRemoveFromPart;
+    stk::mesh::EntityVector sidesToRemoveFromPart;
     for (stk::mesh::Entity element : deactivatedElements)
     {
-        size_t numFaces = this->num_faces(element);
-        const stk::mesh::Entity * faces = this->begin_faces(element);
-        const stk::mesh::ConnectivityOrdinal * sideOrdinals = this->begin_face_ordinals(element);
-        for (size_t faceI=0 ; faceI<numFaces ; ++faceI)
+        size_t numSides = this->num_connectivity(element, mesh_meta_data().side_rank());
+        const stk::mesh::Entity * sides = this->begin(element, mesh_meta_data().side_rank());
+        const stk::mesh::ConnectivityOrdinal * sideOrdinals = this->begin_ordinals(element, mesh_meta_data().side_rank());
+        for (size_t sideI=0 ; sideI<numSides ; ++sideI)
         {
-            stk::mesh::Entity face = faces[faceI];
-            stk::mesh::ConnectivityOrdinal sideOrdinal = sideOrdinals[faceI];
+            stk::mesh::Entity side = sides[sideI];
+            stk::mesh::ConnectivityOrdinal sideOrdinal = sideOrdinals[sideI];
             if(!graph.is_connected_to_other_element_via_side_ordinal(element, sideOrdinal))
             {
-                facesToRemoveFromPart.push_back(face);
+                sidesToRemoveFromPart.push_back(side);
             }
             // find if this element is connected to any other element through this sideOrdinal
             // if not, deactivate it.
             // deactiveate the skin of the killed elements
-            // We can deactivate all faces at this point because we already deleted the death-created-faces
+            // We can deactivate all sides at this point because we already deleted the death-created-sides
         }
     }
 
-    for (stk::mesh::Entity face : facesToRemoveFromPart)
+    for (stk::mesh::Entity side : sidesToRemoveFromPart)
     {
-        this->internal_change_entity_parts(face, {}, {&activePart});
+        this->internal_change_entity_parts(side, {}, {&activePart});
     }
 
     std::vector<int> commProcs;
     stk::CommSparse comm(this->parallel());
     pack_and_communicate(comm,
-        [this,&comm,&facesToRemoveFromPart,&commProcs]()
+        [this,&comm,&sidesToRemoveFromPart,&commProcs]()
         {
-            for (stk::mesh::Entity face : facesToRemoveFromPart)
+            for (stk::mesh::Entity side : sidesToRemoveFromPart)
             {
-                const stk::mesh::EntityKey entityKey = this->entity_key(face);
+                const stk::mesh::EntityKey entityKey = this->entity_key(side);
                 this->comm_procs(entityKey, commProcs);
                 for (int otherProc : commProcs)
                 {
@@ -6589,11 +6614,11 @@ void BulkData::remove_boundary_faces_from_part(stk::mesh::ElemElemGraph &graph, 
     unpack_communications(comm,
         [this,&comm,&activePart](int procId)
         {
-            stk::mesh::EntityId faceId;
-            comm.recv_buffer(procId).unpack<stk::mesh::EntityId>(faceId);
-            stk::mesh::Entity face = this->get_entity(stk::topology::FACE_RANK, faceId);
-            ThrowAssertMsg(this->is_valid(face),"Error in communication for de-imprinting the active part on nodes of killed elements in element death!");
-            this->internal_change_entity_parts(face, {}, {&activePart});
+            stk::mesh::EntityId sideId;
+            comm.recv_buffer(procId).unpack<stk::mesh::EntityId>(sideId);
+            stk::mesh::Entity side = this->get_entity(mesh_meta_data().side_rank(), sideId);
+            ThrowAssertMsg(this->is_valid(side),"Error in communication for de-imprinting the active part on nodes of killed elements in element death!");
+            this->internal_change_entity_parts(side, {}, {&activePart});
         }
     );
 }
@@ -6608,57 +6633,7 @@ std::ostream &operator<<(std::ostream &out, const stk::mesh::PartVector &partVec
     return out;
 }
 
-
-//void BulkData::de_induce_unranked_part_from_nodes(const stk::mesh::ElemElemGraph &graph, const stk::mesh::EntityVector & deactivatedElements, stk::mesh::Part & activePart)
-//{
-//    stk::mesh::EntityIdVector potentiallyDeactivatedNodes;
-//    for (stk::mesh::Entity element : deactivatedElements)
-//    {
-//        const int numNodes = this->num_nodes(element);
-//        const stk::mesh::Entity * nodes = this->begin_nodes(element);
-//        for (int nodeI=0 ; nodeI<numNodes ; ++nodeI)
-//        {
-//            potentiallyDeactivatedNodes.push_back(this->identifier(nodes[nodeI]));
-//        }
-//    }
-//
-//    sort_and_unique(potentiallyDeactivatedNodes);
-//
-//    stk::mesh::EntityIdVector globalPotentiallyDeactivatedNodes;
-//    stk::parallel_vector_concat(this->parallel(), potentiallyDeactivatedNodes, globalPotentiallyDeactivatedNodes);
-//
-//    sort_and_unique(globalPotentiallyDeactivatedNodes);
-//
-//    const int inactive = 0;
-//    const int active = 1;
-//    size_t globalNumNodes = globalPotentiallyDeactivatedNodes.size();
-//    std::vector<int> nodeActiveStatus(globalNumNodes, inactive);
-//    for(size_t nodeI=0; nodeI<globalNumNodes; nodeI++)
-//    {
-//        stk::mesh::Entity node = this->get_entity(stk::topology::NODE_RANK, globalPotentiallyDeactivatedNodes[nodeI]);
-//        if(this->is_valid(node) && is_node_connected_to_active_element_locally(*this, node, activePart))
-//        {
-//            nodeActiveStatus[nodeI] = active;
-//        }
-//    }
-//
-//    std::vector<int> globalNodeActiveStatus(globalNumNodes, inactive);
-//    stk::all_reduce_max(this->parallel(), nodeActiveStatus.data(), globalNodeActiveStatus.data(), nodeActiveStatus.size());
-//
-//    std::ostringstream oss;
-//    for(size_t nodeI=0; nodeI<globalNumNodes; nodeI++)
-//    {
-//        stk::mesh::Entity node = this->get_entity(stk::topology::NODE_RANK, globalPotentiallyDeactivatedNodes[nodeI]);
-//        if(this->is_valid(node) && globalNodeActiveStatus[nodeI] == inactive)
-//        {
-//            this->internal_change_entity_parts(node, {}, {&activePart});
-//            oss << "P" << this->parallel_rank() << " " << entity_key(node) << " removed from active part, parts = " << this->bucket(node).supersets() << std::endl;
-//        }
-//    }
-//    std::cerr << oss.str() << std::endl;
-//}
-
-void BulkData::de_induce_unranked_part_from_nodes(const stk::mesh::ElemElemGraph &graph, const stk::mesh::EntityVector & deactivatedElements, stk::mesh::Part & activePart)
+void BulkData::de_induce_unranked_part_from_nodes(const stk::mesh::EntityVector & deactivatedElements, stk::mesh::Part & activePart)
 {
     stk::mesh::EntityVector nodesToDeactivate;
 

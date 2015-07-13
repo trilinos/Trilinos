@@ -254,7 +254,7 @@ namespace MueLu {
   LocalOrdinal LineDetectionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ML_compute_line_info(LocalOrdinal LayerId[], LocalOrdinal VertLineId[], LocalOrdinal Ndof, LocalOrdinal DofsPerNode, LocalOrdinal MeshNumbering, LocalOrdinal NumNodesPerVertLine, Scalar *xvals, Scalar *yvals, Scalar *zvals, const Teuchos::Comm<int>& comm) const {
 
     LO    Nnodes, NVertLines, MyNode;
-    LO    NumCoords, next, subindex, subnext;
+    LO    NumCoords, next; //, subindex, subnext;
     SC xfirst, yfirst;
     SC *xtemp, *ytemp, *ztemp;
     LO    *OrigLoc;

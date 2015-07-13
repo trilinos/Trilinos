@@ -93,6 +93,7 @@ enum class FaceCreationBehavior;
 
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
 void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+void copy_from_owned(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
 void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
 void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
 void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
@@ -969,12 +970,17 @@ protected: //functions
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner); // Mod Mark
 
   std::vector<uint64_t> internal_get_ids_in_use(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId>& reserved_ids = std::vector<stk::mesh::EntityId>()) const;
-  virtual void de_induce_unranked_part_from_nodes( const stk::mesh::ElemElemGraph &graph,
-                                            const stk::mesh::EntityVector & deactivatedElements,
+
+  virtual void de_induce_unranked_part_from_nodes(const stk::mesh::EntityVector & deactivatedElements,
                                             stk::mesh::Part & activePart);
   virtual void remove_boundary_faces_from_part(  stk::mesh::ElemElemGraph &graph,
                                          const stk::mesh::EntityVector & deactivatedElements,
                                          stk::mesh::Part & activePart);
+
+  void force_protect_orphaned_node(Entity entity)
+  {
+      m_closure_count[entity.local_offset()] += BulkData::orphaned_node_marking;
+  }
 
 private: //functions
 
@@ -1034,6 +1040,11 @@ private:
       if (entity_rank(entity) == stk::topology::NODE_RANK && m_closure_count[entity.local_offset()] >= BulkData::orphaned_node_marking)
       {
           m_closure_count[entity.local_offset()] -= BulkData::orphaned_node_marking;
+          if (identifier(entity) == 48)
+          {
+          std::cerr << "P" << parallel_rank() << "unprotecting orphaned node "
+                  << identifier(entity) <<", closure-count now "<<m_closure_count[entity.local_offset()]<< std::endl;
+          }
       }
   }
 
@@ -1167,6 +1178,7 @@ private:
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
   friend void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+  friend void copy_from_owned(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
   friend void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
   friend void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
   friend void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );

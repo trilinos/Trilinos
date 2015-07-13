@@ -369,9 +369,9 @@ public:
     PCU_Switch_Comm(mpicomm);
 
     int dim;
-    if (adapter->getLocalNumOf(MESH_REGION)>0)
+    if (adapter->getGlobalNumOf(MESH_REGION)>0)
       dim=3;
-    else if (adapter->getLocalNumOf(MESH_FACE)>0)
+    else if (adapter->getGlobalNumOf(MESH_FACE)>0)
       dim=2;
     else
       throw std::runtime_error("ParMA neeeds faces or region information");

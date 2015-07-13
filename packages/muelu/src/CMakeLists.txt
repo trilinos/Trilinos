@@ -49,6 +49,9 @@ INCLUDE_DIRECTORIES(${DIR}/Utils/ForwardDeclaration)
 if (${PACKAGE_NAME}_ENABLE_Tpetra)
   INCLUDE_DIRECTORIES(${DIR}/../adapters/tpetra)
 ENDIF()
+if (${PACKAGE_NAME}_ENABLE_AmgX)
+  INCLUDE_DIRECTORIES(${DIR}/../adapters/amgx)
+ENDIF()
 
 ###############################################
 #The HEADERS variable is the list of headers that will be copied to the install directory during "make install".
@@ -174,3 +177,4 @@ TRIBITS_ADD_LIBRARY(
 #MESSAGE("HEADERS_INTERFACE = ${HEADERS_INTERFACE}")
 #MESSAGE("")
 #MESSAGE("SOURCES_INTERFACE = ${SOURCES_INTERFACE}")
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

@@ -15,7 +15,7 @@ KOKKOS_CXX_STANDARD ?= "c++11"
 KOKKOS_PROFILING ?= ""
 
 #Default settings specific options
-#Options: force_uvm,use_ldg,rdc
+#Options: force_uvm,use_ldg,rdc,enable_lambda
 KOKKOS_CUDA_OPTIONS ?= ""
 
 # Check for general settings
@@ -33,6 +33,7 @@ KOKKOS_INTERNAL_USE_LIBRT := $(strip $(shell echo $(KOKKOS_USE_TPLS) | grep "lib
 KOKKOS_INTERNAL_CUDA_USE_LDG := $(strip $(shell echo $(KOKKOS_CUDA_OPTIONS) | grep "use_ldg" | wc -l))
 KOKKOS_INTERNAL_CUDA_USE_UVM := $(strip $(shell echo $(KOKKOS_CUDA_OPTIONS) | grep "force_uvm" | wc -l))
 KOKKOS_INTERNAL_CUDA_USE_RELOC := $(strip $(shell echo $(KOKKOS_CUDA_OPTIONS) | grep "rdc" | wc -l))
+KOKKOS_INTERNAL_CUDA_USE_LAMBDA := $(strip $(shell echo $(KOKKOS_CUDA_OPTIONS) | grep "enable_lambda" | wc -l))
 
 # Check for Kokkos Host Execution Spaces one of which must be on
 
@@ -212,6 +213,11 @@ ifeq ($(KOKKOS_INTERNAL_CUDA_USE_RELOC), 1)
 	KOKKOS_LDFLAGS += --relocatable-device-code=true
 endif
 
+ifeq ($(KOKKOS_INTERNAL_CUDA_USE_LAMBDA), 1)
+  tmp := $(shell echo "\#define KOKKOS_CUDA_USE_LAMBDA 1" >> KokkosCore_config.tmp )
+  KOKKOS_CXXFLAGS += -expt-extended-lambda
+endif
+
 #Add Architecture flags
 
 ifeq ($(KOKKOS_INTERNAL_USE_ARCH_AVX), 1)
@@ -220,8 +226,8 @@ ifeq ($(KOKKOS_INTERNAL_USE_ARCH_AVX), 1)
 endif
 
 ifeq ($(KOKKOS_INTERNAL_USE_ARCH_AVX2), 1)
-	KOKKOS_CXXFLAGS += -xcore-avx2
-	KOKKOS_LDFLAGS += -xcore-avx2
+	KOKKOS_CXXFLAGS += -march=core-avx2
+	KOKKOS_LDFLAGS += -march=core-avx2
 endif
 
 ifeq ($(KOKKOS_INTERNAL_USE_ARCH_KNC), 1)

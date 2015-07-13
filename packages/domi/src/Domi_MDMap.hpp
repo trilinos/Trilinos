@@ -170,11 +170,11 @@ public:
    * \param layout [in] the storage order of the map
    */
   MDMap(const Teuchos::RCP< const MDComm > mdComm,
-        const Teuchos::ArrayView< dim_type > & dimensions,
-        const Teuchos::ArrayView< int > & commPad =
-          Teuchos::ArrayView< int >(),
-        const Teuchos::ArrayView< int > & bndryPad =
-          Teuchos::ArrayView< int >(),
+        const Teuchos::ArrayView< const dim_type > & dimensions,
+        const Teuchos::ArrayView< const int > & commPad =
+          Teuchos::ArrayView< const int >(),
+        const Teuchos::ArrayView< const int > & bndryPad =
+          Teuchos::ArrayView< const int >(),
         const Layout layout = DEFAULT_ORDER);
 
   /** \brief Constructor with ParameterList
@@ -961,9 +961,9 @@ private:
 template< class Node >
 MDMap< Node >::
 MDMap(const Teuchos::RCP< const MDComm > mdComm,
-      const Teuchos::ArrayView< dim_type > & dimensions,
-      const Teuchos::ArrayView< int > & commPad,
-      const Teuchos::ArrayView< int > & bndryPad,
+      const Teuchos::ArrayView< const dim_type > & dimensions,
+      const Teuchos::ArrayView< const int > & commPad,
+      const Teuchos::ArrayView< const int > & bndryPad,
       const Layout layout) :
   _mdComm(mdComm),
   _globalDims(mdComm->numDims()),
