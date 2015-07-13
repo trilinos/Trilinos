@@ -2578,7 +2578,7 @@ F2C(excn2s,EXCN2S) (int *idexo,
 void
 F2C(exgssn,EXGSSN) (int *idexo,
              entity_id *side_set_id,
-             int *side_set_node_cnt_list,
+             void_int *side_set_node_cnt_list,
              void_int *side_set_node_list,
              int *ierr)
 {
