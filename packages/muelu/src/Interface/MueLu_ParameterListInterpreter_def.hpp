@@ -72,6 +72,7 @@
 #include "MueLu_FactoryFactory.hpp"
 #include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
+#include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_NullspaceFactory.hpp"
 #include "MueLu_PatternFactory.hpp"
@@ -81,8 +82,11 @@
 #include "MueLu_RebalanceTransferFactory.hpp"
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
+#include "MueLu_SemiCoarsenPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
+#include "MueLu_TogglePFactory.hpp"
+#include "MueLu_ToggleCoordinatesTransferFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
@@ -368,6 +372,9 @@ namespace MueLu {
     // NOTE: Factory::SetParameterList must be called prior to Factory::SetFactory, as
     // SetParameterList sets default values for non mentioned parameters, including factories
 
+    // shortcut
+    if (paramList.numParams() == 0 && defaultList.numParams() > 0) paramList = Teuchos::ParameterList(defaultList);
+
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
     TEUCHOS_TEST_FOR_EXCEPTION(reuseType != "none" && reuseType != "tP" && reuseType != "RP" && reuseType != "emin" && reuseType != "RAP" && reuseType != "full",
                                Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
@@ -552,7 +559,10 @@ namespace MueLu {
       // have a single factory responsible for those. Then, this check would belong there.
       if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" ||
           coarseType == "ILUT" || coarseType == "ILU" || coarseType == "RILUK" || coarseType == "SCHWARZ" ||
-          coarseType == "Amesos")
+          coarseType == "Amesos" ||
+          coarseType == "LINESMOOTHING_BANDEDRELAXATION" ||
+          coarseType == "LINESMOOTHING_BANDED_RELAXATION" ||
+          coarseType == "LINESMOOTHING_BANDED RELAXATION")
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams, overlap));
       else
 #ifdef HAVE_MUELU_MATLAB
@@ -745,6 +755,39 @@ namespace MueLu {
     }
 #endif
 
+    // === Semi-coarsening ===
+    RCP<SemiCoarsenPFactory>  semicoarsenFactory = Teuchos::null;
+    if (paramList.isParameter("semicoarsen: number of levels") &&
+        paramList.get<int>("semicoarsen: number of levels") > 0) {
+
+      ParameterList togglePParams;
+      ParameterList semicoarsenPParams;
+      ParameterList linedetectionParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: number of levels", int, togglePParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: coarsen rate", int, semicoarsenPParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: orientation", std::string, linedetectionParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: num layers", int, linedetectionParams);
+
+      semicoarsenFactory                             = rcp(new SemiCoarsenPFactory());
+      RCP<LineDetectionFactory> linedetectionFactory = rcp(new LineDetectionFactory());
+      RCP<TogglePFactory>       togglePFactory       = rcp(new TogglePFactory());
+
+      linedetectionFactory->SetParameterList(linedetectionParams);
+      semicoarsenFactory->SetParameterList(semicoarsenPParams);
+      togglePFactory->SetParameterList(togglePParams);
+      togglePFactory->AddCoarseNullspaceFactory(semicoarsenFactory);
+      togglePFactory->AddProlongatorFactory(semicoarsenFactory);
+      togglePFactory->AddCoarseNullspaceFactory(manager.GetFactory("Ptent"));
+      togglePFactory->AddProlongatorFactory(manager.GetFactory("P"));
+
+      manager.SetFactory("CoarseNumZLayers", linedetectionFactory);
+      manager.SetFactory("LineDetection_Layers", linedetectionFactory);
+      manager.SetFactory("LineDetection_VertLineIds", linedetectionFactory);
+
+      manager.SetFactory("P",         togglePFactory);
+      manager.SetFactory("Nullspace", togglePFactory);
+    }
+
     // === Restriction ===
     if (!this->implicitTranspose_) {
       MUELU_SET_VAR_2LIST(paramList, defaultList, "problem: symmetric", bool, isSymmetric);
@@ -814,6 +857,14 @@ namespace MueLu {
         coords->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
         manager.SetFactory("Coordinates", coords);
 
+        if (paramList.isParameter("semicoarsen: number of levels")) {
+          RCP<ToggleCoordinatesTransferFactory> tf = rcp(new ToggleCoordinatesTransferFactory());
+          tf->SetFactory("Chosen P", manager.GetFactory("P"));
+          tf->AddCoordTransferFactory(semicoarsenFactory);
+          tf->AddCoordTransferFactory(coords);
+          manager.SetFactory("Coordinates", tf);
+
+        }
         RAP->AddTransferFactory(manager.GetFactory("Coordinates"));
       }
     }
@@ -937,7 +988,10 @@ namespace MueLu {
       newP->  SetParameterList(newPparams);
       newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newP->  SetFactory("P",           manager.GetFactory("P"));
-      newP->  SetFactory("Nullspace",   manager.GetFactory("Ptent"));
+      if (!paramList.isParameter("semicoarsen: number of levels"))
+        newP->  SetFactory("Nullspace",   manager.GetFactory("Ptent"));
+      else
+        newP->  SetFactory("Nullspace",   manager.GetFactory("P")); // TogglePFactory
       newP->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
       manager.SetFactory("P",           newP);
       manager.SetFactory("Coordinates", newP);
