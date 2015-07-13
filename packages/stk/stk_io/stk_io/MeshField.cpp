@@ -198,7 +198,8 @@ void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
       } else {
 	if (subsetted) {
 	  stk::io::subsetted_multistate_field_data_from_ioss(bulk, m_field, entity_list,
-							     io_entity, stk_part, m_dbName, state_count);
+							     io_entity, stk_part, m_dbName, state_count,
+							     ignore_missing_fields);
 	} else {
 	  stk::io::multistate_field_data_from_ioss(bulk, m_field, entity_list,
 						   io_entity, m_dbName, state_count,
