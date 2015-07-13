@@ -67,6 +67,8 @@
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_TpetraOperator.hpp"
 
+#include <ctime>
+
 namespace MueLuTests {
 
 #include "MueLu_UseShortNames.hpp"
@@ -81,31 +83,18 @@ namespace MueLuTests {
 
     if (TestHelpers::Parameters::getLib() == Xpetra::UseTpetra)
     {
+
       RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
       if(!(comm->getSize() > 1)){
       //matrix
-      int nx = 90;
+      int nx = 91;
       RCP<Matrix> Op = TestHelpers::TestFactory<double, int, int, NO>::Build2DPoisson(nx, -1, Xpetra::UseTpetra); 
-      Teuchos::ParameterList mtxList;
-      mtxList.set("nx", nx);
-      mtxList.set("ny", nx);
-      mtxList.set("matrixType","Laplace2D");
-      //RCP<Matrix> Op = TestHelpers::TestFactory<double, int, int, NO>::BuildMatrix(mtxList, Xpetra::UseTpetra); 
-      Utils::Write("A_amgx.mm", *Op);
-      //RCP<const Map > map = Op->getRowMap();
       RCP<Tpetra::CrsMatrix<double, int, int,NO> > tpA = MueLu::Utils<double, int, int ,NO>::Op2NonConstTpetraCrs(Op);
 
       Teuchos::ParameterList params;
       params.set("use external multigrid package", "amgx");
       Teuchos::ParameterList subList = params.sublist("amgx:params", false);
-      //subList.set("json file", "test.json");
       params.sublist("amgx:params").set("json file", "test.json");
-       
-      //subList.set("config_version", "2");
-      //subList.set("monitor_residual","1");
-      //subList.set("obtain_timings","1");
-      //subList.set("print_grid_stats","1");
-      //subList.set("exception_handling","1");
       RCP<MueLu::TpetraOperator<double, int, int, NO> > tH = MueLu::CreateTpetraPreconditioner<double, int, int, NO>(tpA, params);
       RCP<AMGXOperator> aH = Teuchos::rcp_dynamic_cast<AMGXOperator>(tH);
 
@@ -114,17 +103,13 @@ namespace MueLuTests {
       RCP<MultiVector> RHS = MultiVectorFactory::Build(Op->getRowMap(), 1);
       RCP<MultiVector> X   = MultiVectorFactory::Build(Op->getRowMap(), 1);
 
-      //normalized RHS, zero initial guess
-      //Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1); 
-      //RHS->setSeed(846930886);
-      //RHS->randomize();
-      //RHS->norm2(norms);
-      //RHS->scale(1/norms[0]);
+      //RHS=1, zero initial guess
       RHS->putScalar( (double) 1.0);
       X->putScalar( (double) 0.0);
  
       aH->apply(*(Utils::MV2TpetraMV(RHS)),*(Utils::MV2NonConstTpetraMV(X)));
-      std::cout<<" status of solve: " << aH->getStatus() << " number of iterations for solve: " << aH->iters() << std::endl;
+ 
+      TEST_EQUALITY(aH->iters()==16,true);
       TEST_EQUALITY(aH->getStatus()==0, true);
       }
     } else {

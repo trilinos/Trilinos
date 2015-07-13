@@ -183,7 +183,7 @@ namespace MueLu {
         std::string configString = oss.str();
         if (configString == "") {
           //print msg that using defaults
-    //      GetOStream(Warnings0) << "Warning: No configuration parameters specified, using default AMGX configuration parameters. \n";
+          //GetOStream(Warnings0) << "Warning: No configuration parameters specified, using default AMGX configuration parameters. \n";
         }
         AMGX_SAFE_CALL(AMGX_config_create(&Config_, (const char *) &configString[0]));
       }
@@ -208,8 +208,9 @@ namespace MueLu {
 
     //! Returns in X the solution to the linear system AX=Y.
     /*!
-       \param[in]  X - Tpetra::MultiVector of dimension NumVectors containing the solution to the linear system
-       \param[out] Y -Tpetra::MultiVector of dimension NumVectors containing the RHS of the linear system.                 */
+       \param[out] X -Tpetra::MultiVector of dimension NumVectors containing the RHS of the linear system
+       \param[in]  Y - Tpetra::MultiVector of dimension NumVectors containing the solution to the linear system
+       */
     void apply(const Tpetra::MultiVector<SC,LO,GO,NO>& X, Tpetra::MultiVector<SC,LO,GO,NO>& Y,
                Teuchos::ETransp mode = Teuchos::NO_TRANS,
                SC alpha = Teuchos::ScalarTraits<SC>::one(),                                                                           SC beta  = Teuchos::ScalarTraits<SC>::one()) const;
