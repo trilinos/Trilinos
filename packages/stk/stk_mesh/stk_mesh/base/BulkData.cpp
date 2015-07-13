@@ -5068,23 +5068,31 @@ void BulkData::internal_verify_add_and_remove_part_ranks_consistent_with_entity_
 //  Changes need to have parallel resolution during
 //  modification_end.
 
-void BulkData::internal_adjust_entity_and_downward_connectivity_closure_count(stk::mesh::Entity entity, stk::mesh::Bucket *bucket_old, uint16_t closureCountAdjustment)
+void BulkData::internal_adjust_entity_and_downward_connectivity_closure_count(stk::mesh::Entity entity, stk::mesh::Bucket *bucket_old, int closureCountAdjustment)
 {
     m_closure_count[entity.local_offset()] += closureCountAdjustment;
 
     // update downward connectivity closure count
     if(bucket_old)
     {
-        for(EntityRank rank = stk::topology::NODE_RANK, end_rank = bucket_old->entity_rank(); rank < end_rank;
-                ++rank)
-                {
+        for(EntityRank rank = stk::topology::NODE_RANK, end_rank = bucket_old->entity_rank(); rank < end_rank; ++rank)
+        {
             unsigned num = num_connectivity(entity, rank);
             Entity const * entities = begin(entity, rank);
             for(unsigned i = 0; i < num; ++i)
             {
                 m_closure_count[entities[i].local_offset()] += closureCountAdjustment;
+                if(entity_rank(entities[i]) == stk::topology::NODE_RANK && m_closure_count[entities[i].local_offset()]==0 && state(entities[i])==stk::mesh::Created)
+                {
+                    this->force_protect_orphaned_node(entities[i]);
+                }
             }
         }
+    }
+
+    if(entity_rank(entity) == stk::topology::NODE_RANK && m_closure_count[entity.local_offset()]==0 && state(entity)==stk::mesh::Created)
+    {
+        this->force_protect_orphaned_node(entity);
     }
 }
 
@@ -5214,12 +5222,12 @@ void BulkData::internal_adjust_closure_count(Entity entity,
     if(add_to_locally_owned_part)
     {
         unprotect_orphaned_node(entity);
-        uint16_t incrementClosureCount = 1;
+        int incrementClosureCount = 1;
         internal_adjust_entity_and_downward_connectivity_closure_count(entity, bucket, incrementClosureCount);
     }
     else if(remove_from_locally_owned_part)
     {
-        uint16_t decrementClosureCount = -1;
+        int decrementClosureCount = -1;
         internal_adjust_entity_and_downward_connectivity_closure_count(entity, bucket, decrementClosureCount);
     }
 }
@@ -6546,10 +6554,9 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
             this->remove_boundary_faces_from_part(elementGraph, killedElements, activePart);
 
             std::vector<EntityProc> sendList;
-            // Potential speed up here if we can populate sendList from known changes.
             this->generate_send_list(this->parallel_rank(), sendList);
-
             this->internal_send_part_memberships_from_owner(sendList);
+
 //            this->internal_resolve_shared_membership();
         }
 

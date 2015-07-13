@@ -1139,7 +1139,7 @@ private:
                                        const PartVector & remove_parts); // Mod Mark
   void internal_adjust_entity_and_downward_connectivity_closure_count(stk::mesh::Entity entity,
                                                                       stk::mesh::Bucket *bucket_old,
-                                                                      uint16_t closureCountAdjustment); // Mod Mark
+                                                                      int closureCountAdjustment); // Mod Mark
 
   void internal_fill_new_part_list_and_removed_part_list(stk::mesh::Entity entity,
                                                            const PartVector & add_parts,
