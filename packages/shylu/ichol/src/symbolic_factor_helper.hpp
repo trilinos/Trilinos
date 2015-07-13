@@ -61,6 +61,24 @@ namespace Example {
     void setLabel(string label) { _label = label; }
     string Label() const { return _label; }
 
+    void clearWorkSpace() {
+      typedef Kokkos::TeamPolicy<space_type> policy_type;
+
+      Kokkos::parallel_for(policy_type(_lsize, 1),
+                           [=](const typename policy_type::member_type &member) {
+                             const int lrank = member.league_rank();
+                             league_specific_ordinal_type_array_ptr queue    = &_queue(0, lrank);
+                             league_specific_ordinal_type_array_ptr distance = &_distance(0, lrank);
+                             league_specific_ordinal_type_array_ptr visited  = &_visited(0, lrank);
+
+                             for (ordinal_type i=0;i<_m;++i) {
+                               queue[i] = 0;
+                               visited[i] = 0;
+                               distance[i] = 0;
+                             }
+                           });
+    }
+
     SymbolicFactorHelper(const CrsMatrixType &A,
                          const int lsize = (space_type::thread_pool_size(0)/
                                             space_type::thread_pool_size(2)))  {
@@ -87,7 +105,7 @@ namespace Example {
       // create workspace per league
       createInternalWorkSpace();
     }
-    virtual~SymbolicFactorHelper() { 
+    virtual~SymbolicFactorHelper() {
       freeInternalWorkSpace();
     }
 
@@ -106,6 +124,7 @@ namespace Example {
       void push(const ordinal_type val) { _q[_end++] = val; }
       ordinal_type pop() { return _q[_begin++]; }
       ordinal_type end() { return _end; }
+      void reset() { _begin = 0; _end = 0; }
     };
 
     class FunctorComputeNonZeroPatternInRow {
@@ -211,6 +230,7 @@ namespace Example {
               distance[jj] = 0;
               visited[jj] = 0;
             }
+            q.reset();
           }
           switch (_phase) {
           case 0:
@@ -259,6 +279,8 @@ namespace Example {
     int createNonZeroPattern(const ordinal_type level,
                              const int uplo,
                              CrsMatrixType &F) {
+      // clear workspace
+      clearWorkSpace();
 
       // all output array should be local and rcp in Kokkos::View manage memory (de)allocation
       size_type_array ap = size_type_array(_label+"::Output::RowPtrArray", _m+1);
