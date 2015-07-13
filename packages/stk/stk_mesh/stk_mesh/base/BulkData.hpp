@@ -977,6 +977,11 @@ protected: //functions
                                          const stk::mesh::EntityVector & deactivatedElements,
                                          stk::mesh::Part & activePart);
 
+  void force_protect_orphaned_node(Entity entity)
+  {
+      m_closure_count[entity.local_offset()] += BulkData::orphaned_node_marking;
+  }
+
 private: //functions
 
   void internal_dump_all_mesh_info(std::ostream& out = std::cout) const;
@@ -1035,6 +1040,11 @@ private:
       if (entity_rank(entity) == stk::topology::NODE_RANK && m_closure_count[entity.local_offset()] >= BulkData::orphaned_node_marking)
       {
           m_closure_count[entity.local_offset()] -= BulkData::orphaned_node_marking;
+          if (identifier(entity) == 48)
+          {
+          std::cerr << "P" << parallel_rank() << "unprotecting orphaned node "
+                  << identifier(entity) <<", closure-count now "<<m_closure_count[entity.local_offset()]<< std::endl;
+          }
       }
   }
 
