@@ -184,7 +184,13 @@ namespace MueLu {
   "<Parameter name=\"aggregation: output file: time step\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: output file: iter\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: output file: agg style\" type=\"string\" value=\"Point Cloud\"/>"
+<<<<<<< HEAD
   "<Parameter name=\"aggregation: output file: graph edges\" type=\"bool\" value=\"false\"/>"
+=======
+  "<Parameter name=\"aggregation: output file: fine graph edges\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: output file: coarse graph edges\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: output file: build colormap\" type=\"bool\" value=\"false\"/>"
+>>>>>>> MueLu: Viz and matlab tests
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
@@ -418,9 +424,19 @@ namespace MueLu {
          ("aggregation: output file: iter","aggregation: output file: iter")
 
          ("aggregation: output file: agg style","aggregation: output file: agg style")
+<<<<<<< HEAD
 
          ("aggregation: output file: graph edges","aggregation: output file: graph edges")
 
+=======
+      
+         ("aggregation: output file: fine graph edges","aggregation: output file: fine graph edges")
+      
+         ("aggregation: output file: coarse graph edges","aggregation: output file: coarse graph edges")
+      
+         ("aggregation: output file: build colormap","aggregation: output file: build colormap")
+      
+>>>>>>> MueLu: Viz and matlab tests
          ("export data","export data")
 
          ("ML print initial list","print initial parameters")

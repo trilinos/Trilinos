@@ -472,10 +472,29 @@
     </parameter>
 
     <parameter>
-      <name>aggregation: output file: graph edges</name>
+      <name>aggregation: output file: fine graph edges</name>
       <type>bool</type>
       <default>false</default>
-      <description>Whether to draw all node connections along with the aggregates.</description>
+      <description>Whether to draw all fine node connections along with the aggregates.</description>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to draw all fine node connections along with the aggregates.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: output file: coarse graph edges</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to draw all coarse node connections along with the aggregates.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: output file: build colormap</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to output a random colormap in a separate XML file.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 

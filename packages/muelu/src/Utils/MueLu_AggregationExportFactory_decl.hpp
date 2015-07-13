@@ -60,6 +60,8 @@
 #include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_AggregationExportFactory_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
+#include "MueLu_Graph_fwd.hpp"
+#include "MueLu_GraphBase.hpp"
 #include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
@@ -136,15 +138,18 @@ namespace MueLu {
   private:
     std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
     //Break different viz styles into separate functions for organization:
-    static void doPointCloud_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates, bool doGraphEdges, std::vector<int>& graphConnections);
-    static void doJacks_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates, bool doGraphEdges, std::vector<int>& graphConnections);
-    static void doJacksPlus_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates, bool doGraphEdges, std::vector<int>& graphConnections);
-    static void doConvexHulls_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates, bool doGraphEdges, std::vector<int>& graphConnections);
-    //The 2D and 3D convex hull algorithms are both long and completely different, so they deserve their own functions as well
-    static void doConvexHulls2D_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates, bool doGraphEdges, std::vector<int>& graphConnections);
-    static void doConvexHulls3D_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates, bool doGraphEdges, std::vector<int>& graphConnections);
-    static void doAlphaHulls_(std::ofstream& fout, Teuchos::ArrayRCP<const double>& xCoords, Teuchos::ArrayRCP<const double>& yCoords, Teuchos::ArrayRCP<const double>& zCoords, int numNodes, int numAggs, Teuchos::ArrayRCP<LocalOrdinal>& aggSizes, int dims, Teuchos::ArrayRCP<LocalOrdinal>& vertex2AggId, Teuchos::ArrayRCP<LocalOrdinal>& procWinners, Teuchos::RCP<Aggregates>& aggregates, bool doGraphEdges, std::vector<int>& graphConnections);
-
+    void doPointCloud_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
+    void doJacks_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
+    void doJacksPlus_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
+    void doConvexHulls_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
+    void doConvexHulls2D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
+    void doConvexHulls3D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
+    void doAlphaHulls_(std::vector<int>& vertices, std::vector<int>& geomSizes) const; //not implemented yet
+    void doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine) const; //add geometry to display node connections from a matrix. Connections in graph but not matrix have different color.
+    void writeFile_(std::ofstream& fout, std::string styleName, std::vector<int>& vertices, std::vector<int>& geomSizes, std::vector<int>& verticesCoarse, std::vector<int>& geomSizesCoarse) const; //write the local .vtu file with the computed geometry
+    void buildColormap_() const;
+    void writePVTU_(std::ofstream& pvtu, std::string baseFname, int numProcs) const;
+    std::vector<int> makeUnique_(std::vector<int>& vertices) const; //replaces node indices in vertices with compressed unique indices, and returns list of unique points
     //Utility functions for convex hulls
     static vec3_ crossProduct_(vec3_ v1, vec3_ v2);
     static double dotProduct_(vec3_ v1, vec3_ v2);
@@ -155,8 +160,29 @@ namespace MueLu {
     static vec3_ getNorm_(vec3_ v1, vec3_ v2, vec3_ v3);
     static double pointDistFromTri_(vec3_ point, vec3_ v1, vec3_ v2, vec3_ v3);
     //Returns a list of the triangles that were removed and replaced
-    static std::vector<Triangle_>  processTriangle_(std::list<Triangle_>& tris, Triangle_ tri, std::list<int>& pointsInFront, vec3_& barycenter, ArrayRCP<const double>& xCoords, ArrayRCP<const double>& yCoords, ArrayRCP<const double>& zCoords);
-    
+    std::vector<Triangle_>  processTriangle_(std::list<Triangle_>& tris, Triangle_ tri, std::list<int>& pointsInFront, vec3_& barycenter) const;
+    const int CONTRAST_1_ = -1;
+    const int CONTRAST_2_ = -2;
+    const int CONTRAST_3_ = -3;
+    //Data that the different styles need to have available when building geometry
+    mutable Teuchos::ArrayRCP<const double> xCoords_; //fine local coordinates
+    mutable Teuchos::ArrayRCP<const double> yCoords_;
+    mutable Teuchos::ArrayRCP<const double> zCoords_;
+    mutable Teuchos::ArrayRCP<const double> cx_; //coarse local coordinates
+    mutable Teuchos::ArrayRCP<const double> cy_;
+    mutable Teuchos::ArrayRCP<const double> cz_;
+    mutable Teuchos::ArrayRCP<LocalOrdinal> vertex2AggId_;
+    mutable Teuchos::ArrayRCP<LocalOrdinal> aggSizes_;
+    mutable std::vector<bool> isRoot_;
+    mutable bool doFineGraphEdges_;
+    mutable bool doCoarseGraphEdges_;
+    mutable int numNodes_;
+    mutable int numAggs_;
+    mutable int dims_;
+    mutable int myRank_;
+    mutable Teuchos::RCP<const Map> nodeMap_; //map used in A and Coordinates to map local ordinals to global ordinals. Need the whole map especially if it's not contiguous.
+    mutable Teuchos::RCP<const Map> nodeMapCoarse_; //Map for Ac
+    mutable int aggsOffset_;            //in a global list of aggregates, the offset of local aggregate indices
   }; // class AggregationExportFactory
 } // namespace MueLu
 

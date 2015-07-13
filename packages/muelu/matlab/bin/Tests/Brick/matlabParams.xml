@@ -1,4 +1,4 @@
-<!--MueLu parameters to run Jacobi smoother test-->
+<!--MueLu parameters to create brick aggregates with a matlab function-->
 
 <ParameterList name="MueLu">
   <ParameterList name="Factories">
