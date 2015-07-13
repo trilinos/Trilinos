@@ -1248,7 +1248,10 @@ void BulkData::internal_change_owner_in_comm_data(const EntityKey& key, int new_
 void BulkData::internal_sync_comm_list_owners()
 {
   for (size_t i = 0, e = m_entity_comm_list.size(); i < e; ++i) {
-    m_entity_comm_list[i].owner = parallel_owner_rank(m_entity_comm_list[i].entity);
+    if(is_valid(m_entity_comm_list[i].entity))
+    {
+      m_entity_comm_list[i].owner = parallel_owner_rank(m_entity_comm_list[i].entity);
+    }
   }
 }
 
@@ -3204,7 +3207,7 @@ void BulkData::generate_ghosting_receive_list(const stk::mesh::Ghosting &ghostin
     // all ghosts on this process by the end of the loop.
     for ( EntityCommListInfoVector::const_iterator
           i = internal_comm_list().begin() ; i != internal_comm_list().end() ; ++i ) {
-      if ( in_receive_ghost( ghosting , i->key ) ) {
+      if ( is_valid(i->entity) && in_receive_ghost( ghosting , i->key ) ) {
         entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs.insert( i->key );
       }
     }
@@ -3307,34 +3310,37 @@ void BulkData::internal_change_ghosting(
     const bool remove_recv = ( ! is_owner ) &&
                              0 == entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs.count(i->key);
 
-    if ( is_owner ) {
-      // Is owner, potentially removing ghost-sends
-      // Have to make a copy
+    if(is_valid(i->entity))
+    {
+      if ( is_owner ) {
+        // Is owner, potentially removing ghost-sends
+        // Have to make a copy
 
-      std::vector<EntityCommInfo> comm_ghost ;
-      const PairIterEntityComm ec = internal_entity_comm_map(i->key, ghosting);
-      comm_ghost.assign( ec.first , ec.second );
+        std::vector<EntityCommInfo> comm_ghost ;
+        const PairIterEntityComm ec = internal_entity_comm_map(i->key, ghosting);
+        comm_ghost.assign( ec.first , ec.second );
 
-      for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
-        const EntityCommInfo tmp = comm_ghost.back();
+        for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
+          const EntityCommInfo tmp = comm_ghost.back();
 
-        if ( 0 == entitiesToGhostOntoOtherProcessors.count( EntityProc( i->entity , tmp.proc ) ) ) {
-          entity_comm_map_erase(i->key, tmp);
+          if ( 0 == entitiesToGhostOntoOtherProcessors.count( EntityProc( i->entity , tmp.proc ) ) ) {
+            entity_comm_map_erase(i->key, tmp);
+          }
         }
       }
-    }
-    else if ( remove_recv ) {
-        entity_comm_map_erase(i->key, ghosting);
-        internal_change_entity_parts(i->entity, addParts, removeParts);
-    }
+      else if ( remove_recv ) {
+          entity_comm_map_erase(i->key, ghosting);
+          internal_change_entity_parts(i->entity, addParts, removeParts);
+      }
 
-    if ( internal_entity_comm_map(i->key).empty() ) {
-      removed = true ;
-      i->key = EntityKey(); // No longer communicated
-      if ( remove_recv ) {
-        ThrowRequireMsg( internal_destroy_entity( i->entity, remove_recv ),
-                         "P[" << this->parallel_rank() << "]: FAILED attempt to destroy entity: "
-                         << entity_key(i->entity) );
+      if ( internal_entity_comm_map(i->key).empty() ) {
+        removed = true ;
+        i->key = EntityKey(); // No longer communicated
+        if ( remove_recv ) {
+          ThrowRequireMsg( internal_destroy_entity( i->entity, remove_recv ),
+                           "P[" << this->parallel_rank() << "]: FAILED attempt to destroy entity: "
+                           << entity_key(i->entity) );
+        }
       }
     }
   }
