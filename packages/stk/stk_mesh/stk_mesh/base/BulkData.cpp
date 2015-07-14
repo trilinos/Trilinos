@@ -6624,14 +6624,14 @@ bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector
                     const stk::mesh::Entity* entities = begin(side, rank);
                     for(unsigned j=0;j<numEntities;++j)
                     {
-                        stk::mesh::EntityKey key = entity_key(entities[i]);
+                        stk::mesh::EntityKey key = entity_key(entities[j]);
                         if(in_shared(key))
                         {
                             std::vector<int> sharing_procs;
                             comm_shared_procs(key, sharing_procs);
                             for(size_t k=0;k<sharing_procs.size();++k)
                             {
-                                EntityProc tmp(entities[i], sharing_procs[k]);
+                                EntityProc tmp(entities[j], sharing_procs[k]);
                                 sendList.push_back(tmp);
                             }
                         }
