@@ -49,6 +49,7 @@
 
 #ifndef USERINPUTFORTESTS
 #define USERINPUTFORTESTS
+#include <Zoltan2_TestHelpers.hpp>
 
 #include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_ChacoReader.hpp>
@@ -233,6 +234,7 @@ public:
 
   RCP<Epetra_MultiVector> getUIEpetraMultiVector(int nvec);
 #endif
+    bool hasInputDataType(const string &input_type);
     
     bool hasUICoordinates();
     
@@ -598,6 +600,41 @@ RCP<Epetra_MultiVector> UserInputForTests::getUIEpetraMultiVector(int nvec)
     return mV;
 }
 #endif
+
+bool UserInputForTests::hasInputDataType(const string &input_type)
+{
+    if(input_type == "coordinates")
+        return this->hasUICoordinates();
+    else if(input_type == "tpetra_vector")
+        return this->hasUITpetraVector();
+    else if(input_type == "tpetra_multivector")
+        return this->hasUITpetraMultiVector();
+    else if(input_type == "tpetra_crs_graph")
+        return this->hasUITpetraCrsGraph();
+    else if(input_type == "tpetra_crs_matrix")
+        return this->hasUITpetraCrsMatrix();
+    else if(input_type == "xpetra_vector")
+        return this->hasUIXpetraVector();
+    else if(input_type == "xpetra_multivector")
+        return this->hasUIXpetraMultiVector();
+    else if(input_type == "xpetra_crs_graph")
+        return this->hasUIXpetraCrsGraph();
+    else if(input_type == "xpetra_crs_matrix")
+        return this->hasUIXpetraCrsMatrix();
+#ifdef HAVE_EPETRA_DATA_TYPES
+
+    else if(input_type == "epetra_vector")
+        return this->hasUIEpetraVector();
+    else if(input_type == "epetra_multivector")
+        return this->hasUIEpetraMultiVector();
+    else if(input_type == "epetra_crs_graph")
+        return this->hasUIEpetraCrsGraph();
+    else if(input_type == "epetra_crs_matrix")
+        return this->hasUIEpetraCrsMatrix();
+#endif
+    
+    return false;
+}
 
 bool UserInputForTests::hasUICoordinates()
 {
