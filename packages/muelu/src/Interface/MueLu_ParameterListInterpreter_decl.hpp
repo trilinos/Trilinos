@@ -66,6 +66,7 @@
 #include "MueLu_FactoryFactory_fwd.hpp"
 #include "MueLu_FilteredAFactory_fwd.hpp"
 #include "MueLu_GenericRFactory_fwd.hpp"
+#include "MueLu_LineDetectionFactory_fwd.hpp"
 #include "MueLu_NullspaceFactory_fwd.hpp"
 #include "MueLu_PatternFactory_fwd.hpp"
 #include "MueLu_PgPFactory_fwd.hpp"
@@ -74,8 +75,11 @@
 #include "MueLu_RebalanceTransferFactory_fwd.hpp"
 #include "MueLu_RepartitionFactory_fwd.hpp"
 #include "MueLu_SaPFactory_fwd.hpp"
+#include "MueLu_SemiCoarsenPFactory_fwd.hpp"
 #include "MueLu_SmootherFactory_fwd.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
+#include "MueLu_TogglePFactory_fwd.hpp"
+#include "MueLu_ToggleCoordinatesTransferFactory_fwd.hpp"
 #include "MueLu_TransPFactory_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_ZoltanInterface_fwd.hpp"
@@ -184,7 +188,7 @@ namespace MueLu {
     void BuildFactoryMap(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, FactoryMap& factoryMapOut, FactoryManagerMap& factoryManagers) const;
 
     //! Internal factory for factories
-    Teuchos::RCP<FactoryFactory> factFact_; 
+    Teuchos::RCP<FactoryFactory> factFact_;
     //@}
   };
 

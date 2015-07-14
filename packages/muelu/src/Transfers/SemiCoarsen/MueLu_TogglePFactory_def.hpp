@@ -70,6 +70,7 @@ namespace MueLu {
     SET_VALID_ENTRY("toggle: mode");
     SET_VALID_ENTRY("semicoarsen: number of levels");
 #undef  SET_VALID_ENTRY
+
     return validParamList;
   }
 
