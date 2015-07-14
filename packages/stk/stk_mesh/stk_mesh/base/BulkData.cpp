@@ -5135,6 +5135,7 @@ void BulkData::internal_verify_add_and_remove_part_ranks_consistent_with_entity_
 //  Changes need to have parallel resolution during
 //  modification_end.
 
+
 void BulkData::internal_adjust_entity_and_downward_connectivity_closure_count(stk::mesh::Entity entity, stk::mesh::Bucket *bucket_old, int closureCountAdjustment)
 {
     m_closure_count[entity.local_offset()] += closureCountAdjustment;
@@ -5149,17 +5150,8 @@ void BulkData::internal_adjust_entity_and_downward_connectivity_closure_count(st
             for(unsigned i = 0; i < num; ++i)
             {
                 m_closure_count[entities[i].local_offset()] += closureCountAdjustment;
-                if(entity_rank(entities[i]) == stk::topology::NODE_RANK && m_closure_count[entities[i].local_offset()]==0 && state(entities[i])==stk::mesh::Created)
-                {
-                    this->force_protect_orphaned_node(entities[i]);
-                }
             }
         }
-    }
-
-    if(entity_rank(entity) == stk::topology::NODE_RANK && m_closure_count[entity.local_offset()]==0 && state(entity)==stk::mesh::Created)
-    {
-        this->force_protect_orphaned_node(entity);
     }
 }
 

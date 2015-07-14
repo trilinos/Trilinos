@@ -980,10 +980,9 @@ protected: //functions
                                          const stk::mesh::EntityVector & deactivatedElements,
                                          stk::mesh::Part & activePart);
 
-  void force_protect_orphaned_node(Entity entity)
-  {
-      m_closure_count[entity.local_offset()] += BulkData::orphaned_node_marking;
-  }
+  virtual void internal_adjust_entity_and_downward_connectivity_closure_count(stk::mesh::Entity entity,
+                                                                      stk::mesh::Bucket *bucket_old,
+                                                                      int closureCountAdjustment); // Mod Mark
 
 private: //functions
 
@@ -1140,9 +1139,6 @@ private:
   void internal_adjust_closure_count(Entity entity,
                                        const PartVector & add_parts,
                                        const PartVector & remove_parts); // Mod Mark
-  void internal_adjust_entity_and_downward_connectivity_closure_count(stk::mesh::Entity entity,
-                                                                      stk::mesh::Bucket *bucket_old,
-                                                                      int closureCountAdjustment); // Mod Mark
 
   void internal_fill_new_part_list_and_removed_part_list(stk::mesh::Entity entity,
                                                            const PartVector & add_parts,
