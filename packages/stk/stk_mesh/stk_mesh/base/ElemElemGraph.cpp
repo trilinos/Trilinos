@@ -630,6 +630,7 @@ bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& element
     std::vector<stk::mesh::sharing_info> shared_modified;
     stk::mesh::EntityVector deletedEntities;
     stk::mesh::EntityVector facesWithNodesToBeMarkedInactive;
+    stk::mesh::EntityVector locally_created_faces_not_shared;
 
     std::vector<impl::graphEdgeProc> elements_to_comm = impl::get_elements_to_communicate(bulkData, killedElements, elementGraph);
     std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> > remote_edges;
@@ -778,6 +779,7 @@ bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& element
 
                                 bulkData.declare_relation(element_with_perm_4, side, ord_and_perm.first, ord_and_perm.second);
                             }
+                            locally_created_faces_not_shared.push_back(side);
                         }
                         else
                         {
@@ -835,7 +837,7 @@ bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& element
     ThrowRequireMsg(id_counter==0 || id_counter<requestedIds.size(), "Program error. Please contact sierra-help@sandia.gov for support.");
     elementGraph.set_num_side_ids_used(id_counter);
     stk::mesh::impl::delete_entities_and_upward_relations(bulkData, deletedEntities);
-    bulkData.modification_end_for_face_creation_and_deletion(shared_modified, deletedEntities, elementGraph, killedElements, active);
+    bulkData.modification_end_for_face_creation_and_deletion(shared_modified, deletedEntities, elementGraph, killedElements, locally_created_faces_not_shared, active);
     return topology_modified;
 }
 
