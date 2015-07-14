@@ -416,9 +416,8 @@ int cmd_line_arg_parse(
 
     case 'm':
       /* Machine type */
-      sub_opt = (optarg == NULL) ? '\0' : optarg;
-      string_to_lower(sub_opt, '\0');
-      while(*sub_opt != '\0')
+      sub_opt = optarg;
+      while(sub_opt != NULL && *sub_opt != '\0')
       {
 
         /* Switch over the machine description */
@@ -528,9 +527,9 @@ int cmd_line_arg_parse(
 
     case 'l':
       /* Load balance information */
-      sub_opt = (optarg == NULL) ? '\0' : optarg;
+      sub_opt = optarg;
       string_to_lower(sub_opt, '\0');
-      while(*sub_opt != '\0')
+      while(sub_opt != NULL && *sub_opt != '\0')
       {
         switch(md_getsubopt(&sub_opt, lb_subopts, &value))
         {
@@ -658,9 +657,9 @@ int cmd_line_arg_parse(
       
     case 's':
       /* Eigen solver options */
-      sub_opt = (optarg == NULL) ? '\0' : optarg;
+      sub_opt = optarg;
       string_to_lower(sub_opt, '\0');
-      while(*sub_opt != '\0')
+      while(sub_opt != NULL && *sub_opt != '\0')
       {
         switch(md_getsubopt(&sub_opt, solve_subopts, &value))
         {
