@@ -1171,17 +1171,16 @@ namespace Tpetra {
         << ", perhaps among other processes, got a bad send process ID.");
     }
 #else
-    // FIXME (mfh 12 Apr 2013) Rather than simply ignoring this
-    // information, we should think about how to pass it along so that
-    // all the processes find out about it.  In a release build with
-    // efficiency warnings turned off, the next communication happens
-    // in computeReceives(), in the reduceAllAndScatter
-    // (MPI_Reduce_scatter).  We could figure out how to encode the
-    // error flag in that operation, for example by replacing it with
-    // a reduceAll (MPI_Allreduce) as described there, and adding an
-    // extra element to the array that encodes the error condition
-    // (zero on all processes if no error, else 1 on any process with
-    // the error, so that the sum will produce a nonzero value if any
+    // FIXME (mfh 12 Apr 2013, 15 Jul 2015) Rather than simply
+    // ignoring this information, we should think about how to pass it
+    // along so that all the processes find out about it.  In a
+    // release build with efficiency warnings turned off, the next
+    // collective communication happens in computeReceives().  We
+    // could figure out how to encode the error flag in that
+    // operation, for example by adding an extra entry to the
+    // collective's output array that encodes the error condition (0
+    // on all processes if no error, else 1 on any process with the
+    // error, so that the sum will produce a nonzero value if any
     // process had an error).  I'll defer this change for now and
     // recommend instead that people with troubles try a debug build.
 #endif // HAVE_TPETRA_DEBUG
