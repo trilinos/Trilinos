@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
     RCP<const Map>   map;
     RCP<MultiVector> coordinates;
     RCP<MultiVector> nullspace;
-    int ndims;
+    int ndims = 2;
     if (matrixFile.empty()) {
       galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
 
@@ -196,7 +196,6 @@ int main(int argc, char *argv[]) {
           matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
         map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
         coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
-        ndims = 2;
 
       } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
         map = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);

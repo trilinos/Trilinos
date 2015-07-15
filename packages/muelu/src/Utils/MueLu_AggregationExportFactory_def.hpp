@@ -83,13 +83,12 @@ namespace MueLu {
         "%ITER is replaced by \'Output file: iter\' variable, %LEVELID is replaced level id, %PROCID is replaced by processor id)";
     std::string output_def = "aggs_level%LEVELID_proc%PROCID.out";
 
-    validParamList->set< RCP<const FactoryBase> >("Aggregates",             Teuchos::null, "Generating factory for aggregates");
-    validParamList->set< RCP<const FactoryBase> >("DofsPerNode",            Teuchos::null, "Generating factory for number of dofs per node");
-    validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo",     Teuchos::null, "Generating factory for amalgamation");
-    validParamList->set< RCP<const FactoryBase> >("Coordinates",            Teuchos::null, "Transfer factory for coordinates (if no user coordinates available)");
-    validParamList->set< RCP<const FactoryBase> >("A",                      Teuchos::null, "The fine matrix A.");
-    validParamList->set< RCP<const FactoryBase> >("Graph",                  Teuchos::null, "Generating factory for graph.");
-
+    validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Factory for A.");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Factory for Coordinates.");
+    validParamList->set< RCP<const FactoryBase> >("Graph", Teuchos::null, "Factory for Graph.");
+    validParamList->set< RCP<const FactoryBase> >("Aggregates", Teuchos::null, "Factory for Aggregates.");
+    validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Factory for UnAmalgamationInfo.");
+    validParamList->set< RCP<const FactoryBase> >("DofsPerNode", Teuchos::null, "Factory for DofsPerNode.");
     // CMS/BMK: Old style factory-only options.  Deprecate me.
     validParamList->set< std::string >           ("Output filename",           output_def, output_msg);
     validParamList->set< int >                   ("Output file: time step",             0, "time step variable for output file name");

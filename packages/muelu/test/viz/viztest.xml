@@ -7,13 +7,13 @@
   <!-- ===========  AGGREGATION  =========== -->
   <Parameter        name="aggregation: type"                            type="string"   value="uncoupled"/>
   <Parameter        name="aggregation: drop scheme"                     type="string"   value="classical"/>
-  <Parameter        name="aggregation: drop tol"                        type="double"   value="0.001"/>
+  <Parameter        name="aggregation: drop tol"                        type="double"   value="0.0"/>
   <Parameter        name="aggregation: export visualization data"       type="bool"     value="true"/>
   <Parameter        name="aggregation: output filename"                 type="string"   value="Viz-Level%LEVELID.vtu"/>
-  <Parameter        name="aggregation: output file: agg style"          type="string"   value="Point Cloud"/>
+  <Parameter        name="aggregation: output file: agg style"          type="string"   value="Convex Hulls"/>
   <Parameter        name="aggregation: output file: fine graph edges"   type="bool"     value="false"/>
-  <Parameter        name="aggregation: output file: coarse graph edges" type="bool"     value="true"/>
-  <Parameter        name="aggregation: output file: build colormap"     type="bool"     value="true"/>
+  <Parameter        name="aggregation: output file: coarse graph edges" type="bool"     value="false"/>
+  <Parameter        name="aggregation: output file: build colormap"     type="bool"     value="false"/>
 
   <!-- ===========  SMOOTHING  =========== -->
   <Parameter        name="smoother: type"                       type="string"   value="CHEBYSHEV"/>

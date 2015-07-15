@@ -161,9 +161,9 @@ namespace MueLu {
     static double pointDistFromTri_(vec3_ point, vec3_ v1, vec3_ v2, vec3_ v3);
     //Returns a list of the triangles that were removed and replaced
     std::vector<Triangle_>  processTriangle_(std::list<Triangle_>& tris, Triangle_ tri, std::list<int>& pointsInFront, vec3_& barycenter) const;
-    const int CONTRAST_1_ = -1;
-    const int CONTRAST_2_ = -2;
-    const int CONTRAST_3_ = -3;
+    static const int CONTRAST_1_ = -1;
+    static const int CONTRAST_2_ = -2;
+    static const int CONTRAST_3_ = -3;
     //Data that the different styles need to have available when building geometry
     mutable Teuchos::ArrayRCP<const double> xCoords_; //fine local coordinates
     mutable Teuchos::ArrayRCP<const double> yCoords_;
