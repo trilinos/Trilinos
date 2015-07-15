@@ -400,6 +400,8 @@ int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_Mult
 
 //==============================================================================
 std::ostream& Ifpack_Hypre::Print(std::ostream& os) const{
+  using std::endl;
+
   if (!Comm().MyPID()) {
     os << endl;
     os << "================================================================================" << endl;
