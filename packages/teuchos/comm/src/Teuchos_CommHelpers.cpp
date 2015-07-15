@@ -307,6 +307,59 @@ gatherImpl (const T sendBuf[],
 }
 
 
+/// \brief Generic implementation of scatter().
+/// \tparam T The type of data on which to scatter.  The requirements
+///   for this type are the same as for the template parameter T of
+///   MpiTypeTraits.
+///
+/// This generic implementation factors out common code among all full
+/// specializations of scatter() in this file.
+template<class T>
+void
+scatterImpl (const T sendBuf[],
+             const int sendCount,
+             T recvBuf[],
+             const int recvCount,
+             const int root,
+             const Comm<int>& comm)
+{
+#ifdef HAVE_MPI
+  // mfh 17 Oct 2012: Even in an MPI build, Comm might be either a
+  // SerialComm or an MpiComm.  If it's something else, we fall back
+  // to the most general implementation.
+  const MpiComm<int>* mpiComm = dynamic_cast<const MpiComm<int>* > (&comm);
+  if (mpiComm == NULL) {
+    // Is it a SerialComm?
+    const SerialComm<int>* serialComm = dynamic_cast<const SerialComm<int>* > (&comm);
+    if (serialComm == NULL) {
+      // We don't know what kind of Comm we have, so fall back to the
+      // most general implementation.
+      scatter<int, T> (sendBuf, sendCount, recvBuf, recvCount, root, comm);
+    }
+    else { // It's a SerialComm; there is only 1 process, so just copy.
+      std::copy (sendBuf, sendBuf + sendCount, recvBuf);
+    }
+  } else { // It's an MpiComm.  Invoke MPI directly.
+    MPI_Comm rawMpiComm = * (mpiComm->getRawMpiComm ());
+    T t;
+    MPI_Datatype rawMpiType = MpiTypeTraits<T>::getType (t);
+    const int err =
+      MPI_Scatter (const_cast<T*> (sendBuf), sendCount, rawMpiType,
+                   recvBuf, recvCount, rawMpiType,
+                   root, rawMpiComm);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (err != MPI_SUCCESS, std::runtime_error,
+      "MPI_Scatter failed with the following error: "
+      << getMpiErrorString (err));
+  }
+#else
+  // We've built without MPI, so just assume it's a SerialComm and
+  // copy the data.
+  std::copy (sendBuf, sendBuf + sendCount, recvBuf);
+#endif // HAVE_MPI
+}
+
+
 /// \brief Generic implementation of reduce().
 /// \tparam T The type of data on which to reduce.  The requirements
 ///   for this type are the same as for the template parameter T of
@@ -358,7 +411,7 @@ reduceImpl (const T sendBuf[],
 
 
 /// \brief Generic implementation of gatherv().
-/// \tparam T The type of data on which to reduce.  The requirements
+/// \tparam T The type of data on which to gather.  The requirements
 ///   for this type are the same as for the template parameter T of
 ///   MpiTypeTraits.
 ///
@@ -1634,6 +1687,18 @@ gatherv<int, int> (const int sendBuf[],
                    const Comm<int>& comm)
 {
   gathervImpl<int> (sendBuf, sendCount, recvBuf, recvCounts, displs, root, comm);
+}
+
+template<>
+void
+scatter<int, int> (const int sendBuf[],
+                   const int sendCount,
+                   int recvBuf[],
+                   const int recvCount,
+                   const int root,
+                   const Comm<int>& comm)
+{
+  scatterImpl<int> (sendBuf, sendCount, recvBuf, recvCount, root, comm);
 }
 
 template<>

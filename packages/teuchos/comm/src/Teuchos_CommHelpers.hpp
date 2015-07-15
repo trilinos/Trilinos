@@ -245,6 +245,52 @@ void gatherAll(
   const Ordinal recvCount, Packet recvBuffer[]
   );
 
+/// \brief Wrapper for MPI_Scatter; scatter collective.
+/// \relates Comm
+///
+/// \tparam Ordinal The template parameter of Comm.  Should always be
+///   \c int unless you REALLY know what you are doing.
+/// \tparam Packet The type of the thing this operation communicates.
+///   For this particular overload of scatter(), \c Packet must have
+///   "value semantics" and must not require a custom \c Serializer.
+///   Built-in types and structs thereof are generally OK here.
+///
+/// If Comm is an MpiComm, then this wraps MPI_Scatter().  This
+/// function is a collective operation over the input communicator.
+///
+/// \param sendBuf [in] Array of Packet things to scatter out.  This
+///   may NOT alias \c recvBuf.  This is ONLY read on the root process
+///   of the collective.
+/// \param sendCount The number of \c Packet things for the root
+///   process to send to each process in the input communicator.
+/// \param recvBuf [out] Array of <tt>recvCount*comm.getSize()</tt>
+///   Packet things to receive.  This may NOT alias \c sendBuf.
+/// \param recvCount [in] Number of Packet things to receive from
+///   each process.
+/// \param root [in] Rank of the process from which to scatter (the
+///   root of the scatter operation).  The rank is relative to the
+///   input communicator.
+/// \param comm [in] The communicator over which to scatter.
+template<typename Ordinal, typename Packet>
+void
+scatter (const Packet sendBuf[],
+         const Ordinal sendCount,
+         Packet recvBuf[],
+         const Ordinal recvCount,
+         const Ordinal root,
+         const Comm<Ordinal>& comm)
+{
+  // See Bug 6375; Tpetra does not actually need any specializations
+  // other than Ordinal = int and Packet = int.  We may add them later
+  // if there is interest.
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Teuchos::scatter<" <<
+     TypeNameTraits<Ordinal>::name () << "," << TypeNameTraits<Packet>::name ()
+     << ">: Generic version is not yet implemented.  This function currently "
+     "only has an implementtion for Ordinal = int and Packet = int.  "
+     "See Bug 6375 and Bug 6336.");
+}
+
 /// \brief Wrapper for MPI_Reduce; reduction to one process, using a
 ///   built-in reduction operator selected by enum.
 /// \relates Comm
@@ -1908,6 +1954,14 @@ gatherv<int, int> (const int sendBuf[],
                    const int displs[],
                    const int root,
                    const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
+scatter (const int sendBuf[],
+         const int sendCount,
+         int recvBuf[],
+         const int recvCount,
+         const int root,
+         const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
 reduce<int, int> (const int sendBuf[],
