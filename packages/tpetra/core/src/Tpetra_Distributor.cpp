@@ -780,7 +780,8 @@ namespace Tpetra {
     using Teuchos::rcp;
     using Teuchos::REDUCE_SUM;
     using Teuchos::receive;
-    using Teuchos::reduceAllAndScatter;
+    using Teuchos::reduce;
+    using Teuchos::scatter;
     using Teuchos::send;
     using Teuchos::waitAll;
     using std::endl;
@@ -829,8 +830,7 @@ namespace Tpetra {
 
       if (debug_) {
         std::ostringstream os;
-        os << myRank << ": computeReceives: "
-          "Calling reduceAllAndScatter" << endl;
+        os << myRank << ": computeReceives: Calling reduce and scatter" << endl;
         *out_ << os.str ();
       }
 
@@ -857,33 +857,47 @@ namespace Tpetra {
       // communicator.  Epetra does this too.  Avoiding this O(P)
       // memory bottleneck would require some research.
       //
-      // In the (wrapped) MPI_Reduce_scatter call below, since the
-      // counts array contains only ones, there is only one output on
-      // each process, namely numReceives_ (which is x[j], in the
-      // above notation).
+      // mfh 09 Jan 2012, 15 Jul 2015: There are three ways to
+      // implement this O(P) memory algorithm.
       //
-      // mfh 09 Jan 2012: The reduceAllAndScatter really isn't
-      // necessary here.  Since counts is just all ones, we could
-      // replace this with an all-reduce on toNodesFromMe, and let my
-      // process (with rank myRank) get numReceives_ from
-      // toNodesFromMe[myRank].  The HPCCG miniapp uses the all-reduce
-      // method.  It could be possible that reduceAllAndScatter is
-      // faster, but it also makes the code more complicated, and it
-      // can't be _asymptotically_ faster (MPI_Allreduce has twice the
-      // critical path length of MPI_Reduce, so reduceAllAndScatter
-      // can't be more than twice as fast as the all-reduce, even if
-      // the scatter is free).
+      //   1. Use MPI_Reduce and MPI_Scatter: reduce on the root
+      //      process (0) from toNodesFromMe, to numRecvsOnEachProc.
+      //      Then, scatter the latter, so that each process p gets
+      //      numRecvsOnEachProc[p].
+      //
+      //   2. Like #1, but use MPI_Reduce_scatter instead of
+      //      MPI_Reduce and MPI_Scatter.  MPI_Reduce_scatter might be
+      //      optimized to reduce the number of messages, but
+      //      MPI_Reduce_scatter is more general than we need (it
+      //      allows the equivalent of MPI_Scatterv).  See Bug 6336.
+      //
+      //   3. Do an all-reduce on toNodesFromMe, and let my process
+      //      (with rank myRank) get numReceives_ from
+      //      toNodesFromMe[myRank].  The HPCCG miniapp uses the
+      //      all-reduce method.
+      //
+      // Approaches 1 and 3 have the same critical path length.
+      // However, #3 moves more data.  This is because the final
+      // result is just one integer, but #3 moves a whole array of
+      // results to all the processes.  This is why we use Approach 1
+      // here.
       //
       // mfh 12 Apr 2013: See discussion in createFromSends() about
       // how we could use this communication to propagate an error
       // flag for "free" in a release build.
-      Array<int> counts (numProcs, 1);
+
+      const int root = 0; // rank of root process of the reduction
+      Array<int> numRecvsOnEachProc; // temp; only needed on root
+      if (myRank == root) {
+        numRecvsOnEachProc.resize (numProcs);
+      }
       int numReceivesAsInt = 0; // output
-      reduceAllAndScatter<int, int> (*comm_, REDUCE_SUM, numProcs,
-                                     toNodesFromMe.getRawPtr (),
-                                     counts.getRawPtr (),
-                                     &numReceivesAsInt);
-      numReceives_ = Teuchos::as<size_t> (numReceivesAsInt);
+      reduce<int, int> (toNodesFromMe.getRawPtr (),
+                        numRecvsOnEachProc.getRawPtr (),
+                        numProcs, REDUCE_SUM, root, *comm_);
+      scatter<int, int> (numRecvsOnEachProc.getRawPtr (), 1,
+                         &numReceivesAsInt, 1, root, *comm_);
+      numReceives_ = static_cast<size_t> (numReceivesAsInt);
     }
 
     // Now we know numReceives_, which is this process' number of
