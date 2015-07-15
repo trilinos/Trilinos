@@ -245,6 +245,42 @@ void gatherAll(
   const Ordinal recvCount, Packet recvBuffer[]
   );
 
+/// \brief Wrapper for MPI_Reduce; reduction to one process, using a
+///   built-in reduction operator selected by enum.
+/// \relates Comm
+///
+/// \tparam Ordinal The template parameter of Comm.  Should always be
+///   \c int unless you REALLY know what you are doing.
+/// \tparam Packet The type of the thing this operation communicates.
+///   For this particular overload of reduce(), \c Packet must have
+///   "value semantics" and must not require a custom \c Serializer.
+///   Built-in types and structs thereof are generally OK here.
+///
+/// If Comm is an MpiComm, then this wraps MPI_Reduce().  This
+/// function is a collective operation over the input communicator.
+///
+/// \param sendBuf [in] Array of \c count Packet things to send.
+///   This may NOT alias \c recvBuf.
+/// \param recvBuf [in] Array of \c count Packet reduction results.
+///   This may NOT alias \c sendBuf.
+/// \param count [in] Number of entries in the sendBuf and recvBuf
+///   arrays.
+/// \param reductType [in] Type of reduction operation.  Valid values
+///   include REDUCE_SUM, REDUCE_MIN, REDUCE_MAX, and REDUCE_AND.  See
+///   the documentation of the EReductionType enum for details.
+/// \param root [in] Rank of the process on which to receive the
+///   reduction result.  The rank is relative to the input
+///   communicator.
+/// \param comm [in] The communicator over which to reduce.
+template<typename Ordinal, typename Packet>
+void
+reduce (const Packet sendBuf[],
+        Packet recvBuf[],
+        const Ordinal count,
+        const EReductionType reductType,
+        const Ordinal root,
+        const Comm<Ordinal>& comm);
+
 /** \brief Collective reduce all of array of objects using value semantics
  * using a user-defined reduction operator.
  *
@@ -1393,6 +1429,26 @@ void Teuchos::gatherAll(
 
 
 template<typename Ordinal, typename Packet>
+void
+Teuchos::reduce (const Packet sendBuf[],
+                 Packet recvBuf[],
+                 const Ordinal count,
+                 const EReductionType reductType,
+                 const Ordinal root,
+                 const Comm<Ordinal>& comm)
+{
+  // See Bug 6375; Tpetra does not actually need any specializations
+  // other than Ordinal = int and Packet = int.  We may add them later
+  // if there is interest.
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Teuchos::reduce<" <<
+     TypeNameTraits<Ordinal>::name () << "," << TypeNameTraits<Packet>::name ()
+     << ">: Generic version not implemented.  We only implement this function "
+     "for Ordinal = int and Packet = specific types.");
+}
+
+
+template<typename Ordinal, typename Packet>
 void Teuchos::reduceAll(
   const Comm<Ordinal>& comm, const ValueTypeReductionOp<Ordinal,Packet> &reductOp
   ,const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
@@ -1854,11 +1910,20 @@ gatherv<int, int> (const int sendBuf[],
                    const Comm<int>& comm);
 template<>
 TEUCHOSCOMM_LIB_DLL_EXPORT void
+reduce<int, int> (const int sendBuf[],
+                  int recvBuf[],
+                  const int count,
+                  const EReductionType reductType,
+                  const int root,
+                  const Comm<int>& comm);
+template<>
+TEUCHOSCOMM_LIB_DLL_EXPORT void
 reduceAll<int, int> (const Comm<int>& comm,
                      const EReductionType reductType,
                      const int count,
                      const int sendBuffer[],
                      int globalReducts[]);
+
 // mfh 09 Apr 2013: We provide a full specialization of
 // reduceAllAndScatter, because it is an important part of
 // Tpetra::Distributor initialization.
