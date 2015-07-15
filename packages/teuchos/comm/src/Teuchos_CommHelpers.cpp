@@ -1732,7 +1732,7 @@ reduceAll<int, int> (const Comm<int>& comm,
 }
 
 template<>
-void
+TEUCHOS_DEPRECATED void
 reduceAllAndScatter<int, int> (const Comm<int>& comm,
                                const EReductionType reductType,
                                const int sendCount,

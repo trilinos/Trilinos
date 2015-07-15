@@ -327,11 +327,28 @@ reduce (const Packet sendBuf[],
         const Ordinal root,
         const Comm<Ordinal>& comm);
 
-/** \brief Collective reduce all of array of objects using value semantics
- * using a user-defined reduction operator.
- *
- * \relates Comm
- */
+/// \brief Wrapper for MPI_Allreduce that takes a custom reduction
+///   operator.
+/// \relates Comm
+///
+/// \tparam Ordinal The template parameter of Comm.  Should always be
+///   \c int unless you REALLY know what you are doing.
+/// \tparam Packet The type of the thing this operation communicates.
+///   For this particular overload of reduce(), \c Packet must have
+///   "value semantics" and must not require a custom \c Serializer.
+///   Built-in types and structs thereof are generally OK here.
+///
+/// If Comm is an MpiComm, then this wraps MPI_Allreduce().  This
+/// function is a collective operation over the input communicator.
+///
+/// \param comm [in] The communicator over which to reduce.
+/// \param reductOp [in] The custom reduction operator.
+/// \param count [in] Number of entries in the \c sendBuffer and
+///   \c globalReducts arrays.
+/// \param sendBuffer [in] Array of \c count \c Packet things to send.
+///   This may NOT alias \c globalReducts.
+/// \param globalReducts [in] Array of \c count \c Packet reduction
+///   results.  This may NOT alias \c recvBuf.
 template<typename Ordinal, typename Packet>
 void reduceAll(
   const Comm<Ordinal>& comm, const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
@@ -408,41 +425,94 @@ void reduceAll(
   const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
   );
 
-/** \brief Reduce and Scatter array of objects that use value semantics using
- * a user-defined reduction object.
- *
- * \relates Comm
- */
+/// \brief Wrapper for MPI_Reduce_scatter; equivalent to MPI_Reduce
+///   followed by MPI_Scatterv.
+/// \relates Comm
+/// \warning This function is DEPRECATED, because its name incorrectly
+///   suggests that it does an all-reduce instead of a reduce.
+///
+/// This version of the function is for Packet types that have "value
+/// semantics."  It allows a user-defined reduction operator.
 template<typename Ordinal, typename Packet>
-void reduceAllAndScatter(
+TEUCHOS_DEPRECATED void
+reduceAllAndScatter (
   const Comm<Ordinal>& comm, const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
   const Ordinal sendCount, const Packet sendBuffer[] ,
   const Ordinal recvCounts[], Packet myGlobalReducts[]
   );
 
-/** \brief Reduce and Scatter array of objects that use value semantics using
- * a a pre-defined reduction type.
- *
- * \relates Comm
- */
+/// \brief Wrapper for MPI_Reduce_scatter; equivalent to MPI_Reduce
+///   followed by MPI_Scatterv.
+/// \relates Comm
+/// \warning This function is DEPRECATED, because its name incorrectly
+///   suggests that it does an all-reduce instead of a reduce.
+///
+/// This version of the function is for Packet types that have "value
+/// semantics."  Callers specify one of Teuchos' predefined reduction
+/// operators using an enum.
 template<typename Ordinal, typename Packet>
-void reduceAllAndScatter(
+TEUCHOS_DEPRECATED void
+reduceAllAndScatter(
   const Comm<Ordinal>& comm, const EReductionType reductType,
   const Ordinal sendCount, const Packet sendBuffer[] ,
   const Ordinal recvCounts[], Packet myGlobalReducts[]
   );
 
-/** \brief Reduce and Scatter array of objects that use reference semantics
- * using a user-defined reduction object.
- *
- * \relates Comm
- */
+
+/// \brief Wrapper for MPI_Reduce_scatter; equivalent to MPI_Reduce
+///   followed by MPI_Scatterv.
+/// \relates Comm
+/// \warning This function is DEPRECATED, because its name incorrectly
+///   suggests that it does an all-reduce instead of a reduce.
+///
+/// This version of the function is for Packet types that have
+/// "reference semantics."  It allows a user-defined reduction
+/// operator.
 template<typename Ordinal, typename Packet>
-void reduceAllAndScatter(
+TEUCHOS_DEPRECATED void
+reduceAllAndScatter(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
   const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp,
   const Ordinal sendCount, const Packet*const sendBuffer[] ,
   const Ordinal recvCounts[], Packet*const myGlobalReducts[]
+  );
+
+/// \brief Wrapper for MPI_Reduce_scatter; equivalent to MPI_Reduce
+///   followed by MPI_Scatterv.
+/// \relates Comm
+/// \warning This function is DEPRECATED, because its name incorrectly
+///   suggests that it does an all-reduce instead of a reduce.
+///
+/// This version of the function is for Packet types that have "value
+/// semantics," but require a custom serializer.  It allows a
+/// user-defined reduction operator.
+template<typename Ordinal, typename Packet, typename Serializer>
+TEUCHOS_DEPRECATED void
+reduceAllAndScatter(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
+  const Ordinal sendCount, const Packet sendBuffer[],
+  const Ordinal recvCounts[], Packet myGlobalReducts[]
+  );
+
+/// \brief Wrapper for MPI_Reduce_scatter; equivalent to MPI_Reduce
+///   followed by MPI_Scatterv.
+/// \relates Comm
+/// \warning This function is DEPRECATED, because its name incorrectly
+///   suggests that it does an all-reduce instead of a reduce.
+///
+/// This version of the function is for Packet types that have "value
+/// semantics," but require a custom serializer.  Callers specify one
+/// of Teuchos' predefined reduction operators using an enum.
+template<typename Ordinal, typename Packet, typename Serializer>
+TEUCHOS_DEPRECATED void
+reduceAllAndScatter(
+  const Comm<Ordinal>& comm,
+  const Serializer& serializer,
+  const EReductionType reductType,
+  const Ordinal sendCount, const Packet sendBuffer[] ,
+  const Ordinal recvCounts[], Packet myGlobalReducts[]
   );
 
 /** \brief Scan/Reduce array of objects that use value semantics using a
@@ -454,34 +524,6 @@ template<typename Ordinal, typename Packet>
 void scan(
   const Comm<Ordinal>& comm, const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
   const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
-  );
-
-/** \brief Reduce and Scatter array of objects that use value semantics using
- * a user-defined reduction object and customized serializer.
- *
- * \relates Comm
- */
-template<typename Ordinal, typename Packet, typename Serializer>
-void reduceAllAndScatter(
-  const Comm<Ordinal>& comm,
-  const Serializer& serializer,
-  const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
-  const Ordinal sendCount, const Packet sendBuffer[],
-  const Ordinal recvCounts[], Packet myGlobalReducts[]
-  );
-
-/** \brief Reduce and Scatter array of objects that use value semantics using
- * a a pre-defined reduction type and customized serializer.
- *
- * \relates Comm
- */
-template<typename Ordinal, typename Packet, typename Serializer>
-void reduceAllAndScatter(
-  const Comm<Ordinal>& comm,
-  const Serializer& serializer,
-  const EReductionType reductType,
-  const Ordinal sendCount, const Packet sendBuffer[] ,
-  const Ordinal recvCounts[], Packet myGlobalReducts[]
   );
 
 /** \brief Scan/Reduce array of objects using value semantics using a
@@ -1982,7 +2024,7 @@ reduceAll<int, int> (const Comm<int>& comm,
 // reduceAllAndScatter, because it is an important part of
 // Tpetra::Distributor initialization.
 template<>
-TEUCHOSCOMM_LIB_DLL_EXPORT void
+TEUCHOSCOMM_LIB_DLL_EXPORT TEUCHOS_DEPRECATED void
 reduceAllAndScatter<int, int> (const Comm<int>& comm,
                                const EReductionType reductType,
                                const int sendCount,
@@ -2243,7 +2285,8 @@ void Teuchos::reduceAll(
 
 
 template<typename Ordinal, typename Packet>
-void Teuchos::reduceAllAndScatter(
+TEUCHOS_DEPRECATED void
+Teuchos::reduceAllAndScatter(
   const Comm<Ordinal>& comm, const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
   const Ordinal sendCount, const Packet sendBuffer[] ,
   const Ordinal recvCounts[], Packet myGlobalReducts[]
@@ -2291,7 +2334,8 @@ void Teuchos::reduceAllAndScatter(
 
 
 template<typename Ordinal, typename Packet>
-void Teuchos::reduceAllAndScatter(
+TEUCHOS_DEPRECATED void
+Teuchos::reduceAllAndScatter(
   const Comm<Ordinal>& comm, const EReductionType reductType,
   const Ordinal sendCount, const Packet sendBuffer[] ,
   const Ordinal recvCounts[], Packet myGlobalReducts[]
@@ -2317,7 +2361,8 @@ void Teuchos::reduceAllAndScatter(
 
 
 template<typename Ordinal, typename Packet>
-void Teuchos::reduceAllAndScatter(
+TEUCHOS_DEPRECATED void
+Teuchos::reduceAllAndScatter(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
   const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp,
   const Ordinal sendCount, const Packet*const sendBuffer[],
@@ -2328,7 +2373,8 @@ void Teuchos::reduceAllAndScatter(
 }
 
 template<typename Ordinal, typename Packet, typename Serializer>
-void Teuchos::reduceAllAndScatter(
+TEUCHOS_DEPRECATED void
+Teuchos::reduceAllAndScatter(
   const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const ValueTypeReductionOp<Ordinal,Packet> &reductOp,
@@ -2377,7 +2423,8 @@ void Teuchos::reduceAllAndScatter(
 }
 
 template<typename Ordinal, typename Packet, typename Serializer>
-void Teuchos::reduceAllAndScatter(
+TEUCHOS_DEPRECATED void
+Teuchos::reduceAllAndScatter(
   const Comm<Ordinal>& comm,
   const Serializer& serializer,
   const EReductionType reductType,
