@@ -59,7 +59,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 program exampleRCB
-   use mpi
+   use mpi_h
    use zoltan
    use zoltanRCBex
 
@@ -111,7 +111,7 @@ end program exampleRCB
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine readInputObjects(fname, numGlobObjs, numLocObjs,GIDs,xcoords,ycoords)
-  use mpi
+  use mpi_h
   implicit none
 
   character (len=*) :: fname
@@ -190,7 +190,7 @@ end subroutine readInputObjects
 !! Works for this specific 6x6 mesh
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine showSimpleMeshPartitions(myProc, numIDs, GIDs, parts)
-  use mpi
+  use mpi_h
   implicit none
 
   integer :: myProc, numIDs
@@ -232,7 +232,7 @@ end subroutine showSimpleMeshPartitions
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine visualizePartition()
-  use mpi
+  use mpi_h
   use zoltanRCBex
   implicit none
 
