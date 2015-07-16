@@ -540,7 +540,11 @@ namespace MueLu {
       ifpackType = "CHEBYSHEV";
 
       MUELU_COPY_PARAM(paramList, "smoother: sweeps",          int, 2,     smootherParamList, "chebyshev: degree");
-      MUELU_COPY_PARAM(paramList, "smoother: Chebyshev alpha", double, 20, smootherParamList, "chebyshev: ratio eigenvalue");
+      if(paramList.isParameter("smoother: MLS alpha"))
+	MUELU_COPY_PARAM(paramList, "smoother: MLS alpha", double, 20, smootherParamList, "chebyshev: ratio eigenvalue");
+      else
+	MUELU_COPY_PARAM(paramList, "smoother: Chebyshev alpha", double, 20, smootherParamList, "chebyshev: ratio eigenvalue");
+
 
       smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
       smooProto->SetFactory("A", AFact);
