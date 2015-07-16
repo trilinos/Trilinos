@@ -1,4 +1,4 @@
-<!--MueLu parameters to run unsmoothed P MATLAB test-->
+<!--MueLu parameters to build unsmoothed P with Muelu-->
 
 <ParameterList name="MueLu">
   <ParameterList name="Factories">
