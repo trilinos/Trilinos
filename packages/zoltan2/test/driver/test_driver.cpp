@@ -150,8 +150,8 @@ vector<ParameterList> getProblems(const string &inputFileName, int rank)
     return problems;
 }
 
-void problemWithBasicInputAdapter(const ParameterList &problem_parameters,
-                                const RCP<const Teuchos::Comm<int> > & comm)
+
+void run(const ParameterList &problem_parameters,const RCP<const Teuchos::Comm<int> > & comm)
 {
     // Major steps in running a problem in zoltan 2
     // 1. get a user input object
@@ -159,202 +159,116 @@ void problemWithBasicInputAdapter(const ParameterList &problem_parameters,
     // 3. construct the problem
     // 4. solve the problem
     // 5. analyze metrics
-    int rank = comm->getRank();
-    if(rank == 0)
-        cout << "\nPerforming test: " << problem_parameters.get<string>("Name") << endl;
+    // 6. clean up
     
-    // 1. get appropriate problem
-    //    if(!problem.isParameter("Name"))
-    //        std::runtime_error("no test name provided");
+    typedef AdapterForTests::base_adapter_t base_t;
+    typedef AdapterForTests::basic_id_t basic_id_t; // basic_identifier_type
+    typedef AdapterForTests::xpetra_mv_adapter xpetra_mv_t; // xpetra_mv_type
     
-    // 1. get uinput for this problem
-    if(!problem_parameters.isParameter("TestParameters"))
-        std::runtime_error("Test parameters not provided");
+    typedef Zoltan2::PartitioningProblem<base_t> problem_t; // base abstract type
+    typedef Zoltan2::PartitioningProblem<basic_id_t> basic_problem_t; // basic id problem type
+    typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mb problem type
     
-    const ParameterList &input = problem_parameters.sublist("TestParameters");
-    UserInputForTests uinput(input,comm,true, true);
-    
-    // 2. get Zoltan2 partion parameters
-    // get Zoltan2 partion parameters
-    const ParameterList &zoltan2params = problem_parameters.sublist("Zoltan2Parameters");
-    
-    // 3. get basic input adapter
-    auto ia = AdapterForTests::getBasicIdentiferAdapterForInput(&uinput, input);
-    
-    //4. construct partitioning problem
-#ifdef HAVE_ZOLTAN2_MPI
-    Zoltan2::PartitioningProblem<decltype(ia)> problem(&ia,
-                                                          const_cast<ParameterList *>(&zoltan2params),
-                                                          MPI_COMM_WORLD);
-#else
-    Zoltan2::PartitioningProblem<adapter_t> problem(ia,
-                                                          const_cast<ParameterList *>(&zoltan2params));
-#endif
-    if (rank == 0)
-        cout << "Problem constructed" << endl;
-    
-    // 5. Solve the problem
-    problem.solve();
-    if (rank == 0)
-        cout << "Problem solved" << endl;
-    
-    // Print problem metrics
-    if (comm->getRank() == 0)
-        problem.printMetrics(cout);
-    
-    if (rank == 0)
-        cout << "\n" << endl;
-}
-
-void problemWithXpetraMVAdapter(const ParameterList &problem_parameters,
-                                const RCP<const Teuchos::Comm<int> > & comm)
-{
-
-    // Major steps in running a problem in zoltan 2
-    // 1. get a user input object
-    // 2. get an input adapter
-    // 3. construct the problem
-    // 4. solve the problem
-    // 5. analyze metrics
     int rank = comm->getRank();
     if(rank == 0)
         cout << "\nPeforming test: " << problem_parameters.get<string>("Name") << endl;
     
-    // 1. get appropriate problem
-    //    if(!problem.isParameter("Name"))
-    //        std::runtime_error("no test name provided");
-    
+    ////////////////////////////////////////////////////////////
     // 1. get uinput for this problem
+    ////////////////////////////////////////////////////////////
     if(!problem_parameters.isParameter("TestParameters"))
         std::runtime_error("Test parameters not provided");
     
     const ParameterList &input = problem_parameters.sublist("TestParameters");
     UserInputForTests uinput(input,comm,true, true);
     
-    // 2. get Zoltan2 partion parameters
+    ////////////////////////////////////////////////////////////
+    // 2. get basic input adapter
+    ////////////////////////////////////////////////////////////
+    base_t * ia = AdapterForTests::getAdapterForInput(&uinput, input); // a pointer to a basic type
+    
+    ////////////////////////////////////////////////////////////
+    // 3. construct partitioning problem
+    ////////////////////////////////////////////////////////////
+    problem_t * problem;
+    string adapter_name = input.get<string>("inputAdapter"); // If we are here we have an input adapter, no need to check for one.
     // get Zoltan2 partion parameters
-    const ParameterList &zoltan2params = problem_parameters.sublist("Zoltan2Parameters");
-
-    // 3. get basic input adapter
-    auto ia = AdapterForTests::getXpetraMVAdapterForInput(&uinput, input);
+    ParameterList zoltan2_parameters = const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
+    zoltan2_parameters.set("num_global_parts", comm->getSize());
     
-    //4. construct partitioning problem
+    if(rank == 0){
+        readPList(zoltan2_parameters, "Zoltan 2 Params:\n");
+        cout <<"\n\n"<<endl;}
+    
 #ifdef HAVE_ZOLTAN2_MPI
-    Zoltan2::PartitioningProblem<decltype(ia)> problem(&ia,
-                                                       const_cast<ParameterList *>(&zoltan2params),
-                                                       MPI_COMM_WORLD);
+        
+        if(adapter_name == "BasicIdentifier"){
+            problem = reinterpret_cast<problem_t * >(new basic_problem_t(reinterpret_cast<basic_id_t *>(ia),
+                                                                                          &zoltan2_parameters,
+                                                                                          MPI_COMM_WORLD));
+        }else if(adapter_name == "XpetraMultiVector")
+        {
+            problem = reinterpret_cast<problem_t * >(new xpetra_mv_problem_t(reinterpret_cast<xpetra_mv_t *>(ia),
+                                                                         &zoltan2_parameters,
+                                                                         MPI_COMM_WORLD));
+        }else if(adapter_name == "XpetraCrsGraph"){
+            
+        }
+        else if(adapter_name == "XpetraCrsMatrix")
+        {
+            
+        }
+        else
+            throw std::runtime_error("Input adapter type not avaible, or misspelled.");
+
+
 #else
-    Zoltan2::PartitioningProblem<adapter_t> problem(ia,
-                                                          const_cast<ParameterList *>(&zoltan2params));
+    if(adapter_name == "BasicIdentifier"){
+        problem = reinterpret_cast<problem_t * >(new basic_problem_t(reinterpret_cast<basic_id_t *>(ia),
+                                                                     &zoltan2_parameters));
+    }else if(adapter_name == "XpetraMultiVector")
+    {
+        problem = reinterpret_cast<problem_t * >(new xpetra_mv_problem_t(reinterpret_cast<xpetra_mv_t *>(ia),
+                                                                      &zoltan2_parameters));
+    }else if(adapter_name == "XpetraCrsGraph"){
+        
+    }
+    else if(adapter_name == "XpetraCrsMatrix")
+    {
+        
+    }
+    else
+        throw std::runtime_error("Input adapter type not avaible, or misspelled.");
 #endif
-    if (rank == 0)
-        cout << "Problem constructed" << endl;
-    
-    // 5. Solve the problem
-    problem.solve();
+
+    ////////////////////////////////////////////////////////////
+    // 4. Solve the problem
+    ////////////////////////////////////////////////////////////
+    reinterpret_cast<basic_problem_t *>(problem)->solve();
     if (rank == 0)
         cout << "Problem solved" << endl;
     
-    // Print problem metrics
+    ////////////////////////////////////////////////////////////
+    // 5. Print problem metrics
+    ////////////////////////////////////////////////////////////
     if (comm->getRank() == 0)
-        problem.printMetrics(cout);
+        reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
     
     if (rank == 0)
         cout << "\n" << endl;
+    
+    ////////////////////////////////////////////////////////////
+    // 6. Clean up
+    ////////////////////////////////////////////////////////////
+    delete ia;
+    delete reinterpret_cast<basic_problem_t *>(problem);
 }
-
-//template<typename base_adapter_t,typename data_t>
-//void problemWithXpetraCRSGraphAdapter(base_adapter_t * adapter,
-//                                      const ParameterList &zoltan2_params,
-//                                      const RCP<const Teuchos::Comm<int> > & comm)
-//{
-//    int rank = comm->getRank();
-//    typedef Zoltan2::XpetraCrsGraphAdapter<data_t> exact_adapter_t;
-//    auto tmp = dynamic_cast<exact_adapter_t *>(adapter);
-//    Zoltan2::PartitioningProblem<exact_adapter_t> problem(tmp,
-//                                                          const_cast<ParameterList *>(&zoltan2_params));
-//    if (rank == 0)
-//        cout << "Problem constructed" << endl;
-//    
-//    // 5. Solve the problem
-//    problem.solve();
-//    if (rank == 0)
-//        cout << "Problem solved" << endl;
-//    
-//    // Print problem metrics
-//    if (comm->getRank() == 0)
-//        problem.printMetrics(cout);
-//}
-//
-//template<typename base_adapter_t,typename data_t>
-//void problemWithXpetraCRSMatrixAdapter(base_adapter_t * adapter,
-//                                       const ParameterList &zoltan2_params,
-//                                       const RCP<const Teuchos::Comm<int> > & comm)
-//{
-//    int rank = comm->getRank();
-//    typedef Zoltan2::XpetraCrsMatrixAdapter<data_t> exact_adapter_t;
-//    auto tmp = dynamic_cast<exact_adapter_t *>(adapter);
-//    Zoltan2::PartitioningProblem<exact_adapter_t> problem(tmp,
-//                                                          const_cast<ParameterList *>(&zoltan2_params));
-//    
-//    
-//    if (rank == 0)
-//        cout << "Problem constructed" << endl;
-//    
-//    // 5. Solve the problem
-//    problem.solve();
-//    if (rank == 0)
-//        cout << "Problem solved" << endl;
-//    
-//    // Print problem metrics
-//    if (comm->getRank() == 0)
-//        problem.printMetrics(cout);
-//}
-
-void run(const ParameterList &problem_parameters,const RCP<const Teuchos::Comm<int> > & comm)
-{
-    
-   // Run Test for specified input adapter
-    if(!problem_parameters.isParameter("TestParameters"))
-        throw std::runtime_error("Test parameters not provided");
-    
-    const ParameterList &input = problem_parameters.sublist("TestParameters");
-    if(!input.isParameter("inputAdapter"))
-        throw std::runtime_error("Input adapter not specified");
-    
-    // pick method for chosen adapter
-    string adapter_name = input.get<string>("inputAdapter");
-    if(adapter_name == "BasicIdentifier")
-        problemWithBasicInputAdapter(problem_parameters, comm);
-    else if(adapter_name == "XpetraMultiVector")
-        problemWithXpetraMVAdapter(problem_parameters,comm);
-//    else if(adapter_name == "XpetraCRSGraph")
-//        problemWithXpetraCRSGraphAdapter<inputAdapter_t, data_t>(ia,zoltan2params,comm);
-//    else if(adapter_name == "XpetraCRSMatrix")
-//        problemWithXpetraCRSMatrixAdapter<inputAdapter_t, data_t>(ia,zoltan2params,comm);
-    else
-        throw std::runtime_error("Input adapter type not avaible, or misspelled.");
-    
-    
-    //    Zoltan2Test * test = getZoltan2Test(problem.get<string>("Name"));
-    
-    //    if(test == nullptr)
-    //            std::runtime_error("no such test");
-    
-    // 2. solve
-    //    test->Run(problem, comm);
-    
-    // 3. pass
-    //    if (rank == 0)
-    //        std::cout << (test->didPass()? "PASS\n" : "FAIL\n") << std::endl;
-}
-
 
 int main(int argc, char *argv[])
 {
-    //------------------------------------------------>>
+    ////////////////////////////////////////////////////////////
     // (0) Set up MPI environment
-    //------------------------------------------------>>
+    ////////////////////////////////////////////////////////////
     Teuchos::GlobalMPISession session(&argc, &argv);
     RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
     
@@ -366,22 +280,22 @@ int main(int argc, char *argv[])
     //        return 0;
     //    }
     
-    //------------------------------------------------>>
+    ////////////////////////////////////////////////////////////
     // (1) Get and read the input file
     // the input file defines tests to be run
-    //------------------------------------------------>>
+    ////////////////////////////////////////////////////////////
     string inputFileName("driver.xml"); // assumes a default input file exists
     if(argc > 1)
         inputFileName = argv[1]; // user has provided an input file
     
-    //------------------------------------------------>>
+    ////////////////////////////////////////////////////////////
     // (2) Get Model Parameter Lists
-    //------------------------------------------------>>
+    ////////////////////////////////////////////////////////////
     vector<ParameterList>tests = getProblems(inputFileName,rank);
     
-    //------------------------------------------------>>
+    ////////////////////////////////////////////////////////////
     // (3) Loop over all tests and execute them
-    //------------------------------------------------>>
+    ////////////////////////////////////////////////////////////
     for(auto i = tests.begin(); i != tests.end(); ++i) run(*i, comm);
     
     
@@ -390,7 +304,6 @@ int main(int argc, char *argv[])
     
     return 0;
 }
-
 
 // helper functions
 

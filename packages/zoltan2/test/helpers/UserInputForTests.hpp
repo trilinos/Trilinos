@@ -382,6 +382,7 @@ tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_()
 ,ecomm_(), eM_(), eG_()
 #endif
 {
+    int rank = c->getRank();
     if(pList.isParameter("inputPath") && pList.isParameter("inputFile"))
     {
         string path = pList.get<string>("inputPath");
@@ -394,7 +395,9 @@ tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_()
         
 
         if (zoltan1){
-            cout << "......have a zoltan 1 graph file...." << endl;
+            if(rank == 0)
+                cout << "......have a zoltan 1 graph file...." << endl;
+            
             readZoltanTestData(path, testData, distributeInput);
         }else
             readMatrixMarketFile(path, testData);
