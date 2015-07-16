@@ -180,7 +180,6 @@ TRIBITS_ADD_TEST(
 )
 
 IF (${PROJECT_NAME}_ENABLE_SCOREC)
-   MESSAGE("GFD HELLO") 
   TRIBITS_ADD_TEST(
     pamgenMeshAdapterTest
     NAME pamgenMeshAdapterTest_ParMA

@@ -150,6 +150,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
+IF (${PROJECT_NAME}_ENABLE_SCOREC)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    HyperGraphModel
+    SOURCES models/HyperGraphModel.cpp
+    NUM_MPI_PROCS 2
+    COMM mpi serial
+  )
+ENDIF()
+
 #
 # Tests for src/models
 #
