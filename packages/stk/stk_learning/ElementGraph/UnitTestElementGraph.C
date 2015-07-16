@@ -235,15 +235,15 @@ void put_all_faces_in_io_part(stk::mesh::BulkData &mesh, stk::mesh::Selector loc
     mesh.modification_end();
 }
 
-void writeStkDebuggingFile(stk::io::StkMeshIoBroker &stkMeshIoBroker, stk::mesh::BulkData &mesh, const std::string &output_name)
-{
-    stk::mesh::Part & face_output_part = mesh.mesh_meta_data().declare_part_with_topology("output_face_name", stk::topology::TRI_3);
-    stk::io::put_io_part_attribute(face_output_part);
-    put_all_faces_in_io_part(mesh, mesh.mesh_meta_data().locally_owned_part(), face_output_part);
-
-    size_t resultFileIndex = stkMeshIoBroker.create_output_mesh(output_name, stk::io::WRITE_RESULTS);
-    stkMeshIoBroker.write_output_mesh(resultFileIndex);
-}
+//void writeStkDebuggingFile(stk::io::StkMeshIoBroker &stkMeshIoBroker, stk::mesh::BulkData &mesh, const std::string &output_name)
+//{
+//    stk::mesh::Part & face_output_part = mesh.mesh_meta_data().declare_part_with_topology("output_face_name", stk::topology::TRI_3);
+//    stk::io::put_io_part_attribute(face_output_part);
+//    put_all_faces_in_io_part(mesh, mesh.mesh_meta_data().locally_owned_part(), face_output_part);
+//
+//    size_t resultFileIndex = stkMeshIoBroker.create_output_mesh(output_name, stk::io::WRITE_RESULTS);
+//    stkMeshIoBroker.write_output_mesh(resultFileIndex);
+//}
 
 void test_add_elements_to_empty_graph(stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
 {
@@ -7327,23 +7327,6 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemBInParallel)
             EXPECT_EQ( 2u, graph.num_parallel_edges());
         }
     }
-}
-
-std::vector<stk::mesh::EntityId> get_ids_in_use(stk::mesh::BulkData& bulkData)
-{
-    std::vector<stk::mesh::EntityId> ids_in_use;
-
-    const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
-    for(size_t i = 0; i < buckets.size(); ++i)
-    {
-        const stk::mesh::Bucket& bucket = *buckets[i];
-        for(size_t j = 0; j < bucket.size(); ++j)
-        {
-            stk::mesh::Entity element = bucket[j];
-            ids_in_use.push_back(bulkData.identifier(element));
-        }
-    }
-    return ids_in_use;
 }
 
 void test_parallel_uniqueness(const std::vector<stk::mesh::EntityId> &ids_in_use, const std::vector<stk::mesh::EntityId>& requested_ids, stk::ParallelMachine comm)
