@@ -283,12 +283,27 @@ except ImportError:
 
 // Use the %teuchos_rcp_epetra_numpy_overrides macro to define the
 // %teuchos_rcp_epetra_numpy macro
-#define EMPTYHACK
 %define %teuchos_rcp_epetra_numpy(CLASS)
   %teuchos_rcp(Epetra_##CLASS)
   %teuchos_rcp(PyTrilinos::Epetra_NumPy##CLASS)
-  %teuchos_rcp_epetra_numpy_overrides(EMPTYHACK, CLASS)
-  %teuchos_rcp_epetra_numpy_overrides(const, CLASS)
+  %teuchos_rcp_epetra_numpy_overrides(SWIGEMPTYHACK, CLASS)
+  %teuchos_rcp_epetra_numpy_overrides(const        , CLASS)
+%enddef
+
+// Use the %teuchos_rcp_dap and %teuchos_rcp_typemaps_overrides macros
+// to define the %teuchos_rcp_epetra_dap macro
+%define %teuchos_rcp_epetra_dap(CLASS...)
+  %feature("smartptr", noblock=1) Epetra_##CLASS
+  {
+    Teuchos::RCP< Epetra_##CLASS >
+  }
+  %feature("smartptr", noblock=1) PyTrilinos::Epetra_NumPy##CLASS
+  {
+    Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS >
+  }
+  %teuchos_rcp_dap(PyTrilinos::convertPythonToEpetra##CLASS, Epetra_##CLASS)
+  %teuchos_rcp_typemaps_overrides(SWIGEMPTYHACK, Epetra_##CLASS)
+  %teuchos_rcp_typemaps_overrides(const        , Epetra_##CLASS)
 %enddef
 
 // Define macros for typemaps that convert a reference to a pointer to
