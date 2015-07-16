@@ -87,6 +87,10 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_AmgX)
   APPEND_SET(SOURCES Adapters/AmgxOperatorAdapter.cpp)
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsAmgxAdapter_cp
+    SOURCE_DIR ${MueLu_SOURCE_DIR}/test/unit_tests/Adapters
+    SOURCE_FILES test.json
+    )
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Belos)

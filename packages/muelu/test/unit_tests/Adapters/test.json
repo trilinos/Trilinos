@@ -26,7 +26,7 @@
         },
         "solver": "PCG",
         "print_solve_stats": 1,
-	"print_config": 1,
+	"print_config": 0,
         "obtain_timings": 1,
         "max_iters": 450,
         "monitor_residual": 1,
