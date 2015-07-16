@@ -71,7 +71,7 @@ namespace Kokkos {
       bool 
       team_fan_in() const {
         if (m_team_size != 1) {
-          const int64_t mask = static_cast<int64_t>(BARRIER_MASK >> 8*(sizeof(int64_t) - m_team_size));
+          const int64_t mask = static_cast<int64_t>(BARRIER_MASK) >> CHAR_BIT*(sizeof(int64_t) - m_team_size);
 
           m_core_barrier->set_arrive(m_team_rank);
           while (m_core_barrier->arrive() == mask); 
