@@ -3,7 +3,7 @@
 #define __EXAMPLE_KOKKOS_TEAM_BARRIER_HPP__
 
 #define CACHELINE_SIZE 64
-#define BARRIER_MASK 0x01010101
+#define BARRIER_MASK 0x0101010101010101
 
 namespace Kokkos { 
 
@@ -13,9 +13,9 @@ namespace Kokkos {
     // =======================
     class SimpleCoreBarrier {
     private:
-      volatile int m_arrive;
-      volatile int m_depart;
-      int m_padding[CACHELINE_SIZE/sizeof(int)-2];
+      volatile int64_t m_arrive;
+      volatile int64_t m_depart;
+      int64_t m_padding[CACHELINE_SIZE/sizeof(int64_t)-2];
 
     public:
       SimpleCoreBarrier() 
@@ -35,11 +35,11 @@ namespace Kokkos {
       set_depart(const int team_rank) { ((char*)&m_depart)[team_rank] = 1; }
         
       KOKKOS_INLINE_FUNCTION 
-      int 
+      int64_t 
       arrive()  { return m_arrive; }
 
       KOKKOS_INLINE_FUNCTION 
-      int
+      int64_t
       depart()  { return m_depart; }
 
     };
@@ -71,11 +71,13 @@ namespace Kokkos {
       bool 
       team_fan_in() const {
         if (m_team_size != 1) {
+          const int64_t mask = static_cast<int64_t>(BARRIER_MASK >> 8*(sizeof(int64_t) - m_team_size));
+
           m_core_barrier->set_arrive(m_team_rank);
-          while (m_core_barrier->arrive() == BARRIER_MASK); 
+          while (m_core_barrier->arrive() == mask); 
             
           m_core_barrier->set_depart(m_team_rank);         
-          while (m_core_barrier->depart() == BARRIER_MASK);  
+          while (m_core_barrier->depart() == mask);  
         }
         return !m_team_rank_rev;
       }
