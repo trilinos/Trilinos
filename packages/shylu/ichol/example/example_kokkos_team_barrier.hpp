@@ -35,11 +35,11 @@ namespace Kokkos {
       set_depart(const int team_rank) { ((char*)&m_depart)[team_rank] = 1; }
         
       KOKKOS_INLINE_FUNCTION 
-      volatile int& 
+      int 
       arrive()  { return m_arrive; }
 
       KOKKOS_INLINE_FUNCTION 
-      volatile int& 
+      int
       depart()  { return m_depart; }
 
     };
@@ -72,10 +72,10 @@ namespace Kokkos {
       team_fan_in() const {
         if (m_team_size != 1) {
           m_core_barrier->set_arrive(m_team_rank);
-          Kokkos::Impl::spinwait(m_core_barrier->arrive(), BARRIER_MASK);
+          while (m_core_barrier->arrive() == BARRIER_MASK); 
             
-          m_core_barrier->set_depart(m_team_rank);          
-          Kokkos::Impl::spinwait(m_core_barrier->depart(), BARRIER_MASK);
+          m_core_barrier->set_depart(m_team_rank);         
+          while (m_core_barrier->depart() == BARRIER_MASK);  
         }
         return !m_team_rank_rev;
       }

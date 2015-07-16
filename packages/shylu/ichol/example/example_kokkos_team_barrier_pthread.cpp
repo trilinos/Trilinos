@@ -114,7 +114,7 @@ int main (int argc, char *argv[]) {
       }
       exec_space::fence();
       double t = timer.seconds()/niter;
-      cout << "ReferenceTeamBarrier:: time = " << t << endl;
+      cout << "TestTeamBarrier:: time = " << t << endl;
     }
 
     exec_space::finalize();
