@@ -521,9 +521,18 @@ namespace Tpetra {
 
     const size_t lclNumRows =
       map.is_null () ? size_t (0) : map->getNodeNumElements ();
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(LDA < lclNumRows, std::runtime_error,
-      "LDA = " << LDA << " < numRows = " << lclNumRows << ".");
-
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (LDA < lclNumRows, std::invalid_argument, "LDA = " << LDA << " < "
+       "map->getNodeNumElements() = " << lclNumRows << ".");
+    if (numVecs != 0) {
+      const size_t minNumEntries = LDA * (numVecs - 1) + lclNumRows;
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (static_cast<size_t> (data.size ()) < minNumEntries,
+         std::invalid_argument, "Input Teuchos::ArrayView does not have enough "
+         "entries, given the input Map and number of vectors in the MultiVector."
+         "  data.size() = " << data.size () << " < (LDA*(numVecs-1)) + "
+         "map->getNodeNumElements () = " << minNumEntries << ".");
+    }
     view_ = allocDualView<Scalar, LO, GO, DeviceType> (lclNumRows, numVecs);
     view_.template modify<HMS> ();
 

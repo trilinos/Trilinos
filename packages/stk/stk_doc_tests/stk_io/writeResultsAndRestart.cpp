@@ -47,6 +47,7 @@
 #include "Ioss_NodeBlock.h"             // for NodeBlock
 #include "Ioss_Property.h"              // for Property
 #include "Ioss_Region.h"                // for Region, NodeBlockContainer
+#include "Ioss_ElementBlock.h"
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data, FieldBase
@@ -96,6 +97,12 @@ namespace {
       stk::mesh::Field<double> &field = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, fieldName, 3);
       stk::mesh::put_field(field, stkIo.meta_data().universal_part());
 
+      const stk::mesh::Part& block_1 = *stkIo.meta_data().get_part("block_1");
+      //create a 3-state field
+      stk::mesh::Field<double> &fooSubset = stkIo.meta_data().
+            declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "fooSubset", 2);
+      stk::mesh::put_field(fooSubset, block_1);
+
       //+ commit the meta data and create the bulk data.  
       //+ populate the bulk data with data from the mesh file.
       stkIo.populate_bulk_data();
@@ -116,6 +123,7 @@ namespace {
       //+ Output the field to the restart database also.
       //+ The two newest states will be output.
       stkIo.add_field(restart_fh, field); 
+      stkIo.add_field(restart_fh, fooSubset);
 
       std::vector<stk::mesh::Entity> nodes;
       stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
@@ -169,19 +177,34 @@ namespace {
       //create a 3-state field
       stk::mesh::Field<double> &foo = stkIo.meta_data().
               declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "foo", 3);
-            stk::mesh::put_field(foo, stkIo.meta_data().universal_part());
+      stk::mesh::put_field(foo, stkIo.meta_data().universal_part());
 
-      //add the new field to the stk-io-broker, even though we know it isn't present
+      const stk::mesh::Part& block_1 = *stkIo.meta_data().get_part("block_1");
+      //create a 3-state field
+      stk::mesh::Field<double> &fooSubset = stkIo.meta_data().
+            declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "fooSubset", 3);
+      stk::mesh::put_field(fooSubset, block_1);
+
+      //add the new fields to the stk-io-broker, even though we know it isn't present
       //in the restart database. This is to test the 'missing-fields' argument below.
-      stk::io::MeshField meshfield(&foo, "FOO");
-      meshfield.set_single_state(false);
-      meshfield.add_part(stk::topology::NODE_RANK, stkIo.meta_data().universal_part(),
+      stk::io::MeshField meshfieldFoo(&foo, "FOO");
+      meshfieldFoo.set_single_state(false);
+      meshfieldFoo.add_part(stk::topology::NODE_RANK, stkIo.meta_data().universal_part(),
                          stkIo.get_input_io_region().get()->get_node_blocks()[0]);
-      stkIo.add_input_field(meshfield);
+      stkIo.add_input_field(meshfieldFoo);
+
+      stk::io::MeshField meshfieldFooSubset(&fooSubset, "FOOSUBSET");
+      meshfieldFooSubset.set_single_state(false);
+      const Ioss::ElementBlock& elem_block = *stkIo.get_input_io_region().get()->get_element_blocks()[0];
+      Ioss::ElementBlock& nonconst_elem_block = const_cast<Ioss::ElementBlock&>(elem_block);
+      meshfieldFooSubset.add_part(stk::topology::NODE_RANK, block_1, &nonconst_elem_block);
+      meshfieldFooSubset.add_subset(block_1);
+      stkIo.add_input_field(meshfieldFooSubset);
 
       stk::io::set_field_role(foo, Ioss::Field::TRANSIENT);
+      stk::io::set_field_role(fooSubset, Ioss::Field::TRANSIENT);
 
-      stkIo.add_all_mesh_fields_as_input_fields();
+      //stkIo.add_all_mesh_fields_as_input_fields();
 
       stkIo.populate_bulk_data();
 
@@ -236,7 +259,7 @@ namespace {
       EXPECT_EQ(restart.get_property("state_count").get_int(), 5);
       // Should be 2 nodal field on database named "disp" and "disp.N";
       Ioss::NodeBlock *nb = restart.get_node_blocks()[0];
-      EXPECT_EQ(2u, nb->field_count(Ioss::Field::TRANSIENT));
+      EXPECT_EQ(3u, nb->field_count(Ioss::Field::TRANSIENT));
       EXPECT_TRUE(nb->field_exists("disp"));
       EXPECT_TRUE(nb->field_exists("disp.N"));
 
