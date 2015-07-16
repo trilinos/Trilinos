@@ -4,7 +4,6 @@ IF(${PROJECT_NAME}_ENABLE_Fortran AND BUILD_ZOLTAN_F90_INTERFACE)
 
 SET(ZFDRIVE_SOURCES
     fdr_migrate.f90 
-    mpistring.c
     fdr_sort.f90 
     fdr_main.f90 
     fdr_loadbal.f90 
