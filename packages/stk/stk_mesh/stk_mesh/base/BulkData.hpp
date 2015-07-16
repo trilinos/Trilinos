@@ -1042,11 +1042,6 @@ private:
       if (entity_rank(entity) == stk::topology::NODE_RANK && m_closure_count[entity.local_offset()] >= BulkData::orphaned_node_marking)
       {
           m_closure_count[entity.local_offset()] -= BulkData::orphaned_node_marking;
-          if (identifier(entity) == 48)
-          {
-          std::cerr << "P" << parallel_rank() << "unprotecting orphaned node "
-                  << identifier(entity) <<", closure-count now "<<m_closure_count[entity.local_offset()]<< std::endl;
-          }
       }
   }
 
