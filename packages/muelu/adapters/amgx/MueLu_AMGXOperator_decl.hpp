@@ -52,6 +52,10 @@
 #include <Tpetra_Operator.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_MultiVector.hpp>
+#include <Tpetra_Distributor.hpp>
+#include <Tpetra_HashTable.hpp>
+#include <Tpetra_Import.hpp>
+#include <Tpetra_Import_Util.hpp>
 
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_TpetraOperator.hpp"
@@ -141,32 +145,16 @@ namespace MueLu {
     //! @name Constructor/Destructor
     //@{
     AMGXOperator(const Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > &inA, Teuchos::ParameterList &paramListIn){
+      RCP<const Teuchos::Comm<LO> > comm = inA->getCrsGraph()->getComm();
       AMGX_Mode mode;
+      int nnz;
       /* init */
       AMGX_SAFE_CALL(AMGX_initialize());
       AMGX_SAFE_CALL(AMGX_initialize_plugins());
       /*system*/
       //AMGX_SAFE_CALL(AMGX_register_print_callback(&print_callback));
       AMGX_SAFE_CALL(AMGX_install_signal_handler());
-
       mode = AMGX_mode_dDDI;
-      Teuchos::ArrayRCP<const size_t> row_ptr_t;
-      Teuchos::ArrayRCP<const int> col_ind;
-      Teuchos::ArrayRCP<const double> data;
-
-      domainMap_ = inA->getDomainMap();
-      rangeMap_ = inA->getRangeMap();
-
-      N = inA->getGlobalNumRows();
-      int nnz = inA->getGlobalNumEntries();
-
-      inA->getAllValues(row_ptr_t, col_ind, data);
-
-
-      Teuchos::ArrayRCP<int> row_ptr(row_ptr_t.size(), 0);
-      for(int i = 0; i < row_ptr_t.size(); i++){
-        row_ptr[i] = Teuchos::as<int, size_t> (row_ptr_t[i]);
-      }
       Teuchos::ParameterList configs = paramListIn.sublist("amgx:params", true);
       if (configs.isParameter("json file")) {
         AMGX_SAFE_CALL(AMGX_config_create_from_file(&Config_, (const char *) &configs.get<std::string>("json file")[0]));
@@ -187,14 +175,134 @@ namespace MueLu {
         }
         AMGX_SAFE_CALL(AMGX_config_create(&Config_, (const char *) &configString[0]));
       }
-      AMGX_resources_create_simple(&Resources_, Config_);
-      AMGX_matrix_create(&A_, Resources_, mode);
-      AMGX_solver_create(&Solver_, Resources_, mode, Config_);
+      if(comm->getSize() > 1){
+        RCP<const Tpetra::Import<LO,GO> > importer = inA->getCrsGraph()->getImporter();
 
+        TEUCHOS_TEST_FOR_EXCEPTION(importer.is_null(), MueLu::Exceptions::RuntimeError, "The matrix A has no Import object.");
+
+        Tpetra::Distributor distributor = importer->getDistributor();
+
+        Array<int> sendRanks = distributor.getImagesTo();
+        Array<int> recvRanks = distributor.getImagesFrom();
+
+        std::sort(sendRanks.begin(), sendRanks.end());
+        std::sort(recvRanks.begin(), recvRanks.end());
+
+        bool match = true;
+        if (sendRanks.size() != recvRanks.size()) {
+          match = false;
+        } else {
+          for (int i = 0; i < sendRanks.size(); i++) {
+            if (recvRanks[i] != sendRanks[i])
+              match = false;
+              break;
+          }
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION(!match, MueLu::Exceptions::RuntimeError, "AMGX requires that the processors that we send to and receive from are the same. "
+                                     "This is not the case: we send to {" << sendRanks << "} and receive from {" << recvRanks << "}");
+
+        int        num_neighbors = sendRanks.size();  // does not include the calling process
+        const int* neighbors     = &sendRanks[0];
+
+        // Later on, we'll have to organize the send and recv data by PIDs,
+        // i.e, a vector V of vectors, where V[i] is PID i's vector of data.
+        // Hence we need to be able to quickly look up  an array index
+        // associated with each PID.
+        Tpetra::Details::HashTable<int,int> hashTable(3*num_neighbors);
+        for (int i = 0; i < num_neighbors; i++)
+          hashTable.add(neighbors[i], i);
+
+        // Construct send arrays
+        ArrayView<const size_t> sendSizes = distributor.getLengthsTo();
+        std::vector<int>        send_sizes(sendSizes.size());
+        for (int i = 0; i < sendSizes.size(); i++)
+          send_sizes[i] = Teuchos::as<int>(sendSizes[i]);
+
+        std::vector<std::vector<int> > sendDatas(num_neighbors);
+        std::vector<int*>              send_maps(num_neighbors);
+        for (int i = 0; i < num_neighbors; i++) {
+          sendDatas[i].reserve(send_sizes[i]);
+          send_maps[i] = &(sendDatas[i][0]);
+        }
+
+        ArrayView<const int> exportLIDs = importer->getExportLIDs();
+        ArrayView<const int> exportPIDs = importer->getExportPIDs();
+        for (int i = 0; i < exportPIDs.size(); i++) {
+          int index = hashTable.get(exportPIDs[i]);
+          sendDatas[index].push_back(exportLIDs[i]);
+        }
+        for (int i = 0; i < sendRanks.size(); i++)
+          TEUCHOS_TEST_FOR_EXCEPTION(sendDatas[i].size() != Teuchos::as<size_t>(send_sizes[i]), MueLu::Exceptions::RuntimeError,
+                                       "The size of the send map (" << sendDatas[i].size() << ") for PID " << i <<
+                                       " is not the same as the size reported by the distributor (" << send_sizes[i] << ").");
+
+        // Construct recv arrays
+        ArrayView<const size_t> recvSizes = distributor.getLengthsFrom();
+        std::vector<int>        recv_sizes(recvSizes.size());
+        for (int i = 0; i < recvSizes.size(); i++)      recv_sizes[i] = Teuchos::as<int>(recvSizes[i]);
+        std::vector<std::vector<int> > recvDatas(num_neighbors);
+        std::vector<int*>              recv_maps(num_neighbors);
+        for (int i = 0; i < num_neighbors; ++i) {
+          recvDatas[i].reserve(recv_sizes[i]);
+          recv_maps[i] = &(recvDatas[i][0]);
+        }
+        Array<int> importPIDs;
+        Tpetra::Import_Util::getPids(*importer, importPIDs, true/* make local -1 */);
+        for (int i = 0; i < importPIDs.size(); i++)
+          if (importPIDs[i] != -1) {
+            int index = hashTable.get(importPIDs[i]);
+            recvDatas[index].push_back(i);
+        }
+        for (int i = 0; i < recvRanks.size(); i++)
+          TEUCHOS_TEST_FOR_EXCEPTION(recvDatas[i].size() != Teuchos::as<size_t>(recv_sizes[i]), MueLu::Exceptions::RuntimeError,
+                          "The size of the recv map (" << recvDatas[i].size() << ") for PID " << i <<
+                          " is not the same as the size reported by the distributor (" << recv_sizes[i] << ").");
+        RCP<const Teuchos::MpiComm<int> > tmpic = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm->duplicate());
+        RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
+        MPI_Comm mpi_comm = *rawMpiComm;
+        if(mpi_comm == NULL) throw Exceptions::RuntimeError("communicator is null \n");
+        int num_gpu, rank;
+        cudaGetDeviceCount(&num_gpu);
+        MPI_Comm_rank(mpi_comm, &rank);
+        int devices[] = {(rank % num_gpu)};
+        AMGX_config_add_parameters(&Config_,"communicator=MPI");
+        AMGX_resources_create(&Resources_, Config_, &mpi_comm, 1, devices);
+        AMGX_matrix_create(&A_, Resources_, mode);
+        AMGX_solver_create(&Solver_, Resources_, mode, Config_);
+        AMGX_vector_create(&X_, Resources_, mode);
+        AMGX_vector_create(&Y_, Resources_, mode);
+        AMGX_matrix_comm_from_maps_one_ring(A_, 1, num_neighbors, neighbors, &send_sizes[0], (const int **) &send_maps[0], &recv_sizes[0], (const int **) &recv_maps[0]);
+        AMGX_vector_bind(X_, A_);
+        AMGX_vector_bind(Y_, A_);
+        N = inA->getNodeNumRows();
+        nnz = inA->getNodeNumEntries();
+      }
+      else{
+        AMGX_resources_create_simple(&Resources_, Config_);
+        AMGX_matrix_create(&A_, Resources_, mode);
+        AMGX_solver_create(&Solver_, Resources_, mode, Config_);
+        AMGX_vector_create(&X_, Resources_, mode);
+        AMGX_vector_create(&Y_, Resources_, mode);
+        N = inA->getGlobalNumRows();
+        nnz = inA->getGlobalNumEntries();
+      }
+
+      Teuchos::ArrayRCP<const size_t> row_ptr_t;
+      Teuchos::ArrayRCP<const int> col_ind;
+      Teuchos::ArrayRCP<const double> data;
+
+      domainMap_ = inA->getDomainMap();
+      rangeMap_ = inA->getRangeMap();
+
+      inA->getAllValues(row_ptr_t, col_ind, data);
+
+      Teuchos::ArrayRCP<int> row_ptr(row_ptr_t.size(), 0);
+      for(int i = 0; i < row_ptr_t.size(); i++){
+        row_ptr[i] = Teuchos::as<int, size_t> (row_ptr_t[i]);
+      }
       AMGX_matrix_upload_all(A_, N, nnz, 1, 1, &row_ptr[0], &col_ind[0], &data[0], NULL);
       AMGX_solver_setup(Solver_, A_);
-      AMGX_vector_create(&X_, Resources_, mode);
-      AMGX_vector_create(&Y_, Resources_, mode);
+      
     }
 
     //! Destructor.

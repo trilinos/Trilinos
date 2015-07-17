@@ -418,15 +418,19 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     offsets_ = arcp<const lno_t>(offsets, 0, numPrimaryPins + 1, false);
   }
   else if (model_type=="ghosting") {
-
+    typedef std::map<gno_t, unsigned int> ghost_t;
+    typedef std::map<gno_t,ghost_t> ghost_map_t;
     //Find local ghosting with second adjacency
     if(!me) std::cout<<"\n\nPHASE ONE\n\n";
     std::map<gno_t,lno_t> lid_mapping;
     for (size_t i=0;i<numLocalVertices_;i++)
       lid_mapping[gids_[i]]=i;
     primaryPinType=primaryEType;
+    if (primaryEType==MESH_REGION||(primaryEType==MESH_FACE&&ia->getGlobalNumOf(MESH_REGION)==0)) {
+      throw std::runtime_error("This ghosting implementation does not work on primary type being mesh element");
+    }
     adjacencyPinType =ia->getSecondAdjacencyEntityType();
-    unsigned int layers=2;
+    unsigned int layers=4;
     const lno_t* offsets;
     const zgid_t* adjacencyIds;
     //size_t numSecondAdj;
@@ -438,7 +442,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
       //numSecondAdj = ia->getLocalNum2ndAdjs(primaryPinType,adjacencyPinType);
       ia->get2ndAdjsView(primaryPinType,adjacencyPinType,offsets,adjacencyIds);
     }
-    std::map<gno_t,std::map<gno_t,unsigned int> > ghosts;
+    ghost_map_t ghosts;
     for (size_t i=0;i<numLocalVertices_;i++) {
       std::priority_queue<GhostCell> dist_queue;
       dist_queue.push(GhostCell(static_cast<lno_t>(i),gids_[i],0));
@@ -461,76 +465,86 @@ HyperGraphModel<Adapter>::HyperGraphModel(
         }
       }
     }
-
-    //Share off process ghosts
-    if (!me) std::cout<<"\n\nPHASE TWO\n\n";
-    std::map<gno_t,std::map<gno_t,unsigned int> > global_ghosts;
-    for (size_t i=0;i<numGlobalVertices_;i++) {
-      //Tell everyone how many ghosts this process has of the ith entity
-      size_t num =0;
-      if (ghosts.find(i)!=ghosts.end())
-        num = ghosts[i].size();
-      size_t *nums = new size_t[comm->getSize()];
-      gatherAll(*comm,1,&num,comm->getSize(),nums);
-      
-      //Send to those that also have the ith entity all of this processes ghosts
-      int num_messages=0;
-      for (int j=0;j<comm->getSize();j++) {
-        if (j==me || nums[j]==0 || num==0)
-          continue;
-        num_messages+=nums[j];
-        typename std::map<gno_t,unsigned int>::iterator itr;
-        for (itr=ghosts[i].begin();itr!=ghosts[i].end();itr++) {
-          gno_t* send_vals = new gno_t[2];
-          send_vals[0] = itr->first;
-          send_vals[1] = itr->second;
-          ArrayRCP<const gno_t> rcp_send_vals = arcp(send_vals,0,2,true);
-          isend(*comm,rcp_send_vals,j);
+    size_t num_new_ghosts=1;
+    ghost_map_t new_ghosts = ghosts;
+    while (num_new_ghosts!=0) {
+      //Share off process ghosts
+      if (!me) std::cout<<"\n\nPHASE TWO\n\n";
+      ghost_map_t global_ghosts;
+      for (size_t i=0;i<numGlobalVertices_;i++) {
+        //Tell everyone how many ghosts this process has of the ith entity
+        size_t num =0;
+        int hasVertex=false; //Make the flag an int because Teuchos does not support bool
+        if (ghosts.find(i)!=ghosts.end()) {
+          num = new_ghosts[i].size();
+          hasVertex=true;
         }
-      }
-      delete nums;
+        int *ownsVertex = new int[comm->getSize()];
+        gatherAll(*comm,1,&hasVertex,comm->getSize(),ownsVertex);
 
-      //Receive
-      while (num_messages>0) {
-        ArrayRCP<gno_t> rcp_recv_vals(2);
-        typedef Teuchos::CommRequest<int> request_t;
-        RCP< request_t > request = ireceive(*comm,rcp_recv_vals,-1);
-        comm->wait(Teuchos::Ptr<RCP<request_t> >(&request));
+        size_t *nums = new size_t[comm->getSize()];
+        gatherAll(*comm,1,&num,comm->getSize(),nums);
       
-        typename std::map<gno_t,unsigned int>::iterator itr = ghosts[i].find(rcp_recv_vals[0]);
-        if (itr==ghosts[i].end()||rcp_recv_vals[1]<static_cast<gno_t>(itr->second)) {
-          global_ghosts[i][rcp_recv_vals[0]] = rcp_recv_vals[1];
-          if (me) std::cout<<"Received: "<<i<<" "<<rcp_recv_vals[0]<<" "<<rcp_recv_vals[1]<<std::endl;
+        //Send to those that also have the ith entity all of this processes ghosts
+        int num_messages=0;
+        for (int j=0;j<comm->getSize();j++) {
+          if (j==me || !ownsVertex[j] || !hasVertex)
+            continue;
+          num_messages+=nums[j];
+          typename ghost_t::iterator itr;
+          for (itr=new_ghosts[i].begin();itr!=new_ghosts[i].end();itr++) {
+            gno_t* send_vals = new gno_t[2];
+            send_vals[0] = itr->first;
+            send_vals[1] = itr->second;
+            ArrayRCP<const gno_t> rcp_send_vals = arcp(send_vals,0,2,true);
+            isend(*comm,rcp_send_vals,j);
+          }
         }
-        num_messages--;
-      }
-      
-    }
-    
-    //update local ghosting information with new global ghosts
-    if (!me) std::cout<<"\n\nPHASE THREE\n\n";
-    for (size_t i=0;i<numLocalVertices_;i++) {//for each local entity
-      typename std::map<gno_t,unsigned int>::iterator itr;
-      for (itr=ghosts[gids_[i]].begin();itr!=ghosts[gids_[i]].end();itr++) { //for each ghost of this entity
-        if (itr->second<layers) {
-          typename std::map<gno_t,unsigned int>::iterator global_itr;
-          for (global_itr=global_ghosts[itr->first].begin();
-               global_itr!=global_ghosts[itr->first].end(); global_itr++) { //for each global ghost of the ghost entity
+        delete nums;
 
-            //
-            typename std::map<gno_t,unsigned int>::iterator local_itr 
-              = ghosts[gids_[i]].find(global_itr->first);
-            if (i==0&&me)
-              std::cout<<global_itr->first<<" "<<global_itr->second<<' '<<local_itr->first<<" "<<local_itr->second<<std::endl;
-            if (global_itr->second+itr->second<=layers &&
-                (local_itr==ghosts[gids_[i]].end() ||
-                 global_itr->second+itr->second<local_itr->second)) {
-              ghosts[gids_[i]][global_itr->first]=global_itr->second+itr->second;
-              std::cout<<me<<" New Ghost value: "<<gids_[i]<<" "<<local_itr->first<<" "<<global_itr->second+itr->second<<"\n";
+        //Receive
+        while (num_messages>0) {
+          ArrayRCP<gno_t> rcp_recv_vals(2);
+          typedef Teuchos::CommRequest<int> request_t;
+          RCP< request_t > request = ireceive(*comm,rcp_recv_vals,-1);
+          comm->wait(Teuchos::Ptr<RCP<request_t> >(&request));
+      
+          typename ghost_t::iterator itr = ghosts[i].find(rcp_recv_vals[0]);
+          if (itr==ghosts[i].end()||rcp_recv_vals[1]<static_cast<gno_t>(itr->second)) {
+            global_ghosts[i][rcp_recv_vals[0]] = rcp_recv_vals[1];
+            if (me) std::cout<<"Received: "<<i<<" "<<rcp_recv_vals[0]<<" "<<rcp_recv_vals[1]<<std::endl;
+          }
+          num_messages--;
+        }
+      
+      }
+      new_ghosts.clear();
+      //update local ghosting information with new global ghosts
+      if (!me) std::cout<<"\n\nPHASE THREE\n\n";
+      for (size_t i=0;i<numLocalVertices_;i++) {//for each local entity
+        typename ghost_t::iterator itr;
+        for (itr=ghosts[gids_[i]].begin();itr!=ghosts[gids_[i]].end();itr++) { //for each ghost of this entity
+          if (itr->second<layers) {
+            typename ghost_t::iterator global_itr;
+            for (global_itr=global_ghosts[itr->first].begin();
+                 global_itr!=global_ghosts[itr->first].end(); global_itr++) { //for each global ghost of the ghost entity
+              typename ghost_t::iterator local_itr 
+                = ghosts[gids_[i]].find(global_itr->first);
+              if (i==0&&me)
+                std::cout<<global_itr->first<<" "<<global_itr->second<<' '<<local_itr->first<<" "<<local_itr->second<<std::endl;
+              if (global_itr->second+itr->second<=layers &&
+                  (local_itr==ghosts[gids_[i]].end() ||
+                   global_itr->second+itr->second<local_itr->second)) {
+                ghosts[gids_[i]][global_itr->first]=global_itr->second+itr->second;
+                std::cout<<me<<" New Ghost value: "<<gids_[i]<<" "<<global_itr->first<<" "<<global_itr->second+itr->second<<"\n";
+                new_ghosts[gids_[i]][global_itr->first] = global_itr->second+itr->second;
+              }
             }
           }
         }
       }
+      num_new_ghosts=new_ghosts.size();
+      reduceAll(*comm,Teuchos::REDUCE_SUM,1,&num_new_ghosts,&num_new_ghosts);
     }
 
     //Finally make the pins
@@ -543,7 +557,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     gno_t j=0;
     for (size_t i=0;i<numLocalVertices_;i++) {//for each local entity
       temp_offsets[i]=j;
-      typename std::map<gno_t,unsigned int>::iterator itr;
+      typename ghost_t::iterator itr;
       for (itr=ghosts[gids_[i]].begin();itr!=ghosts[gids_[i]].end();itr++) { //for each ghost of this entity
         temp_pins[j]=itr->first;
         j++;
