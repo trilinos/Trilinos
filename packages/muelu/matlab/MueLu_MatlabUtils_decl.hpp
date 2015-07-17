@@ -239,7 +239,7 @@ void processProvides(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Fact
   typedef RCP<Aggregates<LocalOrdinal, GlobalOrdinal, Node>> Aggregates_t;
   typedef RCP<AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>> AmalgamationInfo_t;
   vector<string> provides = tokenizeList(providesParam);
-  for(size_t i = 0; i < int(provides.size()); i++)
+  for(size_t i = 0; i < size_t(provides.size()); i++)
   {
     if(provides[i] == "A" || provides[i] == "P" || provides[i] == "R" || provides[i]=="Ptent")
     {
