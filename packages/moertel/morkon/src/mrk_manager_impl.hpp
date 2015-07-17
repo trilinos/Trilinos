@@ -126,6 +126,8 @@ Morkon_Manager<DeviceType, DIM, FACE_TYPE>::declare_all_interfaces(face_interfac
   m_fields.m_node_coords =         node_coords;
   m_non_dense_node_ids   =  non_dense_node_ids;
   m_is_ifc_boundary_node = boundary_node_table;
+
+  return false;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
@@ -215,7 +217,7 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
   {
     Interface<DeviceType,DIM,FACE_TYPE> &interface = *ifcs_i->second;
 
-    for (int hsa_i = 0; hsa_i < interface.m_hs_adapters.size(); ++hsa_i)
+    for (unsigned hsa_i = 0; hsa_i < interface.m_hs_adapters.size(); ++hsa_i)
     {
       Interface_HostSideAdapter<DIM> &adapter = *interface.m_hs_adapters[hsa_i];
 
