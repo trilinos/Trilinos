@@ -410,18 +410,11 @@ class MueLu_XMLChallengeMode():
     self.xmlFileName   = ""
     self.isDirty       = True  # dirty flag
     self.editor        = "gedit" ### fix me
+    self.has_coords    = False
 
     self.proc1 = subprocess.Popen(['gnuplot','-p'], shell=True, stdin=subprocess.PIPE, )
 
   def main(self):
-    # generate results for reference xml files
-    self.xmlReferenceFileName = "challenges/" + self.problem + "_reference.xml"
-
-    # copy file with reference parameters for this example
-    cmd = "cp challenges/" + self.problem + "_reference.xml " + self.problem + "_parameters.xml"
-    runCommand(cmd)
-
-    self.xmlFileName   = self.problem + "_parameters.xml"     # xml parameter file
 
     # check if tar.gz file with data is in subfolder challenges:
     if os.path.isfile("challenges/" + self.problem + ".tar.gz") == False:
@@ -435,6 +428,18 @@ class MueLu_XMLChallengeMode():
       cmd = "tar xvf MueLu_tutorial_challenges.tar.gz"
       runCommand(cmd)
       print bcolors.OKDARKGREEN + "Success!" + bcolors.ENDC
+
+    # generate results for reference xml files
+    self.xmlReferenceFileName = "challenges/" + self.problem + "_reference.xml"
+
+    # copy file with reference parameters for this example
+    cmd = "cp challenges/" + self.problem + "_reference.xml " + self.problem + "_parameters.xml"
+    runCommand(cmd)
+
+    self.xmlFileName   = self.problem + "_parameters.xml"     # xml parameter file
+
+    if os.path.isfile("challenges/" + self.problem + "_coords.txt"):
+      self.has_coords = True
 
     self.doRunReference()
 
@@ -503,7 +508,7 @@ class MueLu_XMLChallengeMode():
     # runs example
     cmd = "rm -f *.vtp *.mat example*.txt output.log output.res reference.log reference.res aggs*.txt nodes*.txt"
     runCommand(cmd)
-    cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --globalNumDofs=" + str(self.globalNumDofs) + " --nDofsPerNode=" + str(self.nDofsPerNode) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlReferenceFileName + " --problem=challenges/" + str(self.problem) + " | tee reference.log 2>&1"
+    cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --globalNumDofs=" + str(self.globalNumDofs) + " --nDofsPerNode=" + str(self.nDofsPerNode) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlReferenceFileName + " --problem=challenges/" + str(self.problem) + " --coordinates=challenges/" + str(self.problem) + "_coords.txt" + " | tee reference.log 2>&1"
     runCommand(cmd)
     self.isDirty = False
 
@@ -514,7 +519,7 @@ class MueLu_XMLChallengeMode():
     cmd = "rm -f *.vtp *.mat example*.txt output.log output.res aggs*.txt nodes*.txt"
     runCommand(cmd)
     print "RUN EXAMPLE"
-    cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --globalNumDofs=" + str(self.globalNumDofs) + " --nDofsPerNode=" + str(self.nDofsPerNode) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlFileName + " --problem=challenges/" + str(self.problem) + " | tee output.log 2>&1"
+    cmd = "mpirun -np " + str(self.numProcs) + " " + str(self.executable) + " --globalNumDofs=" + str(self.globalNumDofs) + " --nDofsPerNode=" + str(self.nDofsPerNode) + " --solver=" + str(self.solver) + " --tol=" + str(self.tol) + " --xml=" + self.xmlFileName + " --problem=challenges/" + str(self.problem) + " --coordinates=challenges/" + str(self.problem) + "_coords.txt" + " | tee output.log 2>&1"
     print cmd
     runCommand(cmd)
     runCommand("echo 'Press q to return.' >> output.log")
