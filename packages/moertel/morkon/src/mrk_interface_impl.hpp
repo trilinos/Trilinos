@@ -69,6 +69,7 @@ bool Interface<DeviceType, DIM,  FACE_TYPE >::define_side(SideEnum which_side, f
     return false;
   }
   m_sides[which_side] = faces_on_side;
+  return true;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >

@@ -54,12 +54,14 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
+#include <mrk_data_types.hpp>
+
 namespace morkon_exp {
 
-template <typename DeviceType, unsigned int DIM = 3, MorkonFaceType = MRK_QUAD4 >
+template <typename DeviceType, unsigned int DIM = 3, MorkonFaceType = MRK_TRI3 >
 class Interface;
 
-template <typename DeviceType, unsigned int DIM = 3, MorkonFaceType = MRK_QUAD4 >
+template <typename DeviceType, unsigned int DIM = 3, MorkonFaceType = MRK_TRI3 >
 class Morkon_Manager;
 
 template <unsigned int DIM = 3 >
@@ -183,8 +185,10 @@ private:
 
   // Note that the non-mortar-side integration points needed in computing D are also
   // needed to compute M.  Store and re-use, or re-compute?
-  bool integrate_pallets_into_onrank_D(mortar_pallets_t pallets_to_integrate_on /* additional arg(s)? */ );
-  bool integrate_pallets_into_onrank_M(mortar_pallets_t pallets_to_integrate_on /* additional arg(s)? */ );
+  bool integrate_pallets_into_onrank_D(mortar_pallets_t pallets_to_integrate_on,
+                                       const node_support_sets_t &support_sets);
+  bool integrate_pallets_into_onrank_M(mortar_pallets_t pallets_to_integrate_on,
+                                       const node_support_sets_t &support_sets);
 
 };
 
