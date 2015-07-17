@@ -535,7 +535,7 @@ namespace MueLu {
       smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
       smooProto->SetFactory("A", AFact);
 
-    } else if (type == "Chebyshev") {
+    } else if (type == "Chebyshev" || type == "MLS") {
 
       ifpackType = "CHEBYSHEV";
 
