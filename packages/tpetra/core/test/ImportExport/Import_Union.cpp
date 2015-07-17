@@ -529,7 +529,20 @@ namespace {
     }
 
     compareImports (success, out, *unionImp1, *expectedUnionImp, *comm);
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      out << "*** imp1->setUnion(imp2) != expected Import ***" << endl;
+    }
+
     compareImports (success, out, *unionImp2, *expectedUnionImp, *comm);
+    lclSuccess = success ? 1 : 0;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    TEST_EQUALITY( gblSuccess, 1 );
+    if (gblSuccess != 1) {
+      out << "*** imp2->setUnion(imp1) != expected Import ***" << endl;
+    }
   }
 
   //
