@@ -158,28 +158,28 @@ LIST(APPEND SOURCES
 IF(PyTrilinos_ENABLE_Epetra)
 
   LIST(APPEND HEADERS
-    Epetra_NumPyFEVector.hpp
-    Epetra_NumPyIntSerialDenseMatrix.hpp
-    Epetra_NumPyIntSerialDenseVector.hpp
-    Epetra_NumPyIntVector.hpp
-    Epetra_NumPyMultiVector.hpp
-    Epetra_NumPySerialDenseMatrix.hpp
-    Epetra_NumPySerialSymDenseMatrix.hpp
-    Epetra_NumPySerialDenseVector.hpp
-    Epetra_NumPyVector.hpp
+    # Epetra_NumPyFEVector.hpp
+    # Epetra_NumPyIntSerialDenseMatrix.hpp
+    # Epetra_NumPyIntSerialDenseVector.hpp
+    # Epetra_NumPyIntVector.hpp
+    # Epetra_NumPyMultiVector.hpp
+    # Epetra_NumPySerialDenseMatrix.hpp
+    # Epetra_NumPySerialSymDenseMatrix.hpp
+    # Epetra_NumPySerialDenseVector.hpp
+    # Epetra_NumPyVector.hpp
     PyTrilinos_Epetra_Util.hpp
     )
 
   LIST(APPEND SOURCES
-    Epetra_NumPyFEVector.cpp
-    Epetra_NumPyIntSerialDenseMatrix.cpp
-    Epetra_NumPyIntSerialDenseVector.cpp
-    Epetra_NumPyIntVector.cpp
-    Epetra_NumPyMultiVector.cpp
-    Epetra_NumPySerialDenseMatrix.cpp
-    Epetra_NumPySerialSymDenseMatrix.cpp
-    Epetra_NumPySerialDenseVector.cpp
-    Epetra_NumPyVector.cpp
+    # Epetra_NumPyFEVector.cpp
+    # Epetra_NumPyIntSerialDenseMatrix.cpp
+    # Epetra_NumPyIntSerialDenseVector.cpp
+    # Epetra_NumPyIntVector.cpp
+    # Epetra_NumPyMultiVector.cpp
+    # Epetra_NumPySerialDenseMatrix.cpp
+    # Epetra_NumPySerialSymDenseMatrix.cpp
+    # Epetra_NumPySerialDenseVector.cpp
+    # Epetra_NumPyVector.cpp
     PyTrilinos_Epetra_Util.cpp
     )
 

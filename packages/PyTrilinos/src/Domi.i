@@ -106,6 +106,15 @@ other Trilinos solver technologies.
 #include "Epetra_JadMatrix.h"
 #include "Epetra_InvOperator.h"
 #include "Epetra_MapColoring.h"
+#include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_IntSerialDenseMatrix.h"
+#include "Epetra_SerialDenseVector.h"
+#include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_SerialSymDenseMatrix.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_SerialDenseSolver.h"
 #endif
@@ -123,16 +132,17 @@ other Trilinos solver technologies.
 #include "Domi_MDVector.hpp"
 
 // PyTrilinos includes
+#include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_Teuchos_Util.hpp"
-#include "Epetra_NumPyIntSerialDenseVector.hpp"
-#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialDenseVector.hpp"
-#include "Epetra_NumPySerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialSymDenseMatrix.hpp"
-#include "Epetra_NumPyIntVector.hpp"
-#include "Epetra_NumPyVector.hpp"
-#include "Epetra_NumPyFEVector.hpp"
-#include "Epetra_NumPyMultiVector.hpp"
+// #include "Epetra_NumPyIntSerialDenseVector.hpp"
+// #include "Epetra_NumPyIntSerialDenseMatrix.hpp"
+// #include "Epetra_NumPySerialDenseVector.hpp"
+// #include "Epetra_NumPySerialDenseMatrix.hpp"
+// #include "Epetra_NumPySerialSymDenseMatrix.hpp"
+// #include "Epetra_NumPyIntVector.hpp"
+// #include "Epetra_NumPyVector.hpp"
+// #include "Epetra_NumPyFEVector.hpp"
+// #include "Epetra_NumPyMultiVector.hpp"
 #include "PyTrilinos_Domi_Util.hpp"
 
 %}
@@ -544,7 +554,7 @@ def from_DistArray(comm, distarray):
 }
 
 %pythoncode
-{
+%{
 class MDVector(object):
     def __init__(self, *args, **kwargs):
         dtype       = kwargs.get("dtype"      , "int64")
@@ -598,7 +608,7 @@ class MDVector(object):
     # from %extend, although I do not understand why
     def __getitem__(self, args):
         return self._vector.__getitem__(args)
-}
+%}
 
 // Turn off the exception handling
 %exception;
