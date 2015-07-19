@@ -108,15 +108,15 @@ NOX.Epetra.Interface provides the following user-level classes:
 
 // Local Epetra includes
 #include "PyTrilinos_Epetra_Util.hpp"
-#include "Epetra_NumPyIntVector.hpp"
-#include "Epetra_NumPyMultiVector.hpp"
-#include "Epetra_NumPyVector.hpp"
-#include "Epetra_NumPyFEVector.hpp"
-#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-#include "Epetra_NumPyIntSerialDenseVector.hpp"
-#include "Epetra_NumPySerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialSymDenseMatrix.hpp"
-#include "Epetra_NumPySerialDenseVector.hpp"
+// #include "Epetra_NumPyIntVector.hpp"
+// #include "Epetra_NumPyMultiVector.hpp"
+// #include "Epetra_NumPyVector.hpp"
+// #include "Epetra_NumPyFEVector.hpp"
+// #include "Epetra_NumPyIntSerialDenseMatrix.hpp"
+// #include "Epetra_NumPyIntSerialDenseVector.hpp"
+// #include "Epetra_NumPySerialDenseMatrix.hpp"
+// #include "Epetra_NumPySerialSymDenseMatrix.hpp"
+// #include "Epetra_NumPySerialDenseVector.hpp"
 
 // NOX::Epetra::Interface includes
 #include "NOX_Epetra_Interface_Required.H"

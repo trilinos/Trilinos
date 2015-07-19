@@ -95,7 +95,7 @@ NOX.Abstract provides the following user-level classes:
 %{
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
-#include "Epetra_NumPyVector.hpp"
+// #include "Epetra_NumPyVector.hpp"
 %}
 #endif
 
