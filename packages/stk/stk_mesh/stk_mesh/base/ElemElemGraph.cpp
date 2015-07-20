@@ -619,7 +619,7 @@ void ElemElemGraph::break_remote_volume_element_connections_across_shells(const 
     }
 }
 
-bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
+bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
         const stk::mesh::PartVector& boundary_mesh_parts)
 {
     bool topology_modified = false;
