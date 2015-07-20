@@ -890,16 +890,15 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       else
         algName_ = std::string("patoh"); 
     }
-    else if (inputType_ == CoordinateAdapterType)
+    else if (inputType_ == VectorAdapterType)
     {
       //modelType_ = CoordinateModelType;
       modelAvail_[CoordinateModelType]=true;
 
       if(algName_ != std::string("multijagged"))
-      algName_ = std::string("rcb");
+        algName_ = std::string("rcb");
     }
-    else if (inputType_ == VectorAdapterType ||
-             inputType_ == IdentifierAdapterType)
+    else if (inputType_ == IdentifierAdapterType)
     {
       //modelType_ = IdentifierModelType;
       modelAvail_[IdentifierModelType]=true;

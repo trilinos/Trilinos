@@ -411,8 +411,8 @@
         <String value=\"block\"/> \
         <String value=\"cyclic\"/> \
         <String value=\"random\"/> \
-        <String value=\"nd\"/> \
         <String value=\"zoltan\"/> \
+        <String value=\"nd\"/> \
       </Validator> \
       <Validator defaultParameterName=\"rectilinear\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"26\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \
