@@ -133,12 +133,15 @@ getLocalSideIds(const STK_Interface & mesh,
    stk_classic::mesh::Selector mySides = *side & (metaData->locally_owned_part() | metaData->globally_shared_part());
 
    stk_classic::mesh::EntityRank rank;
-   unsigned int offset = 0; // offset to avoid giving nodes and edges the same sideId 
+   unsigned int offset = 0; // offset to avoid giving nodes, edges, faces the same sideId 
    if(type_ == "coord"){
      rank = mesh.getNodeRank();
    } else if(type_ == "edge"){
      rank = mesh.getEdgeRank();
      offset = mesh.getMaxEntityId(mesh.getNodeRank());
+   } else if(type_ == "face"){
+     rank = mesh.getFaceRank();
+     offset = mesh.getMaxEntityId(mesh.getNodeRank())+mesh.getMaxEntityId(mesh.getEdgeRank());
    } else {
      ss << "Can't do BCs of type " << type_  << std::endl;
    }
@@ -193,6 +196,10 @@ getLocalSideIdsAndCoords(const STK_Interface & mesh,
      rank = mesh.getEdgeRank();
      field = & mesh.getEdgesField();
      offset = mesh.getMaxEntityId(mesh.getNodeRank());
+   } else if(type_ == "face"){
+     rank = mesh.getFaceRank();
+     field = & mesh.getFacesField();
+     offset = mesh.getMaxEntityId(mesh.getNodeRank())+mesh.getMaxEntityId(mesh.getEdgeRank());
    } else {
      ss << "Can't do BCs of type " << type_  << std::endl;
    }

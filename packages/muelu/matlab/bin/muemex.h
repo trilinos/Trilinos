@@ -118,7 +118,7 @@ class MuemexSystem
   MuemexSystem(DataPackType type);      //type is one of EPETRA, TPETRA or TPETRA_COMPLEX
   virtual ~MuemexSystem() = 0;
   virtual int status() = 0;
-  virtual int setup(const mxArray* mxa) = 0;
+  virtual int setup(const mxArray* matlabA, bool haveCoords , const mxArray* matlabCoords) = 0;
   int id;
   Teuchos::RCP<Teuchos::ParameterList> List;
   DataPackType type;
@@ -130,7 +130,7 @@ class EpetraSystem : public MuemexSystem
  public:
   EpetraSystem();
   ~EpetraSystem();
-  int setup(const mxArray* mxa);
+  int setup(const mxArray* matlabA, bool haveCoords = false, const mxArray* matlabCoords = NULL);
   int status();
   mxArray* solve(Teuchos::RCP<Teuchos::ParameterList> params, Teuchos::RCP<Epetra_CrsMatrix> matrix, const mxArray* rhs, int &iters);
   Teuchos::RCP<Epetra_CrsMatrix> GetMatrix()
@@ -167,7 +167,7 @@ class TpetraSystem : public MuemexSystem
   ~TpetraSystem();
   typedef Tpetra::CrsMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> TMatrix;
   typedef Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> TOperator;
-  int setup(const mxArray* mxa);
+  int setup(const mxArray* matlabA, bool haveCoords = false, const mxArray* matlabCoords = NULL);
   int status();
   mxArray* solve(Teuchos::RCP<Teuchos::ParameterList> params, Teuchos::RCP<TMatrix> matrix, const mxArray* rhs, int &iters);
   //note: I typedef'd mm_node_t at the top of this file as the Kokkos default type

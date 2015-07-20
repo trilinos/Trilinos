@@ -166,6 +166,21 @@ namespace Belos {
       return Teuchos::tuple(timerSolve_);
     }
 
+
+    /// \brief Tolerance achieved by the last \c solve() invocation.
+    ///
+    /// This is the maximum over all right-hand sides' achieved
+    /// convergence tolerances, and is set whether or not the solve
+    /// actually managed to achieve the desired convergence tolerance.
+    ///
+    /// \warning This result may not be meaningful if there was a loss
+    ///   of accuracy during the solve.  You should first call \c
+    ///   isLOADetected() to check for a loss of accuracy during the
+    ///   last solve.
+    MagnitudeType achievedTol() const {
+      return achievedTol_;
+    }
+
     //! Get the iteration count for the most recent call to \c solve().
     int getNumIters() const {
       return numIters_;
@@ -272,7 +287,7 @@ namespace Belos {
     static const Teuchos::RCP<std::ostream> outputStream_default_;
 
     // Current solver values.
-    MagnitudeType convtol_;
+    MagnitudeType convtol_,achievedTol_;
     int maxIters_, numIters_;
     int verbosity_, outputStyle_, outputFreq_, defQuorum_;
     bool assertPositiveDefiniteness_, showMaxResNormOnly_;
@@ -850,6 +865,12 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // get iteration information for this solve
   numIters_ = maxIterTest_->getNumIters();
+
+
+  // Save the convergence test value ("achieved tolerance") for this
+  // solve.  
+  const std::vector<MagnitudeType>* pTestValues = convTest_->getTestValue();
+  achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
 
   if (!isConverged ) {
     return Unconverged; // return from PseudoBlockCGSolMgr::solve()

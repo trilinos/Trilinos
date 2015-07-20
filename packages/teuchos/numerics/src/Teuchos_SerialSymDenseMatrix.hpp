@@ -466,11 +466,27 @@ SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(
 }
 
 template<typename OrdinalType, typename ScalarType>
-SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(const SerialSymDenseMatrix<OrdinalType, ScalarType> &Source) : CompObject(), numRowCols_(Source.numRowCols_), stride_(Source.numRowCols_), valuesCopied_(true), values_(0), upper_(Source.upper_), UPLO_(Source.UPLO_)
+SerialSymDenseMatrix<OrdinalType, ScalarType>::SerialSymDenseMatrix(const SerialSymDenseMatrix<OrdinalType, ScalarType> &Source) : CompObject(), numRowCols_(Source.numRowCols_), stride_(0), valuesCopied_(true), values_(0), upper_(Source.upper_), UPLO_(Source.UPLO_)
 {
-  values_ = new ScalarType[stride_*numRowCols_];
-  copyMat(Source.upper_, Source.values_, Source.stride_, numRowCols_, upper_, values_, stride_, 0);
-  valuesCopied_ = true;
+  if (!Source.valuesCopied_)
+  {
+    stride_ = Source.stride_;
+    values_ = Source.values_;
+    valuesCopied_ = false;
+  }
+  else
+  {
+    stride_ = numRowCols_;
+    const OrdinalType newsize = stride_ * numRowCols_;
+    if(newsize > 0) {
+      values_ = new ScalarType[newsize];
+      copyMat(Source.upper_, Source.values_, Source.stride_, numRowCols_, upper_, values_, stride_, 0);
+    }
+    else {
+      numRowCols_ = 0; stride_ = 0;
+      valuesCopied_ = false;
+    }
+  }
 }
 
 template<typename OrdinalType, typename ScalarType>

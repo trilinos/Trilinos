@@ -58,7 +58,7 @@ namespace Example {
       r_val_prev = r_val;
       cout << "testCrsMatrixBase::ConstructorInternalAllocation::Begin - " << r_val << endl;
 
-      const ordinal_type nnz = tmg.NumNonZeros();
+      const size_type nnz = tmg.NumNonZeros();
       CrsMatrixBaseType A("A, Allocated", m, n, nnz);
 
       r_val += tmg.fill(A);
@@ -80,7 +80,7 @@ namespace Example {
       r_val_prev = r_val;
       cout << "testCrsMatrixBase::ConstructorExternalAllocation::Begin - " << r_val << endl;
       
-      const ordinal_type nnz = tmg.NumNonZeros();
+      const size_type nnz = tmg.NumNonZeros();
 
       typename CrsMatrixBaseType::size_type_array    ap("External::RowPtrArray", m+1);
       typename CrsMatrixBaseType::ordinal_type_array aj("External::ColIdxArray", nnz);
@@ -108,7 +108,7 @@ namespace Example {
       r_val_prev = r_val;
       cout << "testCrsMatrixBase::Copy::Begin - " << r_val << endl;
 
-      const ordinal_type nnz = tmg.NumNonZeros();
+      const size_type nnz = tmg.NumNonZeros();
       CrsMatrixBaseType A("A, Source", m, n, nnz);
 
       r_val += tmg.fill(A);

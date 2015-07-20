@@ -50,6 +50,7 @@
 #include "Ifpack2_ILUT.hpp"
 #include "Ifpack2_Relaxation.hpp"
 #include "Ifpack2_RILUK.hpp"
+#include "Ifpack2_Experimental_RBILUK.hpp"
 #include "Ifpack2_Krylov.hpp"
 #include "Ifpack2_BlockRelaxation.hpp"
 #include "Ifpack2_BandedContainer.hpp"
@@ -112,6 +113,9 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
   }
   else if (precTypeUpper == "RILUK") {
     prec = rcp (new RILUK<MatrixType> (matrix));
+  }
+  else if (precTypeUpper == "RBILUK") {
+    prec = rcp (new Experimental::RBILUK<MatrixType>(matrix));
   }
   else if (precTypeUpper == "KRYLOV") {
     prec = rcp (new Krylov<MatrixType> (matrix));

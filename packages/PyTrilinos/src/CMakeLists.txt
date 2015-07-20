@@ -48,8 +48,12 @@ IF(PyTrilinos_ENABLE_Epetra)
   SET(HAVE_EPETRA ON)
 ENDIF()
 
-IF(PyTrilinos_ENABLE_Teuchos)
-  SET(HAVE_TEUCHOS ON)
+IF(PyTrilinos_ENABLE_Tpetra)
+  SET(HAVE_TPETRA ON)
+ENDIF()
+
+IF(PyTrilinos_ENABLE_Domi)
+  SET(HAVE_DOMI ON)
 ENDIF()
 
 IF(PyTrilinos_ENABLE_STK)
@@ -141,17 +145,13 @@ LIST(APPEND SOURCES
 
 #
 # PyTrilinos + Teuchos headers and sources
-IF(PyTrilinos_ENABLE_Teuchos)
+LIST(APPEND HEADERS
+  PyTrilinos_Teuchos_Util.hpp
+  )
 
-  LIST(APPEND HEADERS
-    PyTrilinos_Teuchos_Util.hpp
-    )
-
-  LIST(APPEND SOURCES
-    PyTrilinos_Teuchos_Util.cpp
-    )
-
-ENDIF(PyTrilinos_ENABLE_Teuchos)
+LIST(APPEND SOURCES
+  PyTrilinos_Teuchos_Util.cpp
+  )
 
 #
 # PyTrilinos + Epetra headers and sources
@@ -200,20 +200,6 @@ IF(PyTrilinos_ENABLE_Tpetra)
 ENDIF(PyTrilinos_ENABLE_Tpetra)
 
 #
-# PyTrilinos + EpetraExt headers and sources
-IF(PyTrilinos_ENABLE_EpetraExt)
-
-  LIST(APPEND HEADERS
-    PyTrilinos_EpetraExt_Util.hpp
-    )
-
-  LIST(APPEND SOURCES
-    PyTrilinos_EpetraExt_Util.cpp
-    )
-
-ENDIF(PyTrilinos_ENABLE_EpetraExt)
-
-#
 # PyTrilinos + Domi headers and sources
 IF(PyTrilinos_ENABLE_Domi)
 
@@ -226,6 +212,20 @@ IF(PyTrilinos_ENABLE_Domi)
     )
 
 ENDIF(PyTrilinos_ENABLE_Domi)
+
+#
+# PyTrilinos + EpetraExt headers and sources
+IF(PyTrilinos_ENABLE_EpetraExt)
+
+  LIST(APPEND HEADERS
+    PyTrilinos_EpetraExt_Util.hpp
+    )
+
+  LIST(APPEND SOURCES
+    PyTrilinos_EpetraExt_Util.cpp
+    )
+
+ENDIF(PyTrilinos_ENABLE_EpetraExt)
 
 #
 # PyTrilinos + ML headers and sources

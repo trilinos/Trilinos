@@ -59,14 +59,14 @@
 //  This approach allows development closer to that of PUMI setup but at the 
 //  cost of creating an extra mesh representation.
 // 
-//!  Available ParMA algorithms are given by setting the parma_method parameter 
-//!  of the sublist parma_paramaters to one of the following:
-//!  Vertex       - Balances targeting vertex imbalance
-//!  Element      - Balances targeting element imbalance
-//!  VtxElm       - Balances targeting vertex and element imbalance
-//!  VtxEdgeElm   - Balances targeting vertex, edge, and element imbalance
-//!  Ghost        - Balances using ghost element aware diffusion      
-//!  Shape        - Optimizes shape of parts by increasing the size of small part boundaries
+//  Available ParMA algorithms are given by setting the parma_method parameter 
+//  of the sublist parma_paramaters to one of the following:
+//  Vertex       - Balances targeting vertex imbalance
+//  Element      - Balances targeting element imbalance
+//  VtxElm       - Balances targeting vertex and element imbalance
+//  VtxEdgeElm   - Balances targeting vertex, edge, and element imbalance
+//  Ghost        - Balances using ghost element aware diffusion      
+//  Shape        - Optimizes shape of parts by increasing the size of small part boundaries
 //////////////////////////////////////////////////////////////////////////////
 
 #ifndef HAVE_ZOLTAN2_PARMA
@@ -369,9 +369,9 @@ public:
     PCU_Switch_Comm(mpicomm);
 
     int dim;
-    if (adapter->getLocalNumOf(MESH_REGION)>0)
+    if (adapter->getGlobalNumOf(MESH_REGION)>0)
       dim=3;
-    else if (adapter->getLocalNumOf(MESH_FACE)>0)
+    else if (adapter->getGlobalNumOf(MESH_FACE)>0)
       dim=2;
     else
       throw std::runtime_error("ParMA neeeds faces or region information");

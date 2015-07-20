@@ -8,6 +8,25 @@ FILE(GLOB SOURCES *.cpp)
 
 SET(LIBRARIES shyluichol)
 
+# Symbolic Factorization
+# ======================
+
+IF(Kokkos_ENABLE_Serial)
+  TRIBITS_ADD_EXECUTABLE(
+    symbolic_factor_serial
+    SOURCES example_symbolic_factor_serial.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
+IF(Kokkos_ENABLE_Pthread)
+  TRIBITS_ADD_EXECUTABLE(
+    symbolic_factor_pthread
+    SOURCES example_symbolic_factor_pthread.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
 # Sparse IChol
 # ============
 
@@ -97,6 +116,18 @@ IF(Kokkos_ENABLE_Pthread)
     SOURCES example_tri_solve_performance_pthread.cpp
     COMM serial mpi
   )
+
+  TRIBITS_ADD_EXECUTABLE(
+    kokkos_task_data_pthread
+    SOURCES example_kokkos_task_data_pthread.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
+    kokkos_team_barrier_pthread
+    SOURCES example_kokkos_team_barrier_pthread.cpp
+    COMM serial mpi
+  )
 ENDIF()
 
 IF(Kokkos_ENABLE_QTHREAD)
@@ -112,6 +143,16 @@ IF(Kokkos_ENABLE_QTHREAD)
     COMM serial mpi
   )
 ENDIF()
+
+IF(TPL_ENABLE_HYPRE)
+  TRIBITS_ADD_EXECUTABLE(
+    hypre_euclid_performance
+    SOURCES example_hypre_euclid_performance.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
+
 
 # Temporary
 # =========

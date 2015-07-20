@@ -148,19 +148,19 @@ struct compute_face_normals<DeviceType, 3,MRK_TRI3>
   void operator() (unsigned face_i) const
   {
     //this function is hard-wired for three-node triangles
-    const unsigned int DIM(3); 
+    const unsigned int DIM(3);
     const int NUM_NODES_PER_ELEMENT(3);
-    
+
     local_idx_t node[NUM_NODES_PER_ELEMENT];
-    for (unsigned j = 0; j < NUM_NODES_PER_ELEMENT; ++j)
+    for (int j = 0; j < NUM_NODES_PER_ELEMENT; ++j)
       node[j] = m_face_nodes(face_i, j);
 
     //a vector has three components in three dimensions.
     double pts[NUM_NODES_PER_ELEMENT][DIM];
-    for (unsigned j = 0; j < NUM_NODES_PER_ELEMENT; ++j) {
+    for (int j = 0; j < NUM_NODES_PER_ELEMENT; ++j) {
       for (unsigned k = 0; k < DIM; ++k)
         pts[j][k] = m_node_coords(node[j], k);
-    }//end for for (unsigned j = 0; j < NUM_NODES_PER_ELEMENT; ++j) {
+    }//end for for (int j = 0; j < NUM_NODES_PER_ELEMENT; ++j) {
 
     //a vector has three components in three dimensions.
     double vecs[2][DIM];
@@ -222,14 +222,14 @@ struct compute_face_normals<DeviceType, 3,MRK_QUAD4>
     //this function is hard-wired for four-node quads
     const unsigned int DIM(3); 
     const int NUM_NODES_PER_ELEMENT(4);
-    
+
     local_idx_t node[NUM_NODES_PER_ELEMENT];
-    for (unsigned j = 0; j < NUM_NODES_PER_ELEMENT; ++j)
+    for (int j = 0; j < NUM_NODES_PER_ELEMENT; ++j)
       node[j] = m_face_nodes(face_i, j);
 
     //a vector has three components in three dimensions.
     double pts[NUM_NODES_PER_ELEMENT][DIM];
-    for (unsigned j = 0; j < NUM_NODES_PER_ELEMENT; ++j) {
+    for (int j = 0; j < NUM_NODES_PER_ELEMENT; ++j) {
       for (unsigned k = 0; k < DIM; ++k)
         pts[j][k] = m_node_coords(node[j], k);
     }//end for for (unsigned j = 0; j < NUM_NODES_PER_ELEMENT; ++j) {
@@ -294,18 +294,18 @@ struct compute_node_normals_from_faces
     const int num_faces = i_faces_end - i_faces_begin;
 
     double nml[DIM];
-    for (int i = 0; i < DIM; ++i) 
+    for (unsigned i = 0; i < DIM; ++i) 
       nml[i] = 0;
 
     // Sum the face normals
     for (int j = i_faces_begin; j < i_faces_end; ++j) {
       local_idx_t face_j = m_node_to_faces.graph.entries(j);
-      for (int k = 0; k < DIM; ++k)
+      for (unsigned k = 0; k < DIM; ++k)
         nml[k] += m_face_normals(face_j, k);
     }//end for (int j = i_faces_begin; j < i_faces_end; ++j)
 
     // Average.
-    for (int k=0; k < DIM; ++k)
+    for (unsigned k=0; k < DIM; ++k)
       m_node_normals(node_i, k) = nml[k] /  num_faces;
   }
 

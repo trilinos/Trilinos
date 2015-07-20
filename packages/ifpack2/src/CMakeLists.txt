@@ -81,6 +81,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     TriDiContainer
     Diagonal
     DiagonalFilter
+    DropFilter
     Factory
     Hiptmair
     IdentitySolver
@@ -97,7 +98,9 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     LinePartitioner
     Details::Chebyshev
     Details::DenseSolver
+    Details::TriDiSolver
     Details::OneLevelFactory
+    Experimental::RBILUK
     )
   IF(Ifpack2_ENABLE_Amesos2)
     APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES
@@ -127,6 +130,22 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
       "${IFPACK2_ETI_LO_GO_CLASSES}"
       Ifpack2_ETI_LO_GO_Serial.tmpl
       "Ifpack2_CLASS_FILE_NAME_Serial.cpp"
+      IFPACK2_SRCS)
+    LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
+  ENDIF()
+
+  # ETI for the Kokkos::Classic::Serialnode device.
+  IF (Tpetra_INST_SERIALCLASSIC)
+    IFPACK2_PROCESS_ETI_TEMPLATE(
+      "${IFPACK2_ETI_CLASSES}"
+      Ifpack2_ETI_SC_LO_GO_Classic.tmpl
+      "Ifpack2_CLASS_FILE_NAME_Classic.cpp"
+      IFPACK2_SRCS)
+    LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
+    IFPACK2_PROCESS_ETI_TEMPLATE(
+      "${IFPACK2_ETI_LO_GO_CLASSES}"
+      Ifpack2_ETI_LO_GO_Classic.tmpl
+      "Ifpack2_CLASS_FILE_NAME_Classic.cpp"
       IFPACK2_SRCS)
     LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
   ENDIF()

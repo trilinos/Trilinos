@@ -665,15 +665,11 @@ namespace {
 
     // read in matrices
     Epetra_CrsMatrix* ptrA = 0;
-    Epetra_Vector*    ptrx = 0;
-    Epetra_Vector*    ptrf = 0;
-    EpetraExt::MatrixMarketFileToCrsMatrix("nsjac_test.mm",*fullmap,*fullmap,*fullmap,ptrA);
-    EpetraExt::MatrixMarketFileToVector("nsrhs_test.mm",*fullmap,ptrf);
-    EpetraExt::MatrixMarketFileToVector("nslhs_test.mm",*fullmap,ptrx);
+    EpetraExt::MatrixMarketFileToCrsMatrix("A.mat",*fullmap,*fullmap,*fullmap,ptrA);
 
     Teuchos::RCP<Epetra_CrsMatrix> fullA = Teuchos::rcp(ptrA);
-    Teuchos::RCP<Epetra_Vector> b = Teuchos::rcp(ptrf);
-    Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp(ptrx);
+    Teuchos::RCP<Epetra_Vector>    x     = rcp(new Epetra_Vector(fullmap));
+    x->putScalar(1.0);
 
     // split fullA into A11,..., A22
     Teuchos::RCP<Epetra_CrsMatrix> A11;
@@ -781,15 +777,11 @@ namespace {
 
     // read in matrices
     Epetra_CrsMatrix* ptrA = 0;
-    Epetra_Vector*    ptrx = 0;
-    Epetra_Vector*    ptrf = 0;
-    EpetraExt::MatrixMarketFileToCrsMatrix("nsjac_test.mm",*fullmap,*fullmap,*fullmap,ptrA);
-    EpetraExt::MatrixMarketFileToVector("nsrhs_test.mm",*fullmap,ptrf);
-    EpetraExt::MatrixMarketFileToVector("nslhs_test.mm",*fullmap,ptrx);
+    EpetraExt::MatrixMarketFileToCrsMatrix("A.mat",*fullmap,*fullmap,*fullmap,ptrA);
 
     Teuchos::RCP<Epetra_CrsMatrix> fullA = Teuchos::rcp(ptrA);
-    Teuchos::RCP<Epetra_Vector> b = Teuchos::rcp(ptrf);
-    Teuchos::RCP<Epetra_Vector> x = Teuchos::rcp(ptrx);
+    Teuchos::RCP<Epetra_Vector>    x     = rcp(new Epetra_Vector(fullmap));
+    x->putScalar(1.0);
 
     // split fullA into A11,..., A22
     Teuchos::RCP<Epetra_CrsMatrix> A11;

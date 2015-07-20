@@ -17,7 +17,6 @@
    INSTMACRO( int , long , long )\
    INSTMACRO( long , int , long )\
    INSTMACRO( long , long , long )\
-   INSTMACRO( float , int , int )\
    INSTMACRO( double , int , int )\
    INSTMACRO( double , int , long )\
    INSTMACRO( double , long , long )\
@@ -31,7 +30,6 @@
    INSTMACRO( int , long , long, CALL_MACRO )\
    INSTMACRO( long , int , long, CALL_MACRO )\
    INSTMACRO( long , long , long, CALL_MACRO )\
-   INSTMACRO( float , int , int, CALL_MACRO )\
    INSTMACRO( double , int , int, CALL_MACRO )\
    INSTMACRO( double , int , long, CALL_MACRO )\
    INSTMACRO( double , long , long, CALL_MACRO )\

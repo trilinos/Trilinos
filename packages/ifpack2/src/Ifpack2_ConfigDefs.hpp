@@ -86,6 +86,13 @@ namespace Ifpack2 {
       SGS     //!< Symmetric Gauss-Seidel
     };
   } // namespace Details
+
+  /*!
+    @namespace Experimental
+    @brief Ifpack2 features that are experimental.  Use at your own risk.
+  */
+  namespace Experimental {
+  }
 } // namespace Ifpack2
 
 #endif /*_IFPACK2_CONFIGDEFS_HPP_*/

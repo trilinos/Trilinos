@@ -253,9 +253,11 @@ int Epetra_PETScAIJMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntrie
 
 int Epetra_PETScAIJMatrix::NumMyRowEntries(int Row, int & NumEntries) const 
 {
+  // NOTE: MatRestoreRow was previously zeroing out NumEntries.
+  //       Do not pass NumEntries to it.
   int globalRow = PetscRowStart_ + Row;
   MatGetRow(Amat_, globalRow, &NumEntries, PETSC_NULL, PETSC_NULL);
-  MatRestoreRow(Amat_,globalRow,&NumEntries, PETSC_NULL, PETSC_NULL);
+  MatRestoreRow(Amat_,globalRow,PETSC_NULL, PETSC_NULL, PETSC_NULL);
   return(0);
 }
 
@@ -263,7 +265,6 @@ int Epetra_PETScAIJMatrix::NumMyRowEntries(int Row, int & NumEntries) const
 
 int Epetra_PETScAIJMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 {
-
   //TODO optimization: only get this diagonal once
   Vec petscDiag;
   double *vals=0;
@@ -370,7 +371,6 @@ int Epetra_PETScAIJMatrix::MaxNumEntries() const {
 //=============================================================================
 // Utility routine to get the specified row and put it into Values_ and Indices_ arrays
 int Epetra_PETScAIJMatrix::GetRow(int Row) const {
-
   int NumEntries;
   int MaxNumEntries = Epetra_PETScAIJMatrix::MaxNumEntries();
 
@@ -503,7 +503,6 @@ int Epetra_PETScAIJMatrix::RightScale(const Epetra_Vector& X) {
 //=============================================================================
 
 double Epetra_PETScAIJMatrix::NormInf() const {
-
   if (NormInf_>-1.0) return(NormInf_);
 
   MatNorm(Amat_, NORM_INFINITY,&NormInf_);
@@ -515,7 +514,6 @@ double Epetra_PETScAIJMatrix::NormInf() const {
 //=============================================================================
 
 double Epetra_PETScAIJMatrix::NormOne() const {
-
   if (NormOne_>-1.0) return(NormOne_);
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
 

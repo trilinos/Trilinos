@@ -43,12 +43,13 @@
 #ifndef IFPACK2_RELAXATION_DEF_HPP
 #define IFPACK2_RELAXATION_DEF_HPP
 
-#include "Ifpack2_Relaxation_decl.hpp"
-#include "Teuchos_StandardParameterEntryValidators.hpp"
+#include <Teuchos_StandardParameterEntryValidators.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Experimental_BlockCrsMatrix.hpp>
+#include <Ifpack2_Utilities.hpp>
+#include <Ifpack2_Relaxation_decl.hpp>
 
 // mfh 28 Mar 2013: Uncomment out these three lines to compute
 // statistics on diagonal entries in compute().
@@ -611,9 +612,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
 
     if (! savedDiagOffsets_) {
       BlockDiagonal_ = Teuchos::null;
-      BlockDiagonal_ =
-        rcp (new block_crs_matrix_type (* (blockCrsA->getDiagonalGraph ()),
-                                        blockSize));
+      BlockDiagonal_ = rcp(new block_crs_matrix_type(*Ifpack2::Details::computeDiagonalGraph(blockCrsA->getCrsGraph()), blockSize));
       blockCrsA->getLocalDiagOffsets (diagOffsets_);
       savedDiagOffsets_ = true;
     }

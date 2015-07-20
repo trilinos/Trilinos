@@ -55,125 +55,170 @@ namespace ROL {
 template<class Real>
 class RiskNeutralObjective : public Objective<Real> {
 private:
-  Teuchos::RCP<ParametrizedObjective<Real> > pObj_;
-  Teuchos::RCP<SampleGenerator<Real> > vsampler_;
-  Teuchos::RCP<SampleGenerator<Real> > gsampler_;
+  Teuchos::RCP<ParametrizedObjective<Real> > ParametrizedObjective_;
+  Teuchos::RCP<SampleGenerator<Real> > ValueSampler_;
+  Teuchos::RCP<SampleGenerator<Real> > GradientSampler_;
+  Teuchos::RCP<SampleGenerator<Real> > HessianSampler_;
 
   Real value_;
   Teuchos::RCP<Vector<Real> > gradient_;
+  Teuchos::RCP<Vector<Real> > pointDual_;
+  Teuchos::RCP<Vector<Real> > sumDual_;
  
   bool firstUpdate_;
+  bool storage_;
+
+  std::map<std::vector<Real>,Real> value_storage_;
+  std::map<std::vector<Real>,Teuchos::RCP<Vector<Real> > > gradient_storage_;
+
+  void getValue(Real &val, const Vector<Real> &x,
+          const std::vector<Real> &param, Real &tol) {
+    if ( storage_ && value_storage_.count(param) ) {
+      val = value_storage_[param];
+    }
+    else {
+      ParametrizedObjective_->setParameter(param);
+      val = ParametrizedObjective_->value(x,tol);
+      if ( storage_ ) {
+        value_storage_.insert(std::pair<std::vector<Real>,Real>(param,val));
+      }
+    }
+  }
+
+  void getGradient(Vector<Real> &g, const Vector<Real> &x,
+             const std::vector<Real> &param, Real &tol) {
+    if ( storage_ && gradient_storage_.count(param) ) {
+      g.set(*(gradient_storage_[param]));
+    }
+    else {
+      ParametrizedObjective_->setParameter(param);
+      ParametrizedObjective_->gradient(g,x,tol);
+      if ( storage_ ) {
+        Teuchos::RCP<Vector<Real> > tmp = g.clone();
+        gradient_storage_.insert(std::pair<std::vector<Real>,Teuchos::RCP<Vector<Real> > >(param,tmp));
+        gradient_storage_[param]->set(g);
+      }
+    }
+  }
+
+  void getHessVec(Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x,
+            const std::vector<Real> &param, Real &tol) {
+    ParametrizedObjective_->setParameter(param);
+    ParametrizedObjective_->hessVec(hv,v,x,tol);
+  }
+ 
 
 public:
   virtual ~RiskNeutralObjective() {}
 
-  RiskNeutralObjective( ParametrizedObjective<Real> &pObj, 
-                        SampleGenerator<Real> &vsampler, 
-                        SampleGenerator<Real> &gsampler ) {
-    pObj_     = Teuchos::rcp(&pObj,false);     // Parametrized Objective Function Object
-    vsampler_ = Teuchos::rcp(&vsampler,false); // Objective Function Value Sampler Object
-    gsampler_ = Teuchos::rcp(&gsampler,false); // Gradient Sampler Object
-    firstUpdate_ = true;
+  RiskNeutralObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+                        Teuchos::RCP<SampleGenerator<Real> >       &vsampler, 
+                        Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
+                        Teuchos::RCP<SampleGenerator<Real> >       &hsampler,
+                        bool storage = true )
+    : ParametrizedObjective_(pObj),
+      ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(hsampler),
+      firstUpdate_(true), storage_(true) {
+    value_storage_.clear();
+    gradient_storage_.clear();
   }
 
-  // Delegating constructors require C++11.
-  //RiskNeutralObjective( ParametrizedObjective<Real> &pObj, SampleGenerator<Real> &sampler ) 
-  //  : RiskNeutralObjective(pObj,sampler,sampler) {}
-  RiskNeutralObjective( ParametrizedObjective<Real> &pObj, SampleGenerator<Real> &sampler ) {
-    pObj_     = Teuchos::rcp(&pObj,false);     // Parametrized Objective Function Object
-    vsampler_ = Teuchos::rcp(&sampler,false); // Objective Function Value Sampler Object
-    gsampler_ = Teuchos::rcp(&sampler,false); // Gradient Sampler Object
-    firstUpdate_ = true;
+  RiskNeutralObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+                        Teuchos::RCP<SampleGenerator<Real> >       &vsampler, 
+                        Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
+                        bool storage = true )
+    : ParametrizedObjective_(pObj),
+      ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(gsampler),
+      firstUpdate_(true), storage_(true) {
+    value_storage_.clear();
+    gradient_storage_.clear();
+  }
+
+  RiskNeutralObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+                        Teuchos::RCP<SampleGenerator<Real> >       &sampler,
+                        bool storage = true )
+    : ParametrizedObjective_(pObj),
+      ValueSampler_(sampler), GradientSampler_(sampler), HessianSampler_(sampler),
+      firstUpdate_(true), storage_(true) {
+    value_storage_.clear();
+    gradient_storage_.clear();
   }
 
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     if ( firstUpdate_ ) {
-      gradient_ = (x.dual()).clone();
+      gradient_  = (x.dual()).clone();
+      pointDual_ = (x.dual()).clone();
+      sumDual_   = (x.dual()).clone();
+      firstUpdate_ = false;
     }
-    pObj_->update(x,flag,iter);
-    vsampler_->update(x);
+    ParametrizedObjective_->update(x,flag,iter);
+    ValueSampler_->update(x);
     value_ = 0.0;
+    if ( storage_ ) {
+      value_storage_.clear();
+    }
     if ( flag ) {
-      gsampler_->update(x);
+      GradientSampler_->update(x);
+      HessianSampler_->update(x);
       gradient_->zero();
+      if ( storage_ ) {
+        gradient_storage_.clear();
+      }
     }
   }
 
   virtual Real value( const Vector<Real> &x, Real &tol ) {
-//    std::cout << " Initial value = " << value_ << "\n";
     Real myval = 0.0, ptval = 0.0, val = 0.0, error = 2.0*tol + 1.0;
     std::vector<Real> ptvals;
     while ( error > tol ) {
-      vsampler_->refine();
-      for ( int i = vsampler_->start(); i < vsampler_->numMySamples(); i++ ) {
-        pObj_->setParameter(vsampler_->getMyPoint(i));
-        ptval  = pObj_->value(x,tol);
-        myval += vsampler_->getMyWeight(i)*ptval;
+      ValueSampler_->refine();
+      for ( int i = ValueSampler_->start(); i < ValueSampler_->numMySamples(); i++ ) {
+        getValue(ptval,x,ValueSampler_->getMyPoint(i),tol);
+        myval += ValueSampler_->getMyWeight(i)*ptval;
         ptvals.push_back(ptval);
-//        std::cout << "       ptval-" << i << " = " << ptval 
-//                  << "  weight-"     << i << " = " << vsampler_->getMyWeight(i) << "\n";
       }
-      error = vsampler_->computeError(ptvals);
-//      std::cout << " v error = "     << error 
-//                << "  tol = "        << tol 
-//                << "  myval = "      << myval
-//                << "  num points = " << vsampler_->numMySamples() 
-//                << "  start = "      << vsampler_->start() << "\n";
+      error = ValueSampler_->computeError(ptvals);
       ptvals.clear();
     }
-    vsampler_->sumAll(&myval,&val,1);
+    ValueSampler_->sumAll(&myval,&val,1);
     value_ += val;
-//    std::cout << " Final value = " << value_ << "\n";
-    vsampler_->setSamples();
+    ValueSampler_->setSamples();
     return value_;
   }
 
   virtual void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-//    std::cout << " Initial norm(gradient) = " << gradient_->norm() << "\n";
-    g.zero();
-    Teuchos::RCP<Vector<Real> > ptg = g.clone(); ptg->zero();
-    Teuchos::RCP<Vector<Real> > myg = g.clone(); myg->zero();
+    g.zero(); pointDual_->zero(); sumDual_->zero();
     std::vector<Teuchos::RCP<Vector<Real> > > ptgs;
     Real error = 2.0*tol + 1.0;
     while ( error > tol ) {
-      gsampler_->refine();
-      for ( int i = gsampler_->start(); i < gsampler_->numMySamples(); i++ ) {
-        pObj_->setParameter(gsampler_->getMyPoint(i));
-        pObj_->gradient(*ptg,x,tol);
-        myg->axpy(gsampler_->getMyWeight(i),*ptg); 
-        ptgs.push_back(x.clone());
-        (ptgs.back())->set(*ptg);
+      GradientSampler_->refine();
+      for ( int i = GradientSampler_->start(); i < GradientSampler_->numMySamples(); i++ ) {
+        getGradient(*pointDual_,x,GradientSampler_->getMyPoint(i),tol);
+        sumDual_->axpy(GradientSampler_->getMyWeight(i),*pointDual_);
+        ptgs.push_back(pointDual_->clone());
+        (ptgs.back())->set(*pointDual_);
       }
-      error = gsampler_->computeError(ptgs,x);
-//      std::cout << " g error = "     << error 
-//                << "  tol = "        << tol 
-//                << "  norm(g) = "    << myg->norm() 
-//                << "  num points = " << gsampler_->numMySamples() 
-//                << "  start = "      << gsampler_->start() 
-//                << "\n";
+      error = GradientSampler_->computeError(ptgs,x);
       ptgs.clear();
     }
-    gsampler_->sumAll(*myg,g);
+    GradientSampler_->sumAll(*sumDual_,g);
     gradient_->axpy(1.0,g);
     g.set(*(gradient_));
-//    std::cout << " Final norm(gradient) = " << gradient_->norm() << "\n";
-    gsampler_->setSamples();
+    GradientSampler_->setSamples();
   }
 
-  virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v, 
+  virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v,
                         const Vector<Real> &x, Real &tol ) {
-    hv.zero();
-    Teuchos::RCP<Vector<Real> > pth = hv.clone(); pth->zero();
-    Teuchos::RCP<Vector<Real> > myh = hv.clone(); myh->zero();
-    for ( int i = 0; i < gsampler_->numMySamples(); i++ ) {
-      pObj_->setParameter(gsampler_->getMyPoint(i));
-      pObj_->hessVec(*pth,v,x,tol);
-      myh->axpy(gsampler_->getMyWeight(i),*pth);
+    hv.zero(); pointDual_->zero(); sumDual_->zero();
+    for ( int i = 0; i < HessianSampler_->numMySamples(); i++ ) {
+      getHessVec(*pointDual_,v,x,HessianSampler_->getMyPoint(i),tol);
+      sumDual_->axpy(HessianSampler_->getMyWeight(i),*pointDual_);
     }
-    gsampler_->sumAll(*myh,hv);
+    HessianSampler_->sumAll(*sumDual_,hv);
   }
 
-  virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+  virtual void precond( Vector<Real> &Pv, const Vector<Real> &v,
+                        const Vector<Real> &x, Real &tol ) {
     Pv.set(v.dual());
   }
 };
@@ -181,26 +226,3 @@ public:
 }
 
 #endif
-
-//  virtual Real value( const Vector<Real> &x, Real &tol ) {
-//    Real myval = 0.0, ptval = 0.0, val = 0.0;
-//    for ( unsigned i = 0; i < vsampler_->numMySamples(); i++ ) {
-//      pObj_->setParameter(vsampler_->getMyPoint(i));
-//      ptval  = pObj_->value(x,tol);
-//      myval += vsampler_->getMyWeight(i)*ptval;
-//    }
-//    vsampler_->sumAll(&myval,&val,1);
-//    return val;
-//  }
-
-//  virtual void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-//    g.zero();
-//    Teuchos::RCP<Vector<Real> > ptg = x.clone(); ptg->zero();
-//    Teuchos::RCP<Vector<Real> > myg = x.clone(); myg->zero();
-//    for ( unsigned i = 0; i < gsampler_->numMySamples(); i++ ) {
-//      pObj_->setParameter(gsampler_->getMyPoint(i));
-//      pObj_->gradient(*ptg,x,tol);
-//      myg->axpy(gsampler_->getMyWeight(i),*ptg); 
-//    }
-//    gsampler_->sumAll(*myg,g);
-//  }

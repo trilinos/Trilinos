@@ -79,7 +79,7 @@ namespace MueLu {
     //! @name Constructors/Destructors.
     //@{
 
-    LineDetectionFactory() { }
+    LineDetectionFactory() : Zorientation_(VERTICAL) { }
 
     //! Destructor.
     virtual ~LineDetectionFactory() { }
@@ -108,6 +108,8 @@ namespace MueLu {
     //@}
 
   private:
+    void sort_coordinates(LO numCoords, LO* OrigLoc, Scalar* xvals, Scalar* yvals, Scalar* zvals, Scalar* xtemp, Scalar* ytemp, Scalar* ztemp, bool flipXY = false) const;
+
     LO ML_compute_line_info(LO LayerId[], LO VertLineId[],
                                       LO Ndof, LO DofsPerNode,
                                       LO MeshNumbering, LO NumNodesPerVertLine,
@@ -115,6 +117,12 @@ namespace MueLu {
                                       const Teuchos::Comm<int>& comm ) const ;
 
     void ML_az_dsort2(SC dlist[], LO N, LO list2[]) const;
+
+    //! internally stores line detection mode
+    //! can be either vertical, horizontal or coordinates
+    //! for the first run. On the coarser levels we automatically
+    //! switch to vertical mode
+    mutable LO Zorientation_;
 
   }; //class LineDetectionFactory
 

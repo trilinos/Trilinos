@@ -47,31 +47,47 @@
 #define MUELU_AMGXOPERATOR_DECL_HPP
 
 #if defined (HAVE_MUELU_EXPERIMENTAL) and defined (HAVE_MUELU_AMGX)
- #include <Tpetra_Operator.hpp>
- #include <Tpetra_MultiVector_decl.hpp>
- #include <amgx_c.h>
- #include "cuda_runtime.h"
- #include <Teuchos_ParameterList.cpp>
+#include <Teuchos_ParameterList.hpp>
+
+#include <Tpetra_Operator.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_MultiVector.hpp>
+#include <Tpetra_Distributor.hpp>
+#include <Tpetra_HashTable.hpp>
+#include <Tpetra_Import.hpp>
+#include <Tpetra_Import_Util.hpp>
+
+#include "MueLu_Exceptions.hpp"
+#include "MueLu_TpetraOperator.hpp"
+#include "MueLu_VerboseObject.hpp"
+
+#include <cuda_runtime.h>
+#include <amgx_c.h>
 
 namespace MueLu {
-  
+
 
   /*! @class TemplatedAMGXOperator
       This templated version of the class throws errors in all methods as AmgX is not implemented for datatypes where scalar!=double/float and ordinal !=int
  */
-  template <class Scalar = Tpetra::Operator<>::scalar_type,
-            class LocalOrdinal = typename Tpetra::Operator<Scalar>::local_ordinal_type,
-            class GlobalOrdinal = typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
-            class Node = typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal,
+            class Node>
   class AMGXOperator : public TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
-  //class AMGXOperator : public Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+  private:
+    typedef Scalar          SC;
+    typedef LocalOrdinal    LO;
+    typedef GlobalOrdinal   GO;
+    typedef Node            NO;
+
   public:
 
     //! @name Constructor/Destructor
     //@{
 
     //! Constructor
-    AMGXOperator(const Teuchos::RCP<Tpetra::CrsMatrix <SC, LO, GO, Node> > &InA, Teuchos::ParameterList &paramListIn) { }
+    AMGXOperator(const Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > &InA, Teuchos::ParameterList &paramListIn) { }
 
     //! Destructor.
     virtual ~AMGXOperator() { }
@@ -97,7 +113,7 @@ namespace MueLu {
                                          Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                                          Teuchos::ETransp mode = Teuchos::NO_TRANS,
                                          Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                                         Scalar beta  = Teuchos::ScalarTraits<Scalar>::one()) const{
+                                         Scalar beta  = Teuchos::ScalarTraits<Scalar>::one()) const {
       throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
     }
 
@@ -105,117 +121,249 @@ namespace MueLu {
     bool hasTransposeApply() const{
       throw Exceptions::RuntimeError("Cannot use AMGXOperator with scalar != double and/or global ordinal != int \n");
     }
-   
-    RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > GetHierarchy const {
-      throw Exceptions:::RuntimeError("AMGXOperator does not hold a MueLu::Hierarchy object \n");
+
+    RCP<MueLu::Hierarchy<SC,LO,GO,NO> > GetHierarchy() const {
+        throw Exceptions::RuntimeError("AMGXOperator does not hold a MueLu::Hierarchy object \n");
     }
 
   private:
-    AMGX_solver_handle Solver_;
-    AMGX_resources_handle Resources_;
-    AMGX_config_handle Config_;	
-    AMGX_matrix_handle A_;
-    int N_;
   };
 
   /*! @class AMGXOperator
       Creates and AmgX Solver object with a Tpetra Matrix. Partial specialization of the template for data types supported by AmgX.
   */
-  template <class Node = typename Tpetra::Operator<double, int, int>::node_type>
-  class AMGXOperator<double, int, int, Node>  : public TpetraOperator<double, int, int, Node> {
-   public:
+  template<class Node>
+  class AMGXOperator<double, int, int, Node> : public TpetraOperator<double, int, int, Node> {
+  private:
+    typedef double  SC;
+    typedef int     LO;
+    typedef int     GO;
+    typedef Node    NO;
 
-    typedef double SC;
-    typedef int LO;
-    typedef int GO;
+  public:
+
     //! @name Constructor/Destructor
     //@{
-    AMGXOperator(const Teuchos::RCP<Tpetra::CrsMatrix <SC, LO, GO, Node> &InA, Teuchos::ParameterList &paramListIn){
-      AMGX_mode mode;
+    AMGXOperator(const Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > &inA, Teuchos::ParameterList &paramListIn){
+      RCP<const Teuchos::Comm<LO> > comm = inA->getCrsGraph()->getComm();
+      AMGX_Mode mode;
+      int nnz;
       /* init */
       AMGX_SAFE_CALL(AMGX_initialize());
       AMGX_SAFE_CALL(AMGX_initialize_plugins());
       /*system*/
-      AMGX_SAFE_CALL(AMGX_register_print_callback(&print_callback));
+      //AMGX_SAFE_CALL(AMGX_register_print_callback(&print_callback));
       AMGX_SAFE_CALL(AMGX_install_signal_handler());
-
       mode = AMGX_mode_dDDI;
-      Teuchos::ArrayRCP<size_t> row_ptr;
-      Teuchos::ArrayRCP<int> col_ind;
-      Teuchos::ArrayRCP<double> data;
-
-      domainMap_ = inA->getDomainMap();
-      columnMap_ = inA->getColumnMap();
-
-      N = inA->getGlobalNumRows();
-      int nnz = inA->getGlobalNumEntries();
-
-      inA->getAllValues(row_ptr, col_ind, data);
-
-      RCP<Teuchos::ParameterList> configs = Teuchos::ParameterList::sublist(paramListIn, "amgx:params");
-      if(configs.isParameter("json file")){
-        AMGX_SAFE_CALL(AMGX_config_create_from_file(&Config_, configs.get<std::string>("json file")));
-      }
-      else{
+      Teuchos::ParameterList configs = paramListIn.sublist("amgx:params", true);
+      if (configs.isParameter("json file")) {
+        AMGX_SAFE_CALL(AMGX_config_create_from_file(&Config_, (const char *) &configs.get<std::string>("json file")[0]));
+      } else {
         std::ostringstream oss;
         oss << "";
         ParameterList::ConstIterator itr;
-        for( itr = configs->begin(); itr != configs->end(); ++itr){
-          const std::string & paramName = configs->name(itr);
-          const ParameterEntry &value = configs->entry(itr);
-          oss << entryName << " = " << filterValueToString(value) << ", ";
+        for( itr = configs.begin(); itr != configs.end(); ++itr){
+          const std::string & paramName = configs.name(itr);
+          const ParameterEntry &value = configs.entry(itr);
+          oss << paramName << "=" << filterValueToString(value) << ", ";
         }
+        oss << "\0";
         std::string configString = oss.str();
-        if(configString == ""){
-        //print msg that using defaults
-         GetOStream(Warnings0) << "Warning: No configuration parameters specified, using default AMGX configuration parameters. \n";
+        if (configString == "") {
+          //print msg that using defaults
+          //GetOStream(Warnings0) << "Warning: No configuration parameters specified, using default AMGX configuration parameters. \n";
         }
-        AMGX_SAFE_CALL(AMGX_config_create(&Config_, configString));
+        AMGX_SAFE_CALL(AMGX_config_create(&Config_, (const char *) &configString[0]));
       }
-      AMGX_resources_create_simple(&Resources_, Config_);
-      AMGX_matrix_create(&A_, Resources_, mode);
-      AMGX_solver_create(&Solver_, Resources_, mode, Config_);
+      if(comm->getSize() > 1){
+        RCP<const Tpetra::Import<LO,GO> > importer = inA->getCrsGraph()->getImporter();
+
+        TEUCHOS_TEST_FOR_EXCEPTION(importer.is_null(), MueLu::Exceptions::RuntimeError, "The matrix A has no Import object.");
+
+        Tpetra::Distributor distributor = importer->getDistributor();
+
+        Array<int> sendRanks = distributor.getImagesTo();
+        Array<int> recvRanks = distributor.getImagesFrom();
+
+        std::sort(sendRanks.begin(), sendRanks.end());
+        std::sort(recvRanks.begin(), recvRanks.end());
+
+        bool match = true;
+        if (sendRanks.size() != recvRanks.size()) {
+          match = false;
+        } else {
+          for (int i = 0; i < sendRanks.size(); i++) {
+            if (recvRanks[i] != sendRanks[i])
+              match = false;
+              break;
+          }
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION(!match, MueLu::Exceptions::RuntimeError, "AMGX requires that the processors that we send to and receive from are the same. "
+                                     "This is not the case: we send to {" << sendRanks << "} and receive from {" << recvRanks << "}");
+
+        int        num_neighbors = sendRanks.size();  // does not include the calling process
+        const int* neighbors     = &sendRanks[0];
+
+        // Later on, we'll have to organize the send and recv data by PIDs,
+        // i.e, a vector V of vectors, where V[i] is PID i's vector of data.
+        // Hence we need to be able to quickly look up  an array index
+        // associated with each PID.
+        Tpetra::Details::HashTable<int,int> hashTable(3*num_neighbors);
+        for (int i = 0; i < num_neighbors; i++)
+          hashTable.add(neighbors[i], i);
+
+        // Construct send arrays
+        ArrayView<const size_t> sendSizes = distributor.getLengthsTo();
+        std::vector<int>        send_sizes(sendSizes.size());
+        for (int i = 0; i < sendSizes.size(); i++)
+          send_sizes[i] = Teuchos::as<int>(sendSizes[i]);
+
+        std::vector<std::vector<int> > sendDatas(num_neighbors);
+        std::vector<int*>              send_maps(num_neighbors);
+        for (int i = 0; i < num_neighbors; i++) {
+          sendDatas[i].reserve(send_sizes[i]);
+          send_maps[i] = &(sendDatas[i][0]);
+        }
+
+        ArrayView<const int> exportLIDs = importer->getExportLIDs();
+        ArrayView<const int> exportPIDs = importer->getExportPIDs();
+        for (int i = 0; i < exportPIDs.size(); i++) {
+          int index = hashTable.get(exportPIDs[i]);
+          sendDatas[index].push_back(exportLIDs[i]);
+        }
+        for (int i = 0; i < sendRanks.size(); i++)
+          TEUCHOS_TEST_FOR_EXCEPTION(sendDatas[i].size() != Teuchos::as<size_t>(send_sizes[i]), MueLu::Exceptions::RuntimeError,
+                                       "The size of the send map (" << sendDatas[i].size() << ") for PID " << i <<
+                                       " is not the same as the size reported by the distributor (" << send_sizes[i] << ").");
+
+        // Construct recv arrays
+        ArrayView<const size_t> recvSizes = distributor.getLengthsFrom();
+        std::vector<int>        recv_sizes(recvSizes.size());
+        for (int i = 0; i < recvSizes.size(); i++)      recv_sizes[i] = Teuchos::as<int>(recvSizes[i]);
+        std::vector<std::vector<int> > recvDatas(num_neighbors);
+        std::vector<int*>              recv_maps(num_neighbors);
+        for (int i = 0; i < num_neighbors; ++i) {
+          recvDatas[i].reserve(recv_sizes[i]);
+          recv_maps[i] = &(recvDatas[i][0]);
+        }
+        Array<int> importPIDs;
+        Tpetra::Import_Util::getPids(*importer, importPIDs, true/* make local -1 */);
+        for (int i = 0; i < importPIDs.size(); i++)
+          if (importPIDs[i] != -1) {
+            int index = hashTable.get(importPIDs[i]);
+            recvDatas[index].push_back(i);
+        }
+        for (int i = 0; i < recvRanks.size(); i++)
+          TEUCHOS_TEST_FOR_EXCEPTION(recvDatas[i].size() != Teuchos::as<size_t>(recv_sizes[i]), MueLu::Exceptions::RuntimeError,
+                          "The size of the recv map (" << recvDatas[i].size() << ") for PID " << i <<
+                          " is not the same as the size reported by the distributor (" << recv_sizes[i] << ").");
+        RCP<const Teuchos::MpiComm<int> > tmpic = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm->duplicate());
+        RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
+        MPI_Comm mpi_comm = *rawMpiComm;
+        if(mpi_comm == NULL) throw Exceptions::RuntimeError("communicator is null \n");
+        int num_gpu, rank;
+        cudaGetDeviceCount(&num_gpu);
+        MPI_Comm_rank(mpi_comm, &rank);
+        int devices[] = {(rank % num_gpu)};
+        AMGX_config_add_parameters(&Config_,"communicator=MPI");
+        AMGX_resources_create(&Resources_, Config_, &mpi_comm, 1, devices);
+        AMGX_matrix_create(&A_, Resources_, mode);
+        AMGX_solver_create(&Solver_, Resources_, mode, Config_);
+        AMGX_vector_create(&X_, Resources_, mode);
+        AMGX_vector_create(&Y_, Resources_, mode);
+        AMGX_matrix_comm_from_maps_one_ring(A_, 1, num_neighbors, neighbors, &send_sizes[0], (const int **) &send_maps[0], &recv_sizes[0], (const int **) &recv_maps[0]);
+        AMGX_vector_bind(X_, A_);
+        AMGX_vector_bind(Y_, A_);
+        N = inA->getNodeNumRows();
+        nnz = inA->getNodeNumEntries();
+      }
+      else{
+        AMGX_resources_create_simple(&Resources_, Config_);
+        AMGX_matrix_create(&A_, Resources_, mode);
+        AMGX_solver_create(&Solver_, Resources_, mode, Config_);
+        AMGX_vector_create(&X_, Resources_, mode);
+        AMGX_vector_create(&Y_, Resources_, mode);
+        N = inA->getGlobalNumRows();
+        nnz = inA->getGlobalNumEntries();
+      }
+
+      Teuchos::ArrayRCP<const size_t> row_ptr_t;
+      Teuchos::ArrayRCP<const int> col_ind;
+      Teuchos::ArrayRCP<const double> data;
+
+      domainMap_ = inA->getDomainMap();
+      rangeMap_ = inA->getRangeMap();
+
+      inA->getAllValues(row_ptr_t, col_ind, data);
+
+      Teuchos::ArrayRCP<int> row_ptr(row_ptr_t.size(), 0);
+      for(int i = 0; i < row_ptr_t.size(); i++){
+        row_ptr[i] = Teuchos::as<int, size_t> (row_ptr_t[i]);
+      }
       AMGX_matrix_upload_all(A_, N, nnz, 1, 1, &row_ptr[0], &col_ind[0], &data[0], NULL);
       AMGX_solver_setup(Solver_, A_);
-      AMGX_vector_create(X_, Resources_, mode_);
-      AMGX_vector_create(Y_, Resources_, mode);
+      
     }
 
-     //! Destructor.
-     virtual ~AMGXOperator() { }
+    //! Destructor.
+    virtual ~AMGXOperator() { }
 
-     //! Returns the Tpetra::Map object associated with the domain of this operator.
-     Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > getDomainMap() const;
-     
-     //! Returns the Tpetra::Map object associated with the range of this operator.
-     Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > getRangeMap() const;
-     
+    //! Returns the Tpetra::Map object associated with the domain of this operator.
+    Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > getDomainMap() const;
+
+    //! Returns the Tpetra::Map object associated with the range of this operator.
+    Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > getRangeMap() const;
+
     //! Returns in X the solution to the linear system AX=Y.
-     /*!
-        \param[in]  X - Tpetra::MultiVector of dimension NumVectors containing the solution to the linear system
-        \param[out] Y -Tpetra::MultiVector of dimension NumVectors containing the RHS of the linear system.                 */
-     void apply(const Tpetra::MultiVector<SC,LO,GO,Node>& X,
-                Tpetra::MultiVector<SC,LO,GO,Node>& Y,
-                Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                SC alpha = Teuchos::ScalarTraits<SC>::one(),                                                                           SC beta  = Teuchos::ScalarTraits<SC>::one()) const;
+    /*!
+       \param[out] X -Tpetra::MultiVector of dimension NumVectors containing the RHS of the linear system
+       \param[in]  Y - Tpetra::MultiVector of dimension NumVectors containing the solution to the linear system
+       */
+    void apply(const Tpetra::MultiVector<SC,LO,GO,NO>& X, Tpetra::MultiVector<SC,LO,GO,NO>& Y,
+               Teuchos::ETransp mode = Teuchos::NO_TRANS,
+               SC alpha = Teuchos::ScalarTraits<SC>::one(),                                                                           SC beta  = Teuchos::ScalarTraits<SC>::one()) const;
 
-     //! Indicates whether this operator supports applying the adjoint operator.
-     bool hasTransposeApply() const;
-    
-     RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> > GetHierarchy const {
-       throw Exceptions:::RuntimeError("AMGXOperator does not hold a MueLu::Hierarchy object \n");
-     }
+    //! Indicates whether this operator supports applying the adjoint operator.
+    bool hasTransposeApply() const;
 
-   private:
-     AMGX_solver_handle Solver_;
-     AMGX_resources_handle Resources_;
-     AMGX_config_handle Config_;
-     AMGX_matrix_handle A_;
-     AMGX_vector_handle X_;
-     AMGX_vector_handle Y_;
-     int N;
-     Teuchos::RCP<const Tpetra::Map<LO, GO, Node> > domainMap_;
-     Teuchos::RCP<const Tpetra::Map<LO, GO, Node> > rangeMap_;
+    RCP<MueLu::Hierarchy<SC,LO,GO,NO> > GetHierarchy() const {
+        throw Exceptions::RuntimeError("AMGXOperator does not hold a MueLu::Hierarchy object \n");
+    }
+
+    std::string filterValueToString(const Teuchos::ParameterEntry& entry )
+    {
+      return ( entry.isList() ? std::string("...") : toString(entry.getAny()) );
+    }
+
+    int sizeA() {
+      int sizeX, sizeY, n;
+      AMGX_matrix_get_size(A_, &n, &sizeX, &sizeY);
+      return n;
+    }
+
+    int iters() {
+      int it;
+      AMGX_solver_get_iterations_number(Solver_, &it);
+      return it;
+    }
+ 
+    AMGX_SOLVE_STATUS getStatus() {
+      AMGX_SOLVE_STATUS status;
+      AMGX_solver_get_status(Solver_, &status);
+      return status;
+    }
+      
+
+  private:
+    AMGX_solver_handle     Solver_;
+    AMGX_resources_handle  Resources_;
+    AMGX_config_handle     Config_;
+    AMGX_matrix_handle     A_;
+    AMGX_vector_handle     X_;
+    AMGX_vector_handle     Y_;
+    int N;
+    Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > domainMap_;
+    Teuchos::RCP<const Tpetra::Map<LO,GO,NO> > rangeMap_;
   };
 
 } // namespace

@@ -459,6 +459,12 @@ typename DropFilter<MatrixType>::mag_type DropFilter<MatrixType>::getFrobeniusNo
   throw std::runtime_error("Ifpack2::DropFilter does not implement getFrobeniusNorm.");
 }
 
+
+#define IFPACK2_DROPFILTER_INSTANT(S,LO,GO,N)                            \
+  template class Ifpack2::DropFilter< Tpetra::CrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::DropFilter< Tpetra::RowMatrix<S, LO, GO, N> >; 
+
+
 } // namespace Ifpack2
 
 #endif
