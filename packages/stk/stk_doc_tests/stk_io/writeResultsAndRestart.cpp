@@ -215,9 +215,12 @@ namespace {
       //+ Read restart data
       stkIo.read_defined_input_fields(time, &missingFields);
 
-      EXPECT_EQ(1u, missingFields.size());
+      EXPECT_EQ(2u, missingFields.size());
       const stk::io::MeshField& missingField = missingFields[0];
-      const std::string& name = missingField.db_name();
+      std::string name = missingField.db_name();
+      EXPECT_EQ("FOOSUBSET", name);
+      const stk::io::MeshField& missingField2 = missingFields[1];
+      name = missingField2.db_name();
       EXPECT_EQ("FOO", name);
     }
 
