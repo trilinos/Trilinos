@@ -59,7 +59,6 @@
 #include "ROL_ParametrizedObjective.hpp"
 #include "ROL_BatchManager.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
-#include "ROL_SparseGridGenerator.hpp"
 #include "ROL_AbsoluteValue.hpp"
 #include "ROL_PlusFunction.hpp"
 #include "ROL_RiskMeasure.hpp"
