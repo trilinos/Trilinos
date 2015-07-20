@@ -71,7 +71,6 @@
 #include "ROL_ExpUtility.hpp"
 #include "ROL_RiskAverseObjective.hpp"
 #include "ROL_RiskNeutralObjective.hpp"
-#include "ROL_Quadrature.hpp"
 
 
 template<class Real> 

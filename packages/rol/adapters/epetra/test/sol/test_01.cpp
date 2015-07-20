@@ -76,7 +76,6 @@
 #include "ROL_RiskAverseObjective.hpp"
 #include "ROL_RiskNeutralObjective.hpp"
 #include "ROL_StdEpetraBatchManager.hpp"
-#include "ROL_Quadrature.hpp"
 
 template<class Real> 
 class ParametrizedObjectiveEx1 : public ROL::ParametrizedObjective<Real> {
