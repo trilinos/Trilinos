@@ -53,6 +53,7 @@ int in_ifdef_getvar = False;
 int file_must_exist = 0; /* Global used by include/conditional include */
 #define LINENUM_INC	ap_file_list[nfile].lineno++
 
+
 static int get_input(char *buf, int size);
 #define YY_INPUT(buf,result,max_size) \
   if ( YY_CURRENT_BUFFER_LVALUE->yy_is_interactive ) {	\
@@ -528,8 +529,9 @@ integer {D}+({E})?
   {id} {
     symrec *s;
     s = getsym(yytext);
-    if (s == 0)
+    if (s == 0) {
       s = putsym (yytext, UNDVAR, 0);
+    }
     yylval.tptr = s;
     return(s->type);
   }
@@ -873,6 +875,7 @@ char *do_case(double x)
 
 char *do_if(double x)
 {
+  in_ifdef_getvar = False;
   if_lvl++;
   if (if_lvl >= MAX_IF_NESTING) {
     yyerror("Too many nested if statements");
