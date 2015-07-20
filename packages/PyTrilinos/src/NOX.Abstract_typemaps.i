@@ -48,7 +48,6 @@
 
 // PyTrilinos includes
 #include "PyTrilinos_config.h"
-// #include "Epetra_NumPyVector.hpp"
 
 // NOX includes
 #include "NOX_Abstract_Vector.H"
@@ -84,16 +83,12 @@
 #ifdef HAVE_NOX_EPETRA
     // Try to downcast to a NOX::Epetra::Vector
     static swig_type_info * swig_PENPV_ptr =
-      //SWIG_TypeQuery("Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *");
       SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector > *");
     NOX::Epetra::Vector * nevResult = dynamic_cast< NOX::Epetra::Vector * >(&nav);
     if (nevResult != NULL)
     {
-      //Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *smartresult = new
       Teuchos::RCP< Epetra_Vector > *smartresult = new
-        //Teuchos::RCP< PyTrilinos::Epetra_NumPyVector >(new
         Teuchos::RCP< Epetra_Vector >(new
-          //PyTrilinos::Epetra_NumPyVector(View,
           Epetra_Vector(View,
                         nevResult->getEpetraVector(),
                         0),
@@ -141,18 +136,16 @@
 #ifdef HAVE_NOX_EPETRA
     // Try to downcast to a NOX::Epetra::Vector
     static swig_type_info * swig_PENPV_ptr =
-      //SWIG_TypeQuery("Teuchos::RCP< const PyTrilinos::Epetra_NumPyVector > *");
       SWIG_TypeQuery("Teuchos::RCP< const Epetra_Vector > *");
     const NOX::Epetra::Vector * nevResult =
       dynamic_cast< const NOX::Epetra::Vector * >(&nav);
     if (nevResult != NULL)
     {
-      //Teuchos::RCP< const PyTrilinos::Epetra_NumPyVector > * smartresult = new
       Teuchos::RCP< const Epetra_Vector > * smartresult = new
-        //Teuchos::RCP< const PyTrilinos::Epetra_NumPyVector >(new
-        Teuchos::RCP< const Epetra_Vector >(new const Epetra_Vector(View,
-                                                                    nevResult->getEpetraVector(),
-                                                                    0),
+        Teuchos::RCP< const Epetra_Vector >(new
+          const Epetra_Vector(View,
+                              nevResult->getEpetraVector(),
+                              0),
                                             owner);
       return SWIG_NewPointerObj(SWIG_as_voidptr(smartresult),
                                 swig_PENPV_ptr,
@@ -198,18 +191,16 @@
 #ifdef HAVE_NOX_EPETRA
     // Try to downcast to a NOX::Epetra::Vector
     static swig_type_info * swig_PENPV_ptr =
-      //SWIG_TypeQuery("Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > *");
       SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector > *");
     Teuchos::RCP< NOX::Epetra::Vector > nevResult =
       Teuchos::rcp_dynamic_cast< NOX::Epetra::Vector >(nav);
     if (!nevResult.is_null())
     {
-      //Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > * smartresult = new
       Teuchos::RCP< Epetra_Vector > * smartresult = new
-        //Teuchos::RCP< PyTrilinos::Epetra_NumPyVector >(new
-        Teuchos::RCP< Epetra_Vector >(new Epetra_Vector(View,
-                                                        nevResult->getEpetraVector(),
-                                                        0),
+        Teuchos::RCP< Epetra_Vector >(new
+          Epetra_Vector(View,
+                        nevResult->getEpetraVector(),
+                        0),
                                       owner);
       return SWIG_NewPointerObj(SWIG_as_voidptr(smartresult),
                                 swig_PENPV_ptr,
@@ -255,18 +246,16 @@
 #ifdef HAVE_NOX_EPETRA
     // Try to downcast to a NOX::Epetra::Vector
     static swig_type_info * swig_PENPV_ptr =
-      //SWIG_TypeQuery("Teuchos::RCP< const PyTrilinos::Epetra_NumPyVector > *");
       SWIG_TypeQuery("Teuchos::RCP< const Epetra_Vector > *");
     Teuchos::RCP< const NOX::Epetra::Vector > nevResult =
       Teuchos::rcp_dynamic_cast< const NOX::Epetra::Vector >(nav);
     if (!nevResult.is_null())
     {
-      //Teuchos::RCP< const PyTrilinos::Epetra_NumPyVector > * smartresult = new
       Teuchos::RCP< const Epetra_Vector > * smartresult = new
-        //Teuchos::RCP< const PyTrilinos::Epetra_NumPyVector >(new
-        Teuchos::RCP< const Epetra_Vector >(new Epetra_Vector(View,
-                                                              nevResult->getEpetraVector(),
-                                                              0),
+        Teuchos::RCP< const Epetra_Vector >(new
+          Epetra_Vector(View,
+                        nevResult->getEpetraVector(),
+                        0),
                                             owner);
       return SWIG_NewPointerObj(SWIG_as_voidptr(smartresult),
                                 swig_PENPV_ptr,
@@ -328,7 +317,6 @@
 %typemap(in) NOX::Epetra::Vector &
 (void* argp=0,
  int res=0,
- //Teuchos::RCP< PyTrilinos::Epetra_NumPyVector > tempshared,
  Teuchos::RCP< Epetra_Vector > tempshared,
  bool cleanup=false)
 {

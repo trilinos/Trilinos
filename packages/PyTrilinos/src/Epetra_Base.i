@@ -70,27 +70,6 @@ static PyObject * PyExc_EpetraError = PyErr_NewException(epetraError,NULL,NULL);
 %{
 # Much of the Epetra module is compatible with the numpy module
 import numpy
-
-# From numpy version 1.0 forward, we want to use the following import syntax for
-# user_array.container.  We rename it UserArray for backward compatibility with
-# 0.9.x versions of numpy:
-try:
-    from numpy.lib.user_array import container as UserArray
-
-# If the previous import failed, it is because we are using a numpy version
-# prior to 1.0.  So we catch it and try again with different syntax.
-except ImportError:
-
-    # There is a bug in UserArray from numpy 0.9.8.  If this is the case, we
-    # have our own patched version.
-    try:
-        from UserArrayFix import UserArray
-        
-    # If the previous import failed, it is because we are using a version of
-    # numpy prior to 0.9.8, such as 0.9.6, which has no bug and therefore has no
-    # local patch.  Now we can import using the old syntax:
-    except ImportError:
-        from numpy.lib.UserArray import UserArray
 %}
 
 ////////////////////////
@@ -225,76 +204,9 @@ except ImportError:
 }
 %enddef
 
-// Define macro for typemaps that convert arguments from
-// Epetra_*Matrix or Epetra_*Vector to the corresponding
-// Epetra_NumPy*Matrix or Epetra_NumPy*Vector.  There is additional
-// magic in the python code to convert the Epetra_NumPy*Matrix or
-// Epetra_NumPy*Vector to to an Epetra.*Matrix or Epetra.*Vector.
-// Since all of these classes potentially represent large data
-// buffers, we want efficient memory management and so store them
-// internally with Teuchos::RCP<>.
-// %define %teuchos_rcp_epetra_numpy_overrides(CONST, CLASS...)
-
-// // Output a plain pointer
-// %typemap(out) CONST Epetra_##CLASS *
-// {
-//   Teuchos::RCP< CONST PyTrilinos::Epetra_NumPy##CLASS > *smartresult = 0;
-//   if ($1)
-//   {
-//     CONST PyTrilinos::Epetra_NumPy##CLASS * npa = new CONST PyTrilinos::Epetra_NumPy##CLASS(*$1);
-//     smartresult = new Teuchos::RCP< CONST PyTrilinos::Epetra_NumPy##CLASS >(npa, bool($owner));
-//   }
-//   %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
-//                                  $descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS > *),
-// 				 $owner | SWIG_POINTER_OWN));
-// }
-
-// // Output a plain reference
-// %apply (CONST Epetra_##CLASS *) {CONST Epetra_##CLASS &}
-
-// // Input/output of a reference to a pointer
-// %typemap(in,numinputs=0) Epetra_##CLASS *& (Epetra_##CLASS * _object)
-// {
-//   $1 = &_object;
-// }
-// %typemap(argout) Epetra_##CLASS *&
-// {
-//   PyTrilinos::Epetra_NumPy##CLASS * npa$argnum = new PyTrilinos::Epetra_NumPy##CLASS(**$1);
-//   Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS > *smartobj$argnum =
-//     new Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS >(npa$argnum);
-//   PyObject * obj = SWIG_NewPointerObj((void*)smartobj$argnum,
-// 			   $descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS > *),
-// 				      SWIG_POINTER_OWN);
-//   $result = SWIG_Python_AppendOutput($result,obj);
-// }
-
-// // Director input of a plain reference
-// %typemap(directorin) CONST Epetra_##CLASS &
-// %{
-//   Teuchos::RCP< CONST PyTrilinos::Epetra_NumPy##CLASS > *temp$argnum = new
-//     Teuchos::RCP< CONST PyTrilinos::Epetra_NumPy##CLASS >
-//     (new PyTrilinos::Epetra_NumPy##CLASS(View,$1_name), false);
-//   $input = SWIG_NewPointerObj((void*)temp$argnum,
-// 			      $descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS > *),
-// 			      SWIG_POINTER_OWN);
-// %}
-
-// %enddef
-
-// Use the %teuchos_rcp_epetra_numpy_overrides macro to define the
-// %teuchos_rcp_epetra_numpy macro
-// #define EMPTYHACK
-// %define %teuchos_rcp_epetra_numpy(CLASS)
-//   %teuchos_rcp(Epetra_##CLASS)
-//   %teuchos_rcp(PyTrilinos::Epetra_NumPy##CLASS)
-//   %teuchos_rcp_epetra_numpy_overrides(EMPTYHACK, CLASS)
-//   %teuchos_rcp_epetra_numpy_overrides(const, CLASS)
-// %enddef
-
 // Define macros for typemaps that convert a reference to a pointer to
 // an object, into a python return argument (which might be placed into a
 // tuple, if there are more than one).
-
 %define %teuchos_rcp_epetra_argout(ClassName)
 %typemap(in,numinputs=0) ClassName *& (ClassName * _object)
 {

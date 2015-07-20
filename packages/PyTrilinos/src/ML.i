@@ -113,10 +113,17 @@ example subdirectory of the PyTrilinos package:
 
 // Epetra includes
 #ifdef HAVE_EPETRA
+#include "Epetra_SerialComm.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_MapColoring.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_InvOperator.h"
@@ -128,23 +135,15 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_JadMatrix.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_SerialDistributor.h"
+#include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_OffsetIndex.h"
 
-// Epetra python includes
+// NumPy include
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
-// #include "Epetra_NumPyIntVector.hpp"
-// #include "Epetra_NumPyMultiVector.hpp"
-// #include "Epetra_NumPyVector.hpp"
-// #include "Epetra_NumPyFEVector.hpp"
-// #include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-// #include "Epetra_NumPyIntSerialDenseVector.hpp"
-// #include "Epetra_NumPySerialDenseMatrix.hpp"
-// #include "Epetra_NumPySerialSymDenseMatrix.hpp"
-// #include "Epetra_NumPySerialDenseVector.hpp"
 #endif
 
 // IFPACK includes

@@ -52,8 +52,6 @@
 #include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_DAP.hpp"
 #include "swigpyrun.h"
-// #include "Epetra_NumPyMultiVector.hpp"
-// #include "Epetra_NumPyVector.hpp"
 
 // System includes
 #include <algorithm>
@@ -66,11 +64,9 @@
 #include "Epetra_Object.h"
 #include "Epetra_Operator.h"
 #include "Epetra_InvOperator.h"
-// #include "Epetra_FastCrsMatrix.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_CrsMatrix.h"
-//#include "Epetra_MsrMatrix.h"
 #include "Epetra_VbrRowMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_FEVbrMatrix.h"
@@ -92,14 +88,7 @@ convertEpetraMultiVectorToPython(const Teuchos::RCP< Epetra_MultiVector > *emv)
 {
   // SWIG initialization
   static swig_type_info * swig_ENMV_ptr =
-    //SWIG_TypeQuery("Teuchos::RCP< PyTrilinos::Epetra_NumPyMultiVector >*");
     SWIG_TypeQuery("Teuchos::RCP< Epetra_MultiVector >*");
-  //
-  // Convert to PyTrilinos::Epetra_NumPyMultiVector
-  //const Teuchos::RCP< Epetra_NumPyMultiVector > *enmv = new
-    //Teuchos::RCP< Epetra_NumPyMultiVector >
-    //(new Epetra_NumPyMultiVector(View, **emv));
-  //return SWIG_NewPointerObj((void*)enmv, swig_ENMV_ptr, 1);
   return SWIG_NewPointerObj((void*)emv, swig_ENMV_ptr, 1);
 }
 
@@ -110,14 +99,7 @@ convertEpetraMultiVectorToPython(const Teuchos::RCP< const Epetra_MultiVector > 
 {
   // SWIG initialization
   static swig_type_info * swig_ENMV_ptr =
-    //SWIG_TypeQuery("Teuchos::RCP< PyTrilinos::Epetra_NumPyMultiVector >*");
     SWIG_TypeQuery("Teuchos::RCP< Epetra_MultiVector >*");
-  //
-  // Convert to PyTrilinos::Epetra_MultiVector
-  //const Teuchos::RCP< Epetra_NumPyMultiVector > *enmv = new
-    //Teuchos::RCP< Epetra_NumPyMultiVector >
-    //(new Epetra_NumPyMultiVector(View, **cemv));
-  //return SWIG_NewPointerObj((void*)enmv, swig_ENMV_ptr, 1);
   return SWIG_NewPointerObj((void*)cemv, swig_ENMV_ptr, 1);
 }
 
@@ -128,13 +110,10 @@ convertEpetraVectorToPython(const Teuchos::RCP< Epetra_Vector > *ev)
 {
   // SWIG initialization
   static swig_type_info * swig_ENV_ptr =
-    //SWIG_TypeQuery("Teuchos::RCP< PyTrilinos::Epetra_NumPyVector >*");
     SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector >*");
   //
   // Convert to PyTrilinos::Epetra_Vector
-  //const Teuchos::RCP< Epetra_NumPyVector > *env = new
   const Teuchos::RCP< Epetra_Vector > *env = new
-    //Teuchos::RCP< Epetra_NumPyVector >(new Epetra_NumPyVector(View, **ev));
     Teuchos::RCP< Epetra_Vector >(new Epetra_Vector(View, **ev, 0));
   return SWIG_NewPointerObj((void*)env, swig_ENV_ptr, 1);
 }
@@ -146,13 +125,10 @@ convertEpetraVectorToPython(const Teuchos::RCP< const Epetra_Vector > *cev)
 {
   // SWIG initialization
   static swig_type_info * swig_ENV_ptr =
-    //SWIG_TypeQuery("Teuchos::RCP< PyTrilinos::Epetra_NumPyVector >*");
     SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector >*");
   //
   // Convert to PyTrilinos::Epetra_Vector
-  //const Teuchos::RCP< Epetra_NumPyVector > *env = new
   const Teuchos::RCP< Epetra_Vector > *env = new
-    //Teuchos::RCP< Epetra_NumPyVector >(new Epetra_NumPyVector(View, **cev));
     Teuchos::RCP< Epetra_Vector >(new Epetra_Vector(View, **cev, 0));
   return SWIG_NewPointerObj((void*)env, swig_ENV_ptr, 1);
 }
@@ -228,8 +204,6 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
   {
     if (PyArray_Check(pyobj))
     {
-      //** result = new Teuchos::RCP< Epetra_NumPyMultiVector >(
-      //**           new Epetra_NumPyMultiVector(pyobj));
       return result;
     }
   }
