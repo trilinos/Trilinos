@@ -277,11 +277,11 @@ namespace {
 #ifdef HAVE_TPETRA_DEBUG
     typedef Tpetra::Vector<Scalar,LO,GO,Node>       V;
     // too small an ArrayView (less than 4 values) is met with an exception, if debugging is on
-    TEST_THROW(MV mvec(map,values(0,3),2,numVecs), std::runtime_error);
+    TEST_THROW(MV mvec(map,values(0,3),2,numVecs), std::invalid_argument);
     // it could also be too small for the given LDA:
-    TEST_THROW(MV mvec(map,values(),2+1,numVecs), std::runtime_error);
+    TEST_THROW(MV mvec(map,values(),2+1,numVecs), std::invalid_argument);
     // too small for number of entries in a Vector
-    TEST_THROW(V   vec(map,values(0,1)), std::runtime_error);
+    TEST_THROW(V   vec(map,values(0,1)), std::invalid_argument);
 #endif
     // LDA < numLocal throws an exception anytime
     TEST_THROW(MV mvec(map,values(0,4),1,numVecs), std::runtime_error);

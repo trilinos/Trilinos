@@ -88,9 +88,12 @@ using Teuchos::RCP;
 //Tpetra typedefs
 typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
 
+#ifdef HAVE_ZOLTAN2_PARMA
+
 void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string action, 
 	     std::string parma_method,int nParts, double imbalance, std::string output_title );
 
+#endif
 /*****************************************************************************/
 /******************************** MAIN ***************************************/
 /*****************************************************************************/
@@ -217,6 +220,8 @@ int main(int narg, char *arg[]) {
 /********************************* END MAIN **********************************/
 /*****************************************************************************/
 
+#ifdef HAVE_ZOLTAN2_PARMA
+
 void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string action,
 	     std::string parma_method,int nParts, double imbalance,std::string output_title) {
   //Get rank
@@ -329,3 +334,5 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
   }
   
 }
+
+#endif

@@ -6074,6 +6074,63 @@ TEST(BulkData, makeElementWithConflictingTopologies)
   mesh.modification_end();
 }
 
+TEST( BulkData, AddSharedNodesInTwoSteps)
+{
+
+
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    unsigned p_size = stk::parallel_machine_size(pm);
+    unsigned p_rank = stk::parallel_machine_rank(pm);
+
+    if(p_size != 3u)
+    {
+        return;
+    }
+
+    int nodeId = 1;
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+
+    meta.commit();
+
+
+    mesh.modification_begin();
+    Entity node;
+    if (0 == p_rank || 1 == p_rank) {
+        node = mesh.declare_entity(stk::topology::NODE_RANK, nodeId);
+    }
+    if (0 == p_rank) {
+        mesh.add_node_sharing(node, 1);
+    }
+    if (1 == p_rank) {
+        mesh.add_node_sharing(node, 0);
+    }
+    mesh.modification_end();
+
+
+
+    mesh.modification_begin();
+    if (2 == p_rank) {
+        node = mesh.declare_entity(stk::topology::NODE_RANK, nodeId);
+    }
+    if (0 == p_rank) {
+        mesh.add_node_sharing(node, 2);
+    }
+    if (1 == p_rank) {
+        mesh.add_node_sharing(node, 2);
+    }
+    if (2 == p_rank) {
+        mesh.add_node_sharing(node, 0);
+        mesh.add_node_sharing(node, 1);
+    }
+
+    //    EXPECT_THROW(mesh.modification_end(), std::logic_error);
+    //this only throws on processor 2, but not in a parallel consistent way
+    //this is because you apparently can't create the node on a new processor where it didn't exist before
+
+}
+
 }// empty namespace
 
 

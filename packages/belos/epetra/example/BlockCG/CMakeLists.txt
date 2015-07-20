@@ -16,11 +16,12 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     COMM serial mpi
     )
 
+  ASSERT_DEFINED(Anasazi_SOURCE_DIR)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyExampleBlockCGFiles
-    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockCG
-    SOURCE_FILES bcsstk14.hb
-    EXEDEPS BlockCG_Epetra_File_Ex
-    )
+  SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
+  SOURCE_FILES bcsstk14.hb 
+  EXEDEPS BlockCG_Epetra_File_Ex
+  )
 
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
   IF(${PACKAGE_NAME}_ENABLE_Ifpack)

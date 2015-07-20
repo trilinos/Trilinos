@@ -177,6 +177,7 @@ int main(int argc, char *argv[]) {
     // Epetra -> Xpetra
     RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVector(B));
     RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVector(X));
+    RCP<MultiVector> coords = Teuchos::rcp(new Xpetra::EpetraMultiVector(epCoord));
 
     xX->setSeed(100);
     xX->randomize();
@@ -213,6 +214,7 @@ int main(int argc, char *argv[]) {
 
     H->GetLevel(0)->Set("A",           A);
     H->GetLevel(0)->Set("Nullspace",   nullspace);
+    H->GetLevel(0)->Set("Coordinates", coords);
 
     mueLuFactory.SetupHierarchy(*H);
 

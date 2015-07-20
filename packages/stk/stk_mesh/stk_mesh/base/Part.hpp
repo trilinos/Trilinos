@@ -84,11 +84,6 @@ public:
 
   BulkData & mesh_bulk_data() const;
 
-  void set_primary_entity_rank(stk::mesh::EntityRank arg_rank)
-  {
-      m_partImpl.set_primary_entity_rank(arg_rank);
-  }
-
   /** \brief  The primary entity type for this part.
    *
    *   For example, the primary purpose of an Element part

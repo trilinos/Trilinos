@@ -2,6 +2,9 @@
 Release Notes for Trilinos Package MueLu
 -----------------------------------------
 
+Trilinos 12.2:
+---------------
+
 Trilinos 12.0:
 ---------------
 

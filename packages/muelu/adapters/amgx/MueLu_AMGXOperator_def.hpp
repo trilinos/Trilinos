@@ -50,50 +50,46 @@
 
 #if defined (HAVE_MUELU_EXPERIMENTAL) and defined (HAVE_MUELU_AMGX)
 #include "MueLu_AMGXOperator_decl.hpp"
-#include <amgx_c.h>
-#include <Teuchos_ArrayRCP.hpp>
-#include "cuda_runtime.h"
 
 namespace MueLu {
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-AMGXOperator::getDomainMap() const {
-   return domainMap_;
-}
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > AMGXOperator::getRangeMap() const {
-   return rangeMap_;
-}
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void AMGXOperator::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                                                                               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-                                                                               Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
-  try {
-
-    Teuchos::ArrayRCP<double> xdata, ydata;
-    for(int i = 0; i < X.getNumVecs(); i++){
-	xdata = X.getDataNonConst(i);
-	ydata = Y.getData(i); 
-        AMGX_vector_upload(X_, N_, 1, &xdata[0]);
-   	AMGX_vector_upload(Y_, N_, 1, &ydata[0]);
-   	AMGX_solver_solve(Solver_, X_, Y_);
-        AMGX_vector_download(yVec, &ydata[0]);
-    }
-	
-    
-  } catch (std::exception& e) {
-      std::string errMsg = "Caught an exception in MueLu::AMGXOperator::Apply():\n" + e.what() + "\n";
-      throw Exceptions::RuntimeError(errMsg);
+  template<class Node>
+  Teuchos::RCP<const Tpetra::Map<int,int,Node> >
+  AMGXOperator<double,int,int,Node>::getDomainMap() const {
+     return domainMap_;
   }
-}
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-bool AMGXOperator::hasTransposeApply() const {
-  return false;
-}
+  template<class Node>
+  Teuchos::RCP<const Tpetra::Map<int,int,Node> > AMGXOperator<double,int,int,Node>::getRangeMap() const {
+     return rangeMap_;
+  }
+
+  template<class Node>
+  void AMGXOperator<double,int,int,Node>::apply(const Tpetra::MultiVector<double,int,int,Node>& X,
+                                                Tpetra::MultiVector<double,int,int,Node>& Y,
+                                                Teuchos::ETransp mode, double alpha, double beta) const {
+    try {
+      Teuchos::ArrayRCP<const double> xdata;
+      Teuchos::ArrayRCP<double> ydata;
+      for(int i = 0; i < Y.getNumVectors(); i++){
+      xdata = X.getData(i);
+      ydata = Y.getDataNonConst(i);
+      AMGX_vector_upload(X_, N, 1, &xdata[0]);
+      AMGX_vector_upload(Y_, N, 1, &ydata[0]);
+      AMGX_solver_solve(Solver_, Y_, X_);
+      AMGX_vector_download(Y_, &ydata[0]);
+      }
+    } catch (std::exception& e) {
+        std::string eW = e.what();
+        std::string errMsg = "Caught an exception in MueLu::AMGXOperator::Apply():\n" + eW + "\n";
+        throw Exceptions::RuntimeError(errMsg);
+    }
+  }
+
+  template<class Node>
+  bool AMGXOperator<double,int,int,Node>::hasTransposeApply() const {
+    return false;
+  }
 
 } // namespace
 #endif //ifdef HAVE_MUELU_EXPERIMENTAL and defined(HAVE_MUELU_AMGX)

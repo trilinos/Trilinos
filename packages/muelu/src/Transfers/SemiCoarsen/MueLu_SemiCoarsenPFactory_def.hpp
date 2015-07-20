@@ -195,7 +195,7 @@ namespace MueLu {
       ArrayRCP<double> z = fineCoords->getDataNonConst(2);
 
       // determine the maximum and minimum z coordinate value on the current processor.
-      double zval_max = -Teuchos::ScalarTraits<double>::one() / Teuchos::ScalarTraits<double>::sfmin();;
+      double zval_max = -Teuchos::ScalarTraits<double>::one() / Teuchos::ScalarTraits<double>::sfmin();
       double zval_min =  Teuchos::ScalarTraits<double>::one() / Teuchos::ScalarTraits<double>::sfmin();
       for ( ArrayRCP<double>::iterator it = z.begin(); it != z.end(); ++it) {
         if(*it > zval_max) zval_max = *it;

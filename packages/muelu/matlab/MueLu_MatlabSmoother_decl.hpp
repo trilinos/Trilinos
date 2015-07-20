@@ -159,7 +159,7 @@ namespace MueLu {
   private:
 
     //! List of arguments to the MATLAB setup function besides "A", in order
-    mutable std::vector<std::string> needsSetup_;
+    mutable std::string needsSetup_;
 
     //! Amount of solve data (besides A, LHS & RHS)
     size_t solveDataSize_;

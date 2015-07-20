@@ -130,6 +130,8 @@ int main(int argc, char *argv[]) {
     Teuchos::Time timer("Interpreter timer");
     double lastTime = timer.wallTime();
     for (int k = 0; k < numLists; k++) {
+      std::ios_base::fmtflags ff;
+      ff = std::cout.flags();
       Teuchos::ArrayRCP<std::string> fileList = MueLuTests::TestHelpers::GetFileList(dirList[k],
             (numProc == 1 ? std::string(".xml") : std::string("_np" + Teuchos::toString(numProc) + ".xml")));
 
@@ -309,6 +311,7 @@ int main(int argc, char *argv[]) {
           lastTime = timer.wallTime();
         }
       }
+      std::cout.flags(ff); // reset flags to whatever they were at the beginning of this test
     }
 
     success = !failed;

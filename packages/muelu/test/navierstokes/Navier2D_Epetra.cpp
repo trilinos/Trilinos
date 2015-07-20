@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
     int minPerAgg=3;
     int maxNbrAlreadySelected=0;
 
-    int globalNumDofs = 8898;
+    int globalNumDofs = 1500;
     int nProcs = comm->getSize();
     int nDofsPerNode = 3;
 

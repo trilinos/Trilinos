@@ -88,7 +88,7 @@
       <visible>false</visible>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
-  
+
   </general>
 
   <smoothing_and_coarse>
@@ -446,7 +446,7 @@
       <description>Filename to write VTK visualization data to.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
-    
+
     <parameter>
       <name>aggregation: output file: time step</name>
       <type>int</type>
@@ -472,10 +472,29 @@
     </parameter>
 
     <parameter>
-      <name>aggregation: output file: graph edges</name>
+      <name>aggregation: output file: fine graph edges</name>
       <type>bool</type>
       <default>false</default>
-      <description>Whether to draw all node connections along with the aggregates.</description>
+      <description>Whether to draw all fine node connections along with the aggregates.</description>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to draw all fine node connections along with the aggregates.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: output file: coarse graph edges</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to draw all coarse node connections along with the aggregates.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: output file: build colormap</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to output a random colormap in a separate XML file.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -565,6 +584,24 @@
       <type>int</type>
       <default>3</default>
       <description>Determines the maximum number of times that semicoarsening is applied.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>linedetection: orientation</name>
+      <type>string</type>
+      <default>vertical</default>
+      <description>Line orientation: can be either 'vertical', 'horizontal' or 'coordinates'.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>linedetection: num layers</name>
+      <type>int</type>
+      <default>-1</default>
+      <description>Line detection: number of layers on finest level. Alternatively, set the number of layers on the finest level as \"NumZLayers\" in the finest level container class.</description>
       <comment-ML>not supported by ML</comment-ML>
       <visible>false</visible>
     </parameter>

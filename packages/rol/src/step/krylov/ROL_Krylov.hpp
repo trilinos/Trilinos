@@ -76,7 +76,7 @@ public:
   void resetRelativeTolerance(const Real relTol) const {
     relTol_ = relTol;
   }
-  void resetMaximumIteration(const unsigned maxit) const {
+  void resetMaximumIteration(const unsigned maxit) {
     maxit_ = maxit;
   }
   Real getAbsoluteTolerance(void) const {

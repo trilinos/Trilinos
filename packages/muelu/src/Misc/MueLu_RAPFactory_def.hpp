@@ -101,6 +101,8 @@ namespace MueLu {
     // call DeclareInput of all user-given transfer factories
     for (std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it != transferFacts_.end(); ++it)
       (*it)->CallDeclareInput(coarseLevel);
+
+    hasDeclaredInput_ = true;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -109,6 +111,9 @@ namespace MueLu {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
       std::ostringstream levelstr;
       levelstr << coarseLevel.GetLevelID();
+
+      TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_==false, Exceptions::RuntimeError,
+                                 "MueLu::RAPFactory::Build(): CallDeclareInput has not been called before Build!");
 
       // Set "Keeps" from params
       const Teuchos::ParameterList& pL = GetParameterList();

@@ -70,8 +70,7 @@ namespace MueLu {
   template class MuemexData<RCP<MAmalInfo>>;
   /*  
   template class MuemexData<int>;
-
-template<> class MuemexData<complex_t>;	  
+  template<> class MuemexData<complex_t>;	  
   template<> class MuemexData<std::string>; 
   template<> class MuemexData<double>;					
   template<> class MuemexData<RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; 
@@ -565,6 +564,38 @@ bool isValidMatlabAggregates(const mxArray* mxa)
       isValidAggregates = false;
   }
   return isValidAggregates;
+}
+
+std::vector<std::string> tokenizeList(std::string params)
+{
+  //use space, comma and semicolon as valid delimiters
+  using namespace std;
+  vector<string> rlist;
+  const char* delims = " ,;";
+  char* mark = (char*) strtok((char*) params.c_str(), delims);
+  while(mark != NULL)
+  {
+    string tok(mark); //copies the characters to string object
+    rlist.push_back(tok);
+    mark = strtok(NULL, delims);
+  }
+  return rlist;
+}
+
+
+Teuchos::RCP<Teuchos::ParameterList> getInputParamList()
+{
+  using namespace Teuchos;
+  RCP<ParameterList> validParamList = rcp(new ParameterList());
+  validParamList->set<RCP<const FactoryBase>>("A", Teuchos::null, "Factory for the matrix A.");
+  validParamList->set<RCP<const FactoryBase>>("P", Teuchos::null, "Factory for the prolongator.");
+  validParamList->set<RCP<const FactoryBase>>("R", Teuchos::null, "Factory for the restrictor.");
+  validParamList->set<RCP<const FactoryBase>>("Ptent", Teuchos::null, "Factory for the tentative (unsmoothed) prolongator.");
+  validParamList->set<RCP<const FactoryBase>>("Coordinates", Teuchos::null, "Factory for the node coordinates.");
+  validParamList->set<RCP<const FactoryBase>>("Nullspace", Teuchos::null, "Factory for the nullspace.");
+  validParamList->set<RCP<const FactoryBase>>("Aggregates",  Teuchos::null, "Factory for the aggregates.");
+  validParamList->set<RCP<const FactoryBase>>("UnamalgamationInfo", Teuchos::null, "Factory for amalgamation.");
+  return validParamList;
 }
 
 }//end namespace

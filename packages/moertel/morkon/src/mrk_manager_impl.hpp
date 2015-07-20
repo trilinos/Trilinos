@@ -126,6 +126,8 @@ Morkon_Manager<DeviceType, DIM, FACE_TYPE>::declare_all_interfaces(face_interfac
   m_fields.m_node_coords =         node_coords;
   m_non_dense_node_ids   =  non_dense_node_ids;
   m_is_ifc_boundary_node = boundary_node_table;
+
+  return false;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
@@ -154,18 +156,20 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::mortar_integrate(Tpetra::CrsMat
     return false;
   }
 
+  // Will our integration scheme require node_support_sets the way the legacy version does?
+
   mortar_pallets_t pallets_for_integration;
   if (!compute_contact_pallets(pallets_for_integration))
   {
     return false;
   }
 
-  if (!integrate_pallets_into_onrank_D(pallets_for_integration))
+  if (!integrate_pallets_into_onrank_D(pallets_for_integration, node_support_sets))
   {
     return false;
   }
 
-  if (!integrate_pallets_into_onrank_M(pallets_for_integration))
+  if (!integrate_pallets_into_onrank_M(pallets_for_integration, node_support_sets))
   {
     return false;
   }
@@ -215,7 +219,7 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
   {
     Interface<DeviceType,DIM,FACE_TYPE> &interface = *ifcs_i->second;
 
-    for (int hsa_i = 0; hsa_i < interface.m_hs_adapters.size(); ++hsa_i)
+    for (unsigned hsa_i = 0; hsa_i < interface.m_hs_adapters.size(); ++hsa_i)
     {
       Interface_HostSideAdapter<DIM> &adapter = *interface.m_hs_adapters[hsa_i];
 
@@ -266,13 +270,20 @@ Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_boundary_node_support_sets(c
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_contact_pallets(mortar_pallets_t &resulting_pallets)
 {
+  // In the Serial prototype and the Cuda version, we can use atomic fetch and adds to allocate space for the
+  // pallets resulting from pair of faces.
+  //
+  // In the OpenMP friendly version, the counting pass functor does the minimal work possible to figure out
+  // how many pallets for each pair, and the compute-and-fill pass does the complete version of the work.
+
   std::cout << "Need to write compute_contact_pallets()" << std::endl;
   return false;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::
-integrate_pallets_into_onrank_D(mortar_pallets_t pallets_to_integrate_on /* additional arg(s)? */ )
+integrate_pallets_into_onrank_D(mortar_pallets_t pallets_to_integrate_on,
+                                const node_support_sets_t &support_sets )
 {
   std::cout << "Need to write integrate_pallets_into_onrank_D()" << std::endl;
   return false;
@@ -280,7 +291,8 @@ integrate_pallets_into_onrank_D(mortar_pallets_t pallets_to_integrate_on /* addi
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::
-integrate_pallets_into_onrank_M(mortar_pallets_t pallets_to_integrate_on /* additional arg(s)? */ )
+integrate_pallets_into_onrank_M(mortar_pallets_t pallets_to_integrate_on,
+                                const node_support_sets_t &support_sets )
 {
   std::cout << "Need to write integrate_pallets_into_onrank_M()" << std::endl;
   return false;

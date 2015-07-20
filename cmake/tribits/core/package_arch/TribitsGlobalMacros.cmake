@@ -1187,7 +1187,7 @@ MACRO(TRIBITS_READ_EXTRA_REPOSITORIES_LISTS)
     IF (EXTRAREPO_PACKSTAT STREQUAL NOPACKAGES)
 
       MESSAGE("")
-      MESSAGE("Skipping reading packages and TPLs for extra repo ${EXTRA_REPO} because marked NOPACKAGES ... ")
+      MESSAGE("Skipping reading packages and TPLs for ${READ_PRE_OR_POST_EXRAREPOS} extra repo ${EXTRA_REPO} because marked NOPACKAGES ... ")
       MESSAGE("")
       # ToDo: TriBITS:73: Don't print the above message by default.  It is
       # just clutter.

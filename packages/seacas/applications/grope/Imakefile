@@ -10,7 +10,8 @@ SRCS = grope.f \
    gr_tostep.f gr_ckeb1.f  gr_cknps.f  gr_getprc.f gr_limits.f gr_prebn.f  gr_prfrm.f  \
    gr_prmmax.f gr_prnsv.f  gr_prtims.f gr_rdeb1.f  gr_rdmmax.f gr_rdnps.f  gr_rixid.f  \
    gr_selmap.f gr_wdberr.f gr_ckelb.f  gr_comand.f gr_prelb.f  gr_prglob.f gr_selset.f \
-   gr_prname.f gr_prqa.f   gr_prvers.f gr_rdelb.f  gr_rdnam1.f gr_rdqa.f   gr_rixint.f
+   gr_prname.f gr_prqa.f   gr_prvers.f gr_rdelb.f  gr_rdnam1.f gr_rdqa.f   gr_rixint.f \
+   gr_rmixint.f
 
 OBJS = ${SRCS:.f=.o}
 

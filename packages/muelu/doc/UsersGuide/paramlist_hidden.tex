@@ -90,7 +90,11 @@
         
 \cbb{aggregation: output file: agg style}{string}{Point Cloud}{Style of aggregate visualization.}
         
-\cbb{aggreation: output file: graph edges}{bool}{false}{Whether to draw all node connections along with the aggregates.}
+\cbb{aggregation: output file: fine graph edges}{bool}{false}{Whether to draw all fine node connections along with the aggregates.}
+        
+\cbb{aggregation: output file: coarse graph edges}{bool}{false}{Whether to draw all coarse node connections along with the aggregates.}
+        
+\cbb{aggregation: output file: build colormap}{bool}{false}{Whether to output a random colormap in a separate XML file.}
         
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", ``P'', ``R'') of type \texttt{string} and value ``\{levels separated by commas\}''. A matrix with a name ``X'' is saved in three MatrixMarket files: a) data is saved in \textit{X\_level.mm}; b) its row map is saved in \textit{rowmap\_X\_level.mm}; c) its column map is saved in \textit{colmap\_X\_level.mm}.}
         
@@ -107,6 +111,10 @@
 \cbb{semicoarsen: coarsen rate}{int}{3}{Rate at which to coarsen unknowns in the z direction.}
         
 \cbb{semicoarsen: number of levels}{int}{3}{Determines the maximum number of times that semicoarsening is applied.}
+        
+\cbb{linedetection: orientation}{string}{vertical}{Line orientation: can be either 'vertical', 'horizontal' or 'coordinates'.}
+        
+\cbb{linedetection: num layers}{int}{-1}{Line detection: number of layers on finest level. Alternatively, set the number of layers on the finest level as \"NumZLayers\" in the finest level container class.}
         
 \cbb{sa: damping factor}{double}{1.33}{Damping factor for smoothed aggregation.}
         

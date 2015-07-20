@@ -254,6 +254,10 @@
     id=\"47\" name=\"color_choice\" type=\"string\" validatorId=\"47\" value=\"amd\" \
     docString='  selection criterion for coloring' \
     /> \
+   <Parameter  \
+    id=\"48\" name=\"hypergraph_model_type\" type=\"string\" validatorId=\"48\" value=\"traditional\" \
+    docString='  construction type when creating a hypergraph model' \
+    /> \
    <ParameterList  name=\"zoltan_parameters\"> \
    </ParameterList> \
    <ParameterList   name=\"parma_parameters\"> \
@@ -470,6 +474,10 @@
         <String value=\"Random\"/> \
         <String value=\"RandomFast\"/> \
         <String value=\"LeastUsed\"/> \
+      </Validator> \
+      <Validator type=\"StringValidator\" validatorId=\"48\"> \
+        <String value=\"traditional\"/> \
+        <String value=\"ghosting\"/> \
       </Validator> \
     </Validators> \
   </ParameterList>"

@@ -65,6 +65,8 @@ namespace MueLu {
             class GlobalOrdinal = typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,
             class Node = typename Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal>::node_type>
   class TpetraOperator : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+  protected:
+    TpetraOperator() { }
   public:
 
     //! @name Constructor/Destructor
