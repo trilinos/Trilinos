@@ -66,6 +66,10 @@ typedef MueLu::CoalesceDropFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Coale
 typedef MueLu::CoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoarseMapFactory;
 #endif
 
+#ifdef MUELU_COARSENINGVISUALIZATIONFACTORY_SHORT
+typedef MueLu::CoarseningVisualizationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoarseningVisualizationFactory;
+#endif
+
 #ifdef MUELU_CONSTRAINT_SHORT
 typedef MueLu::Constraint<Scalar,LocalOrdinal,GlobalOrdinal,Node> Constraint;
 #endif

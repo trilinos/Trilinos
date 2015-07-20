@@ -14,6 +14,7 @@ BraessSarazinSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
 CGSolver
 CoalesceDropFactory
 CoarseMapFactory
+CoarseningVisualizationFactory
 Constraint
 ConstraintFactory
 CoordinatesTransferFactory
