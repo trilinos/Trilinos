@@ -70,12 +70,11 @@
 #include "ROL_MeanVarianceFromTarget.hpp"
 #include "ROL_CVaR.hpp"
 #include "ROL_CVaRQuadrangle.hpp"
-#include "ROL_HMCR.hpp"
+//#include "ROL_HMCR.hpp"
 #include "ROL_ExpUtility.hpp"
 #include "ROL_RiskAverseObjective.hpp"
 #include "ROL_RiskNeutralObjective.hpp"
 #include "ROL_StdTeuchosBatchManager.hpp"
-#include "ROL_Quadrature.hpp"
 
 
 template<class Real> 
@@ -564,41 +563,41 @@ int main(int argc, char* argv[]) {
       *outStream << (*x_rcp)[i] << ", ";
     }
     *outStream << (*x_rcp)[dim-1] << ")\n";
-    /**********************************************************************************************/
-    /************************* MEAN PLUS CVAR *****************************************************/
-    /**********************************************************************************************/
-    *outStream << "\nMEAN PLUS HIGHER MOMENT COHERENT RISK MEASURE\n";
-    unsigned ord = 3;
-    dist2 = Teuchos::rcp(new ROL::Distribution<double>(ROL::DISTRIBUTION_DIRAC));
-    plusf = Teuchos::rcp(new ROL::PlusFunction<double>(dist2));
-    rm  = Teuchos::rcp( new ROL::HMCR<double>(prob,c,ord,plusf) );
-    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
-    // Test objective functions
-    xv = 10.0*random<double>(commptr)-5.0;
-    dv = 10.0*random<double>(commptr)-5.0;
-    dv = 0.0;
-    xp = Teuchos::rcp(&x,false);
-    dp = Teuchos::rcp(&d,false);
-    ROL::CVaRVector<double> xh(xv,xp);
-    ROL::CVaRVector<double> dh(dv,dp);
-    *outStream << "\nCheck Derivatives of Risk-Averse Objective Function\n";
-    x.set(xr);
-    obj->checkGradient(xh,dh,true,*outStream);
-    obj->checkHessVec(xh,dh,true,*outStream);
-    // Run ROL algorithm
-    step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
-    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
-    x.set(x0);
-    start = clock();
-    algo->run(xh,*obj,*CVaRcon,true,*outStream);
-    *outStream << "Optimization time: " << (double)(clock()-start)/(double)CLOCKS_PER_SEC << " seconds.\n";
-    // Print Solution
-    *outStream << "t = " << xh.getVaR() << "\n";
-    *outStream << "x = (";
-    for ( unsigned i = 0; i < dim-1; i++ ) {
-      *outStream << (*x_rcp)[i] << ", ";
-    }
-    *outStream << (*x_rcp)[dim-1] << ")\n";
+//    /**********************************************************************************************/
+//    /************************* MEAN PLUS CVAR *****************************************************/
+//    /**********************************************************************************************/
+//    *outStream << "\nMEAN PLUS HIGHER MOMENT COHERENT RISK MEASURE\n";
+//    unsigned ord = 3;
+//    dist2 = Teuchos::rcp(new ROL::Distribution<double>(ROL::DISTRIBUTION_DIRAC));
+//    plusf = Teuchos::rcp(new ROL::PlusFunction<double>(dist2));
+//    rm  = Teuchos::rcp( new ROL::HMCR<double>(prob,c,ord,plusf) );
+//    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
+//    // Test objective functions
+//    xv = 10.0*random<double>(commptr)-5.0;
+//    dv = 10.0*random<double>(commptr)-5.0;
+//    dv = 0.0;
+//    xp = Teuchos::rcp(&x,false);
+//    dp = Teuchos::rcp(&d,false);
+//    ROL::CVaRVector<double> xh(xv,xp);
+//    ROL::CVaRVector<double> dh(dv,dp);
+//    *outStream << "\nCheck Derivatives of Risk-Averse Objective Function\n";
+//    x.set(xr);
+//    obj->checkGradient(xh,dh,true,*outStream);
+//    obj->checkHessVec(xh,dh,true,*outStream);
+//    // Run ROL algorithm
+//    step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
+//    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+//    x.set(x0);
+//    start = clock();
+//    algo->run(xh,*obj,*CVaRcon,true,*outStream);
+//    *outStream << "Optimization time: " << (double)(clock()-start)/(double)CLOCKS_PER_SEC << " seconds.\n";
+//    // Print Solution
+//    *outStream << "t = " << xh.getVaR() << "\n";
+//    *outStream << "x = (";
+//    for ( unsigned i = 0; i < dim-1; i++ ) {
+//      *outStream << (*x_rcp)[i] << ", ";
+//    }
+//    *outStream << (*x_rcp)[dim-1] << ")\n";
     /**********************************************************************************************/
     /************************* EXPONENTIAL UTILITY FUNCTION ***************************************/
     /**********************************************************************************************/
