@@ -1050,17 +1050,11 @@ void GraphModel<Adapter>::shared_constructor(
 
     try{
       numNewEdges = removeUndesiredEdges<user_t>(env_, comm_->getRank(),
-        removeSelfEdges,
-        false,
-        subsetGraph,
-        vtxView,
-        nborView,
-        nborOwner,
-        eWgts,
-        offView,
-        newEdges,
-        newWeights,
-        newOffs);
+                                                 removeSelfEdges, false,
+                                                 subsetGraph, vtxView,
+                                                 nborView, nborOwner,
+                                                 eWgts, offView,
+                                                 newEdges, newWeights, newOffs);
     }
     Z2_FORWARD_EXCEPTIONS;
 

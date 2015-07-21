@@ -69,7 +69,7 @@ class AlgNatural : public Algorithm<Adapter>
   public:
 
   typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::zgid_t zgid_t;
+  typedef typename Adapter::gno_t gno_t;
 
   AlgNatural(
     const RCP<IdentifierModel<Adapter> > &model__, 
@@ -79,7 +79,7 @@ class AlgNatural : public Algorithm<Adapter>
   {
   }
 
-  int order(const RCP<OrderingSolution<zgid_t, lno_t> > &solution) 
+  int order(const RCP<OrderingSolution<lno_t, gno_t> > &solution) 
   {
 
     int ierr= 0;

@@ -77,11 +77,7 @@ enum MeshEntityType {
     \li \c scalar_t entity and adjacency weights
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
-    \li \c zgid_t    application global Ids
     \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
-
-    See IdentifierTraits to understand why the user's global ID type
-    (\c zgid_t) may differ from that used by Zoltan2 (\c gno_t).
 
     The Kokkos node type can be safely ignored.
 
@@ -111,7 +107,6 @@ public:
   typedef typename InputTraits<User>::scalar_t              scalar_t;
   typedef typename InputTraits<User>::lno_t                 lno_t;
   typedef typename InputTraits<User>::gno_t                 gno_t;
-  typedef typename InputTraits<User>::zgid_t                zgid_t;
   typedef typename InputTraits<User>::part_t                part_t;
   typedef typename InputTraits<User>::node_t                node_t;
   typedef User                                              user_t;
@@ -150,7 +145,7 @@ public:
        process.
   */
   virtual void getIDsViewOf(MeshEntityType etype,
-                            zgid_t const *&Ids) const = 0;
+                            gno_t const *&Ids) const = 0;
 
 
   /*! \brief Return the number of weights per entity.
@@ -235,7 +230,7 @@ public:
          Ids for each entity.
   */
   virtual void getAdjsView(MeshEntityType source, MeshEntityType target,
-     const lno_t *&offsets, const zgid_t *& adjacencyIds) const
+     const lno_t *&offsets, const gno_t *& adjacencyIds) const
   {
     offsets = NULL;
     adjacencyIds = NULL;
@@ -256,7 +251,7 @@ public:
   virtual size_t get2ndAdjsFromAdjs(MeshEntityType sourcetarget,
                                     MeshEntityType through,
                                     const lno_t *&offsets,
-                                    const zgid_t *&adjacencyIds) const
+                                    const gno_t *&adjacencyIds) const
   {
     //typedef Tpetra::global_size_t GST;
     //const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
@@ -265,9 +260,7 @@ public:
     size_t nadj = 0;
     if (availAdjs(sourcetarget, through)) {
       using Tpetra::DefaultPlatform;
-      using Tpetra::global_size_t;
       using Teuchos::Array;
-      using Teuchos::as;
       using Teuchos::RCP;
       using Teuchos::rcp;
 
@@ -283,10 +276,10 @@ public:
       adjacencyIds=NULL;
       getAdjsView(sourcetarget, through, offsets, adjacencyIds);
 
-      zgid_t const *Ids=NULL;
+      gno_t const *Ids=NULL;
       getIDsViewOf(sourcetarget, Ids);
 
-      zgid_t const *throughIds=NULL;
+      gno_t const *throughIds=NULL;
       getIDsViewOf(through, throughIds);
 
       size_t LocalNumIDs = getLocalNumOf(sourcetarget);
@@ -305,9 +298,9 @@ public:
       // Build a list of the global sourcetarget ids...
       sourcetargetGIDs.resize (LocalNumIDs);
       gno_t min[2];
-      min[0] = as<gno_t> (Ids[0]);
+      min[0] = Ids[0];
       for (size_t i = 0; i < LocalNumIDs; ++i) {
-        sourcetargetGIDs[i] = as<gno_t> (Ids[i]);
+        sourcetargetGIDs[i] = Ids[i];
 
 	if (sourcetargetGIDs[i] < min[0]) {
 	  min[0] = sourcetargetGIDs[i];
@@ -315,9 +308,9 @@ public:
       }
 
       // min(throughIds[i])
-      min[1] = as<gno_t> (throughIds[0]);
+      min[1] = throughIds[0];
       for (size_t i = 0; i < LocalNumOfThrough; ++i) {
-	gno_t tmp = as<gno_t> (throughIds[i]);
+	gno_t tmp = throughIds[i];
 
 	if (tmp < min[1]) {
 	  min[1] = tmp;
@@ -356,13 +349,12 @@ public:
       for (size_t localElement=0; localElement<LocalNumIDs; ++localElement){
 
         //globalRow for Tpetra Graph
-        global_size_t globalRowT = as<global_size_t> (Ids[localElement]);
+        gno_t globalRowT = Ids[localElement];
 
 // KDD can we insert all adjacencies at once instead of one at a time
 // (since they are contiguous in adjacencyIds)?
-// KDD maybe not until we get rid of zgid_t, as we need the conversion to gno_t.
         for (lno_t j=offsets[localElement]; j<offsets[localElement+1]; ++j){
-          gno_t globalCol = as<gno_t> (adjacencyIds[j]);
+          gno_t globalCol = adjacencyIds[j];
           //create ArrayView globalCol object for Tpetra
           ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
 
@@ -405,7 +397,7 @@ public:
       Ids = NULL;
       start[LocalNumIDs] = nadj;
 
-      zgid_t *adj_ = new zgid_t [nadj];
+      gno_t *adj_ = new gno_t [nadj];
 
       for (size_t i=0; i < nadj; i++) {
         adj_[i] = adj[i];
@@ -429,7 +421,7 @@ public:
       return 0;
     else {
       lno_t const *offsets;
-      zgid_t const *adjacencyIds;
+      gno_t const *adjacencyIds;
       size_t nadj = get2ndAdjsFromAdjs(sourcetarget, through, offsets,
                                        adjacencyIds);
       delete [] offsets;
@@ -453,7 +445,7 @@ public:
   virtual void get2ndAdjsView(MeshEntityType sourcetarget,
                               MeshEntityType through,
                               const lno_t *&offsets,
-                              const zgid_t *&adjacencyIds) const
+                              const gno_t *&adjacencyIds) const
   {
     if (!availAdjs(sourcetarget, through)) {
       offsets = NULL;
@@ -607,7 +599,7 @@ public:
     return getLocalNumOf(getPrimaryEntityType());
   }
 
-  void getIDsView(const zgid_t *&Ids) const {
+  void getIDsView(const gno_t *&Ids) const {
     getIDsViewOf(getPrimaryEntityType(), Ids);
   }
 

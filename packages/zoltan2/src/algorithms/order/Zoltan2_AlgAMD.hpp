@@ -116,8 +116,8 @@ class AlgAMD : public Algorithm<Adapter>
     ) : model(model__), pl(pl__), comm(comm__)
     { }
 
-    int order(const RCP<OrderingSolution<typename Adapter::zgid_t,
-                                         typename Adapter::lno_t> > &solution)
+    int order(const RCP<OrderingSolution<typename Adapter::lno_t,
+                                         typename Adapter::gno_t> > &solution)
     {
 #ifndef HAVE_ZOLTAN2_AMD
   throw std::runtime_error(
@@ -126,7 +126,6 @@ class AlgAMD : public Algorithm<Adapter>
 #else
       typedef typename Adapter::lno_t lno_t;
       typedef typename Adapter::gno_t gno_t;
-      typedef typename Adapter::zgid_t zgid_t;
       typedef typename Adapter::scalar_t scalar_t;
 
       int ierr= 0;

@@ -325,12 +325,15 @@ void AlgRCB<Adapter>::partition(
 
   int multiVectorDim = coordDim + nWeightsPerCoord;
 
-  gno_t gnoMin, gnoMax;
-  coords->getIdentifierMap()->getGnoRange(gnoMin, gnoMax);
+  gno_t localMinGno = std::numeric_limits<gno_t>.max();
+  gno_t minGno;
+  for (size_t i=0; i < numLocalCoords; i++) 
+    if (gnos[i] < localMinGno) localMinGno = gnos[i];
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MIN, 1, &localMinGno, &minGno);
 
   RCP<map_t> map;
   try{
-    map = rcp(new map_t(numGlobalCoords, gnos, gnoMin, comm));
+    map = rcp(new map_t(numGlobalCoords, gnos, minGno, comm));
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
 

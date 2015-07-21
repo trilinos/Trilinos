@@ -68,7 +68,6 @@ template <typename Adapter>
 private:
 
   typedef typename Adapter::lno_t lno_t;
-  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::scalar_t scalar_t;
 

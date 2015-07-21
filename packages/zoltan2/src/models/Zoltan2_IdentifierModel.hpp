@@ -75,8 +75,6 @@ public:
   typedef typename Adapter::scalar_t  scalar_t;
   typedef typename Adapter::gno_t     gno_t;
   typedef typename Adapter::lno_t     lno_t;
-  typedef typename Adapter::zgid_t     zgid_t;
-  typedef IdentifierMap<typename Adapter::user_t> idmap_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 #endif
 
@@ -115,11 +113,8 @@ public:
     wgts = weights_.view(0, nUserWeights_);
     size_t n = getLocalNumIdentifiers();
     if (n){
-      if (gnosAreGids_) 
-        Ids = ArrayView<const gno_t>(
-                        reinterpret_cast<const gno_t*>(gids_.getRawPtr()), n);
-      else              
-        Ids = gnosConst_(0, n);
+      Ids = ArrayView<const gno_t>(
+                      reinterpret_cast<const gno_t*>(gids_.getRawPtr()), n);
     }
     return n;
   }
@@ -134,15 +129,13 @@ public:
 
 private:
 
-  bool gnosAreGids_;
   gno_t numGlobalIdentifiers_;
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
-  ArrayRCP<const zgid_t> gids_;
+  ArrayRCP<const gno_t> gids_;
+  ArrayRCP<const gno_t> gidsConst_;
   int nUserWeights_;
   ArrayRCP<input_t> weights_;
-  ArrayRCP<gno_t> gnos_;
-  ArrayRCP<const gno_t> gnosConst_;
 };
 
 ////////////////////////////////////////////////////
@@ -152,8 +145,8 @@ template <typename Adapter>
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags):
-      gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
-      gids_(), nUserWeights_(0), weights_(), gnos_(), gnosConst_()
+      numGlobalIdentifiers_(), env_(env), comm_(comm),
+      gids_(), gidsConst_(), nUserWeights_(0), weights_()
 {
   // Get the local and global problem size
   size_t nLocalIds = ia->getLocalNumIDs();
@@ -178,7 +171,7 @@ template <typename Adapter>
     weights_ = arcp<input_t>(w, 0, nUserWeights_);
   }
 
-  const zgid_t *gids=NULL;
+  const gno_t *gids=NULL;
   
   // Get the input adapter's views
   try{
@@ -200,36 +193,7 @@ template <typename Adapter>
     }
   }
 
-
-  // TODO:  Why does an IdentifierModel need an IdentifierMap?
-  // TODO:  Currently is useful only if zgid_t is not Teuchos::Ordinal
-  RCP<const idmap_t> idMap;
-  try{
-    if (modelFlags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE))
-      idMap = rcp(new idmap_t(env_, comm_, gids_, true));
-    else
-      idMap = rcp(new idmap_t(env_, comm_, gids_, false));
-  }
-  Z2_FORWARD_EXCEPTIONS;
-
-  gnosAreGids_ = idMap->gnosAreGids();
-
-  this->setIdentifierMap(idMap);
-
-  if (!gnosAreGids_ && nLocalIds>0){
-    gno_t *tmpGno = new gno_t [nLocalIds];
-    env_->localMemoryAssertion(__FILE__, __LINE__, nLocalIds, tmpGno);
-    gnos_ = arcp(tmpGno, 0, nLocalIds);
-
-    try{
-      ArrayRCP<zgid_t> gidsNonConst = arcp_const_cast<zgid_t>(gids_);
-      idMap->gidTranslate( gidsNonConst(0,nLocalIds),  gnos_(0,nLocalIds),
-        TRANSLATE_APP_TO_LIB);
-    }
-    Z2_FORWARD_EXCEPTIONS;
-  }
-
-  gnosConst_ = arcp_const_cast<const gno_t>(gnos_);
+  gidsConst_ = arcp_const_cast<const gno_t>(gids_);
 
   env_->memory("After construction of identifier model");
 }

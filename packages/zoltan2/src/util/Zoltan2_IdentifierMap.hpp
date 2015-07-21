@@ -78,7 +78,6 @@ enum TranslationType {
     Data types:
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
-    \li \c zgid_t    application global Ids
 
     The template parameter \c User is a user-defined data type
     which, through a traits mechanism, provides the actual data types
@@ -87,15 +86,14 @@ enum TranslationType {
     represent a vector, or it may be the helper class BasicUserTypes.
     See InputTraits for more information.
 
-      \todo test for global IDs that are std::pair<T1, T2>
+    The input includes the application global IDs.
+    The output is a new numbering of the global IDs that is
+    consecutively ordered [0,numGlobalIds-1].  The distribution of 
+    the new ordered global IDs to ranks can be given by an array
+    of size numRanks+1, with array[i] being the first new global ID on
+    rank i.  
 
-  \todo we require that user's zgid_ts have base zero if we are to
-     use them as consecutive gno_ts.  This can be fixed if needed.
-     We are not getting the efficiency
-     advantage of using the user's gids simply because
-     those IDs do not have base 0.  We can add a flag
-     about base 0 being required, and then map only
-     if base 0 is required.
+    This ordering is the ordering required by ParMETIS and Scotch.
 */
 
 ////////////////////////////////////////////////////////////////////
@@ -149,18 +147,9 @@ public:
    */
   gno_t getLocalNumberOfIds() const { return localNumberOfIds_;}
 
-  /*! \brief Return the minimum and maximum values of the internal
-   *  global numbers
-   */
-  void getGnoRange(gno_t &min, gno_t &max) const;
-
   /*! \brief Return true if our internal global numbers are consecutive.
    */
   bool gnosAreConsecutive() const;
-
-  /*! \brief Return true if consecutive Gids are required.
-   */
-  bool consecutiveGnosAreRequired() const;
 
   /*! \brief Return the minimum Zoltan2 global Id across all processes.
    */
@@ -340,23 +329,10 @@ template< typename User>
   return userGidsAreZoltan2Gnos_;
 }
 
-template <typename User>
-  void IdentifierMap<User>::getGnoRange(gno_t &min, gno_t &max) const
-{
-  min = minGlobalGno_;
-  max = maxGlobalGno_;
-}
-
 template< typename User>
   bool IdentifierMap<User>::gnosAreConsecutive() const
 {
   return zoltan2GnosAreConsecutive_;
-}
-
-template< typename User>
-  bool IdentifierMap<User>::consecutiveGnosAreRequired() const
-{
-  return consecutiveGidsAreRequired_;
 }
 
 template< typename User>
