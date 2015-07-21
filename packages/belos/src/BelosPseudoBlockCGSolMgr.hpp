@@ -746,8 +746,9 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
     Teuchos::TimeMonitor slvtimer(*timerSolve_);
 #endif
 
+    bool first_time=true;
     while ( numRHS2Solve > 0 ) {
-      if(genCondEst_ && numRHS2Solve - numCurrRHS <= 0) block_cg_iter->setDoCondEst(true);
+      if(genCondEst_ && first_time) block_cg_iter->setDoCondEst(true);
       else block_cg_iter->setDoCondEst(false);
 
       // Reset the active / converged vectors from this block
@@ -880,6 +881,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
         currIdx.resize( numRHS2Solve );
       }
 
+      first_time=false;
     }// while ( numRHS2Solve > 0 )
 
   }

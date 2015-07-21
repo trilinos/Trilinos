@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
 
     // Check condition estimate
     ST cond = solver.getConditionEstimate();
-    if(condest && cond < Teuchos::ScalarTraits<ST>::zero()) success=false;
+    if(condest && cond < Teuchos::ScalarTraits<ST>::one()) success=false;
     if(proc_verbose)
       std::cout<<"Condition Estimate = "<<cond <<std::endl;
 
