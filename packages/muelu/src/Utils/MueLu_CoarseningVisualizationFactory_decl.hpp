@@ -65,6 +65,34 @@ namespace MueLu {
   class Level;
   //Utility classes used in convex hull algorithm
 
+  class myTriangle
+  {
+    public:
+      myTriangle() : v1(0), v2(0), v3(0) {}
+      myTriangle(int v1in, int v2in, int v3in) : v1(v1in), v2(v2in), v3(v3in) {}
+      ~myTriangle() {}
+      bool operator==(const myTriangle& l)
+      {
+        if(l.v1 == v1 && l.v2 == v2 && l.v3 == v3)
+          return true;
+        return false;
+      }
+      int v1;
+      int v2;
+      int v3;
+  };
+
+  class myVec3
+  {
+    public:
+      myVec3() : x(0), y(0), z(0) {}
+      myVec3(double xin, double yin, double zin) : x(xin), y(yin), z(zin) {}
+      ~myVec3() {}
+      double x;
+      double y;
+      double z;
+  };
+
   /*!
     @class CoarseningVisualizationFactory class.
     @brief Factory for visualization of coarsening using a prolongation operator.
@@ -105,12 +133,29 @@ namespace MueLu {
     //@}
 
   private:
+
+    // move these routines to a common base class for visualization factories?
+    static void doPointCloud(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes);
+    static void doJacks(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const std::vector<LO>& vertex2AggId);
+    static void doConvexHulls2D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const std::vector<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords);
+    static void doConvexHulls3D(std::vector<int>& vertices, std::vector<int>& geomSizes, LO numLocalAggs, LO numFineNodes, const std::vector<bool>& isRoot, const std::vector<LO>& vertex2AggId, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords);
+
+    static myVec3 crossProduct(myVec3 v1, myVec3 v2);
+    static double dotProduct(myVec3 v1, myVec3 v2);
+    static bool isInFront(myVec3 point, myVec3 inPlane, myVec3 n);
+    static double mymagnitude(myVec3 vec);
+    static double distance(myVec3 p1, myVec3 p2);
+    static myVec3 vecSubtract(myVec3 v1, myVec3 v2);
+    static myVec3 getNorm(myVec3 v1, myVec3 v2, myVec3 v3);
+    static double pointDistFromTri(myVec3 point, myVec3 v1, myVec3 v2, myVec3 v3);
+    static std::vector<myTriangle> processTriangle(std::list<myTriangle>& tris, myTriangle tri, std::list<int>& pointsInFront, myVec3& barycenter, const Teuchos::ArrayRCP<const double>& xCoords, const Teuchos::ArrayRCP<const double>& yCoords, const Teuchos::ArrayRCP<const double>& zCoords);
+
     std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
     std::vector<int> makeUnique(std::vector<int>& vertices) const; //!< replaces node indices in vertices with compressed unique indices, and returns list of unique points
 
-    void writeFile_(std::ofstream& fout, std::string styleName, std::vector<int>& vertices, std::vector<int>& geomSizes, std::vector<int>& verticesCoarse, std::vector<int>& geomSizesCoarse) const; //write the local .vtu file with the computed geometry
-    void doPointCloud_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    void doJacks_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
+    //void writeFile_(std::ofstream& fout, std::string styleName, std::vector<int>& vertices, std::vector<int>& geomSizes, std::vector<int>& verticesCoarse, std::vector<int>& geomSizesCoarse) const; //write the local .vtu file with the computed geometry
+    //void doPointCloud_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
+    //void doJacks_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
 
     /*std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
     //Break different viz styles into separate functions for organization:

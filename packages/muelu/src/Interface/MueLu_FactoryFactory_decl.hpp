@@ -395,11 +395,17 @@ namespace MueLu {
         // count how many prolongation factories and how many coarse null space factories have been declared.
         // the numbers must match!
         int numProlongatorFactories = 0;
+        int numPtentFactories = 0;
         int numCoarseNspFactories   = 0;
         for (Teuchos::ParameterList::ConstIterator param = transferFactories->begin(); param != transferFactories->end(); ++param) {
           size_t foundNsp = transferFactories->name(param).find("Nullspace");
           if (foundNsp != std::string::npos && foundNsp == 0 && transferFactories->name(param).length()==10) {
             numCoarseNspFactories++;
+            continue;
+          }
+          size_t foundPtent   = transferFactories->name(param).find("Ptent");
+          if (foundPtent != std::string::npos && foundPtent == 0 && transferFactories->name(param).length()==6) {
+            numPtentFactories++;
             continue;
           }
           size_t foundP   = transferFactories->name(param).find("P");
@@ -409,11 +415,13 @@ namespace MueLu {
           }
         }
         TEUCHOS_TEST_FOR_EXCEPTION(numProlongatorFactories!=numCoarseNspFactories, Exceptions::RuntimeError, "FactoryFactory::BuildToggleP: The user has to provide the same number of prolongator and coarse nullspace factories!");
+        TEUCHOS_TEST_FOR_EXCEPTION(numPtentFactories!=numCoarseNspFactories, Exceptions::RuntimeError, "FactoryFactory::BuildToggleP: The user has to provide the same number of ptent and coarse nullspace factories!");
         TEUCHOS_TEST_FOR_EXCEPTION(numProlongatorFactories < 2, Exceptions::RuntimeError, "FactoryFactory::BuildToggleP: The TogglePFactory needs at least two different prolongation operators. The factories have to be provided using the names P%i and Nullspace %i, where %i denotes a number between 1 and 9.");
 
         // create empty vectors with data
         std::vector<Teuchos::ParameterEntry> prolongatorFactoryNames(numProlongatorFactories);
         std::vector<Teuchos::ParameterEntry> coarseNspFactoryNames(numProlongatorFactories);
+        std::vector<Teuchos::ParameterEntry> ptentFactoryNames(numProlongatorFactories);
 
         for (Teuchos::ParameterList::ConstIterator param = transferFactories->begin(); param != transferFactories->end(); ++param) {
           size_t foundNsp = transferFactories->name(param).find("Nullspace");
@@ -423,10 +431,17 @@ namespace MueLu {
                 coarseNspFactoryNames[number-1] = transferFactories->entry(param);
                 continue;
           }
+          size_t foundPtent   = transferFactories->name(param).find("Ptent");
+          if (foundPtent != std::string::npos && foundPtent == 0 && transferFactories->name(param).length()==6) {
+            int number = atoi(&(transferFactories->name(param).at(5)));
+                TEUCHOS_TEST_FOR_EXCEPTION(number < 1 || number > numPtentFactories, Exceptions::RuntimeError, "FactoryFactory::BuildToggleP: Please use the format Ptent%i with %i an integer between 1 and the maximum number of prolongation operators in TogglePFactory!");
+                ptentFactoryNames[number-1] = transferFactories->entry(param);
+                continue;
+          }
           size_t foundP   = transferFactories->name(param).find("P");
           if (foundP != std::string::npos && foundP == 0 && transferFactories->name(param).length()==2) {
             int number = atoi(&(transferFactories->name(param).at(1)));
-                TEUCHOS_TEST_FOR_EXCEPTION(number < 1 || number > numProlongatorFactories, Exceptions::RuntimeError, "FactoryFactory::BuildToggleP: Please use the format Nullspace%i with %i an integer between 1 and the maximum number of prolongation operators in TogglePFactory!");
+                TEUCHOS_TEST_FOR_EXCEPTION(number < 1 || number > numProlongatorFactories, Exceptions::RuntimeError, "FactoryFactory::BuildToggleP: Please use the format P%i with %i an integer between 1 and the maximum number of prolongation operators in TogglePFactory!");
                 prolongatorFactoryNames[number-1] = transferFactories->entry(param);
                 continue;
           }
@@ -436,6 +451,12 @@ namespace MueLu {
         for (std::vector<Teuchos::ParameterEntry>::const_iterator it = prolongatorFactoryNames.begin(); it != prolongatorFactoryNames.end(); ++it) {
           RCP<const FactoryBase> p = BuildFactory(*it, factoryMapIn, factoryManagersIn);
           factory->AddProlongatorFactory(p);
+        }
+
+        // register all tentative prolongation factories in TogglePFactory
+        for (std::vector<Teuchos::ParameterEntry>::const_iterator it = ptentFactoryNames.begin(); it != ptentFactoryNames.end(); ++it) {
+          RCP<const FactoryBase> p = BuildFactory(*it, factoryMapIn, factoryManagersIn);
+          factory->AddPtentFactory(p);
         }
 
         // register all coarse nullspace factories in TogglePFactory
