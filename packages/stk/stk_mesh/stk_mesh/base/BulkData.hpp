@@ -848,7 +848,8 @@ protected: //functions
   void fill_shared_entities_of_rank(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new);
 
   virtual void internal_resolve_send_ghost_membership();
-  virtual bool should_sort_buckets_by_first_entity_identifier() const;
+  virtual bool should_sort_buckets_by_first_entity_identifier() const { return false; }
+  virtual bool should_sort_faces_by_node_ids() const { return false; }
   void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new); // Mod Mark
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified ); // Mod Mark
 
