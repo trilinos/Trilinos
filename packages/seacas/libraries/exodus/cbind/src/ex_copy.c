@@ -375,6 +375,8 @@ int ex_copy (int in_exoid, int out_exoid)
    update_internal_structs( out_exoid, EX_INQ_FACE_MAP, ex_get_counter_list(EX_FACE_MAP));
    update_internal_structs( out_exoid, EX_INQ_ELEM_MAP, ex_get_counter_list(EX_ELEM_MAP));
 
+   (void)ex_update(out_exoid);
+   
    return(EX_NOERR);
 }
 
