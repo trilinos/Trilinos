@@ -63,7 +63,7 @@ struct compute_face_normals<DeviceType, 2,MRK_LINE2>
 {
   typedef typename DeviceType::execution_space        execution_space;
 
-  typedef Mrk_SkinOnlyMesh<DeviceType, 2>                      mesh_t;
+  typedef Mrk_SurfaceMesh<DeviceType, 2>                      mesh_t;
   typedef typename mesh_t::face_connectivity_data_t     face_data_t;
   typedef typename face_data_t::face_to_nodes_t      face_to_nodes_t;
 
@@ -119,7 +119,7 @@ struct compute_face_normals<DeviceType, 3,MRK_TRI3>
 {
   typedef typename DeviceType::execution_space             execution_space;
 
-  typedef Mrk_SkinOnlyMesh<DeviceType, 3>                           mesh_t;
+  typedef Mrk_SurfaceMesh<DeviceType, 3>                           mesh_t;
   typedef typename mesh_t::face_connectivity_data_t          face_data_t;
   typedef typename face_data_t::face_to_num_nodes_t   face_to_num_nodes_t;
   typedef typename face_data_t::face_to_nodes_t           face_to_nodes_t;
@@ -191,7 +191,7 @@ struct compute_face_normals<DeviceType, 3,MRK_QUAD4>
 {
   typedef typename DeviceType::execution_space             execution_space;
 
-  typedef Mrk_SkinOnlyMesh<DeviceType, 3>                           mesh_t;
+  typedef Mrk_SurfaceMesh<DeviceType, 3>                           mesh_t;
   typedef typename mesh_t::face_connectivity_data_t          face_data_t;
   typedef typename face_data_t::face_to_num_nodes_t   face_to_num_nodes_t;
   typedef typename face_data_t::face_to_nodes_t           face_to_nodes_t;
@@ -264,7 +264,7 @@ struct compute_node_normals_from_faces
 {
   typedef typename DeviceType::execution_space             execution_space;
 
-  typedef Mrk_SkinOnlyMesh<DeviceType, DIM>                              mesh_t;
+  typedef Mrk_SurfaceMesh<DeviceType, DIM>                              mesh_t;
   typedef typename mesh_t::node_connectivity_data_t         node_connectivity_t;
   typedef typename node_connectivity_t::node_to_faces_t       node_to_faces_t;
 
@@ -276,8 +276,8 @@ struct compute_node_normals_from_faces
   normals_mrat    m_face_normals;
   normals_t          m_node_normals;
 
-  compute_node_normals_from_faces(mesh_t skin_mesh, fields_t fields)
-    : m_node_to_faces(skin_mesh.m_node_data.m_node_to_faces)
+  compute_node_normals_from_faces(mesh_t surface_mesh, fields_t fields)
+    : m_node_to_faces(surface_mesh.m_node_data.m_node_to_faces)
     , m_face_normals(fields.m_face_normals)
     , m_node_normals(fields.m_node_normals)
   {

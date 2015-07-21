@@ -54,7 +54,6 @@ template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 Interface<DeviceType, DIM,  FACE_TYPE >::Interface(Morkon_Manager<DeviceType, DIM, FACE_TYPE> * manager)
   : m_manager(manager)
   , m_committed(false)
-  , m_distributed(false)
   , m_sides(std::vector<faces_ids_t>(2))
 {
   m_hs_adapters.resize(2, 0);

@@ -73,7 +73,7 @@ class Interface : public InterfaceBase
 {
   friend  class Morkon_Manager<DeviceType, DIM, FACE_TYPE> ;
 
-  typedef typename DeviceType::execution_space  execution_space;
+  typedef typename DeviceType::execution_space         execution_space;
   typedef Kokkos::View<local_idx_t *, execution_space>     faces_ids_t;
   typedef Kokkos::View<local_idx_t *, execution_space>  faces_ids_dv_t;
 
@@ -89,16 +89,12 @@ public:
   // No more changes via public API after this.
   bool commited() const { return m_committed; }
 
-  // Declare that this is a multi-MPI-rank Interface.  Must be called consistently on all ranks that know about this interface,
-  bool set_distributed();
-
 private:
 
   Interface(Morkon_Manager<DeviceType, DIM, FACE_TYPE> *manager);
 
   Morkon_Manager<DeviceType, DIM, FACE_TYPE>   *m_manager;
   bool                             m_committed;
-  bool                           m_distributed;
   std::vector<faces_ids_t>             m_sides;
 
   std::vector<Interface_HostSideAdapter<DIM> *> m_hs_adapters;
@@ -110,24 +106,24 @@ template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 class Morkon_Manager
 {
   typedef typename DeviceType::execution_space  execution_space;
-  typedef Interface<DeviceType, DIM, FACE_TYPE>   interface_t;
+  typedef Interface<DeviceType, DIM, FACE_TYPE>     interface_t;
   typedef Teuchos::RCP<interface_t>               interface_ptr;
   typedef std::map<int, interface_ptr>         interfaces_map_t;
 
-  typedef Kokkos::View<local_idx_t *[2], execution_space>         faces2interface_t;
-  typedef Kokkos::DualView<local_idx_t *[2], execution_space>  faces2interface_dv_t;
+  typedef Kokkos::View<local_idx_t *[2], execution_space>             faces2interface_t;
+  typedef Kokkos::DualView<local_idx_t *[2], execution_space>      faces2interface_dv_t;
 
-  typedef Mrk_SkinOnlyMesh<DeviceType, DIM>    skin_only_mesh_t;
-  typedef skin_only_mesh_t                local_to_global_idx_t;
-  typedef Mrk_Fields<DeviceType, DIM>                  fields_t;
-  typedef typename fields_t::points_t                  points_t;
+  typedef Mrk_SurfaceMesh<DeviceType, DIM>                               surface_mesh_t;
+  typedef typename surface_mesh_t::local_to_global_idx_t          local_to_global_idx_t;
+  typedef Mrk_Fields<DeviceType, DIM>                                          fields_t;
+  typedef typename fields_t::points_t                                          points_t;
 
-  typedef Mrk_MortarPallets<DeviceType, DIM>   mortar_pallets_t;
+  typedef Mrk_MortarPallets<DeviceType, DIM>                           mortar_pallets_t;
 
-  typedef Kokkos::CrsMatrix<local_idx_t, local_idx_t, DeviceType>         face_interface_mat_t;
-  typedef Kokkos::View<local_idx_t *[3], execution_space>  contact_search_results_t;
-  typedef Kokkos::CrsMatrix<bool, local_idx_t, DeviceType>                    on_boundary_table_t;
-  typedef Kokkos::CrsMatrix<local_idx_t, local_idx_t, DeviceType>             node_support_sets_t;
+  typedef Kokkos::CrsMatrix<local_idx_t, local_idx_t, DeviceType>  face_interface_mat_t;
+  typedef Kokkos::View<local_idx_t *[3], execution_space>      contact_search_results_t;
+  typedef Kokkos::View<bool *, DeviceType>                          on_boundary_table_t;
+  typedef Kokkos::CrsMatrix<local_idx_t, local_idx_t, DeviceType>   node_support_sets_t;
 
 public:
 
@@ -144,7 +140,7 @@ public:
 
   // When data is already on device; called at end of commit_interfaces().
   bool declare_all_interfaces(face_interface_mat_t faces_in_ifcs, 
-                              skin_only_mesh_t dense_idx_mesh,
+                              surface_mesh_t dense_idx_mesh,
                               points_t node_coords,
                               local_to_global_idx_t non_dense_node_ids,
                               on_boundary_table_t boundary_node_table);
@@ -163,8 +159,8 @@ private:
 
   Teuchos::RCP<Tpetra::Map<> >  m_problem_map;
   interfaces_map_t               m_interfaces;
-  skin_only_mesh_t                m_skin_mesh;
-  face_interface_mat_t  m_face_ifc_side_mat;
+  surface_mesh_t               m_surface_mesh;
+  face_interface_mat_t    m_face_ifc_side_mat;
   fields_t                           m_fields;
 
   local_to_global_idx_t  m_non_dense_node_ids;

@@ -93,11 +93,6 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::commit_interfaces()
   for (typename interfaces_map_t::iterator ifcs_i =  m_interfaces.begin(); ifcs_i != m_interfaces.end(); ++ifcs_i)
   {
     Interface<DeviceType,DIM,FACE_TYPE> &interface = *ifcs_i->second;
-
-    if (interface.m_distributed)
-    {
-      return false;
-    }
     interface.m_committed = true;
   }
 
@@ -106,7 +101,7 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::commit_interfaces()
   //
   // As needed, generates and populates
   //   - m_non_dense_node_ids
-  //   - m_skin_mesh
+  //   - m_surface_mesh
   //   - m_fields.m_node_coords
   //   - m_face_ifc_side, the sparce matrix that maps from face_id to its (interface_id, side) pair(s).
   return internalize_interfaces();
@@ -116,13 +111,13 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::commit_interfaces()
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool
 Morkon_Manager<DeviceType, DIM, FACE_TYPE>::declare_all_interfaces(face_interface_mat_t faces_in_ifcs, 
-                                                        skin_only_mesh_t dense_idx_mesh,
+                                                        surface_mesh_t dense_idx_mesh,
                                                         points_t node_coords,
                                                         local_to_global_idx_t non_dense_node_ids,
                                                         on_boundary_table_t boundary_node_table)
 {
-  m_skin_mesh            =      dense_idx_mesh;
-  m_face_ifc_side_mat     =        faces_in_ifcs;
+  m_surface_mesh         =      dense_idx_mesh;
+  m_face_ifc_side_mat    =       faces_in_ifcs;
   m_fields.m_node_coords =         node_coords;
   m_non_dense_node_ids   =  non_dense_node_ids;
   m_is_ifc_boundary_node = boundary_node_table;
@@ -135,7 +130,7 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::mortar_integrate(Tpetra::CrsMat
 {
   typedef Morkon_Manager<DeviceType, DIM, FACE_TYPE> mgr_t;
 
-  // Using the internal SkinOnlyMesh, populate
+  // Using the internal SurfaceMesh, populate
   //   - m_fields.m_node_normals
   //   - m_fields.m_face_normals
   if (!compute_face_and_node_normals())
@@ -208,9 +203,9 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
   // the ifc_ids sorted for each face.  When the face-face searches are done, traverse the
   // lists for the pair to find the matching ifc_id.
 
-  // Thus, gill in the following:
-  face_interface_mat_t         faces_in_ifcs;
-  skin_only_mesh_t              dense_idx_mesh;
+  // Thus, fill in the following:
+  face_interface_mat_t           faces_in_ifcs;
+  surface_mesh_t                dense_idx_mesh;
   points_t                         node_coords;
   local_to_global_idx_t     non_dense_node_ids;
   on_boundary_table_t     is_ifc_boundary_node;
@@ -224,7 +219,7 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
       Interface_HostSideAdapter<DIM> &adapter = *interface.m_hs_adapters[hsa_i];
 
       // Convert the adapter's version of the side to one in terms of the internal face_ids in the
-      // skin_only_mesh, inserting nodes and faces as needed.
+      // surface_mesh, inserting nodes and faces as needed.
       // WRITE ME!
     }
     interface.m_committed = true;
@@ -243,9 +238,9 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_face_and_node_normals()
   // We can make this function provide a useful return value having the implementations
   // do a parallel_reduce with a num_errs reduction variable as argument.
 
-  compute_face_normals<DeviceType, DIM, FACE_TYPE>(m_skin_mesh, m_fields);
+  compute_face_normals<DeviceType, DIM, FACE_TYPE>(m_surface_mesh, m_fields);
 
-  compute_node_normals_from_faces<DeviceType, DIM >(m_skin_mesh, m_fields);
+  compute_node_normals_from_faces<DeviceType, DIM >(m_surface_mesh, m_fields);
 
   return true;
 }
@@ -253,7 +248,7 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_face_and_node_normals()
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::find_possible_contact_face_pairs(contact_search_results_t &)
 {
-  // Implement with a functor over the faces.
+  // Implement with a functor over the faces, followed by a filter that keeps faces in the same interface.
   std::cout << "Need to write :find_possible_contact_face_pairs()" << std::endl;
   return false;
 }
