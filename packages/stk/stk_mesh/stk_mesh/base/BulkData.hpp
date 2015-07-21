@@ -1168,6 +1168,7 @@ private:
   friend class ::stk::mesh::impl::MeshModification;
   friend class ::sierra::Fmwk::EntityCreationOperationList;
   friend class ::stk::mesh::ElemElemGraph;
+  friend class ::stk::mesh::EntityLess;
 
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
