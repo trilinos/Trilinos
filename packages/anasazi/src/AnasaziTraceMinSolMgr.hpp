@@ -101,7 +101,6 @@ class TraceMinSolMgr : public TraceMinBaseSolMgr<ScalarType,MV,OP> {
 
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -174,7 +173,7 @@ TraceMinSolMgr<ScalarType,MV,OP>::TraceMinSolMgr( const Teuchos::RCP<Eigenproble
   this->numBlocks_ = 1;
   this->numRestartBlocks_ = 1;
 
-  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(this->numBlocks_)*this->blockSize_ + this->maxLocked_ > MVText::GetGlobalLength(*this->problem_->getInitVec()),
+  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(this->numBlocks_)*this->blockSize_ + this->maxLocked_ > MVT::GetGlobalLength(*this->problem_->getInitVec()),
          std::invalid_argument,
          "Anasazi::TraceMinSolMgr::constructor(): Potentially impossible orthogonality requests. Reduce basis size or locking size.");
 

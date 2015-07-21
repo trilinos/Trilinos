@@ -95,7 +95,7 @@ public:
       @param[in]          v   is the input vector.
       @param[in]          tol is a tolerance for inexact Hessian application.
   */
-  void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) {
+  void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
     v_->set(v);
     con_->pruneActive(*v_,*xlam_,eps_);
     if ( useSecant_ && secant_ != Teuchos::null ) {

@@ -48,8 +48,8 @@
 #include "Phalanx_Field.hpp"
 
 #include "Panzer_config.hpp"
-#include "Panzer_PointValues.hpp"
-#include "Panzer_BasisValues.hpp"
+#include "Panzer_PointValues2.hpp"
+#include "Panzer_BasisValues2.hpp"
 
 namespace panzer {
     
@@ -59,8 +59,8 @@ PHX_EVALUATOR_CLASS(BasisValues_Evaluator)
   Teuchos::RCP<const panzer::PureBasis> basis;
   
   // is anything other than ScalarT really needed here?
-  BasisValues<ScalarT,PHX::MDField<ScalarT>, PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> > basisValues;
-  PointValues<ScalarT,PHX::MDField<ScalarT> > pointValues;
+  Teuchos::RCP<BasisValues2<ScalarT> > basisValues;
+  PointValues2<ScalarT,PHX::MDField> pointValues;
 
   PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS> orientation;
 

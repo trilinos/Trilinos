@@ -46,7 +46,7 @@
 #include "Tpetra_ConfigDefs.hpp"
 
 // Don't bother compiling anything, or even including anything else,
-// unless OpenMPNode is enabled.
+// unless DoNotUse::OpenMPNode is enabled.
 #if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_KOKKOSCLASSIC_OPENMP)
 
 #include "Tpetra_CrsMatrix_decl.hpp"
@@ -54,7 +54,7 @@
 #include "Tpetra_CrsMatrix_def.hpp"
 
 #define TPETRA_CRSMATRIX_OPENMPNODE_INSTANT( SCALAR, LO, GO ) \
-  TPETRA_CRSMATRIX_INSTANT( SCALAR, LO, GO, KokkosClassic::OpenMPNode )
+  TPETRA_CRSMATRIX_INSTANT( SCALAR, LO, GO, KokkosClassic::DoNotUse::OpenMPNode )
 
 namespace Tpetra {
 

@@ -50,10 +50,11 @@
 
 #include <Teuchos_Utils.hpp>
 
-#include "MueLu_Level.hpp"
 #include "MueLu_Exceptions.hpp"
-#include "MueLu_Monitor.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_Level.hpp"
+#include "MueLu_MasterList.hpp"
+#include "MueLu_Monitor.hpp"
 #include "MueLu_Utilities.hpp"
 
 namespace MueLu {
@@ -62,14 +63,16 @@ namespace MueLu {
  RCP<const ParameterList> RebalanceMapFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
+#define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("repartition: use subcommunicators");
+#undef SET_VALID_ENTRY
+
     // Information about map that is to be rebalanced
-    validParamList->set< std::string >           ("Map name"   , "", "Name of map to rebalanced.");
+    validParamList->set< std::string >           ("Map name"   ,                         "", "Name of map to rebalanced.");
     validParamList->set< RCP<const FactoryBase> >("Map factory", MueLu::NoFactory::getRCP(), "Generating factory of map to be rebalanced.");
 
     // Importer object with rebalancing information
-    validParamList->set< RCP<const FactoryBase> >("Importer",             Teuchos::null, "Factory of the importer object used for the rebalancing");
-
-    validParamList->set< bool >                  ("useSubcomm",              true, "Construct subcommunicators");
+    validParamList->set< RCP<const FactoryBase> >("Importer",                 Teuchos::null, "Factory of the importer object used for the rebalancing");
 
     return validParamList;
   }
@@ -117,7 +120,7 @@ namespace MueLu {
       RCP<Vector> ptv = VectorFactory::Build(rebalanceImporter->getTargetMap());
       ptv->doImport(*pv,*rebalanceImporter,Xpetra::INSERT);
 
-      if (pL.get<bool>("useSubcomm") == true)
+      if (pL.get<bool>("repartition: use subcommunicators") == true)
         ptv->replaceMap(ptv->getMap()->removeEmptyProcesses());
 
       // reconstruct rebalanced partial map

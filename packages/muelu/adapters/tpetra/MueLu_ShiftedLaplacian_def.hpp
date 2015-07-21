@@ -48,6 +48,8 @@
 
 #include "MueLu_ShiftedLaplacian_decl.hpp"
 
+#if defined(HAVE_MUELU_IFPACK2) and defined(HAVE_MUELU_TPETRA)
+
 #include <MueLu_CoalesceDropFactory.hpp>
 #include <MueLu_CoupledAggregationFactory.hpp>
 #include <MueLu_CoupledRBMFactory.hpp>
@@ -297,7 +299,6 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::initialize() {
   else if(Smoother_=="schwarz") {
     precType_ = "SCHWARZ";
     precList_.set("schwarz: overlap level", schwarz_overlap_);
-    precList_.set("schwarz: compute condest", false);
     precList_.set("schwarz: combine mode", schwarz_combinemode_);
     precList_.set("schwarz: use reordering", schwarz_usereorder_);
     precList_.set("schwarz: filter singletons", true);
@@ -449,7 +450,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setupSolver() {
 
   // Define Preconditioner and Operator
   MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>
-		  (Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
+                  (Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
   // Belos Linear Problem
   if(LinearProblem_==Teuchos::null)
     LinearProblem_ = rcp( new LinearProblem );
@@ -487,7 +488,7 @@ int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::solve(const RCP<TM
 // Solve phase
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::multigrid_apply(const RCP<MultiVector> B,
-									       RCP<MultiVector>& X)
+                                                                               RCP<MultiVector>& X)
 {
   // Set left and right hand sides for Belos
   Hierarchy_ -> Iterate(*B, *X, 1, true, 0);
@@ -496,7 +497,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::multigrid_apply(c
 // Solve phase
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::multigrid_apply(const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > B,
-									       RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X)
+                                                                               RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X)
 {
   Teuchos::RCP< Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > XpetraX
     = Teuchos::rcp( new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(X) );
@@ -525,4 +526,6 @@ double ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node>::GetResidual()
 }
 
 #define MUELU_SHIFTEDLAPLACIAN_SHORT
+
+#endif //if defined(HAVE_MUELU_IFPACK2) and defined(HAVE_MUELU_TPETRA)
 #endif // MUELU_SHIFTEDLAPLACIAN_DEF_HPP

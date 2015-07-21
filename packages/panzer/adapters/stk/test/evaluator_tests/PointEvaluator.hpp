@@ -54,7 +54,8 @@
 template <typename ScalarT>
 class PointEvaluation {
 public:
-   virtual void evaluateContainer(const Intrepid::FieldContainer<double> & points,
+   // virtual void evaluateContainer(const Intrepid::FieldContainer<double> & points,
+   virtual void evaluateContainer(const PHX::MDField<ScalarT,panzer::Cell,panzer::IP,panzer::Dim> & points,
                                   PHX::MDField<ScalarT> & field) const = 0;
 };
 

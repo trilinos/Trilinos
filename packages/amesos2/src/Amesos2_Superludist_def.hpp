@@ -120,14 +120,14 @@ namespace Amesos2 {
         matMpiComm.is_null (), std::logic_error, "Amesos2::Superlustdist "
         "constructor: The matrix's communicator is not an MpiComm!");
       TEUCHOS_TEST_FOR_EXCEPTION(
-        matMpiComm->getRawPtrComm ().is_null (), std::logic_error, "Amesos2::"
+        matMpiComm->getRawMpiComm ().is_null (), std::logic_error, "Amesos2::"
         "Superlustdist constructor: The matrix's communicator claims to be a "
         "Teuchos::MpiComm<int>, but its getRawPtrComm() method returns "
         "Teuchos::null!  This means that the underlying MPI_Comm doesn't even "
         "exist, which likely implies that the Teuchos::MpiComm was constructed "
         "incorrectly.  It means something different than if the MPI_Comm were "
         "MPI_COMM_NULL.");
-      MPI_Comm rawMpiComm = (* (matMpiComm->getRawPtrComm ())) ();
+      MPI_Comm rawMpiComm = (* (matMpiComm->getRawMpiComm ())) ();
       data_.mat_comm = rawMpiComm;
       // This looks a bit like ScaLAPACK's grid initialization (which
       // technically takes place in the BLACS, not in ScaLAPACK
@@ -213,7 +213,7 @@ namespace Amesos2 {
     }
 
     // TODO: might only need to initialize if parallel symbolic factorization is requested.
-    const GO indexBase = matrixA_->getRowMap ()->getIndexBase ();
+    const GO indexBase = this->matrixA_->getRowMap ()->getIndexBase ();
     superlu_rowmap_ =
       rcp (new map_type (this->globalNumRows_, myNumRows, indexBase, comm));
 

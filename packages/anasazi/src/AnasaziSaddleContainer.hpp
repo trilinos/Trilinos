@@ -79,7 +79,7 @@ public:
   SaddleContainer<ScalarType, MV> * CloneCopy(const std::vector<int> &index) const;
   SaddleContainer<ScalarType, MV> * CloneViewNonConst(const std::vector<int> &index) const;
   const SaddleContainer<ScalarType, MV> * CloneView(const std::vector<int> &index) const;
-  int GetVecLength() const { return MVT::GetVecLength(*upper_) + lowerRaw_->numRows(); };
+  ptrdiff_t GetGlobalLength() const { return MVT::GetGlobalLength(*upper_) + lowerRaw_->numRows(); };
   int GetNumberVecs() const { return MVT::GetNumberVecs(*upper_); };
   // Update *this with alpha * A * B + beta * (*this)
   void MvTimesMatAddMv(ScalarType alpha, const SaddleContainer<ScalarType,MV> &A,
@@ -260,7 +260,7 @@ SaddleContainer<ScalarType, MV> * SaddleContainer<ScalarType, MV>::CloneViewNonC
   if(!indices_.empty())
   {
     newSC->indices_.resize(index.size());
-    for(int i=0; i<index.size(); i++)
+    for(unsigned int i=0; i<index.size(); i++)
     {
       newSC->indices_[i] = indices_[index[i]];
     }
@@ -288,7 +288,7 @@ const SaddleContainer<ScalarType, MV> * SaddleContainer<ScalarType, MV>::CloneVi
   if(!indices_.empty())
   {
     newSC->indices_.resize(index.size());
-    for(int i=0; i<index.size(); i++)
+    for(unsigned int i=0; i<index.size(); i++)
     {
       newSC->indices_[i] = indices_[index[i]];
     }
@@ -435,7 +435,7 @@ void SaddleContainer<ScalarType, MV>::MvNorm ( std::vector<typename Teuchos::Sca
 {
   // TODO: Make this better
   MvDot(*this,normvec);
-  for(int i=0; i<normvec.size(); i++)
+  for(unsigned int i=0; i<normvec.size(); i++)
     normvec[i] = sqrt(normvec[i]);
 }
 
@@ -542,8 +542,8 @@ public:
   static RCP<SC > CloneCopy( const SC& mv, const std::vector<int>& index )
     { return rcp( const_cast<SC&>(mv).CloneCopy(index) ); }
 
-  static int GetVecLength( const SC& mv )
-    { return mv.GetVecLength(); }
+  static ptrdiff_t GetGlobalLength( const SC& mv )
+    { return mv.GetGlobalLength(); }
 
   static int GetNumberVecs( const SC& mv )
     { return mv.GetNumberVecs(); }
@@ -613,8 +613,8 @@ public:
   static RCP<const SC> CloneView( const SC& mv, const std::vector<int> & index )
     { return rcp( mv.CloneView(index) ); }
 
-  static int GetVecLength( const SC& mv )
-    { return mv.GetVecLength(); }
+  static ptrdiff_t GetGlobalLength( const SC& mv )
+    { return mv.GetGlobalLength(); }
 
   static int GetNumberVecs( const SC& mv )
     { return mv.GetNumberVecs(); }

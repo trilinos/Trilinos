@@ -81,7 +81,7 @@ namespace LOCA {
       //! Constructor
       ModelEvaluatorInterface(
              const Teuchos::RCP<LOCA::GlobalData>& global_data,
-             const Teuchos::RefCountPtr<EpetraExt::ModelEvaluator>& m,
+             const Teuchos::RCP<EpetraExt::ModelEvaluator>& m,
              double perturb = 1.0e-6);
 
       //! Destructor

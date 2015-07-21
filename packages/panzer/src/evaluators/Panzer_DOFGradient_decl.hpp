@@ -51,8 +51,10 @@ namespace panzer {
 //! Interpolates basis DOF values to IP DOF Gradient values
 PHX_EVALUATOR_CLASS(DOFGradient)
   
+  // <cell,point>
   PHX::MDField<ScalarT,Cell,Point> dof_value;
-  PHX::MDField<ScalarT,Cell,Point,Dim> dof_gradient;
+  // <cell,point,dim>
+  PHX::MDField<ScalarT> dof_gradient;
 
   std::string basis_name;
   std::size_t basis_index;

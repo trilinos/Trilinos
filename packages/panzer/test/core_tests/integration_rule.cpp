@@ -45,6 +45,8 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_CellData.hpp"
 #include "Panzer_IntegrationRule.hpp"
 
@@ -52,6 +54,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(integration_rule, volume)
   {
+    PHX::KokkosDeviceSession session;
+    
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Hexahedron<8> >()));
     

@@ -292,6 +292,13 @@ int ex_put_map_param (int   exoid,
     {
       int maxset = num_node_maps > num_elem_maps ? num_node_maps : num_elem_maps;
       int *invalid_ids = malloc(maxset*sizeof(int));
+      if (invalid_ids == NULL) {
+	exerrval = EX_MEMFAIL;
+	sprintf(errmsg,
+		"Error: failed to allocate memory for invalid id storage in file id %d", exoid);
+	ex_err("ex_put_map_param",errmsg,exerrval);
+	return (EX_FATAL);
+      }
       for (i=0; i < maxset; i++) {
 	invalid_ids[i] = EX_INVALID_ID;
       }

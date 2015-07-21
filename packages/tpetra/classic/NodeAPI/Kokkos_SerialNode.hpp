@@ -44,9 +44,9 @@
 
 /// \file Kokkos_SerialNode.hpp
 /// \brief Declaration and definition of the (now DEPRECATED)
-///   KokkosClassic::SerialNode Node type.
-/// \warning KokkosClassic::SerialNode has been DEPRECATED.  For a
-///   Node with comparable intent, please use
+///   KokkosClassic::DoNotUse::SerialNode Node type.
+/// \warning KokkosClassic::DoNotUse::SerialNode has been DEPRECATED.
+///   For a Node with comparable intent, please use
 ///   Kokkos::Compat::KokkosSerialWrapperNode instead.
 
 #include "Kokkos_ConfigDefs.hpp"
@@ -57,15 +57,20 @@
 #ifdef HAVE_TPETRACLASSIC_SERIAL
 #include <Kokkos_StandardNodeMemoryModel.hpp>
 #include "Kokkos_NodeHelpers.hpp"
-
-#ifdef HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
-#  include "KokkosCore_config.h"
-#  ifdef KOKKOS_HAVE_SERIAL
-#    include "Kokkos_Serial.hpp"
-#  endif // KOKKOS_HAVE_SERIAL
-#endif // HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT
+#include <Kokkos_HostSpace.hpp>
 
 namespace KokkosClassic {
+
+/// \namespace DoNotUse
+/// \brief DO NOT USE ANYTHING IN THIS NAMESPACE.
+///
+/// EVERYTHING in this namespace has been DEPRECATED.  Do NOT use
+/// anything in this namespace.  Assume that the namespace itself, or
+/// anything in it, may disappear or change at any time.  We take no
+/// responsibility for backwards compatibility or correctness, for
+/// this namespace or anything in it.  It is not tested; it might not
+/// even build.
+namespace DoNotUse {
 
   /// \brief Node API implementation that uses sequential execution
   ///   for "thread-level parallelism."
@@ -80,6 +85,13 @@ namespace KokkosClassic {
     /// That means we plan to deprecate it with the 11.14 release of
     /// Trilinos, and remove it entirely with the 12.0 release.
     static const bool classic = true;
+
+#ifdef KOKKOS_HAVE_SERIAL
+    typedef Kokkos::Serial execution_space;
+#else
+    typedef typename Kokkos::HostSpace::execution_space execution_space;
+#endif // KOKKOS_HAVE_SERIAL
+    typedef typename Kokkos::HostSpace memory_space;
 
     //! Constructor; sets default parameters.
     SerialNode ();
@@ -123,6 +135,7 @@ namespace KokkosClassic {
     /// See \ref kokkos_node_api "Kokkos Node API"
     static std::string name ();
   };
+} // namespace DoNotUse
 
 #ifdef _MSC_VER
 #  pragma warning(push)
@@ -130,26 +143,30 @@ namespace KokkosClassic {
 #  pragma warning(disable : 4624)
 #endif // _MSC_VER
 
-  template <> class ArrayOfViewsHelper<SerialNode> :
-    public ArrayOfViewsHelperTrivialImpl<SerialNode>
+  template <> class ArrayOfViewsHelper<DoNotUse::SerialNode> :
+    public ArrayOfViewsHelperTrivialImpl<DoNotUse::SerialNode>
   {};
 
 #ifdef _MSC_VER
 #  pragma warning(pop)
 #endif // _MSC_VER
 
+
 } // namespace KokkosClassic
 
-#if defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
+
 namespace Kokkos {
   namespace Compat {
     template <>
-    struct NodeDevice<KokkosClassic::SerialNode> {
+    struct NodeDevice<KokkosClassic::DoNotUse::SerialNode> {
+#if defined (KOKKOS_HAVE_SERIAL)
       typedef Kokkos::Serial type;
+#else
+      typedef Kokkos::HostSpace::execution_space type;
+#endif // defined (KOKKOS_HAVE_SERIAL)
     };
   } // namespace Compat
 } // namespace Kokkos
-#endif // HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT && KOKKOS_HAVE_SERIAL
 
 #endif // HAVE_TPETRACLASSIC_SERIAL
 #endif // KOKKOS_SERIALNODE_HPP_

@@ -4,7 +4,7 @@
   <Parameter name="smoother: type"              type="string"   value="symmetric Gauss-Seidel"/>
   <Parameter name="smoother: sweeps"            type="int"      value="2"/>
   <Parameter name="coarse: type"                type="string"   value="Amesos-KLU"/>
-  <Parameter name="repartition: enable"         type="int"      value="100"/>
+  <Parameter name="repartition: enable"         type="int"      value="1"/>
   <Parameter name="repartition: max min ratio"  type="double"   value="1.2"/>
   <Parameter name="repartition: min per proc"   type="int"      value="1000"/>
 </ParameterList>

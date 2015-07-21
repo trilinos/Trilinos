@@ -49,17 +49,17 @@
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF Div values
-template<typename EvalT, typename Traits>                   
-class DOFDiv : public PHX::EvaluatorWithBaseImpl<Traits>,      
-                public PHX::EvaluatorDerived<EvalT, Traits>  {   
+template<typename EvalT, typename TRAITS>                   
+class DOFDiv : public PHX::EvaluatorWithBaseImpl<TRAITS>,      
+                public PHX::EvaluatorDerived<EvalT, TRAITS>  {   
 public:
 
   DOFDiv(const Teuchos::ParameterList& p);
 
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+                             PHX::FieldManager<TRAITS>& fm);
 
-  void evaluateFields(typename Traits::EvalData d);
+  void evaluateFields(typename TRAITS::EvalData d);
 
 private:
 
@@ -77,18 +77,18 @@ private:
 };
 
 // Specitialization for the Jacobian
-template<typename Traits>                   
-class DOFDiv<panzer::Traits::Jacobian,Traits> : 
-                public PHX::EvaluatorWithBaseImpl<Traits>,      
-                public PHX::EvaluatorDerived<panzer::Traits::Jacobian, Traits>  {   
+template<typename TRAITS>                   
+class DOFDiv<panzer::Traits::Jacobian,TRAITS> : 
+                public PHX::EvaluatorWithBaseImpl<TRAITS>,      
+                public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>  {   
 public:
 
   DOFDiv(const Teuchos::ParameterList& p);
 
-  void postRegistrationSetup(typename Traits::SetupData d,
-                             PHX::FieldManager<Traits>& fm);
+  void postRegistrationSetup(typename TRAITS::SetupData d,
+                             PHX::FieldManager<TRAITS>& fm);
 
-  void evaluateFields(typename Traits::EvalData d);
+  void evaluateFields(typename TRAITS::EvalData d);
 
 private:
 

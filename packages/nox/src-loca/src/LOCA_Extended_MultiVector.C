@@ -70,8 +70,10 @@ LOCA::Extended::MultiVector::MultiVector(
     multiVectorPtrs[i] = source.multiVectorPtrs[i]->clone(type);
 
   // Copy scalars
+
   scalarsPtr =
-    Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(*source.scalarsPtr));
+    Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::Copy,
+                                                             *source.scalarsPtr));
 
   for (int i=0; i<numColumns; i++) {
     extendedVectorPtrs[i] = Teuchos::null;

@@ -207,7 +207,7 @@ namespace Anasazi {
      * Note, for any pointer in \c newstate which directly points to the multivectors in 
      * the solver, the data is not copied.
      */
-    void initialize(BlockKrylovSchurState<ScalarType,MV> state);
+    void initialize(BlockKrylovSchurState<ScalarType,MV>& state);
 
     /*! \brief Initialize the solver with the initial vectors from the eigenproblem
      *  or random data.
@@ -424,7 +424,6 @@ namespace Anasazi {
     // Convenience typedefs
     //
     typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
@@ -717,7 +716,7 @@ namespace Anasazi {
       newsd = blockSize_*numBlocks_+1;
     }
     // check that new size is valid
-    TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(newsd) > MVText::GetGlobalLength(*tmp),std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(newsd) > MVT::GetGlobalLength(*tmp),std::invalid_argument,
         "Anasazi::BlockKrylovSchur::setSize(): maximum basis size is larger than problem dimension.");
 
     ritzValues_.resize(newsd);
@@ -770,7 +769,7 @@ namespace Anasazi {
    */
 
   template <class ScalarType, class MV, class OP>
-  void BlockKrylovSchur<ScalarType,MV,OP>::initialize(BlockKrylovSchurState<ScalarType,MV> newstate)
+  void BlockKrylovSchur<ScalarType,MV,OP>::initialize(BlockKrylovSchurState<ScalarType,MV>& newstate)
   {
     // NOTE: memory has been allocated by setBlockSize(). Use SetBlock below; do not Clone
 
@@ -791,7 +790,7 @@ namespace Anasazi {
 
       // initialize V_,H_, and curDim_
 
-      TEUCHOS_TEST_FOR_EXCEPTION( MVText::GetGlobalLength(*newstate.V) != MVText::GetGlobalLength(*V_),
+      TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetGlobalLength(*newstate.V) != MVT::GetGlobalLength(*V_),
                           std::invalid_argument, errstr );
       if (newstate.V != V_) {
         TEUCHOS_TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < blockSize_,

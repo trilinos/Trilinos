@@ -53,6 +53,7 @@
 #include <algorithm>
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_Field.hpp"
 #include "Phalanx_MDField.hpp"
@@ -83,18 +84,18 @@ namespace PHX {
 
     void registerEvaluator(typename PHX::FieldManager<Traits>::iterator it,
 			   const Teuchos::RCP< PHX::Evaluator<Traits> >& e);
-    
-    template<typename DataT, typename EvalT> 
-    void getFieldData(PHX::Field<DataT>& f);
-    
+        
     template<typename DataT, typename EvalT, 
 	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	     typename Tag4, typename Tag5, typename Tag6, typename Tag7> 
     void getFieldData(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,
 		      Tag6,Tag7>& f);
-    
-    template<typename DataT, typename EvalT> 
-    void getFieldData(const PHX::FieldTag& t, Teuchos::ArrayRCP<DataT>& d);
+        
+    template<typename DataT, typename EvalT, 
+	     typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	     typename Tag4, typename Tag5, typename Tag6, typename Tag7> 
+    void getFieldData(PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,
+		      Tag6,Tag7>& f);
     
     //! Allocates memory for a single evaluation type
     template<typename EvalT>
@@ -111,6 +112,12 @@ namespace PHX {
 
     template<typename EvalT>
     void postEvaluate(typename Traits::PostEvalData d);
+
+    template<typename EvalT>
+    void setKokkosExtendedDataTypeDimensions(const std::vector<PHX::index_size_type>& dims);
+
+    template<typename EvalT>
+    const std::vector<PHX::index_size_type>& getKokkosExtendedDataTypeDimensions() const;
 
     //! Return iterator to first EvaluationContainer
     typename FieldManager::iterator begin();

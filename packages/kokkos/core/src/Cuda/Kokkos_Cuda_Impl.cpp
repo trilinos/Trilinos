@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -112,11 +112,11 @@ bool cuda_launch_blocking()
 
 void cuda_device_synchronize()
 {
-  static const bool launch_blocking = cuda_launch_blocking();
+//  static const bool launch_blocking = cuda_launch_blocking();
 
-  if (!launch_blocking) {
+//  if (!launch_blocking) {
     CUDA_SAFE_CALL( cudaDeviceSynchronize() );
-  }
+//  }
 }
 
 void cuda_internal_error_throw( cudaError e , const char * name, const char * file, const int line )
@@ -481,6 +481,10 @@ void CudaInternal::initialize( int cuda_device_id , int stream_count )
     }
     Kokkos::Impl::throw_runtime_exception( msg.str() );
   }
+
+  // Init the array for used for arbitrarily sized atomics
+  Impl::init_lock_array_cuda_space();
+
 }
 
 //----------------------------------------------------------------------------
@@ -542,6 +546,7 @@ void CudaInternal::finalize()
 {
   if ( 0 != m_scratchSpace || 0 != m_scratchFlags ) {
 
+    lock_array_cuda_space_ptr(true);
     if ( m_stream ) {
       for ( size_type i = 1 ; i < m_streamCount ; ++i ) {
         cudaStreamDestroy( m_stream[i] );

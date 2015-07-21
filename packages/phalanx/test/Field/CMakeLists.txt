@@ -1,46 +1,48 @@
-
+INCLUDE(TribitsAddExecutableAndTest)
+INCLUDE(TribitsCopyFilesToBinaryDir)
 
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR})
 
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/../Utilities)
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  field
-  SOURCES Field.cpp
-  TESTONLYLIBS phalanx_test_utilities
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "Test passed!"
-  )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  mdfield
-  SOURCES MDField.cpp
+  mdfield_compiletime
+  SOURCES MDField_Compiletime.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   TESTONLYLIBS phalanx_test_utilities
-  COMM serial mpi
   NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "Test passed!"
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   mdfield_runtime
-  SOURCES MDField_Runtime.cpp
+  SOURCES MDField_Runtime.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   TESTONLYLIBS phalanx_test_utilities
-  COMM serial mpi
   NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "Test passed!"
   )
 
-IF (NOT Phalanx_ENABLE_COMPILETIME_ARRAY_CHECK)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  mdfield_utilities
+  SOURCES MDField_Utilities.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TESTONLYLIBS phalanx_test_utilities
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  mdfield_simulated_intrepid
+  SOURCES MDField_SimulatedIntrepid.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TESTONLYLIBS phalanx_test_utilities
+  NUM_MPI_PROCS 1
+  )
+
+IF(Phalanx_ENABLE_Intrepid)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    mdfield_simulated_intrepid
-    SOURCES MDField_SimulatedIntrepid.cpp
+    mdfield_intrepid
+    SOURCES MDField_Intrepid.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
     TESTONLYLIBS phalanx_test_utilities
-    COMM serial mpi
     NUM_MPI_PROCS 1
-    PASS_REGULAR_EXPRESSION "Test passed!"
     )
-ENDIF()
+ENDIF(Phalanx_ENABLE_Intrepid)
+
 
 # Will add this test in a later commit
 

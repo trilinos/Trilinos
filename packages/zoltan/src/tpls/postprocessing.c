@@ -189,6 +189,7 @@ Zoltan_Postprocess_Order (ZZ *zz,
 {
   int ierr = ZOLTAN_OK;
   int i;
+  const char *yo = "Zoltan_Postprocess_Order";
 
   /* Ordering */
   /* ParMetis produces the rank vector in Zoltan lingo */
@@ -205,7 +206,7 @@ Zoltan_Postprocess_Order (ZZ *zz,
     }
   }
   else {
-    ZOLTAN_PRINT_WARN(zz->Proc, __func__, "rank is NULL, no data returned");
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "rank is NULL, no data returned");
     ierr = ZOLTAN_WARN;
   }
 

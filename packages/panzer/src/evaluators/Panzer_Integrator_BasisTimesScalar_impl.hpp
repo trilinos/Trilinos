@@ -124,28 +124,39 @@ PHX_POST_REGISTRATION_SETUP(Integrator_BasisTimesScalar,sd,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Integrator_BasisTimesScalar,workset)
 { 
-  for (int i=0; i < residual.size(); ++i)
-    residual[i] = 0.0;
+ // for (int i=0; i < residual.size(); ++i)
+ //   residual[i] = 0.0;
+ //   Irina modified
+  residual.deep_copy(ScalarT(0.0));
 
 #if PANZER_USE_FAST_QUAD
   // do a scaled copy
-  for (int i=0; i < scalar.size(); ++i)
-    tmp[i] = multiplier * scalar[i];
+  // Irina modified
+  // for (int i=0; i < scalar.size(); ++i)
+  //   tmp[i] = multiplier * scalar[i];
+  for (int i=0; i < scalar.dimension(0); ++i)
+    for (int j=0; j < scalar.dimension(1); ++j)
+       tmp(i,j) = multiplier * scalar(i,j);
 
   for (typename std::vector<PHX::MDField<ScalarT,Cell,IP> >::iterator field = field_multipliers.begin();
 	   field != field_multipliers.end(); ++field) {
-    PHX::MDField<ScalarT,Cell,IP> field_data = *field;
+    const PHX::MDField<ScalarT,Cell,IP> & field_data = *field;
 
-    for (int i=0; i < field_data.size(); ++i)
-      tmp[i] *= field_data[i];
+    //Irina modified
+    //for (int i=0; i < field_data.size(); ++i)
+    //  tmp[i] *= field_data[i];
+    for (int i=0; i < scalar.dimension(0); ++i)
+       for (int j=0; j < scalar.dimension(1); ++j)
+          tmp(i,j) = tmp(i,j) * field_data(i,j);
   }
 
-  const Intrepid::FieldContainer<double> & weighted_basis = workset.bases[basis_index]->weighted_basis;
+  // const Intrepid::FieldContainer<double> & weighted_basis = workset.bases[basis_index]->weighted_basis;
+  const BasisValues2<double> & bv = *workset.bases[basis_index];
 
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t basis = 0; basis < num_nodes; ++basis) {
       for (std::size_t qp = 0; qp < num_qp; ++qp) {
-        residual(cell,basis) += tmp(cell,qp)*weighted_basis(cell,basis,qp);
+        residual(cell,basis) += tmp(cell,qp)*bv.weighted_basis_scalar(cell,basis,qp);
       }
     }
   }
@@ -169,9 +180,9 @@ PHX_EVALUATE_FIELDS(Integrator_BasisTimesScalar,workset)
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
+template<typename EvalT, typename TRAITS>
 Teuchos::RCP<Teuchos::ParameterList> 
-Integrator_BasisTimesScalar<EvalT, Traits>::getValidParameters() const
+Integrator_BasisTimesScalar<EvalT, TRAITS>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList);
   p->set<std::string>("Residual Name", "?");

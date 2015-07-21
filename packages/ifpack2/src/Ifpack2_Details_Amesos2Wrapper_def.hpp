@@ -49,7 +49,6 @@
 #include <Teuchos_TypeNameTraits.hpp>
 
 #include <Ifpack2_Heap.hpp>
-#include <Ifpack2_Condest.hpp>
 #include <Ifpack2_LocalFilter.hpp>
 #include <Ifpack2_Details_Amesos2Wrapper.hpp>
 
@@ -62,7 +61,6 @@ template <class MatrixType>
 Amesos2Wrapper<MatrixType>::
 Amesos2Wrapper (const Teuchos::RCP<const row_matrix_type>& A) :
   A_(A),
-  Condest_ (-STM::one ()),
   InitializeTime_ (0.0),
   ComputeTime_ (0.0),
   ApplyTime_ (0.0),
@@ -205,25 +203,6 @@ double Amesos2Wrapper<MatrixType>::getApplyTime () const {
 }
 
 template<class MatrixType>
-typename Amesos2Wrapper<MatrixType>::magnitude_type
-Amesos2Wrapper<MatrixType>::
-computeCondEst (CondestType CT,
-                local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const row_matrix_type>& matrix)
-{
-  if (! isComputed ()) {
-    return -STM::one ();
-  }
-  // NOTE: this is computing the *local* condest
-  if (Condest_ == -STM::one ()) {
-    Condest_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, matrix);
-  }
-  return Condest_;
-}
-
-
-template<class MatrixType>
 void Amesos2Wrapper<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 {
   // It's legal for A to be null; in that case, you may not call
@@ -232,7 +211,6 @@ void Amesos2Wrapper<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_
   // factorization.
   IsInitialized_ = false;
   IsComputed_ = false;
-  Condest_ = -STM::one ();
 
   if (A.is_null ()) {
     A_ = Teuchos::null;
@@ -271,24 +249,18 @@ Amesos2Wrapper<MatrixType>::makeLocalFilter (const Teuchos::RCP<const row_matrix
 
   // If A_ is already a LocalFilter, then use it directly.  This
   // should be the case if RILUK is being used through
-  // AdditiveSchwarz, for example.  There are (unfortunately) two
-  // kinds of LocalFilter, depending on the template parameter, so we
-  // have to test for both.
+  // AdditiveSchwarz, for example.
   RCP<const LocalFilter<row_matrix_type> > A_lf_r =
     rcp_dynamic_cast<const LocalFilter<row_matrix_type> > (A);
   if (! A_lf_r.is_null ()) {
     return rcp_implicit_cast<const row_matrix_type> (A_lf_r);
   }
-  RCP<const LocalFilter<crs_matrix_type> > A_lf_c =
-    rcp_dynamic_cast<const LocalFilter<crs_matrix_type> > (A);
-  if (! A_lf_c.is_null ()) {
-    return rcp_implicit_cast<const row_matrix_type> (A_lf_c);
+  else {
+    // A_'s communicator has more than one process, its row Map and
+    // its column Map differ, and A_ is not a LocalFilter.  Thus, we
+    // have to wrap it in a LocalFilter.
+    return rcp (new LocalFilter<row_matrix_type> (A));
   }
-
-  // A_'s communicator has more than one process, its row Map and
-  // its column Map differ, and A_ is not a LocalFilter.  Thus, we
-  // have to wrap it in a LocalFilter.
-  return rcp (new LocalFilter<row_matrix_type> (A));
 }
 
 
@@ -322,7 +294,6 @@ void Amesos2Wrapper<MatrixType>::initialize ()
     // Clear any previous computations.
     IsInitialized_ = false;
     IsComputed_ = false;
-    Condest_ = -STM::one ();
 
     RCP<const row_matrix_type> A_local = makeLocalFilter (A_);
     TEUCHOS_TEST_FOR_EXCEPTION(

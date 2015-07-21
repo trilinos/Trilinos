@@ -122,8 +122,6 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int i;
-
   // Initialize MPI
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -229,9 +227,20 @@ int main(int argc, char *argv[])
 
 #ifndef HAVE_NOX_EPETRAEXT
     utils.out() << "Cannot use Coloring without package epetraext !!!!" << std::endl;
+    if (verbose) {
+      if(MyPID==0)
+        utils.out() << "\nTimings :\n\tWallTime --> " <<
+          myTimer.WallTime() - startWallTime << " sec."
+          << "\n\tElapsedTime --> " << myTimer.ElapsedTime()
+          << " sec." << std::endl << std::endl;
+    }
     utils.out() << "Test passed!" << std::endl;
-    exit(0);
+    success = true;
+    exit( success ? EXIT_SUCCESS : EXIT_FAILURE );
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 #else
+
     // Create a timer for performance
     Epetra_Time fillTime(Comm);
 
@@ -311,7 +320,7 @@ int main(int argc, char *argv[])
     int NumMyNodes = xMesh.Map().NumMyElements();
     (void) sprintf(file_name, "output.%d_%d",MyPID,timeStep);
     ifp = fopen(file_name, "w");
-    for (i=0; i<NumMyNodes; i++)
+    for (int i=0; i<NumMyNodes; i++)
       fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i,
           xMesh[i], (*soln)[2*i], (*soln)[2*i+1]);
     fclose(ifp);
@@ -346,7 +355,7 @@ int main(int argc, char *argv[])
       // Print solution
       (void) sprintf(file_name, "output.%03d_%05d",MyPID,timeStep);
       ifp = fopen(file_name, "w");
-      for (i=0; i<NumMyNodes; i++)
+      for (int i=0; i<NumMyNodes; i++)
         fprintf(ifp, "%d  %E  %E  %E\n", soln->Map().MinMyGID()+i,
                                      xMesh[i], finalSolution[2*i],
                                      finalSolution[2*i+1]);
@@ -373,10 +382,9 @@ int main(int argc, char *argv[])
     if (verbose) {
       if(MyPID==0)
         utils.out() << "\nTimings :\n\tWallTime --> " <<
-      myTimer.WallTime() - startWallTime << " sec."
-         << "\n\tElapsedTime --> " << myTimer.ElapsedTime()
-         << " sec." << std::endl << std::endl;
-
+          myTimer.WallTime() - startWallTime << " sec."
+          << "\n\tElapsedTime --> " << myTimer.ElapsedTime()
+          << " sec." << std::endl << std::endl;
     }
 
     // Report results

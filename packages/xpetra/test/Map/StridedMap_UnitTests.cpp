@@ -107,119 +107,6 @@ namespace {
   // UNIT TESTS
   //
 
-  // FIXME: invalid constructor tests present a problem at the moment
-  // Specifically, when running in parallel, one of the processors may get an exception,
-  // and exit a constructor, but other processors may be OK until they get to the construction
-  // of the node map, in which they wait indefinitely for the processor that threw.
-
-#ifdef HAVE_TPETRA_DEBUG
-  // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( StridedMap, invalidConstructor1, LO, GO )
-  {
-    typedef Xpetra::StridedMap<LO,GO> M;
-
-    std::cout << "Starting invalidConstructor1" << std::endl;
-
-    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
-    if (clplib == "Tpetra")
-      lib = Xpetra::UseTpetra;
-
-#ifdef __GNUC__
-#warning disabling invalidConstructor1 test
-#endif
-    return;
-
-    // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
-
-    std::vector<size_t> stridedInfo(1,1);
-    // bad constructor calls: (num global elements, index base)
-    TEST_THROW(M map(lib,GSTI,0,stridedInfo,comm), std::invalid_argument);
-    if (numImages > 1) {
-      TEST_THROW(M map(lib,(myImageID == 0 ? GSTI : 0),0,stridedInfo,comm), std::invalid_argument);
-      TEST_THROW(M map(lib,(myImageID == 0 ?  1 : 0),0,stridedInfo,comm), std::invalid_argument);
-      TEST_THROW(M map(lib,0,(myImageID == 0 ? 0 : 1),stridedInfo, comm), std::invalid_argument);
-    }
-    // All procs fail if any proc fails
-    int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-  }
-#endif // HAVE_TPETRA_DEBUG
-
-#ifdef HAVE_TPETRA_DEBUG
-  // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( StridedMap, invalidConstructor2, LO, GO )
-  {
-    typedef Xpetra::StridedMap<LO,GO> M;
-
-    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
-    if (clplib == "Tpetra")
-      lib = Xpetra::UseTpetra;
-
-#ifdef __GNUC__
-#warning disabling invalidConstructor2 test
-#endif
-    return;
-
-    // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
-    std::vector<size_t> stridedInfo(1,1);
-    // bad constructor calls: (num global elements, num local elements, index base)
-    TEST_THROW(M map(lib,1,0,0,stridedInfo, comm),  std::invalid_argument);
-    if (numImages > 1) {
-      TEST_THROW(M map(lib,(myImageID == 0 ? GSTI :  1),0,0,stridedInfo,comm), std::invalid_argument);
-      TEST_THROW(M map(lib,(myImageID == 0 ?  1 :  0),0,0,stridedInfo,comm), std::invalid_argument);
-      TEST_THROW(M map(lib,0,0,(myImageID == 0 ? 0 : 1),stridedInfo,comm), std::invalid_argument);
-    }
-    // All procs fail if any proc fails
-    int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-  }
-#endif // HAVE_TPETRA_DEBUG
-
-#ifdef HAVE_TPETRA_DEBUG
-  // This test will only pass in a debug build of Tpetra (HAVE_TPETRA_DEBUG).
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( StridedMap, invalidConstructor3, LO, GO )
-  {
-    typedef Xpetra::StridedMap<LO,GO> M;
-
-    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
-    if (clplib == "Tpetra")
-      lib = Xpetra::UseTpetra;
-
-#ifdef __GNUC__
-#warning disabling invalidConstructor3 test
-#endif
-    return;
-
-    // create a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const int numImages = comm->getSize();
-    const int myImageID = comm->getRank();
-    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
-    std::vector<size_t> stridedInfo(1,1);
-    // bad constructor calls: (num global, entry list, index base)
-    TEST_THROW(M map(lib, numImages, tuple<GO>(-myImageID), 1,stridedInfo, comm), std::invalid_argument); // GID less than iB
-    if (numImages > 1) {
-      TEST_THROW(M map(lib, 1, tuple<GO>(myImageID+1), 1,stridedInfo, comm), std::invalid_argument);    // nG != sum nL
-      TEST_THROW(M map(lib, (myImageID == 0 ? GSTI :  0),tuple<GO>(myImageID+1),1,stridedInfo, comm), std::invalid_argument);
-      TEST_THROW(M map(lib, 0, tuple<GO>(myImageID+1), (myImageID == 0 ? 0 : 1),stridedInfo, comm), std::invalid_argument);
-    }
-    // All procs fail if any proc fails
-    int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-  }
-#endif // HAVE_TPETRA_DEBUG
-
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( StridedMap, Constructor1, LO, GO )
   {
@@ -628,12 +515,7 @@ namespace {
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#   ifdef HAVE_TPETRA_DEBUG
-  // mfh 20 Feb 2013: The invalidConstructor{1,2,3} tests are now only
-  // valid in a debug build (HAVE_TPETRA_DEBUG).
-#     define UNIT_TEST_GROUP_ORDINAL( LO, GO )                        \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, invalidConstructor1, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, invalidConstructor2, LO, GO ) \
+#   define UNIT_TEST_GROUP_ORDINAL( LO, GO )                        \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor1, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor2, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor3, LO, GO ) \
@@ -642,29 +524,12 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor3, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorOffsetPlusIndexBase, LO, GO )
-      //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, invalidConstructor3, LO, GO )
-#   else
-#     define UNIT_TEST_GROUP_ORDINAL( LO, GO )                        \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor1, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor2, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, Constructor3, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor1, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor2, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructor3, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorWithOffset, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( StridedMap, StridedPartConstructorOffsetPlusIndexBase, LO, GO )
-#   endif // HAVE_TPETRA_DEBUG
 
     UNIT_TEST_GROUP_ORDINAL(int , int)
 
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#   ifdef HAVE_TPETRA_DEBUG
-  // mfh 20 Feb 2013: The invalidConstructor{1,2,3} tests are now only
-  // valid in a debug build (HAVE_TPETRA_DEBUG).
-#     define UNIT_TEST_GROUP_ORDINAL( LO, GO )                        \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, invalidConstructor1, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, invalidConstructor2, LO, GO ) \
+#   define UNIT_TEST_GROUP_ORDINAL( LO, GO )                        \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, Constructor1, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, Constructor2, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, Constructor3, LO, GO ) \
@@ -673,18 +538,6 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, StridedPartConstructor3, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, StridedPartConstructorWithOffset, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, StridedPartConstructorOffsetPlusIndexBase, LO, GO )
-      //JG TODO FAILED: TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, invalidConstructor3, LO, GO )
-#    else
-#     define UNIT_TEST_GROUP_ORDINAL( LO, GO )                        \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, Constructor1, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, Constructor2, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, Constructor3, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, StridedPartConstructor1, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, StridedPartConstructor2, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, StridedPartConstructor3, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, StridedPartConstructorWithOffset, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( StridedMap, StridedPartConstructorOffsetPlusIndexBase, LO, GO )
-#    endif // HAVE_TPETRA_DEBUG
 
     // UNIT_TEST_GROUP_ORDINAL(char , int)
 

@@ -125,7 +125,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, ElemMult, SCALAR, NODE )
 
 #ifdef HAVE_KOKKOSCLASSIC_SERIAL
-  typedef KokkosClassic::SerialNode KokkosClassic_SerialNode;
+  typedef KokkosClassic::DoNotUse::SerialNode KokkosClassic_SerialNode;
 #define UNIT_TEST_SERIALNODE( SCALAR ) \
   ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, KokkosClassic_SerialNode )
 #else
@@ -133,7 +133,7 @@ namespace {
 #endif // HAVE_KOKKOSCLASSIC_SERIAL
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
-  typedef KokkosClassic::TBBNode KokkosClassic_TBBNode;
+  typedef KokkosClassic::DoNotUse::TBBNode KokkosClassic_TBBNode;
 #define UNIT_TEST_TBBNODE(SCALAR) \
   ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, KokkosClassic_TBBNode )
 #else
@@ -141,7 +141,7 @@ namespace {
 #endif
 
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  typedef KokkosClassic::TPINode KokkosClassic_TPINode;
+  typedef KokkosClassic::DoNotUse::TPINode KokkosClassic_TPINode;
 #define UNIT_TEST_TPINODE(SCALAR) \
   ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, KokkosClassic_TPINode )
 #else

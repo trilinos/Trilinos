@@ -47,7 +47,7 @@
 #include "Sacado_UQ_PCE_Traits.hpp"
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_AnalyzeSacadoShape.hpp"
+#include "Kokkos_AnalyzeStokhosShape.hpp"
 #include "Kokkos_View_Utils.hpp"
 #include "Kokkos_View_UQ_PCE_Utils.hpp"
 
@@ -89,14 +89,13 @@ struct ViewSpecialize
 
 //----------------------------------------------------------------------------
 
-template < typename PCEType, typename Device>
+template < typename PCEType >
 struct PCEAllocation;
 
-template < typename Storage, typename Device >
-struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
+template < typename Storage >
+struct PCEAllocation < Sacado::UQ::PCE<Storage> > {
   typedef Sacado::UQ::PCE<Storage> value_type;
   typedef typename Storage::value_type scalar_type;
-  typedef typename Device::memory_space memory_space;
 
   scalar_type * m_scalar_ptr_on_device;
   Kokkos::Impl::AllocationTracker m_tracker;
@@ -105,13 +104,16 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
   PCEAllocation() : m_scalar_ptr_on_device(0), m_tracker() {}
 
   // Allocate scalar_type and value_type arrays
-  template <class LabelType, class ShapeType, class CijkType>
+  template <class ExecSpace, class MemSpace, bool Initialize, class LabelType,
+            class ShapeType, class CijkType>
   inline
   value_type*
   allocate(const LabelType& label,
            const ShapeType& shape,
            const CijkType& cijk,
            const unsigned pce_size) {
+    typedef MemSpace memory_space;
+    typedef ExecSpace execution_space;
 
     // Allocate space for contiguous UQ::PCE values
     // and for UQ::PCE itself.  We do this in one
@@ -121,8 +123,9 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
     // this is the best choice from a locality perspective
     // either.
     const size_t num_vec = Impl::cardinality_count( shape );
+    const size_t count_scalars = num_vec * pce_size;
     const size_t size_scalars =
-      num_vec * pce_size * sizeof(scalar_type);
+      count_scalars * sizeof(scalar_type);
     const size_t size_values =
       num_vec * sizeof(value_type);
     const size_t size = size_scalars + size_values;
@@ -130,6 +133,9 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
     char *data = reinterpret_cast<char*>(m_tracker.alloc_ptr());
     m_scalar_ptr_on_device = (scalar_type *) data;
     value_type * ptr = (value_type *) (data + size_scalars);
+
+    // Initialize data
+    (void) Impl::ViewDefaultConstruct< execution_space , scalar_type , Initialize >( m_scalar_ptr_on_device , count_scalars );
 
     // Construct each UQ::PCE using memory in ptr array,
     // setting pointer to UQ::PCE values from values array
@@ -140,8 +146,10 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
     //   new (p++) value_type(pce_size, sp, false);
     //   sp += pce_size;
     // }
-    parallel_for( num_vec, VectorInit<CijkType>( ptr, m_scalar_ptr_on_device,
-                                                 cijk, pce_size ) );
+    parallel_for( num_vec,
+                  VectorInit<execution_space,CijkType>( ptr,
+                                                        m_scalar_ptr_on_device,
+                                                        cijk, pce_size ) );
 
     return ptr;
   }
@@ -151,6 +159,7 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
   void assign(value_type * ptr) {
     if (ptr != 0) {
       m_scalar_ptr_on_device = ptr->coeff();
+      m_tracker.clear();
     }
     else {
       m_scalar_ptr_on_device = 0;
@@ -158,9 +167,9 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
     }
   }
 
-  template <class CijkType>
+  template <class ExecSpace, class CijkType>
   struct VectorInit {
-    typedef Device device_type;
+    typedef ExecSpace execution_space;
     value_type* p;
     scalar_type* sp;
     CijkType cijk;
@@ -178,8 +187,8 @@ struct PCEAllocation < Sacado::UQ::PCE<Storage>, Device > {
   };
 };
 
-template < typename Storage, typename Device >
-struct PCEAllocation < const Sacado::UQ::PCE<Storage>, Device > {
+template < typename Storage >
+struct PCEAllocation < const Sacado::UQ::PCE<Storage> > {
   typedef Sacado::UQ::PCE<Storage> value_type;
   typedef typename Storage::value_type scalar_type;
 
@@ -189,16 +198,18 @@ struct PCEAllocation < const Sacado::UQ::PCE<Storage>, Device > {
   KOKKOS_INLINE_FUNCTION
   PCEAllocation() : m_scalar_ptr_on_device(0), m_tracker() {}
 
+  // Need assignment operator for const and non-const pce type
   template <typename pce_type>
   KOKKOS_INLINE_FUNCTION
-  PCEAllocation& operator=(const PCEAllocation<pce_type,Device>& rhs) {
+  PCEAllocation& operator=(const PCEAllocation<pce_type>& rhs) {
     m_scalar_ptr_on_device = rhs.m_scalar_ptr_on_device;
     m_tracker = rhs.m_tracker;
     return *this;
   }
 
   // Allocate scalar_type and value_type arrays
-  template <class LabelType, class ShapeType, class CijkType>
+  template <class ExecSpace, class MemSpace, bool Initialize, class LabelType,
+            class ShapeType, class CijkType>
   inline
   value_type*
   allocate(const LabelType& label,
@@ -291,18 +302,17 @@ private:
   typedef Impl::ViewOffset< typename traits::shape_type ,
                             typename traits::array_layout > offset_map_type ;
 
-  typedef Impl::AnalyzeSacadoShape< typename traits::data_type,
+  typedef Impl::AnalyzeStokhosShape< typename traits::data_type,
                                     typename traits::array_layout > analyze_sacado_shape;
 
-  typedef Impl::PCEAllocation<typename traits::value_type,
-                              typename traits::device_type> allocation_type;
+  typedef Impl::PCEAllocation<typename traits::value_type> allocation_type;
 
   typename traits::value_type           * m_ptr_on_device ;
   allocation_type                         m_allocation;
   offset_map_type                         m_offset_map ;
   unsigned                                m_stride ;
   cijk_type                               m_cijk ;  // Sparse 3 tensor
-  typename traits::device_type::size_type m_storage_size ; // Storage size of sacado dimension
+  typename traits::execution_space::size_type m_storage_size ; // Storage size of sacado dimension
   sacado_size_type                        m_sacado_size ; // Size of sacado dimension
   Impl::ViewDataManagement< traits >      m_management ;
   bool                                    m_is_contiguous ;
@@ -365,9 +375,7 @@ public:
                 typename traits::memory_traits > non_const_type ;
 
   // Host mirror
-  typedef View< typename Impl::RebindStokhosStorageDevice<
-                  typename traits::non_const_data_type ,
-                  typename traits::host_mirror_space >::type ,
+  typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
                 typename traits::host_mirror_space ,
                 void > HostMirror ;
@@ -535,6 +543,8 @@ public:
     : m_ptr_on_device(0)
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+      typedef typename traits::execution_space execution_space;
+      typedef typename traits::memory_space memory_space;
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
@@ -545,15 +555,12 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( Alloc::label( prop ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
+        m_allocation.template allocate<execution_space,memory_space,Alloc::Initialize>(
+          Alloc::label( prop ),
+          m_offset_map,
+          m_cijk,
+          m_sacado_size.value );
       m_is_contiguous = true;
-
-      if ( Alloc::Initialize ) {
-        deep_copy( *this , intrinsic_scalar_type() );
-      }
     }
 
   template< class AllocationProperties >
@@ -571,6 +578,8 @@ public:
     : m_ptr_on_device(0)
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+      typedef typename traits::execution_space execution_space;
+      typedef typename traits::memory_space memory_space;
 
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
@@ -581,15 +590,12 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( Alloc::label( prop ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
+        m_allocation.template allocate<execution_space,memory_space,Alloc::Initialize>(
+          Alloc::label( prop ),
+          m_offset_map,
+          m_cijk,
+          m_sacado_size.value );
       m_is_contiguous = true;
-
-      if ( Alloc::Initialize ) {
-        deep_copy( *this , intrinsic_scalar_type() );
-      }
     }
 
   template< class AllocationProperties , typename iType >
@@ -600,6 +606,8 @@ public:
     : m_ptr_on_device(0)
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+      typedef typename traits::execution_space execution_space;
+      typedef typename traits::memory_space memory_space;
 
       const size_t n0 = Rank >= 0 ? n[0] : 0 ;
       const size_t n1 = Rank >= 1 ? n[1] : 0 ;
@@ -618,15 +626,12 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( Alloc::label( prop ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
+        m_allocation.template allocate<execution_space,memory_space,Alloc::Initialize>(
+          Alloc::label( prop ),
+          m_offset_map,
+          m_cijk,
+          m_sacado_size.value );
       m_is_contiguous = true;
-
-      if ( Alloc::Initialize ) {
-        deep_copy( *this , intrinsic_scalar_type() );
-      }
     }
 
   template< class AllocationProperties , typename iType >
@@ -638,6 +643,8 @@ public:
     : m_ptr_on_device(0)
     {
       typedef Impl::ViewAllocProp< traits , AllocationProperties > Alloc ;
+      typedef typename traits::execution_space execution_space;
+      typedef typename traits::memory_space memory_space;
 
       const size_t n0 = Rank >= 0 ? n[0] : 0 ;
       const size_t n1 = Rank >= 1 ? n[1] : 0 ;
@@ -656,15 +663,12 @@ public:
         m_storage_size = m_cijk.dimension();
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
-        m_allocation.allocate( Alloc::label( prop ),
-                               m_offset_map,
-                               m_cijk,
-                               m_sacado_size.value );
+        m_allocation.template allocate<execution_space,memory_space,Alloc::Initialize>(
+          Alloc::label( prop ),
+          m_offset_map,
+          m_cijk,
+          m_sacado_size.value );
       m_is_contiguous = true;
-
-      if ( Alloc::Initialize ) {
-        deep_copy( *this , intrinsic_scalar_type() );
-      }
     }
 
   //------------------------------------
@@ -729,7 +733,95 @@ public:
       m_management.set_unmanaged();
       m_is_contiguous = this->is_data_contiguous();
     }
+  //------------------------------------
+  /** \brief  Constructors for subviews requires following
+   *          type-compatibility condition, enforce via StaticAssert.
+   *
+   *  Impl::is_same< View ,
+   *                 typename Impl::ViewSubview< View<D,A1,A2,A3,Impl::ViewDefault>
+   *                                           , ArgType0 , ArgType1 , ArgType2 , ArgType3
+   *                                           , ArgType4 , ArgType5 , ArgType6 , ArgType7
+   *                 >::type >::value
+   */
+  template< class D , class A1 , class A2 , class A3
+          , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+          , class SubArg4_type , class SubArg5_type , class SubArg6_type , class SubArg7_type
+          >
+  KOKKOS_INLINE_FUNCTION
+  View( const View<D,A1,A2,A3,Impl::ViewPCEContiguous> & src
+      , const SubArg0_type & arg0 , const SubArg1_type & arg1
+      , const SubArg2_type & arg2 , const SubArg3_type & arg3
+      , const SubArg4_type & arg4 , const SubArg5_type & arg5
+      , const SubArg6_type & arg6 , const SubArg7_type & arg7
+      );
 
+  template< class D , class A1 , class A2 , class A3
+          , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+          , class SubArg4_type , class SubArg5_type , class SubArg6_type
+          >
+  KOKKOS_INLINE_FUNCTION
+  View( const View<D,A1,A2,A3,Impl::ViewPCEContiguous> & src
+      , const SubArg0_type & arg0 , const SubArg1_type & arg1
+      , const SubArg2_type & arg2 , const SubArg3_type & arg3
+      , const SubArg4_type & arg4 , const SubArg5_type & arg5
+      , const SubArg6_type & arg6
+      );
+
+  template< class D , class A1 , class A2 , class A3
+          , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+          , class SubArg4_type , class SubArg5_type
+          >
+  KOKKOS_INLINE_FUNCTION
+  View( const View<D,A1,A2,A3,Impl::ViewPCEContiguous> & src
+      , const SubArg0_type & arg0 , const SubArg1_type & arg1
+      , const SubArg2_type & arg2 , const SubArg3_type & arg3
+      , const SubArg4_type & arg4 , const SubArg5_type & arg5
+      );
+
+  template< class D , class A1 , class A2 , class A3
+          , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+          , class SubArg4_type
+          >
+  KOKKOS_INLINE_FUNCTION
+  View( const View<D,A1,A2,A3,Impl::ViewPCEContiguous> & src
+      , const SubArg0_type & arg0 , const SubArg1_type & arg1
+      , const SubArg2_type & arg2 , const SubArg3_type & arg3
+      , const SubArg4_type & arg4
+      );
+
+  template< class D , class A1 , class A2 , class A3
+          , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+          >
+  KOKKOS_INLINE_FUNCTION
+  View( const View<D,A1,A2,A3,Impl::ViewPCEContiguous> & src
+      , const SubArg0_type & arg0 , const SubArg1_type & arg1
+      , const SubArg2_type & arg2 , const SubArg3_type & arg3
+      );
+
+  template< class D , class A1 , class A2 , class A3
+          , class SubArg0_type , class SubArg1_type , class SubArg2_type
+          >
+  KOKKOS_INLINE_FUNCTION
+  View( const View<D,A1,A2,A3,Impl::ViewPCEContiguous> & src
+      , const SubArg0_type & arg0 , const SubArg1_type & arg1
+      , const SubArg2_type & arg2
+      );
+
+  template< class D , class A1 , class A2 , class A3
+          , class SubArg0_type , class SubArg1_type
+          >
+  KOKKOS_INLINE_FUNCTION
+  View( const View<D,A1,A2,A3,Impl::ViewPCEContiguous> & src
+      , const SubArg0_type & arg0 , const SubArg1_type & arg1
+      );
+
+  template< class D , class A1 , class A2 , class A3
+          , class SubArg0_type
+          >
+  KOKKOS_INLINE_FUNCTION
+  View( const View<D,A1,A2,A3,Impl::ViewPCEContiguous> & src
+      , const SubArg0_type & arg0
+      );
   //------------------------------------
   // Is not allocated
 
@@ -1162,8 +1254,8 @@ namespace Impl {
 template< class OutputView , class InputView >
 struct DeepCopyNonContiguous
 {
-  typedef typename OutputView::device_type device_type ;
-  typedef typename device_type::size_type  size_type ;
+  typedef typename OutputView::execution_space execution_space ;
+  typedef typename execution_space::size_type  size_type ;
 
   const OutputView output ;
   const InputView  input ;
@@ -1173,7 +1265,7 @@ struct DeepCopyNonContiguous
     output( arg_out ), input( arg_in )
   {
     parallel_for( output.dimension_0() , *this );
-    device_type::fence();
+    execution_space::fence();
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -1237,11 +1329,11 @@ void deep_copy( const View<DT,DL,DD,DM,Impl::ViewPCEContiguous> & dst ,
 
       typedef View< typename src_type::non_const_data_type ,
                     typename src_type::array_layout ,
-                    typename src_type::device_type > tmp_src_type;
+                    typename src_type::execution_space > tmp_src_type;
       typedef typename tmp_src_type::array_type tmp_src_array_type;
       typedef View< typename dst_type::non_const_data_type ,
                     typename dst_type::array_layout ,
-                    typename dst_type::device_type > tmp_dst_type;
+                    typename dst_type::execution_space > tmp_dst_type;
       typedef typename tmp_dst_type::array_type tmp_dst_array_type;
 
       // Copy src into a contiguous view in src's memory space,
@@ -1324,6 +1416,122 @@ create_mirror( const View<T,L,D,M,Impl::ViewPCEContiguous> & src )
 
 } // namespace Kokkos
 
+namespace Kokkos {
+namespace Impl {
+
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+        , class SubArg4_type , class SubArg5_type , class SubArg6_type , class SubArg7_type
+        >
+struct ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous >
+                  , SubArg0_type , SubArg1_type , SubArg2_type , SubArg3_type
+                  , SubArg4_type , SubArg5_type , SubArg6_type , SubArg7_type >
+{
+private:
+
+  typedef View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous >  SrcViewType ;
+
+  enum { V0 = Impl::is_same< SubArg0_type , void >::value ? 1 : 0 };
+  enum { V1 = Impl::is_same< SubArg1_type , void >::value ? 1 : 0 };
+  enum { V2 = Impl::is_same< SubArg2_type , void >::value ? 1 : 0 };
+  enum { V3 = Impl::is_same< SubArg3_type , void >::value ? 1 : 0 };
+  enum { V4 = Impl::is_same< SubArg4_type , void >::value ? 1 : 0 };
+  enum { V5 = Impl::is_same< SubArg5_type , void >::value ? 1 : 0 };
+  enum { V6 = Impl::is_same< SubArg6_type , void >::value ? 1 : 0 };
+  enum { V7 = Impl::is_same< SubArg7_type , void >::value ? 1 : 0 };
+
+  // The source view rank must be equal to the input argument rank
+  // Once a void argument is encountered all subsequent arguments must be void.
+  enum { InputRank =
+    Impl::StaticAssert<( SrcViewType::rank ==
+                         ( V0 ? 0 : (
+                           V1 ? 1 : (
+                           V2 ? 2 : (
+                           V3 ? 3 : (
+                           V4 ? 4 : (
+                           V5 ? 5 : (
+                           V6 ? 6 : (
+                           V7 ? 7 : 8 ))))))) ))
+                       &&
+                       ( SrcViewType::rank ==
+                         ( 8 - ( V0 + V1 + V2 + V3 + V4 + V5 + V6 + V7 ) ) )
+    >::value ? SrcViewType::rank : 0 };
+
+  enum { R0 = Impl::ViewOffsetRange< SubArg0_type >::is_range ? 1 : 0 };
+  enum { R1 = Impl::ViewOffsetRange< SubArg1_type >::is_range ? 1 : 0 };
+  enum { R2 = Impl::ViewOffsetRange< SubArg2_type >::is_range ? 1 : 0 };
+  enum { R3 = Impl::ViewOffsetRange< SubArg3_type >::is_range ? 1 : 0 };
+  enum { R4 = Impl::ViewOffsetRange< SubArg4_type >::is_range ? 1 : 0 };
+  enum { R5 = Impl::ViewOffsetRange< SubArg5_type >::is_range ? 1 : 0 };
+  enum { R6 = Impl::ViewOffsetRange< SubArg6_type >::is_range ? 1 : 0 };
+  enum { R7 = Impl::ViewOffsetRange< SubArg7_type >::is_range ? 1 : 0 };
+
+  enum { OutputRank = unsigned(R0) + unsigned(R1) + unsigned(R2) + unsigned(R3)
+                    + unsigned(R4) + unsigned(R5) + unsigned(R6) + unsigned(R7) };
+
+  // Reverse
+  enum { R0_rev = 0 == InputRank ? 0u : (
+                  1 == InputRank ? unsigned(R0) : (
+                  2 == InputRank ? unsigned(R1) : (
+                  3 == InputRank ? unsigned(R2) : (
+                  4 == InputRank ? unsigned(R3) : (
+                  5 == InputRank ? unsigned(R4) : (
+                  6 == InputRank ? unsigned(R5) : (
+                  7 == InputRank ? unsigned(R6) : unsigned(R7) ))))))) };
+
+  typedef typename SrcViewType::array_layout  SrcViewLayout ;
+
+  // Choose array layout, attempting to preserve original layout if at all possible.
+  typedef typename Impl::if_c<
+     ( // Same Layout IF
+       // OutputRank 0
+       ( OutputRank == 0 )
+       ||
+       // OutputRank 1 or 2, InputLayout Left, Interval 0
+       // because single stride one or second index has a stride.
+       ( OutputRank <= 2 && R0 && Impl::is_same<SrcViewLayout,LayoutLeft>::value )
+       ||
+       // OutputRank 1 or 2, InputLayout Right, Interval [InputRank-1]
+       // because single stride one or second index has a stride.
+       ( OutputRank <= 2 && R0_rev && Impl::is_same<SrcViewLayout,LayoutRight>::value )
+     ), SrcViewLayout , Kokkos::LayoutStride >::type OutputViewLayout ;
+
+  // Choose data type as a purely dynamic rank array to accomodate a runtime range.
+  typedef typename Impl::if_c< OutputRank == 0 , typename SrcViewType::value_type ,
+          typename Impl::if_c< OutputRank == 1 , typename SrcViewType::value_type *,
+          typename Impl::if_c< OutputRank == 2 , typename SrcViewType::value_type **,
+          typename Impl::if_c< OutputRank == 3 , typename SrcViewType::value_type ***,
+          typename Impl::if_c< OutputRank == 4 , typename SrcViewType::value_type ****,
+          typename Impl::if_c< OutputRank == 5 , typename SrcViewType::value_type *****,
+          typename Impl::if_c< OutputRank == 6 , typename SrcViewType::value_type ******,
+          typename Impl::if_c< OutputRank == 7 , typename SrcViewType::value_type *******,
+                                                 typename SrcViewType::value_type ********
+  >::type >::type >::type >::type >::type >::type >::type >::type  OutputData ;
+
+  // Choose space.
+  // If the source view's template arg1 or arg2 is a space then use it,
+  // otherwise use the source view's execution space.
+
+  typedef typename Impl::if_c< Impl::is_space< SrcArg1Type >::value , SrcArg1Type ,
+          typename Impl::if_c< Impl::is_space< SrcArg2Type >::value , SrcArg2Type , typename SrcViewType::device_type
+  >::type >::type OutputSpace ;
+
+public:
+
+  // If keeping the layout then match non-data type arguments
+  // else keep execution space and memory traits.
+  typedef typename
+    Impl::if_c< Impl::is_same< SrcViewLayout , OutputViewLayout >::value
+              , Kokkos::View< OutputData , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous >
+              , Kokkos::View< OutputData , OutputViewLayout , OutputSpace
+                            , typename SrcViewType::memory_traits
+                            , Impl::ViewPCEContiguous >
+              >::type  type ;
+};
+
+} /* namespace Impl */
+} /* namespace Kokkos */
+
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
@@ -1373,12 +1581,12 @@ public:
  *  This treats Sacado::UQ::PCE as an array.
  */
 template< class StorageType, class Layout >
-struct AnalyzeSacadoShape< Sacado::UQ::PCE< StorageType >, Layout >
+struct AnalyzeStokhosShape< Sacado::UQ::PCE< StorageType >, Layout >
   : Shape< sizeof(Sacado::UQ::PCE< StorageType >) , 0 > // Treat as a scalar
 {
 private:
 
-  typedef AnalyzeSacadoShape< typename StorageType::value_type, Layout > nested ;
+  typedef AnalyzeStokhosShape< typename StorageType::value_type, Layout > nested ;
 
 public:
 
@@ -1998,27 +2206,30 @@ struct ViewAssignment< ViewDefault , ViewPCEContiguous , void >
   }
 };
 
-#if defined( KOKKOS_HAVE_CUDA )
 // Specialization for deep_copy( view, view::value_type ) for Cuda
-template< class T , class L , class M , unsigned Rank >
-struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
+#if defined( KOKKOS_HAVE_CUDA )
+template< class OutputView , unsigned Rank >
+struct ViewFill< OutputView , Rank ,
+                 typename enable_if< is_same< typename OutputView::specialize,
+                                              ViewPCEContiguous >::value &&
+                                     is_same< typename OutputView::execution_space,
+                                              Cuda >::value >::type >
 {
-  typedef View<T,L,Cuda,M,ViewPCEContiguous>         OutputView ;
   typedef typename OutputView::const_value_type      const_value_type ;
   typedef typename OutputView::intrinsic_scalar_type scalar_type ;
-  typedef typename OutputView::device_type           device_type ;
+  typedef typename OutputView::execution_space       execution_space ;
   typedef typename OutputView::size_type             size_type ;
 
   template <unsigned VectorLength>
   struct PCEKernel {
-    typedef typename OutputView::device_type device_type ;
+    typedef typename OutputView::execution_space execution_space ;
     const OutputView output;
     const_value_type input;
 
     PCEKernel( const OutputView & arg_out , const_value_type & arg_in ) :
       output(arg_out), input(arg_in) {}
 
-    typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
+    typedef typename Kokkos::TeamPolicy< execution_space >::member_type team_member ;
     KOKKOS_INLINE_FUNCTION
     void operator()( const team_member & dev ) const
     {
@@ -2046,14 +2257,14 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
 
   template <unsigned VectorLength>
   struct ScalarKernel {
-    typedef typename OutputView::device_type device_type ;
+    typedef typename OutputView::execution_space execution_space ;
     const OutputView  output;
     const scalar_type input;
 
     ScalarKernel( const OutputView & arg_out , const scalar_type & arg_in ) :
       output(arg_out), input(arg_in) {}
 
-    typedef typename Kokkos::TeamPolicy< device_type >::member_type team_member ;
+    typedef typename Kokkos::TeamPolicy< execution_space >::member_type team_member ;
     KOKKOS_INLINE_FUNCTION
     void operator()( const team_member & dev ) const
     {
@@ -2093,7 +2304,7 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
     const size_type n = output.dimension_0();
     const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
     const size_type team_size = rows_per_block * vector_length;
-    Kokkos::TeamPolicy< device_type > config( league_size, team_size );
+    Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
 
     if (input.size() != output.sacado_size() && input.size() != 1)
       Impl::raise_error("ViewFill:  Invalid input value size");
@@ -2103,7 +2314,7 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
         config, ScalarKernel<vector_length>(output, input.fastAccessCoeff(0)) );
     else
       parallel_for( config, PCEKernel<vector_length>(output, input) );
-    device_type::fence();
+    execution_space::fence();
   }
 
   ViewFill( const OutputView & output , const scalar_type & input )
@@ -2120,35 +2331,12 @@ struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
     const size_type n = output.dimension_0();
     const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
     const size_type team_size = rows_per_block * vector_length;
-    Kokkos::TeamPolicy< device_type > config( league_size, team_size );
+    Kokkos::TeamPolicy< execution_space > config( league_size, team_size );
 
     parallel_for( config, ScalarKernel<vector_length>(output, input) );
-    device_type::fence();
+    execution_space::fence();
   }
 
-};
-
-// Specialization for deep_copy( view, view::value_type ) for Cuda
-template< class T , class L , class M , unsigned Rank >
-struct ViewFill< View<T,Cuda,L,M,ViewPCEContiguous> , Rank >
-{
-  typedef View<T,Cuda,L,M,ViewPCEContiguous>         OutputView ;
-  typedef View<T,
-               typename OutputView::array_layout,
-               typename OutputView::device_type,
-               typename OutputView::memory_traits>   OutputViewFull;
-  typedef typename OutputView::const_value_type      const_value_type ;
-  typedef typename OutputView::intrinsic_scalar_type scalar_type ;
-
-  ViewFill( const OutputView & output , const_value_type & input )
-  {
-    ViewFill< OutputViewFull >( output, input );
-  }
-
-  ViewFill( const OutputView & output , const scalar_type & input )
-  {
-    ViewFill< OutputViewFull >( output, input );
-  }
 };
 #endif /* #if defined( KOKKOS_HAVE_CUDA ) */
 
@@ -2158,5 +2346,732 @@ struct ViewFill< View<T,Cuda,L,M,ViewPCEContiguous> , Rank >
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+// Construct subview of a Rank 8 view
+template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+        , class SubArg4_type , class SubArg5_type , class SubArg6_type , class SubArg7_type
+        >
+KOKKOS_INLINE_FUNCTION
+View< DstDataType , DstArg1Type , DstArg2Type , DstArg3Type , Impl::ViewPCEContiguous >::
+View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous > & src
+    , const SubArg0_type & arg0
+    , const SubArg1_type & arg1
+    , const SubArg2_type & arg2
+    , const SubArg3_type & arg3
+    , const SubArg4_type & arg4
+    , const SubArg5_type & arg5
+    , const SubArg6_type & arg6
+    , const SubArg7_type & arg7
+    )
+  : m_ptr_on_device( (typename traits::value_type*) NULL)
+  , m_allocation()
+  , m_offset_map()
+  , m_stride(1)
+  , m_cijk()
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
+  , m_is_contiguous(true)
+{
+  // This constructor can only be used to construct a subview
+  // from the source view.  This type must match the subview type
+  // deduced from the source view and subview arguments.
+
+  typedef Impl::ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous >
+                           , SubArg0_type , SubArg1_type , SubArg2_type , SubArg3_type
+                           , SubArg4_type , SubArg5_type , SubArg6_type , SubArg7_type >
+    ViewSubviewDeduction ;
+
+  enum { is_a_valid_subview_constructor =
+    Impl::StaticAssert<
+      Impl::is_same< View , typename ViewSubviewDeduction::type >::value
+    >::value
+  };
+
+  if ( is_a_valid_subview_constructor ) {
+
+    typedef Impl::ViewOffsetRange< SubArg0_type > R0 ;
+    typedef Impl::ViewOffsetRange< SubArg1_type > R1 ;
+    typedef Impl::ViewOffsetRange< SubArg2_type > R2 ;
+    typedef Impl::ViewOffsetRange< SubArg3_type > R3 ;
+    typedef Impl::ViewOffsetRange< SubArg4_type > R4 ;
+    typedef Impl::ViewOffsetRange< SubArg5_type > R5 ;
+    typedef Impl::ViewOffsetRange< SubArg6_type > R6 ;
+    typedef Impl::ViewOffsetRange< SubArg7_type > R7 ;
+
+    // 'assign_subview' returns whether the subview offset_map
+    // introduces noncontiguity in the view.
+    const bool introduce_noncontiguity =
+      m_offset_map.assign_subview( src.m_offset_map
+                                 , R0::dimension( src.m_offset_map.N0 , arg0 )
+                                 , R1::dimension( src.m_offset_map.N1 , arg1 )
+                                 , R2::dimension( src.m_offset_map.N2 , arg2 )
+                                 , R3::dimension( src.m_offset_map.N3 , arg3 )
+                                 , R4::dimension( src.m_offset_map.N4 , arg4 )
+                                 , R5::dimension( src.m_offset_map.N5 , arg5 )
+                                 , R6::dimension( src.m_offset_map.N6 , arg6 )
+                                 , R7::dimension( src.m_offset_map.N7 , arg7 )
+                                 );
+
+    if ( m_offset_map.capacity() ) {
+
+      m_management = src.m_management ;
+
+      if ( introduce_noncontiguity ) m_management.set_noncontiguous();
+
+      m_ptr_on_device = src.m_ptr_on_device +
+                        src.m_offset_map( R0::begin( arg0 )
+                                        , R1::begin( arg1 )
+                                        , R2::begin( arg2 )
+                                        , R3::begin( arg3 )
+                                        , R4::begin( arg4 )
+                                        , R5::begin( arg5 )
+                                        , R6::begin( arg6 )
+                                        , R7::begin( arg7 ) );
+      m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , R1::begin( arg1 )
+                        , R2::begin( arg2 )
+                        , R3::begin( arg3 )
+                        , R4::begin( arg4 )
+                        , R5::begin( arg5 )
+                        , R6::begin( arg6 )
+                        , R7::begin( arg7 ) ) *
+        src.m_storage_size ;
+      m_sacado_size = src.m_sacado_size;
+      m_storage_size = src.m_storage_size;
+      m_stride = src.m_stride;
+      m_is_contiguous = src.m_is_contiguous;
+      m_cijk = src.m_cijk;
+    }
+  }
+}
+
+// Construct subview of a Rank 7 view
+template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+        , class SubArg4_type , class SubArg5_type , class SubArg6_type
+        >
+KOKKOS_INLINE_FUNCTION
+View< DstDataType , DstArg1Type , DstArg2Type , DstArg3Type , Impl::ViewPCEContiguous >::
+View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous > & src
+    , const SubArg0_type & arg0
+    , const SubArg1_type & arg1
+    , const SubArg2_type & arg2
+    , const SubArg3_type & arg3
+    , const SubArg4_type & arg4
+    , const SubArg5_type & arg5
+    , const SubArg6_type & arg6
+    )
+  : m_ptr_on_device( (typename traits::value_type*) NULL)
+  , m_allocation()
+  , m_offset_map()
+  , m_stride(1)
+  , m_cijk()
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
+  , m_is_contiguous(true)
+{
+  // This constructor can only be used to construct a subview
+  // from the source view.  This type must match the subview type
+  // deduced from the source view and subview arguments.
+
+  typedef Impl::ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous >
+                           , SubArg0_type , SubArg1_type , SubArg2_type , SubArg3_type
+                           , SubArg4_type , SubArg5_type , SubArg6_type , void >
+    ViewSubviewDeduction ;
+
+  enum { is_a_valid_subview_constructor =
+    Impl::StaticAssert<
+      Impl::is_same< View , typename ViewSubviewDeduction::type >::value
+    >::value
+  };
+
+  if ( is_a_valid_subview_constructor ) {
+
+    typedef Impl::ViewOffsetRange< SubArg0_type > R0 ;
+    typedef Impl::ViewOffsetRange< SubArg1_type > R1 ;
+    typedef Impl::ViewOffsetRange< SubArg2_type > R2 ;
+    typedef Impl::ViewOffsetRange< SubArg3_type > R3 ;
+    typedef Impl::ViewOffsetRange< SubArg4_type > R4 ;
+    typedef Impl::ViewOffsetRange< SubArg5_type > R5 ;
+    typedef Impl::ViewOffsetRange< SubArg6_type > R6 ;
+
+    // 'assign_subview' returns whether the subview offset_map
+    // introduces noncontiguity in the view.
+    const bool introduce_noncontiguity =
+      m_offset_map.assign_subview( src.m_offset_map
+                                 , R0::dimension( src.m_offset_map.N0 , arg0 )
+                                 , R1::dimension( src.m_offset_map.N1 , arg1 )
+                                 , R2::dimension( src.m_offset_map.N2 , arg2 )
+                                 , R3::dimension( src.m_offset_map.N3 , arg3 )
+                                 , R4::dimension( src.m_offset_map.N4 , arg4 )
+                                 , R5::dimension( src.m_offset_map.N5 , arg5 )
+                                 , R6::dimension( src.m_offset_map.N6 , arg6 )
+                                 , 0
+                                 );
+
+    if ( m_offset_map.capacity() ) {
+
+      m_management = src.m_management ;
+
+      if ( introduce_noncontiguity ) m_management.set_noncontiguous();
+
+      m_ptr_on_device = src.m_ptr_on_device +
+                        src.m_offset_map( R0::begin( arg0 )
+                                        , R1::begin( arg1 )
+                                        , R2::begin( arg2 )
+                                        , R3::begin( arg3 )
+                                        , R4::begin( arg4 )
+                                        , R5::begin( arg5 )
+                                        , R6::begin( arg6 )
+                                        , 0 );
+      m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , R1::begin( arg1 )
+                        , R2::begin( arg2 )
+                        , R3::begin( arg3 )
+                        , R4::begin( arg4 )
+                        , R5::begin( arg5 )
+                        , R6::begin( arg6 )
+                        , 0 ) *
+        src.m_storage_size ;
+      m_sacado_size = src.m_sacado_size;
+      m_storage_size = src.m_storage_size;
+      m_stride = src.m_stride;
+      m_is_contiguous = src.m_is_contiguous;
+      m_cijk = src.m_cijk;
+    }
+  }
+}
+
+// Construct subview of a Rank 6 view
+template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+        , class SubArg4_type , class SubArg5_type
+        >
+KOKKOS_INLINE_FUNCTION
+View< DstDataType , DstArg1Type , DstArg2Type , DstArg3Type , Impl::ViewPCEContiguous >::
+View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous > & src
+    , const SubArg0_type & arg0
+    , const SubArg1_type & arg1
+    , const SubArg2_type & arg2
+    , const SubArg3_type & arg3
+    , const SubArg4_type & arg4
+    , const SubArg5_type & arg5
+    )
+  : m_ptr_on_device( (typename traits::value_type*) NULL)
+  , m_allocation()
+  , m_offset_map()
+  , m_stride(1)
+  , m_cijk()
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
+  , m_is_contiguous(true)
+{
+  // This constructor can only be used to construct a subview
+  // from the source view.  This type must match the subview type
+  // deduced from the source view and subview arguments.
+
+  typedef Impl::ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous >
+                           , SubArg0_type , SubArg1_type , SubArg2_type , SubArg3_type
+                           , SubArg4_type , SubArg5_type , void , void >
+    ViewSubviewDeduction ;
+
+  enum { is_a_valid_subview_constructor =
+    Impl::StaticAssert<
+      Impl::is_same< View , typename ViewSubviewDeduction::type >::value
+    >::value
+  };
+
+  if ( is_a_valid_subview_constructor ) {
+
+    typedef Impl::ViewOffsetRange< SubArg0_type > R0 ;
+    typedef Impl::ViewOffsetRange< SubArg1_type > R1 ;
+    typedef Impl::ViewOffsetRange< SubArg2_type > R2 ;
+    typedef Impl::ViewOffsetRange< SubArg3_type > R3 ;
+    typedef Impl::ViewOffsetRange< SubArg4_type > R4 ;
+    typedef Impl::ViewOffsetRange< SubArg5_type > R5 ;
+
+    // 'assign_subview' returns whether the subview offset_map
+    // introduces noncontiguity in the view.
+    const bool introduce_noncontiguity =
+      m_offset_map.assign_subview( src.m_offset_map
+                                 , R0::dimension( src.m_offset_map.N0 , arg0 )
+                                 , R1::dimension( src.m_offset_map.N1 , arg1 )
+                                 , R2::dimension( src.m_offset_map.N2 , arg2 )
+                                 , R3::dimension( src.m_offset_map.N3 , arg3 )
+                                 , R4::dimension( src.m_offset_map.N4 , arg4 )
+                                 , R5::dimension( src.m_offset_map.N5 , arg5 )
+                                 , 0
+                                 , 0
+                                 );
+
+    if ( m_offset_map.capacity() ) {
+
+      m_management = src.m_management ;
+
+      if ( introduce_noncontiguity ) m_management.set_noncontiguous();
+
+      m_ptr_on_device = src.m_ptr_on_device +
+                        src.m_offset_map( R0::begin( arg0 )
+                                        , R1::begin( arg1 )
+                                        , R2::begin( arg2 )
+                                        , R3::begin( arg3 )
+                                        , R4::begin( arg4 )
+                                        , R5::begin( arg5 )
+                                        , 0
+                                        , 0 );
+      m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , R1::begin( arg1 )
+                        , R2::begin( arg2 )
+                        , R3::begin( arg3 )
+                        , R4::begin( arg4 )
+                        , R5::begin( arg5 )
+                        , 0
+                        , 0 ) *
+        src.m_storage_size ;
+      m_sacado_size = src.m_sacado_size;
+      m_storage_size = src.m_storage_size;
+      m_stride = src.m_stride;
+      m_is_contiguous = src.m_is_contiguous;
+      m_cijk = src.m_cijk;
+    }
+  }
+}
+
+// Construct subview of a Rank 5 view
+template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+        , class SubArg4_type
+        >
+KOKKOS_INLINE_FUNCTION
+View< DstDataType , DstArg1Type , DstArg2Type , DstArg3Type , Impl::ViewPCEContiguous >::
+View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous > & src
+    , const SubArg0_type & arg0
+    , const SubArg1_type & arg1
+    , const SubArg2_type & arg2
+    , const SubArg3_type & arg3
+    , const SubArg4_type & arg4
+    )
+  : m_ptr_on_device( (typename traits::value_type*) NULL)
+  , m_allocation()
+  , m_offset_map()
+  , m_stride(1)
+  , m_cijk()
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
+  , m_is_contiguous(true)
+{
+  // This constructor can only be used to construct a subview
+  // from the source view.  This type must match the subview type
+  // deduced from the source view and subview arguments.
+
+  typedef Impl::ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous >
+                           , SubArg0_type , SubArg1_type , SubArg2_type , SubArg3_type
+                           , SubArg4_type , void , void , void >
+    ViewSubviewDeduction ;
+
+  enum { is_a_valid_subview_constructor =
+    Impl::StaticAssert<
+      Impl::is_same< View , typename ViewSubviewDeduction::type >::value
+    >::value
+  };
+
+  if ( is_a_valid_subview_constructor ) {
+
+    typedef Impl::ViewOffsetRange< SubArg0_type > R0 ;
+    typedef Impl::ViewOffsetRange< SubArg1_type > R1 ;
+    typedef Impl::ViewOffsetRange< SubArg2_type > R2 ;
+    typedef Impl::ViewOffsetRange< SubArg3_type > R3 ;
+    typedef Impl::ViewOffsetRange< SubArg4_type > R4 ;
+
+    // 'assign_subview' returns whether the subview offset_map
+    // introduces noncontiguity in the view.
+    const bool introduce_noncontiguity =
+      m_offset_map.assign_subview( src.m_offset_map
+                                 , R0::dimension( src.m_offset_map.N0 , arg0 )
+                                 , R1::dimension( src.m_offset_map.N1 , arg1 )
+                                 , R2::dimension( src.m_offset_map.N2 , arg2 )
+                                 , R3::dimension( src.m_offset_map.N3 , arg3 )
+                                 , R4::dimension( src.m_offset_map.N4 , arg4 )
+                                 , 0
+                                 , 0
+                                 , 0
+                                 );
+
+    if ( m_offset_map.capacity() ) {
+
+      m_management = src.m_management ;
+
+      if ( introduce_noncontiguity ) m_management.set_noncontiguous();
+
+      m_ptr_on_device = src.m_ptr_on_device +
+                        src.m_offset_map( R0::begin( arg0 )
+                                        , R1::begin( arg1 )
+                                        , R2::begin( arg2 )
+                                        , R3::begin( arg3 )
+                                        , R4::begin( arg4 )
+                                        , 0
+                                        , 0
+                                        , 0 );
+      m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , R1::begin( arg1 )
+                        , R2::begin( arg2 )
+                        , R3::begin( arg3 )
+                        , R4::begin( arg4 )
+                        , 0
+                        , 0
+                        , 0 ) *
+        src.m_storage_size ;
+      m_sacado_size = src.m_sacado_size;
+      m_storage_size = src.m_storage_size;
+      m_stride = src.m_stride;
+      m_is_contiguous = src.m_is_contiguous;
+      m_cijk = src.m_cijk;
+    }
+  }
+}
+
+// Construct subview of a Rank 4 view
+template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type , class SubArg1_type , class SubArg2_type , class SubArg3_type
+        >
+KOKKOS_INLINE_FUNCTION
+View< DstDataType , DstArg1Type , DstArg2Type , DstArg3Type , Impl::ViewPCEContiguous >::
+View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous > & src
+    , const SubArg0_type & arg0
+    , const SubArg1_type & arg1
+    , const SubArg2_type & arg2
+    , const SubArg3_type & arg3
+    )
+  : m_ptr_on_device( (typename traits::value_type*) NULL)
+  , m_allocation()
+  , m_offset_map()
+  , m_stride(1)
+  , m_cijk()
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
+  , m_is_contiguous(true)
+{
+  // This constructor can only be used to construct a subview
+  // from the source view.  This type must match the subview type
+  // deduced from the source view and subview arguments.
+
+  typedef Impl::ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous >
+                           , SubArg0_type , SubArg1_type , SubArg2_type , SubArg3_type
+                           , void , void , void , void >
+    ViewSubviewDeduction ;
+
+  enum { is_a_valid_subview_constructor =
+    Impl::StaticAssert<
+      Impl::is_same< View , typename ViewSubviewDeduction::type >::value
+    >::value
+  };
+
+  if ( is_a_valid_subview_constructor ) {
+
+    typedef Impl::ViewOffsetRange< SubArg0_type > R0 ;
+    typedef Impl::ViewOffsetRange< SubArg1_type > R1 ;
+    typedef Impl::ViewOffsetRange< SubArg2_type > R2 ;
+    typedef Impl::ViewOffsetRange< SubArg3_type > R3 ;
+
+    // 'assign_subview' returns whether the subview offset_map
+    // introduces noncontiguity in the view.
+    const bool introduce_noncontiguity =
+      m_offset_map.assign_subview( src.m_offset_map
+                                 , R0::dimension( src.m_offset_map.N0 , arg0 )
+                                 , R1::dimension( src.m_offset_map.N1 , arg1 )
+                                 , R2::dimension( src.m_offset_map.N2 , arg2 )
+                                 , R3::dimension( src.m_offset_map.N3 , arg3 )
+                                 , 0
+                                 , 0
+                                 , 0
+                                 , 0
+                                 );
+
+    if ( m_offset_map.capacity() ) {
+
+      m_management = src.m_management ;
+
+      if ( introduce_noncontiguity ) m_management.set_noncontiguous();
+
+      m_ptr_on_device = src.m_ptr_on_device +
+                        src.m_offset_map( R0::begin( arg0 )
+                                        , R1::begin( arg1 )
+                                        , R2::begin( arg2 )
+                                        , R3::begin( arg3 )
+                                        , 0
+                                        , 0
+                                        , 0
+                                        , 0 );
+      m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , R1::begin( arg1 )
+                        , R2::begin( arg2 )
+                        , R3::begin( arg3 )
+                        , 0
+                        , 0
+                        , 0
+                        , 0 ) *
+        src.m_storage_size ;
+      m_sacado_size = src.m_sacado_size;
+      m_storage_size = src.m_storage_size;
+      m_stride = src.m_stride;
+      m_is_contiguous = src.m_is_contiguous;
+      m_cijk = src.m_cijk;
+    }
+  }
+}
+
+// Construct subview of a Rank 3 view
+template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type , class SubArg1_type , class SubArg2_type
+        >
+KOKKOS_INLINE_FUNCTION
+View< DstDataType , DstArg1Type , DstArg2Type , DstArg3Type , Impl::ViewPCEContiguous >::
+View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous > & src
+    , const SubArg0_type & arg0
+    , const SubArg1_type & arg1
+    , const SubArg2_type & arg2
+    )
+  : m_ptr_on_device( (typename traits::value_type*) NULL)
+  , m_allocation()
+  , m_offset_map()
+  , m_stride(1)
+  , m_cijk()
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
+  , m_is_contiguous(true)
+{
+  // This constructor can only be used to construct a subview
+  // from the source view.  This type must match the subview type
+  // deduced from the source view and subview arguments.
+
+  typedef Impl::ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous >
+                           , SubArg0_type , SubArg1_type , SubArg2_type , void , void , void , void , void >
+    ViewSubviewDeduction ;
+
+  enum { is_a_valid_subview_constructor =
+    Impl::StaticAssert<
+      Impl::is_same< View , typename ViewSubviewDeduction::type >::value
+    >::value
+  };
+
+  if ( is_a_valid_subview_constructor ) {
+
+    typedef Impl::ViewOffsetRange< SubArg0_type > R0 ;
+    typedef Impl::ViewOffsetRange< SubArg1_type > R1 ;
+    typedef Impl::ViewOffsetRange< SubArg2_type > R2 ;
+
+    // 'assign_subview' returns whether the subview offset_map
+    // introduces noncontiguity in the view.
+    const bool introduce_noncontiguity =
+      m_offset_map.assign_subview( src.m_offset_map
+                                 , R0::dimension( src.m_offset_map.N0 , arg0 )
+                                 , R1::dimension( src.m_offset_map.N1 , arg1 )
+                                 , R2::dimension( src.m_offset_map.N2 , arg2 )
+                                 , 0 , 0 , 0 , 0 , 0);
+
+    if ( m_offset_map.capacity() ) {
+
+      m_management = src.m_management ;
+
+      if ( introduce_noncontiguity ) m_management.set_noncontiguous();
+
+      m_ptr_on_device = src.m_ptr_on_device +
+                        src.m_offset_map( R0::begin( arg0 )
+                                        , R1::begin( arg1 )
+                                        , R2::begin( arg2 )
+                                        , 0 , 0 , 0 , 0 , 0 );
+      m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , R1::begin( arg1 )
+                        , R2::begin( arg2 )
+                        , 0 , 0 , 0 , 0 , 0 ) *
+        src.m_storage_size ;
+      m_sacado_size = src.m_sacado_size;
+      m_storage_size = src.m_storage_size;
+      m_stride = src.m_stride;
+      m_is_contiguous = src.m_is_contiguous;
+      m_cijk = src.m_cijk;
+    }
+  }
+}
+
+// Construct subview of a Rank 2 view
+template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type , class SubArg1_type
+        >
+KOKKOS_INLINE_FUNCTION
+View< DstDataType , DstArg1Type , DstArg2Type , DstArg3Type , Impl::ViewPCEContiguous >::
+View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous > & src
+    , const SubArg0_type & arg0
+    , const SubArg1_type & arg1
+    )
+  : m_ptr_on_device( (typename traits::value_type*) NULL)
+  , m_allocation()
+  , m_offset_map()
+  , m_stride(1)
+  , m_cijk()
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
+  , m_is_contiguous(true)
+{
+  // This constructor can only be used to construct a subview
+  // from the source view.  This type must match the subview type
+  // deduced from the source view and subview arguments.
+
+  typedef Impl::ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous >
+                           , SubArg0_type , SubArg1_type , void , void , void , void , void , void >
+    ViewSubviewDeduction ;
+
+  enum { is_a_valid_subview_constructor =
+    Impl::StaticAssert<
+      Impl::is_same< View , typename ViewSubviewDeduction::type >::value
+    >::value
+  };
+
+  if ( is_a_valid_subview_constructor ) {
+
+    typedef Impl::ViewOffsetRange< SubArg0_type > R0 ;
+    typedef Impl::ViewOffsetRange< SubArg1_type > R1 ;
+
+    // 'assign_subview' returns whether the subview offset_map
+    // introduces noncontiguity in the view.
+    const bool introduce_noncontiguity =
+      m_offset_map.assign_subview( src.m_offset_map
+                                 , R0::dimension( src.m_offset_map.N0 , arg0 )
+                                 , R1::dimension( src.m_offset_map.N1 , arg1 )
+                                 , 0 , 0 , 0 , 0 , 0 , 0 );
+
+    if ( m_offset_map.capacity() ) {
+
+      m_management = src.m_management ;
+
+      if ( introduce_noncontiguity ) m_management.set_noncontiguous();
+
+      m_ptr_on_device = src.m_ptr_on_device +
+                        src.m_offset_map( R0::begin( arg0 )
+                                        , R1::begin( arg1 )
+                                        , 0 , 0 , 0 , 0 , 0 , 0 );
+      m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , R1::begin( arg1 )
+                        , 0 , 0 , 0 , 0 , 0 , 0 ) *
+        src.m_storage_size ;
+      m_sacado_size = src.m_sacado_size;
+      m_storage_size = src.m_storage_size;
+      m_stride = src.m_stride;
+      m_is_contiguous = src.m_is_contiguous;
+      m_cijk = src.m_cijk;
+    }
+  }
+}
+
+// Construct subview of a Rank 1 view
+template< class DstDataType , class DstArg1Type , class DstArg2Type , class DstArg3Type >
+template< class SrcDataType , class SrcArg1Type , class SrcArg2Type , class SrcArg3Type
+        , class SubArg0_type
+        >
+KOKKOS_INLINE_FUNCTION
+View< DstDataType , DstArg1Type , DstArg2Type , DstArg3Type , Impl::ViewPCEContiguous >::
+View( const View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous > & src
+    , const SubArg0_type & arg0
+    )
+  : m_ptr_on_device( (typename traits::value_type*) NULL)
+  , m_allocation()
+  , m_offset_map()
+  , m_stride(1)
+  , m_cijk()
+  , m_storage_size(0)
+  , m_sacado_size(0)
+  , m_management()
+  , m_is_contiguous(true)
+{
+  // This constructor can only be used to construct a subview
+  // from the source view.  This type must match the subview type
+  // deduced from the source view and subview arguments.
+
+  typedef Impl::ViewSubview< View< SrcDataType , SrcArg1Type , SrcArg2Type , SrcArg3Type , Impl::ViewPCEContiguous >
+                           , SubArg0_type , void , void , void , void , void , void , void >
+    ViewSubviewDeduction ;
+
+  enum { is_a_valid_subview_constructor =
+    Impl::StaticAssert<
+      Impl::is_same< View , typename ViewSubviewDeduction::type >::value
+    >::value
+  };
+
+  if ( is_a_valid_subview_constructor ) {
+
+    typedef Impl::ViewOffsetRange< SubArg0_type > R0 ;
+
+    // 'assign_subview' returns whether the subview offset_map
+    // introduces noncontiguity in the view.
+    const bool introduce_noncontiguity =
+      m_offset_map.assign_subview( src.m_offset_map
+                                 , R0::dimension( src.m_offset_map.N0 , arg0 )
+                                 , 0 , 0 , 0 , 0 , 0 , 0 , 0 );
+
+    if ( m_offset_map.capacity() ) {
+
+      m_management = src.m_management ;
+
+      if ( introduce_noncontiguity ) m_management.set_noncontiguous();
+
+      m_ptr_on_device = src.m_ptr_on_device +
+                        src.m_offset_map( R0::begin( arg0 )
+                                        , 0 , 0 , 0 , 0 , 0 , 0 , 0 );
+      m_allocation = src.m_allocation ;
+      m_allocation.m_scalar_ptr_on_device =
+        src.m_allocation.m_scalar_ptr_on_device +
+        src.m_offset_map( R0::begin( arg0 )
+                        , 0 , 0 , 0 , 0 , 0 , 0 , 0 ) *
+        src.m_storage_size ;
+      m_sacado_size = src.m_sacado_size;
+      m_storage_size = src.m_storage_size;
+      m_stride = src.m_stride;
+      m_is_contiguous = src.m_is_contiguous;
+      m_cijk = src.m_cijk;
+    }
+  }
+}
+
+} /* namespace Kokkos */
 
 #endif /* #ifndef KOKKOS_VIEW_UQ_PCE_CONTIGUOUS_HPP */

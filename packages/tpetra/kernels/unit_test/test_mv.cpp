@@ -13,11 +13,11 @@
 #define DEVICE 1
 #endif
 #if DEVICE==1
-typedef Kokkos::Threads device_type;
+typedef Kokkos::Threads execution_space;
 #define KokkosHost(a) a
 #define KokkosCUDA(a)
 #else
-typedef Kokkos::Cuda device_type;
+typedef Kokkos::Cuda execution_space;
 #define KokkosHost(a)
 #define KokkosCUDA(a) a
 #endif
@@ -28,9 +28,9 @@ typedef Kokkos::Cuda device_type;
 template<typename SCALAR, typename ORDINAL>
 int test_mv_dot(ORDINAL size, int numVecs)
 {
-  typedef typename Kokkos::MultiVectorDynamic<SCALAR,device_type>::type mv_type;
+  typedef typename Kokkos::MultiVectorDynamic<SCALAR,execution_space>::type mv_type;
   typedef typename mv_type::HostMirror h_mv_type;
-  typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,device_type >  vector_type ;
+  typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,execution_space >  vector_type ;
   typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
   typedef typename vector_type::HostMirror h_vector_type;
   typedef typename mv_type::size_type            size_type;
@@ -62,7 +62,7 @@ int test_mv_dot(ORDINAL size, int numVecs)
   Kokkos::deep_copy(y,h_y);
   Kokkos::deep_copy(a,h_a);
   Kokkos::MV_Dot(a,x,y);
-  device_type::fence();
+  execution_space::fence();
 
   Kokkos::deep_copy(h_a,a);
   double errorsum=0;
@@ -77,9 +77,9 @@ int test_mv_dot(ORDINAL size, int numVecs)
 
 template<typename SCALAR, typename ORDINAL>
 int test_mv_add_r_x_y(ORDINAL size, int numVecs){
-	  typedef typename Kokkos::MultiVectorDynamic<ORDINAL,device_type>::type mv_type;
+	  typedef typename Kokkos::MultiVectorDynamic<ORDINAL,execution_space>::type mv_type;
 	  typedef typename mv_type::HostMirror h_mv_type;
-	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,device_type >  vector_type ;
+	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,execution_space >  vector_type ;
 	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
 	  typedef typename vector_type::HostMirror h_vector_type;
 	  typedef typename mv_type::size_type            size_type;
@@ -109,7 +109,7 @@ int test_mv_add_r_x_y(ORDINAL size, int numVecs){
 	  Kokkos::deep_copy(y,h_y);
 	  Kokkos::deep_copy(a,h_a);
 	  Kokkos::MV_Add(r,x,y);
-	  device_type::fence();
+	  execution_space::fence();
 
 	  Kokkos::deep_copy(h_rd,r);
 	  for(int k=0;k<numVecs;k++){
@@ -134,9 +134,9 @@ int test_mv_add_r_x_y(ORDINAL size, int numVecs){
 
 template<typename SCALAR, typename ORDINAL>
 int test_mv_add_r_x_by(ORDINAL size, int numVecs){
-	  typedef typename Kokkos::MultiVectorDynamic<ORDINAL,device_type>::type mv_type;
+	  typedef typename Kokkos::MultiVectorDynamic<ORDINAL,execution_space>::type mv_type;
 	  typedef typename mv_type::HostMirror h_mv_type;
-	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,device_type >  vector_type ;
+	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,execution_space >  vector_type ;
 	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
 	  typedef typename vector_type::HostMirror h_vector_type;
 	  typedef typename mv_type::size_type            size_type;
@@ -166,7 +166,7 @@ int test_mv_add_r_x_by(ORDINAL size, int numVecs){
 	  Kokkos::deep_copy(y,h_y);
 	  Kokkos::deep_copy(a,h_a);
 	  Kokkos::MV_Add(r,x,a,y);
-	  device_type::fence();
+	  execution_space::fence();
 
 	  Kokkos::deep_copy(h_rd,r);
 	  for(int k=0;k<numVecs;k++){
@@ -191,9 +191,9 @@ int test_mv_add_r_x_by(ORDINAL size, int numVecs){
 
 template<typename SCALAR, typename ORDINAL>
 int test_mv_add_r_ax_by(ORDINAL size, int numVecs){
-	  typedef typename Kokkos::MultiVectorDynamic<ORDINAL,device_type>::type mv_type;
+	  typedef typename Kokkos::MultiVectorDynamic<ORDINAL,execution_space>::type mv_type;
 	  typedef typename mv_type::HostMirror h_mv_type;
-	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,device_type >  vector_type ;
+	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,execution_space >  vector_type ;
 	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
 	  typedef typename vector_type::HostMirror h_vector_type;
 	  typedef typename mv_type::size_type            size_type;
@@ -223,7 +223,7 @@ int test_mv_add_r_ax_by(ORDINAL size, int numVecs){
 	  Kokkos::deep_copy(y,h_y);
 	  Kokkos::deep_copy(a,h_a);
 	  Kokkos::MV_Add(r,a,x,a,y);
-	  device_type::fence();
+	  execution_space::fence();
 
 	  Kokkos::deep_copy(h_rd,r);
 	  for(int k=0;k<numVecs;k++){
@@ -248,9 +248,9 @@ int test_mv_add_r_ax_by(ORDINAL size, int numVecs){
 
 template<typename SCALAR, typename ORDINAL>
 int test_mv_add_r_ax_by(ORDINAL size, int numVecs,int A,int B){
-	  typedef typename Kokkos::MultiVectorDynamic<ORDINAL,device_type>::type mv_type;
+	  typedef typename Kokkos::MultiVectorDynamic<ORDINAL,execution_space>::type mv_type;
 	  typedef typename mv_type::HostMirror h_mv_type;
-	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,device_type >  vector_type ;
+	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,execution_space >  vector_type ;
 	  typedef Kokkos::View<ORDINAL* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
 	  typedef typename vector_type::HostMirror h_vector_type;
 	  typedef typename mv_type::size_type            size_type;
@@ -282,7 +282,7 @@ int test_mv_add_r_ax_by(ORDINAL size, int numVecs,int A,int B){
 	  Kokkos::deep_copy(y,h_y);
 	  Kokkos::deep_copy(a,h_a);
 	  Kokkos::MV_Add(r,a,x,a,y,A,B);
-	  device_type::fence();
+	  execution_space::fence();
 
 	  Kokkos::deep_copy(h_rd,r);
 	  for(int k=0;k<numVecs;k++){
@@ -327,9 +327,9 @@ int test_mv_add(ORDINAL size, int numVecs)
 template<typename SCALAR, typename ORDINAL>
 int test_mv_mulscalar_self(ORDINAL size, int numVecs)
 {
-  typedef typename Kokkos::MultiVectorDynamic<SCALAR,device_type>::type mv_type;
+  typedef typename Kokkos::MultiVectorDynamic<SCALAR,execution_space>::type mv_type;
   typedef typename  mv_type::HostMirror h_mv_type;
-  typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,device_type >  vector_type ;
+  typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,execution_space >  vector_type ;
   typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
   typedef typename vector_type::HostMirror h_vector_type;
   typedef typename mv_type::size_type            size_type;
@@ -355,7 +355,7 @@ int test_mv_mulscalar_self(ORDINAL size, int numVecs)
   Kokkos::deep_copy(x,h_x);
   Kokkos::deep_copy(a,h_a);
   Kokkos::MV_MulScalar(x,a,x);
-  device_type::fence();
+  execution_space::fence();
 
   Kokkos::deep_copy(h_rd,x);
   for(int k=0;k<numVecs;k++){
@@ -381,9 +381,9 @@ int test_mv_mulscalar_self(ORDINAL size, int numVecs)
 template<typename SCALAR, typename ORDINAL>
 int test_mv_mulscalar_diff(ORDINAL size, int numVecs)
 {
-  typedef typename Kokkos::MultiVectorDynamic<SCALAR,device_type>::type mv_type;
+  typedef typename Kokkos::MultiVectorDynamic<SCALAR,execution_space>::type mv_type;
   typedef typename  mv_type::HostMirror h_mv_type;
-  typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,device_type >  vector_type ;
+  typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,execution_space >  vector_type ;
   typedef Kokkos::View<SCALAR* ,Kokkos::LayoutLeft,Kokkos::Threads >  h2_vector_type ;
   typedef typename vector_type::HostMirror h_vector_type;
   typedef typename mv_type::size_type            size_type;
@@ -409,7 +409,7 @@ int test_mv_mulscalar_diff(ORDINAL size, int numVecs)
   Kokkos::deep_copy(x,h_x);
   Kokkos::deep_copy(a,h_a);
   Kokkos::MV_MulScalar(r,a,x);
-  device_type::fence();
+  execution_space::fence();
 
   Kokkos::deep_copy(h_rd,r);
   for(int k=0;k<numVecs;k++){
@@ -556,5 +556,5 @@ int main(int argc, char **argv)
 
 
  KokkosCUDA(Kokkos::Threads::finalize();)
- device_type::finalize(  );
+ execution_space::finalize(  );
 }

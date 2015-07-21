@@ -64,6 +64,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_STKConnManager.hpp"
+#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
@@ -84,6 +85,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(gather_orientation, gather_constr)
   {
+    PHX::KokkosDeviceSession session;
+
     const std::size_t workset_size = 4;
     const std::string fieldName_q1 = "U";
     const std::string fieldName_qedge1 = "V";
@@ -181,9 +184,11 @@ namespace panzer {
 
     fm.evaluateFields<panzer::Traits::Residual>(workset);
 
-    PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
+    // <cell,basis>
+    PHX::MDField<panzer::Traits::Residual::ScalarT> 
        fieldData_q1(evalField_q1->name(),basis_q1->functional);
-    PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::BASIS> 
+    // <cell,basis>
+    PHX::MDField<panzer::Traits::Residual::ScalarT> 
        fieldData_qedge1(evalField_qedge1->name(),basis_qedge1->functional);
 
     fm.getFieldData<panzer::Traits::Residual::ScalarT,panzer::Traits::Residual>(fieldData_q1);

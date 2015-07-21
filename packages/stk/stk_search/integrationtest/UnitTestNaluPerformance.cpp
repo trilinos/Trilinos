@@ -34,7 +34,7 @@
 #include <gtest/gtest.h>
 #include <unit_tests/UnitTestUtils.hpp>
 #include <unit_tests/MeshUtilsForBoundingVolumes.hpp>
-#include <optionParsing/getOption.h>
+#include <stk_unit_test_utils/getOption.h>
 
 namespace
 {

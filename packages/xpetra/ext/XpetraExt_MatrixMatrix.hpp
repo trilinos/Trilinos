@@ -507,7 +507,6 @@ void Jacobi(
     const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
     Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
     const RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
-
     Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete,label);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
@@ -583,8 +582,7 @@ inline void JacobiT(
     const Tpetra::CrsMatrix<SC, LO, GO, NO> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
     Tpetra::CrsMatrix<SC, LO, GO, NO>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
     const RCP<Tpetra::Vector<SC, LO, GO, NO>  >          & tpD = toTpetra(Dinv);
-
-    Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete);
+    Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete,label);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif

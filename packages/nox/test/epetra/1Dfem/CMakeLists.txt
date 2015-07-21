@@ -16,17 +16,19 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
     PASS_REGULAR_EXPRESSION "Test passed!"
     )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    1DfemAndersonAcceleration
-    SOURCES
-    1DfemInterface.H
-    1DfemInterface.C
-    1DfemPrePostOperator.H
-    1DfemPrePostOperator.C
-    1DfemAndersonAcceleration.C
-    COMM serial mpi
-    PASS_REGULAR_EXPRESSION "Test passed!"
-    )
+  IF(NOX_ENABLE_ML)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      1DfemAndersonAcceleration
+      SOURCES
+      1DfemInterface.H
+      1DfemInterface.C
+      1DfemPrePostOperator.H
+      1DfemPrePostOperator.C
+      1DfemAndersonAcceleration.C
+      COMM serial mpi
+      PASS_REGULAR_EXPRESSION "Test passed!"
+      )
+  ENDIF(NOX_ENABLE_ML)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     1DfemScaled
@@ -62,15 +64,17 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
     PASS_REGULAR_EXPRESSION "Test passed!"
     )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    1DfemMLPreconditioner
-    SOURCES
-    1DfemInterface.H
-    1DfemInterface.C
-    1DfemMLPreconditioner.C
-    COMM serial mpi
-    PASS_REGULAR_EXPRESSION "Test passed!"
-    )
+  IF(NOX_ENABLE_ML)
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      1DfemMLPreconditioner
+      SOURCES
+      1DfemInterface.H
+      1DfemInterface.C
+      1DfemMLPreconditioner.C
+      COMM serial mpi
+      PASS_REGULAR_EXPRESSION "Test passed!"
+      )
+  ENDIF(NOX_ENABLE_ML)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     1DfemAztecSolverPrecReuse
@@ -231,17 +235,19 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
         COMM serial mpi
         PASS_REGULAR_EXPRESSION "Test passed!"
         )
-    ENDIF()
+    ENDIF(NOX_ENABLE_Belos)
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      1DfemStratimikosPrec
-      SOURCES
-      1DfemInterface.H
-      1DfemInterface.C
-      1DfemStratimikosPrec.C
-      COMM serial mpi
-      PASS_REGULAR_EXPRESSION "Test passed!"
-      )
-  ENDIF()
+    IF(NOX_ENABLE_ML)
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        1DfemStratimikosPrec
+        SOURCES
+        1DfemInterface.H
+        1DfemInterface.C
+        1DfemStratimikosPrec.C
+        COMM serial mpi
+        PASS_REGULAR_EXPRESSION "Test passed!"
+        )
+    ENDIF(NOX_ENABLE_ML)
+  ENDIF(NOX_ENABLE_Stratimikos)
 
-ENDIF()
+ENDIF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)

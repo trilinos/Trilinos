@@ -51,7 +51,6 @@
 
 #include "Intrepid_Basis.hpp"
 #include "Sacado.hpp"
-
 namespace Intrepid {
   
 /** \class  Intrepid::Basis_HGRAD_TRI_Cn_FEM_ORTH

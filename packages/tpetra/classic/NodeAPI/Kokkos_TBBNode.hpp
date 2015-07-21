@@ -44,7 +44,7 @@
 
 /// \file Kokkos_TBBNode.hpp
 /// \brief Declaration and definition of the (now DEPRECATED)
-///   KokkosClassic::TBBNode Node type.
+///   KokkosClassic::DoNotUse::TBBNode Node type.
 
 #include "Kokkos_ConfigDefs.hpp"
 
@@ -69,6 +69,7 @@ namespace Teuchos {
 #include <stdlib.h>
 
 namespace KokkosClassic {
+namespace DoNotUse {
 
   template <class WDPin>
   struct BlockedRangeWDP {
@@ -185,6 +186,8 @@ namespace KokkosClassic {
     bool alreadyInit_;
   };
 
+} // namespace DoNotUse
+
 #ifdef _MSC_VER
 #pragma warning(push)
 // destructor could not be generated because a base class destructor is inaccessible
@@ -192,8 +195,8 @@ namespace KokkosClassic {
 #endif
 
   template <>
-  class ArrayOfViewsHelper<TBBNode> :
-    public ArrayOfViewsHelperTrivialImpl<TBBNode>
+  class ArrayOfViewsHelper<DoNotUse::TBBNode> :
+    public ArrayOfViewsHelperTrivialImpl<DoNotUse::TBBNode>
   {};
 
 #ifdef _MSC_VER

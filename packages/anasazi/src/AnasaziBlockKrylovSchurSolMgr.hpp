@@ -29,9 +29,9 @@
 #ifndef ANASAZI_BLOCK_KRYLOV_SCHUR_SOLMGR_HPP
 #define ANASAZI_BLOCK_KRYLOV_SCHUR_SOLMGR_HPP
 
-/*! \file AnasaziBlockKrylovSchurSolMgr.hpp
- *  \brief The Anasazi::BlockKrylovSchurSolMgr provides a solver manager for the BlockKrylovSchur eigensolver.
-*/
+/// \file AnasaziBlockKrylovSchurSolMgr.hpp
+/// \brief The Anasazi::BlockKrylovSchurSolMgr class provides a user
+///   interface for the block Krylov-Schur eigensolver.
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
@@ -53,15 +53,21 @@
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-
 /** \example BlockKrylovSchur/BlockKrylovSchurEpetraEx.cpp
-    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager, using Epetra data structures.
+    \brief Use Anasazi::BlockKrylovSchurSolMgr to solve a standard
+      (not generalized) eigenvalue problem, using Epetra data
+      structures.
 */
 
 /// \example BlockKrylovSchur/BlockKrylovSchurEpetraExGenAmesos.cpp
-/// \brief This example computes the eigenvalues of smallest magnitude
-///   of a generalized eigenvalue problem \f$K x = \lambda M x\f$,
-///   using Anasazi's implementation of the block Krylov-Schur method.
+/// \brief Compute smallest eigenvalues of a generalized eigenvalue
+///   problem, using block Krylov-Schur with Epetra and an Amesos direct
+///   solver.
+///
+/// This example computes the eigenvalues of smallest magnitude of a
+/// generalized eigenvalue problem \f$K x = \lambda M x\f$, using
+/// Anasazi's implementation of the block Krylov-Schur method, with
+/// Epetra linear algebra and a direct solver from the Amesos package.
 ///
 /// Anasazi computes the smallest-magnitude eigenvalues using a
 /// shift-and-invert strategy.  For simplicity, this example uses a
@@ -84,20 +90,21 @@
 /// sparse direct solver KLU to do so.  Trilinos' Amesos package has
 /// an interface to KLU.
 
-/** \example BlockKrylovSchur/BlockKrylovSchurEpetraExGenAmesos.cpp
-    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager to solve a generalized eigenvalue problem, using Epetra data stuctures and the Amesos solver package.
-*/
-
 /** \example BlockKrylovSchur/BlockKrylovSchurEpetraExGenAztecOO.cpp
-    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager to solve a generalized eigenvalue problem, using Epetra data stuctures and the AztecOO solver package.
+    \brief Use Anasazi::BlockKrylovSchurSolMgr to solve a generalized
+      eigenvalue problem, using Epetra data stuctures and the AztecOO
+      package of iterative linear solvers and preconditioners.
 */
 
 /** \example BlockKrylovSchur/BlockKrylovSchurEpetraExGenBelos.cpp
-    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager to solve a generalized eigenvalue problem, using Epetra data stuctures and the Belos solver package.
+    \brief Use Anasazi::BlockKrylovSchurSolMgr to solve a generalized
+      eigenvalue problem, using Epetra data stuctures and the Belos
+      iterative linear solver package.
 */
 
 /** \example BlockKrylovSchur/BlockKrylovSchurEpetraExSVD.cpp
-    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager to compute an SVD, using Epetra data structures.
+    \brief Use Anasazi::BlockKrylovSchurSolMgr to compute a singular
+      value decomposition (SVD), using Epetra data structures.
 */
 
 namespace Anasazi {
@@ -134,7 +141,6 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -333,7 +339,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   TEUCHOS_TEST_FOR_EXCEPTION(_numBlocks <= _nevBlocks, std::invalid_argument,
                      "Anasazi::BlockKrylovSchurSolMgr: \"Num Blocks\" must be strictly positive and large enough to compute the requested eigenvalues.");
 
-  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(_numBlocks)*_blockSize > MVText::GetGlobalLength(*_problem->getInitVec()),
+  TEUCHOS_TEST_FOR_EXCEPTION(static_cast<ptrdiff_t>(_numBlocks)*_blockSize > MVT::GetGlobalLength(*_problem->getInitVec()),
                      std::invalid_argument,
                      "Anasazi::BlockKrylovSchurSolMgr: Potentially impossible orthogonality requests. Reduce basis size.");
 
@@ -637,7 +643,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
             //
             // get non-const pointer to solver's basis so we can work in situ
             Teuchos::RCP<MV> solverbasis = Teuchos::rcp_const_cast<MV>(oldState.V);
-            Teuchos::SerialDenseMatrix<int,ScalarType> copyQnev(Qnev);
+            Teuchos::SerialDenseMatrix<int,ScalarType> copyQnev(Teuchos::Copy, Qnev);
             //
             // perform Householder QR of copyQnev = Q [D;0], where D is unit diag. We will want D below.
             std::vector<ScalarType> tau(cur_nevBlocks), work(cur_nevBlocks);
@@ -709,9 +715,8 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
           //
           // Create storage for the new Schur matrix of the Krylov-Schur factorization
           // Copy over the current quasi-triangular factorization of oldState.H which is stored in oldState.S.
-          Teuchos::SerialDenseMatrix<int,ScalarType> oldS(Teuchos::View, *(oldState.S), cur_nevBlocks+_blockSize, cur_nevBlocks);
           Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > newH =
-            Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( oldS ) );
+            Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::Copy, *(oldState.S), cur_nevBlocks+_blockSize, cur_nevBlocks) );
           //
           // Get a view of the B block of the current factorization
           Teuchos::SerialDenseMatrix<int,ScalarType> oldB(Teuchos::View, *(oldState.H), _blockSize, _blockSize, curDim, curDim-_blockSize);

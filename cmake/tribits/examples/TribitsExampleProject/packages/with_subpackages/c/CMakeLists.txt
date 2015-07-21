@@ -10,7 +10,8 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/ShowLibErrors.cmake)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 TRIBITS_ADD_LIBRARY(pws_c
   SOURCES C.cpp
-  HEADERS C.hpp
+  HEADERS wsp_c/C.hpp
+  HEADERS_INSTALL_SUBDIR  wsp_c 
   ${TAL_EXTRALIB_ARGS} # Used to show warnings and errors
   )
 

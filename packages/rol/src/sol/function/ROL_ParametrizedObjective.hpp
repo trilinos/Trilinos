@@ -52,7 +52,7 @@
 namespace ROL {
 
 template<class Real>
-class ParametrizedObjective : public Objective<Real> {
+class ParametrizedObjective : public virtual Objective<Real> {
 private:
   std::vector<Real> param_;
 

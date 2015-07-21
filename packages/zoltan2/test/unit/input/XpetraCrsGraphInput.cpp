@@ -70,7 +70,6 @@ using Teuchos::DefaultComm;
 using Teuchos::Array;
 using Teuchos::ArrayView;
 
-typedef UserInputForTests uinput_t;
 typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> tgraph_t;
 typedef Xpetra::CrsGraph<zlno_t, zgno_t, znode_t> xgraph_t;
 typedef Epetra_CrsGraph egraph_t;
@@ -152,11 +151,11 @@ int main(int argc, char *argv[])
   // Create an object that can give us test Tpetra, Xpetra
   // and Epetra graphs for testing.
 
-  RCP<uinput_t> uinput;
+  RCP<UserInputForTests> uinput;
 
   try{
     uinput =
-      rcp(new uinput_t(testDataFilePath,std::string("simple"), comm, true));
+      rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("input ")+e.what(), 1);
@@ -167,7 +166,6 @@ int main(int argc, char *argv[])
 
   tG = uinput->getUITpetraCrsGraph();
   size_t nvtx = tG->getNodeNumRows();
-  ArrayView<const zgno_t> rowGids = tG->getRowMap()->getNodeElementList();
 
   // To test migration in the input adapter we need a Solution object.  
   // Our solution just assigns all objects to part zero.

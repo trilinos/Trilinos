@@ -339,7 +339,7 @@ public:
    */
   void create_ghosting(const std::string & name)
   {
-    ThrowRequire(m_bulk_data.synchronized_state() == m_bulk_data.MODIFIABLE);
+    ThrowRequire(m_bulk_data.in_modifiable_state());
     const int parallel_rank = m_bulk_data.parallel_rank();
     std::vector<stk::mesh::EntityProc> send_nodes;
     for (size_t i=0, size=m_search_results.size(); i<size; ++i) {

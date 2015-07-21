@@ -317,8 +317,6 @@ int main(int argc, char *argv[])
     // Get the final solution from the stepper
     Teuchos::RCP<const LOCA::Epetra::Group> finalGroup =
       Teuchos::rcp_dynamic_cast<const LOCA::Epetra::Group>(stepper.getSolutionGroup());
-    const NOX::Epetra::Vector& finalSolution =
-      dynamic_cast<const NOX::Epetra::Vector&>(finalGroup->getX());
 
     // Output the parameter list
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {

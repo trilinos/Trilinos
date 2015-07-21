@@ -81,7 +81,8 @@ LOCA::Extended::Vector::Vector(const LOCA::Extended::Vector& source,
   }
 
   scalarsPtr =
-    Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(*source.scalarsPtr));
+    Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::Copy,
+                                                             *source.scalarsPtr));
 
   if (type != NOX::DeepCopy)
     init(0.0);

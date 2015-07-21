@@ -43,8 +43,6 @@
 #ifndef __Panzer_LinearObjFactory_hpp__
 #define __Panzer_LinearObjFactory_hpp__
 
-#include <map>
-
 #include "Phalanx_TemplateManager.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
@@ -54,8 +52,8 @@
 
 #include "Teuchos_DefaultMpiComm.hpp"
 
-#include "boost/mpl/placeholders.hpp"
-using namespace boost::mpl::placeholders;
+// #include "boost/mpl/placeholders.hpp"
+// using namespace boost::mpl::placeholders;
 
 namespace panzer {
 
@@ -215,7 +213,7 @@ public:
    virtual void adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                                              const LinearObjContainer & globalBCRows,
                                              LinearObjContainer & ghostedObjs,
-                                             bool zeroVectorRows=false) const = 0;
+                                             bool zeroVectorRows=false, bool adjustX=false) const = 0;
 
    /** Adjust a vector by replacing selected rows with the value of the evaluated
      * dirichlet conditions. This is handled through the standard container mechanism.

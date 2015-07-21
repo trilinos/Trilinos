@@ -6,8 +6,6 @@
 /// \brief This file includes utility functions to convert between flat and hierarchical matrices.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)  
 
-#include <Kokkos_Core.hpp> 
-
 #include "util.hpp"
 
 namespace Example { 
@@ -23,25 +21,24 @@ namespace Example {
     typedef typename CrsHierBase::ordinal_type           ordinal_type;
     typedef typename CrsHierBase::size_type              size_type;
     typedef typename CrsHierBase::ordinal_type_array_ptr ordinal_type_array_ptr;
+
+    size_type nnz = 0;    
+
+    hier.createInternalArrays(flat.NumRows(), flat.NumCols(), flat.NumNonZeros());
     
-    hier.createInternalArrays(flat._m, flat._n, flat._nnz);
-    
-    size_type nnz = 0;
-    for (ordinal_type i=0;i<flat._m;++i) {
-      ordinal_type jsize = flat._ap[i+1] - flat._ap[i];
+    for (ordinal_type i=0;i<flat.NumRows();++i) {
+      ordinal_type jsize = flat.NumNonZerosInRow(i);
       
       hier._ap[i] = nnz;
       ordinal_type_array_ptr ci = flat.ColsInRow(i);
       for (ordinal_type j=0;j<jsize;++j,++nnz) {
-        if (i >= ci[j]) {
-          hier._aj[nnz] = ci[j];
-          hier._ax[nnz].setView(&flat,     i, 1,
-                                /**/   ci[j], 1);
-        }
+        hier._aj[nnz] = ci[j];
+        hier._ax[nnz].setView(&flat,     i, 1,
+                              /**/   ci[j], 1);
       }
     }
     
-    hier._ap[flat._m] = nnz;
+    hier._ap[flat.NumRows()] = nnz;
     hier._nnz = nnz;
     
     return 0;
@@ -76,9 +73,9 @@ namespace Example {
     typedef typename CrsHierBase::ordinal_type            ordinal_type;
     typedef typename CrsHierBase::size_type               size_type;
     
-    typedef typename CrsHierBase::ordinal_type_array     ordinal_type_array;
-    typedef typename CrsHierBase::ordinal_type_array_ptr ordinal_type_array_ptr;
-    typedef typename CrsHierBase::value_type_array_ptr   value_type_array_ptr;
+    //typedef typename CrsHierBase::ordinal_type_array     ordinal_type_array;
+    //typedef typename CrsHierBase::ordinal_type_array_ptr ordinal_type_array_ptr;
+    //typedef typename CrsHierBase::value_type_array_ptr   value_type_array_ptr;
     
     size_type nnz = 0;
     
@@ -101,6 +98,8 @@ namespace Example {
     
     hier._ap[nblks] = nnz;
     hier._nnz = nnz;
+
+    return 0;
   }
 
   template<typename CrsFlatBase,
@@ -116,8 +115,8 @@ namespace Example {
     typedef typename CrsHierBase::size_type              size_type;
     
     typedef typename CrsHierBase::ordinal_type_array     ordinal_type_array;
-    typedef typename CrsHierBase::ordinal_type_array_ptr ordinal_type_array_ptr;
-    typedef typename CrsHierBase::value_type_array_ptr   value_type_array_ptr;
+    //typedef typename CrsHierBase::ordinal_type_array_ptr ordinal_type_array_ptr;
+    //typedef typename CrsHierBase::value_type_array_ptr   value_type_array_ptr;
     
     ordinal_type_array tmp = ordinal_type_array("flat2hier:tmp", nblks+1);
     size_type nnz = 0;

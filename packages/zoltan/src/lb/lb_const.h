@@ -128,12 +128,12 @@ typedef enum Zoltan_LB_Method {
 #define ZOLTAN_LB_RETURN_LISTS_DEF   ZOLTAN_LB_ALL_LISTS
 #define ZOLTAN_LB_APPROACH_DEF   "repartition"
 
-/* Struct for partition size info. */
+/* Struct for part size info. */
 struct Zoltan_part_info {
-  float Size;          /*  Desired partition size. */
-  int Part_id;         /*  Partition id.           */
-  int Idx;             /*  Partition weight index. */
-  int Global_num;      /*  Global partition numbers? */
+  float Size;          /*  Desired part size. */
+  int Part_id;         /*  Part id.           */
+  int Idx;             /*  Part weight index. */
+  int Global_num;      /*  Global part numbers? */
 };
 
 /* LB_struct. Contains all information about a load balancing "object" */
@@ -141,14 +141,14 @@ struct Zoltan_part_info {
 struct Zoltan_LB_Struct {
   int Part_Info_Len;              /*  Actual length of Part_Info arrays. */
   int Part_Info_Max_Len;          /*  Allocated length of Part_Info arrays. */
-  struct Zoltan_part_info *Part_Info; /*  Array of partition size info.  */
-  int Num_Global_Parts;           /*  The total number of partitions.
+  struct Zoltan_part_info *Part_Info; /*  Array of part size info.  */
+  int Num_Global_Parts;           /*  The total number of parts.
                                       Set in Zoltan_LB_Build_PartDist.       */
-  int Num_Global_Parts_Param;     /*  The number of global partitions specified.
+  int Num_Global_Parts_Param;     /*  The number of global parts specified.
                                       If parameter NUM_LOCAL_PARTS or 
                                       NUM_GLOBAL_PARTS is not set,
                                       Num_Global_Parts_Param == Num_Proc.    */
-  int Num_Local_Parts_Param;      /*  The number of local partitions specified.
+  int Num_Local_Parts_Param;      /*  The number of local parts specified.
                                       If parameter NUM_LOCAL_PARTS or 
                                       NUM_GLOBAL_PARTS is not set,
                                       Num_Local_Parts_Param == -1.           */
@@ -160,33 +160,33 @@ struct Zoltan_LB_Struct {
                                       Num_Local_Parts_Param.  Stored to 
                                       prevent unnecessary re-creations of 
                                       PartDist. */
-  int Single_Proc_Per_Part;       /*  Flag indicating whether a partition can
+  int Single_Proc_Per_Part;       /*  Flag indicating whether a part can
                                       be spread across multiple processors.
                                       Happens only when NUM_GLOBAL_PARTS
                                       is set to be < zz->Num_Proc.           */
-  int Remap_Flag;                 /*  Flag indicating whether partitions
+  int Remap_Flag;                 /*  Flag indicating whether parts
                                       should be remapped to reduce data mvmt. */
   int *Remap;                     /*  Remapping array; relabels computed 
-                                      partitions to decrease data mvmt. */
+                                      parts to decrease data mvmt. */
   int *OldRemap;                  /*  Remapping array computed in previous
                                       invocation of partitioning. */
   int Return_Lists;               /*  Flag indicating which lists (if any)
                                       should be returned by Zoltan_LB_Balance.*/
-  int Uniform_Parts;              /*  Flag indicating whether partitions are
+  int Uniform_Parts;              /*  Flag indicating whether parts are
                                       uniformly sized. */
   int *PartDist;                  /*  Array describing distribution of 
-                                      partitions to processors.  
-                                      If Single_Proc_Per_Part, partition i
+                                      parts to processors.  
+                                      If Single_Proc_Per_Part, part i
                                       is located on processor PartDist[i].
-                                      If !Single_Proc_Per_Part, partition i
+                                      If !Single_Proc_Per_Part, part i
                                       is located on processors PartDist[i] to
                                       PartDist[i+1]-1. */
   int *ProcDist;                  /*  Array describing distribution of 
-                                      processors to partitions.  
-                                      If processor i has zero partitions,
+                                      processors to parts.  
+                                      If processor i has zero parts,
                                       ProcDist[i] = -1.  Otherwise,
-                                      ProcDist[i] has the lowest partition
-                                      number of partitions on processor i.  */
+                                      ProcDist[i] has the lowest part
+                                      number of parts on processor i.  */
   ZOLTAN_LB_METHOD Method;        /*  Method to be used for load balancing.  */ 
   ZOLTAN_LB_FN *LB_Fn;            /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
@@ -226,7 +226,7 @@ struct Zoltan_Migrate_Struct {
                                           prefer to do it themselves.        */
   int Only_Proc_Changes;              /*  Pack and unpack objects during
                                           migration ONLY if they are assigned
-                                          to a new processor.  If partition
+                                          to a new processor.  If part
                                           number changes but processor does
                                           not, do not pack and unpack.       */
   /*
@@ -236,7 +236,7 @@ struct Zoltan_Migrate_Struct {
   ZOLTAN_PRE_MIGRATE_PP_FN *Pre_Migrate_PP;
                                        /* Function that performs application
                                           specific pre-processing (including
-                                          partition lists).  Optional
+                                          part lists).  Optional
                                           for migration.                */
   ZOLTAN_PRE_MIGRATE_PP_FORT_FN *Pre_Migrate_PP_Fort;
                                        /* Fortran version               */
@@ -245,7 +245,7 @@ struct Zoltan_Migrate_Struct {
   ZOLTAN_MID_MIGRATE_PP_FN *Mid_Migrate_PP;
                                        /* Function that performs application
                                           specific processing  (including
-                                          partition lists) between packing
+                                          part lists) between packing
                                           and unpacking.  Optional
                                           for migration.                */
   ZOLTAN_MID_MIGRATE_PP_FORT_FN *Mid_Migrate_PP_Fort;
@@ -255,7 +255,7 @@ struct Zoltan_Migrate_Struct {
   ZOLTAN_POST_MIGRATE_PP_FN *Post_Migrate_PP;
                                        /* Function that performs application
                                           specific post-processing (including 
-                                          partition lists).  Optional
+                                          part lists).  Optional
                                           for migration.                */
   ZOLTAN_POST_MIGRATE_PP_FORT_FN *Post_Migrate_PP_Fort;
                                        /* Fortran version             */
@@ -292,7 +292,7 @@ extern int Zoltan_LB_Set_LB_Method(struct Zoltan_Struct *, char *);
 extern void Zoltan_LB_Free_Struct(struct Zoltan_LB_Struct *);
 extern int Zoltan_LB_Part_To_Proc(struct Zoltan_Struct *, int, ZOLTAN_ID_PTR);
 extern int Zoltan_LB_Proc_To_Part(struct Zoltan_Struct *, int, int *, int *);
-extern int Zoltan_LB_Get_Part_Sizes(struct Zoltan_Struct *, int, int, float *);
+extern int Zoltan_LB_Get_Part_Sizes(struct Zoltan_Struct *, int, float *);
 extern int Zoltan_LB_Build_PartDist(struct Zoltan_Struct *);
 extern int Zoltan_LB_Remap(struct Zoltan_Struct *, int *, int, int *, int *,
   int *, int);

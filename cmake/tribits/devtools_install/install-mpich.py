@@ -176,11 +176,12 @@ To use the installed version of mpich-"""+self.inOptions.version+""" add the pat
 
 to your path and that should be it!
 
-Also, you must prepend
+Also, when you link shared libs or executables, pass in:
 
-   """+self.inOptions.installDir+"""/lib[64]
+   -Wl,-rpath,"""+self.inOptions.installDir+"""/lib[64]
 
-to your LD_LIBRARY_PATH env variable.
+That will make it so that you don't need to add this MPICH libs to your
+LD_LIBRARY_PATH.
 """
 
 

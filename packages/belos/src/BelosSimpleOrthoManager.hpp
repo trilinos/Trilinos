@@ -149,36 +149,6 @@ namespace Belos {
       return defaultParams_;
     }
 
-    /// \brief Get a default list of parameters.
-    ///
-    /// The "default" parameter list sets reasonably safe options in
-    /// terms of accuracy of the computed orthogonalization.  Call \c
-    /// getFastParameters() if you prefer to sacrifice some accuracy
-    /// for speed.
-    ///
-    /// \warning This method is deprecated.  Please call \c
-    /// getValidParameters() instead.
-    BELOS_DEPRECATED static Teuchos::RCP<const Teuchos::ParameterList> 
-    getDefaultParameters ()
-    {
-      using Teuchos::ParameterList;
-      using Teuchos::parameterList;
-      using Teuchos::RCP;
-
-      const std::string defaultNormalizationMethod ("MGS");
-      const bool defaultReorthogonalization = false;
-
-      RCP<ParameterList> params = parameterList ("Simple");
-      params->set ("Normalization", defaultNormalizationMethod,
-                   "Which normalization method to use. Valid values are \"MGS\""
-                   " (for Modified Gram-Schmidt) and \"CGS\" (for Classical "
-                   "Gram-Schmidt).");
-      params->set ("Reorthogonalization", defaultReorthogonalization,
-                   "Whether to perform one (unconditional) reorthogonalization "
-                   "pass.");
-      return params;
-    }
-
     /// \brief Get a "fast" list of parameters.
     ///
     /// The "fast" parameter list favors speed of orthogonalization,

@@ -60,6 +60,8 @@
 #include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_Traits.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 
@@ -82,6 +84,8 @@ inline double cat_func(double x, double y) { return y*y+3.0*x+5.0; }
 
 TEUCHOS_UNIT_TEST(tSolutionReader, test)
 {
+   PHX::InitializeKokkosDevice();
+
    RCP<Epetra_Comm> comm = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
    RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(2,2);
 
@@ -147,6 +151,7 @@ TEUCHOS_UNIT_TEST(tSolutionReader, test)
          TEST_FLOATING_EQUALITY((*vec)[dog_lid],dog_func(x,y),tolerance); 
       }
    }
+   PHX::FinalizeKokkosDevice();
 }
 
 Teuchos::RCP<panzer_stk_classic::STK_Interface> buildMesh(int elemX,int elemY)

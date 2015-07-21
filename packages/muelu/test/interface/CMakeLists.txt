@@ -28,6 +28,13 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
     COMM serial mpi
     )
 
+ TRIBITS_ADD_EXECUTABLE(
+    CreateOperator
+    SOURCES CreateOperator.cpp ../unit_tests/MueLu_TestHelpers.cpp
+    COMM serial mpi
+    )
+
+
 ENDIF()
 
 #
@@ -62,6 +69,23 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
         COMM mpi
         )
 
+      TRIBITS_ADD_TEST(
+        CreateOperator
+        NAME "CreateOperatorEpetra"
+        ARGS "--linAlgebra=Epetra"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        COMM mpi serial
+        )
+      TRIBITS_ADD_TEST(
+        CreateOperator
+        NAME "CreateOperatorEpetra"
+        ARGS "--linAlgebra=Epetra"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 4
+        COMM mpi
+        )
+
     ENDIF()
 
     IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
@@ -77,6 +101,23 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       TRIBITS_ADD_TEST(
         ParameterListInterpreter
         NAME "ParameterListInterpreterTpetra"
+        ARGS "--linAlgebra=Tpetra"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 4
+        COMM mpi
+        )
+
+      TRIBITS_ADD_TEST(
+        CreateOperator
+        NAME "CreateOperatorTpetra"
+        ARGS "--linAlgebra=Tpetra"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        COMM mpi serial
+        )
+      TRIBITS_ADD_TEST(
+        CreateOperator
+        NAME "CreateOperatorTpetra"
         ARGS "--linAlgebra=Tpetra"
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 4

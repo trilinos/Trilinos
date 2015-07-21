@@ -100,7 +100,8 @@ int main(int argc, char *argv[]) {
     //
     // Get test parameters from command-line processor
     //
-    bool verbose = false, proc_verbose = false, debug = false;
+    bool proc_verbose = false;
+    bool debug = false;
     int frequency = -1;  // how often residuals are printed by solver
     int numrhs = 1;      // total number of right-hand sides to solve for
     int blocksize = 1;   // blocksize used by solver

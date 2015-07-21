@@ -304,11 +304,6 @@ private:
   const LO blockSize_;
   const LO strideX_;
   const LO strideY_;
-  // FIXME (mfh 04 Jan 2015) I strongly object to putting the LU
-  // factorization's pivot array here.  Pivot arrays should be stored
-  // separately in the preconditioner.  std::vector adds a void* and
-  // two size_t values (size and capacity) to the struct.
-  std::vector<int> ipiv_;
 };
 
 
@@ -493,8 +488,8 @@ public:
     // FIXME (mfh 07 May 2014) This is suitable for column major, not
     // for row major.  Of course, we'll have to change other loops
     // above as well to make row major faster.
-    for (LO j = 0; j < blockSize_; ++j) {
-      for (LO i = 0; i < blockSize_; ++i) {
+    for (LO i = 0; i < blockSize_; ++i) {
+      for (LO j = 0; j < blockSize_; ++j) {
         (*this)(i) += theAlpha * A(i,j) * X(j);
       }
     }

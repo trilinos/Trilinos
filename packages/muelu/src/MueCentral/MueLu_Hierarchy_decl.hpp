@@ -236,7 +236,7 @@ namespace MueLu {
 
     //! Returns multigrid cycle type (supports VCYCLE and WCYCLE)
     CycleType GetCycle()                 const { return Cycle_;  }
-    
+
     //! Supports VCYCLE and WCYCLE types.
     void      SetCycle(CycleType Cycle)        { Cycle_ = Cycle; }
 

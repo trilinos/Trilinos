@@ -55,16 +55,16 @@ private
 
 public :: read_chaco_mesh, free_element_arrays, in_list, build_elem_comm_maps, initialize_element
 
-!/*                                                                          */
-!/*--------------------------------------------------------------------------*/
-!/* Author(s):  Matthew M. St.John (9226)                                    */
+!                                                                          
+!--------------------------------------------------------------------------
+! Author(s):  Matthew M. St.John (9226)                                    
 !   Translated to Fortran by William F. Mitchell
-!/*--------------------------------------------------------------------------*/
-!/* Revision History:                                                        */
-!/*                                                                          */
-!/*    24 May 1999:      Date of creation                                    */
+!--------------------------------------------------------------------------
+! Revision History:                                                        
+!                                                                          
+!    24 May 1999:      Date of creation                                    
 !       1 September 1999: Translation to Fortran
-!/*--------------------------------------------------------------------------*/
+!--------------------------------------------------------------------------
 
 
 logical, parameter :: CHECK_INPUT = .false.
@@ -73,9 +73,9 @@ integer(Zoltan_INT), parameter :: MAP_ALLOC = 10
 
 contains
 
-!/****************************************************************************/
-!/****************************************************************************/
-!/****************************************************************************/
+!**************************************************************************
+!**************************************************************************
+!**************************************************************************
 
 logical function read_chaco_mesh(Proc, Num_Proc, prob, pio_info, elements)
 integer(Zoltan_INT) :: Proc, Num_Proc
@@ -83,7 +83,7 @@ type(PROB_INFO) :: prob
 type(PARIO_INFO) :: pio_info
 type(ELEM_INFO), pointer :: elements(:)
 
-!  /* Local declarations. */
+!   Local declarations. 
   character(len=FILENAME_MAX+8) :: chaco_fname
 
   integer(Zoltan_INT) :: i, nvtxs, ios, allocstat
@@ -93,7 +93,7 @@ type(ELEM_INFO), pointer :: elements(:)
   real(Zoltan_FLOAT), pointer, dimension(:) :: vwgts, ewgts, x, y, z
 
   integer(Zoltan_INT) :: fp
-!/***************************** BEGIN EXECUTION ******************************/
+!**************************** BEGIN EXECUTION *****************************
 
 ! Set appropriate callbacks for this file type.
   Test_Graph_Callbacks = 1
@@ -103,7 +103,7 @@ type(ELEM_INFO), pointer :: elements(:)
 
   if (Proc == 0) then
 
-!    /* Open and read the Chaco graph file. */
+!     Open and read the Chaco graph file. 
     fp = 12
     chaco_fname = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".graph"
     open(unit=fp,file=chaco_fname,action='read',status='old',iostat=ios)
@@ -113,7 +113,7 @@ type(ELEM_INFO), pointer :: elements(:)
       return
     endif
 
-!    /* read the array in on processor 0 */
+!     read the array in on processor 0 
     if (.not.chaco_input_graph(fp, chaco_fname, start, adj, nvtxs, &
                                vwgts, ewgts)) then
       print *, "fatal: Error returned from chaco_input_graph"
@@ -121,7 +121,7 @@ type(ELEM_INFO), pointer :: elements(:)
       return
     endif
 
-!    /* Read Chaco geometry file, if provided. */
+!     Read Chaco geometry file, if provided. 
     fp = 12
     chaco_fname = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".coords"
     open(unit=fp,file=chaco_fname,action='read',status='old',iostat=ios)
@@ -129,7 +129,7 @@ type(ELEM_INFO), pointer :: elements(:)
       print *, "warning:  Could not open Chaco geometry file ",chaco_fname, &
               "; no geometry data will be read"
     else
-!      /* read the coordinates in on processor 0 */
+!       read the coordinates in on processor 0 
       if (.not.chaco_input_geom(fp, chaco_fname, nvtxs, ndim, x, y, z)) then
         print *, "fatal: Error returned from chaco_input_geom"
         read_chaco_mesh = .false.
@@ -138,7 +138,7 @@ type(ELEM_INFO), pointer :: elements(:)
     endif
   endif ! Proc == 0
 
-!  /* Distribute graph */
+!   Distribute graph 
   if (.not.chaco_dist_graph(MPI_COMM_WORLD, 0, nvtxs, vtxdist, start, adj, &
                             vwgts, ewgts, ndim, x, y, z)) then
       print *, "fatal: Error returned from chaco_dist_graph"
@@ -146,7 +146,7 @@ type(ELEM_INFO), pointer :: elements(:)
       return
   endif
 
-!  /* Initialize Mesh structure for Chaco mesh. */
+!   Initialize Mesh structure for Chaco mesh. 
   Mesh%num_elems = nvtxs
   Mesh%elem_array_len = Mesh%num_elems + 5
   Mesh%num_dims = ndim
@@ -171,10 +171,10 @@ type(ELEM_INFO), pointer :: elements(:)
 
   Mesh%eb_ids(0) = 1
   Mesh%eb_cnts(0) = nvtxs
-!  /*
+!  
 !   * Each element has one set of coordinates (i.e., node) if a coords file
 !   * was provided; zero otherwise. 
-!   */
+!   
   if (associated(x)) then
     Mesh%eb_nnodes(0) = 1
   else
@@ -183,7 +183,7 @@ type(ELEM_INFO), pointer :: elements(:)
   Mesh%eb_nattrs(0) = 0
   Mesh%eb_names(0) = "chaco"
 
-!  /* allocate the element structure array */
+!   allocate the element structure array 
   allocate(elements(0:Mesh%elem_array_len-1), stat=allocstat)
   if (allocstat /= 0) then
     print *, "fatal: insufficient memory"
@@ -191,18 +191,18 @@ type(ELEM_INFO), pointer :: elements(:)
     return
   endif
 
-!  /*
+!  
 !   * intialize all of the element structs as unused by
 !   * setting the globalID to -1
-!   */
+!   
   do i = 0, Mesh%elem_array_len-1
     call initialize_element(elements(i))
   end do
 
-!  /*
+!  
 !   * now fill the element structure array with the
 !   * information from the Chaco file
-!   */
+!   
   if (.not.fill_elements(Proc, Num_Proc, prob, elements, nvtxs, vtxdist, &
                      start, adj, vwgts, ewgts, ndim, x, y, z)) then
     print *, "fatal: Error returned from fill_elements"
@@ -222,9 +222,9 @@ type(ELEM_INFO), pointer :: elements(:)
   read_chaco_mesh = .true.
 end function read_chaco_mesh
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 
 logical function fill_elements(Proc, Num_Proc, prob, elem, nvtxs, vtxdist, &
                                start, adj, vwgts, ewgts, ndim, x, y, z)
@@ -243,11 +243,11 @@ logical function fill_elements(Proc, Num_Proc, prob, elem, nvtxs, vtxdist, &
   real(Zoltan_FLOAT), pointer  ::  y(:)       ! y-coordinates of the vertices
   real(Zoltan_FLOAT), pointer  ::  z(:)       ! z-coordinates of the vertices
 
-!  /* Local declarations. */
+!   Local declarations. 
   integer(Zoltan_INT) :: i, j, k, start_id, elem_id, local_id, allocstat
-!/***************************** BEGIN EXECUTION ******************************/
+!**************************** BEGIN EXECUTION *****************************
 
-  start_id = vtxdist(Proc)+1  !/* global ids start at 1 */
+  start_id = vtxdist(Proc)+1  ! global ids start at 1 
 
   do i = 0, Mesh%num_elems-1
     elem(i)%globalID = start_id + i
@@ -256,12 +256,12 @@ logical function fill_elements(Proc, Num_Proc, prob, elem, nvtxs, vtxdist, &
     else
       elem(i)%cpu_wgt = 1.0
     endif
-    elem(i)%elem_blk = 0        !/* only one element block for all vertices */
+    elem(i)%elem_blk = 0        ! only one element block for all vertices 
     elem(i)%my_part = Proc
     elem(i)%perm_value = -1
     elem(i)%invperm_value = -1
     if (Mesh%num_dims > 0) then
-!      /* One set of coords per element. */
+!       One set of coords per element. 
       allocate(elem(i)%connect(0:0))
       elem(i)%connect(0) = elem(i)%globalID
       allocate(elem(i)%coord(0:Mesh%num_dims-1,0:0))
@@ -274,7 +274,7 @@ logical function fill_elements(Proc, Num_Proc, prob, elem, nvtxs, vtxdist, &
       endif
     endif
 
-!    /* now start with the adjacencies */
+!     now start with the adjacencies 
     if (associated(start)) then
       elem(i)%nadj = start(i+1) - start(i)
     else
@@ -303,13 +303,13 @@ logical function fill_elements(Proc, Num_Proc, prob, elem, nvtxs, vtxdist, &
       do j = 0, elem(i)%nadj-1
         elem_id = adj(start(i) + j)
 
-!        /* determine which processor the adjacent vertex is on */
+!         determine which processor the adjacent vertex is on 
         do k = 0, Num_Proc-1
-!         /* Compare with <= since elem_id is 1-based and vtxdist is 0-based. */
+!          Compare with <= since elem_id is 1-based and vtxdist is 0-based. 
           if (elem_id <= vtxdist(k+1)) exit
         end do
 
-!        /* sanity check */
+!         sanity check 
         if (k == Num_Proc) then
           print *, "fatal:  adjacent element ",elem_id, &
                    " not in vtxdist array ",i,j
@@ -317,14 +317,14 @@ logical function fill_elements(Proc, Num_Proc, prob, elem, nvtxs, vtxdist, &
           return
         endif 
 
-!        /*
+!        
 !         * if the adjacent element is on this processor
 !         * then find the local id for that element
-!         */
+!         
         if (k == Proc) then
           local_id = elem_id - start_id
           elem(i)%adj(j) = local_id
-        else ! /* use the global id */
+        else !  use the global id 
           elem(i)%adj(j) = elem_id
         endif
 
@@ -334,8 +334,8 @@ logical function fill_elements(Proc, Num_Proc, prob, elem, nvtxs, vtxdist, &
           elem(i)%edge_wgt(j) = ewgts(start(i) + j)
         endif
       end do
-    endif ! /* End: "if (elem(i)%nadj > 0)" */
-  end do ! /* End: "do i = 0, Mesh.num_elems-1" */
+    endif !  End: "if (elem(i)%nadj > 0)" 
+  end do !  End: "do i = 0, Mesh.num_elems-1" 
 
   if (.not.build_elem_comm_maps(Proc, elem)) then
     print *, "Fatal: error building initial elem comm maps"
@@ -346,40 +346,40 @@ logical function fill_elements(Proc, Num_Proc, prob, elem, nvtxs, vtxdist, &
   fill_elements = .true.
 end function fill_elements
 
-!/**********************************************************/
+!********************************************************
 
 logical function chaco_input_graph(fin, inname, start, adjacency, nvtxs, vweights, eweights)
-integer(Zoltan_INT) :: fin                         !/* input file */
-character(len=*) :: inname                 !/* name of input file */
-integer(Zoltan_INT), pointer :: start(:)     !/* start of edge list for each vertex
-integer(Zoltan_INT), pointer :: adjacency(:) !/* edge list data */
-integer(Zoltan_INT) :: nvtxs                 !/* number of vertices in graph */
-real(Zoltan_FLOAT), pointer :: vweights(:)         !/* vertex weight list data */
-real(Zoltan_FLOAT), pointer :: eweights(:)   !/* edge weight list data */
+integer(Zoltan_INT) :: fin                         ! input file 
+character(len=*) :: inname                 ! name of input file 
+integer(Zoltan_INT), pointer :: start(:)     ! start of edge list for each vertex
+integer(Zoltan_INT), pointer :: adjacency(:) ! edge list data 
+integer(Zoltan_INT) :: nvtxs                 ! number of vertices in graph 
+real(Zoltan_FLOAT), pointer :: vweights(:)         ! vertex weight list data 
+real(Zoltan_FLOAT), pointer :: eweights(:)   ! edge weight list data 
  
-integer(Zoltan_INT) :: adjptr                !/* loops through adjacency data */
-integer(Zoltan_INT) :: ewptr                 !/* loops through edge weight data */
-integer(Zoltan_INT) :: narcs                !/* number of edges expected in graph */
-integer(Zoltan_INT) :: nedges        !/* twice number of edges really in graph */
-integer(Zoltan_INT) :: nedge        !/* loops through edges for each vertex */
-logical :: found_flag        !/* is vertex found in adjacency list? */
-logical :: skip_flag        !/* should this edge be ignored? */
-integer(Zoltan_INT) :: vtx                !/* vertex in graph */
-integer(Zoltan_INT) :: sum_edges        !/* total number of edges read so far */
-integer(Zoltan_INT) :: option                !/* input option */
-logical :: using_ewgts        !/* are edge weights in input file? */
-logical :: using_vwgts        !/* are vertex weights in input file? */
-logical :: vtxnums                !/* are vertex numbers in input file? */
-integer(Zoltan_INT) :: vertex                !/* current vertex being read */
-logical :: new_vertex        !/* new vertex being read */
-real(Zoltan_FLOAT) :: weight        !/* weight being read */
-real(Zoltan_FLOAT) :: eweight        !/* edge weight being read */
-integer(Zoltan_INT) :: neighbor                !/* neighbor of current vertex */
-integer(Zoltan_INT) :: self_edge        !/* is a self edge encountered? */
-logical :: ignore_me        !/* is this edge being ignored? */
-integer(Zoltan_INT) :: ignored                !/* how many edges are ignored? */
-logical :: error_flag        !/* error reading input? */
-integer(Zoltan_INT) :: j                !/* loop counters */
+integer(Zoltan_INT) :: adjptr                ! loops through adjacency data 
+integer(Zoltan_INT) :: ewptr                 ! loops through edge weight data 
+integer(Zoltan_INT) :: narcs                ! number of edges expected in graph 
+integer(Zoltan_INT) :: nedges        ! twice number of edges really in graph 
+integer(Zoltan_INT) :: nedge        ! loops through edges for each vertex 
+logical :: found_flag        ! is vertex found in adjacency list? 
+logical :: skip_flag        ! should this edge be ignored? 
+integer(Zoltan_INT) :: vtx                ! vertex in graph 
+integer(Zoltan_INT) :: sum_edges        ! total number of edges read so far 
+integer(Zoltan_INT) :: option                ! input option 
+logical :: using_ewgts        ! are edge weights in input file? 
+logical :: using_vwgts        ! are vertex weights in input file? 
+logical :: vtxnums                ! are vertex numbers in input file? 
+integer(Zoltan_INT) :: vertex                ! current vertex being read 
+logical :: new_vertex        ! new vertex being read 
+real(Zoltan_FLOAT) :: weight        ! weight being read 
+real(Zoltan_FLOAT) :: eweight        ! edge weight being read 
+integer(Zoltan_INT) :: neighbor                ! neighbor of current vertex 
+integer(Zoltan_INT) :: self_edge        ! is a self edge encountered? 
+logical :: ignore_me        ! is this edge being ignored? 
+integer(Zoltan_INT) :: ignored                ! how many edges are ignored? 
+logical :: error_flag        ! error reading input? 
+integer(Zoltan_INT) :: j                ! loop counters 
 integer(Zoltan_INT) :: i ! current data index on input line
 integer(Zoltan_INT) :: ints_read(32) ! array of integers from one input line
 integer(Zoltan_INT) :: nints_read    ! number of integers on last input line read
@@ -389,11 +389,11 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
     nullify(start, adjacency, vweights, eweights)
     error_flag = .false.
 
-!    /* Read first line  of input (= nvtxs, narcs, option). */
-!    /* The (decimal) digits of the option variable mean:
+!     Read first line  of input (= nvtxs, narcs, option). 
+!     The (decimal) digits of the option variable mean:
 !           1's digit not zero => input edge weights
 !          10's digit not zero => input vertex weights
-!         100's digit not zero => include vertex numbers */
+!         100's digit not zero => include vertex numbers 
 
     call read_graph_line(fin,ints_read,nints_read)
     if (nints_read < 2) then
@@ -434,7 +434,7 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
     option = option/10
     vtxnums = (option - 10 * (option / 10)) /= 0
 
-!    /* Allocate space for rows and columns. */
+!     Allocate space for rows and columns. 
     allocate(start(0:nvtxs))
     if (narcs /= 0) then
         allocate(adjacency(0:2*narcs))
@@ -475,7 +475,7 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
            return
         endif
 
-!/* If multiple input lines per vertex, read vertex number. */
+! If multiple input lines per vertex, read vertex number. 
         if (vtxnums) then
             j = NINT(vals_read(i))
             i = i+1
@@ -499,7 +499,7 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
 
         if (vertex > nvtxs) exit
 
-!/* If vertices are weighted, read vertex weight. */
+! If vertices are weighted, read vertex weight. 
         if (using_vwgts .and. new_vertex) then
             if (nvals_read < i) then
                 print *,"ERROR in graph file ", inname, &
@@ -525,7 +525,7 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
         do
             if (i > nvals_read) exit
 
-!/* Read number of adjacent vertex. */
+! Read number of adjacent vertex. 
             neighbor = NINT(vals_read(i))
             i = i+1
 
@@ -559,7 +559,7 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
                 self_edge = self_edge + 1
             endif
 
-! /* Check if adjacency is repeated. */
+!  Check if adjacency is repeated. 
             if (.not. skip_flag) then
                 found_flag = .false.
                 do j = start(vertex-1), sum_edges+nedge-1
@@ -580,7 +580,7 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
             endif
           endif !CHECK_INPUT
 
-!/* Read edge weight if it's being input. */
+! Read edge weight if it's being input. 
             if (using_ewgts) then
                 if (nvals_read < i) then
                     print *,"ERROR in graph file ", inname, &
@@ -607,7 +607,7 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
                 endif
             endif
 
-!/* Check for edge only entered once. */
+! Check for edge only entered once. 
             if (neighbor < vertex .and. .not.skip_flag) then
                 found_flag = .false.
                 do j = start(neighbor-1), start(neighbor)-1
@@ -624,7 +624,7 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
                 endif
             endif
 
-!/* Add edge to data structure. */
+! Add edge to data structure. 
             if (.not. skip_flag) then
                 nedges = nedges + 1
                 if (nedges > 2*narcs) then
@@ -647,7 +647,7 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
     end do
   endif ! narcs > 0
 
-!/* Make sure there's nothing else in file. */
+! Make sure there's nothing else in file. 
     call read_real_line(fin,vals_read,nvals_read)
     if (nvals_read /= 0 .and. CHECK_INPUT) then
         print *,"WARNING: Possible error in graph file ", inname
@@ -660,8 +660,8 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
         print *,"WARNING: ",self_edge," self edges were read and ignored."
     endif
 
-    if (vertex /= 0) then !/* Normal file was read. */
-!        /* Make sure narcs was reasonable. */
+    if (vertex /= 0) then ! Normal file was read. 
+!         Make sure narcs was reasonable. 
         if (nedges + 2 * self_edge /= 2 * narcs .and. &
             nedges + 2 * self_edge + ignored /= 2 * narcs .and. &
                 nedges + self_edge /= 2 * narcs .and. & 
@@ -674,7 +674,7 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
         endif
 
     else
-!/* Graph was empty => must be using inertial method. */
+! Graph was empty => must be using inertial method. 
         deallocate(start)
         if (associated(adjacency)) deallocate(adjacency)
         if (associated(vweights)) deallocate(vweights)
@@ -686,21 +686,21 @@ integer(Zoltan_INT) :: nvals_read    ! number of values on last input line read
     chaco_input_graph = .not. error_flag
 end function chaco_input_graph
 
-!/* This software was developed by Bruce Hendrickson and Robert Leland   *
+! This software was developed by Bruce Hendrickson and Robert Leland   *
 ! * at Sandia National Laboratories under US Department of Energy        *
-! * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
+! * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. 
 
 logical function chaco_input_geom(fingeom, geomname, nvtxs, igeom, x, y, z)
-integer(Zoltan_INT) ::     fingeom        !/* geometry input file */
-character(len=FILENAME_MAX) :: geomname !/* name of geometry file */
-integer(Zoltan_INT) :: nvtxs        !/* number of coordinates to read */
-integer(Zoltan_INT) :: igeom        !/* dimensionality of geometry */
-real(Zoltan_FLOAT), pointer :: x(:), y(:), z(:) !/* coordiates of vertices */
+integer(Zoltan_INT) ::     fingeom        ! geometry input file 
+character(len=FILENAME_MAX) :: geomname ! name of geometry file 
+integer(Zoltan_INT) :: nvtxs        ! number of coordinates to read 
+integer(Zoltan_INT) :: igeom        ! dimensionality of geometry 
+real(Zoltan_FLOAT), pointer :: x(:), y(:), z(:) ! coordiates of vertices 
 
-    real(Zoltan_FLOAT) :: xc, yc, zc !/* first x, y, z coordinate */
-    integer(Zoltan_INT) :: nread     !/* number of lines of coordinates read */
-    integer(Zoltan_INT) :: ndims     !/* number of values in an input line */
-    integer(Zoltan_INT) :: i         !/* loop counter */
+    real(Zoltan_FLOAT) :: xc, yc, zc ! first x, y, z coordinate 
+    integer(Zoltan_INT) :: nread     ! number of lines of coordinates read 
+    integer(Zoltan_INT) :: ndims     ! number of values in an input line 
+    integer(Zoltan_INT) :: i         ! loop counter 
     real(Zoltan_FLOAT) :: floats_read(32) ! array of floats from one input line
     integer(Zoltan_INT) :: num_read  ! number of entries in floats_read
     integer :: iostat            ! read status
@@ -766,7 +766,7 @@ real(Zoltan_FLOAT), pointer :: x(:), y(:), z(:) !/* coordiates of vertices */
         endif
     end do
 
-!    /* Check for spurious extra stuff in file. */
+!     Check for spurious extra stuff in file. 
     call read_real_line(fingeom,floats_read,num_read)
     if (num_read > 0 .and. CHECK_INPUT) then
         print *,"Warning: possible error in geometry file ", geomname
@@ -781,25 +781,25 @@ end function chaco_input_geom
 logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
                                   adjncy, vwgts, ewgts, ndim, x, y, z)
 
-  integer :: comm                        !/* MPI Communicator */
-  integer(Zoltan_INT) :: host_proc        !/* processor where all the data is initially */
-  integer(Zoltan_INT) :: nvtxs               !/* number of vertices in graph */
-  integer(Zoltan_INT), pointer :: vtxdist(:) !/* vertex distribution data */
-  integer(Zoltan_INT), pointer :: xadj(:)    !/* start of edge list for each vertex
-  integer(Zoltan_INT), pointer :: adjncy(:)  !/* edge list data */
-  real(Zoltan_FLOAT), pointer :: vwgts(:)   !/* vertex weight list data */
-  real(Zoltan_FLOAT), pointer :: ewgts(:)    !/* edge weight list data */
-  integer(Zoltan_INT) :: ndim                !/* dimension of the geometry */
-  real(Zoltan_FLOAT), pointer :: x(:)        !/* x-coordinates of the vertices */
-  real(Zoltan_FLOAT), pointer :: y(:)        !/* y-coordinates of the vertices */
-  real(Zoltan_FLOAT), pointer :: z(:)        !/* z-coordinates of the vertices */
+  integer :: comm                        ! MPI Communicator 
+  integer(Zoltan_INT) :: host_proc        ! processor where all the data is initially 
+  integer(Zoltan_INT) :: nvtxs               ! number of vertices in graph 
+  integer(Zoltan_INT), pointer :: vtxdist(:) ! vertex distribution data 
+  integer(Zoltan_INT), pointer :: xadj(:)    ! start of edge list for each vertex
+  integer(Zoltan_INT), pointer :: adjncy(:)  ! edge list data 
+  real(Zoltan_FLOAT), pointer :: vwgts(:)   ! vertex weight list data 
+  real(Zoltan_FLOAT), pointer :: ewgts(:)    ! edge weight list data 
+  integer(Zoltan_INT) :: ndim                ! dimension of the geometry 
+  real(Zoltan_FLOAT), pointer :: x(:)        ! x-coordinates of the vertices 
+  real(Zoltan_FLOAT), pointer :: y(:)        ! y-coordinates of the vertices 
+  real(Zoltan_FLOAT), pointer :: z(:)        ! z-coordinates of the vertices 
 
-!/*
+!
 ! * Distribute a graph from one processor to all processors.
 ! * The ParMetis format is used for the distributed graph.
 ! * The memory for the graph on the host node is freed
 ! * and fresh memory is allocated for the distr. graph.
-! */
+! 
 
   integer(Zoltan_INT) :: nprocs, myproc, i, n, p, nedges, nsend, rest
   integer(Zoltan_INT) :: ierr, allocstat
@@ -812,11 +812,11 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
 
   nullify(old_xadj, old_adjncy, old_vwgts, size, old_x, old_y, old_z, old_ewgts)
 
-!  /* Determine number of processors and my rank. */
+!   Determine number of processors and my rank. 
   call MPI_Comm_size (comm, nprocs, ierr )
   call MPI_Comm_rank (comm, myproc, ierr )
 
-!  /* Initialize */
+!   Initialize 
   if (associated(ewgts)) then
      use_ewgts = 1
   else
@@ -833,14 +833,14 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
      use_graph = 0
   endif
  
-!  /* Broadcast to all procs */
+!   Broadcast to all procs 
   call MPI_Bcast( use_vwgts, 1, MPI_INTEGER, host_proc, comm, ierr)
   call MPI_Bcast( use_ewgts, 1, MPI_INTEGER, host_proc, comm, ierr)
   call MPI_Bcast( use_graph, 1, MPI_INTEGER, host_proc, comm, ierr)
   call MPI_Bcast( ndim, 1, MPI_INTEGER, host_proc, comm, ierr)
   call MPI_Bcast( nvtxs, 1, MPI_INTEGER, host_proc, comm, ierr)
   
-!  /* Set up vtxdist data */
+!   Set up vtxdist data 
   if (.not. associated(vtxdist)) then
     allocate(vtxdist(0:nprocs), stat=allocstat)
     if (allocstat /= 0) then
@@ -849,7 +849,7 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
       return
     endif
   endif
-!  /* Calculate uniform vertex distribution */
+!   Calculate uniform vertex distribution 
   vtxdist(0) = 0
   rest = nvtxs
   do i=0, nprocs-1
@@ -858,7 +858,7 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
     rest = rest - n
   end do
 
-!  /* Store pointers to original data */
+!   Store pointers to original data 
   if (myproc == host_proc) then
     old_xadj   => xadj
     old_adjncy => adjncy
@@ -867,8 +867,8 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
     old_z      => z
   endif
 
-!  /* Allocate space for new distributed graph data */
-  n = vtxdist(myproc+1)- vtxdist(myproc) !/* local # of nodes */
+!   Allocate space for new distributed graph data 
+  n = vtxdist(myproc+1)- vtxdist(myproc) ! local # of nodes 
   nvtxs = n
   if (use_graph /= 0) then
     allocate(xadj(0:n),stat=allocstat)
@@ -898,8 +898,8 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
   endif
 
 
-!  /* Distribute graph data to all procs */
-!  /* Send xadj and coordinates, if appropriate */
+!   Distribute graph data to all procs 
+!   Send xadj and coordinates, if appropriate 
 
   if (myproc == host_proc) then
     if (use_graph /= 0) then
@@ -918,7 +918,7 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
       offset = vtxdist(p)
       nsend = vtxdist(p+1) - offset
       if (p == myproc) then
-!        /* do a local copy */
+!         do a local copy 
         if (use_graph /= 0) then
           do i=0, nsend
             xadj(i) = old_xadj(offset+i)
@@ -975,13 +975,13 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
   endif
 
   if (use_graph /= 0) then
-!    /* Adjust xadj values */
+!     Adjust xadj values 
     offset = xadj(0)
     do i=0, nvtxs
       xadj(i) = xadj(i) - offset
     end do
 
-!    /* Distribute adjacency info */
+!     Distribute adjacency info 
     nedges = xadj(nvtxs)
     if (nedges > 0) then
       allocate(adjncy(0:nedges-1),stat=allocstat)
@@ -1001,13 +1001,13 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
       endif
     endif
 
-!    /* Next send adjncy data */
+!     Next send adjncy data 
     if (myproc== host_proc) then
       do p=0, nprocs-1
         if (size(p) == 0) cycle
         offset = old_xadj(vtxdist(p))
         if (p == myproc) then
-!          /* do a local copy */
+!           do a local copy 
           do i=0, size(p)-1
             adjncy(i) = old_adjncy(offset+i)
           end do
@@ -1033,7 +1033,7 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
     endif
   endif
 
-!  /* Free space on host proc */
+!   Free space on host proc 
   if (myproc == host_proc) then
     if (associated(old_xadj)) deallocate(old_xadj)
     if (associated(old_adjncy)) deallocate(old_adjncy)
@@ -1055,7 +1055,7 @@ logical function chaco_dist_graph(comm, host_proc, nvtxs, vtxdist, xadj, &
   chaco_dist_graph = .true.
 end function chaco_dist_graph
 
-!/**************************************************************/
+!************************************************************
 
 subroutine read_graph_line(fp,ints,num)
 integer(Zoltan_INT) :: fp,ints(:),num
@@ -1100,7 +1100,7 @@ num = num - 1
 
 end subroutine read_graph_line
 
-!/**************************************************************/
+!************************************************************
 
 subroutine read_real_line(fp,floats,num)
 integer(Zoltan_INT) :: fp,num
@@ -1145,14 +1145,14 @@ num = num - 1
 
 end subroutine read_real_line
 
-!/**************************************************************/
+!************************************************************
 
 subroutine initialize_element(elem)
 type(ELEM_INFO) :: elem
 
-!/*
+!
 ! * Initializes all fields of an element.
-! */
+! 
   elem%globalID = -1
   elem%border = 0
   elem%my_part = -1
@@ -1166,14 +1166,14 @@ type(ELEM_INFO) :: elem
   nullify(elem%coord, elem%connect, elem%adj, elem%adj_proc, elem%edge_wgt)
 end subroutine initialize_element
 
-!/**************************************************************/
+!************************************************************
 
 subroutine free_element_arrays(elem)
 type(ELEM_INFO) :: elem
 
-!/*
+!
 ! * Frees all memory malloc'ed for an individual element.
-! */
+! 
 
   if (associated(elem%coord)) deallocate(elem%coord)
   if (associated(elem%connect)) deallocate(elem%connect)
@@ -1192,16 +1192,16 @@ type(ELEM_INFO) :: elem
   elem%mem_wgt = 0
 end subroutine free_element_arrays
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 
 logical function build_elem_comm_maps(proc, elements)
 use dr_sort
 integer(Zoltan_INT) :: proc
 type(ELEM_INFO), target :: elements(0:)
 
-!/*
+!
 ! * Build element communication maps, given a distributed mesh.
 ! * This routine builds initial communication maps for Chaco input
 ! * (for Nemesis, initial communication maps are read from the Nemesis file)
@@ -1216,7 +1216,7 @@ type(ELEM_INFO), target :: elements(0:)
 ! * IDs on the lower-number processor; the secondary key is the neighboring
 ! * elements global IDs.  The secondary key is used when a single element
 ! * must communicate with more than one neighbor.
-! */
+! 
 
 integer(Zoltan_INT) :: i, j
 type(ELEM_INFO), pointer :: elem
@@ -1240,9 +1240,9 @@ end type map_list_head
 
 type(map_list_head), pointer :: tmp_maps(:), map, tmp_map_ptr(:)
 
-!  /*
+!  
 !   *  Free the old maps, if they exist.
-!   */
+!   
 
   if (associated(Mesh%ecmap_id)) then
     deallocate(Mesh%ecmap_id)
@@ -1253,10 +1253,10 @@ type(map_list_head), pointer :: tmp_maps(:), map, tmp_map_ptr(:)
     Mesh%necmap = 0
   endif
 
-!  /*
+!  
 !   *  Look for off-processor adjacencies.
 !   *  Loop over all elements 
-!   */
+!   
 
   num_alloc_maps = MAP_ALLOC
   allocate(Mesh%ecmap_id(0:num_alloc_maps-1), &
@@ -1273,23 +1273,23 @@ type(map_list_head), pointer :: tmp_maps(:), map, tmp_map_ptr(:)
     elem => elements(i)
     do j = 0, elem%adj_len-1
 
-!     /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
+!      Skip NULL adjacencies (sides that are not adjacent to another elem). 
       if (elem%adj(j) == -1) cycle
 
       iadj_elem = elem%adj(j)
       iadj_proc = elem%adj_proc(j)
 
       if (iadj_proc /= proc) then
-!        /* 
+!         
 !         * Adjacent element is off-processor.
 !         * Add this element to the temporary data structure for 
 !         * the appropriate neighboring processor.
-!         */
+!         
         indx = in_list(iadj_proc, Mesh%necmap, Mesh%ecmap_id)
         if (indx == -1) then
-!          /*
+!          
 !           * Start a new communication map.
-!           */
+!           
 
           if (Mesh%necmap >= num_alloc_maps) then
             num_alloc_maps = num_alloc_maps + MAP_ALLOC
@@ -1319,7 +1319,7 @@ type(map_list_head), pointer :: tmp_maps(:), map, tmp_map_ptr(:)
           indx = Mesh%necmap
           Mesh%necmap = Mesh%necmap + 1
         endif
-!        /* Add to map for indx. */
+!         Add to map for indx. 
         map => tmp_maps(indx)
         if (Mesh%ecmap_cnt(indx) >= map%map_alloc_size) then
           map%map_alloc_size = map%map_alloc_size + MAP_ALLOC
@@ -1336,8 +1336,8 @@ type(map_list_head), pointer :: tmp_maps(:), map, tmp_map_ptr(:)
         tmp = Mesh%ecmap_cnt(indx)
         map%glob_id(tmp) = elem%globalID
         map%elem_id(tmp) = i
-        map%side_id(tmp) = j+1  !/* side is determined by position in
-                                !   adj array (+1 since not 0-based). */
+        map%side_id(tmp) = j+1  ! side is determined by position in
+                                !   adj array (+1 since not 0-based). 
         map%neigh_id(tmp) = iadj_elem
         Mesh%ecmap_cnt(indx) = Mesh%ecmap_cnt(indx) + 1
         max_adj = max_adj + 1
@@ -1345,16 +1345,16 @@ type(map_list_head), pointer :: tmp_maps(:), map, tmp_map_ptr(:)
     end do
   end do
 
-!  /*
+!  
 !   * Allocate data structure for element communication map arrays.
-!   */
+!   
 
   allocate(Mesh%ecmap_elemids(0:max_adj-1), Mesh%ecmap_sideids(0:max_adj-1), &
            Mesh%ecmap_neighids(0:max_adj-1))
 
-!  /*
+!  
 !   * Allocate temporary memory for sort index.
-!   */
+!   
   max_adj_per_map = 0
   do i = 0, Mesh%necmap-1
     if (Mesh%ecmap_cnt(i) > max_adj_per_map) then
@@ -1371,12 +1371,12 @@ type(map_list_head), pointer :: tmp_maps(:), map, tmp_map_ptr(:)
       sindex(j) = j
     end do
 
-!    /*
+!    
 !     * Sort the map so that adjacent processors have the same ordering
 !     * for the communication.  
 !     * Assume the ordering of the lower-numbered processor in the pair
 !     * of communicating processors.
-!     */
+!     
 
     if (proc < Mesh%ecmap_id(i)) then
       call dr_sort2_index(0, Mesh%ecmap_cnt(i)-1, map%glob_id, map%neigh_id, sindex)
@@ -1384,9 +1384,9 @@ type(map_list_head), pointer :: tmp_maps(:), map, tmp_map_ptr(:)
       call dr_sort2_index(0, Mesh%ecmap_cnt(i)-1, map%neigh_id, map%glob_id, sindex)
     endif
 
-!    /*
+!    
 !     * Copy sorted data into elem map arrays. 
-!     */
+!     
 
     offset = cnt
     do j = 0, Mesh%ecmap_cnt(i)-1
@@ -1399,7 +1399,7 @@ type(map_list_head), pointer :: tmp_maps(:), map, tmp_map_ptr(:)
     cnt = cnt + Mesh%ecmap_cnt(i)
   end do
 
-!  /* Free temporary data structure. */
+!   Free temporary data structure. 
   do i = 0, Mesh%necmap-1
     deallocate(tmp_maps(i)%glob_id, tmp_maps(i)%elem_id, &
                tmp_maps(i)%side_id, tmp_maps(i)%neigh_id)
@@ -1410,15 +1410,15 @@ type(map_list_head), pointer :: tmp_maps(:), map, tmp_map_ptr(:)
   build_elem_comm_maps = .true.
 end function build_elem_comm_maps
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/* Function in_list() begins:
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
+! Function in_list() begins:
 ! *----------------------------------------------------------------------------
 ! * This function searches a vector for the input value. If the value is
 ! * found in the vector then it's index in that vector is returned, otherwise
 ! * the function returns -1;
-! *****************************************************************************/
+! ****************************************************************************
 integer(Zoltan_INT) function in_list(value, count, vector)
 integer(Zoltan_INT), intent(in) :: value, count
 integer(Zoltan_INT) :: vector(0:)
@@ -1437,9 +1437,9 @@ integer(Zoltan_INT) :: vector(0:)
   in_list = -1
 end function in_list
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 
 subroutine realloc(array,n,stat)
 integer(Zoltan_INT), pointer :: array(:)

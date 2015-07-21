@@ -119,13 +119,13 @@ public:
   // Element blocks:
   int Num_Elmt_Blocks() const { return num_elmt_blocks; }
   
-  std::string Load_Elmt_Block_Description(int block_index) const;
+  std::string Load_Elmt_Block_Description(size_t block_index) const;
   std::string Load_Elmt_Block_Descriptions() const;  // Loads all blocks.
-  std::string Free_Elmt_Block(int block_index) const; // Frees all dynamic memory.
+  std::string Free_Elmt_Block(size_t block_index) const; // Frees all dynamic memory.
   std::string Free_Elmt_Blocks() const;               // Frees all blocks.
   
   // Moves array of connectivities from the block to the conn array.
-  std::string Give_Connectivity(int block_index, size_t& num_e, size_t& npe, INT*& conn);
+  std::string Give_Connectivity(size_t block_index, size_t& num_e, size_t& npe, INT*& conn);
   
   // Number maps:
   std::string Load_Node_Map();
@@ -170,24 +170,28 @@ public:
   // Node/Side sets:
   
 
-  Exo_Entity* Get_Entity_by_Index(EXOTYPE type, int index) const;
+  Exo_Entity* Get_Entity_by_Index(EXOTYPE type, size_t index) const;
   Exo_Entity* Get_Entity_by_Id   (EXOTYPE type, size_t id)    const;
+  Exo_Entity* Get_Entity_by_Name (EXOTYPE type, const std::string &name)    const;
   
   int        Block_Index            (size_t block_id) const;  // Returns associated block index.
-  size_t        Block_Id               (int block_index) const;  // Returns associated block id.
+  size_t        Block_Id               (size_t block_index) const;  // Returns associated block id.
   Exo_Block<INT>* Get_Elmt_Block_by_Id   (size_t block_id)    const;
-  Exo_Block<INT>* Get_Elmt_Block_by_Index(int block_index) const;
+  Exo_Block<INT>* Get_Elmt_Block_by_Index(size_t block_index) const;
+  Exo_Block<INT>* Get_Elmt_Block_by_Name (const std::string &name)    const;
   
 
   int       Side_Set_Index       (size_t set_id)         const;  // Returns associated sideset index.
-  size_t       Side_Set_Id          (int set_index)      const;
+  size_t       Side_Set_Id          (size_t set_index)      const;
   Side_Set<INT>* Get_Side_Set_by_Id   (size_t set_id)         const;
-  Side_Set<INT>* Get_Side_Set_by_Index(int side_set_index) const;
+  Side_Set<INT>* Get_Side_Set_by_Index(size_t side_set_index) const;
+  Side_Set<INT>* Get_Side_Set_by_Name (const std::string &name)    const;
 
   int       Node_Set_Index       (size_t set_id)         const;  // Returns associated sideset index.
-  size_t       Node_Set_Id          (int set_index)      const;
+  size_t       Node_Set_Id          (size_t set_index)      const;
   Node_Set<INT>* Get_Node_Set_by_Id   (size_t set_id)         const;
-  Node_Set<INT>* Get_Node_Set_by_Index(int side_set_index) const;
+  Node_Set<INT>* Get_Node_Set_by_Index(size_t side_set_index) const;
+  Node_Set<INT>* Get_Node_Set_by_Name (const std::string &name)    const;
   
   // Misc functions:
   
@@ -209,12 +213,12 @@ protected:
   
   std::string  title;
   std::vector<std::string> coord_names;
-  INT    num_nodes;
-  INT    dimension;
-  INT    num_elmts;
-  INT    num_elmt_blocks;
-  INT    num_node_sets;
-  INT    num_side_sets;
+  size_t num_nodes;
+  size_t dimension;
+  size_t num_elmts;
+  size_t num_elmt_blocks;
+  size_t num_node_sets;
+  size_t num_side_sets;
   float        db_version;
   float        api_version;
   int          io_word_size;    // Note: The "compute word size" is always 8.

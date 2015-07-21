@@ -72,20 +72,21 @@ namespace TSQR {
       const ordinal_type ncols = A.ncols();
       const ordinal_type lda = A.lda();
 
-      if (nrows == lda)
-        { // The whole A matrix is stored contiguously.
-          const ordinal_type nelts = nrows * ncols;
-          scalar_type* const A_ptr = A.get();
-          std::transform (A_ptr, A_ptr + nelts, A_ptr, std::bind2nd(std::divides<scalar_type>(), denom));
+      if (nrows == lda) { // A is stored contiguously.
+        const ordinal_type nelts = nrows * ncols;
+        scalar_type* const A_ptr = A.get ();
+        for (ordinal_type k = 0; k < nelts; ++k) {
+          A_ptr[k] /= denom;
         }
-      else
-        { // Each column of A is stored contiguously.
-          for (ordinal_type j = 0; j < ncols; ++j)
-            {
-              scalar_type* const A_j = &A(0,j);
-              std::transform (A_j, A_j + nrows, A_j, std::bind2nd(std::divides<scalar_type>(), denom));
-            }
+      }
+      else { // Each column of A is stored contiguously.
+        for (ordinal_type j = 0; j < ncols; ++j) {
+          scalar_type* const A_j = &A(0,j);
+          for (ordinal_type i = 0; i < nrows; ++i) {
+            A_j[i] /= denom;
+          }
         }
+      }
     }
 
     template< class MatrixViewType, class Generator >

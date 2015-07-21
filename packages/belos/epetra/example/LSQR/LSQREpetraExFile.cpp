@@ -158,7 +158,6 @@ bool proc_verbose = false;
     isRHS = false; // numrhs > 1 not yet supported
     X = rcp( new Epetra_MultiVector( *Map, numrhs ) );
     B = rcp( new Epetra_MultiVector( *Map, numrhs ) );
-    X->Seed();
     X->Random();
     OPT::Apply( *A, *X, *B ); // B := AX
     X->PutScalar( 0.0 );   // annihilate X

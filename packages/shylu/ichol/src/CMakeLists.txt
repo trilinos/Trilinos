@@ -17,6 +17,10 @@ SET(SOURCES "")
 FILE(GLOB HEADERS_PUBLIC *.hpp)
 LIST( APPEND HEADERS_PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h )
 
+
+APPEND_SET(SOURCES
+  util.cpp)
+
 #-----------------------------------------------------------------------------
 
 TRIBITS_ADD_LIBRARY(
@@ -26,4 +30,3 @@ TRIBITS_ADD_LIBRARY(
     SOURCES ${SOURCES}
     DEPLIBS
     )
-

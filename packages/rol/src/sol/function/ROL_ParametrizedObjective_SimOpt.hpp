@@ -46,29 +46,33 @@
 #define ROL_PARAMETRIZEDOBJECTIVE_SIMOPT_H
 
 #include "ROL_Objective_SimOpt.hpp"
+#include "ROL_ParametrizedObjective.hpp"
 #include "ROL_Vector_SimOpt.hpp"
 
 namespace ROL {
 
 template <class Real>
-class ParametrizedObjective_SimOpt : public Objective_SimOpt<Real> {
-private:
-  std::vector<Real> param_;
-
-protected:
-  const std::vector<Real> getParameter(void) const {
-    return this->param_;
-  }
-
+class ParametrizedObjective_SimOpt : public Objective_SimOpt<Real>, public ParametrizedObjective<Real>  {
+//private:
+//  std::vector<Real> param_;
+//
+//protected:
+//  const std::vector<Real> getParameter(void) const {
+//    return this->param_;
+//  }
+//
 public:
-  virtual void setParameter(const std::vector<Real> &param) {
-    this->param_ = param;
-  }
-
-  virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
-
-  virtual Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
-
+  virtual ~ParametrizedObjective_SimOpt(void){}
+  ParametrizedObjective_SimOpt(void){}
+//
+//  virtual void setParameter(const std::vector<Real> &param) {
+//    this->param_ = param;
+//  }
+//
+//  virtual void update( const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
+//
+//  virtual Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) = 0;
+//
 }; // class ParametrizedObjective_SimOpt
 
 } // namespace ROL

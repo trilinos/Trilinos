@@ -78,6 +78,7 @@
 /// It defines a new implementation of Chebyshev iteration.
 
 #include "Ifpack2_Details_Chebyshev_decl.hpp"
+#include <Kokkos_ArithTraits.hpp>
 #include <cmath>
 
 // Uncommit the #define line below if you want Chebyshev to do extra
@@ -90,59 +91,126 @@
 namespace Ifpack2 {
 namespace Details {
 
-namespace {
-  // We use this text a lot in error messages.
-  const char computeBeforeApplyReminder[] =
-    "This means one of the following:\n"
-    "  - you have not yet called compute() on this instance, or \n"
-    "  - you didn't call compute() after calling setParameters().\n\n"
-    "After creating an Ifpack2::Chebyshev instance,\n"
-    "you must _always_ call compute() at least once before calling apply().\n"
-    "After calling compute() once, you do not need to call it again,\n"
-    "unless the matrix has changed or you have changed parameters\n"
-    "(by calling setParameters()).";
+namespace { // (anonymous)
 
-  // Utility function for inverting diagonal with threshold.
-  template <typename S, typename L, typename G, typename N>
-  void
-  reciprocal_threshold (Tpetra::Vector<S,L,G,N>& V,
-                        const S& min_val)
+// We use this text a lot in error messages.
+const char computeBeforeApplyReminder[] =
+  "This means one of the following:\n"
+  "  - you have not yet called compute() on this instance, or \n"
+  "  - you didn't call compute() after calling setParameters().\n\n"
+  "After creating an Ifpack2::Chebyshev instance,\n"
+  "you must _always_ call compute() at least once before calling apply().\n"
+  "After calling compute() once, you do not need to call it again,\n"
+  "unless the matrix has changed or you have changed parameters\n"
+  "(by calling setParameters()).";
+
+} // namespace (anonymous)
+
+// ReciprocalThreshold stuff below needs to be in a namspace visible outside
+// of this file
+template<class XV, class SizeType = typename XV::size_type>
+struct V_ReciprocalThresholdSelfFunctor
+{
+  typedef typename XV::execution_space execution_space;
+  typedef typename XV::non_const_value_type value_type;
+  typedef SizeType size_type;
+  typedef Kokkos::Details::ArithTraits<value_type> KAT;
+  typedef typename KAT::mag_type mag_type;
+
+  XV X_;
+  const value_type m_min_val;
+  const mag_type m_min_val_mag;
+
+  V_ReciprocalThresholdSelfFunctor (const XV& X,
+                                    const value_type& min_val) :
+    X_ (X),
+    m_min_val (min_val),
+    m_min_val_mag (KAT::abs (min_val))
+  {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type& i) const
   {
-    typedef typename Tpetra::Vector<S, L, G, N>::scalar_type scalar_type;
-    typedef typename Tpetra::Vector<S, L, G, N>::mag_type mag_type;
-    typedef Teuchos::ScalarTraits<scalar_type> STS;
+    if (KAT::abs (X_(i)) < m_min_val_mag) {
+      X_[i] = m_min_val;
+    }
+    else {
+      X_[i] = KAT::one () / X_[i];
+    }
+  }
+};
+
+template<class XV, class SizeType = typename XV::size_type>
+struct LocalReciprocalThreshold {
+  static void
+  compute (const XV& X,
+           const typename XV::non_const_value_type& minVal)
+  {
+    typedef typename XV::execution_space execution_space;
+    Kokkos::RangePolicy<execution_space, SizeType> policy (0, X.dimension_0 ());
+    V_ReciprocalThresholdSelfFunctor<XV, SizeType> op (X, minVal);
+    Kokkos::parallel_for (policy, op);
+  }
+};
+
+template <class TpetraVectorType,
+          const bool classic = TpetraVectorType::node_type::classic>
+struct GlobalReciprocalThreshold {};
+
+template <class TpetraVectorType>
+struct GlobalReciprocalThreshold<TpetraVectorType, true> {
+  static void
+  compute (TpetraVectorType& V,
+           const typename TpetraVectorType::scalar_type& min_val)
+  {
+    typedef typename TpetraVectorType::scalar_type scalar_type;
+    typedef typename TpetraVectorType::mag_type mag_type;
+    typedef Kokkos::Details::ArithTraits<scalar_type> STS;
 
     const scalar_type ONE = STS::one ();
-    const mag_type min_val_abs = STS::magnitude (min_val);
+    const mag_type min_val_abs = STS::abs (min_val);
 
     Teuchos::ArrayRCP<scalar_type> V_0 = V.getDataNonConst (0);
-    scalar_type* const V_0_raw = V_0.getRawPtr ();
     const size_t lclNumRows = V.getLocalLength ();
 
     for (size_t i = 0; i < lclNumRows; ++i) {
-      const scalar_type V_0i = V_0_raw[i];
-      if (STS::magnitude (V_0i) < min_val_abs) {
-        V_0_raw[i] = min_val;
+      const scalar_type V_0i = V_0[i];
+      if (STS::abs (V_0i) < min_val_abs) {
+        V_0[i] = min_val;
       } else {
-        V_0_raw[i] = ONE / V_0i;
+        V_0[i] = ONE / V_0i;
       }
     }
   }
+};
 
-  // Partial specialization for the Kokkos refactor version of Tpetra.
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-  template <typename S, typename L, typename G, typename D>
-  void
-  reciprocal_threshold (Tpetra::Vector<S, L, G, Kokkos::Compat::KokkosDeviceWrapperNode<D> >& v,
-                        const S& min_val)
+template <class TpetraVectorType>
+struct GlobalReciprocalThreshold<TpetraVectorType, false> {
+  static void
+  compute (TpetraVectorType& X,
+           const typename TpetraVectorType::scalar_type& minVal)
   {
-    v.template sync<D> ();
-    v.template modify<D> ();
-    Kokkos::MV_ReciprocalThreshold (v.template getLocalView<D> (), min_val);
-  }
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
+    typedef typename TpetraVectorType::dual_view_type::non_const_value_type value_type;
+    typedef typename TpetraVectorType::execution_space::memory_space memory_space;
 
-} // namespace (anonymous)
+    auto X_lcl = X.getDualView ();
+    X_lcl.template sync<memory_space> ();
+    X_lcl.template modify<memory_space> ();
+
+    const value_type minValS = static_cast<value_type> (minVal);
+
+    auto X_0 = Kokkos::subview (X_lcl.d_view, Kokkos::ALL (), 0);
+    LocalReciprocalThreshold<decltype (X_0) >::compute (X_0, minValS);
+  }
+};
+
+// Utility function for inverting diagonal with threshold.
+template <typename S, typename L, typename G, typename N>
+void
+reciprocal_threshold (Tpetra::Vector<S,L,G,N>& V, const S& minVal)
+{
+  GlobalReciprocalThreshold<Tpetra::Vector<S,L,G,N> >::compute (V, minVal);
+}
 
 template<class ScalarType, class MV>
 void Chebyshev<ScalarType, MV>::checkInputMatrix () const

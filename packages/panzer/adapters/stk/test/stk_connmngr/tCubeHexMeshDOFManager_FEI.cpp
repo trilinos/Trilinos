@@ -54,6 +54,8 @@
 #include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
 
@@ -102,6 +104,8 @@ RCP<const panzer::FieldPattern> buildFieldPattern()
 // quad tests
 TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
 {
+   PHX::InitializeKokkosDevice();
+
    // build global (or serial communicator)
    #ifdef HAVE_MPI
       stk_classic::ParallelMachine Comm = MPI_COMM_WORLD;
@@ -197,6 +201,8 @@ TEUCHOS_UNIT_TEST(tCubeHexMeshDOFManager, buildTest_hex)
       TEST_EQUALITY(gids[4],10); TEST_EQUALITY(gids[5],11);  
       TEST_EQUALITY(gids[6],14); TEST_EQUALITY(gids[7],13);
    }
+
+   PHX::FinalizeKokkosDevice();
 }
 
 }

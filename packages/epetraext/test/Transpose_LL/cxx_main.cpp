@@ -62,7 +62,7 @@
 #include "EpetraExt_Transpose_RowMatrix.h"
 #include "Trilinos_Util.h"
 
-int checkResults(Epetra_RowMatrix * A, Epetra_CrsMatrix * transA, 
+int checkResults(Epetra_RowMatrix * A, Epetra_CrsMatrix * transA,
                  Epetra_Vector * xexact, bool verbose);
 
 int main(int argc, char *argv[])
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
   Epetra_Map * map;
   Epetra_CrsMatrix * A;
   Epetra_Vector * x, * b, * xexact;
-	
+
   Trilinos_Util_GenerateCrsProblem64(nx, ny, npoints, xoff, yoff, comm, map, A, x, b, xexact);
 
   if (nx<8)
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
     std::cout << "B       = " << std::endl << *b << std::endl;
   }
 
-  // Construct transposer 
+  // Construct transposer
   Epetra_Time timer(comm);
 
   double start = timer.ElapsedTime();
@@ -129,12 +129,12 @@ int main(int argc, char *argv[])
   EpetraExt::RowMatrix_Transpose transposer;
 
   if (verbose) std::cout << "\nTime to construct transposer  = " << timer.ElapsedTime() - start << std::endl;
-  
+
   Epetra_CrsMatrix & transA = dynamic_cast<Epetra_CrsMatrix&>(transposer(*A));
 
   start = timer.ElapsedTime();
   if (verbose) std::cout << "\nTime to create transpose matrix  = " << timer.ElapsedTime() - start << std::endl;
- 	
+
   // Now test output of transposer by performing matvecs
   int ierr = 0;
   ierr += checkResults(A, &transA, xexact, verbose);
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
   transposer.fwd();
 
   if (verbose) std::cout << "\nTime to update transpose matrix  = " << timer.ElapsedTime() - start << std::endl;
- 	
+
   ierr += checkResults(A, &transA, xexact, verbose);
 
   delete A;
@@ -161,11 +161,10 @@ int main(int argc, char *argv[])
 
   if (verbose) std::cout << std::endl << "Checking transposer for VbrMatrix objects" << std::endl<< std::endl;
 
-  int nsizes = 4;
-  int sizes[] = {4, 6, 5, 3};
-
 // CJ TODO FIXME: Trilinos_Util_GenerateVbrProblem64 not yet defined since vbr matrices not converted to 64 bit.
 #if 0
+  int nsizes = 4;
+  int sizes[] = {4, 6, 5, 3};
 
   Epetra_VbrMatrix * Avbr;
   Epetra_BlockMap * bmap;
@@ -184,7 +183,7 @@ int main(int argc, char *argv[])
 
   Epetra_CrsMatrix & transA1 = dynamic_cast<Epetra_CrsMatrix&>(transposer1(*Avbr));
   if (verbose) std::cout << "\nTime to create transpose matrix  = " << timer.ElapsedTime() - start << std::endl;
- 	
+
   // Now test output of transposer by performing matvecs
 ;
   ierr += checkResults(Avbr, &transA1, xexact, verbose);
@@ -200,7 +199,7 @@ int main(int argc, char *argv[])
   start = timer.ElapsedTime();
   transposer1.fwd();
   if (verbose) std::cout << "\nTime to update transpose matrix  = " << timer.ElapsedTime() - start << std::endl;
- 	
+
   ierr += checkResults(Avbr, &transA1, xexact, verbose);
 
   delete Avbr;
@@ -217,7 +216,7 @@ int main(int argc, char *argv[])
   return ierr;
 }
 
-int checkResults(Epetra_RowMatrix * A, Epetra_CrsMatrix * transA, 
+int checkResults(Epetra_RowMatrix * A, Epetra_CrsMatrix * transA,
                  Epetra_Vector * xexact, bool verbose) {
 
   long long n = A->NumGlobalRows64();

@@ -69,7 +69,7 @@ public:
 
   typedef FixtureType fixture_type ;
   typedef Kokkos::View<S,L,D,M,Kokkos::Impl::ViewPCEContiguous> vector_type ;
-  typedef typename vector_type::device_type device_type ;
+  typedef typename vector_type::execution_space execution_space ;
   typedef typename vector_type::value_type scalar_type ;
 
   // Hack to get parallel_reduce to work
@@ -264,9 +264,9 @@ template < typename pce_view_type,
            typename quad_values_type,
            typename ensemble_scalar_type,
            int EnsembleSize,
-           typename Device = typename pce_view_type::device_type >
+           typename Device = typename pce_view_type::execution_space >
 struct EvaluatePCE {
-  typedef Device device_type;
+  typedef Device execution_space;
   typedef typename pce_view_type::array_type pce_array_type;
 
   const pce_array_type   pce_view;
@@ -304,9 +304,9 @@ template < typename pce_view_type,
            typename quad_values_type,
            typename quad_weights_type,
            int EnsembleSize,
-           typename Device = typename pce_view_type::device_type >
+           typename Device = typename pce_view_type::execution_space >
 struct AssemblePCE {
-  typedef Device device_type;
+  typedef Device execution_space;
   typedef typename pce_view_type::array_type  pce_array_type;
 
   const pce_array_type    pce_view;
@@ -347,9 +347,9 @@ template < typename pce_view_type,
            typename quad_values_type,
            typename quad_weights_type,
            int EnsembleSize,
-           typename Device = typename pce_view_type::device_type >
+           typename Device = typename pce_view_type::execution_space >
 struct AssembleRightPCE {
-  typedef Device device_type;
+  typedef Device execution_space;
   typedef typename pce_view_type::array_type  pce_array_type;
 
   const pce_array_type    pce_view;
@@ -397,7 +397,7 @@ struct EvaluatePCE< pce_view_type,
                     ensemble_scalar_type,
                     EnsembleSize,
                     Kokkos::Cuda > {
-  typedef Kokkos::Cuda device_type;
+  typedef Kokkos::Cuda execution_space;
   typedef typename pce_view_type::array_type pce_array_type;
   typedef typename pce_array_type::value_type scalar_type;
   typedef typename quad_values_type::value_type quad_scalar_type;
@@ -421,7 +421,7 @@ struct EvaluatePCE< pce_view_type,
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
-    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<device_type>( row_count,
+    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<execution_space>( row_count,
                                                       EnsembleSize ),
                           *this );
   }
@@ -447,7 +447,7 @@ struct EvaluatePCE< pce_view_type,
 
     Kokkos::Impl::cuda_parallel_launch_local_memory<<< grid, block, shared >>>
         ( *this );
-    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<device_type>( row_count,
+    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<execution_space>( row_count,
                                                       EnsembleSize ),
                           *this );
   }
@@ -487,7 +487,7 @@ struct AssemblePCE< pce_view_type,
                     quad_weights_type,
                     EnsembleSize,
                     Kokkos::Cuda > {
-  typedef Kokkos::Cuda device_type;
+  typedef Kokkos::Cuda execution_space;
   typedef typename pce_view_type::array_type  pce_array_type;
   typedef typename pce_array_type::value_type scalar_type;
   typedef typename quad_weights_type::value_type weights_scalar_type;
@@ -512,7 +512,7 @@ struct AssemblePCE< pce_view_type,
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
-    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<device_type>( pce_view.dimension_1(),
+    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<execution_space>( pce_view.dimension_1(),
                                                       EnsembleSize ),
                           *this );
   }
@@ -544,7 +544,7 @@ struct AssembleRightPCE< pce_view_type,
                          quad_weights_type,
                          EnsembleSize,
                          Kokkos::Cuda > {
-  typedef Kokkos::Cuda device_type;
+  typedef Kokkos::Cuda execution_space;
   typedef typename pce_view_type::array_type  pce_array_type;
   typedef typename pce_array_type::value_type scalar_type;
   typedef typename quad_weights_type::value_type weights_scalar_type;
@@ -575,7 +575,7 @@ struct AssembleRightPCE< pce_view_type,
 
   void apply(const unsigned arg_qp) {
     qp = arg_qp;
-    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<device_type>( row_count,
+    Kokkos::parallel_for( Kokkos::MPVectorWorkConfig<execution_space>( row_count,
                                                       EnsembleSize ),
                           *this );
   }
@@ -638,7 +638,7 @@ struct AssembleRightPCE< pce_view_type,
 };
 #endif
 
-template< typename DeviceType ,
+template< typename ExecutionSpace ,
           BoxElemPart::ElemOrder Order ,
           typename CoordinateMap ,
           typename StorageType ,
@@ -647,37 +647,37 @@ template< typename DeviceType ,
           typename SizeType ,
           class CoeffFunctionType>
 class ElementComputation<
-  Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap >,
-  Kokkos::CrsMatrix< Sacado::UQ::PCE<StorageType> , OrdinalType , DeviceType , MemoryTraits , SizeType >,
+  Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap >,
+  Kokkos::CrsMatrix< Sacado::UQ::PCE<StorageType> , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >,
   CoeffFunctionType >
 {
 public:
 
-  typedef Kokkos::Example::BoxElemFixture< DeviceType, Order, CoordinateMap >  mesh_type ;
+  typedef Kokkos::Example::BoxElemFixture< ExecutionSpace, Order, CoordinateMap >  mesh_type ;
   typedef Kokkos::Example::HexElement_Data< mesh_type::ElemNode >              element_data_type ;
   typedef Sacado::UQ::PCE<StorageType> ScalarType;
 
   //------------------------------------
 
-  typedef DeviceType   device_type ;
+  typedef ExecutionSpace   execution_space ;
   typedef ScalarType   scalar_type ;
 
-  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >  sparse_matrix_type ;
+  typedef Kokkos::CrsMatrix< ScalarType , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >  sparse_matrix_type ;
   typedef typename sparse_matrix_type::StaticCrsGraphType sparse_graph_type ;
   typedef typename sparse_matrix_type::values_type matrix_values_type ;
-  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, device_type > vector_type ;
+  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft, execution_space > vector_type ;
 
   //------------------------------------
 
   typedef typename scalar_type::value_type scalar_value_type;
   typedef typename scalar_type::ordinal_type ordinal_type;
   static const int EnsembleSize = 32;
-  typedef Stokhos::StaticFixedStorage<ordinal_type,scalar_value_type,EnsembleSize,DeviceType> ensemble_storage_type;
+  typedef Stokhos::StaticFixedStorage<ordinal_type,scalar_value_type,EnsembleSize,ExecutionSpace> ensemble_storage_type;
   typedef Sacado::MP::Vector<ensemble_storage_type> ensemble_scalar_type;
   typedef typename Sacado::mpl::apply<CoeffFunctionType, ensemble_scalar_type>::type scalar_coeff_function_type;
   typedef ElementComputation<
-    Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap >,
-    Kokkos::CrsMatrix< ensemble_scalar_type , OrdinalType , DeviceType , MemoryTraits , SizeType >,
+    Kokkos::Example::BoxElemFixture< ExecutionSpace , Order , CoordinateMap >,
+    Kokkos::CrsMatrix< ensemble_scalar_type , OrdinalType , ExecutionSpace , MemoryTraits , SizeType >,
     scalar_coeff_function_type > scalar_element_computation_type;
   typedef typename scalar_element_computation_type::sparse_matrix_type scalar_sparse_matrix_type ;
   typedef typename scalar_sparse_matrix_type::values_type scalar_matrix_values_type ;
@@ -697,7 +697,7 @@ public:
   const scalar_coeff_function_type      scalar_diffusion_coefficient;
   const scalar_element_computation_type scalar_element_computation ;
 
-  typedef QuadratureData<DeviceType> QD;
+  typedef QuadratureData<ExecutionSpace> QD;
   typename QD::quad_weights_type quad_weights;
   typename QD::quad_values_type quad_points;
   typename QD::quad_values_type quad_values;

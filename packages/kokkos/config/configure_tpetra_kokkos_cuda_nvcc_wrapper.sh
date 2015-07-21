@@ -96,7 +96,6 @@ cmake \
   -D Trilinos_ENABLE_TpetraKernels:BOOL=ON \
   -D Trilinos_ENABLE_KokkosAlgorithms:BOOL=ON \
   -D Trilinos_ENABLE_TeuchosKokkosComm:BOOL=ON \
-  -D Trilinos_ENABLE_KokkosTPL:BOOL=ON \
   -D Trilinos_ENABLE_KokkosExample:BOOL=ON \
   -D Kokkos_ENABLE_EXAMPLES:BOOL=ON \
   -D Kokkos_ENABLE_TESTS:BOOL=OFF \

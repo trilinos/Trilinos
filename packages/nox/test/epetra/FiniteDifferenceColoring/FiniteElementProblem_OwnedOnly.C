@@ -58,11 +58,11 @@
 
 // Constructor - creates the Epetra objects (maps and vectors)
 FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& comm) :
-  Comm(&comm),
-  NumGlobalElements(numGlobalElements),
   flag(F_ONLY),
   ColumnToOverlapImporter(NULL),
-  rhs(NULL)
+  rhs(NULL),
+  Comm(&comm),
+  NumGlobalElements(numGlobalElements)
 {
 
   // Commonly used variables

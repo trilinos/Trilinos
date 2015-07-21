@@ -112,3 +112,6 @@
 
 /* Define if C++11 is enabled */
 #cmakedefine HAVE_STOKHOS_CXX11
+
+/* Define if Thyra is enabled */
+#cmakedefine HAVE_STOKHOS_THYRA

@@ -43,7 +43,7 @@
 #include "Stokhos_UnitTestHelpers.hpp"
 
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
-#include "Kokkos_CrsMatrix.hpp"
+#include "Kokkos_Sparse.hpp"
 #include "Kokkos_CrsMatrix_UQ_PCE.hpp"
 #include "Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp"
 #include "Stokhos_LegendreBasis.hpp"
@@ -137,7 +137,7 @@ kokkos_cijk_type build_cijk(ordinal_type stoch_dim,
   using Teuchos::Array;
 
   typedef typename kokkos_cijk_type::value_type value_type;
-  typedef typename kokkos_cijk_type::device_type device_type;
+  typedef typename kokkos_cijk_type::execution_space execution_space;
   typedef Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> one_d_basis;
   typedef Stokhos::LegendreBasis<ordinal_type,value_type> legendre_basis;
   typedef Stokhos::CompletePolynomialBasis<ordinal_type,value_type> product_basis;
@@ -154,7 +154,7 @@ kokkos_cijk_type build_cijk(ordinal_type stoch_dim,
 
   // Kokkos triple product tensor
   kokkos_cijk_type kokkos_cijk =
-    Stokhos::create_product_tensor<device_type>(*basis, *cijk);
+    Stokhos::create_product_tensor<execution_space>(*basis, *cijk);
 
   return kokkos_cijk;
 }
@@ -310,7 +310,7 @@ buildDiagonalMatrix(typename MatrixType::ordinal_type nrow,
 // Kernel to set diagonal of a matrix to prescribed values
 template <typename MatrixType>
 struct ReplaceDiagonalValuesKernel {
-  typedef typename MatrixType::device_type device_type;
+  typedef typename MatrixType::execution_space execution_space;
   typedef typename MatrixType::size_type size_type;
   typedef typename MatrixType::value_type value_type;
   typedef typename MatrixType::ordinal_type ordinal_type;
@@ -360,7 +360,7 @@ struct ReplaceDiagonalValuesKernel {
 // Kernel to add values to the diagonal of a matrix
 template <typename MatrixType>
 struct AddDiagonalValuesKernel {
-  typedef typename MatrixType::device_type device_type;
+  typedef typename MatrixType::execution_space execution_space;
   typedef typename MatrixType::size_type size_type;
   typedef typename MatrixType::value_type value_type;
   typedef typename MatrixType::ordinal_type ordinal_type;
@@ -411,7 +411,7 @@ struct AddDiagonalValuesKernel {
 // adds to the same row (checks atomic really works)
 template <typename MatrixType>
 struct AddDiagonalValuesAtomicKernel {
-  typedef typename MatrixType::device_type device_type;
+  typedef typename MatrixType::execution_space execution_space;
   typedef typename MatrixType::size_type size_type;
   typedef typename MatrixType::value_type value_type;
   typedef typename MatrixType::ordinal_type ordinal_type;
@@ -466,9 +466,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_PCE, ReplaceValues, MatrixScalar )
 {
   typedef typename MatrixScalar::ordinal_type Ordinal;
-  typedef typename MatrixScalar::device_type Device;
+  typedef typename MatrixScalar::execution_space Device;
   typedef typename MatrixScalar::cijk_type Cijk;
-  typedef Kokkos::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
+  typedef KokkosSparse::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
 
   // Build Cijk tensor
   const Ordinal stoch_dim = 2;
@@ -492,9 +492,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_PCE, SumIntoValues, MatrixScalar )
 {
   typedef typename MatrixScalar::ordinal_type Ordinal;
-  typedef typename MatrixScalar::device_type Device;
+  typedef typename MatrixScalar::execution_space Device;
   typedef typename MatrixScalar::cijk_type Cijk;
-  typedef Kokkos::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
+  typedef KokkosSparse::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
 
   // Build Cijk tensor
   const Ordinal stoch_dim = 2;
@@ -518,9 +518,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_PCE, SumIntoValuesAtomic, MatrixScalar )
 {
   typedef typename MatrixScalar::ordinal_type Ordinal;
-  typedef typename MatrixScalar::device_type Device;
+  typedef typename MatrixScalar::execution_space Device;
   typedef typename MatrixScalar::cijk_type Cijk;
-  typedef Kokkos::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
+  typedef KokkosSparse::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
 
   // Build Cijk tensor
   const Ordinal stoch_dim = 2;
@@ -552,10 +552,10 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
   typedef typename PCEType::value_type scalar_type;
   typedef typename PCEType::storage_type storage_type;
   typedef typename PCEType::cijk_type cijk_type;
-  typedef typename storage_type::device_type device_type;
+  typedef typename storage_type::execution_space execution_space;
   typedef Kokkos::LayoutLeft Layout;
-  typedef Kokkos::View< PCEType*, Layout, device_type > block_vector_type;
-  typedef Kokkos::CrsMatrix< PCEType, ordinal_type, device_type > block_matrix_type;
+  typedef Kokkos::View< PCEType*, Layout, execution_space > block_vector_type;
+  typedef KokkosSparse::CrsMatrix< PCEType, ordinal_type, execution_space > block_matrix_type;
   typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename block_matrix_type::values_type matrix_values_type;
 
@@ -718,7 +718,7 @@ struct Kokkos_MV_Multiply_Op {
   void operator() (const Matrix& A,
                    const InputVector& x,
                    OutputVector& y) const {
-    Kokkos::MV_Multiply(y, A, x);
+    KokkosSparse::spmv("N", typename Matrix::value_type(1.0) , A, x, typename Matrix::value_type(0.0), y);
   }
 };
 
@@ -749,10 +749,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   typedef typename Scalar::value_type scalar_type;
   typedef typename Scalar::storage_type storage_type;
   typedef typename Scalar::cijk_type cijk_type;
-  typedef typename storage_type::device_type device_type;
+  typedef typename storage_type::execution_space execution_space;
   typedef Kokkos::LayoutLeft Layout;
-  typedef Kokkos::View< Scalar*, Layout, device_type > block_vector_type;
-  typedef Kokkos::CrsMatrix< Scalar, ordinal_type, device_type > block_matrix_type;
+  typedef Kokkos::View< Scalar*, Layout, execution_space > block_vector_type;
+  typedef KokkosSparse::CrsMatrix< Scalar, ordinal_type, execution_space > block_matrix_type;
   typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename block_matrix_type::values_type matrix_values_type;
 
@@ -869,7 +869,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   //------------------------------
   // multiply
 
-  Kokkos::MV_Multiply( y, matrix, x );
+  KokkosSparse::spmv("N", Scalar(1.0) , matrix, x, Scalar(0.0), y);
 
   //------------------------------
   // multiply with same matrix but with sacado_size = x.sacado_size
@@ -891,10 +891,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   typedef typename Scalar::value_type scalar_type;
   typedef typename Scalar::storage_type storage_type;
   typedef typename Scalar::cijk_type cijk_type;
-  typedef typename storage_type::device_type device_type;
+  typedef typename storage_type::execution_space execution_space;
   typedef Kokkos::LayoutLeft Layout;
-  typedef Kokkos::View< Scalar**, Layout, device_type > block_vector_type;
-  typedef Kokkos::CrsMatrix< Scalar, ordinal_type, device_type > block_matrix_type;
+  typedef Kokkos::View< Scalar**, Layout, execution_space > block_vector_type;
+  typedef KokkosSparse::CrsMatrix< Scalar, ordinal_type, execution_space > block_matrix_type;
   typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename block_matrix_type::values_type matrix_values_type;
 
@@ -1018,7 +1018,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   //------------------------------
   // multiply
 
-  Kokkos::MV_Multiply( y, matrix, x );
+  KokkosSparse::spmv("N", Scalar(1.0) , matrix, x, Scalar(0.0), y);
 
   //------------------------------
   // multiply with full matrix

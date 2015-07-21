@@ -35,7 +35,6 @@
 #include <cstring>                      // for NULL, strlen
 #include <iosfwd>                       // for ostringstream
 #include <sstream>                      // for operator<<, basic_ostream, etc
-#include <stk_mesh/base/Trace.hpp>      // for TraceIf
 #include <stk_util/util/string_case_compare.hpp>  // for equal_case
 #include "Shards_Array.hpp"             // for ArrayDimTag
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
@@ -144,8 +143,6 @@ FieldBase * FieldRepository::declare_field(
   unsigned                            arg_num_states ,
   MetaData                          * arg_meta_data )
 {
-  TraceIf("stk::mesh::impl::FieldRepository::declare_field", LOG_FIELD);
-
   static const char* reserved_state_suffix[6] = {
     "_STKFS_OLD",
     "_STKFS_N",
@@ -233,8 +230,6 @@ FieldBase * FieldRepository::declare_field(
 
 void FieldRepository::verify_and_clean_restrictions(const Part& superset, const Part& subset)
 {
-  TraceIf("stk::mesh::impl::FieldRepository::verify_and_clean_restrictions", LOG_FIELD);
-
   for ( FieldVector::iterator f = m_fields.begin() ; f != m_fields.end() ; ++f ) {
     (*f)->m_impl.verify_and_clean_restrictions( superset, subset );
   }

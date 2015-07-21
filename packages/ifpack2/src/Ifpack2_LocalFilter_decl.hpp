@@ -52,9 +52,7 @@ namespace Ifpack2 {
 
 /// \class LocalFilter
 /// \brief Access only local rows and columns of a sparse matrix.
-/// \tparam MatrixType A specialization of either Tpetra::RowMatrix
-///   (preferred) or Tpetra::CrsMatrix (which is a subclass of
-///   Tpetra::RowMatrix).
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
 ///
 /// \section Ifpack2_LocalFilter_Summary Summary
 ///
@@ -165,6 +163,18 @@ class LocalFilter :
                                      typename MatrixType::node_type>,
     virtual public Teuchos::Describable
 {
+private:
+  // Tpetra needs C++11 now because Kokkos needs C++11 now.
+  // Thus, Ifpack2 needs C++11.
+  static_assert (std::is_same<
+                   MatrixType,
+                   Tpetra::RowMatrix<
+                     typename MatrixType::scalar_type,
+                     typename MatrixType::local_ordinal_type,
+                     typename MatrixType::global_ordinal_type,
+                     typename MatrixType::node_type> >::value,
+                 "Ifpack2::LocalFilter: MatrixType must be a Tpetra::RowMatrix specialization.");
+
 public:
   //! \name Typedefs
   //@{
@@ -172,36 +182,17 @@ public:
   //! The type of the entries of the input MatrixType.
   typedef typename MatrixType::scalar_type scalar_type;
 
-  //! Preserved only for backwards compatibility.  Please use "scalar_type".
-  TEUCHOS_DEPRECATED typedef typename MatrixType::scalar_type Scalar;
-
-
   //! The type of local indices in the input MatrixType.
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
-
-  //! Preserved only for backwards compatibility.  Please use "local_ordinal_type".
-  TEUCHOS_DEPRECATED typedef typename MatrixType::local_ordinal_type LocalOrdinal;
-
 
   //! The type of global indices in the input MatrixType.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-  //! Preserved only for backwards compatibility.  Please use "global_ordinal_type".
-  TEUCHOS_DEPRECATED typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
-
-
   //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
-  //! Preserved only for backwards compatibility.  Please use "node_type".
-  TEUCHOS_DEPRECATED typedef typename MatrixType::node_type Node;
-
-
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
-
-  //! Preserved only for backwards compatibility.  Please use "magnitude_type".
-  TEUCHOS_DEPRECATED typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
 
   //! Type of the Tpetra::RowMatrix specialization that this class uses.
   typedef Tpetra::RowMatrix<scalar_type,
@@ -472,42 +463,10 @@ public:
   //! Whether this operator supports applying the transpose or conjugate transpose.
   virtual bool hasTransposeApply() const;
 
+  //! Return matrix that LocalFilter was built on.
+  virtual Teuchos::RCP<const row_matrix_type> getUnderlyingMatrix() const;
+
   //@}
-  //! \name Deprecated routines to be removed at some point in the future.
-  //@{
-
-  //! Deprecated. Get a persisting const view of the entries in a specified global row of this matrix.
-  /*!
-    \param GlobalRow - (In) Global row from which to retrieve matrix entries.
-    \param Indices - (Out) Indices for the global row.
-    \param Values - (Out) Values for the global row.
-
-    Note: If \c GlobalRow does not belong to this node, then \c Indices and \c Values are set to <tt>Teuchos::null</t>>.
-
-    \pre isLocallyIndexed()==false
-  */
-  TPETRA_DEPRECATED
-  virtual void getGlobalRowView(global_ordinal_type GlobalRow,
-                                Teuchos::ArrayRCP<const global_ordinal_type> &indices,
-                                Teuchos::ArrayRCP<const scalar_type>        &values) const;
-
-  //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
-  /*!
-    \param LocalRow - (In) Local row from which to retrieve matrix entries.
-    \param Indices - (Out) Indices for the local row.
-    \param Values - (Out) Values for the local row.
-
-    Note: If \c LocalRow is not valid for this node, then \c Indices and \c Values are set to <tt>Teuchos::null</tt>.
-
-    \pre isGloballyIndexed()==false
-  */
-  TPETRA_DEPRECATED
-  virtual void getLocalRowView(local_ordinal_type LocalRow,
-                               Teuchos::ArrayRCP<const local_ordinal_type> &indices,
-                               Teuchos::ArrayRCP<const scalar_type>       &values) const;
-  //@}
-
-
 private:
   //! Type of a read-only interface to a graph.
   typedef Tpetra::RowGraph<local_ordinal_type,

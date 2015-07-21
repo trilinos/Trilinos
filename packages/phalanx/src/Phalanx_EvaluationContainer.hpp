@@ -47,10 +47,13 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 #include "Phalanx_EvaluationContainer_Base.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_Evaluator.hpp"
-#include "Phalanx_DataContainer_TemplateManager.hpp"
+#include <boost/any.hpp>
+#include <boost/unordered_map.hpp>
+#include <string>
 
 namespace PHX {
 
@@ -73,8 +76,7 @@ namespace PHX {
     void 
     registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
 
-    template <typename DataT> 
-    Teuchos::ArrayRCP<DataT> getFieldData(const PHX::FieldTag& f);
+    boost::any getFieldData(const PHX::FieldTag& f);
 
     void postRegistrationSetup(typename Traits::SetupData d,
 			       PHX::FieldManager<Traits>& fm);
@@ -85,6 +87,10 @@ namespace PHX {
 
     void postEvaluate(typename Traits::PostEvalData d);
 
+    void setKokkosExtendedDataTypeDimensions(const std::vector<PHX::index_size_type>& dims);
+
+    const std::vector<PHX::index_size_type> & getKokkosExtendedDataTypeDimensions() const;
+
     //! Return true if the postRegistrationSetupMethod has been called
     bool setupCalled() const;
 
@@ -94,15 +100,11 @@ namespace PHX {
 
   protected:
 
-    typedef PHX::DataContainer_TemplateManager<EvalT, Traits> DCTM;
-
-    PHX::DataContainer_TemplateManager<EvalT, Traits> 
-    data_container_template_manager_;
-    
-    typename Traits::Allocator allocator_;
-
     bool post_registration_setup_called_;
 
+    boost::unordered_map<std::string,boost::any> fields_;
+
+    std::vector<PHX::index_size_type> kokkos_extended_data_type_dimensions_;
   };
   
 } 

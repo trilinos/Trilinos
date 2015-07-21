@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -107,7 +107,7 @@ struct FiniteElementIntegration<
 
   //----------------------------------------
   // Device for parallel dispatch.
-  typedef Device device_type ;
+  typedef typename Device::execution_space execution_space;
 
   // Value type for global parallel reduction.
   struct value_type {
@@ -332,17 +332,21 @@ template< class ViewNodeValue ,
           bool  AlreadyUsedAtomic >
 struct LumpElemToNode {
 
-  typedef typename ViewElemValue::device_type device_type ;
+  typedef typename ViewElemValue::execution_space execution_space ;
 
   // In this example we know that the ViewElemValue
   // array specification is < double*[nNode][nValue] >
 
+#if defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+  enum { value_count = ViewElemValue::dimension::N2 };
+#else
   enum { value_count = ViewElemValue::shape_type::N2 };
+#endif
 
   ViewNodeValue             m_node_value ; ///< Integrated values at nodes
   ViewElemValue             m_elem_value ; ///< Values apportioned to nodes
-  View<int*,   device_type> m_node_scan ;  ///< Offsets for nodes->element
-  View<int*[2],device_type> m_node_elem ;  ///< Node->element connectivity
+  View<int*,   execution_space> m_node_scan ;  ///< Offsets for nodes->element
+  View<int*[2],execution_space> m_node_elem ;  ///< Node->element connectivity
 
   // Only allocate node->element connectivity if have
   // not already used atomic updates for the nodes.

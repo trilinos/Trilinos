@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Comm info: " << *comm;
   }
 
-  typedef KokkosClassic::TBBNode Node;
+  typedef KokkosClassic::DoNotUse::TBBNode Node;
   Teuchos::ParameterList params;
   params.set<int>("Num Threads",numThreads);
   params.set<int>("Verbose",verbose);

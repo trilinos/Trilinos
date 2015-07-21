@@ -66,8 +66,12 @@ namespace {
 
 const std::string fwdScalingVecName = "fwdScalingVec";
 
+#ifdef TEUCHOS_DEBUG
 
-// Assert that the input scaling vectors have been set up correctly
+// Assert that the input scaling vectors have been set up correctly.
+//
+// This function ONLY exists if TEUCHOS_DEBUG is defined.
+// This avoids "unused function" warnings with Clang 3.5.
 void assertModelVarScalings(
   const EpetraExt::ModelEvaluator::InArgs &varScalings
   )
@@ -90,7 +94,8 @@ void assertModelVarScalings(
     "as is used for x!"
     );
 }
-  
+
+#endif // TEUCHOS_DEBUG
 
 
 // Scale a single vector using a templated policy object to take care of what
@@ -156,7 +161,7 @@ void scaleModelVar(
   }
 
 }
-  
+
 
 // Scale variable bounds for a single vector using a templated policy object
 // to take care of what vector gets used.
@@ -325,15 +330,15 @@ void EpetraExt::gatherModelNominalValues(
   if(nominalValues->supports(EME::IN_ARG_x_dot)) {
     nominalValues->set_x_dot(model.get_x_dot_init());
   }
-  
+
   if(nominalValues->supports(EME::IN_ARG_x_dotdot)) {
     nominalValues->set_x_dotdot(model.get_x_dotdot_init());
   }
-  
+
   for( int l = 0; l < nominalValues->Np(); ++l ) {
     nominalValues->set_p( l, model.get_p_init(l) );
   }
-  
+
   if(nominalValues->supports(EME::IN_ARG_t)) {
     nominalValues->set_t(model.get_t_init());
   }
@@ -363,12 +368,12 @@ void EpetraExt::gatherModelBounds(
     lowerBounds->set_x(model.get_x_lower_bounds());
     upperBounds->set_x(model.get_x_upper_bounds());
   }
-  
+
   for( int l = 0; l < lowerBounds->Np(); ++l ) {
     lowerBounds->set_p( l, model.get_p_lower_bounds(l) );
     upperBounds->set_p( l, model.get_p_upper_bounds(l) );
   }
-  
+
   if(lowerBounds->supports(EME::IN_ARG_t)) {
     lowerBounds->set_t(model.get_t_lower_bound());
     upperBounds->set_t(model.get_t_upper_bound());
@@ -552,7 +557,7 @@ void EpetraExt::unscaleModelVars(
   }
 
   // Scal the input varaibles
-  
+
   if (scaledVars.supports(EME::IN_ARG_x_dot)) {
     unscaleModelVar( InArgsGetterSetter_x_dot(), scaledVars, varScalings, origVars,
       out, verbLevel );

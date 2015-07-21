@@ -103,12 +103,28 @@ int Trilinos_Util_ReadMatrixMarket2Epetra_internal(
       int_type i, j;
       double val ;
       i = -13 ;   // Check for blank lines
-      if(sizeof(int) == sizeof(int_type))
-        sscanf( buffer, "%d %d %lg", &i, &j, &val ) ;
-      else if(sizeof(long long) == sizeof(int_type))
-        sscanf( buffer, "%lld %lld %lg", &i, &j, &val ) ;
-      else
+
+      // mfh 24 Mar 2015: We use temporaries of the type corresponding
+      // to the sscanf format specifiers, in order to avoid compiler
+      // warnings about the sscanf output arguments' types not
+      // matching their corresponding format specifiers.  This was a
+      // harmless warning, because the 'sizeof' branch prevented
+      // incorrect execution, but the warning is easy to fix.
+      if(sizeof(int) == sizeof(int_type)) {
+        int i_int, j_int;
+        sscanf( buffer, "%d %d %lg", &i_int, &j_int, &val ) ;
+        i = static_cast<int_type> (i_int);
+        j = static_cast<int_type> (j_int);
+      }
+      else if(sizeof(long long) == sizeof(int_type)) {
+        long long i_ll, j_ll;
+        sscanf( buffer, "%lld %lld %lg", &i_ll, &j_ll, &val ) ;
+        i = static_cast<int_type> (i_ll);
+        j = static_cast<int_type> (j_ll);
+      }
+      else {
         assert(false);
+      }
       assert( i != -13) ;
       if ( diag || i != j ) {
         //  if ( i == j && i == 1 ) val *= 1.0001 ;

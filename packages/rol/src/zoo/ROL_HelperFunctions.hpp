@@ -110,7 +110,7 @@ namespace ROL {
 
     Teuchos::LAPACK<int, Real> lapack;
 
-    Teuchos::SerialDenseMatrix<int, Real> mymat(mat);
+    Teuchos::SerialDenseMatrix<int, Real> mymat(Teuchos::Copy, mat);
 
     char jobvl = 'N';
     char jobvr = 'N';
@@ -149,8 +149,8 @@ namespace ROL {
 
     Teuchos::LAPACK<int, Real> lapack;
 
-    Teuchos::SerialDenseMatrix<int, Real> myA(A);
-    Teuchos::SerialDenseMatrix<int, Real> myB(B);
+    Teuchos::SerialDenseMatrix<int, Real> myA(Teuchos::Copy, A);
+    Teuchos::SerialDenseMatrix<int, Real> myB(Teuchos::Copy, B);
 
     char jobvl = 'N';
     char jobvr = 'N';
@@ -195,7 +195,7 @@ namespace ROL {
 
     Teuchos::LAPACK<int, Real> lapack;
 
-    Teuchos::SerialDenseMatrix<int, Real> mymat(mat);
+    Teuchos::SerialDenseMatrix<int, Real> mymat(Teuchos::Copy, mat);
 
     int n = mat.numRows();
 

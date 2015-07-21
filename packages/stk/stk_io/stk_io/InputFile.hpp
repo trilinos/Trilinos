@@ -177,6 +177,6 @@ namespace stk {
       InputFile(const InputFile &);
       const InputFile & operator=(const InputFile &);
     };
-  }
-}
+  } // namespace io
+} // namespace stk
 #endif

@@ -68,8 +68,9 @@ Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(   stk::ParallelMachine comm
   m_mesh_data.set_active_mesh(ifh);
   m_mesh_data.create_input_mesh();
 
-  const Iogn::DatabaseIO* database =
-    dynamic_cast<const Iogn::DatabaseIO*>(m_mesh_data.get_input_io_region()->get_database());
+  Teuchos::RCP<Ioss::Region> iossRegion = m_mesh_data.get_input_io_region();
+  ThrowRequireMsg(iossRegion.is_valid_ptr(), "Invalid IOSS Region");
+  const Iogn::DatabaseIO* database = dynamic_cast<const Iogn::DatabaseIO*>(iossRegion->get_database());
 //  database->set_int_byte_size_api(Ioss::USE_INT64_API);
 
   // get face parts names; need to convert these to strings

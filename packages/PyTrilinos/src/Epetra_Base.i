@@ -233,7 +233,6 @@ except ImportError:
 // Since all of these classes potentially represent large data
 // buffers, we want efficient memory management and so store them
 // internally with Teuchos::RCP<>.
-#ifdef HAVE_TEUCHOS
 %define %teuchos_rcp_epetra_numpy_overrides(CONST, CLASS...)
 
 // Output a plain pointer
@@ -282,52 +281,6 @@ except ImportError:
 
 %enddef
 
-#else
-// HAVE_TEUCHOS is not defined here, so provide %typemaps that assume
-// internal storage is via raw pointers.
-
-%define %teuchos_rcp_epetra_numpy_overrides(CONST, CLASS...)
-
-// Output a plain pointer
-%typemap(out) CONST Epetra_##CLASS *
-{
-  if ($1 == NULL) $result = Py_BuildValue("");
-  else
-  {
-    PyTrilinos::Epetra_NumPy##CLASS * npa = new PyTrilinos::Epetra_NumPy##CLASS(*$1);
-    $result = SWIG_NewPointerObj(npa, $descriptor(PyTrilinos::Epetra_NumPy##CLASS*), $owner);
-  }
-}
-
-// Output a plain reference
-%apply (CONST Epetra_##CLASS *) {CONST Epetra_##CLASS &}
-
-// Input/output of a reference to a pointer
-%typemap(in,numinputs=0) Epetra_##CLASS *& (Epetra_##CLASS * _object)
-{
-  $1 = &_object;
-}
-%typemap(argout) Epetra_##CLASS *&
-{
-  PyTrilinos::Epetra_NumPy##CLASS * npa$argnum = new PyTrilinos::Epetra_NumPy##CLASS(**$1);
-  PyObject * obj = SWIG_NewPointerObj((void*)(npa$argnum),
-				      $descriptor(PyTrilinos::Epetra_NumPy##CLASS*),
-				      SWIG_POINTER_OWN);
-  $result = SWIG_Python_AppendOutput($result,obj);
-}
-
-// Director input of a plain reference
-%typemap(directorin) CONST Epetra_##CLASS &
-%{
-  PyTrilinos::Epetra_NumPy##CLASS *npa$argnum = new PyTrilinos::Epetra_NumPy##CLASS(View,$1_name);
-  $input = SWIG_NewPointerObj(npa$argnum,
-			      $descriptor(PyTrilinos::Epetra_NumPy##CLASS*),
-			      SWIG_POINTER_OWN);
-%}
-
-%enddef
-#endif
-
 // Use the %teuchos_rcp_epetra_numpy_overrides macro to define the
 // %teuchos_rcp_epetra_numpy macro
 #define EMPTYHACK
@@ -341,7 +294,6 @@ except ImportError:
 // Define macros for typemaps that convert a reference to a pointer to
 // an object, into a python return argument (which might be placed into a
 // tuple, if there are more than one).
-#ifdef HAVE_TEUCHOS
 
 %define %teuchos_rcp_epetra_argout(ClassName)
 %typemap(in,numinputs=0) ClassName *& (ClassName * _object)
@@ -356,22 +308,6 @@ except ImportError:
   $result = SWIG_Python_AppendOutput($result,obj);
 }
 %enddef
-
-#else
-
-%define %teuchos_rcp_epetra_argout(ClassName)
-%typemap(in,numinputs=0) ClassName *& (ClassName * _object)
-{
-  $1 = &_object;
-}
-%typemap(argout) ClassName *&
-{
-  PyObject * obj = SWIG_NewPointerObj(%as_voidptr($1), $descriptor(ClassName *), SWIG_POINTER_OWN);
-  $result = SWIG_Python_AppendOutput($result,obj);
-}
-%enddef
-
-#endif
 
 ////////////////////////////
 // Epetra_Version support //

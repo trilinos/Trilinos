@@ -71,7 +71,7 @@ void communicate_field_data(
   std::vector<int> visited_procs;
   visited_procs.reserve(128);
   for ( EntityCommListInfoVector::const_iterator
-        i =  mesh.comm_list().begin() , iend = mesh.comm_list().end(); i != iend ; ++i ) {
+        i =  mesh.internal_comm_list().begin() , iend = mesh.internal_comm_list().end(); i != iend ; ++i ) {
     Entity e = i->entity;
     const MeshIndex meshIdx = mesh.mesh_index(e);
     const unsigned bucketId = meshIdx.bucket->bucket_id();
@@ -121,7 +121,7 @@ void communicate_field_data(
 
   for (int phase = 0; phase < 2; ++phase) {
 
-    for ( EntityCommListInfoVector::const_iterator i =  mesh.comm_list().begin(), iend = mesh.comm_list().end() ; i != iend ; ++i ) {
+    for ( EntityCommListInfoVector::const_iterator i =  mesh.internal_comm_list().begin(), iend = mesh.internal_comm_list().end() ; i != iend ; ++i ) {
       if ( (i->owner == parallel_rank && phase == 0) ||
            (i->owner != parallel_rank && phase == 1) ) {
         Entity e = i->entity;
@@ -186,7 +186,7 @@ void communicate_field_data(
   std::vector<unsigned> recv_size( parallel_size , zero );
 
   for ( EntityCommListInfoVector::const_iterator
-        i =  mesh.comm_list().begin() , iend = mesh.comm_list().end(); i != iend ; ++i ) {
+        i =  mesh.internal_comm_list().begin() , iend = mesh.internal_comm_list().end(); i != iend ; ++i ) {
     Entity e = i->entity;
     const MeshIndex meshIdx = mesh.mesh_index(e);
     const unsigned bucketId = meshIdx.bucket->bucket_id();
@@ -239,7 +239,7 @@ void communicate_field_data(
 
   for (int phase = 0; phase < 2; ++phase) {
 
-    for ( EntityCommListInfoVector::const_iterator i =  mesh.comm_list().begin(), iend = mesh.comm_list().end() ; i != iend ; ++i ) {
+    for ( EntityCommListInfoVector::const_iterator i =  mesh.internal_comm_list().begin(), iend = mesh.internal_comm_list().end() ; i != iend ; ++i ) {
       if ( (i->owner == parallel_rank && phase == 0) || (i->owner != parallel_rank && phase == 1) ) {
         Entity e = i->entity;
         const MeshIndex meshIdx = mesh.mesh_index(e);

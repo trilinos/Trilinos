@@ -73,7 +73,7 @@ namespace Ifpack2 {
 /// // is more than 10 greater or less than the local column
 /// // index of the diagonal element in that row.
 /// const int maxBw = 10;
-/// // Now create the sparsity filter. Elements dropped are 
+/// // Now create the sparsity filter. Elements dropped are
 /// // not included in calls to getLocalRowCopy() and apply().
 /// Ifpack2::SparsityFilter<Tpetra::RowMatrix> A_drop (A_local, maxEntriesPerRow, maxBw);
 /// \endcode
@@ -81,11 +81,11 @@ namespace Ifpack2 {
 /// This class currently only works if the matrix is the result of a
 /// LocalFilter, that is, if the row and column Maps are the same.
 template<class MatrixType>
-class SparsityFilter : 
+class SparsityFilter :
     virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
-				     typename MatrixType::local_ordinal_type,
-				     typename MatrixType::global_ordinal_type,
-				     typename MatrixType::node_type> {
+                                     typename MatrixType::local_ordinal_type,
+                                     typename MatrixType::global_ordinal_type,
+                                     typename MatrixType::node_type> {
 public:
   typedef typename MatrixType::scalar_type Scalar;
   typedef typename MatrixType::local_ordinal_type LocalOrdinal;
@@ -94,14 +94,14 @@ public:
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
   typedef typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
-  
+
   //! \name Constructor & destructor methods
   //@{
 
   //! Constructor.
   explicit SparsityFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
-			  size_t AllowedNumEntries,
-			  LocalOrdinal AllowedBandwidth = -Teuchos::ScalarTraits<LocalOrdinal>::one());
+                          size_t AllowedNumEntries,
+                          LocalOrdinal AllowedBandwidth = -Teuchos::ScalarTraits<LocalOrdinal>::one());
   //! Destructor.
   virtual ~SparsityFilter();
 
@@ -127,7 +127,7 @@ public:
   //! \brief Returns the Map that describes the range distribution in this matrix.
   virtual Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
 
-  //! Returns the RowGraph associated with this matrix. 
+  //! Returns the RowGraph associated with this matrix.
   virtual Teuchos::RCP<const Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const;
 
   //! Returns the number of global rows in this matrix.
@@ -142,7 +142,7 @@ public:
   //! Returns the number of columns needed to apply the forward operator on this node, i.e., the number of elements listed in the column map.
   virtual size_t getNodeNumCols() const;
 
-  //! Returns the index base for global indices for this matrix. 
+  //! Returns the index base for global indices for this matrix.
   virtual GlobalOrdinal getIndexBase() const;
 
   //! Returns the global number of entries in this matrix.
@@ -150,85 +150,85 @@ public:
 
   //! Returns the local number of entries in this matrix.
   virtual size_t getNodeNumEntries() const;
-  
+
   //! \brief Returns the current number of entries on this node in the specified global row.
   /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this graph. */
   virtual size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const;
-  
+
   //! Returns the current number of entries on this node in the specified local row.
   /*! Returns Teuchos::OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
   virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const;
-  
-  //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
+
+  //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons.
   virtual global_size_t getGlobalNumDiags() const;
-  
-  //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
+
+  //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons.
   virtual size_t getNodeNumDiags() const;
-  
+
   //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
   virtual size_t getGlobalMaxNumRowEntries() const;
-  
+
   //! \brief Returns the maximum number of entries across all rows/columns on this node.
   virtual size_t getNodeMaxNumRowEntries() const;
-  
-  //! \brief Indicates whether this matrix has a well-defined column map. 
+
+  //! \brief Indicates whether this matrix has a well-defined column map.
   virtual bool hasColMap() const;
-  
+
   //! \brief Indicates whether this matrix is lower triangular.
   virtual bool isLowerTriangular() const;
-  
+
   //! \brief Indicates whether this matrix is upper triangular.
   virtual bool isUpperTriangular() const;
-  
+
   //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
   virtual bool isLocallyIndexed() const;
-  
+
   //! \brief If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */
   virtual bool isGloballyIndexed() const;
-  
+
   //! Returns \c true if fillComplete() has been called.
   virtual bool isFillComplete() const;
-  
+
   //! Returns \c true if RowViews are supported.
-  virtual bool supportsRowViews() const;  
+  virtual bool supportsRowViews() const;
 
   //@}
-  
+
   //! @name Extraction Methods
-  //@{ 
-  
+  //@{
+
   //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
   /*!
     \param DropRow - (In) Global row number for which indices are desired.
     \param Indices - (Out) Global column indices corresponding to values.
     \param Values - (Out) Matrix values.
     \param NumEntries - (Out) Number of indices.
-    
+
     Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-    with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
+    with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
   virtual void getGlobalRowCopy(GlobalOrdinal GlobalRow,
-				const Teuchos::ArrayView<GlobalOrdinal> &Indices,
-				const Teuchos::ArrayView<Scalar> &Values,
-				size_t &NumEntries) const;
-  
+                                const Teuchos::ArrayView<GlobalOrdinal> &Indices,
+                                const Teuchos::ArrayView<Scalar> &Values,
+                                size_t &NumEntries) const;
+
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
     \param DropRow - (In) Drop row number for which indices are desired.
     \param Indices - (Out) Drop column indices corresponding to values.
     \param Values - (Out) Matrix values.
     \param NumIndices - (Out) Number of indices.
-    
+
     Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-    with row \c DropRow. If \c DropRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
+    with row \c DropRow. If \c DropRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
-  virtual void getLocalRowCopy(LocalOrdinal DropRow, 
-			       const Teuchos::ArrayView<LocalOrdinal> &Indices, 
-			       const Teuchos::ArrayView<Scalar> &Values,
-			       size_t &NumEntries) const ;
-  
+  virtual void getLocalRowCopy(LocalOrdinal DropRow,
+                               const Teuchos::ArrayView<LocalOrdinal> &Indices,
+                               const Teuchos::ArrayView<Scalar> &Values,
+                               size_t &NumEntries) const ;
+
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
     \param GlobalRow - (In) Global row number for which indices are desired.
@@ -236,13 +236,13 @@ public:
     \param Values    - (Out) Row values
     \pre <tt>isDroplyIndexed() == false</tt>
     \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
-    
+
     Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
   */
-  virtual void getGlobalRowView(GlobalOrdinal GlobalRow, 
-				Teuchos::ArrayView<const GlobalOrdinal> &indices, 
-				Teuchos::ArrayView<const Scalar> &values) const;
-  
+  virtual void getGlobalRowView(GlobalOrdinal GlobalRow,
+                                Teuchos::ArrayView<const GlobalOrdinal> &indices,
+                                Teuchos::ArrayView<const Scalar> &values) const;
+
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
     \param DropRow - (In) Drop row number for which indices are desired.
@@ -250,46 +250,46 @@ public:
     \param Values   - (Out) Row values
     \pre <tt>isGloballyIndexed() == false</tt>
     \post <tt>indices.size() == getNumEntriesInDropRow(DropRow)</tt>
-    
+
     Note: If \c DropRow does not belong to this node, then \c indices is set to null.
   */
-  virtual void getLocalRowView(LocalOrdinal DropRow, 
-			       Teuchos::ArrayView<const LocalOrdinal> &indices, 
-			       Teuchos::ArrayView<const Scalar> &values) const;
-  
+  virtual void getLocalRowView(LocalOrdinal DropRow,
+                               Teuchos::ArrayView<const LocalOrdinal> &indices,
+                               Teuchos::ArrayView<const Scalar> &values) const;
+
   //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
-  /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
+  /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
     the zero and non-zero diagonals owned by this node. */
   virtual void getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const;
-  
+
   //@}
-  
+
   //! \name Mathematical Methods
   //@{
-  
+
   /**
    * \brief Scales the RowMatrix on the left with the Vector x.
    *
-   * This matrix will be scaled such that A(i,j) = x(i)*A(i,j) 
-   * where i denoes the global row number of A and 
+   * This matrix will be scaled such that A(i,j) = x(i)*A(i,j)
+   * where i denoes the global row number of A and
    * j denotes the global column number of A.
    *
    * \param x A vector to left scale this matrix.
    */
   virtual void leftScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
-  
+
   /**
    * \brief Scales the RowMatrix on the right with the Vector x.
    *
-   * This matrix will be scaled such that A(i,j) = x(j)*A(i,j) 
-   * where i denoes the global row number of A and 
+   * This matrix will be scaled such that A(i,j) = x(j)*A(i,j)
+   * where i denoes the global row number of A and
    * j denotes the global column number of A.
    *
    * \param x A vector to right scale this matrix.
    */
   virtual void rightScale(const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
-  
-  //! Returns the Frobenius norm of the matrix. 
+
+  //! Returns the Frobenius norm of the matrix.
   /** Computes and returns the Frobenius norm of the matrix, defined as:
       \f$ \|A\|_F = \sqrt{\sum_{i,j} \|\a_{ij}\|^2} \f$
   */
@@ -301,57 +301,23 @@ public:
     - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
     - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
   */
-  virtual void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-		     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-		     Teuchos::ETransp mode = Teuchos::NO_TRANS, 
-		     Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-		     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
-  
+  virtual void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+                     Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                     Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+                     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+
   //! Indicates whether this operator supports applying the adjoint operator.
   virtual bool hasTransposeApply() const;
-  
-  //@}
-  
-  //! \name Deprecated routines to be removed at some point in the future.
-  //@{
-  
-  //! Deprecated. Get a persisting const view of the entries in a specified global row of this matrix.
-  /*!
-    \param GlobalRow - (In) Global row from which to retrieve matrix entries.
-    \param Indices - (Out) Indices for the global row.
-    \param Values - (Out) Values for the global row.
-    
-    Note: If \c GlobalRow does not belong to this node, then \c Indices and \c Values are set to <tt>Teuchos::null</t>>.
-    
-    \pre isDroplyIndexed()==false
-  */
-  TPETRA_DEPRECATED virtual void getGlobalRowView(GlobalOrdinal GlobalRow, 
-						  Teuchos::ArrayRCP<const GlobalOrdinal> &indices,
-						  Teuchos::ArrayRCP<const Scalar>        &values) const;
-  
-  //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
-  /*!
-    \param DropRow - (In) Drop row from which to retrieve matrix entries.
-    \param Indices - (Out) Indices for the local row.
-    \param Values - (Out) Values for the local row.
-    
-    Note: If \c DropRow is not valid for this node, then \c Indices and \c Values are set to <tt>Teuchos::null</tt>.
-    
-    \pre isGloballyIndexed()==false
-  */
-  TPETRA_DEPRECATED virtual void getLocalRowView(LocalOrdinal DropRow,
-						 Teuchos::ArrayRCP<const LocalOrdinal> &indices,
-						 Teuchos::ArrayRCP<const Scalar>       &values) const;  
-  //@}
 
-  
+  //@}
 private:
 
   //! Pointer to the matrix to be preconditioned.
   Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
 
   //! Maximum allowed entries per row.
-  size_t AllowedNumEntries_;  
+  size_t AllowedNumEntries_;
   //! Maximum allowed bandwidth.
   LocalOrdinal AllowedBandwidth_;
   //! Number of rows in the local matrix.

@@ -121,17 +121,17 @@ namespace details {
  * Compute work range = (begin, end) such that adjacent threads/blocks write to
  * separate cache lines
  */
-template <typename scalar_type, typename device_type, typename size_type>
+template <typename scalar_type, typename execution_space, typename size_type>
 KOKKOS_INLINE_FUNCTION
 Kokkos::pair<size_type, size_type>
-compute_work_range( const device_type device,
+compute_work_range( const execution_space device,
                     const size_type work_count,
                     const size_type thread_count,
                     const size_type thread_rank)
 {
 #if defined( KOKKOS_HAVE_CUDA )
   enum { cache_line =
-         Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value ? 128 : 64 };
+         Kokkos::Impl::is_same<execution_space,Kokkos::Cuda>::value ? 128 : 64 };
 #else
   enum { cache_line = 64 };
 #endif

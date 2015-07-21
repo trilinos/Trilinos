@@ -316,6 +316,7 @@ getLocallyMatchedSideIds(const std::vector<std::size_t> & side_ids,
    // cause the process to hang!
    TEUCHOS_TEST_FOR_EXCEPTION(checkProb,std::logic_error,
                       "getLocallyMatchedSideIds: checkProb failed");
+
    TEUCHOS_TEST_FOR_EXCEPTION(local_side_ids.size()!=result->size(),std::logic_error,
                       "getLocallyMatchedSideIds: not all local side ids are satisfied!");
 

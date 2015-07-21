@@ -66,6 +66,7 @@ namespace stk {
       m_checkSubCycle(false),
       m_checkSmRegion(false),
       m_isZapotec(false),
+      m_usingDiffingTool(false),
       m_worldComm(MPI_COMM_NULL),
       m_parallelComm(MPI_COMM_NULL),
       m_parallelSize(-1),
@@ -76,8 +77,10 @@ namespace stk {
   {
     m_execMap[sierra::Env::EXEC_TYPE_LAG].m_master      = -1;
     m_execMap[sierra::Env::EXEC_TYPE_LAG].m_groupComm   = MPI_COMM_NULL;
+    m_execMap[sierra::Env::EXEC_TYPE_LAG].m_interComm   = MPI_COMM_NULL;
     m_execMap[sierra::Env::EXEC_TYPE_FLUID].m_master    = -1;
     m_execMap[sierra::Env::EXEC_TYPE_FLUID].m_groupComm = MPI_COMM_NULL;
+    m_execMap[sierra::Env::EXEC_TYPE_FLUID].m_interComm = MPI_COMM_NULL;
     stk::register_log_ostream(std::cout, "cout");
     stk::register_log_ostream(std::cerr, "cerr");
 

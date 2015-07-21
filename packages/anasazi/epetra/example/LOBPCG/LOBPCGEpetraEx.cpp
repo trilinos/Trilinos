@@ -1,4 +1,11 @@
-#include "AnasaziConfigDefs.hpp"
+/// \example LOBPCGEpetraEx.cpp
+/// \brief Use LOBPCG with Epetra test problem (computed here).
+///
+/// This example computes the eigenvalues of largest magnitude of an
+/// eigenvalue problem $A x = \lambda x$, using Anasazi's
+/// implementation of the LOBPCG method, with Epetra linear algebra.
+/// It constructs the test problem within the example itself.
+
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziLOBPCGSolMgr.hpp"
 #include "AnasaziBasicOutputManager.hpp"
@@ -14,70 +21,66 @@
 #endif
 #include "Epetra_Map.h"
 
-using namespace Anasazi;
 
-int main(int argc, char *argv[]) {
+int
+main (int argc, char *argv[])
+{
+  using namespace Anasazi;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using std::endl;
 
 #ifdef HAVE_MPI
   // Initialize MPI
-  //
-  MPI_Init(&argc,&argv);
-#endif
+  MPI_Init (&argc, &argv);
+#endif // HAVE_MPI
 
   // Create an Epetra communicator
-  //
 #ifdef HAVE_MPI
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  Epetra_MpiComm Comm (MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
-#endif
+#endif // HAVE_MPI
 
   // Create an Anasazi output manager
-  //
   BasicOutputManager<double> printer;
   printer.stream(Errors) << Anasazi_Version() << std::endl << std::endl;
 
   // Get the sorting std::string from the command line
-  //
-  std::string which("LM");
-  Teuchos::CommandLineProcessor cmdp(false,true);
-  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
-  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+  std::string which ("LM");
+  Teuchos::CommandLineProcessor cmdp (false, true);
+  cmdp.setOption("sort", &which, "Targetted eigenvalues (SM or LM).");
+  if (cmdp.parse (argc, argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
+    MPI_Finalize ();
+#endif // HAVE_MPI
     return -1;
   }
 
   // Dimension of the matrix
   //
   // Discretization points in any one direction.
-  //
-  const int nx = 10;                    
+  const int nx = 10;
   // Size of matrix nx*nx
-  //
-  const int NumGlobalElements = nx*nx;  
+  const int NumGlobalElements = nx*nx;
 
   // Construct a Map that puts approximately the same number of
-  // equations on each processor.
-  //
-  Epetra_Map Map(NumGlobalElements, 0, Comm);
+  // equations on each process.
+  Epetra_Map Map (NumGlobalElements, 0, Comm);
 
   // Get update list and number of local equations from newly created Map.
-  //
-  int NumMyElements = Map.NumMyElements();
+  int NumMyElements = Map.NumMyElements ();
 
-  std::vector<int> MyGlobalElements(NumMyElements);
-      Map.MyGlobalElements(&MyGlobalElements[0]);
+  std::vector<int> MyGlobalElements (NumMyElements);
+  Map.MyGlobalElements (&MyGlobalElements[0]);
 
-  // Create an integer vector NumNz that is used to build the Petra Matrix.
-  // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
-  // on this processor
-  //
-  std::vector<int> NumNz(NumMyElements);
+  // Create an integer vector NumNz that is used to build the Petra
+  // matrix.  NumNz[i] is the number of OFF-DIAGONAL terms for the
+  // i-th global equation on this process.
+  std::vector<int> NumNz (NumMyElements);
 
   /* We are building a matrix of block structure:
-  
+
       | T -I          |
       |-I  T -I       |
       |   -I  T       |
@@ -85,14 +88,14 @@ int main(int argc, char *argv[]) {
       |           -I T|
 
    where each block is dimension nx by nx and the matrix is on the order of
-   nx*nx.  The block T is a tridiagonal matrix. 
+   nx*nx.  The block T is a tridiagonal matrix.
   */
-  for (int i=0; i<NumMyElements; i++) {
-    if (MyGlobalElements[i] == 0 || MyGlobalElements[i] == NumGlobalElements-1 || 
+  for (int i=0; i<NumMyElements; ++i) {
+    if (MyGlobalElements[i] == 0 || MyGlobalElements[i] == NumGlobalElements-1 ||
         MyGlobalElements[i] == nx-1 || MyGlobalElements[i] == nx*(nx-1) ) {
       NumNz[i] = 3;
     }
-    else if (MyGlobalElements[i] < nx || MyGlobalElements[i] > nx*(nx-1) || 
+    else if (MyGlobalElements[i] < nx || MyGlobalElements[i] > nx*(nx-1) ||
              MyGlobalElements[i]%nx == 0 || (MyGlobalElements[i]+1)%nx == 0) {
       NumNz[i] = 4;
     }
@@ -102,42 +105,36 @@ int main(int argc, char *argv[]) {
   }
 
   // Create an Epetra_Matrix
-  //
-  Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]) );
+  RCP<Epetra_CrsMatrix> A = rcp (new Epetra_CrsMatrix (Copy, Map, &NumNz[0]));
 
   // Compute coefficients for discrete convection-diffution operator
-  //
   const double one = 1.0;
   std::vector<double> Values(4);
   std::vector<int> Indices(4);
-  double rho = 0.0;  
+  double rho = 0.0;
   double h = one /(nx+1);
   double h2 = h*h;
   double c = 5.0e-01*rho/ h;
   Values[0] = -one/h2 - c; Values[1] = -one/h2 + c; Values[2] = -one/h2; Values[3]= -one/h2;
   double diag = 4.0 / h2;
   int NumEntries;
-  
-  for (int i=0; i<NumMyElements; i++)
-  {
-    if (MyGlobalElements[i]==0)
-    {
+
+  for (int i=0; i<NumMyElements; ++i) {
+    if (MyGlobalElements[i]==0) {
       Indices[0] = 1;
       Indices[1] = nx;
       NumEntries = 2;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0]);
       assert( info==0 );
     }
-    else if (MyGlobalElements[i] == nx*(nx-1))
-    {
+    else if (MyGlobalElements[i] == nx*(nx-1)) {
       Indices[0] = nx*(nx-1)+1;
       Indices[1] = nx*(nx-2);
       NumEntries = 2;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0]);
       assert( info==0 );
     }
-    else if (MyGlobalElements[i] == nx-1)
-    {
+    else if (MyGlobalElements[i] == nx-1) {
       Indices[0] = nx-2;
       NumEntries = 1;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
@@ -146,8 +143,7 @@ int main(int argc, char *argv[]) {
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0]);
       assert( info==0 );
     }
-    else if (MyGlobalElements[i] == NumGlobalElements-1)
-    {
+    else if (MyGlobalElements[i] == NumGlobalElements-1) {
       Indices[0] = NumGlobalElements-2;
       NumEntries = 1;
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
@@ -156,8 +152,7 @@ int main(int argc, char *argv[]) {
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0]);
       assert( info==0 );
     }
-    else if (MyGlobalElements[i] < nx)
-    {
+    else if (MyGlobalElements[i] < nx) {
       Indices[0] = MyGlobalElements[i]-1;
       Indices[1] = MyGlobalElements[i]+1;
       Indices[2] = MyGlobalElements[i]+nx;
@@ -165,8 +160,7 @@ int main(int argc, char *argv[]) {
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
       assert( info==0 );
     }
-    else if (MyGlobalElements[i] > nx*(nx-1))
-    {
+    else if (MyGlobalElements[i] > nx*(nx-1)) {
       Indices[0] = MyGlobalElements[i]-1;
       Indices[1] = MyGlobalElements[i]+1;
       Indices[2] = MyGlobalElements[i]-nx;
@@ -174,8 +168,7 @@ int main(int argc, char *argv[]) {
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
       assert( info==0 );
     }
-    else if (MyGlobalElements[i]%nx == 0)
-    {
+    else if (MyGlobalElements[i]%nx == 0) {
       Indices[0] = MyGlobalElements[i]+1;
       Indices[1] = MyGlobalElements[i]-nx;
       Indices[2] = MyGlobalElements[i]+nx;
@@ -183,8 +176,7 @@ int main(int argc, char *argv[]) {
       int info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0]);
       assert( info==0 );
     }
-    else if ((MyGlobalElements[i]+1)%nx == 0)
-    {
+    else if ((MyGlobalElements[i]+1)%nx == 0) {
       Indices[0] = MyGlobalElements[i]-nx;
       Indices[1] = MyGlobalElements[i]+nx;
       NumEntries = 2;
@@ -195,8 +187,7 @@ int main(int argc, char *argv[]) {
       info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
       assert( info==0 );
     }
-    else
-    {
+    else {
       Indices[0] = MyGlobalElements[i]-1;
       Indices[1] = MyGlobalElements[i]+1;
       Indices[2] = MyGlobalElements[i]-nx;
@@ -211,14 +202,13 @@ int main(int argc, char *argv[]) {
   }
 
   // Finish up
-  int info = A->FillComplete();
+  int info = A->FillComplete ();
   assert( info==0 );
-  A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
+  A->SetTracebackMode (1); // Shutdown Epetra Warning tracebacks
 
   // Create a identity matrix for the temporary mass matrix
-  Teuchos::RCP<Epetra_CrsMatrix> M = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, 1) );
-  for (int i=0; i<NumMyElements; i++)
-  {
+  RCP<Epetra_CrsMatrix> M = rcp (new Epetra_CrsMatrix (Copy, Map, 1));
+  for (int i=0; i<NumMyElements; i++) {
     Values[0] = one;
     Indices[0] = i;
     NumEntries = 1;
@@ -226,114 +216,105 @@ int main(int argc, char *argv[]) {
     assert( info==0 );
   }
   // Finish up
-  info = M->FillComplete();
+  info = M->FillComplete ();
   assert( info==0 );
-  M->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
-  
+  M->SetTracebackMode (1); // Shutdown Epetra Warning tracebacks
+
   //************************************
   // Call the LOBPCG solver manager
   //***********************************
   //
-  //  Variables used for the LOBPCG Method
-  //
-  const int    nev       = 10;
-  const int    blockSize = 5;
-  const int    maxIters  = 500;
-  const double tol       = 1.0e-8;
+  // Variables used for the LOBPCG Method
+  const int nev       = 10;
+  const int blockSize = 5;
+  const int maxIters  = 500;
+  const double tol    = 1.0e-8;
 
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
   typedef MultiVecTraits<double, Epetra_MultiVector> MVT;
 
-  // Create an Epetra_MultiVector for an initial vector to start the solver.
-  // Note:  This needs to have the same number of columns as the blocksize.
-  //
-  Teuchos::RCP<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(Map, blockSize) );
-  ivec->Random();
+  // Create an Epetra_MultiVector for an initial vector to start the
+  // solver.  Note: This needs to have the same number of columns as
+  // the blocksize.
+  RCP<Epetra_MultiVector> ivec = rcp (new Epetra_MultiVector (Map, blockSize));
+  ivec->Random (); // fill the initial vector with random values
 
   // Create the eigenproblem.
-  //
-  Teuchos::RCP<BasicEigenproblem<double, MV, OP> > MyProblem =
-    Teuchos::rcp( new BasicEigenproblem<double, MV, OP>(A, ivec) );
+  RCP<BasicEigenproblem<double, MV, OP> > MyProblem =
+    rcp (new BasicEigenproblem<double, MV, OP> (A, ivec));
 
   // Inform the eigenproblem that the operator A is symmetric
-  //
-  MyProblem->setHermitian(true);
+  MyProblem->setHermitian (true);
 
   // Set the number of eigenvalues requested
-  //
-  MyProblem->setNEV( nev );
+  MyProblem->setNEV (nev);
 
-  // Inform the eigenproblem that you are finishing passing it information
-  //
-  bool boolret = MyProblem->setProblem();
-  if (boolret != true) {
-    printer.print(Errors,"Anasazi::BasicEigenproblem::setProblem() returned an error.\n");
+  // Tell the eigenproblem that you are finishing passing it information.
+  const bool success = MyProblem->setProblem ();
+  if (! success) {
+    printer.print (Errors, "Anasazi::BasicEigenproblem::setProblem() reported an error.\n");
 #ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
+    MPI_Finalize ();
+#endif // HAVE_MPI
     return -1;
   }
 
   // Create parameter list to pass into the solver manager
-  //
   Teuchos::ParameterList MyPL;
-  MyPL.set( "Which", which );
-  MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Maximum Iterations", maxIters );
-  MyPL.set( "Convergence Tolerance", tol );
-  MyPL.set( "Full Ortho", true );
-  MyPL.set( "Use Locking", true );
-  //
+  MyPL.set ("Which", which);
+  MyPL.set ("Block Size", blockSize);
+  MyPL.set ("Maximum Iterations", maxIters);
+  MyPL.set ("Convergence Tolerance", tol);
+  MyPL.set ("Full Ortho", true);
+  MyPL.set ("Use Locking", true);
+
   // Create the solver manager
-  LOBPCGSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
+  LOBPCGSolMgr<double, MV, OP> MySolverMan (MyProblem, MyPL);
 
   // Solve the problem
-  //
-  ReturnType returnCode = MySolverMan.solve();
+  ReturnType returnCode = MySolverMan.solve ();
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
-  //
-  Eigensolution<double,MV> sol = MyProblem->getSolution();
+  Eigensolution<double,MV> sol = MyProblem->getSolution ();
   std::vector<Value<double> > evals = sol.Evals;
-  Teuchos::RCP<MV> evecs = sol.Evecs;
+  RCP<MV> evecs = sol.Evecs;
 
   // Compute residuals.
-  //
-  std::vector<double> normR(sol.numVecs);
+  std::vector<double> normR (sol.numVecs);
   if (sol.numVecs > 0) {
-    Teuchos::SerialDenseMatrix<int,double> T(sol.numVecs, sol.numVecs);
-    Epetra_MultiVector tempAevec( Map, sol.numVecs );
-    T.putScalar(0.0); 
-    for (int i=0; i<sol.numVecs; i++) {
+    Teuchos::SerialDenseMatrix<int,double> T (sol.numVecs, sol.numVecs);
+    Epetra_MultiVector tempAevec (Map, sol.numVecs );
+    T.putScalar (0.0);
+    for (int i = 0; i < sol.numVecs; ++i) {
       T(i,i) = evals[i].realpart;
     }
-    A->Apply( *evecs, tempAevec );
-    MVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, tempAevec );
-    MVT::MvNorm( tempAevec, normR );
+    A->Apply (*evecs, tempAevec);
+    MVT::MvTimesMatAddMv (-1.0, *evecs, T, 1.0, tempAevec);
+    MVT::MvNorm (tempAevec, normR);
   }
 
   // Print the results
-  //
   std::ostringstream os;
-  os.setf(std::ios_base::right, std::ios_base::adjustfield);
-  os<<"Solver manager returned " << (returnCode == Converged ? "converged." : "unconverged.") << std::endl;
-  os<<std::endl;
-  os<<"------------------------------------------------------"<<std::endl;
-  os<<std::setw(16)<<"Eigenvalue"
-    <<std::setw(18)<<"Direct Residual"
-    <<std::endl;
-  os<<"------------------------------------------------------"<<std::endl;
-  for (int i=0; i<sol.numVecs; i++) {
-    os<<std::setw(16)<<evals[i].realpart
-      <<std::setw(18)<<normR[i]/evals[i].realpart
-      <<std::endl;
+  os.setf (std::ios_base::right, std::ios_base::adjustfield);
+  os << "Solver manager returned "
+     << (returnCode == Converged ? "converged." : "unconverged.") << endl;
+  os << endl;
+  os << "------------------------------------------------------" << endl;
+  os << std::setw(16) << "Eigenvalue"
+     << std::setw(18) << "Direct Residual"
+     << endl;
+  os << "------------------------------------------------------" << endl;
+  for (int i = 0; i < sol.numVecs; ++i) {
+    os << std::setw(16) << evals[i].realpart
+       << std::setw(18) << normR[i] / evals[i].realpart
+       << endl;
   }
-  os<<"------------------------------------------------------"<<std::endl;
-  printer.print(Errors,os.str());
+  os << "------------------------------------------------------" << endl;
+  printer.print (Errors, os.str ());
 
 #ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
+  MPI_Finalize ();
+#endif // HAVE_MPI
   return 0;
 }

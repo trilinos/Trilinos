@@ -125,6 +125,13 @@ public:
    /** Initialize the response library from a previously construct response library.
      */
    void initialize(const ResponseLibrary & rl);
+ 
+   /** Copy all the responses from another response library. This is a different from
+     * <code>initialize</code>. This method only copies the responses leaving the
+     * parameters set by <code>initialize</code> alone. This must be called before 
+     * <code>buildResponseEvaluators</code>.
+     */
+   void copyResponses(const ResponseLibrary & rl);
 
    /** Get the internally stored workset container, note this is non-const because
      * the workset container is mostly a non-const object (uses lots of lazy evaluation).
@@ -296,6 +303,12 @@ protected:
      */
    void addResidualResponsesToInArgs(Overloader<typename TraitsT::Jacobian>,panzer::AssemblyEngineInArgs & input_args) const;
 
+   /** Add in a response (for internal use only) using a template manager.
+     */
+   void addResponse(const std::string & responseName,
+                    const std::vector<WorksetDescriptor> & wkst_desc,
+                    const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & modelFact_tm);
+
 private:
 
    Teuchos::RCP<WorksetContainer> wkstContainer_;
@@ -331,7 +344,7 @@ private:
      std::ostream & os_;
      Printer(const Response_TemplateManager & tm,std::ostream & os) : tm_(tm), os_(os) {}
      template <typename T> void operator()(T) const { 
-       os_ << PHX::TypeString<T>::value << "=";
+//       os_ << PHX::TypeString<T>::value << "=";
        if(tm_.get<T>()!=Teuchos::null) 
          os_ << "ON ";
        else

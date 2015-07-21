@@ -103,13 +103,13 @@ print( std::ostream & os , const char * const lead , const Part & p )
 
 //----------------------------------------------------------------------
 
-void order( PartVector & v )
+void sort_and_unique( PartVector & partVector )
 {
-  PartVector::iterator ev = v.end();
-  PartVector::iterator iv = v.begin();
-  std::sort( iv , ev , PartLess() );
-  iv = std::unique( iv , ev );
-  v.erase( iv , ev );
+  PartVector::iterator begin = partVector.begin();
+  PartVector::iterator end = partVector.end();
+  std::sort( begin , end , PartLess() );
+  PartVector::iterator new_end = std::unique( begin , end );
+  partVector.erase( new_end , end );
 }
 
 bool insert( ConstPartVector & v , const Part & part )

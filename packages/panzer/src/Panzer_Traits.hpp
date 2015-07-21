@@ -61,20 +61,20 @@
 
 // Scalar types
 #include "Sacado.hpp"
-#include "Sacado_CacheFad_DFad.hpp"
-#include "Sacado_ELRFad_DFad.hpp"
-#include "Sacado_ELRCacheFad_DFad.hpp"
+//#include "Sacado_CacheFad_DFad.hpp"
+//#include "Sacado_ELRFad_DFad.hpp"
+//#include "Sacado_ELRCacheFad_DFad.hpp"
 
 // traits Base Class
 #include "Phalanx_Traits_Base.hpp"
 
 // Include User Data Types
-#include "Phalanx_Allocator_Contiguous.hpp"
+//#include "Phalanx_Allocator_Contiguous.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_GlobalEvaluationDataContainer.hpp"
 
 // Debugging information
-#include "Phalanx_TypeStrings.hpp"
+//#include "Phalanx_TypeStrings.hpp"
 
 // add embedded UQ
 #ifdef HAVE_STOKHOS
@@ -95,10 +95,11 @@ namespace panzer {
     
     // Scalar types we plan to use
     typedef double RealType;
-    //typedef Sacado::Fad::DFad<double> FadType;
-    //typedef Sacado::CacheFad::DFad<double> FadType;
-    //typedef Sacado::ELRFad::DFad<double> FadType;
+    // typedef Sacado::Fad::DFad<double> FadType;
+    // typedef Sacado::CacheFad::DFad<double> FadType;
+    // typedef Sacado::ELRFad::DFad<double> FadType;
     // typedef Sacado::ELRCacheFad::DFad<double> FadType;
+    // typedef Sacado::Fad::SLFad<double,8> FadType;
     typedef PANZER_FADTYPE FadType;
 
     #ifdef HAVE_STOKHOS
@@ -157,7 +158,7 @@ namespace panzer {
     // ******************************************************************
     // *** Allocator Type
     // ******************************************************************
-    typedef PHX::ContiguousAllocator<double> Allocator;
+ //   typedef PHX::ContiguousAllocator<double> Allocator;
 
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
@@ -188,7 +189,7 @@ namespace panzer {
   // ******************************************************************
 
 }
-
+/*
 namespace PHX {
   
   // Evaluation Types
@@ -237,5 +238,5 @@ namespace PHX {
   { static const std::string value; };
 
 }
-
+*/
 #endif

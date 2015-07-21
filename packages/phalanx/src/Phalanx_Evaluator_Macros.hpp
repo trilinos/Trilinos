@@ -45,7 +45,7 @@
 #ifndef PHX_EVALUATOR_MACROS_H
 #define PHX_EVALUATOR_MACROS_H
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_FieldManager.hpp"

@@ -19,20 +19,28 @@ linear solver and preconditioner factories are returned as
 <tt>Thyra::PreconditionerFactoryBase</tt> objects respectively.
 
 The class <tt>Stratimikos::DefaultLinearSolverBuilder</tt> is parameter-list
-driven. An example parameter list in XML form that selects AztecOO and Ifpack
+driven.  All valid parameters are given below:
+
+\htmlonly
+  <iframe src="stratimikos.xml" width="100%" scrolling="no" frameborder="0">
+</iframe>
+<hr/>
+\endhtmlonly
+
+An example parameter list in XML form that selects AztecOO and Ifpack
 is shown below:
 
 \verbinclude _aztecoo.ifpack.xml
 
-The parameter <tt>"Linear Solver Type"</tt> selects the linear solver type
+<!-- The parameter <tt>"Linear Solver Type"</tt> selects the linear solver type
 (currently supported are "Amesos", "AztecOO", and "Belos").  The parameter
 <tt>"Preconditioner Type"</tt> selects the preconditioner type (currently
-supported are "None", "ML", and "Ifpack").
+supported are "None", "ML", and "Ifpack"). -->
 
 Many other example XML input files (e.g. <tt>*.xml</tt>) can be found in the
-directory <tt>stratimikos/example</tt>.  The full listing of supported
+directory <tt>stratimikos/example</tt>.  <!--The full listing of supported
 parameters can be found in the documentation for
-<tt>Stratimikos::DefaultLinearSolverBuilder</tt>.
+<tt>Stratimikos::DefaultLinearSolverBuilder</tt>. -->
 
 The example <tt>simple_stratimikos_example.cpp</tt> shows how to wrap Epetra
 objects and then use <tt>Stratimikos::DefaultLinearSolverBuilder</tt> to solve

@@ -111,7 +111,6 @@ void Problem_Interface::printSolution(const Epetra_Vector& x, double conParam)
 double Problem_Interface::computeFreeEnergy(const Epetra_Vector& x)
 {
     double ave; x.MeanValue(&ave);
-    double fe =  abs(ave - 1.2);
     return abs(ave - 1.2);
 }
 //-----------------------------------------------------------------------------

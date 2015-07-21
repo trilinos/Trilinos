@@ -126,19 +126,6 @@ createOverlapGraph (const Teuchos::RCP<const GraphType>& inputGraph,
   return overlapGraph;
 }
 
-/// \brief Construct an overlapped graph for use with Ifpack2 preconditioners.
-///
-/// \warning This function is DEPRECATED, because it does not comply
-///   with Tpetra and Ifpack2 naming standards.  Please call
-///   createOverlapGraph() instead.
-template<class GraphType>
-TEUCHOS_DEPRECATED Teuchos::RCP<const GraphType>
-CreateOverlapGraph (const Teuchos::RCP<const GraphType>& inputGraph,
-                    int OverlapLevel)
-{
-  return createOverlapGraph (inputGraph, OverlapLevel);
-}
-
 /// \brief Construct an overlapped matrix for use with Ifpack2 preconditioners.
 /// \tparam MatrixType A specialization of Tpetra::CrsMatrix.
 ///
@@ -203,19 +190,6 @@ createOverlapMatrix (const Teuchos::RCP<const MatrixType>& inputMatrix,
   }
 
   return overlapMatrix;
-}
-
-/// \brief Construct an overlapped matrix for use with Ifpack2 preconditioners.
-///
-/// \warning This function is DEPRECATED, because it does not comply
-///   with Tpetra and Ifpack2 naming standards.  Please call
-///   createOverlapMatrix() instead.
-template<class MatrixType>
-TEUCHOS_DEPRECATED Teuchos::RCP<const MatrixType>
-CreateOverlapMatrix (const Teuchos::RCP<const MatrixType>& inputGraph,
-                     int overlapLevel)
-{
-  return createOverlapMatrix (inputGraph, overlapLevel);
 }
 
 } // namespace Ifpack2

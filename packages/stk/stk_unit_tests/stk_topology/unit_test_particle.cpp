@@ -45,7 +45,8 @@ TEST( stk_topology, particle)
   EXPECT_FALSE(t.is_shell());
 
   EXPECT_EQ(t.rank(),topology::ELEMENT_RANK);
-  EXPECT_EQ(t.side_rank(),topology::NODE_RANK);
+  EXPECT_EQ(t.side_rank(),topology::INVALID_RANK);
+  EXPECT_EQ(t.num_sides(),0u );
 
 
   EXPECT_EQ(t.dimension(),1u);
@@ -63,5 +64,3 @@ TEST( stk_topology, particle)
   EXPECT_EQ(t.base(),topology::PARTICLE);
 
 }
-
-

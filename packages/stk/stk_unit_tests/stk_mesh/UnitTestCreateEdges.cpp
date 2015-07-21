@@ -36,6 +36,7 @@
 #include <stk_mesh/base/GetEntities.hpp>       // for comm_mesh_counts, count_entities
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
 #include <stk_mesh/base/CreateEdges.hpp>  // for create_edges
+#include <stk_mesh/base/CreateFaces.hpp>  // for create_faces
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
@@ -45,10 +46,12 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc
-#include <exampleMeshes/StkMeshFromGeneratedMesh.h>
+#include <stk_unit_test_utils/StkMeshFromGeneratedMesh.h>
 #include "unit_tests/Setup2Block2HexMesh.hpp"
 
 using stk::mesh::MetaData;
+
+
 
 TEST ( UnitTestCreateEdges, Quad_2x1 )
 {
@@ -476,6 +479,165 @@ TEST( UnitTestCreateEdges , hex1x1x4 )
         stkMeshBulkData.modification_end();
     }
 }
+
+TEST( UnitTestCreateEdges, hybrid_HexPyrTet )
+{
+    //  ID.proc
+    //
+    //          3.0------------7.0-----------11.1
+    //          /|             /|             /|
+    //         / |            / |            / |
+    //        /  |           /  |           /  |
+    //      4.0------------8.0-----------12.1  |
+    //       |   |          |   |          |   | <-- (Undrawable transition pyramid between node (5,6,7,8,9)
+    //       |   |   1.0    |   |          |   |      and 4 tets contained in volume on the right)
+    //       |   |          |   |          |   |
+    //       |  2.0---------|--6.0---------|-10.1
+    //       |  /           |  /           |  /
+    //       | /            | /            | /
+    //       |/             |/             |/
+    //      1.0------------5.0------------9.1
+
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    int p_size = stk::parallel_machine_size(pm);
+
+    if(p_size != 2)
+    {
+        return;
+    }
+
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+    const int p_rank = mesh.parallel_rank();
+
+    stk::mesh::Part * hexPart = &meta.declare_part_with_topology("hex_part", stk::topology::HEX_8);
+    stk::mesh::Part * pyrPart = &meta.declare_part_with_topology("pyr_part", stk::topology::PYRAMID_5);
+    stk::mesh::Part * tetPart = &meta.declare_part_with_topology("tet_part", stk::topology::TET_4);
+    meta.commit();
+
+    const size_t numHex = 1;
+    stk::mesh::EntityIdVector hexNodeIDs[] {
+        { 1, 2, 3, 4, 5, 6, 7, 8 }
+    };
+    stk::mesh::EntityId hexElemIDs[] = { 1 };
+
+    const size_t numPyr = 1;
+    stk::mesh::EntityIdVector pyrNodeIDs[] {
+        { 5, 6, 7, 8, 9 }
+    };
+    stk::mesh::EntityId pyrElemIDs[] = { 2 };
+
+    const size_t numTet = 4;
+    stk::mesh::EntityIdVector tetNodeIDs[] {
+        { 7, 8, 9, 12 },
+        { 6, 9, 10, 7 },
+        { 7, 9, 10, 12 },
+        { 7, 12, 10, 11 }
+    };
+    stk::mesh::EntityId tetElemIDs[] = { 3, 4, 5, 6 };
+
+    // list of triplets: (owner-proc, shared-nodeID, sharing-proc)
+    int shared_nodeIDs_and_procs[][3] =
+    {
+        { 0, 5, 1 },  // proc 0
+        { 0, 6, 1 },
+        { 0, 7, 1 },
+        { 0, 8, 1 },
+        { 1, 5, 0 },  // proc 1
+        { 1, 6, 0 },
+        { 1, 7, 0 },
+        { 1, 8, 0 }
+    };
+    int numSharedNodeTriples = 8;
+
+    mesh.modification_begin();
+
+    if (p_rank == 0) {
+        for (size_t i = 0; i < numHex; ++i) {
+          stk::mesh::declare_element(mesh, *hexPart, hexElemIDs[i], hexNodeIDs[i]);
+        }
+    }
+    else {
+        for (size_t i = 0; i < numPyr; ++i) {
+          stk::mesh::declare_element(mesh, *pyrPart, pyrElemIDs[i], pyrNodeIDs[i]);
+        }
+        for (size_t i = 0; i < numTet; ++i) {
+          stk::mesh::declare_element(mesh, *tetPart, tetElemIDs[i], tetNodeIDs[i]);
+        }
+    }
+
+    for (int nodeIdx = 0; nodeIdx < numSharedNodeTriples; ++nodeIdx) {
+        if (p_rank == shared_nodeIDs_and_procs[nodeIdx][0]) {
+            stk::mesh::EntityId nodeID = shared_nodeIDs_and_procs[nodeIdx][1];
+            int sharingProc = shared_nodeIDs_and_procs[nodeIdx][2];
+            stk::mesh::Entity node = mesh.get_entity(stk::topology::NODE_RANK, nodeID);
+            mesh.add_node_sharing(node, sharingProc);
+        }
+    }
+
+    mesh.modification_end();
+
+    stk::mesh::create_edges(mesh, *meta.get_part("pyr_part"));
+
+    {
+      std::vector<size_t> counts;
+      stk::mesh::comm_mesh_counts(mesh, counts);
+
+      EXPECT_EQ( counts[stk::topology::NODE_RANK], 12u ); // nodes
+      EXPECT_EQ( counts[stk::topology::EDGE_RANK], 8u );  // edges
+      EXPECT_EQ( counts[stk::topology::ELEM_RANK], 6u );  // elements
+    }
+}
+
+TEST ( UnitTestCreateEdges, Hex_2x1x1_select_out_a_face )
+{
+    stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2, 1, 1);
+
+    stk::mesh::Part & facePart = fixture.m_meta.declare_part_with_topology("face_part_to_exclude", stk::topology::QUADRILATERAL_4, true);
+    stk::mesh::PartVector facePartVector(1, &facePart);
+    fixture.m_meta.commit();
+    fixture.generate_mesh();
+    stk::mesh::BulkData & mesh = fixture.m_bulk_data;
+    {
+        std::vector<size_t> counts ;
+        stk::mesh::comm_mesh_counts(mesh , counts);
+
+        EXPECT_EQ( counts[stk::topology::NODE_RANK] , 12u );
+        EXPECT_EQ( counts[stk::topology::EDGE_RANK] , 0u );
+        EXPECT_EQ( counts[stk::topology::FACE_RANK] , 0u );
+        EXPECT_EQ( counts[stk::topology::ELEM_RANK] , 2u );
+    }
+    stk::mesh::create_faces(mesh);
+    const stk::mesh::BucketVector & buckets = mesh.buckets(stk::topology::FACE_RANK);
+    mesh.modification_begin();
+    for (unsigned bucketCount = 0 ; bucketCount < buckets.size() ; ++bucketCount) {
+        stk::mesh::Bucket & bucket = *buckets[bucketCount];
+        for (unsigned count = 0; count < bucket.size(); ++count) {
+            stk::mesh::Entity face = bucket[count];
+            if (mesh.bucket(face).owned()) {
+                mesh.change_entity_parts(face, facePartVector);
+            }
+        }
+    }
+    mesh.modification_end();
+
+    stk::mesh::Selector selectOutFaces(!facePart);
+
+    stk::mesh::create_edges(mesh, selectOutFaces);
+
+    {
+        std::vector<size_t> counts ;
+        stk::mesh::comm_mesh_counts( mesh, counts);
+
+        EXPECT_EQ( counts[stk::topology::NODE_RANK] , 12u );
+        EXPECT_EQ( counts[stk::topology::EDGE_RANK] , 20u );
+        EXPECT_EQ( counts[stk::topology::FACE_RANK] , 11u );
+        EXPECT_EQ( counts[stk::topology::ELEM_RANK] , 2u );
+    }
+}
+
+
 
 
 

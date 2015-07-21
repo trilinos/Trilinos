@@ -86,7 +86,9 @@ int ex_conv_ini( int  exoid,
 		 int* io_wordsize,
 		 int  file_wordsize,
 		 int  int64_status,
-		 int  is_parallel)
+		 int  is_parallel,
+		 int  is_mpiio,
+		 int  is_pnetcdf)
 {
   char errmsg[MAX_ERR_LENGTH];
   struct ex_file_item* new_file;
@@ -186,7 +188,14 @@ int ex_conv_ini( int  exoid,
   
   nc_inq_format(exoid, &filetype);
      
-  new_file = malloc(sizeof(struct ex_file_item));
+  if (!(new_file = malloc(sizeof(struct ex_file_item)))) {
+    exerrval = EX_MEMFAIL;
+    sprintf(errmsg,
+	    "Error: failed to allocate memory for internal file structure storage file id %d",
+	    exoid);
+    ex_err("ex_inquire",errmsg,exerrval);
+    return (EX_FATAL);
+  }
 
   new_file->file_id = exoid;
   new_file->user_compute_wordsize = *comp_wordsize == 4 ? 0 : 1;
@@ -196,6 +205,8 @@ int ex_conv_ini( int  exoid,
   new_file->shuffle = 0;
   new_file->file_type = filetype-1;
   new_file->is_parallel = is_parallel;
+  new_file->is_mpiio    = is_mpiio;
+  new_file->is_pnetcdf  = is_pnetcdf;
   
   new_file->next = file_list;
   file_list = new_file;

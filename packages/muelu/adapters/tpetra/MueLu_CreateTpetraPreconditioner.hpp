@@ -17,37 +17,19 @@
 #include <MueLu_Utilities.hpp>
 #include <MueLu_HierarchyHelpers.hpp>
 
+
+#if defined(HAVE_MUELU_EXPERIMENTAL) and defined(HAVE_MUELU_AMGX)
+#include <MueLu_AMGXOperator.hpp>
+#include <amgx_c.h>
+#include "cuda_runtime.h"
+#endif
+
 //! @file MueLu_CreateTpetraPreconditioner.hpp
 
 namespace MueLu {
 
-  /*! \fn TpetraCrs_To_XpetraMatrix
-    @brief Helper function to convert a Tpetra::CrsMatrix to an Xpetra::Matrix
-    TODO move this function to an Xpetra utility file
-    */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  TpetraCrs_To_XpetraMatrix(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Atpetra) {
-    typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> XTCrsMatrix;
-    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       XCrsMatrix;
-    typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>   XCrsMatrixWrap;
-
-    RCP<XCrsMatrix> Atmp = rcp(new XTCrsMatrix(Atpetra));
-    return rcp(new XCrsMatrixWrap(Atmp));
-  }
-
-  /*! \fn TpetraMultiVector_To_XpetraMultiVector
-    @brief Helper function to convert a Tpetra::MultiVector to an Xpetra::MultiVector
-    TODO move this function to an Xpetra utility file
-    */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  TpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Vtpetra) {
-    return rcp(new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Vtpetra));
-  }
-
   /*! \fn CreateTpetraPreconditioner
-    @brief Helper function to create a MueLu preconditioner that can be used by Tpetra.
+    @brief Helper function to create a MueLu or AMGX preconditioner that can be used by Tpetra.
 
     Given a Tpetra matrix, this function returns a constructed MueLu preconditioner.
 
@@ -56,6 +38,7 @@ namespace MueLu {
     @param[in] inCoords (optional) Coordinates.  The first vector is x, the second (if necessary) y, the third (if necessary) z.
     @param[in] inNullspace (optional) Near nullspace of the matrix.
     */
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   CreateTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix  <Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inA,
@@ -78,22 +61,21 @@ namespace MueLu {
     bool hasParamList = paramListIn.numParams();
 
     RCP<HierarchyManager> mueLuFactory;
-    ParameterList nonSerialList, paramList;
-    if (hasParamList) {
-      // Separate serializable and non-serializable data from the parameter list
-      // The data is put into paramList and nonSerialList
-      ExtractNonSerializableData(paramListIn, paramList, nonSerialList);
-    } else {
-      paramList = paramListIn;
-    }
+    ParameterList paramList = paramListIn;
 
+#if defined(HAVE_MUELU_EXPERIMENTAL) and defined(HAVE_MUELU_AMGX)
+    std::string externalMG = "use external multigrid package";
+    if (hasParamList && paramList.isParameter(externalMG) && paramList.get<std::string>(externalMG) == "amgx"){
+      return rcp(new AMGXOperator<SC,LO,GO,NO>(inA,paramListIn));
+    }
+#endif
     std::string syntaxStr = "parameterlist: syntax";
     if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
       paramList.remove(syntaxStr);
       mueLuFactory = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(paramList));
 
     } else {
-      mueLuFactory = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(paramList));
+      mueLuFactory = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(paramList,inA->getComm()));
     }
 
     RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
@@ -145,12 +127,15 @@ namespace MueLu {
     }
     H->GetLevel(0)->Set("Nullspace", nullspace);
 
-    if (hasParamList)
-      HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory, *H, nonSerialList);
-
+    
+    Teuchos::ParameterList nonSerialList,dummyList;
+    ExtractNonSerializableData(paramList, dummyList, nonSerialList);
+    HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
+    
     mueLuFactory->SetupHierarchy(*H);
-
     return rcp(new TpetraOperator<SC,LO,GO,NO>(H));
+
+
   }
 
   /*! \fn CreateTpetraPreconditioner
@@ -195,14 +180,41 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ReuseTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix  <Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A,
+  void ReuseTpetraPreconditioner(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& inA,
                                  MueLu::TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Op) {
-    RCP<Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > H = Op.GetHierarchy();
-    H->GetLevel(0)->Set("A", TpetraCrs_To_XpetraMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A));
+    typedef Scalar          SC;
+    typedef LocalOrdinal    LO;
+    typedef GlobalOrdinal   GO;
+    typedef Node            NO;
+
+    typedef Xpetra::Matrix<SC,LO,GO,NO>     Matrix;
+    typedef Xpetra::Operator<SC,LO,GO,NO>   Operator;
+    typedef MueLu ::Hierarchy<SC,LO,GO,NO>  Hierarchy;
+
+    RCP<Hierarchy> H = Op.GetHierarchy();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(!H->GetNumLevels(), Exceptions::RuntimeError,
+                               "ReuseTpetraPreconditioner: Hierarchy has no levels in it");
+    TEUCHOS_TEST_FOR_EXCEPTION(!H->GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError,
+                               "ReuseTpetraPreconditioner: Hierarchy has no fine level operator");
+    RCP<Level> level0 = H->GetLevel(0);
+
+    RCP<Operator> O0 = level0->Get<RCP<Operator> >("A");
+    RCP<Matrix>   A0 = Teuchos::rcp_dynamic_cast<Matrix>(O0);
+
+    RCP<Matrix> A = TpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(inA);
+    if (!A0.is_null()) {
+      // If a user provided a "number of equations" argument in a parameter list
+      // during the initial setup, we must honor that settings and reuse it for
+      // all consequent setups.
+      A->SetFixedBlockSize(A0->GetFixedBlockSize());
+    }
+    level0->Set("A", A);
+
     H->SetupRe();
   }
-
 
 } //namespace
 
 #endif //ifndef MUELU_CREATE_TPETRA_PRECONDITIONER_HPP
+

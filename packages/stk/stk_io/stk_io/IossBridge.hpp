@@ -214,7 +214,8 @@ struct FieldAndName
 {
 public:
   FieldAndName(stk::mesh::FieldBase *my_field, const std::string& my_db_name) :
-    m_field(my_field), m_dbName(my_db_name), m_wasFound(false) {}
+    m_field(my_field), m_dbName(my_db_name),
+    m_wasFound(false), m_forceNodeblockOutput(false) {}
   stk::mesh::FieldBase *field() const {return m_field;};
   std::string db_name() const {return m_dbName;}
   void set_db_name(const std::string &name) {m_dbName = name;}
@@ -223,6 +224,10 @@ private:
   std::string m_dbName;
 public:
   bool m_wasFound;
+  // Field is not defined on UNIVERSAL part, but we still want to output it on the nodeblock.
+  // This is done to output, for example, nodal fields that exist on an element block without
+  // creating a nodeset for the nodes of the element block.
+  mutable bool m_forceNodeblockOutput; 
 };
 
 std::string get_field_name(const stk::mesh::FieldBase &f, Ioss::DatabaseUsage dbUsage);
@@ -316,7 +321,8 @@ void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                           std::vector<stk::mesh::Entity> &entity_list,
                           Ioss::GroupingEntity *io_entity,
                           const std::string &name,
-                          const size_t state_count);
+                          const size_t state_count,
+                          bool ignore_missing_fields = false);
 
 void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
 					       const stk::mesh::FieldBase *field,
@@ -324,7 +330,8 @@ void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
 					       Ioss::GroupingEntity *io_entity,
 					       const stk::mesh::Part *stk_part,
 					       const std::string &name,
-					       const size_t state_count);
+					       const size_t state_count,
+					       bool ignore_missing_fields = false);
 
 /**
  * Fill the specified 'field' with data from the Ioss field named

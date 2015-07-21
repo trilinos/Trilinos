@@ -124,7 +124,7 @@ template< class Device ,
 class BoxElemFixture {
 public:
 
-  typedef Device device_type ;
+  typedef Device execution_space ;
 
   enum { SpaceDim = 3 };
   enum { ElemNode = Order == BoxElemPart::ElemLinear ? 8 :

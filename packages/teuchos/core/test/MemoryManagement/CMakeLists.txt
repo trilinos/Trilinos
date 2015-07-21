@@ -4,20 +4,27 @@
 # executables are also likely to fail as well.
 #
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Boost)
-IF (${PACKAGE_NAME}_ENABLE_Boost)
-  ASSERT_DEFINED(HAS_TEUCHOS_BOOST_IS_POLYMORPHIC)
-  IF (HAS_TEUCHOS_BOOST_IS_POLYMORPHIC)
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
-      GetBaseObjVoidPtr_UnitTests
-      SOURCES GetBaseObjVoidPtr_UnitTests.cpp
-        TestClasses.cpp
-        ${TEUCHOS_STD_UNIT_TEST_MAIN}
-      NUM_MPI_PROCS 1
-      ARGS --teuchos-suppress-startup-banner
-      STANDARD_PASS_OUTPUT
-      )
-  ENDIF()
+IF (
+  (${PACKAGE_NAME}_ENABLE_Boost AND HAVE_TEUCHOSCORE_BOOST_IS_POLYMORPHIC)
+  OR ${PROJECT_NAME}_ENABLE_CXX11
+  )
+  SET(HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR  TRUE)
+ELSE()
+  SET(HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR  FALSE)
+ENDIF()
+
+
+
+IF (HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    GetBaseObjVoidPtr_UnitTests
+    SOURCES GetBaseObjVoidPtr_UnitTests.cpp
+      TestClasses.cpp
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    NUM_MPI_PROCS 1
+    ARGS --teuchos-suppress-startup-banner
+    STANDARD_PASS_OUTPUT
+    )
 ENDIF()
 
 
@@ -124,9 +131,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 ASSERT_DEFINED(${PARENT_PACKAGE_NAME}_ENABLE_DEBUG)
 
-IF (${PACKAGE_NAME}_ENABLE_Boost AND HAS_TEUCHOS_BOOST_IS_POLYMORPHIC
-  AND ${PARENT_PACKAGE_NAME}_ENABLE_DEBUG
-  )
+IF (HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR  AND  ${PARENT_PACKAGE_NAME}_ENABLE_DEBUG)
 
   # These tests just provide additional verification that the unit tests show
   # that the RCPNode tracing code that catches tricky errors that the old

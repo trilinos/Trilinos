@@ -56,6 +56,8 @@
 //==============================================================================
 int main(int argc, char *argv[])
 {
+  using std::cout;
+  using std::endl;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -80,9 +82,9 @@ int main(int argc, char *argv[])
   // should be reordered as a "lower arrow". Sparsity pattern //
   // will be printed on screen.                               //
   // ======================================================== //
-  
+
   int NumPoints = 16;
-  
+
 #if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   Epetra_Map Map(-1,NumPoints,0,Comm);
 #else
@@ -94,13 +96,13 @@ int main(int argc, char *argv[])
 
   Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy,Map,0) );
   for (int i = 0 ; i < NumPoints ; ++i) {
-    
+
     int NumEntries;
     if (i == 0) {
       NumEntries = NumPoints;
       for (int j = 0 ; j < NumPoints ; ++j) {
-	Indices[j] = j;
-	Values[j] = 1.0;
+        Indices[j] = j;
+        Values[j] = 1.0;
       }
     }
     else {
@@ -136,7 +138,7 @@ int main(int argc, char *argv[])
   ////Ifpack_PrintSparsity(ReordA,"ReordA.ps");
 
 #ifdef HAVE_MPI
-  MPI_Finalize(); 
+  MPI_Finalize();
 #endif
   return(EXIT_SUCCESS);
 

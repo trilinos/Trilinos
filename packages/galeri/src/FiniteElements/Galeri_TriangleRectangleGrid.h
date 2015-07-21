@@ -173,7 +173,7 @@ public:
   }
 
   //! Returns \c GALERI_TRIANGLE
-  virtual string ElementType() const
+  virtual std::string ElementType() const
   {
     return("GALERI_TRIANGLE");
   }

@@ -82,7 +82,7 @@ namespace panzer {
     struct BCHash {
       boost::hash<std::string> hash;
       std::size_t operator()(const BC & bc) const
-      { return this->hash(bc.elementBlockID()+"_"+bc.sidesetID());}
+      { return this->hash(bc.elementBlockID() + "_" + bc.sidesetID());}
     };
 
     struct BCEquality {

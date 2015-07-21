@@ -98,17 +98,13 @@ PHX_EVALUATE_FIELDS(Equations,workset)
   
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell,++element) {
     
-    const shards::Array<double,shards::NaturalOrder,QuadPoint,Node>& phi = 
-      element->basisFunctions();
+    const Kokkos::View<double**,PHX::Device> phi = element->basisFunctions();
 
-    const shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
-      grad_phi = element->basisFunctionGradientsRealSpace();
+    const Kokkos::View<double***,PHX::Device> grad_phi = element->basisFunctionGradientsRealSpace();
 
-    const shards::Array<double,shards::NaturalOrder,QuadPoint>& det_jac = 
-      element->detJacobian();
+    const Kokkos::View<double*,PHX::Device> det_jac =  element->detJacobian();
 
-    const shards::Array<double,shards::NaturalOrder,QuadPoint>& weights = 
-      element->quadratureWeights();
+    const Kokkos::View<double*,PHX::Device> weights = element->quadratureWeights();
 
     for (int node = 0; node < element->numNodes(); ++node) {
       

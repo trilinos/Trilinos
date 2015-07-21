@@ -50,7 +50,7 @@ enum { field_data_chunk_size = 10 };
 
 UseCase_1_Mesh::UseCase_1_Mesh( stk::ParallelMachine comm )
   : m_metaData( SpatialDim )
-  , m_bulkData(  m_metaData , comm , field_data_chunk_size )
+  , m_bulkData(  m_metaData , comm, stk::mesh::BulkData::AUTO_AURA )
 {
   /// Done populating the mesh meta data.
   /// Commit the meta data: this locks out changes,

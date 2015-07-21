@@ -31,7 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <boost/foreach.hpp>            // for auto_any_base, etc
 #include <iostream>                     // for ostream, operator<<, etc
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian, etc

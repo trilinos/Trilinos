@@ -41,17 +41,12 @@
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
 #include <Tpetra_ConfigDefs.hpp>
-
 #include "Teuchos_UnitTestHarness.hpp"
-
-#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
-#include "Teuchos_as.hpp"
 #include "Tpetra_Distributor.hpp"
 #include <Teuchos_Array.hpp>
+#include <Teuchos_as.hpp>
 
 // FINISH: test for createFromRecvs(), that negatives in remoteNodeIDs are met by negatives in exportNodeIDs, and that the placement is
 //         is preserved. need to understand the semantics of negatives in the node list.

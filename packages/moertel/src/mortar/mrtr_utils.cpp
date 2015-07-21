@@ -534,7 +534,7 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
   // create an ML communicator
   ML_Comm* ml_comm;
   ML_Comm_Create(&ml_comm);
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
 #if 0
   // replace MPI_COMM_WORLD in ml_comm by a comm used by one of the matrices
   const Epetra_MpiComm* mpiecomm = dynamic_cast<const Epetra_MpiComm*>(&(Atrans->Comm()));

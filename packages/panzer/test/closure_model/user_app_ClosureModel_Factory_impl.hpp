@@ -61,6 +61,7 @@
 #include "Panzer_Parameter.hpp"
 #include "Panzer_GlobalStatistics.hpp"
 #include "Panzer_CoordinatesEvaluator.hpp"
+#include "Panzer_Constant.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_DOF.hpp"
 
@@ -147,9 +148,11 @@ buildClosureModels(const std::string& model_id,
     if (plist.isType<std::string>("Type")) {
       
       if (plist.get<std::string>("Type") == "Parameter") {
+        TEUCHOS_ASSERT(!plist.isParameter("Value"));
+
 	{ // at IP
 	  RCP< Evaluator<panzer::Traits> > e = 
-	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,ir->dl_scalar,plist.get<double>("Value"),*global_data->pl));
+	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,ir->dl_scalar,*global_data->pl));
 	  evaluators->push_back(e);
 	}
 	
@@ -157,11 +160,13 @@ buildClosureModels(const std::string& model_id,
 	   basis_itr != bases.end(); ++basis_itr) { // at BASIS
 	  Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
 	  RCP< Evaluator<panzer::Traits> > e = 
-	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,basis->functional,plist.get<double>("Value"),*global_data->pl));
+	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,basis->functional,*global_data->pl));
 	  evaluators->push_back(e);
 	}
 	
 	found = true;
+
+        continue;
       }
       else if (plist.get<std::string>("Type") == "Distributed Parameter") {
         // sanity check
@@ -211,7 +216,7 @@ buildClosureModels(const std::string& model_id,
 	input.set("Value", plist.get<double>("Value"));
 	input.set("Data Layout", ir->dl_scalar);
 	RCP< Evaluator<panzer::Traits> > e = 
-	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
+	  rcp(new panzer::Constant<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
       }
       // at BASIS
@@ -222,7 +227,7 @@ buildClosureModels(const std::string& model_id,
 	Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
 	input.set("Data Layout", basis->functional);
 	RCP< Evaluator<panzer::Traits> > e = 
-	  rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
+	  rcp(new panzer::Constant<EvalT,panzer::Traits>(input));
 	evaluators->push_back(e);
       }
       found = true;
@@ -258,7 +263,7 @@ buildClosureModels(const std::string& model_id,
 	   input.set("Value", 1.0);
 	   input.set("Data Layout", ir->dl_scalar);
 	   RCP< Evaluator<panzer::Traits> > e = 
-   	     rcp(new user_app::ConstantModel<EvalT,panzer::Traits>(input));
+   	     rcp(new panzer::Constant<EvalT,panzer::Traits>(input));
    	   evaluators->push_back(e);
         }
 

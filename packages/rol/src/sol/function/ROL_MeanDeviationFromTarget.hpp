@@ -52,31 +52,44 @@ namespace ROL {
 template<class Real>
 class MeanDeviationFromTarget : public RiskMeasure<Real> {
 private:
+  Teuchos::RCP<PositiveFunction<Real> > positiveFunction_;
+
   std::vector<Real> target_;
   std::vector<Real> order_;
   std::vector<Real> coeff_;
   std::vector<Real> pval_; 
   std::vector<Real> pgv_; 
+
   std::vector<Teuchos::RCP<Vector<Real> > > pg0_;
   std::vector<Teuchos::RCP<Vector<Real> > > pg_;
   std::vector<Teuchos::RCP<Vector<Real> > > phv_;
-  Teuchos::RCP<PositiveFunction<Real> > positiveFunction_;
+
+  bool firstReset_;
 
 public:
+
   MeanDeviationFromTarget( Real target, Real order, Real coeff,
-                           Teuchos::RCP<PositiveFunction<Real> > &pf ) : positiveFunction_(pf) {
-    target_.clear();
+                           Teuchos::RCP<PositiveFunction<Real> > &pf )
+    : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
+    // Initialize storage for problem data
+    target_.clear(); order_.clear(); coeff_.clear();
     target_.push_back(target);
-    order_.clear();
     order_.push_back((order < 2.0) ? 2.0 : order);
-    coeff_.clear();
     coeff_.push_back((coeff < 0.0) ? 1.0 : coeff);
+    // Initialize additional storage
+    pg_.clear(); pg0_.clear(); phv_.clear(); pval_.clear(); pgv_.clear();
+    pg_.resize(order_.size());
+    pg0_.resize(order_.size());
+    phv_.resize(order_.size());
+    pval_.resize(order_.size(),0.0);
+    pgv_.resize(order_.size(),0.0);
   }
+
   MeanDeviationFromTarget( std::vector<Real> &target, std::vector<Real> &order, std::vector<Real> &coeff, 
-                           Teuchos::RCP<PositiveFunction<Real> > &pf ) : positiveFunction_(pf) {
-    target_.clear();
-    order_.clear();
-    coeff_.clear();
+                           Teuchos::RCP<PositiveFunction<Real> > &pf )
+    : RiskMeasure<Real>(), positiveFunction_(pf), firstReset_(true) {
+    // Initialize storage for problem data
+    target_.clear(); order_.clear(); coeff_.clear();
     if ( order.size() != target.size() ) {
       target.resize(order.size(),0.0);
     }
@@ -88,67 +101,67 @@ public:
       order_.push_back((order[i] < 2.0) ? 2.0 : order[i]);
       coeff_.push_back((coeff[i] < 0.0) ? 1.0 : coeff[i]);
     }
+    // Initialize additional storage
+    pg_.clear(); pg0_.clear(); phv_.clear(); pval_.clear(); pgv_.clear();
+    pg_.resize(order_.size());
+    pg0_.resize(order_.size());
+    phv_.resize(order_.size());
+    pval_.resize(order_.size(),0.0);
+    pgv_.resize(order_.size(),0.0);
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
-    RiskMeasure<Real>::val_ = 0.0;
-    this->pval_.clear(); 
-    this->pval_.resize(this->order_.size(),0.0);
-    this->pgv_.clear();
-    this->pgv_.resize(this->order_.size(),0.0);
-    this->pg_.clear();
-    this->pg0_.clear();
-    this->phv_.clear();
-    for ( unsigned p = 0; p < this->order_.size(); p++ ) {
-      this->pg0_.push_back(x.clone());
-      this->pg_.push_back(x.clone());
-      this->phv_.push_back(x.clone());
+    RiskMeasure<Real>::reset(x0,x);
+    if (firstReset_) {
+      for ( unsigned p = 0; p < order_.size(); p++ ) {
+        pg0_[p] = (x.dual()).clone();
+        pg_[p]  = (x.dual()).clone();
+        phv_[p] = (x.dual()).clone();
+      }
+      firstReset_ = false;
     }
-    RiskMeasure<Real>::g_  = x.clone(); RiskMeasure<Real>::g_->zero();
-    RiskMeasure<Real>::hv_ = x.clone(); RiskMeasure<Real>::hv_->zero();
-    x0 = Teuchos::rcp(&const_cast<Vector<Real> &>(x),false); 
+    for ( unsigned p = 0; p < order_.size(); p++ ) {
+      pg0_[p]->zero(); pg_[p]->zero(); phv_[p]->zero();
+      pval_[p] = 0.0; pgv_[p] = 0.0;
+    }
   }
     
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
              Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
-    RiskMeasure<Real>::val_ = 0.0;
-    this->pval_.clear(); 
-    this->pval_.resize(this->order_.size(),0.0);
-    this->pgv_.clear();
-    this->pgv_.resize(this->order_.size(),0.0);
-    this->pg_.clear();
-    this->pg0_.clear();
-    this->phv_.clear();
-    for ( unsigned p = 0; p < this->order_.size(); p++ ) {
-      this->pg_.push_back(x.clone());
-      this->pg0_.push_back(x.clone());
-      this->phv_.push_back(x.clone());
+    RiskMeasure<Real>::reset(x0,x,v0,v);
+    if (firstReset_) {
+      for ( unsigned p = 0; p < order_.size(); p++ ) {
+        pg0_[p] = (x.dual()).clone();
+        pg_[p]  = (x.dual()).clone();
+        phv_[p] = (x.dual()).clone();
+      }
+      firstReset_ = false;
     }
-    RiskMeasure<Real>::g_  = x.clone(); RiskMeasure<Real>::g_->zero();
-    RiskMeasure<Real>::hv_ = x.clone(); RiskMeasure<Real>::hv_->zero();
-    x0 = Teuchos::rcp(&const_cast<Vector<Real> &>(x),false);
-    v0 = Teuchos::rcp(&const_cast<Vector<Real> &>(v),false);
-  } 
+    for ( unsigned p = 0; p < order_.size(); p++ ) {
+      pg0_[p]->zero(); pg_[p]->zero(); phv_[p]->zero();
+      pval_[p] = 0.0; pgv_[p] = 0.0;
+    }
+  }
   
   void update(const Real val, const Real weight) {
     Real diff = 0.0, pf0 = 0.0;
     RiskMeasure<Real>::val_ += weight * val;
-    for ( unsigned p = 0; p < this->order_.size(); p++ ) {
-      diff = val-this->target_[p];
-      pf0  = this->positiveFunction_->evaluate(diff,0);
-      this->pval_[p] += weight * std::pow(pf0,this->order_[p]);
+    for ( unsigned p = 0; p < order_.size(); p++ ) {
+      diff = val-target_[p];
+      pf0  = positiveFunction_->evaluate(diff,0);
+      pval_[p] += weight * std::pow(pf0,order_[p]);
     }
   }
 
   void update(const Real val, const Vector<Real> &g, const Real weight) {
     Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, c = 0.0;
-    for ( unsigned p = 0; p < this->order_.size(); p++ ) {
-      diff = val-this->target_[p];
-      pf0 = this->positiveFunction_->evaluate(diff,0);
-      pf1 = this->positiveFunction_->evaluate(diff,1);
-      c    = std::pow(pf0,this->order_[p]-1.0) * pf1;
-      (this->pg_[p])->axpy(weight * c,g);
-      this->pval_[p] += weight * std::pow(pf0,this->order_[p]);
+    for ( unsigned p = 0; p < order_.size(); p++ ) {
+      diff = val-target_[p];
+      pf0 = positiveFunction_->evaluate(diff,0);
+      pf1 = positiveFunction_->evaluate(diff,1);
+      c    = std::pow(pf0,order_[p]-1.0) * pf1;
+      (pg_[p])->axpy(weight * c,g);
+      pval_[p] += weight * std::pow(pf0,order_[p]);
     }
     RiskMeasure<Real>::g_->axpy(weight,g);
   }
@@ -156,22 +169,22 @@ public:
   void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
               const Real weight) {
     Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, pf2 = 0.0, p0 = 0.0, p1 = 0.0, p2 = 0.0, c = 0.0;
-    for ( unsigned p = 0; p < this->order_.size(); p++ ) {
-      diff = val - this->target_[p];
-      pf0 = this->positiveFunction_->evaluate(diff,0);
-      pf1 = this->positiveFunction_->evaluate(diff,1);
-      pf2 = this->positiveFunction_->evaluate(diff,2);
-      p0   = std::pow(pf0,this->order_[p]);
-      p1   = std::pow(pf0,this->order_[p]-1.0);
-      p2   = std::pow(pf0,this->order_[p]-2.0);
-      c    = -(this->order_[p]-1.0)*p1*pf1;
-      this->pg0_[p]->axpy(weight*c,g);
-      c    = gv*((this->order_[p]-1.0)*p2*pf1*pf1 + p1*pf2);
-      this->pg_[p]->axpy(weight*c,g);
+    for ( unsigned p = 0; p < order_.size(); p++ ) {
+      diff = val - target_[p];
+      pf0 = positiveFunction_->evaluate(diff,0);
+      pf1 = positiveFunction_->evaluate(diff,1);
+      pf2 = positiveFunction_->evaluate(diff,2);
+      p0   = std::pow(pf0,order_[p]);
+      p1   = std::pow(pf0,order_[p]-1.0);
+      p2   = std::pow(pf0,order_[p]-2.0);
+      c    = -(order_[p]-1.0)*p1*pf1;
+      pg0_[p]->axpy(weight*c,g);
+      c    = gv*((order_[p]-1.0)*p2*pf1*pf1 + p1*pf2);
+      pg_[p]->axpy(weight*c,g);
       c    = p1*pf1;
-      this->phv_[p]->axpy(weight*c,hv);
-      this->pval_[p] += weight*p0;
-      this->pgv_[p]  += weight*p1*pf1*gv;
+      phv_[p]->axpy(weight*c,hv);
+      pval_[p] += weight*p0;
+      pgv_[p]  += weight*p1*pf1*gv;
     }
     RiskMeasure<Real>::hv_->axpy(weight,hv);
   }
@@ -180,46 +193,46 @@ public:
     Real val = RiskMeasure<Real>::val_;
     Real dev = 0.0;
     sampler.sumAll(&val,&dev,1);
-    std::vector<Real> pval_sum(this->pval_.size());
-    sampler.sumAll(&(this->pval_)[0],&pval_sum[0],this->pval_.size());
-    for ( unsigned p = 0; p < this->order_.size(); p++ ) {
-      dev += this->coeff_[p] * std::pow(pval_sum[p],1.0/this->order_[p]);
+    std::vector<Real> pval_sum(pval_.size());
+    sampler.sumAll(&(pval_)[0],&pval_sum[0],pval_.size());
+    for ( unsigned p = 0; p < order_.size(); p++ ) {
+      dev += coeff_[p] * std::pow(pval_sum[p],1.0/order_[p]);
     }
     return dev;
   }
 
   void getGradient(Vector<Real> &g, SampleGenerator<Real> &sampler) {
     sampler.sumAll(*(RiskMeasure<Real>::g_),g);
-    std::vector<Real> pval_sum(this->pval_.size());
-    sampler.sumAll(&(this->pval_)[0],&pval_sum[0],this->pval_.size());
+    std::vector<Real> pval_sum(pval_.size());
+    sampler.sumAll(&(pval_)[0],&pval_sum[0],pval_.size());
     Teuchos::RCP<Vector<Real> > pg;
-    for ( unsigned p = 0; p < this->order_.size(); p++ ) {
+    for ( unsigned p = 0; p < order_.size(); p++ ) {
       if ( pval_sum[p] > 0.0 ) {
-        pg = (this->pg_[p])->clone();
-        sampler.sumAll(*(this->pg_[p]),*pg);
-        g.axpy(this->coeff_[p]/std::pow(pval_sum[p],1.0-1.0/this->order_[p]),*pg);
+        pg = (pg_[p])->clone();
+        sampler.sumAll(*(pg_[p]),*pg);
+        g.axpy(coeff_[p]/std::pow(pval_sum[p],1.0-1.0/order_[p]),*pg);
       }
     }
   }
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
     sampler.sumAll(*(RiskMeasure<Real>::hv_),hv);
-    std::vector<Real> pval_sum(this->pval_.size());
-    sampler.sumAll(&(this->pval_)[0],&pval_sum[0],this->pval_.size());
-    std::vector<Real> pgv_sum(this->pgv_.size());
-    sampler.sumAll(&(this->pgv_)[0],&pgv_sum[0],this->pgv_.size());
+    std::vector<Real> pval_sum(pval_.size());
+    sampler.sumAll(&(pval_)[0],&pval_sum[0],pval_.size());
+    std::vector<Real> pgv_sum(pgv_.size());
+    sampler.sumAll(&(pgv_)[0],&pgv_sum[0],pgv_.size());
     Real c = 0.0;
     Teuchos::RCP<Vector<Real> > pg, pg0, phv;
-    for ( unsigned p = 0; p < this->order_.size(); p++ ) {
+    for ( unsigned p = 0; p < order_.size(); p++ ) {
       if ( pval_sum[p] > 0.0 ) {
-        pg  = (this->pg_[p])->clone();
-        sampler.sumAll(*(this->pg_[p]),*pg);
-        pg0 = (this->pg0_[p])->clone();
-        sampler.sumAll(*(this->pg0_[p]),*pg0);
-        phv = (this->phv_[p])->clone();
-        sampler.sumAll(*(this->phv_[p]),*phv);
-        c = this->coeff_[p]*(pgv_sum[p]/std::pow(pval_sum[p],2.0-1.0/this->order_[p]));
+        pg  = (pg_[p])->clone();
+        sampler.sumAll(*(pg_[p]),*pg);
+        pg0 = (pg0_[p])->clone();
+        sampler.sumAll(*(pg0_[p]),*pg0);
+        phv = (phv_[p])->clone();
+        sampler.sumAll(*(phv_[p]),*phv);
+        c = coeff_[p]*(pgv_sum[p]/std::pow(pval_sum[p],2.0-1.0/order_[p]));
         hv.axpy(c,*pg0);
-        c = this->coeff_[p]/std::pow(pval_sum[p],1.0-1.0/this->order_[p]);
+        c = coeff_[p]/std::pow(pval_sum[p],1.0-1.0/order_[p]);
         hv.axpy(c,*pg);
         hv.axpy(c,*phv);
       }

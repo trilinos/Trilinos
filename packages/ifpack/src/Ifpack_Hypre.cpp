@@ -128,7 +128,7 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
 void Ifpack_Hypre::Destroy(){
   if(IsInitialized()){
     IFPACK_CHK_ERRV(HYPRE_IJMatrixDestroy(HypreA_));
-  } 
+  }
   IFPACK_CHK_ERRV(HYPRE_IJVectorDestroy(XHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorDestroy(YHypre_));
   if(IsSolverSetup_[0]){
@@ -399,7 +399,7 @@ int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_Mult
 } //Multiply()
 
 //==============================================================================
-ostream& Ifpack_Hypre::Print(ostream& os) const{
+std::ostream& Ifpack_Hypre::Print(std::ostream& os) const{
   if (!Comm().MyPID()) {
     os << endl;
     os << "================================================================================" << endl;
@@ -435,7 +435,7 @@ ostream& Ifpack_Hypre::Print(ostream& os) const{
 } //Print()
 
 //==============================================================================
-double Ifpack_Hypre::Condest(const Ifpack_CondestType CT, 
+double Ifpack_Hypre::Condest(const Ifpack_CondestType CT,
                              const int MaxIters,
                              const double Tol,
                              Epetra_RowMatrix* Matrix_in){

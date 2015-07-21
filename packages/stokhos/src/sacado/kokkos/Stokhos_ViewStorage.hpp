@@ -76,12 +76,12 @@ namespace Stokhos {
 
     typedef ordinal_t          ordinal_type;
     typedef value_t            value_type;
-    typedef device_t           device_type;
+    typedef device_t           execution_space;
     typedef value_type       & reference;
     typedef const value_type & const_reference;
     typedef value_type       * pointer;
     typedef const value_type * const_pointer;
-    // typedef Stokhos::DynArrayTraits<value_type,device_type> ds;
+    // typedef Stokhos::DynArrayTraits<value_type,execution_space> ds;
 
     //! Turn ViewStorage into a meta-function class usable with mpl::apply
     template <typename ord_t, typename val_t = value_t , typename dev_t = device_t >
@@ -91,7 +91,8 @@ namespace Stokhos {
 
     //! Constructor to satisfy Sacado::MP::Vector, disabled via error type.
     KOKKOS_INLINE_FUNCTION
-    ViewStorage( const error_storage_type_is_not_allocateable & ,
+    ViewStorage( const error_storage_type_is_not_allocateable & z =
+                   error_storage_type_is_not_allocateable(),
                  const value_type& x = value_type(0) );
 
     //! Constructor
@@ -100,6 +101,10 @@ namespace Stokhos {
                  const ordinal_type & arg_size = 0 ,
                  const ordinal_type & arg_stride = 0 ) :
       coeff_(v), size_(arg_size), stride_(arg_stride) {}
+
+    //! Constructor from array
+    KOKKOS_INLINE_FUNCTION
+    ViewStorage(const ordinal_type& sz, const value_type* x) {}
 
     //! Constructor for creating a view
     KOKKOS_INLINE_FUNCTION

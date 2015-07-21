@@ -38,10 +38,6 @@ typedef MueLu::CoupledAggregationFactory<LocalOrdinal,GlobalOrdinal,Node> Couple
 typedef MueLu::DemoFactory<LocalOrdinal,GlobalOrdinal,Node> DemoFactory;
 #endif
 
-#ifdef MUELU_EMERGENCYAGGREGATIONALGORITHM_SHORT
-typedef MueLu::EmergencyAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> EmergencyAggregationAlgorithm;
-#endif
-
 #ifdef MUELU_GRAPH_SHORT
 typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node> Graph;
 #endif
@@ -68,10 +64,6 @@ typedef MueLu::LeftoverAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> Lef
 
 #ifdef MUELU_LOCALAGGREGATIONALGORITHM_SHORT
 typedef MueLu::LocalAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> LocalAggregationAlgorithm;
-#endif
-
-#ifdef MUELU_MAXLINKAGGREGATIONALGORITHM_SHORT
-typedef MueLu::MaxLinkAggregationAlgorithm<LocalOrdinal,GlobalOrdinal,Node> MaxLinkAggregationAlgorithm;
 #endif
 
 #ifdef MUELU_ONEPTAGGREGATIONALGORITHM_SHORT

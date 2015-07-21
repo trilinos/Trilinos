@@ -906,6 +906,15 @@ sqrt(const Base< Taylor<T> >& aa)
   return c;
 }
 
+#ifdef HAVE_SACADO_CXX11
+template <typename T>
+Taylor<T>
+cbrt(const Base< Taylor<T> >& aa)
+{
+  return pow(aa, typename Taylor<T>::value_type(1.0/3.0));
+}
+#endif
+
 template <typename T>
 Taylor<T>
 pow(const Base< Taylor<T> >& aa,

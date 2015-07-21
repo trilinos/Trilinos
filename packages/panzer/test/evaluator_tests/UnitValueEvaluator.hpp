@@ -82,8 +82,9 @@ PHX_POST_REGISTRATION_SETUP(UnitValueEvaluator,sd,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(UnitValueEvaluator,workset)
 { 
-   for(int i=0;i<unitValue.size();i++)
-      unitValue[i] = 1.0;
+  for(int cell=0;cell<unitValue.dimension_0();++cell)
+    for(int ip=0;ip<unitValue.dimension_1();++ip)
+      unitValue(cell,ip) = 1.0;
 }
 
 //**********************************************************************

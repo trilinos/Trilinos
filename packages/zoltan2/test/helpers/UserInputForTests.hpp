@@ -128,7 +128,7 @@ public:
   typedef Tpetra::Map<zlno_t, zgno_t, znode_t> map_t;
   typedef Tpetra::Export<zlno_t, zgno_t, znode_t> export_t;
   typedef Tpetra::Import<zlno_t, zgno_t, znode_t> import_t;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType default_znode_t;
+  typedef map_t::node_type default_znode_t;
 
   /*! \brief Constructor that reads in a matrix/graph from disk.
    *   \param path is the path to the test data.  In the case of
@@ -377,18 +377,13 @@ RCP<UserInputForTests::xcrsGraph_t> UserInputForTests::getUIXpetraCrsGraph()
 
 RCP<UserInputForTests::xVector_t> UserInputForTests::getUIXpetraVector()
 {
-  RCP<const tVector_t> tV = getUITpetraVector();
-  RCP<const xVector_t> xV =
-    Zoltan2::XpetraTraits<tVector_t>::convertToXpetra(tV);
-  return rcp_const_cast<xVector_t>(xV);
+  return Zoltan2::XpetraTraits<tVector_t>::convertToXpetra(getUITpetraVector());
 }
 
 RCP<UserInputForTests::xMVector_t> UserInputForTests::getUIXpetraMultiVector(int nvec)
 {
-  RCP<const tMVector_t> tMV = getUITpetraMultiVector(nvec);
-  RCP<const xMVector_t> xMV =
-    Zoltan2::XpetraTraits<tMVector_t>::convertToXpetra(tMV);
-  return rcp_const_cast<xMVector_t>(xMV);
+  RCP<tMVector_t> tMV = getUITpetraMultiVector(nvec);
+  return Zoltan2::XpetraTraits<tMVector_t>::convertToXpetra(tMV);
 }
 
 #ifdef HAVE_EPETRA_DATA_TYPES
@@ -506,9 +501,8 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
 {
   std::ostringstream fname;
   fname << path << "/" << testData << ".mtx";
-  RCP<KokkosClassic::DefaultNode::DefaultNodeType> dnode
-    = KokkosClassic::DefaultNode::getDefaultNode();
 
+  RCP<default_znode_t> dnode = rcp (new default_znode_t ());
   if (verbose_ && tcomm_->getRank() == 0)
     std::cout << "UserInputForTests, Read: " << fname.str() << std::endl;
 
@@ -528,9 +522,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   }
 
   if (aok){
-    RCP<const xcrsMatrix_t> xm =
-      Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-    xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
+    xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
   }
   else{
     if (tcomm_->getRank() == 0)
@@ -734,9 +726,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
     TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
   }
 
-  RCP<const xcrsMatrix_t> xm =
-    Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-  xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
+  xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
 
   // Compute the coordinates for the matrix rows.
 
@@ -854,9 +844,7 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
     }
   }
 
-  RCP<const xcrsMatrix_t> xm =
-    Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
-  xM_ = rcp_const_cast<xcrsMatrix_t>(xm);
+  xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
 }
 
 void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,

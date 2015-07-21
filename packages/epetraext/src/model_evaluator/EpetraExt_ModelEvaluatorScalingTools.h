@@ -65,7 +65,7 @@ namespace EpetraExt {
  * state function scaling is computed, it will be represented as a positive
  * vector <tt>s_f</tt> that defines a diagonal matrix <tt>S_f = diag(s_f)</tt>
  * that transforms the state function:
- 
+
  \verbatim
 
     f(...) = S_f * f_hat(...)
@@ -80,7 +80,7 @@ namespace EpetraExt {
  * state variables is defined by a positive vector <tt>s_x>/tt> defines a
  * diagonal scaling matrix <tt>S_x = diag(s_x)</tt> that transforms the
  * variables as:
- 
+
  \verbatim
 
     x = S_x * x_hat
@@ -92,7 +92,7 @@ namespace EpetraExt {
  * <tt>x</tt> is the scaled state varaible vector.  Note that when the scaled
  * variables <tt>x</tt> are passed into <tt>evalModel</tt> that they must be
  * unscaled as:
- 
+
  \verbatim
 
     x_hat = inv(S_x) * x
@@ -106,7 +106,7 @@ namespace EpetraExt {
  * <tt>s_x</tt>.
  *
  * Note how these scalings affect the state function:
- 
+
  \verbatim
 
     f( x_dot, x, ... ) = S_f * f_hat( inv(S_x)*x_dot, inv(S_x)*x, ... )
@@ -114,7 +114,7 @@ namespace EpetraExt {
  \endverbatim
 
  * which has the state/state Jacobian:
- 
+
  \verbatim
 
     W = alpha * d(f)/d(x_dot) + beta * d(f)/d(x)
@@ -127,7 +127,7 @@ namespace EpetraExt {
  *
  * The state varaible and state function scaling gives the following scaled
  * quantities:
- 
+
  \verbatim
 
     f = S_f * f_hat
@@ -141,7 +141,7 @@ namespace EpetraExt {
     DgDx_dot(j) = DgDx_dot_hat(j) * inv(S_x), for j=0...Ng-1
 
     DgDx(j) = DgDx_hat(j) * inv(S_x), for j=0...Ng-1
-    
+
     DgDp(j,l) = DgDp_hat(j,l), for j=0...Ng-1, l=0...Np-1
 
  \endverbatim
@@ -149,7 +149,7 @@ namespace EpetraExt {
  * ToDo: Describe how scaling of the state function <tt>S_f</tt> affects the
  * Hessian-vector products an how you just need to scale the Lagrange
  * mutipliers as:
- 
+
  \verbatim
 
   u^T * f(...) = u^T * (S_f * f_hat(...)) = u_f^T * f_hat(...)
@@ -290,7 +290,7 @@ void scaleModelBounds(
  *
  * \param verbLevel
  *          [in] Determines the verbosity level for output sent to <tt>*out</tt>.
- * 
+ *
  */
 void unscaleModelVars(
   const ModelEvaluator::InArgs &scaledVars,
@@ -374,9 +374,9 @@ void scaleModelFuncs(
  * This function may actually result in <tt>scalingVector</tt> being saved for
  * use later embedded within <tt>returnValue</tt>.
  */
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 createInverseModelScalingVector(
-  Teuchos::RefCountPtr<const Epetra_Vector> const& scalingVector
+  Teuchos::RCP<const Epetra_Vector> const& scalingVector
   );
 
 
@@ -559,14 +559,14 @@ public:
 
   std::string getName() const { return "x_dot"; }
 
-  Teuchos::RefCountPtr<const Epetra_Vector>
+  Teuchos::RCP<const Epetra_Vector>
   getVector( const ModelEvaluator::InArgs &inArgs ) const
   {
     return inArgs.get_x_dot();
   }
 
   void setVector(
-    const Teuchos::RefCountPtr<const Epetra_Vector> &x_dot,
+    const Teuchos::RCP<const Epetra_Vector> &x_dot,
     ModelEvaluator::InArgs *inArgs
     ) const
   {
@@ -585,14 +585,14 @@ public:
 
   std::string getName() const { return "x_dotdot"; }
 
-  Teuchos::RefCountPtr<const Epetra_Vector>
+  Teuchos::RCP<const Epetra_Vector>
   getVector( const ModelEvaluator::InArgs &inArgs ) const
   {
     return inArgs.get_x_dotdot();
   }
 
   void setVector(
-    const Teuchos::RefCountPtr<const Epetra_Vector> &x_dotdot,
+    const Teuchos::RCP<const Epetra_Vector> &x_dotdot,
     ModelEvaluator::InArgs *inArgs
     ) const
   {
@@ -611,14 +611,14 @@ public:
 
   std::string getName() const { return "x"; }
 
-  Teuchos::RefCountPtr<const Epetra_Vector>
+  Teuchos::RCP<const Epetra_Vector>
   getVector( const ModelEvaluator::InArgs &inArgs ) const
   {
     return inArgs.get_x();
   }
 
   void setVector(
-    const Teuchos::RefCountPtr<const Epetra_Vector> &x,
+    const Teuchos::RCP<const Epetra_Vector> &x,
     ModelEvaluator::InArgs *inArgs
     ) const
   {
@@ -640,14 +640,14 @@ public:
   std::string getName() const
   { return "p["+Teuchos::Utils::toString(l_)+"]"; }
 
-  Teuchos::RefCountPtr<const Epetra_Vector>
+  Teuchos::RCP<const Epetra_Vector>
   getVector( const ModelEvaluator::InArgs &inArgs ) const
   {
     return inArgs.get_p(l_);
   }
 
   void setVector(
-    const Teuchos::RefCountPtr<const Epetra_Vector> &p_l,
+    const Teuchos::RCP<const Epetra_Vector> &p_l,
     ModelEvaluator::InArgs *inArgs
     ) const
   {
@@ -670,14 +670,14 @@ private:
 class OutArgsGetterSetter_f {
 public:
 
-  Teuchos::RefCountPtr<Epetra_Vector>
+  Teuchos::RCP<Epetra_Vector>
   getVector( const ModelEvaluator::OutArgs &outArgs ) const
   {
     return outArgs.get_f();
   }
 
   void setVector(
-    const Teuchos::RefCountPtr<Epetra_Vector> &f,
+    const Teuchos::RCP<Epetra_Vector> &f,
     ModelEvaluator::OutArgs *outArgs
     ) const
   {
@@ -696,14 +696,14 @@ public:
 
   OutArgsGetterSetter_g( int j ) : j_(j) {}
 
-  Teuchos::RefCountPtr<Epetra_Vector>
+  Teuchos::RCP<Epetra_Vector>
   getVector( const ModelEvaluator::OutArgs &outArgs ) const
   {
     return outArgs.get_g(j_);
   }
 
   void setVector(
-    const Teuchos::RefCountPtr<Epetra_Vector> &g_j,
+    const Teuchos::RCP<Epetra_Vector> &g_j,
     ModelEvaluator::OutArgs *outArgs
     ) const
   {

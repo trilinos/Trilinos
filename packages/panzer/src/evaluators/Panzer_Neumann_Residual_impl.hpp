@@ -104,6 +104,8 @@ PHX_POST_REGISTRATION_SETUP(NeumannResidual,sd,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(NeumannResidual,workset)
 { 
+  residual.deep_copy(ScalarT(0.0));
+
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t ip = 0; ip < num_ip; ++ip) {
       normal_dot_flux(cell,ip) = ScalarT(0.0);
@@ -113,12 +115,21 @@ PHX_EVALUATE_FIELDS(NeumannResidual,workset)
     }
   }
 
+  // const Intrepid::FieldContainer<double> & weighted_basis = workset.bases[basis_index]->weighted_basis;
+  const Teuchos::RCP<const BasisValues2<double> > bv = workset.bases[basis_index];
+  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (std::size_t basis = 0; basis < residual.dimension(1); ++basis) {
+      for (std::size_t qp = 0; qp < num_ip; ++qp) {
+        residual(cell,basis) += normal_dot_flux(cell,qp)*bv->weighted_basis_scalar(cell,basis,qp);
+      }
+    }
+  }
+
   if(workset.num_cells>0)
     Intrepid::FunctionSpaceTools::
       integrate<ScalarT>(residual, normal_dot_flux, 
-			 (workset.bases[basis_index])->weighted_basis, 
+			 (workset.bases[basis_index])->weighted_basis_scalar, 
 			 Intrepid::COMP_BLAS);
-  
 }
 
 //**********************************************************************

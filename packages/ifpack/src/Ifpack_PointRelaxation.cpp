@@ -75,7 +75,7 @@ Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix_in) :
   DampingFactor_(1.0),
   UseTranspose_(false),
   Condest_(-1.0),
-  ComputeCondest_(false),
+  /* ComputeCondest_(false), (unused; commented out to avoid build warnings) */
   PrecType_(IFPACK_JACOBI),
   MinDiagonalValue_(0.0),
   NumMyRows_(0),
@@ -96,8 +96,10 @@ Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix_in) :
 //==============================================================================
 int Ifpack_PointRelaxation::SetParameters(Teuchos::ParameterList& List)
 {
+  using std::cout;
+  using std::endl;
 
-  string PT;
+  std::string PT;
   if (PrecType_ == IFPACK_JACOBI)
     PT = "Jacobi";
   else if (PrecType_ == IFPACK_GS)
@@ -239,13 +241,13 @@ int Ifpack_PointRelaxation::Compute()
 
     for (int i = 0 ; i < NumMyRows_ ; ++i) {
       IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, maxLength,NumEntries,
-					       &Values[0], &Indices[0]));
+                                               &Values[0], &Indices[0]));
       double diagonal_boost=0.0;
       for (int k = 0 ; k < NumEntries ; ++k)
-	if(Indices[k] > NumMyRows_)
-	  diagonal_boost+=std::abs(Values[k]/2.0);
+        if(Indices[k] > NumMyRows_)
+          diagonal_boost+=std::abs(Values[k]/2.0);
       if ((*Diagonal_)[i] < L1Eta_*diagonal_boost)
-	(*Diagonal_)[i]+=diagonal_boost;
+        (*Diagonal_)[i]+=diagonal_boost;
     }
   }
 
@@ -294,8 +296,9 @@ int Ifpack_PointRelaxation::Compute()
 }
 
 //==============================================================================
-ostream& Ifpack_PointRelaxation::Print(ostream & os) const
+std::ostream& Ifpack_PointRelaxation::Print(std::ostream & os) const
 {
+  using std::endl;
 
   double MyMinVal, MyMaxVal;
   double MinVal, MaxVal;
@@ -362,7 +365,7 @@ ostream& Ifpack_PointRelaxation::Print(ostream & os) const
 double Ifpack_PointRelaxation::
 Condest(const Ifpack_CondestType CT,
         const int MaxIters, const double Tol,
-	Epetra_RowMatrix* Matrix_in)
+        Epetra_RowMatrix* Matrix_in)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
@@ -377,7 +380,7 @@ Condest(const Ifpack_CondestType CT,
 //==============================================================================
 void Ifpack_PointRelaxation::SetLabel()
 {
-  string PT;
+  std::string PT;
   if (PrecType_ == IFPACK_JACOBI)
     PT = "Jacobi";
   else if (PrecType_ == IFPACK_GS){
@@ -551,8 +554,8 @@ ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) con
 
       if(!DoBackwardGS_){
         /* Forward Mode */
-	for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
-	  int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
+        for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+          int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
 
           int NumEntries;
           int col;
@@ -571,12 +574,12 @@ ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) con
       }
       else {
         /* Backward Mode */
-	for (int ii = NumLocalSmoothingIndices_  - 1 ; ii > -1 ; --ii) {
-	  int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
+        for (int ii = NumLocalSmoothingIndices_  - 1 ; ii > -1 ; --ii) {
+          int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
 
           int NumEntries;
           int col;
-	  (void) col; // Forestall compiler warning for unused variable.
+          (void) col; // Forestall compiler warning for unused variable.
           IFPACK_CHK_ERR(Matrix_->ExtractMyRowCopy(i, Length,NumEntries,
                                                    &Values[0], &Indices[0]));
           double dtemp = 0.0;
@@ -645,10 +648,10 @@ ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) con
       // using Export() sounded quite expensive
       if (IsParallel_)
         for (int m = 0 ; m < NumVectors ; ++m)
-	  for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
-	    int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
-	    y_ptr[m][i] = y2_ptr[m][i];
-	  }
+          for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+            int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
+            y_ptr[m][i] = y2_ptr[m][i];
+          }
     }
   }
 
@@ -690,7 +693,7 @@ ApplyInverseGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X,
     if(!DoBackwardGS_){
       /* Forward Mode */
       for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
-	int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
+        int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
 
         int NumEntries;
         int col;
@@ -715,7 +718,7 @@ ApplyInverseGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X,
     else {
       /* Backward Mode */
       for (int ii = NumLocalSmoothingIndices_  - 1 ; ii > -1 ; --ii) {
-	int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
+        int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
 
         int NumEntries;
         int col;
@@ -740,10 +743,10 @@ ApplyInverseGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X,
 
     if (IsParallel_)
       for (int m = 0 ; m < NumVectors ; ++m)
-	for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
-	  int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
+        for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+          int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
           y_ptr[m][i] = y2_ptr[m][i];
-	}
+        }
   }
 
 #ifdef IFPACK_FLOPCOUNTERS
@@ -878,7 +881,7 @@ ApplyInverseGS_LocalFastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiV
     if(!DoBackwardGS_){
       /* Forward Mode */
       for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
-	int i=LocalSmoothingIndices_[ii];
+        int i=LocalSmoothingIndices_[ii];
 
         int col;
         double diag = d_ptr[i];
@@ -900,7 +903,7 @@ ApplyInverseGS_LocalFastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiV
     else {
       /* Backward Mode */
       for (int ii = NumLocalSmoothingIndices_  - 1 ; ii > -1 ; --ii) {
-	int i=LocalSmoothingIndices_[ii];
+        int i=LocalSmoothingIndices_[ii];
 
         int col;
         double diag = d_ptr[i];
@@ -924,9 +927,9 @@ ApplyInverseGS_LocalFastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiV
     if (IsParallel_)
       for (int m = 0 ; m < NumVectors ; ++m)
         for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
-	  int i=LocalSmoothingIndices_[ii];
+          int i=LocalSmoothingIndices_[ii];
           y_ptr[m][i] = y2_ptr[m][i];
-	}
+        }
   }
 
 #ifdef IFPACK_FLOPCOUNTERS
@@ -1036,10 +1039,10 @@ ApplyInverseSGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) co
 
     if (IsParallel_)
       for (int m = 0 ; m < NumVectors ; ++m)
-	for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
-	  int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
+        for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+          int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
           y_ptr[m][i] = y2_ptr[m][i];
-	}
+        }
   }
 
 #ifdef IFPACK_FLOPCOUNTERS
@@ -1123,10 +1126,10 @@ ApplyInverseSGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X
 
     if (IsParallel_)
       for (int m = 0 ; m < NumVectors ; ++m)
-	for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
-	  int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
+        for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+          int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
           y_ptr[m][i] = y2_ptr[m][i];
-	}
+        }
   }
 
 #ifdef IFPACK_FLOPCOUNTERS
@@ -1302,10 +1305,10 @@ ApplyInverseSGS_LocalFastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_Multi
 
     if (IsParallel_)
       for (int m = 0 ; m < NumVectors ; ++m)
-	for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
-	  int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
+        for (int ii = 0 ; ii < NumLocalSmoothingIndices_ ; ++ii) {
+          int i = (!LocalSmoothingIndices_)? ii : LocalSmoothingIndices_[ii];
           y_ptr[m][i] = y2_ptr[m][i];
-	}
+        }
   }
 
 #ifdef IFPACK_FLOPCOUNTERS

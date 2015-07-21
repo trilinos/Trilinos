@@ -191,6 +191,16 @@ namespace Sacado {                                                      \
       return expr_t(expr.derived());                                    \
     }                                                                   \
   }                                                                     \
+                                                                        \
+  template <typename T>                                                 \
+  struct IsExpr< MP::OP<T> > {                                          \
+    static const bool value = true;                                     \
+  };                                                                    \
+                                                                        \
+  template <typename T>                                                 \
+  struct BaseExprType< MP::OP<T> > {                                    \
+    typedef typename MP::OP<T>::base_expr_type type;                    \
+  };                                                                    \
 }
 
 MP_UNARYOP_MACRO(operator+, UnaryPlusOp, +)
@@ -199,6 +209,7 @@ MP_UNARYOP_MACRO(exp, ExpOp, std::exp)
 MP_UNARYOP_MACRO(log, LogOp, std::log)
 MP_UNARYOP_MACRO(log10, Log10Op, std::log10)
 MP_UNARYOP_MACRO(sqrt, SqrtOp, std::sqrt)
+MP_UNARYOP_MACRO(cbrt, CbrtOp, std::cbrt)
 MP_UNARYOP_MACRO(cos, CosOp, std::cos)
 MP_UNARYOP_MACRO(sin, SinOp, std::sin)
 MP_UNARYOP_MACRO(tan, TanOp, std::tan)
@@ -506,6 +517,16 @@ namespace Sacado {                                                      \
       return expr_t(expr.derived(), c);                                 \
     }                                                                   \
   }                                                                     \
+                                                                        \
+  template <typename T1, typename T2>                                   \
+  struct IsExpr< MP::OP<T1,T2> > {                                      \
+    static const bool value = true;                                     \
+  };                                                                    \
+                                                                        \
+  template <typename T1, typename T2>                                   \
+  struct BaseExprType< MP::OP<T1,T2> > {                                \
+    typedef typename MP::OP<T1,T2>::base_expr_type type;                \
+  };                                                                    \
 }
 
 MP_BINARYOP_MACRO(operator+, AdditionOp, +)
@@ -731,6 +752,16 @@ namespace Sacado {                                                      \
       return expr_t(expr.derived(), c);                                 \
     }                                                                   \
   }                                                                     \
+                                                                        \
+  template <typename T1, typename T2>                                   \
+  struct IsExpr< MP::OP<T1,T2> > {                                      \
+    static const bool value = true;                                     \
+  };                                                                    \
+                                                                        \
+  template <typename T1, typename T2>                                   \
+  struct BaseExprType< MP::OP<T1,T2> > {                                \
+    typedef typename MP::OP<T1,T2>::base_expr_type type;                \
+  };                                                                    \
 }
 
 MP_BINARYOP_MACRO(atan2, Atan2Op, std::atan2)

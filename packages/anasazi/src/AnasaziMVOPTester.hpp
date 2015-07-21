@@ -85,10 +85,7 @@ namespace Anasazi {
            destruction of the view, changes in the view are not reflected in the
            source multivector.
 
-         GetVecLength 
-             MV: will always be positive (MV cannot have zero vectors)
-
-         GetGlobalLength (MultiVecTraitsExt) 
+         GetGlobalLength 
              MV: will always be positive (MV cannot have zero vectors)
 
          GetNumberVecs 
@@ -145,7 +142,6 @@ namespace Anasazi {
     *********************************************************************/
 
     typedef MultiVecTraits<ScalarType, MV>    MVT;
-    typedef MultiVecTraitsExt<ScalarType, MV> MVText;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType       MagType;
 
@@ -185,24 +181,11 @@ namespace Anasazi {
       return false;
     }
 
-
-    /*********** GetVecLength() ******************************************
-       Verify:
-       1) This number should be strictly positive
-    *********************************************************************/
-    if ( MVT::GetVecLength(*A) <= 0 ) {
-      om->stream(Warnings)
-        << "*** ERROR *** MultiVectorTraits::GetVecLength()" << endl
-        << "Returned <= 0." << endl;
-      return false;
-    }
-
-
     /*********** GetGlobalLength() ***************************************
        Verify:
        1) This number should be strictly positive
     *********************************************************************/
-    if ( MVText::GetGlobalLength(*A) <= 0 ) {
+    if ( MVT::GetGlobalLength(*A) <= 0 ) {
       om->stream(Warnings)
         << "*** ERROR *** MultiVectorTraitsExt::GetGlobalLength()" << endl
         << "Returned <= 0." << endl;
@@ -224,7 +207,7 @@ namespace Anasazi {
           << "Did not allocate requested number of vectors." << endl;
         return false;
       }
-      if ( MVText::GetGlobalLength(*B) != MVText::GetGlobalLength(*A) ) {
+      if ( MVT::GetGlobalLength(*B) != MVT::GetGlobalLength(*A) ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::Clone()." << endl
           << "Did not allocate requested number of vectors." << endl;
@@ -369,12 +352,12 @@ namespace Anasazi {
             << "Vector had negative norm." << endl;
           return false;
         }
-        else if ( norms[i] != SCT::squareroot(MVT::GetVecLength(*B)) && !BadNormWarning ) {
+        else if ( norms[i] != SCT::squareroot(MVT::GetGlobalLength(*B)) && !BadNormWarning ) {
           om->stream(Warnings)
             << endl
             << "Warning testing MultiVecTraits::MvInit()." << endl
             << "Ones vector should have norm sqrt(dim)." << endl
-            << "norms[i]: " << norms[i] << "\tdim: " << MVText::GetGlobalLength(*B) << endl << endl;
+            << "norms[i]: " << norms[i] << "\tdim: " << MVT::GetGlobalLength(*B) << endl << endl;
           BadNormWarning = true;
         }
       }
@@ -430,7 +413,7 @@ namespace Anasazi {
           << "Wrong number of vectors." << endl;
         return false;
       }
-      if ( MVText::GetGlobalLength(*C) != MVText::GetGlobalLength(*B) ) {
+      if ( MVT::GetGlobalLength(*C) != MVT::GetGlobalLength(*B) ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
           << "Vector lengths don't match." << endl;

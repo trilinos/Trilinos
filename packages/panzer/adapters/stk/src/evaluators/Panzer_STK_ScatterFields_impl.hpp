@@ -104,7 +104,7 @@ initialize(const std::string & scatterName,
   scatterFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
     scatterFields_[fd] = 
-      PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
+      PHX::MDField<const ScalarT,Cell,NODE>(names[fd],basis->functional);
     this->addDependentField(scatterFields_[fd]);
   }
 

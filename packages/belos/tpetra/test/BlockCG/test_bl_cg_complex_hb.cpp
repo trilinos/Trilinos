@@ -41,9 +41,9 @@
 //
 // This driver reads a problem from a Harwell-Boeing (HB) file.
 // The right-hand-side corresponds to a randomly generated solution.
-// The initial guesses are all set to zero. 
+// The initial guesses are all set to zero.
 //
-// NOTE: No preconditioner is used in this case. 
+// NOTE: No preconditioner is used in this case.
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
@@ -74,16 +74,16 @@ int main(int argc, char *argv[]) {
   typedef std::complex<double>             ST;
   typedef ScalarTraits<ST>                SCT;
   typedef SCT::magnitudeType               MT;
-  typedef Tpetra::Operator<ST,int>         OP;
-  typedef Tpetra::MultiVector<ST,int>      MV;
+  typedef Tpetra::Operator<ST>             OP;
+  typedef Tpetra::MultiVector<ST>          MV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
   typedef Belos::MultiVecTraits<ST,MV>    MVT;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
+  typedef Tpetra::MultiVector<ST>::node_type Node;
 
   GlobalMPISession mpisess(&argc,&argv,&cout);
 
   const ST one  = SCT::one();
-  const ST zero = SCT::zero();	
+  const ST zero = SCT::zero();
 
   int MyPID = 0;
 
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
 
   //
   // Get test parameters from command-line processor
-  //  
+  //
   bool verbose = false, proc_verbose = false, debug = false;
   int frequency = -1;  // how often residuals are printed by solver
   int numrhs = 1;      // total number of right-hand sides to solve for
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
     std::cout << "Number of right-hand sides: " << numrhs << std::endl;
     std::cout << "Block size used by solver: " << blocksize << std::endl;
-    std::cout << "Max number of CG iterations: " << maxiters << std::endl; 
+    std::cout << "Max number of CG iterations: " << maxiters << std::endl;
     std::cout << "Relative residual tolerance: " << tol << std::endl;
     std::cout << std::endl;
   }
@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
 
   if (ret!=Belos::Converged || badRes) {
     if (proc_verbose) {
-      std::cout << "\nEnd Result: TEST FAILED" << std::endl;	
+      std::cout << "\nEnd Result: TEST FAILED" << std::endl;
     }
     return -1;
   }

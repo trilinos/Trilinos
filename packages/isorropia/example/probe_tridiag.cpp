@@ -46,9 +46,9 @@
 #if defined(HAVE_MPI) && defined(HAVE_EPETRA)
 #include "Epetra_MpiComm.h"
 #endif
-#include "Epetra_CrsMatrix.h" 
-#include "Epetra_Import.h" 
-#include "Epetra_BlockMap.h" 
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Import.h"
+#include "Epetra_BlockMap.h"
 
 // Teuchos includes
 #include "Teuchos_GlobalMPISession.hpp"
@@ -64,10 +64,7 @@ int main(int argc, char *argv[])
     Teuchos::GlobalMPISession mpiSession(&argc, &argv, 0);
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
-    int rank, MyPID, NumProc ;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MyPID = Comm.MyPID();
-    NumProc = Comm.NumProc();
+    int NumProc = Comm.NumProc();
 
     int NumMyEquations = 5;
     int NumGlobalEquations = NumMyEquations * NumProc;
@@ -83,7 +80,7 @@ int main(int argc, char *argv[])
     int i, ierr;
     for (i=0; i<NumMyElements; i++)
     {
-        if (MyGlobalElements[i]==0 || 
+        if (MyGlobalElements[i]==0 ||
                 MyGlobalElements[i] == NumGlobalEquations-1)
             NumNz[i] = 2;
         else
@@ -100,7 +97,7 @@ int main(int argc, char *argv[])
     std::vector<int> Indices(2);
     double two = 2.0;
     int NumEntries;
-      
+
     for (i=0; i<NumMyElements; i++)
     {
         if (MyGlobalElements[i]==0)
@@ -127,7 +124,7 @@ int main(int argc, char *argv[])
                         &MyGlobalElements[i]);
         assert(ierr==0);
     }
-       
+
     // Finish up matrix construction
     ierr = A.FillComplete();
     assert(ierr==0);
@@ -137,7 +134,7 @@ int main(int argc, char *argv[])
     // Construct the graph for a diagonal matrix
     for (i=0; i<NumMyElements; i++)
     {
-        if (MyGlobalElements[i]==0 || 
+        if (MyGlobalElements[i]==0 ||
                 MyGlobalElements[i] == NumGlobalEquations-1)
             NumNz[i] = 1;
         else

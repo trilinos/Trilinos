@@ -41,20 +41,19 @@
   //
   // Specify types used in this example
   // Instead of constantly typing Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
-  // we can type MV.
+  // we can type TMV.
   //
   typedef double                                                       Scalar;
-  typedef Teuchos::ScalarTraits<Scalar>                                SCT;
-  typedef SCT::magnitudeType                                           Magnitude;
+  typedef Teuchos::ScalarTraits<Scalar>                                TSCT;
   typedef Tpetra::Map<>::local_ordinal_type                            LocalOrdinal;
   typedef Tpetra::Map<>::global_ordinal_type                           GlobalOrdinal;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType                 Platform;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType       Node;
   typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>               Map;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>  MV;
-  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>     OP;
-  typedef Anasazi::MultiVecTraits<Scalar, MV>                          MVT;
-  typedef Anasazi::OperatorTraits<Scalar, MV, OP>                      OPT;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>  TMV;
+  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>     TOP;
+  typedef Anasazi::MultiVecTraits<Scalar, TMV>                         TMVT;
+  typedef Anasazi::OperatorTraits<Scalar, TMV, TOP>                    TOPT;
   typedef Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>              Import;
 
 
@@ -78,7 +77,7 @@
 // If you are only interested in running the code sequentially, you can safely
 // ignore everything here regarding maps and importers
 //
-class MyOp : public virtual OP {
+class MyOp : public virtual TOP {
 public:
   //
   // Constructor
@@ -162,13 +161,13 @@ public:
   // TraceMin will never use alpha ~= 1 or beta ~= 0,
   // so we have ignored those options for simplicity.
   //
-  void apply(const MV& X, MV& Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=SCT::one(), Scalar beta=SCT::zero()) const
+  void apply(const TMV& X, TMV& Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=TSCT::one(), Scalar beta=TSCT::zero()) const
   {
     //
     // Let's make sure alpha is 1 and beta is 0...
     // This will throw an exception if that is not the case.
     //
-    TEUCHOS_TEST_FOR_EXCEPTION(alpha != SCT::one() || beta != SCT::zero(),std::invalid_argument,
+    TEUCHOS_TEST_FOR_EXCEPTION(alpha != TSCT::one() || beta != TSCT::zero(),std::invalid_argument,
            "MyOp::apply was given alpha != 1 or beta != 0. That's not supposed to happen.");
 
     //
@@ -184,7 +183,7 @@ public:
     //
     // Make a multivector for holding the redistributed data
     //
-    RCP<MV> redistData = rcp(new MV(redistMap_, numVecs));
+    RCP<TMV> redistData = rcp(new TMV(redistMap_, numVecs));
 
     //
     // Redistribute the data.
@@ -315,14 +314,14 @@ int main(int argc, char *argv[]) {
   // Note:  This needs to have the same number of columns as the blocksize.
   // We are giving it random entries.
   //
-  RCP<MV> ivec = rcp( new MV(K->getDomainMap(), numRestartBlocks*blockSize) );
-  MVT::MvRandom( *ivec );
+  RCP<TMV> ivec = rcp( new TMV(K->getDomainMap(), numRestartBlocks*blockSize) );
+  TMVT::MvRandom( *ivec );
 
   //
   // Create the eigenproblem
   //
-  RCP<Anasazi::BasicEigenproblem<Scalar,MV,OP> > MyProblem =
-      rcp( new Anasazi::BasicEigenproblem<Scalar,MV,OP>(K, ivec) );
+  RCP<Anasazi::BasicEigenproblem<Scalar,TMV,TOP> > MyProblem =
+      rcp( new Anasazi::BasicEigenproblem<Scalar,TMV,TOP>(K, ivec) );
 
   //
   // Inform the eigenproblem that the matrix pencil (K,M) is symmetric
@@ -350,7 +349,7 @@ int main(int argc, char *argv[]) {
   //
   // Initialize the TraceMin-Davidson solver
   //
-  Anasazi::Experimental::TraceMinDavidsonSolMgr<Scalar, MV, OP> MySolverMgr(MyProblem, MyPL);
+  Anasazi::Experimental::TraceMinDavidsonSolMgr<Scalar, TMV, TOP> MySolverMgr(MyProblem, MyPL);
 
   //
   // Solve the problem to the specified tolerances
@@ -367,9 +366,9 @@ int main(int argc, char *argv[]) {
   //
   // Get the eigenvalues and eigenvectors from the eigenproblem
   //
-  Anasazi::Eigensolution<Scalar,MV> sol = MyProblem->getSolution();
+  Anasazi::Eigensolution<Scalar,TMV> sol = MyProblem->getSolution();
   std::vector<Anasazi::Value<Scalar> > evals = sol.Evals;
-  RCP<MV> evecs = sol.Evecs;
+  RCP<TMV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
   //
@@ -380,13 +379,13 @@ int main(int argc, char *argv[]) {
     for (int i=0; i < numev; ++i) {
       T(i,i) = evals[i].realpart;
     }
-    MV tempvec (K->getDomainMap (), MVT::GetNumberVecs (*evecs));
+    TMV tempvec (K->getDomainMap (), TMVT::GetNumberVecs (*evecs));
     std::vector<Scalar> normR (numev);
-    MV Kvec (K->getRangeMap (), MVT::GetNumberVecs (*evecs));
+    TMV Kvec (K->getRangeMap (), TMVT::GetNumberVecs (*evecs));
 
-    OPT::Apply( *K, *evecs, Kvec );
-    MVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, Kvec );
-    MVT::MvNorm( Kvec, normR );
+    TOPT::Apply( *K, *evecs, Kvec );
+    TMVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, Kvec );
+    TMVT::MvNorm( Kvec, normR );
 
     std::vector<Scalar> true_eigs(numev);
     const double PI  =3.141592653589793238463;

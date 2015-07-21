@@ -64,17 +64,17 @@ namespace Stokhos {
  * Third template argument determines whether to store (i,j,k) triple in a
  * single value.
  */
-template< typename ValueType, class DeviceType, bool PackIndex >
+template< typename ValueType, class ExecutionSpace, bool PackIndex >
 class CooProductTensor {};
 
 /** \brief  Specialization of CooProductTensor for packed (i,j,k)
  */
-template< typename ValueType, class DeviceType >
-class CooProductTensor<ValueType,DeviceType,true> {
+template< typename ValueType, class ExecutionSpace >
+class CooProductTensor<ValueType,ExecutionSpace,true> {
 public:
 
-  typedef DeviceType                       device_type;
-  typedef typename device_type::size_type  size_type;
+  typedef ExecutionSpace                       execution_space;
+  typedef typename execution_space::size_type  size_type;
   typedef ValueType                        value_type;
 
 private:
@@ -85,9 +85,9 @@ private:
   // Mask for packing index
   static const size_type mask = (1 << bits)-1;
 
-  typedef Kokkos::View< value_type[], device_type >  vec_type;
-  typedef Kokkos::View< size_type[], device_type > coord_array_type;
-  typedef Kokkos::View< value_type[], device_type > value_array_type;
+  typedef Kokkos::View< value_type[], execution_space >  vec_type;
+  typedef Kokkos::View< size_type[], execution_space > coord_array_type;
+  typedef Kokkos::View< value_type[], execution_space > value_array_type;
 
   coord_array_type   m_coord;
   value_array_type   m_value;
@@ -200,7 +200,7 @@ public:
 
     // Align entry_count
 #if defined( KOKKOS_HAVE_CUDA )
-    enum { Align = Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value ? 32 : 1 };
+    enum { Align = Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value ? 32 : 1 };
 #else
     enum { Align = 1 };
 #endif
@@ -278,19 +278,19 @@ public:
 
 /** \brief  Specialization of CooProductTensor for unpacked (i,j,k)
  */
-template< typename ValueType, class DeviceType>
-class CooProductTensor<ValueType,DeviceType,false> {
+template< typename ValueType, class ExecutionSpace>
+class CooProductTensor<ValueType,ExecutionSpace,false> {
 public:
 
-  typedef DeviceType                       device_type;
-  typedef typename device_type::size_type  size_type;
+  typedef ExecutionSpace                       execution_space;
+  typedef typename execution_space::size_type  size_type;
   typedef ValueType                        value_type;
 
 private:
 
-  typedef Kokkos::View< value_type[], device_type >  vec_type;
-  typedef Kokkos::View< size_type[][3], device_type > coord_array_type;
-  typedef Kokkos::View< value_type[], device_type > value_array_type;
+  typedef Kokkos::View< value_type[], execution_space >  vec_type;
+  typedef Kokkos::View< size_type[][3], execution_space > coord_array_type;
+  typedef Kokkos::View< value_type[], execution_space > value_array_type;
 
   coord_array_type   m_coord;
   value_array_type   m_value;
@@ -385,7 +385,7 @@ public:
 
     // Align entry_count
 #if defined( KOKKOS_HAVE_CUDA )
-    enum { Align = Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value ? 32 : 1 };
+    enum { Align = Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value ? 32 : 1 };
 #else
     enum { Align = 1 };
 #endif

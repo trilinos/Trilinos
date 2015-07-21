@@ -55,7 +55,7 @@ public:
     MyY->MvInit( Teuchos::ScalarTraits<ScalarType>::zero() );
 
     assert (X.GetNumberVecs() == Y.GetNumberVecs());
-    assert (X.GetVecLength() == Y.GetVecLength());
+    assert (X.GetGlobalLength() == Y.GetGlobalLength());
     
     int nv = X.GetNumberVecs();
 

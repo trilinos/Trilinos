@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -170,6 +170,8 @@ public:
 
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
+
+#if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
 
 namespace Kokkos {
 namespace Impl {
@@ -333,17 +335,17 @@ public:
 
   typedef View< typename traits::array_intrinsic_type ,
                 typename traits::array_layout ,
-                typename traits::device_type ,
+                typename traits::execution_space ,
                 typename traits::memory_traits > array_type ;
 
   typedef View< typename traits::non_const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type ,
+                typename traits::execution_space ,
                 typename traits::memory_traits > non_const_type ;
 
   typedef View< typename traits::const_data_type ,
                 typename traits::array_layout ,
-                typename traits::device_type ,
+                typename traits::execution_space ,
                 typename traits::memory_traits > const_type ;
 
   typedef View< typename traits::non_const_data_type ,
@@ -508,7 +510,7 @@ public:
   // Assign unmanaged View to portion of Device shared memory
 
   typedef Impl::if_c< ! traits::is_managed ,
-                      typename traits::device_type ,
+                      typename traits::execution_space ,
                       Impl::ViewError::device_shmem_constructor_requires_unmanaged >
       if_device_shmem_constructor ;
 
@@ -675,6 +677,8 @@ public:
 
 } // namespace Kokkos
 
+#endif /* #if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW ) */
+
 /*--------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------------*/
 
@@ -683,6 +687,9 @@ namespace Test {
 template< class DeviceType >
 int TestViewAggregate()
 {
+
+#if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW )
+
   typedef Kokkos::View< Test::Array<double,32> * , DeviceType > a32_type ;
   typedef typename a32_type::array_type a32_base_type ;
 
@@ -698,9 +705,12 @@ int TestViewAggregate()
   a32_base = a32 ;
   a0_base = a0 ;
 
+#endif /* #if ! defined( KOKKOS_USING_EXPERIMENTAL_VIEW ) */
+
   return 0 ;
 }
 
 }
+
 
 #endif /* #ifndef TEST_AGGREGATE_HPP */

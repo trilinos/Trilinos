@@ -60,7 +60,7 @@ namespace use_cases {
 // Functions to generate the use case mesh information:
 namespace {
 void usecase_2_elem_node_ids( stk::mesh::EntityId elem_id ,
-                              stk::mesh::EntityId node_ids[] );
+                              stk::mesh::EntityIdVector & node_ids );
 void usecase_2_node_coordinates( stk::mesh::EntityId node_id ,
                                  double coord[] );
 
@@ -83,7 +83,7 @@ typedef shards::Hexahedron<8>  ElementTraits ;
 
 UseCase_2_Mesh::UseCase_2_Mesh( stk::ParallelMachine comm ) :
   m_fem_metaData( SpatialDim )
-  , m_bulkData( m_fem_metaData , comm , field_data_chunk_size )
+  , m_bulkData( m_fem_metaData , comm , stk::mesh::BulkData::AUTO_AURA )
   , m_partLeft( m_fem_metaData.declare_part_with_topology( "block_left", stk::topology::HEX_8))
   , m_partRight( m_fem_metaData.declare_part_with_topology( "block_right", stk::topology::HEX_8))
   , m_coordinates_field( m_fem_metaData.declare_field< VectorFieldType >(stk::topology::NODE_RANK, "coordinates" ))
@@ -128,7 +128,7 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
     m_bulkData.modification_begin(); // Begin modifying the mesh
 
     stk::mesh::EntityId curr_elem_id = 1 ;
-    stk::mesh::EntityId node_ids[ shards::Hexahedron<8> ::node_count ];
+    stk::mesh::EntityIdVector node_ids( shards::Hexahedron<8> ::node_count );
 
     // Note declare_element expects a cell topology
     // to have been attached to m_partLeft.
@@ -364,7 +364,7 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
         stk::mesh::Entity elem = elem_bucket[i] ;
 
         // Query the node ids for this element.
-        stk::mesh::EntityId node_ids[ shards::Hexahedron<8> ::node_count ];
+        stk::mesh::EntityIdVector node_ids( shards::Hexahedron<8> ::node_count );
         usecase_2_elem_node_ids( bulkData.identifier(elem) , node_ids );
 
         // Pair of iterators for all of the element's relations.
@@ -581,7 +581,7 @@ namespace {
 
 //Given an element id compute the ids of the associated nodes.
 void usecase_2_elem_node_ids( stk::mesh::EntityId elem_id ,
-                              stk::mesh::EntityId node_ids[] )
+                              stk::mesh::EntityIdVector & node_ids )
 {
   ThrowRequireMsg( elem_id != 0,
                    "usecase_2_elem_node_ids: ERROR, elem_id ("

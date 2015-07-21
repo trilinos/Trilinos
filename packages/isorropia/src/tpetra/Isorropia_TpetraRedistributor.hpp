@@ -67,14 +67,14 @@ namespace Tpetra {
      given the partitioning computed by the Partitioner object.
 */
 
-template <class Node=KokkosClassic::DefaultNode::DefaultNodeType>
+template <typename Node = ::Tpetra::Map<int, int>::node_type >
 class Redistributor : public Isorropia::Redistributor {
 public:
 
   /** @ingroup partitioning_rcp_grp
       This constructor calls the Isorropia::Tpetra::Partitioner::partition
       method on the @c partitioner if it has not already been called.
- 
+
       \param[in] partitioner this input partitioner determines the new partitioning
             to be created when Isorropia::Tpetra::Redistributor::redistribute is called
    */
@@ -83,13 +83,13 @@ public:
   /** @ingroup partitioning_ptr_grp
       This constructor calls the Isorropia::Tpetra::Partitioner::partition
       method on the @c partitioner if it has not already been called.
- 
+
       \param[in] partitioner this input partitioner determines the new partitioning
             to be created when Isorropia::Tpetra::Redistributor::redistribute is called
    */
   Redistributor(Isorropia::Tpetra::Partitioner<Node> *partitioner);
 
-  /** 
+  /**
        Destructor
    */
   virtual ~Redistributor();
@@ -102,13 +102,13 @@ public:
                       according to the partitioner with which this Redistributor was
                       created.
 
-      \param[in] callFillComplete The new graph is FillComplete'd if callFillComplete is @c true. 
-      In that case, the range map is set to equal the row map. 
+      \param[in] callFillComplete The new graph is FillComplete'd if callFillComplete is @c true.
+      In that case, the range map is set to equal the row map.
       The domain map will equal the range map, unless the
       input_graph has different domain and range maps, in which case
       the original domain map is preserved.  By default callFillComplete is @c true.
 
-      \return a reference counted pointer to the new redistributed graph 
+      \return a reference counted pointer to the new redistributed graph
   */
 
   Teuchos::RCP< ::Tpetra::CrsGraph<int,int,Node> >
@@ -122,16 +122,16 @@ public:
                       according to the partitioner with which this Redistributor was
                       created.
 
-      \param[out] outputGraphPtr pointer to the new redistributed graph 
+      \param[out] outputGraphPtr pointer to the new redistributed graph
 
-      \param[in] callFillComplete The new graph is FillComplete'd if callFillComplete is @c true. 
-      In that case, the range map is set to equal the row map. 
+      \param[in] callFillComplete The new graph is FillComplete'd if callFillComplete is @c true.
+      In that case, the range map is set to equal the row map.
       The domain map will equal the range map, unless the
       input_graph has different domain and range maps, in which case
       the original domain map is preserved.  By default callFillComplete is @c true.
 
   */
-  void redistribute(const ::Tpetra::CrsGraph<int,int,Node>& input_graph, 
+  void redistribute(const ::Tpetra::CrsGraph<int,int,Node>& input_graph,
                     ::Tpetra::CrsGraph<int,int,Node> * &outputGraphPtr, bool callFillComplete= true);
 
   /** @ingroup partitioning_rcp_grp
@@ -142,8 +142,8 @@ public:
                       according to the partitioner with which this Redistributor was
                       created.
 
-      \param[in] callFillComplete The new matrix is FillComplete'd if callFillComplete is @c true. 
-      In that case, the range map is set to equal the row map. 
+      \param[in] callFillComplete The new matrix is FillComplete'd if callFillComplete is @c true.
+      In that case, the range map is set to equal the row map.
       The domain map will equal the range map, unless the
       input_matrix has different domain and range maps, in which case
       the original domain map is preserved.  By default callFillComplete is @c true.
@@ -163,14 +163,14 @@ public:
 
       \param[out] outputMatrix pointer to the new redistributed matrix
 
-      \param[in] callFillComplete The new matrix is FillComplete'd if callFillComplete is @c true. 
-      In that case, the range map is set to equal the row map. 
+      \param[in] callFillComplete The new matrix is FillComplete'd if callFillComplete is @c true.
+      In that case, the range map is set to equal the row map.
       The domain map will equal the range map, unless the
       input_matrix has different domain and range maps, in which case
       the original domain map is preserved.  By default callFillComplete is @c true.
   */
 
-  void redistribute(const ::Tpetra::CrsMatrix<double,int,int,Node>& inputMatrix, 
+  void redistribute(const ::Tpetra::CrsMatrix<double,int,int,Node>& inputMatrix,
                     ::Tpetra::CrsMatrix<double,int,int,Node> * &outputMatrix, bool callFillComplete= true);
 
   /** @ingroup partitioning_rcp_grp
@@ -197,10 +197,10 @@ public:
       \param[out] outputVector pointer to the new redistributed vector
   */
   void
-  redistribute(const ::Tpetra::Vector<double,int,int,Node>& inputVector, 
+  redistribute(const ::Tpetra::Vector<double,int,int,Node>& inputVector,
                ::Tpetra::Vector<double,int,int,Node> * &outputVector);
 
-  /** @ingroup partitioning_rcp_grp 
+  /** @ingroup partitioning_rcp_grp
       Method to accept a Tpetra::MultiVector object, and
       return a redistributed Tpetra::MultiVector object.
 
@@ -211,11 +211,11 @@ public:
       \return a reference counted pointer to the new redistributed multi vector
 
   */
-  Teuchos::RCP< ::Tpetra::MultiVector<double,int,int,Node> >  
+  Teuchos::RCP< ::Tpetra::MultiVector<double,int,int,Node> >
   redistribute(const ::Tpetra::MultiVector<double,int,int,Node>& input_vector);
 
 
-  /** @ingroup partitioning_ptr_grp 
+  /** @ingroup partitioning_ptr_grp
       Method to accept a Tpetra::MultiVector object, and
       return a redistributed Tpetra::MultiVector object.
 
@@ -226,10 +226,10 @@ public:
       \param[out] outputVector a reference counted pointer to the new redistributed multi vector
 
   */
-  void redistribute(const ::Tpetra::MultiVector<double,int,int,Node>& inputVector, 
+  void redistribute(const ::Tpetra::MultiVector<double,int,int,Node>& inputVector,
                           ::Tpetra::MultiVector<double,int,int,Node> * &outputVector);
 
-  /** @ingroup partitioning_grp 
+  /** @ingroup partitioning_grp
       Reverse redistribute an Tpetra::Vector.
 
       \param[in] input_vector a vector that is distributed according to the partitioner that was used to create this Redistributor
@@ -241,7 +241,7 @@ public:
   void
   redistribute_reverse(const ::Tpetra::Vector<double,int,int,Node> & input_vector, ::Tpetra::Vector<double,int,int,Node>& output_vector);
 
-  /** @ingroup partitioning_grp 
+  /** @ingroup partitioning_grp
       Reverse redistribute an Tpetra::MultiVector.
 
       \param[in] input_vector a multi vector that is distributed according to the partitioner that was used to create this Redistributor

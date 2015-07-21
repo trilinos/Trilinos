@@ -1,2 +1,1 @@
 #include "Thyra_DefaultMultiVectorLinearOpWithSolve_decl.hpp"
-#include "Thyra_DefaultMultiVectorLinearOpWithSolve_def.hpp"

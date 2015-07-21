@@ -62,7 +62,7 @@
 LOCA::Epetra::ModelEvaluatorInterface::
 ModelEvaluatorInterface(
            const Teuchos::RCP<LOCA::GlobalData>& global_data,
-           const Teuchos::RefCountPtr<EpetraExt::ModelEvaluator>& m,
+           const Teuchos::RCP<EpetraExt::ModelEvaluator>& m,
            double perturb) :
   NOX::Epetra::ModelEvaluatorInterface(m),
   LOCA::DerivUtils(global_data, perturb),
@@ -74,7 +74,7 @@ ModelEvaluatorInterface(
   observer(Teuchos::null)
 {
   // Get parameter names
-  Teuchos::RefCountPtr<const Teuchos::Array<std::string> > param_names =
+  Teuchos::RCP<const Teuchos::Array<std::string> > param_names =
     m->get_p_names(0);
   for (std::size_t i=0; i< Teuchos::as<std::size_t>(param_names->size()); i++)
     loca_param_vec.addParameter((*param_names)[i], param_vec[i]);
@@ -119,7 +119,7 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
   // Create outargs
   EpetraExt::ModelEvaluator::OutArgs outargs = model_->createOutArgs();
   EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> eval_f;
-  Teuchos::RefCountPtr<Epetra_Vector> f = Teuchos::rcp(&F, false);
+  Teuchos::RCP<Epetra_Vector> f = Teuchos::rcp(&F, false);
   if (fillFlag == NOX::Epetra::Interface::Required::Residual)
     eval_f.reset(f, EpetraExt::ModelEvaluator::EVAL_TYPE_EXACT);
   else if (fillFlag == NOX::Epetra::Interface::Required::Jac)
@@ -359,7 +359,7 @@ computeDfDp(LOCA::MultiContinuation::AbstractGroup& grp,
   std::vector<int> dfdp_index(result.numVectors()-1);
   for (unsigned int i=0; i<dfdp_index.size(); i++)
     dfdp_index[i] = i+1;
-  Teuchos::RefCountPtr<NOX::Epetra::MultiVector> dfdp =
+  Teuchos::RCP<NOX::Epetra::MultiVector> dfdp =
     Teuchos::rcp_dynamic_cast<NOX::Epetra::MultiVector>(result.subView(dfdp_index));
   Epetra_MultiVector& epetra_dfdp = dfdp->getEpetraMultiVector();
 
@@ -381,11 +381,11 @@ computeDfDp(LOCA::MultiContinuation::AbstractGroup& grp,
   EpetraExt::ModelEvaluator::OutArgs outargs = model_->createOutArgs();
   if (!isValidF) {
     EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> eval_f;
-    Teuchos::RefCountPtr<Epetra_Vector> F = Teuchos::rcp(&epetra_f, false);
+    Teuchos::RCP<Epetra_Vector> F = Teuchos::rcp(&epetra_f, false);
     eval_f.reset(F, EpetraExt::ModelEvaluator::EVAL_TYPE_EXACT);
     outargs.set_f(eval_f);
   }
-  Teuchos::RefCountPtr<Epetra_MultiVector> DfDp =
+  Teuchos::RCP<Epetra_MultiVector> DfDp =
     Teuchos::rcp(&epetra_dfdp, false);
   Teuchos::Array<int> param_indexes(param_ids.size());
   for (unsigned int i=0; i<param_ids.size(); i++)

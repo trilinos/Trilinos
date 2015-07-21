@@ -77,7 +77,7 @@ TEUCHOS_UNIT_TEST( Map, replaceCommWithSubset )
 {
   typedef int local_ordinal_type;
   typedef long global_ordinal_type;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+  typedef Tpetra::Details::DefaultTypes::node_type node_type;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Array<global_ordinal_type>::size_type size_type;
 

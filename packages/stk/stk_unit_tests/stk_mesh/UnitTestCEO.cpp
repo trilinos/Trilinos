@@ -73,6 +73,7 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <unit_tests/BulkDataTester.hpp>
 #include "UnitTestCEOCommonUtils.hpp"
+#include <stk_mesh/base/MeshUtils.hpp>
 
 namespace stk
 {
@@ -133,6 +134,125 @@ TEST(CEO, change_entity_owner_2Elem2ProcMove)
     bulk.my_internal_change_entity_owner(entity_procs);
 
     CEOUtils::checkStatesAfterCEO_2Elem2ProcMove(bulk);
+}
+
+void test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::AutomaticAuraOption autoAuraOption)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    int psize = stk::parallel_machine_size(communicator);
+    int prank = stk::parallel_machine_rank(communicator);
+    if(psize == 3)
+    { // Skip unless we're on 2 processors
+
+        const int spatialDim = 3;
+        std::vector<std::string> rankNames;
+        rankNames.push_back("node");
+        rankNames.push_back("edge");
+        rankNames.push_back("face");
+        rankNames.push_back("elem");
+        rankNames.push_back("comst");
+
+        stk::mesh::MetaData stkMeshMetaData(spatialDim, rankNames);
+        //stk::mesh::Part &part = stkMeshMetaData.declare_part("constraints", stk::topology::CONSTRAINT_RANK);
+
+        stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, communicator, autoAuraOption);
+        const std::string generatedMeshSpecification = "generated:1x1x6";
+
+        // STK IO module will be described in separate chapter.
+        // It is used here to read the mesh data from the Exodus file and populate an STK Mesh.
+        // The order of the following lines in {} are important
+        {
+            stk::io::StkMeshIoBroker exodusFileReader(communicator);
+
+            // Inform STK IO which STK Mesh objects to populate later
+            exodusFileReader.set_bulk_data(stkMeshBulkData);
+
+            exodusFileReader.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+
+            // Populate the MetaData which has the descriptions of the Parts and Fields.
+            exodusFileReader.create_input_mesh();
+
+            // Populate entities in STK Mesh from Exodus file
+            exodusFileReader.populate_bulk_data();
+        }
+
+        /////////////////////////
+        stkMeshBulkData.modification_begin();
+        std::vector< std::pair<stk::mesh::Entity, int> > ghostingStruct;
+        stk::mesh::Ghosting &ghosting = stkMeshBulkData.create_ghosting("Ghost Node 1");
+        if(prank == 0)
+        {
+            int proc2 = 2;
+            stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
+            ghostingStruct.push_back(std::make_pair(node1, proc2));
+        }
+        stkMeshBulkData.change_ghosting(ghosting, ghostingStruct);
+        stkMeshBulkData.modification_end();
+
+        if (prank==2)
+        {
+            stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
+            ASSERT_TRUE(stkMeshBulkData.is_valid(node1));
+            EXPECT_EQ(0, stkMeshBulkData.parallel_owner_rank(node1));
+        }
+        /////////////////////////
+
+        stkMeshBulkData.modification_begin();
+
+        if (prank==2)
+        {
+            stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
+            stk::mesh::Entity constraint = stkMeshBulkData.declare_entity(stk::topology::CONSTRAINT_RANK, 1);
+            stkMeshBulkData.declare_relation(constraint,node1,0);
+        }
+        stk::mesh::fixup_ghosted_to_shared_nodes(stkMeshBulkData);
+        stkMeshBulkData.modification_end();
+
+        if(prank==2)
+        {
+            stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
+            EXPECT_TRUE(stkMeshBulkData.bucket(node1).shared());
+        }
+
+        if(prank==0 || prank==2)
+        {
+            stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
+            stk::mesh::EntityKey key = stkMeshBulkData.entity_key(node1);
+            int otherProc = 2-prank;
+            EXPECT_TRUE(stkMeshBulkData.in_ghost(ghosting, key, otherProc));
+        }
+
+        /////////////////////////
+
+        stk::mesh::EntityProcVec entity_procs;
+
+        if(prank == 0)
+        {
+            int proc2 = 2;
+            stk::mesh::Entity elem1 = stkMeshBulkData.get_entity(stk::topology::ELEM_RANK, 1);
+            entity_procs.push_back(stk::mesh::EntityProc(elem1, proc2));
+            stk::mesh::Entity node1 = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, 1);
+            entity_procs.push_back(stk::mesh::EntityProc(node1, proc2));
+        }
+
+        stkMeshBulkData.change_entity_owner(entity_procs);
+
+        if (prank == 2)
+        {
+            stk::mesh::Entity elem1 = stkMeshBulkData.get_entity(stk::topology::ELEM_RANK, 1);
+            EXPECT_TRUE(stkMeshBulkData.parallel_owner_rank(elem1) == 2);
+        }
+    }
+}
+
+TEST(CEO, change_entity_owner_3Elem3Proc_WithCustomGhosts_WithAura)
+{
+    test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::AUTO_AURA);
+}
+
+TEST(CEO, change_entity_owner_3Elem3Proc_WithCustomGhosts_WithoutAura)
+{
+    test_change_entity_owner_3Elem3Proc_WithCustomGhosts(stk::mesh::BulkData::NO_AUTO_AURA);
 }
 
 }

@@ -182,10 +182,6 @@ class TwoLevelIterator : public std::iterator<std::forward_iterator_tag, typenam
 //
 // Incrementing this iterator will take us to the next *selected* bucket, skipping past
 // unselected buckets, until the end.
-//
-// As long as we're using a pointer as the value type, we need to
-// specify the reference type to be the value_type in order for this
-// class to work with boost
 template <typename BucketIteratorType>
 class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag,
                                                     typename BucketIteratorType::value_type,
@@ -264,9 +260,6 @@ class SelectedBucketIterator : public std::iterator<std::forward_iterator_tag,
     return *this;
   }
 
-  // The method below is why boost::filter_iterator won't work for us. filter_iterator
-  // deferences to a reference, tranform iterator dereferences to a copy, making them
-  // incompatible.
   typename BucketIteratorType::value_type operator*() const
   {
     return *m_bucket_itr;
@@ -302,7 +295,6 @@ typedef std::pair<BucketVectorEntityIterator, BucketVectorEntityIterator>      B
 
 // Iterator for iterating over selected buckets within a vector of buckets
 typedef SelectedBucketIterator<BucketVector::const_iterator>                      SelectedBucketVectorIterator;
-//typedef boost::filter_iterator<Selector, BucketVector::const_iterator>            SelectedBucketVectorIterator;
 typedef std::pair<SelectedBucketVectorIterator, SelectedBucketVectorIterator>             SelectedBucketVectorIteratorRange;
 
 // Iterator for iterating over all entities within each *selected* bucket of a vector of buckets
@@ -315,7 +307,6 @@ typedef std::pair<AllBucketsIterator, AllBucketsIterator>                       
 
 // Iterator for iterating over all *selected* buckets in a bucket range
 typedef SelectedBucketIterator<AllBucketsIterator>                         AllSelectedBucketsIterator;
-//typedef boost::filter_iterator<Selector, AllBucketsIterator>               AllSelectedBucketsIterator;
 typedef std::pair<AllSelectedBucketsIterator, AllSelectedBucketsIterator>  AllSelectedBucketsRange;
 
 // Iterator for iterating over all entities within each bucket of a bucket range

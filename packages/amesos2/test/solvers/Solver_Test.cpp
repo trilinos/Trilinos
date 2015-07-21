@@ -57,7 +57,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_ParameterXMLFileReader.hpp>
 #include <Teuchos_FancyOStream.hpp>
-#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_TimeMonitor.hpp>
@@ -591,10 +591,11 @@ do_solve_routine(const string& solver_name,
   // declare as 'int' to allow incrementing
   int style = SOLVE_VERBOSE;
 
+  size_t count = 0;
   while (style <= SOLVE_SHORT) {
     rhs_it_t rhs_it = b.begin();
     rhs_it_t x_it = x.begin();
-
+    count++;
     // Create our solver according to the current style
     switch (style) {
     case SOLVE_VERBOSE:
@@ -606,7 +607,11 @@ do_solve_routine(const string& solver_name,
     case SOLVE_SHORT:
       solver = Amesos2::create<Matrix,Vector>(solver_name, A1);
       break;
+
     }
+    if(num_vecs < count)
+      {}
+
 
     solver->setParameters( rcpFromRef(solve_params) );
 

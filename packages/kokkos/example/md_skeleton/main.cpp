@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -64,6 +64,12 @@ int main(int argc, char** argv) {
 
   int num_threads = 1;
   int teams = 1;
+  int device = 0; // Default device for GPU runs
+
+  /* avoid unused variable warnings */
+  (void)num_threads;
+  (void)teams;
+  (void)device;
 
   /* Default value for number of force calculations */
 
@@ -82,7 +88,6 @@ int main(int argc, char** argv) {
   double rho = 0.8442; // Number density of the system
   double delta = 0; // Scaling factor for random offsets of atom positions
 
-  int device = 0; // Default device for GPU runs
 
   /* read in command-line arguments */
 
@@ -196,5 +201,5 @@ int main(int argc, char** argv) {
   double time = timer.seconds();
   printf("Time: %e s for %i iterations with %i atoms\n",time,iter,system.nlocal);
 
-  device_type::finalize();
+  execution_space::finalize();
 }

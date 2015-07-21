@@ -72,10 +72,13 @@ int main(int argc, char *argv[])
   int rank=0, nprocs=1;
 #endif
 
-  // TODO explain
-  typedef float  scalar_t;
-  typedef int    localId_t;
-  typedef long globalId_t;
+  typedef double scalar_t;
+  typedef int localId_t;
+#ifdef HAVE_ZOLTAN2_LONG_LONG_INT
+  typedef long long globalId_t;
+#else
+  typedef int globalId_t;
+#endif
 
   typedef Zoltan2::BasicUserTypes<scalar_t, globalId_t, localId_t, globalId_t> myTypes;
 
@@ -144,14 +147,8 @@ int main(int argc, char *argv[])
 
   // Create a Zoltan2 partitioning problem
 
-#ifdef HAVE_ZOLTAN2_MPI                   
-  Zoltan2::PartitioningProblem<inputAdapter_t> *problem1 = 
-           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia1, &params, 
-                                                            MPI_COMM_WORLD);
-#else
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem1 =
            new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia1, &params);
-#endif
    
   // Solve the problem
 
@@ -202,14 +199,8 @@ int main(int argc, char *argv[])
 
   // Create a Zoltan2 partitioning problem
 
-#ifdef HAVE_ZOLTAN2_MPI                   
-  Zoltan2::PartitioningProblem<inputAdapter_t> *problem2 = 
-           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia2, &params,
-                                                            MPI_COMM_WORLD);
-#else
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem2 =
            new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia2, &params);
-#endif
 
   // Solve the problem
 
@@ -271,14 +262,8 @@ int main(int argc, char *argv[])
 
   // Create a Zoltan2 partitioning problem.
 
-#ifdef HAVE_ZOLTAN2_MPI                   
-  Zoltan2::PartitioningProblem<inputAdapter_t> *problem3 = 
-           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia3, &params,
-                                                            MPI_COMM_WORLD);
-#else
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem3 =
            new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia3, &params);
-#endif
 
   // Solve the problem
 

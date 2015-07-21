@@ -45,12 +45,12 @@
 #include "Sacado_MP_Vector.hpp"
 #include "Kokkos_View_MP_Vector.hpp"
 #include "Kokkos_InnerProductSpaceTraits_MP_Vector.hpp"
-#include "Kokkos_MV.hpp"
+#include "Kokkos_Blas1_MP_Vector.hpp"
 
 //----------------------------------------------------------------------------
 // Specializations of Kokkos Vector/MultiVector math functions
 //----------------------------------------------------------------------------
-
+/*
 namespace Kokkos {
 
 // Rank-1 vector add with Sacado::MP::Vector scalar type, constant a, b
@@ -186,5 +186,5 @@ MV_Dot( const rVector& r,
 }
 
 } // namespace Kokkos
-
+*/
 #endif /* #ifndef KOKKOS_MV_MP_VECTOR_HPP */

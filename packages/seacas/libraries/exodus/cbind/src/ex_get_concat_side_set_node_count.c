@@ -59,26 +59,12 @@
 #include "exodusII.h"                   // for ex_err, exerrval, EX_MSG, etc
 #include "exodusII_int.h"               // for elem_blk_parm, EX_FATAL, etc
 
-/* Generic error message for element type/node count mapping...*/
-#define EL_NODE_COUNT_ERROR sprintf(errmsg, \
-      "Error: An element of type '%s' with %d nodes is not valid.",\
-                      elem_blk_parms[i].elem_type,\
-                      elem_blk_parms[i].num_nodes_per_elem);\
-              ex_err("ex_get_side_set_node_count",errmsg,EX_MSG);\
-              ex_safe_free(elem_blk_ids); \
-              ex_safe_free(side_set_ids); \
-              ex_safe_free(ss_elem_ndx); \
-              ex_safe_free(side_set_elem_list); \
-              ex_safe_free(side_set_side_list); \
-              ex_safe_free(elem_blk_parms); \
-              return(EX_FATAL);
 /*! \endcond */
 
 /*! \undoc */
 int ex_get_concat_side_set_node_count(int exoid,
 				      int *side_set_node_cnt_list)
 {
-  size_t m;
   int ii, i, j, iss, ioff; 
   ex_entity_id side_set_id;
   int  num_side_sets, num_elem_blks, num_df, ndim;
@@ -160,7 +146,7 @@ int ex_get_concat_side_set_node_count(int exoid,
     goto error_ret;
   }
 
-  if (ex_get_ids(exoid, EX_ELEM_BLOCK, elem_blk_ids) == -1) {
+  if (ex_get_ids(exoid, EX_ELEM_BLOCK, elem_blk_ids) != EX_NOERR) {
     sprintf(errmsg,
             "Error: failed to get element block ids in file id %d",
             exoid);
@@ -182,290 +168,16 @@ int ex_get_concat_side_set_node_count(int exoid,
   for (i=0; i<num_elem_blks; i++)
   {
     ex_entity_id id;
-    ex_block block;
     if (ex_int64_status(exoid) & EX_IDS_INT64_API) {
       id = ((int64_t*)elem_blk_ids)[i];
     } else {
       id = ((int*)elem_blk_ids)[i];
     }
 
-    /* read in an element block parameter */
-    block.type = EX_ELEM_BLOCK;
-    block.id = id;
-
-    /* read in an element block parameter */
-    if ((ex_get_block_param (exoid, &block)) == -1) {
-      sprintf(errmsg,
-             "Error: failed to get element block  %"PRId64" parameters in file id %d",
-              block.id, exoid);
-      ex_err("ex_get_concat_side_set_node_count",errmsg,EX_MSG);
+    if (ex_int_get_block_param(exoid, id, ndim, &elem_blk_parms[i]) != EX_NOERR) {
       goto error_ret;
     }
 
-    elem_blk_parms[i].num_elem_in_blk = block.num_entry;
-    elem_blk_parms[i].num_nodes_per_elem = block.num_nodes_per_entry;
-    elem_blk_parms[i].num_attr = block.num_attribute;
-
-    for (m=0; m < strlen(block.topology); m++) {
-      elem_blk_parms[i].elem_type[m] = toupper(block.topology[m]);
-    }
-    elem_blk_parms[i].elem_type[m] = '\0';
-
-    if (strncmp(elem_blk_parms[i].elem_type,"CIRCLE",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_CIRCLE;
-      elem_blk_parms[i].num_sides = 1;
-      elem_blk_parms[i].num_nodes_per_side[0] = 1;
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"SPHERE",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_SPHERE;
-      elem_blk_parms[i].num_sides = 1;
-        elem_blk_parms[i].num_nodes_per_side[0] = 1;
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"QUAD",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_QUAD;
-      elem_blk_parms[i].num_sides = 4;
-      if (elem_blk_parms[i].num_nodes_per_elem == 4) {
-        elem_blk_parms[i].num_nodes_per_side[0] = 2;
-        elem_blk_parms[i].num_nodes_per_side[1] = 2;
-        elem_blk_parms[i].num_nodes_per_side[2] = 2;
-        elem_blk_parms[i].num_nodes_per_side[3] = 2;
-      } else if (elem_blk_parms[i].num_nodes_per_elem == 5) {
-        elem_blk_parms[i].num_nodes_per_side[0] = 2;
-        elem_blk_parms[i].num_nodes_per_side[1] = 2;
-        elem_blk_parms[i].num_nodes_per_side[2] = 2;
-        elem_blk_parms[i].num_nodes_per_side[3] = 2;
-      } else if (elem_blk_parms[i].num_nodes_per_elem == 9 ||
-                 elem_blk_parms[i].num_nodes_per_elem == 8) {
-        elem_blk_parms[i].num_nodes_per_side[0] = 3;
-        elem_blk_parms[i].num_nodes_per_side[1] = 3;
-        elem_blk_parms[i].num_nodes_per_side[2] = 3;
-        elem_blk_parms[i].num_nodes_per_side[3] = 3;
-      } else {
-        EL_NODE_COUNT_ERROR;
-      }
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"TRIANGLE",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_TRIANGLE;
-      if (ndim == 2) { /* 2d TRIs */
-        elem_blk_parms[i].num_sides = 3;
-        if (elem_blk_parms[i].num_nodes_per_elem == 3) {
-          elem_blk_parms[i].num_nodes_per_side[0] = 2;
-          elem_blk_parms[i].num_nodes_per_side[1] = 2;
-          elem_blk_parms[i].num_nodes_per_side[2] = 2;
-        } else if (elem_blk_parms[i].num_nodes_per_elem == 6) {
-          elem_blk_parms[i].num_nodes_per_side[0] = 3;
-          elem_blk_parms[i].num_nodes_per_side[1] = 3;
-          elem_blk_parms[i].num_nodes_per_side[2] = 3;
-        }
-      } else if (ndim == 3) { /* 3d TRIs -- triangular shell*/
-        elem_blk_parms[i].num_sides = 5; /* 2 Faces and 3 Edges */
-        if (elem_blk_parms[i].num_nodes_per_elem == 3) {
-          elem_blk_parms[i].num_nodes_per_side[0] = 3;
-          elem_blk_parms[i].num_nodes_per_side[1] = 3;
-          elem_blk_parms[i].num_nodes_per_side[2] = 2;
-          elem_blk_parms[i].num_nodes_per_side[3] = 2;
-          elem_blk_parms[i].num_nodes_per_side[4] = 2;
-        } else if (elem_blk_parms[i].num_nodes_per_elem == 6) {
-          elem_blk_parms[i].num_nodes_per_side[0] = 6;
-          elem_blk_parms[i].num_nodes_per_side[1] = 6;
-          elem_blk_parms[i].num_nodes_per_side[2] = 3;
-          elem_blk_parms[i].num_nodes_per_side[3] = 3;
-          elem_blk_parms[i].num_nodes_per_side[4] = 3;
-        } else {
-          EL_NODE_COUNT_ERROR;
-        }
-      }
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"SHELL",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_SHELL;
-
-      if (elem_blk_parms[i].num_nodes_per_elem == 2) {/* KLUDGE for 2D Shells*/
-        elem_blk_parms[i].num_sides = 2; 
-        elem_blk_parms[i].num_nodes_per_side[0] = 2;
-        elem_blk_parms[i].num_nodes_per_side[1] = 2;
-      } else if (elem_blk_parms[i].num_nodes_per_elem == 4) {
-        elem_blk_parms[i].num_sides = 6;  /* 2 Faces, 4 Edges */
-        elem_blk_parms[i].num_nodes_per_side[0] = 4;
-        elem_blk_parms[i].num_nodes_per_side[1] = 4;
-        elem_blk_parms[i].num_nodes_per_side[2] = 2;
-        elem_blk_parms[i].num_nodes_per_side[3] = 2;
-        elem_blk_parms[i].num_nodes_per_side[4] = 2;
-        elem_blk_parms[i].num_nodes_per_side[5] = 2;
-      } else if (elem_blk_parms[i].num_nodes_per_elem == 8 ||
-                 elem_blk_parms[i].num_nodes_per_elem == 9) {
-        elem_blk_parms[i].num_sides = 6;  /* 2 Faces, 4 Edges */
-        elem_blk_parms[i].num_nodes_per_side[0] =
-          elem_blk_parms[i].num_nodes_per_elem; /* 8 or 9 */
-        elem_blk_parms[i].num_nodes_per_side[1] =
-          elem_blk_parms[i].num_nodes_per_elem; /* 8 or 9 */
-        elem_blk_parms[i].num_nodes_per_side[2] = 3;
-        elem_blk_parms[i].num_nodes_per_side[3] = 3;
-        elem_blk_parms[i].num_nodes_per_side[4] = 3;
-        elem_blk_parms[i].num_nodes_per_side[5] = 3;
-      } else {
-        EL_NODE_COUNT_ERROR;
-      }
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"HEX",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_HEX;
-      elem_blk_parms[i].num_sides = 6;  
-      /* determine side set node stride */
-      if (elem_blk_parms[i].num_nodes_per_elem == 8) {  /* 8-node bricks */
-        elem_blk_parms[i].num_nodes_per_side[0] = 4;
-        elem_blk_parms[i].num_nodes_per_side[1] = 4;
-        elem_blk_parms[i].num_nodes_per_side[2] = 4;
-        elem_blk_parms[i].num_nodes_per_side[3] = 4;
-        elem_blk_parms[i].num_nodes_per_side[4] = 4;
-        elem_blk_parms[i].num_nodes_per_side[5] = 4;
-      } else if (elem_blk_parms[i].num_nodes_per_elem == 9) { /* 9-node bricks */
-        elem_blk_parms[i].num_nodes_per_side[0] = 4;
-        elem_blk_parms[i].num_nodes_per_side[1] = 4;
-        elem_blk_parms[i].num_nodes_per_side[2] = 4;
-        elem_blk_parms[i].num_nodes_per_side[3] = 4;
-        elem_blk_parms[i].num_nodes_per_side[4] = 4;
-        elem_blk_parms[i].num_nodes_per_side[5] = 4;
-      } else if (elem_blk_parms[i].num_nodes_per_elem == 12) { /* HEXSHELLS */
-        elem_blk_parms[i].num_nodes_per_side[0] = 6;
-        elem_blk_parms[i].num_nodes_per_side[1] = 6;
-        elem_blk_parms[i].num_nodes_per_side[2] = 6;
-        elem_blk_parms[i].num_nodes_per_side[3] = 6;
-        elem_blk_parms[i].num_nodes_per_side[4] = 4;
-        elem_blk_parms[i].num_nodes_per_side[5] = 4;
-      } else if (elem_blk_parms[i].num_nodes_per_elem == 20) { /* 20-node bricks */
-        elem_blk_parms[i].num_nodes_per_side[0] = 8;
-        elem_blk_parms[i].num_nodes_per_side[1] = 8;
-        elem_blk_parms[i].num_nodes_per_side[2] = 8;
-        elem_blk_parms[i].num_nodes_per_side[3] = 8;
-        elem_blk_parms[i].num_nodes_per_side[4] = 8;
-        elem_blk_parms[i].num_nodes_per_side[5] = 8;
-      } else if (elem_blk_parms[i].num_nodes_per_elem == 27) { /* 27-node bricks */
-        elem_blk_parms[i].num_nodes_per_side[0] = 9;
-        elem_blk_parms[i].num_nodes_per_side[1] = 9;
-        elem_blk_parms[i].num_nodes_per_side[2] = 9;
-        elem_blk_parms[i].num_nodes_per_side[3] = 9;
-        elem_blk_parms[i].num_nodes_per_side[4] = 9;
-        elem_blk_parms[i].num_nodes_per_side[5] = 9;
-      } else {
-        EL_NODE_COUNT_ERROR;
-      }
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"TETRA",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_TETRA;
-      elem_blk_parms[i].num_sides = 4;  
-      /* determine side set node stride */
-      if (elem_blk_parms[i].num_nodes_per_elem == 4) {
-        elem_blk_parms[i].num_nodes_per_side[0] = 3;
-        elem_blk_parms[i].num_nodes_per_side[1] = 3;
-        elem_blk_parms[i].num_nodes_per_side[2] = 3;
-        elem_blk_parms[i].num_nodes_per_side[3] = 3;
-      } else if (elem_blk_parms[i].num_nodes_per_elem == 8) {
-        elem_blk_parms[i].num_nodes_per_side[0] = 4;
-        elem_blk_parms[i].num_nodes_per_side[1] = 4;
-        elem_blk_parms[i].num_nodes_per_side[2] = 4;
-        elem_blk_parms[i].num_nodes_per_side[3] = 4;
-      } else if (elem_blk_parms[i].num_nodes_per_elem == 10) {
-        elem_blk_parms[i].num_nodes_per_side[0] = 6;
-        elem_blk_parms[i].num_nodes_per_side[1] = 6;
-        elem_blk_parms[i].num_nodes_per_side[2] = 6;
-        elem_blk_parms[i].num_nodes_per_side[3] = 6;
-      } else {
-        EL_NODE_COUNT_ERROR;
-      }
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"WEDGE",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_WEDGE;
-      elem_blk_parms[i].num_sides = 5;  
-      if (elem_blk_parms[i].num_nodes_per_elem == 6) {
-        elem_blk_parms[i].num_nodes_per_side[0] = 4;
-        elem_blk_parms[i].num_nodes_per_side[1] = 4;
-        elem_blk_parms[i].num_nodes_per_side[2] = 4;
-        elem_blk_parms[i].num_nodes_per_side[3] = 3;
-        elem_blk_parms[i].num_nodes_per_side[4] = 3;
-      } else if (elem_blk_parms[i].num_nodes_per_elem == 15){
-        elem_blk_parms[i].num_nodes_per_side[0] = 8;
-        elem_blk_parms[i].num_nodes_per_side[1] = 8;
-        elem_blk_parms[i].num_nodes_per_side[2] = 8;
-        elem_blk_parms[i].num_nodes_per_side[3] = 6;
-        elem_blk_parms[i].num_nodes_per_side[4] = 6;
-      } else {
-        EL_NODE_COUNT_ERROR;
-      }
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"PYRAMID",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_PYRAMID;
-      elem_blk_parms[i].num_sides = 5;  
-      if (elem_blk_parms[i].num_nodes_per_elem == 5) {
-        elem_blk_parms[i].num_nodes_per_side[0] = 3;
-        elem_blk_parms[i].num_nodes_per_side[1] = 3;
-        elem_blk_parms[i].num_nodes_per_side[2] = 3;
-        elem_blk_parms[i].num_nodes_per_side[3] = 3;
-        elem_blk_parms[i].num_nodes_per_side[4] = 4;
-      } else if (elem_blk_parms[i].num_nodes_per_elem == 13){
-        elem_blk_parms[i].num_nodes_per_side[0] = 6;
-        elem_blk_parms[i].num_nodes_per_side[1] = 6;
-        elem_blk_parms[i].num_nodes_per_side[2] = 6;
-        elem_blk_parms[i].num_nodes_per_side[3] = 6;
-        elem_blk_parms[i].num_nodes_per_side[4] = 8;
-      } else {
-        EL_NODE_COUNT_ERROR;
-      }
-    }
-    else if (strncmp(elem_blk_parms[i].elem_type,"BEAM",3) == 0)
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_BEAM;
-      elem_blk_parms[i].num_sides = 2;  
-
-      if (elem_blk_parms[i].num_nodes_per_elem == 2) {
-        elem_blk_parms[i].num_nodes_per_side[0] = 2;
-        elem_blk_parms[i].num_nodes_per_side[1] = 2;
-      } else if (elem_blk_parms[i].num_nodes_per_elem == 3){
-        elem_blk_parms[i].num_nodes_per_side[0] = 3;
-        elem_blk_parms[i].num_nodes_per_side[1] = 3;
-      } else {
-        EL_NODE_COUNT_ERROR;
-      }
-    }
-    else if ( (strncmp(elem_blk_parms[i].elem_type,"TRUSS",3) == 0) ||
-              (strncmp(elem_blk_parms[i].elem_type,"BAR",3) == 0) ||
-              (strncmp(elem_blk_parms[i].elem_type,"EDGE",3) == 0) )
-    {
-      elem_blk_parms[i].elem_type_val = EX_EL_TRUSS;
-      elem_blk_parms[i].num_sides = 2;  
-
-      if (elem_blk_parms[i].num_nodes_per_elem == 2) {
-        elem_blk_parms[i].num_nodes_per_side[0] = 2;
-        elem_blk_parms[i].num_nodes_per_side[1] = 2;
-      } else if (elem_blk_parms[i].num_nodes_per_elem == 3) {
-        elem_blk_parms[i].num_nodes_per_side[0] = 3;
-        elem_blk_parms[i].num_nodes_per_side[1] = 3;
-      } else {
-        EL_NODE_COUNT_ERROR;
-      }
-    }
-    /* Used for an empty block in a parallel decomposition */
-    else if (strncmp(elem_blk_parms[i].elem_type,"NULL",3) == 0) {
-      elem_blk_parms[i].elem_type_val = EX_EL_NULL_ELEMENT;
-      elem_blk_parms[i].num_sides = 0;  
-      elem_blk_parms[i].num_nodes_per_side[0] = 0;
-      elem_blk_parms[i].num_elem_in_blk = 0;
-    } else {
-      /* unsupported element type; no problem if no sides specified for
-         this element block */
-      elem_blk_parms[i].elem_type_val = EX_EL_UNK;
-      elem_blk_parms[i].num_sides = 0;  
-      elem_blk_parms[i].num_nodes_per_side[0] = 0;
-    }
-
-    elem_blk_parms[i].elem_blk_id = id;    /* save id */
     elem_ctr += elem_blk_parms[i].num_elem_in_blk;
     elem_blk_parms[i].elem_ctr = elem_ctr;      /* save elem number max */
   }
@@ -484,7 +196,7 @@ int ex_get_concat_side_set_node_count(int exoid,
     goto error_ret;
   }
 
-  if (ex_get_ids(exoid, EX_SIDE_SET, side_set_ids) == -1) {
+  if (ex_get_ids(exoid, EX_SIDE_SET, side_set_ids) != EX_NOERR) {
     sprintf(errmsg,
             "Error: failed to get side set ids in file id %d",
             exoid);
@@ -543,7 +255,7 @@ int ex_get_concat_side_set_node_count(int exoid,
     }
     
     if (ex_get_set(exoid, EX_SIDE_SET, side_set_id, 
-		   side_set_elem_list, side_set_side_list) == -1) {
+		   side_set_elem_list, side_set_side_list) != EX_NOERR) {
       sprintf(errmsg,
 	      "Error: failed to get side set  %"PRId64" in file id %d",
 	      side_set_id, exoid);

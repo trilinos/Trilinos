@@ -30,6 +30,7 @@
 #ifndef SACADO_SCALAR_FLOP_COUNTER_HPP
 #define SACADO_SCALAR_FLOP_COUNTER_HPP
 
+#include "Sacado_ConfigDefs.h"
 #include "Sacado_ScalarFlopCounterTraits.hpp"
 #include "Sacado_Base.hpp"
 #include "Sacado_SFINAE_Macros.hpp"
@@ -45,9 +46,13 @@ namespace Sacado {
     class  FlopCounts {
     public:
 
+#ifdef HAVE_SACADO_CXX11
+      /// Number of total operation supported up till now
+      enum { NUM_OPS = 35 };
+#else
       /// Number of total operation supported up till now
       enum { NUM_OPS = 34 };
-
+#endif
       /// Enum for operations
       enum EFlopType {
         ASSIGN
@@ -70,6 +75,9 @@ namespace Sacado {
         ,LOG
         ,LOG10
         ,SQRT
+#ifdef HAVE_SACADO_CXX11
+        ,CBRT
+#endif
         ,COS
         ,SIN
         ,TAN
@@ -450,6 +458,9 @@ namespace Sacado {
     SCALAR_FLOP_COUNTER_UNARY_FUNC(log,FlopCounts::LOG)
     SCALAR_FLOP_COUNTER_UNARY_FUNC(log10,FlopCounts::LOG10)
     SCALAR_FLOP_COUNTER_UNARY_FUNC(sqrt,FlopCounts::SQRT)
+#ifdef HAVE_SACADO_CXX11
+    SCALAR_FLOP_COUNTER_UNARY_FUNC(cbrt,FlopCounts::CBRT)
+#endif
     SCALAR_FLOP_COUNTER_UNARY_FUNC(cos,FlopCounts::COS)
     SCALAR_FLOP_COUNTER_UNARY_FUNC(sin,FlopCounts::SIN)
     SCALAR_FLOP_COUNTER_UNARY_FUNC(tan,FlopCounts::TAN)

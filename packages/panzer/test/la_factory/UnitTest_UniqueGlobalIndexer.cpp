@@ -288,6 +288,20 @@ void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(LocalOrdi
    };
 }
 
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+int UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
+getElementBlockGIDCount(const std::string &) const
+{
+  return 8;
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+int UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
+getElementBlockGIDCount(const std::size_t &) const
+{
+  return 8;
+}
+
 // UniqueGlobalIndexer_Element
 /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -487,6 +501,20 @@ void UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::getCoordinates(L
    default:
       TEUCHOS_ASSERT(false); // fail!
    };
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+int UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::
+getElementBlockGIDCount(const std::string &) const
+{
+  return 2;
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+int UniqueGlobalIndexer_Element<LocalOrdinalT,GlobalOrdinalT>::
+getElementBlockGIDCount(const std::size_t &) const
+{
+  return 2;
 }
 
 // BlockUniqueGlobalIndexer

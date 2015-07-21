@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -92,12 +90,14 @@ int main (int argc, char* argv[]) {
   // Fill the View with some data.  The parallel_for loop will iterate
   // over the View's first dimension N.
   //
-  // Note that the View a is passed by value into the lambda.  ([=]
-  // means "capture all variables in the enclosing scope by value."
-  // Views have "view semantics"; they behave like pointers, not like
-  // std::vector.  Passing them by value does a shallow copy.  A deep
-  // copy never happens unless you explicitly ask for one.
-  Kokkos::parallel_for (10, [=] (const int i) {
+  // Note that the View is passed by value into the lambda.  The macro
+  // KOKKOS_LAMBDA includes the "capture by value" clause [=].  This
+  // tells the lambda to "capture all variables in the enclosing scope
+  // by value."  Views have "view semantics"; they behave like
+  // pointers, not like std::vector.  Passing them by value does a
+  // shallow copy.  A deep copy never happens unless you explicitly
+  // ask for one.
+  Kokkos::parallel_for (10, KOKKOS_LAMBDA (const int i) {
     // Acesss the View just like a Fortran array.  The layout depends
     // on the View's memory space, so don't rely on the View's
     // physical memory layout unless you know what you're doing.
@@ -107,7 +107,7 @@ int main (int argc, char* argv[]) {
   });
   // Reduction functor that reads the View given to its constructor.
   double sum = 0;
-  Kokkos::parallel_reduce (10, [=] (const int i, double& lsum) {
+  Kokkos::parallel_reduce (10, KOKKOS_LAMBDA (const int i, double& lsum) {
     lsum += a(i,0)*a(i,1)/(a(i,2)+0.1);
   }, sum);
   printf ("Result: %f\n", sum);

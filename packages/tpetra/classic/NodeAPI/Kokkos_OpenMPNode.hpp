@@ -44,8 +44,8 @@
 
 /// \file Kokkos_OpenMPNode.hpp
 /// \brief Declaration and definition of the (now DEPRECATED)
-///   KokkosClassic::OpenMPNode Node type.
-/// \warning KokkosClassic::OpenMPNode has been DEPRECATED.  For a
+///   KokkosClassic::DoNotUse::OpenMPNode Node type.
+/// \warning KokkosClassic::DoNotUse::OpenMPNode has been DEPRECATED.  For a
 ///   Node that uses OpenMP for thread-level parallelism, please use
 ///   Kokkos::Compat::KokkosOpenMPWrapperNode instead.
 
@@ -70,6 +70,7 @@ namespace Teuchos {
 }
 
 namespace KokkosClassic {
+namespace DoNotUse {
 
   /// \class OpenMPNode
   /// \brief Kokkos Node using OpenMP for parallelization.
@@ -176,6 +177,8 @@ namespace KokkosClassic {
     bool verbose_;
   };
 
+} // namespace DoNotUse
+
 #ifdef _MSC_VER
 #pragma warning(push)
 // destructor could not be generated because a base class destructor is inaccessible
@@ -183,8 +186,8 @@ namespace KokkosClassic {
 #endif
 
   template <>
-  class ArrayOfViewsHelper<OpenMPNode> :
-    public ArrayOfViewsHelperTrivialImpl<OpenMPNode>
+  class ArrayOfViewsHelper<DoNotUse::OpenMPNode> :
+    public ArrayOfViewsHelperTrivialImpl<DoNotUse::OpenMPNode>
   {};
 
 #ifdef _MSC_VER
@@ -197,7 +200,7 @@ namespace KokkosClassic {
 namespace Kokkos {
   namespace Compat {
     template <>
-    struct NodeDevice<KokkosClassic::OpenMPNode> {
+    struct NodeDevice<KokkosClassic::DoNotUse::OpenMPNode> {
       typedef Kokkos::OpenMP type;
     };
   } // namespace Compat

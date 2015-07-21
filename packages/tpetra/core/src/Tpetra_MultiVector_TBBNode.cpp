@@ -53,7 +53,7 @@
 #  include "Tpetra_MultiVector_def.hpp"
 
 #  define TPETRA_MULTIVECTOR_TBBNODE_INSTANT( SCALAR, LO, GO ) \
-  TPETRA_MULTIVECTOR_INSTANT( SCALAR, LO, GO, KokkosClassic::TBBNode )
+  TPETRA_MULTIVECTOR_INSTANT( SCALAR, LO, GO, KokkosClassic::DoNotUse::TBBNode )
 
 namespace Tpetra {
 

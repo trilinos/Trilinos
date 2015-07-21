@@ -71,8 +71,12 @@ int main(int argc, char *argv[])
 #endif
 
   typedef double scalar_t;
-  typedef long   localId_t;
-  typedef long   globalId_t;
+  typedef int localId_t;
+#ifdef HAVE_ZOLTAN2_LONG_LONG
+  typedef long long globalId_t;
+#else
+  typedef int globalId_t;
+#endif
 
   ///////////////////////////////////////////////////////////////////////
   // Generate some input data.
@@ -120,14 +124,8 @@ int main(int argc, char *argv[])
   ///////////////////////////////////////////////////////////////////////
   // Create a Zoltan2 partitioning problem
 
-#ifdef HAVE_ZOLTAN2_MPI
-  Zoltan2::PartitioningProblem<inputAdapter_t> *problem = 
-           new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params, 
-                                                            MPI_COMM_WORLD);
-#else
   Zoltan2::PartitioningProblem<inputAdapter_t> *problem = 
            new Zoltan2::PartitioningProblem<inputAdapter_t>(&ia, &params);
-#endif
    
   ///////////////////////////////////////////////////////////////////////
   // Solve the problem

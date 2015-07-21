@@ -94,7 +94,7 @@ Ifpack_Chebyshev(const Epetra_Operator* Operator) :
   PolyDegree_(1),
   UseTranspose_(false),
   Condest_(-1.0),
-  ComputeCondest_(false),
+  /* ComputeCondest_(false), (Unused; commented out to avoid build warnings) */
   EigRatio_(30.0),
   Label_(),
   LambdaMin_(0.0),
@@ -136,7 +136,7 @@ Ifpack_Chebyshev(const Epetra_RowMatrix* Operator) :
   PolyDegree_(1),
   UseTranspose_(false),
   Condest_(-1.0),
-  ComputeCondest_(false),
+  /* ComputeCondest_(false), (Unused; commented out to avoid build warnings) */
   EigRatio_(30.0),
   EigMaxIters_(10),
   Label_(),
@@ -184,9 +184,9 @@ int Ifpack_Chebyshev::SetParameters(Teuchos::ParameterList& List)
     // w/"invert" if it's set to multiply
     Teuchos::ParameterList Blist;
     Blist=BlockList_.get("blockdiagmatrix: list",Blist);
-    string dummy("invert");
-    string ApplyMode=Blist.get("apply mode",dummy);
-    if(ApplyMode==string("multiply")){
+    std::string dummy("invert");
+    std::string ApplyMode=Blist.get("apply mode",dummy);
+    if(ApplyMode==std::string("multiply")){
       Blist.set("apply mode","invert");
       BlockList_.set("blockdiagmatrix: list",Blist);
     }
@@ -373,8 +373,9 @@ int Ifpack_Chebyshev::Compute()
 }
 
 //==============================================================================
-ostream& Ifpack_Chebyshev::Print(ostream & os) const
+std::ostream& Ifpack_Chebyshev::Print(std::ostream & os) const
 {
+  using std::endl;
 
   double MyMinVal, MyMaxVal;
   double MinVal, MaxVal;
@@ -432,7 +433,7 @@ ostream& Ifpack_Chebyshev::Print(ostream & os) const
 double Ifpack_Chebyshev::
 Condest(const Ifpack_CondestType CT,
         const int MaxIters, const double Tol,
-	Epetra_RowMatrix* Matrix_in)
+        Epetra_RowMatrix* Matrix_in)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
@@ -785,6 +786,9 @@ CG(const Epetra_Operator& Operator,
 
   return(0);
 #else
+  using std::cout;
+  using std::endl;
+
   cout << "You need to configure IFPACK with support for AztecOO" << endl;
   cout << "to use the CG estimator. This may require --enable-aztecoo" << endl;
   cout << "in your configure script." << endl;
@@ -864,6 +868,9 @@ CG(const int MaximumIterations,
 
   return(0);
 #else
+  using std::cout;
+  using std::endl;
+
   cout << "You need to configure IFPACK with support for AztecOO" << endl;
   cout << "to use the CG estimator. This may require --enable-aztecoo" << endl;
   cout << "in your configure script." << endl;

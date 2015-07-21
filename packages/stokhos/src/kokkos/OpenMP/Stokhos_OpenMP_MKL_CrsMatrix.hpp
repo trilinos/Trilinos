@@ -56,14 +56,14 @@ namespace Stokhos {
 
 namespace Impl {
 
-  template <typename ValueType, typename OrdinalType, typename DeviceType>
+  template <typename ValueType, typename OrdinalType, typename ExecutionSpace>
   struct GatherTranspose {
     typedef ValueType value_type;
     typedef OrdinalType ordinal_type;
-    typedef DeviceType device_type;
-    typedef typename device_type::size_type size_type;
-    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, device_type >  multi_vector_type ;
-    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
+    typedef ExecutionSpace execution_space;
+    typedef typename execution_space::size_type size_type;
+    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, execution_space >  multi_vector_type ;
+    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, execution_space >  trans_multi_vector_type ;
 
     const multi_vector_type m_x;
     const trans_multi_vector_type m_xt;
@@ -87,14 +87,14 @@ namespace Impl {
     }
   };
 
-  template <typename ValueType, typename OrdinalType, typename DeviceType>
+  template <typename ValueType, typename OrdinalType, typename ExecutionSpace>
   struct ScatterTranspose {
     typedef ValueType value_type;
     typedef OrdinalType ordinal_type;
-    typedef DeviceType device_type;
-    typedef typename device_type::size_type size_type;
-    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, device_type >  multi_vector_type ;
-    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
+    typedef ExecutionSpace execution_space;
+    typedef typename execution_space::size_type size_type;
+    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, execution_space >  multi_vector_type ;
+    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, execution_space >  trans_multi_vector_type ;
 
     const multi_vector_type m_x;
     const trans_multi_vector_type m_xt;
@@ -118,13 +118,13 @@ namespace Impl {
     }
   };
 
-  template <typename ValueType, typename DeviceType>
+  template <typename ValueType, typename ExecutionSpace>
   struct GatherVecTranspose {
     typedef ValueType value_type;
-    typedef DeviceType device_type;
-    typedef typename device_type::size_type size_type;
-    typedef Kokkos::View< value_type* , device_type > vector_type ;
-    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
+    typedef ExecutionSpace execution_space;
+    typedef typename execution_space::size_type size_type;
+    typedef Kokkos::View< value_type* , execution_space > vector_type ;
+    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, execution_space >  trans_multi_vector_type ;
 
     const std::vector<vector_type> m_x;
     const trans_multi_vector_type m_xt;
@@ -145,13 +145,13 @@ namespace Impl {
     }
   };
 
-  template <typename ValueType, typename DeviceType>
+  template <typename ValueType, typename ExecutionSpace>
   struct ScatterVecTranspose {
     typedef ValueType value_type;
-    typedef DeviceType device_type;
-    typedef typename device_type::size_type size_type;
-    typedef Kokkos::View< value_type* , device_type > vector_type ;
-    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
+    typedef ExecutionSpace execution_space;
+    typedef typename execution_space::size_type size_type;
+    typedef Kokkos::View< value_type* , execution_space > vector_type ;
+    typedef Kokkos::View< value_type** , Kokkos::LayoutLeft, execution_space >  trans_multi_vector_type ;
 
     const std::vector<vector_type> m_x;
     const trans_multi_vector_type m_xt;
@@ -226,9 +226,9 @@ void multiply(const CrsMatrix< double , Kokkos::OpenMP >& A,
               std::vector< Kokkos::View< double* , Kokkos::OpenMP > >& y,
               MKLMultiply tag)
 {
-  typedef Kokkos::OpenMP device_type ;
+  typedef Kokkos::OpenMP execution_space ;
   typedef double value_type ;
-  typedef Kokkos::View< double** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
+  typedef Kokkos::View< double** , Kokkos::LayoutLeft, execution_space >  trans_multi_vector_type ;
 
   MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
   double *A_values = A.values.ptr_on_device() ;
@@ -244,7 +244,7 @@ void multiply(const CrsMatrix< double , Kokkos::OpenMP >& A,
   MKL_INT ncol = x.size();
   trans_multi_vector_type xx( "xx" , ncol , n );
   trans_multi_vector_type yy( "yy" , ncol , n );
-  Impl::GatherVecTranspose<value_type,device_type>::apply(x,xx);
+  Impl::GatherVecTranspose<value_type,execution_space>::apply(x,xx);
   double *x_values = xx.ptr_on_device() ;
   double *y_values = yy.ptr_on_device() ;
 
@@ -253,7 +253,7 @@ void multiply(const CrsMatrix< double , Kokkos::OpenMP >& A,
              row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
 
   // Copy columns out of continguous multivector
-  Impl::ScatterVecTranspose<value_type,device_type>::apply(y,yy);
+  Impl::ScatterVecTranspose<value_type,execution_space>::apply(y,yy);
 }
 
 void multiply(const CrsMatrix< float , Kokkos::OpenMP >& A,
@@ -261,9 +261,9 @@ void multiply(const CrsMatrix< float , Kokkos::OpenMP >& A,
               std::vector< Kokkos::View< float* , Kokkos::OpenMP > >& y,
               MKLMultiply tag)
 {
-  typedef Kokkos::OpenMP device_type ;
+  typedef Kokkos::OpenMP execution_space ;
   typedef float value_type ;
-  typedef Kokkos::View< float** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
+  typedef Kokkos::View< float** , Kokkos::LayoutLeft, execution_space >  trans_multi_vector_type ;
 
   MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
   float *A_values = A.values.ptr_on_device() ;
@@ -279,7 +279,7 @@ void multiply(const CrsMatrix< float , Kokkos::OpenMP >& A,
   MKL_INT ncol = x.size();
   trans_multi_vector_type xx( "xx" , ncol , n );
   trans_multi_vector_type yy( "yy" , ncol , n );
-  Impl::GatherVecTranspose<value_type,device_type>::apply(x,xx);
+  Impl::GatherVecTranspose<value_type,execution_space>::apply(x,xx);
   float *x_values = xx.ptr_on_device() ;
   float *y_values = yy.ptr_on_device() ;
 
@@ -288,7 +288,7 @@ void multiply(const CrsMatrix< float , Kokkos::OpenMP >& A,
              row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
 
   // Copy columns out of continguous multivector
-  Impl::ScatterVecTranspose<value_type,device_type>::apply(y,yy);
+  Impl::ScatterVecTranspose<value_type,execution_space>::apply(y,yy);
 }
 
 template <typename ordinal_type>
@@ -299,9 +299,9 @@ void multiply(
   const std::vector<ordinal_type>& indices,
   MKLMultiply tag)
 {
-  typedef Kokkos::OpenMP device_type ;
+  typedef Kokkos::OpenMP execution_space ;
   typedef double value_type ;
-  typedef Kokkos::View< double** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
+  typedef Kokkos::View< double** , Kokkos::LayoutLeft, execution_space >  trans_multi_vector_type ;
 
   MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
   double *A_values = A.values.ptr_on_device() ;
@@ -317,7 +317,7 @@ void multiply(
   MKL_INT ncol = indices.size();
   trans_multi_vector_type xx( "xx" , ncol , n );
   trans_multi_vector_type yy( "yy" , ncol , n );
-  Impl::GatherTranspose<value_type,ordinal_type,device_type>::apply(x,xx,indices);
+  Impl::GatherTranspose<value_type,ordinal_type,execution_space>::apply(x,xx,indices);
   double *x_values = xx.ptr_on_device() ;
   double *y_values = yy.ptr_on_device() ;
 
@@ -326,7 +326,7 @@ void multiply(
              row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
 
   // Copy columns out of continguous multivector
-  Impl::ScatterTranspose<value_type,ordinal_type,device_type>::apply(y,yy,indices);
+  Impl::ScatterTranspose<value_type,ordinal_type,execution_space>::apply(y,yy,indices);
 }
 
 template <typename ordinal_type>
@@ -337,9 +337,9 @@ void multiply(
   const std::vector<ordinal_type>& indices,
   MKLMultiply tag)
 {
-  typedef Kokkos::OpenMP device_type ;
+  typedef Kokkos::OpenMP execution_space ;
   typedef float value_type ;
-  typedef Kokkos::View< float** , Kokkos::LayoutLeft, device_type >  trans_multi_vector_type ;
+  typedef Kokkos::View< float** , Kokkos::LayoutLeft, execution_space >  trans_multi_vector_type ;
 
   MKL_INT n = A.graph.row_map.dimension_0() - 1 ;
   float *A_values = A.values.ptr_on_device() ;
@@ -355,7 +355,7 @@ void multiply(
   MKL_INT ncol = indices.size();
   trans_multi_vector_type xx( "xx" , ncol , n );
   trans_multi_vector_type yy( "yy" , ncol , n );
-  Impl::GatherTranspose<value_type,ordinal_type,device_type>::apply(x,xx,indices);
+  Impl::GatherTranspose<value_type,ordinal_type,execution_space>::apply(x,xx,indices);
   float *x_values = xx.ptr_on_device() ;
   float *y_values = yy.ptr_on_device() ;
 
@@ -364,7 +364,7 @@ void multiply(
              row_beg, row_end, x_values, &ncol, &beta, y_values, &ncol);
 
   // Copy columns out of continguous multivector
-  Impl::ScatterTranspose<value_type,ordinal_type,device_type>::apply(y,yy,indices);
+  Impl::ScatterTranspose<value_type,ordinal_type,execution_space>::apply(y,yy,indices);
 }
 
 //----------------------------------------------------------------------------

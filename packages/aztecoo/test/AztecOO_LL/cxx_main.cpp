@@ -540,6 +540,12 @@ int test_azoo_conv_with_scaling(int conv_option, int scaling_option,
                                                proc_config, Amsr,
                                                external, update_index,
                                                external_index);
+  if (err != 0) {
+    if (verbose) {
+      std::cout << "create_and_transform_simple_matrix returned err="<<err<<std::endl;
+    }
+    return(err);
+  }
 
   int N_update = localN+Amsr->data_org[AZ_N_border];
   double* x_msr = new double[N_update];
@@ -553,6 +559,12 @@ int test_azoo_conv_with_scaling(int conv_option, int scaling_option,
                                            proc_config, Avbr,
                                            external2, update_index2,
                                            external_index2);
+  if (err != 0) {
+    if (verbose) {
+      std::cout << "create_and_transform_simple_matrix returned err="<<err<<std::endl;
+    }
+    return(err);
+  }
   for(int i=0; i<N_update; ++i) {
     x_msr[i] = 1.0;
     b_msr[i] = 0.0;

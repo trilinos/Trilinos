@@ -307,6 +307,27 @@ namespace panzer {
                                                     const std::vector<std::string>& residual_contributions,
                                                     const std::string residual_field_name = "") const;
 
+    /** Adds a Sum evaluator that evaluates the local residual
+     * contributions by summing a vector of fields of integrated
+     * residuals. This version allows you to scale each term.
+     * This is a convenience function for when a user
+     * integrates multiple residual contributions and needs to sum
+     * them together before being loaded into the global matrix.
+     * Almost all implementations do this internally and this function
+     * just automates that process for users.
+     *
+     * \param[in] fm Field Manager to register new evaluator with
+     * \param[in] dof_name Name of DOF that this residual will contribute to
+     * \param[in] residual_contributions Vector of field names that will be summed to produce the residual contributions
+     * \param[in] scale_contributions Vector of scalars for each term in the residual contributions.
+     * \param[in] residualfield_name Name of the evalauted residual field.  This is optional and will use a default value if the string is empty.
+     */ 
+    void buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm,
+                                                    const std::string dof_name,
+                                                    const std::vector<std::string>& residual_contributions,
+                                                    const std::vector<double>& scale_contributions,
+                                                    const std::string residual_field_name = "") const;
+
     //! Returns the parameter list used to build this equation set
     //object.  Useful for passing off input parameter sublists
     //directly to evaluators.

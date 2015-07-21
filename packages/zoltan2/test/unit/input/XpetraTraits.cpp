@@ -121,7 +121,6 @@ int main(int argc, char *argv[])
     Teuchos::VerboseObjectBase::getDefaultOStream();
   Teuchos::EVerbosityLevel v=Teuchos::VERB_EXTREME;
 
-  typedef UserInputForTests uinput_t;
   typedef Tpetra::CrsMatrix<zscalar_t,zlno_t,zgno_t,znode_t> tmatrix_t;
   typedef Tpetra::CrsGraph<zlno_t,zgno_t,znode_t> tgraph_t;
   typedef Tpetra::Vector<zscalar_t,zlno_t,zgno_t,znode_t> tvector_t;
@@ -134,11 +133,11 @@ int main(int argc, char *argv[])
 
   // Create object that can give us test Tpetra and Xpetra input.
 
-  RCP<uinput_t> uinput;
+  RCP<UserInputForTests> uinput;
 
   try{
     uinput = 
-      rcp(new uinput_t(testDataFilePath,std::string("simple"), comm, true));
+      rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("input ")+e.what(), 1);
@@ -177,8 +176,7 @@ int main(int argc, char *argv[])
   
     RCP<const tmatrix_t> newM;
     try{
-      newM = Zoltan2::XpetraTraits<tmatrix_t>::doMigration(
-        rcp_const_cast<const tmatrix_t>(M),
+      newM = Zoltan2::XpetraTraits<tmatrix_t>::doMigration(*M,
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
@@ -216,8 +214,7 @@ int main(int argc, char *argv[])
   
     RCP<const tgraph_t> newG;
     try{
-      newG = Zoltan2::XpetraTraits<tgraph_t>::doMigration(
-        rcp_const_cast<const tgraph_t>(G),
+      newG = Zoltan2::XpetraTraits<tgraph_t>::doMigration(*G,
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
@@ -255,8 +252,7 @@ int main(int argc, char *argv[])
   
     RCP<const tvector_t> newV;
     try{
-      newV = Zoltan2::XpetraTraits<tvector_t>::doMigration(
-        rcp_const_cast<const tvector_t>(V),
+      newV = Zoltan2::XpetraTraits<tvector_t>::doMigration(*V,
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
@@ -294,8 +290,7 @@ int main(int argc, char *argv[])
   
     RCP<const tmvector_t> newMV;
     try{
-      newMV = Zoltan2::XpetraTraits<tmvector_t>::doMigration(
-        rcp_const_cast<const tmvector_t>(MV),
+      newMV = Zoltan2::XpetraTraits<tmvector_t>::doMigration(*MV,
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
@@ -339,8 +334,7 @@ int main(int argc, char *argv[])
   
     RCP<const xmatrix_t> newM;
     try{
-      newM = Zoltan2::XpetraTraits<xmatrix_t>::doMigration(
-        rcp_const_cast<const xmatrix_t>(M),
+      newM = Zoltan2::XpetraTraits<xmatrix_t>::doMigration(*M,
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
@@ -377,8 +371,7 @@ int main(int argc, char *argv[])
   
     RCP<const xgraph_t> newG;
     try{
-      newG = Zoltan2::XpetraTraits<xgraph_t>::doMigration(
-        rcp_const_cast<const xgraph_t>(G),
+      newG = Zoltan2::XpetraTraits<xgraph_t>::doMigration(*G,
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
@@ -415,8 +408,7 @@ int main(int argc, char *argv[])
   
     RCP<const xvector_t> newV;
     try{
-      newV = Zoltan2::XpetraTraits<xvector_t>::doMigration(
-        rcp_const_cast<const xvector_t>(V),
+      newV = Zoltan2::XpetraTraits<xvector_t>::doMigration(*V,
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
@@ -453,8 +445,7 @@ int main(int argc, char *argv[])
   
     RCP<const xmvector_t> newMV;
     try{
-      newMV = Zoltan2::XpetraTraits<xmvector_t>::doMigration(
-        rcp_const_cast<const xmvector_t>(MV),
+      newMV = Zoltan2::XpetraTraits<xmvector_t>::doMigration(*MV,
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
@@ -485,11 +476,11 @@ int main(int argc, char *argv[])
 
   // Create object that can give us test Epetra input.
 
-  RCP<uinput_t> euinput;
+  RCP<UserInputForTests> euinput;
 
   try{
     euinput = 
-      rcp(new uinput_t(testDataFilePath,std::string("simple"), comm, true));
+      rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("epetra input ")+e.what(), 1);
@@ -521,8 +512,7 @@ int main(int argc, char *argv[])
   
     RCP<const ematrix_t> newM;
     try{
-      newM = Zoltan2::XpetraTraits<ematrix_t>::doMigration(
-        rcp_const_cast<const ematrix_t>(M),
+      newM = Zoltan2::XpetraTraits<ematrix_t>::doMigration(*M,
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
@@ -561,8 +551,7 @@ int main(int argc, char *argv[])
   
     RCP<const egraph_t> newG;
     try{
-      newG = Zoltan2::XpetraTraits<egraph_t>::doMigration(
-        rcp_const_cast<const egraph_t>(G),
+      newG = Zoltan2::XpetraTraits<egraph_t>::doMigration(*G,
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
@@ -601,8 +590,7 @@ int main(int argc, char *argv[])
   
     RCP<const evector_t> newV;
     try{
-      newV = Zoltan2::XpetraTraits<evector_t>::doMigration(
-        rcp_const_cast<const evector_t>(V),
+      newV = Zoltan2::XpetraTraits<evector_t>::doMigration(*V,
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){
@@ -641,8 +629,7 @@ int main(int argc, char *argv[])
   
     RCP<const emvector_t> newMV;
     try{
-      newMV = Zoltan2::XpetraTraits<emvector_t>::doMigration(
-        rcp_const_cast<const emvector_t>(MV),
+      newMV = Zoltan2::XpetraTraits<emvector_t>::doMigration(*MV,
         localNumRows, newRowIds.getRawPtr());
     }
     catch(std::exception &e){

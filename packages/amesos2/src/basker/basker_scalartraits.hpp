@@ -29,7 +29,7 @@
 #ifndef BASKER_SCALARTRAITS_HPP
 #define BASKER_SCALARTRAITS_HPP
 
-#define SCALAR_ABS(x) (((x) < 0) ? -(x) : (x))
+#define MY_SCALAR_ABS(x) (((x) < 0) ? -(x) : (x))
 
 
 template <class T>
@@ -51,9 +51,9 @@ struct BASKER_ScalarTraits<double>
   static inline double reciprocal(double c){return 1.0/c;}
   static inline double divide(double a, double b){return a/b;}
   static inline magnitudeType approxABS(double a)
-  { return (SCALAR_ABS(a));}
+  { return (MY_SCALAR_ABS(a));}
   static inline magnitudeType abs(double a)
-  { return (SCALAR_ABS(a));}
+  { return (MY_SCALAR_ABS(a));}
   static inline bool gt (double a, double b){return (a>b);}
  
 };
@@ -66,9 +66,9 @@ struct BASKER_ScalarTraits<float>
   static inline float reciprocal(float c){return 1.0/c;}
   static inline float divide(float a, float b){return a/b;}
   static inline magnitudeType approxABS(float a)
-  { return (SCALAR_ABS(a));}
+  { return (MY_SCALAR_ABS(a));}
   static inline magnitudeType abs(float a)
-  { return (SCALAR_ABS(a));}
+  { return (MY_SCALAR_ABS(a));}
   static inline bool gt(float a, float b){return (a>b);}
 
   
@@ -90,7 +90,7 @@ struct BASKER_ScalarTraits< std::complex<T> >
         ComplexT ret ;
         cr = (Teuchos::ScalarTraits<ComplexT>::real(c)) ;
         ci = (Teuchos::ScalarTraits<ComplexT>::imag(c)) ;
-        if (SCALAR_ABS (cr) >= SCALAR_ABS (ci))
+        if (MY_SCALAR_ABS (cr) >= MY_SCALAR_ABS (ci))
         {
             r = ci / cr ;
             den = cr + r * ci ;
@@ -114,7 +114,7 @@ struct BASKER_ScalarTraits< std::complex<T> >
         bi = (Teuchos::ScalarTraits<ComplexT>::imag(b)) ;
         ar = (Teuchos::ScalarTraits<ComplexT>::real(a)) ;
         ai = (Teuchos::ScalarTraits<ComplexT>::imag(a)) ;
-        if (SCALAR_ABS (br) >= SCALAR_ABS (bi))
+        if (MY_SCALAR_ABS (br) >= MY_SCALAR_ABS (bi))
         {
             r = bi / br ;
             den = br + r * bi ;
@@ -131,8 +131,8 @@ struct BASKER_ScalarTraits< std::complex<T> >
 
     static inline magnitudeType approxABS (ComplexT a)
     {
-        return ( SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::real(a)) +
-                    SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::imag(a)) ) ;
+        return ( MY_SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::real(a)) +
+                    MY_SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::imag(a)) ) ;
     }
 
     static inline magnitudeType abs (ComplexT a)
@@ -140,8 +140,8 @@ struct BASKER_ScalarTraits< std::complex<T> >
         T r, ar, ai ;
         magnitudeType s;
 
-        ar = SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::real(a)) ;
-        ai = SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::imag(a)) ;
+        ar = MY_SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::real(a)) ;
+        ai = MY_SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::imag(a)) ;
         if (ar >= ai)
         {
             if (ar + ai == ar)
@@ -191,7 +191,7 @@ struct BASKER_ScalarTraits< std::complex<T> >
         ComplexT ret ;
         cr = (std::real(c)) ;
         ci = (std::imag(c)) ;
-        if (SCALAR_ABS (cr) >= SCALAR_ABS (ci))
+        if (MY_SCALAR_ABS (cr) >= MY_SCALAR_ABS (ci))
         {
             r = ci / cr ;
             den = cr + r * ci ;
@@ -215,7 +215,7 @@ struct BASKER_ScalarTraits< std::complex<T> >
         bi = (std::imag(b)) ;
         ar = (std::real(a)) ;
         ai = (std::imag(a)) ;
-        if (SCALAR_ABS (br) >= SCALAR_ABS (bi))
+        if (MY_SCALAR_ABS (br) >= MY_SCALAR_ABS (bi))
         {
             r = bi / br ;
             den = br + r * bi ;
@@ -232,8 +232,8 @@ struct BASKER_ScalarTraits< std::complex<T> >
 
     static inline magnitudeType approxABS (ComplexT a)
     {
-        return ( SCALAR_ABS (std::real(a)) +
-                    SCALAR_ABS (std::imag(a)) ) ;
+        return ( MY_SCALAR_ABS (std::real(a)) +
+                    MY_SCALAR_ABS (std::imag(a)) ) ;
     }
 
     static inline magnitudeType abs (ComplexT a)
@@ -241,8 +241,8 @@ struct BASKER_ScalarTraits< std::complex<T> >
         T r, ar, ai ;
         magnitudeType s;
 
-        ar = SCALAR_ABS (std::real(a)) ;
-        ai = SCALAR_ABS (std::imag(a)) ;
+        ar = MY_SCALAR_ABS (std::real(a)) ;
+        ai = MY_SCALAR_ABS (std::imag(a)) ;
         if (ar >= ai)
         {
             if (ar + ai == ar)

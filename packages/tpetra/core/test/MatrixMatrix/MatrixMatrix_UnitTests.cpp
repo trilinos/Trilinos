@@ -79,7 +79,7 @@ namespace {
   using Teuchos::FancyOStream;
   using Teuchos::ParameterList;
   using Tpetra::RowMatrixTransposer;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+  typedef Tpetra::Details::DefaultTypes::node_type node_type;
 
   typedef CrsMatrix<double, int, int, node_type> Matrix_t;
 

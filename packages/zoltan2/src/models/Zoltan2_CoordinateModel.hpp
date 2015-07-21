@@ -86,7 +86,7 @@ public:
   ////////////////////////////////////////////////////
 
   // VectorAdapter
-  CoordinateModel(const VectorAdapter<user_t> *ia,
+  CoordinateModel(const RCP<const VectorAdapter<user_t> > &ia,
                   const RCP<const Environment> &env,
                   const RCP<const Comm<int> > &comm,
                   modelFlag_t &flags):
@@ -95,11 +95,11 @@ public:
                   xyz_(), userNumWeights_(0), weights_()
   {
     typedef VectorAdapter<user_t> adapterWithCoords_t;
-    sharedConstructor<adapterWithCoords_t>(ia, env, comm, flags);
+    sharedConstructor<adapterWithCoords_t>(&(*ia), env, comm, flags);
   }
 
   // MatrixAdapter
-  CoordinateModel(const MatrixAdapter<user_t,userCoord_t> *ia,
+  CoordinateModel(const RCP<const MatrixAdapter<user_t,userCoord_t> > &ia,
                   const RCP<const Environment> &env,
                   const RCP<const Comm<int> > &comm,
                   modelFlag_t &flags) :
@@ -117,7 +117,7 @@ public:
   }
 
   // GraphAdapter
-  CoordinateModel(const GraphAdapter<user_t,userCoord_t> *ia,
+  CoordinateModel(const RCP<const GraphAdapter<user_t,userCoord_t> > &ia,
                   const RCP<const Environment> &env,
                   const RCP<const Comm<int> > &comm,
                   modelFlag_t &flags) :
@@ -135,7 +135,7 @@ public:
   }
 
   // MeshAdapter
-  CoordinateModel(const MeshAdapter<user_t> *ia,
+  CoordinateModel(const RCP<const MeshAdapter<user_t> > &ia,
 		  const RCP<const Environment> &env,
 		  const RCP<const Comm<int> > &comm,
 		  modelFlag_t &flags) :
@@ -144,11 +144,11 @@ public:
                   xyz_(), userNumWeights_(0), weights_()
   {
     typedef MeshAdapter<user_t> adapterWithCoords_t;
-    sharedConstructor<adapterWithCoords_t>(ia, env, comm, flags);
+    sharedConstructor<adapterWithCoords_t>(&(*ia), env, comm, flags);
   }
 
   // IdentifierAdapter
-  CoordinateModel(const IdentifierAdapter<user_t> *ia,
+  CoordinateModel(const RCP<const IdentifierAdapter<user_t> > &ia,
                   const RCP<const Environment> &env,
                   const RCP<const Comm<int> > &comm,
                   modelFlag_t &flags)

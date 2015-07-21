@@ -5,52 +5,80 @@
 /// \file trsm.hpp
 /// \brief Sparse triangular solve on given sparse patterns and multiple rhs.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
- 
-namespace Example { 
+
+namespace Example {
 
   using namespace std;
 
-  template<int ArgSide,int ArgUplo, int ArgTrans, int ArgAlgo> 
+  template<int ArgSide,int ArgUplo, int ArgTrans, int ArgAlgo>
   struct Trsm {
-    template<typename ScalarType,
-             typename CrsMatViewType>
-    KOKKOS_INLINE_FUNCTION
-    static int invoke(const int diag,
-                      const ScalarType alpha,
-                      const CrsMatViewType A,
-                      const CrsMatViewType B);
 
-    template<typename ScalarType,
-             typename CrsMatViewType>
+    // data-parallel interface
+    // =======================
+    template<typename ParallelForType,
+             typename ScalarType,
+             typename ExecViewTypeA,
+             typename ExecViewTypeB>
+    KOKKOS_INLINE_FUNCTION
+    static int invoke(typename ExecViewTypeA::policy_type &policy,
+                      const typename ExecViewTypeA::policy_type::member_type &member,
+                      const int diagA,
+                      const ScalarType alpha,
+                      ExecViewTypeA &A,
+                      ExecViewTypeB &B);
+
+    // task-data parallel interface
+    // ============================
+    template<typename ParallelForType,
+             typename ScalarType,
+             typename ExecViewTypeA,
+             typename ExecViewTypeB>
     class TaskFunctor {
+    public:
+      typedef typename ExecViewTypeA::policy_type policy_type;
+      typedef typename policy_type::member_type member_type;
+      typedef int value_type;
+
     private:
-      int _diag;
+      int _diagA;
       ScalarType _alpha;
-      CrsMatViewType _A, _B;
+      ExecViewTypeA _A;
+      ExecViewTypeB _B;
+
+      policy_type &_policy;
 
     public:
-      TaskFunctor(const int diag,
+      TaskFunctor(const int diagA,
                   const ScalarType alpha,
-                  const CrsMatViewType A,
-                  const CrsMatViewType B)
-        : _diag(diag),
+                  const ExecViewTypeA A,
+                  const ExecViewTypeB B)
+        : _diagA(diagA),
           _alpha(alpha),
           _A(A),
-          _B(B) 
-      { } 
+          _B(B),
+          _policy(ExecViewTypeA::task_factory_type::Policy())
+      { }
 
       string Label() const { return "Trsm"; }
-      
-      typedef int value_type;
+
+      // task execution
       void apply(value_type &r_val) {
-        r_val = Trsm::invoke(_diag, _alpha, _A, _B);
+        r_val = Trsm::invoke<ParallelForType>(_policy, _policy.member_single(),
+                                              _diagA, _alpha, _A, _B);
       }
+
+      // task-data execution
+      void apply(const member_type &member, value_type &r_val) {
+        r_val = Trsm::invoke<ParallelForType>(_policy, member, 
+                                              _diagA, _alpha, _A, _B);
+      }
+
     };
   };
-  
+
 }
 
-#include "trsm_r_l_t.hpp"
-#include "trsm_l_u_t.hpp"
+#include "trsm_l_u_nt.hpp"
+#include "trsm_l_u_ct.hpp"
 
 #endif

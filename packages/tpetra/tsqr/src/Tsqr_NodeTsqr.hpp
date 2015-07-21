@@ -116,12 +116,6 @@ namespace TSQR {
     /// methods.
     virtual bool ready() const = 0;
 
-    /// \brief Cache size hint (in bytes) used for the factorization.
-    ///
-    /// This method is deprecated, because the name is misleading.
-    /// Please call \c cache_size_hint() instead.
-    virtual size_t TEUCHOS_DEPRECATED cache_block_size() const = 0;
-
     //! Cache size hint (in bytes) used for the factorization.
     virtual size_t cache_size_hint() const = 0;
 

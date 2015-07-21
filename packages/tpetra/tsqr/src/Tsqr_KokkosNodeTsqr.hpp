@@ -1445,10 +1445,6 @@ namespace TSQR {
       return combine_.QR_produces_R_factor_with_nonnegative_diagonal ();
     }
 
-    size_t TEUCHOS_DEPRECATED cache_block_size() const {
-      return strategy_.cache_size_hint();
-    }
-
     size_t cache_size_hint() const {
       return strategy_.cache_size_hint();
     }

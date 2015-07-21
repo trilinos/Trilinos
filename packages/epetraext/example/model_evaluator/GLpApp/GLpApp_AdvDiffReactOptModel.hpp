@@ -167,7 +167,7 @@ public:
 
   /** \brief Constructor. */
   AdvDiffReactOptModel(
-    const Teuchos::RefCountPtr<const Epetra_Comm>  &comm
+    const Teuchos::RCP<const Epetra_Comm>  &comm
     ,const double                                  beta
     ,const double                                  len_x     // Ignored if meshFile is *not* empty
     ,const double                                  len_y     // Ignored if meshFile is *not* empty
@@ -183,41 +183,41 @@ public:
     );
 
   /** \brief . */
-  void set_q( Teuchos::RefCountPtr<const Epetra_Vector> const& q );
+  void set_q( Teuchos::RCP<const Epetra_Vector> const& q );
 
   /** \brief . */
-  Teuchos::RefCountPtr<GLpApp::GLpYUEpetraDataPool> getDataPool();
+  Teuchos::RCP<GLpApp::GLpYUEpetraDataPool> getDataPool();
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_MultiVector> get_B_bar() const;
+  Teuchos::RCP<const Epetra_MultiVector> get_B_bar() const;
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_x_map() const;
+  Teuchos::RCP<const Epetra_Map> get_x_map() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_f_map() const;
+  Teuchos::RCP<const Epetra_Map> get_f_map() const;
   /** \breif . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_p_map(int l) const;
+  Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
   /** \breif . */
-  Teuchos::RefCountPtr<const Epetra_Map> get_g_map(int j) const;
+  Teuchos::RCP<const Epetra_Map> get_g_map(int j) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
+  Teuchos::RCP<const Epetra_Vector> get_x_init() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_p_init(int l) const;
+  Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_x_lower_bounds() const;
+  Teuchos::RCP<const Epetra_Vector> get_x_lower_bounds() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_x_upper_bounds() const;
+  Teuchos::RCP<const Epetra_Vector> get_x_upper_bounds() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_p_lower_bounds(int l) const;
+  Teuchos::RCP<const Epetra_Vector> get_p_lower_bounds(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const Epetra_Vector> get_p_upper_bounds(int l) const;
+  Teuchos::RCP<const Epetra_Vector> get_p_upper_bounds(int l) const;
   /** \brief . */
-  Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
+  Teuchos::RCP<Epetra_Operator> create_W() const;
   /** \brief . */
-  Teuchos::RefCountPtr<Epetra_Operator> create_DfDp_op(int l) const;
+  Teuchos::RCP<Epetra_Operator> create_DfDp_op(int l) const;
   /** \brief . */
   InArgs createInArgs() const;
   /** \brief . */
@@ -232,8 +232,8 @@ private:
   // /////////////////////////////////////
   // Private types
 
-  typedef Teuchos::Array<Teuchos::RefCountPtr<const Epetra_Map> >  RCP_Eptra_Map_Array_t;
-  typedef Teuchos::Array<Teuchos::RefCountPtr<Epetra_Vector> >     RCP_Eptra_Vector_Array_t;
+  typedef Teuchos::Array<Teuchos::RCP<const Epetra_Map> >  RCP_Eptra_Map_Array_t;
+  typedef Teuchos::Array<Teuchos::RCP<Epetra_Vector> >     RCP_Eptra_Vector_Array_t;
 
   // /////////////////////////////////////
   // Private member data
@@ -246,29 +246,29 @@ private:
 
   bool      isInitialized_;
 
-  Teuchos::RefCountPtr<GLpApp::GLpYUEpetraDataPool>   dat_;
+  Teuchos::RCP<GLpApp::GLpYUEpetraDataPool>   dat_;
   int                                                 np_;
-  Teuchos::RefCountPtr<const Epetra_Vector>           q_;
+  Teuchos::RCP<const Epetra_Vector>           q_;
 
-  Teuchos::RefCountPtr<const Epetra_Map>              map_p_bar_;
-  Teuchos::RefCountPtr<Epetra_MultiVector>            B_bar_;
+  Teuchos::RCP<const Epetra_Map>              map_p_bar_;
+  Teuchos::RCP<Epetra_MultiVector>            B_bar_;
 
-  Teuchos::RefCountPtr<const Epetra_Comm>  epetra_comm_;
-  Teuchos::RefCountPtr<const Epetra_Map>   map_x_;
+  Teuchos::RCP<const Epetra_Comm>  epetra_comm_;
+  Teuchos::RCP<const Epetra_Map>   map_x_;
   RCP_Eptra_Map_Array_t                    map_p_;
-  Teuchos::RefCountPtr<const Epetra_Map>   map_f_;
-  Teuchos::RefCountPtr<const Epetra_Map>   map_g_;
+  Teuchos::RCP<const Epetra_Map>   map_f_;
+  Teuchos::RCP<const Epetra_Map>   map_g_;
 
-  Teuchos::RefCountPtr<Epetra_Vector> x0_;
-  Teuchos::RefCountPtr<Epetra_Vector> xL_;
-  Teuchos::RefCountPtr<Epetra_Vector> xU_;
+  Teuchos::RCP<Epetra_Vector> x0_;
+  Teuchos::RCP<Epetra_Vector> xL_;
+  Teuchos::RCP<Epetra_Vector> xU_;
   RCP_Eptra_Vector_Array_t            p0_;
   RCP_Eptra_Vector_Array_t            pL_;
   RCP_Eptra_Vector_Array_t            pU_;
-  Teuchos::RefCountPtr<Epetra_Vector> gL_;
-  Teuchos::RefCountPtr<Epetra_Vector> gU_;
+  Teuchos::RCP<Epetra_Vector> gL_;
+  Teuchos::RCP<Epetra_Vector> gU_;
 
-  Teuchos::RefCountPtr<Epetra_CrsGraph>  W_graph_;
+  Teuchos::RCP<Epetra_CrsGraph>  W_graph_;
 
 };
 

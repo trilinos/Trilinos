@@ -20,7 +20,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_FADTYPE
   PANZER_FADTYPE
   "Build with debug code enabled."
-  "Sacado::ELRCacheFad::DFad<RealType>" )
+  "Sacado::Fad::DFad<RealType>" )
 
 # optional package specific configurations
 ############################################################
@@ -31,11 +31,11 @@ ELSE()
    GLOBAL_SET(HAVE_IOSS OFF)
 ENDIF()
 
-IF(${PACKAGE_NAME}_ENABLE_Stokhos)
-   GLOBAL_SET(HAVE_STOKHOS ON)
-ELSE()
+#IF(${PACKAGE_NAME}_ENABLE_Stokhos)
+#   GLOBAL_SET(HAVE_STOKHOS ON)
+#ELSE()
    GLOBAL_SET(HAVE_STOKHOS OFF)
-ENDIF()
+#ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_Teko)
    GLOBAL_SET(HAVE_TEKO ON)
@@ -96,7 +96,19 @@ COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_PAPI_SUPPORT
   )
 
 # Explicit Template Instantiation
-TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
+
+# ALWAYS FORCE ETI ON FOR PANZER!  ETI in Panzer is for evaluation
+# types.  For now we set flags, until we can remove all the ETI code
+# for evaluation types.
+# TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
+# Copy of above function with hard coded default of ON. The above
+# function is hard coded to the Project level default.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION
+  HAVE_${PACKAGE_NAME_UC}_EXPLICIT_INSTANTIATION
+  "Enable the use of explicit template instantiation."
+  ON
+  )
 SET(${PARENT_PACKAGE_NAME}_TEMPLATE_DECL_EXT "_decl.hpp")
 SET(${PARENT_PACKAGE_NAME}_TEMPLATE_DEF_EXT "_impl.hpp")
 

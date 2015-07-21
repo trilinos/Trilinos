@@ -49,6 +49,8 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_config.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_Workset_Builder.hpp"
@@ -97,6 +99,8 @@ int main(int argc,char * argv[])
    using Teuchos::rcp_dynamic_cast;
    using panzer::StrPureBasisPair;
    using panzer::StrPureBasisComp;
+
+   PHX::InitializeKokkosDevice();
 
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -318,6 +322,8 @@ int main(int argc,char * argv[])
 
    // all done!
    /////////////////////////////////////////////////////////////
+
+   PHX::FinalizeKokkosDevice();
 
    return 0;
 }

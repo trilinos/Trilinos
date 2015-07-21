@@ -242,9 +242,8 @@ Basker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterL
 
   //RCP<const Teuchos::ParameterList> valid_params = getValidParameters_impl();
   /*To Do --- add support for parameters */
-
-
-
+  if(parameterList->isParameter("Trans"))
+    {}
 }
 
 template <class Matrix, class Vector>
@@ -273,9 +272,13 @@ Basker<Matrix,Vector>::loadA_impl(EPhase current_phase)
 {
   using Teuchos::as;
 
+  if(current_phase == SOLVE) return (false);
+
 #ifdef HAVE_AMESOS2_TIMERS
   Teuchos::TimeMonitor convTimer(this->timers_.mtxConvTime_);
 #endif
+
+
 
   // Only the root image needs storage allocated
   if( this->root_ ){

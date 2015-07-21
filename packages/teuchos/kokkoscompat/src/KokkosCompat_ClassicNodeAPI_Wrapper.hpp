@@ -21,12 +21,16 @@ namespace Kokkos {
 namespace Compat {
 
 /// \brief Node that wraps a new Kokkos execution space.
-/// \tparam DeviceType The type of the Kokkos execution space to wrap.
+/// \tparam ExecutionSpace The type of the Kokkos execution space to wrap.
+/// \tparam MemorySpace The Kokkos memory space in which to work.
+///   Defaults to the default memory space of ExecutionSpace.
 /// \ingroup kokkos_node_api
-template<class DeviceType>
+template<class ExecutionSpace,
+         class MemorySpace = typename ExecutionSpace::memory_space>
 class KokkosDeviceWrapperNode {
 public:
-  typedef DeviceType device_type;
+  typedef ExecutionSpace execution_space;
+  typedef MemorySpace memory_space;
 
   /// \brief This is NOT a "classic" Node type.
   ///
@@ -53,8 +57,8 @@ public:
 
     if (verbose) {
       std::ostream& out = std::cout;
-      out << "DeviceWrapperNode with DeviceType = "
-          << typeid (DeviceType).name () << " initializing with "
+      out << "DeviceWrapperNode with ExecutionSpace = "
+          << typeid (ExecutionSpace).name () << " initializing with "
           << "\"Num Threads\" = " << curNumThreads
           << ", \"Num NUMA\" = " << curNumNUMA
           << ", \"Num CoresPerNUMA\" = " << curNumCoresPerNUMA
@@ -63,9 +67,9 @@ public:
     if (count == 0) {
       init (curNumThreads, curNumNUMA, curNumCoresPerNUMA, curDevice);
       TEUCHOS_TEST_FOR_EXCEPTION(
-        ! DeviceType::is_initialized (), std::logic_error,
-        "Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType = "
-        << typeid (DeviceType).name () << "> constructor: Kokkos execution "
+        ! ExecutionSpace::is_initialized (), std::logic_error,
+        "Kokkos::Compat::KokkosDeviceWrapperNode<ExecutionSpace = "
+        << typeid (ExecutionSpace).name () << "> constructor: Kokkos execution "
         << "space initialization failed.");
     }
     count++;
@@ -81,8 +85,8 @@ public:
 
     if (verbose) {
       std::ostream& out = std::cout;
-      out << "DeviceWrapperNode with DeviceType = "
-          << typeid (DeviceType).name () << " initializing with "
+      out << "DeviceWrapperNode with ExecutionSpace = "
+          << typeid (ExecutionSpace).name () << " initializing with "
           << "\"Num Threads\" = " << curNumThreads
           << ", \"Num NUMA\" = " << curNumNUMA
           << ", \"Num CoresPerNUMA\" = " << curNumCoresPerNUMA
@@ -91,9 +95,9 @@ public:
     if (count == 0) {
       init (curNumThreads, curNumNUMA, curNumCoresPerNUMA, curDevice);
       TEUCHOS_TEST_FOR_EXCEPTION(
-        ! DeviceType::is_initialized (), std::logic_error,
-        "Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType = "
-        << typeid (DeviceType).name () << "> constructor: Kokkos execution "
+        ! ExecutionSpace::is_initialized (), std::logic_error,
+        "Kokkos::Compat::KokkosDeviceWrapperNode<ExecutionSpace = "
+        << typeid (ExecutionSpace).name () << "> constructor: Kokkos execution "
         << "space initialization failed.");
     }
     count++;
@@ -132,7 +136,8 @@ public:
   {
     Teuchos::ParameterList params;
     params.set ("Verbose", 0);
-    params.set ("Num Threads", 1);
+    // -1 says "Let Kokkos pick"
+    params.set ("Num Threads", -1);
     params.set ("Num NUMA", -1);
     params.set ("Num CoresPerNUMA", -1);
     params.set ("Device", 0);
@@ -143,7 +148,7 @@ public:
 
   template <class WDP>
   struct FunctorParallelFor {
-    typedef DeviceType device_type;
+    typedef ExecutionSpace execution_space;
 
     const WDP _c;
     const int _beg;
@@ -167,7 +172,7 @@ public:
 
   template <class WDP>
   struct FunctorParallelReduce {
-    typedef DeviceType device_type;
+    typedef ExecutionSpace execution_space;
     typedef typename WDP::ReductionType value_type;
 
     WDP _c;
@@ -205,7 +210,7 @@ public:
     return globalResult;
   }
 
-  inline void sync () const { DeviceType::fence (); }
+  inline void sync () const { ExecutionSpace::fence (); }
 
   //@{
   //! \name Memory management
@@ -234,7 +239,7 @@ public:
   Teuchos::ArrayRCP<T> allocBuffer(size_t size) {
     Teuchos::ArrayRCP<T> buff;
     if (size > 0) {
-      Kokkos::View<T*, DeviceType> view ("ANodeBuffer",size);
+      Kokkos::View<T*, ExecutionSpace> view ("ANodeBuffer",size);
       buff = Teuchos::arcp (view.ptr_on_device (), 0, size,
                             deallocator (view), false);
     }

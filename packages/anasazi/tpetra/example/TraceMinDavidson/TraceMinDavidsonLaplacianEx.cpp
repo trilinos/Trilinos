@@ -49,17 +49,15 @@
   // Specify types used in this example
   //                                   
   typedef double                                                  Scalar;
-  typedef Teuchos::ScalarTraits<Scalar>                           SCT;
-  typedef SCT::magnitudeType                                      Magnitude;
   typedef int                                                     Ordinal;  
   typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform; 
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;     
   typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,Node>          CrsMatrix;
   typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node>             Vector;
-  typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node>        MV;
-  typedef Tpetra::Operator<Scalar,Ordinal,Ordinal,Node>           OP;
-  typedef Anasazi::MultiVecTraits<Scalar, MV>                     MVT;
-  typedef Anasazi::OperatorTraits<Scalar, MV, OP>                 OPT;
+  typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node>        TMV;
+  typedef Tpetra::Operator<Scalar,Ordinal,Ordinal,Node>           TOP;
+  typedef Anasazi::MultiVecTraits<Scalar, TMV>                     TMVT;
+  typedef Anasazi::OperatorTraits<Scalar, TMV, TOP>                 TOPT;
 
 void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const bool normalized, RCP<CrsMatrix>& L, RCP<Vector>& auxVec);
 
@@ -158,14 +156,14 @@ int main(int argc, char *argv[]) {
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
   //
-  RCP<MV> ivec = Teuchos::rcp( new MV(K->getRowMap(), blockSize) );
-  MVT::MvRandom( *ivec );
+  RCP<TMV> ivec = Teuchos::rcp( new TMV(K->getRowMap(), blockSize) );
+  TMVT::MvRandom( *ivec );
 
   //
   // Create the eigenproblem
   //
-  RCP<Anasazi::BasicEigenproblem<Scalar,MV,OP> > MyProblem = 
-      Teuchos::rcp( new Anasazi::BasicEigenproblem<Scalar,MV,OP>(K, ivec) );
+  RCP<Anasazi::BasicEigenproblem<Scalar,TMV,TOP> > MyProblem = 
+      Teuchos::rcp( new Anasazi::BasicEigenproblem<Scalar,TMV,TOP>(K, ivec) );
   
   //
   // Inform the eigenproblem that the matrix pencil (K,M) is symmetric
@@ -223,7 +221,7 @@ int main(int argc, char *argv[]) {
   //
   // Initialize the TraceMin-Davidson solver
   //
-  Anasazi::Experimental::TraceMinDavidsonSolMgr<Scalar, MV, OP> MySolverMgr(MyProblem, MyPL);
+  Anasazi::Experimental::TraceMinDavidsonSolMgr<Scalar, TMV, TOP> MySolverMgr(MyProblem, MyPL);
  
   //
   // Solve the problem to the specified tolerances
@@ -238,9 +236,9 @@ int main(int argc, char *argv[]) {
   //
   // Get the eigenvalues and eigenvectors from the eigenproblem
   //
-  Anasazi::Eigensolution<Scalar,MV> sol = MyProblem->getSolution();
+  Anasazi::Eigensolution<Scalar,TMV> sol = MyProblem->getSolution();
   std::vector<Anasazi::Value<Scalar> > evals = sol.Evals;
-  RCP<MV> evecs = sol.Evecs;
+  RCP<TMV> evecs = sol.Evecs;
   int numev = sol.numVecs;
   
   //
@@ -249,14 +247,14 @@ int main(int argc, char *argv[]) {
   if (numev > 0) {
     
     Teuchos::SerialDenseMatrix<int,Scalar> T(numev,numev);
-    MV tempvec(K->getRowMap(), MVT::GetNumberVecs( *evecs ));
+    TMV tempvec(K->getRowMap(), TMVT::GetNumberVecs( *evecs ));
     std::vector<Scalar> normR(sol.numVecs);
-    MV Kvec( K->getRowMap(), MVT::GetNumberVecs( *evecs ) );
+    TMV Kvec( K->getRowMap(), TMVT::GetNumberVecs( *evecs ) );
 
-    OPT::Apply( *K, *evecs, Kvec ); 
-    MVT::MvTransMv( 1.0, Kvec, *evecs, T );
-    MVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, Kvec );
-    MVT::MvNorm( Kvec, normR );
+    TOPT::Apply( *K, *evecs, Kvec ); 
+    TMVT::MvTransMv( 1.0, Kvec, *evecs, T );
+    TMVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, Kvec );
+    TMVT::MvNorm( Kvec, normR );
   
     if (myRank == 0) {
       cout.setf(std::ios_base::right, std::ios_base::adjustfield);
@@ -316,6 +314,7 @@ void formLaplacian(const RCP<const CrsMatrix>& A, const bool weighted, const boo
   //
   // Set a few convenient constants
   //
+  typedef Teuchos::ScalarTraits<Scalar>                           SCT;
   Scalar ONE = SCT::one();
   Scalar ZERO = SCT::zero();
 

@@ -481,6 +481,12 @@ FAD_UNARYOP_MACRO(atanh,
                   ATanhOp,
                   a = value_type(1)/(value_type(1)-v*v),
                   std::atanh(v))
+#ifdef HAVE_SACADO_CXX11
+FAD_UNARYOP_MACRO(cbrt,
+                  CbrtOp,
+                  a = value_type(1)/(value_type(3)*std::cbrt(v*v)),
+                  std::cbrt(v))
+#endif
 
 #undef FAD_UNARYOP_MACRO
 

@@ -197,7 +197,7 @@ buildDiagonalMatrix(typename MatrixType::ordinal_type nrow,
 // Kernel to set diagonal of a matrix to prescribed values
 template <typename MatrixType>
 struct ReplaceDiagonalValuesKernel {
-  typedef typename MatrixType::device_type device_type;
+  typedef typename MatrixType::execution_space execution_space;
   typedef typename MatrixType::size_type size_type;
   typedef typename MatrixType::value_type value_type;
   typedef typename MatrixType::ordinal_type ordinal_type;
@@ -245,7 +245,7 @@ struct ReplaceDiagonalValuesKernel {
 // Kernel to add values to the diagonal of a matrix
 template <typename MatrixType>
 struct AddDiagonalValuesKernel {
-  typedef typename MatrixType::device_type device_type;
+  typedef typename MatrixType::execution_space execution_space;
   typedef typename MatrixType::size_type size_type;
   typedef typename MatrixType::value_type value_type;
   typedef typename MatrixType::ordinal_type ordinal_type;
@@ -294,7 +294,7 @@ struct AddDiagonalValuesKernel {
 // adds to the same row (checks atomic really works)
 template <typename MatrixType>
 struct AddDiagonalValuesAtomicKernel {
-  typedef typename MatrixType::device_type device_type;
+  typedef typename MatrixType::execution_space execution_space;
   typedef typename MatrixType::size_type size_type;
   typedef typename MatrixType::value_type value_type;
   typedef typename MatrixType::ordinal_type ordinal_type;
@@ -351,8 +351,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_MP, ReplaceValues, MatrixScalar )
 {
   typedef typename MatrixScalar::ordinal_type Ordinal;
-  typedef typename MatrixScalar::device_type Device;
-  typedef Kokkos::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
+  typedef typename MatrixScalar::execution_space Device;
+  typedef KokkosSparse::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
 
   // Build diagonal matrix
   Ordinal nrow = 10;
@@ -370,8 +370,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_MP, SumIntoValues, MatrixScalar )
 {
   typedef typename MatrixScalar::ordinal_type Ordinal;
-  typedef typename MatrixScalar::device_type Device;
-  typedef Kokkos::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
+  typedef typename MatrixScalar::execution_space Device;
+  typedef KokkosSparse::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
 
   // Build diagonal matrix
   Ordinal nrow = 10;
@@ -389,8 +389,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_MP, SumIntoValuesAtomic, MatrixScalar )
 {
   typedef typename MatrixScalar::ordinal_type Ordinal;
-  typedef typename MatrixScalar::device_type Device;
-  typedef Kokkos::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
+  typedef typename MatrixScalar::execution_space Device;
+  typedef KokkosSparse::CrsMatrix<MatrixScalar,Ordinal,Device> Matrix;
 
   // Build diagonal matrix
   Ordinal nrow = 10;
@@ -407,17 +407,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
 template <typename VectorType, typename Multiply>
 bool test_embedded_vector(const typename VectorType::ordinal_type nGrid,
                           const typename VectorType::ordinal_type stoch_length,
-                          Kokkos::DeviceConfig dev_config,
+                          KokkosSparse::DeviceConfig dev_config,
                           Multiply multiply_op,
                           Teuchos::FancyOStream& out)
 {
   typedef typename VectorType::ordinal_type ordinal_type;
   typedef typename VectorType::value_type scalar_type;
   typedef typename VectorType::storage_type storage_type;
-  typedef typename storage_type::device_type device_type;
+  typedef typename storage_type::execution_space execution_space;
   typedef Kokkos::LayoutRight Layout;
-  typedef Kokkos::View< VectorType*, Layout, device_type > block_vector_type;
-  typedef Kokkos::CrsMatrix< VectorType, ordinal_type, device_type > block_matrix_type;
+  typedef Kokkos::View< VectorType*, Layout, execution_space > block_vector_type;
+  typedef KokkosSparse::CrsMatrix< VectorType, ordinal_type, execution_space > block_matrix_type;
   typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
   typedef typename block_matrix_type::values_type matrix_values_type;
 
@@ -538,7 +538,7 @@ struct Kokkos_MV_Multiply_Op {
   void operator() (const Matrix& A,
                    const InputVector& x,
                    OutputVector& y) const {
-    Kokkos::MV_Multiply(y, A, x);
+    KokkosSparse::spmv("N", typename Matrix::value_type(1.0) , A, x, typename Matrix::value_type(0.0), y);
   }
 };
 

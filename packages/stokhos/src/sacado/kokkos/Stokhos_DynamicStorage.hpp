@@ -62,7 +62,8 @@ namespace Stokhos {
 
     typedef ordinal_t ordinal_type;
     typedef value_t value_type;
-    typedef device_t device_type;
+    typedef typename device_t::execution_space execution_space;
+    typedef typename device_t::memory_space memory_space;
     typedef value_type& reference;
     typedef volatile value_type& volatile_reference;
     typedef const value_type& const_reference;
@@ -71,7 +72,7 @@ namespace Stokhos {
     typedef volatile value_type* volatile_pointer;
     typedef const value_type* const_pointer;
     typedef const volatile value_type* const_volatile_pointer;
-    typedef Stokhos::DynArrayTraits<value_type,device_type> ds;
+    typedef Stokhos::DynArrayTraits<value_type,execution_space> ds;
 
     //! Turn DynamicStorage into a meta-function class usable with mpl::apply
     template <typename ord_t, typename val_t = value_t , typename dev_t = device_t >
@@ -81,22 +82,49 @@ namespace Stokhos {
 
     template <int N>
     struct apply_N {
-      typedef DynamicStorage<ordinal_type,value_type,device_type> type;
+      typedef DynamicStorage<ordinal_type,value_type,device_t> type;
     };
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
-    DynamicStorage(const ordinal_type& sz,
+    DynamicStorage(const ordinal_type& sz = 1,
                    const value_type& x = value_type(0.0)) :
       sz_(sz), is_view_(false) {
-      if (sz_ > 1) {
-        coeff_ = ds::get_and_fill(sz_, x);
-        is_constant_ = false;
-      }
-      else {
+      if (sz_ == 0) {
+        sz_ = 1;
         coeff_0_ = x;
         coeff_ = &coeff_0_;
         is_constant_ = true;
+      }
+      else if (sz_ == 1) {
+        coeff_0_ = x;
+        coeff_ = &coeff_0_;
+        is_constant_ = true;
+      }
+      else {
+        coeff_ = ds::get_and_fill(sz_, x);
+        is_constant_ = false;
+      }
+    }
+
+    //! Constructor from array
+    KOKKOS_INLINE_FUNCTION
+    DynamicStorage(const ordinal_type& sz, const value_type* x) :
+      sz_(sz), is_view_(false) {
+      if (sz_ == 0) {
+        sz_ = 1;
+        coeff_0_ = 0.0;
+        coeff_ = &coeff_0_;
+        is_constant_ = true;
+      }
+      else if (sz_ == 1) {
+        coeff_0_ = *x;
+        coeff_ = &coeff_0_;
+        is_constant_ = true;
+      }
+      else {
+        coeff_ = ds::get_and_fill(x, sz_);
+        is_constant_ = false;
       }
     }
 

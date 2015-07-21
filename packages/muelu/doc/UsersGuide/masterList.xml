@@ -69,6 +69,16 @@
       <description>Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.</description>
     </parameter>
 
+     <parameter>
+      <name>xml parameter file</name>
+      <type>string</type>
+      <default>""</default>
+      <description>An XML file from which to read additional
+      parameters.  In case of a conflict, parameters manually set on
+      the list will override parameters in the file. If the string is
+      empty a file will not be read.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
 
      <parameter>
       <name>parameterlist: syntax</name>
@@ -327,6 +337,30 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: brick x size</name>
+      <type>int</type>
+      <default>2</default>
+      <description>Number of points for x axis in "brick" aggregation (limited to 3).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: brick y size</name>
+      <type>int</type>
+      <default>2</default>
+      <description>Number of points for y axis in "brick" aggregation (limited to 3).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: brick z size</name>
+      <type>int</type>
+      <default>2</default>
+      <description>Number of points for z axis in "brick" aggregation (limited to 3).</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: max selected neighbors</name>
       <type>int</type>
       <default>0</default>
@@ -389,6 +423,15 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: allow user-specified singletons</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: export visualization data</name>
       <type>bool</type>
       <default>false</default>
@@ -397,17 +440,61 @@
     </parameter>
 
     <parameter>
-      <name>aggregation: mode</name>
+      <name>aggregation: output filename</name>
       <type>string</type>
-      <default>"old"</default>
-      <MHD>"new"</MHD>
-      <Poisson-2D>"new"</Poisson-2D>
-      <Poisson-3D>"new"</Poisson-3D>
-      <Elasticity-2D>"new"</Elasticity-2D>
-      <Elasticity-3D>"new"</Elasticity-3D>
-      <ConvectionDiffusion>"new"</ConvectionDiffusion>
-      <description>old = Tobias, new = ML</description>
-      <visible>false</visible>
+      <default>""</default>
+      <description>Filename to write VTK visualization data to.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: output file: time step</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Time step ID for non-linear problems.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: output file: iter</name>
+      <type>int</type>
+      <default>0</default>
+      <description>Iteration for non-linear problems.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: output file: agg style</name>
+      <type>string</type>
+      <default>Point Cloud</default>
+      <description>Style of aggregate visualization.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: output file: fine graph edges</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to draw all fine node connections along with the aggregates.</description>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to draw all fine node connections along with the aggregates.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: output file: coarse graph edges</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to draw all coarse node connections along with the aggregates.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: output file: build colormap</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Whether to output a random colormap in a separate XML file.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -475,11 +562,48 @@
     </parameter>
 
     <parameter>
+      <name>toggle: mode</name>
+      <type>string</type>
+      <default>semicoarsen</default>
+      <description>Toggling strategy for transfer operators (default=semicoarsen)</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>semicoarsen: coarsen rate</name>
       <type>int</type>
       <default>3</default>
       <description>Rate at which to coarsen unknowns in the z direction.</description>
       <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>semicoarsen: number of levels</name>
+      <type>int</type>
+      <default>3</default>
+      <description>Determines the maximum number of times that semicoarsening is applied.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>linedetection: orientation</name>
+      <type>string</type>
+      <default>vertical</default>
+      <description>Line orientation: can be either 'vertical', 'horizontal' or 'coordinates'.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>linedetection: num layers</name>
+      <type>int</type>
+      <default>-1</default>
+      <description>Line detection: number of layers on finest level. Alternatively, set the number of layers on the finest level as \"NumZLayers\" in the finest level container class.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
     </parameter>
 
     <parameter>
@@ -588,6 +712,7 @@
   </multigrid>
 
   <rebalancing>
+
     <parameter>
       <name>repartition: enable</name>
       <type>bool</type>
@@ -683,6 +808,15 @@
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>repartition: use subcommunicators</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Use subcommunicators on coarser levels.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
   </rebalancing>
 
   <reuse>
@@ -696,5 +830,28 @@
     </parameter>
 
   </reuse>
+
+  <external>
+    <parameter>
+       <name>use external multigrid package</name>
+       <type>string</type>
+       <default>"none"</default>
+       <description>Option to utilize external multigrid package for computations, for example allows for use of AMGX</description>
+       <visible>false</visible>
+    </parameter>
+  </external>
+
+  <debug>
+
+    <parameter>
+      <name>debug: graph level</name>
+      <type>int</type>
+      <default>-1</default>
+      <description>Output dependency graph.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+  </debug>
 
 </masterlist>

@@ -115,10 +115,12 @@ namespace {
     return ret;
   }
 
+  /*
   RCP<FancyOStream> getDefaultOStream()
   {
     return( VerboseObjectBase::getDefaultOStream() );
   }
+  */
 
   /*
    * UNIT TESTS

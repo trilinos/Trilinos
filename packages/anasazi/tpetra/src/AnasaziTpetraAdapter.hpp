@@ -330,8 +330,8 @@ namespace Anasazi {
       return X_view;
     }
 
-    ANASAZI_DEPRECATED static int GetVecLength (const MV& mv) {
-      return static_cast<int> (mv.getGlobalLength ());
+    static ptrdiff_t GetGlobalLength( const MV& mv ) {
+      return static_cast<ptrdiff_t> (mv.getGlobalLength ());
     }
 
     static int GetNumberVecs (const MV& mv) {
@@ -720,22 +720,6 @@ namespace Anasazi {
 #endif // HAVE_ANASAZI_TSQR
   };
 
-  //! Partial specialization of Anasazi::MultiVecTraitsExt
-  template<class Scalar, class LO, class GO, class Node>
-  class MultiVecTraitsExt<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > {
-    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
-
-  public:
-    //! @name New attribute methods
-    //@{
-
-    //! Obtain the vector length of \c mv.
-    //! \note This method supersedes GetVecLength, which will be deprecated.
-    static ptrdiff_t GetGlobalLength( const MV& mv ) {
-      return static_cast<ptrdiff_t> (mv.getGlobalLength ());
-    }
-    //@}
-  };
 
   //! Partial specialization of OperatorTraits for Tpetra objects.
   template <class Scalar, class LO, class GO, class Node>

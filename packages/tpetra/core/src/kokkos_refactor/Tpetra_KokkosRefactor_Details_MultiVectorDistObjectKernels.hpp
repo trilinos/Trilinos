@@ -61,8 +61,8 @@ namespace Details {
 
   template <typename DstView, typename SrcView, typename IdxView>
   struct PackArraySingleColumn {
-    typedef typename DstView::device_type device_type;
-    typedef typename device_type::size_type size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     DstView dst;
     SrcView src;
@@ -102,8 +102,8 @@ namespace Details {
 
   template <typename DstView, typename SrcView, typename IdxView>
   struct PackArrayMultiColumn {
-    typedef typename DstView::device_type device_type;
-    typedef typename device_type::size_type size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     DstView dst;
     SrcView src;
@@ -147,8 +147,8 @@ namespace Details {
   template <typename DstView, typename SrcView, typename IdxView,
             typename ColView>
   struct PackArrayMultiColumnVariableStride {
-    typedef typename DstView::device_type device_type;
-    typedef typename device_type::size_type size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     DstView dst;
     SrcView src;
@@ -226,8 +226,8 @@ namespace Details {
 
   template <typename DstView, typename SrcView, typename IdxView, typename Op>
   struct UnpackArrayMultiColumn {
-    typedef typename DstView::device_type device_type;
-    typedef typename device_type::size_type size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     DstView dst;
     SrcView src;
@@ -275,8 +275,8 @@ namespace Details {
   template <typename DstView, typename SrcView, typename IdxView,
             typename ColView, typename Op>
   struct UnpackArrayMultiColumnVariableStride {
-    typedef typename DstView::device_type device_type;
-    typedef typename device_type::size_type size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     DstView dst;
     SrcView src;
@@ -330,8 +330,8 @@ namespace Details {
   template <typename DstView, typename SrcView,
             typename DstIdxView, typename SrcIdxView>
   struct PermuteArrayMultiColumn {
-    typedef typename DstView::device_type device_type;
-    typedef typename device_type::size_type size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     DstView dst;
     SrcView src;
@@ -383,8 +383,8 @@ namespace Details {
             typename DstIdxView, typename SrcIdxView,
             typename DstColView, typename SrcColView>
   struct PermuteArrayMultiColumnVariableStride {
-    typedef typename DstView::device_type device_type;
-    typedef typename device_type::size_type size_type;
+    typedef typename DstView::execution_space execution_space;
+    typedef typename execution_space::size_type size_type;
 
     DstView dst;
     SrcView src;

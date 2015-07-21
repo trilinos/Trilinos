@@ -50,7 +50,6 @@
 // TpetraKernels.
 
 #include<Teuchos_BLAS.hpp>
-#include<Teuchos_as.hpp>
 
 #ifdef KOKKOS_HAVE_CUDA
 #include<cublas.h>
@@ -244,16 +243,16 @@ namespace Kokkos {
 //           View<const Scalar**,LayoutLeft,Serial> A, View<const Scalar**,LayoutLeft,Serial> B,
 //           Scalar beta, View<Scalar**,Serial> C) {
 //         Teuchos::BLAS<int,Scalar> blas;
-//         const int m = Teuchos::as<int>(C.dimension_0()),
-//                   n = Teuchos::as<int>(C.dimension_1()),
+//         const int m = static_cast<int>(C.dimension_0()),
+//                   n = static_cast<int>(C.dimension_1()),
 //                   k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
-//                   lda = Teuchos::as<int>(Impl::getStride2DView(A)),
-//                   ldb = Teuchos::as<int>(Impl::getStride2DView(B)),
-//                   ldc = Teuchos::as<int>(Impl::getStride2DView(C));
+//                   lda = static_cast<int>(Impl::getStride2DView(A)),
+//                   ldb = static_cast<int>(Impl::getStride2DView(B)),
+//                   ldc = static_cast<int>(Impl::getStride2DView(C));
 //         // For some BLAS implementations (i.e. MKL), GEMM when B has one column
 //         // is signficantly less efficient
 //         if (n == 1 && transB == Teuchos::NO_TRANS)
-//           blas.GEMV(transA, A.dimension_0(), A.dimension_1(), alpha, A.ptr_on_device(), lda, B.ptr_on_device(), Teuchos::as<int>(1), beta, C.ptr_on_device(), Teuchos::as<int>(1));
+//           blas.GEMV(transA, A.dimension_0(), A.dimension_1(), alpha, A.ptr_on_device(), lda, B.ptr_on_device(), static_cast<int>(1), beta, C.ptr_on_device(), static_cast<int>(1));
 //         else
 //           blas.GEMM(transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
 //       }
@@ -267,12 +266,12 @@ namespace Kokkos {
 //           View<const Scalar**,LayoutLeft,Threads> A, View<const Scalar**,LayoutLeft,Threads> B,
 //           Scalar beta, View<Scalar**,LayoutLeft,Threads> C) {
 //         Teuchos::BLAS<int,Scalar> blas;
-//         const int m = Teuchos::as<int>(C.dimension_0()),
-//                   n = Teuchos::as<int>(C.dimension_1()),
+//         const int m = static_cast<int>(C.dimension_0()),
+//                   n = static_cast<int>(C.dimension_1()),
 //                   k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
-//                   lda = Teuchos::as<int>(Impl::getStride2DView(A)),
-//                   ldb = Teuchos::as<int>(Impl::getStride2DView(B)),
-//                   ldc = Teuchos::as<int>(Impl::getStride2DView(C));
+//                   lda = static_cast<int>(Impl::getStride2DView(A)),
+//                   ldb = static_cast<int>(Impl::getStride2DView(B)),
+//                   ldc = static_cast<int>(Impl::getStride2DView(C));
 //         blas.GEMM(transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
 //       }
 //   };
@@ -286,12 +285,12 @@ namespace Kokkos {
 //           View<const Scalar**,LayoutLeft,OpenMP> A, View<const Scalar**,LayoutLeft,OpenMP> B,
 //           Scalar beta, View<Scalar**,LayoutLeft,OpenMP> C) {
 //         Teuchos::BLAS<int,Scalar> blas;
-//         const int m = Teuchos::as<int>(C.dimension_0()),
-//                   n = Teuchos::as<int>(C.dimension_1()),
+//         const int m = static_cast<int>(C.dimension_0()),
+//                   n = static_cast<int>(C.dimension_1()),
 //                   k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
-//                   lda = Teuchos::as<int>(Impl::getStride2DView(A)),
-//                   ldb = Teuchos::as<int>(Impl::getStride2DView(B)),
-//                   ldc = Teuchos::as<int>(Impl::getStride2DView(C));
+//                   lda = static_cast<int>(Impl::getStride2DView(A)),
+//                   ldb = static_cast<int>(Impl::getStride2DView(B)),
+//                   ldc = static_cast<int>(Impl::getStride2DView(C));
 //         blas.GEMM(transA, transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
 //       }
 //   };
@@ -315,12 +314,12 @@ namespace Kokkos {
       static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, float alpha,
           View<const float**,LayoutLeft,Cuda> A, View<const float**,LayoutLeft,Cuda> B,
           float beta, View<float**,LayoutLeft,Cuda> C) {
-        const int m = Teuchos::as<int>(C.dimension_0()),
-                  n = Teuchos::as<int>(C.dimension_1()),
+        const int m = static_cast<int>(C.dimension_0()),
+                  n = static_cast<int>(C.dimension_1()),
                   k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
-                  lda = Teuchos::as<int>(Impl::getStride2DView(A)),
-                  ldb = Teuchos::as<int>(Impl::getStride2DView(B)),
-                  ldc = Teuchos::as<int>(Impl::getStride2DView(C));
+                  lda = static_cast<int>(Impl::getStride2DView(A)),
+                  ldb = static_cast<int>(Impl::getStride2DView(B)),
+                  ldc = static_cast<int>(Impl::getStride2DView(C));
         const char char_transA = (transA == Teuchos::NO_TRANS ? 'N' : 'T'),
                    char_transB = (transB == Teuchos::NO_TRANS ? 'N' : 'T');
         cublasSgemm(char_transA, char_transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);
@@ -337,12 +336,12 @@ namespace Kokkos {
       static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, double alpha,
           View<const double**,LayoutLeft,Cuda> A, View<const double**,LayoutLeft,Cuda> B,
           double beta, View<double**,LayoutLeft,Cuda> C) {
-        const int m = Teuchos::as<int>(C.dimension_0()),
-                  n = Teuchos::as<int>(C.dimension_1()),
+        const int m = static_cast<int>(C.dimension_0()),
+                  n = static_cast<int>(C.dimension_1()),
                   k = (transA == Teuchos::NO_TRANS ? A.dimension_1() : A.dimension_0()),
-                  lda = Teuchos::as<int>(Impl::getStride2DView(A)),
-                  ldb = Teuchos::as<int>(Impl::getStride2DView(B)),
-                  ldc = Teuchos::as<int>(Impl::getStride2DView(C));
+                  lda = static_cast<int>(Impl::getStride2DView(A)),
+                  ldb = static_cast<int>(Impl::getStride2DView(B)),
+                  ldc = static_cast<int>(Impl::getStride2DView(C));
         const char char_transA = (transA == Teuchos::NO_TRANS ? 'N' : 'T'),
                    char_transB = (transB == Teuchos::NO_TRANS ? 'N' : 'T');
         cublasDgemm(char_transA, char_transB, m, n, k, alpha, A.ptr_on_device(), lda, B.ptr_on_device(), ldb, beta, C.ptr_on_device(), ldc);

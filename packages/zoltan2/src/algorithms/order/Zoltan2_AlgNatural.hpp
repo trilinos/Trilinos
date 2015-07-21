@@ -63,8 +63,8 @@ class AlgNatural : public Algorithm<Adapter>
   private:
 
   const RCP<IdentifierModel<Adapter> > model;
-  const RCP<Teuchos::ParameterList> &pl;
-  const RCP<Teuchos::Comm<int> > &comm;
+  const RCP<Teuchos::ParameterList> pl;
+  const RCP<Teuchos::Comm<int> > comm;
 
   public:
 

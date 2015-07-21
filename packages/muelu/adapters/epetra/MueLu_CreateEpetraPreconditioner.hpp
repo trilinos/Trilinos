@@ -21,31 +21,6 @@
 
 namespace MueLu {
 
-  /*! \fn EpetraCrs_To_XpetraMatrix
-    @brief Helper function to convert a Epetra::CrsMatrix to an Xpetra::Matrix
-    TODO move this function to an Xpetra utility file
-    */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  EpetraCrs_To_XpetraMatrix(const Teuchos::RCP<Epetra_CrsMatrix>& A) {
-    typedef Xpetra::EpetraCrsMatrix                                            XECrsMatrix;
-    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       XCrsMatrix;
-    typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>   XCrsMatrixWrap;
-
-    RCP<XCrsMatrix> Atmp = rcp(new XECrsMatrix(A));
-    return rcp(new XCrsMatrixWrap(Atmp));
-  }
-
-  /*! \fn EpetraMultiVector_To_XpetraMultiVector
-    @brief Helper function to convert a Epetra::MultiVector to an Xpetra::MultiVector
-    TODO move this function to an Xpetra utility file
-    */
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-  EpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Epetra_MultiVector>& V) {
-    return rcp(new Xpetra::EpetraMultiVector(V));
-  }
-
   /*! \fn CreateEpetraPreconditioner
     @brief Helper function to create a MueLu preconditioner that can be used by Epetra.
 
@@ -78,14 +53,7 @@ namespace MueLu {
     bool hasParamList = paramListIn.numParams();
 
     RCP<HierarchyManager> mueLuFactory;
-    ParameterList nonSerialList, paramList;
-    if (hasParamList) {
-      // Separate serializable and non-serializable data from the parameter list
-      // The data is put into paramList and nonSerialList
-      ExtractNonSerializableData(paramListIn, paramList, nonSerialList);
-    } else {
-      paramList = paramListIn;
-    }
+    ParameterList paramList = paramListIn;
 
     std::string syntaxStr = "parameterlist: syntax";
     if (hasParamList && paramList.isParameter(syntaxStr) && paramList.get<std::string>(syntaxStr) == "ml") {
@@ -93,7 +61,7 @@ namespace MueLu {
       mueLuFactory = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(paramList));
 
     } else {
-      mueLuFactory = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(paramList));
+      mueLuFactory = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(paramList,Xpetra::toXpetra(inA->Comm())));
     }
 
     RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
@@ -145,8 +113,9 @@ namespace MueLu {
     }
     H->GetLevel(0)->Set("Nullspace", nullspace);
 
-    if (hasParamList)
-      HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory, *H, nonSerialList);
+    Teuchos::ParameterList nonSerialList,dummyList;
+    ExtractNonSerializableData(paramList, dummyList, nonSerialList);    
+    HierarchyUtils<SC,LO,GO,NO>::AddNonSerializableDataToHierarchy(*mueLuFactory,*H, nonSerialList);
 
     mueLuFactory->SetupHierarchy(*H);
 
@@ -192,14 +161,35 @@ namespace MueLu {
     return CreateEpetraPreconditioner(A, paramList, inCoords, inNullspace);
   }
 
-  void ReuseEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>& A, MueLu::EpetraOperator& Op) {
+  void ReuseEpetraPreconditioner(const Teuchos::RCP<Epetra_CrsMatrix>& inA, MueLu::EpetraOperator& Op) {
     typedef double                                                              SC;
     typedef int                                                                 LO;
     typedef int                                                                 GO;
     typedef KokkosClassic::DefaultNode::DefaultNodeType                         NO;
 
-    RCP<Hierarchy<SC,LO,GO,NO> > H = Op.GetHierarchy();
-    H->GetLevel(0)->Set("A", EpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(A));
+    typedef Xpetra::Matrix<SC,LO,GO,NO>     Matrix;
+    typedef Xpetra::Operator<SC,LO,GO,NO>   Operator;
+    typedef MueLu ::Hierarchy<SC,LO,GO,NO>  Hierarchy;
+
+    RCP<Hierarchy> H = Op.GetHierarchy();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(!H->GetNumLevels(), Exceptions::RuntimeError,
+                               "ReuseTpetraPreconditioner: Hierarchy has no levels in it");
+    TEUCHOS_TEST_FOR_EXCEPTION(!H->GetLevel(0)->IsAvailable("A"), Exceptions::RuntimeError,
+                               "ReuseTpetraPreconditioner: Hierarchy has no fine level operator");
+    RCP<Level> level0 = H->GetLevel(0);
+
+    RCP<Operator> O0 = level0->Get<RCP<Operator> >("A");
+    RCP<Matrix>   A0 = Teuchos::rcp_dynamic_cast<Matrix>(O0);
+
+    RCP<Matrix> A = EpetraCrs_To_XpetraMatrix<SC,LO,GO,NO>(inA);
+    if (!A0.is_null()) {
+      // If a user provided a "number of equations" argument in a parameter list
+      // during the initial setup, we must honor that settings and reuse it for
+      // all consequent setups.
+      A->SetFixedBlockSize(A0->GetFixedBlockSize());
+    }
+    level0->Set("A", A);
     H->SetupRe();
   }
 

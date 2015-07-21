@@ -708,7 +708,7 @@ MPI_Comm local_comm;
   proclower = 0;
   local_comm = zz->Communicator;
 
-  for (j=0; j<dim; j++){
+  for (j=0; j<3; j++){
     min[j] = DBL_MAX;
     max[j] = DBL_MIN;
   }

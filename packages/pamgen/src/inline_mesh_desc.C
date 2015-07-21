@@ -1159,6 +1159,7 @@ void Inline_Mesh_Desc::ZeroSet()
   inline_n[0] = 1;
   inline_n[1] = 1;
   inline_n[2] = 1;
+  inline_block_start = 1;
   inline_offset[0] = 0.;
   inline_offset[1] = 0.;
   inline_offset[2] = 0.;

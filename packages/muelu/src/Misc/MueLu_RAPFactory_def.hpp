@@ -101,6 +101,8 @@ namespace MueLu {
     // call DeclareInput of all user-given transfer factories
     for (std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it != transferFacts_.end(); ++it)
       (*it)->CallDeclareInput(coarseLevel);
+
+    hasDeclaredInput_ = true;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -109,6 +111,9 @@ namespace MueLu {
       FactoryMonitor m(*this, "Computing Ac", coarseLevel);
       std::ostringstream levelstr;
       levelstr << coarseLevel.GetLevelID();
+
+      TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_==false, Exceptions::RuntimeError,
+                                 "MueLu::RAPFactory::Build(): CallDeclareInput has not been called before Build!");
 
       // Set "Keeps" from params
       const Teuchos::ParameterList& pL = GetParameterList();
@@ -132,7 +137,8 @@ namespace MueLu {
 
         AP = Utils::Multiply(*A, false, *P, false, AP, GetOStream(Statistics2),true,true,std::string("MueLu::A*P-")+levelstr.str());
       }
-      Set(coarseLevel, "AP Pattern", AP);
+      if (pL.get<bool>("Keep AP Pattern"))
+        Set(coarseLevel, "AP Pattern", AP);
 
       // Reuse coarse matrix memory if available (multiple solve)
       if (coarseLevel.IsAvailable("RAP Pattern", this)) {
@@ -171,7 +177,8 @@ namespace MueLu {
       }
 
       Set(coarseLevel, "A",           Ac);
-      Set(coarseLevel, "RAP Pattern", Ac);
+      if (pL.get<bool>("Keep RAP Pattern"))
+        Set(coarseLevel, "RAP Pattern", Ac);
     }
 
     if (transferFacts_.begin() != transferFacts_.end()) {
@@ -244,7 +251,7 @@ namespace MueLu {
       }
     }
     GO gZeroDiags;
-    sumAll(rowMap->getComm(), Teuchos::as<GO>(lZeroDiags), gZeroDiags);
+    MueLu_sumAll(rowMap->getComm(), Teuchos::as<GO>(lZeroDiags), gZeroDiags);
 
     if (repairZeroDiagonals && gZeroDiags > 0) {
       // TAW: If Ac has empty rows, put a 1 on the diagonal of Ac. Be aware that Ac might have empty rows AND columns.

@@ -59,7 +59,7 @@ namespace Basker{
                    Int *color,
                    Int *pattern, /* o/p */
                    Int *top,       /* o/p */
-                   Int k,
+                 
                    Int *tpinv,
                    Int *stack
                    );

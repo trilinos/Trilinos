@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //               ShyLU: Hybrid preconditioner package
 //                 Copyright 2012 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -368,7 +368,11 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     double *values = new double[nvectors];
     int *indices = new int[nvectors];
     double *vecvalues;
+#ifdef SHYLU_DEBUG
+    // mfh 25 May 2015: Don't declare this variable if it's not used.
+    // It's only used if SHYLU_DEBUG is defined.
     int dropped = 0;
+#endif // SHYLU_DEBUG
     double *maxvalue = new double[nvectors];
 #ifdef TIMING_OUTPUT
     ftime.start();
@@ -376,7 +380,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
     int findex = g_localElems / nvectors ;
 
     int cindex;
-    int mypid = C->Comm().MyPID();
+    // int mypid = C->Comm().MyPID(); // unused
     Epetra_MultiVector probevec (G_localRMap, nvectors);
     Epetra_MultiVector Scol (G_localRMap, nvectors);
     probevec.PutScalar(0.0);
@@ -424,14 +428,11 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
                     indices[nentries++] = g_rows[cindex];
                 }
 #ifdef SHYLU_DEBUG
-                else
+                else if (vecvalues[j] != 0.0)
                 {
-                    if (vecvalues[j] != 0.0)
-                    {
-                        dropped++;
-                    }
+                    dropped++;
                 }
-#endif
+#endif // SHYLU_DEBUG
             }
             Sbar->InsertGlobalValues(g_rows[j], nentries, values,
                         indices);
@@ -480,14 +481,11 @@ Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(shylu_config *config,
                     indices[nentries++] = g_rows[cindex];
                 }
 #ifdef SHYLU_DEBUG
-                else
+                else if (vecvalues[j] != 0.0)
                 {
-                    if (vecvalues[j] != 0.0)
-                    {
-                        dropped++;
-                    }
+                    dropped++;
                 }
-#endif
+#endif // SHYLU_DEBUG
             }
             Sbar->InsertGlobalValues(g_rows[j], nentries, values,
                         indices);
@@ -723,7 +721,7 @@ Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing
         int findex = g_localElems / nvectors ;
 
         int cindex;
-        int mypid = C->Comm().MyPID();
+        // int mypid = C->Comm().MyPID(); // unused
         Epetra_MultiVector probevec(G_localRMap, nvectors);
         Epetra_MultiVector Scol(G_localRMap, nvectors);
         for (i = 0 ; i < findex*nvectors ; i+=nvectors)

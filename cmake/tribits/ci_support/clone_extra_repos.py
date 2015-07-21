@@ -51,13 +51,13 @@ import gitdist
 
 g_extraReposTypes = g_knownTribitsTestRepoTypes
 g_extraReposTypeDefault = "Nightly"
-g_extraReposTypesDefaulIdx = g_extraReposTypes.index(g_extraReposTypeDefault)
+g_extraReposTypesDefaulIdx = findInSequence(g_extraReposTypes, g_extraReposTypeDefault)
 
 g_extraRerposFileDefault = "cmake/ExtraRepositoriesList.cmake"
 
 g_verbosityLevels = [ "none", "minimal",  "more", "most" ]
 g_verbosityLevelDefault = "more"
-g_verbosityLevelDefaultIdx = g_verbosityLevels.index(g_verbosityLevelDefault)
+g_verbosityLevelDefaultIdx = findInSequence(g_verbosityLevels, g_verbosityLevelDefault)
 
 
 #
@@ -219,8 +219,8 @@ def getCmndLineOptions():
 
 
 def isVerbosityLevel(inOptions, testVerbLevel):
-  requestedVerbLevelInt = g_verbosityLevels.index(inOptions.verbLevel)
-  testVerbLevelInt = g_verbosityLevels.index(testVerbLevel)
+  requestedVerbLevelInt = findInSequence(g_verbosityLevels, inOptions.verbLevel)
+  testVerbLevelInt = findInSequence(g_verbosityLevels, testVerbLevel)
   if testVerbLevelInt <= requestedVerbLevelInt:
     return True
   return False
@@ -289,7 +289,7 @@ def getExtraReposDictListFromCmakefile(projectDir, extraReposFile, withCmake,
     " -DEXTRA_REPOS_FILE="+extraReposFile+ \
     " -DENABLE_KNOWN_EXTERNAL_REPOS_TYPE="+extraReposType+ \
     " -DEXTRA_REPOS="+extraRepos+\
-    " -DNO_CHECK_FOR_MISSING_EXTRA_REPOS=TRUE"
+    " -DCHECK_EXTRAREPOS_EXIST=FALSE"
 #  " -DTRIBITS_PROCESS_EXTRAREPOS_LISTS_DEBUG=TRUE"
   cmnd += \
     " -P "+ciSupportDir+"/TribitsGetExtraReposForCheckinTest.cmake"
@@ -338,8 +338,9 @@ def getGitoliteReposList(inOptions, trace=False, dumpGitoliteOutput=False):
   rawSshGitoliteRootInfoOutput = getCmndOutput(cmnd)
   if dumpGitoliteOutput:
     print rawSshGitoliteRootInfoOutput
-  return parseRawSshGitoliteRootInfoOutput(rawSshGitoliteRootInfoOutput,
-    verbose = (True if (trace and not dumpGitoliteOutput) else False ) )
+  if (trace and not dumpGitoliteOutput): verbose=True
+  else: verbose=False
+  return parseRawSshGitoliteRootInfoOutput(rawSshGitoliteRootInfoOutput, verbose=verbose)
 
 
 def filterOutNotExtraRepos(extraRepoDictList_in, notExtraRepos, verbose=False):

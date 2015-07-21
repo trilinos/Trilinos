@@ -38,9 +38,6 @@
 #include <stk_util/util/nested_iterator.hpp>  // for nested_iterator
 #include <stk_util/util/nested_range.hpp>  // for identity
 #include <vector>                       // for vector
-#include "boost/iterator/iterator_facade.hpp"  // for iterator_facade, etc
-#include "boost/optional/optional.hpp"  // for operator==, operator!=
-
 
 namespace vector_vector_int {
 
@@ -56,7 +53,7 @@ namespace vector_vector_int {
                                       stk::util::details::identity<std::vector<int> >
                                     > const_nested_iterator;
 }
-/// srk 12/20/12 - these tests seem to hang on boost 1.50 / Trilinos build
+
 #if defined(STK_BUILT_IN_SIERRA)
 TEST ( nested_iterator, vector_vector_int)
 {

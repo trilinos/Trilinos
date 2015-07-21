@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -99,7 +99,7 @@ void sort_array( const size_t array_length /* length of spans of array to sort *
                , const size_t total_length /* total length of array */
                , const int print = 1 )
 {
-  typedef Device device_type ;
+  typedef Device execution_space ;
   typedef Kokkos::View<int*,Device>  device_array_type ;
 
 #if defined( KOKKOS_HAVE_CUDA )
@@ -160,7 +160,7 @@ void sort_array( const size_t array_length /* length of spans of array to sort *
 
     sec_copy_in += timer.seconds(); timer.reset();
 
-    SortView< device_type >( work_array , 0 , end - begin );
+    SortView< execution_space >( work_array , 0 , end - begin );
 
     sec_sort += timer.seconds(); timer.reset();
 

@@ -51,4 +51,8 @@
 
 PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::Sum)
 
+PANZER_INSTANTIATE_TEMPLATE_CLASS_THREE_T(panzer::SumStatic,panzer::Cell)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::SumStatic,panzer::Cell,panzer::IP)
+PANZER_INSTANTIATE_TEMPLATE_CLASS_FOUR_T(panzer::SumStatic,panzer::Cell,panzer::BASIS)
+
 #endif

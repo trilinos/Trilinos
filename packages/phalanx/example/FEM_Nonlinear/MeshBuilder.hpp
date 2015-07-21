@@ -45,7 +45,7 @@
 #ifndef PHX_EXAMPLE_MESH_BUILDER_HPP
 #define PHX_EXAMPLE_MESH_BUILDER_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Comm.h"
 #include "Element_Linear2D.hpp"

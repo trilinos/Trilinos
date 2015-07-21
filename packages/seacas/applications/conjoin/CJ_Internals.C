@@ -42,12 +42,10 @@
 
 #include <CJ_Internals.h>
 
-extern "C" {
 #define NO_NETCDF_2
 #include <netcdf.h>
 #include <exodusII.h>
 #include <exodusII_int.h>
-}
 
 #include <CJ_ExodusEntity.h>
 
@@ -369,7 +367,6 @@ int Excn::Internals::put_metadata(const Mesh<INT> &mesh,
   }
 
   {
-    int dim[1];
     int varid = 0;
     dim[0] = timedim;
     if ((status = nc_def_var(exodusFilePtr, VAR_WHOLE_TIME, nc_flt_code(exodusFilePtr), 1, dim, &varid)) != NC_NOERR) {

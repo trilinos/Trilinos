@@ -167,12 +167,12 @@ struct QuadratureData {
 
 // Traits class for creating strided local views for embedded ensemble-based,
 // specialized for ensemble UQ scalar type
-template <typename ViewType>
+template <typename ViewType, typename Enabled = void>
 struct LocalViewTraits {
   typedef ViewType view_type;
   // typedef Kokkos::View<typename view_type::data_type,
   //                      typename view_type::array_layout,
-  //                      typename view_type::device_type,
+  //                      typename view_type::execution_space,
   //                      Kokkos::MemoryUnmanaged> local_view_type;
   typedef const view_type& local_view_type;
   typedef typename view_type::value_type local_value_type;

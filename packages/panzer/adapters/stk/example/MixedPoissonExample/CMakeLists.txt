@@ -13,11 +13,11 @@ TRIBITS_ADD_EXECUTABLE(
 TRIBITS_ADD_ADVANCED_TEST(
   MixedPoissonExample
   TEST_0 EXEC MixedPoissonExample
-    ARGS --use-epetra
+    ARGS --use-epetra --x-elements=5 --y-elements=5 --z-elements=5
     PASS_REGULAR_EXPRESSION "ALL PASSED: Epetra"
     NUM_MPI_PROCS 4
   TEST_1 EXEC MixedPoissonExample
-    ARGS --use-tpetra
+    ARGS --use-tpetra --x-elements=5 --y-elements=5 --z-elements=5
     PASS_REGULAR_EXPRESSION "ALL PASSED: Tpetra"
     NUM_MPI_PROCS 4
   COMM mpi

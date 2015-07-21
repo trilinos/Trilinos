@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -67,7 +65,7 @@
 // A "functor" is just a class or struct with a public operator()
 // instance method.
 struct hello_world {
-  // If a functor has an "execution_space" (or "device_type", for
+  // If a functor has an "execution_space" (or "execution_space", for
   // backwards compatibility) public typedef, parallel_* will only run
   // the functor in that execution space.  That's a good way to mark a
   // functor as specific to an execution space.  If the functor lacks
@@ -124,7 +122,7 @@ int main (int argc, char* argv[]) {
   //
   // You may notice that the printed numbers do not print out in
   // order.  Parallel for loops may execute in any order.
-  Kokkos::parallel_for (15, hello_world ());
+  Kokkos::parallel_for ("HelloWorld",15, hello_world ());
 
   // You must call finalize() after you are done using Kokkos.
   Kokkos::finalize ();

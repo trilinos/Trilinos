@@ -65,12 +65,12 @@ namespace Details {
 
   template <typename Scalar, typename LocalOrdinal, typename Device>
   struct PackArraySingleColumnConstantStride {
-    typedef Device device_type;
-    typedef typename device_type::size_type size_type;
+    typedef Device execution_space;
+    typedef typename execution_space::size_type size_type;
 
-    Kokkos::View<const LocalOrdinal*, device_type> exportLIDs;
-    Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged> src;
-    Kokkos::View<Scalar*, device_type> exports;
+    Kokkos::View<const LocalOrdinal*, execution_space> exportLIDs;
+    Kokkos::View<const Scalar*, execution_space, Kokkos::MemoryUnmanaged> src;
+    Kokkos::View<Scalar*, execution_space> exports;
 
     KOKKOS_INLINE_FUNCTION
     void operator()( const size_type k ) const {
@@ -82,12 +82,12 @@ namespace Details {
 
   template <typename Scalar, typename LocalOrdinal, typename Device>
   struct PackArraySingleColumnOffset {
-    typedef Device device_type;
-    typedef typename device_type::size_type size_type;
+    typedef Device execution_space;
+    typedef typename execution_space::size_type size_type;
 
-    Kokkos::View<const LocalOrdinal*, device_type> exportLIDs;
-    Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged> src;
-    Kokkos::View<Scalar*, device_type> exports;
+    Kokkos::View<const LocalOrdinal*, execution_space> exportLIDs;
+    Kokkos::View<const Scalar*, execution_space, Kokkos::MemoryUnmanaged> src;
+    Kokkos::View<Scalar*, execution_space> exports;
     size_t offset;
 
     KOKKOS_INLINE_FUNCTION
@@ -100,12 +100,12 @@ namespace Details {
 
   template <typename Scalar, typename LocalOrdinal, typename Device>
   struct PackArrayMultiColumnConstantStride {
-    typedef Device device_type;
-    typedef typename device_type::size_type size_type;
+    typedef Device execution_space;
+    typedef typename execution_space::size_type size_type;
 
-    Kokkos::View<const LocalOrdinal*, device_type> exportLIDs;
-    Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged> src;
-    Kokkos::View<Scalar*, device_type> exports;
+    Kokkos::View<const LocalOrdinal*, execution_space> exportLIDs;
+    Kokkos::View<const Scalar*, execution_space, Kokkos::MemoryUnmanaged> src;
+    Kokkos::View<Scalar*, execution_space> exports;
     size_t stride, numCols;
 
     KOKKOS_INLINE_FUNCTION
@@ -121,13 +121,13 @@ namespace Details {
 
   template <typename Scalar, typename LocalOrdinal, typename Device>
   struct PackArrayMultiColumnVariableStride {
-    typedef Device device_type;
-    typedef typename device_type::size_type size_type;
+    typedef Device execution_space;
+    typedef typename execution_space::size_type size_type;
 
-    Kokkos::View<const LocalOrdinal*, device_type> exportLIDs;
-    Kokkos::View<const size_t*, device_type> srcWhichVectors;
-    Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged> src;
-    Kokkos::View<Scalar*, device_type> exports;
+    Kokkos::View<const LocalOrdinal*, execution_space> exportLIDs;
+    Kokkos::View<const size_t*, execution_space> srcWhichVectors;
+    Kokkos::View<const Scalar*, execution_space, Kokkos::MemoryUnmanaged> src;
+    Kokkos::View<Scalar*, execution_space> exports;
     size_t stride, numCols;
 
     KOKKOS_INLINE_FUNCTION
@@ -176,12 +176,12 @@ namespace Details {
 
   template <typename Scalar, typename LocalOrdinal, typename Op, typename Device>
   struct UnpackArrayMultiColumnConstantStride {
-    typedef Device device_type;
-    typedef typename device_type::size_type size_type;
+    typedef Device execution_space;
+    typedef typename execution_space::size_type size_type;
 
-    Kokkos::View<const LocalOrdinal*, device_type> importLIDs;
-    Kokkos::View<const Scalar*, device_type> imports;
-    Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged> dest;
+    Kokkos::View<const LocalOrdinal*, execution_space> importLIDs;
+    Kokkos::View<const Scalar*, execution_space> imports;
+    Kokkos::View<Scalar*, execution_space, Kokkos::MemoryUnmanaged> dest;
     size_t stride, numCols;
     Op op;
 
@@ -198,13 +198,13 @@ namespace Details {
 
   template <typename Scalar, typename LocalOrdinal, typename Op, typename Device>
   struct UnpackArrayMultiColumnVariableStride {
-    typedef Device device_type;
-    typedef typename device_type::size_type size_type;
+    typedef Device execution_space;
+    typedef typename execution_space::size_type size_type;
 
-    Kokkos::View<const LocalOrdinal*, device_type> importLIDs;
-    Kokkos::View<const size_t*, device_type> whichVectors;
-    Kokkos::View<const Scalar*, device_type> imports;
-    Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged> dest;
+    Kokkos::View<const LocalOrdinal*, execution_space> importLIDs;
+    Kokkos::View<const size_t*, execution_space> whichVectors;
+    Kokkos::View<const Scalar*, execution_space> imports;
+    Kokkos::View<Scalar*, execution_space, Kokkos::MemoryUnmanaged> dest;
     size_t stride, numCols;
     Op op;
 
@@ -221,13 +221,13 @@ namespace Details {
 
   template <typename Scalar, typename LocalOrdinal, typename Device>
   struct PermuteArrayMultiColumnConstantStride {
-    typedef Device device_type;
-    typedef typename device_type::size_type size_type;
+    typedef Device execution_space;
+    typedef typename execution_space::size_type size_type;
 
-    Kokkos::View<const LocalOrdinal*, device_type> permuteToLIDs;
-    Kokkos::View<const LocalOrdinal*, device_type> permuteFromLIDs;
-    Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged> src;
-    Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged> dest;
+    Kokkos::View<const LocalOrdinal*, execution_space> permuteToLIDs;
+    Kokkos::View<const LocalOrdinal*, execution_space> permuteFromLIDs;
+    Kokkos::View<const Scalar*, execution_space, Kokkos::MemoryUnmanaged> src;
+    Kokkos::View<Scalar*, execution_space, Kokkos::MemoryUnmanaged> dest;
     size_t src_stride, dest_stride, numCols;
 
     KOKKOS_INLINE_FUNCTION
@@ -243,15 +243,15 @@ namespace Details {
 
   template <typename Scalar, typename LocalOrdinal, typename Device>
   struct PermuteArrayMultiColumnVariableStride {
-    typedef Device device_type;
-    typedef typename device_type::size_type size_type;
+    typedef Device execution_space;
+    typedef typename execution_space::size_type size_type;
 
-    Kokkos::View<const LocalOrdinal*, device_type> permuteToLIDs;
-    Kokkos::View<const LocalOrdinal*, device_type> permuteFromLIDs;
-    Kokkos::View<const size_t*, device_type> src_whichVectors;
-    Kokkos::View<const size_t*, device_type> dest_whichVectors;
-    Kokkos::View<const Scalar*, device_type, Kokkos::MemoryUnmanaged> src;
-    Kokkos::View<Scalar*, device_type, Kokkos::MemoryUnmanaged> dest;
+    Kokkos::View<const LocalOrdinal*, execution_space> permuteToLIDs;
+    Kokkos::View<const LocalOrdinal*, execution_space> permuteFromLIDs;
+    Kokkos::View<const size_t*, execution_space> src_whichVectors;
+    Kokkos::View<const size_t*, execution_space> dest_whichVectors;
+    Kokkos::View<const Scalar*, execution_space, Kokkos::MemoryUnmanaged> src;
+    Kokkos::View<Scalar*, execution_space, Kokkos::MemoryUnmanaged> dest;
     size_t src_stride, dest_stride, numCols;
 
     KOKKOS_INLINE_FUNCTION

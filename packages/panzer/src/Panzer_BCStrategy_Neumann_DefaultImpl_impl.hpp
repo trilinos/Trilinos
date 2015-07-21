@@ -186,7 +186,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
     // Scatter evaluator
     {
-      ParameterList p("Scatter: "+ residual_name + " to " + dof_name);
+      ParameterList p("Scatter: " + residual_name + " to " + dof_name);
     
       // Set name
       string scatter_field_name = "Dummy Scatter: " + this->m_bc.identifier() + residual_name; 

@@ -3,11 +3,11 @@
 */
 
 /* define if we want to use MPI */
-#cmakedefine HAVE_MPI
+#cmakedefine HAVE_SHYLUCORE_MPI
 
-#cmakedefine HAVE_SHYLU_TPETRA
+#cmakedefine HAVE_SHYLUCORE_TPETRA
 
-#cmakedefine HAVE_SHYLU_ZOLTAN2
+#cmakedefine HAVE_SHYLUCORE_ZOLTAN2
 
-#cmakedefine HAVE_SHYLU_AMESOS2
+#cmakedefine HAVE_SHYLUCORE_AMESOS2
 

@@ -56,14 +56,17 @@
 #include <typeinfo>
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 
 #include "boost/version.hpp"
 #if defined(BOOST_VERSION)&&(BOOST_VERSION>=104200)
+// icpc cannot handle adjacency_list.hpp in BGL after boost 1.56.0
+#if (BOOST_VERSION<105600) || !defined(__INTEL_COMPILER)
 #include "boost/graph/graphviz.hpp"
 #include "boost/tuple/tuple.hpp"
+#endif
 #endif
 
 //=======================================================================
@@ -370,7 +373,9 @@ writeGraphvizFile(const std::string filename,
 		  bool writeDependentFields,
 		  bool debugRegisteredEvaluators) const
 {
-#if defined(BOOST_VERSION)&&(BOOST_VERSION>=104200)
+//#if defined(BOOST_VERSION)&&(BOOST_VERSION>=104200)
+// icpc cannot handle adjacency_list.hpp in BGL after boost 1.56.0
+#if defined(BOOST_VERSION)&&(BOOST_VERSION>=104200) && ((BOOST_VERSION<105600) || !defined(__INTEL_COMPILER))
 
   using std::string;
   using std::vector;

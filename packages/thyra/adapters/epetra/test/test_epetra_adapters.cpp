@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -119,8 +119,8 @@ int main( int argc, char* argv[] )
 
   typedef double Scalar;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef ST::magnitudeType ScalarMag;
-  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+  // typedef ST::magnitudeType ScalarMag; // unused
+  // typedef Teuchos::ScalarTraits<ScalarMag> SMT; // unused
 
   using Teuchos::dyn_cast;
   using Teuchos::CommandLineProcessor;
@@ -140,7 +140,7 @@ int main( int argc, char* argv[] )
   using Thyra::create_VectorSpace;
   using Thyra::create_Vector;
   using Thyra::create_MultiVector;
-  
+
   bool verbose = true;
   bool dumpAll = false;
   bool success = true;
@@ -152,7 +152,7 @@ int main( int argc, char* argv[] )
 
   RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  
+
   try {
 
     Teuchos::Time timer("");
@@ -329,7 +329,7 @@ int main( int argc, char* argv[] )
 
     const std::string s1_n = "fabs(scalar)*global_dim";
     const Scalar s1 = fabs(scalar)*global_dim;
-    
+
     if(!testRelErr("Thyra::norm_1(ev1)",ev1_nrm,"0",Scalar(0),"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
     if(verbose && dumpAll) *out << "\nev1 =\n" << *ev1;
     if(!testRelErr("Thyra::norm_1(ev2)",ev2_nrm,s1_n,s1,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,out.ptr())) success=false;
@@ -578,7 +578,7 @@ int main( int argc, char* argv[] )
 
     const std::string s3_n = "2*scalar^2*global_dim";
     const Scalar s3 = 2*scalar*scalar*global_dim;
-    
+
     if(verbose) *out << "\nPerforming ey = 2*Op*ev1 ...\n";
     timer.start(true);
     apply( *Op, NOTRANS, *ev1, ey.ptr(), 2.0 );
@@ -798,7 +798,7 @@ int main( int argc, char* argv[] )
         ) success=false;
 
       if(verbose) *out << "\nChecking that t1 and T1 yield the same objects as et1 and eT2 ...\n";
-  
+
       Teuchos::RCP<Epetra_Vector>
         et1_v = get_Epetra_Vector(*epetra_map,t1);
       result = et1_v.get() == et1.get();
@@ -828,7 +828,7 @@ int main( int argc, char* argv[] )
         ) success=false;
 
       if(verbose) *out << "\nChecking that ct1 and cT1 yield the same objects as et1 and eT2 ...\n";
-  
+
       Teuchos::RCP<const Epetra_Vector>
         cet1_v = get_Epetra_Vector(*epetra_map,ct1);
       result = cet1_v.get() == et1.get();
@@ -885,7 +885,7 @@ int main( int argc, char* argv[] )
     {
 
       if(verbose) *out << "\nUsing DiagonalEpetraLinearOpWithSolveFactory to create diagLOWS from Op ...\n";
-      
+
       Thyra::DiagonalEpetraLinearOpWithSolveFactory diagLOWSFactory;
 
       Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
@@ -900,7 +900,7 @@ int main( int argc, char* argv[] )
 
       result = linearOpWithSolveTester.check(*diagLOWS, &*out);
       if(!result) success = false;
-    
+
     }
 
 
@@ -933,18 +933,18 @@ int main( int argc, char* argv[] )
 
     double raw_epetra_time, thyra_wrapped_time;
 
-    
+
     if(verbose) *out << "\n*** (C.1) Comparing the speed of RTOp verses raw Epetra_Vector operations\n";
 
     const double flop_adjust_factor_1 = 3.0;
     const int num_time_loops_1 = int( max_flop_rate / ( flop_adjust_factor_1 * local_dim * num_mv_cols ) ) + 1;
 
     {
-        
+
       // Get references to Epetra_MultiVector objects in eV1 and eV2
       const RCP<Epetra_MultiVector>       eeV1 = get_Epetra_MultiVector(*epetra_map,eV1);
       const RCP<const Epetra_MultiVector> eeV2 = get_Epetra_MultiVector(*epetra_map,eV2);
-      
+
       if(verbose)
         *out << "\nPerforming eeV1 = eeV2 (using raw Epetra_MultiVector::operator=(...)) " << num_time_loops_1 << " times ...\n";
       timer.start(true);
@@ -957,7 +957,7 @@ int main( int argc, char* argv[] )
 
       // When this block ends and eeV1 goes *out of scope then eV1 is guaranteed to be updated!
     }
-    
+
     if(verbose)
       *out << "\nPerforming eV1 = eV2 (using Thyra::SpmdMultiVectorBase::applyOp(...)) " << num_time_loops_1 << " times ...\n";
     timer.start(true);
@@ -967,7 +967,7 @@ int main( int argc, char* argv[] )
     timer.stop();
     thyra_wrapped_time = timer.totalElapsedTime();
     if(verbose) *out << "  total time = " << thyra_wrapped_time << " sec\n";
-    
+
     print_performance_stats( num_time_loops_1, raw_epetra_time, thyra_wrapped_time, verbose, *out );
 
     // RAB: 2004/01/05: Note, the above relative performance is likely
@@ -992,16 +992,16 @@ int main( int argc, char* argv[] )
     const int num_time_loops_2 = int( max_flop_rate / ( flop_adjust_factor_2* local_dim * num_mv_cols * num_mv_cols ) ) + 1;
 
     {
-      
+
       // Get constant references to Epetra_MultiVector objects in eV1 and eV2
       const RCP<const Epetra_MultiVector> eeV1 = get_Epetra_MultiVector(*epetra_map,eV1);
       const RCP<const Epetra_MultiVector> eeV2 = get_Epetra_MultiVector(*epetra_map,eV2);
-      
+
       Epetra_LocalMap eT_map((int) T->range()->dim(),0,*epetra_comm);
       Epetra_MultiVector eT(eT_map,T->domain()->dim());
-      
+
       if(verbose)
-        *out << "\nPerforming eeV1'*eeV2 (using raw Epetra_MultiVector::Multiply(...)) "	<< num_time_loops_2 << " times ...\n";
+        *out << "\nPerforming eeV1'*eeV2 (using raw Epetra_MultiVector::Multiply(...)) "        << num_time_loops_2 << " times ...\n";
       timer.start(true);
       for(int k = 0; k < num_time_loops_2; ++k ) {
         eT.Multiply( 'T', 'N', 1.0, *eeV1, *eeV2, 0.0 );
@@ -1009,11 +1009,11 @@ int main( int argc, char* argv[] )
       timer.stop();
       raw_epetra_time = timer.totalElapsedTime();
       if(verbose) *out << "  total time = " << raw_epetra_time << " sec\n";
-      
+
     }
-    
+
     if(verbose)
-      *out << "\nPerforming eV1'*eV2 (using Thyra::SpmdMultiVectorBase::apply(...)) "	<< num_time_loops_2 << " times ...\n";
+      *out << "\nPerforming eV1'*eV2 (using Thyra::SpmdMultiVectorBase::apply(...)) "   << num_time_loops_2 << " times ...\n";
     timer.start(true);
     for(int k = 0; k < num_time_loops_2; ++k ) {
       apply( *eV1, TRANS, *eV2, T.ptr() );
@@ -1021,9 +1021,9 @@ int main( int argc, char* argv[] )
     timer.stop();
     thyra_wrapped_time = timer.totalElapsedTime();
     if(verbose) *out << "  total time = " << thyra_wrapped_time << " sec\n";
-  
+
     print_performance_stats( num_time_loops_2, raw_epetra_time, thyra_wrapped_time, verbose, *out );
-    
+
     // RAB: 2004/01/05: Note, even though the Thyra adapter does
     // not actually call Epetra_MultiVector::Multiply(...), the
     // implementation in Thyra::SpmdMultiVectorBase::apply(...)
@@ -1041,11 +1041,11 @@ int main( int argc, char* argv[] )
     const int num_time_loops_3 = int( max_flop_rate / ( flop_adjust_factor_3 * local_dim * num_mv_cols ) ) + 1;
 
     {
-      
+
       // Get constant references to Epetra_MultiVector objects in eV1 and eV2
       const RCP<const Epetra_MultiVector> eeV1 = get_Epetra_MultiVector(*epetra_map,eV1);
       const RCP<Epetra_MultiVector>       eeY  = get_Epetra_MultiVector(*epetra_map,eY);
-      
+
       if(verbose)
         *out << "\nPerforming eeY = eOp*eeV1 (using raw Epetra_Operator::apply(...)) " << num_time_loops_3 << " times ...\n";
 
@@ -1064,9 +1064,9 @@ int main( int argc, char* argv[] )
 
       if(verbose)
         Teuchos::TimeMonitor::summarize(*out << "\n");
-      
+
     }
-    
+
     if(verbose)
       *out << "\nPerforming eY = Op*eV1 (using Thyra::EpetraLinearOp::apply(...)) " << num_time_loops_3 << " times ...\n";
 
@@ -1083,7 +1083,7 @@ int main( int argc, char* argv[] )
 
     if(verbose)
       Teuchos::TimeMonitor::summarize(*out << "\n");
-    
+
     print_performance_stats( num_time_loops_3, raw_epetra_time, thyra_wrapped_time, verbose, *out );
 
     // RAB: 2004/01/05: Note, the above Epetra adapter is a true

@@ -140,9 +140,11 @@ int ex_put_nodal_var (int   exoid,
 
     start[0] = --time_step;
     start[1] = 0;
-
+    start[2] = 0;
+    
     count[0] = 1;
     count[1] = num_nodes;
+    count[2] = 0;
   }
 
   if (ex_comp_ws(exoid) == 4) {

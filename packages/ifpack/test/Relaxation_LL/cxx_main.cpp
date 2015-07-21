@@ -106,7 +106,7 @@ int CompareBlockOverlap(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int Ove
 }
 
 // ====================================================================== 
-int CompareBlockSizes(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int NumParts)
+int CompareBlockSizes(std::string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int NumParts)
 {
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
@@ -143,7 +143,7 @@ int CompareBlockSizes(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatr
 }
 
 // ====================================================================== 
-bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int sweeps)
+bool ComparePointAndBlock(std::string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int sweeps)
 {
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
@@ -241,7 +241,7 @@ bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_Row
 }
 
 // ====================================================================== 
-bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, bool backward)
+bool KrylovTest(std::string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, bool backward)
 {
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
@@ -331,7 +331,7 @@ bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A
 }
 
 // ====================================================================== 
-bool BasicTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A,bool backward)
+bool BasicTest(std::string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A,bool backward)
 {
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);

@@ -85,6 +85,8 @@ NNTI_buffer_t       send_mr; /* contiguous registered memory regions */
 NNTI_work_request_t send_wr[QUEUE_SIZE]; /* work requests */
 NNTI_work_request_t *send_wr_list[QUEUE_SIZE]; /* work requests */
 
+NNTI_work_request_t send_ack_wr;
+
 #define WR_COUNT 2
 NNTI_work_request_t *mr_wr_list[WR_COUNT];
 NNTI_result_t        err;
@@ -131,11 +133,6 @@ void client(void) {
     char     *packed=NULL;
     uint64_t  packed_size=0;
 
-
-    sent_count   =0;
-    success_count=0;
-    dropped_count=0;
-    fill_count   =0;
 
     NNTI_connect(&trans_hdl, url, 5000, &server_hdl);
 
@@ -205,7 +202,7 @@ void client(void) {
      * Phase 2 - fill the server's queue
      */
     // the server's queue has QUEUE_SIZE slots available, so these NNTI_send() operations should all succeed.
-    for (int i=0;i<QUEUE_SIZE;i++) {
+    while (1) {
         rc=NNTI_send(&server_hdl, &send_mr, NULL, &send_wr[0]);
         if (rc == NNTI_OK) {
             sent_count++;
@@ -220,38 +217,40 @@ void client(void) {
         } else if (rc == NNTI_EDROPPED) {
         	dropped_count++;
         	break;
+        } else if (rc == NNTI_ETIMEDOUT) {
+            timeout_count++;
+            break;
         } else {
             log_error(fullqueue_debug_level, "NNTI_wait() returned an error: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
 
-    MPI_Barrier(MPI_COMM_WORLD);
-
     c_ptr=NNTI_BUFFER_C_POINTER(&send_mr);
     *(int*)c_ptr=fill_count;
 
     // send an ACK so the server knows to proceed
-    rc=NNTI_send(&server_hdl, &send_mr, &server_ack_mr, &send_wr[0]);
+    rc=NNTI_send(&server_hdl, &send_mr, &server_ack_mr, &send_ack_wr);
     if (rc != NNTI_OK) {
         log_error(fullqueue_debug_level, "NNTI_send() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
     }
-    rc=NNTI_wait(&send_wr[0], 1000, &send_status[0]);
+    rc=NNTI_wait(&send_ack_wr, 1000, &send_status[0]);
     if (rc != NNTI_OK) {
         log_error(fullqueue_debug_level, "NNTI_wait() returned an error: %d", rc);
         MPI_Abort(MPI_COMM_WORLD, rc);
     }
 
-
-    log_debug(LOG_ALL, "Client Begin Phase #3 - the client sends to a full queue");
+    log_debug(LOG_ALL, "Client Begin Phase #3 - the client sends to a full queue (blocked_count=%d)", QUEUE_SIZE);
     /*
      * Phase 3 - send to a full queue
      */
     MPI_Barrier(MPI_COMM_WORLD);
 
+    send_wr_list[0]=&send_wr[0];
+    send_status_list[0]=&send_status[0];
     // the server's queue should be full, so these NNTI_send() operations should fail with NNTI_ETIMEDOUT.
-    for (int i=0;i<QUEUE_SIZE;i++) {
+    for (int i=1;i<QUEUE_SIZE;i++) {
         rc=NNTI_send(&server_hdl, &send_mr, NULL, &send_wr[i]);
         if (rc == NNTI_OK) {
             sent_count++;
@@ -262,8 +261,8 @@ void client(void) {
         send_wr_list[i]=&send_wr[i];
         send_status_list[i]=&send_status[i];
     }
-    for (int i=0;i<QUEUE_SIZE;i++) {
-        rc=NNTI_wait(&send_wr[1], 1000, &send_status[0]);
+    for (int i=1;i<QUEUE_SIZE;i++) {
+        rc=NNTI_wait(&send_wr[i], 1000, &send_status[i]);
         if (rc == NNTI_ETIMEDOUT) {
             timeout_count++;
         } else {
@@ -314,9 +313,10 @@ void client(void) {
     /*
      * Phase 6 - fill the server's queue again
      */
+    int refill_count=fill_count;
     fill_count=0;
     // the server's queue is empty again, so these NNTI_send() operations should all succeed.
-    for (int i=0;i<QUEUE_SIZE;i++) {
+    for (int i=0;i<refill_count;i++) {
         rc=NNTI_send(&server_hdl, &send_mr, NULL, &send_wr[0]);
         if (rc == NNTI_OK) {
             sent_count++;
@@ -436,7 +436,6 @@ void server(void)
 
 
     log_debug(LOG_ALL, "Server Begin Phase #2 - the client fills the queue");
-    MPI_Barrier(MPI_COMM_WORLD);
 
     /*
      * Phase 2 - the client fills the queue
@@ -487,11 +486,11 @@ void server(void)
 #endif
 
 
-    log_debug(LOG_ALL, "Server Begin Phase #5 - the server drains the queue  (requests blocked by full queue)");
+    log_debug(LOG_ALL, "Server Begin Phase #5 - the server drains the queue  (requests blocked by full queue) (blocked_count=%d)", QUEUE_SIZE);
     /*
      * Phase 5 - drain the queue
      */
-    for (int i=0;i<fill_count;i++) {
+    for (int i=0;i<QUEUE_SIZE;i++) {
         NNTI_create_work_request(&queue_mr, &queue_wr);
         rc=NNTI_wait(&queue_wr, 1000, &queue_status);
         NNTI_destroy_work_request(&queue_wr);

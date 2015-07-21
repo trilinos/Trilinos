@@ -272,15 +272,15 @@ transpose(Tensor4<T, N> const & A);
 /// \return \f$ \delta_{ik} \delta_{jl} \f$ such that \f$ A = I_1 A \f$
 ///
 template<typename T, Index N>
-const Tensor4<T, N>
+Tensor4<T, N> const
 identity_1();
 
 template<typename T>
-const Tensor4<T, DYNAMIC>
+Tensor4<T, DYNAMIC> const
 identity_1(Index const dimension);
 
 template<typename T, Index N>
-const Tensor4<T, N>
+Tensor4<T, N> const
 identity_1(Index const dimension);
 
 ///
@@ -288,15 +288,15 @@ identity_1(Index const dimension);
 /// \return \f$ \delta_{il} \delta_{jk} \f$ such that \f$ A^T = I_2 A \f$
 ///
 template<typename T, Index N>
-const Tensor4<T, N>
+Tensor4<T, N> const
 identity_2();
 
 template<typename T>
-const Tensor4<T, DYNAMIC>
+Tensor4<T, DYNAMIC> const
 identity_2(Index const dimension);
 
 template<typename T, Index N>
-const Tensor4<T, N>
+Tensor4<T, N> const
 identity_2(Index const dimension);
 
 ///
@@ -304,16 +304,61 @@ identity_2(Index const dimension);
 /// \return \f$ \delta_{ij} \delta_{kl} \f$ such that \f$ I_A I = I_3 A \f$
 ///
 template<typename T, Index N>
-const Tensor4<T, N>
+Tensor4<T, N> const
 identity_3();
 
 template<typename T>
-const Tensor4<T, DYNAMIC>
+Tensor4<T, DYNAMIC> const
 identity_3(Index const dimension);
 
 template<typename T, Index N>
-const Tensor4<T, N>
+Tensor4<T, N> const
 identity_3(Index const dimension);
+
+///
+/// Levi-Civita symbol
+///
+template<typename T, Index N>
+Tensor4<T, N> const
+levi_civita_4();
+
+template<typename T>
+Tensor4<T, DYNAMIC> const
+levi_civita_4(Index const dimension);
+
+template<typename T, Index N>
+Tensor4<T, N> const
+levi_civita_4(Index const dimension);
+
+///
+/// Permutation symbol
+///
+template<typename T, Index N>
+Tensor4<T, N> const
+permutation_4();
+
+template<typename T>
+Tensor4<T, DYNAMIC> const
+permutation_4(Index const dimension);
+
+template<typename T, Index N>
+Tensor4<T, N> const
+permutation_4(Index const dimension);
+
+///
+/// Alternating symbol
+///
+template<typename T, Index N>
+Tensor4<T, N> const
+alternator_4();
+
+template<typename T>
+Tensor4<T, DYNAMIC> const
+alternator_4(Index const dimension);
+
+template<typename T, Index N>
+Tensor4<T, N> const
+alternator_4(Index const dimension);
 
 ///
 /// 4th-order inverse

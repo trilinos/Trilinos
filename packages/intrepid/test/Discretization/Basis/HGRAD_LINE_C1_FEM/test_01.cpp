@@ -70,7 +70,10 @@ using namespace Intrepid;
 }
 
 int main(int argc, char *argv[]) {
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(std::cout);
 
+#ifndef KOKKOS_HAVE_CUDA
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if
@@ -84,8 +87,6 @@ int main(int argc, char *argv[]) {
     outStream = Teuchos::rcp(&bhs, false);
 
   // Save the format state of the original std::cout.
-  Teuchos::oblackholestream oldFormatState;
-  oldFormatState.copyfmt(std::cout);
 
   *outStream \
     << "===============================================================================\n" \
@@ -105,12 +106,12 @@ int main(int argc, char *argv[]) {
     << "===============================================================================\n"\
     << "| TEST 1: Basis creation, exception testing                                   |\n"\
     << "===============================================================================\n";
-
+#endif
   
   // Define basis and error flag
   Basis_HGRAD_LINE_C1_FEM<double, FieldContainer<double> > lineBasis;
   int errorFlag = 0;
-
+#ifndef KOKKOS_HAVE_CUDA
   // Initialize throw counter for exception testing
   int nException     = 0;
   int throwCounter   = 0;
@@ -432,13 +433,13 @@ int main(int argc, char *argv[]) {
     errorFlag = -1000;
   };
 
+#endif
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
   else
     std::cout << "End Result: TEST PASSED\n";
 
   // reset format state of std::cout
-  std::cout.copyfmt(oldFormatState);
-
+     std::cout.copyfmt(oldFormatState);
   return errorFlag;
 }

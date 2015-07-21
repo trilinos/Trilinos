@@ -40,8 +40,8 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_DENSECONTAINER_DEF_HPP
-#define IFPACK2_DENSECONTAINER_DEF_HPP
+#ifndef IFPACK2_TRIDICONTAINER_DEF_HPP
+#define IFPACK2_TRIDICONTAINER_DEF_HPP
 
 #include "Ifpack2_TriDiContainer_decl.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -191,10 +191,10 @@ void TriDiContainer<MatrixType, LocalScalarType>::factor ()
   Teuchos::LAPACK<int, local_scalar_type> lapack;
   int INFO = 0;
   lapack.GTTRF (diagBlock_.numRowsCols (),
-		diagBlock_.DL(),
-		diagBlock_.D(),
-		diagBlock_.DU(),
-		diagBlock_.DU2(),
+                diagBlock_.DL(),
+                diagBlock_.D(),
+                diagBlock_.DU(),
+                diagBlock_.DU2(),
                 ipiv_.getRawPtr (), &INFO);
   // INFO < 0 is a bug.
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -255,7 +255,7 @@ applyImpl (const local_mv_type& X,
     << (mode == Teuchos::NO_TRANS ? diagBlock_.numRowsCols () : diagBlock_.numRowsCols())
     << ").  Please report this bug to the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.getLocalLength () != static_cast<size_t> (diagBlock_.numRowsCols()),
+    Y.getLocalLength () != static_cast<size_t> (diagBlock_.numRowsCols()),
     std::logic_error, "Ifpack2::TriDiContainer::applyImpl: The output "
     "multivector Y has incompatible dimensions from those of the "
     "inverse operator (" << Y.getLocalLength () << " vs. "
@@ -296,10 +296,10 @@ applyImpl (const local_mv_type& X,
     const char trans =
       (mode == Teuchos::CONJ_TRANS ? 'C' : (mode == Teuchos::TRANS ? 'T' : 'N'));
     lapack.GTTRS (trans, diagBlock_.numRowsCols(),numVecs,
-		  diagBlock_.DL(),
-		  diagBlock_.D(),
-		  diagBlock_.DU(),
-		  diagBlock_.DU2(),
+                  diagBlock_.DL(),
+                  diagBlock_.D(),
+                  diagBlock_.DU(),
+                  diagBlock_.DU2(),
                   ipiv_.getRawPtr (), Y_ptr, Y_stride, &INFO);
     TEUCHOS_TEST_FOR_EXCEPTION(
       INFO != 0, std::runtime_error, "Ifpack2::TriDiContainer::applyImpl: "
@@ -310,7 +310,7 @@ applyImpl (const local_mv_type& X,
       Y.update (alpha, *Y_tmp, beta);
     }
     else if (! Y.isConstantStride ()) {
-      Y = *Y_tmp;
+      Tpetra::deep_copy (Y, *Y_tmp);
     }
   }
 }
@@ -777,6 +777,7 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
 } // namespace Ifpack2
 
 #define IFPACK2_TRIDICONTAINER_INSTANT(S,LO,GO,N) \
-  template class Ifpack2::TriDiContainer< Tpetra::CrsMatrix<S, LO, GO, N>, S >;
+  template class Ifpack2::TriDiContainer< Tpetra::CrsMatrix<S, LO, GO, N>, S >; \
+  template class Ifpack2::TriDiContainer< Tpetra::RowMatrix<S, LO, GO, N>, S >;
 
-#endif // IFPACK2_SPARSECONTAINER_HPP
+#endif // IFPACK2_TRIDICONTAINER_HPP

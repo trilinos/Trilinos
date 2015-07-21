@@ -57,10 +57,10 @@
 namespace panzer {
     
 //! Interpolates basis DOF using reference coordinates defined by a field
-template <typename EvalT, typename TraitsT>
+template <typename EvalT, typename TRAITST>
 class DOF_PointField 
-  : public PHX::EvaluatorWithBaseImpl<TraitsT>,
-    public PHX::EvaluatorDerived<EvalT, TraitsT> {
+  : public PHX::EvaluatorWithBaseImpl<TRAITST>,
+    public PHX::EvaluatorDerived<EvalT, TRAITST> {
 public:
 
   /** \basic Constructor that allows user to specify a postfix for the
@@ -110,10 +110,10 @@ public:
   { std::string postfixFieldName = (useCoordPostfix ? coordinateName : ""); 
     initialize(fieldName,fieldBasis,coordinateName,coordLayout,quadLayout,postfixFieldName); }
   
-  void postRegistrationSetup(typename TraitsT::SetupData d,
-			     PHX::FieldManager<TraitsT>& vm);
+  void postRegistrationSetup(typename TRAITST::SetupData d,
+			     PHX::FieldManager<TRAITST>& vm);
 
-  void evaluateFields(typename TraitsT::EvalData workset);
+  void evaluateFields(typename TRAITST::EvalData workset);
 
 private:
   typedef typename EvalT::ScalarT ScalarT;
@@ -127,8 +127,8 @@ private:
                   const std::string & postfixFieldName);
 
   PHX::MDField<ScalarT,Point,Dim> coordinates; // reference coordinates
-  PHX::MDField<ScalarT,Cell,Point> dof_coeff;  // coefficient values   
-  PHX::MDField<ScalarT,Cell,Point> dof_field;  // evaluate field
+  PHX::MDField<ScalarT> dof_coeff;  // coefficient values   
+  PHX::MDField<ScalarT> dof_field;  // evaluate field
 
   Teuchos::RCP<Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepidBasis;
   Intrepid::FieldContainer<double> intrpCoords, basisRef, basis;

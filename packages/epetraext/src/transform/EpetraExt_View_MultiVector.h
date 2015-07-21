@@ -52,7 +52,7 @@ namespace EpetraExt {
 //! Generates a sub-block view of a Epetra_MultiVector
 class MultiVector_View : public ViewTransform<Epetra_MultiVector> {
 
-  const Epetra_BlockMap & OrigMap_;
+  /* const Epetra_BlockMap & OrigMap_; (unused private field) */
   const Epetra_BlockMap & NewMap_;
 
   const int NumVec_;
@@ -63,10 +63,10 @@ class MultiVector_View : public ViewTransform<Epetra_MultiVector> {
   ~MultiVector_View();
 
   //! Constructor
-  MultiVector_View( const Epetra_BlockMap & orig_map,
+  MultiVector_View( const Epetra_BlockMap & /* orig_map (unused) */,
                     const Epetra_BlockMap & new_map,
                     const int num_vec = -1 )
-  : OrigMap_(orig_map),
+    : /* OrigMap_(orig_map), (unused) */
     NewMap_(new_map),
     NumVec_(num_vec)
   {}

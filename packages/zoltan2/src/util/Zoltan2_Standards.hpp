@@ -118,15 +118,7 @@ typedef size_t global_size_t;
 
 }
 
-//////////////////////////////////////////////////////
-// Our data types
-//   Prepend API types with zoltan2_.
-//////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////
 // For debugging
-//////////////////////////////////////////////////////
-
 #define HELLO
 //#define HELLO printf("HELLO from %s:%i\n", __FILE__, __LINE__); // Turn on for debug 
 
@@ -136,14 +128,5 @@ typedef size_t global_size_t;
 
 #include <Zoltan2_Exceptions.hpp>
 
-//////////////////////////////////////////////////////
-// Until Kokkos node types are supported, use default
-//////////////////////////////////////////////////////
-
-#include <Kokkos_DefaultNode.hpp>
-
-namespace Zoltan2{
-typedef KokkosClassic::DefaultNode::DefaultNodeType default_node_t;
-}
 
 #endif

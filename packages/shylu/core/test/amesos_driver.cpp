@@ -17,14 +17,12 @@
 
 // Epetra includes
 #ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#else
+#  include "Epetra_MpiComm.h"
+#endif // HAVE_MPI
 #include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_SerialComm.h"
-#include "Epetra_CrsMatrix.h" 
-#include "Epetra_Map.h" 
-#include "Epetra_MultiVector.h" 
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Map.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_LinearProblem.h"
 
 // Teuchos includes
@@ -109,7 +107,7 @@ int main(int argc, char *argv[])
     Isorropia::Epetra::Redistributor rd(partitioner);
 
     Epetra_CrsMatrix *newA;
-    Epetra_MultiVector *newX, *newB; 
+    Epetra_MultiVector *newX, *newB;
     rd.redistribute(*A, newA);
     delete A;
     A = newA;
@@ -145,7 +143,7 @@ int main(int argc, char *argv[])
     double Norm;
     Epetra_MultiVector Ax(vecMap, 1);
 
-    Epetra_MultiVector *newAx; 
+    Epetra_MultiVector *newAx;
     rd.redistribute(Ax, newAx);
     A->Multiply(false, *newX, *newAx);
     newAx->Update(1.0, *newB, -1.0);

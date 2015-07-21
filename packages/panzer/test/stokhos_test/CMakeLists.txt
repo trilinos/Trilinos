@@ -14,8 +14,6 @@ SET(RIG_HEADERS
    ${PACKAGE_SOURCE_DIR}/test/ugi_rig/user_app_ClosureModel_Factory.hpp
    ${PACKAGE_SOURCE_DIR}/test/ugi_rig/user_app_ClosureModel_FactoryT.hpp
    ${PACKAGE_SOURCE_DIR}/test/ugi_rig/user_app_ClosureModel_Factory_TemplateBuilder.hpp
-   ${PACKAGE_SOURCE_DIR}/test/ugi_rig/user_app_ConstantModel.hpp
-   ${PACKAGE_SOURCE_DIR}/test/ugi_rig/user_app_ConstantModelT.hpp
    ${PACKAGE_SOURCE_DIR}/test/ugi_rig/user_app_Convection.hpp
    ${PACKAGE_SOURCE_DIR}/test/ugi_rig/user_app_ConvectionT.hpp
    ${PACKAGE_SOURCE_DIR}/test/ugi_rig/user_app_EquationSetFactory.hpp

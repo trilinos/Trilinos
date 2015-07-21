@@ -45,18 +45,14 @@
 #ifndef PHX_TYPE_STRINGS_HPP
 #define PHX_TYPE_STRINGS_HPP
 
+#include "Teuchos_TypeNameTraits.hpp"
 #include <string>
 
 namespace PHX {
-  
-  //! User must specialize this class for each evaluation and data type!
-  template<typename ObjectT> 
-  struct TypeString
-  { static const std::string value; };
 
   template<typename ObjectT>
   std::string typeAsString() 
-  { return TypeString<ObjectT>::value; }
+  { return Teuchos::TypeNameTraits<ObjectT>::name(); }
 
 }
    

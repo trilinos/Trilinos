@@ -57,11 +57,11 @@
 
 // Constructor - creates the Epetra objects (maps and vectors)
 DennisSchnabel::DennisSchnabel(int numGlobalElements, Epetra_Comm& comm) :
-  Comm(&comm),
-  NumGlobalElements(numGlobalElements),
   flag(F_ONLY),
   soln(NULL),
-  rhs(NULL)
+  rhs(NULL),
+  Comm(&comm),
+  NumGlobalElements(numGlobalElements)
 {
 
   // Commonly used variables
@@ -146,17 +146,11 @@ bool DennisSchnabel::evaluate(
   // for function and Jacobian evaluations.
   u.Import(*soln, *Importer, Insert);
 
-  // Declare required variables
-  int i,ierr;
-  int OverlapMinMyGID;
-  if (MyPID==0) OverlapMinMyGID = StandardMap->MinMyGID();
-  else OverlapMinMyGID = StandardMap->MinMyGID()-1;
-
   // Begin F fill
   if((flag == F_ONLY) || (flag == ALL)) {
 
     // Zero out the F vector
-    i=rhs->PutScalar(0.0);
+    rhs->PutScalar(0.0);
 
     // Processor 0 always fills the first equation.
     if (MyPID==0) {
@@ -185,26 +179,26 @@ bool DennisSchnabel::evaluate(
   if((flag == MATRIX_ONLY) || (flag == ALL)) {
 
     // Zero out Jacobian
-    i=A->PutScalar(0.0);
+    A->PutScalar(0.0);
 
     if (MyPID==0) {
       // Processor 0 always fills the first equation.
       jac[0] = 2.*u[0];
       jac[1] = 2.*u[1];
-      ierr=A->ReplaceGlobalValues(0, 2, jac, column);
+      A->ReplaceGlobalValues(0, 2, jac, column);
 
       // If it's a single processor job, fill the second equation on proc 0.
       if (NumProc==1) {
     jac[0] = exp(u[0]-1.);
     jac[1] = 3.*u[1]*u[1];
-    ierr=A->ReplaceGlobalValues(1, 2, jac, column);
+    A->ReplaceGlobalValues(1, 2, jac, column);
       }
     }
     // Multiprocessor job puts the second equation on processor 1.
     else {
       jac[0] = exp(u[0]-1.);
       jac[1] = 3.*u[1]*u[1];
-      ierr=A->ReplaceGlobalValues(1, 2, jac, column);
+      A->ReplaceGlobalValues(1, 2, jac, column);
     }
   }
 

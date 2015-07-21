@@ -57,7 +57,19 @@
 namespace MueLu {
   /*!
     @class AggregationPhase3Algorithm class.
-    @brief
+    @brief Handle leftover nodes. Try to avoid singleton nodes
+    @ingroup Aggregation
+
+    ### Idea ###
+    In phase 3 we try to stick unaggregated nodes into a neighboring aggregate.
+    We try to avoid singletons: we first try to build a new aggregate containing
+    all neighboring non-aggregated nodes. If we cannot build a new aggregate,
+    we add the non-aggregated node to the first adjacent aggregate.
+    Only if there is no adjacent aggregate, we create a singleton node aggregate.
+
+    ### Comments ###
+    Only nodes with state READY are changed to AGGREGATED.
+
   */
 
   template <class LocalOrdinal = int,

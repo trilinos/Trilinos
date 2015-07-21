@@ -25,18 +25,15 @@ APPEND_SET(HEADERS
     Kokkos_CrsGraphBase.hpp
     Kokkos_CrsMatrixBase.hpp
     Kokkos_MultiVector.hpp
-    Kokkos_VbrMatrix.hpp
     # Default LocalMapOps template parameters
     Kokkos_DefaultKernels.hpp
     # kernels
-    Kokkos_DefaultBlockSparseKernelOps.hpp
     Kokkos_DefaultSparseMultiplyKernelOps.hpp
     Kokkos_DefaultSparseSolveKernelOps.hpp
     Kokkos_DefaultRelaxationKernelOps.hpp
     Kokkos_MultiVectorKernelOps.hpp
     # traits and kernel wrappers
     Kokkos_DefaultArithmetic.hpp
-    Kokkos_DefaultBlockSparseOps.hpp
     Kokkos_DefaultSparseOps.hpp
     Kokkos_DefaultRelaxation.hpp
     Kokkos_AltSparseOps.hpp

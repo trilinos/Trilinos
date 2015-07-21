@@ -50,6 +50,7 @@
 
 // Domi includes
 #include "Domi_ConfigDefs.hpp"
+#include "Domi_DefaultNode.hpp"
 #include "Domi_Utils.hpp"
 #include "Domi_getValidParameters.hpp"
 #include "Domi_Slice.hpp"
@@ -63,7 +64,7 @@
 #include "Teuchos_Tuple.hpp"
 
 // Kokkos includes
-#include "Kokkos_DefaultNode.hpp"
+#include "Kokkos_Core.hpp"
 
 #ifdef HAVE_EPETRA
 #include "Epetra_Map.h"
@@ -139,7 +140,7 @@ namespace Domi
  * or communication padding is present.  This allows negative indexes
  * to represent reverse indexing from the end of a dimension.
  */
-template< class Node = KokkosClassic::DefaultNode::DefaultNodeType >
+template< class Node = DefaultNode::DefaultNodeType >
 class MDMap
 {
 public:
@@ -167,18 +168,14 @@ public:
    *        padding sizes will be set to zero.
    *
    * \param layout [in] the storage order of the map
-   *
-   * \param node [in] the Kokkos node of the map
    */
   MDMap(const Teuchos::RCP< const MDComm > mdComm,
-        const Teuchos::ArrayView< dim_type > & dimensions,
-        const Teuchos::ArrayView< int > & commPad =
-          Teuchos::ArrayView< int >(),
-        const Teuchos::ArrayView< int > & bndryPad =
-          Teuchos::ArrayView< int >(),
-        const Layout layout = DEFAULT_ORDER,
-        const Teuchos::RCP< Node > & node =
-          KokkosClassic::DefaultNode::getDefaultNode());
+        const Teuchos::ArrayView< const dim_type > & dimensions,
+        const Teuchos::ArrayView< const int > & commPad =
+          Teuchos::ArrayView< const int >(),
+        const Teuchos::ArrayView< const int > & bndryPad =
+          Teuchos::ArrayView< const int >(),
+        const Layout layout = DEFAULT_ORDER);
 
   /** \brief Constructor with ParameterList
    *
@@ -188,13 +185,9 @@ public:
    *        <hr />
    *        \endhtmlonly
    *
-   * \param node [in] the Kokkos node of the map
-   *
    * This constructor uses the Teuchos::DefaultComm
    */
-  MDMap(Teuchos::ParameterList & plist,
-        const Teuchos::RCP< Node > & node =
-          KokkosClassic::DefaultNode::getDefaultNode());
+  MDMap(Teuchos::ParameterList & plist);
 
   /** \brief Constructor with Teuchos::Comm and ParameterList
    *
@@ -206,13 +199,9 @@ public:
    *        <iframe src="domi.xml" width="90%"height="400px"></iframe>
    *        <hr />
    *        \endhtmlonly
-   *
-   * \param node [in] the Kokkos node of the map
    */
   MDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
-        Teuchos::ParameterList & plist,
-        const Teuchos::RCP< Node > & node =
-          KokkosClassic::DefaultNode::getDefaultNode());
+        Teuchos::ParameterList & plist);
 
   /** \brief Constructor with MDComm and ParameterList
    *
@@ -224,13 +213,9 @@ public:
    *        <iframe src="domi.xml" width="90%"height="400px"></iframe>
    *        <hr />
    *        \endhtmlonly
-   *
-   * \param node [in] the Kokkos node of the map
    */
   MDMap(const Teuchos::RCP< const MDComm > mdComm,
-        Teuchos::ParameterList & plist,
-        const Teuchos::RCP< Node > & node =
-          KokkosClassic::DefaultNode::getDefaultNode());
+        Teuchos::ParameterList & plist);
 
   /** \brief Constructor with global bounds for this processor
    *
@@ -242,16 +227,12 @@ public:
    *        processor, excluding padding
    *
    * \param layout [in] the storage order of the map
-   *
-   * \param node [in] the Kokkos node of the map
    */
   MDMap(const Teuchos::RCP< const MDComm > mdComm,
         const Teuchos::ArrayView< Slice > & myGlobalBounds,
         const Teuchos::ArrayView< padding_type > & padding =
           Teuchos::ArrayView< padding_type >(),
-        const Layout layout = DEFAULT_ORDER,
-        const Teuchos::RCP< Node > & node =
-          KokkosClassic::DefaultNode::getDefaultNode());
+        const Layout layout = DEFAULT_ORDER);
 
   /** \brief Copy constructor
    *
@@ -671,7 +652,7 @@ public:
 
   /** \brief Return an RCP to a Tpetra::Map that is equivalent to this
    *         MDMap, specifying the LocalOrdinal and GlobalOrdinal
-   *         types, but not the Node tpye
+   *         types, but not the Node type
    *
    * \param withCommPad [in] flag whether to include the communication
    *        padding in the map
@@ -944,9 +925,6 @@ private:
   // The storage order
   Layout _layout;
 
-  // The Kokkos node type
-  Teuchos::RCP< Node > _node;
-
 #ifdef HAVE_EPETRA
   // An RCP pointing to an Epetra_Map that is equivalent to this
   // MDMap, including communication padding.  It is mutable because we
@@ -983,11 +961,10 @@ private:
 template< class Node >
 MDMap< Node >::
 MDMap(const Teuchos::RCP< const MDComm > mdComm,
-      const Teuchos::ArrayView< dim_type > & dimensions,
-      const Teuchos::ArrayView< int > & commPad,
-      const Teuchos::ArrayView< int > & bndryPad,
-      const Layout layout,
-      const Teuchos::RCP< Node > & node) :
+      const Teuchos::ArrayView< const dim_type > & dimensions,
+      const Teuchos::ArrayView< const int > & commPad,
+      const Teuchos::ArrayView< const int > & bndryPad,
+      const Layout layout) :
   _mdComm(mdComm),
   _globalDims(mdComm->numDims()),
   _globalBounds(),
@@ -1004,8 +981,7 @@ MDMap(const Teuchos::RCP< const MDComm > mdComm,
   _pad(),
   _bndryPadSizes(mdComm->numDims(), 0),
   _bndryPad(),
-  _layout(layout),
-  _node(node)
+  _layout(layout)
 {
   // Temporarily store the number of dimensions
   int numDims = mdComm->numDims();
@@ -1059,9 +1035,8 @@ MDMap(const Teuchos::RCP< const MDComm > mdComm,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
-MDMap< Node>::
-MDMap(Teuchos::ParameterList & plist,
-      const Teuchos::RCP< Node > & node) :
+MDMap< Node >::
+MDMap(Teuchos::ParameterList & plist) :
   _mdComm(Teuchos::rcp(new MDComm(plist))),
   _globalDims(),
   _globalBounds(),
@@ -1078,8 +1053,7 @@ MDMap(Teuchos::ParameterList & plist,
   _pad(),
   _bndryPadSizes(),
   _bndryPad(),
-  _layout(),
-  _node(node)
+  _layout()
 {
   // Note that the call to the MDComm constructor in the constructor
   // initialization list will validate the ParameterList, so we don't
@@ -1173,10 +1147,9 @@ MDMap(Teuchos::ParameterList & plist,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
-MDMap< Node>::
+MDMap< Node >::
 MDMap(Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
-      Teuchos::ParameterList & plist,
-      const Teuchos::RCP< Node > & node) :
+      Teuchos::ParameterList & plist) :
   _mdComm(Teuchos::rcp(new MDComm(teuchosComm, plist))),
   _globalDims(),
   _globalBounds(),
@@ -1193,8 +1166,7 @@ MDMap(Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
   _pad(),
   _bndryPadSizes(),
   _bndryPad(),
-  _layout(),
-  _node(node)
+  _layout()
 {
   // Note that the call to the MDComm constructor in the constructor
   // initialization list will validate the ParameterList, so we don't
@@ -1297,8 +1269,7 @@ MDMap< Node >::
 MDMap(const Teuchos::RCP< const MDComm > mdComm,
       const Teuchos::ArrayView< Slice > & myGlobalBounds,
       const Teuchos::ArrayView< padding_type > & padding,
-      const Layout layout,
-      const Teuchos::RCP< Node > & node) :
+      const Layout layout) :
   _mdComm(mdComm),
   _globalDims(mdComm->numDims()),
   _globalBounds(mdComm->numDims()),
@@ -1315,8 +1286,7 @@ MDMap(const Teuchos::RCP< const MDComm > mdComm,
   _pad(mdComm->numDims(), Teuchos::tuple(0,0)),
   _bndryPadSizes(mdComm->numDims(), 0),
   _bndryPad(mdComm->numDims()),
-  _layout(layout),
-  _node(node)
+  _layout(layout)
 {
   // Check that myGlobalBounds is the correct size
   int numDims = _mdComm->numDims();
@@ -1463,10 +1433,9 @@ MDMap(const Teuchos::RCP< const MDComm > mdComm,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Node >
-MDMap< Node>::
+MDMap< Node >::
 MDMap(Teuchos::RCP< const MDComm > mdComm,
-      Teuchos::ParameterList & plist,
-      const Teuchos::RCP< Node > & node) :
+      Teuchos::ParameterList & plist) :
   _mdComm(mdComm),
   _globalDims(mdComm->numDims()),
   _globalBounds(),
@@ -1483,8 +1452,7 @@ MDMap(Teuchos::RCP< const MDComm > mdComm,
   _pad(),
   _bndryPadSizes(mdComm->numDims(), 0),
   _bndryPad(),
-  _layout(),
-  _node(node)
+  _layout()
 {
   // Validate the ParameterList
   plist.validateParameters(*getValidParameters());
@@ -1595,8 +1563,7 @@ MDMap(const MDMap< Node > & source) :
   _pad(source._pad),
   _bndryPadSizes(source._bndryPadSizes),
   _bndryPad(source._bndryPad),
-  _layout(source._layout),
-  _node(source._node)
+  _layout(source._layout)
 {
 }
 
@@ -1623,8 +1590,7 @@ MDMap(const MDMap< Node > & parent,
   _pad(),
   _bndryPadSizes(),
   _bndryPad(),
-  _layout(parent._layout),
-  _node(parent._node)
+  _layout(parent._layout)
 {
   if (parent.onSubcommunicator())
   {
@@ -1747,8 +1713,7 @@ MDMap(const MDMap< Node > & parent,
   _pad(parent._pad),
   _bndryPadSizes(parent._bndryPadSizes),
   _bndryPad(parent._bndryPad),
-  _layout(parent._layout),
-  _node(parent._node)
+  _layout(parent._layout)
 {
   if (parent.onSubcommunicator())
   {
@@ -1961,7 +1926,6 @@ MDMap< Node >::operator=(const MDMap< Node > & source)
   _bndryPadSizes    = source._bndryPadSizes;
   _bndryPad         = source._bndryPad;
   _layout           = source._layout;
-  _node             = source._node;
   return *this;
 }
 
@@ -2787,11 +2751,11 @@ getTpetraAxisMap(int axis,
     elements[i] = i + start;
   return Teuchos::rcp(new Tpetra::Map< LocalOrdinal,
                                        GlobalOrdinal,
-                                       Node>(Teuchos::OrdinalTraits<
-                                               Tpetra::global_size_t>::invalid(),
-                                             elements,
-                                             0,
-                                             teuchosComm));
+                                       Node >(Teuchos::OrdinalTraits<
+                                                   Tpetra::global_size_t>::invalid(),
+                                                   elements,
+                                                   0,
+                                                   teuchosComm));
 }
 #endif
 

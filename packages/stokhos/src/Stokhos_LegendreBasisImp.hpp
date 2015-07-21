@@ -1,14 +1,14 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -60,7 +60,7 @@ LegendreBasis(ordinal_type p, const LegendreBasis& basis) :
 {
   // Compute coefficients in 3-term recurrsion
   computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta,
-				this->gamma);
+                                this->gamma);
 
   // Setup rest of recurrence basis
   this->setup();
@@ -76,35 +76,35 @@ template <typename ordinal_type, typename value_type>
 bool
 Stokhos::LegendreBasis<ordinal_type, value_type>::
 computeRecurrenceCoefficients(ordinal_type n,
-			      Teuchos::Array<value_type>& alpha,
-			      Teuchos::Array<value_type>& beta,
-			      Teuchos::Array<value_type>& delta,
-			      Teuchos::Array<value_type>& gamma) const
+                              Teuchos::Array<value_type>& theAlpha,
+                              Teuchos::Array<value_type>& theBeta,
+                              Teuchos::Array<value_type>& theDelta,
+                              Teuchos::Array<value_type>& theGamma) const
 {
   // Legendre 3 term recurrence:
   // P_0(x) = 1
   // P_1(x) = x
   // P_i(x) = (2*i-1)/i*x*P_{i-1}(x) - (i-1)/i*P_{i-2}(x), i=2,3,...
-  alpha[0] = 0.0;
-  beta[0] = 1.0;
-  delta[0] = 1.0;
-  gamma[0] = 1.0;
+  theAlpha[0] = 0.0;
+  theBeta[0] = 1.0;
+  theDelta[0] = 1.0;
+  theGamma[0] = 1.0;
   for (ordinal_type i=1; i<n; i++) {
-    alpha[i] = 0.0;
-    //beta[i] = value_type(i*i) / value_type((2*i-1)*(2*i+1));
-    beta[i] = value_type(i) / value_type(i+1);
-    delta[i] = value_type(2*i+1) / value_type(i+1);
-    gamma[i] = 1.0;
+    theAlpha[i] = 0.0;
+    //theBeta[i] = value_type(i*i) / value_type((2*i-1)*(2*i+1));
+    theBeta[i] = value_type(i) / value_type(i+1);
+    theDelta[i] = value_type(2*i+1) / value_type(i+1);
+    theGamma[i] = 1.0;
   }
 
   return false;
 }
 
 template <typename ordinal_type, typename value_type>
-Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > 
+Teuchos::RCP<Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> >
 Stokhos::LegendreBasis<ordinal_type,value_type>::
-cloneWithOrder(ordinal_type p) const
+cloneWithOrder(ordinal_type pp) const
 {
-  return 
-    Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(p,*this));
+  return
+    Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(pp,*this));
 }

@@ -11,6 +11,11 @@
         
 \cbb{problem: symmetric}{bool}{true}{Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.}
         
+\cbb{xml parameter file}{string}{""}{An XML file from which to read additional
+      parameters.  In case of a conflict, parameters manually set on
+      the list will override parameters in the file. If the string is
+      empty a file will not be read.}
+        
 \cbb{parameterlist: syntax}{string}{muelu}{Syntax of ParameterList to use.  This should either be "muelu" or "ml." }
         
 \cbb{smoother: pre or post}{string}{"both"}{Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers), "none" (no smoothing).}
@@ -53,6 +58,12 @@
         
 \cbb{aggregation: max agg size}{int}{-1}{Maximum size of an aggregate (-1 means unlimited).}
         
+\cbb{aggregation: brick x size}{int}{2}{Number of points for x axis in "brick" aggregation (limited to 3).}
+        
+\cbb{aggregation: brick y size}{int}{2}{Number of points for y axis in "brick" aggregation (limited to 3).}
+        
+\cbb{aggregation: brick z size}{int}{2}{Number of points for z axis in "brick" aggregation (limited to 3).}
+        
 \cbb{aggregation: max selected neighbors}{int}{0}{Maximum number of neighbour nodes that are already aggregated. If a new aggregate has some neighbours that are already aggregated, this node probably can be added to one of these aggregates. We don't need a new one.}
         
 \cbb{aggregation: Dirichlet threshold}{double}{0.0}{Threshold for determining whether entries are zero during Dirichlet row detection.}
@@ -67,9 +78,23 @@
         
 \cbb{aggregation: preserve Dirichlet points}{bool}{false}{Turn on/off Dirichlet points preservation}
         
+\cbb{aggregation: allow user-specified singletons}{bool}{false}{Allow special nodes to be marked for one-to-one transfer to the coarsest level. (default = off)}
+        
 \cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
         
-\cbb{aggregation: mode}{string}{"old"}{old = Tobias, new = ML}
+\cbb{aggregation: output filename}{string}{""}{Filename to write VTK visualization data to.}
+        
+\cbb{aggregation: output file: time step}{int}{0}{Time step ID for non-linear problems.}
+        
+\cbb{aggregation: output file: iter}{int}{0}{Iteration for non-linear problems.}
+        
+\cbb{aggregation: output file: agg style}{string}{Point Cloud}{Style of aggregate visualization.}
+        
+\cbb{aggregation: output file: fine graph edges}{bool}{false}{Whether to draw all fine node connections along with the aggregates.}
+        
+\cbb{aggregation: output file: coarse graph edges}{bool}{false}{Whether to draw all coarse node connections along with the aggregates.}
+        
+\cbb{aggregation: output file: build colormap}{bool}{false}{Whether to output a random colormap in a separate XML file.}
         
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", ``P'', ``R'') of type \texttt{string} and value ``\{levels separated by commas\}''. A matrix with a name ``X'' is saved in three MatrixMarket files: a) data is saved in \textit{X\_level.mm}; b) its row map is saved in \textit{rowmap\_X\_level.mm}; c) its column map is saved in \textit{colmap\_X\_level.mm}.}
         
@@ -81,7 +106,15 @@
         
 \cbb{multigrid algorithm}{string}{"sa"}{Multigrid method. Possible values: see Table~\ref{t:mgs}.}
         
+\cbb{toggle: mode}{string}{semicoarsen}{Toggling strategy for transfer operators (default=semicoarsen)}
+        
 \cbb{semicoarsen: coarsen rate}{int}{3}{Rate at which to coarsen unknowns in the z direction.}
+        
+\cbb{semicoarsen: number of levels}{int}{3}{Determines the maximum number of times that semicoarsening is applied.}
+        
+\cbb{linedetection: orientation}{string}{vertical}{Line orientation: can be either 'vertical', 'horizontal' or 'coordinates'.}
+        
+\cbb{linedetection: num layers}{int}{-1}{Line detection: number of layers on finest level. Alternatively, set the number of layers on the finest level as \"NumZLayers\" in the finest level container class.}
         
 \cbb{sa: damping factor}{double}{1.33}{Damping factor for smoothed aggregation.}
         
@@ -127,5 +160,11 @@
         
 \cbb{repartition: rebalance P and R}{bool}{false}{Explicit rebalancing of R and P during the setup. This speeds up the solve, but slows down the setup phases.}
         
+\cbb{repartition: use subcommunicators}{bool}{true}{Use subcommunicators on coarser levels.}
+        
 \cbb{reuse: type}{string}{"none"}{Reuse options for consecutive hierarchy construction. This speeds up the setup phase, but may lead to poorer convergence. Possible values: see Table~\ref{t:reuse_types}.}
+        
+\cbb{use external multigrid package}{string}{"none"}{Option to utilize external multigrid package for computations, for example allows for use of AMGX}
+        
+\cbb{debug: graph level}{int}{-1}{Output dependency graph.}
         

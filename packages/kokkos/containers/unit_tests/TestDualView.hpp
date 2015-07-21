@@ -1,15 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//                             Kokkos
-//         Manycore Performance-Portable Multidimensional Arrays
-//
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions?  Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -62,7 +60,7 @@ namespace Impl {
     typedef test_dualview_combinations<Scalar,Device> self_type;
 
     typedef Scalar scalar_type;
-    typedef Device device_type;
+    typedef Device execution_space;
 
     Scalar reference;
     Scalar result;
@@ -73,18 +71,21 @@ namespace Impl {
       if(m<3) m = 3;
       ViewType a("A",n,m);
 
-      Kokkos::Impl::ViewFill<typename ViewType::t_dev>(a.d_view,1);
-      a.template modify<typename ViewType::device_type>();
+      Kokkos::deep_copy( a.d_view , 1 );
+
+      a.template modify<typename ViewType::execution_space>();
       a.template sync<typename ViewType::host_mirror_space>();
 
       a.h_view(5,1) = 3;
       a.h_view(6,1) = 4;
       a.h_view(7,2) = 5;
       a.template modify<typename ViewType::host_mirror_space>();
-      ViewType b = Kokkos::subview<ViewType>(a,std::pair<unsigned int, unsigned int>(6,9),std::pair<unsigned int, unsigned int>(0,1));
-      a.template sync<typename ViewType::device_type>();
-      b.template modify<typename ViewType::device_type>();
-      Kokkos::Impl::ViewFill<typename ViewType::t_dev>(b.d_view,2);
+      ViewType b = Kokkos::subview(a,std::pair<unsigned int, unsigned int>(6,9),std::pair<unsigned int, unsigned int>(0,1));
+      a.template sync<typename ViewType::execution_space>();
+      b.template modify<typename ViewType::execution_space>();
+
+      Kokkos::deep_copy( b.d_view , 2 );
+
       a.template sync<typename ViewType::host_mirror_space>();
       Scalar count = 0;
       for(unsigned int i = 0; i<a.d_view.dimension_0(); i++)

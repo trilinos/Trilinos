@@ -53,7 +53,8 @@ done
 #
 BASE=/projects/albany
 BOOSTDIR=$BASE
-MPI_BASE_DIR=/sierra/sntools/SDK/mpi/openmpi/1.6.4-gcc-4.7.2-RHEL6
+COMPILER_PATH=/sierra/sntools/SDK/compilers/gcc/4.8.2-RHEL6/bin
+MPI_BASE_DIR=/sierra/sntools/SDK/mpi/openmpi/1.6.4-gcc-4.8.2-RHEL6
 NETCDF=$BASE
 HDFDIR=$BASE
 MKL_PATH=/sierra/sntools/SDK/compilers/intel
@@ -106,6 +107,7 @@ echo "
 -D Amesos2_ENABLE_KLU2:BOOL=ON
 -D TPL_ENABLE_Netcdf:BOOL=ON
 -D TPL_ENABLE_HDF5:BOOL=ON
+-D TPL_ENABLE_Matio:BOOL=OFF
 -D Netcdf_INCLUDE_DIRS:PATH=\"$NETCDF/include\"
 -D Netcdf_LIBRARY_DIRS:PATH=\"$NETCDF/lib\"
 -D HDF5_INCLUDE_DIRS:PATH=\"$HDFDIR/include\"
@@ -113,10 +115,15 @@ echo "
 -D Zlib_INCLUDE_DIRS:PATH=$HDFDIR/include
 -D Zlib_LIBRARY_DIRS:PATH=$HDFDIR/lib
 -D TPL_HDF5_LIBRARIES:PATH=\"${HDFDIR}/lib/libnetcdf.a;${HDFDIR}/lib/libhdf5_hl.a;${HDFDIR}/lib/libhdf5.a;${HDFDIR}/lib/libz.a\" 
+-D Trilinos_EXTRA_LINK_FLAGS:STRING=\"-L${HDFDIR}/lib -lnetcdf -lhdf5_hl -lhdf5 -lz -lgfortran\"
 " > MPI_RELEASE_SS.config
+
 
 echo "
 -DCMAKE_BUILD_TYPE:STRING=RELEASE
+-DCMAKE_CXX_COMPILER:STRING=$COMPILER_PATH/g++
+-DCMAKE_C_COMPILER:STRING=$COMPILER_PATH/gcc
+-DCMAKE_Fortran_COMPILER:STRING=$COMPILER_PATH/gfortran
 " > SERIAL_RELEASE.config
 
 EXTRA_ARGS=$@

@@ -355,41 +355,6 @@ public:
   template <class DomainScalar, class RangeScalar>
   void permuteReorderedToOriginalTempl(const Tpetra::MultiVector<DomainScalar,local_ordinal_type,global_ordinal_type,node_type> &reorderedX,
                                        Tpetra::MultiVector<RangeScalar,local_ordinal_type,global_ordinal_type,node_type> &originalY) const;
-
-
-  //@}
-  //! \name Deprecated routines to be removed at some point in the future.
-  //@{
-
-  //! Deprecated. Get a persisting const view of the entries in a specified global row of this matrix.
-  /*!
-    \param GlobalRow - (In) Global row from which to retrieve matrix entries.
-    \param Indices - (Out) Indices for the global row.
-    \param Values - (Out) Values for the global row.
-
-    Note: If \c GlobalRow does not belong to this node, then \c Indices and \c Values are set to <tt>Teuchos::null</t>>.
-
-    \pre isDroplyIndexed()==false
-  */
-  TPETRA_DEPRECATED
-  virtual void getGlobalRowView (global_ordinal_type GlobalRow,
-                                 Teuchos::ArrayRCP<const global_ordinal_type> &indices,
-                                 Teuchos::ArrayRCP<const scalar_type> &values) const;
-
-  //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
-  /*!
-    \param DropRow - (In) Drop row from which to retrieve matrix entries.
-    \param Indices - (Out) Indices for the local row.
-    \param Values - (Out) Values for the local row.
-
-    Note: If \c DropRow is not valid for this node, then \c Indices and \c Values are set to <tt>Teuchos::null</tt>.
-
-    \pre isGloballyIndexed()==false
-  */
-  TPETRA_DEPRECATED
-  virtual void getLocalRowView (local_ordinal_type DropRow,
-                                Teuchos::ArrayRCP<const local_ordinal_type> &indices,
-                                Teuchos::ArrayRCP<const scalar_type> &values) const;
   //@}
 
 private:

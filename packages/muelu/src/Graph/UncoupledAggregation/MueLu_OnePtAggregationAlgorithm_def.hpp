@@ -100,7 +100,7 @@ void OnePtAggregationAlgorithm<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregat
 
       // finalize aggregate
       for(size_t k=0; k<ag.list.size(); k++) {
-        aggStat[ag.list[k]] = AGGREGATED;
+        aggStat[ag.list[k]] = IGNORED;
         vertex2AggId[ag.list[k]] = ag.index;
         procWinner[ag.list[k]] = myRank;
       }

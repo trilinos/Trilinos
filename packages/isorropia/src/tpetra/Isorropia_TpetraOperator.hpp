@@ -61,19 +61,19 @@ namespace Tpetra {
 
 */
 
-template <class Node=KokkosClassic::DefaultNode::DefaultNodeType>
-class Operator : virtual public Isorropia::Operator 
+template <class Node = ::Tpetra::Map<int,int>::node_type>
+class Operator : virtual public Isorropia::Operator
 {
 public:
 
   /** Constructor that accepts an ::Tpetra::CrsGraph object
 
      \param input_graph Matrix-graph object for which a new operation
-        is to be computed. 
+        is to be computed.
 
      \param[in] paramlist Teuchos::ParameterList which will be copied to an
-        internal ParameterList attribute. 
-    
+        internal ParameterList attribute.
+
      \param[in] base index base
 
   If the ParameterList object contains a sublist named "Zoltan", then
@@ -90,7 +90,7 @@ public:
   virtual ~Operator();
 
   /** setParameters() is an internal method which handles
-      the parameters from a Teuchos::ParameterList object. 
+      the parameters from a Teuchos::ParameterList object.
    */
   void setParameters(const Teuchos::ParameterList& paramlist);
 
@@ -98,7 +98,7 @@ public:
 
   /** Query whether compute_operation() has already been called.
    */
-  bool alreadyComputed() const 
+  bool alreadyComputed() const
   {
     return operation_already_computed_;
   }
@@ -124,15 +124,15 @@ public:
       global element ids to be located in the given partition.
   */
   virtual void elemsWithProperty(int property,
-			 int* elementList,
-			 int len) const;
+                         int* elementList,
+                         int len) const;
 
   virtual int extractPropertiesCopy(int len,
-				    int& size,
-				    int* array) const ;
+                                    int& size,
+                                    int* array) const ;
 
   virtual int extractPropertiesView(int& size,
-				    const int*& array) const;
+                                    const int*& array) const;
 
 private:
 
@@ -167,7 +167,7 @@ protected:
   Teuchos::RCP<Library<Node> > lib_;
 
   int base_;
-  
+
   void computeNumberOfProperties();
 };//class Operator
 

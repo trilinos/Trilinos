@@ -128,6 +128,13 @@ initialize(const ResponseLibrary<TraitsT> & rl)
      initialize(rl.wkstContainer_,rl.globalIndexer_,rl.linObjFactory_);
 }
 
+template <typename TraitsT>
+void ResponseLibrary<TraitsT>::
+copyResponses(const ResponseLibrary & rl)
+{
+  TEUCHOS_ASSERT(false);
+}
+
 namespace {
   // This is a builder for building a ResponseBase object by evaluation type
   template <typename TraitsT>
@@ -212,6 +219,12 @@ addResponse(const std::string & responseName,
         = rcp(new ResponseEvaluatorFactory_TemplateManager<TraitsT>);
    modelFact_tm->buildObjects(builder);
 
+   std::vector<WorksetDescriptor> wkst_desc;
+   for(std::size_t i=0;i<blocks.size();i++)
+      wkst_desc.push_back(blockDescriptor(blocks[i]));
+
+   addResponse(responseName,wkst_desc,modelFact_tm);
+/*
    // build a response object for each evaluation type
    ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName,blocks);
    responseObjects_[responseName].buildObjects(respData_builder);
@@ -225,6 +238,7 @@ addResponse(const std::string & responseName,
         = respFactories_[blockDescriptor(blockId)];
      block_tm.push_back(std::make_pair(responseName,modelFact_tm));
    }
+*/
 }
 
 template <typename TraitsT>
@@ -306,6 +320,15 @@ addResponse(const std::string & responseName,
        = rcp(new ResponseEvaluatorFactory_TemplateManager<TraitsT>);
   modelFact_tm->buildObjects(builder);
 
+  addResponse(responseName,wkst_desc,modelFact_tm);
+}
+
+template <typename TraitsT>
+void ResponseLibrary<TraitsT>::
+addResponse(const std::string & responseName,
+            const std::vector<WorksetDescriptor> & wkst_desc,
+            const Teuchos::RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > & modelFact_tm)
+{
   // build a response object for each evaluation type
   ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName,wkst_desc);
   responseObjects_[responseName].buildObjects(respData_builder);
@@ -315,9 +338,7 @@ addResponse(const std::string & responseName,
     const WorksetDescriptor & desc = wkst_desc[i];
 
     // add response factory TM to vector that stores them
-    std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > & block_tm 
-        = respFactories_[desc];
-    block_tm.push_back(std::make_pair(responseName,modelFact_tm));
+    respFactories_[desc].push_back(std::make_pair(responseName,modelFact_tm));
   }
 }
 

@@ -1127,7 +1127,7 @@ array *do_csv_array1(const char *filename)
 
 array *do_csv_array(const char *filename, double skip)
 {
-  int rows_to_skip = (int)skip;
+  size_t rows_to_skip = (size_t)skip;
   
   const char *delim = ",\t ";
   std::fstream *file = aprepro->open_file(filename, "r");
@@ -1167,7 +1167,7 @@ array *do_csv_array(const char *filename, double skip)
       }
     }
   }
-  assert((int)rows - rows_to_skip == array_data->rows);
+  assert(rows - rows_to_skip == (size_t)array_data->rows);
   return array_data;
 }
 

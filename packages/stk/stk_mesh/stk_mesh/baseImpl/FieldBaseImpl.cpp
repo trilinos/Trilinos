@@ -37,7 +37,6 @@
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldBase, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Part.hpp>       // for Part
-#include <stk_mesh/base/Trace.hpp>      // for TraceIfWatching
 #include <stk_mesh/base/Types.hpp>      // for ::MaximumFieldDimension
 #include <stk_util/util/SimpleArrayOps.hpp>  // for Copy
 #include <vector>                       // for vector, etc
@@ -78,8 +77,6 @@ FieldBaseImpl::FieldBaseImpl(
   m_initial_value(NULL),
   m_initial_value_num_bytes(0)
 {
-  TraceIfWatching("stk::mesh::impl::FieldBaseImpl::FieldBaseImpl", LOG_FIELD, m_ordinal);
-
   FieldBase * const pzero = NULL ;
   const shards::ArrayDimTag * const dzero = NULL ;
   Copy<MaximumFieldStates>(    m_field_states , pzero );
@@ -117,8 +114,6 @@ void FieldBaseImpl::insert_restriction(
   const unsigned   arg_first_dimension ,
   const void*      arg_init_value )
 {
-  TraceIfWatching("stk::mesh::impl::FieldBaseImpl::insert_restriction", LOG_FIELD, m_ordinal);
-
   FieldRestriction tmp( arg_selector );
 
   if ( m_field_rank ) {
@@ -226,8 +221,6 @@ void FieldBaseImpl::insert_restriction(
 
 void FieldBaseImpl::verify_and_clean_restrictions(const Part& superset, const Part& subset)
 {
-  TraceIfWatching("stk::mesh::impl::FieldBaseImpl::verify_and_clean_restrictions", LOG_FIELD, m_ordinal);
-
   FieldRestrictionVector & restrs = restrictions();
 
   //Check whether restriction contains subset part, if so, it may now be redundant

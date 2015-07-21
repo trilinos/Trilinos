@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -101,7 +101,7 @@ struct TextureFetch
 
     void apply() const
     {
-      Kokkos::parallel_for( Kokkos::RangePolicy<Kokkos::Cuda,int>(0,m_array.size()), *this);
+      Kokkos::parallel_for( Kokkos::RangePolicy<Kokkos::Cuda,int>(0,m_array.dimension_0()), *this);
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -119,10 +119,10 @@ struct TextureFetch
 
     void apply() const
     {
-      Kokkos::parallel_for( Kokkos::RangePolicy<Kokkos::HostSpace::execution_space,int>(0,m_host_indexes.size()), *this);
+      Kokkos::parallel_for( Kokkos::RangePolicy<Kokkos::HostSpace::execution_space,int>(0,m_host_indexes.dimension_0()), *this);
       //random shuffle
       Kokkos::HostSpace::execution_space::fence();
-      std::random_shuffle(m_host_indexes.ptr_on_device(), m_host_indexes.ptr_on_device() + m_host_indexes.size());
+      std::random_shuffle(m_host_indexes.ptr_on_device(), m_host_indexes.ptr_on_device() + m_host_indexes.dimension_0());
       Kokkos::deep_copy(m_indexes,m_host_indexes);
     }
 
@@ -141,7 +141,7 @@ struct TextureFetch
 
     void apply(T & reduce) const
     {
-      Kokkos::parallel_reduce( Kokkos::RangePolicy<Kokkos::Cuda,int>(0,m_array.size()), *this, reduce);
+      Kokkos::parallel_reduce( Kokkos::RangePolicy<Kokkos::Cuda,int>(0,m_array.dimension_0()), *this, reduce);
     }
 
     KOKKOS_INLINE_FUNCTION

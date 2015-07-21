@@ -5,6 +5,7 @@
 IF (NOT ${PROJECT_NAME}_EXCLUDE_PACKAGES)
   SET(${PROJECT_NAME}_EXCLUDE_PACKAGES
     ThreadPool
+    Sacado
     GlobiPack
     OptiPack
     Pliris
@@ -31,5 +32,6 @@ IF (NOT ${PROJECT_NAME}_EXCLUDE_PACKAGES)
     Mesquite
     FEApp
     Zoltan2
+    ShyLU
     )
 ENDIF()

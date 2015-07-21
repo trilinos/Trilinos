@@ -47,7 +47,8 @@
 
 #include "Panzer_PhysicsBlock.hpp"
 #include "Panzer_WorksetFactoryBase.hpp"
-#include "Panzer_WorksetDescriptor.hpp"
+#include "Panzer_WorksetDescriptor.hpp" // what the workset is defined over
+#include "Panzer_WorksetNeeds.hpp"      // whats in a workset basis/integration rules
 
 namespace panzer {
 
@@ -68,8 +69,8 @@ struct SideId {
 struct LessSide {
    bool operator()(const SideId & left, 
                    const SideId  right) const
-   { return   (left.ss_id+"_"+left.eblk_id 
-            < right.ss_id+"_"+right.eblk_id); }
+   { return   (left.ss_id + "_" + left.eblk_id 
+            < right.ss_id + "_" + right.eblk_id); }
 };
 
 /** \brief Class that provides access to worksets on
@@ -134,6 +135,9 @@ public:
    //! Look up an input physics block, throws an exception if it can not be found.
    const PhysicsBlock & lookupPhysicsBlock(const std::string & eBlock) const;
 
+   //! Look up an input physics block, throws an exception if it can not be found.
+   const WorksetNeeds & lookupNeeds(const std::string & eBlock) const;
+
    //! Access to volume worksets
    Teuchos::RCP<std::vector<Workset> > getVolumeWorksets(const std::string & eBlock);
 
@@ -196,6 +200,7 @@ private:
 
    Teuchos::RCP<const WorksetFactoryBase> wkstFactory_;      //! How to construct worksets
    std::map<std::string,Teuchos::RCP<PhysicsBlock> > ebToPb_; //! Maps element blocks to input physics block objects
+   std::map<std::string,WorksetNeeds> ebToNeeds_; //! Maps element blocks to input physics block objects
 
    VolumeMap volWorksets_;
    SideMap sideWorksets_;

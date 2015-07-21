@@ -43,15 +43,15 @@
   //
   // Specify types used in this example
   // Instead of constantly typing Tpetra::MultiVector<Scalar, ...>,
-  // we can type MV.
+  // we can type TMV.
   //
   typedef double                                        Scalar;
   typedef Teuchos::ScalarTraits<Scalar>::magnitudeType  Magnitude;
   typedef Tpetra::Map<>::local_ordinal_type             LocalOrdinal;
   typedef Tpetra::Map<>::global_ordinal_type            GlobalOrdinal;
   typedef Tpetra::Map<>               Map;
-  typedef Tpetra::MultiVector<Scalar> MV;
-  typedef Tpetra::Operator<Scalar>    OP;
+  typedef Tpetra::MultiVector<Scalar> TMV;
+  typedef Tpetra::Operator<Scalar>    TOP;
 
 //
 // Define a class for our user-defined operator.
@@ -73,7 +73,7 @@
 // If you are only interested in running the code sequentially, you can safely
 // ignore everything here regarding maps and importers
 //
-class MyOp : public virtual OP {
+class MyOp : public virtual TOP {
 private:
   typedef Tpetra::Import<> Import;
 
@@ -165,8 +165,8 @@ public:
   // TraceMin will never use alpha ~= 1 or beta ~= 0,
   // so we have ignored those options for simplicity.
   void
-  apply (const MV& X,
-         MV& Y,
+  apply (const TMV& X,
+         TMV& Y,
          Teuchos::ETransp mode = Teuchos::NO_TRANS,
          Scalar alpha = Teuchos::ScalarTraits<Scalar>::one (),
          Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ()) const
@@ -189,7 +189,7 @@ public:
     const int numVecs = X.getNumVectors();
 
     // Make a multivector for holding the redistributed data
-    RCP<MV> redistData = rcp(new MV(redistMap_, numVecs));
+    RCP<TMV> redistData = rcp(new TMV(redistMap_, numVecs));
 
     // Redistribute the data.
     // This will do all the necessary communication for you.
@@ -240,8 +240,8 @@ private:
 
 
 int main(int argc, char *argv[]) {
-  typedef Anasazi::MultiVecTraits<Scalar, MV> MVT;
-  typedef Anasazi::OperatorTraits<Scalar, MV, OP> OPT;
+  typedef Anasazi::MultiVecTraits<Scalar, TMV> MVT;
+  typedef Anasazi::OperatorTraits<Scalar, TMV, TOP> OPT;
 
   //
   // Initialize the MPI session
@@ -309,14 +309,14 @@ int main(int argc, char *argv[]) {
   // Note:  This needs to have the same number of columns as the blocksize.
   // We are giving it random entries.
   //
-  RCP<MV> ivec = rcp( new MV(K->getDomainMap(), nev) );
+  RCP<TMV> ivec = rcp( new TMV(K->getDomainMap(), nev) );
   MVT::MvRandom( *ivec );
 
   //
   // Create the eigenproblem
   //
-  RCP<Anasazi::BasicEigenproblem<Scalar,MV,OP> > MyProblem =
-      rcp( new Anasazi::BasicEigenproblem<Scalar,MV,OP>(K, ivec) );
+  RCP<Anasazi::BasicEigenproblem<Scalar,TMV,TOP> > MyProblem =
+      rcp( new Anasazi::BasicEigenproblem<Scalar,TMV,TOP>(K, ivec) );
 
   //
   // Inform the eigenproblem that the matrix pencil (K,M) is symmetric
@@ -344,7 +344,7 @@ int main(int argc, char *argv[]) {
   //
   // Initialize the TraceMin-Davidson solver
   //
-  Anasazi::Experimental::TraceMinSolMgr<Scalar, MV, OP> MySolverMgr(MyProblem, MyPL);
+  Anasazi::Experimental::TraceMinSolMgr<Scalar, TMV, TOP> MySolverMgr(MyProblem, MyPL);
 
   //
   // Solve the problem to the specified tolerances
@@ -361,9 +361,9 @@ int main(int argc, char *argv[]) {
   //
   // Get the eigenvalues and eigenvectors from the eigenproblem
   //
-  Anasazi::Eigensolution<Scalar,MV> sol = MyProblem->getSolution();
+  Anasazi::Eigensolution<Scalar,TMV> sol = MyProblem->getSolution();
   std::vector<Anasazi::Value<Scalar> > evals = sol.Evals;
-  RCP<MV> evecs = sol.Evecs;
+  RCP<TMV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
   //
@@ -374,9 +374,9 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < numev; ++i) {
       T(i,i) = evals[i].realpart;
     }
-    MV tempvec(K->getDomainMap(), MVT::GetNumberVecs( *evecs ));
+    TMV tempvec(K->getDomainMap(), MVT::GetNumberVecs( *evecs ));
     std::vector<Scalar> normR(numev);
-    MV Kvec( K->getRangeMap(), MVT::GetNumberVecs( *evecs ) );
+    TMV Kvec( K->getRangeMap(), MVT::GetNumberVecs( *evecs ) );
 
     OPT::Apply( *K, *evecs, Kvec );
     MVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, Kvec );

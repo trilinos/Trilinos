@@ -458,6 +458,11 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 {
   typedef Teuchos::ScalarTraits<scalar_type> STS;
 
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    alpha != STS::one () || beta != STS::zero (), std::logic_error,
+    "Ifpack2::ReorderFilter::apply is only implemented for alpha = 1 and "
+    "beta = 0.  You set alpha = " << alpha << " and beta = " << beta << ".");
+
   // Note: This isn't AztecOO compliant.  But neither was Ifpack's version.
   // Note: The localized maps mean the matvec is trivial (and has no import)
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -568,6 +573,28 @@ permuteReorderedToOriginalTempl (const Tpetra::MultiVector<DomainScalar,local_or
     "Ifpack2::ReorderFilter::permuteReorderedToOriginal: "
     "X.getNumVectors() != Y.getNumVectors().");
 
+#ifdef HAVE_IFPACK2_DEBUG
+  {
+    typedef Teuchos::ScalarTraits<DomainScalar> STS;
+    typedef typename STS::magnitudeType magnitude_type;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+    Teuchos::Array<magnitude_type> norms (reorderedX.getNumVectors ());
+    reorderedX.norm2 (norms ());
+    bool good = true;
+    for (size_t j = 0;
+         j < reorderedX.getNumVectors (); ++j) {
+      if (STM::isnaninf (norms[j])) {
+        good = false;
+        break;
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! good, std::runtime_error, "Ifpack2::ReorderFilter::"
+      "permuteReorderedToOriginalTempl: The 2-norm of the input reorderedX is "
+      "NaN or Inf.");
+  }
+#endif // HAVE_IFPACK2_DEBUG
+
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const DomainScalar> > x_ptr = reorderedX.get2dView();
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<RangeScalar> >        y_ptr = originalY.get2dViewNonConst();
 
@@ -576,28 +603,28 @@ permuteReorderedToOriginalTempl (const Tpetra::MultiVector<DomainScalar,local_or
       y_ptr[k][reverseperm_[i]] = (RangeScalar) x_ptr[k][i];
     }
   }
-}
 
-
-template<class MatrixType>
-TPETRA_DEPRECATED void
-ReorderFilter<MatrixType>::
-getGlobalRowView (global_ordinal_type GlobalRow,
-                  Teuchos::ArrayRCP<const global_ordinal_type> &indices,
-                  Teuchos::ArrayRCP<const scalar_type> &values) const
-{
-  throw std::runtime_error("Ifpack2::ReorderFilter does not implement getGlobalRowView.");
-}
-
-
-template<class MatrixType>
-TPETRA_DEPRECATED void
-ReorderFilter<MatrixType>::
-getLocalRowView (local_ordinal_type LocalRow,
-                 Teuchos::ArrayRCP<const local_ordinal_type> &indices,
-                 Teuchos::ArrayRCP<const scalar_type> &values) const
-{
-  throw std::runtime_error("Ifpack2::ReorderFilter does not implement getLocalRowView.");
+#ifdef HAVE_IFPACK2_DEBUG
+  {
+    typedef Teuchos::ScalarTraits<RangeScalar> STS;
+    typedef typename STS::magnitudeType magnitude_type;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+    Teuchos::Array<magnitude_type> norms (originalY.getNumVectors ());
+    originalY.norm2 (norms ());
+    bool good = true;
+    for (size_t j = 0;
+         j < originalY.getNumVectors (); ++j) {
+      if (STM::isnaninf (norms[j])) {
+        good = false;
+        break;
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! good, std::runtime_error, "Ifpack2::ReorderFilter::"
+      "permuteReorderedToOriginalTempl: The 2-norm of the output originalY is "
+      "NaN or Inf.");
+  }
+#endif // HAVE_IFPACK2_DEBUG
 }
 
 } // namespace Ifpack2

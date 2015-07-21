@@ -91,7 +91,7 @@ namespace Env {
   //  Set or get the gemini version, if passed value is not unknown, set the version, either way return the version
   //
   GeminiSCIVersion GetGeminiVersion(GeminiSCIVersion ver) {
-    static GeminiSCIVersion GeminiSCIVersionValue = GEMINI_SCI_1;  //This is the default gemini verion
+    static GeminiSCIVersion GeminiSCIVersionValue = GEMINI_SCI_1;  //This is the default gemini version
     if(ver != GEMINI_SCI_UNKNOWN) {
       GeminiSCIVersionValue = ver;
     }
@@ -314,6 +314,12 @@ MPI_Comm
 parallel_comm()
 {
   return stk::EnvData::instance().m_parallelComm;
+}
+
+MPI_Comm
+parallel_intercomm()
+{
+  return stk::EnvData::instance().m_interComm;
 }
 
 MPI_Comm

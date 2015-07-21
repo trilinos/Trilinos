@@ -48,7 +48,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 
 //**********************************************************************
@@ -117,6 +117,7 @@ addDependentField(const PHX::FieldTag& ft)
 }
 
 //**********************************************************************
+// DEPRECATED!!!!
 template<typename Traits>
 template<typename DataT>
 void PHX::EvaluatorWithBaseImpl<Traits>::
@@ -127,11 +128,33 @@ addDependentField(const PHX::Field<DataT>& v)
 
 //**********************************************************************
 template<typename Traits>
+template<typename DataT>
+void PHX::EvaluatorWithBaseImpl<Traits>::
+addDependentField(const PHX::Field<const DataT>& v)
+{
+  this->addDependentField(v.fieldTag());
+}
+
+//**********************************************************************
+// DEPRECATED!!!!
+template<typename Traits>
 template<typename DataT,
 	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 void PHX::EvaluatorWithBaseImpl<Traits>::
 addDependentField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
+		  Tag4,Tag5,Tag6,Tag7>& f)
+{
+  this->addDependentField(f.fieldTag());
+}
+
+//**********************************************************************
+template<typename Traits>
+template<typename DataT,
+	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+void PHX::EvaluatorWithBaseImpl<Traits>::
+addDependentField(const PHX::MDField<const DataT,Tag0,Tag1,Tag2,Tag3,
 		  Tag4,Tag5,Tag6,Tag7>& f)
 {
   this->addDependentField(f.fieldTag());

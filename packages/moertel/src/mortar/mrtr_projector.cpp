@@ -335,7 +335,8 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node,
       deta = (-F)/dF;
       eta += deta;
     }
-    if (abs(F)>1.0e-9)
+    const bool ok = abs(F) <= 1.0e-9;
+    if ( ! ok)
     {
       if (OutLevel()>3)
       std::cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal:\n"
@@ -348,7 +349,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node,
     std::cout << "#iterations = " << i << " F = " << F << " eta = " << eta << std::endl;
 #endif
     xi[0] = eta;
-    return true;
+    return ok;
   }
   // 3D case
   else

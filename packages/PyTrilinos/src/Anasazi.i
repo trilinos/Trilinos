@@ -113,7 +113,6 @@ package:
 #include "PyTrilinos_FILEstream.hpp"
 
 // Teuchos includes
-#ifdef HAVE_TEUCHOS
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
 #endif
@@ -126,7 +125,6 @@ package:
 #endif
 #include "Teuchos_ScalarTraits.hpp"
 #include "PyTrilinos_Teuchos_Util.hpp"
-#endif
 
 // Epetra includes
 #ifdef HAVE_EPETRA
@@ -232,9 +230,7 @@ package:
 %rename(_global) global;
 
 // Support for other Trilinos packages
-#ifdef HAVE_TEUCHOS
 %import "Teuchos.i"
-#endif
 
 #ifdef HAVE_EPETRA
 %include "numpy.i"
@@ -310,7 +306,7 @@ package:
 %typemap(out,fragment="NumPy_Backward_Compatibility,NumPy_Macros")
   (std::vector< Anasazi::Value< ScalarType > >)
 {
-  npy_intp dims[1] = { $1.size() };
+  npy_intp dims[1] = { static_cast< npy_intp >($1.size()) };
   PyObject * array = PyArray_SimpleNew(1, dims, NumPyType);
   ScalarType * data = (ScalarType*) array_data(array);
   for (npy_intp i=0; i<dims[0]; ++i)

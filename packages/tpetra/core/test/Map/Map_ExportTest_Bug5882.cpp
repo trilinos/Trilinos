@@ -18,7 +18,7 @@ int main(int argc, char *argv[]) {
 
   typedef int    LO;
   typedef int    GO;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType NO;
+  typedef Tpetra::Details::DefaultTypes::node_type NO;
   typedef Tpetra::Map<LO, GO, NO> mapType;
   typedef Tpetra::Vector<GO, LO, GO, NO> vectorType;
 

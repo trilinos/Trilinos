@@ -43,12 +43,13 @@
 #ifndef IFPACK2_RELAXATION_DEF_HPP
 #define IFPACK2_RELAXATION_DEF_HPP
 
-#include "Ifpack2_Relaxation_decl.hpp"
-#include "Teuchos_StandardParameterEntryValidators.hpp"
+#include <Teuchos_StandardParameterEntryValidators.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <Tpetra_ConfigDefs.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Experimental_BlockCrsMatrix.hpp>
+#include <Ifpack2_Utilities.hpp>
+#include <Ifpack2_Relaxation_decl.hpp>
 
 // mfh 28 Mar 2013: Uncomment out these three lines to compute
 // statistics on diagonal entries in compute().
@@ -180,7 +181,6 @@ Relaxation (const Teuchos::RCP<const row_matrix_type>& A)
   MinDiagonalValue_ (STS::zero ()),
   fixTinyDiagEntries_ (false),
   checkDiagEntries_ (false),
-  Condest_ (-STM::one ()),
   isInitialized_ (false),
   IsComputed_ (false),
   NumInitialize_ (0),
@@ -427,32 +427,6 @@ double Relaxation<MatrixType>::getApplyFlops() const {
 
 
 template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-Relaxation<MatrixType>::getCondEst () const
-{
-  return Condest_;
-}
-
-
-template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-Relaxation<MatrixType>::
-computeCondEst (CondestType CT,
-                typename MatrixType::local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const row_matrix_type>& matrix)
-{
-  if (! isComputed ()) { // cannot compute right now
-    return -Teuchos::ScalarTraits<magnitude_type>::one ();
-  }
-  // always compute it. Call Condest() with no parameters to get
-  // the previous estimate.
-  Condest_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, matrix);
-  return Condest_;
-}
-
-
-template<class MatrixType>
 void
 Relaxation<MatrixType>::
 apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>& X,
@@ -501,11 +475,11 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       // If X and Y alias one another, then we need to create an
       // auxiliary vector, Xcopy (a deep copy of X).
       RCP<const MV> Xcopy;
+      // FIXME (mfh 12 Sep 2014) This test for aliasing is incomplete.
 #ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-      if (false) { // FIXME (mfh 16 Dec 2014) Add test for aliasing!
+      if (X.getDualView ().h_view.ptr_on_device () ==
+          Y.getDualView ().h_view.ptr_on_device ()) {
 #else
-      // FIXME (mfh 12 Sep 2014) This test for aliasing is both
-      // incomplete, and a dependence on KokkosClassic.
       if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
         Xcopy = rcp (new MV (X, Teuchos::Copy));
@@ -633,15 +607,12 @@ void Relaxation<MatrixType>::computeBlockCrs ()
 
     // Reset state.
     IsComputed_ = false;
-    Condest_ = -STM::one ();
 
     const local_ordinal_type blockSize = blockCrsA->getBlockSize ();
 
     if (! savedDiagOffsets_) {
       BlockDiagonal_ = Teuchos::null;
-      BlockDiagonal_ =
-        rcp (new block_crs_matrix_type (* (blockCrsA->getDiagonalGraph ()),
-                                        blockSize));
+      BlockDiagonal_ = rcp(new block_crs_matrix_type(*Ifpack2::Details::computeDiagonalGraph(blockCrsA->getCrsGraph()), blockSize));
       blockCrsA->getLocalDiagOffsets (diagOffsets_);
       savedDiagOffsets_ = true;
     }
@@ -733,7 +704,6 @@ void Relaxation<MatrixType>::compute ()
 
     // Reset state.
     IsComputed_ = false;
-    Condest_ = -STM::one ();
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       NumSweeps_ < 0, std::logic_error,
@@ -794,7 +764,7 @@ void Relaxation<MatrixType>::compute ()
     RCP<vector_type> origDiag;
     if (checkDiagEntries_) {
       origDiag = rcp (new vector_type (A_->getRowMap ()));
-      *origDiag = *Diagonal_;
+      Tpetra::deep_copy (*origDiag, *Diagonal_);
     }
 
     // "Host view" means that if the Node type is a GPU Node, the
@@ -996,10 +966,10 @@ void Relaxation<MatrixType>::compute ()
 
       // Compute and save the difference between the computed inverse
       // diagonal, and the original diagonal's inverse.
-      RCP<vector_type> diff = rcp (new vector_type (A_->getRowMap ()));
-      diff->reciprocal (*origDiag);
-      diff->update (-one, *Diagonal_, one);
-      globalDiagNormDiff_ = diff->norm2 ();
+      vector_type diff (A_->getRowMap ());
+      diff.reciprocal (*origDiag);
+      diff.update (-one, *Diagonal_, one);
+      globalDiagNormDiff_ = diff.norm2 ();
     }
     else { // don't check diagonal elements
       if (fixTinyDiagEntries_) {
@@ -1404,12 +1374,15 @@ ApplyInverseGS_CrsMatrix (const crs_matrix_type& A,
   using Teuchos::as;
   const Tpetra::ESweepDirection direction =
     DoBackwardGS_ ? Tpetra::Backward : Tpetra::Forward;
-  if(localSmoothingIndices_.is_null())
+  if (localSmoothingIndices_.is_null ()) {
     A.gaussSeidelCopy (Y, X, *Diagonal_, DampingFactor_, direction,
                        NumSweeps_, ZeroStartingSolution_);
-  else
-    A.reorderedGaussSeidelCopy (Y, X, *Diagonal_, localSmoothingIndices_(), DampingFactor_, direction,
+  }
+  else {
+    A.reorderedGaussSeidelCopy (Y, X, *Diagonal_, localSmoothingIndices_ (),
+                                DampingFactor_, direction,
                                 NumSweeps_, ZeroStartingSolution_);
+  }
 
   // For each column of output, for each sweep over the matrix:
   //
@@ -1962,8 +1935,7 @@ describe (Teuchos::FancyOStream &out,
     out << "Computed quantities:" << endl;
     {
       OSTab tab3 (out);
-      out << "Condition number estimate: " << Condest_ << endl
-          << "Global number of rows: " << A_->getGlobalNumRows () << endl
+      out << "Global number of rows: " << A_->getGlobalNumRows () << endl
           << "Global number of columns: " << A_->getGlobalNumCols () << endl;
     }
     if (checkDiagEntries_ && isComputed ()) {

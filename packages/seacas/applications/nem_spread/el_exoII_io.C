@@ -55,7 +55,11 @@
 #include "sort_utils.h"                 // for gds_qsort
 template <typename T, typename INT> class Globals;
 
+#if __cplusplus > 199711L
+#define TOPTR(x) x.data()
+#else
 #define TOPTR(x) (x.empty() ? NULL : &x[0])
+#endif
 
 #ifndef TRUE
 #define TRUE  1
@@ -441,23 +445,25 @@ void NemSpread<T,INT>::load_mesh()
    * Process the Node Set IDs and associated information related to node sets
    * (i.e., read them, broadcast them, and check them against the input file).
    */
-  start_time = second();
 
-  read_node_set_ids(mesh_exoid, num_nodes_in_node_set, num_df_in_nsets, max_name_length);
+  if (globals.Num_Node_Set > 0)  {
+    start_time = second();
+    read_node_set_ids(mesh_exoid, num_nodes_in_node_set, num_df_in_nsets, max_name_length);
 
-  printf("\tTime to read node set IDs: %.2f\n",
-	 second() - start_time);
+    printf("\tTime to read node set IDs: %.2f\n",
+	   second() - start_time);
+  }
 
   /*
    * Process the Side Set IDs and associated information related to side sets
    * (i.e., read them, broadcast them, and check them against the input file).
    */
-  start_time = second();
-
-  read_side_set_ids(mesh_exoid, num_elem_in_ssets, num_df_in_ssets, max_name_length);
-
-  printf("\tTime to read side set IDs: %.2f\n",
-	 second() - start_time);
+  if (globals.Num_Side_Set > 0) {
+    start_time = second();
+    read_side_set_ids(mesh_exoid, num_elem_in_ssets, num_df_in_ssets, max_name_length);
+    printf("\tTime to read side set IDs: %.2f\n",
+	   second() - start_time);
+  }
 
   /*
    * Process the element block information.  Find out which element blocks have

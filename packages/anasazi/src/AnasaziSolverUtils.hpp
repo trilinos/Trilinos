@@ -168,7 +168,6 @@ namespace Anasazi {
     //@{
 
     typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
 
     //@}
@@ -270,7 +269,7 @@ namespace Anasazi {
     TEUCHOS_TEST_FOR_EXCEPTION(n != Q.numCols(), std::invalid_argument, "Anasazi::SolverUtils::permuteVectors(): size of permutation vector not equal to number of columns.");
 
     // Sort the primitive ritz vectors
-    Teuchos::SerialDenseMatrix<int,ScalarType> copyQ( Q );
+    Teuchos::SerialDenseMatrix<int,ScalarType> copyQ(Teuchos::Copy, Q);
     for (int i=0; i<n; i++) {
       blas.COPY(m, copyQ[perm[i]], 1, Q[i], 1);
     }
@@ -292,7 +291,7 @@ namespace Anasazi {
     const ScalarType ZERO = SCT::zero();
 
     // early exit if V has zero-size or if k==0
-    if (MVT::GetNumberVecs(V) == 0 || MVText::GetGlobalLength(V) == 0 || k == 0) {
+    if (MVT::GetNumberVecs(V) == 0 || MVT::GetGlobalLength(V) == 0 || k == 0) {
       return;
     }
 

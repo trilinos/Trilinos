@@ -103,7 +103,7 @@ panzer::BC::BC(std::size_t bc_id,
   m_equation_set_name(eq_set_name),
   m_strategy(strategy)
 {
-  m_params = Teuchos::rcp(new Teuchos::ParameterList);
+  m_params = Teuchos::rcp(new Teuchos::ParameterList(""));
   *m_params = p;
 }
 

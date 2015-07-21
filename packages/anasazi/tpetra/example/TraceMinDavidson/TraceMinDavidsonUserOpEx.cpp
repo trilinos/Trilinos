@@ -43,18 +43,18 @@ using std::endl;
 //
 // Specify types used in this example.
 // Instead of constantly typing Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
-// we can type MV.
+// we can type TMV.
 //
 typedef double                                       Scalar;
-typedef Tpetra::MultiVector<Scalar>                  MV;
-typedef Tpetra::Operator<Scalar>                     OP;
+typedef Tpetra::MultiVector<Scalar>                  TMV;
+typedef Tpetra::Operator<Scalar>                     TOP;
 typedef Tpetra::Map<>                                Map;
 typedef Tpetra::Import<>                             Import;
 
 typedef Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-typedef MV::local_ordinal_type                       LocalOrdinal;
-typedef MV::global_ordinal_type                      GlobalOrdinal;
-typedef MV::node_type                                Node;
+typedef TMV::local_ordinal_type                       LocalOrdinal;
+typedef TMV::global_ordinal_type                      GlobalOrdinal;
+typedef TMV::node_type                                Node;
 typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
 
 //
@@ -78,7 +78,7 @@ typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
 // If you are only interested in running the code sequentially, you
 // may safely ignore everything here regarding Map and Import objects.
 //
-class MyOp : public virtual OP {
+class MyOp : public virtual TOP {
 public:
   //
   // Constructor
@@ -179,8 +179,8 @@ public:
   // so we have ignored those options for simplicity.
   //
   void
-  apply (const MV& X,
-         MV& Y,
+  apply (const TMV& X,
+         TMV& Y,
          Teuchos::ETransp mode = Teuchos::NO_TRANS,
          Scalar alpha = Teuchos::ScalarTraits<Scalar>::one (),
          Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ()) const
@@ -207,7 +207,7 @@ public:
     // careful to reallocate if it has a different number of vectors
     // than X.  The number of vectors in X can vary across different
     // apply() calls.
-    RCP<MV> redistData = rcp (new MV (redistMap_, numVecs));
+    RCP<TMV> redistData = rcp (new TMV (redistMap_, numVecs));
 
     // Redistribute the data.
     // This will do all the necessary communication for you.
@@ -268,8 +268,8 @@ private:
 int
 main (int argc, char *argv[])
 {
-  typedef Anasazi::MultiVecTraits<Scalar, MV> MVT;
-  typedef Anasazi::OperatorTraits<Scalar, MV, OP> OPT;
+  typedef Anasazi::MultiVecTraits<Scalar, TMV> TMVT;
+  typedef Anasazi::OperatorTraits<Scalar, TMV, TOP> TOPT;
 
   //
   // Initialize MPI.
@@ -354,12 +354,12 @@ main (int argc, char *argv[])
   // to have the same number of columns as the block size.  We
   // initialize it with random entries.
   //
-  RCP<MV> ivec = rcp (new MV (K->getDomainMap (), numRestartBlocks*blockSize));
-  MVT::MvRandom (*ivec);
+  RCP<TMV> ivec = rcp (new TMV (K->getDomainMap (), numRestartBlocks*blockSize));
+  TMVT::MvRandom (*ivec);
 
   // Create the eigenproblem
-  RCP<Anasazi::BasicEigenproblem<Scalar,MV,OP> > MyProblem =
-    rcp (new Anasazi::BasicEigenproblem<Scalar,MV,OP> (K, ivec));
+  RCP<Anasazi::BasicEigenproblem<Scalar,TMV,TOP> > MyProblem =
+    rcp (new Anasazi::BasicEigenproblem<Scalar,TMV,TOP> (K, ivec));
 
   // Inform the eigenproblem that the matrix pencil (K,M) is symmetric
   MyProblem->setHermitian (true);
@@ -378,7 +378,7 @@ main (int argc, char *argv[])
   }
 
   // Initialize the TraceMin-Davidson solver
-  typedef Anasazi::Experimental::TraceMinDavidsonSolMgr<Scalar, MV, OP> solver_type;
+  typedef Anasazi::Experimental::TraceMinDavidsonSolMgr<Scalar, TMV, TOP> solver_type;
   solver_type MySolverMgr (MyProblem, MyPL);
 
   //
@@ -398,9 +398,9 @@ main (int argc, char *argv[])
   //
   // Get the eigenvalues and eigenvectors from the eigenproblem
   //
-  Anasazi::Eigensolution<Scalar,MV> sol = MyProblem->getSolution ();
+  Anasazi::Eigensolution<Scalar,TMV> sol = MyProblem->getSolution ();
   std::vector<Anasazi::Value<Scalar> > evals = sol.Evals;
-  RCP<MV> evecs = sol.Evecs;
+  RCP<TMV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
   //
@@ -408,14 +408,14 @@ main (int argc, char *argv[])
   //
   if (numev > 0) {
     Teuchos::SerialDenseMatrix<int,Scalar> T (numev, numev);
-    MV tempvec (K->getDomainMap (), MVT::GetNumberVecs (*evecs));
+    TMV tempvec (K->getDomainMap (), TMVT::GetNumberVecs (*evecs));
     std::vector<Scalar> normR (sol.numVecs);
-    MV Kvec (K->getRangeMap (), MVT::GetNumberVecs (*evecs));
+    TMV Kvec (K->getRangeMap (), TMVT::GetNumberVecs (*evecs));
 
-    OPT::Apply (*K, *evecs, Kvec );
-    MVT::MvTransMv (1.0, Kvec, *evecs, T);
-    MVT::MvTimesMatAddMv (-1.0, *evecs, T, 1.0, Kvec);
-    MVT::MvNorm (Kvec, normR);
+    TOPT::Apply (*K, *evecs, Kvec );
+    TMVT::MvTransMv (1.0, Kvec, *evecs, T);
+    TMVT::MvTimesMatAddMv (-1.0, *evecs, T, 1.0, Kvec);
+    TMVT::MvNorm (Kvec, normR);
 
     if (myRank == 0) {
       cout.setf (std::ios_base::right, std::ios_base::adjustfield);

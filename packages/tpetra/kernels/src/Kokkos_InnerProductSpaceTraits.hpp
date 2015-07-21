@@ -46,9 +46,6 @@
 
 /// \file Kokkos_InnerProductSpaceTraits.hpp
 /// \brief Declaration and definition of Kokkos::Details::InnerProductSpaceTraits
-///
-/// \warning This interface is not ready for exposure to users yet.
-///   Users beware!
 
 #include "Kokkos_ArithTraits.hpp"
 
@@ -224,6 +221,29 @@ struct InnerProductSpaceTraits<std::complex<T> >
   }
 };
 
+#ifdef HAVE_TPETRAKERNELS_QUADMATH
+
+/// \brief Partial specialization for __float128.
+///
+/// CUDA does not support __float128 in device functions, so none of
+/// the class methods in this specialization are marked as device
+/// functions.
+template<>
+struct InnerProductSpaceTraits<__float128>
+{
+  typedef __float128 val_type;
+  typedef typename ArithTraits<val_type>::mag_type mag_type;
+  typedef val_type dot_type;
+
+  static mag_type norm (const val_type& x) {
+    return ArithTraits<val_type>::abs (x);
+  }
+  static dot_type dot (const val_type& x, const val_type& y) {
+    return x * y;
+  }
+};
+
+#endif // HAVE_TPETRAKERNELS_QUADMATH
 
 // dd_real and qd_real are floating-point types provided by the QD
 // library of David Bailey (LBNL):

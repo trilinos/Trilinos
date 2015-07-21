@@ -35,7 +35,11 @@
 #ifndef ObjectType_H
 #define ObjectType_H
 
+#if __cplusplus > 199711L
+#define TOPTR(x) x.data()
+#else
 #define TOPTR(x) (x.empty() ? NULL : &x[0])
+#endif
 
 namespace Excn {
     // Note that these are used as indices into truth table for ELBK, NSET, SSET...

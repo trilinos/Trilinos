@@ -163,7 +163,7 @@ namespace Sacado {
         return dx_[ stride_one ? i : i * stride_.value ];
       }
 
-    private:
+    protected:
 
       //! Derivative array size
       const mpl::integral_nonzero_constant< int, static_length > sz_;

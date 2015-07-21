@@ -44,8 +44,7 @@ namespace unit_test {
 /**
  * TODO - Document what this does
  */
-void test_shift_ring( stk::mesh::fixtures::RingFixture& ring,
-                      bool generate_aura=true );
+void test_shift_ring( stk::mesh::fixtures::RingFixture& ring);
 
 } // namespace unit_test
 } // namespace stk

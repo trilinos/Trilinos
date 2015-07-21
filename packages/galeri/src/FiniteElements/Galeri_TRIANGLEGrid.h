@@ -197,7 +197,7 @@ public:
   }
 
   //! Returns a string containing the element type.
-  virtual string ElementType() const
+  virtual std::string ElementType() const
   {
     return("ML_TRIANGLE");
   }

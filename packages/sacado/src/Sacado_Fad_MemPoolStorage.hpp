@@ -211,22 +211,23 @@ namespace Sacado {
 
       //! Assignment
       MemPoolStorage& operator=(const MemPoolStorage& x) {
-        val_ = x.val_;
-        if (sz_ != x.sz_) {
-          sz_ = x.sz_;
-          if (x.sz_ > len_) {
-            if (len_ != 0)
-              mp_array<T>::destroy_and_release(dx_, len_, myPool_);
-            len_ = x.sz_;
-            myPool_ = x.myPool_;
-            dx_ = mp_array<T>::get_and_fill(x.dx_, sz_, myPool_);
+        if (this != &x) {
+          val_ = x.val_;
+          if (sz_ != x.sz_) {
+            sz_ = x.sz_;
+            if (x.sz_ > len_) {
+              if (len_ != 0)
+                mp_array<T>::destroy_and_release(dx_, len_, myPool_);
+              len_ = x.sz_;
+              myPool_ = x.myPool_;
+              dx_ = mp_array<T>::get_and_fill(x.dx_, sz_, myPool_);
+            }
+            else
+              mp_array<T>::copy(x.dx_, dx_, sz_);
           }
           else
             mp_array<T>::copy(x.dx_, dx_, sz_);
         }
-        else
-          mp_array<T>::copy(x.dx_, dx_, sz_);
-
         return *this;
       }
 

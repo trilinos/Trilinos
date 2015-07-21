@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -72,6 +72,11 @@ public:
 
   //! Copy constructor.
   KOKKOS_INLINE_FUNCTION complex (const complex<RealType>& src) :
+    re_ (src.re_), im_ (src.im_)
+  {}
+
+  //! Copy constructor from volatile.
+  KOKKOS_INLINE_FUNCTION complex (const volatile complex<RealType>& src) :
     re_ (src.re_), im_ (src.im_)
   {}
 
@@ -119,25 +124,28 @@ public:
   //! Assignment operator.
   template<class InputRealType>
   KOKKOS_INLINE_FUNCTION
-  void operator= (const complex<InputRealType>& src) volatile {
+  volatile complex<RealType>& operator= (const complex<InputRealType>& src) volatile {
     re_ = src.re_;
     im_ = src.im_;
+    return *this;
   }
 
   //! Assignment operator.
   template<class InputRealType>
   KOKKOS_INLINE_FUNCTION
-  void operator= (const volatile complex<InputRealType>& src) volatile {
+  volatile complex<RealType>& operator= (const volatile complex<InputRealType>& src) volatile {
     re_ = src.re_;
     im_ = src.im_;
+    return *this;
   }
 
   //! Assignment operator.
   template<class InputRealType>
   KOKKOS_INLINE_FUNCTION
-  void operator= (const volatile complex<InputRealType>& src) {
+  complex<RealType>& operator= (const volatile complex<InputRealType>& src) {
     re_ = src.re_;
     im_ = src.im_;
+    return *this;
   }
 
   //! Assignment operator (from a real number).
@@ -170,22 +178,42 @@ public:
   }
 
   //! The imaginary part of this complex number.
-  KOKKOS_INLINE_FUNCTION RealType imag () const {
+  KOKKOS_INLINE_FUNCTION RealType& imag () {
     return im_;
   }
 
   //! The real part of this complex number.
-  KOKKOS_INLINE_FUNCTION RealType real () const {
+  KOKKOS_INLINE_FUNCTION RealType& real () {
+    return re_;
+  }
+
+  //! The imaginary part of this complex number.
+  KOKKOS_INLINE_FUNCTION const RealType imag () const {
+    return im_;
+  }
+
+  //! The real part of this complex number.
+  KOKKOS_INLINE_FUNCTION const RealType real () const {
     return re_;
   }
 
   //! The imaginary part of this complex number (volatile overload).
-  KOKKOS_INLINE_FUNCTION RealType imag () const volatile {
+  KOKKOS_INLINE_FUNCTION volatile RealType& imag () volatile {
     return im_;
   }
 
   //! The real part of this complex number (volatile overload).
-  KOKKOS_INLINE_FUNCTION RealType real () const volatile {
+  KOKKOS_INLINE_FUNCTION volatile RealType& real () volatile {
+    return re_;
+  }
+
+  //! The imaginary part of this complex number (volatile overload).
+  KOKKOS_INLINE_FUNCTION const RealType imag () const volatile {
+    return im_;
+  }
+
+  //! The real part of this complex number (volatile overload).
+  KOKKOS_INLINE_FUNCTION const RealType real () const volatile {
     return re_;
   }
 
@@ -211,41 +239,6 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator += (const volatile RealType& src) volatile {
     re_ += src;
-  }
-
-  KOKKOS_INLINE_FUNCTION void atomic_add (const complex<RealType>& x) volatile {
-    // We can do the atomic update of a complex number componentwise,
-    // since the components don't interact in an add operation.  This
-    // does NOT work for dd_real!
-    #if defined(KOKKOS_HAVE_CXX11) && !defined(__CUDA_ARCH__)
-    ::Kokkos::atomic_add(this,x);
-    #else
-    ::Kokkos::atomic_add (&re_, x.real ());
-    ::Kokkos::atomic_add (&im_, x.imag ());
-    #endif
-  }
-
-  KOKKOS_INLINE_FUNCTION void atomic_assign (const complex<RealType>& x) volatile {
-    /*The following text is wrong. Atomic operations only guarantee that each operation
-    actually takes effect: it does not guarantee any order. As a consequence the
-    component wise assignment would potentially end up with the real and imaginary part
-    coming from different assignments.*/
-    // We can do atomic assignment componentwise, because atomics only
-    // promise that a sequence of atomic operations, once complete,
-    // will eventually reach the value it would have reached after
-    // executing them sequentially.  Thus, intermediate results might
-    // be out of order, but the final result is the same as if the
-    // operations had been executed sequentially.
-    //
-    // The one problem is if we mix atomic_add and atomic_assign.
-    // Those operations do not commute with each other, so we cannot
-    // mix them and expect to get the same answer if the order of
-    // operations changes.
-    #if defined(KOKKOS_HAVE_CXX11) && !defined(__CUDA_ARCH__)
-      ::Kokkos::atomic_assign(this,x);
-    #else
-      *this = x;
-    #endif
   }
 
   KOKKOS_INLINE_FUNCTION
@@ -501,33 +494,6 @@ std::ostream& operator >> (std::ostream& os, complex<RealType>& x) {
   return os;
 }
 
-KOKKOS_INLINE_FUNCTION void
-atomic_add (volatile ::Kokkos::complex<double>* const dest,
-            const ::Kokkos::complex<double> src)
-{
-  dest->atomic_add (src);
-}
-
-KOKKOS_INLINE_FUNCTION void
-atomic_add (volatile ::Kokkos::complex<float>* const dest,
-            const ::Kokkos::complex<float> src)
-{
-  dest->atomic_add (src);
-}
-
-KOKKOS_INLINE_FUNCTION void
-atomic_assign (volatile ::Kokkos::complex<double>* const dest,
-               const ::Kokkos::complex<double> src)
-{
-  dest->atomic_assign (src);
-}
-
-KOKKOS_INLINE_FUNCTION void
-atomic_assign (volatile ::Kokkos::complex<float>* const dest,
-               const ::Kokkos::complex<float> src)
-{
-  dest->atomic_assign (src);
-}
 
 } // namespace Kokkos
 

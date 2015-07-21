@@ -1,0 +1,50 @@
+The Kernels subpackage of Tpetra ("TpetraKernels") contains local
+computational kernels.  "Local" means no MPI or other
+distributed-memory communication.  "Computational kernels" are
+coarse-grained operations; they take a lot of work and make sense to
+parallelize inside using Kokkos.  Computational kernels in this
+subpackage include the following:
+
+  - (Multi)vector dot products, norms, and updates (AXPY-like
+    operations that add vectors together entry-wise)
+  - Sparse matrix-vector multiply and other sparse matrix / dense
+    vector kernels
+  - Other operations that the Core subpackage of Tpetra (TpetraCore)
+    needs
+
+We organize this directory as follows:
+
+  1. Public interfaces to computational kernels live in the src/
+     subdirectory (tpetra/kernels/src):
+
+     - Kokkos_Blas1_MV.hpp: (Multi)vector operations that
+       Tpetra::MultiVector uses
+     - Kokkos_CrsMatrix.hpp: Sparse matrix data structure used for the
+       computational kernels below
+     - Kokkos_Sparse.hpp: Sparse matrix-vector multiply with a
+       single vector, stored in a 1-D View
+     - Kokkos_Sparse_MV.hpp: Sparse matrix-vector multiply with
+       multiple vectors at a time (multivectors), stored in a 2-D View
+
+  2. Implementations of computational kernels live in the src/impl/
+     subdirectory (tpetra/kernels/src/impl)
+
+  3. Correctness tests live in the unit_test/ subdirectory, and
+     performance tests live in the perf_test subdirectory
+
+Do NOT use or rely on anything in the KokkosBlas::Impl namespace, or
+on anything in the impl/ subdirectory.
+
+This separation of interface and implementation lets the interface
+assign the users' Views to View types with the desired attributes
+(e.g., read-only, RandomRead).  This also makes it easier to provide
+full specializations of the implementation.  "Full specializations"
+mean that all the template parameters are fixed, so that the compiler
+can actually compile the code.  This technique keeps Tpetra build
+times down, since kernels are already precompiled for certain Scalar
+types.  It also improves performance, since compilers have an easier
+time optimizing code in shorter .cpp files.
+
+
+
+

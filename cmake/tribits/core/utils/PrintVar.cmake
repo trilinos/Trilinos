@@ -37,6 +37,10 @@
 # ************************************************************************
 # @HEADER
 
+IF (PRINT_VAR_INCLUDED)
+  RETURN()
+ENDIF()
+SET(PRINT_VAR_INCLUDED TRUE)
 
 #
 # @FUNCTION: PRINT_VAR()
@@ -55,5 +59,16 @@
 # an explicit "-- " line prefix so that it prints nice even on Windows CMake.
 #
 FUNCTION(PRINT_VAR VARIBLE_NAME)
-  MESSAGE("-- " "${VARIBLE_NAME}='${${VARIBLE_NAME}}'")
+  IF (MESSAGE_WRAPPER_UNIT_TEST_MODE)
+    GLOBAL_SET(MESSAGE_WRAPPER_INPUT "${MESSAGE_WRAPPER_INPUT}"
+      "-- " "${VARIBLE_NAME}='${${VARIBLE_NAME}}'" "${PRINT_MSG}")
+  ELSE()
+    MESSAGE("-- " "${VARIBLE_NAME}='${${VARIBLE_NAME}}'")
+  ENDIF()
 ENDFUNCTION()
+
+# NOTE: Above, I was not able to call MESSAGE_WRAPPER() directly because it
+# was removing the ';' in array arguments.  This broke a bunch of unit tests.
+# Therefore, I have to duplicate code and call it in two separate places.  I
+# have to admit that CMake behavior surprises me many times.  This is not a
+# great programming langauge.

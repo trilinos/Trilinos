@@ -43,11 +43,11 @@
 #define EPETRA_EXT_POLYNOMIAL_VECTOR_TRAITS_H
 
 #include "Teuchos_PolynomialTraits.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Epetra_Vector.h"
 
 namespace Teuchos {
-  
+
   //! Specilization of Teuchos::PolynomialTraits for %Epetra vectors.
   /*!
    * This class provides a specilization of Teuchos::PolynomialTraits for
@@ -65,7 +65,7 @@ namespace Teuchos {
     typedef double scalar_type;
 
     //! Clone a coefficient
-    static inline Teuchos::RefCountPtr<coeff_type> clone(const coeff_type& c) {
+    static inline Teuchos::RCP<coeff_type> clone(const coeff_type& c) {
       return Teuchos::rcp(new Epetra_Vector(c));
     }
 
@@ -80,8 +80,8 @@ namespace Teuchos {
     }
 
     //! y = x + beta*y
-    static inline void update(coeff_type* y, const coeff_type& x, 
-			      const scalar_type& beta) {
+    static inline void update(coeff_type* y, const coeff_type& x,
+                              const scalar_type& beta) {
       y->Update(1.0, x, beta);
     }
 

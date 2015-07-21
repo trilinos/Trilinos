@@ -40,8 +40,6 @@
 #include <stk_mesh/base/Types.hpp>      // for RelationType, EntityRank, etc
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowAssertMsg
 #include <vector>                       // for vector
-#include "boost/range/begin.hpp"        // for const_begin
-#include "boost/range/end.hpp"          // for const_end
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Part; } }
 
@@ -123,8 +121,8 @@ private:
 #ifdef SIERRA_MIGRATION
     ,
     fwmk_relation_type_digits = 8,
-    fmwk_orientation_digits   = 24,
-    fmwk_orientation_mask     = ~(0u) >> fwmk_relation_type_digits
+    fmwk_permutation_digits   = 24,
+    fmwk_permutation_mask     = ~(0u) >> fwmk_relation_type_digits
 #endif
   };
 
@@ -200,45 +198,37 @@ private:
     POLARITY_IDENTITY   = 0x80
   };
 
-  static bool polarity(unsigned orient) {
-    return (orient & POLARITY_MASK) == POLARITY_POSITIVE;
-  }
-
-  static unsigned permutation(unsigned orient) {
-    return orient & ~POLARITY_MASK;
-  }
-
   /**
    * Construct filled-out relation, fmwk-style
    */
   // Only needed by Framework and Framework-based apps.
-  Relation(EntityRank, Entity obj, const unsigned relation_type, const unsigned ordinal, const unsigned orient = 0);
+  Relation(EntityRank, Entity obj, const unsigned relation_type, const unsigned ordinal, const unsigned permut = 0);
 
   // Only needed by Framework and Framework-based apps.
   inline void setMeshObj(Entity object, EntityRank object_rank);
 
   RelationType  getRelationType() const {
-    return static_cast<RelationType::relation_type_t >(attribute() >> fmwk_orientation_digits);
+    return static_cast<RelationType::relation_type_t >(attribute() >> fmwk_permutation_digits);
   }
 
   void setRelationType(RelationType relation_type) {
-    set_attribute( (relation_type << fmwk_orientation_digits) | getOrientation() );
+    set_attribute( (relation_type << fmwk_permutation_digits) | getPermutation() );
   }
 
-  RelationIdentifier getOrdinal() const {
-    return relation_ordinal();
+  ConnectivityOrdinal getOrdinal() const {
+    return static_cast<ConnectivityOrdinal>(relation_ordinal());
   }
 
   void setOrdinal(RelationIdentifier ordinal) {
     m_raw_relation = Relation::raw_relation_id( entity_rank(), ordinal );
   }
 
-  attribute_type getOrientation() const {
-    return attribute() & fmwk_orientation_mask;
+  Permutation getPermutation() const {
+    return static_cast<Permutation>(attribute() & fmwk_permutation_mask);
   }
 
-  void setOrientation(attribute_type orientation) {
-    set_attribute( (getRelationType() << fmwk_orientation_digits) | orientation );
+  void setPermutation(unsigned perm) {
+    set_attribute( (getRelationType() << fmwk_permutation_digits) | perm );
   }
 
   /**
@@ -251,16 +241,40 @@ private:
    * of face-nodes is compatible with the ordering of element nodes,
    * i.e. the face's normal defined by a clockwise ordering is outward.
    */
-  bool polarity() const
-  { return compute_polarity(getOrientation()); }
-
-  // TODO: This doesn't belong here. This is topology information.
-  static bool compute_polarity(attribute_type orientation)
-  { return (orientation & POLARITY_MASK) == POLARITY_POSITIVE; }
-
-  unsigned permutation() const {
-    return getOrientation() & ~POLARITY_MASK;
+  static bool compute_polarity(const stk::topology & topology, unsigned permutation)
+  {
+    ThrowAssert(permutation < topology.num_permutations());
+    const bool polarity = permutation < topology.num_positive_permutations();
+    return polarity;
   }
+
+// deprecated methods
+  // Deprecated 2015-04-14
+  attribute_type getOrientation() const
+  { ThrowRequireMsg(false, "This method is deprecated! Use getPermutation instead."); return attribute() & fmwk_permutation_mask; }
+  // Deprecated 2015-04-14
+  STK_DEPRECATED(void setOrientation(attribute_type orientation))
+  { ThrowRequireMsg(false, "This method is deprecated! Use setPermutation instead."); set_attribute( (getRelationType() << fmwk_permutation_digits) | orientation ); }
+  // Deprecated 2015-04-14
+  STK_DEPRECATED(static unsigned permutation(unsigned orient)) {
+    ThrowRequireMsg(false, "This method is deprecated! It is no longer needed because orientation=permutation.");
+    return orient & ~POLARITY_MASK;
+  }
+  // Deprecated 2015-04-14
+  STK_DEPRECATED(bool polarity(stk::topology to_topology) const)
+  { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return compute_polarity(to_topology, getPermutation()); }
+  // Deprecated 2015-04-14
+  STK_DEPRECATED(bool polarity() const)
+  { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return compute_polarity(getOrientation()); }
+  // Deprecated 2015-04-14
+  STK_DEPRECATED(static bool polarity(unsigned orient))
+  { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return (orient & POLARITY_MASK) == POLARITY_POSITIVE; }
+  // Deprecated 2015-04-14
+  static bool compute_polarity(attribute_type orientation)
+  { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return (orientation & POLARITY_MASK) == POLARITY_POSITIVE; }
+  // Deprecated 2015-04-14
+  STK_DEPRECATED(unsigned permutation() const)
+  { ThrowRequireMsg(false, "This method is deprecated! Use getPermutation instead."); return getOrientation() & ~POLARITY_MASK; }
 
 private:
   bool has_fmwk_state() const { return getRelationType() != RelationType::INVALID; }
@@ -308,29 +322,13 @@ void get_entities_through_relations(
         EntityRank             entities_related_rank ,
         std::vector<Entity> & entities_related );
 
-/** \brief  Induce entities' part membership based upon relationships
- *          between entities. Insert the result into 'induced_parts'.
- */
-void induced_part_membership( const Part & part ,
-                              EntityRank entity_rank_from ,
-                              EntityRank entity_rank_to ,
-                              OrdinalVector & induced_parts);
-
-/** \brief  Induce entities' part membership based upon relationships
- *          between entities.  Do not include and parts in the 'omit' list.
- */
-void induced_part_membership(const BulkData& mesh, const PartVector& all_parts,
-                             const Entity entity_from ,
-                              const OrdinalVector       & omit ,
-                                    EntityRank            entity_rank_to ,
-                                    OrdinalVector       & induced_parts);
-
 /** \brief  Induce an entity's part membership based upon relationships
  *          from other entities.  Do not include and parts in the 'omit' list.
  */
-void induced_part_membership(const BulkData& mesh, const Entity entity ,
-                              const OrdinalVector & omit ,
-                                    OrdinalVector & induced_parts);
+void induced_part_membership(const BulkData& mesh,
+                             const Entity entity ,
+                             const OrdinalVector & omit ,
+                             OrdinalVector & induced_parts);
 
 
 //----------------------------------------------------------------------
@@ -408,10 +406,6 @@ back_relation_type(const RelationType relType)
     return RelationType::USED_BY;
   case RelationType::USED_BY:
     return RelationType::USES;
-  case RelationType::CHILD:
-    return RelationType::PARENT;
-  case RelationType::PARENT:
-    return RelationType::CHILD;
   default:
     return relType;
   }
@@ -449,13 +443,6 @@ verify_relation_ordering(Iterator begin, Iterator end)
   return true ;
 }
 
-template <class Range>
-bool
-verify_relation_ordering(Range range)
-{
-  return verify_relation_ordering(boost::const_begin(range), boost::const_end(range));
-}
-
 namespace impl {
 
 inline
@@ -476,14 +463,14 @@ Entity Relation::entity() const
 #ifdef SIERRA_MIGRATION
 
 inline
-Relation::Relation(EntityRank rel_rank, Entity obj, const unsigned relation_type, const unsigned ordinal, const unsigned orient)
+Relation::Relation(EntityRank rel_rank, Entity obj, const unsigned relation_type, const unsigned ordinal, const unsigned permut)
   :
       m_raw_relation( Relation::raw_relation_id(rel_rank, ordinal )),
-      m_attribute( (relation_type << fmwk_orientation_digits) | orient ),
+      m_attribute( (relation_type << fmwk_permutation_digits) | permut ),
       m_target_entity(obj)
 {
-  ThrowAssertMsg( orient <= fmwk_orientation_mask,
-      "orientation " << orient << " exceeds maximum allowed value");
+  ThrowAssertMsg( permut <= fmwk_permutation_mask,
+      "permutation " << permut << " exceeds maximum allowed value");
 }
 
 inline

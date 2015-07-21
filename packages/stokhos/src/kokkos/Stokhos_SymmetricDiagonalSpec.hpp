@@ -42,7 +42,7 @@
 #ifndef STOKHOS_SYMMETRIC_DIAGONAL_SPEC_HPP
 #define STOKHOS_SYMMETRIC_DIAGONAL_SPEC_HPP
 
-#include "Kokkos_CrsArray.hpp"
+#include "Kokkos_StaticCrsGraph.hpp"
 
 namespace Stokhos {
 
@@ -59,7 +59,7 @@ namespace Stokhos {
  *  { a13 , a24 , a35 , a46 , a57 , ... }
  *
  */
-template< class DeviceType >
+template< class ExecutionSpace >
 class SymmetricDiagonalSpec {
 public:
 
@@ -114,9 +114,9 @@ private:
 template < typename Device >
 class BlockMultiply< SymmetricDiagonalSpec< Device > > {
 public:
-  typedef Device device_type ;
-  typedef typename device_type::size_type size_type ;
-  typedef SymmetricDiagonalSpec< device_type > block_type ;
+  typedef Device execution_space ;
+  typedef typename execution_space::size_type size_type ;
+  typedef SymmetricDiagonalSpec< execution_space > block_type ;
 
   template< typename MatrixValue , typename VectorValue >
   KOKKOS_INLINE_FUNCTION

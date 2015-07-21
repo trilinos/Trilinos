@@ -77,7 +77,7 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 RCP<const ParameterList> RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
   RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-  validParamList->set< RCP<const FactoryBase> >("R",              Teuchos::null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
+  validParamList->set< RCP<const FactoryBase> >("R", Teuchos::null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
 
   return validParamList;
 }
@@ -240,7 +240,7 @@ void RebalanceBlockRestrictionFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>
       permutedNullspace->doImport(*nullspace, *rebalanceImporter, Xpetra::INSERT);
 
       // TODO think about this
-      //if (pL.get<bool>("useSubcomm") == true) // TODO either useSubcomm is enabled everywhere or nowhere
+      //if (pL.get<bool>("repartition: use subcommunicators") == true) // TODO either useSubcomm is enabled everywhere or nowhere
       //permutedNullspace->replaceMap(permutedNullspace->getMap()->removeEmptyProcesses());
 
       coarseLevel.Set<RCP<MultiVector> >("Nullspace", permutedNullspace, (*it)->GetFactory("Nullspace").get());

@@ -25,7 +25,6 @@
 /* Define if want to build with triutils enabled */
 #define HAVE_BELOS_TRIUTILS
 
-
 /* Define if want to build belos-examples */
 /* #undef HAVE_BELOS_EXAMPLES */
 
@@ -61,6 +60,11 @@
 
 /* Define if we are building with experimental code enabled */
 /* #undef HAVE_BELOS_EXPERIMENTAL */
+
+/* Add macros for declaring functions deprecated */
+#define BELOS_DEPRECATED
+#define BELOS_DEPRECATED_MSG(MSG)
+
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */

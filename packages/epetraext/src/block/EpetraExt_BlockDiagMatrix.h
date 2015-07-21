@@ -59,7 +59,7 @@ class Epetra_Comm;
   capabilities.
 
   This class has a rigid map structure --- the Domain and Range
-  maps must be the same. 
+  maps must be the same.
 */
 
 //=========================================================================
@@ -69,10 +69,10 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
   //! Constructor - This map is the map of the vector this can be applied to
   EpetraExt_BlockDiagMatrix(const Epetra_BlockMap& Map,bool zero_out=true);
 
-  
+
   //! Copy constructor
   EpetraExt_BlockDiagMatrix(const EpetraExt_BlockDiagMatrix& Source);
-    
+
   //! Destructor
   virtual ~EpetraExt_BlockDiagMatrix();
 
@@ -84,7 +84,7 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
     \return EpetraExt_BlockDiagMatrix.
   */
   EpetraExt_BlockDiagMatrix& operator = (const EpetraExt_BlockDiagMatrix& Source);
-  
+
   //! Block access function.
   /*!
     \return the pointer V[Index].
@@ -99,10 +99,10 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
 
 
   //! @name Attribute set methods
-  //@{ 
+  //@{
 
   //! SetUseTranspose - not implemented
-  virtual int SetUseTranspose(bool UseTranspose){return -1;}
+  virtual int SetUseTranspose(bool /* useTranspose */){return -1;}
 
   //! SetParameters
   virtual int SetParameters(Teuchos::ParameterList & List);
@@ -112,13 +112,13 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
 
   //@}
 
-  
+
   //! @name Attribute access functions
   //@{
 
   //! Returns a character std::string describing the operator
   virtual const char * Label() const{return "EpetraExt::BlockDiagMatrix";}//HAQ
-  
+
   //! Returns the current UseTranspose setting.
   virtual bool UseTranspose() const {return false;}
 
@@ -135,8 +135,8 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
   virtual const Epetra_Map & OperatorRangeMap() const {return *dynamic_cast<const Epetra_Map*>(&Map());}
 
   //! Returns the Epetra_BlockMap object associated with the range of this operator.
-  virtual const Epetra_BlockMap & BlockMap() const {return Map();} 
-  
+  virtual const Epetra_BlockMap & BlockMap() const {return Map();}
+
   //! Returns a pointer to the array containing the blocks.
   double* Values() const {return(Values_);}
 
@@ -148,7 +148,7 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
 
   //! Returns true if the element size is constant
   bool ConstantBlockSize() const {return Map().ConstantElementSize();}
-  
+
   //! Returns the number of local blocks
   int NumMyBlocks() const {return(Map().NumMyElements());}
 
@@ -169,31 +169,31 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
 
   //! Returns the size of the total Data block
   int NumData() const {return DataMap_->NumMyPoints();}
-  
+
   //! Gets apply mode info
   int GetApplyMode() {return ApplyMode_;}
 
   //! Print method
-  virtual void Print(std::ostream & os) const;  
+  virtual void Print(std::ostream & os) const;
 
   //@}
 
-  
+
   //! @name Mathematical functions
-  //@{ 
+  //@{
 
   //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
-  /*! 
+  /*!
     \param In
       X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
     \param Out
-      Y -A Epetra_MultiVector of dimension NumVectors containing result.    
+      Y -A Epetra_MultiVector of dimension NumVectors containing result.
     \return Integer error code, set to 0 if successful.
   */
   virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {return -1;}
-  
+
   //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
-  /*! 
+  /*!
     \param In
       X - A Epetra_MultiVector of dimension NumVectors to solve for.
     \param Out
@@ -201,7 +201,7 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
 
     \return Integer error code, set to 0 if successful.
 
-    \warning In order to work with AztecOO, any implementation of this method must 
+    \warning In order to work with AztecOO, any implementation of this method must
               support the case where X and Y are the same object.
   */
   virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
@@ -213,14 +213,14 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
   void PutScalar(double value);
 
   //! Returns the Epetra_BlockMap object with the distribution of underlying values
-  virtual const Epetra_BlockMap & DataMap() const {return *DataMap_;}   
+  virtual const Epetra_BlockMap & DataMap() const {return *DataMap_;}
 
   //@}
 
-  
+
 private:
   void Allocate();
-  
+
   int DoCopy(const EpetraExt_BlockDiagMatrix& Source);
 
   // Routines to implement Epetra_DistObject virtual methods
@@ -228,7 +228,7 @@ private:
   int CheckSizes(const Epetra_SrcDistObject& Source);
   // Perform ID copies and permutations that are on processor.
   int CopyAndPermute(const Epetra_SrcDistObject& Source,
-                     int NumSameIDs, 
+                     int NumSameIDs,
                      int NumPermuteIDs,
                      int * PermuteToLIDs,
                      int * PermuteFromLIDs,
@@ -245,14 +245,14 @@ private:
                      int* Sizes,
                      bool & VarSizes,
                      Epetra_Distributor& Distor);
-  
+
   // Perform any unpacking and combining after call to DoTransfer().
-  int UnpackAndCombine(const Epetra_SrcDistObject& Source, 
+  int UnpackAndCombine(const Epetra_SrcDistObject& Source,
                        int NumImportIDs,
-                       int* ImportLIDs, 
+                       int* ImportLIDs,
                        int LenImports,
                        char* Imports,
-                       int& SizeOfPacket, 
+                       int& SizeOfPacket,
                        Epetra_Distributor& Distor,
                        Epetra_CombineMode CombineMode,
                        const Epetra_OffsetIndex * Indexor);
@@ -262,13 +262,13 @@ private:
 
   //! Has Computed? Needed for Inverse/Factorization modes
   bool HasComputed_;
-  
+
   //! Which Apply Mode to use
   int ApplyMode_;
 
   //! Map for the data
   Epetra_BlockMap* DataMap_;
-  
+
   //! Actual Data values
   double *Values_;
 

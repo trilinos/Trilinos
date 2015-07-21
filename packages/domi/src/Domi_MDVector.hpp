@@ -50,6 +50,7 @@
 
 // Domi includes
 #include "Domi_ConfigDefs.hpp"
+#include "Domi_DefaultNode.hpp"
 #include "Domi_MDMap.hpp"
 #include "Domi_MDArrayRCP.hpp"
 
@@ -169,7 +170,7 @@ namespace Domi
  * internally.
  */
 template< class Scalar,
-          class Node = KokkosClassic::DefaultNode::DefaultNodeType >
+          class Node = DefaultNode::DefaultNodeType >
 class MDVector : public Teuchos::Describable
 {
 public:
@@ -259,13 +260,9 @@ public:
    *        <iframe src="domi.xml" width="90%"height="400px"></iframe>
    *        <hr />
    *        \endhtmlonly
-   *
-   * \param node [in] the Kokkos node of the map
    */
   MDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
-           Teuchos::ParameterList & plist,
-           const Teuchos::RCP< Node > & node =
-             KokkosClassic::DefaultNode::getDefaultNode());
+           Teuchos::ParameterList & plist);
 
   /** \brief Constructor with MDComm and ParameterList
    *
@@ -277,13 +274,9 @@ public:
    *        <iframe src="domi.xml" width="90%"height="400px"></iframe>
    *        <hr />
    *        \endhtmlonly
-   *
-   * \param node [in] the Kokkos node of the map
    */
   MDVector(const Teuchos::RCP< const MDComm > mdComm,
-           Teuchos::ParameterList & plist,
-           const Teuchos::RCP< Node > & node =
-             KokkosClassic::DefaultNode::getDefaultNode());
+           Teuchos::ParameterList & plist);
 
   /** \brief Parent/single global ordinal sub-vector constructor
    *
@@ -1428,8 +1421,7 @@ template< class Scalar,
           class Node >
 MDVector< Scalar, Node >::
 MDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
-         Teuchos::ParameterList & plist,
-         const Teuchos::RCP< Node > & node) :
+         Teuchos::ParameterList & plist) :
   _teuchosComm(teuchosComm),
   _mdMap(),
   _mdArrayRcp(),
@@ -1444,7 +1436,7 @@ MDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
   setObjectLabel("Domi::MDVector");
 
   // Compute the MDComm and MDMap
-  MDMap< Node > * myMdMap = new MDMap< Node >(teuchosComm, plist, node);
+  MDMap< Node > * myMdMap = new MDMap< Node >(teuchosComm, plist);
   dim_type leadingDim  = plist.get("leading dimension" , 0);
   dim_type trailingDim = plist.get("trailing dimension", 0);
   if (leadingDim + trailingDim > 0)
@@ -1472,10 +1464,9 @@ template< class Scalar,
           class Node >
 MDVector< Scalar, Node >::
 MDVector(const Teuchos::RCP< const MDComm > mdComm,
-         Teuchos::ParameterList & plist,
-         const Teuchos::RCP< Node > & node) :
+         Teuchos::ParameterList & plist) :
   _teuchosComm(mdComm->getTeuchosComm()),
-  _mdMap(Teuchos::rcp(new MDMap< Node >(mdComm, plist, node))),
+  _mdMap(Teuchos::rcp(new MDMap< Node >(mdComm, plist))),
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
@@ -1488,7 +1479,7 @@ MDVector(const Teuchos::RCP< const MDComm > mdComm,
   setObjectLabel("Domi::MDVector");
 
   // Compute the MDMap
-  MDMap< Node > * myMdMap = new MDMap< Node >(mdComm, plist, node);
+  MDMap< Node > * myMdMap = new MDMap< Node >(mdComm, plist);
   dim_type leadingDim  = plist.get("leading dimension" , 0);
   dim_type trailingDim = plist.get("trailing dimension", 0);
   if (leadingDim + trailingDim > 0)
@@ -2041,7 +2032,7 @@ getEpetraMultiVectorView() const
   // Obtain the appropriate MDMap and check that it is contiguous
   Teuchos::RCP< const MDMap< Node > > newMdMap;
   if (padding == 0 && commDim == 1)
-    newMdMap = Teuchos::rcp(new MDMap<Node>(*_mdMap, vectorAxis, 0));
+    newMdMap = Teuchos::rcp(new MDMap< Node >(*_mdMap, vectorAxis, 0));
   else
   {
     newMdMap = _mdMap;
@@ -2135,7 +2126,7 @@ getEpetraMultiVectorCopy() const
   // Obtain the appropriate MDMap
   Teuchos::RCP< const MDMap< Node > > newMdMap;
   if (padding == 0 && commDim == 1)
-    newMdMap = Teuchos::rcp(new MDMap<Node>(*_mdMap, vectorAxis, 0));
+    newMdMap = Teuchos::rcp(new MDMap< Node >(*_mdMap, vectorAxis, 0));
   else
   {
     newMdMap = _mdMap;
@@ -2815,7 +2806,7 @@ description() const
   oss << "\"Domi::MDVector\": {"
       << "Template parameters: {"
       << "Scalar: " << TypeNameTraits<Scalar>::name()
-      << ", Node: " << TypeNameTraits<Node>::name()
+      << ", Node: " << TypeNameTraits< Node >::name()
       << "}";
   if (this->getObjectLabel() != "")
     oss << ", Label: \"" << this->getObjectLabel () << "\", ";
@@ -2866,7 +2857,7 @@ describe(Teuchos::FancyOStream &out,
       {
         Teuchos::OSTab tab2(out);
         out << "Scalar: " << TypeNameTraits<Scalar>::name() << endl
-            << "Node: " << TypeNameTraits<Node>::name() << endl;
+            << "Node: " << TypeNameTraits< Node >::name() << endl;
       }
       out << endl;
       if (this->getObjectLabel() != "")
@@ -2891,21 +2882,6 @@ describe(Teuchos::FancyOStream &out,
           for (int axis = 0; axis < numDims(); ++axis)
             localDims[axis] = getLocalDim(axis, true);
           out << "Local dimensions: " << localDims << endl;
-
-          // if (vl == VERB_EXTREME && this->getLocalLength() > 0)
-          // {
-          //   // VERB_EXTREME prints values
-          //   out << "Global indices and values:" << endl;
-          //   Teuchos::OSTab tab3 (out);
-          //   RCP<Node> node = this->lclMV_.getNode();
-          //   ArrayRCP<const Scalar> myview =
-          //     node->template viewBuffer<Scalar> (this->getLocalLength(),
-          //                                        MVT::getValues (this->lclMV_));
-          //   for (size_t i = 0; i < this->getLocalLength(); ++i)
-          //   {
-          //     out << map.getGlobalElement(i) << ": " << myview[i] << endl;
-          //   }
-          // }
         }
         std::flush(out); // give output time to complete
       }
@@ -2946,16 +2922,6 @@ randomize()
   for (iterator it = _mdArrayView.begin(); it != _mdArrayView.end(); ++it)
     *it = Teuchos::ScalarTraits< Scalar >::random();
 }
-
-////////////////////////////////////////////////////////////////////////
-
-// template< class Scalar,
-//           class Node >
-// void
-// MDVector< Scalar, Node >::
-// reduce()
-// {
-// }
 
 ////////////////////////////////////////////////////////////////////////
 

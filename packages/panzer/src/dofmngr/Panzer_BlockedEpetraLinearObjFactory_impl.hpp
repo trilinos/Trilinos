@@ -307,7 +307,7 @@ void BlockedEpetraLinearObjFactory<Traits,LocalOrdinalT>::
 adjustForDirichletConditions(const LinearObjContainer & localBCRows,
                              const LinearObjContainer & globalBCRows,
                              LinearObjContainer & ghostedObjs,
-                             bool zeroVectorRows) const
+                             bool zeroVectorRows, bool adjustX) const
 {
    typedef BlockedEpetraLinearObjContainer BLOC;
 
@@ -329,14 +329,16 @@ adjustForDirichletConditions(const LinearObjContainer & localBCRows,
 
    // TEUCHOS_ASSERT(b_ghosted.get_A()!=Teuchos::null);
    // TEUCHOS_ASSERT(b_ghosted.get_f()!=Teuchos::null);
-   TEUCHOS_ASSERT(b_localBCRows.get_x()!=Teuchos::null);
-   TEUCHOS_ASSERT(b_globalBCRows.get_x()!=Teuchos::null);
+   TEUCHOS_ASSERT(b_localBCRows.get_f()!=Teuchos::null);
+   TEUCHOS_ASSERT(b_globalBCRows.get_f()!=Teuchos::null);
 
    // cast each component as needed to their product form
    RCP<PhysicallyBlockedLinearOpBase<double> > A = rcp_dynamic_cast<PhysicallyBlockedLinearOpBase<double> >(b_ghosted.get_A());
    RCP<ProductVectorBase<double> > f = rcp_dynamic_cast<ProductVectorBase<double> >(b_ghosted.get_f());
-   RCP<ProductVectorBase<double> > local_bcs  = rcp_dynamic_cast<ProductVectorBase<double> >(b_localBCRows.get_x(),true);
-   RCP<ProductVectorBase<double> > global_bcs = rcp_dynamic_cast<ProductVectorBase<double> >(b_globalBCRows.get_x(),true);
+   RCP<ProductVectorBase<double> > local_bcs  = rcp_dynamic_cast<ProductVectorBase<double> >(b_localBCRows.get_f(),true);
+   RCP<ProductVectorBase<double> > global_bcs = rcp_dynamic_cast<ProductVectorBase<double> >(b_globalBCRows.get_f(),true);
+
+   if(adjustX) f = rcp_dynamic_cast<ProductVectorBase<double> >(b_ghosted.get_x());
 
    // sanity check!
    if(A!=Teuchos::null) TEUCHOS_ASSERT(A->productRange()->numBlocks()==(int) blockDim);

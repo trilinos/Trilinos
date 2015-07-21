@@ -55,6 +55,7 @@
 ///
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_Operator.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_ComputeGatherMap.hpp"
 #include "Teuchos_MatrixMarket_Raw_Adder.hpp"
@@ -226,10 +227,17 @@ namespace Tpetra {
                     const Teuchos::RCP<node_type>& pNode,
                     const global_ordinal_type numRows)
       {
-        // A conventional, uniformly partitioned, contiguous map.
-        return rcp (new map_type (static_cast<global_size_t> (numRows),
-                                  static_cast<global_ordinal_type> (0),
-                                  pComm, GloballyDistributed, pNode));
+        // Return a conventional, uniformly partitioned, contiguous map.
+        if (pNode.is_null ()) {
+          return rcp (new map_type (static_cast<global_size_t> (numRows),
+                                    static_cast<global_ordinal_type> (0),
+                                    pComm, GloballyDistributed));
+        }
+        else {
+          return rcp (new map_type (static_cast<global_size_t> (numRows),
+                                    static_cast<global_ordinal_type> (0),
+                                    pComm, GloballyDistributed, pNode));
+        }
       }
 
       /// \brief Compute initial row map, or verify an existing one.
@@ -268,27 +276,32 @@ namespace Tpetra {
       {
         // If the caller didn't provide a map, return a conventional,
         // uniformly partitioned, contiguous map.
-        if (pRowMap.is_null()) {
-          return rcp (new map_type (static_cast<global_size_t> (numRows),
-                                    static_cast<global_ordinal_type> (0),
-                                    pComm, GloballyDistributed, pNode));
-        } else {
-          TEUCHOS_TEST_FOR_EXCEPTION(! pRowMap->isDistributed() && pComm->getSize() > 1,
-                             std::invalid_argument,
-                             "The specified row map is not distributed, but "
-                             "the given communicator includes more than one "
-                             "rank (in fact, there are " << pComm->getSize()
-                             << " ranks).");
-          TEUCHOS_TEST_FOR_EXCEPTION(pRowMap->getComm() != pComm,
-                             std::invalid_argument,
-                             "The specified row map's communicator (pRowMap->"
-                             "getComm()) is different than the given separately "
-                             "supplied communicator pComm.");
-          TEUCHOS_TEST_FOR_EXCEPTION(pRowMap->getNode() != pNode,
-                             std::invalid_argument,
-                             "The specified row map's node (pRowMap->getNode()) "
-                             "is different than the given separately supplied "
-                             "node pNode.");
+        if (pRowMap.is_null ()) {
+          if (pNode.is_null ()) {
+            return rcp (new map_type (static_cast<global_size_t> (numRows),
+                                      static_cast<global_ordinal_type> (0),
+                                      pComm, GloballyDistributed));
+          }
+          else {
+            return rcp (new map_type (static_cast<global_size_t> (numRows),
+                                      static_cast<global_ordinal_type> (0),
+                                      pComm, GloballyDistributed, pNode));
+          }
+        }
+        else {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (! pRowMap->isDistributed () && pComm->getSize () > 1,
+             std::invalid_argument, "The specified row map is not distributed, "
+             "but the given communicator includes more than one process (in "
+             "fact, there are " << pComm->getSize () << " processes).");
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (pRowMap->getComm () != pComm, std::invalid_argument,
+             "The specified row Map's communicator (pRowMap->getComm()) "
+             "differs from the given separately supplied communicator pComm.");
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (pRowMap->getNode () != pNode, std::invalid_argument,
+             "The specified row Map's node (pRowMap->getNode()) differs from "
+             "the given separately supplied node pNode.");
           return pRowMap;
         }
       }
@@ -1238,7 +1251,6 @@ namespace Tpetra {
       /// \param filename [in] Name of the Matrix Market file.
       /// \param pComm [in] Communicator containing all processor(s)
       ///   over which the sparse matrix will be distributed.
-      /// \param pNode [in] Kokkos Node object.
       /// \param callFillComplete [in] Whether to call fillComplete()
       ///   on the Tpetra::CrsMatrix, after adding all the entries
       ///   read in from the input stream.
@@ -1247,6 +1259,17 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
+      static Teuchos::RCP<sparse_matrix_type>
+      readSparseFile (const std::string& filename,
+                      const RCP<const Comm<int> >& pComm,
+                      const bool callFillComplete=true,
+                      const bool tolerant=false,
+                      const bool debug=false)
+      {
+        return readSparseFile (filename, pComm, Teuchos::null, callFillComplete, tolerant, debug);
+      }
+
+      //! Variant of readSparseFile that takes a Node object.
       static Teuchos::RCP<sparse_matrix_type>
       readSparseFile (const std::string& filename,
                       const RCP<const Comm<int> >& pComm,
@@ -1262,6 +1285,12 @@ namespace Tpetra {
         if (myRank == 0) {
           in.open (filename.c_str ());
         }
+        // FIXME (mfh 16 Jun 2015) Do a broadcast to make sure that
+        // opening the file succeeded, before continuing.  That will
+        // avoid hangs if the read doesn't work.  On the other hand,
+        // readSparse could do that too, by checking the status of the
+        // std::ostream.
+
         return readSparse (in, pComm, pNode, callFillComplete, tolerant, debug);
         // We can rely on the destructor of the input stream to close
         // the file on scope exit, even if readSparse() throws an
@@ -1287,7 +1316,6 @@ namespace Tpetra {
       /// \param filename [in] Name of the Matrix Market file.
       /// \param pComm [in] Communicator containing all process(es)
       ///   over which the sparse matrix will be distributed.
-      /// \param pNode [in] Kokkos Node object.
       /// \param constructorParams [in/out] Parameters for the
       ///   CrsMatrix constructor.
       /// \param fillCompleteParams [in/out] Parameters for
@@ -1299,10 +1327,24 @@ namespace Tpetra {
       ///   anyone else.
       static Teuchos::RCP<sparse_matrix_type>
       readSparseFile (const std::string& filename,
-                      const RCP<const Comm<int> >& pComm,
-                      const RCP<node_type>& pNode,
-                      const RCP<Teuchos::ParameterList>& constructorParams,
-                      const RCP<Teuchos::ParameterList>& fillCompleteParams,
+                      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                      const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                      const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
+                      const bool tolerant=false,
+                      const bool debug=false)
+      {
+        return readSparseFile (filename, pComm, Teuchos::null,
+                               constructorParams, fillCompleteParams,
+                               tolerant, debug);
+      }
+
+      //! Variant of readSparseFile above that takes a Node object.
+      static Teuchos::RCP<sparse_matrix_type>
+      readSparseFile (const std::string& filename,
+                      const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                      const Teuchos::RCP<node_type>& pNode,
+                      const Teuchos::RCP<Teuchos::ParameterList>& constructorParams,
+                      const Teuchos::RCP<Teuchos::ParameterList>& fillCompleteParams,
                       const bool tolerant=false,
                       const bool debug=false)
       {
@@ -1368,7 +1410,6 @@ namespace Tpetra {
           "Row Map must be nonnull.");
 
         RCP<const Comm<int> > comm = rowMap->getComm ();
-        RCP<node_type> node = rowMap->getNode ();
         const int myRank = comm->getRank ();
 
         // Only open the file on Process 0.  Test carefully to make
@@ -1410,7 +1451,6 @@ namespace Tpetra {
       /// \param in [in] The input stream from which to read.
       /// \param pComm [in] Communicator containing all processor(s)
       ///   over which the sparse matrix will be distributed.
-      /// \param pNode [in] Kokkos Node object.
       /// \param callFillComplete [in] Whether to call fillComplete()
       ///   on the Tpetra::CrsMatrix, after adding all the entries
       ///   read in from the input stream.  (Not calling
@@ -1421,6 +1461,17 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
+      static Teuchos::RCP<sparse_matrix_type>
+      readSparse (std::istream& in,
+                  const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
+                  const bool callFillComplete=true,
+                  const bool tolerant=false,
+                  const bool debug=false)
+      {
+        return readSparse (in, pComm, Teuchos::null, callFillComplete, tolerant, debug);
+      }
+
+      //! Variant of readSparse() above that takes a Node object.
       static Teuchos::RCP<sparse_matrix_type>
       readSparse (std::istream& in,
                   const Teuchos::RCP<const Teuchos::Comm<int> >& pComm,
@@ -1965,7 +2016,6 @@ namespace Tpetra {
       /// \param in [in] The input stream from which to read.
       /// \param pComm [in] Communicator containing all process(es)
       ///   over which the sparse matrix will be distributed.
-      /// \param pNode [in] Kokkos Node object.
       /// \param constructorParams [in/out] Parameters for the
       ///   CrsMatrix constructor.
       /// \param fillCompleteParams [in/out] Parameters for
@@ -1975,6 +2025,19 @@ namespace Tpetra {
       /// \param debug [in] Whether to produce copious status output
       ///   useful for Tpetra developers, but probably not useful for
       ///   anyone else.
+      static Teuchos::RCP<sparse_matrix_type>
+      readSparse (std::istream& in,
+                  const RCP<const Comm<int> >& pComm,
+                  const RCP<Teuchos::ParameterList>& constructorParams,
+                  const RCP<Teuchos::ParameterList>& fillCompleteParams,
+                  const bool tolerant=false,
+                  const bool debug=false)
+      {
+        return readSparse (in, pComm, Teuchos::null, constructorParams,
+                           fillCompleteParams, tolerant, debug);
+      }
+
+      //! Variant of the above readSparse() method that takes a Kokkos Node.
       static Teuchos::RCP<sparse_matrix_type>
       readSparse (std::istream& in,
                   const RCP<const Comm<int> >& pComm,
@@ -4834,6 +4897,9 @@ namespace Tpetra {
       //! Specialization of Tpetra::Map that matches SparseMatrixType.
       typedef Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
+      typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type>            operator_type;
+      typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type>         mv_type;
+
       /// \brief Print the sparse matrix in Matrix Market format, with
       ///   comments.
       ///
@@ -6759,6 +6825,474 @@ namespace Tpetra {
           }
         }
       }
+
+    public:
+
+      /// \brief Write a Tpetra::Operator to a file.
+      ///
+      /// This method works by applying the Operator to columns of the
+      /// identity matrix.  As a result, it effectively turns the
+      /// Operator into a dense matrix.  However, it writes the
+      /// Operator in sparse matrix format.  As such, you may read it
+      /// back in again using Reader::readSparseFile.
+      ///
+      /// Probing calls apply() on the input Operator, using a
+      /// MultiVector with a small, fixed number of columns.  If you
+      /// want to change the number of columns used, you must invoke
+      /// the overload of this method that takes an input
+      /// Teuchos::ParameterList (see below).
+      ///
+      /// \param fileName [in] The name of the file to which to write.
+      ///   Only Process 0 in the input Operator's communicator will
+      ///   write to the file.
+      /// \param A [in] The input Tpetra::Operator to write.
+      static void
+      writeOperator(const std::string& fileName, operator_type const &A) {
+        Teuchos::ParameterList pl;
+        writeOperator(fileName, A, pl);
+      }
+
+      /// \brief Write a Tpetra::Operator to an output stream.
+      ///
+      /// This method works by applying the Operator to columns of the
+      /// identity matrix.  As a result, it effectively turns the
+      /// Operator into a dense matrix.  However, it writes the
+      /// Operator in sparse matrix format.  As such, you may read it
+      /// back in again using Reader::readSparseFile.
+      ///
+      /// Probing calls apply() on the input Operator, using a
+      /// MultiVector with a small, fixed number of columns.  If you
+      /// want to change the number of columns used, you must invoke
+      /// the overload of this method that takes an input
+      /// Teuchos::ParameterList (see below).
+      ///
+      /// \param out [in] Output stream to which to write.  Only
+      ///   Process 0 in the input Operator's communicator will write
+      ///   to the output stream.  Other processes will not write to
+      ///   it or call any methods on it.  Thus, the stream need only
+      ///   be valid on Process 0.
+      /// \param A [in] The input Tpetra::Operator to write.
+      static void
+      writeOperator (std::ostream& out, const operator_type& A) {
+        Teuchos::ParameterList pl;
+        writeOperator (out, A, pl);
+      }
+
+      /// \brief Write a Tpetra::Operator to a file, with options.
+      ///
+      /// This method works by applying the Operator to columns of the
+      /// identity matrix.  As a result, it effectively turns the
+      /// Operator into a dense matrix.  However, it writes the
+      /// Operator in sparse matrix format.  As such, you may read it
+      /// back in again using Reader::readSparseFile.
+      ///
+      /// Probing calls apply() on the input Operator, using a
+      /// MultiVector with a small, fixed number of columns.  You may
+      /// set this number of columns in the input ParameterList.
+      ///
+      /// \param fileName [in] The name of the file to which to write.
+      ///   Only Process 0 in the Operator's communicator will write
+      ///   to the file.
+      /// \param A [in] The input Tpetra::Operator to write.
+      /// \param params [in] List of options.  An empty list means
+      ///   "use default values of options."
+      ///
+      /// If you always want the default options, use the overload of
+      /// this method above that takes two arguments (the filename and
+      /// the Operator).  This three-argument overload lets the user
+      /// pass in options.  The currently supported options are:
+      ///
+      /// <ul>
+      /// <li> "probing size" (integer [10]): number of columns to use
+      ///       in the probing MultiVector </li>
+      /// <li> "precision" (integer [C++ default]): precision to use
+      ///      when writing floating-point values </li>
+      /// <li> "print MatrixMarket header" (boolean [true]): whether
+      ///      to print the MatrixMarket header </li>
+      /// <li> "zero-based indexing" (boolean [false]): print matrix
+      ///      using zero-based indexing.  The Matrix Market format
+      ///      uses one-based indexing, so setting this option to true
+      ///      violates the Matrix Market format standard. </li>
+      /// </ul>
+      static void
+      writeOperator (const std::string& fileName,
+                     const operator_type& A,
+                     const Teuchos::ParameterList& params)
+      {
+        std::ofstream out;
+        std::string tmpFile = "__TMP__" + fileName;
+        const int myRank = A.getDomainMap()->getComm()->getRank();
+        bool precisionChanged=false;
+        int  oldPrecision;
+        // The number of nonzero entries in a Tpetra::Operator is
+        // unknown until probing is completed.  In order to write a
+        // MatrixMarket header, we write the matrix to a temporary
+        // file.
+        //
+        // FIXME (mfh 23 May 2015) IT WASN'T MY IDEA TO WRITE TO A
+        // TEMPORARY FILE.
+        if (myRank==0) {
+          if (std::ifstream(tmpFile))
+            TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                                       "writeOperator: temporary file " << tmpFile << " already exists");
+          out.open(tmpFile.c_str());
+          if (params.isParameter("precision")) {
+            oldPrecision = out.precision(params.get<int>("precision"));
+            precisionChanged=true;
+          }
+        }
+
+        const std::string header = writeOperatorImpl(out, A, params);
+
+        if (myRank==0) {
+          if (precisionChanged)
+            out.precision(oldPrecision);
+          out.close();
+          out.open(fileName.c_str(), std::ios::binary);
+          bool printMatrixMarketHeader = true;
+          if (params.isParameter("print MatrixMarket header"))
+            printMatrixMarketHeader = params.get<bool>("print MatrixMarket header");
+          if (printMatrixMarketHeader && myRank == 0) {
+            // Write header to final file.
+            out << header;
+          }
+          // Append matrix from temporary to final file.
+          std::ifstream src(tmpFile, std::ios_base::binary);
+          out << src.rdbuf();
+          src.close();
+          // Delete the temporary file.
+          remove(tmpFile.c_str());
+        }
+      }
+
+      /// \brief Write a Tpetra::Operator to an output stream, with options.
+      ///
+      /// This method works by applying the Operator to columns of the
+      /// identity matrix.  As a result, it effectively turns the
+      /// Operator into a dense matrix.  However, it writes the
+      /// Operator in sparse matrix format.  As such, you may read it
+      /// back in again using Reader::readSparseFile.
+      ///
+      /// Probing calls apply() on the input Operator, using a
+      /// MultiVector with a small, fixed number of columns.  You may
+      /// set this number of columns in the input ParameterList.
+      ///
+      /// \param out [in] Output stream to which to write.  Only
+      ///   Process 0 in the input Operator's communicator will write
+      ///   to the output stream.  Other processes will not write to
+      ///   it or call any methods on it.  Thus, the stream need only
+      ///   be valid on Process 0.
+      /// \param A [in] The input Tpetra::Operator to write.
+      /// \param params [in] List of options.  An empty list means
+      ///   "use default values of options."
+      ///
+      /// If you always want the default options, use the overload of
+      /// this method above that takes two arguments (the filename and
+      /// the Operator).  This three-argument overload lets the user
+      /// pass in options.  The currently supported options are:
+      ///
+      /// <ul>
+      /// <li> "probing size" (integer [10]): number of columns to use
+      ///       in the probing MultiVector </li>
+      /// <li> "precision" (integer [C++ default]): precision to use
+      ///      when writing floating-point values </li>
+      /// <li> "print MatrixMarket header" (boolean [true]): whether
+      ///      to print the MatrixMarket header </li>
+      /// <li> "zero-based indexing" (boolean [false]): print matrix
+      ///      using zero-based indexing.  The Matrix Market format
+      ///      uses one-based indexing, so setting this option to true
+      ///      violates the Matrix Market format standard. </li>
+      /// </ul>
+      static void
+      writeOperator (std::ostream& out,
+                     const operator_type& A,
+                     const Teuchos::ParameterList& params)
+      {
+        const int myRank = A.getDomainMap ()->getComm ()->getRank ();
+
+        // The number of nonzero entries in a Tpetra::Operator is
+        // unknown until probing is completed.  In order to write a
+        // MatrixMarket header, we write the matrix to a temporary
+        // output stream.
+        //
+        // NOTE (mfh 23 May 2015): Writing to a temporary output
+        // stream may double the memory usage, depending on whether
+        // 'out' is a file stream or an in-memory output stream (e.g.,
+        // std::ostringstream).  It might be wise to use a temporary
+        // file instead.  However, please look carefully at POSIX
+        // functions for safe creation of temporary files.  Don't just
+        // prepend "__TMP__" to the filename and hope for the best.
+        // Furthermore, it should be valid to call the std::ostream
+        // overload of this method even when Process 0 does not have
+        // access to a file system.
+        std::ostringstream tmpOut;
+        if (myRank == 0) {
+          if (params.isParameter ("precision") && params.isType<int> ("precision")) {
+            (void) tmpOut.precision (params.get<int> ("precision"));
+          }
+        }
+
+        const std::string header = writeOperatorImpl (tmpOut, A, params);
+
+        if (myRank == 0) {
+          bool printMatrixMarketHeader = true;
+          if (params.isParameter ("print MatrixMarket header") &&
+              params.isType<bool> ("print MatrixMarket header")) {
+            printMatrixMarketHeader = params.get<bool> ("print MatrixMarket header");
+          }
+          if (printMatrixMarketHeader && myRank == 0) {
+            out << header; // write header to final output stream
+          }
+          // Append matrix from temporary output stream to final output stream.
+          //
+          // NOTE (mfh 23 May 2015) This might use a lot of memory.
+          // However, we should not use temporary files in this
+          // method.  Since it does not access the file system (unlike
+          // the overload that takes a file name), it should not
+          // require the file system at all.
+          //
+          // If memory usage becomes a problem, one thing we could do
+          // is write the entries of the Operator one column (or a few
+          // columns) at a time.  The Matrix Market sparse format does
+          // not impose an order on its entries, so it would be OK to
+          // write them in that order.
+          out << tmpOut.str ();
+        }
+      }
+
+    private:
+
+      /// \brief Implementation detail of writeOperator overloads.
+      ///
+      /// Use column probing to discover the entries of the Operator.
+      /// Write them in Matrix Market sparse matrix format, on Process
+      /// 0 only, to the output stream \c os.  Do NOT write the Matrix
+      /// Market header line, but DO return it (unless the input
+      /// options specify otherwise).
+      static std::string
+      writeOperatorImpl (std::ostream& os,
+                         const operator_type& A,
+                         const Teuchos::ParameterList& params)
+      {
+        using Teuchos::RCP;
+        using Teuchos::rcp;
+        using Teuchos::ArrayRCP;
+        using Teuchos::Array;
+
+        typedef local_ordinal_type                 LO;
+        typedef global_ordinal_type                GO;
+        typedef scalar_type                        Scalar;
+        typedef Teuchos::OrdinalTraits<LO>         TLOT;
+        typedef Teuchos::OrdinalTraits<GO>         TGOT;
+        typedef Tpetra::Import<LO, GO, node_type>  import_type;
+        typedef Tpetra::MultiVector<GO, LO, GO, node_type> mv_type_go;
+
+        const map_type&                domainMap = *(A.getDomainMap());
+        RCP<const map_type>            rangeMap = A.getRangeMap();
+        RCP<const Teuchos::Comm<int> > comm = rangeMap->getComm();
+        const int                      myRank = comm->getRank();
+        const size_t                   numProcs = comm->getSize();
+
+        size_t numMVs = 10;
+        if (params.isParameter("probing size"))
+          numMVs = params.get<int>("probing size");
+
+        GO globalNnz = 0;
+        GO minColGid = domainMap.getMinAllGlobalIndex();
+        GO maxColGid = domainMap.getMaxAllGlobalIndex();
+        // Rather than replicating the domainMap on all processors, we instead
+        // iterate from the min GID to the max GID.  If the map is gappy,
+        // there will be invalid GIDs, i.e., GIDs no one has.  This will require
+        // unnecessary matvecs  against potentially zero vectors.
+        GO numGlobElts = maxColGid - minColGid + TGOT::one();
+        GO numChunks = numGlobElts / numMVs;
+        GO rem = numGlobElts % numMVs;
+        GO indexBase = rangeMap->getIndexBase();
+
+        int offsetToUseInPrinting = 1 - indexBase; // default is 1-based indexing
+        if (params.isParameter("zero-based indexing")) {
+          if (params.get<bool>("zero-based indexing") == true)
+            offsetToUseInPrinting = -indexBase; // If 0-based, use as-is. If 1-based, subtract 1.
+        }
+
+        // Create map that replicates the range map on pid 0 and is empty for all other pids
+        size_t numLocalRangeEntries = rangeMap->getNodeNumElements();
+
+        // Create contiguous source map
+        RCP<const map_type> allGidsMap = rcp(new map_type(TGOT::invalid(), numLocalRangeEntries,
+                                                              indexBase, comm));
+        // Create vector based on above map.  Populate it with GIDs corresponding to this pid's GIDs in rangeMap.
+        mv_type_go allGids(allGidsMap,1);
+        Teuchos::ArrayRCP<GO> allGidsData = allGids.getDataNonConst(0);
+
+        for (size_t i=0; i<numLocalRangeEntries; i++)
+          allGidsData[i] = rangeMap->getGlobalElement(i);
+        allGidsData = Teuchos::null;
+
+        // Create target map that is nontrivial only on pid 0
+        GO numTargetMapEntries=TGOT::zero();
+        Teuchos::Array<GO> importGidList;
+        if (myRank==0) {
+          numTargetMapEntries = rangeMap->getGlobalNumElements();
+          importGidList.reserve(numTargetMapEntries);
+          for (GO j=0; j<numTargetMapEntries; ++j) importGidList.push_back(j + indexBase);
+        } else {
+          importGidList.reserve(numTargetMapEntries);
+        }
+        RCP<map_type> importGidMap = rcp(new map_type(TGOT::invalid(), importGidList(), indexBase, comm));
+
+        // Import all rangeMap GIDs to pid 0
+        import_type gidImporter(allGidsMap, importGidMap);
+        mv_type_go importedGids(importGidMap, 1);
+        importedGids.doImport(allGids, gidImporter, INSERT);
+
+        // The following import map will be non-trivial only on pid 0.
+        ArrayRCP<const GO> importedGidsData = importedGids.getData(0);
+        RCP<const map_type> importMap = rcp(new map_type(TGOT::invalid(), importedGidsData(), indexBase, comm) );
+
+        // Importer from original range map to pid 0
+        import_type importer(rangeMap, importMap);
+        // Target vector on pid 0
+        RCP<mv_type> colsOnPid0 = rcp(new mv_type(importMap,numMVs));
+
+        RCP<mv_type> ei = rcp(new mv_type(A.getDomainMap(),numMVs));    //probing vector
+        RCP<mv_type> colsA = rcp(new mv_type(A.getRangeMap(),numMVs));  //columns of A revealed by probing
+
+        Array<GO> globalColsArray, localColsArray;
+        globalColsArray.reserve(numMVs);
+        localColsArray.reserve(numMVs);
+
+        ArrayRCP<ArrayRCP<Scalar> > eiData(numMVs);
+        for (size_t i=0; i<numMVs; ++i)
+          eiData[i] = ei->getDataNonConst(i);
+
+        // //////////////////////////////////////
+        // Discover A by chunks
+        // //////////////////////////////////////
+        for (GO k=0; k<numChunks; ++k) {
+          for (size_t j=0; j<numMVs; ++j ) {
+            //GO curGlobalCol = maxColGid - numMVs + j + TGOT::one();
+            GO curGlobalCol = minColGid + k*numMVs + j;
+            globalColsArray.push_back(curGlobalCol);
+            //TODO  extract the g2l map outside of this loop loop
+            LO curLocalCol = domainMap.getLocalElement(curGlobalCol);
+            if (curLocalCol != TLOT::invalid()) {
+              eiData[j][curLocalCol] = TGOT::one();
+              localColsArray.push_back(curLocalCol);
+            }
+          }
+          //TODO Do the views eiData need to be released prior to the matvec?
+
+          // probe
+          A.apply(*ei,*colsA);
+
+          colsOnPid0->doImport(*colsA,importer,INSERT);
+
+          if (myRank==0)
+            globalNnz += writeColumns(os,*colsOnPid0, numMVs, importedGidsData(),
+                                      globalColsArray, offsetToUseInPrinting);
+
+          //zero out the ei's
+          for (size_t j=0; j<numMVs; ++j ) {
+            for (int i=0; i<localColsArray.size(); ++i)
+              eiData[j][localColsArray[i]] = TGOT::zero();
+          }
+          globalColsArray.clear();
+          localColsArray.clear();
+
+        }
+
+        // //////////////////////////////////////
+        // Handle leftover part of A
+        // //////////////////////////////////////
+        if (rem > 0) {
+          for (int j=0; j<rem; ++j ) {
+            GO curGlobalCol = maxColGid - rem + j + TGOT::one();
+            globalColsArray.push_back(curGlobalCol);
+            //TODO  extract the g2l map outside of this loop loop
+            LO curLocalCol = domainMap.getLocalElement(curGlobalCol);
+            if (curLocalCol != TLOT::invalid()) {
+              eiData[j][curLocalCol] = TGOT::one();
+              localColsArray.push_back(curLocalCol);
+            }
+          }
+          //TODO Do the views eiData need to be released prior to the matvec?
+
+          // probe
+          A.apply(*ei,*colsA);
+
+          colsOnPid0->doImport(*colsA,importer,INSERT);
+          if (myRank==0)
+            globalNnz += writeColumns(os,*colsOnPid0, rem, importedGidsData(),
+                                      globalColsArray, offsetToUseInPrinting);
+
+          //zero out the ei's
+          for (int j=0; j<rem; ++j ) {
+            for (int i=0; i<localColsArray.size(); ++i)
+              eiData[j][localColsArray[i]] = TGOT::zero();
+          }
+          globalColsArray.clear();
+          localColsArray.clear();
+
+        }
+
+        // Return the Matrix Market header.  It includes the header
+        // line (that starts with "%%"), some comments, and the triple
+        // of matrix dimensions and number of nonzero entries.  We
+        // don't actually print this here, because we don't know the
+        // number of nonzero entries until after probing.
+        std::ostringstream oss;
+        if (myRank == 0) {
+          oss << "%%MatrixMarket matrix coordinate ";
+          if (Teuchos::ScalarTraits<typename operator_type::scalar_type>::isComplex) {
+            oss << "complex";
+          } else {
+            oss << "real";
+          }
+          oss << " general" << std::endl;
+          oss << "% Tpetra::Operator" << std::endl;
+          std::time_t now = std::time(NULL);
+          oss << "% time stamp: " << ctime(&now);
+          oss << "% written from " << numProcs << " processes" << std::endl;
+          size_t numRows = rangeMap->getGlobalNumElements();
+          size_t numCols = domainMap.getGlobalNumElements();
+          oss << numRows << " " << numCols << " " << globalNnz << std::endl;
+        }
+
+        return oss.str ();
+      }
+
+      static global_ordinal_type
+      writeColumns(std::ostream& os, mv_type const &colsA, size_t const &numCols,
+                   Teuchos::ArrayView<const global_ordinal_type> const &rowGids,
+                   Teuchos::Array<global_ordinal_type> const &colsArray,
+                   global_ordinal_type const & indexBase) {
+
+      typedef global_ordinal_type           GO;
+      typedef scalar_type                   Scalar;
+      typedef Teuchos::ScalarTraits<Scalar> STS;
+
+        GO nnz=0;
+        const Scalar zero = STS::zero();
+        const size_t numRows = colsA.getGlobalLength();
+        for (size_t j=0; j<numCols; ++j) {
+          ArrayRCP<const Scalar> const curCol = colsA.getData(j);
+          const GO J = colsArray[j];
+          for (size_t i=0; i<numRows; ++i) {
+            const Scalar val = curCol[i];
+            if (val!=zero) {
+              os << rowGids[i]+indexBase << " " << J+indexBase << " " << val << std::endl;
+              ++nnz;
+            }
+          }
+        }
+
+        return nnz;
+
+      }
+
+    public:
+
     }; // class Writer
 
   } // namespace MatrixMarket

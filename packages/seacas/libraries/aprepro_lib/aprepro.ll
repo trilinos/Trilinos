@@ -354,6 +354,35 @@ integer {D}+({E})?
   switch_active = false;
 }
 
+<INITIAL>{
+  /* This restores the old behavior of ifdef and ifndef
+   * where they would eat up any leading whitespace on
+   * a line.
+   */
+  {WS}"{"[Ii]"fdef"{WS}"(" { 
+    unput('(');
+    unput('f');
+    unput('e');
+    unput('d');
+    unput('f');
+    unput('i');
+    unput('_');
+    unput('{');
+  }
+
+  {WS}"{"[Ii]"fndef"{WS}"(" {
+    unput('(');
+    unput('f');
+    unput('e');
+    unput('d');
+    unput('n');
+    unput('f');
+    unput('i');
+    unput('_');
+    unput('{');
+  }
+}
+
 <IF_WHILE_SKIP>{
   /* If an if was found while skipping, then eat
    * that entire if block until endif
@@ -645,8 +674,9 @@ integer {D}+({E})?
     if(aprepro.ap_options.keep_history &&
        strcmp("_string_", aprepro.ap_file_list.top().name.c_str()) != 0)
     {
-      hist_start = curr_index - yyleng;
-      if(hist_start < 0)
+      if (curr_index > yyleng) 
+	hist_start = curr_index - yyleng;
+      else
         hist_start = 0;
     }
 
@@ -873,19 +903,21 @@ namespace SEAMS {
   char *Scanner::if_handler(double x)
   {
     if_lvl++;
-    if (if_lvl >= MAX_IF_NESTING)
+    if (if_lvl >= MAX_IF_NESTING) {
       yyerror("Too many nested if statements");
-
-    if (x == 0) {
-      if_state[if_lvl] = IF_SKIP;
-      if_case_run[if_lvl] = false;
-    } else {
-      suppress_nl = true;
-      if_state[if_lvl] = INITIAL;
-      if_case_run[if_lvl] = true;
+    } 
+    else {
+      if (x == 0) {
+	if_state[if_lvl] = IF_SKIP;
+	if_case_run[if_lvl] = false;
+      } else {
+	suppress_nl = true;
+	if_state[if_lvl] = INITIAL;
+	if_case_run[if_lvl] = true;
+      }
+      if (aprepro.ap_options.debugging) 
+	std::cerr << "DEBUG IF: If level " << if_lvl << " " << if_state[if_lvl] << "\n";
     }
-    if (aprepro.ap_options.debugging) 
-      std::cerr << "DEBUG IF: If level " << if_lvl << " " << if_state[if_lvl] << "\n"; 
     return(NULL);
   }
 

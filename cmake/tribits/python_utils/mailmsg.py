@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 
 # @HEADER
 # ************************************************************************
@@ -54,7 +54,7 @@ sys.path.insert(0, scriptsDir)
 
 from GeneralScriptSupport import *
 
-emailAddress = getCmndOutput("eg config --get user.email", True, False)
+emailAddress = getCmndOutput("git config --get user.email", True, False)
 if not emailAddress:
   emailAddress = os.environ['USER']+"@sandia.gov"
 

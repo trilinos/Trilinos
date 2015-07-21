@@ -64,6 +64,7 @@ namespace Intrepid {
       getEquispacedLattice<Scalar,ArrayType>( cellType , pts , order , offset );
       break;
     case POINTTYPE_WARPBLEND:
+
       getWarpBlendLattice<Scalar,ArrayType>( cellType , pts , order , offset );
       break;
     default:
@@ -140,6 +141,7 @@ namespace Intrepid {
                                         const int offset )
 
   {
+
     switch (cellType.getKey()) {
     case shards::Tetrahedron<4>::key:
     case shards::Tetrahedron<8>::key:
@@ -148,6 +150,7 @@ namespace Intrepid {
                           || points.dimension(1) != 3 ,
                           std::invalid_argument ,
                           ">>> ERROR(PointTools::getWarpBlendLattice): points argument is ill-sized." );
+
       getWarpBlendLatticeTetrahedron<Scalar,ArrayType>( points , order , offset );
       break;
     case shards::Triangle<3>::key:
@@ -156,7 +159,8 @@ namespace Intrepid {
       TEUCHOS_TEST_FOR_EXCEPTION( ( points.dimension(0) != getLatticeSize( cellType , order , offset ) ) 
                           || points.dimension(1) != 2 ,
                           std::invalid_argument ,
-                          ">>> ERROR(PointTools::getWarpBlendLattice): points argument is ill-sized." );
+                          ">>> ERROR(PointTools::getWarpBlendLattice): points argument is ill-sized." );	            
+
       getWarpBlendLatticeTriangle<Scalar,ArrayType>( points , order , offset );
       break;
     case shards::Line<2>::key:
@@ -165,6 +169,7 @@ namespace Intrepid {
                           || points.dimension(1) != 1 ,
                           std::invalid_argument ,
                           ">>> ERROR(PointTools::getWarpBlendLattice): points argument is ill-sized." );
+
       getWarpBlendLatticeLine<Scalar,ArrayType>( points , order , offset );
       break;
     default:
@@ -333,6 +338,7 @@ namespace Intrepid {
                                                 const int offset  )
   {
     /* get Gauss-Lobatto points */
+
     Intrepid::FieldContainer<Scalar> gaussX( order + 1 , 1 );
     
     PointTools::getWarpBlendLatticeLine<Scalar,FieldContainer<Scalar> >( gaussX , order , 0 );
@@ -360,7 +366,7 @@ namespace Intrepid {
     Intrepid::FieldContainer<Scalar> L3( N );     
     Intrepid::FieldContainer<Scalar> X(N);
     Intrepid::FieldContainer<Scalar> Y(N);
-    
+
     int sk = 0;
     for (int n=1;n<=p+1;n++) {
       for (int m=1;m<=p+2-n;m++) {
@@ -375,7 +381,7 @@ namespace Intrepid {
       X(n) = -L2(n) + L3(n);
       Y(n) = (-L2(n) - L3(n) + 2*L1(n))/1.7320508075688772;
     }
-    
+
     /* get blending function for each node at each edge */
     Intrepid::FieldContainer<Scalar> blend1(N);
     Intrepid::FieldContainer<Scalar> blend2(N);
@@ -448,7 +454,7 @@ namespace Intrepid {
                                                       warburtonVerts ,
                                                       shards::getCellTopologyData< shards::Triangle<3> >(),
                                                       0 );
-    
+
     // now write from refPts into points, taking care of offset
     int noffcur = 0;  // index into refPts
     int offcur = 0;   // index int points

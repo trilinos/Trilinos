@@ -45,10 +45,11 @@
 #ifndef PHX_EXAMPLE_MYCELL_HPP
 #define PHX_EXAMPLE_MYCELL_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Dimension.hpp"
-#include "Shards_Array.hpp"
+#include "Kokkos_View.hpp"
+#include "Phalanx_KokkosDeviceTypes.hpp"
 
 class MyCell {
   
@@ -58,13 +59,11 @@ public:
   
   virtual ~MyCell() {}
   
-  shards::Array<double,shards::NaturalOrder,Node,Dim>& getNodeCoordinates();
+  Kokkos::View<double**,PHX::Device> getNodeCoordinates();
   
-  shards::Array<double,shards::NaturalOrder,QuadPoint,Node>& 
-  getBasisFunctions();
+  Kokkos::View<double**,PHX::Device> getBasisFunctions();
   
-  shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
-  getBasisFunctionGradients();
+  Kokkos::View<double***,PHX::Device> getBasisFunctionGradients();
   
   std::size_t localIndex();
 
@@ -74,17 +73,9 @@ private:
   
   std::size_t local_index_;
 
-  Teuchos::ArrayRCP<double> m_coords_mem;
-  
-  Teuchos::ArrayRCP<double> m_phi_mem;
-  
-  Teuchos::ArrayRCP<double> m_grad_phi_mem;
-
-  shards::Array<double,shards::NaturalOrder,Node,Dim> m_coords;
-  
-  shards::Array<double,shards::NaturalOrder,QuadPoint,Node> m_phi;
-
-  shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim> m_grad_phi;
+  Kokkos::View<double**,PHX::Device> m_coords;
+  Kokkos::View<double**,PHX::Device> m_phi;
+  Kokkos::View<double***,PHX::Device> m_grad_phi;
 
 };
 

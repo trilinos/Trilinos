@@ -45,7 +45,6 @@
 #include <mesh/UseCase_ChangeOwner.hpp>
 
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/DiagWriter.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 
 //----------------------------------------------------------------------

@@ -404,10 +404,6 @@ public:
 
 protected:
 
-  template <class S,class LO,class GO,class N>
-  friend Teuchos::RCP<Vector<S, LO, GO, N, true> >
-  createVectorFromView (const Teuchos::RCP<const Map<LO, GO, N> >&, const Teuchos::ArrayRCP<S>&);
-
   // view constructor, sitting on user allocated data, only for CPU nodes
   // and his non-member constructor friend
   Vector (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
@@ -422,32 +418,6 @@ protected:
   typedef KokkosClassic::MultiVector<Scalar,Node> KMV;
   typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
 }; // class Vector
-
-/// \brief Nonmember function to create a Vector with view semantics
-///   using user-allocated data, with the Teuchos memory management
-///   class Teuchos::ArrayRCP.
-/// \relatesalso Vector
-///
-/// \warning This function is DEPRECATED.
-///
-/// \warning This use case is not supported for all Node types.
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-TPETRA_DEPRECATED
-Teuchos::RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, true> >
-createVectorFromView (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &map,
-                      const Teuchos::ArrayRCP<Scalar>& view)
-{
-  using Teuchos::rcp;
-  typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node, true> vec_type;
-  typedef Tpetra::details::ViewAccepter<Node> accepter_type;
-
-  // "this is a protected constructor, but we are friends"
-  //
-  // The ViewAccepter expression will fail to compile for unsupported
-  // Node types.
-  return rcp (new vec_type (map, accepter_type::template acceptView<Scalar> (view), HOST_VIEW_CONSTRUCTOR)
-  );
-}
 
 #endif // defined(HAVE_TPETRACLASSIC_SERIAL) || defined(HAVE_TPETRACLASSIC_TBB) || defined(HAVE_TPETRACLASSIC_THREADPOOL) || defined(HAVE_TPETRACLASSIC_OPENMP)
 

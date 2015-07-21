@@ -63,7 +63,6 @@ Hiptmair (const Teuchos::RCP<const row_matrix_type>& A,
   preOrPost_ ("both"),
   ZeroStartingSolution_ (true),
   // General
-  Condest_ (-STM::one ()),
   IsInitialized_ (false),
   IsComputed_ (false),
   NumInitialize_ (0),
@@ -201,25 +200,6 @@ double Hiptmair<MatrixType>::getComputeTime () const {
 template <class MatrixType>
 double Hiptmair<MatrixType>::getApplyTime () const {
   return ApplyTime_;
-}
-
-
-template <class MatrixType>
-typename Hiptmair<MatrixType>::magnitude_type
-Hiptmair<MatrixType>::
-computeCondEst (CondestType CT,
-                local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const row_matrix_type>& matrix)
-{
-  if (! isComputed ()) { // cannot compute right now
-    return -STM::one ();
-  }
-  // NOTE: this is computing the *local* condest
-  if (Condest_ == -STM::one ()) {
-    Condest_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, matrix);
-  }
-  return Condest_;
 }
 
 

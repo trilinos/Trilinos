@@ -262,23 +262,6 @@ namespace TSQR {
       /// main problem, in order to solve it in parallel.
       size_t ntasks() const { return numTasks_; }
 
-      /// \brief Number of tasks that TSQR will use to solve the problem.
-      ///
-      /// This is the number of subproblems into which to divide the
-      /// main problem, in order to solve it in parallel.
-      ///
-      /// This method is deprecated, because the name is misleading.
-      /// Please call \c ntasks() instead.
-      size_t TEUCHOS_DEPRECATED ncores() const { return numTasks_; }
-
-      /// \brief Cache size hint (in bytes) used for the factorization.
-      ///
-      /// This method is deprecated, because the name is misleading.
-      /// Please call \c cache_size_hint() instead.
-      size_t TEUCHOS_DEPRECATED cache_block_size() const {
-        return seq_.cache_size_hint();
-      }
-
       /// \brief Cache size hint (in bytes) used for the factorization.
       ///
       /// This may be different from the corresponding constructor

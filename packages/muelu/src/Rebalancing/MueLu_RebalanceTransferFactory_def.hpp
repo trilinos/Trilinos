@@ -75,9 +75,8 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("repartition: rebalance P and R");
     SET_VALID_ENTRY("transpose: use implicit");
+    SET_VALID_ENTRY("repartition: use subcommunicators");
 #undef  SET_VALID_ENTRY
-    // The value of "useSubcomm" parameter here must be the same as in RebalanceAcFactory
-    validParamList->set< bool >                  ("useSubcomm",          true, "Construct subcommunicators");
 
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
@@ -227,7 +226,7 @@ namespace MueLu {
         LO myBlkSize = 0, blkSize = 0;
         if (nodeNumElts > 0)
           myBlkSize = importer->getSourceMap()->getNodeNumElements() / nodeNumElts;
-        maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
+        MueLu_maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
 
         RCP<const Import> coordImporter;
         if (blkSize == 1) {
@@ -253,7 +252,7 @@ namespace MueLu {
         RCP<xdMV> permutedCoords  = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coordImporter->getTargetMap(), coords->getNumVectors());
         permutedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
 
-        if (pL.get<bool>("useSubcomm") == true)
+        if (pL.get<bool>("repartition: use subcommunicators") == true)
           permutedCoords->replaceMap(permutedCoords->getMap()->removeEmptyProcesses());
 
         Set(coarseLevel, "Coordinates", permutedCoords);
@@ -272,7 +271,7 @@ namespace MueLu {
         RCP<MultiVector> permutedNullspace = MultiVectorFactory::Build(importer->getTargetMap(), nullspace->getNumVectors());
         permutedNullspace->doImport(*nullspace, *importer, Xpetra::INSERT);
 
-        if (pL.get<bool>("useSubcomm") == true)
+        if (pL.get<bool>("repartition: use subcommunicators") == true)
           permutedNullspace->replaceMap(permutedNullspace->getMap()->removeEmptyProcesses());
 
         Set(coarseLevel, "Nullspace", permutedNullspace);
@@ -294,7 +293,9 @@ namespace MueLu {
             SubFactoryMonitor subM(*this, "Rebalancing restriction -- fusedImport", coarseLevel);
 
             RCP<Map> dummy;         // meaning: use originalR's domain map.
-            rebalancedR = MatrixFactory::Build(originalR, *importer, dummy, importer->getTargetMap());
+            Teuchos::ParameterList listLabel;
+            listLabel.set("Timer Label","MueLu::RebalanceR-" + Teuchos::toString(coarseLevel.GetLevelID()));
+            rebalancedR = MatrixFactory::Build(originalR, *importer, dummy, importer->getTargetMap(),Teuchos::rcp(&listLabel,false));
           }
           Set(coarseLevel, "R", rebalancedR);
 

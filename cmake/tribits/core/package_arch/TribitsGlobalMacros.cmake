@@ -49,6 +49,7 @@ INCLUDE(TribitsGeneralMacros)
 INCLUDE(TribitsAddTestHelpers)
 INCLUDE(TribitsVerbosePrintVar)
 INCLUDE(TribitsProcessEnabledTpl)
+INCLUDE(TribitsInstallHeaders)
 
 # Standard TriBITS utilities includes
 INCLUDE(TribitsAddOptionAndDefine)
@@ -65,6 +66,7 @@ INCLUDE(PrintVar)
 INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(Split)
 INCLUDE(TimingUtils)
+INCLUDE(SetDefaultAndFromEnv) # Used by some call-back files
 
 # Standard CMake includes
 INCLUDE(CheckIncludeFileCXX)
@@ -139,16 +141,6 @@ MACRO(TRIBITS_SETUP_BASIC_SYSTEM_VARS)
 
 ENDMACRO()
 
-
-#
-# Find Python
-#
-
-MACRO(TRIBITS_FIND_PYTHON_INTERP)
-  INCLUDE(TribitsFindPythonInterp)
-  TRIBITS_FIND_PYTHON()
-  PRINT_VAR(PYTHON_EXECUTABLE)
-ENDMACRO()
 
 #
 # Define and option to include a file that reads in a bunch of options
@@ -304,10 +296,12 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Make the ${PROJECT_NAME} configure process verbose."
     )
 
-  ADVANCED_SET(${PROJECT_NAME}_TRACE_ADD_TEST ${${PROJECT_NAME}_VERBOSE_CONFIGURE}
+  IF ("${${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT  ${${PROJECT_NAME}_VERBOSE_CONFIGURE})
+  ENDIF()
+  ADVANCED_SET(${PROJECT_NAME}_TRACE_ADD_TEST ${${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT}
     CACHE BOOL
-    "Show a configure time trace of every test added or not added any why (one line)."
-    )
+    "Show a configure time trace of every test added or not added any why (one line)." )
 
   ADVANCED_OPTION(${PROJECT_NAME}_DUMP_LINK_LIBS
     "Dump the link libraries for every library and executable created."
@@ -325,6 +319,14 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     )
 
   ADVANCED_OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
+
+  IF ("${${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS_DEFAULT  FALSE)
+  ENDIF()
+  ADVANCED_SET(${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS
+    ${${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS_DEFAULT}
+    CACHE BOOL
+    "If set TRUE, then 'SYSTEM' will be passed into INCLUDE_DIRECTORIES() for TPL includes.")
 
   ADVANCED_SET(TPL_FIND_SHARED_LIBS ON CACHE BOOL
     "If ON, then the TPL system will find shared libs if the exist, otherwise will only find static libs." )
@@ -581,19 +583,29 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   # Even if a project does not support an extra repos file, it can always
   # support extra repositories defined by the user by the very nature of
   # Tribits.
+
+  ADVANCED_SET(${PROJECT_NAME}_PRE_REPOSITORIES
+    ""
+    CACHE STRING
+    "List of pre-extra repositories that contain extra ${PROJECT_NAME} packages."
+    )
+  SPLIT("${${PROJECT_NAME}_PRE_REPOSITORIES}"  "," ${PROJECT_NAME}_PRE_REPOSITORIES)
+
   ADVANCED_SET(${PROJECT_NAME}_EXTRA_REPOSITORIES
     ""
     CACHE STRING
-    "List of external repositories that contain extra ${PROJECT_NAME} packages."
+    "List of post-extra repositories that contain extra ${PROJECT_NAME} packages."
     )
   SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  "," ${PROJECT_NAME}_EXTRA_REPOSITORIES)
 
-  SET(${PROJECT_NAME}_CHECK_EXTRAREPOS_EXIST TRUE)
+  IF ("${${PROJECT_NAME}_CHECK_EXTRAREPOS_EXIST}"  STREQUAL  "")
+    SET(${PROJECT_NAME}_CHECK_EXTRAREPOS_EXIST  TRUE)
+  ENDIF()
+
   TRIBITS_GET_AND_PROCESS_EXTRA_REPOSITORIES_LISTS()
 
   ADVANCED_SET(${PROJECT_NAME}_INSTALLATION_DIR
-    ""
-    CACHE STRING
+    ""  CACHE  STRING
     "Location of an installed version of ${PROJECT_NAME} that will be built against during installation testing"
     )
 
@@ -849,24 +861,19 @@ ENDMACRO()
 #
 # Combine native and extra repos lists into a single list.
 #
-# Combines ${PROJECT_NAME}_NATIVE_REPOSITORIES and
-# ${PROJECT_NAME}_EXTRA_REPOSITORIES into a single list
-# ${PROJECT_NAME}_EXTRA_REPOSITORIES.
+# Combines ${PROJECT_NAME}_PRE_REPOSITORIES
+# ${PROJECT_NAME}_NATIVE_REPOSITORIES and ${PROJECT_NAME}_EXTRA_REPOSITORIES
+# into a single list ${PROJECT_NAME}_ALL_REPOSITORIES.
 #
 MACRO(TRIBITS_COMBINE_NATIVE_AND_EXTRA_REPOS)
-  # Define a single variable that will loop over native and extra Repositories
-  #
-  # NOTE: ${PROJECT_NAME}_EXTRA_REPOSITORIES should be defined after the above
-  # options call.
-  #
+  ASSERT_DEFINED(${PROJECT_NAME}_PRE_REPOSITORIES)
   ASSERT_DEFINED(${PROJECT_NAME}_NATIVE_REPOSITORIES)
-  #PRINT_VAR(${PROJECT_NAME}_NATIVE_REPOSITORIES)
   ASSERT_DEFINED(${PROJECT_NAME}_EXTRA_REPOSITORIES)
-  #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES)
-  SET(${PROJECT_NAME}_ALL_REPOSITORIES ${${PROJECT_NAME}_NATIVE_REPOSITORIES}
-    ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
-  # ToDo: Update this function to put pre-extra repos first followed by native
-  # repos, followed by post-extra repos.
+  SET( ${PROJECT_NAME}_ALL_REPOSITORIES
+    ${${PROJECT_NAME}_PRE_REPOSITORIES}
+    ${${PROJECT_NAME}_NATIVE_REPOSITORIES}
+    ${${PROJECT_NAME}_EXTRA_REPOSITORIES}
+    )
 ENDMACRO()
 
 
@@ -992,19 +999,16 @@ FUNCTION(TRIBITS_GENERATE_REPO_VERSION_FILE_STRING  PROJECT_REPO_VERSION_FILE_ST
     "*** Base Git Repo: ${PROJECT_NAME}\n"
     "${SINGLE_REPO_VERSION}\n" )
 
-  # Allow list to be seprated by ',' instead of just by ';'
-  SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  "," ${PROJECT_NAME}_EXTRA_REPOSITORIES)
-
   SET(EXTRAREPO_IDX 0)
-  FOREACH(EXTRA_REPO ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
+  FOREACH(EXTRA_REPO ${${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES})
 
     #PRINT_VAR(EXTRA_REPO)
     #PRINT_VAR(EXTRAREPO_IDX)
-    #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES_DIRS)
+    #PRINT_VAR(${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES_DIRS)
 
-    IF (${PROJECT_NAME}_EXTRA_REPOSITORIES_DIRS)
+    IF (${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES_DIRS)
       # Read from an extra repo file with potentially different dir.
-      LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_DIRS ${EXTRAREPO_IDX}
+      LIST(GET ${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES_DIRS ${EXTRAREPO_IDX}
         EXTRAREPO_DIR )
     ELSE()
        # Not read from extra repo file so dir is same as name
@@ -1110,10 +1114,163 @@ ENDFUNCTION()
 
 
 #
+# Sets ${PROJECT_NAME}_EXTRA_REPOSITORIES from
+# ${PROJECT_NAME}_EXTRA_REPOSITORIES and ${PROJECT_NAME}_EXTRA_REPOSITORIES if
+# it is not alrady set.  Also, it replaces ',' with ';' in the latter.
+#
+# This function is needed in use cases where extra repos are used where the
+# extra repos are not read in through an ExtraRepositoriesList.cmake file and
+# instead are directly passed in by the user.
+#
+MACRO(TRIBITS_SET_ALL_EXTRA_REPOSITORIES)
+  IF ("${${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES}"   STREQUAL  "")
+    # Allow list to be seprated by ',' instead of just by ';'.  This is needed
+    # by the unit test driver code
+    SPLIT("${${PROJECT_NAME}_PRE_REPOSITORIES}"  ","
+      ${PROJECT_NAME}_PRE_REPOSITORIES)
+    SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  ","
+      ${PROJECT_NAME}_EXTRA_REPOSITORIES)
+    SET(${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES
+      ${${PROJECT_NAME}_PRE_REPOSITORIES}  ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
+  ENDIF()
+ENDMACRO()
+
+
+#
+# Macro that processes the list of package and TPLs for the set of 'PRE' or
+# 'POST' extra repos.
+#
+MACRO(TRIBITS_READ_EXTRA_REPOSITORIES_LISTS)
+
+  LIST(LENGTH  ${PROJECT_NAME}_PRE_REPOSITORIES  PRE_EXTRAREPOS_LEN)
+  LIST(LENGTH  ${PROJECT_NAME}_EXTRA_REPOSITORIES  POST_EXTRAREPOS_LEN)
+  MATH(EXPR  ALL_EXTRAREPOS_LEN  "${PRE_EXTRAREPOS_LEN} + ${POST_EXTRAREPOS_LEN}")
+
+  # See if processing 'PRE' or 'POST' extra repos
+  IF (READ_PRE_OR_POST_EXRAREPOS  STREQUAL  "PRE")
+    SET(EXTRAREPO_IDX_START  0)
+    SET(EXTRAREPO_IDX_END  ${PRE_EXTRAREPOS_LEN})
+  ELSEIF (READ_PRE_OR_POST_EXRAREPOS  STREQUAL  "POST")
+    SET(EXTRAREPO_IDX_START  ${PRE_EXTRAREPOS_LEN})
+    SET(EXTRAREPO_IDX_END  ${ALL_EXTRAREPOS_LEN})
+  ELSE()
+    MESSAGE(FATAL_ERROR "Invalid value for READ_PRE_OR_POST_EXRAREPOS='${READ_PRE_OR_POST_EXRAREPOS}' ")
+  ENDIF()
+  # NOTE: For some reason, we can't pass this argument to the function and
+  # have it read.  Instead, we have to pass it a local variable.  I will never
+  # understand CMake.
+
+  SET(EXTRAREPO_IDX  ${EXTRAREPO_IDX_START})
+  WHILE(EXTRAREPO_IDX  LESS  EXTRAREPO_IDX_END)
+
+    LIST(GET ${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES  ${EXTRAREPO_IDX}  EXTRA_REPO )
+
+    #PRINT_VAR(EXTRA_REPO)
+    #PRINT_VAR(EXTRAREPO_IDX)
+    #PRINT_VAR(${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES_HASPKGS)
+
+    # Need to make sure this gets set because logic in Dependencies.cmake files
+    # looks for the presents of this variable.
+    SET(${EXTRA_REPO}_SOURCE_DIR "${PROJECT_SOURCE_DIR}/${EXTRA_REPO}")
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      PRINT_VAR(${EXTRA_REPO}_SOURCE_DIR)
+    ENDIF()
+    # ToDo: TriBITS:73: Get ${EXTRA_REPO}_SOURCE_DIR from
+    # ${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES_DIR when it exists.
+
+    SET(EXTRAREPO_PACKSTAT "")
+    IF (${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES_HASPKGS)
+      LIST(GET ${PROJECT_NAME}_ALL_EXTRA_REPOSITORIES_HASPKGS ${EXTRAREPO_IDX}
+        EXTRAREPO_PACKSTAT )
+    ENDIF()
+
+    IF (EXTRAREPO_PACKSTAT STREQUAL NOPACKAGES)
+
+      MESSAGE("")
+      MESSAGE("Skipping reading packages and TPLs for ${READ_PRE_OR_POST_EXRAREPOS} extra repo ${EXTRA_REPO} because marked NOPACKAGES ... ")
+      MESSAGE("")
+      # ToDo: TriBITS:73: Don't print the above message by default.  It is
+      # just clutter.
+
+    ELSE()
+
+      # Read in the add-on packages from the extra repo
+
+      #PRINT_VAR(${EXTRA_REPO}_PACKAGES_LIST_FILE)
+      IF (${EXTRA_REPO}_PACKAGES_LIST_FILE)
+        SET(EXTRAREPO_PACKAGES_FILE
+          "${PROJECT_SOURCE_DIR}/${${EXTRA_REPO}_PACKAGES_LIST_FILE}")
+      ELSE()
+        SET(EXTRAREPO_PACKAGES_FILE
+          "${${EXTRA_REPO}_SOURCE_DIR}/${${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME}")
+      ENDIF()
+
+      MESSAGE("")
+      MESSAGE("Reading list of ${READ_PRE_OR_POST_EXRAREPOS} extra packages from ${EXTRAREPO_PACKAGES_FILE} ... ")
+      MESSAGE("")
+
+      IF (NOT EXISTS "${EXTRAREPO_PACKAGES_FILE}")
+        IF (${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
+          MESSAGE(
+            "\n***"
+            "\n*** WARNING!  Ignoring missing ${READ_PRE_OR_POST_EXRAREPOS} extra repo '${EXTRA_REPO}' packages list file '${EXTRAREPO_PACKAGES_FILE}' on request!"
+            "\n***\n")
+            # ToDo: TriBITS:73: Shorten above message to just one line
+        ELSE()
+          MESSAGE( SEND_ERROR
+            "ERROR: Skipping missing ${READ_PRE_OR_POST_EXRAREPOS} extra repo '${EXTRA_REPO}' packages list file '${EXTRAREPO_PACKAGES_FILE}'!")
+          # ToDo: TriBITS:73: Change to FATAL_ERROR to abort early
+        ENDIF()
+      ELSE()
+        SET(REPOSITORY_NAME  ${EXTRA_REPO})
+        TRIBITS_TRACE_FILE_PROCESSING(REPOSITORY  INCLUDE  "${EXTRAREPO_PACKAGES_FILE}")
+        INCLUDE("${EXTRAREPO_PACKAGES_FILE}")
+        SET(APPEND_TO_PACKAGES_LIST  TRUE)
+        TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${EXTRA_REPO} ${EXTRA_REPO})
+      ENDIF()
+
+      # Read in the add-on TPLs from the extra repo
+
+      SET(${EXTRA_REPO}_TPLS_FILE
+        "${${EXTRA_REPO}_SOURCE_DIR}/${${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME}")
+
+      MESSAGE("")
+      MESSAGE("Reading list of ${READ_PRE_OR_POST_EXRAREPOS} extra TPLs from ${${EXTRA_REPO}_TPLS_FILE} ... ")
+      MESSAGE("")
+
+      IF (NOT EXISTS "${${EXTRA_REPO}_TPLS_FILE}")
+        IF (${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
+          MESSAGE(
+            "\n***"
+            "\n*** WARNING!  Ignoring missing ${READ_PRE_OR_POST_EXRAREPOS} extra repo '${EXTRA_REPO}' TPLs list file '${${EXTRA_REPO}_TPLS_FILE}' on request!"
+            "\n***\n")
+          # ToDo: TriBITS:73: Shorten above warning to just one line
+        ELSE()
+          MESSAGE( SEND_ERROR
+            "ERROR: Skipping missing ${READ_PRE_OR_POST_EXRAREPOS} extra repo '${EXTRA_REPO}' TPLs list file '${${EXTRA_REPO}_TPLS_FILE}'!")
+        ENDIF()
+      ELSE()
+        TRIBITS_TRACE_FILE_PROCESSING(REPOSITORY  INCLUDE  "${${EXTRA_REPO}_TPLS_FILE}")
+        INCLUDE("${${EXTRA_REPO}_TPLS_FILE}")
+        SET(APPEND_TO_TPLS_LIST  TRUE)
+        TRIBITS_PROCESS_TPLS_LISTS(${EXTRA_REPO}  ${EXTRA_REPO})
+      ENDIF()
+
+    ENDIF()
+
+    MATH(EXPR EXTRAREPO_IDX "${EXTRAREPO_IDX}+1")
+
+  ENDWHILE()
+
+ENDMACRO()
+
+#
 # Read in ${PROJECT_NAME} packages and TPLs, process dependencies, write XML
 # files
 #
 MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
+
+  TRIBITS_SET_ALL_EXTRA_REPOSITORIES()
 
   # Set to empty
   SET(${PROJECT_NAME}_PACKAGES)
@@ -1121,7 +1278,14 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   SET(${PROJECT_NAME}_TPLS)
 
   #
-  # B) Read native repos
+  # A) Read list of packages and TPLs from 'PRE' extra repos
+  #
+
+  SET(READ_PRE_OR_POST_EXRAREPOS  PRE)
+  TRIBITS_READ_EXTRA_REPOSITORIES_LISTS()
+
+  #
+  # B) Read list of packages and TPLs from native repos
   #
 
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
@@ -1159,7 +1323,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     ENDIF()
 
     MESSAGE("")
-    MESSAGE("Reading the list of packages from ${${NATIVE_REPO_NAME}_PACKAGES_FILE}")
+    MESSAGE("Reading list of native packages from ${${NATIVE_REPO_NAME}_PACKAGES_FILE}")
     MESSAGE("")
 
     IF (NATIVE_REPO STREQUAL ".")
@@ -1179,7 +1343,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
       "${${NATIVE_REPO_NAME}_SOURCE_DIR}/${${PROJECT_NAME}_TPLS_FILE_NAME}")
 
     MESSAGE("")
-    MESSAGE("Reading the list of TPLs from ${${NATIVE_REPO_NAME}_TPLS_FILE}")
+    MESSAGE("Reading list of native TPLs from ${${NATIVE_REPO_NAME}_TPLS_FILE}")
     MESSAGE("")
 
     TRIBITS_TRACE_FILE_PROCESSING(REPOSITORY  INCLUDE
@@ -1190,108 +1354,14 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   ENDFOREACH()
 
   #
-  # C) Read extra repos
+  # C) Read list of packages and TPLs from 'POST' extra repos
   #
 
-  # Allow list to be seprated by ',' instead of just by ';'.  This is needed
-  # by the unit test driver code
-  SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  "," ${PROJECT_NAME}_EXTRA_REPOSITORIES)
-
-  SET(EXTRAREPO_IDX 0)
-  FOREACH(EXTRA_REPO ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
-
-    #PRINT_VAR(EXTRA_REPO)
-    #PRINT_VAR(EXTRAREPO_IDX)
-    #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES_PACKSTATS)
-
-    # Need to make sure this gets set because logic in Dependencies.cmake files
-    # looks for the presents of this variable.
-    SET(${EXTRA_REPO}_SOURCE_DIR "${PROJECT_SOURCE_DIR}/${EXTRA_REPO}")
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      PRINT_VAR(${EXTRA_REPO}_SOURCE_DIR)
-    ENDIF()
-
-    SET(EXTRAREPO_PACKSTAT "")
-    IF (${PROJECT_NAME}_EXTRA_REPOSITORIES_PACKSTATS)
-      LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_PACKSTATS ${EXTRAREPO_IDX}
-        EXTRAREPO_PACKSTAT )
-    ENDIF()
-
-    IF (EXTRAREPO_PACKSTAT STREQUAL NOPACKAGES)
-
-      MESSAGE("")
-      MESSAGE("Skipping reading packages and TPLs for extra repo ${EXTRA_REPO} because marked NOPACKAGES ... ")
-      MESSAGE("")
-
-    ELSE()
-
-      # Read in the add-on packages from the extra repo
-
-      #PRINT_VAR(${EXTRA_REPO}_PACKAGES_LIST_FILE)
-      IF (${EXTRA_REPO}_PACKAGES_LIST_FILE)
-        SET(EXTRAREPO_PACKAGES_FILE
-          "${PROJECT_SOURCE_DIR}/${${EXTRA_REPO}_PACKAGES_LIST_FILE}")
-      ELSE()
-        SET(EXTRAREPO_PACKAGES_FILE
-          "${${EXTRA_REPO}_SOURCE_DIR}/${${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME}")
-      ENDIF()
-
-      MESSAGE("")
-      MESSAGE("Reading a list of extra packages from ${EXTRAREPO_PACKAGES_FILE} ... ")
-      MESSAGE("")
-
-      IF (NOT EXISTS "${EXTRAREPO_PACKAGES_FILE}")
-        IF (${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
-          MESSAGE(
-            "\n***"
-            "\n*** WARNING!  Ignoring missing extra repo '${EXTRA_REPO}' packages list file '${EXTRAREPO_PACKAGES_FILE}' on request!"
-            "\n***\n")
-        ELSE()
-          MESSAGE( SEND_ERROR
-            "ERROR: Skipping missing extra repo '${EXTRA_REPO}' packages list file '${EXTRAREPO_PACKAGES_FILE}'!")
-        ENDIF()
-      ELSE()
-        SET(REPOSITORY_NAME ${EXTRA_REPO})
-        TRIBITS_TRACE_FILE_PROCESSING(REPOSITORY  INCLUDE "${EXTRAREPO_PACKAGES_FILE}")
-        INCLUDE("${EXTRAREPO_PACKAGES_FILE}")
-        SET(APPEND_TO_PACKAGES_LIST TRUE)
-        TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${EXTRA_REPO} ${EXTRA_REPO})  # Reads the variable ???
-      ENDIF()
-
-      # Read in the add-on TPLs from the extra repo
-
-      SET(${EXTRA_REPO}_TPLS_FILE
-        "${${EXTRA_REPO}_SOURCE_DIR}/${${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME}")
-
-      MESSAGE("")
-      MESSAGE("Reading a list of extra TPLs from ${${EXTRA_REPO}_TPLS_FILE} ... ")
-      MESSAGE("")
-
-      IF (NOT EXISTS "${${EXTRA_REPO}_TPLS_FILE}")
-        IF (${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
-          MESSAGE(
-            "\n***"
-            "\n*** WARNING!  Ignoring missing extra repo '${EXTRA_REPO}' TPLs list file '${${EXTRA_REPO}_TPLS_FILE}' on request!"
-            "\n***\n")
-        ELSE()
-          MESSAGE( SEND_ERROR
-            "ERROR: Skipping missing extra repo '${EXTRA_REPO}' TPLs list file '${${EXTRA_REPO}_TPLS_FILE}'!")
-        ENDIF()
-      ELSE()
-        TRIBITS_TRACE_FILE_PROCESSING(REPOSITORY  INCLUDE "${${EXTRA_REPO}_TPLS_FILE}")
-        INCLUDE("${${EXTRA_REPO}_TPLS_FILE}")
-        SET(APPEND_TO_TPLS_LIST TRUE)
-        TRIBITS_PROCESS_TPLS_LISTS(${EXTRA_REPO} ${EXTRA_REPO})  # Reads the variable ???
-      ENDIF()
-
-    ENDIF()
-
-    MATH(EXPR EXTRAREPO_IDX "${EXTRAREPO_IDX}+1")
-
-  ENDFOREACH()
+  SET(READ_PRE_OR_POST_EXRAREPOS  POST)
+  TRIBITS_READ_EXTRA_REPOSITORIES_LISTS()
 
   #
-  # D) Process listS of packages, TPLs, etc.
+  # D) Process lists of packages, TPLs, etc.
   #
 
   #
@@ -1492,6 +1562,10 @@ MACRO(TRIBITS_SETUP_ENV)
     TIMER_GET_RAW_SECONDS(SETUP_ENV_TIME_START_SECONDS)
   ENDIF()
 
+  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    SET(TRIBITS_SETUP_ENV_DEBUG  TRUE)
+  ENDIF()
+
   # Set to release build by default
 
   IF (NOT CMAKE_BUILD_TYPE)
@@ -1522,7 +1596,7 @@ MACRO(TRIBITS_SETUP_ENV)
   ELSE()
     SET(CMAKE_CONFIGURATION_TYPE "")
   ENDIF()
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+  IF (TRIBITS_SETUP_ENV_DEBUG)
     PRINT_VAR(CMAKE_CONFIGURATION_TYPE)
   ENDIF()
 
@@ -1570,8 +1644,13 @@ MACRO(TRIBITS_SETUP_ENV)
   IF (MSVC)
     ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE
       -D_CRT_NONSTDC_NO_DEPRECATE  -D_SCL_SECURE_NO_WARNINGS)
-    INCLUDE_DIRECTORIES(
-      ${${PROJECT_NAME}_TRIBITS_DIR}/common_tools/win_interface/include)
+    SET(WIN_INTERFACE_INCL  ${${PROJECT_NAME}_TRIBITS_DIR}/win_interface/include)
+    IF (EXISTS "${WIN_INTERFACE_INCL}")
+      INCLUDE_DIRECTORIES("${WIN_INTERFACE_INCL}")
+      IF (TRIBITS_SETUP_ENV_DEBUG)
+        MESSAGE("-- Adding win_interface/include ...")
+      ENDIF()
+    ENDIF()
   ENDIF()
 
   IF (WIN32 AND NOT CYGWIN)
@@ -1643,14 +1722,28 @@ MACRO(TRIBITS_SETUP_ENV)
 
   IF (${PROJECT_NAME}_ENABLE_CXX AND ${PROJECT_NAME}_ENABLE_CXX11)
     INCLUDE(TribitsCXX11Support)
-    TRIBITS_FIND_CXX11_FLAGS()
-    TRIBITS_CHECK_CXX11_SUPPORT(${PROJECT_NAME}_ENABLE_CXX11)
-    IF (${PROJECT_NAME}_ENABLE_CXX11)
+    TRIBITS_FIND_CXX11_FLAGS() # Aborts if can't find C++11 flags!
+    TRIBITS_CHECK_CXX11_SUPPORT(CXX11_WORKS)  # Double check that C++11 flags!
+    IF (CXX11_WORKS)
       MESSAGE("-- ${PROJECT_NAME}_ENABLE_CXX11=${${PROJECT_NAME}_ENABLE_CXX11}")
       SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${PROJECT_NAME}_CXX11_FLAGS}")
-        IF(${PROJECT_NAME}_VERBOSE_CONFIGURE OR TRIBITS_ENABLE_CXX11_DEBUG_DUMP)
+        IF (TRIBITS_SETUP_ENV_DEBUG OR TRIBITS_ENABLE_CXX11_DEBUG_DUMP)
           PRINT_VAR(CMAKE_CXX_FLAGS)
         ENDIF()
+    ELSE()
+      MESSAGE(FATAL_ERROR
+        "Error, C++11 support does not appear to be supported"
+        " with this C++ compiler and/or with the C++11 flags"
+        " ${PROJECT_NAME}_CXX11_FLAGS='${${PROJECT_NAME}_CXX11_FLAGS}'!"
+        " If the flags ${PROJECT_NAME}_CXX11_FLAGS='${${PROJECT_NAME}_CXX11_FLAGS}'"
+        " where set manually, then try clearing the CMake cache and configure"
+        " without setting "
+        " ${PROJECT_NAME}_CXX11_FLAGS and let the configure process try to"
+        " find flags that work automatically.  However, if these compile-time"
+        " tests still fail, consider selecting a different C++ compiler"
+        " (and compatible compilers for other languages) that supports C++11."
+        " Or, if C++11 support in this project is not needed or desired, then set"
+        " -D${PROJECT_NAME}_ENABLE_CXX11=OFF.")
     ENDIF()
   ENDIF()
 
@@ -1692,7 +1785,7 @@ MACRO(TRIBITS_SETUP_ENV)
   # Set the hack library to get link options on
 
   IF (${PROJECT_NAME}_EXTRA_LINK_FLAGS)
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    IF (TRIBITS_SETUP_ENV_DEBUG)
       MESSAGE(STATUS "Creating dummy last_lib for appending the link flags: "
         "${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
     ENDIF()
@@ -1810,10 +1903,9 @@ ENDMACRO()
 #
 # NOTE: This is done as a function so that the read-in version variables don't
 # bleed into the outer scope.
-
-
+#
 FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE
-  REPOSITORY_NAME  REPOSITORY_DIR
+  REPOSITORY_NAME  REPOSITORY_DIR  ADD_INSTALL_TARGET
   OUTPUT_VERSION_HEADER_FILE
   )
 
@@ -1847,24 +1939,9 @@ FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_PACKAGE_ARCH_DIR}/Tribits_version.h.in
       ${OUTPUT_VERSION_HEADER_FILE})
 
-    SET(INSTALL_HEADERS ON)
-    IF (NOT ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS)
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE(STATUS "Skipping installation if ${OUTPUT_VERSION_HEADER_FILE}"
-          " because '${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS' was set to true ...")
-      ENDIF()
-      SET(INSTALL_HEADERS OFF)
-    ENDIF()
-
-    IF (INSTALL_HEADERS AND NOT ${REPOSITORY_NAME}_INSTALLED_REPO_VERSION_HEADER_FILE)
+    IF (ADD_INSTALL_TARGET)
       # Install version header file
-      INSTALL(
-        FILES ${OUTPUT_VERSION_HEADER_FILE}
-        DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
-        COMPONENT ${PROJECT_NAME}
-        )
-      SET(${REPOSITORY_NAME}_INSTALLED_REPO_VERSION_HEADER_FILE TRUE
-        CACHE INTERNAL "" FORCE )
+      TRIBITS_INSTALL_HEADERS(HEADERS  ${OUTPUT_VERSION_HEADER_FILE})
     ENDIF()
 
   ENDIF()
@@ -1883,9 +1960,7 @@ FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_ALL_VERSION_HEADER_FILES)
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       MESSAGE("Considering configuring version file for '${REPO_NAME}'")
     ENDIF()
-    SET(${REPOSITORY_NAME}_INSTALLED_REPO_VERSION_HEADER_FILE FALSE
-      CACHE INTERNAL "" FORCE )
-    TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE( ${REPO_NAME} ${REPO_DIR}
+    TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE( ${REPO_NAME}  ${REPO_DIR}  TRUE
       "${${PROJECT_NAME}_BINARY_DIR}/${REPO_DIR}/${REPO_NAME}_version.h")
   ENDFOREACH()
 

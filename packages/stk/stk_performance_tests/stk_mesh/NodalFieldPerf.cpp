@@ -46,7 +46,7 @@
 #include <vector>
 #include <string>
 
-#include <optionParsing/getOption.h>
+#include <stk_unit_test_utils/getOption.h>
 
 #if defined(_OPENMP)
 #include <omp.h>
@@ -87,7 +87,7 @@ void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, stk::mesh
     stk::mesh::MetaData &stkMeshMetaData = exodusFileReader.meta_data();
     createNodalVectorFields(stkMeshMetaData);
 
-    Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data(new stk::mesh::BulkData(stkMeshMetaData, MPI_COMM_WORLD, false, NULL, fieldDataManager));
+    Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data(new stk::mesh::BulkData(stkMeshMetaData, MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA, false, NULL, fieldDataManager));
     exodusFileReader.set_bulk_data(arg_bulk_data);
     stk::mesh::BulkData& stkMeshBulkData = *arg_bulk_data;
 

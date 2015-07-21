@@ -24,6 +24,12 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+TRIBITS_ADD_EXECUTABLE(
+  basis_example
+  SOURCES simple/basis.cpp
+  COMM serial mpi
+  )
+
 IF(Stokhos_ENABLE_TriKota)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(

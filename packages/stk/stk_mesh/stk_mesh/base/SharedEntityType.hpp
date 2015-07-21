@@ -1,7 +1,10 @@
 #ifndef STK_SHAREDENTITYTYPE_HPP
 #define STK_SHAREDENTITYTYPE_HPP
 
+#include <vector>
+#include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
+#include <stk_topology/topology.hpp>
 
 namespace stk {
 namespace mesh {
@@ -13,6 +16,8 @@ struct shared_entity_type
   stk::mesh::EntityKey      local_key;
   stk::mesh::EntityKey      global_key;
   std::vector<int>          sharing_procs;
+  stk::mesh::Entity         entity;
+  bool                      need_update_nodes;
 
   friend inline bool operator < (shared_entity_type const& l, shared_entity_type const& r)
   {

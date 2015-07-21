@@ -95,18 +95,22 @@ void construct_communication_set( const BulkData & bulk, const std::set<Entity,E
 {
   if (bulk.parallel_size() < 2) return;
 
+  std::vector<int> commProcs;
   for ( std::set<Entity,EntityLess>::const_iterator
         i = closure.begin(); i != closure.end(); ++i) {
 
     Entity entity = *i;
 
     const bool owned = bulk.parallel_rank() == bulk.parallel_owner_rank(entity);
+    const bool shared = bulk.bucket(entity).shared();
 
     // Add sharing processes and ghost-send processes to communication_set
 
-    for ( PairIterEntityComm ec = bulk.entity_comm_map(bulk.entity_key(entity)); ! ec.empty() ; ++ec ) {
-      if ( owned || ec->ghost_id == 0 ) {
-        EntityKeyProc tmp( bulk.entity_key(entity) , ec->proc );
+    bulk.comm_procs(bulk.entity_key(entity), commProcs);
+    for(size_t j=0; j<commProcs.size(); j++)
+    {
+      if ( owned || shared ) {
+        EntityKeyProc tmp( bulk.entity_key(entity) , commProcs[j] );
         communication_set.insert( tmp );
       }
     }
@@ -143,7 +147,7 @@ void find_closure( const BulkData & bulk,
   EntityLess entless(bulk);
   std::set<Entity,EntityLess>     temp_entities_closure(entless);
 
-  const bool bulk_in_modifiable_state = bulk.synchronized_state() != BulkData::SYNCHRONIZED;
+  const bool bulk_in_modifiable_state = !bulk.in_synchronized_state();
   const size_t num_ghost_entities = bulk_in_modifiable_state ? 0 : count_ghost_entities(bulk, entities);
 
   const bool local_bad_input = bulk_in_modifiable_state || (0 < num_ghost_entities);

@@ -45,10 +45,7 @@
 namespace Intrepid {
 
 //
-// R^N tensor input
-// \param A tensor
-// \param is input stream
-// \return is input stream
+// tensor input
 //
 template<typename T, Index N>
 std::istream &
@@ -68,10 +65,7 @@ operator>>(std::istream & is, Tensor<T, N> & A)
 }
 
 //
-// R^N tensor output
-// \param A tensor
-// \param os output stream
-// \return os output stream
+// tensor output
 //
 template<typename T, Index N>
 std::ostream &
@@ -84,12 +78,14 @@ operator<<(std::ostream & os, Tensor<T, N> const & A)
     return os;
   }
 
+  os << std::scientific << std::setw(24) << std::setprecision(16);
+
   for (Index i = 0; i < dimension; ++i) {
 
-    os << std::scientific << std::setprecision(16) << A(i,0);
+    os << A(i,0);
 
     for (Index j = 1; j < dimension; ++j) {
-      os << "," << std::scientific  << std::setprecision(16) << A(i,j);
+      os << "," << std::setw(24) << A(i,j);
     }
 
     os << std::endl;

@@ -50,7 +50,8 @@
 
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_StaticCrsGraph.hpp>
-#include <Kokkos_CrsMatrix.hpp>
+#include <Kokkos_Sparse.hpp>
+#include <Kokkos_Blas1.hpp>
 #include <impl/Kokkos_Timer.hpp>
 
 // Examples headers:
@@ -462,7 +463,7 @@ Perf fenl(
       const double residual_norm =
         std::sqrt(
           Kokkos::Example::all_reduce(
-            Kokkos::V_Dot( nodal_residual, nodal_residual ) , comm ) );
+            KokkosBlas::dot( nodal_residual, nodal_residual ) , comm ) );
 
       perf.newton_residual = residual_norm ;
 
@@ -479,7 +480,7 @@ Perf fenl(
 
       // Update solution vector
 
-      Kokkos::V_Add( nodal_solution , -1.0 , nodal_delta , 1.0 , nodal_solution );
+      KokkosBlas::axpby( -1.0 , nodal_delta , 1.0 , nodal_solution );
 
       perf.cg_iter_count += cgsolve.iteration ;
       perf.matvec_time   += cgsolve.matvec_time ;
@@ -491,7 +492,7 @@ Perf fenl(
         const double delta_norm =
           std::sqrt(
             Kokkos::Example::all_reduce(
-              Kokkos::V_Dot( nodal_delta, nodal_delta ) , comm ) );
+              KokkosBlas::dot( nodal_delta, nodal_delta ) , comm ) );
 
         if ( 0 == comm_rank ) {
           std::cout << "Newton iteration[" << perf.newton_iter_count << "]"

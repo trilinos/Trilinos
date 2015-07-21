@@ -679,7 +679,7 @@ void *Registry::getsym<void *>(const char *sym);
 
 template <typename T>
 inline T Registry::getsym(const char *sym) {
-  return static_cast<T>(getsym<void *>(sym));
+  return static_cast<T>(Registry::getsym<void *>(sym));
 }
 
 } // namespace Plugin

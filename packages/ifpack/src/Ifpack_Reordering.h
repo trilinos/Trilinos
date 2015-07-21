@@ -54,7 +54,7 @@ class Epetra_RowMatrix;
 
 //! Ifpack_Reordering: basic class for reordering for a Ifpack_Graph object.
 /*!
-Class Ifpack_Reordering is a pure virtual class that defines the 
+Class Ifpack_Reordering is a pure virtual class that defines the
 structure of all Ifpack reordering.
 
 The Ifpack_Graph object is used \e only by method Compute().
@@ -104,12 +104,12 @@ public:
 
   //! Destructor.
   virtual ~Ifpack_Reordering() {};
-  
+
   //! Sets integer parameters `Name'.
-  virtual int SetParameter(const string Name, const int Value) = 0;
- 
+  virtual int SetParameter(const std::string Name, const int Value) = 0;
+
   //! Sets double parameters `Name'.
-  virtual int SetParameter(const string Name, const double Value) = 0;
+  virtual int SetParameter(const std::string Name, const double Value) = 0;
 
   //! Sets all parameters.
   virtual int SetParameters(Teuchos::ParameterList& List) = 0;
@@ -131,18 +131,18 @@ public:
 
   //! Applies reordering to multivector Xorig, whose local length equals the number of local rows, stores reordered vector in X.
   virtual int P(const Epetra_MultiVector& Xorig,
-		Epetra_MultiVector& X) const = 0;
+                Epetra_MultiVector& X) const = 0;
 
   //! Applies inverse reordering to multivector Xorig, whose local length equals the number of local rows, stores inverse reordered vector in X.
   virtual int Pinv(const Epetra_MultiVector& Xorig,
-		   Epetra_MultiVector& X) const = 0;
+                   Epetra_MultiVector& X) const = 0;
 
   //! Prints basic information on iostream. This function is used by operator<<.
-  virtual ostream& Print(std::ostream& os) const = 0;
+  virtual std::ostream& Print(std::ostream& os) const = 0;
 
-}; 
+};
 
-inline ostream& operator<<(ostream& os, const Ifpack_Reordering& obj)
+inline std::ostream& operator<<(std::ostream& os, const Ifpack_Reordering& obj)
 {
   return(obj.Print(os));
 }

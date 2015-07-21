@@ -52,7 +52,7 @@
 #include <ifp_parameters.h>
 
 //==============================================================================
-Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph_in) 
+Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph_in)
   : UserMatrixIsVbr_(false),
     UserMatrixIsCrs_(false),
     Graph_(Graph_in),
@@ -73,7 +73,7 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph_in)
 }
 
 //==============================================================================
-Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_CrsRiluk & FactoredMatrix) 
+Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_CrsRiluk & FactoredMatrix)
   : UserMatrixIsVbr_(FactoredMatrix.UserMatrixIsVbr_),
     UserMatrixIsCrs_(FactoredMatrix.UserMatrixIsCrs_),
     IsOverlapped_(FactoredMatrix.IsOverlapped_),
@@ -99,7 +99,7 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_CrsRiluk & FactoredMatrix)
   if (IlukRowMap_!=Teuchos::null) IlukRowMap_ = Teuchos::rcp( new Epetra_Map(*IlukRowMap_) );
   if (IlukDomainMap_!=Teuchos::null) IlukDomainMap_ = Teuchos::rcp( new Epetra_Map(*IlukDomainMap_) );
   if (IlukRangeMap_!=Teuchos::null) IlukRangeMap_ = Teuchos::rcp( new Epetra_Map(*IlukRangeMap_) );
-  
+
 }
 //==============================================================================
 Ifpack_CrsRiluk::~Ifpack_CrsRiluk(){
@@ -133,12 +133,12 @@ int Ifpack_CrsRiluk::AllocateVbr() {
   U_DomainMap_ = IlukDomainMap_;
   L_RangeMap_ = IlukRangeMap_;
   // If there is fill, then pre-build the L and U structures from the Block version of L and U.
-  if (Graph().LevelFill()) { 
+  if (Graph().LevelFill()) {
     L_Graph_ = Teuchos::rcp( new Epetra_CrsGraph(Copy, *IlukRowMap_, *IlukRowMap_, 0) );
     U_Graph_ = Teuchos::rcp( new Epetra_CrsGraph(Copy, *IlukRowMap_, *IlukRowMap_, 0) );
     EPETRA_CHK_ERR(BlockGraph2PointGraph(Graph_.L_Graph(), *L_Graph_, false));
     EPETRA_CHK_ERR(BlockGraph2PointGraph(Graph_.U_Graph(), *U_Graph_, true));
-    
+
     L_Graph_->FillComplete(*IlukRowMap_, *IlukRangeMap_);
     U_Graph_->FillComplete(*IlukDomainMap_, *IlukRowMap_);
 
@@ -188,12 +188,12 @@ int Ifpack_CrsRiluk::InitValues(const Epetra_CrsMatrix & A) {
   Teuchos::RefCountPtr<Epetra_CrsMatrix> OverlapA = Teuchos::rcp( (Epetra_CrsMatrix *) &A, false );
 
   if (IsOverlapped_) {
-  
+
     OverlapA = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Graph_.OverlapGraph()) );
     EPETRA_CHK_ERR(OverlapA->Import(A, *Graph_.OverlapImporter(), Insert));
     EPETRA_CHK_ERR(OverlapA->FillComplete());
   }
-  
+
   // Get Maximun Row length
   int MaxNumEntries = OverlapA->MaxNumEntries();
 
@@ -216,24 +216,24 @@ int Ifpack_CrsRiluk::InitValues(const Epetra_VbrMatrix & A) {
   if (!Allocated()) AllocateVbr();
 
   //cout << "Original Graph " << endl <<  A.Graph() << endl << flush;
-  //A.Comm().Barrier(); 
+  //A.Comm().Barrier();
   //if (A.Comm().MyPID()==0) cout << "*****************************************************" <<endl;
   //cout << "Original Matrix " << endl << A << endl << flush;
-  //A.Comm().Barrier(); 
+  //A.Comm().Barrier();
   //if (A.Comm().MyPID()==0) cout << "*****************************************************" <<endl;
   //cout << "Overlap Graph " << endl << *Graph_.OverlapGraph() << endl << flush;
-  //A.Comm().Barrier(); 
+  //A.Comm().Barrier();
   //if (A.Comm().MyPID()==0) cout << "*****************************************************" <<endl;
 
   Teuchos::RefCountPtr<Epetra_VbrMatrix> OverlapA = Teuchos::rcp( (Epetra_VbrMatrix *) &A, false );
 
   if (IsOverlapped_) {
-  
+
     OverlapA = Teuchos::rcp( new Epetra_VbrMatrix(Copy, *Graph_.OverlapGraph()) );
     EPETRA_CHK_ERR(OverlapA->Import(A, *Graph_.OverlapImporter(), Insert));
     EPETRA_CHK_ERR(OverlapA->FillComplete());
   }
-  
+
   //cout << "Overlap Matrix " << endl << *OverlapA << endl << flush;
 
   // Get Maximun Row length
@@ -274,42 +274,42 @@ int Ifpack_CrsRiluk::InitAllValues(const Epetra_RowMatrix & OverlapA, int MaxNum
   D_->PutScalar(0.0); // Set diagonal values to zero
   double *DV;
   EPETRA_CHK_ERR(D_->ExtractView(&DV)); // Get view of diagonal
-    
+
 
   // First we copy the user's matrix into L and U, regardless of fill level
 
   for (i=0; i< NumMyRows(); i++) {
 
     EPETRA_CHK_ERR(OverlapA.ExtractMyRowCopy(i, MaxNumEntries, NumIn, &InV[0], &InI[0])); // Get Values and Indices
-    
+
     // Split into L and U (we don't assume that indices are ordered).
-    
-    NumL = 0; 
-    NumU = 0; 
+
+    NumL = 0;
+    NumU = 0;
     DiagFound = false;
-    
+
     for (j=0; j< NumIn; j++) {
       int k = InI[j];
 
       if (k==i) {
-	DiagFound = true;
-	DV[i] += Rthresh_ * InV[j] + EPETRA_SGN(InV[j]) * Athresh_; // Store perturbed diagonal in Epetra_Vector D_
+        DiagFound = true;
+        DV[i] += Rthresh_ * InV[j] + EPETRA_SGN(InV[j]) * Athresh_; // Store perturbed diagonal in Epetra_Vector D_
       }
 
       else if (k < 0) {EPETRA_CHK_ERR(-1);} // Out of range
 
       else if (k < i) {
-	LI[NumL] = k;
-	LV[NumL] = InV[j];
-	NumL++;
+        LI[NumL] = k;
+        LV[NumL] = InV[j];
+        NumL++;
       }
       else if (k<NumMyRows()) {
-	UI[NumU] = k;
-	UV[NumU] = InV[j];
-	NumU++;
+        UI[NumU] = k;
+        UV[NumU] = InV[j];
+        NumU++;
       }
     }
-    
+
     // Check in things for this row of L and U
 
     if (DiagFound) NumNonzeroDiags++;
@@ -317,22 +317,22 @@ int Ifpack_CrsRiluk::InitAllValues(const Epetra_RowMatrix & OverlapA, int MaxNum
 
     if (NumL) {
       if (ReplaceValues) {
-	EPETRA_CHK_ERR(L_->ReplaceMyValues(i, NumL, &LV[0], &LI[0]));
+        EPETRA_CHK_ERR(L_->ReplaceMyValues(i, NumL, &LV[0], &LI[0]));
       }
       else {
-	EPETRA_CHK_ERR(L_->InsertMyValues(i, NumL, &LV[0], &LI[0]));
+        EPETRA_CHK_ERR(L_->InsertMyValues(i, NumL, &LV[0], &LI[0]));
       }
     }
 
     if (NumU) {
       if (ReplaceValues) {
-	EPETRA_CHK_ERR(U_->ReplaceMyValues(i, NumU, &UV[0], &UI[0]));
+        EPETRA_CHK_ERR(U_->ReplaceMyValues(i, NumU, &UV[0], &UI[0]));
       }
       else {
-	EPETRA_CHK_ERR(U_->InsertMyValues(i, NumU, &UV[0], &UI[0]));
+        EPETRA_CHK_ERR(U_->InsertMyValues(i, NumU, &UV[0], &UI[0]));
       }
     }
-    
+
   }
 
   if (!ReplaceValues) {
@@ -366,7 +366,7 @@ int Ifpack_CrsRiluk::Factor() {
 
   SetValuesInitialized(false);
 
-  // MinMachNum should be officially defined, for now pick something a little 
+  // MinMachNum should be officially defined, for now pick something a little
   // bigger than IEEE underflow value
 
   double MinDiagonalValue = Epetra_MinDouble;
@@ -395,7 +395,7 @@ int Ifpack_CrsRiluk::Factor() {
   // Now start the factorization.
 
   // Need some integer workspace and pointers
-  int NumUU; 
+  int NumUU;
   int * UUI;
   double * UUV;
   for (j=0; j<NumMyCols(); j++) colflag[j] = - 1;
@@ -411,7 +411,7 @@ int Ifpack_CrsRiluk::Factor() {
 
     InV[NumL] = DV[i]; // Put in diagonal
     InI[NumL] = i;
-    
+
     EPETRA_CHK_ERR(U_->ExtractMyRowCopy(i, NumIn-NumL-1, NumU, &InV[NumL+1], &InI[NumL+1]));
     NumIn = NumL+NumU+1;
     UV = &InV[NumL+1];
@@ -427,29 +427,29 @@ int Ifpack_CrsRiluk::Factor() {
       double multiplier = InV[jj]; // current_mults++;
 
       InV[jj] *= DV[j];
-      
+
       EPETRA_CHK_ERR(U_->ExtractMyRowView(j, NumUU, UUV, UUI)); // View of row above
 
       if (RelaxValue_==0.0) {
-	for (k=0; k<NumUU; k++) {
-	  int kk = colflag[UUI[k]];
-	  if (kk>-1) {
-	    InV[kk] -= multiplier*UUV[k];
+        for (k=0; k<NumUU; k++) {
+          int kk = colflag[UUI[k]];
+          if (kk>-1) {
+            InV[kk] -= multiplier*UUV[k];
 #ifdef IFPACK_FLOPCOUNTERS
-	    current_madds++;
+            current_madds++;
 #endif
-	  }
-	}
+          }
+        }
       }
       else {
-	for (k=0; k<NumUU; k++) {
-	  int kk = colflag[UUI[k]];
-	  if (kk>-1) InV[kk] -= multiplier*UUV[k];
-	  else diagmod -= multiplier*UUV[k];
+        for (k=0; k<NumUU; k++) {
+          int kk = colflag[UUI[k]];
+          if (kk>-1) InV[kk] -= multiplier*UUV[k];
+          else diagmod -= multiplier*UUV[k];
 #ifdef IFPACK_FLOPCOUNTERS
-	  current_madds++;
+          current_madds++;
 #endif
-	}
+        }
       }
      }
     if (NumL) {
@@ -482,17 +482,17 @@ int Ifpack_CrsRiluk::Factor() {
 
   // Validate that the L and U factors are actually lower and upper triangular
 
-  if( !L_->LowerTriangular() ) 
+  if( !L_->LowerTriangular() )
     EPETRA_CHK_ERR(-2);
-  if( !U_->UpperTriangular() ) 
+  if( !U_->UpperTriangular() )
     EPETRA_CHK_ERR(-3);
-  
+
 #ifdef IFPACK_FLOPCOUNTERS
   // Add up flops
- 
+
   double current_flops = 2 * current_madds;
   double total_flops = 0;
-    
+
   EPETRA_CHK_ERR(Graph_.L_Graph().RowMap().Comm().SumAll(&current_flops, &total_flops, 1)); // Get total madds across all PEs
 
   // Now count the rest
@@ -510,8 +510,8 @@ int Ifpack_CrsRiluk::Factor() {
 }
 
 //=============================================================================
-int Ifpack_CrsRiluk::Solve(bool Trans, const Epetra_MultiVector& X, 
-				Epetra_MultiVector& Y) const {
+int Ifpack_CrsRiluk::Solve(bool Trans, const Epetra_MultiVector& X,
+                                Epetra_MultiVector& Y) const {
 //
 // This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 //
@@ -546,17 +546,17 @@ int Ifpack_CrsRiluk::Solve(bool Trans, const Epetra_MultiVector& X,
     EPETRA_CHK_ERR(Y1->Multiply(1.0, *D_, *Y1, 0.0)); // y = D*y (D_ has inverse of diagonal)
     EPETRA_CHK_ERR(L_->Solve(Lower, Trans, UnitDiagonal, *Y1, *Y1));
     if (IsOverlapped_) {EPETRA_CHK_ERR(Y.Export(*Y1,*U_->Importer(), OverlapMode_));} // Export computed Y values if needed
-  } 
+  }
 
   return(0);
 }
 //=============================================================================
-int Ifpack_CrsRiluk::Multiply(bool Trans, const Epetra_MultiVector& X, 
-			      Epetra_MultiVector& Y) const {
+int Ifpack_CrsRiluk::Multiply(bool Trans, const Epetra_MultiVector& X,
+                              Epetra_MultiVector& Y) const {
 //
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 //
-    
+
   // First generate X and Y as needed for this function
   Teuchos::RefCountPtr<Epetra_MultiVector> X1;
   Teuchos::RefCountPtr<Epetra_MultiVector> Y1;
@@ -572,7 +572,7 @@ int Ifpack_CrsRiluk::Multiply(bool Trans, const Epetra_MultiVector& X,
 #endif
 
   if (!Trans) {
-    EPETRA_CHK_ERR(U_->Multiply(Trans, *X1, *Y1)); // 
+    EPETRA_CHK_ERR(U_->Multiply(Trans, *X1, *Y1)); //
     EPETRA_CHK_ERR(Y1->Update(1.0, *X1, 1.0)); // Y1 = Y1 + X1 (account for implicit unit diagonal)
     EPETRA_CHK_ERR(Y1->ReciprocalMultiply(1.0, *D_, *Y1, 0.0)); // y = D*y (D_ has inverse of diagonal)
     Epetra_MultiVector Y1temp(*Y1); // Need a temp copy of Y1
@@ -589,7 +589,7 @@ int Ifpack_CrsRiluk::Multiply(bool Trans, const Epetra_MultiVector& X,
     EPETRA_CHK_ERR(U_->Multiply(Trans, Y1temp, *Y1));
     EPETRA_CHK_ERR(Y1->Update(1.0, Y1temp, 1.0)); // (account for implicit unit diagonal)
     if (IsOverlapped_) {EPETRA_CHK_ERR(Y.Export(*Y1,*L_->Exporter(), OverlapMode_));}
-  } 
+  }
   return(0);
 }
 //=============================================================================
@@ -640,7 +640,7 @@ int Ifpack_CrsRiluk::BlockGraph2PointGraph(const Epetra_CrsGraph & BG, Epetra_Cr
     int RowDim = BG.RowMap().ElementSize(BlockRow);
     NumEntries = 0;
 
-    // This next line make sure that the off-diagonal entries in the block diagonal of the 
+    // This next line make sure that the off-diagonal entries in the block diagonal of the
     // original block entry matrix are included in the nonzero pattern of the point graph
     if (Upper) {
       int jstart = i+1;
@@ -656,7 +656,7 @@ int Ifpack_CrsRiluk::BlockGraph2PointGraph(const Epetra_CrsGraph & BG, Epetra_Cr
       for (int k=0; k < ColDim; k++) *ptr++ = Index++;
     }
 
-    // This next line make sure that the off-diagonal entries in the block diagonal of the 
+    // This next line make sure that the off-diagonal entries in the block diagonal of the
     // original block entry matrix are included in the nonzero pattern of the point graph
     if (!Upper) {
       int jstart = EPETRA_MAX(0,i-RowDim+1);
@@ -673,68 +673,68 @@ int Ifpack_CrsRiluk::BlockGraph2PointGraph(const Epetra_CrsGraph & BG, Epetra_Cr
 }
 //=========================================================================
 int Ifpack_CrsRiluk::BlockMap2PointMap(const Epetra_BlockMap & BlockMap, Teuchos::RefCountPtr<Epetra_Map>* PointMap) {
-	// Generate an Epetra_Map that has the same number and distribution of points
-	// as the input Epetra_BlockMap object.  The global IDs for the output PointMap
-	// are computed by using the MaxElementSize of the BlockMap.  For variable block
-	// sizes this will create gaps in the GID space, but that is OK for Epetra_Maps.
+        // Generate an Epetra_Map that has the same number and distribution of points
+        // as the input Epetra_BlockMap object.  The global IDs for the output PointMap
+        // are computed by using the MaxElementSize of the BlockMap.  For variable block
+        // sizes this will create gaps in the GID space, but that is OK for Epetra_Maps.
 
-	int MaxElementSize = BlockMap.MaxElementSize();
-	int PtNumMyElements = BlockMap.NumMyPoints();
+        int MaxElementSize = BlockMap.MaxElementSize();
+        int PtNumMyElements = BlockMap.NumMyPoints();
 
-	std::vector<int> PtMyGlobalElements_int;
-	std::vector<long long> PtMyGlobalElements_LL;
+        std::vector<int> PtMyGlobalElements_int;
+        std::vector<long long> PtMyGlobalElements_LL;
 
-	int NumMyElements = BlockMap.NumMyElements();
-	int curID = 0;
+        int NumMyElements = BlockMap.NumMyElements();
+        int curID = 0;
 
-	if (PtNumMyElements>0) {
+        if (PtNumMyElements>0) {
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
       if(BlockMap.GlobalIndicesInt()) {
         PtMyGlobalElements_int.resize(PtNumMyElements);
         for (int i=0; i<NumMyElements; i++) {
-		  int StartID = BlockMap.GID(i)*MaxElementSize;
-		  int ElementSize = BlockMap.ElementSize(i);
-		  for (int j=0; j<ElementSize; j++) PtMyGlobalElements_int[curID++] = StartID+j;
+                  int StartID = BlockMap.GID(i)*MaxElementSize;
+                  int ElementSize = BlockMap.ElementSize(i);
+                  for (int j=0; j<ElementSize; j++) PtMyGlobalElements_int[curID++] = StartID+j;
         }
       }
-	  else
+          else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
       if(BlockMap.GlobalIndicesLongLong()) {
         PtMyGlobalElements_LL.resize(PtNumMyElements);
         for (int i=0; i<NumMyElements; i++) {
-		  long long StartID = BlockMap.GID64(i)*MaxElementSize;
-		  int ElementSize = BlockMap.ElementSize(i);
-		  for (int j=0; j<ElementSize; j++) PtMyGlobalElements_LL[curID++] = StartID+j;
+                  long long StartID = BlockMap.GID64(i)*MaxElementSize;
+                  int ElementSize = BlockMap.ElementSize(i);
+                  for (int j=0; j<ElementSize; j++) PtMyGlobalElements_LL[curID++] = StartID+j;
         }
-	  }
-	  else
+          }
+          else
 #endif
         throw "Ifpack_CrsRiluk::BlockMap2PointMap: GlobalIndices type unknown";
     }
 
-	assert(curID==PtNumMyElements); // Sanity test
+        assert(curID==PtNumMyElements); // Sanity test
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     if(BlockMap.GlobalIndicesInt())
       (*PointMap) = Teuchos::rcp( new Epetra_Map(-1, PtNumMyElements, &PtMyGlobalElements_int[0], BlockMap.IndexBase(), BlockMap.Comm()) );
-	else
+        else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     if(BlockMap.GlobalIndicesLongLong())
       (*PointMap) = Teuchos::rcp( new Epetra_Map(-1LL, PtNumMyElements, &PtMyGlobalElements_LL[0], BlockMap.IndexBase64(), BlockMap.Comm()) );
-	else
+        else
 #endif
       throw "Ifpack_CrsRiluk::BlockMap2PointMap: GlobalIndices type unknown";
 
-	if (!BlockMap.PointSameAs(*(*PointMap))) {EPETRA_CHK_ERR(-1);} // Maps not compatible
+        if (!BlockMap.PointSameAs(*(*PointMap))) {EPETRA_CHK_ERR(-1);} // Maps not compatible
   return(0);
 }
 //=========================================================================
-int Ifpack_CrsRiluk::GenerateXY(bool Trans, 
-				const Epetra_MultiVector& Xin, const Epetra_MultiVector& Yin,
-				Teuchos::RefCountPtr<Epetra_MultiVector>* Xout, 
-				Teuchos::RefCountPtr<Epetra_MultiVector>* Yout) const {
+int Ifpack_CrsRiluk::GenerateXY(bool Trans,
+                                const Epetra_MultiVector& Xin, const Epetra_MultiVector& Yin,
+                                Teuchos::RefCountPtr<Epetra_MultiVector>* Xout,
+                                Teuchos::RefCountPtr<Epetra_MultiVector>* Yout) const {
 
   // Generate an X and Y suitable for performing Solve() and Multiply() methods
 
@@ -748,8 +748,8 @@ int Ifpack_CrsRiluk::GenerateXY(bool Trans,
   if (UserMatrixIsVbr_) {
     if (VbrX_!=Teuchos::null) {
       if (VbrX_->NumVectors()!=Xin.NumVectors()) {
-	VbrX_ = Teuchos::null;
-	VbrY_ = Teuchos::null;
+        VbrX_ = Teuchos::null;
+        VbrY_ = Teuchos::null;
       }
     }
     if (VbrX_==Teuchos::null) { // Need to allocate space for overlap X and Y
@@ -763,13 +763,13 @@ int Ifpack_CrsRiluk::GenerateXY(bool Trans,
     (*Xout) = VbrX_;
     (*Yout) = VbrY_;
   }
-    
+
   if (IsOverlapped_) {
     // Make sure the number of vectors in the multivector is the same as before.
     if (OverlapX_!=Teuchos::null) {
       if (OverlapX_->NumVectors()!=Xin.NumVectors()) {
-	OverlapX_ = Teuchos::null;
-	OverlapY_ = Teuchos::null;
+        OverlapX_ = Teuchos::null;
+        OverlapY_ = Teuchos::null;
       }
     }
     if (OverlapX_==Teuchos::null) { // Need to allocate space for overlap X and Y
@@ -786,14 +786,16 @@ int Ifpack_CrsRiluk::GenerateXY(bool Trans,
     (*Yout) = OverlapY_; // Set pointers for Xout and Yout to point to overlap space
     //cout << "OverlapX_ = " << *OverlapX_ << endl;
   }
-  
+
   return(0);
 }
 //=============================================================================
 // Non-member functions
 
-ostream& operator << (ostream& os, const Ifpack_CrsRiluk& A)
+std::ostream& operator << (std::ostream& os, const Ifpack_CrsRiluk& A)
 {
+  using std::endl;
+
 /*  Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
   Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
   int oldp = os.precision(12); */
@@ -828,7 +830,7 @@ ostream& operator << (ostream& os, const Ifpack_CrsRiluk& A)
   os << endl;
   os << U; // Let Epetra_CrsMatrix handle the rest.
   os << endl;
- 
+
   // Reset os flags
 
 /*  os.setf(olda,ios::adjustfield);

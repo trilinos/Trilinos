@@ -78,8 +78,6 @@ using namespace std;
 int main(int argc, char *argv[])
 {
 
-  int ierr = 0;
-
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
@@ -160,8 +158,8 @@ int main(int argc, char *argv[])
   ed_solver.SetMatrix(*ed_Matrix);
   ed_solver.SetVectors(ed_LHS, ed_RHS);
 
-  ierr = solver.Solve();  
-  ierr = ed_solver.Solve();
+  solver.Solve();  
+  ed_solver.Solve();
 
   std::cout << " LHS vals are: "<<std::endl;
   bool TestPassed=true;

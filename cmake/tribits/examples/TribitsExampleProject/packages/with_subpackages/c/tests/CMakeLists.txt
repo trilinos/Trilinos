@@ -1,5 +1,5 @@
-IF(WithSubpackagesB_ENABLE_ExternalPkg)
-  SET(EXPECTED_EXTERNALPKG_DEPS "ExternalPkg no_deps ")
+IF(WithSubpackagesB_ENABLE_InsertedPkg)
+  SET(EXPECTED_EXTERNALPKG_DEPS "InsertedPkg no_deps ")
 ENDIF()
 
 TRIBITS_ADD_TEST( c_util
@@ -16,7 +16,7 @@ TRIBITS_VERBOSE_PRINT_VAR(c_util_TEST_NAME)
 
 # Example of how to set properties on added test
 IF (c_util_TEST_NAME)
-  SET_TESTS_PROPERTIES( ${c_util_TEST_NAME}  PROPERTIES  TIMEOUT  5.0 )
+  SET_TESTS_PROPERTIES( ${c_util_TEST_NAME}  PROPERTIES  TIMEOUT  15.0 )
   # NOTE: You don't have to set the TIMEOUT separately.  You can pass it into
   # TRIBITS_ADD_TET().
 ENDIF()

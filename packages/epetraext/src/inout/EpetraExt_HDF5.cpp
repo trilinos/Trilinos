@@ -60,7 +60,7 @@
 #include "Epetra_SerialComm.h"
 
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_CrsGraph.h"
@@ -104,14 +104,14 @@ static herr_t FindDataset(hid_t loc_id, const char *name, void *opdata)
 
 // ==========================================================================
 // This function copied from Roman Geus' FEMAXX code
-static void WriteParameterListRecursive(const Teuchos::ParameterList& params, 
-                                        hid_t group_id) 
+static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
+                                        hid_t group_id)
 {
   Teuchos::ParameterList::ConstIterator it = params.begin();
-  for (; it != params.end(); ++ it) 
+  for (; it != params.end(); ++ it)
   {
     std::string key(params.name(it));
-    if (params.isSublist(key)) 
+    if (params.isSublist(key))
     {
       // Sublist
 
@@ -119,8 +119,8 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
       hid_t child_group_id = H5Gcreate(group_id, key.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       WriteParameterListRecursive(params.sublist(key), child_group_id);
       H5Gclose(child_group_id);
-    } 
-    else 
+    }
+    else
     {
       //
       // Regular parameter
@@ -133,13 +133,13 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
       bool found = false; // to avoid a compiler error on MAC OS X GCC 4.0.0
 
       // Write the dataset.
-      if (params.isType<std::string>(key)) 
+      if (params.isType<std::string>(key))
       {
         std::string value = params.get<std::string>(key);
         hsize_t len = value.size() + 1;
         dataspace_id = H5Screate_simple(1, &len, NULL);
         dataset_id = H5Dcreate(group_id, key.c_str(), H5T_C_S1, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        status = H5Dwrite(dataset_id, H5T_C_S1, H5S_ALL, H5S_ALL, 
+        status = H5Dwrite(dataset_id, H5T_C_S1, H5S_ALL, H5S_ALL,
                           H5P_DEFAULT, value.c_str());
         CHECK_STATUS(status);
         status = H5Dclose(dataset_id);
@@ -147,15 +147,15 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
         status = H5Sclose(dataspace_id);
         CHECK_STATUS(status);
         found = true;
-      } 
+      }
 
-      if (params.isType<bool>(key)) 
+      if (params.isType<bool>(key))
       {
         // Use H5T_NATIVE_USHORT to store a bool value
         unsigned short value = params.get<bool>(key) ? 1 : 0;
         dataspace_id = H5Screate_simple(1, &one, NULL);
         dataset_id = H5Dcreate(group_id, key.c_str(), H5T_NATIVE_USHORT, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        status = H5Dwrite(dataset_id, H5T_NATIVE_USHORT, H5S_ALL, H5S_ALL, 
+        status = H5Dwrite(dataset_id, H5T_NATIVE_USHORT, H5S_ALL, H5S_ALL,
                           H5P_DEFAULT, &value);
         CHECK_STATUS(status);
         status = H5Dclose(dataset_id);
@@ -163,14 +163,14 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
         status = H5Sclose(dataspace_id);
         CHECK_STATUS(status);
         found = true;
-      } 
-      
-      if (params.isType<int>(key)) 
+      }
+
+      if (params.isType<int>(key))
       {
         int value = params.get<int>(key);
         dataspace_id = H5Screate_simple(1, &one, NULL);
         dataset_id = H5Dcreate(group_id, key.c_str(), H5T_NATIVE_INT, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, 
+        status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL,
                           H5P_DEFAULT, &value);
         CHECK_STATUS(status);
         status = H5Dclose(dataset_id);
@@ -178,14 +178,14 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
         status = H5Sclose(dataspace_id);
         CHECK_STATUS(status);
         found = true;
-      } 
+      }
 
-      if (params.isType<double>(key)) 
+      if (params.isType<double>(key))
       {
         double value = params.get<double>(key);
         dataspace_id = H5Screate_simple(1, &one, NULL);
         dataset_id = H5Dcreate(group_id, key.c_str(), H5T_NATIVE_DOUBLE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, 
+        status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL,
                           H5P_DEFAULT, &value);
         CHECK_STATUS(status);
         status = H5Dclose(dataset_id);
@@ -193,11 +193,11 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
         status = H5Sclose(dataspace_id);
         CHECK_STATUS(status);
         found = true;
-      } 
+      }
 
       if (!found)
       {
-        throw(EpetraExt::Exception(__FILE__, __LINE__, 
+        throw(EpetraExt::Exception(__FILE__, __LINE__,
                                 "type for parameter " + key + " not supported"));
       }
     }
@@ -207,7 +207,7 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
 // ==========================================================================
 // Recursive Operator function called by H5Giterate for each entity in group.
 // This function copied from Roman Geus' FEMAXX code
-static herr_t f_operator(hid_t loc_id, const char *name, void *opdata) 
+static herr_t f_operator(hid_t loc_id, const char *name, void *opdata)
 {
   H5G_stat_t statbuf;
   hid_t dataset_id, space_id, type_id;
@@ -215,7 +215,7 @@ static herr_t f_operator(hid_t loc_id, const char *name, void *opdata)
   Teuchos::ParameterList* params = (Teuchos::ParameterList*)opdata;
   /*
    * Get type of the object and display its name and type.
-   * The name of the object is passed to this function by 
+   * The name of the object is passed to this function by
    * the Library. Some magic :-)
    */
   H5Gget_objinfo(loc_id, name, 0, &statbuf);
@@ -232,7 +232,7 @@ static herr_t f_operator(hid_t loc_id, const char *name, void *opdata)
     dataset_id = H5Dopen(loc_id, name, H5P_DEFAULT);
     space_id = H5Dget_space(dataset_id);
     if (H5Sget_simple_extent_ndims(space_id) != 1)
-      throw(EpetraExt::Exception(__FILE__, __LINE__, 
+      throw(EpetraExt::Exception(__FILE__, __LINE__,
                               "dimensionality of parameters must be 1."));
     H5Sget_simple_extent_dims(space_id, &len, NULL);
     type_id = H5Dget_type(dataset_id);
@@ -258,8 +258,8 @@ static herr_t f_operator(hid_t loc_id, const char *name, void *opdata)
                               "unsupported datatype")); // FIXME
     }
     H5Tclose(type_id);
-    H5Sclose(space_id);  
-    H5Dclose(dataset_id);  
+    H5Sclose(space_id);
+    H5Dclose(dataset_id);
     break;
   default:
     throw(EpetraExt::Exception(__FILE__, __LINE__,
@@ -298,33 +298,33 @@ void EpetraExt::HDF5::Create(const std::string FileName)
     MPI_Comm mpiComm = MPI_COMM_NULL; // Hopefully not for long
 
     // Is Comm_ an Epetra_MpiComm?
-    const Epetra_MpiComm* mpiWrapper = 
+    const Epetra_MpiComm* mpiWrapper =
       dynamic_cast<const Epetra_MpiComm*> (&Comm_);
     if (mpiWrapper != NULL) {
       mpiComm = mpiWrapper->Comm();
     }
     else {
       // Is Comm_ an Epetra_SerialComm?
-      const Epetra_SerialComm* serialWrapper = 
-	dynamic_cast<const Epetra_SerialComm*> (&Comm_);
+      const Epetra_SerialComm* serialWrapper =
+        dynamic_cast<const Epetra_SerialComm*> (&Comm_);
 
       if (serialWrapper != NULL) {
-	// Comm_ is an Epetra_SerialComm.  This means that even though
-	// Trilinos was built with MPI, the user who instantiated the
-	// HDF5 class wants only the calling process to access HDF5.
-	// The right communicator to use in that case is
-	// MPI_COMM_SELF.
-	mpiComm = MPI_COMM_SELF;
+        // Comm_ is an Epetra_SerialComm.  This means that even though
+        // Trilinos was built with MPI, the user who instantiated the
+        // HDF5 class wants only the calling process to access HDF5.
+        // The right communicator to use in that case is
+        // MPI_COMM_SELF.
+        mpiComm = MPI_COMM_SELF;
       } else {
-	// Comm_ must be some other subclass of Epetra_Comm.
-	// We don't know how to get an MPI communicator out of it.
-	const char* const errMsg = "EpetraExt::HDF5::Create: This HDF5 object "
-	  "was created with an Epetra_Comm instance which is neither an "
-	  "Epetra_MpiComm nor a Epetra_SerialComm.  As a result, we do not "
-	  "know how to get an MPI communicator from it.  Our HDF5 class only "
-	  "understands Epetra_Comm objects which are instances of one of these "
-	  "two subclasses.";
-	throw EpetraExt::Exception (__FILE__, __LINE__, errMsg);
+        // Comm_ must be some other subclass of Epetra_Comm.
+        // We don't know how to get an MPI communicator out of it.
+        const char* const errMsg = "EpetraExt::HDF5::Create: This HDF5 object "
+          "was created with an Epetra_Comm instance which is neither an "
+          "Epetra_MpiComm nor a Epetra_SerialComm.  As a result, we do not "
+          "know how to get an MPI communicator from it.  Our HDF5 class only "
+          "understands Epetra_Comm objects which are instances of one of these "
+          "two subclasses.";
+        throw EpetraExt::Exception (__FILE__, __LINE__, errMsg);
       }
     }
 
@@ -332,9 +332,9 @@ void EpetraExt::HDF5::Create(const std::string FileName)
     // MPI_COMM_NULL.  Otherwise, Comm_ wraps MPI_COMM_NULL.
     if (mpiComm == MPI_COMM_NULL) {
       const char* const errMsg = "EpetraExt::HDF5::Create: The Epetra_Comm "
-	"object with which this HDF5 instance was created wraps MPI_COMM_NULL, "
-	"which is an invalid MPI communicator.  HDF5 requires a valid MPI "
-	"communicator.";
+        "object with which this HDF5 instance was created wraps MPI_COMM_NULL, "
+        "which is an invalid MPI communicator.  HDF5 requires a valid MPI "
+        "communicator.";
       throw EpetraExt::Exception (__FILE__, __LINE__, errMsg);
     }
 
@@ -354,7 +354,7 @@ void EpetraExt::HDF5::Create(const std::string FileName)
 #endif
 
   // create the file collectively and release property list identifier.
-  file_id_ = H5Fcreate(FileName.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, 
+  file_id_ = H5Fcreate(FileName.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT,
                       plist_id_);
   H5Pclose(plist_id_);
 
@@ -427,9 +427,9 @@ void EpetraExt::HDF5::Write(const std::string& Name, const Epetra_BlockMap& Bloc
   std::vector<int> NumMyPoints_v(Comm_.NumProc());
   Comm_.GatherAll(&NumMyPoints, &NumMyPoints_v[0], 1);
 
-  Write(Name, "MyGlobalElements", NumMyElements, NumGlobalElements, 
+  Write(Name, "MyGlobalElements", NumMyElements, NumGlobalElements,
         H5T_NATIVE_INT, MyGlobalElements);
-  Write(Name, "ElementSizeList", NumMyElements, NumGlobalElements, 
+  Write(Name, "ElementSizeList", NumMyElements, NumGlobalElements,
         H5T_NATIVE_INT, ElementSizeList);
   Write(Name, "NumMyPoints", H5T_NATIVE_INT, Comm_.NumProc(), &NumMyPoints_v[0]);
 
@@ -461,25 +461,25 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_BlockMap*& Block
   if (NumProc != Comm_.NumProc())
     throw(Exception(__FILE__, __LINE__,
                     "requested map not compatible with current number of",
-                    "processors, " + toString(Comm_.NumProc()) + 
+                    "processors, " + toString(Comm_.NumProc()) +
                     " vs. " + toString(NumProc)));
 
   std::vector<int> MyGlobalElements(NumMyElements);
   std::vector<int> ElementSizeList(NumMyElements);
 
-  Read(GroupName, "MyGlobalElements", NumMyElements, NumGlobalElements, 
+  Read(GroupName, "MyGlobalElements", NumMyElements, NumGlobalElements,
        H5T_NATIVE_INT, &MyGlobalElements[0]);
 
-  Read(GroupName, "ElementSizeList", NumMyElements, NumGlobalElements, 
+  Read(GroupName, "ElementSizeList", NumMyElements, NumGlobalElements,
        H5T_NATIVE_INT, &ElementSizeList[0]);
 
-  BlockMap = new Epetra_BlockMap(NumGlobalElements, NumMyElements, 
+  BlockMap = new Epetra_BlockMap(NumGlobalElements, NumMyElements,
                                  &MyGlobalElements[0], &ElementSizeList[0],
                                  IndexBase, Comm_);
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::ReadBlockMapProperties(const std::string& GroupName, 
+void EpetraExt::HDF5::ReadBlockMapProperties(const std::string& GroupName,
                                           int& NumGlobalElements,
                                           int& NumGlobalPoints,
                                           int& IndexBase,
@@ -513,7 +513,7 @@ void EpetraExt::HDF5::Write(const std::string& Name, const Epetra_Map& Map)
   std::vector<int> NumMyElements(Comm_.NumProc());
   Comm_.GatherAll(&MySize, &NumMyElements[0], 1);
 
-  Write(Name, "MyGlobalElements", MySize, GlobalSize, 
+  Write(Name, "MyGlobalElements", MySize, GlobalSize,
         H5T_NATIVE_INT, MyGlobalElements);
   Write(Name, "NumMyElements", H5T_NATIVE_INT, Comm_.NumProc(), &NumMyElements[0]);
   Write(Name, "NumGlobalElements", 1, Comm_.NumProc(), H5T_NATIVE_INT, &GlobalSize);
@@ -537,19 +537,19 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_Map*& Map)
   if (NumProc != Comm_.NumProc())
     throw(Exception(__FILE__, __LINE__,
                     "requested map not compatible with current number of",
-                    "processors, " + toString(Comm_.NumProc()) + 
+                    "processors, " + toString(Comm_.NumProc()) +
                     " vs. " + toString(NumProc)));
 
   std::vector<int> MyGlobalElements(NumMyElements);
 
-  Read(GroupName, "MyGlobalElements", NumMyElements, NumGlobalElements, 
+  Read(GroupName, "MyGlobalElements", NumMyElements, NumGlobalElements,
        H5T_NATIVE_INT, &MyGlobalElements[0]);
 
   Map = new Epetra_Map(-1, NumMyElements, &MyGlobalElements[0], IndexBase, Comm_);
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::ReadMapProperties(const std::string& GroupName, 
+void EpetraExt::HDF5::ReadMapProperties(const std::string& GroupName,
                                      int& NumGlobalElements,
                                      int& IndexBase,
                                      int& NumProc)
@@ -587,7 +587,7 @@ void EpetraExt::HDF5::Write(const std::string& Name, const Epetra_IntVector& x)
   else
   {
     // need to build a linear map first, the import data, then
-    // finally write them 
+    // finally write them
     const Epetra_BlockMap& OriginalMap = x.Map();
     Epetra_Map LinearMap(OriginalMap.NumGlobalElements(), OriginalMap.IndexBase(), Comm_);
     Epetra_Import Importer(LinearMap, OriginalMap);
@@ -613,7 +613,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_IntVector*& X)
   Epetra_Map LinearMap(GlobalLength, 0, Comm_);
   X = new Epetra_IntVector(LinearMap);
 
-  Read(GroupName, "Values", LinearMap.NumMyElements(), 
+  Read(GroupName, "Values", LinearMap.NumMyElements(),
        LinearMap.NumGlobalElements(), H5T_NATIVE_INT, X->Values());
 }
 
@@ -640,7 +640,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
     Epetra_Map LinearMap(GlobalLength, Map.IndexBase(), Comm_);
     Epetra_IntVector LinearX(LinearMap);
 
-    Read(GroupName, "Values", LinearMap.NumMyElements(), 
+    Read(GroupName, "Values", LinearMap.NumMyElements(),
          LinearMap.NumGlobalElements(),
          H5T_NATIVE_INT, LinearX.Values());
 
@@ -651,7 +651,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::ReadIntVectorProperties(const std::string& GroupName, 
+void EpetraExt::HDF5::ReadIntVectorProperties(const std::string& GroupName,
                                            int& GlobalLength)
 {
   if (!IsContained(GroupName))
@@ -728,7 +728,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_CrsGraph*& Graph
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::ReadCrsGraphProperties(const std::string& GroupName, 
+void EpetraExt::HDF5::ReadCrsGraphProperties(const std::string& GroupName,
                                           int& NumGlobalRows,
                                           int& NumGlobalCols,
                                           int& NumGlobalNonzeros,
@@ -755,7 +755,7 @@ void EpetraExt::HDF5::ReadCrsGraphProperties(const std::string& GroupName,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& DomainMap, 
+void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& DomainMap,
                         const Epetra_Map& RangeMap, Epetra_CrsGraph*& Graph)
 {
   if (!IsContained(GroupName))
@@ -870,7 +870,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_CrsMatrix*& A)
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& DomainMap, 
+void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& DomainMap,
                         const Epetra_Map& RangeMap, Epetra_CrsMatrix*& A)
 {
   int NumGlobalRows, NumGlobalCols, NumGlobalNonzeros;
@@ -912,7 +912,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Domai
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::ReadCrsMatrixProperties(const std::string& GroupName, 
+void EpetraExt::HDF5::ReadCrsMatrixProperties(const std::string& GroupName,
                                            int& NumGlobalRows,
                                            int& NumGlobalCols,
                                            int& NumGlobalNonzeros,
@@ -954,7 +954,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Teuchos::Paramet
 
   hid_t group_id = H5Gcreate(file_id_, GroupName.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-  // Iterate through parameter list 
+  // Iterate through parameter list
   WriteParameterListRecursive(params, group_id);
 
   // Finalize hdf5 file
@@ -965,7 +965,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Teuchos::Paramet
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const std::string& GroupName, Teuchos::ParameterList& params) 
+void EpetraExt::HDF5::Read(const std::string& GroupName, Teuchos::ParameterList& params)
 {
   if (!IsOpen())
     throw(Exception(__FILE__, __LINE__, "no file open yet"));
@@ -986,7 +986,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Teuchos::ParameterList&
   group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
   CHECK_HID(group_id);
 
-  // Iterate through parameter list 
+  // Iterate through parameter list
   std::string xxx = "/" + GroupName;
   status = H5Giterate(group_id, xxx.c_str() , NULL, f_operator, &params);
   CHECK_STATUS(status);
@@ -1012,7 +1012,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
   herr_t      status;
 
   // need a linear distribution to use hyperslabs
-  Teuchos::RefCountPtr<Epetra_MultiVector> LinearX;
+  Teuchos::RCP<Epetra_MultiVector> LinearX;
 
   if (X.Map().LinearMap())
     LinearX = Teuchos::rcp(const_cast<Epetra_MultiVector*>(&X), false);
@@ -1028,7 +1028,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
   int GlobalLength = X.GlobalLength();
 
   // Whether or not we do writeTranspose or not is
-  // handled by one of the components of q_dimsf, offset and count. 
+  // handled by one of the components of q_dimsf, offset and count.
   // They are determined by indexT
   int indexT(0);
   if (writeTranspose) indexT = 1;
@@ -1055,12 +1055,12 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
 
   // Select hyperslab in the file.
   hsize_t offset[] = {static_cast<hsize_t>(LinearX->Map().GID(0)-X.Map().IndexBase()),
-		      static_cast<hsize_t>(LinearX->Map().GID(0)-X.Map().IndexBase())};
+                      static_cast<hsize_t>(LinearX->Map().GID(0)-X.Map().IndexBase())};
   hsize_t stride[] = {1, 1};
   hsize_t count[] = {static_cast<hsize_t>(LinearX->MyLength()),
-		     static_cast<hsize_t>(LinearX->MyLength())};
+                     static_cast<hsize_t>(LinearX->MyLength())};
   hsize_t block[] = {1, 1};
-    
+
   // write vectors one by one
   for (int n(0); n < NumVectors; ++n)
     {
@@ -1070,7 +1070,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
 
       filespace_id = H5Dget_space(dset_id);
       H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride,
-			  count, block);
+                          count, block);
 
       // Each process defines dataset in memory and writes it to the hyperslab in the file.
       hsize_t dimsm[] = {static_cast<hsize_t>(LinearX->MyLength())};
@@ -1078,7 +1078,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
 
       // Write hyperslab
       status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id,
-			plist_id_, LinearX->operator[](n));
+                        plist_id_, LinearX->operator[](n));
       CHECK_STATUS(status);
     }
   H5Gclose(group_id);
@@ -1099,7 +1099,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
   // first read it with linear distribution
   Epetra_MultiVector* LinearX;
   Read(GroupName, LinearX, writeTranspose, Map.IndexBase());
-  
+
   // now build the importer to the actual one
   Epetra_Import Importer(Map, LinearX->Map());
   X = new Epetra_MultiVector(Map, LinearX->NumVectors());
@@ -1167,7 +1167,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& Li
   block [indexT]  = 1;
 
   filespace_id = H5Dget_space(dset_id);
-  H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride, 
+  H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride,
                       count, block);
 
   // Each process defines dataset in memory and writes it to the hyperslab in the file.
@@ -1175,7 +1175,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& Li
   memspace_id = H5Screate_simple(1, dimsm, NULL);
 
   // Write hyperslab
-  CHECK_STATUS(H5Dread(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id, 
+  CHECK_STATUS(H5Dread(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id,
                        H5P_DEFAULT, LinearX->Values()));
 
   } else {
@@ -1183,7 +1183,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& Li
 
     // Select hyperslab in the file.
     hsize_t count[] = {static_cast<hsize_t>(LinearX->MyLength()),
-		       static_cast<hsize_t>(LinearX->MyLength())};
+                       static_cast<hsize_t>(LinearX->MyLength())};
     hsize_t block[] = {1, 1};
 
     // write vectors one by one
@@ -1195,7 +1195,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& Li
 
       filespace_id = H5Dget_space(dset_id);
       H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride,
-			  count, block);
+                          count, block);
 
       // Each process defines dataset in memory and writes it to the hyperslab in the file.
       hsize_t dimsm[] = {static_cast<hsize_t>(LinearX->MyLength())};
@@ -1203,7 +1203,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& Li
 
       // Read hyperslab
       CHECK_STATUS(H5Dread(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id,
-			   H5P_DEFAULT, LinearX->operator[](n)));
+                           H5P_DEFAULT, LinearX->operator[](n)));
 
     }
   }
@@ -1215,7 +1215,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& Li
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::ReadMultiVectorProperties(const std::string& GroupName, 
+void EpetraExt::HDF5::ReadMultiVectorProperties(const std::string& GroupName,
                                              int& GlobalLength,
                                              int& NumVectors)
 {
@@ -1244,14 +1244,14 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const DistArray<int>& 
 {
   if (x.Map().LinearMap())
   {
-    Write(GroupName, "Values", x.Map().NumMyElements() * x.RowSize(), 
+    Write(GroupName, "Values", x.Map().NumMyElements() * x.RowSize(),
           x.Map().NumGlobalElements() * x.RowSize(),
           H5T_NATIVE_INT, x.Values());
   }
   else
   {
     // need to build a linear map first, the import data, then
-    // finally write them 
+    // finally write them
     const Epetra_BlockMap& OriginalMap = x.Map();
     Epetra_Map LinearMap(OriginalMap.NumGlobalElements(), OriginalMap.IndexBase(), Comm_);
     Epetra_Import Importer(LinearMap, OriginalMap);
@@ -1259,7 +1259,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const DistArray<int>& 
     EpetraExt::DistArray<int> LinearX(LinearMap, x.RowSize());
     LinearX.Import(x, Importer, Insert);
 
-    Write(GroupName, "Values", LinearMap.NumMyElements() * x.RowSize(), 
+    Write(GroupName, "Values", LinearMap.NumMyElements() * x.RowSize(),
           LinearMap.NumGlobalElements() * x.RowSize(),
           H5T_NATIVE_INT, LinearX.Values());
   }
@@ -1281,7 +1281,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
   {
     X = new EpetraExt::DistArray<int>(Map, RowSize);
     // simply read stuff and go home
-    Read(GroupName, "Values", Map.NumMyElements() * RowSize, 
+    Read(GroupName, "Values", Map.NumMyElements() * RowSize,
          Map.NumGlobalElements() * RowSize, H5T_NATIVE_INT, X->Values());
   }
   else
@@ -1291,7 +1291,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
     Epetra_Map LinearMap(GlobalLength, Map.IndexBase(), Comm_);
     EpetraExt::DistArray<int> LinearX(LinearMap, RowSize);
 
-    Read(GroupName, "Values", LinearMap.NumMyElements() * RowSize, 
+    Read(GroupName, "Values", LinearMap.NumMyElements() * RowSize,
          LinearMap.NumGlobalElements() * RowSize,
          H5T_NATIVE_INT, LinearX.Values());
 
@@ -1312,12 +1312,12 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, DistArray<int>*& X)
   Epetra_Map LinearMap(GlobalLength, 0, Comm_);
   X = new EpetraExt::DistArray<int>(LinearMap, RowSize);
 
-  Read(GroupName, "Values", LinearMap.NumMyElements() * RowSize, 
+  Read(GroupName, "Values", LinearMap.NumMyElements() * RowSize,
        LinearMap.NumGlobalElements() * RowSize, H5T_NATIVE_INT, X->Values());
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::ReadIntDistArrayProperties(const std::string& GroupName, 
+void EpetraExt::HDF5::ReadIntDistArrayProperties(const std::string& GroupName,
                                                  int& GlobalLength,
                                                  int& RowSize)
 {
@@ -1346,14 +1346,14 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const DistArray<double
 {
   if (x.Map().LinearMap())
   {
-    Write(GroupName, "Values", x.Map().NumMyElements() * x.RowSize(), 
+    Write(GroupName, "Values", x.Map().NumMyElements() * x.RowSize(),
           x.Map().NumGlobalElements() * x.RowSize(),
           H5T_NATIVE_DOUBLE, x.Values());
   }
   else
   {
     // need to build a linear map first, the import data, then
-    // finally write them 
+    // finally write them
     const Epetra_BlockMap& OriginalMap = x.Map();
     Epetra_Map LinearMap(OriginalMap.NumGlobalElements(), OriginalMap.IndexBase(), Comm_);
     Epetra_Import Importer(LinearMap, OriginalMap);
@@ -1361,7 +1361,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const DistArray<double
     EpetraExt::DistArray<double> LinearX(LinearMap, x.RowSize());
     LinearX.Import(x, Importer, Insert);
 
-    Write(GroupName, "Values", LinearMap.NumMyElements() * x.RowSize(), 
+    Write(GroupName, "Values", LinearMap.NumMyElements() * x.RowSize(),
           LinearMap.NumGlobalElements() * x.RowSize(),
           H5T_NATIVE_DOUBLE, LinearX.Values());
   }
@@ -1383,7 +1383,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
   {
     X = new EpetraExt::DistArray<double>(Map, RowSize);
     // simply read stuff and go home
-    Read(GroupName, "Values", Map.NumMyElements() * RowSize, 
+    Read(GroupName, "Values", Map.NumMyElements() * RowSize,
          Map.NumGlobalElements() * RowSize, H5T_NATIVE_DOUBLE, X->Values());
   }
   else
@@ -1393,7 +1393,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
     Epetra_Map LinearMap(GlobalLength, Map.IndexBase(), Comm_);
     EpetraExt::DistArray<double> LinearX(LinearMap, RowSize);
 
-    Read(GroupName, "Values", LinearMap.NumMyElements() * RowSize, 
+    Read(GroupName, "Values", LinearMap.NumMyElements() * RowSize,
          LinearMap.NumGlobalElements() * RowSize,
          H5T_NATIVE_DOUBLE, LinearX.Values());
 
@@ -1414,12 +1414,12 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, DistArray<double>*& X)
   Epetra_Map LinearMap(GlobalLength, 0, Comm_);
   X = new EpetraExt::DistArray<double>(LinearMap, RowSize);
 
-  Read(GroupName, "Values", LinearMap.NumMyElements() * RowSize, 
+  Read(GroupName, "Values", LinearMap.NumMyElements() * RowSize,
        LinearMap.NumGlobalElements() * RowSize, H5T_NATIVE_DOUBLE, X->Values());
 }
 //
 // ==========================================================================
-void EpetraExt::HDF5::ReadDoubleDistArrayProperties(const std::string& GroupName, 
+void EpetraExt::HDF5::ReadDoubleDistArrayProperties(const std::string& GroupName,
                                                     int& GlobalLength,
                                                     int& RowSize)
 {
@@ -1452,7 +1452,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& Dat
 
   hid_t filespace_id = H5Screate(H5S_SCALAR);
   hid_t group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
-  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), H5T_NATIVE_INT, 
+  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), H5T_NATIVE_INT,
                       filespace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   herr_t status = H5Dwrite(dset_id, H5T_NATIVE_INT, H5S_ALL, filespace_id,
@@ -1474,10 +1474,10 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& Dat
 
   hid_t filespace_id = H5Screate(H5S_SCALAR);
   hid_t group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
-  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), H5T_NATIVE_DOUBLE, 
+  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), H5T_NATIVE_DOUBLE,
                             filespace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
-  herr_t status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL, 
+  herr_t status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL,
                            filespace_id, H5P_DEFAULT, &what);
   CHECK_STATUS(status);
 
@@ -1532,8 +1532,8 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& Data
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Write(const std::string& GroupName, 
-                            const std::string& DataSetName, 
+void EpetraExt::HDF5::Write(const std::string& GroupName,
+                            const std::string& DataSetName,
                             const std::string& data)
 {
   if (!IsContained(GroupName))
@@ -1548,9 +1548,9 @@ void EpetraExt::HDF5::Write(const std::string& GroupName,
   hid_t atype = H5Tcopy(H5T_C_S1);
   H5Tset_size(atype, data.size() + 1);
 
-  hid_t dataset_id = H5Dcreate(group_id, DataSetName.c_str(), atype, 
+  hid_t dataset_id = H5Dcreate(group_id, DataSetName.c_str(), atype,
                                dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  CHECK_STATUS(H5Dwrite(dataset_id, atype, H5S_ALL, H5S_ALL, 
+  CHECK_STATUS(H5Dwrite(dataset_id, atype, H5S_ALL, H5S_ALL,
                         H5P_DEFAULT, data.c_str()));
 
   CHECK_STATUS(H5Tclose(atype));
@@ -1563,8 +1563,8 @@ void EpetraExt::HDF5::Write(const std::string& GroupName,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const std::string& GroupName, 
-                           const std::string& DataSetName, 
+void EpetraExt::HDF5::Read(const std::string& GroupName,
+                           const std::string& DataSetName,
                            std::string& data)
 {
   if (!IsContained(GroupName))
@@ -1579,7 +1579,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName,
 //  size_t typesize_id = H5Tget_size(datatype_id);
   H5T_class_t typeclass_id = H5Tget_class(datatype_id);
 
-  if(typeclass_id != H5T_STRING) 
+  if(typeclass_id != H5T_STRING)
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " is not a std::string"));
   char data2[160];
@@ -1587,8 +1587,8 @@ void EpetraExt::HDF5::Read(const std::string& GroupName,
                        H5P_DEFAULT, data2));
   data = data2;
 
-  H5Dclose(dataset_id);  
-  H5Gclose(group_id);  
+  H5Dclose(dataset_id);
+  H5Gclose(group_id);
 }
 
 // ============= //
@@ -1597,7 +1597,7 @@ void EpetraExt::HDF5::Read(const std::string& GroupName,
 
 // ==========================================================================
 void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& DataSetName,
-                         const int type, const int Length, 
+                         const int type, const int Length,
                          void* data)
 {
   if (!IsContained(GroupName))
@@ -1609,7 +1609,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& Dat
 
   hid_t group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
 
-  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), type, 
+  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), type,
                             filespace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   herr_t status = H5Dwrite(dset_id, type, H5S_ALL, H5S_ALL,
@@ -1624,7 +1624,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& Dat
 
 // ==========================================================================
 void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& DataSetName,
-                        const int type, const int Length, 
+                        const int type, const int Length,
                         void* data)
 {
   if (!IsContained(GroupName))
@@ -1665,14 +1665,14 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const std::string& Dat
   hsize_t GlobalSize_t = GlobalSize;
   hsize_t Offset_t = Offset;
 
-  hid_t filespace_id = H5Screate_simple(1, &GlobalSize_t, NULL); 
+  hid_t filespace_id = H5Screate_simple(1, &GlobalSize_t, NULL);
 
   // Create the dataset with default properties and close filespace.
   if (!IsContained(GroupName))
     CreateGroup(GroupName);
 
   hid_t group_id = H5Gopen(file_id_, GroupName.c_str(), H5P_DEFAULT);
-  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), type, filespace_id, 
+  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), type, filespace_id,
                             H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 
   H5Sclose(filespace_id);
@@ -1724,20 +1724,20 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& Data
 
   // Select hyperslab in the file.
   hid_t filespace_id = H5Dget_space(dataset_id);
-  H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, &Offset_t, NULL, 
+  H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, &Offset_t, NULL,
                       &MySize_t, NULL);
 
   hid_t mem_dataspace = H5Screate_simple (1, &MySize_t, NULL);
 
-  herr_t status = H5Dread(dataset_id, type, mem_dataspace, filespace_id, 
+  herr_t status = H5Dread(dataset_id, type, mem_dataspace, filespace_id,
                           H5P_DEFAULT, data);
   CHECK_STATUS(status);
 
   H5Sclose(mem_dataspace);
-  H5Gclose(group_id);  
-  //H5Sclose(space_id);  
-  H5Dclose(dataset_id);  
-//  H5Dclose(filespace_id);  
+  H5Gclose(group_id);
+  //H5Sclose(space_id);
+  H5Dclose(dataset_id);
+//  H5Dclose(filespace_id);
 }
 
 

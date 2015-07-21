@@ -124,7 +124,7 @@ namespace Solver {
 
   - "2-Norm of Residual" - Two-norm of final residual
 
-  \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
+  \author Alex Toth and Roger Pawlowski
 */
 
 class AndersonAcceleration : public Generic {

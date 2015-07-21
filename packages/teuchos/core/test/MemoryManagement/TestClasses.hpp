@@ -94,7 +94,7 @@ class A {
 public:
 	A() : A_g_(A_g_return), A_f_(A_f_return) {}
   static Teuchos::RCP<A> create() { return Teuchos::rcp(new A); }
-	virtual ~A(); // See below
+	virtual ~A() TEUCHOS_NOEXCEPT_FALSE; // See below
 	virtual int A_g() { return A_g_; }
 	virtual int A_f() const { return A_f_; }
   int call_C_f();
@@ -136,7 +136,7 @@ public:
       A_g_on_delete_ = -2;
     }
   static Teuchos::RCP<C> create() { return Teuchos::rcp(new C); }
-	~C()
+	~C() TEUCHOS_NOEXCEPT_FALSE
     {
       C_g_ = -1; C_f_ = -1;
       if (call_A_on_delete_) {
@@ -146,7 +146,14 @@ public:
         // already been deleted, then this destructor will throw an exception.
         // This is *never* a good thing to do in production code.  However, I
         // am allowing this destructor to throw an exception so I can write a
-        // unit test to detect this.
+        // unit test to detect this. The destructor must be declared as
+        // noexcept(false) in C++11 (using the TEUCHOS_NOEXCEPT_FALSE
+        // definition), otherwise it will terminate the program by calling
+        // std::terminate when the exception is thrown. When the ~C()
+        // destructor is declared as noexcept(false), then also the ~A()
+        // destructor must be declared as noexcept(false), because a method in
+        // a derived class cannot throw more exceptions than the corresponding
+        // virtual method in the superclass.
       }
     }
 	virtual int C_g() { return C_g_; }
@@ -168,7 +175,7 @@ public:
 // Need to put these here if we have circular references
 
 inline
-A::~A() { A_g_ = -1; A_f_ = -1; }
+A::~A() TEUCHOS_NOEXCEPT_FALSE { A_g_ = -1; A_f_ = -1; }
 
 
 inline

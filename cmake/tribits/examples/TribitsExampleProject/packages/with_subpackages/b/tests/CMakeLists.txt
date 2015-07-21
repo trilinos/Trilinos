@@ -27,8 +27,8 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_WithSubpackagesA)
 IF(${PACKAGE_NAME}_ENABLE_WithSubpackagesA)
   SET(EXPECTED_B_DEPS "${EXPECTED_B_DEPS} A no_deps")
 ENDIF()
-IF(${PACKAGE_NAME}_ENABLE_ExternalPkg)
-  SET(EXPECTED_B_DEPS "${EXPECTED_B_DEPS} ExternalPkg no_deps")
+IF(${PACKAGE_NAME}_ENABLE_InsertedPkg)
+  SET(EXPECTED_B_DEPS "${EXPECTED_B_DEPS} InsertedPkg no_deps")
 ENDIF()
 SET(EXPECTED_B_DEPS "${EXPECTED_B_DEPS} no_deps")
 
@@ -46,7 +46,7 @@ TRIBITS_VERBOSE_PRINT_VAR(test_of_b_TEST_NAME)
 # Example of changing CTest property on advanced test
 IF (test_of_b_TEST_NAME)
   SET_TESTS_PROPERTIES( ${test_of_b_TEST_NAME}
-    PROPERTIES  TIMEOUT  3.0 )
+    PROPERTIES  TIMEOUT  12.0 )
 ENDIF()
 
 #

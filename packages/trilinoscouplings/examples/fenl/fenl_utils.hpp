@@ -113,7 +113,7 @@ createKokkosNode( const CMD & cmd , const Teuchos::Comm<int>& comm ) {
   Teuchos::RCP<NodeType> node = Teuchos::rcp (new NodeType(params));
 
   if ( cmd.VERBOSE ) {
-    typedef typename NodeType::device_type Device;
+    typedef typename NodeType::execution_space Device;
     if (comm.getRank() == 0)
       Device::print_configuration(std::cout);
     std::cout.flush();

@@ -51,6 +51,7 @@
 #define _ZOLTAN2_GRAPHMODEL_HPP_
 
 #include <Zoltan2_Model.hpp>
+#include <Zoltan2_ModelHelpers.hpp>
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_GraphAdapter.hpp>
@@ -456,26 +457,26 @@ public:
    *  \todo document the model flags that might be set
    */
 
-  GraphModel(const MatrixAdapter<user_t,userCoord_t> *ia,
+  GraphModel(const RCP<const MatrixAdapter<user_t,userCoord_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags);
 
-  GraphModel(const GraphAdapter<user_t,userCoord_t> *ia,
+  GraphModel(const RCP<const GraphAdapter<user_t,userCoord_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags);
 
-  GraphModel(const MeshAdapter<user_t> *ia,
+  GraphModel(const RCP<const MeshAdapter<user_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelflags);
 
-  GraphModel(const VectorAdapter<userCoord_t> *ia,
+  GraphModel(const RCP<const VectorAdapter<userCoord_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
   {
     throw std::runtime_error("cannot build GraphModel from VectorAdapter");
   }
 
-  GraphModel(const IdentifierAdapter<user_t> *ia,
+  GraphModel(const RCP<const IdentifierAdapter<user_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
   {
@@ -639,7 +640,7 @@ public:
   size_t getGlobalNumObjects() const { return numGlobalVertices_; }
 
 private:
-  void shared_constructor(const Adapter *ia, modelFlag_t &modelFlags);
+  void shared_constructor(const RCP<const Adapter>&ia, modelFlag_t &modelFlags);
 
   template <typename AdapterWithCoords>
   void shared_GetVertexCoords(const AdapterWithCoords *ia);
@@ -696,7 +697,7 @@ private:
 ////////////////////////////////////////////////////////////////
 template <typename Adapter>
 GraphModel<Adapter>::GraphModel(
-  const MatrixAdapter<user_t,userCoord_t> *ia,
+  const RCP<const MatrixAdapter<user_t,userCoord_t> > &ia,
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &comm,
   modelFlag_t &modelFlags):
@@ -780,7 +781,7 @@ GraphModel<Adapter>::GraphModel(
 ////////////////////////////////////////////////////////////////
 template <typename Adapter>
 GraphModel<Adapter>::GraphModel(
-  const GraphAdapter<user_t,userCoord_t> *ia,
+  const RCP<const GraphAdapter<user_t,userCoord_t> > &ia,
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &comm,
   modelFlag_t &modelFlags):
@@ -866,7 +867,7 @@ GraphModel<Adapter>::GraphModel(
 ////////////////////////////////////////////////////////////////
 template <typename Adapter>
 GraphModel<Adapter>::GraphModel(
-  const MeshAdapter<user_t> *ia,
+  const RCP<const MeshAdapter<user_t> > &ia,
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &comm,
   modelFlag_t &modelFlags):
@@ -926,8 +927,12 @@ GraphModel<Adapter>::GraphModel(
 
   if (!ia->avail2ndAdjs(primaryEType, secondAdjEType)) {
 
-    throw std::logic_error("MeshAdapter must provide 2nd adjacencies for "
-                           "graph construction");
+    try {
+      get2ndAdjsViewFromAdjs(ia,primaryEType,secondAdjEType,offsets,nborIds);
+    }
+    Z2_FORWARD_EXCEPTIONS;
+    /*throw std::logic_error("MeshAdapter must provide 2nd adjacencies for "
+      "graph construction");*/
 
   }
   else {  // avail2ndAdjs
@@ -937,45 +942,46 @@ GraphModel<Adapter>::GraphModel(
       ia->get2ndAdjsView(primaryEType, secondAdjEType, offsets, nborIds);
     }
     Z2_FORWARD_EXCEPTIONS;
+  }
 
-    numLocalEdges_ = offsets[numLocalVertices_];
+  numLocalEdges_ = offsets[numLocalVertices_];
 
-    edgeGids_ = arcp<const zgid_t>(nborIds, 0, numLocalEdges_, false);
-    offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
+  edgeGids_ = arcp<const zgid_t>(nborIds, 0, numLocalEdges_, false);
+  offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
 
-    // Get edge weights
-    nWeightsPerEdge_ = ia->getNumWeightsPer2ndAdj(primaryEType, secondAdjEType);
+  // Get edge weights
+  nWeightsPerEdge_ = ia->getNumWeightsPer2ndAdj(primaryEType, secondAdjEType);
 
-    if (nWeightsPerEdge_ > 0){
-      input_t *wgts = new input_t [nWeightsPerEdge_];
-      eWeights_ = arcp(wgts, 0, nWeightsPerEdge_, true);
-    }
+  if (nWeightsPerEdge_ > 0){
+    input_t *wgts = new input_t [nWeightsPerEdge_];
+    eWeights_ = arcp(wgts, 0, nWeightsPerEdge_, true);
+  }
 
-    for (int w=0; w < nWeightsPerEdge_; w++){
-      const scalar_t *ewgts=NULL;
-      int stride=0;
+  for (int w=0; w < nWeightsPerEdge_; w++){
+    const scalar_t *ewgts=NULL;
+    int stride=0;
 
-      ia->get2ndAdjWeightsView(primaryEType, secondAdjEType,
-                               ewgts, stride, w);
+    ia->get2ndAdjWeightsView(primaryEType, secondAdjEType,
+			     ewgts, stride, w);
 
-      ArrayRCP<const scalar_t> wgtArray(ewgts, 0, numLocalEdges_, false);
-      eWeights_[w] = input_t(wgtArray, stride);
-    }
+    ArrayRCP<const scalar_t> wgtArray(ewgts, 0, numLocalEdges_, false);
+    eWeights_[w] = input_t(wgtArray, stride);
   }
 
   shared_constructor(ia, modelFlags);
 
   typedef MeshAdapter<user_t> adapterWithCoords_t;
-  shared_GetVertexCoords<adapterWithCoords_t>(ia);
+  shared_GetVertexCoords<adapterWithCoords_t>(&(*ia));
 
   env_->timerStop(MACRO_TIMERS, "GraphModel constructed from MeshAdapter");
   print();
 }
 
+
 //////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
 void GraphModel<Adapter>::shared_constructor(
-  const Adapter *ia,
+  const RCP<const Adapter> &ia,
   modelFlag_t &modelFlags)
 {
   // Model creation flags

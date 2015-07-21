@@ -369,6 +369,13 @@ public:
 
   void debug_dump(std::ostream& out, unsigned ordinal = -1u) const;
 
+protected:
+  void change_existing_connectivity(unsigned bucket_ordinal, stk::mesh::Entity* new_nodes);
+  void change_existing_permutation_for_connected_element(unsigned bucket_ordinal_of_lower_ranked_entity, unsigned elem_connectivity_ordinal, stk::mesh::Permutation permut);
+  void change_existing_permutation_for_connected_edge(unsigned bucket_ordinal_of_higher_ranked_entity, unsigned edge_connectivity_ordinal, stk::mesh::Permutation permut);
+  void change_existing_permutation_for_connected_face(unsigned bucket_ordinal_of_higher_ranked_entity, unsigned face_connectivity_ordinal, stk::mesh::Permutation permut);
+  virtual ~Bucket();
+
 private:
 
   bool destroy_relation(Entity e_from, Entity e_to, const RelationIdentifier local_id );
@@ -408,9 +415,8 @@ private:
    */
   BulkData & bulk_data() const { return mesh(); }
 
-  ~Bucket();
-
   Bucket();
+
   Bucket( const Bucket & );
   Bucket & operator = ( const Bucket & );
 
@@ -575,13 +581,14 @@ bool Bucket::has_permutation(EntityRank rank) const
   case stk::topology::NODE_RANK:
     return m_node_kind == FIXED_CONNECTIVITY ? m_fixed_node_connectivity.has_permutation() : m_dynamic_node_connectivity.has_permutation();
   case stk::topology::EDGE_RANK:
-    return m_edge_kind == FIXED_CONNECTIVITY ? m_fixed_node_connectivity.has_permutation() : m_dynamic_node_connectivity.has_permutation();
+    return m_edge_kind == FIXED_CONNECTIVITY ? m_fixed_edge_connectivity.has_permutation() : m_dynamic_edge_connectivity.has_permutation();
   case stk::topology::FACE_RANK:
-    return m_face_kind == FIXED_CONNECTIVITY ? m_fixed_node_connectivity.has_permutation() : m_dynamic_node_connectivity.has_permutation();
+    return m_face_kind == FIXED_CONNECTIVITY ? m_fixed_face_connectivity.has_permutation() : m_dynamic_face_connectivity.has_permutation();
   case stk::topology::ELEMENT_RANK:
-    return m_element_kind == FIXED_CONNECTIVITY ? m_fixed_node_connectivity.has_permutation() : m_dynamic_node_connectivity.has_permutation();
+    return m_element_kind == FIXED_CONNECTIVITY ? m_fixed_element_connectivity.has_permutation() : m_dynamic_element_connectivity.has_permutation();
+  case stk::topology::CONSTRAINT_RANK:
   default:
-    return m_dynamic_other_connectivity.has_permutation();
+    return false;
   }
 }
 

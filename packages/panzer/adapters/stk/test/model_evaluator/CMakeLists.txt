@@ -17,6 +17,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  model_evaluator_mass_check
+  SOURCES model_evaluator_mass_check.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   thyra_model_evaluator
   SOURCES thyra_model_evaluator.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi

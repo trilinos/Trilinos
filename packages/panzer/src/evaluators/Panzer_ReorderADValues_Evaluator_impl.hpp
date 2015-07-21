@@ -52,8 +52,8 @@
 
 #include "Phalanx_DataLayout.hpp"
 
-template<typename EvalT,typename Traits>
-panzer::ReorderADValues_Evaluator<EvalT, Traits>::
+template<typename EvalT,typename TRAITS>
+panzer::ReorderADValues_Evaluator<EvalT, TRAITS>::
 ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::vector<std::string> & inFieldNames,
                           const std::vector<Teuchos::RCP<PHX::DataLayout> > & fieldLayouts,
@@ -77,8 +77,8 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
 }
 
 // **********************************************************************
-template<typename EvalT,typename Traits>
-panzer::ReorderADValues_Evaluator<EvalT, Traits>::
+template<typename EvalT,typename TRAITS>
+panzer::ReorderADValues_Evaluator<EvalT, TRAITS>::
 ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::vector<std::string> & inFieldNames,
                           const std::vector<std::string> & inDOFs,
@@ -105,10 +105,10 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
 }
 
 // **********************************************************************
-template<typename EvalT,typename Traits>
-void panzer::ReorderADValues_Evaluator<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename EvalT,typename TRAITS>
+void panzer::ReorderADValues_Evaluator<EvalT, TRAITS>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<inFields_.size();++fd) {
@@ -119,22 +119,24 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename EvalT,typename Traits>
-void panzer::ReorderADValues_Evaluator<EvalT, Traits>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename EvalT,typename TRAITS>
+void panzer::ReorderADValues_Evaluator<EvalT, TRAITS>::
+evaluateFields(typename TRAITS::EvalData workset)
 {
   // just copy fields if there is no AD data
+  //for(std::size_t i = 0; i < inFields_.size(); ++i)
+  //  for(typename PHX::MDField<ScalarT>::size_type j = 0; j < inFields_[i].size(); ++j)
+  //    outFields_[i][j] = inFields_[i][j];
   for(std::size_t i = 0; i < inFields_.size(); ++i)
-    for(typename PHX::MDField<ScalarT>::size_type j = 0; j < inFields_[i].size(); ++j)
-      outFields_[i][j] = inFields_[i][j];
+   outFields_[i].deep_copy(inFields_[i]);
 }
 
 // **********************************************************************
 // Jacobian
 // **********************************************************************
 
-template<typename Traits>
-panzer::ReorderADValues_Evaluator<panzer::Traits::Jacobian, Traits>::
+template<typename TRAITS>
+panzer::ReorderADValues_Evaluator<typename TRAITS::Jacobian, TRAITS>::
 ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::vector<std::string> & inFieldNames,
                           const std::vector<Teuchos::RCP<PHX::DataLayout> > & fieldLayouts,
@@ -163,8 +165,8 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
 
 // **********************************************************************
 
-template<typename Traits>
-panzer::ReorderADValues_Evaluator<panzer::Traits::Jacobian, Traits>::
+template<typename TRAITS>
+panzer::ReorderADValues_Evaluator<typename TRAITS::Jacobian, TRAITS>::
 ReorderADValues_Evaluator(const std::string & outPrefix,
                           const std::vector<std::string> & inFieldNames,
                           const std::vector<std::string> & inDOFs,
@@ -207,10 +209,10 @@ ReorderADValues_Evaluator(const std::string & outPrefix,
 }
 
 // **********************************************************************
-template<typename Traits>
-void panzer::ReorderADValues_Evaluator<panzer::Traits::Jacobian, Traits>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename TRAITS>
+void panzer::ReorderADValues_Evaluator<typename TRAITS::Jacobian, TRAITS>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<inFields_.size();++fd) {
@@ -221,11 +223,87 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename Traits>
-void panzer::ReorderADValues_Evaluator<panzer::Traits::Jacobian, Traits>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename TRAITS>
+void panzer::ReorderADValues_Evaluator<typename TRAITS::Jacobian, TRAITS>::
+evaluateFields(typename TRAITS::EvalData workset)
 {
   // for AD data do a reordering
+
+  // TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"ERROR: panzer::ReorderADValues_Evaluator: This is currently broken for the Kokkkos Transition!  Contact Drekar team to fix!");
+
+  for(std::size_t fieldIndex = 0; fieldIndex < inFields_.size(); ++fieldIndex) {
+
+    const PHX::MDField<ScalarT>& inField = inFields_[fieldIndex];                                                                                                    
+    const PHX::MDField<ScalarT>& outField = outFields_[fieldIndex];
+
+    if(inField.size()>0) {
+
+      switch (inFields_[fieldIndex].rank()) {
+      case (1):
+	for (typename PHX::MDField<ScalarT>::size_type i = 0; i < inField.dimension(0); ++i) {
+	  outField(i).val() = inField(i).val();
+	  for (typename PHX::MDField<ScalarT>::size_type dx = 0; dx < Teuchos::as<typename PHX::MDField<ScalarT>::size_type>(dstFromSrcMap_.size()); ++dx)
+	    outField(i).fastAccessDx(dx) = inField(i).fastAccessDx(dstFromSrcMap_[dx]);
+	}
+	break;
+      case (2):
+	for (typename PHX::MDField<ScalarT>::size_type i = 0; i < inField.dimension(0); ++i)
+	  for (typename PHX::MDField<ScalarT>::size_type j = 0; j < inField.dimension(1); ++j) {
+	    outField(i,j).val() = inField(i,j).val();
+	    for (typename PHX::MDField<ScalarT>::size_type dx = 0; dx < Teuchos::as<typename PHX::MDField<ScalarT>::size_type>(dstFromSrcMap_.size()); ++dx)
+	      outField(i,j).fastAccessDx(dx) = inField(i,j).fastAccessDx(dstFromSrcMap_[dx]);
+	  }
+	break;
+      case (3):
+	for (typename PHX::MDField<ScalarT>::size_type i = 0; i < inField.dimension(0); ++i)
+	  for (typename PHX::MDField<ScalarT>::size_type j = 0; j < inField.dimension(1); ++j)
+	    for (typename PHX::MDField<ScalarT>::size_type k = 0; k < inField.dimension(2); ++k) {
+	      outField(i,j,k).val() = inField(i,j,k).val();
+	      for (typename PHX::MDField<ScalarT>::size_type dx = 0; dx < Teuchos::as<typename PHX::MDField<ScalarT>::size_type>(dstFromSrcMap_.size()); ++dx)
+		outField(i,j,k).fastAccessDx(dx) = inField(i,j,k).fastAccessDx(dstFromSrcMap_[dx]);
+	    }
+	break;
+      case (4):
+	for (typename PHX::MDField<ScalarT>::size_type i = 0; i < inField.dimension(0); ++i)
+	  for (typename PHX::MDField<ScalarT>::size_type j = 0; j < inField.dimension(1); ++j)
+	    for (typename PHX::MDField<ScalarT>::size_type k = 0; k < inField.dimension(2); ++k)
+	      for (typename PHX::MDField<ScalarT>::size_type l = 0; l < inField.dimension(3); ++l) {
+		outField(i,j,k,l).val() = inField(i,j,k,l).val();
+		for (typename PHX::MDField<ScalarT>::size_type dx = 0; dx < Teuchos::as<typename PHX::MDField<ScalarT>::size_type>(dstFromSrcMap_.size()); ++dx)
+		  outField(i,j,k,l).fastAccessDx(dx) = inField(i,j,k,l).fastAccessDx(dstFromSrcMap_[dx]);
+	      }
+	break;
+      case (5):
+	for (typename PHX::MDField<ScalarT>::size_type i = 0; i < inField.dimension(0); ++i)
+	  for (typename PHX::MDField<ScalarT>::size_type j = 0; j < inField.dimension(1); ++j)
+	    for (typename PHX::MDField<ScalarT>::size_type k = 0; k < inField.dimension(2); ++k)
+	      for (typename PHX::MDField<ScalarT>::size_type l = 0; l < inField.dimension(3); ++l)
+		for (typename PHX::MDField<ScalarT>::size_type m = 0; m < inField.dimension(4); ++m) {
+		  outField(i,j,k,l,m).val() = inField(i,j,k,l,m).val();
+		  for (typename PHX::MDField<ScalarT>::size_type dx = 0; dx < Teuchos::as<typename PHX::MDField<ScalarT>::size_type>(dstFromSrcMap_.size()); ++dx)
+		    outField(i,j,k,l,m).fastAccessDx(dx) = inField(i,j,k,l,m).fastAccessDx(dstFromSrcMap_[dx]);
+		}
+	break;
+      case (6):
+	for (typename PHX::MDField<ScalarT>::size_type i = 0; i < inField.dimension(0); ++i)
+	  for (typename PHX::MDField<ScalarT>::size_type j = 0; j < inField.dimension(1); ++j)
+	    for (typename PHX::MDField<ScalarT>::size_type k = 0; k < inField.dimension(2); ++k)
+	      for (typename PHX::MDField<ScalarT>::size_type l = 0; l < inField.dimension(3); ++l)
+		for (typename PHX::MDField<ScalarT>::size_type m = 0; m < inField.dimension(4); ++m)
+		  for (typename PHX::MDField<ScalarT>::size_type n = 0; n < inField.dimension(5); ++n) {
+		    outField(i,j,k,l,m,n).val() = inField(i,j,k,l,m,n).val();
+		    for (typename PHX::MDField<ScalarT>::size_type dx = 0; dx < Teuchos::as<typename PHX::MDField<ScalarT>::size_type>(dstFromSrcMap_.size()); ++dx)
+		      outField(i,j,k,l,m,n).fastAccessDx(dx) = inField(i,j,k,l,m,n).fastAccessDx(dstFromSrcMap_[dx]);
+		  }
+	break;
+      }
+
+    }
+
+  }
+
+//Irina TOFIX
+/*
   for(std::size_t i = 0; i < inFields_.size(); ++i) {
 
     for(typename PHX::MDField<ScalarT>::size_type j = 0; j < inFields_[i].size(); ++j) {
@@ -248,11 +326,12 @@ evaluateFields(typename Traits::EvalData workset)
       outField.val() = inField.val();
     }
   }
+*/
 }
 
 // **********************************************************************
-template<typename Traits>
-void panzer::ReorderADValues_Evaluator<panzer::Traits::Jacobian, Traits>::
+template<typename TRAITS>
+void panzer::ReorderADValues_Evaluator<typename TRAITS::Jacobian, TRAITS>::
 buildSrcToDestMap(const std::string & elementBlock,
                   const UniqueGlobalIndexerBase & indexerSrc,
                   const UniqueGlobalIndexerBase & indexerDest)
@@ -281,8 +360,8 @@ buildSrcToDestMap(const std::string & elementBlock,
 }
 
 // **********************************************************************
-template<typename Traits>
-void panzer::ReorderADValues_Evaluator<panzer::Traits::Jacobian, Traits>::
+template<typename TRAITS>
+void panzer::ReorderADValues_Evaluator<typename TRAITS::Jacobian, TRAITS>::
 buildSrcToDestMap(const std::string & elementBlock,
                   const std::map<int,int> & fieldNumberMaps,
                   const UniqueGlobalIndexerBase & indexerSrc,

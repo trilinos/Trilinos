@@ -63,6 +63,10 @@
 #endif
 
 int main(int argc, char* argv[]) {
+  using std::cerr;
+  using std::cout;
+  using std::endl;
+
   //bool verbose = false;  // used to set verbose false on non-root processors
   bool verbose1 = false; // user's command-line argument
 
@@ -133,14 +137,14 @@ int main(int argc, char* argv[]) {
   Ifpack_CrsIct crsict(A, 1.0, 1);
 
   ilukgraph.SetParameters(paramlist);
- 
+
   int levelfill = ilukgraph.LevelFill();
   if (levelfill != 2) {
     cerr << "SetParameters test failed to correctly set level_fill."
         << endl;
     return(-1);
   }
- 
+
   int leveloverlap = ilukgraph.LevelOverlap();
   if (leveloverlap != 2) {
     cerr << "SetParameters test failed to correctly set level_overlap."

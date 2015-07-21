@@ -35,7 +35,7 @@
 #include "adolc/interfaces.h"
 
 // Sacado includes
-#include "Sacado.hpp"
+#include "Sacado_No_Kokkos.hpp"
 #include "Sacado_Random.hpp"
 
 inline adouble max(const adouble& a, const adouble& b) { return fmax(a,b); }

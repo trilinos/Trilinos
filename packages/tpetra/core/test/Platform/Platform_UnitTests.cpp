@@ -61,7 +61,7 @@ namespace {
 #ifdef HAVE_TPETRA_MPI
   using Tpetra::MpiPlatform;
 #endif
-  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+  typedef Tpetra::Details::DefaultTypes::node_type node_type;
 
   template <class PLAT>
   RCP<PLAT> getPlatform() {

@@ -198,14 +198,12 @@ namespace Tpetra {
     SerialPlatform& operator= (const SerialPlatform<NodeType>& platform);
   };
 
-  /// \class SerialPlatform<KokkosClassic::DefaultNode::DefaultNodeType>
-  /// \brief SerialPlatform specialization for KokkosClassic::DefaultNode::DefaultNodeType.
+  /// \class SerialPlatform<Tpetra::Details::DefaultTypes::node_type>
+  /// \brief SerialPlatform specialization for the default Node type.
   ///
-  /// \warning KokkosClassic::DefaultNode::DefaultNodeType is a typedef, and
+  /// \note Tpetra::Details::DefaultTypes::node_type is a typedef, and
   ///   may have a different type, depending on Trilinos' build
-  ///   options.  For example, it may be KokkosClassic::SerialNode if
-  ///   Trilinos was built without a threading library, or
-  ///   KokkosClassic::TPINode if Trilinos was built with Pthreads.
+  ///   options.
   ///
   /// \note In the past (up to and including the 10.8 Trilinos
   ///   release), the specialization of SerialPlatform for the default
@@ -215,14 +213,14 @@ namespace Tpetra {
   ///   SerialPlatform conform more closely to the generic version of
   ///   SerialPlatform.
   template <>
-  class SerialPlatform<KokkosClassic::DefaultNode::DefaultNodeType> :
+  class SerialPlatform<Tpetra::Details::DefaultTypes::node_type> :
     public Teuchos::Describable {
   public:
     //! @name Typedefs
     //@{
 
     //! Kokkos Node type; the template parameter of this class.
-    typedef KokkosClassic::DefaultNode::DefaultNodeType NodeType;
+    typedef Tpetra::Details::DefaultTypes::node_type NodeType;
 
     //@}
     //! @name Constructors and destructor
@@ -244,10 +242,6 @@ namespace Tpetra {
       // called.  Initializing Kokkos with the wrong command-line
       // arguments may result in poor performance due to the wrong
       // assignment of software threads to hardware execution units.
-      //
-      // if (node_.is_null ()) {
-      //   node_ = KokkosClassic::DefaultNode::getDefaultNode ();
-      // }
     }
 
     /// \brief Constructor that accepts the same arguments as
@@ -314,7 +308,7 @@ namespace Tpetra {
     }
 
     //! The Kokkos Node instance with which this object was created.
-    Teuchos::RCP<KokkosClassic::DefaultNode::DefaultNodeType> getNode () const {
+    Teuchos::RCP<Tpetra::Details::DefaultTypes::node_type> getNode () const {
       typedef SerialPlatform<NodeType> this_type;
       if (node_.is_null ()) {
         // NOTE (mfh 29 Jun 2014): Creating an instance of one of the

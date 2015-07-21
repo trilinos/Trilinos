@@ -34,6 +34,7 @@
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_Base.hpp"
+#include "Sacado_Fad_ExpressionFwd.hpp"
 #include "Sacado_SFINAE_Macros.hpp"
 
 #define UNARYFUNC_MACRO(OP,FADOP)                                       \
@@ -41,7 +42,6 @@ namespace Sacado {                                                      \
                                                                         \
   namespace Fad {                                                       \
     template <typename T> class FADOP;                                  \
-    template <typename T> class Expr;                                   \
     template <typename T>                                               \
     KOKKOS_INLINE_FUNCTION                                              \
     Expr< FADOP< Expr<T> > > OP (const Expr<T>&);                       \
@@ -129,6 +129,9 @@ UNARYFUNC_MACRO(asinh, ASinhOp)
 UNARYFUNC_MACRO(atanh, ATanhOp)
 UNARYFUNC_MACRO(abs, AbsOp)
 UNARYFUNC_MACRO(fabs, FAbsOp)
+#ifdef HAVE_SACADO_CXX11
+UNARYFUNC_MACRO(cbrt, CbrtOp)
+#endif
 
 #undef UNARYFUNC_MACRO
 
@@ -137,7 +140,6 @@ namespace Sacado {                                                      \
                                                                         \
   namespace Fad {                                                       \
     template <typename T1, typename T2> class FADOP;                    \
-    template <typename T> class Expr;                                   \
     template <typename T> class ConstExpr;                              \
     template <typename T> struct IsFadExpr;                             \
     template <typename T> struct ExprLevel;                             \

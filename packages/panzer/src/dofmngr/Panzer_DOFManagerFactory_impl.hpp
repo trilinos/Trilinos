@@ -134,22 +134,8 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
    if(fieldOrder!="") {
       std::vector<std::string> fieldOrderV;
 
-      // this basiclly tokenzies "fieldOrder" string 
-      // and dumps it into "fieldOrderV"
-      std::stringstream ss;
-      ss << fieldOrder;
+      buildFieldOrder(fieldOrder,fieldOrderV);
 
-      // until all tokens are eaten
-      while(!ss.eof()) {
-         std::string token;
-         ss >> token;
- 
-         // reorder tokens
-         if(token!="")
-            fieldOrderV.push_back(token);
-      }
-
-      // do some stuff columinating in 
       dofManager->setFieldOrder(fieldOrderV);
    }
 
@@ -170,6 +156,27 @@ DOFManagerFactory<LO,GO>::buildUniqueGlobalIndexer(const Teuchos::RCP<const Teuc
    // }
 
    return dofManager;
+}
+
+template <typename LO,typename GO>
+void 
+DOFManagerFactory<LO,GO>::
+buildFieldOrder(const std::string & fieldOrderStr,std::vector<std::string> & fieldOrder)
+{
+  // this tokenizes "fieldOrderStr" string 
+  // and dumps it into "fieldOrder"
+  std::stringstream ss;
+  ss << fieldOrderStr;
+
+  // until all tokens are eaten
+  while(!ss.eof()) {
+     std::string token;
+     ss >> token;
+
+     // reorder tokens
+     if(token!="")
+        fieldOrder.push_back(token);
+  }
 }
 
 }

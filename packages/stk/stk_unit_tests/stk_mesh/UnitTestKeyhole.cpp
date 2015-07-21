@@ -73,7 +73,7 @@ TEST(UnitTestKeyhole, NodeParts_case1)
   stk::mesh::MetaData meta(spatialDim);
   stk::mesh::BulkData bulk(meta, communicator);
 
-  setupKeyholeMesh2D_case1(bulk);
+  stk::mesh::unit_test::setupKeyholeMesh2D_case1(bulk);
 
   stk::mesh::Part& shared = meta.globally_shared_part();
   const stk::mesh::BucketVector& shared_node_buckets = bulk.get_buckets(stk::topology::NODE_RANK, shared);
@@ -129,7 +129,7 @@ TEST(UnitTestKeyhole, NodeParts_case2)
   stk::mesh::MetaData meta(spatialDim);
   stk::mesh::BulkData bulk(meta, communicator);
 
-  setupKeyholeMesh2D_case2(bulk);
+  stk::mesh::unit_test::setupKeyholeMesh2D_case2(bulk);
 
   if (bulk.parallel_rank() == 0) {
     stk::mesh::Part& aura = meta.aura_part();
@@ -166,7 +166,7 @@ TEST(UnitTestKeyhole, EdgeParts_case1)
   stk::mesh::MetaData meta(spatialDim);
   stk::mesh::BulkData bulk(meta, communicator);
 
-  setupKeyholeMesh2D_case1(bulk);
+  stk::mesh::unit_test::setupKeyholeMesh2D_case1(bulk);
 
   stk::mesh::create_edges(bulk);
 
@@ -230,7 +230,7 @@ TEST(UnitTestKeyhole, EdgeParts_case2)
   stk::mesh::MetaData meta(spatialDim);
   stk::mesh::BulkData bulk(meta, communicator);
 
-  setupKeyholeMesh2D_case2(bulk);
+  stk::mesh::unit_test::setupKeyholeMesh2D_case2(bulk);
 
   stk::mesh::create_edges(bulk);
 

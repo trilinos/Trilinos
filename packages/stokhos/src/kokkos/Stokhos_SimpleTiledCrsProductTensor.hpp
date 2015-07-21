@@ -57,11 +57,11 @@
 
 namespace Stokhos {
 
-template< typename ValueType, class DeviceType >
+template< typename ValueType, class ExecutionSpace >
 class SimpleTiledCrsProductTensor {
 public:
 
-  typedef DeviceType device_type;
+  typedef ExecutionSpace execution_space;
   typedef int size_type;
   typedef ValueType value_type;
 
@@ -79,7 +79,7 @@ public:
   static const size_type cuda_vectorsize = 32;
   static const bool is_cuda =
 #if defined( KOKKOS_HAVE_CUDA )
-    Kokkos::Impl::is_same<DeviceType,Kokkos::Cuda>::value;
+    Kokkos::Impl::is_same<ExecutionSpace,Kokkos::Cuda>::value;
 #else
     false ;
 #endif
@@ -90,21 +90,21 @@ public:
 
 private:
 
-  typedef Kokkos::View< value_type[], device_type >  vec_type;
-  typedef Kokkos::View< value_type[], device_type > value_array_type;
-  typedef Kokkos::View< size_type[], device_type > coord_array_type;
-  typedef Kokkos::View< size_type[][2], Kokkos::LayoutLeft, device_type > coord2_array_type;
-  typedef Kokkos::View< size_type*, device_type > i_begin_type;
-  typedef Kokkos::View< size_type*, device_type > i_size_type;
-  typedef Kokkos::View< size_type*, device_type > num_j_type;
-  typedef Kokkos::View< size_type**, device_type > j_begin_type;
-  typedef Kokkos::View< size_type**, device_type > j_size_type;
-  typedef Kokkos::View< size_type**, device_type > num_k_type;
-  typedef Kokkos::View< size_type***, device_type > k_begin_type;
-  typedef Kokkos::View< size_type***, device_type > k_size_type;
+  typedef Kokkos::View< value_type[], execution_space >  vec_type;
+  typedef Kokkos::View< value_type[], execution_space > value_array_type;
+  typedef Kokkos::View< size_type[], execution_space > coord_array_type;
+  typedef Kokkos::View< size_type[][2], Kokkos::LayoutLeft, execution_space > coord2_array_type;
+  typedef Kokkos::View< size_type*, execution_space > i_begin_type;
+  typedef Kokkos::View< size_type*, execution_space > i_size_type;
+  typedef Kokkos::View< size_type*, execution_space > num_j_type;
+  typedef Kokkos::View< size_type**, execution_space > j_begin_type;
+  typedef Kokkos::View< size_type**, execution_space > j_size_type;
+  typedef Kokkos::View< size_type**, execution_space > num_k_type;
+  typedef Kokkos::View< size_type***, execution_space > k_begin_type;
+  typedef Kokkos::View< size_type***, execution_space > k_size_type;
 
-  typedef Kokkos::View< size_type****,  Kokkos::LayoutRight, device_type > row_map_type;
-  typedef Kokkos::View< size_type****,  Kokkos::LayoutRight, device_type > num_entry_type;
+  typedef Kokkos::View< size_type****,  Kokkos::LayoutRight, execution_space > row_map_type;
+  typedef Kokkos::View< size_type****,  Kokkos::LayoutRight, execution_space > num_entry_type;
 
   value_array_type   m_value;
   coord_array_type   m_coord;

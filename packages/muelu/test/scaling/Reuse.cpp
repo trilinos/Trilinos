@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
       RCP<Matrix> Aprecond = matrices[i];
       if (Aprecond.is_null()) {
         out << "[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
-        Aprecond = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
+        Aprecond = Utils::Read(std::string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
         out << "done" << std::endl;
 
         Aprecond->SetFixedBlockSize(numPDEs);
@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
           if (Amatvec.is_null()) {
             // Load the matrix
             out << "[" << j << "]<-[" << i << "] Loading matrix \"" << matrixFileName << "\"... ";
-            Amatvec = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
+            Amatvec = Utils::Read(std::string(matrixFileName), xpetraParameters.GetLib(), comm, binary);
             out << "done" << std::endl;
 
             Amatvec->SetFixedBlockSize(numPDEs);
@@ -264,7 +264,7 @@ int main(int argc, char *argv[]) {
         RCP<MultiVector> rhs = rhss[j];
         if (rhs.is_null()) {
           out << "[" << j << "] Loading rhs " << rhsFileName << "\"... ";
-          rhs = Utils2::ReadMultiVector(string(rhsFileName), Amatvec->getRowMap());
+          rhs = Utils2::ReadMultiVector(std::string(rhsFileName), Amatvec->getRowMap());
           out << "done" << std::endl;
 
           if (inMemory)

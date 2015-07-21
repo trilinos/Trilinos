@@ -674,9 +674,9 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   this->supportsPreconditionerInputType(PRECONDITIONER_INPUT_TYPE_AS_MATRIX);
   enum ELocalPrecType {
     PT_NONE, PT_AZTEC_FROM_OP, PT_AZTEC_FROM_APPROX_FWD_MATRIX,
-    PT_FROM_PREC_OP
+    PT_FROM_PREC_OP, PT_UPPER_BOUND
   };
-  ELocalPrecType localPrecType;
+  ELocalPrecType localPrecType = PT_UPPER_BOUND;
   if( precUsed.get()==NULL && approxFwdOp.get()==NULL && !useAztecPrec_ ) {
     // No preconditioning at all!
     localPrecType = PT_NONE;
@@ -696,6 +696,12 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     // such
     localPrecType = PT_FROM_PREC_OP;
   }
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (localPrecType == PT_UPPER_BOUND, std::logic_error,
+     "AztecOOLinearOpWithSolveFactory::initializeOp_impl(...): "
+     "localPrecType == PT_UPPER_BOUND.  This means that previously, "
+     "this value might have been used uninitialized.  "
+     "Please report this bug to the Stratimikos developers.");
 
   //
   // Determine if aztecOp already contains solvers and if we need to
@@ -963,22 +969,22 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       //
       // Forward solve
       RCP<const Epetra_Operator>
-        epetraOps[]
+        theEpetraOps[]
         = { epetra_epetraPrecOp };
       Teuchos::ETransp
-        epetraOpsTransp[]
+        theEpetraOpsTransp[]
         = { overall_epetra_epetraPrecOpTransp==NOTRANS
             ? Teuchos::NO_TRANS
             : Teuchos::TRANS };
       // Here we must toggle the apply mode since aztecoo applies the
       // preconditioner using ApplyInverse(...)
       PO::EApplyMode
-        epetraOpsApplyMode[]
+        theEpetraOpsApplyMode[]
         = { epetra_epetraPrecOpApplyAs==EPETRA_OP_APPLY_APPLY
             ? PO::APPLY_MODE_APPLY_INVERSE
             : PO::APPLY_MODE_APPLY };
       if(
-        epetraOpsTransp[0] == Teuchos::NO_TRANS
+        theEpetraOpsTransp[0] == Teuchos::NO_TRANS
         &&
         epetra_epetraPrecOpApplyAs==EPETRA_OP_APPLY_APPLY_INVERSE
         )
@@ -986,7 +992,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
         aztec_fwd_epetra_epetraPrecOp = epetra_epetraPrecOp;
       }
       else {
-        aztec_fwd_epetra_epetraPrecOp = rcp(new PO(1,epetraOps,epetraOpsTransp,epetraOpsApplyMode));
+        aztec_fwd_epetra_epetraPrecOp = rcp(new PO(1,theEpetraOps,theEpetraOpsTransp,theEpetraOpsApplyMode));
       }
       aztecFwdSolver->SetPrecOperator(
         const_cast<Epetra_Operator*>(&*aztec_fwd_epetra_epetraPrecOp));
@@ -1001,13 +1007,13 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
         epetra_epetraPrecOpAdjointSupport == EPETRA_OP_ADJOINT_SUPPORTED
         )
       {
-        epetraOpsTransp[0] = (
+        theEpetraOpsTransp[0] = (
           overall_epetra_epetraPrecOpTransp==NOTRANS
           ? Teuchos::TRANS
           : Teuchos::NO_TRANS
           );
         if(
-          epetraOpsTransp[0] == Teuchos::NO_TRANS
+          theEpetraOpsTransp[0] == Teuchos::NO_TRANS
           &&
           epetra_epetraPrecOpApplyAs==EPETRA_OP_APPLY_APPLY_INVERSE
           )
@@ -1016,7 +1022,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
         }
         else {
           aztec_adj_epetra_epetraPrecOp = rcp(
-            new PO(1,epetraOps,epetraOpsTransp,epetraOpsApplyMode));
+            new PO(1,theEpetraOps,theEpetraOpsTransp,theEpetraOpsApplyMode));
         }
         aztecAdjSolver->SetPrecOperator(
           const_cast<Epetra_Operator*>(&*aztec_adj_epetra_epetraPrecOp));

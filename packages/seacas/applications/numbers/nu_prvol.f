@@ -31,26 +31,6 @@ C    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 C    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 C    
 
-C     $Id: prvol.f,v 1.3 2004/06/29 18:05:33 gdsjaar Exp $
-C     $Log: prvol.f,v $
-C     Revision 1.3  2004/06/29 18:05:33  gdsjaar
-C     General cleanup. Remove unused labels and variables.
-C
-C     Revision 1.2  2001/02/20 23:27:04  gdsjaar
-C     Special modification for Frank Dempsey.
-C     The command 'list nodalvol' calculates an approximate nodal volume at
-C     each node.  A nodes nodal volume is 1/8th of the volume of each
-C     element connected to it.
-C
-C     Revision 1.1  2001/02/20 21:30:01  gdsjaar
-C     Special modification for Frank Dempsey.  Calculates volume of each
-C     element and writes element id, volume, and connectivity to the output file.
-C     This selected by the 'LIST VOLUME' command.
-C
-C     Revision 1.1  1991/11/06 20:02:49  gdsjaar
-C     Initial revision
-C
-      
       SUBROUTINE PRVOL (NDIM, CRD, IX, NUMNP, NUMEL, NNODE,
      &  VOLUME, IUNIT)
 C     

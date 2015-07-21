@@ -94,7 +94,6 @@ namespace Belos { // should be moved to Belos or Xpetra?
 #ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::TpetraMultiVector<Scalar,LO,GO,Node> TpetraMultiVector;
     typedef MultiVecTraits   <Scalar,Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
-    typedef MultiVecTraitsExt<Scalar,Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsExtTpetra;
 #endif
 
   public:
@@ -211,12 +210,12 @@ namespace Belos { // should be moved to Belos or Xpetra?
       XPETRA_FACTORY_END;
     }
 
-    static int GetVecLength( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
+    static ptrdiff_t GetGlobalLength( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra)
-        return MultiVecTraitsExtTpetra::GetGlobalLength(toTpetra(mv));
+        return MultiVecTraitsTpetra::GetGlobalLength(toTpetra(mv));
 #endif
 
       XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
@@ -451,26 +450,6 @@ namespace Belos { // should be moved to Belos or Xpetra?
 
   };
 
-  template<class Scalar, class LO, class GO, class Node>
-  class MultiVecTraitsExt<Scalar, Xpetra::MultiVector<Scalar,LO,GO,Node> >
-  {
-  private:
-    typedef Xpetra::MultiVector<Scalar,LO,GO,Node> MV;
-#ifdef HAVE_XPETRA_TPETRA
-    typedef MultiVecTraitsExt<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsExtTpetra;
-#endif
-
-  public:
-    static ptrdiff_t GetGlobalLength( const MV& mv )
-    {
-#ifdef HAVE_XPETRA_TPETRA
-      return MultiVecTraitsExtTpetra::GetGlobalLength(toTpetra(mv));
-#endif
-
-      XPETRA_FACTORY_ERROR_IF_EPETRA(mv.getMap()->lib());
-      XPETRA_FACTORY_END;
-    }
-  };
 
   template<>
   class MultiVecTraits<double, Xpetra::MultiVector<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> >
@@ -486,13 +465,11 @@ namespace Belos { // should be moved to Belos or Xpetra?
 #ifdef HAVE_XPETRA_TPETRA
     typedef Xpetra::TpetraMultiVector<Scalar,LO,GO,Node>                    TpetraMultiVector;
     typedef MultiVecTraits   <Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsTpetra;
-    typedef MultiVecTraitsExt<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> > MultiVecTraitsExtTpetra;
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
     typedef Xpetra::EpetraMultiVector                  EpetraMultiVector;
     typedef MultiVecTraits   <Scalar, Epetra_MultiVector> MultiVecTraitsEpetra;
-    typedef MultiVecTraitsExt<Scalar, Epetra_MultiVector> MultiVecTraitsExtEpetra;
 #endif
 
   public:
@@ -647,17 +624,17 @@ namespace Belos { // should be moved to Belos or Xpetra?
       XPETRA_FACTORY_END;
     }
 
-    static int GetVecLength( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
+    static ptrdiff_t GetGlobalLength( const Xpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
 
 #ifdef HAVE_XPETRA_TPETRA
       if (mv.getMap()->lib() == Xpetra::UseTpetra)
-        return MultiVecTraitsExtTpetra::GetGlobalLength(toTpetra(mv));
+        return MultiVecTraitsTpetra::GetGlobalLength(toTpetra(mv));
 #endif
 
 #ifdef HAVE_XPETRA_EPETRA
       if (mv.getMap()->lib() == Xpetra::UseEpetra)
-        return MultiVecTraitsExtEpetra::GetGlobalLength(toEpetra(mv));
+        return MultiVecTraitsEpetra::GetGlobalLength(toEpetra(mv));
 #endif
 
       XPETRA_FACTORY_END;
@@ -970,38 +947,6 @@ namespace Belos { // should be moved to Belos or Xpetra?
       XPETRA_FACTORY_END;
     }
 
-  };
-
-  template<>
-  class MultiVecTraitsExt<double, Xpetra::MultiVector<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType> >
-  {
-    typedef double                                          SC;
-    typedef int                                             LO;
-    typedef int                                             GO;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType     NO;
-
-    typedef Xpetra::MultiVector<SC,LO,GO,NO>                            MV;
-#ifdef HAVE_XPETRA_TPETRA
-    typedef MultiVecTraitsExt<SC, Tpetra::MultiVector<SC,LO,GO,NO> >    MultiVecTraitsExtTpetra;
-#endif
-#ifdef HAVE_XPETRA_EPETRA
-    typedef MultiVecTraitsExt<SC, Epetra_MultiVector>                   MultiVecTraitsExtEpetra;
-#endif
-
-  public:
-    static ptrdiff_t GetGlobalLength( const MV& mv )
-    {
-#ifdef HAVE_XPETRA_TPETRA
-      if (mv.getMap()->lib() == Xpetra::UseTpetra)
-        return MultiVecTraitsExtTpetra::GetGlobalLength(toTpetra(mv));
-#endif
-#ifdef HAVE_XPETRA_EPETRA
-      if (mv.getMap()->lib() == Xpetra::UseEpetra)
-        return MultiVecTraitsExtEpetra::GetGlobalLength(toEpetra(mv));
-#endif
-
-      XPETRA_FACTORY_END;
-    }
   };
 
 } // end of Belos namespace

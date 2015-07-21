@@ -85,8 +85,12 @@
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_Utils.hpp"
 
-// Sacado includes
+#ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
+#else
+// Sacado includes
+#include "Sacado_No_Kokkos.hpp"
+#endif
 
 // Epetra includes
 #include "Epetra_Time.h"

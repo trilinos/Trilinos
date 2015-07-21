@@ -253,8 +253,9 @@ namespace Belos {
     //@{
 
     //! Obtain the std::vector length of \c mv.
-    static int GetVecLength( const TMVB& mv )
-    { return mv.range()->dim(); }
+    static ptrdiff_t GetGlobalLength( const TMVB& mv ) { 
+      return Teuchos::as<ptrdiff_t>(mv.range()->dim());
+    } 
 
     //! Obtain the number of vectors in \c mv
     static int GetNumberVecs( const TMVB& mv )
@@ -586,16 +587,6 @@ namespace Belos {
       return Op.opSupported (Thyra::TRANS) &&
         (! STS::isComplex || Op.opSupported (Thyra::CONJTRANS));
     }
-  };
-
-  // Partial specialization for MV=Thyra::MultiVectorBase. This supports 64-bit types
-  template<class ScalarType>
-  class MultiVecTraitsExt<ScalarType, Thyra::MultiVectorBase<ScalarType> > {
-  public: 
-    typedef Thyra::MultiVectorBase<ScalarType> MV; 
-    static ptrdiff_t GetGlobalLength( const MV& mv ) { 
-      return Teuchos::as<ptrdiff_t>(mv.range()->dim());
-    } 
   };
 
 } // end of Belos namespace

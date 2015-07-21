@@ -49,11 +49,11 @@ namespace Stokhos {
   namespace KL {
 
     //! Container for multi-dimensional product of 1-D eigenfunctions/values
-    template <typename eigen_function_type, typename Device>
+    template <typename eigen_function_type, typename ExecutionSpace>
     struct ProductEigenPair {
 
       typedef typename eigen_function_type::value_type value_type;
-      typedef Device device_type;
+      typedef ExecutionSpace execution_space;
       typedef OneDEigenPair<eigen_function_type> one_d_eigen_pair_type;
       typedef Teuchos::Array<one_d_eigen_pair_type> eig_pair_type;
 

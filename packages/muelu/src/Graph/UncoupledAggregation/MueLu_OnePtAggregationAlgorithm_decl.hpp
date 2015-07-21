@@ -66,7 +66,19 @@ namespace MueLu {
   /*!
     @class OnePtAggregationAlgorithm class.
     @brief Algorithm for coarsening a graph with uncoupled aggregation.
-    keep special marked nodes as "1 point aggregates" over all multigrid levels
+    keep special marked nodes as singleton node aggregates over all multigrid levels
+
+    @ingroup Aggregation
+
+    ### Idea ###
+    The user can mark some nodes as ONEPT to build some single node aggregates.
+    This can be very useful for certain applications. We build single node aggregates
+    for nodes with the state ONEPT. Then, the state is changed to ignored.
+    The OnePtAggregationAlgorithm should run before the Phase1AggregationAlgorithm.
+
+    ### Comments ###
+    Only nodes with state ONEPT are changed to IGNORED.
+
   */
 
   template <class LocalOrdinal = int,

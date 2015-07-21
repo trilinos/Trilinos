@@ -87,7 +87,7 @@ struct TestBoxFixture : public fixtures::BoxFixture
 {
   TestBoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
                  unsigned block_size = 1000) :
-    BoxFixture(pm, block_size),
+    BoxFixture(pm, stk::mesh::BulkData::AUTO_AURA, block_size),
     m_test_part ( m_fem_meta.declare_part ( "Test Part" ) ),
     m_cell_part ( m_fem_meta.declare_part ( "Cell list" , stk::topology::ELEM_RANK ) ),
     m_part_A_0 ( m_fem_meta.declare_part ( "Part A 0", stk::topology::NODE_RANK ) ),
@@ -337,7 +337,7 @@ TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
 TEST ( UnitTestBulkData_new , verifyParallelAddParts )
 {
   TestBoxFixture fixture;
-  BulkData             &bulk = fixture.bulk_data ();
+  stk::mesh::unit_test::BulkDataTester &bulk = fixture.bulk_data ();
   PartVector            add_part;
 
   const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
@@ -352,8 +352,8 @@ TEST ( UnitTestBulkData_new , verifyParallelAddParts )
   bulk.modification_begin();
 
   for ( EntityCommListInfoVector::const_iterator
-        i =  bulk.comm_list().begin();
-        i != bulk.comm_list().end() ; ++i ) {
+        i =  bulk.my_internal_comm_list().begin();
+        i != bulk.my_internal_comm_list().end() ; ++i ) {
     if ( i->key.rank() == 0 ) {
       if ( i->owner == fixture.comm_rank() ) {
         bulk.change_entity_parts ( i->entity, add_part, PartVector() );
@@ -364,8 +364,8 @@ TEST ( UnitTestBulkData_new , verifyParallelAddParts )
   bulk.modification_end();
 
   for ( EntityCommListInfoVector::const_iterator
-        i =  bulk.comm_list().begin();
-        i != bulk.comm_list().end() ; ++i ) {
+        i =  bulk.my_internal_comm_list().begin();
+        i != bulk.my_internal_comm_list().end() ; ++i ) {
     if ( i->key.rank() == 0 ) {
       ASSERT_TRUE ( bulk.bucket(i->entity).member ( fixture.m_part_A_0 ) );
     }
@@ -780,7 +780,7 @@ TEST ( UnitTestBulkData_new , testEntityComm )
   create_vector.push_back ( &part_a );
   create_vector.push_back ( &part_b );
 
-  BulkData bulk ( fem_meta , MPI_COMM_WORLD , 100 );
+  BulkData bulk ( fem_meta , MPI_COMM_WORLD , stk::mesh::BulkData::AUTO_AURA );
 
   bulk.modification_begin();
 
@@ -1283,7 +1283,7 @@ TEST ( UnitTestBulkData_new , testCustomBucketCapacity )
   create_vector.push_back ( &node_part );
 
   const unsigned non_standard_bucket_capacity = 42;
-  BulkData bulk ( meta , MPI_COMM_WORLD , true, NULL, NULL, non_standard_bucket_capacity);
+  BulkData bulk ( meta , MPI_COMM_WORLD, stk::mesh::BulkData::AUTO_AURA , true, NULL, NULL, non_standard_bucket_capacity);
 
   bulk.modification_begin();
 

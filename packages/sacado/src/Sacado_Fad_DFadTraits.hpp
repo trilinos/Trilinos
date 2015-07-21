@@ -109,7 +109,6 @@ namespace Sacado {
   //! Specialization of %StringName to DFad types
   template <typename ValueT>
   struct StringName< Fad::DFad<ValueT> > {
-    KOKKOS_INLINE_FUNCTION
     static std::string eval() {
       return std::string("Sacado::Fad::DFad< ") +
         StringName<ValueT>::eval() + " >"; }

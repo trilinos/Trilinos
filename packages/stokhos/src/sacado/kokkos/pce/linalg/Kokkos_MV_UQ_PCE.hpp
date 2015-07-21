@@ -45,8 +45,8 @@
 #include "Sacado_UQ_PCE.hpp"
 #include "Kokkos_View_UQ_PCE.hpp"
 #include "Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp"
-#include "Kokkos_MV.hpp"
-
+#include "Kokkos_Blas1_UQ_PCE.hpp"
+/*
 //----------------------------------------------------------------------------
 // Specializations of Kokkos Vector/MultiVector math functions
 //----------------------------------------------------------------------------
@@ -185,6 +185,9 @@ MV_Dot( const rVector& r,
   MV_Dot( r, x_flat, y_flat, n );
 }
 
+template<class VT1, class VT2, class VT3>
+struct MV_ElementWiseMultiplyFunctor;
+
 template <typename CT, typename CD, typename CM,
           typename AT, typename AD, typename AM,
           typename BT, typename BD, typename BM>
@@ -201,7 +204,7 @@ struct MV_ElementWiseMultiplyFunctor<
   typedef typename AVector::array_type AArray;
   typedef typename BVector::array_type BArray;
 
-  typedef typename CArray::device_type        device_type;
+  typedef typename CArray::execution_space        execution_space;
   typedef typename CArray::size_type            size_type;
 
   typename CArray::const_value_type m_c;
@@ -241,6 +244,9 @@ struct MV_ElementWiseMultiplyFunctor<
   }
 };
 
+template<class VT1, class VT2, class VT3>
+struct V_ElementWiseMultiplyFunctor;
+
 template <typename CT, typename CD, typename CM,
           typename AT, typename AD, typename AM,
           typename BT, typename BD, typename BM>
@@ -257,7 +263,7 @@ struct V_ElementWiseMultiplyFunctor<
   typedef typename AVector::array_type AArray;
   typedef typename BVector::array_type BArray;
 
-  typedef typename CArray::device_type        device_type;
+  typedef typename CArray::execution_space        execution_space;
   typedef typename CArray::size_type            size_type;
 
   typename CArray::const_value_type m_c;
@@ -308,9 +314,9 @@ V_ElementWiseMultiply(
   typedef View< Sacado::UQ::PCE<AS>*, AL, AD, AM > AVector;
   typedef View< Sacado::UQ::PCE<BS>*, BL, BD, BM > BVector;
 
-  typedef View< typename CVector::data_type, typename CVector::array_layout, typename CVector::device_type, typename CVector::memory_traits > CView;
-  typedef View< typename AVector::data_type, typename AVector::array_layout, typename AVector::device_type, typename AVector::memory_traits > AView;
-  typedef View< typename BVector::data_type, typename BVector::array_layout, typename BVector::device_type, typename BVector::memory_traits > BView;
+  typedef View< typename CVector::data_type, typename CVector::array_layout, typename CVector::execution_space, typename CVector::memory_traits > CView;
+  typedef View< typename AVector::data_type, typename AVector::array_layout, typename AVector::execution_space, typename AVector::memory_traits > AView;
+  typedef View< typename BVector::data_type, typename BVector::array_layout, typename BVector::execution_space, typename BVector::memory_traits > BView;
 
   V_ElementWiseMultiplyFunctor<CView,AView,BView> op(c,C,ab,A,B) ;
   Kokkos::parallel_for( C.dimension_0() , op );
@@ -356,9 +362,9 @@ MV_ElementWiseMultiply(
   typedef View< Sacado::UQ::PCE<AS>*,  AL, AD, AM > AVector;
   typedef View< Sacado::UQ::PCE<BS>**, BL, BD, BM > BVector;
 
-  typedef View< typename CVector::data_type, typename CVector::array_layout, typename CVector::device_type, typename CVector::memory_traits > CView;
-  typedef View< typename AVector::data_type, typename AVector::array_layout, typename AVector::device_type, typename AVector::memory_traits > AView;
-  typedef View< typename BVector::data_type, typename BVector::array_layout, typename BVector::device_type, typename BVector::memory_traits > BView;
+  typedef View< typename CVector::data_type, typename CVector::array_layout, typename CVector::execution_space, typename CVector::memory_traits > CView;
+  typedef View< typename AVector::data_type, typename AVector::array_layout, typename AVector::execution_space, typename AVector::memory_traits > AView;
+  typedef View< typename BVector::data_type, typename BVector::array_layout, typename BVector::execution_space, typename BVector::memory_traits > BView;
 
   MV_ElementWiseMultiplyFunctor<CView,AView,BView> op(c,C,ab,A,B,C.dimension_1()) ;
   Kokkos::parallel_for( C.dimension_0() , op );
@@ -460,6 +466,9 @@ MV_MulScalar( const Kokkos::View< Sacado::UQ::PCE<RS>**, RL, RD, RM >& r,
   return r;
 }
 
+template <typename T>
+struct V_ReciprocalThresholdSelfFunctor;
+
 template <typename T, typename D, typename M>
 struct V_ReciprocalThresholdSelfFunctor<
   View< T,LayoutLeft,D,M,Impl::ViewPCEContiguous > >
@@ -467,7 +476,7 @@ struct V_ReciprocalThresholdSelfFunctor<
   typedef View< T,LayoutLeft,D,M,Impl::ViewPCEContiguous > XVector;
   typedef typename XVector::array_type array_type;
 
-  typedef typename array_type::device_type           device_type;
+  typedef typename array_type::execution_space           execution_space;
   typedef typename array_type::size_type               size_type;
   typedef typename array_type::non_const_value_type   value_type;
   typedef Kokkos::Details::ArithTraits<value_type>           KAT;
@@ -499,6 +508,9 @@ struct V_ReciprocalThresholdSelfFunctor<
   }
 };
 
+template <typename T>
+struct MV_ReciprocalThresholdSelfFunctor;
+
 template <typename T, typename D, typename M>
 struct MV_ReciprocalThresholdSelfFunctor<
   View< T,LayoutLeft,D,M,Impl::ViewPCEContiguous > >
@@ -506,7 +518,7 @@ struct MV_ReciprocalThresholdSelfFunctor<
   typedef View< T,LayoutLeft,D,M,Impl::ViewPCEContiguous > XVector;
   typedef typename XVector::array_type array_type;
 
-  typedef typename array_type::device_type           device_type;
+  typedef typename array_type::execution_space           execution_space;
   typedef typename array_type::size_type               size_type;
   typedef typename array_type::non_const_value_type   value_type;
   typedef Kokkos::Details::ArithTraits<value_type>           KAT;
@@ -544,5 +556,5 @@ struct MV_ReciprocalThresholdSelfFunctor<
 };
 
 } // namespace Kokkos
-
+*/
 #endif /* #ifndef KOKKOS_MV_UQ_PCE_HPP */

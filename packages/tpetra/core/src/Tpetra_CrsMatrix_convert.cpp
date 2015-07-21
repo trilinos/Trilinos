@@ -41,10 +41,11 @@
 // @HEADER
 */
 
-#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_ConfigDefs.hpp"
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
+#include "Tpetra_CrsMatrix_decl.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 #include "Tpetra_CrsMatrix_def.hpp"
 #include "Tpetra_CrsGraph_def.hpp"

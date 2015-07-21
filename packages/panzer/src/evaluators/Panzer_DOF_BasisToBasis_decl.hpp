@@ -57,10 +57,10 @@
 namespace panzer {
     
 //! Interpolates DOF coefficients on one basis to points on another basis.  This is used with nodal bases to map DOF coefficient values from one nodal basis to dof coefficients on another basis. 
-template <typename EvalT, typename TraitsT>
+template <typename EvalT, typename TRAITST>
 class DOF_BasisToBasis 
-  : public PHX::EvaluatorWithBaseImpl<TraitsT>,
-    public PHX::EvaluatorDerived<EvalT, TraitsT> {
+  : public PHX::EvaluatorWithBaseImpl<TRAITST>,
+    public PHX::EvaluatorDerived<EvalT, TRAITST> {
 public:
 
   /** \brief Ctor
@@ -73,19 +73,19 @@ public:
 		   const PureBasis & sourceBasis,
 		   const PureBasis & targetBasis);
 
-  void postRegistrationSetup(typename TraitsT::SetupData d,
-			     PHX::FieldManager<TraitsT>& vm);
+  void postRegistrationSetup(typename TRAITST::SetupData d,
+			     PHX::FieldManager<TRAITST>& vm);
 
-  void evaluateFields(typename TraitsT::EvalData workset);
+  void evaluateFields(typename TRAITST::EvalData workset);
 
 private:
   typedef typename EvalT::ScalarT ScalarT;
 
   //! Dependent field: DOF coefficient values at source basis
-  PHX::MDField<ScalarT,Cell,BASIS> dof_source_coeff;
+  PHX::MDField<ScalarT> dof_source_coeff;
   
   //! Vealuated field: DOF coefficient values at target basis
-  PHX::MDField<ScalarT,Cell,BASIS> dof_target_coeff;
+  PHX::MDField<ScalarT> dof_target_coeff;
 
   //! Reference cell basis values at target points, replicated for each cell in workset
   Intrepid::FieldContainer<double> basis;

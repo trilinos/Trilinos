@@ -72,7 +72,7 @@
 namespace Thyra {
 
 
-// Parameter names for Paramter List
+// Parameter names for Parameter List
 
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverType_name = "Solver Type";
@@ -100,6 +100,10 @@ template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::TFQMR_name = "TFQMR";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::ConvergenceTestFrequency_name = "Convergence Test Frequency";
+
+namespace {
+const std::string LeftPreconditionerIfUnspecified_name = "Left Preconditioner If Unspecified";
+}
 
 // Constructors/initializers/accessors
 
@@ -447,6 +451,12 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
     validParamList->set(ConvergenceTestFrequency_name, as<int>(1),
       "Number of linear solver iterations to skip between applying"
       " user-defined convergence test.");
+    validParamList->set(
+      LeftPreconditionerIfUnspecified_name, false,
+      "If the preconditioner does not specify if it is left or right, and this\n"
+      "option is set to true, put the preconditioner on the left side.\n"
+      "Historically, preconditioning is on the right. Some solvers may not\n"
+      "support left preconditioning.");
     Teuchos::ParameterList
       &solverTypesSL = validParamList->sublist(SolverTypes_name);
     {
@@ -649,9 +659,10 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       ,"Error, at least one preconditoner linear operator objects must be set!"
       );
     if(unspecified.get()) {
-      lp->setRightPrec(unspecified);
-      // ToDo: Allow user to determine whether this should be placed on the
-      // left or on the right through a parameter in the parameter list!
+      if (paramList_->get<bool>(LeftPreconditionerIfUnspecified_name, false))
+        lp->setLeftPrec(unspecified);
+      else
+        lp->setRightPrec(unspecified);
     }
     else {
       // Set a left, right or split preconditioner

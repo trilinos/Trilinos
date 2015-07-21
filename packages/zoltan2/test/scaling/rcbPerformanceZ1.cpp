@@ -50,7 +50,6 @@
 */
 
 #include "Zoltan2_config.h"
-#define HAVE_ZOLTAN2_ZOLTAN
 #ifdef HAVE_ZOLTAN2_ZOLTAN
 #include <zoltan.h>
 
@@ -94,15 +93,10 @@ using Teuchos::rcp;
 using Teuchos::Comm;
 using Teuchos::ArrayView;
 using Teuchos::CommandLineProcessor;
-/*
-typedef int zlno_t;
-typedef long zgno_t;
-typedef double zscalar_t;
-*/
-typedef KokkosClassic::DefaultNode::DefaultNodeType znode_t;
 
 typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
 typedef Tpetra::Map<zlno_t, zgno_t, znode_t> tMap_t;
+typedef tMap_t::node_type znode_t;
 
 //////////////////////////////////////////////////////////////////////////////
 // Data structure for data
@@ -778,6 +772,6 @@ int main(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
   std::cout << "Test did not run due to faulty configuration." << std::endl;
-  std::cout << "PASS" << std::endl;
+  std::cout << "FAIL" << std::endl;
 }
 #endif

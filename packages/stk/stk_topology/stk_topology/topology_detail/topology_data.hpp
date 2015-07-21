@@ -147,7 +147,7 @@ struct topology_data<topology::PARTICLE>
 
   static const bool is_valid = true;
   static const topology::rank_t rank = topology::ELEMENT_RANK;
-  static const topology::rank_t side_rank = topology::NODE_RANK;
+  static const topology::rank_t side_rank = topology::INVALID_RANK;
   static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;

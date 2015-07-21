@@ -47,7 +47,7 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
-#include "stk_util/util/TrackingAllocator.hpp"
+
 namespace shards { class ArrayDimTag; }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class UnitTestFieldImpl; } }
@@ -65,12 +65,7 @@ struct FieldMetaData
   int m_bytes_per_entity;   // num bytes per entity, 0 means bucket does not have this field
 };
 
-#ifdef __IBMCPP__
-// The IBM compiler is easily confused by complex template types...
-typedef std::vector<FieldMetaData>                               FieldMetaDataVector;
-#else
-typedef TrackedVectorMetaFunc<FieldMetaData, FieldDataTag>::type FieldMetaDataVector;
-#endif
+typedef std::vector<FieldMetaData> FieldMetaDataVector;
 
 //----------------------------------------------------------------------
 /** \ingroup stk_stk_mesh_module
@@ -291,6 +286,7 @@ inline unsigned field_bytes_per_entity(const FieldBase& f, const Bucket& b) {
 }
 
 inline unsigned field_bytes_per_entity(const FieldBase& f, unsigned bucket_id) {
+  ThrowAssert(bucket_id < f.get_meta_data_for_field().size());
   return f.get_meta_data_for_field()[bucket_id].m_bytes_per_entity;
 }
 
@@ -302,7 +298,7 @@ inline unsigned field_bytes_per_entity(const FieldBase& f, Entity e) {
 
 inline bool is_matching_rank(const FieldBase& f, const Bucket& b) {
   ThrowAssert(&f.get_mesh() == &b.mesh());
-  return(b.entity_rank() == static_cast<unsigned>(f.entity_rank()));
+  return(b.entity_rank() == f.entity_rank());
 }
 
 inline bool is_matching_rank(const FieldBase& f, Entity e) {

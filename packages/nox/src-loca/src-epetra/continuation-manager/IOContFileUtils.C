@@ -121,18 +121,16 @@ bool RestartContFile( const std::string & fileName, const int & idStep )
 bool TouchContFileParameters( Teuchos::ParameterList & fileParams )
 {
   // Either int or double type
-  int dummyInt;
-  double dummyDouble;
 
   // Looping the list
   Teuchos::ParameterList::ConstIterator i;
   for (i = fileParams.begin(); i !=fileParams.end(); ++i) {
 
     if (fileParams.isType<int>(fileParams.name(i)))
-      dummyInt = fileParams.get<int>(fileParams.name(i));
+      fileParams.get<int>(fileParams.name(i));
 
     if (fileParams.isType<double>(fileParams.name(i)))
-      dummyDouble = fileParams.get<double>(fileParams.name(i));
+      fileParams.get<double>(fileParams.name(i));
   }
 
   return true;

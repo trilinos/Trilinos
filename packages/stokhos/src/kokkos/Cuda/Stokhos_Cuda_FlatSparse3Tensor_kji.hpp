@@ -67,11 +67,11 @@ class Multiply<
 {
 public:
 
-  typedef Kokkos::Cuda device_type ;
-  typedef device_type::size_type size_type ;
+  typedef Kokkos::Cuda execution_space ;
+  typedef execution_space::size_type size_type ;
 
-  typedef FlatSparse3Tensor_kji< TensorScalar , device_type > tensor_type ;
-  typedef BlockCrsMatrix< tensor_type, MatrixScalar, device_type > matrix_type ;
+  typedef FlatSparse3Tensor_kji< TensorScalar , execution_space > tensor_type ;
+  typedef BlockCrsMatrix< tensor_type, MatrixScalar, execution_space > matrix_type ;
   typedef Kokkos::View< VectorScalar** ,
                              Kokkos::LayoutLeft ,
                              Kokkos::Cuda > vector_type ;

@@ -4,7 +4,7 @@
 // I can see this, because they are in subpackage C and so am I!
 #include "A.hpp"
 #include "B.hpp"
-#include "C.hpp"
+#include "wsp_c/C.hpp"
 
 using namespace WithSubpackages;
 

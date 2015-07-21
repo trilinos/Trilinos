@@ -236,6 +236,25 @@ TEST(stk_topology_understanding, superelements)
 }
 //Done
 
+//beginCheckForPositivePolarity
+TEST(stk_topology_how_to, check_for_positive_polarity)
+{
+    stk::topology quad4Topology = stk::topology::QUAD_4;
+
+    ASSERT_EQ(8u, quad4Topology.num_permutations());
+    ASSERT_EQ(4u, quad4Topology.num_positive_permutations());
+
+    EXPECT_TRUE( quad4Topology.is_positive_polarity(0));
+    EXPECT_TRUE( quad4Topology.is_positive_polarity(1));
+    EXPECT_TRUE( quad4Topology.is_positive_polarity(2));
+    EXPECT_TRUE( quad4Topology.is_positive_polarity(3));
+    EXPECT_TRUE(!quad4Topology.is_positive_polarity(4));
+    EXPECT_TRUE(!quad4Topology.is_positive_polarity(5));
+    EXPECT_TRUE(!quad4Topology.is_positive_polarity(6));
+    EXPECT_TRUE(!quad4Topology.is_positive_polarity(7));
+}
+//endCheckForPositivePolarity
+
 }
 
 #endif // __IBMCPP__

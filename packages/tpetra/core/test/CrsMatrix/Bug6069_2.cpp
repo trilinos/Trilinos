@@ -41,11 +41,9 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
 
@@ -54,15 +52,11 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_Version.hpp"
 
 typedef double scalar_type;
 typedef int local_ordinal_type;
 //typedef long global_ordinal_type;  //<<<<<<<<   valgrind is clean
 typedef int global_ordinal_type;     //<<<<<<<<   valgrind complains
-typedef Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
-typedef Tpetra::Map<local_ordinal_type, global_ordinal_type> map_type;
-typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type> mat_type;
 
 void
 GetNeighboursCartesian2d (const global_ordinal_type i,
@@ -90,6 +84,8 @@ GetNeighboursCartesian2d (const global_ordinal_type i,
 int
 main (int argc, char *argv[])
 {
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type> mat_type;
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type> map_type;
   // global_size_t: Tpetra defines this unsigned integer type big
   // enough to hold any global dimension or amount of data.
   typedef Tpetra::global_size_t GST;

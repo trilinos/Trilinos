@@ -14,14 +14,14 @@
 #include "Epetra_Export.h"
 #include "Amesos.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Galeri_ReadHB.h"
 
 //============ //
 // main driver //
 //============ //
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
   int numRet = solver->NumericFactorization();
   if (numRet != 0) {
     std::cout << "Processor "<< map.Comm().MyPID() << " : Numeric factorization did not complete!" << std::endl;
-  } 
+  }
 
   // Check that all processors returned error -22 (Numerically Singular)!
   int minRet = 0;
@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
   }
 
   delete mapPtr;
- 
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif

@@ -43,7 +43,7 @@
 #ifndef __PANZER_STK_ScatterFields_decl_HPP__
 #define __PANZER_STK_ScatterFields_decl_HPP__
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
@@ -69,7 +69,7 @@ class ScatterFields : public PHX::EvaluatorWithBaseImpl<TraitsT>,
   typedef typename EvalT::ScalarT ScalarT;
   typedef panzer_stk_classic::STK_Interface::SolutionFieldType VariableField;
 
-  std::vector< PHX::MDField<ScalarT,panzer::Cell,panzer::NODE> > scatterFields_;
+  std::vector< PHX::MDField<const ScalarT,panzer::Cell,panzer::NODE> > scatterFields_;
   Teuchos::RCP<STK_Interface> mesh_;
 
   std::vector<double> scaling_;

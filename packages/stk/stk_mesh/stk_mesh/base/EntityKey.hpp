@@ -36,25 +36,15 @@
 
 #include <stddef.h>                     // for size_t
 #include <stdint.h>                     // for uint64_t
-#include <boost/static_assert.hpp>      // for BOOST_STATIC_ASSERT
-#include <boost/type_traits/is_same.hpp>  // for is_same
 #include <iosfwd>                       // for ostream
 #include <stk_mesh/base/Types.hpp>      // for EntityId, EntityRank
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowAssertMsg
-#include "boost/functional/hash/hash.hpp"  // for hash_value
-#include "boost/mpl/bool.hpp"           // for bool_<>::value
-
-
-
-
 
 namespace stk {
 namespace mesh {
 
 struct EntityKey
 {
-  BOOST_STATIC_ASSERT(( boost::is_same<EntityId, uint64_t>::value ));
-
   enum entity_key_t {
       RANK_SHIFT = 56ULL
     , MIN_ID = 0ULL
@@ -95,10 +85,13 @@ struct EntityKey
 
 std::ostream & operator << ( std::ostream & out, EntityKey  key);
 
-inline size_t hash_value(EntityKey k)
+struct HashValueForEntityKey
 {
-  return boost::hash_value(static_cast<size_t>(k.m_value));
-}
+    size_t operator()(EntityKey k) const
+    {
+      return static_cast<size_t>(k.m_value);
+    }
+};
 
 }} // namespace stk::mesh
 

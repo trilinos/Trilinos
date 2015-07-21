@@ -24,14 +24,6 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   )
 
-# FIXME (mfh 19 Dec 2014) Do we actually need to build this CUDA
-# library, now that we are using nvcc_wrapper to build everything
-# (meaning that we don't need separate .cu files)?
-IF (Kokkos_ENABLE_Cuda)
-  FILE(GLOB CUDA_SOURCES *.cu)
-  PACKAGE_ADD_CUDA_LIBRARY(teuchoskokkoscompat_cuda SOURCES ${CUDA_SOURCES})
-ENDIF()
-
 # FIXME (mfh 19 Dec 2014) We should rely on TriBITS to handle
 # installation.
 

@@ -58,9 +58,12 @@ TEST(stkMeshHowTo, useSimpleFields)
     typedef stk::mesh::Field<double, stk::mesh::Cartesian3d> VectorField;
     ScalarField& pressureField = metaData.declare_field<ScalarField>(stk::topology::ELEM_RANK, "pressure");
     VectorField& displacementsField = metaData.declare_field<VectorField>(stk::topology::NODE_RANK, "displacements");
+    ScalarField& nodePressureField = metaData.declare_field<ScalarField>(stk::topology::NODE_RANK, "pressure");
 
     double initialPressureValue = 4.4;
     stk::mesh::put_field_on_entire_mesh_with_initial_value(pressureField, &initialPressureValue);
+    double initialNodePressureValue = 2.7;
+    stk::mesh::put_field_on_entire_mesh_with_initial_value(nodePressureField, &initialNodePressureValue);
     stk::mesh::put_field_on_entire_mesh(displacementsField);
 
     stk::mesh::Part &tetPart = metaData.declare_part_with_topology("tetElementPart", stk::topology::TET_4);
@@ -69,10 +72,10 @@ TEST(stkMeshHowTo, useSimpleFields)
     stk::mesh::BulkData mesh(metaData, MPI_COMM_WORLD);
     mesh.modification_begin();
     stk::mesh::EntityId elem1Id = 1;
-    stk::mesh::EntityId elem1Nodes[] = {1, 2, 3, 4};
+    stk::mesh::EntityIdVector elem1Nodes {1, 2, 3, 4};
     stk::mesh::Entity elem1=stk::mesh::declare_element(mesh, tetPart, elem1Id, elem1Nodes);
     stk::mesh::EntityId elem2Id = 2;
-    stk::mesh::EntityId elem2Nodes[] = {2, 3, 4, 5};
+    stk::mesh::EntityIdVector elem2Nodes {2, 3, 4, 5};
     stk::mesh::Entity elem2=stk::mesh::declare_element(mesh, tetPart, elem2Id, elem2Nodes);
     mesh.modification_end();
 
@@ -101,6 +104,10 @@ TEST(stkMeshHowTo, useSimpleFields)
 
     double* pressureFieldDataForElem2 = stk::mesh::field_data(pressureField, elem2);
     EXPECT_EQ(initialPressureValue, *pressureFieldDataForElem2);
+
+    stk::mesh::Entity node1 = mesh.get_entity(stk::topology::NODE_RANK, 1);
+    double* pressureFieldDataForNode1 = stk::mesh::field_data(nodePressureField, node1);
+    EXPECT_EQ(initialNodePressureValue, *pressureFieldDataForNode1);
 }
 //END
 

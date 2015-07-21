@@ -506,6 +506,7 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region*> &part_mesh, INT
   }
   ts_max = ts_max < num_steps ? ts_max : num_steps;
 
+  std::ios::fmtflags f(std::cerr.flags());
   for (int step=ts_min-1; step < ts_max; step+=ts_step) {
     int ostep = output_region.add_state(global_times[step]);
     output_region.begin_state(ostep);
@@ -515,6 +516,7 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region*> &part_mesh, INT
     output_region.end_state(ostep);
   }
   std::cerr << "\n";
+  std::cerr.flags(f);
   output_region.end_mode(Ioss::STATE_TRANSIENT);
   
   /*************************************************************************/

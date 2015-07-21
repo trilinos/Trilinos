@@ -59,8 +59,8 @@
 
 #include "Tpetra_Map.hpp"
 
-template <typename EvalT,typename Traits,typename S,typename LO,typename GO,typename NodeT>
-panzer::GatherSolution_BlockedTpetra<EvalT, Traits,S,LO,GO,NodeT>::
+template <typename EvalT,typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+panzer::GatherSolution_BlockedTpetra<EvalT, TRAITS,S,LO,GO,NodeT>::
 GatherSolution_BlockedTpetra(
   const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
@@ -83,8 +83,8 @@ GatherSolution_BlockedTpetra(
 // Specialization: Residual
 // **********************************************************************
 
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, Traits,S,LO,GO,NodeT>::
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
 GatherSolution_BlockedTpetra(
   const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
@@ -117,10 +117,10 @@ GatherSolution_BlockedTpetra(
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, Traits,S,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
 
@@ -139,18 +139,18 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, Traits,S,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
    // extract linear object container
    blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, Traits,S,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Residual, TRAITS,S,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    using Teuchos::RCP;
    using Teuchos::ArrayRCP;
@@ -220,8 +220,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: Tangent
 // **********************************************************************
 
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, Traits,S,LO,GO,NodeT>::
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, TRAITS,S,LO,GO,NodeT>::
 GatherSolution_BlockedTpetra(
   const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
@@ -254,10 +254,10 @@ GatherSolution_BlockedTpetra(
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, Traits,S,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, TRAITS,S,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
 
@@ -276,18 +276,18 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, Traits,S,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, TRAITS,S,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
    // extract linear object container
    blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, Traits,S,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Tangent, TRAITS,S,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    using Teuchos::RCP;
    using Teuchos::ArrayRCP;
@@ -357,8 +357,8 @@ evaluateFields(typename Traits::EvalData workset)
 // Specialization: Jacobian
 // **********************************************************************
 
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, Traits,S,LO,GO,NodeT>::
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
 GatherSolution_BlockedTpetra(
   const Teuchos::RCP<const BlockedDOFManager<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
@@ -399,10 +399,10 @@ GatherSolution_BlockedTpetra(
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, Traits,S,LO,GO,NodeT>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   TEUCHOS_ASSERT(gatherFields_.size() == indexerNames_->size());
 
@@ -421,18 +421,18 @@ postRegistrationSetup(typename Traits::SetupData d,
   indexerNames_ = Teuchos::null;  // Don't need this anymore
 }
 
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, Traits,S,LO,GO,NodeT>::
-preEvaluate(typename Traits::PreEvalData d)
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
+preEvaluate(typename TRAITS::PreEvalData d)
 {
    // extract linear object container
    blockedContainer_ = Teuchos::rcp_dynamic_cast<const ContainerType>(d.gedc.getDataObject(globalDataKey_),true);
 }
 
 // **********************************************************************
-template <typename Traits,typename S,typename LO,typename GO,typename NodeT>
-void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, Traits,S,LO,GO,NodeT>::
-evaluateFields(typename Traits::EvalData workset)
+template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
+void panzer::GatherSolution_BlockedTpetra<panzer::Traits::Jacobian, TRAITS,S,LO,GO,NodeT>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    using Teuchos::RCP;
    using Teuchos::ArrayRCP;

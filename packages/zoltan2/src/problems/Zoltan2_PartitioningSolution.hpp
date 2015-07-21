@@ -117,7 +117,7 @@ public:
  *   to be globally calculated.
  */
 
-  PartitioningSolution( RCP<const Environment> &env,
+  PartitioningSolution( const RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     int nUserWeights, 
     const RCP<Algorithm<Adapter> > &algorithm = Teuchos::null);
@@ -151,7 +151,7 @@ public:
  *   \todo handle errors that may arise - like duplicate part numbers
  */
 
-  PartitioningSolution( RCP<const Environment> &env,
+  PartitioningSolution(const RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     int nUserWeights, ArrayView<ArrayRCP<part_t> > reqPartIds,
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes,
@@ -629,11 +629,11 @@ private:
 
 template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
-    RCP<const Environment> &env,
+    const RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     int nUserWeights,
     const RCP<Algorithm<Adapter> > &algorithm)
-    : env_(env), comm_(comm), 
+    : env_(env), comm_(comm),
       partBoxes(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  nWeightsPerObj_(),
@@ -662,13 +662,13 @@ template <typename Adapter>
 
 template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
-    RCP<const Environment> &env,
+    const RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     int nUserWeights,
     ArrayView<ArrayRCP<part_t> > reqPartIds,
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes,
     const RCP<Algorithm<Adapter> > &algorithm)
-    : env_(env), comm_(comm), 
+    : env_(env), comm_(comm),
       partBoxes(),
       nGlobalParts_(0), nLocalParts_(0),
       localFraction_(0),  nWeightsPerObj_(),

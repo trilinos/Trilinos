@@ -59,6 +59,7 @@
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_Dirichlet_Residual.hpp"
 #include "Panzer_Dirichlet_Residual_EdgeBasis.hpp"
+#include "Panzer_Dirichlet_Residual_FaceBasis.hpp"
 #include "Panzer_GatherSolution_Epetra.hpp"
 #include "Panzer_GatherBasisCoordinates.hpp"
 #include "Panzer_ScatterDirichletResidual_Epetra.hpp"
@@ -365,6 +366,22 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       RCP< PHX::Evaluator<panzer::Traits> > op = 
         rcp(new panzer::DirichletResidual<EvalT,panzer::Traits>(p));
     
+      fm.template registerEvaluator<EvalT>(op);
+    }
+    // This assumes that dofs on faces are all named "<dof>_face"
+    else if(basis->isVectorBasis()&&(dofName.compare(dofName.substr(0,dofName.find_last_of("_"))+"_face")==0)) {
+      RCP<const panzer::PointRule> pointRule = rcp(new panzer::PointRule(basis->name()+":BasisPoints",basis->cardinality(),cellData));
+
+      ParameterList p;
+      p.set("Residual Name", residualName);
+      p.set("DOF Name", dofName);
+      p.set("Value Name", targetName);
+      p.set("Basis", basis.getConst());
+      p.set("Point Rule", pointRule);
+
+      RCP< PHX::Evaluator<panzer::Traits> > op =
+        rcp(new panzer::DirichletResidual_FaceBasis<EvalT,panzer::Traits>(p));
+
       fm.template registerEvaluator<EvalT>(op);
     }
     else if(basis->isVectorBasis()) {

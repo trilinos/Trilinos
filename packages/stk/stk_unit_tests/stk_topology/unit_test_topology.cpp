@@ -34,6 +34,7 @@
 #include <gtest/gtest.h>
 #include <stk_topology/topology.hpp>
 
+#include <array>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -142,4 +143,24 @@ TEST( stk_topology, arrayMesh )
   EXPECT_EQ( 1, side_nodes[1] );
   EXPECT_EQ( 5, side_nodes[2] );
   EXPECT_EQ( 4, side_nodes[3] );
+}
+
+TEST( stk_topology, positive_polarity)
+{
+    std::array<stk::topology, 2> topologiesToTest = {{stk::topology::QUAD_4, stk::topology::HEX_8}};
+
+    for (size_t i = 0; i < topologiesToTest.size(); ++i)
+    {
+        unsigned numNodePermutations = topologiesToTest[i].num_permutations();
+        unsigned numPositiveNodePermutations = topologiesToTest[i].num_positive_permutations();
+
+        for (unsigned permIndex = 0; permIndex < numPositiveNodePermutations; ++permIndex)
+        {
+            EXPECT_TRUE(topologiesToTest[i].is_positive_polarity(permIndex));
+        }
+        for (unsigned permIndex = numPositiveNodePermutations; permIndex < numNodePermutations; ++permIndex)
+        {
+            EXPECT_TRUE(!topologiesToTest[i].is_positive_polarity(permIndex));
+        }
+    }
 }

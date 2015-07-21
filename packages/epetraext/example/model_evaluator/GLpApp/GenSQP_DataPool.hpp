@@ -60,21 +60,21 @@ class DataPool {
 public:
 
   virtual ~DataPool() {}
-  
+
   /** \brief Recompute all stored quantities.
       \param x [in]  - Current SQP iterate vector.
-    
-      \return None. 
-    
+
+      \return None.
+
       \par Detailed Description:
 
       Interface function that evaluates and stores problem-specific quantities
       that can be reused within one (or more) SQP iteration.
-  
+
       \note The GenSQP::Vector input parameters can be recast into user-accessible
       quantities by using the following syntax:\n
       <tt>
-      Teuchos::RefCountPtr<const umDVec> ex =
+      Teuchos::RCP<const umDVec> ex =
         (Teuchos::dyn_cast<GenSQP::SledgeVector>(const_cast<GenSQP::Vector&>(x))).getVector();
       </tt>
   */

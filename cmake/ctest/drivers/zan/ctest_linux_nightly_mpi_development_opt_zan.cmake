@@ -79,6 +79,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DNetcdf_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.4.4/pnetcdf-4.2/lib"
   "-DHDF5_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.4.4/phdf5-1.8.6/include"
   "-DHDF5_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.4.4/phdf5-1.8.6/lib"
+  "-DTrilinos_ENABLE_CXX11=OFF"
   )
 
 #

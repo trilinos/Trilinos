@@ -176,14 +176,14 @@ int main(int argc, char *argv[]) {
     int minPerAgg=3;
     int maxNbrAlreadySelected=0;
 
-    int globalNumDofs = 8898;
+    int globalNumDofs = 1500;
     int nProcs = comm->getSize();
     int nDofsPerNode = 3;
 
     int nLocalDofs = (int) globalNumDofs / nProcs;
     nLocalDofs = nLocalDofs - (nLocalDofs % nDofsPerNode);
     int nCumulatedDofs = 0;
-    sumAll(comm,nLocalDofs, nCumulatedDofs);
+    MueLu_sumAll(comm,nLocalDofs, nCumulatedDofs);
     //Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM, 1, nLocalDofs, &nCumulatedDofs );
 
     if(comm->getRank() == nProcs-1) {
@@ -258,6 +258,7 @@ int main(int argc, char *argv[]) {
     }
 
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    dropFact->SetParameter("lightweight wrap",Teuchos::ParameterEntry(false));
     dropFact->SetVerbLevel(MueLu::Extreme);
 
     //RCP<PreDropFunctionConstVal> predrop = rcp(new PreDropFunctionConstVal(0.00001));

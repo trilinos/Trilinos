@@ -9,6 +9,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_ResponseEvaluatorFactory.hpp"
 #include "Panzer_LinearObjFactory.hpp"
+#include "Panzer_ResponseMESupportBuilderBase.hpp"
 
 #include <mpi.h>
 
@@ -21,7 +22,7 @@ class ResponseEvaluatorFactory_Functional : public ResponseEvaluatorFactory<Eval
 public:
 
    ResponseEvaluatorFactory_Functional(MPI_Comm comm, int cubatureDegree=1,bool requiresCellIntegral=true,const std::string & quadPointField="",
-                                       const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & linearObjFactory=Teuchos::null,
+                                       const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & linearObjFactory=Teuchos::null,
                                        const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & globalIndexer=Teuchos::null,
                                        bool applyDirichletToDerivative=false)
      : comm_(comm), cubatureDegree_(cubatureDegree), requiresCellIntegral_(requiresCellIntegral)
@@ -83,13 +84,13 @@ private:
    int cubatureDegree_;
    bool requiresCellIntegral_;
    std::string quadPointField_;
-   Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linearObjFactory_;
+   Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linearObjFactory_;
    Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer_;
    bool applyDirichletToDerivative_;
 };
 
 template <typename LO,typename GO> 
-struct FunctionalResponse_Builder {
+struct FunctionalResponse_Builder : public ResponseMESupportBuilderBase {
   MPI_Comm comm;
   int cubatureDegree;
   bool requiresCellIntegral;
@@ -99,7 +100,9 @@ struct FunctionalResponse_Builder {
 
   FunctionalResponse_Builder() : applyDirichletToDerivative(false) {}
 
-  void setDerivativeInformation(const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory,
+  virtual ~FunctionalResponse_Builder() {}
+
+  void setDerivativeInformation(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory,
                                 const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & in_globalIndexer)
   {
     linearObjFactory = in_linearObjFactory;
@@ -109,7 +112,7 @@ struct FunctionalResponse_Builder {
                    (linearObjFactory!=Teuchos::null && globalIndexer!=Teuchos::null));
   }
 
-  void setDerivativeInformationBase(const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory,
+  virtual void setDerivativeInformationBase(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > & in_linearObjFactory,
                                     const Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> & in_globalIndexer)
   {
     setDerivativeInformation(in_linearObjFactory,Teuchos::rcp_dynamic_cast<const panzer::UniqueGlobalIndexer<LO,GO> >(in_globalIndexer,true));
@@ -120,8 +123,14 @@ struct FunctionalResponse_Builder {
   { return Teuchos::rcp(new ResponseEvaluatorFactory_Functional<T,LO,GO>(comm,cubatureDegree,requiresCellIntegral,quadPointField,
                                                                          linearObjFactory,globalIndexer,applyDirichletToDerivative)); }
 
+  virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildValueFactory() const
+  { return build<panzer::Traits::Residual>(); }
+
+  virtual Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> buildDerivativeFactory() const
+  { return build<panzer::Traits::Jacobian>(); }
+  
 private:
-  Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
+  Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits> > linearObjFactory;
   Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > globalIndexer;
 };
 

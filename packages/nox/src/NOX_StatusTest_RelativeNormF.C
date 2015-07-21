@@ -60,11 +60,11 @@
 NOX::StatusTest::RelativeNormF::
 RelativeNormF(double in_tolerance, bool in_scale_norms_by_vector_length,
           const NOX::Utils* u) :
+  status(NOX::StatusTest::Unevaluated),
   tolerance(in_tolerance),
   normF_0(0.0),
   normF(0.0),
-  scale_norms_by_vector_length(in_scale_norms_by_vector_length),
-  status(NOX::StatusTest::Unevaluated)
+  scale_norms_by_vector_length(in_scale_norms_by_vector_length)
 {
   if (u != NULL)
     utils = *u;

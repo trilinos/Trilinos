@@ -75,15 +75,15 @@ namespace Teuchos {
     \author Chris Siefert, SNL 1431.
 
     \date Last modified on May 21st, 2009.
-*/    
+*/
 
 class Ifpack_HIPS: public Ifpack_Preconditioner {
-      
+
 public:
   // @{ Constructors and destructors.
   //! Constructor
   Ifpack_HIPS(Epetra_RowMatrix* A);
-  
+
   //! Destructor
   ~Ifpack_HIPS()
   {
@@ -92,10 +92,10 @@ public:
 
   // @}
   // @{ Construction methods
-  
+
   //! Initialize the preconditioner, does not touch matrix values.
   int Initialize();
-  
+
   //! Returns \c true if the preconditioner has been successfully initialized.
   bool IsInitialized() const
   {
@@ -108,7 +108,7 @@ public:
   int Compute();
 
   //! If factor is completed, this query returns true, otherwise it returns false.
-  bool IsComputed() const 
+  bool IsComputed() const
   {
     return(IsComputed_);
   }
@@ -125,9 +125,9 @@ public:
 
   //! If set true, transpose of this operator will be applied.
   /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
-      affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
+      affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface
       does not support transpose use, this method should return a value of -1.
-      
+
       \param
        UseTranspose_in - (In) If true, multiply by the transpose of operator, otherwise just use operator.
 
@@ -138,36 +138,36 @@ public:
 
   // @{ Mathematical functions.
   // Applies the matrix to X, returns the result in Y.
-  int Apply(const Epetra_MultiVector& X, 
-	       Epetra_MultiVector& Y) const
+  int Apply(const Epetra_MultiVector& X,
+               Epetra_MultiVector& Y) const
   {
     return(Multiply(false,X,Y));
   }
 
-  int Multiply(bool Trans, const Epetra_MultiVector& X, 
-	       Epetra_MultiVector& Y) const{return A_->Multiply(Trans,X,Y);}
+  int Multiply(bool Trans, const Epetra_MultiVector& X,
+               Epetra_MultiVector& Y) const{return A_->Multiply(Trans,X,Y);}
 
   //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
   /*! In this implementation, we use several existing attributes to determine how virtual
-      method ApplyInverse() should call the concrete method Solve().  We pass in the UpperTriangular(), 
+      method ApplyInverse() should call the concrete method Solve().  We pass in the UpperTriangular(),
       the Epetra_CrsMatrix::UseTranspose(), and NoDiagonal() methods. The most notable warning is that
       if a matrix has no diagonal values we assume that there is an implicit unit diagonal that should
       be accounted for when doing a triangular solve.
 
-    \param 
-	   X - (In) A Epetra_MultiVector of dimension NumVectors to solve for.
+    \param
+           X - (In) A Epetra_MultiVector of dimension NumVectors to solve for.
     \param Out
-	   Y - (Out) A Epetra_MultiVector of dimension NumVectors containing result.
+           Y - (Out) A Epetra_MultiVector of dimension NumVectors containing result.
 
     \return Integer error code, set to 0 if successful.
   */
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   //! Computes the estimated condition number and returns the value.
-  double Condest(const Ifpack_CondestType CT = Ifpack_Cheap, 
+  double Condest(const Ifpack_CondestType CT = Ifpack_Cheap,
                  const int MaxIters = 1550,
                  const double Tol = 1e-9,
-		 Epetra_RowMatrix* Matrix_in = 0);
+                 Epetra_RowMatrix* Matrix_in = 0);
 
   //! Returns the computed estimated condition number, or -1.0 if not computed.
   double Condest() const
@@ -177,7 +177,7 @@ public:
 
   // @}
   // @{ Query methods
-  
+
   //! Returns a character string describing the operator
   const char* Label() const {return(Label_);}
 
@@ -188,7 +188,7 @@ public:
     return(0);
   }
 
-  
+
   //! Returns 0.0 because this class cannot compute Inf-norm.
   double NormInf() const {return(0.0);};
 
@@ -209,12 +209,12 @@ public:
 
   //! Returns a reference to the matrix to be preconditioned.
   const Epetra_RowMatrix& Matrix() const
-  { 
+  {
     return(*A_);
   }
 
   //! Prints on stream basic information about \c this object.
-  virtual ostream& Print(ostream& os) const;
+  virtual std::ostream& Print(std::ostream& os) const;
 
   //! Returns the number of calls to Initialize().
   virtual int NumInitialize() const
@@ -288,14 +288,14 @@ private:
   void Destroy();
 
   //! Returns the result of a Ifpack_ILU forward/back solve on a Epetra_MultiVector X in Y.
-  /*! 
+  /*!
     \param In
     Trans -If true, solve transpose problem.
-    \param 
+    \param
     X - (In) A Epetra_MultiVector of dimension NumVectors to solve for.
     \param Out
     Y - (Out) A Epetra_MultiVector of dimension NumVectorscontaining result.
-    
+
     \return Integer error code, set to 0 if successful.
   */
   int Solve(bool Trans, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
@@ -303,16 +303,16 @@ private:
 
   //! Returns the number of global matrix rows.
   int NumGlobalRows() const {return(A_->NumGlobalRows());};
-  
+
   //! Returns the number of global matrix columns.
   int NumGlobalCols() const {return(A_->NumGlobalCols());};
-  
+
   //! Returns the number of local matrix rows.
   int NumMyRows() const {return(A_->NumMyRows());};
-  
+
   //! Returns the number of local matrix columns.
   int NumMyCols() const {return(A_->NumMyCols());};
-  
+
   //! Returns a reference to the matrix.
   /*  Epetra_RowMatrix& Matrix()
   {
@@ -321,21 +321,21 @@ private:
 
   // @}
   // @{ Internal data
-  
+
   //! Pointer to the Epetra_RowMatrix to factorize
   Teuchos::RefCountPtr<Epetra_RowMatrix> A_;
   Teuchos::ParameterList List_;
   Teuchos::RefCountPtr<Epetra_Map> RowMap0_;
   Teuchos::RefCountPtr<Epetra_Map> ColMap0_;
-  
-  
+
+
   int HIPS_id;
-  
+
   bool UseTranspose_;
   bool Allocated_;
   bool ValuesInitialized_;
   bool Factored_;
-  
+
   double Condest_;
 
   bool IsParallel_;

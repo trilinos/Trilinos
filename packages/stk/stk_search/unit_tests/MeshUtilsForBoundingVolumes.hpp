@@ -35,7 +35,7 @@
 #define STK_SEARCH_MESHUTILSFORBOUNDINGVOLUMES_H_
 
 #include <exodusMeshInterface.h>
-#include <optionParsing/getOption.h>
+#include <stk_unit_test_utils/getOption.h>
 
 inline void createBoundingBoxForElement(const sierra::Mesh::LocalNodeId *connectivity, const int numNodesPerElement,
         const std::vector<double> &coordinates, std::vector<double>& boxCoordinates)

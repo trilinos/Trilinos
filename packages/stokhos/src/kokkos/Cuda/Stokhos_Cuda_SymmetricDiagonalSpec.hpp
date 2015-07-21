@@ -58,8 +58,8 @@ template<>
 class BlockMultiply< SymmetricDiagonalSpec< Kokkos::Cuda > >
 {
 public:
-  typedef Kokkos::Cuda device_type ;
-  typedef device_type::size_type size_type ;
+  typedef Kokkos::Cuda execution_space ;
+  typedef execution_space::size_type size_type ;
   typedef SymmetricDiagonalSpec< Kokkos::Cuda >  block_type ;
 
   __host__

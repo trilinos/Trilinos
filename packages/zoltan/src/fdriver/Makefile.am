@@ -99,3 +99,5 @@ EXTRA_DIST = $(srcdir)/CMakeLists.txt \
 	$(srcdir)/zoltan_user_data.f90.old
 
 MOSTLYCLEANFILES = *.mod
+
+.NOTPARALLEL:

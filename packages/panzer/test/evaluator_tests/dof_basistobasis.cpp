@@ -62,7 +62,6 @@ using Teuchos::rcp;
 #include "Panzer_Traits.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_BasisIRLayout.hpp"
-#include "Panzer_BasisValues.hpp"
 
 #include "Panzer_DOF.hpp"
 #include "Panzer_DOF_BasisToBasis.hpp"
@@ -70,6 +69,7 @@ using Teuchos::rcp;
 
 #include "Phalanx_FieldManager.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Phalanx_KokkosUtilities.hpp"
 
 #include "Epetra_MpiComm.h"
 #include "Epetra_Comm.h"
@@ -78,8 +78,8 @@ using Teuchos::rcp;
 
 // for making explicit instantiated tests easier 
 #define UNIT_TEST_GROUP(TYPE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(dof_pointfield,value,TYPE) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(dof_pointfield,gradient,TYPE)
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(dof_pointfield,value,TYPE)
+  //TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(dof_pointfield,gradient,TYPE)
 
 namespace panzer {
 
@@ -128,6 +128,8 @@ PHX_EVALUATE_FIELDS(DummyFieldEvaluator,workset)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
 {
+  PHX::KokkosDeviceSession session;
+
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -179,6 +181,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   setupData.worksets_ = rcp(new std::vector<panzer::Workset>);
   setupData.worksets_->push_back(*workset);
 
+  std::vector<PHX::index_size_type> derivative_dimensions;
+  derivative_dimensions.push_back(4);
+  fm->setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
   fm->postRegistrationSetup(setupData);
 
   //fm->writeGraphvizFile();
@@ -190,6 +195,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   fm->postEvaluate<EvalType>(0);
 
   typedef typename EvalType::ScalarT ScalarT;
+  typedef typename PHX::MDFieldTypeTraits<PHX::MDField<ScalarT,Cell,BASIS> >::return_type  ScalarView;
 
   typename PHX::MDField<ScalarT,Cell,BASIS> s("Pressure",sourceBasis->functional);
   typename PHX::MDField<ScalarT,Cell,BASIS> t("Pressure",targetBasis->functional);
@@ -200,31 +206,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,value,EvalType)
   typename Teuchos::ScalarTraits<ScalarT>::magnitudeType tol =
     100.0 * Teuchos::ScalarTraits<ScalarT>::eps();
 
-  TEST_FLOATING_EQUALITY(t(0,0),s(0,0),tol);
-  TEST_FLOATING_EQUALITY(t(0,1),s(0,1),tol);
-  TEST_FLOATING_EQUALITY(t(0,2),s(0,2),tol);
-  TEST_FLOATING_EQUALITY(t(0,3),s(0,3),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(0,0)),ScalarT(s(0,0)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(0,1)),ScalarT(s(0,1)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(0,2)),ScalarT(s(0,2)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(0,3)),ScalarT(s(0,3)),tol);
 
-  TEST_FLOATING_EQUALITY(t(1,0),s(1,0),tol);
-  TEST_FLOATING_EQUALITY(t(1,1),s(1,1),tol);
-  TEST_FLOATING_EQUALITY(t(1,2),s(1,2),tol);
-  TEST_FLOATING_EQUALITY(t(1,3),s(1,3),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(1,0)),ScalarT(s(1,0)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(1,1)),ScalarT(s(1,1)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(1,2)),ScalarT(s(1,2)),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(1,3)),ScalarT(s(1,3)),tol);
 
-  TEST_FLOATING_EQUALITY(t(0,4),ScalarT(1.5),tol);
-  TEST_FLOATING_EQUALITY(t(0,5),ScalarT(2.0),tol);
-  TEST_FLOATING_EQUALITY(t(0,6),ScalarT(1.5),tol);
-  TEST_FLOATING_EQUALITY(t(0,7),ScalarT(1.0),tol);
-  TEST_FLOATING_EQUALITY(t(0,8),ScalarT(1.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(0,4)),ScalarT(1.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(0,5)),ScalarT(2.0),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(0,6)),ScalarT(1.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(0,7)),ScalarT(1.0),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(0,8)),ScalarT(1.5),tol);
 
-  TEST_FLOATING_EQUALITY(t(1,4),ScalarT(2.5),tol);
-  TEST_FLOATING_EQUALITY(t(1,5),ScalarT(3.0),tol);
-  TEST_FLOATING_EQUALITY(t(1,6),ScalarT(2.5),tol);
-  TEST_FLOATING_EQUALITY(t(1,7),ScalarT(2.0),tol);
-  TEST_FLOATING_EQUALITY(t(1,8),ScalarT(2.5),tol);
-}
-
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(dof_pointfield,gradient,EvalType)
-{
+  TEST_FLOATING_EQUALITY(ScalarT(t(1,4)),ScalarT(2.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(1,5)),ScalarT(3.0),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(1,6)),ScalarT(2.5),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(1,7)),ScalarT(2.0),tol);
+  TEST_FLOATING_EQUALITY(ScalarT(t(1,8)),ScalarT(2.5),tol);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////

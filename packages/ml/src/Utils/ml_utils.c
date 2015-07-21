@@ -1926,7 +1926,9 @@ void ML_serial_end(ML_Comm *comm)
 /* (Based on code from ALEGRA).                                         */
 /* ******************************************************************** */
 #ifndef ICL
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #endif
 void ML_BreakForDebugger(ML_Comm *comm)
 {

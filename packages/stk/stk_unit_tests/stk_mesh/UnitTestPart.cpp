@@ -159,9 +159,9 @@ TEST(UnitTestPart, testPartVector)
   vdef.push_back( pe );
   vdef.push_back( pf );
 
-  order( vabc );
-  order( vbcd );
-  order( vdef );
+  sort_and_unique( vabc );
+  sort_and_unique( vbcd );
+  sort_and_unique( vdef );
 
   vresult.clear();
   ASSERT_EQ( size_t(2) , intersect( vabc , vbcd ) );

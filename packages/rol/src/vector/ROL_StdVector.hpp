@@ -44,6 +44,9 @@
 #ifndef ROL_STDVECTOR_H
 #define ROL_STDVECTOR_H
 
+#include <algorithm>
+#include <cstdlib>
+
 #include "ROL_Vector.hpp"
 
 /** \class ROL::StdVector
@@ -63,6 +66,12 @@ private:
 public:
 
   StdVector(const Teuchos::RCP<std::vector<Element> > & std_vec) : std_vec_(std_vec) {}
+
+  void set( const Vector<Real> &x ) {
+    const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
+    const std::vector<Element>& xval = *ex.getVector();
+    std::copy(xval.begin(),xval.end(),std_vec_->begin());   
+  }
 
   void plus( const Vector<Real> &x ) {
     const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
@@ -118,7 +127,7 @@ public:
   int dimension() const {
     return std_vec_->size();
   }
-
+  
 }; // class StdVector
 
 namespace StdVector_Helper {

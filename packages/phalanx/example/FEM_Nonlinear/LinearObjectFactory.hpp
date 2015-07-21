@@ -45,7 +45,7 @@
 #ifndef PHX_EXAMPLE_LINEAR_OBJECT_FACTORY_HPP
 #define PHX_EXAMPLE_LINEAR_OBJECT_FACTORY_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Teuchos_RCP.hpp"
 #include "MeshBuilder.hpp"
 #include "Epetra_Comm.h"

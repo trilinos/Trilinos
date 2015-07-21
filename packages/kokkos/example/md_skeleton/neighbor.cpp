@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -54,7 +54,7 @@
  */
 
 struct BinningFunctor {
-  typedef t_int_2d::device_type device_type;
+  typedef t_int_2d::execution_space execution_space;
 
   System s;
 
@@ -112,7 +112,7 @@ struct BinningFunctor {
 
 struct BuildFunctor {
 
-  typedef t_int_2d::device_type device_type;
+  typedef t_int_2d::execution_space execution_space;
 
   System s;
 
@@ -210,7 +210,7 @@ struct BuildFunctor {
 /* Reset an array to zero */
 
 struct MemsetZeroFunctor {
-  typedef t_x_array::device_type  device_type ;
+  typedef t_x_array::execution_space  execution_space ;
   void* ptr;
   KOKKOS_INLINE_FUNCTION void operator()(const int i) const {
     ((int*)ptr)[i] = 0;
@@ -388,11 +388,11 @@ void neigh_build(System &s) {
     MemsetZeroFunctor f_zero;
     f_zero.ptr = (void*) s.bincount.ptr_on_device();
     Kokkos::parallel_for(s.mbins, f_zero);
-    device_type::fence();
+    execution_space::fence();
 
     BinningFunctor f(s);
     Kokkos::parallel_for(s.natoms, f);
-    device_type::fence();
+    execution_space::fence();
 
     /* Check if bins was large enough, if nor reallocated and rerun */
 
@@ -416,7 +416,7 @@ void neigh_build(System &s) {
     BuildFunctor f(s);
     Kokkos::parallel_for(s.nlocal, f);
 
-    device_type::fence();
+    execution_space::fence();
 
     /* Check if neighbors was large enough, if nor reallocated and rerun */
 

@@ -138,7 +138,7 @@ in order to remove the intermediate source and build files.
 
     supportedVersions = self.installObj.getProductSupportedVersions()
     defaultVersion = self.installObj.getProductDefaultVersion()
-    defaultVersionIdx = supportedVersions.index(defaultVersion)
+    defaultVersionIdx = findInSequence(supportedVersions, defaultVersion)
 
     addOptionParserChoiceOption(
       versionCmndArgName, "version", supportedVersions, defaultVersionIdx,

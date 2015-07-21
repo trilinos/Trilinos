@@ -312,40 +312,6 @@ public:
 
 
   //@}
-
-  //! \name Deprecated routines to be removed at some point in the future.
-  //@{
-
-  //! Deprecated. Get a persisting const view of the entries in a specified global row of this matrix.
-  /*!
-    \param GlobalRow - (In) Global row from which to retrieve matrix entries.
-    \param Indices - (Out) Indices for the global row.
-    \param Values - (Out) Values for the global row.
-
-    Note: If \c GlobalRow does not belong to this node, then \c Indices and \c Values are set to <tt>Teuchos::null</t>>.
-
-    \pre isLocallyIndexed()==false
-  */
-  TPETRA_DEPRECATED virtual void getGlobalRowView(GlobalOrdinal GlobalRow,
-                                                  Teuchos::ArrayRCP<const GlobalOrdinal> &indices,
-                                                  Teuchos::ArrayRCP<const Scalar>        &values) const;
-
-  //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
-  /*!
-    \param LocalRow - (In) Local row from which to retrieve matrix entries.
-    \param Indices - (Out) Indices for the local row.
-    \param Values - (Out) Values for the local row.
-
-    Note: If \c LocalRow is not valid for this node, then \c Indices and \c Values are set to <tt>Teuchos::null</tt>.
-
-    \pre isGloballyIndexed()==false
-  */
-  TPETRA_DEPRECATED virtual void getLocalRowView(LocalOrdinal LocalRow,
-                                                 Teuchos::ArrayRCP<const LocalOrdinal> &indices,
-                                                 Teuchos::ArrayRCP<const Scalar>       &values) const;
-  //@}
-
-
 private:
 
   //! Pointer to the matrix to be preconditioned.

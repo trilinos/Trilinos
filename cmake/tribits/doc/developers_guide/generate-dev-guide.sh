@@ -106,11 +106,25 @@ if [ "$TRIBITS_DEV_GUIDE_SKIP_OTHER_EXTRACTION" == "" ] ; then
   update_if_different  gitdist-help.txt  tmp
 
   echo
+  echo "Generating output for 'clone_extra_repos.py --help' ..."
+  echo
+  ../../ci_support/clone_extra_repos.py --help \
+    &> clone_extra_repos-help.txt.tmp
+  update_if_different  clone_extra_repos-help.txt  tmp
+
+  echo
   echo "Generating output for 'snapshot-dir.py --help' ..."
   echo
   env SNAPSHOT_DIR_DUMMY_DEFAULTS=1 ../../python_utils/snapshot-dir.py --help \
    &> snapshot-dir-help.txt.tmp
   update_if_different  snapshot-dir-help.txt  tmp
+
+  echo
+  echo "Generating output for 'install_devtools.py --help' ..."
+  echo
+  ../../devtools_install/install_devtools.py --help \
+    &> install_devtools-help.txt.tmp
+  update_if_different  install_devtools-help.txt  tmp
 
 fi
 

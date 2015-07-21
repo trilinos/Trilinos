@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -244,7 +244,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, ScaledLinearOpBase )
     );
   // NOTE: Above, it would ask for exact binary match except if one uses
   // threading it will not match exactly!
-  
+
 }
 
 
@@ -304,13 +304,13 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, RowStatLinearOpBase )
     );
 }
 
-RCP<Epetra_CrsMatrix> getMyEpetraMatrix(int numRows, int numCols, double shift=0.0) 
+RCP<Epetra_CrsMatrix> getMyEpetraMatrix(int numRows, int numCols, double shift=0.0)
 {
   const RCP<const Epetra_Comm> comm = getEpetraComm();
 
   const Epetra_Map rowMap(numRows, 0, *comm);
   const Epetra_Map domainMap(numCols, numCols, 0, *comm);
- 
+
   const RCP<Epetra_CrsMatrix> epetraCrsM =
     rcp(new Epetra_CrsMatrix(Copy, rowMap,domainMap,0));
 
@@ -338,7 +338,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, Blocked_ScaledLinearOpBase)
   using Teuchos::inOutArg;
   using Teuchos::updateSuccess;
   using Teuchos::rcp_dynamic_cast;
-  typedef ScalarTraits<double> ST;
+  // typedef ScalarTraits<double> ST; // unused
 
   // Set up the EpetraLinearOp
 
@@ -346,7 +346,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, Blocked_ScaledLinearOpBase)
   const int numLocalRows = g_localDim;
   const int numRows = numLocalRows * comm->NumProc();
   const int numCols = numLocalRows ;
- 
+
   out << "numRows = " << numRows << ", numCols = " << numCols << std::endl;
 
   const RCP<Epetra_CrsMatrix> epetraCrsM00_base = getMyEpetraMatrix(numRows, numRows);
@@ -429,7 +429,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, Blocked_RowStatLinearOpBase )
   const int numLocalRows = g_localDim;
   const int numRows = numLocalRows * comm->NumProc();
   const int numCols = numLocalRows / 2;
- 
+
   out << "numRows = " << numRows << ", numCols = " << numCols << std::endl;
 
   const RCP<Epetra_CrsMatrix> epetraCrsM00 = getEpetraMatrix(numRows, numRows);
@@ -495,12 +495,12 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, Blocked_ScalingWithMultiVectors)
   // Set up the EpetraLinearOp
 
   const RCP<const Epetra_Comm> comm = getEpetraComm();
-  const RCP<const Teuchos::Comm<Ordinal> > tComm = 
+  const RCP<const Teuchos::Comm<Ordinal> > tComm =
       Teuchos::DefaultComm<Ordinal>::getComm();
   const int numLocalRows = 4;
   const int numRows = numLocalRows * comm->NumProc();
   const int numCols = numLocalRows / 2;
- 
+
   out << "numRows = " << numRows << ", numCols = " << numCols << std::endl;
 
   const RCP<Epetra_CrsMatrix> epetraCrsM00 = getMyEpetraMatrix(numRows, numRows);
@@ -567,10 +567,10 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, Blocked_ScalingWithMultiVectors)
   {
     const RCP<VectorBase<double> > left_scale  = createMember<double>(blocked_base->range());
     const RCP<VectorBase<double> > right_scale = createMember<double>(blocked_base->domain());
-  
+
     put_scalar(7.0,left_scale.ptr());
     put_scalar(-4.0,right_scale.ptr());
-  
+
     rcp_dynamic_cast<ScaledLinearOpBase<double> >(blocked)->scaleLeft(*left_scale);
 
     {
@@ -581,12 +581,12 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, Blocked_ScalingWithMultiVectors)
       tester.num_random_vectors(2);
       const RCP<const LinearOpBase<double> > left_op = Thyra::diagonal(left_scale);
       const RCP<const LinearOpBase<double> > ref_op = multiply(left_op,blocked_base);
-  
+
       updateSuccess(tester.compare(*ref_op, *blocked, ptrFromRef(out)), success);
     }
-  
+
     rcp_dynamic_cast<ScaledLinearOpBase<double> >(blocked)->scaleRight(*right_scale);
-  
+
     {
       LinearOpTester<double> tester;
       tester.set_all_error_tol(1e-10);
@@ -596,7 +596,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, Blocked_ScalingWithMultiVectors)
       const RCP<const LinearOpBase<double> > left_op = Thyra::diagonal(left_scale);
       const RCP<const LinearOpBase<double> > right_op = Thyra::diagonal(right_scale);
       const RCP<const LinearOpBase<double> > ref_op = multiply(left_op,blocked_base,right_op);
-  
+
       updateSuccess(tester.compare(*ref_op, *blocked, ptrFromRef(out)), success);
     }
   }
@@ -628,7 +628,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, rectangular )
 
   // NOTE: Above, it would seem the Epetra_CrsMatrix::Apply(...) does not work
   // when doing and adjoint where the RowMap has empty processes.
-   
+
 }
 
 
@@ -641,7 +641,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, blocked_op )
   }
 
   using Teuchos::describe;
-  
+
   // build sub operators
   RCP<const LinearOpBase<double> > A00 =
     epetraLinearOp(getEpetraMatrix(4,4,0));
@@ -664,7 +664,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, blocked_op )
 
   const Teuchos::EVerbosityLevel verbLevel =
     (g_dumpAll ? Teuchos::VERB_HIGH : Teuchos::VERB_MEDIUM);
-  
+
   out << "Sub operators built" << std::endl;
 
   {
@@ -674,19 +674,19 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, blocked_op )
          block2x2<double>(A00, A01, A10, A11),   block2x1<double>(A02,A12),
          block1x2<double>(A20, A21),             A22
          );
-   
+
      out << "First composite operator built" << std::endl;
-     
+
      // build vectors for use in apply
      RCP<MultiVectorBase<double> > x = createMembers<double>(A->domain(), 3);
      RCP<MultiVectorBase<double> > y = createMembers<double>(A->range(), 3);
-     
+
      randomize(-1.0, 1.0, x.ptr());
-   
+
      out << "A = \n" << describe(*A, verbLevel) << std::endl;
      out << "x = \n" << describe(*x, verbLevel) << std::endl;
      out << "y = \n" << describe(*y, verbLevel) << std::endl;
-     
+
      // perform a matrix vector multiply
      apply(*A, NOTRANS, *x, y.ptr());
 
@@ -698,19 +698,19 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, blocked_op )
        A11,                          block1x2<double>(A10, A12),
        block2x1<double>(A01, A21),   block2x2<double>(A00, A02, A20, A22)
        );
-     
+
      out << "Second composite operator built" << std::endl;
-     
+
      // build vectors for use in apply
      RCP<MultiVectorBase<double> > x = createMembers<double>(A->domain(), 3);
      RCP<MultiVectorBase<double> > y = createMembers<double>(A->range(), 3);
-     
+
      randomize(-1.0, 1.0, x.ptr());
-   
+
      out << "A = \n" << describe(*A, verbLevel) << std::endl;
      out << "x = \n" << describe(*x, verbLevel) << std::endl;
      out << "y = \n" << describe(*y, verbLevel) << std::endl;
-     
+
      // perform a matrix vector multiply
      apply(*A, NOTRANS, *x, y.ptr());
 

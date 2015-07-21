@@ -61,9 +61,56 @@ PHX_POST_REGISTRATION_SETUP(Constant,data,fm)
 {
   using namespace PHX;
   this->utils.setFieldData(constant,fm);
-
-  for (std::size_t i = 0; i < static_cast<std::size_t>(constant.size()); ++i)
-    constant[i] = value;
+  
+  if (constant.rank() == 1) {
+    for (PHX::Device::size_type i = 0; i < constant.dimension(0); ++i)
+	   constant(i) = value;
+  }
+  else if (constant.rank() == 2) {
+    for (PHX::Device::size_type i = 0; i < constant.dimension(0); ++i)
+      for (PHX::Device::size_type j = 0; j < constant.dimension(1); ++j)
+	constant(i,j) = value;
+  }
+  else if (constant.rank() == 3) {
+    for (PHX::Device::size_type i = 0; i < constant.dimension(0); ++i)
+      for (PHX::Device::size_type j = 0; j < constant.dimension(1); ++j)
+	for (PHX::Device::size_type k = 0; k < constant.dimension(2); ++k)
+	  constant(i,j,k) = value;
+  }
+  else if (constant.rank() == 4) {
+    for (PHX::Device::size_type i = 0; i < constant.dimension(0); ++i)
+      for (PHX::Device::size_type j = 0; j < constant.dimension(1); ++j)
+	for (PHX::Device::size_type k = 0; k < constant.dimension(2); ++k)
+	  for (PHX::Device::size_type l = 0; l < constant.dimension(3); ++l)
+	    constant(i,j,k,l) = value;
+  }
+  else if (constant.rank() == 5) {
+    for (PHX::Device::size_type i = 0; i < constant.dimension(0); ++i)
+      for (PHX::Device::size_type j = 0; j < constant.dimension(1); ++j)
+	for (PHX::Device::size_type k = 0; k < constant.dimension(2); ++k)
+	  for (PHX::Device::size_type l = 0; l < constant.dimension(3); ++l)
+	    for (PHX::Device::size_type m = 0; m < constant.dimension(4); ++m)
+	      constant(i,j,k,l,m) = value;
+  }
+  else if (constant.rank() == 6) {
+    for (PHX::Device::size_type i = 0; i < constant.dimension(0); ++i)
+      for (PHX::Device::size_type j = 0; j < constant.dimension(1); ++j)
+	for (PHX::Device::size_type k = 0; k < constant.dimension(2); ++k)
+	  for (PHX::Device::size_type l = 0; l < constant.dimension(3); ++l)
+	    for (PHX::Device::size_type m = 0; m < constant.dimension(4); ++m)
+	      for (PHX::Device::size_type n = 0; n < constant.dimension(5); ++n)
+		constant(i,j,k,l,m,n) = value;
+  }
+  else if (constant.rank() == 7) {
+    for (PHX::Device::size_type i = 0; i < constant.dimension(0); ++i)
+      for (PHX::Device::size_type j = 0; j < constant.dimension(1); ++j)
+	for (PHX::Device::size_type k = 0; k < constant.dimension(2); ++k)
+	  for (PHX::Device::size_type l = 0; l < constant.dimension(3); ++l)
+	    for (PHX::Device::size_type m = 0; m < constant.dimension(4); ++m)
+	      for (PHX::Device::size_type n = 0; n < constant.dimension(5); ++n)
+		for (PHX::Device::size_type o = 0; o < constant.dimension(6); ++o)
+		  constant(i,j,k,l,m,n,o) = value;
+  }
 }
 
 //**********************************************************************

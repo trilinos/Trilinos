@@ -155,12 +155,12 @@ namespace TSQR {
 
 #ifdef HAVE_KOKKOSTSQR_TBB
   //
-  // Specialization of NodeTsqrFactory for KokkosClassic::TBBNode.
+  // Specialization of NodeTsqrFactory for KokkosClassic::DoNotUse::TBBNode.
   //
   template<class Scalar, class LocalOrdinal>
-  class NodeTsqrFactory<KokkosClassic::TBBNode, Scalar, LocalOrdinal> {
+  class NodeTsqrFactory<KokkosClassic::DoNotUse::TBBNode, Scalar, LocalOrdinal> {
   public:
-    typedef KokkosClassic::TBBNode node_type;
+    typedef KokkosClassic::DoNotUse::TBBNode node_type;
     typedef Teuchos::RCP<node_type> node_ptr;
     typedef TBB::TbbTsqr<LocalOrdinal, Scalar> node_tsqr_type;
 
@@ -203,12 +203,12 @@ namespace TSQR {
 
 #if defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   //
-  // Specialization of NodeTsqrFactory for KokkosClassic::TPINode.
+  // Specialization of NodeTsqrFactory for KokkosClassic::DoNotUse::TPINode.
   //
   template<class Scalar, class LocalOrdinal>
-  class NodeTsqrFactory<KokkosClassic::TPINode, Scalar, LocalOrdinal> {
+  class NodeTsqrFactory<KokkosClassic::DoNotUse::TPINode, Scalar, LocalOrdinal> {
   public:
-    typedef KokkosClassic::TPINode node_type;
+    typedef KokkosClassic::DoNotUse::TPINode node_type;
     typedef Teuchos::RCP<node_type> node_ptr;
     typedef KokkosNodeTsqr<LocalOrdinal, Scalar, node_type> node_tsqr_type;
 
@@ -247,12 +247,12 @@ namespace TSQR {
 
 #if defined(HAVE_KOKKOSCLASSIC_SERIAL)
   //
-  // Specialization of NodeTsqrFactory for KokkosClassic::SerialNode.
+  // Specialization of NodeTsqrFactory for KokkosClassic::DoNotUse::SerialNode.
   //
   template<class Scalar, class LocalOrdinal>
-  class NodeTsqrFactory<KokkosClassic::SerialNode, Scalar, LocalOrdinal> {
+  class NodeTsqrFactory<KokkosClassic::DoNotUse::SerialNode, Scalar, LocalOrdinal> {
   public:
-    typedef KokkosClassic::SerialNode node_type;
+    typedef KokkosClassic::DoNotUse::SerialNode node_type;
     typedef Teuchos::RCP<node_type> node_ptr;
     typedef SequentialTsqr<LocalOrdinal, Scalar> node_tsqr_type;
 

@@ -30,7 +30,7 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Sacado.hpp"
+#include "Sacado_No_Kokkos.hpp"
 #include "Sacado_Tay_CacheTaylor.hpp"
 #include "Tay_CommTests.hpp"
 

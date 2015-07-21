@@ -49,7 +49,7 @@
 #include "MyMultiVec.hpp"
 
 //! Simple example of a user's defined Belos::Operator class.
-/*! 
+/*!
  * This is a simple, single processor example of user's defined
  * Belos::Operator-derived class. The class is templated with ScalarType;
  * possible choices are, for example, "float", "double", or
@@ -66,9 +66,9 @@ class MyOperator : public Belos::Operator<ScalarType>
 {
 
 public:
-  
+
   /* Constructs a square matrix with \c NumRows rows and columns.
-   * The matrix is tridiagonal, and the computational stencil is 
+   * The matrix is tridiagonal, and the computational stencil is
    * [-1, 2, -1]
    */
   MyOperator(const int NumRows) :
@@ -85,7 +85,7 @@ public:
   {
     l_ = ldu[0];
     d_ = ldu[1];
-    u_ = ldu[2];    
+    u_ = ldu[2];
   }
 
   // Constructor for a diagonal matrix with variable entries.
@@ -100,35 +100,35 @@ public:
   //! Dtor
   ~MyOperator()
   {}
-  
+
   //! Applies the tridiagonal or diagonal matrix to a multivector.
-  void Apply(const Belos::MultiVec<ScalarType>& X, 
+  void Apply(const Belos::MultiVec<ScalarType>& X,
              Belos::MultiVec<ScalarType>& Y,
              Belos::ETrans trans = Belos::NOTRANS) const
   {
     const MyMultiVec<ScalarType>* MyX;
-    MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
+    MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X);
     assert (MyX != 0);
-    
+
     MyMultiVec<ScalarType>* MyY;
-    MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
+    MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y);
     assert (MyY != 0);
-    
+
     assert (X.GetNumberVecs() == Y.GetNumberVecs());
-    assert (X.GetVecLength() == Y.GetVecLength());
-   
+    assert (X.GetGlobalLength() == Y.GetGlobalLength());
+
     if (diag_.size() == 0)
     {
       // This is a tridiagonal matrix
       for (int v = 0 ; v < X.GetNumberVecs() ; ++v)
       {
-        for (int i = 0 ; i < X.GetVecLength() ; ++i)
+        for (ptrdiff_t i = 0 ; i < X.GetGlobalLength() ; ++i)
         {
           if (i == 0)
           {
             (*MyY)[v][i] = (d_ * (*MyX)[v][i] + u_ * (*MyX)[v][i + 1]);
           }
-          else if (i == X.GetVecLength() - 1)
+          else if (i == X.GetGlobalLength() - 1)
           {
             (*MyY)[v][i] = (d_ * (*MyX)[v][i] + l_ * (*MyX)[v][i-1]);
           }
@@ -138,20 +138,20 @@ public:
           }
         }
       }
-    } 
+    }
     else
     {
       // This is a diagonal matrix
       for (int v = 0 ; v < X.GetNumberVecs() ; ++v)
       {
-        for (int i = 0 ; i < X.GetVecLength() ; ++i)
+        for (ptrdiff_t i = 0 ; i < X.GetGlobalLength() ; ++i)
         {
           (*MyY)[v][i] = diag_[i] * (*MyX)[v][i];
         }
-      }      
+      }
     }
   }
-  
+
 private:
   //! Number of rows and columns
   int NumRows_;

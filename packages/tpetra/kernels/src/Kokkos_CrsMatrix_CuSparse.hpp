@@ -158,7 +158,7 @@ MV_Multiply_Try_CuSparse (typename RangeVector::value_type s_b,
                           const CrsMatrix& A,
                           const DomainVector& x)
 {
-  if(!Kokkos::Impl::is_same<typename RangeVector::device_type,typename Kokkos::Cuda>::value) return false;
+  if(!Kokkos::Impl::is_same<typename RangeVector::execution_space,typename Kokkos::Cuda>::value) return false;
   if(Kokkos::Impl::is_same<typename RangeVector::non_const_value_type,float>::value&&
          Kokkos::Impl::is_same<typename DomainVector::non_const_value_type,float>::value&&
          Kokkos::Impl::is_same<typename CrsMatrix::values_type::non_const_value_type,float>::value) {

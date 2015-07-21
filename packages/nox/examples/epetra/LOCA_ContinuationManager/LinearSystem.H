@@ -60,7 +60,7 @@
 #endif
 #include "Epetra_Vector.h"
 #include "LOCA_Parameter_Vector.H"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 // ParaCont headers
@@ -73,9 +73,9 @@ class LinearSystem:
 
       // Constructor
 #ifdef HAVE_MPI
-      LinearSystem( const Teuchos::RefCountPtr <Epetra_MpiComm> & aComm );
+      LinearSystem( const Teuchos::RCP <Epetra_MpiComm> & aComm );
 #else
-      LinearSystem( const Teuchos::RefCountPtr <Epetra_SerialComm> & aComm );
+      LinearSystem( const Teuchos::RCP <Epetra_SerialComm> & aComm );
 #endif
 
       // Destructor
@@ -92,11 +92,11 @@ class LinearSystem:
       virtual bool ComputeJacF(const Epetra_Vector & x);
 
       // Returns a pointer to the Jacobian of F
-      virtual Teuchos::RefCountPtr <Epetra_CrsMatrix>
+      virtual Teuchos::RCP <Epetra_CrsMatrix>
     GetJacF() const;
 
       // Returns a pointer to the initial guess
-      virtual Teuchos::RefCountPtr <Epetra_Vector>
+      virtual Teuchos::RCP <Epetra_Vector>
     GetInitialGuess() const;
 
       // Implementation of ProblemLOCAPrototype
@@ -120,7 +120,7 @@ class LinearSystem:
       virtual bool SetContinuationFileParameters(const Epetra_Vector & x);
 
       // Getting the continuation file parameters
-      virtual Teuchos::RefCountPtr <Teuchos::ParameterList>
+      virtual Teuchos::RCP <Teuchos::ParameterList>
     GetContinuationFileParameters();
 
       // Printing the solution at each step
@@ -134,23 +134,23 @@ class LinearSystem:
       //
       // Communicator
 #ifdef HAVE_MPI
-      Teuchos::RefCountPtr <Epetra_MpiComm> comm;
+      Teuchos::RCP <Epetra_MpiComm> comm;
 #else
-      Teuchos::RefCountPtr <Epetra_SerialComm> comm;
+      Teuchos::RCP <Epetra_SerialComm> comm;
 #endif
 
       // Continuable parameter list
       LOCA::ParameterVector continuableParams;
 
       // The continuation file parameters
-      Teuchos::RefCountPtr <Teuchos::ParameterList>
+      Teuchos::RCP <Teuchos::ParameterList>
     continuationFileParams;
 
       // Initial Guess
-      Teuchos::RefCountPtr <Epetra_Vector> initialGuess;
+      Teuchos::RCP <Epetra_Vector> initialGuess;
 
       // Jacobian
-      Teuchos::RefCountPtr <Epetra_CrsMatrix>  jacobian;
+      Teuchos::RCP <Epetra_CrsMatrix>  jacobian;
 
       // From Local to global indices (vector map)
       int * myGlobalElements;
@@ -159,7 +159,7 @@ class LinearSystem:
       int numMyElements;
 
       // Epetra Map of the vector's components
-      Teuchos::RefCountPtr <Epetra_Map>  vectorMap;
+      Teuchos::RCP <Epetra_Map>  vectorMap;
   };
 
 #endif

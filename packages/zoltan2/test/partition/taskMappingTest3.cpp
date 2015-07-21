@@ -225,10 +225,11 @@ int main(int argc, char *argv[]){
             }
 
 
-            task_communication_xadj_ = new part_t [numParts];
+            task_communication_xadj_ = new part_t [numParts+1];
             task_communication_adj_ = new part_t [numParts * 6];
 
             int prevNCount = 0;
+            task_communication_xadj_[0] = 0;
             for (part_t i = 0; i < numParts; ++i) {
               int x = i % jobX;
               int y = (i / (jobX)) % jobY;
@@ -255,7 +256,7 @@ int main(int argc, char *argv[]){
               if (z < jobZ - 1){
               task_communication_adj_[prevNCount++] = i + jobX * jobY;
               }
-              task_communication_xadj_[i] = prevNCount;
+              task_communication_xadj_[i+1] = prevNCount;
             }
         }
 
@@ -291,7 +292,7 @@ int main(int argc, char *argv[]){
 
         */
         RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
-        part_t *proc_to_task_xadj_ = new part_t[numProcs];
+        part_t *proc_to_task_xadj_ = new part_t[numProcs+1];
         part_t *proc_to_task_adj_ = new part_t[numParts];
 /*
         cout << "procDim:" << procDim <<

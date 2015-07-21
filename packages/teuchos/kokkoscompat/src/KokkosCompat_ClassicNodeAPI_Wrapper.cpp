@@ -45,8 +45,10 @@ namespace Kokkos {
           Kokkos::Threads::initialize ( NumThreads, NumNUMA, NumCoresPerNUMA );
         else if (NumNUMA > 0)
           Kokkos::Threads::initialize ( NumThreads, NumNUMA );
-        else
+        else if (NumThreads > 0)
           Kokkos::Threads::initialize ( NumThreads );
+        else
+          Kokkos::Threads::initialize ( );
       }
     }
 
@@ -77,8 +79,10 @@ namespace Kokkos {
           Kokkos::OpenMP::initialize ( NumThreads, NumNUMA, NumCoresPerNUMA );
         else if (NumNUMA > 0)
           Kokkos::OpenMP::initialize ( NumThreads, NumNUMA );
-        else
+        else if (NumThreads > 0)
           Kokkos::OpenMP::initialize ( NumThreads );
+        else
+          Kokkos::OpenMP::initialize ( );
       }
     }
 
@@ -125,7 +129,7 @@ namespace Kokkos {
       count--;
       if(count==0) {
         if(HostSpace::execution_space::is_initialized()) {
-          // make sure that no Actual DeviceWrapper node of the mirror_device_type is in use
+          // make sure that no Actual DeviceWrapper node of the mirror_execution_space is in use
           if(KokkosDeviceWrapperNode<HostSpace::execution_space>::count==0) {
             HostSpace::execution_space::finalize();
           }
@@ -150,8 +154,10 @@ namespace Kokkos {
           Kokkos::HostSpace::execution_space::initialize ( NumThreads, NumNUMA, NumCoresPerNUMA );
         else if (NumNUMA > 0)
           Kokkos::HostSpace::execution_space::initialize ( NumThreads, NumNUMA );
-        else
+        else if (NumThreads > 0)
           Kokkos::HostSpace::execution_space::initialize ( NumThreads );
+        else
+          Kokkos::HostSpace::execution_space::initialize ( );
       }
       Kokkos::Cuda::SelectDevice select_device(Device);
       if(!Kokkos::Cuda::is_initialized())

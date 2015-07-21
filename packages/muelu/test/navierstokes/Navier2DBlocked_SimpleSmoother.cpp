@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
 
-    int globalNumDofs = 8898;  // used for the maps
+    int globalNumDofs = 1500;  // used for the maps
     //int nDofsPerNode = 3;      // used for generating the fine level null-space
 
     // build strided maps

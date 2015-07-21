@@ -68,7 +68,7 @@ class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix>
     IgnoreNonLocalCols - Whether to ignore non-local columns for the transpose
    */
   RowMatrix_Transpose( Epetra_Map * TransposeRowMap = 0,
-		       bool IgnoreNonLocalCols = false)
+                       bool IgnoreNonLocalCols = false)
   : TransposeMatrix_(0),
     TransposeRowMap_(TransposeRowMap),
     IgnoreNonLocalCols_(IgnoreNonLocalCols),
@@ -101,7 +101,7 @@ class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix>
 
   Epetra_Map * TransposeRowMap_;
 
-  bool MakeDataContiguous_;
+  /* bool MakeDataContiguous_; (unused private field) */
   bool IgnoreNonLocalCols_;
 
   int NumMyRows_;

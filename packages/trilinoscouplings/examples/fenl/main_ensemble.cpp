@@ -270,7 +270,7 @@ int main( int argc , char ** argv )
 #if defined(__MIC__)
       if ( cmdline.USE_UQ_ENSEMBLE == 0 ||
            cmdline.USE_UQ_ENSEMBLE == 16 )
-        run< Kokkos::Threads >( comm , cmdline );
+        run< Kokkos::Threads , 16 >( comm , cmdline );
       else if ( cmdline.USE_UQ_ENSEMBLE == 32 )
         run< Kokkos::Threads , 32 >( comm , cmdline );
       else

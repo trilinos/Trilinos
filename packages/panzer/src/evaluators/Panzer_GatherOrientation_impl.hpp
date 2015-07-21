@@ -51,8 +51,8 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
-template<typename EvalT,typename Traits,typename LO,typename GO>
-panzer::GatherOrientation<EvalT, Traits,LO,GO>::
+template<typename EvalT,typename TRAITS,typename LO,typename GO>
+panzer::GatherOrientation<EvalT, TRAITS,LO,GO>::
 GatherOrientation(
   const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LO,GO> > & indexer,
   const Teuchos::ParameterList& p)
@@ -82,10 +82,10 @@ GatherOrientation(
 }
 
 // **********************************************************************
-template<typename EvalT,typename Traits,typename LO,typename GO>
-void panzer::GatherOrientation<EvalT, Traits,LO,GO>::
-postRegistrationSetup(typename Traits::SetupData d, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename EvalT,typename TRAITS,typename LO,typename GO>
+void panzer::GatherOrientation<EvalT, TRAITS,LO,GO>::
+postRegistrationSetup(typename TRAITS::SetupData d, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   TEUCHOS_ASSERT(gatherFieldOrientations_.size() == indexerNames_->size());
 
@@ -104,9 +104,9 @@ postRegistrationSetup(typename Traits::SetupData d,
 }
 
 // **********************************************************************
-template<typename EvalT,typename Traits,typename LO,typename GO>
-void panzer::GatherOrientation<EvalT, Traits,LO,GO>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename EvalT,typename TRAITS,typename LO,typename GO>
+void panzer::GatherOrientation<EvalT, TRAITS,LO,GO>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
    std::vector<GO> GIDs;
    std::vector<int> LIDs;

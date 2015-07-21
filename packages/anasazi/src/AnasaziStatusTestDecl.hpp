@@ -40,14 +40,13 @@
 
 namespace Anasazi {
 
-  /*! 
-    \class StatusTest
-    \brief A pure virtual class for defining the status tests for the ::Anasazi iterative solvers
-    
-    StatusTest is an interface that can be implemented to create convergence tests for
-    all Anasazi solvers.  Almost any kind of test can be expressed using this mechanism, 
-    including composite tests (see StatusTestCombo). 
-  */
+  /// \class StatusTest
+  /// \brief Common interface of stopping criteria for Anasazi's solvers.
+  ///
+  /// StatusTest is an interface that can be implemented to create
+  /// convergence tests for all Anasazi solvers. Almost any kind of test
+  /// can be expressed using this mechanism, including composite tests
+  /// (see StatusTestCombo).
   template <class ScalarType, class MV, class OP>
   class StatusTest;
 }

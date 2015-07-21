@@ -297,6 +297,21 @@ PeriodicBC_Parser::buildMatcher(const std::string & buildStr) const
      return panzer_stk_classic::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"edge");
    }
 
+   if(matcher=="xy-face" || matcher=="yx-face") {
+     panzer_stk_classic::PlaneMatcher matcher(0,1,params);
+     return panzer_stk_classic::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"face");
+   }
+
+   if(matcher=="xz-face" || matcher=="zx-face") {
+     panzer_stk_classic::PlaneMatcher matcher(0,2,params);
+     return panzer_stk_classic::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"face");
+   }
+
+   if(matcher=="yz-face" || matcher=="zy-face") {
+     panzer_stk_classic::PlaneMatcher matcher(1,2,params);
+     return panzer_stk_classic::buildPeriodicBC_Matcher(bndry1,bndry2,matcher,"face");
+   }
+
    if(matcher=="(xy)z-quarter-coord") {
      panzer_stk_classic::QuarterPlaneMatcher matcher(0,1,2,params);
      return panzer_stk_classic::buildPeriodicBC_Matcher(bndry1,bndry2,matcher);

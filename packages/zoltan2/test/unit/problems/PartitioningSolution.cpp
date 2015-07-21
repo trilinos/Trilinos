@@ -116,7 +116,6 @@ int main(int argc, char *argv[])
   for (int i=0, x=rank*numIdsPerProc; i < numIdsPerProc; i++)
     myGids[i] = x++;
 
-
   /////////////
   // TEST:
   // One weight, one part per proc.

@@ -321,11 +321,19 @@ void Gear::mesh( stk::mesh::BulkData & M )
 
           stk::mesh::Entity elem = M.get_entity(element_rank, elem_id);
 
-          M.declare_relation( elem , face , face_ord );
+          stk::topology elem_topo = M.bucket(elem).topology();
+          stk::mesh::Permutation perm =
+                  M.find_permutation(elem_topo, M.begin_nodes(elem),
+                                     elem_topo.face_topology(face_ord), node, face_ord);
+          ThrowRequireMsg(perm != stk::mesh::INVALID_PERMUTATION,
+                          "Gear::mesh():  could not find valid permutation to connect face to element");
+
+          M.declare_relation( elem , face , face_ord, perm );
         }
       }
     }
   }
+  // ALAN: modification_begin again? should be modification_end?
   M.modification_begin();
 }
 

@@ -134,9 +134,12 @@
 #include "ml_epetra_utils.h"
 
 
-
-// Sacado includes
+#ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
+#else
+// Sacado includes
+#include "Sacado_No_Kokkos.hpp"
+#endif
 
 using namespace std;
 using namespace Intrepid;

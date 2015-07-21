@@ -47,7 +47,7 @@
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_Assert.hpp>
 
-#include <Kokkos_TPINode.hpp>
+#include <Kokkos_DefaultNode.hpp>
 
 // I/O for Harwell-Boeing files
 #include "Tpetra_MatrixIO.hpp"
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Comm info: " << *comm;
   }
 
-  typedef KokkosClassic::TPINode Node;
+  typedef KokkosClassic::DoNotUse::TPINode Node;
   Teuchos::ParameterList params;
   params.set<int>("Num Threads",numThreads);
   params.set<int>("Verbose",verbose);

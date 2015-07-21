@@ -54,6 +54,9 @@
 
 #include "Intrepid_FieldContainer.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+#include "Phalanx_KokkosViewFactory.hpp"
+
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Intrepid::FieldContainer;
@@ -61,6 +64,8 @@ using Intrepid::FieldContainer;
 namespace panzer {
   TEUCHOS_UNIT_TEST(point_values, intrepid_container)
   {
+    PHX::KokkosDeviceSession session;
+
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
@@ -146,6 +151,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(point_values, intrepid_container_dfad)
   {
+    PHX::KokkosDeviceSession session;
+
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
@@ -215,17 +222,22 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(point_values, md_field_setup)
   {
+    typedef PHX::KokkosViewFactory<double,PHX::Device> ViewFactory;
+    typedef PHX::MDField<double>::size_type size_type;
+
+    PHX::KokkosDeviceSession session;
+
     Teuchos::RCP<shards::CellTopology> topo = 
        Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
 
     const int num_cells = 20;
     const int base_cell_dimension = 2;
     const panzer::CellData cell_data(num_cells,topo);
-    int num_points = 3;
+    unsigned int num_points = 3;
 
     RCP<PointRule> point_rule = rcp(new PointRule("RandomPoints",num_points, cell_data));
 
-    TEST_EQUALITY(point_rule->num_points,num_points);
+    TEST_EQUALITY(point_rule->num_points,Teuchos::as<int>(num_points));
   
     panzer::PointValues<double,PHX::MDField<double> > point_values;
     panzer::MDFieldArrayFactory af("prefix_");
@@ -272,5 +284,152 @@ namespace panzer {
     TEST_EQUALITY(point_values.jac_det.fieldTag().dataLayout().dimension(0),num_cells);
     TEST_EQUALITY(point_values.jac_det.fieldTag().dataLayout().dimension(1),num_points);
     TEST_EQUALITY(point_values.jac_det.fieldTag().name(),"prefix_jac_det");
+
+    const size_type derivative_dim = 4;
+    const std::vector<PHX::index_size_type> ddims(1,derivative_dim);
+
+    point_values.coords_ref.setFieldData(ViewFactory::buildView(point_values.coords_ref.fieldTag(),ddims));
+  }
+
+  TEUCHOS_UNIT_TEST(point_values, md_field_evaluate)
+  {
+    typedef panzer::Traits::FadType ScalarType;
+    typedef PHX::MDField<ScalarType> ArrayType;
+    typedef PHX::KokkosViewFactory<ScalarType,PHX::Device> ViewFactory;
+    typedef PHX::MDField<double>::size_type size_type;
+
+    PHX::KokkosDeviceSession session;
+
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
+    const int num_cells = 4;
+    const int base_cell_dimension = 2;
+    const panzer::CellData cell_data(num_cells,topo);
+    int num_points = 3;
+
+    RCP<PointRule> point_rule = rcp(new PointRule("RandomPoints",num_points, cell_data));
+
+    TEST_EQUALITY(point_rule->num_points,num_points);
+  
+    panzer::PointValues<ScalarType,PHX::MDField<ScalarType> > point_values;
+    panzer::MDFieldArrayFactory af("prefix_");
+
+    point_values.setupArrays(point_rule,af);
+
+    // Set up node coordinates.  Here we assume the following
+    // ordering.  This needs to be consistent with shards topology,
+    // otherwise we will get negative determinates
+
+    // 3(0,1)---2(1,1)
+    //   |    0  |
+    //   |       |
+    // 0(0,0)---1(1,0)
+
+    const size_type derivative_dim = 4;
+    const std::vector<PHX::index_size_type> ddims(1,derivative_dim);
+
+    const int num_vertices = point_rule->topology->getNodeCount();
+    ArrayType node_coordinates = af.buildArray<ScalarType,Cell,NODE,Dim>("node_coordinates",num_cells, num_vertices, base_cell_dimension);
+    node_coordinates.setFieldData(ViewFactory::buildView(node_coordinates.fieldTag(),ddims));
+
+    const size_type x = 0;
+    const size_type y = 1;
+    for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
+      int xleft = cell % 2;
+      int yleft = int(cell/2);
+
+      node_coordinates(cell,0,x) = xleft*0.5;
+      node_coordinates(cell,0,y) = yleft*0.5;
+
+      node_coordinates(cell,1,x) = (xleft+1)*0.5;
+      node_coordinates(cell,1,y) = yleft*0.5; 
+
+      node_coordinates(cell,2,x) = (xleft+1)*0.5;
+      node_coordinates(cell,2,y) = (yleft+1)*0.5;
+
+      node_coordinates(cell,3,x) = xleft*0.5;
+      node_coordinates(cell,3,y) = (yleft+1)*0.5;
+
+      out << "Cell " << cell << " = ";
+      for(int i=0;i<4;i++)
+         out << "(" << node_coordinates(cell,i,x) << ", "
+                    << node_coordinates(cell,i,y) << ") ";
+      out << std::endl;
+    }
+
+    // Build the evaluation points
+
+    ArrayType point_coordinates =  af.buildArray<ScalarType,IP,Dim>("points",num_points, base_cell_dimension);
+    point_coordinates.setFieldData(ViewFactory::buildView(point_coordinates.fieldTag(),ddims));
+    point_coordinates(0,0) =  0.0; point_coordinates(0,1) = 0.0; // mid point
+    point_coordinates(1,0) =  0.5; point_coordinates(1,1) = 0.5; // mid point of upper left quadrant
+    point_coordinates(2,0) = -0.5; point_coordinates(2,1) = 0.0; // mid point of line from center to left side
+
+    point_values.coords_ref.setFieldData(ViewFactory::buildView(point_values.coords_ref.fieldTag(),ddims));
+    point_values.node_coordinates.setFieldData(ViewFactory::buildView(point_values.node_coordinates.fieldTag(),ddims));
+    point_values.point_coords.setFieldData(ViewFactory::buildView(point_values.point_coords.fieldTag(),ddims));
+    point_values.jac.setFieldData(ViewFactory::buildView(point_values.jac.fieldTag(),ddims));
+    point_values.jac_inv.setFieldData(ViewFactory::buildView(point_values.jac_inv.fieldTag(),ddims));
+    point_values.jac_det.setFieldData(ViewFactory::buildView(point_values.jac_det.fieldTag(),ddims));
+    
+    point_values.evaluateValues(node_coordinates,point_coordinates);
+
+    // check the reference values (ensure copying)
+    for(int p=0;p<num_points;p++)
+       for(size_type d=0;d<base_cell_dimension;d++)
+          TEST_EQUALITY(point_values.coords_ref(p,d).val(),point_coordinates(p,d).val());
+
+    // check the shifted values (ensure physical mapping)
+    for(size_type c=0;c<num_cells;c++) {
+       double dx = 0.5;
+       double dy = 0.5;
+       for(int p=0;p<num_points;p++) {
+          double x = dx*(point_coordinates(p,0).val()+1.0)/2.0 + node_coordinates(c,0,0).val(); 
+          double y = dy*(point_coordinates(p,1).val()+1.0)/2.0 + node_coordinates(c,0,1).val();
+          TEST_FLOATING_EQUALITY(point_values.point_coords(c,p,0).val(),x,1e-10);
+          TEST_FLOATING_EQUALITY(point_values.point_coords(c,p,1).val(),y,1e-10);
+       }
+    }
+
+    // check the jacobian
+    for(size_type c=0;c<num_cells;c++) {
+       double dx = 0.5;
+       double dy = 0.5;
+       for(int p=0;p<num_points;p++) {
+          TEST_FLOATING_EQUALITY(point_values.jac(c,p,0,0).val(),dx/2.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_values.jac(c,p,0,1).val(),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_values.jac(c,p,1,0).val(),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_values.jac(c,p,1,1).val(),dy/2.0,1e-10);
+       }
+    }
+    for(size_type c=0;c<num_cells;c++) {
+       double dx = 0.5;
+       double dy = 0.5;
+       for(int p=0;p<num_points;p++) {
+          TEST_FLOATING_EQUALITY(point_values.jac_det(c,p).val(),dy*dx/4.0,1e-10);
+       }
+    }
+
+    out << "TESTING" << std::endl;
+    for(size_type c=0;c<point_values.jac_det.size();c++) {
+      point_values.jac_det[c] = c+1.0;
+      out << "  " << point_values.jac_det[c] << ", " << c+1.0 << std::endl;
+    }
+    out << "TESTING B" << std::endl;
+    for(size_type c=0;c<point_values.jac_det.size();c++) 
+      out << "  " << point_values.jac_det[c]  << ", " << c << std::endl;
+
+    // check the inverse jacobian
+    for(size_type c=0;c<num_cells;c++) {
+       double dx = 0.5;
+       double dy = 0.5;
+       for(int p=0;p<num_points;p++) {
+          TEST_FLOATING_EQUALITY(point_values.jac_inv(c,p,0,0).val(),2.0/dx,1e-10);
+          TEST_FLOATING_EQUALITY(point_values.jac_inv(c,p,0,1).val(),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_values.jac_inv(c,p,1,0).val(),0.0,1e-10);
+          TEST_FLOATING_EQUALITY(point_values.jac_inv(c,p,1,1).val(),2.0/dy,1e-10);
+       }
+    }
   }
 }

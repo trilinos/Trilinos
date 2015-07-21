@@ -30,7 +30,7 @@
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
-#include "Sacado_Kokkos.hpp"
+#include "Sacado.hpp"
 #include "Fad_CommTests.hpp"
 
 typedef int Ordinal;

@@ -43,8 +43,8 @@
 #ifndef PANZER_TEST_SCATTER_IMPL_HPP
 #define PANZER_TEST_SCATTER_IMPL_HPP
 
-template <typename EvalT,typename Traits>
-int panzer::TestScatter<EvalT, Traits>::offset = 0;
+template <typename EvalT,typename TRAITS>
+int panzer::TestScatter<EvalT, TRAITS>::offset = 0;
 
 namespace panzer {
 
@@ -78,8 +78,9 @@ PHX_POST_REGISTRATION_SETUP(TestScatter,setupData,fm)
 
 PHX_EVALUATE_FIELDS(TestScatter,workset)
 { 
-  for (int i=0; i < scatter_value.size(); ++i)
-    scatter_value[i] = 0.0;
+ // for (int i=0; i < scatter_value.size(); ++i)
+ //   scatter_value[i] = 0.0;
+  Kokkos::deep_copy(scatter_value.get_kokkos_view(), ScalarT(0.0));
 
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     ScalarT sum = 0.0;

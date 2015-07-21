@@ -37,8 +37,6 @@
 #include <iostream>                     // for basic_ostream::operator<<, etc
 #include <gtest/gtest.h>
 #include <vector>                       // for vector, vector<>::iterator
-#include "boost/iterator/iterator_facade.hpp"  // for iterator_facade, etc
-
 
 namespace vector_vector_int {
 

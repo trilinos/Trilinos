@@ -507,7 +507,7 @@ template <typename scalar_t, typename part_t>
 class GridHash{
 private:
 
-    RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > pBoxes;
+    const RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > pBoxes;
 
     //minimum of the maximum box boundaries
     scalar_t *minMaxBoundaries;
@@ -531,7 +531,7 @@ public:
     /*! \brief GridHash Class,
      * Constructor
      */
-    GridHash(RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > pBoxes_,
+    GridHash(const RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, part_t> > > &pBoxes_,
             part_t ntasks_, int dim_):
         pBoxes(pBoxes_),
         minMaxBoundaries(0),
@@ -564,7 +564,7 @@ public:
         part_t nCount = this->calculateNeighbors();
 
         //allocate memory for communication graph
-        ArrayRCP <part_t> tmpComXadj(ntasks_);
+        ArrayRCP <part_t> tmpComXadj(ntasks_+1);
         ArrayRCP <part_t> tmpComAdj(nCount);
         comXAdj = tmpComXadj;
         comAdj = tmpComAdj;
@@ -589,15 +589,13 @@ public:
 
         part_t adjIndex = 0;
 
+        comXAdj[0] = 0;
         for(part_t i = 0; i < this->nTasks; ++i){
             std::set<part_t> *neigbors = (*pBoxes)[i].getNeighbors();
 
             part_t s = neigbors->size();
 
-            comXAdj[i] = s;
-            if (i > 0){
-                comXAdj[i] += comXAdj[i - 1];
-            }
+            comXAdj[i+1] = comXAdj[i] + s;
             typedef typename std::set<part_t> mySet;
             typedef typename mySet::iterator myIT;
             myIT it;

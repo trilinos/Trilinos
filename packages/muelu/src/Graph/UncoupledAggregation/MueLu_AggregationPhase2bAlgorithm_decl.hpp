@@ -58,7 +58,23 @@
 namespace MueLu {
   /*!
     @class AggregationPhase2bAlgorithm class.
-    @brief
+    @brief Add leftovers to existing aggregates
+    @ingroup Aggregation
+
+    ### Idea ###
+    In phase 2b non-aggregated nodes are added to existing aggregates.
+    All neighbors of the unaggregated node are checked and the corresponding
+    aggregate weight is increased. The unaggregated node is added to the aggregate
+    with the best weight. A simple penalty strategy makes sure that the non-aggregated
+    nodes are added to different aggregates.
+    The routine runs twice to cover non-aggregate nodes which have a node distance
+    of two to existing aggregates. Assuming that the node distance is not greater
+    than 3 (the aggregate diameter size), running the algorithm only twice should
+    be sufficient.
+
+    ### Comments ###
+    Only nodes with state READY are changed to AGGREGATED. There are no aggregation criteria considered. Especially the aggregation: max agg size criterion is ignored.
+    This is not a problem, since after the previous aggregation phases one should not be able to build too large aggregates.
   */
 
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>

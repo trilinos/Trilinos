@@ -78,6 +78,7 @@ extern "C" {
 #endif
 
 static int Num_Global_Parts;
+static int Obj_Weight_Dim;
 static int Num_GID = 1, Num_LID = 1;
 static int Export_Lists_Special = 0;
 static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR,
@@ -155,6 +156,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   /* Allocate space for arrays. */
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
   Num_Global_Parts = nprocs;
+  Obj_Weight_Dim = 0;
   psize = (float *) malloc(nprocs*sizeof(float));
   partid = (int *) malloc(2*nprocs*sizeof(int));
   idx = partid + nprocs;
@@ -170,11 +172,8 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     if (prob->params[i].Index>=0)
       ierr = Zoltan_Set_Param_Vec(zz, prob->params[i].Name, prob->params[i].Val,
 	     prob->params[i].Index);
-    else {
+    else 
       ierr = Zoltan_Set_Param(zz, prob->params[i].Name, prob->params[i].Val);
-      if (strncasecmp(prob->params[i].Name, "NUM_GLOBAL_PART",15) == 0)
-	Num_Global_Parts = atoi(prob->params[i].Val);
-    }
     if (ierr == ZOLTAN_FATAL) {
       sprintf(errmsg,
 	      "fatal: error in Zoltan_Set_Param when setting parameter %s\n",
@@ -182,6 +181,10 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       Gen_Error(0, errmsg);
       return 0;
     }
+    if (strncasecmp(prob->params[i].Name, "NUM_GLOBAL_PART",15) == 0)
+      Num_Global_Parts = atoi(prob->params[i].Val);
+    if (strcasecmp(prob->params[i].Name, "OBJ_WEIGHT_DIM") == 0)
+      Obj_Weight_Dim = atoi(prob->params[i].Val);
     if (strcasecmp(prob->params[i].Name, "NUM_GID_ENTRIES") == 0)
       Num_GID = atoi(prob->params[i].Val);
     else if (strcasecmp(prob->params[i].Name, "NUM_LID_ENTRIES") == 0)
@@ -326,6 +329,29 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
     /* Set part sizes using global numbers. */
     Zoltan_LB_Set_Part_Sizes(zz, 1, nparts, partid, NULL, psize);
+  }
+  else if (Test.Local_Parts == 9) {
+    /* explicitly set part sizes to be uniform parts. */
+    /* Added to test Zoltan_LB_Build_PartDist when num_global_parts < nproc,
+     * obj_weight_dim > 1 and part sizes explicitly set. (see bug 6339) */
+    /* Set part size for each part and each weight dimension */
+    float unifsize = 1. / Num_Global_Parts;
+    int wgtdim = (Obj_Weight_Dim > 0 ? Obj_Weight_Dim : 1);
+    int nentries = Num_Global_Parts * wgtdim;
+
+    safe_free((void **)(void *) &psize);
+    safe_free((void **)(void *) &partid);
+  
+    psize = (float *) malloc(nentries * sizeof(float));
+    partid = (int *) malloc(2 * nentries * sizeof(int));
+    idx = partid + nentries;
+
+    for (i = 0; i < nentries; i++) {
+      psize[i] = unifsize;
+      partid[i] = i / wgtdim;
+      idx[i] = i % wgtdim;
+    }
+    Zoltan_LB_Set_Part_Sizes(zz, 1, nentries, partid, idx, psize);
   }
 
   /* Free temporary arrays for part sizes. */
@@ -683,7 +709,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
  * the ranks was INITIAL_LINEAR; if it isn't, one can't infer
  * the GID associated with a part in the output.
  */
-char filename[33];
+char filename[FILENAME_MAX+24];
 FILE *fp;
 if (!Export_Lists_Special) {
   printf("ERROR:  To output partition without migration, need "

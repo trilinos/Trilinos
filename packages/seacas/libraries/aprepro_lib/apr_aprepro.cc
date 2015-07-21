@@ -49,7 +49,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "4.21 (2014/11/18)";
+  const char* version_string = "4.22 (2015/06/03)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -65,9 +65,9 @@ namespace SEAMS {
   int   echo = true;
   
   Aprepro::Aprepro()
-    : lexer(NULL), sym_table(HASHSIZE),
+    : lexer(NULL), infoStream(&std::cout), sym_table(HASHSIZE),
       stringInteractive(false), stringScanner(NULL),
-      errorStream(&std::cerr), warningStream(&std::cerr), infoStream(&std::cout),
+      errorStream(&std::cerr), warningStream(&std::cerr), 
       stateImmutable(false), doLoopSubstitution(true), doIncludeSubstitution(true),
       isCollectingLoop(false)
   {

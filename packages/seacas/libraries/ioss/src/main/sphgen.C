@@ -339,7 +339,19 @@ namespace {
 
 	// Find corresponding output element block...
 	Ioss::ElementBlock *output_eb = output_region.get_element_block((*I)->name());
+	if (output_eb == NULL) {
+	  std::cerr << "ERROR: Could not put find element block "
+		    << (*I)->name() << "\n";
+	  std::exit(EXIT_FAILURE);
+	}
+
 	Ioss::NodeSet *output_ns = output_region.get_nodeset((*I)->name()+"_nodes");
+	if (output_ns == NULL) {
+	  std::cerr << "ERROR: Could not put find node set "
+		    << (*I)->name()+"_nodes" << "\n";
+	  std::exit(EXIT_FAILURE);
+	}
+
 
 	// Connectivity for the sphere element blocks is just their local element location
 	size_t num_elem = output_eb->get_property("entity_count").get_int();

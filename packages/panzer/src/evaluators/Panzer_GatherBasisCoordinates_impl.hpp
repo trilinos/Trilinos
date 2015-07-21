@@ -52,9 +52,9 @@
 
 #include "Teuchos_FancyOStream.hpp"
 
-template<typename EvalT,typename Traits>
+template<typename EvalT,typename TRAITS>
 std::string 
-panzer::GatherBasisCoordinates<EvalT, Traits>::
+panzer::GatherBasisCoordinates<EvalT, TRAITS>::
 fieldName(const std::string & basisName)
 {
    std::stringstream ss; 
@@ -62,8 +62,8 @@ fieldName(const std::string & basisName)
    return ss.str();
 }
 
-template<typename EvalT,typename Traits>
-panzer::GatherBasisCoordinates<EvalT, Traits>::
+template<typename EvalT,typename TRAITS>
+panzer::GatherBasisCoordinates<EvalT, TRAITS>::
 GatherBasisCoordinates(const panzer::PureBasis & basis)
 { 
   basisName_ = basis.name();
@@ -76,10 +76,10 @@ GatherBasisCoordinates(const panzer::PureBasis & basis)
 }
 
 // **********************************************************************
-template<typename EvalT,typename Traits>
-void panzer::GatherBasisCoordinates<EvalT, Traits>::
-postRegistrationSetup(typename Traits::SetupData sd, 
-		      PHX::FieldManager<Traits>& fm)
+template<typename EvalT,typename TRAITS>
+void panzer::GatherBasisCoordinates<EvalT, TRAITS>::
+postRegistrationSetup(typename TRAITS::SetupData sd, 
+		      PHX::FieldManager<TRAITS>& fm)
 {
   this->utils.setFieldData(basisCoordinates_,fm);
 
@@ -87,15 +87,18 @@ postRegistrationSetup(typename Traits::SetupData sd,
 }
 
 // **********************************************************************
-template<typename EvalT,typename Traits> 
-void panzer::GatherBasisCoordinates<EvalT, Traits>::
-evaluateFields(typename Traits::EvalData workset)
+template<typename EvalT,typename TRAITS> 
+void panzer::GatherBasisCoordinates<EvalT, TRAITS>::
+evaluateFields(typename TRAITS::EvalData workset)
 { 
-  const Intrepid::FieldContainer<double> & basisCoords = workset.bases[basisIndex_]->basis_coordinates;  
+  // const Intrepid::FieldContainer<double> & basisCoords = workset.bases[basisIndex_]->basis_coordinates;  
+  const Teuchos::RCP<const BasisValues2<double> > bv = workset.bases[basisIndex_];
 
   // just copy the array
-  for(int i=0;i<basisCoords.size();i++)
-     basisCoordinates_[i] = basisCoords[i];
+  for(int i=0;i<bv->basis_coordinates.dimension(0);i++)
+    for(int j=0;j<bv->basis_coordinates.dimension(1);j++)
+      for(int k=0;k<bv->basis_coordinates.dimension(2);k++)
+          basisCoordinates_(i,j,k)= bv->basis_coordinates(i,j,k);
 }
 
 #endif

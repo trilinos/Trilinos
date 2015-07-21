@@ -343,8 +343,8 @@ namespace Belos {
       return X_view;
     }
 
-    BELOS_DEPRECATED static int GetVecLength (const MV& mv) {
-      return static_cast<int> (mv.getGlobalLength ());
+    static ptrdiff_t GetGlobalLength (const MV& mv) {
+      return static_cast<ptrdiff_t> (mv.getGlobalLength ());
     }
 
     static int GetNumberVecs (const MV& mv) {
@@ -794,16 +794,6 @@ namespace Belos {
     HasApplyTranspose (const ::Tpetra::Operator<Scalar,LO,GO,Node>& Op)
     {
       return Op.hasTransposeApply ();
-    }
-  };
-
-  // Partial specialization for MV=Tpetra::MultiVector.
-  template<class Scalar, class LO, class GO, class Node>
-  class MultiVecTraitsExt<Scalar, ::Tpetra::MultiVector<Scalar, LO, GO, Node> > {
-  public:
-    typedef ::Tpetra::MultiVector<Scalar, LO, GO, Node> MV;
-    static ptrdiff_t GetGlobalLength (const MV& mv) {
-      return static_cast<ptrdiff_t> (mv.getGlobalLength ());
     }
   };
 

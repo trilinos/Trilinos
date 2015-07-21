@@ -1424,3 +1424,4 @@ SEARCHENGINE           = YES
 # Use MathJax for nice rescaling of LaTeX output. Needs a fairly recent version of doxygen.
 #
 USE_MATHJAX            = YES
+MATHJAX_RELPATH        = https://cdn.mathjax.org/mathjax/latest

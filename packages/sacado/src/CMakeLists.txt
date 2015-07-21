@@ -24,6 +24,7 @@ SET(HEADERS ${HEADERS}
   Sacado_Fad_GeneralFad.hpp
   Sacado_Fad_GeneralFadExpr.hpp
   Sacado_Fad_ExpressionTraits.hpp
+  Sacado_Fad_ExpressionFwd.hpp
   Sacado_Fad_Expression.hpp
   Sacado_Fad_Ops.hpp
   Sacado_Fad_DynamicStorage.hpp
@@ -254,7 +255,7 @@ SET(HEADERS ${HEADERS}
   Sacado_Version.hpp
   Sacado_Traits.hpp
   Sacado.hpp
-  Sacado_Kokkos.hpp
+  Sacado_No_Kokkos.hpp
   Kokkos_View_Fad.hpp
   Kokkos_AnalyzeSacadoShape.hpp
   Sacado_DisableKokkosCuda.hpp

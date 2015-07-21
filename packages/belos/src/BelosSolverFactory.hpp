@@ -59,6 +59,7 @@
 #include <BelosRCGSolMgr.hpp>
 #include <BelosTFQMRSolMgr.hpp>
 #include <BelosPseudoBlockTFQMRSolMgr.hpp>
+#include <BelosFixedPointSolMgr.hpp>
 
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Describable.hpp>
@@ -106,7 +107,8 @@ enum EBelosSolverType {
   SOLVER_TYPE_TFQMR,
   SOLVER_TYPE_PSEUDO_BLOCK_TFQMR,
   SOLVER_TYPE_GMRES_POLY,
-  SOLVER_TYPE_PCPG
+  SOLVER_TYPE_PCPG,
+  SOLVER_TYPE_FIXED_POINT
 };
 
 } // namespace details
@@ -471,6 +473,10 @@ makeSolverManagerFromEnum (const EBelosSolverType solverType,
     typedef PCPGSolMgr<Scalar, MV, OP> impl_type;
     return makeSolverManagerTmpl<base_type, impl_type> (params);
   }
+  case SOLVER_TYPE_FIXED_POINT: {
+    typedef FixedPointSolMgr<Scalar, MV, OP> impl_type;
+    return makeSolverManagerTmpl<base_type, impl_type> (params);
+  }
   default: // Fall through; let the code below handle it.
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Belos::SolverFactory: Invalid EBelosSolverType "
@@ -543,6 +549,7 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   aliasToCanonicalName_["Seed GMRES"] = "Hybrid Block GMRES";
   aliasToCanonicalName_["CGPoly"] = "PCPG";
   aliasToCanonicalName_["Seed CG"] = "PCPG";
+  aliasToCanonicalName_["Fixed Point"] = "Fixed Point";
 
   // Mapping from canonical solver name (a string) to its
   // corresponding enum value.  This mapping is one-to-one.
@@ -559,6 +566,7 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   canonicalNameToEnum_["Pseudoblock TFQMR"] = details::SOLVER_TYPE_PSEUDO_BLOCK_TFQMR;
   canonicalNameToEnum_["Hybrid Block GMRES"] = details::SOLVER_TYPE_GMRES_POLY;
   canonicalNameToEnum_["PCPG"] = details::SOLVER_TYPE_PCPG;
+  canonicalNameToEnum_["Fixed Point"] = details::SOLVER_TYPE_FIXED_POINT;
 }
 
 

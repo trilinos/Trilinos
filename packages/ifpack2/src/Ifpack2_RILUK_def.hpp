@@ -63,8 +63,7 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
     applyTime_ (0.0),
     RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
-    Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
-    Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
+    Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ())
 {}
 
 
@@ -83,8 +82,7 @@ RILUK<MatrixType>::RILUK (const Teuchos::RCP<const crs_matrix_type>& Matrix_in)
     applyTime_ (0.0),
     RelaxValue_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
     Athresh_ (Teuchos::ScalarTraits<magnitude_type>::zero ()),
-    Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ()),
-    Condest_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
+    Rthresh_ (Teuchos::ScalarTraits<magnitude_type>::one ())
 {}
 
 
@@ -109,7 +107,6 @@ RILUK<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     L_ = Teuchos::null;
     U_ = Teuchos::null;
     D_ = Teuchos::null;
-    Condest_ = -Teuchos::ScalarTraits<magnitude_type>::one();
     A_ = A;
   }
 }
@@ -400,24 +397,18 @@ RILUK<MatrixType>::makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A
 
   // If A_ is already a LocalFilter, then use it directly.  This
   // should be the case if RILUK is being used through
-  // AdditiveSchwarz, for example.  There are (unfortunately) two
-  // kinds of LocalFilter, depending on the template parameter, so we
-  // have to test for both.
+  // AdditiveSchwarz, for example.
   RCP<const LocalFilter<row_matrix_type> > A_lf_r =
     rcp_dynamic_cast<const LocalFilter<row_matrix_type> > (A);
   if (! A_lf_r.is_null ()) {
     return rcp_implicit_cast<const row_matrix_type> (A_lf_r);
   }
-  RCP<const LocalFilter<crs_matrix_type> > A_lf_c =
-    rcp_dynamic_cast<const LocalFilter<crs_matrix_type> > (A);
-  if (! A_lf_c.is_null ()) {
-    return rcp_implicit_cast<const row_matrix_type> (A_lf_c);
+  else {
+    // A_'s communicator has more than one process, its row Map and
+    // its column Map differ, and A_ is not a LocalFilter.  Thus, we
+    // have to wrap it in a LocalFilter.
+    return rcp (new LocalFilter<row_matrix_type> (A));
   }
-
-  // A_'s communicator has more than one process, its row Map and
-  // its column Map differ, and A_ is not a LocalFilter.  Thus, we
-  // have to wrap it in a LocalFilter.
-  return rcp (new LocalFilter<row_matrix_type> (A));
 }
 
 
@@ -857,6 +848,22 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     "Ifpack2::RILUK::apply: mode = Teuchos::CONJ_TRANS is not implemented for "
     "complex Scalar type.  Please talk to the Ifpack2 developers to get this "
     "fixed.  There is a FIXME in this file about this very issue.");
+#ifdef HAVE_IFPACK2_DEBUG
+  {
+    const magnitude_type D_nrm1 = D_->norm1 ();
+    TEUCHOS_TEST_FOR_EXCEPTION( STM::isnaninf (D_nrm1), std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the stored diagonal is NaN or Inf.");
+    Teuchos::Array<magnitude_type> norms (X.getNumVectors ());
+    X.norm1 (norms ());
+    bool good = true;
+    for (size_t j = 0; j < X.getNumVectors (); ++j) {
+      if (STM::isnaninf (norms[j])) {
+        good = false;
+        break;
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the input X is NaN or Inf.");
+  }
+#endif // HAVE_IFPACK2_DEBUG
 
   const scalar_type one = STS::one ();
   const scalar_type zero = STS::zero ();
@@ -920,6 +927,21 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     }
   } // Stop timing
 
+#ifdef HAVE_IFPACK2_DEBUG
+  {
+    Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
+    Y.norm1 (norms ());
+    bool good = true;
+    for (size_t j = 0; j < Y.getNumVectors (); ++j) {
+      if (STM::isnaninf (norms[j])) {
+        good = false;
+        break;
+      }
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION( ! good, std::runtime_error, "Ifpack2::RILUK::apply: The 1-norm of the output Y is NaN or Inf.");
+  }
+#endif // HAVE_IFPACK2_DEBUG
+
   ++numApply_;
   applyTime_ = timer.totalElapsedTime ();
 }
@@ -955,59 +977,6 @@ multiply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordina
     U_->apply (Y_tmp, Y, mode);
     Y.update (one, Y_tmp, one); // (account for implicit unit diagonal)
   }
-}
-
-
-template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-RILUK<MatrixType>::computeCondEst (Teuchos::ETransp mode) const
-{
-  if (Condest_ != -Teuchos::ScalarTraits<magnitude_type>::one ()) {
-    return Condest_;
-  }
-  // Create a vector with all values equal to one
-  vec_type ones (U_->getDomainMap ());
-  vec_type onesResult (L_->getRangeMap ());
-  ones.putScalar (Teuchos::ScalarTraits<scalar_type>::one ());
-
-  apply (ones, onesResult, mode); // Compute the effect of the solve on the vector of ones
-  onesResult.abs (onesResult); // Make all values non-negative
-  Teuchos::Array<magnitude_type> norms (1);
-  onesResult.normInf (norms ());
-  Condest_ = norms[0];
-  return Condest_;
-}
-
-
-template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-RILUK<MatrixType>::
-computeCondEst (CondestType CT,
-                local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >& Matrix)
-{
-  // Forestall "unused variable" compiler warnings.
-  (void) CT;
-  (void) MaxIters;
-  (void) Tol;
-  (void) Matrix;
-
-  if (Condest_ != -Teuchos::ScalarTraits<magnitude_type>::one() ) {
-    return Condest_;
-  }
-  // Create a vector with all values equal to one
-  vec_type ones (U_->getDomainMap ());
-  vec_type onesResult (L_->getRangeMap ());
-  ones.putScalar (Teuchos::ScalarTraits<scalar_type>::one ());
-
-  // Compute the effect of the solve on the vector of ones
-  apply (ones, onesResult, Teuchos::NO_TRANS);
-  onesResult.abs (onesResult); // Make all values non-negative
-  Teuchos::Array<magnitude_type> norms (1);
-  onesResult.normInf (norms ());
-  Condest_ = norms[0];
-  return Condest_;
 }
 
 

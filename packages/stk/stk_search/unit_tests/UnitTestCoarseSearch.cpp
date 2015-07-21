@@ -33,6 +33,7 @@
 
 #include <unit_tests/UnitTestUtils.hpp>
 #include <unit_tests/MeshUtilsForBoundingVolumes.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 
 #include <gtest/gtest.h>
 
@@ -429,6 +430,44 @@ TEST(stk_search, coarse_search_one_point)
   } else {
     ASSERT_EQ(searchResults.size(), 0u);
   }
+}
+
+TEST(CoarseSearch, forDeterminingSharing)
+{
+    const stk::ParallelMachine comm = MPI_COMM_WORLD;
+    const int p_rank = stk::parallel_machine_rank(comm);
+
+    typedef std::vector< std::pair<Sphere,Ident> > SphereVector;
+
+    SphereVector source_bbox_vector;
+
+    Point coords(1.0, 1.0, 1.0);
+    double radius = 1.0e-6;
+    Sphere node(coords, radius);
+    uint64_t global_id = 1000;
+    Ident id = Ident(global_id, p_rank);
+
+    source_bbox_vector.push_back(std::make_pair(node, id));
+
+    SearchResults searchResults;
+    stk::search::coarse_search(source_bbox_vector, source_bbox_vector, stk::search::BOOST_RTREE, comm, searchResults);
+
+    std::set<int> procs;
+
+    for(size_t i=0;i<searchResults.size();++i)
+    {
+        procs.insert(searchResults[i].second.proc());
+        procs.insert(searchResults[i].first.proc());
+    }
+
+    std::set<int>::iterator iter = procs.begin();
+
+    int procCounter = 0;
+    for (;iter!=procs.end();++iter)
+    {
+        EXPECT_EQ(procCounter, *iter);
+        procCounter++;
+    }
 }
 
 } //namespace

@@ -563,6 +563,15 @@ sqrt(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 template <typename ordinal_type, typename value_type, typename point_compare_type, typename node_type>
 void
 Stokhos::PseudoSpectralOrthogPolyExpansion<ordinal_type, value_type, point_compare_type, node_type>::
+cbrt(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
+{
+  unary_op(cbrt_quad_func(), c, a);
+}
+
+template <typename ordinal_type, typename value_type, typename point_compare_type, typename node_type>
+void
+Stokhos::PseudoSpectralOrthogPolyExpansion<ordinal_type, value_type, point_compare_type, node_type>::
 pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)

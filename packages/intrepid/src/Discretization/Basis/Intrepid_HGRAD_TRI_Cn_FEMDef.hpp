@@ -58,6 +58,7 @@ namespace Intrepid {
     Vinv((n+1)*(n+2)/2,(n+1)*(n+2)/2),
     latticePts( (n+1)*(n+2)/2 , 2 )
   {
+
     const int N = (n+1)*(n+2)/2;
     this -> basisCardinality_  = N;
     this -> basisDegree_       = n;
@@ -69,6 +70,7 @@ namespace Intrepid {
     // construct lattice
 
     shards::CellTopology myTri_3( shards::getCellTopologyData< shards::Triangle<3> >() );  
+
     PointTools::getLattice<Scalar,FieldContainer<Scalar> >( latticePts ,
                                                             myTri_3 ,
                                                             n ,

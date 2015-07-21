@@ -123,6 +123,23 @@ sqrt(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
+cbrt(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
+{
+  if (a.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::cbrt(a[0]);
+  }
+  else
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::AlgebraicOrthogPolyExpansion::cbrt()" 
+		       << ":  Method not implemented!");
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)

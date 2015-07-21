@@ -48,6 +48,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include "Phalanx_KokkosDeviceTypes.hpp"
 
 namespace PHX{
 
@@ -63,23 +64,24 @@ namespace PHX{
       DataLayout will differentiate the objects.  We could probably
       just use an enumerated type here, but the DataLayout class
       allows users to derive and pass in auxiliary data via the tag.
-
   */
   class DataLayout {
 
   public:
 
-    typedef int size_type;
+    // typedef long unsigned int size_type;
+    typedef PHX::Device::size_type size_type;
 
     DataLayout() {}
 
     virtual ~DataLayout() {}
 
-    virtual size_type rank() const = 0; 
+    virtual PHX::Device::size_type rank() const = 0; 
 
-    virtual size_type dimension(size_type ordinal) const = 0; 
+    virtual PHX::Device::size_type dimension(size_type ordinal) const = 0; 
 
-    virtual void dimensions(std::vector<size_type>& dim) const = 0; 
+    virtual void 
+    dimensions(std::vector<PHX::Device::size_type>& dim) const = 0; 
 
     //! Returns the name of the input ordinal
     virtual std::string name(size_type ordinal) const = 0;
@@ -87,7 +89,7 @@ namespace PHX{
     //! Returns the names of all ordinals in a vector
     virtual void names(std::vector<std::string>& names) const = 0; 
 
-    virtual size_type size() const = 0;
+    virtual PHX::Device::size_type size() const = 0;
 
     virtual bool operator==(const DataLayout& left) const = 0;
 

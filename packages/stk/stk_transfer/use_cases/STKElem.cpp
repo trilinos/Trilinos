@@ -32,6 +32,9 @@
 // 
 
 #include "STKElem.hpp"
+#include <Intrepid_FunctionSpaceTools.hpp>
+#include <Intrepid_Utils.hpp>
+#include <Intrepid_CellTools.hpp>
 
 namespace stk {
 namespace transfer {

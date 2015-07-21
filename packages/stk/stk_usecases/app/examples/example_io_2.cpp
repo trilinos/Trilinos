@@ -268,22 +268,22 @@ namespace app {
 
 	std::vector<int> elem_ids ;
 	std::vector<int> connectivity ;
-	std::vector<stk::mesh::EntityId> connectivity2 ;
 
 	entity->get_field_data("ids", elem_ids);
 	entity->get_field_data("connectivity", connectivity);
-        connectivity2.reserve(connectivity.size());
-        std::copy(connectivity.begin(), connectivity.end(), std::back_inserter(connectivity2));
 
 	int element_count = elem_ids.size();
 	int nodes_per_elem = cell_topo->node_count ;
 
+	std::vector<stk::mesh::EntityId> connectivity2(nodes_per_elem);
+
+        std::vector<int>::const_iterator connBegin = connectivity.begin();
 	std::vector<stk::mesh::Entity> elements(element_count);
-	for(int i=0; i<element_count; ++i) {
+	for(int i=0; i<element_count; ++i, connBegin += nodes_per_elem) {
+          std::copy(connBegin, connBegin + nodes_per_elem, connectivity2.begin());
 	  /// \todo REFACTOR cast from int to unsigned is unsafe and ugly.
 	  /// change function to take int[] argument.
-	  stk::mesh::EntityId *conn = &connectivity2[i*nodes_per_elem];
-	  elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], conn);
+	  elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], connectivity2);
 	}
 
 	// For this example, we are just taking all attribute fields

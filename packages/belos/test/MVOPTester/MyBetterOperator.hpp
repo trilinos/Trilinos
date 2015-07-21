@@ -50,7 +50,7 @@
 #include "Teuchos_BLAS.hpp"
 
 //! Simple example of a user's defined Belos::Operator class.
-/*! 
+/*!
  * This is a simple, single processor example of user's defined
  * Belos::Operator-derived class. The class is templated with ScalarType;
  * possible choices are, for example, "float", "double", or
@@ -63,7 +63,7 @@
  *
  */
 template <class ScalarType>
-class MyBetterOperator : public Belos::Operator<ScalarType> 
+class MyBetterOperator : public Belos::Operator<ScalarType>
 {
 
 public:
@@ -83,24 +83,24 @@ public:
   { }
 
   //! Applies the matrix to a multivector.
-  void Apply(const Belos::MultiVec<ScalarType>& X, 
+  void Apply(const Belos::MultiVec<ScalarType>& X,
              Belos::MultiVec<ScalarType>& Y,
              Belos::ETrans trans = Belos::NOTRANS) const
   {
     const MyMultiVec<ScalarType>* MyX;
-    MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
+    MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X);
     assert (MyX != 0);
-    
+
     MyMultiVec<ScalarType>* MyY;
-    MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
+    MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y);
     assert (MyY != 0);
 
     // Initialize output std::vector to zero.
     MyY->MvInit( Teuchos::ScalarTraits<ScalarType>::zero() );
-    
+
     assert (X.GetNumberVecs() == Y.GetNumberVecs());
-    assert (X.GetVecLength() == Y.GetVecLength());
-    
+    assert (X.GetGlobalLength() == Y.GetGlobalLength());
+
     int nv = X.GetNumberVecs();
 
     // Apply operator
@@ -111,7 +111,7 @@ public:
       IA1 = _cptr[j]-1;
       IA2 = _cptr[j+1]-1;
       for (i=IA1; i<IA2; i++) {
-	ri = _rind[i]-1;
+        ri = _rind[i]-1;
         aval = _vals[i];
         for (v=0; v<nv; v++) {
           (*MyY)[v][ri] += aval*(*MyX)[v][j];
@@ -127,7 +127,7 @@ public:
       for (int i=IA1; i<IA2; i++) {
         os << "("<<_rind[i]-1<<","<<j<<")\t"<<_vals[i]<< std::endl;
       }
-    }	
+    }
   }
 
   private:
@@ -135,7 +135,7 @@ public:
   typedef std::vector<int>::iterator        IntIter;
   //! Number of rows and columns
   int _nr, _nnz;
-  //! Column pointers 
+  //! Column pointers
   std::vector<int> _cptr;
   //! Row indices
   std::vector<int> _rind;

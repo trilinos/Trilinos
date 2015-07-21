@@ -96,8 +96,8 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWith3Billion )
     return;
   }
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
-  typedef int LO;
-  typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
+  typedef Tpetra::Map<>::local_ordinal_type LO;
+  typedef Tpetra::Details::DefaultTypes::node_type NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
   const size_t localNumElts = 5;

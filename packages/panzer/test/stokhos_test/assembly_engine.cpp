@@ -50,6 +50,8 @@ using Teuchos::rcp;
 
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Panzer_config.hpp"
 #include "Panzer_GlobalData.hpp"
 #include "Panzer_Workset_Builder.hpp"
@@ -132,6 +134,8 @@ Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > buildExpansion(int numDi
 
 TEUCHOS_UNIT_TEST(field_manager_builder, basic)
 {
+  PHX::KokkosDeviceSession session;
+
   // build global (or serial communicator)
   #ifdef HAVE_MPI
      Teuchos::RCP<Epetra_Comm> eComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));

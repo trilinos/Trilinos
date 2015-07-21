@@ -45,9 +45,9 @@
 
 #include "Ifpack2_BlockRelaxation_decl.hpp"
 #include "Ifpack2_LinearPartitioner.hpp"
+#include "Ifpack2_LinePartitioner.hpp"
 #include "Ifpack2_Details_UserPartitioner_decl.hpp"
 #include "Ifpack2_Details_UserPartitioner_def.hpp"
-#include <Ifpack2_Condest.hpp>
 #include <Ifpack2_Parameters.hpp>
 
 namespace Ifpack2 {
@@ -59,7 +59,6 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
   if (A.getRawPtr () != A_.getRawPtr ()) { // it's a different matrix
     IsInitialized_ = false;
     IsComputed_ = false;
-    Condest_ = -STM::one ();
     Partitioner_ = Teuchos::null;
     Importer_ = Teuchos::null;
     W_ = Teuchos::null;
@@ -90,7 +89,6 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   IsParallel_ (false),
   ZeroStartingSolution_ (true),
   DoBackwardGS_ (false),
-  Condest_ (-STM::one ()),
   IsInitialized_ (false),
   IsComputed_ (false),
   NumInitialize_ (0),
@@ -269,34 +267,6 @@ double BlockRelaxation<MatrixType,ContainerType>::getApplyFlops() const {
 
 //==========================================================================
 template<class MatrixType,class ContainerType>
-typename BlockRelaxation<MatrixType, ContainerType>::magnitude_type
-BlockRelaxation<MatrixType,ContainerType>::getCondEst () const
-{
-  return Condest_;
-}
-
-//==========================================================================
-template<class MatrixType,class ContainerType>
-typename BlockRelaxation<MatrixType, ContainerType>::magnitude_type
-BlockRelaxation<MatrixType,ContainerType>::
-computeCondEst (CondestType CT,
-                typename MatrixType::local_ordinal_type MaxIters,
-                magnitude_type Tol,
-                const Teuchos::Ptr<const row_matrix_type>& matrix)
-{
-  if (! isComputed ()) {// cannot compute right now
-    return -STM::one ();
-  }
-
-  // always compute it. Call Condest() with no parameters to get
-  // the previous estimate.
-  Condest_ = Ifpack2::Condest (*this, CT, MaxIters, Tol, matrix);
-
-  return Condest_;
-}
-
-//==========================================================================
-template<class MatrixType,class ContainerType>
 void
 BlockRelaxation<MatrixType,ContainerType>::
 apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
@@ -408,6 +378,9 @@ void BlockRelaxation<MatrixType,ContainerType>::initialize() {
   if (PartitionerType_ == "linear") {
     Partitioner_ =
       rcp (new Ifpack2::LinearPartitioner<row_graph_type> (A_->getGraph ()));
+  } else if (PartitionerType_ == "line") {
+    Partitioner_ =
+      rcp (new Ifpack2::LinePartitioner<row_graph_type,typename MatrixType::scalar_type> (A_->getGraph ()));
   } else if (PartitionerType_ == "user") {
     Partitioner_ =
       rcp (new Ifpack2::Details::UserPartitioner<row_graph_type> (A_->getGraph () ) );
@@ -462,7 +435,6 @@ void BlockRelaxation<MatrixType,ContainerType>::compute()
 
   // reset values
   IsComputed_ = false;
-  Condest_ = -STM::one ();
 
   // Extract the submatrices
   ExtractSubmatrices ();
@@ -940,12 +912,12 @@ std::string BlockRelaxation<MatrixType,ContainerType>::description () const
   out << "Computed: " << (isComputed () ? "true" : "false") << ", ";
 
   if (A_.is_null ()) {
-    out << "Matrix: null";
+    out << "Matrix: null, ";
   }
   else {
     out << "Matrix: not null"
         << ", Global matrix dimensions: ["
-        << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
+        << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "], ";
   }
 
   // It's useful to print this instance's relaxation method.  If you
@@ -960,6 +932,9 @@ std::string BlockRelaxation<MatrixType,ContainerType>::description () const
   } else {
     out << "INVALID";
   }
+
+  out  << ", " << "sweeps: " << NumSweeps_ << ", "
+      << "damping factor: " << DampingFactor_ << ", ";
 
   out << "}";
   return out.str();
@@ -1021,8 +996,7 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
         << ((PrecType_ == Ifpack2::Details::GS && DoBackwardGS_) ? "true" : "false")
         << endl
         << "zero starting solution: "
-        << (ZeroStartingSolution_ ? "true" : "false") << endl
-        << "condition number estimate: " << Condest_ << endl;
+        << (ZeroStartingSolution_ ? "true" : "false") << endl;
 
     out << "===============================================================================" << endl;
     out << "Phase           # calls    Total Time (s)     Total MFlops      MFlops/s       " << endl;
@@ -1047,6 +1021,8 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
 // For ETI
 #include "Ifpack2_DenseContainer_decl.hpp"
 #include "Ifpack2_SparseContainer_decl.hpp"
+#include "Ifpack2_TriDiContainer_decl.hpp"
+#include "Ifpack2_BandedContainer_decl.hpp"
 #include "Ifpack2_ILUT_decl.hpp"
 
 // FIXME (mfh 16 Sep 2014) We should really only use RowMatrix here!
@@ -1069,6 +1045,18 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
       S > >; \
   template \
   class Ifpack2::BlockRelaxation<      \
+    Tpetra::RowMatrix<S, LO, GO, N>, \
+    Ifpack2::TriDiContainer<        \
+      Tpetra::RowMatrix<S, LO, GO, N>, \
+      S > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::RowMatrix<S, LO, GO, N>, \
+    Ifpack2::BandedContainer<        \
+      Tpetra::RowMatrix<S, LO, GO, N>, \
+      S > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
     Tpetra::CrsMatrix<S, LO, GO, N>, \
     Ifpack2::SparseContainer<       \
       Tpetra::CrsMatrix<S, LO, GO, N>, \
@@ -1078,8 +1066,19 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
     Tpetra::CrsMatrix<S, LO, GO, N>, \
     Ifpack2::DenseContainer<        \
       Tpetra::CrsMatrix<S, LO, GO, N>, \
+      S > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::CrsMatrix<S, LO, GO, N>, \
+    Ifpack2::TriDiContainer<        \
+      Tpetra::CrsMatrix<S, LO, GO, N>, \
+      S > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::CrsMatrix<S, LO, GO, N>, \
+    Ifpack2::BandedContainer<        \
+      Tpetra::CrsMatrix<S, LO, GO, N>, \
       S > >;
-
 
 
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION

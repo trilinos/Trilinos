@@ -56,15 +56,18 @@
 // loop.
 //#define SHYLU_DEBUG
 
-#include "Isorropia_config.h" // Just for HAVE_MPI
+#include "ShyLUCore_config.h"
 
-#ifdef HAVE_MPI
+#ifdef HAVE_SHYLUCORE_MPI
 #include <mpi.h>
 #endif
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 
+/** \brief Call reponsible for handeling debugging
+ *
+ */
 class DebugManager
 {
     public:
@@ -121,7 +124,7 @@ DebugManager::DebugManager(int debugLevel, const Teuchos::RCP<std::ostream> &os)
     debugLevel_(debugLevel),
     myOS_(os)
 {
-#ifdef HAVE_MPI
+#ifdef HAVE_SHYLUCORE_MPI
         int mpiStarted = 0;
         MPI_Initialized(&mpiStarted);
         if (mpiStarted) MPI_Comm_rank(MPI_COMM_WORLD, &myPID_);

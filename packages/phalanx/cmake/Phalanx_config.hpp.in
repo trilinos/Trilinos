@@ -1,3 +1,5 @@
+#ifndef PHALANX_CONFIG_HPP
+#define PHALANX_CONFIG_HPP
 
 #cmakedefine HAVE_MPI
 
@@ -7,6 +9,21 @@
 
 #cmakedefine PHX_ETI
 
-#cmakedefine PHX_USE_COMPILETIME_ARRAY
+#cmakedefine PHX_KOKKOS_DEVICE_TYPE_SERIAL
+#cmakedefine PHX_KOKKOS_DEVICE_TYPE_CUDA
+#cmakedefine PHX_KOKKOS_DEVICE_TYPE_THREAD
+#cmakedefine PHX_KOKKOS_DEVICE_TYPE_OPENMP
+
+#cmakedefine PHX_INDEX_SIZE_TYPE_KOKKOS
+#cmakedefine PHX_INDEX_SIZE_TYPE_INT
+#cmakedefine PHX_INDEX_SIZE_TYPE_UINT
+#cmakedefine PHX_INDEX_SIZE_TYPE_LONGINT
+#cmakedefine PHX_INDEX_SIZE_TYPE_ULONGINT
 
 #cmakedefine HAVE_PHALANX_TVMET
+
+#cmakedefine Phalanx_ENABLE_Intrepid
+
+@PHALANX_DEPRECATED_DECLARATIONS@
+
+#endif

@@ -74,7 +74,7 @@ EpetraModelEval4DOpt::EpetraModelEval4DOpt(
 {
   using Teuchos::rcp;
 
-	epetra_comm_ = rcp(new Epetra_SerialComm());
+        epetra_comm_ = rcp(new Epetra_SerialComm());
 
   const int nx = 2, np = 2, ng = 1;
 
@@ -136,72 +136,72 @@ void EpetraModelEval4DOpt::set_x_bounds(
 
 // Overridden from EpetraExt::ModelEvaluator
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 EpetraModelEval4DOpt::get_x_map() const
 {
   return map_x_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 EpetraModelEval4DOpt::get_f_map() const
 {
   return map_x_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 EpetraModelEval4DOpt::get_p_map(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(l!=0);
   return map_p_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Map>
+Teuchos::RCP<const Epetra_Map>
 EpetraModelEval4DOpt::get_g_map(int j) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(j!=0);
   return map_g_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraModelEval4DOpt::get_x_init() const
 {
   return x0_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraModelEval4DOpt::get_p_init(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(l!=0);
   return p0_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraModelEval4DOpt::get_x_lower_bounds() const
 {
   return xL_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraModelEval4DOpt::get_x_upper_bounds() const
 {
   return xU_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraModelEval4DOpt::get_p_lower_bounds(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(l!=0);
   return pL_;
 }
 
-Teuchos::RefCountPtr<const Epetra_Vector>
+Teuchos::RCP<const Epetra_Vector>
 EpetraModelEval4DOpt::get_p_upper_bounds(int l) const
 {
   TEUCHOS_TEST_FOR_EXCEPT(l!=0);
   return pU_;
 }
 
-Teuchos::RefCountPtr<Epetra_Operator>
+Teuchos::RCP<Epetra_Operator>
 EpetraModelEval4DOpt::create_W() const
 {
   return Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_));
@@ -271,7 +271,7 @@ void EpetraModelEval4DOpt::evalModel(
   //
   // Get the input arguments
   //
-  Teuchos::RefCountPtr<const Epetra_Vector> p_in = inArgs.get_p(0);
+  Teuchos::RCP<const Epetra_Vector> p_in = inArgs.get_p(0);
   const Epetra_Vector &p = (p_in.get() ? *p_in : *p0_);
   const Epetra_Vector &x = *inArgs.get_x();
   //

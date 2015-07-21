@@ -79,7 +79,7 @@ namespace {
   // a CUDA Node type here.
 #if defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE)
 #  if defined(HAVE_KOKKOSCLASSIC_SERIAL)
-  typedef KokkosClassic::SerialNode node_type;
+  typedef KokkosClassic::DoNotUse::SerialNode node_type;
 #  elif defined(HAVE_TPETRACLASSIC_TEUCHOSKOKKOSCOMPAT) && defined(KOKKOS_HAVE_SERIAL)
   typedef Kokkos::Compat::KokkosSerialWrapperNode node_type;
 #  else

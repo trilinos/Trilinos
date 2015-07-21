@@ -72,17 +72,17 @@ namespace Tpetra {
 
 
 
-template <class Node=KokkosClassic::DefaultNode::DefaultNodeType>
+template <class Node = ::Tpetra::Map<int, int>::node_type>
 class Partitioner : public Isorropia::Partitioner, public Isorropia::Tpetra::Operator<Node>  {
 public:
-  
+
 
   Partitioner(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > inputGraph,
-              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),  
+              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
   Partitioner(const ::Tpetra::CrsGraph<int,int,Node> *inputGraph,
-              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),  
+              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
   Partitioner(Teuchos::RCP<const ::Tpetra::CrsGraph<int,int,Node> > inputGraph,
@@ -171,8 +171,8 @@ public:
    */
   void clearPartSizes();
 
-  /** @ingroup partitioning_grp 
-      partition is the method that computes 
+  /** @ingroup partitioning_grp
+      partition is the method that computes
        a rebalanced partitioning for the data in the object
       that this class was constructed with.
 
@@ -201,7 +201,7 @@ public:
     elemsWithProperty(part, elementList, len);
   }
 
-  /** 
+  /**
       Create a new @c ::Tpetra::Map corresponding to the new partition.
 
       This method is essentially used by the
@@ -214,7 +214,7 @@ public:
   */
   Teuchos::RCP< ::Tpetra::Map<int,int,Node> > createNewMap();
 
-  /** 
+  /**
       Create a new @c ::Tpetra::Map corresponding to the new partition.
 
       This method is essentially used by the

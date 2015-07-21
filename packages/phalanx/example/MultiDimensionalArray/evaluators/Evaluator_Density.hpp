@@ -45,7 +45,7 @@
 #ifndef PHX_EXAMPLE_VP_DENSITY_HPP
 #define PHX_EXAMPLE_VP_DENSITY_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_config.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
 #include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_MDField.hpp"
@@ -63,7 +63,10 @@ public:
 			     PHX::FieldManager<Traits>& vm);
   
   void evaluateFields(typename Traits::EvalData ud);
-  
+
+  KOKKOS_INLINE_FUNCTION
+  void operator () (const int i) const;  
+
 private:
   
   typedef typename EvalT::ScalarT ScalarT;
@@ -71,7 +74,7 @@ private:
   double constant;
 
   PHX::MDField<ScalarT,Cell,Point> density;
-  PHX::MDField<ScalarT,Cell,Point> temp;
+  PHX::MDField<const ScalarT,Cell,Point> temp;
 
   std::size_t cell_data_size;
 

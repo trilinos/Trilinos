@@ -198,46 +198,52 @@ namespace Amesos2 {
     }
 
 
-    /** \brief Solve \f$ A X = B\f$ using the given X and B vectors.
+    /** \brief Solve \f$ A X = B\f$ using the given \c XX and \c BB
+     *   (multi)vectors.
      *
-     * This overload of solve uses the given X and B vectors when
-     * solving.  This X and B are used in place of any X and B that
-     * were given upon construction of the Amesos2 solver instance and
-     * are used only for this solve.
+     * This overload of solve uses the given \c XX and \c BB
+     * (multi)vectors when solving.  These \c XX and \c BB
+     * (multi)vectors are used in place of any X and B that were given
+     * upon construction of the Amesos2 solver instance.  \c XX and
+     * \c BB are used only for this solve.
      *
      * If a permanent change of X and B are required, see the setX()
      * and setB() methods.
      *
      * \post
-     *  - The (multi)vector \c X contains the solution to the system
-     *  - The \c X and \c B given at construction time (if any) are unchanged.
+     *  - The (multi)vector \c XX contains the solution to the system
+     *  - The (multi)vectors \c X and \c B given at construction time
+     *    (if any) are unchanged.
      */
-    virtual void solve(const Teuchos::Ptr<Vector>       X,
-                       const Teuchos::Ptr<const Vector> B) const {
+    virtual void solve(const Teuchos::Ptr<Vector>       XX,
+                       const Teuchos::Ptr<const Vector> BB) const {
       flat_solver->solve(
-        Stokhos::create_flat_vector_view(*X, flat_X_map).get(),
-        Stokhos::create_flat_vector_view(*B, flat_B_map).get() );
+        Stokhos::create_flat_vector_view(*XX, flat_X_map).get(),
+        Stokhos::create_flat_vector_view(*BB, flat_B_map).get() );
     }
 
 
-    /** \brief Solve \f$ A X = B\f$ using the given X and B vectors.
+    /** \brief Solve \f$ A X = B\f$ using the given \c XX and \c BB
+     *   (multi)vectors.
      *
-     * This overload of solve uses the given X and B vectors when
-     * solving.  This X and B are used in place of any X and B that
-     * were given upon construction of the Amesos2 solver instance and
-     * are used only for this solve.
+     * This overload of solve uses the given \c XX and \c BB
+     * (multi)vectors when solving.  These \c XX and \c BB
+     * (multi)vectors are used in place of any X and B that were given
+     * upon construction of the Amesos2 solver instance.  \c XX and
+     * \c BB are used only for this solve.
      *
      * If a permanent change of X and B are required, see the setX()
      * and setB() methods.
      *
      * \post
-     *  - The (multi)vector \c X contains the solution to the system
-     *  - The \c X and \c B given at construction time (if any) are unchanged.
+     *  - The (multi)vector \c XX contains the solution to the system
+     *  - The (multi)vectors \c X and \c B given at construction time
+     *    (if any) are unchanged.
      */
-    virtual void solve(Vector* X, const Vector* B) const {
+    virtual void solve(Vector* XX, const Vector* BB) const {
       flat_solver->solve(
-        Stokhos::create_flat_vector_view(*X, flat_X_map).get(),
-        Stokhos::create_flat_vector_view(*B, flat_B_map).get() );
+        Stokhos::create_flat_vector_view(*XX, flat_X_map).get(),
+        Stokhos::create_flat_vector_view(*BB, flat_B_map).get() );
     }
 
     //@} End Mathematical Functions

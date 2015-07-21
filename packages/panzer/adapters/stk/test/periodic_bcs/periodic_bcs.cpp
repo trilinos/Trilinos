@@ -56,6 +56,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_CubeHexMeshFactory.hpp"
 #include "Panzer_STK_Utilities.hpp"
 #include "Panzer_STK_PeriodicBC_Matcher.hpp"
 #include "Panzer_STK_PeriodicBC_MatchConditions.hpp"
@@ -69,12 +70,17 @@ using Teuchos::rcp;
 #include "Epetra_Export.h"
 #include "Epetra_Import.h"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 using panzer_stk_classic::CoordMatcher;
+using panzer_stk_classic::PlaneMatcher;
 
 namespace panzer {
 
   TEUCHOS_UNIT_TEST(periodic_bcs, sorted_permutation)
   {
+    PHX::InitializeKokkosDevice();
+
      std::vector<double> vec(5.0);
      std::vector<std::size_t> permute;
      vec[0] = 0.0; 
@@ -88,12 +94,16 @@ namespace panzer {
      TEST_EQUALITY(permute.size(),5);
      for(std::size_t i=0;i<permute.size();i++)  
         TEST_EQUALITY(vec[permute[i]],(double) i);
+
+     PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, getSideIdsAndCoords)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
 
@@ -110,7 +120,7 @@ namespace panzer {
        mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
     }
 
-    // run tests (for both nodes and edges)
+    // run tests (for nodes and edges)
     /////////////////////////////////////////////
     std::pair<RCP<std::vector<std::size_t> >,
               RCP<std::vector<Tuple<double,3> > > > idsAndCoords = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(*mesh,"left");
@@ -172,12 +182,15 @@ namespace panzer {
        TEST_FLOATING_EQUALITY(sideCoords_edge[p][1],i*1.0/4.0+1.0/8.0,1e-14);
     }
 
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, getLocalSideIds)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     int rank = Comm.MyPID(); 
@@ -207,12 +220,16 @@ namespace panzer {
        TEST_EQUALITY(locallyRequiredIds->size(),0);
        TEST_EQUALITY(locallyRequiredIds_edge->size(),0);
     }
+
+    PHX::FinalizeKokkosDevice();
   }
  
   TEUCHOS_UNIT_TEST(periodic_bcs, getLocallyMatchedSideIds)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     int rank = Comm.MyPID(); 
@@ -275,7 +292,7 @@ namespace panzer {
           Tuple<double,3> coord_left;
           Tuple<double,3> coord_right;
           int flag0 = 0;
-          for(std::size_t j=0;j<sideIds.size();j++){
+          for(std::size_t j=0;j<sideIds_edge.size();j++){
             if(pair.first == sideIds_edge[j]){
               coord_left = sideCoords_edge[j];
               flag0++;
@@ -322,12 +339,15 @@ namespace panzer {
     else {
        TEST_EQUALITY(matchedIds->size(),0)
     }
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, getGlobalPairing)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     int rank = Comm.MyPID(); 
@@ -396,7 +416,7 @@ namespace panzer {
           Tuple<double,3> coord_left;
           Tuple<double,3> coord_right;
           int flag0 = 0;
-          for(std::size_t j=0;j<sideIds.size();j++){
+          for(std::size_t j=0;j<sideIds_edge.size();j++){
             if(pair.first == sideIds_edge[j]){
               coord_left = sideCoords_edge[j];
               flag0++;
@@ -443,12 +463,15 @@ namespace panzer {
     else {
        TEST_EQUALITY(globallyMatchedIds->size(),0);
     }
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, matchPeriodicSides)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
     int rank = Comm.MyPID(); 
@@ -536,7 +559,7 @@ namespace panzer {
              Tuple<double,3> coord_left;
              Tuple<double,3> coord_right;
              int flag0 = 0;
-             for(std::size_t j=0;j<sideIds_left.size();j++){
+             for(std::size_t j=0;j<sideIds_edge_left.size();j++){
                if(pair.first == sideIds_edge_left[j]){
                  coord_left = sideCoords_edge_left[j];
                  flag0++;
@@ -619,7 +642,7 @@ namespace panzer {
              Tuple<double,3> coord_top;
              Tuple<double,3> coord_bottom;
              int flag0 = 0;
-             for(std::size_t j=0;j<sideIds_top.size();j++){
+             for(std::size_t j=0;j<sideIds_edge_top.size();j++){
                if(pair.first == sideIds_edge_top[j]){
                  coord_top = sideCoords_edge_top[j];
                  flag0++;
@@ -679,12 +702,15 @@ namespace panzer {
        TEST_THROW(panzer_stk_classic::periodic_helpers::matchPeriodicSides("top","right",*mesh,matcherX,"edge"),std::logic_error);
        TEST_THROW(panzer_stk_classic::periodic_helpers::matchPeriodicSides("bottom","left",*mesh,matcherY,"edge"),std::logic_error);
     }
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, PeriodicBC_Matcher)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
@@ -761,7 +787,7 @@ namespace panzer {
              Tuple<double,3> coord_top;
              Tuple<double,3> coord_bottom;
              int flag0 = 0;
-             for(std::size_t j=0;j<sideIds_top.size();j++){
+             for(std::size_t j=0;j<sideIds_edge_top.size();j++){
                if(pair.first == sideIds_edge_top[j]){
                  coord_top = sideCoords_edge_top[j];
                  flag0++;
@@ -837,12 +863,15 @@ namespace panzer {
        TEST_THROW(pMatch->getMatchedPair(*mesh),std::logic_error);
     }
     
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, PeriodicBC_Matcher_multi)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
@@ -892,13 +921,15 @@ namespace panzer {
        }
 
     }
-
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, PeriodicBC_Matcher_multi_edge)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
@@ -972,7 +1003,7 @@ namespace panzer {
           Tuple<double,3> coord_top;
           Tuple<double,3> coord_bottom;
           int flag_tb = 0;
-          for(std::size_t j=0;j<sideIds_top.size();j++){
+          for(std::size_t j=0;j<sideIds_edge_top.size();j++){
             if(pair.first == sideIds_edge_top[j]){
               coord_top = sideCoords_edge_top[j];
               flag_tb++;
@@ -987,7 +1018,7 @@ namespace panzer {
           Tuple<double,3> coord_left;
           Tuple<double,3> coord_right;
           int flag_lr = 0;
-          for(std::size_t j=0;j<sideIds_left.size();j++){
+          for(std::size_t j=0;j<sideIds_edge_left.size();j++){
             if(pair.first == sideIds_edge_left[j]){
               coord_left = sideCoords_edge_left[j];
               flag_lr++;
@@ -1067,13 +1098,238 @@ namespace panzer {
        }
 
     }
+    PHX::FinalizeKokkosDevice();
+  }
 
+  TEUCHOS_UNIT_TEST(periodic_bcs, PeriodicBC_Matcher_multi_face)
+  {
+    using Teuchos::RCP;
+    using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
+
+    Epetra_MpiComm Comm(MPI_COMM_WORLD);
+
+    panzer_stk_classic::CubeHexMeshFactory mesh_factory;
+
+    // setup mesh
+    /////////////////////////////////////////////
+    RCP<panzer_stk_classic::STK_Interface> mesh;
+    {
+       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+       pl->set("X Blocks",2);
+       pl->set("Y Blocks",1);
+       pl->set("Z Blocks",1);
+       pl->set("X Elements",4);
+       pl->set("Y Elements",2);
+       pl->set("Z Elements",1);
+       mesh_factory.setParameterList(pl);
+       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
+    }
+
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_left = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(*mesh,"left");
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_right = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(*mesh,"right");
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_face_left = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(*mesh,"left","face");
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_face_right = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(*mesh,"right","face");
+       std::vector<std::size_t> & sideIds_left = *idsAndCoords_left.first;
+       std::vector<std::size_t> & sideIds_right = *idsAndCoords_right.first;
+       std::vector<std::size_t> & sideIds_face_left = *idsAndCoords_face_left.first;
+       std::vector<std::size_t> & sideIds_face_right = *idsAndCoords_face_right.first;
+       std::vector<Tuple<double,3> > & sideCoords_left = *idsAndCoords_left.second;
+       std::vector<Tuple<double,3> > & sideCoords_right = *idsAndCoords_right.second;
+       std::vector<Tuple<double,3> > & sideCoords_face_left = *idsAndCoords_face_left.second;
+       std::vector<Tuple<double,3> > & sideCoords_face_right = *idsAndCoords_face_right.second;
+
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_top = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(*mesh,"top");
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_bottom = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(*mesh,"bottom");
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_face_top = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(*mesh,"top","face");
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_face_bottom = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(*mesh,"bottom","face");
+       std::vector<std::size_t> & sideIds_top = *idsAndCoords_top.first;
+       std::vector<std::size_t> & sideIds_bottom = *idsAndCoords_bottom.first;
+       std::vector<std::size_t> & sideIds_face_top = *idsAndCoords_face_top.first;
+       std::vector<std::size_t> & sideIds_face_bottom = *idsAndCoords_face_bottom.first;
+       std::vector<Tuple<double,3> > & sideCoords_top = *idsAndCoords_top.second;
+       std::vector<Tuple<double,3> > & sideCoords_bottom = *idsAndCoords_bottom.second;
+       std::vector<Tuple<double,3> > & sideCoords_face_top = *idsAndCoords_face_top.second;
+       std::vector<Tuple<double,3> > & sideCoords_face_bottom = *idsAndCoords_face_bottom.second;
+
+    {
+       CoordMatcher xmatcher(0);
+       CoordMatcher ymatcher(1);
+       Teuchos::RCP<const panzer_stk_classic::PeriodicBC_MatcherBase> tb_Match 
+             = panzer_stk_classic::buildPeriodicBC_Matcher("top","bottom",xmatcher,"face");
+       Teuchos::RCP<const panzer_stk_classic::PeriodicBC_MatcherBase> lr_Match 
+             = panzer_stk_classic::buildPeriodicBC_Matcher("left","right",ymatcher,"face");
+
+       RCP<std::vector<std::pair<std::size_t,std::size_t> > > globallyMatchedIds_face;
+       globallyMatchedIds_face = tb_Match->getMatchedPair(*mesh);
+       globallyMatchedIds_face = lr_Match->getMatchedPair(*mesh,globallyMatchedIds_face);
+
+       // match top & bottom sides
+       for(std::size_t i=0;i<globallyMatchedIds_face->size();i++) {
+
+          std::pair<std::size_t,std::size_t> pair = (*globallyMatchedIds_face)[i];
+
+          // Get coordinates for matched faces on top and bottom
+          Tuple<double,3> coord_top;
+          Tuple<double,3> coord_bottom;
+          int flag_tb = 0;
+          for(std::size_t j=0;j<sideIds_face_top.size();j++){
+            if(pair.first == sideIds_face_top[j]){
+              coord_top = sideCoords_face_top[j];
+              flag_tb++;
+            }
+            if(pair.second == sideIds_face_bottom[j]){
+              coord_bottom = sideCoords_face_bottom[j];
+              flag_tb++;
+            }
+          }
+
+          // Get coordinates for matched faces on left and right
+          Tuple<double,3> coord_left;
+          Tuple<double,3> coord_right;
+          int flag_lr = 0;
+          for(std::size_t j=0;j<sideIds_face_left.size();j++){
+            if(pair.first == sideIds_face_left[j]){
+              coord_left = sideCoords_face_left[j];
+              flag_lr++;
+            }
+            if(pair.second == sideIds_face_right[j]){
+              coord_right = sideCoords_face_right[j];
+              flag_lr++;
+            }
+          }
+          TEST_EQUALITY(flag_tb+flag_lr,2);
+
+          // If node is on top
+          if(flag_tb == 2) {
+             int top_ll  = -1;   
+             int top_lu  = -1;   
+             int top_ul  = -1; 
+             int top_uu  = -1; 
+             int bottom_ll = -1;   
+             int bottom_lu = -1;   
+             int bottom_ul = -1; 
+             int bottom_uu = -1; 
+             int flag   = 0;
+
+             for(std::size_t j=0;j<sideCoords_top.size();j++) {
+               if ((std::abs(sideCoords_top[j][0] - (coord_top[0]-1.0/16.0)) < 1e-14) && (std::abs(sideCoords_top[j][1] - coord_top[1]) < 1e-14) && (std::abs(sideCoords_top[j][2] - (coord_top[2]-1.0/2.0)) < 1e-14)){
+                  top_ll = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_top[j][0] - (coord_top[0]-1.0/16.0)) < 1e-14) && (std::abs(sideCoords_top[j][1] - coord_top[1]) < 1e-14) && (std::abs(sideCoords_top[j][2] - (coord_top[2]+1.0/2.0)) < 1e-14)){
+                  top_lu = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_top[j][0] - (coord_top[0]+1.0/16.0)) < 1e-14) && (std::abs(sideCoords_top[j][1] - coord_top[1]) < 1e-14) && (std::abs(sideCoords_top[j][2] - (coord_top[2]-1.0/2.0)) < 1e-14)){
+                  top_ul = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_top[j][0] - (coord_top[0]+1.0/16.0)) < 1e-14) && (std::abs(sideCoords_top[j][1] - coord_top[1]) < 1e-14) && (std::abs(sideCoords_top[j][2] - (coord_top[2]+1.0/2.0)) < 1e-14)){
+                  top_uu = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_bottom[j][0] - (coord_bottom[0]-1.0/16.0)) < 1e-14) && (std::abs(sideCoords_bottom[j][1] - coord_bottom[1]) < 1e-14) && (std::abs(sideCoords_bottom[j][2] - (coord_bottom[2]-1.0/2.0)) < 1e-14)){
+                  bottom_ll = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_bottom[j][0] - (coord_bottom[0]-1.0/16.0)) < 1e-14) && (std::abs(sideCoords_bottom[j][1] - coord_bottom[1]) < 1e-14) && (std::abs(sideCoords_bottom[j][2] - (coord_bottom[2]+1.0/2.0)) < 1e-14)){
+                  bottom_lu = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_bottom[j][0] - (coord_bottom[0]+1.0/16.0)) < 1e-14) && (std::abs(sideCoords_bottom[j][1] - coord_bottom[1]) < 1e-14) && (std::abs(sideCoords_bottom[j][2] - (coord_bottom[2]-1.0/2.0)) < 1e-14)){
+                  bottom_ul = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_bottom[j][0] - (coord_bottom[0]+1.0/16.0)) < 1e-14) && (std::abs(sideCoords_bottom[j][1] - coord_bottom[1]) < 1e-14) && (std::abs(sideCoords_bottom[j][2] - (coord_bottom[2]+1.0/2.0)) < 1e-14)){
+                  bottom_uu = j;
+                  flag++;
+               }
+             }
+             TEST_EQUALITY(flag,8);
+
+             // Test equivalence of node numbers
+             TEST_EQUALITY(sideIds_top[top_ll],sideIds_bottom[bottom_ll]+18);
+             TEST_EQUALITY(sideIds_top[top_lu],sideIds_bottom[bottom_lu]+18);
+             TEST_EQUALITY(sideIds_top[top_ul],sideIds_bottom[bottom_ul]+18);
+             TEST_EQUALITY(sideIds_top[top_uu],sideIds_bottom[bottom_uu]+18);
+          }
+          // If node is on left
+          else if(flag_lr == 2) {
+             int left_ll  = -1;   
+             int left_lu  = -1;   
+             int left_ul  = -1; 
+             int left_uu  = -1; 
+             int right_ll = -1;   
+             int right_lu = -1;   
+             int right_ul = -1; 
+             int right_uu = -1; 
+             int flag   = 0;
+
+             for(std::size_t j=0;j<sideCoords_left.size();j++) {
+               if ((std::abs(sideCoords_left[j][0] - coord_left[0]) < 1e-14) && (std::abs(sideCoords_left[j][1] - (coord_left[1]-1.0/4.0)) < 1e-14) && (std::abs(sideCoords_left[j][2] - (coord_left[2]-1.0/2.0)) < 1e-14)){
+                  left_ll = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_left[j][0] - coord_left[0]) < 1e-14) && (std::abs(sideCoords_left[j][1] - (coord_left[1]-1.0/4.0)) < 1e-14) && (std::abs(sideCoords_left[j][2] - (coord_left[2]+1.0/2.0)) < 1e-14)){
+                  left_lu = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_left[j][0] - coord_left[0]) < 1e-14) && (std::abs(sideCoords_left[j][1] - (coord_left[1]+1.0/4.0)) < 1e-14) && (std::abs(sideCoords_left[j][2] - (coord_left[2]-1.0/2.0)) < 1e-14)){
+                  left_ul = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_left[j][0] - coord_left[0]) < 1e-14) && (std::abs(sideCoords_left[j][1] - (coord_left[1]+1.0/4.0)) < 1e-14) && (std::abs(sideCoords_left[j][2] - (coord_left[2]+1.0/2.0)) < 1e-14)){
+                  left_uu = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_right[j][0] - coord_right[0]) < 1e-14) && (std::abs(sideCoords_right[j][1] - (coord_right[1]-1.0/4.0)) < 1e-14) && (std::abs(sideCoords_right[j][2] - (coord_right[2]-1.0/2.0)) < 1e-14)){
+                  right_ll = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_right[j][0] - coord_right[0]) < 1e-14) && (std::abs(sideCoords_right[j][1] - (coord_right[1]-1.0/4.0)) < 1e-14) && (std::abs(sideCoords_right[j][2] - (coord_right[2]+1.0/2.0)) < 1e-14)){
+                  right_lu = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_right[j][0] - coord_right[0]) < 1e-14) && (std::abs(sideCoords_right[j][1] - (coord_right[1]+1.0/4.0)) < 1e-14) && (std::abs(sideCoords_right[j][2] - (coord_right[2]-1.0/2.0)) < 1e-14)){
+                  right_ul = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_right[j][0] - coord_right[0]) < 1e-14) && (std::abs(sideCoords_right[j][1] - (coord_right[1]+1.0/4.0)) < 1e-14) && (std::abs(sideCoords_right[j][2] - (coord_right[2]+1.0/2.0)) < 1e-14)){
+                  right_uu = j;
+                  flag++;
+               }
+             }
+             TEST_EQUALITY(flag,8);
+
+             // Test equivalence of node numbers
+             TEST_EQUALITY(sideIds_left[left_ll],sideIds_right[right_ll]-8);
+             TEST_EQUALITY(sideIds_left[left_lu],sideIds_right[right_lu]-8);
+             TEST_EQUALITY(sideIds_left[left_ul],sideIds_right[right_ul]-8);
+             TEST_EQUALITY(sideIds_left[left_uu],sideIds_right[right_uu]-8);
+          }
+
+       }
+
+    }
+    PHX::FinalizeKokkosDevice();
   }
 
   TEUCHOS_UNIT_TEST(periodic_bcs, PeriodicBC_Matcher_nodes_and_edges)
   {
     using Teuchos::RCP;
     using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
 
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
@@ -1128,7 +1384,7 @@ namespace panzer {
           std::pair<std::size_t,std::size_t> pair = (*globallyMatchedIds)[i];
 
           // Is this a node or edge pairing?
-          if(pair.first < 28){ // Node
+          if(pair.first < 27){ // Node
             TEST_EQUALITY(pair.first,pair.second-8);
           } else {             //Edge
 
@@ -1180,7 +1436,220 @@ namespace panzer {
        }
 
     }
+    
+    PHX::FinalizeKokkosDevice();
+  }
 
+  TEUCHOS_UNIT_TEST(periodic_bcs, PeriodicBC_Matcher_nodes_edges_and_faces)
+  {
+    using Teuchos::RCP;
+    using Teuchos::Tuple;
+
+    PHX::InitializeKokkosDevice();
+
+    Epetra_MpiComm Comm(MPI_COMM_WORLD);
+
+    panzer_stk_classic::CubeHexMeshFactory mesh_factory;
+
+    // setup mesh
+    /////////////////////////////////////////////
+    RCP<panzer_stk_classic::STK_Interface> mesh;
+    {
+       RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
+       pl->set("X Blocks",2);
+       pl->set("Y Blocks",1);
+       pl->set("Z Blocks",1);
+       pl->set("X Elements",4);
+       pl->set("Y Elements",2);
+       pl->set("Z Elements",1);
+       mesh_factory.setParameterList(pl);
+       mesh = mesh_factory.buildMesh(MPI_COMM_WORLD);
+    }
+
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_left = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(*mesh,"left");
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_right = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(*mesh,"right");
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_edge_left = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(*mesh,"left","edge");
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_edge_right = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(*mesh,"right","edge");
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_face_left = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(*mesh,"left","face");
+       std::pair<RCP<std::vector<std::size_t> >,
+                 RCP<std::vector<Tuple<double,3> > > > idsAndCoords_face_right = panzer_stk_classic::periodic_helpers::getSideIdsAndCoords(*mesh,"right","face");
+       std::vector<std::size_t> & sideIds_left = *idsAndCoords_left.first;
+       std::vector<std::size_t> & sideIds_right = *idsAndCoords_right.first;
+       std::vector<std::size_t> & sideIds_edge_left = *idsAndCoords_edge_left.first;
+       std::vector<std::size_t> & sideIds_edge_right = *idsAndCoords_edge_right.first;
+       std::vector<std::size_t> & sideIds_face_left = *idsAndCoords_face_left.first;
+       std::vector<std::size_t> & sideIds_face_right = *idsAndCoords_face_right.first;
+       std::vector<Tuple<double,3> > & sideCoords_left = *idsAndCoords_left.second;
+       std::vector<Tuple<double,3> > & sideCoords_right = *idsAndCoords_right.second;
+       std::vector<Tuple<double,3> > & sideCoords_edge_left = *idsAndCoords_edge_left.second;
+       std::vector<Tuple<double,3> > & sideCoords_edge_right = *idsAndCoords_edge_right.second;
+       std::vector<Tuple<double,3> > & sideCoords_face_left = *idsAndCoords_face_left.second;
+       std::vector<Tuple<double,3> > & sideCoords_face_right = *idsAndCoords_face_right.second;
+
+    {
+       PlaneMatcher ymatcher(1,2);
+       Teuchos::RCP<const panzer_stk_classic::PeriodicBC_MatcherBase> node_Match 
+             = panzer_stk_classic::buildPeriodicBC_Matcher("left","right",ymatcher);
+       Teuchos::RCP<const panzer_stk_classic::PeriodicBC_MatcherBase> edge_Match 
+             = panzer_stk_classic::buildPeriodicBC_Matcher("left","right",ymatcher,"edge");
+       Teuchos::RCP<const panzer_stk_classic::PeriodicBC_MatcherBase> face_Match 
+             = panzer_stk_classic::buildPeriodicBC_Matcher("left","right",ymatcher,"face");
+
+       RCP<std::vector<std::pair<std::size_t,std::size_t> > > globallyMatchedIds;
+       globallyMatchedIds = node_Match->getMatchedPair(*mesh);
+       globallyMatchedIds = edge_Match->getMatchedPair(*mesh,globallyMatchedIds);
+       globallyMatchedIds = face_Match->getMatchedPair(*mesh,globallyMatchedIds);
+
+
+       // match left & right sides
+       for(std::size_t i=0;i<globallyMatchedIds->size();i++) {
+
+          std::pair<std::size_t,std::size_t> pair = (*globallyMatchedIds)[i];
+          // Is this a node, edge, or face pairing?
+          if(pair.first < 54){ // Node
+            TEST_EQUALITY(pair.first,pair.second-8);
+          } else if(pair.first < 192){ //Edge
+
+            // Get coordinates for matched edges on left and right
+            Tuple<double,3> coord_left;
+            Tuple<double,3> coord_right;
+            int flag_lr = 0;
+            for(std::size_t j=0;j<sideIds_edge_left.size();j++){
+              if(pair.first == sideIds_edge_left[j]){
+                coord_left = sideCoords_edge_left[j];
+                flag_lr++;
+              }
+              if(pair.second == sideIds_edge_right[j]){
+                coord_right = sideCoords_edge_right[j];
+                flag_lr++;
+              }
+            }
+            TEST_EQUALITY(flag_lr,2);
+
+            int left_l  = -1;   
+            int left_u  = -1; 
+            int right_l = -1;   
+            int right_u = -1; 
+            int flag   = 0;
+
+            for(std::size_t j=0;j<sideCoords_left.size();j++) {
+              if ((std::abs(sideCoords_left[j][0] - coord_left[0]) < 1e-14) && (std::abs(sideCoords_left[j][1] - (coord_left[1]-1.0/4.0)) < 1e-14) && (std::abs(sideCoords_left[j][2] - coord_left[2]) < 1e-14)){
+                 left_l = j;
+                 flag++;
+              }
+              if ((std::abs(sideCoords_left[j][0] - coord_left[0]) < 1e-14) && (std::abs(sideCoords_left[j][1] - coord_left[1]) < 1e-14) && (std::abs(sideCoords_left[j][2] - (coord_left[2]-1.0/2.0)) < 1e-14)){
+                 left_l = j;
+                 flag++;
+              }
+              if ((std::abs(sideCoords_left[j][0] - coord_left[0]) < 1e-14) && (std::abs(sideCoords_left[j][1] - (coord_left[1]+1.0/4.0)) < 1e-14) && (std::abs(sideCoords_left[j][2] - coord_left[2]) < 1e-14)){
+                 left_u = j;
+                 flag++;
+              }
+              if ((std::abs(sideCoords_left[j][0] - coord_left[0]) < 1e-14) && (std::abs(sideCoords_left[j][1] - coord_left[1]) < 1e-14) && (std::abs(sideCoords_left[j][2] - (coord_left[2]+1.0/2.0)) < 1e-14)){
+                 left_u = j;
+                 flag++;
+              }
+              if ((std::abs(sideCoords_right[j][0] - coord_right[0]) < 1e-14) && (std::abs(sideCoords_right[j][1] - (coord_right[1]-1.0/4.0)) < 1e-14) && (std::abs(sideCoords_right[j][2] - coord_right[2]) < 1e-14)){
+                 right_l = j;
+                 flag++;
+              }
+              if ((std::abs(sideCoords_right[j][0] - coord_right[0]) < 1e-14) && (std::abs(sideCoords_right[j][1] - coord_right[1]) < 1e-14) && (std::abs(sideCoords_right[j][2] - (coord_right[2]-1.0/2.0)) < 1e-14)){
+                 right_l = j;
+                 flag++;
+              }
+              if ((std::abs(sideCoords_right[j][0] - coord_right[0]) < 1e-14) && (std::abs(sideCoords_right[j][1] - (coord_right[1]+1.0/4.0)) < 1e-14) && (std::abs(sideCoords_right[j][2] - coord_right[2]) < 1e-14)){
+                 right_u = j;
+                 flag++;
+              }
+              if ((std::abs(sideCoords_right[j][0] - coord_right[0]) < 1e-14) && (std::abs(sideCoords_right[j][1] - coord_right[1]) < 1e-14) && (std::abs(sideCoords_right[j][2] - (coord_right[2]+1.0/2.0)) < 1e-14)){
+                 right_u = j;
+                 flag++;
+              }
+            }
+            TEST_EQUALITY(flag,4);
+            // Test equivalence of node numbers
+            TEST_EQUALITY(sideIds_left[left_l],sideIds_right[right_l]-8);
+            TEST_EQUALITY(sideIds_left[left_u],sideIds_right[right_u]-8);
+          } else { //Face
+
+            // Get coordinates for matched faces on left and right
+            Tuple<double,3> coord_left;
+            Tuple<double,3> coord_right;
+            int flag_lr = 0;
+            for(std::size_t j=0;j<sideIds_face_left.size();j++){
+              if(pair.first == sideIds_face_left[j]){
+                coord_left = sideCoords_face_left[j];
+                flag_lr++;
+              }
+              if(pair.second == sideIds_face_right[j]){
+                coord_right = sideCoords_face_right[j];
+                flag_lr++;
+              }
+            }
+            TEST_EQUALITY(flag_lr,2);
+
+             int left_ll  = -1;   
+             int left_lu  = -1;   
+             int left_ul  = -1; 
+             int left_uu  = -1; 
+             int right_ll = -1;   
+             int right_lu = -1;   
+             int right_ul = -1; 
+             int right_uu = -1; 
+             int flag   = 0;
+
+             for(std::size_t j=0;j<sideCoords_left.size();j++) {
+               if ((std::abs(sideCoords_left[j][0] - coord_left[0]) < 1e-14) && (std::abs(sideCoords_left[j][1] - (coord_left[1]-1.0/4.0)) < 1e-14) && (std::abs(sideCoords_left[j][2] - (coord_left[2]-1.0/2.0)) < 1e-14)){
+                  left_ll = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_left[j][0] - coord_left[0]) < 1e-14) && (std::abs(sideCoords_left[j][1] - (coord_left[1]-1.0/4.0)) < 1e-14) && (std::abs(sideCoords_left[j][2] - (coord_left[2]+1.0/2.0)) < 1e-14)){
+                  left_lu = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_left[j][0] - coord_left[0]) < 1e-14) && (std::abs(sideCoords_left[j][1] - (coord_left[1]+1.0/4.0)) < 1e-14) && (std::abs(sideCoords_left[j][2] - (coord_left[2]-1.0/2.0)) < 1e-14)){
+                  left_ul = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_left[j][0] - coord_left[0]) < 1e-14) && (std::abs(sideCoords_left[j][1] - (coord_left[1]+1.0/4.0)) < 1e-14) && (std::abs(sideCoords_left[j][2] - (coord_left[2]+1.0/2.0)) < 1e-14)){
+                  left_uu = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_right[j][0] - coord_right[0]) < 1e-14) && (std::abs(sideCoords_right[j][1] - (coord_right[1]-1.0/4.0)) < 1e-14) && (std::abs(sideCoords_right[j][2] - (coord_right[2]-1.0/2.0)) < 1e-14)){
+                  right_ll = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_right[j][0] - coord_right[0]) < 1e-14) && (std::abs(sideCoords_right[j][1] - (coord_right[1]-1.0/4.0)) < 1e-14) && (std::abs(sideCoords_right[j][2] - (coord_right[2]+1.0/2.0)) < 1e-14)){
+                  right_lu = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_right[j][0] - coord_right[0]) < 1e-14) && (std::abs(sideCoords_right[j][1] - (coord_right[1]+1.0/4.0)) < 1e-14) && (std::abs(sideCoords_right[j][2] - (coord_right[2]-1.0/2.0)) < 1e-14)){
+                  right_ul = j;
+                  flag++;
+               }
+               if ((std::abs(sideCoords_right[j][0] - coord_right[0]) < 1e-14) && (std::abs(sideCoords_right[j][1] - (coord_right[1]+1.0/4.0)) < 1e-14) && (std::abs(sideCoords_right[j][2] - (coord_right[2]+1.0/2.0)) < 1e-14)){
+                  right_uu = j;
+                  flag++;
+               }
+             }
+             TEST_EQUALITY(flag,8);
+
+             // Test equivalence of node numbers
+             TEST_EQUALITY(sideIds_left[left_ll],sideIds_right[right_ll]-8);
+             TEST_EQUALITY(sideIds_left[left_lu],sideIds_right[right_lu]-8);
+             TEST_EQUALITY(sideIds_left[left_ul],sideIds_right[right_ul]-8);
+             TEST_EQUALITY(sideIds_left[left_uu],sideIds_right[right_uu]-8);
+          }
+       }
+
+    }
+    
+    PHX::FinalizeKokkosDevice();
   }
 
 }

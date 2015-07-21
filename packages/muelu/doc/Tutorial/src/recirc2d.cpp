@@ -49,11 +49,10 @@
 
 #include <Teuchos_StandardCatchMacros.hpp>
 
-#include <Epetra_MpiComm.h>
-#include <Epetra_SerialComm.h>
 #include <Epetra_RowMatrix.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Map.h>
+#include <Epetra_Comm.h>
 
 // Galeri
 #include <Galeri_Maps.h>
@@ -178,6 +177,7 @@ int main(int argc, char *argv[]) {
     // Epetra -> Xpetra
     RCP<Vector> xB = Teuchos::rcp(new Xpetra::EpetraVector(B));
     RCP<Vector> xX = Teuchos::rcp(new Xpetra::EpetraVector(X));
+    RCP<MultiVector> coords = Teuchos::rcp(new Xpetra::EpetraMultiVector(epCoord));
 
     xX->setSeed(100);
     xX->randomize();
@@ -214,6 +214,7 @@ int main(int argc, char *argv[]) {
 
     H->GetLevel(0)->Set("A",           A);
     H->GetLevel(0)->Set("Nullspace",   nullspace);
+    H->GetLevel(0)->Set("Coordinates", coords);
 
     mueLuFactory.SetupHierarchy(*H);
 

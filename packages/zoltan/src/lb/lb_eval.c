@@ -57,39 +57,42 @@ extern "C" {
 
 /************************************************************************/
 static void iget_strided_stats(int *v, int stride, int offset, int len,
-                             float *min, float *max, float *sum);
+                               float *min, float *max, float *sum);
 
 static void fget_strided_stats(float *v, int stride, int offset, int len,
-                             float *min, float *max, float *sum);
+                               float *min, float *max, float *sum);
 
-static int get_nbor_parts( ZZ *zz, int nobj, ZOLTAN_ID_PTR global_ids, 
-  ZOLTAN_ID_PTR local_ids, int *part, int nnbors, ZOLTAN_ID_PTR nbors_global,
-  int *nbors_part);
+static int get_nbor_parts(ZZ *zz, int nobj, ZOLTAN_ID_PTR global_ids, 
+                          ZOLTAN_ID_PTR local_ids, int *part, int nnbors,
+                          ZOLTAN_ID_PTR nbors_global, int *nbors_part);
 
 static int *objects_by_part(ZZ *zz, int num_obj, int *part,
-  int *nparts, int *nonempty);
+                            int *nparts, int *nonempty);
 
-static int
-object_metrics(ZZ *zz, int num_obj, int *parts, float *part_sizes, int req_nparts,
-               float *vwgts, int wgt_dim, 
-               int *nparts, int *nonempty, float *obj_imbalance, float *imbalance, float *nobj,
-               float *obj_wgt, float *xtra_imbalance, float (*xtra_obj_wgt)[EVAL_SIZE]);
+static int object_metrics(ZZ *zz, int num_obj, int *parts, float *part_sizes,
+                          int req_nparts, float *vwgts, int wgt_dim, 
+                          int *nparts, int *nonempty, float *obj_imbalance, 
+                          float *imbalance, float *nobj, float *obj_wgt, 
+                          float *xtra_imbalance, 
+                          float (*xtra_obj_wgt)[EVAL_SIZE]);
 
-static int 
-add_graph_extra_weight(ZZ *zz, int num_obj, int *edges_per_obj, int *vwgt_dim, float **vwgts);
+static int add_graph_extra_weight(ZZ *zz, int num_obj, int *edges_per_obj, 
+                                  int *vwgt_dim, float **vwgts);
 
 extern int zoltan_lb_eval_sort_increasing(const void *a, const void *b);
 
 /*****************************************************************************/
 
-int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, ZOLTAN_BALANCE_EVAL *eval)
+int Zoltan_LB_Eval_Balance(ZZ *zzin, int print_stats, ZOLTAN_BALANCE_EVAL *eval)
 {
-  /*****************************************************************************/
-  /* Return performance metrics in ZOLTAN_BALANCE_EVAL structure.                     */ 
-  /* Also print them out if print_stats is true.                               */
-  /*****************************************************************************/
+  /***************************************************************************/
+  /* Return performance metrics in ZOLTAN_BALANCE_EVAL structure.            */ 
+  /* Also print them out if print_stats is true.                             */
+  /***************************************************************************/
 
   char *yo = "Zoltan_LB_Eval_Balance";
+  ZZ *zz = Zoltan_Copy(zzin);  /* Some operations have side-effects in zz;
+                                  Don't change the user's settings */
   int vwgt_dim = zz->Obj_Weight_Dim;
   int part_dim = 0;
   int i, j, ierr;
@@ -123,7 +126,8 @@ int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, ZOLTAN_BALANCE_EVAL *eval)
 
   /* Get object weights and parts */
 
-  ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, vwgt_dim, &vwgts, &parts);
+  ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, 
+                             vwgt_dim, &vwgts, &parts);
 
   if (ierr != ZOLTAN_OK)
     goto End;
@@ -155,11 +159,12 @@ int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, ZOLTAN_BALANCE_EVAL *eval)
     goto End;
   }
 
-  Zoltan_LB_Get_Part_Sizes(zz, req_nparts, part_dim, part_sizes);
+  Zoltan_LB_Get_Part_Sizes(zz, part_dim, part_sizes);
 
   /* Get metrics based on number of objects and object weights */
 
-  ierr = object_metrics(zz, num_obj, parts, part_sizes, req_nparts, vwgts, vwgt_dim,
+  ierr = object_metrics(zz, num_obj, parts, part_sizes, req_nparts,
+          vwgts, vwgt_dim,
           &nparts,           /* actual number of parts */
           &nonempty_nparts,  /* number of non-empty parts */
           &eval->obj_imbalance,
@@ -181,14 +186,15 @@ int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, ZOLTAN_BALANCE_EVAL *eval)
   if (print_stats && (zz->Proc == zz->Debug_Proc)){
 
     printf("\n%s  Part count: %1d requested, %1d actual , %1d non-empty\n", 
-      yo, req_nparts, nparts, nonempty_nparts);
+           yo, req_nparts, nparts, nonempty_nparts);
 
     printf("%s  Statistics with respect to %1d parts: \n", yo, nparts);
-    printf("%s                             Min      Max      Sum  Imbalance\n", yo);
+    printf("%s                             Min      Max      Sum  Imbalance\n",
+           yo);
 
     printf("%s  Number of objects  :  %8.3g %8.3g %8.3g", yo, 
-        eval->nobj[EVAL_GLOBAL_MIN], eval->nobj[EVAL_GLOBAL_MAX], 
-        eval->nobj[EVAL_GLOBAL_SUM]);
+           eval->nobj[EVAL_GLOBAL_MIN], eval->nobj[EVAL_GLOBAL_MAX], 
+           eval->nobj[EVAL_GLOBAL_SUM]);
 
     if (eval->obj_imbalance >= 0){
       printf("     %5.3f\n", eval->obj_imbalance);
@@ -199,8 +205,8 @@ int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, ZOLTAN_BALANCE_EVAL *eval)
 
     if (vwgt_dim > 0){
       printf("%s  Object weight      :  %8.3g %8.3g %8.3g", yo, 
-        eval->obj_wgt[EVAL_GLOBAL_MIN], eval->obj_wgt[EVAL_GLOBAL_MAX], 
-        eval->obj_wgt[EVAL_GLOBAL_SUM]);
+             eval->obj_wgt[EVAL_GLOBAL_MIN], eval->obj_wgt[EVAL_GLOBAL_MAX], 
+             eval->obj_wgt[EVAL_GLOBAL_SUM]);
 
       if (eval->imbalance >= 0){
         printf("     %5.3f\n", eval->imbalance);
@@ -214,8 +220,9 @@ int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, ZOLTAN_BALANCE_EVAL *eval)
           break;
         }
         printf("%s  Object weight %d    :  %8.3g %8.3g %8.3g", yo, i+2,
-          eval->xtra_obj_wgt[i][EVAL_GLOBAL_MIN], eval->xtra_obj_wgt[i][EVAL_GLOBAL_MAX], 
-          eval->xtra_obj_wgt[i][EVAL_GLOBAL_SUM]);
+               eval->xtra_obj_wgt[i][EVAL_GLOBAL_MIN], 
+               eval->xtra_obj_wgt[i][EVAL_GLOBAL_MAX], 
+               eval->xtra_obj_wgt[i][EVAL_GLOBAL_SUM]);
 
         if (eval->xtra_imbalance[i] >= 0){
           printf("     %5.3f\n", eval->xtra_imbalance[i] );
@@ -225,7 +232,8 @@ int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, ZOLTAN_BALANCE_EVAL *eval)
         }
       }
       if (vwgt_dim-1 > EVAL_MAX_XTRA_VWGTS){
-        printf("(We calculate up to %d extra object weights.  This can be changed.)\n",
+        printf("(We calculate up to %d extra object weights.  "
+               "This can be changed.)\n",
               EVAL_MAX_XTRA_VWGTS);
       }
     }
@@ -242,19 +250,21 @@ End:
   ZOLTAN_FREE(&part_sizes);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
-
+  Zoltan_Destroy(&zz);
   return ierr;
 }
 /*****************************************************************************/
 
-int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
+int Zoltan_LB_Eval_Graph(ZZ *zzin, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
 {
   /****************************************************************************/
-  /* Return performance metrics in ZOLTAN_GRAPH_EVAL structure.                      */ 
+  /* Return performance metrics in ZOLTAN_GRAPH_EVAL structure.               */
   /* Also print them out if print_stats is true.                              */
   /****************************************************************************/
 
   char *yo = "Zoltan_LB_Eval_Graph";
+  ZZ *zz = Zoltan_Copy(zzin);  /* Some operations have side-effects in zz;
+                                  Don't change the user's settings */
   MPI_Comm comm = zz->Communicator;
   int vwgt_dim = zz->Obj_Weight_Dim;
   int ewgt_dim = zz->Edge_Weight_Dim;
@@ -292,7 +302,6 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
   ZOLTAN_GRAPH_EVAL localEval;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
-
   ierr = ZOLTAN_OK;
 
   if (!graph)
@@ -360,13 +369,13 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
 
   eval_vwgt_dim = ((vwgt_dim > 0) ? vwgt_dim : 1);
 
-  part_sizes = (float*)ZOLTAN_MALLOC(sizeof(float) * req_nparts * eval_vwgt_dim);
+  part_sizes = (float*)ZOLTAN_MALLOC(sizeof(float)*req_nparts*eval_vwgt_dim);
   if (req_nparts && !part_sizes){
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
 
-  Zoltan_LB_Get_Part_Sizes(zz, req_nparts, part_dim, part_sizes);
+  Zoltan_LB_Get_Part_Sizes(zz, part_dim, part_sizes);
 
   if (eval_vwgt_dim > part_dim){
     for (i=req_nparts-1; i >= 0; i--){
@@ -404,7 +413,8 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
    * Get metrics based on number of objects and object weights 
    */
 
-  ierr = object_metrics(zz, num_obj, parts, part_sizes, req_nparts, vwgts, vwgt_dim,
+  ierr = object_metrics(zz, num_obj, parts, part_sizes, req_nparts, 
+          vwgts, vwgt_dim,
           &nparts,          /* actual number of parts */
           &nonempty_nparts,  /* number of non-empty parts */
           &graph->obj_imbalance,
@@ -668,7 +678,8 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
                graph->nnborparts + EVAL_GLOBAL_MAX,
                graph->nnborparts + EVAL_GLOBAL_SUM);
 
-  graph->nnborparts[EVAL_GLOBAL_AVG] = graph->nnborparts[EVAL_GLOBAL_SUM] / nparts;
+  graph->nnborparts[EVAL_GLOBAL_AVG] = 
+                    graph->nnborparts[EVAL_GLOBAL_SUM] / nparts;
 
   /*
    * CUTS - Number of cut edges in each part
@@ -734,7 +745,8 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
                graph->num_boundary + EVAL_GLOBAL_MAX,
                graph->num_boundary + EVAL_GLOBAL_SUM);
 
-  graph->num_boundary[EVAL_GLOBAL_AVG] = graph->num_boundary[EVAL_GLOBAL_SUM] / nparts;
+  graph->num_boundary[EVAL_GLOBAL_AVG] = 
+                      graph->num_boundary[EVAL_GLOBAL_SUM] / nparts;
 
   ZOLTAN_FREE(&num_boundary);
   ZOLTAN_FREE(&globalCount);
@@ -749,11 +761,12 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
       yo, req_nparts, nparts, nonempty_nparts);
 
     printf("%s  Statistics with respect to %1d parts: \n", yo, nparts);
-    printf("%s                             Min      Max      Sum  Imbalance\n", yo);
+    printf("%s                             Min      Max      Sum  Imbalance\n",
+           yo);
 
     printf("%s  Number of objects  :  %8.3g %8.3g %8.3g", yo, 
-      graph->nobj[EVAL_GLOBAL_MIN], graph->nobj[EVAL_GLOBAL_MAX],
-      graph->nobj[EVAL_GLOBAL_SUM]);
+           graph->nobj[EVAL_GLOBAL_MIN], graph->nobj[EVAL_GLOBAL_MAX],
+           graph->nobj[EVAL_GLOBAL_SUM]);
 
     if (graph->obj_imbalance >= 0){
       printf("    %5.3g\n", graph->obj_imbalance);
@@ -764,8 +777,8 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
 
     if (vwgt_dim > 0){
       printf("%s  Object weight      :  %8.3g %8.3g %8.3g", yo, 
-        graph->obj_wgt[EVAL_GLOBAL_MIN], graph->obj_wgt[EVAL_GLOBAL_MAX], 
-        graph->obj_wgt[EVAL_GLOBAL_SUM]);
+             graph->obj_wgt[EVAL_GLOBAL_MIN], graph->obj_wgt[EVAL_GLOBAL_MAX], 
+             graph->obj_wgt[EVAL_GLOBAL_SUM]);
 
       if (graph->imbalance >= 0){
         printf("     %5.3f\n", graph->imbalance);
@@ -779,8 +792,9 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
           break;
         }
         printf("%s  Object weight %d    :  %8.3g %8.3g %8.3g", yo, i+2,
-          graph->xtra_obj_wgt[i][EVAL_GLOBAL_MIN], graph->xtra_obj_wgt[i][EVAL_GLOBAL_MAX], 
-          graph->xtra_obj_wgt[i][EVAL_GLOBAL_SUM]);
+               graph->xtra_obj_wgt[i][EVAL_GLOBAL_MIN], 
+               graph->xtra_obj_wgt[i][EVAL_GLOBAL_MAX], 
+               graph->xtra_obj_wgt[i][EVAL_GLOBAL_SUM]);
 
         if (graph->xtra_imbalance[i] >= 0){
           printf("     %5.3f\n", graph->xtra_imbalance[i]);
@@ -790,7 +804,8 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
         }
       }
       if (vwgt_dim-1 > EVAL_MAX_XTRA_VWGTS){
-        printf("(We calculate up to %d extra object weights.  This can be changed.)\n",
+        printf("(We calculate up to %d extra object weights.  "
+               "This can be changed.)\n",
               EVAL_MAX_XTRA_VWGTS);
       }
     }
@@ -798,37 +813,47 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
     printf("\n");
 
     printf("%s  Statistics with respect to %1d parts: \n", yo, nparts);
-    printf("%s                                    Min      Max    Average    Sum\n", yo);
+    printf("%s                                    "
+           "Min      Max    Average    Sum\n", yo);
 
     printf("%s  Num boundary objects      :  %8.3g %8.3g %8.3g %8.3g\n", yo, 
-      graph->num_boundary[EVAL_GLOBAL_MIN], graph->num_boundary[EVAL_GLOBAL_MAX], 
-      graph->num_boundary[EVAL_GLOBAL_AVG], graph->num_boundary[EVAL_GLOBAL_SUM]);
+           graph->num_boundary[EVAL_GLOBAL_MIN], 
+           graph->num_boundary[EVAL_GLOBAL_MAX], 
+           graph->num_boundary[EVAL_GLOBAL_AVG], 
+           graph->num_boundary[EVAL_GLOBAL_SUM]);
 
     printf("%s  Number of cut edges       :  %8.3g %8.3g %8.3g %8.3g\n", yo, 
-      graph->cuts[EVAL_GLOBAL_MIN], graph->cuts[EVAL_GLOBAL_MAX], graph->cuts[EVAL_GLOBAL_AVG],
-      graph->cuts[EVAL_GLOBAL_SUM]);
+           graph->cuts[EVAL_GLOBAL_MIN], graph->cuts[EVAL_GLOBAL_MAX], 
+           graph->cuts[EVAL_GLOBAL_AVG],
+           graph->cuts[EVAL_GLOBAL_SUM]);
 
     if (ewgt_dim)
       printf("%s  Weight of cut edges (CUTE):  %8.3g %8.3g %8.3g %8.3g\n", yo, 
-        graph->cut_wgt[EVAL_GLOBAL_MIN], graph->cut_wgt[EVAL_GLOBAL_MAX], 
-        graph->cut_wgt[EVAL_GLOBAL_AVG], graph->cut_wgt[EVAL_GLOBAL_SUM]);
+             graph->cut_wgt[EVAL_GLOBAL_MIN], graph->cut_wgt[EVAL_GLOBAL_MAX], 
+             graph->cut_wgt[EVAL_GLOBAL_AVG], graph->cut_wgt[EVAL_GLOBAL_SUM]);
 
     for (i=0; i < ewgt_dim-1; i++){
       if (i == EVAL_MAX_XTRA_EWGTS){
         break;
       }
-      printf("%s  Weight %d                 :  %8.3g %8.3g %8.3g %8.3g\n", yo, i+2,
-        graph->xtra_cut_wgt[i][EVAL_GLOBAL_MIN], graph->xtra_cut_wgt[i][EVAL_GLOBAL_MAX], 
-        graph->xtra_cut_wgt[i][EVAL_GLOBAL_AVG], graph->xtra_cut_wgt[i][EVAL_GLOBAL_SUM]);
+      printf("%s  Weight %d                 :  %8.3g %8.3g %8.3g %8.3g\n", 
+             yo, i+2,
+             graph->xtra_cut_wgt[i][EVAL_GLOBAL_MIN], 
+             graph->xtra_cut_wgt[i][EVAL_GLOBAL_MAX], 
+             graph->xtra_cut_wgt[i][EVAL_GLOBAL_AVG], 
+             graph->xtra_cut_wgt[i][EVAL_GLOBAL_SUM]);
     }
     if (ewgt_dim-1 > EVAL_MAX_XTRA_EWGTS){
-      printf("(We calculate up to %d extra edge weights.  This can be changed.)\n",
-            EVAL_MAX_XTRA_EWGTS);
+      printf("(We calculate up to %d extra edge weights.  "
+             "This can be changed.)\n",
+             EVAL_MAX_XTRA_EWGTS);
     }
 
     printf("%s  Num Nbor Parts            :  %8.3g %8.3g %8.3g %8.3g\n", yo, 
-      graph->nnborparts[EVAL_GLOBAL_MIN], graph->nnborparts[EVAL_GLOBAL_MAX], 
-      graph->nnborparts[EVAL_GLOBAL_AVG], graph->nnborparts[EVAL_GLOBAL_SUM]);
+           graph->nnborparts[EVAL_GLOBAL_MIN], 
+           graph->nnborparts[EVAL_GLOBAL_MAX], 
+           graph->nnborparts[EVAL_GLOBAL_AVG], 
+           graph->nnborparts[EVAL_GLOBAL_SUM]);
 
     printf("\n\n");
   }
@@ -859,19 +884,21 @@ End:
   ZOLTAN_FREE(&part_sizes);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
-
+  Zoltan_Destroy(&zz);
   return ierr;
 }
 /*****************************************************************************/
 
-int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, ZOLTAN_HG_EVAL *hg)
+int Zoltan_LB_Eval_HG(ZZ *zzin, int print_stats, ZOLTAN_HG_EVAL *hg)
 {
   /****************************************************************************/
-  /* Return performance metrics in ZOLTAN_HG_EVAL structure.  Also print them out    */
+  /* Return performance metrics in ZOLTAN_HG_EVAL structure.  Also print them */
   /* if print_stats is true.  Results are per part, not per process.      */
   /****************************************************************************/
 
   char *yo = "Zoltan_LB_Eval_HG";
+  ZZ *zz = Zoltan_Copy(zzin);  /* Some operations have side-effects in zz;
+                                  Don't change the user's settings */
   MPI_Comm comm = zz->Communicator;
 
   float *part_sizes=NULL;
@@ -892,7 +919,6 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, ZOLTAN_HG_EVAL *hg)
   ZOLTAN_HG_EVAL localEval;
   
   ZOLTAN_TRACE_ENTER(zz, yo);
-
   /* Set default error code */
   ierr = ZOLTAN_OK;
 
@@ -905,7 +931,7 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, ZOLTAN_HG_EVAL *hg)
       (zz->Get_Num_Edges==NULL) && (zz->Get_Num_Edges_Multi==NULL) &&
       (zz->Get_Edge_List==NULL) && (zz->Get_Edge_List_Multi==NULL)) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-      "This function requires caller-defined graph or hypergraph query functions.\n");
+      "This function requires graph or hypergraph query functions.\n");
     return ZOLTAN_FATAL;
   }
 
@@ -928,7 +954,7 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, ZOLTAN_HG_EVAL *hg)
     goto End;
   }
 
-  Zoltan_LB_Get_Part_Sizes(zz, zz->LB.Num_Global_Parts, part_dim, part_sizes);
+  Zoltan_LB_Get_Part_Sizes(zz, part_dim, part_sizes);
 
   debug_level = zz->Debug_Level;
   zz->Debug_Level = 0;
@@ -1027,7 +1053,8 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, ZOLTAN_HG_EVAL *hg)
       yo, req_nparts, nparts, nonempty_nparts);
 
     printf("%s  Statistics with respect to %1d parts: \n", yo, nparts);
-    printf("%s                            Min      Max     Sum  Imbalance\n", yo);
+    printf("%s                            Min      Max     Sum  Imbalance\n", 
+           yo);
 
     printf("%s  Number of objects :  %8.3g %8.3g %8.3g", yo, 
       hg->nobj[EVAL_GLOBAL_MIN], hg->nobj[EVAL_GLOBAL_MAX], 
@@ -1077,9 +1104,12 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, ZOLTAN_HG_EVAL *hg)
     }
     printf("\n");
 
-    printf("%s  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )): %8.3f\n", yo, hg->cutn[EVAL_GLOBAL_SUM]);
-    printf("%s  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )): %8.3f\n", yo, hg->cutl[EVAL_GLOBAL_SUM]);
-    printf("%s  CUTL-MAX (Max_procs( comm. volume ):       %8.3f\n", yo, hg->cutl[EVAL_GLOBAL_MAX]);
+    printf("%s  CUTN (Sum_edges( (#parts(edge)>1)*ewgt )): %8.3f\n", 
+           yo, hg->cutn[EVAL_GLOBAL_SUM]);
+    printf("%s  CUTL (Sum_edges( (#parts(edge)-1)*ewgt )): %8.3f\n", 
+           yo, hg->cutl[EVAL_GLOBAL_SUM]);
+    printf("%s  CUTL-MAX (Max_procs( comm. volume ):       %8.3f\n", 
+           yo, hg->cutl[EVAL_GLOBAL_MAX]);
 
 
     printf("\n\n");
@@ -1105,14 +1135,18 @@ End:
   ZOLTAN_FREE(&localCount);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
-
+  Zoltan_Destroy(&zz);
   return ierr;
 }
 
 /************************************************************************/
 /************************************************************************/
 /************************************************************************/
-int Zoltan_LB_Eval (ZZ *zzin, int print_stats, ZOLTAN_BALANCE_EVAL *obj, ZOLTAN_GRAPH_EVAL *graph, ZOLTAN_HG_EVAL *hg)
+int Zoltan_LB_Eval(ZZ *zz, int print_stats, 
+                   ZOLTAN_BALANCE_EVAL *obj, 
+                   ZOLTAN_GRAPH_EVAL *graph, 
+                   ZOLTAN_HG_EVAL *hg
+)
 /*
  * Input:
  *   zzin        - pointer to Zoltan structure
@@ -1120,14 +1154,18 @@ int Zoltan_LB_Eval (ZZ *zzin, int print_stats, ZOLTAN_BALANCE_EVAL *obj, ZOLTAN_
  *                 if == 0, stay silent but update EVAL structures with metrics
  *
  * Input/Output:
- *   obj         - pointer to a ZOLTAN_BALANCE_EVAL structure, if non-NULL partitioning
+ *   obj         - pointer to a ZOLTAN_BALANCE_EVAL structure,
+ *                 if non-NULL partitioning
  *                 metrics will be written to the structure
- *   graph       - pointer to a ZOLTAN_GRAPH_EVAL structure, if non_null and graph query
+ *   graph       - pointer to a ZOLTAN_GRAPH_EVAL structure, 
+ *                 if non_null and graph query
  *                 functions are defined by the application, graph partitioning
  *                 quality metrics will be written to the structure
- *   hg          - pointer to an ZOLTAN_HG_EVAL structure, if non_null and graph or
+ *   hg          - pointer to an ZOLTAN_HG_EVAL structure, 
+ *                 if non_null and graph or
  *                 hypergraph query functions are defined by the application,
- *                 hypergraph partitioning quality metrics will be written to the structure
+ *                 hypergraph partitioning quality metrics will be written to 
+ *                 the structure
  *
  */
 {
@@ -1135,7 +1173,6 @@ int Zoltan_LB_Eval (ZZ *zzin, int print_stats, ZOLTAN_BALANCE_EVAL *obj, ZOLTAN_
   int ierr = ZOLTAN_OK;
   int hypergraph_callbacks = 0;
   int graph_callbacks = 0;
-  ZZ *zz = Zoltan_Copy(zzin);
 
   if (!print_stats && !obj && !graph && !hg){
     return ierr;
@@ -1177,7 +1214,6 @@ int Zoltan_LB_Eval (ZZ *zzin, int print_stats, ZOLTAN_BALANCE_EVAL *obj, ZOLTAN_
   }
 
 End:
-  Zoltan_Destroy(&zz);
   return ierr;
 }
 
@@ -1264,8 +1300,6 @@ int ierr;
 int i, start, size, i_am_done, alldone;
 const int MAXSIZE = 200000;
 
-  ZOLTAN_TRACE_ENTER(zz, yo);
-
   for (i=0; i < nnbors; i++){
     /* 
      * a check on validity of data supplied by query functions
@@ -1304,26 +1338,28 @@ const int MAXSIZE = 200000;
   for (i=0, size=0; i < nnbors; i++){
     if (nbors_part[i] < 0){
       if (size == 10){
-        fprintf(stderr, "%s (%d) more uninitialized entries omitted from print out\n",
-                        yo, zz->Proc);
+        fprintf(stderr,
+                "%s (%d) more uninitialized entries omitted from print out\n",
+                yo, zz->Proc);
         break;
       }
       else{
-        fprintf(stderr, "%s (%d) ERROR part array index %d is uninitialized\n",
-                        yo, zz->Proc,i);
+        fprintf(stderr,
+                "%s (%d) ERROR part array index %d is uninitialized\n",
+                yo, zz->Proc,i);
         size++;
       }
     }
   }
   if (size){
-    fprintf(stderr, "%s (%d) Most likely cause is incorrect edge data from application\n",
-                        yo, zz->Proc);
+    fprintf(stderr,
+            "%s (%d) Most likely cause is incorrect edge data from app\n",
+            yo, zz->Proc);
     ierr = ZOLTAN_FATAL;
   }
 
 End:
   Zoltan_DD_Destroy(&dd);
-  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 
@@ -1336,8 +1372,6 @@ objects_by_part(ZZ *zz, int num_obj, int *part, int *nparts, int *nonempty)
   int i, num_parts, num_nonempty, max_part, gmax_part;
   int *partCounts = NULL, *totalCounts;
   int *returnBuf = NULL;
-
-  ZOLTAN_TRACE_ENTER(zz, yo);
 
   max_part = 0;
   for (i=0; i < num_obj; i++){
@@ -1388,7 +1422,6 @@ objects_by_part(ZZ *zz, int num_obj, int *part, int *nparts, int *nonempty)
   *nparts = num_parts;
   *nonempty = num_nonempty;
 
-  ZOLTAN_TRACE_EXIT(zz, yo);
   return returnBuf;
 }
 
@@ -1422,8 +1455,6 @@ object_metrics(ZZ *zz, int num_obj, int *parts, float *part_sizes, int req_npart
   float imbal, tmp;
 
   ierr = ZOLTAN_OK;
-
-  ZOLTAN_TRACE_ENTER(zz, yo);
 
   part_dim = (vwgt_dim > 0) ? vwgt_dim : 1;
 
@@ -1577,7 +1608,6 @@ End:
   ZOLTAN_FREE(&localVals);
   ZOLTAN_FREE(&globalCount);
 
-  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 

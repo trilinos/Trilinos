@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -72,7 +72,7 @@ namespace Impl {
     if(do_threads) {
       int nthreads = 3;
 
-#ifdef _OPENMP
+#ifdef KOKKOS_HAVE_OPENMP
       if(omp_get_max_threads() < 3)
         nthreads = omp_get_max_threads();
 #endif
@@ -84,7 +84,8 @@ namespace Impl {
       }
 
 #ifdef KOKKOS_HAVE_SERIAL
-      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value) {
+      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value ||
+         Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultHostExecutionSpace>::value ) {
         nthreads = 1;
       }
 #endif
@@ -97,7 +98,8 @@ namespace Impl {
       if(Kokkos::hwloc::available())
         numa = Kokkos::hwloc::get_available_numa_count();
 #ifdef KOKKOS_HAVE_SERIAL
-      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value) {
+      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value ||
+         Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultHostExecutionSpace>::value ) {
         numa = 1;
       }
 #endif
@@ -129,7 +131,7 @@ namespace Impl {
     if(do_threads) {
       int nthreads = 3;
 
-#ifdef _OPENMP
+#ifdef KOKKOS_HAVE_OPENMP
       if(omp_get_max_threads() < 3)
         nthreads = omp_get_max_threads();
 #endif
@@ -140,7 +142,8 @@ namespace Impl {
                        * Kokkos::hwloc::get_available_numa_count();
       }
 #ifdef KOKKOS_HAVE_SERIAL
-      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value) {
+      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value ||
+         Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultHostExecutionSpace>::value ) {
         nthreads = 1;
       }
 #endif
@@ -153,7 +156,8 @@ namespace Impl {
       if(Kokkos::hwloc::available())
         numa = Kokkos::hwloc::get_available_numa_count();
 #ifdef KOKKOS_HAVE_SERIAL
-      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value) {
+      if(Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultExecutionSpace>::value ||
+         Kokkos::Impl::is_same<Kokkos::Serial,Kokkos::DefaultHostExecutionSpace>::value ) {
         numa = 1;
       }
 #endif
@@ -187,6 +191,11 @@ namespace Impl {
           expected_nthreads = 1;
 
       }
+      #ifdef KOKKOS_HAVE_SERIAL
+      if(Kokkos::Impl::is_same<Kokkos::DefaultExecutionSpace,Kokkos::Serial>::value ||
+         Kokkos::Impl::is_same<Kokkos::DefaultHostExecutionSpace,Kokkos::Serial>::value ) 
+        expected_nthreads = 1;
+      #endif
     }
 
     int expected_numa = argstruct.num_numa;
@@ -196,6 +205,11 @@ namespace Impl {
       } else {
         expected_numa = 1;
       }
+      #ifdef KOKKOS_HAVE_SERIAL
+      if(Kokkos::Impl::is_same<Kokkos::DefaultExecutionSpace,Kokkos::Serial>::value ||
+         Kokkos::Impl::is_same<Kokkos::DefaultHostExecutionSpace,Kokkos::Serial>::value )
+        expected_numa = 1;
+      #endif
     }
     ASSERT_EQ(Kokkos::HostSpace::execution_space::thread_pool_size(),expected_nthreads);
 

@@ -79,12 +79,12 @@ namespace TSQR {
     /// request.
     ///
     /// TsqrAdaptor uses the appropriate specialization of
-    /// \c TsqrTypeAdaptor to figure out which variant of TSQR to use on
+    /// TsqrTypeAdaptor to figure out which variant of TSQR to use on
     /// the given multivector type.  For example, with
-    /// \c Tpetra::MultiVector<S, LO, GO, NodeType>, if NodeType is
-    /// \c KokkosClassic::TBBNode, the TBB-parallel intranode variant of TSQR
-    /// will be used.  The caller is responsible for constructing the
-    /// intranode and internode TSQR objects.
+    /// Tpetra::MultiVector<S, LO, GO, NodeType>, if NodeType is
+    /// KokkosClassic::DoNotUse::TBBNode, the TBB-parallel intranode
+    /// variant of TSQR will be used.  The caller is responsible for
+    /// constructing the intranode and internode TSQR objects.
     ///
     /// \tparam S Scalar type
     /// \tparam LO Local ordinal type

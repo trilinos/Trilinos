@@ -121,9 +121,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_DivBasisTimesScalar,sd,fm)
 PHX_EVALUATE_FIELDS(Integrator_DivBasisTimesScalar,workset)
 { 
   // zero the reisdual
-  for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
-    for (std::size_t b=0; b < num_nodes; ++b)
-      residual(cell,b) = 0.0;
+  residual.deep_copy(ScalarT(0.0));
   
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t qp = 0; qp < num_qp; ++qp) {
@@ -137,19 +135,31 @@ PHX_EVALUATE_FIELDS(Integrator_DivBasisTimesScalar,workset)
     }
   }
   
+  {
+    // const Intrepid::FieldContainer<double> & weighted_div_basis = (workset.bases[basis_index])->weighted_div_basis;
+    const BasisValues2<double> & bv = *workset.bases[basis_index];
+
+    for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
+      for (std::size_t basis = 0; basis < num_nodes; ++basis) {
+        for (std::size_t qp = 0; qp < num_qp; ++qp)
+          residual(cell,basis) += tmp(cell,qp)*bv.weighted_div_basis(cell,basis,qp);
+      }
+  }
+/*
   if(workset.num_cells>0) {
      Intrepid::FunctionSpaceTools::
        integrate<ScalarT>(residual, tmp, 
                        workset.bases[basis_index]->weighted_div_basis, 
 		       Intrepid::COMP_BLAS);
   }
+*/
 }
 
 //**********************************************************************
 
-template<typename EvalT, typename Traits>
+template<typename EvalT, typename TRAITS>
 Teuchos::RCP<Teuchos::ParameterList> 
-Integrator_DivBasisTimesScalar<EvalT, Traits>::getValidParameters() const
+Integrator_DivBasisTimesScalar<EvalT, TRAITS>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList);
   p->set<std::string>("Residual Name", "?");

@@ -54,21 +54,23 @@ namespace impl {
 //stk-mesh capabilities.
 //----------------------------------------------------------------------
 
-void find_elements_these_nodes_have_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems);
+void find_elements_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems);
+void find_faces_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& faces);
 
 bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes);
 
-void find_locally_owned_elements_these_nodes_have_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems);
+void find_locally_owned_elements_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems);
 
 bool find_element_edge_ordinal_and_equivalent_nodes(BulkData& mesh, Entity element, unsigned numEdgeNodes, const Entity* edgeNodes, unsigned& elemEdgeOrdinal, Entity* elemEdgeNodes);
 
 bool shared_entities_modified_on_any_proc(const BulkData& mesh, stk::ParallelMachine comm);
 
 void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<EntityGhostData> & dataVector );
-void delete_shared_entities_which_are_no_longer_in_owned_closure( BulkData & mesh );
-bool comm_mesh_verify_parallel_consistency(BulkData & M , std::ostream & error_log );
-void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity,
-        stk::mesh::Entity edge, const stk::mesh::Entity* nodes, size_t numNodes);
+
+void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity upward_entity,
+        stk::mesh::Entity entity, const stk::mesh::Entity* nodes);
+
+void delete_entities_and_upward_relations(stk::mesh::BulkData &bulkData, const stk::mesh::EntityVector &entities);
 
 void internal_generate_parallel_change_lists( const BulkData & mesh ,
                                               const std::vector<EntityProc> & local_change ,
@@ -80,19 +82,11 @@ void internal_clean_and_verify_parallel_change(
   const BulkData & mesh ,
   std::vector<EntityProc> & local_change );
 
-void unpack_not_owned_verify_compare_comm_info( CommBuffer&            buf,
-                                                const BulkData &       mesh,
-                                                Entity                 entity,
-                                                EntityKey &            recv_entity_key,
-                                                int       &            recv_owner_rank,
-                                                unsigned  &            recv_comm_count,
-                                                std::vector<Part*>&    recv_parts,
-                                                std::vector<Relation>& recv_relations,
-                                                std::vector<int>    &  recv_comm,
-                                                bool&                  bad_comm);
-
 int check_no_shared_elements_or_higher(const BulkData& mesh);
 int check_for_connected_nodes(const BulkData& mesh);
+bool check_permutations_on_all(stk::mesh::BulkData& mesh);
+void find_side_nodes(BulkData& mesh, Entity element, int side_ordinal, EntityVector & permuted_face_nodes);
+
 
 template<class DO_THIS_FOR_ENTITY_IN_CLOSURE, class DESIRED_ENTITY>
 void VisitClosureGeneral(
@@ -348,8 +342,119 @@ void VisitAuraClosure(
 
 stk::parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( const MetaData & meta );
 
-void internal_fix_node_sharing_delete_on_2015_03_06(stk::mesh::BulkData& bulk_data);
+void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData& mesh,
+                             const Entity entity_from ,
+                             const OrdinalVector       & omit ,
+                             EntityRank            entity_rank_to ,
+                             OrdinalVector       & induced_parts);
 
+stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
+                                                     stk::mesh::Entity elem,
+                                                     int side_ordinal,
+                                                     stk::mesh::EntityId new_face_global_id,
+                                                     const stk::mesh::PartVector & parts = stk::mesh::PartVector());
+
+void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
+                                    stk::mesh::Entity face,
+                                    stk::mesh::Entity elem_with_face,
+                                    int elem_with_face_side_ordinal);
+
+
+enum ShellStatus {
+    NO_SHELLS = 25,
+    YES_SHELLS_ONE_SHELL_ONE_SOLID = 31,
+    YES_SHELLS_BOTH_SHELLS_OR_BOTH_SOLIDS = 46
+};
+
+void create_shell_status(const std::vector<stk::topology> & elements_touching_surface, stk::topology original_element_topology, std::vector<ShellStatus> & element_shell_status);
+
+template<typename ENTITY_ID>
+bool should_face_be_connected_to_element_side(std::vector<ENTITY_ID> & face_nodes,
+                                              std::vector<ENTITY_ID> & element_side_nodes,
+                                              stk::topology element_side_topology,
+                                              ShellStatus  shell_status)
+{
+    bool should_connect = false;
+    const std::pair<bool, unsigned> equiv_result = element_side_topology.equivalent(face_nodes, element_side_nodes);
+    const bool nodes_match = equiv_result.first;
+    if (nodes_match) {
+       if (NO_SHELLS == shell_status) {
+           should_connect = true;
+       }
+       else {
+           const unsigned permutation_of_element_side = equiv_result.second;
+           const bool element_side_polarity_matches_face_nodes = permutation_of_element_side < element_side_topology.num_positive_permutations();
+           if (YES_SHELLS_ONE_SHELL_ONE_SOLID == shell_status) {
+               should_connect = !element_side_polarity_matches_face_nodes;
+           }
+           else { // YES_SHELLS_BOTH_SHELS_OR_BOTH_SOLIDS
+               should_connect = element_side_polarity_matches_face_nodes;
+           }
+       }
+    }
+    return should_connect;
+}
+
+struct StoreInEntityProcSet {
+    StoreInEntityProcSet(
+            BulkData & mesh_in,
+            std::set<stk::mesh::EntityProc, stk::mesh::EntityLess> & set_in)
+    :mesh(mesh_in)
+    ,myset(set_in) { }
+
+    void operator()(Entity entity) {
+      myset.insert(stk::mesh::EntityProc(entity,proc));
+    }
+
+    BulkData & mesh;
+    std::set<stk::mesh::EntityProc , stk::mesh::EntityLess> & myset;
+    int proc;
+};
+
+struct OnlyGhosts  {
+    OnlyGhosts(BulkData & mesh_in) : mesh(mesh_in) {}
+    bool operator()(Entity entity) {
+        const bool isValid = mesh.is_valid(entity);
+        const bool iDoNotOwnEntity = proc != mesh.parallel_owner_rank(entity);
+        const bool entityIsShared = mesh.in_shared( mesh.entity_key(entity) , proc );
+        return (isValid && iDoNotOwnEntity && !entityIsShared);
+    }
+    BulkData & mesh;
+    int proc;
+};
+
+void send_entity_keys_to_owners(
+  BulkData & mesh ,
+  const std::set< EntityKey > & entitiesGhostedOnThisProcThatNeedInfoFromOtherProcs ,
+        std::set< EntityProc , EntityLess > & entitiesToGhostOntoOtherProcessors );
+
+void comm_sync_send_recv(
+  BulkData & mesh ,
+  std::set< EntityProc , EntityLess > & new_send ,
+  std::set< EntityKey > & new_recv );
+
+void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
+                             const EntityRank rank_of_orig_entity,
+                             const int my_rank,
+                             const int share_proc,
+                             std::vector<EntityProc>& send);
+
+void move_unowned_entities_for_owner_to_ghost(
+  stk::mesh::BulkData & mesh ,
+  std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > & entitiesToGhostOntoOtherProcessors);
+
+struct HashValueForEntityVector
+{
+    size_t operator()(const EntityVector &vector) const
+    {
+        size_t hashValue = 0;
+        for(size_t i=0; i<vector.size(); i++)
+        {
+            hashValue += vector[i].local_offset();
+        }
+        return hashValue;
+    }
+};
 
 } // namespace impl
 } // namespace mesh

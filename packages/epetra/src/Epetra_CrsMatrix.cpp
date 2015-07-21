@@ -5051,7 +5051,7 @@ Epetra_CrsMatrix::FusedTransfer (const Epetra_CrsMatrix& SourceMatrix,
 
 
 // ===================================================================
-Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter,const Epetra_Map * DomainMap, const Epetra_Map * RangeMap, bool RestrictCommunicator)
+Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Import & RowImporter,const Epetra_Map * theDomainMap, const Epetra_Map * theRangeMap, bool RestrictCommunicator)
   : Epetra_DistObject(RowImporter.TargetMap(), "Epetra::CrsMatrix"),
   Epetra_CompObject(),
   Epetra_BLAS(),
@@ -5064,12 +5064,12 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
   ExportVector_(0),
   CV_(Copy)
 {
-  FusedTransfer<Epetra_Import>(SourceMatrix,RowImporter,DomainMap,RangeMap,RestrictCommunicator);
+  FusedTransfer<Epetra_Import>(SourceMatrix,RowImporter,theDomainMap,theRangeMap,RestrictCommunicator);
 }// end fused import constructor
 
 
 // ===================================================================
-Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Export & RowExporter,const Epetra_Map * DomainMap, const Epetra_Map * RangeMap, bool RestrictCommunicator)
+Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const Epetra_Export & RowExporter,const Epetra_Map * theDomainMap, const Epetra_Map * theRangeMap, bool RestrictCommunicator)
    : Epetra_DistObject(RowExporter.TargetMap(), "Epetra::CrsMatrix"),
    Epetra_CompObject(),
    Epetra_BLAS(),
@@ -5082,26 +5082,26 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
    ExportVector_(0),
    CV_(Copy)
 {
-  FusedTransfer<Epetra_Export>(SourceMatrix,RowExporter,DomainMap,RangeMap,RestrictCommunicator);
+  FusedTransfer<Epetra_Export>(SourceMatrix,RowExporter,theDomainMap,theRangeMap,RestrictCommunicator);
 } // end fused export constructor
 
 
 // ===================================================================
 void Epetra_CrsMatrix::FusedImport(const Epetra_CrsMatrix & SourceMatrix,
                                    const Epetra_Import & RowImporter,
-                                   const Epetra_Map * DomainMap,
-                                   const Epetra_Map * RangeMap,
+                                   const Epetra_Map * theDomainMap,
+                                   const Epetra_Map * theRangeMap,
                                    bool RestrictCommunicator) {
-  FusedTransfer<Epetra_Import>(SourceMatrix,RowImporter,DomainMap,RangeMap,RestrictCommunicator);
+  FusedTransfer<Epetra_Import>(SourceMatrix,RowImporter,theDomainMap,theRangeMap,RestrictCommunicator);
 }  // end fused import non-constructor
 
 // ===================================================================
 void Epetra_CrsMatrix::FusedExport(const Epetra_CrsMatrix & SourceMatrix,
                                    const Epetra_Export & RowExporter,
-                                   const Epetra_Map * DomainMap,
-                                   const Epetra_Map * RangeMap,
+                                   const Epetra_Map * theDomainMap,
+                                   const Epetra_Map * theRangeMap,
                                    bool RestrictCommunicator) {
-  FusedTransfer<Epetra_Export>(SourceMatrix,RowExporter,DomainMap,RangeMap,RestrictCommunicator);
+  FusedTransfer<Epetra_Export>(SourceMatrix,RowExporter,theDomainMap,theRangeMap,RestrictCommunicator);
 } // end fused export non-constructor
 
 

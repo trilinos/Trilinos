@@ -86,12 +86,6 @@ public:
   typedef typename MatrixType::node_type node_type;
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
-  typedef TEUCHOS_DEPRECATED typename MatrixType::scalar_type Scalar;
-  typedef TEUCHOS_DEPRECATED typename MatrixType::local_ordinal_type LocalOrdinal;
-  typedef TEUCHOS_DEPRECATED typename MatrixType::global_ordinal_type GlobalOrdinal;
-  typedef TEUCHOS_DEPRECATED typename MatrixType::node_type Node;
-  typedef TEUCHOS_DEPRECATED typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitudeType;
-
   //! Tpetra::RowMatrix specialization used by this class.
   typedef Tpetra::RowMatrix<scalar_type,
                             local_ordinal_type,
@@ -216,34 +210,8 @@ public:
   Teuchos::RCP<const map_type> getRangeMap () const;
 
   //@}
-  //! \name Mathematical functions
-  //@{
-
-  /// \brief Compute the condition number estimate and return its value.
-  ///
-  /// \warning This method is DEPRECATED.  It was inherited from
-  ///   Ifpack, and Ifpack never clearly stated what this method
-  ///   computes.  Furthermore, Ifpack's method just estimates the
-  ///   condition number of the matrix A, and ignores the
-  ///   preconditioner -- which is probably not what users thought it
-  ///   did.  If there is sufficient interest, we might reintroduce
-  ///   this method with a different meaning and a better algorithm.
-  magnitude_type TEUCHOS_DEPRECATED
-  computeCondEst (CondestType CT = Cheap,
-                  local_ordinal_type MaxIters = 1550,
-                  magnitude_type Tol = 1e-9,
-                  const Teuchos::Ptr<const row_matrix_type>& matrix = Teuchos::null);
-
-  //@}
   //! \name Attribute accessor methods
   //@{
-
-  /// \brief Return the computed condition number estimate, or -1 if not computed.
-  ///
-  /// \warning This method is DEPRECATED.  See warning for computeCondEst().
-  magnitude_type TEUCHOS_DEPRECATED getCondEst() const {
-    return condEst_;
-  }
 
   //! Return the communicator associated with this matrix operator.
   //Teuchos::RCP<const Teuchos::Comm<int> > getComm () const;
@@ -320,7 +288,6 @@ private:
   int numCompute_;
   mutable int numApply_;
 
-  magnitude_type condEst_;
   bool isInitialized_;
   bool isComputed_;
 };

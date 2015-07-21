@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-//
-//   Kokkos: Manycore Performance-Portable Multidimensional Arrays
-//              Copyright (2012) Sandia Corporation
-//
+// 
+//                        Kokkos v. 2.0
+//              Copyright (2014) Sandia Corporation
+// 
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-//
+// 
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-//
+// 
 // ************************************************************************
 //@HEADER
 */
@@ -59,6 +59,12 @@
 #include <Cuda/Kokkos_Cuda_ReduceScan.hpp>
 #include <Cuda/Kokkos_Cuda_Internal.hpp>
 #include <Kokkos_Vectorization.hpp>
+
+#ifdef KOKKOSP_ENABLE_PROFILING
+#include <impl/Kokkos_Profiling_Interface.hpp>
+#include <typeinfo>
+#endif
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -183,23 +189,6 @@ public:
   __device__ inline Type team_scan( const Type & value ) const
     { return this->template team_scan<Type>( value , 0 ); }
 
-
-#ifdef KOKKOS_HAVE_CXX11
-  template< class Operation >
-  __device__ inline void vector_single(const Operation & op) const {
-    if(threadIdx.x == 0)
-      op();
-  }
-
-  template< class Operation, typename ValueType>
-  __device__ inline void vector_single(const Operation & op, ValueType& bcast) const {
-    if(threadIdx.x == 0)
-      op();
-    bcast = shfl(bcast,0,blockDim.x);
-  }
-
-#endif
-
   //----------------------------------------
   // Private for the driver
 
@@ -238,13 +227,6 @@ public:
   template< typename Type >
   Type team_scan( const Type & value ) const {return Type();}
 
-#ifdef KOKKOS_HAVE_CXX11
-  template< class Operation >
-  void vector_single(const Operation & op) const {}
-
-  template< class Operation , typename ValueType>
-  void vector_single(const Operation & op, ValueType& val) const {}
-#endif
   //----------------------------------------
   // Private for the driver
 
@@ -307,6 +289,14 @@ public:
   static int team_size_recommended( const FunctorType & functor )
     { return team_size_max( functor ); }
 
+  template< class FunctorType >
+  static int team_size_recommended( const FunctorType & functor , const int vector_length)
+    {
+      int max = team_size_max( functor )/vector_length;
+      if(max<1) max = 1;
+      return max;
+    }
+
   inline static
   int vector_length_max()
     { return Impl::CudaTraits::WarpSize; }
@@ -325,7 +315,7 @@ public:
     {
       // Allow only power-of-two vector_length
       int check = 0;
-      for(int k = 1; k < vector_length_max(); k*=2)
+      for(int k = 1; k <= vector_length_max(); k*=2)
         if(k == vector_length_request)
           check = 1;
       if(!check)
@@ -343,7 +333,7 @@ public:
     {
       // Allow only power-of-two vector_length
       int check = 0;
-      for(int k = 1; k < vector_length_max(); k*=2)
+      for(int k = 1; k <= vector_length_max(); k*=2)
         if(k == vector_length_request)
           check = 1;
       if(!check)
@@ -457,13 +447,13 @@ private:
   size_type         m_league_size ;
 
   template< class TagType >
-  KOKKOS_FORCEINLINE_FUNCTION
+  __device__ inline
   void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
                  const typename Policy::member_type & >::type member ) const
     { m_functor( member ); }
 
   template< class TagType >
-  KOKKOS_FORCEINLINE_FUNCTION
+  __device__ inline
   void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
                  const typename Policy::member_type & >::type  member ) const
     { m_functor( TagType() , member ); }
@@ -729,14 +719,14 @@ private:
   size_type         m_league_size ;
 
   template< class TagType >
-  KOKKOS_FORCEINLINE_FUNCTION
+  __device__ inline
   void driver( typename Impl::enable_if< Impl::is_same< TagType , void >::value ,
                  const typename Policy::member_type & >::type  member 
              , reference_type update ) const
     { m_functor( member , update ); }
 
   template< class TagType >
-  KOKKOS_FORCEINLINE_FUNCTION
+  __device__ inline
   void driver( typename Impl::enable_if< ! Impl::is_same< TagType , void >::value ,
                  const typename Policy::member_type & >::type  member 
              , reference_type update ) const
@@ -1064,12 +1054,10 @@ public:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-#ifdef KOKKOS_HAVE_CXX11
-
 namespace Kokkos {
 namespace Impl {
   template<typename iType>
-  struct TeamThreadLoopBoundariesStruct<iType,CudaTeamMember> {
+  struct TeamThreadRangeBoundariesStruct<iType,CudaTeamMember> {
     typedef iType index_type;
     const iType start;
     const iType end;
@@ -1078,17 +1066,31 @@ namespace Impl {
 
 #ifdef __CUDA_ARCH__
     __device__ inline
-    TeamThreadLoopBoundariesStruct (const CudaTeamMember& thread_, const iType& count):
+    TeamThreadRangeBoundariesStruct (const CudaTeamMember& thread_, const iType& count):
       start( threadIdx.y ),
       end( count ),
       increment( blockDim.y ),
       thread(thread_)
     {}
+    __device__ inline
+    TeamThreadRangeBoundariesStruct (const CudaTeamMember& thread_, const iType& begin_, const iType& end_):
+      start( begin_+threadIdx.y ),
+      end( end_ ),
+      increment( blockDim.y ),
+      thread(thread_)
+    {}
 #else
     KOKKOS_INLINE_FUNCTION
-    TeamThreadLoopBoundariesStruct (const CudaTeamMember& thread_, const iType& count):
+    TeamThreadRangeBoundariesStruct (const CudaTeamMember& thread_, const iType& count):
       start( 0 ),
       end( count ),
+      increment( 1 ),
+      thread(thread_)
+    {}
+    KOKKOS_INLINE_FUNCTION
+    TeamThreadRangeBoundariesStruct (const CudaTeamMember& thread_,  const iType& begin_, const iType& end_):
+      start( begin_ ),
+      end( end_ ),
       increment( 1 ),
       thread(thread_)
     {}
@@ -1096,7 +1098,7 @@ namespace Impl {
   };
 
   template<typename iType>
-  struct ThreadVectorLoopBoundariesStruct<iType,CudaTeamMember> {
+  struct ThreadVectorRangeBoundariesStruct<iType,CudaTeamMember> {
     typedef iType index_type;
     const iType start;
     const iType end;
@@ -1104,14 +1106,14 @@ namespace Impl {
 
 #ifdef __CUDA_ARCH__
     __device__ inline
-    ThreadVectorLoopBoundariesStruct (const CudaTeamMember& thread, const iType& count):
+    ThreadVectorRangeBoundariesStruct (const CudaTeamMember& thread, const iType& count):
     start( threadIdx.x ),
     end( count ),
     increment( blockDim.x )
     {}
 #else
     KOKKOS_INLINE_FUNCTION
-    ThreadVectorLoopBoundariesStruct (const CudaTeamMember& thread_, const iType& count):
+    ThreadVectorRangeBoundariesStruct (const CudaTeamMember& thread_, const iType& count):
       start( 0 ),
       end( count ),
       increment( 1 )
@@ -1123,16 +1125,23 @@ namespace Impl {
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
-Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>
-  TeamThreadLoop(const Impl::CudaTeamMember& thread, const iType& count) {
-  return Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>(thread,count);
+Impl::TeamThreadRangeBoundariesStruct<iType,Impl::CudaTeamMember>
+  TeamThreadRange(const Impl::CudaTeamMember& thread, const iType& count) {
+  return Impl::TeamThreadRangeBoundariesStruct<iType,Impl::CudaTeamMember>(thread,count);
 }
 
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
-Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaTeamMember >
-  ThreadVectorLoop(Impl::CudaTeamMember thread, const iType count) {
-  return Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaTeamMember >(thread,count);
+Impl::TeamThreadRangeBoundariesStruct<iType,Impl::CudaTeamMember>
+  TeamThreadRange(const Impl::CudaTeamMember& thread, const iType& begin, const iType& end) {
+  return Impl::TeamThreadRangeBoundariesStruct<iType,Impl::CudaTeamMember>(thread,begin,end);
+}
+
+template<typename iType>
+KOKKOS_INLINE_FUNCTION
+Impl::ThreadVectorRangeBoundariesStruct<iType,Impl::CudaTeamMember >
+  ThreadVectorRange(const Impl::CudaTeamMember& thread, const iType& count) {
+  return Impl::ThreadVectorRangeBoundariesStruct<iType,Impl::CudaTeamMember >(thread,count);
 }
 
 KOKKOS_INLINE_FUNCTION
@@ -1155,9 +1164,11 @@ namespace Kokkos {
    * This functionality requires C++11 support.*/
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
-void parallel_for(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries, const Lambda& lambda) {
+void parallel_for(const Impl::TeamThreadRangeBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries, const Lambda& lambda) {
+  #ifdef __CUDA_ARCH__
   for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
     lambda(i);
+  #endif
 }
 
 /** \brief  Inter-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
@@ -1166,7 +1177,7 @@ void parallel_for(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTea
  * val is performed and put into result. This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadRangeBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries,
                      const Lambda & lambda, ValueType& result) {
 
 #ifdef __CUDA_ARCH__
@@ -1191,7 +1202,7 @@ void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::Cuda
  * '1 for *'). This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType, class JoinType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::TeamThreadLoopBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries,
+void parallel_reduce(const Impl::TeamThreadRangeBoundariesStruct<iType,Impl::CudaTeamMember>& loop_boundaries,
                      const Lambda & lambda, const JoinType& join, ValueType& init_result) {
 
 #ifdef __CUDA_ARCH__
@@ -1217,11 +1228,12 @@ namespace Kokkos {
  * This functionality requires C++11 support.*/
 template<typename iType, class Lambda>
 KOKKOS_INLINE_FUNCTION
-void parallel_for(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaTeamMember >&
+void parallel_for(const Impl::ThreadVectorRangeBoundariesStruct<iType,Impl::CudaTeamMember >&
     loop_boundaries, const Lambda& lambda) {
-
+#ifdef __CUDA_ARCH__
   for( iType i = loop_boundaries.start; i < loop_boundaries.end; i+=loop_boundaries.increment)
     lambda(i);
+#endif
 }
 
 /** \brief  Intra-thread vector parallel_reduce. Executes lambda(iType i, ValueType & val) for each i=0..N-1.
@@ -1230,7 +1242,7 @@ void parallel_for(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaT
  * val is performed and put into result. This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaTeamMember >&
+void parallel_reduce(const Impl::ThreadVectorRangeBoundariesStruct<iType,Impl::CudaTeamMember >&
       loop_boundaries, const Lambda & lambda, ValueType& result) {
 #ifdef __CUDA_ARCH__
   ValueType val = ValueType();
@@ -1265,7 +1277,7 @@ void parallel_reduce(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::Cu
  * '1 for *'). This functionality requires C++11 support.*/
 template< typename iType, class Lambda, typename ValueType, class JoinType >
 KOKKOS_INLINE_FUNCTION
-void parallel_reduce(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaTeamMember >&
+void parallel_reduce(const Impl::ThreadVectorRangeBoundariesStruct<iType,Impl::CudaTeamMember >&
       loop_boundaries, const Lambda & lambda, const JoinType& join, ValueType& init_result) {
 
 #ifdef __CUDA_ARCH__
@@ -1302,7 +1314,7 @@ void parallel_reduce(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::Cu
  * This functionality requires C++11 support.*/
 template< typename iType, class FunctorType >
 KOKKOS_INLINE_FUNCTION
-void parallel_scan(const Impl::ThreadVectorLoopBoundariesStruct<iType,Impl::CudaTeamMember >&
+void parallel_scan(const Impl::ThreadVectorRangeBoundariesStruct<iType,Impl::CudaTeamMember >&
       loop_boundaries, const FunctorType & lambda) {
 
 #ifdef __CUDA_ARCH__
@@ -1412,182 +1424,6 @@ void single(const Impl::ThreadSingleStruct<Impl::CudaTeamMember>& single_struct,
 
 }
 
-#endif // KOKKOS_HAVE_CXX11
-
-namespace Kokkos {
-template<int N>
-struct Vectorization<Cuda,N> {
-  typedef Kokkos::TeamPolicy< Cuda >         team_policy ;
-  typedef typename team_policy::member_type  team_member ;
-  enum {increment = N};
-
-#ifdef __CUDA_ARCH__
-  KOKKOS_FORCEINLINE_FUNCTION
-  static int begin() { return threadIdx.y%N;}
-#else
-  KOKKOS_FORCEINLINE_FUNCTION
-  static int begin() { return 0;}
-#endif
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  static int thread_rank(const team_member &dev) {
-    return dev.team_rank()/increment;
-  }
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  static int team_rank(const team_member &dev) {
-    return dev.team_rank()/increment;
-  }
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  static int team_size(const team_member &dev) {
-    return dev.team_size()/increment;
-  }
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  static int global_thread_rank(const team_member &dev) {
-    return (dev.league_rank()*dev.team_size()+dev.team_rank())/increment;
-  }
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  static bool is_lane_0(const team_member &dev) {
-    return (dev.team_rank()%increment)==0;
-  }
-
-  template<class Scalar>
-  KOKKOS_INLINE_FUNCTION
-  static Scalar reduce(const Scalar& val) {
-    #ifdef __CUDA_ARCH__
-    __shared__ Scalar result[256];
-    Scalar myresult;
-    for(int k=0;k<blockDim.y;k+=256) {
-      const int tid = threadIdx.y - k;
-      if(tid > 0 && tid<256) {
-        result[tid] = val;
-        if ( (N > 1) && (tid%2==0) )
-          result[tid] += result[tid+1];
-        if ( (N > 2) && (tid%4==0) )
-          result[tid] += result[tid+2];
-        if ( (N > 4) && (tid%8==0) )
-          result[tid] += result[tid+4];
-        if ( (N > 8) && (tid%16==0) )
-          result[tid] += result[tid+8];
-        if ( (N > 16) && (tid%32==0) )
-          result[tid] += result[tid+16];
-        myresult = result[tid];
-      }
-      if(blockDim.y>256)
-        __syncthreads();
-    }
-    return myresult;
-    #else
-    return val;
-    #endif
-  }
-
-#ifdef __CUDA_ARCH__
-  #if (__CUDA_ARCH__ >= 300)
-  KOKKOS_INLINE_FUNCTION
-  static int reduce(const int& val) {
-    int result = val;
-    if (N > 1)
-      result += shfl_down(result, 1,N);
-    if (N > 2)
-      result += shfl_down(result, 2,N);
-    if (N > 4)
-      result += shfl_down(result, 4,N);
-    if (N > 8)
-      result += shfl_down(result, 8,N);
-    if (N > 16)
-      result += shfl_down(result, 16,N);
-    return result;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static unsigned int reduce(const unsigned int& val) {
-    unsigned int result = val;
-    if (N > 1)
-      result += shfl_down(result, 1,N);
-    if (N > 2)
-      result += shfl_down(result, 2,N);
-    if (N > 4)
-      result += shfl_down(result, 4,N);
-    if (N > 8)
-      result += shfl_down(result, 8,N);
-    if (N > 16)
-      result += shfl_down(result, 16,N);
-    return result;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static long int reduce(const long int& val) {
-    long int result = val;
-    if (N > 1)
-      result += shfl_down(result, 1,N);
-    if (N > 2)
-      result += shfl_down(result, 2,N);
-    if (N > 4)
-      result += shfl_down(result, 4,N);
-    if (N > 8)
-      result += shfl_down(result, 8,N);
-    if (N > 16)
-      result += shfl_down(result, 16,N);
-    return result;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static unsigned long int reduce(const unsigned long int& val) {
-    unsigned long int result = val;
-    if (N > 1)
-      result += shfl_down(result, 1,N);
-    if (N > 2)
-      result += shfl_down(result, 2,N);
-    if (N > 4)
-      result += shfl_down(result, 4,N);
-    if (N > 8)
-      result += shfl_down(result, 8,N);
-    if (N > 16)
-      result += shfl_down(result, 16,N);
-    return result;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static float reduce(const float& val) {
-    float result = val;
-    if (N > 1)
-      result += shfl_down(result, 1,N);
-    if (N > 2)
-      result += shfl_down(result, 2,N);
-    if (N > 4)
-      result += shfl_down(result, 4,N);
-    if (N > 8)
-      result += shfl_down(result, 8,N);
-    if (N > 16)
-      result += shfl_down(result, 16,N);
-    return result;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static double reduce(const double& val) {
-    double result = val;
-    if (N > 1)
-      result += shfl_down(result, 1,N);
-    if (N > 2)
-      result += shfl_down(result, 2,N);
-    if (N > 4)
-      result += shfl_down(result, 4,N);
-    if (N > 8)
-      result += shfl_down(result, 8,N);
-    if (N > 16)
-      result += shfl_down(result, 16,N);
-    return result;
-  }
-  #endif
-#endif
-
-};
-}
-
 namespace Kokkos {
 
 namespace Impl {
@@ -1681,6 +1517,7 @@ inline
 void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorTypeIn & functor_in
                     , const ViewType    & result_view
+                    , const std::string& str = "" 
                     , typename Impl::enable_if<
                       ( Impl::is_view<ViewType>::value && ! Impl::is_integral< ExecPolicy >::value &&
                         Impl::is_same<typename ExecPolicy::execution_space,Kokkos::Cuda>::value
@@ -1690,7 +1527,20 @@ void parallel_reduce( const ExecPolicy  & policy
   typedef typename Kokkos::Impl::if_c<FunctorHasValueType, FunctorTypeIn, Impl::CudaFunctorAdapter<FunctorTypeIn,ExecPolicy,typename ViewType::value_type> >::type FunctorType;
   FunctorType functor = Impl::if_c<FunctorHasValueType,FunctorTypeIn,FunctorType>::select(functor_in,FunctorType(functor_in));
 
+#ifdef KOKKOSP_ENABLE_PROFILING
+    uint64_t kpID = 0;
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::beginParallelScan("" == str ? typeid(FunctorType).name() : str, 0, &kpID);
+     }
+#endif
+    
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
+    
+#ifdef KOKKOSP_ENABLE_PROFILING
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::endParallelScan(kpID);
+     }
+#endif
 }
 
 // general policy and pod or array of pod output
@@ -1699,6 +1549,7 @@ inline
 void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorTypeIn & functor_in
                     , ResultType& result_ref
+                    , const std::string& str = "" 
                     , typename Impl::enable_if<
                       ( ! Impl::is_view<ResultType>::value &&
                         ! Impl::IsNonTrivialReduceFunctor<FunctorTypeIn>::value &&
@@ -1725,7 +1576,20 @@ void parallel_reduce( const ExecPolicy  & policy
                , 1
                );
 
+#ifdef KOKKOSP_ENABLE_PROFILING
+    uint64_t kpID = 0;
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::beginParallelScan("" == str ? typeid(FunctorType).name() : str, 0, &kpID);
+     }
+#endif
+    
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( FunctorType(functor_in) , policy , result_view );
+    
+#ifdef KOKKOSP_ENABLE_PROFILING
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::endParallelScan(kpID);
+     }
+#endif
 }
 
 // general policy and pod or array of pod output
@@ -1734,6 +1598,7 @@ inline
 void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorType & functor
                     , typename Kokkos::Impl::FunctorValueTraits< FunctorType , typename ExecPolicy::work_tag >::reference_type result_ref
+                    , const std::string& str = "" 
                     , typename Impl::enable_if<
                       (   Impl::IsNonTrivialReduceFunctor<FunctorType>::value &&
                         ! Impl::is_integral< ExecPolicy >::value  &&
@@ -1758,7 +1623,20 @@ void parallel_reduce( const ExecPolicy  & policy
                , ValueTraits::value_count( functor )
                );
 
+#ifdef KOKKOSP_ENABLE_PROFILING
+    uint64_t kpID = 0;
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::beginParallelScan("" == str ? typeid(FunctorType).name() : str, 0, &kpID);
+     }
+#endif
+    
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
+    
+#ifdef KOKKOSP_ENABLE_PROFILING
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::endParallelScan(kpID);
+     }
+#endif
 }
 
 // integral range policy and view ouput
@@ -1767,6 +1645,7 @@ inline
 void parallel_reduce( const size_t        work_count
                     , const FunctorTypeIn & functor_in
                     , const ViewType    & result_view
+                    , const std::string& str = "" 
                     , typename Impl::enable_if<( Impl::is_view<ViewType>::value &&
                                                  Impl::is_same<
                           typename Impl::FunctorPolicyExecutionSpace< FunctorTypeIn , void >::execution_space,
@@ -1784,7 +1663,21 @@ void parallel_reduce( const size_t        work_count
 
   FunctorType functor = Impl::if_c<FunctorHasValueType,FunctorTypeIn,FunctorType>::select(functor_in,FunctorType(functor_in));
 
+#ifdef KOKKOSP_ENABLE_PROFILING
+    uint64_t kpID = 0;
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::beginParallelScan("" == str ? typeid(FunctorType).name() : str, 0, &kpID);
+     }
+#endif
+    
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , ExecPolicy(0,work_count) , result_view );
+
+#ifdef KOKKOSP_ENABLE_PROFILING
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::endParallelScan(kpID);
+     }
+#endif
+
 }
 
 // integral range policy and pod or array of pod output
@@ -1793,6 +1686,7 @@ inline
 void parallel_reduce( const size_t        work_count
                     , const FunctorTypeIn & functor_in
                     , ResultType& result
+                    , const std::string& str = "" 
                     , typename Impl::enable_if< ! Impl::is_view<ResultType>::value &&
                                                 ! Impl::IsNonTrivialReduceFunctor<FunctorTypeIn>::value &&
                                                 Impl::is_same<
@@ -1827,7 +1721,20 @@ void parallel_reduce( const size_t        work_count
                , 1
                );
 
+#ifdef KOKKOSP_ENABLE_PROFILING
+    uint64_t kpID = 0;
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::beginParallelScan("" == str ? typeid(FunctorType).name() : str, 0, &kpID);
+     }
+#endif
+    
   (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( FunctorType(functor_in) , ExecPolicy(0,work_count) , result_view );
+    
+#ifdef KOKKOSP_ENABLE_PROFILING
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::endParallelScan(kpID);
+     }
+#endif
 }
 
 template< class FunctorType>
@@ -1835,6 +1742,7 @@ inline
 void parallel_reduce( const size_t        work_count
                     , const FunctorType & functor
                     , typename Kokkos::Impl::FunctorValueTraits< FunctorType , void >::reference_type result
+                    , const std::string& str = "" 
                     , typename Impl::enable_if< Impl::IsNonTrivialReduceFunctor<FunctorType>::value &&
                                                 Impl::is_same<
                              typename Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space,
@@ -1868,7 +1776,20 @@ void parallel_reduce( const size_t        work_count
                , ValueTraits::value_count( functor )
                );
 
+#ifdef KOKKOSP_ENABLE_PROFILING
+    uint64_t kpID = 0;
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::beginParallelScan("" == str ? typeid(FunctorType).name() : str, 0, &kpID);
+     }
+#endif
+    
   (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( functor , ExecPolicy(0,work_count) , result_view );
+    
+#ifdef KOKKOSP_ENABLE_PROFILING
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::endParallelScan(kpID);
+     }
+#endif
 }
 
 } // namespace Kokkos

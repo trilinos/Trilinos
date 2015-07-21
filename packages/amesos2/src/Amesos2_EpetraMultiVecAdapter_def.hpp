@@ -240,6 +240,7 @@ void MultiVecAdapter<Epetra_MultiVector>::get1dCopy(
 Teuchos::ArrayRCP<MultiVecAdapter<Epetra_MultiVector>::scalar_t>
 MultiVecAdapter<Epetra_MultiVector>::get1dViewNonConst(bool local)
 {
+  ((void) local);
   // TEUCHOS_TEST_FOR_EXCEPTION( !this->isConstantStride(),
   //   std::logic_error,
   //   "get1dViewNonConst() : can only get 1d view if stride is constant");
@@ -329,6 +330,10 @@ void MultiVecAdapter<Epetra_MultiVector>::describe(
   const Teuchos::EVerbosityLevel verbLevel) const
 {
   // TODO: implement!
+  if(verbLevel != Teuchos::VERB_NONE)
+    {
+      os << "TODO: implement! ";
+    }
 }
 
 

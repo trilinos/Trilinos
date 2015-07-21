@@ -147,7 +147,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Multiplier", 1.0);
   
       RCP< PHX::Evaluator<panzer::Traits> > op = 
-        rcp(new panzer::Integrator_TransientBasisTimesScalar<EvalT,panzer::Traits>(p));
+        rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
       
       fm.template registerEvaluator<EvalT>(op);
     }

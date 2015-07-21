@@ -42,7 +42,11 @@
 // @HEADER
 
 /** \file
-    \brief  Contains definitions for the Zakharov function.
+    \brief  Contains definitions for the Zakharov function as evaluated using only the 
+            ROL::Vector interface.
+    \details This is a nice example not only because the gradient, Hessian, and inverse Hessian
+             are easy to derive, but because they only require dot products, meaning this
+             code can be used with any class that inherits from ROL::Vector.
 
     Objective function: 
     \f[f(\mathbf{x}) = \mathbf{x}^\top\mathbf{x} + \frac{1}{4}(\mathbf{k}^\top \mathbf{x})^2 +
@@ -90,115 +94,62 @@ namespace ZOO {
   template<class Real>
   class Objective_Zakharov : public Objective<Real> {
   private:
-    
+      Teuchos::RCP<Vector<Real> > k_;  
 
   public:
-    Objective_Zakharov(void) {}
+    
+    // Create using a ROL::Vector containing 1,2,3,...,n
+    Objective_Zakharov(const Teuchos::RCP<Vector<Real> > k) : k_(k) {}
 
     Real value( const Vector<Real> &x, Real &tol ) {
-      StdVector<Real> & ex =
-        Teuchos::dyn_cast<StdVector<Real> >(const_cast <Vector<Real> &>(x));
-      Teuchos::RCP<const std::vector<Real> > xp = ex.getVector();
-      int n = xp->size();
 
-      Real val = 0;
-      Real xdotx = 0; 
-      Real kdotx = 0; 
+        Real xdotx = x.dot(x); 
+        Real kdotx = x.dot(*k_); 
 
-      for(int i=0; i<n; i++ ) {
-          xdotx += pow((*xp)[i],2);
-          kdotx += double(i+1)*((*xp)[i]);
-      }
-      val = xdotx + pow(kdotx,2)/4.0 + pow(kdotx,4)/16.0;
-      return val;
+        Real val = xdotx + pow(kdotx,2)/4.0 + pow(kdotx,4)/16.0;
+
+        return val;
     }
 
     void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-      Teuchos::RCP<std::vector<Real> > gp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(g)).getVector());
 
-      int n = xp->size();
+        Real kdotx = x.dot(*k_);
+        Real coeff = 0.25*(2.0*kdotx+pow(kdotx,3.0));
 
-      Real kdotx = 0;
-      for( int i=0; i<n; i++ ) {
-        kdotx += double(i+1)*((*xp)[i]);
-      }
-
-      Real coeff = (2.0*kdotx+pow(kdotx,3))/4.0;  
-
-      for( int i=0; i<n; i++ ) {
-        (*gp)[i]   =  2.0*((*xp)[i]) + double(i+1)*coeff;
-      }
+        g.set(x);
+        g.scale(2.0);
+        g.axpy(coeff,*k_);
     }
 
 #if USE_HESSVEC
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-      Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
-      Teuchos::RCP<std::vector<Real> > hvp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
 
-      int n = xp->size();
+        Real kdotx = x.dot(*k_);
+        Real kdotv = v.dot(*k_);
+        Real coeff = 0.25*(2.0+3.0*pow(kdotx,2.0))*kdotv;
 
-      Real kdotk = 0;
-      Real kdotx = 0;
-      Real kdotv = 0;
-
-      for( int i=0; i<n; i++ ) {
-        kdotx += double(i+1)*((*xp)[i]);
-        kdotk += pow(double(i+1),2);
-        kdotv += double(i+1)*((*vp)[i]); 
-      }
-      
-      Real coeff = (2.0+3.0*pow(kdotx,2))*kdotv/4.0;
-
-      for( int i=0; i<n; i++ ) {
-        (*hvp)[i] = 2.0*(*vp)[i] + coeff*double(i+1);
-      }
-
+        hv.set(v);
+        hv.scale(2.0);
+        hv.axpy(coeff,*k_);
     }
 #endif
-    void invHessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-      Teuchos::RCP<const std::vector<Real> > xp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(x))).getVector();
-      Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<StdVector<Real> >(const_cast<Vector<Real> &>(v))).getVector();
-      Teuchos::RCP<std::vector<Real> > hvp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(hv)).getVector());
-
-      int n = xp->size();
-      Real kdotv = 0;
-      Real kdotx = 0; 
-      Real kdotk = 0; 
-
-      for( int i=0; i<n; i++) {
-          kdotv += double(i+1)*((*vp)[i]); 
-          kdotx += double(i+1)*((*xp)[i]); 
-          kdotk += pow(double(i+1),2);
-      }
-
-      Real coeff = -kdotv/(16.0/(2.0+3.0*pow(kdotx,2))+2.0*kdotk);
-
-      for( int i=0; i<n; i++) {
-          (*hvp)[i] = 0.5*((*vp)[i]) + coeff*(i+1); 
-      }       
-
+    void invHessVec( Vector<Real> &ihv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+    
+        Real kdotv = v.dot(*k_);
+        Real kdotx = x.dot(*k_);
+        Real kdotk = (*k_).dot(*k_);
+        Real coeff = -kdotv/(2.0*kdotk+16.0/(2.0+3.0*pow(kdotx,2.0)));
+        
+        ihv.set(v);
+        ihv.scale(0.5);
+        ihv.axpy(coeff,*k_); 
     }
-  };
+};
 
 
 
-
-
-
-
-
-  template<class Real>
-  void getZakharov( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x ) {
+template<class Real>
+void getZakharov( Teuchos::RCP<Objective<Real> > &obj, Vector<Real> &x0, Vector<Real> &x ) {
     // Cast Initial Guess and Solution Vectors
     Teuchos::RCP<std::vector<Real> > x0p =
       Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<StdVector<Real> >(x0)).getVector());
@@ -207,10 +158,16 @@ namespace ZOO {
     int n = xp->size();
     // Resize Vectors
     n = 10;
+
+    Teuchos::RCP<std::vector<Real> > k_rcp = Teuchos::rcp(new std::vector<Real>(n,0));
+    for(int i=0;i<n;++i) {
+        (*k_rcp)[i] = i+1.0;    
+    }    
+    Teuchos::RCP<Vector<Real> > k = Teuchos::rcp(new StdVector<Real>(k_rcp));
     x0p->resize(n);
     xp->resize(n);
     // Instantiate Objective Function
-    obj = Teuchos::rcp( new Objective_Zakharov<Real> );
+    obj = Teuchos::rcp( new Objective_Zakharov<Real>(k) );
     // Get Initial Guess
     (*x0p)[0] =  3.0;
     (*x0p)[1] =  3.0;

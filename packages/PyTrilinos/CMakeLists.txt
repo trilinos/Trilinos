@@ -52,7 +52,7 @@ IF(NOT BUILD_SHARED_LIBS)
 ENDIF()
 
 # Set the package version number
-SET(PyTrilinos_VERSION 5.0d)
+SET(PyTrilinos_VERSION 12.1 (Dev))
 
 # Define the list of PyTrilinos packages and modules.  Packages are
 # the top-level names only, such as Epetra, AztecOO and NOX.  The list
@@ -62,10 +62,8 @@ SET(PyTrilinos_VERSION 5.0d)
 SET(PyTrilinos_PACKAGES "")
 SET(PyTrilinos_MODULES  "")
 
-IF(PyTrilinos_ENABLE_Teuchos)
-  APPEND_SET(PyTrilinos_PACKAGES Teuchos)
-  APPEND_SET(PyTrilinos_MODULES  Teuchos)
-ENDIF(PyTrilinos_ENABLE_Teuchos)
+APPEND_SET(PyTrilinos_PACKAGES Teuchos)
+APPEND_SET(PyTrilinos_MODULES  Teuchos)
 
 IF(PyTrilinos_ENABLE_Epetra)
   APPEND_SET(PyTrilinos_PACKAGES Epetra)
@@ -82,15 +80,20 @@ IF(PyTrilinos_ENABLE_Tpetra)
   APPEND_SET(PyTrilinos_MODULES  Tpetra)
 ENDIF(PyTrilinos_ENABLE_Tpetra)
 
+IF(PyTrilinos_ENABLE_Domi)
+  APPEND_SET(PyTrilinos_PACKAGES Domi)
+  APPEND_SET(PyTrilinos_MODULES  Domi)
+ENDIF(PyTrilinos_ENABLE_Domi)
+
 IF(PyTrilinos_ENABLE_EpetraExt)
   APPEND_SET(PyTrilinos_PACKAGES EpetraExt)
   APPEND_SET(PyTrilinos_MODULES  EpetraExt)
 ENDIF(PyTrilinos_ENABLE_EpetraExt)
 
 IF(PyTrilinos_ENABLE_Isorropia)
-  APPEND_SET(PyTrilinos_PACKAGES Isorropia)
-  APPEND_SET(PyTrilinos_MODULES  Isorropia.__init__    )
-  Append_SET(PyTrilinos_MODULES  Isorropia.Epetra)
+  APPEND_SET(PyTrilinos_PACKAGES Isorropia         )
+  APPEND_SET(PyTrilinos_MODULES  Isorropia.__init__)
+  Append_SET(PyTrilinos_MODULES  Isorropia.Epetra  )
 ENDIF(PyTrilinos_ENABLE_Isorropia)
 
 IF(PyTrilinos_ENABLE_Pliris)
@@ -184,11 +187,6 @@ IF(NOX_ENABLE_LOCA)
   ENDIF(NOX_ENABLE_Epetra)
 ENDIF(NOX_ENABLE_LOCA)
 
-IF(PyTrilinos_ENABLE_Domi)
-  APPEND_SET(PyTrilinos_PACKAGES Domi)
-  APPEND_SET(PyTrilinos_MODULES  Domi)
-ENDIF(PyTrilinos_ENABLE_Domi)
-
 # Python interpreter, library, and header files are required.
 FIND_PACKAGE(PythonInterp 2.5 REQUIRED)
 #FIND_PACKAGE(PythonLibs 2.5 REQUIRED)
@@ -213,7 +211,12 @@ INCLUDE(UseSWIG)
 # Python module mpi4py is optional, and only of interest if MPI is
 # enabled
 IF(TPL_ENABLE_MPI)
-  FIND_PACKAGE(Mpi4Py)
+  SET(TPL_ENABLE_MPI4PY ON CACHE BOOL "Use Mpi4Py")
+  IF(TPL_ENABLE_MPI4PY)
+    FIND_PACKAGE(Mpi4Py)
+  ELSE(TPL_ENABLE_MPI4PY)
+    SET(Mpi4Py_FOUND OFF)
+  ENDIF(TPL_ENABLE_MPI4PY)
 ENDIF(TPL_ENABLE_MPI)
 
 # Python module petsc4py is required if NOX_ENABLE_PETSC is true

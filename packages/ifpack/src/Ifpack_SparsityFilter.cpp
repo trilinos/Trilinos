@@ -51,8 +51,8 @@
 
 //==============================================================================
 Ifpack_SparsityFilter::Ifpack_SparsityFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix,
-					     int AllowedEntries, 
-					     int AllowedBandwidth) :
+                                             int AllowedEntries,
+                                             int AllowedBandwidth) :
   A_(Matrix),
   MaxNumEntries_(0),
   MaxNumEntriesA_(0),
@@ -61,6 +61,9 @@ Ifpack_SparsityFilter::Ifpack_SparsityFilter(const Teuchos::RefCountPtr<Epetra_R
   NumNonzeros_(0),
   NumRows_(0)
 {
+  using std::cerr;
+  using std::endl;
+
   // use this filter only on serial matrices
   if (A_->Comm().NumProc() != 1) {
     cerr << "Ifpack_SparsityFilter can be used with Comm().NumProc() == 1" << endl;
@@ -82,8 +85,8 @@ Ifpack_SparsityFilter::Ifpack_SparsityFilter(const Teuchos::RefCountPtr<Epetra_R
   // default value is to not consider bandwidth
   if (AllowedBandwidth_ == -1)
     AllowedBandwidth_ = NumRows_;
-  
-  // computes the number of nonzero elements per row in the 
+
+  // computes the number of nonzero elements per row in the
   // dropped matrix. Stores this number in NumEntries_.
   // Also, computes the global number of nonzeros.
   std::vector<int>    Ind(MaxNumEntriesA_);
@@ -96,7 +99,7 @@ Ifpack_SparsityFilter::Ifpack_SparsityFilter(const Teuchos::RefCountPtr<Epetra_R
   for (int i = 0 ; i < A_->NumMyRows() ; ++i) {
     int Nnz;
     IFPACK_CHK_ERRV(ExtractMyRowCopy(i,MaxNumEntriesA_,Nnz,
-				     &Val[0], &Ind[0]));
+                                     &Val[0], &Ind[0]));
 
     NumEntries_[i] = Nnz;
     NumNonzeros_ += Nnz;
@@ -108,27 +111,27 @@ Ifpack_SparsityFilter::Ifpack_SparsityFilter(const Teuchos::RefCountPtr<Epetra_R
 
 //==============================================================================
 int Ifpack_SparsityFilter::
-ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, 
-		 double *Values, int * Indices) const
+ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
+                 double *Values, int * Indices) const
 {
   if (Length < NumEntries_[MyRow])
     IFPACK_CHK_ERR(-1);
 
   int Nnz;
   IFPACK_CHK_ERR(A_->ExtractMyRowCopy(MyRow,MaxNumEntriesA_,Nnz,
-				     &Values_[0],&Indices_[0]));
+                                     &Values_[0],&Indices_[0]));
 
   double Threshold = 0.0;
-    
+
   // this `if' is to define the cut-off value
   if (Nnz > AllowedEntries_) {
- 
+
     std::vector<double> Values2(Nnz);
     int count = 0;
     for (int i = 0 ; i < Nnz ; ++i) {
       // skip diagonal entry (which is always inserted)
       if (Indices_[i] == MyRow)
-	continue;
+        continue;
       // put absolute value
       Values2[count] = IFPACK_ABS(Values_[i]);
       count++;
@@ -178,8 +181,8 @@ ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 
 //==============================================================================
 int Ifpack_SparsityFilter::
-Multiply(bool TransA, const Epetra_MultiVector& X, 
-	 Epetra_MultiVector& Y) const
+Multiply(bool TransA, const Epetra_MultiVector& X,
+         Epetra_MultiVector& Y) const
 {
 
   int NumVectors = X.NumVectors();
@@ -195,21 +198,21 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
 
     int Nnz;
     ExtractMyRowCopy(i,MaxNumEntries_,Nnz,
-		     &Values[0], &Indices[0]);
+                     &Values[0], &Indices[0]);
     if (!TransA) {
       // no transpose first
       for (int j = 0 ; j < NumVectors ; ++j) {
-	for (int k = 0 ; k < Nnz ; ++k) {
-	  Y[j][i] += Values[k] * X[j][Indices[k]];
-	}
+        for (int k = 0 ; k < Nnz ; ++k) {
+          Y[j][i] += Values[k] * X[j][Indices[k]];
+        }
       }
     }
     else {
       // transpose here
       for (int j = 0 ; j < NumVectors ; ++j) {
-	for (int k = 0 ; k < Nnz ; ++k) {
-	  Y[j][Indices[k]] += Values[k] * X[j][i];
-	}
+        for (int k = 0 ; k < Nnz ; ++k) {
+          Y[j][Indices[k]] += Values[k] * X[j][i];
+        }
       }
     }
   }
@@ -219,7 +222,7 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
 
 //==============================================================================
 int Ifpack_SparsityFilter::
-Solve(bool Upper, bool Trans, bool UnitDiagonal, 
+Solve(bool Upper, bool Trans, bool UnitDiagonal,
       const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   IFPACK_CHK_ERR(-98);
@@ -237,5 +240,5 @@ Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 int Ifpack_SparsityFilter::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  IFPACK_CHK_ERR(-98); 
+  IFPACK_CHK_ERR(-98);
 }

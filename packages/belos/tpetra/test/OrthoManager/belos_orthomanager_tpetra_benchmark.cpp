@@ -58,9 +58,9 @@ using std::endl;
 // These typedefs make main() as generic as possible.
 //
 typedef double scalar_type;
-typedef int local_ordinal_type;
-typedef int global_ordinal_type;
-typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+typedef Tpetra::Map<>::local_ordinal_type local_ordinal_type;
+typedef Tpetra::Map<>::global_ordinal_type global_ordinal_type;
+typedef Tpetra::Map<>::node_type node_type;
 
 typedef Teuchos::ScalarTraits<scalar_type> SCT;
 typedef SCT::magnitudeType magnitude_type;

@@ -402,9 +402,9 @@ main (int argc, char *argv[])
     // Get values of command-line arguments.
     getCmdLineArgs (*comm, argc, argv);
 
-    typedef int local_ordinal_type;
-    typedef int global_ordinal_type;
-    typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
+    typedef Tpetra::Map<>::local_ordinal_type local_ordinal_type;
+    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_type;
+    typedef Tpetra::Map<>::node_type node_type;
 
     {
       typedef double scalar_type;

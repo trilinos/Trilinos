@@ -87,11 +87,17 @@ PHX_POST_REGISTRATION_SETUP(Product,worksets,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Product,workset)
 { 
-  for (typename PHX::MDField<ScalarT>::size_type i = 0; i < product.size(); ++i) {
-    product[i] = scaling;
+ 
+  //Irina modified
+//  for (typename PHX::MDField<ScalarT>::size_type i = 0; i < product.size(); ++i) {
+//    product[i] = scaling;
+//    for (std::size_t j = 0; j < values.size(); ++j)
+//      product[i] *= (values[j])[i];
+//  }
+   
+    product.deep_copy(ScalarT(scaling));
     for (std::size_t j = 0; j < values.size(); ++j)
-      product[i] *= (values[j])[i];
-  }
+      product.V_Multiply(values[j]);   
 
 }
 

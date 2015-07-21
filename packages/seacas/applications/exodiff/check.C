@@ -226,7 +226,11 @@ namespace {
       if (interface.map_flag != DISTANCE && interface.map_flag != PARTIAL) {
 	if (block1 != NULL) {
 	  if (block2 == NULL || block1->Id() != block2->Id()) {
-	    block2 = file2.Get_Elmt_Block_by_Id(block1->Id());
+	    if (interface.by_name)
+	      block2 = file2.Get_Elmt_Block_by_Name(block1->Name());
+	    else
+	      block2 = file2.Get_Elmt_Block_by_Id(block1->Id());
+
 	    if (block2 == NULL) {
 	      std::cout << "exodiff: ERROR .. Block id " << block1->Id()
 			<< " exists in first "
@@ -294,9 +298,14 @@ namespace {
     bool is_same = true;
     SMART_ASSERT(block1 && block2);
   
-    if (block1->Id() != block2->Id()) {
+    if (!interface.by_name && block1->Id() != block2->Id()) {
       std::cout << "exodiff: ERROR .. Block ids don't agree (" << block1->Id()
 		<< " != " << block2->Id() << ")." << std::endl;
+      is_same = false;
+    }
+    if (interface.by_name && block1->Name() != block2->Name()) {
+      std::cout << "exodiff: ERROR .. Block names don't agree (" << block1->Name()
+		<< " != " << block2->Name() << ")." << std::endl;
       is_same = false;
     }
     if (!( no_case_equals( block1->Elmt_Type(), block2->Elmt_Type() ) ) ) {
@@ -352,7 +361,12 @@ namespace {
     // Check that the files both contain the same nodesets...
     for (int b = 0; b < file1.Num_Node_Sets(); ++b) {
       Node_Set<INT>* set1 = file1.Get_Node_Set_by_Index(b);
-      Node_Set<INT>* set2 = file2.Get_Node_Set_by_Id(set1->Id());
+      Node_Set<INT>* set2 = NULL;
+      if (interface.by_name)
+	set2 = file2.Get_Node_Set_by_Name(set1->Name());
+      else
+	set2 = file2.Get_Node_Set_by_Id(set1->Id());
+
       if (set2 == NULL) {
 	std::cout << "exodiff: ERROR .. Nodeset id " << set1->Id()
 		  << " exists in first file but not the second.\n";
@@ -388,7 +402,12 @@ namespace {
     if (!interface.ns_var_names.empty() || interface.pedantic) {
       for (int b = 0; b < file1.Num_Node_Sets(); ++b) {
 	Node_Set<INT>* set1 = file1.Get_Node_Set_by_Index(b);
-	Node_Set<INT>* set2 = file2.Get_Node_Set_by_Id(set1->Id());
+	Node_Set<INT>* set2 = NULL;
+	if (interface.by_name)
+	  set2 = file2.Get_Node_Set_by_Name(set1->Name());
+	else
+	  set2 = file2.Get_Node_Set_by_Id(set1->Id());
+
 	if (set2 == NULL)
 	  continue;
 
@@ -439,7 +458,12 @@ namespace {
     // Check that the files both contain the same sidesets...
     for (int b = 0; b < file1.Num_Side_Sets(); ++b) {
       Side_Set<INT>* set1 = file1.Get_Side_Set_by_Index(b);
-      Side_Set<INT>* set2 = file2.Get_Side_Set_by_Id(set1->Id());
+      Side_Set<INT>* set2 = NULL;
+      if (interface.by_name)
+	set2 = file2.Get_Side_Set_by_Name(set1->Name());
+      else
+	set2 = file2.Get_Side_Set_by_Id(set1->Id());
+
       if (set2 == NULL) {
 	std::cout << "exodiff: ERROR .. Sideset id " << set1->Id()
 		  << " exists in first file but not the second.\n";
@@ -470,10 +494,15 @@ namespace {
     // Do the following check(s) only if there are sideset variables... (or -pedantic)
     // For each sideset, check that the order of the sideset sides is the same.
     // Eventually need to be able to map the order...
-    if (!interface.ss_var_names.empty() || interface.pedantic) {
+    if (!interface.ss_var_names.empty() || interface.pedantic || !interface.ignore_sideset_df) {
       for (int b = 0; b < file1.Num_Side_Sets(); ++b) {
 	Side_Set<INT>* set1 = file1.Get_Side_Set_by_Index(b);
-	Side_Set<INT>* set2 = file2.Get_Side_Set_by_Id(set1->Id());
+	Side_Set<INT>* set2 = NULL;
+	if (interface.by_name)
+	  set2 = file2.Get_Side_Set_by_Name(set1->Name());
+	else
+	  set2 = file2.Get_Side_Set_by_Id(set1->Id());
+
 	if (set2 == NULL)
 	  continue;
 

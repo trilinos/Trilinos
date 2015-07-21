@@ -261,6 +261,14 @@ int main(int argc, char *argv[])
   // 6) Redistributing the vector for each solve to the accepted format for the solver
   vec_redist_time = TimingsList.get( "Total vector redistribution time", 0.0 );
 
+  std::cout << " sfact_time " << sfact_time 
+            << " nfact_time " << nfact_time
+            << " solve_time " << solve_time
+            << " mtx_conv_time " << mtx_conv_time
+            << " mtx_redist_time " << mtx_redist_time 
+            << " vec_redist_time " << vec_redist_time
+            << std::endl;
+
   // =========================================== //
   // E N D   O F   T H E   A M E S O S   P A R T //
   // =========================================== //

@@ -440,7 +440,7 @@ int main(int argc, char* argv[])
 }
 
 template <typename T, typename INT>
-int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T float_or_double, INT integer_type )
+int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T float_or_double, INT)
 {
   SMART_ASSERT(sizeof(T) == ExodusFile::io_word_size());
 
@@ -918,6 +918,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 	if (error < 0)
 	  exodus_error(__LINE__);
 	if (proc_time_val != time_val) {
+	  std::ios::fmtflags f(std::cerr.flags());
 	  std::cerr << "ERROR: (EPU) At step " << std::setw(get_width(ts_max+1)) << time_step+1
 		    << ", the time on processor " << 0 + start_part << " is "
 		    << std::setw(15) << std::scientific << std::setprecision(8)
@@ -926,6 +927,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 		    << std::setw(15) << std::scientific << std::setprecision(8)
 		    << proc_time_val << "\n       This usually indicates a corrupt database."
 		    << std::endl;
+	  std::cerr.flags(f);
 	}
       }
 
@@ -961,6 +963,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 	      exodus_error(__LINE__);
 	    for (int ig=0; ig < global_vars.count(IN); ig++) {
 	      if (proc_global_values[ig] != global_values[ig]) {
+		std::ios::fmtflags f(std::cerr.flags());
 		std::cerr << "At step " << std::setw(get_width(ts_max+1)) << time_step+1
 			  << ", Global Variable " << std::setw(get_width(global_vars.count(IN))) << ig+1
 			  << ", P" << std::setfill('0') << std::setw(get_width(interface.processor_count()))
@@ -972,6 +975,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
 			  << std::scientific << std::setprecision(8)
 			  << proc_global_values[ig]
 			  << std::endl;
+		std::cerr.flags(f);
 	      }
 	    }
 	  }
@@ -1121,9 +1125,10 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
       std::cout << cycle+1 << "/" << subcycles << " ";
     }
 
+    std::ios::fmtflags f(std::cout.flags());
     std::cout << "Wrote step " << std::setw(2) << time_step+1 << ", time "
 	      << std::scientific << std::setprecision(4) << time_val;
-
+    
     double cur_time = seacas_timer();
     double elapsed = cur_time - start_time;
     double time_per_step = elapsed / time_step_out;
@@ -1137,6 +1142,7 @@ int epu(SystemInterface &interface, int start_part, int part_count, int cycle, T
     if (debug_level & 1) {
       std::cout << "\n";
     }
+    std::cout.flags(f);
   }
 
 
@@ -1337,6 +1343,7 @@ namespace {
 	  size_t node = local_node_to_global[proc][i];
 	  if (x[node] != FILL_VALUE && y[node] != FILL_VALUE && z[node] != FILL_VALUE) {
 	    if (x[node] != local_x[i] || y[node] != local_y[i] || z[node] != local_z[i]) {
+	      std::ios::fmtflags f(std::cerr.flags());
 	      std::cerr << "\nWARNING: Node " << node+1
 			<< " has different coordinates in at least two files.\n"
 			<< "         cur value = "
@@ -1346,6 +1353,7 @@ namespace {
 			<< std::setw(14) << local_x[i] << std::setw(14) << local_y[i] << std::setw(14) << local_z[i]
 			<< " from processor " << proc << std::endl;
 
+	      std::cerr.flags(f);
 	    }
 	  }
 	}
@@ -1368,6 +1376,7 @@ namespace {
 	  size_t node = local_node_to_global[proc][i];
 	  if (x[node] != FILL_VALUE && y[node] != FILL_VALUE) {
 	    if (x[node] != local_x[i] || y[node] != local_y[i]) {
+	      std::ios::fmtflags f(std::cerr.flags());
 	      std::cerr << "\nWARNING: Node " << node+1
 			<< " has different coordinates in at least two files.\n"
 			<< "         cur value = "
@@ -1376,6 +1385,7 @@ namespace {
 			<< "         new value = "
 			<< std::setw(14) << local_x[i] << std::setw(14) << local_y[i]
 			<< " from processor " << proc << std::endl;
+	      std::cerr.flags(f);
 	    }
 	  }
 	}
@@ -1396,6 +1406,7 @@ namespace {
 	  size_t node = local_node_to_global[proc][i];
 	  if (x[node] != FILL_VALUE && y[node] != FILL_VALUE) {
 	    if (x[node] != local_x[i]) {
+	      std::ios::fmtflags f(std::cerr.flags());
 	      std::cerr << "\nWARNING: Node " << node+1
 			<< " has different coordinates in at least two files.\n"
 			<< "         cur value = "
@@ -1403,6 +1414,7 @@ namespace {
 			<< std::setw(14) << x[node] << "\tnew value = "
 			<< std::setw(14) << local_x[i] 
 			<< " from processor " << proc << std::endl;
+	      std::cerr.flags(f);
 	    }
 	  }
 	}
@@ -1750,11 +1762,11 @@ namespace {
 	  INT global_element = global_element_numbers[p][i];
 
 	  if (cur_pos == global_element_map.end() || *cur_pos != global_element) {
-	    std::pair<GMapIter, GMapIter> iter = std::equal_range(global_element_map.begin(),
-								  global_element_map.end(),
-								  global_element);
-	    SMART_ASSERT(iter.first  != iter.second);
-	    cur_pos = iter.first;
+	    GMapIter iter = std::lower_bound(global_element_map.begin(),
+					     global_element_map.end(),
+					     global_element);
+	    SMART_ASSERT(iter != global_element_map.end());
+	    cur_pos = iter;
 	  }
 	  element_value = cur_pos - global_element_map.begin();
 	  local_element_to_global[p][i] = element_value;
@@ -1914,11 +1926,11 @@ namespace {
 	INT global_node = global_node_numbers[p][i];
 
 	if (cur_pos == global_node_map.end() || *cur_pos != global_node) {
-	  std::pair<GMapIter, GMapIter> iter = std::equal_range(global_node_map.begin(),
-								global_node_map.end(),
-								global_node);
-	  SMART_ASSERT(iter.first  != iter.second);
-	  cur_pos = iter.first;
+	  GMapIter iter = std::lower_bound(global_node_map.begin(),
+					   global_node_map.end(),
+					   global_node);
+	  SMART_ASSERT(iter != global_node_map.end());
+	  cur_pos = iter;
 	}
 	nodal_value = cur_pos - global_node_map.begin();
 	local_node_to_global[p][i] = nodal_value;
@@ -1984,6 +1996,7 @@ namespace {
 	int i = 0;
 	int ifld = 1;
 	std::cout << "\t";
+	std::ios::fmtflags f(std::cout.flags());
 	while (i < vars.count(OUT)) {
 	  std::cout << std::setw(maxlen) << std::left << output_name_list[i++];
 	  if (++ifld > nfield && i < vars.count(OUT)) {
@@ -1992,7 +2005,7 @@ namespace {
 	  }
 	}
 	std::cout << "\n\n";
-	std::cout << std::right; // Reset back to what it was.
+	std::cout.flags(f); // Reset back to what it was.
       }
 
       if (!interface.append()) {
@@ -3000,8 +3013,7 @@ namespace {
   }
 
   template <typename T, typename U>
-  void map_nodeset_vars(U &local_set, size_t entity_count, size_t glob_entity_count,
-			std::vector<T> &values, T *global_values)
+  void map_nodeset_vars(U&, size_t, size_t, std::vector<T> &, T *)
   {
     throw std::runtime_error("Internal Error!");
   }

@@ -135,8 +135,12 @@
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_epetra_utils.h"
 
-// Sacado includes
+#ifdef HAVE_INTREPID_KOKKOSCORE
 #include "Sacado.hpp"
+#else
+// Sacado includes
+#include "Sacado_No_Kokkos.hpp"
+#endif
 
 using namespace std;
 using namespace Intrepid;
@@ -1205,7 +1209,7 @@ int main(int argc, char *argv[]) {
    delete [] element_attributes;
    delete [] element_types;
    delete [] elmt_node_linkage;
-  // delete [] ownedGIDs;
+   delete [] ownedGIDs;
    delete [] elements;
    delete [] globalNodeIds;
    delete [] nodeIsOwned;

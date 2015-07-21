@@ -60,7 +60,7 @@ PHX_EVALUATOR_CTOR(Integrator_Scalar,p) : quad_index(-1)
   quad_order = ir->cubature_degree;
 
   Teuchos::RCP<PHX::DataLayout> dl_cell = Teuchos::rcp(new PHX::MDALayout<Cell>(ir->dl_scalar->dimension(0)));
-  integral = PHX::MDField<ScalarT,Cell>( p.get<std::string>("Integral Name"), dl_cell);
+  integral = PHX::MDField<ScalarT>( p.get<std::string>("Integral Name"), dl_cell);
   scalar = PHX::MDField<ScalarT,Cell,IP>( p.get<std::string>("Integrand Name"), ir->dl_scalar);
 
   this->addEvaluatedField(integral);
@@ -110,8 +110,10 @@ PHX_POST_REGISTRATION_SETUP(Integrator_Scalar,sd,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
 { 
-  for (int i=0; i < integral.size(); ++i)
-    integral[i] = 0.0;
+/*
+  for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
+    integral(cell) = 0.0;
+*/
 
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     for (std::size_t qp = 0; qp < num_qp; ++qp) {
@@ -122,17 +124,40 @@ PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
     }
   }
 
+  // Switch to Kokkos means we can no longer use intrepid.  There is a
+  // hard coded call to blas that grab a reference to the first
+  // element. You can't grab refrerences to memory anymore with
+  // kokkos.  When Intrepid is fixed, we can switch this back.
+  /*
   if(workset.num_cells>0)
-     Intrepid::FunctionSpaceTools::
-       integrate<ScalarT>(integral, tmp, 
-   		          (workset.int_rules[quad_index])->weighted_measure, 
-		          Intrepid::COMP_BLAS);
+    Intrepid::FunctionSpaceTools::
+      integrate<ScalarT>(integral, tmp, 
+			 (workset.int_rules[quad_index])->weighted_measure, 
+			 Intrepid::COMP_BLAS);
+  */
+  
+  // NOTE: this is not portable to GPUs.  Need to remove all uses of
+  // intrepid field container for MDFields.  This is rather involved
+  // since we need to change the Worksets.
+
+  // const Intrepid::FieldContainer<double>& rightFields = (workset.int_rules[quad_index])->weighted_measure;
+  const IntegrationValues2<double> & iv = *workset.int_rules[quad_index];
+
+  int numCells        = tmp.dimension(0);
+  int numPoints       = tmp.dimension(1);
+ 
+  for(int cl = 0; cl < workset.num_cells; cl++) {
+    integral(cl) = tmp(cl, 0)*iv.weighted_measure(cl, 0);
+    for(int qp = 1; qp < numPoints; qp++)
+      // integral(cl) += tmp(cl, qp)*rightFields(cl, qp);
+      integral(cl) += tmp(cl, qp)*iv.weighted_measure(cl, qp);
+  } // cl-loop
 }
 
 //**********************************************************************
-template<typename EvalT, typename Traits>
+template<typename EvalT, typename TRAITS>
 Teuchos::RCP<Teuchos::ParameterList> 
-Integrator_Scalar<EvalT, Traits>::getValidParameters() const
+Integrator_Scalar<EvalT, TRAITS>::getValidParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList);
   p->set<std::string>("Integral Name", "?");

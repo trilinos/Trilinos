@@ -8,7 +8,17 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
       "\n***"
       "\n*** Warning: Setting ${PROJECT_NAME}_ENABLE_WrapExternal=OFF"
       " because ${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES or"
-      " ${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES is on!"
+      " ${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES is ON!"
+      "\n***\n"
+      )
+    SET(${PROJECT_NAME}_ENABLE_WrapExternal OFF)
+  ENDIF()
+
+  IF ("${PYTHON_EXECUTABLE}" STREQUAL "")
+    MESSAGE(
+      "\n***"
+      "\n*** Warning: Setting ${PROJECT_NAME}_ENABLE_WrapExternal=OFF"
+      " because PYTHON_EXECUTABLE=''!"
       "\n***\n"
       )
     SET(${PROJECT_NAME}_ENABLE_WrapExternal OFF)
@@ -20,7 +30,7 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
     MESSAGE(
       "\n***"
       "\n*** Warning: Setting ${PROJECT_NAME}_ENABLE_MixedLang=OFF"
-      " because ${PROJECT_NAME}_ENABLE_Fortran=OFF!"
+      " because ${PROJECT_NAME}_ENABLE_Fortran='${${PROJECT_NAME}_ENABLE_Fortran}'!"
       "\n***\n"
       )
     SET(${PROJECT_NAME}_ENABLE_MixedLang OFF)

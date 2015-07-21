@@ -188,6 +188,15 @@ namespace Iogn {
     // active interval settings. If scale or offset or zdecomp
     // specified later in the option list, you may not get the
     // desired bounding box.
+    if (numX == 0 || numY == 0 || numZ == 0) {
+      if (myProcessor == 0) {
+        std::cerr << "ERROR: (Iogn::GeneratedMesh::set_bbox)\n"
+		  << "       All interval counts must be greater than 0.\n"
+		  << "       numX = " << numX << ", numY = " << numY << ", numZ = " << numZ << "\n";
+      }
+      std::exit(EXIT_FAILURE);
+    }
+
     double x_range = xmax - xmin;
     double y_range = ymax - ymin;
     double z_range = zmax - zmin;
@@ -1577,7 +1586,7 @@ namespace Iogn {
       variableCount[Ioss::NODESET] = count;
     }
     else if (type == "surface" || type == "sideset") {
-      variableCount[Ioss::SURFACE] = count;
+      variableCount[Ioss::SIDEBLOCK] = count;
     }
     else {
       std::cerr << "ERROR: (Iogn::GeneratedMesh::set_variable_count)\n"

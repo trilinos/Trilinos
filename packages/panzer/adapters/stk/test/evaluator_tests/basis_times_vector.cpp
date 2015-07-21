@@ -67,6 +67,8 @@ using Teuchos::rcp;
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_STK_WorksetFactory.hpp"
 
+#include "Phalanx_KokkosUtilities.hpp"
+
 #include "Teuchos_DefaultMpiComm.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
 
@@ -90,7 +92,7 @@ namespace panzer {
   class BilinearPointEvaluator : public PointEvaluation<panzer::Traits::Residual::ScalarT> {
   public:
     virtual ~BilinearPointEvaluator() {}
-    virtual void evaluateContainer(const Intrepid::FieldContainer<double> & points,
+    virtual void evaluateContainer(const PHX::MDField<panzer::Traits::Residual::ScalarT,panzer::Cell,panzer::IP,panzer::Dim> & points,
                                    PHX::MDField<panzer::Traits::Residual::ScalarT> & field) const
     {
        int num_cells = field.dimension(0);
@@ -101,8 +103,6 @@ namespace panzer {
              double x = points(i,j,0); // just x and y
              double y = points(i,j,1);
 
-             // std::cout << "x,y = " << x << ", " << y << std::endl;
-   
              field(i,j,0) = (x+y)*(x+y);
              field(i,j,1) = sin(x+y);
           }
@@ -112,6 +112,8 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(basis_time_vector, residual)
   {
+    PHX::KokkosDeviceSession session;
+
     const std::size_t workset_size = 1;
     const std::string fieldName_q1 = "TEMPERATURE";
     const std::string fieldName_qedge1 = "ION_TEMPERATURE";
@@ -191,6 +193,10 @@ namespace panzer {
        fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
        fm.requireField<panzer::Traits::Residual>(*evaluator->evaluatedFields()[0]);
     }
+
+    std::vector<PHX::index_size_type> derivative_dimensions;
+    derivative_dimensions.push_back(8);
+    fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
 
     panzer::Traits::SetupData sd;
     sd.worksets_ = work_sets;

@@ -116,6 +116,15 @@ namespace Amesos2 {
     }
 #endif
 
+#ifdef HAVE_AMESOS2_MUMPS
+    if(solverName  == "MUMPS" || solverName == "mumps" ||
+       solverName == "amesos2_MUMPS" || solverName == "amesos2_MUMPS")
+      {
+        return true;
+      }
+#endif
+
+
 #if defined (HAVE_AMESOS2_CHOLMOD) && defined (HAVE_AMESOS2_EXPERIMENTAL)
     if (solverName == "amesos2_cholmod" || solverName == "cholmod") {
       return true;

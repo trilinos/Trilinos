@@ -51,15 +51,15 @@
 
 namespace Kokkos {
 
-template <typename Storage1, typename Storage2>
+template <typename Storage>
 KOKKOS_INLINE_FUNCTION
 void
-atomic_assign(Sacado::UQ::PCE<Storage1>* const dest,
-              const Sacado::UQ::PCE<Storage2>& src )
+atomic_assign(volatile Sacado::UQ::PCE<Storage>* const dest,
+              const Sacado::UQ::PCE<Storage>& src )
 {
-  typedef typename Storage1::ordinal_type ordinal_type;
-  typedef typename Storage1::pointer pointer1;
-  pointer1 dest_c = dest->coeff();
+  typedef typename Storage::ordinal_type ordinal_type;
+  typedef typename Storage::volatile_pointer pointer;
+  pointer dest_c = dest->coeff();
   const ordinal_type sz = dest->size();
   if (src.hasFastAccess(sz))
     for (ordinal_type i=0; i<sz; ++i)
@@ -69,15 +69,15 @@ atomic_assign(Sacado::UQ::PCE<Storage1>* const dest,
       atomic_exchange(dest_c+i, src.coeff(i));
 }
 
-template <typename Storage1, typename Storage2>
+template <typename Storage>
 KOKKOS_INLINE_FUNCTION
 void
-atomic_add(Sacado::UQ::PCE<Storage1>* const dest,
-           const Sacado::UQ::PCE<Storage2>& src)
+atomic_add(volatile Sacado::UQ::PCE<Storage>* const dest,
+           const Sacado::UQ::PCE<Storage>& src)
 {
-  typedef typename Storage1::ordinal_type ordinal_type;
-  typedef typename Storage1::pointer pointer1;
-  pointer1 dest_c = dest->coeff();
+  typedef typename Storage::ordinal_type ordinal_type;
+  typedef typename Storage::volatile_pointer pointer;
+  pointer dest_c = dest->coeff();
   const ordinal_type sz = dest->size();
   if (src.hasFastAccess(sz))
     for (ordinal_type i=0; i<sz; ++i)

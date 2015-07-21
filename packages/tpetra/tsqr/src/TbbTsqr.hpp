@@ -196,25 +196,8 @@ namespace TSQR {
       /// main problem, in order to solve it in parallel.
       size_t ntasks() const { return impl_.ntasks(); }
 
-      /// \brief Number of tasks that TSQR will use to solve the problem.
-      ///
-      /// This is the number of subproblems into which to divide the
-      /// main problem, in order to solve it in parallel.
-      ///
-      /// This method is deprecated, because the name is misleading.
-      /// Please call \c ntasks() instead.
-      size_t TEUCHOS_DEPRECATED ncores() const { return impl_.ntasks(); }
-
       //! Cache size hint (in bytes) used for the factorization.
       size_t cache_size_hint() const { return impl_.cache_size_hint(); }
-
-      /// \brief Cache size hint (in bytes) used for the factorization.
-      ///
-      /// This method is deprecated, because the name is misleading.
-      /// Please call \c cache_size_hint() instead.
-      size_t TEUCHOS_DEPRECATED cache_block_size() const {
-        return impl_.cache_size_hint();
-      }
 
       /// Whether or not this QR factorization produces an R factor
       /// with all nonnegative diagonal entries.

@@ -295,13 +295,16 @@ namespace MueLu {
     PrintMonitor m0(*this, "Level " +  Teuchos::Utils::toString(coarseLevelID), static_cast<MsgType>(GetVerbLevel()));
 
     // Build coarse level hierarchy
+    RCP<Operator> Ac = Teuchos::null;
     TopRAPFactory coarseRAPFactory(fineLevelManager, coarseLevelManager);
-    if (!isFinestLevel) {
+
+    if (level.IsAvailable("A")) {
+      Ac = level.Get<RCP<Operator> >("A");
+    } else if (!isFinestLevel) {
       // We only build here, the release is done later
       coarseRAPFactory.Build(*level.GetPreviousLevel(), level);
     }
 
-    RCP<Operator> Ac = Teuchos::null;
     if (level.IsAvailable("A"))
       Ac = level.Get<RCP<Operator> >("A");
     RCP<Matrix> Acm = rcp_dynamic_cast<Matrix>(Ac);
@@ -622,6 +625,10 @@ namespace MueLu {
         // On intermediate levels, we do cycles
         RCP<Level> Coarse = Levels_[startLevel+1];
 
+        // Utils::Write("X_before.mm", X);
+        // Utils::Write("B_before.mm", B);
+
+
         {
           // ============== PRESMOOTHING ==============
           RCP<TimeMonitor> STime      = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing (total)"      , Timings0));
@@ -634,6 +641,8 @@ namespace MueLu {
             GetOStream(Warnings1) << "Level " <<  startLevel << ": No PreSmoother!" << std::endl;
           }
         }
+        // Utils::Write("X_after.mm", X);
+        // Utils::Write("B_after.mm", B);
 
         RCP<MultiVector> residual;
         {
@@ -641,6 +650,9 @@ namespace MueLu {
           RCP<TimeMonitor> ALevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation" + levelSuffix, Timings0));
           residual = Utils::Residual(*A, X, B);
         }
+        // Utils::Write("R_after.mm", *residual);
+        // if (startLevel == 0)
+          // exit(1);
 
         RCP<Operator>    P = Coarse->Get< RCP<Operator> >("P");
         RCP<MultiVector> coarseRhs, coarseX;
@@ -852,12 +864,9 @@ namespace MueLu {
     int root = comm->getRank();
 
 #ifdef HAVE_MPI
-    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
-    MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
-
-    std::vector<int> numGlobalLevels(comm->getSize());
-    MPI_Allgather(&numLevels, 1, MPI_INT, &numGlobalLevels[0], 1, MPI_INT, rawComm);
-    root = std::max_element(numGlobalLevels.begin(), numGlobalLevels.end()) - numGlobalLevels.begin();
+    int smartData = numLevels*comm->getSize() + comm->getRank(), maxSmartData;
+    reduceAll(*comm, Teuchos::REDUCE_MAX, smartData, Teuchos::ptr(&maxSmartData));
+    root = maxSmartData % comm->getSize();
 #endif
 
     std::string outstr;
@@ -888,15 +897,13 @@ namespace MueLu {
       }
 
       if (!aborted) {
-        double operatorComplexity = as<double>(std::accumulate(nnzPerLevel.begin(), nnzPerLevel.end(), 0)) / nnzPerLevel[0];
-
         std::ostringstream oss;
         oss << "\n--------------------------------------------------------------------------------\n" <<
             "---                            Multigrid Summary                             ---\n"
             "--------------------------------------------------------------------------------" << std::endl;
         oss << "Number of levels    = " << numLevels << std::endl;
         oss << "Operator complexity = " << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-            << operatorComplexity << std::endl;
+            << GetOperatorComplexity() << std::endl;
         oss << std::endl;
 
         Xpetra::global_size_t tt = rowsPerLevel[0];
@@ -939,6 +946,9 @@ namespace MueLu {
     }
 
 #ifdef HAVE_MPI
+    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+    MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
+
     int strLength = outstr.size();
     MPI_Bcast(&strLength, 1, MPI_INT, root, rawComm);
     if (comm->getRank() != root)
@@ -1012,61 +1022,62 @@ namespace MueLu {
   // Enforce that coordinate vector's map is consistent with that of A
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReplaceCoordinateMap(Level& level) {
-    RCP<Operator>    Ao      = level.Get<RCP<Operator> >   ("A");
-    RCP<Matrix>      A       = rcp_dynamic_cast<Matrix>(Ao);
+    RCP<Operator> Ao = level.Get<RCP<Operator> >("A");
+    RCP<Matrix>   A  = rcp_dynamic_cast<Matrix>(Ao);
     if (A.is_null()) {
-      GetOStream(Warnings0) << "Skipping Hierarchy::ReplaceCoordinateMap call, as the operator is not a matrix" << std::endl;
+      GetOStream(Warnings0) << "Hierarchy::ReplaceCoordinateMap: operator is not a matrix, skipping..." << std::endl;
       return;
     }
 
     typedef Xpetra::MultiVector<double,LO,GO,NO> xdMV;
 
-    RCP<xdMV> coords  = level.Get<RCP<xdMV> >("Coordinates");
+    RCP<xdMV> coords = level.Get<RCP<xdMV> >("Coordinates");
 
-    size_t           blkSize = A->GetFixedBlockSize();
-
-    if (A->getRowMap()->isSameAs(*(coords->getMap())))
+    if (A->getRowMap()->isSameAs(*(coords->getMap()))) {
+      GetOStream(Warnings0) << "Hierarchy::ReplaceCoordinateMap: matrix and coordinates maps are same, skipping..." << std::endl;
       return;
+    }
 
-    bool replaceMap = true;
     if (A->IsView("stridedMaps") && rcp_dynamic_cast<const StridedMap>(A->getRowMap("stridedMaps")) != Teuchos::null) {
       RCP<const StridedMap> stridedRowMap = rcp_dynamic_cast<const StridedMap>(A->getRowMap("stridedMaps"));
 
-      if (stridedRowMap->getStridedBlockId() != -1 || stridedRowMap->getOffset() == 0)
-        replaceMap = false;
+      // It is better to through an exceptions if maps may be inconsistent, than to ignore it and experience unfathomable breakdowns
+      TEUCHOS_TEST_FOR_EXCEPTION(stridedRowMap->getStridedBlockId() != -1 || stridedRowMap->getOffset() != 0,
+                                 Exceptions::RuntimeError, "Hierarchy::ReplaceCoordinateMap: nontrivial maps (block id = " << stridedRowMap->getStridedBlockId()
+                                 << ", offset = " << stridedRowMap->getOffset() << ")");
     }
 
-    if (replaceMap) {
-      GetOStream(Runtime1) << "Replacing coordinate map" << std::endl;
+    GetOStream(Runtime1) << "Replacing coordinate map" << std::endl;
 
-      RCP<const Map> nodeMap = A->getRowMap();
-      if (blkSize > 1) {
-        // Create a nodal map, as coordinates have not been expanded to a DOF map yet.
-        RCP<const Map> dofMap       = A->getRowMap();
-        GO             indexBase    = dofMap->getIndexBase();
-        size_t         numLocalDOFs = dofMap->getNodeNumElements();
-        TEUCHOS_TEST_FOR_EXCEPTION(numLocalDOFs % blkSize, Exceptions::RuntimeError, "Some trouble with map");
+    size_t blkSize = A->GetFixedBlockSize();
 
-        ArrayView<const GO> GIDs = dofMap->getNodeElementList();
+    RCP<const Map> nodeMap = A->getRowMap();
+    if (blkSize > 1) {
+      // Create a nodal map, as coordinates have not been expanded to a DOF map yet.
+      RCP<const Map> dofMap       = A->getRowMap();
+      GO             indexBase    = dofMap->getIndexBase();
+      size_t         numLocalDOFs = dofMap->getNodeNumElements();
+      TEUCHOS_TEST_FOR_EXCEPTION(numLocalDOFs % blkSize, Exceptions::RuntimeError,
+        "Hierarchy::ReplaceCoordinateMap: block size (" << blkSize << ") is incompatible with the number of local dofs in a row map (" << numLocalDOFs);
+      ArrayView<const GO> GIDs = dofMap->getNodeElementList();
 
-        Array<GO> nodeGIDs(numLocalDOFs/blkSize);
-        for (size_t i = 0; i < numLocalDOFs; i += blkSize)
-          nodeGIDs[i/blkSize] = (GIDs[i] - indexBase)/blkSize + indexBase;
+      Array<GO> nodeGIDs(numLocalDOFs/blkSize);
+      for (size_t i = 0; i < numLocalDOFs; i += blkSize)
+        nodeGIDs[i/blkSize] = (GIDs[i] - indexBase)/blkSize + indexBase;
 
-        Xpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
-        nodeMap = MapFactory::Build(dofMap->lib(), INVALID, nodeGIDs(), indexBase, dofMap->getComm());
-      }
-
-      Array<ArrayView<const double> >      coordDataView;
-      std::vector<ArrayRCP<const double> > coordData;
-      for (size_t i = 0; i < coords->getNumVectors(); i++) {
-        coordData.push_back(coords->getData(i));
-        coordDataView.push_back(coordData[i]());
-      }
-
-      RCP<xdMV> newCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nodeMap, coordDataView(), coords->getNumVectors());
-      level.Set("Coordinates", newCoords);
+      Xpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+      nodeMap = MapFactory::Build(dofMap->lib(), INVALID, nodeGIDs(), indexBase, dofMap->getComm());
     }
+
+    Array<ArrayView<const double> >      coordDataView;
+    std::vector<ArrayRCP<const double> > coordData;
+    for (size_t i = 0; i < coords->getNumVectors(); i++) {
+      coordData.push_back(coords->getData(i));
+      coordDataView.push_back(coordData[i]());
+    }
+
+    RCP<xdMV> newCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nodeMap, coordDataView(), coords->getNumVectors());
+    level.Set("Coordinates", newCoords);
   }
 
 } //namespace MueLu

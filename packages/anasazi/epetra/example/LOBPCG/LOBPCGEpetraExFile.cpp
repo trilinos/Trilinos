@@ -1,7 +1,11 @@
-//  This example compute the eigenvalues of a matrix from and input file using the block Davidson
-//  method.  The matrix is passed to the example routine through the command line, and
-//  converted to an Epetra matrix through some utilty routines.  This matrix is passed to the
-//  eigensolver, the specifics of the block Davidson method can be set by the user.
+/// \example LOBPCGEpetraFile.cpp
+/// \brief Use LOBPCG with Epetra test problem loaded from file.
+///
+/// This example computes the eigenvalues of largest magnitude of an
+/// eigenvalue problem $A x = \lambda x$, using Anasazi's
+/// implementation of the LOBPCG method, with Epetra linear algebra.
+/// The example loads the matrix from a file whose name is specified
+/// at the command line.
 
 #include "AnasaziLOBPCGSolMgr.hpp"
 #include "AnasaziBasicEigenproblem.hpp"

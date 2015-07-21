@@ -56,8 +56,8 @@
 #include <Epetra_MultiVector.h>
 #include <Epetra_Operator.h>
 
-#include <gmres_tools.h>
-#include <gmres.h>
+#include <shylu_internal_gmres_tools.h>
+#include <shylu_internal_gmres.h>
 
 #include <Ifpack_Preconditioner.h>
 

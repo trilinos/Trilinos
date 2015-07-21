@@ -51,4 +51,10 @@
 
 #include "TeuchosCore_config.h"
 
+#ifdef HAVE_TEUCHOSCORE_CXX11
+#  define TEUCHOS_NOEXCEPT_FALSE noexcept(false)
+#else
+#  define TEUCHOS_NOEXCEPT_FALSE
+#endif
+
 #endif /* TEUCHOSCORE_CONFIGDEFS_HPP */
