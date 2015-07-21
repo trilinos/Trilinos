@@ -59,6 +59,7 @@
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
+#include "Teuchos_LAPACK.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif
@@ -191,6 +192,11 @@ namespace Belos {
      */
     bool isLOADetected() const { return false; }
 
+    /*! \brief Gets the estimated condition number.
+      \note Only works if "Estimate Condition Number" is set on parameterlist
+    */
+    ScalarType getConditionEstimate() const {return condEstimate_;}
+
     //@}
 
     //! @name Set methods
@@ -245,6 +251,13 @@ namespace Belos {
 
     //@}
 
+  protected:
+    // Compute the condition number estimate
+    void compute_condnum_tridiag_sym(Teuchos::ArrayView<ScalarType> diag,
+				     Teuchos::ArrayView<ScalarType> offdiag,
+				     ScalarType & lambda_min,
+				     ScalarType & lambda_max,
+				     ScalarType & ConditionNumber );
   private:
 
     // Linear problem.
@@ -285,6 +298,7 @@ namespace Belos {
     static const std::string resScale_default_;
     static const std::string label_default_;
     static const Teuchos::RCP<std::ostream> outputStream_default_;
+    static const bool genCondEst_default_;
 
     // Current solver values.
     MagnitudeType convtol_,achievedTol_;
@@ -292,6 +306,8 @@ namespace Belos {
     int verbosity_, outputStyle_, outputFreq_, defQuorum_;
     bool assertPositiveDefiniteness_, showMaxResNormOnly_;
     std::string resScale_;
+    bool genCondEst_;
+    ScalarType condEstimate_;
 
     // Timers.
     std::string label_;
@@ -336,6 +352,8 @@ const std::string PseudoBlockCGSolMgr<ScalarType,MV,OP>::label_default_ = "Belos
 template<class ScalarType, class MV, class OP>
 const Teuchos::RCP<std::ostream> PseudoBlockCGSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
 
+template<class ScalarType, class MV, class OP>
+const bool PseudoBlockCGSolMgr<ScalarType,MV,OP>::genCondEst_default_ = false;
 
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
@@ -351,6 +369,8 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr() :
   assertPositiveDefiniteness_(assertPositiveDefiniteness_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
   resScale_(resScale_default_),
+  genCondEst_(genCondEst_default_),
+  condEstimate_(-Teuchos::ScalarTraits<ScalarType>::one()),
   label_(label_default_),
   isSet_(false)
 {}
@@ -372,6 +392,8 @@ PseudoBlockCGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &probl
   assertPositiveDefiniteness_(assertPositiveDefiniteness_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
   resScale_(resScale_default_),
+  genCondEst_(genCondEst_default_),
+  condEstimate_(-Teuchos::ScalarTraits<ScalarType>::one()),
   label_(label_default_),
   isSet_(false)
 {
@@ -486,6 +508,11 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
     params_->set("Output Frequency", outputFreq_);
     if (outputTest_ != Teuchos::null)
       outputTest_->setOutputFrequency( outputFreq_ );
+  }
+
+  // Condition estimate
+  if (params->isParameter("Estimate Condition Number")) {
+    genCondEst_ = params->get("Estimate Condition Number",genCondEst_default_);
   }
 
   // Create output manager if we need to.
@@ -647,6 +674,8 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "relative residual norm when the block size is greater than one.");
     pl->set("Implicit Residual Scaling", resScale_default_,
       "The type of scaling used in the residual convergence test.");
+    pl->set("Estimate Condition Number", genCondEst_default_,
+      "Whether or not to estimate the condition number of the preconditioned system.");
     // We leave the old name as a valid parameter for backwards
     // compatibility (so that validateParametersAndSetDefaults()
     // doesn't raise an exception if it encounters "Residual
@@ -693,10 +722,11 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
   problem_->setLSIndex( currIdx );
 
   //////////////////////////////////////////////////////////////////////////////////////
-  // Parameter list
+  // Parameter list (iteration)
   Teuchos::ParameterList plist;
 
   plist.set("Assert Positive Definiteness",assertPositiveDefiniteness_);
+  if(genCondEst_) plist.set("Max Size For Condest",maxIters_);
 
   // Reset the status test.
   outputTest_->reset();
@@ -717,6 +747,8 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
 #endif
 
     while ( numRHS2Solve > 0 ) {
+      if(genCondEst_ && numRHS2Solve - numCurrRHS <= 0) block_cg_iter->setDoCondEst(true);
+      else block_cg_iter->setDoCondEst(false);
 
       // Reset the active / converged vectors from this block
       std::vector<int> convRHSIdx;
@@ -740,7 +772,8 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
       while(1) {
 
         // tell block_gmres_iter to iterate
-        try {
+        try {	  
+
           block_cg_iter->iterate();
 
           ////////////////////////////////////////////////////////////////////////////////////
@@ -872,6 +905,15 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
   const std::vector<MagnitudeType>* pTestValues = convTest_->getTestValue();
   achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
 
+
+  // Do condition estimate, if needed
+  if(genCondEst_) {
+    ScalarType l_min, l_max;
+    Teuchos::ArrayView<ScalarType> diag    = block_cg_iter->getDiag();
+    Teuchos::ArrayView<ScalarType> offdiag = block_cg_iter->getOffDiag();
+    compute_condnum_tridiag_sym(diag,offdiag,l_min,l_max,condEstimate_);
+  }
+
   if (!isConverged ) {
     return Unconverged; // return from PseudoBlockCGSolMgr::solve()
   }
@@ -888,6 +930,51 @@ std::string PseudoBlockCGSolMgr<ScalarType,MV,OP>::description() const
   oss << "}";
   return oss.str();
 }
+
+
+template<class ScalarType, class MV, class OP>
+void PseudoBlockCGSolMgr<ScalarType,MV,OP>::compute_condnum_tridiag_sym(Teuchos::ArrayView<ScalarType> diag,
+									Teuchos::ArrayView<ScalarType> offdiag,
+									ScalarType & lambda_min,
+									ScalarType & lambda_max,
+									ScalarType & ConditionNumber )
+{
+  /* Copied from az_cg.c: compute_condnum_tridiag_sym */
+  /* diag ==      ScalarType vector of size N, containing the diagonal
+     elements of A
+     offdiag ==   ScalarType vector of size N-1, containing the offdiagonal
+     elements of A. Note that A is supposed to be symmatric
+  */		    
+  int info;
+  ScalarType scalar_dummy;
+  char char_N = 'N';
+  Teuchos::LAPACK<int,ScalarType> lapack;
+  int N = diag.size();
+
+  Teuchos::ArrayView<ScalarType> eigenvalues = diag;
+  if( N > 2 ) {
+    //STEQR(const char COMPZ, const OrdinalType n, ScalarType* D, ScalarType* E, ScalarType* Z, const OrdinalType ldz, ScalarType* WORK, OrdinalType* info) const;
+    lapack.STEQR(char_N,N,diag.getRawPtr(),offdiag.getRawPtr(),&scalar_dummy,1,&scalar_dummy,&info);
+
+    //@}
+    lambda_min = eigenvalues[0];
+    lambda_max = eigenvalues[N-1];
+
+  } else {
+    lambda_min = 1.0;
+    lambda_max = 1.0;    
+  }
+
+  if(info == 0) 
+    ConditionNumber = lambda_max/lambda_min;
+  else
+    ConditionNumber = -Teuchos::ScalarTraits<ScalarType>::one();
+
+} /* compute_condnum_tridiag_sym */
+
+
+
+
 
 } // end Belos namespace
 
