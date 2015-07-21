@@ -215,8 +215,8 @@ public:
    *              a parallel-consistent exception will be thrown.
    */
 
-#ifndef STK_BUILT_IN_SIERRA // Deprecated 2015-06-10
-  STK_DEPRECATED(bool modification_end(impl::MeshModification::modification_optimization opt))
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2015-07-30
+  STK_DEPRECATED bool modification_end(impl::MeshModification::modification_optimization opt)
   {
       if (impl::MeshModification::MOD_END_SORT == opt) {
           return m_meshModification.modification_end();
