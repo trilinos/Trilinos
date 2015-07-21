@@ -263,7 +263,7 @@ private:
   size_t numRows_;
 
   //! The local diagonal block, which compute() extracts.
-  Teuchos::SerialBandDenseMatrix<int, local_scalar_type> diagBlock_;
+  Teuchos::RCP<Teuchos::SerialBandDenseMatrix<int, local_scalar_type> > diagBlock_;
 
   //! Permutation array from LAPACK (GETRF).
   Teuchos::Array<int> ipiv_;

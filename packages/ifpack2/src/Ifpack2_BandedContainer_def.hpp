@@ -63,6 +63,7 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                  const Teuchos::ArrayView<const local_ordinal_type>& localRows) :
   Container<MatrixType> (matrix, localRows),
   numRows_ (localRows.size ()),
+  diagBlock_ (Teuchos::null),
   ipiv_ (numRows_, 0),
   kl_(-1),
   ku_(-1)
@@ -93,7 +94,7 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
     "entries are not valid local row indices on the calling process: "
     << Teuchos::toString (invalidLocalRowIndices) << ".");
 
-  // calculate optimal bandwith
+  // calculate optimal bandwidth
   const map_type& domMap = * (matrix->getDomainMap ());
   for (size_type i = 0; i < numRows; ++i) {
     Teuchos::ArrayView< const local_ordinal_type > indices;
@@ -102,17 +103,20 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
     typename Teuchos::ArrayView<const local_ordinal_type>::iterator cur;
     local_ordinal_type min_col_idx = Teuchos::OrdinalTraits< local_ordinal_type >::max();
     local_ordinal_type max_col_idx = 0;
+    size_type min_col_it = Teuchos::OrdinalTraits< size_type >::max();
+    size_type max_col_it = 0;
     for(cur = indices.begin(); cur!=indices.end(); ++cur) {
-      if (! domMap.isNodeLocalElement (*cur)) continue;
+      if(! domMap.isNodeLocalElement (*cur)) continue;
       for (size_type j=0; j<numRows; ++j) {
         if (localRows[j] == *cur) {
-          if (min_col_idx > *cur) min_col_idx = *cur;
-          if (max_col_idx < *cur) max_col_idx = *cur;
+          if (min_col_idx > *cur) { min_col_idx = *cur; min_col_it = j; }
+          if (max_col_idx < *cur) { max_col_idx = *cur; max_col_it = j; }
         }
       }
     }
-    local_ordinal_type ku = max_col_idx - localRows[i];
-    local_ordinal_type kl = localRows[i] - min_col_idx;
+    local_ordinal_type ku = Teuchos::as<local_ordinal_type>(max_col_it - i);
+    local_ordinal_type kl = Teuchos::as<local_ordinal_type>(i - min_col_it);
+
     if (ku > ku_) ku_ = ku;  // update internal kl and ku with maximal values
     if (kl > kl_) kl_ = kl;
   }
@@ -180,7 +184,8 @@ void BandedContainer<MatrixType, LocalScalarType>::initialize ()
   TEUCHOS_TEST_FOR_EXCEPTION(kl_==-1 || ku_==-1, std::invalid_argument,
                        "BandedContainer<T>::setParameters: the user must provide the number of sub- and superdiagonals in the 'kl' and 'ku' parameters.");
 
-  diagBlock_ = Teuchos::SerialBandDenseMatrix<int, local_scalar_type>(numRows_, numRows_, kl_ /* lower bandwith */, kl_+ku_ /* upper bandwith. Don't forget to store kl extra superdiagonals for LU decomposition! */);
+  //std::cout << "numRows_ = " << numRows_ << " kl_ = " << kl_ << " ku_ = " << ku_ << std::endl;
+  diagBlock_ = Teuchos::rcp(new Teuchos::SerialBandDenseMatrix<int, local_scalar_type>(numRows_, numRows_, kl_ /* lower bandwith */, kl_+ku_ /* upper bandwith. Don't forget to store kl extra superdiagonals for LU decomposition! */));
 
   // We assume that if you called this method, you intend to recompute
   // everything.
@@ -188,7 +193,7 @@ void BandedContainer<MatrixType, LocalScalarType>::initialize ()
   IsComputed_ = false;
 
   // Fill the diagonal block and LU permutation array with zeros.
-  diagBlock_.putScalar (Teuchos::ScalarTraits<local_scalar_type>::zero ());
+  diagBlock_->putScalar (Teuchos::ScalarTraits<local_scalar_type>::zero ());
   std::fill (ipiv_.begin (), ipiv_.end (), 0);
 
   IsInitialized_ = true;
@@ -222,17 +227,17 @@ void BandedContainer<MatrixType, LocalScalarType>::factor ()
   int INFO = 0;
 
   // Plausibility checks for matrix
-  TEUCHOS_TEST_FOR_EXCEPTION(diagBlock_.values()==0, std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(diagBlock_->values()==0, std::invalid_argument,
                      "BandedContainer<T>::factor: Diagonal block is an empty SerialBandDenseMatrix<T>!");
-  TEUCHOS_TEST_FOR_EXCEPTION(diagBlock_.upperBandwidth()<diagBlock_.lowerBandwidth(), std::invalid_argument,
+  TEUCHOS_TEST_FOR_EXCEPTION(diagBlock_->upperBandwidth()<diagBlock_->lowerBandwidth(), std::invalid_argument,
                      "BandedContainer<T>::factor: Diagonal block needs kl additional superdiagonals for factorization! However, the number of superdiagonals is smaller than the number of subdiagonals!");
 
-  lapack.GBTRF (diagBlock_.numRows(),
-      diagBlock_.numCols(),
-      diagBlock_.lowerBandwidth(),
-      diagBlock_.upperBandwidth()-diagBlock_.lowerBandwidth(), /* enter the real number of superdiagonals (see Teuchos_SerialBandDenseSolver)*/
-      diagBlock_.values(),
-      diagBlock_.stride(),
+  lapack.GBTRF (diagBlock_->numRows(),
+      diagBlock_->numCols(),
+      diagBlock_->lowerBandwidth(),
+      diagBlock_->upperBandwidth()-diagBlock_->lowerBandwidth(), /* enter the real number of superdiagonals (see Teuchos_SerialBandDenseSolver)*/
+      diagBlock_->values(),
+      diagBlock_->stride(),
       ipiv_.getRawPtr (),
       &INFO);
 
@@ -288,18 +293,18 @@ applyImpl (const local_mv_type& X,
     << Y.getLocalLength () << ").  Please report this bug to "
     "the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    X.getLocalLength() != static_cast<size_t> (mode == Teuchos::NO_TRANS ? diagBlock_.numCols() : diagBlock_.numRows()),
+    X.getLocalLength() != static_cast<size_t> (mode == Teuchos::NO_TRANS ? diagBlock_->numCols() : diagBlock_->numRows()),
     std::logic_error, "Ifpack2::BandedContainer::applyImpl: The input "
     "multivector X has incompatible dimensions from those of the "
     "inverse operator (" << X.getLocalLength () << " vs. "
-    << (mode == Teuchos::NO_TRANS ? diagBlock_.numCols() : diagBlock_.numRows())
+    << (mode == Teuchos::NO_TRANS ? diagBlock_->numCols() : diagBlock_->numRows())
     << ").  Please report this bug to the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(
-    Y.getLocalLength() != static_cast<size_t> (mode == Teuchos::NO_TRANS ? diagBlock_.numRows() : diagBlock_.numCols()),
+    Y.getLocalLength() != static_cast<size_t> (mode == Teuchos::NO_TRANS ? diagBlock_->numRows() : diagBlock_->numCols()),
     std::logic_error, "Ifpack2::BandedContainer::applyImpl: The output "
     "multivector Y has incompatible dimensions from those of the "
     "inverse operator (" << Y.getLocalLength () << " vs. "
-    << (mode == Teuchos::NO_TRANS ? diagBlock_.numRows() : diagBlock_.numCols())
+    << (mode == Teuchos::NO_TRANS ? diagBlock_->numRows() : diagBlock_->numCols())
     << ").  Please report this bug to the Ifpack2 developers.");
 
   typedef Teuchos::ScalarTraits<local_scalar_type> STS;
@@ -336,12 +341,12 @@ applyImpl (const local_mv_type& X,
     const char trans =(mode == Teuchos::CONJ_TRANS ? 'C' : (mode == Teuchos::TRANS ? 'T' : 'N'));
 
     lapack.GBTRS(trans,
-        diagBlock_.numCols(),
-        diagBlock_.lowerBandwidth(),
-        diagBlock_.upperBandwidth()-diagBlock_.lowerBandwidth(), // /* enter the real number of superdiagonals (see Teuchos_SerialBandDenseSolver)*/
+        diagBlock_->numCols(),
+        diagBlock_->lowerBandwidth(),
+        diagBlock_->upperBandwidth()-diagBlock_->lowerBandwidth(), // /* enter the real number of superdiagonals (see Teuchos_SerialBandDenseSolver)*/
         numVecs,
-        diagBlock_.values(),
-        diagBlock_.stride(),
+        diagBlock_->values(),
+        diagBlock_->stride(),
         ipiv_.getRawPtr (), Y_ptr, Y_stride, &INFO);
 
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -665,8 +670,8 @@ void BandedContainer<MatrixType,LocalScalarType>::describe(Teuchos::FancyOStream
   os << "================================================================================" << std::endl;
   os << "Ifpack2::BandedContainer" << std::endl;
   os << "Number of rows           = " << numRows_ << std::endl;
-  os << "Number of subdiagonals   = " << diagBlock_.lowerBandwidth() << std::endl;
-  os << "Number of superdiagonals = " << diagBlock_.upperBandwidth() << std::endl;
+  os << "Number of subdiagonals   = " << diagBlock_->lowerBandwidth() << std::endl;
+  os << "Number of superdiagonals = " << diagBlock_->upperBandwidth() << std::endl;
   os << "isInitialized()          = " << IsInitialized_ << std::endl;
   os << "isComputed()             = " << IsComputed_ << std::endl;
   os << "================================================================================" << std::endl;
@@ -781,7 +786,7 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
     "singular.  Here is the compete set of invalid global column indices: "
     << toString (invalidGlobalColInds) << ".");
 
-  diagBlock_.putScalar (Teuchos::ScalarTraits<local_scalar_type>::zero ());
+  diagBlock_->putScalar (Teuchos::ScalarTraits<local_scalar_type>::zero ());
 
   const size_t maxNumEntriesInRow = globalMatrix->getNodeMaxNumRowEntries ();
   Array<scalar_type> val (maxNumEntriesInRow);
@@ -816,7 +821,7 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
           }
         }
         if (jj != INVALID) {
-          diagBlock_ (i, jj) += val[k]; // ???
+          (*diagBlock_) (i, jj) += val[k]; // ???
         }
       }
     }
