@@ -220,10 +220,10 @@ namespace Belos {
     void setDoCondEst(bool val){doCondEst_=val;}
 
     //! Gets the diagonal for condition estimation
-    Teuchos::ArrayView<ScalarType> getDiag(){return diag_(0,iter_);}
+    Teuchos::ArrayView<MagnitudeType> getDiag(){return diag_(0,iter_);}
 
     //! Gets the off-diagonal for condition estimation
-    Teuchos::ArrayView<ScalarType> getOffDiag(){return offdiag_(0,iter_);}
+    Teuchos::ArrayView<MagnitudeType> getOffDiag(){return offdiag_(0,iter_);}
 
   private:
     
@@ -255,7 +255,7 @@ namespace Belos {
     bool assertPositiveDefiniteness_;
 
     // Tridiagonal system for condition estimation (if needed)
-    Teuchos::ArrayRCP<ScalarType> diag_, offdiag_;
+    Teuchos::ArrayRCP<MagnitudeType> diag_, offdiag_;
     int numEntriesForCondEst_;
     bool doCondEst_;
 
@@ -493,11 +493,11 @@ namespace Belos {
       // Condition estimate (if needed)
       if(doCondEst_ > 0) {
 	if(iter_ > 1 ) {
-	  diag_[iter_-1]    = (beta_old * beta_old * pAp_old + pAp[0]) / rHz_old[0];
-	  offdiag_[iter_-2] = -beta_old * pAp_old / (sqrt( rHz_old[0] * rHz_old2));
+	  diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real((beta_old * beta_old * pAp_old + pAp[0]) / rHz_old[0]);
+	  offdiag_[iter_-2] = -Teuchos::ScalarTraits<ScalarType>::real(beta_old * pAp_old / (sqrt( rHz_old[0] * rHz_old2)));
 	} 
 	else {	  
-	  diag_[iter_-1]    = pAp[0] / rHz_old[0];
+	  diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real(pAp[0] / rHz_old[0]);
 	}
 	rHz_old2 = rHz_old[0];	
 	beta_old = beta(0,0);

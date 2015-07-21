@@ -250,15 +250,13 @@ namespace Belos {
     std::string description() const;
 
     //@}
-
-  protected:
+  private:
     // Compute the condition number estimate
-    void compute_condnum_tridiag_sym(Teuchos::ArrayView<ScalarType> diag,
-				     Teuchos::ArrayView<ScalarType> offdiag,
+    void compute_condnum_tridiag_sym(Teuchos::ArrayView<MagnitudeType> diag,
+				     Teuchos::ArrayView<MagnitudeType> offdiag,
 				     ScalarType & lambda_min,
 				     ScalarType & lambda_max,
 				     ScalarType & ConditionNumber );
-  private:
 
     // Linear problem.
     Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
@@ -911,8 +909,8 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
   // Do condition estimate, if needed
   if(genCondEst_) {
     ScalarType l_min, l_max;
-    Teuchos::ArrayView<ScalarType> diag    = block_cg_iter->getDiag();
-    Teuchos::ArrayView<ScalarType> offdiag = block_cg_iter->getOffDiag();
+    Teuchos::ArrayView<MagnitudeType> diag    = block_cg_iter->getDiag();
+    Teuchos::ArrayView<MagnitudeType> offdiag = block_cg_iter->getOffDiag();
     compute_condnum_tridiag_sym(diag,offdiag,l_min,l_max,condEstimate_);
   }
 
@@ -935,8 +933,8 @@ std::string PseudoBlockCGSolMgr<ScalarType,MV,OP>::description() const
 
 
 template<class ScalarType, class MV, class OP>
-void PseudoBlockCGSolMgr<ScalarType,MV,OP>::compute_condnum_tridiag_sym(Teuchos::ArrayView<ScalarType> diag,
-									Teuchos::ArrayView<ScalarType> offdiag,
+void PseudoBlockCGSolMgr<ScalarType,MV,OP>::compute_condnum_tridiag_sym(Teuchos::ArrayView<MagnitudeType> diag,
+									Teuchos::ArrayView<MagnitudeType> offdiag,
 									ScalarType & lambda_min,
 									ScalarType & lambda_max,
 									ScalarType & ConditionNumber )
@@ -949,24 +947,20 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::compute_condnum_tridiag_sym(Teuchos:
   */		    
   int info;
   ScalarType scalar_dummy;
+  MagnitudeType mag_dummy;
   char char_N = 'N';
   Teuchos::LAPACK<int,ScalarType> lapack;
   int N = diag.size();
 
-  Teuchos::ArrayView<ScalarType> eigenvalues = diag;
   if( N > 2 ) {
-    //STEQR(const char COMPZ, const OrdinalType n, ScalarType* D, ScalarType* E, ScalarType* Z, const OrdinalType ldz, ScalarType* WORK, OrdinalType* info) const;
-    lapack.STEQR(char_N,N,diag.getRawPtr(),offdiag.getRawPtr(),&scalar_dummy,1,&scalar_dummy,&info);
-
-    //@}
-    lambda_min = eigenvalues[0];
-    lambda_max = eigenvalues[N-1];
-
+    lapack.STEQR(char_N,N,diag.getRawPtr(),offdiag.getRawPtr(),&scalar_dummy,1,&mag_dummy,&info);
+    lambda_min = Teuchos::as<ScalarType>(diag[0]);
+    lambda_max = Teuchos::as<ScalarType>(diag[N-1]);
   } else {
-    lambda_min = 1.0;
-    lambda_max = 1.0;    
+    lambda_min = Teuchos::ScalarTraits<ScalarType>::one();
+    lambda_max = Teuchos::ScalarTraits<ScalarType>::one();
   }
-
+  
   if(info == 0) 
     ConditionNumber = lambda_max/lambda_min;
   else
