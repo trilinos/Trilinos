@@ -56,7 +56,7 @@
 
 // TO DO:
 //     - make downward connectivity data Kokkos::DualViews for now
-//     - member variables for Mrk_SkinOnlyMesh
+//     - member variables for Mrk_SurfaceMesh
 //     - generalize to support higher-order elements
 
 
@@ -163,12 +163,12 @@ struct FaceConnectivityData
 
 
 template  <typename DeviceType, unsigned int DIM>
-struct Mrk_SkinOnlyMesh
+struct Mrk_SurfaceMesh
 {
 };
 
 template  <typename DeviceType>
-struct Mrk_SkinOnlyMesh<DeviceType, 2>
+struct Mrk_SurfaceMesh<DeviceType, 2>
 {
   typedef typename DeviceType::execution_space execution_space;
 
@@ -183,7 +183,7 @@ struct Mrk_SkinOnlyMesh<DeviceType, 2>
 };
 
 template  <typename DeviceType>
-struct Mrk_SkinOnlyMesh<DeviceType, 3>
+struct Mrk_SurfaceMesh<DeviceType, 3>
 {
   typedef typename DeviceType::execution_space execution_space;
 
@@ -191,7 +191,7 @@ struct Mrk_SkinOnlyMesh<DeviceType, 3>
 
   typedef NodeConnectivityData<DeviceType, 3>     node_connectivity_data_t;
   typedef EdgeConnectivityData<DeviceType, 3>     edge_connectivity_data_t;
-  typedef FaceConnectivityData<DeviceType>     face_connectivity_data_t;
+  typedef FaceConnectivityData<DeviceType>        face_connectivity_data_t;
 
   node_connectivity_data_t       m_node_data;
   edge_connectivity_data_t       m_edge_data;
@@ -210,9 +210,9 @@ struct Mrk_Fields
   typedef points_t       normals_t;
   typedef points_mrat normals_mrat;
 
-  points_t       m_node_coords;
-  normals_t     m_node_normals;
-  normals_t  m_face_normals;
+  points_t   m_node_coords;
+  normals_t m_node_normals;
+  normals_t m_face_normals;
 };
 
 template  <typename DeviceType, unsigned int DIM>
@@ -222,10 +222,10 @@ struct Mrk_MortarPallets
 
   typedef Kokkos::View<local_idx_t *[2], execution_space>       faces_t;
 
-  typedef Kokkos::View<double *[DIM], execution_space>            points_t;
-  typedef points_t                                               normals_t;
+  typedef Kokkos::View<double *[DIM], execution_space>         points_t;
+  typedef points_t                                            normals_t;
 
-  typedef Kokkos::View<double *[DIM][DIM], execution_space>     vertices_t;
+  typedef Kokkos::View<double *[DIM][DIM], execution_space>              vertices_t;
   typedef Kokkos::View<double *[2][DIM][DIM - 1], execution_space> shape_fn_parms_t;
 
   // Each pallet is associated with a mortar-side face and a non-mortar-side face.

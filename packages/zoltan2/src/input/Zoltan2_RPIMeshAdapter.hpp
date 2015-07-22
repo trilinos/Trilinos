@@ -138,7 +138,7 @@ public:
   RPIMeshAdapter(const Comm<int> &comm, apf::Mesh* m,std::string primary,
                  std::string adjacency,bool needSecondAdj=false);
   void destroy();
-  void print(int);
+  void print(int me,int verbosity=0);
   template <typename Adapter>
   void applyPartitioningSolution(const User &in, User *&out,
     const PartitioningSolution<Adapter> &solution) const{
@@ -356,7 +356,8 @@ RPIMeshAdapter<User>::RPIMeshAdapter(const Comm<int> &comm,
 
   for (int i=0;i<=m_dimension;i++) {  
     //number of local and global entities
-    long global_count = num_local[i] = m->count(i);
+    num_local[i] = m->count(i);
+    long global_count = countOwned(m,i);
     PCU_Add_Longs(&global_count,1);
     num_global[i] = global_count;
     
@@ -578,24 +579,51 @@ void RPIMeshAdapter<User>::destroy() {
   delete [] lids;
   delete [] num_local;
   delete [] num_global;
-  
+  m_dimension=0;
      
 }  
 template <typename User>
-void RPIMeshAdapter<User>::print(int me)
+void RPIMeshAdapter<User>::print(int me,int verbosity)
 {
-  std::string fn("RPIMesh ");
+  if (m_dimension==0) {
+    std::cout<<"Cannot print destroyed mesh adapter\n";
+    return;
+  }
+  
+  std::string fn(" RPIMesh ");
   std::cout << me << fn 
             << " dimension = " << m_dimension
             << std::endl;
-  for (int i=0;i<=m_dimension;i++)
+  if (verbosity==0)
+    return;
+  for (int i=0;i<=m_dimension;i++) {
     std::cout<<me<<" Number of dimension " << i<< " = " <<num_local[i] <<std::endl;
+    if (verbosity>=1) { 
+      for (size_t j=0;j<num_local[i];j++) {
+        std::cout<<"   Entity "<<gid_mapping[i][j]<<"("<<j<<"):\n";
+        for (int k=0;k<=m_dimension;k++) {
+          if (k==i)
+            continue;
+          std::cout<<"     First Adjacency of Dimension "<<k<<":";
+          for (lno_t l=adj_offsets[i][k][j];l<adj_offsets[i][k][j+1];l++)
+            std::cout<<" "<<adj_gids[i][k][l];
+          std::cout<<"\n";
+          if (verbosity>=3) {
+            std::cout<<"     Second Adjacency through Dimension "<<k<<":";
+            for (lno_t l=adj2_offsets[i][k][j];l<adj2_offsets[i][k][j+1];l++)
+              std::cout<<" "<<adj2_gids[i][k][l];
+            std::cout<<"\n";
+          }
+        }
+      }
+    }
+  }
 }
 
  
 
-#endif //HAVE_ZOLTAN2_PARMA
-  
 }  //namespace Zoltan2
-  
+
+#endif //HAVE_ZOLTAN2_PARMA
+    
 #endif

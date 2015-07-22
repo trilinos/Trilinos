@@ -11,11 +11,11 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     STANDARD_PASS_OUTPUT 
     )
 
-
+  ASSERT_DEFINED(Anasazi_SOURCE_DIR)
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestFPFiles
-    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockCG
+    SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
     SOURCE_FILES bcsstk14.hb
     EXEDEPS fp_hb
-    )
+  )
 
 ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)

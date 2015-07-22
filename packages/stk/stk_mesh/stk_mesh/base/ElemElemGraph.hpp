@@ -92,7 +92,7 @@ protected:
     void add_possibly_connected_elements_to_graph_using_side_nodes( const stk::mesh::impl::ElemSideToProcAndFaceId& elemSideComm,
                                                                     stk::mesh::impl::ConnectedElementDataVector & communicatedElementDataVector,
                                                                     const stk::mesh::EntityVector & elements_to_ignore,
-                                                                    std::vector<impl::SharedEdgeInfo> *newlySharedEdges = nullptr);
+                                                                    std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
 
     void  break_local_volume_element_connections_across_shells(const std::set<stk::mesh::EntityId> & localElementsConnectedToRemoteShell);
 
@@ -162,6 +162,8 @@ protected:
 
     void break_remote_shell_connectivity_and_pack(stk::CommSparse& comm, impl::LocalId leftId, impl::LocalId rightId, int phase);
 
+    void pack_both_remote_shell_connectivity(stk::CommSparse &comm, impl::LocalId shellId, impl::LocalId leftId, impl::LocalId rightId);
+
     void unpack_remote_edge_across_shell(stk::CommSparse &comm);
 
     stk::mesh::BulkData &m_bulk_data;
@@ -184,7 +186,7 @@ protected:
 
 };
 
-bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
+bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
         const stk::mesh::PartVector& boundary_mesh_parts);
 
 }} // end stk mesh namespaces

@@ -1539,7 +1539,7 @@ void ex_compress_variable(int exoid, int varid, int type)
     int deflate_level = file->compression_level;
     int compress = 1;
     int shuffle = file->shuffle;
-    if (deflate_level > 0 && (file->file_type == 2 || file->file_type == 3)) {
+    if (!file->is_parallel && deflate_level > 0 && (file->file_type == 2 || file->file_type == 3)) {
       nc_def_var_deflate(exoid, varid, shuffle, compress, deflate_level);
     }
 #if defined(PARALLEL_AWARE_EXODUS)

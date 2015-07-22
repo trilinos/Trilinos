@@ -54,7 +54,7 @@ struct ConnectedElementData
     : m_procId(-1),
       m_elementId(std::numeric_limits<impl::LocalId>::max()),
       m_elementTopology(stk::topology::INVALID_TOPOLOGY),
-      m_sideIndex(std::numeric_limits<impl::LocalId>::max()),
+      m_sideIndex(std::numeric_limits<unsigned>::max()),
       m_suggestedFaceId(std::numeric_limits<impl::LocalId>::max()),
       m_isInPart(true)
     {}
@@ -113,16 +113,6 @@ ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::Bulk
 size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, ElemSideToProcAndFaceId& elements_to_communicate,
         const std::vector<stk::mesh::EntityId>& suggested_face_ids, const stk::mesh::Part &part);
 
-void add_possibly_connected_elements_to_graph_using_side_nodes(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
-        SidesForElementGraph& via_sides, ParallelGraphInfo& parallel_graph_info,
-        const ElemSideToProcAndFaceId& elemSideComm,
-        std::vector<ConnectedElementData> & communicatedElementDataVector);
-
-void fill_parallel_graph(const stk::mesh::BulkData& bulkData, ElementGraph& elem_graph,
-        SidesForElementGraph& via_sides, ParallelGraphInfo& parallel_graph_info,
-        ElemSideToProcAndFaceId& elem_side_comm, const std::vector<stk::mesh::EntityId>& suggested_face_ids,
-        const stk::mesh::Part &part);
-
 std::vector<graphEdgeProc> get_elements_to_communicate(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
         const ElemElemGraph& elem_graph);
 
@@ -134,8 +124,7 @@ void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<graphEdgePro
 bool create_or_delete_shared_side(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
         stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, bool create_face, const stk::mesh::PartVector& face_parts,
         stk::mesh::Part &activePart, std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities,
-        stk::mesh::EntityVector &facesWithNodesToBeMarkedInactive,
-        size_t &id_counter, stk::mesh::EntityId suggested_local_face_id, stk::mesh::Part& faces_created_during_death);
+        stk::mesh::EntityVector &facesWithNodesToBeMarkedInactive, stk::mesh::Part& faces_created_during_death);
 
 stk::mesh::Entity get_side_for_element(const stk::mesh::BulkData& bulkData, stk::mesh::Entity this_elem_entity, int side_id);
 
@@ -165,6 +154,8 @@ void break_volume_element_connections_across_shells(const std::set<EntityId> & l
                                        SidesForElementGraph & via_sides);
 
 void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::BulkData &m_bulk_data, const std::vector<SharedEdgeInfo> &newlySharedEdges);
+
+bool does_element_have_side(stk::mesh::BulkData& bulkData, stk::mesh::Entity element);
 
 }
 }} // end namespaces stk mesh

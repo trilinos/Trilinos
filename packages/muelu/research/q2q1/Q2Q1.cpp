@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
     Xpetra::Parameters xpetraParameters(clp);
 
     // configure problem
-    std::string prefix = "./Q2Q1_17x17_";    clp.setOption("prefix",     &prefix,        "prefix for data files");
+    std::string prefix = "./Q2Q1_9x9_";      clp.setOption("prefix",     &prefix,        "prefix for data files");
 
     // configure run
     std::string xmlFileName  = "driver.xml"; clp.setOption("xml",        &xmlFileName,   "read parameters from a file [default = 'driver.xml']");
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
     BelosList.sublist("VerboseObject").set("Verbosity Level", "low"); // this is needed, as otherwise Stratimikos ignores Belos output
 
     ParameterList& GmresDetails = BelosList.sublist("Solver Types").sublist("Block GMRES");
-    GmresDetails.set("Maximum Iterations",      20);
+    GmresDetails.set("Maximum Iterations",      100);
     GmresDetails.set("Convergence Tolerance",   1e-12);
     GmresDetails.set("Verbosity",               Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
     GmresDetails.set("Output Frequency",        1);
@@ -314,7 +314,7 @@ int main(int argc, char *argv[]) {
     RCP<const tMap> fullMap = Utils::Map2TpetraMap(*(MapFactory::createUniformContigMap(Xpetra::UseTpetra, numElem, comm)));
 
     RCP<tOperator> A;
-    if (!!binary)
+    if (!binary)
       A = Reader<tCrsMatrix>::readSparseFile((prefix + "BigA.mm").c_str(), fullMap, fullMap, fullMap, fullMap, true, true, false);
     else
       A = ReadBinary<SC,LO,GO,NO>((prefix + "BigA.dat").c_str(), comm);

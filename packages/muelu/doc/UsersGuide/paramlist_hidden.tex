@@ -90,7 +90,13 @@
         
 \cbb{aggregation: output file: agg style}{string}{Point Cloud}{Style of aggregate visualization.}
         
-\cbb{aggreation: output file: graph edges}{bool}{false}{Whether to draw all node connections along with the aggregates.}
+\cbb{aggregation: output file: fine graph edges}{bool}{false}{Whether to draw all fine node connections along with the aggregates.}
+        
+\cbb{aggregation: output file: coarse graph edges}{bool}{false}{Whether to draw all coarse node connections along with the aggregates.}
+        
+\cbb{aggregation: output file: build colormap}{bool}{false}{Whether to output a random colormap in a separate XML file.}
+        
+\cba{aggregation: params}{\parameterlist}{Sublist of options for use by aggregation.}
         
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", ``P'', ``R'') of type \texttt{string} and value ``\{levels separated by commas\}''. A matrix with a name ``X'' is saved in three MatrixMarket files: a) data is saved in \textit{X\_level.mm}; b) its row map is saved in \textit{rowmap\_X\_level.mm}; c) its column map is saved in \textit{colmap\_X\_level.mm}.}
         
@@ -108,6 +114,10 @@
         
 \cbb{semicoarsen: number of levels}{int}{3}{Determines the maximum number of times that semicoarsening is applied.}
         
+\cbb{linedetection: orientation}{string}{vertical}{Line orientation: can be either 'vertical', 'horizontal' or 'coordinates'.}
+        
+\cbb{linedetection: num layers}{int}{-1}{Line detection: number of layers on finest level. Alternatively, set the number of layers on the finest level as \"NumZLayers\" in the finest level container class.}
+        
 \cbb{sa: damping factor}{double}{1.33}{Damping factor for smoothed aggregation.}
         
 \cbb{sa: use filtered matrix}{bool}{true}{Matrix to use for smoothing the tentative prolongator. The two options are: to use the original matrix, and to use the filtered matrix with filtering based on filtered graph used for aggregation.}
@@ -115,6 +125,8 @@
 \cbb{sa: calculate eigenvalue estimate}{bool}{false}{Force calculation of eigenvalue estimate during prolongator smoothing.}
         
 \cbb{sa: eigenvalue estimate num iterations}{int}{10}{Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.}
+        
+\cba{transfer: params}{\parameterlist}{Sublist of options for use by transfer.}
         
 \cbb{filtered matrix: use lumping}{bool}{true}{Lump (add to diagonal) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace.}
         

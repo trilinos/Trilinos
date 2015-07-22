@@ -93,11 +93,12 @@ enum class FaceCreationBehavior;
 
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
 void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+void copy_from_owned(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
 void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
 void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
 void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
 void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
-bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
+bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
         const stk::mesh::PartVector& boundary_mesh_parts);
 
 typedef std::unordered_map<EntityKey, size_t, stk::mesh::HashValueForEntityKey> GhostReuseMap;
@@ -214,8 +215,8 @@ public:
    *              a parallel-consistent exception will be thrown.
    */
 
-#ifndef STK_BUILT_IN_SIERRA // Deprecated 2015-06-10
-  STK_DEPRECATED(bool modification_end(impl::MeshModification::modification_optimization opt))
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2015-07-30
+  STK_DEPRECATED bool modification_end(impl::MeshModification::modification_optimization opt)
   {
       if (impl::MeshModification::MOD_END_SORT == opt) {
           return m_meshModification.modification_end();
@@ -713,7 +714,8 @@ protected: //functions
   bool modification_end_for_face_creation_and_deletion(const std::vector<sharing_info>& shared_modified,
                                                          const stk::mesh::EntityVector& deletedEntities,
                                                          stk::mesh::ElemElemGraph &elementGraph,
-                                                         const stk::mesh::EntityVector & killedElements,
+                                                         const stk::mesh::EntityVector &killedElements,
+                                                         const stk::mesh::EntityVector &locally_created_faces,
                                                          stk::mesh::Part & activePart);
 
   bool modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector,
@@ -839,12 +841,15 @@ protected: //functions
   void internal_resolve_parallel_create(); // Mod Mark
   void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new ); // Mod Mark
   void internal_send_part_memberships_from_owner(const std::vector<EntityProc> &send_list);
+  void add_parts_received(const std::vector<EntityProc> &send_list);
+
   virtual void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(std::vector<stk::mesh::Entity> & shared_new );
   void extract_entity_from_shared_entity_type(const std::vector<shared_entity_type>& shared_entities, std::vector<Entity>& shared_new);
   void fill_shared_entities_of_rank(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new);
 
   virtual void internal_resolve_send_ghost_membership();
-  virtual bool should_sort_buckets_by_first_entity_identifier() const;
+  virtual bool should_sort_buckets_by_first_entity_identifier() const { return false; }
+  virtual bool should_sort_faces_by_node_ids() const { return false; }
   void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new); // Mod Mark
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified ); // Mod Mark
 
@@ -969,12 +974,16 @@ protected: //functions
   void internal_change_owner_in_comm_data(const EntityKey& key, int new_owner); // Mod Mark
 
   std::vector<uint64_t> internal_get_ids_in_use(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId>& reserved_ids = std::vector<stk::mesh::EntityId>()) const;
-  virtual void de_induce_unranked_part_from_nodes( const stk::mesh::ElemElemGraph &graph,
-                                            const stk::mesh::EntityVector & deactivatedElements,
+
+  virtual void de_induce_unranked_part_from_nodes(const stk::mesh::EntityVector & deactivatedElements,
                                             stk::mesh::Part & activePart);
   virtual void remove_boundary_faces_from_part(  stk::mesh::ElemElemGraph &graph,
                                          const stk::mesh::EntityVector & deactivatedElements,
                                          stk::mesh::Part & activePart);
+
+  virtual void internal_adjust_entity_and_downward_connectivity_closure_count(stk::mesh::Entity entity,
+                                                                      stk::mesh::Bucket *bucket_old,
+                                                                      int closureCountAdjustment); // Mod Mark
 
 private: //functions
 
@@ -1126,9 +1135,6 @@ private:
   void internal_adjust_closure_count(Entity entity,
                                        const PartVector & add_parts,
                                        const PartVector & remove_parts); // Mod Mark
-  void internal_adjust_entity_and_downward_connectivity_closure_count(stk::mesh::Entity entity,
-                                                                      stk::mesh::Bucket *bucket_old,
-                                                                      uint16_t closureCountAdjustment); // Mod Mark
 
   void internal_fill_new_part_list_and_removed_part_list(stk::mesh::Entity entity,
                                                            const PartVector & add_parts,
@@ -1163,15 +1169,17 @@ private:
   friend class ::stk::mesh::impl::MeshModification;
   friend class ::sierra::Fmwk::EntityCreationOperationList;
   friend class ::stk::mesh::ElemElemGraph;
+  friend class ::stk::mesh::EntityLess;
 
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
   friend void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+  friend void copy_from_owned(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
   friend void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
   friend void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
   friend void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
   friend void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
-  friend bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
+  friend bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
           const stk::mesh::PartVector& boundary_mesh_parts);
 
   bool ordered_comm( const Entity entity );

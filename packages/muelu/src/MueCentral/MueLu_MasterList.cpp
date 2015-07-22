@@ -184,7 +184,10 @@ namespace MueLu {
   "<Parameter name=\"aggregation: output file: time step\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: output file: iter\" type=\"int\" value=\"0\"/>"
   "<Parameter name=\"aggregation: output file: agg style\" type=\"string\" value=\"Point Cloud\"/>"
-  "<Parameter name=\"aggreation: output file: graph edges\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: output file: fine graph edges\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: output file: coarse graph edges\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: output file: build colormap\" type=\"bool\" value=\"false\"/>"
+  "<ParameterList name=\"aggregation: params\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
@@ -193,10 +196,13 @@ namespace MueLu {
   "<Parameter name=\"toggle: mode\" type=\"string\" value=\"semicoarsen\"/>"
   "<Parameter name=\"semicoarsen: coarsen rate\" type=\"int\" value=\"3\"/>"
   "<Parameter name=\"semicoarsen: number of levels\" type=\"int\" value=\"3\"/>"
+  "<Parameter name=\"linedetection: orientation\" type=\"string\" value=\"vertical\"/>"
+  "<Parameter name=\"linedetection: num layers\" type=\"int\" value=\"-1\"/>"
   "<Parameter name=\"sa: damping factor\" type=\"double\" value=\"1.33\"/>"
   "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"sa: calculate eigenvalue estimate\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=\"10\"/>"
+  "<ParameterList name=\"transfer: params\"/>"
   "<Parameter name=\"filtered matrix: use lumping\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse eigenvalue\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse graph\" type=\"bool\" value=\"true\"/>"
@@ -417,7 +423,13 @@ namespace MueLu {
       
          ("aggregation: output file: agg style","aggregation: output file: agg style")
       
-         ("aggreation: output file: graph edges","aggreation: output file: graph edges")
+         ("aggregation: output file: fine graph edges","aggregation: output file: fine graph edges")
+      
+         ("aggregation: output file: coarse graph edges","aggregation: output file: coarse graph edges")
+      
+         ("aggregation: output file: build colormap","aggregation: output file: build colormap")
+      
+         ("aggregation: params","aggregation: params")
       
          ("export data","export data")
       
@@ -435,6 +447,10 @@ namespace MueLu {
       
          ("semicoarsen: number of levels","semicoarsen: number of levels")
       
+         ("linedetection: orientation","linedetection: orientation")
+      
+         ("linedetection: num layers","linedetection: num layers")
+      
          ("aggregation: damping factor","sa: damping factor")
       
          ("sa: use filtered matrix","sa: use filtered matrix")
@@ -442,6 +458,8 @@ namespace MueLu {
          ("sa: calculate eigenvalue estimate","sa: calculate eigenvalue estimate")
       
          ("eigen-analysis: iterations","sa: eigenvalue estimate num iterations")
+      
+         ("transfer: params","transfer: params")
       
          ("filtered matrix: use lumping","filtered matrix: use lumping")
       

@@ -100,6 +100,10 @@ namespace MueLu {
     void Build(Level& fineLevel, Level& coarseLevel) const;
     //@}
 
+    //! @ name Description
+    //@{
+    std::string description() const;
+    //@}
   private:
     //@{
 

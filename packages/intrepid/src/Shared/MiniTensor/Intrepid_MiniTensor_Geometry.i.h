@@ -571,11 +571,16 @@ ParametricGrid<T, N>::traverse(Visitor & visitor) const
     //std::cout << "Indices : ";
 
     for (Index dimension = 0; dimension < number_parameters; ++dimension) {
-
-      position_in_grid(dimension) = indices(dimension) * span(dimension) /
+      
+      if ( points_per_dimension_(dimension) == 1 ) {
+      
+        position_in_grid(dimension) = lower_(dimension);
+        
+      } else {
+      
+        position_in_grid(dimension) = indices(dimension) * span(dimension) /
           (points_per_dimension_(dimension) - 1) + lower_(dimension);
-
-      visitor(position_in_grid);
+      }
 
       //std::cout << indices(dimension) << " ";
 
@@ -588,6 +593,8 @@ ParametricGrid<T, N>::traverse(Visitor & visitor) const
       }
 
     }
+
+    visitor(position_in_grid);
 
     //std::cout << std::endl;
     //std::cout << "Position : " << position_in_grid << std::endl;

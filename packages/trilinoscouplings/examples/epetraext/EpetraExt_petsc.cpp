@@ -72,6 +72,7 @@ int main(int argc,char **args)
   ierr = MatSetType(A, MATAIJ);CHKERRQ(ierr);
   ierr = MatSetFromOptions(A);CHKERRQ(ierr);
   ierr = MatMPIAIJSetPreallocation(A,5,PETSC_NULL,5,PETSC_NULL);CHKERRQ(ierr);
+  ierr = MatSetUp(A);CHKERRQ(ierr);
   PetscObjectGetComm( (PetscObject)A, &comm);
   ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
   if (!rank) printf("Matrix has %d (%dx%d) rows\n",m*n,m,n);
@@ -214,7 +215,7 @@ int main(int argc,char **args)
   ierr = VecNorm(x,NORM_2,&norm);CHKERRQ(ierr);
   ierr = KSPGetIterationNumber(ksp,&its);CHKERRQ(ierr);
 
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %A iterations %D\n",
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"Norm of error %e iterations %D\n",
                      norm,its);CHKERRQ(ierr);
 
   ierr = KSPDestroy(&ksp);CHKERRQ(ierr);
@@ -242,10 +243,14 @@ PetscErrorCode ShellApplyML(PC pc,Vec x,Vec y)
   ierr = PCShellGetContext(pc,&ctx); CHKERRQ(ierr);  
   mlp = (ML_Epetra::MultiLevelPreconditioner*)ctx;
 #endif
+
   /* Wrap x and y as Epetra_Vectors. */
-  PetscScalar *xvals,*yvals;
-  ierr = VecGetArray(x,&xvals);CHKERRQ(ierr);
-  Epetra_Vector epx(View,mlp->OperatorDomainMap(),xvals);
+  // NOTE: We should not be const casting xvals, but we do promise not to modify the entries.
+  const PetscScalar *xvals;
+  PetscScalar *nonconst_xvals, *yvals;
+  ierr = VecGetArrayRead(x,&xvals);CHKERRQ(ierr);
+  nonconst_xvals = const_cast<PetscScalar*>(xvals);
+  Epetra_Vector epx(View,mlp->OperatorDomainMap(),nonconst_xvals);
   ierr = VecGetArray(y,&yvals);CHKERRQ(ierr);
   Epetra_Vector epy(View,mlp->OperatorRangeMap(),yvals);
 
@@ -253,7 +258,7 @@ PetscErrorCode ShellApplyML(PC pc,Vec x,Vec y)
   mlp->ApplyInverse(epx,epy);
   
   /* Clean up and return. */
-  ierr = VecRestoreArray(x,&xvals);CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(x,&xvals);CHKERRQ(ierr);
   ierr = VecRestoreArray(y,&yvals);CHKERRQ(ierr);
   return 0;
 } /*ShellApplyML*/

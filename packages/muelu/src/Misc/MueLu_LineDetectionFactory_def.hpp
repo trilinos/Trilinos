@@ -63,13 +63,15 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("linedetection: orientation");
+    SET_VALID_ENTRY("linedetection: num layers");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",               Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",     Teuchos::null, "Generating factory for coorindates");
 
-    validParamList->set< std::string > ("linedetection: orientation", "vertical", "Line orientation: can be either 'vertical', 'horizontal' or 'coordinates'");
-    validParamList->set< LO > ("linedetection: num layers", -1, "Line detection: number of layers on finest level. Alternatively, set the number of layers on the finest level as \"NumZLayers\" in the finest level container class.");
+    //validParamList->set< std::string > ("linedetection: orientation", "vertical", "Line orientation: can be either 'vertical', 'horizontal' or 'coordinates'");
+    //validParamList->set< LO > ("linedetection: num layers", -1, "Line detection: number of layers on finest level. Alternatively, set the number of layers on the finest level as \"NumZLayers\" in the finest level container class.");
     return validParamList;
   }
 

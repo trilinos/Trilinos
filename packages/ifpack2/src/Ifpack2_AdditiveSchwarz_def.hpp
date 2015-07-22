@@ -190,16 +190,6 @@ public:
   }
 };
 
-#ifdef HAVE_IFPACK2_EXPERIMENTAL
-template<class MatrixType>
-class OneLevelPreconditionerNamer< ::Ifpack2::Experimental::RBILUK<MatrixType> > {
-public:
-  static std::string name () {
-    return "RBILUK";
-  }
-};
-#endif
-
 template<class MatrixType>
 class OneLevelPreconditionerNamer< ::Ifpack2::Krylov<MatrixType> > {
 public:

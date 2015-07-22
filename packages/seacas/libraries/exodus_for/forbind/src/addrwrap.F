@@ -1208,7 +1208,6 @@ C
 
         integer  nsess
         integer  ndess
-        INTEGER   NINCNT
 
         IDEXO4 = IDEXO
         CALL EXGSP4 (IDEXO4, IDESS, NSESS, NDESS, IERR4)

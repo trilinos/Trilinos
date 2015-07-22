@@ -122,7 +122,7 @@ public:
     ,const Ordinal bytes, const char sendBuffer[], char globalReducts[]
     ) const;
   /** \brief . */
-  virtual void reduceAllAndScatter(
+  TEUCHOS_DEPRECATED virtual void reduceAllAndScatter(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
     ,const Ordinal sendBytes, const char sendBuffer[]
     ,const Ordinal recvCounts[], char myGlobalReducts[]
@@ -328,6 +328,7 @@ void SerialComm<Ordinal>::reduceAll(
 
 
 template<typename Ordinal>
+TEUCHOS_DEPRECATED
 void SerialComm<Ordinal>::reduceAllAndScatter(
   const ValueTypeReductionOp<Ordinal,char> &reductOp
   ,const Ordinal sendBytes, const char sendBuffer[]

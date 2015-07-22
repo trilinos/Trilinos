@@ -73,7 +73,6 @@ namespace Zoltan2 {
 enum BaseAdapterType {
   InvalidAdapterType = 0, /*!< \brief unused value */
   IdentifierAdapterType,  /*!< \brief identifier data, just a list of IDs*/
-  CoordinateAdapterType,  /*!< \brief coordinate data */
   VectorAdapterType,      /*!< \brief vector data */
   MatrixAdapterType,      /*!< \brief matrix data */
   GraphAdapterType,       /*!< \brief graph data */

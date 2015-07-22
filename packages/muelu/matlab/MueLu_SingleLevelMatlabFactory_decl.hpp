@@ -56,7 +56,6 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_SingleLevelMatlabFactory_fwd.hpp"
-
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_PerfUtils_fwd.hpp"
@@ -98,6 +97,11 @@ namespace MueLu {
     //! @name Build methods.
     //@{
     void Build(Level& currentLevel) const;
+    //@}
+
+    //! @ name Description
+    //@{
+    std::string description() const;
     //@}
 
   private:

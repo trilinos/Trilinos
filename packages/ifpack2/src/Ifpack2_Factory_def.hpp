@@ -50,6 +50,7 @@
 #  include "Ifpack2_SupportGraph.hpp"
 #endif // defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
 #include "Ifpack2_RILUK.hpp"
+#include "Ifpack2_Experimental_RBILUK.hpp"
 #include "Ifpack2_Factory.hpp"
 
 namespace Ifpack2 {
@@ -258,10 +259,16 @@ Factory::clone (const Teuchos::RCP<Preconditioner<typename InputMatrixType::scal
     new_prec = luPrec->clone (matrix);
     return new_prec;
   }
+  RCP<Experimental::RBILUK<InputMatrixType> > rbilukPrec;
+  rbilukPrec = rcp_dynamic_cast<Experimental::RBILUK<InputMatrixType> > (prec);
+  if (rbilukPrec != null) {
+    new_prec = rbilukPrec->clone (matrix);
+    return new_prec;
+  }
   TEUCHOS_TEST_FOR_EXCEPTION(
     true, std::logic_error, "Ifpack2::Factory::clone: Not implemented for the "
     "current preconditioner type.  The only supported types thus far are "
-    "Chebyshev and RILUK.");
+    "Chebyshev, RILUK, and RBILUK.");
 }
 
 } // namespace Ifpack2

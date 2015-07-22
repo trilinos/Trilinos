@@ -39,7 +39,7 @@ CXXETRA_DEFINES = -ptused -DNO_MPI
 CXXEXTRA_DEFINES = -DNO_MPI
 #endif
 
-SRCS =  Iopx_DatabaseIO.C  Iopx_IOFactory.C  Iopx_Internals.C Iopx_DecompositionData.C
+SRCS =  Iopx_DatabaseIO.C  Iopx_DecompositionData.C
 
 OBJS = ${SRCS:.C=.o}
 
