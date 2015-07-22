@@ -143,7 +143,8 @@ namespace MueLu {
     GetOStream(Runtime0) << "TogglePFactory: call transfer factory: " << (prolongatorFacts_[nProlongatorFactory])->description() << std::endl;
     prolongatorFacts_[nProlongatorFactory]->CallBuild(coarseLevel);
     P = coarseLevel.Get< RCP<Matrix> >("P", (prolongatorFacts_[nProlongatorFactory]).get());
-    ptentFacts_[nProlongatorFactory]->CallBuild(coarseLevel);
+    // do not call "Build" for "Ptent" factory since it should automatically be called recursively
+    // through the "Build" call for "P"
     Ptent = coarseLevel.Get< RCP<Matrix> >("P", (ptentFacts_[nProlongatorFactory]).get());
     coarseNullspace = coarseLevel.Get< RCP<MultiVector> >("Nullspace", (nspFacts_[nProlongatorFactory]).get());
 

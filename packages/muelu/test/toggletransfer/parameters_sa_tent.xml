@@ -68,6 +68,8 @@
         <!-- The entries must be Nullspace%i and P%i with %i integers between 1 and 9 -->
         <Parameter name="P1"                type="string" value="mySaPFact1"/>
         <Parameter name="P2"                type="string" value="myTentativePFact2"/>
+        <Parameter name="Ptent1"            type="string" value="myTentativePFact1"/>
+        <Parameter name="Ptent2"            type="string" value="myTentativePFact2"/>
         <Parameter name="Nullspace1"        type="string" value="myTentativePFact1"/>
         <Parameter name="Nullspace2"        type="string" value="myTentativePFact2"/>
       </ParameterList>

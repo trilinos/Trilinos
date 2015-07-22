@@ -781,14 +781,17 @@ namespace MueLu {
       togglePFactory->SetParameterList(togglePParams);
       togglePFactory->AddCoarseNullspaceFactory(semicoarsenFactory);
       togglePFactory->AddProlongatorFactory(semicoarsenFactory);
+      togglePFactory->AddPtentFactory(semicoarsenFactory);
       togglePFactory->AddCoarseNullspaceFactory(manager.GetFactory("Ptent"));
       togglePFactory->AddProlongatorFactory(manager.GetFactory("P"));
+      togglePFactory->AddPtentFactory(manager.GetFactory("Ptent"));
 
       manager.SetFactory("CoarseNumZLayers", linedetectionFactory);
       manager.SetFactory("LineDetection_Layers", linedetectionFactory);
       manager.SetFactory("LineDetection_VertLineIds", linedetectionFactory);
 
       manager.SetFactory("P",         togglePFactory);
+      manager.SetFactory("Ptent",     togglePFactory);
       manager.SetFactory("Nullspace", togglePFactory);
     }
 
