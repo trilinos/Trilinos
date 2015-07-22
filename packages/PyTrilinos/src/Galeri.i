@@ -220,7 +220,7 @@ __version__ = Galeri_Version().split()[2]
 ////////////////////////////////
 // Galeri_CrsMatrices support //
 ////////////////////////////////
-%newobject Galeri::CreatCrsMatrix;
+%newobject Galeri::CreateCrsMatrix;
 %include "Galeri_CrsMatrices.h"
 
 ////////////////////////////////
