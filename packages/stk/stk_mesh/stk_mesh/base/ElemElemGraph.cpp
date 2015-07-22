@@ -18,6 +18,7 @@
 namespace stk { namespace mesh {
 
 const impl::LocalId ElemElemGraph::INVALID_LOCAL_ID = std::numeric_limits<impl::LocalId>::max();
+const int ElemElemGraph::INVALID_SIDE_ID = -1;
 
 ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Part &part) : m_bulk_data(bulkData), m_part(part)
 {
@@ -122,21 +123,31 @@ int ElemElemGraph::get_owning_proc_id_of_remote_element(stk::mesh::Entity local_
     return other_proc;
 }
 
-int ElemElemGraph::get_side_from_element1_to_remote_element2(stk::mesh::Entity local_element, stk::mesh::EntityId other_element_id) const
+int ElemElemGraph::find_side_for_remote_element(const std::vector<impl::LocalId>& connElements,
+                                                impl::LocalId remoteElementGlobalId,
+                                                impl::LocalId localElementLocalId) const
 {
-    impl::LocalId remote_element_local_id = -other_element_id;
-    impl::LocalId element1_local_id = get_local_element_id(local_element);
-
-    int side = -1;
-    const std::vector<impl::LocalId>& conn_elements = m_elem_graph[element1_local_id];
-
-    std::vector<impl::LocalId>::const_iterator iter = std::find(conn_elements.begin(), conn_elements.end(), remote_element_local_id);
-    if ( iter != conn_elements.end() )
-    {
-        int64_t index = iter - conn_elements.begin();
-        side = m_via_sides[element1_local_id][index];
+    std::vector<impl::LocalId>::const_iterator iter = std::find(connElements.begin(),
+                                                                connElements.end(),
+                                                                remoteElementGlobalId);
+    if(connElements.end() == iter) {
+      	return INVALID_SIDE_ID;
     }
-    return side;
+    const int64_t index = iter - connElements.begin();
+    return m_via_sides[localElementLocalId][index];
+}
+
+impl::LocalId ElemElemGraph::convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const
+{
+    return -remoteElementId;
+}
+
+int ElemElemGraph::get_side_from_element1_to_remote_element2(stk::mesh::Entity localElement, stk::mesh::EntityId otherElementId) const
+{
+    impl::LocalId negativeLocalId = convert_remote_global_id_to_negative_local_id(otherElementId);
+    impl::LocalId localElementId = get_local_element_id(localElement);
+    const std::vector<impl::LocalId>& connElements = m_elem_graph[localElementId];
+    return find_side_for_remote_element(connElements, negativeLocalId, localElementId);
 }
 
 int ElemElemGraph::get_side_from_element1_to_locally_owned_element2(stk::mesh::Entity local_element, stk::mesh::Entity other_element) const
@@ -144,7 +155,7 @@ int ElemElemGraph::get_side_from_element1_to_locally_owned_element2(stk::mesh::E
     impl::LocalId other_element_id = get_local_element_id(other_element);
     impl::LocalId element1_local_id = get_local_element_id(local_element);
 
-    int side = -1;
+    int side = INVALID_SIDE_ID;
     const std::vector<impl::LocalId>& conn_elements = m_elem_graph[element1_local_id];
 
     std::vector<impl::LocalId>::const_iterator iter = std::find(conn_elements.begin(), conn_elements.end(), other_element_id);

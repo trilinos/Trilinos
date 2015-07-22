@@ -33,6 +33,7 @@ void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph
 class ElemElemGraph
 {
 public:
+
     ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Part &part);
 
     virtual ~ElemElemGraph();
@@ -183,7 +184,13 @@ protected:
     size_t m_num_ids_used;
 
     static const impl::LocalId INVALID_LOCAL_ID;
+    static const int INVALID_SIDE_ID;
 
+private:
+    int find_side_for_remote_element(const std::vector<impl::LocalId>& conn_elements,
+                                     impl::LocalId remote_element_local_id,
+                                     impl::LocalId element1_local_id) const;
+    impl::LocalId convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const;
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
