@@ -221,6 +221,75 @@ import numpy
 }
 %enddef
 
+//////////////////////////////
+// Python utility functions //
+//////////////////////////////
+%pythoncode
+%{
+  def class_array_inplace_op(self, op_str, other):
+    in_op = getattr(self.array, "__i"+op_str+"__")
+    in_op(other.array)
+    return self
+
+  def class_array_math_op(self, op_str, other):
+    # Initialize the result by calling the copy constructor
+    result = self.__class__(self)
+    # Get the equivalent in-place operator for the result
+    in_op = getattr(result.array, "__i"+op_str+"__")
+    try:
+      in_op(other.array)
+    except AttributeError:
+      in_op(other)
+    return result
+
+  def class_array_rmath_op(self, op_str, other):
+    # Initialize the result by calling the copy constructor
+    result = self.__class__(self)
+    indices = (slice(None),) * len(self.array.shape)
+    result.array[indices] = other
+    in_op = getattr(result.array, "__i"+op_str+"__")
+    in_op(self.array)
+    return result
+
+  def class_array_add_math_ops(cls, op_str):
+    setattr(cls,
+            "__i"+op_str+"__",
+            lambda self, other: class_array_inplace_op(self, op_str, other))
+    setattr(cls,
+            "__"+op_str+"__",
+            lambda self, other: class_array_math_op(self, op_str, other))
+    setattr(cls,
+            "__r"+op_str+"__",
+            lambda self, other: class_array_rmath_op(self, op_str, other))
+
+  def class_array_add_math(cls):
+    class_array_add_math_ops(cls, "add")
+    class_array_add_math_ops(cls, "sub")
+    class_array_add_math_ops(cls, "mul")
+    class_array_add_math_ops(cls, "add")
+
+  def class_array_comp_op(self, op_str, other):
+    comp_op = getattr(self.array, "__"+op_str+"__")
+    try:
+      return comp_op(other.array)
+    except AttributeError:
+      return comp_op(other)
+
+  def class_array_add_comp_op(cls, op_str):
+    setattr(cls,
+            "__"+op_str+"__",
+            lambda self, other: class_array_comp_op(self, op_str, other))
+
+  def class_array_add_comp(cls):
+    class_array_add_comp_op(cls, "lt")
+    class_array_add_comp_op(cls, "le")
+    class_array_add_comp_op(cls, "eq")
+    class_array_add_comp_op(cls, "ne")
+    class_array_add_comp_op(cls, "gt")
+    class_array_add_comp_op(cls, "ge")
+%}
+
+
 ////////////////////////////
 // Epetra_Version support //
 ////////////////////////////
