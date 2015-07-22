@@ -60,6 +60,7 @@
 #include "Teuchos_DefaultComm.hpp"
 
 // Epetra includes
+#include "Epetra_SerialCOmm.h"
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_Operator.h"
@@ -203,9 +204,27 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
   {
     if (PyArray_Check(pyobj))
     {
-      // This probably won't compile...
-      result = Teuchos::RCP< Epetra_MultiVector >(
-                 new Epetra_MultiVector());
+      Epetra_SerialComm comm = Epetra_SerialComm();
+      PyArrayObject * array =
+        (PyArrayObject*) PyArray_ContiguousFromObject(pyobj, NPY_DOUBLE, 0, 0);
+      if (!array) throw PythonException();
+      int numVec, vecLen;
+      int ndim = PyArray_NDIM(array);
+      if (ndim == 1)
+      {
+        numVec = 1;
+        vecLen = PyArray_DIM(array, 0);
+      }
+      else
+      {
+        numVec = PyArray_DIM(array, 0);
+        vecLen = 1;
+        for (int i=1; i < ndim; ++i) vecLen *= PyArray_DIM(array, i);
+      }
+      double * data = (double*) PyArray_DATA(array);
+      Epetra_Map map(vecLen, 0, comm);
+      result =
+        Teuchos::rcp(new Epetra_MultiVector(Copy, map, data, vecLen, numVec));
       return result;
     }
   }
@@ -288,9 +307,15 @@ convertPythonToEpetraVector(PyObject * pyobj)
   {
     if (PyArray_Check(pyobj))
     {
-      // This probably won't compile...
-      result = Teuchos::RCP< Epetra_Vector >(
-                 new Epetra_Vector());
+      Epetra_SerialComm comm = Epetra_SerialComm();
+      PyArrayObject * array =
+        (PyArrayObject*) PyArray_ContiguousFromObject(pyobj, NPY_DOUBLE, 0, 0);
+      if (!array) throw PythonException();
+      const int totalLength = PyArray_Size((PyObject*)array);
+      double * data = (double*) PyArray_DATA(array);
+      Epetra_Map map(totalLength, 0, comm);
+      result =
+        Teuchos::RCP< Epetra_Vector >(new Epetra_Vector(Copy, map, data));
       return result;
     }
   }
