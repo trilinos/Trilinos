@@ -99,6 +99,11 @@ namespace MueLu {
     void Build(Level& currentLevel) const;
     //@}
 
+    //! @ name Description
+    //@{
+    std::string description() const;
+    //@}
+
   private:
     //@{
 

@@ -125,6 +125,15 @@ namespace MueLu {
     processProvides<Scalar, LocalOrdinal, GlobalOrdinal, Node>(mexOutput, this, provides, coarseLevel);
   }
 
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string TwoLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
+    std::ostringstream out;
+    const Teuchos::ParameterList& pL = GetParameterList();
+    out << "TwoLevelMatlabFactory["<<pL.get<std::string>("Function")<<"]";
+    return out.str();
+  }
+
+
 } //namespace MueLu
 
 #define MUELU_TWOLEVELMATLABFACTORY_SHORT

@@ -106,6 +106,16 @@ namespace MueLu {
     // Set output in level 
     processProvides<Scalar, LocalOrdinal, GlobalOrdinal, Node>(mexOutput, this, providesList, currentLevel);
   }
+  
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
+    std::ostringstream out;
+    const Teuchos::ParameterList& pL = GetParameterList();
+    out << "SingleLevelMatlabFactory["<<pL.get<std::string>("Function")<<"]";
+    return out.str();
+  }
+
+
 } //namespace MueLu
 
 #define MUELU_SINGLELEVELMATLABFACTORY_SHORT
