@@ -204,6 +204,83 @@ import numpy
 }
 %enddef
 
+// // Define macro for typemaps that convert arguments from
+// // Epetra_*Matrix or Epetra_*Vector to the corresponding
+// // Epetra_NumPy*Matrix or Epetra_NumPy*Vector.  There is additional
+// // magic in the python code to convert the Epetra_NumPy*Matrix or
+// // Epetra_NumPy*Vector to to an Epetra.*Matrix or Epetra.*Vector.
+// // Since all of these classes potentially represent large data
+// // buffers, we want efficient memory management and so store them
+// // internally with Teuchos::RCP<>.
+// %define %teuchos_rcp_epetra_numpy_overrides(CONST, CLASS...)
+
+// // Output a plain pointer
+// %typemap(out) CONST Epetra_##CLASS *
+// {
+//   Teuchos::RCP< CONST PyTrilinos::Epetra_NumPy##CLASS > *smartresult = 0;
+//   if ($1)
+//   {
+//     CONST PyTrilinos::Epetra_NumPy##CLASS * npa = new CONST PyTrilinos::Epetra_NumPy##CLASS(*$1);
+//     smartresult = new Teuchos::RCP< CONST PyTrilinos::Epetra_NumPy##CLASS >(npa, bool($owner));
+//   }
+//   %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
+//                                  $descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS > *),
+// 				 $owner | SWIG_POINTER_OWN));
+// }
+
+// // Output a plain reference
+// %apply (CONST Epetra_##CLASS *) {CONST Epetra_##CLASS &}
+
+// // Input/output of a reference to a pointer
+// %typemap(in,numinputs=0) Epetra_##CLASS *& (Epetra_##CLASS * _object)
+// {
+//   $1 = &_object;
+// }
+// %typemap(argout) Epetra_##CLASS *&
+// {
+//   PyTrilinos::Epetra_NumPy##CLASS * npa$argnum = new PyTrilinos::Epetra_NumPy##CLASS(**$1);
+//   Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS > *smartobj$argnum =
+//     new Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS >(npa$argnum);
+//   PyObject * obj = SWIG_NewPointerObj((void*)smartobj$argnum,
+// 			   $descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS > *),
+// 				      SWIG_POINTER_OWN);
+//   $result = SWIG_Python_AppendOutput($result,obj);
+// }
+
+// // Director input of a plain reference
+// %typemap(directorin) CONST Epetra_##CLASS &
+// %{
+//   Teuchos::RCP< CONST PyTrilinos::Epetra_NumPy##CLASS > *temp$argnum = new
+//     Teuchos::RCP< CONST PyTrilinos::Epetra_NumPy##CLASS >
+//     (new PyTrilinos::Epetra_NumPy##CLASS(View,$1_name), false);
+//   $input = SWIG_NewPointerObj((void*)temp$argnum,
+// 			      $descriptor(Teuchos::RCP< PyTrilinos::Epetra_NumPy##CLASS > *),
+// 			      SWIG_POINTER_OWN);
+// %}
+
+// %enddef
+
+// Use the %teuchos_rcp_epetra_numpy_overrides macro to define the
+// %teuchos_rcp_epetra_numpy macro
+// %define %teuchos_rcp_epetra_numpy(CLASS)
+//   %teuchos_rcp(Epetra_##CLASS)
+//   %teuchos_rcp(PyTrilinos::Epetra_NumPy##CLASS)
+//   %teuchos_rcp_epetra_numpy_overrides(SWIGEMPTYHACK, CLASS)
+//   %teuchos_rcp_epetra_numpy_overrides(const        , CLASS)
+// %enddef
+
+// Use the %teuchos_rcp_dap and %teuchos_rcp_typemaps_overrides macros
+// to define the %teuchos_rcp_epetra_dap macro
+%define %teuchos_rcp_epetra_dap(CLASS...)
+  %feature("smartptr", noblock=1) Epetra_##CLASS
+  {
+    Teuchos::RCP< Epetra_##CLASS >
+  }
+  %teuchos_rcp_dap(PyTrilinos::convertPythonToEpetra##CLASS, Epetra_##CLASS)
+  %teuchos_rcp_typemaps_overrides(SWIGEMPTYHACK, Epetra_##CLASS)
+  %teuchos_rcp_typemaps_overrides(const        , Epetra_##CLASS)
+%enddef
+
 // Define macros for typemaps that convert a reference to a pointer to
 // an object, into a python return argument (which might be placed into a
 // tuple, if there are more than one).

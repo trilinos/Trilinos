@@ -135,7 +135,7 @@ convertEpetraVectorToPython(const Teuchos::RCP< const Epetra_Vector > *cev)
 
 ////////////////////////////////////////////////////////////////////////
 
-Teuchos::RCP< Epetra_MultiVector > *
+Teuchos::RCP< Epetra_MultiVector >
 convertPythonToEpetraMultiVector(PyObject * pyobj)
 {
   // SWIG initialization
@@ -150,8 +150,7 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
   //
   // Result objects
   void *argp = 0;
-  Teuchos::RCP< Epetra_MultiVector > * result = 0;
-  Teuchos::RCP< Epetra_MultiVector > emv_rcp;
+  Teuchos::RCP< Epetra_MultiVector > result;
   Teuchos::RCP< Domi::MDVector<double> > dmdv_rcp;
   int newmem = 0;
   //
@@ -160,7 +159,7 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
   if (SWIG_IsOK(res))
   {
     result =
-        reinterpret_cast< Teuchos::RCP< Epetra_MultiVector > * >(argp);
+      *reinterpret_cast< Teuchos::RCP< Epetra_MultiVector > * >(argp);
     return result;
   }
 
@@ -176,13 +175,13 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
       dmdv_rcp =
         *reinterpret_cast< Teuchos::RCP< Domi::MDVector<double> > * >(argp);
       delete reinterpret_cast< Teuchos::RCP< Domi::MDVector<double> > * >(argp);
-      //** result = &(dmdv_rcp->getEpetraMultiVectorView());
+      result = dmdv_rcp->getEpetraMultiVectorView();
     }
     else
     {
       dmdv_rcp =
         *reinterpret_cast< Teuchos::RCP< Domi::MDVector<double> > * >(argp);
-      //** result = &(dmdv_rcp->getEpetraMultiVectorView());
+      result = dmdv_rcp->getEpetraMultiVectorView();
     }
     return result;
   }
@@ -192,7 +191,7 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
   {
     DistArrayProtocol dap(pyobj);
     dmdv_rcp = convertToMDVector<double>(comm, dap);
-    //** result = &(dmdv_rcp->getEpetraMultiVectorView());
+    result = dmdv_rcp->getEpetraMultiVectorView();
     return result;
   }
 #endif
@@ -204,14 +203,102 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
   {
     if (PyArray_Check(pyobj))
     {
+      // This probably won't compile...
+      result = Teuchos::RCP< Epetra_MultiVector >(
+                 new Epetra_MultiVector());
       return result;
     }
   }
   //
   // If we get to this point, then none of our known converters will
   // work, so it is time to throw an exception.
-  PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s' to "
-               "an Epetra_MultiVector",
+  PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
+               "to an Epetra_MultiVector",
+               PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
+  throw PythonException();
+}
+
+////////////////////////////////////////////////////////////////////////
+
+Teuchos::RCP< Epetra_Vector >
+convertPythonToEpetraVector(PyObject * pyobj)
+{
+  // SWIG initialization
+  static swig_type_info * swig_EV_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< PyTrilinos::Epetra_Vector >*");
+  static swig_type_info * swig_DMDV_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<double> >*");
+  //
+  // Get the default communicator
+  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
+    Teuchos::DefaultComm<int>::getComm();
+  //
+  // Result objects
+  void *argp = 0;
+  Teuchos::RCP< Epetra_Vector > result;
+  Teuchos::RCP< Domi::MDVector<double> > dmdv_rcp;
+  int newmem = 0;
+  //
+  // Check if the Python object is a wrapped Epetra_Vector
+  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_EV_ptr, 0, &newmem);
+  if (SWIG_IsOK(res))
+  {
+    result =
+      *reinterpret_cast< Teuchos::RCP< Epetra_Vector > * >(argp);
+    return result;
+  }
+
+#ifdef HAVE_DOMI
+  //
+  // Check if the Python object is a wrapped Domi::MDVector<double>
+  newmem = 0;
+  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, &newmem);
+  if (SWIG_IsOK(res))
+  {
+    if (newmem & SWIG_CAST_NEW_MEMORY)
+    {
+      dmdv_rcp =
+        *reinterpret_cast< Teuchos::RCP< Domi::MDVector<double> > * >(argp);
+      delete reinterpret_cast< Teuchos::RCP< Domi::MDVector<double> > * >(argp);
+      result = dmdv_rcp->getEpetraVectorView();
+    }
+    else
+    {
+      dmdv_rcp =
+        *reinterpret_cast< Teuchos::RCP< Domi::MDVector<double> > * >(argp);
+      result = dmdv_rcp->getEpetraVectorView();
+    }
+    return result;
+  }
+  //
+  // Check if the Python object supports the DistArray Protocol
+  if (PyObject_HasAttrString(pyobj, "__distarray__"))
+  {
+    DistArrayProtocol dap(pyobj);
+    dmdv_rcp = convertToMDVector<double>(comm, dap);
+    result = dmdv_rcp->getEpetraVectorView();
+    return result;
+  }
+#endif
+
+  //
+  // Check if the environment is serial, and if so, check if the
+  // Python object is a NumPy array
+  if (comm->getSize() == 1)
+  {
+    if (PyArray_Check(pyobj))
+    {
+      // This probably won't compile...
+      result = Teuchos::RCP< Epetra_Vector >(
+                 new Epetra_Vector());
+      return result;
+    }
+  }
+  //
+  // If we get to this point, then none of our known converters will
+  // work, so it is time to throw an exception.
+  PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
+               "to an Epetra_Vector",
                PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
   throw PythonException();
 }
