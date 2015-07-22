@@ -72,15 +72,13 @@
     _extractNumPyArrayFromEpetraIntSerialDenseMatrix(
       const Epetra_IntSerialDenseMatrix & source)
   {
-    //PyArray_Descr * dtype = PyArray_DescrFromType(NPY_INT);
+    // This NumPy function returns a borrowed pointer: do not DECREF
+    PyArray_Descr * dtype = PyArray_DescrFromType(NPY_INT);
     npy_intp dim[2] = { source.M(), source.N() };
     int * data = const_cast< int* >(source.A());
-    //PyObject * result = PyArray_NewFromDescr(&PyArray_Type, dtype, 2, dim,
-    //                                         NULL, (void*)data,
-    //                                         NPY_ARRAY_FARRAY, NULL);
-    PyObject * result =
-      PyArray_SimpleNewFromData(2, dim, NPY_INT, (void*)data);
-    //Py_DECREF(dtype);
+    PyObject * result = PyArray_NewFromDescr(&PyArray_Type, dtype, 2, dim,
+                                             NULL, (void*)data,
+                                             NPY_ARRAY_FARRAY, NULL);
     return result;
   }
 }
@@ -88,8 +86,11 @@
 {
   Epetra_IntSerialDenseMatrix(PyObject * array)
   {
+    // This NumPy function returns a borrowed pointer: do not DECREF
+    PyArray_Descr * dtype = PyArray_DescrFromType(NPY_INT);
     PyArrayObject * matrix =
-      (PyArrayObject*) PyArray_ContiguousFromAny(array, NPY_INT, 2, 2);
+      (PyArrayObject*)PyArray_FromAny(array, dtype, 2, 2,
+                                      NPY_ARRAY_FARRAY, NULL);
     if (!matrix) throw PyTrilinos::PythonException();
     int nRows  = PyArray_DIM(matrix,0);
     int nCols  = PyArray_DIM(matrix,1);
@@ -110,7 +111,7 @@
 }
 %ignore Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix(Epetra_DataAccess,
                                                                  int*,int,int,int);
-%ignore Epetra_IntSerialDenseMatrix::operator()(int,int) const;
+%ignore Epetra_IntSerialDenseMatrix::operator()(int,int);
 %ignore Epetra_IntSerialDenseMatrix::A() const;
 %ignore Epetra_IntSerialDenseMatrix::MakeViewOf;
 %include "Epetra_IntSerialDenseMatrix.h"
@@ -138,17 +139,13 @@
           self.__dict__[name] = value
   IntSerialDenseMatrix.__getattr__ = IntSerialDenseMatrix_getattr
   IntSerialDenseMatrix.__setattr__ = IntSerialDenseMatrix_setattr
-  IntSerialDenseMatrix.__len__     = lambda self: self.array.__len__()
-  IntSerialDenseMatrix.__getitem__ = lambda self, i: self.array[i]
+  IntSerialDenseMatrix.__getitem__ = lambda self, i: self.array.__getitem__(i)
   IntSerialDenseMatrix.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
-  IntSerialDenseMatrix.__lt__      = lambda self, other: self.array.__lt__(other)
-  IntSerialDenseMatrix.__le__      = lambda self, other: self.array.__le__(other)
-  IntSerialDenseMatrix.__eq__      = lambda self, other: self.array.__eq__(other)
-  IntSerialDenseMatrix.__ne__      = lambda self, other: self.array.__ne__(other)
-  IntSerialDenseMatrix.__gt__      = lambda self, other: self.array.__gt__(other)
-  IntSerialDenseMatrix.__ge__      = lambda self, other: self.array.__ge__(other)
+  IntSerialDenseMatrix.__len__     = lambda self: self.array.__len__()
   IntSerialDenseMatrix.__str__     = lambda self: self.array.__str__()
   IntSerialDenseMatrix.A           = lambda self: self.array
+  class_array_add_math(IntSerialDenseMatrix)
+  class_array_add_comp(IntSerialDenseMatrix)
 %}
 
 /////////////////////////////////////////
@@ -195,7 +192,6 @@
 %ignore Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(Epetra_DataAccess,
                                                                  int*,int);
 %ignore Epetra_IntSerialDenseVector::operator()(int);
-%ignore Epetra_IntSerialDenseVector::operator()(int) const;
 %ignore Epetra_IntSerialDenseVector::Values;
 %include "Epetra_IntSerialDenseVector.h"
 %pythoncode
@@ -221,18 +217,14 @@
           self.__dict__[name] = value
   IntSerialDenseVector.__getattr__ = IntSerialDenseVector_getattr
   IntSerialDenseVector.__setattr__ = IntSerialDenseVector_setattr
-  IntSerialDenseVector.__len__     = lambda self: self.array.__len__()
-  IntSerialDenseVector.__getitem__ = lambda self, i: self.array[i]
+  IntSerialDenseVector.__getitem__ = lambda self, i: self.array.__getitem__(i)
   IntSerialDenseVector.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
-  IntSerialDenseVector.__lt__      = lambda self, other: self.array.__lt__(other)
-  IntSerialDenseVector.__le__      = lambda self, other: self.array.__le__(other)
-  IntSerialDenseVector.__eq__      = lambda self, other: self.array.__eq__(other)
-  IntSerialDenseVector.__ne__      = lambda self, other: self.array.__ne__(other)
-  IntSerialDenseVector.__gt__      = lambda self, other: self.array.__gt__(other)
-  IntSerialDenseVector.__ge__      = lambda self, other: self.array.__ge__(other)
+  IntSerialDenseVector.__len__     = lambda self: self.array.__len__()
   IntSerialDenseVector.__str__     = lambda self: self.array.__str__()
-  IntSerialDenseVector.__iadd__    = lambda self, other: IntSerialDenseVector(self.array.__iadd__(other))
   IntSerialDenseVector.Values      = lambda self: self.array
+  class_array_add_math(IntSerialDenseVector)
+  class_array_add_comp(IntSerialDenseVector)
+
 }
 
 ////////////////////////////////////////
@@ -253,15 +245,13 @@
     _extractNumPyArrayFromEpetraSerialDenseMatrix(
       const Epetra_SerialDenseMatrix & source)
   {
-    //PyArray_Descr * dtype = PyArray_DescrFromType(NPY_DOUBLE);
+    // This NumPy function returns a borrowed pointer: do not DECREF
+    PyArray_Descr * dtype = PyArray_DescrFromType(NPY_DOUBLE);
     npy_intp dim[2] = { source.M(), source.N() };
     double * data = const_cast< double* >(source.A());
-    //PyObject * result = PyArray_NewFromDescr(&PyArray_Type, dtype, 2, dim,
-    //                                         NULL, (void*)data,
-    //                                         NPY_ARRAY_FARRAY, NULL);
-    PyObject * result =
-      PyArray_SimpleNewFromData(2, dim, NPY_DOUBLE, (void*)data);
-    //Py_DECREF(dtype);
+    PyObject * result = PyArray_NewFromDescr(&PyArray_Type, dtype, 2, dim,
+                                             NULL, (void*)data,
+                                             NPY_ARRAY_FARRAY, NULL);
     return result;
   }
 }
@@ -270,11 +260,14 @@
   Epetra_SerialDenseMatrix(PyObject * array,
                            bool set_object_label = true)
   {
+    // This NumPy function returns a borrowed pointer: do not DECREF
+    PyArray_Descr * dtype = PyArray_DescrFromType(NPY_DOUBLE);
     PyArrayObject * matrix =
-      (PyArrayObject*) PyArray_ContiguousFromAny(array, NPY_DOUBLE, 2, 2);
+      (PyArrayObject*) PyArray_FromAny(array, dtype, 2, 2,
+                                       NPY_ARRAY_FARRAY, NULL);
     if (!matrix) throw PyTrilinos::PythonException();
-    int nRows  = PyArray_DIM(matrix,0);
-    int nCols  = PyArray_DIM(matrix,1);
+    int nRows     = PyArray_DIM(matrix,0);
+    int nCols     = PyArray_DIM(matrix,1);
     double * data = (double*)PyArray_DATA(matrix);
     Epetra_SerialDenseMatrix * result =
       new Epetra_SerialDenseMatrix(Copy, data, nRows, nRows, nCols,
@@ -291,7 +284,7 @@
 {
     if self.__dict__.has_key("array"): del self.__dict__["array"]
 }
-%ignore Epetra_SerialDenseMatrix::operator()(int,int) const;
+%ignore Epetra_SerialDenseMatrix::operator()(int,int);
 %ignore Epetra_SerialDenseMatrix::A() const;
 %include "Epetra_SerialDenseMatrix.h"
 %pythoncode
@@ -318,18 +311,14 @@
           self.__dict__[name] = value
   SerialDenseMatrix.__getattr__ = SerialDenseMatrix_getattr
   SerialDenseMatrix.__setattr__ = SerialDenseMatrix_setattr
-  SerialDenseMatrix.__len__     = lambda self: self.array.__len__()
-  SerialDenseMatrix.__getitem__ = lambda self, i: self.array[i]
+  SerialDenseMatrix.__getitem__ = lambda self, i: self.array.__getitem__(i)
   SerialDenseMatrix.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
-  SerialDenseMatrix.__lt__      = lambda self, other: self.array.__lt__(other)
-  SerialDenseMatrix.__le__      = lambda self, other: self.array.__le__(other)
-  SerialDenseMatrix.__eq__      = lambda self, other: self.array.__eq__(other)
-  SerialDenseMatrix.__ne__      = lambda self, other: self.array.__ne__(other)
-  SerialDenseMatrix.__gt__      = lambda self, other: self.array.__gt__(other)
-  SerialDenseMatrix.__ge__      = lambda self, other: self.array.__ge__(other)
+  SerialDenseMatrix.__len__     = lambda self: self.array.__len__()
   SerialDenseMatrix.__str__     = lambda self: self.array.__str__()
-  SerialDenseMatrix.__mul__     = lambda self, other: SerialDenseMatrix(self.array * other)
   SerialDenseMatrix.A           = lambda self: self.array
+  class_array_add_math(SerialDenseMatrix)
+  class_array_add_comp(SerialDenseMatrix)
+
 %}
 
 /////////////////////////////////////////
@@ -383,10 +372,9 @@
 %ignore Epetra_SerialDenseVector::Epetra_SerialDenseVector(Epetra_DataAccess,
                                                            double*,int);
 %ignore Epetra_SerialDenseVector::operator()(int);
-%ignore Epetra_SerialDenseVector::operator()(int) const;
 %include "Epetra_SerialDenseVector.h"
 %pythoncode
-{
+%{
   def SerialDenseVector_getattr(self, name):
       if name == "array":
           a = _extractNumPyArrayFromEpetraSerialDenseVector(self)
@@ -408,19 +396,15 @@
           self.__dict__[name] = value
   SerialDenseVector.__getattr__ = SerialDenseVector_getattr
   SerialDenseVector.__setattr__ = SerialDenseVector_setattr
-  SerialDenseVector.__len__     = lambda self: self.array.__len__()
-  SerialDenseVector.__getitem__ = lambda self, i: self.array[i]
+  SerialDenseVector.__getitem__ = lambda self, i: self.array.__getitem__(i)
   SerialDenseVector.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
-  SerialDenseVector.__lt__      = lambda self, other: self.array.__lt__(other)
-  SerialDenseVector.__le__      = lambda self, other: self.array.__le__(other)
-  SerialDenseVector.__eq__      = lambda self, other: self.array.__eq__(other)
-  SerialDenseVector.__ne__      = lambda self, other: self.array.__ne__(other)
-  SerialDenseVector.__gt__      = lambda self, other: self.array.__gt__(other)
-  SerialDenseVector.__ge__      = lambda self, other: self.array.__ge__(other)
+  SerialDenseVector.__len__     = lambda self: self.array.__len__()
   SerialDenseVector.__str__     = lambda self: self.array.__str__()
-  SerialDenseVector.__iadd__    = lambda self, other: SerialDenseVector(self.array.__iadd__(other))
   SerialDenseVector.Values      = lambda self: self.array
-}
+  class_array_add_math(SerialDenseVector)
+  class_array_add_comp(SerialDenseVector)
+
+%}
 
 //////////////////////////////////////
 // Epetra_SerialDenseSolver support //

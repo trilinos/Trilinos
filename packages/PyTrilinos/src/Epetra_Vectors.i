@@ -147,19 +147,15 @@
           self.__dict__[name] = value
   IntVector.__getattr__ = IntVector_getattr
   IntVector.__setattr__ = IntVector_setattr
-  IntVector.__len__     = lambda self: self.array.__len__()
-  IntVector.__getitem__ = lambda self, i: self.array[i]
+  IntVector.__getitem__ = lambda self, i: self.array.__getitem__(i)
   IntVector.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
-  IntVector.__lt__      = lambda self, other: self.array.__lt__(other)
-  IntVector.__le__      = lambda self, other: self.array.__le__(other)
-  IntVector.__eq__      = lambda self, other: self.array.__eq__(other)
-  IntVector.__ne__      = lambda self, other: self.array.__ne__(other)
-  IntVector.__gt__      = lambda self, other: self.array.__gt__(other)
-  IntVector.__ge__      = lambda self, other: self.array.__ge__(other)
+  IntVector.__len__     = lambda self: self.array.__len__()
   IntVector.__str__     = lambda self: self.array.__str__()
   IntVector.ExtractCopy = lambda self: self.array.copy()
   IntVector.ExtractView = lambda self: self.array
   IntVector.Values      = lambda self: self.array
+  class_array_add_math(IntVector)
+  class_array_add_comp(IntVector)
 }
 
 ////////////////////////////////
@@ -411,7 +407,7 @@
 %apply (int* IN_ARRAY1, int DIM1) {(int* Indices, int NumVectors)};
 %include "Epetra_MultiVector.h"
 %pythoncode
-{
+%{
   def MultiVector_getattr(self, name):
       if name == "array":
           a = _extractNumPyArrayFromEpetraMultiVector(self)
@@ -431,21 +427,23 @@
           raise AttributeError("Cannot change MultiVector 'dtype' attribute")
       else:
           self.__dict__[name] = value
+  def MultiVector_getitem(self,i):
+      if isinstance(i,tuple):
+          return self.array.__getitem__(i)
+      else:
+        return Vector(View,self,i)
   MultiVector.__getattr__ = MultiVector_getattr
   MultiVector.__setattr__ = MultiVector_setattr
-  MultiVector.__len__     = lambda self: self.array.__len__()
-  MultiVector.__getitem__ = lambda self, key: self.array.__getitem__(key)
+  # MultiVector.__getitem__ = MultiVector_getitem
+  MultiVector.__getitem__ = lambda self, i: self.array.__getitem__(i)
   MultiVector.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
-  MultiVector.__lt__      = lambda self, other: self.array.__lt__(other)
-  MultiVector.__le__      = lambda self, other: self.array.__le__(other)
-  MultiVector.__eq__      = lambda self, other: self.array.__eq__(other)
-  MultiVector.__ne__      = lambda self, other: self.array.__ne__(other)
-  MultiVector.__gt__      = lambda self, other: self.array.__gt__(other)
-  MultiVector.__ge__      = lambda self, other: self.array.__ge__(other)
+  MultiVector.__len__     = lambda self: self.array.__len__()
   MultiVector.__str__     = lambda self: self.array.__str__()
   MultiVector.ExtractCopy = lambda self: self.array.copy()
   MultiVector.ExtractView = lambda self: self.array
-}
+  class_array_add_math(MultiVector)
+  class_array_add_comp(MultiVector)
+%}
 
 ///////////////////////////
 // Epetra_Vector support //
@@ -836,7 +834,7 @@
 %ignore Epetra_Vector::ResetView(double *);
 %include "Epetra_Vector.h"
 %pythoncode
-{
+%{
   def Vector_getattr(self, name):
       if name == "array":
           a = _extractNumPyArrayFromEpetraVector(self)
@@ -858,19 +856,15 @@
           self.__dict__[name] = value
   Vector.__getattr__ = Vector_getattr
   Vector.__setattr__ = Vector_setattr
-  Vector.__len__     = lambda self: self.array.__len__()
-  Vector.__getitem__ = lambda self, i: self.array[i]
+  Vector.__getitem__ = lambda self, i: self.array.__getitem__(i)
   Vector.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
-  Vector.__lt__      = lambda self, other: self.array.__lt__(other)
-  Vector.__le__      = lambda self, other: self.array.__le__(other)
-  Vector.__eq__      = lambda self, other: self.array.__eq__(other)
-  Vector.__ne__      = lambda self, other: self.array.__ne__(other)
-  Vector.__gt__      = lambda self, other: self.array.__gt__(other)
-  Vector.__ge__      = lambda self, other: self.array.__ge__(other)
+  Vector.__len__     = lambda self: self.array.__len__()
   Vector.__str__     = lambda self: self.array.__str__()
   Vector.ExtractCopy = lambda self: self.array.copy()
   Vector.ExtractView = lambda self: self.array
-}
+  class_array_add_math(Vector)
+  class_array_add_comp(Vector)
+%}
 
 /////////////////////////////
 // Epetra_FEVector support //
@@ -1030,16 +1024,12 @@
           self.__dict__[name] = value
   FEVector.__getattr__ = FEVector_getattr
   FEVector.__setattr__ = FEVector_setattr
+  FEVector.__getitem__ = lambda self, i: self.array.__getitem__(i)
+  FEVector.__setitem__ = lambda self, i, v: self.array.__setitem__(i, v)
   FEVector.__len__     = lambda self: self.array.__len__()
-  FEVector.__getitem__ = lambda self, key: self.array.__getitem__(key)
-  FEVector.__setitem__ = lambda self, key, value: self.array.__setitem__(key, value)
-  FEVector.__lt__      = lambda self, other: self.array.__lt__(other)
-  FEVector.__le__      = lambda self, other: self.array.__le__(other)
-  FEVector.__eq__      = lambda self, other: self.array.__eq__(other)
-  FEVector.__ne__      = lambda self, other: self.array.__ne__(other)
-  FEVector.__gt__      = lambda self, other: self.array.__gt__(other)
-  FEVector.__ge__      = lambda self, other: self.array.__ge__(other)
-  FEVector.__str__     = lambda self: self.array.__eq__()
+  FEVector.__str__     = lambda self: self.array.__str__()
   FEVector.ExtractCopy = lambda self: self.array.copy()
   FEVector.ExtractView = lambda self: self.array
+  class_array_add_math(FEVector)
+  class_array_add_comp(FEVector)
 }
