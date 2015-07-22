@@ -60,7 +60,8 @@ namespace Experimental {
 template<class MatrixType>
 RBILUK<MatrixType>::RBILUK (const Teuchos::RCP<const row_matrix_type>& Matrix_in)
   : RILUK<row_matrix_type>(Teuchos::rcp_dynamic_cast<const row_matrix_type>(Matrix_in) ),
-    A_(Matrix_in)
+    A_(Matrix_in),
+    A_block_(Teuchos::rcp_dynamic_cast<const block_crs_matrix_type>(Matrix_in))
 {}
 
 template<class MatrixType>
