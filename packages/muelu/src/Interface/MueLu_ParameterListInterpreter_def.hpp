@@ -638,7 +638,9 @@ namespace MueLu {
     }
 #ifdef HAVE_MUELU_MATLAB
     else if(aggType == "matlab") {
+      ParameterList aggParams = paramList.sublist("aggregation: params");
       aggFactory = rcp(new SingleLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
+      aggFactory->SetParameterList(aggParams);
     }
 #endif
     manager.SetFactory("Aggregates", aggFactory);
@@ -749,7 +751,9 @@ namespace MueLu {
     }
 #ifdef HAVE_MUELU_MATLAB
     else if(multigridAlgo == "matlab") {
+      ParameterList Pparams = paramList.sublist("transfer: params");
       RCP<TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node> > P = rcp(new TwoLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
+      P->SetParameterList(Pparams);
       P->SetFactory("P",manager.GetFactory("Ptent"));
       manager.SetFactory("P", P);
     }

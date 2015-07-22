@@ -498,6 +498,15 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>aggregation: params</name>
+      <type>\parameterlist</type>
+      <visible>false</visible>
+      <description>Sublist of options for use by aggregation.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+
   </aggregation>
 
   <misc>
@@ -643,6 +652,15 @@
       <visible>false</visible>
       <name-ML>eigen-analysis: iterations</name-ML>
     </parameter>
+
+    <parameter>
+      <name>transfer: params</name>
+      <type>\parameterlist</type>
+      <visible>false</visible>
+      <description>Sublist of options for use by transfer.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
 
     <parameter>
       <name>filtered matrix: use lumping</name>

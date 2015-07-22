@@ -4,7 +4,7 @@ try
   [A, coords] = laplacianfun([90, 90]);
   b = (1:(8100))';
   % Set up the problem using a Matlab TwoLevelFactory for Aggregates
-  matlabProblem = muelu('setup', A, coords, 'xml parameter file', 'matlabParams.xml');
+  matlabProblem = muelu('setup', A, coords, 'xml parameter file', 'matlabParamsEasy.xml');
   mueluProblem = muelu('setup', A, coords, 'xml parameter file', 'mueluParams.xml');
   matlabP = muelu('get', matlabProblem, 1, 'P');
   mueluP = muelu('get', mueluProblem, 1, 'P');

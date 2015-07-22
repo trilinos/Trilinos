@@ -187,6 +187,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: output file: fine graph edges\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: output file: coarse graph edges\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: output file: build colormap\" type=\"bool\" value=\"false\"/>"
+  "<ParameterList name=\"aggregation: params\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
@@ -201,6 +202,7 @@ namespace MueLu {
   "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"sa: calculate eigenvalue estimate\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=\"10\"/>"
+  "<ParameterList name=\"transfer: params\"/>"
   "<Parameter name=\"filtered matrix: use lumping\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse eigenvalue\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse graph\" type=\"bool\" value=\"true\"/>"
@@ -427,6 +429,8 @@ namespace MueLu {
       
          ("aggregation: output file: build colormap","aggregation: output file: build colormap")
       
+         ("aggregation: params","aggregation: params")
+      
          ("export data","export data")
       
          ("ML print initial list","print initial parameters")
@@ -454,6 +458,8 @@ namespace MueLu {
          ("sa: calculate eigenvalue estimate","sa: calculate eigenvalue estimate")
       
          ("eigen-analysis: iterations","sa: eigenvalue estimate num iterations")
+      
+         ("transfer: params","transfer: params")
       
          ("filtered matrix: use lumping","filtered matrix: use lumping")
       
