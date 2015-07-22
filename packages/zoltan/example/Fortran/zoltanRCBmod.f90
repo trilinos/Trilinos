@@ -57,7 +57,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 module zoltanRCBex
-  use mpi
+  use mpi_h
   use zoltan
 
   implicit none
@@ -88,7 +88,7 @@ module zoltanRCBex
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine partitionMeshWithRCB()
     use zoltan
-    use mpi
+    use mpi_h
 
     implicit none
 

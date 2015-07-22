@@ -50,6 +50,7 @@
 #include "Ifpack2_ILUT.hpp"
 #include "Ifpack2_Relaxation.hpp"
 #include "Ifpack2_RILUK.hpp"
+#include "Ifpack2_Experimental_RBILUK.hpp"
 #include "Ifpack2_Krylov.hpp"
 #include "Ifpack2_BlockRelaxation.hpp"
 #include "Ifpack2_BandedContainer.hpp"
@@ -113,6 +114,9 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
   else if (precTypeUpper == "RILUK") {
     prec = rcp (new RILUK<MatrixType> (matrix));
   }
+  else if (precTypeUpper == "RBILUK") {
+    prec = rcp (new Experimental::RBILUK<MatrixType>(matrix));
+  }
   else if (precTypeUpper == "KRYLOV") {
     prec = rcp (new Krylov<MatrixType> (matrix));
   }
@@ -142,7 +146,6 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
            precTypeUpper == "BANDEDRELAXATION") {
     typedef BandedContainer<MatrixType, scalar_type> container_type;
     prec = rcp (new BlockRelaxation<MatrixType, container_type> (matrix));
-
   }
   else if (precTypeUpper == "IDENTITY" || precTypeUpper == "IDENTITY_SOLVER") {
     prec = rcp (new IdentitySolver<MatrixType> (matrix));

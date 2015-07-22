@@ -172,6 +172,11 @@ TEST(UnitTestWriter, UnitTest)
   dw() << stk::diag::setiosflags(std::ios::fixed) << 3.14159265 << dendl;
   dw() << stk::diag::resetiosflags(std::ios::fixed) << 3.14159265 << dendl;
   dw() << stk::diag::setfill('#') << stk::diag::setw(10) << "x" << dendl;
+  if (std::string("10\n20\n16\n3.141593\n3.141593e+00\n10\n20\n16\n3.141593\n3.141593e+00\n3.141593e+00\n3.14159e+00\n3.1416\n3.14159e+00\n#########x\n") != oss().str())
+  {
+      std::cerr << "expected string: 10\n20\n16\n3.141593\n3.141593e+00\n10\n20\n16\n3.141593\n3.141593e+00\n3.141593e+00\n3.14159e+00\n3.1416\n3.14159e+00\n#########x\n" << std::endl;
+      std::cerr << "oss().str(): " << oss().str() << std::endl;
+  }
   ASSERT_EQ((std::string("10\n20\n16\n3.141593\n3.141593e+00\n10\n20\n16\n3.141593\n3.141593e+00\n3.141593e+00\n3.14159e+00\n3.1416\n3.14159e+00\n#########x\n") == oss().str()), true);
 
   oss().str("");

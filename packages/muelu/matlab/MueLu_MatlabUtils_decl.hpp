@@ -58,9 +58,11 @@
 #error "Muemex types require MATLAB, Epetra and Tpetra."
 #else
 #include "mex.h"
+#include "MueLu_Factory.hpp"
 #include "MueLu_Hierarchy_decl.hpp"
 #include "MueLu_Aggregates_decl.hpp"
 #include "MueLu_AmalgamationInfo_decl.hpp"
+#include "MueLu_Utilities_decl.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Tpetra_CrsMatrix_decl.hpp"
@@ -91,14 +93,12 @@ enum MUEMEX_TYPE
   };
 
 typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> mm_node_t;
-typedef Tpetra::Vector<>::local_ordinal_type mm_LocalOrd;
-typedef Tpetra::Vector<>::global_ordinal_type mm_GlobalOrd;
+typedef int mm_LocalOrd;  //these are used for LocalOrdinal and GlobalOrdinal of all xpetra/tpetra templated types
+typedef int mm_GlobalOrd;
 typedef Tpetra::Map<> muemex_map_type;
 typedef Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_CrsMatrix_double;
 typedef std::complex<double> complex_t;
 typedef Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_CrsMatrix_complex;
-  //typedef MueLu::TpetraOperator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_operator_real;
-  //typedef MueLu::TpetraOperator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_operator_complex;
 typedef Xpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_ordinal_vector;
 typedef Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_double;
 typedef Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_complex;
@@ -108,6 +108,30 @@ typedef MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy
 typedef MueLu::Hierarchy<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy_complex;
 typedef MueLu::Aggregates<> MAggregates;
 typedef MueLu::AmalgamationInfo<> MAmalInfo;
+
+class MuemexArg
+{
+ public:
+  MuemexArg(MUEMEX_TYPE dataType) {type = dataType;}
+  MUEMEX_TYPE type;
+};
+
+template<typename T> 
+MUEMEX_TYPE getMuemexType(const T & data);
+
+template<typename T>
+class MuemexData : public MuemexArg
+{
+ public:
+  MuemexData(T& data); //Construct from pre-existing data, to pass to MATLAB.
+  MuemexData(T& data, MUEMEX_TYPE type);        //Construct from pre-existing data, to pass to MATLAB.
+  MuemexData(const mxArray* mxa); //Construct from MATLAB array, to get from MATLAB.
+  mxArray* convertToMatlab(); //Create a MATLAB object and copy this data to it
+  T& getData();                         //Set and get methods
+  void setData(T& data);
+ private:
+  T data;
+};
 
 /* Static utility functions */
 template<typename Scalar>
@@ -158,35 +182,90 @@ Teuchos::RCP<MAmalInfo> loadAmalInfo(const mxArray* mxa);
 mxArray* saveAmalInfo(Teuchos::RCP<MAmalInfo>& amal);
 //Need an easy way to determine if an mxArray* points to a valid Aggregates struct
 bool isValidMatlabAggregates(const mxArray* mxa);
-
-class MuemexArg
-{
- public:
-  MuemexArg(MUEMEX_TYPE dataType) {type = dataType;}
-  MUEMEX_TYPE type;
-};
-
-template<typename T> 
-MUEMEX_TYPE getMuemexType(const T & data);
-
-template<typename T>
-class MuemexData : public MuemexArg
-{
- public:
-  MuemexData(T& data); //Construct from pre-existing data, to pass to MATLAB.
-  MuemexData(T& data, MUEMEX_TYPE type);        //Construct from pre-existing data, to pass to MATLAB.
-  MuemexData(const mxArray* mxa); //Construct from MATLAB array, to get from MATLAB.
-  mxArray* convertToMatlab(); //Create a MATLAB object and copy this data to it
-  T& getData();                         //Set and get methods
-  void setData(T& data);
- private:
-  T data;
-};
-
+std::vector<std::string> tokenizeList(std::string param);
 //The two callback functions that MueLu can call to run anything in MATLAB
 void callMatlabNoArgs(std::string function);
 std::vector<Teuchos::RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std::vector<Teuchos::RCP<MuemexArg>> args);
+Teuchos::RCP<Teuchos::ParameterList> getInputParamList();
 
+//Functions used to put data through matlab factories - first arg is "this" pointer of matlab factory
+template<typename Scalar = double, typename LocalOrdinal = mm_LocalOrd, typename GlobalOrdinal = mm_GlobalOrd, typename Node = mm_node_t>
+std::vector<Teuchos::RCP<MuemexArg>> processNeeds(const Factory* factory, std::string& needsParam, Level& lvl)
+{
+  using namespace std;
+  using namespace Teuchos;
+  typedef RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Matrix_t;
+  typedef RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> MultiVector_t;
+  typedef RCP<Aggregates<LocalOrdinal, GlobalOrdinal, Node>> Aggregates_t;
+  typedef RCP<AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>> AmalgamationInfo_t;
+  vector<string> needsList = tokenizeList(needsParam);
+  vector<RCP<MuemexArg>> args;
+  for(int i = 0; i < int(needsList.size()); i++)
+  {
+    if(needsList[i] == "A" || needsList[i] == "P" || needsList[i] == "R" || needsList[i]=="Ptent")
+    {
+      Matrix_t mydata = lvl.Get<Matrix_t>(needsList[i], factory->GetFactory(needsList[i]).get());
+      args.push_back(rcp(new MuemexData<Matrix_t>(mydata)));
+    }
+
+    if(needsList[i] == "Nullspace" || needsList[i] == "Coordinates")
+    {
+      MultiVector_t mydata = lvl.Get<MultiVector_t>(needsList[i], factory->GetFactory(needsList[i]).get());
+      args.push_back(rcp(new MuemexData<MultiVector_t>(mydata)));
+    }
+
+    if(needsList[i] == "Aggregates")
+    {
+      Aggregates_t mydata = lvl.Get<Aggregates_t>(needsList[i], factory->GetFactory(needsList[i]).get());
+      args.push_back(rcp(new MuemexData<Aggregates_t>(mydata)));
+    }
+
+    if(needsList[i] == "UnAmalgamationInfo")
+    {
+      AmalgamationInfo_t mydata = lvl.Get<AmalgamationInfo_t>(needsList[i], factory->GetFactory(needsList[i]).get());
+      args.push_back(rcp(new MuemexData<AmalgamationInfo_t>(mydata)));
+    }
+  }
+  return args;
+}
+
+template<typename Scalar = double, typename LocalOrdinal = mm_LocalOrd, typename GlobalOrdinal = mm_GlobalOrd, typename Node = mm_node_t>
+void processProvides(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Factory* factory, std::string& providesParam, Level& lvl)
+{
+  using namespace std;
+  using namespace Teuchos;
+  typedef RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> Matrix_t;
+  typedef RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> MultiVector_t;
+  typedef RCP<Aggregates<LocalOrdinal, GlobalOrdinal, Node>> Aggregates_t;
+  typedef RCP<AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>> AmalgamationInfo_t;
+  vector<string> provides = tokenizeList(providesParam);
+  for(size_t i = 0; i < size_t(provides.size()); i++)
+  {
+    if(provides[i] == "A" || provides[i] == "P" || provides[i] == "R" || provides[i]=="Ptent")
+    {
+      RCP<MuemexData<Matrix_t>> mydata = Teuchos::rcp_static_cast<MuemexData<Matrix_t>>(mexOutput[i]);
+      lvl.Set(provides[i], mydata->getData(), factory);
+    }
+  
+    if(provides[i] == "Nullspace" || provides[i] == "Coordinates")
+    {
+      RCP<MuemexData<MultiVector_t>> mydata = Teuchos::rcp_static_cast<MuemexData<MultiVector_t>>(mexOutput[i]);
+      lvl.Set(provides[i], mydata->getData(), factory);
+    }
+  
+    if(provides[i] == "Aggregates")
+    {
+      RCP<MuemexData<Aggregates_t>> mydata = Teuchos::rcp_static_cast<MuemexData<Aggregates_t>>(mexOutput[i]);
+      lvl.Set(provides[i], mydata->getData(), factory);
+    }
+
+    if(provides[i] == "UnAmalgamationInfo")
+    {
+      RCP<MuemexData<AmalgamationInfo_t>> mydata = Teuchos::rcp_static_cast<MuemexData<AmalgamationInfo_t>>(mexOutput[i]);
+      lvl.Set(provides[i], mydata->getData(), factory);
+    }
+  }
+}
 
 }//end namespace
 

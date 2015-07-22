@@ -312,7 +312,7 @@ SIZE_TYPE computeSize(const Teuchos::ArrayView< DIM_TYPE > & dimensions,
 Teuchos::Array< int >
 regularizeCommDims(int numProcs,
                    int numDims,
-                   const Teuchos::ArrayView< int > & commDims);
+                   const Teuchos::ArrayView< const int > & commDims);
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -342,7 +342,7 @@ computeCommIndexes(int rank,
  */
 Teuchos::Array< int >
 computePeriodic(int numDims,
-                const Teuchos::ArrayView< int > & periodic);
+                const Teuchos::ArrayView< const int > & periodic);
 
 ////////////////////////////////////////////////////////////////////////
 

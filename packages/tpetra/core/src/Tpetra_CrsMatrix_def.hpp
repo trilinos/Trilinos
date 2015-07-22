@@ -5573,7 +5573,7 @@ namespace Tpetra {
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     std::string label;
-    label = params.get("Timer Label",label);
+    label = params->get("Timer Label",label);
     std::string prefix = std::string("Tpetra ")+ label + std::string(": ");
     using Teuchos::TimeMonitor;
     Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC Pack"))));

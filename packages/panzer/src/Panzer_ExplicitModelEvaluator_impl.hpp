@@ -56,10 +56,12 @@ template<typename Scalar>
 ExplicitModelEvaluator<Scalar>::
 ExplicitModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > & model,
                        bool constantMassMatrix,
-                       bool useLumpedMass)
+                       bool useLumpedMass,
+                       bool applyMassInverse)
    : Thyra::ModelEvaluatorDelegatorBase<Scalar>(model)
    , constantMassMatrix_(constantMassMatrix)
    , massLumping_(useLumpedMass)
+   , applyMassInverse_(applyMassInverse)
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
@@ -147,12 +149,17 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   under_me->evalModel(under_inArgs,under_outArgs);
 
-  if(f!=Teuchos::null) {
-    if(invMassMatrix_==Teuchos::null || constantMassMatrix_==false)
-      buildInverseMassMatrix(inArgs);
+  // build the mass matrix
+  if(invMassMatrix_==Teuchos::null || constantMassMatrix_==false)
+    buildInverseMassMatrix(inArgs);
 
-    // invert the mass matrix
+  // invert the mass matrix
+  Thyra::Vt_S(scrap_f_.ptr(),-1.0);
+  if(f!=Teuchos::null && applyMassInverse_) {
     Thyra::apply(*invMassMatrix_,Thyra::NOTRANS,*scrap_f_,f.ptr()); 
+  }
+  else if(f!=Teuchos::null){
+    Thyra::V_V(f.ptr(),*scrap_f_);
   }
 }
 
@@ -167,7 +174,7 @@ buildInverseMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) 
   RCP<const Thyra::ModelEvaluator<Scalar> > me = this->getUnderlyingModel();
 
   // first allocate space for the mass matrix
-  RCP<Thyra::LinearOpBase<Scalar> > mass = me->create_W_op();
+  mass_ = me->create_W_op();
 
   // intialize a zero to get rid of the x-dot 
   if(zero_==Teuchos::null) {
@@ -180,26 +187,26 @@ buildInverseMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) 
   MEB::InArgs<Scalar>  inArgs_new  = me->createInArgs();
   inArgs_new.setArgs(inArgs);
   inArgs_new.set_x_dot(zero_);
-  inArgs_new.set_alpha(-1.0);
+  inArgs_new.set_alpha(1.0);
   inArgs_new.set_beta(0.0);
 
   // set the one time beta to ensure dirichlet conditions
   // are correctly included in the mass matrix: do it for
   // both epetra and Tpetra. 
   if(panzerModel_!=Teuchos::null)
-    panzerModel_->setOneTimeDirichletBeta(-1.0);
+    panzerModel_->setOneTimeDirichletBeta(1.0);
   else if(panzerEpetraModel_!=Teuchos::null)
-    panzerEpetraModel_->setOneTimeDirichletBeta(-1.0);
+    panzerEpetraModel_->setOneTimeDirichletBeta(1.0);
   else {
     // assuming the underlying model is a delegator, walk through
     // the decerator hierarchy until you find a panzer::ME or panzer::EpetraME.
     // If you don't find one, then throw because you are in a load of trouble anyway!
-    setOneTimeDirichletBeta(-1.0,*this->getUnderlyingModel());
+    setOneTimeDirichletBeta(1.0,*this->getUnderlyingModel());
   }
 
   // set only the mass matrix
   MEB::OutArgs<Scalar> outArgs = me->createOutArgs();
-  outArgs.set_W_op(mass);
+  outArgs.set_W_op(mass_);
 
   // this will fill the mass matrix operator 
   me->evalModel(inArgs_new,outArgs);
@@ -208,15 +215,15 @@ buildInverseMassMatrix(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs) 
   // EpetraExt::RowMatrixToMatrixMarketFile("expmat.mm",*crsMat);
 
   if(!massLumping_) {
-    invMassMatrix_ = Thyra::inverse<Scalar>(*me->get_W_factory(),mass);
+    invMassMatrix_ = Thyra::inverse<Scalar>(*me->get_W_factory(),mass_);
   }
   else {
     // build lumped mass matrix (assumes all positive mass entries, does a simple sum)
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > ones = Thyra::createMember(*mass->domain());
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > ones = Thyra::createMember(*mass_->domain());
     Thyra::assign(ones.ptr(),1.0);
 
-    RCP<Thyra::VectorBase<Scalar> > invLumpMass = Thyra::createMember(*mass->range());
-    Thyra::apply(*mass,Thyra::NOTRANS,*ones,invLumpMass.ptr());
+    RCP<Thyra::VectorBase<Scalar> > invLumpMass = Thyra::createMember(*mass_->range());
+    Thyra::apply(*mass_,Thyra::NOTRANS,*ones,invLumpMass.ptr());
     Thyra::reciprocal(*invLumpMass,invLumpMass.ptr());
 
     invMassMatrix_ = Thyra::diagonal(invLumpMass);

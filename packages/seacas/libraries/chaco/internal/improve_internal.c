@@ -62,8 +62,8 @@ improve_internal (
     struct bidint *move_list;	/* list of vertices changing sets */
     struct bidint *ptr, *ptr2;	/* loop through bidints */
     struct bidint *changed_sets;/* list of sets that were modified */
-    double    vwgt_avg;		/* average vertex weight in current set */
-    double    degree_avg;	/* average vertex degree in current set */
+    double    vwgt_avg = 0.0;	/* average vertex weight in current set */
+    double    degree_avg = 0.0;	/* average vertex degree in current set */
     double    frac = .4;	/* fraction of neighbors acceptable to move. */
     double    cost, min_cost;	/* cost of making a vertex internal */
     double    min_cost_start;	/* larger than any possible cost */
@@ -74,7 +74,7 @@ improve_internal (
     int       vtx, best_vtx=-1;	/* vertex to make internal */
     int       move_vtx=-1;	/* vertex to move between sets */
     int       neighbor;		/* neighbor of a vertex */
-    int       nguys;		/* number of vertices in current set */
+    int       nguys = 0;	/* number of vertices in current set */
     int       internal;		/* is a vertex internal or not? */
     int       balanced;		/* are two sets balanced? */
     int       flag;		/* did I improve things: return code */
@@ -85,10 +85,7 @@ improve_internal (
     /* This is vertex which is already most nearly internal. */
     min_cost_start = 2.0 * vwgt_max * nvtxs;
     min_cost = min_cost_start;
-    vwgt_avg = 0;
-    degree_avg = 0;
     size = (int) (&(vtx_elems[1]) - &(vtx_elems[0]));
-    nguys = 0;
     for (ptr = set_list[set1].next; ptr != NULL; ptr = ptr->next) {
 	++nguys;
 	vtx = ((int) (ptr - vtx_elems)) / size;
@@ -121,8 +118,10 @@ improve_internal (
 	}
     }
 
-    vwgt_avg /= nguys;
-    degree_avg /= nguys;
+    if (nguys > 0) {
+      vwgt_avg /= nguys;
+      degree_avg /= nguys;
+    }
     cost_limit = frac * vwgt_avg * degree_avg;
 
     if (min_cost > cost_limit) {

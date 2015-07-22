@@ -560,7 +560,7 @@ public:
     ,const Ordinal bytes, const char sendBuffer[], char globalReducts[]
     ) const;
   /** \brief . */
-  virtual void reduceAllAndScatter(
+  TEUCHOS_DEPRECATED virtual void reduceAllAndScatter(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
     ,const Ordinal sendBytes, const char sendBuffer[]
     ,const Ordinal recvCounts[], char myGlobalReducts[]
@@ -1089,7 +1089,7 @@ reduceAll (const ValueTypeReductionOp<Ordinal,char> &reductOp,
 
 
 template<typename Ordinal>
-void MpiComm<Ordinal>::reduceAllAndScatter(
+TEUCHOS_DEPRECATED void MpiComm<Ordinal>::reduceAllAndScatter(
   const ValueTypeReductionOp<Ordinal,char> &reductOp
   ,const Ordinal sendBytes, const char sendBuffer[]
   ,const Ordinal recvCounts[], char myGlobalReducts[]

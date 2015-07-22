@@ -216,6 +216,15 @@ namespace Belos {
     
     //@}
     
+    //! Sets whether or not to store the diagonal for condition estimation
+    void setDoCondEst(bool val){doCondEst_=val;}
+
+    //! Gets the diagonal for condition estimation
+    Teuchos::ArrayView<MagnitudeType> getDiag(){return diag_(0,iter_);}
+
+    //! Gets the off-diagonal for condition estimation
+    Teuchos::ArrayView<MagnitudeType> getOffDiag(){return offdiag_(0,iter_);}
+
   private:
     
     //
@@ -242,8 +251,13 @@ namespace Belos {
     // Current number of iterations performed.
     int iter_;
 
-    // Current number of iterations performed.
+    // Assert that the matrix is positive definite
     bool assertPositiveDefiniteness_;
+
+    // Tridiagonal system for condition estimation (if needed)
+    Teuchos::ArrayRCP<MagnitudeType> diag_, offdiag_;
+    int numEntriesForCondEst_;
+    bool doCondEst_;
 
     // 
     // State Storage
@@ -275,7 +289,8 @@ namespace Belos {
     numRHS_(0),
     initialized_(false),
     iter_(0),
-    assertPositiveDefiniteness_( params.get("Assert Positive Definiteness", true) )
+    assertPositiveDefiniteness_( params.get("Assert Positive Definiteness", true) ),
+    numEntriesForCondEst_(params.get("Max Size For Condest",0) ) 
   {
   }
   
@@ -285,7 +300,7 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void PseudoBlockCGIter<ScalarType,MV,OP>::initializeCG(CGIterationState<ScalarType,MV>& newstate)
   {
-    // Check if there is any multivector to clone from.
+    // Check if there is any mltivector to clone from.
     Teuchos::RCP<const MV> lhsMV = lp_->getCurrLHSVec();
     Teuchos::RCP<const MV> rhsMV = lp_->getCurrRHSVec();
     TEUCHOS_TEST_FOR_EXCEPTION((lhsMV==Teuchos::null && rhsMV==Teuchos::null),std::invalid_argument,
@@ -305,6 +320,12 @@ namespace Belos {
       Z_ = MVT::Clone( *tmp, numRHS_ );
       P_ = MVT::Clone( *tmp, numRHS_ );
       AP_ = MVT::Clone( *tmp, numRHS_ );
+    }
+
+    // Tracking information for condition number estimation
+    if(numEntriesForCondEst_ > 0) {
+      diag_.resize(numEntriesForCondEst_);
+      offdiag_.resize(numEntriesForCondEst_-1);
     }
 	
     // NOTE:  In CGIter R_, the initial residual, is required!!!  
@@ -379,6 +400,9 @@ namespace Belos {
     // Create convenience variables for zero and one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
+
+    // Scalars for condition estimation (if needed) - These will always use entry zero, for convenience
+    ScalarType pAp_old=one, beta_old=one ,rHz_old2=one;
     
     // Get the current solution std::vector.
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
@@ -465,6 +489,22 @@ namespace Belos {
 	Teuchos::RCP<MV> P_i = MVT::CloneViewNonConst( *P_, index );
         MVT::MvAddMv( one, *Z_i, beta(i,i), *P_i, *P_i );
       }
+
+      // Condition estimate (if needed)
+      if(doCondEst_ > 0) {
+	if(iter_ > 1 ) {
+	  diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real((beta_old * beta_old * pAp_old + pAp[0]) / rHz_old[0]);
+	  offdiag_[iter_-2] = -Teuchos::ScalarTraits<ScalarType>::real(beta_old * pAp_old / (sqrt( rHz_old[0] * rHz_old2)));
+	} 
+	else {	  
+	  diag_[iter_-1]    = Teuchos::ScalarTraits<ScalarType>::real(pAp[0] / rHz_old[0]);
+	}
+	rHz_old2 = rHz_old[0];	
+	beta_old = beta(0,0);
+	pAp_old = pAp[0];
+      }
+
+
       //      
     } // end while (sTest_->checkStatus(this) != Passed)
   }

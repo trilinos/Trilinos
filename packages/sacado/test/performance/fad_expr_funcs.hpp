@@ -30,14 +30,8 @@
 #ifndef FAD_EXPR_FUNCS_HPP
 #define FAD_EXPR_FUNCS_HPP
 
-#include "Sacado_MathFunctions.hpp"
-#include "Sacado_Fad_DFad.hpp"
-#include "Sacado_ELRFad_DFad.hpp"
-#include "Sacado_CacheFad_DFad.hpp"
-#include "Sacado_ELRCacheFad_DFad.hpp"
+#include "Sacado.hpp"
 #include "Sacado_Fad_SimpleFad.hpp"
-
-#include "Sacado_ConfigDefs.h"
 
 // ADOL-C includes
 #ifdef HAVE_ADOLC

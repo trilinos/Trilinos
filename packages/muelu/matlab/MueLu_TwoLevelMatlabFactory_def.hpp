@@ -48,10 +48,14 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 
+#include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_TwoLevelMatlabFactory_decl.hpp"
 #include "MueLu_MatlabUtils_decl.hpp"
+
+#include <iostream>
+
 
 #ifdef HAVE_MUELU_MATLAB
 #include "mex.h"
@@ -64,137 +68,71 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const ParameterList> TwoLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
-    RCP<ParameterList> validParamList = rcp(new ParameterList());
-    
+    RCP<ParameterList> validParamList = getInputParamList();
     validParamList->set<std::string>("Provides"     , "" ,"A comma-separated list of objects provided on the coarse level by the TwoLevelMatlabFactory");
     validParamList->set<std::string>("Needs Fine"   , "", "A comma-separated list of objects needed on the fine level by the TwoLevelMatlabFactory");
     validParamList->set<std::string>("Needs Coarse" , "", "A comma-separated list of objects needed on the coarse level by the TwoLevelMatlabFactory");
-    validParamList->set<std::string>("Function"     , "" , "The name of the Matlab MEX function to call for Build()");
-
+    validParamList->set<std::string>("Function"     , "" , "The name of the Matlab MEX function to call for Build()");    
     return validParamList;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void TwoLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+    using namespace std;
     const Teuchos::ParameterList& pL = GetParameterList();
-
     // Get needs strings
     const std::string str_nf = pL.get<std::string>("Needs Fine");
     const std::string str_nc = pL.get<std::string>("Needs Coarse");
-
-    // Tokenize the strings
-    printf("str_nf = %s\n",str_nf.c_str());
-    TokenizeStringAndStripWhiteSpace(str_nf,needsFine_,",");
-    TokenizeStringAndStripWhiteSpace(str_nc,needsCoarse_,",");
-
-    // Declare inputs
-    for(size_t i = 0; i < needsFine_.size(); i++) {
-          printf("needsFine_[%d] = %s\n",(int)i,needsFine_[i].c_str());
-          Input(fineLevel, needsFine_[i]);
+    needsFine_.clear();
+    needsCoarse_.clear();
+    TokenizeStringAndStripWhiteSpace(str_nf, needsFine_, " ,;");
+    TokenizeStringAndStripWhiteSpace(str_nc, needsCoarse_, " ,;");
+    for(auto fineNeed : needsFine_)
+    {
+      this->Input(fineLevel, fineNeed);
     }
-
-    for(size_t i = 0; i < needsCoarse_.size(); i++) {
-          printf("needsCoarse_[%d] = %s\n",(int)i,needsCoarse_[i].c_str());
-      Input(coarseLevel, needsCoarse_[i]);
-  }
-
-    hasDeclaredInput_=true;
+    for(auto coarseNeed : needsCoarse_)
+    {
+      this->Input(coarseLevel, coarseNeed);
+    }
+    hasDeclaredInput_ = true;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void TwoLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
+    FactoryMonitor m(*this, "Build", coarseLevel);
+
     const Teuchos::ParameterList& pL = GetParameterList();
     using Teuchos::rcp;
     using Teuchos::RCP;
-
-    /* NOTE: We need types to call Get functions.  For the moment, I'm just going to infer types from names.
-       We'll need to replace this wby modifying the needs list with strings that define types and adding some kind of lookup function instead */
-
-    // NOTE: mexOutput[0] is the "Provides."  Might want to modify to allow for additional outputs
-    std::vector<RCP<MuemexArg> > InputArgs;
-
-    // Fine needs
-    for(size_t i = 0; needsFine_.size(); i++) {
-      if(needsFine_[i] == "A" || needsFine_[i] == "P" || needsFine_[i] == "R" || needsFine_[i]=="Ptent") {
-	RCP<Matrix> mydata = Get<RCP<Matrix> >(fineLevel, needsFine_[i]);
-	InputArgs.push_back(rcp(new MuemexData<RCP<Matrix> >(mydata)));
-      }
-
-      if(needsFine_[i] == "Nullspace" || needsFine_[i] == "Coordinates") {
-	RCP<MultiVector> mydata = Get<RCP<MultiVector> >(fineLevel,needsFine_[i]);
-	InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> >(mydata)));
-      }
-
-      if(needsFine_[i] == "Aggregates") {
-	RCP<Aggregates> mydata = Get<RCP<Aggregates>> (fineLevel, needsFine_[i]);
-	InputArgs.push_back(rcp(new MuemexData<RCP<Aggregates>>(mydata)));
-      }
-
-      if(needsFine_[i] == "UnAmalgamationInfo") {
-	RCP<AmalgamationInfo> mydata=Get<RCP<AmalgamationInfo> >(fineLevel,needsFine_[i]);
-	InputArgs.push_back(rcp(new MuemexData<RCP<AmalgamationInfo> >(mydata)));
-      }
-    }
-
-    // Coarser needs
-    for(size_t i=0; needsCoarse_.size(); i++) {
-      if(needsCoarse_[i] == "A" || needsCoarse_[i] == "P" || needsCoarse_[i] == "R" || needsCoarse_[i]=="Ptent") {
-	RCP<Matrix> mydata = Get<RCP<Matrix> >(coarseLevel,needsCoarse_[i]);
-	InputArgs.push_back(rcp(new MuemexData<RCP<Matrix> >(mydata)));
-      }
-
-      if(needsCoarse_[i] == "Nullspace" || needsCoarse_[i] == "Coordinates") {
-	RCP<MultiVector> mydata = Get<RCP<MultiVector> >(coarseLevel,needsCoarse_[i]);
-	InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> >(mydata)));
-      }
-
-      if(needsCoarse_[i] == "Aggregates") {
-	RCP<Aggregates> mydata =Get<RCP<Aggregates> >(coarseLevel,needsCoarse_[i]);
-	InputArgs.push_back(rcp(new MuemexData<RCP<Aggregates> >(mydata)));
-      }
-
-      if(needsCoarse_[i] == "UnAmalgamationInfo") {
-	RCP<AmalgamationInfo> mydata=Get<RCP<AmalgamationInfo> >(coarseLevel,needsCoarse_[i]);
-	InputArgs.push_back(rcp(new MuemexData<RCP<AmalgamationInfo> >(mydata)));
-      }
-    }
+    using namespace std;
+    string needsFine = pL.get<string>("Needs Fine");
+    string needsCoarse = pL.get<string>("Needs Coarse");
+    vector<RCP<MuemexArg>> InputArgs = processNeeds<Scalar, LocalOrdinal, GlobalOrdinal, Node>(this, needsFine, fineLevel);
+    vector<RCP<MuemexArg>> InputArgsCoarse = processNeeds<Scalar, LocalOrdinal, GlobalOrdinal, Node>(this, needsCoarse, coarseLevel);
+    //Add coarse args to the end of InputArgs
+    InputArgs.reserve(InputArgs.size() + InputArgsCoarse.size());
+    InputArgs.insert(InputArgs.begin(), InputArgsCoarse.begin(), InputArgsCoarse.end());
 
     // Determine output
-    const std::string str_prov = pL.get<std::string>("Provides");
-    std::vector<std::string> provides;
-    TokenizeStringAndStripWhiteSpace(str_prov,provides);
-
-   
+    string provides = pL.get<string>("Provides");
+    size_t numProvides = tokenizeList(provides).size();
     // Call mex function
-    std::string matlabFunction = pL.get<std::string>("Function");
-    if(!matlabFunction.length()) throw std::runtime_error("Invalid matlab function name");
-    std::vector<Teuchos::RCP<MuemexArg> > mexOutput = callMatlab(matlabFunction, provides.size(), InputArgs);
-
-
-    // Set output
-    if(mexOutput.size()!=provides.size()) throw std::runtime_error("Invalid matlab output");
-    for(size_t i = 0; provides.size(); i++)  {
-      if(provides[i] == "A" || provides[i] == "P" || provides[i] == "R" || provides[i] == "Ptent") {
-	RCP<MuemexData<RCP<Matrix> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<Matrix>>>(mexOutput[i]);
-	coarseLevel.Set(provides[i],mydata->getData());
-      }
-
-      if(provides[i] == "Nullspace" || provides[i] == "Coordinates") {
-	RCP<MuemexData<RCP<MultiVector>>> mydata = Teuchos::rcp_static_cast<MuemexData<RCP<MultiVector>>>(mexOutput[i]);
-	coarseLevel.Set(provides[i], mydata->getData());
-      }
-
-      if(provides[i] == "Aggregates") {
-	RCP<MuemexData<RCP<Aggregates>>> mydata = Teuchos::rcp_static_cast<MuemexData<RCP<Aggregates>>>(mexOutput[i]);
-	coarseLevel.Set(provides[i], mydata->getData());
-      }
-
-      if(provides[i] == "UnAmalgamationInfo") {
-	RCP<MuemexData<RCP<AmalgamationInfo> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<AmalgamationInfo> > >(mexOutput[i]);
-	coarseLevel.Set(provides[i], mydata->getData());
-      }
-    }
+    string matlabFunction = pL.get<string>("Function");
+    if(!matlabFunction.length())
+      throw runtime_error("Invalid matlab function name");
+    vector<RCP<MuemexArg>> mexOutput = callMatlab(matlabFunction, numProvides, InputArgs);
+    processProvides<Scalar, LocalOrdinal, GlobalOrdinal, Node>(mexOutput, this, provides, coarseLevel);
   }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string TwoLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
+    std::ostringstream out;
+    const Teuchos::ParameterList& pL = GetParameterList();
+    out << "TwoLevelMatlabFactory["<<pL.get<std::string>("Function")<<"]";
+    return out.str();
+  }
+
 
 } //namespace MueLu
 

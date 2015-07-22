@@ -75,9 +75,17 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
       NUM_MPI_PROCS 4
       COMM serial mpi
       )
+
+    TRIBITS_ADD_TEST(
+      TogglePFactory_driver
+      NAME "Driver_TogglePFactory_semi_tent_line_Tpetra"
+      ARGS "--matrixType=Laplace3D --nx=40 --ny=40 --nz=60 --mz=1 --xmlFile=parameters_semi_tent_line.xml --linAlgebra=Tpetra"
+      NUM_MPI_PROCS 4
+      COMM serial mpi
+      )
   ENDIF()
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(ToggleDriver_cp
-    SOURCE_FILES parameters_sa_tent.xml parameters_semi_tent.xml parameters_tent_tent.xml
+    SOURCE_FILES parameters_sa_tent.xml parameters_semi_tent.xml parameters_semi_tent_line.xml parameters_tent_tent.xml
    )
 ENDIF()

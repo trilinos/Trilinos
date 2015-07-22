@@ -46,7 +46,6 @@
 
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_EqualityConstraint_SimOpt.hpp"
-#include "ROL_Vector_SimOpt.hpp"
 
 /** @ingroup func_group
     \class ROL::Reduced_Objective_SimOpt

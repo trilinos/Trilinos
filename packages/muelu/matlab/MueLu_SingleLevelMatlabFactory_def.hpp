@@ -48,10 +48,12 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 
+#include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_SingleLevelMatlabFactory_decl.hpp"
 #include "MueLu_MatlabUtils_decl.hpp"
+
 
 #ifdef HAVE_MUELU_MATLAB
 #include "mex.h"
@@ -63,105 +65,56 @@ namespace MueLu {
     : hasDeclaredInput_(false) { }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const ParameterList> SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
-    RCP<ParameterList> validParamList = rcp(new ParameterList());
-    
+  RCP<const ParameterList> SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const
+  {
+    RCP<ParameterList> validParamList = getInputParamList();
     validParamList->set<std::string>("Provides"     , "" ,"A comma-separated list of objects provided by the SingleLevelMatlabFactory");
     validParamList->set<std::string>("Needs"        , "", "A comma-separated list of objects needed by the SingleLevelMatlabFactory");
     validParamList->set<std::string>("Function"     , "" , "The name of the Matlab MEX function to call for Build()");
-
     return validParamList;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
+  void SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const
+  {
     const Teuchos::ParameterList& pL = GetParameterList();
-
-    // Get needs strings
-    const std::string str = pL.get<std::string>("Needs");
-
-    // Tokenize the strings
-    TokenizeStringAndStripWhiteSpace(str, needs_);
-
+    needs_ = tokenizeList(pL.get<std::string>("Needs"));
     // Declare inputs
     for(size_t i = 0; i < needs_.size(); i++)
-      Input(currentLevel, needs_[i]);
-
+      this->Input(currentLevel, needs_[i]);
     hasDeclaredInput_ = true;
-
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const {
+  void SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const
+  {
+    FactoryMonitor m(*this, "Build", currentLevel);
+
     const Teuchos::ParameterList& pL = GetParameterList();
     using Teuchos::rcp;
     using Teuchos::rcp;
-
-    /* NOTE: We need types to call Get functions.  For the moment, I'm just going to infer types from names.
-       We'll need to replace this wby modifying the needs list with strings that define types and adding some kind of lookup function instead */
-
     // NOTE: mexOutput[0] is the "Provides."  Might want to modify to allow for additional outputs
-    std::vector<RCP<MuemexArg>> InputArgs;
-
-    // Fine needs
-    for(size_t i=0; needs_.size(); i++) {
-      if(needs_[i] == "A" || needs_[i] == "P" || needs_[i] == "R" || needs_[i]=="Ptent") {
-	RCP<Matrix> mydata = Get<RCP<Matrix>>(currentLevel,needs_[i]);
-	InputArgs.push_back(rcp(new MuemexData<RCP<Matrix>>(mydata)));
-      }
-
-      if(needs_[i] == "Nullspace" || needs_[i] == "Coordinates") {
-	RCP<MultiVector> mydata = Get<RCP<MultiVector>>(currentLevel, needs_[i]);
-	InputArgs.push_back(rcp(new MuemexData<RCP<MultiVector> >(mydata)));
-      }
-
-      if(needs_[i] == "Aggregates") {
-	RCP<Aggregates> mydata = Get<RCP<Aggregates>>(currentLevel, needs_[i]);
-	InputArgs.push_back(rcp(new MuemexData<RCP<Aggregates> >(mydata)));
-      }
-
-      if(needs_[i] == "UnAmalgamationInfo") {
-	RCP<AmalgamationInfo> mydata = Get<RCP<AmalgamationInfo> >(currentLevel,needs_[i]);
-	InputArgs.push_back(rcp(new MuemexData<RCP<AmalgamationInfo>>(mydata)));
-      }
-    }
-
-    // Determine output
-    const std::string str_prov = pL.get<std::string>("Provides");
-    std::vector<std::string> provides;
-    TokenizeStringAndStripWhiteSpace(str_prov,provides);
-
-   
+    std::string needsList = pL.get<std::string>("Needs");
+    std::vector<RCP<MuemexArg>> InputArgs = processNeeds<Scalar, LocalOrdinal, GlobalOrdinal, Node>(this, needsList, currentLevel);
+    std::string providesList = pL.get<std::string>("Provides");
+    size_t numProvides = tokenizeList(providesList).size();
     // Call mex function
     std::string matlabFunction = pL.get<std::string>("Function");
-    if(!matlabFunction.length()) throw std::runtime_error("Invalid matlab function name");
-    std::vector<Teuchos::RCP<MuemexArg> > mexOutput = callMatlab(matlabFunction,provides.size(),InputArgs);
-
-
-    // Set output
-    if(mexOutput.size()!=provides.size()) throw std::runtime_error("Invalid matlab output");
-    for(size_t i=0; provides.size(); i++)  {
-      if(provides[i] == "A" || provides[i] == "P" || provides[i] == "R" || provides[i]=="Ptent") {
-	RCP<MuemexData<RCP<Matrix> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<Matrix> > >(mexOutput[i]);
-	currentLevel.Set(provides[i],mydata->getData());
-      }
-
-      if(provides[i] == "Nullspace" || provides[i] == "Coordinates") {
-	RCP<MuemexData<RCP<MultiVector> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<MultiVector> > >(mexOutput[i]);
-	currentLevel.Set(provides[i],mydata->getData());
-      }
-
-      if(provides[i] == "Aggregates") {
-	RCP<MuemexData<RCP<Aggregates> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<Aggregates> > >(mexOutput[i]);
-	currentLevel.Set(provides[i], mydata->getData());
-      }
-
-      if(provides[i] == "UnAmalgamationInfo") {
-	RCP<MuemexData<RCP<AmalgamationInfo> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<AmalgamationInfo> > >(mexOutput[i]);
-	currentLevel.Set(provides[i], mydata->getData());
-      }
-    }
+    if(!matlabFunction.length())
+      throw std::runtime_error("Invalid matlab function name");
+    std::vector<Teuchos::RCP<MuemexArg> > mexOutput = callMatlab(matlabFunction, numProvides, InputArgs);
+    // Set output in level 
+    processProvides<Scalar, LocalOrdinal, GlobalOrdinal, Node>(mexOutput, this, providesList, currentLevel);
   }
+  
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
+    std::ostringstream out;
+    const Teuchos::ParameterList& pL = GetParameterList();
+    out << "SingleLevelMatlabFactory["<<pL.get<std::string>("Function")<<"]";
+    return out.str();
+  }
+
 
 } //namespace MueLu
 

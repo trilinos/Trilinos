@@ -340,7 +340,6 @@ Epetra_Operator::ApplyInverse;
 //////////////////////////////////
 // Typemaps for Epetra_Operator //
 //////////////////////////////////
-#ifdef HAVE_TEUCHOS
 %typemap(out) Teuchos::RCP< Epetra_Operator >
 {
   if ($1 == Teuchos::null)
@@ -370,12 +369,6 @@ Epetra_Operator::ApplyInverse;
   $input = PyTrilinos::convertEpetraOperatorToPython(smartinput);
   delete smartinput;
 }
-#else
-%typemap(directorin) Epetra_Operator &
-{
-  $input = PyTrilinos::convertEpetraOperatorToPython(&$1_name, SWIG_POINTER_OWN);
-}
-#endif
 
 ////////////////////////////////
 // Epetra_InvOperator support //

@@ -1,0 +1,4 @@
+
+/* Add macros for declaring functions deprecated */
+@STK_DEPRECATED_DECLARATIONS@
+

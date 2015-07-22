@@ -377,7 +377,7 @@ void BlockRelaxation<MatrixType,ContainerType>::initialize() {
 
   if (PartitionerType_ == "linear") {
     Partitioner_ =
-      rcp (new Ifpack2::LinearPartitioner<row_graph_type> (A_->getGraph ())); 
+      rcp (new Ifpack2::LinearPartitioner<row_graph_type> (A_->getGraph ()));
   } else if (PartitionerType_ == "line") {
     Partitioner_ =
       rcp (new Ifpack2::LinePartitioner<row_graph_type,typename MatrixType::scalar_type> (A_->getGraph ()));
@@ -1051,6 +1051,12 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
       S > >; \
   template \
   class Ifpack2::BlockRelaxation<      \
+    Tpetra::RowMatrix<S, LO, GO, N>, \
+    Ifpack2::BandedContainer<        \
+      Tpetra::RowMatrix<S, LO, GO, N>, \
+      S > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
     Tpetra::CrsMatrix<S, LO, GO, N>, \
     Ifpack2::SparseContainer<       \
       Tpetra::CrsMatrix<S, LO, GO, N>, \
@@ -1065,6 +1071,12 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
   class Ifpack2::BlockRelaxation<      \
     Tpetra::CrsMatrix<S, LO, GO, N>, \
     Ifpack2::TriDiContainer<        \
+      Tpetra::CrsMatrix<S, LO, GO, N>, \
+      S > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::CrsMatrix<S, LO, GO, N>, \
+    Ifpack2::BandedContainer<        \
       Tpetra::CrsMatrix<S, LO, GO, N>, \
       S > >;
 

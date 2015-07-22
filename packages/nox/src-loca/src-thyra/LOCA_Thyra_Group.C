@@ -178,7 +178,14 @@ LOCA::Thyra::Group::computeJacobian()
   model_->evalModel(in_args_, out_args_);
 
   in_args_.set_x(Teuchos::null);
-  in_args_.set_p(param_index, Teuchos::null);
+  // nschloe (I apologize for this hack):
+  // Curiously, the *_args_ are persistent object in the NOX groups and
+  // accessible from anywhere. We make use of this here by *not* resetting the
+  // parameters
+  //    in_args_.set_p(param_index, Teuchos::null);
+  // and thus passing the the param_thyra_vec into the preconditioner builder,
+  // which resides in NOX::Thyra::Group::updateLOWS.  This only works because
+  // this function right here is called *before* NOX::Thyra::Group::updateLOWS.
   out_args_.set_W_op(Teuchos::null);
 
   is_valid_jacobian_ = true;

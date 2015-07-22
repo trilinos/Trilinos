@@ -58,9 +58,9 @@ int main (int argc, char *argv[]) {
     exec_space::initialize(nthreads);
     exec_space::print_configuration(cout, true);
     
-    r_val = exampleICholPerformance
-      <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, niter, nthreads, max_task_dependence, team_size, team_interface, (nthreads != 1), verbose);
+    // r_val = exampleICholPerformance
+    //   <value_type,ordinal_type,size_type,exec_space,void>
+    //   (file_input, niter, nthreads, max_task_dependence, team_size, team_interface, (nthreads != 1), verbose);
 
     exec_space::finalize();
   }

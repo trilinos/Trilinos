@@ -54,7 +54,6 @@ template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 Interface<DeviceType, DIM,  FACE_TYPE >::Interface(Morkon_Manager<DeviceType, DIM, FACE_TYPE> * manager)
   : m_manager(manager)
   , m_committed(false)
-  , m_distributed(false)
   , m_sides(std::vector<faces_ids_t>(2))
 {
   m_hs_adapters.resize(2, 0);
@@ -69,6 +68,7 @@ bool Interface<DeviceType, DIM,  FACE_TYPE >::define_side(SideEnum which_side, f
     return false;
   }
   m_sides[which_side] = faces_on_side;
+  return true;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >

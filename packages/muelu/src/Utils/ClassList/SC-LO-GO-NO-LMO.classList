@@ -31,6 +31,7 @@ HierarchyManager
 HierarchyFactory
 Ifpack2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 IndefBlockedDiagonalSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
+LineDetectionFactory
 LocalPermutationStrategy
 MapTransferFactory
 MergedBlockedMatrixFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
@@ -72,6 +73,7 @@ SteepestDescentSolver
 SubBlockAFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 TentativePFactory
 ThresholdAFilterFactory
+ToggleCoordinatesTransferFactory
 TogglePFactory
 TpetraOperator
 TransPFactory

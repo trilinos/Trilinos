@@ -44,9 +44,8 @@
 #ifndef ROL_RISKAVERSEOBJECTIVE_HPP
 #define ROL_RISKAVERSEOBJECTIVE_HPP
 
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "ROL_Vector.hpp"
-#include "ROL_Objective.hpp"
 #include "ROL_ParametrizedObjective.hpp"
 #include "ROL_SampleGenerator.hpp"
 #include "ROL_RiskMeasure.hpp"
@@ -56,57 +55,124 @@ namespace ROL {
 template<class Real>
 class RiskAverseObjective : public Objective<Real> {
 private:
-  // Problem Data
-  Teuchos::RCP<ParametrizedObjective<Real> > pObj_;
-  Teuchos::RCP<SampleGenerator<Real> > vsampler_;
-  Teuchos::RCP<SampleGenerator<Real> > gsampler_;
-  Teuchos::RCP<RiskMeasure<Real> > rm_;
+  // Objective function definition
+  Teuchos::RCP<ParametrizedObjective<Real> > ParametrizedObjective_; // Parametrized objective function
+  Teuchos::RCP<RiskMeasure<Real> >           RiskMeasure_;           // Risk measure
 
-  // Storage Information
+  // Sampler generators
+  Teuchos::RCP<SampleGenerator<Real> >       ValueSampler_;          // Sampler for objective value
+  Teuchos::RCP<SampleGenerator<Real> >       GradientSampler_;       // Sampler for objective gradient
+  Teuchos::RCP<SampleGenerator<Real> >       HessianSampler_;        // Sampler for objective Hessian-times-a-vector
+
+  // Additional storage
+  bool firstUpdate_;
   bool storage_;
-  std::map<std::vector<Real>,Real> value_storage_;
+  std::map<std::vector<Real>,Real>                         value_storage_;
   std::map<std::vector<Real>,Teuchos::RCP<Vector<Real> > > gradient_storage_;
+  Teuchos::RCP<Vector<Real> > x_;
+  Teuchos::RCP<Vector<Real> > v_;
+  Teuchos::RCP<Vector<Real> > g_;
+  Teuchos::RCP<Vector<Real> > hv_;
+
+  // Evaluate objective function at current parameter
+  void getValue(Real &val, const Vector<Real> &x,
+          const std::vector<Real> &param, Real &tol) {
+    if ( storage_ && value_storage_.count(param) ) {
+      val = value_storage_[param];
+    }
+    else {
+      ParametrizedObjective_->setParameter(param);
+      val = ParametrizedObjective_->value(x,tol);
+      if ( storage_ ) {
+        value_storage_.insert(std::pair<std::vector<Real>,Real>(param,val));
+      }
+    }
+//std::cout << "BATCH ID: " << ValueSampler_->batchID() << "  "
+//          << "POINT: (" << param[0] << ", " << param[1] << ", " << param[2] << ", " << param[3] << ")  "
+//          << "VALUE: " << val << "\n";
+  }
+ 
+  // Evaluate gradient of objective function at current parameter
+  void getGradient(Vector<Real> &g, const Vector<Real> &x,
+             const std::vector<Real> &param, Real &tol) {
+    if ( storage_ && gradient_storage_.count(param) ) {
+      g.set(*(gradient_storage_[param]));
+    }
+    else {
+      ParametrizedObjective_->setParameter(param);
+      ParametrizedObjective_->gradient(g,x,tol);
+      if ( storage_ ) {
+        Teuchos::RCP<Vector<Real> > tmp = g.clone();
+        gradient_storage_.insert(std::pair<std::vector<Real>,Teuchos::RCP<Vector<Real> > >(param,tmp));
+        gradient_storage_[param]->set(g);
+      }
+    }
+//std::cout << "BATCH ID: " << GradientSampler_->batchID() << "  "
+//          << "POINT: (" << param[0] << ", " << param[1] << ", " << param[2] << ", " << param[3] << ")  "
+//          << "GNORM: " << g.norm() << "\n";
+  }
+
+  // Evaluate Hessian-times-a-vector at current parameter
+  void getHessVec(Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x,
+            const std::vector<Real> &param, Real &tol) {
+    ParametrizedObjective_->setParameter(param);
+    ParametrizedObjective_->hessVec(hv,v,x,tol);
+  }
 
 public:
   virtual ~RiskAverseObjective() {}
 
-  RiskAverseObjective( ParametrizedObjective<Real> &pObj, RiskMeasure<Real> &rm,  
-                       SampleGenerator<Real> &vsampler, SampleGenerator<Real> &gsampler,
-                       bool storage = true ) : storage_(storage) { 
-    pObj_     = Teuchos::rcp(&pObj,false);     // Parametrized Objective Function Object
-    vsampler_ = Teuchos::rcp(&vsampler,false); // Objective Function Value Sampler Object
-    gsampler_ = Teuchos::rcp(&gsampler,false); // Gradient Sampler Object
-    rm_       = Teuchos::rcp(&rm,false);       // Risk Measure Object
-    
+  RiskAverseObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+                       Teuchos::RCP<RiskMeasure<Real> >           &rm,
+                       Teuchos::RCP<SampleGenerator<Real> >       &vsampler,
+                       Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
+                       Teuchos::RCP<SampleGenerator<Real> >       &hsampler,
+                       bool storage = true )
+    : ParametrizedObjective_(pObj), RiskMeasure_(rm),
+      ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(hsampler),
+      firstUpdate_(true), storage_(storage) {
     value_storage_.clear();
     gradient_storage_.clear();
   }
 
-  // Delegating constructors require C++11; can't use yet:
-  //RiskAverseObjective( ParametrizedObjective<Real> &pObj, RiskMeasure<Real> &rm,  
-  //                     SampleGenerator<Real> &sampler, bool storage = true ) 
-  //  : RiskAverseObjective(pObj,rm,sampler,sampler,storage) {}
+  RiskAverseObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+                       Teuchos::RCP<RiskMeasure<Real> >           &rm,
+                       Teuchos::RCP<SampleGenerator<Real> >       &vsampler,
+                       Teuchos::RCP<SampleGenerator<Real> >       &gsampler,
+                       bool storage = true )
+    : ParametrizedObjective_(pObj), RiskMeasure_(rm),
+      ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(gsampler),
+      firstUpdate_(true), storage_(storage) {
+    value_storage_.clear();
+    gradient_storage_.clear();
+  }
 
-  RiskAverseObjective( ParametrizedObjective<Real> &pObj, RiskMeasure<Real> &rm,  
-                       SampleGenerator<Real> &sampler, bool storage = true ) 
-    : storage_(storage) {
-    pObj_     = Teuchos::rcp(&pObj,false);     // Parametrized Objective Function Object
-    vsampler_ = Teuchos::rcp(&sampler,false);  // Objective Function Value Sampler Object
-    gsampler_ = Teuchos::rcp(&sampler,false);  // Gradient Sampler Object
-    rm_       = Teuchos::rcp(&rm,false);       // Risk Measure Object
-
+  RiskAverseObjective( Teuchos::RCP<ParametrizedObjective<Real> > &pObj,
+                       Teuchos::RCP<RiskMeasure<Real> >           &rm,
+                       Teuchos::RCP<SampleGenerator<Real> >       &sampler,
+                       bool storage = true )
+    : ParametrizedObjective_(pObj), RiskMeasure_(rm),
+      ValueSampler_(sampler), GradientSampler_(sampler), HessianSampler_(sampler),
+      firstUpdate_(true), storage_(storage) {
     value_storage_.clear();
     gradient_storage_.clear();
   }
 
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    pObj_->update(x,flag,iter);
-    vsampler_->update(x);
+    if ( firstUpdate_ ) {
+      RiskMeasure_->reset(x_,x);
+      g_  = (x_->dual()).clone();
+      hv_ = (x_->dual()).clone();
+      firstUpdate_ = false;
+    }
+    ParametrizedObjective_->update(x,flag,iter);
+    ValueSampler_->update(x);
     if ( storage_ ) {
       value_storage_.clear();
     }
     if ( flag ) {
-      gsampler_->update(x);
+      GradientSampler_->update(x);
+      HessianSampler_->update(x);
       if ( storage_ ) {
         gradient_storage_.clear();
       }
@@ -115,98 +181,43 @@ public:
 
   virtual Real value( const Vector<Real> &x, Real &tol ) {
     Real val = 0.0;
-    Teuchos::RCP<Vector<Real> > x0;
-    rm_->reset(x0,x);
-    for ( int i = 0; i < vsampler_->numMySamples(); i++ ) {
-      pObj_->setParameter(vsampler_->getMyPoint(i));
-      if ( storage_ && value_storage_.count(vsampler_->getMyPoint(i)) ) {
-        val = value_storage_[vsampler_->getMyPoint(i)];
-      }
-      else {
-        val = pObj_->value(*x0,tol);
-        if ( storage_ ) {
-          value_storage_.insert(std::pair<std::vector<Real>,Real>(vsampler_->getMyPoint(i),val));
-        }
-      }
-      rm_->update(val,vsampler_->getMyWeight(i));
+    RiskMeasure_->reset(x_,x);
+    for ( int i = 0; i < ValueSampler_->numMySamples(); i++ ) {
+      getValue(val,*x_,ValueSampler_->getMyPoint(i),tol);
+      RiskMeasure_->update(val,ValueSampler_->getMyWeight(i));
     }
-    return rm_->getValue(*vsampler_);
+    return RiskMeasure_->getValue(*ValueSampler_);
   }
 
   virtual void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    //gsampler_->refine(x,tol);
+    Real val = 0.0;
     g.zero();
-    Teuchos::RCP<Vector<Real> > x0;
-    rm_->reset(x0,x);
-    Teuchos::RCP<Vector<Real> > g0 = x0->clone();
-    Real val = 0.0;
-    for ( int i = 0; i < gsampler_->numMySamples(); i++ ) {
-      pObj_->setParameter(gsampler_->getMyPoint(i));
-      if ( storage_ && value_storage_.count(gsampler_->getMyPoint(i)) ) {
-        val = value_storage_[gsampler_->getMyPoint(i)];
-      }
-      else {
-        val = pObj_->value(*x0,tol);
-        if ( storage_ ) {
-          value_storage_.insert(std::pair<std::vector<Real>,Real>(gsampler_->getMyPoint(i),val));
-        }
-      }
-      if ( storage_ && gradient_storage_.count(gsampler_->getMyPoint(i)) ) {
-        g0->set(*(gradient_storage_[gsampler_->getMyPoint(i)]));
-      }
-      else { 
-        pObj_->gradient(*g0,*x0,tol);
-        if ( storage_ ) {
-          Teuchos::RCP<Vector<Real> > tmp = g0->clone();
-          gradient_storage_.insert(std::pair<std::vector<Real>,Teuchos::RCP<Vector<Real> > >(gsampler_->getMyPoint(i),tmp));
-          gradient_storage_[gsampler_->getMyPoint(i)]->set(*g0);
-        }
-      }
-      rm_->update(val,*g0,gsampler_->getMyWeight(i));
+    RiskMeasure_->reset(x_,x);
+    for ( int i = 0; i < GradientSampler_->numMySamples(); i++ ) {
+      getValue(val,*x_,GradientSampler_->getMyPoint(i),tol);
+      getGradient(*g_,*x_,GradientSampler_->getMyPoint(i),tol);
+      RiskMeasure_->update(val,*g_,GradientSampler_->getMyWeight(i));
     }
-    rm_->getGradient(g,*gsampler_);
+    RiskMeasure_->getGradient(g,*GradientSampler_);
   }
 
-  virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v, 
-                        const Vector<Real> &x, Real &tol ) {
+  virtual void hessVec( Vector<Real> &hv, const Vector<Real> &v,
+                  const Vector<Real> &x, Real &tol ) {
+    Real val = 0.0, gv = 0.0;
     hv.zero();
-    Teuchos::RCP<Vector<Real> > x0;
-    Teuchos::RCP<Vector<Real> > v0;
-    rm_->reset(x0,x,v0,v);
-    Real val = 0.0;
-    Real gv  = 0.0;
-    Teuchos::RCP<Vector<Real> > g0 = x0->clone();
-    Teuchos::RCP<Vector<Real> > h0 = x0->clone();
-    for ( int i = 0; i < gsampler_->numMySamples(); i++ ) {
-      pObj_->setParameter(gsampler_->getMyPoint(i));
-      if ( storage_ && value_storage_.count(gsampler_->getMyPoint(i)) ) {
-        val = value_storage_[gsampler_->getMyPoint(i)];
-      }
-      else {
-        val = pObj_->value(*x0,tol);
-        if ( storage_ ) {
-          value_storage_.insert(std::pair<std::vector<Real>,Real>(gsampler_->getMyPoint(i),val));
-        }
-      }
-      if ( storage_ && gradient_storage_.count(gsampler_->getMyPoint(i)) ) {
-        g0->set(*(gradient_storage_[gsampler_->getMyPoint(i)]));
-      }
-      else { 
-        pObj_->gradient(*g0,*x0,tol);
-        if ( storage_ ) {
-          Teuchos::RCP<Vector<Real> > tmp = g0->clone();
-          gradient_storage_.insert(std::pair<std::vector<Real>,Teuchos::RCP<Vector<Real> > >(gsampler_->getMyPoint(i),tmp));
-          gradient_storage_[gsampler_->getMyPoint(i)]->set(*g0);
-        }
-      }
-      gv  = g0->dot(*v0);
-      pObj_->hessVec(*h0,*v0,*x0,tol);
-      rm_->update(val,*g0,gv,*h0,gsampler_->getMyWeight(i));
+    RiskMeasure_->reset(x_,x,v_,v);
+    for ( int i = 0; i < HessianSampler_->numMySamples(); i++ ) {
+      getValue(val,*x_,HessianSampler_->getMyPoint(i),tol);
+      getGradient(*g_,*x_,HessianSampler_->getMyPoint(i),tol);
+      getHessVec(*hv_,*v_,*x_,HessianSampler_->getMyPoint(i),tol);
+      gv = g_->dot(v_->dual());
+      RiskMeasure_->update(val,*g_,gv,*hv_,HessianSampler_->getMyWeight(i));
     }
-    rm_->getHessVec(hv,*gsampler_);
+    RiskMeasure_->getHessVec(hv,*HessianSampler_);
   }
 
-  virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
+  virtual void precond( Vector<Real> &Pv, const Vector<Real> &v,
+                  const Vector<Real> &x, Real &tol ) {
     Pv.set(v.dual());
   }
 };

@@ -87,6 +87,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     "-DTPL_ENABLE_BLAS:BOOL=ON"
     "-DTPL_ENABLE_LAPACK:BOOL=ON"
+    "-DLAPACK_LIBRARY_DIRS:STRING=/home/csiefer/lapack-3.4.0/build/lib/"
+    "-DBLAS_LIBRARY_DIRS:STRING=/home/csiefer/lapack-3.4.0/build/lib/"
+
     "-DTPL_ENABLE_MATLAB:BOOL=ON"
     "-DMATLAB_ROOT:STRING=/nfsshare/matlab/"
     "-DMATLAB_ARCH:STRING=glnxa64"

@@ -91,6 +91,7 @@
 #include "MueLu_IndefBlockedDiagonalSmoother.hpp"
 #endif
 #include "MueLu_IsorropiaInterface.hpp"
+#include "MueLu_LineDetectionFactory.hpp"
 #include "MueLu_RepartitionInterface.hpp"
 #include "MueLu_MapTransferFactory.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
@@ -112,6 +113,7 @@
 #include "MueLu_SubBlockAFactory.hpp"
 #endif
 #include "MueLu_TentativePFactory.hpp"
+#include "MueLu_ToggleCoordinatesTransferFactory.hpp"
 #include "MueLu_TogglePFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_TransPFactory.hpp"
@@ -180,9 +182,7 @@ namespace MueLu {
       if (factoryName == "BlockedCoarseMapFactory")         return Build2<BlockedCoarseMapFactory>      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedRAPFactory")               return BuildRAPFactory<BlockedRAPFactory>   (paramList, factoryMapIn, factoryManagersIn);
 #endif
-#if defined(HAVE_MPI)
       if (factoryName == "BrickAggregationFactory")         return Build2<BrickAggregationFactory>      (paramList, factoryMapIn, factoryManagersIn);
-#endif
       if (factoryName == "CoarseMapFactory")                return Build2<CoarseMapFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoalesceDropFactory")             return Build2<CoalesceDropFactory>          (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "ConstraintFactory")               return Build2<ConstraintFactory>            (paramList, factoryMapIn, factoryManagersIn);
@@ -192,6 +192,7 @@ namespace MueLu {
       if (factoryName == "EminPFactory")                    return Build2<EminPFactory>                 (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "FilteredAFactory")                return Build2<FilteredAFactory>             (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "GenericRFactory")                 return Build2<GenericRFactory>              (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "LineDetectionFactory")            return Build2<LineDetectionFactory>         (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MapTransferFactory")              return Build2<MapTransferFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "MultiVectorTransferFactory")      return Build2<MultiVectorTransferFactory>   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NoFactory")                       return Teuchos::null;
@@ -207,6 +208,7 @@ namespace MueLu {
       if (factoryName == "SubBlockAFactory")                return Build2<SubBlockAFactory>             (paramList, factoryMapIn, factoryManagersIn);
 #endif
       if (factoryName == "TentativePFactory")               return Build2<TentativePFactory>            (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "ToggleCoordinatesTransferFactory")return BuildToggleCoordinatesTransferFactory(paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TogglePFactory")                  return BuildTogglePFactory<TogglePFactory>  (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TransPFactory")                   return Build2<TransPFactory>                (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TrilinosSmoother")                return BuildTrilinosSmoother                (paramList, factoryMapIn, factoryManagersIn);
@@ -443,6 +445,51 @@ namespace MueLu {
       return factory;
     }
 
+    RCP<ToggleCoordinatesTransferFactory> BuildToggleCoordinatesTransferFactory(const Teuchos::ParameterList & paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+      RCP<ToggleCoordinatesTransferFactory> factory;
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isSublist("TransferFactories") == false, Exceptions::RuntimeError, "FactoryFactory::BuildToggleCoordinatesTransferFactory: the ToggleCoordinatesTransferFactory needs a sublist 'TransferFactories' containing information about the subfactories for coordinate transfer!");
+
+      RCP<Teuchos::ParameterList>       paramListNonConst = rcp(new Teuchos::ParameterList(paramList));
+      RCP<const Teuchos::ParameterList> transferFactories = rcp(new Teuchos::ParameterList(*sublist(paramListNonConst, "TransferFactories")));
+      paramListNonConst->remove("TransferFactories");
+
+      // build CoordinatesTransferFactory
+      factory = Build2<ToggleCoordinatesTransferFactory>(*paramListNonConst, factoryMapIn, factoryManagersIn);
+
+      // count how many coordinate transfer factories have been declared.
+      // the numbers must match!
+      int numCoordTransferFactories = 0;
+      for (Teuchos::ParameterList::ConstIterator param = transferFactories->begin(); param != transferFactories->end(); ++param) {
+        size_t foundCoordinates = transferFactories->name(param).find("Coordinates");
+        if (foundCoordinates != std::string::npos && foundCoordinates == 0 && transferFactories->name(param).length()==12) {
+          numCoordTransferFactories++;
+          continue;
+        }
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(numCoordTransferFactories != 2, Exceptions::RuntimeError, "FactoryFactory::BuildToggleCoordinatesTransfer: The ToggleCoordinatesTransferFactory needs two (different) coordinate transfer factories. The factories have to be provided using the names Coordinates%i, where %i denotes a number between 1 and 9.");
+
+      // create empty vectors with data
+      std::vector<Teuchos::ParameterEntry> coarseCoordsFactoryNames(numCoordTransferFactories);
+
+      for (Teuchos::ParameterList::ConstIterator param = transferFactories->begin(); param != transferFactories->end(); ++param) {
+        size_t foundCoords = transferFactories->name(param).find("Coordinates");
+        if (foundCoords != std::string::npos && foundCoords == 0 && transferFactories->name(param).length()==12) {
+          int number = atoi(&(transferFactories->name(param).at(11)));
+              TEUCHOS_TEST_FOR_EXCEPTION(number < 1 || number > numCoordTransferFactories, Exceptions::RuntimeError, "FactoryFactory::BuildToggleCoordinatesTransfer: Please use the format Coordinates%i with %i an integer between 1 and the maximum number of coordinate transfer factories in ToggleCoordinatesTransferFactory!");
+              coarseCoordsFactoryNames[number-1] = transferFactories->entry(param);
+              continue;
+        }
+      }
+
+      // register all coarse nullspace factories in TogglePFactory
+      for (std::vector<Teuchos::ParameterEntry>::const_iterator it = coarseCoordsFactoryNames.begin(); it != coarseCoordsFactoryNames.end(); ++it) {
+        RCP<const FactoryBase> p = BuildFactory(*it, factoryMapIn, factoryManagersIn);
+        factory->AddCoordTransferFactory(p);
+      }
+
+      return factory;
+    }
+
     //! CoupledAggregationFactory
     RCP<FactoryBase> BuildCoupledAggregationFactory(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       RCP<CoupledAggregationFactory> factory = Build<CoupledAggregationFactory>(paramList, factoryMapIn, factoryManagersIn);
@@ -523,7 +570,26 @@ namespace MueLu {
       // std::string verbose;         if(paramList.isParameter("verbose"))       verbose = paramList.get<std::string>("verbose");
       Teuchos::ParameterList params;  if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
 
-      return rcp(new SmootherFactory(rcp(new TrilinosSmoother(type, params, overlap))));
+      // Read in factory information for smoothers (if available...)
+      // NOTE: only a selected number of factories can be used with the Trilinos smoother
+      //       smoothers usually work with the global data available (which is A and the transfers P and R)
+
+      Teuchos::RCP<TrilinosSmoother> trilSmoo = Teuchos::rcp(new TrilinosSmoother(type, params, overlap));
+
+      if (paramList.isParameter("LineDetection_Layers")) {
+        RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry("LineDetection_Layers"), factoryMapIn, factoryManagersIn);
+        trilSmoo->SetFactory("LineDetection_Layers", generatingFact);
+      }
+      if (paramList.isParameter("LineDetection_VertLineIds")) {
+        RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry("LineDetection_Layers"), factoryMapIn, factoryManagersIn);
+        trilSmoo->SetFactory("LineDetection_Layers", generatingFact);
+      }
+      if (paramList.isParameter("CoarseNumZLayers")) {
+        RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry("CoarseNumZLayers"), factoryMapIn, factoryManagersIn);
+        trilSmoo->SetFactory("CoarseNumZLayers", generatingFact);
+      }
+
+      return rcp(new SmootherFactory(trilSmoo));
     }
 
     RCP<FactoryBase> BuildDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {

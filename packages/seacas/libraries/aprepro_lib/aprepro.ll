@@ -67,7 +67,6 @@ typedef SEAMS::Parser::token_type token_type;
    void yyerror(const char *s);
  }
  
-int ifdef;
 int file_must_exist = 0; /* Global used by include/conditional include */
 
 /* Global variables used by the looping mechanism */
@@ -360,6 +359,8 @@ integer {D}+({E})?
    * a line.
    */
   {WS}"{"[Ii]"fdef"{WS}"(" { 
+    // Used to avoid undefined variable warnings in old ifdef/ifndef construct
+    aprepro.inIfdefGetvar = true; 
     unput('(');
     unput('f');
     unput('e');
@@ -371,6 +372,8 @@ integer {D}+({E})?
   }
 
   {WS}"{"[Ii]"fndef"{WS}"(" {
+    // Used to avoid undefined variable warnings in old ifdef/ifndef construct
+    aprepro.inIfdefGetvar = true; 
     unput('(');
     unput('f');
     unput('e');

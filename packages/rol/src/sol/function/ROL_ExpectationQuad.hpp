@@ -53,11 +53,16 @@ namespace ROL {
 template<class Real>
 class ExpectationQuad : public RiskMeasure<Real> {
 private:
+
+  Teuchos::RCP<Vector<Real> > dualVector_;
+
   Real xstat_;
   Real vstat_;
 
+  bool firstReset_;
+
 public:
-  ExpectationQuad(void) : xstat_(0.0), vstat_(0.0) {}
+  ExpectationQuad(void) : RiskMeasure<Real>(), xstat_(0.0), vstat_(0.0), firstReset_(true) {}
 
   virtual Real regret(Real x, int deriv = 0) = 0;
 
@@ -174,24 +179,25 @@ public:
            Teuchos::dyn_cast<const Vector<Real> >(x)).getVector());
     xstat_ = Teuchos::dyn_cast<const CVaRVector<Real> >(
                Teuchos::dyn_cast<const Vector<Real> >(x)).getVaR();
+    if (firstReset_) {
+      RiskMeasure<Real>::g_  = (x0->dual()).clone();
+      RiskMeasure<Real>::hv_ = (x0->dual()).clone();
+      dualVector_            = (x0->dual()).clone();
+      firstReset_ = false;
+    }
     RiskMeasure<Real>::val_ = 0.0;
-    RiskMeasure<Real>::g_  = x0->clone(); RiskMeasure<Real>::g_->zero();
-    RiskMeasure<Real>::hv_ = x0->clone(); RiskMeasure<Real>::hv_->zero();
+    RiskMeasure<Real>::g_->zero();
+    RiskMeasure<Real>::hv_->zero();
+    dualVector_->zero();
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x, 
              Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
-    x0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const CVaRVector<Real> >(
-           Teuchos::dyn_cast<const Vector<Real> >(x)).getVector());
-    xstat_ = Teuchos::dyn_cast<const CVaRVector<Real> >(
-               Teuchos::dyn_cast<const Vector<Real> >(x)).getVaR();
+    this->reset(x0,x);
     v0 = Teuchos::rcp_const_cast<Vector<Real> >(Teuchos::dyn_cast<const CVaRVector<Real> >(
            Teuchos::dyn_cast<const Vector<Real> >(v)).getVector());
     vstat_ = Teuchos::dyn_cast<const CVaRVector<Real> >(
                Teuchos::dyn_cast<const Vector<Real> >(v)).getVaR();
-    RiskMeasure<Real>::val_ = 0.0;
-    RiskMeasure<Real>::g_  = x0->clone(); RiskMeasure<Real>::g_->zero();
-    RiskMeasure<Real>::hv_ = x0->clone(); RiskMeasure<Real>::hv_->zero();
   }
 
   void update(const Real val, const Real weight) {
@@ -230,9 +236,8 @@ public:
     gstat += 1.0;
     gs.setVaR(gstat);
 
-    Teuchos::RCP<Vector<Real> > gz = RiskMeasure<Real>::g_->clone();
-    sampler.sumAll(*(RiskMeasure<Real>::g_),*gz);
-    gs.setVector(*gz);
+    sampler.sumAll(*(RiskMeasure<Real>::g_),*dualVector_);
+    gs.setVector(*dualVector_);
   }
 
   void getHessVec(Vector<Real> &hv, SampleGenerator<Real> &sampler) {
@@ -242,9 +247,8 @@ public:
     sampler.sumAll(&stat,&gstat,1);
     hs.setVaR(gstat);
 
-    Teuchos::RCP<Vector<Real> > hz = RiskMeasure<Real>::hv_->clone();
-    sampler.sumAll(*(RiskMeasure<Real>::hv_),*hz);
-    hs.setVector(*hz);
+    sampler.sumAll(*(RiskMeasure<Real>::hv_),*dualVector_);
+    hs.setVector(*dualVector_);
   }
 };
 

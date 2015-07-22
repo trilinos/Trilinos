@@ -70,6 +70,7 @@ namespace MueLu {
     SET_VALID_ENTRY("toggle: mode");
     SET_VALID_ENTRY("semicoarsen: number of levels");
 #undef  SET_VALID_ENTRY
+
     return validParamList;
   }
 
@@ -84,6 +85,17 @@ namespace MueLu {
       coarseLevel.DeclareInput("Nullspace", (*it).get(), this);  // request/release coarse "Nullspace" (dependencies are not affected)
       (*it)->CallDeclareInput(coarseLevel); // request dependencies
     }
+
+    // The factory needs the information about the number of z-layers. While this information is
+    // provided by the user for the finest level, the factory itself is responsible to provide the
+    // corresponding information on the coarser levels. Since a factory cannot be dependent on itself
+    // we use the NoFactory class as generator class, but remove the UserData keep flag, such that
+    // "NumZLayers" is part of the request/release mechanism.
+    // Please note, that this prevents us from having several (independent) CoarsePFactory instances!
+    // TODO: allow factory to dependent on self-generated data for TwoLevelFactories -> introduce ExpertRequest/Release in Level
+    fineLevel.DeclareInput("NumZLayers", NoFactory::get(), this);
+    fineLevel.RemoveKeepFlag("NumZLayers", NoFactory::get(), MueLu::UserData);
+
     hasDeclaredInput_ = true;
   }
 
@@ -92,8 +104,6 @@ namespace MueLu {
     FactoryMonitor m(*this, "Prolongator toggle", coarseLevel);
     std::ostringstream levelstr;
     levelstr << coarseLevel.GetLevelID();
-
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
     TEUCHOS_TEST_FOR_EXCEPTION(nspFacts_.size() != prolongatorFacts_.size(), Exceptions::RuntimeError, "MueLu::TogglePFactory::Build: The number of provided prolongator factories and coarse nullspace factories must be identical.");
     TEUCHOS_TEST_FOR_EXCEPTION(nspFacts_.size() != 2, Exceptions::RuntimeError, "MueLu::TogglePFactory::Build: TogglePFactory needs two different transfer operator strategies for toggling."); // TODO adapt this/weaken this as soon as other toggling strategies are introduced.
@@ -108,8 +118,14 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(mode!="semicoarsen", Exceptions::RuntimeError, "MueLu::TogglePFactory::Build: The 'toggle: mode' parameter must be set to 'semicoarsen'. No other mode supported, yet.");
 
+    LO NumZDir = -1;
+    if(fineLevel.IsAvailable("NumZLayers", NoFactory::get())) {
+      NumZDir = fineLevel.Get<LO>("NumZLayers", NoFactory::get()); //obtain info
+      GetOStream(Runtime1) << "Number of layers for semicoarsening: " << NumZDir << std::endl;
+    }
+
     // Make a decision which prolongator to be used.
-    if(fineLevel.GetLevelID() >= semicoarsen_levels) {
+    if(fineLevel.GetLevelID() >= semicoarsen_levels || NumZDir == 1) {
       nProlongatorFactory = 1;
     } else {
       nProlongatorFactory = 0;
@@ -133,7 +149,7 @@ namespace MueLu {
     // store prolongator with this factory identification.
     Set(coarseLevel, "P", P);
     Set(coarseLevel, "Nullspace", coarseNullspace);
-
+    Set(coarseLevel, "Chosen P", nProlongatorFactory);
   } //Build()
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

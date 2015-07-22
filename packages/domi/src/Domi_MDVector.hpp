@@ -50,6 +50,7 @@
 
 // Domi includes
 #include "Domi_ConfigDefs.hpp"
+#include "Domi_DefaultNode.hpp"
 #include "Domi_MDMap.hpp"
 #include "Domi_MDArrayRCP.hpp"
 
@@ -169,7 +170,7 @@ namespace Domi
  * internally.
  */
 template< class Scalar,
-          class ExecSpace = Kokkos::DefaultExecutionSpace >
+          class Node = DefaultNode::DefaultNodeType >
 class MDVector : public Teuchos::Describable
 {
 public:
@@ -184,7 +185,7 @@ public:
    *
    * \param zeroOut [in] flag to initialize all data to zero
    */
-  MDVector(const Teuchos::RCP< const MDMap< ExecSpace > > & mdMap,
+  MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
            bool zeroOut = true);
 
   /** \brief Augmented constructor
@@ -208,7 +209,7 @@ public:
    * and computes a new, augmented MDComm and a new MDMap for this
    * MDVector.
    */
-  MDVector(const Teuchos::RCP< const MDMap< ExecSpace > > & mdMap,
+  MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
            const dim_type leadingDim,
            const dim_type trailingDim = 0,
            bool zeroOut = true);
@@ -220,7 +221,7 @@ public:
    *
    * \param source [in] initialization values
    */
-  MDVector(const Teuchos::RCP< const MDMap< ExecSpace > > & mdMap,
+  MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
            const MDArrayView< Scalar > & source);
 
   /** \brief Constructor with managed array object (view)
@@ -230,7 +231,7 @@ public:
    *
    * \param source [in] memory-managed multi-dimensional array
    */
-  MDVector(const Teuchos::RCP< const MDMap< ExecSpace > > & mdMap,
+  MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
            const MDArrayRCP< Scalar > & source);
 
   /** \brief Copy constructor with view or copy semantics
@@ -245,7 +246,7 @@ public:
    * source MDVector data for the new MDVector.  Default behavior is
    * to use view semantics.
    */
-  MDVector(const MDVector< Scalar, ExecSpace > & source,
+  MDVector(const MDVector< Scalar, Node > & source,
            Teuchos::DataAccess access = Teuchos::View);
 
   /** \brief Constructor with Teuchos::Comm and ParameterList
@@ -286,7 +287,7 @@ public:
    *
    * \param index [in] the global ordinal that defines the sub-vector
    */
-  MDVector(const MDVector< Scalar, ExecSpace > & parent,
+  MDVector(const MDVector< Scalar, Node > & parent,
            int axis,
            dim_type index);
 
@@ -305,7 +306,7 @@ public:
    *        boundary padding of the parent MDVector, but it does not
    *        have to.
    */
-  MDVector(const MDVector< Scalar, ExecSpace > & parent,
+  MDVector(const MDVector< Scalar, Node > & parent,
            int axis,
            const Slice & slice,
            int bndryPad = 0);
@@ -314,8 +315,8 @@ public:
    *
    * \param source [in] source MDVector to be copied
    */
-  MDVector< Scalar, ExecSpace > &
-  operator=(const MDVector< Scalar, ExecSpace > & source);
+  MDVector< Scalar, Node > &
+  operator=(const MDVector< Scalar, Node > & source);
 
   /** \brief Destructor
    */
@@ -328,7 +329,7 @@ public:
 
   /** \brief MDMap accessor method
    */
-  const Teuchos::RCP< const MDMap< ExecSpace > >
+  const Teuchos::RCP< const MDMap< Node > >
   getMDMap() const;
 
   /** \brief Query whether this processor is on the sub-communicator
@@ -679,7 +680,7 @@ public:
    * on this non-contiguous MDVector.
    */
   template< class LocalOrdinal >
-  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, ExecSpace > >
+  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, Node > >
   getTpetraVectorView() const;
 
   /** \brief Return a view of this MDVector as an Tpetra::Vector
@@ -694,7 +695,7 @@ public:
    */
   template< class LocalOrdinal,
             class GlobalOrdinal >
-  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, ExecSpace > >
+  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > >
   getTpetraVectorView() const;
 
   /** \brief Return a view of this MDVector as an Tpetra::Vector
@@ -709,8 +710,8 @@ public:
    */
   template< class LocalOrdinal,
             class GlobalOrdinal,
-            class ExecSpace2 >
-  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, ExecSpace2 > >
+            class Node2 >
+  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node2 > >
   getTpetraVectorView() const;
 
   /** \brief Return a view of this MDVector as an Tpetra::MultiVector
@@ -734,7 +735,7 @@ public:
   Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                      LocalOrdinal,
                                      LocalOrdinal,
-                                     ExecSpace > >
+                                     Node > >
   getTpetraMultiVectorView() const;
 
   /** \brief Return a view of this MDVector as an Tpetra::MultiVector
@@ -759,7 +760,7 @@ public:
   Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                      LocalOrdinal,
                                      GlobalOrdinal,
-                                     ExecSpace > >
+                                     Node > >
   getTpetraMultiVectorView() const;
 
   /** \brief Return a view of this MDVector as an Tpetra::MultiVector
@@ -781,11 +782,11 @@ public:
    */
   template < class LocalOrdinal,
              class GlobalOrdinal,
-             class ExecSpace2 >
+             class Node2 >
   Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                      LocalOrdinal,
                                      GlobalOrdinal,
-                                     ExecSpace2 > >
+                                     Node2 > >
   getTpetraMultiVectorView() const;
 
   /** \brief Return a copy of this MDVector as an Tpetra::Vector
@@ -794,7 +795,7 @@ public:
    * order to be expressed as an Tpetra::Vector.
    */
   template< class LocalOrdinal >
-  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, ExecSpace > >
+  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, Node > >
   getTpetraVectorCopy() const;
 
   /** \brief Return a copy of this MDVector as an Tpetra::Vector
@@ -804,7 +805,7 @@ public:
    */
   template< class LocalOrdinal,
             class GlobalOrdinal >
-  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, ExecSpace > >
+  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > >
   getTpetraVectorCopy() const;
 
   /** \brief Return a copy of this MDVector as an Tpetra::Vector
@@ -814,8 +815,8 @@ public:
    */
   template< class LocalOrdinal,
             class GlobalOrdinal,
-            class ExecSpace2 >
-  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, ExecSpace2 > >
+            class Node2 >
+  Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node2 > >
   getTpetraVectorCopy() const;
 
   /** \brief Return a copy of this MDVector as an Tpetra::MultiVector
@@ -834,7 +835,7 @@ public:
   Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                      LocalOrdinal,
                                      LocalOrdinal,
-                                     ExecSpace > >
+                                     Node > >
   getTpetraMultiVectorCopy() const;
 
   /** \brief Return a copy of this MDVector as an Tpetra::MultiVector
@@ -854,7 +855,7 @@ public:
   Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                      LocalOrdinal,
                                      GlobalOrdinal,
-                                     ExecSpace > >
+                                     Node > >
   getTpetraMultiVectorCopy() const;
 
   /** \brief Return a copy of this MDVector as an Tpetra::MultiVector
@@ -871,11 +872,11 @@ public:
    */
   template < class LocalOrdinal,
              class GlobalOrdinal,
-             class ExecSpace2 >
+             class Node2 >
   Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                      LocalOrdinal,
                                      GlobalOrdinal,
-                                     ExecSpace2 > >
+                                     Node2 > >
   getTpetraMultiVectorCopy() const;
 
 #endif
@@ -937,7 +938,7 @@ public:
    * \param a [in] partner MDVector for performing dot product
    */
   Scalar
-  dot(const MDVector< Scalar, ExecSpace > & a) const;
+  dot(const MDVector< Scalar, Node > & a) const;
 
   /** \brief Compute the 1-norm of this MDVector
    */
@@ -956,7 +957,7 @@ public:
    * \param weights [in] MDVector of weights for weighted norm
    */
   typename Teuchos::ScalarTraits< Scalar >::magnitudeType
-  normWeighted(const MDVector< Scalar, ExecSpace > & weights) const;
+  normWeighted(const MDVector< Scalar, Node > & weights) const;
 
   /** \brief Compute the mean (average) value of this MDVector
    */
@@ -1061,7 +1062,7 @@ public:
    * The returned <tt>MDVector</tt> will have one fewer dimensions
    * than the calling <tt>MDVector</tt>.
    */
-  MDVector< Scalar, ExecSpace >
+  MDVector< Scalar, Node >
   operator[](dim_type index) const;
 
   /** \brief Sub-vector access operator.
@@ -1080,7 +1081,7 @@ public:
    * MDVector constructor that takes a parent MDVector, an axis, a
    * Slice, and a boundary padding specification.
    */
-  MDVector< Scalar, ExecSpace >
+  MDVector< Scalar, Node >
   operator[](Slice slice) const;
 
   //@}
@@ -1119,7 +1120,7 @@ private:
 
   // The MDMap that describes the domain decomposition of this
   // MDVector
-  Teuchos::RCP< const MDMap< ExecSpace > > _mdMap;
+  Teuchos::RCP< const MDMap< Node > > _mdMap;
 
   // The MDArrayRCP that stores the data of this MDVector
   MDArrayRCP< Scalar > _mdArrayRcp;
@@ -1225,9 +1226,9 @@ private:
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
-MDVector< Scalar, ExecSpace >::
-MDVector(const Teuchos::RCP< const MDMap< ExecSpace > > & mdMap,
+          class Node >
+MDVector< Scalar, Node >::
+MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
          bool zeroOut) :
   _teuchosComm(mdMap->getTeuchosComm()),
   _mdMap(mdMap),
@@ -1256,9 +1257,9 @@ MDVector(const Teuchos::RCP< const MDMap< ExecSpace > > & mdMap,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
-MDVector< Scalar, ExecSpace >::
-MDVector(const Teuchos::RCP< const MDMap< ExecSpace > > & mdMap,
+          class Node >
+MDVector< Scalar, Node >::
+MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
          const dim_type leadingDim,
          const dim_type trailingDim,
          bool zeroOut) :
@@ -1289,9 +1290,9 @@ MDVector(const Teuchos::RCP< const MDMap< ExecSpace > > & mdMap,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
-MDVector< Scalar, ExecSpace >::
-MDVector(const Teuchos::RCP< const MDMap< ExecSpace > > & mdMap,
+          class Node >
+MDVector< Scalar, Node >::
+MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
          const MDArrayView< Scalar > & source) :
   _mdMap(mdMap),
   _mdArrayRcp(source),
@@ -1323,9 +1324,9 @@ MDVector(const Teuchos::RCP< const MDMap< ExecSpace > > & mdMap,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
-MDVector< Scalar, ExecSpace >::
-MDVector(const Teuchos::RCP< const MDMap< ExecSpace > > & mdMap,
+          class Node >
+MDVector< Scalar, Node >::
+MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
          const MDArrayRCP< Scalar > & mdArrayRcp) :
   _mdMap(mdMap),
   _mdArrayRcp(mdArrayRcp),
@@ -1363,9 +1364,9 @@ MDVector(const Teuchos::RCP< const MDMap< ExecSpace > > & mdMap,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
-MDVector< Scalar, ExecSpace >::
-MDVector(const MDVector< Scalar, ExecSpace > & source,
+          class Node >
+MDVector< Scalar, Node >::
+MDVector(const MDVector< Scalar, Node > & source,
          Teuchos::DataAccess access) :
   _teuchosComm(source.getMDMap()->getTeuchosComm()),
   _mdMap(source.getMDMap()),
@@ -1417,8 +1418,8 @@ MDVector(const MDVector< Scalar, ExecSpace > & source,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
-MDVector< Scalar, ExecSpace >::
+          class Node >
+MDVector< Scalar, Node >::
 MDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
          Teuchos::ParameterList & plist) :
   _teuchosComm(teuchosComm),
@@ -1435,7 +1436,7 @@ MDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
   setObjectLabel("Domi::MDVector");
 
   // Compute the MDComm and MDMap
-  MDMap< ExecSpace > * myMdMap = new MDMap< ExecSpace >(teuchosComm, plist);
+  MDMap< Node > * myMdMap = new MDMap< Node >(teuchosComm, plist);
   dim_type leadingDim  = plist.get("leading dimension" , 0);
   dim_type trailingDim = plist.get("trailing dimension", 0);
   if (leadingDim + trailingDim > 0)
@@ -1460,12 +1461,12 @@ MDVector(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
-MDVector< Scalar, ExecSpace >::
+          class Node >
+MDVector< Scalar, Node >::
 MDVector(const Teuchos::RCP< const MDComm > mdComm,
          Teuchos::ParameterList & plist) :
   _teuchosComm(mdComm->getTeuchosComm()),
-  _mdMap(Teuchos::rcp(new MDMap< ExecSpace >(mdComm, plist))),
+  _mdMap(Teuchos::rcp(new MDMap< Node >(mdComm, plist))),
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
@@ -1478,7 +1479,7 @@ MDVector(const Teuchos::RCP< const MDComm > mdComm,
   setObjectLabel("Domi::MDVector");
 
   // Compute the MDMap
-  MDMap< ExecSpace > * myMdMap = new MDMap< ExecSpace >(mdComm, plist);
+  MDMap< Node > * myMdMap = new MDMap< Node >(mdComm, plist);
   dim_type leadingDim  = plist.get("leading dimension" , 0);
   dim_type trailingDim = plist.get("trailing dimension", 0);
   if (leadingDim + trailingDim > 0)
@@ -1503,9 +1504,9 @@ MDVector(const Teuchos::RCP< const MDComm > mdComm,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
-MDVector< Scalar, ExecSpace >::
-MDVector(const MDVector< Scalar, ExecSpace > & parent,
+          class Node >
+MDVector< Scalar, Node >::
+MDVector(const MDVector< Scalar, Node > & parent,
          int axis,
          dim_type globalIndex) :
   _teuchosComm(parent._teuchosComm),
@@ -1522,10 +1523,10 @@ MDVector(const MDVector< Scalar, ExecSpace > & parent,
   setObjectLabel("Domi::MDVector");
 
   // Obtain the parent MDMap
-  Teuchos::RCP< const MDMap< ExecSpace > > parentMdMap = parent.getMDMap();
+  Teuchos::RCP< const MDMap< Node > > parentMdMap = parent.getMDMap();
 
   // Obtain the new, sliced MDMap
-  _mdMap = Teuchos::rcp(new MDMap< ExecSpace >(*parentMdMap,
+  _mdMap = Teuchos::rcp(new MDMap< Node >(*parentMdMap,
                                           axis,
                                           globalIndex));
 
@@ -1561,9 +1562,9 @@ MDVector(const MDVector< Scalar, ExecSpace > & parent,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
-MDVector< Scalar, ExecSpace >::
-MDVector(const MDVector< Scalar, ExecSpace > & parent,
+          class Node >
+MDVector< Scalar, Node >::
+MDVector(const MDVector< Scalar, Node > & parent,
          int axis,
          const Slice & slice,
          int bndryPad) :
@@ -1587,10 +1588,10 @@ MDVector(const MDVector< Scalar, ExecSpace > & parent,
   setObjectLabel("Domi::MDVector");
 
   // Obtain the parent MDMap
-  Teuchos::RCP< const MDMap< ExecSpace > > parentMdMap = parent.getMDMap();
+  Teuchos::RCP< const MDMap< Node > > parentMdMap = parent.getMDMap();
 
   // Obtain the new, sliced MDMap
-  _mdMap = Teuchos::rcp(new MDMap< ExecSpace >(*parentMdMap,
+  _mdMap = Teuchos::rcp(new MDMap< Node >(*parentMdMap,
                                           axis,
                                           slice,
                                           bndryPad));
@@ -1646,10 +1647,10 @@ MDVector(const MDVector< Scalar, ExecSpace > & parent,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
-MDVector< Scalar, ExecSpace > &
-MDVector< Scalar, ExecSpace >::
-operator=(const MDVector< Scalar, ExecSpace > & source)
+          class Node >
+MDVector< Scalar, Node > &
+MDVector< Scalar, Node >::
+operator=(const MDVector< Scalar, Node > & source)
 {
   _teuchosComm  = source._teuchosComm;
   _mdMap        = source._mdMap;
@@ -1667,17 +1668,17 @@ operator=(const MDVector< Scalar, ExecSpace > & source)
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
-MDVector< Scalar, ExecSpace >::~MDVector()
+          class Node >
+MDVector< Scalar, Node >::~MDVector()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
-const Teuchos::RCP< const MDMap< ExecSpace > >
-MDVector< Scalar, ExecSpace >::
+          class Node >
+const Teuchos::RCP< const MDMap< Node > >
+MDVector< Scalar, Node >::
 getMDMap() const
 {
   return _mdMap;
@@ -1686,9 +1687,9 @@ getMDMap() const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 bool
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 onSubcommunicator() const
 {
   return _mdMap->onSubcommunicator();
@@ -1697,9 +1698,9 @@ onSubcommunicator() const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 Teuchos::RCP< const Teuchos::Comm< int > >
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getTeuchosComm() const
 {
   return _mdMap->getTeuchosComm();
@@ -1708,9 +1709,9 @@ getTeuchosComm() const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 int
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 numDims() const
 {
   return _mdMap->numDims();
@@ -1719,9 +1720,9 @@ numDims() const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 int
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getCommDim(int axis) const
 {
   return _mdMap->getCommDim(axis);
@@ -1730,9 +1731,9 @@ getCommDim(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 bool
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 isPeriodic(int axis) const
 {
   return _mdMap->isPeriodic(axis);
@@ -1741,9 +1742,9 @@ isPeriodic(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 int
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getCommIndex(int axis) const
 {
   return _mdMap->getCommIndex(axis);
@@ -1752,9 +1753,9 @@ getCommIndex(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 int
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getLowerNeighbor(int axis) const
 {
   return _mdMap->getLowerNeighbor(axis);
@@ -1763,9 +1764,9 @@ getLowerNeighbor(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 int
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getUpperNeighbor(int axis) const
 {
   return _mdMap->getUpperNeighbor(axis);
@@ -1774,9 +1775,9 @@ getUpperNeighbor(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 dim_type
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getGlobalDim(int axis, bool withBndryPad) const
 {
   return _mdMap->getGlobalDim(axis, withBndryPad);
@@ -1785,9 +1786,9 @@ getGlobalDim(int axis, bool withBndryPad) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 Slice
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getGlobalBounds(int axis, bool withBndryPad) const
 {
   return _mdMap->getGlobalBounds(axis, withBndryPad);
@@ -1796,9 +1797,9 @@ getGlobalBounds(int axis, bool withBndryPad) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 Slice
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getGlobalRankBounds(int axis, bool withBndryPad) const
 {
   return _mdMap->getGlobalRankBounds(axis, withBndryPad);
@@ -1807,9 +1808,9 @@ getGlobalRankBounds(int axis, bool withBndryPad) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 dim_type
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getLocalDim(int axis, bool withCommPad) const
 {
   return _mdMap->getLocalDim(axis, withCommPad);
@@ -1818,9 +1819,9 @@ getLocalDim(int axis, bool withCommPad) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 Slice
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getLocalBounds(int axis, bool withCommPad) const
 {
   return _mdMap->getLocalBounds(axis, withCommPad);
@@ -1829,9 +1830,9 @@ getLocalBounds(int axis, bool withCommPad) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 bool
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 hasPadding() const
 {
   return _mdMap->hasPadding();
@@ -1840,9 +1841,9 @@ hasPadding() const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 int
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getLowerPadSize(int axis) const
 {
   return _mdMap->getLowerPadSize(axis);
@@ -1851,9 +1852,9 @@ getLowerPadSize(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 int
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getUpperPadSize(int axis) const
 {
   return _mdMap->getUpperPadSize(axis);
@@ -1862,9 +1863,9 @@ getUpperPadSize(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 int
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getCommPadSize(int axis) const
 {
   return _mdMap->getCommPadSize(axis);
@@ -1873,9 +1874,9 @@ getCommPadSize(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 int
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getLowerBndryPad(int axis) const
 {
   return _mdMap->getLowerBndryPad(axis);
@@ -1884,9 +1885,9 @@ getLowerBndryPad(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 int
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getUpperBndryPad(int axis) const
 {
   return _mdMap->getUpperBndryPad(axis);
@@ -1895,9 +1896,9 @@ getUpperBndryPad(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 int
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getBndryPadSize(int axis) const
 {
   return _mdMap->getBndryPadSize(axis);
@@ -1906,9 +1907,9 @@ getBndryPadSize(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 void
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 setLowerPad(int axis,
             const Scalar value)
 {
@@ -1919,9 +1920,9 @@ setLowerPad(int axis,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 void
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 setUpperPad(int axis,
             const Scalar value)
 {
@@ -1932,9 +1933,9 @@ setUpperPad(int axis,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 Layout
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getLayout() const
 {
   return _mdMap->getLayout();
@@ -1943,9 +1944,9 @@ getLayout() const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 bool
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 isContiguous() const
 {
   return _mdMap->isContiguous();
@@ -1963,9 +1964,9 @@ isContiguous() const
 // Scalar, but we will throw an exception if Scalar is not double.
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 Teuchos::RCP< Epetra_Vector >
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getEpetraVectorView() const
 {
   // Throw an exception if Scalar is not double
@@ -2009,9 +2010,9 @@ getEpetraVectorView() const
 // Scalar, but we will throw an exception if Scalar is not double.
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 Teuchos::RCP< Epetra_MultiVector >
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getEpetraMultiVectorView() const
 {
   // Throw an exception if Scalar is not double
@@ -2029,9 +2030,9 @@ getEpetraMultiVectorView() const
   int numVectors = getGlobalDim(vectorAxis);
 
   // Obtain the appropriate MDMap and check that it is contiguous
-  Teuchos::RCP< const MDMap< ExecSpace > > newMdMap;
+  Teuchos::RCP< const MDMap< Node > > newMdMap;
   if (padding == 0 && commDim == 1)
-    newMdMap = Teuchos::rcp(new MDMap< ExecSpace >(*_mdMap, vectorAxis, 0));
+    newMdMap = Teuchos::rcp(new MDMap< Node >(*_mdMap, vectorAxis, 0));
   else
   {
     newMdMap = _mdMap;
@@ -2077,9 +2078,9 @@ getEpetraMultiVectorView() const
 #ifdef HAVE_EPETRA
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 Teuchos::RCP< Epetra_Vector >
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getEpetraVectorCopy() const
 {
   typedef typename MDArrayView< const Scalar >::iterator iterator;
@@ -2108,9 +2109,9 @@ getEpetraVectorCopy() const
 #ifdef HAVE_EPETRA
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 Teuchos::RCP< Epetra_MultiVector >
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getEpetraMultiVectorCopy() const
 {
   typedef typename MDArrayView< Scalar >::iterator iterator;
@@ -2123,9 +2124,9 @@ getEpetraMultiVectorCopy() const
   int numVectors = getGlobalDim(vectorAxis);
 
   // Obtain the appropriate MDMap
-  Teuchos::RCP< const MDMap< ExecSpace > > newMdMap;
+  Teuchos::RCP< const MDMap< Node > > newMdMap;
   if (padding == 0 && commDim == 1)
-    newMdMap = Teuchos::rcp(new MDMap< ExecSpace >(*_mdMap, vectorAxis, 0));
+    newMdMap = Teuchos::rcp(new MDMap< Node >(*_mdMap, vectorAxis, 0));
   else
   {
     newMdMap = _mdMap;
@@ -2168,13 +2169,13 @@ getEpetraMultiVectorCopy() const
 
 #ifdef HAVE_TPETRA
 
-template< class Scalar, class ExecSpace >
+template< class Scalar, class Node >
 template< class LocalOrdinal >
-Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, ExecSpace > >
-MDVector< Scalar, ExecSpace >::
+Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, Node > >
+MDVector< Scalar, Node >::
 getTpetraVectorView() const
 {
-  return getTpetraVectorView< LocalOrdinal, LocalOrdinal, ExecSpace >();
+  return getTpetraVectorView< LocalOrdinal, LocalOrdinal, Node >();
 }
 
 #endif
@@ -2183,14 +2184,14 @@ getTpetraVectorView() const
 
 #ifdef HAVE_TPETRA
 
-template< class Scalar, class ExecSpace >
+template< class Scalar, class Node >
 template< class LocalOrdinal,
           class GlobalOrdinal >
-Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, ExecSpace > >
-MDVector< Scalar, ExecSpace >::
+Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > >
+MDVector< Scalar, Node >::
 getTpetraVectorView() const
 {
-  return getTpetraVectorView< LocalOrdinal, GlobalOrdinal, ExecSpace >();
+  return getTpetraVectorView< LocalOrdinal, GlobalOrdinal, Node >();
 }
 
 #endif
@@ -2199,12 +2200,12 @@ getTpetraVectorView() const
 
 #ifdef HAVE_TPETRA
 
-template< class Scalar, class ExecSpace >
+template< class Scalar, class Node >
 template< class LocalOrdinal,
           class GlobalOrdinal,
-          class ExecSpace2 >
-Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, ExecSpace2 > >
-MDVector< Scalar, ExecSpace >::
+          class Node2 >
+Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node2 > >
+MDVector< Scalar, Node >::
 getTpetraVectorView() const
 {
   // Throw an exception if this MDVector's MDMap is not contiguous
@@ -2217,14 +2218,14 @@ getTpetraVectorView() const
   // Get the Tpetra::Map that is equivalent to this MDVector's MDMap
   Teuchos::RCP< const Tpetra::Map< LocalOrdinal,
                                    GlobalOrdinal,
-                                   ExecSpace2 > > tpetraMap =
-    _mdMap->template getTpetraMap< LocalOrdinal, GlobalOrdinal, ExecSpace2 >(true);
+                                   Node2 > > tpetraMap =
+    _mdMap->template getTpetraMap< LocalOrdinal, GlobalOrdinal, Node2 >(true);
 
   // Return the result
   return Teuchos::rcp(new Tpetra::Vector< Scalar,
                                           LocalOrdinal,
                                           GlobalOrdinal,
-                                          ExecSpace2 >(tpetraMap,
+                                          Node2 >(tpetraMap,
                                                   _mdArrayView.arrayView()));
 }
 
@@ -2234,13 +2235,13 @@ getTpetraVectorView() const
 
 #ifdef HAVE_TPETRA
 
-template< class Scalar, class ExecSpace >
+template< class Scalar, class Node >
 template< class LocalOrdinal >
-Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, ExecSpace > >
-MDVector< Scalar, ExecSpace >::
+Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, Node > >
+MDVector< Scalar, Node >::
 getTpetraVectorCopy() const
 {
-  return getTpetraVectorCopy< LocalOrdinal, LocalOrdinal, ExecSpace >();
+  return getTpetraVectorCopy< LocalOrdinal, LocalOrdinal, Node >();
 }
 
 #endif
@@ -2249,14 +2250,14 @@ getTpetraVectorCopy() const
 
 #ifdef HAVE_TPETRA
 
-template< class Scalar, class ExecSpace >
+template< class Scalar, class Node >
 template< class LocalOrdinal,
           class GlobalOrdinal >
-Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, ExecSpace > >
-MDVector< Scalar, ExecSpace >::
+Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > >
+MDVector< Scalar, Node >::
 getTpetraVectorCopy() const
 {
-  return getTpetraVectorCopy< LocalOrdinal, GlobalOrdinal, ExecSpace >();
+  return getTpetraVectorCopy< LocalOrdinal, GlobalOrdinal, Node >();
 }
 
 #endif
@@ -2265,12 +2266,12 @@ getTpetraVectorCopy() const
 
 #ifdef HAVE_TPETRA
 
-template< class Scalar, class ExecSpace >
+template< class Scalar, class Node >
 template< class LocalOrdinal,
           class GlobalOrdinal,
-          class ExecSpace2 >
-Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, ExecSpace2 > >
-MDVector< Scalar, ExecSpace >::
+          class Node2 >
+Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node2 > >
+MDVector< Scalar, Node >::
 getTpetraVectorCopy() const
 {
   typedef typename MDArrayView< const Scalar >::iterator iterator;
@@ -2278,18 +2279,18 @@ getTpetraVectorCopy() const
   // Get the Tpetra::Map that is equivalent to this MDVector's MDMap
   Teuchos::RCP< const Tpetra::Map< LocalOrdinal,
                                    GlobalOrdinal,
-                                   ExecSpace2 > > tpetraMap =
-    _mdMap->template getTpetraMap< LocalOrdinal, GlobalOrdinal, ExecSpace2 >(true);
+                                   Node2 > > tpetraMap =
+    _mdMap->template getTpetraMap< LocalOrdinal, GlobalOrdinal, Node2 >(true);
 
   // Construct the result
   Teuchos::RCP< Tpetra::Vector< Scalar,
                                 LocalOrdinal,
                                 GlobalOrdinal,
-                                ExecSpace2 > > result =
+                                Node2 > > result =
     Teuchos::rcp(new Tpetra::Vector< Scalar,
                                      LocalOrdinal,
                                      GlobalOrdinal,
-                                     ExecSpace2 >(tpetraMap) );
+                                     Node2 >(tpetraMap) );
 
   // Copy the MDVector data to the Tpetra::Vector, even if the
   // MDVector is non-contiguous
@@ -2308,16 +2309,16 @@ getTpetraVectorCopy() const
 
 #ifdef HAVE_TPETRA
 
-template< class Scalar, class ExecSpace >
+template< class Scalar, class Node >
 template < class LocalOrdinal >
 Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                    LocalOrdinal,
                                    LocalOrdinal,
-                                   ExecSpace > >
-MDVector< Scalar, ExecSpace >::
+                                   Node > >
+MDVector< Scalar, Node >::
 getTpetraMultiVectorView() const
 {
-  return getTpetraMultiVectorView< LocalOrdinal, LocalOrdinal, ExecSpace >();
+  return getTpetraMultiVectorView< LocalOrdinal, LocalOrdinal, Node >();
 }
 
 #endif
@@ -2326,17 +2327,17 @@ getTpetraMultiVectorView() const
 
 #ifdef HAVE_TPETRA
 
-template< class Scalar, class ExecSpace >
+template< class Scalar, class Node >
 template < class LocalOrdinal,
            class GlobalOrdinal >
 Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                    LocalOrdinal,
                                    GlobalOrdinal,
-                                   ExecSpace > >
-MDVector< Scalar, ExecSpace >::
+                                   Node > >
+MDVector< Scalar, Node >::
 getTpetraMultiVectorView() const
 {
-  return getTpetraMultiVectorView< LocalOrdinal, GlobalOrdinal, ExecSpace >();
+  return getTpetraMultiVectorView< LocalOrdinal, GlobalOrdinal, Node >();
 }
 
 #endif
@@ -2345,15 +2346,15 @@ getTpetraMultiVectorView() const
 
 #ifdef HAVE_TPETRA
 
-template< class Scalar, class ExecSpace >
+template< class Scalar, class Node >
 template < class LocalOrdinal,
            class GlobalOrdinal,
-           class ExecSpace2 >
+           class Node2 >
 Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                    LocalOrdinal,
                                    GlobalOrdinal,
-                                   ExecSpace2 > >
-MDVector< Scalar, ExecSpace >::
+                                   Node2 > >
+MDVector< Scalar, Node >::
 getTpetraMultiVectorView() const
 {
   // Determine the vector axis and related info
@@ -2363,9 +2364,9 @@ getTpetraMultiVectorView() const
   int numVectors = getGlobalDim(vectorAxis);
 
   // Obtain the appropriate MDMap and check that it is contiguous
-  Teuchos::RCP< const MDMap< ExecSpace > > newMdMap;
+  Teuchos::RCP< const MDMap< Node > > newMdMap;
   if (padding == 0 && commDim == 1)
-    newMdMap = Teuchos::rcp(new MDMap< ExecSpace >(*_mdMap, vectorAxis, 0));
+    newMdMap = Teuchos::rcp(new MDMap< Node >(*_mdMap, vectorAxis, 0));
   else
   {
     newMdMap = _mdMap;
@@ -2393,14 +2394,14 @@ getTpetraMultiVectorView() const
   // Get the Tpetra::Map that is equivalent to newMdMap
   Teuchos::RCP< const Tpetra::Map< LocalOrdinal,
                                    GlobalOrdinal,
-                                   ExecSpace2> > tpetraMap =
-    newMdMap->template getTpetraMap< LocalOrdinal, GlobalOrdinal, ExecSpace2 >(true);
+                                   Node2> > tpetraMap =
+    newMdMap->template getTpetraMap< LocalOrdinal, GlobalOrdinal, Node2 >(true);
 
   // Return the result
   return Teuchos::rcp(new Tpetra::MultiVector< Scalar,
                                                LocalOrdinal,
                                                GlobalOrdinal,
-                                               ExecSpace2 >(tpetraMap,
+                                               Node2 >(tpetraMap,
                                                        _mdArrayRcp.arrayRCP(),
                                                        lda,
                                                        numVectors));
@@ -2412,16 +2413,16 @@ getTpetraMultiVectorView() const
 
 #ifdef HAVE_TPETRA
 
-template< class Scalar, class ExecSpace >
+template< class Scalar, class Node >
 template < class LocalOrdinal >
 Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                    LocalOrdinal,
                                    LocalOrdinal,
-                                   ExecSpace > >
-MDVector< Scalar, ExecSpace >::
+                                   Node > >
+MDVector< Scalar, Node >::
 getTpetraMultiVectorCopy() const
 {
-  return getTpetraMultiVectorCopy< LocalOrdinal, LocalOrdinal, ExecSpace >();
+  return getTpetraMultiVectorCopy< LocalOrdinal, LocalOrdinal, Node >();
 }
 
 #endif
@@ -2430,17 +2431,17 @@ getTpetraMultiVectorCopy() const
 
 #ifdef HAVE_TPETRA
 
-template< class Scalar, class ExecSpace >
+template< class Scalar, class Node >
 template < class LocalOrdinal,
            class GlobalOrdinal >
 Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                    LocalOrdinal,
                                    GlobalOrdinal,
-                                   ExecSpace > >
-MDVector< Scalar, ExecSpace >::
+                                   Node > >
+MDVector< Scalar, Node >::
 getTpetraMultiVectorCopy() const
 {
-  return getTpetraMultiVectorCopy< LocalOrdinal, GlobalOrdinal, ExecSpace >();
+  return getTpetraMultiVectorCopy< LocalOrdinal, GlobalOrdinal, Node >();
 }
 
 #endif
@@ -2449,15 +2450,15 @@ getTpetraMultiVectorCopy() const
 
 #ifdef HAVE_TPETRA
 
-template< class Scalar, class ExecSpace >
+template< class Scalar, class Node >
 template < class LocalOrdinal,
            class GlobalOrdinal,
-           class ExecSpace2 >
+           class Node2 >
 Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                    LocalOrdinal,
                                    GlobalOrdinal,
-                                   ExecSpace2 > >
-MDVector< Scalar, ExecSpace >::
+                                   Node2 > >
+MDVector< Scalar, Node >::
 getTpetraMultiVectorCopy() const
 {
   typedef typename MDArrayView< Scalar >::iterator iterator;
@@ -2470,9 +2471,9 @@ getTpetraMultiVectorCopy() const
   int numVectors = getGlobalDim(vectorAxis);
 
   // Obtain the appropriate MDMap
-  Teuchos::RCP< const MDMap< ExecSpace > > newMdMap;
+  Teuchos::RCP< const MDMap< Node > > newMdMap;
   if (padding == 0 && commDim == 1)
-    newMdMap = Teuchos::rcp(new MDMap< ExecSpace >(*_mdMap, vectorAxis, 0));
+    newMdMap = Teuchos::rcp(new MDMap< Node >(*_mdMap, vectorAxis, 0));
   else
   {
     newMdMap = _mdMap;
@@ -2482,18 +2483,18 @@ getTpetraMultiVectorCopy() const
   // Get the Tpetra::Map that is equivalent to newMdMap
   Teuchos::RCP< const Tpetra::Map< LocalOrdinal,
                                    GlobalOrdinal,
-                                   ExecSpace2 > > tpetraMap =
-    newMdMap->template getTpetraMap< LocalOrdinal, GlobalOrdinal, ExecSpace2 >(true);
+                                   Node2 > > tpetraMap =
+    newMdMap->template getTpetraMap< LocalOrdinal, GlobalOrdinal, Node2 >(true);
 
   // Construct the result
   Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                      LocalOrdinal,
                                      GlobalOrdinal,
-                                     ExecSpace2 > > result =
+                                     Node2 > > result =
     Teuchos::rcp(new Tpetra::MultiVector< Scalar,
                                           LocalOrdinal,
                                           GlobalOrdinal,
-                                          ExecSpace2 >(tpetraMap, numVectors));
+                                          Node2 >(tpetraMap, numVectors));
 
   // Copy the MDVector to the Tpetra::MultiVector, even if the
   // MDVector is non-contiguous
@@ -2526,9 +2527,9 @@ getTpetraMultiVectorCopy() const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 MDArrayView< Scalar >
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getDataNonConst(bool includePadding)
 {
 #ifdef DOMI_MDVECTOR_VERBOSE
@@ -2551,9 +2552,9 @@ getDataNonConst(bool includePadding)
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 MDArrayView< const Scalar >
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getData(bool includePadding) const
 {
   if (includePadding)
@@ -2571,9 +2572,9 @@ getData(bool includePadding) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 MDArrayView< Scalar >
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getLowerPadDataNonConst(int axis)
 {
   MDArrayView< Scalar > newArrayView(_mdArrayView,
@@ -2585,9 +2586,9 @@ getLowerPadDataNonConst(int axis)
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 MDArrayView< const Scalar >
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getLowerPadData(int axis) const
 {
   MDArrayView< const Scalar > newArrayView(_mdArrayView.getConst(),
@@ -2599,9 +2600,9 @@ getLowerPadData(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 MDArrayView< Scalar >
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getUpperPadDataNonConst(int axis)
 {
   dim_type n   = getLocalDim(axis,true);
@@ -2618,9 +2619,9 @@ getUpperPadDataNonConst(int axis)
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 MDArrayView< const Scalar >
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 getUpperPadData(int axis) const
 {
   dim_type n   = getLocalDim(axis,true);
@@ -2637,10 +2638,10 @@ getUpperPadData(int axis) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 Scalar
-MDVector< Scalar, ExecSpace >::
-dot(const MDVector< Scalar, ExecSpace > & a) const
+MDVector< Scalar, Node >::
+dot(const MDVector< Scalar, Node > & a) const
 {
   typedef typename MDArrayView< const Scalar >::iterator iterator;
 
@@ -2667,9 +2668,9 @@ dot(const MDVector< Scalar, ExecSpace > & a) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 typename Teuchos::ScalarTraits< Scalar >::magnitudeType
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 norm1() const
 {
   typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
@@ -2690,9 +2691,9 @@ norm1() const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 typename Teuchos::ScalarTraits< Scalar >::magnitudeType
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 norm2() const
 {
   typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
@@ -2703,9 +2704,9 @@ norm2() const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 typename Teuchos::ScalarTraits< Scalar >::magnitudeType
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 normInf() const
 {
   typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
@@ -2726,10 +2727,10 @@ normInf() const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 typename Teuchos::ScalarTraits< Scalar >::magnitudeType
-MDVector< Scalar, ExecSpace >::
-normWeighted(const MDVector< Scalar, ExecSpace > & weights) const
+MDVector< Scalar, Node >::
+normWeighted(const MDVector< Scalar, Node > & weights) const
 {
   typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
   typedef typename MDArrayView< const Scalar >::iterator iterator;
@@ -2762,9 +2763,9 @@ normWeighted(const MDVector< Scalar, ExecSpace > & weights) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 Scalar
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 meanValue() const
 {
   typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
@@ -2790,9 +2791,9 @@ meanValue() const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 std::string
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 description() const
 {
   using Teuchos::TypeNameTraits;
@@ -2805,7 +2806,7 @@ description() const
   oss << "\"Domi::MDVector\": {"
       << "Template parameters: {"
       << "Scalar: " << TypeNameTraits<Scalar>::name()
-      << ", ExecSpace: " << TypeNameTraits< ExecSpace >::name()
+      << ", Node: " << TypeNameTraits< Node >::name()
       << "}";
   if (this->getObjectLabel() != "")
     oss << ", Label: \"" << this->getObjectLabel () << "\", ";
@@ -2816,9 +2817,9 @@ description() const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 void
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 describe(Teuchos::FancyOStream &out,
          const Teuchos::EVerbosityLevel verbLevel) const
 {
@@ -2837,7 +2838,7 @@ describe(Teuchos::FancyOStream &out,
   const Teuchos::EVerbosityLevel vl =
     (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
 
-  const MDMap< ExecSpace > & mdMap = *(getMDMap());
+  const MDMap< Node > & mdMap = *(getMDMap());
   Teuchos::RCP< const Teuchos::Comm< int > > comm = mdMap.getTeuchosComm();
   const int myImageID = comm->getRank();
   const int numImages = comm->getSize();
@@ -2856,7 +2857,7 @@ describe(Teuchos::FancyOStream &out,
       {
         Teuchos::OSTab tab2(out);
         out << "Scalar: " << TypeNameTraits<Scalar>::name() << endl
-            << "ExecSpace: " << TypeNameTraits< ExecSpace >::name() << endl;
+            << "Node: " << TypeNameTraits< Node >::name() << endl;
       }
       out << endl;
       if (this->getObjectLabel() != "")
@@ -2894,9 +2895,9 @@ describe(Teuchos::FancyOStream &out,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 void
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 putScalar(const Scalar & value,
           bool includePadding)
 {
@@ -2910,9 +2911,9 @@ putScalar(const Scalar & value,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 void
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 randomize()
 {
   typedef typename MDArrayView< Scalar >::iterator iterator;
@@ -2925,9 +2926,9 @@ randomize()
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 void
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 updateCommPad()
 {
   for (int axis = 0; axis < numDims(); ++axis)
@@ -2939,9 +2940,9 @@ updateCommPad()
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 void
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 updateCommPad(int axis)
 {
   startUpdateCommPad(axis);
@@ -2951,9 +2952,9 @@ updateCommPad(int axis)
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 void
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 startUpdateCommPad(int axis)
 {
   // #define DOMI_MDVECTOR_OUTPUT_UPDATECOMMPAD
@@ -3034,9 +3035,9 @@ startUpdateCommPad(int axis)
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 void
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 endUpdateCommPad(int axis)
 {
 #ifdef HAVE_MPI
@@ -3055,12 +3056,12 @@ endUpdateCommPad(int axis)
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
-MDVector< Scalar, ExecSpace >
-MDVector< Scalar, ExecSpace >::
+          class Node >
+MDVector< Scalar, Node >
+MDVector< Scalar, Node >::
 operator[](dim_type index) const
 {
-  MDVector< Scalar, ExecSpace > result(*this,
+  MDVector< Scalar, Node > result(*this,
                                   _nextAxis,
                                   index);
   int newAxis = _nextAxis + 1;
@@ -3072,12 +3073,12 @@ operator[](dim_type index) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
-MDVector< Scalar, ExecSpace >
-MDVector< Scalar, ExecSpace >::
+          class Node >
+MDVector< Scalar, Node >
+MDVector< Scalar, Node >::
 operator[](Slice slice) const
 {
-  MDVector< Scalar, ExecSpace > result(*this,
+  MDVector< Scalar, Node > result(*this,
                                   _nextAxis,
                                   slice     );
   int newAxis = _nextAxis + 1;
@@ -3089,9 +3090,9 @@ operator[](Slice slice) const
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 void
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 initializeMessages()
 {
   // #define DOMI_MDVECTOR_MESSAGE_INITIALIZE
@@ -3300,9 +3301,9 @@ initializeMessages()
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 void
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 writeBinary(const std::string & filename,
             bool includeBndryPad) const
 {
@@ -3390,9 +3391,9 @@ writeBinary(const std::string & filename,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
+          class Node >
 void
-MDVector< Scalar, ExecSpace >::
+MDVector< Scalar, Node >::
 readBinary(const std::string & filename,
            bool includeBndryPad)
 {
@@ -3474,14 +3475,14 @@ readBinary(const std::string & filename,
 ////////////////////////////////////////////////////////////////////////
 
 template< class Scalar,
-          class ExecSpace >
-Teuchos::RCP< typename MDVector< Scalar, ExecSpace >::FileInfo > &
-MDVector< Scalar, ExecSpace >::
+          class Node >
+Teuchos::RCP< typename MDVector< Scalar, Node >::FileInfo > &
+MDVector< Scalar, Node >::
 computeFileInfo(bool includeBndryPad) const
 {
   // Work with the appropriate FileInfo object.  By using a reference
   // here, we are working directly with the member data.
-  Teuchos::RCP< MDVector< Scalar, ExecSpace >::FileInfo > & fileInfo =
+  Teuchos::RCP< MDVector< Scalar, Node >::FileInfo > & fileInfo =
     includeBndryPad ? _fileInfoWithBndry : _fileInfo;
 
   // If the fileInfo object already has been set, our work is done
@@ -3489,7 +3490,7 @@ computeFileInfo(bool includeBndryPad) const
 
   // Initialize the new FileInfo object
   int ndims = _mdMap->numDims();
-  fileInfo.reset(new MDVector< Scalar, ExecSpace >::FileInfo);
+  fileInfo.reset(new MDVector< Scalar, Node >::FileInfo);
   fileInfo->fileShape.resize(ndims);
   fileInfo->bufferShape.resize(ndims);
   fileInfo->dataShape.resize(ndims);

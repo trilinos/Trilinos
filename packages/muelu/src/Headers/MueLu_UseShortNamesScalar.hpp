@@ -134,6 +134,10 @@ typedef MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Ifpack2Sm
 typedef MueLu::IndefBlockedDiagonalSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> IndefBlockedDiagonalSmoother;
 #endif
 
+#ifdef MUELU_LINEDETECTIONFACTORY_SHORT
+typedef MueLu::LineDetectionFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> LineDetectionFactory;
+#endif
+
 #ifdef MUELU_LOCALPERMUTATIONSTRATEGY_SHORT
 typedef MueLu::LocalPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node> LocalPermutationStrategy;
 #endif
@@ -298,6 +302,10 @@ typedef MueLu::TentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tentati
 typedef MueLu::ThresholdAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ThresholdAFilterFactory;
 #endif
 
+#ifdef MUELU_TOGGLECOORDINATESTRANSFERFACTORY_SHORT
+typedef MueLu::ToggleCoordinatesTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ToggleCoordinatesTransferFactory;
+#endif
+
 #ifdef MUELU_TOGGLEPFACTORY_SHORT
 typedef MueLu::TogglePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TogglePFactory;
 #endif
@@ -333,4 +341,13 @@ typedef MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node> Zoltan2I
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2;
+#endif
+#ifdef MUELU_TWOLEVELMATLABFACTORY_SHORT
+typedef MueLu::TwoLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TwoLevelMatlabFactory;
+#endif
+#ifdef MUELU_SINGLELEVELMATLABFACTORY_SHORT
+typedef MueLu::SingleLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SingleLevelMatlabFactory;
+#endif
+#ifdef MUELU_MATLABSMOOTHER_SHORT
+typedef MueLu::MatlabSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> MatlabSmoother;
 #endif

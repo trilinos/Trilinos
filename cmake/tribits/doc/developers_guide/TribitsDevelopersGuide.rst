@@ -7364,16 +7364,43 @@ These options are described below.
 
   If ``${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS`` is set to ``TRUE``, then the
   ``SYSTEM`` flag will be passed into the ``INCLUDE_DIRECTORIES()`` command
-  for TPL include directories.  On some systems this will result in include
-  directories being passed to the compiler with ``-isystem`` instead of
-  ``-I``.  This helps to avoid compiler warning coming from TPL header files
-  for C and C++.  However, with CMake version 2.8.11, this also results in
-  ``-isystem`` being passed to the Fortran compiler (e.g. gfortran) as well.
-  This breaks the reading of Fortran module files (perhaps a bug in gfortran).
-  Because if the issue with Fortran, the default for this option is ``FALSE``
-  but project can override the default using::
+  for TPL include directories for every TPL for every package, by default.  On
+  some systems this will result in include directories being passed to the
+  compiler with ``-isystem`` instead of ``-I``.  This helps to avoid compiler
+  warning coming from TPL header files for C and C++.  However, with CMake
+  version 3.2 and less, this also results in ``-isystem`` being passed to the
+  Fortran compiler (e.g. gfortran) as well.  This breaks the reading of
+  Fortran module files (perhaps a bug in gfortran).  Because of this issue
+  with Fortran, the TriBITS default for this option is set to ``FALSE`` but a
+  project can override the default using::
 
     SET(${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS_DEFAULT  TRUE)
+
+  (This would be a good default if the project has not Fortran files or has
+  not Fortran files that use modules provided by TPLs).
+
+  However, if a package or subpackage sets::
+
+    SET(${PACKAGE_NAME}_SKIP_TPL_SYSTEM_INCLUDE_DIRS  TRUE)
+
+  in its ``CMakeLists.txt`` files before the ``TRIBITS_ADD_LIBRARY()`` or
+  ``TRIBITS_ADD_EXECUTABLE()`` commands are called in that package, then
+  ``SYSTEM`` will **not** be passed into ``INCLUDE_DIRECTORIES()`` for TPL
+  include dirs.  This is how some TriBITS packages with Fortran files that use
+  Fortran modules avoid passing in ``-isystem`` to the Fortran compiles and
+  thereby avoid the defect with gfortran described above.  If CMake version
+  3.3 or greater is used, this variable is not required.
+
+  NOTE: Currently, a TriBITS SE package must have a direct dependency on a TPL
+  to have ``-isystem`` added to a TPL's include directories on the compile
+  lines for that package.  That is, the TPL must be listed in the
+  ``LIB_REQUIRED_TPLS`` or ``LIB_OPTIONAL_TPLS`` arguments passed into the
+  `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ function in the SE package's
+  `<packageDir>/cmake/Dependencies.cmake`_ file.  In addition, to have
+  ``-isystem`` added to the include directories for a TPL when compiling the
+  tests for an SE package, it must be listed in the ``TEST_REQUIRED_TPLS`` or
+  ``TEST_OPTIONAL_TPLS`` arguments.  This is a limitation of the TriBITS
+  implementation that will be removed in a future version of TriBITS.
 
 .. _${PROJECT_NAME}_TRACE_ADD_TEST:
 .. _${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT:

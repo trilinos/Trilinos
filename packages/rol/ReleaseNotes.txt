@@ -1,0 +1,46 @@
+*
+*
+*
+********************************
+
+Rapid Optimization Library (ROL)
+
+RELEASE TAG: Trilinos 12.2
+------------
+Released as part of Trilinos 12.2, July 2015.  This is the first publicly
+announced release of ROL.
+
+
+FEATURES:
+---------
+
+Rapid Optimization Library (ROL) is a C++ package for large-scale
+optimization. It is used for the solution of optimal design, optimal control
+and inverse problems in large-scale engineering applications. Other uses
+include mesh optimization and image processing.
+
+ROL aims to combine flexibility, efficiency and robustness.  Key features:
+
+*** Matrix-free application programming interfaces (APIs) --enable direct use
+    of application data structures and memory spaces, linear solvers,
+    nonlinear solvers and preconditioners.
+*** State-of-the-art algorithms for unconstrained optimization, constrained
+    optimization and optimization under uncertainty --enable inexact and
+    adaptive function evaluations and iterative linear system solves.
+*** Special APIs for simulation-based optimization --enable a streamlined
+    embedding into engineering applications, rigorous implementation
+    verification and efficient use.
+*** Modular interfaces throughout the optimization process --enable custom
+    and user-defined algorithms, stopping criteria, hierarchies of algorithms,
+    and selective use of a variety of tools and components.
+
+For a detailed description of user interfaces and algorithms included in this
+release, see the presentation ROL-Trilinos-12.2.pptx (or .pdf) in the
+doc/presentations directory.
+
+
+BUG FIXES:
+----------
+None (first release).
+
+********************************

@@ -186,6 +186,8 @@ public:
 
    void addEdges();
 
+   void addFaces();
+
    /** Addes an entity to a specified side set.
      */
    void addEntityToSideset(stk_classic::mesh::Entity & entity,stk_classic::mesh::Part * sideset);
@@ -206,6 +208,9 @@ public:
      */
    const VectorFieldType & getEdgesField() const
    { return *edgesField_; }
+
+   const VectorFieldType & getFacesField() const
+   { return *facesField_; }
 
    /** Look up a global node and get the coordinate.
      */
@@ -341,7 +346,7 @@ public:
      * in lexiographic order (uses the sorting built into the std::map).
      * This method can only be called after <code>initialize</code>.
      *
-     * \param[in,out] names Vector of names of the element blocks.
+     * \param[in,out] names Vector of names of the side sets
      */
    void getSidesetNames(std::vector<std::string> & name) const;
 
@@ -673,6 +678,7 @@ public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;
    static const std::string edgesString;
+   static const std::string facesString;
 
 protected:
 
@@ -767,9 +773,12 @@ protected:
    std::vector<stk_classic::mesh::Part*> nodesPartVec_;
    stk_classic::mesh::Part * edgesPart_;
    std::vector<stk_classic::mesh::Part*> edgesPartVec_;
+   stk_classic::mesh::Part * facesPart_;
+   std::vector<stk_classic::mesh::Part*> facesPartVec_;
 
    VectorFieldType * coordinatesField_;
    VectorFieldType * edgesField_;
+   VectorFieldType * facesField_;
    ProcIdFieldType * processorIdField_;
    SolutionFieldType * loadBalField_;
    

@@ -142,6 +142,7 @@ int main(int narg, char *arg[]) {
   std::string parma_method("VtxElm");
   std::string output_loc("");
   int nParts = CommT->getSize();
+  double imbalance = 1.1;
 
   // Read run-time options.
   Teuchos::CommandLineProcessor cmdp (false, false);
@@ -155,6 +156,8 @@ int main(int narg, char *arg[]) {
                  "Method to use: Vertex, Element, VtxElm, VtxEdgeElm, Ghost, or Shape ");
   cmdp.setOption("nparts", &nParts,
                  "Number of parts to create");
+  cmdp.setOption("imbalance", &imbalance,
+                 "Target imbalance for the partitioning method");
   cmdp.setOption("output", &output_loc,
                  "Location of new partitioned apf mesh. Ex: 4/torus.smb");
   cmdp.parse(narg, arg);
@@ -182,14 +185,16 @@ int main(int narg, char *arg[]) {
   gmi_register_mesh();
   apf::Mesh2* m = apf::loadMdsMesh(modelFileName.c_str(),meshFileName.c_str());
   apf::verify(m);
-  // Creating mesh adapter
-  if (me == 0) cout << "Creating mesh adapter ... \n\n";
-
-  typedef Zoltan2::RPIMeshAdapter<apf::Mesh2*> inputAdapter_t;
-
-  inputAdapter_t ia(*CommT, m);
-  ia.print(me);
-
+  
+  //Data for RPI MeshAdapter
+  std::string primary="region";
+  std::string adjacency="face";
+  if (m->getDimension()==2) {
+    primary="face";
+    adjacency="edge";
+  }
+  bool needSecondAdj=false;
+  
   // Set parameters for partitioning
   if (me == 0) cout << "Creating parameter list ... \n\n";
 
@@ -200,31 +205,33 @@ int main(int narg, char *arg[]) {
   if (action == "mj") {
     do_partitioning = true;
     params.set("debug_level", "basic_status");
-    params.set("imbalance_tolerance", 1.1);
+    params.set("imbalance_tolerance", imbalance);
     params.set("num_global_parts", nParts);
     params.set("algorithm", "multijagged");
     params.set("rectilinear", "yes");
   }
   else if (action == "scotch") {
     do_partitioning = true;
-    params.set("debug_level", "verbose_detailed_status");
-    params.set("imbalance_tolerance", 1.1);
+    params.set("debug_level", "no_status");
+    params.set("imbalance_tolerance", imbalance);
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
+    params.set("objects_to_partition","mesh_elements");
     params.set("algorithm", "scotch");
+    needSecondAdj=true;
   }
   else if (action == "zoltan_rcb") {
     do_partitioning = true;
     params.set("debug_level", "verbose_detailed_status");
-    params.set("imbalance_tolerance", 1.1);
+    params.set("imbalance_tolerance", imbalance);
     params.set("num_global_parts", nParts);
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "zoltan");
   }
   else if (action == "parma") {
     do_partitioning = true;
-    params.set("debug_level", "basic_status");
-    params.set("imbalance_tolerance", 1.01);
+    params.set("debug_level", "no_status");
+    params.set("imbalance_tolerance", imbalance);
     params.set("algorithm", "parma");
     Teuchos::ParameterList &pparams = params.sublist("parma_parameters",false);
     pparams.set("parma_method",parma_method);
@@ -239,12 +246,14 @@ int main(int narg, char *arg[]) {
   else if (action=="zoltan_hg") {
     do_partitioning = true;
     params.set("debug_level", "no_status");
-    params.set("imbalance_tolerance", 1.01);
+    params.set("imbalance_tolerance", imbalance);
     params.set("algorithm", "zoltan");
     params.set("num_global_parts", nParts);
     Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
     zparams.set("LB_METHOD","HYPERGRAPH");
+    zparams.set("LB_APPROACH","REPARTITION");
     //params.set("compute_metrics","yes");
+    adjacency="vertex";
 
   }
   else if (action == "color") {
@@ -253,7 +262,16 @@ int main(int narg, char *arg[]) {
     params.set("debug_procs", "all");
   }
   Parma_PrintPtnStats(m,"before");
+
+  // Creating mesh adapter
+  if (me == 0) cout << "Creating mesh adapter ... \n\n";
+  typedef Zoltan2::RPIMeshAdapter<apf::Mesh2*> inputAdapter_t;
+  double time_1=PCU_Time();
+  inputAdapter_t ia(*CommT, m,primary,adjacency,needSecondAdj);  
+  double time_2=PCU_Time();
+
   // create Partitioning problem
+  double time_3 = PCU_Time();
   if (do_partitioning) {
     if (me == 0) cout << "Creating partitioning problem ... \n\n";
 
@@ -288,6 +306,7 @@ int main(int narg, char *arg[]) {
 
 
   }
+  double time_4=PCU_Time();
   //if (!me)
   Parma_PrintPtnStats(m,"after");
   if (output_loc!="") {
@@ -296,7 +315,14 @@ int main(int narg, char *arg[]) {
 
   // delete mesh
   if (me == 0) cout << "Deleting the mesh ... \n\n";
-
+  time_4-=time_3;
+  time_2-=time_1;
+  PCU_Max_Doubles(&time_2,1);
+  PCU_Max_Doubles(&time_4,1);
+  if (!me) {
+    std::cout<<"\nConstruction time: "<<time_2<<"\n"
+	     <<"Problem time: " << time_4<<"\n\n";
+  }
   //Delete_APF_Mesh();
   ia.destroy();
   m->destroyNative();

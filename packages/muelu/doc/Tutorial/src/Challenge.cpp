@@ -139,6 +139,9 @@ int main(int argc, char *argv[]) {
     clp.setOption("tol", &dtol, "solver convergence tolerance [default = 1e-12]");
     std::string problemFile = "stru2d";
     clp.setOption("problem", &problemFile, "string for problem file (e.g. 'stru2d' expects 'stru2d_A.txt', 'stru2d_b.txt' and 'stru2d_ns.txt')");
+    std::string coordsFile = "";
+    clp.setOption("coordinates", &coordsFile, "file name containing coordinates in matrix market format");
+
 
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -183,6 +186,16 @@ int main(int argc, char *argv[]) {
     RCP<Epetra_Vector> epB = Teuchos::rcp(ptrf);
     RCP<Epetra_MultiVector> epNS = Teuchos::rcp(ptrNS);
 
+    // read in coordinates
+    RCP<MultiVector> xCoords = Teuchos::null;
+    if(coordsFile != "") {
+      Epetra_MultiVector* ptrcoords = 0;
+      Epetra_Map coords_emap (globalNumDofs/nDofsPerNode, nLocalDofs/nDofsPerNode, 0, *Xpetra::toEpetra(comm));
+      EpetraExt::MatrixMarketFileToMultiVector(coordsFile.c_str(), coords_emap, ptrcoords);
+      RCP<Epetra_MultiVector> epCoords = Teuchos::rcp(ptrcoords);
+      xCoords = Teuchos::rcp(new Xpetra::EpetraMultiVector(epCoords));
+    }
+
     // Epetra_CrsMatrix -> Xpetra::Matrix
     RCP<CrsMatrix> exA = Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epA));
     RCP<CrsMatrixWrap> crsOp = Teuchos::rcp(new CrsMatrixWrap(exA));
@@ -200,6 +213,7 @@ int main(int argc, char *argv[]) {
     Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
     Finest->Set("A",Op);
     Finest->Set("Nullspace",xNS);
+    if(xCoords != Teuchos::null) Finest->Set("Coordinates",xCoords);
 
     mueLuFactory.SetupHierarchy(*H);
 

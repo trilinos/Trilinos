@@ -739,32 +739,32 @@ std::ostream& Ifpack_SupportGraph<T>::
 Print(std::ostream& os) const
 {
   os << "================================================================================" << std::endl;
-   os << "Ifpack_SupportGraph: " << Label () << endl << endl;
-  os << "Condition number estimate = " << Condest() << endl;
-  os << "Global number of rows            = " << Matrix_->NumGlobalRows64() << endl;
-  os << "Number of edges in support graph     = " << (Support_->NumGlobalNonzeros64()-Support_->NumGlobalDiagonals64())/2 << endl;
+   os << "Ifpack_SupportGraph: " << Label () << std::endl << std::endl;
+  os << "Condition number estimate = " << Condest() << std::endl;
+  os << "Global number of rows            = " << Matrix_->NumGlobalRows64() << std::endl;
+  os << "Number of edges in support graph     = " << (Support_->NumGlobalNonzeros64()-Support_->NumGlobalDiagonals64())/2 << std::endl;
   os << "Fraction of off diagonals of support graph/off diagonals of original     = "
      << ((double)Support_->NumGlobalNonzeros64()-Support_->NumGlobalDiagonals64())/(Matrix_->NumGlobalNonzeros64()-Matrix_->NumGlobalDiagonals64());
-  os << endl;
-  os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
-  os << "-----           -------   --------------       ------------     --------" << endl;
+  os << std::endl;
+  os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << std::endl;
+  os << "-----           -------   --------------       ------------     --------" << std::endl;
   os << "Initialize()    "   << std::setw(10) << NumInitialize_
      << "  " << std::setw(15) << InitializeTime_
-     << "        0.0              0.0" << endl;
+     << "        0.0              0.0" << std::endl;
   os << "Compute()       "   << std::setw(10) << NumCompute_
      << "  " << std::setw(22) << ComputeTime_
      << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_;
   if (ComputeTime_ != 0.0)
-    os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << endl;
+    os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << std::endl;
   else
-    os << "     " << std::setw(15) << 0.0 << endl;
+    os << "     " << std::setw(15) << 0.0 << std::endl;
   os << "ApplyInverse()  "   << std::setw(10) << NumApplyInverse_
      << "  " << std::setw(22) << ApplyInverseTime_
      << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_;
   if (ApplyInverseTime_ != 0.0)
-    os << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ / ApplyInverseTime_ << endl;
+    os << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ / ApplyInverseTime_ << std::endl;
   else
-    os << "  " << std::setw(15) << 0.0 << endl;
+    os << "  " << std::setw(15) << 0.0 << std::endl;
 
   os << std::endl << std::endl;
   os << "Now calling the underlying preconditioner's print()" << std::endl;

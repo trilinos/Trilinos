@@ -143,7 +143,9 @@ namespace MueLu {
     //MUELU_READ_PARAM(paramList, "aggregation: smoothing sweeps",            int,                   1,       agg_smoothingsweeps);
     MUELU_READ_PARAM(paramList, "aggregation: nodes per aggregate",         int,                   1,       minPerAgg);
     MUELU_READ_PARAM(paramList, "aggregation: keep Dirichlet bcs",         bool,               false,       bKeepDirichletBcs); // This is a MueLu specific extension that does not exist in ML
-    MUELU_READ_PARAM(paramList, "aggregation: max neighbours already aggregated", int,             0,       maxNbrAlreadySelected); // This is a MueLu specific extension that does not exist in ML
+    MUELU_READ_PARAM(paramList, "aggregation: max neighbours already aggregated", int,             0,       maxNbrAlreadySelected); // This is a MueLu specific extension that does not exist in M
+    MUELU_READ_PARAM(paramList, "aggregation: aux: enable",                bool,               false,       agg_use_aux);
+    MUELU_READ_PARAM(paramList, "aggregation: aux: threshold",           double,               false,       agg_aux_thresh);
 
     MUELU_READ_PARAM(paramList, "null space: type",                 std::string,   "default vectors",       nullspaceType);
     MUELU_READ_PARAM(paramList, "null space: dimension",                    int,                  -1,       nullspaceDim); // TODO: ML default not in documentation
@@ -152,6 +154,8 @@ namespace MueLu {
     MUELU_READ_PARAM(paramList, "energy minimization: enable",             bool,               false,       bEnergyMinimization);
 
     MUELU_READ_PARAM(paramList, "RAP: fix diagonal",                       bool,               false,       bFixDiagonal); // This is a MueLu specific extension that does not exist in ML
+
+
 
     //
     // Move smoothers/aggregation/coarse parameters to sublists
@@ -218,6 +222,10 @@ namespace MueLu {
 
     // Create MueLu factories
     RCP<CoalesceDropFactory> dropFact = rcp(new CoalesceDropFactory());
+    if(agg_use_aux) {
+      dropFact->SetParameter("aggregation: drop scheme",Teuchos::ParameterEntry(std::string("distance laplacian")));
+      dropFact->SetParameter("aggregation: drop tol",Teuchos::ParameterEntry(agg_aux_thresh));
+    }
 
     RCP<FactoryBase> AggFact = Teuchos::null;
     if(agg_type == "Uncoupled") {
@@ -296,21 +304,21 @@ namespace MueLu {
       // define rebalancing factory for coarse matrix
       Teuchos::RCP<MueLu::AmalgamationFactory<SC, LO, GO, NO> > rebAmalgFact = Teuchos::rcp(new MueLu::AmalgamationFactory<SC, LO, GO, NO>());
       rebAmalgFact->SetFactory("A", AcFact);
-      
+
       MUELU_READ_PARAM(paramList, "repartition: max min ratio",            double,                 1.3,       maxminratio);
       MUELU_READ_PARAM(paramList, "repartition: min per proc",                int,                 512,       minperproc);
-      
+
       // create "Partition"
       Teuchos::RCP<MueLu::IsorropiaInterface<LO, GO, NO> > isoInterface = Teuchos::rcp(new MueLu::IsorropiaInterface<LO, GO, NO>());
       isoInterface->SetFactory("A", AcFact);
       isoInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact);
-      
+
       // create "Partition" by unamalgamtion
       Teuchos::RCP<MueLu::RepartitionInterface<LO, GO, NO> > repInterface = Teuchos::rcp(new MueLu::RepartitionInterface<LO, GO, NO>());
       repInterface->SetFactory("A", AcFact);
       repInterface->SetFactory("AmalgamatedPartition", isoInterface);
       //repInterface->SetFactory("UnAmalgamationInfo", rebAmalgFact); // not necessary?
-      
+
       // Repartitioning (creates "Importer" from "Partition")
       RepartitionFact = Teuchos::rcp(new RepartitionFactory());
       {
@@ -321,19 +329,19 @@ namespace MueLu {
       }
       RepartitionFact->SetFactory("A", AcFact);
       RepartitionFact->SetFactory("Partition", repInterface);
-      
+
       // Reordering of the transfer operators
       RebalancedPFact = Teuchos::rcp(new RebalanceTransferFactory());
       RebalancedPFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Interpolation")));
       RebalancedPFact->SetFactory("P", PFact);
       RebalancedPFact->SetFactory("Nullspace", PtentFact);
       RebalancedPFact->SetFactory("Importer",    RepartitionFact);
-      
+
       RebalancedRFact = Teuchos::rcp(new RebalanceTransferFactory());
       RebalancedRFact->SetParameter("type", Teuchos::ParameterEntry(std::string("Restriction")));
       RebalancedRFact->SetFactory("R", RFact);
       RebalancedRFact->SetFactory("Importer",    RepartitionFact);
-            
+
       // Compute Ac from rebalanced P and R
       RebalancedAFact = Teuchos::rcp(new RebalanceAcFactory());
       RebalancedAFact->SetFactory("A", AcFact);
@@ -527,12 +535,17 @@ namespace MueLu {
       smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
       smooProto->SetFactory("A", AFact);
 
-    } else if (type == "Chebyshev") {
+    } else if (type == "Chebyshev" || type == "MLS") {
 
       ifpackType = "CHEBYSHEV";
 
       MUELU_COPY_PARAM(paramList, "smoother: sweeps",          int, 2,     smootherParamList, "chebyshev: degree");
-      MUELU_COPY_PARAM(paramList, "smoother: Chebyshev alpha", double, 20, smootherParamList, "chebyshev: ratio eigenvalue");
+      if(paramList.isParameter("smoother: MLS alpha")) {
+        MUELU_COPY_PARAM(paramList, "smoother: MLS alpha", double, 20, smootherParamList, "chebyshev: ratio eigenvalue");
+      } else {
+        MUELU_COPY_PARAM(paramList, "smoother: Chebyshev alpha", double, 20, smootherParamList, "chebyshev: ratio eigenvalue");
+      }
+
 
       smooProto = rcp( new TrilinosSmoother(ifpackType, smootherParamList, 0) );
       smooProto->SetFactory("A", AFact);
