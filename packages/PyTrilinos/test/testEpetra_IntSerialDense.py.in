@@ -184,23 +184,23 @@ class EpetraIntSerialDenseMatrixTestCase(unittest.TestCase):
     #     isdm = Epetra.IntSerialDenseMatrix()
     #     self.assertRaises(ValueError, isdm.Shape, self.rows, -self.cols)
 
-    # def testReshape1(self):
-    #     "Test Epetra.IntSerialDenseMatrix Reshape method to smaller"
-    #     isdm1  = Epetra.IntSerialDenseMatrix(self.rows,self.cols)
-    #     isdm1.Random()
-    #     isdm2  = Epetra.IntSerialDenseMatrix(isdm1)
-    #     result = isdm2.Reshape(self.rows-1,self.cols-1)
-    #     self.assertEqual(result, 0)
-    #     self.failUnless((isdm2 == isdm1[:-1,:-1]).all())
+    def testReshape1(self):
+        "Test Epetra.IntSerialDenseMatrix Reshape method to smaller"
+        isdm1  = Epetra.IntSerialDenseMatrix(self.rows,self.cols)
+        isdm1.Random()
+        isdm2  = Epetra.IntSerialDenseMatrix(isdm1)
+        result = isdm2.Reshape(self.rows-1,self.cols-1)
+        self.assertEqual(result, 0)
+        self.failUnless((isdm2 == isdm1[:-1,:-1]).all())
 
-    # def testReshape2(self):
-    #     "Test Epetra.IntSerialDenseMatrix Reshape method to larger"
-    #     isdm1  = Epetra.IntSerialDenseMatrix(self.rows,self.cols)
-    #     isdm1.Random()
-    #     isdm2  = Epetra.IntSerialDenseMatrix(isdm1)
-    #     result = isdm2.Reshape(self.rows+1,self.cols+1)
-    #     self.assertEqual(result, 0)
-    #     self.failUnless((isdm2[:-1,:-1] == isdm1).all())
+    def testReshape2(self):
+        "Test Epetra.IntSerialDenseMatrix Reshape method to larger"
+        isdm1  = Epetra.IntSerialDenseMatrix(self.rows,self.cols)
+        isdm1.Random()
+        isdm2  = Epetra.IntSerialDenseMatrix(isdm1)
+        result = isdm2.Reshape(self.rows+1,self.cols+1)
+        self.assertEqual(result, 0)
+        self.failUnless((isdm2[:-1,:-1] == isdm1).all())
 
     # def testReshape3(self):
     #     "Test Epetra.IntSerialDenseMatrix Reshape method, negative rows"
