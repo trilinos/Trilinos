@@ -50,6 +50,7 @@
 
 #include <mrk_api_classes.hpp>
 #include <mrk_compute_normals.hpp>
+#include <mrk_search_for_pallet_generating_faces.hpp>
 #include <mrk_interface_impl.hpp>
 
 namespace morkon_exp {
@@ -233,10 +234,14 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_face_and_node_normals()
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
-bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::find_possible_contact_face_pairs(contact_search_results_t &)
+bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::find_possible_contact_face_pairs(contact_search_results_t search_results)
 {
   // Implement with a functor over the faces, followed by a filter that keeps faces in the same interface.
   std::cout << "Need to write :find_possible_contact_face_pairs()" << std::endl;
+
+  search_for_pallet_generating_faces<DeviceType, DIM>(m_surface_mesh, m_fields.m_node_coords,
+                                                      m_face_to_interface_and_side,
+                                                      search_results);
   return false;
 }
 

@@ -45,42 +45,50 @@
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
 
-#ifndef MORKON_EXP_FUNCTORS_FWD_H
-#define MORKON_EXP_FUNCTORS_FWD_H
+#ifndef MORKON_EXP_SEARCH_FOR_PALLET_GENERATING_FACES_H
+#define MORKON_EXP_SEARCH_FOR_PALLET_GENERATING_FACES_H
 
-#include <cstdint>
+#include <mrk_data_types.hpp>
 
 namespace morkon_exp {
 
-// ChooseMortarSide is serial.
+template <typename DeviceType, unsigned int DIM>
+struct search_for_pallet_generating_faces
+{
+    typedef typename DeviceType::execution_space                          execution_space;
+    typedef Mrk_SurfaceMesh<DeviceType, DIM>                               surface_mesh_t;
+    typedef typename surface_mesh_t::face_connectivity_t              face_connectivity_t;
+    typedef typename face_connectivity_t::face_to_num_nodes_t         face_to_num_nodes_t;
+    typedef typename face_connectivity_t::face_to_nodes_t                 face_to_nodes_t;
+    typedef Mrk_Fields<DeviceType, DIM>                                          fields_t;
+    typedef typename fields_t::points_t                                          points_t;
+    typedef typename fields_t::points_mrat                                    points_mrat;
+    typedef Kokkos::View<local_idx_t *[2], execution_space>  face_to_interface_and_side_t;
 
-// NEED TO FIGURE OUT APPROACH FOR THIS:
-//     Make sure all interfaces have primal and dual shape functions.
-//     What corresponds to array of ptrs to functions?!
+    typedef Kokkos::View<local_idx_t *[3], execution_space>      contact_search_results_t;
 
-template <typename DeviceType, unsigned int DIM = 3 >
-struct Update_Node_Support;
+    face_to_num_nodes_t                     m_face_to_num_nodes;
+    face_to_nodes_t                             m_face_to_nodes;
+    points_mrat                                   m_node_coords;
+    face_to_interface_and_side_t   m_face_to_interface_and_side;
+    contact_search_results_t                   m_search_results;
 
-template <typename DeviceType, unsigned int DIM = 3 >
-struct Search_For_Pallet_Generating_Faces;
-
-template <>
-struct Generate_Pallets;
-
-template <typename DeviceType, unsigned int DIM = 3 >
-struct Pallet_D_Functor;
-
-template <typename DeviceType, unsigned int DIM = 3 >
-struct Pallet_M_Functor;
-
-template <typename DeviceType, unsigned int DIM = 3 >
-struct Assemble_M_from_interfaces;
-
-template <typename DeviceType, unsigned int DIM = 3 >
-struct Assemble_M_from_Interfaces;
+    search_for_pallet_generating_faces(surface_mesh_t surface_mesh,
+                                       points_t node_coords,
+                                       face_to_interface_and_side_t face_to_interface_and_side,
+                                       contact_search_results_t search_results)
+        : m_face_to_num_nodes(surface_mesh.m_face_data.m_face_to_num_nodes)
+        , m_face_to_nodes(surface_mesh.m_face_data.m_face_to_nodes)
+        , m_node_coords(node_coords)
+        , m_face_to_interface_and_side(face_to_interface_and_side)
+        , m_search_results(search_results)
+    {
+        // WRITE ME
+    }
 
 };
 
 
-#endif
+}
 
+#endif

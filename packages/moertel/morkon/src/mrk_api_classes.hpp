@@ -180,7 +180,7 @@ protected:
                          on_boundary_table_hmt is_node_on_boundary);
 
   bool compute_face_and_node_normals();
-  bool find_possible_contact_face_pairs(contact_search_results_t &);
+  bool find_possible_contact_face_pairs(contact_search_results_t course_search_results);
   bool compute_boundary_node_support_sets(contact_search_results_t course_search_results,
                                           node_support_sets_t &support_sets);
   bool compute_contact_pallets(mortar_pallets_t &resulting_pallets);

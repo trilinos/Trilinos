@@ -43,6 +43,7 @@ SET(INCLUDES
     mrk_interface_impl.hpp
 	mrk_int_types.hpp
 	mrk_manager_impl.hpp
+    mrk_search_for_pallet_generating_faces.hpp
    )
 
 
@@ -62,7 +63,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   morkon_core_unit_test
   NAME morkon_core_unit_test
   SOURCES morkon_core_unit_test.cpp
-  ARGS 
+  ARGS
   COMM mpi
   PASS_REGULAR_EXPRESSION "Test passed!"
   )

@@ -41,6 +41,7 @@ SET(INCLUDES
     mrk_interface_impl.hpp
 	mrk_int_types.hpp
 	mrk_manager_impl.hpp
+    mrk_search_for_pallet_generating_faces.hpp
    )
 
 SET(CPPSOURCES
