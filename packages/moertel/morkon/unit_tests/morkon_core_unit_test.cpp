@@ -84,10 +84,7 @@ TEST(morkon,compute_normals_single_tri) {
 
   //make an empty mesh
   Mrk_SurfaceMesh<default_kokkos_device_t,DIM> theMesh;
-  //extract face connectivity data
-  Mrk_SurfaceMesh<default_kokkos_device_t,DIM>::face_connectivity_t &faceData = theMesh.m_face_data;
-  //extract face to node data
-  FaceConnectivityData<default_kokkos_device_t>::face_to_nodes_t &faceToNodes = faceData.m_face_to_nodes;
+  Mrk_SurfaceMesh<default_kokkos_device_t,DIM>::face_to_nodes_t &faceToNodes = theMesh.m_face_to_nodes;
   //resize to store one face
   Kokkos::resize(faceToNodes,1);
   //insert node connectivity data for one triangular face
@@ -97,8 +94,7 @@ TEST(morkon,compute_normals_single_tri) {
   faceToNodes(faceNumber,2) = 2;
 
   //set up node-to-face connectivity matrix
-  Mrk_SurfaceMesh<default_kokkos_device_t,DIM>::node_connectivity_t &nodeData = theMesh.m_node_data;
-  NodeConnectivityData<default_kokkos_device_t,DIM>::node_to_faces_t &nodeToFaces = nodeData.m_node_to_faces;
+  Mrk_SurfaceMesh<default_kokkos_device_t,DIM>::node_to_faces_t &nodeToFaces = theMesh.m_node_to_faces;
   const std::string label("node to face connectivity");
   const int nNodes(3);
   const int nFaces(1);

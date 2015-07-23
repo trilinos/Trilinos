@@ -100,18 +100,17 @@ private:
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 class Morkon_Manager
 {
-  typedef typename DeviceType::execution_space  execution_space;
-  typedef Interface<DeviceType, DIM, FACE_TYPE>     interface_t;
-  typedef Teuchos::RCP<interface_t>               interface_ptr;
-  typedef std::map<int, interface_ptr>         interfaces_map_t;
+  typedef typename DeviceType::execution_space                              execution_space;
+  typedef Interface<DeviceType, DIM, FACE_TYPE>                                 interface_t;
+  typedef Teuchos::RCP<interface_t>                                           interface_ptr;
+  typedef std::map<int, interface_ptr>                                     interfaces_map_t;
 
   typedef Mrk_SurfaceMesh<DeviceType, DIM>                                   surface_mesh_t;
   typedef typename surface_mesh_t::local_to_global_idx_t              local_to_global_idx_t;
   typedef typename local_to_global_idx_t::HostMirror                local_to_global_idx_hmt;
-  typedef typename surface_mesh_t::face_connectivity_t                  face_connectivity_t;
-  typedef typename face_connectivity_t::face_to_num_nodes_t             face_to_num_nodes_t;
+  typedef typename surface_mesh_t::face_to_num_nodes_t                  face_to_num_nodes_t;
   typedef typename face_to_num_nodes_t::HostMirror                    face_to_num_nodes_hmt;
-  typedef typename face_connectivity_t::face_to_nodes_t                     face_to_nodes_t;
+  typedef typename surface_mesh_t::face_to_nodes_t                          face_to_nodes_t;
   typedef typename face_to_nodes_t::HostMirror                            face_to_nodes_hmt;
 
   typedef Mrk_Fields<DeviceType, DIM>                                              fields_t;
