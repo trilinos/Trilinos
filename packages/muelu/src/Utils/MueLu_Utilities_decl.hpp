@@ -440,6 +440,9 @@ namespace MueLu {
   */
   void TokenizeStringAndStripWhiteSpace(const std::string & stream, std::vector<std::string> & tokenList, const char* token = ",");
 
+  /*! Returns true if a parameter name is a valid Muemex custom level variable, e.g. "MultiVector myArray"
+  */
+  bool IsParamMuemexVariable(const std::string& name);
 
 #ifdef HAVE_MUELU_EPETRA
   //This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.

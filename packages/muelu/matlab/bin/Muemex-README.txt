@@ -1,13 +1,19 @@
 Muemex is the MATLAB interface for MueLu.
 
+<><><><><><><><><><>
 Basic Instructions:
+<><><><><><><><><><>
+
 -Run "matlab" script in this directory to launch matlab with proper shared libraries
 -Run "help muelu" from matlab to see detailed help for "muelu" function
 -Basic setup for muelu is "problemID = muelu('setup', A);"
 -Basic solve for muelu is "x = muelu(problemID, b);"
 -Run "ctest" in this directory to run the experimental matlab tests for MueLu.
 
+<><><><><><><><><><><>
 Factory Instructions:
+<><><><><><><><><><><>
+
 -MatlabSmoother, SingleLevelMatlabFactory and TwoLevelMatlabFactory are
 implementations of those types of factories that use matlab functions
 to generate level data.
@@ -28,7 +34,8 @@ passed in after A, x, b.
 
 SingleLevelMatlabFactory: "Needs", "Provides", "Function"
 -"Needs" is list of inputs to the matlab function that will be pulled from
-level.
+level. "Level" is a special key for the Needs list, and will be passed to MATLAB with the
+current level ID.
 -"Provides" is what will be returned by the matlab function and added to the
 level.
 -"Function" is the name of the matlab function to run. Parameters/return
@@ -37,3 +44,47 @@ values must match Needs/Provides.
 TwoLevelMatlabFactory: "Needs Fine", "Needs Coarse", "Provides", "Function"
 -Just like SingleLevelMatlabFactory, but inputs come from both fine and coarse
 levels.
+
+<><><><><><><><><>
+Custom Variables:
+<><><><><><><><><>
+
+Muemex also supports setting custom data in the hierarchy. To use this
+feature, set the data you want as a parameter in a level sublist when
+setting up the problem. For example, if you want a matrix "MyMatrix" to
+be available to a matlab factory, set up with this command:
+
+muelu('setup', A, 'level 0', {'Matrix MyMatrix', MyMatrix}, 'xml parameter
+file', 'myXMLParams.xml');
+
+Notice the type specifier "Matrix" before the variable name. This is part
+of the name, and has to be included in every mention of the variable. The
+type is not case sensitive; 'MultiVector' and 'multivector' are equivalent.
+The name itself can be any string without whitespace. Names have to unique
+within their level - there can't be "Double d1" and "Int d1".
+
+If an aggregates factory needs that custom matrix, the XML parameter list for
+the problem might look like this:
+...
+<Parameter name="factory" type="string" value="SingleLevelMatlabFactory"/>
+<Parameter name="Provides" type="string" value="Aggregates"/>
+<Parameter name="Needs" type="string" value="A, Matrix MyMatrix"/>
+<Parameter name="Function" type="string" value="simpleAggregation"/>
+...
+
+This will send MyMatrix to simpleAggregation as the second argument.
+There must always be exactly one space between the
+type and the name. Leading and trailing spaces are always ignored.
+
+The following custom variable types are supported:
+-Matrix (sparse, MxM, real or complex depending on MueLu context)
+-MultiVector
+-OrdinalVector (must be Mx1 column vector of int32)
+-Int (32 bit signed)
+-Scalar (double or complex depending on context)
+-Double
+-Complex
+
+Note: Custom variables added to the hierarchy either through muelu('setup') or
+by a matlab factory are never removed from their level - a UserData keep
+flag is set for them.

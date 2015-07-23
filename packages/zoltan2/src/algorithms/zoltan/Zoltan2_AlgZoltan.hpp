@@ -98,6 +98,14 @@ private:
 #   endif
   }
 
+  void zoltanInit() {
+    // call Zoltan_Initialize to make sure MPI_Init is called (in MPI or siMPI).
+    int argc = 0;
+    char **argv = NULL;
+    float ver;
+    Zoltan_Initialize(argc, argv, &ver);
+  }
+
   void setCallbacksIDs()
   {
     zz->Set_Num_Obj_Fn(zoltanNumObj<Adapter>, (void *) &(*adapter));
@@ -187,6 +195,7 @@ public:
     env(env__), problemComm(problemComm__), adapter(adapter__)
   { 
     setMPIComm(problemComm__);
+    zoltanInit();
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
   }
@@ -197,6 +206,7 @@ public:
     env(env__), problemComm(problemComm__), adapter(adapter__)
   { 
     setMPIComm(problemComm__);
+    zoltanInit();
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
     setCallbacksGeom(&(*adapter));
@@ -208,6 +218,7 @@ public:
     env(env__), problemComm(problemComm__), adapter(adapter__)
   { 
     setMPIComm(problemComm__);
+    zoltanInit();
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
     setCallbacksGraph(adapter);
@@ -222,6 +233,7 @@ public:
     env(env__), problemComm(problemComm__), adapter(adapter__)
   { 
     setMPIComm(problemComm__);
+    zoltanInit();
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
     setCallbacksGraph(adapter);
@@ -237,6 +249,7 @@ public:
     env(env__), problemComm(problemComm__), adapter(adapter__)
   { 
     setMPIComm(problemComm__);
+    zoltanInit();
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
     setCallbacksGraph(adapter);

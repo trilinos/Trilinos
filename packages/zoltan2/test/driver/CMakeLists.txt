@@ -14,7 +14,6 @@
 #  NOEXEPREFIX
 #)
 
-
 #set(HEADERS
 #    Zoltan2_MeshCoordinateTest.hpp
 #    Zoltan2_TestInterface.hpp
@@ -23,8 +22,8 @@
 
 ADD_SUBDIRECTORY(driverinputs)
 
-TRIBITS_ADD_EXECUTABLE(
-  test_driver
-  SOURCES ${HEADERS} test_driver.cpp
-  COMM serial mpi
-)
+#KDD TRIBITS_ADD_EXECUTABLE(
+#KDD   test_driver
+#KDD   SOURCES ${HEADERS} test_driver.cpp
+#KDD   COMM serial mpi
+#KDD )

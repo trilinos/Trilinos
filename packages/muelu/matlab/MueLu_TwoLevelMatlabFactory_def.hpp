@@ -83,17 +83,17 @@ namespace MueLu {
     // Get needs strings
     const std::string str_nf = pL.get<std::string>("Needs Fine");
     const std::string str_nc = pL.get<std::string>("Needs Coarse");
-    needsFine_.clear();
-    needsCoarse_.clear();
-    TokenizeStringAndStripWhiteSpace(str_nf, needsFine_, " ,;");
-    TokenizeStringAndStripWhiteSpace(str_nc, needsCoarse_, " ,;");
+    needsFine_ = tokenizeList(str_nf);
+    needsCoarse_ = tokenizeList(str_nc);
     for(auto fineNeed : needsFine_)
     {
-      this->Input(fineLevel, fineNeed);
+      if(!IsParamMuemexVariable(fineNeed) && fineNeed != "Level")
+        this->Input(fineLevel, fineNeed);
     }
     for(auto coarseNeed : needsCoarse_)
     {
-      this->Input(coarseLevel, coarseNeed);
+      if(!IsParamMuemexVariable(coarseNeed) && coarseNeed != "Level")
+        this->Input(coarseLevel, coarseNeed);
     }
     hasDeclaredInput_ = true;
   }

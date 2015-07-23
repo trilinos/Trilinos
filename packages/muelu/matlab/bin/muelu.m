@@ -56,53 +56,46 @@ function varargout = muelu(varargin)
 % (6) data = muelu('get', h, levelID, dataName[, typeHint])
 % - get hierarchy data
 % Input:
-% h				   - MueMex handle for problem with the hierarchy
-% levelID		   - ID of level to get data from (0, 1, etc.)
-% dataName		   - Name of data field to fetch ('Nullspace', 'P', etc.)
-% typeHint		   - (Optional) Type of data expected ('matrix', 'scalar',
-%													   'lovector', etc).
-%						If not given, will attempt to infer from dataName.
+% h                - MueMex handle for problem with the hierarchy
+% levelID          - ID of level to get data from (0, 1, etc.)
+% dataName         - Name of data field to fetch ('Nullspace', 'P', etc.)
+% typeHint         - (Optional) Type of data expected ('matrix', 'scalar', 'lovector', etc).
+%                    If not given, will attempt to infer from dataName.
 % Output:
-% data			   - The data from the hierarchy.
-%
+% data	   - The data from the hierarchy.
+% 
 % by: Brian Kelley <bmkelle@sandia.gov>
 
 if(nargin >= 2 && strcmp(varargin{1},'setup')),
-	% Setup mode = 0
-	[out, oc] = muemex(0, varargin{2:nargin});
-	varargout{1} = out;
-	if(nargout == 2),
-		varargout{2} = oc;
-	end
+    % Setup mode = 0
+    [out, oc] = muemex(0, varargin{2:nargin});
+    varargout{1} = out;
+    if(nargout == 2),
+        varargout{2} = oc;
+    end
 elseif(nargin >= 2 && isnumeric(varargin{1}) && isnumeric(varargin{2})),
-	% Solve mode = 1
-	[sol, its] = muemex(1, varargin{:});
-	varargout{1} = sol;
-	if(nargout == 2),
-		varargout{2} = its;
-	end
-	elseif(nargin >= 1 && strcmp(varargin{1}, 'cleanup')),
-	% Cleanup mode = 2
-	varargout{1} = muemex(2, varargin{2:nargin});
+    % Solve mode = 1
+    [sol, its] = muemex(1, varargin{:});
+    varargout{1} = sol;
+    if(nargout == 2),
+        varargout{2} = its;
+    end
+elseif(nargin >= 1 && strcmp(varargin{1}, 'cleanup')),
+    % Cleanup mode = 2
+    varargout{1} = muemex(2, varargin{2:nargin});
 elseif(nargin>=1 && strcmp(varargin{1}, 'status')),
-	% Status mode = 3
-	varargout{1} = muemex(3, varargin{2:nargin});
+    % Status mode = 3
+    varargout{1} = muemex(3, varargin{2:nargin});
 elseif(strcmp(varargin{1}, 'get')),
-	% Get mode = 5
-	varargout{1} = muemex(5, varargin{2:nargin});
+    % Get mode = 5
+    varargout{1} = muemex(5, varargin{2:nargin});
 else
-	fprintf('\nUsage:\n');
-	fprintf('[h, oc] = muelu(''setup'', A) to setup a problem\n');
-	fprintf('muelu(''status''[, probID]) to get status of all problems, or a specific problem.\n');
-	fprintf('[x, its] = muelu(h, A, b[, paramName, paramValue, ...]) to solve problem #h\n');
-	fprintf('[x, its] = muelu(h, b[, paramName, paramValue, ...]) to solve problem #h with loaded matrix\n');
-	fprintf('muelu(''cleanup''[, id]) to free memory associated with all problems, or a specific one.\n');
+    fprintf('\nUsage:\n');
+    fprintf('[h, oc] = muelu(''setup'', A) to setup a problem\n');
+    fprintf('muelu(''status''[, probID]) to get status of all problems, or a specific problem.\n');
+    fprintf('[x, its] = muelu(h, A, b[, paramName, paramValue, ...]) to solve problem #h\n');
+    fprintf('[x, its] = muelu(h, b[, paramName, paramValue, ...]) to solve problem #h with loaded matrix\n');
+    fprintf('muelu(''cleanup''[, id]) to free memory associated with all problems, or a specific one.\n');
+    fprintf('muelu(''get'', probID, levelID, dataName[, typeHint]) to get data from a level.\n');
 end
-end
-
-%This function could be called externally, as long as the types are correct.
-%nVertices, nAggregates are single ints. vertexToAggID, aggSizes and procWinner and rootNodes are ordinal vectors, or arrays of ints.
-
-function agg = constructAggregates(nVertices, nAggregates, vertexToAggID, rootNodes, aggSizes)
-  agg = struct('nVertices', nVertices, 'nAggregates', nAggregates, 'vertexToAggID', vertexToAggID, 'rootNodes', rootNodes, 'aggSizes', aggSizes);
 end

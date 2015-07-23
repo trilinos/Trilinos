@@ -64,8 +64,8 @@
 namespace morkon_exp {
 
 enum MorkonFaceType { MRK_LINE2=0,
-		      MRK_TRI3,
-		      MRK_QUAD4 };
+                      MRK_TRI3,
+                      MRK_QUAD4 };
 
 template <typename DeviceType, int DIM, int ORDER = 1>
 struct FaceType
@@ -119,6 +119,7 @@ struct EdgeConnectivityData<DeviceType, 2>
 
   typedef Kokkos::View<local_idx_t *[2], execution_space >  Edge2NodesDataType;  // head, tail
   typedef Edge2NodesDataType                       face_to_nodes_t;
+  typedef typename face_to_nodes_t::HostMirror   face_to_nodes_hmt;
 
   face_to_nodes_t m_face_to_nodes;
 };
@@ -138,6 +139,7 @@ struct EdgeConnectivityData<DeviceType, 3>
 
   typedef Edge2FacesConnectivityType  edge_2_faces_connectivity_t;
   typedef Edge2NodesDataType                      face_to_nodes_t;
+  typedef typename face_to_nodes_t::HostMirror  face_to_nodes_hmt;
 
   face_to_nodes_t m_face_to_nodes;
 };
@@ -154,11 +156,13 @@ struct FaceConnectivityData
   typedef Kokkos::View<local_idx_t *[4], execution_space>             Face2EdgesDataType;
   typedef Kokkos::View<polarity_t *, DeviceType>              Face2EdgesPolartiyDataType;
 
-  typedef FaceNumSidesDataType                           face_to_num_nodes_t;
-  typedef Face2NodesDataType                                 face_to_nodes_t;
+  typedef FaceNumSidesDataType                        face_to_num_nodes_t;
+  typedef Face2NodesDataType                              face_to_nodes_t;
+  typedef typename face_to_num_nodes_t::HostMirror  face_to_num_nodes_hmt;
+  typedef typename face_to_nodes_t::HostMirror          face_to_nodes_hmt;
 
   FaceNumSidesDataType m_face_to_num_nodes;
-  face_to_nodes_t       m_face_to_nodes;
+  face_to_nodes_t          m_face_to_nodes;
 };
 
 
@@ -175,11 +179,11 @@ struct Mrk_SurfaceMesh<DeviceType, 2>
   // Will need one of these each for nodes and edges, respectively.
   typedef Kokkos::View<global_idx_t *, execution_space> local_to_global_idx_t;
 
-  typedef NodeConnectivityData<DeviceType, 2>      node_connectivity_data_t;
-  typedef EdgeConnectivityData<DeviceType, 2>   face_connectivity_data_t;
+  typedef NodeConnectivityData<DeviceType, 2>   node_connectivity_t;
+  typedef EdgeConnectivityData<DeviceType, 2>   face_connectivity_t;
 
-  node_connectivity_data_t        m_node_data;
-  face_connectivity_data_t  m_face_data;
+  node_connectivity_t        m_node_data;
+  face_connectivity_t        m_face_data;
 };
 
 template  <typename DeviceType>
@@ -189,13 +193,13 @@ struct Mrk_SurfaceMesh<DeviceType, 3>
 
   typedef Kokkos::View<global_idx_t *, execution_space> local_to_global_idx_t;
 
-  typedef NodeConnectivityData<DeviceType, 3>     node_connectivity_data_t;
-  typedef EdgeConnectivityData<DeviceType, 3>     edge_connectivity_data_t;
-  typedef FaceConnectivityData<DeviceType>        face_connectivity_data_t;
+  typedef NodeConnectivityData<DeviceType, 3>   node_connectivity_t;
+  typedef EdgeConnectivityData<DeviceType, 3>   edge_connectivity_t;
+  typedef FaceConnectivityData<DeviceType>      face_connectivity_t;
 
-  node_connectivity_data_t       m_node_data;
-  edge_connectivity_data_t       m_edge_data;
-  face_connectivity_data_t m_face_data;
+  node_connectivity_t       m_node_data;
+  edge_connectivity_t       m_edge_data;
+  face_connectivity_t       m_face_data;
 
 };
 
@@ -206,9 +210,10 @@ struct Mrk_Fields
 
   typedef Kokkos::View<double *[DIM], execution_space>                                 points_t;
   typedef Kokkos::View<double *[DIM], execution_space, Kokkos::MemoryRandomAccess>  points_mrat;
+  typedef typename points_t::HostMirror                                              points_hmt;
 
-  typedef points_t       normals_t;
-  typedef points_mrat normals_mrat;
+  typedef points_t                        normals_t;
+  typedef points_mrat                  normals_mrat;
 
   points_t   m_node_coords;
   normals_t m_node_normals;

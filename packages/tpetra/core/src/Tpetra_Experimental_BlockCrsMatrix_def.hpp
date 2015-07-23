@@ -2549,7 +2549,7 @@ namespace Experimental {
     using Teuchos::VERB_DEFAULT;
     using Teuchos::VERB_NONE;
     using Teuchos::VERB_LOW;
-    // using Teuchos::VERB_MEDIUM;
+    using Teuchos::VERB_MEDIUM;
     // using Teuchos::VERB_HIGH;
     using Teuchos::VERB_EXTREME;
     using Teuchos::RCP;
@@ -2585,6 +2585,66 @@ namespace Experimental {
 
     const LO blockSize = getBlockSize ();
     out << "Block size: " << blockSize << endl;
+
+    // constituent objects
+    if (vl >= VERB_MEDIUM) {
+      const Teuchos::Comm<int>& comm = * (graph_.getMap ()->getComm ());
+      const int myRank = comm.getRank ();
+      if (myRank == 0) {
+        out << "Row Map:" << endl;
+      }
+      getRowMap()->describe (out, vl);
+
+      if (! getColMap ().is_null ()) {
+        if (getColMap() == getRowMap()) {
+          if (myRank == 0) {
+            out << "Column Map: same as row Map" << endl;
+          }
+        }
+        else {
+          if (myRank == 0) {
+            out << "Column Map:" << endl;
+          }
+          getColMap ()->describe (out, vl);
+        }
+      }
+      if (! getDomainMap ().is_null ()) {
+        if (getDomainMap () == getRowMap ()) {
+          if (myRank == 0) {
+            out << "Domain Map: same as row Map" << endl;
+          }
+        }
+        else if (getDomainMap () == getColMap ()) {
+          if (myRank == 0) {
+            out << "Domain Map: same as column Map" << endl;
+          }
+        }
+        else {
+          if (myRank == 0) {
+            out << "Domain Map:" << endl;
+          }
+          getDomainMap ()->describe (out, vl);
+        }
+      }
+      if (! getRangeMap ().is_null ()) {
+        if (getRangeMap () == getDomainMap ()) {
+          if (myRank == 0) {
+            out << "Range Map: same as domain Map" << endl;
+          }
+        }
+        else if (getRangeMap () == getRowMap ()) {
+          if (myRank == 0) {
+            out << "Range Map: same as row Map" << endl;
+          }
+        }
+        else {
+          if (myRank == 0) {
+            out << "Range Map: " << endl;
+          }
+          getRangeMap ()->describe (out, vl);
+        }
+      }
+    }
 
     if (vl >= VERB_EXTREME) {
       const Teuchos::Comm<int>& comm = * (graph_.getMap ()->getComm ());

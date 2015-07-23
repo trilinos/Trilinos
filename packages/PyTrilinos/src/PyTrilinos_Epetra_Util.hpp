@@ -76,43 +76,49 @@ namespace PyTrilinos
 ////////////////////////////////////////////////////////////
 
 // Given an RCP to an Epetra_MultiVector, convert to a python object
-// and return the pointer.  Attempt to downcast to an
-// Epetra_NumPyMultiVector.
+// and return the pointer.
 PyObject *
 convertEpetraMultiVectorToPython(const Teuchos::RCP< Epetra_MultiVector > *emv);
 
 ////////////////////////////////////////////////////////////
 
 // Given an RCP to a const Epetra_MultiVector, convert to a python
-// object and return the pointer.  Attempt to downcast to a const
-// Epetra_NumPyMultiVector.
+// object and return the pointer.
 PyObject *
 convertEpetraMultiVectorToPython(const Teuchos::RCP< const Epetra_MultiVector > *emv);
 
 ////////////////////////////////////////////////////////////
 
 // Given an RCP to an Epetra_Vector, convert to a python object and
-// return the pointer.  Attempt to downcast to an Epetra_NumPyVector.
+// return the pointer.
 PyObject *
 convertEpetraVectorToPython(const Teuchos::RCP< Epetra_Vector > *ev);
 
 ////////////////////////////////////////////////////////////
 
 // Given an RCP to a const Epetra_Vector, convert to a python object
-// and return the pointer.  Attempt to downcast to a const
-// Epetra_NumPyVector.
+// and return the pointer.
 PyObject *
 convertEpetraVectorToPython(const Teuchos::RCP< const Epetra_Vector > *ev);
 
 ////////////////////////////////////////////////////////////
 
-// Attempt to convert a PyObject to a pointer to an
-// Epetra_MultiVector.  The input PyObject could be a wrapped
-// Epetra_NumPyMultiVector, or a wrapped Domi::MDVector, or an object
-// that supports the DistArray Protocol, or, if the environment is
-// serial, an object that simply supports the Buffer Protocol.
-Teuchos::RCP< Epetra_MultiVector > *
+// Attempt to convert a PyObject to an RCP to an Epetra_MultiVector.
+// The input PyObject could be a wrapped Epetra_MultiVector, or a
+// wrapped Domi::MDVector<double>, or an object that supports the
+// DistArray Protocol, or, if the environment is serial, a simple
+// NumPy array.
+Teuchos::RCP< Epetra_MultiVector >
 convertPythonToEpetraMultiVector(PyObject * pyobj);
+
+////////////////////////////////////////////////////////////
+
+// Attempt to convert a PyObject to an RCP to an Epetra_Vector.  The
+// input PyObject could be a wrapped Epetra_Vector, or a wrapped
+// Domi::MDVector<double>, or an object that supports the DistArray
+// Protocol, or, if the environment is serial, a simple NumPy array.
+Teuchos::RCP< Epetra_Vector >
+convertPythonToEpetraVector(PyObject * pyobj);
 
 ////////////////////////////////////////////////////////////
 
