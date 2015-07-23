@@ -1,5 +1,4 @@
-
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(driver 
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(driver
 #  SOURCES ${HEADERS} driver.cpp
 #  NUM_MPI_PROCS 4
 #  COMM mpi serial
@@ -16,17 +15,13 @@
 #)
 
 
-set(HEADERS
-    Zoltan2_MeshCoordinateTest.hpp
-    Zoltan2_TestInterface.hpp
-    Zoltan2_Tests.hpp
-)
+#set(HEADERS
+#    Zoltan2_MeshCoordinateTest.hpp
+#    Zoltan2_TestInterface.hpp
+#    Zoltan2_Tests.hpp
+#)
 
 ADD_SUBDIRECTORY(driverinputs)
-
-INCLUDE_DIRECTORIES(
-    ${CMAKE_CURRENT_LIST_DIR}/driverinputs
-)
 
 TRIBITS_ADD_EXECUTABLE(
   test_driver

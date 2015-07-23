@@ -182,7 +182,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
     vector<const zscalar_t *> weights;
     std::vector<int> weightStrides;
     const zzgid_t * globalIds;
-    size_t localCount;
+    size_t localCount = 0;
     
     // get weights if any
     if(uinput->hasUIWeights())
@@ -252,30 +252,31 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
     else if(input_type == "epetra_vector")
     {
         RCP<Epetra_Vector> data = uinput->getUIEpetraVector();
-        globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
-        localCount = data->getLocalLength();
+//        globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+//        localCount = data->getLocalLength();
     }
     else if(input_type == "epetra_multivector")
     {
         int nvec = pList.get<int>("number_of_vectors");
         RCP<Epetra_MultiVector> data = uinput->getUIEpetraMultiVector(nvec);
-        globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
-        localCount = data->getLocalLength();
+//        globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+//        localCount = data->getLocalLength();
     }
     else if(input_type == "epetra_crs_graph")
     {
         RCP<Epetra_CrsGraph> data = uinput->getUIEpetraCrsGraph();
-        globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
-        localCount = data->getNodeNumCols();
+//        globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+//        localCount = data->getNodeNumCols();
     }
     else if(input_type == "epetra_crs_matrix")
     {
         RCP<Epetra_CrsMatrix> data = uinput->getUIEpetraCrsMatrix();
-        globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
-        localCount = data->getNodeNumCols();
+//        globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+//        localCount = data->getNodeNumCols();
     }
 #endif
     
+    if(localCount == 0) return nullptr;
     return reinterpret_cast<AdapterForTests::base_adapter_t *>( new AdapterForTests::basic_id_t(zlno_t(localCount),globalIds,weights,weightStrides));
 }
 

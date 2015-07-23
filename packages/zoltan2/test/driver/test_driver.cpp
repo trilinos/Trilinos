@@ -177,7 +177,7 @@ void run(const ParameterList &problem_parameters,const RCP<const Teuchos::Comm<i
     // 1. get uinput for this problem
     ////////////////////////////////////////////////////////////
     if(!problem_parameters.isParameter("TestParameters"))
-        std::runtime_error("Test parameters not provided");
+        throw std::runtime_error("Test parameters not provided");
     
     const ParameterList &input = problem_parameters.sublist("TestParameters");
     UserInputForTests uinput(input,comm,true, true);
@@ -186,6 +186,13 @@ void run(const ParameterList &problem_parameters,const RCP<const Teuchos::Comm<i
     // 2. get basic input adapter
     ////////////////////////////////////////////////////////////
     base_t * ia = AdapterForTests::getAdapterForInput(&uinput, input); // a pointer to a basic type
+    if(ia == nullptr)
+    {
+        if(rank == 0)
+            cout << "Get adapter for input failed" << endl;
+        
+        return;
+    }
     
     ////////////////////////////////////////////////////////////
     // 3. construct partitioning problem
