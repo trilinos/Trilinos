@@ -1,1 +1,2 @@
 #include "MueLu_RebalanceBlockInterpolationFactory_decl.hpp"
+#include "MueLu_RebalanceBlockInterpolationFactory_def.hpp"
