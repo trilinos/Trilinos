@@ -72,6 +72,15 @@
 #include <stdexcept>
 #include <cstdio>
 #include <cmath>
+//For alpha hulls (is optional feature requiring a third-party library)
+#ifdef HAVE_MUELU_CGAL //Include all headers needed for both 2D and 3D fixed-alpha alpha shapes
+#include "CGAL/Exact_predicates_inexact_constructions_kernel.h"
+#include "CGAL/Delaunay_triangulation_2.h"
+#include "CGAL/Delaunay_triangulation_3.h"
+#include "CGAL/Alpha_shape_2.h"
+#include "CGAL/Fixed_alpha_shape_3.h"
+#include "CGAL/algorithm.h"
+#endif
 
 namespace MueLu {
 
@@ -177,7 +186,6 @@ namespace MueLu {
       dims_ = coords->getNumVectors();  //2D or 3D?
       if(numProcs > 1)
       {
-        if(doFineGraphEdges_)
         {
           RCP<Import> coordImporter = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(coords->getMap(), Amat->getColMap());
           RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > ghostedCoords = Xpetra::MultiVectorFactory<double, LocalOrdinal, GlobalOrdinal, Node>::Build(Amat->getColMap(), dims_);
@@ -213,7 +221,7 @@ namespace MueLu {
       numAggsGlobal [i] += numAggsGlobal[i-1];
       minGlobalAggId[i]  = numAggsGlobal[i-1];
     }
-    if(myRank == 0)
+    if(numProcs == 0)
       aggsOffset_ = 0;
     else
       aggsOffset_ = minGlobalAggId[myRank];
@@ -267,8 +275,6 @@ namespace MueLu {
     else
     {
       using namespace std;
-      if(sizeof(Scalar) != sizeof(double)) //Don't try to process complex, from now on will assume scalar is double.
-        throw runtime_error("Only double scalars not supported in VTK aggregate visualization.");
       //Make sure we have coordinates
       if(coords.is_null())
         throw runtime_error("AggExportFactory could not get coordinates, but they are required for VTK output.");
@@ -301,16 +307,14 @@ namespace MueLu {
       catch(exception& e) {}
       vector<int> vertices;
       vector<int> geomSizes;
-      vector<int> verticesCoarse;
-      vector<int> geomSizesCoarse;
       string indent = "";
       nodeMap_ = Amat->getMap();
       for(LocalOrdinal i = 0; i < numNodes_; i++)
       {
         isRoot_.push_back(aggregates->IsRoot(i));
       }
-      //If the output will be parallel VTU and this is root processor, write out the master PVTU file now
-      //Only do this if the problem has multiple processors, since the .vtu from the root proc would work on its own in a serial problem
+      //If problem is serial and not outputting fine nor coarse graph edges, don't make pvtu file
+      //Otherwise create it
       if(myRank == 0 && (numProcs != 1 || doCoarseGraphEdges_ || doFineGraphEdges_))
       {
         ofstream pvtu(pvtuFilename.c_str());
@@ -325,15 +329,22 @@ namespace MueLu {
         doJacksPlus_(vertices, geomSizes);
       else if(aggStyle == "Convex Hulls")
         doConvexHulls_(vertices, geomSizes);
-      else if(aggStyle == "Alpha Hulls") //Not implemented
+      else if(aggStyle == "Alpha Hulls")
+      {
+        #ifdef HAVE_MUELU_CGAL
         doAlphaHulls_(vertices, geomSizes);
+        #else
+        std::cout << "   Trilinos was not configured with CGAL so Alpha Hulls not available.\n   Using Convex Hulls instead." << std::endl;
+        doConvexHulls_(vertices, geomSizes);
+        #endif
+      }
       else
       {
-        std::cout << "   Warning: Unrecognized agg style.\nPossible values are Point Cloud, Jacks, Jacks++, Convex Hulls and Alpha Hulls.\nDefaulting to Point Cloud." << std::endl;
+        std::cout << "   Warning: Unrecognized agg style.\n   Possible values are Point Cloud, Jacks, Jacks++, Convex Hulls and Alpha Hulls.\n   Defaulting to Point Cloud." << std::endl;
         aggStyle = "Point Cloud";
         doPointCloud_(vertices, geomSizes);
       }
-      writeFile_(fout, aggStyle, vertices, geomSizes, verticesCoarse, geomSizesCoarse);
+      writeFile_(fout, aggStyle, vertices, geomSizes);
       if(doCoarseGraphEdges_)
       {
         string fname = filenameToWrite;
@@ -376,29 +387,38 @@ namespace MueLu {
     vertices.reserve(vertices.size() + 3 * (numNodes_ - numAggs_));
     geomSizes.reserve(vertices.size() + 2 * (numNodes_ - numAggs_));
     int root = 0;
-    for(int i = 0; i < numAggs_; i++) //TODO: Replace this O(n^2) with a better way
+    for(int i = 0; i < numAggs_; i++) //TODO: Replace this O(n^2) with a better way?
     {
       while(!isRoot_[root])
         root++;
-      int numInAggFound = 0;
-      for(int j = 0; j < numNodes_; j++)
+      int aggSize = aggSizes_[vertex2AggId_[root]];
+      if(aggSize == 1)
       {
-        if(j == root) //don't make a connection from the root to itself
+        vertices.push_back(root);
+        geomSizes.push_back(1);
+      }
+      else
+      {
+        int numInAggFound = 0;
+        for(int j = 0; j < numNodes_; j++)
         {
-          numInAggFound++;
-          continue;
-        }
-        if(vertex2AggId_[root] == vertex2AggId_[j])
-        {
-          vertices.push_back(root);
-          vertices.push_back(j);
-          geomSizes.push_back(2);
-          //Also draw the free endpoint explicitly for the current line
-          vertices.push_back(j);
-          geomSizes.push_back(1);
-          numInAggFound++;
-          if(numInAggFound == aggSizes_[vertex2AggId_[root]]) //don't spend more time looking if done with that root
-            break;
+          if(j == root) //don't make a connection from the root to itself
+          {
+            numInAggFound++;
+            continue;
+          }
+          if(vertex2AggId_[root] == vertex2AggId_[j])
+          {
+            vertices.push_back(root);
+            vertices.push_back(j);
+            geomSizes.push_back(2);
+            //Also draw the free endpoint explicitly for the current line
+            vertices.push_back(j);
+            geomSizes.push_back(1);
+            numInAggFound++;
+            if(numInAggFound == aggSizes_[vertex2AggId_[root]]) //don't spend more time looking if done with that root
+              break;
+          }
         }
       }
       root++; //get set up to look for the next root
@@ -447,6 +467,7 @@ namespace MueLu {
       {
         vertices.push_back(aggNodes.front());
         vertices.push_back(aggNodes.back());
+        geomSizes.push_back(2);
         continue;
       }
       //check if all points are collinear, need to explicitly draw a line in that case.
@@ -503,71 +524,20 @@ namespace MueLu {
         geomSizes.push_back(2);
         continue; //jump to next aggregate in loop
       }
-      list<int>::iterator min = aggNodes.begin();
-      for(list<int>::iterator it = ++aggNodes.begin(); it != aggNodes.end(); it++)
+      vector<vec2_> points;
+      vector<int> nodes;
+      for(list<int>::iterator it = aggNodes.begin(); it != aggNodes.end(); it++)
       {
-        if(xCoords_[*it] < xCoords_[*min])
-          min = it;
-        else if(xCoords_[*it] == xCoords_[*min])
-        {
-          if(yCoords_[*it] < yCoords_[*min])
-            min = it;
-        }
+        points.push_back(vec2_(xCoords_[*it], yCoords_[*it]));
+        nodes.push_back(*it);
       }
-      //this is the most common case: at least 3 nodes making up a polygon with positive area
-      //do Jarvis march on these points to compute convex hull
-      //start with "min" point
-      int thisHullSize = 1;
-      vertices.push_back(*min);
-      //repeatedly sweep through aggNodes (with a pivot at thisHull.back()) counterclockwise. Connect up with last node found this way ("left-most"). If there is a tie for the left-most node, take the most distant one from thisHull.back().
-      bool includeMin = false;
-      while(1)
+      vector<int> hull = giftWrap_(points, nodes);
+      vertices.reserve(vertices.size() + hull.size());
+      for(size_t i = 0; i < hull.size(); i++)
       {
-        list<int>::iterator leftMost = aggNodes.begin();
-        if(!includeMin && leftMost == min)
-        {
-          leftMost++;
-        }
-        list<int>::iterator it = leftMost;
-        it++;
-        while(it != aggNodes.end())
-        {
-          if(it == min && !includeMin) //don't compare to min on very first sweep
-          {
-            it++;
-            continue;
-          }
-          //see if it is in front of line containing nodes thisHull.back() and leftMost
-          //first get the left normal of leftMost - thisHull.back() (<dy, -dx>)
-          vec3_ testNorm(yCoords_[*leftMost] - yCoords_[vertices.back()], -(xCoords_[*leftMost] - xCoords_[vertices.back()]), 0);
-          //now dot testNorm with *it - leftMost. If dot is positive, leftMost becomes it. If dot is zero, take one further from thisHull.back().
-          vec3_ itVec(xCoords_[*it] - xCoords_[*leftMost], yCoords_[*it] - yCoords_[*leftMost], 0);
-          double dotProd = dotProduct_(testNorm, itVec);
-          if(-1e-10 < dotProd && dotProd < 1e-10)
-          {
-            //thisHull.back(), it and leftMost are collinear.
-            //Just sum the differences in x and differences in y for each and compare to get further one, don't need distance formula
-            double itDist = fabs(xCoords_[*it] - xCoords_[vertices.back()]) + fabs(yCoords_[*it] - yCoords_[vertices.back()]);
-            double leftMostDist = fabs(xCoords_[*leftMost] - xCoords_[vertices.back()]) + fabs(yCoords_[*leftMost] - yCoords_[vertices.back()]);
-            if(itDist > leftMostDist)
-              leftMost = it;
-          }
-          else if(dotProd > 0)
-            leftMost = it;
-          it++;
-        }
-        //if leftMost is min, then the loop is complete.
-        if(leftMost == min)
-        {
-          geomSizes.push_back(thisHullSize);
-          break; //this goes to the next aggregate
-        }
-        //add leftMost to thisHull, and remove it from aggNodes so later searches are faster
-        vertices.push_back(*leftMost);
-        thisHullSize++;
-        aggNodes.erase(leftMost);
-        includeMin = true; //have found second point (the one after min) so now include min in the searches
+        vertices.push_back(hull[i]);
       }
+      geomSizes.push_back(hull.size());
     }
   }
 
@@ -590,7 +560,9 @@ namespace MueLu {
       }
       //First, check anomalous cases
       if(aggNodes.size() == 0)
+      {
         throw runtime_error("An aggregate has zero nodes in it!");
+      }
       else if(aggNodes.size() == 1)
       {
         vertices.push_back(aggNodes.front());
@@ -607,33 +579,20 @@ namespace MueLu {
       //check for collinearity
       bool areCollinear = true;
       {
-        Iter colCheck = aggNodes.begin();
-        int firstNode = *colCheck;
-        colCheck++;
-        int secondNode = *colCheck;
-        colCheck++;
-        double colCheckDX = xCoords_[firstNode] - xCoords_[secondNode];
-        double colCheckDY = yCoords_[firstNode] - yCoords_[secondNode];
-        double colCheckDZ = zCoords_[firstNode] - zCoords_[secondNode];
-        vec3_ collinearVec(colCheckDX, colCheckDY, colCheckDZ);
-        //normalize collinearVec
-        double collinearVecMag = magnitude_(collinearVec);
-        collinearVec.x /= collinearVecMag;
-        collinearVec.y /= collinearVecMag;
-        collinearVec.z /= collinearVecMag;
-        vec3_ firstPoint(xCoords_[aggNodes.front()], yCoords_[aggNodes.front()], zCoords_[aggNodes.front()]);
-        for(Iter it = colCheck; it != aggNodes.end(); it++)
+        Iter it = aggNodes.begin();
+        vec3_ firstVec(xCoords_[*it], yCoords_[*it], zCoords_[*it]);
+        vec3_ comp;
+        {
+          it++;
+          vec3_ secondVec(xCoords_[*it], yCoords_[*it], zCoords_[*it]); //cross this with other vectors to compare
+          comp = vecSubtract_(secondVec, firstVec);
+          it++;
+        }
+        for(; it != aggNodes.end(); it++)
         {
           vec3_ thisVec(xCoords_[*it], yCoords_[*it], zCoords_[*it]);
-          vec3_ vecDiff = vecSubtract_(thisVec, firstPoint);
-          //normalize vecDiff so that it can be directly compared to collinearVec
-          double vecDiffMag = magnitude_(vecDiff);
-          vecDiff.x /= vecDiffMag;
-          vecDiff.y /= vecDiffMag;
-          vecDiff.z /= vecDiffMag;
-          //compare x, y and z separately and give some slack for rounding error
-          vec3_ compare = vecSubtract_(vecDiff, collinearVec);
-          if(compare.x < -1e-10 || compare.x > 1e-10 || compare.y < -1e-10 || compare.y > 1e-10 || compare.z < -1e-10 || compare.z > 1e-10)
+          vec3_ cross = crossProduct_(vecSubtract_(thisVec, firstVec), comp);
+          if(magnitude_(cross) > 1e-10)
           {
             areCollinear = false;
             break;
@@ -678,6 +637,75 @@ namespace MueLu {
         vertices.push_back(*max);
         geomSizes.push_back(2);
         continue;
+      }
+      bool areCoplanar = true;
+      {
+        //number of points is known to be >= 3
+        Iter vert = aggNodes.begin();
+        vec3_ v1(xCoords_[*vert], yCoords_[*vert], zCoords_[*vert]);
+        vert++;
+        vec3_ v2(xCoords_[*vert], yCoords_[*vert], zCoords_[*vert]);
+        vert++;
+        vec3_ v3(xCoords_[*vert], yCoords_[*vert], zCoords_[*vert]);
+        vert++;
+        //Make sure the first three points aren't also collinear (need a non-degenerate triangle to get a normal)
+        while(magnitude_(crossProduct_(vecSubtract_(v1, v2), vecSubtract_(v1, v3))) < 1e-10)
+        {
+          //Replace the third point with the next point
+          v3 = vec3_(xCoords_[*vert], yCoords_[*vert], zCoords_[*vert]);
+          vert++;
+        }
+        for(; vert != aggNodes.end(); vert++)
+        {
+          vec3_ pt(xCoords_[*vert], yCoords_[*vert], zCoords_[*vert]);
+          if(fabs(pointDistFromTri_(pt, v1, v2, v3)) > 1e-12)
+          {
+            areCoplanar = false;
+            break;
+          }
+        }
+        if(areCoplanar)
+        {
+          //do 2D convex hull
+          vec3_ planeNorm = getNorm_(v1, v2, v3);
+          planeNorm.x = fabs(planeNorm.x);
+          planeNorm.y = fabs(planeNorm.y);
+          planeNorm.z = fabs(planeNorm.z);
+          vector<vec2_> points;
+          vector<int> nodes;
+          if(planeNorm.x >= planeNorm.y && planeNorm.x >= planeNorm.z)
+          {
+            //project points to yz plane to make hull
+            for(Iter it = aggNodes.begin(); it != aggNodes.end(); it++)
+            {
+              nodes.push_back(*it);
+              points.push_back(vec2_(yCoords_[*it], zCoords_[*it]));
+            }
+          }
+          if(planeNorm.y >= planeNorm.x && planeNorm.y >= planeNorm.z)
+          {
+            //use xz
+            for(Iter it = aggNodes.begin(); it != aggNodes.end(); it++)
+            {
+              nodes.push_back(*it);
+              points.push_back(vec2_(xCoords_[*it], zCoords_[*it]));
+            }           
+          }
+          if(planeNorm.z >= planeNorm.x && planeNorm.z >= planeNorm.y)
+          {
+            for(Iter it = aggNodes.begin(); it != aggNodes.end(); it++)
+            {
+              nodes.push_back(*it);
+              points.push_back(vec2_(xCoords_[*it], yCoords_[*it]));
+            }           
+          }
+          vector<int> convhull2d = giftWrap_(points, nodes);
+          geomSizes.push_back(convhull2d.size());
+          vertices.reserve(vertices.size() + convhull2d.size());
+          for(size_t i = 0; i < convhull2d.size(); i++)
+            vertices.push_back(convhull2d[i]);
+          continue;
+        }
       }
       Iter exIt = aggNodes.begin(); //iterator to be used for searching for min/max x/y/z
       int extremeSix[] = {*exIt, *exIt, *exIt, *exIt, *exIt, *exIt}; //nodes with minimumX, maxX, minY ...
@@ -891,16 +919,172 @@ namespace MueLu {
     }
   }
 
+#ifdef HAVE_MUELU_CGAL
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls_(std::vector<int>& vertices, std::vector<int>& geomSizes) const
   {
     using namespace std;
-    //TODO
+    if(dims_ == 2)
+      doAlphaHulls2D_(vertices, geomSizes);
+    else if(dims_ == 3)
+      doAlphaHulls3D_(vertices, geomSizes);
   }
 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls2D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const
+  {
+    const double ALPHA_VAL = 2; //Make configurable?
+    using namespace std;
+    //CGAL setup
+    typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+    typedef K::FT FT;
+    typedef K::Point_2 Point;
+    typedef K::Segment_2 Segment;
+    typedef CGAL::Alpha_shape_vertex_base_2<K> Vb;
+    typedef CGAL::Alpha_shape_face_base_2<K> Fb;
+    typedef CGAL::Triangulation_data_structure_2<Vb,Fb> Tds;
+    typedef CGAL::Delaunay_triangulation_2<K,Tds> Triangulation_2;
+    typedef CGAL::Alpha_shape_2<Triangulation_2> Alpha_shape_2;
+    typedef Alpha_shape_2::Alpha_shape_edges_iterator Alpha_shape_edges_iterator;
+    for(int i = 0; i < numAggs_; i++)
+    {
+      //Populate a list of Point_2 for this aggregate
+      list<Point> aggPoints;
+      vector<int> aggNodes;
+      for(int j = 0; j < numNodes_; j++)
+      {
+        if(vertex2AggId_[j] == i)
+        {
+          Point p(xCoords_[j], yCoords_[j]);
+          aggPoints.push_back(p);
+          aggNodes.push_back(j);
+        }
+      }
+      Alpha_shape_2 hull(aggPoints.begin(), aggPoints.end(), FT(ALPHA_VAL), Alpha_shape_2::GENERAL);
+      vector<Segment> segments;
+      alpha_edges(hull, back_inserter(segments));
+      vertices.reserve(vertices.size() + 2 * segments.size());
+      geomSizes.reserve(geomSizes.size() + segments.size());
+      for(size_t j = 0; j < segments.size(); j++)
+      {
+        for(size_t k = 0; k < aggNodes.size(); k++)
+        {
+          if(fabs(segments[j][0].x == xCoords_[aggNodes[k]]) < 1e-12 && fabs(segments[j][0].y == yCoords_[aggNodes[k]]) < 1e-12)
+          {
+            vertices.push_back(aggNodes[k]);
+            break;
+          }
+        }
+        for(size_t k = 0; k < aggNodes.size(); k++)
+        {
+          if(fabs(segments[j][1].x  == xCoords_[aggNodes[k]]) < 1e-12 && fabs(segments[j][1].y == yCoords_[aggNodes[k]]) < 1e-12)
+          {
+            vertices.push_back(aggNodes[k]);
+            break;
+          }
+        }
+        geomSizes.push_back(2); //all cells are line segments
+      }
+    }
+  }
+  
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doAlphaHulls3D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const
+  {
+    typedef CGAL::Exact_predicates_inexact_constructions_kernel Gt;
+    typedef CGAL::Alpha_shape_cell_base_3<Gt> Fb;
+    typedef CGAL::Triangulation_data_structure_3<Vb,Fb> Tds;
+    typedef CGAL::Delaunay_triangulation_3<Gt,Tds> Triangulation_3;
+    typedef Gt::Point_3 Point;
+    typedef Alpha_shape_3::Alpha_iterator Alpha_iterator;
+    typedef Alpha_shape_3::Cell_handle Cell_handle;
+    typedef Alpha_shape_3::Vertex_handle Vertex_handle;
+    typedef Alpha_shape_3::Facet Facet;
+    typedef Alpha_shape_3::Edge Edge;
+    typedef Gt::Weighted_point Weighted_point;
+    typedef Gt::Bare_point Bare_point;
+    const double ALPHA_VAL = 2; //Make configurable?
+    using namespace std;
+    for(int i = 0; i < numAggs_; i++)
+    {
+      list<Point> aggPoints;
+      vector<int> aggNodes;
+      for(int j = 0; j < numNodes_; j++)
+      {
+        if(vertex2AggId[j] == i)
+        {
+          Point p(xCoords_[j], yCoords_[j], zCoords_[j]);
+          aggPoints.push_back(p);
+          aggNodes.push_back(j);
+        }
+      }
+      Fixed_alpha_shape_3 hull(aggPoints.begin(), aggPoints.end(), FT(ALPHA_VAL));
+      list<Cell_handle> cells;
+      list<Facet> facets;
+      list<Edge> edges;
+      hull.get_alpha_shape_cells(back_inserter(cells));
+      hull.get_alpha_shape_facets(back_inserter(facets));
+      hull.get_alpha_shape_edges(back_inserter(edges));
+      for(size_t j = 0; j < cells.size(); j++)
+      {
+        Point tetPoints[4];
+        tetPoints[0] = cells[j]->vertex(0);
+        tetPoints[1] = cells[j]->vertex(1);
+        tetPoints[2] = cells[j]->vertex(2);
+        tetPoints[3] = cells[j]->vertex(3);
+        for(int k = 0; k < 4; k++)
+        {
+          for(size_t l = 0; l < aggNodes.size(); l++)
+          {
+            if(fabs(tetPoints[k].x - xCoords_[aggNodes[l]]) < 1e-12 &&
+               fabs(tetPoints[k].y - yCoords_[aggNodes[l]]) < 1e-12 &&
+               fabs(tetPoints[k].z - zCoords_[aggNodes[l]]) < 1e-12)
+            {
+              vertices.push_back(aggNodes[l]);
+              break;
+            }
+          }
+        }
+        geomSizes.push_back(-10); //tetrahedron
+      }
+      for(size_t j = 0; j < facets.size(); j++)
+      {
+        int indices[3];
+        indices[0] = (facets[i].second + 1) % 4;
+        indices[1] = (facets[i].second + 2) % 4;
+        indices[2] = (facets[i].second + 3) % 4;
+        if(facets[i].second % 2 == 0)
+          swap(indices[0], indices[1]);
+        Point facetPts[3];
+        facetPts[0] = facets[i].first->vertex(indices[0])->point();
+        facetPts[1] = facets[i].first->vertex(indices[1])->point();
+        facetPts[2] = facets[i].first->vertex(indices[2])->point();
+        //add triangles in terms of node indices
+        for(size_t l = 0; l < aggNodes.size(); l++)
+        {
+          if(fabs(facetPts[k].x - xCoords_[aggNodes[l]]) < 1e-12 &&
+             fabs(facetPts[k].y - yCoords_[aggNodes[l]]) < 1e-12 &&
+             fabs(facetPts[k].z - zCoords_[aggNodes[l]]) < 1e-12)
+          {
+            vertices.push_back(aggNodes[l]);
+            break;
+          }
+        }
+        geomSizes.push_back(3);
+      }
+      for(size_t j = 0; j < edges.size(); j++)
+      {
+        
+      }
+    }
+  }
+#endif
+  
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  std::string AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const {
-    while(1) {
+  std::string AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const
+  {
+    while(1)
+    {
       const int pos = result.find(replaceWhat);
       if (pos == -1)
         break;
@@ -922,10 +1106,16 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  double AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dotProduct_(vec2_ v1, vec2_ v2)
+  {
+    return v1.x * v2.x + v1.y * v2.y;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isInFront_(vec3_ point, vec3_ inPlane, vec3_ n)
   {
     vec3_ rel(point.x - inPlane.x, point.y - inPlane.y, point.z - inPlane.z); //position of the point relative to the plane
-    return dotProduct_(rel, n) > 1e-12 ? true : false;
+    return dotProduct_(rel, n) > 1e-12;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -938,6 +1128,12 @@ namespace MueLu {
   double AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::distance_(vec3_ p1, vec3_ p2)
   {
     return magnitude_(vecSubtract_(p1, p2));
+  }
+ 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  vec2_ AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::vecSubtract_(vec2_ v1, vec2_ v2)
+  {
+    return vec2_(v1.x - v2.x, v1.y - v2.y);    
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -952,6 +1148,12 @@ namespace MueLu {
     return crossProduct_(vecSubtract_(v2, v1), vecSubtract_(v3, v1));
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  vec2_ AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getNorm_(vec2_ v) //"normal" to a 2D vector - just rotate 90 degrees to left
+  {
+    return vec2_(v.y, -v.x);
+  }
+
   //get minimum distance from 'point' to plane containing v1, v2, v3 (or the triangle with v1, v2, v3 as vertices)
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   double AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::pointDistFromTri_(vec3_ point, vec3_ v1, vec3_ v2, vec3_ v3)
@@ -963,9 +1165,6 @@ namespace MueLu {
     norm.x /= normScl;
     norm.y /= normScl;
     norm.z /= normScl;
-    //cout << "Have a normal vector <" << norm.x << "," << norm.y << "," << norm.z << ">" << endl;
-    //cout << "The distance from the point (" << point.x << "," << point.y << "," << point.z << ")" << endl;
-    //cout << "to the triangle containing points (" << v1.x << "," << v1.y << "," << v1.z << "), (" << v2.x << "," << v2.y << "," << v2.z << "), and (" << v3.x << "," << v3.y << "," << v3.z << ") is ";
     double rv = fabs(dotProduct_(norm, vecSubtract_(point, v1)));
     //cout << rv << endl;
     return rv;
@@ -1112,7 +1311,7 @@ namespace MueLu {
       newFrontPoints.push_back(newInFront);
     }
     vector<Triangle_> allRemoved; //list of all invalid iterators that were erased by calls to processTriangle_ below
-    for(int i = 0; i < int(trisToProcess.size()); i++)
+    for(size_t i = 0; i < trisToProcess.size(); i++)
     {
       if(!newFrontPoints[i].empty())
       {
@@ -1121,12 +1320,76 @@ namespace MueLu {
         if(find(allRemoved.begin(), allRemoved.end(), trisToProcess[i]) == allRemoved.end() && !(trisToProcess[i] == tri))
         {
           vector<Triangle_> removedList = processTriangle_(tris, trisToProcess[i], newFrontPoints[i], barycenter);
-          for(int j = 0; j < int(removedList.size()); j++)
+          for(size_t j = 0; j < removedList.size(); j++)
             allRemoved.push_back(removedList[j]);
         }
       }
     }
     return visible;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::vector<int> AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::giftWrap_(std::vector<vec2_>& points, std::vector<int>& nodes) const
+  {
+    using namespace std;
+    if(points.size() < 3)
+      throw runtime_error("Gift wrap algorithm input has to have at least 3 points.");
+    vector<int> hull;
+    vector<int>::iterator minNode = nodes.begin();
+    vec2_ min = points[0];
+    for(vector<int>::iterator it = nodes.begin(); it != nodes.end(); it++)
+    {
+      int i = it - nodes.begin();
+      if(points[i].x < min.x || (fabs(points[i].x - min.x) < 1e-12 && points[i].y < min.y))
+      {
+        min = points[i];
+        minNode = it;
+      }
+    }
+    hull.push_back(*minNode);
+    bool includeMin = false;
+    while(1)
+    {
+      vector<int>::iterator leftMost = nodes.begin();
+      if(!includeMin && leftMost == minNode)
+      {
+        leftMost++;
+      }
+      vector<int>::iterator it = leftMost;
+      it++;
+      for(; it != nodes.end(); it++)
+      {
+        if(it == minNode && !includeMin) //don't compare to min on very first sweep
+          continue;
+        if(*it == hull.back())
+          continue;
+        //see if it is in front of line containing nodes thisHull.back() and leftMost
+        //first get the left normal of leftMost - thisHull.back() (<dy, -dx>)
+        vec2_ leftMostVec = points[leftMost - nodes.begin()];
+        vec2_ lastVec(xCoords_[hull.back()], yCoords_[hull.back()]);
+        vec2_ testNorm = getNorm_(vecSubtract_(leftMostVec, lastVec));
+        //now dot testNorm with *it - leftMost. If dot is positive, leftMost becomes it. If dot is zero, take one further from thisHull.back().
+        vec2_ itVec(xCoords_[*it], yCoords_[*it]);
+        double dotProd = dotProduct_(testNorm, vecSubtract_(itVec, lastVec));
+        if(-1e-10 < dotProd && dotProd < 1e-10)
+        {
+          //thisHull.back(), it and leftMost are collinear.
+          //Just sum the differences in x and differences in y for each and compare to get further one, don't need distance formula
+          vec2_ itDist = vecSubtract_(itVec, lastVec);
+          vec2_ leftMostDist = vecSubtract_(leftMostVec, lastVec);
+          if(fabs(itDist.x) + fabs(itDist.y) > fabs(leftMostDist.x) + fabs(leftMostDist.y))
+            leftMost = it;
+        }
+        else if(dotProd > 0)
+          leftMost = it;
+      }
+      //if leftMost is min, then the loop is complete.
+      if(*leftMost == *minNode)
+        break;
+      hull.push_back(*leftMost);
+      includeMin = true; //have found second point (the one after min) so now include min in the searches
+    }
+    return hull;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1191,7 +1454,7 @@ namespace MueLu {
         }
       }
     }
-    for(int i = 0; i < int(vert1.size()); i ++)
+    for(size_t i = 0; i < vert1.size(); i ++)
     {
       if(vert1[i].first > vert1[i].second)
       {
@@ -1200,7 +1463,7 @@ namespace MueLu {
         vert1[i].second = temp;
       }
     }
-    for(int i = 0; i < int(vert2.size()); i++)
+    for(size_t i = 0; i < vert2.size(); i++)
     {
       if(vert2[i].first > vert2[i].second)
       {
@@ -1217,14 +1480,14 @@ namespace MueLu {
     vert2.erase(newEnd, vert2.end());
     vector<int> points1;
     points1.reserve(2 * vert1.size());
-    for(int i = 0; i < int(vert1.size()); i++)
+    for(size_t i = 0; i < vert1.size(); i++)
     {
       points1.push_back(vert1[i].first);
       points1.push_back(vert1[i].second);
     }
     vector<int> points2;
     points2.reserve(2 * vert2.size());
-    for(int i = 0; i < int(vert2.size()); i++)
+    for(size_t i = 0; i < vert2.size(); i++)
     {
       points2.push_back(vert2[i].first);
       points2.push_back(vert2[i].second);
@@ -1238,13 +1501,13 @@ namespace MueLu {
     fout << "        <DataArray type=\"Int32\" Name=\"Node\" format=\"ascii\">" << endl; //node and aggregate will be set to CONTRAST_1|2, but processor will have its actual value
     string indent = "          ";
     fout << indent;
-    for(int i = 0; i < int(unique1.size()); i++)
+    for(size_t i = 0; i < unique1.size(); i++)
     {
       fout << CONTRAST_1_ << " ";
       if(i % 25 == 24)
         fout << endl << indent;
     }
-    for(int i = 0; i < int(unique2.size()); i++)
+    for(size_t i = 0; i < unique2.size(); i++)
     {
       fout << CONTRAST_2_ << " ";
       if((i + 2 * vert1.size()) % 25 == 24)
@@ -1254,13 +1517,13 @@ namespace MueLu {
     fout << "        </DataArray>" << endl;
     fout << "        <DataArray type=\"Int32\" Name=\"Aggregate\" format=\"ascii\">" << endl;
     fout << indent;
-    for(int i = 0; i < int(unique1.size()); i++)
+    for(size_t i = 0; i < unique1.size(); i++)
     {
       fout << CONTRAST_1_ << " ";
       if(i % 25 == 24)
         fout << endl << indent;
     }
-    for(int i = 0; i < int(unique2.size()); i++)
+    for(size_t i = 0; i < unique2.size(); i++)
     {
       fout << CONTRAST_2_ << " ";
       if((i + 2 * vert2.size()) % 25 == 24)
@@ -1270,7 +1533,7 @@ namespace MueLu {
     fout << "        </DataArray>" << endl;
     fout << "        <DataArray type=\"Int32\" Name=\"Processor\" format=\"ascii\">" << endl;
     fout << indent;
-    for(int i = 0; i < int(unique1.size() + unique2.size()); i++)
+    for(size_t i = 0; i < unique1.size() + unique2.size(); i++)
     {
       fout << myRank_ << " ";
       if(i % 25 == 24)
@@ -1282,7 +1545,7 @@ namespace MueLu {
     fout << "      <Points>" << endl;
     fout << "        <DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">" << endl;
     fout << indent;
-    for(int i = 0; i < int(unique1.size()); i++)
+    for(size_t i = 0; i < unique1.size(); i++)
     {
       if(fine)
       {
@@ -1305,7 +1568,7 @@ namespace MueLu {
           fout << endl << indent;
       }
     }
-    for(int i = 0; i < int(unique2.size()); i++)
+    for(size_t i = 0; i < unique2.size(); i++)
     {
       if(fine)
       {
@@ -1334,13 +1597,13 @@ namespace MueLu {
     fout << "      <Cells>" << endl;
     fout << "        <DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">" << endl;
     fout << indent;
-    for(int i = 0; i < int(points1.size()); i++)
+    for(size_t i = 0; i < points1.size(); i++)
     {
       fout << points1[i] << " ";
       if(i % 10 == 9)
         fout << endl << indent;
     }
-    for(int i = 0; i < int(points2.size()); i++)
+    for(size_t i = 0; i < points2.size(); i++)
     {
       fout << points2[i] + unique1.size() << " ";
       if((i + points1.size()) % 10 == 9)
@@ -1351,7 +1614,7 @@ namespace MueLu {
     fout << "        <DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">" << endl;
     fout << indent;
     int offset = 0;
-    for(int i = 0; i < int(vert1.size() + vert2.size()); i++)
+    for(size_t i = 0; i < vert1.size() + vert2.size(); i++)
     {
       offset += 2;
       fout << offset << " ";
@@ -1362,7 +1625,7 @@ namespace MueLu {
     fout << "        </DataArray>"  << endl;
     fout << "        <DataArray type=\"Int32\" Name=\"types\" format=\"ascii\">" << endl;
     fout << indent;
-    for(int i = 0; i < int(vert1.size() + vert2.size()); i++)
+    for(size_t i = 0; i < vert1.size() + vert2.size(); i++)
     {
       fout << "3 ";
       if(i % 25 == 24)
@@ -1377,59 +1640,46 @@ namespace MueLu {
   }
   
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFile_(std::ofstream& fout, std::string styleName, std::vector<int>& vertices, std::vector<int>& geomSizes, std::vector<int>& verticesCoarse, std::vector<int>& geomSizesCoarse) const
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::writeFile_(std::ofstream& fout, std::string styleName, std::vector<int>& vertices, std::vector<int>& geomSizes) const
   {
     using namespace std;
     vector<int> uniqueFine = makeUnique_(vertices);
-    vector<int> uniqueCoarse = makeUnique_(verticesCoarse);
     string indent = "      ";
     fout << "<!--" << styleName << " Aggregates Visualization-->" << endl;
     fout << "<VTKFile type=\"UnstructuredGrid\" byte_order=\"LittleEndian\">" << endl;
     fout << "  <UnstructuredGrid>" << endl;
-    fout << "    <Piece NumberOfPoints=\"" << uniqueFine.size() + uniqueCoarse.size() << "\" NumberOfCells=\"" << geomSizes.size() + geomSizesCoarse.size() << "\">" << endl;
+    fout << "    <Piece NumberOfPoints=\"" << uniqueFine.size() << "\" NumberOfCells=\"" << geomSizes.size() << "\">" << endl;
     fout << "      <PointData Scalars=\"Node Aggregate Processor\">" << endl;
     fout << "        <DataArray type=\"Int32\" Name=\"Node\" format=\"ascii\">" << endl;
     indent = "          ";
     fout << indent;
-    for(int i = 0; i < int(uniqueFine.size()); i++)
+    bool localIsGlobal = GlobalOrdinal(nodeMap_->getGlobalNumElements()) == GlobalOrdinal(nodeMap_->getNodeNumElements());
+    for(size_t i = 0; i < uniqueFine.size(); i++)
     {
-      fout << nodeMap_->getGlobalElement(uniqueFine[i]) << " ";
+      if(localIsGlobal)
+      {
+        fout << uniqueFine[i] << " "; //if all nodes are on this processor, do not map from local to global
+      }
+      else
+        fout << nodeMap_->getGlobalElement(uniqueFine[i]) << " ";
       if(i % 10 == 9)
         fout << endl << indent;
-    }
-    if(doCoarseGraphEdges_)
-    {
-      for(int i = 0; i < int(uniqueCoarse.size()); i++)
-      {
-        fout << nodeMapCoarse_->getGlobalElement(uniqueCoarse[i]) << " ";
-        if((i + uniqueFine.size()) % 10 == 9)  //pretty formatting, pick up in the line where other list left off
-          fout << endl << indent;
-      }
     }
     fout << endl;
     fout << "        </DataArray>" << endl;
     fout << "        <DataArray type=\"Int32\" Name=\"Aggregate\" format=\"ascii\">" << endl;
     fout << indent;
-    for(int i = 0; i < int(uniqueFine.size()); i++)
+    for(size_t i = 0; i < uniqueFine.size(); i++)
     {
       fout << aggsOffset_ + vertex2AggId_[uniqueFine[i]] << " ";
       if(i % 10 == 9)
         fout << endl << indent;
     }
-    if(doCoarseGraphEdges_)
-    {
-      for(int i = 0; i < int(uniqueCoarse.size()); i++)
-      {
-        fout << "-1 ";
-        if((i + uniqueFine.size()) % 10 == 9)
-          fout << endl << indent;
-      }
-    }
     fout << endl;
     fout << "        </DataArray>" << endl;
     fout << "        <DataArray type=\"Int32\" Name=\"Processor\" format=\"ascii\">" << endl;
     fout << indent;
-    for(int i = 0; i < int(uniqueFine.size() + uniqueCoarse.size()); i++)
+    for(size_t i = 0; i < uniqueFine.size(); i++)
     {
       fout << myRank_ << " ";
       if(i % 20 == 19)
@@ -1441,7 +1691,7 @@ namespace MueLu {
     fout << "      <Points>" << endl;
     fout << "        <DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">" << endl;
     fout << indent;
-    for(int i = 0; i < int(uniqueFine.size()); i++)
+    for(size_t i = 0; i < uniqueFine.size(); i++)
     {
       fout << xCoords_[uniqueFine[i]] << " " << yCoords_[uniqueFine[i]] << " ";
       if(dims_ == 2)
@@ -1451,32 +1701,16 @@ namespace MueLu {
       if(i % 3 == 2)
         fout << endl << indent;
     }
-    for(int i = 0; i < int(uniqueCoarse.size()); i++)
-    {
-      fout << cx_[uniqueCoarse[i]] << " " << cy_[uniqueCoarse[i]] << " ";
-      if(dims_ == 2)
-        fout << "0 ";
-      else
-        fout << cz_[uniqueCoarse[i]] << " ";
-      if((i + uniqueFine.size()) % 3 == 2)
-        fout << endl << indent;
-    }
     fout << endl;
     fout << "        </DataArray>" << endl;
     fout << "      </Points>" << endl;
     fout << "      <Cells>" << endl;
     fout << "        <DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">" << endl;
     fout << indent;
-    for(int i = 0; i < int(vertices.size()); i++)
+    for(size_t i = 0; i < vertices.size(); i++)
     {
       fout << vertices[i] << " ";
       if(i % 10 == 9)
-        fout << endl << indent;
-    }
-    for(int i = 0; i < int(verticesCoarse.size()); i++)
-    {
-      fout << verticesCoarse[i] + uniqueFine.size() << " ";
-      if((i + vertices.size()) % 10 == 9)
         fout << endl << indent;
     }
     fout << endl;
@@ -1484,25 +1718,18 @@ namespace MueLu {
     fout << "        <DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">" << endl;
     fout << indent;
     int accum = 0;
-    for(int i = 0; i < int(geomSizes.size()); i++)
+    for(size_t i = 0; i < geomSizes.size(); i++)
     {
       accum += geomSizes[i];
       fout << accum << " ";
       if(i % 10 == 9)
         fout << endl << indent;
     }
-    for(int i = 0; i < int(geomSizesCoarse.size()); i++)
-    {
-      accum += geomSizesCoarse[i];
-      fout << accum << " ";
-      if((i + geomSizes.size()) % 10 == 9)
-        fout << endl << indent;
-    }
     fout << endl;
     fout << "        </DataArray>" << endl;
     fout << "        <DataArray type=\"Int32\" Name=\"types\" format=\"ascii\">" << endl;
     fout << indent;
-    for(int i = 0; i < int(geomSizes.size()); i++)
+    for(size_t i = 0; i < geomSizes.size(); i++)
     {
       switch(geomSizes[i])
       {
@@ -1519,25 +1746,6 @@ namespace MueLu {
           fout << "7 "; //Polygon
       }
       if(i % 30 == 29)
-        fout << endl << indent;
-    }
-    for(int i = 0; i < int(geomSizesCoarse.size()); i++)
-    {
-      switch(geomSizesCoarse[i])
-      {
-        case 1:
-          fout << "1 "; //Point
-          break;
-        case 2:
-          fout << "3 "; //Line
-          break;
-        case 3:
-          fout << "5 "; //Triangle
-          break;
-        default:
-          fout << "7 "; //Polygon
-      }
-      if((i + geomSizes.size()) % 30 == 29)
         fout << endl << indent;
     }
     fout << endl;
@@ -1558,7 +1766,7 @@ namespace MueLu {
     uniqueNodes.erase(newUniqueFineEnd, uniqueNodes.end());
     //uniqueNodes is now a sorted list of the nodes whose info actually goes in file
     //Now replace values in vertices with locations of the old values in uniqueFine
-    for(int i = 0; i < int(vertices.size()); i++)
+    for(size_t i = 0; i < vertices.size(); i++)
     {
       int lo = 0;
       int hi = uniqueNodes.size() - 1;
@@ -1595,7 +1803,7 @@ namespace MueLu {
       color << "  <Point x=\"" << CONTRAST_2_ << "\" o=\"1\" r=\"1\" g=\"0.6\" b=\"0\"/>" << endl;
       color << "  <Point x=\"" << CONTRAST_3_ << "\" o=\"1\" r=\"1\" g=\"1\" b=\"0\"/>" << endl;
       srand(time(NULL));
-      for(int i = 0; i < 100; i ++)
+      for(int i = 0; i < 5000; i += 4)
       {
         color << "  <Point x=\"" << i << "\" o=\"1\" r=\"" << (rand() % 50) / 256.0 << "\" g=\"" << (rand() % 256) / 256.0 << "\" b=\"" << (rand() % 256) / 256.0 << "\"/>" << endl;
       }

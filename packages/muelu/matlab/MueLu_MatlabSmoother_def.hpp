@@ -71,63 +71,68 @@ namespace MueLu {
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
+  void MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const
+  {
+    using namespace std;
     this->Input(currentLevel, "A");
-
     ParameterList& pL = const_cast<ParameterList&>(this->GetParameterList());
-    needsSetup_ = pL.get<std::string>("Needs");
-    std::vector<std::string> needsList = tokenizeList(needsSetup_);
+    needsSetup_ = pL.get<string>("Needs");
+    vector<string> needsList = tokenizeList(needsSetup_);
     for(size_t i = 0; i < needsList.size(); i++)
+    {
+      if(!IsParamMuemexVariable(needsList[i]));
       this->Input(currentLevel, needsList[i]);
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& currentLevel) {
+  void MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& currentLevel)
+  {
+    using namespace std;
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
-    std::cout << "Running setup() in MatlabSmoother" << std::endl;
     if (this->IsSetup() == true)
       this->GetOStream(Warnings0) << "MueLu::MatlabSmoother::Setup(): Setup() has already been called";
-    std::vector<RCP<MuemexArg> > InputArgs = processNeeds<Scalar, LocalOrdinal, GlobalOrdinal, Node>(this, needsSetup_, currentLevel);
-    A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
+    vector<RCP<MuemexArg>> InputArgs = processNeeds<Scalar, LocalOrdinal, GlobalOrdinal, Node>(this, needsSetup_, currentLevel);
+    A_ = Factory::Get<RCP<Matrix>>(currentLevel, "A");
     RCP<MuemexArg> AmatArg = rcp_implicit_cast<MuemexArg>(rcp(new MuemexData<RCP<Matrix>>(A_)));
     //Always add A to the beginning of InputArgs
     InputArgs.insert(InputArgs.begin(), AmatArg);
     // Call mex function
     if(!setupFunction_.length())
-      throw std::runtime_error("Invalid matlab function name");
+      throw runtime_error("Invalid matlab function name");
     solveData_= callMatlab(setupFunction_, solveDataSize_, InputArgs);
-    this->GetOStream(Statistics0) << description() << std::endl;
+    this->GetOStream(Statistics0) << description() << endl;
     this->IsSetup(true); //mark the smoother as set up
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
+  void MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const
+  {
     TEUCHOS_TEST_FOR_EXCEPTION(SmootherPrototype::IsSetup() == false, Exceptions::RuntimeError, "MueLu::MatlabSmoother::Apply(): Setup() has not been called");
     using namespace Teuchos;
     using namespace std;
     // Push on A as first input
-    vector<RCP<MuemexArg> > InputArgs;
-    InputArgs.push_back(rcp(new MuemexData<RCP<Matrix> >(A_)));
+    vector<RCP<MuemexArg>> InputArgs;
+    InputArgs.push_back(rcp(new MuemexData<RCP<Matrix>>(A_)));
     // Push on LHS & RHS
     RCP<MultiVector> Xrcp(&X, false);
     MultiVector* BPtrNonConst = (MultiVector*) &B;
     RCP<MultiVector> Brcp = rcp<MultiVector>(BPtrNonConst, false);
-    RCP<MuemexData<RCP<MultiVector> > > XData = rcp(new MuemexData<RCP<MultiVector> >(Xrcp));
-    RCP<MuemexData<RCP<MultiVector> > > BData = rcp(new MuemexData<RCP<MultiVector> >(Brcp));
+    RCP<MuemexData<RCP<MultiVector>>> XData = rcp(new MuemexData<RCP<MultiVector>>(Xrcp));
+    RCP<MuemexData<RCP<MultiVector>>> BData = rcp(new MuemexData<RCP<MultiVector>>(Brcp));
     InputArgs.push_back(XData);
     InputArgs.push_back(BData);
-
     for(size_t i = 0; i < solveData_.size(); i++)
       InputArgs.push_back(solveData_[i]);
-
     if(!solveFunction_.length()) throw std::runtime_error("Invalid matlab function name");
-    std::vector<Teuchos::RCP<MuemexArg> > mexOutput = callMatlab(solveFunction_, 1, InputArgs);
-    RCP<MuemexData<RCP<MultiVector> > > mydata = Teuchos::rcp_static_cast<MuemexData<RCP<MultiVector> > >(mexOutput[0]);
+    vector<Teuchos::RCP<MuemexArg>> mexOutput = callMatlab(solveFunction_, 1, InputArgs);
+    RCP<MuemexData<RCP<MultiVector>>> mydata = Teuchos::rcp_static_cast<MuemexData<RCP<MultiVector>>>(mexOutput[0]);
     X = *(mydata->getData());
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node> > MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Copy() const {
+  RCP<MueLu::SmootherPrototype<Scalar, LocalOrdinal, GlobalOrdinal, Node>> MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Copy() const
+  {
     RCP<MatlabSmoother> smoother = rcp(new MatlabSmoother(*this) );
     smoother->SetParameterList(this->GetParameterList());
     return smoother;
