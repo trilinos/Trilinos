@@ -23,7 +23,7 @@ namespace Kokkos {
           m_depart(0) {}
 
       KOKKOS_INLINE_FUNCTION 
-      const int
+      int
       set_arrive(const int team_rank) { 
         const int flip = !((char*)&m_arrive)[team_rank];
         ((char*)&m_arrive)[team_rank] = flip;
@@ -31,7 +31,7 @@ namespace Kokkos {
       }
 
       KOKKOS_INLINE_FUNCTION 
-      const int
+      int
       set_depart(const int team_rank) { 
         const int flip = !((char*)&m_depart)[team_rank];
         ((char*)&m_depart)[team_rank] = flip; 
