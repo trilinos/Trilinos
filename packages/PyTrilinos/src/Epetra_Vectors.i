@@ -58,11 +58,22 @@
 // PyTrilinos configuration
 %include "PyTrilinos_config.h"
 
+/////////////////////////////////////////////////////////
+// Teuchos::RCP<> support for all classes in this file //
+/////////////////////////////////////////////////////////
+%teuchos_rcp(Epetra_IntVector  )
+%teuchos_rcp(Epetra_MultiVector)
+%teuchos_rcp(Epetra_Vector     )
+%teuchos_rcp(Epetra_FEVector   )
+%teuchos_rcp_epetra_argout(Epetra_IntVector  )
+%teuchos_rcp_epetra_argout(Epetra_MultiVector)
+%teuchos_rcp_epetra_argout(Epetra_Vector     )
+%teuchos_rcp_epetra_argout(Epetra_FEVector   )
+
 //////////////////////////////
 // Epetra_IntVector support //
 //////////////////////////////
 %rename(IntVector) Epetra_IntVector;
-%teuchos_rcp(Epetra_IntVector)
 %inline
 {
   PyObject *
@@ -162,7 +173,6 @@
 // Epetra_MultiVector support //
 ////////////////////////////////
 %rename(MultiVector) Epetra_MultiVector;
-%teuchos_rcp(Epetra_MultiVector)
 %inline
 {
   PyObject *
@@ -388,7 +398,7 @@
                                                double **,
                                                int,
                                                int);
-%ignore Epetra_MultiVector::operator()(int);
+//%ignore Epetra_MultiVector::operator()(int);
 %ignore Epetra_MultiVector::operator()(int) const;
 %ignore Epetra_MultiVector::ExtractCopy(double *, int   ) const;
 %ignore Epetra_MultiVector::ExtractCopy(double **       ) const;
@@ -431,11 +441,11 @@
       if isinstance(i,tuple):
           return self.array.__getitem__(i)
       else:
-        return Vector(View,self,i)
+        return self.__call__(i)
   MultiVector.__getattr__ = MultiVector_getattr
   MultiVector.__setattr__ = MultiVector_setattr
-  # MultiVector.__getitem__ = MultiVector_getitem
-  MultiVector.__getitem__ = lambda self, i: self.array.__getitem__(i)
+  MultiVector.__getitem__ = MultiVector_getitem
+  # MultiVector.__getitem__ = lambda self, i: self.array.__getitem__(i)
   MultiVector.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
   MultiVector.__len__     = lambda self: self.array.__len__()
   MultiVector.__str__     = lambda self: self.array.__str__()
@@ -449,7 +459,6 @@
 // Epetra_Vector support //
 ///////////////////////////
 %rename(Vector) Epetra_Vector;
-%teuchos_rcp(Epetra_Vector)
 %inline
 {
   PyObject *
@@ -870,7 +879,6 @@
 // Epetra_FEVector support //
 /////////////////////////////
 %rename(FEVector) Epetra_FEVector;
-%teuchos_rcp(Epetra_FEVector)
 %inline
 {
   PyObject *
