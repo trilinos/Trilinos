@@ -612,29 +612,29 @@ def from_DistArray(comm, distarray):
 #     def __getitem__(self, args):
 #         return self._vector.__getitem__(args)
 
-  def MDVector(*args, **kwargs):
+def MDVector(*args, **kwargs):
     dtype = None
     if len(args) > 0:
-      try:
-        dtype = args[0].dtype()
-        if dtype == "int": dtype = "i"
-      except AttributeError:
-        pass
+        try:
+            dtype = args[0].dtype()
+            if dtype == "int": dtype = "i"
+        except AttributeError:
+            pass
     dtype = kwargs.get("dtype", dtype)
     if dtype is None: dtype = "int64"
     if type(dtype) == str:
-      dtype = numpy.dtype(dtype)
+        dtype = numpy.dtype(dtype)
     if dtype.type is numpy.int32:
-      result = MDVector_int(*args)
+        result = MDVector_int(*args)
     elif dtype.type is numpy.int64:
-      result = MDVector_long(*args)
+        result = MDVector_long(*args)
     elif dtype.type is numpy.float32:
-      result = MDVector_float(*args)
+        result = MDVector_float(*args)
     elif dtype.type is numpy.float64:
-      result = MDVector_double(*args)
+        result = MDVector_double(*args)
     else:
-      raise TypeError("Unsupported or unrecognized dtype = %s" %
-                      str(dtype))
+        raise TypeError("Unsupported or unrecognized dtype = %s" %
+                        str(dtype))
     return result
 
 %}
