@@ -183,6 +183,7 @@ class EpetraIntVectorTestCase(unittest.TestCase):
         "Test Epetra.IntVector (BlockMap,3D-correct-list) constructor"
         list = [[[0, 1, 2], [3, 2, 1], [1, 0, 0]]]
         eiv = Epetra.IntVector(self.map,list)
+        eiv.shape = (1,3,3)
         self.assertEquals(eiv.Label(),        "Epetra::IntVector"       )
         self.assertEquals(eiv.dtype,          self.dtype                )
         self.assertEquals(eiv.MyLength(),     self.length               )
@@ -225,6 +226,7 @@ class EpetraIntVectorTestCase(unittest.TestCase):
         list = [[0, 1, 2, 3, 2, 1, 1, 0, 0],
                 [0, 0, 1, 1, 2, 3, 2, 1, 0]]
         eiv = Epetra.IntVector(list)
+        eiv.shape = (2,9)
         self.assertEquals(eiv.Label(),        "Epetra::IntVector")
         self.assertEquals(eiv.dtype,          self.dtype         )
         self.assertEquals(eiv.MyLength(),     2*len(list[0])     )
@@ -239,6 +241,7 @@ class EpetraIntVectorTestCase(unittest.TestCase):
                 [[0, 0, 1], [1, 2, 3], [2, 1, 0]],
                 [[3, 2, 1], [0, 0, 0], [1, 1, 2]]]
         eiv = Epetra.IntVector(list)
+        eiv.shape = (3,3,3)
         self.assertEquals(eiv.Label(),        "Epetra::IntVector")
         self.assertEquals(eiv.dtype,          self.dtype         )
         self.assertEquals(eiv.MyLength(),     3*3*len(list[0][0]))
@@ -250,12 +253,13 @@ class EpetraIntVectorTestCase(unittest.TestCase):
     def testConstructor15(self):
         "Test Epetra.IntVector (bad-list) constructor"
         list = [0, 1.0, "e", "pi"]
-        self.assertRaises((TypeError,ValueError),Epetra.IntVector,list)
+        self.assertRaises((TypeError,ValueError), Epetra.IntVector,
+                          self.map, list)
 
     def testConstructor16(self):
         "Test Epetra.IntVector copy constructor"
         eiv1 = Epetra.IntVector(self.map)
-        self.assertEquals(eiv1.dtype,self.dtype)
+        self.assertEquals(eiv1.dtype, self.dtype)
         eiv2 = Epetra.IntVector(eiv1)
         self.assertEquals(eiv2.Label(),        eiv1.Label()       )
         self.assertEquals(eiv2.dtype,          self.dtype         )
@@ -267,7 +271,7 @@ class EpetraIntVectorTestCase(unittest.TestCase):
     def testPutValue(self):
         "Test Epetra.IntVector PutValue method"
         eiv = Epetra.IntVector(self.map)
-        self.assertEquals(eiv.dtype,self.dtype)
+        self.assertEquals(eiv.dtype, self.dtype)
         for i in range(self.map.NumMyPoints()):
             self.assertEquals(eiv[i], 0)
         value = 789
@@ -278,7 +282,7 @@ class EpetraIntVectorTestCase(unittest.TestCase):
 
     def testExtractCopy(self):
         "Test Epetra.IntVector ExtractCopy method"
-        a     = [self.numPyArray1] * 4
+        a     = self.numPyArray1
         eiv   = Epetra.IntVector(self.map,a)
         array = eiv.ExtractCopy()
         self.assertEquals(type(array), ndarray)
@@ -287,7 +291,7 @@ class EpetraIntVectorTestCase(unittest.TestCase):
 
     def testExtractView(self):
         "Test Epetra.IntVector ExtractView method"
-        a     = [self.numPyArray1] * 4
+        a     = self.numPyArray1
         eiv   = Epetra.IntVector(self.map,a)
         array = eiv.ExtractView()
         self.assertEquals(type(array), ndarray)
@@ -334,9 +338,14 @@ class EpetraIntVectorTestCase(unittest.TestCase):
         eiv = Epetra.IntVector(self.map)
         self.assertRaises(AttributeError, eiv.__setattr__, "array", "junk")
 
+    def testSetDtype(self):
+        "Test Epetra.IntVector __setattr__ method for 'dtype'"
+        eiv = Epetra.IntVector(self.map)
+        self.assertRaises(AttributeError, eiv.__setattr__, "dtype", "junk")
+
     def testValues(self):
         "Test Epetra.IntVector Values method"
-        a     = [self.numPyArray1] * 4
+        a     = self.numPyArray1
         eiv   = Epetra.IntVector(self.map,a)
         array = eiv.Values()
         self.assertEquals(type(array), ndarray)

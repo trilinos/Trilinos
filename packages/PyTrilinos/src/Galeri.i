@@ -102,7 +102,10 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
-#include "Epetra_MapColoring.h"
+#include "Epetra_CompObject.h"
+#include "Epetra_OffsetIndex.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_FEVector.h"
@@ -115,26 +118,18 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVbrMatrix.h"
 #include "Epetra_LinearProblem.h"
+#include "Epetra_SerialDenseOperator.h"
+#include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_SerialDistributor.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
 #include "Epetra_Time.h"
+#include "Epetra_MapColoring.h"
 
-// Epetra Python utility code
+// NumPy include
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
-#include "Epetra_NumPyMultiVector.hpp"
-#include "Epetra_NumPyVector.hpp"
-#include "Epetra_NumPyFEVector.hpp"
-#include "Epetra_NumPyIntVector.hpp"
-#include "Epetra_NumPySerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialSymDenseMatrix.hpp"
-#include "Epetra_NumPySerialDenseVector.hpp"
-#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-#include "Epetra_NumPyIntSerialDenseVector.hpp"
 #endif
 
 // Teuchos includes
@@ -225,7 +220,7 @@ __version__ = Galeri_Version().split()[2]
 ////////////////////////////////
 // Galeri_CrsMatrices support //
 ////////////////////////////////
-%newobject Galeri::CreatCrsMatrix;
+%newobject Galeri::CreateCrsMatrix;
 %include "Galeri_CrsMatrices.h"
 
 ////////////////////////////////

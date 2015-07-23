@@ -15,3 +15,21 @@
 #  NOEXEPREFIX
 #)
 
+
+set(HEADERS
+    Zoltan2_MeshCoordinateTest.hpp
+    Zoltan2_TestInterface.hpp
+    Zoltan2_Tests.hpp
+)
+
+ADD_SUBDIRECTORY(driverinputs)
+
+INCLUDE_DIRECTORIES(
+    ${CMAKE_CURRENT_LIST_DIR}/driverinputs
+)
+
+TRIBITS_ADD_EXECUTABLE(
+  test_driver
+  SOURCES ${HEADERS} test_driver.cpp
+  COMM serial mpi
+)

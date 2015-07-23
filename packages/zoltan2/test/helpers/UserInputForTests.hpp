@@ -49,6 +49,7 @@
 
 #ifndef USERINPUTFORTESTS
 #define USERINPUTFORTESTS
+#include <Zoltan2_TestHelpers.hpp>
 
 #include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_ChacoReader.hpp>
@@ -63,6 +64,10 @@
 #include <Galeri_XpetraParameters.hpp>
 
 #include <Kokkos_DefaultNode.hpp>
+
+//#include <Teuchos_FileInputSource.hpp>
+//#include <Teuchos_DefaultComm.hpp>
+//#include <Teuchos_XMLObject.hpp>
 
 //#include <Xpetra_EpetraUtils.hpp>
 #ifdef HAVE_ZOLTAN2_MPI
@@ -79,6 +84,7 @@ using Teuchos::Comm;
 using Teuchos::rcp;
 using Teuchos::arcp;
 using Teuchos::rcp_const_cast;
+using Teuchos::ParameterList;
 using std::string;
 
 /*! \brief A class that generates typical user input for testing.
@@ -172,6 +178,25 @@ public:
   UserInputForTests(int x, int y, int z, string matrixType,
     const RCP<const Comm<int> > &c, bool debugInfo=false,
     bool distributeInput=true);
+    
+    /*! \brief Constructor that can generate a sp matrix or read a
+     *      matrix/graph file defined in an input parameter list.
+     *   \param pList the parameter list containing input options
+     *   \param problemType the type of problem that will generate a
+     *             sparse matrix from the mesh.  If the problemType is
+     *             empty we'll pick a default.
+     *   \param  c  is the communicator for the processes that
+     *         share the data.
+     *   \param  debugInfo if true process zero will print out status.
+     *
+     * Problems can be "Laplace1D", "Laplace2D", "Star2D", "BigStar2D",
+     * "Laplace3D", "Brick3D" and "Identity".
+     * See Galeri::Xpetra::BuildProblem() for more information
+     * about problem types.
+     */
+    UserInputForTests(const ParameterList &pList,
+                      const RCP<const Comm<int> > &c, bool debugInfo=false,
+                      bool distributeInput=true);
 
   /*! \brief Generate lists of random scalars.
    */
@@ -208,6 +233,39 @@ public:
   RCP<Epetra_Vector> getUIEpetraVector();
 
   RCP<Epetra_MultiVector> getUIEpetraMultiVector(int nvec);
+#endif
+    bool hasInputDataType(const string &input_type);
+    
+    bool hasUICoordinates();
+    
+    bool hasUIWeights();
+    
+    bool hasUIEdgeWeights();
+    
+    bool hasUITpetraCrsMatrix();
+    
+    bool hasUITpetraCrsGraph();
+    
+    bool hasUITpetraVector();
+    
+    bool hasUITpetraMultiVector();
+    
+    bool hasUIXpetraCrsMatrix();
+    
+    bool hasUIXpetraCrsGraph();
+    
+    bool hasUIXpetraVector();
+    
+    bool hasUIXpetraMultiVector();
+    
+#ifdef HAVE_EPETRA_DATA_TYPES
+    bool hasUIEpetraCrsGraph();
+    
+    bool hasUIEpetraCrsMatrix();
+    
+    bool hasUIEpetraVector();
+    
+    bool hasUIEpetraMultiVector();
 #endif
 
 private:
@@ -314,6 +372,79 @@ UserInputForTests::UserInputForTests(int x, int y, int z,
 #endif
 }
 
+UserInputForTests::UserInputForTests(const ParameterList &pList,
+                                     const RCP<const Comm<int> > &c,
+                                     bool debugInfo,
+                                     bool distributeInput):
+verbose_(debugInfo),
+tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_()
+#ifdef HAVE_EPETRA_DATA_TYPES
+,ecomm_(), eM_(), eG_()
+#endif
+{
+    int rank = c->getRank();
+    if(pList.isParameter("inputPath") && pList.isParameter("inputFile"))
+    {
+        string path = pList.get<string>("inputPath");
+        string testData = pList.get<string>("inputFile");
+        
+        bool zoltan1 = false;
+        string::size_type loc = path.find("/zoltan/test/");  // Zoltan1 data
+        if (loc != string::npos)
+            zoltan1 = true;
+        
+
+        if (zoltan1){
+            if(rank == 0)
+                cout << "......have a zoltan 1 graph file...." << endl;
+            
+            readZoltanTestData(path, testData, distributeInput);
+        }else
+            readMatrixMarketFile(path, testData);
+        
+    }else if(pList.isParameter("x") || pList.isParameter("y") || pList.isParameter("z")){
+       
+        int x,y,z;
+        x = y = z = 0;
+        if(pList.isParameter("x")) x = pList.get<int>("x");
+        if(pList.isParameter("y")) y = pList.get<int>("y");
+        if(pList.isParameter("z")) z = pList.get<int>("z");
+
+        string problemType = "";
+        if(pList.isParameter("ProblemType")) problemType = pList.get<string>("ProblemType");
+        
+        if (problemType.size() == 0){ /** default behavior */
+            int dim = 0;
+            if (x > 0) dim++;
+            if (y > 0) dim++;
+            if (z > 0) dim++;
+            if (dim == 1)
+                problemType = string("Laplace1D");
+            else if (dim == 2)
+                problemType = string("Laplace2D");
+            else if (dim == 3)
+                problemType = string("Laplace3D");
+            else
+                throw std::runtime_error("input");
+            
+            if (verbose_ && tcomm_->getRank() == 0)
+                std::cout << "UserInputForTests, Matrix type : " << problemType << std::endl;
+        }
+        
+        
+        buildCrsMatrix(x, y, z, problemType, distributeInput);
+        
+    }else{
+        throw std::runtime_error("user options insufficient");
+    }
+    
+#ifdef HAVE_EPETRA_DATA_TYPES
+    ecomm_ = Xpetra::toEpetra(c);
+#endif
+    
+}
+
+
 RCP<UserInputForTests::tMVector_t> UserInputForTests::getUICoordinates()
 {
   if (xyz_.is_null())
@@ -389,87 +520,199 @@ RCP<UserInputForTests::xMVector_t> UserInputForTests::getUIXpetraMultiVector(int
 #ifdef HAVE_EPETRA_DATA_TYPES
 RCP<Epetra_CrsGraph> UserInputForTests::getUIEpetraCrsGraph()
 {
-  if (M_.is_null())
-    throw std::runtime_error("could not read mtx file");
-  RCP<const tcrsGraph_t> tgraph = M_->getCrsGraph();
-  RCP<const Tpetra::Map<zlno_t, zgno_t> > trowMap = tgraph->getRowMap();
-  RCP<const Tpetra::Map<zlno_t, zgno_t> > tcolMap = tgraph->getColMap();
-
-  int nElts = static_cast<int>(trowMap->getGlobalNumElements());
-  int nMyElts = static_cast<int>(trowMap->getNodeNumElements());
-  int base = trowMap->getIndexBase();
-  ArrayView<const int> gids = trowMap->getNodeElementList();
-
-  Epetra_BlockMap erowMap(nElts, nMyElts,
-    gids.getRawPtr(), 1, base, *ecomm_);
-
-  Array<int> rowSize(nMyElts);
-  for (int i=0; i < nMyElts; i++){
-    rowSize[i] = static_cast<int>(M_->getNumEntriesInLocalRow(i+base));
-  }
-
-  size_t maxRow = M_->getNodeMaxNumRowEntries();
-  Array<int> colGids(maxRow);
-  ArrayView<const int> colLid;
-
-  eG_ = rcp(new Epetra_CrsGraph(Copy, erowMap,
-    rowSize.getRawPtr(), true));
-
-  for (int i=0; i < nMyElts; i++){
-    tgraph->getLocalRowView(i+base, colLid);
-    for (int j=0; j < colLid.size(); j++)
-      colGids[j] = tcolMap->getGlobalElement(colLid[j]);
-    eG_->InsertGlobalIndices(gids[i], rowSize[i], colGids.getRawPtr());
-  }
-  eG_->FillComplete();
-  return eG_;
+    if (M_.is_null())
+        throw std::runtime_error("could not read mtx file");
+    RCP<const tcrsGraph_t> tgraph = M_->getCrsGraph();
+    RCP<const Tpetra::Map<zlno_t, zgno_t> > trowMap = tgraph->getRowMap();
+    RCP<const Tpetra::Map<zlno_t, zgno_t> > tcolMap = tgraph->getColMap();
+    
+    int nElts = static_cast<int>(trowMap->getGlobalNumElements());
+    int nMyElts = static_cast<int>(trowMap->getNodeNumElements());
+    int base = trowMap->getIndexBase();
+    ArrayView<const int> gids = trowMap->getNodeElementList();
+    
+    Epetra_BlockMap erowMap(nElts, nMyElts,
+                            gids.getRawPtr(), 1, base, *ecomm_);
+    
+    Array<int> rowSize(nMyElts);
+    for (int i=0; i < nMyElts; i++){
+        rowSize[i] = static_cast<int>(M_->getNumEntriesInLocalRow(i+base));
+    }
+    
+    size_t maxRow = M_->getNodeMaxNumRowEntries();
+    Array<int> colGids(maxRow);
+    ArrayView<const int> colLid;
+    
+    eG_ = rcp(new Epetra_CrsGraph(Copy, erowMap,
+                                  rowSize.getRawPtr(), true));
+    
+    for (int i=0; i < nMyElts; i++){
+        tgraph->getLocalRowView(i+base, colLid);
+        for (int j=0; j < colLid.size(); j++)
+            colGids[j] = tcolMap->getGlobalElement(colLid[j]);
+        eG_->InsertGlobalIndices(gids[i], rowSize[i], colGids.getRawPtr());
+    }
+    eG_->FillComplete();
+    return eG_;
 }
 
 RCP<Epetra_CrsMatrix> UserInputForTests::getUIEpetraCrsMatrix()
 {
-  if (M_.is_null())
-    throw std::runtime_error("could not read mtx file");
-  RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
-  eM_ = rcp(new Epetra_CrsMatrix(Copy, *egraph));
-
-  size_t maxRow = M_->getNodeMaxNumRowEntries();
-  int nrows = egraph->NumMyRows();
-  int base = egraph->IndexBase();
-  const Epetra_BlockMap &rowMap = egraph->RowMap();
-  const Epetra_BlockMap &colMap = egraph->ColMap();
-  Array<int> colGid(maxRow);
-
-  for (int i=0; i < nrows; i++){
-    ArrayView<const int> colLid;
-    ArrayView<const zscalar_t> nz;
-    M_->getLocalRowView(i+base, colLid, nz);
-    size_t rowSize = colLid.size();
-    int rowGid = rowMap.GID(i+base);
-    for (size_t j=0; j < rowSize; j++){
-      colGid[j] = colMap.GID(colLid[j]);
+    if (M_.is_null())
+        throw std::runtime_error("could not read mtx file");
+    RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
+    eM_ = rcp(new Epetra_CrsMatrix(Copy, *egraph));
+    
+    size_t maxRow = M_->getNodeMaxNumRowEntries();
+    int nrows = egraph->NumMyRows();
+    int base = egraph->IndexBase();
+    const Epetra_BlockMap &rowMap = egraph->RowMap();
+    const Epetra_BlockMap &colMap = egraph->ColMap();
+    Array<int> colGid(maxRow);
+    
+    for (int i=0; i < nrows; i++){
+        ArrayView<const int> colLid;
+        ArrayView<const zscalar_t> nz;
+        M_->getLocalRowView(i+base, colLid, nz);
+        size_t rowSize = colLid.size();
+        int rowGid = rowMap.GID(i+base);
+        for (size_t j=0; j < rowSize; j++){
+            colGid[j] = colMap.GID(colLid[j]);
+        }
+        eM_->InsertGlobalValues(
+                                rowGid, rowSize, nz.getRawPtr(), colGid.getRawPtr());
     }
-    eM_->InsertGlobalValues(
-      rowGid, rowSize, nz.getRawPtr(), colGid.getRawPtr());
-  }
-  eM_->FillComplete();
-  return eM_;
+    eM_->FillComplete();
+    return eM_;
 }
 
 RCP<Epetra_Vector> UserInputForTests::getUIEpetraVector()
 {
-  RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
-  RCP<Epetra_Vector> V = rcp(new Epetra_Vector(egraph->RowMap()));
-  V->Random();
-  return V;
+    RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
+    RCP<Epetra_Vector> V = rcp(new Epetra_Vector(egraph->RowMap()));
+    V->Random();
+    return V;
 }
 
 RCP<Epetra_MultiVector> UserInputForTests::getUIEpetraMultiVector(int nvec)
 {
-  RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
-  RCP<Epetra_MultiVector> mV =
+    RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
+    RCP<Epetra_MultiVector> mV =
     rcp(new Epetra_MultiVector(egraph->RowMap(), nvec));
-  mV->Random();
-  return mV;
+    mV->Random();
+    return mV;
+}
+#endif
+
+bool UserInputForTests::hasInputDataType(const string &input_type)
+{
+    if(input_type == "coordinates")
+        return this->hasUICoordinates();
+    else if(input_type == "tpetra_vector")
+        return this->hasUITpetraVector();
+    else if(input_type == "tpetra_multivector")
+        return this->hasUITpetraMultiVector();
+    else if(input_type == "tpetra_crs_graph")
+        return this->hasUITpetraCrsGraph();
+    else if(input_type == "tpetra_crs_matrix")
+        return this->hasUITpetraCrsMatrix();
+    else if(input_type == "xpetra_vector")
+        return this->hasUIXpetraVector();
+    else if(input_type == "xpetra_multivector")
+        return this->hasUIXpetraMultiVector();
+    else if(input_type == "xpetra_crs_graph")
+        return this->hasUIXpetraCrsGraph();
+    else if(input_type == "xpetra_crs_matrix")
+        return this->hasUIXpetraCrsMatrix();
+#ifdef HAVE_EPETRA_DATA_TYPES
+
+    else if(input_type == "epetra_vector")
+        return this->hasUIEpetraVector();
+    else if(input_type == "epetra_multivector")
+        return this->hasUIEpetraMultiVector();
+    else if(input_type == "epetra_crs_graph")
+        return this->hasUIEpetraCrsGraph();
+    else if(input_type == "epetra_crs_matrix")
+        return this->hasUIEpetraCrsMatrix();
+#endif
+    
+    return false;
+}
+
+bool UserInputForTests::hasUICoordinates()
+{
+    return xyz_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUIWeights()
+{
+    return vtxWeights_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUIEdgeWeights()
+{
+    return edgWeights_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUITpetraCrsMatrix()
+{
+    return M_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUITpetraCrsGraph()
+{
+    return M_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUITpetraVector()
+{
+    return true;
+}
+
+bool UserInputForTests::hasUITpetraMultiVector()
+{
+    return true;
+}
+
+bool UserInputForTests::hasUIXpetraCrsMatrix()
+{
+    return M_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUIXpetraCrsGraph()
+{
+    return M_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUIXpetraVector()
+{
+    return true;
+}
+
+bool UserInputForTests::hasUIXpetraMultiVector()
+{
+    return true;
+}
+
+#ifdef HAVE_EPETRA_DATA_TYPES
+bool UserInputForTests::hasUIEpetraCrsGraph()
+{
+  return M_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUIEpetraCrsMatrix()
+{
+    return hasUIEpetraCrsGraph();
+}
+
+bool UserInputForTests::hasUIEpetraVector()
+{
+    return hasUIEpetraCrsGraph();
+}
+
+bool UserInputForTests::hasUIEpetraMultiVector()
+{
+    return hasUIEpetraCrsGraph();
 }
 #endif
 
@@ -794,6 +1037,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
 void UserInputForTests::readZoltanTestData(string path, string testData,
                                            bool distributeInput)
 {
+
   int rank = tcomm_->getRank();
   FILE *graphFile = NULL;
   FILE *coordFile = NULL;

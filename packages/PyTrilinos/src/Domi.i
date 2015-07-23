@@ -106,6 +106,15 @@ other Trilinos solver technologies.
 #include "Epetra_JadMatrix.h"
 #include "Epetra_InvOperator.h"
 #include "Epetra_MapColoring.h"
+#include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_IntSerialDenseMatrix.h"
+#include "Epetra_SerialDenseVector.h"
+#include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_SerialSymDenseMatrix.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_SerialDenseSolver.h"
 #endif
@@ -123,16 +132,8 @@ other Trilinos solver technologies.
 #include "Domi_MDVector.hpp"
 
 // PyTrilinos includes
+#include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_Teuchos_Util.hpp"
-#include "Epetra_NumPyIntSerialDenseVector.hpp"
-#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialDenseVector.hpp"
-#include "Epetra_NumPySerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialSymDenseMatrix.hpp"
-#include "Epetra_NumPyIntVector.hpp"
-#include "Epetra_NumPyVector.hpp"
-#include "Epetra_NumPyFEVector.hpp"
-#include "Epetra_NumPyMultiVector.hpp"
 #include "PyTrilinos_Domi_Util.hpp"
 
 %}
@@ -486,6 +487,11 @@ MDMap = MDMap_default
   {
     return PyTrilinos::convertToDistArray(*self);
   }
+
+  PyObject * dtype()
+  {
+    return PyArray_TypeObjectFromType(PyTrilinos::NumPy_TypeCode< Scalar >());
+  }
 }
 %ignore Domi::MDVector::getDataNonConst;
 %ignore Domi::MDVector::getData;
@@ -495,10 +501,14 @@ MDMap = MDMap_default
 %teuchos_rcp(Domi::MDVector< long  , Domi::DefaultNode::DefaultNodeType >)
 %teuchos_rcp(Domi::MDVector< float , Domi::DefaultNode::DefaultNodeType >)
 %teuchos_rcp(Domi::MDVector< double, Domi::DefaultNode::DefaultNodeType >)
-%template(MDVector_int   ) Domi::MDVector< int   , Domi::DefaultNode::DefaultNodeType >;
-%template(MDVector_long  ) Domi::MDVector< long  , Domi::DefaultNode::DefaultNodeType >;
-%template(MDVector_float ) Domi::MDVector< float , Domi::DefaultNode::DefaultNodeType >;
-%template(MDVector_double) Domi::MDVector< double, Domi::DefaultNode::DefaultNodeType >;
+%template(MDVector_int   )
+  Domi::MDVector< int   , Domi::DefaultNode::DefaultNodeType >;
+%template(MDVector_long  )
+  Domi::MDVector< long  , Domi::DefaultNode::DefaultNodeType >;
+%template(MDVector_float )
+  Domi::MDVector< float , Domi::DefaultNode::DefaultNodeType >;
+%template(MDVector_double)
+  Domi::MDVector< double, Domi::DefaultNode::DefaultNodeType >;
 
 ////////////////////////////
 // from_DistArray support //
@@ -527,7 +537,7 @@ from_DistArray(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
 %template(from_DistArray_float ) from_DistArray< float  >;
 %template(from_DistArray_double) from_DistArray< double >;
 %pythoncode
-{
+%{
 def from_DistArray(comm, distarray):
     protocol = distarray.__distarray__()
     dtype = protocol["buffer"].dtype
@@ -541,64 +551,93 @@ def from_DistArray(comm, distarray):
         return from_DistArray_double(comm, protocol)
     else:
         raise TypeError("Unsupported or unrecognized dtype = %s" % str(dtype))
-}
+%}
 
 %pythoncode
-{
-class MDVector(object):
-    def __init__(self, *args, **kwargs):
-        dtype       = kwargs.get("dtype"      , "int64")
-        zeroOut     = kwargs.get("zeroOut"    , False  )
-        leadingDim  = kwargs.get("leadingDim" , 0      )
-        trailingDim = kwargs.get("trailingDim", 0      )
-        if type(dtype) == str:
-            dtype = numpy.dtype(dtype)
+%{
+# My first cut at MDVector was to make it a wrapper class.  I now prefer the
+# idea of MDVector being a factory function.  There is a bit of non-trivial work
+# that went into the wrapper class, though, so I comment it out rather than
+# delete it.  Who knows, I may want to go back to it some day...
 
-        # Factory for arg is MDMap
-        if isinstance(args[0], MDMap):
-            if dtype.type is numpy.int32:
-                self._vector = MDVector_int(args[0],
-                                            leadingDim,
-                                            trailingDim,
-                                            zeroOut)
-            elif dtype.type is numpy.int64:
-                self._vector = MDVector_long(args[0],
-                                             leadingDim,
-                                             trailingDim,
-                                             zeroOut)
-            elif dtype.type is numpy.float32:
-                self._vector = MDVector_float(args[0],
-                                              leadingDim,
-                                              trailingDim,
-                                              zeroOut)
-            elif dtype.type is numpy.float64:
-                self._vector = MDVector_double(args[0],
-                                               leadingDim,
-                                               trailingDim,
-                                               zeroOut)
-            else:
-                raise TypeError("Unsupported or unrecognized dtype = %s" %
-                            str(dtype))
+# class MDVector(object):
+#     def __init__(self, *args, **kwargs):
+#         dtype       = kwargs.get("dtype"      , "int64")
+#         zeroOut     = kwargs.get("zeroOut"    , False  )
+#         leadingDim  = kwargs.get("leadingDim" , 0      )
+#         trailingDim = kwargs.get("trailingDim", 0      )
+#         if type(dtype) == str:
+#             dtype = numpy.dtype(dtype)
+# 
+#         # Factory for arg is MDMap
+#         if isinstance(args[0], MDMap):
+#             if dtype.type is numpy.int32:
+#                 self._vector = MDVector_int(args[0],
+#                                             leadingDim,
+#                                             trailingDim,
+#                                             zeroOut)
+#             elif dtype.type is numpy.int64:
+#                 self._vector = MDVector_long(args[0],
+#                                              leadingDim,
+#                                              trailingDim,
+#                                              zeroOut)
+#             elif dtype.type is numpy.float32:
+#                 self._vector = MDVector_float(args[0],
+#                                               leadingDim,
+#                                               trailingDim,
+#                                               zeroOut)
+#             elif dtype.type is numpy.float64:
+#                 self._vector = MDVector_double(args[0],
+#                                                leadingDim,
+#                                                trailingDim,
+#                                                zeroOut)
+#             else:
+#                 raise TypeError("Unsupported or unrecognized dtype = %s" %
+#                                 str(dtype))
+# 
+#         # Factory for arg is DistArray
+#         elif hasattr(arg, '__distarray__'):
+#             self._vector = from_DistArray(*args)
+# 
+#         self.dtype = dtype
+# 
+#     def __getattribute__(self, name):
+#         if name in ('__class__', '__dir__', '__getitem__', '_vector', 'dtype'):
+#             return object.__getattribute__(self, name)
+#         return getattr(object.__getattribute__(self, '_vector'), name)
+# 
+#     def __dir__(self):
+#         return sorted(set(dir(self._vector) + dir(MDVector)))
+# 
+#     def __getitem__(self, args):
+#         return self._vector.__getitem__(args)
 
-        # Factory for arg is DistArray
-        elif hasattr(arg, '__distarray__'):
-            self._vector = from_DistArray(*args)
+  def MDVector(*args, **kwargs):
+    dtype = None
+    if len(args) > 0:
+      try:
+        dtype = args[0].dtype()
+        if dtype == "int": dtype = "i"
+      except AttributeError:
+        pass
+    dtype = kwargs.get("dtype", dtype)
+    if dtype is None: dtype = "int64"
+    if type(dtype) == str:
+      dtype = numpy.dtype(dtype)
+    if dtype.type is numpy.int32:
+      result = MDVector_int(*args)
+    elif dtype.type is numpy.int64:
+      result = MDVector_long(*args)
+    elif dtype.type is numpy.float32:
+      result = MDVector_float(*args)
+    elif dtype.type is numpy.float64:
+      result = MDVector_double(*args)
+    else:
+      raise TypeError("Unsupported or unrecognized dtype = %s" %
+                      str(dtype))
+    return result
 
-        self.__dtype = dtype
-
-    def __getattribute__(self, name):
-        if name in ('__class__', '__dir__', '__getitem__', '_vector'):
-            return object.__getattribute__(self, name)
-        return getattr(object.__getattribute__(self, '_vector'), name)
-
-    def __dir__(self):
-        return sorted(set(dir(self._vector) + dir(MDVector)))
-
-    # __getitem__ has to be pulled out specifically, probably because it comes
-    # from %extend, although I do not understand why
-    def __getitem__(self, args):
-        return self._vector.__getitem__(args)
-}
+%}
 
 // Turn off the exception handling
 %exception;

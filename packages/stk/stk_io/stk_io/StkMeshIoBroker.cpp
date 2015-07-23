@@ -1715,10 +1715,10 @@ namespace stk {
       }
 
       double StkMeshIoBroker::read_defined_input_fields(double time,
-							std::vector<stk::io::MeshField> *missing)
+							std::vector<stk::io::MeshField> *missingFields)
       {
 	validate_input_file_index(m_active_mesh_index);
-	return m_input_files[m_active_mesh_index]->read_defined_input_fields(time, missing, bulk_data());
+	return m_input_files[m_active_mesh_index]->read_defined_input_fields(time, missingFields, bulk_data());
       }
 
       double StkMeshIoBroker::read_defined_input_fields(int step,

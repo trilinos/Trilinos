@@ -48,10 +48,12 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 
+#include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_SingleLevelMatlabFactory_decl.hpp"
 #include "MueLu_MatlabUtils_decl.hpp"
+
 
 #ifdef HAVE_MUELU_MATLAB
 #include "mex.h"
@@ -86,6 +88,8 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& currentLevel) const
   {
+    FactoryMonitor m(*this, "Build", currentLevel);
+
     const Teuchos::ParameterList& pL = GetParameterList();
     using Teuchos::rcp;
     using Teuchos::rcp;
@@ -102,6 +106,16 @@ namespace MueLu {
     // Set output in level 
     processProvides<Scalar, LocalOrdinal, GlobalOrdinal, Node>(mexOutput, this, providesList, currentLevel);
   }
+  
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string SingleLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
+    std::ostringstream out;
+    const Teuchos::ParameterList& pL = GetParameterList();
+    out << "SingleLevelMatlabFactory["<<pL.get<std::string>("Function")<<"]";
+    return out.str();
+  }
+
+
 } //namespace MueLu
 
 #define MUELU_SINGLELEVELMATLABFACTORY_SHORT

@@ -795,11 +795,9 @@ namespace MueLuTests {
       // Build block SGS smoother
       std::string ifpack2Type;
       ParameterList ifpack2List;
-      ifpack2Type = "RELAXATION";
-      ifpack2List.set("relaxation: sweeps",         (LO) 2);
-      ifpack2List.set("relaxation: damping factor", 1.0);
-      ifpack2List.set("relaxation: type",           "Symmetric Gauss-Seidel");
-      RCP<SmootherPrototype> smooProto = Teuchos::rcp( new Ifpack2Smoother(ifpack2Type,ifpack2List) );
+      ifpack2Type = "RBILUK";
+      out << ifpack2Type << std::endl;
+      RCP<SmootherPrototype> smooProto = Teuchos::rcp( new Ifpack2Smoother(ifpack2Type) );
       RCP<SmootherFactory>   SmooFact  = rcp( new SmootherFactory(smooProto) );
 
       // Setup hierarchy managers
@@ -808,7 +806,7 @@ namespace MueLuTests {
       // fix proposed here is to simply set corresponding fatories to NoFactory, so
       // they would fetch user data.
       FactoryManager M0, M1, M2;
-      M0.SetFactory("Smoother", Teuchos::null);               // no smoother, as we assume Operator != Matrix
+      M0.SetFactory("Smoother", SmooFact);
       M1.SetFactory("A",        MueLu::NoFactory::getRCP());
       M1.SetFactory("P",        MueLu::NoFactory::getRCP());
       M1.SetFactory("R",        MueLu::NoFactory::getRCP());
@@ -826,7 +824,7 @@ namespace MueLuTests {
       H.SetDefaultVerbLevel(MueLu::Low | MueLu::Debug);
 
       RCP<Level> l0 = H.GetLevel(0);
-      l0->Set("A",          rcp_dynamic_cast<Operator>(A));
+      l0->Set("A",          A);
       H.AddNewLevel();
       RCP<Level> l1     = H   .GetLevel(1);
       RCP<Level> l1_aux = Haux.GetLevel(1);
