@@ -1117,7 +1117,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
     char *nonConstName = new char [fname.size() + 1];
     strcpy(nonConstName, fname.c_str());
 
-    fail = Zoltan2::chaco_input_graph(fptr, nonConstName,
+    fail = chaco_input_graph(fptr, nonConstName,
       &start, &adj, &nvtxs, &nVwgts, &vwgts, &nEwgts, &ewgts);
     delete [] nonConstName;
 
@@ -1384,7 +1384,7 @@ void UserInputForTests::getUIChacoCoords(FILE *fptr, string fname)
     // Reads in the file and closes it when done.
     char *nonConstName = new char [fname.size() + 1];
     strcpy(nonConstName, fname.c_str());
-    fail = Zoltan2::chaco_input_geom(fptr, nonConstName, globalNumVtx,
+    fail = chaco_input_geom(fptr, nonConstName, globalNumVtx,
       &ndim, &x, &y, &z);
     delete [] nonConstName;
 

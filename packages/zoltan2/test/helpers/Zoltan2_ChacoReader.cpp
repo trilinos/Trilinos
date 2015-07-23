@@ -52,8 +52,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-namespace Zoltan2 {
-
 #define LINE_LENGTH 200
 static char chaco_line[LINE_LENGTH];	/* space to hold values */
 static int chaco_offset = 0;		/* offset into line for next data */
@@ -643,5 +641,3 @@ float   **z
 
     return (0);
 }
-
-}  // namespace Zoltan2
