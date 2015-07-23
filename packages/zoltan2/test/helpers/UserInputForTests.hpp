@@ -52,7 +52,7 @@
 #include <Zoltan2_TestHelpers.hpp>
 
 #include <Zoltan2_XpetraTraits.hpp>
-#include <Zoltan2_ChacoReader.hpp>
+#include <ChacoReader.hpp>
 
 #include <Tpetra_MultiVector.hpp>
 #include <Xpetra_Vector.hpp>
