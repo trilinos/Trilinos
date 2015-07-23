@@ -45,8 +45,8 @@
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
 
-#ifndef MORKON_EXP_FUNCTORS_H
-#define MORKON_EXP_FUNCTORS_H
+#ifndef MORKON_EXP_COMPUTE_NORMALS_H
+#define MORKON_EXP_COMPUTE_NORMALS_H
 
 #include <mrk_data_types.hpp>
 
@@ -64,7 +64,7 @@ struct compute_face_normals<DeviceType, 2,MRK_LINE2>
   typedef typename DeviceType::execution_space        execution_space;
 
   typedef Mrk_SurfaceMesh<DeviceType, 2>                      mesh_t;
-  typedef typename mesh_t::face_connectivity_data_t     face_data_t;
+  typedef typename mesh_t::face_connectivity_t     face_data_t;
   typedef typename face_data_t::face_to_nodes_t      face_to_nodes_t;
 
   typedef Mrk_Fields<DeviceType, 2>          fields_t;
@@ -120,7 +120,7 @@ struct compute_face_normals<DeviceType, 3,MRK_TRI3>
   typedef typename DeviceType::execution_space             execution_space;
 
   typedef Mrk_SurfaceMesh<DeviceType, 3>                           mesh_t;
-  typedef typename mesh_t::face_connectivity_data_t          face_data_t;
+  typedef typename mesh_t::face_connectivity_t          face_data_t;
   typedef typename face_data_t::face_to_num_nodes_t   face_to_num_nodes_t;
   typedef typename face_data_t::face_to_nodes_t           face_to_nodes_t;
 
@@ -192,7 +192,7 @@ struct compute_face_normals<DeviceType, 3,MRK_QUAD4>
   typedef typename DeviceType::execution_space             execution_space;
 
   typedef Mrk_SurfaceMesh<DeviceType, 3>                           mesh_t;
-  typedef typename mesh_t::face_connectivity_data_t          face_data_t;
+  typedef typename mesh_t::face_connectivity_t          face_data_t;
   typedef typename face_data_t::face_to_num_nodes_t   face_to_num_nodes_t;
   typedef typename face_data_t::face_to_nodes_t           face_to_nodes_t;
 
@@ -262,10 +262,10 @@ struct compute_face_normals<DeviceType, 3,MRK_QUAD4>
 template <typename DeviceType, unsigned int DIM >
 struct compute_node_normals_from_faces
 {
-  typedef typename DeviceType::execution_space             execution_space;
+  typedef typename DeviceType::execution_space                execution_space;
 
-  typedef Mrk_SurfaceMesh<DeviceType, DIM>                              mesh_t;
-  typedef typename mesh_t::node_connectivity_data_t         node_connectivity_t;
+  typedef Mrk_SurfaceMesh<DeviceType, DIM>                             mesh_t;
+  typedef typename mesh_t::node_connectivity_t            node_connectivity_t;
   typedef typename node_connectivity_t::node_to_faces_t       node_to_faces_t;
 
   typedef Mrk_Fields<DeviceType, 3>            fields_t;

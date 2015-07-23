@@ -49,7 +49,7 @@
 #define MORKON_EXP_API_MANAGER_IMPL_H
 
 #include <mrk_api_classes.hpp>
-#include <mrk_manager_functors.hpp>
+#include <mrk_compute_normals.hpp>
 #include <mrk_interface_impl.hpp>
 
 namespace morkon_exp {
@@ -93,36 +93,26 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::commit_interfaces()
   for (typename interfaces_map_t::iterator ifcs_i =  m_interfaces.begin(); ifcs_i != m_interfaces.end(); ++ifcs_i)
   {
     Interface<DeviceType,DIM,FACE_TYPE> &interface = *ifcs_i->second;
+
+    // No more changes allowed to this interface, even if some other interface
+    // cannot be internalized.
     interface.m_committed = true;
   }
 
-  // Generate Kokkos::CrsMatrixOfKVecs that maps internal face_ids (e.g., face_ids) to sorted vectors of
-  // (interface_id, side) pairs.
-  //
-  // As needed, generates and populates
-  //   - m_non_dense_node_ids
-  //   - m_surface_mesh
-  //   - m_fields.m_node_coords
-  //   - m_face_ifc_side, the sparce matrix that maps from face_id to its (interface_id, side) pair(s).
   return internalize_interfaces();
 }
 
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool
-Morkon_Manager<DeviceType, DIM, FACE_TYPE>::declare_all_interfaces(face_interface_mat_t faces_in_ifcs, 
-                                                        surface_mesh_t dense_idx_mesh,
-                                                        points_t node_coords,
-                                                        local_to_global_idx_t non_dense_node_ids,
-                                                        on_boundary_table_t boundary_node_table)
+Morkon_Manager<DeviceType, DIM, FACE_TYPE>::migrate_to_device(
+                                        face_to_interface_and_side_hmt face_to_interface_and_side,
+                                        face_to_num_nodes_hmt face_to_num_nodes,
+                                        face_to_nodes_hmt face_to_nodes,
+                                        points_hmt node_coords,
+                                        on_boundary_table_hmt is_node_on_boundary)
 {
-  m_surface_mesh         =      dense_idx_mesh;
-  m_face_ifc_side_mat    =       faces_in_ifcs;
-  m_fields.m_node_coords =         node_coords;
-  m_non_dense_node_ids   =  non_dense_node_ids;
-  m_is_ifc_boundary_node = boundary_node_table;
-
-  return false;
+    return false;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
@@ -203,12 +193,12 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
   // the ifc_ids sorted for each face.  When the face-face searches are done, traverse the
   // lists for the pair to find the matching ifc_id.
 
-  // Thus, fill in the following:
-  face_interface_mat_t           faces_in_ifcs;
-  surface_mesh_t                dense_idx_mesh;
-  points_t                         node_coords;
-  local_to_global_idx_t     non_dense_node_ids;
-  on_boundary_table_t     is_ifc_boundary_node;
+  // Thus, create and fill the following:
+  face_to_interface_and_side_hmt  face_to_interface_and_side;
+  face_to_num_nodes_hmt                    face_to_num_nodes;
+  face_to_nodes_hmt                            face_to_nodes;
+  points_hmt                                     node_coords;
+  on_boundary_table_hmt                  is_node_on_boundary;
 
   for (typename interfaces_map_t::iterator ifcs_i = m_interfaces.begin(); ifcs_i != m_interfaces.end(); ++ifcs_i)
   {
@@ -222,14 +212,11 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
       // surface_mesh, inserting nodes and faces as needed.
       // WRITE ME!
     }
-    interface.m_committed = true;
   }
 
-  // Now call declare_all_interfaces(..) since we have the data on the Device side we need for
-  // its arguments.
-  bool ok = declare_all_interfaces(faces_in_ifcs, dense_idx_mesh, node_coords, non_dense_node_ids,
-                                   is_ifc_boundary_node);
-  return false;
+  // Now that the data is ready to move to the device side, commit it to there.
+  return  migrate_to_device(face_to_interface_and_side, face_to_num_nodes, face_to_nodes,
+                            node_coords, is_node_on_boundary);
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>
