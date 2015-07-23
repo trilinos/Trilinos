@@ -22,8 +22,8 @@
 
 ADD_SUBDIRECTORY(driverinputs)
 
-#KDD TRIBITS_ADD_EXECUTABLE(
-#KDD   test_driver
-#KDD   SOURCES ${HEADERS} test_driver.cpp
-#KDD   COMM serial mpi
-#KDD )
+TRIBITS_ADD_EXECUTABLE(
+   test_driver
+   SOURCES ${HEADERS} test_driver.cpp
+   COMM serial mpi
+ )
