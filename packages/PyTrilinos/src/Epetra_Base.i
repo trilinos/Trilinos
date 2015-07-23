@@ -293,7 +293,8 @@ import numpy
 {
   Teuchos::RCP< ClassName > *smartresult = new Teuchos::RCP< ClassName >(*$1);
   PyObject * obj = SWIG_NewPointerObj(%as_voidptr(smartresult),
-				      $descriptor(Teuchos::RCP< ClassName >*), SWIG_POINTER_OWN);
+				      $descriptor(Teuchos::RCP< ClassName >*),
+                                      SWIG_POINTER_OWN);
   $result = SWIG_Python_AppendOutput($result,obj);
 }
 %enddef
