@@ -1048,10 +1048,9 @@ namespace MueLu {
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Validate(const ParameterList& constParamList) const {
     ParameterList paramList = constParamList;
     const ParameterList& validList = *MasterList::List();
-
     // Validate up to maxLevels level specific parameter sublists
     const int maxLevels = 100;
-
+    
     // Extract level specific list
     std::vector<ParameterList> paramLists;
     for (int levelID = 0; levelID < maxLevels; levelID++) {
@@ -1064,43 +1063,66 @@ namespace MueLu {
     }
     paramLists.push_back(paramList);
     // paramLists.back().setName("main");
-
+    //If Muemex is supported, hide custom level variables from validator by removing them from paramList's sublists
+    #ifdef HAVE_MUELU_MATLAB
+    for(size_t i = 0; i < paramLists.size(); i++)
+    {
+      std::vector<std::string> customVars; //list of names (keys) to be removed from list
+      for(Teuchos::ParameterList::ConstIterator it = paramLists[i].begin(); it != paramLists[i].end(); it++)
+      {
+        std::string paramName = paramLists[i].name(it);
+        if(IsParamMuemexVariable(paramName))
+          customVars.push_back(paramName);
+      }
+      //Remove the keys
+      for(size_t j = 0; j < customVars.size(); j++)
+      {
+        paramLists[i].remove(customVars[j], false);
+      }
+    }
+    #endif
     const int maxDepth = 0;
-    for (size_t i = 0; i < paramLists.size(); i++) {
+    for (size_t i = 0; i < paramLists.size(); i++)
+    {
       // validate every sublist
-      try {
+      try
+      {
         paramLists[i].validateParameters(validList, maxDepth);
-      } catch (const Teuchos::Exceptions::InvalidParameterName& e) {
+      }
+      catch (const Teuchos::Exceptions::InvalidParameterName& e)
+      {
         std::string eString = e.what();
 
         // Parse name from: <Error, the parameter {name="smoothe: type",...>
         size_t nameStart = eString.find_first_of('"') + 1;
         size_t nameEnd   = eString.find_first_of('"', nameStart);
         std::string name = eString.substr(nameStart, nameEnd - nameStart);
-
-        int         bestScore = 100;
+  
+        int bestScore = 100;
         std::string bestName  = "";
-        for (ParameterList::ConstIterator it = validList.begin(); it != validList.end(); it++) {
+        for (ParameterList::ConstIterator it = validList.begin(); it != validList.end(); it++)
+        {
           const std::string& pName = validList.name(it);
           this->GetOStream(Runtime1) << "| " << pName;
-
           int score = LevenshteinDistance(name.c_str(), name.length(), pName.c_str(), pName.length());
           this->GetOStream(Runtime1) << " -> " << score << std::endl;
-          if (score < bestScore) {
+          if (score < bestScore)
+          {
             bestScore = score;
             bestName  = pName;
           }
         }
-
-        if (bestScore < 10 && bestName != "") {
+        if (bestScore < 10 && bestName != "")
+        {
           TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameterName, eString << "The parameter name \"" + name + "\" is not valid. Did you mean \"" + bestName << "\"?\n");
-        } else {
+        }
+        else
+        {
           TEUCHOS_TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameterName, eString << "The parameter name \"" + name + "\" is not valid.\n");
         }
-
-      }
       }
     }
+  }
 
     // =====================================================================================================
     // ==================================== FACTORY interpreter ============================================

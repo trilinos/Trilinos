@@ -1,0 +1,18 @@
+<!--MueLu parameters to build unsmoothed P with matlab function-->
+
+<ParameterList name="MueLu">
+  <ParameterList name="Factories">
+    <ParameterList name="reentrantPFactory">
+      <Parameter name="factory" type="string" value="TwoLevelMatlabFactory"/> 
+      <Parameter name="Provides" type="string" value="P"/>
+      <Parameter name="Needs Fine" type="string" value="A"/>
+      <Parameter name="Needs Coarse" type="string" value=""/>
+      <Parameter name="Function" type="string" value="modifyP"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Hierarchy">
+    <ParameterList name="All">
+      <Parameter name="P" type="string" value="reentrantPFactory"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
