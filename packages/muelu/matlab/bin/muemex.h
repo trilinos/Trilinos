@@ -99,6 +99,7 @@ typedef enum
     MODE_STATUS, //3
     MODE_AGGREGATE, //4
     MODE_GET, //5
+    MODE_SET, //6
     MODE_ERROR
   } MODE_TYPE;
 
@@ -107,7 +108,10 @@ typedef enum
     MATRIX,
     MULTIVECTOR,
     LOVECTOR,
-    SCALAR,
+    HIER_SCALAR,
+    HIER_DOUBLE,
+    HIER_COMPLEX,
+    HIER_INT,
     HIER_AGGREGATES,
     UNKNOWN
   } HierAttribType;
@@ -134,13 +138,13 @@ class EpetraSystem : public MuemexSystem
   int status();
   mxArray* solve(Teuchos::RCP<Teuchos::ParameterList> params, Teuchos::RCP<Epetra_CrsMatrix> matrix, const mxArray* rhs, int &iters);
   Teuchos::RCP<Epetra_CrsMatrix> GetMatrix()
-    {
-      return A;
-    }
+  {
+    return A;
+  }
   Teuchos::RCP<Epetra_Operator> GetPrec()
-    {
-      return prec;
-    }
+  {
+    return prec;
+  }
   int NumGlobalRows()
   {
     return A->NumGlobalRows();
@@ -172,13 +176,13 @@ class TpetraSystem : public MuemexSystem
   mxArray* solve(Teuchos::RCP<Teuchos::ParameterList> params, Teuchos::RCP<TMatrix> matrix, const mxArray* rhs, int &iters);
   //note: I typedef'd mm_node_t at the top of this file as the Kokkos default type
   Teuchos::RCP<TMatrix> GetMatrix()
-    {
-      return A;
-    }
+  { 
+    return A;
+  }
   Teuchos::RCP<TOperator> GetPrec()
-    {
-      return prec;
-    }
+  {
+    return prec;
+  }
   int NumMyRows()
   {
     if(A.is_null())

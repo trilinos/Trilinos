@@ -949,6 +949,25 @@ namespace stk {
       return field_name_with_suffix;
     }
 
+    bool field_state_exists_on_io_entity(const std::string& db_name, const stk::mesh::FieldBase* field, stk::mesh::FieldState state_identifier,
+                                         Ioss::GroupingEntity *io_entity)
+    {
+        std::string field_name_with_suffix = get_stated_field_name(db_name, state_identifier);
+        return io_entity->field_exists(field_name_with_suffix);
+    }
+
+    bool all_field_states_exist_on_io_entity(const std::string& db_name, const stk::mesh::FieldBase* field, Ioss::GroupingEntity *io_entity)
+    {
+        bool all_states_exist = true;
+        size_t state_count = field->number_of_states();
+        for(size_t state = 0; state < state_count - 1; state++)
+        {
+            stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
+            all_states_exist = all_states_exist && field_state_exists_on_io_entity(db_name, field, state_identifier, io_entity);
+        }
+        return all_states_exist;
+    }
+
     void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                                          const stk::mesh::FieldBase *field,
                                          std::vector<stk::mesh::Entity> &entity_list,
@@ -960,15 +979,15 @@ namespace stk {
         for(size_t state = 0; state < state_count - 1; state++)
         {
             stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
-            std::string field_name_with_suffix = get_stated_field_name(name, state_identifier);
-            stk::mesh::FieldBase *stated_field = field->field_state(state_identifier);
-            bool field_exists = io_entity->field_exists(field_name_with_suffix);
+            bool field_exists = field_state_exists_on_io_entity(name, field, state_identifier, io_entity);
             if (!field_exists && !ignore_missing_fields)
             {
-                STKIORequire(io_entity->field_exists(field_name_with_suffix));
+                STKIORequire(field_exists);
             }
             if (field_exists)
             {
+                stk::mesh::FieldBase *stated_field = field->field_state(state_identifier);
+                std::string field_name_with_suffix = get_stated_field_name(name, state_identifier);
                 stk::io::field_data_from_ioss(mesh, stated_field, entity_list, io_entity, field_name_with_suffix);
             }
         }
@@ -986,15 +1005,15 @@ namespace stk {
         for(size_t state = 0; state < state_count - 1; state++)
         {
             stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
-            std::string field_name_with_suffix = get_stated_field_name(name, state_identifier);
-            stk::mesh::FieldBase *stated_field = field->field_state(state_identifier);
-            bool field_exists = io_entity->field_exists(field_name_with_suffix);
+            bool field_exists = field_state_exists_on_io_entity(name, field, state_identifier, io_entity);
             if (!field_exists && !ignore_missing_fields)
             {
-                STKIORequire(io_entity->field_exists(field_name_with_suffix));
+                STKIORequire(field_exists);
             }
             if (field_exists)
             {
+                stk::mesh::FieldBase *stated_field = field->field_state(state_identifier);
+                std::string field_name_with_suffix = get_stated_field_name(name, state_identifier);
                 stk::io::subsetted_field_data_from_ioss(mesh, stated_field, entity_list,
                                                       io_entity, stk_part, field_name_with_suffix);
             }

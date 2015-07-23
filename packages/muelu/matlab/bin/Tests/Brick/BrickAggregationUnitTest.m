@@ -3,7 +3,7 @@ addpath('../..')
 try
   [A, coords] = laplacianfun([90, 90]);
   b = (1:(8100))';
-  %Set up the problem using a Matlab TwoLevelFactory for Aggregates
+  % Set up the problem using a Matlab TwoLevelFactory for Aggregates
   matlabProblem = muelu('setup', A, coords, 'xml parameter file', 'matlabParams.xml');
   mueluProblem = muelu('setup', A, coords, 'xml parameter file', 'mueluParams.xml');
   matlabP = muelu('get', matlabProblem, 1, 'P');

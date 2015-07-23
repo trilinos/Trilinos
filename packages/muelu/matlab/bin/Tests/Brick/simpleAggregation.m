@@ -2,7 +2,7 @@
 %Triplets of nodes with consecutive IDs are grouped together.
 %Should simulate brick with some set of parameters?
 function agg = simpleAggregation(A)
-	[m, n] = size(A);
+        [m, n] = size(A);
 	nVerts = m; %number of rows -> number of nodes
 	nAggs = nVerts / 3;
 	vertToAgg = int32(zeros([nVerts, 1]));

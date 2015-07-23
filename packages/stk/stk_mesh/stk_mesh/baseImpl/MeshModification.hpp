@@ -69,12 +69,11 @@ public:
 
     bool modification_begin(const std::string description);
 
-#ifndef STK_BUILT_IN_SIERRA // Deprecated 2015-06-10
-    STK_DEPRECATED(bool modification_end_with_compress())
+// Deprecated 2015-06-10
+    bool modification_end_with_compress()
     {
         return this->internal_modification_end( MOD_END_COMPRESS_AND_SORT );
     }
-#endif
 
     bool modification_end();
 

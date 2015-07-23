@@ -63,4 +63,6 @@
 #cmakedefine HAVE_MUELU_MATLAB
 
 #cmakedefine HAVE_MUELU_AMGX
+
+#cmakedefine HAVE_MUELU_CGAL
 #endif /* MUELU_CONFIG_HPP */

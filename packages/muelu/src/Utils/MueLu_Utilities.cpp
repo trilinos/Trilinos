@@ -402,8 +402,14 @@ namespace MueLu {
           const std::string& name = it2->first;
           if (name == "A" || name == "P" || name == "R" || name == "Nullspace" || name == "Coordinates")
             nonSerialList.sublist(levelName).setEntry(name, it2->second);
+          #ifdef HAVE_MUELU_MATLAB
+          else if(IsParamMuemexVariable(name))
+          {
+            nonSerialList.sublist(levelName).setEntry(name, it2->second);
+          }
+          #endif
           else
-            serialList   .sublist(levelName).setEntry(name, it2->second);
+            serialList.sublist(levelName).setEntry(name, it2->second);
         }
 
       } else {
@@ -445,5 +451,46 @@ namespace MueLu {
     delete [] buffer;
   }
 
+  bool IsParamMuemexVariable(const std::string& name)
+  {
+    //see if paramName is exactly two "words" - like "OrdinalVector myNullspace" or something
+    char* str = (char*) malloc(name.length() + 1);
+    strcpy(str, name.c_str());
+    //Strip leading and trailing whitespace
+    char* firstWord = strtok(str, " ");
+    if(!firstWord)
+      return false;
+    char* secondWord = strtok(NULL, " ");
+    if(!secondWord)
+      return false;
+    char* thirdWord = strtok(NULL, " ");
+    if(thirdWord)
+      return false;
+    //convert first word to all lowercase for case insensitive compare
+    char* tolowerIt = firstWord;
+    while(*tolowerIt)
+    {
+      *tolowerIt = (char) tolower(*tolowerIt);
+      tolowerIt++;
+    }
+    //See if the first word is one of the custom variable names
+    if(strstr(firstWord, "matrix") ||
+       strstr(firstWord, "multivector") ||
+       strstr(firstWord, "ordinalvector") ||
+       strstr(firstWord, "int") ||
+       strstr(firstWord, "scalar") ||
+       strstr(firstWord, "double") ||
+       strstr(firstWord, "complex"))
+      //Add name to list of keys to remove
+    {
+      free(str);
+      return true;
+    }
+    else
+    {
+      free(str);
+      return false;
+    }
+  }
 
 } // namespace MueLu

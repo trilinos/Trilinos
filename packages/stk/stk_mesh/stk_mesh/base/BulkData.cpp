@@ -4870,11 +4870,6 @@ void BulkData::internal_resolve_send_ghost_membership()
     // StkTransitionBulkData derived class in Framework.
 }
 
-bool BulkData::should_sort_buckets_by_first_entity_identifier() const
-{
-    return false;
-}
-
 void BulkData::internal_update_fast_comm_maps()
 {
   if (parallel_size() > 1) {
@@ -6855,6 +6850,45 @@ void BulkData::de_induce_unranked_part_from_nodes(const stk::mesh::EntityVector 
         this->internal_change_entity_parts(nodeToDeactivate,{},{&activePart});
     }
 }
+
+bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
+{
+  bool result = false;
+  if (m_mesh->should_sort_faces_by_node_ids() &&
+      m_mesh->entity_rank(lhs) == m_mesh->mesh_meta_data().side_rank() &&
+      m_mesh->entity_rank(rhs) == m_mesh->mesh_meta_data().side_rank())
+  {
+      unsigned num_nodes_lhs = m_mesh->num_nodes(lhs);
+      unsigned num_nodes_rhs = m_mesh->num_nodes(rhs);
+      if (num_nodes_lhs != num_nodes_rhs)
+      {
+          result = num_nodes_lhs < num_nodes_rhs;
+      }
+      else
+      {
+          stk::mesh::EntityVector nodes_lhs(num_nodes_lhs);
+          stk::mesh::EntityVector nodes_rhs(num_nodes_rhs);
+          const stk::mesh::Entity* nodes_lhs_ptr = m_mesh->begin_nodes(lhs);
+          const stk::mesh::Entity* nodes_rhs_ptr = m_mesh->begin_nodes(rhs);
+          for(unsigned i=0;i<num_nodes_lhs;++i)
+          {
+              nodes_lhs[i] = nodes_lhs_ptr[i];
+              nodes_rhs[i] = nodes_rhs_ptr[i];
+          }
+          std::sort(nodes_lhs.begin(), nodes_lhs.end());
+          std::sort(nodes_rhs.begin(), nodes_rhs.end());
+          result = nodes_lhs < nodes_rhs;
+      }
+  }
+  else
+  {
+      const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
+      const EntityKey rhs_key = m_mesh->in_index_range(rhs) ? m_mesh->entity_key(rhs) : EntityKey();
+      result = lhs_key < rhs_key;
+  }
+  return result;
+}
+
 
 } // namespace mesh
 } // namespace stk

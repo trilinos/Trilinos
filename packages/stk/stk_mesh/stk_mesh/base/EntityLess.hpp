@@ -7,7 +7,7 @@ namespace mesh {
 struct EntityLess {
   inline EntityLess(const BulkData& mesh);
   /** \brief  Comparison operator */
-  inline bool operator()(const Entity lhs, const Entity rhs) const;
+  bool operator()(const Entity lhs, const Entity rhs) const;
   inline bool operator()(const Entity lhs, const EntityKey & rhs) const;
   inline bool operator()( const EntityProc & lhs, const EntityProc & rhs) const;
   inline bool operator()( const EntityProc & lhs, const Entity rhs) const;

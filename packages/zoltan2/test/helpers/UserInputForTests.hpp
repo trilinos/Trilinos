@@ -49,9 +49,9 @@
 
 #ifndef USERINPUTFORTESTS
 #define USERINPUTFORTESTS
+#include <Zoltan2_TestHelpers.hpp>
 
 #include <Zoltan2_XpetraTraits.hpp>
-#include <Zoltan2_ChacoReader.hpp>
 
 #include <Tpetra_MultiVector.hpp>
 #include <Xpetra_Vector.hpp>
@@ -63,6 +63,10 @@
 #include <Galeri_XpetraParameters.hpp>
 
 #include <Kokkos_DefaultNode.hpp>
+
+//#include <Teuchos_FileInputSource.hpp>
+//#include <Teuchos_DefaultComm.hpp>
+//#include <Teuchos_XMLObject.hpp>
 
 //#include <Xpetra_EpetraUtils.hpp>
 #ifdef HAVE_ZOLTAN2_MPI
@@ -79,6 +83,7 @@ using Teuchos::Comm;
 using Teuchos::rcp;
 using Teuchos::arcp;
 using Teuchos::rcp_const_cast;
+using Teuchos::ParameterList;
 using std::string;
 
 /*! \brief A class that generates typical user input for testing.
@@ -172,6 +177,25 @@ public:
   UserInputForTests(int x, int y, int z, string matrixType,
     const RCP<const Comm<int> > &c, bool debugInfo=false,
     bool distributeInput=true);
+    
+    /*! \brief Constructor that can generate a sp matrix or read a
+     *      matrix/graph file defined in an input parameter list.
+     *   \param pList the parameter list containing input options
+     *   \param problemType the type of problem that will generate a
+     *             sparse matrix from the mesh.  If the problemType is
+     *             empty we'll pick a default.
+     *   \param  c  is the communicator for the processes that
+     *         share the data.
+     *   \param  debugInfo if true process zero will print out status.
+     *
+     * Problems can be "Laplace1D", "Laplace2D", "Star2D", "BigStar2D",
+     * "Laplace3D", "Brick3D" and "Identity".
+     * See Galeri::Xpetra::BuildProblem() for more information
+     * about problem types.
+     */
+    UserInputForTests(const ParameterList &pList,
+                      const RCP<const Comm<int> > &c, bool debugInfo=false,
+                      bool distributeInput=true);
 
   /*! \brief Generate lists of random scalars.
    */
@@ -208,6 +232,39 @@ public:
   RCP<Epetra_Vector> getUIEpetraVector();
 
   RCP<Epetra_MultiVector> getUIEpetraMultiVector(int nvec);
+#endif
+    bool hasInputDataType(const string &input_type);
+    
+    bool hasUICoordinates();
+    
+    bool hasUIWeights();
+    
+    bool hasUIEdgeWeights();
+    
+    bool hasUITpetraCrsMatrix();
+    
+    bool hasUITpetraCrsGraph();
+    
+    bool hasUITpetraVector();
+    
+    bool hasUITpetraMultiVector();
+    
+    bool hasUIXpetraCrsMatrix();
+    
+    bool hasUIXpetraCrsGraph();
+    
+    bool hasUIXpetraVector();
+    
+    bool hasUIXpetraMultiVector();
+    
+#ifdef HAVE_EPETRA_DATA_TYPES
+    bool hasUIEpetraCrsGraph();
+    
+    bool hasUIEpetraCrsMatrix();
+    
+    bool hasUIEpetraVector();
+    
+    bool hasUIEpetraMultiVector();
 #endif
 
 private:
@@ -255,15 +312,39 @@ private:
 
   // Read Zoltan data that is in a .coords file.
   void getUIChacoCoords(FILE *fptr, string name);
+
+  //  Chaco reader code: This code is copied from zoltan/ch.  
+  //  It might benefit from a rewrite and simplification.
+
+  //  Chaco reader helper functions:  copied from zoltan/ch
+  static const int CHACO_LINE_LENGTH=200;
+  char chaco_line[CHACO_LINE_LENGTH];    /* space to hold values */
+  int chaco_offset;        /* offset into line for next data */
+  int chaco_break_pnt;    /* place in sequence to pause */
+  int chaco_save_pnt;        /* place in sequence to save */
+
+  double chaco_read_val(FILE* infile, int *end_flag);
+  int chaco_read_int(FILE* infile, int *end_flag);
+  void chaco_flush_line(FILE*);
+
+  // Chaco graph reader:  copied from zoltan/ch
+  int chaco_input_graph(FILE *fin, char *inname, int **start,
+                        int **adjacency, int  *nvtxs, int  *nVwgts,
+                        float **vweights, int  *nEwgts, float **eweights);
+
+  // Chaco coordinate reader:  copied from zoltan/ch
+  int chaco_input_geom(FILE *fingeom, char *geomname, int nvtxs,
+                       int  *igeom, float **x, float **y, float **z);
 };
 
 UserInputForTests::UserInputForTests(string path, string testData,
   const RCP<const Comm<int> > &c, bool debugInfo, bool distributeInput):
     verbose_(debugInfo),
-    tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_()
+    tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_(),
 #ifdef HAVE_EPETRA_DATA_TYPES
-    ,ecomm_(), eM_(), eG_()
+    ecomm_(), eM_(), eG_(),
 #endif
+    chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
 {
   bool zoltan1 = false;
   string::size_type loc = path.find("/zoltan/test/");  // Zoltan1 data
@@ -284,10 +365,11 @@ UserInputForTests::UserInputForTests(int x, int y, int z,
   string matrixType, const RCP<const Comm<int> > &c, bool debugInfo,
   bool distributeInput):
     verbose_(debugInfo),
-    tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_()
+    tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_(),
 #ifdef HAVE_EPETRA_DATA_TYPES
-    ,ecomm_(), eM_(), eG_()
+    ecomm_(), eM_(), eG_(),
 #endif
+    chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
 {
   if (matrixType.size() == 0){
     int dim = 0;
@@ -313,6 +395,80 @@ UserInputForTests::UserInputForTests(int x, int y, int z,
   ecomm_ = Xpetra::toEpetra(c);
 #endif
 }
+
+UserInputForTests::UserInputForTests(const ParameterList &pList,
+                                     const RCP<const Comm<int> > &c,
+                                     bool debugInfo,
+                                     bool distributeInput):
+verbose_(debugInfo),
+tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_(),
+#ifdef HAVE_EPETRA_DATA_TYPES
+ecomm_(), eM_(), eG_(),
+#endif
+chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
+{
+    int rank = c->getRank();
+    if(pList.isParameter("inputPath") && pList.isParameter("inputFile"))
+    {
+        string path = pList.get<string>("inputPath");
+        string testData = pList.get<string>("inputFile");
+        
+        bool zoltan1 = false;
+        string::size_type loc = path.find("/zoltan/test/");  // Zoltan1 data
+        if (loc != string::npos)
+            zoltan1 = true;
+        
+
+        if (zoltan1){
+            if(rank == 0)
+                cout << "......have a zoltan 1 graph file...." << endl;
+            
+            readZoltanTestData(path, testData, distributeInput);
+        }else
+            readMatrixMarketFile(path, testData);
+        
+    }else if(pList.isParameter("x") || pList.isParameter("y") || pList.isParameter("z")){
+       
+        int x,y,z;
+        x = y = z = 0;
+        if(pList.isParameter("x")) x = pList.get<int>("x");
+        if(pList.isParameter("y")) y = pList.get<int>("y");
+        if(pList.isParameter("z")) z = pList.get<int>("z");
+
+        string problemType = "";
+        if(pList.isParameter("ProblemType")) problemType = pList.get<string>("ProblemType");
+        
+        if (problemType.size() == 0){ /** default behavior */
+            int dim = 0;
+            if (x > 0) dim++;
+            if (y > 0) dim++;
+            if (z > 0) dim++;
+            if (dim == 1)
+                problemType = string("Laplace1D");
+            else if (dim == 2)
+                problemType = string("Laplace2D");
+            else if (dim == 3)
+                problemType = string("Laplace3D");
+            else
+                throw std::runtime_error("input");
+            
+            if (verbose_ && tcomm_->getRank() == 0)
+                std::cout << "UserInputForTests, Matrix type : " << problemType << std::endl;
+        }
+        
+        
+        buildCrsMatrix(x, y, z, problemType, distributeInput);
+        
+    }else{
+        throw std::runtime_error("user options insufficient");
+    }
+    
+#ifdef HAVE_EPETRA_DATA_TYPES
+    ecomm_ = Xpetra::toEpetra(c);
+#endif
+    
+}
+
 
 RCP<UserInputForTests::tMVector_t> UserInputForTests::getUICoordinates()
 {
@@ -389,87 +545,199 @@ RCP<UserInputForTests::xMVector_t> UserInputForTests::getUIXpetraMultiVector(int
 #ifdef HAVE_EPETRA_DATA_TYPES
 RCP<Epetra_CrsGraph> UserInputForTests::getUIEpetraCrsGraph()
 {
-  if (M_.is_null())
-    throw std::runtime_error("could not read mtx file");
-  RCP<const tcrsGraph_t> tgraph = M_->getCrsGraph();
-  RCP<const Tpetra::Map<zlno_t, zgno_t> > trowMap = tgraph->getRowMap();
-  RCP<const Tpetra::Map<zlno_t, zgno_t> > tcolMap = tgraph->getColMap();
-
-  int nElts = static_cast<int>(trowMap->getGlobalNumElements());
-  int nMyElts = static_cast<int>(trowMap->getNodeNumElements());
-  int base = trowMap->getIndexBase();
-  ArrayView<const int> gids = trowMap->getNodeElementList();
-
-  Epetra_BlockMap erowMap(nElts, nMyElts,
-    gids.getRawPtr(), 1, base, *ecomm_);
-
-  Array<int> rowSize(nMyElts);
-  for (int i=0; i < nMyElts; i++){
-    rowSize[i] = static_cast<int>(M_->getNumEntriesInLocalRow(i+base));
-  }
-
-  size_t maxRow = M_->getNodeMaxNumRowEntries();
-  Array<int> colGids(maxRow);
-  ArrayView<const int> colLid;
-
-  eG_ = rcp(new Epetra_CrsGraph(Copy, erowMap,
-    rowSize.getRawPtr(), true));
-
-  for (int i=0; i < nMyElts; i++){
-    tgraph->getLocalRowView(i+base, colLid);
-    for (int j=0; j < colLid.size(); j++)
-      colGids[j] = tcolMap->getGlobalElement(colLid[j]);
-    eG_->InsertGlobalIndices(gids[i], rowSize[i], colGids.getRawPtr());
-  }
-  eG_->FillComplete();
-  return eG_;
+    if (M_.is_null())
+        throw std::runtime_error("could not read mtx file");
+    RCP<const tcrsGraph_t> tgraph = M_->getCrsGraph();
+    RCP<const Tpetra::Map<zlno_t, zgno_t> > trowMap = tgraph->getRowMap();
+    RCP<const Tpetra::Map<zlno_t, zgno_t> > tcolMap = tgraph->getColMap();
+    
+    int nElts = static_cast<int>(trowMap->getGlobalNumElements());
+    int nMyElts = static_cast<int>(trowMap->getNodeNumElements());
+    int base = trowMap->getIndexBase();
+    ArrayView<const int> gids = trowMap->getNodeElementList();
+    
+    Epetra_BlockMap erowMap(nElts, nMyElts,
+                            gids.getRawPtr(), 1, base, *ecomm_);
+    
+    Array<int> rowSize(nMyElts);
+    for (int i=0; i < nMyElts; i++){
+        rowSize[i] = static_cast<int>(M_->getNumEntriesInLocalRow(i+base));
+    }
+    
+    size_t maxRow = M_->getNodeMaxNumRowEntries();
+    Array<int> colGids(maxRow);
+    ArrayView<const int> colLid;
+    
+    eG_ = rcp(new Epetra_CrsGraph(Copy, erowMap,
+                                  rowSize.getRawPtr(), true));
+    
+    for (int i=0; i < nMyElts; i++){
+        tgraph->getLocalRowView(i+base, colLid);
+        for (int j=0; j < colLid.size(); j++)
+            colGids[j] = tcolMap->getGlobalElement(colLid[j]);
+        eG_->InsertGlobalIndices(gids[i], rowSize[i], colGids.getRawPtr());
+    }
+    eG_->FillComplete();
+    return eG_;
 }
 
 RCP<Epetra_CrsMatrix> UserInputForTests::getUIEpetraCrsMatrix()
 {
-  if (M_.is_null())
-    throw std::runtime_error("could not read mtx file");
-  RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
-  eM_ = rcp(new Epetra_CrsMatrix(Copy, *egraph));
-
-  size_t maxRow = M_->getNodeMaxNumRowEntries();
-  int nrows = egraph->NumMyRows();
-  int base = egraph->IndexBase();
-  const Epetra_BlockMap &rowMap = egraph->RowMap();
-  const Epetra_BlockMap &colMap = egraph->ColMap();
-  Array<int> colGid(maxRow);
-
-  for (int i=0; i < nrows; i++){
-    ArrayView<const int> colLid;
-    ArrayView<const zscalar_t> nz;
-    M_->getLocalRowView(i+base, colLid, nz);
-    size_t rowSize = colLid.size();
-    int rowGid = rowMap.GID(i+base);
-    for (size_t j=0; j < rowSize; j++){
-      colGid[j] = colMap.GID(colLid[j]);
+    if (M_.is_null())
+        throw std::runtime_error("could not read mtx file");
+    RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
+    eM_ = rcp(new Epetra_CrsMatrix(Copy, *egraph));
+    
+    size_t maxRow = M_->getNodeMaxNumRowEntries();
+    int nrows = egraph->NumMyRows();
+    int base = egraph->IndexBase();
+    const Epetra_BlockMap &rowMap = egraph->RowMap();
+    const Epetra_BlockMap &colMap = egraph->ColMap();
+    Array<int> colGid(maxRow);
+    
+    for (int i=0; i < nrows; i++){
+        ArrayView<const int> colLid;
+        ArrayView<const zscalar_t> nz;
+        M_->getLocalRowView(i+base, colLid, nz);
+        size_t rowSize = colLid.size();
+        int rowGid = rowMap.GID(i+base);
+        for (size_t j=0; j < rowSize; j++){
+            colGid[j] = colMap.GID(colLid[j]);
+        }
+        eM_->InsertGlobalValues(
+                                rowGid, rowSize, nz.getRawPtr(), colGid.getRawPtr());
     }
-    eM_->InsertGlobalValues(
-      rowGid, rowSize, nz.getRawPtr(), colGid.getRawPtr());
-  }
-  eM_->FillComplete();
-  return eM_;
+    eM_->FillComplete();
+    return eM_;
 }
 
 RCP<Epetra_Vector> UserInputForTests::getUIEpetraVector()
 {
-  RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
-  RCP<Epetra_Vector> V = rcp(new Epetra_Vector(egraph->RowMap()));
-  V->Random();
-  return V;
+    RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
+    RCP<Epetra_Vector> V = rcp(new Epetra_Vector(egraph->RowMap()));
+    V->Random();
+    return V;
 }
 
 RCP<Epetra_MultiVector> UserInputForTests::getUIEpetraMultiVector(int nvec)
 {
-  RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
-  RCP<Epetra_MultiVector> mV =
+    RCP<Epetra_CrsGraph> egraph = getUIEpetraCrsGraph();
+    RCP<Epetra_MultiVector> mV =
     rcp(new Epetra_MultiVector(egraph->RowMap(), nvec));
-  mV->Random();
-  return mV;
+    mV->Random();
+    return mV;
+}
+#endif
+
+bool UserInputForTests::hasInputDataType(const string &input_type)
+{
+    if(input_type == "coordinates")
+        return this->hasUICoordinates();
+    else if(input_type == "tpetra_vector")
+        return this->hasUITpetraVector();
+    else if(input_type == "tpetra_multivector")
+        return this->hasUITpetraMultiVector();
+    else if(input_type == "tpetra_crs_graph")
+        return this->hasUITpetraCrsGraph();
+    else if(input_type == "tpetra_crs_matrix")
+        return this->hasUITpetraCrsMatrix();
+    else if(input_type == "xpetra_vector")
+        return this->hasUIXpetraVector();
+    else if(input_type == "xpetra_multivector")
+        return this->hasUIXpetraMultiVector();
+    else if(input_type == "xpetra_crs_graph")
+        return this->hasUIXpetraCrsGraph();
+    else if(input_type == "xpetra_crs_matrix")
+        return this->hasUIXpetraCrsMatrix();
+#ifdef HAVE_EPETRA_DATA_TYPES
+
+    else if(input_type == "epetra_vector")
+        return this->hasUIEpetraVector();
+    else if(input_type == "epetra_multivector")
+        return this->hasUIEpetraMultiVector();
+    else if(input_type == "epetra_crs_graph")
+        return this->hasUIEpetraCrsGraph();
+    else if(input_type == "epetra_crs_matrix")
+        return this->hasUIEpetraCrsMatrix();
+#endif
+    
+    return false;
+}
+
+bool UserInputForTests::hasUICoordinates()
+{
+    return xyz_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUIWeights()
+{
+    return vtxWeights_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUIEdgeWeights()
+{
+    return edgWeights_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUITpetraCrsMatrix()
+{
+    return M_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUITpetraCrsGraph()
+{
+    return M_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUITpetraVector()
+{
+    return true;
+}
+
+bool UserInputForTests::hasUITpetraMultiVector()
+{
+    return true;
+}
+
+bool UserInputForTests::hasUIXpetraCrsMatrix()
+{
+    return M_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUIXpetraCrsGraph()
+{
+    return M_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUIXpetraVector()
+{
+    return true;
+}
+
+bool UserInputForTests::hasUIXpetraMultiVector()
+{
+    return true;
+}
+
+#ifdef HAVE_EPETRA_DATA_TYPES
+bool UserInputForTests::hasUIEpetraCrsGraph()
+{
+  return M_.is_null() ? false : true;
+}
+
+bool UserInputForTests::hasUIEpetraCrsMatrix()
+{
+    return hasUIEpetraCrsGraph();
+}
+
+bool UserInputForTests::hasUIEpetraVector()
+{
+    return hasUIEpetraCrsGraph();
+}
+
+bool UserInputForTests::hasUIEpetraMultiVector()
+{
+    return hasUIEpetraCrsGraph();
 }
 #endif
 
@@ -794,6 +1062,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
 void UserInputForTests::readZoltanTestData(string path, string testData,
                                            bool distributeInput)
 {
+
   int rank = tcomm_->getRank();
   FILE *graphFile = NULL;
   FILE *coordFile = NULL;
@@ -873,7 +1142,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
     char *nonConstName = new char [fname.size() + 1];
     strcpy(nonConstName, fname.c_str());
 
-    fail = Zoltan2::chaco_input_graph(fptr, nonConstName,
+    fail = chaco_input_graph(fptr, nonConstName,
       &start, &adj, &nvtxs, &nVwgts, &vwgts, &nEwgts, &ewgts);
     delete [] nonConstName;
 
@@ -1140,7 +1409,7 @@ void UserInputForTests::getUIChacoCoords(FILE *fptr, string fname)
     // Reads in the file and closes it when done.
     char *nonConstName = new char [fname.size() + 1];
     strcpy(nonConstName, fname.c_str());
-    fail = Zoltan2::chaco_input_geom(fptr, nonConstName, globalNumVtx,
+    fail = chaco_input_geom(fptr, nonConstName, globalNumVtx,
       &ndim, &x, &y, &z);
     delete [] nonConstName;
 
@@ -1196,5 +1465,568 @@ void UserInputForTests::getUIChacoCoords(FILE *fptr, string fname)
   xyz_ = toCoords;
 
 }
+
+///////////  Chaco reader -- copied from zoltan/ch //////////////////////////
+///////////  This code might benefit from rewrite and simplification. ///////
+
+double  UserInputForTests::chaco_read_val(
+  FILE* infile,        /* file to read value from */
+  int  *end_flag       /* 0 => OK, 1 => EOL, -1 => EOF */
+)
+{
+  double  val;        /* return value */
+  char   *ptr;        /* ptr to next string to read */
+  char   *ptr2;       /* ptr to next string to read */
+  int     length;     /* length of line to read */
+  int     length_left;/* length of line still around */
+  int     white_seen; /* have I detected white space yet? */
+  int     done;       /* checking for end of scan */
+  int     i;          /* loop counter */
+
+  *end_flag = 0;
+
+  if (chaco_offset == 0 || chaco_offset >= chaco_break_pnt) {
+    if (chaco_offset >= chaco_break_pnt) { /* Copy rest of line back to beginning. */
+      length_left = CHACO_LINE_LENGTH - chaco_save_pnt - 1;
+      ptr2 = chaco_line;
+      ptr = &chaco_line[chaco_save_pnt];
+      for (i=length_left; i; i--) *ptr2++ = *ptr++;
+      length = chaco_save_pnt + 1;
+    }
+    else {
+      length = CHACO_LINE_LENGTH;
+      length_left = 0;
+    }
+
+    /* Now read next line, or next segment of current one. */
+    ptr2 = fgets(&chaco_line[length_left], length, infile);
+
+    if (ptr2 == (char *) NULL) {    /* We've hit end of file. */
+      *end_flag = -1;
+      return((double) 0.0);
+    }
+
+    if ((chaco_line[CHACO_LINE_LENGTH - 2] != '\n') && (chaco_line[CHACO_LINE_LENGTH - 2] != '\f')
+      && (strlen(chaco_line) == CHACO_LINE_LENGTH - 1)){
+      /* Line too long.  Find last safe place in chaco_line. */
+      chaco_break_pnt = CHACO_LINE_LENGTH - 1;
+      chaco_save_pnt = chaco_break_pnt;
+      white_seen = 0;
+      done = 0;
+      while (!done) {
+        --chaco_break_pnt;
+        if (chaco_line[chaco_break_pnt] != '\0') {
+          if (isspace((int)(chaco_line[chaco_break_pnt]))) {
+            if (!white_seen) {
+              chaco_save_pnt = chaco_break_pnt + 1;
+              white_seen = 1;
+            }
+          }
+          else if (white_seen) {
+            done= 1;
+          }
+        }
+      }
+    }
+    else {
+      chaco_break_pnt = CHACO_LINE_LENGTH;
+    }
+
+    chaco_offset = 0;
+  }
+
+  while (isspace((int)(chaco_line[chaco_offset])) && chaco_offset < CHACO_LINE_LENGTH) chaco_offset++;
+  if (chaco_line[chaco_offset] == '%' || chaco_line[chaco_offset] == '#') {
+    *end_flag = 1;
+    if (chaco_break_pnt < CHACO_LINE_LENGTH) {
+      chaco_flush_line(infile);
+    }
+    return((double) 0.0);
+  }
+
+  ptr = &(chaco_line[chaco_offset]);
+  val = strtod(ptr, &ptr2);
+
+  if (ptr2 == ptr) {    /* End of input line. */
+    chaco_offset = 0;
+    *end_flag = 1;
+    return((double) 0.0);
+  }
+  else {
+    chaco_offset = (int) (ptr2 - chaco_line) / sizeof(char);
+  }
+
+  return(val);
+}
+
+
+int UserInputForTests::chaco_read_int(
+FILE *infile,        /* file to read value from */
+int    *end_flag         /* 0 => OK, 1 => EOL, -1 => EOF */
+)
+{
+  int     val;        /* return value */
+  char   *ptr;        /* ptr to next string to read */
+  char   *ptr2;        /* ptr to next string to read */
+  int     length;        /* length of line to read */
+  int     length_left;    /* length of line still around */
+  int     white_seen;    /* have I detected white space yet? */
+  int     done;        /* checking for end of scan */
+  int     i;        /* loop counter */
+
+  *end_flag = 0;
+
+  if (chaco_offset == 0 || chaco_offset >= chaco_break_pnt) {
+    if (chaco_offset >= chaco_break_pnt) { /* Copy rest of line back to beginning. */
+      length_left = CHACO_LINE_LENGTH - chaco_save_pnt - 1;
+      ptr2 = chaco_line;
+      ptr = &chaco_line[chaco_save_pnt];
+      for (i=length_left; i; i--) *ptr2++ = *ptr++;
+      length = chaco_save_pnt + 1;
+    }
+    else {
+      length = CHACO_LINE_LENGTH;
+      length_left = 0;
+    }
+
+    /* Now read next line, or next segment of current one. */
+    ptr2 = fgets(&chaco_line[length_left], length, infile);
+
+    if (ptr2 == (char *) NULL) {    /* We've hit end of file. */
+      *end_flag = -1;
+      return(0);
+    }
+
+    if ((chaco_line[CHACO_LINE_LENGTH - 2] != '\n') && (chaco_line[CHACO_LINE_LENGTH - 2] != '\f')
+      && (strlen(chaco_line) == CHACO_LINE_LENGTH - 1)){
+      /* Line too long.  Find last safe place in line. */
+      chaco_break_pnt = CHACO_LINE_LENGTH - 1;
+      chaco_save_pnt = chaco_break_pnt;
+      white_seen = 0;
+      done = 0;
+      while (!done) {
+        --chaco_break_pnt;
+        if (chaco_line[chaco_break_pnt] != '\0') {
+          if (isspace((int)(chaco_line[chaco_break_pnt]))) {
+            if (!white_seen) {
+              chaco_save_pnt = chaco_break_pnt + 1;
+              white_seen = 1;
+            }
+          }
+          else if (white_seen) {
+            done= 1;
+          }
+        }
+      }
+    }
+    else {
+      chaco_break_pnt = CHACO_LINE_LENGTH;
+    }
+
+    chaco_offset = 0;
+  }
+
+  while (isspace((int)(chaco_line[chaco_offset])) && chaco_offset < CHACO_LINE_LENGTH) chaco_offset++;
+  if (chaco_line[chaco_offset] == '%' || chaco_line[chaco_offset] == '#') {
+    *end_flag = 1;
+    if (chaco_break_pnt < CHACO_LINE_LENGTH) {
+      chaco_flush_line(infile);
+    }
+    return(0);
+  }
+
+  ptr = &(chaco_line[chaco_offset]);
+  val = (int) strtol(ptr, &ptr2, 10);
+
+  if (ptr2 == ptr) {    /* End of input chaco_line. */
+    chaco_offset = 0;
+    *end_flag = 1;
+    return(0);
+  }
+  else {
+    chaco_offset = (int) (ptr2 - chaco_line) / sizeof(char);
+  }
+
+  return(val);
+}
+
+void UserInputForTests::chaco_flush_line(
+FILE *infile         /* file to read value from */
+)
+{
+  char    c;        /* character being read */
+
+  c = fgetc(infile);
+  while (c != '\n' && c != '\f')
+    c = fgetc(infile);
+}
+
+int UserInputForTests::chaco_input_graph(
+FILE *fin,            /* input file */
+char   *inname,        /* name of input file */
+int   **start,        /* start of edge list for each vertex */
+int   **adjacency,        /* edge list data */
+int    *nvtxs,        /* number of vertices in graph */
+int    *nVwgts,        /* # of vertex weights per node */
+float   **vweights,        /* vertex weight list data */
+int    *nEwgts,        /* # of edge weights per edge */
+float   **eweights         /* edge weight list data */
+)
+{
+  int    *adjptr;        /* loops through adjacency data */
+  float  *ewptr;        /* loops through edge weight data */
+  int     narcs;        /* number of edges expected in graph */
+  int     nedges;        /* twice number of edges really in graph */
+  int     nedge;        /* loops through edges for each vertex */
+  int     flag;        /* condition indicator */
+  int     skip_flag;    /* should this edge be ignored? */
+  int     end_flag;        /* indicates end of line or file */
+  int     vtx;        /* vertex in graph */
+  int     line_num;        /* line number in input file */
+  int     sum_edges;    /* total number of edges read so far */
+  int     option = 0;    /* input option */
+  int     using_ewgts;    /* are edge weights in input file? */
+  int     using_vwgts;    /* are vertex weights in input file? */
+  int     vtxnums;        /* are vertex numbers in input file? */
+  int     vertex;        /* current vertex being read */
+  int     new_vertex;    /* new vertex being read */
+  float   weight;        /* weight being read */
+  float   eweight;        /* edge weight being read */
+  int     neighbor;        /* neighbor of current vertex */
+  int     error_flag;    /* error reading input? */
+  int     j;        /* loop counters */
+
+  /* Read first line  of input (= nvtxs, narcs, option). */
+  /* The (decimal) digits of the option variable mean: 1's digit not zero => input
+   edge weights 10's digit not zero => input vertex weights 100's digit not zero
+   => include vertex numbers */
+
+  *start = NULL;
+  *adjacency = NULL;
+  *vweights = NULL;
+  *eweights = NULL;
+
+  error_flag = 0;
+  line_num = 0;
+
+  /* Read any leading comment lines */
+  end_flag = 1;
+  while (end_flag == 1) {
+    *nvtxs = chaco_read_int(fin, &end_flag);
+    ++line_num;
+  }
+  if (*nvtxs <= 0) {
+    printf("ERROR in graph file `%s':", inname);
+    printf(" Invalid number of vertices (%d).\n", *nvtxs);
+    fclose(fin);
+    return(1);
+  }
+
+  narcs = chaco_read_int(fin, &end_flag);
+  if (narcs < 0) {
+    printf("ERROR in graph file `%s':", inname);
+    printf(" Invalid number of expected edges (%d).\n", narcs);
+    fclose(fin);
+    return(1);
+  }
+
+  /*  Check if vertex or edge weights are used */
+  if (!end_flag) {
+    option = chaco_read_int(fin, &end_flag);
+  }
+  using_ewgts = option - 10 * (option / 10);
+  option /= 10;
+  using_vwgts = option - 10 * (option / 10);
+  option /= 10;
+  vtxnums = option - 10 * (option / 10);
+
+  /* Get weight info from Chaco option */
+  (*nVwgts) = using_vwgts;
+  (*nEwgts) = using_ewgts;
+
+  /* Read numbers of weights if they are specified separately */
+  if (!end_flag && using_vwgts==1){
+   j = chaco_read_int(fin, &end_flag);
+   if (!end_flag) (*nVwgts) = j;
+  }
+  if (!end_flag && using_ewgts==1){
+   j = chaco_read_int(fin, &end_flag);
+   if (!end_flag) (*nEwgts) = j;
+  }
+
+  /* Discard rest of line */
+  while (!end_flag)
+    j = chaco_read_int(fin, &end_flag);
+
+  /* Allocate space for rows and columns. */
+  *start = (int *) malloc((unsigned) (*nvtxs + 1) * sizeof(int));
+  if (narcs != 0)
+    *adjacency = (int *) malloc((unsigned) (2 * narcs + 1) * sizeof(int));
+  else
+    *adjacency = NULL;
+
+  if (using_vwgts)
+    *vweights = (float *) malloc((unsigned) (*nvtxs) * (*nVwgts) * sizeof(float));
+  else
+    *vweights = NULL;
+
+  if (using_ewgts)
+    *eweights = (float *)
+           malloc((unsigned) (2 * narcs + 1) * (*nEwgts) * sizeof(float));
+  else
+    *eweights = NULL;
+
+  adjptr = *adjacency;
+  ewptr = *eweights;
+
+  sum_edges = 0;
+  nedges = 0;
+  (*start)[0] = 0;
+  vertex = 0;
+  vtx = 0;
+  new_vertex = 1;
+  while ((using_vwgts || vtxnums || narcs) && end_flag != -1) {
+    ++line_num;
+
+    /* If multiple input lines per vertex, read vertex number. */
+    if (vtxnums) {
+      j = chaco_read_int(fin, &end_flag);
+      if (end_flag) {
+        if (vertex == *nvtxs)
+          break;
+        printf("ERROR in graph file `%s':", inname);
+        printf(" no vertex number in line %d.\n", line_num);
+        fclose(fin);
+        return (1);
+      }
+      if (j != vertex && j != vertex + 1) {
+        printf("ERROR in graph file `%s':", inname);
+        printf(" out-of-order vertex number in line %d.\n", line_num);
+        fclose(fin);
+        return (1);
+      }
+      if (j != vertex) {
+        new_vertex = 1;
+        vertex = j;
+      }
+      else
+        new_vertex = 0;
+    }
+    else
+      vertex = ++vtx;
+
+    if (vertex > *nvtxs)
+      break;
+
+    /* If vertices are weighted, read vertex weight. */
+    if (using_vwgts && new_vertex) {
+      for (j=0; j<(*nVwgts); j++){
+          weight = chaco_read_val(fin, &end_flag);
+          if (end_flag) {
+            printf("ERROR in graph file `%s':", inname);
+            printf(" not enough weights for vertex %d.\n", vertex);
+            fclose(fin);
+            return (1);
+          }
+          (*vweights)[(vertex-1)*(*nVwgts)+j] = weight;
+      }
+    }
+
+    nedge = 0;
+
+    /* Read number of adjacent vertex. */
+    neighbor = chaco_read_int(fin, &end_flag);
+
+    while (!end_flag) {
+      skip_flag = 0;
+
+      if (using_ewgts) {    /* Read edge weight if it's being input. */
+        for (j=0; j<(*nEwgts); j++){
+          eweight = chaco_read_val(fin, &end_flag);
+
+          if (end_flag) {
+            printf("ERROR in graph file `%s':", inname);
+            printf(" not enough weights for edge (%d,%d).\n", vertex, neighbor);
+            fclose(fin);
+            return (1);
+          }
+
+          else {
+            *ewptr++ = eweight;
+          }
+        }
+      }
+
+      /* Add edge to data structure. */
+      if (!skip_flag) {
+        if (++nedges > 2*narcs) {
+          printf("ERROR in graph file `%s':", inname);
+          printf(" at least %d adjacencies entered, but nedges = %d\n",
+            nedges, narcs);
+          fclose(fin);
+          return (1);
+        }
+        *adjptr++ = neighbor;
+        nedge++;
+      }
+
+      /* Read number of next adjacent vertex. */
+      neighbor = chaco_read_int(fin, &end_flag);
+    }
+
+    sum_edges += nedge;
+    (*start)[vertex] = sum_edges;
+  }
+
+  /* Make sure there's nothing else in file. */
+  flag = 0;
+  while (!flag && end_flag != -1) {
+    chaco_read_int(fin, &end_flag);
+    if (!end_flag)
+      flag = 1;
+  }
+
+  (*start)[*nvtxs] = sum_edges;
+
+  if (vertex != 0) {        /* Normal file was read. */
+    if (narcs) {
+    }
+    else { /* no edges, but did have vertex weights or vertex numbers */
+      free(*start);
+      *start = NULL;
+      if (*adjacency != NULL)
+        free(*adjacency);
+      *adjacency = NULL;
+      if (*eweights != NULL)
+        free(*eweights);
+      *eweights = NULL;
+    }
+  }
+
+  else {
+    /* Graph was empty */
+    free(*start);
+    if (*adjacency != NULL)
+      free(*adjacency);
+    if (*vweights != NULL)
+      free(*vweights);
+    if (*eweights != NULL)
+      free(*eweights);
+    *start = NULL;
+    *adjacency = NULL;
+  }
+
+  fclose(fin);
+
+  return (error_flag);
+}
+
+
+int UserInputForTests::chaco_input_geom(
+FILE *fingeom,        /* geometry input file */
+char   *geomname,        /* name of geometry file */
+int     nvtxs,        /* number of coordinates to read */
+int    *igeom,        /* dimensionality of geometry */
+float   **x,             /* coordinates of vertices */
+float   **y,
+float   **z
+)
+{
+  float   xc, yc, zc =0;    /* first x, y, z coordinate */
+  int     nread;        /* number of lines of coordinates read */
+  int     flag;        /* any bad data at end of file? */
+  int     line_num;        /* counts input lines in file */
+  int     end_flag;        /* return conditional */
+  int     ndims;        /* number of values in an input line */
+  int     i=0;        /* loop counter */
+
+  *x = *y = *z = NULL;
+  line_num = 0;
+  end_flag = 1;
+  while (end_flag == 1) {
+    xc = chaco_read_val(fingeom, &end_flag);
+    ++line_num;
+  }
+
+  if (end_flag == -1) {
+    printf("No values found in geometry file `%s'\n", geomname);
+    fclose(fingeom);
+    return (1);
+  }
+
+  ndims = 1;
+  yc = chaco_read_val(fingeom, &end_flag);
+  if (end_flag == 0) {
+    ndims = 2;
+    zc = chaco_read_val(fingeom, &end_flag);
+    if (end_flag == 0) {
+      ndims = 3;
+      chaco_read_val(fingeom, &end_flag);
+      if (!end_flag) {
+        printf("Too many values on input line of geometry file `%s'\n",
+               geomname);
+
+        printf(" Maximum dimensionality is 3\n");
+        fclose(fingeom);
+        return (1);
+      }
+    }
+  }
+
+  *igeom = ndims;
+
+  *x = (float *) malloc((unsigned) nvtxs * sizeof(float));
+  (*x)[0] = xc;
+  if (ndims > 1) {
+    *y = (float *) malloc((unsigned) nvtxs * sizeof(float));
+    (*y)[0] = yc;
+  }
+  if (ndims > 2) {
+    *z = (float *) malloc((unsigned) nvtxs * sizeof(float));
+    (*z)[0] = zc;
+  }
+
+  for (nread = 1; nread < nvtxs; nread++) {
+    ++line_num;
+    if (ndims == 1) {
+      i = fscanf(fingeom, "%f", &((*x)[nread]));
+    }
+    else if (ndims == 2) {
+      i = fscanf(fingeom, "%f%f", &((*x)[nread]), &((*y)[nread]));
+    }
+    else if (ndims == 3) {
+      i = fscanf(fingeom, "%f%f%f", &((*x)[nread]), &((*y)[nread]),
+                 &((*z)[nread]));
+    }
+
+    if (i == EOF) {
+      printf("Too few lines of values in geometry file; nvtxs=%d, but only %d read\n",
+           nvtxs, nread);
+      fclose(fingeom);
+      return (1);
+    }
+    else if (i != ndims) {
+      printf("Wrong number of values in line %d of geometry file `%s'\n",
+             line_num, geomname);
+      fclose(fingeom);
+      return (1);
+    }
+  }
+
+  /* Check for spurious extra stuff in file. */
+  flag = 0;
+  end_flag = 0;
+  while (!flag && end_flag != -1) {
+    chaco_read_val(fingeom, &end_flag);
+    if (!end_flag)
+      flag = 1;
+  }
+
+  fclose(fingeom);
+
+  return (0);
+}
+
+
 
 #endif

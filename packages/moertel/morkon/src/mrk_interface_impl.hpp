@@ -54,28 +54,15 @@ template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 Interface<DeviceType, DIM,  FACE_TYPE >::Interface(Morkon_Manager<DeviceType, DIM, FACE_TYPE> * manager)
   : m_manager(manager)
   , m_committed(false)
-  , m_distributed(false)
-  , m_sides(std::vector<faces_ids_t>(2))
 {
   m_hs_adapters.resize(2, 0);
 }
 
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
-bool Interface<DeviceType, DIM,  FACE_TYPE >::define_side(SideEnum which_side, faces_ids_t faces_on_side)
-{
-  if (m_committed || (m_sides[which_side].dimension_0() > 0) || (m_hs_adapters[which_side] != 0))
-  {
-    return false;
-  }
-  m_sides[which_side] = faces_on_side;
-  return true;
-}
-
-template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool Interface<DeviceType, DIM,  FACE_TYPE >::hsa_add_node(SideEnum which_side, global_idx_t gbl_node_id, const double coords[])
 {
-  if (m_committed || (m_sides[which_side].dimension_0() > 0))
+  if (m_committed)
   {
     return false;
   }
@@ -107,7 +94,7 @@ bool Interface<DeviceType, DIM,  FACE_TYPE >::hsa_add_node(SideEnum which_side, 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool Interface<DeviceType, DIM, FACE_TYPE>::hsa_add_face(SideEnum which_side, global_idx_t gbl_face_id, int num_nodes, const global_idx_t gbl_node_id[])
 {
-  if (m_committed || (m_sides[which_side].dimension_0() > 0))
+  if (m_committed )
   {
     return false;
   }

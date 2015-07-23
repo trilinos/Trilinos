@@ -55,6 +55,13 @@
 #include "mrk_interface_impl.hpp"
 #include "mrk_manager_impl.hpp"
 
+//
+// Use default_kokkos_device_t (from mrk_default_kokkos_device_type.hpp) for
+// now.  When we start using devices that require Kokkos::initialize(..) and
+// Kokkos::finalize(), we probably want to use TEST_F, which automatically calls
+// the SetUpTestCase() and TearDownTestCase() static member functions in a
+// test fixture class.  See, e.g., kokkos/core/unit_test/TestOpenMP.cpp.
+
 TEST(morkon,just_check_if_it_compiles) {
   using namespace morkon_exp;
   typedef Morkon_Manager<default_kokkos_device_t, 3, MRK_QUAD4>    default_manager_3d_t;
@@ -76,11 +83,8 @@ TEST(morkon,compute_normals_single_tri) {
   const int DIM(3);
 
   //make an empty mesh
-  Mrk_SkinOnlyMesh<default_kokkos_device_t,DIM> theMesh;
-  //extract face connectivity data
-  Mrk_SkinOnlyMesh<default_kokkos_device_t,DIM>::face_connectivity_data_t &faceData = theMesh.m_face_data;
-  //extract face to node data
-  FaceConnectivityData<default_kokkos_device_t>::face_to_nodes_t &faceToNodes = faceData.m_face_to_nodes;
+  Mrk_SurfaceMesh<default_kokkos_device_t,DIM> theMesh;
+  Mrk_SurfaceMesh<default_kokkos_device_t,DIM>::face_to_nodes_t &faceToNodes = theMesh.m_face_to_nodes;
   //resize to store one face
   Kokkos::resize(faceToNodes,1);
   //insert node connectivity data for one triangular face
@@ -90,8 +94,7 @@ TEST(morkon,compute_normals_single_tri) {
   faceToNodes(faceNumber,2) = 2;
 
   //set up node-to-face connectivity matrix
-  Mrk_SkinOnlyMesh<default_kokkos_device_t,DIM>::node_connectivity_data_t &nodeData = theMesh.m_node_data;
-  NodeConnectivityData<default_kokkos_device_t,DIM>::node_to_faces_t &nodeToFaces = nodeData.m_node_to_faces;
+  Mrk_SurfaceMesh<default_kokkos_device_t,DIM>::node_to_faces_t &nodeToFaces = theMesh.m_node_to_faces;
   const std::string label("node to face connectivity");
   const int nNodes(3);
   const int nFaces(1);

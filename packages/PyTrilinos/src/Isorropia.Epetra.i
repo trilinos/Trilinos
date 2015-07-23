@@ -71,8 +71,18 @@ The purpose of Isorropia.Epetra is to ....
 #endif
 
 // Epetra includes
+#include "Epetra_Comm.h"
+#include "Epetra_SerialComm.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_LocalMap.h"
-#include "Epetra_MapColoring.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
+#include "Epetra_CompObject.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_FECrsGraph.h"
@@ -83,15 +93,13 @@ The purpose of Isorropia.Epetra is to ....
 #include "Epetra_JadMatrix.h"
 #include "Epetra_MapColoring.h"
 #include "Epetra_SerialDistributor.h"
+#include "Epetra_SerialDenseOperator.h"
+#include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_SerialDenseSolver.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
 #include "Epetra_Time.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
+#include "Epetra_MapColoring.h"
 
 // Isorropia includes
 #include "Isorropia_EpetraOperator.hpp"
@@ -107,15 +115,6 @@ The purpose of Isorropia.Epetra is to ....
 #define NO_IMPORT_ARRAY
 #define SWIG_FILE_WITH_INIT
 #include "numpy_include.hpp"
-#include "Epetra_NumPyFEVector.hpp"
-#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-#include "Epetra_NumPyIntSerialDenseVector.hpp"
-#include "Epetra_NumPyIntVector.hpp"
-#include "Epetra_NumPyMultiVector.hpp"
-#include "Epetra_NumPySerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialSymDenseMatrix.hpp"
-#include "Epetra_NumPySerialDenseVector.hpp"
-#include "Epetra_NumPyVector.hpp"
 #include "PyTrilinos_Teuchos_Util.hpp"
 %}
 

@@ -49,7 +49,8 @@
 #define MORKON_EXP_API_MANAGER_IMPL_H
 
 #include <mrk_api_classes.hpp>
-#include <mrk_manager_functors.hpp>
+#include <mrk_compute_normals.hpp>
+#include <mrk_search_for_pallet_generating_faces.hpp>
 #include <mrk_interface_impl.hpp>
 
 namespace morkon_exp {
@@ -94,40 +95,25 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::commit_interfaces()
   {
     Interface<DeviceType,DIM,FACE_TYPE> &interface = *ifcs_i->second;
 
-    if (interface.m_distributed)
-    {
-      return false;
-    }
+    // No more changes allowed to this interface, even if some other interface
+    // cannot be internalized.
     interface.m_committed = true;
   }
 
-  // Generate Kokkos::CrsMatrixOfKVecs that maps internal face_ids (e.g., face_ids) to sorted vectors of
-  // (interface_id, side) pairs.
-  //
-  // As needed, generates and populates
-  //   - m_non_dense_node_ids
-  //   - m_skin_mesh
-  //   - m_fields.m_node_coords
-  //   - m_face_ifc_side, the sparce matrix that maps from face_id to its (interface_id, side) pair(s).
   return internalize_interfaces();
 }
 
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool
-Morkon_Manager<DeviceType, DIM, FACE_TYPE>::declare_all_interfaces(face_interface_mat_t faces_in_ifcs, 
-                                                        skin_only_mesh_t dense_idx_mesh,
-                                                        points_t node_coords,
-                                                        local_to_global_idx_t non_dense_node_ids,
-                                                        on_boundary_table_t boundary_node_table)
+Morkon_Manager<DeviceType, DIM, FACE_TYPE>::migrate_to_device(
+                                        face_to_interface_and_side_hmt face_to_interface_and_side,
+                                        face_to_num_nodes_hmt face_to_num_nodes,
+                                        face_to_nodes_hmt face_to_nodes,
+                                        points_hmt node_coords,
+                                        on_boundary_table_hmt is_node_on_boundary)
 {
-  m_skin_mesh            =      dense_idx_mesh;
-  m_face_ifc_side_mat     =        faces_in_ifcs;
-  m_fields.m_node_coords =         node_coords;
-  m_non_dense_node_ids   =  non_dense_node_ids;
-  m_is_ifc_boundary_node = boundary_node_table;
-
-  return false;
+    return false;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
@@ -135,7 +121,7 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::mortar_integrate(Tpetra::CrsMat
 {
   typedef Morkon_Manager<DeviceType, DIM, FACE_TYPE> mgr_t;
 
-  // Using the internal SkinOnlyMesh, populate
+  // Using the internal SurfaceMesh, populate
   //   - m_fields.m_node_normals
   //   - m_fields.m_face_normals
   if (!compute_face_and_node_normals())
@@ -208,12 +194,12 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
   // the ifc_ids sorted for each face.  When the face-face searches are done, traverse the
   // lists for the pair to find the matching ifc_id.
 
-  // Thus, gill in the following:
-  face_interface_mat_t         faces_in_ifcs;
-  skin_only_mesh_t              dense_idx_mesh;
-  points_t                         node_coords;
-  local_to_global_idx_t     non_dense_node_ids;
-  on_boundary_table_t     is_ifc_boundary_node;
+  // Thus, create and fill the following:
+  face_to_interface_and_side_hmt  face_to_interface_and_side;
+  face_to_num_nodes_hmt                    face_to_num_nodes;
+  face_to_nodes_hmt                            face_to_nodes;
+  points_hmt                                     node_coords;
+  on_boundary_table_hmt                  is_node_on_boundary;
 
   for (typename interfaces_map_t::iterator ifcs_i = m_interfaces.begin(); ifcs_i != m_interfaces.end(); ++ifcs_i)
   {
@@ -224,17 +210,14 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
       Interface_HostSideAdapter<DIM> &adapter = *interface.m_hs_adapters[hsa_i];
 
       // Convert the adapter's version of the side to one in terms of the internal face_ids in the
-      // skin_only_mesh, inserting nodes and faces as needed.
+      // surface_mesh, inserting nodes and faces as needed.
       // WRITE ME!
     }
-    interface.m_committed = true;
   }
 
-  // Now call declare_all_interfaces(..) since we have the data on the Device side we need for
-  // its arguments.
-  bool ok = declare_all_interfaces(faces_in_ifcs, dense_idx_mesh, node_coords, non_dense_node_ids,
-                                   is_ifc_boundary_node);
-  return false;
+  // Now that the data is ready to move to the device side, commit it to there.
+  return  migrate_to_device(face_to_interface_and_side, face_to_num_nodes, face_to_nodes,
+                            node_coords, is_node_on_boundary);
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>
@@ -243,18 +226,22 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_face_and_node_normals()
   // We can make this function provide a useful return value having the implementations
   // do a parallel_reduce with a num_errs reduction variable as argument.
 
-  compute_face_normals<DeviceType, DIM, FACE_TYPE>(m_skin_mesh, m_fields);
+  compute_face_normals<DeviceType, DIM, FACE_TYPE>(m_surface_mesh, m_fields);
 
-  compute_node_normals_from_faces<DeviceType, DIM >(m_skin_mesh, m_fields);
+  compute_node_normals_from_faces<DeviceType, DIM >(m_surface_mesh, m_fields);
 
   return true;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
-bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::find_possible_contact_face_pairs(contact_search_results_t &)
+bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::find_possible_contact_face_pairs(contact_search_results_t search_results)
 {
-  // Implement with a functor over the faces.
+  // Implement with a functor over the faces, followed by a filter that keeps faces in the same interface.
   std::cout << "Need to write :find_possible_contact_face_pairs()" << std::endl;
+
+  search_for_pallet_generating_faces<DeviceType, DIM>(m_surface_mesh, m_fields.m_node_coords,
+                                                      m_face_to_interface_and_side,
+                                                      search_results);
   return false;
 }
 
