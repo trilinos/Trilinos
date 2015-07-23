@@ -55,7 +55,6 @@
 
 #include "mex.h"
 #include <Tpetra_DefaultPlatform.hpp>
-#include <stdexcept>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -132,53 +131,53 @@ RCP<Tpetra_CrsMatrix_double> tpetraLoadMatrix<double>(const mxArray* mxa)
   bool success = false;
   RCP<Tpetra_CrsMatrix_double> A;
   try
+  {
+    RCP<const Teuchos::Comm<int>> comm = rcp(new Teuchos::SerialComm<int>());
+    //numGlobalIndices is just the number of rows in the matrix
+    const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
+    const mm_GlobalOrd indexBase = 0;
+    RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
+    RCP<const muemex_map_type> domainMap = rcp(new muemex_map_type(mxGetN(mxa), indexBase, comm));
+    A = Tpetra::createCrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(rowMap);
+    double* valueArray = mxGetPr(mxa);
+    int* colptr;
+    int* rowind;
+    int nc = mxGetN(mxa);
+    if(rewrap_ints)
     {
-      RCP<const Teuchos::Comm<int>> comm = rcp(new Teuchos::SerialComm<int>());
-      //numGlobalIndices is just the number of rows in the matrix
-      const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
-      const mm_GlobalOrd indexBase = 0;
-      RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
-      RCP<const muemex_map_type> domainMap = rcp(new muemex_map_type(mxGetN(mxa), indexBase, comm));
-      A = Tpetra::createCrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(rowMap);
-      double* valueArray = mxGetPr(mxa);
-      int* colptr;
-      int* rowind;
-      int nc = mxGetN(mxa);
-      if(rewrap_ints)
-        {
-          //mwIndex_to_int allocates memory so must delete[] later
-          colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
-          rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
-        }
-      else
-        {
-          rowind = (int*) mxGetIr(mxa);
-          colptr = (int*) mxGetJc(mxa);
-        }
-      for(int i = 0; i < nc; i++)
-        {
-          for(int j = colptr[i]; j < colptr[i + 1]; j++)
-            {
-              //'array' of 1 element, containing column (in global matrix).
-              Teuchos::ArrayView<mm_GlobalOrd> cols = Teuchos::ArrayView<mm_GlobalOrd>(&i, 1);
-              //'array' of 1 element, containing value
-              Teuchos::ArrayView<double> vals = Teuchos::ArrayView<double>(&valueArray[j], 1);
-              A->insertGlobalValues(rowind[j], cols, vals);
-            }
-        }
-      A->fillComplete(domainMap, rowMap);
-      if(rewrap_ints)
-        {
-          delete[] rowind;
-          delete[] colptr;
-        }
-      success = true;
+      //mwIndex_to_int allocates memory so must delete[] later
+      colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
+      rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
     }
+    else
+    {
+      rowind = (int*) mxGetIr(mxa);
+      colptr = (int*) mxGetJc(mxa);
+    }
+    for(int i = 0; i < nc; i++)
+    {
+      for(int j = colptr[i]; j < colptr[i + 1]; j++)
+      {
+        //'array' of 1 element, containing column (in global matrix).
+        Teuchos::ArrayView<mm_GlobalOrd> cols = Teuchos::ArrayView<mm_GlobalOrd>(&i, 1);
+        //'array' of 1 element, containing value
+        Teuchos::ArrayView<double> vals = Teuchos::ArrayView<double>(&valueArray[j], 1);
+        A->insertGlobalValues(rowind[j], cols, vals);
+      }
+    }
+    A->fillComplete(domainMap, rowMap);
+    if(rewrap_ints)
+    {
+      delete[] rowind;
+      delete[] colptr;
+    }
+    success = true;
+  }
   catch(std::exception& e)
-    {
-      mexPrintf("Error while constructing Tpetra matrix:\n");
-      std::cout << e.what() << std::endl;
-    }
+  {
+    mexPrintf("Error while constructing Tpetra matrix:\n");
+    std::cout << e.what() << std::endl;
+  }
   if(!success)
     mexErrMsgTxt("An error occurred while setting up a Tpetra matrix.\n");
   return A;
@@ -190,52 +189,53 @@ RCP<Tpetra_CrsMatrix_complex> tpetraLoadMatrix<complex_t>(const mxArray* mxa)
   RCP<Tpetra_CrsMatrix_complex> A;
   //Create a map in order to create the matrix (taken from muelu basic example - complex)
   try
+  {
+    RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+    const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
+    const mm_GlobalOrd indexBase = 0;
+    RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
+    RCP<const muemex_map_type> domainMap = rcp(new muemex_map_type(mxGetN(mxa), indexBase, comm));
+    A = Tpetra::createCrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(rowMap);
+    double* realArray = mxGetPr(mxa);
+    double* imagArray = mxGetPi(mxa);
+    int* colptr;
+    int* rowind;
+    int nc = mxGetN(mxa);
+    if(rewrap_ints)
     {
-      RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-      const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
-      const mm_GlobalOrd indexBase = 0;
-      RCP<const muemex_map_type> map = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
-      A = rcp(new Tpetra_CrsMatrix_complex(map, 0));
-      double* realArray = mxGetPr(mxa);
-      double* imagArray = mxGetPi(mxa);
-      int* colptr;
-      int* rowind;
-      int nc = mxGetN(mxa);
-      if(rewrap_ints)
-        {
-          //mwIndex_to_int allocates memory so must delete[] later
-          colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
-          rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
-        }
-      else
-        {
-          rowind = (int*) mxGetIr(mxa);
-          colptr = (int*) mxGetJc(mxa);
-        }
-      for(int i = 0; i < nc; i++)
-        {
-          for(int j = colptr[i]; j < colptr[i + 1]; j++)
-            {
-              //here assuming that complex_t will always be defined as std::complex<double>
-              //use 'value' over and over again with Teuchos::ArrayViews to insert into matrix
-              complex_t value = std::complex<double>(realArray[j], imagArray[j]);
-              Teuchos::ArrayView<mm_GlobalOrd> cols = Teuchos::ArrayView<mm_GlobalOrd>(&i, 1);
-              Teuchos::ArrayView<complex_t> vals = Teuchos::ArrayView<complex_t>(&value, 1);
-              A->insertGlobalValues(rowind[j], cols, vals);
-            }
-        }
-      A->fillComplete();
-      if(rewrap_ints)
-        {
-          delete[] rowind;
-          delete[] colptr;
-        }
+      //mwIndex_to_int allocates memory so must delete[] later
+      colptr = mwIndex_to_int(nc + 1, mxGetJc(mxa));
+      rowind = mwIndex_to_int(colptr[nc], mxGetIr(mxa));
     }
+    else
+    {
+      rowind = (int*) mxGetIr(mxa);
+      colptr = (int*) mxGetJc(mxa);
+    }
+    for(int i = 0; i < nc; i++)
+    {
+      for(int j = colptr[i]; j < colptr[i + 1]; j++)
+      {
+        //here assuming that complex_t will always be defined as std::complex<double>
+        //use 'value' over and over again with Teuchos::ArrayViews to insert into matrix
+        complex_t value = std::complex<double>(realArray[j], imagArray[j]);
+        Teuchos::ArrayView<mm_GlobalOrd> cols = Teuchos::ArrayView<mm_GlobalOrd>(&i, 1);
+        Teuchos::ArrayView<complex_t> vals = Teuchos::ArrayView<complex_t>(&value, 1);
+        A->insertGlobalValues(rowind[j], cols, vals);
+      }
+    }
+    A->fillComplete(domainMap, rowMap);
+    if(rewrap_ints)
+    {
+      delete[] rowind;
+      delete[] colptr;
+    }
+  }
   catch(std::exception& e)
-    {
-      mexPrintf("Error while constructing tpetra matrix:\n");
-      std::cout << e.what() << std::endl;
-    }
+  {
+    mexPrintf("Error while constructing tpetra matrix:\n");
+    std::cout << e.what() << std::endl;
+  }
   return A;
 }
 

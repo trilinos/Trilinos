@@ -81,7 +81,10 @@ namespace MueLu {
     needs_ = tokenizeList(pL.get<std::string>("Needs"));
     // Declare inputs
     for(size_t i = 0; i < needs_.size(); i++)
-      this->Input(currentLevel, needs_[i]);
+    {
+      if(!IsParamMuemexVariable(needs_[i]) && needs_[i] != "Level")
+        this->Input(currentLevel, needs_[i]);
+    }
     hasDeclaredInput_ = true;
   }
 
@@ -93,16 +96,17 @@ namespace MueLu {
     const Teuchos::ParameterList& pL = GetParameterList();
     using Teuchos::rcp;
     using Teuchos::rcp;
+    using namespace std;
     // NOTE: mexOutput[0] is the "Provides."  Might want to modify to allow for additional outputs
-    std::string needsList = pL.get<std::string>("Needs");
-    std::vector<RCP<MuemexArg>> InputArgs = processNeeds<Scalar, LocalOrdinal, GlobalOrdinal, Node>(this, needsList, currentLevel);
-    std::string providesList = pL.get<std::string>("Provides");
+    string needsList = pL.get<string>("Needs");
+    vector<RCP<MuemexArg>> InputArgs = processNeeds<Scalar, LocalOrdinal, GlobalOrdinal, Node>(this, needsList, currentLevel);
+    string providesList = pL.get<std::string>("Provides");
     size_t numProvides = tokenizeList(providesList).size();
     // Call mex function
-    std::string matlabFunction = pL.get<std::string>("Function");
+    string matlabFunction = pL.get<std::string>("Function");
     if(!matlabFunction.length())
       throw std::runtime_error("Invalid matlab function name");
-    std::vector<Teuchos::RCP<MuemexArg> > mexOutput = callMatlab(matlabFunction, numProvides, InputArgs);
+    vector<Teuchos::RCP<MuemexArg> > mexOutput = callMatlab(matlabFunction, numProvides, InputArgs);
     // Set output in level 
     processProvides<Scalar, LocalOrdinal, GlobalOrdinal, Node>(mexOutput, this, providesList, currentLevel);
   }

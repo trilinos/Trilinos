@@ -45,25 +45,49 @@
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
 
-#ifndef MORKON_EXP_INT_TYPES_H
-#define MORKON_EXP_INT_TYPES_H
+#ifndef MORKON_EXP_SEARCH_FOR_PALLET_GENERATING_FACES_H
+#define MORKON_EXP_SEARCH_FOR_PALLET_GENERATING_FACES_H
 
-#include <cstdint>
+#include <mrk_data_types.hpp>
 
 namespace morkon_exp {
 
-typedef int32_t       local_idx_t;
-typedef int64_t      global_idx_t;
-typedef local_idx_t    polarity_t;
-
-enum Ordinal_enums { INVALID_ORDINAL = -1 };
-
-struct InterfaceBase
+template <typename DeviceType, unsigned int DIM>
+struct search_for_pallet_generating_faces
 {
-  enum SideEnum { NON_MORTAR_SIDE = 0, MORTAR_SIDE, NUM_INTERFACE_SIDES };
+    typedef typename DeviceType::execution_space                          execution_space;
+    typedef Mrk_SurfaceMesh<DeviceType, DIM>                               surface_mesh_t;
+    typedef typename surface_mesh_t::face_to_num_nodes_t              face_to_num_nodes_t;
+    typedef typename surface_mesh_t::face_to_nodes_t                      face_to_nodes_t;
+    typedef Mrk_Fields<DeviceType, DIM>                                          fields_t;
+    typedef typename fields_t::points_t                                          points_t;
+    typedef typename fields_t::points_mrat                                    points_mrat;
+    typedef Kokkos::View<local_idx_t *[2], execution_space>  face_to_interface_and_side_t;
+
+    typedef Kokkos::View<local_idx_t *[3], execution_space>      contact_search_results_t;
+
+    face_to_num_nodes_t                     m_face_to_num_nodes;
+    face_to_nodes_t                             m_face_to_nodes;
+    points_mrat                                   m_node_coords;
+    face_to_interface_and_side_t   m_face_to_interface_and_side;
+    contact_search_results_t                   m_search_results;
+
+    search_for_pallet_generating_faces(surface_mesh_t surface_mesh,
+                                       points_t node_coords,
+                                       face_to_interface_and_side_t face_to_interface_and_side,
+                                       contact_search_results_t search_results)
+        : m_face_to_num_nodes(surface_mesh.m_face_to_num_nodes)
+        , m_face_to_nodes(surface_mesh.m_face_to_nodes)
+        , m_node_coords(node_coords)
+        , m_face_to_interface_and_side(face_to_interface_and_side)
+        , m_search_results(search_results)
+    {
+        // WRITE ME
+    }
+
 };
 
 
 }
 
-#endif // MORKON_EXP_INT_TYPES_H
+#endif

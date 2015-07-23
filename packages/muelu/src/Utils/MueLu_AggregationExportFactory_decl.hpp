@@ -102,6 +102,15 @@ namespace MueLu {
       double y;
       double z;
   };
+  class vec2_
+  {
+    public:
+      vec2_() : x(0), y(0) {}
+      vec2_(double xin, double yin) : x(xin), y(yin) {}
+      ~vec2_() {}
+      double x;
+      double y;
+  };
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class AggregationExportFactory : public TwoLevelFactoryBase {
 #undef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
@@ -144,23 +153,31 @@ namespace MueLu {
     void doConvexHulls_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
     void doConvexHulls2D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
     void doConvexHulls3D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    void doAlphaHulls_(std::vector<int>& vertices, std::vector<int>& geomSizes) const; //not implemented yet
-    void doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine) const; //add geometry to display node connections from a matrix. Connections in graph but not matrix have different color.
-    void writeFile_(std::ofstream& fout, std::string styleName, std::vector<int>& vertices, std::vector<int>& geomSizes, std::vector<int>& verticesCoarse, std::vector<int>& geomSizesCoarse) const; //write the local .vtu file with the computed geometry
+    #ifdef HAVE_MUELU_CGAL
+    void doAlphaHulls_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
+    void doAlphaHulls2D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
+    void doAlphaHulls3D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
+    #endif
+    void doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine, int dofs) const; //add geometry to display node connections from a matrix. Connections in graph but not matrix have different color.
+    void writeFile_(std::ofstream& fout, std::string styleName, std::vector<int>& vertices, std::vector<int>& geomSizes) const;
     void buildColormap_() const;
     void writePVTU_(std::ofstream& pvtu, std::string baseFname, int numProcs) const;
+    std::vector<int> giftWrap_(std::vector<vec2_>& points, std::vector<int>& nodes) const;
+    std::vector<Triangle_>  processTriangle_(std::list<Triangle_>& tris, Triangle_ tri, std::list<int>& pointsInFront, vec3_& barycenter) const;
     std::vector<int> makeUnique_(std::vector<int>& vertices) const; //replaces node indices in vertices with compressed unique indices, and returns list of unique points
     //Utility functions for convex hulls
     static vec3_ crossProduct_(vec3_ v1, vec3_ v2);
+    static double dotProduct_(vec2_ v1, vec2_ v2);
     static double dotProduct_(vec3_ v1, vec3_ v2);
     static bool isInFront_(vec3_ point, vec3_ inPlane, vec3_ n);
     static double magnitude_(vec3_ vec);
     static double distance_(vec3_ p1, vec3_ p2);
+    static vec2_ vecSubtract_(vec2_ v1, vec2_ v2);
     static vec3_ vecSubtract_(vec3_ v1, vec3_ v2);
+    static vec2_ getNorm_(vec2_ v);
     static vec3_ getNorm_(vec3_ v1, vec3_ v2, vec3_ v3);
     static double pointDistFromTri_(vec3_ point, vec3_ v1, vec3_ v2, vec3_ v3);
     //Returns a list of the triangles that were removed and replaced
-    std::vector<Triangle_>  processTriangle_(std::list<Triangle_>& tris, Triangle_ tri, std::list<int>& pointsInFront, vec3_& barycenter) const;
     static const int CONTRAST_1_ = -1;
     static const int CONTRAST_2_ = -2;
     static const int CONTRAST_3_ = -3;
