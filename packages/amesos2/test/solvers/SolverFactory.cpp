@@ -46,8 +46,8 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_MultiVector.hpp>
 #include <Amesos2_Factory.hpp>
-#include <Trilinos_Details_Solver.hpp>
-#include <Trilinos_Details_SolverFactory.hpp>
+#include <Trilinos_Details_LinearSolver.hpp>
+#include <Trilinos_Details_LinearSolverFactory.hpp>
 // Define typedefs and macros for testing over all Tpetra types.
 // They work whether or not ETI is enabled.
 #include "TpetraCore_ETIHelperMacros.h"
@@ -55,9 +55,9 @@
 namespace {
   // Create a very simple square test matrix.  We use the identity
   // matrix here.  The point of this test is NOT to exercise the
-  // solver; it's just to check that its SolverFactory can create
-  // working solvers.  Amesos2 has more rigorous tests for each of its
-  // solvers.
+  // solver; it's just to check that its LinearSolverFactory can
+  // create working solvers.  Amesos2 has more rigorous tests for each
+  // of its solvers.
   template<class SC, class LO, class GO, class NT>
   Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NT> >
   createTestMatrix (Teuchos::FancyOStream& out,
@@ -108,9 +108,9 @@ namespace {
   // Create a very simple square test linear system (matrix,
   // right-hand side(s), and exact solution(s).  We use the identity
   // matrix here.  The point of this test is NOT to exercise the
-  // solver; it's just to check that its SolverFactory can create
-  // working solvers.  Amesos2 has more rigorous tests for each of its
-  // solvers.
+  // solver; it's just to check that its LinearSolverFactory can
+  // create working solvers.  Amesos2 has more rigorous tests for each
+  // of its solvers.
   template<class SC, class LO, class GO, class NT>
   void
   createTestProblem (Teuchos::FancyOStream& out,
@@ -160,11 +160,11 @@ namespace {
     out << "Test solver \"" << solverName << "\" from Amesos2 package" << endl;
     Teuchos::OSTab tab1 (out);
 
-    RCP<Trilinos::Details::Solver<MV, OP> > solver;
+    RCP<Trilinos::Details::LinearSolver<MV, OP> > solver;
     try {
-      solver = Trilinos::Details::getSolver<MV, OP> ("Amesos2", solverName);
+      solver = Trilinos::Details::getLinearSolver<MV, OP> ("Amesos2", solverName);
     } catch (std::exception& e) {
-      out << "*** FAILED: getSolver threw an exception: " << e.what () << endl;
+      out << "*** FAILED: getLinearSolver threw an exception: " << e.what () << endl;
       success = false;
       return;
     }

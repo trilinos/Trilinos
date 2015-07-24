@@ -42,8 +42,8 @@
 // @HEADER
 
 // We need both the decl and def files here, whether or not ETI is on.
-#include "Amesos2_Details_SolverFactory_decl.hpp"
-#include "Amesos2_Details_SolverFactory_def.hpp"
+#include "Amesos2_Details_LinearSolverFactory_decl.hpp"
+#include "Amesos2_Details_LinearSolverFactory_def.hpp"
 // We need this whether or not ETI is on, in order to define typedefs
 // for making Tpetra's macros work.
 #include "TpetraCore_ETIHelperMacros.h"
@@ -54,22 +54,22 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 #ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
 #ifdef HAVE_AMESOS2_EPETRA
-// Do explicit instantiation of Amesos2::Details::SolverFactory, for Epetra objects.
-template class Amesos2::Details::SolverFactory<Epetra_MultiVector, Epetra_Operator>;
+// Do explicit instantiation of Amesos2::Details::LinearSolverFactory, for Epetra objects.
+template class Amesos2::Details::LinearSolverFactory<Epetra_MultiVector, Epetra_Operator>;
 #endif // HAVE_AMESOS2_EPETRA
 
 // mfh 23 Jul 2015: Amesos2 has a required dependency on Tpetra,
 // so we don't have to protect use of Tpetra with a macro.
 
 // Macro for doing explicit instantiation of
-// Amesos2::Details::SolverFactory, for Tpetra objects, with given
+// Amesos2::Details::LinearSolverFactory, for Tpetra objects, with given
 // Tpetra template parameters (Scalar, LocalOrdinal, GlobalOrdinal,
 // Node).
 #define LCLINST(SC, LO, GO, NT) \
-  template class Amesos2::Details::SolverFactory<Tpetra::MultiVector<SC, LO, GO, NT>, \
+  template class Amesos2::Details::LinearSolverFactory<Tpetra::MultiVector<SC, LO, GO, NT>, \
                                                  Tpetra::Operator<SC, LO, GO, NT> >;
 
-// Do explicit instantiation of Amesos2::Details::SolverFactory, for
+// Do explicit instantiation of Amesos2::Details::LinearSolverFactory, for
 // Tpetra objects, for all combinations of Tpetra template parameters
 // for which Tpetra does explicit template instantiation (ETI).
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCLINST )
@@ -85,19 +85,19 @@ namespace Amesos2 {
 namespace Details {
 
 template<class MV, class OP>
-class RegisterSolverFactory {
+class RegisterLinearSolverFactory {
 public:
-  RegisterSolverFactory () {
+  RegisterLinearSolverFactory () {
 #ifdef HAVE_TEUCHOSCORE_CXX11
-    typedef std::shared_ptr<Amesos2::Details::SolverFactory<MV, OP> > ptr_type;
-    //typedef std::shared_ptr<Trilinos::Details::SolverFactory<MV, OP> > base_ptr_type;
+    typedef std::shared_ptr<Amesos2::Details::LinearSolverFactory<MV, OP> > ptr_type;
+    //typedef std::shared_ptr<Trilinos::Details::LinearSolverFactory<MV, OP> > base_ptr_type;
 #else
-    typedef Teuchos::RCP<Amesos2::Details::SolverFactory<MV, OP> > ptr_type;
-    //typedef Teuchos::RCP<Trilinos::Details::SolverFactory<MV, OP> > base_ptr_type;
+    typedef Teuchos::RCP<Amesos2::Details::LinearSolverFactory<MV, OP> > ptr_type;
+    //typedef Teuchos::RCP<Trilinos::Details::LinearSolverFactory<MV, OP> > base_ptr_type;
 #endif // HAVE_TEUCHOSCORE_CXX11
 
-    ptr_type factory (new Amesos2::Details::SolverFactory<MV, OP> ());
-    Trilinos::Details::registerFactory<MV, OP> ("Amesos2", factory);
+    ptr_type factory (new Amesos2::Details::LinearSolverFactory<MV, OP> ());
+    Trilinos::Details::registerLinearSolverFactory<MV, OP> ("Amesos2", factory);
   }
 };
 
@@ -107,13 +107,14 @@ public:
 namespace { // (anonymous)
 
 #ifdef HAVE_AMESOS2_EPETRA
-  Amesos2::Details::RegisterSolverFactory<Epetra_MultiVector, Epetra_Operator> registerer_Epetra;
+  Amesos2::Details::RegisterLinearSolverFactory<Epetra_MultiVector, Epetra_Operator>
+  registerer_Epetra;
 
 #endif // HAVE_AMESOS2_EPETRA
 
 #define AMESOS2_DETAILS_REGISTER(SC, LO, GO, NT) \
-  Amesos2::Details::RegisterSolverFactory<Tpetra::MultiVector<SC, LO, GO, NT>, \
-                                          Tpetra::Operator<SC, LO, GO, NT> > \
+  Amesos2::Details::RegisterLinearSolverFactory<Tpetra::MultiVector<SC, LO, GO, NT>, \
+                                                Tpetra::Operator<SC, LO, GO, NT> > \
     registerer_Tpetra_##SC##_##LO##_##GO##_##NT ;
 
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( AMESOS2_DETAILS_REGISTER )

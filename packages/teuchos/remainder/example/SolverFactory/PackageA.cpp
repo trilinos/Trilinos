@@ -4,19 +4,19 @@ namespace A {
 
   // Creating an instance of this "object" registers A::FactoryA<MV,
   // OP> with the central registry of packages' factories.  That lets
-  // getSolver create solvers from package A.
+  // getLinearSolver create solvers from package A.
   template<class MV, class OP>
   class RegisterFactoryA {
   public:
     RegisterFactoryA () {
 #ifdef HAVE_TEUCHOSCORE_CXX11
-      typedef std::shared_ptr<Trilinos::Details::SolverFactory<MV, OP> > ptr_type;
+      typedef std::shared_ptr<Trilinos::Details::LinearSolverFactory<MV, OP> > ptr_type;
 #else
-      typedef Teuchos::RCP<Trilinos::Details::SolverFactory<MV, OP> > ptr_type;
+      typedef Teuchos::RCP<Trilinos::Details::LinearSolverFactory<MV, OP> > ptr_type;
 #endif // HAVE_TEUCHOSCORE_CXX11
 
       ptr_type factory (new FactoryA<MV, OP> ());
-      Trilinos::Details::registerFactory<MV, OP> ("A", factory);
+      Trilinos::Details::registerLinearSolverFactory<MV, OP> ("A", factory);
     }
   };
 
@@ -29,7 +29,7 @@ namespace { // (anonymous)
   // OP = Common::Operator<Scalar> here, for various Scalar types.
   // This is a stub of what you likely will want to do with Tpetra and
   // its downstream solver packages.  See the public documentation of
-  // Trilinos::Details::SolverFactory for details.
+  // Trilinos::Details::LinearSolverFactory for details.
   //
   // The ## operator in a macro appends two things.  For example, with
   // INSTMACRO( float ), registerer_##SCALAR becomes registerer_float.

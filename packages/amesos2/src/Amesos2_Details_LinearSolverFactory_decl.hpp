@@ -43,18 +43,18 @@
 
 /// \file   Amesos2_Details_SolverFactory_decl.hpp
 /// \author Mark Hoemmen
-/// \brief  Declaration of Amesos2::Details::SolverFactory.
+/// \brief  Declaration of Amesos2::Details::LinearSolverFactory.
 
-#ifndef AMESOS2_DETAILS_SOLVERFACTORY_DECL_HPP
-#define AMESOS2_DETAILS_SOLVERFACTORY_DECL_HPP
+#ifndef AMESOS2_DETAILS_LINEARSOLVERFACTORY_DECL_HPP
+#define AMESOS2_DETAILS_LINEARSOLVERFACTORY_DECL_HPP
 
 #include "Amesos2_config.h"
-#include "Trilinos_Details_SolverFactory.hpp"
+#include "Trilinos_Details_LinearSolverFactory.hpp"
 
 namespace Amesos2 {
 namespace Details {
 
-  /// \class SolverFactory
+  /// \class LinearSolverFactory
   /// \brief Interface for a "factory" that creates Amesos2 solvers.
   ///
   /// \tparam MV Type of a (multi)vector, representing either the
@@ -72,22 +72,23 @@ namespace Details {
   ///   (e.g., Tpetra::RowMatrix instead of Tpetra::Operator) means
   ///   more expensive explicit template instantiation.
   template<class MV, class OP>
-  class SolverFactory : public Trilinos::Details::SolverFactory<MV, OP> {
+  class LinearSolverFactory :
+    public Trilinos::Details::LinearSolverFactory<MV, OP> {
   public:
     /// \brief Get an instance of a Amesos2 solver.
     ///
-    /// The solver is wrapped in a Trilinos::Details::Solver
+    /// The solver is wrapped in a Trilinos::Details::LinearSolver
     /// interface.
     ///
     /// \param solverName [in] The solver's name.  Names are case
     ///   sensitive.
-    /// \return A pointer to the Solver, if the name was valid; else,
+    /// \return A pointer to the solver, if the name was valid; else,
     ///   a null pointer (Teuchos::null).
-    virtual Teuchos::RCP<Trilinos::Details::Solver<MV, OP> >
-    getSolver (const std::string& solverName);
+    virtual Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP> >
+    getLinearSolver (const std::string& solverName);
   };
 
 } // namespace Details
 } // namespace Amesos2
 
-#endif // AMESOS2_DETAILS_SOLVERFACTORY_DECL_HPP
+#endif // AMESOS2_DETAILS_LINEARSOLVERFACTORY_DECL_HPP

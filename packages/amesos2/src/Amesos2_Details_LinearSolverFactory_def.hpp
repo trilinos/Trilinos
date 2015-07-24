@@ -43,16 +43,16 @@
 
 /// \file   Amesos2_Details_SolverFactory_def.hpp
 /// \author Mark Hoemmen
-/// \brief  Definition of Amesos2::Details::SolverFactory.
+/// \brief  Definition of Amesos2::Details::LinearSolverFactory.
 
-#ifndef AMESOS2_DETAILS_SOLVERFACTORY_DEF_HPP
-#define AMESOS2_DETAILS_SOLVERFACTORY_DEF_HPP
+#ifndef AMESOS2_DETAILS_LINEARSOLVERFACTORY_DEF_HPP
+#define AMESOS2_DETAILS_LINEARSOLVERFACTORY_DEF_HPP
 
 #include "Amesos2_config.h"
 #include "Amesos2_Factory.hpp"
 #include "Amesos2_Solver.hpp"
-#include "Trilinos_Details_Solver.hpp"
-#include "Trilinos_Details_SolverFactory.hpp"
+#include "Trilinos_Details_LinearSolver.hpp"
+#include "Trilinos_Details_LinearSolverFactory.hpp"
 #include <type_traits>
 
 #ifdef HAVE_AMESOS2_EPETRA
@@ -71,6 +71,9 @@
 namespace Amesos2 {
 namespace Details {
 
+// For a given linear algebra implementation's Operator type OP,
+// find the corresponding CrsMatrix type.
+//
 // Amesos2 unfortunately only does ETI for Tpetra::CrsMatrix, even
 // though it could very well take Tpetra::RowMatrix.
 template<class OP>
@@ -107,7 +110,7 @@ struct GetMatrixType<Tpetra::Operator<S, LO, GO, NT> > {
 #endif // HAVE_AMESOS2_TPETRA
 
 template<class MV, class OP>
-class LinearSolver : public Trilinos::Details::Solver<MV, OP> {
+class LinearSolver : public Trilinos::Details::LinearSolver<MV, OP> {
 #ifdef HAVE_AMESOS2_EPETRA
   static_assert(! std::is_same<OP, Epetra_MultiVector>::value,
                 "Amesos2::Details::LinearSolver: OP = Epetra_MultiVector.  "
@@ -163,10 +166,16 @@ public:
       solver_ = Teuchos::null;
     }
     else {
+      // FIXME (mfh 24 Jul 2015) Even though Amesos2 solvers currently
+      // require a CrsMatrix input, we could add a copy step in order
+      // to let them take a RowMatrix.  The issue is that this would
+      // require keeping the original matrix around, and copying again
+      // if it changes.
       RCP<const MAT> A_mat = Teuchos::rcp_dynamic_cast<const MAT> (A);
       TEUCHOS_TEST_FOR_EXCEPTION
         (A_mat.is_null (), std::invalid_argument,
-         "Input matrix A must be a CrsMatrix");
+         "Amesos2::Details::LinearSolver::setMatrix: "
+         "The input matrix A must be a CrsMatrix.");
       if (solver_.is_null ()) {
         // Amesos2 solvers must be created with a nonnull matrix.
         // Thus, we don't actually create the solver until setMatrix
@@ -254,8 +263,8 @@ private:
 };
 
 template<class MV, class OP>
-Teuchos::RCP<Trilinos::Details::Solver<MV, OP> >
-SolverFactory<MV, OP>::getSolver (const std::string& solverName)
+Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP> >
+LinearSolverFactory<MV, OP>::getLinearSolver (const std::string& solverName)
 {
   return Teuchos::rcp (new Amesos2::Details::LinearSolver<MV, OP> (solverName));
 }
@@ -263,4 +272,4 @@ SolverFactory<MV, OP>::getSolver (const std::string& solverName)
 } // namespace Details
 } // namespace Amesos2
 
-#endif // AMESOS2_DETAILS_SOLVERFACTORY_DEF_HPP
+#endif // AMESOS2_DETAILS_LINEARSOLVERFACTORY_DEF_HPP

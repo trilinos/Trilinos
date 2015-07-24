@@ -13,7 +13,7 @@ namespace A {
   // This solver is independent of other solvers.
   //
   template<class MV, class OP>
-  class Solver1 : public Common::SolverTestBase<MV, OP> {
+  class Solver1 : public Common::LinearSolverTestBase<MV, OP> {
   protected:
     std::string name () const {
       return "Solver1";
@@ -32,7 +32,7 @@ namespace A {
   // This solver uses Solver4 from Package B.
   //
   template<class MV, class OP>
-  class Solver2 : public Common::SolverTestBase<MV, OP> {
+  class Solver2 : public Common::LinearSolverTestBase<MV, OP> {
   protected:
     std::string name () const {
       return "Solver2";
@@ -44,7 +44,8 @@ namespace A {
     void solve (MV& X, const MV& Y) {
       std::cout << this->name () << "::solve START" << std::endl;
 
-      Teuchos::RCP<Trilinos::Details::Solver<MV, OP> > solverB4 = Trilinos::Details::getSolver<MV, OP> ("B", "4");
+      Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP> > solverB4 =
+        Trilinos::Details::getLinearSolver<MV, OP> ("B", "4");
       if (solverB4.get () == NULL) {
         throw std::runtime_error ("Solver4 from package B has not been registered!");
       }
@@ -59,19 +60,23 @@ namespace A {
   // Package A's solver factory.
   //
   template<class MV, class OP>
-  class FactoryA : public Trilinos::Details::SolverFactory<MV, OP> {
+  class FactoryA : public Trilinos::Details::LinearSolverFactory<MV, OP> {
   public:
     // Get an instance of a solver from a particular package
-    Teuchos::RCP<Trilinos::Details::Solver<MV, OP> > getSolver (const std::string& solverName) {
+    Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP> >
+    getLinearSolver (const std::string& solverName)
+    {
+      typedef Trilinos::Details::LinearSolver<MV, OP> solver_type;
+
       if (solverName == "1") {
-        return Teuchos::RCP<Trilinos::Details::Solver<MV, OP> > (new Solver1<MV, OP> ());
+        return Teuchos::RCP<solver_type> (new Solver1<MV, OP> ());
       }
       else if (solverName == "2") {
-        return Teuchos::RCP<Trilinos::Details::Solver<MV, OP> > (new Solver2<MV, OP> ());
+        return Teuchos::RCP<solver_type> (new Solver2<MV, OP> ());
       }
       else {
         std::ostringstream err;
-        err << "A::FactoryA::getSolver: Invalid solver name \"" << solverName << "\"";
+        err << "A::FactoryA::getLinearSolver: Invalid solver name \"" << solverName << "\"";
         throw std::invalid_argument (err.str ());
       }
     }

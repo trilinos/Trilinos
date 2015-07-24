@@ -39,17 +39,17 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TRILINOS_DETAILS_SOLVER_HPP
-#define TRILINOS_DETAILS_SOLVER_HPP
+#ifndef TRILINOS_DETAILS_LINEARSOLVER_HPP
+#define TRILINOS_DETAILS_LINEARSOLVER_HPP
 
-/// \file Trilinos_Details_Factory.hpp
+/// \file Trilinos_Details_LinearSolver.hpp
 /// \brief Declaration of linear solver interface.
 ///
 /// \warning This header file is NOT currently part of the public
 ///   interface of Trilinos.  It or its contents may change or
 ///   disappear at any time.
 ///
-/// \note To developers: The Solver interface must live in the
+/// \note To developers: The LinearSolver interface must live in the
 ///   bottom-most (most upstream) package from all solvers that depend
 ///   on it.
 
@@ -82,19 +82,20 @@ namespace Details {
 ///   containing zero or more vectors with the same dimensions and
 ///   layout.
 ///
-/// \tparam OP Type of a matrix or linear operator that this Solver
-///   understands.  For example, for Tpetra, use a Tpetra::Operator
-///   specialization.
+/// \tparam OP Type of a matrix or linear operator that this
+///   LinearSolver understands.  For example, for Tpetra, use a
+///   Tpetra::Operator specialization.
 ///
-/// A Solver knows how to solve linear systems AX=B, where A is a
-/// linear operator ("matrix") and B the right-hand side(s).
+/// A LinearSolver knows how to solve linear systems AX=B, where A is
+/// a linear operator ("matrix") and B the right-hand side(s).
 ///
 /// This interface separates "setup" from "solves."  "Setup" depends
 /// only on the matrix A, while solves also depend on the right-hand
 /// side(s) B and possibly also on initial guess(es).  "Setup" may be
 /// more expensive than solve, but it can be reused for different
-/// right-hand side(s) and initial guess(es).  The Solver interface
-/// further divides setup into two phases: "symbolic" and "numeric."
+/// right-hand side(s) and initial guess(es).  The LinearSolver
+/// interface further divides setup into two phases: "symbolic" and
+/// "numeric."
 ///
 /// The "symbolic" phase depends only on the "structure" of the
 /// matrix, and not its values.  By "structure," we mean
@@ -108,16 +109,16 @@ namespace Details {
 ///
 /// The distinction between "structure" and "values" matters most for
 /// sparse matrices.  If the structure of a matrix does not change,
-/// Solver can reuse the "symbolic" setup phase for multiple solves,
-/// even if the values in the matrix change between solves.  If the
-/// structure of a matrix changes, you must ask Solver to recompute
-/// the symbolic setup.
+/// LinearSolver can reuse the "symbolic" setup phase for multiple
+/// solves, even if the values in the matrix change between solves.
+/// If the structure of a matrix changes, you must ask LinearSolver to
+/// recompute the symbolic setup.
 ///
 /// The "numeric" setup phase depends on both the matrix's structure,
 /// and the values of its entries.  If the values in the matrix
-/// change, you must ask the Solver to recompute the numeric setup.
+/// change, you must ask the solver to recompute the numeric setup.
 /// If only the values changed but not the matrix's structure, then
-/// you do <i>not</i> need to ask the Solver to recompute the symbolic
+/// you do <i>not</i> need to ask the solver to recompute the symbolic
 /// setup.  The symbolic setup must be done before the numeric setup.
 ///
 /// \note To implementers: For the \c OP template parameter, you
@@ -130,41 +131,42 @@ namespace Details {
 ///   instantiation (ETI) easier, and helps keep build times and
 ///   library sizes small.
 template<class MV, class OP>
-class Solver {
+class LinearSolver {
 public:
   //! Destructor (virtual for memory safety of derived classes).
-  virtual ~Solver () {}
+  virtual ~LinearSolver () {}
 
-  /// \brief Set the Solver's matrix.
+  /// \brief Set the solver's matrix.
   ///
   /// \param A [in] Pointer to the matrix A in the linear system(s)
   ///   AX=B to solve.
   ///
-  /// This Solver instance keeps the matrix (by pointer) given to it
-  /// by this method, and does not modify it.  The solver stores any
-  /// additional data needed for solves separately from the matrix.
+  /// This LinearSolver instance keeps the matrix (by pointer) given
+  /// to it by this method, and does not modify it.  The solver stores
+  /// any additional data needed for solves separately from the
+  /// matrix.
   ///
-  /// Calling this method resets the Solver's state.  After calling
+  /// Calling this method resets the solver's state.  After calling
   /// this method, you must call symbolic() and numeric() before you
   /// may call solve().
   ///
   /// You are allowed to change the structure and/or numerical values
-  /// in the matrix that this Solver instance holds.  If you do so,
-  /// you do NOT need to call this method.  If you change the graph
-  /// structure of the matrix, you must call symbolic() and numeric()
-  /// before you may call solve().  If you change the numerical values
-  /// but not the graph structure of the matrix, you must call
-  /// numeric() before you may call solve().
+  /// in the matrix that this LinearSolver instance holds.  If you do
+  /// so, you do NOT need to call this method.  If you change the
+  /// graph structure of the matrix, you must call symbolic() and
+  /// numeric() before you may call solve().  If you change the
+  /// numerical values but not the graph structure of the matrix, you
+  /// must call numeric() before you may call solve().
   ///
   /// Teuchos::RCP is just like std::shared_ptr.  It uses reference
   /// counting for automatic deallocation.  Passing in a "const OP"
-  /// implies that the Solver may not modify A.
+  /// implies that the solver may not modify A.
   virtual void setMatrix (const Teuchos::RCP<const OP>& A) = 0;
 
-  /// \brief Get a pointer to this Solver's matrix.
+  /// \brief Get a pointer to this solver's matrix.
   ///
-  /// If this Solver instance does not (yet) have a matrix, this
-  /// method will return Teuchos::null.  The Solver <i>must</i> have a
+  /// If this LinearSolver instance does not (yet) have a matrix, this
+  /// method will return Teuchos::null.  The solver <i>must</i> have a
   /// matrix before you may call solve().
   ///
   /// Teuchos::RCP is just like std::shared_ptr.  It uses reference
@@ -175,7 +177,7 @@ public:
   /// \brief Solve the linear system(s) AX=B.
   ///
   /// \param X [in/out] On input: (multi)vector that is allocated and
-  ///   ready for output.  The Solver may choose to read the contents
+  ///   ready for output.  The solver may choose to read the contents
   ///   as the initial guess(es).  On output: the solution vector(s).
   ///
   /// \param B [in] Right-hand side(s) of the linear system(s).
@@ -215,8 +217,8 @@ public:
   ///   structure of the input matrix, but not its numerical values.
   ///
   /// If the structure of the matrix has changed, or if you have not
-  /// yet called this method on this Solver instance, then you must
-  /// call this method before you may call numeric() or solve().
+  /// yet called this method on this LinearSolver instance, then you
+  /// must call this method before you may call numeric() or solve().
   ///
   /// There is no way that the solver can tell users whether the
   /// symbolic factorization is "done," because the solver may have no
@@ -234,8 +236,8 @@ public:
   ///   structure and the numerical values of the input matrix.
   ///
   /// If any values in the matrix have changed, or if you have not yet
-  /// called this method on this Solver instance, then you must call
-  /// this method before you may call solve().
+  /// called this method on this LinearSolver instance, then you must
+  /// call this method before you may call solve().
   ///
   /// There is no way that the solver can tell users whether the
   /// numeric factorization is "done," because the solver may have no
@@ -249,4 +251,4 @@ public:
 } // namespace Details
 } // namespace Trilinos
 
-#endif // TRILINOS_DETAILS_SOLVER_HPP
+#endif // TRILINOS_DETAILS_LINEARSOLVER_HPP
