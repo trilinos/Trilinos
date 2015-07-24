@@ -204,11 +204,12 @@ public:
   /// fill in the input list.
   ///
   /// This interface is compatible with either variant.  The solver
-  /// reserves the right to modify the input list.  If it needs to
-  /// keep the list, it must make a deep copy before this method
-  /// returns.  Users are responsible for knowing how the different
-  /// solvers behave.
-  virtual void setParameters (Teuchos::ParameterList& params) = 0;
+  /// reserves the right to modify the input list, or to keep a
+  /// pointer to the input list.  Callers are responsible for copying
+  /// the list if they don't want the solver to see changes, or if the
+  /// Teuchos::RCP is nonowning.  Users are responsible for knowing
+  /// how the different solvers behave.
+  virtual void setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params) = 0;
 
   /// \brief Set up any part of the solve that depends on the
   ///   structure of the input matrix, but not its numerical values.

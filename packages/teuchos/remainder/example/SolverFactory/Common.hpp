@@ -53,7 +53,7 @@ namespace Common {
       return A_; // this could be null if setMatrix wasn't called
     }
 
-    void setParameters (Teuchos::ParameterList& /* params */ ) {
+    void setParameters (const Teuchos::RCP<Teuchos::ParameterList>& /* params */ ) {
       std::cout << this->name () << "::setParameters" << std::endl;
     }
 
