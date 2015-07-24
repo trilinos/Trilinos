@@ -1230,9 +1230,13 @@ public:
     }
   }
 
-  friend std::ostream& operator << (std::ostream& output, const FArrayContainer&)
+  friend std::ostream& operator << (std::ostream& os, const FArrayContainer& array)
   {
-    return output;
+    os << "(";
+    for (size_t i = 0; i < array.dimension(0); ++i)
+      os << array(i) << " ";
+    os << ")";
+    return os;
   }
 
   //----------------------------------------
