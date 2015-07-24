@@ -61,11 +61,22 @@
 // it off.
 %feature("compactdefaultargs", "0");
 
+/////////////////////////////////////////////////////////
+// Teuchos::RCP<> support for all classes in this file //
+/////////////////////////////////////////////////////////
+%teuchos_rcp(Epetra_IntSerialDenseMatrix)
+%teuchos_rcp(Epetra_IntSerialDenseVector)
+%teuchos_rcp(Epetra_SerialDenseOperator )
+%teuchos_rcp(Epetra_SerialDenseMatrix   )
+%teuchos_rcp(Epetra_SerialSymDenseMatrix)
+%teuchos_rcp(Epetra_SerialDenseVector   )
+%teuchos_rcp(Epetra_SerialDenseSolver   )
+%teuchos_rcp(Epetra_SerialDenseSVD      )
+
 /////////////////////////////////////////
 // Epetra_IntSerialDenseMatrix support //
 /////////////////////////////////////////
 %rename(IntSerialDenseMatrix) Epetra_IntSerialDenseMatrix;
-%teuchos_rcp(Epetra_IntSerialDenseMatrix)
 %inline
 {
   PyObject *
@@ -152,7 +163,6 @@
 // Epetra_IntSerialDenseVector support //
 /////////////////////////////////////////
 %rename(IntSerialDenseVector) Epetra_IntSerialDenseVector;
-%teuchos_rcp(Epetra_IntSerialDenseVector)
 %inline
 {
   PyObject *
@@ -231,14 +241,12 @@
 // Epetra_SerialDenseOperator support //
 ////////////////////////////////////////
 %rename(SerialDenseOperator) Epetra_SerialDenseOperator;
-%teuchos_rcp(Epetra_SerialDenseOperator)
 %include "Epetra_SerialDenseOperator.h"
 
 //////////////////////////////////////
 // Epetra_SerialDenseMatrix support //
 //////////////////////////////////////
 %rename(SerialDenseMatrix) Epetra_SerialDenseMatrix;
-%teuchos_rcp(Epetra_SerialDenseMatrix)
 %inline
 {
   PyObject *
@@ -325,14 +333,12 @@
 // Epetra_SerialSymDenseMatrix support //
 /////////////////////////////////////////
 %rename(SerialSymDenseMatrix) Epetra_SerialSymDenseMatrix;
-%teuchos_rcp(Epetra_SerialSymDenseMatrix)
 %include "Epetra_SerialSymDenseMatrix.h"
 
 //////////////////////////////////////
 // Epetra_SerialDenseVector support //
 //////////////////////////////////////
 %rename(SerialDenseVector) Epetra_SerialDenseVector;
-%teuchos_rcp(Epetra_SerialDenseVector)
 %inline
 {
   PyObject *
@@ -409,7 +415,6 @@
 //////////////////////////////////////
 // Epetra_SerialDenseSolver support //
 //////////////////////////////////////
-%teuchos_rcp(Epetra_SerialDenseSolver)
 %ignore Epetra_SerialDenseSolver::ReciprocalConditionEstimate(double&);
 %rename(SerialDenseSolver) Epetra_SerialDenseSolver;
 %fragment("NumPy_Macros");  // These macros depend upon this fragment
@@ -443,7 +448,6 @@
 ///////////////////////////////////
 // Epetra_SerialDenseSVD support //
 ///////////////////////////////////
-%teuchos_rcp(Epetra_SerialDenseSVD)
 %rename(SerialDenseSVD) Epetra_SerialDenseSVD;
 %include "Epetra_SerialDenseSVD.h"
 

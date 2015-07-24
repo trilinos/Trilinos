@@ -96,25 +96,13 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::commit_interfaces()
     Interface<DeviceType,DIM,FACE_TYPE> &interface = *ifcs_i->second;
 
     // No more changes allowed to this interface, even if some other interface
-    // cannot be internalized.
+    // cannot be internalized and this function fails!
     interface.m_committed = true;
   }
 
   return internalize_interfaces();
 }
 
-
-template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
-bool
-Morkon_Manager<DeviceType, DIM, FACE_TYPE>::migrate_to_device(
-                                        face_to_interface_and_side_hmt face_to_interface_and_side,
-                                        face_to_num_nodes_hmt face_to_num_nodes,
-                                        face_to_nodes_hmt face_to_nodes,
-                                        points_hmt node_coords,
-                                        on_boundary_table_hmt is_node_on_boundary)
-{
-    return false;
-}
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::mortar_integrate(Tpetra::CrsMatrix<> *D_to_overwrite, Tpetra::CrsMatrix<> *M_to_overwrite)
@@ -181,25 +169,29 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::build_sys_M_and_D(Tpetra::CrsMa
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 Morkon_Manager<DeviceType, DIM, FACE_TYPE>::Morkon_Manager(MPI_Comm mpi_comm, int printlevel)
-  : m_mpi_comm(mpi_comm), m_printlevel(printlevel)
+    : m_mpi_comm(mpi_comm)
+    , m_printlevel(printlevel)
 {
 }
+
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
 {
-  // Count up the numbers of nodes, faces, and interfaces.  Want to be able to go
-  // from a (face_id, face_id) pair to a (non_mrtr_sd_face_id, mrtr_sd_face_id, ifc_id) triple.
-  // This could be done by constructing a crs_repn from face_id to (ifc_id, side) here, with
-  // the ifc_ids sorted for each face.  When the face-face searches are done, traverse the
-  // lists for the pair to find the matching ifc_id.
+  // Count up the numbers of nodes, faces, and interfaces.  Fill in the following
+  // on the host side, then migrate the data to the device.
 
-  // Thus, create and fill the following:
-  face_to_interface_and_side_hmt  face_to_interface_and_side;
-  face_to_num_nodes_hmt                    face_to_num_nodes;
-  face_to_nodes_hmt                            face_to_nodes;
-  points_hmt                                     node_coords;
-  on_boundary_table_hmt                  is_node_on_boundary;
+  local_to_global_idx_dvt                  node_to_global_id;
+  local_to_global_idx_dvt                  face_to_global_id;
+  face_to_interface_and_side_dvt  face_to_interface_and_side;
+  face_to_num_nodes_dvt                    face_to_num_nodes;
+  face_to_nodes_dvt                            face_to_nodes;
+  points_dvt                                     node_coords;
+  on_boundary_table_dvt                  is_node_on_boundary;
+
+  prepare_for_host_write(node_to_global_id, face_to_global_id,
+                         face_to_interface_and_side, face_to_num_nodes, face_to_nodes,
+                         node_coords, is_node_on_boundary);
 
   for (typename interfaces_map_t::iterator ifcs_i = m_interfaces.begin(); ifcs_i != m_interfaces.end(); ++ifcs_i)
   {
@@ -216,8 +208,61 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
   }
 
   // Now that the data is ready to move to the device side, commit it to there.
-  return  migrate_to_device(face_to_interface_and_side, face_to_num_nodes, face_to_nodes,
-                            node_coords, is_node_on_boundary);
+  return migrate_to_device(node_to_global_id, face_to_global_id,
+                           face_to_interface_and_side, face_to_num_nodes, face_to_nodes,
+                           node_coords, is_node_on_boundary);
+}
+
+template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
+void
+Morkon_Manager<DeviceType, DIM, FACE_TYPE>::prepare_for_host_write(
+                                        local_to_global_idx_dvt node_to_global_id,
+                                        local_to_global_idx_dvt face_to_global_id,
+                                        face_to_interface_and_side_dvt face_to_interface_and_side,
+                                        face_to_num_nodes_dvt face_to_num_nodes,
+                                        face_to_nodes_dvt face_to_nodes,
+                                        points_dvt node_coords,
+                                        on_boundary_table_dvt is_node_on_boundary)
+{
+    face_to_global_id.template modify<typename local_to_global_idx_dvt::t_host>();
+    node_to_global_id.template modify<typename local_to_global_idx_dvt::t_host>();
+    face_to_interface_and_side.template modify<typename face_to_interface_and_side_dvt::t_host>();
+    face_to_num_nodes.template modify<typename face_to_num_nodes_dvt::t_host>();
+    face_to_nodes.template modify<typename face_to_nodes_dvt::t_host>();
+    node_coords.template modify<typename points_dvt::t_host>();
+    is_node_on_boundary.template modify<typename on_boundary_table_dvt::t_host>();
+}
+
+template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
+bool
+Morkon_Manager<DeviceType, DIM, FACE_TYPE>::migrate_to_device(
+                                        local_to_global_idx_dvt node_to_global_id,
+                                        local_to_global_idx_dvt face_to_global_id,
+                                        face_to_interface_and_side_dvt face_to_interface_and_side,
+                                        face_to_num_nodes_dvt face_to_num_nodes,
+                                        face_to_nodes_dvt face_to_nodes,
+                                        points_dvt node_coords,
+                                        on_boundary_table_dvt is_node_on_boundary)
+{
+    face_to_global_id.template sync<typename local_to_global_idx_dvt::t_dev>();
+    node_to_global_id.template sync<typename local_to_global_idx_dvt::t_dev>();
+    face_to_interface_and_side.template sync<typename face_to_interface_and_side_dvt::t_dev>();
+    face_to_num_nodes.template sync<typename face_to_num_nodes_dvt::t_dev>();
+    face_to_nodes.template sync<typename face_to_nodes_dvt::t_dev>();
+    node_coords.template sync<typename points_dvt::t_dev>();
+    is_node_on_boundary.template sync<typename on_boundary_table_dvt::t_dev>();
+
+    m_node_global_ids                  = node_to_global_id.d_view;
+    m_face_global_ids                  = face_to_global_id.d_view;
+    m_face_to_interface_and_side       = face_to_interface_and_side.d_view;
+    m_surface_mesh.m_face_to_num_nodes = face_to_num_nodes.d_view;
+    m_surface_mesh.m_face_to_nodes     = face_to_nodes.d_view;
+    m_fields.m_node_coords             = node_coords.d_view;
+    m_is_ifc_boundary_node             = is_node_on_boundary.h_view;
+
+    // TO DO: compute upward connectivities on the surface mesh, if needed.
+
+    return true;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>

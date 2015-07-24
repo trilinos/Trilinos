@@ -69,13 +69,22 @@
 // General ignore directive
 %ignore *::operator=;
 
-// Forward declare typemaps for Teuchos::RCP< Epetra_BlockMap >
+/////////////////////////////////////////////////////////
+// Teuchos::RCP<> support for all classes in this file //
+/////////////////////////////////////////////////////////
 %teuchos_rcp(Epetra_BlockMap)
+%teuchos_rcp(Epetra_Comm)
+%teuchos_rcp(Epetra_SerialComm)
+%teuchos_rcp(Epetra_Distributor)
+%teuchos_rcp(Epetra_SerialDistributor)
+#ifdef HAVE_MPI
+%teuchos_rcp(Epetra_MpiComm)
+%teuchos_rcp(Epetra_MpiDistributor)
+#endif
 
 /////////////////////////
 // Epetra_Comm support //
 /////////////////////////
-%teuchos_rcp(Epetra_Comm)
 %feature("autodoc",
 "Broadcast(self, numpy.ndarray myObj, int root)
 
@@ -311,21 +320,18 @@ PyObject* methodName(PyObject* partialObj)
 ///////////////////////////////
 // Epetra_SerialComm support //
 ///////////////////////////////
-%teuchos_rcp(Epetra_SerialComm)
 %rename(SerialComm) Epetra_SerialComm;
 %include "Epetra_SerialComm.h"
 
 ////////////////////////////////
 // Epetra_Distributor support //
 ////////////////////////////////
-%teuchos_rcp(Epetra_Distributor)
 %rename(Distributor) Epetra_Distributor;
 %include "Epetra_Distributor.h"
 
 //////////////////////////////////////
 // Epetra_SerialDistributor support //
 //////////////////////////////////////
-%teuchos_rcp(Epetra_SerialDistributor)
 %rename(SerialDistributor) Epetra_Distributor;
 %include "Epetra_SerialDistributor.h"
 
@@ -451,7 +457,6 @@ else:
   }
 #endif
 }
-%teuchos_rcp(Epetra_MpiComm)
 %ignore Epetra_MpiComm::Epetra_MpiComm;
 %rename(MpiComm) Epetra_MpiComm;
 %include "Epetra_MpiComm.h"
@@ -459,7 +464,6 @@ else:
 ///////////////////////////////////
 // Epetra_MpiDistributor support //
 ///////////////////////////////////
-%teuchos_rcp(Epetra_MpiDistributor)
 %rename(MpiDistributor) Epetra_MpiDistributor;
 %include "Epetra_MpiDistributor.h"
 

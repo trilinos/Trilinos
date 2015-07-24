@@ -81,16 +81,27 @@ struct Mrk_SurfaceMesh
 template  <typename DeviceType>
 struct Mrk_SurfaceMesh<DeviceType, 3>
 {
-  typedef typename DeviceType::execution_space                               execution_space;
-  typedef Kokkos::View<global_idx_t *, execution_space>                local_to_global_idx_t;
-  typedef Kokkos::CrsMatrix<local_idx_t, local_idx_t, execution_space >      node_to_faces_t;
-  typedef Kokkos::View<local_idx_t *, execution_space>                   face_to_num_nodes_t;
-  typedef Kokkos::View<local_idx_t *[4], execution_space>                    face_to_nodes_t;
+  typedef typename DeviceType::execution_space                                execution_space;
+  typedef Kokkos::View<global_idx_t *, execution_space>                 local_to_global_idx_t;
+  typedef Kokkos::CrsMatrix<local_idx_t, local_idx_t, execution_space >       node_to_faces_t;
+  typedef Kokkos::View<local_idx_t *, execution_space>                    face_to_num_nodes_t;
+  typedef Kokkos::View<local_idx_t *[4], execution_space>                     face_to_nodes_t;
 
   node_to_faces_t          m_node_to_faces;
   face_to_num_nodes_t  m_face_to_num_nodes;
   face_to_nodes_t          m_face_to_nodes;
 
+  typedef Kokkos::DualView<typename local_to_global_idx_t::value_type *,
+                           typename local_to_global_idx_t::array_layout,
+                           typename local_to_global_idx_t::execution_space>  local_to_global_idx_dvt;
+
+  typedef Kokkos::DualView<typename face_to_num_nodes_t::value_type *,
+                           typename face_to_num_nodes_t::array_layout,
+                           typename face_to_num_nodes_t::execution_space>      face_to_num_nodes_dvt;
+
+  typedef Kokkos::DualView<typename face_to_nodes_t::value_type *[4],
+                           typename face_to_nodes_t::array_layout,
+                           typename face_to_num_nodes_t::execution_space>          face_to_nodes_dvt;
 };
 
 template  <typename DeviceType, unsigned int DIM>
@@ -98,15 +109,20 @@ struct Mrk_Fields
 {
   typedef typename DeviceType::execution_space execution_space;
 
-  typedef Kokkos::View<double *[DIM], execution_space>                                 points_t;
-  typedef Kokkos::View<double *[DIM], execution_space, Kokkos::MemoryRandomAccess>  points_mrat;
-  typedef typename points_t::HostMirror                                              points_hmt;
-  typedef points_t                                                                    normals_t;
-  typedef points_mrat                                                              normals_mrat;
+  typedef Kokkos::View<double *[DIM], execution_space>              points_t;
+  typedef Kokkos::View<const double *[DIM], execution_space,
+                       Kokkos::MemoryRandomAccess>               points_mrat;
+  typedef typename points_t::HostMirror                           points_hmt;
+  typedef points_t                                                 normals_t;
+  typedef points_mrat                                           normals_mrat;
 
   points_t   m_node_coords;
   normals_t m_node_normals;
   normals_t m_face_normals;
+
+  typedef Kokkos::DualView<typename points_t::value_type *[DIM],
+                           typename points_t::array_layout,
+                           typename points_t::execution_space>    points_dvt;
 };
 
 template  <typename DeviceType, unsigned int DIM>

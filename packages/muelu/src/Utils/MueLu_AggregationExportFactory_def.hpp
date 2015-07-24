@@ -350,14 +350,14 @@ namespace MueLu {
         string fname = filenameToWrite;
         string cEdgeFile = fname.insert(fname.rfind(".vtu"), "-coarsegraph");
         std::ofstream edgeStream(cEdgeFile.c_str());
-        doGraphEdges_(edgeStream, Ac, coarseGraph, false);
+        doGraphEdges_(edgeStream, Ac, coarseGraph, false, DofsPerNode);
       }
       if(doFineGraphEdges_)
       {
         string fname = filenameToWrite;
         string fEdgeFile = fname.insert(fname.rfind(".vtu"), "-finegraph");
         std::ofstream edgeStream(fEdgeFile.c_str());
-        doGraphEdges_(edgeStream, Amat, fineGraph, true);
+        doGraphEdges_(edgeStream, Amat, fineGraph, true, DofsPerNode);
       }
       if(myRank == 0 && pL.get<bool>("aggregation: output file: build colormap"))
       {
@@ -1393,7 +1393,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine) const
+  void AggregationExportFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine, int dofs) const
   {
     using namespace std;
     ArrayView<const Scalar> values;
@@ -1406,23 +1406,32 @@ namespace MueLu {
       ArrayView<const GlobalOrdinal> indices;
       for(GlobalOrdinal globRow = 0; globRow < GlobalOrdinal(A->getGlobalNumRows()); globRow++)
       {
-        A->getGlobalRowView(globRow, indices, values);
+        if(dofs == 1)
+          A->getGlobalRowView(globRow, indices, values);
         neighbors = G->getNeighborVertices((LocalOrdinal) globRow);
         int gEdge = 0;
         int aEdge = 0;
         while(gEdge != int(neighbors.size()))
         {
-          if(neighbors[gEdge] == indices[aEdge])
+          if(dofs == 1)
           {
-            //graph and matrix both have this edge, wasn't filtered, show as color 1
-            vert1.push_back(pair<int, int>(int(globRow), neighbors[gEdge]));
-            gEdge++;
-            aEdge++;
+            if(neighbors[gEdge] == indices[aEdge])
+            {
+              //graph and matrix both have this edge, wasn't filtered, show as color 1
+              vert1.push_back(pair<int, int>(int(globRow), neighbors[gEdge]));
+              gEdge++;
+              aEdge++;
+            }
+            else
+            {
+              //graph contains an edge at gEdge which was filtered from A, show as color 2
+              vert2.push_back(pair<int, int>(int(globRow), neighbors[gEdge]));
+              gEdge++;
+            }
           }
-          else
+          else //for multiple DOF problems, don't try to detect filtered edges and ignore A
           {
-            //graph contains an edge at gEdge which was filtered from A, show as color 2
-            vert2.push_back(pair<int, int>(int(globRow), neighbors[gEdge]));
+            vert1.push_back(pair<int, int>(int(globRow), neighbors[gEdge]));
             gEdge++;
           }
         }
@@ -1433,22 +1442,31 @@ namespace MueLu {
       ArrayView<const LocalOrdinal> indices;
       for(LocalOrdinal locRow = 0; locRow < LocalOrdinal(A->getNodeNumRows()); locRow++)
       {
-        A->getLocalRowView(locRow, indices, values);
+        if(dofs == 1)
+          A->getLocalRowView(locRow, indices, values);
         neighbors = G->getNeighborVertices(locRow);
         //Add those local indices (columns) to the list of connections (which are pairs of the form (localM, localN))
         int gEdge = 0;
         int aEdge = 0;
         while(gEdge != int(neighbors.size()))
         {
-          if(neighbors[gEdge] == indices[aEdge])
+          if(dofs == 1)
           {
-            vert1.push_back(pair<int, int>(locRow, neighbors[gEdge]));
-            gEdge++;
-            aEdge++;
+            if(neighbors[gEdge] == indices[aEdge])
+            {
+              vert1.push_back(pair<int, int>(locRow, neighbors[gEdge]));
+              gEdge++;
+              aEdge++;
+            }
+            else
+            {
+              vert2.push_back(pair<int, int>(locRow, neighbors[gEdge]));
+              gEdge++;
+            }
           }
           else
           {
-            vert2.push_back(pair<int, int>(locRow, neighbors[gEdge]));
+            vert1.push_back(pair<int, int>(locRow, neighbors[gEdge]));
             gEdge++;
           }
         }
