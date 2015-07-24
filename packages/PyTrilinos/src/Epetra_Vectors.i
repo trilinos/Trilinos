@@ -61,9 +61,9 @@
 /////////////////////////////////////////////////////////
 // Teuchos::RCP<> support for all classes in this file //
 /////////////////////////////////////////////////////////
-%teuchos_rcp(Epetra_IntVector  )
-%teuchos_rcp(Epetra_MultiVector)
-%teuchos_rcp(Epetra_Vector     )
+%teuchos_rcp_dap(PyTrilinos::convertPythonToEpetraIntVector  , Epetra_IntVector  )
+%teuchos_rcp_dap(PyTrilinos::convertPythonToEpetraMultiVector, Epetra_MultiVector)
+%teuchos_rcp_dap(PyTrilinos::convertPythonToEpetraVector     , Epetra_Vector     )
 %teuchos_rcp(Epetra_FEVector   )
 %teuchos_rcp_epetra_argout(Epetra_IntVector  )
 %teuchos_rcp_epetra_argout(Epetra_MultiVector)
