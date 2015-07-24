@@ -59,22 +59,23 @@
 // Language specific macro implementing all the customisations for handling the smart pointer
 %define %teuchos_rcp_dap_typemaps(CONST, CONVERTER, CLASS...)
 
+// Mark CLASS as a smart pointer
+%feature("smartptr", noblock=1) CLASS {Teuchos::RCP< CLASS >}
+
 // %naturalvar is as documented for member variables
 %naturalvar CLASS;
 %naturalvar Teuchos::RCP< CONST CLASS >;
 
 // destructor wrapper customisation
-%feature("unref") CLASS "(void)arg1;"
+%feature("unref") CLASS "(void)arg1; delete smartarg1;"
 
-//"(void)arg1; delete smartarg1;"
-
-// Typemap customisations...
+// Typemap customizations...
 
 // plain value
 %typemap(in) CONST CLASS
 {
-  Teuchos::RCP< CLASS > smartarg = CONVERTER($input);
-  $1 = *(Teuchos::rcp_const_cast< CONST CLASS >(smartarg).get());
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  $1 = %const_cast(*smartarg->get(), $1_ltype);
 }
 
 %typemap(out) CONST CLASS
@@ -88,8 +89,8 @@
 
 %typemap(varin) CONST CLASS
 {
-  Teuchos::RCP< CLASS > smartarg = CONVERTER($input);
-  $1 = *(Teuchos::rcp_const_cast< CONST CLASS >(smartarg).get());
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  $1 = %const_cast(*smartarg->get(), $1_ltype);
 }
 
 %typemap(varout) CONST CLASS
@@ -102,12 +103,12 @@
 }
 
 // plain pointer
-// Note: $disown not implemented by default as it will lead to a memory leak of the RCP instance
-%typemap(in) CONST CLASS * (Teuchos::RCP< CONST CLASS > smartarg)
+// Note: $disown not implemented by default as it will lead to a
+// memory leak of the RCP instance
+%typemap(in) CONST CLASS * (Teuchos::RCP< CLASS > * smartarg = 0)
 {
-  smartarg =
-    Teuchos::rcp_const_cast< CONST CLASS >(CONVERTER($input));
-  $1 = smartarg.get();
+  smartarg = CONVERTER($input);
+  $1 = %const_cast(smartarg->get(), $1_ltype);
 }
 
 %typemap(out, fragment="SWIG_null_deleter_python") CONST CLASS *
@@ -121,9 +122,8 @@
 
 %typemap(varin) CONST CLASS *
 {
-  Teuchos::RCP< CONST CLASS > smartarg =
-    Teuchos::rcp_const_cast< CONST CLASS >(CONVERTER($input));
-  $1 = smartarg.get();
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  $1 = %const_cast(smartarg->get(), $1_ltype);
 }
 
 %typemap(varout, fragment="SWIG_null_deleter_python") CONST CLASS *
@@ -136,9 +136,10 @@
 }
 
 // plain reference
-%typemap(in) CONST CLASS &
+%typemap(in) CONST CLASS & (Teuchos::RCP< CLASS > * smartarg = 0)
 {
-  $1 = CONVERTER($input).get();
+  smartarg = CONVERTER($input);
+  $1 = %const_cast(smartarg->get(), $1_ltype);
 }
 
 %typemap(out, fragment="SWIG_null_deleter_python") CONST CLASS &
@@ -152,9 +153,8 @@
 
 %typemap(varin) CONST CLASS &
 {
-  Teuchos::RCP< CONST CLASS > smartarg =
-    Teuchos::rcp_const_cast< CONST CLASS >(CONVERTER($input));
-  $1 = smartarg.get();
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  $1 = %const_cast(smartarg->get(), $1_ltype);
 }
 
 %typemap(varout, fragment="SWIG_null_deleter_python") CONST CLASS &
@@ -171,8 +171,7 @@
 %typemap(in) CLASS *CONST& ($*1_ltype temp = 0,
                            Teuchos::RCP< CONST CLASS > tempshared)
 {
-  tempshared =
-    Teuchos::rcp_const_cast< CONST CLASS >(CONVERTER($input));
+  tempshared = *CONVERTER($input);
   temp = %const_cast(tempshared.get(), $*1_ltype);
   $1 = &temp;
 }
@@ -189,6 +188,7 @@
 %typemap(varin) CLASS *CONST& %{
 #error "varin typemap not implemented"
 %}
+
 %typemap(varout) CLASS *CONST& %{
 #error "varout typemap not implemented"
 %}
@@ -196,7 +196,8 @@
 // RCP by value
 %typemap(in) Teuchos::RCP< CONST CLASS >
 {
-  $1 = Teuchos::rcp_const_cast< CONST CLASS >(CONVERTER($input));
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  $1 = Teuchos::rcp_const_cast< CONST CLASS >(*smartarg);
 }
 
 %typemap(out) Teuchos::RCP< CONST CLASS > {
@@ -209,7 +210,8 @@
 
 %typemap(varin) Teuchos::RCP< CONST CLASS >
 {
-  $1 = Teuchos::rcp_const_cast< CONST CLASS >(CONVERTER($input));
+  Teuchos::RCP< CLASS > smartarg = CONVERTER($input);
+  $1 = Teuchos::rcp_const_cast< CONST CLASS >(*smartarg);
 }
 
 %typemap(varout) Teuchos::RCP< CONST CLASS >
@@ -224,8 +226,7 @@
 // RCP by reference
 %typemap(in) Teuchos::RCP< CONST CLASS > & (Teuchos::RCP< CONST CLASS > tempshared)
 {
-  tempshared =
-    Teuchos::rcp_const_cast< CONST CLASS >(CONVERTER($input));
+  tempshared = Teuchos::rcp_const_cast< CONST CLASS >(*CONVERTER($input));
   $1 = &tempshared;
 }
 
@@ -251,8 +252,7 @@
 // RCP by pointer
 %typemap(in) Teuchos::RCP< CONST CLASS > * (Teuchos::RCP< CONST CLASS > tempshared)
 {
-  tempshared =
-    Teuchos::rcp_const_cast< CONST CLASS >(CONVERTER($input));
+  tempshared = Teuchos::rcp_const_cast< CONST CLASS >(*CONVERTER($input));
   $1 = &tempshared;
 }
 
@@ -280,7 +280,7 @@
 %typemap(in) Teuchos::RCP< CONST CLASS > *& (Teuchos::RCP< CONST CLASS > tempshared,
                                             $*1_ltype temp = 0)
 {
-  tempshared = %reinterpret_casr(CONVERTER($input), Teuchos::RCP< CONST CLASS >);
+  tempshared = %reinterpret_cast(*CONVERTER($input), Teuchos::RCP< CONST CLASS >);
   temp = &tempshared;
   $1 = &temp;
 }
