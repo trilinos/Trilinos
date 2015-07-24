@@ -100,29 +100,45 @@ private:
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 class Morkon_Manager
 {
-  typedef typename DeviceType::execution_space  execution_space;
-  typedef Interface<DeviceType, DIM, FACE_TYPE>     interface_t;
-  typedef Teuchos::RCP<interface_t>               interface_ptr;
-  typedef std::map<int, interface_ptr>         interfaces_map_t;
+  typedef typename DeviceType::execution_space                              execution_space;
+  typedef Interface<DeviceType, DIM, FACE_TYPE>                                 interface_t;
+  typedef Teuchos::RCP<interface_t>                                           interface_ptr;
+  typedef std::map<int, interface_ptr>                                     interfaces_map_t;
 
   typedef Mrk_SurfaceMesh<DeviceType, DIM>                                   surface_mesh_t;
   typedef typename surface_mesh_t::local_to_global_idx_t              local_to_global_idx_t;
   typedef typename local_to_global_idx_t::HostMirror                local_to_global_idx_hmt;
-  typedef typename surface_mesh_t::face_connectivity_t                  face_connectivity_t;
-  typedef typename face_connectivity_t::face_to_num_nodes_t             face_to_num_nodes_t;
+  typedef typename surface_mesh_t::local_to_global_idx_dvt          local_to_global_idx_dvt;
+
+  typedef typename surface_mesh_t::face_to_num_nodes_t                  face_to_num_nodes_t;
   typedef typename face_to_num_nodes_t::HostMirror                    face_to_num_nodes_hmt;
-  typedef typename face_connectivity_t::face_to_nodes_t                     face_to_nodes_t;
+  typedef typename surface_mesh_t::face_to_num_nodes_dvt              face_to_num_nodes_dvt;
+
+  typedef typename surface_mesh_t::face_to_nodes_t                          face_to_nodes_t;
   typedef typename face_to_nodes_t::HostMirror                            face_to_nodes_hmt;
+  typedef typename surface_mesh_t::face_to_nodes_dvt                      face_to_nodes_dvt;
 
   typedef Mrk_Fields<DeviceType, DIM>                                              fields_t;
+
   typedef typename fields_t::points_t                                              points_t;
   typedef typename points_t::HostMirror                                          points_hmt;
+  typedef typename fields_t::points_dvt                                          points_dvt;
 
   typedef Kokkos::View<local_idx_t *[2], execution_space>      face_to_interface_and_side_t;
   typedef typename face_to_interface_and_side_t::HostMirror  face_to_interface_and_side_hmt;
+  typedef Kokkos::DualView<typename face_to_interface_and_side_t::value_type *[2],
+                           typename face_to_interface_and_side_t::array_layout,
+                           typename face_to_interface_and_side_t::execution_space>  face_to_interface_and_side_dvt;
+
   typedef Kokkos::View<local_idx_t *[3], execution_space>          contact_search_results_t;
+
+  // Need a DualView of this one
   typedef Kokkos::View<bool *, execution_space>                         on_boundary_table_t;
   typedef typename on_boundary_table_t::HostMirror                    on_boundary_table_hmt;
+  typedef Kokkos::DualView<typename on_boundary_table_t::value_type *,
+                           typename on_boundary_table_t::array_layout,
+                           typename on_boundary_table_t::execution_space>  on_boundary_table_dvt;
+
   typedef Kokkos::CrsMatrix<local_idx_t, local_idx_t, DeviceType>       node_support_sets_t;
 
   typedef Mrk_MortarPallets<DeviceType, DIM>                               mortar_pallets_t;
@@ -153,13 +169,13 @@ protected:
   MPI_Comm    m_mpi_comm;
   int       m_printlevel;
 
-  // Input set/manipulated by the application, on the host side for now.
+  // Input set/manipulated functions called from application, on the host side for now.
   Teuchos::RCP<Tpetra::Map<> >                 m_problem_map;
   interfaces_map_t                              m_interfaces;
 
   // On the Device, nodes and faces use local ids.
   local_to_global_idx_t                    m_node_global_ids;
-  local_to_global_idx_t                   m_faces_global_ids;
+  local_to_global_idx_t                    m_face_global_ids;
   surface_mesh_t                              m_surface_mesh;
   fields_t                                          m_fields;
   face_to_interface_and_side_t  m_face_to_interface_and_side;  // Might be able to just use separate views for mortar-side face_id
@@ -173,11 +189,22 @@ protected:
   // the implementation of Morkon_Manager::mortar_integrate().
 
   bool internalize_interfaces();
-  bool migrate_to_device(face_to_interface_and_side_hmt face_to_interface_and_side,
-                         face_to_num_nodes_hmt face_to_num_nodes,
-                         face_to_nodes_hmt face_to_nodes,
-                         points_hmt node_coords,
-                         on_boundary_table_hmt is_node_on_boundary);
+
+  void prepare_for_host_write(local_to_global_idx_dvt node_to_global_id,
+                              local_to_global_idx_dvt face_to_global_id,
+                              face_to_interface_and_side_dvt face_to_interface_and_side,
+                              face_to_num_nodes_dvt face_to_num_nodes,
+                              face_to_nodes_dvt face_to_nodes,
+                              points_dvt node_coords,
+                              on_boundary_table_dvt is_node_on_boundary);
+
+  bool migrate_to_device(local_to_global_idx_dvt node_to_global_id,
+                         local_to_global_idx_dvt face_to_global_id,
+                         face_to_interface_and_side_dvt face_to_interface_and_side,
+                         face_to_num_nodes_dvt face_to_num_nodes,
+                         face_to_nodes_dvt face_to_nodes,
+                         points_dvt node_coords,
+                         on_boundary_table_dvt is_node_on_boundary);
 
   bool compute_face_and_node_normals();
   bool find_possible_contact_face_pairs(contact_search_results_t course_search_results);

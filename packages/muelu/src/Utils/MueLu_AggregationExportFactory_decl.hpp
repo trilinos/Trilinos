@@ -158,7 +158,7 @@ namespace MueLu {
     void doAlphaHulls2D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
     void doAlphaHulls3D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
     #endif
-    void doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine) const; //add geometry to display node connections from a matrix. Connections in graph but not matrix have different color.
+    void doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine, int dofs) const; //add geometry to display node connections from a matrix. Connections in graph but not matrix have different color.
     void writeFile_(std::ofstream& fout, std::string styleName, std::vector<int>& vertices, std::vector<int>& geomSizes) const;
     void buildColormap_() const;
     void writePVTU_(std::ofstream& pvtu, std::string baseFname, int numProcs) const;

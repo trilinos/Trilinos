@@ -72,6 +72,12 @@ int main (int argc, char *argv[]) {
   string file_output = "ichol.gv";
   clp.setOption("file-output", &file_output, "Output file (dot file)");
 
+  int treecut = 10;
+  clp.setOption("treecut", &treecut, "Level to cut tree from bottom");
+
+  int minblksize = 0;
+  clp.setOption("minblksize", &minblksize, "Minimum block size for internal reordering");
+
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
 
@@ -115,7 +121,7 @@ int main (int argc, char *argv[]) {
     timer.reset();
 
     GraphHelperType S(AA);
-    S.computeOrdering();
+    S.computeOrdering(treecut, minblksize);
 
     cout << "ICholByBlocks::graphviz:: "
          << "# of rows = " << S.NumRows() << ", # of blocks " << S.NumBlocks()
@@ -161,6 +167,7 @@ int main (int argc, char *argv[]) {
     }
 
     TaskFactoryType::Policy().graphviz(out);
+    cout << "ICholByBlocks::graphviz:: size of queue = " << TaskFactoryType::Policy().size() << endl;
     TaskFactoryType::Policy().clear();
 
     t = timer.seconds();

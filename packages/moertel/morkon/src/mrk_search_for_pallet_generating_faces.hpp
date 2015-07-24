@@ -57,9 +57,8 @@ struct search_for_pallet_generating_faces
 {
     typedef typename DeviceType::execution_space                          execution_space;
     typedef Mrk_SurfaceMesh<DeviceType, DIM>                               surface_mesh_t;
-    typedef typename surface_mesh_t::face_connectivity_t              face_connectivity_t;
-    typedef typename face_connectivity_t::face_to_num_nodes_t         face_to_num_nodes_t;
-    typedef typename face_connectivity_t::face_to_nodes_t                 face_to_nodes_t;
+    typedef typename surface_mesh_t::face_to_num_nodes_t              face_to_num_nodes_t;
+    typedef typename surface_mesh_t::face_to_nodes_t                      face_to_nodes_t;
     typedef Mrk_Fields<DeviceType, DIM>                                          fields_t;
     typedef typename fields_t::points_t                                          points_t;
     typedef typename fields_t::points_mrat                                    points_mrat;
@@ -77,8 +76,8 @@ struct search_for_pallet_generating_faces
                                        points_t node_coords,
                                        face_to_interface_and_side_t face_to_interface_and_side,
                                        contact_search_results_t search_results)
-        : m_face_to_num_nodes(surface_mesh.m_face_data.m_face_to_num_nodes)
-        , m_face_to_nodes(surface_mesh.m_face_data.m_face_to_nodes)
+        : m_face_to_num_nodes(surface_mesh.m_face_to_num_nodes)
+        , m_face_to_nodes(surface_mesh.m_face_to_nodes)
         , m_node_coords(node_coords)
         , m_face_to_interface_and_side(face_to_interface_and_side)
         , m_search_results(search_results)

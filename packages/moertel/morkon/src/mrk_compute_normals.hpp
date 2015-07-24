@@ -61,19 +61,16 @@ struct compute_face_normals
 template <typename DeviceType>
 struct compute_face_normals<DeviceType, 2,MRK_LINE2>
 {
-  typedef typename DeviceType::execution_space        execution_space;
-
-  typedef Mrk_SurfaceMesh<DeviceType, 2>                      mesh_t;
-  typedef typename mesh_t::face_connectivity_t     face_data_t;
-  typedef typename face_data_t::face_to_nodes_t      face_to_nodes_t;
-
-  typedef Mrk_Fields<DeviceType, 2>          fields_t;
-  typedef typename fields_t::points_mrat  points_mrat;
-  typedef typename fields_t::normals_t      normals_t;
+  typedef typename DeviceType::execution_space  execution_space;
+  typedef Mrk_SurfaceMesh<DeviceType, 2>                 mesh_t;
+  typedef typename mesh_t::face_to_nod          face_to_nodes_t;
+  typedef Mrk_Fields<DeviceType, 2>                    fields_t;
+  typedef typename fields_t::points_mrat            points_mrat;
+  typedef typename fields_t::normals_t                normals_t;
 
   face_to_nodes_t    m_face_nodes;
-  points_mrat     m_node_coords;
-  normals_t       m_face_normals;
+  points_mrat       m_node_coords;
+  normals_t        m_face_normals;
 
   compute_face_normals(mesh_t mesh, fields_t fields)
     : m_face_nodes(mesh.m_face_data.m_face_to_nodes)
@@ -117,25 +114,22 @@ struct compute_face_normals<DeviceType, 2,MRK_LINE2>
 template <typename DeviceType>
 struct compute_face_normals<DeviceType, 3,MRK_TRI3>
 {
-  typedef typename DeviceType::execution_space             execution_space;
+  typedef typename DeviceType::execution_space        execution_space;
+  typedef Mrk_SurfaceMesh<DeviceType, 3>                       mesh_t;
+  typedef typename mesh_t::face_to_num_nodes_t    face_to_num_nodes_t;
+  typedef typename mesh_t::face_to_nodes_t            face_to_nodes_t;
+  typedef Mrk_Fields<DeviceType, 3>                          fields_t;
+  typedef typename fields_t::points_mrat                  points_mrat;
+  typedef typename fields_t::normals_t                      normals_t;
 
-  typedef Mrk_SurfaceMesh<DeviceType, 3>                           mesh_t;
-  typedef typename mesh_t::face_connectivity_t          face_data_t;
-  typedef typename face_data_t::face_to_num_nodes_t   face_to_num_nodes_t;
-  typedef typename face_data_t::face_to_nodes_t           face_to_nodes_t;
-
-  typedef Mrk_Fields<DeviceType, 3>          fields_t;
-  typedef typename fields_t::points_mrat  points_mrat;
-  typedef typename fields_t::normals_t      normals_t;
-
-  face_to_num_nodes_t m_face_num_nodes;   // In case we want to generalize or do robust direction.
-  face_to_nodes_t         m_face_nodes;
-  points_mrat          m_node_coords;
-  normals_t            m_face_normals;
+  face_to_num_nodes_t  m_face_num_nodes;   // In case we want to generalize or do robust direction.
+  face_to_nodes_t          m_face_nodes;
+  points_mrat             m_node_coords;
+  normals_t              m_face_normals;
 
   compute_face_normals(mesh_t mesh, fields_t fields)
-    : m_face_num_nodes(mesh.m_face_data.m_face_to_num_nodes)
-    , m_face_nodes(mesh.m_face_data.m_face_to_nodes)
+    : m_face_num_nodes(mesh.m_face_to_num_nodes)
+    , m_face_nodes(mesh.m_face_to_nodes)
     , m_node_coords(fields.m_node_coords)
     , m_face_normals(fields.m_face_normals)
   {
@@ -189,25 +183,23 @@ struct compute_face_normals<DeviceType, 3,MRK_TRI3>
 template <typename DeviceType>
 struct compute_face_normals<DeviceType, 3,MRK_QUAD4>
 {
-  typedef typename DeviceType::execution_space             execution_space;
+  typedef typename DeviceType::execution_space      execution_space;
 
-  typedef Mrk_SurfaceMesh<DeviceType, 3>                           mesh_t;
-  typedef typename mesh_t::face_connectivity_t          face_data_t;
-  typedef typename face_data_t::face_to_num_nodes_t   face_to_num_nodes_t;
-  typedef typename face_data_t::face_to_nodes_t           face_to_nodes_t;
+  typedef Mrk_SurfaceMesh<DeviceType, 3>                     mesh_t;
+  typedef typename mesh_t::face_to_num_nodes_t  face_to_num_nodes_t;
+  typedef typename mesh_t::face_to_nodes_t          face_to_nodes_t;
+  typedef Mrk_Fields<DeviceType, 3>                        fields_t;
+  typedef typename fields_t::points_mrat                points_mrat;
+  typedef typename fields_t::normals_t                    normals_t;
 
-  typedef Mrk_Fields<DeviceType, 3>          fields_t;
-  typedef typename fields_t::points_mrat  points_mrat;
-  typedef typename fields_t::normals_t      normals_t;
-
-  face_to_num_nodes_t m_face_num_nodes;   // In case we want to generalize or do robust direction.
-  face_to_nodes_t         m_face_nodes;
-  points_mrat          m_node_coords;
-  normals_t            m_face_normals;
+  face_to_num_nodes_t  m_face_num_nodes;   // In case we want to generalize or do robust direction.
+  face_to_nodes_t          m_face_nodes;
+  points_mrat             m_node_coords;
+  normals_t             m_face_normals;
 
   compute_face_normals(mesh_t mesh, fields_t fields)
-    : m_face_num_nodes(mesh.m_face_data.m_face_to_num_nodes)
-    , m_face_nodes(mesh.m_face_data.m_face_to_nodes)
+    : m_face_num_nodes(mesh.m_face_to_num_nodes)
+    , m_face_nodes(mesh.m_face_to_nodes)
     , m_node_coords(fields.m_node_coords)
     , m_face_normals(fields.m_face_normals)
   {
@@ -262,22 +254,19 @@ struct compute_face_normals<DeviceType, 3,MRK_QUAD4>
 template <typename DeviceType, unsigned int DIM >
 struct compute_node_normals_from_faces
 {
-  typedef typename DeviceType::execution_space                execution_space;
+  typedef typename DeviceType::execution_space     execution_space;
+  typedef Mrk_SurfaceMesh<DeviceType, DIM>                  mesh_t;
+  typedef typename mesh_t::node_to_faces_t         node_to_faces_t;
+  typedef Mrk_Fields<DeviceType, 3>                       fields_t;
+  typedef typename fields_t::normals_mrat             normals_mrat;
+  typedef typename fields_t::normals_t                   normals_t;
 
-  typedef Mrk_SurfaceMesh<DeviceType, DIM>                             mesh_t;
-  typedef typename mesh_t::node_connectivity_t            node_connectivity_t;
-  typedef typename node_connectivity_t::node_to_faces_t       node_to_faces_t;
-
-  typedef Mrk_Fields<DeviceType, 3>            fields_t;
-  typedef typename fields_t::normals_mrat  normals_mrat;
-  typedef typename fields_t::normals_t        normals_t;
-
-  node_to_faces_t     m_node_to_faces;
-  normals_mrat    m_face_normals;
-  normals_t          m_node_normals;
+  node_to_faces_t  m_node_to_faces;
+  normals_mrat      m_face_normals;
+  normals_t         m_node_normals;
 
   compute_node_normals_from_faces(mesh_t surface_mesh, fields_t fields)
-    : m_node_to_faces(surface_mesh.m_node_data.m_node_to_faces)
+    : m_node_to_faces(surface_mesh.m_node_to_faces)
     , m_face_normals(fields.m_face_normals)
     , m_node_normals(fields.m_node_normals)
   {

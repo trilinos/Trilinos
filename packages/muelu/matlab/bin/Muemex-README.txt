@@ -8,7 +8,59 @@ Basic Instructions:
 -Run "help muelu" from matlab to see detailed help for "muelu" function
 -Basic setup for muelu is "problemID = muelu('setup', A);"
 -Basic solve for muelu is "x = muelu(problemID, b);"
--Run "ctest" in this directory to run the experimental matlab tests for MueLu.
+-Run "ctest" in this directory to run the experimental matlab tests for MueLu
+
+<><><><><><><>
+Muemex Usage:
+<><><><><><><>
+
+Go to muelu/matlab/bin.
+Run MATLAB through the "matlab" script.
+
+With a sparse matrix A, set up a MueLu hierarchy:
+
+    problemID = muelu('setup', A);
+
+Note: any number of problems can be set up at a time.
+Optionally, pass A and fine level coordinates:
+
+    problemID = muelu('setup', A, coords);
+
+Parameters for the "easy parameter list" are listed after A and coords:
+
+    problemID = muelu('setup', A, coords, 'coarse: max size', 50);
+
+Sublists can be passed using MATLAB cell arrays.
+
+    problemID = muelu('setup', A, 'level 0', {'aggregation: drop tol', 0.03}, 'level 1', {'aggregation: drop tol', 0.01});
+
+Parameters can be strings, integers, booleans or arrays (full or sparse, real
+or complex). 
+
+Solve a problem with b as the right-hand side vector(s):
+
+    x = muelu(problemID, b);
+    x = muelu(problemID, A, b);
+
+The first version uses the A that was passed when setting up the problem.
+The second version uses a new A with the same hierarchy.
+
+Remove a specific problem and free memory associated with it:
+
+    muelu('cleanup', problemID);
+
+or all problems:
+
+    muelu('cleanup');
+
+List basic information about problem(s):
+
+    muelu('status', problemID);
+    muelu('status');
+
+Get data from a level:
+
+    data = muelu('get', problemID, levelID, 
 
 <><><><><><><><><><><>
 Factory Instructions:
