@@ -66,6 +66,10 @@ typedef MueLu::CoalesceDropFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Coale
 typedef MueLu::CoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoarseMapFactory;
 #endif
 
+#ifdef MUELU_COARSENINGVISUALIZATIONFACTORY_SHORT
+typedef MueLu::CoarseningVisualizationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> CoarseningVisualizationFactory;
+#endif
+
 #ifdef MUELU_CONSTRAINT_SHORT
 typedef MueLu::Constraint<Scalar,LocalOrdinal,GlobalOrdinal,Node> Constraint;
 #endif
@@ -332,6 +336,10 @@ typedef MueLu::SemiCoarsenPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SemiC
 
 #ifdef MUELU_UZAWASMOOTHER_SHORT
 typedef MueLu::UzawaSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> UzawaSmoother;
+#endif
+
+#ifdef MUELU_VISUALIZATIONHELPERS_SHORT
+typedef MueLu::VisualizationHelpers<Scalar,LocalOrdinal,GlobalOrdinal,Node> VisualizationHelpers;
 #endif
 
 #ifdef MUELU_ZOLTAN2INTERFACE_SHORT

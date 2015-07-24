@@ -81,6 +81,10 @@ namespace MueLu {
       coarseLevel.DeclareInput("P", (*it).get(), this); // request/release "P" (dependencies are not affected)
       (*it)->CallDeclareInput(coarseLevel); // request dependencies
     }
+    for (std::vector<RCP<const FactoryBase> >::const_iterator it = ptentFacts_.begin(); it != ptentFacts_.end(); ++it) {
+      coarseLevel.DeclareInput("P", (*it).get(), this); // request/release "Ptent" (dependencies are not affected)
+      (*it)->CallDeclareInput(coarseLevel); // request dependencies
+    }
     for (std::vector<RCP<const FactoryBase> >::const_iterator it = nspFacts_.begin(); it != nspFacts_.end(); ++it) {
       coarseLevel.DeclareInput("Nullspace", (*it).get(), this);  // request/release coarse "Nullspace" (dependencies are not affected)
       (*it)->CallDeclareInput(coarseLevel); // request dependencies
@@ -131,24 +135,30 @@ namespace MueLu {
       nProlongatorFactory = 0;
     }
 
-    RCP<Matrix> P = Teuchos::null;
+    RCP<Matrix> P     = Teuchos::null;
+    RCP<Matrix> Ptent = Teuchos::null;
     RCP<MultiVector> coarseNullspace = Teuchos::null;
 
     // call Build for selected transfer operator
     GetOStream(Runtime0) << "TogglePFactory: call transfer factory: " << (prolongatorFacts_[nProlongatorFactory])->description() << std::endl;
     prolongatorFacts_[nProlongatorFactory]->CallBuild(coarseLevel);
     P = coarseLevel.Get< RCP<Matrix> >("P", (prolongatorFacts_[nProlongatorFactory]).get());
+    // do not call "Build" for "Ptent" factory since it should automatically be called recursively
+    // through the "Build" call for "P"
+    Ptent = coarseLevel.Get< RCP<Matrix> >("P", (ptentFacts_[nProlongatorFactory]).get());
     coarseNullspace = coarseLevel.Get< RCP<MultiVector> >("Nullspace", (nspFacts_[nProlongatorFactory]).get());
 
     // Release dependencies of all prolongator and coarse level null spaces
     for(size_t t=0; t<nspFacts_.size(); ++t) {
       coarseLevel.Release(*(prolongatorFacts_[t]));
+      coarseLevel.Release(*(ptentFacts_[t]));
       coarseLevel.Release(*(nspFacts_[t]));
     }
 
     // store prolongator with this factory identification.
     Set(coarseLevel, "P", P);
     Set(coarseLevel, "Nullspace", coarseNullspace);
+    Set(coarseLevel, "Ptent", Ptent);
     Set(coarseLevel, "Chosen P", nProlongatorFactory);
   } //Build()
 
@@ -160,6 +170,16 @@ namespace MueLu {
                                "This is very strange. (Note: you can remove this exception if there's a good reason for)");
     TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_, Exceptions::RuntimeError, "MueLu::TogglePFactory::AddProlongatorFactory: Factory is being added after we have already declared input");
     prolongatorFacts_.push_back(factory);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void TogglePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::AddPtentFactory(const RCP<const FactoryBase>& factory) {
+    // check if it's a TwoLevelFactoryBase based transfer factory
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::rcp_dynamic_cast<const TwoLevelFactoryBase>(factory) == Teuchos::null, Exceptions::BadCast,
+                               "MueLu::TogglePFactory::AddPtentFactory: Transfer factory is not derived from TwoLevelFactoryBase. "
+                               "This is very strange. (Note: you can remove this exception if there's a good reason for)");
+    TEUCHOS_TEST_FOR_EXCEPTION(hasDeclaredInput_, Exceptions::RuntimeError, "MueLu::TogglePFactory::AddPtentFactory: Factory is being added after we have already declared input");
+    ptentFacts_.push_back(factory);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

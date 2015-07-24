@@ -298,7 +298,7 @@ void AlgZoltan<Adapter>::partition(
                                       iter != zpl.end(); iter++) {
       const std::string &zname = pl.name(iter);
       // Convert the value to a string to pass to Zoltan
-      std::string &zval = pl.entry(iter).getValue(&zval);
+      std::string zval = pl.entry(iter).getValue(&zval);
       zz->Set_Param(zname.c_str(), zval.c_str());
     }
   }
