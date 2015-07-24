@@ -67,7 +67,7 @@
 #include <sstream>
 #include <string>
 #include <iostream>
-#include <vector>
+#include <queue>
 
 using Teuchos::ParameterList;
 using Teuchos::Comm;
@@ -81,7 +81,7 @@ using std::endl;
 using std::string;
 using std::exception;
 using std::ostringstream;
-using std::vector;
+using std::queue;
 
 #define ERRMSG(msg) if (rank == 0){ cerr << "FAIL: " << msg << endl; }
 #define EXC_ERRMSG(msg, e) \
@@ -124,12 +124,12 @@ void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & pli
 }
 
 // this method takes the user input file and extracts all
-// problem definitions
-vector<ParameterList> getProblems(const string &inputFileName, int rank)
+// pLists definitions
+queue<ParameterList> getParameterLists(const string &inputFileName, int rank)
 {
     Teuchos::FileInputSource inputSource(inputFileName);
     XMLObject xmlInput;
-    vector<ParameterList> problems;
+    queue<ParameterList> pLists;
     // Try to get xmlObject from inputfile
     try{
         xmlInput = inputSource.getObject();
@@ -144,28 +144,28 @@ vector<ParameterList> getProblems(const string &inputFileName, int rank)
     {
         ParameterList plist;
         xmlToModelPList(xmlInput.getChild(i), plist);
-        problems.push_back(plist);
+        pLists.emplace(plist);
     }
     
-    return problems;
+    return pLists;
 }
 
 
-void run(const ParameterList &problem_parameters,const RCP<const Teuchos::Comm<int> > & comm)
+void run(const UserInputForTests &uinput, const ParameterList &problem_parameters,const RCP<const Teuchos::Comm<int> > & comm)
 {
     // Major steps in running a problem in zoltan 2
-    // 1. get a user input object
-    // 2. get an input adapter
-    // 3. construct the problem
-    // 4. solve the problem
-    // 5. analyze metrics
-    // 6. clean up
+    // 1. get an input adapter
+    // 2. construct the problem
+    // 3. solve the problem
+    // 4. analyze metrics
+    // 5. clean up
     
     typedef AdapterForTests::base_adapter_t base_t;
     typedef AdapterForTests::basic_id_t basic_id_t; // basic_identifier_type
     typedef AdapterForTests::xpetra_mv_adapter xpetra_mv_t; // xpetra_mv_type
     
-    typedef Zoltan2::PartitioningProblem<base_t> problem_t; // base abstract type
+    typedef Zoltan2::Problem<base_t> problem_t;
+    typedef Zoltan2::PartitioningProblem<base_t> partioning_problem_t; // base abstract type
     typedef Zoltan2::PartitioningProblem<basic_id_t> basic_problem_t; // basic id problem type
     typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mb problem type
     
@@ -173,19 +173,15 @@ void run(const ParameterList &problem_parameters,const RCP<const Teuchos::Comm<i
     if(rank == 0)
         cout << "\nPeforming test: " << problem_parameters.get<string>("Name") << endl;
     
-    ////////////////////////////////////////////////////////////
-    // 1. get uinput for this problem
-    ////////////////////////////////////////////////////////////
-    if(!problem_parameters.isParameter("TestParameters"))
-        throw std::runtime_error("Test parameters not provided");
-    
-    const ParameterList &input = problem_parameters.sublist("TestParameters");
-    UserInputForTests uinput(input,comm,true, true);
     
     ////////////////////////////////////////////////////////////
-    // 2. get basic input adapter
+    // 1. get basic input adapter
     ////////////////////////////////////////////////////////////
-    base_t * ia = AdapterForTests::getAdapterForInput(&uinput, input); // a pointer to a basic type
+    if(!problem_parameters.isParameter("InputAdapterParameters"))
+            throw std::runtime_error("Input adapter parameters not provided");
+    
+    const ParameterList &adapterPlist = problem_parameters.sublist("InputAdapterParameters");
+    base_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist); // a pointer to a basic type
     if(ia == nullptr)
     {
         if(rank == 0)
@@ -195,10 +191,10 @@ void run(const ParameterList &problem_parameters,const RCP<const Teuchos::Comm<i
     }
     
     ////////////////////////////////////////////////////////////
-    // 3. construct partitioning problem
+    // 2. construct partitioning problem
     ////////////////////////////////////////////////////////////
     problem_t * problem;
-    string adapter_name = input.get<string>("inputAdapter"); // If we are here we have an input adapter, no need to check for one.
+    string adapter_name = adapterPlist.get<string>("inputAdapter"); // If we are here we have an input adapter, no need to check for one.
     // get Zoltan2 partion parameters
     ParameterList zoltan2_parameters = const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
     zoltan2_parameters.set("num_global_parts", comm->getSize());
@@ -249,23 +245,20 @@ void run(const ParameterList &problem_parameters,const RCP<const Teuchos::Comm<i
 #endif
 
     ////////////////////////////////////////////////////////////
-    // 4. Solve the problem
+    // 3. Solve the problem
     ////////////////////////////////////////////////////////////
     reinterpret_cast<basic_problem_t *>(problem)->solve();
     if (rank == 0)
         cout << "Problem solved" << endl;
     
     ////////////////////////////////////////////////////////////
-    // 5. Print problem metrics
+    // 4. Print problem metrics
     ////////////////////////////////////////////////////////////
     if (comm->getRank() == 0)
         reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
     
-    if (rank == 0)
-        cout << "\n" << endl;
-    
     ////////////////////////////////////////////////////////////
-    // 6. Clean up
+    // 5. Clean up
     ////////////////////////////////////////////////////////////
     delete ia;
     delete reinterpret_cast<basic_problem_t *>(problem);
@@ -296,15 +289,33 @@ int main(int argc, char *argv[])
         inputFileName = argv[1]; // user has provided an input file
     
     ////////////////////////////////////////////////////////////
-    // (2) Get Model Parameter Lists
+    // (2) Get All Input Parameter Lists
     ////////////////////////////////////////////////////////////
-    vector<ParameterList>tests = getProblems(inputFileName,rank);
+    queue<ParameterList>pLists = getParameterLists(inputFileName,rank);
     
     ////////////////////////////////////////////////////////////
-    // (3) Loop over all tests and execute them
+    // (3) Get Input Data Parameters
     ////////////////////////////////////////////////////////////
-    for(auto i = tests.begin(); i != tests.end(); ++i) run(*i, comm);
+    const ParameterList inputParameters = pLists.front();
+    if(inputParameters.name() != "InputParameters")
+    {
+        if(rank == 0)
+            cout << "InputParameters not defined" << endl;
+        
+        return 1;
+    }
     
+    // get the user input for all tests
+    UserInputForTests uinput(inputParameters, comm,true,true);
+    pLists.pop();
+    
+    ////////////////////////////////////////////////////////////
+    // (4) Perform all tests
+    ////////////////////////////////////////////////////////////
+    while (!pLists.empty()) {
+        run(uinput, pLists.front(), comm);
+        pLists.pop();
+    }
     
     if(rank == 0)
         cout << "....finished tests\n" << endl;

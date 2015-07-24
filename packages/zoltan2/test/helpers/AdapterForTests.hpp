@@ -339,10 +339,11 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(Us
         int nvec = pList.get<int>("number_of_vectors");
         RCP<Epetra_MultiVector> data = uinput->getUIEpetraMultiVector(nvec);
         RCP<const Epetra_MultiVector> const_data = rcp_const_cast<const Epetra_MultiVector>(data);
-        if(weights.empty())
-            adapter = new Zoltan2::XpetraMultiVectorAdapter<Epetra_MultiVector>(const_data);
-        else
-            adapter = new Zoltan2::XpetraMultiVectorAdapter<Epetra_MultiVector>(const_data,weights,weightStrides);
+        
+//        if(weights.empty())
+//            adapter = new Zoltan2::XpetraMultiVectorAdapter<Epetra_MultiVector>(const_data);
+//        else
+//            adapter = new Zoltan2::XpetraMultiVectorAdapter<Epetra_MultiVector>(const_data,weights,weightStrides);
     }
 #endif
     
