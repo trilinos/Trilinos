@@ -160,7 +160,9 @@ public:
   void setMatrix (const Teuchos::RCP<const OP>& A) {
     using Teuchos::null;
     using Teuchos::RCP;
+    using Teuchos::TypeNameTraits;
     typedef crs_matrix_type MAT;
+    const char prefix[] = "Amesos2::Details::LinearSolver::setMatrix: ";
 
     if (A.is_null ()) {
       solver_ = Teuchos::null;
@@ -183,8 +185,25 @@ public:
         // Furthermore, Amesos2 solvers do not accept a null matrix
         // (to setA), so if setMatrix is called with a null matrix, we
         // free the solver.
-        RCP<solver_type> solver =
-          Amesos2::create<MAT, MV> (solverName_, A_mat, null, null);
+        RCP<solver_type> solver;
+        try {
+          solver = Amesos2::create<MAT, MV> (solverName_, A_mat, null, null);
+        }
+        catch (std::exception& e) {
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (true, std::invalid_argument, prefix << "Failed to create Amesos2 "
+             "solver named \"" << solverName_ << "\".  "
+             "Amesos2::create<MAT = " << TypeNameTraits<MAT>::name ()
+             << ", MV = " << TypeNameTraits<MV>::name ()
+             << " threw an exception: " << e.what ());
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (solver.is_null (), std::invalid_argument, prefix << "Failed to "
+           "create Amesos2 solver named \"" << solverName_ << "\".  "
+           "Amesos2::create<MAT = " << TypeNameTraits<MAT>::name ()
+           << ", MV = " << TypeNameTraits<MV>::name ()
+           << " returned null.");
+
         // Use same parameters as before, if user set parameters.
         if (! params_.is_null ()) {
           solver->setParameters (params_);
