@@ -90,6 +90,10 @@ public:
 struct NotTriangularException : public Exception {
   NotTriangularException () : Exception("Not a triangular matrix.") {}
 };
+// The matrix must have a full diagonal.
+struct NotFullDiagonal : public Exception {
+  NotFullDiagonal () : Exception("Lacks a full diagonal.") {}
+};
 
 // Interface between the user's and the solver's data. It's just a shallow
 // wrapper to the user's data. The data passed in must persist at least as long

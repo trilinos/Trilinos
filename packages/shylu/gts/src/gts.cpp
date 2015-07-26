@@ -719,13 +719,18 @@ void get_idxs (const Int n, const LevelSetter& lstr, std::vector<Int>& lsis,
 
 struct Shape {
   const bool is_lower, is_triangular;
-  Shape (const bool is_lower, const bool is_triangular)
-    : is_lower(is_lower), is_triangular(is_triangular) {}
+  const bool has_full_diag; // Valid only if is_triangular.
+  Shape (const bool is_lower, const bool is_triangular,
+         const bool has_full_diag = false)
+    : is_lower(is_lower), is_triangular(is_triangular),
+      has_full_diag(has_full_diag) {}
 };
 
 Shape determine_shape (const ConstCrsMatrix& A) {
-  bool tri_determined = false, is_tri = true, is_lower = true;
-  for (Int r = 0; r < A.m; ++r)
+  bool tri_determined = false, is_tri = true, is_lower = true,
+    has_full_diag = true;
+  for (Int r = 0; r < A.m; ++r) {
+    bool diag_fnd = false;
     for (Int j = A.ir[r]; j < A.ir[r+1]; ++j) {
       const Int c = A.jc[j];
       if (c != r) {
@@ -737,11 +742,13 @@ Shape determine_shape (const ConstCrsMatrix& A) {
           is_tri = false;
           return Shape(is_lower, is_tri);
         }
-      }
+      } else diag_fnd = true;
     }
+    if ( ! diag_fnd) has_full_diag = false;
+  }
   // If ! tri_determined, then T must be a diag matrix. Can treat as lower,
   // which is is_lower's default value.
-  return Shape(is_lower, is_tri);
+  return Shape(is_lower, is_tri, has_full_diag);
 }
 
 int are_same_ (const ConstCrsMatrix& A, const ConstCrsMatrix& B) {
@@ -2010,6 +2017,7 @@ void TriSolver::init (const ConstCrsMatrix* T, const Int nthreads,
     // Determine shape.
     Shape shape = determine_shape(*T);
     if ( ! shape.is_triangular) throw NotTriangularException();
+    if ( ! shape.has_full_diag) throw NotFullDiagonal();
     is_lo_ = shape.is_lower;
     Timer::stop(Timer::setup); Timer::start(Timer::tolower);
     if ( ! is_lo_) {
@@ -2242,10 +2250,10 @@ inline void SerialBlock::
 n1Axpy_dense (const Real* RESTRICT x, const Int ldx, const Int nrhs,
               Real* RESTRICT y, const Int ldy) const {
   assert(d_);
-#ifdef HAVE_SHYLUGTS_MKL
+#if defined(HAVE_SHYLUGTS_MKL)
   cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, nr_, nrhs, nc_, -1, d_,
               nc_, x, ldx, 1, y, ldy);
-#elif HAVE_SHYLUGTS_BLAS
+#elif defined(HAVE_SHYLUGTS_BLAS)
   gemm<Real>('t', 'n', nr_, nrhs, nc_, -1, d_, nc_, x, ldx, 1, y, ldy);
 #else
   for (Int g = 0; ; ) {
