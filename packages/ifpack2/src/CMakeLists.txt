@@ -100,6 +100,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     Details::DenseSolver
     Details::TriDiSolver
     Details::OneLevelFactory
+    Details::LinearSolver
     Experimental::RBILUK
     )
   IF(Ifpack2_ENABLE_Amesos2)
