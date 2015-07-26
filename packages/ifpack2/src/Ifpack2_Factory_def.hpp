@@ -70,6 +70,9 @@ Factory::create (const std::string& precType,
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
   typedef typename MatrixType::node_type node_type;
+  typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
+    global_ordinal_type, node_type> row_matrix_type;
+
   typedef Preconditioner<scalar_type, local_ordinal_type,
                          global_ordinal_type, node_type> prec_base_type;
 
@@ -115,7 +118,7 @@ Factory::create (const std::string& precType,
 #endif
   else {
     try {
-      Details::OneLevelFactory<MatrixType> factory;
+      Details::OneLevelFactory<row_matrix_type> factory;
       prec = factory.create (precType, matrix);
     } catch (std::invalid_argument&) {
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -145,6 +148,10 @@ Factory::create (const std::string& precType,
                          local_ordinal_type,
                          global_ordinal_type,
                          node_type> prec_base_type;
+  typedef Tpetra::RowMatrix<scalar_type,
+    local_ordinal_type,
+    global_ordinal_type,
+    node_type> row_matrix_type;
 
   RCP<prec_base_type> prec;
 
@@ -197,7 +204,7 @@ Factory::create (const std::string& precType,
     bool success = false;
     std::ostringstream err;
     try {
-      Details::OneLevelFactory<MatrixType> factory;
+      Details::OneLevelFactory<row_matrix_type> factory;
       prec = factory.create (precType, matrix);
       success = true;
     } catch (std::invalid_argument& e) {

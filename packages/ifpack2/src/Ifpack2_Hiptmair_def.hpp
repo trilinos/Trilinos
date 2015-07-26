@@ -223,7 +223,7 @@ void Hiptmair<MatrixType>::initialize ()
   { // The body of code to time
     Teuchos::TimeMonitor timeMon (timer);
 
-    Details::OneLevelFactory<MatrixType> factory;
+    Details::OneLevelFactory<row_matrix_type> factory;
 
     ifpack2_prec1_=factory.create(precType1_,A_);
     ifpack2_prec1_->initialize();

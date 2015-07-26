@@ -209,3 +209,8 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES} ${IFPACK2_CPP_SOURCES}
   )
+
+#
+# Make a trivial change here if you want cmake to run,
+# due to changes you make to files in Ifpack2.
+#
