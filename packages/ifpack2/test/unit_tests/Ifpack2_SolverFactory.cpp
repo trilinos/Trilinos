@@ -110,8 +110,6 @@ namespace {
     typedef Tpetra::Operator<SC,LO,GO,NT> OP;
     typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
     typedef Teuchos::ScalarTraits<SC> STS;
-    typedef typename MV::mag_type mag_type;
-    typedef Teuchos::ScalarTraits<mag_type> STM;
 
     Teuchos::OSTab tab0 (out);
     out << "Test solver \"" << solverName << "\" from Ifpack2 package" << endl;
