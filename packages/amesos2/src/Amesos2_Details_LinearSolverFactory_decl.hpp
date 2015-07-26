@@ -41,7 +41,7 @@
 //
 // @HEADER
 
-/// \file   Amesos2_Details_SolverFactory_decl.hpp
+/// \file   Amesos2_Details_LinearSolverFactory_decl.hpp
 /// \author Mark Hoemmen
 /// \brief  Declaration of Amesos2::Details::LinearSolverFactory.
 
