@@ -49,6 +49,7 @@
 
 #ifndef USERINPUTFORTESTS
 #define USERINPUTFORTESTS
+
 #include <Zoltan2_TestHelpers.hpp>
 
 #include <Zoltan2_XpetraTraits.hpp>
@@ -408,11 +409,15 @@ ecomm_(), eM_(), eG_(),
 chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
 {
     int rank = c->getRank();
-    if(pList.isParameter("inputPath") && pList.isParameter("inputFile"))
+    if(pList.isParameter("inputFile"))
     {
-        string path = pList.get<string>("inputPath");
+        string path(".");
+        if(pList.isParameter("inputPath"))
+            path = pList.get<string>("inputPath");
+        
         string testData = pList.get<string>("inputFile");
         
+        // find out if we are working from the zoltan1 test diretory
         bool zoltan1 = false;
         string::size_type loc = path.find("/zoltan/test/");  // Zoltan1 data
         if (loc != string::npos)
@@ -420,9 +425,6 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
         
 
         if (zoltan1){
-            if(rank == 0)
-                cout << "......have a zoltan 1 graph file...." << endl;
-            
             readZoltanTestData(path, testData, distributeInput);
         }else
             readMatrixMarketFile(path, testData);
@@ -769,7 +771,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
 {
   std::ostringstream fname;
   fname << path << "/" << testData << ".mtx";
-
+    
   RCP<default_znode_t> dnode = rcp (new default_znode_t ());
   if (verbose_ && tcomm_->getRank() == 0)
     std::cout << "UserInputForTests, Read: " << fname.str() << std::endl;
