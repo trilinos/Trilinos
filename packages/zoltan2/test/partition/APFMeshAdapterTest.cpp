@@ -224,7 +224,7 @@ int main(int narg, char *arg[]) {
   cmdp.setOption("action", &action,
                  "Method to use:  mj, scotch, zoltan_rcb, parma or color");
   cmdp.setOption("parma_method", &parma_method,
-                 "Method to use: Vertex, Element, VtxElm, VtxEdgeElm, Ghost, or Shape ");
+                 "Method to use: Vertex, Element, VtxElm, VtxEdgeElm, Ghost, Shape, or Centroid ");
   cmdp.setOption("nparts", &nParts,
                  "Number of parts to create");
   cmdp.setOption("imbalance", &imbalance,

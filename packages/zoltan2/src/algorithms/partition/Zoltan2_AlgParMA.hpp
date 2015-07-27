@@ -67,6 +67,7 @@
 //  VtxEdgeElm   - Balances targeting vertex, edge, and element imbalance
 //  Ghost        - Balances using ghost element aware diffusion      
 //  Shape        - Optimizes shape of parts by increasing the size of small part boundaries
+//  Centroid     - Balances using centroid diffusion
 //////////////////////////////////////////////////////////////////////////////
 
 #ifndef HAVE_ZOLTAN2_PARMA
@@ -400,9 +401,10 @@ public:
     
     
     //Get vertex coordinates
-    const scalar_t ** vertex_coords = new const scalar_t*[dim];
-    int* strides = new int[dim];
-    for (int i=0;i<dim;i++)
+    int c_dim = adapter->getDimension();
+    const scalar_t ** vertex_coords = new const scalar_t*[c_dim];
+    int* strides = new int[c_dim];
+    for (int i=0;i<c_dim;i++)
       adapter->getCoordinatesViewOf(MESH_VERTEX,vertex_coords[i],strides[i],i);
 
     //Get first adjacencies from elements to vertices
@@ -418,10 +420,10 @@ public:
     for (size_t i=0;i<adapter->getLocalNumOf(MESH_VERTEX);i++) {
       apf::MeshEntity* vtx = m->createVert_(interior);
       scalar_t temp_coords[3];
-      for (int k=0;k<dim;k++) 
+      for (int k=0;k<c_dim&&k<3;k++) 
 	temp_coords[k] = vertex_coords[k][i*strides[k]];
 
-      for (int k=dim;k<3;k++)
+      for (int k=c_dim;k<3;k++)
 	temp_coords[k] = 0;  
       apf::Vector3 point(temp_coords[0],temp_coords[1],temp_coords[2]);    
       m->setPoint(vtx,0,point);
@@ -537,6 +539,10 @@ void AlgParMA<Adapter>::partition(
   }
   else if (alg_name=="Shape") {
     balancer = Parma_MakeShapeOptimizer(m,step,verbose);
+    weightElement=true;
+  }
+  else if (alg_name=="Centroid") {
+    balancer = Parma_MakeCentroidDiffuser(m,step,verbose);
     weightElement=true;
   }
   else  {

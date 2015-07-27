@@ -73,7 +73,7 @@ public:
   {
     throw std::runtime_error(
           "BUILD ERROR:  ParMA requested but not compiled into Zoltan2.\n"
-          "Please set CMake flag Zoltan2_ENABLE_ParMA:BOOL=ON.");
+          "Please set CMake flag Trilinos_ENABLE_SCOREC:BOOL=ON.");
   }
 };
 }
