@@ -242,6 +242,16 @@ IF (${PROJECT_NAME}_ENABLE_SCOREC)
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
+  TRIBITS_ADD_TEST(
+    RPIMeshAdapterTest
+    NAME RPIMeshAdapterTest_ZOLTAN_GHOST_HG
+    NUM_MPI_PROCS 2
+    COMM serial mpi
+    ARGS
+    "--action=hg_ghost --meshfile=pumiTri14/2/ --modelfile=pumiTri14/plate.dmg --layers=1"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     PartitionAndParMATest
     NAME ZoltanHGAndParMA_VtxElm

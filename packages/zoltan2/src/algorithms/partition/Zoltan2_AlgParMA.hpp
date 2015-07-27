@@ -54,7 +54,7 @@
 //! \file Zoltan2_AlgParMA.hpp
 //! \brief interface to the ParMA library
 //  
-//  This first design creates an apf mesh to run the ParMA algorithms on. The
+//  This design creates an apf mesh to run the ParMA algorithms on. The
 //  final solution is determined by changes from beginning to end of the mesh.
 //  This approach allows development closer to that of PUMI setup but at the 
 //  cost of creating an extra mesh representation.

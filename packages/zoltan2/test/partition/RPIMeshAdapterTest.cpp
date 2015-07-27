@@ -58,7 +58,7 @@
 #include <Zoltan2_Environment.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_ColoringProblem.hpp>
-
+#include <Zoltan2_HyperGraphModel.hpp>
 //Tpetra includes
 #include "Tpetra_DefaultPlatform.hpp"
 
@@ -66,6 +66,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_Hashtable.hpp"
 
 // SCOREC includes
 #ifdef HAVE_ZOLTAN2_PARMA
@@ -78,9 +79,12 @@
 #include <gmi_mesh.h>
 #endif
 
+#include <set>
+
 using namespace std;
 using Teuchos::ParameterList;
 using Teuchos::RCP;
+using Teuchos::ArrayView;
 
 /*********************************************************/
 /*                     Typedefs                          */
@@ -89,6 +93,74 @@ using Teuchos::RCP;
 typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
 
 
+// Computes and prints ghost metrics (takes in a Hyper graph model)
+template <typename Adapter>
+void PrintGhostMetrics(Zoltan2::HyperGraphModel<Adapter>& mdl) {
+  typedef typename Adapter::gno_t       gno_t;
+  typedef typename Adapter::lno_t       lno_t;
+  typedef typename Adapter::scalar_t       scalar_t;
+  typedef Zoltan2::StridedData<lno_t, scalar_t>  input_t;
+
+  ArrayView<const gno_t> Ids;
+  ArrayView<input_t> wgts;
+  mdl.getEdgeList(Ids,wgts);
+  ArrayView<bool> isOwner;
+  mdl.getOwnedList(isOwner);
+  size_t numOwned = mdl.getLocalNumOwnedVertices();
+  ArrayView<const gno_t> pins;
+  ArrayView<const lno_t> offsets;
+  mdl.getPinList(pins,offsets,wgts);
+  
+  std::set<gno_t> gids;
+  for (size_t i=0;i<mdl.getLocalNumVertices();i++) {
+    if (isOwner[i])
+      gids.insert(Ids[i]);
+  }
+  std::set<gno_t> ghosts;
+  gno_t num_ghosts=0;
+  for (size_t i=0;i<mdl.getLocalNumPins();i++) {
+    gno_t pin = pins[i];
+    if (gids.find(pin)==gids.end()) {
+      num_ghosts++;
+      if (ghosts.find(pin)==ghosts.end())
+        ghosts.insert(pin);
+    }
+  }
+  std::cout<< "[METRIC] " << PCU_Comm_Self() << " Total number of ghosts in the hypergraph: " << num_ghosts << "\n"
+           << "[METRIC] " << PCU_Comm_Self() << " Number of unique ghosts: " << ghosts.size() << "\n";
+  gno_t unique_ghosts =ghosts.size();
+  gno_t owned_and_ghosts =unique_ghosts+numOwned;
+  gno_t max_o_and_g,min_o_and_g;
+  gno_t max_ghosts,max_u_ghosts;
+  gno_t min_ghosts,min_u_ghosts;
+  max_ghosts = min_ghosts = num_ghosts;
+  max_u_ghosts = min_u_ghosts = unique_ghosts;
+  max_o_and_g = min_o_and_g = owned_and_ghosts;  
+  double avg_ghosts,avg_u_ghosts,avg_o_and_g;
+  PCU_Add_Ints(&num_ghosts,1);
+  PCU_Add_Ints(&unique_ghosts,1);
+  PCU_Add_Ints(&owned_and_ghosts,1);
+  PCU_Max_Ints(&max_ghosts,1);
+  PCU_Max_Ints(&max_u_ghosts,1);
+  PCU_Max_Ints(&max_o_and_g,1);
+  PCU_Min_Ints(&min_ghosts,1);
+  PCU_Min_Ints(&min_u_ghosts,1);
+  PCU_Min_Ints(&min_o_and_g,1);
+  avg_ghosts = num_ghosts*1.0/PCU_Comm_Peers();
+  avg_u_ghosts = unique_ghosts*1.0/PCU_Comm_Peers();
+  avg_o_and_g = owned_and_ghosts*1.0/PCU_Comm_Peers();
+  if (!PCU_Comm_Self()) 
+    std::cout<< "[METRIC] Global ghosts in the hypergraph (tot max min avg imb): " 
+             << num_ghosts<<" "<<max_ghosts<<" "<<min_ghosts<<" "<<avg_ghosts<<" "
+             <<max_ghosts/avg_ghosts << "\n"
+             << "[METRIC] Global unique ghosts (tot max min avg imb): " 
+             << unique_ghosts<<" "<<max_u_ghosts<<" "<<min_u_ghosts<<" "<<avg_u_ghosts<<" "
+             <<max_u_ghosts/avg_u_ghosts << "\n"
+             << "[METRIC] Global owned and ghosts  (tot max min avg imb): " 
+             << owned_and_ghosts<<" "<<max_o_and_g<<" "<<min_o_and_g<<" "<<avg_o_and_g<<" "
+             <<max_o_and_g/avg_o_and_g << "\n";
+
+}
 
 /*****************************************************************************/
 /******************************** MAIN ***************************************/
@@ -113,7 +185,6 @@ int main(int narg, char *arg[]) {
     << "|                      Erik Boman        (egboman@sandia.gov),     |\n"
     << "|                      Siva Rajamanickam (srajama@sandia.gov).     |\n"
     << "|                                                                  |\n"
-    << "|  Pamgen's website:   http://trilinos.sandia.gov/packages/pamgen  |\n"
     << "|  Zoltan2's website:  http://trilinos.sandia.gov/packages/zoltan2 |\n"
     << "|  Trilinos website:   http://trilinos.sandia.gov                  |\n"
     << "|                                                                  |\n"
@@ -143,7 +214,7 @@ int main(int narg, char *arg[]) {
   std::string output_loc("");
   int nParts = CommT->getSize();
   double imbalance = 1.1;
-
+  int layers=2;
   // Read run-time options.
   Teuchos::CommandLineProcessor cmdp (false, false);
   cmdp.setOption("meshfile", &meshFileName,
@@ -160,8 +231,9 @@ int main(int narg, char *arg[]) {
                  "Target imbalance for the partitioning method");
   cmdp.setOption("output", &output_loc,
                  "Location of new partitioned apf mesh. Ex: 4/torus.smb");
+  cmdp.setOption("layers", &layers,
+                 "Number of layers for ghosting");
   cmdp.parse(narg, arg);
-
   
   /***************************************************************************/
   /********************** GET CELL TOPOLOGY **********************************/
@@ -237,7 +309,7 @@ int main(int narg, char *arg[]) {
     pparams.set("parma_method",parma_method);
     pparams.set("step_size",1.1);
     if (parma_method=="Ghost") {
-      pparams.set("ghost_layers",3);
+      pparams.set("ghost_layers",layers);
       pparams.set("ghost_bridge",m->getDimension()-1);
     }
     params.set("compute_metrics","yes");
@@ -251,10 +323,27 @@ int main(int narg, char *arg[]) {
     params.set("num_global_parts", nParts);
     Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
     zparams.set("LB_METHOD","HYPERGRAPH");
-    zparams.set("LB_APPROACH","REPARTITION");
+    zparams.set("LB_APPROACH","PARTITION");
     //params.set("compute_metrics","yes");
     adjacency="vertex";
 
+  }
+  else if (action=="hg_ghost") {
+     do_partitioning = true;
+    params.set("debug_level", "no_status");
+    params.set("imbalance_tolerance", imbalance);
+    params.set("algorithm", "zoltan");
+    params.set("num_global_parts", nParts);
+    params.set("hypergraph_model_type","ghosting");
+    params.set("ghost_layers",layers);
+    Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
+    zparams.set("LB_METHOD","HYPERGRAPH");
+    zparams.set("LB_APPROACH","PARTITION");
+    zparams.set("PHG_EDGE_SIZE_THRESHOLD", "1.0");
+    //zparams.set("PHG_COARSENING_LIMIT", "2");
+    primary="vertex";
+    adjacency="edge";
+    needSecondAdj=true;
   }
   else if (action == "color") {
     params.set("debug_level", "verbose_detailed_status");
@@ -266,9 +355,28 @@ int main(int narg, char *arg[]) {
   // Creating mesh adapter
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
   typedef Zoltan2::RPIMeshAdapter<apf::Mesh2*> inputAdapter_t;
+  typedef Zoltan2::MeshAdapter<apf::Mesh2*> baseMeshAdapter_t;
+  
   double time_1=PCU_Time();
   inputAdapter_t ia(*CommT, m,primary,adjacency,needSecondAdj);  
   double time_2=PCU_Time();
+
+  if (action=="hg_ghost") {
+    const baseMeshAdapter_t *base_ia = dynamic_cast<const baseMeshAdapter_t*>(&ia);
+    Zoltan2::modelFlag_t graphFlags_;
+    RCP<Zoltan2::Environment> env;
+    try{
+      env = rcp(new Zoltan2::Environment(params, Teuchos::DefaultComm<int>::getComm()));
+    }
+    Z2_FORWARD_EXCEPTIONS
+      
+    RCP<const Zoltan2::Environment> envConst = Teuchos::rcp_const_cast<const Zoltan2::Environment>(env);
+
+    RCP<const baseMeshAdapter_t> baseInputAdapter_(base_ia,false);
+    Zoltan2::HyperGraphModel<inputAdapter_t> model(baseInputAdapter_,envConst,CommT,
+                                                 graphFlags_,Zoltan2::HYPEREDGE_CENTRIC);
+    PrintGhostMetrics(model);
+  }
 
   // create Partitioning problem
   double time_3 = PCU_Time();
@@ -306,9 +414,33 @@ int main(int narg, char *arg[]) {
 
 
   }
+  
   double time_4=PCU_Time();
-  //if (!me)
+  
+  //Destroy the adapter
+  ia.destroy();
+  
   Parma_PrintPtnStats(m,"after");
+  
+  if (action=="hg_ghost") {
+    inputAdapter_t ia2(*CommT, m,primary,adjacency,true);  
+    const baseMeshAdapter_t *base_ia = dynamic_cast<const baseMeshAdapter_t*>(&ia2);
+
+    Zoltan2::modelFlag_t graphFlags_;
+    RCP<Zoltan2::Environment> env;
+    try{
+      env = rcp(new Zoltan2::Environment(params, Teuchos::DefaultComm<int>::getComm()));
+    }
+    Z2_FORWARD_EXCEPTIONS
+    RCP<const Zoltan2::Environment> envConst = Teuchos::rcp_const_cast<const Zoltan2::Environment>(env);
+    RCP<const baseMeshAdapter_t> baseInputAdapter_(base_ia,false);
+    Zoltan2::HyperGraphModel<inputAdapter_t> model(baseInputAdapter_, envConst, CommT,
+                                                   graphFlags_,Zoltan2::HYPEREDGE_CENTRIC);
+
+    PrintGhostMetrics(model);
+    ia2.destroy();
+  }
+  
   if (output_loc!="") {
     m->writeNative(output_loc.c_str());
   }
@@ -323,13 +455,13 @@ int main(int narg, char *arg[]) {
     std::cout<<"\nConstruction time: "<<time_2<<"\n"
 	     <<"Problem time: " << time_4<<"\n\n";
   }
-  //Delete_APF_Mesh();
-  ia.destroy();
+  //Delete the APF Mesh
   m->destroyNative();
   apf::destroyMesh(m);
   //End communications
   PCU_Comm_Free();
 #endif
+
   if (me == 0)
     std::cout << "PASS" << std::endl;
 
