@@ -5,6 +5,13 @@ Release Notes for Trilinos Package MueLu
 Trilinos 12.2:
 ---------------
 
+* Allow to dynamically switch transfer operators between different multigrid levels.
+  Can be used in context of semi-coarsening.
+
+* Enabled semi-coarsening (using Ray's line detection algorithm).
+
+* Add support for line smoothing (Ifpack/Ifpack2) [EXPERIMENTAL]
+
 Trilinos 12.0:
 ---------------
 
