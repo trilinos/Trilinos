@@ -32,7 +32,7 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos       AND
     xml/s1_easy_10levels.xml xml/s1_easy_exercise.xml xml/s1_easy_jacobi.xml xml/s1_easy_jacobi2.xml
     xml/s2_adv_a.xml xml/s2_adv_b.xml xml/s2_adv_c.xml
     xml/s2a.xml xml/s2b.xml
-    xml/s4a.xml xml/s4b.xml xml/s4c.xml
+    xml/s4a.xml xml/s4av.xml xml/s4b.xml xml/s4c.xml
     xml/s5a.xml xml/s5b.xml
     xml/s6_dep.xml xml/s6_export.xml
     xml/s2_easy.xml xml/s3a_easy.xml xml/s3b_easy.xml xml/s3c_easy.xml

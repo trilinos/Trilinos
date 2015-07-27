@@ -32,10 +32,24 @@
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
     </ParameterList>
 
+    <ParameterList name="myCoordTransferFact">
+      <Parameter name="factory"                             type="string" value="CoordinatesTransferFactory"/>
+    </ParameterList>
+
+    <ParameterList name="myAggExportFact">
+      <Parameter name="factory"                             type="string" value="AggregationExportFactory"/>
+      <Parameter name="aggregation: output filename"        type="string" value="aggs_level%LEVELID_proc%PROCID.out"/>
+      <Parameter name="aggregation: output file: agg style" type="string" value="Convex Hulls"/>
+    </ParameterList>
+
     <ParameterList name="myRAPFact">
       <Parameter name="factory"                             type="string" value="RAPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
       <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
+      <ParameterList name="TransferFactories">
+        <Parameter name="CoordinateTransfer"                type="string" value="myCoordTransferFact"/>
+        <Parameter name="Visualization"                     type="string" value="myAggExportFact"/>
+      </ParameterList>
     </ParameterList>
 
     <!-- =======================  SMOOTHERS  ======================= -->
@@ -67,6 +81,7 @@
       <Parameter name="R"              type="string" value="myRestrictorFact"/>
       <Parameter name="A"              type="string" value="myRAPFact"/>
       <Parameter name="CoarseSolver"   type="string" value="DirectSolver"/>
+      <Parameter name="Coordinates"    type="string" value="myCoordTransferFact"/>
     </ParameterList>
   </ParameterList>
 </ParameterList>
