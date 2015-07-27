@@ -43,7 +43,7 @@
 //
 // @HEADER
 
-/*! \file RPIMeshAdapterTest.cpp
+/*! \file APFMeshAdapterTest.cpp
     \brief An example of partitioning a SCOREC mesh with RCB.
 
     \author Created by G. Diamond, K. Devine.
@@ -54,7 +54,7 @@
 /*                          Includes                          */
 /**************************************************************/
 
-#include <Zoltan2_RPIMeshAdapter.hpp>
+#include <Zoltan2_APFMeshAdapter.hpp>
 #include <Zoltan2_Environment.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <Zoltan2_ColoringProblem.hpp>
@@ -258,7 +258,7 @@ int main(int narg, char *arg[]) {
   apf::Mesh2* m = apf::loadMdsMesh(modelFileName.c_str(),meshFileName.c_str());
   apf::verify(m);
   
-  //Data for RPI MeshAdapter
+  //Data for APF MeshAdapter
   std::string primary="region";
   std::string adjacency="face";
   if (m->getDimension()==2) {
@@ -354,7 +354,7 @@ int main(int narg, char *arg[]) {
 
   // Creating mesh adapter
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
-  typedef Zoltan2::RPIMeshAdapter<apf::Mesh2*> inputAdapter_t;
+  typedef Zoltan2::APFMeshAdapter<apf::Mesh2*> inputAdapter_t;
   typedef Zoltan2::MeshAdapter<apf::Mesh2*> baseMeshAdapter_t;
   
   double time_1=PCU_Time();

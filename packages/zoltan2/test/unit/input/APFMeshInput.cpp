@@ -45,7 +45,7 @@
 //
 // Basic testing of Zoltan2::APFMeshAdapter
 
-#include <Zoltan2_RPIMeshAdapter.hpp>
+#include <Zoltan2_APFMeshAdapter.hpp>
 
 #ifdef HAVE_ZOLTAN2_PARMA
 #include <apf.h>
@@ -114,7 +114,7 @@ int main(int narg, char *arg[]) {
   int dim = m->getDimension();
 
   //Contruct the MeshAdapter
-  typedef Zoltan2::RPIMeshAdapter<apf::Mesh2*> Adapter;
+  typedef Zoltan2::APFMeshAdapter<apf::Mesh2*> Adapter;
   typedef Adapter::lno_t lno_t;
   typedef Adapter::zgid_t zgid_t;
   typedef Adapter::scalar_t scalar_t;
@@ -126,7 +126,7 @@ int main(int narg, char *arg[]) {
     pri="region";
   }
   
-  Zoltan2::RPIMeshAdapter<apf::Mesh2*> ia(*CommT,m,pri,adj,true);
+  Zoltan2::APFMeshAdapter<apf::Mesh2*> ia(*CommT,m,pri,adj,true);
 
   Zoltan2::MeshEntityType ents[4] = {Zoltan2::MESH_VERTEX,
                                      Zoltan2::MESH_EDGE,

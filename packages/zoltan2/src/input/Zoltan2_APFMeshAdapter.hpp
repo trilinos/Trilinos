@@ -64,12 +64,12 @@ namespace apf {
 }
 namespace Zoltan2 {
 template <typename User>
-class RPIMeshAdapter : public MeshAdapter<User>
+class APFMeshAdapter : public MeshAdapter<User>
 {
 public:
   
   
-  RPIMeshAdapter(const Comm<int> &comm, apf::Mesh* m,std::string primary,std::string adjacency,bool needSecondAdj=false)
+  APFMeshAdapter(const Comm<int> &comm, apf::Mesh* m,std::string primary,std::string adjacency,bool needSecondAdj=false)
   {
     throw std::runtime_error(
           "BUILD ERROR:  ParMA requested but not compiled into Zoltan2.\n"
@@ -115,7 +115,7 @@ namespace Zoltan2 {
  */
 
 template <typename User>
-  class RPIMeshAdapter: public MeshAdapter<User> {
+  class APFMeshAdapter: public MeshAdapter<User> {
 
 public:
 
@@ -139,7 +139,7 @@ public:
    *  lifetime of this InputAdapter.
    */
 
-  RPIMeshAdapter(const Comm<int> &comm, apf::Mesh* m,std::string primary,
+  APFMeshAdapter(const Comm<int> &comm, apf::Mesh* m,std::string primary,
                  std::string adjacency,bool needSecondAdj=false);
 
   void destroy();
@@ -379,7 +379,7 @@ private:
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-RPIMeshAdapter<User>::RPIMeshAdapter(const Comm<int> &comm,
+APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
                                      apf::Mesh* m,
                                      std::string primary,
                                      std::string adjacency,
@@ -608,7 +608,7 @@ RPIMeshAdapter<User>::RPIMeshAdapter(const Comm<int> &comm,
   delete [] lid_mapping;
 }
 template <typename User>
-void RPIMeshAdapter<User>::destroy() {
+void APFMeshAdapter<User>::destroy() {
   for (int i=0;i<=m_dimension;i++) {
     delete [] ent_coords[i];
     delete [] adj_gids[i];
@@ -644,14 +644,14 @@ void RPIMeshAdapter<User>::destroy() {
      
 }  
 template <typename User>
-void RPIMeshAdapter<User>::print(int me,int verbosity)
+void APFMeshAdapter<User>::print(int me,int verbosity)
 {
   if (m_dimension==0) {
     std::cout<<"Cannot print destroyed mesh adapter\n";
     return;
   }
   
-  std::string fn(" RPIMesh ");
+  std::string fn(" APFMesh ");
   std::cout << me << fn 
             << " dimension = " << m_dimension
             << std::endl;
