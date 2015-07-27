@@ -1,5 +1,4 @@
-/*
-//@HEADER
+/*@HEADER
 // ***********************************************************************
 //
 //       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
@@ -41,51 +40,56 @@
 //@HEADER
 */
 
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_Factory_decl.hpp"
+#ifndef IFPACK2_DETAILS_FACTORY_DECL_HPP
+#define IFPACK2_DETAILS_FACTORY_DECL_HPP
 
-#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-#  include "Ifpack2_Factory_def.hpp"
-#  include "Ifpack2_ExplicitInstantiationHelpers.hpp"
-#  include "Ifpack2_ETIHelperMacros.h"
-#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+#include "Ifpack2_ConfigDefs.hpp"
+#include "Ifpack2_Preconditioner.hpp"
 
 namespace Ifpack2 {
+namespace Details {
 
-bool supportsUnsymmetric (const std::string& prec_type)
-{
-  bool result = false;
-  if (prec_type == "RELAXATION" ||
-      prec_type == "CHEBYSHEV"  ||
-      prec_type == "DIAGONAL"   ||
-      prec_type == "RILUK"      ||
-      prec_type == "RBILUK"     ||
-      prec_type == "ILUT"       ||
-      prec_type == "SCHWARZ"    ||
-      prec_type == "KRYLOV")
-  {
-    result = true;
-  }
-  else {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::invalid_argument, "Ifpack2::supportsUnsymmetric: "
-      "Unrecognized preconditioner type prec_type = \"" << prec_type
-      << "\"");
-  }
-  return result;
-}
+template<class SC, class LO, class GO, class NT>
+class Factory {
+public:
+  typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
+  typedef ::Ifpack2::Preconditioner<SC, LO, GO, NT> prec_type;
 
-#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+  /// \brief Create an instance of Ifpack2::Preconditioner given the
+  ///   string name of the preconditioner type.
+  ///
+  /// \param precType [in] Name of preconditioner type to be created.
+  /// \param matrix [in] Matrix used to define the preconditioner
+  ///
+  /// Throw an exception if the preconditioner with that input name
+  /// does not exist.  Otherwise, return a newly created
+  /// preconditioner object.
+  Teuchos::RCP<prec_type>
+  create (const std::string& precType,
+          const Teuchos::RCP<const row_matrix_type>& matrix);
 
-// We can't use the usual IFPACK2_* class macro here because
-// OneLevelFactory is not a templated class; its methods are.
-#define LCLINST(S, LO, GO)
+  /** \brief Create an instance of Ifpack2::Preconditioner given the
+   *   string name of the preconditioner type.
+   *
+   * \warning This version of the constructor is DEPRECATED, because
+   *   the single-argument version suffices; users may specify the
+   *   overlap level via the "schwarz: overlap level" parameter.
+   *
+   * \param precType [in] Name of preconditioner type to be created.
+   * \param matrix [in] Matrix used to define the preconditioner
+   * \param overlap (in) Specified overlap; defaults to 0.
+   *
+   * Throw an exception if the preconditioner with that input name
+   * does not exist.  Otherwise, return a newly created preconditioner
+   * object.
+   */
+  Teuchos::RCP<prec_type>
+  create (const std::string& precType,
+          const Teuchos::RCP<const row_matrix_type>& matrix,
+          const int overlap);
+};
 
-  IFPACK2_ETI_MANGLING_TYPEDEFS()
-
-  IFPACK2_INSTANTIATE_SLG_REAL( LCLINST )
-
-#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-
+} // namespace Details
 } // namespace Ifpack2
 
+#endif // IFPACK2_DETAILS_FACTORY_DECL_HPP

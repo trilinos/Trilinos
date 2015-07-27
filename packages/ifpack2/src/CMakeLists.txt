@@ -98,9 +98,10 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     LinePartitioner
     Details::Chebyshev
     Details::DenseSolver
-    Details::TriDiSolver
-    Details::OneLevelFactory
+    Details::Factory
     Details::LinearSolver
+    Details::OneLevelFactory
+    Details::TriDiSolver
     Experimental::RBILUK
     )
   IF(Ifpack2_ENABLE_Amesos2)

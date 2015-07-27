@@ -60,6 +60,7 @@ build_precond (Teuchos::ParameterList& test_params,
   using Teuchos::rcpFromRef;
   using std::cout;
   using std::endl;
+  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
   Teuchos::Time timer("precond");
   const int myRank = A->getRowMap ()->getComm ()->getRank ();
 
@@ -71,7 +72,7 @@ build_precond (Teuchos::ParameterList& test_params,
 
   std::string prec_name("not specified");
   Ifpack2::getParameter(test_params, "Ifpack2::Preconditioner", prec_name);
-  prec = factory.create(prec_name, A);
+  prec = factory.create<row_matrix_type> (prec_name, A);
 
   Teuchos::ParameterList tif_params;
   if (test_params.isSublist("Ifpack2")) {

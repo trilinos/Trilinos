@@ -157,6 +157,7 @@ namespace {
     using std::endl;
     typedef Tpetra::CrsMatrix<SC,LO,GO,NT> MAT;
     typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
+    typedef Tpetra::RowMatrix<SC,LO,GO,NT> row_matrix_type;
 
     RCP<const Comm<int> > comm =
       Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
@@ -184,7 +185,7 @@ namespace {
       // throws, the combination is not supported.
       bool skip = false;
       try {
-        (void) Ifpack2::Factory::create<MAT> (solverName, A);
+        (void) Ifpack2::Factory::create<row_matrix_type> (solverName, A);
       }
       catch (...) {
         skip = true;

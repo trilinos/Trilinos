@@ -45,6 +45,7 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
+#include "Ifpack2_Details_Factory.hpp"
 
 namespace Ifpack2 {
 
@@ -127,7 +128,19 @@ public:
                               typename MatrixType::global_ordinal_type,
                               typename MatrixType::node_type> >
   create (const std::string& precType,
-          const Teuchos::RCP<const MatrixType>& matrix);
+          const Teuchos::RCP<const MatrixType>& matrix)
+  {
+    using Teuchos::rcp_implicit_cast;
+    typedef typename MatrixType::scalar_type SC;
+    typedef typename MatrixType::local_ordinal_type LO;
+    typedef typename MatrixType::global_ordinal_type GO;
+    typedef typename MatrixType::node_type NT;
+    typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
+
+    auto A = rcp_implicit_cast<const row_matrix_type> (matrix);
+    Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
+    return factory.create (precType, A);
+  }
 
   /** \brief Create an instance of Ifpack2_Preconditioner given the string
    * name of the preconditioner type.
@@ -152,9 +165,22 @@ public:
                               typename MatrixType::node_type> >
   create (const std::string& precType,
           const Teuchos::RCP<const MatrixType>& matrix,
-          const int overlap);
+          const int overlap)
+  {
+    using Teuchos::rcp_implicit_cast;
+    typedef typename MatrixType::scalar_type SC;
+    typedef typename MatrixType::local_ordinal_type LO;
+    typedef typename MatrixType::global_ordinal_type GO;
+    typedef typename MatrixType::node_type NT;
+    typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
 
-  //! Clones a preconditioner for a different node type from an Ifpack2 RILUK or Chebyshev preconditioner
+    auto A = rcp_implicit_cast<const row_matrix_type> (matrix);
+    Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
+    return factory.create (precType, A, overlap);
+  }
+
+  /// \brief Clones a preconditioner for a different node type from an
+  ///   Ifpack2 RILUK or Chebyshev preconditioner
   template<class InputMatrixType, class OutputMatrixType>
   static
   Teuchos::RCP<Preconditioner<typename OutputMatrixType::scalar_type,
