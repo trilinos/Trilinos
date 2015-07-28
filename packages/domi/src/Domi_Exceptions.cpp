@@ -40,111 +40,66 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef DOMI_EXCEPTIONS_HPP
-#define DOMI_EXCEPTIONS_HPP
-
-#include "Domi_ConfigDefs.hpp"
+#include "Domi_Exceptions.hpp"
 
 namespace Domi
 {
 
-/** \brief Invalid argument exception type
- */
-class InvalidArgument : public std::invalid_argument
-{
-public:
-  /** \brief Constructor
-   *
-   * \param msg [in] Error message
-   */
-  InvalidArgument(std::string msg);
-};
+////////////////////////////////////////////////////////////////////////
 
-/** \brief Range Error exception type
- */
-class RangeError : public std::range_error
+InvalidArgument::InvalidArgument(std::string msg) :
+  std::invalid_argument(msg)
 {
-public:
-  /** \brief Constructor
-   *
-   * \param msg [in] Error message
-   */
-  RangeError(std::string msg);
-};
-
-/** \brief Subcommunicator Error exception type
- */
-class SubcommunicatorError : public std::domain_error
-{
-public:
-  /** \brief Constructor
-   *
-   * \param op [in] Should be the name of the operator or operation
-   *        that is throwing the SubcommunicatorError
-   */
-  SubcommunicatorError(std::string op);
-};
-
-/** \brief Map Ordinal Error exception type
- */
-class MapOrdinalError : public std::runtime_error
-{
-public:
-  /** \brief Constructor
-   *
-   * \param msg [in] Error message
-   */
-  MapOrdinalError(std::string msg);
-};
-
-/** \brief MDMap Error exception type
- */
-class MDMapError : public std::runtime_error
-{
-public:
-  /** \brief Constructor
-   *
-   * \param msg [in] Error message
-   */
-  MDMapError(std::string msg);
-};
-
-/** \brief MDMap Error exception type
- */
-class MDMapNoncontiguousError : public std::runtime_error
-{
-public:
-  /** \brief Constructor
-   *
-   * \param msg [in] Error message
-   */
-  MDMapNoncontiguousError(std::string msg);
-};
-
-/** \brief Type Error exception type
- */
-class TypeError : public std::runtime_error
-{
-public:
-  /** \brief Constructor
-   *
-   * \param msg [in] Error message
-   */
-  TypeError(std::string msg);
-};
-
-/** \brief Bounds Error exception type
- */
-class BoundsError : public std::runtime_error
-{
-public:
-  /** \brief Constructor
-   *
-   * \param msg [in] Error message
-   */
-  BoundsError(std::string msg);
-};
-
 }
 
-#endif
+////////////////////////////////////////////////////////////////////////
+
+RangeError::RangeError(std::string msg) :
+  std::range_error(msg)
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+
+SubcommunicatorError::SubcommunicatorError(std::string op) :
+  std::domain_error(op + " attempted on a processor that does "
+                    "not belong to the operative subcommunicator")
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+
+MapOrdinalError::MapOrdinalError(std::string msg) :
+  std::runtime_error(msg)
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+
+MDMapError::MDMapError(std::string msg) :
+  std::runtime_error(msg)
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+
+MDMapNoncontiguousError::MDMapNoncontiguousError(std::string msg) :
+  std::runtime_error(msg)
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+
+TypeError::TypeError(std::string msg) :
+  std::runtime_error(msg)
+{
+}
+
+////////////////////////////////////////////////////////////////////////
+
+BoundsError::BoundsError(std::string msg) :
+  std::runtime_error(msg)
+{
+}
+
+}
