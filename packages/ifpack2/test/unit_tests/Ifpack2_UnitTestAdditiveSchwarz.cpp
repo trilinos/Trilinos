@@ -766,9 +766,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
   prec.apply (x, z);
 
   out << "Comparing results of two solves" << endl;
-  Teuchos::Array<mag_type> ynorms(1),znorms(1);
-  y.norm2(ynorms());
-  z.norm2(znorms());
+  Teuchos::Array<mag_type> ynorms (y.getNumVectors ()), znorms (z.getNumVectors ());
+  y.norm2 (ynorms ());
+  z.norm2 (znorms ());
   out << "solution norm, sparse direct solve: " << std::setprecision(7) << ynorms[0] << endl;
   out << "solution norm,  dense direct solve: " << std::setprecision(7) << znorms[0] << endl;
   TEST_FLOATING_EQUALITY(ynorms[0], znorms[0], 10* STS::eps ());
