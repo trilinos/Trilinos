@@ -285,7 +285,9 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
   void *argp = 0;
   Teuchos::RCP< Epetra_MultiVector > smartresult;
   Teuchos::RCP< Epetra_MultiVector > * result;
+#ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector<double> > dmdv_rcp;
+#endif
   int newmem = 0;
   //
   // Check if the Python object is a wrapped Epetra_MultiVector
