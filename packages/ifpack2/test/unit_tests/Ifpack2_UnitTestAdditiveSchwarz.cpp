@@ -646,6 +646,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
   typedef GlobalOrdinal GO;
   typedef Node NT;
   typedef typename Tpetra::Vector<SC,LO,GO,NT>::mag_type mag_type;
+  typedef Teuchos::ScalarTraits<SC> STS;
 
   typedef Tpetra::CrsMatrix<SC,LO,GO,NT>   crs_matrix_type;
   typedef Tpetra::RowMatrix<SC,LO,GO,NT>   row_matrix_type;
