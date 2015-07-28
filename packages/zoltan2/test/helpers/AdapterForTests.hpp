@@ -252,27 +252,27 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
     else if(input_type == "epetra_vector")
     {
         RCP<Epetra_Vector> data = uinput->getUIEpetraVector();
-//        globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
-//        localCount = data->getLocalLength();
+        globalIds = (zzgid_t *)data->Map().MyGlobalElements();
+        localCount = data->MyLength();
     }
     else if(input_type == "epetra_multivector")
     {
         int nvec = pList.get<int>("number_of_vectors");
         RCP<Epetra_MultiVector> data = uinput->getUIEpetraMultiVector(nvec);
-//        globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
-//        localCount = data->getLocalLength();
+        globalIds = (zzgid_t *)data->Map().MyGlobalElements();
+        localCount = data->MyLength();
     }
     else if(input_type == "epetra_crs_graph")
     {
         RCP<Epetra_CrsGraph> data = uinput->getUIEpetraCrsGraph();
-//        globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
-//        localCount = data->getNodeNumCols();
+        globalIds = (zzgid_t *)data->Map().MyGlobalElements();
+        localCount = data->NumMyCols();
     }
     else if(input_type == "epetra_crs_matrix")
     {
         RCP<Epetra_CrsMatrix> data = uinput->getUIEpetraCrsMatrix();
-//        globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
-//        localCount = data->getNodeNumCols();
+        globalIds = (zzgid_t *)data->Map().MyGlobalElements();
+        localCount = data->NumMyCols();
     }
 #endif
     
@@ -340,10 +340,12 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(Us
         RCP<Epetra_MultiVector> data = uinput->getUIEpetraMultiVector(nvec);
         RCP<const Epetra_MultiVector> const_data = rcp_const_cast<const Epetra_MultiVector>(data);
         
-//        if(weights.empty())
-//            adapter = new Zoltan2::XpetraMultiVectorAdapter<Epetra_MultiVector>(const_data);
-//        else
-//            adapter = new Zoltan2::XpetraMultiVectorAdapter<Epetra_MultiVector>(const_data,weights,weightStrides);
+        if(weights.empty())
+            adapter = reinterpret_cast<AdapterForTests::base_adapter_t *>(
+                                                                          new Zoltan2::XpetraMultiVectorAdapter<Epetra_MultiVector>(const_data));
+        else
+            adapter = reinterpret_cast<AdapterForTests::base_adapter_t *>(
+                                                                         new Zoltan2::XpetraMultiVectorAdapter<Epetra_MultiVector>(const_data,weights,weightStrides));
     }
 #endif
     
