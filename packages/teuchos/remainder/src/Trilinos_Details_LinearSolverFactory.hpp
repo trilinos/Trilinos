@@ -300,6 +300,25 @@ registerLinearSolverFactory (const std::string& packageName,
 /// details of <i>implementation details</i>.
 namespace Impl {
 
+/// \brief Remember which packages registered at least one
+///   LinearSolverFactory, with any template parameters.
+///
+/// This is helpful for debugging failures to register a
+/// LinearSolverFactory with the correct template parameters.
+///
+/// \return true if the package has already registered some
+///   LinearSolverFactory before, else false.  (Same as what
+///   registeredSomeLinearSolverFactory(packageName) would have
+///   returned.)
+bool rememberRegisteredSomeLinearSolverFactory (const std::string& packageName);
+
+/// \brief Did the package with the given name register at least
+///   one LinearSolverFactory, with any template parameters?
+///
+/// This is helpful for debugging failures to register a
+/// LinearSolverFactory with the correct template parameters.
+bool registeredSomeLinearSolverFactory (const std::string& packageName);
+
 /// \class LinearSolverFactoryRepository
 /// \brief Repository of solver factories
 ///
@@ -463,28 +482,41 @@ registerLinearSolverFactory (const std::string& packageName,
 #endif // HAVE_TEUCHOSCORE_CXX11
 {
   Impl::LinearSolverFactoryRepository<MV, OP>::registerLinearSolverFactory (packageName, factory);
+  Impl::rememberRegisteredSomeLinearSolverFactory (packageName);
 }
 
 template<class MV, class OP>
 Teuchos::RCP<LinearSolver<MV, OP> >
 getLinearSolver (const std::string& packageName, const std::string& solverName)
 {
+  using Teuchos::RCP;
+  using Teuchos::TypeNameTraits;
   typedef typename Impl::LinearSolverFactoryRepository<MV, OP>::factory_pointer_type factory_pointer_type;
   const char prefix[] = "Trilinos::Details::getLinearSolver: ";
 
+  const bool pkgExists = Impl::registeredSomeLinearSolverFactory (packageName);
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! pkgExists, std::invalid_argument, prefix << "Package \"" << packageName
+     << "\" never registered a LinearSolverFactory for _any_ combination of "
+     "template parameters MV and OP.  This means either that the package name "
+     "is invalid, or that the package is not enabled.");
+
   factory_pointer_type factory =
     Impl::LinearSolverFactoryRepository<MV, OP>::getFactory (packageName);
-  if (factory.get () == NULL) {
-    std::ostringstream err;
-    err << prefix << "Invalid package name \"" << packageName << "\"";
-    throw std::invalid_argument (err.str ());
-  }
-  Teuchos::RCP<LinearSolver<MV, OP> > solver = factory->getLinearSolver (solverName);
-  if (solver.is_null ()) {
-    std::ostringstream err;
-    err << prefix << "Invalid solver name \"" << solverName << "\"";
-    throw std::invalid_argument (err.str ());
-  }
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (factory.get () == NULL, std::invalid_argument, prefix << "Package \"" <<
+     packageName << "\" is valid, but it never registered a LinearSolverFactory"
+     " for template parameters MV = " << TypeNameTraits<MV>::name () << " and "
+     "OP = " << TypeNameTraits<OP>::name () << ".");
+
+  RCP<LinearSolver<MV, OP> > solver = factory->getLinearSolver (solverName);
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (solver.is_null (), std::invalid_argument, prefix << "Invalid solver name "
+     "\"" << solverName << "\".  However, package \"" << packageName << "\" is "
+     "valid, and it did register a LinearSolverFactory for template parameters "
+     "MV = " << TypeNameTraits<MV>::name () << " and "
+     "OP = " << TypeNameTraits<OP>::name () << ".");
+
   return solver;
 }
 

@@ -91,7 +91,7 @@ namespace {
     if (rowMap->getNodeNumElements () != 0) {
       Teuchos::Array<SC> vals (1);
       Teuchos::Array<LO> inds (1);
-      for (size_t lclRow = rowMap->getMinLocalIndex ();
+      for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         inds[0] = lclRow;
         vals[0] = STS::one ();
@@ -206,6 +206,7 @@ namespace {
     using Teuchos::Comm;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using Teuchos::TypeNameTraits;
     using std::endl;
     typedef Tpetra::CrsMatrix<SC,LO,GO,NT> MAT;
     typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
@@ -226,6 +227,10 @@ namespace {
     const char* solverNames[9] = {"basker", "klu2", "superlu_dist",
                                   "superlu_mt", "superlu", "pardiso_mkl",
                                   "lapack", "mumps", "amesos2_cholmod"};
+    // The number of solvers that Amesos2::create actually supports,
+    // for the current MV and MAT types.  If it doesn't support _any_
+    // of the solvers, we consider this test to have failed.
+    int numSolversSupported = 0;
     for (int k = 0; k < numSolvers; ++k) {
       const std::string solverName (solverNames[k]);
 
@@ -234,18 +239,45 @@ namespace {
         // Unfortunately, Amesos2::query() doesn't tell us whether the
         // solver supports the given combination of template
         // parameters.  However, we can use Amesos2::create to tell us
-        // this.  If it throws, the combination is not supported.
+        // this.  If it throws or returns null, the combination is
+        // (presumably) not supported.
         bool skip = false;
+        RCP<Amesos2::Solver<MAT, MV> > solver;
         try {
-          (void) Amesos2::create<MAT, MV> (solverName, A, X, B);
+          solver = Amesos2::create<MAT, MV> (solverName, A, X, B);
         }
         catch (...) {
+          out << "Amesos2::create threw an exception for solverName = \"" <<
+            solverName << "\", MAT = " << TypeNameTraits<MAT>::name () <<
+            ", and MV = " << TypeNameTraits<MV>::name () << ".  As a result, "
+            "we will skip attempting to create this solver using Trilinos::"
+            "Details::getLinearSolver." << endl;
+          skip = true;
+        }
+        if (solver.is_null ()) {
+          out << "Amesos2::create returned null for solverName = \"" <<
+            solverName << "\", MAT = " << TypeNameTraits<MAT>::name () <<
+            ", and MV = " << TypeNameTraits<MV>::name () << ".  As a result, "
+            "we will skip attempting to create this solver using Trilinos::"
+            "Details::getLinearSolver." << endl;
           skip = true;
         }
         if (! skip) {
-          testSolver<SC, LO, GO, NT> (out, success, *X, A, *B, *X_exact, solverName);
+          ++numSolversSupported;
+          bool testSuccess = true;
+          testSolver<SC, LO, GO, NT> (out, testSuccess, *X, A, *B, *X_exact, solverName);
+          success = success && testSuccess;
         }
       }
+    }
+
+    if (numSolversSupported == 0) {
+      success = false;
+      out << "*** Amesos2::create doesn't actually support any solvers for "
+          << "SC = " << TypeNameTraits<SC>::name ()
+          << " , LO = " << TypeNameTraits<LO>::name ()
+          << ", GO = " << TypeNameTraits<GO>::name ()
+          << ", and NT = " << TypeNameTraits<NT>::name () << "." << endl;
     }
   }
 

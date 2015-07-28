@@ -646,6 +646,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
   typedef GlobalOrdinal GO;
   typedef Node NT;
   typedef typename Tpetra::Vector<SC,LO,GO,NT>::mag_type mag_type;
+  typedef Teuchos::ScalarTraits<SC> STS;
 
   typedef Tpetra::CrsMatrix<SC,LO,GO,NT>   crs_matrix_type;
   typedef Tpetra::RowMatrix<SC,LO,GO,NT>   row_matrix_type;
@@ -765,9 +766,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, SuperLU, Scalar, Local
   prec.apply (x, z);
 
   out << "Comparing results of two solves" << endl;
-  Teuchos::Array<mag_type> ynorms(1),znorms(1);
-  y.norm2(ynorms());
-  z.norm2(znorms());
+  Teuchos::Array<mag_type> ynorms (y.getNumVectors ()), znorms (z.getNumVectors ());
+  y.norm2 (ynorms ());
+  z.norm2 (znorms ());
   out << "solution norm, sparse direct solve: " << std::setprecision(7) << ynorms[0] << endl;
   out << "solution norm,  dense direct solve: " << std::setprecision(7) << znorms[0] << endl;
   TEST_FLOATING_EQUALITY(ynorms[0], znorms[0], 10* STS::eps ());

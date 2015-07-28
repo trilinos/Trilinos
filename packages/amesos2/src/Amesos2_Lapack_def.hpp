@@ -63,8 +63,8 @@ namespace Amesos2 {
 
   template <class Matrix, class Vector>
   Lapack<Matrix,Vector>::Lapack(Teuchos::RCP<const Matrix> A,
-				Teuchos::RCP<Vector>       X,
-				Teuchos::RCP<const Vector> B)
+                                Teuchos::RCP<Vector>       X,
+                                Teuchos::RCP<const Vector> B)
     : SolverCore<Amesos2::Lapack,Matrix,Vector>(A, X, B) // instantiate superclass
     , nzvals_()
     , rowind_()
@@ -114,17 +114,17 @@ namespace Amesos2 {
 
       {
 #ifdef HAVE_AMESOS2_TIMERS
-	Teuchos::TimeMonitor numFactTimer( this->timers_.numFactTime_ );
+        Teuchos::TimeMonitor numFactTimer( this->timers_.numFactTime_ );
 #endif
-	factor_ierr = solver_.factor();
+        factor_ierr = solver_.factor();
       }
     }
 
     Teuchos::broadcast(*(this->getComm()), 0, &factor_ierr);
     TEUCHOS_TEST_FOR_EXCEPTION( factor_ierr != 0,
-				std::runtime_error,
-				"Lapack factor routine returned error code "
-				<< factor_ierr );
+                                std::runtime_error,
+                                "Lapack factor routine returned error code "
+                                << factor_ierr );
     return( 0 );
   }
 
@@ -132,7 +132,7 @@ namespace Amesos2 {
   template <class Matrix, class Vector>
   int
   Lapack<Matrix,Vector>::solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
-				    const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
+                                    const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
   {
     using Teuchos::as;
 
@@ -151,12 +151,12 @@ namespace Amesos2 {
       Teuchos::TimeMonitor redistTimer( this->timers_.vecRedistTime_ );
 #endif
       typedef Util::get_1d_copy_helper<MultiVecAdapter<Vector>,
-				       scalar_type> copy_helper;
+                                       scalar_type> copy_helper;
       copy_helper::do_get(B, rhsvals_(), as<size_t>(ld_rhs), ROOTED);
     }
 
     int solve_ierr         = 0;
-    int unequilibrate_ierr = 0;
+    // int unequilibrate_ierr = 0; // unused
 
     if( this->root_ ){
 #ifdef HAVE_AMESOS2_TIMERS
@@ -167,10 +167,10 @@ namespace Amesos2 {
       typedef Teuchos::SerialDenseMatrix<int,scalar_type> DenseMat;
 
       DenseMat rhs_dense_mat(Teuchos::View, rhsvals_.getRawPtr(),
-				  as<int>(ld_rhs), as<int>(ld_rhs), as<int>(nrhs));
+                                  as<int>(ld_rhs), as<int>(ld_rhs), as<int>(nrhs));
 
       solver_.setVectors( rcpFromRef(rhs_dense_mat),
-			  rcpFromRef(rhs_dense_mat) );
+                          rcpFromRef(rhs_dense_mat) );
 
       solve_ierr = solver_.solve();
 
@@ -180,9 +180,9 @@ namespace Amesos2 {
     // Consolidate and check error codes
     Teuchos::broadcast(*(this->getComm()), 0, &solve_ierr);
     TEUCHOS_TEST_FOR_EXCEPTION( solve_ierr != 0,
-				std::runtime_error,
-				"Lapack solver solve method returned with error code "
-				<< solve_ierr );
+                                std::runtime_error,
+                                "Lapack solver solve method returned with error code "
+                                << solve_ierr );
 
     /* Update X's global values */
     {
@@ -192,8 +192,8 @@ namespace Amesos2 {
 
       Util::put_1d_data_helper<
       MultiVecAdapter<Vector>,scalar_type>::do_put(X, rhsvals_(),
-						   as<size_t>(ld_rhs),
-						   ROOTED);
+                                                   as<size_t>(ld_rhs),
+                                                   ROOTED);
     }
 
     return( 0 );
@@ -216,7 +216,7 @@ namespace Amesos2 {
   Lapack<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
   {
     solver_.solveWithTranspose( parameterList->get<bool>("Transpose",
-							 this->control_.useTranspose_) );
+                                                         this->control_.useTranspose_) );
 
     solver_.factorWithEquilibration( parameterList->get<bool>("Equilibrate", true) );
 
@@ -270,12 +270,12 @@ namespace Amesos2 {
 #endif
 
       // typedef Util::get_ccs_helper<MatrixAdapter<Matrix>,
-      //	scalar_type, global_ordinal_type, global_size_type> ccs_helper;
+      //        scalar_type, global_ordinal_type, global_size_type> ccs_helper;
       typedef Util::get_ccs_helper<MatrixAdapter<Matrix>,
-	scalar_type, int, int> ccs_helper;
+        scalar_type, int, int> ccs_helper;
       ccs_helper::do_get(this->matrixA_.ptr(),
-			 nzvals_(), rowind_(), colptr_(),
-			 nnz_ret, ROOTED, SORTED_INDICES);
+                         nzvals_(), rowind_(), colptr_(),
+                         nnz_ret, ROOTED, SORTED_INDICES);
   }
 
     if( this->root_ ){
@@ -285,11 +285,11 @@ namespace Amesos2 {
       // Put entries of ccs representation into the dense matrix
       global_size_type end_col = this->globalNumCols_;
       for( global_size_type col = 0; col < end_col; ++col ){
-	global_ordinal_type ptr = colptr_[col];
-	global_ordinal_type end_ptr = colptr_[col+1];
-	for( ; ptr < end_ptr; ++ptr ){
-	  lu_(rowind_[ptr], col) = nzvals_[ptr];
-	}
+        global_ordinal_type ptr = colptr_[col];
+        global_ordinal_type end_ptr = colptr_[col+1];
+        for( ; ptr < end_ptr; ++ptr ){
+          lu_(rowind_[ptr], col) = nzvals_[ptr];
+        }
       }
 
       // lu_.print(std::cout);
@@ -305,4 +305,4 @@ namespace Amesos2 {
 
 } // end namespace Amesos2
 
-#endif	// AMESOS2_LAPACK_DEF_HPP
+#endif  // AMESOS2_LAPACK_DEF_HPP

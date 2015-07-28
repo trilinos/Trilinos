@@ -777,7 +777,6 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
 } // namespace Ifpack2
 
 #define IFPACK2_TRIDICONTAINER_INSTANT(S,LO,GO,N) \
-  template class Ifpack2::TriDiContainer< Tpetra::CrsMatrix<S, LO, GO, N>, S >; \
   template class Ifpack2::TriDiContainer< Tpetra::RowMatrix<S, LO, GO, N>, S >;
 
 #endif // IFPACK2_TRIDICONTAINER_HPP

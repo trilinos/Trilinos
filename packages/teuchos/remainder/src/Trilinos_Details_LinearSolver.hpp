@@ -192,9 +192,10 @@ public:
 
   /// \brief Set this solver's parameters.
   ///
-  /// Setting the parameters resets all solver setup, both symbolic
-  /// and numeric.  You must recompute all setup (by calling
-  /// symbolic() and numeric()) before you may call solve() again.
+  /// Depending on the solver and which parameters you set or changed,
+  /// you may have to recompute the symbolic or numeric setup (by
+  /// calling symbolic() resp. numeric()) after calling
+  /// setParameters(), before you may call solve() again.
   ///
   /// Different solver implementations have different ideas about how
   /// to treat parameters.  Some of them (like those in Ifpack2) treat

@@ -56,33 +56,35 @@ namespace MueLu {
   template<class Node>
   Teuchos::RCP<const Tpetra::Map<int,int,Node> >
   AMGXOperator<double,int,int,Node>::getDomainMap() const {
-     return domainMap_;
+    return domainMap_;
   }
 
   template<class Node>
   Teuchos::RCP<const Tpetra::Map<int,int,Node> > AMGXOperator<double,int,int,Node>::getRangeMap() const {
-     return rangeMap_;
+    return rangeMap_;
   }
 
   template<class Node>
   void AMGXOperator<double,int,int,Node>::apply(const Tpetra::MultiVector<double,int,int,Node>& X,
-                                                Tpetra::MultiVector<double,int,int,Node>& Y,
+                                                Tpetra::MultiVector<double,int,int,Node>&       Y,
                                                 Teuchos::ETransp mode, double alpha, double beta) const {
     try {
-      Teuchos::ArrayRCP<const double> xdata;
-      Teuchos::ArrayRCP<double> ydata;
-      for(int i = 0; i < Y.getNumVectors(); i++){
-      xdata = X.getData(i);
-      ydata = Y.getDataNonConst(i);
-      AMGX_vector_upload(X_, N, 1, &xdata[0]);
-      AMGX_vector_upload(Y_, N, 1, &ydata[0]);
-      AMGX_solver_solve(Solver_, Y_, X_);
-      AMGX_vector_download(Y_, &ydata[0]);
+      ArrayRCP<const double>   xdata;
+      ArrayRCP<double>         ydata;
+
+      for (int i = 0; i < Y.getNumVectors(); i++) {
+        xdata = X.getData(i);
+        ydata = Y.getDataNonConst(i);
+
+        AMGX_vector_upload(X_, N_, 1, &xdata[0]);
+        AMGX_vector_upload(Y_, N_, 1, &ydata[0]);
+
+        AMGX_solver_solve(Solver_, X_, Y_);
+        AMGX_vector_download(Y_, &ydata[0]);
       }
     } catch (std::exception& e) {
-        std::string eW = e.what();
-        std::string errMsg = "Caught an exception in MueLu::AMGXOperator::Apply():\n" + eW + "\n";
-        throw Exceptions::RuntimeError(errMsg);
+      std::string errMsg = std::string("Caught an exception in MueLu::AMGXOperator::Apply():\n") + e.what() + "\n";
+      throw Exceptions::RuntimeError(errMsg);
     }
   }
 
