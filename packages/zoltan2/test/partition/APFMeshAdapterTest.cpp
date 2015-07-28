@@ -215,6 +215,7 @@ int main(int narg, char *arg[]) {
   int nParts = CommT->getSize();
   double imbalance = 1.1;
   int layers=2;
+  int ghost_metric=false;
   // Read run-time options.
   Teuchos::CommandLineProcessor cmdp (false, false);
   cmdp.setOption("meshfile", &meshFileName,
@@ -233,6 +234,8 @@ int main(int narg, char *arg[]) {
                  "Location of new partitioned apf mesh. Ex: 4/torus.smb");
   cmdp.setOption("layers", &layers,
                  "Number of layers for ghosting");
+  cmdp.setOption("ghost_metric", &ghost_metric,
+                 "0 does not compute ghost metric otherwise compute both before and after");
   cmdp.parse(narg, arg);
   
   /***************************************************************************/
@@ -329,7 +332,7 @@ int main(int narg, char *arg[]) {
 
   }
   else if (action=="hg_ghost") {
-     do_partitioning = true;
+    do_partitioning = true;
     params.set("debug_level", "no_status");
     params.set("imbalance_tolerance", imbalance);
     params.set("algorithm", "zoltan");
@@ -340,7 +343,6 @@ int main(int narg, char *arg[]) {
     zparams.set("LB_METHOD","HYPERGRAPH");
     zparams.set("LB_APPROACH","PARTITION");
     zparams.set("PHG_EDGE_SIZE_THRESHOLD", "1.0");
-    //zparams.set("PHG_COARSENING_LIMIT", "2");
     primary="vertex";
     adjacency="edge";
     needSecondAdj=true;
@@ -361,7 +363,7 @@ int main(int narg, char *arg[]) {
   inputAdapter_t ia(*CommT, m,primary,adjacency,needSecondAdj);  
   double time_2=PCU_Time();
 
-  if (action=="hg_ghost") {
+  if (ghost_metric) {
     const baseMeshAdapter_t *base_ia = dynamic_cast<const baseMeshAdapter_t*>(&ia);
     Zoltan2::modelFlag_t graphFlags_;
     RCP<Zoltan2::Environment> env;
@@ -422,7 +424,7 @@ int main(int narg, char *arg[]) {
   
   Parma_PrintPtnStats(m,"after");
   
-  if (action=="hg_ghost") {
+  if (ghost_metric) {
     inputAdapter_t ia2(*CommT, m,primary,adjacency,true);  
     const baseMeshAdapter_t *base_ia = dynamic_cast<const baseMeshAdapter_t*>(&ia2);
 

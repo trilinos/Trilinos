@@ -214,6 +214,11 @@ public:
     return 0;
   }
 
+  /* NOTE: Only elements are uniquely provided from the APF Mesh Adapter.
+     All other elements have copies across the shared parts
+     These copies can be joined by the sharing of a unique global id
+     getGlobalNumOf(type) != Sum(getLocalNumOf(type))
+  */
   size_t getLocalNumOf(MeshEntityType etype) const
   {
     int dim = entityZ2toAPF(etype);

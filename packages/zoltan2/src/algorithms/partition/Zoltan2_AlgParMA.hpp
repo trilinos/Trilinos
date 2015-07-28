@@ -170,6 +170,8 @@ private:
     
   }
 
+  //Sets the weights of each entity in dimension 'dim' to 1
+  //TODO set the weights to those provided by the mesh adapter
   void setEntWeights(int dim, apf::MeshTag* tag) {
     apf::MeshIterator* itr = m->begin(dim);
     apf::MeshEntity* ent;
@@ -182,6 +184,7 @@ private:
    
   }
   
+  //Helper function to set the weights of each dimension needed by the specific parma algorithm
   apf::MeshTag* setWeights(bool vtx, bool edge, bool elm) {
     apf::MeshTag* tag = m->createDoubleTag("parma_weight",1);
     if (vtx)
@@ -195,7 +198,7 @@ private:
   }
 
 
-  //APF Mesh construction helper functions
+  //APF Mesh construction helper functions modified and placed here to support arbitrary entity types
   void constructVerts(const zgid_t* conn, lno_t num_adj, apf::GlobalToVert& result) {
     apf::ModelEntity* interior = m->findModelEntity(m->getDimension(), 0);
     for (lno_t i=0;i<num_adj;i++) 
@@ -377,6 +380,10 @@ public:
     else
       throw std::runtime_error("ParMA neeeds faces or region information");
 
+    //GFD Currently not allowing ParMA to balance non element primary types
+    if (dim!=adapter->getPrimaryEntityType())
+      throw std::runtime_error("ParMA only supports balancing primary type==mesh element");
+    
     //Create empty apf mesh
     gmi_register_null();
     gmi_model* g = gmi_load(".null");
@@ -398,7 +405,6 @@ public:
     //get vertex global ids
     const zgid_t* vertex_gids;
     adapter->getIDsViewOf(MESH_VERTEX,vertex_gids);
-    
     
     //Get vertex coordinates
     int c_dim = adapter->getDimension();
