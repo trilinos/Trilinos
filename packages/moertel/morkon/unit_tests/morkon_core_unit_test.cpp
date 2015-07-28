@@ -100,7 +100,7 @@ TEST(morkon,compute_normals_single_tri) {
   const int nFaces(1);
   const int nEntries(3);
   int val[] = {faceNumber,faceNumber,faceNumber};
-  int rows[] = {0,1,2};
+  int rows[] = {0,1,2,3};
   int cols[] = {0,0,0};
   nodeToFaces.import( label, nNodes, nFaces, nEntries, val, rows, cols );
 

@@ -124,8 +124,7 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::mortar_integrate(Tpetra::CrsMat
     return false;
   }
 
-  node_support_sets_t node_support_sets;
-  if (!compute_boundary_node_support_sets(coarse_contacts, node_support_sets))
+  if (!compute_boundary_node_support_sets(coarse_contacts))
   {
     return false;
   }
@@ -133,17 +132,17 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::mortar_integrate(Tpetra::CrsMat
   // Will our integration scheme require node_support_sets the way the legacy version does?
 
   mortar_pallets_t pallets_for_integration;
-  if (!compute_contact_pallets(pallets_for_integration))
+  if (!compute_contact_pallets(coarse_contacts, pallets_for_integration))
   {
     return false;
   }
 
-  if (!integrate_pallets_into_onrank_D(pallets_for_integration, node_support_sets))
+  if (!integrate_pallets_into_onrank_D(pallets_for_integration))
   {
     return false;
   }
 
-  if (!integrate_pallets_into_onrank_M(pallets_for_integration, node_support_sets))
+  if (!integrate_pallets_into_onrank_M(pallets_for_integration))
   {
     return false;
   }
@@ -189,10 +188,6 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
   points_dvt                                     node_coords;
   on_boundary_table_dvt                  is_node_on_boundary;
 
-  prepare_for_host_write(node_to_global_id, face_to_global_id,
-                         face_to_interface_and_side, face_to_num_nodes, face_to_nodes,
-                         node_coords, is_node_on_boundary);
-
   for (typename interfaces_map_t::iterator ifcs_i = m_interfaces.begin(); ifcs_i != m_interfaces.end(); ++ifcs_i)
   {
     Interface<DeviceType,DIM,FACE_TYPE> &interface = *ifcs_i->second;
@@ -214,8 +209,8 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
-void
-Morkon_Manager<DeviceType, DIM, FACE_TYPE>::prepare_for_host_write(
+bool
+Morkon_Manager<DeviceType, DIM, FACE_TYPE>::migrate_to_device(
                                         local_to_global_idx_dvt node_to_global_id,
                                         local_to_global_idx_dvt face_to_global_id,
                                         face_to_interface_and_side_dvt face_to_interface_and_side,
@@ -231,19 +226,7 @@ Morkon_Manager<DeviceType, DIM, FACE_TYPE>::prepare_for_host_write(
     face_to_nodes.template modify<typename face_to_nodes_dvt::t_host>();
     node_coords.template modify<typename points_dvt::t_host>();
     is_node_on_boundary.template modify<typename on_boundary_table_dvt::t_host>();
-}
 
-template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
-bool
-Morkon_Manager<DeviceType, DIM, FACE_TYPE>::migrate_to_device(
-                                        local_to_global_idx_dvt node_to_global_id,
-                                        local_to_global_idx_dvt face_to_global_id,
-                                        face_to_interface_and_side_dvt face_to_interface_and_side,
-                                        face_to_num_nodes_dvt face_to_num_nodes,
-                                        face_to_nodes_dvt face_to_nodes,
-                                        points_dvt node_coords,
-                                        on_boundary_table_dvt is_node_on_boundary)
-{
     face_to_global_id.template sync<typename local_to_global_idx_dvt::t_dev>();
     node_to_global_id.template sync<typename local_to_global_idx_dvt::t_dev>();
     face_to_interface_and_side.template sync<typename face_to_interface_and_side_dvt::t_dev>();
@@ -292,15 +275,15 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::find_possible_contact_face_pair
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool 
-Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_boundary_node_support_sets(contact_search_results_t course_search_results,
-                                                                    node_support_sets_t &support_sets)
+Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_boundary_node_support_sets(contact_search_results_t course_search_results)
 {
   std::cout << "Need to write compute_boundary_node_support_sets()" << std::endl;
   return false;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
-bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_contact_pallets(mortar_pallets_t &resulting_pallets)
+bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_contact_pallets(contact_search_results_t course_search_results,
+                                                                         mortar_pallets_t &resulting_pallets)
 {
   // In the Serial prototype and the Cuda version, we can use atomic fetch and adds to allocate space for the
   // pallets resulting from pair of faces.
@@ -314,8 +297,7 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_contact_pallets(mortar_
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::
-integrate_pallets_into_onrank_D(mortar_pallets_t pallets_to_integrate_on,
-                                const node_support_sets_t &support_sets )
+integrate_pallets_into_onrank_D(mortar_pallets_t pallets_to_integrate_on)
 {
   std::cout << "Need to write integrate_pallets_into_onrank_D()" << std::endl;
   return false;
@@ -323,8 +305,7 @@ integrate_pallets_into_onrank_D(mortar_pallets_t pallets_to_integrate_on,
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::
-integrate_pallets_into_onrank_M(mortar_pallets_t pallets_to_integrate_on,
-                                const node_support_sets_t &support_sets )
+integrate_pallets_into_onrank_M(mortar_pallets_t pallets_to_integrate_on)
 {
   std::cout << "Need to write integrate_pallets_into_onrank_M()" << std::endl;
   return false;

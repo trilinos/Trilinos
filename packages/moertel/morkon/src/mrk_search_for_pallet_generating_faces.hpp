@@ -64,7 +64,7 @@ struct search_for_pallet_generating_faces
     typedef typename fields_t::points_mrat                                    points_mrat;
     typedef Kokkos::View<local_idx_t *[2], execution_space>  face_to_interface_and_side_t;
 
-    typedef Kokkos::View<local_idx_t *[3], execution_space>      contact_search_results_t;
+    typedef Kokkos::View<local_idx_t *[2], execution_space>      contact_search_results_t;
 
     face_to_num_nodes_t                     m_face_to_num_nodes;
     face_to_nodes_t                             m_face_to_nodes;

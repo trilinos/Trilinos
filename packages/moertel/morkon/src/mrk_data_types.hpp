@@ -133,22 +133,22 @@ struct Mrk_MortarPallets
   typedef Kokkos::View<double *[DIM], execution_space>                     points_t;
   typedef points_t                                                        normals_t;
   typedef Kokkos::View<double *[DIM][DIM], execution_space>              vertices_t;
-  typedef Kokkos::View<double *[2][DIM][DIM - 1], execution_space> shape_fn_parms_t;
+
+  //  each index quadruple is (pallet #, node # on pallet, interface side, psi or eta)
+  typedef Kokkos::View<double *[DIM][2][DIM - 1], execution_space> shape_fn_parms_t;
 
   // Each pallet is associated with a mortar-side face and a non-mortar-side face.
-  faces_t  m_generating_faces;
+  faces_t          m_generating_faces;
 
   // Each pallet has a projection (mortar) plane.
-  normals_t         m_plane_normals;
-  points_t        m_plane_witnesses;
+  normals_t           m_plane_normals;
+  points_t          m_plane_witnesses;
 
   // Each pallet has DIM vertices that lie on that plane.
-  vertices_t             m_vertices;
+  vertices_t               m_vertices;
 
   // Each pallet has shape function parameters for the mortar and the non-mortar side
   // points that project to the pallet vertices.
-  // Are they needed?  I.e., are they helpful for computing the integration points
-  // of each pallet on the faces?
   shape_fn_parms_t  m_vertex_sf_parms;
 };
 

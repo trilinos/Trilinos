@@ -130,7 +130,7 @@ class Morkon_Manager
                            typename face_to_interface_and_side_t::array_layout,
                            typename face_to_interface_and_side_t::execution_space>  face_to_interface_and_side_dvt;
 
-  typedef Kokkos::View<local_idx_t *[3], execution_space>          contact_search_results_t;
+  typedef Kokkos::View<local_idx_t *[2], execution_space>          contact_search_results_t;
 
   // Need a DualView of this one
   typedef Kokkos::View<bool *, execution_space>                         on_boundary_table_t;
@@ -190,14 +190,6 @@ protected:
 
   bool internalize_interfaces();
 
-  void prepare_for_host_write(local_to_global_idx_dvt node_to_global_id,
-                              local_to_global_idx_dvt face_to_global_id,
-                              face_to_interface_and_side_dvt face_to_interface_and_side,
-                              face_to_num_nodes_dvt face_to_num_nodes,
-                              face_to_nodes_dvt face_to_nodes,
-                              points_dvt node_coords,
-                              on_boundary_table_dvt is_node_on_boundary);
-
   bool migrate_to_device(local_to_global_idx_dvt node_to_global_id,
                          local_to_global_idx_dvt face_to_global_id,
                          face_to_interface_and_side_dvt face_to_interface_and_side,
@@ -207,17 +199,18 @@ protected:
                          on_boundary_table_dvt is_node_on_boundary);
 
   bool compute_face_and_node_normals();
+
   bool find_possible_contact_face_pairs(contact_search_results_t course_search_results);
-  bool compute_boundary_node_support_sets(contact_search_results_t course_search_results,
-                                          node_support_sets_t &support_sets);
-  bool compute_contact_pallets(mortar_pallets_t &resulting_pallets);
+
+  bool compute_boundary_node_support_sets(contact_search_results_t course_search_results);
+
+  bool compute_contact_pallets(contact_search_results_t course_search_results,
+                               mortar_pallets_t &resulting_pallets);
 
   // Note that the non-mortar-side integration points needed in computing D are also
   // needed to compute M.  Store and re-use, or re-compute?
-  bool integrate_pallets_into_onrank_D(mortar_pallets_t pallets_to_integrate_on,
-                                       const node_support_sets_t &support_sets);
-  bool integrate_pallets_into_onrank_M(mortar_pallets_t pallets_to_integrate_on,
-                                       const node_support_sets_t &support_sets);
+  bool integrate_pallets_into_onrank_D(mortar_pallets_t pallets_to_integrate_on);
+  bool integrate_pallets_into_onrank_M(mortar_pallets_t pallets_to_integrate_on);
 
 };
 
