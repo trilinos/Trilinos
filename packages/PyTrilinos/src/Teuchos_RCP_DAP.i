@@ -319,7 +319,7 @@
   int res = SWIG_ConvertPtr($input, 0, $descriptor(Teuchos::RCP< CLASS > *), 0);
   if (SWIG_CheckState(res)) $1 = 1;
   else
-    if (PyObject_HasAttrString($input, "__distarry__")) $1 = 1;
+    if (PyObject_HasAttrString($input, "__distarray__")) $1 = 1;
     else
       if ((Teuchos::DefaultComm<int>::getComm()->getSize() == 1) &&
           (PyArray_Check($input))) $1 = 1;
