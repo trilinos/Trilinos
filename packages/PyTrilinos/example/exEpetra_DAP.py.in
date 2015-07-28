@@ -1,0 +1,170 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# @HEADER
+# ***********************************************************************
+#
+#          PyTrilinos: Python Interfaces to Trilinos Packages
+#                 Copyright (2014) Sandia Corporation
+#
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia
+# Corporation, the U.S. Government retains certain rights in this
+# software.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Questions? Contact William F. Spotz (wfspotz@sandia.gov)
+#
+# ***********************************************************************
+# @HEADER
+
+# Example script exEpetra_DAP.py is to demonstrate how the Epetra DAP (DistArray
+# Protocol) typemaps work
+
+#
+# System imports
+from optparse import *
+import sys
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Teuchos = fromPyTrilinosImport('Teuchos', options.testharness)
+Epetra  = fromPyTrilinosImport('Epetra' , options.testharness)
+Domi    = fromPyTrilinosImport('Domi'   , options.testharness)
+
+# Import the NumPy module
+import numpy
+
+def main(iAmRoot):
+  # Initialize the communicators
+  eComm  = Epetra.PyComm()
+  tComm  = Teuchos.DefaultComm.getComm()
+  mdComm = Domi.MDComm((-1,))
+  
+  # Intitialize the maps
+  size  = 10
+  eMap  = Epetra.Map(size, 0, eComm)
+  mdMap = Domi.MDMap(mdComm, (size,))
+
+  # Construct a CRS matrix
+  matrix = Epetra.CrsMatrix(Epetra.Copy, eMap, 3)
+
+  # Initialize the error count
+  errors = 0
+
+  # We are going to demonstrate the DAP typemaps by constructing
+  # Epetra>LinearProblem objects.  In C++, these constructors take two
+  # Epetra::MultiVectors.  The DAP typemaps allow us to provide any object that
+  # supports the DistArray Protocol as substitute arguments.  They also allow
+  # NumPy arrays when the environment is serial.
+
+  # For the serial case, we will create two NumPy arrays and provide them to the
+  # Epetra.LinearProblem constructor
+  if tComm.getSize() == 1:
+      x1  = numpy.zeros((size,), dtype='d')
+      b1  = numpy.ones((size,), dtype='d')
+      lp1 = Epetra.LinearProblem(matrix, x1, b1)
+      if iAmRoot:
+          print "Successfully built Epetra.LinearProblem with NumPy arrays"
+      if not (lp1.GetLHS() == 0.0).all():
+          if iAmRoot:
+              print "Error with serial NumPy LHS vector"
+          errors += 1
+      if not (lp1.GetRHS() == 1.0).all():
+          if iAmRoot:
+              print "Error with serial NumPy RHS vector"
+          errors += 1
+
+  # Now we will construct two Domi.MDVectors and provide them as arguments to
+  # the Epetra.LinearProblem constructor
+  x2 = Domi.MDVector(mdMap, dtype='d')
+  x2.getData()[:] = 0.0
+  print x2
+  b2 = Domi.MDVector(mdMap, dtype='d')
+  b2.getData()[:] = 1.0
+  print b2
+  lp2 = Epetra.LinearProblem(matrix, x2, b2)
+  if iAmRoot:
+      print "Successfully built Epetra.LinearProblem with Domi MDVectors"
+  if not (lp2.GetLHS() == 0.0).all():
+      if iAmRoot:
+          print "Error with MDVector LHS vector"
+      errors += 1
+  if not (lp2.GetRHS() == 1.0).all():
+      if iAmRoot:
+          print "Error with MDVector RHS vector"
+      errors += 1
+
+  # Return the number of errors
+  return errors
+
+################################################################################
+
+if __name__ == "__main__":
+
+    # Obtain the default communicator
+    comm    = Teuchos.DefaultComm.getComm()
+    iAmRoot = comm.getRank() == 0
+
+    if iAmRoot:
+        print "*********************"
+        print "** exEpetra_DAP.py **"
+        print "*********************"
+
+    # Run the test and catch any errors
+    errors = 0
+    try:
+        errors = main(iAmRoot)
+    except Exception, e:
+        print "Processor", comm.getRank(), ": Exception raised"
+        print "  Exception text = '%s'" % str(e)
+        errors = 1
+
+    # Sum the errors, report the status and exit
+    print "Processor", comm.getRank(), ": errors =", errors
+    totalErrors = comm.reduceAll(Teuchos.REDUCE_SUM, errors)
+    print "Processor", comm.getRank(), ": totalErrors =", totalErrors
+    if iAmRoot:
+        if totalErrors == 0:
+            print "End Result: TEST PASSED"
+        else:
+            print "End Result: TEST FAILED"
+    sys.exit(totalErrors)
