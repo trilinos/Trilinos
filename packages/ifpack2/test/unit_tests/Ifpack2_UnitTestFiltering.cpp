@@ -100,7 +100,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // ====================================== //
   Scalar alpha = 100.0;
   Scalar beta = 1.0;
-  Ifpack2::DiagonalFilter<CRS > DiagA(Matrix,alpha,beta);
+  Ifpack2::DiagonalFilter<ROW> DiagA(Matrix,alpha,beta);
 
   // Apply w/ Filter
   DiagA.apply(x,y);
