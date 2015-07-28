@@ -49,9 +49,6 @@
 #if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
 #  include "Ifpack2_SupportGraph.hpp"
 #endif // defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
-#include "Ifpack2_RILUK.hpp"
-#include "Ifpack2_Experimental_RBILUK.hpp"
-#include "Ifpack2_Factory.hpp"
 
 namespace Ifpack2 {
 namespace Details {
