@@ -143,7 +143,7 @@ convertPythonToEpetraIntVector(PyObject * pyobj)
   static swig_type_info * swig_EIV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< Epetra_IntVector >*");
   static swig_type_info * swig_DMDV_ptr =
-    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<int> >*");
+    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<int,Domi::DefaultNode::DefaultNodeType> >*");
   //
   // Get the default communicator
   const Teuchos::RCP< const Teuchos::Comm<int> > comm =
@@ -238,7 +238,7 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
   static swig_type_info * swig_EMV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< Epetra_MultiVector >*");
   static swig_type_info * swig_DMDV_ptr =
-    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<double> >*");
+    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<double,Domi::DefaultNode::DefaultNodeType> >*");
   //
   // Get the default communicator
   const Teuchos::RCP< const Teuchos::Comm<int> > comm =
@@ -346,7 +346,7 @@ convertPythonToEpetraVector(PyObject * pyobj)
   static swig_type_info * swig_EV_ptr =
     SWIG_TypeQuery("Teuchos::RCP< Epetra_Vector >*");
   static swig_type_info * swig_DMDV_ptr =
-    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<double> >*");
+    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector<double,Domi::DefaultNode::DefaultNodeType> >*");
   //
   // Get the default communicator
   const Teuchos::RCP< const Teuchos::Comm<int> > comm =
