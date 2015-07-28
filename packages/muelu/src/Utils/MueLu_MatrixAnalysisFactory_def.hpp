@@ -85,22 +85,22 @@ RCP<const ParameterList> MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdin
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
-  Input(currentLevel, "A");
+void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  Input(fineLevel, "A");
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level & currentLevel) const {
-  FactoryMonitor m(*this, "MatrixAnalysis Factory ", currentLevel);
+void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &fineLevel, Level &coarseLevel) const {
+  FactoryMonitor m(*this, "MatrixAnalysis Factory ", fineLevel);
 
-  Teuchos::RCP<Matrix> A = Get< Teuchos::RCP<Matrix> > (currentLevel, "A");
+  Teuchos::RCP<Matrix> A = Get< Teuchos::RCP<Matrix> > (fineLevel, "A");
   Teuchos::RCP<const Teuchos::Comm<int> > comm = A->getRangeMap()->getComm();
 
   //const ParameterList & pL = GetParameterList();
 
   // General information
   {
-    GetOStream(Runtime0) << "~~~~~~~~ GENERAL INFORMATION ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (Level " << currentLevel.GetLevelID() << ")" << std::endl;
+    GetOStream(Runtime0) << "~~~~~~~~ GENERAL INFORMATION ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (Level " << fineLevel.GetLevelID() << ")" << std::endl;
     GetOStream(Runtime0) << "A is a " << A->getRangeMap()->getGlobalNumElements() << " x " << A->getDomainMap()->getGlobalNumElements() << " matrix." << std::endl;
 
     if (A->IsView("stridedMaps") && Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap("stridedMaps")) != Teuchos::null) {
@@ -146,7 +146,7 @@ void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Lev
 
   // Matrix diagonal
   {
-    GetOStream(Runtime0) << "~~~~~~~~ MATRIX DIAGONAL ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (Level " << currentLevel.GetLevelID() << ")" << std::endl;
+    GetOStream(Runtime0) << "~~~~~~~~ MATRIX DIAGONAL ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (Level " << fineLevel.GetLevelID() << ")" << std::endl;
     Teuchos::RCP<Vector> diagAVec = VectorFactory::Build(A->getRowMap(),true);
     A->getLocalDiagCopy(*diagAVec);
     Teuchos::ArrayRCP< const Scalar > diagAVecData = diagAVec->getData(0);
@@ -179,7 +179,7 @@ void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Lev
 
   // Diagonal dominance?
   {
-    GetOStream(Runtime0) << "~~~~~~~~ DIAGONAL DOMINANCE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (Level " << currentLevel.GetLevelID() << ")" << std::endl;
+    GetOStream(Runtime0) << "~~~~~~~~ DIAGONAL DOMINANCE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (Level " << fineLevel.GetLevelID() << ")" << std::endl;
     // loop over all local rows in matrix A and keep diagonal entries if corresponding
     // matrix rows are not contained in permRowMap
     GlobalOrdinal lnumWeakDiagDomRows = 0;
@@ -232,70 +232,68 @@ void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Lev
 
   // multiply with one vector
   {
-    GetOStream(Runtime0) << "~~~~~~~~ Av with one vector ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (Level " << currentLevel.GetLevelID() << ")" << std::endl;
+    GetOStream(Runtime0) << "~~~~~~~~ Av with one vector ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (Level " << fineLevel.GetLevelID() << ")" << std::endl;
     Teuchos::RCP<Vector> ones = VectorFactory::Build(A->getDomainMap(), 1);
     ones->putScalar(one);
 
     Teuchos::RCP<Vector> res1 = VectorFactory::Build(A->getRangeMap(), false);
     A->apply(*ones, *res1, Teuchos::NO_TRANS, one, zero);
-    checkVectorEntries(res1,"after applying the one vector to A");
+    checkVectorEntries(res1,std::string("after applying the one vector to A"));
   }
 
   {
-    GetOStream(Runtime0) << "~~~~~~~~ Av with random vector ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (Level " << currentLevel.GetLevelID() << ")" << std::endl;
+    GetOStream(Runtime0) << "~~~~~~~~ Av with random vector ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (Level " << fineLevel.GetLevelID() << ")" << std::endl;
     Teuchos::RCP<Vector> randvec = VectorFactory::Build(A->getDomainMap(), 1);
     randvec->randomize();
 
     Teuchos::RCP<Vector> resrand = VectorFactory::Build(A->getRangeMap(), false);
     A->apply(*randvec, *resrand, Teuchos::NO_TRANS, one, zero);
-    checkVectorEntries(resrand,"after applying random vector to A");
+    checkVectorEntries(resrand,std::string("after applying random vector to A"));
   }
 
   // apply Jacobi sweep
   {
-    GetOStream(Runtime0) << "~~~~~~~~ Damped Jacobi sweep (one vector) ~~~~~~~~~~~~~~~~~~~~~~~ (Level " << currentLevel.GetLevelID() << ")" << std::endl;
+    GetOStream(Runtime0) << "~~~~~~~~ Damped Jacobi sweep (one vector) ~~~~~~~~~~~~~~~~~~~~~~~ (Level " << fineLevel.GetLevelID() << ")" << std::endl;
     Teuchos::RCP<Vector> ones = VectorFactory::Build(A->getDomainMap(), 1);
     ones->putScalar(one);
 
     Teuchos::RCP<Vector> res1 = VectorFactory::Build(A->getRangeMap(), false);
     A->apply(*ones, *res1, Teuchos::NO_TRANS, one, zero);
-    checkVectorEntries(res1,"after applying one vector to A");
+    checkVectorEntries(res1,std::string("after applying one vector to A"));
 
     Teuchos::RCP<Vector> invDiag = Utils::GetMatrixDiagonalInverse(*A);
-    checkVectorEntries(invDiag,"in invDiag");
+    checkVectorEntries(invDiag,std::string("in invDiag"));
 
     Teuchos::RCP<Vector> res2 = VectorFactory::Build(A->getRangeMap(), false);
     res2->elementWiseMultiply (0.8, *invDiag, *res1, 0.0);
-    checkVectorEntries(res2,"after scaling Av with invDiag (with v the one vector)");
+    checkVectorEntries(res2,std::string("after scaling Av with invDiag (with v the one vector)"));
     res2->update(1.0, *ones, -1.0);
 
-    checkVectorEntries(res2,"after applying one damped Jacobi sweep (with one vector)");
+    checkVectorEntries(res2,std::string("after applying one damped Jacobi sweep (with one vector)"));
   }
 
   // apply Jacobi sweep
   {
-    GetOStream(Runtime0) << "~~~~~~~~ Damped Jacobi sweep (random vector) ~~~~~~~~~~~~~~~~~~~~ (Level " << currentLevel.GetLevelID() << ")" << std::endl;
+    GetOStream(Runtime0) << "~~~~~~~~ Damped Jacobi sweep (random vector) ~~~~~~~~~~~~~~~~~~~~ (Level " << fineLevel.GetLevelID() << ")" << std::endl;
     Teuchos::RCP<Vector> ones = VectorFactory::Build(A->getDomainMap(), 1);
     ones->randomize();
 
     Teuchos::RCP<Vector> res1 = VectorFactory::Build(A->getRangeMap(), false);
     A->apply(*ones, *res1, Teuchos::NO_TRANS, one, zero);
-    checkVectorEntries(res1,"after applying a random vector to A");
+    checkVectorEntries(res1,std::string("after applying a random vector to A"));
 
     Teuchos::RCP<Vector> invDiag = Utils::GetMatrixDiagonalInverse(*A);
-    checkVectorEntries(invDiag,"in invDiag");
+    checkVectorEntries(invDiag,std::string("in invDiag"));
 
     Teuchos::RCP<Vector> res2 = VectorFactory::Build(A->getRangeMap(), false);
     res2->elementWiseMultiply (0.8, *invDiag, *res1, 0.0);
-    checkVectorEntries(res2,"after scaling Av with invDiag (with v a random vector)");
+    checkVectorEntries(res2,std::string("after scaling Av with invDiag (with v a random vector)"));
     res2->update(1.0, *ones, -1.0);
 
-    checkVectorEntries(res2,"after applying one damped Jacobi sweep (with v a random vector)");
+    checkVectorEntries(res2,std::string("after applying one damped Jacobi sweep (with v a random vector)"));
   }
 
-  GetOStream(Runtime0) << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (Level " << currentLevel.GetLevelID() << ")" << std::endl;
-
-  currentLevel.Set("A", A, this);
+  GetOStream(Runtime0) << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ (Level " << fineLevel.GetLevelID() << ")" << std::endl;
 }
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

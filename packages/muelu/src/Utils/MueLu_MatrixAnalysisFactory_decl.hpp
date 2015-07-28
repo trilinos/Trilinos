@@ -59,7 +59,7 @@
 #include <Xpetra_ImportFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_SingleLevelFactoryBase.hpp"
+#include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
@@ -92,7 +92,7 @@ namespace MueLu {
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class MatrixAnalysisFactory : public SingleLevelFactoryBase {
+  class MatrixAnalysisFactory : public TwoLevelFactoryBase {
 #undef MUELU_MATRIXANALYSISFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -118,7 +118,7 @@ namespace MueLu {
         If the Build method of this class requires some data, but the generating factory is not specified in DeclareInput, then this class
         will fall back to the settings in FactoryManager.
     */
-    void DeclareInput(Level &currentLevel) const;
+    void DeclareInput(Level &fineLevel, Level &coarseLevel) const;
 
     //@}
 
@@ -126,7 +126,7 @@ namespace MueLu {
     //@{
 
     //! Build an object with this factory.
-    void Build(Level & currentLevel) const;
+    void Build(Level &fineLevel, Level &coarseLevel) const;
 
     //@}
 
