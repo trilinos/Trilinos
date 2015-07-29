@@ -116,9 +116,11 @@ struct Mrk_Fields
   typedef points_t                                                 normals_t;
   typedef points_mrat                                           normals_mrat;
 
-  points_t   m_node_coords;
-  normals_t m_node_normals;
-  normals_t m_face_normals;
+  points_t            m_node_coords;
+  normals_t          m_node_normals;
+  normals_t          m_face_normals;
+
+  points_t  m_predicted_node_coords;
 
   typedef Kokkos::DualView<typename points_t::value_type *[DIM],
                            typename points_t::array_layout,
