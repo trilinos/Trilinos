@@ -68,23 +68,48 @@ namespace MueLu {
   void AMGXOperator<double,int,int,Node>::apply(const Tpetra::MultiVector<double,int,int,Node>& X,
                                                 Tpetra::MultiVector<double,int,int,Node>&       Y,
                                                 Teuchos::ETransp mode, double alpha, double beta) const {
+    RCP<const Teuchos::Comm<int> > comm = Y.getMap()->getComm();
+
+    ArrayRCP<const double> mueluXdata, amgxXdata;
+    ArrayRCP<double>       mueluYdata, amgxYdata;
+
     try {
-      ArrayRCP<const double>   xdata;
-      ArrayRCP<double>         ydata;
-
       for (int i = 0; i < Y.getNumVectors(); i++) {
-        xdata = X.getData(i);
-        ydata = Y.getDataNonConst(i);
+        mueluXdata = X.getData(i);
+        mueluYdata = Y.getDataNonConst(i);
 
-        AMGX_vector_upload(X_, N_, 1, &xdata[0]);
-        AMGX_vector_upload(Y_, N_, 1, &ydata[0]);
+        if (comm->getSize() == 1) {
+          amgxXdata = mueluXdata;
+          amgxYdata = mueluYdata;
+
+        } else {
+          int n = mueluXdata.size();
+
+          amgxXdata.resize(n);
+          amgxYdata.resize(n);
+
+          ArrayRCP<double> amgxXdata_nonConst = Teuchos::arcp_const_cast<double>(amgxXdata);
+          for (int j = 0; j < n; j++) {
+            amgxXdata_nonConst[muelu2amgx_[j]] = mueluXdata[j];
+            amgxYdata         [muelu2amgx_[j]] = mueluYdata[j];
+          }
+        }
+
+        AMGX_vector_upload(X_, N_, 1, &amgxXdata[0]);
+        AMGX_vector_upload(Y_, N_, 1, &amgxYdata[0]);
 
         AMGX_solver_solve(Solver_, X_, Y_);
-        AMGX_vector_download(Y_, &ydata[0]);
 
-        // TODO: for MPI we need to add some code here to reorder ydata back
-        // using AMGX reordering
+        AMGX_vector_download(Y_,      &amgxYdata[0]);
+
+        if (comm->getSize() > 1) {
+          int n = mueluYdata.size();
+
+          for (int j = 0; j < n; j++)
+            mueluYdata[j] = amgxYdata[muelu2amgx_[j]];
+        }
       }
+
     } catch (std::exception& e) {
       std::string errMsg = std::string("Caught an exception in MueLu::AMGXOperator::Apply():\n") + e.what() + "\n";
       throw Exceptions::RuntimeError(errMsg);
