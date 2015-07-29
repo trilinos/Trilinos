@@ -202,7 +202,7 @@ namespace MueLu {
           }
         }
         TEUCHOS_TEST_FOR_EXCEPTION(!match, MueLu::Exceptions::RuntimeError, "AMGX requires that the processors that we send to and receive from are the same. "
-                                     "This is not the case: we send to {" << sendRanks << "} and receive from {" << recvRanks << "}");
+                                   "This is not the case: we send to {" << sendRanks << "} and receive from {" << recvRanks << "}");
 
         int        num_neighbors = sendRanks.size();  // does not include the calling process
         const int* neighbors     = &sendRanks[0];
@@ -216,50 +216,36 @@ namespace MueLu {
           hashTable.add(neighbors[i], i);
 
         // Construct send arrays
-        ArrayView<const size_t> sendSizes = distributor.getLengthsTo();
-        std::vector<int>        send_sizes(sendSizes.size());
-        for (int i = 0; i < sendSizes.size(); i++)
-          send_sizes[i] = Teuchos::as<int>(sendSizes[i]);
-
-        std::vector<std::vector<int> > sendDatas(num_neighbors);
-        std::vector<int*>              send_maps(num_neighbors);
-        for (int i = 0; i < num_neighbors; i++) {
-          sendDatas[i].reserve(send_sizes[i]);
-          send_maps[i] = &(sendDatas[i][0]);
-        }
-
         ArrayView<const int> exportLIDs = importer->getExportLIDs();
         ArrayView<const int> exportPIDs = importer->getExportPIDs();
+
+        std::vector<std::vector<int> > sendDatas (num_neighbors);
+        std::vector<int>               send_sizes(num_neighbors, 0);
         for (int i = 0; i < exportPIDs.size(); i++) {
           int index = hashTable.get(exportPIDs[i]);
-          sendDatas[index].push_back(exportLIDs[i]);
+          sendDatas [index].push_back(exportLIDs[i]);
+          send_sizes[index]++;
         }
-        for (int i = 0; i < sendRanks.size(); i++)
-          TEUCHOS_TEST_FOR_EXCEPTION(sendDatas[i].size() != Teuchos::as<size_t>(send_sizes[i]), MueLu::Exceptions::RuntimeError,
-                                       "The size of the send map (" << sendDatas[i].size() << ") for PID " << i <<
-                                       " is not the same as the size reported by the distributor (" << send_sizes[i] << ").");
+
+        std::vector<int*> send_maps(num_neighbors);
+        for (int i = 0; i < num_neighbors; i++)
+          send_maps[i] = &(sendDatas[i][0]);
 
         // Construct recv arrays
-        ArrayView<const size_t> recvSizes = distributor.getLengthsFrom();
-        std::vector<int>        recv_sizes(recvSizes.size());
-        for (int i = 0; i < recvSizes.size(); i++)      recv_sizes[i] = Teuchos::as<int>(recvSizes[i]);
-        std::vector<std::vector<int> > recvDatas(num_neighbors);
-        std::vector<int*>              recv_maps(num_neighbors);
-        for (int i = 0; i < num_neighbors; ++i) {
-          recvDatas[i].reserve(recv_sizes[i]);
-          recv_maps[i] = &(recvDatas[i][0]);
-        }
         Array<int> importPIDs;
         Tpetra::Import_Util::getPids(*importer, importPIDs, true/* make local -1 */);
+
+        std::vector<std::vector<int> > recvDatas (num_neighbors);
+        std::vector<int>               recv_sizes(num_neighbors, 0);
         for (int i = 0; i < importPIDs.size(); i++)
           if (importPIDs[i] != -1) {
             int index = hashTable.get(importPIDs[i]);
-            recvDatas[index].push_back(i);
+            recvDatas [index].push_back(i);
+            recv_sizes[index]++;
         }
-        for (int i = 0; i < recvRanks.size(); i++)
-          TEUCHOS_TEST_FOR_EXCEPTION(recvDatas[i].size() != Teuchos::as<size_t>(recv_sizes[i]), MueLu::Exceptions::RuntimeError,
-                          "The size of the recv map (" << recvDatas[i].size() << ") for PID " << i <<
-                          " is not the same as the size reported by the distributor (" << recv_sizes[i] << ").");
+        std::vector<int*> recv_maps(num_neighbors);
+        for (int i = 0; i < num_neighbors; i++)
+          recv_maps[i] = &(recvDatas[i][0]);
 
         RCP<const Teuchos::MpiComm<int> > tmpic = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm->duplicate());
         TEUCHOS_TEST_FOR_EXCEPTION(tmpic.is_null(), Exceptions::RuntimeError, "Communicator is not MpiComm");
@@ -270,9 +256,9 @@ namespace MueLu {
         cudaGetDeviceCount(&numGPUDevices);
         MPI_Comm_rank(mpiComm, &myRank);
 
-        int devices[] = {(myRank % numGPUDevices)};
+        int device[] = {(myRank % numGPUDevices)};
         AMGX_config_add_parameters(&Config_, "communicator=MPI");
-        AMGX_resources_create(&Resources_, Config_, &mpiComm, 1, devices);
+        AMGX_resources_create(&Resources_, Config_, &mpiComm, 1/* number of GPU devices utilized by this rank */, device);
 
         AMGX_solver_create(&Solver_, Resources_, mode,  Config_);
         AMGX_matrix_create(&A_,      Resources_, mode);
@@ -290,7 +276,7 @@ namespace MueLu {
       } else {
         AMGX_resources_create_simple(&Resources_, Config_);
 
-        AMGX_solver_create(&Solver_, Resources_, mode, Config_);
+        AMGX_solver_create(&Solver_, Resources_, mode,  Config_);
         AMGX_matrix_create(&A_,      Resources_, mode);
         AMGX_vector_create(&X_,      Resources_, mode);
         AMGX_vector_create(&Y_,      Resources_, mode);
@@ -299,13 +285,12 @@ namespace MueLu {
         nnz = inA->getGlobalNumEntries();
       }
 
-      Teuchos::ArrayRCP<const size_t> row_ptr_t;
-      Teuchos::ArrayRCP<const int> col_ind;
-      Teuchos::ArrayRCP<const double> data;
-
       domainMap_ = inA->getDomainMap();
-      rangeMap_ = inA->getRangeMap();
+      rangeMap_  = inA->getRangeMap();
 
+      ArrayRCP<const size_t> row_ptr_t;
+      ArrayRCP<const int>    col_ind;
+      ArrayRCP<const double> data;
       inA->getAllValues(row_ptr_t, col_ind, data);
 
       Teuchos::ArrayRCP<int> row_ptr(row_ptr_t.size(), 0);
