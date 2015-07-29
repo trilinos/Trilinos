@@ -75,6 +75,7 @@
 %typemap(in) CONST CLASS
 {
   Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  if (!smartarg) SWIG_fail;
   $1 = %const_cast(*smartarg->get(), $1_ltype);
 }
 
@@ -90,6 +91,7 @@
 %typemap(varin) CONST CLASS
 {
   Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  if (!smartarg) SWIG_fail;
   $1 = %const_cast(*smartarg->get(), $1_ltype);
 }
 
@@ -108,6 +110,7 @@
 %typemap(in) CONST CLASS * (Teuchos::RCP< CLASS > * smartarg = 0)
 {
   smartarg = CONVERTER($input);
+  if (!smartarg) SWIG_fail;
   $1 = %const_cast(smartarg->get(), $1_ltype);
 }
 
@@ -123,6 +126,7 @@
 %typemap(varin) CONST CLASS *
 {
   Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  if (!smartarg) SWIG_fail;
   $1 = %const_cast(smartarg->get(), $1_ltype);
 }
 
@@ -139,6 +143,7 @@
 %typemap(in) CONST CLASS & (Teuchos::RCP< CLASS > * smartarg = 0)
 {
   smartarg = CONVERTER($input);
+  if (!smartarg) SWIG_fail;
   $1 = %const_cast(smartarg->get(), $1_ltype);
 }
 
@@ -154,6 +159,7 @@
 %typemap(varin) CONST CLASS &
 {
   Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  if (!smartarg) SWIG_fail;
   $1 = %const_cast(smartarg->get(), $1_ltype);
 }
 
@@ -171,7 +177,9 @@
 %typemap(in) CLASS *CONST& ($*1_ltype temp = 0,
                            Teuchos::RCP< CONST CLASS > tempshared)
 {
-  tempshared = *CONVERTER($input);
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  if (!smartarg) SWIG_fail;
+  tempshared = *smartarg;
   temp = %const_cast(tempshared.get(), $*1_ltype);
   $1 = &temp;
 }
@@ -197,6 +205,7 @@
 %typemap(in) Teuchos::RCP< CONST CLASS >
 {
   Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  if (!smartarg) SWIG_fail;
   $1 = Teuchos::rcp_const_cast< CONST CLASS >(*smartarg);
 }
 
@@ -211,6 +220,7 @@
 %typemap(varin) Teuchos::RCP< CONST CLASS >
 {
   Teuchos::RCP< CLASS > smartarg = CONVERTER($input);
+  if (!smartarg) SWIG_fail;
   $1 = Teuchos::rcp_const_cast< CONST CLASS >(*smartarg);
 }
 
@@ -226,7 +236,9 @@
 // RCP by reference
 %typemap(in) Teuchos::RCP< CONST CLASS > & (Teuchos::RCP< CONST CLASS > tempshared)
 {
-  tempshared = Teuchos::rcp_const_cast< CONST CLASS >(*CONVERTER($input));
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  if (!smartarg) SWIG_fail;
+  tempshared = Teuchos::rcp_const_cast< CONST CLASS >(*smartarg);
   $1 = &tempshared;
 }
 
@@ -252,7 +264,9 @@
 // RCP by pointer
 %typemap(in) Teuchos::RCP< CONST CLASS > * (Teuchos::RCP< CONST CLASS > tempshared)
 {
-  tempshared = Teuchos::rcp_const_cast< CONST CLASS >(*CONVERTER($input));
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  if (!smartarg) SWIG_fail;
+  tempshared = Teuchos::rcp_const_cast< CONST CLASS >(*smartarg);
   $1 = &tempshared;
 }
 
@@ -280,7 +294,8 @@
 %typemap(in) Teuchos::RCP< CONST CLASS > *& (Teuchos::RCP< CONST CLASS > tempshared,
                                             $*1_ltype temp = 0)
 {
-  tempshared = %reinterpret_cast(*CONVERTER($input), Teuchos::RCP< CONST CLASS >);
+  Teuchos::RCP< CLASS > * smartarg = CONVERTER($input);
+  tempshared = %reinterpret_cast(*smartarg, Teuchos::RCP< CONST CLASS >);
   temp = &tempshared;
   $1 = &temp;
 }
