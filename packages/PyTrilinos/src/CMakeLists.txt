@@ -301,7 +301,7 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   SWIG_MODULE_GET_OUTDIR_AND_MODULE(${MODULE}.i MODULE_OUTDIR MODULE_NAME)
 
   # Define the target for this module
-  SET(PyTrilinos_TARGET_NAME ${MODULE_NODOT})
+  SET(PyTrilinos_TARGET_NAME "PyTrilinos_${MODULE_NODOT}")
   SWIG_ADD_MODULE(${PyTrilinos_TARGET_NAME}
     python
     "${MODULE}.i"
