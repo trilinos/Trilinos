@@ -193,6 +193,9 @@ std::vector<RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std
         case AMALGAMATION_INFO:
           matlabArgs[i] = rcp_static_cast<MuemexData<RCP<MAmalInfo>>, MuemexArg>(args[i])->convertToMatlab();
           break;
+        case GRAPH:
+          matlabArgs[i] = NULL; //TODO!!
+          break;
       }
     }
     catch (std::exception& e)

@@ -361,11 +361,19 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, HierAttribType dataType
   {
     //First, get Level, which doesn't depend on Epetra vs. Tpetra
     RCP<MueLu::Level> level;
-    const RCP<const FactoryManagerBase>& fmb;
+    RCP<const FactoryManagerBase> fmb;
     if(this->type == TPETRA)
-      fmb = ((TpetraSystem<double>*) this)->levelManagers[levelID];
+    {
+      TpetraSystem<double>* tsys = (TpetraSystem<double>*) this;
+      if(tsys->keepAll)
+        fmb = tsys->systemManagers[levelID];
+    }
     else if(this->type == TPETRA_COMPLEX)
-      fmb = ((TpetraSystem<complex_t>*) this)->levelManagers[levelID];
+    {
+      TpetraSystem<complex_t>* tsys = (TpetraSystem<complex_t>*) this;
+      if(tsys->keepAll)
+        fmb = tsys->systemManagers[levelID];
+    }
     const FactoryBase* factory = NoFactory::get(); //(ptr to constant)
     bool needFMB = true;
     if(dataName == "A" || dataName == "P") //these are kept by default, don't use actual factory pointer
@@ -380,7 +388,7 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, HierAttribType dataType
         level = hier->GetLevel(levelID);
         if(needFMB)
         {
-          if(fmb.is_null)()
+          if(fmb.is_null())
             fmb = (RCP<const FactoryManagerBase>) hier->GetFactoryManager(levelID);
           if(!fmb.is_null())
           {
@@ -702,6 +710,7 @@ int TpetraSystem<Scalar>::setup(const mxArray* matlabA, bool haveCoords, const m
 template<typename Scalar>
 void TpetraSystem<Scalar>::normalSetup(const mxArray* matlabA, bool haveCoords, const mxArray* matlabCoords)
 {
+  keepAll = false;
   A = loadDataFromMatlab<RCP<Tpetra::CrsMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(matlabA);
   RCP<MueLu::TpetraOperator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop;
   if(haveCoords)
@@ -720,6 +729,7 @@ void TpetraSystem<Scalar>::normalSetup(const mxArray* matlabA, bool haveCoords, 
 template<typename Scalar>
 void TpetraSystem<Scalar>::customSetup(const mxArray* matlabA, bool haveCoords, const mxArray* matlabCoords)
 {
+  keepAll = true;
   A = loadDataFromMatlab<RCP<Tpetra::CrsMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(matlabA);
   RCP<MueLu::TpetraOperator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop;
   //Now modify CreateTpetraPreconditioner to set keep flags on all factories
@@ -796,8 +806,8 @@ void TpetraSystem<Scalar>::customSetup(const mxArray* matlabA, bool haveCoords, 
     throw runtime_error("Could not cast RCP<Hierarchy> to subclass.");
   for(int lvl = 0; lvl < H->GetNumLevels(); lvl++)
   {
-    const RCP<const FactoryManagerBase> fman = mueluFactory->GetFactoryManager(lvl);
-    levelManagers.push_back(fman);
+    RCP<const FactoryManagerBase> fman = (RCP<const FactoryManagerBase>) mueluFactory->GetFactoryManager(lvl);
+    systemManagers.push_back(fman);
     for(auto s : keepItems)
     {
       try
