@@ -1,5 +1,81 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 12.2 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 12.2 general release contains 58 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Domi, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, MueLu, NOX, Optika, OptiPack,
+Pamgen, Phalanx, Pike, Piro, Pliris, PyTrilinos, ROL*, RTOp, Rythmos, Sacado,
+SEACAS, Shards, ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos,
+ThreadPool, Thyra, Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra,
+Zoltan, Zoltan2.
+
+(* denotes package is being released externally as a part of Trilinos for the
+first time.)
+
+ROL 
+
+  Rapid Optimization Library (ROL) is a C++ package for large-scale
+  optimization. It is used for the solution of optimal design, optimal control
+  and inverse problems in large-scale engineering applications. Other uses
+  include mesh optimization and image processing.
+
+  ROL aims to combine flexibility, efficiency and robustness.  Key features:
+
+  - Matrix-free application programming interfaces (APIs) --enable direct use
+    of application data structures and memory spaces, linear solvers,
+    nonlinear solvers and preconditioners.
+
+  - State-of-the-art algorithms for unconstrained optimization, constrained
+    optimization and optimization under uncertainty --enable inexact and
+    adaptive function evaluations and iterative linear system solves.
+
+  - Special APIs for simulation-based optimization --enable a streamlined
+    embedding into engineering applications, rigorous implementation
+    verification and efficient use.
+
+  - Modular interfaces throughout the optimization process --enable custom
+    and user-defined algorithms, stopping criteria, hierarchies of algorithms,
+    and selective use of a variety of tools and components.
+
+  For a detailed description of user interfaces and algorithms included in this
+  release, see the presentation ROL-Trilinos-12.2.pptx (or .pdf) in the
+  doc/presentations directory.
+
+MueLu
+
+  - Allow to dynamically switch transfer operators between different multigrid
+    levels. Can be used in context of semi-coarsening.
+
+  - Enabled semi-coarsening (using Ray's line detection algorithm).
+
+  - Add support for line smoothing (Ifpack/Ifpack2) [EXPERIMENTAL]
+
+  - New AMGX Adapter [EXPERIMENTAL]
+
+    New experimental adapter which allows a user with AMGX installed to utilize
+    this software for the preconditioning and solution of linear systems. If a
+    user provides AMGX configuration options instead of a MueLu input deck, the
+    adapter will be called. Currently supported with Tpetra objects.
+
+  - Matlab interface for MueLu [EXPERIMENTAL]
+
+    Setup and solve hierarchies from Matlab and use Matlab functions as MueLu
+    factories.
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 12.0 Release Notes                                        #
 #                                                                             #
 ###############################################################################
