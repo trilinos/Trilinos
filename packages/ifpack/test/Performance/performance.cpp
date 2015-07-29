@@ -208,7 +208,6 @@ int main(int argc, char *argv[])
 
   // test the preconditioner
   int TestPassed = true;
-  int who = RUSAGE_SELF;
   struct rusage usage;
   //int ret;
   //ret = getrusage(who, &usage);
