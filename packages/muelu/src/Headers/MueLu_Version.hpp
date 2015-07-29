@@ -56,7 +56,7 @@
 namespace MueLu {
 
   inline std::string const Version() {
-    return("MueLu development");
+    return("MueLu, Trilinos 12.2");
   }
 
 } // namespace MueLu
