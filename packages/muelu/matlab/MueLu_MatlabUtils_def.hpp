@@ -914,37 +914,73 @@ mxArray* saveDataToMatlab(RCP<MAggregates>& data)
   int numNodes = data->GetVertex2AggId()->getData(0).size();
   int numAggs = data->GetNumAggregates();
   mxArray* dataIn[5];
-  mwSize singleton = 1;
-  dataIn[0] = mxCreateNumericArray(1, &singleton, mxINT32_CLASS, mxREAL);
+  mwSize singleton[] = {1, 1};
+  dataIn[0] = mxCreateNumericArray(2, singleton, mxINT32_CLASS, mxREAL);
   *((int*) mxGetData(dataIn[0])) = numNodes;
-  dataIn[1] = mxCreateNumericArray(1, &singleton, mxINT32_CLASS, mxREAL);
+  dataIn[1] = mxCreateNumericArray(2, singleton, mxINT32_CLASS, mxREAL);
   *((int*) mxGetData(dataIn[1])) = numAggs;
-  mwSize nodeArrayDims[] = {(mwSize) numNodes};
-  dataIn[2] = mxCreateNumericArray(1, nodeArrayDims, mxINT32_CLASS, mxREAL);
+  mwSize nodeArrayDims[] = {(mwSize) numNodes, 1}; //dimensions for Nx1 array, where N is number of nodes (vert2Agg)
+  dataIn[2] = mxCreateNumericArray(2, nodeArrayDims, mxINT32_CLASS, mxREAL);
   int* vtaid = (int*) mxGetData(dataIn[2]);
   ArrayRCP<const mm_LocalOrd> vertexToAggID = data->GetVertex2AggId()->getData(0);
   for(int i = 0; i < numNodes; i++)
   {
     vtaid[i] = vertexToAggID[i];
   }
-  dataIn[3] = mxCreateNumericArray(1, nodeArrayDims, mxINT32_CLASS, mxREAL);
-  int* rn = (int*) mxGetData(dataIn[3]); //list of root nodes
+  mwSize aggArrayDims[] = {(mwSize) numAggs, 1}; //dims for Nx1 array, where N is number of aggregates (rootNodes, aggSizes)
+  dataIn[3] = mxCreateNumericArray(2, aggArrayDims, mxINT32_CLASS, mxREAL);
+  //First, find out if the aggregates even have 1 root node per aggregate. If not, assume roots are invalid and assign ourselves
+  int totalRoots = 0;
+  for(int i = 0; i < numNodes; i++)
   {
-    int i = 0;
-    for(int j = 0; j < numNodes; j++)
+    if(data->IsRoot(i))
+      totalRoots++;
+  }
+  bool reassignRoots = false;
+  if(totalRoots != numAggs)
+  {
+    cout << endl << "Warning: Number of root nodes and number of aggregates do not match." << endl;
+    cout << "Will reassign root nodes when writing aggregates to matlab." << endl << endl;
+    reassignRoots = true;
+  }
+  int* rn = (int*) mxGetData(dataIn[3]); //list of root nodes (in no particular order)
+  {
+    if(reassignRoots)
     {
-      if(data->IsRoot(j))
+      //For each aggregate, just pick the first node we see in it and set it as root
+      int lastFoundNode = 0; //heuristic for speed, a node in aggregate N+1 is likely to come very soon after a node in agg N
+      for(int i = 0; i < numAggs; i++)
       {
-        if(i == numAggs)
-          throw runtime_error("Cannot store aggregates in MATLAB - more root nodes than aggregates.");
-        rn[i] = j; //now we know this won't go out of bounds
-        i++;
+        rn[i] = -1;
+        for(int j = lastFoundNode; j < lastFoundNode + numNodes; j++)
+        {
+          int index = j % numNodes;
+          if(vertexToAggID[index] == i)
+          {
+            rn[i] = index;
+            lastFoundNode = index;
+          }
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION(rn[i] == -1, runtime_error, "Invalid aggregates: Couldn't find any node in aggregate #" << i << ".");
       }
     }
-    if(i + 1 < numAggs)
-      throw runtime_error("Cannot store aggregates in MATLAB - fewer root nodes than aggregates.");
+    else
+    {
+      int i = 0; //iterates over aggregate IDs
+      for(int j = 0; j < numNodes; j++)
+      {
+        if(data->IsRoot(j))
+        {
+          if(i == numAggs)
+            throw runtime_error("Cannot store invalid aggregates in MATLAB - more root nodes than aggregates.");
+          rn[i] = j; //now we know this won't go out of bounds (rn's underlying matlab array is numAggs in length)
+          i++;
+        }
+      }
+      if(i + 1 < numAggs)
+        throw runtime_error("Cannot store invalid aggregates in MATLAB - fewer root nodes than aggregates.");
+    }
   }
-  mwSize aggArrayDims[] = {(mwSize) numAggs};
   dataIn[4] = mxCreateNumericArray(1, aggArrayDims, mxINT32_CLASS, mxREAL);
   int* as = (int*) mxGetData(dataIn[4]); //list of aggregate sizes
   ArrayRCP<mm_LocalOrd> aggSizes = data->ComputeAggregateSizes();

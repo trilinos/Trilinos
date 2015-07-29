@@ -80,6 +80,10 @@ The solve function can also return the number of iterations taken by Belos:
 The first version uses the A that was passed when setting up the problem.
 The second version uses a new A with the same hierarchy.
 
+Parameters for Belos can be listed after the required parameters:
+
+    [x, numIters] = muelu(0, b, 'Maximum Iterations', 400);
+
 Remove a specific problem and free memory associated with it:
 
     muelu('cleanup', problemID);

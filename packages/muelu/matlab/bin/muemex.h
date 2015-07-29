@@ -81,7 +81,8 @@
 
 #define HAVE_COMPLEX_SCALARS
 
-namespace MueLu {
+namespace MueLu
+{
 
 typedef enum
   {
@@ -100,7 +101,7 @@ typedef enum
     MODE_AGGREGATE, //4
     MODE_GET, //5
     MODE_SET, //6
-    MODE_ERROR
+    MODE_ERROR //7
   } MODE_TYPE;
 
 typedef enum
@@ -116,6 +117,10 @@ typedef enum
     UNKNOWN
   } HierAttribType;
 
+/* Note: MuemexSystem is declared friend in MueLu::Hierarchy and MueLu::FactoryManager.
+   This gives access to the private method Hierarchy::GetFactoryManager, which allows
+   muelu('get', ...) to retrieve nonstandard "kept" items like Nullspace and Aggregates.
+*/
 class MuemexSystem
 {
  public:
@@ -172,6 +177,8 @@ class TpetraSystem : public MuemexSystem
   typedef Tpetra::CrsMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> TMatrix;
   typedef Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> TOperator;
   int setup(const mxArray* matlabA, bool haveCoords = false, const mxArray* matlabCoords = NULL);
+  void normalSetup(const mxArray* matlabA, bool haveCoords = false, const mxArray* matlabCoords = NULL);
+  void customSetup(const mxArray* matlabA, bool haveCoords = false, const mxArray* matlabCoords = NULL);
   int status();
   mxArray* solve(Teuchos::RCP<Teuchos::ParameterList> params, Teuchos::RCP<TMatrix> matrix, const mxArray* rhs, int &iters);
   //note: I typedef'd mm_node_t at the top of this file as the Kokkos default type

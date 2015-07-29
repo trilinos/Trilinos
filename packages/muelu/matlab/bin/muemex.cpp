@@ -57,10 +57,8 @@
 
 #include <Tpetra_DefaultPlatform.hpp>
 #include "MueLu_MatlabUtils.hpp"
-
 #include "MueLu_TwoLevelMatlabFactory.hpp"
 #include "MueLu_SingleLevelMatlabFactory.hpp"
-
 
 using namespace std;
 using namespace Teuchos;
@@ -82,6 +80,22 @@ extern void _main();
 //#define VERBOSE_OUTPUT
 
 namespace MueLu {
+
+//Need subclass of Hierarchy that gives public access to list of FactoryManagers
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+class OpenHierarchy : public Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>
+{
+  public:
+    const RCP<const FactoryManagerBase>& GetFactoryManager(const int levelID) const;
+};
+
+template<typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
+const RCP<const FactoryManagerBase>& OpenHierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetFactoryManager(const int levelID) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(levelID < 0 || levelID > this->GetNumLevels(), Exceptions::RuntimeError,
+                            "MueLu::Hierarchy::GetFactoryManager(): invalid input parameter value: LevelID = " << levelID);
+  return this->GetLevelManager(levelID);
+}
 
 //Declare and call default constructor for data_pack_list vector (starts empty)
 vector<RCP<MuemexSystem>> MuemexSystemList::list;
@@ -120,6 +134,8 @@ HierAttribType strToHierAttribType(const char* str)
   if(strcmp(str, "P") == 0)
     return MATRIX;
   if(strcmp(str, "R") == 0)
+    return MATRIX;
+  if(strcmp(str, "Ptent") == 0)
     return MATRIX;
   if(strcmp(str, "Nullspace") == 0)
     return MULTIVECTOR;
@@ -343,227 +359,178 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, HierAttribType dataType
   mxArray* output = NULL;
   try
   {
-      switch(dataType)
+    //First, get Level, which doesn't depend on Epetra vs. Tpetra
+    RCP<MueLu::Level> level;
+    RCP<const FactoryManagerBase> fmb;
+    const FactoryBase* factory = NoFactory::get(); //(ptr to constant)
+    bool needFMB = true;
+    if(dataName == "A" || dataName == "P") //these are kept by default, don't use actual factory pointer
+      //Otherwise would break getting A and P when 'keep' is off
+      needFMB = false;
+    switch(this->type)
+    {
+      case EPETRA:
+      case TPETRA:
       {
-        case MATRIX:
+        RCP<OpenHierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier = rcp_static_cast<OpenHierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(getDatapackHierarchy<double>(this));
+        level = hier->GetLevel(levelID);
+        if(needFMB)
         {
-            switch(this->type)  //datapack type (EPETRA TPETRA or TPETRA_COMPLEX)
-            {
-              //get real matrix, put into output
-              case EPETRA:
-              case TPETRA:
-              {
-                  RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
-                  RCP<MueLu::Level> level = hier->GetLevel(levelID);
-                  RCP<Xpetra_Matrix_double> mat;
-                  level->Get(dataName, mat);
-                  output = saveDataToMatlab(mat);
-                  break;
-              }
-              case TPETRA_COMPLEX:
-              {
-                  RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
-                  RCP<MueLu::Level> level = hier->GetLevel(levelID);
-                  RCP<Xpetra_Matrix_complex> mat;
-                  level->Get(dataName, mat);
-                  output = saveDataToMatlab(mat);
-                  break;
-              }
-            }
-            break;
-        }
-        case MULTIVECTOR:
-        {
-            switch(this->type)
-            {
-              case EPETRA:
-              case TPETRA:
-              {
-                  RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
-                  RCP<MueLu::Level> level = hier->GetLevel(levelID);
-                  RCP<Xpetra_MultiVector_double> mv;
-                  level->Get(dataName, mv);
-                  output = saveDataToMatlab(mv);
-                  break;
-              }
-              case TPETRA_COMPLEX:
-              {
-                  RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
-                  RCP<MueLu::Level> level = hier->GetLevel(levelID);
-                  RCP<Xpetra_MultiVector_complex> mv;
-                  level->Get(dataName, mv);
-                  output = saveDataToMatlab(mv);
-                  break;
-              }
-            }
-            break;
-        }
-        case LOVECTOR:
-        {
-            RCP<Xpetra_ordinal_vector> loVec;
-            switch(this->type)
-            {
-              case EPETRA:
-              case TPETRA:
-              {
-                  RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
-                  RCP<MueLu::Level> level = hier->GetLevel(levelID);
-#ifdef VERBOSE_OUTPUT
-                  level->print(cout, MueLu::MsgType::Extreme);
-#endif
-                  level->Get(dataName, loVec);
-                  break;
-              }
-              case TPETRA_COMPLEX:
-              {
-                  RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
-                  RCP<MueLu::Level> level = hier->GetLevel(levelID);
-                  level->Get(dataName, loVec);
-                  break;
-              }
-            }
-            output = saveDataToMatlab(loVec);
-            break;
-          }
-        case HIER_SCALAR:
-        {
-            switch(this->type)
-            {
-              case EPETRA:
-              case TPETRA:
-              {
-                  double value;
-                  RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
-                  RCP<MueLu::Level> level = hier->GetLevel(levelID);
-                  level->Get(dataName, value);
-                  output = mxCreateDoubleScalar(value);
-                  break;
-              }
-              case TPETRA_COMPLEX:
-              {
-                  complex_t value;
-                  RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
-                  RCP<MueLu::Level> level = hier->GetLevel(levelID);
-                  level->Get(dataName, value);
-                  output = mxCreateDoubleMatrix(1, 1, mxCOMPLEX);
-                  double* realPart = mxGetPr(output);
-                  *realPart = real<double>(value);
-                  double* imagPart = mxGetPi(output);
-                  *imagPart = imag<double>(value);
-                  break;
-              }
-            }
-            break;
-        }
-        case HIER_DOUBLE:
-        {
-          double value;
-          RCP<MueLu::Level> level;
-          switch(this->type)
+          fmb = (RCP<const FactoryManagerBase>) hier->GetFactoryManager(levelID);
+          if(!fmb.is_null())
           {
-            case EPETRA:
-            case TPETRA:
+            try
             {
-              RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
-              level = hier->GetLevel(levelID);
+              factory = fmb->GetFactory(dataName).get();
             }
-            case TPETRA_COMPLEX:
-            {
-              RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
-              level = hier->GetLevel(levelID);
-            }
+            catch(exception& e) {} //forced to try using NoFactory (which will work with default keeps A, P)
           }
-          level->Get(dataName, value);
-          output = mxCreateDoubleScalar(value);
-          break;
         }
-        case HIER_COMPLEX:
+        break;
+      }
+      case TPETRA_COMPLEX:
+      {
+        RCP<OpenHierarchy<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier = rcp_static_cast<OpenHierarchy<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(getDatapackHierarchy<complex_t>(this));
+        level = hier->GetLevel(levelID);
+        if(needFMB)
         {
-          complex<double> value;
-          RCP<MueLu::Level> level;
-          switch(this->type)
+          fmb = (RCP<const FactoryManagerBase>) hier->GetFactoryManager(levelID);
+          if(!fmb.is_null())
           {
-            case EPETRA:
-            case TPETRA:
+            try
             {
-              RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
-              level = hier->GetLevel(levelID);
+              factory = fmb->GetFactory(dataName).get();
             }
-            case TPETRA_COMPLEX:
-            {
-              RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
-              level = hier->GetLevel(levelID);
-            }
+            catch(exception& e) {} //attempt to use NoFactory
           }
-          level->Get(dataName, value);
-          output = mxCreateDoubleMatrix(1, 1, mxCOMPLEX);
-          *(mxGetPr(output)) = real<double>(value);
-          *(mxGetPi(output)) = imag<double>(value);
-          break;
         }
-        case HIER_INT:
+        break;
+      }
+    }
+    if(level.is_null())
+      throw runtime_error("Can't get level data because level is null.");
+    bool dataIsAvailable = level->IsAvailable(dataName, factory);
+    if(!dataIsAvailable)
+    {
+      //Give the level the FactoryManager again so it can provide the data (by re-creating it, if necessary)
+      level->SetFactoryManager(fmb);
+    }
+    //Given the dataName and factory pointer, all data in the level should now be accessible
+    switch(dataType)
+    {
+      case MATRIX:
+      {
+        switch(this->type)  //datapack type (EPETRA TPETRA or TPETRA_COMPLEX)
         {
-          int value;
-          RCP<MueLu::Level> level;
-          switch(this->type)
-          {
-            case EPETRA:
-            case TPETRA:
-            {
-              RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
-              level = hier->GetLevel(levelID);
-            }
-            case TPETRA_COMPLEX:
-            {
-              RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
-              level = hier->GetLevel(levelID);
-            }
-          }
-          level->Get<int>(dataName, value);
-          cout << "Int from level: " << value << endl;
-          mwSize dims[1];
-          dims[0] = 1;
-          output = mxCreateNumericArray(1, dims, mxINT32_CLASS, mxREAL);
-          int* valuePtr = (int*) mxGetData(output);
-          *valuePtr = value;
-          break;
-        }
-        case HIER_AGGREGATES:
-        {
-          RCP<MueLu::Level> level;
-          switch(this->type)
-          {
-            case EPETRA:
-            case TPETRA:
-            {
-              RCP<Hierarchy_double> hier = getDatapackHierarchy<double>(this);
-              level = hier->GetLevel(levelID);
-              break;
-            }
-            case TPETRA_COMPLEX:
-              RCP<Hierarchy_complex> hier = getDatapackHierarchy<complex_t>(this);
-              level = hier->GetLevel(levelID);
-              break;
-          }
-          RCP<MAggregates> agg = level->Get<RCP<MAggregates>>("Aggregates");
-          if(!agg.is_null())
-            return saveDataToMatlab(agg);
-          break;
-        }
-        default:
-        {
-            throw runtime_error("getHierarchyData() requires the type of the data");
+          //get real matrix, put into output
+          case EPETRA:
+          case TPETRA:
+            return saveDataToMatlab(level->Get<RCP<Xpetra_Matrix_double>>(dataName, factory));
+          case TPETRA_COMPLEX:
+            return saveDataToMatlab(level->Get<RCP<Xpetra_Matrix_complex>>(dataName, factory));
         }
       }
-      if(output == NULL)
+      case MULTIVECTOR:
       {
-          throw runtime_error("mxArray pointer was never initialized. Check data type and name.");
+        if(dataName == "Coordinates")
+        {
+          //Coordinates is special because it's always user-provided on level 0, not always provided at all, not always kept in the level (only kept if doing agg viz, etc), and is always MV<double> regardless of problem scalar type
+          double errReturn = -1;
+          if(level->GetLevelID() == 0)
+          {
+            //Try to get coordinates as if it's user data, but don't be surprised if it's not there at all.
+            try
+            {
+              RCP<Xpetra_MultiVector_double> coords = level->Get<RCP<Xpetra_MultiVector_double>>(dataName, NoFactory::get());
+              if(coords.is_null())
+                throw runtime_error("Coordinates were not available (Level 0)."); //just print the message below and return -1
+              return saveDataToMatlab(coords);
+            }
+            catch(exception& e)
+            {
+              cout << endl << "Coordinates were not available on Level 0." << endl;
+              cout << "They must be provided by the user and aren't generated or kept by default (even in MueMex 'keep' mode)." << endl;
+              cout << "User-provided coordinates for Level 0 will be kept and passed to other levels if something requires them:" << endl;
+              cout << "aggregate visualization, brick aggregation, repartitioning or distance laplacian filtering." << endl << endl;
+              return saveDataToMatlab(errReturn);
+            }
+          }
+          else
+          {
+            //If coords are provided & kept, they are produced by CoordinatesTransferFactory in levels > 0.
+            try
+            {
+              RCP<Xpetra_MultiVector_double> coords = level->Get<RCP<Xpetra_MultiVector_double>>(dataName, factory);
+              if(coords.is_null())
+                throw runtime_error("Coordinates were not available (Level > 0).");
+              return saveDataToMatlab(coords);
+            }
+            catch(exception& e)
+            {
+              cout << "Coordinates must be provided by the user and aren't generated or kept by default (even in MueMex 'keep' mode)." << endl;
+              cout << "User-provided coordinates for Level 0 will be kept and passed to other levels if something requires them:" << endl;
+              cout << "aggregate visualization, brick aggregation, repartitioning or distance laplacian filtering." << endl << endl;
+              return saveDataToMatlab(errReturn);
+            }
+          }
+        }
+        else
+        {
+          switch(this->type)
+          {
+            case EPETRA:
+            case TPETRA:
+              return saveDataToMatlab(level->Get<RCP<Xpetra_MultiVector_double>>(dataName, factory));
+            case TPETRA_COMPLEX:
+              return saveDataToMatlab(level->Get<RCP<Xpetra_MultiVector_complex>>(dataName, factory));
+          }
+        }
       }
+      case LOVECTOR:
+      {
+        return saveDataToMatlab(level->Get<RCP<Xpetra_ordinal_vector>>(dataName, factory));
+      }
+      case HIER_SCALAR:
+      {
+        switch(this->type)
+        {
+          case EPETRA:
+          case TPETRA:
+            return saveDataToMatlab(level->Get<double>(dataName, factory));
+          case TPETRA_COMPLEX:
+            return saveDataToMatlab(level->Get<complex_t>(dataName, factory));
+        }
+      }
+      case HIER_DOUBLE:
+      {
+        return saveDataToMatlab(level->Get<double>(dataName, factory));
+      }
+      case HIER_COMPLEX:
+      {
+        return saveDataToMatlab(level->Get<complex_t>(dataName, factory));
+      }
+      case HIER_INT:
+      {
+        return saveDataToMatlab(level->Get<int>(dataName, factory));
+      }
+      case HIER_AGGREGATES:
+      {
+        return saveDataToMatlab(level->Get<RCP<MAggregates>>(dataName, factory));
+      }
+      default:
+      {
+        throw runtime_error("getHierarchyData() requires the type of the data");
+      }
+    }
+    if(output == NULL)
+    {
+      throw runtime_error("mxArray pointer was never initialized. Check data type and name.");
+    }
   }
   catch(exception& e)
   {
-      mexPrintf("Error occurred while getting hierarchy data.\n");
-      cout << e.what() << endl;
+    mexPrintf("Error occurred while getting hierarchy data.\n");
+    cout << e.what() << endl;
   }
   return output;
 }
@@ -691,33 +658,154 @@ RCP<Hierarchy_double> EpetraSystem::getHierarchy()
 template<> TpetraSystem<double>::TpetraSystem() : MuemexSystem(TPETRA) {}
 template<> TpetraSystem<double>::~TpetraSystem() {}
 
-template<>
-int TpetraSystem<double>::setup(const mxArray* matlabA, bool haveCoords, const mxArray* matlabCoords)
+template<typename Scalar>
+int TpetraSystem<Scalar>::setup(const mxArray* matlabA, bool haveCoords, const mxArray* matlabCoords)
 {
-  bool success = false;
-  try
+  //decide whether do do default or custom setup
+  bool doCustomSetup = List->isParameter("keep") && List->isType<bool>("keep") && List->get<bool>("keep");
+  List->remove("keep", false); //"keep" would cause Plist validation to fail if left in
+  if(doCustomSetup)
   {
-    A = loadDataFromMatlab<RCP<Tpetra_CrsMatrix_double>>(matlabA);
-    RCP<MueLu::TpetraOperator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop;
-    if(haveCoords)
+    try
     {
-      RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> coordArray = loadDataFromMatlab<RCP<Tpetra_MultiVector_double>>(matlabCoords);
-      mop = MueLu::CreateTpetraPreconditioner<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List, coordArray);
+      customSetup(matlabA, haveCoords, matlabCoords);
+    }
+    catch(exception& e)
+    {
+      cout << "An error occurred during Tpetra custom problem setup:" << endl;
+      cout << e.what() << endl;
+      return IS_FALSE;
+    }
+  }
+  else
+  {
+    try
+    {
+      normalSetup(matlabA, haveCoords, matlabCoords);
+    }
+    catch(exception& e)
+    {
+      cout << "An error occurred during Tpetra preconditioner setup:" << endl;
+      cout << e.what();
+      return IS_FALSE;
+    }
+  }
+  return IS_TRUE;
+}
+
+template<typename Scalar>
+void TpetraSystem<Scalar>::normalSetup(const mxArray* matlabA, bool haveCoords, const mxArray* matlabCoords)
+{
+  A = loadDataFromMatlab<RCP<Tpetra::CrsMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(matlabA);
+  RCP<MueLu::TpetraOperator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop;
+  if(haveCoords)
+  {
+    RCP<Tpetra_MultiVector_double> coordArray = loadDataFromMatlab<RCP<Tpetra_MultiVector_double>>(matlabCoords);
+    mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List, coordArray);
+  }
+  else
+  {
+    mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List);
+  }
+  prec = rcp_implicit_cast<Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(mop);
+  operatorComplexity = mop->GetHierarchy()->GetOperatorComplexity();
+}
+
+template<typename Scalar>
+void TpetraSystem<Scalar>::customSetup(const mxArray* matlabA, bool haveCoords, const mxArray* matlabCoords)
+{
+  A = loadDataFromMatlab<RCP<Tpetra::CrsMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>(matlabA);
+  RCP<MueLu::TpetraOperator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop;
+  //Now modify CreateTpetraPreconditioner to set keep flags on all factories
+  typedef Xpetra::MultiVector<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> MultiVector;
+  typedef Xpetra::Matrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Matrix;
+  typedef Hierarchy<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy;
+  typedef HierarchyManager<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> HierarchyManager;
+  RCP<HierarchyManager> mueluFactory = rcp(new ParameterListInterpreter<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(*List, A->getComm()));
+  RCP<Hierarchy> H = mueluFactory->CreateHierarchy();
+  H->setlib(Xpetra::UseTpetra);
+  RCP<Matrix> xA = TpetraCrs_To_XpetraMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A);
+  H->GetLevel(0)->Set("A", xA);
+  if(haveCoords)
+  {
+    RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> coords = loadDataFromMatlab<RCP<Xpetra_MultiVector_double>>(matlabCoords);
+    H->GetLevel(0)->Set("Coordinates", coords);
+  }
+  //Decide whether user passed level 0 Nullspace in parameter list. If not, make it here.
+  if(!List->isSublist("level 0") || !List->sublist("level 0", true).isParameter("Nullspace"))
+  {
+    int nPDE = MasterList::getDefault<int>("number of equations");
+    if (List->isSublist("Matrix"))
+    {
+      // Factory style parameter list
+      const Teuchos::ParameterList& operatorList = List->sublist("Matrix");
+      if (operatorList.isParameter("PDE equations"))
+        nPDE = operatorList.get<int>("PDE equations");
+    }
+    else if (List->isParameter("number of equations"))
+    {
+      // Easy style parameter list
+      nPDE = List->get<int>("number of equations");
+    }
+    RCP<MultiVector> nullspace = Xpetra::MultiVectorFactory<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>::Build(xA->getDomainMap(), nPDE);
+    if (nPDE == 1)
+    {
+      nullspace->putScalar(Teuchos::ScalarTraits<Scalar>::one());
     }
     else
     {
-      mop = MueLu::CreateTpetraPreconditioner<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List);
+      for (int i = 0; i < nPDE; i++)
+      {
+        Teuchos::ArrayRCP<Scalar> nsData = nullspace->getDataNonConst(i);
+        for (size_t j = 0; j < nsData.size(); j++)
+        {
+          mm_GlobalOrd GID = A->getDomainMap()->getGlobalElement(j) - A->getDomainMap()->getIndexBase();
+          if ((GID - i) % nPDE == 0)
+            nsData[j] = Teuchos::ScalarTraits<Scalar>::one();
+        }
+      }
     }
-    prec = rcp_implicit_cast<Tpetra::Operator<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(mop);
-    operatorComplexity = mop->GetHierarchy()->GetOperatorComplexity();
-    success = true;
+    H->GetLevel(0)->Set("Nullspace", nullspace);
   }
-  catch(exception& e)
+  Teuchos::ParameterList nonSerialList, dummyList;
+  ExtractNonSerializableData(*List, dummyList, nonSerialList);
+  HierarchyUtils<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>::AddNonSerializableDataToHierarchy(*mueluFactory, *H, nonSerialList);
+  //Set up dummy levels in hierarchy
+  for(int i = 0; i < 5; i++)
   {
-    mexPrintf("An error occurred while setting up tpetra problem:\n");
-    cout << e.what() << endl;
+    RCP<Level> l = rcp(new Level());
+    H->AddLevel(l);
   }
-  return success ? IS_TRUE : IS_FALSE;
+  //Set keep flags on ALL factories in ALL levels
+  //We have access to H's list of FactoryManagers so we know how to get factory pointer given the name of the factory.
+  //We don't know which names are in the FactoryManagers though so a brute force approach is needed...
+  vector<string> keepItems = {"A", "P", "R", "Ptent", "Aggregates", "Coordinates", "UnAmalgamationInfo", "Smoother", "PreSmoother", "PostSmoother", "CoarseSolver", "Graph", "CoarseMap", "Nullspace", "Ppattern", "Constraint", "CoarseNumZLayers", "LineDetection_Layers", "LineDetection_VertLineIds", "Partition", "Importer", "DofsPerNode", "Filtering"};
+  RCP<OpenHierarchy<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> openH = rcp_static_cast<OpenHierarchy<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>, Hierarchy>(H);
+  if(openH.is_null())
+    throw runtime_error("Could not cast RCP<Hierarchy> to subclass.");
+  cout << "Hierarchy has " << H->GetNumLevels() << " levels." << endl;
+  for(int lvl = 0; lvl < H->GetNumLevels(); lvl++)
+  {
+    const RCP<const FactoryManagerBase> fman = mueluFactory->GetFactoryManager(lvl);
+    for(auto s : keepItems)
+    {
+      try
+      {
+        const RCP<const FactoryBase> fact = fman->GetFactory(s); //will throw if factory doesn't exist, ignore in that case
+        if(!fact.is_null())
+        {
+          FactoryBase* factPtr = (FactoryBase*) fact.get();
+          //Add keep flag to level
+          cout << "Adding keep flag for \"" << s << "\" on level #" << lvl << " with factory at " << factPtr << endl;
+          H->GetLevel(lvl)->AddKeepFlag(s, factPtr, MueLu::Keep | MueLu::UserData);
+        }
+      }
+      catch(exception& e) {}
+    }
+  }
+  mueluFactory->SetupHierarchy(*H);
+  operatorComplexity = H->GetOperatorComplexity();
+  prec = rcp(new TpetraOperator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(H));
 }
 
 template<>
@@ -753,36 +841,6 @@ RCP<MueLu::Hierarchy<Scalar, mm_GlobalOrd, mm_LocalOrd, mm_node_t>> TpetraSystem
 #ifdef HAVE_COMPLEX_SCALARS
 template<> TpetraSystem<complex_t>::TpetraSystem() : MuemexSystem(TPETRA_COMPLEX) {}
 template<> TpetraSystem<complex_t>::~TpetraSystem() {}
-
-template<>
-int TpetraSystem<complex_t>::setup(const mxArray* matlabA, bool haveCoords, const mxArray* matlabCoords)
-{
-  bool success = false;
-  try
-  {
-    //TODO: Does a complex-scalar matrix mean complex-scalar coordinates?
-    A = loadDataFromMatlab<RCP<Tpetra_CrsMatrix_complex>>(matlabA);
-    RCP<MueLu::TpetraOperator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> mop;
-    if(haveCoords)
-    {
-      RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> coordArray = loadDataFromMatlab<RCP<Tpetra_MultiVector_double>>(matlabCoords);
-      mop = MueLu::CreateTpetraPreconditioner<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List, coordArray);
-    }
-    else
-    {
-      mop = MueLu::CreateTpetraPreconditioner<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List);
-    }
-    prec = rcp_implicit_cast<Tpetra::Operator<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(mop);
-    operatorComplexity = mop->GetHierarchy()->GetOperatorComplexity();
-    success = true;
-  }
-  catch(exception& e)
-  {
-    mexPrintf("An error occurred while setting up a Tpetra problem:\n");
-    cout << e.what() << endl;
-  }
-  return success ? IS_TRUE : IS_FALSE;
-}
 
 template<>
 int TpetraSystem<complex_t>::status()
@@ -1494,11 +1552,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
           if(nrhs == 4)
             throw runtime_error("Could not determine type from the name of the variable, please specify.");
           //Case insensitive compare with type names
-          char* typeName = mxArrayToString(prhs[4]);
+          char* paramTypeName = mxArrayToString(prhs[4]);
+          char* typeName = (char*) malloc(strlen(paramTypeName) + 1);
           char* iter = typeName;
+          strcpy(typeName, paramTypeName);
           while(*iter != '\0')
           {
-            *iter = (char) tolower((int) *iter);
+            *iter = (char) tolower(*iter);
             iter++;
           }
           if(strstr(typeName, "matrix"))
@@ -1512,8 +1572,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
           else if(strstr(typeName, "aggregates"))
             outputType = HIER_AGGREGATES;
           else
+          {
+            free(typeName);
             throw runtime_error("Unknown data type for hierarchy attribute. \
                                  Must be one of 'matrix', 'multivector', 'lovector', 'aggregates' or 'scalar'.");
+          }
+          free(typeName);
         }
         if(outputType == UNKNOWN)
           throw runtime_error("Could not determine type from name of variable and given type invalid.");

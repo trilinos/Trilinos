@@ -323,6 +323,11 @@ namespace MueLu {
     void setlib(Xpetra::UnderlyingLib inlib) { lib_ = inlib; }
     Xpetra::UnderlyingLib lib() { return lib_; }
 
+  protected:
+    const RCP<const FactoryManagerBase>& GetLevelManager(const int levelID) const {
+      return levelManagers_[levelID];
+    }
+
   private:
     //! Copy constructor is not implemented.
     Hierarchy(const Hierarchy &h);
