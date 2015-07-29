@@ -14,6 +14,9 @@ Trilinos 12.2:
 
 * New AMGX Adapter [EXPERIMENTAL]
 
+* Matlab interface for MueLu: Setup and solve hierarchies from Matlab
+  and use Matlab functions as MueLu factories.
+
 New experimental adapter which allows a user with AMGX installed to utilize
 this software for the preconditioning and solution of linear systems. If a
 user provides AMGX configuration options instead of a MueLu input deck, the
