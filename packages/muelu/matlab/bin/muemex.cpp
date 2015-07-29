@@ -754,11 +754,16 @@ void TpetraSystem<Scalar>::customSetup(const mxArray* matlabA, bool haveCoords, 
     }
     else
     {
+      typedef typename Teuchos::ArrayRCP<Scalar>::size_type arrayRCPSizeType;
       for (int i = 0; i < nPDE; i++)
       {
         Teuchos::ArrayRCP<Scalar> nsData = nullspace->getDataNonConst(i);
-        for (size_t j = 0; j < nsData.size(); j++)
+        for (arrayRCPSizeType j = 0; j < nsData.size(); j++)
         {
+          //TODO optimizations:
+          //TODO This can be optimized by getting the domain map and index base outside the loop.
+          //TODO Also, the whole local-to-global lookup table can be fetched one time, instead of repeatedly
+          //TODO calling getGlobalElement.
           mm_GlobalOrd GID = A->getDomainMap()->getGlobalElement(j) - A->getDomainMap()->getIndexBase();
           if ((GID - i) % nPDE == 0)
             nsData[j] = Teuchos::ScalarTraits<Scalar>::one();
