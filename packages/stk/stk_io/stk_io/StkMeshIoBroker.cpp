@@ -91,6 +91,7 @@ namespace {
 
   stk::mesh::EntityId get_side_entity_id(int64_t elem_id, int side_ordinal)
   {
+    // NOTE: This function uses a 1-based side ordinal
     int64_t ten = 10;
     stk::mesh::EntityId side_id = elem_id * ten + side_ordinal;
     return side_id;
@@ -505,7 +506,7 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
                 if (bulk.is_valid(elem)) {
                     // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
                     int side_ordinal = elem_side[is*2+1] - 1;
-                    stk::mesh::EntityId side_id = get_side_entity_id(elem_side[is*2], side_ordinal);
+                    stk::mesh::EntityId side_id = get_side_entity_id(elem_side[is*2], elem_side[is*2+1]);
 
                     if (par_dimen == 1) {
                       stk::mesh::Entity side = stk::mesh::declare_element_edge(bulk, side_id, elem, side_ordinal);
@@ -578,7 +579,7 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
         // subsetted out of the analysis mesh. Only process if
         // non-null.
         if (bulk.is_valid(elem)) {
-          stk::mesh::EntityId side_id = get_side_entity_id(elem_side[is*2], elem_side[is*2+1]-1);
+          stk::mesh::EntityId side_id = get_side_entity_id(elem_side[is*2], elem_side[is*2+1]);
           stk::mesh::Entity side = bulk.get_entity(side_rank, side_id);
           sides.push_back(side);
         } else {
