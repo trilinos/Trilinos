@@ -93,7 +93,8 @@ enum MUEMEX_TYPE
   EPETRA_CRSMATRIX,
   EPETRA_MULTIVECTOR,
   AGGREGATES,
-  AMALGAMATION_INFO
+  AMALGAMATION_INFO,
+  GRAPH
 };
 
 typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> mm_node_t;
@@ -112,8 +113,9 @@ typedef Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra
 typedef Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_MultiVector_complex;
 typedef MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy_double;
 typedef MueLu::Hierarchy<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy_complex;
-typedef MueLu::Aggregates<> MAggregates;
-typedef MueLu::AmalgamationInfo<> MAmalInfo;
+typedef MueLu::Aggregates<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAggregates;
+typedef MueLu::AmalgamationInfo<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAmalInfo;
+typedef MueLu::Graph<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MGraph;
 
 class MuemexArg
 {

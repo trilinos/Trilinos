@@ -361,7 +361,11 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, HierAttribType dataType
   {
     //First, get Level, which doesn't depend on Epetra vs. Tpetra
     RCP<MueLu::Level> level;
-    RCP<const FactoryManagerBase> fmb;
+    const RCP<const FactoryManagerBase>& fmb;
+    if(this->type == TPETRA)
+      fmb = ((TpetraSystem<double>*) this)->levelManagers[levelID];
+    else if(this->type == TPETRA_COMPLEX)
+      fmb = ((TpetraSystem<complex_t>*) this)->levelManagers[levelID];
     const FactoryBase* factory = NoFactory::get(); //(ptr to constant)
     bool needFMB = true;
     if(dataName == "A" || dataName == "P") //these are kept by default, don't use actual factory pointer
@@ -376,7 +380,8 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, HierAttribType dataType
         level = hier->GetLevel(levelID);
         if(needFMB)
         {
-          fmb = (RCP<const FactoryManagerBase>) hier->GetFactoryManager(levelID);
+          if(fmb.is_null)()
+            fmb = (RCP<const FactoryManagerBase>) hier->GetFactoryManager(levelID);
           if(!fmb.is_null())
           {
             try
@@ -394,7 +399,8 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, HierAttribType dataType
         level = hier->GetLevel(levelID);
         if(needFMB)
         {
-          fmb = (RCP<const FactoryManagerBase>) hier->GetFactoryManager(levelID);
+          if(fmb.is_null())
+            fmb = (RCP<const FactoryManagerBase>) hier->GetFactoryManager(levelID);
           if(!fmb.is_null())
           {
             try
@@ -788,10 +794,10 @@ void TpetraSystem<Scalar>::customSetup(const mxArray* matlabA, bool haveCoords, 
   RCP<OpenHierarchy<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> openH = rcp_static_cast<OpenHierarchy<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>, Hierarchy>(H);
   if(openH.is_null())
     throw runtime_error("Could not cast RCP<Hierarchy> to subclass.");
-  cout << "Hierarchy has " << H->GetNumLevels() << " levels." << endl;
   for(int lvl = 0; lvl < H->GetNumLevels(); lvl++)
   {
     const RCP<const FactoryManagerBase> fman = mueluFactory->GetFactoryManager(lvl);
+    levelManagers.push_back(fman);
     for(auto s : keepItems)
     {
       try
@@ -801,8 +807,7 @@ void TpetraSystem<Scalar>::customSetup(const mxArray* matlabA, bool haveCoords, 
         {
           FactoryBase* factPtr = (FactoryBase*) fact.get();
           //Add keep flag to level
-          cout << "Adding keep flag for \"" << s << "\" on level #" << lvl << " with factory at " << factPtr << endl;
-          H->GetLevel(lvl)->AddKeepFlag(s, factPtr, MueLu::Keep | MueLu::UserData);
+          H->GetLevel(lvl)->Keep(s, factPtr);
         }
       }
       catch(exception& e) {}

@@ -209,6 +209,7 @@ class TpetraSystem : public MuemexSystem
  private:
   Teuchos::RCP<TMatrix> A;
   Teuchos::RCP<TOperator> prec;
+  std::vector<const Teuchos::RCP<const FactoryManagerBase>> levelManagers;
 };
 
 namespace MuemexSystemList

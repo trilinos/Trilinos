@@ -118,6 +118,9 @@ template<> MUEMEX_TYPE getMuemexType<RCP<MAggregates>>() {return AGGREGATES;}
 template<> MUEMEX_TYPE getMuemexType(const RCP<MAmalInfo>& data) {return AMALGAMATION_INFO;}
 template<> MUEMEX_TYPE getMuemexType<RCP<MAmalInfo>>() {return AMALGAMATION_INFO;}
 
+template<> MUEMEX_TYPE getMuemexType(const RCP<MGraph>& data) {return GRAPH;}
+template<> MUEMEX_TYPE getMuemexType<RCP<MGraph>>() {return GRAPH;}
+
 /* "prototypes" for specialized functions used in other specialized functions */
 
 template<> mxArray* createMatlabSparse<double>(int numRows, int numCols, int nnz);
@@ -524,6 +527,52 @@ RCP<MAmalInfo> loadDataFromMatlab<RCP<MAmalInfo>>(const mxArray* mxa)
   throw runtime_error("AmalgamationInfo not supported in Muemex yet.");
   return amal;
 }
+/*
+template<>
+RCP<MGraph> loadDataFromMatlab<RCP<MGraph>>(const mxArray* mxa)
+{
+  RCP<MGraph> graph;
+  //mxa must be struct with logical sparse matrix called 'edges' and Nx1 int32 array 'boundaryNodes'
+  mxArray* edges = mxGetField(mxa, 0, "edges");
+  mxArray* boundaryNodes = mxGetField(mxa, 0, "boundaryNodes");
+  if(edges == NULL)
+    throw runtime_error("Graph structure in MATLAB must have a field called 'edges' (logical sparse matrix)");
+  if(boundaryNodes == NULL)
+    throw runtime_error("Graph structure in MATLAB must have a field called 'boundaryNodes' (int32 array containing list of boundary nodes)");
+  if(!mxIsSparse(edges) || mxGetGetClassId(edges) != mxLOGICAL_CLASS)
+    throw runtime_error("Graph edges must be stored as a logical sparse matrix.");
+  mwIndex* rowIndices = mxGetIr(edges);
+  mwIndex* colPtrs = mxGetJc(edges);
+  mm_GlobalOrd nRows = (mm_GlobalOrd) mxGetM(edges);
+  RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<muemex_map_type> map = rcp(new muemex_map_type(nRows, 0, comm));
+  //Figure out max entries per row (for ideal CrsGraph constructor)
+  int nnz = colPtrs[mxGetN(edges)]; //last entry in colPtrs
+  int* entriesPerRow = new int[nRows];
+  int** colIndices = new int*[nRows]; //pointer to array of ints, inner array are col indices
+  int maxNzPerRow = 0;
+  for(int i = 0; i < nnz; i++)
+  {
+    entriesPerRow[rowIndices[i]]++;
+  }
+  //Another pass to populate colIndices now that we know # of entries per row
+  for(int i = 0; i < nnz; i++)
+  {
+  
+  }
+  //Find maximum
+  for(int i = 0; i < nRows; i++)
+  {
+    if(maxNzPerRow < entriesPerRow[i])
+      maxNzPerRow = entriesPerRow[i];
+  }
+  typedef Tpetra::CrsGraph<mm_LocalOrd, mm_GlobalOrd, mm_node_t> TpetraGraph;
+  RCP<TpetraGraph> tgraph = rcp(new TpetraGraph(map, (size_t) maxNzPerRow));
+  //Populate tgraph in compressed-row format. Must get each row individually...
+  
+  delete[] entriesPerRow;
+}
+*/
 
 /* ******************************* */
 /* saveDataToMatlab                */
