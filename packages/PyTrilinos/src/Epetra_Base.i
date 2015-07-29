@@ -61,11 +61,6 @@
 #include "Epetra_Util.h"
 #include "Epetra_MapColoring.h"
 
-//#ifdef HAVE_DOMI
-// The Domi exceptions are needed by the DistArray Protocol typemaps
-#include "Domi_Exceptions.hpp"
-//#endif
-
 // Epetra python exception
 char epetraError[13] = "Epetra.Error";
 static PyObject * PyExc_EpetraError = PyErr_NewException(epetraError,NULL,NULL);
@@ -84,7 +79,6 @@ import numpy
 
 // Standard exception handling
 %include "exception.i"
-%include "Domi_exceptions.i"
 
 // Define the EpetraError exception
 %constant PyObject * Error = PyExc_EpetraError;  // This steals the reference
@@ -114,7 +108,6 @@ import numpy
     PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
     SWIG_fail;
   }
-  SWIG_CATCH_DOMIEXCEPT
   SWIG_CATCH_STDEXCEPT
   catch (Swig::DirectorException & e)
   {
