@@ -34,11 +34,11 @@
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
     
-        <ParameterList name="passing criteria">
-            <Parameter name="imbalance" type="double" value="1.2"/>
-            <Parameter name="min" type="double" value="1.25"/>
-            <Parameter name="max" type="double" value="1.15"/>
-            <Parameter name="plus_minus" type="double" value=".05"/>
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
         </ParameterList>
 
     </ParameterList>
@@ -60,12 +60,65 @@
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
     
-        <ParameterList name="passing criteria">
-            <Parameter name="imbalance" type="double" value="1.2"/>
-            <Parameter name="min" type="double" value="1.25"/>
-            <Parameter name="max" type="double" value="1.15"/>
-            <Parameter name="plus_minus" type="double" value=".05"/>
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
+        </ParameterList>
+    </ParameterList>
+
+
+    <ParameterList name="test3">
+        <Parameter name="Name" type="string" value="rcb_testFromDataFile_tpet"/>
+     
+        <ParameterList name="InputAdapterParameters">
+            <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
+            <Parameter name="inputType" type="string" value="tpetra_multivector"/> 
+            <Parameter name="number_of_vectors" type="int" value="2"/> 
+            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="algorithm" type="string" value="rcb"/>
+            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
+            <Parameter name="imbalance_tolerance" type="double" value="1.1"/> 
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+    
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
         </ParameterList>
 
     </ParameterList>
+
+    <ParameterList name="test4">
+        <Parameter name="Name" type="string" value="rcb_testFromDataFile_epet"/>
+     
+        <ParameterList name="InputAdapterParameters">
+            <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
+            <Parameter name="inputType" type="string" value="epetra_multivector"/> 
+            <Parameter name="number_of_vectors" type="int" value="2"/> 
+            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="algorithm" type="string" value="rcb"/>
+            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
+            <Parameter name="imbalance_tolerance" type="double" value="1.1"/> 
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+    
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
+        </ParameterList>
+
+    </ParameterList>
+
 </ParameterList>

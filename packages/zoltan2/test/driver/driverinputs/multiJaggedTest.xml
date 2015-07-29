@@ -1,0 +1,49 @@
+<!-- 
+    INPUT TYPES: coordinates,
+                 (x,t,e)petra_crs_matrix,
+                 (x,t,e)petra_crs_graph,
+                 (x,t,e)petra_vector,
+                 (x,t,e)petra_multivector
+
+    INPUT ADAPTERS: BasicIdentifier,
+                    XpetraMultiVector,
+                    XpetraCRSGraph,
+                    XpetraCRSMatrix
+-->
+
+<ParameterList name="mjTest">
+    
+        <ParameterList name="InputParameters">
+            <Parameter name="inputFile" type="string" value="GeomGenWeight"/>
+            <Parameter name="fileType" type="string" value="Geometric Generator"/>
+        </ParameterList>
+    
+    <ParameterList name="test1">
+        <Parameter name="Name" type="string" value="mj_testFromDataFile_coordinates"/>
+     
+        <ParameterList name="InputAdapterParameters">
+            <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
+            <Parameter name="inputType" type="string" value="coordinates"/> 
+            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+    
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
+
+            <ParameterList name="weight 1">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
+        </ParameterList>
+
+    </ParameterList>
+</ParameterList>

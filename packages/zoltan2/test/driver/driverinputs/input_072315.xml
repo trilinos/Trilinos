@@ -23,7 +23,7 @@
     </ParameterList>
         
     <ParameterList name="Test1">
-        <Parameter name="Name" type="string" value="MeshCoordinateTest_rcb"/>
+        <Parameter name="Name" type="string" value="MeshCoordinateTest_rcb_coord"/>
      
         <ParameterList name="InputAdapterParameters">
             <!--<Parameter name="inputType" type="string" value="tpetra_multivector"/>--> 
@@ -39,14 +39,17 @@
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
 
-        <ParameterList name="Passing Criteria">
-            <Parameter name="imbalance" type="double" value="1.2"/>
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
         </ParameterList>
 
     </ParameterList>
 
     <ParameterList name="Test2">
-        <Parameter name="Name" type="string" value="MeshCoordinateTest_2d"/>
+        <Parameter name="Name" type="string" value="MeshCoordinateTest_rcb_tpet"/>
      
         <ParameterList name="InputAdapterParameters">
             <Parameter name="inputType" type="string" value="tpetra_multivector"/> 
@@ -61,13 +64,16 @@
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
         
-        <ParameterList name="Passing Criteria">
-            <Parameter name="imbalance" type="double" value="1.2"/>
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
         </ParameterList>
     </ParameterList>
     
     <ParameterList name="Test3">
-        <Parameter name="Name" type="string" value="MeshCoordinateTest_2d_xpetra"/>
+        <Parameter name="Name" type="string" value="MeshCoordinateTest_rcb_xpet"/>
      
         <ParameterList name="InputAdapterParameters">
             <Parameter name="inputType" type="string" value="xpetra_multivector"/> 
@@ -82,9 +88,37 @@
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
     
-        <ParameterList name="Passing Criteria">
-            <Parameter name="imbalance" type="double" value="1.2"/>
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
         </ParameterList>
+
     </ParameterList>
 
+
+    <ParameterList name="Test4">
+        <Parameter name="Name" type="string" value="MeshCoordinateTest_rcb_epet"/>
+     
+        <ParameterList name="InputAdapterParameters">
+            <Parameter name="inputType" type="string" value="epetra_multivector"/> 
+            <Parameter name="number_of_vectors" type="int" value="3"/>
+            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
+        </ParameterList>
+
+
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
+            <Parameter name="rectilinear" type="string" value="yes"/>            
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+    
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
+        </ParameterList>
+    </ParameterList>
 </ParameterList>
