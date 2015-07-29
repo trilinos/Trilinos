@@ -45,6 +45,15 @@
 
 #include "netcdf.h"
 
+#if defined(NC_HAVE_META_H)
+#include "netcdf_meta.h"
+#if NC_HAS_PARALLEL
+#ifndef PARALLEL_AWARE_EXODUS
+#define PARALLEL_AWARE_EXODUS
+#endif
+#endif
+#endif
+
 #if defined(PARALLEL_AWARE_EXODUS)
 #include "netcdf_par.h"
 #endif
@@ -58,8 +67,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 6.13f
-#define EX_API_VERS_NODOT 613
+#define EX_API_VERS 6.15f
+#define EX_API_VERS_NODOT 615
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
@@ -119,7 +128,7 @@ extern "C" {
 
   /* Parallel IO mode flags... */
 #define EX_MPIIO               0x20000
-#define EX_MPIPOSIX            0x40000
+#define EX_MPIPOSIX            0x40000  /**< \deprecated As of libhdf5 1.8.13. */
 #define EX_PNETCDF             0x80000
   
   /*@}*/
@@ -1983,10 +1992,6 @@ ex_put_elem_cmap(int  exoid,	/* NetCDF/Exodus file ID */
 		 );
 
 
-#ifdef __cplusplus
-}                               /* close brackets on extern "C" declaration */
-#endif
-
 /**
  * \defgroup ErrorReturnCodes Exodus error return codes - exerrval return values
  * @{
@@ -2003,6 +2008,10 @@ ex_put_elem_cmap(int  exoid,	/* NetCDF/Exodus file ID */
 #define EX_NOTROOTID    -1002   /**< file id is not the root id; it is a subgroup id */
 #define EX_NULLENTITY   -1006   /**< null entity found                        */
 /* @} */
+
+#ifdef __cplusplus
+}                               /* close brackets on extern "C" declaration */
+#endif
 
 #endif
 

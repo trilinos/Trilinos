@@ -52,7 +52,7 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-void find_entities_these_nodes_have_in_common(BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
+void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::EntityRank rank, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
 {
   entity_vector.clear();
   std::vector<Entity> tmp;
@@ -75,12 +75,12 @@ void find_entities_these_nodes_have_in_common(BulkData& mesh, stk::mesh::EntityR
   }
 }
 
-void find_elements_these_nodes_have_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
+void find_elements_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
 {
     find_entities_these_nodes_have_in_common(mesh,stk::topology::ELEMENT_RANK,numNodes,nodes,entity_vector);
 }
 
-void find_faces_these_nodes_have_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
+void find_faces_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& entity_vector)
 {
     find_entities_these_nodes_have_in_common(mesh,stk::topology::FACE_RANK,numNodes,nodes,entity_vector);
 }
@@ -99,7 +99,7 @@ bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned n
 }
 
 
-void find_locally_owned_elements_these_nodes_have_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems)
+void find_locally_owned_elements_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems)
 {
   find_elements_these_nodes_have_in_common(mesh, numNodes, nodes, elems);
 
@@ -627,7 +627,7 @@ stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::Entity elem,
                                                      int side_ordinal,
                                                      stk::mesh::EntityId new_face_global_id,
-                                                     stk::mesh::Part & part)
+                                                     const stk::mesh::PartVector & parts)
 {
     stk::mesh::Entity new_face = stk::mesh::Entity();
     unsigned elem_num_faces = bulk.num_faces(elem);
@@ -640,10 +640,9 @@ stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
         }
     }
     if (!bulk.is_valid(new_face)) {
-        new_face = stk::mesh::declare_element_side(bulk, new_face_global_id, elem, side_ordinal, &part);
+        new_face = stk::mesh::declare_element_side(bulk, new_face_global_id, elem, side_ordinal, parts);
     } else {
-        stk::mesh::PartVector add_parts(1, &part);
-        bulk.change_entity_parts(new_face, add_parts );
+        bulk.change_entity_parts(new_face, parts );
     }
     return new_face;
 }

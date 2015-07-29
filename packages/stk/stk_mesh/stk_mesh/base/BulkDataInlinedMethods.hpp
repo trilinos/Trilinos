@@ -49,14 +49,6 @@ EntityLess::EntityLess(const BulkData& mesh) : m_mesh(&mesh) {}
 
 /** \brief  Comparison operator */
 inline
-bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
-{
-  const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
-  const EntityKey rhs_key = m_mesh->in_index_range(rhs) ? m_mesh->entity_key(rhs) : EntityKey();
-  return lhs_key < rhs_key;
-}
-
-inline
 bool EntityLess::operator()(const Entity lhs, const EntityKey & rhs) const
 {
   const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
@@ -816,6 +808,8 @@ inline RelationVector& BulkData::aux_relations(Entity entity)
 inline void BulkData::set_global_id(stk::mesh::Entity entity, int id)
 {
   entity_setter_debug_check(entity);
+
+  m_modSummary.track_set_global_id(entity, id);
 
   m_fmwk_global_ids[entity.local_offset()] = id;
 }

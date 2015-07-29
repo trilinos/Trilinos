@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
     comm->barrier();
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
 
-    RCP<Matrix> A = Utils::Read(string(matrixFileName), xpetraParameters.GetLib(), comm);
+    RCP<Matrix> A = Utils::Read(std::string(matrixFileName), xpetraParameters.GetLib(), comm);
     RCP<const Map>   map = A->getRowMap();
     RCP<MultiVector> nullspace = MultiVectorFactory::Build(A->getDomainMap(),nPDE);
     //RCP<MultiVector> fakeCoordinates = MultiVectorFactory::Build(A->getDomainMap(),1);
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
     RCP<MultiVector> B = VectorFactory::Build(map,1);
 
     if (rhsFileName != "")
-      B = Utils2::ReadMultiVector(string(rhsFileName), A->getRowMap());
+      B = Utils2::ReadMultiVector(std::string(rhsFileName), A->getRowMap());
     else
     {
       // we set seed for reproducibility

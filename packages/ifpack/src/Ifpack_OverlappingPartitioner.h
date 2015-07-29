@@ -55,14 +55,14 @@ class Epetra_Import;
 /* \brief Ifpack_OverlappingPartitioner: A class to create overlapping
     partitions of a local graph.
 
-Class Ifpack_OverlappingPartitioner enables the extension of 
+Class Ifpack_OverlappingPartitioner enables the extension of
 non-overlapping partitions to an arbitrary value of overlap.
 Note that overlap refers to the overlap among \e local parts,
 and not the overlap among the processes.
 
 Supported parameters are:
 - \c "partitioner: local parts": the required number of parts;
-- \c "partitioner: overlap": the required amount of overlap is set in 
+- \c "partitioner: overlap": the required amount of overlap is set in
   parameter. Default = 0 (integer).
 - \c "partitioner: verbose": if \c true, information are reported on
   cout. Nothing is reported otherwise.
@@ -77,7 +77,7 @@ that has been filtered using Ifpack_SingletonFilter.
 \author Marzio Sala, SNL 9214.
 
 \date Last update: Oct-04.
-*/  
+*/
 class Ifpack_OverlappingPartitioner : public Ifpack_Partitioner {
 
 public:
@@ -89,20 +89,20 @@ public:
   virtual ~Ifpack_OverlappingPartitioner();
 
   //! Returns the number of computed local partitions.
-  int NumLocalParts() const 
+  int NumLocalParts() const
   {
     return(NumLocalParts_);
   }
 
   //! Returns the overlapping level.
-  int OverlappingLevel() const 
+  int OverlappingLevel() const
   {
     return(OverlappingLevel_);
   }
 
   //! Returns the local non-overlapping partition ID of the specified row.
   /*! Returns the non-overlapping partition ID of the specified row.
-   \param 
+   \param
    MyRow - (In) local row numbe
 
    \return
@@ -133,7 +133,7 @@ public:
   {
     return(Parts_[Part].size());
   }
-    
+
   int RowsInPart(const int Part, int* List) const
   {
     for (int i = 0 ; i < NumRowsInPart(Part) ; ++i)
@@ -141,7 +141,7 @@ public:
 
     return(0);
   }
-  
+
   const int* NonOverlappingPartition() const
   {
     return(&Partition_[0]);
@@ -170,7 +170,7 @@ public:
 
   //! Computes the partitions. Returns 0 if successful.
   virtual int ComputeOverlappingPartitions();
-  
+
   //! Returns true if partitions have been computed successfully.
   bool IsComputed()
   {
@@ -178,10 +178,10 @@ public:
   }
 
   //! Prints basic information on iostream. This function is used by operator<<.
-  virtual ostream& Print(std::ostream& os) const;
+  virtual std::ostream& Print(std::ostream& os) const;
 
 protected:
-   
+
   //! Returns the number of local rows.
   int NumMyRows() const;
   //! Returns the number of local nonzero elements.
@@ -198,8 +198,8 @@ protected:
   //! Number of local subgraphs
   int NumLocalParts_;
   //! Partition_[i] contains the ID of non-overlapping part it belongs to
-  std::vector<int> Partition_; 
-  //! Parts_[i][j] is the ID of the j-th row contained in the (overlapping) 
+  std::vector<int> Partition_;
+  //! Parts_[i][j] is the ID of the j-th row contained in the (overlapping)
   // partition i
   std::vector<std::vector<int> > Parts_;
   //! Reference to the graph to be partitioned

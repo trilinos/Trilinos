@@ -86,9 +86,7 @@ implicit none
   type(PARIO_INFO) :: pio_info
   type(PROB_INFO) :: prob
 
-  integer, parameter :: MAX_PROCNAME_LEN = 64
-  character(len=MAX_PROCNAME_LEN) :: procname
-  integer(Zoltan_INT) :: int_procname(MAX_PROCNAME_LEN)
+  character(len=MPI_MAX_PROCESSOR_NAME) :: procname
   integer(Zoltan_INT) :: namelen
   integer(Zoltan_INT) :: alloc_stat
 
@@ -142,16 +140,8 @@ end interface
 !   get some machine information 
   call MPI_Comm_rank(MPI_COMM_WORLD, Proc, error)
   call MPI_Comm_size(MPI_COMM_WORLD, Num_Proc, error)
-  namelen = MAX_PROCNAME_LEN
-  call my_Get_Processor_Name(int_procname, namelen, error)
 
-  if (namelen > MAX_PROCNAME_LEN) then
-     print *,"WARNING: processor name longer than MAX_PROCNAME_LEN (",MAX_PROCNAME_LEN,") characters"
-     namelen = MAX_PROCNAME_LEN
-  endif
-  do i=1,namelen
-     procname(i:i) = achar(int_procname(i))
-  end do
+  call MPI_Get_processor_name(procname, namelen, error)
   print *,"Processor ",Proc," of ",Num_Proc," on host ",procname(1:namelen)
 
 ! Set the input file

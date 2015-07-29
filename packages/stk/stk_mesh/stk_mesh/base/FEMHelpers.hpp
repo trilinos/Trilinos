@@ -61,17 +61,6 @@ Entity declare_element( BulkData & mesh ,
   return declare_element(mesh, vec, elem_id, node_ids);
 }
 
-STK_DEPRECATED(Entity declare_element( BulkData & mesh ,
-                                       PartVector & parts , // parts[0] expected to have topology
-                                       const EntityId elem_id ,
-                                       const EntityId node_id[] ));  // Delete on 2015-07-09
-
-STK_DEPRECATED(Entity declare_element( BulkData & mesh ,
-                                       Part & part ,
-                                       const EntityId elem_id ,
-                                       const EntityId node_id[] ));  // Delete on 2015-07-09
-
-
 /** \brief  Create (or find) an element side.
  *
  *  The element must be a member of a Part with a topology.
@@ -80,7 +69,13 @@ Entity declare_element_side( BulkData & mesh ,
 			     const stk::mesh::EntityId global_side_id ,
 			     Entity elem ,
 			     const unsigned local_side_id ,
-			     Part * part = NULL);
+			     const stk::mesh::PartVector& parts);
+
+Entity declare_element_side( BulkData & mesh ,
+                             const stk::mesh::EntityId global_side_id ,
+                             Entity elem ,
+                             const unsigned local_side_id ,
+                             stk::mesh::Part* part = NULL);
 
 /** \brief  Create (or find) an element edge.
  *
@@ -90,7 +85,9 @@ Entity declare_element_edge( BulkData & mesh ,
 			     const stk::mesh::EntityId global_side_id ,
 			     Entity elem ,
 			     const unsigned local_side_id ,
-			     Part * part = NULL);
+			     const stk::mesh::PartVector& parts = stk::mesh::PartVector());
+
+
 
 /** \brief  Create (or find) an element side.
  *
@@ -100,8 +97,13 @@ Entity declare_element_side( BulkData & mesh ,
                                Entity elem ,
                                Entity side ,
                                const unsigned local_side_id ,
-                               Part * part = NULL );
+                               const stk::mesh::PartVector& parts);
 
+Entity declare_element_side( BulkData & mesh ,
+                               Entity elem ,
+                               Entity side ,
+                               const unsigned local_side_id ,
+                               stk::mesh::Part* part = NULL);
 
 
 /** \brief  Create (or find) an element edge.
@@ -112,7 +114,7 @@ Entity declare_element_edge( BulkData & mesh ,
                                Entity elem ,
                                Entity edge ,
                                const unsigned local_edge_id ,
-                               Part * part = NULL );
+                               const stk::mesh::PartVector& parts = stk::mesh::PartVector());
 
 /** \brief finds oridinal and permutation of an entity relative to a parent entity
  *
@@ -121,7 +123,8 @@ Entity declare_element_edge( BulkData & mesh ,
  *
  *
  */
-std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> get_ordinal_and_permutation(stk::mesh::BulkData& mesh, stk::mesh::Entity parent_entity, stk::mesh::EntityRank to_rank, stk::mesh::EntityVector &nodes_of_sub_rank);
+typedef std::pair<stk::mesh::ConnectivityOrdinal, stk::mesh::Permutation> OrdinalAndPermutation;
+OrdinalAndPermutation get_ordinal_and_permutation(const stk::mesh::BulkData& mesh, stk::mesh::Entity parent_entity, stk::mesh::EntityRank to_rank, const stk::mesh::EntityVector &nodes_of_sub_rank);
 
 /** \brief declares relation from an element to an entity of lower rank based on nodes that the entity contains
  *

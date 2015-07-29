@@ -87,6 +87,17 @@ void ModificationSummary::track_declare_entity(stk::mesh::EntityRank rank, stk::
     addEntityKeyAndStringToTracker(key, os.str());
 }
 
+void ModificationSummary::track_set_global_id(stk::mesh::Entity entity, stk::mesh::EntityId newId)
+{
+    if (isValid(entity)) {
+        stk::mesh::EntityKey oldKey = getEntityKey(entity);
+        stk::mesh::EntityId oldId = oldKey.id();
+        std::ostringstream os;
+        os << "Changing Fmwk global id for entity " << oldKey << " from " << oldId << " to " << newId << std::endl;
+        addEntityKeyAndStringToTracker(oldKey, os.str());
+    }
+}
+
 void ModificationSummary::track_change_entity_owner(const std::vector<stk::mesh::EntityProc> &changes)
 {
     std::ostringstream os;
@@ -211,6 +222,7 @@ void ModificationSummary::write_summary(int mod_cycle_count, bool sort)
             {
                 out << m_stringTracker[i].first << "\t" << m_stringTracker[i].second;
             }
+//            m_bulkData.dump_all_mesh_info(out);
         }
 
         out.close();
@@ -250,9 +262,9 @@ void ModificationSummary::addEntityKeyAndStringToTracker(stk::mesh::EntityKey ke
 }
 
 std::string ModificationSummary::get_filename(int mod_cycle_count) const
-        {
+{
     std::ostringstream os;
-    os << "modification_cycle_" << mod_cycle_count << "_P" << my_proc_id() << ".txt";
+    os << "modification_cycle_P" << my_proc_id() << "_" << &m_bulkData << "_" << mod_cycle_count << ".txt";
     return os.str();
 }
 

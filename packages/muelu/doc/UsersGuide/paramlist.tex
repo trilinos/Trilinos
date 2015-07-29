@@ -66,6 +66,20 @@
           
 \cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
           
+\cbb{aggregation: output filename}{string}{""}{Filename to write VTK visualization data to.}
+          
+\cbb{aggregation: output file: time step}{int}{0}{Time step ID for non-linear problems.}
+          
+\cbb{aggregation: output file: iter}{int}{0}{Iteration for non-linear problems.}
+          
+\cbb{aggregation: output file: agg style}{string}{Point Cloud}{Style of aggregate visualization.}
+          
+\cbb{aggregation: output file: fine graph edges}{bool}{false}{Whether to draw all fine node connections along with the aggregates.}
+          
+\cbb{aggregation: output file: coarse graph edges}{bool}{false}{Whether to draw all coarse node connections along with the aggregates.}
+          
+\cbb{aggregation: output file: build colormap}{bool}{false}{Whether to output a random colormap in a separate XML file.}
+          
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", ``P'', ``R'') of type \texttt{string} and value ``\{levels separated by commas\}''. A matrix with a name ``X'' is saved in three MatrixMarket files: a) data is saved in \textit{X\_level.mm}; b) its row map is saved in \textit{rowmap\_X\_level.mm}; c) its column map is saved in \textit{colmap\_X\_level.mm}.}
           
 \cbb{print initial parameters}{bool}{true}{Print parameters provided for a hierarchy construction.}
@@ -75,8 +89,6 @@
 \cbb{transpose: use implicit}{bool}{false}{Use implicit transpose for the restriction operator.}
           
 \cbb{multigrid algorithm}{string}{"sa"}{Multigrid method. Possible values: see Table~\ref{t:mgs}.}
-          
-\cbb{semicoarsen: coarsen rate}{int}{3}{Rate at which to coarsen unknowns in the z direction.}
           
 \cbb{sa: damping factor}{double}{1.33}{Damping factor for smoothed aggregation.}
           

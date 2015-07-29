@@ -496,7 +496,6 @@ template <typename Adapter>
 template <typename Adapter>
 void PartitioningProblem<Adapter>::solve(bool updateInputData)
 {
-  HELLO;
   this->env_->debug(DETAILED_STATUS, "Entering solve");
 
   // Create the computational model.
@@ -515,12 +514,24 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   //   metrics.  The Solution object itself will convert our internal
   //   global numbers back to application global Ids if needed.
 
-  RCP<const IdentifierMap<user_t> > idMap = 
-    this->baseModel_->getIdentifierMap();
-
   // Create the algorithm
   try {
-    if (algName_ == std::string("scotch")) {
+    if (algName_ == std::string("multijagged")) {
+      this->algorithm_ = rcp(new Zoltan2_AlgMJ<Adapter>(this->envConst_,
+                                              problemComm_,
+                                              this->coordinateModel_));
+    }
+    else if (algName_ == std::string("zoltan")) {
+      this->algorithm_ = rcp(new AlgZoltan<Adapter>(this->envConst_,
+                                           problemComm_,
+                                           this->baseInputAdapter_));
+    }
+    else if (algName_ == std::string("parma")) {
+      this->algorithm_ = rcp(new AlgParMA<Adapter>(this->envConst_,
+                                           problemComm_,
+                                           this->baseInputAdapter_));
+    }
+    else if (algName_ == std::string("scotch")) {
       this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
                                             problemComm_,
                                             this->graphModel_));
@@ -538,16 +549,13 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_, problemComm_,
                                                  this->coordinateModel_));
     }
-    else if (algName_ == std::string("multijagged")) {
-      this->algorithm_ = rcp(new Zoltan2_AlgMJ<Adapter>(this->envConst_,
-                                              problemComm_,
-                                              this->coordinateModel_));
-    }
-    else if (algName_ == std::string("wolf")) {
-      this->algorithm_ = rcp(new AlgWolf<Adapter>(this->envConst_,
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
+    else if (algName_ == std::string("nd")) {
+      this->algorithm_ = rcp(new AlgND<Adapter>(this->envConst_,
                                         problemComm_,this->graphModel_,
-                                        this->coordinateModel_));
+					this->coordinateModel_,this->baseInputAdapter_));
     }
+#endif
     else {
       throw std::logic_error("partitioning algorithm not supported");
     }
@@ -560,7 +568,7 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   try{
     soln = new PartitioningSolution<Adapter>( 
-      this->envConst_, problemCommConst_, idMap, numberOfWeights_, 
+      this->envConst_, problemCommConst_, numberOfWeights_, 
       partIds_.view(0, numberOfCriteria_), 
       partSizes_.view(0, numberOfCriteria_), this->algorithm_);
   }
@@ -613,11 +621,10 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
     psq_t *quality = NULL;
     RCP<const ps_t> solutionConst = rcp_const_cast<const ps_t>(solution_);
-    RCP<const Adapter> adapter = rcp(this->inputAdapter_, false);
 
     try{
-      quality = new psq_t(this->envConst_, problemCommConst_, adapter, 
-        solutionConst);
+      quality = new psq_t(this->envConst_, problemCommConst_,
+                          this->inputAdapter_, solutionConst);
     }
     Z2_FORWARD_EXCEPTIONS
 
@@ -630,7 +637,6 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 template <typename Adapter>
 void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 {
-  HELLO;
   this->env_->debug(DETAILED_STATUS, 
     "PartitioningProblem::createPartitioningProblem");
 
@@ -735,6 +741,11 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       algName_ = algorithm;
       needConsecutiveGlobalIds = true;
     }
+    else if (algorithm == std::string("zoltan") ||
+	     algorithm == std::string("parma"))
+    {
+      algName_ = algorithm;
+    }
     else if (algorithm == std::string("rcb") ||
              algorithm == std::string("rib") ||
              algorithm == std::string("multijagged") ||
@@ -772,12 +783,14 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       algName_ = algorithm;
       needConsecutiveGlobalIds = true;
     }
-    else if (algorithm == std::string("wolf"))
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
+    else if (algorithm == std::string("nd"))
     {
       modelAvail_[GraphModelType]=true;
       modelAvail_[CoordinateModelType]=true;
       algName_ = algorithm;
     }
+#endif
     else
     {
       // Parameter list should ensure this does not happen.
@@ -877,16 +890,15 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       else
         algName_ = std::string("patoh"); 
     }
-    else if (inputType_ == CoordinateAdapterType)
+    else if (inputType_ == VectorAdapterType)
     {
       //modelType_ = CoordinateModelType;
       modelAvail_[CoordinateModelType]=true;
 
       if(algName_ != std::string("multijagged"))
-      algName_ = std::string("rcb");
+        algName_ = std::string("rcb");
     }
-    else if (inputType_ == VectorAdapterType ||
-             inputType_ == IdentifierAdapterType)
+    else if (inputType_ == IdentifierAdapterType)
     {
       //modelType_ = IdentifierModelType;
       modelAvail_[IdentifierModelType]=true;
@@ -1012,17 +1024,16 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   }
 
 
-  if ( newData ||
-       (modelAvail_[GraphModelType]!=prevModelAvail[GraphModelType]) ||
-       (modelAvail_[HypergraphModelType]!=prevModelAvail[HypergraphModelType]) ||
-       (modelAvail_[CoordinateModelType]!=prevModelAvail[CoordinateModelType]) ||
-       (modelAvail_[IdentifierModelType]!=prevModelAvail[IdentifierModelType]) ||
-	//       (modelType_ != previousModel) ||
-       (graphFlags_ != previousGraphModelFlags) ||
-       (coordFlags_ != previousCoordinateModelFlags) ||
-       (idFlags_ != previousIdentifierModelFlags) ) 
+  if (newData ||
+      (modelAvail_[GraphModelType]!=prevModelAvail[GraphModelType]) ||
+      (modelAvail_[HypergraphModelType]!=prevModelAvail[HypergraphModelType])||
+      (modelAvail_[CoordinateModelType]!=prevModelAvail[CoordinateModelType])||
+      (modelAvail_[IdentifierModelType]!=prevModelAvail[IdentifierModelType])||
+      // (modelType_ != previousModel) ||
+      (graphFlags_ != previousGraphModelFlags) ||
+      (coordFlags_ != previousCoordinateModelFlags) ||
+      (idFlags_    != previousIdentifierModelFlags)) 
   {
-
     // Create the computational model.
     // Models are instantiated for base input adapter types (mesh,
     // matrix, graph, and so on).  We pass a pointer to the input
@@ -1033,53 +1044,47 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     //KDD const Teuchos::ParameterList pl = this->envConst_->getParameters();
     //bool exceptionThrow = true;
 
-    if(modelAvail_[GraphModelType]==false && modelAvail_[HypergraphModelType]==false &&
-       modelAvail_[CoordinateModelType]==false && modelAvail_[IdentifierModelType]==false)
+    if(modelAvail_[GraphModelType]==true)
     {
-      cout << __func__zoltan2__ << " Invalid model"  << endl;
-    }
-    else
-    {
-      if(modelAvail_[GraphModelType]==true)
-      {
-        this->env_->debug(DETAILED_STATUS, "    building graph model");
-        this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
-          this->baseInputAdapter_, this->envConst_, problemComm_, graphFlags_));
+      this->env_->debug(DETAILED_STATUS, "    building graph model");
+      this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
+            this->baseInputAdapter_, this->envConst_, problemComm_,
+            graphFlags_));
 
-        this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(this->graphModel_);
-      }
-      if(modelAvail_[HypergraphModelType]==true)
-      {
-	std::cout << "Hypergraph model not implemented yet..." << std::endl;
-      }
-
-      if(modelAvail_[CoordinateModelType]==true)
-      {
-      	this->env_->debug(DETAILED_STATUS, "    building coordinate model");
-      	this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
-      				     this->baseInputAdapter_, this->envConst_, problemComm_, coordFlags_));
-
-        this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(this->coordinateModel_);
-      }
-
-      if(modelAvail_[IdentifierModelType]==true)
-      {
-        this->env_->debug(DETAILED_STATUS, "    building identifier model");
-        this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
-                                     this->baseInputAdapter_, this->envConst_, problemComm_, idFlags_));
-
-        this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(this->identifierModel_);
-      }
-  
-
+      this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+            this->graphModel_);
     }
 
+    if(modelAvail_[HypergraphModelType]==true)
+    {
+      std::cout << "Hypergraph model not implemented yet..." << std::endl;
+    }
 
+    if(modelAvail_[CoordinateModelType]==true)
+    {
+      this->env_->debug(DETAILED_STATUS, "    building coordinate model");
+      this->coordinateModel_ = rcp(new CoordinateModel<base_adapter_t>(
+            this->baseInputAdapter_, this->envConst_, problemComm_, 
+            coordFlags_));
+
+      this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+            this->coordinateModel_);
+    }
+
+    if(modelAvail_[IdentifierModelType]==true)
+    {
+      this->env_->debug(DETAILED_STATUS, "    building identifier model");
+      this->identifierModel_ = rcp(new IdentifierModel<base_adapter_t>(
+            this->baseInputAdapter_, this->envConst_, problemComm_,
+            idFlags_));
+
+      this->baseModel_ = rcp_implicit_cast<const Model<base_adapter_t> >(
+            this->identifierModel_);
+    }
 
     this->env_->memory("After creating Model");
     this->env_->debug(DETAILED_STATUS, "createPartitioningProblem done");
   }
-
 }
 
 }  // namespace Zoltan2

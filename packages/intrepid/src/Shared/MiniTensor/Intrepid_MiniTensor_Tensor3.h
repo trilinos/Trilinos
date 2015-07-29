@@ -247,6 +247,16 @@ Tensor3<typename Promote<S, T>::type, N>
 operator/(S const & s, Tensor3<T, N> const & A);
 
 ///
+/// 3rd-order tensor 2nd-order tensor double dot product
+/// \param A 3rd-order tensor
+/// \param u 2nd-order tensor
+/// \return \f$ B = A : u := B_i = A_{ijk} u_{jk} \f$
+///
+template<typename S, typename T, Index N>
+Vector<typename Promote<S, T>::type, N>
+dotdot(Tensor3<T, N> const & A, Tensor<S, N> const & u);
+
+///
 /// 3rd-order tensor vector product
 /// \param A 3rd-order tensor
 /// \param u vector

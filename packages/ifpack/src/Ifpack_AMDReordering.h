@@ -70,13 +70,13 @@ public:
 
   //! Destructor.
   virtual ~Ifpack_AMDReordering() {};
-  
+
   //! Sets integer parameters `Name'.
-  int SetParameter(const string Name, const int Value);
+  int SetParameter(const std::string Name, const int Value);
 
   //! Sets double parameters `Name'.
-  int SetParameter(const string Name, const double Value);
-  
+  int SetParameter(const std::string Name, const double Value);
+
   //! Sets all parameters.
   int SetParameters(Teuchos::ParameterList& List);
 
@@ -100,18 +100,18 @@ public:
 
   //! Applies reordering to multivector X, whose local length equals the number of local rows.
   int P(const Epetra_MultiVector& Xorig,
-	Epetra_MultiVector& Xreord) const;
+        Epetra_MultiVector& Xreord) const;
 
   //! Applies inverse reordering to multivector X, whose local length equals the number of local rows.
   int Pinv(const Epetra_MultiVector& Xorig,
-	   Epetra_MultiVector& Xinvreord) const;
+           Epetra_MultiVector& Xinvreord) const;
 
-  
+
   //! Prints basic information on iostream. This function is used by operator<<.
-  ostream& Print(std::ostream& os) const;
+  std::ostream& Print(std::ostream& os) const;
 
   //! Returns the number of local rows.
-  int NumMyRows() const 
+  int NumMyRows() const
   {
     return(NumMyRows_);
   }
@@ -125,6 +125,6 @@ private:
   std::vector<int> Reorder_;
   //! Contains the inverse reordering.
   std::vector<int> InvReorder_;
-}; 
+};
 
 #endif

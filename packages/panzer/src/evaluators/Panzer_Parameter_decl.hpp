@@ -63,9 +63,9 @@ namespace panzer {
   
   public:
     
-    Parameter(const std::string name,
+    Parameter(const std::string parameter_name,
+	      const std::string field_name,
 	      const Teuchos::RCP<PHX::DataLayout>& data_layout,
-	      const double initial_value,
 	      panzer::ParamLib& param_lib);
 
     #ifdef HAVE_STOKHOS
@@ -77,7 +77,8 @@ namespace panzer {
       * \param[in] expansion Expansion to use when constructing the stochastic scalar
       * \param[in] param_lib Parameter library to register the scalar parameter with
       */
-    Parameter(const std::string name,
+    Parameter(const std::string parameter_name,
+	      const std::string field_name,
 	      const Teuchos::RCP<PHX::DataLayout>& data_layout,
 	      const std::vector<double> & sg_initial_value,
               const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > & expansion,

@@ -58,4 +58,5 @@ TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/h
 
 GENERATE_TAGFILE       = ../../common/tag_files/ifpack.tag
 USE_MATHJAX            = YES
+MATHJAX_RELPATH        = https://cdn.mathjax.org/mathjax/latest
 IMAGE_PATH             = ./

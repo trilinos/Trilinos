@@ -46,6 +46,7 @@
 #include "Intrepid_MiniTensor_Tensor.h"
 #include "Intrepid_MiniTensor_Tensor3.h"
 #include "Intrepid_MiniTensor_Tensor4.h"
+#include "Intrepid_MiniTensor_Matrix.h"
 
 #include "Intrepid_MiniTensor_Geometry.h"
 #include "Intrepid_MiniTensor_LinearAlgebra.h"

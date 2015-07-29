@@ -235,6 +235,11 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    // Test achievedTol output
+    MT ach_tol = solver.achievedTol();
+    if (proc_verbose)
+      std::cout << "Achieved tol : "<<ach_tol<<std::endl;
+
     // Clean up.
     delete [] dvals;
     delete [] colptr;

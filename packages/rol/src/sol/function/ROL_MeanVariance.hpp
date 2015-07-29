@@ -52,6 +52,9 @@ namespace ROL {
 template<class Real>
 class MeanVariance : public RiskMeasure<Real> {
 private:
+
+  Teuchos::RCP<PositiveFunction<Real> > positiveFunction_;
+
   std::vector<Real> order_;
   std::vector<Real> coeff_;
 
@@ -61,20 +64,19 @@ private:
   std::vector<Teuchos::RCP<Vector<Real> > > hessvec_storage_;
   std::vector<Real> gradvec_storage_;
 
-  Teuchos::RCP<PositiveFunction<Real> > positiveFunction_;
-
 public:
+
   MeanVariance( Real order, Real coeff,
-                Teuchos::RCP<PositiveFunction<Real> > &pf ) : positiveFunction_(pf) {
-    order_.clear();
+                Teuchos::RCP<PositiveFunction<Real> > &pf )
+    : RiskMeasure<Real>(), positiveFunction_(pf) {
+    order_.clear(); coeff_.clear();
     order_.push_back((order < 2.0) ? 2.0 : order);
-    coeff_.clear();
     coeff_.push_back((coeff < 0.0) ? 1.0 : coeff);
   }
   MeanVariance( std::vector<Real> &order, std::vector<Real> &coeff, 
-                Teuchos::RCP<PositiveFunction<Real> > &pf ) : positiveFunction_(pf) {
-    order_.clear();
-    coeff_.clear();
+                Teuchos::RCP<PositiveFunction<Real> > &pf )
+    : RiskMeasure<Real>(), positiveFunction_(pf) {
+    order_.clear(); coeff_.clear();
     if ( order.size() != coeff.size() ) {
       coeff.resize(order.size(),1.0);
     }
@@ -85,48 +87,39 @@ public:
   }
 
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x) {
-    RiskMeasure<Real>::val_ = 0.0;
-    RiskMeasure<Real>::gv_  = 0.0;
-    RiskMeasure<Real>::g_   = x.clone(); RiskMeasure<Real>::g_->zero();
-    RiskMeasure<Real>::hv_  = x.clone(); RiskMeasure<Real>::hv_->zero();
-    (this->value_storage_).clear();
-    (this->gradient_storage_).clear();
-    (this->gradvec_storage_).clear();
-    (this->hessvec_storage_).clear();
-    (this->weights_).clear();
-    x0 = Teuchos::rcp(&const_cast<Vector<Real> &>(x),false); 
+    RiskMeasure<Real>::reset(x0,x);
+    value_storage_.clear();
+    gradient_storage_.clear();
+    gradvec_storage_.clear();
+    hessvec_storage_.clear();
+    weights_.clear();
   }
     
   void reset(Teuchos::RCP<Vector<Real> > &x0, const Vector<Real> &x,
              Teuchos::RCP<Vector<Real> > &v0, const Vector<Real> &v) {
-    RiskMeasure<Real>::val_ = 0.0;
-    RiskMeasure<Real>::gv_  = 0.0;
-    RiskMeasure<Real>::g_   = x.clone(); RiskMeasure<Real>::g_->zero();
-    RiskMeasure<Real>::hv_  = x.clone(); RiskMeasure<Real>::hv_->zero();
-    (this->value_storage_).clear();
-    (this->gradient_storage_).clear();
-    (this->gradvec_storage_).clear();
-    (this->hessvec_storage_).clear();
-    (this->weights_).clear();
-    x0 = Teuchos::rcp(&const_cast<Vector<Real> &>(x),false);
-    v0 = Teuchos::rcp(&const_cast<Vector<Real> &>(v),false);
+    RiskMeasure<Real>::reset(x0,x,v0,v);
+    value_storage_.clear();
+    gradient_storage_.clear();
+    gradvec_storage_.clear();
+    hessvec_storage_.clear();
+    weights_.clear();
   } 
   
   void update(const Real val, const Real weight) {
     RiskMeasure<Real>::val_ += weight * val;
-    this->value_storage_.push_back(val);
-    this->weights_.push_back(weight);    
+    value_storage_.push_back(val);
+    weights_.push_back(weight);    
   }
 
   void update(const Real val, const Vector<Real> &g, const Real weight) {
     RiskMeasure<Real>::val_ += weight * val;
     RiskMeasure<Real>::g_->axpy(weight,g);
-    this->value_storage_.push_back(val);
-    this->gradient_storage_.push_back(g.clone());
-    typename std::vector<Teuchos::RCP<Vector<Real> > >::iterator it = (this->gradient_storage_).end();
+    value_storage_.push_back(val);
+    gradient_storage_.push_back(g.clone());
+    typename std::vector<Teuchos::RCP<Vector<Real> > >::iterator it = gradient_storage_.end();
     it--;
     (*it)->set(g);
-    this->weights_.push_back(weight);    
+    weights_.push_back(weight);    
   }
 
   void update(const Real val, const Vector<Real> &g, const Real gv, const Vector<Real> &hv,
@@ -135,17 +128,17 @@ public:
     RiskMeasure<Real>::gv_  += weight * gv;
     RiskMeasure<Real>::g_->axpy(weight,g);
     RiskMeasure<Real>::hv_->axpy(weight,hv);
-    this->value_storage_.push_back(val);
-    this->gradient_storage_.push_back(g.clone());
-    typename std::vector<Teuchos::RCP<Vector<Real> > >::iterator it = (this->gradient_storage_).end();
+    value_storage_.push_back(val);
+    gradient_storage_.push_back(g.clone());
+    typename std::vector<Teuchos::RCP<Vector<Real> > >::iterator it = gradient_storage_.end();
     it--;
     (*it)->set(g);
-    this->gradvec_storage_.push_back(gv);
-    this->hessvec_storage_.push_back(hv.clone());
-    it = (this->hessvec_storage_).end();
+    gradvec_storage_.push_back(gv);
+    hessvec_storage_.push_back(hv.clone());
+    it = hessvec_storage_.end();
     it--;
     (*it)->set(hv);
-    this->weights_.push_back(weight);
+    weights_.push_back(weight);
   }
 
   Real getValue(SampleGenerator<Real> &sampler) {
@@ -156,11 +149,11 @@ public:
     // Compute deviation
     val = 0.0;
     Real diff = 0.0, pf0 = 0.0, var = 0.0;
-    for ( unsigned i = 0; i < this->weights_.size(); i++ ) {
-      diff = this->value_storage_[i]-ev;
-      pf0  = this->positiveFunction_->evaluate(diff,0);
-      for ( unsigned p = 0; p < this->order_.size(); p++ ) {
-        val += this->coeff_[p] * std::pow(pf0,this->order_[p]) * this->weights_[i];
+    for ( unsigned i = 0; i < weights_.size(); i++ ) {
+      diff = value_storage_[i]-ev;
+      pf0  = positiveFunction_->evaluate(diff,0);
+      for ( unsigned p = 0; p < order_.size(); p++ ) {
+        val += coeff_[p] * std::pow(pf0,order_[p]) * weights_[i];
       }
     }
     sampler.sumAll(&val,&var,1);
@@ -179,16 +172,16 @@ public:
     Teuchos::RCP<Vector<Real> > gs   = g.clone(); gs->zero();
     Teuchos::RCP<Vector<Real> > gtmp = g.clone(); gtmp->zero();
     Real diff = 0.0, pf0 = 0.0, pf1 = 0.0, c = 0.0, ec = 0.0, ecs = 0.0;
-    for ( unsigned i = 0; i < this->weights_.size(); i++ ) {
+    for ( unsigned i = 0; i < weights_.size(); i++ ) {
       c    = 0.0;
-      diff = this->value_storage_[i]-ev;
-      pf0  = this->positiveFunction_->evaluate(diff,0);
-      pf1  = this->positiveFunction_->evaluate(diff,1);
-      for ( unsigned p = 0; p < this->order_.size(); p++ ) {
-        c += this->coeff_[p]*this->order_[p]*std::pow(pf0,this->order_[p]-1.0)*pf1;
+      diff = value_storage_[i]-ev;
+      pf0  = positiveFunction_->evaluate(diff,0);
+      pf1  = positiveFunction_->evaluate(diff,1);
+      for ( unsigned p = 0; p < order_.size(); p++ ) {
+        c += coeff_[p]*order_[p]*std::pow(pf0,order_[p]-1.0)*pf1;
       }
-      ec += this->weights_[i]*c;
-      gtmp->axpy(this->weights_[i]*c,*(this->gradient_storage_[i]));
+      ec += weights_[i]*c;
+      gtmp->axpy(weights_[i]*c,*(gradient_storage_[i]));
     }
     sampler.sumAll(&ec,&ecs,1);
     g.scale(1.0-ecs);
@@ -213,23 +206,23 @@ public:
     Real cg = 0.0, ecg = 0.0, ecgs = 0.0, ch = 0.0, ech = 0.0, echs = 0.0;
     Teuchos::RCP<Vector<Real> > htmp = hv.clone(); htmp->zero();
     Teuchos::RCP<Vector<Real> > hs   = hv.clone(); hs->zero();
-    for ( unsigned i = 0; i < this->weights_.size(); i++ ) {
+    for ( unsigned i = 0; i < weights_.size(); i++ ) {
       cg   = 0.0;
       ch   = 0.0;
-      diff = this->value_storage_[i]-ev;
-      pf0  = this->positiveFunction_->evaluate(diff,0);
-      pf1  = this->positiveFunction_->evaluate(diff,1);
-      pf2  = this->positiveFunction_->evaluate(diff,2);
-      for ( unsigned p = 0; p < this->order_.size(); p++ ) {
-        cg += this->coeff_[p]*this->order_[p]*(this->gradvec_storage_[i]-egv)*
-                ((this->order_[p]-1.0)*std::pow(pf0,this->order_[p]-2.0)*pf1*pf1+
-                std::pow(pf0,this->order_[p]-1.0)*pf2);
-        ch += this->coeff_[p]*this->order_[p]*std::pow(pf0,this->order_[p]-1.0)*pf1;
+      diff = value_storage_[i]-ev;
+      pf0  = positiveFunction_->evaluate(diff,0);
+      pf1  = positiveFunction_->evaluate(diff,1);
+      pf2  = positiveFunction_->evaluate(diff,2);
+      for ( unsigned p = 0; p < order_.size(); p++ ) {
+        cg += coeff_[p]*order_[p]*(gradvec_storage_[i]-egv)*
+                ((order_[p]-1.0)*std::pow(pf0,order_[p]-2.0)*pf1*pf1+
+                std::pow(pf0,order_[p]-1.0)*pf2);
+        ch += coeff_[p]*order_[p]*std::pow(pf0,order_[p]-1.0)*pf1;
       }
-      ecg += this->weights_[i]*cg;
-      ech += this->weights_[i]*ch;
-      htmp->axpy(this->weights_[i]*cg,*(this->gradient_storage_[i]));
-      htmp->axpy(this->weights_[i]*ch,*(this->hessvec_storage_[i]));
+      ecg += weights_[i]*cg;
+      ech += weights_[i]*ch;
+      htmp->axpy(weights_[i]*cg,*(gradient_storage_[i]));
+      htmp->axpy(weights_[i]*ch,*(hessvec_storage_[i]));
     }
     sampler.sumAll(&ech,&echs,1);
     hv.scale(1.0-echs);

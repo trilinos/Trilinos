@@ -202,9 +202,8 @@ class any;
 // Implement internal storage of Teuchos::ParameterList objects via
 // Teuchos::RCP<>
 %teuchos_rcp(Teuchos::ParameterList)
-#define EMPTYHACK
-%teuchos_rcp_pydict_overrides(EMPTYHACK, Teuchos::ParameterList)
-%teuchos_rcp_pydict_overrides(const,     Teuchos::ParameterList)
+%teuchos_rcp_pydict_overrides(SWIGEMPTYHACK, Teuchos::ParameterList)
+%teuchos_rcp_pydict_overrides(const        , Teuchos::ParameterList)
 
 %feature("docstring") Teuchos::ParameterList
 "The ``ParameterList`` class is an important utility class that is used
@@ -965,9 +964,6 @@ Teuchos::ParameterList::values
 %ignore Teuchos::ParameterList::end() const;
 %ignore Teuchos::ParameterList::entry(ConstIterator) const;
 %ignore Teuchos::ParameterList::name(ConstIterator) const;
-#ifndef HAVE_TEUCHOS
-%warn "HAVE_TEUCHOS IS NOT DEFINED!!!!"
-#endif
 %include "Teuchos_ParameterList.hpp"
 // SWIG thinks that PrintOptions is an un-nested Teuchos class, so we
 // need to trick the C++ compiler into understanding this so called

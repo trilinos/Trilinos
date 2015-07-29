@@ -191,7 +191,7 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       const U& fastAccessDx(int i) const { return dx_[i];}
 
-    private:
+    protected:
 
       //! Value
       T val_;

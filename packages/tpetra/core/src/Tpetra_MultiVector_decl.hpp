@@ -42,15 +42,20 @@
 #ifndef TPETRA_MULTIVECTOR_DECL_HPP
 #define TPETRA_MULTIVECTOR_DECL_HPP
 
+#include <Tpetra_ConfigDefs.hpp>
+#ifdef HAVE_TPETRACORE_KOKKOSCONTAINERS
+#  include <Kokkos_DualView.hpp>
+#endif // HAVE_TPETRACORE_KOKKOSCONTAINERS
+#include <Tpetra_Map_decl.hpp>
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_Range1D.hpp>
-#include "Tpetra_ConfigDefs.hpp"
-#include <Tpetra_Map_decl.hpp>
+
 #if TPETRA_USE_KOKKOS_DISTOBJECT
 #include "Tpetra_DistObjectKA.hpp"
 #else
 #include "Tpetra_DistObject.hpp"
 #endif
+
 #include <Kokkos_MultiVector.hpp>
 #include <Teuchos_BLAS_types.hpp>
 
@@ -446,7 +451,47 @@ namespace Tpetra {
     typedef typename DO::execution_space execution_space;
 #else
     typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
+#  ifdef HAVE_TPETRACORE_KOKKOSCORE
+    typedef typename Node::execution_space execution_space;
+#  endif // HAVE_TPETRACORE_KOKKOSCORE
 #endif
+
+#ifdef HAVE_TPETRACORE_KOKKOSCONTAINERS
+    /// \brief Kokkos::DualView specialization used by this class.
+    ///
+    /// \warning Only use this with the "new" version of Tpetra, not
+    ///   the "classic" version!  This typedef doesn't do what you
+    ///   think it does in "classic" Tpetra.  In particular, "classic"
+    ///   Tpetra lacks a getDualView() method, because there is no way
+    ///   to transfer ownership from a Teuchos::ArrayRCP (which is how
+    ///   classic Tpetra stores local data) to a Kokkos::View.
+    ///
+    /// This is of interest to users who already have a
+    /// Kokkos::DualView, and want the MultiVector to view it.  By
+    /// "view" it, we mean that the MultiVector doesn't copy the data
+    /// in the DualView; it just hangs on to the pointer.
+    ///
+    /// We take particular care to template the DualView on an
+    /// execution space, rather than a memory space.  This ensures
+    /// that Tpetra will use exactly the specified execution space(s)
+    /// and no others.  This matters because View (and DualView)
+    /// initialization is a parallel Kokkos kernel.  If the View is
+    /// templated on an execution space, Kokkos uses that execution
+    /// space (and only that execution space) to initialize the View.
+    /// This is what we want.  If the View is templated on a
+    /// <i>memory</i> space, Kokkos uses the memory space's default
+    /// <i>execution</i> space to initialize.  This is not necessarily
+    /// what we want.  For example, if building with OpenMP enabled,
+    /// the default execution space for host memory is Kokkos::OpenMP,
+    /// even if the user-specified DeviceType is Kokkos::Serial.  That
+    /// is why we go through the trouble of asking for the
+    /// execution_space's execution space.
+    typedef Kokkos::DualView<impl_scalar_type**, Kokkos::LayoutLeft,
+      typename execution_space::execution_space> dual_view_type;
+#endif // HAVE_TPETRACORE_KOKKOSCONTAINERS
+
+    //! The type of the Map specialization used by this class.
+    typedef Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
 
     //@}
     //! \name Constructors and destructor
@@ -931,6 +976,80 @@ namespace Tpetra {
     /// \brief This method is for expert users only.
     ///   It may change or be removed at any time.
     KokkosClassic::MultiVector<Scalar,Node> getLocalMV () const;
+
+#ifdef HAVE_TPETRACORE_KOKKOSCONTAINERS
+
+    /// \brief Update data on device or host only if data in the other
+    ///   space has been marked as modified.
+    ///
+    /// \warning This only has an effect in the "new" version of
+    ///   Tpetra, not the "classic" version.
+    ///
+    /// If \c TargetDeviceType is the same as this MultiVector's
+    /// device type, then copy data from host to device.  Otherwise,
+    /// copy data from device to host.  In either case, only copy if
+    /// the source of the copy has been modified.
+    ///
+    /// This is a one-way synchronization only.  If the target of the
+    /// copy has been modified, this operation will discard those
+    /// modifications.  It will also reset both device and host modified
+    /// flags.
+    ///
+    /// \note This method doesn't know on its own whether you modified
+    ///   the data in either memory space.  You must manually mark the
+    ///   MultiVector as modified in the space in which you modified
+    ///   it, by calling the modify() method with the appropriate
+    ///   template parameter.
+    template<class TargetDeviceType>
+    void sync () { /* does nothing */ }
+
+
+    /// \brief Mark data as modified on the given device \c TargetDeviceType.
+    ///
+    /// \warning This only has an effect in the "new" version of
+    ///   Tpetra, not the "classic" version.
+    ///
+    /// If \c TargetDeviceType is the same as this MultiVector's
+    /// device type, then mark the device's data as modified.
+    /// Otherwise, mark the host's data as modified.
+    template<class TargetDeviceType>
+    void modify () { /* does nothing */ }
+
+    /// \brief Return a view of the local data on a specific device.
+    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
+    ///
+    /// \warning Please only use this method in the "new" version of
+    ///   Tpetra, not the "classic" version.  Please alsso note that
+    ///   in "classic" Tpetra, this returns an unmanaged
+    ///   (thus nonpersisting!) View.
+    template<class TargetDeviceType>
+    Kokkos::View<impl_scalar_type**,
+                 typename dual_view_type::array_layout,
+                 execution_space,
+                 Kokkos::MemoryUnmanaged>
+    getLocalView () const {
+      using Teuchos::ArrayRCP;
+      using Teuchos::arcp_const_cast;
+      typedef Kokkos::View<impl_scalar_type**,
+        typename dual_view_type::array_layout,
+        execution_space,
+        Kokkos::MemoryUnmanaged> ret_view_type;
+
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (typeid (typename TargetDeviceType::memory_space) == typeid (typename execution_space::memory_space),
+         std::invalid_argument, "Tpetra::MultiVector::getLocalView: With "
+         "\"classic\" (old) Tpetra, the template parameter of getLocalView "
+         "must have the same memory_space as the MultiVector.");
+
+      KokkosClassic::MultiVector<Scalar, Node> X_lcl = this->getLocalMV ();
+      ArrayRCP<impl_scalar_type> X_ptr =
+        arcp_reinterpret_cast<impl_scalar_type> (X_lcl.getValuesNonConst ());
+      return ret_view_type (X_ptr.getRawPtr (),
+                            X_lcl.getNumRows (),
+                            X_lcl.getNumCols ());
+    }
+
+#endif // HAVE_TPETRACORE_KOKKOSCONTAINERS
 
     //@}
     //! @name Mathematical methods

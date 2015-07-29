@@ -24,6 +24,7 @@ SET(HEADERS ${HEADERS}
   Sacado_Fad_GeneralFad.hpp
   Sacado_Fad_GeneralFadExpr.hpp
   Sacado_Fad_ExpressionTraits.hpp
+  Sacado_Fad_ExpressionFwd.hpp
   Sacado_Fad_Expression.hpp
   Sacado_Fad_Ops.hpp
   Sacado_Fad_DynamicStorage.hpp

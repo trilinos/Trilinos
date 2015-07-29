@@ -59,6 +59,12 @@
 #include <Cuda/Kokkos_Cuda_ReduceScan.hpp>
 #include <Cuda/Kokkos_Cuda_Internal.hpp>
 #include <Kokkos_Vectorization.hpp>
+
+#ifdef KOKKOSP_ENABLE_PROFILING
+#include <impl/Kokkos_Profiling_Interface.hpp>
+#include <typeinfo>
+#endif
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -1066,11 +1072,25 @@ namespace Impl {
       increment( blockDim.y ),
       thread(thread_)
     {}
+    __device__ inline
+    TeamThreadRangeBoundariesStruct (const CudaTeamMember& thread_, const iType& begin_, const iType& end_):
+      start( begin_+threadIdx.y ),
+      end( end_ ),
+      increment( blockDim.y ),
+      thread(thread_)
+    {}
 #else
     KOKKOS_INLINE_FUNCTION
     TeamThreadRangeBoundariesStruct (const CudaTeamMember& thread_, const iType& count):
       start( 0 ),
       end( count ),
+      increment( 1 ),
+      thread(thread_)
+    {}
+    KOKKOS_INLINE_FUNCTION
+    TeamThreadRangeBoundariesStruct (const CudaTeamMember& thread_,  const iType& begin_, const iType& end_):
+      start( begin_ ),
+      end( end_ ),
       increment( 1 ),
       thread(thread_)
     {}
@@ -1120,7 +1140,7 @@ Impl::TeamThreadRangeBoundariesStruct<iType,Impl::CudaTeamMember>
 template<typename iType>
 KOKKOS_INLINE_FUNCTION
 Impl::ThreadVectorRangeBoundariesStruct<iType,Impl::CudaTeamMember >
-  ThreadVectorRange(Impl::CudaTeamMember thread, const iType count) {
+  ThreadVectorRange(const Impl::CudaTeamMember& thread, const iType& count) {
   return Impl::ThreadVectorRangeBoundariesStruct<iType,Impl::CudaTeamMember >(thread,count);
 }
 
@@ -1497,6 +1517,7 @@ inline
 void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorTypeIn & functor_in
                     , const ViewType    & result_view
+                    , const std::string& str = "" 
                     , typename Impl::enable_if<
                       ( Impl::is_view<ViewType>::value && ! Impl::is_integral< ExecPolicy >::value &&
                         Impl::is_same<typename ExecPolicy::execution_space,Kokkos::Cuda>::value
@@ -1506,7 +1527,20 @@ void parallel_reduce( const ExecPolicy  & policy
   typedef typename Kokkos::Impl::if_c<FunctorHasValueType, FunctorTypeIn, Impl::CudaFunctorAdapter<FunctorTypeIn,ExecPolicy,typename ViewType::value_type> >::type FunctorType;
   FunctorType functor = Impl::if_c<FunctorHasValueType,FunctorTypeIn,FunctorType>::select(functor_in,FunctorType(functor_in));
 
+#ifdef KOKKOSP_ENABLE_PROFILING
+    uint64_t kpID = 0;
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::beginParallelScan("" == str ? typeid(FunctorType).name() : str, 0, &kpID);
+     }
+#endif
+    
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
+    
+#ifdef KOKKOSP_ENABLE_PROFILING
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::endParallelScan(kpID);
+     }
+#endif
 }
 
 // general policy and pod or array of pod output
@@ -1515,6 +1549,7 @@ inline
 void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorTypeIn & functor_in
                     , ResultType& result_ref
+                    , const std::string& str = "" 
                     , typename Impl::enable_if<
                       ( ! Impl::is_view<ResultType>::value &&
                         ! Impl::IsNonTrivialReduceFunctor<FunctorTypeIn>::value &&
@@ -1541,7 +1576,20 @@ void parallel_reduce( const ExecPolicy  & policy
                , 1
                );
 
+#ifdef KOKKOSP_ENABLE_PROFILING
+    uint64_t kpID = 0;
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::beginParallelScan("" == str ? typeid(FunctorType).name() : str, 0, &kpID);
+     }
+#endif
+    
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( FunctorType(functor_in) , policy , result_view );
+    
+#ifdef KOKKOSP_ENABLE_PROFILING
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::endParallelScan(kpID);
+     }
+#endif
 }
 
 // general policy and pod or array of pod output
@@ -1550,6 +1598,7 @@ inline
 void parallel_reduce( const ExecPolicy  & policy
                     , const FunctorType & functor
                     , typename Kokkos::Impl::FunctorValueTraits< FunctorType , typename ExecPolicy::work_tag >::reference_type result_ref
+                    , const std::string& str = "" 
                     , typename Impl::enable_if<
                       (   Impl::IsNonTrivialReduceFunctor<FunctorType>::value &&
                         ! Impl::is_integral< ExecPolicy >::value  &&
@@ -1574,7 +1623,20 @@ void parallel_reduce( const ExecPolicy  & policy
                , ValueTraits::value_count( functor )
                );
 
+#ifdef KOKKOSP_ENABLE_PROFILING
+    uint64_t kpID = 0;
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::beginParallelScan("" == str ? typeid(FunctorType).name() : str, 0, &kpID);
+     }
+#endif
+    
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , policy , result_view );
+    
+#ifdef KOKKOSP_ENABLE_PROFILING
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::endParallelScan(kpID);
+     }
+#endif
 }
 
 // integral range policy and view ouput
@@ -1583,6 +1645,7 @@ inline
 void parallel_reduce( const size_t        work_count
                     , const FunctorTypeIn & functor_in
                     , const ViewType    & result_view
+                    , const std::string& str = "" 
                     , typename Impl::enable_if<( Impl::is_view<ViewType>::value &&
                                                  Impl::is_same<
                           typename Impl::FunctorPolicyExecutionSpace< FunctorTypeIn , void >::execution_space,
@@ -1600,7 +1663,21 @@ void parallel_reduce( const size_t        work_count
 
   FunctorType functor = Impl::if_c<FunctorHasValueType,FunctorTypeIn,FunctorType>::select(functor_in,FunctorType(functor_in));
 
+#ifdef KOKKOSP_ENABLE_PROFILING
+    uint64_t kpID = 0;
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::beginParallelScan("" == str ? typeid(FunctorType).name() : str, 0, &kpID);
+     }
+#endif
+    
   (void) Impl::ParallelReduce< FunctorType, ExecPolicy >( functor , ExecPolicy(0,work_count) , result_view );
+
+#ifdef KOKKOSP_ENABLE_PROFILING
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::endParallelScan(kpID);
+     }
+#endif
+
 }
 
 // integral range policy and pod or array of pod output
@@ -1609,6 +1686,7 @@ inline
 void parallel_reduce( const size_t        work_count
                     , const FunctorTypeIn & functor_in
                     , ResultType& result
+                    , const std::string& str = "" 
                     , typename Impl::enable_if< ! Impl::is_view<ResultType>::value &&
                                                 ! Impl::IsNonTrivialReduceFunctor<FunctorTypeIn>::value &&
                                                 Impl::is_same<
@@ -1643,7 +1721,20 @@ void parallel_reduce( const size_t        work_count
                , 1
                );
 
+#ifdef KOKKOSP_ENABLE_PROFILING
+    uint64_t kpID = 0;
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::beginParallelScan("" == str ? typeid(FunctorType).name() : str, 0, &kpID);
+     }
+#endif
+    
   (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( FunctorType(functor_in) , ExecPolicy(0,work_count) , result_view );
+    
+#ifdef KOKKOSP_ENABLE_PROFILING
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::endParallelScan(kpID);
+     }
+#endif
 }
 
 template< class FunctorType>
@@ -1651,6 +1742,7 @@ inline
 void parallel_reduce( const size_t        work_count
                     , const FunctorType & functor
                     , typename Kokkos::Impl::FunctorValueTraits< FunctorType , void >::reference_type result
+                    , const std::string& str = "" 
                     , typename Impl::enable_if< Impl::IsNonTrivialReduceFunctor<FunctorType>::value &&
                                                 Impl::is_same<
                              typename Impl::FunctorPolicyExecutionSpace< FunctorType , void >::execution_space,
@@ -1684,7 +1776,20 @@ void parallel_reduce( const size_t        work_count
                , ValueTraits::value_count( functor )
                );
 
+#ifdef KOKKOSP_ENABLE_PROFILING
+    uint64_t kpID = 0;
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::beginParallelScan("" == str ? typeid(FunctorType).name() : str, 0, &kpID);
+     }
+#endif
+    
   (void) Impl::ParallelReduce< FunctorType , ExecPolicy >( functor , ExecPolicy(0,work_count) , result_view );
+    
+#ifdef KOKKOSP_ENABLE_PROFILING
+     if(Kokkos::Experimental::profileLibraryLoaded()) {
+	Kokkos::Experimental::endParallelScan(kpID);
+     }
+#endif
 }
 
 } // namespace Kokkos

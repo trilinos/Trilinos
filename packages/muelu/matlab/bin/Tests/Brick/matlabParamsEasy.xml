@@ -1,0 +1,9 @@
+<!--MueLu parameters to create brick aggregates with a matlab function, using the new interface -->
+<ParameterList name="MueLu">
+  <Parameter name="aggregation: type" type="string" value="matlab"/>
+  <ParameterList name="aggregation: params">
+    <Parameter name="Provides" type="string" value="Aggregates"/>
+    <Parameter name="Needs" type="string" value="A"/>
+    <Parameter name="Function" type="string" value="simpleAggregation"/>
+  </ParameterList>
+</ParameterList>

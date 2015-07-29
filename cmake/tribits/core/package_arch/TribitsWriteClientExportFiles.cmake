@@ -772,6 +772,12 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
   SET(PROJECT_CONFIG_CODE "${PROJECT_CONFIG_CODE}\n${LOAD_CODE}")
 
   IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+    # In TribitsProjectConfigTemplate.cmake.in, we would like to preserve
+    # ${}-variables after the conversion to TribitsProjectConfigTemplate.cmake.
+    # To this end, one typically uses the @-syntax for variables. That doesn't
+    # support nested variables, however.  Use ${PDOLLAR} as a workaround, cf.
+    # <http://www.cmake.org/pipermail/cmake/2013-April/054341.html>.
+    SET(PDOLLAR "$")
     CONFIGURE_FILE(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.cmake.in
       ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake )
@@ -800,6 +806,13 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
     TRIBITS_LIST_TO_STRING("${FULL_TPL_SET}" "" MAKEFILE_FULL_TPL_SET)
 
     IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
+      # In TribitsProjectConfigTemplate.cmake.in, we would like to preserve
+      # ${}-variables after the conversion to
+      # TribitsProjectConfigTemplate.cmake. To this end, one typically uses the
+      # @-syntax for variables. That doesn't support nested variables, however.
+      # Use ${PDOLLAR} as a workaround, cf.
+      # <http://www.cmake.org/pipermail/cmake/2013-April/054341.html>.
+      SET(PDOLLAR "$")
       CONFIGURE_FILE(
         ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.export.in
         ${CMAKE_CURRENT_BINARY_DIR}/Makefile.export.${PROJECT_NAME})

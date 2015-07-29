@@ -444,7 +444,7 @@ public:
    * <li><tt>sendBytes == sum(recvCounts[i],i=0...this->getSize()-1)</tt>
    * </ul>
    */
-  virtual void reduceAllAndScatter(
+  TEUCHOS_DEPRECATED virtual void reduceAllAndScatter(
     const ValueTypeReductionOp<Ordinal,char> &reductOp
     ,const Ordinal sendBytes, const char sendBuffer[]
     ,const Ordinal recvCounts[], char myGlobalReducts[]

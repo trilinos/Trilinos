@@ -488,7 +488,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
         }
       }
 
-      impl::connect_faces_to_edges(mesh, element_selector, edge_map);
+      impl::connect_faces_to_edges(mesh, mesh.meta_data().universal_part(), edge_map);
     }
   }
 
@@ -496,7 +496,8 @@ void create_edges( BulkData & mesh, const Selector & element_selector, Part * pa
   {
     bool oldOption = mesh.use_entity_ids_for_resolving_sharing();
     mesh.set_use_entity_ids_for_resolving_sharing(false);
-    mesh.modification_end_for_entity_creation( stk::topology::EDGE_RANK, BulkData::MOD_END_COMPRESS_AND_SORT );
+    std::vector<EntityRank> entity_rank_vector = {stk::topology::EDGE_RANK};
+    mesh.modification_end_for_entity_creation( entity_rank_vector );
     mesh.set_use_entity_ids_for_resolving_sharing(oldOption);
   }
 }

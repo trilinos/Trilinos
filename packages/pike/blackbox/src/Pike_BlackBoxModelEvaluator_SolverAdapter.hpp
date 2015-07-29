@@ -30,16 +30,28 @@ namespace pike {
     void solve();
     bool isLocallyConverged() const;
     bool isGloballyConverged() const;
+
     bool supportsParameter(const std::string& pName) const;
     int getNumberOfParameters() const;
     std::string getParameterName(const int l) const;
     int getParameterIndex(const std::string& pName) const;
     void setParameter(const int l, const Teuchos::ArrayView<const double>& p);
+
     bool supportsResponse(const std::string& rName) const;
     int getNumberOfResponses() const;
     std::string getResponseName(const int i) const;
     int getResponseIndex(const std::string& rName) const;
     Teuchos::ArrayView<const double> getResponse(const int i) const;
+
+    bool isTransient() const;
+    double getCurrentTime() const;
+    double getTentativeTime() const;
+    bool solvedTentativeStep() const;    
+    double getCurrentTimeStepSize() const;    
+    double getDesiredTimeStepSize() const;
+    double getMaxTimeStepSize() const;
+    void setNextTimeStepSize(const double& dt);
+    void acceptTimeStep();
 
   private:
     std::string name_;
@@ -47,8 +59,8 @@ namespace pike {
 
     std::map<std::string,int> parameterNameToIndex_;
     std::vector<std::string> parameterNames_;
-    //! Stores the model index and the response index in that model for the response. 
-    std::vector<std::pair<int,int> > parameterIndexToModelIndices_;
+    //! Stores the model index and the parameter index in that model for the parameter. Note that multiple underlying model evaluators can support the same parameter. 
+    std::vector<std::vector<std::pair<int,int> > > parameterIndexToModelIndices_;
 
     std::map<std::string,int> responseNameToIndex_;
     std::vector<std::string> responseNames_;

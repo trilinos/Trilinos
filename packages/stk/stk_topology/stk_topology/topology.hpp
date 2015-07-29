@@ -243,6 +243,9 @@ struct topology
   unsigned lexicographical_smallest_permutation_preserve_polarity(const NodeArray &nodes, const NodeArray &element_nodes) const;
 
   /// fill the output ordinals with the ordinals that make up the given sub topology
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename OrdinalOutputIterator>
   BOOST_GPU_ENABLED
   void sub_topology_node_ordinals(unsigned sub_rank, unsigned sub_ordinal, OrdinalOutputIterator output_ordinals) const
@@ -258,6 +261,9 @@ struct topology
 
   /// fill the output nodes with the nodes that make up the given sub topology
   /// input 'nodes' is expected to be of length num_nodes.
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename NodeArray, typename NodeOutputIterator>
   BOOST_GPU_ENABLED
   void sub_topology_nodes(const NodeArray & nodes, unsigned sub_rank, unsigned sub_ordinal, NodeOutputIterator output_nodes) const

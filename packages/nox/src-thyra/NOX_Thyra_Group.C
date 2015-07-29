@@ -103,12 +103,15 @@ Group(const NOX::Thyra::Vector& initial_guess,
   // create preconditioner
   prec_factory_ = lows_factory_->getPreconditionerFactory();
 
-  if (Teuchos::nonnull(prec_factory_))
-    prec_ = prec_factory_->createPrec();
-
   // Create in/out args
   in_args_ = model_->createInArgs();
   out_args_ = model_->createOutArgs();
+
+  if (Teuchos::nonnull(prec_factory_)) {
+    prec_ = prec_factory_->createPrec();
+  } else if (out_args_.supports( ::Thyra::ModelEvaluatorBase::OUT_ARG_W_prec)) {
+    prec_ = model->create_W_prec();
+  }
 
   resetIsValidFlags();
 }

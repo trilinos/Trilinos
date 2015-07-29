@@ -148,9 +148,18 @@ buildClosureModels(const std::string& model_id,
     if (plist.isType<std::string>("Type")) {
       
       if (plist.get<std::string>("Type") == "Parameter") {
+        TEUCHOS_ASSERT(!plist.isParameter("Value"));
+	// Defaults for backward compatibility                                                                                  
+	std::string parameter_name = key;
+	std::string field_name = key;
+        if (plist.isType<std::string>("Parameter Name"))
+          parameter_name = plist.get<std::string>("Parameter Name");
+        if (plist.isType<std::string>("Field Name"))
+          field_name = plist.get<std::string>("Field Name");
+
 	{ // at IP
 	  RCP< Evaluator<panzer::Traits> > e = 
-	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,ir->dl_scalar,plist.get<double>("Value"),*global_data->pl));
+	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(parameter_name,field_name,ir->dl_scalar,*global_data->pl));
 	  evaluators->push_back(e);
 	}
 	
@@ -158,11 +167,13 @@ buildClosureModels(const std::string& model_id,
 	   basis_itr != bases.end(); ++basis_itr) { // at BASIS
 	  Teuchos::RCP<const panzer::BasisIRLayout> basis = basisIRLayout(*basis_itr,*ir);
 	  RCP< Evaluator<panzer::Traits> > e = 
-	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(key,basis->functional,plist.get<double>("Value"),*global_data->pl));
+	    rcp(new panzer::Parameter<EvalT,panzer::Traits>(parameter_name,field_name,basis->functional,*global_data->pl));
 	  evaluators->push_back(e);
 	}
 	
 	found = true;
+
+        continue;
       }
       else if (plist.get<std::string>("Type") == "Distributed Parameter") {
         // sanity check

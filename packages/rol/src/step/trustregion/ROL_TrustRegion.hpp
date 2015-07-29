@@ -141,42 +141,57 @@ public:
                        int iter, ProjectedObjective<Real> &pObj ) { 
     Real tol = std::sqrt(ROL_EPSILON);
 
-    // Compute New Function Value
+    // Compute updated iterate vector
     xupdate_->set(x);
     xupdate_->axpy(1.0,s);
     /***************************************************************************************************/
-    // BEGIN INEXACT OBJECTIVE FUNCTION COMPUTATION
+    // BEGIN OBJECTIVE FUNCTION COMPUTATION
     /***************************************************************************************************/
-    Real fold1 = fold;
+    // Update inexact objective function
+    Real fold1 = fold, ftol = tol;
     if ( useInexact_[0] ) {
       if ( !(cnt_%updateIter_) && (cnt_ != 0) ) {
         force_ *= forceFactor_;
       }
       Real c = scale_*std::max(1.e-2,std::min(1.0,1.e4*std::max(pRed_,std::sqrt(ROL_EPSILON))));
-      Real ftol = c*std::pow(std::min(eta1_,1.0-eta2_)
-                   *std::min(std::max(pRed_,std::sqrt(ROL_EPSILON)),force_),1.0/omega_);
+      ftol   = c*std::pow(std::min(eta1_,1.0-eta2_)
+                *std::min(std::max(pRed_,std::sqrt(ROL_EPSILON)),force_),1.0/omega_);
       if ( ftol_old_ > ftol || cnt_ == 0 ) {
         ftol_old_ = ftol;
         fold1 = pObj.value(x,ftol_old_);
       }
-      updateObj(*xupdate_,iter,pObj);
-      //pObj.update(*xupdate_,true,iter);
-      fnew = pObj.value(*xupdate_,ftol);
       cnt_++;
     }
-    else {
-      updateObj(*xupdate_,iter,pObj);
-      //pObj.update(*xupdate_,true,iter);
-      fnew = pObj.value(*xupdate_,tol);
-    }
+    // Evaluate objective function at new iterat
+    //updateObj(*xupdate_,iter,pObj);
+    //pObj.update(*xupdate_,true,iter);
+    pObj.update(*xupdate_);
+    fnew = pObj.value(*xupdate_,ftol);
+    pObj.update(x);
+
     nfval = 1;   
     Real aRed = fold1 - fnew;
     /***************************************************************************************************/
-    // FINISH INEXACT OBJECTIVE FUNCTION COMPUTATION
+    // FINISH OBJECTIVE FUNCTION COMPUTATION
     /***************************************************************************************************/
+    // If constraints are turned on, then compute a different predicted reduction
+    if (pObj.isConActivated()) {
+      xupdate_->set(x);
+      xupdate_->axpy(-1.0,g.dual());
+      pObj.project(*xupdate_);
+      xupdate_->axpy(-1.0,x);
+      xupdate_->scale(-1.0);
+ 
+      pObj.reducedHessVec(*Hs_,s,x,xupdate_->dual(),x,tol);
+      pRed_  = -0.5*s.dot(Hs_->dual());
+
+      Hs_->set(g);
+      pObj.pruneActive(*Hs_,xupdate_->dual(),x);
+      pRed_ -= s.dot(Hs_->dual());
+    }
 
     // Compute Ratio of Actual and Predicted Reduction
-    aRed -= eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
+    aRed  -= eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
     pRed_ -= eps_*((1.0 < std::abs(fold1)) ? 1.0 : std::abs(fold1));
     Real rho  = 0.0; 
     if ((std::abs(aRed) < eps_) && (std::abs(pRed_) < eps_)) {
@@ -226,7 +241,7 @@ public:
     
     // Accept or Reject Step and Update Trust Region
     if ((rho < eta0_ && flagTR == 0) || flagTR >= 2 || !decr ) { // Step Rejected 
-      updateObj(x,iter,pObj);
+      //updateObj(x,iter,pObj);
       //pObj.update(x,true,iter);
       fnew = fold1;
       if (rho < 0.0) { // Negative reduction, interpolate to find new trust-region radius
@@ -244,6 +259,7 @@ public:
     }
     else if ((rho >= eta0_ && flagTR != 3) || flagTR == 1) { // Step Accepted
       x.axpy(1.0,s);
+      pObj.update(x,true,iter);
       if (rho >= eta2_) { // Increase trust-region radius
         del = std::min(gamma2_*del,delmax_);
       }

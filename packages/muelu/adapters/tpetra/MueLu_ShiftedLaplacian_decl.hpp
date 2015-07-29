@@ -84,6 +84,7 @@
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosSolverFactory.hpp>
+#include <BelosTpetraAdapter.hpp>
 
 namespace MueLu {
 
@@ -109,6 +110,11 @@ namespace MueLu {
     typedef Belos::SolverFactory<SC,TMV,OP>              SolverFactory;
 
   public:
+
+  /*
+    FIXME  26-June-2015 JJH:  This contructor is setting numerous defaults.  However, they don't match the defaults
+    FIXME  int the method setParameters().  There also isn't any parameter validation that I can see.
+  */
 
     //! Constructors
     ShiftedLaplacian():

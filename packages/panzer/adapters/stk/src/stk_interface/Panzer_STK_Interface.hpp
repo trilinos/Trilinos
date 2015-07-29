@@ -186,6 +186,8 @@ public:
 
    void addEdges();
 
+   void addFaces();
+
    /** Addes an entity to a specified side set.
      */
    void addEntityToSideset(stk_classic::mesh::Entity & entity,stk_classic::mesh::Part * sideset);
@@ -206,6 +208,9 @@ public:
      */
    const VectorFieldType & getEdgesField() const
    { return *edgesField_; }
+
+   const VectorFieldType & getFacesField() const
+   { return *facesField_; }
 
    /** Look up a global node and get the coordinate.
      */
@@ -246,6 +251,25 @@ public:
      */
    void getMySides(const std::string & sideName,std::vector<stk_classic::mesh::Entity*> & sides) const;
 
+   /** Get Entities corresponding to the locally owned part of the side set requested. This also limits
+     * the entities to be in a particular element block. The Entites in the vector should be a dimension
+     * lower then <code>getDimension()</code>.
+     *
+     * \param[in] sideName Name of side set
+     * \param[in] blockName Name of block
+     * \param[in,out] sides Vector of entities containing the requested sides.
+     */
+   void getMySides(const std::string & sideName,const std::string & blockName,std::vector<stk_classic::mesh::Entity*> & sides) const;
+
+   /** Get Entities corresponding to the locally owned part of the side set requested. 
+     * The Entites in the vector should be a dimension
+     * lower then <code>getDimension()</code>.
+     *
+     * \param[in] sideName Name of side set
+     * \param[in,out] sides Vector of entities containing the requested sides.
+     */
+   void getAllSides(const std::string & sideName,std::vector<stk_classic::mesh::Entity*> & sides) const;
+
    /** Get Entities corresponding to the side set requested. This also limits the entities
      * to be in a particular element block. The Entites in the vector should be a dimension
      * lower then <code>getDimension()</code>.
@@ -254,7 +278,8 @@ public:
      * \param[in] blockName Name of block
      * \param[in,out] sides Vector of entities containing the requested sides.
      */
-   void getMySides(const std::string & sideName,const std::string & blockName,std::vector<stk_classic::mesh::Entity*> & sides) const;
+
+   void getAllSides(const std::string & sideName,const std::string & blockName,std::vector<stk_classic::mesh::Entity*> & sides) const;
 
    /** Get Entities corresponding to the node set requested. This also limits the entities
      * to be in a particular element block. The Entites in the vector should be ofdimension
@@ -264,6 +289,7 @@ public:
      * \param[in] blockName Name of block
      * \param[in,out] sides Vector of entities containing the requested sides.
      */
+
    void getMyNodes(const std::string & sideName,const std::string & blockName,std::vector<stk_classic::mesh::Entity*> & nodes) const;
 
    // Utility functions
@@ -320,7 +346,7 @@ public:
      * in lexiographic order (uses the sorting built into the std::map).
      * This method can only be called after <code>initialize</code>.
      *
-     * \param[in,out] names Vector of names of the element blocks.
+     * \param[in,out] names Vector of names of the side sets
      */
    void getSidesetNames(std::vector<std::string> & name) const;
 
@@ -652,6 +678,7 @@ public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;
    static const std::string edgesString;
+   static const std::string facesString;
 
 protected:
 
@@ -746,9 +773,12 @@ protected:
    std::vector<stk_classic::mesh::Part*> nodesPartVec_;
    stk_classic::mesh::Part * edgesPart_;
    std::vector<stk_classic::mesh::Part*> edgesPartVec_;
+   stk_classic::mesh::Part * facesPart_;
+   std::vector<stk_classic::mesh::Part*> facesPartVec_;
 
    VectorFieldType * coordinatesField_;
    VectorFieldType * edgesField_;
+   VectorFieldType * facesField_;
    ProcIdFieldType * processorIdField_;
    SolutionFieldType * loadBalField_;
    

@@ -55,9 +55,7 @@
 #include "PyTrilinos_NumPy_Util.hpp"
 
 // Teuchos includes
-#ifdef HAVE_TEUCHOS
 #include "Teuchos_RCP.hpp"
-#endif
 
 // Epetra includes
 //#include "Tpetra_BlockMap.hpp"

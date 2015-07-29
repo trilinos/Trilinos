@@ -127,7 +127,11 @@ int main(int argc, char *argv[]) {
     int numLists = dirList.size();
 
     bool failed = false;
+    Teuchos::Time timer("Interpreter timer");
+    double lastTime = timer.wallTime();
     for (int k = 0; k < numLists; k++) {
+      std::ios_base::fmtflags ff;
+      ff = std::cout.flags();
       Teuchos::ArrayRCP<std::string> fileList = MueLuTests::TestHelpers::GetFileList(dirList[k],
             (numProc == 1 ? std::string(".xml") : std::string("_np" + Teuchos::toString(numProc) + ".xml")));
 
@@ -177,6 +181,7 @@ int main(int argc, char *argv[]) {
         else if (dirList[k] == "MLParameterListInterpreter2/")      paramList                     .set("ML output",     10);
 
         try {
+          timer.start();
           Teuchos::RCP<HierarchyManager> mueluFactory;
 
           // create parameter list interpreter
@@ -222,6 +227,7 @@ int main(int argc, char *argv[]) {
             mueluFactory->SetupHierarchy(*H);
           }
 
+          timer.stop();
         } catch (Teuchos::ExceptionBase& e) {
           std::string msg = e.what();
           msg = msg.substr(msg.find_last_of('\n')+1);
@@ -298,9 +304,14 @@ int main(int argc, char *argv[]) {
           if (ret)
             failed = true;
 
-          std::cout << xmlFile << ": " << (ret ? "failed" : "passed") << std::endl;
+          std::streamsize oldPrecision = std::cout.precision(2);
+          std::cout << xmlFile << " (" << std::setiosflags(std::ios::fixed)
+                    << timer.wallTime() - lastTime << " sec.) : " << (ret ? "failed" : "passed") << std::endl;
+          std::cout.precision(oldPrecision);
+          lastTime = timer.wallTime();
         }
       }
+      std::cout.flags(ff); // reset flags to whatever they were at the beginning of this test
     }
 
     success = !failed;

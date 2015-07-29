@@ -102,9 +102,10 @@ TEUCHOS_UNIT_TEST( MDMap, dimensionsConstructor )
   Array< dim_type > dims(num_dims);
   for (int axis = 0; axis < num_dims; ++axis)
     dims[axis] = localDim * mdComm->getCommDim(axis);
+  ArrayView< const dim_type > const_dims(dims());
 
   // Construct an MDMap
-  MDMap<> mdMap(mdComm, dims());
+  MDMap<> mdMap(mdComm, const_dims);
 
   // Perform unit tests of MDMap as a whole
   TEST_ASSERT(mdMap.onSubcommunicator());

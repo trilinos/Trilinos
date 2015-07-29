@@ -32,12 +32,7 @@
 
 #include "Sacado_Traits.hpp"
 
-// Forward declarations
-namespace Sacado {
-  namespace Fad {
-    template <typename T> class Expr;
-  }
-}
+#include "Sacado_Fad_ExpressionFwd.hpp"
 
 namespace Sacado {
 

@@ -68,7 +68,16 @@ public:
     void increment_sync_count() { ++m_sync_count; }
 
     bool modification_begin(const std::string description);
-    bool modification_end(modification_optimization opt);
+
+// Deprecated 2015-06-10
+    bool modification_end_with_compress()
+    {
+        return this->internal_modification_end( MOD_END_COMPRESS_AND_SORT );
+    }
+
+    bool modification_end();
+
+    void change_entity_owner( const EntityProcVec & arg_change);
 
     void internal_resolve_shared_modify_delete();
 

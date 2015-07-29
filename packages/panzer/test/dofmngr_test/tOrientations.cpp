@@ -75,6 +75,10 @@
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
 
+#include "Panzer_Intrepid_ConstBasis.hpp"
+
+#include "Shards_BasicTopologies.hpp"
+
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
@@ -543,6 +547,51 @@ TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
       for(std::size_t s=0;s<faceIndices.size();s++)
          TEST_EQUALITY(orientations[faceIndices[s]],tests[e]);
    }       
+}
+
+TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri2)
+{
+   PHX::KokkosDeviceSession session;
+
+   out << note << std::endl;
+
+   shards::CellTopology tri(shards::getCellTopologyData<shards::Triangle<3> >());
+
+   // basis to build patterns from
+   RCP<Intrepid::Basis<double,FieldContainer> > basisA = rcp(new panzer::Basis_Constant<double,FieldContainer>(tri));
+
+   RCP<const FieldPattern> patternA = rcp(new IntrepidFieldPattern(basisA));
+
+   TEST_EQUALITY(patternA->numberIds(),1);
+
+   std::vector<std::vector<int> > topFaceIndices;
+   orientation_helpers::computePatternFaceIndices(*patternA,topFaceIndices);
+
+   TEST_EQUALITY(topFaceIndices.size(),1);
+   TEST_EQUALITY(topFaceIndices[0].size(),3); TEST_EQUALITY(topFaceIndices[0][0],0); TEST_EQUALITY(topFaceIndices[0][1],1); TEST_EQUALITY(topFaceIndices[0][2],2);
+}
+
+TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad2)
+{
+   PHX::KokkosDeviceSession session;
+
+   out << note << std::endl;
+
+   shards::CellTopology quad(shards::getCellTopologyData<shards::Quadrilateral<4> >()); 
+
+   // basis to build patterns from
+   RCP<Intrepid::Basis<double,FieldContainer> > basisA = rcp(new panzer::Basis_Constant<double,FieldContainer>(quad));
+
+   RCP<const FieldPattern> patternA = rcp(new IntrepidFieldPattern(basisA));
+
+   TEST_EQUALITY(patternA->numberIds(),1);
+
+   std::vector<std::vector<int> > topFaceIndices;
+   orientation_helpers::computePatternFaceIndices(*patternA,topFaceIndices);
+
+   TEST_EQUALITY(topFaceIndices.size(),1);
+   TEST_EQUALITY(topFaceIndices[0].size(),4); 
+   TEST_EQUALITY(topFaceIndices[0][0],0); TEST_EQUALITY(topFaceIndices[0][1],1); TEST_EQUALITY(topFaceIndices[0][2],2); TEST_EQUALITY(topFaceIndices[0][3],3); 
 }
 
 /////////////////////////////////////////////

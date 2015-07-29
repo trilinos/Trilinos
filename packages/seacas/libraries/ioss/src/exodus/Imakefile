@@ -43,7 +43,7 @@ CXXETRA_DEFINES = -ptused -DNO_MPI ${IOPX}
 CXXEXTRA_DEFINES = -DNO_MPI ${IOPX}
 #endif
 
-SRCS =  Ioex_DatabaseIO.C  Ioex_IOFactory.C  Ioex_Internals.C   Ioex_SuperElement.C
+SRCS =  Ioex_DatabaseIO.C  Ioex_Utils.C  Ioex_Internals.C   Ioex_SuperElement.C
 
 OBJS = ${SRCS:.C=.o}
 

@@ -2719,7 +2719,7 @@ order listed in the ``TribitsExampleProject/PackagesList.cmake`` file:
 From this file, we get the list of top-level packages ``SimpleCxx``,
 ``MixedLang``, ``WithSubpackages``, and ``WrapExternal`` (and their base
 package directories and testing group, see `<repoDir>/PackagesList.cmake`_).
-(NOTE: By default the package ``ExternalPkg`` is not defined because its
+(NOTE: By default the package ``InsertedPkg`` is not defined because its
 directory is missing, see `How to insert a package into an upstream repo`_.)
 
 A full listing of package files in `TribitsExampleProject Files and
@@ -5540,37 +5540,37 @@ supported in TriBITS is to just list the inserted package into the
 depends on and before the packages that will use it then call the
 `TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_ function to allow the package to
 be missing.  This is demonstrated in `TribitsExampleProject`_ with the package
-``ExternalPkg`` which is **not** included in the default
+``InsertedPkg`` which is **not** included in the default
 ``TribitsExampleProject`` source tree.  The
 `TribitsExampleProject`_/``PackagesList.cmake`` file looks like:
 
 .. include:: ../../examples/TribitsExampleProject/PackagesList.cmake
    :literal:
 
-In this example, the subpackage ``ExternalPkg`` has a required dependency on
+In this example, the subpackage ``InsertedPkg`` has a required dependency on
 ``SimpleCxx`` and ``WithSubpackagesB`` has an optional dependency on
-``ExternalPkg``.  Therefore, the inserted package ``ExternalPkg`` has upstream
+``InsertedPkg``.  Therefore, the inserted package ``InsertedPkg`` has upstream
 and downstream dependencies.
 
 What the function ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`` does is to
-tell TriBITS to treat ``ExternalPkg`` the same as any other package if the
-directory ``TribitsExampleProject/ExternalPkg`` exists and to otherwise
-complete ignore the package ``ExternalPkg`` if the source for the package does
+tell TriBITS to treat ``InsertedPkg`` the same as any other package if the
+directory ``TribitsExampleProject/InsertedPkg`` exists and to otherwise
+complete ignore the package ``InsertedPkg`` if the source for the package does
 not exist.  In addition, TriBITS will automatically disable of all downstream
 package dependencies for the missing package.
 
-The way one would set up ``TribitsExampleProject`` to enable ``ExternalPkg``,
+The way one would set up ``TribitsExampleProject`` to enable ``InsertedPkg``,
 if these were in separate VC (e.g. git) repos for example, would be to do::
 
   $ git clone <some-url-base>/TribitsExampleProject
   $ cd TribitsExampleProject
   $ git clone <some-other-url-base>/ExteranlPkg
-  $ echo /ExternalPkg/ >> .git/info/excludes
+  $ echo /InsertedPkg/ >> .git/info/excludes
 
 Then, when you configure ``TribitsExampleProject``, the package
-``ExternalPkg`` would automatically appear and could then be enabled or
+``InsertedPkg`` would automatically appear and could then be enabled or
 disabled like any other TriBITS package.  The TriBITS test
-``Tribits_TribitsExampleProject_ExternalPkg`` demonstrates this.
+``Tribits_TribitsExampleProject_InsertedPkg`` demonstrates this.
 
 Assuming that one would put the (new) external package in a separate VC repo,
 one would perform the following steps:
@@ -7324,7 +7324,8 @@ These options are described below.
     SET(${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME_DEFAULT ON)
 
   The implementation of this feature currently uses ``EXECUTE_PROCESS(date)``
-  and therefore will only on Linux/Unix/Mac systems and not Windows systems.
+  and therefore will only work on Linux/Unix/Mac systems and not Windows
+  systems.
 
   NOTE: In a future version of CTest, this option may turn on start and end
   date/time for regular tests added with `TRIBITS_ADD_TEST()`_ (which uses a
@@ -7363,16 +7364,43 @@ These options are described below.
 
   If ``${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS`` is set to ``TRUE``, then the
   ``SYSTEM`` flag will be passed into the ``INCLUDE_DIRECTORIES()`` command
-  for TPL include directories.  On some systems this will result in include
-  directories being passed to the compiler with ``-isystem`` instead of
-  ``-I``.  This helps to avoid compiler warning coming from TPL header files
-  for C and C++.  However, with CMake version 2.8.11, this also results in
-  ``-isystem`` being passed to the Fortran compiler (e.g. gfortran) as well.
-  This breaks the reading of Fortran module files (perhaps a bug in gfortran).
-  Because if the issue with Fortran, the default for this option is ``FALSE``
-  but project can override the default using::
+  for TPL include directories for every TPL for every package, by default.  On
+  some systems this will result in include directories being passed to the
+  compiler with ``-isystem`` instead of ``-I``.  This helps to avoid compiler
+  warning coming from TPL header files for C and C++.  However, with CMake
+  version 3.2 and less, this also results in ``-isystem`` being passed to the
+  Fortran compiler (e.g. gfortran) as well.  This breaks the reading of
+  Fortran module files (perhaps a bug in gfortran).  Because of this issue
+  with Fortran, the TriBITS default for this option is set to ``FALSE`` but a
+  project can override the default using::
 
     SET(${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS_DEFAULT  TRUE)
+
+  (This would be a good default if the project has not Fortran files or has
+  not Fortran files that use modules provided by TPLs).
+
+  However, if a package or subpackage sets::
+
+    SET(${PACKAGE_NAME}_SKIP_TPL_SYSTEM_INCLUDE_DIRS  TRUE)
+
+  in its ``CMakeLists.txt`` files before the ``TRIBITS_ADD_LIBRARY()`` or
+  ``TRIBITS_ADD_EXECUTABLE()`` commands are called in that package, then
+  ``SYSTEM`` will **not** be passed into ``INCLUDE_DIRECTORIES()`` for TPL
+  include dirs.  This is how some TriBITS packages with Fortran files that use
+  Fortran modules avoid passing in ``-isystem`` to the Fortran compiles and
+  thereby avoid the defect with gfortran described above.  If CMake version
+  3.3 or greater is used, this variable is not required.
+
+  NOTE: Currently, a TriBITS SE package must have a direct dependency on a TPL
+  to have ``-isystem`` added to a TPL's include directories on the compile
+  lines for that package.  That is, the TPL must be listed in the
+  ``LIB_REQUIRED_TPLS`` or ``LIB_OPTIONAL_TPLS`` arguments passed into the
+  `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ function in the SE package's
+  `<packageDir>/cmake/Dependencies.cmake`_ file.  In addition, to have
+  ``-isystem`` added to the include directories for a TPL when compiling the
+  tests for an SE package, it must be listed in the ``TEST_REQUIRED_TPLS`` or
+  ``TEST_OPTIONAL_TPLS`` arguments.  This is a limitation of the TriBITS
+  implementation that will be removed in a future version of TriBITS.
 
 .. _${PROJECT_NAME}_TRACE_ADD_TEST:
 .. _${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT:

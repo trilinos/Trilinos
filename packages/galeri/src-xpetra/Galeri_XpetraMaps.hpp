@@ -57,7 +57,7 @@
 #ifndef GALERI_XPETRAMAPS_HPP
 #define GALERI_XPETRAMAPS_HPP
 
-#include <string.h>
+#include <string>
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>

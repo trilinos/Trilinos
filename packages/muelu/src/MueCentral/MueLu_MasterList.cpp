@@ -131,6 +131,7 @@ namespace MueLu {
     if (name == "repartition: start level") { ss << "<Parameter name=\"repartition: start level\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: max imbalance") { ss << "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
     return "";
   }
  
@@ -147,6 +148,7 @@ namespace MueLu {
   "<Parameter name=\"problem: symmetric\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"xml parameter file\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"parameterlist: syntax\" type=\"string\" value=\"muelu\"/>"
+  "<Parameter name=\"keep\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"smoother: pre or post\" type=\"string\" value=\"both\"/>"
   "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
   "<Parameter name=\"smoother: pre type\" type=\"string\" value=\"RELAXATION\"/>"
@@ -179,16 +181,29 @@ namespace MueLu {
   "<Parameter name=\"aggregation: preserve Dirichlet points\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: allow user-specified singletons\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: export visualization data\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: output filename\" type=\"string\" value=\"\"/>"
+  "<Parameter name=\"aggregation: output file: time step\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"aggregation: output file: iter\" type=\"int\" value=\"0\"/>"
+  "<Parameter name=\"aggregation: output file: agg style\" type=\"string\" value=\"Point Cloud\"/>"
+  "<Parameter name=\"aggregation: output file: fine graph edges\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: output file: coarse graph edges\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"aggregation: output file: build colormap\" type=\"bool\" value=\"false\"/>"
+  "<ParameterList name=\"aggregation: params\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
+  "<Parameter name=\"toggle: mode\" type=\"string\" value=\"semicoarsen\"/>"
   "<Parameter name=\"semicoarsen: coarsen rate\" type=\"int\" value=\"3\"/>"
+  "<Parameter name=\"semicoarsen: number of levels\" type=\"int\" value=\"3\"/>"
+  "<Parameter name=\"linedetection: orientation\" type=\"string\" value=\"vertical\"/>"
+  "<Parameter name=\"linedetection: num layers\" type=\"int\" value=\"-1\"/>"
   "<Parameter name=\"sa: damping factor\" type=\"double\" value=\"1.33\"/>"
   "<Parameter name=\"sa: use filtered matrix\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"sa: calculate eigenvalue estimate\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"sa: eigenvalue estimate num iterations\" type=\"int\" value=\"10\"/>"
+  "<ParameterList name=\"transfer: params\"/>"
   "<Parameter name=\"filtered matrix: use lumping\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse eigenvalue\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"filtered matrix: reuse graph\" type=\"bool\" value=\"true\"/>"
@@ -209,6 +224,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: rebalance P and R\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
+  "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
   "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-1\"/>"
 "</ParameterList>"
 ;
@@ -336,6 +352,8 @@ namespace MueLu {
       
          ("parameterlist: syntax","parameterlist: syntax")
       
+         ("keep","keep")
+      
          ("smoother: pre or post","smoother: pre or post")
       
          ("smoother: type","smoother: type")
@@ -400,6 +418,22 @@ namespace MueLu {
       
          ("aggregation: export visualization data","aggregation: export visualization data")
       
+         ("aggregation: output filename","aggregation: output filename")
+      
+         ("aggregation: output file: time step","aggregation: output file: time step")
+      
+         ("aggregation: output file: iter","aggregation: output file: iter")
+      
+         ("aggregation: output file: agg style","aggregation: output file: agg style")
+      
+         ("aggregation: output file: fine graph edges","aggregation: output file: fine graph edges")
+      
+         ("aggregation: output file: coarse graph edges","aggregation: output file: coarse graph edges")
+      
+         ("aggregation: output file: build colormap","aggregation: output file: build colormap")
+      
+         ("aggregation: params","aggregation: params")
+      
          ("export data","export data")
       
          ("ML print initial list","print initial parameters")
@@ -410,7 +444,15 @@ namespace MueLu {
       
          ("energy minimization: enable","multigrid algorithm")
       
+         ("toggle: mode","toggle: mode")
+      
          ("semicoarsen: coarsen rate","semicoarsen: coarsen rate")
+      
+         ("semicoarsen: number of levels","semicoarsen: number of levels")
+      
+         ("linedetection: orientation","linedetection: orientation")
+      
+         ("linedetection: num layers","linedetection: num layers")
       
          ("aggregation: damping factor","sa: damping factor")
       
@@ -419,6 +461,8 @@ namespace MueLu {
          ("sa: calculate eigenvalue estimate","sa: calculate eigenvalue estimate")
       
          ("eigen-analysis: iterations","sa: eigenvalue estimate num iterations")
+      
+         ("transfer: params","transfer: params")
       
          ("filtered matrix: use lumping","filtered matrix: use lumping")
       
@@ -459,6 +503,8 @@ namespace MueLu {
          ("repartition: use subcommunicators","repartition: use subcommunicators")
       
          ("reuse: type","reuse: type")
+      
+         ("use external multigrid package","use external multigrid package")
       
          ("debug: graph level","debug: graph level")
       ;

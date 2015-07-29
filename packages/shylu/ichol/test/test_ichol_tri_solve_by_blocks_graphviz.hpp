@@ -122,7 +122,7 @@ namespace Example {
 
     {
       CrsHierTaskViewType TU(&HU);
-      for (ordinal_type k=0;k<HU.NumNonZeros();++k)
+      for (size_type k=0;k<HU.NumNonZeros();++k)
         HU.Value(k).fillRowViewArray();
 
       DenseHierTaskViewType TB(&HB);

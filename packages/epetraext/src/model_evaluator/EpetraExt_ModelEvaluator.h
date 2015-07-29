@@ -807,7 +807,7 @@ public:
     /** \brief Get stochastic Galerkin residual vector polynomial.  */
     sg_vector_t get_f_sg() const;
     /** \brief Set multi-point residual vector.  */
-    void set_f_mp( const mp_vector_t& f_sg );
+    void set_f_mp( const mp_vector_t& f_mp );
     /** \brief Get multi-point residual vector.  */
     mp_vector_t get_f_mp() const;
     /** \brief Set <tt>g(j)</tt> where <tt>0 <= j && j < this->Ng()</tt>.  */
@@ -1155,6 +1155,22 @@ public:
 
   /** \breif . */
   virtual Teuchos::RCP<const Epetra_Map> get_g_map(int j) const;
+
+  /** \brief Get the names of the response functions associated with response
+   * subvector j if available.
+   *
+   * \return Returns an RCP to a Teuchos::Array<std::string> object that
+   * contains the names of the responses.  If returnVal == Teuchos::null,
+   * then there are no names available for the response subvector g(j).  If
+   * returnVal->size() == 1, then a single name is given to the entire
+   * response subvector.  If returnVal->size() ==
+   * get_g_map(j)->GlobalNumElements(), then a name is given to every
+   * response scalar entry.
+   *
+   * The default implementation return returnVal==Teuchos::null which means
+   * by default, responses have no names associated with them.
+   */
+  virtual Teuchos::ArrayView<const std::string> get_g_names(int j) const;
 
   //@}
 

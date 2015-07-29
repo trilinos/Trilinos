@@ -106,13 +106,13 @@ int Ifpack_ILU::SetParameters(Teuchos::ParameterList& List)
 
   // set label
   sprintf(Label_, "IFPACK ILU (fill=%d, relax=%f, athr=%f, rthr=%f)",
-	  LevelOfFill(), RelaxValue(), AbsoluteThreshold(), 
-	  RelativeThreshold());
+          LevelOfFill(), RelaxValue(), AbsoluteThreshold(),
+          RelativeThreshold());
   return(0);
 }
 
 //==========================================================================
-int Ifpack_ILU::ComputeSetup() 
+int Ifpack_ILU::ComputeSetup()
 {
 
 #ifdef IFPACK_TEUCHOS_TIME_MONITOR
@@ -131,7 +131,7 @@ int Ifpack_ILU::ComputeSetup()
   // Set L range map and U domain map
   U_DomainMap_ = &(Matrix().OperatorDomainMap());
   L_RangeMap_ = &(Matrix().OperatorRangeMap());
- 
+
   // this is the old InitAllValues()
   int ierr = 0;
   int i, j;
@@ -162,35 +162,35 @@ int Ifpack_ILU::ComputeSetup()
   for (i=0; i< NumMyRows(); i++) {
 
     IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, MaxNumEntries, NumIn, &InV[0], &InI[0])); // Get Values and Indices
-    
+
     // Split into L and U (we don't assume that indices are ordered).
-    
-    NumL = 0; 
-    NumU = 0; 
+
+    NumL = 0;
+    NumU = 0;
     DiagFound = false;
-    
+
     for (j=0; j< NumIn; j++) {
       int k = InI[j];
 
       if (k==i) {
-	DiagFound = true;
-	DV[i] += Rthresh_ * InV[j] + EPETRA_SGN(InV[j]) * Athresh_; // Store perturbed diagonal in Epetra_Vector D_
+        DiagFound = true;
+        DV[i] += Rthresh_ * InV[j] + EPETRA_SGN(InV[j]) * Athresh_; // Store perturbed diagonal in Epetra_Vector D_
       }
 
       else if (k < 0) {IFPACK_CHK_ERR(-4);} // Out of range
 
       else if (k < i) {
-	LI[NumL] = k;
-	LV[NumL] = InV[j];
-	NumL++;
+        LI[NumL] = k;
+        LV[NumL] = InV[j];
+        NumL++;
       }
       else if (k<NumMyRows()) {
-	UI[NumU] = k;
-	UV[NumU] = InV[j];
-	NumU++;
+        UI[NumU] = k;
+        UV[NumU] = InV[j];
+        NumU++;
       }
     }
-    
+
     // Check in things for this row of L and U
 
     if (DiagFound) NumNonzeroDiags++;
@@ -198,22 +198,22 @@ int Ifpack_ILU::ComputeSetup()
 
     if (NumL) {
       if (ReplaceValues) {
-	(L_->ReplaceMyValues(i, NumL, &LV[0], &LI[0]));
+        (L_->ReplaceMyValues(i, NumL, &LV[0], &LI[0]));
       }
       else {
-	IFPACK_CHK_ERR(L_->InsertMyValues(i, NumL, &LV[0], &LI[0]));
+        IFPACK_CHK_ERR(L_->InsertMyValues(i, NumL, &LV[0], &LI[0]));
       }
     }
 
     if (NumU) {
       if (ReplaceValues) {
-	(U_->ReplaceMyValues(i, NumU, &UV[0], &UI[0]));
+        (U_->ReplaceMyValues(i, NumU, &UV[0], &UI[0]));
       }
       else {
-	IFPACK_CHK_ERR(U_->InsertMyValues(i, NumU, &UV[0], &UI[0]));
+        IFPACK_CHK_ERR(U_->InsertMyValues(i, NumU, &UV[0], &UI[0]));
       }
     }
-    
+
   }
 
   if (!ReplaceValues) {
@@ -236,7 +236,7 @@ int Ifpack_ILU::ComputeSetup()
 }
 
 //==========================================================================
-int Ifpack_ILU::Initialize() 
+int Ifpack_ILU::Initialize()
 {
 
 #ifdef IFPACK_TEUCHOS_TIME_MONITOR
@@ -261,7 +261,7 @@ int Ifpack_ILU::Initialize()
     if (CrsGraph_.get() == 0)
       IFPACK_CHK_ERR(-5); // memory allocation error
 
-	std::vector<double> Values(size);
+        std::vector<double> Values(size);
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     if(A_->RowMatrixRowMap().GlobalIndicesInt()) {
@@ -271,17 +271,17 @@ int Ifpack_ILU::Initialize()
       for (int i = 0 ; i < A_->NumMyRows() ; ++i) {
         int NumEntries;
         int GlobalRow = A_->RowMatrixRowMap().GID(i);
-        IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, size, NumEntries, 
-					  &Values[0], &Indices[0]));
+        IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, size, NumEntries,
+                                          &Values[0], &Indices[0]));
         // convert to global indices
         for (int j = 0 ; j < NumEntries ; ++j) {
-          Indices[j] = A_->RowMatrixColMap().GID(Indices[j]); 
+          Indices[j] = A_->RowMatrixColMap().GID(Indices[j]);
         }
         IFPACK_CHK_ERR(CrsGraph_->InsertGlobalIndices(GlobalRow,NumEntries,
-						   &Indices[0]));
+                                                   &Indices[0]));
       }
     }
-	else
+        else
 #endif
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
     if(A_->RowMatrixRowMap().GlobalIndicesLongLong()) {
@@ -292,22 +292,22 @@ int Ifpack_ILU::Initialize()
       for (int i = 0 ; i < A_->NumMyRows() ; ++i) {
         int NumEntries;
         long long GlobalRow = A_->RowMatrixRowMap().GID64(i);
-        IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, size, NumEntries, 
-					  &Values[0], &Indices_local[0]));
+        IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, size, NumEntries,
+                                          &Values[0], &Indices_local[0]));
         // convert to global indices
         for (int j = 0 ; j < NumEntries ; ++j) {
-          Indices[j] = A_->RowMatrixColMap().GID64(Indices_local[j]); 
+          Indices[j] = A_->RowMatrixColMap().GID64(Indices_local[j]);
         }
         IFPACK_CHK_ERR(CrsGraph_->InsertGlobalIndices(GlobalRow,NumEntries,
-						   &Indices[0]));
+                                                   &Indices[0]));
       }
-	}
-	else
+        }
+        else
 #endif
       throw "Ifpack_ILU::Initialize: GlobalIndices type unknown";
 
     IFPACK_CHK_ERR(CrsGraph_->FillComplete(A_->RowMatrixRowMap(),
-					  A_->RowMatrixRowMap()));
+                                          A_->RowMatrixRowMap()));
 
     // always overlap zero, wider overlap will be handled
     // by the AdditiveSchwarz preconditioner.
@@ -331,14 +331,14 @@ int Ifpack_ILU::Initialize()
 }
 
 //==========================================================================
-int Ifpack_ILU::Compute() 
+int Ifpack_ILU::Compute()
 {
 
 #ifdef IFPACK_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Ifpack_ILU::Compute");
 #endif
 
-  if (!IsInitialized()) 
+  if (!IsInitialized())
     IFPACK_CHK_ERR(Initialize());
 
   Time_.ResetStartTime();
@@ -347,7 +347,7 @@ int Ifpack_ILU::Compute()
   // convert Matrix() into L and U factors.
   IFPACK_CHK_ERR(ComputeSetup());
 
-  // MinMachNum should be officially defined, for now pick something a little 
+  // MinMachNum should be officially defined, for now pick something a little
   // bigger than IEEE underflow value
 
   double MinDiagonalValue = Epetra_MinDouble;
@@ -362,7 +362,7 @@ int Ifpack_ILU::Compute()
   // Get Maximun Row length
   int MaxNumEntries = L_->MaxNumEntries() + U_->MaxNumEntries() + 1;
 
-  std::vector<int> InI(MaxNumEntries+1);    // Allocate temp space, pad by one to 
+  std::vector<int> InI(MaxNumEntries+1);    // Allocate temp space, pad by one to
   std::vector<double> InV(MaxNumEntries+1); // to avoid debugger complaints for pathological cases
   std::vector<int> colflag(NumMyCols());
 
@@ -378,7 +378,7 @@ int Ifpack_ILU::Compute()
   // =========================== //
 
   // Need some integer workspace and pointers
-  int NumUU; 
+  int NumUU;
   int * UUI;
   double * UUV;
   for (j = 0; j < NumMyCols(); ++j) colflag[j] = - 1;
@@ -394,7 +394,7 @@ int Ifpack_ILU::Compute()
 
     InV[NumL] = DV[i]; // Put in diagonal
     InI[NumL] = i;
-    
+
     IFPACK_CHK_ERR(U_->ExtractMyRowCopy(i, NumIn-NumL-1, NumU, &InV[NumL+1], &InI[NumL+1]));
     NumIn = NumL+NumU+1;
     UV = &InV[NumL+1];
@@ -410,29 +410,29 @@ int Ifpack_ILU::Compute()
       double multiplier = InV[jj]; // current_mults++;
 
       InV[jj] *= DV[j];
-      
+
       IFPACK_CHK_ERR(U_->ExtractMyRowView(j, NumUU, UUV, UUI)); // View of row above
 
       if (RelaxValue_==0.0) {
-	for (k=0; k<NumUU; k++) {
-	  int kk = colflag[UUI[k]];
-	  if (kk>-1) {
-	    InV[kk] -= multiplier*UUV[k];
+        for (k=0; k<NumUU; k++) {
+          int kk = colflag[UUI[k]];
+          if (kk>-1) {
+            InV[kk] -= multiplier*UUV[k];
 #ifdef IFPACK_FLOPCOUNTERS
-	    current_madds++;
+            current_madds++;
 #endif
-	  }
-	}
+          }
+        }
       }
       else {
-	for (k=0; k<NumUU; k++) {
-	  int kk = colflag[UUI[k]];
-	  if (kk>-1) InV[kk] -= multiplier*UUV[k];
-	  else diagmod -= multiplier*UUV[k];
+        for (k=0; k<NumUU; k++) {
+          int kk = colflag[UUI[k]];
+          if (kk>-1) InV[kk] -= multiplier*UUV[k];
+          else diagmod -= multiplier*UUV[k];
 #ifdef IFPACK_FLOPCOUNTERS
-	  current_madds++;
+          current_madds++;
 #endif
-	}
+        }
       }
      }
     if (NumL) {
@@ -465,17 +465,17 @@ int Ifpack_ILU::Compute()
 
   // Validate that the L and U factors are actually lower and upper triangular
 
-  if (!L_->LowerTriangular()) 
+  if (!L_->LowerTriangular())
     IFPACK_CHK_ERR(-4);
-  if (!U_->UpperTriangular()) 
+  if (!U_->UpperTriangular())
     IFPACK_CHK_ERR(-4);
-  
+
 #ifdef IFPACK_FLOPCOUNTERS
   // Add up flops
- 
+
   double current_flops = 2 * current_madds;
   double total_flops = 0;
-    
+
   IFPACK_CHK_ERR(Graph().L_Graph().RowMap().Comm().SumAll(&current_flops, &total_flops, 1)); // Get total madds across all PEs
 
   // Now count the rest
@@ -486,7 +486,7 @@ int Ifpack_ILU::Compute()
   // add to this object's counter
   ComputeFlops_ += total_flops;
 #endif
-  
+
   IsComputed_ = true;
   NumCompute_++;
   ComputeTime_ += Time_.ElapsedTime();
@@ -497,8 +497,8 @@ int Ifpack_ILU::Compute()
 
 //=============================================================================
 // This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Ifpack_ILU::Solve(bool Trans, const Epetra_MultiVector& X, 
-                      Epetra_MultiVector& Y) const 
+int Ifpack_ILU::Solve(bool Trans, const Epetra_MultiVector& X,
+                      Epetra_MultiVector& Y) const
 {
 
 #ifdef IFPACK_TEUCHOS_TIME_MONITOR
@@ -514,17 +514,17 @@ int Ifpack_ILU::Solve(bool Trans, const Epetra_MultiVector& X,
 
     IFPACK_CHK_ERR(L_->Solve(Lower, Trans, UnitDiagonal, X, Y));
     // y = D*y (D_ has inverse of diagonal)
-    IFPACK_CHK_ERR(Y.Multiply(1.0, *D_, Y, 0.0)); 
+    IFPACK_CHK_ERR(Y.Multiply(1.0, *D_, Y, 0.0));
     // Solve Uy = y
-    IFPACK_CHK_ERR(U_->Solve(Upper, Trans, UnitDiagonal, Y, Y)); 
+    IFPACK_CHK_ERR(U_->Solve(Upper, Trans, UnitDiagonal, Y, Y));
   }
   else {
     // Solve Uy = y
-    IFPACK_CHK_ERR(U_->Solve(Upper, Trans, UnitDiagonal, X, Y)); 
+    IFPACK_CHK_ERR(U_->Solve(Upper, Trans, UnitDiagonal, X, Y));
     // y = D*y (D_ has inverse of diagonal)
-    IFPACK_CHK_ERR(Y.Multiply(1.0, *D_, Y, 0.0)); 
+    IFPACK_CHK_ERR(Y.Multiply(1.0, *D_, Y, 0.0));
     IFPACK_CHK_ERR(L_->Solve(Lower, Trans, UnitDiagonal, Y, Y));
-  } 
+  }
 
 
   return(0);
@@ -532,8 +532,8 @@ int Ifpack_ILU::Solve(bool Trans, const Epetra_MultiVector& X,
 
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Ifpack_ILU::Multiply(bool Trans, const Epetra_MultiVector& X, 
-				Epetra_MultiVector& Y) const 
+int Ifpack_ILU::Multiply(bool Trans, const Epetra_MultiVector& X,
+                                Epetra_MultiVector& Y) const
 {
 
 #ifdef IFPACK_TEUCHOS_TIME_MONITOR
@@ -544,35 +544,35 @@ int Ifpack_ILU::Multiply(bool Trans, const Epetra_MultiVector& X,
     IFPACK_CHK_ERR(-3);
 
   if (!Trans) {
-    IFPACK_CHK_ERR(U_->Multiply(Trans, X, Y)); 
+    IFPACK_CHK_ERR(U_->Multiply(Trans, X, Y));
     // Y1 = Y1 + X1 (account for implicit unit diagonal)
-    IFPACK_CHK_ERR(Y.Update(1.0, X, 1.0)); 
+    IFPACK_CHK_ERR(Y.Update(1.0, X, 1.0));
     // y = D*y (D_ has inverse of diagonal)
-    IFPACK_CHK_ERR(Y.ReciprocalMultiply(1.0, *D_, Y, 0.0)); 
+    IFPACK_CHK_ERR(Y.ReciprocalMultiply(1.0, *D_, Y, 0.0));
     Epetra_MultiVector Y1temp(Y); // Need a temp copy of Y1
     IFPACK_CHK_ERR(L_->Multiply(Trans, Y1temp, Y));
     // (account for implicit unit diagonal)
-    IFPACK_CHK_ERR(Y.Update(1.0, Y1temp, 1.0)); 
+    IFPACK_CHK_ERR(Y.Update(1.0, Y1temp, 1.0));
   }
   else {
 
     IFPACK_CHK_ERR(L_->Multiply(Trans, X, Y));
     // Y1 = Y1 + X1 (account for implicit unit diagonal)
-    IFPACK_CHK_ERR(Y.Update(1.0, X, 1.0)); 
+    IFPACK_CHK_ERR(Y.Update(1.0, X, 1.0));
     // y = D*y (D_ has inverse of diagonal)
-    IFPACK_CHK_ERR(Y.ReciprocalMultiply(1.0, *D_, Y, 0.0)); 
+    IFPACK_CHK_ERR(Y.ReciprocalMultiply(1.0, *D_, Y, 0.0));
     Epetra_MultiVector Y1temp(Y); // Need a temp copy of Y1
     IFPACK_CHK_ERR(U_->Multiply(Trans, Y1temp, Y));
     // (account for implicit unit diagonal)
-    IFPACK_CHK_ERR(Y.Update(1.0, Y1temp, 1.0)); 
-  } 
+    IFPACK_CHK_ERR(Y.Update(1.0, Y1temp, 1.0));
+  }
 
   return(0);
 }
 
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Ifpack_ILU::ApplyInverse(const Epetra_MultiVector& X, 
+int Ifpack_ILU::ApplyInverse(const Epetra_MultiVector& X,
                              Epetra_MultiVector& Y) const
 {
 
@@ -600,7 +600,7 @@ int Ifpack_ILU::ApplyInverse(const Epetra_MultiVector& X,
 
   // approx is the number of nonzeros in L and U
 #ifdef IFPACK_FLOPCOUNTERS
-  ApplyInverseFlops_ += X.NumVectors() * 4 * 
+  ApplyInverseFlops_ += X.NumVectors() * 4 *
     (L_->NumGlobalNonzeros() + U_->NumGlobalNonzeros());
 #endif
 
@@ -612,7 +612,7 @@ int Ifpack_ILU::ApplyInverse(const Epetra_MultiVector& X,
 }
 
 //=============================================================================
-double Ifpack_ILU::Condest(const Ifpack_CondestType CT, 
+double Ifpack_ILU::Condest(const Ifpack_CondestType CT,
                            const int MaxIters, const double Tol,
                               Epetra_RowMatrix* Matrix_in)
 {
@@ -633,6 +633,8 @@ double Ifpack_ILU::Condest(const Ifpack_CondestType CT,
 std::ostream&
 Ifpack_ILU::Print(std::ostream& os) const
 {
+  using std::endl;
+
   if (!Comm().MyPID()) {
     os << endl;
     os << "================================================================================" << endl;
@@ -646,26 +648,26 @@ Ifpack_ILU::Print(std::ostream& os) const
     if (IsComputed_) {
       os << "Number of rows of L, D, U       = " << L_->NumGlobalRows64() << endl;
       os << "Number of nonzeros of L + U     = " << NumGlobalNonzeros64() << endl;
-      os << "nonzeros / rows                 = " 
+      os << "nonzeros / rows                 = "
         << 1.0 * NumGlobalNonzeros64() / U_->NumGlobalRows64() << endl;
     }
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
     os << "-----           -------   --------------       ------------     --------" << endl;
-    os << "Initialize()    "   << std::setw(5) << NumInitialize() 
-       << "  " << std::setw(15) << InitializeTime() 
+    os << "Initialize()    "   << std::setw(5) << NumInitialize()
+       << "  " << std::setw(15) << InitializeTime()
        << "               0.0            0.0" << endl;
-    os << "Compute()       "   << std::setw(5) << NumCompute() 
+    os << "Compute()       "   << std::setw(5) << NumCompute()
        << "  " << std::setw(15) << ComputeTime()
        << "  " << std::setw(15) << 1.0e-6 * ComputeFlops();
-    if (ComputeTime() != 0.0) 
+    if (ComputeTime() != 0.0)
       os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() / ComputeTime() << endl;
     else
       os << "  " << std::setw(15) << 0.0 << endl;
-    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse() 
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse()
        << "  " << std::setw(15) << ApplyInverseTime()
        << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops();
-    if (ApplyInverseTime() != 0.0) 
+    if (ApplyInverseTime() != 0.0)
       os << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() / ApplyInverseTime() << endl;
     else
       os << "  " << std::setw(15) << 0.0 << endl;

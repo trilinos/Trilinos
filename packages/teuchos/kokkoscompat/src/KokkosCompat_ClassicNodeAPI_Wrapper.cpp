@@ -45,8 +45,10 @@ namespace Kokkos {
           Kokkos::Threads::initialize ( NumThreads, NumNUMA, NumCoresPerNUMA );
         else if (NumNUMA > 0)
           Kokkos::Threads::initialize ( NumThreads, NumNUMA );
-        else
+        else if (NumThreads > 0)
           Kokkos::Threads::initialize ( NumThreads );
+        else
+          Kokkos::Threads::initialize ( );
       }
     }
 
@@ -77,8 +79,10 @@ namespace Kokkos {
           Kokkos::OpenMP::initialize ( NumThreads, NumNUMA, NumCoresPerNUMA );
         else if (NumNUMA > 0)
           Kokkos::OpenMP::initialize ( NumThreads, NumNUMA );
-        else
+        else if (NumThreads > 0)
           Kokkos::OpenMP::initialize ( NumThreads );
+        else
+          Kokkos::OpenMP::initialize ( );
       }
     }
 
@@ -150,8 +154,10 @@ namespace Kokkos {
           Kokkos::HostSpace::execution_space::initialize ( NumThreads, NumNUMA, NumCoresPerNUMA );
         else if (NumNUMA > 0)
           Kokkos::HostSpace::execution_space::initialize ( NumThreads, NumNUMA );
-        else
+        else if (NumThreads > 0)
           Kokkos::HostSpace::execution_space::initialize ( NumThreads );
+        else
+          Kokkos::HostSpace::execution_space::initialize ( );
       }
       Kokkos::Cuda::SelectDevice select_device(Device);
       if(!Kokkos::Cuda::is_initialized())

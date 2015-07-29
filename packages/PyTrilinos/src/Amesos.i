@@ -103,8 +103,13 @@ exAmesos_Factory.py.
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_MapColoring.h"
+#include "Epetra_DataAccess.h"
+#include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_InvOperator.h"
 #include "Epetra_RowMatrix.h"
@@ -113,16 +118,15 @@ exAmesos_Factory.py.
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_JadMatrix.h"
 #include "Epetra_LinearProblem.h"
-#include "Epetra_DataAccess.h"
 #include "Epetra_FEVbrMatrix.h"
+#include "Epetra_SerialDenseOperator.h"
+#include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
-#include "Epetra_Export.h"
-#include "Epetra_OffsetIndex.h"
 #include "Epetra_SerialDistributor.h"
 #endif
 
 // Teuchos includes
-#ifdef HAVE_TEUCHOS
 #include "Teuchos_RefCountPtrDecl.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
@@ -130,7 +134,6 @@ exAmesos_Factory.py.
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
 #include "PyTrilinos_Teuchos_Util.hpp"
-#endif
 
 // Amesos includes
 #include "Amesos.h"
@@ -169,17 +172,7 @@ exAmesos_Factory.py.
 // Local includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
-#ifdef HAVE_EPETRA
-#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-#include "Epetra_NumPyIntSerialDenseVector.hpp"
-#include "Epetra_NumPySerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialSymDenseMatrix.hpp"
-#include "Epetra_NumPySerialDenseVector.hpp"
-#include "Epetra_NumPyIntVector.hpp"
-#include "Epetra_NumPyMultiVector.hpp"
-#include "Epetra_NumPyVector.hpp"
-#include "Epetra_NumPyFEVector.hpp"
-#endif
+#include "PyTrilinos_Epetra_Util.hpp"
 
 %}
 
@@ -199,9 +192,7 @@ exAmesos_Factory.py.
 %include "stl.i"
 
 // External Trilinos packages
-#ifdef HAVE_TEUCHOS
 %import "Teuchos.i"
-#endif
 #ifdef HAVE_EPETRA
 %import "Epetra.i"
 #endif

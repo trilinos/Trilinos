@@ -76,10 +76,12 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     BlockRelaxation
     BorderedOperator
     Chebyshev
+    BandedContainer
     DenseContainer
     TriDiContainer
     Diagonal
     DiagonalFilter
+    DropFilter
     Factory
     Hiptmair
     IdentitySolver
@@ -93,9 +95,14 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     SingletonFilter
     SparseContainer
     SparsityFilter
+    LinePartitioner
     Details::Chebyshev
     Details::DenseSolver
+    Details::Factory
+    Details::LinearSolver
     Details::OneLevelFactory
+    Details::TriDiSolver
+    Experimental::RBILUK
     )
   IF(Ifpack2_ENABLE_Amesos2)
     APPEND_GLOBAL_SET(IFPACK2_ETI_CLASSES
@@ -125,6 +132,22 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
       "${IFPACK2_ETI_LO_GO_CLASSES}"
       Ifpack2_ETI_LO_GO_Serial.tmpl
       "Ifpack2_CLASS_FILE_NAME_Serial.cpp"
+      IFPACK2_SRCS)
+    LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
+  ENDIF()
+
+  # ETI for the Kokkos::Classic::Serialnode device.
+  IF (Tpetra_INST_SERIALCLASSIC)
+    IFPACK2_PROCESS_ETI_TEMPLATE(
+      "${IFPACK2_ETI_CLASSES}"
+      Ifpack2_ETI_SC_LO_GO_Classic.tmpl
+      "Ifpack2_CLASS_FILE_NAME_Classic.cpp"
+      IFPACK2_SRCS)
+    LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
+    IFPACK2_PROCESS_ETI_TEMPLATE(
+      "${IFPACK2_ETI_LO_GO_CLASSES}"
+      Ifpack2_ETI_LO_GO_Classic.tmpl
+      "Ifpack2_CLASS_FILE_NAME_Classic.cpp"
       IFPACK2_SRCS)
     LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
   ENDIF()
@@ -187,3 +210,8 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES} ${IFPACK2_CPP_SOURCES}
   )
+
+#
+# Make a trivial change here if you want cmake to run,
+# due to changes you make to files in Ifpack2.
+#

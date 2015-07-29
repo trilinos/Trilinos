@@ -34,7 +34,7 @@
 
 // Forward declarations
 namespace Sacado {
-  namespace Fad {
+  namespace CacheFad {
     template <typename T> class Expr;
   }
 }

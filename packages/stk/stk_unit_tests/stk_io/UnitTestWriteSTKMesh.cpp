@@ -51,6 +51,7 @@ Iofx::DatabaseIO* create_output_db_io(const std::string &filename)
     return db_io;
 }
 
+//BeginDocTest1
 TEST(StkIo, write_stk_mesh_to_file)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
@@ -216,6 +217,7 @@ TEST(StkIo, write_stk_mesh_to_file)
     unlink(file_written.c_str());
 
 }
+//EndDocTest1
 
 void print_memory(size_t &current, size_t &hwm)
 {

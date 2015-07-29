@@ -26,21 +26,21 @@ BUILDING
 
 There are 4 methods for building exodus.
 
-1. SEAMS/SEACAS Build system which is based on imake.  If you have a
-SEAMS or SEACAS installation, you can use its build system.  In the
-top-level exodus directory, do 'accmkmf' followed by 'make
-Makefiles' and then 'make'
+1. CMAKE: Edit the cmake-script file to update library and install paths.
+   The type 'sh cmake-script' to generate the Makefiles
+   followed by 'make' and then 'make install'
 
-2. CMAKE: type 'cmake .' or 'cmake -i' to generate the Makefiles
-followed by 'make'.  There is a cmake-script file which shows how I configure 
-cmake.
+2. SEAMS/SEACAS Build system which is based on imake.  If you have a
+   SEAMS or SEACAS installation, you can use its build system.  In the
+   top-level exodus directory, do 'accmkmf' followed by 'make
+   Makefiles' and then 'make'
 
 3. Makefile.standalone.  Edit the top-level Makefile.standalone file
-and specify the compiler and other options as detailed in the
-file. Then, do "make -f Makefile.standalone".
+   and specify the compiler and other options as detailed in the
+   file. Then, do "make -f Makefile.standalone".
 
 4. Building in the Trilinos system as part of the seacas package. 
-See the Trilinos documentation for more details.
+   See the Trilinos documentation for more details.
 
 Once you have built the library, you can test it by typing "make
 check"

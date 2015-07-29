@@ -40,6 +40,7 @@
 // @HEADER
 
 
+#include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_UnitTestBase.hpp"
 #include "Teuchos_TestingHelpers.hpp"
@@ -188,7 +189,11 @@ public:
   InstanceData()
     :clp(false),
      showTestDetails(SHOW_TEST_DETAILS_TEST_NAMES),
+#if defined(HAVE_TEUCHOS_GLOBALLY_REDUCE_UNITTEST_RESULTS)
+     globallyReduceUnitTestResult(true),
+#else
      globallyReduceUnitTestResult(false),
+#endif
      showSrcLocation(false),
      showFailSrcLocation(true),
      noOp(false),

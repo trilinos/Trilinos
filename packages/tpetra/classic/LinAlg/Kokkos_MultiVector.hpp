@@ -178,7 +178,7 @@ namespace KokkosClassic {
     //@{
 
     //! The multivector data, as a nonconst array.
-    Teuchos::ArrayRCP<Scalar> getValuesNonConst () {
+    Teuchos::ArrayRCP<Scalar> getValuesNonConst () const {
       return contigValues_;
     }
 

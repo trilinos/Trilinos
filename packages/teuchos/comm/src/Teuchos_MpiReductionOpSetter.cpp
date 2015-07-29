@@ -83,24 +83,15 @@ Teuchos_MPI_reduction_op (void* invec, void* inoutvec,
 namespace { // anonymous
 
 //
-// The two static variables theMpiOp_ and theMpiOpKey_ are persistent
-// and initialized lazily.
+// theMpiOp_: The MPI_Op singleton that implements the Teuchos
+// reduction or scan operation.  We only need to create the MPI_Op
+// once (lazily, on demand).  When we create the MPI_Op, we stash its
+// "destructor" in MPI_COMM_SELF so that it gets freed at
+// MPI_Finalize.  (This is a standard MPI idiom.)
 //
-
-// The MPI_Op singleton that implements the reduction or scan
-// operation.  We only need to create the MPI_Op once (lazily, on
-// demand).  When we create the MPI_Op, we stash its "destructor" in
-// MPI_COMM_SELF so that it gets freed at MPI_Finalize.  (This is a
-// standard MPI idiom.)
+// This variable is global, persistent (until MPI_Finalize is called),
+// and initialized lazily.
 MPI_Op theMpiOp_ = MPI_OP_NULL;
-
-// When we stash the MPI_Op singleton's "destructor" in MPI_COMM_SELF,
-// we get back a key.  This is the key.  If we ever needed to change
-// the destructor, we could use the key to look it up and free it.  We
-// don't in this case, but knowing that the key value is valid (!=
-// MPI_KEYVAL_INVALID) tells us whether the MPI_Op singleton has been
-// created yet.
-int theMpiOpKey_ = MPI_KEYVAL_INVALID; // flag value
 
 // The current reduction or scan "function."  (It's actually a class
 // instance.)
@@ -129,8 +120,11 @@ freeMpiOp (MPI_Op* op)
 }
 
 // Free the MPI_Op singleton (theMpiOp_), and return the error code
-// returned by freeMpiOp_.  This is the singleton's "destructor" that
-// we attach to MPI_COMM_SELF as an MPI_Finalize hook.
+// returned by freeMpiOp().  As a side effect, if freeing succeeds,
+// set theMpiOp_ to MPI_OP_NULL.
+//
+// This is the singleton's "destructor" that we attach to
+// MPI_COMM_SELF as an MPI_Finalize hook.
 int
 freeMpiOpCallback (MPI_Comm, int, void*, void*)
 {
@@ -146,13 +140,13 @@ freeMpiOpCallback (MPI_Comm, int, void*, void*)
 // Create the MPI_Op singleton that invokes the
 // Teuchos_MPI_reduction_op callback.  Assign the MPI_Op to theMpiOp_,
 // and set it up with an MPI_Finalize hook so it gets freed
-// automatically.  Store the hook's key in theMpiOpKey_.
+// automatically.
 void createReductOp ()
 {
-  // This function has side effects on global singletons.  This check
-  // ensures that the function is idempotent.  We only need to create
-  // the MPI_Op singleton once.
-  if (theMpiOpKey_ != MPI_KEYVAL_INVALID) {
+  // This function has side effects on the global singleton theMpiOp_.
+  // This check ensures that the function is idempotent.  We only need
+  // to create the MPI_Op singleton once.
+  if (theMpiOp_ != MPI_OP_NULL) {
     return; // We've already called this function; we don't have to again.
   }
 
@@ -169,13 +163,9 @@ void createReductOp ()
 
   // Use the standard MPI idiom (attach a (key,value) pair to
   // MPI_COMM_SELF with a "destructor" function) in order that
-  // theMpiOp_ gets freed at MPI_Finalize, if necessary.  Save the
-  // resulting key in theMpiOpKey_.
+  // theMpiOp_ gets freed at MPI_Finalize, if necessary.
 
-  // Key is an output argument of MPI_Comm_create_keyval.  If we
-  // ever wanted to call MPI_Comm_free_keyval, we would need to save
-  // the key.  MPI_Finalize will free the (key,value) pair
-  // automatically, so we never need to call MPI_Comm_free_keyval.
+  // 'key' is an output argument of MPI_Comm_create_keyval.
   int key = MPI_KEYVAL_INVALID;
   err = MPI_Comm_create_keyval (MPI_COMM_NULL_COPY_FN, freeMpiOpCallback,
                                 &key, NULL);
@@ -193,24 +183,60 @@ void createReductOp ()
   // Attach the attribute to MPI_COMM_SELF.
   err = MPI_Comm_set_attr (MPI_COMM_SELF, key, &val);
   if (err != MPI_SUCCESS) {
-    // Attempt to clean up by freeing the newly created MPI_Op.  If
-    // cleaning up fails, just let it slide, since we're already in
-    // trouble if MPI can't create a (key,value) pair.
+    // MPI (versions up to and including 3.0) doesn't promise correct
+    // behavior after any function returns something other than
+    // MPI_SUCCESS.  Thus, it's not required to try to free the new
+    // key via MPI_Comm_free_keyval.  Furthermore, if something went
+    // wrong with MPI_Comm_set_attr, it's likely that the attribute
+    // mechanism is broken.  Thus, it would be unwise to call
+    // MPI_Comm_free_keyval.
+    //
+    // I optimistically assume that the "rest" of MPI is still
+    // working, and attempt to clean up by freeing the newly created
+    // MPI_Op.  If cleaning up fails, just let it slide, since we're
+    // already in trouble if MPI can't create a (key,value) pair.
     (void) MPI_Op_free (&mpi_op);
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::runtime_error, "Teuchos::createReductOp: "
       "MPI_Comm_set_attr (for custom reduction operator) failed!");
   }
 
-  // The "transaction" succeeded; save the results.
+  // It looks weird to "free" the key right away.  However, this does
+  // not actually cause the "destructor" to be called.  It only gets
+  // called at MPI_FINALIZE.  See MPI 3.0 standard, Section 6.7.2,
+  // MPI_COMM_FREE_KEYVAL:
+  //
+  // "Note that it is not erroneous to free an attribute key that is
+  // in use, because the actual free does not transpire until after
+  // all references (in other communicators on the process) to the key
+  // have been freed.  These references need to be explicitly freed by
+  // the program, either via calls to MPI_COMM_DELETE_ATTR that free
+  // one attribute instance, or by calls to MPI_COMM_FREE that free
+  // all attribute instances associated with the freed communicator."
+  //
+  // We rely here on the latter mechanism.  MPI_FINALIZE calls
+  // MPI_COMM_FREE on MPI_COMM_SELF, so we do not need to call it
+  // explicitly.
+  //
+  // It's not clear what to do if the MPI_* calls above succeeded, but
+  // this call fails (i.e., returns != MPI_SUCCESS).  We could throw;
+  // this would make sense to do, because MPI (versions up to and
+  // including 3.0) doesn't promise correct behavior after any MPI
+  // function returns something other than MPI_SUCCESS.  We could also
+  // be optimistic and just ignore the return value, hoping that if
+  // the above calls succeeded, then the communicator will get freed
+  // at MPI_FINALIZE, even though the unfreed key may leak memory (see
+  // Bug 6338).  I've chosen the latter.
+  (void) MPI_Comm_free_keyval (&key);
+
+  // The "transaction" succeeded; save the result.
   theMpiOp_ = mpi_op;
-  theMpiOpKey_ = key;
 }
 
 void
 setReductOp (const Teuchos::Details::MpiReductionOpBase* reductOp)
 {
-  if (theMpiOpKey_ == MPI_KEYVAL_INVALID) {
+  if (theMpiOp_ == MPI_OP_NULL) {
     createReductOp ();
   }
   theReductOp_ = reductOp;
@@ -239,11 +265,11 @@ namespace Details {
 MPI_Op setMpiReductionOp (const MpiReductionOpBase& reductOp)
 {
   setReductOp (&reductOp);
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    theMpiOpKey_ == MPI_KEYVAL_INVALID || theMpiOp_ == MPI_OP_NULL,
-    std::logic_error, "Teuchos::Details::setMpiReductionOp: Failed to create "
-    "theMpiOpKey_ or theMpiOp_.  This should never happen.  "
-    "Please report this bug to the Teuchos developers.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (theMpiOp_ == MPI_OP_NULL, std::logic_error, "Teuchos::Details::"
+     "setMpiReductionOp: Failed to create reduction MPI_Op theMpiOp_.  "
+     "This should never happen.  "
+     "Please report this bug to the Teuchos developers.");
   return theMpiOp_;
 }
 

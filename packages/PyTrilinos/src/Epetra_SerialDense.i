@@ -43,12 +43,6 @@
 // @HEADER
 
 %{
-// Local interface includes
-#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-#include "Epetra_NumPyIntSerialDenseVector.hpp"
-#include "Epetra_NumPySerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialSymDenseMatrix.hpp"
-#include "Epetra_NumPySerialDenseVector.hpp"
 
 // Epetra includes
 #include "Epetra_IntSerialDenseMatrix.h"
@@ -59,470 +53,368 @@
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_SerialDenseSVD.h"
+
 %}
 
 // This feature is turned on for most of the rest of the Epetra
-// wrappers.  However, here it appears to causes errors, so we turn it
-// off.
+// wrappers.  However, here it appears to cause us errors, so we turn
+// it off.
 %feature("compactdefaultargs", "0");
 
-////////////////////////////////////////////////
-// Typemaps for Teuchos::RCP< Epetra_NumPy* > //
-////////////////////////////////////////////////
-%teuchos_rcp_epetra_numpy(IntSerialDenseMatrix)
-%teuchos_rcp_epetra_numpy(IntSerialDenseVector)
-%teuchos_rcp_epetra_numpy(SerialDenseMatrix   )
-%teuchos_rcp_epetra_numpy(SerialSymDenseMatrix)
-%teuchos_rcp_epetra_numpy(SerialDenseVector   )
+/////////////////////////////////////////////////////////
+// Teuchos::RCP<> support for all classes in this file //
+/////////////////////////////////////////////////////////
+%teuchos_rcp(Epetra_IntSerialDenseMatrix)
+%teuchos_rcp(Epetra_IntSerialDenseVector)
+%teuchos_rcp(Epetra_SerialDenseOperator )
+%teuchos_rcp(Epetra_SerialDenseMatrix   )
+%teuchos_rcp(Epetra_SerialSymDenseMatrix)
+%teuchos_rcp(Epetra_SerialDenseVector   )
+%teuchos_rcp(Epetra_SerialDenseSolver   )
+%teuchos_rcp(Epetra_SerialDenseSVD      )
 
 /////////////////////////////////////////
 // Epetra_IntSerialDenseMatrix support //
 /////////////////////////////////////////
-%ignore Epetra_IntSerialDenseMatrix::operator()(int,int) const;
-%ignore Epetra_IntSerialDenseMatrix::A() const;
-%ignore Epetra_IntSerialDenseMatrix::MakeViewOf;
+%rename(IntSerialDenseMatrix) Epetra_IntSerialDenseMatrix;
 %inline
 {
-  struct IntSerialDenseMatrix{ };
+  PyObject *
+    _extractNumPyArrayFromEpetraIntSerialDenseMatrix(
+      const Epetra_IntSerialDenseMatrix & source)
+  {
+    // This NumPy function returns a borrowed pointer: do not DECREF
+    PyArray_Descr * dtype = PyArray_DescrFromType(NPY_INT);
+    npy_intp dim[2] = { source.M(), source.N() };
+    int * data = const_cast< int* >(source.A());
+    PyObject * result = PyArray_NewFromDescr(&PyArray_Type, dtype, 2, dim,
+                                             NULL, (void*)data,
+                                             NPY_ARRAY_FARRAY, NULL);
+    return result;
+  }
 }
+%extend Epetra_IntSerialDenseMatrix
+{
+  Epetra_IntSerialDenseMatrix(PyObject * array)
+  {
+    // This NumPy function returns a borrowed pointer: do not DECREF
+    PyArray_Descr * dtype = PyArray_DescrFromType(NPY_INT);
+    PyArrayObject * matrix =
+      (PyArrayObject*)PyArray_FromAny(array, dtype, 2, 2,
+                                      NPY_ARRAY_FARRAY, NULL);
+    if (!matrix) throw PyTrilinos::PythonException();
+    int nRows  = PyArray_DIM(matrix,0);
+    int nCols  = PyArray_DIM(matrix,1);
+    int * data = (int*)PyArray_DATA(matrix);
+    Epetra_IntSerialDenseMatrix * result =
+      new Epetra_IntSerialDenseMatrix(Copy, data, nRows, nRows, nCols);
+    Py_DECREF(matrix);
+    return result;
+  }
+}
+%pythonappend Epetra_IntSerialDenseMatrix::Shape
+{
+    if self.__dict__.has_key("array"): del self.__dict__["array"]
+}
+%pythonappend Epetra_IntSerialDenseMatrix::Reshape
+{
+    if self.__dict__.has_key("array"): del self.__dict__["array"]
+}
+%ignore Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix(Epetra_DataAccess,
+                                                                 int*,int,int,int);
+%ignore Epetra_IntSerialDenseMatrix::operator()(int,int);
+%ignore Epetra_IntSerialDenseMatrix::A() const;
+%ignore Epetra_IntSerialDenseMatrix::MakeViewOf;
 %include "Epetra_IntSerialDenseMatrix.h"
-
-//////////////////////////////////////////////
-// Epetra_NumPyIntSerialDenseMatrix support //
-//////////////////////////////////////////////
-%rename(NumPyIntSerialDenseMatrix) PyTrilinos::Epetra_NumPyIntSerialDenseMatrix;
-%include "Epetra_NumPyIntSerialDenseMatrix.hpp"
 %pythoncode
 %{
-class IntSerialDenseMatrix(UserArray,NumPyIntSerialDenseMatrix):
-    def __init__(self, *args):
-      	"""
-      	__init__(self) -> IntSerialDenseMatrix
-      	__init__(self, int numRows, int numCols) -> IntSerialDenseMatrix
-      	__init__(self, PyObject array) -> IntSerialDenseMatrix
-      	__init__(self, IntSerialDenseMatrix source) -> IntSerialDenseMatrix
-      	"""
-        NumPyIntSerialDenseMatrix.__init__(self, *args)
-        self.__initArray__()
-    def __initArray__(self):
-        self.array = self.A()
-        self.__protected = True
-    def __str__(self):
-        return str(self.array)
-    def __lt__(self,other):
-        return numpy.less(self.array,other)
-    def __le__(self,other):
-        return numpy.less_equal(self.array,other)
-    def __eq__(self,other):
-        return numpy.equal(self.array,other)
-    def __ne__(self,other):
-        return numpy.not_equal(self.array,other)
-    def __gt__(self,other):
-        return numpy.greater(self.array,other)
-    def __ge__(self,other):
-        return numpy.greater_equal(self.array,other)
-    def __getattr__(self, key):
-        # This should get called when the IntSerialDenseMatrix is accessed after
-        # not properly being initialized
-        if not "array" in self.__dict__:
-            self.__initArray__()
-        try:
-            return self.array.__getattribute__(key)
-        except AttributeError:
-            return IntSerialDenseMatrix.__getattribute__(self, key)
-    def __setattr__(self, key, value):
-        "Handle 'this' attribute properly and protect the 'array' and 'shape' attributes"
-        if key == "this":
-            NumPyIntSerialDenseMatrix.__setattr__(self, key, value)
-        else:
-            if key in self.__dict__:
-                if self.__protected:
-                    if key == "array":
-                        raise AttributeError, \
-                              "Cannot change Epetra.IntSerialDenseMatrix array attribute"
-                    if key == "shape":
-                        raise AttributeError, \
-                              "Cannot change Epetra.IntSerialDenseMatrix shape attribute"
-            UserArray.__setattr__(self, key, value)
-    def __getitem__(self, index):
-        """
-        __getitem__(self,int,int) -> int
-        __getitem__(self,int,slice) -> array
-        __getitem__(self,slice,int) -> array
-        __getitem__(self,slice,slice) -> array
-        """
-        return self.array[index]
-    def Shape(self,numRows,numCols):
-        "Shape(self, int numRows, int numCols) -> int"
-        result = NumPyIntSerialDenseMatrix.Shape(self,numRows,numCols)
-        self.__protected = False
-        self.__initArray__()
-        return result
-    def Reshape(self,numRows,numCols):
-        "Reshape(self, int numRows, int numCols) -> int"
-        result = NumPyIntSerialDenseMatrix.Reshape(self,numRows,numCols)
-        self.__protected = False
-        self.__initArray__()
-        return result
-_Epetra.NumPyIntSerialDenseMatrix_swigregister(IntSerialDenseMatrix)
+  def IntSerialDenseMatrix_getattr(self, name):
+      if name == "array":
+          a = _extractNumPyArrayFromEpetraIntSerialDenseMatrix(self)
+          #a = a.transpose()
+          self.__dict__["array"] = a
+          return a
+      elif name == "shape":
+          return self.array.shape
+      elif name == "dtype":
+          return self.array.dtype
+      raise AttributeError("'%s' not an attribute of IntSerialDenseMatrix" % name)
+  def IntSerialDenseMatrix_setattr(self, name, value):
+      if name == "array":
+          raise AttributeError("Cannot change IntSerialDenseMatrix 'array' attribute")
+      elif name == "shape":
+          self.array.shape = value
+      elif name == "dtype":
+          raise AttributeError("Cannot change IntSerialDenseMatrix 'dtype' attribute")
+      else:
+          self.__dict__[name] = value
+  IntSerialDenseMatrix.__getattr__ = IntSerialDenseMatrix_getattr
+  IntSerialDenseMatrix.__setattr__ = IntSerialDenseMatrix_setattr
+  IntSerialDenseMatrix.__getitem__ = lambda self, i: self.array.__getitem__(i)
+  IntSerialDenseMatrix.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
+  IntSerialDenseMatrix.__len__     = lambda self: self.array.__len__()
+  IntSerialDenseMatrix.__str__     = lambda self: self.array.__str__()
+  IntSerialDenseMatrix.A           = lambda self: self.array
+  class_array_add_math(IntSerialDenseMatrix)
+  class_array_add_comp(IntSerialDenseMatrix)
 %}
 
 /////////////////////////////////////////
 // Epetra_IntSerialDenseVector support //
 /////////////////////////////////////////
-%ignore Epetra_IntSerialDenseVector::operator()(int);
-%ignore Epetra_IntSerialDenseVector::operator()(int) const;
+%rename(IntSerialDenseVector) Epetra_IntSerialDenseVector;
 %inline
 {
-  struct IntSerialDenseVector{ };
+  PyObject *
+    _extractNumPyArrayFromEpetraIntSerialDenseVector(
+      const Epetra_IntSerialDenseVector & source)
+  {
+    npy_intp dim[1] = { source.Length() };
+    int * data = const_cast< int* >(source.Values());
+    return PyArray_SimpleNewFromData(1, dim, NPY_INT, (void*)data);
+  }
 }
+%extend Epetra_IntSerialDenseVector
+{
+  Epetra_IntSerialDenseVector(PyObject * array)
+  {
+    PyArrayObject * vector =
+      (PyArrayObject*) PyArray_ContiguousFromAny(array, NPY_INT, 0, 0);
+    if (!vector) throw PyTrilinos::PythonException();
+    int ndim   = PyArray_NDIM(vector);
+    int size = 1;
+    for (int i=0; i<ndim; ++i) size *= PyArray_DIM(vector,i);
+    int * data = (int*)PyArray_DATA(vector);
+    Epetra_IntSerialDenseVector * result =
+      new Epetra_IntSerialDenseVector(Copy, data, size);
+    Py_DECREF(vector);
+    return result;
+  }
+}
+%pythonappend Epetra_IntSerialDenseVector::Size
+{
+    if self.__dict__.has_key("array"): del self.__dict__["array"]
+}
+%pythonappend Epetra_IntSerialDenseVector::Resize
+{
+    if self.__dict__.has_key("array"): del self.__dict__["array"]
+}
+%ignore Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(Epetra_DataAccess,
+                                                                 int*,int);
+%ignore Epetra_IntSerialDenseVector::operator()(int);
+%ignore Epetra_IntSerialDenseVector::Values;
 %include "Epetra_IntSerialDenseVector.h"
-
-//////////////////////////////////////////////
-// Epetra_NumPyIntSerialDenseVector support //
-//////////////////////////////////////////////
-%rename(NumPyIntSerialDenseVector) PyTrilinos::Epetra_NumPyIntSerialDenseVector;
-%include "Epetra_NumPyIntSerialDenseVector.hpp"
 %pythoncode
-%{
-class IntSerialDenseVector(UserArray,NumPyIntSerialDenseVector):
-    def __init__(self, *args):
-      	"""
-      	__init__(self) -> IntSerialDenseVector
-      	__init__(self, int length) -> IntSerialDenseVector
-      	__init__(self, PyObject array) -> IntSerialDenseVector
-      	__init__(self, IntSerialDenseVector source) -> IntSerialDenseVector
-      	"""
-        NumPyIntSerialDenseVector.__init__(self, *args)
-        self.__initArray__()
-    def __initArray__(self):
-        self.array = self.Values()
-        self.__protected = True
-    def __str__(self):
-        return str(self.array)
-    def __lt__(self,other):
-        return numpy.less(self.array,other)
-    def __le__(self,other):
-        return numpy.less_equal(self.array,other)
-    def __eq__(self,other):
-        return numpy.equal(self.array,other)
-    def __ne__(self,other):
-        return numpy.not_equal(self.array,other)
-    def __gt__(self,other):
-        return numpy.greater(self.array,other)
-    def __ge__(self,other):
-        return numpy.greater_equal(self.array,other)
-    def __getattr__(self, key):
-        # This should get called when the IntSerialDenseVector is accessed after
-        # not properly being initialized
-        if not "array" in self.__dict__:
-            self.__initArray__()
-        try:
-            return self.array.__getattribute__(key)
-        except AttributeError:
-            return IntSerialDenseVector.__getattribute__(self, key)
-    def __setattr__(self, key, value):
-        "Handle 'this' attribute properly and protect the 'array' attribute"
-        if key == "this":
-            NumPyIntSerialDenseVector.__setattr__(self, key, value)
-        else:
-            if key in self.__dict__:
-                if self.__protected:
-                    if key == "array":
-                        raise AttributeError, \
-                              "Cannot change Epetra.IntSerialDenseVector array attribute"
-            UserArray.__setattr__(self, key, value)
-    def __call__(self,i):
-        "__call__(self, int i) -> int"
-        return self.__getitem__(i)
-    def Size(self,length):
-        "Size(self, int length) -> int"
-        result = NumPyIntSerialDenseVector.Size(self,length)
-        self.__protected = False
-        self.__initArray__()
-        return result
-    def Resize(self,length):
-        "Resize(self, int length) -> int"
-        result = NumPyIntSerialDenseVector.Resize(self,length)
-        self.__protected = False
-        self.__initArray__()
-        return result
-_Epetra.NumPyIntSerialDenseVector_swigregister(IntSerialDenseVector)
-%}
+{
+  def IntSerialDenseVector_getattr(self, name):
+      if name == "array":
+          a = _extractNumPyArrayFromEpetraIntSerialDenseVector(self)
+          self.__dict__["array"] = a
+          return a
+      elif name == "shape":
+          return self.array.shape
+      elif name == "dtype":
+          return self.array.dtype
+      raise AttributeError("'%s' not an attribute of IntSerialDenseVector" % name)
+  def IntSerialDenseVector_setattr(self, name, value):
+      if name == "array":
+          raise AttributeError("Cannot change IntSerialDenseVector 'array' attribute")
+      elif name == "shape":
+          self.array.shape = value
+      elif name == "dtype":
+          raise AttributeError("Cannot change IntSerialDenseVector 'dtype' attribute")
+      else:
+          self.__dict__[name] = value
+  IntSerialDenseVector.__getattr__ = IntSerialDenseVector_getattr
+  IntSerialDenseVector.__setattr__ = IntSerialDenseVector_setattr
+  IntSerialDenseVector.__getitem__ = lambda self, i: self.array.__getitem__(i)
+  IntSerialDenseVector.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
+  IntSerialDenseVector.__len__     = lambda self: self.array.__len__()
+  IntSerialDenseVector.__str__     = lambda self: self.array.__str__()
+  IntSerialDenseVector.Values      = lambda self: self.array
+  class_array_add_math(IntSerialDenseVector)
+  class_array_add_comp(IntSerialDenseVector)
+
+}
 
 ////////////////////////////////////////
 // Epetra_SerialDenseOperator support //
 ////////////////////////////////////////
 %rename(SerialDenseOperator) Epetra_SerialDenseOperator;
-%teuchos_rcp(Epetra_SerialDenseOperator)
 %include "Epetra_SerialDenseOperator.h"
 
 //////////////////////////////////////
 // Epetra_SerialDenseMatrix support //
 //////////////////////////////////////
-%ignore Epetra_SerialDenseMatrix::operator()(int,int) const;
-%ignore Epetra_SerialDenseMatrix::A() const;
+%rename(SerialDenseMatrix) Epetra_SerialDenseMatrix;
 %inline
 {
-  struct SerialDenseMatrix{ };
+  PyObject *
+    _extractNumPyArrayFromEpetraSerialDenseMatrix(
+      const Epetra_SerialDenseMatrix & source)
+  {
+    // This NumPy function returns a borrowed pointer: do not DECREF
+    PyArray_Descr * dtype = PyArray_DescrFromType(NPY_DOUBLE);
+    npy_intp dim[2] = { source.M(), source.N() };
+    double * data = const_cast< double* >(source.A());
+    PyObject * result = PyArray_NewFromDescr(&PyArray_Type, dtype, 2, dim,
+                                             NULL, (void*)data,
+                                             NPY_ARRAY_FARRAY, NULL);
+    return result;
+  }
 }
+%extend Epetra_SerialDenseMatrix
+{
+  Epetra_SerialDenseMatrix(PyObject * array,
+                           bool set_object_label = true)
+  {
+    // This NumPy function returns a borrowed pointer: do not DECREF
+    PyArray_Descr * dtype = PyArray_DescrFromType(NPY_DOUBLE);
+    PyArrayObject * matrix =
+      (PyArrayObject*) PyArray_FromAny(array, dtype, 2, 2,
+                                       NPY_ARRAY_FARRAY, NULL);
+    if (!matrix) throw PyTrilinos::PythonException();
+    int nRows     = PyArray_DIM(matrix,0);
+    int nCols     = PyArray_DIM(matrix,1);
+    double * data = (double*)PyArray_DATA(matrix);
+    Epetra_SerialDenseMatrix * result =
+      new Epetra_SerialDenseMatrix(Copy, data, nRows, nRows, nCols,
+                                   set_object_label);
+    Py_DECREF(matrix);
+    return result;
+  }
+}
+%pythonappend Epetra_SerialDenseMatrix::Shape
+{
+    if self.__dict__.has_key("array"): del self.__dict__["array"]
+}
+%pythonappend Epetra_SerialDenseMatrix::Reshape
+{
+    if self.__dict__.has_key("array"): del self.__dict__["array"]
+}
+%ignore Epetra_SerialDenseMatrix::operator()(int,int);
+%ignore Epetra_SerialDenseMatrix::A() const;
 %include "Epetra_SerialDenseMatrix.h"
-
-///////////////////////////////////////////
-// Epetra_NumPySerialDenseMatrix support //
-///////////////////////////////////////////
-%rename(NumPySerialDenseMatrix) PyTrilinos::Epetra_NumPySerialDenseMatrix;
-%include "Epetra_NumPySerialDenseMatrix.hpp"
 %pythoncode
 %{
-class SerialDenseMatrix(UserArray,NumPySerialDenseMatrix):
-    def __init__(self, *args):
-      	"""
-      	__init__(self, bool set_object_label=True) -> SerialDenseMatrix
-      	__init__(self, int numRows, int numCols, bool set_object_label=True) -> SerialDenseMatrix
-      	__init__(self, PyObject array, bool set_object_label=True) -> SerialDenseMatrix
-      	__init__(self, SerialDenseMatrix source) -> SerialDenseMatrix
-      	"""
-        NumPySerialDenseMatrix.__init__(self, *args)
-        self.__initArray__()
-    def __initArray__(self):
-        self.array = self.A()
-        self.__protected = True
-    def __str__(self):
-        return str(self.array)
-    def __lt__(self,other):
-        return numpy.less(self.array,other)
-    def __le__(self,other):
-        return numpy.less_equal(self.array,other)
-    def __eq__(self,other):
-        return numpy.equal(self.array,other)
-    def __ne__(self,other):
-        return numpy.not_equal(self.array,other)
-    def __gt__(self,other):
-        return numpy.greater(self.array,other)
-    def __ge__(self,other):
-        return numpy.greater_equal(self.array,other)
-    def __getattr__(self, key):
-        # This should get called when the SerialDenseMatrix is accessed after
-        # not properly being initialized
-        if not "array" in self.__dict__:
-            self.__initArray__()
-        try:
-            return self.array.__getattribute__(key)
-        except AttributeError:
-            return SerialDenseMatrix.__getattribute__(self, key)
-    def __setattr__(self, key, value):
-        "Handle 'this' attribute properly and protect the 'array' and 'shape' attributes"
-        if key == "this":
-            NumPySerialDenseMatrix.__setattr__(self, key, value)
-        else:
-            if key in self.__dict__:
-                if self.__protected:
-                    if key == "array":
-                        raise AttributeError, \
-                              "Cannot change Epetra.SerialDenseMatrix array attribute"
-                    if key == "shape":
-                        raise AttributeError, \
-                              "Cannot change Epetra.SerialDenseMatrix shape attribute"
-            UserArray.__setattr__(self, key, value)
-    def __getitem__(self, index):
-        """
-        __getitem__(self,int,int) -> int
-        __getitem__(self,int,slice) -> array
-        __getitem__(self,slice,int) -> array
-        __getitem__(self,slice,slice) -> array
-        """
-        return self.array[index]
-    def Shape(self,numRows,numCols):
-        "Shape(self, int numRows, int numCols) -> int"
-        result = NumPySerialDenseMatrix.Shape(self,numRows,numCols)
-        self.__protected = False
-        self.__initArray__()
-        return result
-    def Reshape(self,numRows,numCols):
-        "Reshape(self, int numRows, int numCols) -> int"
-        result = NumPySerialDenseMatrix.Reshape(self,numRows,numCols)
-        self.__protected = False
-        self.__initArray__()
-        return result
-_Epetra.NumPySerialDenseMatrix_swigregister(SerialDenseMatrix)
+  def SerialDenseMatrix_getattr(self, name):
+      if name == "array":
+          a = _extractNumPyArrayFromEpetraSerialDenseMatrix(self)
+          #a = a.transpose()
+          self.__dict__["array"] = a
+          return a
+      elif name == "shape":
+          return self.array.shape
+      elif name == "dtype":
+          return self.array.dtype
+      raise AttributeError("'%s' not an attribute of SerialDenseMatrix" % name)
+  def SerialDenseMatrix_setattr(self, name, value):
+      if name == "array":
+          raise AttributeError("Cannot change SerialDenseMatrix 'array' attribute")
+      elif name == "shape":
+          self.array.shape = value
+      elif name == "dtype":
+          raise AttributeError("Cannot change SerialDenseMatrix 'dtype' attribute")
+      else:
+          self.__dict__[name] = value
+  SerialDenseMatrix.__getattr__ = SerialDenseMatrix_getattr
+  SerialDenseMatrix.__setattr__ = SerialDenseMatrix_setattr
+  SerialDenseMatrix.__getitem__ = lambda self, i: self.array.__getitem__(i)
+  SerialDenseMatrix.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
+  SerialDenseMatrix.__len__     = lambda self: self.array.__len__()
+  SerialDenseMatrix.__str__     = lambda self: self.array.__str__()
+  SerialDenseMatrix.A           = lambda self: self.array
+  class_array_add_math(SerialDenseMatrix)
+  class_array_add_comp(SerialDenseMatrix)
+
 %}
 
 /////////////////////////////////////////
 // Epetra_SerialSymDenseMatrix support //
 /////////////////////////////////////////
-%inline
-{
-  struct SerialSymDenseMatrix{ };
-}
+%rename(SerialSymDenseMatrix) Epetra_SerialSymDenseMatrix;
 %include "Epetra_SerialSymDenseMatrix.h"
-
-///////////////////////////////////////////
-// Epetra_NumPySerialSymDenseMatrix support //
-///////////////////////////////////////////
-%rename(NumPySerialSymDenseMatrix) PyTrilinos::Epetra_NumPySerialSymDenseMatrix;
-%include "Epetra_NumPySerialSymDenseMatrix.hpp"
-%pythoncode
-%{
-class SerialSymDenseMatrix(UserArray,NumPySerialSymDenseMatrix):
-    def __init__(self, *args):
-      	"""
-      	__init__(self) -> SerialSymDenseMatrix
-      	__init__(self, PyObject array) -> SerialSymDenseMatrix
-      	__init__(self, SerialSymDenseMatrix source) -> SerialSymDenseMatrix
-      	"""
-        NumPySerialSymDenseMatrix.__init__(self, *args)
-        self.__initArray__()
-    def __initArray__(self):
-        self.array = self.A()
-        self.__protected = True
-    def __str__(self):
-        return str(self.array)
-    def __lt__(self,other):
-        return numpy.less(self.array,other)
-    def __le__(self,other):
-        return numpy.less_equal(self.array,other)
-    def __eq__(self,other):
-        return numpy.equal(self.array,other)
-    def __ne__(self,other):
-        return numpy.not_equal(self.array,other)
-    def __gt__(self,other):
-        return numpy.greater(self.array,other)
-    def __ge__(self,other):
-        return numpy.greater_equal(self.array,other)
-    def __getattr__(self, key):
-        # This should get called when the SerialSymDenseMatrix is accessed after
-        # not properly being initialized
-        if not "array" in self.__dict__:
-            self.__initArray__()
-        try:
-            return self.array.__getattribute__(key)
-        except AttributeError:
-            return SerialSymDenseMatrix.__getattribute__(self, key)
-    def __setattr__(self, key, value):
-        "Handle 'this' attribute properly and protect the 'array' and 'shape' attributes"
-        if key == "this":
-            NumPySerialSymDenseMatrix.__setattr__(self, key, value)
-        else:
-            if key in self.__dict__:
-                if self.__protected:
-                    if key == "array":
-                        raise AttributeError, \
-                              "Cannot change Epetra.SerialSymDenseMatrix array attribute"
-                    if key == "shape":
-                        raise AttributeError, \
-                              "Cannot change Epetra.SerialSymDenseMatrix shape attribute"
-            UserArray.__setattr__(self, key, value)
-    def __getitem__(self, index):
-        """
-        __getitem__(self,int,int) -> int
-        __getitem__(self,int,slice) -> array
-        __getitem__(self,slice,int) -> array
-        __getitem__(self,slice,slice) -> array
-        """
-        return self.array[index]
-    def Shape(self,numRows,numCols):
-        "Shape(self, int numRows, int numCols) -> int"
-        result = NumPySerialSymDenseMatrix.Shape(self,numRows,numCols)
-        self.__protected = False
-        self.__initArray__()
-        return result
-    def Reshape(self,numRows,numCols):
-        "Reshape(self, int numRows, int numCols) -> int"
-        result = NumPySerialSymDenseMatrix.Reshape(self,numRows,numCols)
-        self.__protected = False
-        self.__initArray__()
-        return result
-_Epetra.NumPySerialSymDenseMatrix_swigregister(SerialSymDenseMatrix)
-%}
 
 //////////////////////////////////////
 // Epetra_SerialDenseVector support //
 //////////////////////////////////////
-%ignore Epetra_SerialDenseVector::operator()(int);
-%ignore Epetra_SerialDenseVector::operator()(int) const;
+%rename(SerialDenseVector) Epetra_SerialDenseVector;
 %inline
 {
-  struct SerialDenseVector{ };
+  PyObject *
+    _extractNumPyArrayFromEpetraSerialDenseVector(
+      const Epetra_SerialDenseVector & source)
+  {
+    npy_intp dim[1] = { source.Length() };
+    double * data = const_cast< double* >(source.Values());
+    return PyArray_SimpleNewFromData(1, dim, NPY_DOUBLE, (void*)data);
+  }
 }
+%extend Epetra_SerialDenseVector
+{
+  Epetra_SerialDenseVector(PyObject * array)
+  {
+    PyArrayObject * vector =
+      (PyArrayObject*) PyArray_ContiguousFromAny(array, NPY_DOUBLE, 0, 0);
+    if (!vector) throw PyTrilinos::PythonException();
+    int ndim   = PyArray_NDIM(vector);
+    int size = 1;
+    for (int i=0; i<ndim; ++i) size *= PyArray_DIM(vector,i);
+    double * data = (double*)PyArray_DATA(vector);
+    Epetra_SerialDenseVector * result =
+      new Epetra_SerialDenseVector(Copy, data, size);
+    Py_DECREF(vector);
+    return result;
+  }
+}
+%pythonappend Epetra_SerialDenseVector::Size
+{
+    if self.__dict__.has_key("array"): del self.__dict__["array"]
+}
+%pythonappend Epetra_SerialDenseVector::Resize
+{
+    if self.__dict__.has_key("array"): del self.__dict__["array"]
+}
+%ignore Epetra_SerialDenseVector::Epetra_SerialDenseVector(Epetra_DataAccess,
+                                                           double*,int);
+%ignore Epetra_SerialDenseVector::operator()(int);
 %include "Epetra_SerialDenseVector.h"
-
-///////////////////////////////////////////
-// Epetra_NumPySerialDenseVector support //
-///////////////////////////////////////////
-%rename(NumPySerialDenseVector) PyTrilinos::Epetra_NumPySerialDenseVector;
-%include "Epetra_NumPySerialDenseVector.hpp"
 %pythoncode
 %{
-class SerialDenseVector(UserArray,NumPySerialDenseVector):
-    def __init__(self, *args):
-      	"""
-      	__init__(self) -> SerialDenseVector
-      	__init__(self, int length) -> SerialDenseVector
-      	__init__(self, PyObject array) -> SerialDenseVector
-      	__init__(self, SerialDenseVector source) -> SerialDenseVector
-      	"""
-        NumPySerialDenseVector.__init__(self, *args)
-        self.__initArray__()
-    def __initArray__(self):
-        self.array = self.Values()
-        self.__protected = True
-    def __str__(self):
-        return str(self.array)
-    def __lt__(self,other):
-        return numpy.less(self.array,other)
-    def __le__(self,other):
-        return numpy.less_equal(self.array,other)
-    def __eq__(self,other):
-        return numpy.equal(self.array,other)
-    def __ne__(self,other):
-        return numpy.not_equal(self.array,other)
-    def __gt__(self,other):
-        return numpy.greater(self.array,other)
-    def __ge__(self,other):
-        return numpy.greater_equal(self.array,other)
-    def __getattr__(self, key):
-        # This should get called when the SerialDenseVector is accessed after
-        # not properly being initialized
-        if not "array" in self.__dict__:
-            self.__initArray__()
-        try:
-            return self.array.__getattribute__(key)
-        except AttributeError:
-            return SerialDenseVector.__getattribute__(self, key)
-    def __setattr__(self, key, value):
-        "Handle 'this' attribute properly and protect the 'array' attribute"
-        if key == "this":
-            NumPySerialDenseVector.__setattr__(self, key, value)
-        else:
-            if key in self.__dict__:
-                if self.__protected:
-                    if key == "array":
-                        raise AttributeError, \
-                              "Cannot change Epetra.SerialDenseVector array attribute"
-            UserArray.__setattr__(self, key, value)
-    def __call__(self,i):
-        "__call__(self, int i) -> double"
-        return self.__getitem__(i)
-    def Size(self,length):
-        "Size(self, int length) -> int"
-        result = NumPySerialDenseVector.Size(self,length)
-        self.__protected = False
-        self.__initArray__()
-        return result
-    def Resize(self,length):
-        "Resize(self, int length) -> int"
-        result = NumPySerialDenseVector.Resize(self,length)
-        self.__protected = False
-        self.__initArray__()
-        return result
-_Epetra.NumPySerialDenseVector_swigregister(SerialDenseVector)
+  def SerialDenseVector_getattr(self, name):
+      if name == "array":
+          a = _extractNumPyArrayFromEpetraSerialDenseVector(self)
+          self.__dict__["array"] = a
+          return a
+      elif name == "shape":
+          return self.array.shape
+      elif name == "dtype":
+          return self.array.dtype
+      raise AttributeError("'%s' not an attribute of SerialDenseVector" % name)
+  def SerialDenseVector_setattr(self, name, value):
+      if name == "array":
+          raise AttributeError("Cannot change SerialDenseVector 'array' attribute")
+      elif name == "shape":
+          self.array.shape = value
+      elif name == "dtype":
+          raise AttributeError("Cannot change SerialDenseVector 'dtype' attribute")
+      else:
+          self.__dict__[name] = value
+  SerialDenseVector.__getattr__ = SerialDenseVector_getattr
+  SerialDenseVector.__setattr__ = SerialDenseVector_setattr
+  SerialDenseVector.__getitem__ = lambda self, i: self.array.__getitem__(i)
+  SerialDenseVector.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
+  SerialDenseVector.__len__     = lambda self: self.array.__len__()
+  SerialDenseVector.__str__     = lambda self: self.array.__str__()
+  SerialDenseVector.Values      = lambda self: self.array
+  class_array_add_math(SerialDenseVector)
+  class_array_add_comp(SerialDenseVector)
+
 %}
 
 //////////////////////////////////////
 // Epetra_SerialDenseSolver support //
 //////////////////////////////////////
-%teuchos_rcp(Epetra_SerialDenseSolver)
 %ignore Epetra_SerialDenseSolver::ReciprocalConditionEstimate(double&);
 %rename(SerialDenseSolver) Epetra_SerialDenseSolver;
 %fragment("NumPy_Macros");  // These macros depend upon this fragment
@@ -556,17 +448,7 @@ _Epetra.NumPySerialDenseVector_swigregister(SerialDenseVector)
 ///////////////////////////////////
 // Epetra_SerialDenseSVD support //
 ///////////////////////////////////
-%teuchos_rcp(Epetra_SerialDenseSVD)
 %rename(SerialDenseSVD) Epetra_SerialDenseSVD;
 %include "Epetra_SerialDenseSVD.h"
-
-/////////////////////////////////////////
-// Epetra_SerialSpdDenseSolver support //
-/////////////////////////////////////////
-// *** Epetra_SerialSpdDenseSolver is apparently not built ***
-//#include "Epetra_SerialSpdDenseSolver.h"
-//%teuchos_rcp(Epetra_SerialSpdDenseSolver)
-//%rename(SerialSpdDenseSolver  ) Epetra_SerialSpdDenseSolver;
-//%include "Epetra_SerialSpdDenseSolver.h"
 
 %feature("compactdefaultargs");       // Turn the feature back on

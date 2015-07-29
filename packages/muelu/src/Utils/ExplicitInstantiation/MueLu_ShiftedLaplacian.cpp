@@ -44,7 +44,7 @@
 //
 // @HEADER
 #include "MueLu_ConfigDefs.hpp"
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_BELOS)
 #include "MueLu_ExplicitInstantiation.hpp"
 
 #include "MueLu_ShiftedLaplacian_def.hpp"

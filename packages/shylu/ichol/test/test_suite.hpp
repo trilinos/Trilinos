@@ -93,7 +93,6 @@ namespace Example {
             r_val += testTriSolveBlocked<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
                                                            blks[j], nrhs[i]);
         // ============================================================ 
-        // This is problematic
         r_val += testCrsHierBase<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx");
         r_val += testCrsTaskView<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx");
         // ============================================================ 

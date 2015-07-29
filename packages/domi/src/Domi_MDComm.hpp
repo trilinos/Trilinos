@@ -142,9 +142,9 @@ public:
    *
    * This constructor uses the Teuchos::DefaultComm communicator
    */
-  MDComm(const Teuchos::ArrayView< int > & commDims,
-         const Teuchos::ArrayView< int > & periodic =
-           Teuchos::ArrayView< int >());
+  MDComm(const Teuchos::ArrayView< const int > & commDims,
+         const Teuchos::ArrayView< const int > & periodic =
+           Teuchos::ArrayView< const int >());
 
   /** \brief Constructor with Teuchos Comm and axis sizes
    *
@@ -163,9 +163,9 @@ public:
    *        are assumed to be zero (false).
    */
   MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
-         const Teuchos::ArrayView< int > & commDims,
-         const Teuchos::ArrayView< int > & periodic =
-           Teuchos::ArrayView< int >());
+         const Teuchos::ArrayView< const int > & commDims,
+         const Teuchos::ArrayView< const int > & periodic =
+           Teuchos::ArrayView< const int >());
 
   /** \brief Constructor with ParameterList
    * 
@@ -239,9 +239,9 @@ public:
    * This constructor uses the Teuchos::DefaultComm
    */
   MDComm(int numDims,
-         const Teuchos::ArrayView< int > & commDims,
-         const Teuchos::ArrayView< int > & periodic =
-           Teuchos::ArrayView< int >());
+         const Teuchos::ArrayView< const int > & commDims,
+         const Teuchos::ArrayView< const int > & periodic =
+           Teuchos::ArrayView< const int >());
 
   /** \brief Constructor with Teuchos Comm, number of dimensions and axis sizes
    *
@@ -266,9 +266,9 @@ public:
    */
   MDComm(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
          int numDims,
-         const Teuchos::ArrayView< int > & commDims,
-         const Teuchos::ArrayView< int > & periodic =
-           Teuchos::ArrayView< int >());
+         const Teuchos::ArrayView< const int > & commDims,
+         const Teuchos::ArrayView< const int > & periodic =
+           Teuchos::ArrayView< const int >());
 
   /** \brief Axis rank sub-communicator constructor
    *

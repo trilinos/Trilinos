@@ -193,6 +193,7 @@ using std::string;
 // accomplished by %include-ing Teuchos_RCP.i and calling the provided
 // macro %teuchos_rcp() on the class.
 %include "Teuchos_RCP.i"
+%include "Teuchos_RCP_DAP.i"
 %teuchos_rcp(std::basic_ostream)
 %teuchos_rcp(std::ostream)
 %teuchos_rcp(std::vector< int, std::allocator< int > >)

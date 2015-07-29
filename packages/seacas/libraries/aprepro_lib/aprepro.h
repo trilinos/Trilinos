@@ -359,6 +359,9 @@ namespace SEAMS {
     // reset the historyString and add an entry to the substitution map.
     void add_history(const std::string& original, const std::string& substitution);
 
+    // Used to avoid undefined variable warnings in old ifdef/ifndef construct
+    mutable bool inIfdefGetvar;
+
     const std::vector<history_data> &get_history();
     void clear_history();
   };

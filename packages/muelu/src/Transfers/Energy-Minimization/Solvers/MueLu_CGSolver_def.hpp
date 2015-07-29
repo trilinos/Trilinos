@@ -256,7 +256,7 @@ namespace MueLu {
         valBAll[indB[j]] = zero;
     }
 
-    sumAll(AColMap.getComm(), f, gf);
+    MueLu_sumAll(AColMap.getComm(), f, gf);
 
     return gf;
   }

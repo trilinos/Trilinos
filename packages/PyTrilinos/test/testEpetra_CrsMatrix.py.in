@@ -577,7 +577,9 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
         crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, self.colMap, 3, False)
         self.fillMatrixGlobal(crsm)
         gid0 = self.rowMap.GID(0)
-        x = Epetra.Vector(self.rowMap, arange(gid0+1, gid0+self.mySize+1))
+        x = Epetra.Vector(Epetra.Copy,
+                          self.rowMap,
+                          arange(gid0+1, gid0+self.mySize+1))
         result = crsm.LeftScale(x)
         for lrid in range(crsm.NumMyRows()):
             grid = crsm.GRID(lrid)
@@ -620,7 +622,9 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
         crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, self.colMap, 3, False)
         self.fillMatrixGlobal(crsm)
         gid0 = self.rowMap.GID(0)
-        x = Epetra.Vector(self.rowMap, arange(gid0+1, gid0+self.mySize+1))
+        x = Epetra.Vector(Epetra.Copy,
+                          self.rowMap,
+                          arange(gid0+1, gid0+self.mySize+1))
         result = crsm.RightScale(x)
         for lrid in range(crsm.NumMyRows()):
             grid = crsm.GRID(lrid)

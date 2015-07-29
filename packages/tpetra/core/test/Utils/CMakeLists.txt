@@ -28,3 +28,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TpetraUtils_gathervPrint
+  SOURCES
+    TpetraUtils_gathervPrint
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ${ARGS}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )

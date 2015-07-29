@@ -17,11 +17,12 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
         "--verbose --filename=mhd1280b.cua"
       )
 
+    ASSERT_DEFINED(Anasazi_SOURCE_DIR)
     TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestTFQMRComplexFiles
-      SOURCE_DIR ${Belos_SOURCE_DIR}/test/MVOPTester
-      SOURCE_FILES mhd1280b.cua mhd1280a.cua
+      SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
+      SOURCE_FILES mhd1280b.cua 
       EXEDEPS tfqmr_complex_hb
-      )
+    )
 
   ENDIF(Teuchos_ENABLE_COMPLEX)
 

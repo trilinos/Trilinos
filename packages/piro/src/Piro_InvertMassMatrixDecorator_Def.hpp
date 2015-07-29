@@ -54,6 +54,7 @@
 
 #ifdef Piro_ENABLE_Ifpack2
 #include "Thyra_Ifpack2PreconditionerFactory.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 #endif
 
 #ifdef Piro_ENABLE_MueLu
@@ -150,6 +151,13 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::InvertMassMatrixDecorator<Scalar>::get_g_space(int j) const
 {
   return model->get_g_space(j);
+}
+
+template<typename Scalar>
+Teuchos::ArrayView<const std::string> 
+Piro::InvertMassMatrixDecorator<Scalar>::get_g_names(int j) const
+{
+  return model->get_g_names(j);
 }
 
 template<typename Scalar>

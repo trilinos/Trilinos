@@ -75,6 +75,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_SuperLU=ON"
   "-DMueLu_ENABLE_Experimental=ON"
   "-DXpetra_ENABLE_Experimental=ON"
+  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
 )
 
 #

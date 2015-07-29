@@ -38,13 +38,20 @@ namespace Example {
   
 #undef CHKERR
 #define CHKERR(ierr)                                                    \
-  if (ierr != 0) { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << endl; }
+  if (ierr != 0) { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << " : " << ierr << endl; }
 
 #define MSG_NOT_YET_IMPLEMENTED ">> Not yet implemented"
 #define MSG_INVALID_INPUT(what) ">> Invaid input argument: " #what
 #define MSG_INVALID_TEMPLATE_ARGS ">> Invaid template arguments"
 #define ERROR(msg)                                                      \
   { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << endl << msg << endl; }
+  
+  /// \class GraphHelper
+  class GraphHelper {
+  public:
+    static const int DefaultRandomSeed = -1;
+  };
+
   
   /// \class Partition
   /// \brief Matrix partition parameters.
@@ -146,7 +153,7 @@ namespace Example {
   /// \brief Interface for overloaded stream operators.
   template<typename T> 
   inline 
-  ostream& operator<<(ostream &os, const auto_ptr<T> &p) {
+  ostream& operator<<(ostream &os, const unique_ptr<T> &p) {
     return p->showMe(os);
   }
 
