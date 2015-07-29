@@ -42,6 +42,7 @@
 
 #ifdef HAVE_DOMI
 %define SWIG_CATCH_DOMIEXCEPT
+
 catch (Domi::InvalidArgument & e) {
   SWIG_exception_fail(SWIG_ValueError, e.what());
 } catch (Domi::RangeError & e) {
@@ -59,5 +60,8 @@ catch (Domi::InvalidArgument & e) {
 } catch (Domi::BoundsError & e) {
   SWIG_exception_fail(SWIG_IndexError, e.what());
 }
+%enddef
+#else
+%define SWIG_CATCH_DOMIEXCEPT
 %enddef
 #endif
