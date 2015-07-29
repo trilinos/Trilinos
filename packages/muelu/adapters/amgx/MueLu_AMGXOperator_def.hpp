@@ -81,6 +81,9 @@ namespace MueLu {
 
         AMGX_solver_solve(Solver_, X_, Y_);
         AMGX_vector_download(Y_, &ydata[0]);
+
+        // TODO: for MPI we need to add some code here to reorder ydata back
+        // using AMGX reordering
       }
     } catch (std::exception& e) {
       std::string errMsg = std::string("Caught an exception in MueLu::AMGXOperator::Apply():\n") + e.what() + "\n";

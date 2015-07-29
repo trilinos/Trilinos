@@ -146,7 +146,6 @@ namespace MueLu {
     //@{
     AMGXOperator(const Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > &inA, Teuchos::ParameterList &paramListIn) {
       RCP<const Teuchos::Comm<LO> > comm = inA->getCrsGraph()->getComm();
-      AMGX_Mode mode;
 
       // Initialize
       AMGX_SAFE_CALL(AMGX_initialize());
@@ -155,7 +154,6 @@ namespace MueLu {
       /*system*/
       //AMGX_SAFE_CALL(AMGX_register_print_callback(&print_callback));
       AMGX_SAFE_CALL(AMGX_install_signal_handler());
-      mode = AMGX_mode_dDDI;
       Teuchos::ParameterList configs = paramListIn.sublist("amgx:params", true);
       if (configs.isParameter("json file")) {
         AMGX_SAFE_CALL(AMGX_config_create_from_file(&Config_, (const char *) &configs.get<std::string>("json file")[0]));
@@ -163,10 +161,10 @@ namespace MueLu {
         std::ostringstream oss;
         oss << "";
         ParameterList::ConstIterator itr;
-        for( itr = configs.begin(); itr != configs.end(); ++itr){
-          const std::string & paramName = configs.name(itr);
-          const ParameterEntry &value = configs.entry(itr);
-          oss << paramName << "=" << filterValueToString(value) << ", ";
+        for (itr = configs.begin(); itr != configs.end(); ++itr) {
+          const std::string&    name  = configs.name(itr);
+          const ParameterEntry& entry = configs.entry(itr);
+          oss << name << "=" << filterValueToString(entry) << ", ";
         }
         oss << "\0";
         std::string configString = oss.str();
@@ -177,8 +175,29 @@ namespace MueLu {
         AMGX_SAFE_CALL(AMGX_config_create(&Config_, (const char *) &configString[0]));
       }
 
+      AMGX_Mode mode = AMGX_mode_dDDI;
+
       int nnz = -1;
       if (comm->getSize() > 1) {
+        // FIXME: the below code handling MPI communication is wrong
+        // Specifically, we completely missed the fact the matrix itself has to be reordered (packed) before passing it to AMGX.
+        // AMGX_matrix_upload_all documentation states this:
+        //     1. Select the rows (with global column indices) belonging to rank i and read them into memory
+        //     2. Pack the columns:
+        //        a) Reorder the column indices such that the columns corresponding to the global diagonal elements present
+        //           on rank i come ﬁrst.
+        //        b) Then, reorder the remaining column indices, in the order to which they belong (have connections) to
+        //           rank’s i neighbors. Columns belonging to neighbor 0 first, neighbor 1 second, etc., leaving the natural
+        //           ordering of columns within the same neighbor.
+        //        c) Notice that we now have a rectangular matrix with reordered column indices that are numbered locally.
+        //           To keep track of this reordering create a local to global map which indicates how the locally renumbered
+        //           columns map into their global counterparts.
+        //     3. Reorder the rows and columns (such that the rows with no connections to neighbors come ﬁrst):
+        //        a) Find the reordering that moves rows with no connections to neighbors ﬁrst
+        //        b) Apply it to rows and columns (belonging to the global diagonal elements present on rank i only, in other
+        //           words, columns up to n).
+        //     4. Pass the resulting packed local matrix to this routine.
+        // This is non-trivial and expensive.
         RCP<const Tpetra::Import<LO,GO> > importer = inA->getCrsGraph()->getImporter();
 
         TEUCHOS_TEST_FOR_EXCEPTION(importer.is_null(), MueLu::Exceptions::RuntimeError, "The matrix A has no Import object.");
@@ -227,7 +246,7 @@ namespace MueLu {
           send_sizes[index]++;
         }
 
-        std::vector<int*> send_maps(num_neighbors);
+        std::vector<const int*> send_maps(num_neighbors);
         for (int i = 0; i < num_neighbors; i++)
           send_maps[i] = &(sendDatas[i][0]);
 
@@ -243,7 +262,7 @@ namespace MueLu {
             recvDatas [index].push_back(i);
             recv_sizes[index]++;
         }
-        std::vector<int*> recv_maps(num_neighbors);
+        std::vector<const int*> recv_maps(num_neighbors);
         for (int i = 0; i < num_neighbors; i++)
           recv_maps[i] = &(recvDatas[i][0]);
 
@@ -252,11 +271,12 @@ namespace MueLu {
         RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
         MPI_Comm mpiComm = *rawMpiComm;
 
-        int numGPUDevices, myRank;
+        int numGPUDevices;
         cudaGetDeviceCount(&numGPUDevices);
-        MPI_Comm_rank(mpiComm, &myRank);
+        int device[] = {(comm->getRank() % numGPUDevices)};
 
-        int device[] = {(myRank % numGPUDevices)};
+        // TODO: we probably need to add "exception_handling=1" to the parameter list
+        // to switch on internal error handling (with no need for AMGX_SAFE_CALL)
         AMGX_config_add_parameters(&Config_, "communicator=MPI");
         AMGX_resources_create(&Resources_, Config_, &mpiComm, 1/* number of GPU devices utilized by this rank */, device);
 
@@ -265,7 +285,7 @@ namespace MueLu {
         AMGX_vector_create(&X_,      Resources_, mode);
         AMGX_vector_create(&Y_,      Resources_, mode);
 
-        AMGX_matrix_comm_from_maps_one_ring(A_, 1, num_neighbors, neighbors, &send_sizes[0], (const int **) &send_maps[0], &recv_sizes[0], (const int **) &recv_maps[0]);
+        AMGX_matrix_comm_from_maps_one_ring(A_, 1, num_neighbors, neighbors, &send_sizes[0], &send_maps[0], &recv_sizes[0], &recv_maps[0]);
 
         AMGX_vector_bind(X_, A_);
         AMGX_vector_bind(Y_, A_);
@@ -297,6 +317,7 @@ namespace MueLu {
       for (int i = 0; i < row_ptr_t.size(); i++)
         row_ptr[i] = Teuchos::as<int, size_t>(row_ptr_t[i]);
 
+      // TODO We also need to pin memory here through AMGX_pin_memory
       AMGX_matrix_upload_all(A_, N_, nnz, 1, 1, &row_ptr[0], &col_ind[0], &data[0], NULL);
       AMGX_solver_setup(Solver_, A_);
     }
