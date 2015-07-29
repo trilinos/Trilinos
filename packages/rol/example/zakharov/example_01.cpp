@@ -92,8 +92,6 @@ int main(int argc, char *argv[]) {
     // Define Step
     ROL::LineSearchStep<RealT> step(*parlist);
 
-    step.setOutput(*outStream,0);
-
     // Define Status Test
     RealT gtol  = 1e-12;  // norm of gradient tolerance
     RealT stol  = 1e-14;  // norm of step tolerance
