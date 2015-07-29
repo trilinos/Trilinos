@@ -14,7 +14,7 @@
 <ParameterList name="mjTest">
     
         <ParameterList name="InputParameters">
-            <Parameter name="inputFile" type="string" value="GeomGenWeight"/>
+            <Parameter name="inputFile" type="string" value="GeoGenWeight"/>
             <Parameter name="fileType" type="string" value="Geometric Generator"/>
         </ParameterList>
     
