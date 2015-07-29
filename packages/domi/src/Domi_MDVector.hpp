@@ -1999,12 +1999,11 @@ MDVector< Scalar, Node >::
 getEpetraIntVectorView() const
 {
   // Throw an exception if Scalar is not int
-  const char * scalarType = typeid(Scalar).name();
   TEUCHOS_TEST_FOR_EXCEPTION(
-    strncmp(scalarType, "int", 3) != 0,
+    typeid(Scalar) != typeid(int),
     TypeError,
-    "MDVector is of scalar type '" << scalarType << "', but Epetra_IntVector "
-    "requires scalar type 'int'");
+    "MDVector is of scalar type '" << typeid(Scalar).name() << "', but "
+    "Epetra_IntVector requires scalar type 'int'");
 
   // Throw an exception if this MDVector's MDMap is not contiguous
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2041,12 +2040,11 @@ MDVector< Scalar, Node >::
 getEpetraVectorView() const
 {
   // Throw an exception if Scalar is not double
-  const char * scalarType = typeid(Scalar).name();
   TEUCHOS_TEST_FOR_EXCEPTION(
-    strncmp(scalarType, "double", 6) != 0,
+    typeid(Scalar) != typeid(double),
     TypeError,
-    "MDVector is of scalar type '" << scalarType << "', but Epetra_Vector "
-    "requires scalar type 'double'");
+    "MDVector is of scalar type '" << typeid(Scalar).name() << "', but "
+    "Epetra_Vector requires scalar type 'double'");
 
   // Throw an exception if this MDVector's MDMap is not contiguous
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -2083,12 +2081,11 @@ MDVector< Scalar, Node >::
 getEpetraMultiVectorView() const
 {
   // Throw an exception if Scalar is not double
-  const char * scalarType = typeid(Scalar).name();
   TEUCHOS_TEST_FOR_EXCEPTION(
-    strncmp(scalarType, "double", 6) != 0,
+    typeid(Scalar) != typeid(double),
     TypeError,
-    "MDVector is of scalar type '" << scalarType << "', but Epetra_Vector "
-    "requires scalar type 'double'");
+    "MDVector is of scalar type '" << typeid(Scalar).name() << "', but "
+    "Epetra_Vector requires scalar type 'double'");
 
   // Determine the vector axis and related info
   int vectorAxis = (getLayout() == C_ORDER) ? 0 : numDims()-1;
