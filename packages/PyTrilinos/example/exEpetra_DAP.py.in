@@ -117,10 +117,8 @@ def main(iAmRoot):
   # the Epetra.LinearProblem constructor
   x2 = Domi.MDVector(mdMap, dtype='d')
   x2.getData()[:] = 0.0
-  print x2
   b2 = Domi.MDVector(mdMap, dtype='d')
   b2.getData()[:] = 1.0
-  print b2
   lp2 = Epetra.LinearProblem(matrix, x2, b2)
   if iAmRoot:
       print "Successfully built Epetra.LinearProblem with Domi MDVectors"
@@ -148,6 +146,7 @@ if __name__ == "__main__":
         print "*********************"
         print "** exEpetra_DAP.py **"
         print "*********************"
+        print
 
     # Run the test and catch any errors
     errors = 0
