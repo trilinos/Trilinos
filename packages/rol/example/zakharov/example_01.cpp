@@ -47,9 +47,10 @@
 
 #define USE_HESSVEC 1
 
-#include "ROL_Zakharov.hpp"
-#include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_LineSearchStep.hpp"
+#include "ROL_StdVector.hpp"
+#include "ROL_Zakharov.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -80,10 +81,10 @@ int main(int argc, char *argv[]) {
 
     Teuchos::ParameterList parlist;
     // Enumerations
-    parlist.set("Descent Type",                           "Nonlinear-CG");
-    parlist.set("Nonlinear CG Type",                      "Oren-Luenberger");
+//    parlist.set("Descent Type",                           "Nonlinear-CG");
+    parlist.set("Nonlinear CG Type",                      "Dai-Yuan");
     parlist.set("Linesearch Type",                        "Cubic Interpolation");
-    parlist.set("Linesearch Curvature Condition",         "Wolfe");
+    parlist.set("Linesearch Curvature Condition",         "Wolfe Conditions");
     // Linesearch Parameters
     parlist.set("Maximum Number of Function Evaluations", 20);
     parlist.set("Sufficient Decrease Parameter",          1.e-4);
@@ -95,8 +96,11 @@ int main(int argc, char *argv[]) {
     parlist.set("Absolute Krylov Tolerance",              1.e-4);
     parlist.set("Relative Krylov Tolerance",              1.e-2);
     parlist.set("Maximum Number of Krylov Iterations",    10);
+
     // Define Step
     ROL::LineSearchStep<RealT> step(parlist);
+
+    step.setOutput(*outStream,2);
 
     // Define Status Test
     RealT gtol  = 1e-12;  // norm of gradient tolerance
@@ -122,7 +126,7 @@ int main(int argc, char *argv[]) {
   
     RealT left = -1e0, right = 1e0; 
     for (int i=0; i<dim; i++) {
-      (*x_rcp)[i]   = 4;
+      (*x_rcp)[i]   = 2;
       (*k_rcp)[i]   = i+1.0;
 
       (*xtest_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
