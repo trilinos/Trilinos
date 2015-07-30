@@ -47,9 +47,6 @@
 #ifndef MUELU_MATRIXANALYSISFACTORY_DEF_HPP_
 #define MUELU_MATRIXANALYSISFACTORY_DEF_HPP_
 
-#include <vector>
-#include <queue>
-
 #include "MueLu_MatrixAnalysisFactory_decl.hpp"
 
 #include <Xpetra_Map.hpp>
@@ -57,11 +54,6 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Matrix.hpp>
-#include <Xpetra_CrsMatrixWrap.hpp>
-#include <Xpetra_Export.hpp>
-#include <Xpetra_ExportFactory.hpp>
-#include <Xpetra_Import.hpp>
-#include <Xpetra_ImportFactory.hpp>
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Utilities.hpp"
@@ -186,7 +178,7 @@ void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Lev
     GlobalOrdinal gnumWeakDiagDomRows = 0;
     GlobalOrdinal lnumStrictDiagDomRows = 0;
     GlobalOrdinal gnumStrictDiagDomRows = 0;
-    Scalar worstRatio = 99999999.9;
+    double worstRatio = 99999999.9;
     for (size_t row = 0; row < A->getRowMap()->getNodeNumElements(); row++) {
       GlobalOrdinal grow = A->getRowMap()->getGlobalElement(row);
 
@@ -200,12 +192,12 @@ void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Lev
       TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(indices.size()) != nnz, Exceptions::RuntimeError, "MueLu::MatrixAnalysisFactory::Build: number of nonzeros not equal to number of indices? Error.");
 
       // find column entry with max absolute value
-      Scalar norm1 = 0.0;
-      Scalar normdiag = 0.0;
+      double norm1 = 0.0;
+      double normdiag = 0.0;
       for (size_t j = 0; j < Teuchos::as<size_t>(indices.size()); j++) {
         GO gcol = A->getColMap()->getGlobalElement(indices[j]);
-        if (gcol==grow) normdiag = Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
-        else norm1 += std::abs(vals[j]);
+        if (gcol==grow) normdiag = Teuchos::as<double>(Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]));
+        else norm1 +=  Teuchos::as<double>(Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]));
       }
 
       if      (normdiag >= norm1) lnumWeakDiagDomRows++;
@@ -222,7 +214,7 @@ void MatrixAnalysisFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Lev
     GetOStream(Runtime0) << "A has " << gnumWeakDiagDomRows << "/" << A->getRangeMap()->getGlobalNumElements() << " weakly diagonal dominant rows. (" << Teuchos::as<Scalar>(gnumWeakDiagDomRows/A->getRangeMap()->getGlobalNumElements()*100) << "%)" << std::endl;
     GetOStream(Runtime0) << "A has " << gnumStrictDiagDomRows << "/" << A->getRangeMap()->getGlobalNumElements() << " strictly diagonal dominant rows. (" << Teuchos::as<Scalar>(gnumStrictDiagDomRows/A->getRangeMap()->getGlobalNumElements()*100) << "%)" << std::endl;
 
-    Scalar gworstRatio;
+    double gworstRatio;
     Teuchos::reduceAll(*comm,Teuchos::REDUCE_MIN,comm->getSize(),&worstRatio,&gworstRatio);
     GetOStream(Runtime0) << "The minimum of the ratio of diagonal element/ sum of off-diagonal elements is " << gworstRatio << ". Values about 1.0 are ok." << std::endl;
   }
