@@ -127,82 +127,104 @@ int strToMsgType(const char* str)
   return Belos::Errors;
 }
 
-HierAttribType strToHierAttribType(const char* str)
+MuemexType strToDataType(const char* str, char* typeName, bool complexFlag = false)
 {
+  MuemexType matrixType, multivectorType, scalarType;
+  if(!complexFlag)
+  {
+    matrixType = XPETRA_MATRIX_DOUBLE;
+    multivectorType = XPETRA_MULTIVECTOR_DOUBLE;
+    scalarType = DOUBLE;
+  }
+  else
+  {
+    matrixType = XPETRA_MATRIX_COMPLEX;
+    multivectorType = XPETRA_MULTIVECTOR_COMPLEX;
+    scalarType = COMPLEX;
+  }
+  size_t npos = string::npos;
   if(strcmp(str, "A") == 0)
-    return MATRIX;
+    return matrixType;
   if(strcmp(str, "P") == 0)
-    return MATRIX;
+    return matrixType;
   if(strcmp(str, "R") == 0)
-    return MATRIX;
+    return matrixType;
   if(strcmp(str, "Ptent") == 0)
-    return MATRIX;
+    return matrixType;
   if(strcmp(str, "Nullspace") == 0)
-    return MULTIVECTOR;
-  if(strcmp(str, "Coordinates") == 0)
-    return MULTIVECTOR;
-  //TODO: Add eigenvalue scalar type here - what's it called?
+    return multivectorType;
   if(strcmp(str, "Aggregates") == 0)
-    return HIER_AGGREGATES;
+    return AGGREGATES;
+  if(strcmp(str, "Graph") == 0)
+    return GRAPH;
+  if(strcmp(str, "Coordinates") == 0)
+    return XPETRA_MULTIVECTOR_DOUBLE;
   //Check for custom variable
   //Copy str into mutable buffer to make lowercase and compare type name
   char* buf = (char*) malloc(strlen(str) + 1);
   strcpy(buf, str);
   char* firstWord = strtok(buf, " ");
-  if(firstWord == NULL)
+  if(firstWord)
   {
+    string wordString(firstWord);
     free(buf);
-    return UNKNOWN;
+    char* secondWord = strtok(NULL, " ");
+    if(secondWord)
+    {
+      //make first word lowercase
+      for(char* iter = firstWord; *iter; iter++)
+      {
+        *iter = (char) tolower(*iter);
+      }
+      //compare first word with possible values
+      if(wordString.find("matrix") != npos)
+        return matrixType;
+      if(wordString.find("multivector") != npos)
+        return multivectorType;
+      if(wordString.find("ordinalvector") != npos)
+        return XPETRA_ORDINAL_VECTOR;
+      if(wordString.find("int") != npos)
+        return INT;
+      if(wordString.find("scalar") != npos)
+        return scalarType;
+      if(wordString.find("double") != npos)
+        return DOUBLE;
+      if(wordString.find("complex") != npos)
+        return COMPLEX;
+    }
   }
-  char* secondWord = strtok(NULL, " ");
-  if(secondWord == NULL)
-  {
+  else
     free(buf);
-    return UNKNOWN;
-  }
-  //make first word lowercase
-  for(char* iter = firstWord; *iter; iter++)
+  if(typeName)
   {
-    *iter = (char) tolower(*iter);
+    size_t typeLength = strlen(typeName);
+    char* typeBuf = (char*) malloc(typeLength + 1);
+    strcpy(typeBuf, typeName);
+    //convert to lowercase
+    for(size_t i = 0; i < typeLength; i++)
+    {
+      typeBuf[i] = (char) tolower(typeBuf[i]);
+    }
+    string typeString(typeBuf);
+    free(typeBuf);
+    if(typeString.find("matrix") != npos)
+      return matrixType;
+    if(typeString.find("multivector") != npos)
+      return multivectorType;
+    if(typeString.find("ordinalvector") != npos)
+      return XPETRA_ORDINAL_VECTOR;
+    if(typeString.find("int") != npos)
+      return INT;
+    if(typeString.find("scalar") != npos)
+      return scalarType;
+    if(typeString.find("double") != npos)
+      return DOUBLE;
+    if(typeString.find("complex") != npos)
+      return COMPLEX;
+    string errMsg = typeString + " is not a valid type.";
+    throw runtime_error(errMsg);
   }
-  //compare first word with possible values
-  if(strstr(firstWord, "matrix"))
-  {
-    free(buf);
-    return MATRIX;
-  }
-  if(strstr(firstWord, "multivector"))
-  {
-    free(buf);
-    return MULTIVECTOR;
-  }
-  if(strstr(firstWord, "ordinalvector"))
-  {
-    free(buf);
-    return LOVECTOR;
-  }
-  if(strstr(firstWord, "int"))
-  {
-    free(buf);
-    return HIER_INT;
-  }
-  if(strstr(firstWord, "scalar"))
-  {
-    free(buf);
-    return HIER_SCALAR;
-  }
-  if(strstr(firstWord, "double"))
-  {
-    free(buf);
-    return HIER_DOUBLE;
-  }
-  if(strstr(firstWord, "complex"))
-  {
-    free(buf);
-    return HIER_COMPLEX;
-  }
-  free(buf);
-  return UNKNOWN;
+  throw runtime_error("Could not determine type of data.");
 }
 
 //Parse a string to get Belos output style (Brief is default)
@@ -354,7 +376,7 @@ void setHierarchyData(MuemexSystem* problem, int levelID, T& data, string& dataN
 MuemexSystem::MuemexSystem(DataPackType probType) : id(MUEMEX_ERROR), type(probType) {}
 MuemexSystem::~MuemexSystem() {}
 
-mxArray* MuemexSystem::getHierarchyData(string dataName, HierAttribType dataType, int levelID)
+mxArray* MuemexSystem::getHierarchyData(string dataName, MuemexType dataType, int levelID)
 {
   mxArray* output = NULL;
   try
@@ -432,20 +454,11 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, HierAttribType dataType
     //Given the dataName and factory pointer, all data in the level should now be accessible
     switch(dataType)
     {
-      case MATRIX:
-      {
-        switch(this->type)  //datapack type (EPETRA TPETRA or TPETRA_COMPLEX)
-        {
-          //get real matrix, put into output
-          case EPETRA:
-          case TPETRA:
-            return saveDataToMatlab(level->Get<RCP<Xpetra_Matrix_double>>(dataName, factory));
-          case TPETRA_COMPLEX:
-            return saveDataToMatlab(level->Get<RCP<Xpetra_Matrix_complex>>(dataName, factory));
-        }
-      }
-      case MULTIVECTOR:
-      {
+      case XPETRA_MATRIX_DOUBLE:
+        return saveDataToMatlab(level->Get<RCP<Xpetra_Matrix_double>>(dataName, factory));
+      case XPETRA_MATRIX_COMPLEX:
+        return saveDataToMatlab(level->Get<RCP<Xpetra_Matrix_complex>>(dataName, factory));
+      case XPETRA_MULTIVECTOR_DOUBLE:
         if(dataName == "Coordinates")
         {
           //Coordinates is special because it's always user-provided on level 0, not always provided at all, not always kept in the level (only kept if doing agg viz, etc), and is always MV<double> regardless of problem scalar type
@@ -490,55 +503,24 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, HierAttribType dataType
         }
         else
         {
-          switch(this->type)
-          {
-            case EPETRA:
-            case TPETRA:
-              return saveDataToMatlab(level->Get<RCP<Xpetra_MultiVector_double>>(dataName, factory));
-            case TPETRA_COMPLEX:
-              return saveDataToMatlab(level->Get<RCP<Xpetra_MultiVector_complex>>(dataName, factory));
-          }
+          return saveDataToMatlab(level->Get<RCP<Xpetra_MultiVector_double>>(dataName, factory));
         }
-      }
-      case LOVECTOR:
-      {
+      case XPETRA_MULTIVECTOR_COMPLEX:
+        return saveDataToMatlab(level->Get<RCP<Xpetra_MultiVector_complex>>(dataName, factory));
+      case XPETRA_ORDINAL_VECTOR:
         return saveDataToMatlab(level->Get<RCP<Xpetra_ordinal_vector>>(dataName, factory));
-      }
-      case HIER_SCALAR:
-      {
-        switch(this->type)
-        {
-          case EPETRA:
-          case TPETRA:
-            return saveDataToMatlab(level->Get<double>(dataName, factory));
-          case TPETRA_COMPLEX:
-            return saveDataToMatlab(level->Get<complex_t>(dataName, factory));
-        }
-      }
-      case HIER_DOUBLE:
-      {
+      case DOUBLE:
         return saveDataToMatlab(level->Get<double>(dataName, factory));
-      }
-      case HIER_COMPLEX:
-      {
+      case COMPLEX:
         return saveDataToMatlab(level->Get<complex_t>(dataName, factory));
-      }
-      case HIER_INT:
-      {
+      case INT:
         return saveDataToMatlab(level->Get<int>(dataName, factory));
-      }
-      case HIER_AGGREGATES:
-      {
+      case AGGREGATES:
         return saveDataToMatlab(level->Get<RCP<MAggregates>>(dataName, factory));
-      }
+      case GRAPH:
+        return saveDataToMatlab(level->Get<RCP<MGraph>>(dataName, factory));
       default:
-      {
-        throw runtime_error("getHierarchyData() requires the type of the data");
-      }
-    }
-    if(output == NULL)
-    {
-      throw runtime_error("mxArray pointer was never initialized. Check data type and name.");
+        throw runtime_error("Invalid MuemexType for getting hierarchy data.");
     }
   }
   catch(exception& e)
@@ -1199,6 +1181,33 @@ void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *
     case mxFUNCTION_CLASS:
     case mxUNKNOWN_CLASS:
     case mxSTRUCT_CLASS:
+      //Currently Graph and Aggregates are stored as structures
+      if(isValidMatlabAggregates(prhs))
+      {
+        try
+        {
+          List->set(option_name, loadDataFromMatlab<RCP<MAggregates>>(prhs));
+          break;
+        }
+        catch(exception& e)
+        {
+          cout << e.what();
+          throw runtime_error("Parsing aggregates in parameter list failed.");
+        }
+      }
+      else if(isValidMatlabGraph(prhs))
+      {
+        try
+        {
+          List->set(option_name, loadDataFromMatlab<RCP<MGraph>>(prhs));
+          break;
+        }
+        catch(exception& e)
+        {
+          cout << e.what();
+          throw runtime_error("Parsing graph in parameter list failed.");
+        }
+      }
     default:
       mexPrintf("Error parsing input option: %s [type=%d]\n", option_name, cid);
       mexErrMsgTxt("Error: An input option is invalid!\n");
@@ -1559,48 +1568,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         int probID = loadDataFromMatlab<int>(prhs[1]);
         int levelID = loadDataFromMatlab<int>(prhs[2]);
         char* dataName = mxArrayToString(prhs[3]);
-        HierAttribType outputType = UNKNOWN;
+        MuemexType outputType = INT;
         RCP<MuemexSystem> dp = MuemexSystemList::find(probID);
         if(dp.is_null())
         {
           throw runtime_error("Problem handle not allocated.");
         }
         //See if typeHint was given
-        outputType = strToHierAttribType(dataName);
-        if(outputType == UNKNOWN)
-        {
-          if(nrhs == 4)
-            throw runtime_error("Could not determine type from the name of the variable, please specify.");
-          //Case insensitive compare with type names
-          char* paramTypeName = mxArrayToString(prhs[4]);
-          char* typeName = (char*) malloc(strlen(paramTypeName) + 1);
-          char* iter = typeName;
-          strcpy(typeName, paramTypeName);
-          while(*iter != '\0')
-          {
-            *iter = (char) tolower(*iter);
-            iter++;
-          }
-          if(strstr(typeName, "matrix"))
-            outputType = MATRIX;
-          else if(strstr(typeName, "multivector"))
-            outputType = MULTIVECTOR;
-          else if(strstr(typeName, "lovector") || strstr(typeName, "ordinalvector"))
-            outputType = LOVECTOR;
-          else if(strstr(typeName, "scalar"))
-            outputType = HIER_SCALAR;
-          else if(strstr(typeName, "aggregates"))
-            outputType = HIER_AGGREGATES;
-          else
-          {
-            free(typeName);
-            throw runtime_error("Unknown data type for hierarchy attribute. \
-                                 Must be one of 'matrix', 'multivector', 'lovector', 'aggregates' or 'scalar'.");
-          }
-          free(typeName);
-        }
-        if(outputType == UNKNOWN)
-          throw runtime_error("Could not determine type from name of variable and given type invalid.");
+        char* paramTypeName = NULL;
+        if(nrhs > 4)
+          paramTypeName = mxArrayToString(prhs[4]);
+        bool complexFlag = dp->type == TPETRA_COMPLEX;
+        outputType = strToDataType(dataName, paramTypeName, complexFlag);
         plhs[0] = dp->getHierarchyData(string(dataName), outputType, levelID);
       }
       catch(exception& e)
