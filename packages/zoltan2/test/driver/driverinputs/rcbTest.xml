@@ -14,7 +14,7 @@
 <ParameterList name="rcbTest">
     
         <ParameterList name="InputParameters">
-            <Parameter name="inputPath" type="string" value="/scr_davidson/davidson/trilinosall/build/trilinosrepo/parzoltan2/packages/zoltan2/test/partition"/>
+            <Parameter name="inputPath" type="string" value="../partition"/>
             <Parameter name="inputFile" type="string" value="USAir97"/>
         </ParameterList>
     
