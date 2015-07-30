@@ -54,7 +54,7 @@
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_HyperGraphModel.hpp>
-#include <Zoltan2_RPIMeshAdapter.hpp>
+#include <Zoltan2_APFMeshAdapter.hpp>
 #include <Zoltan2_Environment.hpp>
 
 //Tpetra includes
@@ -94,7 +94,7 @@ int main(int narg, char *arg[]) {
   gmi_register_mesh();
   apf::Mesh2* m = apf::loadMdsMesh("../partition/pumiTri14/plate.dmg","../partition/pumiTri14/2/");
 
-  typedef Zoltan2::RPIMeshAdapter<apf::Mesh2*> inputAdapter_t;
+  typedef Zoltan2::APFMeshAdapter<apf::Mesh2*> inputAdapter_t;
   typedef Zoltan2::MeshAdapter<apf::Mesh2*> baseMeshAdapter_t;
   Teuchos::ParameterList params("test params");
   params.set("timer_output_stream" , "std::cout");

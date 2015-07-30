@@ -80,6 +80,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverFactory.hpp"
+#include <BelosTpetraAdapter.hpp>
 
 #ifdef HAVE_MUELU_EPETRA
 #include "BelosEpetraAdapter.hpp"

@@ -77,13 +77,9 @@ bool supportsUnsymmetric (const std::string& prec_type)
 
 #ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
-  // We can't use the usual IFPACK2_* class macro here because
-  // OneLevelFactory is not a templated class; its methods are.
-  //
-  // mfh 12 Dec 2013: For some reason, this all has to be on one line,
-  // otherwise the macro definition includes the whole rest of the file.
-#define LCLINST(S, LO, GO) template Teuchos::RCP<Preconditioner<S, LO, GO> > Factory::create<Tpetra::CrsMatrix< S, LO, GO> > (const std::string&, const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO> >&); template Teuchos::RCP<Preconditioner<S, LO, GO> > Factory::create<Tpetra::CrsMatrix< S, LO, GO> > (const std::string&, const Teuchos::RCP<const Tpetra::CrsMatrix<S, LO, GO> >&, const int);  template Teuchos::RCP<Preconditioner<S, LO, GO> > Factory::create<Tpetra::RowMatrix< S, LO, GO> > (const std::string&, const Teuchos::RCP<const Tpetra::RowMatrix<S, LO, GO> >&); template Teuchos::RCP<Preconditioner<S, LO, GO> > Factory::create<Tpetra::RowMatrix< S, LO, GO> > (const std::string&, const Teuchos::RCP<const Tpetra::RowMatrix<S, LO, GO> >&, const int);
-
+// We can't use the usual IFPACK2_* class macro here because
+// OneLevelFactory is not a templated class; its methods are.
+#define LCLINST(S, LO, GO)
 
   IFPACK2_ETI_MANGLING_TYPEDEFS()
 

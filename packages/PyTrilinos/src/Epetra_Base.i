@@ -44,6 +44,7 @@
 
 %{
 // PyTrilinos includes
+#include "PyTrilinos_config.h"
 #include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_FILEstream.hpp"
 

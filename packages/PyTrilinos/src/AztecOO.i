@@ -127,6 +127,7 @@ struct OperatorData
 // Optional Teuchos support
 #ifdef HAVE_AZTECOO_TEUCHOS
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
@@ -168,6 +169,7 @@ struct OperatorData
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #endif
+#include "PyTrilinos_Epetra_Util.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY

@@ -191,9 +191,9 @@ IF (${PROJECT_NAME}_ENABLE_SCOREC)
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    RPIMeshAdapterTest
-    NAME RPIMeshAdapterTest_ParMA
-    SOURCES RPIMeshAdapterTest.cpp
+    APFMeshAdapterTest
+    NAME APFMeshAdapterTest_ParMA
+    SOURCES APFMeshAdapterTest.cpp
     NUM_MPI_PROCS 4
     COMM serial mpi
     ARGS
@@ -202,8 +202,8 @@ IF (${PROJECT_NAME}_ENABLE_SCOREC)
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
   TRIBITS_ADD_TEST(
-    RPIMeshAdapterTest
-    NAME RPIMeshAdapterTest_ParMA_Vtx_Edge_Elm
+    APFMeshAdapterTest
+    NAME APFMeshAdapterTest_ParMA_Vtx_Edge_Elm
     NUM_MPI_PROCS 4
     COMM serial mpi
     ARGS
@@ -212,8 +212,8 @@ IF (${PROJECT_NAME}_ENABLE_SCOREC)
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
   TRIBITS_ADD_TEST(
-    RPIMeshAdapterTest
-    NAME RPIMeshAdapterTest_ParMA_Ghost
+    APFMeshAdapterTest
+    NAME APFMeshAdapterTest_ParMA_Ghost
     NUM_MPI_PROCS 4
     COMM serial mpi
     ARGS
@@ -222,8 +222,8 @@ IF (${PROJECT_NAME}_ENABLE_SCOREC)
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
   TRIBITS_ADD_TEST(
-    RPIMeshAdapterTest
-    NAME RPIMeshAdapterTest_ParMA_Shape
+    APFMeshAdapterTest
+    NAME APFMeshAdapterTest_ParMA_Shape
     NUM_MPI_PROCS 4
     COMM serial mpi
     ARGS
@@ -233,12 +233,22 @@ IF (${PROJECT_NAME}_ENABLE_SCOREC)
   )
   
   TRIBITS_ADD_TEST(
-    RPIMeshAdapterTest
-    NAME RPIMeshAdapterTest_ZOLTAN_HG
+    APFMeshAdapterTest
+    NAME APFMeshAdapterTest_ZOLTAN_HG
     NUM_MPI_PROCS 4
     COMM serial mpi
     ARGS
     "--action=zoltan_hg --meshfile=4/ --modelfile=torus.dmg"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+  TRIBITS_ADD_TEST(
+    APFMeshAdapterTest
+    NAME APFMeshAdapterTest_ZOLTAN_GHOST_HG
+    NUM_MPI_PROCS 2
+    COMM serial mpi
+    ARGS
+    "--action=hg_ghost --meshfile=pumiTri14/2/ --modelfile=pumiTri14/plate.dmg --layers=1"
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )

@@ -47,11 +47,13 @@
 
 #define USE_HESSVEC 1
 
-#include "ROL_Zakharov.hpp"
-#include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_LineSearchStep.hpp"
+#include "ROL_StdVector.hpp"
+#include "ROL_Zakharov.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include <iostream>
 
@@ -59,7 +61,12 @@ typedef double RealT;
 
 int main(int argc, char *argv[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  using namespace Teuchos;
+
+  typedef ROL::StdVector<RealT>       V;
+  typedef std::vector<RealT>          Vec;
+
+  GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -78,25 +85,12 @@ int main(int argc, char *argv[]) {
 
     int dim = 10; // Set problem dimension. 
 
-    Teuchos::ParameterList parlist;
-    // Enumerations
-    parlist.set("Descent Type",                           "Nonlinear-CG");
-    parlist.set("Nonlinear CG Type",                      "Oren-Luenberger");
-    parlist.set("Linesearch Type",                        "Cubic Interpolation");
-    parlist.set("Linesearch Curvature Condition",         "Wolfe");
-    // Linesearch Parameters
-    parlist.set("Maximum Number of Function Evaluations", 20);
-    parlist.set("Sufficient Decrease Parameter",          1.e-4);
-    parlist.set("Curvature Conditions Parameter",         0.9);
-    parlist.set("Backtracking Rate",                      0.5);
-    parlist.set("Initial Linesearch Parameter",           1.0);
-    parlist.set("User Defined Linesearch Parameter",      false);
-    // Krylov Parameters
-    parlist.set("Absolute Krylov Tolerance",              1.e-4);
-    parlist.set("Relative Krylov Tolerance",              1.e-2);
-    parlist.set("Maximum Number of Krylov Iterations",    10);
+    RCP<ParameterList> parlist = rcp(new ParameterList());
+    std::string paramfile = "parameters.xml";
+    updateParametersFromXmlFile(paramfile,Ptr<ParameterList>(&*parlist));
+
     // Define Step
-    ROL::LineSearchStep<RealT> step(parlist);
+    ROL::LineSearchStep<RealT> step(*parlist);
 
     // Define Status Test
     RealT gtol  = 1e-12;  // norm of gradient tolerance
@@ -108,21 +102,21 @@ int main(int argc, char *argv[]) {
     ROL::DefaultAlgorithm<RealT> algo(step,status,false);
 
     // Iteration Vector 
-    Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    RCP<Vec> x_rcp = rcp( new Vec(dim, 0.0) );
 
     // Vector of natural numbers
-    Teuchos::RCP<std::vector<RealT> > k_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    RCP<Vec> k_rcp = rcp( new Vec(dim, 0.0) );
 
     // For gradient and Hessian checks 
-    Teuchos::RCP<std::vector<RealT> > xtest_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > v_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > hv_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    Teuchos::RCP<std::vector<RealT> > ihhv_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
+    RCP<Vec> xtest_rcp = rcp( new Vec(dim, 0.0) );
+    RCP<Vec> d_rcp     = rcp( new Vec(dim, 0.0) );
+    RCP<Vec> v_rcp     = rcp( new Vec(dim, 0.0) );
+    RCP<Vec> hv_rcp    = rcp( new Vec(dim, 0.0) );
+    RCP<Vec> ihhv_rcp  = rcp( new Vec(dim, 0.0) );
   
     RealT left = -1e0, right = 1e0; 
     for (int i=0; i<dim; i++) {
-      (*x_rcp)[i]   = 4;
+      (*x_rcp)[i]   = 2;
       (*k_rcp)[i]   = i+1.0;
 
       (*xtest_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
@@ -134,11 +128,11 @@ int main(int argc, char *argv[]) {
     ROL::StdVector<RealT> x(x_rcp);
 
     // Check gradient and Hessian
-    ROL::StdVector<RealT> xtest(xtest_rcp);
-    ROL::StdVector<RealT> d(d_rcp);
-    ROL::StdVector<RealT> v(v_rcp);
-    ROL::StdVector<RealT> hv(hv_rcp);
-    ROL::StdVector<RealT> ihhv(ihhv_rcp);
+    V xtest(xtest_rcp);
+    V d(d_rcp);
+    V v(v_rcp);
+    V hv(hv_rcp);
+    V ihhv(ihhv_rcp);
 
     ROL::ZOO::Objective_Zakharov<RealT> obj(k);
 
@@ -162,8 +156,8 @@ int main(int argc, char *argv[]) {
     }
 
     // Get True Solution
-    Teuchos::RCP<std::vector<RealT> > xtrue_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
-    ROL::StdVector<RealT> xtrue(xtrue_rcp);
+    RCP<Vec> xtrue_rcp = rcp( new Vec(dim, 0.0) );
+    V xtrue(xtrue_rcp);
 
         
     // Compute Error

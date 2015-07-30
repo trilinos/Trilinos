@@ -380,7 +380,7 @@ int run(
   const int *z2parts = problem->getSolution().getPartListView();
   int diffcnt = 0, gdiffcnt = 0;
   for (size_t i = 0; i < nObj; i++) {
-    if (z2parts[i] != ppart[plid[i]]) {
+    if (z2parts[plid[i]] != ppart[i]) {
       diffcnt++;
       cout << me << " DIFF for " << i << " (" 
            << coords->getMap()->getGlobalElement(i) << "):  "

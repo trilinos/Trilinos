@@ -45,6 +45,14 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
+#include "Ifpack2_Details_Factory.hpp"
+
+// FIXME (mfh 28 Jul 2015) I would very much not like to include ANY
+// specific preconditioner header files here.  However, these are
+// unfortunately necessary for the largely useless clone() method.
+#include "Ifpack2_Chebyshev.hpp"
+#include "Ifpack2_RILUK.hpp"
+#include "Ifpack2_Experimental_RBILUK.hpp"
 
 namespace Ifpack2 {
 
@@ -127,7 +135,19 @@ public:
                               typename MatrixType::global_ordinal_type,
                               typename MatrixType::node_type> >
   create (const std::string& precType,
-          const Teuchos::RCP<const MatrixType>& matrix);
+          const Teuchos::RCP<const MatrixType>& matrix)
+  {
+    using Teuchos::rcp_implicit_cast;
+    typedef typename MatrixType::scalar_type SC;
+    typedef typename MatrixType::local_ordinal_type LO;
+    typedef typename MatrixType::global_ordinal_type GO;
+    typedef typename MatrixType::node_type NT;
+    typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
+
+    auto A = rcp_implicit_cast<const row_matrix_type> (matrix);
+    Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
+    return factory.create (precType, A);
+  }
 
   /** \brief Create an instance of Ifpack2_Preconditioner given the string
    * name of the preconditioner type.
@@ -152,9 +172,22 @@ public:
                               typename MatrixType::node_type> >
   create (const std::string& precType,
           const Teuchos::RCP<const MatrixType>& matrix,
-          const int overlap);
+          const int overlap)
+  {
+    using Teuchos::rcp_implicit_cast;
+    typedef typename MatrixType::scalar_type SC;
+    typedef typename MatrixType::local_ordinal_type LO;
+    typedef typename MatrixType::global_ordinal_type GO;
+    typedef typename MatrixType::node_type NT;
+    typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
 
-  //! Clones a preconditioner for a different node type from an Ifpack2 RILUK or Chebyshev preconditioner
+    auto A = rcp_implicit_cast<const row_matrix_type> (matrix);
+    Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
+    return factory.create (precType, A, overlap);
+  }
+
+  /// \brief Clones a preconditioner for a different node type from an
+  ///   Ifpack2 RILUK or Chebyshev preconditioner
   template<class InputMatrixType, class OutputMatrixType>
   static
   Teuchos::RCP<Preconditioner<typename OutputMatrixType::scalar_type,
@@ -166,7 +199,51 @@ public:
                                            typename InputMatrixType::global_ordinal_type,
                                            typename InputMatrixType::node_type> >& prec,
          const Teuchos::RCP<const OutputMatrixType>& matrix,
-         const Teuchos::ParameterList& params = Teuchos::ParameterList ());
+         const Teuchos::ParameterList& params = Teuchos::ParameterList ())
+  {
+    using Teuchos::null;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::rcp_dynamic_cast;
+
+    // FIXME (mfh 09 Nov 2013) The code below assumes that the old and
+    // new scalar, local ordinal, and global ordinal types are the same.
+
+    typedef typename OutputMatrixType::scalar_type scalar_type;
+    typedef typename OutputMatrixType::local_ordinal_type local_ordinal_type;
+    typedef typename OutputMatrixType::global_ordinal_type global_ordinal_type;
+    typedef typename OutputMatrixType::node_type new_node_type;
+    typedef Preconditioner<scalar_type, local_ordinal_type,
+      global_ordinal_type, new_node_type> output_prec_type;
+
+    // FIXME (mfh 09 Nov 2013) The code below only knows how to clone
+    // three different kinds of preconditioners.  This is probably because
+    // only two subclasses of Preconditioner implement a clone() method.
+
+    RCP<output_prec_type> new_prec;
+    RCP<Chebyshev<InputMatrixType> > chebyPrec;
+    chebyPrec = rcp_dynamic_cast<Chebyshev<InputMatrixType> > (prec);
+    if (chebyPrec != null) {
+      new_prec = chebyPrec->clone (matrix, params);
+      return new_prec;
+    }
+    RCP<RILUK<InputMatrixType> > luPrec;
+    luPrec = rcp_dynamic_cast<RILUK<InputMatrixType> > (prec);
+    if (luPrec != null) {
+      new_prec = luPrec->clone (matrix);
+      return new_prec;
+    }
+    RCP<Experimental::RBILUK<InputMatrixType> > rbilukPrec;
+    rbilukPrec = rcp_dynamic_cast<Experimental::RBILUK<InputMatrixType> > (prec);
+    if (rbilukPrec != null) {
+      new_prec = rbilukPrec->clone (matrix);
+      return new_prec;
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::logic_error, "Ifpack2::Factory::clone: Not implemented for the "
+       "current preconditioner type.  The only supported types thus far are "
+       "Chebyshev, RILUK, and RBILUK.");
+  }
 };
 
 } // namespace Ifpack2

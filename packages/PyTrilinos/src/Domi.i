@@ -172,6 +172,7 @@ import numpy
 
 // Include the standard exception handlers
 %include "exception.i"
+%include "Domi_exceptions.i"
 
 // External Teuchos interface imports
 %import "Teuchos.i"
@@ -210,6 +211,7 @@ import numpy
   {
     SWIG_fail;
   }
+  SWIG_CATCH_DOMIEXCEPT
   SWIG_CATCH_STDEXCEPT
   catch(...)
   {

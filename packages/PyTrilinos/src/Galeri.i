@@ -126,6 +126,7 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_SerialDistributor.h"
 #include "Epetra_Time.h"
 #include "Epetra_MapColoring.h"
+#include "PyTrilinos_Epetra_Util.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY
@@ -134,6 +135,7 @@ example subdirectory of the PyTrilinos package:
 
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"

@@ -4,19 +4,19 @@ namespace B {
 
   // Creating an instance of this "object" registers B::FactoryB<MV,
   // OP> with the central registry of packages' factories.  That lets
-  // B::getSolver create solvers from package B.
+  // B::getLinearSolver create solvers from package B.
   template<class MV, class OP>
   class RegisterFactoryB {
   public:
     RegisterFactoryB () {
 #ifdef HAVE_TEUCHOSCORE_CXX11
-      typedef std::shared_ptr<Trilinos::Details::SolverFactory<MV, OP> > ptr_type;
+      typedef std::shared_ptr<Trilinos::Details::LinearSolverFactory<MV, OP> > ptr_type;
 #else
-      typedef Teuchos::RCP<Trilinos::Details::SolverFactory<MV, OP> > ptr_type;
+      typedef Teuchos::RCP<Trilinos::Details::LinearSolverFactory<MV, OP> > ptr_type;
 #endif // HAVE_TEUCHOSCORE_CXX11
 
       ptr_type factory (new FactoryB<MV, OP> ());
-      Trilinos::Details::registerFactory<MV, OP> ("B", factory);
+      Trilinos::Details::registerLinearSolverFactory<MV, OP> ("B", factory);
     }
   };
 

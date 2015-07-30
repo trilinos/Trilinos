@@ -94,5 +94,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-
-
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SolverFactory
+  SOURCES 
+    Ifpack2_SolverFactory.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  TESTONLYLIBS ifpack2_tpetra_testinst
+  STANDARD_PASS_OUTPUT
+  )

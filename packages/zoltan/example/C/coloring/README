@@ -1,0 +1,6 @@
+These examples show how coloring can be done, but
+unfortunately the coloring computed is not always valid
+(in parallel). The reason is unclear.
+
+TODO: These examples should either be fixed or removed.
+

@@ -81,7 +81,8 @@
 
 #define HAVE_COMPLEX_SCALARS
 
-namespace MueLu {
+namespace MueLu
+{
 
 typedef enum
   {
@@ -100,7 +101,7 @@ typedef enum
     MODE_AGGREGATE, //4
     MODE_GET, //5
     MODE_SET, //6
-    MODE_ERROR
+    MODE_ERROR //7
   } MODE_TYPE;
 
 typedef enum
@@ -116,6 +117,10 @@ typedef enum
     UNKNOWN
   } HierAttribType;
 
+/* Note: MuemexSystem is declared friend in MueLu::Hierarchy and MueLu::FactoryManager.
+   This gives access to the private method Hierarchy::GetFactoryManager, which allows
+   muelu('get', ...) to retrieve nonstandard "kept" items like Nullspace and Aggregates.
+*/
 class MuemexSystem
 {
  public:
@@ -172,6 +177,8 @@ class TpetraSystem : public MuemexSystem
   typedef Tpetra::CrsMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> TMatrix;
   typedef Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t> TOperator;
   int setup(const mxArray* matlabA, bool haveCoords = false, const mxArray* matlabCoords = NULL);
+  void normalSetup(const mxArray* matlabA, bool haveCoords = false, const mxArray* matlabCoords = NULL);
+  void customSetup(const mxArray* matlabA, bool haveCoords = false, const mxArray* matlabCoords = NULL);
   int status();
   mxArray* solve(Teuchos::RCP<Teuchos::ParameterList> params, Teuchos::RCP<TMatrix> matrix, const mxArray* rhs, int &iters);
   //note: I typedef'd mm_node_t at the top of this file as the Kokkos default type
@@ -202,6 +209,9 @@ class TpetraSystem : public MuemexSystem
  private:
   Teuchos::RCP<TMatrix> A;
   Teuchos::RCP<TOperator> prec;
+ public:
+  bool keepAll;
+  std::vector<Teuchos::RCP<const FactoryManagerBase>> systemManagers;
 };
 
 namespace MuemexSystemList
@@ -215,15 +225,6 @@ namespace MuemexSystemList
   int status_all();
   bool isInList(int id);
   void clearAll();
-}
-
-
-// Template function implementations
-template<typename Scalar>
-Teuchos::RCP<Xpetra::Matrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> xpetraLoadMatrix(const mxArray* mxa)
-{
-  Teuchos::RCP<Tpetra::CrsMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> tpetraMat = tpetraLoadMatrix<Scalar>(mxa);
-  return MueLu::TpetraCrs_To_XpetraMatrix<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tpetraMat);
 }
 
 // Get a hierarchy from a MuemexSystem

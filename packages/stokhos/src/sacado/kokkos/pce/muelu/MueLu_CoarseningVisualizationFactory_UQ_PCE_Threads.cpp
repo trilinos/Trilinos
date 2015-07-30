@@ -1,8 +1,7 @@
-/*
-//@HEADER
+// @HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -35,40 +34,34 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 //
 // ***********************************************************************
-//@HEADER
-*/
-
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Tpetra_ConfigDefs.hpp"
-#include "Ifpack2_Details_OneLevelFactory_decl.hpp"
-
-#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-#  include "Ifpack2_Details_OneLevelFactory_def.hpp"
-#  include "Ifpack2_ExplicitInstantiationHelpers.hpp"
-#  include "Ifpack2_ETIHelperMacros.h"
-
-// Explicit instantiation macro for OneLevelFactory.
-// Only invoke this macro in the Ifpack2::Details namespace.
-#  define LCLINST(S, LO, GO) \
-  template class OneLevelFactory< \
-  Tpetra::CrsMatrix< \
-    S, LO, GO> >; \
-  template class OneLevelFactory< \
-  Tpetra::RowMatrix< \
-    S, LO, GO> >;
+// @HEADER
 
 
-namespace Ifpack2 {
-namespace Details {
 
-  IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-  IFPACK2_INSTANTIATE_SLG( LCLINST )
+#include "MueLu_ExplicitInstantiation.hpp"
+#include "Stokhos_ConfigDefs.h"
 
-} // namespace Details
-} // namespace Ifpack2
+#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
 
-#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
+#include "Stokhos_MueLu_UQ_PCE.hpp"
+
+#include "MueLu_CoarseningVisualizationFactory_def.hpp"
+
+#define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
+  template class MueLu::CoarseningVisualizationFactory<S, LO, GO, N>;
+
+#define MUELU_INST_N(N) \
+  INSTANTIATE_TPETRA_UQ_PCE_N(MUELU_INST_S_LO_GO_N, N)
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+INSTANTIATE_TPETRA_UQ_PCE_THREADS(MUELU_INST_N)
+
+#endif
+
+

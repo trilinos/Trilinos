@@ -145,3 +145,15 @@ if (${PACKAGE_NAME}_ENABLE_MUMPS)
    STANDARD_PASS_OUTPUT
    )
 ENDIF()
+
+# SolverFactory test
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SolverFactory_UnitTests
+  SOURCES
+    SolverFactory
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+

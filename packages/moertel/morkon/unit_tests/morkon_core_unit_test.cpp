@@ -54,6 +54,7 @@
 #include "mrk_api_classes.hpp"
 #include "mrk_interface_impl.hpp"
 #include "mrk_manager_impl.hpp"
+#include "mrk_manager_tester.hpp"
 
 //
 // Use default_kokkos_device_t (from mrk_default_kokkos_device_type.hpp) for
@@ -100,7 +101,7 @@ TEST(morkon,compute_normals_single_tri) {
   const int nFaces(1);
   const int nEntries(3);
   int val[] = {faceNumber,faceNumber,faceNumber};
-  int rows[] = {0,1,2};
+  int rows[] = {0,1,2,3};
   int cols[] = {0,0,0};
   nodeToFaces.import( label, nNodes, nFaces, nEntries, val, rows, cols );
 

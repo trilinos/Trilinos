@@ -281,6 +281,12 @@ ADD_SUBDIRECTORY(scripts)
 SET(ADDITIONAL_CLEAN_FILES "")
 
 #
+# Set the Domi library name
+IF(PyTrilinos_ENABLE_Domi)
+  SET(DOMI_LIB domi)
+ENDIF(PyTrilinos_ENABLE_Domi)
+
+#
 # Loop over the PyTrilinos-enabled Trilinos modules and define the
 # swig-generated PyTrilinos extension modules
 FOREACH(MODULE ${PyTrilinos_MODULES})
@@ -295,14 +301,14 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   SWIG_MODULE_GET_OUTDIR_AND_MODULE(${MODULE}.i MODULE_OUTDIR MODULE_NAME)
 
   # Define the target for this module
-  SET(PyTrilinos_TARGET_NAME ${MODULE_NODOT})
+  SET(PyTrilinos_TARGET_NAME "PyTrilinos_${MODULE_NODOT}")
   SWIG_ADD_MODULE(${PyTrilinos_TARGET_NAME}
     python
     "${MODULE}.i"
     "${MODULE_OUTDIR}"
     "${MODULE_NAME}")
   SET_PROPERTY(TARGET ${PyTrilinos_TARGET_NAME} PROPERTY NO_SONAME 1)
-  SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} pytrilinos)
+  SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} pytrilinos ${DOMI_LIB})
 
   # Add the header file to the list of additional "make clean" files
   LIST(APPEND ADDITIONAL_CLEAN_FILES "${MODULE}PYTHON_wrap.h")

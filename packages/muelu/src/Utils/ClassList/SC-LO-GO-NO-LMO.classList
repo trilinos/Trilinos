@@ -14,6 +14,7 @@ BraessSarazinSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
 CGSolver
 CoalesceDropFactory
 CoarseMapFactory
+CoarseningVisualizationFactory
 Constraint
 ConstraintFactory
 CoordinatesTransferFactory
@@ -81,4 +82,5 @@ TrilinosSmoother
 UserPFactory
 SemiCoarsenPFactory
 UzawaSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
+VisualizationHelpers
 Zoltan2Interface - #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)

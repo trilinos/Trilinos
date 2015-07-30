@@ -51,6 +51,8 @@
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_TPLTraits.hpp>
 
+#include <Zoltan2_Model.hpp>
+
 #include <Zoltan2_AlgZoltanCallbacks.hpp>
 #include <zoltan_cpp.h>
 
@@ -86,6 +88,7 @@ private:
   const RCP<const Environment> env;
   const RCP<const Comm<int> > problemComm;
   const RCP<const typename Adapter::base_adapter_t> adapter;
+  RCP<const Model<Adapter> > model;
   RCP<Zoltan> zz;
 
   MPI_Comm mpicomm;
@@ -166,22 +169,25 @@ private:
   }
 
   void setCallbacksHypergraph(
-    const RCP<const MeshAdapter<user_t> > &adp)
+    const RCP<const Model<Adapter> > &mdl)
   {
     // TODO:  If add parameter list to this function, can register 
     // TODO:  different callbacks depending on the hypergraph model to use
+    zz->Set_Num_Obj_Fn(zoltanHGNumObj<Adapter>, (void *) &(*mdl));
+    zz->Set_Obj_List_Fn(zoltanHGObjList<Adapter>, (void *) &(*mdl));
 
     zz->Set_HG_Size_CS_Fn(zoltanHGSizeCSForMeshAdapter<Adapter>,
-                          (void *) &(*adp));
+                          (void *) &(*mdl));
     zz->Set_HG_CS_Fn(zoltanHGCSForMeshAdapter<Adapter>,
-                     (void *) &(*adp));
-
+                     (void *) &(*mdl));
+    
     // zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMeshAdapter<Adapter>,
     //                             (void *) &(*adapter));
     // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMeshAdapter<Adapter>,
     //                             (void *) &(*adapter));
   }
 
+  
 public:
 
   /*! Zoltan constructor
@@ -253,7 +259,7 @@ public:
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
     setCallbacksGraph(adapter);
-    setCallbacksHypergraph(adapter);
+    //setCallbacksHypergraph(model);
     setCallbacksGeom(&(*adapter));
   }
 
@@ -290,6 +296,7 @@ void AlgZoltan<Adapter>::partition(
     sprintf(str, "%f", tolerance);
     zz->Set_Param("IMBALANCE_TOL", str);
   }
+  
 
   // Look for zoltan_parameters sublist; pass all zoltan parameters to Zoltan
   try {
@@ -300,6 +307,14 @@ void AlgZoltan<Adapter>::partition(
       // Convert the value to a string to pass to Zoltan
       std::string zval = pl.entry(iter).getValue(&zval);
       zz->Set_Param(zname.c_str(), zval.c_str());
+      if (zval=="HYPERGRAPH") {
+        Zoltan2::modelFlag_t flags;
+        HyperGraphModel<Adapter>* mdl = new HyperGraphModel<Adapter>(adapter,env,problemComm,
+                                                                     flags,HYPEREDGE_CENTRIC);
+        model = rcp(static_cast<const Model<Adapter>* >(mdl),true);
+        setCallbacksHypergraph(model);
+      }
+      
     }
   }
   catch (std::exception &e) {
@@ -343,9 +358,52 @@ void AlgZoltan<Adapter>::partition(
   env->globalInputAssertion(__FILE__, __LINE__, "Zoltan LB_Partition", 
     (ierr==ZOLTAN_OK || ierr==ZOLTAN_WARN), BASIC_ASSERTION, problemComm);
 
+  int numObjects=nObj;
+  if (model!=RCP<const Model<Adapter> >()) {
+    numObjects=model->getLocalNumObjects();
+  }
   // Load answer into the solution.
-  ArrayRCP<part_t> partList(new part_t[nObj], 0, nObj, true);
-  for (int i = 0; i < nObj; i++) partList[i] = oParts[oLids[i]];
+  ArrayRCP<part_t> partList(new part_t[numObjects], 0, numObjects, true);
+  for (int i = 0; i < nObj; i++) partList[oLids[i]] = oParts[i];
+  //
+  
+  if (model!=RCP<const Model<Adapter> >()) {
+    //Ghosting cleanup for copies
+    ArrayView<const gno_t> Ids;
+    typedef StridedData<lno_t, scalar_t>  input_t;
+    ArrayView<input_t> xyz;
+    ArrayView<input_t> wgts;
+    ArrayView<bool> isOwner;
+    const HyperGraphModel<Adapter>* mdl = static_cast<const HyperGraphModel<Adapter>* >(&(*model));
+    nObj = mdl->getLocalNumVertices();        
+    mdl->getVertexList(Ids,xyz,wgts);
+    mdl->getOwnedList(isOwner);
+    int me = problemComm->getRank();
+    int all = problemComm->getSize();
+    //A mapping from gids to lids for efficiency
+    std::map<gno_t,lno_t> lid_mapping;
+    for (size_t i=0;i<mdl->getLocalNumVertices();i++) 
+      lid_mapping[Ids[i]]=i;
+   
+    for (size_t i=0;i<mdl->getGlobalNumVertices();i++) {
+      int amowner = all;
+      if (lid_mapping.find(i)!=lid_mapping.end() && isOwner[lid_mapping[i]])
+        amowner=me;
+      int owner;
+      reduceAll(*problemComm,Teuchos::REDUCE_MIN,1,&amowner,&owner);
+      part_t new_part;
+      if (owner==me)
+        new_part=partList[lid_mapping[i]];
+      broadcast(*problemComm,owner,&new_part);
+      if (new_part>=all) {
+        new_part=me;
+        std::cerr<<"PROBLEMS..."<<std::endl;
+      }
+      if (lid_mapping.find(i)!=lid_mapping.end())
+        partList[lid_mapping[i]] = new_part;
+    }
+  }
+  
   solution->setParts(partList);
 
   // Clean up

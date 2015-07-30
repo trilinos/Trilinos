@@ -54,7 +54,7 @@
 //! \file Zoltan2_AlgParMA.hpp
 //! \brief interface to the ParMA library
 //  
-//  This first design creates an apf mesh to run the ParMA algorithms on. The
+//  This design creates an apf mesh to run the ParMA algorithms on. The
 //  final solution is determined by changes from beginning to end of the mesh.
 //  This approach allows development closer to that of PUMI setup but at the 
 //  cost of creating an extra mesh representation.
@@ -67,6 +67,7 @@
 //  VtxEdgeElm   - Balances targeting vertex, edge, and element imbalance
 //  Ghost        - Balances using ghost element aware diffusion      
 //  Shape        - Optimizes shape of parts by increasing the size of small part boundaries
+//  Centroid     - Balances using centroid diffusion
 //////////////////////////////////////////////////////////////////////////////
 
 #ifndef HAVE_ZOLTAN2_PARMA
@@ -169,6 +170,8 @@ private:
     
   }
 
+  //Sets the weights of each entity in dimension 'dim' to 1
+  //TODO set the weights to those provided by the mesh adapter
   void setEntWeights(int dim, apf::MeshTag* tag) {
     apf::MeshIterator* itr = m->begin(dim);
     apf::MeshEntity* ent;
@@ -181,6 +184,7 @@ private:
    
   }
   
+  //Helper function to set the weights of each dimension needed by the specific parma algorithm
   apf::MeshTag* setWeights(bool vtx, bool edge, bool elm) {
     apf::MeshTag* tag = m->createDoubleTag("parma_weight",1);
     if (vtx)
@@ -194,7 +198,7 @@ private:
   }
 
 
-  //APF Mesh construction helper functions
+  //APF Mesh construction helper functions modified and placed here to support arbitrary entity types
   void constructVerts(const zgid_t* conn, lno_t num_adj, apf::GlobalToVert& result) {
     apf::ModelEntity* interior = m->findModelEntity(m->getDimension(), 0);
     for (lno_t i=0;i<num_adj;i++) 
@@ -376,6 +380,10 @@ public:
     else
       throw std::runtime_error("ParMA neeeds faces or region information");
 
+    //GFD Currently not allowing ParMA to balance non element primary types
+    if (dim!=adapter->getPrimaryEntityType())
+      throw std::runtime_error("ParMA only supports balancing primary type==mesh element");
+    
     //Create empty apf mesh
     gmi_register_null();
     gmi_model* g = gmi_load(".null");
@@ -398,11 +406,11 @@ public:
     const zgid_t* vertex_gids;
     adapter->getIDsViewOf(MESH_VERTEX,vertex_gids);
     
-    
     //Get vertex coordinates
-    const scalar_t ** vertex_coords = new const scalar_t*[dim];
-    int* strides = new int[dim];
-    for (int i=0;i<dim;i++)
+    int c_dim = adapter->getDimension();
+    const scalar_t ** vertex_coords = new const scalar_t*[c_dim];
+    int* strides = new int[c_dim];
+    for (int i=0;i<c_dim;i++)
       adapter->getCoordinatesViewOf(MESH_VERTEX,vertex_coords[i],strides[i],i);
 
     //Get first adjacencies from elements to vertices
@@ -418,10 +426,10 @@ public:
     for (size_t i=0;i<adapter->getLocalNumOf(MESH_VERTEX);i++) {
       apf::MeshEntity* vtx = m->createVert_(interior);
       scalar_t temp_coords[3];
-      for (int k=0;k<dim;k++) 
+      for (int k=0;k<c_dim&&k<3;k++) 
 	temp_coords[k] = vertex_coords[k][i*strides[k]];
 
-      for (int k=dim;k<3;k++)
+      for (int k=c_dim;k<3;k++)
 	temp_coords[k] = 0;  
       apf::Vector3 point(temp_coords[0],temp_coords[1],temp_coords[2]);    
       m->setPoint(vtx,0,point);
@@ -537,6 +545,10 @@ void AlgParMA<Adapter>::partition(
   }
   else if (alg_name=="Shape") {
     balancer = Parma_MakeShapeOptimizer(m,step,verbose);
+    weightElement=true;
+  }
+  else if (alg_name=="Centroid") {
+    balancer = Parma_MakeCentroidDiffuser(m,step,verbose);
     weightElement=true;
   }
   else  {

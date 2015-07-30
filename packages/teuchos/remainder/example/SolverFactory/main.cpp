@@ -24,8 +24,8 @@ void testSolvers () {
     const std::string solverName = solvers[k].second;
     cout << "Package \"" << packageName << "\", solver \"" << solverName
          << "\":" << endl;
-    Teuchos::RCP<Trilinos::Details::Solver<MV, OP> > solver =
-      Trilinos::Details::getSolver<MV, OP> (packageName, solverName);
+    Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP> > solver =
+      Trilinos::Details::getLinearSolver<MV, OP> (packageName, solverName);
     if (solver.get () == NULL) {
       std::ostringstream err;
       err << "Solver \"" << solvers[k].second << "\" from package \""

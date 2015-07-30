@@ -43,12 +43,12 @@
 //
 // @HEADER
 
-/*! \file Zoltan2_RPIMeshAdapter.hpp
-    \brief Defines the RPIMeshAdapter class.
+/*! \file Zoltan2_APFMeshAdapter.hpp
+    \brief Defines the APFMeshAdapter class.
 */
 
-#ifndef _ZOLTAN2_RPIMESHADAPTER_HPP_
-#define _ZOLTAN2_RPIMESHADAPTER_HPP_
+#ifndef _ZOLTAN2_APFMESHADAPTER_HPP_
+#define _ZOLTAN2_APFMESHADAPTER_HPP_
 
 #include <Zoltan2_MeshAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
@@ -64,16 +64,16 @@ namespace apf {
 }
 namespace Zoltan2 {
 template <typename User>
-class RPIMeshAdapter : public MeshAdapter<User>
+class APFMeshAdapter : public MeshAdapter<User>
 {
 public:
   
   
-  RPIMeshAdapter(const Comm<int> &comm, apf::Mesh* m,std::string primary,std::string adjacency,bool needSecondAdj=false)
+  APFMeshAdapter(const Comm<int> &comm, apf::Mesh* m,std::string primary,std::string adjacency,bool needSecondAdj=false)
   {
     throw std::runtime_error(
           "BUILD ERROR:  ParMA requested but not compiled into Zoltan2.\n"
-          "Please set CMake flag Zoltan2_ENABLE_ParMA:BOOL=ON.");
+          "Please set CMake flag Trilinos_ENABLE_SCOREC:BOOL=ON.");
   }
 };
 }
@@ -115,7 +115,7 @@ namespace Zoltan2 {
  */
 
 template <typename User>
-  class RPIMeshAdapter: public MeshAdapter<User> {
+  class APFMeshAdapter: public MeshAdapter<User> {
 
 public:
 
@@ -128,15 +128,20 @@ public:
   typedef MeshAdapter<User>       base_adapter_t;
   typedef User user_t;
 
-  /*! \brief Constructor for mesh with identifiers but no coordinates or edges
-   *  \param etype is the mesh entity type of the identifiers
+  /*! \brief Constructor for mesh with and apf mesh
+   *  \param m the apf Mesh
+   *  \param primary the entity type for the primary target
+   *  \param adjacency the entity type for the adjacency from the primary
+   *  \param needSecondAdj true means the second adjacency will be computed
+   *
    *
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this InputAdapter.
    */
 
-  RPIMeshAdapter(const Comm<int> &comm, apf::Mesh* m,std::string primary,
+  APFMeshAdapter(const Comm<int> &comm, apf::Mesh* m,std::string primary,
                  std::string adjacency,bool needSecondAdj=false);
+
   void destroy();
   void print(int me,int verbosity=0);
   template <typename Adapter>
@@ -146,12 +151,52 @@ public:
     apf::Migration* plan = new apf::Migration(*out);
     const part_t* new_part_ids = solution.getPartListView();
 
-    apf::MeshIterator* itr = (*out)->begin(m_dimension);
-    apf::MeshEntity* ent;
-    int i=0;
-    while ((ent=(*out)->iterate(itr)))  {
-      plan->send(ent,new_part_ids[i]);
-      i++;
+    if ((m_dimension==3 && this->getPrimaryEntityType()==MESH_REGION) ||
+        (m_dimension==2&&this->getPrimaryEntityType()==MESH_FACE)) {
+      //Elements can simply be sent to the given target parts
+      apf::MeshIterator* itr = (*out)->begin(m_dimension);
+      apf::MeshEntity* ent;
+      int i=0;
+      while ((ent=(*out)->iterate(itr)))  {
+        assert(new_part_ids[i]<PCU_Comm_Peers());
+        plan->send(ent,new_part_ids[i]);
+        i++;
+      }
+    }
+    else {
+      //mapping from global id to new part id
+      int dim = entityZ2toAPF(this->getPrimaryEntityType());
+      // PCU_Debug_Open();
+      // for (size_t i=0;i<num_local[dim];i++) {
+      //    PCU_Debug_Print("Vertex %d: %d\n",i,new_part_ids[i]); 
+      // }
+      apf::MeshIterator* itr = (*out)->begin(m_dimension);
+      apf::MeshEntity* ent;
+      size_t i=0;
+      while ((ent=(*out)->iterate(itr)))  {
+        std::map<unsigned int,unsigned int> newOwners;
+        apf::Downward adj;
+        unsigned int max_num = 1;
+        int new_part=PCU_Comm_Self();
+        unsigned int num = in->getDownward(ent,dim,adj);
+        for (unsigned int j=0;j<num;j++) {
+          gno_t gid = apf::getNumber(gids[dim],apf::Node(adj[j],0));
+          lno_t lid = apf::getNumber(lids[dim],adj[j],0,0);
+          newOwners[new_part_ids[lid]]++;
+          if (newOwners[new_part_ids[lid]]>max_num) {
+            max_num=newOwners[new_part_ids[lid]];
+            new_part = new_part_ids[lid];
+          }
+        }
+        if (max_num>1)
+          if (new_part<0||new_part>=PCU_Comm_Peers()) {
+            std::cout<<new_part<<std::endl;
+            throw std::runtime_error("Target part is out of bounds\n");
+          }
+          plan->send(ent,new_part);
+        i++;
+      }
+      
     }
     (*out)->migrate(plan);
   }
@@ -169,6 +214,11 @@ public:
     return 0;
   }
 
+  /* NOTE: Only elements are uniquely provided from the APF Mesh Adapter.
+     All other elements have copies across the shared parts
+     These copies can be joined by the sharing of a unique global id
+     getGlobalNumOf(type) != Sum(getLocalNumOf(type))
+  */
   size_t getLocalNumOf(MeshEntityType etype) const
   {
     int dim = entityZ2toAPF(etype);
@@ -254,8 +304,12 @@ public:
 #ifndef USE_MESH_ADAPTER
   bool avail2ndAdjs(MeshEntityType sourcetarget, MeshEntityType through) const
   {
+    if (adj2_gids==NULL)
+      return false;
     int dim_source = entityZ2toAPF(sourcetarget);
     int dim_target = entityZ2toAPF(through);
+    if (dim_source==1&&dim_target==0)
+      return false;
     return dim_source<=m_dimension && dim_source>=0 &&
       dim_target<=m_dimension && dim_target>=0 &&
       dim_target!=dim_source;
@@ -311,8 +365,8 @@ private:
   
 
   int m_dimension;  //Dimension of the mesh
-  apf::Numbering** lids; //[dimension] array of local id numbers
-  apf::GlobalNumbering** gids;//[dimension] array of global id numbers
+  apf::Numbering** lids; //[dimension] numbering of local id numbers
+  apf::GlobalNumbering** gids;//[dimension] numbering of global id numbers
   zgid_t** gid_mapping; //[dimension][lid] corresponding global id numbers
   size_t* num_local; //[dimension] number of local entities
   size_t* num_global; //[dimension] number of global entities
@@ -330,15 +384,27 @@ private:
 ////////////////////////////////////////////////////////////////
 
 template <typename User>
-RPIMeshAdapter<User>::RPIMeshAdapter(const Comm<int> &comm,
+APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
                                      apf::Mesh* m,
                                      std::string primary,
                                      std::string adjacency,
                                      bool needSecondAdj) {
   
-  
   //mesh dimension
   m_dimension = m->getDimension();
+  if (primary=="element") {
+    if (m_dimension==2)
+      primary="face";
+    else
+      primary="region";
+  }
+  if (adjacency=="element") {
+    if (m_dimension==2)
+      adjacency="face";
+    else
+      adjacency="region";
+  }
+
   if (primary=="region"&&m_dimension<3)
     throw std::runtime_error("primary type and mesh dimension mismatch");
   if (adjacency=="region"&&m_dimension<3)
@@ -392,7 +458,7 @@ RPIMeshAdapter<User>::RPIMeshAdapter(const Comm<int> &comm,
     while((ent=m->iterate(itr)))  {
       zgid_t gid = apf::getNumber(gids[i],apf::Node(ent,0));
       gid_mapping[i][ apf::getNumber(lids[i],ent,0,0)] = gid;
-      topologies[i][num] = topologyAPFtoZ2(static_cast<apf::Mesh::Type>(m->getType(ent)));
+      topologies[i][num] = topologyAPFtoZ2(m->getType(ent));
       num++;
     }
     m->end(itr);
@@ -547,7 +613,7 @@ RPIMeshAdapter<User>::RPIMeshAdapter(const Comm<int> &comm,
   delete [] lid_mapping;
 }
 template <typename User>
-void RPIMeshAdapter<User>::destroy() {
+void APFMeshAdapter<User>::destroy() {
   for (int i=0;i<=m_dimension;i++) {
     delete [] ent_coords[i];
     delete [] adj_gids[i];
@@ -583,14 +649,14 @@ void RPIMeshAdapter<User>::destroy() {
      
 }  
 template <typename User>
-void RPIMeshAdapter<User>::print(int me,int verbosity)
+void APFMeshAdapter<User>::print(int me,int verbosity)
 {
   if (m_dimension==0) {
     std::cout<<"Cannot print destroyed mesh adapter\n";
     return;
   }
   
-  std::string fn(" RPIMesh ");
+  std::string fn(" APFMesh ");
   std::cout << me << fn 
             << " dimension = " << m_dimension
             << std::endl;

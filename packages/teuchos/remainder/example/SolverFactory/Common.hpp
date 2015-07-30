@@ -5,8 +5,8 @@
 // Header file for classes common to all "packages" in this example.
 //
 
-#include "Trilinos_Details_Solver.hpp"
-#include "Trilinos_Details_SolverFactory.hpp"
+#include "Trilinos_Details_LinearSolver.hpp"
+#include "Trilinos_Details_LinearSolverFactory.hpp"
 #include <iostream>
 #include <sstream>
 
@@ -31,17 +31,17 @@ namespace Common {
     }
   };
 
-  // Base classes of Trilinos::Details::Solver must implement all the
-  // pure virtual methods of that interface.  This base class only
-  // exists to make the example more concise.  Its subclasses must
-  // implement solve(), name(), and the virtual destructor.
+  // Base classes of Trilinos::Details::LinearSolver must implement
+  // all the pure virtual methods of that interface.  This base class
+  // only exists to make the example more concise.  Its subclasses
+  // must implement solve(), name(), and the virtual destructor.
   template<class MV, class OP>
-  class SolverTestBase : public Trilinos::Details::Solver<MV, OP> {
+  class LinearSolverTestBase : public Trilinos::Details::LinearSolver<MV, OP> {
   protected:
     virtual std::string name () const = 0;
 
   public:
-    virtual ~SolverTestBase () {}
+    virtual ~LinearSolverTestBase () {}
 
     void setMatrix (const Teuchos::RCP<const OP>& A) {
       std::cout << this->name () << "::setMatrix" << std::endl;
@@ -53,7 +53,7 @@ namespace Common {
       return A_; // this could be null if setMatrix wasn't called
     }
 
-    void setParameters (Teuchos::ParameterList& /* params */ ) {
+    void setParameters (const Teuchos::RCP<Teuchos::ParameterList>& /* params */ ) {
       std::cout << this->name () << "::setParameters" << std::endl;
     }
 

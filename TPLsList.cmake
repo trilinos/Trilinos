@@ -193,6 +193,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Lemon           "cmake/TPLs/"    EX
   GLM             "cmake/TPLs/"    EX
   quadmath        "cmake/TPLs/"    EX
+  CAMAL           "cmake/TPLs/"    SS
   RTlib           "cmake/TPLs/"    SS
   AmgX            "cmake/TPLs/"    EX
   CGAL            "cmake/TPLs/"    EX

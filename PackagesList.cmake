@@ -65,6 +65,12 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   RTOp                  packages/rtop                     PS
   Sacado                packages/sacado                   PS
   Epetra                packages/epetra                   PS
+  SCORECgmi             SCOREC/gmi                        SS
+  SCORECpcu             SCOREC/pcu                        SS
+  SCORECapf             SCOREC/apf                        SS
+  SCORECmds             SCOREC/mds                        SS
+  SCORECparma           SCOREC/parma                      SS
+  SCORECspr             SCOREC/spr                        SS
   Zoltan                packages/zoltan                   PS
   Shards                packages/shards                   PS
   GlobiPack             packages/globipack                PS
@@ -100,6 +106,10 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TriKota               packages/TriKota                  SS
   Intrepid              packages/intrepid                 PS
   STK                   packages/stk                      SS # Depends on boost
+  SCORECapf_zoltan      SCOREC/zoltan                     SS
+  SCORECapf_stk         SCOREC/stk                        SS
+  SCORECma              SCOREC/ma                         SS
+  SCOREC                SCOREC                            SS
   Phalanx               packages/phalanx                  SS
   Phdmesh               packages/phdmesh                  EX # to be replaced by STK
   NOX                   packages/nox                      PS
@@ -127,6 +137,18 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   FEApp                 demos/FEApp                       SS # Capability demonstration package
   )
 
+# Allow builds even is some packages are missing
+
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCOREC)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECgmi)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECpcu)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECmds)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECparma)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECspr)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_stk)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECapf_zoltan)
+TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECma)
 
 #
 # Disable certain packages on certain platforms.
@@ -150,6 +172,7 @@ TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(SEACAS Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Anasazi Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Zoltan Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Isorropia Windows)
+
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Teko Windows)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Mesquite AIX)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Trios Windows)
