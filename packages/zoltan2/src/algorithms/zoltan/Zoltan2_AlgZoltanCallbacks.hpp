@@ -51,6 +51,8 @@
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_IdentifierAdapter.hpp>
 
+#include <Zoltan2_HyperGraphModel.hpp>
+
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_TPLTraits.hpp>
 #include <zoltan_cpp.h>
@@ -63,6 +65,8 @@
 namespace Zoltan2 {
 
 /////////////////////////////////////////////////////////////////////////////
+// CALLBACKS SHARED BY ALL ADAPTERS
+
 // ZOLTAN_NUM_OBJ_FN
 template <typename Adapter>
 static int zoltanNumObj(void *data, int *ierr) {
@@ -71,7 +75,6 @@ static int zoltanNumObj(void *data, int *ierr) {
   return int(adp->getLocalNumIDs());
 }
 
-/////////////////////////////////////////////////////////////////////////////
 // ZOLTAN_OBJ_LIST_FN
 template <typename Adapter>
 static void zoltanObjList(void *data, int nGidEnt, int nLidEnt, 
@@ -110,7 +113,6 @@ static void zoltanObjList(void *data, int nGidEnt, int nLidEnt,
   }
 }
 
-/////////////////////////////////////////////////////////////////////////////
 // ZOLTAN_PART_MULTI_FN
 template <typename Adapter>
 static void zoltanParts(void *data, int nGidEnt, int nLidEnt, int nObj,
@@ -126,7 +128,6 @@ static void zoltanParts(void *data, int nGidEnt, int nLidEnt, int nObj,
     parts[i] = int(myparts[lids[i]]);
 }
 
-/////////////////////////////////////////////////////////////////////////////
 // ZOLTAN_NUM_GEOM_FN
 template <typename Adapter>
 static int zoltanNumGeom(void *data, int *ierr) 
@@ -136,7 +137,6 @@ static int zoltanNumGeom(void *data, int *ierr)
   return adp->getDimension();
 }
 
-/////////////////////////////////////////////////////////////////////////////
 // ZOLTAN_GEOM_MULTI_FN
 template <typename Adapter>
 static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
@@ -156,7 +156,141 @@ static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// MESH ADAPTER CALLBACKS
+
+template <typename Adapter>
+static int zoltanHGNumObj(void *data, int *ierr) {
+  const HyperGraphModel<Adapter>* mdl = static_cast<HyperGraphModel<Adapter>* >(data);
+  *ierr = ZOLTAN_OK;
+  return int(mdl->getLocalNumOwnedVertices());
+}
+
+// ZOLTAN_OBJ_LIST_FN
+template <typename Adapter>
+static void zoltanHGObjList(void *data, int nGidEnt, int nLidEnt, 
+                          ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
+                          int wdim, float *wgts, int *ierr) 
+{
+  const HyperGraphModel<Adapter>* mdl = static_cast<HyperGraphModel<Adapter>* >(data);
+  typedef typename Adapter::gno_t       gno_t;
+  typedef typename Adapter::lno_t       lno_t;
+  typedef typename Adapter::scalar_t    scalar_t;
+  typedef StridedData<lno_t, scalar_t>  input_t;
+
+  *ierr = ZOLTAN_OK;
+  ArrayView<const gno_t> Ids;
+  ArrayView<input_t> model_wgts;
+  ArrayView<input_t> xyz;
+  size_t num_verts = mdl->getVertexList(Ids,xyz,model_wgts);
+  ArrayView<bool> isOwner;
+  mdl->getOwnedList(isOwner);
+  int j=0;
+  for (size_t i=0;i<num_verts;i++) {
+    if (isOwner[i]) {
+      lids[j] = i;
+      gids[j] = Ids[i];
+      //TODO add weights here
+      j++;
+    }
+  }
+}
+// ZOLTAN_HG_SIZE_CS_FN
+template <typename Adapter>
+static void zoltanHGSizeCSForMeshAdapter(
+  void *data, int *nEdges, int *nPins,
+  int *format, int *ierr
+) 
+{
+  *ierr = ZOLTAN_OK;
+  const HyperGraphModel<Adapter>* mdl = static_cast<HyperGraphModel<Adapter>* >(data);
+  *nEdges = mdl->getLocalNumHyperEdges();
+  *nPins = mdl->getLocalNumPins();
+  if (mdl->getCentricView()==HYPEREDGE_CENTRIC)
+    *format = ZOLTAN_COMPRESSED_EDGE;
+  else
+    *format = ZOLTAN_COMPRESSED_VERTEX;
+  
+  // typedef typename Adapter::user_t user_t;
+  // const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>* >(data);
+  // *nEdges = madp->getLocalNumOf(madp->getAdjacencyEntityType());
+  // *nPins = madp->getLocalNumAdjs(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType());
+  // *format = ZOLTAN_COMPRESSED_EDGE;
+}
+
+// ZOLTAN_HG_CS_FN
+template <typename Adapter>
+static void zoltanHGCSForMeshAdapter(
+  void *data, int nGidEnt, int nEdges, int nPins,
+  int format, ZOLTAN_ID_PTR edgeIds, 
+  int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr
+)
+{
+  *ierr = ZOLTAN_OK;
+  const HyperGraphModel<Adapter>* mdl = static_cast<HyperGraphModel<Adapter>* >(data);
+  typedef typename Adapter::gno_t       gno_t;
+  typedef typename Adapter::lno_t       lno_t;
+  typedef typename Adapter::scalar_t    scalar_t;
+  typedef StridedData<lno_t, scalar_t>  input_t;
+
+  ArrayView<const gno_t> Ids;
+  ArrayView<input_t> wgts;
+  mdl->getEdgeList(Ids,wgts);
+  ArrayView<const gno_t> pinIds_;
+  ArrayView<const lno_t> offsets;
+  ArrayView<input_t> pin_wgts;
+  mdl->getPinList(pinIds_,offsets,pin_wgts);
+  for (int i=0;i<nEdges;i++) {
+    edgeIds[i]=Ids[i];
+    edgeIdx[i]=offsets[i];
+  }
+  
+  for (int i=0;i<nPins;i++)
+    pinIds[i] = pinIds_[i];
+  // typedef typename Adapter::user_t user_t;
+  // const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>*>(data);
+  // const typename Adapter::zgid_t *Ids;
+  // madp->getIDsViewOf(madp->getAdjacencyEntityType(),Ids);
+  // const typename Adapter::lno_t* offsets;
+  // const typename Adapter::zgid_t* adjIds;
+  // madp->getAdjsView(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType(),offsets,adjIds);
+  // for (int i=0;i<nEdges;i++) {
+  //   edgeIds[i]=Ids[i];
+  //   edgeIdx[i]=offsets[i];
+  // }
+  // for (int i=0;i<nPins;i++)
+  //   pinIds[i] = adjIds[i];
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// MATRIX ADAPTER CALLBACKS
+
+// ZOLTAN_HG_SIZE_CS_FN
+template <typename Adapter>
+static void zoltanHGSizeCSForMatrixAdapter(
+  void *data, int *nEdges, int *nPins,
+  int *format, int *ierr
+) 
+{
+  cout << "HELLO FROM HGSizeCS with MATRIX ADAPTER" << endl;
+  *ierr = ZOLTAN_FATAL;
+}
+
+// ZOLTAN_HG_CS_FN
+template <typename Adapter>
+static void zoltanHGCSForMatrixAdapter(
+  void *data, int nGidEnt, int nEdges, int nPins,
+  int format, ZOLTAN_ID_PTR edgeIds, 
+  int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr
+)
+{
+  cout << "HELLO FROM HGCS with MATRIX ADAPTER" << endl;
+  *ierr = ZOLTAN_FATAL;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // TODO:  OTHER CALLBACKS
 
 }
+
+
 #endif

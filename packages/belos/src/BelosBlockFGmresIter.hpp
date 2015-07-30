@@ -162,7 +162,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
    * \note For any pointer in \c newstate which directly points to the multivectors in
    * the solver, the data is not copied.
    */
-  void initializeGmres(GmresIterationState<ScalarType,MV> newstate);
+  void initializeGmres(GmresIterationState<ScalarType,MV>& newstate);
 
   /*! \brief Initialize the solver with the initial vectors from the linear problem
    *  or random data.
@@ -546,7 +546,7 @@ class BlockFGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
 
   template <class ScalarType, class MV, class OP>
   void BlockFGmresIter<ScalarType,MV,OP>::
-  initializeGmres (GmresIterationState<ScalarType,MV> newstate)
+  initializeGmres (GmresIterationState<ScalarType,MV>& newstate)
   {
     using Teuchos::RCP;
     using Teuchos::rcp;

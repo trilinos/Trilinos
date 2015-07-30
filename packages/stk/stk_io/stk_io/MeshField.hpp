@@ -132,7 +132,8 @@ namespace stk {
       bool is_active() const {return m_isActive;}
       
       void restore_field_data(stk::mesh::BulkData &bulk,
-			      const DBStepTimeInterval &sti);
+			      const DBStepTimeInterval &sti,
+			      bool ignore_missing_fields = false);
       
       const std::string &db_name() const {return m_dbName;}
       stk::mesh::FieldBase *field() const {return m_field;}

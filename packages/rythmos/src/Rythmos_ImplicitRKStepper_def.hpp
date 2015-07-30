@@ -586,7 +586,7 @@ template <class Scalar>
 void ImplicitRKStepper<Scalar>::initialize_()
 {
 
-  typedef ScalarTraits<Scalar> ST;
+  // typedef ScalarTraits<Scalar> ST; // unused
   using Teuchos::rcp_dynamic_cast;
 
   TEUCHOS_TEST_FOR_EXCEPT(is_null(model_));

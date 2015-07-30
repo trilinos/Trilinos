@@ -169,8 +169,10 @@ void Environment::commitParameters()
     // the validators' validateAndModify() to be called instead
     // of validate().  validateAndModify() "fixes" some of the
     // parameters for us.
+    // Note:  depth==0 --> do not validate sublists, 
+    //                     since they are for TPL parameters
   
-    params_.validateParametersAndSetDefaults(validParams);
+    params_.validateParametersAndSetDefaults(validParams, 0);
 
     // For all of the string to integer parameters, convert
     // them to the integer.  I would have

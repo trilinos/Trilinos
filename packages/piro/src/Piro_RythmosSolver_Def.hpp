@@ -586,6 +586,10 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
   if (num_p > 0) {
     p_in = inArgs.get_p(l);
   }
+  RCP<const Thyra::VectorBase<Scalar> > p_in2;  //JF add for multipoint
+  if (num_p > 1) {
+    p_in2 = inArgs.get_p(l+1);
+  }
 
   // Parse OutArgs
   RCP<Thyra::VectorBase<Scalar> > g_out;
@@ -629,9 +633,15 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
       state_ic.set_p(l, p_in);
     }
   }
+  if (num_p > 1) { //JF added for multipoint
+    if (Teuchos::nonnull(p_in2)) {
+      state_ic.set_p(l+1, p_in2);
+    }
+  }
 
   *out << "\nstate_ic:\n" << Teuchos::describe(state_ic, solnVerbLevel);
 
+  //JF  may need a version of the following for multipoint, i.e. num_p>1, l+1, if we want sensitivities
   RCP<Thyra::MultiVectorBase<Scalar> > dgxdp_out;
   Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv_out;
   if (num_p > 0) {
@@ -852,6 +862,9 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
       modelInArgs.set_x(finalSolution);
       if (num_p > 0) {
         modelInArgs.set_p(l, p_in);
+      }
+      if (num_p > 1) {  //JF added for multipoint
+        modelInArgs.set_p(l+1, p_in2);
       }
       //Set time to be final time at which the solve occurs (< t_final in the case we don't make it to t_final).
       modelInArgs.set_t(fwdStateStepper->getTimeRange().lower()); 

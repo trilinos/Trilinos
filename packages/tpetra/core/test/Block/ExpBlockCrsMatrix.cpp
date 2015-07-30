@@ -144,8 +144,8 @@ namespace {
   }
 
   // Test for basic functionality of a BlockCrsMatrix.  We create a
-  // BlockCrsMatrix with a nontrivial graph, exercise getLocalRowView
-  // and replaceLocalValues, and test applyBlock and apply.
+  // BlockCrsMatrix with a nontrivial graph; exercise getLocalRowView,
+  // getLocalRowCopy, and replaceLocalValues; and test applyBlock and apply.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, basic, Scalar, LO, GO, Node )
   {
     typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
@@ -254,13 +254,15 @@ namespace {
                    graph.getColMap ()->isSameAs (* (graph2.getColMap ())) );
     }
 
-    out << "Test getLocalRowView and replaceLocalValues" << endl;
+    out << "Test getLocalRowView, getLocalRowCopy, and replaceLocalValues" << endl;
 
     Array<Scalar> tempBlockSpace (maxNumEntPerRow * entriesPerBlock);
 
     // Test that getLocalRowView returns the right column indices.
     Array<LO> lclColInds (maxNumEntPerRow);
     Array<LO> myLclColIndsCopy (maxNumEntPerRow);
+    Array<Scalar> myValsCopy (maxNumEntPerRow);
+    Array<LO> myLclColIndsSorted (maxNumEntPerRow);
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
       const LO* myLclColInds = NULL;
@@ -283,9 +285,22 @@ namespace {
       // CrsGraph doesn't technically need to promise to sort by local
       // column indices, so we sort both arrays before comparing.
       std::sort (lclColInds.begin (), lclColInds.end ());
-      std::copy (myLclColInds, myLclColInds + 2, myLclColIndsCopy.begin ());
-      std::sort (myLclColIndsCopy.begin (), myLclColIndsCopy.end ());
-      TEST_COMPARE_ARRAYS( lclColInds, myLclColIndsCopy );
+      std::copy (myLclColInds, myLclColInds + 2, myLclColIndsSorted.begin ());
+      std::sort (myLclColIndsSorted.begin (), myLclColIndsSorted.end ());
+      TEST_COMPARE_ARRAYS( lclColInds, myLclColIndsSorted );
+
+      // Test that getLocalRowCopy works.
+      size_t numEntries;
+      blockMat.getLocalRowCopy (lclRowInd, myLclColIndsCopy(), myValsCopy(), numEntries);
+      numEnt = static_cast<LO>(numEntries);
+      TEST_ASSERT( err == 0 );
+      TEST_ASSERT( numEnt == static_cast<LO> (maxNumEntPerRow) );
+
+      // CrsGraph doesn't technically need to promise to sort by local
+      // column indices, so we sort both arrays before comparing.
+      std::copy (myLclColIndsCopy.getRawPtr(), myLclColIndsCopy.getRawPtr() + 2, myLclColIndsSorted.begin ());
+      std::sort (myLclColIndsSorted.begin (), myLclColIndsSorted.end ());
+      TEST_COMPARE_ARRAYS( lclColInds, myLclColIndsSorted );
 
       // Fill the entries in the row with zeros.
       std::fill (tempBlockSpace.begin (), tempBlockSpace.end (), STS::zero ());

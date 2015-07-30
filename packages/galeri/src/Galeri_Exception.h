@@ -51,10 +51,10 @@ namespace Galeri
 class Exception 
 {
 public:
-  Exception(const string FileName, const int LineNumber,
-            const string Line1, const string Line2 = "",
-            const string Line3 = "", const string Line4 = "",
-            const string Line5 = "", const string Line6 = "") :
+  Exception(const std::string FileName, const int LineNumber,
+            const std::string Line1, const std::string Line2 = "",
+            const std::string Line3 = "", const std::string Line4 = "",
+            const std::string Line5 = "", const std::string Line6 = "") :
     FileName_(FileName),
     LineNumber_(LineNumber),
     Line1_(Line1),
@@ -83,14 +83,14 @@ public:
   }
 
 private:
-  string FileName_;
+  std::string FileName_;
   int LineNumber_;
-  string Line1_;
-  string Line2_;
-  string Line3_;
-  string Line4_;
-  string Line5_;
-  string Line6_;
+  std::string Line1_;
+  std::string Line2_;
+  std::string Line3_;
+  std::string Line4_;
+  std::string Line5_;
+  std::string Line6_;
 
 }; // class Exception
 

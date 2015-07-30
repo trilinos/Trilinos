@@ -236,7 +236,7 @@ public:
   virtual int SetParameters(Teuchos::ParameterList& List);
 
   //! Prints object to an output stream
-  virtual ostream& Print(ostream & os) const;
+  virtual std::ostream& Print(std::ostream & os) const;
 
   //@}
 
@@ -394,7 +394,7 @@ private:
   //! Max number of iterations to use in eigenvalue estimation (if automatic).
   int EigMaxIters_;
   //! Contains the label of this object.
-  string Label_;
+  std::string Label_;
   //! Bounds on the spectrum
   double LambdaRealMin_, LambdaRealMax_, LambdaImagMin_, LambdaImagMax_;
   //! Contains the minimum value on the diagonal.

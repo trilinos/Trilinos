@@ -234,7 +234,7 @@ namespace Anasazi {
      * Note, for any pointer in \c newstate which directly points to the multivectors in 
      * the solver, the data is not copied.
      */
-    void initialize(BlockDavidsonState<ScalarType,MV> newstate);
+    void initialize(BlockDavidsonState<ScalarType,MV>& newstate);
 
     /*! \brief Initialize the solver with the initial vectors from the eigenproblem
      *  or random data.
@@ -882,7 +882,7 @@ namespace Anasazi {
    *
    */
   template <class ScalarType, class MV, class OP>
-  void BlockDavidson<ScalarType,MV,OP>::initialize(BlockDavidsonState<ScalarType,MV> newstate)
+  void BlockDavidson<ScalarType,MV,OP>::initialize(BlockDavidsonState<ScalarType,MV>& newstate)
   {
     // NOTE: memory has been allocated by setBlockSize(). Use setBlock below; do not Clone
     // NOTE: Overall time spent in this routine is counted to timerInit_; portions will also be counted towards other primitives

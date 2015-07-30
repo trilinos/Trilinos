@@ -127,47 +127,55 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, Test0, Scalar, LocalOrdinal, G
 //that method has these input arguments:
 //Teuchos::FancyOStream& out, bool& success
 
-  std::string version = Ifpack2::Version();
-  out << "Ifpack2::Version(): " << version << std::endl;
+  using Teuchos::RCP;
+  using std::endl;
+  typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> prec_type;
+  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
+  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+
+  Teuchos::OSTab tab0 (out);
+  out << "Ifpack2::Factory Test0" << endl;
+  Teuchos::OSTab tab1 (out);
 
   global_size_t num_rows_per_proc = 5;
 
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  RCP<const map_type> rowmap =
+    tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
 
-  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+  RCP<const crs_matrix_type> crsmatrix =
+    tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
   Ifpack2::Factory factory;
-
-  Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_ilut = factory.create("ILUT", crsmatrix);
+  RCP<prec_type> prec_ilut = factory.create<row_matrix_type> ("ILUT", crsmatrix);
   TEST_EQUALITY(prec_ilut != Teuchos::null, true);
 
   check_precond_basics(prec_ilut, out, success);
 
-  Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_riluk = factory.create("RILUK", crsmatrix);
+  RCP<prec_type> prec_riluk = factory.create<row_matrix_type> ("RILUK", crsmatrix);
   TEST_EQUALITY(prec_riluk != Teuchos::null, true);
 
   check_precond_basics(prec_riluk, out, success);
 
-  Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_relax = factory.create("RELAXATION", crsmatrix);
+  RCP<prec_type> prec_relax = factory.create<row_matrix_type> ("RELAXATION", crsmatrix);
   TEST_EQUALITY(prec_relax != Teuchos::null, true);
 
   check_precond_basics(prec_relax, out, success);
 
-  Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_diag = factory.create("DIAGONAL", crsmatrix);
+  RCP<prec_type> prec_diag = factory.create<row_matrix_type> ("DIAGONAL", crsmatrix);
   TEST_EQUALITY(prec_diag != Teuchos::null, true);
 
   check_precond_basics(prec_diag, out, success);
 
-  Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_cheby = factory.create("CHEBYSHEV", crsmatrix);
+  RCP<prec_type> prec_cheby = factory.create<row_matrix_type> ("CHEBYSHEV", crsmatrix);
   TEST_EQUALITY(prec_cheby != Teuchos::null, true);
 
   check_precond_basics(prec_cheby, out, success);
 
-  Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_krylov = factory.create("KRYLOV", crsmatrix);
+  RCP<prec_type> prec_krylov = factory.create<row_matrix_type> ("KRYLOV", crsmatrix);
   TEST_EQUALITY(prec_krylov != Teuchos::null, true);
 
   check_precond_basics(prec_krylov, out, success);
-
 }
 
 
@@ -177,30 +185,37 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, BlockCrs, Scalar, LocalOrdinal
 //we are now in a class method declared by the above macro, and
 //that method has these input arguments:
 //Teuchos::FancyOStream& out, bool& success
+
+  using Teuchos::RCP;
+  using std::endl;
+  typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> prec_type;
   typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
   // typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
   // typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
-  std::string version = Ifpack2::Version();
-  out << "Ifpack2::Version(): " << version << std::endl;
+
+  Teuchos::OSTab tab0 (out);
+  out << "Ifpack2::Factory: Test BlockCrs" << endl;
+  Teuchos::OSTab tab1 (out);
 
   const int num_rows_per_proc = 5;
   const int blockSize = 3;
 
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
-  Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph = tif_utest::create_diagonal_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > crsgraph =
+    tif_utest::create_diagonal_graph<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
 
-  Teuchos::RCP<block_crs_matrix_type> bcrsmatrix =
-    Teuchos::rcp_const_cast<block_crs_matrix_type,const block_crs_matrix_type>(tif_utest::create_block_diagonal_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(crsgraph, blockSize));
+  RCP<block_crs_matrix_type> bcrsmatrix =
+    Teuchos::rcp_const_cast<block_crs_matrix_type, const block_crs_matrix_type> (tif_utest::create_block_diagonal_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> (crsgraph, blockSize));
   bcrsmatrix->computeDiagonalGraph();
 
-  Teuchos::RCP<const row_matrix_type> rowmatrix = bcrsmatrix;
+  RCP<const row_matrix_type> rowmatrix = bcrsmatrix;
 
   Ifpack2::Factory factory;
-
-  Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_relax = factory.create("RELAXATION", rowmatrix);
+  RCP<prec_type> prec_relax = factory.create<row_matrix_type> ("RELAXATION", rowmatrix);
   TEST_EQUALITY(prec_relax != Teuchos::null, true);
   check_precond_basics(prec_relax, out, success);
   check_precond_apply(prec_relax, out, success);

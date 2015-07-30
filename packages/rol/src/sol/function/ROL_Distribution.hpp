@@ -483,6 +483,7 @@ private:
             3.0*v2/d2 - 2.0*v3/d3));
   }
   Real parabolic_intcdf(Real input) {
+    Real d0 = data_[1]+data_[0];
     Real d1 = data_[1]-data_[0];
     Real d2 = d1*d1;
     Real d3 = d2*d1;
@@ -491,7 +492,7 @@ private:
     Real v3 = v1*v2;
     Real v4 = v1*v3;
     return ((input < data_[0]) ? 0.0 : 
-           ((input > data_[1]) ? input - 0.5*d1 : 
+           ((input > data_[1]) ? input - 0.5*d0 :
              v3/d2 - 0.5*v4/d3));
   }
   Real parabolic_invcdf(Real input) {

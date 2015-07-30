@@ -57,7 +57,7 @@ RCP<ExplicitRKStepper<Scalar> > explicitRKStepper()
 
 template<class Scalar>
 RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model 
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model
     )
 {
   RCP<RKButcherTableauBase<Scalar> > rkbt = createRKBT<Scalar>("Explicit 4 Stage");
@@ -71,7 +71,7 @@ RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
 template<class Scalar>
 RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-    const RCP<const RKButcherTableauBase<Scalar> >& rkbt 
+    const RCP<const RKButcherTableauBase<Scalar> >& rkbt
     )
 {
   RCP<ExplicitRKStepper<Scalar> > stepper = rcp(new ExplicitRKStepper<Scalar>());
@@ -210,7 +210,7 @@ Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
     TScalarMag ts = t_ + c(s)*dt;
     eval_model_explicit<Scalar>(*model_,basePoint_,*ktemp_vector_,ts,Teuchos::outArg(*k_vector_[s]));
     Thyra::Vt_S(k_vector_[s].ptr(),dt); // k_s = k_s*dt
-  } 
+  }
   // Sum for solution:
   for (int s=0 ; s < stages ; ++s) {
     if (b(s) != ST::zero()) {
@@ -338,7 +338,7 @@ void ExplicitRKStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 }
 
 template<class Scalar>
-void ExplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& time_vec) 
+void ExplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for ExplicitRKStepper at this time.\n");
 }
@@ -413,7 +413,7 @@ ExplicitRKStepper<Scalar>::getModel() const
 
 template<class Scalar>
 Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >
-ExplicitRKStepper<Scalar>::getNonconstModel() 
+ExplicitRKStepper<Scalar>::getNonconstModel()
 {
   return Teuchos::null;
 }
@@ -425,7 +425,7 @@ void ExplicitRKStepper<Scalar>::setInitialCondition(
   )
 {
 
-  typedef Thyra::ModelEvaluatorBase MEB;
+  // typedef Thyra::ModelEvaluatorBase MEB; // unused
 
   basePoint_ = initialCondition;
 
@@ -445,7 +445,7 @@ void ExplicitRKStepper<Scalar>::setInitialCondition(
   solution_vector_old_ = x_init->clone_v();
 
   // t
-  
+
   t_ = initialCondition.get_t();
   t_old_ = t_;
 
@@ -455,7 +455,7 @@ void ExplicitRKStepper<Scalar>::setInitialCondition(
 
 
 template<class Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar> 
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
 ExplicitRKStepper<Scalar>::getInitialCondition() const
 {
   return basePoint_;
@@ -491,10 +491,10 @@ RCP<StepperBase<Scalar> > ExplicitRKStepper<Scalar>::cloneStepperAlgorithm() con
   return stepper;
 
 }
-    
 
 
-// 
+
+//
 // Explicit Instantiation macro
 //
 // Must be expanded from within the Rythmos namespace!
@@ -517,7 +517,7 @@ RCP<StepperBase<Scalar> > ExplicitRKStepper<Scalar>::cloneStepperAlgorithm() con
     const RCP<Thyra::ModelEvaluator< SCALAR > >& model, \
     const RCP<const RKButcherTableauBase< SCALAR > >& rkbt \
       ); \
-   
+
 } // namespace Rythmos
 
 #endif //Rythmos_ExplicitRK_STEPPER_DEF_H

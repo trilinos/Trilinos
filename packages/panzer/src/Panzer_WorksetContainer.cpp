@@ -72,8 +72,26 @@ WorksetContainer::WorksetContainer(const WorksetContainer & wc)
 
 void WorksetContainer::setPhysicsBlockVector(const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks)
 {
+   using Teuchos::RCP;
+
    for(std::size_t i=0;i<physicsBlocks.size();i++) {
       ebToPb_[physicsBlocks[i]->elementBlockID()] = physicsBlocks[i];
+   }
+
+   for(std::size_t i=0;i<physicsBlocks.size();i++) {
+      WorksetNeeds & needs =  ebToNeeds_[physicsBlocks[i]->elementBlockID()];
+
+      needs.cellData = physicsBlocks[i]->cellData();
+
+      const std::map<int,RCP<panzer::IntegrationRule> >& int_rules = physicsBlocks[i]->getIntegrationRules();
+      for(std::map<int,RCP<panzer::IntegrationRule> >::const_iterator ir_itr = int_rules.begin();
+          ir_itr != int_rules.end(); ++ir_itr)
+        needs.int_rules.push_back(ir_itr->second);
+  
+     const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases= physicsBlocks[i]->getBases();
+     for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases.begin();
+         b_itr != bases.end(); ++b_itr)
+       needs.bases.push_back(b_itr->second);
    }
 }
 
@@ -98,6 +116,18 @@ const PhysicsBlock & WorksetContainer::lookupPhysicsBlock(const std::string & eB
    return *itr->second;
 }
 
+//! Look up an input physics block, throws an exception if it can be found.
+const WorksetNeeds & WorksetContainer::lookupNeeds(const std::string & eBlock) const
+{
+   std::map<std::string,WorksetNeeds>::const_iterator itr = ebToNeeds_.find(eBlock);
+ 
+   TEUCHOS_TEST_FOR_EXCEPTION(itr==ebToNeeds_.end(),std::logic_error, 
+                      "WorksetContainer::lookupNeeds no WorksetNeeds object is associated "
+                      "with the element block \""+eBlock+"\".");
+
+   return itr->second;
+}
+
 //! Access, and construction of volume worksets
 Teuchos::RCP<std::vector<Workset> >  
 WorksetContainer::getVolumeWorksets(const std::string & eBlock)
@@ -114,8 +144,9 @@ WorksetContainer::getWorksets(const WorksetDescriptor & wd)
    VolumeMap::iterator itr = volWorksets_.find(wd);
    if(itr==volWorksets_.end()) {
       // couldn't find workset, build it!
-      const PhysicsBlock & pb = lookupPhysicsBlock(wd.getElementBlock());
-      worksetVector = wkstFactory_->getWorksets(wd,pb);
+      // const PhysicsBlock & pb = lookupPhysicsBlock(wd.getElementBlock());
+      const WorksetNeeds & needs = lookupNeeds(wd.getElementBlock());
+      worksetVector = wkstFactory_->getWorksets(wd,needs);
 
       // apply orientations to the just constructed worksets
       if(worksetVector!=Teuchos::null)
@@ -140,8 +171,9 @@ WorksetContainer::getSideWorksets(const BC & bc)
    if(itr==sideWorksets_.end()) {
       // couldn't find workset, build it!
       const std::string & eBlock = side.eblk_id;
-      const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
-      worksetMap = wkstFactory_->getSideWorksets(bc,pb);
+      //const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
+      const WorksetNeeds & needs = lookupNeeds(eBlock);
+      worksetMap = wkstFactory_->getSideWorksets(bc,needs);
 
       // apply orientations to the worksets for this side
       if(worksetMap!=Teuchos::null)
@@ -162,11 +194,12 @@ void WorksetContainer::allocateVolumeWorksets(const std::vector<std::string> & e
    for(std::size_t i=0;i<eBlocks.size();i++) {
       // couldn't find workset, build it!
       const std::string & eBlock = eBlocks[i];
-      const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
+      // const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
+      const WorksetNeeds & needs = lookupNeeds(eBlock);
 
       // store vector for reuse in the future
       const WorksetDescriptor wd = blockDescriptor(eBlock);
-      volWorksets_[eBlock] = wkstFactory_->getWorksets(wd,pb);
+      volWorksets_[eBlock] = wkstFactory_->getWorksets(wd,needs);
 
       // apply orientations to the worksets for this side
       if(volWorksets_[eBlock]!=Teuchos::null)
@@ -181,10 +214,11 @@ void WorksetContainer::allocateSideWorksets(const std::vector<BC> & bcs)
       const BC & bc = bcs[i];
       SideId side(bc);
       const std::string & eBlock = bc.elementBlockID();
-      const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
+      // const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
+      const WorksetNeeds & needs = lookupNeeds(eBlock);
 
       // store map for reuse in the future
-      sideWorksets_[side] = wkstFactory_->getSideWorksets(bc,pb);
+      sideWorksets_[side] = wkstFactory_->getSideWorksets(bc,needs);
 
       // apply orientations to the worksets for this side
       if(sideWorksets_[side]!=Teuchos::null)

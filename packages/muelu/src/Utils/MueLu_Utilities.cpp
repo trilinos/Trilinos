@@ -402,8 +402,14 @@ namespace MueLu {
           const std::string& name = it2->first;
           if (name == "A" || name == "P" || name == "R" || name == "Nullspace" || name == "Coordinates")
             nonSerialList.sublist(levelName).setEntry(name, it2->second);
+          #ifdef HAVE_MUELU_MATLAB
+          else if(IsParamMuemexVariable(name))
+          {
+            nonSerialList.sublist(levelName).setEntry(name, it2->second);
+          }
+          #endif
           else
-            serialList   .sublist(levelName).setEntry(name, it2->second);
+            serialList.sublist(levelName).setEntry(name, it2->second);
         }
 
       } else {
@@ -414,5 +420,79 @@ namespace MueLu {
     return maxLevel;
   }
 
+  void TokenizeStringAndStripWhiteSpace(const std::string& stream, std::vector<std::string>& tokenList, const char* delimChars)
+  {
+    //note: default delimiter string is ","
+    // Take a comma-separated list and tokenize it, stripping out leading & trailing whitespace.  Then add to tokenList
+    char* buf = (char*) malloc(stream.size() + 1);
+    strcpy(buf, stream.c_str());
+    char* token = strtok(buf, delimChars);
+    if(token == NULL)
+    {
+      free(buf);
+      return;
+    }
+    while(token)
+    {
+      //token points to start of string to add to tokenList
+      //remove front whitespace...
+      char* tokStart = token;
+      char* tokEnd = token + strlen(token) - 1;
+      while(*tokStart == ' ' && tokStart < tokEnd)
+        tokStart++;
+      while(*tokEnd == ' ' && tokStart < tokEnd)
+        tokEnd--;
+      tokEnd++;
+      if(tokStart < tokEnd)
+      {
+        std::string finishedToken(tokStart, tokEnd - tokStart); //use the constructor that takes a certain # of chars
+        tokenList.push_back(finishedToken);
+      }
+      token = strtok(NULL, delimChars);
+    }
+    free(buf);
+  }
+
+  bool IsParamMuemexVariable(const std::string& name)
+  {
+    //see if paramName is exactly two "words" - like "OrdinalVector myNullspace" or something
+    char* str = (char*) malloc(name.length() + 1);
+    strcpy(str, name.c_str());
+    //Strip leading and trailing whitespace
+    char* firstWord = strtok(str, " ");
+    if(!firstWord)
+      return false;
+    char* secondWord = strtok(NULL, " ");
+    if(!secondWord)
+      return false;
+    char* thirdWord = strtok(NULL, " ");
+    if(thirdWord)
+      return false;
+    //convert first word to all lowercase for case insensitive compare
+    char* tolowerIt = firstWord;
+    while(*tolowerIt)
+    {
+      *tolowerIt = (char) tolower(*tolowerIt);
+      tolowerIt++;
+    }
+    //See if the first word is one of the custom variable names
+    if(strstr(firstWord, "matrix") ||
+       strstr(firstWord, "multivector") ||
+       strstr(firstWord, "ordinalvector") ||
+       strstr(firstWord, "int") ||
+       strstr(firstWord, "scalar") ||
+       strstr(firstWord, "double") ||
+       strstr(firstWord, "complex"))
+      //Add name to list of keys to remove
+    {
+      free(str);
+      return true;
+    }
+    else
+    {
+      free(str);
+      return false;
+    }
+  }
 
 } // namespace MueLu

@@ -100,7 +100,7 @@ void throwScalarTraitsNanInfError( const std::string &errMsg );
 template<class Scalar>
 bool generic_real_isnaninf(const Scalar &x)
 {
-  typedef std::numeric_limits<Scalar> NL;
+  typedef std::numeric_limits<Scalar> STD_NL;
   // IEEE says this should fail for NaN (not all compilers do not obey IEEE)
   const Scalar tol = 1.0; // Any (bounded) number should do!
   if (!(x <= tol) && !(x > tol)) return true;
@@ -108,7 +108,7 @@ bool generic_real_isnaninf(const Scalar &x)
   Scalar z = static_cast<Scalar>(0.0) * x;
   if (!(z <= tol) && !(z > tol)) return true;
   // As a last result use comparisons
-  if (x == NL::infinity() || x == -NL::infinity()) return true;
+  if (x == STD_NL::infinity() || x == -STD_NL::infinity()) return true;
   // We give up and assume the number is finite
   return false;
 }

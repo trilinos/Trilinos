@@ -307,9 +307,7 @@ struct bucket_less_by_first_entity_identifier
         else
         {
             const stk::mesh::BulkData& mesh = first->mesh();
-            stk::mesh::EntityId firstId = mesh.identifier((*first)[0]);
-            stk::mesh::EntityId secondId = mesh.identifier((*second)[0]);
-            return firstId < secondId;
+            return EntityLess(mesh)((*first)[0], (*second)[0]);
        }
     }
 };

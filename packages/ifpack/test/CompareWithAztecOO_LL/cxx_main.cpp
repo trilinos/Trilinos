@@ -65,7 +65,7 @@
 
 bool verbose = false;
 
-bool CompareWithAztecOO(Epetra_LinearProblem& Problem, const string what,
+bool CompareWithAztecOO(Epetra_LinearProblem& Problem, const std::string what,
                        int Overlap, int ival)
 {
 
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
   TestPassed = TestPassed && 
     CompareWithAztecOO(Problem,"IC reord",0,0);
 
-  vector<string> Tests;
+  vector<std::string> Tests;
   // now test solvers that accept overlap
   Tests.push_back("ILU no reord");
   Tests.push_back("ILU reord");

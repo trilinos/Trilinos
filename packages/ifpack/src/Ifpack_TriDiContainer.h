@@ -54,14 +54,14 @@ class Epetra_RowMatrix;
 //! Ifpack_TriDiContainer: a class to define containers for dense matrices.
 /*!
 
-<P>To understand what an IFPACK container is, please refer to the documentation 
+<P>To understand what an IFPACK container is, please refer to the documentation
 of the pure virtual class Ifpack_Container. Currently, containers are
 used by class Ifpack_BlockRelaxation.
 
 <P>Using block methods, one needs to store all diagonal blocks and
 to be also to apply the inverse of each diagonal block. Using
 class Ifpack_TriDiContainer, one can store the blocks as dense
-matrices, which can be advantageous when the 
+matrices, which can be advantageous when the
 blocks are small. Otherwise,
 class Ifpack_SparseContainer is probably more appropriate.
 
@@ -73,7 +73,7 @@ class Ifpack_SparseContainer is probably more appropriate.
 // local matrix of (5,5), with two vectors for solution and rhs.
 Ifpack_Container* Container = new
   Ifpack_TriDiContainer(5,5);
-  
+
 // assign local rows 1, 5, 12, 13, 16 to this container
 Container(0) = 1;
 Container(1) = 5;
@@ -102,8 +102,8 @@ Container.ApplyInverse().
 
 A call to Compute() computes the LU factorization of the
 linear system matrix, using LAPACK (more precisely, by calling
-the corresponding routines in Ifpack_SerialTriDiSolver). 
-The default behavior is 
+the corresponding routines in Ifpack_SerialTriDiSolver).
+The default behavior is
 to store the matrix factors by overwriting the linear system matrix
 itself. This way, method Apply() fails, as the original matrix
 does no longer exists. An alternative is to call
@@ -148,7 +148,7 @@ public:
     RHS_ = rhs.RHS();
     ID_ = rhs.ID();
   }
-    
+
   //! Destructor.
   virtual ~Ifpack_TriDiContainer()
   {}
@@ -192,7 +192,7 @@ public:
   //! Sets the number of vectors for LHS/RHS.
   virtual int SetNumVectors(const int NumVectors_in)
   {
-    if (NumVectors_ == NumVectors_in) 
+    if (NumVectors_ == NumVectors_in)
       return(0);
 
     NumVectors_ = NumVectors_in;
@@ -201,8 +201,8 @@ public:
     // zero out vector elements
     for (int i = 0 ; i < NumRows_ ; ++i)
       for (int j = 0 ; j < NumVectors_ ; ++j) {
-	LHS_(i,j) = 0.0;
-	RHS_(i,j) = 0.0;
+        LHS_(i,j) = 0.0;
+        RHS_(i,j) = 0.0;
       }
      if (NumRows_!=0)
        {
@@ -213,11 +213,11 @@ public:
 
   //! Returns the i-th component of the vector Vector of LHS.
   virtual double& LHS(const int i, const int Vector = 0);
-  
+
   //! Returns the i-th component of the vector Vector of RHS.
   virtual double& RHS(const int i, const int Vector = 0);
 
-  //! Returns the ID associated to local row i. 
+  //! Returns the ID associated to local row i.
   /*!
    * The set of (local) rows assigned to this container is defined
    * by calling ID(i) = j, where i (from 0 to NumRows()) indicates
@@ -231,7 +231,7 @@ public:
 
   //! Set the matrix element (row,col) to \c value.
   virtual int SetMatrixElement(const int row, const int col,
-			       const double value);
+                               const double value);
 
   //! Sets all necessary parameters.
   virtual int SetParameters(Teuchos::ParameterList& List)
@@ -338,15 +338,15 @@ public:
   }
 
   //! Prints basic information on iostream. This function is used by operator<<.
-  virtual ostream& Print(std::ostream& os) const;
+  virtual std::ostream& Print(std::ostream& os) const;
 
 private:
-  
+
   //! Extract the submatrices identified by the ID set int ID().
   virtual int Extract(const Epetra_RowMatrix& Matrix_in);
 
   //! Number of rows in the container.
-  int NumRows_; 
+  int NumRows_;
   //! Number of vectors in the container.
   int NumVectors_;
   //! TriDi matrix, that contains the non-factored matrix.
@@ -368,7 +368,7 @@ private:
   //! If \c true, the container has been successfully computed.
   bool IsComputed_;
   //! Label for \c this object
-  string Label_;
+  std::string Label_;
 
   //! Flops in Compute().
   double ComputeFlops_;

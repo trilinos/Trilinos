@@ -46,9 +46,11 @@
 #include "Panzer_config.hpp"
 
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
+#include "Thyra_BlockedLinearOpBase.hpp"
 
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
+#include "Panzer_MassMatrixModelEvaluator.hpp"
 
 namespace panzer {
 
@@ -59,7 +61,8 @@ namespace panzer {
   */
 template<typename Scalar>
 class ExplicitModelEvaluator
-  : public Thyra::ModelEvaluatorDelegatorBase<Scalar> {
+  : public Thyra::ModelEvaluatorDelegatorBase<Scalar>,
+    public panzer::MassMatrixModelEvaluator<Scalar> {
 public:
 
   /** \name Constructors/Initializers/Accessors */
@@ -70,7 +73,8 @@ public:
     */
   ExplicitModelEvaluator(const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > & model,
                          bool constantMassMatrix,
-                         bool useLumpedMass);
+                         bool useLumpedMass,
+                         bool applyMassInverse=true);
 
   //@}
 
@@ -85,6 +89,16 @@ public:
 
   //! Get the underlying panzer::ModelEvaluator
   Teuchos::RCP<panzer::ModelEvaluator<Scalar> > getPanzerUnderlyingModel();
+
+  void applyInverseMassMatrix(const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > input, const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > output) const
+  {
+    Thyra::apply(*invMassMatrix_,Thyra::NOTRANS,*input,output.ptr());
+  }
+
+  void applyMassMatrix(const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > input, const Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > output) const
+  {
+    Thyra::apply(*mass_,Thyra::NOTRANS,*input,output.ptr());
+  }
 
 private: // data members
 
@@ -132,12 +146,16 @@ private: // data members
   //! Use mass lumping, or a full solve
   bool massLumping_;
 
+  //! Apply mass matrix inverse within the evaluator
+  bool applyMassInverse_;
+
   //! Access to the panzer model evaluator pointer (thyra version)
   Teuchos::RCP<const panzer::ModelEvaluator<Scalar> > panzerModel_;
 
   //! Access to the epetra panzer model evaluator pointer 
   Teuchos::RCP<const panzer::ModelEvaluator_Epetra> panzerEpetraModel_;
 
+  mutable Teuchos::RCP<Thyra::LinearOpBase<Scalar> > mass_;
   mutable Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > invMassMatrix_;
   mutable Teuchos::RCP<Thyra::VectorBase<Scalar> > scrap_f_;
   mutable Teuchos::RCP<Thyra::VectorBase<Scalar> > zero_;

@@ -1494,9 +1494,12 @@ namespace Tpetra {
       this->storageStatus_ = Details::STORAGE_1D_PACKED;
     }
 
-    // Build the local sparse matrix object.
+    // Build the local sparse matrix object.  At this point, the local
+    // matrix certainly has a column Map.  Remember that the local
+    // matrix's number of columns comes from the column Map, not the
+    // domain Map.
     lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
-                                    getDomainMap ()->getNodeNumElements (),
+                                    getColMap ()->getNodeNumElements (),
                                     k_vals,
                                     staticGraph_->getLocalGraph ());
   }
@@ -7333,9 +7336,12 @@ namespace Tpetra {
     /***************************************************/
     // Pre-build the importer using the existing PIDs
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC ESFC"))));
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC CreateImporter"))));
 #endif
     RCP<import_type> MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids));
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC ESFC"))));
+#endif
     destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport);
   }
 

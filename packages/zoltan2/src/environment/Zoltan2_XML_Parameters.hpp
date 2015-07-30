@@ -254,6 +254,18 @@
     id=\"47\" name=\"color_choice\" type=\"string\" validatorId=\"47\" value=\"amd\" \
     docString='  selection criterion for coloring' \
     /> \
+   <Parameter  \
+    id=\"48\" name=\"hypergraph_model_type\" type=\"string\" validatorId=\"48\" value=\"traditional\" \
+    docString='  construction type when creating a hypergraph model' \
+    /> \
+   <Parameter  \
+    id=\"49\" name=\"ghost_layers\" type=\"int\" validatorId=\"49\" value=\"2\" \
+    docString='  number of layers for ghosting used in hypergraph ghost method' \
+    /> \
+   <ParameterList  name=\"zoltan_parameters\"> \
+   </ParameterList> \
+   <ParameterList   name=\"parma_parameters\"> \
+   </ParameterList> \
     <Validators> \
       <Validator defaultParameterName=\"error_check_level\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"0\"> \
         <String integralValue=\"0\" stringDoc=\"no assertions will be performed\" stringValue=\"no_assertions\"/> \
@@ -397,13 +409,14 @@
         <String value=\"phg\"/> \
         <String value=\"metis\"/> \
         <String value=\"parmetis\"/> \
+        <String value=\"parma\"/> \
         <String value=\"scotch\"/> \
         <String value=\"ptscotch\"/> \
         <String value=\"block\"/> \
         <String value=\"cyclic\"/> \
         <String value=\"random\"/> \
-        <String value=\"wolf\"/> \
         <String value=\"zoltan\"/> \
+        <String value=\"nd\"/> \
       </Validator> \
       <Validator defaultParameterName=\"rectilinear\" integralValue=\"int\" type=\"StringIntegralValidator(int)\" validatorId=\"26\"> \
         <String integralValue=\"1\" stringValue=\"true\"/> \
@@ -466,6 +479,11 @@
         <String value=\"RandomFast\"/> \
         <String value=\"LeastUsed\"/> \
       </Validator> \
+      <Validator type=\"StringValidator\" validatorId=\"48\"> \
+        <String value=\"traditional\"/> \
+        <String value=\"ghosting\"/> \
+      </Validator> \
+      <Validator max=\"10\" min=\"1\" precision=\"0\" step=\"1\" type=\"EnhancedNumberValidator(int)\" validatorId=\"49\"/> \
     </Validators> \
   </ParameterList>"
 

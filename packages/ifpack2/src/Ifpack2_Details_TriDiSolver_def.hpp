@@ -241,7 +241,7 @@ void TriDiSolver<MatrixType, false>::initialize ()
 
     // Make the local filter of the input matrix A.
     if (A_->getComm ()->getSize () > 1) {
-      A_local_ = rcp (new LocalFilter<MatrixType> (A_));
+      A_local_ = rcp (new LocalFilter<row_matrix_type> (A_));
     } else {
       A_local_ = A_;
     }
@@ -335,18 +335,18 @@ void TriDiSolver<MatrixType, false>::factor (Teuchos::SerialTriDiMatrix<int, sca
   // INFO < 0 is a bug.
   TEUCHOS_TEST_FOR_EXCEPTION(
     INFO < 0, std::logic_error, "Ifpack2::Details::TriDiSolver::factor: "
-    "LAPACK's _GETRF (LU factorization with partial pivoting) was called "
-    "incorrectly.  INFO = " << INFO << " < 0.  "
+    "LAPACK's _GTTRF (tridiagonal LU factorization with partial pivoting) "
+    "was called incorrectly.  INFO = " << INFO << " < 0.  "
     "Please report this bug to the Ifpack2 developers.");
   // INFO > 0 means the matrix is singular.  This is probably an issue
   // either with the choice of rows the rows we extracted, or with the
   // input matrix itself.
   TEUCHOS_TEST_FOR_EXCEPTION(
     INFO > 0, std::runtime_error, "Ifpack2::Details::TriDiSolver::factor: "
-    "LAPACK's _GETRF (LU factorization with partial pivoting) reports that the "
-    "computed U factor is exactly singular.  U(" << INFO << "," << INFO << ") "
-    "(one-based index i) is exactly zero.  This probably means that the input "
-    "matrix has a singular diagonal block.");
+    "LAPACK's _GTTRF (tridiagonal LU factorization with partial pivoting) "
+    "reports that the computed U factor is exactly singular.  U(" << INFO <<
+    "," << INFO << ") (one-based index i) is exactly zero.  This probably "
+    "means that the input matrix has a singular diagonal block.");
 }
 
 
@@ -408,8 +408,8 @@ applyImpl (const MV& X,
                   ipiv_.getRawPtr (), Y_ptr, Y_stride, &INFO);
     TEUCHOS_TEST_FOR_EXCEPTION(
       INFO != 0, std::runtime_error, "Ifpack2::Details::TriDiSolver::"
-      "applyImpl: LAPACK's _GTTRS (solve using LU factorization with "
-      "partial pivoting) failed with INFO = " << INFO << " != 0.");
+      "applyImpl: LAPACK's _GTTRS (tridiagonal solve using LU factorization "
+      "with partial pivoting) failed with INFO = " << INFO << " != 0.");
 
     if (beta != STS::zero ()) {
       Y.update (alpha, *Y_tmp, beta);

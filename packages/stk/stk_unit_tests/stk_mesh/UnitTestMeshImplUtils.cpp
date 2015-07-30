@@ -1023,7 +1023,7 @@ TEST(MeshImplUtils, do_these_nodes_have_any_shell_elements_in_common_hexshellwra
 void call_get_or_create_face_at_element_side_and_check(stk::mesh::BulkData & mesh, stk::mesh::Entity element, unsigned side_ordinal, unsigned new_face_global_id, stk::mesh::Part & part) {
     mesh.modification_begin();
     stk::mesh::PartVector add_parts(1, &part);
-    stk::mesh::Entity new_face = stk::mesh::impl::get_or_create_face_at_element_side(mesh, element, side_ordinal, new_face_global_id, part);
+    stk::mesh::Entity new_face = stk::mesh::impl::get_or_create_face_at_element_side(mesh, element, side_ordinal, new_face_global_id, stk::mesh::PartVector(1,&part));
     mesh.modification_end();
     ASSERT_TRUE( mesh.is_valid(new_face) );
     EXPECT_EQ( new_face_global_id, mesh.identifier(new_face) );

@@ -48,8 +48,11 @@ cmake \
 -D Trilinos_ENABLE_STK:BOOL=OFF \
 -D Trilinos_ENABLE_Optika:BOOL=OFF \
 -D PyTrilinos_DOCSTRINGS=OFF \
+-D TPL_ENABLE_SuperLU:BOOL=ON \
+-D SuperLU_INCLUDE_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.3/SRC \
+-D SuperLU_LIBRARY_DIRS:PATH=/home/trilinos/tpl/gcc4.1.2/SuperLU_4.3/lib \
 $EXTRA_ARGS \
-../trilinos-11.14.1-Source
+../trilinos-12.0-Source
  \
 
 #-D Trilinos_DATA_DIR:STRING=/home/bmpersc/nightly/TrilinosData \

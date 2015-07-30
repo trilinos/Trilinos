@@ -11,8 +11,8 @@
 #include "MueLu_IsorropiaInterface_decl.hpp"
 
 #include <Teuchos_Utils.hpp>
-#include <Teuchos_DefaultMpiComm.hpp> //TODO: fwd decl.
-#include <Teuchos_OpaqueWrapper.hpp>  //TODO: fwd decl.
+//#include <Teuchos_DefaultMpiComm.hpp> //TODO: fwd decl.
+//#include <Teuchos_OpaqueWrapper.hpp>  //TODO: fwd decl.
 
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_CrsGraphFactory.hpp>

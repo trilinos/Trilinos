@@ -526,6 +526,11 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
                                            problemComm_,
                                            this->baseInputAdapter_));
     }
+    else if (algName_ == std::string("parma")) {
+      this->algorithm_ = rcp(new AlgParMA<Adapter>(this->envConst_,
+                                           problemComm_,
+                                           this->baseInputAdapter_));
+    }
     else if (algName_ == std::string("scotch")) {
       this->algorithm_ = rcp(new AlgPTScotch<Adapter>(this->envConst_,
                                             problemComm_,
@@ -544,11 +549,13 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_, problemComm_,
                                                  this->coordinateModel_));
     }
-    else if (algName_ == std::string("wolf")) {
-      this->algorithm_ = rcp(new AlgWolf<Adapter>(this->envConst_,
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
+    else if (algName_ == std::string("nd")) {
+      this->algorithm_ = rcp(new AlgND<Adapter>(this->envConst_,
                                         problemComm_,this->graphModel_,
-                                        this->coordinateModel_));
+					this->coordinateModel_,this->baseInputAdapter_));
     }
+#endif
     else {
       throw std::logic_error("partitioning algorithm not supported");
     }
@@ -734,7 +741,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       algName_ = algorithm;
       needConsecutiveGlobalIds = true;
     }
-    else if (algorithm == std::string("zoltan"))
+    else if (algorithm == std::string("zoltan") ||
+	     algorithm == std::string("parma"))
     {
       algName_ = algorithm;
     }
@@ -775,12 +783,14 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       algName_ = algorithm;
       needConsecutiveGlobalIds = true;
     }
-    else if (algorithm == std::string("wolf"))
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
+    else if (algorithm == std::string("nd"))
     {
       modelAvail_[GraphModelType]=true;
       modelAvail_[CoordinateModelType]=true;
       algName_ = algorithm;
     }
+#endif
     else
     {
       // Parameter list should ensure this does not happen.
@@ -880,16 +890,15 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       else
         algName_ = std::string("patoh"); 
     }
-    else if (inputType_ == CoordinateAdapterType)
+    else if (inputType_ == VectorAdapterType)
     {
       //modelType_ = CoordinateModelType;
       modelAvail_[CoordinateModelType]=true;
 
       if(algName_ != std::string("multijagged"))
-      algName_ = std::string("rcb");
+        algName_ = std::string("rcb");
     }
-    else if (inputType_ == VectorAdapterType ||
-             inputType_ == IdentifierAdapterType)
+    else if (inputType_ == IdentifierAdapterType)
     {
       //modelType_ = IdentifierModelType;
       modelAvail_[IdentifierModelType]=true;

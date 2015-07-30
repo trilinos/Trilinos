@@ -445,10 +445,10 @@ class EpetraFEVectorTestCase(unittest.TestCase):
         meanValue = ev.MeanValue()
         self.assertEquals(meanValue, result)
 
-    def testSetArray(self):
-        "Test Epetra.FEVector __setattr__ method for 'array'"
-        ev = Epetra.FEVector(self.map,1)
-        self.assertRaises(AttributeError, ev.__setattr__, "array", "junk")
+    # def testSetArray(self):
+    #     "Test Epetra.FEVector __setattr__ method for 'array'"
+    #     ev = Epetra.FEVector(self.map,1)
+    #     self.assertRaises(AttributeError, ev.__setattr__, "array", "junk")
 
 ##########################################################################
 

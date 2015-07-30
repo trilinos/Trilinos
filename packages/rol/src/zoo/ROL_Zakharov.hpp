@@ -83,8 +83,8 @@
 #ifndef ROL_ZAKHAROV_HPP
 #define ROL_ZAKHAROV_HPP
 
-#include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
+#include "ROL_StdVector.hpp"
 
 namespace ROL {
 namespace ZOO {
@@ -119,6 +119,20 @@ namespace ZOO {
         g.set(x);
         g.scale(2.0);
         g.axpy(coeff,*k_);
+    }
+
+    Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol ) {
+
+        Real kdotd = d.dot(*k_);
+        Real kdotx = x.dot(*k_);
+        Real xdotd = x.dot(d);
+        
+        Real coeff = 0.25*(2.0*kdotx+pow(kdotx,3.0));
+
+        Real deriv = 2*xdotd + coeff*kdotd;
+ 
+        return deriv;
+
     }
 
 #if USE_HESSVEC

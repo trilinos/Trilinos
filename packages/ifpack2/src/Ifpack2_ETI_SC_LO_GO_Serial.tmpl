@@ -50,8 +50,7 @@
 #include "Ifpack2_@CLASS_FILE_NAME@_def.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
-// Ifpack2 already instantiates its classes for the default Node type.
-#if defined(HAVE_TPETRA_INST_SERIAL) && ! defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#if defined(HAVE_TPETRA_INST_SERIAL)
 
 // Need this for the mangling of the Node typedef.
 IFPACK2_ETI_MANGLING_TYPEDEFS()
@@ -60,6 +59,9 @@ IFPACK2_ETI_MANGLING_TYPEDEFS()
   IFPACK2_@UPPER_CASE_CLASS@_INSTANT(SC, LO, GO, Kokkos_Compat_KokkosSerialWrapperNode)
 
 IFPACK2_INSTANTIATE_SLG(LCLINST)
+
+#else
+#warning "We don't have the KokkosRefactor SerialNode"
 
 #endif
 

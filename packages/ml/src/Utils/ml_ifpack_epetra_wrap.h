@@ -29,7 +29,7 @@ namespace Teuchos {
 class Epetra_Vector;
 
 namespace ML_Epetra {
-  Epetra_Operator* ML_Gen_Smoother_Ifpack_Epetra(const Epetra_Operator *A,const Epetra_Vector* InvDiagonal,Teuchos::ParameterList & List, string printMsg,bool verbose);
+  Epetra_Operator* ML_Gen_Smoother_Ifpack_Epetra(const Epetra_Operator *A,const Epetra_Vector* InvDiagonal,Teuchos::ParameterList & List, std::string printMsg,bool verbose);
 }
 #endif
 #endif

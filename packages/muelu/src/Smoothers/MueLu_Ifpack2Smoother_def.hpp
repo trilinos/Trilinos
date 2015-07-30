@@ -66,6 +66,7 @@
 
 #include "MueLu_Ifpack2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"
+#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
 
@@ -98,12 +99,22 @@ namespace MueLu {
 
     prec_->setParameters(*precList);
 
-    paramList.setParameters(*precList);
+    paramList.setParameters(*precList); // what about that??
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     this->Input(currentLevel, "A");
+
+    if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
+        type_ == "LINESMOOTHING_BANDED RELAXATION" ||
+        type_ == "LINESMOOTHING_BANDEDRELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCKRELAXATION") {
+      this->Input(currentLevel, "CoarseNumZLayers");              // necessary for fallback criterion
+      this->Input(currentLevel, "LineDetection_VertLineIds"); // necessary to feed block smoother
+    } // if (type_ == "LINESMOOTHING_BANDEDRELAXATION")
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -183,6 +194,62 @@ namespace MueLu {
         }
       }
     } // if (type_ == "SCHWARZ")
+
+    if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
+        type_ == "LINESMOOTHING_BANDED RELAXATION" ||
+        type_ == "LINESMOOTHING_BANDEDRELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCK_RELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCK RELAXATION"  ||
+        type_ == "LINESMOOTHING_BLOCKRELAXATION" ) {
+      ParameterList& myparamList = const_cast<ParameterList&>(this->GetParameterList());
+
+      LO CoarseNumZLayers = Factory::Get<LO>(currentLevel,"CoarseNumZLayers");
+      if (CoarseNumZLayers > 0) {
+        Teuchos::ArrayRCP<LO> TVertLineIdSmoo = Factory::Get< Teuchos::ArrayRCP<LO> >(currentLevel, "LineDetection_VertLineIds");
+
+        // determine number of local parts
+        LO maxPart = 0;
+        for(size_t k = 0; k < Teuchos::as<size_t>(TVertLineIdSmoo.size()); k++) {
+          if(maxPart < TVertLineIdSmoo[k]) maxPart = TVertLineIdSmoo[k];
+        }
+
+        size_t numLocalRows = A_->getNodeNumRows();
+        TEUCHOS_TEST_FOR_EXCEPTION(numLocalRows % TVertLineIdSmoo.size() != 0, Exceptions::RuntimeError, "MueLu::Ifpack2Smoother::Setup(): the number of local nodes is incompatible with the TVertLineIdsSmoo.");
+
+        if (numLocalRows == Teuchos::as<size_t>(TVertLineIdSmoo.size())) {
+          myparamList.set("partitioner: type","user");
+          myparamList.set("partitioner: map",TVertLineIdSmoo);
+          myparamList.set("partitioner: local parts",maxPart+1);
+        } else {
+          // we assume a constant number of DOFs per node
+          size_t numDofsPerNode = numLocalRows / TVertLineIdSmoo.size();
+
+          // Create a new Teuchos::ArrayRCP<LO> of size numLocalRows and fill it with the corresponding information
+          Teuchos::ArrayRCP<LO> partitionerMap(numLocalRows, Teuchos::OrdinalTraits<LocalOrdinal>::invalid());
+          for (size_t blockRow = 0; blockRow < Teuchos::as<size_t>(TVertLineIdSmoo.size()); ++blockRow)
+            for (size_t dof = 0; dof < numDofsPerNode; dof++)
+              partitionerMap[blockRow * numDofsPerNode + dof] = TVertLineIdSmoo[blockRow];
+          myparamList.set("partitioner: type","user");
+          myparamList.set("partitioner: map",partitionerMap);
+          myparamList.set("partitioner: local parts",maxPart + 1);
+        }
+
+        if (type_ == "LINESMOOTHING_BANDED_RELAXATION" ||
+            type_ == "LINESMOOTHING_BANDED RELAXATION" ||
+            type_ == "LINESMOOTHING_BANDEDRELAXATION")
+          type_ = "BANDEDRELAXATION";
+        else
+          type_ = "BLOCKRELAXATION";
+      } else {
+        // line detection failed -> fallback to point-wise relaxation
+        this->GetOStream(Runtime0) << "Line detection failed: fall back to point-wise relaxation" << std::endl;
+        myparamList.remove("partitioner: type",false);
+        myparamList.remove("partitioner: map", false);
+        myparamList.remove("partitioner: local parts",false);
+        type_ = "RELAXATION";
+      }
+
+    } // if (type_ == "LINESMOOTHING_BANDEDRELAXATION")
 
     if (type_ == "CHEBYSHEV") {
       std::string maxEigString   = "chebyshev: max eigenvalue";

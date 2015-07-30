@@ -114,7 +114,7 @@ CurlLaplacianEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
    // Assemble DOF names and Residual names
    // ********************
 
-  this->addDOF("EFIELD",basis_type,basis_order,integration_order);
+   this->addDOF("EFIELD",basis_type,basis_order,integration_order);
    this->addDOFCurl("EFIELD");
    if (this->buildTransientSupport())
      this->addDOFTimeDerivative("EFIELD");

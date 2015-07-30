@@ -194,7 +194,7 @@ void donate_one_element(stk::mesh::unit_test::BulkDataTester & mesh)
         }
     }
 
-    mesh.change_entity_owner(change, BulkData::MOD_END_COMPRESS_AND_SORT);
+    mesh.change_entity_owner(change);
 
     count_entities(select_owned, mesh, after_count);
 
@@ -237,7 +237,7 @@ void donate_all_shared_nodes(stk::mesh::unit_test::BulkDataTester & mesh)
         }
     }
 
-    mesh.change_entity_owner(change, BulkData::MOD_END_COMPRESS_AND_SORT);
+    mesh.change_entity_owner(change);
 
     count_entities(select_used, mesh, after_count);
 
@@ -773,7 +773,7 @@ TEST(BulkData, testChangeOwner_ring)
         ring_mesh.generate_mesh();
         ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
 
-        ring_mesh.fixup_node_ownership(BulkData::MOD_END_COMPRESS_AND_SORT);
+        ring_mesh.fixup_node_ownership();
 
         const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() | ring_mesh.m_meta_data.globally_shared_part();
         const Selector select_all = ring_mesh.m_meta_data.universal_part();
@@ -957,7 +957,7 @@ TEST(BulkData, testChangeOwner_ring)
             change.push_back(entry);
         }
 
-        ring_mesh.m_bulk_data.change_entity_owner(change, BulkData::MOD_END_COMPRESS_AND_SORT);
+        ring_mesh.m_bulk_data.change_entity_owner(change);
 
         count_entities(select_owned, ring_mesh.m_bulk_data, local_count);
         const unsigned n_node = p_rank == 0 ? nPerProc + 1 : (p_rank + 1 == p_size ? nPerProc - 1 : nPerProc );
@@ -6072,6 +6072,63 @@ TEST(BulkData, makeElementWithConflictingTopologies)
   EXPECT_THROW(stk::mesh::declare_element(mesh, parts, element_ids[0], elem_node_ids[0]), std::runtime_error);
 
   mesh.modification_end();
+}
+
+TEST( BulkData, AddSharedNodesInTwoSteps)
+{
+
+
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    unsigned p_size = stk::parallel_machine_size(pm);
+    unsigned p_rank = stk::parallel_machine_rank(pm);
+
+    if(p_size != 3u)
+    {
+        return;
+    }
+
+    int nodeId = 1;
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+
+    meta.commit();
+
+
+    mesh.modification_begin();
+    Entity node;
+    if (0 == p_rank || 1 == p_rank) {
+        node = mesh.declare_entity(stk::topology::NODE_RANK, nodeId);
+    }
+    if (0 == p_rank) {
+        mesh.add_node_sharing(node, 1);
+    }
+    if (1 == p_rank) {
+        mesh.add_node_sharing(node, 0);
+    }
+    mesh.modification_end();
+
+
+
+    mesh.modification_begin();
+    if (2 == p_rank) {
+        node = mesh.declare_entity(stk::topology::NODE_RANK, nodeId);
+    }
+    if (0 == p_rank) {
+        mesh.add_node_sharing(node, 2);
+    }
+    if (1 == p_rank) {
+        mesh.add_node_sharing(node, 2);
+    }
+    if (2 == p_rank) {
+        mesh.add_node_sharing(node, 0);
+        mesh.add_node_sharing(node, 1);
+    }
+
+    //    EXPECT_THROW(mesh.modification_end(), std::logic_error);
+    //this only throws on processor 2, but not in a parallel consistent way
+    //this is because you apparently can't create the node on a new processor where it didn't exist before
+
 }
 
 }// empty namespace

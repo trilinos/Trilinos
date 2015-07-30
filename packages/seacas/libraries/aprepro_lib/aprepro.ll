@@ -67,7 +67,6 @@ typedef SEAMS::Parser::token_type token_type;
    void yyerror(const char *s);
  }
  
-int ifdef;
 int file_must_exist = 0; /* Global used by include/conditional include */
 
 /* Global variables used by the looping mechanism */
@@ -352,6 +351,39 @@ integer {D}+({E})?
     yyerror("endswitch statement found without matching switch.");
   }
   switch_active = false;
+}
+
+<INITIAL>{
+  /* This restores the old behavior of ifdef and ifndef
+   * where they would eat up any leading whitespace on
+   * a line.
+   */
+  {WS}"{"[Ii]"fdef"{WS}"(" { 
+    // Used to avoid undefined variable warnings in old ifdef/ifndef construct
+    aprepro.inIfdefGetvar = true; 
+    unput('(');
+    unput('f');
+    unput('e');
+    unput('d');
+    unput('f');
+    unput('i');
+    unput('_');
+    unput('{');
+  }
+
+  {WS}"{"[Ii]"fndef"{WS}"(" {
+    // Used to avoid undefined variable warnings in old ifdef/ifndef construct
+    aprepro.inIfdefGetvar = true; 
+    unput('(');
+    unput('f');
+    unput('e');
+    unput('d');
+    unput('n');
+    unput('f');
+    unput('i');
+    unput('_');
+    unput('{');
+  }
 }
 
 <IF_WHILE_SKIP>{

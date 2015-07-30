@@ -195,8 +195,8 @@ namespace DoNotUse {
 #endif
 
   template <>
-  class ArrayOfViewsHelper<TBBNode> :
-    public ArrayOfViewsHelperTrivialImpl<TBBNode>
+  class ArrayOfViewsHelper<DoNotUse::TBBNode> :
+    public ArrayOfViewsHelperTrivialImpl<DoNotUse::TBBNode>
   {};
 
 #ifdef _MSC_VER

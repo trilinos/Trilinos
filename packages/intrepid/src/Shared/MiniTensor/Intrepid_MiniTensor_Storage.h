@@ -198,6 +198,26 @@ struct dimension_subtract<DYNAMIC, P> {
   static Index const value = DYNAMIC;
 };
 
+template <Index N, Index P>
+struct dimension_product {
+  static Index const value = N * P;
+};
+
+template <Index N>
+struct dimension_product<N, DYNAMIC> {
+  static Index const value = DYNAMIC;
+};
+
+template <Index P>
+struct dimension_product<DYNAMIC, P> {
+  static Index const value = DYNAMIC;
+};
+
+template <>
+struct dimension_product<DYNAMIC, DYNAMIC> {
+  static Index const value = DYNAMIC;
+};
+
 ///
 /// Base static storage class. Simple linear access memory model.
 ///

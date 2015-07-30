@@ -115,7 +115,7 @@ Teuchos::ParameterList Ifpack_GetValidParameters()
 
   // Additive Schwarz preconditioner
   List.set("schwarz: compute condest", true);
-  List.set("schwarz: combine mode", "Zero"); // use string mode for this
+  List.set("schwarz: combine mode", "Zero"); // use std::string mode for this
   List.set("schwarz: reordering type", "none");
   List.set("schwarz: filter singletons", false);
 

@@ -304,7 +304,7 @@ void BackwardEulerStepper<Scalar>::setInitialCondition(
 {
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef Thyra::ModelEvaluatorBase MEB;
+  // typedef Thyra::ModelEvaluatorBase MEB; // unused
 
   basePoint_ = initialCondition;
 
@@ -588,7 +588,7 @@ template<class Scalar>
 const StepStatus<Scalar> BackwardEulerStepper<Scalar>::getStepStatus() const
 {
 
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  // typedef Teuchos::ScalarTraits<Scalar> ST; // unused
 
   StepStatus<Scalar> stepStatus; // Defaults to unknown status
 
@@ -1123,7 +1123,7 @@ template<class Scalar>
 void BackwardEulerStepper<Scalar>::obtainPredictor_()
 {
   using Teuchos::as;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  // typedef Teuchos::ScalarTraits<Scalar> ST; // unused
 
   if (!isInitialized_) return;
 

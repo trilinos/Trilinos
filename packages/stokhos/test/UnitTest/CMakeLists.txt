@@ -433,6 +433,24 @@ IF(Stokhos_ENABLE_Sacado)
     NUM_MPI_PROCS 1
     )
 
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoUQPCESerializationTests
+    SOURCES Stokhos_SacadoUQPCESerializationTests.cpp ${UTILS_SOURCES}
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
+
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SacadoUQPCECommTests
+    SOURCES Stokhos_SacadoUQPCECommTests.cpp ${UTILS_SOURCES}
+    ARGS
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    STANDARD_PASS_OUTPUT
+    )
+
   IF (Kokkos_ENABLE_Pthread)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       KokkosViewMPVectorUnitTest_Threads

@@ -52,6 +52,7 @@
 #include "Tpetra_RowMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_SerialTriDiMatrix.hpp"
+#include <type_traits>
 
 namespace Ifpack2 {
 
@@ -123,6 +124,8 @@ public:
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
   //! The Node type of the input (global) matrix.
   typedef typename MatrixType::node_type node_type;
+
+  static_assert (std::is_same<MatrixType, Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> >::value, "Ifpack2::TriDiContainer: MatrixType must be a Tpetra::RowMatrix specialization.");
 
   /// \brief The (base class) type of the input matrix.
   ///

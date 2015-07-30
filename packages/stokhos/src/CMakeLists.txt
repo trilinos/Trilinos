@@ -481,6 +481,7 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/kokkos/Stokhos_mpl_for_each.hpp
     sacado/kokkos/Stokhos_ViewStorage.hpp
     sacado/kokkos/Stokhos_Is_Constant.hpp
+    sacado/kokkos/Kokkos_AnalyzeStokhosShape.hpp
     sacado/kokkos/Kokkos_View_Utils.hpp
     sacado/kokkos/vector/Stokhos_Sacado_Kokkos_MP_Vector.hpp
     sacado/kokkos/vector/Sacado_MP_Vector.hpp
@@ -512,6 +513,18 @@ IF (Stokhos_ENABLE_Sacado)
   LIST(APPEND SACADO_SOURCES
     sacado/kokkos/Stokhos_MemoryTraits.cpp
     sacado/kokkos/vector/Kokkos_View_MP_Vector.cpp
+    )
+
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/Fad)
+  LIST(APPEND SACADO_HEADERS
+    sacado/kokkos/vector/Fad/Sacado_Fad_ExprSpec_MP_Vector.hpp
+    sacado/kokkos/vector/Fad/Sacado_Fad_Expr_MP_Vector.hpp
+    sacado/kokkos/vector/Fad/Sacado_Fad_GeneralFad_MP_Vector.hpp
+    sacado/kokkos/vector/Fad/Sacado_Fad_Ops_MP_Vector.hpp
+    sacado/kokkos/vector/Fad/Sacado_Fad_DFad_MP_Vector.hpp
+    sacado/kokkos/vector/Fad/Sacado_Fad_SFad_MP_Vector.hpp
+    sacado/kokkos/vector/Fad/Sacado_Fad_SLFad_MP_Vector.hpp
+    sacado/kokkos/vector/Fad/Sacado_Fad_ViewFad_MP_Vector.hpp
     )
   IF (Stokhos_ENABLE_TpetraKernels)
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)

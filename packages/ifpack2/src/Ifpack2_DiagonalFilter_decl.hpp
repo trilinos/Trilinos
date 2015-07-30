@@ -44,10 +44,7 @@
 #define IFPACK2_DIAGONALFILTER_DECL_HPP
 
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix.hpp"
-#include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_ScalarTraits.hpp"
 
 namespace Ifpack2 {
 

@@ -250,6 +250,7 @@ char* strtok;
 
 // Teuchos::RCP<> support
 %include "Teuchos_RCP.i"
+%include "Teuchos_RCP_DAP.i"
 
 // Include Epetra documentation
 %include "Epetra_dox.i"

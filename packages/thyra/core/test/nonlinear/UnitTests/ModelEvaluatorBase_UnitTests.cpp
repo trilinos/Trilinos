@@ -232,6 +232,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( OutArgs, setArgs, Scalar )
   TEST_EQUALITY(g_out.getType(), MEB::EVAL_TYPE_VERY_APPROX_DERIV);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Responses, get_g_names, Scalar )
+{
+  const RCP<const ModelEvaluator<Scalar> > model = getXGTestModel<Scalar>(2, 1);
+  TEST_ASSERT( model->get_g_names(0).size() == 0);
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( OutArgs, setArgs )
 
 

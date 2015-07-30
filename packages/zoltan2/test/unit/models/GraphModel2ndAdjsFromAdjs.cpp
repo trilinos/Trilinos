@@ -46,6 +46,7 @@
 // Basic testing of Zoltan2::PamgenMeshAdapter
 
 #include <Zoltan2_GraphModel.hpp>
+#include <Zoltan2_ModelHelpers.hpp>
 #include <Zoltan2_PamgenMeshAdapter.hpp>
 
 // Teuchos includes
@@ -172,7 +173,7 @@ int main(int narg, char *arg[]) {
     Zoltan2::GraphModel<base_adapter_t> graphModel(baseInputAdapter, env,
 						   CommT, modelFlags);
 
-    graphModel.get2ndAdjsViewFromAdjs(baseInputAdapter, primaryEType,
+    Zoltan2::get2ndAdjsViewFromAdjs(baseInputAdapter, primaryEType,
 				      secondAdjEType, moffsets, madjacencyIds);
 
     for (size_t telct = 0; telct < ia.getLocalNumOf(primaryEType); telct++) {

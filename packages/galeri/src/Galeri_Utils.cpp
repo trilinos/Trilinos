@@ -170,7 +170,7 @@ ComputeNorm(const Epetra_RowMatrix* A, const Epetra_MultiVector* LHS,
 
 // ============================================================================
 Epetra_MultiVector*
-CreateCartesianCoordinates(const string CoordType,
+CreateCartesianCoordinates(const std::string CoordType,
                            const Epetra_BlockMap* BlockMap,
                            Teuchos::ParameterList& List)
 {
@@ -259,59 +259,59 @@ CreateCartesianCoordinates(const string CoordType,
 }
 
 // ============================================================================
-string toString(const int& x)
+std::string toString(const int& x)
 {
   char s[100];
   sprintf(s, "%d", x);
-  return string(s);
+  return std::string(s);
 }
 
 // ============================================================================
-string toString(const unsigned int& x)
+std::string toString(const unsigned int& x)
 {
   char s[100];
   sprintf(s, "%u", x);
-  return string(s);
+  return std::string(s);
 }
 
 // ============================================================================
-string toString(const long int& x)
+std::string toString(const long int& x)
 {
   char s[100];
   sprintf(s, "%ld", x);
-  return string(s);
+  return std::string(s);
 }
 
 // ============================================================================
-string toString(const unsigned long int& x)
+std::string toString(const unsigned long int& x)
 {
   char s[100];
   sprintf(s, "%lu", x);
-  return string(s);
+  return std::string(s);
 }
 
 // ============================================================================
-string toString(const double& x)
+std::string toString(const double& x)
 {
   char s[100];
   sprintf(s, "%g", x);
-  return string(s);
+  return std::string(s);
 }
 
 // ============================================================================
-string toString(const long long& x)
+std::string toString(const long long& x)
 {
   char s[100];
   sprintf(s, "%lld", x);
-  return string(s);
+  return std::string(s);
 }
 
 // ============================================================================
-string toString(const unsigned long long& x)
+std::string toString(const unsigned long long& x)
 {
   char s[100];
   sprintf(s, "%llu", x);
-  return string(s);
+  return std::string(s);
 }
 
 // ============================================================================
@@ -319,11 +319,11 @@ string toString(const unsigned long long& x)
 // different size_t sizes.  It is also not required since we
 // already have overloads for unsigned {int,long,long long}.
 // Hence commenting it out.
-//string toString(const size_t& x)
+//std::string toString(const size_t& x)
 //{
 //  char s[100];
 //  sprintf(s, "%lu", x);
-//  return string(s);
+//  return std::string(s);
 //}
 
 // ============================================================================

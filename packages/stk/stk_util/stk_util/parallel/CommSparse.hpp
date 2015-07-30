@@ -105,12 +105,6 @@ public:
   }
 
   //----------------------------------------
-  /** Construct for undefined communication.
-   *  No buffers are allocated.
-   */
-  CommSparse();
- 
-  //----------------------------------------
   /** Construct for a to-be-sized communication.
    *  Allocate surrogate send buffers to enable
    *  no-op packing for the purpose of send sizing.
@@ -153,6 +147,12 @@ public:
 
 private:
 
+  //----------------------------------------
+  /** Construct for undefined communication.
+   *  No buffers are allocated.
+   */
+  CommSparse();
+
   CommSparse( const CommAll & );
   CommSparse & operator = ( const CommAll & );
 
@@ -170,6 +170,30 @@ private:
   std::vector<int> m_send_procs;
   std::vector<int> m_recv_procs;
 };
+
+template<typename COMM, typename PACK_ALGORITHM>
+void pack_and_communicate(COMM & comm, const PACK_ALGORITHM & algorithm)
+{
+    algorithm();
+    comm.allocate_buffers();
+    algorithm();
+    comm.communicate();
+}
+
+template<typename COMM, typename UNPACK_ALGORITHM>
+void unpack_communications(COMM & comm, const UNPACK_ALGORITHM & algorithm)
+{
+    for(int proc_id=0; proc_id<comm.parallel_size(); ++proc_id)
+    {
+        if (proc_id != comm.parallel_rank())
+        {
+            while(comm.recv_buffer(proc_id).remaining())
+            {
+                algorithm(proc_id);
+            }
+        }
+    }
+}
 
 }
 

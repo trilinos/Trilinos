@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
       aprepro.ap_options.interactive = true;
       bool result = aprepro.parse_stream(std::cin, "standard input");
       if (result) {
-	std::cout << "PARSING RESULTS: " << aprepro.parsing_results().str();
+	std::cout << aprepro.parsing_results().str();
       }
     }
     else if (arg[0] == '-') {
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 
       bool result = aprepro.parse_stream(infile, argv[ai]);
       if (result) {
-	std::cout << "PARSING RESULTS: " << aprepro.parsing_results().str();
+	std::cout << aprepro.parsing_results().str();
       }
 
       readfile = true;

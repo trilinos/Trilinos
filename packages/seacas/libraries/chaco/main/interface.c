@@ -161,7 +161,8 @@ interface (
 		vwgt_sum += *(vptr++);
 	}
 
-	vwgt_sum /= nsets_tot;
+	if (nsets_tot > 0)
+	  vwgt_sum /= nsets_tot;
 	goal = smalloc_ret(nsets_tot * sizeof(double));
 	if (goal == NULL) {
 	    strout("\nERROR: No room to make goals.\n");

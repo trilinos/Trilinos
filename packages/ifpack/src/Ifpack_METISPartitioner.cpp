@@ -57,12 +57,12 @@ typedef int idxtype;
 #ifdef HAVE_IFPACK_METIS
 extern "C" {
   void METIS_EstimateMemory(int *, idxtype *, idxtype *, int *, int *, int *);
-  void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, 
-			   idxtype *, int *, int *, int *, int *, int *,
-			   idxtype *);
-  void METIS_PartGraphRecursive(int *, idxtype *, idxtype *, 
-				idxtype *, idxtype *, int *, int *, int *, 
-				int *, int *, idxtype *);
+  void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *,
+                           idxtype *, int *, int *, int *, int *, int *,
+                           idxtype *);
+  void METIS_PartGraphRecursive(int *, idxtype *, idxtype *,
+                                idxtype *, idxtype *, int *, int *, int *,
+                                int *, int *, idxtype *);
 
 }
 #endif
@@ -71,10 +71,12 @@ extern "C" {
 // NOTE:
 // - matrix is supposed to be localized, and passes through the
 // singleton filter. This means that I do not have to look
-// for Dirichlet nodes (singletons). Also, all rows and columns are 
+// for Dirichlet nodes (singletons). Also, all rows and columns are
 // local.
 int Ifpack_METISPartitioner::ComputePartitions()
 {
+  using std::cerr;
+  using std::endl;
 
   int ierr;
 #ifdef HAVE_IFPACK_METIS
@@ -100,13 +102,13 @@ int Ifpack_METISPartitioner::ComputePartitions()
 
   std::vector<int> options;
   options.resize(4);
-  
+
   int numflag;
 
   if (UseSymmetricGraph_) {
 
 #if !defined(EPETRA_NO_32BIT_GLOBAL_INDICES) || !defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
-    // need to build a symmetric graph. 
+    // need to build a symmetric graph.
     // I do this in two stages:
     // 1.- construct an Epetra_CrsMatrix, symmetric
     // 2.- convert the Epetra_CrsMatrix into METIS format
@@ -162,21 +164,21 @@ int Ifpack_METISPartitioner::ComputePartitions()
   // the non-symmetric one
 
   /* set parameters */
-   
+
   wgtflag[0] = 0;    /* no weights */
   numflag    = 0;    /* C style */
   options[0] = 0;    /* default options */
-   
+
   std::vector<idxtype> xadj;
   xadj.resize(NumMyRows() + 1);
 
   std::vector<idxtype> adjncy;
   adjncy.resize(NumMyNonzeros());
-   
-  int count = 0; 
-  int count2 = 0; 
+
+  int count = 0;
+  int count2 = 0;
   xadj[0] = 0;
-  
+
   for (int i = 0; i < NumMyRows() ; ++i) {
 
     xadj[count2+1] = xadj[count2]; /* nonzeros in row i-1 */
@@ -187,8 +189,8 @@ int Ifpack_METISPartitioner::ComputePartitions()
     for (int j = 0 ; j < NumIndices ; ++j) {
       int jj = Indices[j];
       if (jj != i) {
-	adjncy[count++] = jj;
-	xadj[count2+1]++;
+        adjncy[count++] = jj;
+        xadj[count2+1]++;
       }
     }
     count2++;
@@ -198,19 +200,19 @@ int Ifpack_METISPartitioner::ComputePartitions()
   NodesInSubgraph.resize(NumLocalParts_);
 
   // some cases can be handled separately
-  
+
   int ok;
 
   if (NumLocalParts() == 1) {
 
-    for (int i = 0 ; i < NumMyRows() ; ++i) 
+    for (int i = 0 ; i < NumMyRows() ; ++i)
       Partition_[i] = 0;
-    
+
   } else if (NumLocalParts() == NumMyRows()) {
 
-    for (int i = 0 ; i < NumMyRows() ; ++i) 
+    for (int i = 0 ; i < NumMyRows() ; ++i)
       Partition_[i] = i;
-  
+
   } else {
 
     ok = 0;
@@ -219,86 +221,86 @@ int Ifpack_METISPartitioner::ComputePartitions()
     // ok will check this problem, and recall metis, asking
     // for NumLocalParts_/2 partitions
     while (ok == 0) {
-      
-      for (int i = 0 ; i < NumMyRows() ; ++i) 
-	Partition_[i] = -1;
-    
+
+      for (int i = 0 ; i < NumMyRows() ; ++i)
+        Partition_[i] = -1;
+
 #ifdef HAVE_IFPACK_METIS
       int j = NumMyRows();
       if (NumLocalParts_ < 8) {
 
-	int i = 1; /* optype in the METIS manual */
-	numflag = 0;
-	METIS_EstimateMemory(&j, &xadj[0], &adjncy[0], 
-			     &numflag, &i, &nbytes );
-	
-	METIS_PartGraphRecursive(&j, &xadj[0], &adjncy[0],
-				 NULL, NULL,
-				 &wgtflag[0], &numflag, &NumLocalParts_, 
-				 &options[0], &edgecut, &Partition_[0]);
+        int i = 1; /* optype in the METIS manual */
+        numflag = 0;
+        METIS_EstimateMemory(&j, &xadj[0], &adjncy[0],
+                             &numflag, &i, &nbytes );
+
+        METIS_PartGraphRecursive(&j, &xadj[0], &adjncy[0],
+                                 NULL, NULL,
+                                 &wgtflag[0], &numflag, &NumLocalParts_,
+                                 &options[0], &edgecut, &Partition_[0]);
       } else {
 
-	numflag = 0;
-	
-	METIS_PartGraphKway (&j, &xadj[0], &adjncy[0], 
-			     NULL, 
-			     NULL, &wgtflag[0], &numflag, 
-			     &NumLocalParts_, &options[0],
-			     &edgecut, &Partition_[0]);
+        numflag = 0;
+
+        METIS_PartGraphKway (&j, &xadj[0], &adjncy[0],
+                             NULL,
+                             NULL, &wgtflag[0], &numflag,
+                             &NumLocalParts_, &options[0],
+                             &edgecut, &Partition_[0]);
       }
 #else
       numflag = numflag * 2; // avoid warning for unused variable
       if (Graph_->Comm().MyPID() == 0) {
-	cerr << "METIS was not linked; now I put all" << endl;
-	cerr << "the local nodes in the same partition." << endl;
+        cerr << "METIS was not linked; now I put all" << endl;
+        cerr << "the local nodes in the same partition." << endl;
       }
-      for (int i = 0 ; i < NumMyRows() ; ++i) 
-	Partition_[i] = 0;
+      for (int i = 0 ; i < NumMyRows() ; ++i)
+        Partition_[i] = 0;
       NumLocalParts_ = 1;
 #endif
-      
+
       ok = 1;
-      
-      for (int i = 0 ; i < NumLocalParts() ; ++i) 
-	NodesInSubgraph[i] = 0;
+
+      for (int i = 0 ; i < NumLocalParts() ; ++i)
+        NodesInSubgraph[i] = 0;
 
       for (int i = 0 ; i < NumMyRows() ; ++i) {
-	int j = Partition_[i];
-	if ((j < 0) || (j>= NumLocalParts())) {
-	  ok = 0;
-	  break;
-	} 
-	else NodesInSubgraph[j]++;
+        int j = Partition_[i];
+        if ((j < 0) || (j>= NumLocalParts())) {
+          ok = 0;
+          break;
+        }
+        else NodesInSubgraph[j]++;
       }
-      
+
       for (int i = 0 ; i < NumLocalParts() ; ++i) {
-	if( NodesInSubgraph[i] == 0 ) {
-	  ok = 0;
-	  break;
-	}
+        if( NodesInSubgraph[i] == 0 ) {
+          ok = 0;
+          break;
+        }
       }
-      
+
       if (ok == 0) {
-	cerr << "Specified number of subgraphs ("
-	     << NumLocalParts_ << ") generates empty subgraphs." << endl;
-	cerr << "Now I recall METIS with NumLocalParts_ = "
-	     << NumLocalParts_ / 2 << "..." << endl;
-	NumLocalParts_ = NumLocalParts_/2;
+        cerr << "Specified number of subgraphs ("
+             << NumLocalParts_ << ") generates empty subgraphs." << endl;
+        cerr << "Now I recall METIS with NumLocalParts_ = "
+             << NumLocalParts_ / 2 << "..." << endl;
+        NumLocalParts_ = NumLocalParts_/2;
       }
-      
+
       if (NumLocalParts() == 0) {
-	IFPACK_CHK_ERR(-10); // something went wrong
+        IFPACK_CHK_ERR(-10); // something went wrong
       }
-      
+
       if (NumLocalParts() == 1) {
-	for (int i = 0 ; i < NumMyRows() ; ++i) 
-	  Partition_[i] = 0;
-	ok = 1;
+        for (int i = 0 ; i < NumMyRows() ; ++i)
+          Partition_[i] = 0;
+        ok = 1;
       }
-      
+
     } /* while( ok == 0 ) */
-  
+
   } /* if( NumLocalParts_ == 1 ) */
 
   return(0);
-} 
+}

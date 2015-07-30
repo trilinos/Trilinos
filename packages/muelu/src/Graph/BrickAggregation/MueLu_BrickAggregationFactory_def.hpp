@@ -256,7 +256,7 @@ namespace MueLu {
     }
 
     GO numGlobalRemote;
-    sumAll(comm, as<GO>(numRemote), numGlobalRemote);
+    MueLu_sumAll(comm, as<GO>(numRemote), numGlobalRemote);
     aggregates->AggregatesCrossProcessors(numGlobalRemote);
 
     Set(currentLevel, "Aggregates", aggregates);

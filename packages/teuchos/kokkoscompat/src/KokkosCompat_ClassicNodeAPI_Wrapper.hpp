@@ -136,7 +136,8 @@ public:
   {
     Teuchos::ParameterList params;
     params.set ("Verbose", 0);
-    params.set ("Num Threads", 1);
+    // -1 says "Let Kokkos pick"
+    params.set ("Num Threads", -1);
     params.set ("Num NUMA", -1);
     params.set ("Num CoresPerNUMA", -1);
     params.set ("Device", 0);

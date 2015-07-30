@@ -208,9 +208,9 @@ int Ifpack_Polynomial::SetParameters(Teuchos::ParameterList& List)
     // w/"invert" if it's set to multiply
     Teuchos::ParameterList Blist;
     Blist=BlockList_.get("blockdiagmatrix: list",Blist);
-    string dummy("invert");
-    string ApplyMode=Blist.get("apply mode",dummy);
-    if(ApplyMode==string("multiply")){
+    std::string dummy("invert");
+    std::string ApplyMode=Blist.get("apply mode",dummy);
+    if(ApplyMode==std::string("multiply")){
       Blist.set("apply mode","invert");
       BlockList_.set("blockdiagmatrix: list",Blist);
     }
@@ -545,8 +545,9 @@ int Ifpack_Polynomial::Compute()
 }
 
 //==============================================================================
-ostream& Ifpack_Polynomial::Print(ostream & os) const
+std::ostream& Ifpack_Polynomial::Print(std::ostream & os) const
 {
+  using std::endl;
 
   double MyMinVal, MyMaxVal;
   double MinVal, MaxVal;
@@ -730,6 +731,9 @@ CG(const Epetra_Operator& Operator,
 
   return(0);
 #else
+  using std::cout;
+  using std::endl;
+
   cout << "You need to configure IFPACK with support for AztecOO" << endl;
   cout << "to use the CG estimator. This may require --enable-aztecoo" << endl;
   cout << "in your configure script." << endl;
@@ -809,6 +813,9 @@ CG(const int MaximumIterations,
 
   return(0);
 #else
+  using std::cout;
+  using std::endl;
+
   cout << "You need to configure IFPACK with support for AztecOO" << endl;
   cout << "to use the CG estimator. This may require --enable-aztecoo" << endl;
   cout << "in your configure script." << endl;
@@ -846,6 +853,9 @@ GMRES(const Epetra_Operator& Operator,
   lambda_imag_max = status[AZ_lambda_imag_max];
   return(0);
 #else
+  using std::cout;
+  using std::endl;
+
   cout << "You need to configure IFPACK with support for AztecOO" << endl;
   cout << "to use the GMRES estimator. This may require --enable-aztecoo" << endl;
   cout << "in your configure script." << endl;

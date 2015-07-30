@@ -39,25 +39,6 @@
 // ***********************************************************************
 // @HEADER
 
-// Kris
-// 06.18.03 -- Removed comments/documentation; file too hard to edit otherwise. Will replace later.
-//          -- Begin conversion from <ScalarType> template to <OrdinalType, ScalarType>
-// 06.23.03 -- Finished conversion from <ScalarType> to <OrdinalType, ScalarType>
-//          -- Tpetra_DenseMatrix.cpp is now obsolete
-//          -- Added new constructor to allow construction of a submatrix
-//          -- Altered copyMat to enable its use in new constructor
-//          -- Commented out broken print() function
-//          -- Fixed oneNorm() (uninitialized return variable was causing erroneous results)
-// 06.24.03 -- Minor formatting changes
-// 07.01.03 -- Added TempPrint() function to temporarily take the place of print() and operator<< while I figure out how to fix them
-// 07.02.03 -- Added operator== and operator!= to make testing programs easier to write/read. Implementation of == isn't the most
-//             efficient/robust, but it works. Will consider optimizing later.
-//          -- Warning! Constructor DenseMatrix(DataAccess, const DenseMatrix<OrdinalType, ScalarType> &, int, int, int, int) (the
-//             "submatrix grabber" constructor) does not work correctly when used with CV == View (always grabs submatrix from top
-//             left corner).
-// 07.07.03 -- Constructor bug detailed above (07.02) is now corrected (hopefully).
-// 07.08.03 -- Move into Teuchos package/namespace
-
 #ifndef _TEUCHOS_SERIALDENSEMATRIX_HPP_
 #define _TEUCHOS_SERIALDENSEMATRIX_HPP_
 /*! \file Teuchos_SerialDenseMatrix.hpp
@@ -203,7 +184,7 @@ public:
 
   //! Copies values from one matrix to another.
   /*!
-    The operator= copies the values from one existing SerialDenseMatrix to another
+    Copies the values from one existing SerialDenseMatrix to another
     if the dimension of both matrices are the same.  If not, \e this matrix
     will be returned unchanged.
   */

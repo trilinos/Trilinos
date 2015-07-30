@@ -98,7 +98,7 @@ namespace Example {
 
     {
       const auto epsilon = sqrt(NumericTraits<value_type>::epsilon());
-      for (ordinal_type k=0;k<UU.NumNonZeros();++k) {
+      for (size_type k=0;k<UU.NumNonZeros();++k) {
         auto tmp = abs(UU.Value(k) - FF.Value(k));
         __ASSERT_TRUE__(tmp < epsilon);
       }

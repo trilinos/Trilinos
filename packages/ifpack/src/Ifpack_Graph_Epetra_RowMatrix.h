@@ -54,7 +54,7 @@ class Epetra_RowMatrix;
 
 //! Ifpack_Graph_Epetra_RowMatrix: a class to define Ifpack_Graph as a light-weight conversion of Epetra_RowMatrix's.
 
-/*! 
+/*!
 Class Ifpack_Graph_Epetra_RowMatrix enables the construction of an
 Ifpack_Graph based on the input Epetra_RowMatrix. Note that data are
 not copied to \e this object; instead, wrappers are furnished.
@@ -66,14 +66,14 @@ not copied to \e this object; instead, wrappers are furnished.
 class Ifpack_Graph_Epetra_RowMatrix : public Ifpack_Graph {
 
 public:
-    
+
   //! Constructor.
   Ifpack_Graph_Epetra_RowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& RowMatrix);
 
   //! Destructor.
   virtual ~Ifpack_Graph_Epetra_RowMatrix() {};
 
-  //! Returns the number of local rows.  
+  //! Returns the number of local rows.
   int NumMyRows() const
   {
     return(NumMyRows_);
@@ -91,7 +91,7 @@ public:
   {
     if(RowMatrix_->RowMatrixRowMap().GlobalIndicesInt())
       return (int) (NumGlobalRows_);
-	else
+        else
       throw "Ifpack_Graph_Epetra_RowMatrix::NumGlobalRows: GlobalIndices not int.";
   }
 #endif
@@ -106,7 +106,7 @@ public:
   {
     if(RowMatrix_->RowMatrixColMap().GlobalIndicesInt())
       return (int) (NumGlobalCols_);
-	else
+        else
       throw "Ifpack_Graph_Epetra_RowMatrix::NumGlobalCols: GlobalIndices not int.";
   }
 #endif
@@ -156,14 +156,14 @@ public:
 #endif
 
   //! Extracts a copy of input local row.
-  int ExtractMyRowCopy(int GlobalRow, int LenOfIndices, 
-		       int &NumIndices, int *Indices) const;
+  int ExtractMyRowCopy(int GlobalRow, int LenOfIndices,
+                       int &NumIndices, int *Indices) const;
 
   //! Returns the communicator object of the graph.
-  const Epetra_Comm& Comm() const;  
-  
+  const Epetra_Comm& Comm() const;
+
   //! Prints basic information abobut the graph object.
-  ostream& Print(std::ostream& os) const;
+  std::ostream& Print(std::ostream& os) const;
 
 private:
 

@@ -62,15 +62,18 @@
 static bool verbose = false;
 
 // ======================================================================
-bool TestContainer(string Type, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A)
+bool TestContainer(std::string Type, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A)
 {
+  using std::cout;
+  using std::endl;
+
   int NumVectors = 3;
   int NumMyRows = A->NumMyRows();
 
   Epetra_MultiVector LHS_exact(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
-  LHS_exact.Random(); LHS.PutScalar(0.0); 
+  LHS_exact.Random(); LHS.PutScalar(0.0);
   A->Multiply(false, LHS_exact, RHS);
 
   Epetra_LinearProblem Problem(&*A, &LHS, &RHS);
@@ -80,7 +83,7 @@ bool TestContainer(string Type, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A)
     cout << "NumMyRows = " << NumMyRows << ", NumVectors = " << NumVectors << endl;
   }
   LHS.PutScalar(0.0);
-  
+
   Teuchos::RefCountPtr<Ifpack_Container> Container;
 
   if (Type == "dense")
@@ -105,7 +108,7 @@ bool TestContainer(string Type, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A)
       Container->RHS(i,j) = RHS[j][i];
       Container->LHS(i,j) = LHS[j][i];
     }
-  
+
   // set parameters (empty for dense containers)
   Teuchos::ParameterList List;
   List.set("amesos: solver type", Type);
@@ -137,6 +140,8 @@ bool TestContainer(string Type, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A)
 // ======================================================================
 int main(int argc, char *argv[])
 {
+  using std::cout;
+  using std::endl;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -156,7 +161,7 @@ int main(int argc, char *argv[])
 
   Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( Galeri::CreateMap64("Linear", Comm, GaleriList) );
   Teuchos::RefCountPtr<Epetra_RowMatrix> Matrix = Teuchos::rcp( Galeri::CreateCrsMatrix("Laplace2D", &*Map, GaleriList) );
-  
+
   Teuchos::RefCountPtr<Ifpack_LocalFilter> LocalMatrix = Teuchos::rcp( new Ifpack_LocalFilter(Matrix) );
   int TestPassed = true;
 
@@ -172,9 +177,9 @@ int main(int argc, char *argv[])
     cout << "Test `TestContainer.exe' FAILED!" << endl;
     exit(EXIT_FAILURE);
   }
-  
+
 #ifdef HAVE_MPI
-  MPI_Finalize(); 
+  MPI_Finalize();
 #endif
 
   return(EXIT_SUCCESS);

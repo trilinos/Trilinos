@@ -134,8 +134,9 @@ extern void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
 extern void ML_AGG_Calculate_Smoothing_Factors(int numSweeps, double *factors);
 
 extern int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
-                     int VertLineId[], int DofsPerNode, ML_Operator *Amat,
-                     int **ParamPptr, int **ParamPcols, double **ParamPvals);
+                     int VertLineId[], int DofsPerNode, int nullspace_dim,
+                     double *fnull, ML_Operator *Amat,
+                     int **ParamPptr, int **ParamPcols, double **ParamPvals, double **cnull);
 extern int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data);
 extern int ML_compute_line_info(int LayerId[], int VertLineId[],
                               int Ndof, int DofsPerNode,char semicoarsen_coordinate,

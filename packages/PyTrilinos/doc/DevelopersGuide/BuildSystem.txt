@@ -121,7 +121,6 @@ Currently, the following variables are set depending upon the
 top-level Trilinos configuration::
 
     HAVE_EPETRA
-    HAVE_TEUCHOS
     HAVE_NOX_EPETRA
     HAVE_NOX_EPETRAEXT
     HAVE_MPI

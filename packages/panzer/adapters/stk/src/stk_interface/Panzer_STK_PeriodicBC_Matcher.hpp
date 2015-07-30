@@ -220,7 +220,7 @@ private:
                                // opposite of each other.
    Matcher matcher_;
 
-   std::string type_; // type of periodic BC: coord, edge, (face)
+   std::string type_; // type of periodic BC: coord, edge, face
 
 };
 

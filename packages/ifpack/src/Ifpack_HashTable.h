@@ -57,7 +57,7 @@
 // ============================================================================
 // Hash table with good performances and high level of memory reuse.
 // Given a maximum number of keys n_keys, this class allocates chunks of memory
-// to store n_keys keys and values. 
+// to store n_keys keys and values.
 //
 // Usage:
 //
@@ -65,12 +65,12 @@
 //
 //    Ifpack_HashTable Hash(n_keys);
 //
-//    n_keys - maximum number of keys (This will be the n_keys with zero 
+//    n_keys - maximum number of keys (This will be the n_keys with zero
 //             collisons.)
 //
 // 3) use it, then delete it:
 //
-//    Hash.get(key, value)       --> returns the value stored on key, or 0.0 
+//    Hash.get(key, value)       --> returns the value stored on key, or 0.0
 //                                   if not found.
 //    Hash.set(key, value)       --> sets the value in the hash table, replace
 //                                   existing values.
@@ -84,9 +84,9 @@
 // \author Marzio Sala, ETHZ/COLAB
 //
 // \date 30-Jun-06
-// ============================================================================ 
+// ============================================================================
 template<typename key_type>
-class TIfpack_HashTable 
+class TIfpack_HashTable
 {
   public:
     //! constructor.
@@ -119,7 +119,7 @@ class TIfpack_HashTable
 
       for (int set_ptr = 0; set_ptr < counter_[hashed_key]; ++set_ptr)
       {
-        if (keys_[set_ptr][hashed_key] == key)  
+        if (keys_[set_ptr][hashed_key] == key)
           return(vals_[set_ptr][hashed_key]);
       }
 
@@ -177,7 +177,7 @@ class TIfpack_HashTable
     }
 
     //! Returns the number of stored entries.
-    inline int getNumEntries() const 
+    inline int getNumEntries() const
     {
       int n_entries = 0;
       for (int key = 0; key < n_keys_; ++key)
@@ -201,6 +201,9 @@ class TIfpack_HashTable
     //! Basic printing routine.
     void print()
     {
+      using std::cout;
+      using std::endl;
+
       cout << "n_keys = " << n_keys_ << endl;
       cout << "n_sets = " << n_sets_ << endl;
     }
@@ -208,7 +211,7 @@ class TIfpack_HashTable
     int getRecommendedHashSize (int n)
     {
         /* Prime number approximately in the middle of the range [2^x..2^(x+1)]
-         * is in primes[x-1]. Every prime number stored is approximately two 
+         * is in primes[x-1]. Every prime number stored is approximately two
          * times the previous one, so hash table size doubles every time.
          */
         int primes[] = {
@@ -218,8 +221,8 @@ class TIfpack_HashTable
         805306457, 1610612741 } ;
         int i, hsize ;
 
-        /* SRSR : err on the side of performance and choose the next largest 
-         * prime number. One can also choose primes[i-1] below to cut the 
+        /* SRSR : err on the side of performance and choose the next largest
+         * prime number. One can also choose primes[i-1] below to cut the
          * memory by half.
          */
         hsize = primes[29] ;

@@ -115,7 +115,10 @@ void Ifpack_IKLU::Destroy()
 //==========================================================================
 int Ifpack_IKLU::SetParameters(Teuchos::ParameterList& List)
 {
-  try 
+  using std::cerr;
+  using std::endl;
+
+  try
   {
     LevelOfFill_ = List.get<double>("fact: ilut level-of-fill", LevelOfFill());
     if (LevelOfFill_ <= 0.0)
@@ -149,6 +152,10 @@ int Ifpack_IKLU::SetParameters(Teuchos::ParameterList& List)
 //==========================================================================
 int Ifpack_IKLU::Initialize()
 {
+  using std::cerr;
+  using std::cout;
+  using std::endl;
+
   // delete previously allocated factorization
   Destroy();
 
@@ -161,11 +168,11 @@ int Ifpack_IKLU::Initialize()
     cerr << "and it is currently not meant to be used otherwise." << endl;
     exit(EXIT_FAILURE);
   }
-  
+
   // check dimensions of input matrix only in serial
   if (Comm().NumProc() == 1 && Matrix().NumMyRows() != Matrix().NumMyCols())
     IFPACK_CHK_ERR(-2);
-    
+
   NumMyRows_ = Matrix().NumMyRows();
   NumMyNonzeros_ = Matrix().NumMyNonzeros();
 
@@ -183,7 +190,7 @@ int Ifpack_IKLU::Initialize()
   for (int i = 0; i < NumMyRows_; ++i ) {
 
     IFPACK_CHK_ERR(A_.ExtractMyRowCopy(i,Length,RowNnz,
-				       &RowValues[0],&RowIndices[0]));
+                                       &RowValues[0],&RowIndices[0]));
     for (int j = 0 ; j < RowNnz ; ++j) {
       csrA_->j[count++] = RowIndices[j];
       //cout << "Row = " << i << ", Column = " << RowIndices[j] << ", Value = " << RowValues[j] << endl;
@@ -207,10 +214,10 @@ int Ifpack_IKLU::Initialize()
 }
 
 //==========================================================================
-class Ifpack_AbsComp 
+class Ifpack_AbsComp
 {
  public:
-  inline bool operator()(const double& x, const double& y) 
+  inline bool operator()(const double& x, const double& y)
   {
     return(IFPACK_ABS(x) > IFPACK_ABS(y));
   }
@@ -218,9 +225,12 @@ class Ifpack_AbsComp
 
 //==========================================================================
 
-int Ifpack_IKLU::Compute() 
+int Ifpack_IKLU::Compute()
 {
-  if (!IsInitialized()) 
+  using std::cout;
+  using std::endl;
+
+  if (!IsInitialized())
     IFPACK_CHK_ERR(Initialize());
 
   Time_.ResetStartTime();
@@ -251,18 +261,18 @@ int Ifpack_IKLU::Compute()
   for (int i = 0; i < NumMyRows_; ++i ) {
 
     IFPACK_CHK_ERR(A_.ExtractMyRowCopy(i,Length,RowNnz,
-				       &RowValues[0],&RowIndices[0]));
+                                       &RowValues[0],&RowIndices[0]));
     // make sure each row has the same number of nonzeros
     if (RowNnz != (csrA_->p[i+1]-csrA_->p[i])) {
       cout << "The number of nonzeros for this row does not math the expected number of nonzeros!!!" << endl;
     }
     for (int j = 0 ; j < RowNnz ; ++j) {
-      
+
       csrA_->x[count++] = RowValues[j];
       //cout << "Row = " << i << ", Column = " << RowIndices[j] << ", Value = " << RowValues[j] << endl;
     }
   }
-  
+
   // compute the lu factors
   double tol = 0.1;
   csrnN_ = csr_lu( &*csrA_, &*cssS_, tol );
@@ -292,7 +302,7 @@ int Ifpack_IKLU::Compute()
     if(SerialMap_->GlobalIndicesLongLong()) {
 
       const int MaxNumEntries_L_U = std::max(L_->MaxNumEntries(), U_->MaxNumEntries());
-	  std::vector<long long> entries(MaxNumEntries_L_U);
+          std::vector<long long> entries(MaxNumEntries_L_U);
 
       for (int i=0; i < NumMyRows_; ++i) {
         std::copy(&(L_tmp->j[L_tmp->p[i]]), &(L_tmp->j[L_tmp->p[i]]) + numEntriesL[i], entries.begin());
@@ -320,15 +330,15 @@ int Ifpack_IKLU::Compute()
   return(0);
 
 }
-  
+
 //=============================================================================
-int Ifpack_IKLU::ApplyInverse(const Epetra_MultiVector& X, 
-			     Epetra_MultiVector& Y) const
+int Ifpack_IKLU::ApplyInverse(const Epetra_MultiVector& X,
+                             Epetra_MultiVector& Y) const
 {
   if (!IsComputed())
     IFPACK_CHK_ERR(-2); // compute preconditioner first
 
-  if (X.NumVectors() != Y.NumVectors()) 
+  if (X.NumVectors() != Y.NumVectors())
     IFPACK_CHK_ERR(-3); // Return error: X and Y not the same size
 
   Time_.ResetStartTime();
@@ -357,7 +367,7 @@ int Ifpack_IKLU::ApplyInverse(const Epetra_MultiVector& X,
 
   if (!UseTranspose_)
   {
-    // solves LU Y = X 
+    // solves LU Y = X
     IFPACK_CHK_ERR(L_->Solve(false,false,false,*Xcopy,*Ytemp));
     IFPACK_CHK_ERR(U_->Solve(true,false,false,*Ytemp,*Ytemp));
   }
@@ -386,17 +396,17 @@ int Ifpack_IKLU::ApplyInverse(const Epetra_MultiVector& X,
 }
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Ifpack_IKLU::Apply(const Epetra_MultiVector& X, 
-		      Epetra_MultiVector& Y) const 
+int Ifpack_IKLU::Apply(const Epetra_MultiVector& X,
+                      Epetra_MultiVector& Y) const
 {
 
   return(-98);
 }
 
 //=============================================================================
-double Ifpack_IKLU::Condest(const Ifpack_CondestType CT, 
+double Ifpack_IKLU::Condest(const Ifpack_CondestType CT,
                             const int MaxIters, const double Tol,
-			    Epetra_RowMatrix* Matrix_in)
+                            Epetra_RowMatrix* Matrix_in)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
@@ -412,6 +422,8 @@ double Ifpack_IKLU::Condest(const Ifpack_CondestType CT,
 std::ostream&
 Ifpack_IKLU::Print(std::ostream& os) const
 {
+  using std::endl;
+
   if (!Comm().MyPID()) {
     os << endl;
     os << "================================================================================" << endl;
@@ -424,29 +436,29 @@ Ifpack_IKLU::Print(std::ostream& os) const
     os << "Global number of rows           = " << A_.NumGlobalRows64() << endl;
     if (IsComputed_) {
       os << "Number of nonzeros in A         = " << A_.NumGlobalNonzeros64() << endl;
-      os << "Number of nonzeros in L + U     = " << NumGlobalNonzeros64() 
-         << " ( = " << 100.0 * NumGlobalNonzeros64() / A_.NumGlobalNonzeros64() 
+      os << "Number of nonzeros in L + U     = " << NumGlobalNonzeros64()
+         << " ( = " << 100.0 * NumGlobalNonzeros64() / A_.NumGlobalNonzeros64()
          << " % of A)" << endl;
-      os << "nonzeros / rows                 = " 
+      os << "nonzeros / rows                 = "
         << 1.0 * NumGlobalNonzeros64() / U_->NumGlobalRows64() << endl;
     }
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
     os << "-----           -------   --------------       ------------     --------" << endl;
-    os << "Initialize()    "   << std::setw(5) << NumInitialize() 
-       << "  " << std::setw(15) << InitializeTime() 
+    os << "Initialize()    "   << std::setw(5) << NumInitialize()
+       << "  " << std::setw(15) << InitializeTime()
        << "               0.0            0.0" << endl;
-    os << "Compute()       "   << std::setw(5) << NumCompute() 
+    os << "Compute()       "   << std::setw(5) << NumCompute()
        << "  " << std::setw(15) << ComputeTime()
-       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops(); 
+       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops();
     if (ComputeTime() != 0.0)
       os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() / ComputeTime() << endl;
     else
       os << "  " << std::setw(15) << 0.0 << endl;
-    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse() 
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse()
        << "  " << std::setw(15) << ApplyInverseTime()
        << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops();
-    if (ApplyInverseTime() != 0.0) 
+    if (ApplyInverseTime() != 0.0)
       os << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() / ApplyInverseTime() << endl;
     else
       os << "  " << std::setw(15) << 0.0 << endl;

@@ -422,8 +422,7 @@ namespace Thyra {
     RCP<Matrix> BBt     = Utils::Multiply(*A_21,     false, *A_12,     false, out);
     RCP<Matrix> BBt_abs = Utils::Multiply(*A_21_abs, false, *A_12_abs, false, out);
 
-    // FIXME: why do we have a magic number here?
-    SC dropTol = 0.06;
+    SC dropTol = (paramList.get<int>("useFilters") ? 0.06 : 0.00);
     RCP<Matrix> filteredA = FilterMatrix(*A_11, *A_11,    dropTol);
     RCP<Matrix> filteredB = FilterMatrix(*BBt,  *BBt_abs, dropTol);
 
@@ -509,7 +508,7 @@ namespace Thyra {
     std::string   smootherType   = MUELU_GPD("smoother: type", std::string, "vanka");
     ParameterList smootherParams;
     if (paramList.isSublist("smoother: params"))
-        smootherParams = paramList.sublist("smoother: params");
+      smootherParams = paramList.sublist("smoother: params");
     M.SetFactory("Smoother", GetSmoother(smootherType, smootherParams, false/*coarseSolver?*/));
 
     std::string   coarseType   = MUELU_GPD("coarse: type", std::string, "direct");
@@ -787,8 +786,7 @@ namespace Thyra {
 
     } else if (type == "braess-sarazin") {
       // Define smoother/solver for BraessSarazin
-      // SC omega = 1.7;
-      SC omega = 1.0;
+      SC omega = MUELU_GPD("bs: omega", double, 1.0);
 
       RCP<SchurComplementFactory> schurFact = rcp(new SchurComplementFactory());
       schurFact->SetParameter("omega",  ParameterEntry(omega));
@@ -796,17 +794,14 @@ namespace Thyra {
 
       // Schur complement solver
       RCP<SmootherPrototype> schurSmootherPrototype;
-#if 1
-      std::string   schurSmootherType = "RELAXATION";
-      ParameterList schurSmootherParams;
-      schurSmootherParams.set("relaxation: type",           "Gauss-Seidel");
-      // schurSmootherParams.set("relaxation: type",           "Symmetric Gauss-Seidel");
-      schurSmootherParams.set("relaxation: sweeps",         5);
-      schurSmootherParams.set("relaxation: damping factor", omega);
-      schurSmootherPrototype = rcp(new TrilinosSmoother(schurSmootherType, schurSmootherParams));
-#else
-      schurSmootherPrototype = rcp(new DirectSolver());
-#endif
+      std::string schurSmootherType = (paramList.isParameter("schur smoother: type") ? paramList.get<std::string>("schur smoother: type") : "RELAXATION");
+      if (schurSmootherType == "RELAXATION") {
+        ParameterList schurSmootherParams = paramList.sublist("schur smoother: params");
+        // schurSmootherParams.set("relaxation: damping factor", omega);
+        schurSmootherPrototype = rcp(new TrilinosSmoother(schurSmootherType, schurSmootherParams));
+      } else {
+        schurSmootherPrototype = rcp(new DirectSolver());
+      }
       schurSmootherPrototype->SetFactory("A", schurFact);
 
       RCP<SmootherFactory> schurSmootherFact = rcp(new SmootherFactory(schurSmootherPrototype));
@@ -820,8 +815,8 @@ namespace Thyra {
       braessManager->SetIgnoreUserData(true);                           // always use data from factories defined in factory manager
 
       smootherPrototype = rcp(new BraessSarazinSmoother());
-      smootherPrototype->SetParameter("Sweeps",         ParameterEntry(MUELU_GPD("Sweeps",          int,    1)));
-      smootherPrototype->SetParameter("Damping factor", ParameterEntry(MUELU_GPD("Damping factor",  double, omega)));
+      smootherPrototype->SetParameter("Sweeps",         ParameterEntry(MUELU_GPD("bs: sweeps", int, 1)));
+      smootherPrototype->SetParameter("Damping factor", ParameterEntry(omega));
       rcp_dynamic_cast<BraessSarazinSmoother>(smootherPrototype)->AddFactoryManager(braessManager, 0);   // set temporary factory manager in BraessSarazin smoother
     }
 

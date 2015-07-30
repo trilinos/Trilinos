@@ -154,6 +154,8 @@ int ex_create_par_int (const char *path,
    
   int int64_status;
   int pariomode = 0;
+  int is_mpiio = 0;
+  int is_pnetcdf = 0;
 
   unsigned int my_mode = cmode;
   assert(my_mode == cmode);
@@ -203,10 +205,12 @@ int ex_create_par_int (const char *path,
   }
   else if (my_mode & EX_MPIIO) {
     pariomode = NC_MPIIO;
+    is_mpiio = 1;
     my_mode |= EX_NETCDF4;
   }
   else if (my_mode & EX_PNETCDF) {
     pariomode = NC_PNETCDF;
+    is_pnetcdf = 1;
     mode |= NC_64BIT_OFFSET;
   }
 
@@ -251,6 +255,7 @@ int ex_create_par_int (const char *path,
 
   if ((status = nc_create_par (path, mode|pariomode, comm, info, &exoid)) != NC_NOERR) {
     exerrval = status;
+#if !defined(NC_HAS_HDF5)	  
     if (my_mode & EX_NETCDF4) {
       sprintf(errmsg,
 	      "Error: file create failed for %s in NETCDF4 and %s mode.\n\tThis library probably does not support netcdf-4 files.",
@@ -260,6 +265,11 @@ int ex_create_par_int (const char *path,
 	      "Error: file create failed for %s, mode: %s",
 	      path, mode_name);
     }
+#else
+    sprintf(errmsg,
+	    "Error: file create failed for %s, mode: %s",
+	    path, mode_name);
+#endif
     ex_err("ex_create",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -279,7 +289,7 @@ int ex_create_par_int (const char *path,
    * i/o wordsize attribute from file is zero.
    */
 
-  if (ex_conv_ini(exoid, comp_ws, io_ws, 0, int64_status,1) != EX_NOERR) {
+  if (ex_conv_ini(exoid, comp_ws, io_ws, 0, int64_status, 1, is_mpiio, is_pnetcdf) != EX_NOERR) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
 	    "Error: failed to init conversion routines in file id %d",

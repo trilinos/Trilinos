@@ -67,16 +67,16 @@
 
 // function for fancy output
 
-string toString(const int& x) {
+std::string toString(const int& x) {
   char s[100];
   sprintf(s, "%d", x);
-  return string(s);
+  return std::string(s);
 }
 
-string toString(const double& x) {
+std::string toString(const double& x) {
   char s[100];
   sprintf(s, "%g", x);
-  return string(s);
+  return std::string(s);
 }
 
 // main driver
@@ -89,10 +89,6 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm Comm;
 #endif
-
-  int MyPID = Comm.MyPID();
-  bool verbose = false; 
-  if (MyPID==0) verbose = true;
 
   // The problem is defined on a 2D grid, global size is nx * nx.
   int nx = 30;
@@ -159,7 +155,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Define label for printing out during the solve phase
-  string label = "Ifpack_CrsRick Preconditioner: LevelFill = " + toString(LevelFill) + 
+  std::string label = "Ifpack_CrsRick Preconditioner: LevelFill = " + toString(LevelFill) + 
                                                  " Overlap = 0"; 
   IC->SetLabel(label.c_str());
   

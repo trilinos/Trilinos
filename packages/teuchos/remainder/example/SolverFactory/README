@@ -1,0 +1,35 @@
+This example shows how to create Solver and SolverFactory instances.
+It has three different "packages": A, B, and C.  Each package has its
+own Solver subclasses, and its own SolverFactory subclass that knows
+how to create instances of all Solvers in that package.
+
+Some solvers in packages A and B depend on each other.  The system
+helps resolve that circular dependency at run time.  This prevents a
+circular software dependency between packages A and B.  Package C is
+independent, and exists just to show that not all packages need to
+depend on solvers in some other package.
+
+The example uses stub MultiVector and Operator classes as values of
+the MV and OP template parameters.  You should think of
+Tpetra::MultiVector and Tpetra::Operator when you see these.
+
+Solver and SolverFactory subclasses are all implemented in header
+files (.hpp).  This is because they are templated classes.  Each
+package's .cpp file registers SolverFactory instances "statically" --
+that is, before main() is called.  You do not need to worry about
+"de-registering" or deallocating SolverFactory instances;
+std::shared_ptr takes care of that automatically, after main()
+finishes.  SolverFactory instances should not hold on to resources
+that need explicit deallocation or "finalization," such as MPI_* data
+structures (that need to be "freed" before MPI_Finalize is called).
+
+In this example, Packages A, B, and C register their factories for
+Scalar = float and double.  In the Tpetra solver stack, it's necessary
+to register factories for all combinations of template parameters that
+applications plan to use.  The easiest way to do that is to hook into
+the explicit template instantiation (ETI) system of each package.  If
+ETI is ON, this is easy.  If ETI is OFF, it's a bit harder.  Tpetra
+defines a set of template parameter combinations over which it
+_tests_.  If ETI is ON, this is always a subset of the ETI set.  If
+ETI is OFF, I would recommend using this set of test types for
+registering factories.

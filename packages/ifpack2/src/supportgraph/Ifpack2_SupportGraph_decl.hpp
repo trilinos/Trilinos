@@ -67,7 +67,7 @@ namespace Ifpack2 {
 
 /// \class SupportGraph
 /// \brief SupportGraph of a Tpetra sparse matrix.
-/// \tparam Specialization of Tpetra::CrsMatrix or Tpetra::RowMatrix.
+/// \tparam Specialization of Tpetra::RowMatrix.
 ///
 /// This class computes a maximum weight spanning tree
 /// or multiple trees (forest), of a given sparse matrix
@@ -303,6 +303,10 @@ private:
                               local_ordinal_type,
                               global_ordinal_type,
                               node_type> MV;
+  typedef Tpetra::CrsMatrix<scalar_type,
+                            local_ordinal_type,
+                            global_ordinal_type,
+                            node_type> crs_matrix_type;
 
   //! Find the maximum weight spanning tree and construct a CrsMatrix with it
   void findSupport ();
@@ -342,9 +346,9 @@ private:
   /// an explanation.
   Teuchos::RCP<const row_matrix_type> A_local_;
 
-  Teuchos::RCP<MatrixType> Support_;
+  Teuchos::RCP<crs_matrix_type> Support_;
 
-  Teuchos::RCP<Amesos2::Solver<MatrixType,
+  Teuchos::RCP<Amesos2::Solver<crs_matrix_type,
                                Tpetra::MultiVector<scalar_type,
                                                    local_ordinal_type,
                                                    global_ordinal_type,

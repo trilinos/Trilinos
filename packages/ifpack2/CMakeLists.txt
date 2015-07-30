@@ -96,6 +96,7 @@ ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(adapters)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
+TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 
 # Promote these variables to be visible outside of the "scope" of this
 # directory -- e.g., to other packages.

@@ -74,7 +74,7 @@ TimingData time_thingy(size_t num_thingies, size_t num_repeat)
     for (size_t i = 0; i < num_repeat; ++i) {
       std::vector<THINGY> thingies;
       thingies.reserve(num_thingies);
-      for (size_t i = 0; i < num_thingies; ++i) {
+      for (size_t j = 0; j < num_thingies; ++j) {
         thingies.push_back(THINGY());
       }
     }

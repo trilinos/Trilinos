@@ -366,10 +366,10 @@ namespace MueLu {
       GlobalOrdinal nan_all;
       Magnitude min_all;
       Magnitude max_all;
-      sumAll(A->getRowMap()->getComm(), zero_local, zero_all);
-      sumAll(A->getRowMap()->getComm(), nan_local, nan_all);
-      minAll(A->getRowMap()->getComm(), min_local, min_all);
-      maxAll(A->getRowMap()->getComm(), max_local, max_all);
+      MueLu_sumAll(A->getRowMap()->getComm(), zero_local, zero_all);
+      MueLu_sumAll(A->getRowMap()->getComm(), nan_local, nan_all);
+      MueLu_minAll(A->getRowMap()->getComm(), min_local, min_all);
+      MueLu_maxAll(A->getRowMap()->getComm(), max_local, max_all);
 
       GetOStream(MueLu::Statistics1, 0) << "PgPFactory: smoothed aggregation (scheme: ";
       switch (min_norm) {

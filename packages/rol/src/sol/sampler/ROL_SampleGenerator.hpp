@@ -61,11 +61,11 @@ private:
 protected:
   void setPoints(std::vector<std::vector<Real> > &p) {
     points_.clear();
-    points_.insert(points_.begin(),p.begin(),p.end());
+    points_.assign(p.begin(),p.end());
   }
   void setWeights(std::vector<Real> &w) {
     weights_.clear();
-    weights_.insert(weights_.begin(),w.begin(),w.end());
+    weights_.assign(w.begin(),w.end());
   }
 
 public:

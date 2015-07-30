@@ -12,9 +12,6 @@
 
 #   TRIBITS_COPY_FILES_TO_BINARY_DIR(BlockedCrsMatrix_UnitTests_copyfiles
 #     SOURCE_FILES
-#       nsjac_test.mm
-#       nslhs_test.mm
-#       nsrhs_test.mm
 #       A.mat
 #       P.mat
 #     )
