@@ -193,6 +193,9 @@ std::vector<RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std
         case AMALGAMATION_INFO:
           matlabArgs[i] = rcp_static_cast<MuemexData<RCP<MAmalInfo>>, MuemexArg>(args[i])->convertToMatlab();
           break;
+        case GRAPH:
+          matlabArgs[i] = rcp_static_cast<MuemexData<RCP<MGraph>>, MuemexArg>(args[i])->convertToMatlab();
+          break;
       }
     }
     catch (std::exception& e)
@@ -272,6 +275,26 @@ bool isValidMatlabAggregates(const mxArray* mxa)
       isValidAggregates = false;
   }
   return isValidAggregates;
+}
+
+bool isValidMatlabGraph(const mxArray* mxa)
+{
+  bool isValidGraph = true;
+  if(!mxIsStruct(mxa))
+    return false;
+  int numFields = mxGetNumberOfFields(mxa); //check that struct has correct # of fields
+  if(numFields != 2)
+    isValidGraph = false;
+  if(isValidGraph)
+  {
+    const char* mem1 = mxGetFieldNameByNumber(mxa, 0);
+    if(mem1 == NULL || strcmp(mem1, "edges") != 0)
+      isValidGraph = false;
+    const char* mem2 = mxGetFieldNameByNumber(mxa, 1);
+    if(mem2 == NULL || strcmp(mem2, "boundaryNodes") != 0)
+      isValidGraph  = false;
+  }
+  return isValidGraph;
 }
 
 std::vector<std::string> tokenizeList(const std::string& params)

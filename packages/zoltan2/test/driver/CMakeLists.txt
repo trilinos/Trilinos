@@ -1,5 +1,4 @@
-
-#TRIBITS_ADD_EXECUTABLE_AND_TEST(driver 
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(driver
 #  SOURCES ${HEADERS} driver.cpp
 #  NUM_MPI_PROCS 4
 #  COMM mpi serial
@@ -15,21 +14,45 @@
 #  NOEXEPREFIX
 #)
 
-
-set(HEADERS
-    Zoltan2_MeshCoordinateTest.hpp
-    Zoltan2_TestInterface.hpp
-    Zoltan2_Tests.hpp
-)
-
 ADD_SUBDIRECTORY(driverinputs)
 
-INCLUDE_DIRECTORIES(
-    ${CMAKE_CURRENT_LIST_DIR}/driverinputs
+TRIBITS_ADD_EXECUTABLE(
+   test_driver
+   SOURCES ${HEADERS} test_driver.cpp
+   COMM serial mpi
 )
 
-#KDD TRIBITS_ADD_EXECUTABLE(
-#KDD   test_driver
-#KDD   SOURCES ${HEADERS} test_driver.cpp
-#KDD   COMM serial mpi
-#KDD )
+# MultiJagged Tests
+TRIBITS_ADD_TEST(
+    test_driver
+    NAME coordinateDriverTest
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/input_072315.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    test_driver
+    NAME rcbDriverTest
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/rcbTest.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    test_driver
+    NAME mjDriverTest
+    NUM_MPI_PROCS 3
+    COMM serial mpi
+    ARGS
+    "./driverinputs/multiJaggedTest.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+

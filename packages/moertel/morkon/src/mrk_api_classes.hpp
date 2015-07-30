@@ -75,7 +75,7 @@ class Interface : public InterfaceBase
 
   typedef typename DeviceType::execution_space         execution_space;
   typedef Kokkos::View<local_idx_t *, execution_space>     faces_ids_t;
-  typedef Kokkos::View<local_idx_t *, execution_space>  faces_ids_dv_t;
+  typedef Kokkos::View<local_idx_t *, execution_space>   faces_ids_dvt;
 
 public:
 
@@ -196,15 +196,16 @@ protected:
                          face_to_num_nodes_dvt face_to_num_nodes,
                          face_to_nodes_dvt face_to_nodes,
                          points_dvt node_coords,
+                         points_dvt predicted_node_coords,
                          on_boundary_table_dvt is_node_on_boundary);
 
   bool compute_face_and_node_normals();
 
-  bool find_possible_contact_face_pairs(contact_search_results_t course_search_results);
+  bool find_possible_contact_face_pairs(contact_search_results_t coarse_search_results);
 
-  bool compute_boundary_node_support_sets(contact_search_results_t course_search_results);
+  bool compute_boundary_node_support_sets(contact_search_results_t coarse_search_results);
 
-  bool compute_contact_pallets(contact_search_results_t course_search_results,
+  bool compute_contact_pallets(contact_search_results_t coarse_search_results,
                                mortar_pallets_t &resulting_pallets);
 
   // Note that the non-mortar-side integration points needed in computing D are also

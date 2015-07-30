@@ -54,6 +54,7 @@
 #include "mrk_api_classes.hpp"
 #include "mrk_interface_impl.hpp"
 #include "mrk_manager_impl.hpp"
+#include "mrk_manager_tester.hpp"
 
 //
 // Use default_kokkos_device_t (from mrk_default_kokkos_device_type.hpp) for

@@ -42,6 +42,9 @@
 // ***********************************************************************
 //
 // @HEADER
+#ifndef GEOMETRICGENERATOR
+#define GEOMETRICGENERATOR
+
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_FilteredIterator.hpp>
@@ -74,6 +77,9 @@
 #endif
 
 using Teuchos::CommandLineProcessor;
+using Teuchos::ArrayView;
+using std::string;
+using Teuchos::ArrayRCP;
 
 namespace GeometricGen{
 #define CATCH_EXCEPTIONS(pp) \
@@ -2727,3 +2733,5 @@ public:
   }
 };
 }
+
+#endif /* GEOMETRICGENERATOR */

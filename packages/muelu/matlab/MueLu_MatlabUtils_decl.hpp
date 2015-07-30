@@ -60,6 +60,7 @@
 #include "MueLu_Aggregates_decl.hpp"
 #include "MueLu_AmalgamationInfo_decl.hpp"
 #include "MueLu_Utilities_decl.hpp"
+#include "MueLu_Graph_decl.hpp"
 #include "Epetra_MultiVector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Tpetra_CrsMatrix_decl.hpp"
@@ -75,7 +76,7 @@
 namespace MueLu
 {
 
-enum MUEMEX_TYPE
+enum MuemexType
 {
   INT,
   DOUBLE,
@@ -93,7 +94,8 @@ enum MUEMEX_TYPE
   EPETRA_CRSMATRIX,
   EPETRA_MULTIVECTOR,
   AGGREGATES,
-  AMALGAMATION_INFO
+  AMALGAMATION_INFO,
+  GRAPH
 };
 
 typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Serial, Kokkos::HostSpace> mm_node_t;
@@ -112,25 +114,26 @@ typedef Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra
 typedef Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_MultiVector_complex;
 typedef MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy_double;
 typedef MueLu::Hierarchy<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Hierarchy_complex;
-typedef MueLu::Aggregates<> MAggregates;
-typedef MueLu::AmalgamationInfo<> MAmalInfo;
+typedef MueLu::Aggregates<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAggregates;
+typedef MueLu::AmalgamationInfo<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MAmalInfo;
+typedef MueLu::GraphBase<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MGraph;
 
 class MuemexArg
 {
   public:
-    MuemexArg(MUEMEX_TYPE dataType) {type = dataType;}
-    MUEMEX_TYPE type;
+    MuemexArg(MuemexType dataType) {type = dataType;}
+    MuemexType type;
 };
 
 template<typename T> 
-MUEMEX_TYPE getMuemexType(const T & data);
+MuemexType getMuemexType(const T & data);
 
 template<typename T>
 class MuemexData : public MuemexArg
 {
   public:
     MuemexData(T& data); //Construct from pre-existing data, to pass to MATLAB.
-    MuemexData(T& data, MUEMEX_TYPE type);        //Construct from pre-existing data, to pass to MATLAB.
+    MuemexData(T& data, MuemexType type);        //Construct from pre-existing data, to pass to MATLAB.
     MuemexData(const mxArray* mxa); //Construct from MATLAB array, to get from MATLAB.
     mxArray* convertToMatlab(); //Create a MATLAB object and copy this data to it
     T& getData();                         //Set and get methods
@@ -140,10 +143,10 @@ class MuemexData : public MuemexArg
 };
 
 template<typename T> 
-MUEMEX_TYPE getMuemexType(const T & data);
+MuemexType getMuemexType(const T & data);
 
 template<typename T>
-MUEMEX_TYPE getMuemexType();
+MuemexType getMuemexType();
 
 template<typename T>
 T loadDataFromMatlab(const mxArray* mxa);
@@ -171,6 +174,7 @@ template<typename Scalar> mxArray* createMatlabMultiVector(int numRows, int numC
 template<typename Scalar> void fillMatlabArray(Scalar* array, const mxArray* mxa, int n);
 int* mwIndex_to_int(int N, mwIndex* mwi_array);
 bool isValidMatlabAggregates(const mxArray* mxa);
+bool isValidMatlabGraph(const mxArray* mxa);
 std::vector<std::string> tokenizeList(const std::string& param);
 //The two callback functions that MueLu can call to run anything in MATLAB
 void callMatlabNoArgs(std::string function);

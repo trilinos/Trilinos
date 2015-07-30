@@ -121,6 +121,20 @@ namespace ZOO {
         g.axpy(coeff,*k_);
     }
 
+    Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol ) {
+
+        Real kdotd = d.dot(*k_);
+        Real kdotx = x.dot(*k_);
+        Real xdotd = x.dot(d);
+        
+        Real coeff = 0.25*(2.0*kdotx+pow(kdotx,3.0));
+
+        Real deriv = 2*xdotd + coeff*kdotd;
+ 
+        return deriv;
+
+    }
+
 #if USE_HESSVEC
     void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
 

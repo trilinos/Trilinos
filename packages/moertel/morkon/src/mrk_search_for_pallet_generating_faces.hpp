@@ -52,6 +52,16 @@
 
 namespace morkon_exp {
 
+template <typename DeviceType, typename ScalarType>
+struct AxisAlignedBB
+{
+    enum AABBIndices { X_MIN = 0, Y_MIN, Z_MIN, X_MAX, Y_MAX, Z_MAX, NUM_AABB_INDICES};
+
+    typedef ScalarType                                        scalar_type;
+    typedef typename DeviceType::execution_space          execution_space;
+    typedef Kokkos::View<ScalarType *[NUM_AABB_INDICES]>          boxes_t;
+};
+
 template <typename DeviceType, unsigned int DIM>
 struct search_for_pallet_generating_faces
 {
@@ -63,26 +73,46 @@ struct search_for_pallet_generating_faces
     typedef typename fields_t::points_t                                          points_t;
     typedef typename fields_t::points_mrat                                    points_mrat;
     typedef Kokkos::View<local_idx_t *[2], execution_space>  face_to_interface_and_side_t;
-
     typedef Kokkos::View<local_idx_t *[2], execution_space>      contact_search_results_t;
+    typedef Kokkos::View<local_idx_t *, execution_space>                      faces_ids_t;
+
+    typedef typename AxisAlignedBB<DeviceType, float>::boxes_t           bounding_boxes_t;
 
     face_to_num_nodes_t                     m_face_to_num_nodes;
     face_to_nodes_t                             m_face_to_nodes;
     points_mrat                                   m_node_coords;
+    points_mrat                         m_predicted_node_coords;
     face_to_interface_and_side_t   m_face_to_interface_and_side;
     contact_search_results_t                   m_search_results;
 
+    const float                                 m_boxes_epsilon;
+
     search_for_pallet_generating_faces(surface_mesh_t surface_mesh,
                                        points_t node_coords,
+                                       points_t predicted_node_coords,
                                        face_to_interface_and_side_t face_to_interface_and_side,
+                                       double epsilon,
                                        contact_search_results_t search_results)
         : m_face_to_num_nodes(surface_mesh.m_face_to_num_nodes)
         , m_face_to_nodes(surface_mesh.m_face_to_nodes)
         , m_node_coords(node_coords)
+        , m_predicted_node_coords(predicted_node_coords)
         , m_face_to_interface_and_side(face_to_interface_and_side)
         , m_search_results(search_results)
+        , m_boxes_epsilon(static_cast<float>(epsilon))
     {
-        // WRITE ME
+        faces_ids_t  non_mortarside_faces;
+        faces_ids_t      mortarside_faces;
+        // Divide up the faces into non-mortarside and mortarside sets.
+
+        bounding_boxes_t non_mortarside_boxes;
+        bounding_boxes_t     mortarside_boxes;
+        // Construct bounding boxes for the sets of spaces, using both the node_coords
+        // and predicted node_coords and also the m_boxes_epsilon.
+
+        // Do a (brute-force, for now) search for pairs with bounding boxes that overlap
+        // Extra points if you disallow face pairs whose normals are incompatible with
+        // contact.
     }
 
 };

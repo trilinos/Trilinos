@@ -93,6 +93,11 @@
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_VectorStdOps.hpp>
 
+#include <BelosConfigDefs.hpp>
+#include <BelosLinearProblem.hpp>
+#include <BelosSolverFactory.hpp>
+#include <BelosTpetraAdapter.hpp>
+
 #include <Xpetra_MapFactory.hpp>
 
 #include "MueLu_UseDefaultTypes.hpp"
