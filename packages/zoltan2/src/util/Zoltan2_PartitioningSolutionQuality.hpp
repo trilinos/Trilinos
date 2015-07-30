@@ -101,7 +101,9 @@ public:
    *  \param values on return is the array of values.
    */
   ArrayRCP<const MetricValues<scalar_t> > getMetrics() const{
-    return metricsConst_;
+    //BDD return metricsConst_;
+      if(metricsConst_.is_null()) return metrics_;
+      return metricsConst_;
   }
 
   /*! \brief Return the object count imbalance.

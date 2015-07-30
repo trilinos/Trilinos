@@ -104,19 +104,6 @@ typedef enum
     MODE_ERROR //7
   } MODE_TYPE;
 
-typedef enum
-  {
-    MATRIX,
-    MULTIVECTOR,
-    LOVECTOR,
-    HIER_SCALAR,
-    HIER_DOUBLE,
-    HIER_COMPLEX,
-    HIER_INT,
-    HIER_AGGREGATES,
-    UNKNOWN
-  } HierAttribType;
-
 /* Note: MuemexSystem is declared friend in MueLu::Hierarchy and MueLu::FactoryManager.
    This gives access to the private method Hierarchy::GetFactoryManager, which allows
    muelu('get', ...) to retrieve nonstandard "kept" items like Nullspace and Aggregates.
@@ -131,7 +118,7 @@ class MuemexSystem
   int id;
   Teuchos::RCP<Teuchos::ParameterList> List;
   DataPackType type;
-  mxArray* getHierarchyData(std::string dataName, HierAttribType dataType, int levelID); //Works for all dp types
+  mxArray* getHierarchyData(std::string dataName, MuemexType dataType, int levelID); //Works for all dp types
 };
 
 class EpetraSystem : public MuemexSystem

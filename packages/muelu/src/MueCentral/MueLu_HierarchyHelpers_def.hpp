@@ -262,8 +262,14 @@ namespace MueLu {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second), M->GetFactory(name).get());
           }
-          else if (name == "Nullspace" || name == "Coordinates"){
+          else if (name == "Nullspace")
+          {
             level->Set(name, Teuchos::getValue<RCP<MultiVector > >(it2->second), NoFactory::get());
+            M->SetFactory(name, NoFactory::getRCP());
+          }
+          else if(name == "Coordinates") //Scalar of Coordinates MV is always double
+          {
+            level->Set(name, Teuchos::getValue<RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
             M->SetFactory(name, NoFactory::getRCP());
           }
           #ifdef HAVE_MUELU_MATLAB
@@ -295,6 +301,8 @@ namespace MueLu {
               level->Set(name, Teuchos::getValue<std::complex<double> >(it2->second), NoFactory::get());
             else if(strstr(typeName, "int"))
               level->Set(name, Teuchos::getValue<int>(it2->second), NoFactory::get());
+            else if(strstr(typeName, "string"))
+              level->Set(name, Teuchos::getValue<std::string>(it2->second), NoFactory::get());
             free(typeName);
           }
           #endif
