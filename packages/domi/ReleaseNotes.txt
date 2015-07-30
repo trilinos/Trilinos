@@ -1,3 +1,22 @@
+Release Notes for Domi for Trilinos 12.2
+========================================
+
+Primary changes to the Domi package for Trilinos 12.2 release are:
+
+* Input arguments that come in the form of const Domi::MDArrayView<
+  int > have been changed to be const-correct, i.e., they are now
+  const Domi::MDArrayView< const int >.  This allowed for more logical
+  wrappers in PyTrilinos.
+
+* A new Domi::DefaultNode class has been added.  If Tpetra is enabled,
+  it uses the Tpetra default node.  If Tpetra is not enabled, it uses
+  the serial wrapper node from Teuchos.
+
+* Domi's required dependencies have been simplified, to Teuchos,
+  Kokkos, and TeuchosKokkosCompat.  Optional dependencies are Epetra,
+  TpetraClassic, and TpetraCore.
+
+
 Release Notes for Domi for Trilinos 12.0
 ========================================
 
