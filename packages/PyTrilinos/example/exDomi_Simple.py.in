@@ -114,8 +114,8 @@ def main():
     # leading dimension of 3.  Print the shape of the buffer on each processor.
     mdVector = Domi.MDVector(mdMap, 3)
     if rank == 0:
-        print "MDVector dtype =", mdVector.dtype()
-    print "Processor", rank, "buffer shape =", mdVector.getData().shape
+        print "MDVector dtype =", mdVector.dtype
+    print "Processor", rank, "buffer shape =", mdVector.shape
 
     # Output for test harness
     comm.barrier()
