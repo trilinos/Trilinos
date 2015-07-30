@@ -342,13 +342,6 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
 int main(int argc, char *argv[])
 {
   
-#ifdef ZOLTAN2_DEFAULT_TESTDRIVER_PATH
-  cout <<"Test driver path specified:" << endl;
-  cout << string(ZOLTAN2_DEFAULT_TESTDRIVER_PATH) << endl;
-#else
-  cout <<"Test driver path not specified" << endl;
-#endif
-  
   ////////////////////////////////////////////////////////////
   // (0) Set up MPI environment
   ////////////////////////////////////////////////////////////
