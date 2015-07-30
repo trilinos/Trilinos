@@ -65,61 +65,61 @@ extern bool rewrap_ints;
 /* getMuemexType                   */
 /* ******************************* */
 
-template<typename T> MUEMEX_TYPE getMuemexType(const T & data) {throw std::runtime_error("Unknown Type");}
+template<typename T> MuemexType getMuemexType(const T & data) {throw std::runtime_error("Unknown Type");}
 
-template<> MUEMEX_TYPE getMuemexType(const int & data) {return INT;}
-template<> MUEMEX_TYPE getMuemexType<int>() {return INT;}
+template<> MuemexType getMuemexType(const int & data) {return INT;}
+template<> MuemexType getMuemexType<int>() {return INT;}
 
-template<> MUEMEX_TYPE getMuemexType(const double & data) {return DOUBLE;}
-template<> MUEMEX_TYPE getMuemexType<double>() {return DOUBLE;}
+template<> MuemexType getMuemexType(const double & data) {return DOUBLE;}
+template<> MuemexType getMuemexType<double>() {return DOUBLE;}
 
-template<> MUEMEX_TYPE getMuemexType(const std::string & data) {return STRING;}
-template<> MUEMEX_TYPE getMuemexType<string>() {return STRING;}
+template<> MuemexType getMuemexType(const std::string & data) {return STRING;}
+template<> MuemexType getMuemexType<string>() {return STRING;}
 
-template<> MUEMEX_TYPE getMuemexType(const complex_t& data) {return COMPLEX;}
-template<> MUEMEX_TYPE getMuemexType<complex_t>() {return COMPLEX;}
+template<> MuemexType getMuemexType(const complex_t& data) {return COMPLEX;}
+template<> MuemexType getMuemexType<complex_t>() {return COMPLEX;}
 
-template<> MUEMEX_TYPE getMuemexType(const RCP<Xpetra_ordinal_vector> & data) {return XPETRA_ORDINAL_VECTOR;}
-template<> MUEMEX_TYPE getMuemexType<RCP<Xpetra_ordinal_vector>>() {return XPETRA_ORDINAL_VECTOR;}
+template<> MuemexType getMuemexType(const RCP<Xpetra_ordinal_vector> & data) {return XPETRA_ORDINAL_VECTOR;}
+template<> MuemexType getMuemexType<RCP<Xpetra_ordinal_vector>>() {return XPETRA_ORDINAL_VECTOR;}
 
-template<> MUEMEX_TYPE getMuemexType(const RCP<Tpetra_MultiVector_double> & data) {return TPETRA_MULTIVECTOR_DOUBLE;}
-template<> MUEMEX_TYPE getMuemexType<RCP<Tpetra_MultiVector_double>>() {return TPETRA_MULTIVECTOR_DOUBLE;}
+template<> MuemexType getMuemexType(const RCP<Tpetra_MultiVector_double> & data) {return TPETRA_MULTIVECTOR_DOUBLE;}
+template<> MuemexType getMuemexType<RCP<Tpetra_MultiVector_double>>() {return TPETRA_MULTIVECTOR_DOUBLE;}
 
-template<> MUEMEX_TYPE getMuemexType(const RCP<Tpetra_MultiVector_complex>& data) {return TPETRA_MULTIVECTOR_COMPLEX;}
-template<> MUEMEX_TYPE getMuemexType<RCP<Tpetra_MultiVector_complex>>() {return TPETRA_MULTIVECTOR_COMPLEX;}
+template<> MuemexType getMuemexType(const RCP<Tpetra_MultiVector_complex>& data) {return TPETRA_MULTIVECTOR_COMPLEX;}
+template<> MuemexType getMuemexType<RCP<Tpetra_MultiVector_complex>>() {return TPETRA_MULTIVECTOR_COMPLEX;}
 
-template<> MUEMEX_TYPE getMuemexType(const RCP<Tpetra_CrsMatrix_double> & data) {return TPETRA_MATRIX_DOUBLE;}
-template<> MUEMEX_TYPE getMuemexType<RCP<Tpetra_CrsMatrix_double>>() {return TPETRA_MATRIX_DOUBLE;}
+template<> MuemexType getMuemexType(const RCP<Tpetra_CrsMatrix_double> & data) {return TPETRA_MATRIX_DOUBLE;}
+template<> MuemexType getMuemexType<RCP<Tpetra_CrsMatrix_double>>() {return TPETRA_MATRIX_DOUBLE;}
 
-template<> MUEMEX_TYPE getMuemexType(const RCP<Tpetra_CrsMatrix_complex> & data) {return TPETRA_MATRIX_COMPLEX;}
-template<> MUEMEX_TYPE getMuemexType<RCP<Tpetra_CrsMatrix_complex>>() {return TPETRA_MATRIX_COMPLEX;}
+template<> MuemexType getMuemexType(const RCP<Tpetra_CrsMatrix_complex> & data) {return TPETRA_MATRIX_COMPLEX;}
+template<> MuemexType getMuemexType<RCP<Tpetra_CrsMatrix_complex>>() {return TPETRA_MATRIX_COMPLEX;}
 
-template<> MUEMEX_TYPE getMuemexType(const RCP<Xpetra_MultiVector_double> & data) {return XPETRA_MULTIVECTOR_DOUBLE;}
-template<> MUEMEX_TYPE getMuemexType<RCP<Xpetra_MultiVector_double>>() {return XPETRA_MULTIVECTOR_DOUBLE;}
+template<> MuemexType getMuemexType(const RCP<Xpetra_MultiVector_double> & data) {return XPETRA_MULTIVECTOR_DOUBLE;}
+template<> MuemexType getMuemexType<RCP<Xpetra_MultiVector_double>>() {return XPETRA_MULTIVECTOR_DOUBLE;}
 
-template<> MUEMEX_TYPE getMuemexType(const RCP<Xpetra_MultiVector_complex> & data) {return XPETRA_MULTIVECTOR_COMPLEX;}
-template<> MUEMEX_TYPE getMuemexType<RCP<Xpetra_MultiVector_complex>>() {return XPETRA_MULTIVECTOR_COMPLEX;}
+template<> MuemexType getMuemexType(const RCP<Xpetra_MultiVector_complex> & data) {return XPETRA_MULTIVECTOR_COMPLEX;}
+template<> MuemexType getMuemexType<RCP<Xpetra_MultiVector_complex>>() {return XPETRA_MULTIVECTOR_COMPLEX;}
 
-template<> MUEMEX_TYPE getMuemexType(const RCP<Xpetra_Matrix_double> & data) {return XPETRA_MATRIX_DOUBLE;}
-template<> MUEMEX_TYPE getMuemexType<RCP<Xpetra_Matrix_double>>() {return XPETRA_MATRIX_DOUBLE;}
+template<> MuemexType getMuemexType(const RCP<Xpetra_Matrix_double> & data) {return XPETRA_MATRIX_DOUBLE;}
+template<> MuemexType getMuemexType<RCP<Xpetra_Matrix_double>>() {return XPETRA_MATRIX_DOUBLE;}
 
-template<> MUEMEX_TYPE getMuemexType(const RCP<Xpetra_Matrix_complex> & data) {return XPETRA_MATRIX_COMPLEX;}
-template<> MUEMEX_TYPE getMuemexType<RCP<Xpetra_Matrix_complex>>() {return XPETRA_MATRIX_COMPLEX;}
+template<> MuemexType getMuemexType(const RCP<Xpetra_Matrix_complex> & data) {return XPETRA_MATRIX_COMPLEX;}
+template<> MuemexType getMuemexType<RCP<Xpetra_Matrix_complex>>() {return XPETRA_MATRIX_COMPLEX;}
 
-template<> MUEMEX_TYPE getMuemexType(const RCP<Epetra_CrsMatrix> & data) {return EPETRA_CRSMATRIX;}
-template<> MUEMEX_TYPE getMuemexType<RCP<Epetra_CrsMatrix>>() {return EPETRA_CRSMATRIX;}
+template<> MuemexType getMuemexType(const RCP<Epetra_CrsMatrix> & data) {return EPETRA_CRSMATRIX;}
+template<> MuemexType getMuemexType<RCP<Epetra_CrsMatrix>>() {return EPETRA_CRSMATRIX;}
 
-template<> MUEMEX_TYPE getMuemexType(const RCP<Epetra_MultiVector> & data) {return EPETRA_MULTIVECTOR;}
-template<> MUEMEX_TYPE getMuemexType<RCP<Epetra_MultiVector>>() {return EPETRA_MULTIVECTOR;}
+template<> MuemexType getMuemexType(const RCP<Epetra_MultiVector> & data) {return EPETRA_MULTIVECTOR;}
+template<> MuemexType getMuemexType<RCP<Epetra_MultiVector>>() {return EPETRA_MULTIVECTOR;}
 
-template<> MUEMEX_TYPE getMuemexType(const RCP<MAggregates>& data) {return AGGREGATES;}
-template<> MUEMEX_TYPE getMuemexType<RCP<MAggregates>>() {return AGGREGATES;}
+template<> MuemexType getMuemexType(const RCP<MAggregates>& data) {return AGGREGATES;}
+template<> MuemexType getMuemexType<RCP<MAggregates>>() {return AGGREGATES;}
 
-template<> MUEMEX_TYPE getMuemexType(const RCP<MAmalInfo>& data) {return AMALGAMATION_INFO;}
-template<> MUEMEX_TYPE getMuemexType<RCP<MAmalInfo>>() {return AMALGAMATION_INFO;}
+template<> MuemexType getMuemexType(const RCP<MAmalInfo>& data) {return AMALGAMATION_INFO;}
+template<> MuemexType getMuemexType<RCP<MAmalInfo>>() {return AMALGAMATION_INFO;}
 
-template<> MUEMEX_TYPE getMuemexType(const RCP<MGraph>& data) {return GRAPH;}
-template<> MUEMEX_TYPE getMuemexType<RCP<MGraph>>() {return GRAPH;}
+template<> MuemexType getMuemexType(const RCP<MGraph>& data) {return GRAPH;}
+template<> MuemexType getMuemexType<RCP<MGraph>>() {return GRAPH;}
 
 /* "prototypes" for specialized functions used in other specialized functions */
 
@@ -527,11 +527,10 @@ RCP<MAmalInfo> loadDataFromMatlab<RCP<MAmalInfo>>(const mxArray* mxa)
   throw runtime_error("AmalgamationInfo not supported in Muemex yet.");
   return amal;
 }
-/*
+
 template<>
 RCP<MGraph> loadDataFromMatlab<RCP<MGraph>>(const mxArray* mxa)
 {
-  RCP<MGraph> graph;
   //mxa must be struct with logical sparse matrix called 'edges' and Nx1 int32 array 'boundaryNodes'
   mxArray* edges = mxGetField(mxa, 0, "edges");
   mxArray* boundaryNodes = mxGetField(mxa, 0, "boundaryNodes");
@@ -539,26 +538,43 @@ RCP<MGraph> loadDataFromMatlab<RCP<MGraph>>(const mxArray* mxa)
     throw runtime_error("Graph structure in MATLAB must have a field called 'edges' (logical sparse matrix)");
   if(boundaryNodes == NULL)
     throw runtime_error("Graph structure in MATLAB must have a field called 'boundaryNodes' (int32 array containing list of boundary nodes)");
-  if(!mxIsSparse(edges) || mxGetGetClassId(edges) != mxLOGICAL_CLASS)
+  int* boundaryList = (int*) mxGetData(boundaryNodes);
+  if(!mxIsSparse(edges) || mxGetClassID(edges) != mxLOGICAL_CLASS)
     throw runtime_error("Graph edges must be stored as a logical sparse matrix.");
   mwIndex* rowIndices = mxGetIr(edges);
   mwIndex* colPtrs = mxGetJc(edges);
   mm_GlobalOrd nRows = (mm_GlobalOrd) mxGetM(edges);
-  RCP<const Teuchos::Comm<int>> comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
-  RCP<muemex_map_type> map = rcp(new muemex_map_type(nRows, 0, comm));
+  RCP<const Teuchos::Comm<mm_GlobalOrd>> comm = rcp(new Teuchos::SerialComm<mm_GlobalOrd>());
+  typedef Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MMap;
+  RCP<MMap> map = rcp(new MMap(nRows, 0, comm));
   //Figure out max entries per row (for ideal CrsGraph constructor)
   int nnz = colPtrs[mxGetN(edges)]; //last entry in colPtrs
   int* entriesPerRow = new int[nRows];
-  int** colIndices = new int*[nRows]; //pointer to array of ints, inner array are col indices
+  mm_LocalOrd** colIndices = new mm_LocalOrd*[nRows]; //pointer to array of ints, inner array are col indices
+  int* numEnteredPerRow = new int[nRows];
   int maxNzPerRow = 0;
+  for(int i = 0; i < nRows; i++)
+  {
+    entriesPerRow[i] = 0;
+    numEnteredPerRow[i] = 0;
+  }
   for(int i = 0; i < nnz; i++)
   {
     entriesPerRow[rowIndices[i]]++;
   }
+  for(int i = 0; i < nRows; i++)
+  {
+    colIndices[i] = new int[entriesPerRow[i]]; //Allocate space for the column indices for CRS
+  }
   //Another pass to populate colIndices now that we know # of entries per row
+  int colIter = 0; //keep track of the column that 'i' is in in the following loop
   for(int i = 0; i < nnz; i++)
   {
-  
+    while(i > (int) colPtrs[colIter + 1]) //Seek to the column that entry i is in
+      colIter++;
+    mwIndex thisRow = rowIndices[i];
+    colIndices[thisRow][numEnteredPerRow[thisRow]] = (mm_LocalOrd) colIter;
+    numEnteredPerRow[thisRow]++;
   }
   //Find maximum
   for(int i = 0; i < nRows; i++)
@@ -566,13 +582,38 @@ RCP<MGraph> loadDataFromMatlab<RCP<MGraph>>(const mxArray* mxa)
     if(maxNzPerRow < entriesPerRow[i])
       maxNzPerRow = entriesPerRow[i];
   }
-  typedef Tpetra::CrsGraph<mm_LocalOrd, mm_GlobalOrd, mm_node_t> TpetraGraph;
+  typedef Xpetra::TpetraCrsGraph<mm_LocalOrd, mm_GlobalOrd, mm_node_t> TpetraGraph;
   RCP<TpetraGraph> tgraph = rcp(new TpetraGraph(map, (size_t) maxNzPerRow));
   //Populate tgraph in compressed-row format. Must get each row individually...
-  
+  for(int i = 0; i < nRows; i++)
+  {
+    ArrayView<mm_LocalOrd> rowData(colIndices[i], entriesPerRow[i]);
+    tgraph->insertGlobalIndices((mm_GlobalOrd) i, rowData);
+  }
+  for(int i = 0; i < nRows; i++)
+  {
+    delete[] colIndices[i];
+  }
+  delete[] colIndices;
   delete[] entriesPerRow;
+  delete[] numEnteredPerRow;
+  tgraph->fillComplete(map, map);
+  RCP<MGraph> mgraph = rcp(new MueLu::Graph<mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tgraph));
+  //Set boundary nodes
+  int numBoundaryNodes = mxGetNumberOfElements(boundaryNodes);
+  bool* boundaryFlags = new bool[nRows];
+  for(int i = 0; i < nRows; i++)
+  {
+    boundaryFlags[i] = false;
+  }
+  for(int i = 0; i < numBoundaryNodes; i++)
+  {
+    boundaryFlags[boundaryList[i]] = true;
+  }
+  ArrayRCP<bool> boundaryNodesInput(boundaryFlags, 0, nRows, true);
+  mgraph->SetBoundaryNodeMap(boundaryNodesInput);
+  return mgraph;
 }
-*/
 
 /* ******************************* */
 /* saveDataToMatlab                */
@@ -1051,6 +1092,105 @@ mxArray* saveDataToMatlab(RCP<MAmalInfo>& data)
   return mxCreateDoubleScalar(0);
 }
 
+template<>
+mxArray* saveDataToMatlab(RCP<MGraph>& data)
+{
+  int numEntries = (int) data->GetGlobalNumEdges();
+  int numRows = (int) data->GetDomainMap()->getGlobalNumElements(); //assume numRows == numCols
+  mxArray* mat = mxCreateSparseLogicalMatrix(numRows, numRows, numEntries);
+  mxLogical* outData = (mxLogical*) mxGetData(mat);
+  mwIndex* rowInds = mxGetIr(mat);
+  mwIndex* colPtrs = mxGetJc(mat);
+  mm_LocalOrd* dataCopy = new mm_LocalOrd[numEntries];
+  mm_LocalOrd* iter = dataCopy;
+  int* entriesPerRow = new int[numRows];
+  int* entriesPerCol = new int[numRows];
+  for(int i = 0; i < numRows; i++)
+  {
+    entriesPerRow[i] = 0;
+    entriesPerCol[i] = 0;
+  }
+  for(int i = 0; i < numRows; i++)
+  {
+    ArrayView<const mm_LocalOrd> neighbors = data->getNeighborVertices(i); //neighbors has the column indices for row i
+    memcpy(iter, neighbors.getRawPtr(), sizeof(mm_LocalOrd) * neighbors.size());
+    entriesPerRow[i] = neighbors.size();
+    for(int j = 0; j < neighbors.size(); j++)
+    {
+      entriesPerCol[neighbors[j]]++;
+    }
+    iter += neighbors.size();
+  }
+  mwIndex** rowIndsByColumn = new mwIndex*[numRows]; //rowIndsByColumn[0] points to array of row indices in column 1
+  mxLogical** valuesByColumn = new mxLogical*[numRows];
+  int* numEnteredPerCol = new int[numRows];
+  int accum = 0;
+  for(int i = 0; i < numRows; i++)
+  {
+    rowIndsByColumn[i] = &rowInds[accum];
+    //cout << "Entries in column " << i << " start at offset " << accum << endl;
+    valuesByColumn[i] = &outData[accum];
+    accum += entriesPerCol[i];
+    if(accum > numEntries)
+      throw runtime_error("potato");
+  }
+  for(int i = 0; i < numRows; i++)
+  {
+    numEnteredPerCol[i] = 0; //rowIndsByColumn[n][numEnteredPerCol[n]] gives the next place to put a row index
+  }
+  //entriesPerCol now has Jc information (col offsets)
+  accum = 0; //keep track of cumulative index in dataCopy
+  for(int row = 0; row < numRows; row++)
+  {
+    for(int entryInRow = 0; entryInRow < entriesPerRow[row]; entryInRow++)
+    {
+      int col = dataCopy[accum];
+      accum++;
+      rowIndsByColumn[col][numEnteredPerCol[col]] = row;
+      valuesByColumn[col][numEnteredPerCol[col]] = (mxLogical) 1;
+      numEnteredPerCol[col]++;
+    }
+  }
+  accum = 0; //keep track of total entries over all columns
+  for(int col = 0; col < numRows; col++)
+  {
+    colPtrs[col] = accum;
+    accum += entriesPerCol[col];
+  }
+  colPtrs[numRows] = accum; //the last entry in jc, which is equivalent to numEntries
+  delete[] numEnteredPerCol;
+  delete[] rowIndsByColumn;
+  delete[] valuesByColumn;
+  delete[] dataCopy;
+  delete[] entriesPerRow;
+  delete[] entriesPerCol;
+  //Construct list of boundary nodes
+  const ArrayRCP<const bool> boundaryFlags = data->GetBoundaryNodeMap();
+  int numBoundaryNodes = 0;
+  for(int i = 0; i < boundaryFlags.size(); i++)
+  {
+    if(boundaryFlags[i])
+      numBoundaryNodes++;
+  }
+  cout << "Graph has " << numBoundaryNodes << " Dirichlet boundary nodes." << endl;
+  mwSize dims[] = {(mwSize) numBoundaryNodes, 1};
+  mxArray* boundaryList = mxCreateNumericArray(2, dims, mxINT32_CLASS, mxREAL);
+  int* dest = (int*) mxGetData(boundaryList);
+  int* destIter = dest;
+  for(int i = 0; i < boundaryFlags.size(); i++)
+  {
+    if(boundaryFlags[i])
+    {
+      *destIter = i;
+      destIter++;
+    }
+  }
+  mxArray* constructArgs[] = {mat, boundaryList};
+  mxArray* out[1];
+  mexCallMATLAB(1, out, 2, constructArgs, "constructGraph");
+  return out[0];
+}
+
 template<typename T>
 MuemexData<T>::MuemexData(const mxArray* mxa) : MuemexArg(getMuemexType<T>())
 {
@@ -1064,7 +1204,7 @@ mxArray* MuemexData<T>::convertToMatlab()
 }
 
 template<typename T>
-MuemexData<T>::MuemexData(T& dataToCopy, MUEMEX_TYPE dataType) : MuemexArg(dataType)
+MuemexData<T>::MuemexData(T& dataToCopy, MuemexType dataType) : MuemexArg(dataType)
 {
   data = dataToCopy;
 }
