@@ -1,3 +1,29 @@
+Release Notes for PyTrilinos for Trilinos 12.2
+==============================================
+
+General
+  * Updated the Developers Guide
+
+Teuchos
+  * Made Teuchos a required dependency for PyTrilinos.
+
+Domi
+  * Domi wrappers now use new Domi::DefaultNode class
+  * Added HAVE_DOMI as a macro in PyTrilinos_config.h
+  * Fixed docstrings for Domi package
+  * Added a simple Domi example
+  * Fixed Domi.MDVector extensions
+
+Tpetra
+  * Enabled Tpetra wrappers in the release branch
+  * Fixed a dynamic typing problem
+  * Bug fixes in Tpetra.Map
+  * Added HAVE_TPETRA as a macro in PyTrilinos_config.h
+  * Fixed docstrings for Tpetra package
+  * Got wrappers for all requiredTpetra constructors to work
+  * Expanded Tpetra.Vector unit tests
+  * Added unit tests for Tpetra.MultiVector
+
 Release Notes for PyTrilinos for Trilinos 12.0
 ==============================================
 
