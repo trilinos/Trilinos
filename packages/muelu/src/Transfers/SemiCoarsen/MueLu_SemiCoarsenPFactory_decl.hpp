@@ -47,14 +47,10 @@
 #define MUELU_SEMICOARSENPFACTORY_DECL_HPP
 
 #include <Xpetra_Matrix_fwd.hpp>
-#include <Xpetra_MultiVectorFactory_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_SemiCoarsenPFactory_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
-#include "MueLu_CoarseMapFactory_fwd.hpp"
 
 #include "MueLu_Level_fwd.hpp"
 

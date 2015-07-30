@@ -48,10 +48,11 @@
 
 #include <stdlib.h>
 
+#include <Teuchos_LAPACK.hpp>
+
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Matrix.hpp>
-#include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
@@ -60,9 +61,6 @@
 
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_PerfUtils.hpp"
-#include "MueLu_Utilities.hpp"
-#include <Teuchos_LAPACK.hpp>
 
 namespace MueLu {
 

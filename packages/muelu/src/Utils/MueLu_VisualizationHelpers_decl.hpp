@@ -51,14 +51,8 @@
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_TwoLevelFactoryBase.hpp"
 #include "MueLu_VisualizationHelpers_fwd.hpp"
-#include "MueLu_Aggregates_fwd.hpp"
-#include "MueLu_Graph_fwd.hpp"
 #include "MueLu_GraphBase.hpp"
-#include "MueLu_AmalgamationFactory_fwd.hpp"
-#include "MueLu_AmalgamationInfo_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 
