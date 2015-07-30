@@ -1258,6 +1258,7 @@ std::vector<Teuchos::RCP<MuemexArg>> processNeeds(const Factory* factory, std::s
   typedef RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> MultiVector_t;
   typedef RCP<Aggregates<LocalOrdinal, GlobalOrdinal, Node>> Aggregates_t;
   typedef RCP<AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>> AmalgamationInfo_t;
+  typedef RCP<MGraph> Graph_t;
   vector<string> needsList = tokenizeList(needsParam);
   vector<RCP<MuemexArg>> args;
   for(size_t i = 0; i < needsList.size(); i++)
@@ -1286,6 +1287,11 @@ std::vector<Teuchos::RCP<MuemexArg>> processNeeds(const Factory* factory, std::s
     {
       int levelNum = lvl.GetLevelID();
       args.push_back(rcp(new MuemexData<int>(levelNum)));
+    }
+    else if(needsList[i] == "Graph")
+    {
+      Graph_t mydata = lvl.Get<Graph_t>(needsList[i], factory->GetFactory(needsList[i]).get());
+      args.push_back(rcp(new MuemexData<Graph_t>(mydata)));
     }
     else
     {
@@ -1353,6 +1359,11 @@ std::vector<Teuchos::RCP<MuemexArg>> processNeeds(const Factory* factory, std::s
         int mydata = getLevelVariable<int>(needsList[i], lvl);
         args.push_back(rcp(new MuemexData<int>(mydata)));
       }
+      else if(strstr(typeStr, "string"))
+      {
+        string mydata = getLevelVariable<string>(needsList[i], lvl);
+        args.push_back(rcp(new MuemexData<string>(mydata)));
+      }
       else
       {
         free(buf);
@@ -1373,6 +1384,7 @@ void processProvides(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Fact
   typedef RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>> MultiVector_t;
   typedef RCP<Aggregates<LocalOrdinal, GlobalOrdinal, Node>> Aggregates_t;
   typedef RCP<AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node>> AmalgamationInfo_t;
+  typedef RCP<MGraph> Graph_t;
   vector<string> provides = tokenizeList(providesParam);
   for(size_t i = 0; i < size_t(provides.size()); i++)
   {
@@ -1394,6 +1406,11 @@ void processProvides(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Fact
     else if(provides[i] == "UnAmalgamationInfo")
     {
       RCP<MuemexData<AmalgamationInfo_t>> mydata = Teuchos::rcp_static_cast<MuemexData<AmalgamationInfo_t>>(mexOutput[i]);
+      lvl.Set(provides[i], mydata->getData(), factory);
+    }
+    else if(provides[i] == "Graph")
+    {
+      RCP<MuemexData<Graph_t>> mydata = Teuchos::rcp_static_cast<MuemexData<Graph_t>>(mexOutput[i]);
       lvl.Set(provides[i], mydata->getData(), factory);
     }
     else
@@ -1461,6 +1478,11 @@ void processProvides(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Fact
       {
         RCP<MuemexData<int>> mydata = Teuchos::rcp_static_cast<MuemexData<int>>(mexOutput[i]);
         addLevelVariable<int>(mydata->getData(), provides[i], lvl);
+      }
+      else if(strstr(typeStr, "string"))
+      {
+        RCP<MuemexData<string>> mydata = Teuchos::rcp_static_cast<MuemexData<string>>(mexOutput[i]);
+        addLevelVariable<string>(mydata->getData(), provides[i], lvl);
       }
       else
       {

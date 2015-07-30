@@ -482,7 +482,8 @@ namespace MueLu {
        strstr(firstWord, "int") ||
        strstr(firstWord, "scalar") ||
        strstr(firstWord, "double") ||
-       strstr(firstWord, "complex"))
+       strstr(firstWord, "complex") ||
+       strstr(firstWord, "string"))
       //Add name to list of keys to remove
     {
       free(str);
