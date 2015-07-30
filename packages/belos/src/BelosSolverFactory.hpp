@@ -502,10 +502,12 @@ makeSolverManagerTmpl (const Teuchos::RCP<Teuchos::ParameterList>& params)
   RCP<SolverManagerType> solver = rcp (new SolverManagerType);
 
   // Some solvers may not like to get a null ParameterList.  If params
-  // is null, replace it with the solver's default parameters.
+  // is null, replace it with an empty parameter list.  The solver
+  // will fill in default parameters for that case.  Use the name of
+  // the solver's default parameters to name the new empty list.
   RCP<ParameterList> pl;
   if (params.is_null()) {
-    pl = parameterList (*solver->getValidParameters ());
+    pl = parameterList (solver->getValidParameters ()->name ());
   } else {
     pl = params;
   }
