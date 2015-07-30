@@ -143,7 +143,7 @@ namespace MueLu {
     typedef Tpetra::Map<LO,GO,NO>            Map;
     typedef Tpetra::MultiVector<SC,LO,GO,NO> MultiVector;
 
-    void printMaps(Teuchos::RCP<const Teuchos::Comm<int> >& comm, const std::vector<std::vector<int> >& vec,
+    void printMaps(Teuchos::RCP<const Teuchos::Comm<int> >& comm, const std::vector<std::vector<int> >& vec, const std::vector<int>& perm,
                    const int* nbrs, const Map& map, const std::string& label) {
       for (int p = 0; p < comm->getSize(); p++) {
         if (comm->getRank() == p) {
@@ -152,7 +152,7 @@ namespace MueLu {
           for (size_t i = 0; i < vec.size(); ++i) {
             std::cout << "   neighbor " << nbrs[i] << " :";
             for (size_t j = 0; j < vec[i].size(); ++j)
-              std::cout << " " << vec[i][j] << " (" << map.getGlobalElement(vec[i][j]) << ")";
+              std::cout << " " << vec[i][j] << " (" << map.getGlobalElement(perm[vec[i][j]]) << ")";
             std::cout << std::endl;
           }
           std::cout << std::endl;
@@ -168,8 +168,9 @@ namespace MueLu {
     //! @name Constructor/Destructor
     //@{
     AMGXOperator(const Teuchos::RCP<Tpetra::CrsMatrix<SC,LO,GO,NO> > &inA, Teuchos::ParameterList &paramListIn) {
-      RCP<const Teuchos::Comm<int> > comm = inA->getCrsGraph()->getComm();
-      int myRank = comm->getRank();
+      RCP<const Teuchos::Comm<int> > comm = inA->getRowMap()->getComm();
+      int numProcs = comm->getSize();
+      int myRank   = comm->getRank();
 
       // Initialize
       AMGX_SAFE_CALL(AMGX_initialize());
@@ -202,6 +203,8 @@ namespace MueLu {
       // TODO: we probably need to add "exception_handling=1" to the parameter list
       // to switch on internal error handling (with no need for AMGX_SAFE_CALL)
 
+#define NEW_COMM
+#ifdef NEW_COMM
       // NOTE: MPI communicator used in AMGX_resources_create must exist in the scope of AMGX_matrix_comm_from_maps_one_ring
       // FIXME: fix for serial comm
       RCP<const Teuchos::MpiComm<int> > tmpic = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm->duplicate());
@@ -209,9 +212,10 @@ namespace MueLu {
 
       RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > rawMpiComm = tmpic->getRawMpiComm();
       MPI_Comm mpiComm = *rawMpiComm;
+#endif
 
       // Construct AMGX resources
-      if (comm->getSize() == 1) {
+      if (numProcs == 1) {
         AMGX_resources_create_simple(&Resources_, Config_);
 
       } else {
@@ -220,9 +224,13 @@ namespace MueLu {
         int device[] = {(comm->getRank() % numGPUDevices)};
 
         AMGX_config_add_parameters(&Config_, "communicator=MPI");
+#ifdef NEW_COMM
         AMGX_resources_create(&Resources_, Config_, &mpiComm, 1/* number of GPU devices utilized by this rank */, device);
+#else
+        AMGX_resources_create(&Resources_, Config_, MPI_COMM_WORLD, 1/* number of GPU devices utilized by this rank */, device);
+#endif
       }
-      // std::cout << "Created Resources" << std::endl;
+      std::cout << "Created Resources" << std::endl;
 
       AMGX_Mode mode = AMGX_mode_dDDI;
       AMGX_solver_create(&Solver_, Resources_, mode,  Config_);
@@ -232,8 +240,10 @@ namespace MueLu {
 
       // std::cout << "Created stuff" << std::endl;
 
+      std::vector<int> amgx2muelu;
+
       // Construct AMGX communication pattern
-      if (comm->getSize() > 1) {
+      if (numProcs > 1) {
         RCP<const Tpetra::Import<LO,GO> > importer = inA->getCrsGraph()->getImporter();
 
         TEUCHOS_TEST_FOR_EXCEPTION(importer.is_null(), MueLu::Exceptions::RuntimeError, "The matrix A has no Import object.");
@@ -308,14 +318,14 @@ namespace MueLu {
             if (importPIDs[i] != -1 && hashTable.get(importPIDs[i]) == k)
               muelu2amgx_[i] = importOffset++;
 
-        amgx2muelu_.resize(muelu2amgx_.size());
-        for (int i = 0; i < muelu2amgx_.size(); i++)
-          amgx2muelu_[muelu2amgx_[i]] = i;
-
         std::cout << "[" << comm->getRank() << "]: muelu2amgx mapping" << std::endl;
         for (int i = 0; i < Nc; i++)
           std::cout << " " << muelu2amgx_[i];
         std::cout << std::endl;
+
+        amgx2muelu.resize(muelu2amgx_.size());
+        for (int i = 0; i < muelu2amgx_.size(); i++)
+          amgx2muelu[muelu2amgx_[i]] = i;
 
         // Construct send arrays
         std::vector<std::vector<int> > sendDatas (num_neighbors);
@@ -332,7 +342,7 @@ namespace MueLu {
           send_maps[i] = &(sendDatas[i][0]);
 
         // Debugging
-        printMaps(comm, sendDatas, neighbors, *importer->getTargetMap(), "send_map_vector");
+        printMaps(comm, sendDatas, amgx2muelu, neighbors, *importer->getTargetMap(), "send_map_vector");
 
         // Construct recv arrays
         std::vector<std::vector<int> > recvDatas (num_neighbors);
@@ -350,20 +360,16 @@ namespace MueLu {
           recv_maps[i] = &(recvDatas[i][0]);
 
         // Debugging
-        printMaps(comm, recvDatas, neighbors, *importer->getTargetMap(), "recv_map_vector");
+        printMaps(comm, recvDatas, amgx2muelu, neighbors, *importer->getTargetMap(), "recv_map_vector");
 
 
-        // std::cout << "Created comm pattern" << std::endl;
-
+        std::cout << "Creaing comm pattern..."; std::cout.flush();
         AMGX_SAFE_CALL(AMGX_matrix_comm_from_maps_one_ring(A_, 1, num_neighbors, neighbors, &send_sizes[0], &send_maps[0], &recv_sizes[0], &recv_maps[0]));
-
-        // std::cout << "Uploaded matrix" << std::endl;
+        std::cout << "done" << std::endl;
 
         AMGX_vector_bind(X_, A_);
         AMGX_vector_bind(Y_, A_);
-        // std::cout << "Binded vectors" << std::endl;
       }
-      // std::cout << "Created communication pattern" << std::endl;
 
       ArrayRCP<const size_t> ia_s;
       ArrayRCP<const int>    ja;
@@ -379,7 +385,7 @@ namespace MueLu {
 
       // Upload matrix
       // TODO Do we need to pin memory here through AMGX_pin_memory?
-      if (comm->getSize() == 1) {
+      if (numProcs == 1) {
         AMGX_matrix_upload_all(A_, N_, nnz, 1, 1, &ia[0], &ja[0], &a[0], NULL);
 
       } else {
@@ -390,7 +396,7 @@ namespace MueLu {
 
         ia_new[0] = 0;
         for (int i = 0; i < N_; i++) {
-          int oldRow = amgx2muelu_[i];
+          int oldRow = amgx2muelu[i];
 
           ia_new[i+1] = ia_new[i] + (ia[oldRow+1] - ia[oldRow]);
 
@@ -425,9 +431,10 @@ namespace MueLu {
           std::cout << " " << a_new[i];
         std::cout << std::endl;
 
+        std::cout << "Uploading matrix..."; std::cout.flush();
         AMGX_matrix_upload_all(A_, N_, nnz, 1, 1, &ia_new[0], &ja_new[0], &a_new[0], NULL);
+        std::cout << "done" << std::endl;
       }
-      // std::cout << "Uploaded matrix" << std::endl;
 
       domainMap_ = inA->getDomainMap();
       rangeMap_  = inA->getRangeMap();
@@ -495,7 +502,6 @@ namespace MueLu {
     RCP<const Map>          rangeMap_;
 
     std::vector<int>        muelu2amgx_;
-    std::vector<int>        amgx2muelu_;
   };
 
 } // namespace
