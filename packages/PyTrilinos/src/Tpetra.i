@@ -549,20 +549,20 @@ public:
   MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
               const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >&ArrayOfPtrs,
               const size_t NumVectors);
-  MultiVector(const Teuchos::RCP<const DefaultMapType>& map,
-              const dual_view_type& view);
-  MultiVector(const Teuchos::RCP<const DefaultMapType>& map,
-              const typename dual_view_type::t_dev& d_view);
-  MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-              const dual_view_type& view,
-              const dual_view_type& origView);
-  MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-              const dual_view_type& view,
-              const Teuchos::ArrayView<const size_t>& whichVectors);
-  MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-              const dual_view_type& view,
-              const dual_view_type& origView,
-              const Teuchos::ArrayView<const size_t>& whichVectors);
+  // MultiVector(const Teuchos::RCP<const DefaultMapType>& map,
+  //             const dual_view_type& view);
+  // MultiVector(const Teuchos::RCP<const DefaultMapType>& map,
+  //             const typename dual_view_type::t_dev& d_view);
+  // MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+  //             const dual_view_type& view,
+  //             const dual_view_type& origView);
+  // MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+  //             const dual_view_type& view,
+  //             const Teuchos::ArrayView<const size_t>& whichVectors);
+  // MultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+  //             const dual_view_type& view,
+  //             const dual_view_type& origView,
+  //             const Teuchos::ArrayView<const size_t>& whichVectors);
   template <class Node2>
   Teuchos::RCP< MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node2 > >
   clone(const Teuchos::RCP< Node2 > &node2) const;
