@@ -77,6 +77,9 @@ class StridedData {
 private:
   ArrayRCP<const scalar_t> vec_;
   int stride_;
+#ifdef KDDKDD_DEBUG_BUG_6379
+  ArrayRCP<const scalar_t> unstridedVec_;
+#endif
 
 public:
 
@@ -87,11 +90,11 @@ public:
    *  \param stride   the stride of the elements in the strided array.
    */
   StridedData(ArrayRCP<const scalar_t> x, int stride) :  
-    vec_(x), stride_(stride) { }
+    vec_(x), stride_(stride), unstridedVec_() { }
 
   /*! \brief Default constructor.  A zero-length strided array.
    */
-  StridedData(): vec_(), stride_(0) { }
+  StridedData(): vec_(), stride_(0), unstridedVec_() { }
 
   /*! \brief Return the length of the strided array.
    *
@@ -117,7 +120,11 @@ public:
    *   an exception is thrown.
    */
 
-  template <typename T> void getInputArray(ArrayRCP<const T> &array) const;
+  template <typename T> void getInputArray(ArrayRCP<const T> &array)
+#ifndef KDDKDD_DEBUG_BUG_6379
+const
+#endif
+;
 
   /*! \brief Get a reference counted pointer to the input.
       \param vec  on return is a reference counted pointer to the input.  
@@ -158,7 +165,10 @@ public:
 template<typename lno_t, typename scalar_t>
   template<typename T>
      void StridedData<lno_t, scalar_t>::getInputArray(
-       ArrayRCP<const T> &array) const
+       ArrayRCP<const T> &array)
+#ifndef KDDKDD_DEBUG_BUG_6379
+const
+#endif
 {
   if (vec_.size() < 1){
     array = ArrayRCP<const T>();
@@ -166,7 +176,13 @@ template<typename lno_t, typename scalar_t>
   else if (stride_==1 && typeid(T()) == typeid(scalar_t())){
     array = vec_;
   }
-  else{
+#ifdef KDDKDD_DEBUG_BUG_6379
+  else if (unstridedVec_ != Teuchos::null) {
+    array = unstridedVec_;
+  }
+#endif
+  else {
+    // Create an unstrided copy
     Environment env;           // a default environment for error reporting
     size_t n = vec_.size() / stride_;
     T *tmp = new T [n];
@@ -175,6 +191,9 @@ template<typename lno_t, typename scalar_t>
       tmp[i] = static_cast<T>(vec_[j]);
     }
     array = arcp(tmp, 0, n);
+#ifdef KDDKDD_DEBUG_BUG_6379
+    unstridedVec_ = array;
+#endif
   }
   
   return;
