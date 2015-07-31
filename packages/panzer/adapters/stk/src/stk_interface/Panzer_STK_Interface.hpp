@@ -674,6 +674,34 @@ public:
    bool getUseLowerCaseForIO() const
    { return useLowerCase_; }
 
+   /** Get vertices associated with a number of elements of the same geometry, note that a coordinate field
+     * will be used (if not is available an exception will be thrown).
+     *
+     * \param[in] elements Element entities to construct vertices
+     * \param[in] eBlock Element block the elements are in
+     * \param[out] vertices Output array that will be sized (<code>localIds.size()</code>,#Vertices,#Dim)
+     *
+     * \note If not all elements have the same number of vertices an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementVertices_FromField(const std::vector<stk_classic::mesh::Entity*> & elements,const std::string & eBlock, ArrayT & vertices) const;
+
+   /** Get vertices associated with a number of elements of the same geometry. This access the true mesh coordinates
+     * array.
+     *
+     * \param[in] elements Element entities to construct vertices
+     * \param[out] vertices Output array that will be sized (<code>localIds.size()</code>,#Vertices,#Dim)
+     *
+     * \note If not all elements have the same number of vertices an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
+   template <typename ArrayT>
+   void getElementVertices_FromCoords(const std::vector<stk_classic::mesh::Entity*> & elements, ArrayT & vertices) const;
+
+   template <typename ArrayT>
+   void getElementVertices_FromCoordsNoResize(const std::vector<stk_classic::mesh::Entity*> & elements, ArrayT & vertices) const;
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;
@@ -732,31 +760,6 @@ protected:
    template <typename ArrayT>
    void setDispFieldData(const std::string & fieldName,const std::string & blockId,int axis,
                          const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
-
-   /** Get vertices associated with a number of elements of the same geometry, note that a coordinate field
-     * will be used (if not is available an exception will be thrown).
-     *
-     * \param[in] elements Element entities to construct vertices
-     * \param[in] eBlock Element block the elements are in
-     * \param[out] vertices Output array that will be sized (<code>localIds.size()</code>,#Vertices,#Dim)
-     *
-     * \note If not all elements have the same number of vertices an exception is thrown.
-     *       If the size of <code>localIds</code> is 0, the function will silently return
-     */
-   template <typename ArrayT>
-   void getElementVertices_FromField(const std::vector<stk_classic::mesh::Entity*> & elements,const std::string & eBlock, ArrayT & vertices) const;
-
-   /** Get vertices associated with a number of elements of the same geometry. This access the true mesh coordinates
-     * array.
-     *
-     * \param[in] elements Element entities to construct vertices
-     * \param[out] vertices Output array that will be sized (<code>localIds.size()</code>,#Vertices,#Dim)
-     *
-     * \note If not all elements have the same number of vertices an exception is thrown.
-     *       If the size of <code>localIds</code> is 0, the function will silently return
-     */
-   template <typename ArrayT>
-   void getElementVertices_FromCoords(const std::vector<stk_classic::mesh::Entity*> & elements, ArrayT & vertices) const;
 
    std::vector<Teuchos::RCP<const PeriodicBC_MatcherBase> > periodicBCs_;
 
@@ -1029,6 +1032,49 @@ void STK_Interface::getElementVertices_FromCoords(const std::vector<stk_classic:
 
    // allocate space
    vertices.resize(elements.size(),masterVertexCount,getDimension());
+
+   // loop over each requested element
+   unsigned dim = getDimension();
+   for(std::size_t cell=0;cell<elements.size();cell++) {
+      stk_classic::mesh::Entity * element = elements[cell];
+      TEUCHOS_ASSERT(element!=0);
+ 
+      unsigned vertexCount 
+         = stk_classic::mesh::fem::get_cell_topology(element->bucket()).getCellTopologyData()->vertex_count;
+      TEUCHOS_TEST_FOR_EXCEPTION(vertexCount!=masterVertexCount,std::runtime_error,
+                         "In call to STK_Interface::getElementVertices all elements "
+                         "must have the same vertex count!");
+
+      // loop over all element nodes
+      stk_classic::mesh::PairIterRelation nodes = element->relations(getNodeRank());
+      TEUCHOS_TEST_FOR_EXCEPTION(nodes.size()!=masterVertexCount,std::runtime_error,
+                         "In call to STK_Interface::getElementVertices cardinality of "
+                         "element node relations must be the vertex count!");
+      for(std::size_t node=0;node<nodes.size();++node) {
+         const double * coord = getNodeCoordinates(nodes[node].entity()->identifier());
+
+         // set each dimension of the coordinate
+         for(unsigned d=0;d<dim;d++)
+            vertices(cell,node,d) = coord[d];
+      }
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementVertices_FromCoordsNoResize(const std::vector<stk_classic::mesh::Entity*> & elements, ArrayT & vertices) const
+{
+   // nothing to do! silently return
+   if(elements.size()==0) {
+      return;
+   }
+
+   //
+   // gather from the intrinsic mesh coordinates (non-lagrangian)
+   //
+
+   // get *master* cell toplogy...(belongs to first element)
+   unsigned masterVertexCount 
+      = stk_classic::mesh::fem::get_cell_topology(elements[0]->bucket()).getCellTopologyData()->vertex_count;
 
    // loop over each requested element
    unsigned dim = getDimension();
