@@ -90,11 +90,19 @@ public:
    *  \param stride   the stride of the elements in the strided array.
    */
   StridedData(ArrayRCP<const scalar_t> x, int stride) :  
-    vec_(x), stride_(stride), unstridedVec_() { }
+    vec_(x), stride_(stride)
+#ifdef KDDKDD_DEBUG_BUG_6379
+    , unstridedVec_() 
+#endif
+    { }
 
   /*! \brief Default constructor.  A zero-length strided array.
    */
-  StridedData(): vec_(), stride_(0), unstridedVec_() { }
+  StridedData(): vec_(), stride_(0)
+#ifdef KDDKDD_DEBUG_BUG_6379
+    , unstridedVec_() 
+#endif
+    { }
 
   /*! \brief Return the length of the strided array.
    *
