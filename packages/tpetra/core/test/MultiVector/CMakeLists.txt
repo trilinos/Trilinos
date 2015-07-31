@@ -8,6 +8,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ${MAXNP}
   )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  Bug5474
+  SOURCES
+    Bug5474
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
 # This test requires exactly 2 MPI processes.  It could be rewritten
 # so that it will run with more, but then the test would just waste
 # the remaining processes.
