@@ -18,7 +18,7 @@
 int main(int narg, char **arg)
 {
   typedef int lno_t;
-  typedef long long gno_t;
+  typedef int gno_t;
 
   // Usual Teuchos MPI stuff
   Teuchos::GlobalMPISession mpiSession(&narg,&arg);
