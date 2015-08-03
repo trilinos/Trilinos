@@ -4,7 +4,8 @@
 namespace stk {
 namespace mesh {
 
-struct EntityLess {
+class EntityLess {
+public:
   inline EntityLess(const BulkData& mesh);
   /** \brief  Comparison operator */
   bool operator()(const Entity lhs, const Entity rhs) const;
@@ -13,6 +14,7 @@ struct EntityLess {
   inline bool operator()( const EntityProc & lhs, const Entity rhs) const;
   inline bool operator()( const EntityProc & lhs, const EntityKey & rhs) const;
   inline EntityLess& operator=(const EntityLess& rhs);
+private:
   const BulkData* m_mesh;
 }; //struct EntityLess
 
