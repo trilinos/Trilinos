@@ -176,7 +176,7 @@ public:
       while ((ent=(*out)->iterate(itr)))  {
         std::map<unsigned int,unsigned int> newOwners;
         apf::Downward adj;
-        unsigned int max_num = 1;
+        unsigned int max_num = 0;
         int new_part=PCU_Comm_Self();
         unsigned int num = in->getDownward(ent,dim,adj);
         for (unsigned int j=0;j<num;j++) {
