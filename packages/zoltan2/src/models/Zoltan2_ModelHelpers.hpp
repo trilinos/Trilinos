@@ -167,9 +167,9 @@ void get2ndAdjsViewFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
       //globalRow for Tpetra Graph
       gno_t globalRowT = as<gno_t> (Ids[localElement]);
 
-// KDD can we insert all adjacencies at once instead of one at a time
+// TODO:  can we insert all adjacencies at once instead of one at a time
 // (since they are contiguous in adjacencyIds)?
-// KDD maybe not until we get rid of zgid_t, as we need the conversion to gno_t.
+// TODO:  maybe not until we get rid of zgid_t, as we need the conversion to gno_t.
       for (lno_t j=offsets[localElement]; j<offsets[localElement+1]; ++j){
 	gno_t globalCol = as<gno_t> (adjacencyIds[j]);
 	//create ArrayView globalCol object for Tpetra
