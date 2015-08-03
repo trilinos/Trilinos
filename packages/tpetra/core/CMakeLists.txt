@@ -343,7 +343,7 @@ IF (Tpetra_ENABLE_Kokkos_Refactor)
 
 ELSE() # NOT Tpetra_ENABLE_Kokkos_Refactor (DEPRECATED)
 
-  MESSAGE(WARNING "The 'classic' version of Tpetra has been DEPRECATED and will go away before the 12.0 release of Trilinos.")
+  MESSAGE(WARNING "The 'classic' version of Tpetra has been DEPRECATED and is no longer supported.  If you don't want to see this message, please stop setting Tpetra_ENABLE_Kokkos_Refactor to OFF.  (It is ON by default; you do not have to set it explicitly.)")
 
   SET(TpetraCore_ETI_NODES   "${KokkosClassic_ENABLED_NODES}")
   GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC ON)
