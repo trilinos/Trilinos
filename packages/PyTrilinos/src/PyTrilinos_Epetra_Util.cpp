@@ -60,7 +60,7 @@
 #include "Teuchos_DefaultComm.hpp"
 
 // Epetra includes
-#include "Epetra_SerialCOmm.h"
+#include "Epetra_SerialComm.h"
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_Operator.h"
@@ -153,7 +153,9 @@ convertPythonToEpetraIntVector(PyObject * pyobj)
   void *argp = 0;
   Teuchos::RCP< Epetra_IntVector > smartresult;
   Teuchos::RCP< Epetra_IntVector > * result;
+#ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector<int> > dmdv_rcp;
+#endif
   int newmem = 0;
   //
   // Check if the Python object is a wrapped Epetra_IntVector
@@ -285,7 +287,9 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
   void *argp = 0;
   Teuchos::RCP< Epetra_MultiVector > smartresult;
   Teuchos::RCP< Epetra_MultiVector > * result;
+#ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector<double> > dmdv_rcp;
+#endif
   int newmem = 0;
   //
   // Check if the Python object is a wrapped Epetra_MultiVector
@@ -430,7 +434,9 @@ convertPythonToEpetraVector(PyObject * pyobj)
   void *argp = 0;
   Teuchos::RCP< Epetra_Vector > smartresult;
   Teuchos::RCP< Epetra_Vector > * result;
+#ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector<double> > dmdv_rcp;
+#endif
   int newmem = 0;
   //
   // Check if the Python object is a wrapped Epetra_Vector

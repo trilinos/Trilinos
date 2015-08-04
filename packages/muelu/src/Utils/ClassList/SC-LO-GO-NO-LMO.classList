@@ -35,6 +35,7 @@ IndefBlockedDiagonalSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
 LineDetectionFactory
 LocalPermutationStrategy
 MapTransferFactory
+MatrixAnalysisFactory
 MergedBlockedMatrixFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 MergedSmoother
 MLParameterListInterpreter

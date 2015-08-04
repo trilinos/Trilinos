@@ -150,6 +150,10 @@ typedef MueLu::LocalPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node> 
 typedef MueLu::MapTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MapTransferFactory;
 #endif
 
+#ifdef MUELU_MATRIXANALYSISFACTORY_SHORT
+typedef MueLu::MatrixAnalysisFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MatrixAnalysisFactory;
+#endif
+
 #ifdef MUELU_MERGEDBLOCKEDMATRIXFACTORY_SHORT
 typedef MueLu::MergedBlockedMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> MergedBlockedMatrixFactory;
 #endif
