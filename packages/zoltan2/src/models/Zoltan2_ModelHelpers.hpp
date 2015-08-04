@@ -210,7 +210,6 @@ void get2ndAdjsViewFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 
   typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
   typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>   sparse_matrix_type;
-  typedef Tpetra::Map<lno_t, gno_t, node_t>                 map_type;
   //typedef Tpetra::global_size_t GST;
   //const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
