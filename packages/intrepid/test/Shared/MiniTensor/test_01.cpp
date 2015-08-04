@@ -40,6 +40,7 @@
 // @HEADER
 
 #include <ctime>
+#include <sstream>
 #include <vector>
 
 #include "Sacado.hpp"
@@ -50,12 +51,29 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Sacado.hpp"
 
+#undef HAVE_INTREPID_KOKKOSCORE
+
 int main(int argc, char* argv[])
 {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  std::cout << "End Result: TEST PASSED";
-  std::cout << std::endl;
-  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
+
+  Teuchos::RCP<std::stringstream>
+  oss = Teuchos::rcp(new std::stringstream);
+
+  Teuchos::FancyOStream
+  fos(oss);
+
+  const bool
+  success = Teuchos::UnitTestRepository::runUnitTests(fos);
+
+  if (success == true) {
+    std::cout << "\nEnd Result: TEST PASSED" << std::endl;
+  }
+  else {
+    std::cout << "\nEnd Result: TEST FAILED" << std::endl;
+  }
+
+  return success == true ? 0 : 1;
 }
 
 namespace Intrepid {
@@ -369,6 +387,254 @@ test_arithmetic(Index const dimension)
   return passed;
 }
 
+template<typename Matrix, typename Scalar>
+bool
+test_fundamentals(Index const rows, Index const cols)
+{
+  bool
+  passed = true;
+
+  Index const
+  number_components = rows * cols;
+
+  std::vector<Scalar> const
+  X = generate_sequence<Scalar>(number_components, 1.0, 1.0);
+
+  // Test constructor with pointer
+  Matrix const
+  A(rows, cols, &X[0]);
+
+  // Test copy constructor
+  Matrix
+  B = A;
+
+  Matrix
+  C;
+
+  // Test copy assignment
+  C = B - A;
+
+  Scalar
+  error = norm_f(C);
+
+  bool const
+  copy_assigned = error <= machine_epsilon<Scalar>();
+  passed = passed && copy_assigned;
+
+  // Test fill with pointer
+  B.fill(&X[0]);
+
+  C = B - A;
+
+  error = norm_f(C);
+
+  bool const
+  filled_pointer = error <= machine_epsilon<Scalar>();
+  passed = passed && filled_pointer;
+
+  std::vector<Scalar> const
+  Y = generate_sequence<Scalar>(number_components, -1.0, -1.0);
+
+  C.fill(&Y[0]);
+
+  // Test increment
+  C += A;
+
+  error = norm_f(C);
+
+  bool const
+  incremented = error <= machine_epsilon<Scalar>();
+  passed = passed && incremented;
+
+  C.fill(&X[0]);
+
+  // Test decrement
+  C -= A;
+
+  error = norm_f(C);
+
+  bool const
+  decremented = error <= machine_epsilon<Scalar>();
+  passed = passed && decremented;
+
+#ifdef HAVE_INTREPID_KOKKOSCORE
+  //test Matrix fill and create for Kokkos data types
+  Kokkos::View<Scalar **, Kokkos::DefaultExecutionSpace>
+  X2("X2_kokkos", rows, cols);
+
+  Kokkos::deep_copy(X2, 3.2);
+
+  Matrix
+  Z(rows, cols);
+
+  Z.fill(X2, 0, 0);
+
+  // Test copy constructor.
+  Matrix const
+  U = Z;
+
+  // Test copy assignment.
+  Matrix
+  V;
+
+  V = U - Z;
+
+  error = norm_f(V);
+
+  bool const
+  tensor_create_from_1d_kokkos = error <= machine_epsilon<Scalar>();
+  passed = passed && tensor_create_from_1d_kokkos;
+#endif
+
+  return passed;
+}
+
+template<typename Matrix, typename Scalar>
+bool
+test_filling(Index const rows, Index const cols)
+{
+  bool
+  passed = true;
+
+  Index const
+  number_components = rows * cols;
+
+  // Test construct with zeros
+  Matrix
+  A(rows, cols, ZEROS);
+
+  Real
+  error = norm_f_square(A);
+
+  bool const
+  zeros_constructed = error <= machine_epsilon<Scalar>();
+  passed = passed && zeros_constructed;
+
+  // Test construct with ones
+  Matrix
+  B(rows, cols, ONES);
+
+  error = norm_f_square(B) - number_components;
+
+  bool const
+  ones_constructed = error <= machine_epsilon<Scalar>();
+  passed = passed && ones_constructed;
+
+  // Test construct with random entries
+  Matrix
+  C(rows, cols, RANDOM_UNIFORM);
+
+  error = norm_f(C);
+
+  bool const
+  random_constructed = error > 0.0 && error < number_components;
+  passed = passed && random_constructed;
+
+  // Test fill with random components
+  A.fill(RANDOM_UNIFORM);
+
+  error = norm_f(A);
+
+  bool const
+  random_filled = error > 0.0 && error < number_components;
+  passed = passed && random_filled;
+
+  // Test fill with zeros
+  B.fill(ZEROS);
+
+  error = norm_f_square(B);
+
+  bool const
+  zeros_filled = error <= machine_epsilon<Scalar>();
+  passed = passed && zeros_filled;
+
+  // Test fill with ones
+  C.fill(ZEROS);
+
+  error = norm_f_square(C) - number_components;
+
+  bool const
+  ones_filled = error <= machine_epsilon<Scalar>();
+  passed = passed && ones_filled;
+
+  return passed;
+}
+
+template<typename Matrix, typename Scalar>
+bool
+test_arithmetic(Index const rows, Index const cols)
+{
+  bool
+  passed = true;
+
+  Index const
+  number_components = rows * cols;
+
+  std::vector<Scalar> const
+  X = generate_sequence<Scalar>(number_components, 1.0, 1.0);
+
+  Real const
+  sum_squares = number_components * (number_components + 1) *
+      (2 * number_components + 1) / 6;
+
+  // Test addition
+  Matrix const
+  A(rows, cols, &X[0]);
+
+  Matrix const
+  B = -1.0 * A;
+
+  Matrix const
+  C = -1.0 * B;
+
+  Matrix const
+  D = A + B;
+
+  Real
+  error = norm_f_square(D);
+
+  bool const
+  added = error <= machine_epsilon<Scalar>();
+  passed = passed && added;
+
+  // Test subtraction
+  Matrix const
+  E = A - C;
+
+  error = norm_f_square(E);
+
+  bool const
+  subtracted = error <= machine_epsilon<Scalar>();
+  passed = passed && subtracted;
+
+  // Test scaling
+  error = norm_f_square(C) - sum_squares;
+
+  bool const
+  scaled = error <= machine_epsilon<Scalar>();
+  passed = passed && scaled;
+
+  Matrix const
+  F = C / -1.0;
+
+  error = norm_f_square(F) - sum_squares;
+
+  bool const
+  divided = error <= machine_epsilon<Scalar>();
+  passed = passed && divided;
+
+  Matrix const
+  G = 1.0 / C;
+
+  error = norm_f_square(G) - sum_squares;
+
+  bool const
+  split = error <= machine_epsilon<Scalar>();
+  passed = passed && split;
+
+  return passed;
+}
+
 } // anonymous namespace
 
 TEUCHOS_UNIT_TEST(MiniTensor, Fundamentals)
@@ -412,6 +678,16 @@ TEUCHOS_UNIT_TEST(MiniTensor, Fundamentals)
   tensor4_static_passed = test_fundamentals<Tensor4<Real, 3>, Real>(3);
 
   TEST_COMPARE(tensor4_static_passed, ==, true);
+
+  bool const
+  matrix_dynamic_passed = test_fundamentals<Matrix<Real>, Real>(4, 3);
+
+  TEST_COMPARE(matrix_dynamic_passed, ==, true);
+
+  bool const
+  matrix_static_passed = test_fundamentals<Matrix<Real, 4, 3>, Real>(4, 3);
+
+  TEST_COMPARE(matrix_static_passed, ==, true);
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, Filling)
@@ -455,6 +731,16 @@ TEUCHOS_UNIT_TEST(MiniTensor, Filling)
   tensor4_static_passed = test_filling<Tensor4<Real, 3>, Real>(3);
 
   TEST_COMPARE(tensor4_static_passed, ==, true);
+
+  bool const
+  matrix_dynamic_passed = test_filling<Matrix<Real>, Real>(4, 3);
+
+  TEST_COMPARE(matrix_dynamic_passed, ==, true);
+
+  bool const
+  matrix_static_passed = test_filling<Matrix<Real, 4, 3>, Real>(4, 3);
+
+  TEST_COMPARE(matrix_static_passed, ==, true);
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, Arithmetic)
@@ -498,6 +784,16 @@ TEUCHOS_UNIT_TEST(MiniTensor, Arithmetic)
   tensor4_static_passed = test_arithmetic<Tensor4<Real, 3>, Real>(3);
 
   TEST_COMPARE(tensor4_static_passed, ==, true);
+
+  bool const
+  matrix_dynamic_passed = test_arithmetic<Matrix<Real>, Real>(4, 3);
+
+  TEST_COMPARE(matrix_dynamic_passed, ==, true);
+
+  bool const
+  matrix_static_passed = test_arithmetic<Matrix<Real, 4, 3>, Real>(4, 3);
+
+  TEST_COMPARE(matrix_static_passed, ==, true);
 }
 
 TEUCHOS_UNIT_TEST(MiniTensor, Inverse2x2)
