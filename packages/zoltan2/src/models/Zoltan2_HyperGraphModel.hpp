@@ -485,7 +485,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     typedef Tpetra::Map<lno_t, gno_t, node_t>                 map_type;
     RCP<sparse_matrix_type> secondAdj;
     if (!ia->avail2ndAdjs(primaryPinType,adjacencyPinType)) {
-      secondAdj=Zoltan2::get2ndAdjsMatFromAdjs<user_t>(ia,primaryPinType, adjacencyPinType);
+      secondAdj=Zoltan2::get2ndAdjsMatFromAdjs<user_t>(ia,comm_,primaryPinType, adjacencyPinType);
     }
     else {
       const lno_t* offsets;

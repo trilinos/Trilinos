@@ -173,7 +173,8 @@ int main(int narg, char *arg[]) {
     Zoltan2::GraphModel<base_adapter_t> graphModel(baseInputAdapter, env,
 						   CommT, modelFlags);
 
-    Zoltan2::get2ndAdjsViewFromAdjs(baseInputAdapter, primaryEType,
+    Zoltan2::get2ndAdjsViewFromAdjs(baseInputAdapter, graphModel.getComm(),
+				    primaryEType,
 				      secondAdjEType, moffsets, madjacencyIds);
 
     for (size_t telct = 0; telct < ia.getLocalNumOf(primaryEType); telct++) {

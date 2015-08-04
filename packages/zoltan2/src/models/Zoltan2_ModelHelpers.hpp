@@ -62,6 +62,7 @@ RCP<Tpetra::CrsMatrix<int,
                       typename MeshAdapter<User>::gno_t, 
                       typename MeshAdapter<User>::node_t> >
 get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
+		      const RCP<const Comm<int> > comm,
                       Zoltan2::MeshEntityType sourcetarget,
                       Zoltan2::MeshEntityType through) {
   typedef typename MeshAdapter<User>::zgid_t zgid_t;
@@ -84,8 +85,8 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     // Get the default communicator and Kokkos Node instance
     // TODO:  Default communicator is not correct here; need to get
     // TODO:  communicator from the problem
-    RCP<const Comm<int> > comm =
-      DefaultPlatform::getDefaultPlatform ().getComm ();
+    /*RCP<const Comm<int> > comm = 
+      DefaultPlatform::getDefaultPlatform ().getComm ();*/
 
     // Get node-element connectivity
 
@@ -196,6 +197,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 
 template <typename User>
 void get2ndAdjsViewFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
+			    const RCP<const Comm<int> > comm,
                             Zoltan2::MeshEntityType sourcetarget,
                             Zoltan2::MeshEntityType through,
                             const typename MeshAdapter<User>::lno_t *&offsets,
@@ -212,7 +214,7 @@ void get2ndAdjsViewFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
   //typedef Tpetra::global_size_t GST;
   //const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
-  RCP<sparse_matrix_type> secondAdjs = get2ndAdjsMatFromAdjs(ia,sourcetarget,through);
+  RCP<sparse_matrix_type> secondAdjs = get2ndAdjsMatFromAdjs(ia,comm,sourcetarget,through);
 
   if (secondAdjs!=RCP<sparse_matrix_type>()) {
     Array<gno_t> Indices;
