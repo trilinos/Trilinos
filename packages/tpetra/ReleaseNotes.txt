@@ -2,6 +2,40 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
+Trilinos 12.2
+-------------
+
+* Improvements to the "local" part of Tpetra::Map
+
+Tpetra::Details::FixedHashTable implements the "local" part of
+Tpetra::Map, where the "local part" is that which does not use MPI
+communication.  For example, FixedHashTable knows how to convert from
+global indices to local indices, for all the global indices known by
+the calling process.
+
+FixedHashTable now uses Kokkos for its data structures.  Its
+initialization is completely Kokkos parallel, and its conversions
+between global and local indices are Kokkos device functions.  This
+achieves an important goal of making the local part of Tpetra::Map
+functionality available for Kokkos parallel operations.
+
+* Many Tpetra classes now split instantiations into multiple files
+
+This matters only when explicit template instantiation (ETI) is ON.
+(This _should_ be ON by default, but is not ON by default yet.)
+
+The largest Tpetra classes (e.g., CrsGraph, CrsMatrix, and
+MultiVector) now split their explicit instantiations into multiple
+.cpp files.  This helps reduce build times and memory usage when ETI
+is ON, and makes setting ETI ON an even more attractive option for
+applications.
+
+* Fixed Bugs 6335, 6336, 6377, and others
+
+* Improved tests to catch errors on processes other than Process 0
+
+* Improved CMake output and internal ETI-related documentation
+
 Trilinos 12.0
 -------------
 
