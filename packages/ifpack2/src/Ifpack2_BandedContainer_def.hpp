@@ -121,6 +121,8 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
     if (kl > kl_) kl_ = kl;
   }
 
+  std::cout << "ku=" << ku_ << " kl=" << kl_ <<std::endl;
+
 #ifdef HAVE_MPI
   Teuchos::RCP<const Teuchos::Comm<int> > localComm =
       Teuchos::rcp (new Teuchos::MpiComm<int> (MPI_COMM_SELF));
