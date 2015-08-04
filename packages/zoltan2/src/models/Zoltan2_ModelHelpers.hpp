@@ -142,6 +142,10 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     sourcetargetMapG = rcp(new map_type(ia->getGlobalNumOf(sourcetarget),
 					sourcetargetGIDs(), gmin[0], comm));
 
+    //Create a new map with IDs uniquely assigned to ranks (oneToOneMap)
+    RCP<const map_type> oneToOneMap =
+      Tpetra::createOneToOne<lno_t, gno_t, node_t>(sourcetargetMapG);
+
     //Generate Map for through.
 // TODO
 // TODO Could check for max through id as well, and if all through ids are
@@ -159,7 +163,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     RCP<sparse_matrix_type> adjsMatrix;
 
     // Construct Tpetra::CrsGraph objects.
-    adjsMatrix = rcp (new sparse_matrix_type (sourcetargetMapG, 0));
+    adjsMatrix = rcp (new sparse_matrix_type (oneToOneMap, 0));
 
     nonzero_t justOne = 1;
     ArrayView<nonzero_t> justOneAV = Teuchos::arrayView (&justOne, 1);
