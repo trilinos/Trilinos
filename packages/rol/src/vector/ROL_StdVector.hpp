@@ -127,7 +127,35 @@ public:
   int dimension() const {
     return std_vec_->size();
   }
-  
+
+  void applyUnary( Elementwise::UnaryFunction<Real> *f ) {
+    unsigned dimension  = std_vec_->size();
+    for(unsigned i=0; i<dimension; ++i) {
+      (*std_vec_)[i] = f->apply((*std_vec_)[i]);
+    }
+
+  }
+
+  void applyBinary( Elementwise::BinaryFunction<Real> *f, const Vector<Real> &x ) {
+    const StdVector & ex = Teuchos::dyn_cast<const StdVector>(x);
+    const std::vector<Element>& xval = *ex.getVector();
+    unsigned dimension  = std_vec_->size();
+    for (unsigned i=0; i<dimension; i++) {
+      (*std_vec_)[i] = f->apply((*std_vec_)[i],xval[i]);
+    }
+
+  }
+
+  Real reduce( Elementwise::ReductionOp<Real> *r ) {
+    Real result = r->initialValue();
+    unsigned dimension  = std_vec_->size();
+    for(unsigned i=0; i<dimension; ++i) {
+      r->reduce((*std_vec_)[i],result);
+    }
+    return result;
+  }
+
+
 }; // class StdVector
 
 namespace StdVector_Helper {
