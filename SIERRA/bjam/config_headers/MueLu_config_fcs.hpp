@@ -1,4 +1,5 @@
-
+#ifndef MUELU_CONFIG_HPP
+#define MUELU_CONFIG_HPP
 
 /* Options */
 
@@ -59,3 +60,8 @@
 /* #undef HAVE_MUELU_TIMER_SYNCHRONIZATION */
 
 /* #undef HAVE_MUELU_MATLAB */
+
+/* #undef HAVE_MUELU_AMGX */
+
+/* #undef HAVE_MUELU_CGAL */
+#endif /* MUELU_CONFIG_HPP */

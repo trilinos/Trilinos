@@ -22,6 +22,9 @@
 /* define if we have the ParMETIS library*/
 #define HAVE_ZOLTAN2_PARMETIS
 
+/* define if we have the ParMA library*/
+/* #undef HAVE_ZOLTAN2_PARMA */
+
 /* define if we have the AMD library*/
 /* #undef HAVE_ZOLTAN2_AMD */
 
