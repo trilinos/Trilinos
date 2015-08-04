@@ -849,7 +849,6 @@ protected: //functions
 
   virtual void internal_resolve_send_ghost_membership();
   virtual bool should_sort_buckets_by_first_entity_identifier() const { return false; }
-  virtual bool should_sort_faces_by_node_ids() const { return false; }
   void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new); // Mod Mark
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified ); // Mod Mark
 
@@ -1257,6 +1256,8 @@ protected: //data
   bool m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
   std::vector<FmwkId> m_fmwk_global_ids;
   mutable std::vector<RelationVector* > m_fmwk_aux_relations;   // Relations that can't be managed by STK such as PARENT/CHILD
+  inline bool should_sort_faces_by_node_ids() const { return m_shouldSortFacesByNodeIds; }
+  bool m_shouldSortFacesByNodeIds;
 #endif
   bool m_do_create_aura;
   enum AutomaticAuraOption m_autoAuraOption;

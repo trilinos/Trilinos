@@ -201,9 +201,6 @@ struct PartLess {
     { return lhs->mesh_meta_data_ordinal() < rhs->mesh_meta_data_ordinal(); }
 };
 
-/** \brief  Order a collection of parts: invoke sort and then unique */
-void sort_and_unique( PartVector &partVector );
-
 /** \brief  Insert a part into a properly ordered collection of parts.
  *          Returns true if this is a new insertion.
  */
