@@ -192,18 +192,11 @@ TEUCHOS_UNIT_TEST( Factory, Bug6383 )
     const std::string solverName ("Fixed Point");
     testSolver<ST, factory_type, solver_base_type, solver_impl_type> (success, out, solverName);
   }
-
-  // FIXME (mfh 04 Aug 2015) The test for LSQR does not currently
-  // pass, because LSQR for some reason expects "Timer Label" to be a
-  // parameter in the input ParameterList.  This is a bug in LSQR, not
-  // a bug in SolverFactory.
-
-  // {
-  //   typedef Belos::LSQRSolMgr<ST, MV, OP> solver_impl_type;
-  //   const std::string solverName ("LSQR");
-  //   testSolver<ST, factory_type, solver_base_type, solver_impl_type> (success, out, solverName);
-  // }
-
+  {
+    typedef Belos::LSQRSolMgr<ST, MV, OP> solver_impl_type;
+    const std::string solverName ("LSQR");
+    testSolver<ST, factory_type, solver_base_type, solver_impl_type> (success, out, solverName);
+  }
   {
     typedef Belos::PCPGSolMgr<ST, MV, OP> solver_impl_type;
     const std::string solverName ("PCPG");
