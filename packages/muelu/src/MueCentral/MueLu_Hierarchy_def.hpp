@@ -625,10 +625,6 @@ namespace MueLu {
         // On intermediate levels, we do cycles
         RCP<Level> Coarse = Levels_[startLevel+1];
 
-        // Utils::Write("X_before.mm", X);
-        // Utils::Write("B_before.mm", B);
-
-
         {
           // ============== PRESMOOTHING ==============
           RCP<TimeMonitor> STime      = rcp(new TimeMonitor(*this, prefix + "Solve : smoothing (total)"      , Timings0));
@@ -641,8 +637,6 @@ namespace MueLu {
             GetOStream(Warnings1) << "Level " <<  startLevel << ": No PreSmoother!" << std::endl;
           }
         }
-        // Utils::Write("X_after.mm", X);
-        // Utils::Write("B_after.mm", B);
 
         RCP<MultiVector> residual;
         {
@@ -650,9 +644,6 @@ namespace MueLu {
           RCP<TimeMonitor> ALevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : residual calculation" + levelSuffix, Timings0));
           residual = Utils::Residual(*A, X, B);
         }
-        // Utils::Write("R_after.mm", *residual);
-        // if (startLevel == 0)
-          // exit(1);
 
         RCP<Operator>    P = Coarse->Get< RCP<Operator> >("P");
         RCP<MultiVector> coarseRhs, coarseX;
@@ -912,14 +903,16 @@ namespace MueLu {
         int nnzspacer = 2; while (tt != 0) { tt /= 10; nnzspacer++; }
         tt = numProcsPerLevel[0];
         int npspacer = 2;  while (tt != 0) { tt /= 10; npspacer++; }
-        oss  << "matrix" << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " <<  " nnz/row" << std::setw(npspacer)  << " procs" << std::endl;
+        oss  << "level " << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " << " nnz/row" << std::setw(npspacer) << "  c ratio" << "  procs" << std::endl;
         for (size_t i = 0; i < nnzPerLevel.size(); ++i) {
-          oss << "A " << i << "  "
-              << std::setw(rowspacer) << rowsPerLevel[i]
-              << std::setw(nnzspacer) << nnzPerLevel[i]
-              << std::setw(9) << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-              << Teuchos::as<double>(nnzPerLevel[i]) / rowsPerLevel[i]
-              << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
+          oss << "  " << i << "  ";
+          oss << std::setw(rowspacer) << rowsPerLevel[i];
+          oss << std::setw(nnzspacer) << nnzPerLevel[i];
+          oss << std::setprecision(2) << std::setiosflags(std::ios::fixed);
+          oss << std::setw(9) << as<double>(nnzPerLevel[i]) / rowsPerLevel[i];
+          if (i) oss << std::setw(9) << as<double>(rowsPerLevel[i-1])/rowsPerLevel[i];
+          else   oss << std::setw(9) << "     ";
+          oss << "    " << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
         }
         oss << std::endl;
         for (int i = 0; i < GetNumLevels(); ++i) {

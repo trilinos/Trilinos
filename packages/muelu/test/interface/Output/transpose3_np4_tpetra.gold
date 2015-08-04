@@ -180,10 +180,10 @@ Level 2
 Number of levels    = 3
 Operator complexity = 1.45
 
-matrix rows    nnz  nnz/row procs
-A 0    9999  29995     3.00  4
-A 1    3335  10015     3.00  4
-A 2    1112   3340     3.00  1
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               4
+  1    3335  10015     3.00     3.00      4
+  2    1112   3340     3.00     3.00      1
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 
