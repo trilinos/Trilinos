@@ -253,7 +253,7 @@ void test_add_elements_to_empty_graph(stk::mesh::BulkData::AutomaticAuraOption a
         stk::mesh::Selector selector(bulkData.mesh_meta_data().locally_owned_part());
         bulkData.get_entities(stk::topology::ELEMENT_RANK, selector, elements_to_add);
 
-        elem_graph.add_elements_to_graph(elements_to_add);
+        elem_graph.add_elements(elements_to_add);
 
         stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
         stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
@@ -447,7 +447,7 @@ ElemElemGraphTester test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::
         elements_to_add.push_back(elem4);
     }
 
-    elem_graph.add_elements_to_graph(elements_to_add);
+    elem_graph.add_elements(elements_to_add);
 
     if (0 == p_rank)
     {
@@ -536,7 +536,7 @@ void test_delete_elements_from_graph(ElemElemGraphTester &elem_graph, std::vecto
         }
     }
 
-    elem_graph.delete_elements_from_graph(elements_to_delete);
+    elem_graph.delete_elements(elements_to_delete);
 
     bulkData.modification_begin();
     for (stk::mesh::Entity elem : elements_to_delete)
@@ -685,7 +685,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         	EXPECT_EQ(0, bulkData.parallel_owner_rank(elements_to_add[i]));
         }
 
-        elem_graph.add_elements_to_graph(elements_to_add);
+        elem_graph.add_elements(elements_to_add);
 
         EXPECT_EQ(4u, elem_graph.size());
         EXPECT_EQ(6u, elem_graph.num_edges());
@@ -704,7 +704,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         elems_to_delete.push_back(elem2);
         elems_to_delete.push_back(elem3);
 
-        elem_graph.delete_elements_from_graph(elems_to_delete);
+        elem_graph.delete_elements(elems_to_delete);
 
         EXPECT_EQ(2u, elem_graph.size());
         EXPECT_EQ(0u, elem_graph.num_edges());
@@ -723,7 +723,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         elements_to_add.push_back(elem2);
         elements_to_add.push_back(elem3);
 
-        elem_graph.add_elements_to_graph(elements_to_add);
+        elem_graph.add_elements(elements_to_add);
 
         EXPECT_EQ(4u, elem_graph.size());
         EXPECT_EQ(6u, elem_graph.num_edges());
@@ -744,7 +744,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         elems_to_delete.push_back(elem1);
         elems_to_delete.push_back(elem3);
 
-        elem_graph.delete_elements_from_graph(elems_to_delete);
+        elem_graph.delete_elements(elems_to_delete);
 
         EXPECT_EQ(0u, elem_graph.size());
         const stk::mesh::impl::ElementGraph &e_graph = elem_graph.get_element_graph();
@@ -826,7 +826,7 @@ TEST(ElementGraph, HexAddShellSerial)
     }
     mesh.modification_end();
 
-    elem_graph.add_elements_to_graph(added_shells);
+    elem_graph.add_elements(added_shells);
 
     EXPECT_EQ(2u, elem_graph.size());
     EXPECT_EQ(0u, elem_graph.num_parallel_edges());
@@ -913,7 +913,7 @@ TEST( ElementGraph, HexDelShellSerial )
     EntityVector elements_to_delete;
     elements_to_delete.push_back(shell2);
 
-    elemElemGraph.delete_elements_from_graph(elements_to_delete);
+    elemElemGraph.delete_elements(elements_to_delete);
 
     mesh.modification_begin();
     mesh.destroy_entity(shell2);
@@ -991,7 +991,7 @@ TEST( ElementGraph, HexDelShellHexSerial )
     EntityVector elements_to_delete;
     elements_to_delete.push_back(shell3);
 
-    elemElemGraph.delete_elements_from_graph(elements_to_delete);
+    elemElemGraph.delete_elements(elements_to_delete);
 
     mesh.modification_begin();
     mesh.destroy_entity(shell3);
@@ -1075,7 +1075,7 @@ TEST( ElementGraph, DISABLED_HexAddShellAddShellSerial )
     }
     mesh.modification_end();
 
-    elemElemGraph.add_elements_to_graph(added_shells);
+    elemElemGraph.add_elements(added_shells);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -1168,7 +1168,7 @@ TEST( ElementGraph, HexAddShellHexSerial )
     }
     mesh.modification_end();
 
-    elemElemGraph.add_elements_to_graph(added_shells);
+    elemElemGraph.add_elements(added_shells);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -1262,7 +1262,7 @@ TEST( ElementGraph, DISABLED_HexAddShellAddShellHexSerial )
     }
     mesh.modification_end();
 
-    elemElemGraph.add_elements_to_graph(added_shells);
+    elemElemGraph.add_elements(added_shells);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -4441,7 +4441,7 @@ TEST( ElementGraph, Hex0DelShell1Parallel )
         elements_to_delete.push_back(shell2);
     }
 
-    elemElemGraph.delete_elements_from_graph( elements_to_delete );
+    elemElemGraph.delete_elements( elements_to_delete );
 
     mesh.modification_begin();
     if (p_rank == 1) {
@@ -4558,7 +4558,7 @@ TEST( ElementGraph, Hex0AddShell1Parallel )
     if (p_rank == 1) {
         elements_to_add.push_back(shell2);
     }
-    elemElemGraph.add_elements_to_graph(elements_to_add);
+    elemElemGraph.add_elements(elements_to_add);
 
     if (p_rank == 0) {
         // Connectivity for Hex Element 1
@@ -4682,7 +4682,7 @@ TEST( ElementGraph, Hex0AddShell0Hex1Parallel )
     if (0 == p_rank) {
         addVector.push_back(shell3);
     }
-    elemElemGraph.add_elements_to_graph(addVector);
+    elemElemGraph.add_elements(addVector);
 
     if (p_rank == 0) {
         // Connectivity for Hex Element 1
@@ -4835,7 +4835,7 @@ TEST( ElementGraph, Hex0AddShell1Hex2Parallel )
         addVector.push_back(shell3);
     }
 
-    elemElemGraph.add_elements_to_graph(addVector);
+    elemElemGraph.add_elements(addVector);
 
     if (p_rank == 0) {
         // Connectivity for Hex Element 1
@@ -4992,7 +4992,7 @@ TEST( ElementGraph, Hex0Shell1AddHex2Parallel )
         addVector.push_back(hex2);
     }
 
-    elemElemGraph.add_elements_to_graph(addVector);
+    elemElemGraph.add_elements(addVector);
 
     if (p_rank == 0) {
         // Connectivity for Hex Element 1
@@ -5606,7 +5606,7 @@ TEST( ElementGraph, Hex0DelShell0Hex1Parallel )
         elements_to_delete.push_back(shell3);
     }
 
-    elemElemGraph.delete_elements_from_graph( elements_to_delete );
+    elemElemGraph.delete_elements( elements_to_delete );
 
     mesh.modification_begin();
     if (p_rank == 0) {
@@ -5738,7 +5738,7 @@ TEST( ElementGraph, Hex0DelShell1Hex2Parallel )
         elements_to_delete.push_back(shell3);
     }
 
-    elemElemGraph.delete_elements_from_graph( elements_to_delete );
+    elemElemGraph.delete_elements( elements_to_delete );
 
     mesh.modification_begin();
     if (p_rank == 1) {
@@ -6122,7 +6122,7 @@ TEST( ElementGraph, Hex0AddShell1Hex0Parallel )
     if (1 == p_rank) {
         addVector.push_back(shell3);
     }
-    elemElemGraph.add_elements_to_graph(addVector);
+    elemElemGraph.add_elements(addVector);
 
     if (p_rank == 0) {
         // Connectivity for Hex Element 1
@@ -6244,7 +6244,7 @@ TEST( ElementGraph, Hex0DelShell1Hex0Parallel )
         elements_to_delete.push_back(shell3);
     }
 
-    elemElemGraph.delete_elements_from_graph( elements_to_delete );
+    elemElemGraph.delete_elements( elements_to_delete );
 
     mesh.modification_begin();
     if (p_rank == 1) {

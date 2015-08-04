@@ -33,25 +33,26 @@ void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph
 class ElemElemGraph
 {
 public:
+
     ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Part &part);
 
     virtual ~ElemElemGraph();
 
-    size_t get_num_connected_elems(stk::mesh::Entity local_element) const;
+    size_t get_num_connected_elems(stk::mesh::Entity localElement) const;
 
-    bool is_connected_elem_locally_owned(stk::mesh::Entity local_element, size_t index_conn_elem) const;
+    bool is_connected_elem_locally_owned(stk::mesh::Entity localElement, size_t indexConnElement) const;
 
-    stk::mesh::Entity get_connected_element(stk::mesh::Entity local_element, size_t index_conn_elem) const;
+    stk::mesh::Entity get_connected_element(stk::mesh::Entity localElement, size_t indexConnElement) const;
 
-    stk::mesh::EntityId get_entity_id_of_remote_element(stk::mesh::Entity local_element, size_t index_conn_elem) const;
+    stk::mesh::EntityId get_entity_id_of_remote_element(stk::mesh::Entity localElement, size_t indexConnElement) const;
 
-    int get_owning_proc_id_of_remote_element(stk::mesh::Entity local_element, stk::mesh::EntityId other_element_id) const;
+    int get_owning_proc_id_of_remote_element(stk::mesh::Entity localElement, stk::mesh::EntityId other_element_id) const;
 
-    int get_side_id_to_connected_element(stk::mesh::Entity local_element, size_t index_conn_elem) const;
+    int get_side_id_to_connected_element(stk::mesh::Entity localElement, size_t indexConnElement) const;
 
-    int get_side_from_element1_to_remote_element2(stk::mesh::Entity local_element, stk::mesh::EntityId other_element_id) const;
+    int get_side_from_element1_to_remote_element2(stk::mesh::Entity localElement, stk::mesh::EntityId other_element_id) const;
 
-    int get_side_from_element1_to_locally_owned_element2(stk::mesh::Entity local_element, stk::mesh::Entity other_element) const;
+    int get_side_from_element1_to_locally_owned_element2(stk::mesh::Entity localElement, stk::mesh::Entity other_element) const;
 
     bool is_connected_to_other_element_via_side_ordinal(stk::mesh::Entity element, int sideOrdinal) const;
 
@@ -65,9 +66,10 @@ public:
 
     void set_num_side_ids_used(size_t num_used);
 
-    void add_elements_to_graph(const stk::mesh::EntityVector &elements_to_add);
 
-    void delete_elements_from_graph(const stk::mesh::EntityVector &elements_to_delete);
+    void add_elements(const stk::mesh::EntityVector &elements);
+
+    void delete_elements(const stk::mesh::EntityVector &elements);
 
     bool is_valid_graph_element(stk::mesh::Entity local_element);
 
@@ -111,7 +113,7 @@ protected:
 
     impl::LocalId get_new_local_element_id_from_pool();
     int size_data_members();
-    void ensure_space_in_entity_to_local_id(size_t max_index);
+    void resize_entity_to_local_id_if_needed(size_t max_index);
     size_t find_max_local_offset_in_neighborhood(stk::mesh::Entity element);
     void pack_deleted_element_comm(stk::CommSparse &comm,
                                    const std::vector<impl::DeletedElementData> &local_elem_and_remote_connected_elem);
@@ -183,7 +185,13 @@ protected:
     size_t m_num_ids_used;
 
     static const impl::LocalId INVALID_LOCAL_ID;
+    static const int INVALID_SIDE_ID;
 
+private:
+    int get_side_of_element1_that_is_connected_to_element2(impl::LocalId elem1, impl::LocalId elem2,
+                                                               const std::vector<impl::LocalId>& connElements) const;
+    impl::LocalId convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const;
+    int get_side_id_to_connected_local_id(impl::LocalId localElementId, size_t indexConnElement) const;
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,

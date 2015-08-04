@@ -103,14 +103,6 @@ print( std::ostream & os , const char * const lead , const Part & p )
 
 //----------------------------------------------------------------------
 
-void sort_and_unique( PartVector & partVector )
-{
-  PartVector::iterator begin = partVector.begin();
-  PartVector::iterator end = partVector.end();
-  std::sort( begin , end , PartLess() );
-  PartVector::iterator new_end = std::unique( begin , end );
-  partVector.erase( new_end , end );
-}
 
 bool insert( ConstPartVector & v , const Part & part )
 {
