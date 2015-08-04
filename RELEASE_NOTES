@@ -24,6 +24,22 @@ Zoltan, Zoltan2.
 (* denotes package is being released externally as a part of Trilinos for the
 first time.)
 
+Domi
+
+  - Input arguments that come in the form of const Domi::MDArrayView<
+    int > have been changed to be const-correct, i.e., they are now
+    const Domi::MDArrayView< const int >.  This allowed for more logical
+    wrappers in PyTrilinos.
+
+  - A new Domi::DefaultNode class has been added.  If Tpetra is enabled,
+    it uses the Tpetra default node.  If Tpetra is not enabled, it uses
+    the serial wrapper node from Teuchos.
+
+  - Domi's required dependencies have been simplified, to Teuchos,
+    Kokkos, and TeuchosKokkosCompat.  Optional dependencies are Epetra,
+    TpetraClassic, and TpetraCore.
+
+
 ROL 
 
   Rapid Optimization Library (ROL) is a C++ package for large-scale
@@ -73,6 +89,32 @@ MueLu
 
     Setup and solve hierarchies from Matlab and use Matlab functions as MueLu
     factories.
+
+PyTrilinos
+
+  - General
+    - Updated the Developers Guide
+
+  - Teuchos
+    - Made Teuchos a required dependency for PyTrilinos.
+
+  - Domi
+    - Domi wrappers now use new Domi::DefaultNode class
+    - Added HAVE_DOMI as a macro in PyTrilinos_config.h
+    - Fixed docstrings for Domi package
+    - Added a simple Domi example
+    - Fixed Domi.MDVector extensions
+
+  - Tpetra
+    - Enabled Tpetra wrappers in the release branch
+    - Fixed a dynamic typing problem
+    - Bug fixes in Tpetra.Map
+    - Added HAVE_TPETRA as a macro in PyTrilinos_config.h
+    - Fixed docstrings for Tpetra package
+    - Got wrappers for all requiredTpetra constructors to work
+    - Expanded Tpetra.Vector unit tests
+    - Added unit tests for Tpetra.MultiVector
+
 
 ###############################################################################
 #                                                                             #
