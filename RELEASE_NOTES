@@ -39,36 +39,6 @@ Domi
     Kokkos, and TeuchosKokkosCompat.  Optional dependencies are Epetra,
     TpetraClassic, and TpetraCore.
 
-
-ROL 
-
-  Rapid Optimization Library (ROL) is a C++ package for large-scale
-  optimization. It is used for the solution of optimal design, optimal control
-  and inverse problems in large-scale engineering applications. Other uses
-  include mesh optimization and image processing.
-
-  ROL aims to combine flexibility, efficiency and robustness.  Key features:
-
-  - Matrix-free application programming interfaces (APIs) --enable direct use
-    of application data structures and memory spaces, linear solvers,
-    nonlinear solvers and preconditioners.
-
-  - State-of-the-art algorithms for unconstrained optimization, constrained
-    optimization and optimization under uncertainty --enable inexact and
-    adaptive function evaluations and iterative linear system solves.
-
-  - Special APIs for simulation-based optimization --enable a streamlined
-    embedding into engineering applications, rigorous implementation
-    verification and efficient use.
-
-  - Modular interfaces throughout the optimization process --enable custom
-    and user-defined algorithms, stopping criteria, hierarchies of algorithms,
-    and selective use of a variety of tools and components.
-
-  For a detailed description of user interfaces and algorithms included in this
-  release, see the presentation ROL-Trilinos-12.2.pptx (or .pdf) in the
-  doc/presentations directory.
-
 MueLu
 
   - Allow to dynamically switch transfer operators between different multigrid
@@ -114,6 +84,68 @@ PyTrilinos
     - Got wrappers for all requiredTpetra constructors to work
     - Expanded Tpetra.Vector unit tests
     - Added unit tests for Tpetra.MultiVector
+
+ROL 
+
+  Rapid Optimization Library (ROL) is a C++ package for large-scale
+  optimization. It is used for the solution of optimal design, optimal control
+  and inverse problems in large-scale engineering applications. Other uses
+  include mesh optimization and image processing.
+
+  ROL aims to combine flexibility, efficiency and robustness.  Key features:
+
+  - Matrix-free application programming interfaces (APIs) --enable direct use
+    of application data structures and memory spaces, linear solvers,
+    nonlinear solvers and preconditioners.
+
+  - State-of-the-art algorithms for unconstrained optimization, constrained
+    optimization and optimization under uncertainty --enable inexact and
+    adaptive function evaluations and iterative linear system solves.
+
+  - Special APIs for simulation-based optimization --enable a streamlined
+    embedding into engineering applications, rigorous implementation
+    verification and efficient use.
+
+  - Modular interfaces throughout the optimization process --enable custom
+    and user-defined algorithms, stopping criteria, hierarchies of algorithms,
+    and selective use of a variety of tools and components.
+
+  For a detailed description of user interfaces and algorithms included in this
+  release, see the presentation ROL-Trilinos-12.2.pptx (or .pdf) in the
+  doc/presentations directory.
+
+Tpetra
+
+  - Improvements to the "local" part of Tpetra::Map
+
+    Tpetra::Details::FixedHashTable implements the "local" part of
+    Tpetra::Map, where the "local part" is that which does not use MPI
+    communication.  For example, FixedHashTable knows how to convert from
+    global indices to local indices, for all the global indices known by
+    the calling process.
+
+    FixedHashTable now uses Kokkos for its data structures.  Its
+    initialization is completely Kokkos parallel, and its conversions
+    between global and local indices are Kokkos device functions.  This
+    achieves an important goal of making the local part of Tpetra::Map
+    functionality available for Kokkos parallel operations.
+
+  - Many Tpetra classes now split instantiations into multiple files
+
+    This matters only when explicit template instantiation (ETI) is ON.
+    (This _should_ be ON by default, but is not ON by default yet.)
+
+    The largest Tpetra classes (e.g., CrsGraph, CrsMatrix, and
+    MultiVector) now split their explicit instantiations into multiple
+    .cpp files.  This helps reduce build times and memory usage when ETI
+    is ON, and makes setting ETI ON an even more attractive option for
+    applications.
+
+  - Fixed Bugs 6335, 6336, 6377, and others
+
+  - Improved tests to catch errors on processes other than Process 0
+
+  - Improved CMake output and internal ETI-related documentation
 
 
 ###############################################################################
