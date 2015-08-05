@@ -253,10 +253,10 @@ namespace Belos {
   private:
     // Compute the condition number estimate
     void compute_condnum_tridiag_sym(Teuchos::ArrayView<MagnitudeType> diag,
-				     Teuchos::ArrayView<MagnitudeType> offdiag,
-				     ScalarType & lambda_min,
-				     ScalarType & lambda_max,
-				     ScalarType & ConditionNumber );
+                                     Teuchos::ArrayView<MagnitudeType> offdiag,
+                                     ScalarType & lambda_min,
+                                     ScalarType & lambda_max,
+                                     ScalarType & ConditionNumber );
 
     // Linear problem.
     Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
@@ -408,137 +408,168 @@ PseudoBlockCGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &probl
 }
 
 template<class ScalarType, class MV, class OP>
-void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
+void
+PseudoBlockCGSolMgr<ScalarType,MV,OP>::
+setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::RCP;
+  using Teuchos::rcp;
 
-  RCP<const ParameterList> defaultParams = getValidParameters();
+  RCP<const ParameterList> defaultParams = this->getValidParameters ();
 
   // Create the internal parameter list if one doesn't already exist.
-  if (params_.is_null()) {
-    params_ = parameterList (*defaultParams);
+  // Belos' solvers treat the input ParameterList to setParameters as
+  // a "delta" -- that is, a change from the current state -- so the
+  // default parameter list (if the input is null) should be empty.
+  // This explains also why Belos' solvers copy parameters one by one
+  // from the input list to the current list.
+  //
+  // Belos obfuscates the latter, because it takes the input parameter
+  // list by RCP, rather than by (nonconst) reference.  The latter
+  // would make more sense, given that it doesn't actually keep the
+  // input parameter list.
+  //
+  // Note, however, that Belos still correctly triggers the "used"
+  // field of each parameter in the input list.  While isParameter()
+  // doesn't (apparently) trigger the "used" flag, get() certainly
+  // does.
+
+  if (params_.is_null ()) {
+    // Create an empty list with the same name as the default list.
+    params_ = parameterList (defaultParams->name ());
   } else {
     params->validateParameters (*defaultParams);
   }
 
   // Check for maximum number of iterations
-  if (params->isParameter("Maximum Iterations")) {
-    maxIters_ = params->get("Maximum Iterations",maxIters_default_);
+  if (params->isParameter ("Maximum Iterations")) {
+    maxIters_ = params->get ("Maximum Iterations", maxIters_default_);
 
     // Update parameter in our list and in status test.
-    params_->set("Maximum Iterations", maxIters_);
-    if (maxIterTest_!=Teuchos::null)
-      maxIterTest_->setMaxIters( maxIters_ );
+    params_->set ("Maximum Iterations", maxIters_);
+    if (! maxIterTest_.is_null ()) {
+      maxIterTest_->setMaxIters (maxIters_);
+    }
   }
 
   // Check if positive definiteness assertions are to be performed
-  if (params->isParameter("Assert Positive Definiteness")) {
-    assertPositiveDefiniteness_ = params->get("Assert Positive Definiteness",assertPositiveDefiniteness_default_);
+  if (params->isParameter ("Assert Positive Definiteness")) {
+    assertPositiveDefiniteness_ =
+      params->get ("Assert Positive Definiteness",
+                   assertPositiveDefiniteness_default_);
 
     // Update parameter in our list.
-    params_->set("Assert Positive Definiteness", assertPositiveDefiniteness_);
+    params_->set ("Assert Positive Definiteness", assertPositiveDefiniteness_);
   }
 
   // Check to see if the timer label changed.
-  if (params->isParameter("Timer Label")) {
-    std::string tempLabel = params->get("Timer Label", label_default_);
+  if (params->isParameter ("Timer Label")) {
+    const std::string tempLabel = params->get ("Timer Label", label_default_);
 
     // Update parameter in our list and solver timer
     if (tempLabel != label_) {
       label_ = tempLabel;
-      params_->set("Timer Label", label_);
-      std::string solveLabel = label_ + ": PseudoBlockCGSolMgr total solve time";
+      params_->set ("Timer Label", label_);
+      const std::string solveLabel =
+        label_ + ": PseudoBlockCGSolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
+      timerSolve_ = Teuchos::TimeMonitor::getNewCounter (solveLabel);
 #endif
-      if (ortho_ != Teuchos::null) {
-        ortho_->setLabel( label_ );
+      if (! ortho_.is_null ()) {
+        ortho_->setLabel (label_);
       }
     }
   }
 
   // Check for a change in verbosity level
-  if (params->isParameter("Verbosity")) {
-    if (Teuchos::isParameterType<int>(*params,"Verbosity")) {
-      verbosity_ = params->get("Verbosity", verbosity_default_);
+  if (params->isParameter ("Verbosity")) {
+    if (Teuchos::isParameterType<int> (*params, "Verbosity")) {
+      verbosity_ = params->get ("Verbosity", verbosity_default_);
     } else {
-      verbosity_ = (int)Teuchos::getParameter<Belos::MsgType>(*params,"Verbosity");
+      verbosity_ = (int) Teuchos::getParameter<Belos::MsgType> (*params, "Verbosity");
     }
 
     // Update parameter in our list.
-    params_->set("Verbosity", verbosity_);
-    if (printer_ != Teuchos::null)
-      printer_->setVerbosity(verbosity_);
+    params_->set ("Verbosity", verbosity_);
+    if (! printer_.is_null ()) {
+      printer_->setVerbosity (verbosity_);
+    }
   }
 
   // Check for a change in output style
-  if (params->isParameter("Output Style")) {
-    if (Teuchos::isParameterType<int>(*params,"Output Style")) {
-      outputStyle_ = params->get("Output Style", outputStyle_default_);
+  if (params->isParameter ("Output Style")) {
+    if (Teuchos::isParameterType<int> (*params, "Output Style")) {
+      outputStyle_ = params->get ("Output Style", outputStyle_default_);
     } else {
-      outputStyle_ = (int)Teuchos::getParameter<Belos::OutputType>(*params,"Output Style");
+      // FIXME (mfh 29 Jul 2015) What if the type is wrong?
+      outputStyle_ = (int) Teuchos::getParameter<Belos::OutputType> (*params, "Output Style");
     }
 
-    // Reconstruct the convergence test if the explicit residual test is not being used.
-    params_->set("Output Style", outputStyle_);
+    // Reconstruct the convergence test if the explicit residual test
+    // is not being used.
+    params_->set ("Output Style", outputStyle_);
     outputTest_ = Teuchos::null;
   }
 
   // output stream
-  if (params->isParameter("Output Stream")) {
-    outputStream_ = Teuchos::getParameter<Teuchos::RCP<std::ostream> >(*params,"Output Stream");
+  if (params->isParameter ("Output Stream")) {
+    outputStream_ = params->get<RCP<std::ostream> > ("Output Stream");
 
     // Update parameter in our list.
-    params_->set("Output Stream", outputStream_);
-    if (printer_ != Teuchos::null)
-      printer_->setOStream( outputStream_ );
+    params_->set ("Output Stream", outputStream_);
+    if (! printer_.is_null ()) {
+      printer_->setOStream (outputStream_);
+    }
   }
 
   // frequency level
   if (verbosity_ & Belos::StatusTestDetails) {
-    if (params->isParameter("Output Frequency")) {
-      outputFreq_ = params->get("Output Frequency", outputFreq_default_);
+    if (params->isParameter ("Output Frequency")) {
+      outputFreq_ = params->get ("Output Frequency", outputFreq_default_);
     }
 
     // Update parameter in out list and output status test.
-    params_->set("Output Frequency", outputFreq_);
-    if (outputTest_ != Teuchos::null)
-      outputTest_->setOutputFrequency( outputFreq_ );
+    params_->set ("Output Frequency", outputFreq_);
+    if (! outputTest_.is_null ()) {
+      outputTest_->setOutputFrequency (outputFreq_);
+    }
   }
 
   // Condition estimate
-  if (params->isParameter("Estimate Condition Number")) {
-    genCondEst_ = params->get("Estimate Condition Number",genCondEst_default_);
+  if (params->isParameter ("Estimate Condition Number")) {
+    genCondEst_ = params->get ("Estimate Condition Number", genCondEst_default_);
   }
 
   // Create output manager if we need to.
-  if (printer_ == Teuchos::null) {
-    printer_ = Teuchos::rcp( new OutputManager<ScalarType>(verbosity_, outputStream_) );
+  if (printer_.is_null ()) {
+    printer_ = rcp (new OutputManager<ScalarType> (verbosity_, outputStream_));
   }
 
   // Convergence
-  typedef Belos::StatusTestCombo<ScalarType,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP>  StatusTestResNorm_t;
+  typedef Belos::StatusTestCombo<ScalarType,MV,OP> StatusTestCombo_t;
+  typedef Belos::StatusTestGenResNorm<ScalarType,MV,OP> StatusTestResNorm_t;
 
   // Check for convergence tolerance
-  if (params->isParameter("Convergence Tolerance")) {
-    convtol_ = params->get("Convergence Tolerance",convtol_default_);
+  if (params->isParameter ("Convergence Tolerance")) {
+    convtol_ = params->get ("Convergence Tolerance", convtol_default_);
 
     // Update parameter in our list and residual tests.
-    params_->set("Convergence Tolerance", convtol_);
-    if (convTest_ != Teuchos::null)
-      convTest_->setTolerance( convtol_ );
+    params_->set ("Convergence Tolerance", convtol_);
+    if (! convTest_.is_null ()) {
+      convTest_->setTolerance (convtol_);
+    }
   }
 
-  if (params->isParameter("Show Maximum Residual Norm Only")) {
-    showMaxResNormOnly_ = Teuchos::getParameter<bool>(*params,"Show Maximum Residual Norm Only");
+  if (params->isParameter ("Show Maximum Residual Norm Only")) {
+    showMaxResNormOnly_ = params->get<bool> ("Show Maximum Residual Norm Only");
 
     // Update parameter in our list and residual tests
-    params_->set("Show Maximum Residual Norm Only", showMaxResNormOnly_);
-    if (convTest_ != Teuchos::null)
-      convTest_->setShowMaxResNormOnly( showMaxResNormOnly_ );
+    params_->set ("Show Maximum Residual Norm Only", showMaxResNormOnly_);
+    if (! convTest_.is_null ()) {
+      convTest_->setShowMaxResNormOnly (showMaxResNormOnly_);
+    }
   }
 
   // Check for a change in scaling, if so we need to build new residual tests.
@@ -559,7 +590,8 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
 
     // Only update the scaling if it's different.
     if (resScale_ != tempResScale) {
-      Belos::ScaleType resScaleType = convertStringToScaleType( tempResScale );
+      const Belos::ScaleType resScaleType =
+        convertStringToScaleType (tempResScale);
       resScale_ = tempResScale;
 
       // Update parameter in our list and residual tests, using the
@@ -571,9 +603,9 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
         params_->set ("Residual Scaling", resScale_);
       }
 
-      if (! convTest_.is_null()) {
+      if (! convTest_.is_null ()) {
         try {
-          convTest_->defineScaleForm( resScaleType, Belos::TwoNorm );
+          convTest_->defineScaleForm (resScaleType, Belos::TwoNorm);
         }
         catch (std::exception& e) {
           // Make sure the convergence test gets constructed again.
@@ -584,46 +616,49 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
   }
 
   // Get the deflation quorum, or number of converged systems before deflation is allowed
-  if (params->isParameter("Deflation Quorum")) {
-    defQuorum_ = params->get("Deflation Quorum", defQuorum_);
-    params_->set("Deflation Quorum", defQuorum_);
-    if (convTest_ != Teuchos::null)
+  if (params->isParameter ("Deflation Quorum")) {
+    defQuorum_ = params->get ("Deflation Quorum", defQuorum_);
+    params_->set ("Deflation Quorum", defQuorum_);
+    if (! convTest_.is_null ()) {
       convTest_->setQuorum( defQuorum_ );
+    }
   }
 
   // Create status tests if we need to.
 
   // Basic test checks maximum iterations and native residual.
-  if (maxIterTest_ == Teuchos::null)
-    maxIterTest_ = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>( maxIters_ ) );
-
-  // Implicit residual test, using the native residual to determine if convergence was achieved.
-  if (convTest_ == Teuchos::null || newResTest) {
-    convTest_ = Teuchos::rcp( new StatusTestResNorm_t( convtol_, defQuorum_, showMaxResNormOnly_ ) );
-    convTest_->defineScaleForm( convertStringToScaleType( resScale_ ), Belos::TwoNorm );
+  if (maxIterTest_.is_null ()) {
+    maxIterTest_ = rcp (new StatusTestMaxIters<ScalarType,MV,OP> (maxIters_));
   }
 
-  if (sTest_ == Teuchos::null || newResTest)
-    sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
+  // Implicit residual test, using the native residual to determine if convergence was achieved.
+  if (convTest_.is_null () || newResTest) {
+    convTest_ = rcp (new StatusTestResNorm_t (convtol_, defQuorum_, showMaxResNormOnly_));
+    convTest_->defineScaleForm (convertStringToScaleType (resScale_), Belos::TwoNorm);
+  }
 
-  if (outputTest_ == Teuchos::null || newResTest) {
+  if (sTest_.is_null () || newResTest) {
+    sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR, maxIterTest_, convTest_));
+  }
 
+  if (outputTest_.is_null () || newResTest) {
     // Create the status test output class.
     // This class manages and formats the output from the status test.
-    StatusTestOutputFactory<ScalarType,MV,OP> stoFactory( outputStyle_ );
-    outputTest_ = stoFactory.create( printer_, sTest_, outputFreq_, Passed+Failed+Undefined );
+    StatusTestOutputFactory<ScalarType,MV,OP> stoFactory (outputStyle_);
+    outputTest_ = stoFactory.create (printer_, sTest_, outputFreq_,
+                                     Passed+Failed+Undefined);
 
     // Set the solver string for the output test
-    std::string solverDesc = " Pseudo Block CG ";
-    outputTest_->setSolverDesc( solverDesc );
-
+    const std::string solverDesc = " Pseudo Block CG ";
+    outputTest_->setSolverDesc (solverDesc);
   }
 
   // Create the timer if we need to.
-  if (timerSolve_ == Teuchos::null) {
-    std::string solveLabel = label_ + ": PseudoBlockCGSolMgr total solve time";
+  if (timerSolve_.is_null ()) {
+    const std::string solveLabel =
+      label_ + ": PseudoBlockCGSolMgr total solve time";
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-    timerSolve_ = Teuchos::TimeMonitor::getNewCounter(solveLabel);
+    timerSolve_ = Teuchos::TimeMonitor::getNewCounter (solveLabel);
 #endif
   }
 
@@ -693,7 +728,9 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
 
 // solve()
 template<class ScalarType, class MV, class OP>
-ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
+ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve ()
+{
+  const char prefix[] = "Belos::PseudoBlockCGSolMgr::solve: ";
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and
@@ -702,8 +739,11 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
 
   Teuchos::BLAS<int,ScalarType> blas;
 
-  TEUCHOS_TEST_FOR_EXCEPTION(!problem_->isProblemSet(),PseudoBlockCGSolMgrLinearProblemFailure,
-                     "Belos::PseudoBlockCGSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! problem_->isProblemSet (), PseudoBlockCGSolMgrLinearProblemFailure,
+     prefix << "The linear problem to solve is not ready.  You must call "
+     "setProblem() on the Belos::LinearProblem instance before telling the "
+     "Belos solver to solve it.");
 
   // Create indices for the linear systems to be solved.
   int startPtr = 0;
@@ -771,7 +811,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
       while(1) {
 
         // tell block_gmres_iter to iterate
-        try {	  
+        try {
 
           block_cg_iter->iterate();
 
@@ -899,22 +939,22 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
   // get iteration information for this solve
   numIters_ = maxIterTest_->getNumIters();
 
-
   // Save the convergence test value ("achieved tolerance") for this
-  // solve.  
+  // solve.
   const std::vector<MagnitudeType>* pTestValues = convTest_->getTestValue();
-  achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
-
+  if (pTestValues != NULL && pTestValues->size () > 0) {
+    achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
+  }
 
   // Do condition estimate, if needed
-  if(genCondEst_) {
+  if (genCondEst_) {
     ScalarType l_min, l_max;
     Teuchos::ArrayView<MagnitudeType> diag    = block_cg_iter->getDiag();
     Teuchos::ArrayView<MagnitudeType> offdiag = block_cg_iter->getOffDiag();
     compute_condnum_tridiag_sym(diag,offdiag,l_min,l_max,condEstimate_);
   }
 
-  if (!isConverged ) {
+  if (! isConverged) {
     return Unconverged; // return from PseudoBlockCGSolMgr::solve()
   }
   return Converged; // return from PseudoBlockCGSolMgr::solve()
@@ -934,37 +974,51 @@ std::string PseudoBlockCGSolMgr<ScalarType,MV,OP>::description() const
 
 template<class ScalarType, class MV, class OP>
 void PseudoBlockCGSolMgr<ScalarType,MV,OP>::compute_condnum_tridiag_sym(Teuchos::ArrayView<MagnitudeType> diag,
-									Teuchos::ArrayView<MagnitudeType> offdiag,
-									ScalarType & lambda_min,
-									ScalarType & lambda_max,
-									ScalarType & ConditionNumber )
+                                                                        Teuchos::ArrayView<MagnitudeType> offdiag,
+                                                                        ScalarType & lambda_min,
+                                                                        ScalarType & lambda_max,
+                                                                        ScalarType & ConditionNumber )
 {
+  typedef Teuchos::ScalarTraits<ScalarType> STS;
+
   /* Copied from az_cg.c: compute_condnum_tridiag_sym */
   /* diag ==      ScalarType vector of size N, containing the diagonal
      elements of A
      offdiag ==   ScalarType vector of size N-1, containing the offdiagonal
      elements of A. Note that A is supposed to be symmatric
-  */		    
-  int info;
+  */
+  int info = 0;
   ScalarType scalar_dummy;
   MagnitudeType mag_dummy;
   char char_N = 'N';
   Teuchos::LAPACK<int,ScalarType> lapack;
-  int N = diag.size();
+  const int N = diag.size ();
 
+  lambda_min = STS::one ();
+  lambda_max = STS::one ();
   if( N > 2 ) {
-    lapack.STEQR(char_N,N,diag.getRawPtr(),offdiag.getRawPtr(),&scalar_dummy,1,&mag_dummy,&info);
-    lambda_min = Teuchos::as<ScalarType>(diag[0]);
-    lambda_max = Teuchos::as<ScalarType>(diag[N-1]);
-  } else {
-    lambda_min = Teuchos::ScalarTraits<ScalarType>::one();
-    lambda_max = Teuchos::ScalarTraits<ScalarType>::one();
+    lapack.STEQR (char_N, N, diag.getRawPtr (), offdiag.getRawPtr (),
+                  &scalar_dummy, 1, &mag_dummy, &info);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (info < 0, std::logic_error, "Belos::PseudoBlockCGSolMgr::"
+       "compute_condnum_tridiag_sym: LAPACK's _STEQR failed with info = "
+       << info << " < 0.  This suggests there might be a bug in the way Belos "
+       "is calling LAPACK.  Please report this to the Belos developers.");
+    lambda_min = Teuchos::as<ScalarType> (diag[0]);
+    lambda_max = Teuchos::as<ScalarType> (diag[N-1]);
   }
-  
-  if(info == 0) 
-    ConditionNumber = lambda_max/lambda_min;
-  else
-    ConditionNumber = -Teuchos::ScalarTraits<ScalarType>::one();
+
+  // info > 0 means that LAPACK's eigensolver didn't converge.  This
+  // is unlikely but may be possible.  In that case, the best we can
+  // do is use the eigenvalues that it computes, as long as lambda_max
+  // >= lambda_min.
+  if (STS::real (lambda_max) < STS::real (lambda_min)) {
+    ConditionNumber = STS::one ();
+  }
+  else {
+    // It's OK for the condition number to be Inf.
+    ConditionNumber = lambda_max / lambda_min;
+  }
 
 } /* compute_condnum_tridiag_sym */
 

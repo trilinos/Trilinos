@@ -47,7 +47,6 @@
 #define MUELU_TOGGLEPFACTORY_DEF_HPP
 
 #include <Xpetra_Matrix.hpp>
-#include <sstream>
 
 #include "MueLu_TogglePFactory_decl.hpp"
 
@@ -55,10 +54,7 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_PerfUtils.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 

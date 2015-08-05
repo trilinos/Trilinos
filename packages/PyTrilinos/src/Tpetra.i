@@ -80,6 +80,7 @@ using Teuchos::ArrayRCP;
 #include "Tpetra_Version.hpp"
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_Map.hpp"
+#include "Tpetra_Vector.hpp"
 #include "Tpetra_MultiVector.hpp"
 
 // PyTrilinos includes

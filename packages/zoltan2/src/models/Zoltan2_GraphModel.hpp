@@ -483,6 +483,10 @@ public:
     throw std::runtime_error("cannot build GraphModel from IdentifierAdapter");
   }
 
+  /*! \brief Return the communicator used by the model
+   */
+  const RCP<const Comm<int> > getComm() { return comm_; }
+
   /*! \brief Returns the number vertices on this process.
    */
   size_t getLocalNumVertices() const { return numLocalVertices_; }
@@ -928,7 +932,8 @@ GraphModel<Adapter>::GraphModel(
   if (!ia->avail2ndAdjs(primaryEType, secondAdjEType)) {
 
     try {
-      get2ndAdjsViewFromAdjs(ia,primaryEType,secondAdjEType,offsets,nborIds);
+      get2ndAdjsViewFromAdjs(ia, comm_, primaryEType, secondAdjEType, offsets,
+			     nborIds);
     }
     Z2_FORWARD_EXCEPTIONS;
     /*throw std::logic_error("MeshAdapter must provide 2nd adjacencies for "

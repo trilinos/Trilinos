@@ -53,19 +53,12 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include "MueLu_VisualizationHelpers_decl.hpp"
 #include "MueLu_Level.hpp"
-#include "MueLu_Aggregates.hpp"
 #include "MueLu_Graph.hpp"
-#include "MueLu_AmalgamationFactory.hpp"
-#include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_Utilities.hpp"
 #include <vector>
 #include <list>
 #include <algorithm>
 #include <string>
-#include <stdexcept>
-#include <cstdio>
-#include <cmath>
 
 namespace MueLu {
 

@@ -72,7 +72,6 @@ using Teuchos::CommandLineProcessor;
 
 typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tMVector_t;
 typedef Tpetra::Map<zlno_t, zgno_t, znode_t> tMap_t;
-typedef Zoltan2::BasicVectorAdapter<tMVector_t> inputAdapter_t;
 
 enum weightTypes{
   upDown,
@@ -386,6 +385,7 @@ int main(int argc, char *argv[])
   const zgno_t *globalIds = ids.getRawPtr();
   
   size_t localCount = coordinates->getLocalLength();
+  typedef Zoltan2::BasicVectorAdapter<tMVector_t> inputAdapter_t;
   RCP<inputAdapter_t> ia;
   
   if (nWeights == 0){
