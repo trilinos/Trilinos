@@ -38,6 +38,7 @@
 #include <stdlib.h>                     // for exit, EXIT_FAILURE
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <iterator>                     // for back_insert_iterator, etc
+#include <limits>
 #include <stdexcept>                    // for runtime_error
 #include <stk_io/InputFile.hpp>         // for InputFile
 #include <stk_io/IossBridge.hpp>        // for FieldAndName, STKIORequire, etc
@@ -45,6 +46,7 @@
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element_edge, etc
 #include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/Comm.hpp> 
 #include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
 #include <stk_util/environment/FileUtils.hpp>
@@ -1389,6 +1391,14 @@ namespace stk {
         if (is_index_valid(m_input_files, m_active_mesh_index)) {
           input_region = get_input_io_region().get();
         }
+	// Determine whether 64-bit integers are required for the output mesh...
+	if (!properties.exists("INTEGER_SIZE_DB")){
+	  bool requires_64bit = check_integer_size_requirements() == 8;
+	  if (requires_64bit) {
+	    properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
+	  }
+	}
+
         Teuchos::RCP<impl::OutputFile> output_file = Teuchos::rcp(new impl::OutputFile(out_filename, m_communicator, db_type,
                                                                            properties, input_region));
         m_output_files.push_back(output_file);
@@ -1758,6 +1768,49 @@ namespace stk {
                                                                        properties, m_communicator));
         m_heartbeat.push_back(heartbeat);
         return m_heartbeat.size()-1;
+      }
+
+      int StkMeshIoBroker::check_integer_size_requirements()
+      {
+	// m_property_manager is for the StkMeshIoBroker;
+	// out_properties is for the output file specifically; may be the same as m_property_manager.
+	
+	// 1. If the INGEGER_SIZE_DB or _API property exists, then use its value no matter what...
+	if (m_property_manager.exists("INTEGER_SIZE_DB")) {
+	  return m_property_manager.get("INTEGER_SIZE_DB").get_int();
+	}
+
+	if (m_property_manager.exists("INTEGER_SIZE_API")) {
+	  return m_property_manager.get("INTEGER_SIZE_API").get_int();
+	}
+	
+	// 2. If input_region exists, then if it is using 64-bit integers, the output should
+	//    use those also.
+	Ioss::Region *input_region = NULL;
+        if (is_index_valid(m_input_files, m_active_mesh_index)) {
+          input_region = get_input_io_region().get();
+        }
+	if (input_region != NULL) {
+	  // Get the integer size setting for the database associated with the region.
+	  int int_size = db_api_int_size(input_region);
+	  if (int_size == 8) {
+	    return int_size;
+	  }
+	}
+
+	// 3. If the any entity count exceeds INT_MAX, then use 64-bit integers.
+	std::vector<size_t> entityCounts;
+	stk::mesh::comm_mesh_counts(*m_bulk_data, entityCounts);
+	for (size_t i=0; i < entityCounts.size(); i++) {
+	  if (entityCounts[i] > (size_t)std::numeric_limits<int>::max()) {
+	    return 8;
+	  }
+	}
+
+	// 4. Should also check if the maximum node or element id exceeds INT_MAX.
+
+	// 5. Default to 4-byte integers...
+	return 4;
       }
 
       impl::Heartbeat::Heartbeat(const std::string &filename, HeartbeatType hb_type,
