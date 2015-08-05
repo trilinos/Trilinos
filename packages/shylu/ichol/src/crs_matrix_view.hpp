@@ -85,6 +85,20 @@ namespace Example {
     KOKKOS_INLINE_FUNCTION
     ordinal_type  NumCols() const { return _n; }
 
+    KOKKOS_INLINE_FUNCTION
+    size_type countNumNonZeros() const { 
+      size_type nnz = 0;
+      const ordinal_type m = NumRows();
+
+      for (ordinal_type i=0;i<m;++i) {
+        row_view_type row;
+        row.setView(*this, i);
+        nnz += row.NumNonZeros();
+      }
+
+      return nnz; 
+    }
+
     CrsMatrixView()
       : _base(NULL),
         _offm(0),
@@ -128,7 +142,8 @@ namespace Example {
       if (_base != NULL) 
         os << _base->Label() << "::View, "
            << " Offs ( " << setw(w) << _offm << ", " << setw(w) << _offn << " ); "
-           << " Dims ( " << setw(w) << _m    << ", " << setw(w) << _n    << " ); ";
+           << " Dims ( " << setw(w) << _m    << ", " << setw(w) << _n    << " ); "
+           << " NumNonZeros = " << countNumNonZeros() << ";";
       else 
         os << "-- Base object is null --";
       
