@@ -138,6 +138,75 @@ import numpy
   }
 }
 
+//////////////////////////////
+// Python utility functions //
+//////////////////////////////
+%pythoncode
+%{
+  def class_array_inplace_op(self, op_str, other):
+    in_op = getattr(self.array, "__i"+op_str+"__")
+    in_op(other.array)
+    return self
+
+  def class_array_math_op(self, op_str, other):
+    # Initialize the result by calling the copy constructor
+    result = self.__class__(self)
+    # Get the equivalent in-place operator for the result
+    in_op = getattr(result.array, "__i"+op_str+"__")
+    try:
+      in_op(other.array)
+    except AttributeError:
+      in_op(other)
+    return result
+
+  def class_array_rmath_op(self, op_str, other):
+    # Initialize the result by calling the copy constructor
+    result = self.__class__(self)
+    indices = (slice(None),) * len(self.array.shape)
+    result.array[indices] = other
+    in_op = getattr(result.array, "__i"+op_str+"__")
+    in_op(self.array)
+    return result
+
+  def class_array_add_math_ops(cls, op_str):
+    setattr(cls,
+            "__i"+op_str+"__",
+            lambda self, other: class_array_inplace_op(self, op_str, other))
+    setattr(cls,
+            "__"+op_str+"__",
+            lambda self, other: class_array_math_op(self, op_str, other))
+    setattr(cls,
+            "__r"+op_str+"__",
+            lambda self, other: class_array_rmath_op(self, op_str, other))
+
+  def class_array_add_math(cls):
+    class_array_add_math_ops(cls, "add")
+    class_array_add_math_ops(cls, "sub")
+    class_array_add_math_ops(cls, "mul")
+    class_array_add_math_ops(cls, "add")
+
+  def class_array_comp_op(self, op_str, other):
+    comp_op = getattr(self.array, "__"+op_str+"__")
+    try:
+      return comp_op(other.array)
+    except AttributeError:
+      return comp_op(other)
+
+  def class_array_add_comp_op(cls, op_str):
+    setattr(cls,
+            "__"+op_str+"__",
+            lambda self, other: class_array_comp_op(self, op_str, other))
+
+  def class_array_add_comp(cls):
+    class_array_add_comp_op(cls, "lt")
+    class_array_add_comp_op(cls, "le")
+    class_array_add_comp_op(cls, "eq")
+    class_array_add_comp_op(cls, "ne")
+    class_array_add_comp_op(cls, "gt")
+    class_array_add_comp_op(cls, "ge")
+
+%}
+
 // General ignore directives
 %ignore *::operator[];
 %ignore *::operator++;
@@ -511,6 +580,25 @@ protected:
 // The refactor is making Tpetra::Vector difficult for SWIG to
 // parse, and so I provide a simplified prototype of the class here
 %feature("notabstract") Tpetra::MultiVector;
+%extend Tpetra::MultiVector
+{
+  PyObject * _extractNumPyArray() const
+  {
+    if (!self->isConstantStride())
+    {
+      PyErr_SetString(PyExc_ValueError, "_extractNumPyArrayFromTpetraMulti"
+                      "Vector: MultiVector is not constant stride");
+      return NULL;
+    }
+    npy_intp dims[2] = { (npy_intp) self->getNumVectors(),
+                         (npy_intp) self->getLocalLength() };
+    const Scalar * data = self->getData(0).get();
+    return PyArray_SimpleNewFromData(2,
+                                     dims,
+                                     PyTrilinos::NumPy_TypeCode< Scalar >(),
+                                     (void*)data);
+  }
+}
 namespace Tpetra
 {
 template< class Scalar = DefaultScalarType,
@@ -653,7 +741,7 @@ public:
   // KokkosClassic::MultiVector<Scalar, Node > getLocalMV() const;
   // TEUCHOS_DEPRECATED KokkosClassic::MultiVector<Scalar, Node>
   // getLocalMVNonConst();
-  dual_view_type getDualView() const;
+  // dual_view_type getDualView() const;
   template<class TargetDeviceType>
   void sync();
   template<class TargetDeviceType>
@@ -759,6 +847,41 @@ public:
 }   // namespace Tpetra
 // %include "Tpetra_MultiVector_decl.hpp"
 // %include "Tpetra_KokkosRefactor_MultiVector_decl.hpp"
+%pythoncode
+%{
+  def MultiVector_getattr(self, name):
+      if name == "array":
+          a = self._extractNumPyArray()
+          self.__dict__["array"] = a
+          return a
+      elif name == "shape":
+          return self.array.shape
+      elif name == "dtype":
+          return self.array.dtype
+      else:
+          raise AttributeError("'%s' not an attribute of MultiVector" % name)
+  def MultiVector_setattr(self, name, value):
+      if name in ("array", "shape", "dtype"):
+          raise AttributeError("Cannot change MultiVector '%s' attribute", name)
+      else:
+          self.__dict__[name] = value
+  def MultiVector_getitem(self,i):
+      if isinstance(i,int):
+          return self.getVectorNonConst(i)
+      else:
+          return self.array.__getitem__(i)
+  def upgradeMultiVectorClass(cls):
+      cls.__getattr__ = MultiVector_getattr
+      cls.__setattr__ = MultiVector_setattr
+      cls.__getitem__ = MultiVector_getitem
+      cls.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
+      cls.__len__     = lambda self: self.array.__len__()
+      cls.__str__     = lambda self: self.array.__str__()
+      cls.copy        = lambda self: cls(self)
+      class_array_add_math(cls)
+      class_array_add_comp(cls)
+
+%}
 
 ///////////////////////////
 // Tpetra Vector support //
@@ -766,6 +889,18 @@ public:
 // The refactor is making Tpetra::Vector difficult for SWIG to
 // parse, and so I provide a simplified prototype of the class here
 %feature("notabstract") Tpetra::Vector;
+%extend Tpetra::Vector
+{
+  PyObject * _extractNumPyArray() const
+  {
+    npy_intp dims[] = { (npy_intp) self->getLocalLength() };
+    const Scalar * data = self->getData().get();
+    return PyArray_SimpleNewFromData(1,
+                                     dims,
+                                     PyTrilinos::NumPy_TypeCode< Scalar >(),
+                                     (void*)data);
+  }
+}
 namespace Tpetra
 {
 template< class Scalar = DefaultScalarType,
@@ -857,6 +992,36 @@ public:
 // %warnfilter(302) Tpetra::createVectorFromView;
 // %include "Tpetra_Vector_decl.hpp"
 // %include "Tpetra_KokkosRefactor_Vector_decl.hpp"
+%pythoncode
+%{
+  def Vector_getattr(self, name):
+      if name == "array":
+          a = self._extractNumPyArray()
+          self.__dict__["array"] = a
+          return a
+      elif name == "shape":
+          return self.array.shape
+      elif name == "dtype":
+          return self.array.dtype
+      else:
+          raise AttributeError("'%s' not an attribute of Vector" % name)
+  def Vector_setattr(self, name, value):
+      if name in ("array", "shape", "dtype"):
+          raise AttributeError("Cannot change Vector '%s' attribute", name)
+      else:
+          self.__dict__[name] = value
+  def upgradeVectorClass(cls):
+      cls.__getattr__ = Vector_getattr
+      cls.__setattr__ = Vector_setattr
+      cls.__getitem__ = lambda self, i: self.array.__getitem__(i)
+      cls.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
+      cls.__len__     = lambda self: self.array.__len__()
+      cls.__str__     = lambda self: self.array.__str__()
+      cls.copy        = lambda self: cls(self)
+      class_array_add_math(cls)
+      class_array_add_comp(cls)
+
+%}
 
 /////////////////////////////////////
 // Explicit template instantiation //
@@ -866,32 +1031,37 @@ public:
 //     CLASS        Class name (DistObject, Vector, ...)
 //     SCALAR       C/C++ scalar name ("in, long long, ...)
 //     SCALAR_NAME  Suffix name (int, longlong, ...)
-//     SCALAR_CODE  Numpy dtype code (i, l, f, d, ...)
 //
-%define %tpetra_class( CLASS, SCALAR, SCALAR_NAME, SCALAR_CODE )
+%define %tpetra_class( CLASS, SCALAR, SCALAR_NAME )
     %warnfilter(315) Tpetra::CLASS< SCALAR, long, long, DefaultNodeType >;
     %teuchos_rcp(Tpetra::CLASS< SCALAR, long, long, DefaultNodeType >)
-    %extend Tpetra::CLASS< SCALAR, long, long, DefaultNodeType >
-    {
-      std::string dtype() { return std::string("SCALAR_CODE"); }
-    }
     %template(CLASS ## _ ## SCALAR_NAME)
         Tpetra::CLASS< SCALAR, long, long, DefaultNodeType >;
 %enddef
 
-%define %tpetra_scalars( SCALAR, SCALAR_NAME, SCALAR_CODE )
-    %tpetra_class( DistObject , SCALAR, SCALAR_NAME, SCALAR_CODE )
-    %tpetra_class( MultiVector, SCALAR, SCALAR_NAME, SCALAR_CODE )
-    %tpetra_class( Vector     , SCALAR, SCALAR_NAME, SCALAR_CODE )
+%define %tpetra_scalars( SCALAR, SCALAR_NAME )
+    %tpetra_class( DistObject, SCALAR, SCALAR_NAME )
+
+    %tpetra_class( MultiVector, SCALAR, SCALAR_NAME )
+    %pythoncode
+    %{
+      upgradeMultiVectorClass(MultiVector_ ## SCALAR_NAME)
+    %}
+
+    %tpetra_class( Vector, SCALAR, SCALAR_NAME )
+    %pythoncode
+    %{
+      upgradeVectorClass(Vector_ ## SCALAR_NAME)
+    %}
 %enddef
 
 //////////////////////////////////////////////
 // Concrete scalar types for Tpetra classes //
 //////////////////////////////////////////////
-%tpetra_scalars(int   , int   , i)
-%tpetra_scalars(long  , long  , l)
-%tpetra_scalars(float , float , f)
-%tpetra_scalars(double, double, d)
+%tpetra_scalars(int   , int   )
+%tpetra_scalars(long  , long  )
+%tpetra_scalars(float , float )
+%tpetra_scalars(double, double)
 
 /////////////////////////////////////////////////////
 // Python code that consolidates templated classes //
@@ -902,7 +1072,7 @@ public:
     dtype = None
     if len(args) > 0:
       try:
-        dtype = args[0].dtype()
+        dtype = args[0].dtype
       except AttributeError:
         pass
     dtype = kwargs.get("dtype", dtype)
@@ -926,8 +1096,7 @@ public:
     dtype = None
     if len(args) > 0:
       try:
-        dtype = args[0].dtype()
-        if dtype == "int": dtype = "i"
+        dtype = args[0].dtype
       except AttributeError:
         pass
     dtype = kwargs.get("dtype", dtype)
