@@ -132,6 +132,7 @@ namespace MueLu {
     if (name == "repartition: min rows per proc") { ss << "<Parameter name=\"repartition: min rows per proc\" type=\"int\" value=" << value << "/>"; return ss.str(); }      
     if (name == "repartition: max imbalance") { ss << "<Parameter name=\"repartition: max imbalance\" type=\"double\" value=" << value << "/>"; return ss.str(); }      
     if (name == "use external multigrid package") { ss << "<Parameter name=\"use external multigrid package\" type=\"string\" value=" << value << "/>"; return ss.str(); }      
+    if (name == "amgx:params") { ss << "<Parameter name=\"amgx:params\" type=\"\parameterlist\" value=" << value << "/>"; return ss.str(); }
     return "";
   }
  
@@ -148,7 +149,6 @@ namespace MueLu {
   "<Parameter name=\"problem: symmetric\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"xml parameter file\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"parameterlist: syntax\" type=\"string\" value=\"muelu\"/>"
-  "<Parameter name=\"keep\" type=\"string\" value=\"\"/>"
   "<Parameter name=\"smoother: pre or post\" type=\"string\" value=\"both\"/>"
   "<Parameter name=\"smoother: type\" type=\"string\" value=\"RELAXATION\"/>"
   "<Parameter name=\"smoother: pre type\" type=\"string\" value=\"RELAXATION\"/>"
@@ -225,6 +225,7 @@ namespace MueLu {
   "<Parameter name=\"repartition: use subcommunicators\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"reuse: type\" type=\"string\" value=\"none\"/>"
   "<Parameter name=\"use external multigrid package\" type=\"string\" value=\"none\"/>"
+  "<ParameterList name=\"amgx:params\"/>"
   "<Parameter name=\"debug: graph level\" type=\"int\" value=\"-1\"/>"
 "</ParameterList>"
 ;
@@ -351,8 +352,6 @@ namespace MueLu {
          ("xml parameter file","xml parameter file")
       
          ("parameterlist: syntax","parameterlist: syntax")
-      
-         ("keep","keep")
       
          ("smoother: pre or post","smoother: pre or post")
       
@@ -506,6 +505,8 @@ namespace MueLu {
       
          ("use external multigrid package","use external multigrid package")
       
+         ("amgx:params","amgx:params")
+
          ("debug: graph level","debug: graph level")
       ;
 
