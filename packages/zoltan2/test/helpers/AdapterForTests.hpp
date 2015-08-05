@@ -147,6 +147,42 @@ private:
 
 AdapterForTests::base_adapter_t * AdapterForTests::getAdapterForInput(UserInputForTests *uinput, const ParameterList &pList)
 {
+  // ask chaco gen what data types are available! -> for debugging
+  
+  if(uinput->hasUICoordinates())
+    std::cout << "coordinates available" << std::endl;
+  if(uinput->hasUIWeights())
+    std::cout << "vtx weights available" << std::endl;
+  if(uinput->hasUIEdgeWeights())
+    std::cout << "edge weights available" << std::endl;
+  if(uinput->hasUITpetraCrsMatrix())
+    std::cout << "tpet crs matrix available" << std::endl;
+  if(uinput->hasUITpetraCrsGraph())
+    std::cout << "tpet crs graph available" << std::endl;
+  if(uinput->hasUITpetraVector())
+    std::cout << "teptra vector available" << std::endl;
+  if(uinput->hasUITpetraMultiVector())
+    std::cout << "tpet mv available" << std::endl;
+  if(uinput->hasUIXpetraCrsMatrix())
+    std::cout << "xpet crs matrix available" << std::endl;
+  if(uinput->hasUIXpetraCrsGraph())
+    std::cout << "xpet crs graph available" << std::endl;
+  if(uinput->hasUIXpetraVector())
+    std::cout << "xpet vector available" << std::endl;
+  if(uinput->hasUIXpetraMultiVector())
+    std::cout << "xpet mv available" << std::endl;
+#ifdef HAVE_EPETRA_DATA_TYPES
+  if(uinput->hasUIEpetraCrsGraph())
+    std::cout << "epet crs graph available" << std::endl;
+  if(uinput->hasUIEpetraCrsMatrix())
+    std::cout << "epet crs matrix available" << std::endl;
+  if(uinput->hasUIEpetraVector())
+    std::cout << "epet vector available" << std::endl;
+  if(uinput->hasUIEpetraMultiVector())
+    std::cout << "epet mv available" << std::endl;
+#endif
+  
+  
   if(!pList.isParameter("inputAdapter"))
     throw std::runtime_error("Input adapter not specified");
   

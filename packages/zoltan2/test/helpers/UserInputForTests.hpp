@@ -305,7 +305,6 @@ private:
   // into M_.  If it has geometric coordinates,
   // read them into xyz_.  If it has weights,
   // read those into vtxWeights_ and edgWeights_.
-  
   void readZoltanTestData(string path, string testData,
                           bool distributeInput);
   
@@ -455,7 +454,10 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
     bool geom_gen = false;
     if(pList.isParameter("fileType") && pList.get<string>("fileType") == "Geometric Generator")
       geom_gen = true;
+    else if(pList.isParameter("fileType") && pList.get<string>("fileType") == "Chaco")
+      zoltan1 = true; // this flag calls read ZoltanTestData, which calls the chaco readers...
     
+    // read the input file
     if (zoltan1){
       readZoltanTestData(path, testData, distributeInput);
     }else if(geom_gen)
@@ -1300,13 +1302,28 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
   int fileInfo[2];
   
   if (rank == 0){
+    // set chacho graph file name
     std::ostringstream chGraphFileName;
-    chGraphFileName << path << "/ch_" << testData << "/" << testData << ".graph";
+    chGraphFileName << path << "/" << testData << ".graph";
+    
+    // set chaco graph
     std::ostringstream chCoordFileName;
-    chCoordFileName << path << "/ch_" << testData << "/" << testData << ".coords";
-    memset(fileInfo, 0, sizeof(int) * 2);
+    chCoordFileName << path << "/" << testData << ".coords";
     
     graphFile = fopen(chGraphFileName.str().c_str(), "r");
+    if(!graphFile)
+    {
+      chGraphFileName.str("");
+      chCoordFileName.str("");
+      // try constructing zoltan1 paths
+      chGraphFileName << path << "/ch_" << testData << "/" << testData << ".graph";
+      chCoordFileName << path << "/ch_" << testData << "/" << testData << ".coords";
+      
+      // try to open the graph file again, if this doesn't open
+      // the user has not provided a valid path to the file
+      graphFile = fopen(chGraphFileName.str().c_str(), "r");
+    }
+    memset(fileInfo, 0, sizeof(int) * 2); // set fileinfo to 0's
     if (graphFile){
       fileInfo[0] = 1;
       if (verbose_ && tcomm_->getRank() == 0)
@@ -1323,6 +1340,7 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
     }
   }
   
+  // broadcast whether we have graphs and coords to all processes
   Teuchos::broadcast<int, int>(*tcomm_, 0, 2, fileInfo);
   
   bool haveGraph = (fileInfo[0] == 1);
