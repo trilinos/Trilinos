@@ -6,6 +6,12 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_CrsGraph.hpp>
 
+@IFPACK2_ETIMACRO_SL@
+
+@IFPACK2_ETIMACRO_SL_REAL@
+
+@IFPACK2_ETIMACRO_L@
+
 @IFPACK2_ETIMACRO_SLG@
 
 @IFPACK2_ETIMACRO_SLG_REAL@

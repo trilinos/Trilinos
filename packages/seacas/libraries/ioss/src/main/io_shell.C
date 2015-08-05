@@ -165,7 +165,7 @@ namespace {
 
 namespace {
   std::string codename;
-  std::string version = "4.6";
+  std::string version = "4.7";
 }
 
 int main(int argc, char *argv[])
@@ -265,22 +265,7 @@ namespace {
     if (!interface.decomp_method.empty()) {
       properties.add(Ioss::Property("DECOMPOSITION_METHOD", interface.decomp_method));
     }
-    //========================================================================
-    // OUTPUT ...
-    //========================================================================
     for (size_t input_db = 0; input_db < interface.inputFile.size(); input_db++) {
-
-      Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(interface.outFiletype, interface.outputFile, 
-						      Ioss::WRITE_RESTART, (MPI_Comm)MPI_COMM_WORLD, properties);
-      if (dbo == NULL || !dbo->ok(true)) {
-	std::exit(EXIT_FAILURE);
-      }
-
-      // NOTE: 'output_region' owns 'dbo' pointer at this time
-      Ioss::Region output_region(dbo, "region_2");
-      // Set the qa information...
-      output_region.property_add(Ioss::Property(std::string("code_name"), codename));
-      output_region.property_add(Ioss::Property(std::string("code_version"), version));
 
       std::string inpfile = interface.inputFile[input_db];
       
@@ -307,6 +292,26 @@ namespace {
       // NOTE: 'region' owns 'db' pointer at this time...
       Ioss::Region region(dbi, "region_1");
     
+      // Get length of longest name on input file...
+      int max_name_length = dbi->maximum_symbol_length();
+      if (max_name_length > 0) {
+	properties.add(Ioss::Property("MAXIMUM_NAME_LENGTH", max_name_length));
+      }
+      //========================================================================
+      // OUTPUT ...
+      //========================================================================
+      Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(interface.outFiletype, interface.outputFile, 
+						      Ioss::WRITE_RESTART, (MPI_Comm)MPI_COMM_WORLD, properties);
+      if (dbo == NULL || !dbo->ok(true)) {
+	std::exit(EXIT_FAILURE);
+      }
+
+      // NOTE: 'output_region' owns 'dbo' pointer at this time
+      Ioss::Region output_region(dbo, "region_2");
+      // Set the qa information...
+      output_region.property_add(Ioss::Property(std::string("code_name"), codename));
+      output_region.property_add(Ioss::Property(std::string("code_version"), version));
+
       if (interface.inputFile.size() > 1) {
 	properties.add(Ioss::Property("APPEND_OUTPUT",Ioss::DB_APPEND_GROUP)); 
 

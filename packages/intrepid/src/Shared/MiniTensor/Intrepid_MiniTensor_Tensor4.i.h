@@ -407,7 +407,7 @@ template<typename T, Index N>
 Tensor4<T, N>
 inverse(Tensor4<T, N> const & A)
 {
-  return Tensor4<T, N>(inverse(Tensor<T, N>(A)));
+  return Tensor4<T, N>(inverse(Tensor<T, dimension_square<N>::value>(A)));
 }
 
 } // namespace Intrepid

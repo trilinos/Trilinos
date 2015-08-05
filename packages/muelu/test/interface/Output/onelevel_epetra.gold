@@ -9,8 +9,8 @@ Level 0
 Number of levels    = 1
 Operator complexity = 1.00
 
-matrix rows    nnz  nnz/row procs
-A 0    9999  29995     3.00  1
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               1
 
 Smoother (level 0) pre  : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 Smoother (level 0) post : no smoother

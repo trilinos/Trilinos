@@ -58,6 +58,7 @@
 #include <Tpetra_Import_Util.hpp>
 
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_TimeMonitor.hpp"
 #include "MueLu_TpetraOperator.hpp"
 #include "MueLu_VerboseObject.hpp"
 
@@ -74,7 +75,7 @@ namespace MueLu {
             class LocalOrdinal,
             class GlobalOrdinal,
             class Node>
-  class AMGXOperator : public TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
+  class AMGXOperator : public TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>, public BaseClass {
   private:
     typedef Scalar          SC;
     typedef LocalOrdinal    LO;
@@ -230,15 +231,12 @@ namespace MueLu {
         AMGX_resources_create(&Resources_, Config_, MPI_COMM_WORLD, 1/* number of GPU devices utilized by this rank */, device);
 #endif
       }
-      std::cout << "Created Resources" << std::endl;
 
       AMGX_Mode mode = AMGX_mode_dDDI;
       AMGX_solver_create(&Solver_, Resources_, mode,  Config_);
       AMGX_matrix_create(&A_,      Resources_, mode);
       AMGX_vector_create(&X_,      Resources_, mode);
       AMGX_vector_create(&Y_,      Resources_, mode);
-
-      // std::cout << "Created stuff" << std::endl;
 
       std::vector<int> amgx2muelu;
 
@@ -300,8 +298,6 @@ namespace MueLu {
             muelu2amgx_[exportLIDs[i]] = -2;
           }
 
-        std::cout << "[" << myRank << "]: N = " << N << ", Nc = " << Nc << std::endl;
-
         int localOffset = 0, exportOffset = N - numUniqExports;
         // Go through exported LIDs and put them at the end of LIDs
         for (int i = 0; i < exportLIDs.size(); i++)
@@ -317,11 +313,6 @@ namespace MueLu {
           for (int i = 0; i < importPIDs.size(); i++)
             if (importPIDs[i] != -1 && hashTable.get(importPIDs[i]) == k)
               muelu2amgx_[i] = importOffset++;
-
-        std::cout << "[" << comm->getRank() << "]: muelu2amgx mapping" << std::endl;
-        for (int i = 0; i < Nc; i++)
-          std::cout << " " << muelu2amgx_[i];
-        std::cout << std::endl;
 
         amgx2muelu.resize(muelu2amgx_.size());
         for (int i = 0; i < muelu2amgx_.size(); i++)
@@ -362,10 +353,7 @@ namespace MueLu {
         // Debugging
         printMaps(comm, recvDatas, amgx2muelu, neighbors, *importer->getTargetMap(), "recv_map_vector");
 
-
-        std::cout << "Creaing comm pattern..."; std::cout.flush();
         AMGX_SAFE_CALL(AMGX_matrix_comm_from_maps_one_ring(A_, 1, num_neighbors, neighbors, &send_sizes[0], &send_maps[0], &recv_sizes[0], &recv_maps[0]));
-        std::cout << "done" << std::endl;
 
         AMGX_vector_bind(X_, A_);
         AMGX_vector_bind(Y_, A_);
@@ -383,8 +371,11 @@ namespace MueLu {
       N_      = inA->getNodeNumRows();
       int nnz = inA->getNodeNumEntries();
 
+
       // Upload matrix
       // TODO Do we need to pin memory here through AMGX_pin_memory?
+      RCP<Teuchos::Time> matrixTimer = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: transfer matrix  CPU->GPU");
+      matrixTimer->start();
       if (numProcs == 1) {
         AMGX_matrix_upload_all(A_, N_, nnz, 1, 1, &ia[0], &ja[0], &a[0], NULL);
 
@@ -420,26 +411,18 @@ namespace MueLu {
           } while (swapped == true);
         }
 
-        std::cout << "[" << myRank << "]: ia_new" << std::endl;
-        for (int i = 0; i < ia_new.size(); i++)
-          std::cout << " " << ia_new[i];
-        std::cout << "\n[" << myRank << "]: ja_new" << std::endl;
-        for (int i = 0; i < ja_new.size(); i++)
-          std::cout << " " << ja_new[i];
-        std::cout << "\n[" << myRank << "]: a_new" << std::endl;
-        for (int i = 0; i < a_new.size(); i++)
-          std::cout << " " << a_new[i];
-        std::cout << std::endl;
-
-        std::cout << "Uploading matrix..."; std::cout.flush();
         AMGX_matrix_upload_all(A_, N_, nnz, 1, 1, &ia_new[0], &ja_new[0], &a_new[0], NULL);
-        std::cout << "done" << std::endl;
       }
+      matrixTimer->stop();
+      matrixTimer->incrementNumCalls();
 
       domainMap_ = inA->getDomainMap();
       rangeMap_  = inA->getRangeMap();
 
       AMGX_solver_setup(Solver_, A_);
+
+      vectorTimer1_ = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: transfer vectors CPU->GPU");
+      vectorTimer2_ = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: transfer vector  GPU->CPU");
     }
 
     //! Destructor.
@@ -502,6 +485,9 @@ namespace MueLu {
     RCP<const Map>          rangeMap_;
 
     std::vector<int>        muelu2amgx_;
+
+    RCP<Teuchos::Time>      vectorTimer1_;
+    RCP<Teuchos::Time>      vectorTimer2_;
   };
 
 } // namespace

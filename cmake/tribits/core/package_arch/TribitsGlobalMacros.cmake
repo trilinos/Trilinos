@@ -470,6 +470,10 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     CACHE BOOL
     "Determines if asserts are performed on missing packages or not." )
 
+  ADVANCED_SET( ${PROJECT_NAME}_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES
+    FALSE  CACHE  BOOL
+    "If set to TRUE, a 'NOTE' is printed for each missing package that is ignored." )
+
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_STRONG_C_COMPILE_WARNINGS
     ${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE}
     CACHE BOOL "Enable strong compiler warnings for C code for supported compilers." )

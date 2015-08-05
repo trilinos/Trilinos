@@ -61,6 +61,8 @@ namespace MueLu {
 
     RCP<ParameterList> validParamList = VisualizationHelpers::GetValidParameterList();
 
+    validParamList->set< int >                   ("visualization: start level",             0,                     "visualize only levels with level ids greater or equal than start level");// Remove me?
+
     validParamList->set< RCP<const FactoryBase> >("P",           Teuchos::null, "Prolongator factory. The user has to declare either P or Ptent but not both at the same time.");
     validParamList->set< RCP<const FactoryBase> >("Ptent",       Teuchos::null, "Tentative prolongator factory. The user has to declare either P or Ptent as input but not both at the same time");
     validParamList->set< RCP<const FactoryBase> >("Coordinates", Teuchos::null, "Factory for Coordinates.");
@@ -261,28 +263,30 @@ namespace MueLu {
       isRoot[rootCandidate] = true;
     }
 
-
     std::vector<LocalOrdinal> vertices;
     std::vector<LocalOrdinal> geomSize;
+    int vizLevel = pL.get<int>("visualization: start level");
+    if(vizLevel <= fineLevel.GetLevelID()) {
 
-    std::string aggStyle = pL.get<std::string>("visualization: style");
-    if(aggStyle == "Point Cloud")
-      this->doPointCloud(vertices, geomSize, numLocalAggs, numFineNodes);
-    else if(aggStyle == "Jacks")
-      this->doJacks(vertices, geomSize, numLocalAggs, numFineNodes, isRoot, vertex2AggId);
-    else if(aggStyle == "Convex Hulls") {
-      // TODO do a smarter distinction and check the number of z levels...
-      // loop over all coordinates and collect coordinate components in sets...
-      if(coords->getNumVectors() == 3)
-        this->doConvexHulls3D(vertices, geomSize, numLocalAggs, numFineNodes, isRoot, vertex2AggId, xCoords, yCoords, zCoords);
-      else if(coords->getNumVectors() == 2)
-        this->doConvexHulls2D(vertices, geomSize, numLocalAggs, numFineNodes, isRoot, vertex2AggId, xCoords, yCoords, zCoords);
-    }
-    else
-    {
-      GetOStream(Warnings0) << "   Warning: Unrecognized agg style.\nPossible values are Point Cloud, Jacks, Convex Hulls.\nDefaulting to Point Cloud." << std::endl;
-      aggStyle = "Point Cloud";
-      this->doPointCloud(vertices, geomSize, numLocalAggs, numFineNodes);
+      std::string aggStyle = pL.get<std::string>("visualization: style");
+      if(aggStyle == "Point Cloud")
+        this->doPointCloud(vertices, geomSize, numLocalAggs, numFineNodes);
+      else if(aggStyle == "Jacks")
+        this->doJacks(vertices, geomSize, numLocalAggs, numFineNodes, isRoot, vertex2AggId);
+      else if(aggStyle == "Convex Hulls") {
+        // TODO do a smarter distinction and check the number of z levels...
+        // loop over all coordinates and collect coordinate components in sets...
+        if(coords->getNumVectors() == 3)
+          this->doConvexHulls3D(vertices, geomSize, numLocalAggs, numFineNodes, isRoot, vertex2AggId, xCoords, yCoords, zCoords);
+        else if(coords->getNumVectors() == 2)
+          this->doConvexHulls2D(vertices, geomSize, numLocalAggs, numFineNodes, isRoot, vertex2AggId, xCoords, yCoords, zCoords);
+      }
+      else
+      {
+        GetOStream(Warnings0) << "   Warning: Unrecognized agg style.\nPossible values are Point Cloud, Jacks, Convex Hulls.\nDefaulting to Point Cloud." << std::endl;
+        aggStyle = "Point Cloud";
+        this->doPointCloud(vertices, geomSize, numLocalAggs, numFineNodes);
+      }
     }
 
     // write out fine edge information
@@ -348,26 +352,28 @@ namespace MueLu {
     }
 #endif
 
-    // write out coarsening information
-    std::string filenameToWrite = this->getFileName(comm->getSize(), comm->getRank(), fineLevel.GetLevelID(), pL);
-    std::ofstream fout (filenameToWrite.c_str());
+    if(pL.get<int>("visualization: start level") <= fineLevel.GetLevelID()) {
+      // write out coarsening information
+      std::string filenameToWrite = this->getFileName(comm->getSize(), comm->getRank(), fineLevel.GetLevelID(), pL);
+      std::ofstream fout (filenameToWrite.c_str());
 
-    std::vector<int> uniqueFine = this->makeUnique(vertices);
-    this->writeFileVTKOpening(fout, uniqueFine, geomSize);
-    this->writeFileVTKNodes(fout, uniqueFine, nodeMap);
-    this->writeFileVTKData(fout, uniqueFine, myAggOffset, vertex2AggId, comm->getRank());
-    this->writeFileVTKCoordinates(fout, uniqueFine, xCoords, yCoords, zCoords, coords->getNumVectors());
-    this->writeFileVTKCells(fout, uniqueFine, vertices, geomSize);
-    this->writeFileVTKClosing(fout);
-    fout.close();
+      std::vector<int> uniqueFine = this->makeUnique(vertices);
+      this->writeFileVTKOpening(fout, uniqueFine, geomSize);
+      this->writeFileVTKNodes(fout, uniqueFine, nodeMap);
+      this->writeFileVTKData(fout, uniqueFine, myAggOffset, vertex2AggId, comm->getRank());
+      this->writeFileVTKCoordinates(fout, uniqueFine, xCoords, yCoords, zCoords, coords->getNumVectors());
+      this->writeFileVTKCells(fout, uniqueFine, vertices, geomSize);
+      this->writeFileVTKClosing(fout);
+      fout.close();
 
-    // create pvtu file
-    if(comm->getRank() == 0) {
-      std::string pvtuFilename = this->getPVTUFileName(comm->getSize(), comm->getRank(), fineLevel.GetLevelID(), pL);
-      std::string baseFname = this->getBaseFileName(comm->getSize(), fineLevel.GetLevelID(), pL);
-      std::ofstream pvtu(pvtuFilename.c_str());
-      this->writePVTU(pvtu, baseFname, comm->getSize(), pL.get<bool>("visualization: fine graph edges"));
-      pvtu.close();
+      // create pvtu file
+      if(comm->getRank() == 0) {
+        std::string pvtuFilename = this->getPVTUFileName(comm->getSize(), comm->getRank(), fineLevel.GetLevelID(), pL);
+        std::string baseFname = this->getBaseFileName(comm->getSize(), fineLevel.GetLevelID(), pL);
+        std::ofstream pvtu(pvtuFilename.c_str());
+        this->writePVTU(pvtu, baseFname, comm->getSize(), pL.get<bool>("visualization: fine graph edges"));
+        pvtu.close();
+      }
     }
 
     if(comm->getRank() == 0 && pL.get<bool>("visualization: build colormap")) {
