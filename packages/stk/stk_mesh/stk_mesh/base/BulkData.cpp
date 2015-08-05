@@ -860,10 +860,12 @@ bool BulkData::destroy_entity( Entity entity, bool was_ghost )
 
 bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
 {
-  const EntityKey key = entity_key(entity);
-
   require_ok_to_modify();
   m_modSummary.track_destroy_entity(entity);
+
+  const stk::mesh::EntityKey key = entity_key(entity);
+
+  require_ok_to_modify();
 
   m_check_invalid_rels = false;
 
@@ -873,10 +875,10 @@ bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
   }
 
   const bool ghost = was_ghost || in_receive_ghost(key);
-  const EntityRank erank = entity_rank(entity);
+  const stk::mesh::EntityRank erank = entity_rank(entity);
 
-  const EntityRank end_rank = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
-  for (EntityRank irank = static_cast<EntityRank>(erank + 1); irank != end_rank; ++irank) {
+  const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(m_mesh_meta_data.entity_rank_count());
+  for (stk::mesh::EntityRank irank = static_cast<stk::mesh::EntityRank>(erank + 1); irank != end_rank; ++irank) {
     if (num_connectivity(entity, irank) > 0) {
       m_check_invalid_rels = true;
       return false;
@@ -895,12 +897,12 @@ bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
 
   // It is important that relations be destroyed from highest to lowest rank so
   // that the back relations are destroyed first.
-  EntityVector temp_entities;
-  std::vector<ConnectivityOrdinal> temp_ordinals;
-  Entity const* rel_entities = NULL;
+  stk::mesh::EntityVector temp_entities;
+  std::vector<stk::mesh::ConnectivityOrdinal> temp_ordinals;
+  stk::mesh::Entity const* rel_entities = nullptr;
   int num_conn = 0;
-  ConnectivityOrdinal const* rel_ordinals;
-  for (EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
+  stk::mesh::ConnectivityOrdinal const* rel_ordinals;
+  for (stk::mesh::EntityRank irank = end_rank; irank != stk::topology::BEGIN_RANK; )
   {
     --irank;
 
@@ -937,10 +939,10 @@ bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
   // makes references to the entity's original bucket.
 
   // Need to invalidate Entity handles in comm-list
-  EntityCommListInfoVector::iterator lb_itr =
+  stk::mesh::EntityCommListInfoVector::iterator lb_itr =
     std::lower_bound(m_entity_comm_list.begin(), m_entity_comm_list.end(), key);
   if (lb_itr != m_entity_comm_list.end() && lb_itr->key == key) {
-    lb_itr->entity = Entity();
+    lb_itr->entity = stk::mesh::Entity();
   }
 
   remove_entity_callback(erank, bucket(entity).bucket_id(), bucket_ordinal(entity));
@@ -4825,7 +4827,7 @@ void BulkData::add_parts_received(const std::vector<EntityProc> &send_list)
         CommBuffer & buf = comm.recv_buffer(p);
         while(buf.remaining())
         {
-            PartVector owner_parts, current_parts, remove_parts;
+            PartVector owner_parts;
 
             EntityKey key;
             buf.unpack<EntityKey>(key);
@@ -4840,28 +4842,9 @@ void BulkData::add_parts_received(const std::vector<EntityProc> &send_list)
                 }
             }
 
-            // Any current part that is not a member of owners_parts
-            // must be removed.
-
             Entity const entity = find_entity(*this, m_entity_comm_list, key).entity;
 
-            this->bucket(entity).supersets(current_parts);
-
-            for(PartVector::iterator
-            ip = current_parts.begin(); ip != current_parts.end(); ++ip)
-            {
-                Part * const part = *ip;
-                const unsigned part_ord = part->mesh_meta_data_ordinal();
-                if(PART_ORD_UNIVERSAL != part_ord &&
-                        PART_ORD_OWNED != part_ord &&
-                        PART_ORD_SHARED != part_ord &&
-                        !contain(m_ghost_parts, *part))
-                {
-                    remove_parts.push_back(part);
-                }
-            }
-
-            internal_change_entity_parts(entity, owner_parts, remove_parts);
+            internal_change_entity_parts(entity, owner_parts, stk::mesh::PartVector());
         }
     }
 }
