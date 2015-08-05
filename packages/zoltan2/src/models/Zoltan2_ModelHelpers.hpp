@@ -82,12 +82,6 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    // Get the default communicator and Kokkos Node instance
-    // TODO:  Default communicator is not correct here; need to get
-    // TODO:  communicator from the problem
-    /*RCP<const Comm<int> > comm = 
-      DefaultPlatform::getDefaultPlatform ().getComm ();*/
-
     // Get node-element connectivity
 
     const lno_t *offsets=NULL;
@@ -107,6 +101,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     /***********************************************************************/
 
     Array<gno_t> sourcetargetGIDs;
+    Array<gno_t> throughGIDs;
     RCP<const map_type> sourcetargetMapG;
     RCP<const map_type> throughMapG;
 
@@ -115,6 +110,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 
     // Build a list of the global sourcetarget ids...
     sourcetargetGIDs.resize (LocalNumIDs);
+    throughGIDs.resize (LocalNumOfThrough);
     gno_t min[2];
     min[0] = as<gno_t> (Ids[0]);
     for (size_t i = 0; i < LocalNumIDs; ++i) {
@@ -128,10 +124,10 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     // min(throughIds[i])
     min[1] = as<gno_t> (throughIds[0]);
     for (size_t i = 0; i < LocalNumOfThrough; ++i) {
-      gno_t tmp = as<gno_t> (throughIds[i]);
+      throughGIDs[i] = as<gno_t> (throughIds[i]);
 
-      if (tmp < min[1]) {
-	min[1] = tmp;
+      if (throughGIDs[i] < min[1]) {
+	min[1] = throughGIDs[i];
       }
     }
 
@@ -142,8 +138,8 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     sourcetargetMapG = rcp(new map_type(ia->getGlobalNumOf(sourcetarget),
 					sourcetargetGIDs(), gmin[0], comm));
 
-    //Create a new map with IDs uniquely assigned to ranks (oneToOneMap)
-    RCP<const map_type> oneToOneMap =
+    //Create a new map with IDs uniquely assigned to ranks (oneToOneSTMap)
+    RCP<const map_type> oneToOneSTMap =
       Tpetra::createOneToOne<lno_t, gno_t, node_t>(sourcetargetMapG);
 
     //Generate Map for through.
@@ -154,7 +150,12 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 // TODO all through entities on processor, followed by call to createOneToOne
 // TODO
 
-    throughMapG = rcp (new map_type(ia->getGlobalNumOf(through),gmin[1],comm));
+    throughMapG = rcp (new map_type(ia->getGlobalNumOf(through), throughGIDs,
+				    gmin[1], comm));
+
+    //Create a new map with IDs uniquely assigned to ranks (oneToOneTMap)
+    RCP<const map_type> oneToOneTMap =
+      Tpetra::createOneToOne<lno_t, gno_t, node_t>(throughMapG);
 
     /***********************************************************************/
     /************************* BUILD GRAPH FOR ADJS ************************/
@@ -163,7 +164,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     RCP<sparse_matrix_type> adjsMatrix;
 
     // Construct Tpetra::CrsGraph objects.
-    adjsMatrix = rcp (new sparse_matrix_type (oneToOneMap, 0));
+    adjsMatrix = rcp (new sparse_matrix_type (oneToOneSTMap, 0));
 
     nonzero_t justOne = 1;
     ArrayView<nonzero_t> justOneAV = Teuchos::arrayView (&justOne, 1);
@@ -187,7 +188,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     }// *** source loop ***
 
     //Fill-complete adjs Graph
-    adjsMatrix->fillComplete (throughMapG, adjsMatrix->getRowMap());
+    adjsMatrix->fillComplete (oneToOneTMap, adjsMatrix->getRowMap());
 
     // Form 2ndAdjs
     RCP<sparse_matrix_type> secondAdjs =
