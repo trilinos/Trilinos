@@ -1772,9 +1772,6 @@ namespace stk {
 
       int StkMeshIoBroker::check_integer_size_requirements()
       {
-	// m_property_manager is for the StkMeshIoBroker;
-	// out_properties is for the output file specifically; may be the same as m_property_manager.
-	
 	// 1. If the INGEGER_SIZE_DB or _API property exists, then use its value no matter what...
 	if (m_property_manager.exists("INTEGER_SIZE_DB")) {
 	  return m_property_manager.get("INTEGER_SIZE_DB").get_int();
