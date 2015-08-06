@@ -3494,7 +3494,7 @@ bool BulkData::pack_entity_modification( const BulkData & mesh ,
 
       for ( PairIterEntityComm ec = mesh.internal_entity_comm_map(i->key); ! ec.empty() ; ++ec )
       {
-        if ( ( packGhosted && ec->ghost_id > 0 ) || ( packShared && ec->ghost_id == 0 ) )
+        if ( ( packGhosted && ec->ghost_id > BulkData::SHARED ) || ( packShared && ec->ghost_id == BulkData::SHARED ) )
         {
           comm.send_buffer( ec->proc )
               .pack<EntityKey>( i->key )
@@ -4887,7 +4887,7 @@ void BulkData::internal_update_fast_comm_maps()
       fast_idx.bucket_ord = idx.bucket_ordinal;
 
       PairIterEntityComm ec = internal_entity_comm_map(key);
-      for (; !ec.empty() && ec->ghost_id == 0; ++ec) {
+      for (; !ec.empty() && ec->ghost_id == BulkData::SHARED; ++ec) {
         m_volatile_fast_shared_comm_map[rank][ec->proc].push_back(fast_idx);
       }
     }
@@ -5627,7 +5627,7 @@ void BulkData::unpack_not_owned_verify_compare_comm_info( CommBuffer&           
   std::vector<unsigned> ec_idx_shared;
   std::vector<unsigned> ec_idx_not_shared;
   for (unsigned iec=0; iec < ec_size; iec++) {
-    if (0 == ec[iec].ghost_id) {
+    if (BulkData::SHARED == ec[iec].ghost_id) {
       ec_idx_shared.push_back(iec);
     }
     else {
@@ -5643,7 +5643,7 @@ void BulkData::unpack_not_owned_verify_compare_comm_info( CommBuffer&           
     if ( ! bad_comm ) {
       size_t j = 0 ;
       for ( ; j < ec_idx_shared.size() &&
-              ec[ec_idx_shared[j]].ghost_id == 0 &&
+              ec[ec_idx_shared[j]].ghost_id == BulkData::SHARED &&
               ec[ec_idx_shared[j]].proc   == recv_comm[j] ; ++j );
       bad_comm = j != ec_idx_shared.size() ;
 
@@ -5804,7 +5804,7 @@ void BulkData::unpack_not_owned_verify_report_errors(Entity entity,
     if ( in_shared( key ) ) {
       error_log << " sharing(" ;
       for ( size_t j = 0 ; j < ec.size() &&
-              ec[j].ghost_id == 0 ; ++j ) {
+              ec[j].ghost_id == BulkData::SHARED ; ++j ) {
         error_log << " " << ec[j].proc ;
       }
       error_log << " ) != received sharing(" ;
@@ -6080,14 +6080,14 @@ void BulkData::pack_owned_verify( CommAll & all )
         // What ghost subsets go to this process?
         unsigned count = 0 ;
         for ( size_t k = 0 ; k < comm.size() ; ++k ) {
-          if ( comm[k].ghost_id != 0 && comm[k].proc == ghost_proc ) {
+          if ( comm[k].ghost_id != BulkData::SHARED && comm[k].proc == ghost_proc ) {
             ++count ;
           }
         }
         put_tag(buf,PACK_TAG_GHOST_COUNT);
         buf.pack<unsigned>( count );
         for ( size_t k = 0 ; k < comm.size() ; ++k ) {
-          if ( comm[k].ghost_id != 0 && comm[k].proc == ghost_proc ) {
+          if ( comm[k].ghost_id != BulkData::SHARED && comm[k].proc == ghost_proc ) {
             buf.pack<unsigned>( comm[k].ghost_id );
           }
         }
