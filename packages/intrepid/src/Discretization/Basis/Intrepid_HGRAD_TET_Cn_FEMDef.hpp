@@ -204,8 +204,8 @@ namespace Intrepid {
       //  begin internal lines of internal face
       for (int j=1;j<degree-i;j++) {
         //    first point on line is on face of vertices (0,3,2), which is face 2
-        tag_cur[0] = 2;  tag_cur[1] = 2;  tag_cur[2] = edge_dof_cur[2];  tag_cur[3] = numFaceDof;
-        edge_dof_cur[2]++;
+        tag_cur[0] = 2;  tag_cur[1] = 2;  tag_cur[2] = face_dof_cur[2];  tag_cur[3] = numFaceDof;
+        face_dof_cur[2]++;
         tag_cur += tagSize;
         //    end first point of line
         //    begin internal points on the cell

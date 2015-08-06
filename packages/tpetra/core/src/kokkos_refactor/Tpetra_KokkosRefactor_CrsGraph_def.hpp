@@ -3745,7 +3745,7 @@ namespace Tpetra {
 
     // makeImportExport won't create a new importer/exporter if I set one here first.
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-mIX"))));
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-mIXcheckI"))));
 #endif
 
     importer_ = Teuchos::null;
@@ -3758,6 +3758,11 @@ namespace Tpetra {
       importer_ = importer;
 
     }
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-mIXcheckE"))));
+#endif
+
     if (exporter != Teuchos::null) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         ! exporter->getSourceMap ()->isSameAs (*getRowMap ()) ||
@@ -3765,6 +3770,11 @@ namespace Tpetra {
         std::invalid_argument,": exporter does not match matrix maps.");
       exporter_ = exporter;
     }
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-mIXmake"))));
+#endif
+
     makeImportExport ();
 
     // Compute the constants

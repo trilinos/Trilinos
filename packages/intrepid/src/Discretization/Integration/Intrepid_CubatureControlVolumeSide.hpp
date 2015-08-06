@@ -41,57 +41,53 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_CubatureTensor.hpp
-    \brief  Header file for the Intrepid::CubatureTensor class.
-    \author Created by P. Bochev and J. Lai.
+/** \file   Intrepid_CubatureControlVolumeSide.hpp
+    \brief  Header file for the Intrepid::CubatureControlVolumeSide class.
+    \author Created by K. Peterson, P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID_CUBATURE_POLYGON_HPP
-#define INTREPID_CUBATURE_POLYGON_HPP
+#ifndef INTREPID_CUBATURE_CONTROLVOLUMESIDE_HPP
+#define INTREPID_CUBATURE_CONTROLVOLUMESIDE_HPP
 
 #include "Intrepid_Cubature.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Shards_CellTopology.hpp"
+#include "Intrepid_CellTools.hpp"
 
 namespace Intrepid{
 
-  /** \class Intrepid::CubaturePolygon
-      \breif Defines cubature (integration) rules for polygons.
+  /** \class Intrepid::CubatureControlVolumeSide
+      \brief Defines cubature (integration) rules over control volumes.
   */
-  template<class Scalar, class ArrayPoint=FieldContainer<Scalar>, class ArrayWeight=ArrayPoint>
-  class CubaturePolygon : public Intrepid::Cubature<Scalar,ArrayPoint,ArrayWeight>{
+  template<class Scalar, class ArrayPoint, class ArrayWeight>
+  class CubatureControlVolumeSide : public Intrepid::Cubature<Scalar,ArrayPoint,ArrayWeight>{
   public:
     
     /** brief Constructor.
 	
-	\param cellTopology           [in]     - The topology of the polygon.
-	\param cellVertices           [in]     - The vertices of the polygon 
-	\param degree                 [in]     - The degree of cubature for each triangle
+	\param cellTopology           [in]     - The topology of the primary cell.
     */
-    CubaturePolygon(const shards::CellTopology& cellTopology,
-				 const ArrayPoint& cellVertices,
-				 int degree);
-    
+    CubatureControlVolumeSide(const Teuchos::RCP<const shards::CellTopology> & cellTopology);
+
     /** \brief Returns cubature points and weights
-	       (return arrays must be pre-sized/pre-allocated).
+	       Method for reference space cubature - throws an exception.
 	
 	\param cubPoints             [out]        - Array containing the cubature points.
         \param cubWeights            [out]        - Array of corresponding cubature weights.
     */
     void getCubature(ArrayPoint& cubPoints,
 		     ArrayWeight& cubWeights) const;
-
-    /** \brief Returns cubature points and weights.
-                Method for physical space cubature, throws an exception.
-
-        \param cubPoints             [out]        - Array containing the cubature points.
+    
+    /** \brief Returns cubature points and weights
+	       (return arrays must be pre-sized/pre-allocated).
+	
+	\param cubPoints             [out]        - Array containing the cubature points.
         \param cubWeights            [out]        - Array of corresponding cubature weights.
         \param cellCoords             [in]        - Array of cell coordinates
     */
     void getCubature(ArrayPoint& cubPoints,
-                     ArrayWeight& cubWeights,
+		     ArrayWeight& cubWeights,
                      ArrayPoint& cellCoords) const;
-
     
     /** \brief Returns the number of cubature points.
      */
@@ -107,31 +103,23 @@ namespace Intrepid{
     void getAccuracy(std::vector<int> & accuracy) const;
 
     
-    virtual ~CubaturePolygon() {}
+    virtual ~CubatureControlVolumeSide() {}
     
   private:
     
     
-    /** \brief The topology of the polygon.
+    /** \brief The topology of the primary cell.
      */
-    shards::CellTopology cellTopology_;
+    Teuchos::RCP<const shards::CellTopology> primaryCellTopo_;
 
-    /** \brief The vertices of the polygon.
+    /** \brief The topology of the sub-control volume.
      */
-    ArrayPoint cellVertices_;
-    
-    /** \brief The degree of the polynomials that are integrated exactly on each triangle.
+    Teuchos::RCP<const shards::CellTopology> subCVCellTopo_;
+
+    /** \brief The degree of the polynomials that are integrated exactly.
      */
     int degree_;
     
-    /** \brief Local copy of cubature points.
-     */
-    FieldContainer<Scalar> cubaturePoints_;
-
-    /** \brief Local copy of cubature weights.
-     */
-    FieldContainer<Scalar> cubatureWeights_;
-
     /** \brief The number of cubature points.
      */
     int numPoints_;
@@ -140,11 +128,11 @@ namespace Intrepid{
      */
     int cubDimension_;
     
-  }; // end class CubaturePolygon
+  }; // end class CubatureControlVolumeSide
 
 } // end namespace Intrepid
 
-#include "Intrepid_CubaturePolygonDef.hpp"
+#include "Intrepid_CubatureControlVolumeSideDef.hpp"
 
 #endif
 
