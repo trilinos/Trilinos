@@ -665,8 +665,10 @@ void HyperGraphModel<Adapter>::print()
 
   for (lno_t i = 0; i < gids_.size(); i++) {
     *os << me << fn << i << " VTXGID " << gids_[i]<<" isOwner: "<<isOwner_[i];
+    if (numWeightsPerVertex_==1)
+      *os << " weight: " << vWeights_[0][i]; 
     if (view_==VERTEX_CENTRIC) {
-      *os <<":";
+      *os <<" pins:";
       for (lno_t j = offsets_[i]; j< offsets_[i+1];j++)
         *os <<" "<<pinGids_[j];
     }

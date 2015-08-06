@@ -110,7 +110,14 @@ int main(int narg, char *arg[]) {
   RCP<const Zoltan2::Environment> envConst = Teuchos::rcp_const_cast<const Zoltan2::Environment>(env);
   
   
-  inputAdapter_t* ia = new inputAdapter_t(*CommT, m,"vertex","edge",true);
+  inputAdapter_t* ia = new inputAdapter_t(*CommT, m,"face","edge",true);
+  inputAdapter_t::scalar_t* arr = new inputAdapter_t::scalar_t[ia->getLocalNumOf(Zoltan2::MESH_FACE)];
+  for (size_t i=0;i<ia->getLocalNumOf(Zoltan2::MESH_FACE);i++) {
+    arr[i]=PCU_Comm_Self();
+  }
+  const inputAdapter_t::scalar_t* weights=arr;
+  ia->setWeights(Zoltan2::MESH_FACE,weights,1);
+
   const baseMeshAdapter_t *base_ia = dynamic_cast<const baseMeshAdapter_t*>(ia);
   Zoltan2::modelFlag_t graphFlags_;
   RCP<const baseMeshAdapter_t> baseInputAdapter_(base_ia,false);
