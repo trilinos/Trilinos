@@ -322,22 +322,43 @@ IF (Tpetra_ENABLE_Kokkos_Refactor)
         MESSAGE(FATAL_ERROR "Tpetra: Kokkos::Compat::KokkosSerialWrapperNode is set as the default Node type, but that Node type is not enabled.")   
       ENDIF()
     ENDIF()
+
+    # mfh 05 Aug 2015: By default, only enable one of the two threaded
+    # CPU Node types.  It takes effort to turn on OpenMP, so this will
+    # at least ensure that both the OpenMP case (well exercised by
+    # Kokkos and Tpetra developers) and the Threads case (exercised by
+    # users who don't turn on OpenMP) get enabled.  If both OpenMP and
+    # Threads are enabled, prefer OpenMP.
+
     IF(Kokkos_ENABLE_Pthread)
-      GLOBAL_SET(HAVE_TPETRA_PTHREAD ON)
-    ELSE()
+      IF(Kokkos_ENABLE_OpenMP)
+        GLOBAL_SET(HAVE_TPETRA_OPENMP ON) # prefer OpenMP to Threads
+        GLOBAL_SET(HAVE_TPETRA_PTHREAD OFF)
+      ELSE() # OpenMP is OFF
+        GLOBAL_SET(HAVE_TPETRA_OPENMP OFF)
+        GLOBAL_SET(HAVE_TPETRA_PTHREAD ON) # OpenMP is OFF, so use Threads
+      ENDIF()
+    ELSE() # Threads is (are) OFF, so let's see if OpenMP is ON
       GLOBAL_SET(HAVE_TPETRA_PTHREAD OFF)
-      IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE) 
+      IF(Kokkos_ENABLE_OpenMP)
+        GLOBAL_SET(HAVE_TPETRA_OPENMP ON) # Threads is OFF, so use OpenMP
+      ELSE()
+        GLOBAL_SET(HAVE_TPETRA_OPENMP OFF) # OpenMP is OFF too
+      ENDIF()
+    ENDIF()
+
+    IF(NOT HAVE_TPETRA_PTHREAD)
+      IF(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE) 
         MESSAGE(FATAL_ERROR "Tpetra: Kokkos::Compat::KokkosThreadsWrapperNode is set as the default Node type, but that Node type is not enabled.")   
       ENDIF()
     ENDIF()
-    IF(Kokkos_ENABLE_OpenMP)
-      GLOBAL_SET(HAVE_TPETRA_OPENMP ON)
-    ELSE()
-      GLOBAL_SET(HAVE_TPETRA_OPENMP OFF)
-      IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE) 
+
+    IF(NOT HAVE_TPETRA_OPENMP)
+      IF(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE) 
         MESSAGE(FATAL_ERROR "Tpetra: Kokkos::Compat::KokkosOpenMPWrapperNode is set as the default Node type, but that Node type is not enabled.")   
       ENDIF()
     ENDIF()
+
     IF(Kokkos_ENABLE_Cuda)
       GLOBAL_SET(HAVE_TPETRA_CUDA ON)
     ELSE()
@@ -367,7 +388,6 @@ IF (Tpetra_ENABLE_Kokkos_Refactor)
       MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosCudaWrapperNode")
     ENDIF()
   ENDIF() # Whether ETI is enabled
-
 
 ELSE() # NOT Tpetra_ENABLE_Kokkos_Refactor (DEPRECATED)
 
