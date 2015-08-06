@@ -493,8 +493,8 @@ namespace Belos {
     while (stest_->checkStatus(this) != Passed) {
 //      std::cout << std::endl;
 
-      std::vector<ScalarType> tempResids(numRHS_);
-      MVT::MvNorm(*R_,tempResids);
+      // std::vector<ScalarType> tempResids(numRHS_);
+      // MVT::MvNorm(*R_,tempResids);
 //      for(i=0; i<numRHS_; i++)
 //        std::cout << "r[" << i << "] = " << tempResids[i] << std::endl;
 
