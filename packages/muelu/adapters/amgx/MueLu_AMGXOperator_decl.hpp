@@ -173,6 +173,8 @@ namespace MueLu {
       int numProcs = comm->getSize();
       int myRank   = comm->getRank();
 
+      RCP<Teuchos::Time> amgxTimer = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: initialize");
+      amgxTimer->start();
       // Initialize
       AMGX_SAFE_CALL(AMGX_initialize());
       AMGX_SAFE_CALL(AMGX_initialize_plugins());
@@ -237,6 +239,9 @@ namespace MueLu {
       AMGX_matrix_create(&A_,      Resources_, mode);
       AMGX_vector_create(&X_,      Resources_, mode);
       AMGX_vector_create(&Y_,      Resources_, mode);
+
+      amgxTimer->stop();
+      amgxTimer->incrementNumCalls();
 
       std::vector<int> amgx2muelu;
 
@@ -359,6 +364,9 @@ namespace MueLu {
         AMGX_vector_bind(Y_, A_);
       }
 
+      RCP<Teuchos::Time> matrixTransformTimer = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: transform matrix");
+      matrixTransformTimer->start();
+
       ArrayRCP<const size_t> ia_s;
       ArrayRCP<const int>    ja;
       ArrayRCP<const double> a;
@@ -370,6 +378,9 @@ namespace MueLu {
 
       N_      = inA->getNodeNumRows();
       int nnz = inA->getNodeNumEntries();
+
+      matrixTransformTimer->stop();
+      matrixTransformTimer->incrementNumCalls();
 
 
       // Upload matrix
@@ -419,7 +430,11 @@ namespace MueLu {
       domainMap_ = inA->getDomainMap();
       rangeMap_  = inA->getRangeMap();
 
+      RCP<Teuchos::Time> realSetupTimer = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: real setup");
+      realSetupTimer->start();
       AMGX_solver_setup(Solver_, A_);
+      realSetupTimer->stop();
+      realSetupTimer->incrementNumCalls();
 
       vectorTimer1_ = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: transfer vectors CPU->GPU");
       vectorTimer2_ = Teuchos::TimeMonitor::getNewTimer("MueLu: AMGX: transfer vector  GPU->CPU");
