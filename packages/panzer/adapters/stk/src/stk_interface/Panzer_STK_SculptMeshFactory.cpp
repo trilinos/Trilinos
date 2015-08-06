@@ -75,6 +75,9 @@ Teuchos::RCP<STK_Interface> SculptMeshFactory::buildMesh(stk_classic::ParallelMa
    // build bulk data
    completeMeshConstruction(*mesh,parallelMach);
 
+   // wrtie exodus file
+   //mesh->writeToExodus("STKSculptMesh.exo");
+ 
    return mesh;
 }
 
@@ -101,7 +104,13 @@ Teuchos::RCP<STK_Interface> SculptMeshFactory::buildUncommitedMesh(stk_classic::
         buildMetaData(parallelMach,*mesh);
 
         mesh->addPeriodicBCs(periodicBCVec_);
+
    }
+
+//   if( machRank_ == 0 )
+//                if(mesh->isWritable())
+//                               mesh->writeToExodus("STKSculptMesh.exo");
+            
 
    return mesh;
 }
@@ -167,7 +176,9 @@ int SculptMeshFactory::callSculptor(stk_classic::ParallelMachine parallelMach, c
   int adapt_level = 2;
   int adapt_type = 0;
    
-
+  printf("\n Sculpt BBox Min ( %lf, %lf, %lf )\n", xMin_, yMin_, zMin_ );
+  printf("\n Sculpt BBox Max ( %lf, %lf, %lf )\n", xMax_, yMax_, zMax_ );
+  
   int cr_result = Create_Sculptor_Mesh(diatom_file_name,
 				       base_exodus_file_name,
                                        base_vfrac_file_name,
@@ -357,10 +368,13 @@ void SculptMeshFactory::buildNodes( stk_classic::ParallelMachine paralleMach, ST
     for(int ict = 0; ict < num_nodes; ict ++){
       global_node_numbers = mss->global_node_numbers[ict];
       std::vector<double> coord(3, 0.0);
-      coord[0] = mss->coord[dimensionality*ict];
-      coord[1] = mss->coord[dimensionality*ict+1];
-      coord[2] = mss->coord[dimensionality*ict+2];
+      coord[0] = mss->coord[0*num_nodes+ict];
+      coord[1] = mss->coord[1*num_nodes+ict];
+      coord[2] = mss->coord[2*num_nodes+ict];
       mesh.addNode(global_node_numbers, coord );
+
+      //std::cout<<"Node "<<global_node_numbers<<": ( "<<coord[0]<<", "<<coord[1]<<", "<<coord[2]<<" )"<<std::endl;      
+
     }
   }
  
@@ -404,7 +418,6 @@ void SculptMeshFactory::buildBlock(stk_classic::ParallelMachine parallelMach,STK
 
   struct MeshStorageStruct *mss = get_sculpt_mesh();
 
-
    // add blocks     
    std::stringstream blockName;
    blockName << "eblock-" << block_id[block_index];
@@ -421,10 +434,13 @@ void SculptMeshFactory::buildBlock(stk_classic::ParallelMachine parallelMach,STK
        elmt_node_linkage[block_index]        = new int[maximum_nodes];
        for(int ict = 0;ict < elements[block_index]; ict ++){
          std::vector<stk_classic::mesh::EntityId> nodes(nodes_per_element[block_index]);
-
+         //std::cout<<"Element id = "<<elm_start+ ict<<std::endl;
+         //std::cout<<"Element global id = "<<mss->global_element_numbers[elm_start+ ict-1]<<std::endl;
          for(int nct = 0; nct < nodes_per_element[block_index]; nct++){
-            elmt_node_linkage[block_index][ict*nodes_per_element[block_index]+nct] = mss->elmt_node_linkage[block_index][ict*nodes_per_element[block_index]+nct];
-            nodes[nct] =  mss->global_node_numbers[elmt_node_linkage[block_index][ict*nodes_per_element[block_index]+nct]-1];
+            elmt_node_linkage[block_index][(ict*nodes_per_element[block_index])+nct] = mss->elmt_node_linkage[block_index][(ict*nodes_per_element[block_index])+nct];
+            nodes[nct] =  mss->global_node_numbers[elmt_node_linkage[block_index][(ict*nodes_per_element[block_index])+nct]-1];
+            //std::cout<<" Node linkage id = "<<elmt_node_linkage[block_index][(ict*nodes_per_element[block_index])+nct]<<std::endl;
+            //std::cout<<" Node global  id = "<<nodes[nct]<<std::endl;
          }
 
          stk_classic::mesh::EntityId gid = mss->global_element_numbers[elm_start+ ict-1];
@@ -451,7 +467,6 @@ const stk_classic::mesh::Relation * SculptMeshFactory::getRelationByID(unsigned 
 void SculptMeshFactory::addSideSets(STK_Interface & mesh) const
 {
    mesh.beginModification();
-
 
     struct MeshStorageStruct *mss = get_sculpt_mesh();
     int num_side_sets  = mss->num_side_sets;
