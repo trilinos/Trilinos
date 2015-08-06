@@ -482,7 +482,6 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     
     typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
     typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>   sparse_matrix_type;
-    typedef Tpetra::Map<lno_t, gno_t, node_t>                 map_type;
     RCP<sparse_matrix_type> secondAdj;
     if (!ia->avail2ndAdjs(primaryPinType,adjacencyPinType)) {
       secondAdj=Zoltan2::get2ndAdjsMatFromAdjs<user_t>(ia,comm_,primaryPinType, adjacencyPinType);

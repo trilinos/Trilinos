@@ -225,11 +225,11 @@ template<typename T, Index N>
 class Storage
 {
 public:
-  typedef T value_type;
-  typedef T * pointer_type;
-  typedef T & reference_type;
-  typedef T const * const_pointer_type;
-  typedef T const & const_reference_type;
+  using value_type = T;
+  using pointer_type = T *;
+  using reference_type = T &;
+  using const_pointer_type = T const *;
+  using const_reference_type = T const &;
 
   static
   bool const
@@ -288,11 +288,11 @@ template<typename T>
 class Storage<T, DYNAMIC>
 {
 public:
-  typedef T value_type;
-  typedef T * pointer_type;
-  typedef T & reference_type;
-  typedef T const * const_pointer_type;
-  typedef T const & const_reference_type;
+  using value_type = T;
+  using pointer_type = T *;
+  using reference_type = T &;
+  using const_pointer_type = T const *;
+  using const_reference_type = T const &;
 
   static
   bool const

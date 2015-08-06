@@ -125,7 +125,7 @@ public:
     }
 
     if (MESH_VERTEX == etype) {
-      return num_nodes_global_;
+      return Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
     }
 
     return 0;

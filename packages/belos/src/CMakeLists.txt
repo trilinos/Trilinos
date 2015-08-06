@@ -23,6 +23,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # CORE
 APPEND_SET(HEADERS
+  BelosBiCGStabIter.hpp
+  BelosBiCGStabSolMgr.hpp
   BelosBlockCGIter.hpp
   BelosBlockCGSolMgr.hpp
   BelosBlockFGmresIter.hpp

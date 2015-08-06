@@ -155,7 +155,8 @@ const
   void getStridedList(size_t &len, const scalar_t *&vec, int &stride) const
   {
     len = vec_.size();
-    vec = vec_.getRawPtr();
+    if (len != 0) vec = vec_.getRawPtr();
+    else          vec = NULL;
     stride = stride_;
   }
 
