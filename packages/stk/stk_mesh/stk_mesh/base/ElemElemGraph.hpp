@@ -195,9 +195,14 @@ private:
     void make_space_for_new_elements(
             const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
 
-    void add_edge_between_local_elements(impl::LocalId elemId, impl::LocalId otherElemId, int side);
-    void add_bidirectional_edge_between_local_elements(impl::LocalId new_elem_id, impl::LocalId otherElemId, int side);
-
+    void add_edge_between_local_elements(impl::LocalId elem1Id, impl::LocalId elem2Id, int elem1Side);
+    void add_both_edges_between_local_elements(impl::LocalId elem1Id, impl::LocalId elem2Id, int elem1Side);
+    void add_local_edges(
+            stk::mesh::Entity elem_to_add, impl::LocalId new_elem_id,
+            std::vector<impl::ElementSidePair>& elem_side_pairs,
+            size_t& num_local_edges_needed);
+    void add_vertex(impl::LocalId new_elem_id,
+            stk::mesh::Entity elem_to_add);
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,

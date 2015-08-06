@@ -1666,66 +1666,82 @@ void ElemElemGraph::make_space_for_new_elements(
     resize_entity_to_local_id_if_needed(max_offset);
 }
 
-void ElemElemGraph::add_edge_between_local_elements(impl::LocalId elemId, impl::LocalId otherElemId, int side)
+void ElemElemGraph::add_edge_between_local_elements(impl::LocalId elem1Id, impl::LocalId elem2Id, int elem1Side)
 {
-    m_elem_graph[elemId].push_back(otherElemId);
-    m_via_sides[elemId].push_back(side);
+    m_elem_graph[elem1Id].push_back(elem2Id);
+    m_via_sides[elem1Id].push_back(elem1Side);
     ++m_num_edges;
 }
 
-void ElemElemGraph::add_bidirectional_edge_between_local_elements(impl::LocalId elemId, impl::LocalId otherElemId, int side)
+void ElemElemGraph::add_both_edges_between_local_elements(impl::LocalId elem1Id, impl::LocalId elem2Id, int elem1Side)
 {
-    stk::mesh::Entity elemToAdd = m_local_id_to_element_entity[elemId];
-    stk::mesh::Entity otherElem = m_local_id_to_element_entity[otherElemId];
+    add_edge_between_local_elements(elem1Id, elem2Id, elem1Side);
 
-    add_edge_between_local_elements(elemId, otherElemId, side);
-    stk::mesh::ConnectivityOrdinal currentOrdinal = static_cast<stk::mesh::ConnectivityOrdinal>(side);
-    stk::mesh::ConnectivityOrdinal neighborOrdinal = get_neighboring_side_ordinal(m_bulk_data, elemToAdd, currentOrdinal, otherElem);
-    add_edge_between_local_elements(otherElemId, elemId, neighborOrdinal);
+    stk::mesh::Entity elem1 = m_local_id_to_element_entity[elem1Id];
+    stk::mesh::Entity elem2 = m_local_id_to_element_entity[elem2Id];
+    stk::mesh::ConnectivityOrdinal elem1SideOrdinal = static_cast<stk::mesh::ConnectivityOrdinal>(elem1Side);
+    stk::mesh::ConnectivityOrdinal elem2SideOrdinal = get_neighboring_side_ordinal(m_bulk_data, elem1, elem1SideOrdinal, elem2);
+    add_edge_between_local_elements(elem2Id, elem1Id, elem2SideOrdinal);
+}
+
+void ElemElemGraph::add_local_edges(
+        stk::mesh::Entity elem_to_add, impl::LocalId new_elem_id,
+        std::vector<impl::ElementSidePair>& elem_side_pairs,
+        size_t& num_local_edges_needed)
+{
+    std::set<EntityId> localElementsConnectedToNewShell;
+    get_element_side_pairs(m_bulk_data.mesh_index(elem_to_add), new_elem_id,
+            elem_side_pairs);
+    for (impl::ElementSidePair& elemSidePair : elem_side_pairs)
+    {
+        stk::mesh::Entity neighbor =
+                m_local_id_to_element_entity[elemSidePair.first];
+        if (is_valid_graph_element(neighbor))
+        {
+            add_both_edges_between_local_elements(new_elem_id,
+                    elemSidePair.first, elemSidePair.second);
+            num_local_edges_needed += 2;
+            if (m_element_topologies[new_elem_id].is_shell())
+            {
+                impl::LocalId neighbor_id2 =
+                        m_entity_to_local_id[neighbor.local_offset()];
+                localElementsConnectedToNewShell.insert(neighbor_id2);
+            }
+        }
+    }
+    break_local_volume_element_connections_across_shells(
+            localElementsConnectedToNewShell);
+}
+
+void ElemElemGraph::add_vertex(impl::LocalId new_elem_id, stk::mesh::Entity elem_to_add)
+{
+    m_local_id_to_element_entity[new_elem_id] = elem_to_add;
+    m_entity_to_local_id[elem_to_add.local_offset()] = new_elem_id;
+    stk::topology elem_topology = m_bulk_data.bucket(elem_to_add).topology();
+    m_element_topologies[new_elem_id] = elem_topology;
 }
 
 void ElemElemGraph::add_elements(const stk::mesh::EntityVector &allElementsNotAlreadyInGraph)
 {
     make_space_for_new_elements(allElementsNotAlreadyInGraph);
-    std::vector<impl::ElementSidePair> elem_side_pairs;
-    size_t num_local_edges_needed = 0;
+    std::vector<impl::ElementSidePair> elemSidePairs;
+    size_t numLocalEdgesNeeded = 0;
 
-    for(unsigned i=0; i<allElementsNotAlreadyInGraph.size(); ++i)
+    for(stk::mesh::Entity newElem : allElementsNotAlreadyInGraph)
     {
-        std::set<EntityId> localElementsConnectedToNewShell;
-        stk::mesh::Entity elem_to_add = allElementsNotAlreadyInGraph[i];
-        if (!m_bulk_data.bucket(elem_to_add).owned())
+        if (m_bulk_data.bucket(newElem).owned())
         {
-            continue;
+            ThrowRequire(!is_valid_graph_element(newElem));
+            impl::LocalId newElemId = get_new_local_element_id_from_pool();
+            add_vertex(newElemId, newElem);
+            add_local_edges(newElem, newElemId, elemSidePairs, numLocalEdgesNeeded);
         }
-        ThrowRequire(!is_valid_graph_element(elem_to_add));
-        impl::LocalId new_elem_id = get_new_local_element_id_from_pool();
-        m_local_id_to_element_entity[new_elem_id] = elem_to_add;
-        m_entity_to_local_id[elem_to_add.local_offset()] = new_elem_id;
-        stk::topology elem_topology = m_bulk_data.bucket(elem_to_add).topology();
-        m_element_topologies[new_elem_id] = elem_topology;
-        get_element_side_pairs(m_bulk_data.mesh_index(elem_to_add), new_elem_id, elem_side_pairs);
-        for(size_t index=0; index<elem_side_pairs.size(); ++index)
-        {
-            stk::mesh::Entity neighbor = m_local_id_to_element_entity[elem_side_pairs[index].first];
-            if (is_valid_graph_element(neighbor))
-            {
-
-                add_bidirectional_edge_between_local_elements(new_elem_id, elem_side_pairs[index].first, elem_side_pairs[index].second);
-                num_local_edges_needed+=2;
-                if (elem_topology.is_shell()) {
-                   impl::LocalId neighbor_id2 = m_entity_to_local_id[neighbor.local_offset()];
-                   localElementsConnectedToNewShell.insert(neighbor_id2);
-                }
-            }
-        }
-        break_local_volume_element_connections_across_shells(localElementsConnectedToNewShell);
     }
 
     impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_element_side_ids_to_communicate(m_bulk_data);
 
     size_t num_additional_parallel_edges = elem_side_comm.size() - m_num_parallel_edges;
-    size_t num_additional_side_ids_needed =  num_additional_parallel_edges + num_local_edges_needed;
+    size_t num_additional_side_ids_needed =  num_additional_parallel_edges + numLocalEdgesNeeded;
     this->generate_additional_ids_collective(num_additional_side_ids_needed);
 
     stk::mesh::EntityVector allElementsNotAlreadyInGraph_copy = allElementsNotAlreadyInGraph;
