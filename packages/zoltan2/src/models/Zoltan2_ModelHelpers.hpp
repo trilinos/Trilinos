@@ -139,8 +139,8 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 					sourcetargetGIDs(), gmin[0], comm));
 
     //Create a new map with IDs uniquely assigned to ranks (oneToOneSTMap)
-    RCP<const map_type> oneToOneSTMap =
-      Tpetra::createOneToOne<lno_t, gno_t, node_t>(sourcetargetMapG);
+    /*RCP<const map_type> oneToOneSTMap =
+      Tpetra::createOneToOne<lno_t, gno_t, node_t>(sourcetargetMapG);*/
 
     //Generate Map for through.
 // TODO
@@ -164,7 +164,8 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     RCP<sparse_matrix_type> adjsMatrix;
 
     // Construct Tpetra::CrsGraph objects.
-    adjsMatrix = rcp (new sparse_matrix_type (oneToOneSTMap, 0));
+    adjsMatrix = rcp (new sparse_matrix_type (/*oneToOneSTMap*/
+					      sourcetargetMapG, 0));
 
     nonzero_t justOne = 1;
     ArrayView<nonzero_t> justOneAV = Teuchos::arrayView (&justOne, 1);
