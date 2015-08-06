@@ -196,6 +196,8 @@ private:
             const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
 
     void add_edge_between_local_elements(impl::LocalId elemId, impl::LocalId otherElemId, int side);
+    void add_bidirectional_edge_between_local_elements(impl::LocalId new_elem_id, impl::LocalId otherElemId, int side);
+
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,

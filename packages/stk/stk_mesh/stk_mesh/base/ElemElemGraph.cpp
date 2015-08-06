@@ -1673,6 +1673,17 @@ void ElemElemGraph::add_edge_between_local_elements(impl::LocalId elemId, impl::
     ++m_num_edges;
 }
 
+void ElemElemGraph::add_bidirectional_edge_between_local_elements(impl::LocalId elemId, impl::LocalId otherElemId, int side)
+{
+    stk::mesh::Entity elemToAdd = m_local_id_to_element_entity[elemId];
+    stk::mesh::Entity otherElem = m_local_id_to_element_entity[otherElemId];
+
+    add_edge_between_local_elements(elemId, otherElemId, side);
+    stk::mesh::ConnectivityOrdinal currentOrdinal = static_cast<stk::mesh::ConnectivityOrdinal>(side);
+    stk::mesh::ConnectivityOrdinal neighborOrdinal = get_neighboring_side_ordinal(m_bulk_data, elemToAdd, currentOrdinal, otherElem);
+    add_edge_between_local_elements(otherElemId, elemId, neighborOrdinal);
+}
+
 void ElemElemGraph::add_elements(const stk::mesh::EntityVector &allElementsNotAlreadyInGraph)
 {
     make_space_for_new_elements(allElementsNotAlreadyInGraph);
@@ -1699,16 +1710,12 @@ void ElemElemGraph::add_elements(const stk::mesh::EntityVector &allElementsNotAl
             stk::mesh::Entity neighbor = m_local_id_to_element_entity[elem_side_pairs[index].first];
             if (is_valid_graph_element(neighbor))
             {
-                add_edge_between_local_elements(new_elem_id, elem_side_pairs[index].first, elem_side_pairs[index].second);
-                impl::LocalId neighbor_id = m_entity_to_local_id[neighbor.local_offset()];
-                stk::mesh::ConnectivityOrdinal currentOrdinal = static_cast<stk::mesh::ConnectivityOrdinal>(elem_side_pairs[index].second);
-                stk::mesh::ConnectivityOrdinal neighborOrdinal = get_neighboring_side_ordinal(m_bulk_data, elem_to_add, currentOrdinal, neighbor);
-                m_elem_graph[neighbor_id].push_back(new_elem_id);
-                m_via_sides[neighbor_id].push_back(neighborOrdinal);
-                ++m_num_edges;
+
+                add_bidirectional_edge_between_local_elements(new_elem_id, elem_side_pairs[index].first, elem_side_pairs[index].second);
                 num_local_edges_needed+=2;
                 if (elem_topology.is_shell()) {
-                    localElementsConnectedToNewShell.insert(neighbor_id);
+                   impl::LocalId neighbor_id2 = m_entity_to_local_id[neighbor.local_offset()];
+                   localElementsConnectedToNewShell.insert(neighbor_id2);
                 }
             }
         }
