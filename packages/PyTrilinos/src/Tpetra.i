@@ -61,6 +61,13 @@ operators, and dense and sparse matrices.
         docstring = %tpetra_docstring) Tpetra
 
 %{
+// PyTrilinos includes
+#include "PyTrilinos_config.h"
+#include "PyTrilinos_PythonException.hpp"
+#include "PyTrilinos_NumPy_Util.hpp"
+#include "PyTrilinos_Teuchos_Util.hpp"
+#include "PyTrilinos_DAP.hpp"
+
 // Import the numpy interface
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
@@ -80,14 +87,327 @@ using Teuchos::ArrayRCP;
 #include "Tpetra_Version.hpp"
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_Map.hpp"
-#include "Tpetra_Vector.hpp"
 #include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Vector.hpp"
 
-// PyTrilinos includes
-#include "PyTrilinos_config.h"
-#include "PyTrilinos_PythonException.hpp"
-#include "PyTrilinos_Teuchos_Util.hpp"
-#include "PyTrilinos_NumPy_Util.hpp"
+#ifdef HAVE_DOMI
+// Domi includes
+#include "Domi_MDVector.hpp"
+#include "PyTrilinos_Domi_Util.hpp"
+#endif
+
+%}
+
+// Define shortcuts for the default Tpetra template types
+%inline
+%{
+  typedef Tpetra::Details::DefaultTypes::scalar_type         DefaultScalarType;
+  typedef Tpetra::Details::DefaultTypes::local_ordinal_type  DefaultLOType;
+  typedef Tpetra::Details::DefaultTypes::global_ordinal_type DefaultGOType;
+  typedef Tpetra::Details::DefaultTypes::node_type           DefaultNodeType;
+
+%}
+
+%{
+namespace PyTrilinos
+{
+
+// Attempt to convert a PyObject to an RCP to a Tpetra::MultiVector.
+// The input PyObject could be a wrapped Tpetra::MultiVector, or a
+// wrapped Domi::MDVector, or an object that supports the DistArray
+// Protocol, or, if the environment is serial, a simple NumPy array.
+template< class Scalar >
+Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > > *
+convertPythonToTpetraMultiVector(PyObject * pyobj)
+{
+  // SWIG initialization
+  static swig_type_info * swig_TMV_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > >*");
+  static swig_type_info * swig_DMDV_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector< Scalar,Domi::DefaultNode::DefaultNodeType > >*");
+  //
+  // Get the default communicator
+  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
+    Teuchos::DefaultComm<int>::getComm();
+  //
+  // Result objects
+  void *argp = 0;
+  Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > > smartresult;
+  Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > > * result;
+#ifdef HAVE_DOMI
+  Teuchos::RCP< Domi::MDVector< Scalar > > dmdv_rcp;
+#endif
+  int newmem = 0;
+  //
+  // Check if the Python object is a wrapped Tpetra::MultiVector
+  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_TMV_ptr, 0, &newmem);
+  if (SWIG_IsOK(res))
+  {
+    result =
+      reinterpret_cast< Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > > * >(argp);
+    return result;
+  }
+
+#ifdef HAVE_DOMI
+  //
+  // Check if the Python object is a wrapped Domi::MDVector< Scalar >
+  newmem = 0;
+  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, &newmem);
+  if (SWIG_IsOK(res))
+  {
+    dmdv_rcp =
+      *reinterpret_cast< Teuchos::RCP< Domi::MDVector< Scalar > > * >(argp);
+    try
+    {
+      smartresult = dmdv_rcp->template getTpetraMultiVectorView<long>();
+    }
+    catch (Domi::TypeError & e)
+    {
+      PyErr_SetString(PyExc_TypeError, e.what());
+      return NULL;
+    }
+    catch (Domi::MDMapNoncontiguousError & e)
+    {
+      PyErr_SetString(PyExc_ValueError, e.what());
+      return NULL;
+    }
+    catch (Domi::MapOrdinalError & e)
+    {
+      PyErr_SetString(PyExc_IndexError, e.what());
+      return NULL;
+    }
+    result = new Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > >(smartresult);
+    if (newmem & SWIG_CAST_NEW_MEMORY)
+    {
+      delete reinterpret_cast< Teuchos::RCP< Domi::MDVector< Scalar > > * >(argp);
+    }
+    return result;
+  }
+  //
+  // Check if the Python object supports the DistArray Protocol
+  if (PyObject_HasAttrString(pyobj, "__distarray__"))
+  {
+    try
+    {
+      DistArrayProtocol dap(pyobj);
+      dmdv_rcp = convertToMDVector< Scalar >(comm, dap);
+    }
+    catch (PythonException & e)
+    {
+      e.restore();
+      return NULL;
+    }
+    try
+    {
+      smartresult = dmdv_rcp->template getTpetraMultiVectorView<long>();
+    }
+    catch (Domi::TypeError & e)
+    {
+      PyErr_SetString(PyExc_TypeError, e.what());
+      return NULL;
+    }
+    catch (Domi::MDMapNoncontiguousError & e)
+    {
+      PyErr_SetString(PyExc_ValueError, e.what());
+      return NULL;
+    }
+    catch (Domi::MapOrdinalError & e)
+    {
+      PyErr_SetString(PyExc_IndexError, e.what());
+      return NULL;
+    }
+    result = new Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > >(smartresult);
+    return result;
+  }
+#endif
+
+  //
+  // Check if the environment is serial, and if so, check if the
+  // Python object is a NumPy array
+  if (comm->getSize() == 1)
+  {
+    if (PyArray_Check(pyobj))
+    {
+      PyArrayObject * array =
+        (PyArrayObject*) PyArray_ContiguousFromObject(pyobj, NumPy_TypeCode< Scalar >(), 0, 0);
+      if (!array) return NULL;
+      size_t numVec, vecLen;
+      int ndim = PyArray_NDIM(array);
+      if (ndim == 1)
+      {
+        numVec = 1;
+        vecLen = PyArray_DIM(array, 0);
+      }
+      else
+      {
+        numVec = PyArray_DIM(array, 0);
+        vecLen = 1;
+        for (int i=1; i < ndim; ++i) vecLen *= PyArray_DIM(array, i);
+      }
+      Scalar * data = (Scalar*) PyArray_DATA(array);
+      Teuchos::ArrayView< Scalar > arrayView(data, vecLen*numVec);
+      Teuchos::RCP< const Tpetra::Map< long,long,DefaultNodeType > > map =
+        Teuchos::rcp(new Tpetra::Map< long,long,DefaultNodeType >(vecLen, 0, comm));
+      smartresult =
+        Teuchos::rcp(new Tpetra::MultiVector< Scalar,long,long,DefaultNodeType >(map, arrayView, vecLen, numVec));
+      result = new Teuchos::RCP< Tpetra::MultiVector< Scalar,long,long,DefaultNodeType > >(smartresult);
+      return result;
+    }
+  }
+  //
+  // If we get to this point, then none of our known converters will
+  // work, so it is time to set a Python error
+  PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
+               "to a Tpetra::MultiVector",
+               PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
+  return NULL;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+// Attempt to convert a PyObject to an RCP to a Tpetra::Vector.  The
+// input PyObject could be a wrapped Tpetra::Vector, or a wrapped
+// Domi::MDVector, or an object that supports the DistArray Protocol,
+// or, if the environment is serial, a simple NumPy array.
+template< class Scalar >
+Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > > *
+convertPythonToTpetraVector(PyObject * pyobj)
+{
+  // SWIG initialization
+  static swig_type_info * swig_TV_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > >*");
+  static swig_type_info * swig_DMDV_ptr =
+    SWIG_TypeQuery("Teuchos::RCP< Domi::MDVector< Scalar,Domi::DefaultNode::DefaultNodeType > >*");
+  //
+  // Get the default communicator
+  const Teuchos::RCP< const Teuchos::Comm<int> > comm =
+    Teuchos::DefaultComm<int>::getComm();
+  //
+  // Result objects
+  void *argp = 0;
+  Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > > smartresult;
+  Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > > * result;
+#ifdef HAVE_DOMI
+  Teuchos::RCP< Domi::MDVector< Scalar > > dmdv_rcp;
+#endif
+  int newmem = 0;
+  //
+  // Check if the Python object is a wrapped Tpetra::Vector
+  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_TV_ptr, 0, &newmem);
+  if (SWIG_IsOK(res))
+  {
+    result =
+      reinterpret_cast< Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > > * >(argp);
+    return result;
+  }
+
+#ifdef HAVE_DOMI
+  //
+  // Check if the Python object is a wrapped Domi::MDVector< Scalar >
+  newmem = 0;
+  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, &newmem);
+  if (SWIG_IsOK(res))
+  {
+    dmdv_rcp =
+      *reinterpret_cast< Teuchos::RCP< Domi::MDVector< Scalar > > * >(argp);
+    try
+    {
+      smartresult = dmdv_rcp->template getTpetraVectorView<long>();
+    }
+    catch (Domi::TypeError & e)
+    {
+      PyErr_SetString(PyExc_TypeError, e.what());
+      return NULL;
+    }
+    catch (Domi::MDMapNoncontiguousError & e)
+    {
+      PyErr_SetString(PyExc_ValueError, e.what());
+      return NULL;
+    }
+    catch (Domi::MapOrdinalError & e)
+    {
+      PyErr_SetString(PyExc_IndexError, e.what());
+      return NULL;
+    }
+    result = new Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > >(smartresult);
+    if (newmem & SWIG_CAST_NEW_MEMORY)
+    {
+      delete reinterpret_cast< Teuchos::RCP< Domi::MDVector< Scalar > > * >(argp);
+    }
+    return result;
+  }
+  //
+  // Check if the Python object supports the DistArray Protocol
+  if (PyObject_HasAttrString(pyobj, "__distarray__"))
+  {
+    try
+    {
+      DistArrayProtocol dap(pyobj);
+      dmdv_rcp = convertToMDVector< Scalar >(comm, dap);
+    }
+    catch (PythonException & e)
+    {
+      e.restore();
+      return NULL;
+    }
+    try
+    {
+      smartresult = dmdv_rcp->template getTpetraVectorView<long>();
+    }
+    catch (Domi::TypeError & e)
+    {
+      PyErr_SetString(PyExc_TypeError, e.what());
+      return NULL;
+    }
+    catch (Domi::MDMapNoncontiguousError & e)
+    {
+      PyErr_SetString(PyExc_ValueError, e.what());
+      return NULL;
+    }
+    catch (Domi::MapOrdinalError & e)
+    {
+      PyErr_SetString(PyExc_IndexError, e.what());
+      return NULL;
+    }
+    result = new Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > >(smartresult);
+    return result;
+  }
+#endif
+
+  //
+  // Check if the environment is serial, and if so, check if the
+  // Python object is a NumPy array
+  if (comm->getSize() == 1)
+  {
+    if (PyArray_Check(pyobj))
+    {
+      PyArrayObject * array =
+        (PyArrayObject*) PyArray_ContiguousFromObject(pyobj, NumPy_TypeCode< Scalar >(), 0, 0);
+      if (!array) return NULL;
+      int ndim = PyArray_NDIM(array);
+      size_t vecLen = 1;
+      for (int i=1; i < ndim; ++i) vecLen *= PyArray_DIM(array, i);
+      Scalar * data = (Scalar*) PyArray_DATA(array);
+      Teuchos::ArrayView< const Scalar > arrayView(data, vecLen);
+      Teuchos::RCP< const Tpetra::Map< long,long,DefaultNodeType > > map =
+        Teuchos::rcp(new Tpetra::Map< long,long,DefaultNodeType >(vecLen, 0, comm));
+      smartresult =
+        Teuchos::rcp(new Tpetra::Vector< Scalar,long,long,DefaultNodeType >(map, arrayView));
+      result = new Teuchos::RCP< Tpetra::Vector< Scalar,long,long,DefaultNodeType > >(smartresult);
+      return result;
+    }
+  }
+  //
+  // If we get to this point, then none of our known converters will
+  // work, so it is time to set a Python error
+  PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
+               "to a Tpetra::Vector",
+               PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
+  return NULL;
+}
+
+}    // Namespace PyTrilinos
+
 %}
 
 // Global swig features
@@ -241,15 +561,6 @@ template< class T2, class T1 > RCP< T2 > rcp_const_cast(const RCP< T1 >& p1);
 %include "TpetraClassic_config.h"
 %include "Tpetra_ConfigDefs.hpp"
 %include "Tpetra_CombineMode.hpp"
-
-// Define shortcuts for the default Tpetra template types
-%inline
-%{
-  typedef Tpetra::Details::DefaultTypes::scalar_type         DefaultScalarType;
-  typedef Tpetra::Details::DefaultTypes::local_ordinal_type  DefaultLOType;
-  typedef Tpetra::Details::DefaultTypes::global_ordinal_type DefaultGOType;
-  typedef Tpetra::Details::DefaultTypes::node_type           DefaultNodeType;
-%}
 
 ////////////////////////////
 // Tpetra version support //
@@ -935,7 +1246,7 @@ public:
   // attempt has been made to dereference the underlying object from a
   // weak smart pointer object where the underling object has already
   // been deleted since the strong count has already gone to zero."  I
-  // don't currently thik it is a wrapper problem, but I could be
+  // don't currently think it is a wrapper problem, but I could be
   // wrong.
   // Vector(const Teuchos::RCP<const DefaultMapType>& map,
   //        const Teuchos::ArrayView<const Scalar>& A);
@@ -1032,23 +1343,27 @@ public:
 //     SCALAR       C/C++ scalar name ("in, long long, ...)
 //     SCALAR_NAME  Suffix name (int, longlong, ...)
 //
-%define %tpetra_class( CLASS, SCALAR, SCALAR_NAME )
-    %warnfilter(315) Tpetra::CLASS< SCALAR, long, long, DefaultNodeType >;
-    %teuchos_rcp(Tpetra::CLASS< SCALAR, long, long, DefaultNodeType >)
+%define %tpetra_class(CLASS, SCALAR, SCALAR_NAME)
+    %warnfilter(315) Tpetra::CLASS< SCALAR,long,long,DefaultNodeType >;
     %template(CLASS ## _ ## SCALAR_NAME)
-        Tpetra::CLASS< SCALAR, long, long, DefaultNodeType >;
+        Tpetra::CLASS< SCALAR,long,long,DefaultNodeType >;
 %enddef
 
-%define %tpetra_scalars( SCALAR, SCALAR_NAME )
-    %tpetra_class( DistObject, SCALAR, SCALAR_NAME )
+%define %tpetra_scalars(SCALAR, SCALAR_NAME)
+    %teuchos_rcp(Tpetra::DistObject< SCALAR,long,long,DefaultNodeType >)
+    %tpetra_class(DistObject, SCALAR, SCALAR_NAME)
 
-    %tpetra_class( MultiVector, SCALAR, SCALAR_NAME )
+    %teuchos_rcp_dap(PyTrilinos::convertPythonToTpetraMultiVector< SCALAR >,
+                     Tpetra::MultiVector< SCALAR,long,long,DefaultNodeType >)
+    %tpetra_class(MultiVector, SCALAR, SCALAR_NAME)
     %pythoncode
     %{
       upgradeMultiVectorClass(MultiVector_ ## SCALAR_NAME)
     %}
 
-    %tpetra_class( Vector, SCALAR, SCALAR_NAME )
+    %teuchos_rcp_dap(PyTrilinos::convertPythonToTpetraVector< SCALAR >,
+                     Tpetra::Vector< SCALAR,long,long,DefaultNodeType >)
+    %tpetra_class(Vector, SCALAR, SCALAR_NAME)
     %pythoncode
     %{
       upgradeVectorClass(Vector_ ## SCALAR_NAME)
