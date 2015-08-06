@@ -539,23 +539,55 @@ IF (${${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION})
 
 ELSE() # ETI is OF
 
-  # If ETI is OFF, all GlobalOrdinal types are available but none get instantiated. 
+  # If ETI is OFF, we follow the following rules:
+  #
+  # 1. Respect Tpetra_INST_* for determining nondefault behavior
+  #
+  # 2. By default, always enable GlobalOrdinal = int, as MueLu
+  #    currently (as of 05 Aug 2015) requires it
+  #
+  # 3. Enable exactly one of long long, or long.  Prefer long long,
+  #    as it is guaranteed always to be >= 64 bits.
 
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
+  IF (HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+  ELSE ()
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
+  ENDIF ()
   GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
   GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT OFF)
-  
-  GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG ${Teuchos_ENABLE_LONG_LONG_INT})
-  GLOBAL_SET(HAVE_TPETRA_INT_LONG ON)
-  GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED ON)
+
+  IF (Tpetra_INST_INT_LONG_LONG OR HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
+    IF (NOT ${HAVE_TEUCHOS_LONG_LONG_INT})
+      MESSAGE (FATAL_ERROR "Tpetra: You enabled GlobalOrdinal = long long by setting Tpetra_INST_INT_LONG_LONG:BOOL=ON, but it is not enabled in Teuchos.  You must set Teuchos_ENABLE_LONG_LONG_INT:BOOL=ON as well if you wish to use long long as a GlobalOrdinal type.")
+     ENDIF ()
+     GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG ON)
+  ELSE ()
+     GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG OFF)
+  ENDIF ()
+
+  IF (Tpetra_INST_INT_LONG OR HAVE_TPETRA_INST_INT_LONG_DEFAULT)
+    GLOBAL_SET(HAVE_TPETRA_INT_LONG ON)
+  ELSE ()
+    GLOBAL_SET(HAVE_TPETRA_INT_LONG OFF)
+  ENDIF ()
+
+  IF (Tpetra_INST_INT_UNSIGNED OR HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT)
+    GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED ON)
+  ELSE ()
+    GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED OFF)
+  ENDIF ()
+
+  # mfh 05 Aug 2015: Unfortunately, MueLu still requires that this be
+  # ON, even if applications never use it.
   GLOBAL_SET(HAVE_TPETRA_INT_INT ON)
   
 
   # Even though ETI is still OFF, we still require that Tpetra enable
   # at least one GlobalOrdinal type.  This ensures that tests will
   # actually test something (but see Bug 6380).
-  IF(HAVE_TPETRA_INT_INT OR HAVE_TPETRA_INT_UNSIGNED OR HAVE_TPETRA_INT_LONG OR HAVE_TPETRA_INT_LONG_LONG)
+  IF (HAVE_TPETRA_INT_INT OR HAVE_TPETRA_INT_UNSIGNED OR HAVE_TPETRA_INT_LONG OR HAVE_TPETRA_INT_LONG_LONG)
     # If this is ON, then Tpetra has at least one GlobalOrdinal type enabled.
     GLOBAL_SET(HAVE_TPETRA_GLOBALORDINAL ON)
   ELSE()
