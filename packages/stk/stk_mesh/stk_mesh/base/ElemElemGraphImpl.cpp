@@ -56,32 +56,6 @@ void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData
     }
 }
 
-ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData)
-{
-    stk::mesh::EntityVector elements_to_communicate;
-    std::set<stk::mesh::Entity> element_set;
-    const stk::mesh::BucketVector& shared_node_buckets = bulkData.get_buckets(stk::topology::NODE_RANK, bulkData.mesh_meta_data().globally_shared_part());
-    for(size_t i=0; i<shared_node_buckets.size(); ++i)
-    {
-        const stk::mesh::Bucket& bucket = *shared_node_buckets[i];
-        for(size_t node_index=0; node_index<bucket.size(); ++node_index)
-        {
-            stk::mesh::Entity node = bucket[node_index];
-            const stk::mesh::Entity* elements = bulkData.begin_elements(node);
-            unsigned num_elements = bulkData.num_elements(node);
-            for(unsigned element_index=0; element_index<num_elements; ++element_index)
-            {
-                if (bulkData.bucket(elements[element_index]).owned())
-                {
-                    element_set.insert(elements[element_index]);
-                }
-            }
-        }
-    }
-    elements_to_communicate.assign(element_set.begin(), element_set.end());
-
-    return build_element_side_ids_to_proc_map(bulkData, elements_to_communicate);
-}
 
 
 ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &element_list)

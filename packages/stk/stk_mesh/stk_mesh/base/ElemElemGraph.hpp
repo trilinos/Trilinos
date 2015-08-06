@@ -71,7 +71,7 @@ public:
 
     void delete_elements(const stk::mesh::EntityVector &elements);
 
-    bool is_valid_graph_element(stk::mesh::Entity local_element);
+    bool is_valid_graph_element(stk::mesh::Entity local_element) const;
 
     size_t size() {return m_elem_graph.size() - m_deleted_element_local_id_pool.size();}
 
@@ -192,17 +192,15 @@ private:
                                                                const std::vector<impl::LocalId>& connElements) const;
     impl::LocalId convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const;
     int get_side_id_to_connected_local_id(impl::LocalId localElementId, size_t indexConnElement) const;
-    void make_space_for_new_elements(
-            const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
+    void make_space_for_new_elements(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
 
     void add_edge_between_local_elements(impl::LocalId elem1Id, impl::LocalId elem2Id, int elem1Side);
     void add_both_edges_between_local_elements(impl::LocalId elem1Id, impl::LocalId elem2Id, int elem1Side);
-    void add_local_edges(
-            stk::mesh::Entity elem_to_add, impl::LocalId new_elem_id,
-            std::vector<impl::ElementSidePair>& elem_side_pairs,
-            size_t& num_local_edges_needed);
-    void add_vertex(impl::LocalId new_elem_id,
-            stk::mesh::Entity elem_to_add);
+    void add_local_edges(stk::mesh::Entity elem_to_add, impl::LocalId new_elem_id, size_t &numNewEdges);
+    void add_vertex(impl::LocalId new_elem_id, stk::mesh::Entity elem_to_add);
+    stk::mesh::EntityVector filter_add_elements_arguments(const stk::mesh::EntityVector& allUnfilteredElementsNotAlreadyInGraph) const;
+    impl::ElemSideToProcAndFaceId get_element_side_ids_to_communicate() const;
+    void add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph, size_t &numNewEdges);
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,

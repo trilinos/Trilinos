@@ -20,6 +20,33 @@ namespace stk { namespace mesh {
 const impl::LocalId ElemElemGraph::INVALID_LOCAL_ID = std::numeric_limits<impl::LocalId>::max();
 const int ElemElemGraph::INVALID_SIDE_ID = -1;
 
+impl::ElemSideToProcAndFaceId ElemElemGraph::get_element_side_ids_to_communicate() const
+{
+    stk::mesh::EntityVector elements_to_communicate;
+    std::set<stk::mesh::Entity> element_set;
+    const stk::mesh::BucketVector& shared_node_buckets = m_bulk_data.get_buckets(stk::topology::NODE_RANK, m_bulk_data.mesh_meta_data().globally_shared_part());
+    for(size_t i=0; i<shared_node_buckets.size(); ++i)
+    {
+        const stk::mesh::Bucket& bucket = *shared_node_buckets[i];
+        for(size_t node_index=0; node_index<bucket.size(); ++node_index)
+        {
+            stk::mesh::Entity node = bucket[node_index];
+            const stk::mesh::Entity* elements = m_bulk_data.begin_elements(node);
+            unsigned num_elements = m_bulk_data.num_elements(node);
+            for(unsigned element_index=0; element_index<num_elements; ++element_index)
+            {
+                if (m_bulk_data.bucket(elements[element_index]).owned())
+                {
+                    element_set.insert(elements[element_index]);
+                }
+            }
+        }
+    }
+    elements_to_communicate.assign(element_set.begin(), element_set.end());
+
+    return impl::build_element_side_ids_to_proc_map(m_bulk_data, elements_to_communicate);
+}
+
 ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Part &part) : m_bulk_data(bulkData), m_part(part)
 {
     int numElems = size_data_members();
@@ -29,7 +56,7 @@ ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Par
         impl::fill_local_ids_and_fill_element_entities_and_topologies(m_bulk_data, m_local_id_to_element_entity, m_entity_to_local_id, m_element_topologies);
         fill_graph();
 
-        elem_side_comm = impl::get_element_side_ids_to_communicate(bulkData);
+        elem_side_comm = get_element_side_ids_to_communicate();
     }
 
     size_t num_side_ids_needed = elem_side_comm.size();
@@ -1251,14 +1278,17 @@ impl::LocalId ElemElemGraph::get_new_local_element_id_from_pool()
     return new_local_id;
 }
 
-bool ElemElemGraph::is_valid_graph_element(stk::mesh::Entity local_element)
+bool ElemElemGraph::is_valid_graph_element(stk::mesh::Entity local_element) const
 {
     bool value = false;
     if (m_bulk_data.is_valid(local_element))
     {
         impl::LocalId max_elem_id = static_cast<impl::LocalId>(m_elem_graph.size());
-        impl::LocalId elem_id = get_local_element_id(local_element, false);
-        value = elem_id >= 0 && elem_id < max_elem_id && !m_local_id_in_pool[elem_id];
+        if (local_element.local_offset() < m_entity_to_local_id.size())
+        {
+            impl::LocalId elem_id = get_local_element_id(local_element, false);
+            value = elem_id >= 0 && elem_id < max_elem_id && !m_local_id_in_pool[elem_id];
+        }
     }
     return value;
 }
@@ -1654,8 +1684,7 @@ void ElemElemGraph::generate_additional_ids_collective(size_t num_additional_ids
     m_suggested_side_ids.insert(m_suggested_side_ids.end(), new_ids.begin(), new_ids.end());
 }
 
-void ElemElemGraph::make_space_for_new_elements(
-        const stk::mesh::EntityVector& allElementsNotAlreadyInGraph)
+void ElemElemGraph::make_space_for_new_elements(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph)
 {
     size_t max_offset = 0;
     for (const stk::mesh::Entity& element_to_add : allElementsNotAlreadyInGraph)
@@ -1684,33 +1713,26 @@ void ElemElemGraph::add_both_edges_between_local_elements(impl::LocalId elem1Id,
     add_edge_between_local_elements(elem2Id, elem1Id, elem2SideOrdinal);
 }
 
-void ElemElemGraph::add_local_edges(
-        stk::mesh::Entity elem_to_add, impl::LocalId new_elem_id,
-        std::vector<impl::ElementSidePair>& elem_side_pairs,
-        size_t& num_local_edges_needed)
+void ElemElemGraph::add_local_edges(stk::mesh::Entity elem_to_add, impl::LocalId new_elem_id, size_t &numNewEdges)
 {
+    std::vector<impl::ElementSidePair> elemSidePairs;
     std::set<EntityId> localElementsConnectedToNewShell;
-    get_element_side_pairs(m_bulk_data.mesh_index(elem_to_add), new_elem_id,
-            elem_side_pairs);
-    for (impl::ElementSidePair& elemSidePair : elem_side_pairs)
+    get_element_side_pairs(m_bulk_data.mesh_index(elem_to_add), new_elem_id, elemSidePairs);
+    for (impl::ElementSidePair& elemSidePair : elemSidePairs)
     {
-        stk::mesh::Entity neighbor =
-                m_local_id_to_element_entity[elemSidePair.first];
+        stk::mesh::Entity neighbor = m_local_id_to_element_entity[elemSidePair.first];
         if (is_valid_graph_element(neighbor))
         {
-            add_both_edges_between_local_elements(new_elem_id,
-                    elemSidePair.first, elemSidePair.second);
-            num_local_edges_needed += 2;
+            add_both_edges_between_local_elements(new_elem_id, elemSidePair.first, elemSidePair.second);
+            numNewEdges += 2;
             if (m_element_topologies[new_elem_id].is_shell())
             {
-                impl::LocalId neighbor_id2 =
-                        m_entity_to_local_id[neighbor.local_offset()];
+                impl::LocalId neighbor_id2 = m_entity_to_local_id[neighbor.local_offset()];
                 localElementsConnectedToNewShell.insert(neighbor_id2);
             }
         }
     }
-    break_local_volume_element_connections_across_shells(
-            localElementsConnectedToNewShell);
+    break_local_volume_element_connections_across_shells(localElementsConnectedToNewShell);
 }
 
 void ElemElemGraph::add_vertex(impl::LocalId new_elem_id, stk::mesh::Entity elem_to_add)
@@ -1721,42 +1743,58 @@ void ElemElemGraph::add_vertex(impl::LocalId new_elem_id, stk::mesh::Entity elem
     m_element_topologies[new_elem_id] = elem_topology;
 }
 
-void ElemElemGraph::add_elements(const stk::mesh::EntityVector &allElementsNotAlreadyInGraph)
+stk::mesh::EntityVector ElemElemGraph::filter_add_elements_arguments(const stk::mesh::EntityVector& allUnfilteredElementsNotAlreadyInGraph) const
 {
-    make_space_for_new_elements(allElementsNotAlreadyInGraph);
-    std::vector<impl::ElementSidePair> elemSidePairs;
-    size_t numLocalEdgesNeeded = 0;
-
-    for(stk::mesh::Entity newElem : allElementsNotAlreadyInGraph)
+    stk::mesh::EntityVector allElementsNotAlreadyInGraph;
+    allElementsNotAlreadyInGraph.reserve(allUnfilteredElementsNotAlreadyInGraph.size());
+    for(stk::mesh::Entity element : allUnfilteredElementsNotAlreadyInGraph)
     {
-        if (m_bulk_data.bucket(newElem).owned())
+        ThrowRequire(m_bulk_data.is_valid(element));
+        if(m_bulk_data.bucket(element).owned())
         {
-            ThrowRequire(!is_valid_graph_element(newElem));
-            impl::LocalId newElemId = get_new_local_element_id_from_pool();
-            add_vertex(newElemId, newElem);
-            add_local_edges(newElem, newElemId, elemSidePairs, numLocalEdgesNeeded);
+            ThrowRequire(!is_valid_graph_element(element));
+            allElementsNotAlreadyInGraph.push_back(element);
         }
     }
+    return allElementsNotAlreadyInGraph;
+}
 
-    impl::ElemSideToProcAndFaceId elem_side_comm = impl::get_element_side_ids_to_communicate(m_bulk_data);
+void ElemElemGraph::add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph, size_t &numNewEdges)
+{
+    make_space_for_new_elements(allElementsNotAlreadyInGraph);
+    for(stk::mesh::Entity newElem : allElementsNotAlreadyInGraph)
+    {
+        impl::LocalId newElemId = get_new_local_element_id_from_pool();
+        add_vertex(newElemId, newElem);
+        add_local_edges(newElem, newElemId, numNewEdges);
+    }
+}
+
+void ElemElemGraph::add_elements(const stk::mesh::EntityVector &allUnfilteredElementsNotAlreadyInGraph)
+{
+    stk::mesh::EntityVector allElementsNotAlreadyInGraph = filter_add_elements_arguments(allUnfilteredElementsNotAlreadyInGraph);
+
+    size_t numLocalEdgesNeeded = 0;
+    add_elements_locally(allElementsNotAlreadyInGraph, numLocalEdgesNeeded);
+
+    impl::ElemSideToProcAndFaceId elem_side_comm = get_element_side_ids_to_communicate();
 
     size_t num_additional_parallel_edges = elem_side_comm.size() - m_num_parallel_edges;
     size_t num_additional_side_ids_needed =  num_additional_parallel_edges + numLocalEdgesNeeded;
-    this->generate_additional_ids_collective(num_additional_side_ids_needed);
+    generate_additional_ids_collective(num_additional_side_ids_needed);
 
     stk::mesh::EntityVector allElementsNotAlreadyInGraph_copy = allElementsNotAlreadyInGraph;
     std::sort(allElementsNotAlreadyInGraph_copy.begin(), allElementsNotAlreadyInGraph_copy.end());
 
     std::set< stk::mesh::Entity > addedShells;
     impl::ElemSideToProcAndFaceId only_added_elements;
-    impl::ElemSideToProcAndFaceId::iterator iter = elem_side_comm.begin();
-    for(;iter!=elem_side_comm.end();++iter)
+    for(impl::ElemSideToProcAndFaceId::value_type &elemSideToProcAndFaceId : elem_side_comm)
     {
-        stk::mesh::Entity element = iter->first.entity;
+        stk::mesh::Entity element = elemSideToProcAndFaceId.first.entity;
         stk::mesh::EntityVector::iterator elem_iter = std::lower_bound(allElementsNotAlreadyInGraph_copy.begin(), allElementsNotAlreadyInGraph_copy.end(), element);
         if(elem_iter!=allElementsNotAlreadyInGraph_copy.end() && *elem_iter==element)
         {
-            only_added_elements.insert(*iter);
+            only_added_elements.insert(elemSideToProcAndFaceId);
             if (m_bulk_data.bucket(element).topology().is_shell())
             {
                 addedShells.insert(element);
