@@ -32,19 +32,10 @@
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
     </ParameterList>
 
-    <ParameterList name="myAggExportFact">
-      <Parameter name="factory"                             type="string" value="AggregationExportFactory"/>
-      <Parameter name="Output filename"                     type="string" value="aggs_level%LEVELID_proc%PROCID.out"/>
-      <Parameter name="DofsPerNode"                         type="string" value="myCoalesceDropFact"/>
-    </ParameterList>
-
     <ParameterList name="myRAPFact">
       <Parameter name="factory"                             type="string" value="RAPFactory"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
       <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
-      <ParameterList name="TransferFactories">
-        <Parameter name="Visualization"                     type="string" value="myAggExportFact"/>
-      </ParameterList>
     </ParameterList>
 
     <!-- =======================  SMOOTHERS  ======================= -->

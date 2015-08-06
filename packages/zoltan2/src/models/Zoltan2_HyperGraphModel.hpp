@@ -247,7 +247,7 @@ public:
   }
 
   /*! \brief Sets pointers to this process' pins global Ids based on 
-    the centric view giveb by getCentricView()
+    the centric view given by getCentricView()
 
       \param pinIds This is the list of global neighbor Ids corresponding
         to the vertices or hyperedges listed in getVertexList/getEdgeList.
@@ -264,7 +264,7 @@ public:
   {
     pinIds = pinGids_(0, numLocalPins_);
     offsets = offsets_.view(0, offsets_.size());
-    wgts = eWeights_.view(0, nWeightsPerPin_);
+    wgts = pWeights_.view(0, nWeightsPerPin_);
     return pinGids_.size();
   }
 
@@ -334,7 +334,7 @@ private:
 
 ////////////////////////////////////////////////////////////////
 //TODO get the weights for vertices and hyperedges
-//GFD Do we need weights for pins too? First adjacency weights
+//GFD Do we need weights for pins too?
 template <typename Adapter>
 HyperGraphModel<Adapter>::HyperGraphModel(
   const RCP<const MeshAdapter<user_t> > &ia,
@@ -388,7 +388,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
   try {
     numLocalVertices_ = ia->getLocalNumOf(primaryEType);
     ia->getIDsViewOf(primaryEType, vtxIds);
-    numGlobalVertices_ = ia->getGlobalNumOf(primaryEType);
+    reduceAll(*comm_,Teuchos::REDUCE_SUM,1,&numLocalVertices_,&numGlobalVertices_);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -425,7 +425,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     try {
       numLocalEdges_ = ia->getLocalNumOf(adjacencyEType);
       ia->getIDsViewOf(adjacencyEType, edgeIds);
-      numGlobalEdges_ = ia->getGlobalNumOf(adjacencyEType);
+      reduceAll(*comm_,Teuchos::REDUCE_SUM,1,&numLocalEdges_,&numGlobalEdges_);
     }
     Z2_FORWARD_EXCEPTIONS;
     
@@ -482,10 +482,9 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     
     typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
     typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>   sparse_matrix_type;
-    typedef Tpetra::Map<lno_t, gno_t, node_t>                 map_type;
     RCP<sparse_matrix_type> secondAdj;
     if (!ia->avail2ndAdjs(primaryPinType,adjacencyPinType)) {
-      secondAdj=Zoltan2::get2ndAdjsMatFromAdjs<user_t>(ia,primaryPinType, adjacencyPinType);
+      secondAdj=Zoltan2::get2ndAdjsMatFromAdjs<user_t>(ia,comm_,primaryPinType, adjacencyPinType);
     }
     else {
       const lno_t* offsets;
@@ -568,27 +567,42 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     //==============================Ghosting complete=================================
   }
 
-  //TODO get the weights for vertices,edges, and pins(?)
-  // Get edge weights
-  /*
-  nWeightsPerEdge_ = ia->getNumWeightsPer2ndAdj(primaryEType, secondAdjEType);
 
-  if (nWeightsPerEdge_ > 0){
-    input_t *wgts = new input_t [nWeightsPerEdge_];
-    eWeights_ = arcp(wgts, 0, nWeightsPerEdge_, true);
+  //Vertex Weights
+  numWeightsPerVertex_ = ia->getNumWeightsPerID();
+
+  if (numWeightsPerVertex_ > 0){
+    input_t *weightInfo = new input_t [numWeightsPerVertex_];
+    env_->localMemoryAssertion(__FILE__, __LINE__, numWeightsPerVertex_,
+                               weightInfo);
+
+    for (int idx=0; idx < numWeightsPerVertex_; idx++){
+      bool useNumNZ = ia->useDegreeAsWeight(idx);
+      if (useNumNZ){
+        scalar_t *wgts = new scalar_t [numLocalVertices_];
+        env_->localMemoryAssertion(__FILE__, __LINE__, numLocalVertices_, wgts);
+        ArrayRCP<const scalar_t> wgtArray =
+          arcp(wgts, 0, numLocalVertices_, true);
+        for (size_t i=0; i < numLocalVertices_; i++){
+          wgts[i] = offsets_[i+1] - offsets_[i];
+        }
+        weightInfo[idx] = input_t(wgtArray, 1);
+      }
+      else{
+        const scalar_t *weights=NULL;
+        int stride=0;
+        ia->getWeightsView(weights, stride, idx);
+        ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0,
+                                                 stride*numLocalVertices_,
+                                                 false);
+        weightInfo[idx] = input_t(wgtArray, stride);
+      }
+    }
+
+    vWeights_ = arcp<input_t>(weightInfo, 0, numWeightsPerVertex_, true);
   }
 
-  for (int w=0; w < nWeightsPerEdge_; w++){
-    const scalar_t *ewgts=NULL;
-    int stride=0;
-
-    ia->get2ndAdjWeightsView(primaryEType, secondAdjEType,
-			     ewgts, stride, w);
-
-    ArrayRCP<const scalar_t> wgtArray(ewgts, 0, numLocalEdges_, false);
-    eWeights_[w] = input_t(wgtArray, stride);
-  }
-  */
+  //TODO get the weights for edges, and pins(?)
 
 
   typedef MeshAdapter<user_t> adapterWithCoords_t;
@@ -650,8 +664,10 @@ void HyperGraphModel<Adapter>::print()
 
   for (lno_t i = 0; i < gids_.size(); i++) {
     *os << me << fn << i << " VTXGID " << gids_[i]<<" isOwner: "<<isOwner_[i];
+    if (numWeightsPerVertex_==1)
+      *os << " weight: " << vWeights_[0][i]; 
     if (view_==VERTEX_CENTRIC) {
-      *os <<":";
+      *os <<" pins:";
       for (lno_t j = offsets_[i]; j< offsets_[i+1];j++)
         *os <<" "<<pinGids_[j];
     }

@@ -208,14 +208,15 @@ IF (Tpetra_ENABLE_Kokkos_Refactor)
     # execution space is ON, but ETI for its corresponding Node type
     # is OFF.  This may help users diagnose link errors.
     
-    # KokkosClassic::DoNotUse::SerialNode
+    # KokkosClassic::DoNotUse::SerialNode is always disabled in this
+    # case, because Tpetra_ENABLE_Kokkos_Refactor is ON.
+
+    GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC OFF)
     IF(Tpetra_INST_SERIALCLASSIC)
-      GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC ON)
-    ELSE()
-      GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC OFF)
-      IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE) 
-        MESSAGE(FATAL_ERROR "Tpetra: You set KokkosClassic::DoNotUse::SerialNode as the default Node type, but ETI (explicit template instantiation) is OFF for that Node type.  Try setting the CMake option Tpetra_INST_SERIALCLASSIC:BOOL=ON.")
-      ENDIF()
+      MESSAGE(FATAL_ERROR "Tpetra: You attempted to enable explicit instantiation for Node = KokkosClassic::DoNotUse::SerialNode (by setting Tpetra_INST_SERIALCLASSIC:BOOL=ON), but Tpetra_ENABLE_Kokkos_Refactor is ON.  You are not allowed to use that Node type when Tpetra_ENABLE_Kokkos_Refactor is ON (which is its default setting).  If you insist on using this deprecated Node, please set Tpetra_ENABLE_Kokkos_Refactor:BOOL=OFF.  Please note that this option is deprecated and no longer supported.")
+    ENDIF()
+    IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE) 
+      MESSAGE(FATAL_ERROR "Tpetra: You set KokkosClassic::DoNotUse::SerialNode as the default Node type, but Tpetra_ENABLE_Kokkos_Refactor is ON.  You are not allowed to use that Node type when Tpetra_ENABLE_Kokkos_Refactor is ON (which is its default setting).  If you insist on using this deprecated Node, please set Tpetra_ENABLE_Kokkos_Refactor:BOOL=OFF.  Please note that this option is deprecated and no longer supported.")
     ENDIF()
 
     # Kokkos::Serial (Kokkos::Compat::KokkosSerialWrapperNode)
@@ -272,13 +273,10 @@ IF (Tpetra_ENABLE_Kokkos_Refactor)
         MESSAGE(STATUS "NOTE: Kokkos::Cuda is ON (the CMake option Kokkos_ENABLE_Cuda is ON), but explicit instantiation for Kokkos::Cuda in Tpetra is OFF.  If you want to enable instantiation and use of Kokkos::Cuda in Tpetra, please also set the CMake option Tpetra_INST_CUDA:BOOL=ON.  If you use the Kokkos::Cuda version of Tpetra without doing this, you will get link errors!")
       ENDIF ()
     ENDIF()
-    
-    # Append the instantiation list
 
-    IF(Tpetra_INST_SERIALCLASSIC) 
-      LIST(APPEND TpetraCore_ETI_NODES "KokkosClassic::DoNotUse::SerialNode")
-      MESSAGE(STATUS "Enabling Node: KokkosClassic::DoNotUse::SerialNode")
-    ENDIF()
+    #
+    # Append to the list of enabled Node types
+    #
     IF(Tpetra_INST_SERIAL) 
       LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosSerialWrapperNode")
       MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosSerialWrapperNode")
@@ -303,16 +301,25 @@ IF (Tpetra_ENABLE_Kokkos_Refactor)
     GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)
     GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)
 
+    GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC OFF)
+    IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE) 
+      MESSAGE(FATAL_ERROR "Tpetra: You set KokkosClassic::DoNotUse::SerialNode as the default Node type, but Tpetra_ENABLE_Kokkos_Refactor is ON.  You are not allowed to use that Node type when Tpetra_ENABLE_Kokkos_Refactor is ON (which is its default setting).  If you insist on using this deprecated Node, please set Tpetra_ENABLE_Kokkos_Refactor:BOOL=OFF.  Please note that this option is deprecated and no longer supported.")
+    ENDIF()
+
     # If ETI is OFF, then all Node types whose execution spaces are
     # enabled in Kokkos are available to packages downstream of Tpetra.
 
-    GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC ON)
+    #
+    # Figure out which Node types Tpetra should enable.  If any Node
+    # type should NOT be enabled, but it is supposed to be the default
+    # Node type, report an error.
+    #
     IF(Kokkos_ENABLE_Serial)
       GLOBAL_SET(HAVE_TPETRA_SERIAL ON)
     ELSE()
       GLOBAL_SET(HAVE_TPETRA_SERIAL OFF)
       IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE) 
-        MESSAGE(FATAL_ERROR "Tpetra: set KokkosSerialWrapperNode as default node type but its not enabled.")   
+        MESSAGE(FATAL_ERROR "Tpetra: Kokkos::Compat::KokkosSerialWrapperNode is set as the default Node type, but that Node type is not enabled.")   
       ENDIF()
     ENDIF()
     IF(Kokkos_ENABLE_Pthread)
@@ -320,7 +327,7 @@ IF (Tpetra_ENABLE_Kokkos_Refactor)
     ELSE()
       GLOBAL_SET(HAVE_TPETRA_PTHREAD OFF)
       IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE) 
-        MESSAGE(FATAL_ERROR "Tpetra: set KokkosThreadsWrapperNode as default node type but its not enabled.")   
+        MESSAGE(FATAL_ERROR "Tpetra: Kokkos::Compat::KokkosThreadsWrapperNode is set as the default Node type, but that Node type is not enabled.")   
       ENDIF()
     ENDIF()
     IF(Kokkos_ENABLE_OpenMP)
@@ -328,7 +335,7 @@ IF (Tpetra_ENABLE_Kokkos_Refactor)
     ELSE()
       GLOBAL_SET(HAVE_TPETRA_OPENMP OFF)
       IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE) 
-        MESSAGE(FATAL_ERROR "Tpetra: set KokkosOpenMPWrapperNode as default node type but its not enabled.")   
+        MESSAGE(FATAL_ERROR "Tpetra: Kokkos::Compat::KokkosOpenMPWrapperNode is set as the default Node type, but that Node type is not enabled.")   
       ENDIF()
     ENDIF()
     IF(Kokkos_ENABLE_Cuda)
@@ -336,14 +343,35 @@ IF (Tpetra_ENABLE_Kokkos_Refactor)
     ELSE()
       GLOBAL_SET(HAVE_TPETRA_CUDA OFF)
       IF (HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE) 
-        MESSAGE(FATAL_ERROR "Tpetra: set KokkosCudaWrapperNode as default node type but its not enabled.")   
+        MESSAGE(FATAL_ERROR "Tpetra: Kokkos::Compat::KokkosCudaWrapperNode is set as the default Node type, but that Node type is not enabled.")   
       ENDIF()
     ENDIF()
-  ENDIF()
+
+    #
+    # Build the list of enabled Node types.
+    #
+    IF(HAVE_TPETRA_SERIAL)
+      LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosSerialWrapperNode")
+      MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosSerialWrapperNode")
+    ENDIF()
+    IF(HAVE_TPETRA_PTHREAD)
+      LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosThreadsWrapperNode")
+      MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosThreadsWrapperNode")
+    ENDIF()
+    IF(HAVE_TPETRA_OPENMP)
+      LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosOpenMPWrapperNode")
+      MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosOpenMPWrapperNode")
+    ENDIF()
+    IF(HAVE_TPETRA_CUDA)
+      LIST(APPEND TpetraCore_ETI_NODES "Kokkos::Compat::KokkosCudaWrapperNode")
+      MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosCudaWrapperNode")
+    ENDIF()
+  ENDIF() # Whether ETI is enabled
+
 
 ELSE() # NOT Tpetra_ENABLE_Kokkos_Refactor (DEPRECATED)
 
-  MESSAGE(WARNING "The 'classic' version of Tpetra has been DEPRECATED and will go away before the 12.0 release of Trilinos.")
+  MESSAGE(WARNING "The 'classic' version of Tpetra has been DEPRECATED and is no longer supported.  If you don't want to see this message, please stop setting Tpetra_ENABLE_Kokkos_Refactor to OFF.  (It is ON by default; you do not have to set it explicitly.)")
 
   SET(TpetraCore_ETI_NODES   "${KokkosClassic_ENABLED_NODES}")
   GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC ON)
@@ -503,7 +531,35 @@ ELSE() # ETI is OF
   GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED ON)
   GLOBAL_SET(HAVE_TPETRA_INT_INT ON)
   
-  GLOBAL_SET(HAVE_TPETRA_GLOBALORDINAL ON)
+
+  # Even though ETI is still OFF, we still require that Tpetra enable
+  # at least one GlobalOrdinal type.  This ensures that tests will
+  # actually test something (but see Bug 6380).
+  IF(HAVE_TPETRA_INT_INT OR HAVE_TPETRA_INT_UNSIGNED OR HAVE_TPETRA_INT_LONG OR HAVE_TPETRA_INT_LONG_LONG)
+    # If this is ON, then Tpetra has at least one GlobalOrdinal type enabled.
+    GLOBAL_SET(HAVE_TPETRA_GLOBALORDINAL ON)
+  ELSE()
+    MESSAGE(FATAL_ERROR "Tpetra: At least one GlobalOrdinal type must be enabled.  This generally should not happen for the ETI OFF case.  Please report this bug to the Tpetra developers.")
+  ENDIF()  
+
+  # GlobalOrdinal types get added to the list of Scalar types.
+  IF(HAVE_TPETRA_INT_INT) 
+    LIST(APPEND TpetraCore_ETI_SCALARS "int")
+    LIST(APPEND TpetraCore_ETI_GORDS "int")
+  ENDIF()
+  IF(HAVE_TPETRA_INT_UNSIGNED)
+    LIST(APPEND TpetraCore_ETI_SCALARS "unsigned")
+    LIST(APPEND TpetraCore_ETI_GORDS "unsigned")
+  ENDIF()
+  IF(HAVE_TPETRA_INT_LONG)
+    LIST(APPEND TpetraCore_ETI_SCALARS "long")
+    LIST(APPEND TpetraCore_ETI_GORDS "long")
+  ENDIF()
+  IF(HAVE_TPETRA_INT_LONG_LONG)
+    LIST(APPEND TpetraCore_ETI_SCALARS "long long")
+    LIST(APPEND TpetraCore_ETI_GORDS "long long")
+  ENDIF()
+
 ENDIF()
 
 ######################################################################
@@ -511,7 +567,7 @@ ENDIF()
 ######################################################################
 #
 # Users always get what they ask for.  If they don't ask for anything,
-# they get Scalar = double by default.  Scalar = dobule is always
+# they get Scalar = double by default.  Scalar = double is always
 # enabled, since tests explicitly depend on it.
 
 # The warning makes sense whether or not ETI is enabled.
@@ -812,8 +868,35 @@ ELSE() # ETI NOT enabled
     GLOBAL_SET(HAVE_TPETRA_QD_REAL OFF)
   ENDIF()
 
+  IF(HAVE_TPETRA_DOUBLE)
+    LIST(APPEND TpetraCore_ETI_SCALARS "double")
+  ENDIF()
+  IF(HAVE_TPETRA_FLOAT)
+    LIST(APPEND TpetraCore_ETI_SCALARS "float")
+  ENDIF()
+  IF(HAVE_TPETRA_COMPLEX_FLOAT)
+    LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<float>")
+  ENDIF()
+  IF(HAVE_TPETRA_COMPLEX_DOUBLE)
+    LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<double>")
+  ENDIF()
+  IF(HAVE_TPETRA_FLOAT128) 
+    LIST(APPEND TpetraCore_ETI_SCALARS "__float128")
+  ENDIF()
+  IF(HAVE_TPETRA_QD_REAL) 
+    LIST(APPEND TpetraCore_ETI_SCALARS "qd_real")
+  ENDIF()
+  IF(HAVE_TPETRA_DD_REAL) 
+    LIST(APPEND TpetraCore_ETI_SCALARS "dd_real")
+  ENDIF()
+
 ENDIF() # whether ETI is enabled
 
+# Make sure that Tpetra enables at least one Scalar type, and at least
+# one GlobalOrdinal type.  If ETI is ON, this ensures that Tpetra does
+# a nontrivial build.  If ETI is OFF, it (should, but see Bug 6380)
+# ensure that Tpetra tests at least one combination of template
+# parameters.
 ASSERT_DEFINED(HAVE_TPETRA_SCALAR)
 ASSERT_DEFINED(HAVE_TPETRA_GLOBALORDINAL)
 

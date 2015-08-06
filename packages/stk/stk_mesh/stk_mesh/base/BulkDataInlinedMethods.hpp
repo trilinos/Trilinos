@@ -44,8 +44,58 @@ size_t get_connectivity( const BulkData & mesh,
 
 
  /** \brief  Comparator functor for entities compares the entities' keys */
+#ifdef SIERRA_MIGRATION
 inline
-EntityLess::EntityLess(const BulkData& mesh) : m_mesh(&mesh) {}
+bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
+{
+  bool result = false;
+  if (m_shouldSortFacesByNodeIds &&
+      m_mesh->entity_rank(lhs) == m_sideRank &&
+      m_mesh->entity_rank(rhs) == m_sideRank)
+  {
+      unsigned num_nodes_lhs = m_mesh->num_nodes(lhs);
+      unsigned num_nodes_rhs = m_mesh->num_nodes(rhs);
+      if (num_nodes_lhs != num_nodes_rhs)
+      {
+          result = num_nodes_lhs < num_nodes_rhs;
+      }
+      else
+      {
+          stk::mesh::EntityVector nodes_lhs(num_nodes_lhs);
+          stk::mesh::EntityVector nodes_rhs(num_nodes_rhs);
+          const stk::mesh::Entity* nodes_lhs_ptr = m_mesh->begin_nodes(lhs);
+          const stk::mesh::Entity* nodes_rhs_ptr = m_mesh->begin_nodes(rhs);
+          for(unsigned i=0;i<num_nodes_lhs;++i)
+          {
+              nodes_lhs[i] = nodes_lhs_ptr[i];
+              nodes_rhs[i] = nodes_rhs_ptr[i];
+          }
+          std::sort(nodes_lhs.begin(), nodes_lhs.end());
+          std::sort(nodes_rhs.begin(), nodes_rhs.end());
+          result = nodes_lhs < nodes_rhs;
+      }
+  }
+  else
+  {
+      const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
+      const EntityKey rhs_key = m_mesh->in_index_range(rhs) ? m_mesh->entity_key(rhs) : EntityKey();
+      result = lhs_key < rhs_key;
+  }
+  return result;
+}
+
+#else
+
+inline EntityLess::EntityLess(const BulkData& mesh) : m_mesh(&mesh) {}
+
+inline
+bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
+{
+  const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
+  const EntityKey rhs_key = m_mesh->in_index_range(rhs) ? m_mesh->entity_key(rhs) : EntityKey();
+  return (lhs_key < rhs_key);
+}
+#endif
 
 /** \brief  Comparison operator */
 inline

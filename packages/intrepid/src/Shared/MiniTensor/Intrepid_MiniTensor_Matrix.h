@@ -70,11 +70,12 @@ class Matrix: public TensorBase<T, typename matrix_store<T, M, N>::type>
 public:
 
   ///
-  /// Order
+  /// For matrices ORDER == 1 as they are not really tensors and we use
+  /// this to allocate memory for them as vectors of dimension = cols * rows.
   ///
   static
   Index const
-  ORDER = 2;
+  ORDER = 1;
 
   ///
   /// Static or dynamic

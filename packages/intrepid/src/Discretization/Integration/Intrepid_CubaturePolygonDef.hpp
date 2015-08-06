@@ -156,6 +156,16 @@ void CubaturePolygon<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint& cub
     cubWeights(pointId) = cubatureWeights_(pointId);
   }
 } // end getCubature
+
+template<class Scalar, class ArrayPoint, class ArrayWeight>
+void CubaturePolygon<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint& cubPoints,
+                                                                 ArrayWeight& cubWeights,
+                                                                 ArrayPoint& cellCoords) const
+{
+    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
+                      ">>> ERROR (CubaturePolygon): Cubature defined in reference space calling method for physical space cubature.");
+}
+
   
 
 template<class Scalar, class ArrayPoint, class ArrayWeight>

@@ -237,6 +237,15 @@ void CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::getCubature(
   */
 } // end getCubature
 
+template<class Scalar, class ArrayPoint, class ArrayWeight>
+void CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint& cubPoints,
+                                                                      ArrayWeight& cubWeights,
+                                                                      ArrayPoint& cellCoords) const
+{
+    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
+                      ">>> ERROR (CubatureTensorSorted): Cubature defined in reference space calling method for physical space cubature.");
+}
+
 template <class Scalar, class ArrayPoint, class ArrayWeight>
 int CubatureTensorSorted<Scalar,ArrayPoint,ArrayWeight>::getDimension() const {
   return dimension_;

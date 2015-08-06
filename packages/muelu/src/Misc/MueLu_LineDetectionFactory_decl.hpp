@@ -51,14 +51,9 @@
 #define  HORIZONTAL     2
 #define  GRID_SUPPLIED -1
 
-#include <string>
-
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_LineDetectionFactory_fwd.hpp"
 
-#include "MueLu_GraphBase.hpp"
-#include "MueLu_PerfUtils_fwd.hpp"
-#include "MueLu_Utilities_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 

@@ -69,7 +69,7 @@ namespace SEAMS {
       stringInteractive(false), stringScanner(NULL),
       errorStream(&std::cerr), warningStream(&std::cerr), 
       stateImmutable(false), doLoopSubstitution(true), doIncludeSubstitution(true),
-      isCollectingLoop(false)
+      isCollectingLoop(false), inIfdefGetvar(false)
   {
     ap_file_list.push(file_rec());
     init_table("#");

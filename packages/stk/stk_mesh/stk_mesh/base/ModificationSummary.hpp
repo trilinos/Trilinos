@@ -160,6 +160,7 @@ private:
     std::vector<std::pair<stk::mesh::EntityKey, std::string> > m_stringTracker;
     int m_lastModCycle;
     int m_modCounter;
+    int m_modificationSummaryNumber;
 };
 
 } // namespace

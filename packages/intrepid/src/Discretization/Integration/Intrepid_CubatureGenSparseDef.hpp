@@ -223,6 +223,14 @@ void CubatureGenSparse<Scalar,dimension_,ArrayPoint,ArrayWeight>::getCubature(Ar
   grid.copyToArrays(cubPoints, cubWeights);
 } // end getCubature
 
+template<class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>
+void CubatureGenSparse<Scalar,dimension_, ArrayPoint,ArrayWeight>::getCubature(ArrayPoint& cubPoints,
+                                                                               ArrayWeight& cubWeights,
+                                                                               ArrayPoint& cellCoords) const
+{
+    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
+                      ">>> ERROR (CubatureGenSparse): Cubature defined in reference space calling method for physical space cubature.");
+}
 
 
 template <class Scalar, int dimension_, class ArrayPoint, class ArrayWeight>

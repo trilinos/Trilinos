@@ -53,6 +53,7 @@
 #include <Zoltan2_MeshAdapter.hpp>
 #include <Zoltan2_StridedData.hpp>
 #include <map>
+#include <unordered_map>
 #include <vector>
 #include <string>
 #include <cassert>
@@ -128,19 +129,20 @@ public:
   typedef MeshAdapter<User>       base_adapter_t;
   typedef User user_t;
 
-  /*! \brief Constructor for mesh with and apf mesh
+  /*! \brief Constructor for mesh with an apf mesh
    *  \param m the apf Mesh
    *  \param primary the entity type for the primary target
    *  \param adjacency the entity type for the adjacency from the primary
    *  \param needSecondAdj true means the second adjacency will be computed
-   *
+   *  \param needs an int 0-15 that represents the entities needed from the mesh Ex: 9 = 1001 in binary represents the need for regions and vertices
+   *               
    *
    *  The values pointed to the arguments must remain valid for the
    *  lifetime of this InputAdapter.
    */
 
   APFMeshAdapter(const Comm<int> &comm, apf::Mesh* m,std::string primary,
-                 std::string adjacency,bool needSecondAdj=false);
+                 std::string adjacency,bool needSecondAdj=false, int needs=0);
 
   void destroy();
   void print(int me,int verbosity=0);
@@ -245,11 +247,24 @@ public:
       Types = NULL;
   }
 
-  void getWeightsViewOf(MeshEntityType etype, const scalar_t *&weights,
+  int getNumWeightsPerOf(MeshEntityType etype) const {
+    int dim = entityZ2toAPF(etype);
+    return static_cast<int>(weights[dim].size());
+}
+
+  void getWeightsViewOf(MeshEntityType etype, const scalar_t *&ws,
                         int &stride, int idx = 0) const
   {
-    weights = NULL;
-    stride = 0;
+    int dim = entityZ2toAPF(etype);
+    typename map_array_t::iterator itr = weights[dim].find(idx);
+    if (itr!=weights[dim].end()) {
+      ws = &(*(itr->second.first));
+      stride = itr->second.second;
+    }
+    else {
+      ws = NULL;
+      stride = 0;
+    }
   }
 
   int getDimension() const { return coord_dimension; }
@@ -261,6 +276,10 @@ public:
       if (dim<=m_dimension&&dim>=0) {
         coords = ent_coords[dim]+coordDim;
         stride = 3;
+      }
+      else {
+        coords = NULL;
+        stride = 0;
       }
     }
     else {
@@ -274,7 +293,8 @@ public:
     int dim_target = entityZ2toAPF(target);
     return dim_source<=m_dimension && dim_source>=0 &&
       dim_target<=m_dimension && dim_target>=0 &&
-      dim_target!=dim_source;
+      dim_target!=dim_source&&
+      has(dim_source) && has(dim_target);
   }
 
   size_t getLocalNumAdjs(MeshEntityType source, MeshEntityType target) const
@@ -312,7 +332,8 @@ public:
       return false;
     return dim_source<=m_dimension && dim_source>=0 &&
       dim_target<=m_dimension && dim_target>=0 &&
-      dim_target!=dim_source;
+      dim_target!=dim_source &&
+      has(dim_source)&&has(dim_target);
   }
 
   size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget, 
@@ -339,7 +360,22 @@ public:
   }
 #endif
 
+  /*! \brief Provide a pointer to weights for the primary entity type.
+   *    \param val A pointer to the weights for index \c idx.
+   *    \param stride    A stride for the \c val array.  If \stride is
+   *             \c k, then val[n * k] is the weight for the
+   *             \c n th entity for index \idx.
+   *    \param idx A number from 0 to one less than 
+   *          weight idx specified in the constructor.
+   *
+   *  The order of the weights should match the order that
+   *  entities appear in the input data structure.
+   */
+
+  void setWeights(MeshEntityType etype, const scalar_t *val, int stride, int idx=0);
+
 private:
+  bool has(int dim) const {return (entity_needs>>dim)%2;}
   int entityZ2toAPF(enum MeshEntityType etype) const {return static_cast<int>(etype);}
   enum EntityTopologyType topologyAPFtoZ2(enum apf::Mesh::Type ttype) const {
     if (ttype==apf::Mesh::VERTEX)
@@ -365,6 +401,7 @@ private:
   
 
   int m_dimension;  //Dimension of the mesh
+  int entity_needs;
   apf::Numbering** lids; //[dimension] numbering of local id numbers
   apf::GlobalNumbering** gids;//[dimension] numbering of global id numbers
   zgid_t** gid_mapping; //[dimension][lid] corresponding global id numbers
@@ -377,6 +414,10 @@ private:
   std::vector<zgid_t>** adj2_gids; //[first_dimension][second_dimension] global_ids of second adjacencies
   int coord_dimension; //dimension of coordinates (always 3 for APF)
   scalar_t** ent_coords; //[dimension] array of coordinates [xs ys zs]
+  //[dimension][id] has the start of the weights array and the stride
+  typedef std::unordered_map<int, std::pair<ArrayRCP<const scalar_t>, int> > map_array_t;
+  map_array_t* weights;
+  
 };
 
 ////////////////////////////////////////////////////////////////
@@ -388,10 +429,12 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
                                      apf::Mesh* m,
                                      std::string primary,
                                      std::string adjacency,
-                                     bool needSecondAdj) {
+                                     bool needSecondAdj,
+                                     int needs) {
   
   //mesh dimension
   m_dimension = m->getDimension();
+  entity_needs = needs;
   if (primary=="element") {
     if (m_dimension==2)
       primary="face";
@@ -409,8 +452,14 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
     throw std::runtime_error("primary type and mesh dimension mismatch");
   if (adjacency=="region"&&m_dimension<3)
     throw std::runtime_error("adjacency type and mesh dimension mismatch");
-
   this->setEntityTypes(primary,adjacency,adjacency);
+  int dim1 = entityZ2toAPF(this->getPrimaryEntityType());
+  int dim2 = entityZ2toAPF(this->getAdjacencyEntityType());
+  int new_needs=0;
+  new_needs+=1<<dim1;
+  new_needs+=1<<dim2;
+  entity_needs|=new_needs;
+
   //count the local and global numbers as well as assign ids and map local to global
   lids = new apf::Numbering*[m_dimension+1];
   gids = new apf::GlobalNumbering*[m_dimension+1];
@@ -419,8 +468,14 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
   num_local = new size_t[m_dimension+1];
   num_global = new size_t[m_dimension+1];
   topologies = new EntityTopologyType*[m_dimension+1];
-
+  
   for (int i=0;i<=m_dimension;i++) {  
+    num_local[i]=0;
+    num_global[i]=0;
+    topologies[i] = NULL;
+    gid_mapping[i] = NULL;
+    if (!has(i))
+      continue;
     //number of local and global entities
     num_local[i] = m->count(i);
     long global_count = countOwned(m,i);
@@ -477,6 +532,14 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
     adj2_offsets=NULL;
   }
   for (int i=0;i<=m_dimension;i++) {
+    adj_gids[i]=NULL;
+    adj_offsets[i]=NULL;
+    if (needSecondAdj) {
+      adj2_gids[i]=NULL;
+      adj2_offsets[i]=NULL;
+    }
+    if (!has(i))
+      continue;
     adj_gids[i] = new std::vector<zgid_t>[m_dimension+1];
     adj_offsets[i] = new lno_t*[m_dimension+1];
     if (needSecondAdj) {
@@ -485,7 +548,7 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
     }
     for (int j=0;j<=m_dimension;j++) {
       
-      if (i==j) {
+      if (i==j||!has(j)) {
         adj_offsets[i][j]=NULL;
         if (needSecondAdj)
           adj2_offsets[i][j]=NULL;
@@ -592,6 +655,9 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
   coord_dimension = 3;
   ent_coords = new scalar_t*[m_dimension+1];
   for (int i=0;i<=m_dimension;i++) {
+    ent_coords[i] = NULL;
+    if (!has(i))
+      continue;
     apf::MeshIterator* itr = m->begin(i);
     apf::MeshEntity* ent;
     ent_coords[i] = new scalar_t[3*num_local[i]];
@@ -610,16 +676,23 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
     }
     m->end(itr);
   }
+
+  //Just make the weights array with nothing in it
+  weights = new map_array_t[m_dimension+1];
   delete [] lid_mapping;
 }
 template <typename User>
 void APFMeshAdapter<User>::destroy() {
   for (int i=0;i<=m_dimension;i++) {
+    if (!has(i))
+      continue;
     delete [] ent_coords[i];
     delete [] adj_gids[i];
     if (adj2_gids)
       delete [] adj2_gids[i];
     for (int j=0;j<=m_dimension;j++) {
+      if (!has(j))
+        continue;
       if (i!=j) {
         delete [] adj_offsets[i][j];
         if (adj2_gids)
@@ -646,8 +719,19 @@ void APFMeshAdapter<User>::destroy() {
   delete [] num_local;
   delete [] num_global;
   m_dimension=0;
-     
+  delete [] weights;
 }  
+
+template <typename User>
+void APFMeshAdapter<User>::setWeights(MeshEntityType etype, const scalar_t *val, int stride, int idx) {
+  int dim = entityZ2toAPF(etype);
+  if (dim>m_dimension||!has(dim)) {
+    throw std::runtime_error("Cannot add weights to non existing dimension");
+  }
+  ArrayRCP<const scalar_t> weight_rcp(val,0,stride*getLocalNumOf(etype),false);
+  weights[dim][idx] =std::make_pair(weight_rcp,stride);
+}
+
 template <typename User>
 void APFMeshAdapter<User>::print(int me,int verbosity)
 {
@@ -663,11 +747,15 @@ void APFMeshAdapter<User>::print(int me,int verbosity)
   if (verbosity==0)
     return;
   for (int i=0;i<=m_dimension;i++) {
+    if (!has(i))
+      continue;
     std::cout<<me<<" Number of dimension " << i<< " = " <<num_local[i] <<std::endl;
     if (verbosity>=1) { 
       for (size_t j=0;j<num_local[i];j++) {
         std::cout<<"   Entity "<<gid_mapping[i][j]<<"("<<j<<"):\n";
         for (int k=0;k<=m_dimension;k++) {
+          if (!has(k))
+            continue;
           if (k==i)
             continue;
           std::cout<<"     First Adjacency of Dimension "<<k<<":";

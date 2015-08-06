@@ -47,7 +47,7 @@
 #define MUELU_LINEDETECTIONFACTORY_DEF_HPP
 
 #include <Xpetra_Matrix.hpp>
-#include <Xpetra_MatrixFactory.hpp>
+//#include <Xpetra_MatrixFactory.hpp>
 
 #include "MueLu_LineDetectionFactory_decl.hpp"
 
@@ -70,8 +70,6 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("A",               Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",     Teuchos::null, "Generating factory for coorindates");
 
-    //validParamList->set< std::string > ("linedetection: orientation", "vertical", "Line orientation: can be either 'vertical', 'horizontal' or 'coordinates'");
-    //validParamList->set< LO > ("linedetection: num layers", -1, "Line detection: number of layers on finest level. Alternatively, set the number of layers on the finest level as \"NumZLayers\" in the finest level container class.");
     return validParamList;
   }
 
