@@ -1713,7 +1713,7 @@ void ElemElemGraph::add_both_edges_between_local_elements(impl::LocalId elem1Id,
     add_edge_between_local_elements(elem2Id, elem1Id, elem2SideOrdinal);
 }
 
-void ElemElemGraph::add_local_edges(stk::mesh::Entity elem_to_add, impl::LocalId new_elem_id, size_t &numNewEdges)
+void ElemElemGraph::add_local_edges(stk::mesh::Entity elem_to_add, impl::LocalId new_elem_id)
 {
     std::vector<impl::ElementSidePair> elemSidePairs;
     std::set<EntityId> localElementsConnectedToNewShell;
@@ -1724,7 +1724,6 @@ void ElemElemGraph::add_local_edges(stk::mesh::Entity elem_to_add, impl::LocalId
         if (is_valid_graph_element(neighbor))
         {
             add_both_edges_between_local_elements(new_elem_id, elemSidePair.first, elemSidePair.second);
-            numNewEdges += 2;
             if (m_element_topologies[new_elem_id].is_shell())
             {
                 impl::LocalId neighbor_id2 = m_entity_to_local_id[neighbor.local_offset()];
@@ -1759,14 +1758,14 @@ stk::mesh::EntityVector ElemElemGraph::filter_add_elements_arguments(const stk::
     return allElementsNotAlreadyInGraph;
 }
 
-void ElemElemGraph::add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph, size_t &numNewEdges)
+void ElemElemGraph::add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph)
 {
     make_space_for_new_elements(allElementsNotAlreadyInGraph);
     for(stk::mesh::Entity newElem : allElementsNotAlreadyInGraph)
     {
         impl::LocalId newElemId = get_new_local_element_id_from_pool();
         add_vertex(newElemId, newElem);
-        add_local_edges(newElem, newElemId, numNewEdges);
+        add_local_edges(newElem, newElemId);
     }
 }
 
@@ -1774,8 +1773,9 @@ void ElemElemGraph::add_elements(const stk::mesh::EntityVector &allUnfilteredEle
 {
     stk::mesh::EntityVector allElementsNotAlreadyInGraph = filter_add_elements_arguments(allUnfilteredElementsNotAlreadyInGraph);
 
-    size_t numLocalEdgesNeeded = 0;
-    add_elements_locally(allElementsNotAlreadyInGraph, numLocalEdgesNeeded);
+    const size_t numEdgesBefore = num_edges();
+    add_elements_locally(allElementsNotAlreadyInGraph);
+    const size_t numLocalEdgesNeeded = num_edges() - numEdgesBefore;
 
     impl::ElemSideToProcAndFaceId elem_side_comm = get_element_side_ids_to_communicate();
 

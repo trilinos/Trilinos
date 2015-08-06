@@ -196,11 +196,11 @@ private:
 
     void add_edge_between_local_elements(impl::LocalId elem1Id, impl::LocalId elem2Id, int elem1Side);
     void add_both_edges_between_local_elements(impl::LocalId elem1Id, impl::LocalId elem2Id, int elem1Side);
-    void add_local_edges(stk::mesh::Entity elem_to_add, impl::LocalId new_elem_id, size_t &numNewEdges);
+    void add_local_edges(stk::mesh::Entity elem_to_add, impl::LocalId new_elem_id);
     void add_vertex(impl::LocalId new_elem_id, stk::mesh::Entity elem_to_add);
     stk::mesh::EntityVector filter_add_elements_arguments(const stk::mesh::EntityVector& allUnfilteredElementsNotAlreadyInGraph) const;
     impl::ElemSideToProcAndFaceId get_element_side_ids_to_communicate() const;
-    void add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph, size_t &numNewEdges);
+    void add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
