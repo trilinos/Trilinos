@@ -392,7 +392,10 @@ public:
 
     //Get entity topology types
     const EntityTopologyType* tops;
-    adapter->getTopologyViewOf(primary_type,tops);
+    try {
+      adapter->getTopologyViewOf(primary_type,tops);
+    }
+    Z2_FORWARD_EXCEPTIONS
     
     //Get element global ids and part ids
     const zgid_t* element_gids;
