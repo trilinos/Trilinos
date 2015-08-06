@@ -192,6 +192,10 @@ private:
                                                                const std::vector<impl::LocalId>& connElements) const;
     impl::LocalId convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const;
     int get_side_id_to_connected_local_id(impl::LocalId localElementId, size_t indexConnElement) const;
+    void make_space_for_new_elements(
+            const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
+
+    void add_edge_between_local_elements(impl::LocalId elemId, impl::LocalId otherElemId, int side);
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,

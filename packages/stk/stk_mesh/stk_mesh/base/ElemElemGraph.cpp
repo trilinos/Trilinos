@@ -1654,26 +1654,35 @@ void ElemElemGraph::generate_additional_ids_collective(size_t num_additional_ids
     m_suggested_side_ids.insert(m_suggested_side_ids.end(), new_ids.begin(), new_ids.end());
 }
 
-void ElemElemGraph::add_elements(const stk::mesh::EntityVector &elements_to_add)
+void ElemElemGraph::make_space_for_new_elements(
+        const stk::mesh::EntityVector& allElementsNotAlreadyInGraph)
 {
     size_t max_offset = 0;
-    for (const stk::mesh::Entity & element_to_add : elements_to_add)
+    for (const stk::mesh::Entity& element_to_add : allElementsNotAlreadyInGraph)
     {
-        size_t local_max = find_max_local_offset_in_neighborhood(element_to_add);
-        if (local_max > max_offset)
-        {
-            max_offset = local_max;
-        }
+        const size_t local_max = find_max_local_offset_in_neighborhood(element_to_add);
+        max_offset = std::max(local_max, max_offset);
     }
     resize_entity_to_local_id_if_needed(max_offset);
+}
 
+void ElemElemGraph::add_edge_between_local_elements(impl::LocalId elemId, impl::LocalId otherElemId, int side)
+{
+    m_elem_graph[elemId].push_back(otherElemId);
+    m_via_sides[elemId].push_back(side);
+    ++m_num_edges;
+}
+
+void ElemElemGraph::add_elements(const stk::mesh::EntityVector &allElementsNotAlreadyInGraph)
+{
+    make_space_for_new_elements(allElementsNotAlreadyInGraph);
     std::vector<impl::ElementSidePair> elem_side_pairs;
     size_t num_local_edges_needed = 0;
 
-    for(unsigned i=0; i<elements_to_add.size(); ++i)
+    for(unsigned i=0; i<allElementsNotAlreadyInGraph.size(); ++i)
     {
         std::set<EntityId> localElementsConnectedToNewShell;
-        stk::mesh::Entity elem_to_add = elements_to_add[i];
+        stk::mesh::Entity elem_to_add = allElementsNotAlreadyInGraph[i];
         if (!m_bulk_data.bucket(elem_to_add).owned())
         {
             continue;
@@ -1690,9 +1699,7 @@ void ElemElemGraph::add_elements(const stk::mesh::EntityVector &elements_to_add)
             stk::mesh::Entity neighbor = m_local_id_to_element_entity[elem_side_pairs[index].first];
             if (is_valid_graph_element(neighbor))
             {
-                m_elem_graph[new_elem_id].push_back(elem_side_pairs[index].first);
-                m_via_sides[new_elem_id].push_back(elem_side_pairs[index].second);
-                ++m_num_edges;
+                add_edge_between_local_elements(new_elem_id, elem_side_pairs[index].first, elem_side_pairs[index].second);
                 impl::LocalId neighbor_id = m_entity_to_local_id[neighbor.local_offset()];
                 stk::mesh::ConnectivityOrdinal currentOrdinal = static_cast<stk::mesh::ConnectivityOrdinal>(elem_side_pairs[index].second);
                 stk::mesh::ConnectivityOrdinal neighborOrdinal = get_neighboring_side_ordinal(m_bulk_data, elem_to_add, currentOrdinal, neighbor);
@@ -1714,8 +1721,8 @@ void ElemElemGraph::add_elements(const stk::mesh::EntityVector &elements_to_add)
     size_t num_additional_side_ids_needed =  num_additional_parallel_edges + num_local_edges_needed;
     this->generate_additional_ids_collective(num_additional_side_ids_needed);
 
-    stk::mesh::EntityVector elements_to_add_copy = elements_to_add;
-    std::sort(elements_to_add_copy.begin(), elements_to_add_copy.end());
+    stk::mesh::EntityVector allElementsNotAlreadyInGraph_copy = allElementsNotAlreadyInGraph;
+    std::sort(allElementsNotAlreadyInGraph_copy.begin(), allElementsNotAlreadyInGraph_copy.end());
 
     std::set< stk::mesh::Entity > addedShells;
     impl::ElemSideToProcAndFaceId only_added_elements;
@@ -1723,8 +1730,8 @@ void ElemElemGraph::add_elements(const stk::mesh::EntityVector &elements_to_add)
     for(;iter!=elem_side_comm.end();++iter)
     {
         stk::mesh::Entity element = iter->first.entity;
-        stk::mesh::EntityVector::iterator elem_iter = std::lower_bound(elements_to_add_copy.begin(), elements_to_add_copy.end(), element);
-        if(elem_iter!=elements_to_add_copy.end() && *elem_iter==element)
+        stk::mesh::EntityVector::iterator elem_iter = std::lower_bound(allElementsNotAlreadyInGraph_copy.begin(), allElementsNotAlreadyInGraph_copy.end(), element);
+        if(elem_iter!=allElementsNotAlreadyInGraph_copy.end() && *elem_iter==element)
         {
             only_added_elements.insert(*iter);
             if (m_bulk_data.bucket(element).topology().is_shell())
