@@ -139,8 +139,8 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 					sourcetargetGIDs(), gmin[0], comm));
 
     //Create a new map with IDs uniquely assigned to ranks (oneToOneSTMap)
-    RCP<const map_type> oneToOneSTMap =
-      Tpetra::createOneToOne<lno_t, gno_t, node_t>(sourcetargetMapG);
+    /*RCP<const map_type> oneToOneSTMap =
+      Tpetra::createOneToOne<lno_t, gno_t, node_t>(sourcetargetMapG);*/
 
     //Generate Map for through.
 // TODO
@@ -150,12 +150,12 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 // TODO all through entities on processor, followed by call to createOneToOne
 // TODO
 
-    throughMapG = rcp (new map_type(ia->getGlobalNumOf(through), throughGIDs,
-				    gmin[1], comm));
+    throughMapG = rcp (new map_type(ia->getGlobalNumOf(through),
+				    /*throughGIDs,*/ gmin[1], comm));
 
     //Create a new map with IDs uniquely assigned to ranks (oneToOneTMap)
-    RCP<const map_type> oneToOneTMap =
-      Tpetra::createOneToOne<lno_t, gno_t, node_t>(throughMapG);
+    /*RCP<const map_type> oneToOneTMap =
+      Tpetra::createOneToOne<lno_t, gno_t, node_t>(throughMapG);*/
 
     /***********************************************************************/
     /************************* BUILD GRAPH FOR ADJS ************************/
@@ -164,7 +164,8 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     RCP<sparse_matrix_type> adjsMatrix;
 
     // Construct Tpetra::CrsGraph objects.
-    adjsMatrix = rcp (new sparse_matrix_type (oneToOneSTMap, 0));
+    adjsMatrix = rcp (new sparse_matrix_type (/*oneToOneSTMap*/
+					      sourcetargetMapG, 0));
 
     nonzero_t justOne = 1;
     ArrayView<nonzero_t> justOneAV = Teuchos::arrayView (&justOne, 1);
@@ -188,7 +189,8 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     }// *** source loop ***
 
     //Fill-complete adjs Graph
-    adjsMatrix->fillComplete (oneToOneTMap, adjsMatrix->getRowMap());
+    adjsMatrix->fillComplete (throughMapG/*oneToOneTMap*/,
+			      adjsMatrix->getRowMap());
 
     // Form 2ndAdjs
     RCP<sparse_matrix_type> secondAdjs =

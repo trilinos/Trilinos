@@ -138,8 +138,10 @@ int main(int narg, char *arg[]) {
   if (me == 0) cout << "Creating mesh adapter ... \n\n";
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
+  typedef inputAdapter_t::base_adapter_t base_adapter_t;
 
   inputAdapter_t ia(*CommT, "region");
+  inputAdapter_t ia2(*CommT, "vertex");
   inputAdapter_t::zgid_t const *adjacencyIds=NULL;
   inputAdapter_t::zgid_t const *madjacencyIds=NULL;
   inputAdapter_t::lno_t const *offsets=NULL;
@@ -148,6 +150,9 @@ int main(int narg, char *arg[]) {
   Zoltan2::MeshEntityType primaryEType = ia.getPrimaryEntityType();
   Zoltan2::MeshEntityType adjEType = ia.getAdjacencyEntityType();
   Zoltan2::MeshEntityType secondAdjEType = ia.getSecondAdjacencyEntityType();
+  RCP<const base_adapter_t> baseInputAdapter;
+  RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
+  std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
 
   if (ia.availAdjs(primaryEType, adjEType)) {
     if (ia.avail2ndAdjs(primaryEType, secondAdjEType)) {
@@ -162,13 +167,7 @@ int main(int narg, char *arg[]) {
 
     if (me == 0) std::cout << "        Creating GraphModel" << std::endl;
 
-    typedef inputAdapter_t::base_adapter_t base_adapter_t;
-
-    RCP<const base_adapter_t> baseInputAdapter;
     baseInputAdapter = (rcp(dynamic_cast<const base_adapter_t *>(&ia), false));
-    RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
-
-    std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
 
     Zoltan2::GraphModel<base_adapter_t> graphModel(baseInputAdapter, env,
 						   CommT, modelFlags);
@@ -199,6 +198,60 @@ int main(int narg, char *arg[]) {
 	}
       }
     }
+  }
+  else{
+    std::cout << "Adjacencies not available" << std::endl;
+    return 1;
+  }
+
+  primaryEType = ia2.getPrimaryEntityType();
+  adjEType = ia2.getAdjacencyEntityType();
+  secondAdjEType = ia2.getSecondAdjacencyEntityType();
+
+  if (ia2.availAdjs(primaryEType, adjEType)) {
+    if (ia2.avail2ndAdjs(primaryEType, secondAdjEType)) {
+      ia2.get2ndAdjsView(primaryEType, secondAdjEType, offsets, adjacencyIds);
+    }
+    else{
+      std::cout << "2nd adjacencies not available" << std::endl;
+      return 2;
+    }
+
+    // Create a GraphModel based on this input data.
+
+    if (me == 0) std::cout << "        Creating GraphModel" << std::endl;
+
+    baseInputAdapter = (rcp(dynamic_cast<const base_adapter_t *>(&ia2),false));
+
+    Zoltan2::GraphModel<base_adapter_t> graphModel2(baseInputAdapter, env,
+						   CommT, modelFlags);
+
+    /*Zoltan2::get2ndAdjsViewFromAdjs(baseInputAdapter, graphModel2.getComm(),
+				    primaryEType,
+				    secondAdjEType, moffsets, madjacencyIds);
+
+    for (size_t telct = 0; telct < ia.getLocalNumOf(primaryEType); telct++) {
+      if (offsets[telct+1]-offsets[telct]!=moffsets[telct+1]-moffsets[telct]) {
+	std::cout << "Number of adjacencies do not match" << std::endl;
+	return 3;
+      }
+
+      for (inputAdapter_t::lno_t j=moffsets[telct]; j<moffsets[telct+1]; j++) {
+	ssize_t in_list = -1;
+
+	for (inputAdapter_t::lno_t k=offsets[telct]; k<offsets[telct+1]; k++) {
+	  if (adjacencyIds[k] == adjacencyIds[j]) {
+	    in_list = k;
+	    break;
+	  }
+	}
+
+	if (in_list < 0) {
+	  std::cout << "Adjacency missing" << std::endl;
+	  return 4;
+	}
+      }
+      }*/
   }
   else{
     std::cout << "Adjacencies not available" << std::endl;

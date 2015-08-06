@@ -64,22 +64,22 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-/*!	
+/*!
   \class Belos::BiCGStabIter
-  
+
   \brief This class implements the pseudo-block BiCGStab iteration, where the basic BiCGStab
-  algorithm is performed on all of the linear systems simultaneously.  
+  algorithm is performed on all of the linear systems simultaneously.
 
   \ingroup belos_solver_framework
- 
+
   \author Alicia Klinvex
 */
 
 namespace Belos {
 
-  //! @name BiCGStabIteration Structures 
-  //@{ 
-  
+  //! @name BiCGStabIteration Structures
+  //@{
+
   /** \brief Structure to contain pointers to BiCGStabIteration state variables.
    *
    * This struct is utilized by BiCGStabIteration::initialize() and BiCGStabIteration::getState().
@@ -100,21 +100,21 @@ namespace Belos {
     Teuchos::RCP<const MV> V;
 
     std::vector<ScalarType> rho_old, alpha, omega;
-    
-    BiCGStabIterationState() : R(Teuchos::null), Rhat(Teuchos::null), 
-		    P(Teuchos::null), V(Teuchos::null)
+
+    BiCGStabIterationState() : R(Teuchos::null), Rhat(Teuchos::null),
+                    P(Teuchos::null), V(Teuchos::null)
     {
       rho_old.clear();
       alpha.clear();
       omega.clear();
     }
   };
-  
+
   template<class ScalarType, class MV, class OP>
   class BiCGStabIter : virtual public Iteration<ScalarType,MV,OP> {
-    
+
   public:
-    
+
     //
     // Convenience typedefs
     //
@@ -122,28 +122,28 @@ namespace Belos {
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
-    
+
     //! @name Constructors/Destructor
-    //@{ 
-    
+    //@{
+
     /*! \brief %BiCGStabIter constructor with linear problem, solver utilities, and parameter list of solver options.
      *
      * This constructor takes pointers required by the linear solver, in addition
-     * to a parameter list of options for the linear solver. 
+     * to a parameter list of options for the linear solver.
      */
-    BiCGStabIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
-			  const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-			  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-			  Teuchos::ParameterList &params );
-    
+    BiCGStabIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+                          const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+                          const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                          Teuchos::ParameterList &params );
+
     //! Destructor.
     virtual ~BiCGStabIter() {};
     //@}
-    
-    
+
+
     //! @name Solver methods
-    //@{ 
-    
+    //@{
+
     /*! \brief This method performs BiCGStab iterations on each linear system until the status
      * test indicates the need to stop or an error occurs (in which case, an
      * std::exception is thrown).
@@ -152,23 +152,23 @@ namespace Belos {
      * not, it will call initialize() using default arguments. After
      * initialization, the solver performs BiCGStab iterations until the
      * status test evaluates as ::Passed, at which point the method returns to
-     * the caller. 
+     * the caller.
      *
      * The status test is queried at the beginning of the iteration.
      *
      */
     void iterate();
-    
+
     /*! \brief Initialize the solver to an iterate, providing a complete state.
      *
-     * The %BiCGStabIter contains a certain amount of state, consisting of the current 
+     * The %BiCGStabIter contains a certain amount of state, consisting of the current
      * direction vectors and residuals.
      *
      * initialize() gives the user the opportunity to manually set these,
      * although this must be done with caution, abiding by the rules given
-     * below. 
+     * below.
      *
-     * \post 
+     * \post
      * <li>isInitialized() == \c true (see post-conditions of isInitialize())
      *
      * The user has the option of specifying any component of the state using
@@ -176,11 +176,11 @@ namespace Belos {
      * post-conditions specified under isInitialized(). Any necessary component of the
      * state not given to initialize() will be generated.
      *
-     * \note For any pointer in \c newstate which directly points to the multivectors in 
+     * \note For any pointer in \c newstate which directly points to the multivectors in
      * the solver, the data is not copied.
      */
     void initializeBiCGStab(BiCGStabIterationState<ScalarType,MV>& newstate);
-    
+
     /*! \brief Initialize the solver with the initial vectors from the linear problem
      *  or random data.
      */
@@ -189,7 +189,7 @@ namespace Belos {
       BiCGStabIterationState<ScalarType,MV> empty;
       initializeBiCGStab(empty);
     }
-    
+
     /*! \brief Get the current state of the linear solver.
      *
      * The data is only valid if isInitialized() == \c true.
@@ -208,82 +208,82 @@ namespace Belos {
       state.omega = omega_;
       return state;
     }
-    
+
     //@}
-    
-    
+
+
     //! @name Status methods
-    //@{ 
-    
+    //@{
+
     //! \brief Get the current iteration count.
     int getNumIters() const { return iter_; }
-    
+
     //! \brief Reset the iteration count.
     void resetNumIters( int iter = 0 ) { iter_ = iter; }
-    
+
     //! Get the norms of the residuals native to the solver.
     //! \return A std::vector of length blockSize containing the native residuals.
     // amk TODO: are the residuals actually being set?  What is a native residual?
     Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return R_; }
-    
+
     //! Get the current update to the linear system.
     /*! \note This method returns a null pointer because the linear problem is current.
     */
     // amk TODO: what is this supposed to be doing?
     Teuchos::RCP<MV> getCurrentUpdate() const { return Teuchos::null; }
-    
+
     //@}
-    
+
     //! @name Accessor methods
-    //@{ 
-    
+    //@{
+
     //! Get a constant reference to the linear problem.
     const LinearProblem<ScalarType,MV,OP>& getProblem() const { return *lp_; }
-    
+
     //! Get the blocksize to be used by the iterative solver in solving this linear problem.
     int getBlockSize() const { return 1; }
-    
+
     //! \brief Set the blocksize.
-    void setBlockSize(int blockSize) { 
+    void setBlockSize(int blockSize) {
       TEUCHOS_TEST_FOR_EXCEPTION(blockSize!=1,std::invalid_argument,
-			 "Belos::BiCGStabIter::setBlockSize(): Cannot use a block size that is not one.");
+                         "Belos::BiCGStabIter::setBlockSize(): Cannot use a block size that is not one.");
     }
-    
+
     //! States whether the solver has been initialized or not.
     bool isInitialized() { return initialized_; }
-    
+
     //@}
 
   private:
 
-    void axpy(const ScalarType alpha, const MV & A, 
+    void axpy(const ScalarType alpha, const MV & A,
               const std::vector<ScalarType> beta, const MV& B, MV& mv, bool minus=false);
-    
+
     //
     // Classes inputed through constructor that define the linear problem to be solved.
     //
     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
     const Teuchos::RCP<OutputManager<ScalarType> >          om_;
     const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
-    
+
     //
     // Algorithmic parameters
-    //  
+    //
     // numRHS_ is the current number of linear systems being solved.
     int numRHS_;
-    
-    // 
+
+    //
     // Current solver state
     //
     // initialized_ specifies that the basis vectors have been initialized and the iterate() routine
     // is capable of running; _initialize is controlled  by the initialize() member method
     // For the implications of the state of initialized_, please see documentation for initialize()
     bool initialized_;
-    
+
     // Current number of iterations performed.
     int iter_;
 
-    // 
+    //
     // State Storage
     //
     // Initial residual
@@ -300,14 +300,14 @@ namespace Belos {
     //
     std::vector<ScalarType> rho_old_, alpha_, omega_;
   };
-  
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor.
   template<class ScalarType, class MV, class OP>
-  BiCGStabIter<ScalarType,MV,OP>::BiCGStabIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
-							       const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-							       const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-							       Teuchos::ParameterList &params ):
+  BiCGStabIter<ScalarType,MV,OP>::BiCGStabIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+                                                               const Teuchos::RCP<OutputManager<ScalarType> > &printer,
+                                                               const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
+                                                               Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
     stest_(tester),
@@ -316,7 +316,7 @@ namespace Belos {
     iter_(0)
   {
   }
-  
+
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize this iteration object
@@ -327,7 +327,7 @@ namespace Belos {
     Teuchos::RCP<const MV> lhsMV = lp_->getCurrLHSVec();
     Teuchos::RCP<const MV> rhsMV = lp_->getCurrRHSVec();
     TEUCHOS_TEST_FOR_EXCEPTION((lhsMV==Teuchos::null && rhsMV==Teuchos::null),std::invalid_argument,
-		       "Belos::BiCGStabIter::initialize(): Cannot initialize state storage!");
+                       "Belos::BiCGStabIter::initialize(): Cannot initialize state storage!");
 
     // Get the multivector that is not null.
     Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
@@ -335,7 +335,7 @@ namespace Belos {
     // Get the number of right-hand sides we're solving for now.
     int numRHS = MVT::GetNumberVecs(*tmp);
     numRHS_ = numRHS;
-	
+
     // Initialize the state storage
     // If the subspace has not be initialized before or has changed sizes, generate it using the LHS or RHS from lp_.
     if (Teuchos::is_null(R_) || MVT::GetNumberVecs(*R_)!=numRHS_) {
@@ -348,8 +348,8 @@ namespace Belos {
       alpha_.resize(numRHS_);
       omega_.resize(numRHS_);
     }
-	
-    // NOTE:  In BiCGStabIter R_, the initial residual, is required!!!  
+
+    // NOTE:  In BiCGStabIter R_, the initial residual, is required!!!
     //
     std::string errstr("Belos::BlockPseudoCGIter::initialize(): Specified multivectors must have a consistent length and width.");
 
@@ -393,7 +393,7 @@ namespace Belos {
         // Initial V = 0
         MVT::MvInit(*V_);
       }
-      
+
       // Set P
       if (!Teuchos::is_null(newstate.P) && newstate.P != P_) {
         // Assigned by the new state
@@ -405,7 +405,7 @@ namespace Belos {
       }
 
       // Set rho_old
-      if (newstate.rho_old.size() == numRHS_) {
+      if (newstate.rho_old.size () == static_cast<size_t> (numRHS_)) {
         // Assigned by the new state
         rho_old_ = newstate.rho_old;
       }
@@ -415,7 +415,7 @@ namespace Belos {
       }
 
       // Set alpha
-      if (newstate.alpha.size() == numRHS_) {
+      if (newstate.alpha.size() == static_cast<size_t> (numRHS_)) {
         // Assigned by the new state
         alpha_ = newstate.alpha;
       }
@@ -425,7 +425,7 @@ namespace Belos {
       }
 
       // Set omega
-      if (newstate.omega.size() == numRHS_) {
+      if (newstate.omega.size() == static_cast<size_t> (numRHS_)) {
         // Assigned by the new state
         omega_ = newstate.omega;
       }
@@ -483,7 +483,7 @@ namespace Belos {
       Y = P_;
       Z = S;
     }
-    
+
     // Get the current solution std::vector.
     Teuchos::RCP<MV> X = lp_->getCurrLHSVec();
 
@@ -493,11 +493,11 @@ namespace Belos {
     while (stest_->checkStatus(this) != Passed) {
 //      std::cout << std::endl;
 
-      std::vector<ScalarType> tempResids(numRHS_);
-      MVT::MvNorm(*R_,tempResids);
+      // std::vector<ScalarType> tempResids(numRHS_);
+      // MVT::MvNorm(*R_,tempResids);
 //      for(i=0; i<numRHS_; i++)
 //        std::cout << "r[" << i << "] = " << tempResids[i] << std::endl;
-      
+
       // Increment the iteration
       iter_++;
 
@@ -610,7 +610,7 @@ namespace Belos {
       axpy(one, *S, omega_, *T, *R_, true);
 
       // Update rho_old
-      rho_old_ = rho_new;    
+      rho_old_ = rho_new;
     } // end while (sTest_->checkStatus(this) != Passed)
   }
 
@@ -618,13 +618,13 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Iterate until the status test informs us we should stop.
   template <class ScalarType, class MV, class OP>
-  void BiCGStabIter<ScalarType,MV,OP>::axpy(const ScalarType alpha, const MV & A, 
+  void BiCGStabIter<ScalarType,MV,OP>::axpy(const ScalarType alpha, const MV & A,
                                             const std::vector<ScalarType> beta, const MV& B, MV& mv, bool minus)
   {
     Teuchos::RCP<const MV> A1, B1;
     Teuchos::RCP<MV> mv1;
     std::vector<int> index(1);
- 
+
     for(int i=0; i<numRHS_; i++) {
       index[0] = i;
       A1 = MVT::CloneView(A,index);
@@ -632,7 +632,7 @@ namespace Belos {
       mv1 = MVT::CloneViewNonConst(mv,index);
       if(minus) {
         MVT::MvAddMv(alpha,*A1,-beta[i],*B1,*mv1);
-      } 
+      }
       else {
         MVT::MvAddMv(alpha,*A1,beta[i],*B1,*mv1);
       }
