@@ -188,20 +188,23 @@ FUNCTION(TRIBITS_SET_DEP_PACKAGES  PACKAGE_NAME   LIB_OR_TEST  REQUIRED_OR_OPTIO
           "${DEP_PKG}" "${PACKAGE_NAME}" "${PROJECT_NAME}_SE_PACKAGES")
       ELSE()
         IF (${DEP_PKG}_ALLOW_MISSING_EXTERNAL_PACKAGE)
-          MESSAGE_WRAPPER("WARNING: ${DEP_PKG} is being ignored since its directory"
-            " is missing and ${DEP_PKG}_ALLOW_MISSING_EXTERNAL_PACKAGE ="
-            " ${${DEP_PKG}_ALLOW_MISSING_EXTERNAL_PACKAGE}!")
+          IF (${PROJECT_NAME}_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES)
+            MESSAGE_WRAPPER("NOTE: ${DEP_PKG} is being ignored since its directory"
+              " is missing and ${DEP_PKG}_ALLOW_MISSING_EXTERNAL_PACKAGE ="
+              " ${${DEP_PKG}_ALLOW_MISSING_EXTERNAL_PACKAGE}!")
+          ENDIF()
           IF (REQUIRED_OR_OPTIONAL STREQUAL "REQUIRED")
             SET(SE_PACKAGE_ENABLE_VAR  ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
-            MESSAGE_WRAPPER("WARNING: Setting ${SE_PACKAGE_ENABLE_VAR}=OFF because"
-              " ${DEP_PKG} is a required missing package!")
+            MESSAGE_WRAPPER("NOTE: Setting ${SE_PACKAGE_ENABLE_VAR}=OFF because"
+              " package ${PACKAGE_NAME} has a required dependency on missing"
+              " package ${DEP_PKG}!")
             DUAL_SCOPE_SET(${SE_PACKAGE_ENABLE_VAR} OFF)
           ENDIF()
         ENDIF()
         IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
           MESSAGE(
             "\n***"
-            "\n*** WARNING: The package ${DEP_PKG} which is a dependent package of"
+            "\n*** NOTE: The package ${DEP_PKG} which is a dependent package of"
               " ${PACKAGE_NAME} being ignored because ${DEP_PKG} is missing!"
             "\n***\n" )
         ENDIF()

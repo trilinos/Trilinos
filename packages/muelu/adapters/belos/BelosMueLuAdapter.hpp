@@ -117,15 +117,17 @@ namespace Belos {
       // This does not matter for Hierarchy, but matters for AMGX
       y.putScalar(0.0);
 
+#ifdef HAVE_MUELU_AMGX
       if (!AMGX_.is_null()) {
         Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Xpetra::toTpetra(x);
         Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY = Xpetra::toTpetra(y);
 
         AMGX_->apply(tX, tY);
 
-      } else {
-        Hierarchy_->Iterate(x, y, 1, true);
       }
+#endif
+      if (!Hierarchy_.is_null())
+        Hierarchy_->Iterate(x, y, 1, true);
     }
 
 #ifdef HAVE_MUELU_TPETRA
@@ -140,19 +142,19 @@ namespace Belos {
       TEUCHOS_TEST_FOR_EXCEPTION(trans!=NOTRANS, MueLuOpFailure,
                          "Belos::MueLuOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners.");
 
-      if (!AMGX_.is_null()) {
-        y.putScalar(0.0);
+      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate(), but it matters for AMGX
+      y.putScalar(0.0);
 
+#ifdef HAVE_MUELU_AMGX
+      if (!AMGX_.is_null())
         AMGX_->apply(x, y);
+#endif
 
-      } else {
+      if (!Hierarchy_.is_null()) {
         Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & temp_x = const_cast<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &>(x);
 
         const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(rcpFromRef(temp_x));
         Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(rcpFromRef(y));
-
-        //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
-        tY.putScalar(0.0);
 
         Hierarchy_->Iterate(tX, tY, 1, true);
       }
@@ -161,7 +163,9 @@ namespace Belos {
 
   private:
     RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >    Hierarchy_;
+#ifdef HAVE_MUELU_AMGX
     RCP<MueLu::AMGXOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AMGX_;
+#endif
   };
 
   template <>
@@ -183,8 +187,9 @@ namespace Belos {
   public:
 
     MueLuOp(const RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& H) : Hierarchy_(H) {}
-
+#ifdef HAVE_MUELU_AMGX
     MueLuOp(const RCP<MueLu::AMGXOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A) : AMGX_(A) {}
+#endif
 
     virtual ~MueLuOp() {}
 
@@ -193,19 +198,19 @@ namespace Belos {
       TEUCHOS_TEST_FOR_EXCEPTION(trans != NOTRANS, MueLuOpFailure,
                          "Belos::MueLuOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners.");
 
-      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
+      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate(), but it matters for AMGX
       y.putScalar(0.0);
 
+#ifdef HAVE_MUELU_AMGX
       if (!AMGX_.is_null()) {
         Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX = Xpetra::toTpetra(x);
         Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY = Xpetra::toTpetra(y);
 
         AMGX_->apply(tX, tY);
-
-      } else{
-        Hierarchy_->Iterate(x, y, 1, true);
       }
-
+#endif
+      if (!Hierarchy_.is_null())
+        Hierarchy_->Iterate(x, y, 1, true);
     }
 
 #ifdef HAVE_MUELU_TPETRA
@@ -213,17 +218,20 @@ namespace Belos {
       TEUCHOS_TEST_FOR_EXCEPTION(trans != NOTRANS, MueLuOpFailure,
                          "Belos::MueLuOp::Apply, transpose mode != NOTRANS not supported by MueLu preconditionners.");
 
-      if (!AMGX_.is_null()) {
-        y.putScalar(0.0);
-        AMGX_->apply(x, y);
+      //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate(), but it matters for AMGX
+      y.putScalar(0.0);
 
-      } else {
+#ifdef HAVE_MUELU_AMGX
+      if (!AMGX_.is_null())
+        AMGX_->apply(x, y);
+#endif
+
+      if (!Hierarchy_.is_null()) {
         Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & temp_x = const_cast<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &>(x);
 
-        const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(rcpFromRef(temp_x));
-        Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(rcpFromRef(y));
+        const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  tX(rcpFromRef(temp_x));
+        Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>        tY(rcpFromRef(y));
 
-        //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
         tY.putScalar(0.0);
 
         Hierarchy_->Iterate(tX, tY, 1, true);
@@ -271,7 +279,9 @@ namespace Belos {
 
   private:
     RCP<MueLu::Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node> >    Hierarchy_;
+#ifdef HAVE_MUELU_AMGX
     RCP<MueLu::AMGXOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> > AMGX_;
+#endif
   };
 
 } // namespace Belos

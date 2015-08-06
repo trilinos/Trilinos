@@ -423,7 +423,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar,
   out << "BandedContainer constructor" << endl;
   RCP<container_type> MyContainer;
   try {
+    const Teuchos::ParameterList params = Teuchos::ParameterList();
     MyContainer = Teuchos::rcp (new container_type (A, localRows));
+    MyContainer->setParameters(params);
+    localSuccess = 1;
+  } catch (std::exception& e) {
+    localSuccess = 0;
+    cerr << e.what () << endl;
+  }
+  reduceAll<int, int> (* (rowMap->getComm ()), REDUCE_MIN,
+                       localSuccess, outArg (globalSuccess));
+  TEST_EQUALITY_CONST( globalSuccess, 1 );
+
+  out << "DenseContainer::setParameters" << endl;
+  try {
+    const Teuchos::ParameterList params = Teuchos::ParameterList();
+    MyContainer->setParameters(params);
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;
