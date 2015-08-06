@@ -408,11 +408,11 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
   }
   //
   // If we get to this point, then none of our known converters will
-  // work, so it is time to throw an exception.
+  // work, so it is time to set a Python error
   PyErr_Format(PyExc_TypeError, "Could not convert argument of type '%s'\n"
                "to an Epetra_MultiVector",
                PyString_AsString(PyObject_Str(PyObject_Type(pyobj))));
-  throw PythonException();
+  return NULL;
 }
 
 ////////////////////////////////////////////////////////////////////////
