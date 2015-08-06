@@ -144,6 +144,17 @@ public:
   void getCubature(ArrayPoint  & cubPoints,
 		   ArrayWeight & cubWeights) const;
 
+  /** \brief Returns cubature points and weights.
+              Method for physical space cubature, throws an exception.
+
+       \param cubPoints             [out]        - Array containing the cubature points.
+       \param cubWeights            [out]        - Array of corresponding cubature weights.
+       \param cellCoords             [in]        - Array of cell coordinates
+  */
+  void getCubature(ArrayPoint& cubPoints,
+                   ArrayWeight& cubWeights,
+                   ArrayPoint& cellCoords) const;
+
   /** \brief Returns the number of cubature points.
   */
   int getNumPoints() const;

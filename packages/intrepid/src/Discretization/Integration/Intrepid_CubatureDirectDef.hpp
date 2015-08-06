@@ -69,12 +69,20 @@ void CubatureDirect<Scalar,ArrayPoint,ArrayWeight>::getCubatureData(ArrayPoint  
 } // end getCubatureData
 
 
-
 template <class Scalar, class ArrayPoint, class ArrayWeight>
 void CubatureDirect<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint  & cubPoints,
                                                                 ArrayWeight & cubWeights) const {
   getCubatureData( cubPoints, cubWeights, &(exposeCubatureData()[degree_]) );
 } // end getCubature
+
+template<class Scalar, class ArrayPoint, class ArrayWeight>
+void CubatureDirect<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint& cubPoints,
+		                                                ArrayWeight& cubWeights,
+                                                                ArrayPoint& cellCoords) const
+{
+    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
+                      ">>> ERROR (CubatureDirect): Cubature defined in reference space calling method for physical space cubature.");
+}
 
 
 

@@ -194,6 +194,14 @@ void CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint  & cu
 
 } // end getCubature
 
+template<class Scalar, class ArrayPoint, class ArrayWeight>
+void CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint& cubPoints,
+                                                                ArrayWeight& cubWeights,
+                                                                ArrayPoint& cellCoords) const
+{
+    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
+                      ">>> ERROR (CubatureTensor): Cubature defined in reference space calling method for physical space cubature.");
+}
 
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
