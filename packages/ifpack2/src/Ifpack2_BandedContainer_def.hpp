@@ -199,8 +199,6 @@ setParameters (const Teuchos::ParameterList& List)
     }
   }
 
-  std::cout << "ku=" << ku_ << " kl=" << kl_ <<std::endl;
-
   TEUCHOS_TEST_FOR_EXCEPTION(kl_==-1 || ku_==-1, std::invalid_argument,
       "BandedContainer<T>::setParameters: the user must provide the number of sub- and superdiagonals in the 'kl' and 'ku' parameters.");
 }
