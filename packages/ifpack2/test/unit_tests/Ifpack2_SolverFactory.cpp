@@ -48,7 +48,7 @@ namespace {
     if (rowMap->getNodeNumElements () != 0) {
       Teuchos::Array<SC> vals (1);
       Teuchos::Array<LO> inds (1);
-      for (size_t lclRow = rowMap->getMinLocalIndex ();
+      for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         inds[0] = lclRow;
         vals[0] = STS::one ();
