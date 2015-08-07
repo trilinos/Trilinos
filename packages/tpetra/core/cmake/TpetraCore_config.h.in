@@ -22,11 +22,8 @@
 #  define HAVE_TPETRA_MPI
 #endif // HAVE_TPETRACORE_MPI
 
-/* Determine if we have CUDA */
+/* Determine if the CUDA TPL is enabled */
 #cmakedefine HAVE_TPETRACORE_CUDA
-#ifdef HAVE_TPETRACORE_CUDA
-#  define HAVE_TPETRA_CUDA
-#endif // HAVE_TPETRACORE_CUDA
 
 /* Determine if we have the quadmath TPL */
 #cmakedefine HAVE_TPETRACORE_QUADMATH
