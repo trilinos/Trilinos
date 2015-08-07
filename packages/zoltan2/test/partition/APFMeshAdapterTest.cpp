@@ -329,6 +329,8 @@ int main(int narg, char *arg[]) {
     zparams.set("LB_APPROACH","PARTITION");
     //params.set("compute_metrics","yes");
     adjacency="vertex";
+    primary="vertex";
+    adjacency="edge";
   }
   else if (action=="hg_ghost") {
     do_partitioning = true;
@@ -342,7 +344,7 @@ int main(int narg, char *arg[]) {
     zparams.set("LB_METHOD","HYPERGRAPH");
     zparams.set("LB_APPROACH","PARTITION");
     zparams.set("PHG_EDGE_SIZE_THRESHOLD", "1.0");
-    primary="vertex";
+    primary="face";
     adjacency="edge";
     needSecondAdj=true;
   }

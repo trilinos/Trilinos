@@ -168,23 +168,45 @@ private:
     //                             (void *) &(*adapter));
   }
 
-  void setCallbacksHypergraph(
-    const RCP<const Model<Adapter> > &mdl)
+  void setCallbacksHypergraph(const RCP<const MeshAdapter<user_t> > &adp)
   {
     // TODO:  If add parameter list to this function, can register 
     // TODO:  different callbacks depending on the hypergraph model to use
-    zz->Set_Num_Obj_Fn(zoltanHGNumObj<Adapter>, (void *) &(*mdl));
-    zz->Set_Obj_List_Fn(zoltanHGObjList<Adapter>, (void *) &(*mdl));
 
-    zz->Set_HG_Size_CS_Fn(zoltanHGSizeCSForMeshAdapter<Adapter>,
-                          (void *) &(*mdl));
-    zz->Set_HG_CS_Fn(zoltanHGCSForMeshAdapter<Adapter>,
-                     (void *) &(*mdl));
-    
+    // TODO:  check params list if ghost model then need to do model version
+    const Teuchos::ParameterList &pl = env->getParameters();
+
+    const Teuchos::ParameterEntry *pe = pl.getEntryPtr("hypergraph_model_type");
+    std::string model_type("traditional");
+    if (pe){
+      model_type = pe->getValue<std::string>(&model_type);
+    }
+
+    if (model_type=="ghosting"||!adp->isEntityTypeUnique(adp->getPrimaryEntityType())) {
+      Zoltan2::modelFlag_t flags;
+      HyperGraphModel<Adapter>* mdl = new HyperGraphModel<Adapter>(adp,env,problemComm,
+                                                                   flags,HYPEREDGE_CENTRIC);
+      model = rcp(static_cast<const Model<Adapter>* >(mdl),true);
+      
+      zz->Set_Num_Obj_Fn(zoltanHGModelNumObj<Adapter>, (void *) &(*mdl));
+      zz->Set_Obj_List_Fn(zoltanHGModelObjList<Adapter>, (void *) &(*mdl));
+      
+      zz->Set_HG_Size_CS_Fn(zoltanHGModelSizeCSForMeshAdapter<Adapter>,
+                            (void *) &(*mdl));
+      zz->Set_HG_CS_Fn(zoltanHGModelCSForMeshAdapter<Adapter>,
+                       (void *) &(*mdl));
+    }
+    else {
+      //If entities are unique we dont need the extra cost of the model
+      zz->Set_HG_Size_CS_Fn(zoltanHGSizeCSForMeshAdapter<Adapter>,
+                            (void *) &(*adp));
+      zz->Set_HG_CS_Fn(zoltanHGCSForMeshAdapter<Adapter>,
+                       (void *) &(*adp));
+    }
     // zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMeshAdapter<Adapter>,
-    //                             (void *) &(*adapter));
+    //                               (void *) &(*adp));
     // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMeshAdapter<Adapter>,
-    //                             (void *) &(*adapter));
+    //                         (void *) &(*adp));
   }
 
   
@@ -259,7 +281,9 @@ public:
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
     setCallbacksGraph(adapter);
-    //setCallbacksHypergraph(model);
+    //TODO:: check parameter list to see if hypergraph is needed. We dont want to build the model
+    //       if we don't have to
+    setCallbacksHypergraph(adapter);
     setCallbacksGeom(&(*adapter));
   }
 
@@ -306,15 +330,7 @@ void AlgZoltan<Adapter>::partition(
       const std::string &zname = pl.name(iter);
       // Convert the value to a string to pass to Zoltan
       std::string zval = pl.entry(iter).getValue(&zval);
-      zz->Set_Param(zname.c_str(), zval.c_str());
-      if (zval=="HYPERGRAPH") {
-        Zoltan2::modelFlag_t flags;
-        HyperGraphModel<Adapter>* mdl = new HyperGraphModel<Adapter>(adapter,env,problemComm,
-                                                                     flags,HYPEREDGE_CENTRIC);
-        model = rcp(static_cast<const Model<Adapter>* >(mdl),true);
-        setCallbacksHypergraph(model);
-      }
-      
+      zz->Set_Param(zname.c_str(), zval.c_str());      
     }
   }
   catch (std::exception &e) {

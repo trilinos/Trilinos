@@ -159,7 +159,7 @@ static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
 // MESH ADAPTER CALLBACKS
 
 template <typename Adapter>
-static int zoltanHGNumObj(void *data, int *ierr) {
+static int zoltanHGModelNumObj(void *data, int *ierr) {
   const HyperGraphModel<Adapter>* mdl = static_cast<HyperGraphModel<Adapter>* >(data);
   *ierr = ZOLTAN_OK;
   return int(mdl->getLocalNumOwnedVertices());
@@ -167,7 +167,7 @@ static int zoltanHGNumObj(void *data, int *ierr) {
 
 // ZOLTAN_OBJ_LIST_FN
 template <typename Adapter>
-static void zoltanHGObjList(void *data, int nGidEnt, int nLidEnt, 
+static void zoltanHGModelObjList(void *data, int nGidEnt, int nLidEnt, 
                           ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
                           int wdim, float *wgts, int *ierr) 
 {
@@ -200,7 +200,6 @@ static void zoltanHGObjList(void *data, int nGidEnt, int nLidEnt,
         for (size_t i = 0; i < num_verts; i++)  {
           if (isOwner[i]) {
             wgts[j*wdim+w] = float(model_wgts[w][i]);
-            std::cout<<"Weight: "<< float(model_wgts[w][i])<<"\n";
             j++;
           }
         }
@@ -220,7 +219,7 @@ static void zoltanHGObjList(void *data, int nGidEnt, int nLidEnt,
 }
 // ZOLTAN_HG_SIZE_CS_FN
 template <typename Adapter>
-static void zoltanHGSizeCSForMeshAdapter(
+static void zoltanHGModelSizeCSForMeshAdapter(
   void *data, int *nEdges, int *nPins,
   int *format, int *ierr
 ) 
@@ -243,7 +242,7 @@ static void zoltanHGSizeCSForMeshAdapter(
 
 // ZOLTAN_HG_CS_FN
 template <typename Adapter>
-static void zoltanHGCSForMeshAdapter(
+static void zoltanHGModelCSForMeshAdapter(
   void *data, int nGidEnt, int nEdges, int nPins,
   int format, ZOLTAN_ID_PTR edgeIds, 
   int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr
@@ -283,6 +282,47 @@ static void zoltanHGCSForMeshAdapter(
   // }
   // for (int i=0;i<nPins;i++)
   //   pinIds[i] = adjIds[i];
+}
+
+// ZOLTAN_HG_SIZE_CS_FN
+template <typename Adapter>
+static void zoltanHGSizeCSForMeshAdapter(
+  void *data, int *nEdges, int *nPins,
+  int *format, int *ierr
+) 
+{
+  *ierr = ZOLTAN_OK;  
+  typedef typename Adapter::user_t user_t;
+  const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>* >(data);
+  *nEdges = madp->getLocalNumOf(madp->getAdjacencyEntityType());
+  *nPins = madp->getLocalNumAdjs(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType());
+  *format = ZOLTAN_COMPRESSED_EDGE;
+}
+
+// ZOLTAN_HG_CS_FN
+template <typename Adapter>
+static void zoltanHGCSForMeshAdapter(
+  void *data, int nGidEnt, int nEdges, int nPins,
+  int format, ZOLTAN_ID_PTR edgeIds, 
+  int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr
+)
+{
+  *ierr = ZOLTAN_OK;
+  typedef typename Adapter::zgid_t      zgid_t;
+  typedef typename Adapter::lno_t       lno_t;  
+  typedef typename Adapter::user_t      user_t;
+  const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>*>(data);
+  const zgid_t *Ids;
+  madp->getIDsViewOf(madp->getAdjacencyEntityType(),Ids);
+  const lno_t* offsets;
+  const zgid_t* adjIds;
+  madp->getAdjsView(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType(),offsets,adjIds);
+  for (int i=0;i<nEdges;i++) {
+    edgeIds[i]=Ids[i];
+    edgeIdx[i]=offsets[i];
+  }
+  for (int i=0;i<nPins;i++)
+    pinIds[i] = adjIds[i];
 }
 
 /////////////////////////////////////////////////////////////////////////////

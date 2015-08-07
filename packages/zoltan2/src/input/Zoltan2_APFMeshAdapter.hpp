@@ -208,6 +208,10 @@ public:
   // This is the interface that would be called by a model or a problem .
   ////////////////////////////////////////////////////////////////
 
+  bool isEntityTypeUnique(MeshEntityType etype) const {
+    int dim = entityZ2toAPF(etype);
+    return dim==m_dimension;
+  }
   /* NOTE: Only elements are uniquely provided from the APF Mesh Adapter.
      All other elements have copies across the shared parts
      These copies can be joined by the sharing of a unique global id

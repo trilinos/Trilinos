@@ -403,18 +403,22 @@ HyperGraphModel<Adapter>::HyperGraphModel(
   // Define owners for each hypergraph vertex by the minimum 
   // process that has the vertex
   typedef Tpetra::Map<lno_t, gno_t> map_t;
-  
-  Tpetra::global_size_t numGlobalCoords = 
-    Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-  Teuchos::RCP<const map_t> mapWithCopies =
-    rcp(new map_t(numGlobalCoords, gids_(), 0, comm));
-  Teuchos::RCP<const map_t> oneToOneMap =
-    Tpetra::createOneToOne<lno_t, gno_t>(mapWithCopies);
 
-  numOwnedVertices_=oneToOneMap->getNodeNumElements();
-  isOwner_ = arcp<bool>(numLocalVertices_);
-  for (size_t i=0;i<numLocalVertices_;i++) {
-    isOwner_[i] = oneToOneMap->isNodeGlobalElement(gids_[i]);
+  numOwnedVertices_=numLocalVertices_;
+  isOwner_ = ArrayRCP<bool>(numLocalVertices_,true);
+  if (!ia->isEntityTypeUnique(ia->getPrimaryEntityType())) {
+    
+    Tpetra::global_size_t numGlobalCoords = 
+      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+    Teuchos::RCP<const map_t> mapWithCopies =
+      rcp(new map_t(numGlobalCoords, gids_(), 0, comm));
+    Teuchos::RCP<const map_t> oneToOneMap =
+      Tpetra::createOneToOne<lno_t, gno_t>(mapWithCopies);
+
+    numOwnedVertices_=oneToOneMap->getNodeNumElements();
+    for (size_t i=0;i<numLocalVertices_;i++) {
+      isOwner_[i] = oneToOneMap->isNodeGlobalElement(gids_[i]);
+    }
   }
 
 
@@ -492,6 +496,13 @@ HyperGraphModel<Adapter>::HyperGraphModel(
       const lno_t* offsets;
       const zgid_t* adjacencyIds;
       ia->get2ndAdjsView(primaryPinType,adjacencyPinType,offsets,adjacencyIds);
+      Tpetra::global_size_t numGlobalCoords = 
+        Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+      Teuchos::RCP<const map_t> mapWithCopies =
+        rcp(new map_t(numGlobalCoords, gids_(), 0, comm));
+      Teuchos::RCP<const map_t> oneToOneMap =
+        Tpetra::createOneToOne<lno_t, gno_t>(mapWithCopies);
+
       secondAdj = rcp(new sparse_matrix_type(oneToOneMap,0));
       for (size_t i=0; i<numLocalVertices_;i++) {
         if (!isOwner_[i])

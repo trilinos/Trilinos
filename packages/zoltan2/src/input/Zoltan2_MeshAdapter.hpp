@@ -158,6 +158,16 @@ public:
   ////////////////////////////////////////////////////////////////////////////
   // Methods to be defined in derived classes.
 
+  /*! \brief Provide a pointer to the entity topology types
+      \param Types will on return point to the list of entity topology types
+      for this process.
+  */
+  virtual bool isEntityTypeUnique(MeshEntityType etype) const
+  {
+    return true;
+    // Should we throw this or assume it is not or is copied??? Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+  }
+  
   /*! \brief Returns the global number of mesh entities of MeshEntityType
    */
   //virtual size_t getGlobalNumOf(MeshEntityType etype) const = 0;
