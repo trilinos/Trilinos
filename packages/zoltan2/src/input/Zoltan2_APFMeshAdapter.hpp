@@ -352,7 +352,8 @@ public:
   }
 #endif
 
-  /*! \brief Provide a pointer to weights for the primary entity type.
+  /*! \brief Provide a pointer to weights for the etype entity type.
+   *    \param etype the entity type to assign the weights to
    *    \param val A pointer to the weights for index \c idx.
    *    \param stride    A stride for the \c val array.  If \stride is
    *             \c k, then val[n * k] is the weight for the
@@ -365,6 +366,19 @@ public:
    */
 
   void setWeights(MeshEntityType etype, const scalar_t *val, int stride, int idx=0);
+
+  /*! \brief Provide an apf::MeshTag to weights for the etype entity type.
+   *    \param etype the type to assign the weights to
+   *    \param m the mesh
+   *    \param weights the mesh tag of size n that contains the weights
+   *    \param ids an array of length n that lists the ids for each set of weights in the tag If
+   *               unspecified assumes the ids are 0 to n-1
+   *
+   *  Non tagged entities receive a weight of 1
+   *  
+   */
+
+  void setWeights(MeshEntityType etype, apf::Mesh* m,apf::MeshTag* weights, int* ids=NULL);
 
 private:
   bool has(int dim) const {return (entity_needs>>dim)%2;}
@@ -390,7 +404,8 @@ private:
       throw "No such APF topology type";
     
   }
-  
+  void getTagWeight(apf::Mesh* m, apf::MeshTag* tag,apf::MeshEntity* ent, scalar_t* ws);
+
 
   int m_dimension;  //Dimension of the mesh
   int entity_needs;
@@ -720,6 +735,89 @@ void APFMeshAdapter<User>::setWeights(MeshEntityType etype, const scalar_t *val,
   }
   ArrayRCP<const scalar_t> weight_rcp(val,0,stride*getLocalNumOf(etype),false);
   weights[dim][idx] =std::make_pair(weight_rcp,stride);
+}
+
+//Simple helper function to convert the tag type to the scalar_t type
+template <typename User>
+void APFMeshAdapter<User>::getTagWeight(apf::Mesh* m, 
+                                        apf::MeshTag* tag,
+                                        apf::MeshEntity* ent,
+                                        scalar_t* ws) {
+  int size = m->getTagSize(tag);
+  int type = m->getTagType(tag);
+  if (type==apf::Mesh::DOUBLE)  {
+    double* w = new double[size];
+    m->getDoubleTag(ent,tag,w);
+    for (int i=0;i<size;i++) 
+      ws[i] = static_cast<scalar_t>(w[i]);
+    delete [] w;
+  }
+  else if (type==apf::Mesh::INT)  {
+    int* w = new int[size];
+    m->getIntTag(ent,tag,w);
+    for (int i=0;i<size;i++) 
+      ws[i] = static_cast<scalar_t>(w[i]);
+    delete [] w;
+  }
+  else if (type==apf::Mesh::LONG)  {
+    long* w = new long[size];
+    m->getLongTag(ent,tag,w);
+    for (int i=0;i<size;i++) 
+      ws[i] = static_cast<scalar_t>(w[i]);
+    delete [] w;
+  }
+  else {
+    throw std::runtime_error("Unrecognized tag type");
+  }
+}
+
+template <typename User>
+void APFMeshAdapter<User>::setWeights(MeshEntityType etype, apf::Mesh* m,apf::MeshTag* tag, int* ids) {
+  int dim = entityZ2toAPF(etype);
+  if (dim>m_dimension||!has(dim)) {
+    throw std::runtime_error("Cannot add weights to non existing dimension");
+  }
+  int n_weights = m->getTagSize(tag);
+  bool delete_ids = false;
+  if (ids==NULL) {
+    ids = new int[n_weights];
+    delete_ids=true;
+    for (int i=0;i<n_weights;i++)
+      ids[i] = i;
+  }
+  scalar_t* ones = new scalar_t[n_weights];
+  for (int i=0;i<n_weights;i++)
+    ones[i] = 1;
+  
+  scalar_t* ws = new scalar_t[num_local[dim]*n_weights];
+  apf::MeshIterator* itr = m->begin(dim);
+  apf::MeshEntity* ent;
+  int  j=0;
+  while ((ent=m->iterate(itr))) {
+    scalar_t* w;
+    if (m->hasTag(ent,tag))  {
+      w = new scalar_t[n_weights];
+      getTagWeight(m,tag,ent,w);
+    }
+    else
+      w = ones;
+    
+    for (int i=0;i<n_weights;i++) {
+      ws[i*getLocalNumOf(etype)+j] = w[i];
+    }
+    j++;
+
+    if (m->hasTag(ent,tag)) 
+      delete [] w;
+  }
+  for (int i=0;i<n_weights;i++) {
+    ArrayRCP<const scalar_t> weight_rcp(ws+i*getLocalNumOf(etype),0,getLocalNumOf(etype),i==0);
+    weights[dim][ids[i]] =std::make_pair(weight_rcp,1);
+  }
+
+  if (delete_ids)
+    delete [] ids;
+  delete [] ones;
 }
 
 template <typename User>
