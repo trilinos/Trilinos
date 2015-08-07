@@ -160,7 +160,7 @@ public:
 
   /*! \brief Returns the global number of mesh entities of MeshEntityType
    */
-  virtual size_t getGlobalNumOf(MeshEntityType etype) const = 0;
+  //virtual size_t getGlobalNumOf(MeshEntityType etype) const = 0;
 
   /*! \brief Returns the number of mesh entities on this process.
    */

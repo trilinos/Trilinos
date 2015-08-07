@@ -73,6 +73,8 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
   typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
   typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>   sparse_matrix_type;
   typedef Tpetra::Map<lno_t, gno_t, node_t>                 map_type;
+  typedef Tpetra::global_size_t GST;
+  const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
   
 /* Find the adjacency for a nodal based decomposition */
   if (ia->availAdjs(sourcetarget, through)) {
@@ -135,7 +137,8 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     Teuchos::reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_MIN, 2, min, gmin);
 
     //Generate Map for sourcetarget.
-    sourcetargetMapG = rcp(new map_type(ia->getGlobalNumOf(sourcetarget),
+    sourcetargetMapG = rcp(new map_type(//ia->getGlobalNumOf(sourcetarget),
+					INVALID,
 					sourcetargetGIDs(), gmin[0], comm));
 
     //Create a new map with IDs uniquely assigned to ranks (oneToOneSTMap)
@@ -150,12 +153,12 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 // TODO all through entities on processor, followed by call to createOneToOne
 // TODO
 
-    throughMapG = rcp (new map_type(ia->getGlobalNumOf(through),
-				    /*throughGIDs,*/ gmin[1], comm));
+    throughMapG = rcp (new map_type(INVALID,//ia->getGlobalNumOf(through),
+				    throughGIDs, gmin[1], comm));
 
     //Create a new map with IDs uniquely assigned to ranks (oneToOneTMap)
-    /*RCP<const map_type> oneToOneTMap =
-      Tpetra::createOneToOne<lno_t, gno_t, node_t>(throughMapG);*/
+    RCP<const map_type> oneToOneTMap =
+      Tpetra::createOneToOne<lno_t, gno_t, node_t>(throughMapG);
 
     /***********************************************************************/
     /************************* BUILD GRAPH FOR ADJS ************************/
@@ -164,8 +167,8 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     RCP<sparse_matrix_type> adjsMatrix;
 
     // Construct Tpetra::CrsGraph objects.
-    adjsMatrix = rcp (new sparse_matrix_type (/*oneToOneSTMap*/
-					      sourcetargetMapG, 0));
+    adjsMatrix = rcp (new sparse_matrix_type (sourcetargetMapG,//oneToOneSTMap,
+					      0));
 
     nonzero_t justOne = 1;
     ArrayView<nonzero_t> justOneAV = Teuchos::arrayView (&justOne, 1);
@@ -189,7 +192,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     }// *** source loop ***
 
     //Fill-complete adjs Graph
-    adjsMatrix->fillComplete (throughMapG/*oneToOneTMap*/,
+    adjsMatrix->fillComplete (oneToOneTMap, //throughMapG,
 			      adjsMatrix->getRowMap());
 
     // Form 2ndAdjs
@@ -217,8 +220,6 @@ void get2ndAdjsViewFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
 
   typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
   typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>   sparse_matrix_type;
-  //typedef Tpetra::global_size_t GST;
-  //const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
 
   RCP<sparse_matrix_type> secondAdjs = get2ndAdjsMatFromAdjs(ia,comm,sourcetarget,through);
 
