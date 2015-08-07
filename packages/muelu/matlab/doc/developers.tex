@@ -3,16 +3,17 @@ Developer Features
 
 \subsection{Matlab Factories}
 
-\begin{enumerate}
-  \item MatlabSmoother, SingleLevelMatlabFactory and TwoLevelMatlabFactory are
+MatlabSmoother, SingleLevelMatlabFactory and TwoLevelMatlabFactory are
 implementations of SmootherPrototype, SingleLevelFactoryBase, and
 TwoLevelFactoryBase that use matlab functions instead of C++ code
 to generate data in MueLu levels.
 
 Parameters: Set in XML parameter list in the factory instantiation.
 
+\noindent
 MatlabSmoother: "Needs", "Setup Function", "Solve Function", "Number of Solver
 Args"
+\begin{enumerate}
   \item "Needs" is a comma-separated list of hierarchy data that the smoother will
 request, and pass into setup function in order that they are listed.
   \item "Setup Function" is the matlab function to run to set up the smoothing. Must
@@ -23,8 +24,11 @@ the outputs of "Setup Function" as arguments. Shouldn't return anything.
   \item "Number of Solver Args" (int) is the number of expected outputs of "Setup
 Function" that will be stored until the solve phase, when they will be
 passed in after A, x, b.
+\end{enumerate}
 
+\noindent
 SingleLevelMatlabFactory: "Needs", "Provides", "Function"
+\begin{enumerate}
   \item "Needs" is list of inputs to the matlab function that will be pulled from
 level. "Level" is a special key for the Needs list, and will be passed to MATLAB with the
 current level ID.
@@ -32,8 +36,11 @@ current level ID.
 level.
   \item "Function" is the name of the matlab function to run. Parameters/return
 values must match Needs/Provides.
+\end{enumerate}
 
+\noindent
 TwoLevelMatlabFactory: "Needs Fine", "Needs Coarse", "Provides", "Function"
+\begin{enumerate}
   \item Just like SingleLevelMatlabFactory, but inputs come from both fine and coarse
 levels.
 \end{enumerate}
