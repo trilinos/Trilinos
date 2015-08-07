@@ -1310,19 +1310,21 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
     std::ostringstream chCoordFileName;
     chCoordFileName << path << "/" << testData << ".coords";
     
+    // open file
     graphFile = fopen(chGraphFileName.str().c_str(), "r");
-    if(!graphFile)
+    
+    if(!graphFile) // maybe the user is using the default zoltan1 path convention
     {
       chGraphFileName.str("");
       chCoordFileName.str("");
       // try constructing zoltan1 paths
       chGraphFileName << path << "/ch_" << testData << "/" << testData << ".graph";
       chCoordFileName << path << "/ch_" << testData << "/" << testData << ".coords";
-      
       // try to open the graph file again, if this doesn't open
       // the user has not provided a valid path to the file
       graphFile = fopen(chGraphFileName.str().c_str(), "r");
     }
+    
     memset(fileInfo, 0, sizeof(int) * 2); // set fileinfo to 0's
     if (graphFile){
       fileInfo[0] = 1;

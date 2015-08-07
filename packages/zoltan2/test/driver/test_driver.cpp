@@ -197,11 +197,16 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   typedef AdapterForTests::base_adapter_t base_t;
   typedef AdapterForTests::basic_id_t basic_id_t; // basic_identifier_type
   typedef AdapterForTests::xpetra_mv_adapter xpetra_mv_t; // xpetra_mv_type
+  typedef AdapterForTests::xcrsGraph_adapter xcrsGraph_t;
+  typedef AdapterForTests::xcrsMatrix_adapter xcrsMatrix_t;
   
   typedef Zoltan2::Problem<base_t> problem_t;
   typedef Zoltan2::PartitioningProblem<base_t> partioning_problem_t; // base abstract type
   typedef Zoltan2::PartitioningProblem<basic_id_t> basic_problem_t; // basic id problem type
   typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mb problem type
+  typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_mb problem type
+  typedef Zoltan2::PartitioningProblem<xcrsMatrix_t> xcrsMatrix_problem_t; // xpetra_mb problem type
+  
   
   int rank = comm->getRank();
   if(rank == 0)
@@ -253,11 +258,15 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
                                                                      &zoltan2_parameters,
                                                                      MPI_COMM_WORLD));
   }else if(adapter_name == "XpetraCrsGraph"){
-    
+    problem = reinterpret_cast<problem_t * >(new xcrsGraph_problem_t(reinterpret_cast<xcrsGraph_t *>(ia),
+                                                                     &zoltan2_parameters,
+                                                                     MPI_COMM_WORLD));
   }
   else if(adapter_name == "XpetraCrsMatrix")
   {
-    
+    problem = reinterpret_cast<problem_t * >(new xcrsMatrix_problem_t(reinterpret_cast<xcrsMatrix_t *>(ia),
+                                                                      &zoltan2_parameters,
+                                                                      MPI_COMM_WORLD));
   }
   else
     throw std::runtime_error("Input adapter type not avaible, or misspelled.");
@@ -272,11 +281,13 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
     problem = reinterpret_cast<problem_t * >(new xpetra_mv_problem_t(reinterpret_cast<xpetra_mv_t *>(ia),
                                                                      &zoltan2_parameters));
   }else if(adapter_name == "XpetraCrsGraph"){
-    
+    problem = reinterpret_cast<problem_t * >(new xcrsGraph_problem_t(reinterpret_cast<xcrsGraph_t *>(ia),
+                                                                     &zoltan2_parameters));
   }
   else if(adapter_name == "XpetraCrsMatrix")
   {
-    
+    problem = reinterpret_cast<problem_t * >(new xcrsMatrix_problem_t(reinterpret_cast<xcrsMatrix_t *>(ia),
+                                                                      &zoltan2_parameters));
   }
   else
     throw std::runtime_error("Input adapter type not avaible, or misspelled.");
@@ -285,6 +296,7 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   ////////////////////////////////////////////////////////////
   // 3. Solve the problem
   ////////////////////////////////////////////////////////////
+  if(rank == 0) cout << "...Solving problem..." << endl;
   reinterpret_cast<basic_problem_t *>(problem)->solve();
   if (rank == 0)
     cout << "Problem solved" << endl;
@@ -335,6 +347,12 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   ////////////////////////////////////////////////////////////
   // 5. Clean up
   ////////////////////////////////////////////////////////////
+  
+  if(adapter_name == "XpetraCrsGraph")
+    delete reinterpret_cast<xcrsGraph_t *>(ia)->getCoordinateInput();
+  if(adapter_name == "XpetraCrsMatrix")
+    delete reinterpret_cast<xcrsMatrix_t *>(ia)->getCoordinateInput();
+  
   delete ia;
   delete reinterpret_cast<basic_problem_t *>(problem);
 }

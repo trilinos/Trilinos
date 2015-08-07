@@ -11,16 +11,16 @@
                     XpetraCrsMatrix
 -->
 
-<ParameterList name="chacoSimpleTest">
+<ParameterList name="chacoEdgeWeight">
     
         <ParameterList name="InputParameters">
-            <Parameter name="inputPath" type="string" value="/Users/davidson/trilinosall/trilinosrepo/packages/zoltan/test/ch_simple"/>
-            <Parameter name="inputFile" type="string" value="simple"/>
+            <Parameter name="inputPath" type="string" value="/Users/davidson/trilinosall/trilinosrepo/packages/zoltan/test/ch_ewgt"/>
+            <Parameter name="inputFile" type="string" value="ewgt"/>
             <Parameter name="fileType" type="string" value="Chaco"/>
         </ParameterList>
     
     <ParameterList name="test1">
-        <Parameter name="Name" type="string" value="simpleChaco_xpetmv"/>
+        <Parameter name="Name" type="string" value="chacoEdgeWeight_xpetmv"/>
      
         <ParameterList name="InputAdapterParameters">
             <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
@@ -49,7 +49,7 @@
     </ParameterList>
     
     <ParameterList name="test2">
-        <Parameter name="Name" type="string" value="simpleChaco_xpetra_crs_matrix"/>
+        <Parameter name="Name" type="string" value="chacoEdgeWeight_xpet_crs_matrix"/>
      
         <ParameterList name="InputAdapterParameters">
             <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
@@ -78,7 +78,7 @@
     </ParameterList>
     
     <ParameterList name="test3">
-        <Parameter name="Name" type="string" value="simpleChaco_xpetra_crs_graph"/>
+        <Parameter name="Name" type="string" value="chacoEdgeWeight_xpet_crs_graph"/>
      
         <ParameterList name="InputAdapterParameters">
             <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
