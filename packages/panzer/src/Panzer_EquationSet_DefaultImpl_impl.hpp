@@ -620,6 +620,23 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
       fm.template registerEvaluator<EvalT>((*evaluators)[i]);
   }
 
+  // **************************
+  // Add Orientation terms
+  // **************************
+
+  for (BasisIterator basis_it = m_basis_to_dofs.begin(); basis_it != m_basis_to_dofs.end(); ++basis_it) {
+    if(basis_it->second.first->requiresOrientations())  {
+      Teuchos::ParameterList p("Gather Orientation");
+      p.set("Basis", basis_it->second.first);
+      p.set("DOF Names", basis_it->second.second);
+      p.set("Indexer Names", basis_it->second.second);
+     
+      Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGatherOrientation<EvalT>(p);
+      
+      fm.template registerEvaluator<EvalT>(op);
+    }
+  }
+
 }
 
 // ***********************************************************************
