@@ -226,20 +226,20 @@ int main(int narg, char *arg[]) {
     Zoltan2::GraphModel<base_adapter_t> graphModel2(baseInputAdapter, env,
 						   CommT, modelFlags);
 
-    /*Zoltan2::get2ndAdjsViewFromAdjs(baseInputAdapter, graphModel2.getComm(),
+    Zoltan2::get2ndAdjsViewFromAdjs(baseInputAdapter, graphModel2.getComm(),
 				    primaryEType,
 				    secondAdjEType, moffsets, madjacencyIds);
 
-    for (size_t telct = 0; telct < ia.getLocalNumOf(primaryEType); telct++) {
-      if (offsets[telct+1]-offsets[telct]!=moffsets[telct+1]-moffsets[telct]) {
+    for (size_t tnoct = 0; tnoct < ia2.getLocalNumOf(primaryEType); tnoct++) {
+      if (offsets[tnoct+1]-offsets[tnoct]!=moffsets[tnoct+1]-moffsets[tnoct]) {
 	std::cout << "Number of adjacencies do not match" << std::endl;
 	return 3;
       }
 
-      for (inputAdapter_t::lno_t j=moffsets[telct]; j<moffsets[telct+1]; j++) {
+      for (inputAdapter_t::lno_t j=moffsets[tnoct]; j<moffsets[tnoct+1]; j++) {
 	ssize_t in_list = -1;
 
-	for (inputAdapter_t::lno_t k=offsets[telct]; k<offsets[telct+1]; k++) {
+	for (inputAdapter_t::lno_t k=offsets[tnoct]; k<offsets[tnoct+1]; k++) {
 	  if (adjacencyIds[k] == adjacencyIds[j]) {
 	    in_list = k;
 	    break;
@@ -251,7 +251,7 @@ int main(int narg, char *arg[]) {
 	  return 4;
 	}
       }
-      }*/
+    }
   }
   else{
     std::cout << "Adjacencies not available" << std::endl;
