@@ -329,7 +329,6 @@ int main(int narg, char *arg[]) {
     zparams.set("LB_APPROACH","PARTITION");
     //params.set("compute_metrics","yes");
     adjacency="vertex";
-
   }
   else if (action=="hg_ghost") {
     do_partitioning = true;
@@ -345,7 +344,7 @@ int main(int narg, char *arg[]) {
     zparams.set("PHG_EDGE_SIZE_THRESHOLD", "1.0");
     primary="vertex";
     adjacency="edge";
-    needSecondAdj=false;
+    needSecondAdj=true;
   }
   else if (action == "color") {
     params.set("debug_level", "verbose_detailed_status");
@@ -366,7 +365,7 @@ int main(int narg, char *arg[]) {
   
   inputAdapter_t::scalar_t* arr = new inputAdapter_t::scalar_t[ia.getLocalNumOf(ia.getPrimaryEntityType())];
   for (size_t i=0;i<ia.getLocalNumOf(ia.getPrimaryEntityType());i++) {
-    arr[i]=1;
+    arr[i]=PCU_Comm_Self()+1;
   }
   
   const inputAdapter_t::scalar_t* weights=arr;
@@ -430,7 +429,7 @@ int main(int narg, char *arg[]) {
   
   //Destroy the adapter
   ia.destroy();
-  
+  delete [] arr;
   //Parma_PrintPtnStats(m,"after");
   
   if (ghost_metric) {

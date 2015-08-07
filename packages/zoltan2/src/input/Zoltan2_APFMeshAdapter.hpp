@@ -208,14 +208,6 @@ public:
   // This is the interface that would be called by a model or a problem .
   ////////////////////////////////////////////////////////////////
 
-  size_t getGlobalNumOf(MeshEntityType etype) const
-  {
-    int dim = entityZ2toAPF(etype);
-    if (dim<=m_dimension&&dim>=0)
-      return num_global[dim];
-    return 0;
-  }
-
   /* NOTE: Only elements are uniquely provided from the APF Mesh Adapter.
      All other elements have copies across the shared parts
      These copies can be joined by the sharing of a unique global id
@@ -406,7 +398,6 @@ private:
   apf::GlobalNumbering** gids;//[dimension] numbering of global id numbers
   zgid_t** gid_mapping; //[dimension][lid] corresponding global id numbers
   size_t* num_local; //[dimension] number of local entities
-  size_t* num_global; //[dimension] number of global entities
   EntityTopologyType** topologies; //[dimension] topologies for each entity
   lno_t*** adj_offsets; //[first_dimension][second_dimension] array of offsets
   std::vector<zgid_t>** adj_gids; //[first_dimension][second_dimension] global_ids of first adjacencies
@@ -466,12 +457,11 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
   gid_mapping = new zgid_t*[m_dimension+1];
   std::map<zgid_t,lno_t>* lid_mapping = new std::map<zgid_t,lno_t>[m_dimension+1];
   num_local = new size_t[m_dimension+1];
-  num_global = new size_t[m_dimension+1];
   topologies = new EntityTopologyType*[m_dimension+1];
   
   for (int i=0;i<=m_dimension;i++) {  
     num_local[i]=0;
-    num_global[i]=0;
+    
     topologies[i] = NULL;
     gid_mapping[i] = NULL;
     if (!has(i))
@@ -480,7 +470,7 @@ APFMeshAdapter<User>::APFMeshAdapter(const Comm<int> &comm,
     num_local[i] = m->count(i);
     long global_count = countOwned(m,i);
     PCU_Add_Longs(&global_count,1);
-    num_global[i] = global_count;
+
     
     //Number each entity with local and global numbers
     char lids_name[15];
@@ -717,7 +707,7 @@ void APFMeshAdapter<User>::destroy() {
   delete [] gids;
   delete [] lids;
   delete [] num_local;
-  delete [] num_global;
+
   m_dimension=0;
   delete [] weights;
 }  
