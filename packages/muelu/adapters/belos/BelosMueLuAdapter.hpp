@@ -59,8 +59,6 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_Hierarchy.hpp"
 
-#include <Xpetra_TpetraMultiVector.hpp>
-
 namespace Belos {
   using Teuchos::RCP;
   using Teuchos::rcpFromRef;
