@@ -1,5 +1,3 @@
-#ifndef IFPACK2_CONFIG_H
-#define IFPACK2_CONFIG_H
 /* Ifpack2_config.h.in is preprocessed by CMake to create Ifpack2_config.h. */
 
 /*
@@ -59,4 +57,3 @@
 /* Define if we have the QD extended-precision TPL */
 /* #undef HAVE_IFPACK2_QD */
 
-#endif

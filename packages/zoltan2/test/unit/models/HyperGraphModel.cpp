@@ -43,7 +43,7 @@
 //
 // @HEADER
 //
-// Testing of GraphModel built from Xpetra matrix input adapters.
+// Testing of HyperGraphModel built from APF mesh adapters.
 //
 
 /*! \brief Test of HyperGraphModel interface.
@@ -110,7 +110,14 @@ int main(int narg, char *arg[]) {
   RCP<const Zoltan2::Environment> envConst = Teuchos::rcp_const_cast<const Zoltan2::Environment>(env);
   
   
-  inputAdapter_t* ia = new inputAdapter_t(*CommT, m,"vertex","edge",true);
+  inputAdapter_t* ia = new inputAdapter_t(*CommT, m,"vertex","edge",false);
+  inputAdapter_t::scalar_t* arr = new inputAdapter_t::scalar_t[ia->getLocalNumOf(ia->getPrimaryEntityType())];
+  for (size_t i=0;i<ia->getLocalNumOf(ia->getPrimaryEntityType());i++) {
+    arr[i]=PCU_Comm_Self();
+  }
+  const inputAdapter_t::scalar_t* weights=arr;
+  ia->setWeights(ia->getPrimaryEntityType(),weights,1);
+
   const baseMeshAdapter_t *base_ia = dynamic_cast<const baseMeshAdapter_t*>(ia);
   Zoltan2::modelFlag_t graphFlags_;
   RCP<const baseMeshAdapter_t> baseInputAdapter_(base_ia,false);

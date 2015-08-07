@@ -1111,7 +1111,7 @@ Figure \ref{fig:simpledesignaggregates} shows the extended transfer operator des
 \node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=TentativePFactory] (SaPFactory) {SaPFactory};
 \node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=SaPFactory,node distance=6cm] (TransPFactory) {TransPFactory};
 \node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=SaPFactory] (RAPFactory) {RAPFactory};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=RAPFactory,node distance=9cm] (AggExportFactory) {AggregationExportFactory};
+%\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=RAPFactory,node distance=9cm] (AggExportFactory) {AggregationExportFactory};
 \node(A2) at (-3,-2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A_c$};
 \draw[->] (A) -- (CoalesceDropFactory);
 \draw[->] (CoalesceDropFactory) -- node [near start, left] {Graph} (AggregationFactory);
@@ -1124,9 +1124,9 @@ Figure \ref{fig:simpledesignaggregates} shows the extended transfer operator des
 \draw[->] (SaPFactory) -- node [near start, left] {P} (RAPFactory);
 \draw[->] (TransPFactory) -- node [near start, below] {R} (RAPFactory);
 \draw[->] (RAPFactory) -- node [near start, below] {} (A2);
-\draw[o->] (RAPFactory) -- (AggExportFactory);
-\draw[->] (AggregationFactory) to[out=0,in=100] node [near start, right] {Aggregates} (AggExportFactory);
-\draw[->] (CoalesceDropFactory) to[out=0,in=80] node [near start, right] {DofsPerNode} (AggExportFactory);
+%\draw[o->] (RAPFactory) -- (AggExportFactory);
+%\draw[->] (AggregationFactory) to[out=0,in=100] node [near start, right] {Aggregates} (AggExportFactory);
+%\draw[->] (CoalesceDropFactory) to[out=0,in=80] node [near start, right] {DofsPerNode} (AggExportFactory);
 \end{scope}
 \end{tikzpicture}
 } % end scalebox
@@ -1152,325 +1152,256 @@ For demonstration purposes we also introduced a \verb|RAPFactory| which makes us
 
 \section{Visualization of aggregates}
 
-For debugging purposes it can be very useful to visualize the aggregates. In \muelu there is a helper factory named \verb|AggregationExportFactory| which can be used to export the aggregates for visualization purposes.
+For debugging purposes it can be very useful to visualize the aggregates. \muelu~provides several ways to graphically visualize the coarsening process and the aggregates. In order to visualize aggregates one needs the coordinates of the mesh nodes as geometric information. Whereas the user is expected to provide the mesh node coordinates in the \verb|Coordinates| variable on the finest level, we have to transfer the mesh information to the coarser levels.
 
-The \verb|AggregationExportFactory| acts as a small helper factory within the \verb|RAPFactory| which writes out some aggregation information to files on the hard disk (see figure \ref{fig:simpledesignaggregates}). In a post-processing step one can use these files together with some mesh information to generate pictures of the aggregates on each level. For post-processing we use the \verb|MueLu_Agg2VTK.py| python script which is stored in the \texttt{src} folder of this tutorial. It works both for 2D and 3D problems. You have to provide the output files from the \verb|AggregationExportFactory| as well as a list of node coordinates, that are needed to produce the output in the vtk format which can be opened in paraview.
+\subsection{General data transfer}
+
+The \verb|RAPFactory| is responsible to generate the coarse level matrix $A_c$, which is beside the transfer operators $P$ and $R$ the only information needed for an algebraic multigrid method to further coarsen the problem. However, in some situations the user might be able to transfer further user-specific information to coarser levels. The \verb|RAPFactory| can be extended by further helper transfer functions. These helper factories have to be registered in the \verb|RAPFactory| and then are called during the multigrid setup phase after the Galerkin product has been built. A typical example for such a helper factory is the \verb|CoordinatesTransferFactory| which transfers the \verb|Coordinates| variable to the coarser level and builds coarse node coordinates using the aggregation information. Further examples for special helper transfer factories are the \verb|AggregationExportFactory| and the \verb|CoarseningVisualizationFactory| which are all introduced in the following sections.
+
+\subsection{Use the AggregationExportFactory}
+
+\begin{figure}
+\begin{center}
+\scalebox{0.6}{
+\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
+\def\datawidth{2cm}
+\def\dataheight{0.5cm}
+\def\factorywidth{4cm}
+\def\factoryheight{0.75cm}
+%\draw[help lines] (-10,-10) grid (10,10);
+\begin{scope}[>=triangle 60]
+\node(A) at (-3,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A$};
+\node(Coordinates) at (12,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{Coordinates};
+\node(CoalesceDropFactory) at (-3,8) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{CoalesceDropFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=nothing] (AggregationFactory) {AggregationFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFactory] (TentativePFactory) {TentativePFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=TentativePFactory] (SaPFactory) {SaPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=SaPFactory,node distance=6cm] (TransPFactory) {TransPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=SaPFactory] (RAPFactory) {RAPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=RAPFactory,node distance=9cm] (AggExportFactory) {AggregationExportFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=AggExportFactory,node distance=6cm] (CoordinatesTransferFactory) {CoordinatesTransferFactory};
+\node(A2) at (-3,-2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A_c$};
+\node(Coordinates2) at (12,-2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{Coordinates};
+\draw[->] (A) -- (CoalesceDropFactory);
+\draw[->] (CoalesceDropFactory) -- node [near start, left] {Graph} (AggregationFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (TentativePFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (SaPFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (RAPFactory);
+\draw[->] (AggregationFactory) -- node [near start, left] {Aggregates} (TentativePFactory);
+\draw[->] (TentativePFactory) -- node [near start, left] {P} (SaPFactory);
+\draw[->] (SaPFactory) -- node [near start, below] {} (TransPFactory);
+\draw[->] (SaPFactory) -- node [near start, left] {P} (RAPFactory);
+\draw[->] (TransPFactory) -- node [near start, below] {R} (RAPFactory);
+\draw[->] (RAPFactory) -- node [near start, below] {} (A2);
+\draw[o->] (RAPFactory) -- (AggExportFactory);
+\draw[o->] (RAPFactory) to[out=-20,in=200] node [near start, right] {} (CoordinatesTransferFactory);
+\draw[->] (AggregationFactory) to[out=0,in=100] node [near start, right] {Aggregates} (AggExportFactory);
+\draw[->] (CoalesceDropFactory) to[out=0,in=80] node [near start, right] {DofsPerNode} (AggExportFactory);
+\draw[->] (Coordinates) to[out=270,in=70] node [near end, right] {} (AggExportFactory);
+\draw[->] (AggregationFactory) to[out=0,in=100] node [near end, right] {} (CoordinatesTransferFactory);
+\draw[->] (Coordinates) to[out=270,in=90] node [near end, right] {} (CoordinatesTransferFactory);
+\draw[->] (CoordinatesTransferFactory) to[out=270,in=90] node [near end, right] {} (Coordinates2);
+\draw[->,dashed] (TentativePFactory) to[out=0,in=100] node [near start, below] {CoarseMap} (CoordinatesTransferFactory);
+\end{scope}
+\end{tikzpicture}
+} % end scalebox
+\end{center}
+\caption{Visualization of aggregates using the AggregationExportFactory.}
+\label{fig:simpledesignaggregatesvis}
+\end{figure}
+
+If you have an aggregation-based algebraic multigrid method, the \verb|AggregationExportFactory| is the first choice to export the aggregates for visualization purposes.
+
+The file \verb|xml/s4av.xml| extends the multigrid hierarchy from file \verb|xml/s4a.xml| for support of visualization of aggregates.
+The important changes are the following:
+
+{\small
+\begin{lstlisting}
+<ParameterList name="myAggExportFact">
+  <Parameter name="factory"         type="string" value="AggregationExportFactory"/>
+  <Parameter name="aggregation: output filename"  type="string"
+             value="aggs_level%LEVELID_proc%PROCID.out"/>
+  <Parameter name="aggregation: output file: agg style" type="string"
+             value="Convex Hulls"/>
+</ParameterList>
+
+<ParameterList name="myCoordTransferFact">
+  <Parameter name="factory"         type="string" value="CoordinatesTransferFactory"/>
+</ParameterList>
+
+<ParameterList name="myRAPFact">
+  <Parameter name="factory"                  type="string" value="RAPFactory"/>
+  <Parameter name="P"                        type="string" value="myProlongatorFact"/>
+  <Parameter name="R"                        type="string" value="myRestrictorFact"/>
+  <ParameterList name="TransferFactories">
+    <Parameter name="CoordinateTransfer"     type="string" value="myCoordTransferFact"/>
+    <Parameter name="Visualization"          type="string" value="myAggExportFact"/>
+  </ParameterList>
+</ParameterList>
+\end{lstlisting}
+}
+
+The \verb|AggregationExportFactory| acts as a small helper factory within the \verb|RAPFactory| which writes out some aggregation information to VTK files on the hard disk (see Figure \ref{fig:simpledesignaggregatesvis}). For visualization the user has to provide the coordinates associated with the mesh nodes in the \verb|Coordinates| variable. The coordinates are transferred to the coarse level by the \verb|CoordinatesTransferFactory| which is also a helper transfer factory called by the \verb|RAPFactory| as the \verb|AggregationExportFactory|. The \verb|CoordinatesTransferFactory| needs the aggregation information to build a coarse coordinate by using the midpoint of each aggregate.
+Note, that the \verb|RAPFactory| accepts a sublist \verb|TransferFactories| to register all the additional helper transfer factories which are called after the Galerkin product is calculated. The helper transfer factories are called in the ordering in which they are registered in the \verb|RAPFactory|, but for this example the ordering is not important.
+
+To complete the xml file one has to declare the \verb|CoordinatesTransferFactory| to be the default factory for producing \verb|coordinates| by making the following statements in the \verb|Hierarchy| sublist of the xml file.
+
+\begin{lstlisting}
+<ParameterList name="Hierarchy">
+  <Parameter name="max levels"       type="int"    value="10"/>
+  <Parameter name="coarse: max size" type="int"    value="10"/>
+  <Parameter name="verbosity"        type="string" value="High"/>
+
+  <ParameterList name="All">
+    <Parameter name="Smoother"       type="string" value="SymGaussSeidel"/>
+    <Parameter name="Graph"          type="string" value="myCoalesceDropFact"/>
+    <Parameter name="Aggregates"     type="string" value="UncoupledAggregationFact"/>
+    <Parameter name="Nullspace"      type="string" value="myTentativePFact"/>
+    <Parameter name="P"              type="string" value="myProlongatorFact"/>
+    <Parameter name="R"              type="string" value="myRestrictorFact"/>
+    <Parameter name="A"              type="string" value="myRAPFact"/>
+    <Parameter name="CoarseSolver"   type="string" value="DirectSolver"/>
+    <Parameter name="Coordinates"    type="string" value="myCoordTransferFact"/>
+  </ParameterList>
+</ParameterList>
+\end{lstlisting}
+
+This way, the \verb|myCoordTransferFact| is declared as the default factory to generate the coarse coordinates in \verb|Coordinates| on the coarser levels.
 
 \begin{mycomment}
-The visualization script has successfully been tested with VTK 5.x. Note that it is not compatible to VTK 6.x.
+The fine level coordinates have to be provided by the user in the \verb|Coordinates| variable on the finest level. They are automatically used as input for the \verb|CoordinatesTransferFactory| to produce the coarse level coordinates for level 1. On the coarser levels then the \verb|CoordinatesTransferFactory| serves as input factory for being responsible to produce the coarse coordinates vector. Therefore, it is not a problem to declare \verb|myCoordTransferFact| as generating factory for the \verb|Coordinates| on all multigrid levels as per default input data on level 0 provided by the user has always precedence over factory-generated data.
+\end{mycomment}
+
+\begin{figure}
+\centering
+%\subfigure[Aggregates with settings from \texttt{xml/s4a.xml}]{\includegraphics[width=0.3\textwidth]{pics/s4al1.png}\includegraphics[width=0.3\textwidth]{pics/s4al2.png}\includegraphics[width=0.3\textwidth]{pics/s4al3.png}}
+%\subfigure[Aggregates with settings from \texttt{xml/s4b.xml} (default parameters)]{\includegraphics[width=0.3\textwidth]{pics/s4bl1.png}\includegraphics[width=0.3\textwidth]{pics/s4bl2.png}\includegraphics[width=0.3\textwidth]{pics/s4bl3.png}}
+\includegraphics[width=0.3\textwidth]{pics/s4al1.png}\includegraphics[width=0.3\textwidth]{pics/s4al2.png}\includegraphics[width=0.3\textwidth]{pics/s4al3.png}
+\caption{Aggregates with settings from \texttt{xml/s4av.xml}}
+\label{fig:diffaggregates}
+\end{figure}
+
+\begin{exercise}
+Run the \verb|Laplace 2D| example on a $50\times 50$ mesh using the XML file \verb|xml/s4av.xml|. Open \verb|paraview| and load the \verb|aggs\_level*\_proc.out-master.pvtu| file.
+\end{exercise}
+\begin{exercise}
+In the \verb|xml/s4av.xml| file an uncoupled aggregation factory has been explicitly defined using with some user-chosen aggregation parameters. Make a copy of \verb|xml/s4av.xml| and use the default (uncoupled) aggregation routine that is provided by \muelu if no user-specified aggregation algorithm with parameters is prescribed. Which line in the XML file do you have to remove to obtain this behavior? Compare the results (screen output of aggregates, multigrid hierarchy). Try to visualize the aggregates.
+\end{exercise}
+
+\begin{figure}
+\centering
+%\subfigure[Aggregates with settings from \texttt{xml/s4a.xml}]{\includegraphics[width=0.3\textwidth]{pics/s4al1.png}\includegraphics[width=0.3\textwidth]{pics/s4al2.png}\includegraphics[width=0.3\textwidth]{pics/s4al3.png}}
+%\subfigure[Aggregates with settings from \texttt{xml/s4b.xml} (default parameters)]{\includegraphics[width=0.3\textwidth]{pics/s4bl1.png}\includegraphics[width=0.3\textwidth]{pics/s4bl2.png}\includegraphics[width=0.3\textwidth]{pics/s4bl3.png}}
+\includegraphics[width=0.3\textwidth]{pics/s4bl1.png}\includegraphics[width=0.3\textwidth]{pics/s4bl2.png}\includegraphics[width=0.3\textwidth]{pics/s4bl3.png}
+\caption{Demonstration of different visualization options. Convex hulls with fine level mesh, coarse level mesh and jacks.}
+\label{fig:diffaggregatesstyles}
+\end{figure}
+
+The \verb|AggregationExportFactory| has several parameters which allow to change the visualization of the aggregates. The
+\verb|aggregation: output file: agg style| parameter allows to change the style of the aggregates. It can be \verb|Point Cloud|, \verb|Jacks| or \verb|Convex Hulls|. With the boolean parameter \verb|aggregation: output file: fine graph edges| the factory also writes out mesh information for visualization. Figure \ref{fig:diffaggregatesstyles} shows some examples of visualization. All data is exported to vtk files and can be loaded into \verb|paraview| where it can be combined in overlays. One can, e.g., show the fine level aggregates with the "mesh information" from the next coarser levels which visualizes the connections between aggregates. The \verb|Jacks| style in the rightmost picture of Figure \ref{fig:diffaggregatesstyles} shows which nodes are attached to the supernode in each aggregate.
+
+
+\subsection{Use the CoarseningVisualizationFactory}
+
+A more general alternative to visualize coarsening information is available with the so-called \verb|CoarseningVisualizationFactory|. It uses the same graphical VTK backend for writing out data. But instead of \verb|Aggregates| as input it expects a prolongation operator \verb|P| or \verb|Ptent|. Internally, the coarsening information is reconstructed from the prolongator basis functions through reverse engineering.
+
+\begin{mycomment}
+The prolongator basis functions must not overlap. That is, only transfer operators generated by the \verb|TentativePFactory| or the \verb|SemiCoarsenPFactory| are valid input transfer operators.
+\end{mycomment}
+
+The usage is very similar to the \verb|AggregationExportFactory|:
+\begin{lstlisting}
+<ParameterList name="myCoordTransferFact">
+  <Parameter name="factory"         type="string" value="CoordinatesTransferFactory"/>
+</ParameterList>
+
+<ParameterList name="myVizFact">
+  <Parameter name="factory"   type="string" value="CoarseningVisualizationFactory"/>
+  <Parameter name="P"                      type="string" value="myPFact"/>
+  <Parameter name="visualization: style"   type="string" value="Jacks"/>
+  <Parameter name="visualization: fine graph edges"   type="bool" value="true"/>
+</ParameterList>
+
+<ParameterList name="myRAPFact">
+  <Parameter name="factory"                 type="string" value="RAPFactory"/>
+  <Parameter name="P"                       type="string" value="myPFact"/>
+  <Parameter name="R"                       type="string" value="myRFact"/>
+  <ParameterList name="TransferFactories">
+    <Parameter name="For Coordinates"       type="string" value="myCoordTransferFact"/>
+    <Parameter name="Viz"                   type="string" value="myVizFact"/>
+  </ParameterList>
+</ParameterList>
+\end{lstlisting}
+
+\begin{figure}
+\begin{center}
+\scalebox{0.6}{
+\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
+\def\datawidth{2cm}
+\def\dataheight{0.5cm}
+\def\factorywidth{4cm}
+\def\factoryheight{0.75cm}
+%\draw[help lines] (-10,-10) grid (10,10);
+\begin{scope}[>=triangle 60]
+\node(A) at (-3,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A$};
+\node(Coordinates) at (12,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{Coordinates};
+\node(CoalesceDropFactory) at (-3,8) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{CoalesceDropFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=nothing] (AggregationFactory) {AggregationFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFactory] (TentativePFactory) {TentativePFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=TentativePFactory] (SaPFactory) {SaPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=SaPFactory,node distance=6cm] (TransPFactory) {TransPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=SaPFactory] (RAPFactory) {RAPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=RAPFactory,node distance=9cm] (AggExportFactory) {CoarseningVisualizationFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=AggExportFactory,node distance=6cm] (CoordinatesTransferFactory) {CoordinatesTransferFactory};
+\node(A2) at (-3,-2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A_c$};
+\node(Coordinates2) at (12,-2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{Coordinates};
+\draw[->] (A) -- (CoalesceDropFactory);
+\draw[->] (CoalesceDropFactory) -- node [near start, left] {Graph} (AggregationFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (TentativePFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (SaPFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (RAPFactory);
+\draw[->] (AggregationFactory) -- node [near start, left] {Aggregates} (TentativePFactory);
+\draw[->] (TentativePFactory) -- node [near start, left] {P} (SaPFactory);
+\draw[->] (SaPFactory) -- node [near start, below] {} (TransPFactory);
+\draw[->] (SaPFactory) -- node [near start, left] {P} (RAPFactory);
+\draw[->] (TransPFactory) -- node [near start, below] {R} (RAPFactory);
+\draw[->] (RAPFactory) -- node [near start, below] {} (A2);
+\draw[o->] (RAPFactory) -- (AggExportFactory);
+\draw[o->] (RAPFactory) to[out=-20,in=200] node [near start, right] {} (CoordinatesTransferFactory);
+\draw[->] (TentativePFactory) to[out=0,in=90] node [near start, below] {P} (AggExportFactory);
+\draw[->] (CoalesceDropFactory) to[out=0,in=80] node [near start, right] {DofsPerNode} (AggExportFactory);
+\draw[->] (Coordinates) to[out=270,in=70] node [near end, right] {} (AggExportFactory);
+\draw[->] (AggregationFactory) to[out=0,in=100] node [near start, below] {Aggregates} (CoordinatesTransferFactory);
+\draw[->] (Coordinates) to[out=270,in=90] node [near end, right] {} (CoordinatesTransferFactory);
+\draw[->] (CoordinatesTransferFactory) to[out=270,in=90] node [near end, right] {} (Coordinates2);
+\draw[->,dashed] (TentativePFactory) to[out=0,in=100] node [near start, above] {CoarseMap} (CoordinatesTransferFactory);
+\end{scope}
+\end{tikzpicture}
+} % end scalebox
+\end{center}
+\caption{Visualization of aggregates using the CoarseningVisualizationFactory.}
+\label{fig:simpledesignaggregatesvis2}
+\end{figure}
+
+The most important difference is, that the user has to specify either \verb|P| or \verb|Ptent| as input for visualization. Furthermore, the parameter names for the \verb|CoarseningVisualizationFactory| are different to the corresponding parameters of the \verb|AggregationExportFactory|.
+
+\begin{mycomment}
+Note, that in the factory configuration as shown in Figure \ref{fig:simpledesignaggregatesvis2} one still needs the \verb|Aggregates| for building the coarse level node coordinates in the \verb|CoordinatesTransferFacotory|. That is, for coarsening methods other than aggregation-based coarsening the user has to provide a mechanism to generate the coarse level coordinates (e.g., using geometric considerations).
 \end{mycomment}
 
 \begin{exercise}
-Run the \verb|Laplace 2D| example on a $50\times 50$ mesh using the XML file \verb|xml/s4a.xml|. Visualize the aggregates.
-\end{exercise}
-\begin{exercise}
-In the \verb|xml/s4a.xml| file an uncoupled aggregation factory has been explicitly defined using with some user-chosen aggregation parameters. Make a copy of \verb|xml/s4a.xml| and use the default (uncoupled) aggregation routine that is provided by \muelu if no user-specified aggregation algorithm with parameters is prescribed. Which line in the XML file do you have to remove to obtain this behavior? Compare the results (screen output of aggregates, multigrid hierarchy). Try to visualize the aggregates.
+Run the \verb|Laplace 2D| example on a $50\times 50$ mesh using the XML file \verb|xml/s4av.xml|. Create a copy of the \verb|xml/s4av.xml| file and try to adapt it to use the \verb|CoarseningVisualizationFactory| instead of the \verb|AggregationExportFactory|. The aggregates should be the same in both cases.
 \end{exercise}
 
+\subsection{General remarks}
 Before we close this tutorial there are some general remarks that might help in setting up valid XML files.
 \begin{mycomment}
 In general it is a good idea to use the \textit{Hierarchy} section to register the factories to generate the variables. It is very hard to declare all dependencies in the factory sections itself. In the worst case you declare, e.g., a \verb|UncoupledAggregationFactory| and use it as input for the \verb|TentativePFactory| but forget to declare it also explicitly as input for the aggregation export factory \verb|AggregationExportFactory|. If you \verb|UncoupledAggregationFactory| is not declared as default for \verb|Aggregates| in the \verb|AggregationExportFactory|, the \verb|AggregationExportFactory| will use default aggregates provided by \muelu which are not identical to the aggregates used for building the transfer operators! Missing or wrong dependencies in the factory list are very hard to debug. Therefore one should always start with the \textit{Hierarchy} section and only locally overwrite the dependencies where necessary.
 \end{mycomment}
 
-
-\begin{figure}
-\centering
-\subfigure[Aggregates with settings from \texttt{xml/s4a.xml}]{\includegraphics[width=0.3\textwidth]{pics/s4al1.png}\includegraphics[width=0.3\textwidth]{pics/s4al2.png}\includegraphics[width=0.3\textwidth]{pics/s4al3.png}}
-\subfigure[Aggregates with settings from \texttt{xml/s4b.xml} (default parameters)]{\includegraphics[width=0.3\textwidth]{pics/s4bl1.png}\includegraphics[width=0.3\textwidth]{pics/s4bl2.png}\includegraphics[width=0.3\textwidth]{pics/s4bl3.png}}
-\caption{Different aggregation parameters and the corresponding aggregates}
-\label{fig:diffaggregates}
-\end{figure}
-
-\chapter{Useful commands and debugging}
-
-\section{Export level information}
-Of course, it is possible to export the multigrid hierarchy in matrix market format similar to \S\ref{sec:exportdatasimple} when using the advanced XML file format instead of the simple XML format.
-
-To export the multigrid hierarchy one can use, e.g., the following parameters
-
-\lstinputlisting{../src/xml/s6_export.xml}
-
-\section{Dependency trees}
-\label{sec:dependencytrees}
-For debugging it can be extremely helpful to automatically generate the dependency tree of the factories for a given XML file. However, it shall be noticed that even with a graphical dependency tree it might be hard to find the missing links and dependencies without a sufficient understanding of the overall framework.
-
-To write out the dependencies you just have to put in the \verb|dependencyOutputLevel| parameter. The value gives you the fine level index that you are interested in (e.g., 1 means: print dependencies between level 1 and level 2).
-
-\lstinputlisting{../src/xml/s6_dep.xml}
-
-After running the example you should find a file named \verb|dep_graph.dot| in the current folder which you can transform into a graph using the \verb|dot| utility from the graphviz package.
-Run, e.g. the following commands in your terminal to obtain the following graph:
-\begin{verbatim}
-sed -i 's/label=Graph\]/label=\"Graph\"\]/' dep_graph.dot
-sed -i 's/\\"/"/g' dep_graph.dot
-sed -i 's/"</</' dep_graph.dot
-sed -i 's/>"/>/' dep_graph.dot
-dot -Tpng dep_graph.dot -o dep_graph.dot.png
-\end{verbatim}
-\includegraphics[width=1.0\textwidth]{pics/dep_graph}
-
-Note that the red arrows correspond to the fine level (level 1) and the blue arrows correspond to data on the coarse level (level 2).
-Compare the factory layout in Figure \ref{fig:simpledesignaggregates} with above dependency graph. Try to read it from bottom to top.
-
-\begin{mycomment}
-In case that the file \verb|dep_graph.dot| is not generated you have to check the prerequisites. To be able to auto-generate the dependency graphs you have to compile \muelu with Boost enabled. Furthermore you have to set the \verb|MueLu_ENABLE_Boost_for_real:BOOL = ON| defines flag in your configuration script. If these requirements are not fulfilled you should find the error message \textit{Dependency graph output requires boost and MueLu\_ENABLE\_Boost\_for\_real} in the screen output of \muelu.
-\end{mycomment}
-
-As one can see from the dependency output there are also some internal factories which have not been visualized in the Figures \ref{fig:simpledesign}. A good example is the \verb|NullspaceFactory| which seems to build a dependency cycle with the \verb|TentativePFactory|. In fact, the \verb|NullspaceFactory| is a helper factory which allows to use the user-provided near null space vectors as input on the finest level. On the coarser levels it just loops through the generated coarse set of near null space vectors from the \verb|TentativePFactory|. This is a technical detail which sometimes can cause some problems when the corresponding dependency is not defined properly in the XML file.
-
-
-\section{Graphical assistant for XML file generation}
-
-The \verb|hands-on.py| driver script contains a graphical assistant to generate new XML parameter files in the advanced \muelu file format.
-
-Just run the \verb|hands-on.py| script and choose a problem type from the list. Then choose option 2 to set the xml file. If you enter a filename that does not exist then the assistant is started to generate that new XML file.
-
-\begin{center}\includegraphics[width=10cm]{pics/tut1_15.png} \end{center}
-
-Just go through the menu and make your choices for level smoothers, transfer operators and so on. Do not forget to call option 6 to save the XML file under the given name, that you have entered before. Then you can use option 7 to go back to the main menu for the example problem and try your new preconditioner with your parameter choices.
-
-\begin{mycomment}
-Of course, we could have introduced this feature with the earlier tutorials, but the idea was to familiarize the user with the XML files.
-\end{mycomment}
-
-\chapter{Challenge: elasticity example}
-\section{Practical example}
-
-For the second challenge, we consider an 2D elasticity example with $7020$ degrees of freedom. No further information is provided (geometry, discretization technique, \ldots).
-
-\section{User-interface}
-Run the \verb|hands-on.sh| script and choose the option 5 for the elasticity. The script automatically generates a XML file with reference multigrid parameters which are far from being optimal. The resulting problem matrix is symmetric. Therefore, we can use a CG method as outer linear solver.
-
-\begin{exercise}
-Open the \verb|stru2d_parameters.xml| file by pressing option 3. Try to find optimized multigrid settings using your knowledge from the previous tutorials. We have 2 (displacement) degrees of freedom per node and 3 vectors describing the near null space components (rigid body modes). All this information is automatically set correctly by the \verb|hands-on.py| script.
-Run the example. Check the screen output (using option 1) and verify \verb|blockdim=2| on level 1 and \verb|blockdim=3| on level 2.
-\end{exercise}
-
-In the screen output of the \verb|CoalesceDropFactory| the \verb|blockdim| denotes the number of degrees of freedom per node (or super node on the coarser levels). Since the number of near null space vectors differs from the number of PDE equations, the number of degrees of freedom per node changes on the different multigrid levels.
-
-\begin{exercise}
-Open the XML parameter file (choose option 3) and try to find optimized settings. Use the advanced XML file format. Save the file, rerun the example (option 0) and compare the output with the reference results.
-\end{exercise}
-
-\begin{mycomment}
-Use \S\ref{sec:generalhings} for a general step-by-step procedure to optimize the multigrid parameters.
-\end{mycomment}
-
-\begin{exercise}
-How do the reference settings and your XML parameter settings perform when increasing the number of processors?
-\end{exercise}
-
-\begin{exercise}
-Compare the results of the reference method and your preconditioner parameters when changing to a GMRES solver (instead of CG). What is changing? What about the solver timings?
-\end{exercise}
-
-
-\part{Expert tutorials}
-
-\chapter{Using \muelu in user applications}
-
-This tutorial demonstrates how to use \muelu from within user applications in C++. In \cite[Section 2.6]{Mue} it is explained how to use \muelu through the \texttt{MueLu::CreateE/TpetraPreconditioner} interface. This interface is designed for beginners which want to try \muelu through standard \trilinos interfaces. Note that there is also support for \stratimikos. Please refer to the \texttt{examples} in the \muelu folder for more details.
-
-This tutorial aims at more advanced methods to use \muelu, creating an explicit instance of some \muelu classes like \texttt{MueLu::Hierarchy} and \texttt{MueLu::HierarchyManager}. In the next sections we give some code snippets. Most of them are borrowed form the \texttt{laplace2d.cpp} file in the tutorial.
-
-\section{Preparations}
-First of all, we have to define a communicator object.
-\printCppListing{laplace2d.cpp_2.fragment}
-
-For the multigrid method we need a linear operator $A$. For demonstration purposes, here we just generate a 2D Laplacian operator using the \textsc{Galeri} package (see \ref{lab:examplesym}). In this example we use \epetra for the underlying linear algebra framework, but it shall be mentioned that it works for \tpetra in a similar way (refer to the code examples in the \muelu examples folder).
-\printCppListing{laplace2d.cpp_4.fragment}
-
-\muelu is based on \xpetra which provides a common interface both for \epetra and \tpetra. Therefore we have to encapsulate our \epetra objects into \xpetra wrapper objects. This is done using the following code.
-\printCppListing{laplace2d.cpp_6.fragment}
-Note that the \muelu setup routines require a \texttt{Xpetra::Matrix} object. The wrapper class \texttt{Xpetra::CrsMatrixWrap} is just a wrapper derived from \texttt{Xpetra::Matrix} which manages a \texttt{Xpetra::CrsMatrix} object which is the common base class for both \epetra and \tpetra CRS matrix classes. The details are not really important as long as one understands that one needs a \texttt{Xpetra::Matrix} object for \muelu in the end.
-With the \texttt{SetFixedBlockSize} routine we state that there is only one degree of freedom per node (pure Laplace problem).
-For aggregation-based algebraic multigrid methods one has to provide a valid set of near null space vectors to produce transfer operators. In case of a Laplace problem we just use a constant vector.
-\printCppListing{laplace2d.cpp_8.fragment}
-
-\section{Setup phase}
-
-With a fine level operator $A$ available as \texttt{Xpetra::Matrix} object and a set of near null space vectors (available as \texttt{Xpetra::MultiVector}) all minimum requirements are fulfilled for generating an algebraic multigrid hierarchy. There are two different ways to setup a multigrid hierarchy in \muelu. One can either use a parameter list driven setup process which accepts either \texttt{Teuchos::ParameterList} objects or XML files in two different XML file formats. Alternatively, one can use the \muelu C++ API to define the multigrid setup at compile time. In the next sections we show both variants.
-
-\subsection{XML Interface}
-
-The most comfortable way to declare the multigrid parameters for \muelu is using the XML interface. In fact, \muelu provides two different XML interfaces. There is a simplified XML interface for multigrid users and a more advanced XML interface for expert which allows to make use of all features of \muelu as a multigrid framework. Both XML file formats are introduced in the previous sections of this hands on tutorial.
-However, for the C++ code it makes no difference which type of XML interface is used.
-
-Assuming that we have a \texttt{Teuchos::ParameterList} object with valid \muelu parameters we can create a \texttt{MueLu::HierarchyManager} object
-%First of all, one has to create a \texttt{MueLu::ParameterListInterpreter} object which either accepts a \texttt{Teuchos::ParameterList} or a file with XML parameters.
-\printCppListing{ScalingTestParamList.cpp_2.fragment}
-For an example how to fill the parameter list the reader may refer to \cite[Section 2.3]{Mue}. Note that there are routines to fill the parameter lists with the information from XML files. You can also directly provide a file name of a XML file to the \texttt{Muelu::ParameterListInterpreter}. For details you may refer to the doxygen documentation or the example in \texttt{laplace2d.cpp}.
-
-Next a new \texttt{MueLu::Hierarchy} object is generated
-\printCppListing{ScalingTestParamList.cpp_4.fragment}
-The \texttt{CreateHierarchy} creates a new empty multigrid hierarchy with a finest level only. The user has to feed in the linear operator $A$ and the near null space vector. If further information is available, such as the node coordinates, they can be also stored in the finest level. The coordinates are needed, e.g., for rebalancing the coarse levels.
-Finally, the \texttt{SetupHierarchy} call initiates the coarsening process and the multigrid hierarchy is built according to the parameters from the \texttt{mueluList} parameters.
-\printCppListing{ScalingTestParamList.cpp_6.fragment}
-
-As XML parameter file any of the files shown in the previous tutorials can be used.
-
-\begin{mycomment}
-As one can see from the last code snippet, the \texttt{Hierarchy} allows access to all important parts of the multigrid method before setup. So, if you have to feed in some non-standard information, this is the way how it works. Using the \texttt{CreateE/TpetraPreconditioner} interface may be easier but does not allow to access the finest level before setup.
-\end{mycomment}
-
-Once the \texttt{SetupHierarchy} call is completed, the multigrid hierarchy is ready to use. The reader can skip the next section about the C++ interface and proceed with \S\ref{sec:muelu_belospreconditioner} for an example how to use the multigrid method as preconditioner within a Krylov subspace method from the \belos package.
-
-\subsection{C++ Interface}
-
-As an alternative to the XML interfaces, the user can also define the multigrid hierarchy using the C++ API directly. In contrary to the XML interface which allows to build the layout of the multigrid preconditioner at runtime, the preconditioner is fully defined at compile time when using the C++ interface.
-
-First, a \texttt{MueLu::Hierarchy} object has to be defined, which manages the multigrid hierarchy including all multigrid levels. It provides routines for the multigrid setup and the multigrid cycle algorithms (such as V-cycle and W-cycle).
-\printCppListing{ScalingTest.cpp_6.fragment}
-
-There are some member functions which can be used to describe the basic multigrid hierarchy. The \texttt{SetMaxCoarseSize} member function is used to set the maximum size of the coarse level problem before the coarsening process can be stopped.
-\printCppListing{ScalingTest.cpp_8.fragment}
-
-Next, one defines an empty \texttt{MueLu::Level} object for the finest level. The \texttt{MueLu::Level} objects represent a data container storing the internal variables on each multigrid level. The user has to provide and fill the level container for the finest level only. The \texttt{MueLu::Hierarchy} object then automatically generates the coarse levels using the multigrid parameters. The absolute minimum requirements for the finest level that the user has to provide is the fine level operator $A$ which represents the fine level matrix. \muelu is based on \xpetra. So, the matrix $A$ has to be of type \texttt{Xpetra::Matrix}. In addition, the user should also provide a valid set of near null space vectors. For a Laplace problem we can just use the constant \texttt{nullspace} vector that has previously been defined. Some routines need additional information. For example, the user has to provide the node coordinates for repartitioning.
-\printCppListing{ScalingTest.cpp_10.fragment}
-\begin{mycomment}
-When including the \texttt{MueLu\_UseShortNames.hpp} header file the template parameters usually can be dropped for compiling. The most important template parameters are \texttt{SC} for the scalar type, \texttt{LO} for the local ordinal type (usually \texttt{int}) and \texttt{GO} for the global ordinal type. For a detailed description of the template parameters the reader may refer to the \tpetra documentation.
-\end{mycomment}
-
-A \texttt{MueLu::FactoryManager} object is used for the internal management of data dependencies and generating algorithms of the multigrid setup. Even though not absolutely necessary, we show the usage of the \texttt{MueLu::FactoryManager} object as it allows for  user-specific enhancements of the multigrid code.
-\printCppListing{ScalingTest.cpp_12.fragment}
-
-The user can define its own factories for performing different tasks in the setup process. The following code shows how to define a smoothed aggregation transfer operator and a restriction operator. The \texttt{MueLu::RAPFactory} is used for the (standard) Galerkin product to generate the coarse level matrix $A$.
-\printCppListing{ScalingTest.cpp_14.fragment}
-
-The user-defined factories have to be registered in the \texttt{FactoryManager} using the lines
-\printCppListing{ScalingTest.cpp_16.fragment}
-\begin{mycomment}
-If you forget to register the new factories, the \texttt{FactoryManager} will use some internal default factories for being responsible to create the corresponding variables. Then your user-specified factories are just ignored during the multigrid setup!
-\end{mycomment}
-Note, that the \texttt{FactoryManager} is also responsible for resolving all dependencies between different factories. That is, after the user-defined factories have been registered, all factories that request variable $P$ are provided with the prolongation operator $P$ that has been generated by the registered factory \texttt{PFact}. If there is some data requested for which no factory has been registered by the user, the \texttt{FactoryManager} manages an internal list for reasonable default choices and default factories.
-
-Next, the user has to declare a level smoother. The following code can be used to define a symmetric Gauss-Seidel smoother. Other methods can be set up in a similar way.
-\printCppListing{ScalingTest.cpp_18.fragment}
-Before the level smoother can be used, a \texttt{MueLu::SmootherFactory} has to be defined for the smoother factory. The \texttt{SmootherFactory} is used in the multigrid setup to generate level smoothers for the corresponding levels using the prototyping design pattern. Note, that the \texttt{SmootherFactory} has also to be registered in the \texttt{FactoryManager} object. If the user forgets this, the multigrid setup will use some kind of default smoother, i.e., the user-chosen smoother options are just ignored.
-\printCppListing{ScalingTest.cpp_20.fragment}
-Once the \texttt{FactoryManager} is set up, it can be used with the \texttt{Hierarchy::Setup} routine to initiate the coarsening process and set up the multigrid hierarchy.
-\printCppListing{ScalingTest.cpp_22.fragment}
-
-\section{Iteration phase}
-\label{sec:iterationphase}
-Once the setup phase is completed, the \muelu multigrid hierarchy is ready for being used.
-
-There are several ways how to use the multigrid method. One can apply the multigrid method as standalone solver for linear systems. Multigrid methods are also known to be efficient preconditioners within iterative (Krylov) solvers such as CG or GMRES methods.
-
-In the next subsections it is demonstrated how to use \muelu as standalone solver and as preconditioner for iterative solvers from the \belos and \aztecoo package in \trilinos.
-
-For solving a linear system $Ax=b$ we need a right hand side vector $b$. When using iterative solvers we also need an initial guess for the solution vector.
-\printCppListing{laplace2d.cpp_7.fragment}
-In this example we just create \epetra vectors and wrap them into \xpetra objects. The right hand side vector is initialized with one and the solution vector is filled with random values.
-
-\subsection{\muelu as multigrid solver}
-To use \muelu as standalone solver one can use the following code
-\printCppListing{laplace2d.cpp_18.fragment}
-In this code snippet a solution vector is created using the \texttt{Xpetra::VectorFactory} and initialized with the content from the solution vector \verb|xX| containing the initial guess. Then, the \texttt{MueLu::Hierarchy} object is set to the non-preconditioner mode and the \texttt{Iterate} routine is called
-to perform \texttt{mgridSweeps} sweeps with the chosen multigrid cycle. If successful, the \texttt{mgridLsgVec} vector contains the solution.
-
-\subsection{\muelu as preconditioner for \aztecoo}
-Commonly, multigrid methods are used as preconditioners for iterative linear solvers. Here, we show how to use the \texttt{MueLu::Hierarchy} as preconditioner within an \aztecoo solver (using \epetra).
-After an \epetra solution vector has been created by
-\lstinputlisting[firstline=2]{laplace2d.cpp_14.fragment}
-the following code can be used to apply the \muelu hierarchy as preconditioner within the \aztecoo CG solver
-\lstinputlisting[firstline=2]{laplace2d.cpp_16.fragment}
-Basically, the \muelu hierarchy is put into an \texttt{MueLu::EpetraOperator} object, which implements the \epetra interface for preconditioners.
-With the \texttt{SetPrecOperator} routine from the \aztecoo solver the \texttt{MueLu::EpetraOperator} object then is defined as preconditioner.
-
-\subsection{\muelu as preconditioner for \belos}
-\label{sec:muelu_belospreconditioner}
-%% common part
-
-\belos is the successor package of \aztecoo for linear solvers in \trilinos and works both for \epetra and \tpetra. Here we demonstrate how to use \muelu as preconditioner for \belos solvers using \xpetra.
-First, we have to declare objects for the solution vector and the right hand side vector in \xpetra. The following code just uses a random vector for the initial guess and solution variable.
-\printCppListing{ScalingTest.cpp_24.fragment}
-
-In the following we demonstrate how to use the \muelu hierarchy as preconditioner within a \belos solver. There are special wrapper objects for wrapping the \xpetra matrix and the \muelu hierarchy to \belos compatible objects. These can be used to define a linear problem for use with \belos.
-\printCppListing{ScalingTest.cpp_26.fragment}
-
-Then, one can set up the \belos solver. For a \belos GMRES solver one uses
-\printCppListing{ScalingTest.cpp_28.fragment}
-Finally, we can solve the linear system using \belos with the \muelu multigrid preconditioner (left-preconditioning) by calling
-\printCppListing{ScalingTest.cpp_30.fragment}
-and perform some convergence checks
-\printCppListing{ScalingTest.cpp_32.fragment}
-
-\section{Full example}
-
-The reader may refer to \texttt{laplace2d.cpp} for a working example to study the source code. This demonstration program has some more features that are not discussed in this tutorial.
-
-\begin{exercise}
-Compile the example in \texttt{laplace2d.cpp} and then run the program in parallel using two processors
-        \begin{verbatim}
-        mpirun -np 2 ./MueLu_tutorial_laplace2d.exe --help
-        \end{verbatim}
-        Study the screen output and try to run the example with an XML file as input for the multigrid setup.
-\end{exercise}
-\begin{exercise}
-Create large scale examples using the \verb|nx| and \verb|ny| parameters for a finer mesh. Choose reasonable numbers for \verb|nx| and \verb|ny| for your machine and make use of your knowledge about \muelu for generating efficient preconditioners.
-\end{exercise}
-
-\chapter{ML ParameterList interpreter}
-
-\section{Backwards compatibility}
-\ml \cite{mlguide} is the predecessor multigrid package of \muelu in \trilinos and widely used in the community for smoothed aggregation multigrid methods. \ml is implemented in C and known for its good performance properties. However, the disadvantage is that \ml is harder to adapt to new applications and non-standard problems. Furthermore, \ml uses its own internal data structure and is somewhat limited to the use with \epetra objects only. In contrast, \muelu provides a fully flexible multigrid framework which is designed to be adapted to any kind of new application with non-standard requirements. Furthermore, it is based on \xpetra and therefore can be used both with \epetra or \tpetra. Nevertheless, it is an important point to provide some kind of backwards compatibility to allow \ml users to easily migrate to \muelu (or make experiments with \muelu without having to write to much new code).
-
-In this tutorial we present the \texttt{MueLu::MLParameterListInterpreter} which provides support for the most important \ml parameters to be used with \muelu.
-
-\section{C++ part}
-
-\subsection{Preparations}
-In order to use \muelu (instead or aside of \ml) you first have to add it to your application. Please refer to the \muelu user guide for information about compilation and linking (see \cite{Mue}). Basically, if your application is already working with \ml you should only need to compile and install \muelu and make sure that the \muelu libraries are found by the linker.
-
-\subsection{C++ interface}
-
-
-In the following we assume that the linear operator $A$ is available as \verb|RCP<Xpetra::Matrix> A|.
-
-Then we create a parameter list and fill it with \ml parameters. Please refer to the \ml guide \cite{mlguide} for a complete list of available parameters.
-\printCppListingSkipLine{MLParameterList.cpp_6.fragment}
-
-\begin{mycomment}
-Be aware that the \verb|MLParameterListInterpreter| does not support all \ml parameters but only the most important ones (e.g., smoothers, transfer operators, rebalancing, ...). There is, e.g., no support for the Maxwell specific enhancements in \ml.
-\end{mycomment}
-
-Instead of defining the \ml parameters by hand in the ParameterList you can also read in XML files with \ml parameters using
-\printCppListingSkipLine{MLParameterList.cpp_4.fragment}
-
-Next, you create a \verb|MLParameterListInterpreter| object using the parameters and create a new \verb|MueLu::Hierarchy| from it.
-\printCppListingSkipLine{MLParameterList.cpp_8.fragment}
-
-Of course, we have to provide all necessary information for the multigrid setup routine. This does not only include the fine level operator but also the set of near null space vectors. Assuming that \verb|numPDEs| stores the number of equations (and near null space vectors) the following code allows to produce piecewise constant standard near null space vectors (which should be valid for many PDE discretizations).
-\printCppListingSkipLine{MLParameterList.cpp_10.fragment}
-
-Then we just feed in the information to the finest level
-\printCppListingSkipLine{MLParameterList.cpp_11.fragment}
-
-Finally we call the \verb|Setup| routine which actually builds the multigrid hierarchy.
-\printCppListingSkipLine{MLParameterList.cpp_13.fragment}
-
-Once we have the multigrid hierarchy set up we can use it the same way as described in \S\ref{sec:iterationphase}.
-
-\begin{exercise}
-Study the source code of \texttt{../src/MLParameterList.cpp} and compile it. Run the executable \verb|MueLu_tutorial_MLParameterList.exe| with the \verb|--help| command line parameter to get an overview of all available command line parameters. Run the example using
-\begin{verbatim}
-./MueLu_tutorial_MLParameterList.exe --ml=1 --muelu=0
-   --xml=xml/ml_ParameterList.xml --linAlgebra=Epetra
-\end{verbatim}
-and study the \ml output. Compare the output and results when switching to \muelu using the same input file
-\begin{verbatim}
-./MueLu_tutorial_MLParameterList.exe --ml=0 --muelu=1
-   --xml=xml/ml_ParameterList.xml --linAlgebra=Epetra
-\end{verbatim}
-\end{exercise}
-
-\begin{exercise}
-Play around with the parameters from \verb|MueLu_tutorial_MLParameterList.exe|. Change, e.g., the problem type to a 2D Laplace problem (\verb|--matrixType=Laplace2D|) and adapt the \verb|--nx| and \verb|--ny| parameters accordingly.
-Try to run both \ml and \muelu and compare the results. Do you find significant differences?
-\end{exercise}
-
 \chapter{Advanced concepts}
+
+As already mentioned in the beginning, \muelu~is designed as a multigrid framework, and, even though initiated as an aggregation-based algebraic multigrid method, it can also be used for other kinds of coarsening methods. In this chapter we demonstrate the combination of a semi-coarsening method with an aggregation-based coarsening on the coarser levels. Semi-coarsening is combined with a line-smoothing method which then changes to a point-relaxation smoothing once no further semi-coarsening is possible. In both cases, the semi-coarsening and the line-smoothing, the key element here is the dynamic switch from one to the another coarsening or smoothing strategy during runtime.
 
 \section{Semi-coarsening}
 
@@ -1789,6 +1720,336 @@ Finally, it is important to declare all necessary main factories in the \verb|Hi
 \end{lstlisting}
 
 \section{Line-smoothing}
+
+
+
+\chapter{Useful commands and debugging}
+
+\section{Export level information}
+Of course, it is possible to export the multigrid hierarchy in matrix market format similar to \S\ref{sec:exportdatasimple} when using the advanced XML file format instead of the simple XML format.
+
+To export the multigrid hierarchy one can use, e.g., the following parameters
+
+\lstinputlisting{../src/xml/s6_export.xml}
+
+\section{Dependency trees}
+\label{sec:dependencytrees}
+For debugging it can be extremely helpful to automatically generate the dependency tree of the factories for a given XML file. However, it shall be noticed that even with a graphical dependency tree it might be hard to find the missing links and dependencies without a sufficient understanding of the overall framework.
+
+To write out the dependencies you just have to put in the \verb|dependencyOutputLevel| parameter. The value gives you the fine level index that you are interested in (e.g., 1 means: print dependencies between level 1 and level 2).
+
+\lstinputlisting{../src/xml/s6_dep.xml}
+
+After running the example you should find a file named \verb|dep_graph.dot| in the current folder which you can transform into a graph using the \verb|dot| utility from the graphviz package.
+Run, e.g. the commands
+\begin{verbatim}
+sed -i 's/label=Graph\]/label=\"Graph\"\]/' dep_graph.dot
+sed -i 's/\\"/"/g' dep_graph.dot
+sed -i 's/"</</' dep_graph.dot
+sed -i 's/>"/>/' dep_graph.dot
+dot -Tpng dep_graph.dot -o dep_graph.dot.png
+\end{verbatim}
+in your terminal to obtain the graph as given in Figure \ref{fig:autograph}.
+\begin{figure}
+\begin{center}
+\includegraphics[width=1.0\textwidth]{pics/dep_graph}
+\end{center}
+\caption{Visualization of aggregates using the CoarseningVisualizationFactory.}
+\label{fig:autograph}
+\end{figure}
+
+Note that the red arrows correspond to the fine level (level 1) and the blue arrows correspond to data on the coarse level (level 2).
+
+\begin{mycomment}
+In case that the file \verb|dep_graph.dot| is not generated you have to check the prerequisites. To be able to auto-generate the dependency graphs you have to compile \muelu with Boost enabled. Furthermore you have to set the \verb|MueLu_ENABLE_Boost_for_real:BOOL = ON| defines flag in your configuration script. If these requirements are not fulfilled you should find the error message \textit{Dependency graph output requires boost and MueLu\_ENABLE\_Boost\_for\_real} in the screen output of \muelu.
+\end{mycomment}
+
+As one can see from the dependency output there are also some internal factories which have not been visualized in the Figures \ref{fig:simpledesign}. A good example is the \verb|NullspaceFactory| which seems to build a dependency cycle with the \verb|TentativePFactory|. In fact, the \verb|NullspaceFactory| is a helper factory which allows to use the user-provided near null space vectors as input on the finest level. On the coarser levels it just loops through the generated coarse set of near null space vectors from the \verb|TentativePFactory|. This is a technical detail which sometimes can cause some problems when the corresponding dependency is not defined properly in the XML file.
+Another example for a special factory is the \verb|NoFactory|. This special factory is used for all data which is kept in memory and needed by the level smoothers during the iteration. Usually, the final transfer operators $P$ and $R$ as well as the level matrix $A$ are transformed to \verb|NoFactory| objects after the setup phase has completed. However, expert users can also use the \verb|NoFactory| mechanism for special data during the setup phase. But this is not recommended.
+
+\begin{exercise}
+Compare the factory layout in Figure \ref{fig:simpledesignaggregates} with above dependency graph. Try to read it from bottom to top. Which factories are missing in Figure \ref{fig:simpledesignaggregates}? Which variables are missing in Figure \ref{fig:simpledesignaggregates}?
+\end{exercise}
+
+\section{Helper routines for mathematical analysis of level operators}
+
+There is a small helper transfer factory \verb|MatrixAnalysisFactory| which can be registered in the \verb|RAPFactory|. It checks the current fine level operator $A$ for certain properties and prints the result on screen. The intention of this helper factory is to provide a simple tool for tracking mathematical problems, such as nan's or inf entries during the calculation.
+
+The \verb|MatrixAnalysisFactory| is used as follows:
+\begin{lstlisting}
+<ParameterList name="myAnaFact">
+  <Parameter name="factory"   type="string" value="MatrixAnalysisFactory"/>
+</ParameterList>
+
+<ParameterList name="myRAPFact">
+  <Parameter name="factory"                 type="string" value="RAPFactory"/>
+  <ParameterList name="TransferFactories">
+    <Parameter name="Analysis"              type="string" value="myAnaFact"/>
+  </ParameterList>
+</ParameterList>
+\end{lstlisting}
+
+
+In particular, the factory performs the following checks:
+\begin{itemize}
+\item Check for empty processors in distribution. In contrary to the \ml~package, empty processors should technically not be a problem for \muelu, but it can be an indicator for a failure in the rebalancing mechanism.
+\item Check the matrix diagonal for zero entries or nan's/inf values. Zero entries on the diagonal are usually catastrophic for any kind of smoothing, including relaxation-based level smoothers or transfer operator smoothing. Infinite values are a sign of defect operators or can result from incited error modes (e.g., missing or insufficient damping for the level smoothers).
+\item Check whether matrix is diagonally dominant. Diagonal dominance is an important property for (relaxation-based) level smoothers.
+\item Apply a one-vector and a random vector to the operator $A$ and check the result for zeros and inf values.
+\item Perform one sweep with a damped Jacobi method applied to the one-vector and a random vector. Check the result for zeros and inf values.
+\end{itemize}
+
+\section{Graphical assistant for XML file generation}
+
+The \verb|hands-on.py| driver script contains a graphical assistant to generate new XML parameter files in the advanced \muelu file format.
+
+Just run the \verb|hands-on.py| script and choose a problem type from the list. Then choose option 2 to set the xml file. If you enter a filename that does not exist then the assistant is started to generate that new XML file.
+
+\begin{center}\includegraphics[width=10cm]{pics/tut1_15.png} \end{center}
+
+Just go through the menu and make your choices for level smoothers, transfer operators and so on. Do not forget to call option 6 to save the XML file under the given name, that you have entered before. Then you can use option 7 to go back to the main menu for the example problem and try your new preconditioner with your parameter choices.
+
+\begin{mycomment}
+Of course, we could have introduced this feature with the earlier tutorials, but the idea was to familiarize the user with the XML files.
+\end{mycomment}
+
+\chapter{Challenge: elasticity example}
+\section{Practical example}
+
+For the second challenge, we consider an 2D elasticity example with $7020$ degrees of freedom. No further information is provided (geometry, discretization technique, \ldots).
+
+\section{User-interface}
+Run the \verb|hands-on.sh| script and choose the option 5 for the elasticity. The script automatically generates a XML file with reference multigrid parameters which are far from being optimal. The resulting problem matrix is symmetric. Therefore, we can use a CG method as outer linear solver.
+
+\begin{exercise}
+Open the \verb|stru2d_parameters.xml| file by pressing option 3. Try to find optimized multigrid settings using your knowledge from the previous tutorials. We have 2 (displacement) degrees of freedom per node and 3 vectors describing the near null space components (rigid body modes). All this information is automatically set correctly by the \verb|hands-on.py| script.
+Run the example. Check the screen output (using option 1) and verify \verb|blockdim=2| on level 1 and \verb|blockdim=3| on level 2.
+\end{exercise}
+
+In the screen output of the \verb|CoalesceDropFactory| the \verb|blockdim| denotes the number of degrees of freedom per node (or super node on the coarser levels). Since the number of near null space vectors differs from the number of PDE equations, the number of degrees of freedom per node changes on the different multigrid levels.
+
+\begin{exercise}
+Open the XML parameter file (choose option 3) and try to find optimized settings. Use the advanced XML file format. Save the file, rerun the example (option 0) and compare the output with the reference results.
+\end{exercise}
+
+\begin{mycomment}
+Use \S\ref{sec:generalhings} for a general step-by-step procedure to optimize the multigrid parameters.
+\end{mycomment}
+
+\begin{exercise}
+How do the reference settings and your XML parameter settings perform when increasing the number of processors?
+\end{exercise}
+
+\begin{exercise}
+Compare the results of the reference method and your preconditioner parameters when changing to a GMRES solver (instead of CG). What is changing? What about the solver timings?
+\end{exercise}
+
+
+\part{Expert tutorials}
+
+\chapter{Using \muelu in user applications}
+
+This tutorial demonstrates how to use \muelu from within user applications in C++. In \cite[Section 2.6]{Mue} it is explained how to use \muelu through the \texttt{MueLu::CreateE/TpetraPreconditioner} interface. This interface is designed for beginners which want to try \muelu through standard \trilinos interfaces. Note that there is also support for \stratimikos. Please refer to the \texttt{examples} in the \muelu folder for more details.
+
+This tutorial aims at more advanced methods to use \muelu, creating an explicit instance of some \muelu classes like \texttt{MueLu::Hierarchy} and \texttt{MueLu::HierarchyManager}. In the next sections we give some code snippets. Most of them are borrowed form the \texttt{laplace2d.cpp} file in the tutorial.
+
+\section{Preparations}
+First of all, we have to define a communicator object.
+\printCppListing{laplace2d.cpp_2.fragment}
+
+For the multigrid method we need a linear operator $A$. For demonstration purposes, here we just generate a 2D Laplacian operator using the \textsc{Galeri} package (see \ref{lab:examplesym}). In this example we use \epetra for the underlying linear algebra framework, but it shall be mentioned that it works for \tpetra in a similar way (refer to the code examples in the \muelu examples folder).
+\printCppListing{laplace2d.cpp_4.fragment}
+
+\muelu is based on \xpetra which provides a common interface both for \epetra and \tpetra. Therefore we have to encapsulate our \epetra objects into \xpetra wrapper objects. This is done using the following code.
+\printCppListing{laplace2d.cpp_6.fragment}
+Note that the \muelu setup routines require a \texttt{Xpetra::Matrix} object. The wrapper class \texttt{Xpetra::CrsMatrixWrap} is just a wrapper derived from \texttt{Xpetra::Matrix} which manages a \texttt{Xpetra::CrsMatrix} object which is the common base class for both \epetra and \tpetra CRS matrix classes. The details are not really important as long as one understands that one needs a \texttt{Xpetra::Matrix} object for \muelu in the end.
+With the \texttt{SetFixedBlockSize} routine we state that there is only one degree of freedom per node (pure Laplace problem).
+For aggregation-based algebraic multigrid methods one has to provide a valid set of near null space vectors to produce transfer operators. In case of a Laplace problem we just use a constant vector.
+\printCppListing{laplace2d.cpp_8.fragment}
+
+\section{Setup phase}
+
+With a fine level operator $A$ available as \texttt{Xpetra::Matrix} object and a set of near null space vectors (available as \texttt{Xpetra::MultiVector}) all minimum requirements are fulfilled for generating an algebraic multigrid hierarchy. There are two different ways to setup a multigrid hierarchy in \muelu. One can either use a parameter list driven setup process which accepts either \texttt{Teuchos::ParameterList} objects or XML files in two different XML file formats. Alternatively, one can use the \muelu C++ API to define the multigrid setup at compile time. In the next sections we show both variants.
+
+\subsection{XML Interface}
+
+The most comfortable way to declare the multigrid parameters for \muelu is using the XML interface. In fact, \muelu provides two different XML interfaces. There is a simplified XML interface for multigrid users and a more advanced XML interface for expert which allows to make use of all features of \muelu as a multigrid framework. Both XML file formats are introduced in the previous sections of this hands on tutorial.
+However, for the C++ code it makes no difference which type of XML interface is used.
+
+Assuming that we have a \texttt{Teuchos::ParameterList} object with valid \muelu parameters we can create a \texttt{MueLu::HierarchyManager} object
+%First of all, one has to create a \texttt{MueLu::ParameterListInterpreter} object which either accepts a \texttt{Teuchos::ParameterList} or a file with XML parameters.
+\printCppListing{ScalingTestParamList.cpp_2.fragment}
+For an example how to fill the parameter list the reader may refer to \cite[Section 2.3]{Mue}. Note that there are routines to fill the parameter lists with the information from XML files. You can also directly provide a file name of a XML file to the \texttt{Muelu::ParameterListInterpreter}. For details you may refer to the doxygen documentation or the example in \texttt{laplace2d.cpp}.
+
+Next a new \texttt{MueLu::Hierarchy} object is generated
+\printCppListing{ScalingTestParamList.cpp_4.fragment}
+The \texttt{CreateHierarchy} creates a new empty multigrid hierarchy with a finest level only. The user has to feed in the linear operator $A$ and the near null space vector. If further information is available, such as the node coordinates, they can be also stored in the finest level. The coordinates are needed, e.g., for rebalancing the coarse levels.
+Finally, the \texttt{SetupHierarchy} call initiates the coarsening process and the multigrid hierarchy is built according to the parameters from the \texttt{mueluList} parameters.
+\printCppListing{ScalingTestParamList.cpp_6.fragment}
+
+As XML parameter file any of the files shown in the previous tutorials can be used.
+
+\begin{mycomment}
+As one can see from the last code snippet, the \texttt{Hierarchy} allows access to all important parts of the multigrid method before setup. So, if you have to feed in some non-standard information, this is the way how it works. Using the \texttt{CreateE/TpetraPreconditioner} interface may be easier but does not allow to access the finest level before setup.
+\end{mycomment}
+
+Once the \texttt{SetupHierarchy} call is completed, the multigrid hierarchy is ready to use. The reader can skip the next section about the C++ interface and proceed with \S\ref{sec:muelu_belospreconditioner} for an example how to use the multigrid method as preconditioner within a Krylov subspace method from the \belos package.
+
+\subsection{C++ Interface}
+
+As an alternative to the XML interfaces, the user can also define the multigrid hierarchy using the C++ API directly. In contrary to the XML interface which allows to build the layout of the multigrid preconditioner at runtime, the preconditioner is fully defined at compile time when using the C++ interface.
+
+First, a \texttt{MueLu::Hierarchy} object has to be defined, which manages the multigrid hierarchy including all multigrid levels. It provides routines for the multigrid setup and the multigrid cycle algorithms (such as V-cycle and W-cycle).
+\printCppListing{ScalingTest.cpp_6.fragment}
+
+There are some member functions which can be used to describe the basic multigrid hierarchy. The \texttt{SetMaxCoarseSize} member function is used to set the maximum size of the coarse level problem before the coarsening process can be stopped.
+\printCppListing{ScalingTest.cpp_8.fragment}
+
+Next, one defines an empty \texttt{MueLu::Level} object for the finest level. The \texttt{MueLu::Level} objects represent a data container storing the internal variables on each multigrid level. The user has to provide and fill the level container for the finest level only. The \texttt{MueLu::Hierarchy} object then automatically generates the coarse levels using the multigrid parameters. The absolute minimum requirements for the finest level that the user has to provide is the fine level operator $A$ which represents the fine level matrix. \muelu is based on \xpetra. So, the matrix $A$ has to be of type \texttt{Xpetra::Matrix}. In addition, the user should also provide a valid set of near null space vectors. For a Laplace problem we can just use the constant \texttt{nullspace} vector that has previously been defined. Some routines need additional information. For example, the user has to provide the node coordinates for repartitioning.
+\printCppListing{ScalingTest.cpp_10.fragment}
+\begin{mycomment}
+When including the \texttt{MueLu\_UseShortNames.hpp} header file the template parameters usually can be dropped for compiling. The most important template parameters are \texttt{SC} for the scalar type, \texttt{LO} for the local ordinal type (usually \texttt{int}) and \texttt{GO} for the global ordinal type. For a detailed description of the template parameters the reader may refer to the \tpetra documentation.
+\end{mycomment}
+
+A \texttt{MueLu::FactoryManager} object is used for the internal management of data dependencies and generating algorithms of the multigrid setup. Even though not absolutely necessary, we show the usage of the \texttt{MueLu::FactoryManager} object as it allows for  user-specific enhancements of the multigrid code.
+\printCppListing{ScalingTest.cpp_12.fragment}
+
+The user can define its own factories for performing different tasks in the setup process. The following code shows how to define a smoothed aggregation transfer operator and a restriction operator. The \texttt{MueLu::RAPFactory} is used for the (standard) Galerkin product to generate the coarse level matrix $A$.
+\printCppListing{ScalingTest.cpp_14.fragment}
+
+The user-defined factories have to be registered in the \texttt{FactoryManager} using the lines
+\printCppListing{ScalingTest.cpp_16.fragment}
+\begin{mycomment}
+If you forget to register the new factories, the \texttt{FactoryManager} will use some internal default factories for being responsible to create the corresponding variables. Then your user-specified factories are just ignored during the multigrid setup!
+\end{mycomment}
+Note, that the \texttt{FactoryManager} is also responsible for resolving all dependencies between different factories. That is, after the user-defined factories have been registered, all factories that request variable $P$ are provided with the prolongation operator $P$ that has been generated by the registered factory \texttt{PFact}. If there is some data requested for which no factory has been registered by the user, the \texttt{FactoryManager} manages an internal list for reasonable default choices and default factories.
+
+Next, the user has to declare a level smoother. The following code can be used to define a symmetric Gauss-Seidel smoother. Other methods can be set up in a similar way.
+\printCppListing{ScalingTest.cpp_18.fragment}
+Before the level smoother can be used, a \texttt{MueLu::SmootherFactory} has to be defined for the smoother factory. The \texttt{SmootherFactory} is used in the multigrid setup to generate level smoothers for the corresponding levels using the prototyping design pattern. Note, that the \texttt{SmootherFactory} has also to be registered in the \texttt{FactoryManager} object. If the user forgets this, the multigrid setup will use some kind of default smoother, i.e., the user-chosen smoother options are just ignored.
+\printCppListing{ScalingTest.cpp_20.fragment}
+Once the \texttt{FactoryManager} is set up, it can be used with the \texttt{Hierarchy::Setup} routine to initiate the coarsening process and set up the multigrid hierarchy.
+\printCppListing{ScalingTest.cpp_22.fragment}
+
+\section{Iteration phase}
+\label{sec:iterationphase}
+Once the setup phase is completed, the \muelu multigrid hierarchy is ready for being used.
+
+There are several ways how to use the multigrid method. One can apply the multigrid method as standalone solver for linear systems. Multigrid methods are also known to be efficient preconditioners within iterative (Krylov) solvers such as CG or GMRES methods.
+
+In the next subsections it is demonstrated how to use \muelu as standalone solver and as preconditioner for iterative solvers from the \belos and \aztecoo package in \trilinos.
+
+For solving a linear system $Ax=b$ we need a right hand side vector $b$. When using iterative solvers we also need an initial guess for the solution vector.
+\printCppListing{laplace2d.cpp_7.fragment}
+In this example we just create \epetra vectors and wrap them into \xpetra objects. The right hand side vector is initialized with one and the solution vector is filled with random values.
+
+\subsection{\muelu as multigrid solver}
+To use \muelu as standalone solver one can use the following code
+\printCppListing{laplace2d.cpp_18.fragment}
+In this code snippet a solution vector is created using the \texttt{Xpetra::VectorFactory} and initialized with the content from the solution vector \verb|xX| containing the initial guess. Then, the \texttt{MueLu::Hierarchy} object is set to the non-preconditioner mode and the \texttt{Iterate} routine is called
+to perform \texttt{mgridSweeps} sweeps with the chosen multigrid cycle. If successful, the \texttt{mgridLsgVec} vector contains the solution.
+
+\subsection{\muelu as preconditioner for \aztecoo}
+Commonly, multigrid methods are used as preconditioners for iterative linear solvers. Here, we show how to use the \texttt{MueLu::Hierarchy} as preconditioner within an \aztecoo solver (using \epetra).
+After an \epetra solution vector has been created by
+\lstinputlisting[firstline=2]{laplace2d.cpp_14.fragment}
+the following code can be used to apply the \muelu hierarchy as preconditioner within the \aztecoo CG solver
+\lstinputlisting[firstline=2]{laplace2d.cpp_16.fragment}
+Basically, the \muelu hierarchy is put into an \texttt{MueLu::EpetraOperator} object, which implements the \epetra interface for preconditioners.
+With the \texttt{SetPrecOperator} routine from the \aztecoo solver the \texttt{MueLu::EpetraOperator} object then is defined as preconditioner.
+
+\subsection{\muelu as preconditioner for \belos}
+\label{sec:muelu_belospreconditioner}
+%% common part
+
+\belos is the successor package of \aztecoo for linear solvers in \trilinos and works both for \epetra and \tpetra. Here we demonstrate how to use \muelu as preconditioner for \belos solvers using \xpetra.
+First, we have to declare objects for the solution vector and the right hand side vector in \xpetra. The following code just uses a random vector for the initial guess and solution variable.
+\printCppListing{ScalingTest.cpp_24.fragment}
+
+In the following we demonstrate how to use the \muelu hierarchy as preconditioner within a \belos solver. There are special wrapper objects for wrapping the \xpetra matrix and the \muelu hierarchy to \belos compatible objects. These can be used to define a linear problem for use with \belos.
+\printCppListing{ScalingTest.cpp_26.fragment}
+
+Then, one can set up the \belos solver. For a \belos GMRES solver one uses
+\printCppListing{ScalingTest.cpp_28.fragment}
+Finally, we can solve the linear system using \belos with the \muelu multigrid preconditioner (left-preconditioning) by calling
+\printCppListing{ScalingTest.cpp_30.fragment}
+and perform some convergence checks
+\printCppListing{ScalingTest.cpp_32.fragment}
+
+\section{Full example}
+
+The reader may refer to \texttt{laplace2d.cpp} for a working example to study the source code. This demonstration program has some more features that are not discussed in this tutorial.
+
+\begin{exercise}
+Compile the example in \texttt{laplace2d.cpp} and then run the program in parallel using two processors
+        \begin{verbatim}
+        mpirun -np 2 ./MueLu_tutorial_laplace2d.exe --help
+        \end{verbatim}
+        Study the screen output and try to run the example with an XML file as input for the multigrid setup.
+\end{exercise}
+\begin{exercise}
+Create large scale examples using the \verb|nx| and \verb|ny| parameters for a finer mesh. Choose reasonable numbers for \verb|nx| and \verb|ny| for your machine and make use of your knowledge about \muelu for generating efficient preconditioners.
+\end{exercise}
+
+\chapter{ML ParameterList interpreter}
+
+\section{Backwards compatibility}
+\ml \cite{mlguide} is the predecessor multigrid package of \muelu in \trilinos and widely used in the community for smoothed aggregation multigrid methods. \ml is implemented in C and known for its good performance properties. However, the disadvantage is that \ml is harder to adapt to new applications and non-standard problems. Furthermore, \ml uses its own internal data structure and is somewhat limited to the use with \epetra objects only. In contrast, \muelu provides a fully flexible multigrid framework which is designed to be adapted to any kind of new application with non-standard requirements. Furthermore, it is based on \xpetra and therefore can be used both with \epetra or \tpetra. Nevertheless, it is an important point to provide some kind of backwards compatibility to allow \ml users to easily migrate to \muelu (or make experiments with \muelu without having to write to much new code).
+
+In this tutorial we present the \texttt{MueLu::MLParameterListInterpreter} which provides support for the most important \ml parameters to be used with \muelu.
+
+\section{C++ part}
+
+\subsection{Preparations}
+In order to use \muelu (instead or aside of \ml) you first have to add it to your application. Please refer to the \muelu user guide for information about compilation and linking (see \cite{Mue}). Basically, if your application is already working with \ml you should only need to compile and install \muelu and make sure that the \muelu libraries are found by the linker.
+
+\subsection{C++ interface}
+
+
+In the following we assume that the linear operator $A$ is available as \verb|RCP<Xpetra::Matrix> A|.
+
+Then we create a parameter list and fill it with \ml parameters. Please refer to the \ml guide \cite{mlguide} for a complete list of available parameters.
+\printCppListingSkipLine{MLParameterList.cpp_6.fragment}
+
+\begin{mycomment}
+Be aware that the \verb|MLParameterListInterpreter| does not support all \ml parameters but only the most important ones (e.g., smoothers, transfer operators, rebalancing, ...). There is, e.g., no support for the Maxwell specific enhancements in \ml.
+\end{mycomment}
+
+Instead of defining the \ml parameters by hand in the ParameterList you can also read in XML files with \ml parameters using
+\printCppListingSkipLine{MLParameterList.cpp_4.fragment}
+
+Next, you create a \verb|MLParameterListInterpreter| object using the parameters and create a new \verb|MueLu::Hierarchy| from it.
+\printCppListingSkipLine{MLParameterList.cpp_8.fragment}
+
+Of course, we have to provide all necessary information for the multigrid setup routine. This does not only include the fine level operator but also the set of near null space vectors. Assuming that \verb|numPDEs| stores the number of equations (and near null space vectors) the following code allows to produce piecewise constant standard near null space vectors (which should be valid for many PDE discretizations).
+\printCppListingSkipLine{MLParameterList.cpp_10.fragment}
+
+Then we just feed in the information to the finest level
+\printCppListingSkipLine{MLParameterList.cpp_11.fragment}
+
+Finally we call the \verb|Setup| routine which actually builds the multigrid hierarchy.
+\printCppListingSkipLine{MLParameterList.cpp_13.fragment}
+
+Once we have the multigrid hierarchy set up we can use it the same way as described in \S\ref{sec:iterationphase}.
+
+\begin{exercise}
+Study the source code of \texttt{../src/MLParameterList.cpp} and compile it. Run the executable \verb|MueLu_tutorial_MLParameterList.exe| with the \verb|--help| command line parameter to get an overview of all available command line parameters. Run the example using
+\begin{verbatim}
+./MueLu_tutorial_MLParameterList.exe --ml=1 --muelu=0
+   --xml=xml/ml_ParameterList.xml --linAlgebra=Epetra
+\end{verbatim}
+and study the \ml output. Compare the output and results when switching to \muelu using the same input file
+\begin{verbatim}
+./MueLu_tutorial_MLParameterList.exe --ml=0 --muelu=1
+   --xml=xml/ml_ParameterList.xml --linAlgebra=Epetra
+\end{verbatim}
+\end{exercise}
+
+\begin{exercise}
+Play around with the parameters from \verb|MueLu_tutorial_MLParameterList.exe|. Change, e.g., the problem type to a 2D Laplace problem (\verb|--matrixType=Laplace2D|) and adapt the \verb|--nx| and \verb|--ny| parameters accordingly.
+Try to run both \ml and \muelu and compare the results. Do you find significant differences?
+\end{exercise}
+
 
 
 

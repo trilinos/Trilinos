@@ -1858,7 +1858,7 @@ void import_and_extract_views(
     // Now create a new matrix into which we can import the remote rows of M that we need.
     Teuchos::ParameterList labelList;
     labelList.set("Timer Label",label);
-    Mview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrix_t>(Teuchos::rcp(&M,false),*importer,M.getDomainMap(),M.getRangeMap(),Teuchos::rcp(&labelList,false));
+    Mview.importMatrix = Tpetra::importAndFillCompleteCrsMatrix<CrsMatrix_t>(Teuchos::rcp(&M,false),*importer,M.getDomainMap(),MremoteRowMap,Teuchos::rcp(&labelList,false));
 
 #ifdef COMPUTE_MMM_STATISTICS
     printMultiplicationStatistics(importer,label+std::string(" I&X MMM"));

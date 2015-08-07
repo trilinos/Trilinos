@@ -41,8 +41,7 @@
 
 #ifndef STK_UTIL_UTIL_FArray_h
 #define STK_UTIL_UTIL_FArray_h
- 
-#include <iostream>                     // for ostream, cout, istream
+
 #include <cstddef>
 #include <utility>
 #include <algorithm>
@@ -1228,11 +1227,6 @@ public:
       m_allocator.deallocate(m_ptr, m_capacity);
       m_capacity = 0;
     }
-  }
-
-  friend std::ostream& operator << (std::ostream& output, const FArrayContainer&)
-  {
-    return output;
   }
 
   //----------------------------------------

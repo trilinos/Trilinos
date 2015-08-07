@@ -276,7 +276,7 @@ void runTest(RCP<const Teuchos::Comm<int> >& CommT, apf::Mesh2* m,std::string ac
       pparams.set("ghost_bridge",m->getDimension()-1);
     }
     params.set("compute_metrics","yes");
-
+    adjacency="vertex";
   }
   else if (action=="zoltan_hg") {
     params.set("debug_level", "no_status");

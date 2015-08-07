@@ -104,6 +104,14 @@ ENDIF()
 # Benchmark
 # ==========
 
+IF(Kokkos_ENABLE_Serial)
+  TRIBITS_ADD_EXECUTABLE(
+    stat_by_blocks_serial
+    SOURCES example_stat_by_blocks_serial.cpp
+    COMM serial mpi
+  )
+ENDIF()
+
 IF(Kokkos_ENABLE_Pthread)
   TRIBITS_ADD_EXECUTABLE(
     ichol_performance_pthread

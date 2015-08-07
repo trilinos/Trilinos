@@ -189,10 +189,34 @@ static void zoltanHGObjList(void *data, int nGidEnt, int nLidEnt,
     if (isOwner[i]) {
       lids[j] = i;
       gids[j] = Ids[i];
-      //TODO add weights here
       j++;
     }
   }
+  if (wdim) {
+    int mywdim = mdl->getNumWeightsPerVertex();
+    for (int w = 0; w < wdim; w++) {
+      j=0;
+      if (w < mywdim) {
+        for (size_t i = 0; i < num_verts; i++)  {
+          if (isOwner[i]) {
+            wgts[j*wdim+w] = float(model_wgts[w][i]);
+            std::cout<<"Weight: "<< float(model_wgts[w][i])<<"\n";
+            j++;
+          }
+        }
+      }
+      else {
+        // provide uniform weights
+        for (size_t i = 0; i < num_verts; i++) {
+          if (isOwner[i]) {
+            wgts[j*wdim+w] = 1.;
+            j++;
+          }
+        }
+      }
+    }
+  }
+
 }
 // ZOLTAN_HG_SIZE_CS_FN
 template <typename Adapter>

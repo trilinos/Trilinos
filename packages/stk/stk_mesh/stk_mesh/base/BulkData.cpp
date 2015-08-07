@@ -72,6 +72,7 @@
 #include "stk_util/util/NamedPair.hpp"
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_util/util/SameType.hpp"   // for SameType, etc
+#include "stk_util/util/SortAndUnique.hpp"
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
 #include <stk_mesh/base/ElemElemGraph.hpp>
 
@@ -439,6 +440,7 @@ BulkData::BulkData( MetaData & mesh_meta_data
     m_add_fmwk_data(add_fmwk_data),
     m_fmwk_global_ids(),
     m_fmwk_aux_relations(),
+    m_shouldSortFacesByNodeIds(false),
 #endif
     m_autoAuraOption(auto_aura_option),
     m_meshModification(*this),
@@ -5039,7 +5041,7 @@ void fill_add_parts_and_supersets(const PartVector & add_parts, PartVector &addP
             addPartsAndSupersets.push_back(supersets[j]);
         }
     }
-    sort_and_unique(addPartsAndSupersets);
+    stk::util::sort_and_unique(addPartsAndSupersets,PartLess());
 }
 
 void fill_remove_parts_and_subsets_minus_parts_in_add_parts_list(const PartVector & remove_parts,
@@ -5067,7 +5069,7 @@ void fill_remove_parts_and_subsets_minus_parts_in_add_parts_list(const PartVecto
             }
         }
     }
-    sort_and_unique(removePartsAndSubsetsMinusPartsInAddPartsList);
+    stk::util::sort_and_unique(removePartsAndSubsetsMinusPartsInAddPartsList,PartLess());
 }
 
 void BulkData::internal_verify_and_change_entity_parts( Entity entity,
@@ -5181,7 +5183,7 @@ void BulkData::internal_change_entity_parts(
 
         OrdinalVector newBucketPartList;
         internal_fill_new_part_list_and_removed_part_list(entity, add_parts, remove_parts, newBucketPartList, parts_removed);
-
+        stk::util::sort_and_unique(newBucketPartList);
         internal_move_entity_to_new_bucket(entity, newBucketPartList);
 
         EntityRank e_rank = entity_rank(entity);
@@ -6461,13 +6463,6 @@ bool is_node_connected_to_active_element_locally(stk::mesh::BulkData &mesh, stk:
     }
     return activeNode;
 }
-template<typename VECTOR>
-void sort_and_unique(VECTOR &vector)
-{
-    std::sort(vector.begin(), vector.end());
-    auto endIter = std::unique(vector.begin(), vector.end());
-    vector.resize(endIter - vector.begin());
-}
 } //emtpy namespace
 
 bool BulkData::modification_end_for_face_creation_and_deletion(const std::vector<sharing_info>& shared_modified,
@@ -6736,7 +6731,7 @@ void BulkData::de_induce_unranked_part_from_nodes(const stk::mesh::EntityVector 
             potentiallyDeactivatedNodes.push_back(nodes[nodeI]);
         }
     }
-    sort_and_unique(potentiallyDeactivatedNodes);
+    stk::util::sort_and_unique(potentiallyDeactivatedNodes);
 
     stk::mesh::EntityVector nodesToCommunicate;
     for (stk::mesh::Entity node : potentiallyDeactivatedNodes)
@@ -6851,44 +6846,13 @@ void BulkData::de_induce_unranked_part_from_nodes(const stk::mesh::EntityVector 
     }
 }
 
-bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
-{
-  bool result = false;
-  if (m_mesh->should_sort_faces_by_node_ids() &&
-      m_mesh->entity_rank(lhs) == m_mesh->mesh_meta_data().side_rank() &&
-      m_mesh->entity_rank(rhs) == m_mesh->mesh_meta_data().side_rank())
-  {
-      unsigned num_nodes_lhs = m_mesh->num_nodes(lhs);
-      unsigned num_nodes_rhs = m_mesh->num_nodes(rhs);
-      if (num_nodes_lhs != num_nodes_rhs)
-      {
-          result = num_nodes_lhs < num_nodes_rhs;
-      }
-      else
-      {
-          stk::mesh::EntityVector nodes_lhs(num_nodes_lhs);
-          stk::mesh::EntityVector nodes_rhs(num_nodes_rhs);
-          const stk::mesh::Entity* nodes_lhs_ptr = m_mesh->begin_nodes(lhs);
-          const stk::mesh::Entity* nodes_rhs_ptr = m_mesh->begin_nodes(rhs);
-          for(unsigned i=0;i<num_nodes_lhs;++i)
-          {
-              nodes_lhs[i] = nodes_lhs_ptr[i];
-              nodes_rhs[i] = nodes_rhs_ptr[i];
-          }
-          std::sort(nodes_lhs.begin(), nodes_lhs.end());
-          std::sort(nodes_rhs.begin(), nodes_rhs.end());
-          result = nodes_lhs < nodes_rhs;
-      }
-  }
-  else
-  {
-      const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
-      const EntityKey rhs_key = m_mesh->in_index_range(rhs) ? m_mesh->entity_key(rhs) : EntityKey();
-      result = lhs_key < rhs_key;
-  }
-  return result;
-}
-
+#ifdef SIERRA_MIGRATION
+EntityLess::EntityLess(const BulkData& mesh)
+  : m_mesh(&mesh),
+    m_shouldSortFacesByNodeIds(mesh.should_sort_faces_by_node_ids()),
+    m_sideRank(mesh.mesh_meta_data().side_rank())
+{}
+#endif
 
 } // namespace mesh
 } // namespace stk

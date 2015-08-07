@@ -838,7 +838,6 @@ void UserInputForTests::readGeometricGenTestData(string path,
   if (verbose_ && tcomm_->getRank() == 0)
     std::cout << "UserInputForTests, Read: " << fname.str() << std::endl;
   
-  int ierr = 0;
   Teuchos::ParameterList geoparams("geo params");
   readGeoGenParams(fname.str(),geoparams,comm);
   

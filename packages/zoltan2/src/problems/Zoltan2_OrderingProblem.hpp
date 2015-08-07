@@ -233,6 +233,18 @@ void OrderingProblem<Adapter>::solve(bool newData)
           alg.order(this->solution_);
       }
   }
+
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
+  else if (method == std::string("nd")) 
+  {
+      AlgND<base_adapter_t> alg(this->envConst_,problemComm_,this->graphModel_,
+		                this->coordinateModel_,this->baseInputAdapter_);
+      alg.order(this->solution_);
+  }
+#endif
+
+
+
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -315,6 +327,10 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
   std::bitset<NUM_MODEL_FLAGS> graphFlags;
   std::bitset<NUM_MODEL_FLAGS> idFlags;
+
+
+  //MMW: need to change this to allow multiple models
+  //     as I did with partitioning, use modelAvail_
 
   switch (modelType) {
 

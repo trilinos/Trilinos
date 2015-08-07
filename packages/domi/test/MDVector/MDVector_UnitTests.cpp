@@ -199,7 +199,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, dimensionsConstructor, Sca )
   }
 
 #ifdef HAVE_EPETRA
-  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  if (typeid(Sca) == typeid(double))
   {
     Teuchos::RCP< Epetra_Vector > epetraVectorView =
       mdVector.getEpetraVectorView();
@@ -299,7 +299,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
     TEST_EQUALITY(*it, scalar);
 
 #ifdef HAVE_EPETRA
-  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  if (typeid(Sca) == typeid(double))
   {
     Teuchos::RCP< Epetra_Vector > epetraVectorView =
       mdVector.getEpetraVectorView();
@@ -392,7 +392,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, copyConstructor, Sca )
     TEST_EQUALITY(*it, scalar);
 
 #ifdef HAVE_EPETRA
-  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  if (typeid(Sca) == typeid(double))
   {
     Teuchos::RCP< Epetra_Vector > epetraVectorView =
       mdVector.getEpetraVectorView();
@@ -467,7 +467,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListDimensionsConstructor, Sca )
   }
 
 #ifdef HAVE_EPETRA
-  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  if (typeid(Sca) == typeid(double))
   {
     Teuchos::RCP< Epetra_Vector > epetraVectorView =
       mdVector.getEpetraVectorView();
@@ -560,7 +560,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListCommPadConstructor, Sca )
   }
 
 #ifdef HAVE_EPETRA
-  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  if (typeid(Sca) == typeid(double))
   {
     Teuchos::RCP< Epetra_Vector > epetraVectorView =
       mdVector.getEpetraVectorView();
@@ -669,7 +669,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListBndryPadConstructor, Sca )
   }
 
 #ifdef HAVE_EPETRA
-  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  if (typeid(Sca) == typeid(double))
   {
     Teuchos::RCP< Epetra_Vector > epetraVectorView =
       mdVector.getEpetraVectorView();
@@ -779,7 +779,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListPaddingConstructor, Sca )
   }
 
 #ifdef HAVE_EPETRA
-  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  if (typeid(Sca) == typeid(double))
   {
     Teuchos::RCP< Epetra_Vector > epetraVectorView =
       mdVector.getEpetraVectorView();
@@ -845,7 +845,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
   TEST_EQUALITY(mdv3.getGlobalDim(numDims), 5        );
 
 #ifdef HAVE_EPETRA
-  if (strncmp(typeid(Sca).name(), "double", 6) == 0)
+  if (typeid(Sca) == typeid(double))
   {
     Teuchos::RCP< Epetra_Vector      > ev1  = mdv1.getEpetraVectorView();
     Teuchos::RCP< Epetra_MultiVector > emv2 = mdv2.getEpetraMultiVectorView();

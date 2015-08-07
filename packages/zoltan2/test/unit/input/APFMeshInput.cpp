@@ -132,34 +132,40 @@ int main(int narg, char *arg[]) {
                                      Zoltan2::MESH_EDGE,
                                      Zoltan2::MESH_FACE,
                                      Zoltan2::MESH_REGION};
-  int* numberGlobal = new int[dim];
+
   //Check the local number of each entity
+  bool* has = new bool[dim+1];
   for (int i=0;i<=dim;i++) {
+
+    has[i]=true;
+    if (ia.getLocalNumOf(ents[i])==0) {
+      has[i]=false;
+      continue;
+    }
     if (ia.getLocalNumOf(ents[i])!=m->count(i)) {      
       std::cerr<<"Local number of entities does not match in dimension "<<i<<"\n";
       return 1;
     }
-    numberGlobal[i] = countOwned(m,i);
+
   }
 
-  //Check the global number of each entity
-  PCU_Add_Ints(numberGlobal,dim+1);
-  for (int i=0;i<=dim;i++)
-    if (ia.getGlobalNumOf(ents[i])!=static_cast<unsigned int>(numberGlobal[i])) {
-      std::cerr<<"Global number of entities does not match in dimension "<<i<<"\n";
-      return 1;
-    }
-  delete [] numberGlobal;
-
+  
   //Check the coordinate dimension
   apf::GlobalNumbering** gnums = new apf::GlobalNumbering*[dim];
   apf::Numbering** lnums = new apf::Numbering*[dim];
+  int sub=0;
   for (int i=0;i<=dim;i++) {
-    gnums[i] = m->getGlobalNumbering(i);
-    lnums[i] = m->getNumbering(i);
+    if (!has[i]) {
+      sub++;
+      continue;
+    }
+    gnums[i] = m->getGlobalNumbering(i-sub);
+    lnums[i] = m->getNumbering(i-sub);
   }
 
   for (int i=0;i<=dim;i++) {
+    if (!has[i])
+      continue;
     const zgid_t* gids;
     const Zoltan2::EntityTopologyType* topTypes;
     const scalar_t* x_coords;
@@ -178,6 +184,8 @@ int main(int narg, char *arg[]) {
     ia.getCoordinatesViewOf(ents[i],z_coords,z_stride,2);
     //Check availability of First Adjacency
     for (int j=0;j<=dim;j++) {
+      if (!has[j])
+        continue;
       if (ia.availAdjs(ents[i],ents[j])!=(i!=j)) {
         std::cerr<<"First Adjacency does not exist from "<<i<<" to "<< j<<"\n";
         return 5;
@@ -196,7 +204,6 @@ int main(int narg, char *arg[]) {
         std::cerr<<"Local numbering does not match in dimension "<<i<<" on entity "<<j<<"\n";
         return 2;
       } 
-
       //Check Global Id numbers
       if (apf::getNumber(gnums[i],apf::Node(ent,0))!=gids[j]) {
         std::cerr<<"Global numbering does not match in dimension "<<i<<" on entity "<<j<<"\n";
@@ -231,6 +238,8 @@ int main(int narg, char *arg[]) {
       
       //Check first adjacencies
       for (int k=0;k<=dim;k++) {
+        if (!has[k])
+          continue;
         if (i==k) {
           //Check first adjacency to self is set to NULL
           if (offsets[k]!=NULL || adj_gids[k]!=NULL) {
@@ -266,6 +275,8 @@ int main(int narg, char *arg[]) {
     delete [] adj_gids;
     //Check the number of first adjacency
     for (int k=0;k<=dim;k++) {
+      if (!has[k])
+        continue;
       if (ia.getLocalNumAdjs(ents[i],ents[k])!=numAdjs[k]) {
         std::cerr<<"Local number of first adjacencies do not match in dimension "<<i
                  <<" through dimension "<<k<<"\n";
@@ -277,7 +288,28 @@ int main(int narg, char *arg[]) {
   }
   delete [] lnums;
   delete [] gnums;
+  const Adapter::scalar_t arr[] = {1,2,1,3,1,5,1,2,1,6,1,7,1,8};
+  ia.setWeights(Zoltan2::MESH_FACE,arr,2);
+  
+  if (ia.getNumWeightsPerOf(Zoltan2::MESH_FACE)!=1) {
+    std::cerr<<"Number of weights incorrect\n";
+    return 9;
+    
+  }
 
+  
+  const Adapter::scalar_t* arr2;
+  int stride;
+  ia.getWeightsViewOf(Zoltan2::MESH_FACE,arr2,stride);
+  for (int i=0;i<7;i++) {
+    if (arr[i*stride]!=arr2[i*stride]) {
+      std::cerr<<"Weights do not match the original input\n";
+      return 10;
+    
+    }
+  }
+  
+  ia.print(PCU_Comm_Self(),5);
   
   //Delete the MeshAdapter
   ia.destroy();
@@ -290,127 +322,7 @@ int main(int narg, char *arg[]) {
   PCU_Comm_Free();
 #endif
   std::cout<<"PASS\n";
-  /***************************************************************************/
-  /***************************** GENERATE MESH *******************************/
-  /***************************************************************************/
-  /*
-  if (me == 0) cout << "Generating mesh ... \n\n";
 
-  // Generate mesh with Pamgen
-  long long maxInt = 9223372036854775807LL;
-  Create_Pamgen_Mesh(meshInput.c_str(), dim, me, numProcs, maxInt);
-
-  // Creating mesh adapter
-  if (me == 0) cout << "Creating mesh adapter ... \n\n";
-
-  typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
-
-  inputAdapter_t ia(*CommT, "region");
-  inputAdapter_t::zgid_t const *adjacencyIds=NULL;
-  inputAdapter_t::lno_t const *offsets=NULL;
-  ia.print(me);
-  Zoltan2::MeshEntityType primaryEType = ia.getPrimaryEntityType();
-  Zoltan2::MeshEntityType adjEType = ia.getAdjacencyEntityType();
-
-  if (ia.availAdjs(primaryEType, adjEType)) {
-    ia.getAdjsView(primaryEType, adjEType, offsets, adjacencyIds);
-    int dimension, num_nodes, num_elem;
-    int error = 0;
-    char title[100];
-    int exoid = 0;
-    int num_elem_blk, num_node_sets, num_side_sets;
-    error += im_ex_get_init(exoid, title, &dimension, &num_nodes, &num_elem,
-			    &num_elem_blk, &num_node_sets, &num_side_sets);
-
-    if ((int)ia.getLocalNumOf(primaryEType) != num_elem) {
-      cout << "Number of elements do not match\n";
-      return 2;
-    }
-
-    int *element_num_map = new int [num_elem];
-    error += im_ex_get_elem_num_map(exoid, element_num_map);
-
-    inputAdapter_t::zgid_t *node_num_map = new int [num_nodes];
-    error += im_ex_get_node_num_map(exoid, node_num_map);
-
-    int *elem_blk_ids = new int [num_elem_blk];
-    error += im_ex_get_elem_blk_ids(exoid, elem_blk_ids);
-
-    int *num_nodes_per_elem = new int [num_elem_blk];
-    int *num_attr           = new int [num_elem_blk];
-    int *num_elem_this_blk  = new int [num_elem_blk];
-    char **elem_type        = new char * [num_elem_blk];
-    int **connect           = new int * [num_elem_blk];
-
-    for(int i = 0; i < num_elem_blk; i++){
-      elem_type[i] = new char [MAX_STR_LENGTH + 1];
-      error += im_ex_get_elem_block(exoid, elem_blk_ids[i], elem_type[i],
-				    (int*)&(num_elem_this_blk[i]),
-				    (int*)&(num_nodes_per_elem[i]),
-				    (int*)&(num_attr[i]));
-      delete[] elem_type[i];
-    }
-
-    delete[] elem_type;
-    elem_type = NULL;
-    delete[] num_attr;
-    num_attr = NULL;
-
-    for(int b = 0; b < num_elem_blk; b++) {
-      connect[b] = new int [num_nodes_per_elem[b]*num_elem_this_blk[b]];
-      error += im_ex_get_elem_conn(exoid, elem_blk_ids[b], connect[b]);
-    }
-
-    delete[] elem_blk_ids;
-    elem_blk_ids = NULL;
-    int telct = 0;
-
-    for (int b = 0; b < num_elem_blk; b++) {
-      for (int i = 0; i < num_elem_this_blk[b]; i++) {
-	if (offsets[telct + 1] - offsets[telct] != num_nodes_per_elem[b]) {
-	  std::cout << "Number of adjacencies do not match" << std::endl;
-	  return 3;
-	}
-
-	for (int j = 0; j < num_nodes_per_elem[b]; j++) {
-	  ssize_t in_list = -1;
-
-	  for(inputAdapter_t::lno_t k=offsets[telct];k<offsets[telct+1];k++) {
-	    if(adjacencyIds[k] ==
-	       node_num_map[connect[b][i*num_nodes_per_elem[b]+j]-1]) {
-	      in_list = k;
-	      break;
-	    }
-	  }
-
-	  if (in_list < 0) {
-	    std::cout << "Adjacency missing" << std::endl;
-	    return 4;
-	  }
-	}
-
-	++telct;
-      }
-    }
-
-    if (telct != num_elem) {
-      cout << "Number of elements do not match\n";
-      return 2;
-    }
-  }
-  else{
-    std::cout << "Adjacencies not available" << std::endl;
-    return 1;
-  }
-
-  // delete mesh
-  if (me == 0) cout << "Deleting the mesh ... \n\n";
-
-  Delete_Pamgen_Mesh();
-
-  if (me == 0)
-    std::cout << "PASS" << std::endl;
-  */
   return 0;
 }
 /*****************************************************************************/

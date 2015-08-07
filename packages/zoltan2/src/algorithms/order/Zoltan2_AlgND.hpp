@@ -101,13 +101,17 @@ private:
 
   typedef typename Adapter::part_t part_t;
 
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::zgid_t zgid_t;
+
+
   const RCP<const Environment> mEnv;
   const RCP<Comm<int> > mProblemComm;
 
-  const RCP<const GraphModel<typename Adapter::base_adapter_t> > mGraphModel;
-  const RCP<const CoordinateModel<typename Adapter::base_adapter_t> > mIds;
+  const RCP<const GraphModel<Adapter> > mGraphModel;
+  const RCP<const CoordinateModel<Adapter> > mIds;
 
-  const RCP<const typename Adapter::base_adapter_t> mBaseInputAdapter;
+  const RCP<const Adapter> mBaseInputAdapter;
 
 
   void getBoundLayerSep(int levelIndx, const std::vector<part_t> &partMap,
@@ -120,9 +124,9 @@ public:
   // Constructor
   AlgND(const RCP<const Environment> &env_,
 	  const RCP<Comm<int> > &problemComm_,
-	  const RCP<const GraphModel<typename Adapter::base_adapter_t> > &gModel_,
-	  const RCP<const CoordinateModel<typename Adapter::base_adapter_t> > &cModel_,
-	  const RCP<const typename Adapter::base_adapter_t> baseInputAdapter_)
+	  const RCP<const GraphModel<Adapter> > &gModel_,
+	  const RCP<const CoordinateModel<Adapter> > &cModel_,
+	  const RCP<const Adapter> baseInputAdapter_)
     :mEnv(env_), mProblemComm(problemComm_), mGraphModel(gModel_), mIds(cModel_), 
      mBaseInputAdapter(baseInputAdapter_)
   {
@@ -141,8 +145,8 @@ public:
 
   }
 
-  // Partitioning method
-  void partition(const RCP<PartitioningSolution<Adapter> > &solution_);
+  // Ordering method
+  int order(const RCP<OrderingSolution<zgid_t, lno_t> > &solution_);
 
 };
 ////////////////////////////////////////////////////////////////////////////////
@@ -150,7 +154,7 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
-void AlgND<Adapter>::partition(const RCP<PartitioningSolution<Adapter> > &solution_)
+int AlgND<Adapter>::order(const RCP<OrderingSolution<zgid_t, lno_t> > &solution_)
 {
     // typedef typename Adapter::lno_t lno_t;     // local ids
     // typedef typename Adapter::gno_t gno_t;     // global ids
@@ -168,103 +172,104 @@ void AlgND<Adapter>::partition(const RCP<PartitioningSolution<Adapter> > &soluti
     // TODO: use new partitioning solution
 
 
-    AlgZoltan<Adapter> algZoltan(this->mEnv, mProblemComm, this->mBaseInputAdapter);
-    algZoltan.partition(solution_);
+    //AlgZoltan<Adapter> algZoltan(this->mEnv, mProblemComm, this->mBaseInputAdapter);
+    // algZoltan.partition(solution_);
 
-    size_t numGlobalParts = solution_->getTargetGlobalNumberOfParts();
+    // size_t numGlobalParts = solution_->getTargetGlobalNumberOfParts();
 
-    const part_t *parts = solution_->getPartListView();
-    //////////////////////////////////////////////////////////////////////
+    // const part_t *parts = solution_->getPartListView();
+    // //////////////////////////////////////////////////////////////////////
 
-    //////////////////////////////////////////////////////////////////////
-    // Build up tree that represents partitioning subproblems, which will 
-    // be used for determining separators at each level
-    //   -- for now, this is built up artificially
-    //   -- eventually this will be built from PHG output
-    //////////////////////////////////////////////////////////////////////
-    // change int to something, part_t?
-    std::vector<int> partTree;
+    // //////////////////////////////////////////////////////////////////////
+    // // Build up tree that represents partitioning subproblems, which will 
+    // // be used for determining separators at each level
+    // //   -- for now, this is built up artificially
+    // //   -- eventually this will be built from PHG output
+    // //////////////////////////////////////////////////////////////////////
+    // // change int to something, part_t?
+    // std::vector<int> partTree;
 
-    buildPartTree( 0, 0, (numGlobalParts-1)/2 + 1, numGlobalParts, partTree);
-    unsigned int numSeparators = partTree.size() / 4;
-    //////////////////////////////////////////////////////////////////////
+    // buildPartTree( 0, 0, (numGlobalParts-1)/2 + 1, numGlobalParts, partTree);
+    // unsigned int numSeparators = partTree.size() / 4;
+    // //////////////////////////////////////////////////////////////////////
 
 
-    //////////////////////////////////////////////////////////////////////
-    // Create a map that maps each part number to a new number based on
-    // the level of the hiearchy of the separator tree.  This allows us
-    // to easily identify the boundary value vertices
-    //////////////////////////////////////////////////////////////////////
-    int numLevels = partTree[4*(numSeparators-1)]+1;
+    // //////////////////////////////////////////////////////////////////////
+    // // Create a map that maps each part number to a new number based on
+    // // the level of the hiearchy of the separator tree.  This allows us
+    // // to easily identify the boundary value vertices
+    // //////////////////////////////////////////////////////////////////////
+    // int numLevels = partTree[4*(numSeparators-1)]+1;
 
-    std::vector<std::vector<int> > partLevelMap(numLevels,std::vector<int>(numGlobalParts));
+    // std::vector<std::vector<int> > partLevelMap(numLevels,std::vector<int>(numGlobalParts));
 
-    std::vector<int> sepsInLev(numLevels,0);
+    // std::vector<int> sepsInLev(numLevels,0);
 
-    for(unsigned int i=0;i<numSeparators;i++)
-    {
-      int level = partTree[4*i];
-      int leftPart = partTree[4*i+1];
-      int splitPart = partTree[4*i+2];
-      int rightPart = partTree[4*i+3];
+    // for(unsigned int i=0;i<numSeparators;i++)
+    // {
+    //   int level = partTree[4*i];
+    //   int leftPart = partTree[4*i+1];
+    //   int splitPart = partTree[4*i+2];
+    //   int rightPart = partTree[4*i+3];
       
-      for(int part=leftPart; part<splitPart; part++)
-      {
-        partLevelMap[level][part] = 2*sepsInLev[level];
-      }
+    //   for(int part=leftPart; part<splitPart; part++)
+    //   {
+    //     partLevelMap[level][part] = 2*sepsInLev[level];
+    //   }
 
-      for(int part=splitPart; part<rightPart; part++)
-      {
-        partLevelMap[level][part] = 2*sepsInLev[level]+1;
-      }
+    //   for(int part=splitPart; part<rightPart; part++)
+    //   {
+    //     partLevelMap[level][part] = 2*sepsInLev[level]+1;
+    //   }
 
-      sepsInLev[level]++;
-    }
-    //////////////////////////////////////////////////////////////////////
+    //   sepsInLev[level]++;
+    // }
+    // //////////////////////////////////////////////////////////////////////
 
-    // Set of separator vertices.  Used to keep track of what vertices are
-    // already in previous calculated separators.  These vertices should be
-    // excluded from future separator calculations
-    const std::set<int> sepVerts;
+    // // Set of separator vertices.  Used to keep track of what vertices are
+    // // already in previous calculated separators.  These vertices should be
+    // // excluded from future separator calculations
+    // const std::set<int> sepVerts;
 
-    //////////////////////////////////////////////////////////////////////
-    // Loop over each cut
-    //    1. Build boundary layer between parts
-    //    2. Build vertex separator from boundary layer
-    //////////////////////////////////////////////////////////////////////
-    for(unsigned int level=0;level<numLevels;level++)
-    {
-      for(unsigned int levIndx=0;levIndx<sepsInLev[level];levIndx++)
-      {
+    // //////////////////////////////////////////////////////////////////////
+    // // Loop over each cut
+    // //    1. Build boundary layer between parts
+    // //    2. Build vertex separator from boundary layer
+    // //////////////////////////////////////////////////////////////////////
+    // for(unsigned int level=0;level<numLevels;level++)
+    // {
+    //   for(unsigned int levIndx=0;levIndx<sepsInLev[level];levIndx++)
+    //   {
 
-	std::vector<int> boundVerts;
-	std::vector<std::vector<int> > boundVertsST(2);
+    // 	std::vector<int> boundVerts;
+    // 	std::vector<std::vector<int> > boundVertsST(2);
 
-        ///////////////////////////////////////////////////////////////
-        // Build boundary layer between parts (edge separator)
-        ///////////////////////////////////////////////////////////////
-        getBoundLayerSep(levIndx, partLevelMap[level], parts, boundVerts,
-			 boundVertsST, sepVerts);
-        ///////////////////////////////////////////////////////////////
+    //     ///////////////////////////////////////////////////////////////
+    //     // Build boundary layer between parts (edge separator)
+    //     ///////////////////////////////////////////////////////////////
+    //     getBoundLayerSep(levIndx, partLevelMap[level], parts, boundVerts,
+    // 			 boundVertsST, sepVerts);
+    //     ///////////////////////////////////////////////////////////////
 
-        ///////////////////////////////////////////////////////////////
-        // Calculate vertex separator from boundary layer
-        ///////////////////////////////////////////////////////////////
+    //     ///////////////////////////////////////////////////////////////
+    //     // Calculate vertex separator from boundary layer
+    //     ///////////////////////////////////////////////////////////////
 
-	//VCOfBoundLayer
+    // 	//VCOfBoundLayer
 
-        ///////////////////////////////////////////////////////////////
+    //     ///////////////////////////////////////////////////////////////
 
 
-	}
-    }
-    //////////////////////////////////////////////////////////////////////
+    // 	}
+    // }
+    // //////////////////////////////////////////////////////////////////////
 
-    //TODO: calculate vertex separator for each layer, 
-    //TODO: using vertex separators, compute new ordering and store in solution
-    //TODO: move to ordering directory
+    // //TODO: calculate vertex separator for each layer, 
+    // //TODO: using vertex separators, compute new ordering and store in solution
+    // //TODO: move to ordering directory
 
     mEnv->debug(DETAILED_STATUS, std::string("Exiting AlgND"));
+    return 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
 

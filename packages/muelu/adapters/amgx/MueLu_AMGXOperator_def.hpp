@@ -75,38 +75,52 @@ namespace MueLu {
 
     try {
       for (int i = 0; i < Y.getNumVectors(); i++) {
-        mueluXdata = X.getData(i);
-        mueluYdata = Y.getDataNonConst(i);
+        {
+          vectorTimer1_->start();
 
-        if (comm->getSize() == 1) {
-          amgxXdata = mueluXdata;
-          amgxYdata = mueluYdata;
+          mueluXdata = X.getData(i);
+          mueluYdata = Y.getDataNonConst(i);
 
-        } else {
-          int n = mueluXdata.size();
+          if (comm->getSize() == 1) {
+            amgxXdata = mueluXdata;
+            amgxYdata = mueluYdata;
 
-          amgxXdata.resize(n);
-          amgxYdata.resize(n);
+          } else {
+            int n = mueluXdata.size();
 
-          ArrayRCP<double> amgxXdata_nonConst = Teuchos::arcp_const_cast<double>(amgxXdata);
-          for (int j = 0; j < n; j++) {
-            amgxXdata_nonConst[muelu2amgx_[j]] = mueluXdata[j];
-            amgxYdata         [muelu2amgx_[j]] = mueluYdata[j];
+            amgxXdata.resize(n);
+            amgxYdata.resize(n);
+
+            ArrayRCP<double> amgxXdata_nonConst = Teuchos::arcp_const_cast<double>(amgxXdata);
+            for (int j = 0; j < n; j++) {
+              amgxXdata_nonConst[muelu2amgx_[j]] = mueluXdata[j];
+              amgxYdata         [muelu2amgx_[j]] = mueluYdata[j];
+            }
           }
-        }
 
-        AMGX_vector_upload(X_, N_, 1, &amgxXdata[0]);
-        AMGX_vector_upload(Y_, N_, 1, &amgxYdata[0]);
+          AMGX_vector_upload(X_, N_, 1, &amgxXdata[0]);
+          AMGX_vector_upload(Y_, N_, 1, &amgxYdata[0]);
+
+          vectorTimer1_->stop();
+          vectorTimer1_->incrementNumCalls();
+        }
 
         AMGX_solver_solve(Solver_, X_, Y_);
 
-        AMGX_vector_download(Y_,      &amgxYdata[0]);
+        {
+          vectorTimer2_->start();
 
-        if (comm->getSize() > 1) {
-          int n = mueluYdata.size();
+          AMGX_vector_download(Y_,      &amgxYdata[0]);
 
-          for (int j = 0; j < n; j++)
-            mueluYdata[j] = amgxYdata[muelu2amgx_[j]];
+          if (comm->getSize() > 1) {
+            int n = mueluYdata.size();
+
+            for (int j = 0; j < n; j++)
+              mueluYdata[j] = amgxYdata[muelu2amgx_[j]];
+          }
+
+          vectorTimer2_->stop();
+          vectorTimer2_->incrementNumCalls();
         }
       }
 

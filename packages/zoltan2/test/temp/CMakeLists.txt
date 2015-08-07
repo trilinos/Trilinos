@@ -35,6 +35,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
 )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tpetraOneToOneMapTest
+  SOURCES mapOneToOne.cpp
+  NUM_MPI_PROCS 4
+  COMM mpi
+)
+
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  tpetraMapTest
 #  SOURCES mapMemoryLeak.cpp

@@ -3672,6 +3672,15 @@ namespace Tpetra {
                             const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     const char tfecfFuncName[] = "expertStaticFillComplete: ";
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    std::string label;
+    if(!params.is_null())
+      label = params->get("Timer Label",label);
+    std::string prefix = std::string("Tpetra ")+ label + std::string(": ");
+    using Teuchos::TimeMonitor;
+    Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-Setup"))));
+#endif
+
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       domainMap.is_null () || rangeMap.is_null (),
@@ -3725,6 +3734,9 @@ namespace Tpetra {
     indicesAreGlobal_ = false;
 
     // set domain/range map: may clear the import/export objects
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-Maps"))));
+#endif
     setDomainRangeMaps (domainMap, rangeMap);
 
     // Presume the user sorted and merged the arrays first
@@ -3732,6 +3744,10 @@ namespace Tpetra {
     noRedundancies_ = true;
 
     // makeImportExport won't create a new importer/exporter if I set one here first.
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-mIXcheckI"))));
+#endif
+
     importer_ = Teuchos::null;
     exporter_ = Teuchos::null;
     if (importer != Teuchos::null) {
@@ -3742,6 +3758,11 @@ namespace Tpetra {
       importer_ = importer;
 
     }
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-mIXcheckE"))));
+#endif
+
     if (exporter != Teuchos::null) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
         ! exporter->getSourceMap ()->isSameAs (*getRowMap ()) ||
@@ -3749,15 +3770,29 @@ namespace Tpetra {
         std::invalid_argument,": exporter does not match matrix maps.");
       exporter_ = exporter;
     }
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-mIXmake"))));
+#endif
+
     makeImportExport ();
 
     // Compute the constants
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-cGC"))));
+#endif
     computeGlobalConstants ();
 
     // Since we have a StaticProfile, fillLocalGraph will do the right thing...
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-fLG"))));
+#endif
     fillLocalGraph (params);
     fillComplete_ = true;
 
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-G-cIS"))));
+#endif
     checkInternalState ();
   }
 

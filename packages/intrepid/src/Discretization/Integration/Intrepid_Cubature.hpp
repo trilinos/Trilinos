@@ -86,6 +86,16 @@ class Cubature {
   virtual void getCubature(ArrayPoint  & cubPoints,
                            ArrayWeight & cubWeights) const = 0;
 
+  /** \brief Returns cubature points and weights on physical cells
+             (return arrays must be pre-sized/pre-allocated).
+
+      \param cubPoints       [out]     - Array containing the cubature points.
+      \param cubWeights      [out]     - Array of corresponding cubature weights.
+      \param cellVertices    [in]      - Array containing the cell vertices.
+  */
+  virtual void getCubature(ArrayPoint  & cubPoints,
+                           ArrayWeight & cubWeights,
+                           ArrayPoint  & cellVertices) const = 0;
 
   /** \brief Returns the number of cubature points.
   */

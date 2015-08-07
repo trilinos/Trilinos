@@ -50,15 +50,14 @@
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 
-// PyTrilinos include
+// PyTrilinos includes
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_NumPy_Util.hpp"
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
 
-// Epetra includes
-//#include "Tpetra_BlockMap.hpp"
+// Tpetra includes
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 
@@ -66,8 +65,6 @@
 
 namespace PyTrilinos
 {
-
-////////////////////////////////////////////////////////////
 
 // Given a Tpetra::Map, return a Python dimension data object, which
 // is a tuple of Python dimension data dictionaries that describe the
