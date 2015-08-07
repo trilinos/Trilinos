@@ -316,7 +316,7 @@ int main(int narg, char *arg[]) {
       pparams.set("ghost_bridge",m->getDimension()-1);
     }
     params.set("compute_metrics","yes");
-
+    adjacency="vertex";
   }
   else if (action=="zoltan_hg") {
     do_partitioning = true;
@@ -345,7 +345,7 @@ int main(int narg, char *arg[]) {
     zparams.set("PHG_EDGE_SIZE_THRESHOLD", "1.0");
     primary="vertex";
     adjacency="edge";
-    needSecondAdj=true;
+    needSecondAdj=false;
   }
   else if (action == "color") {
     params.set("debug_level", "verbose_detailed_status");
@@ -362,6 +362,15 @@ int main(int narg, char *arg[]) {
   double time_1=PCU_Time();
   inputAdapter_t ia(*CommT, m,primary,adjacency,needSecondAdj);  
   double time_2=PCU_Time();
+ 
+  
+  inputAdapter_t::scalar_t* arr = new inputAdapter_t::scalar_t[ia.getLocalNumOf(ia.getPrimaryEntityType())];
+  for (size_t i=0;i<ia.getLocalNumOf(ia.getPrimaryEntityType());i++) {
+    arr[i]=1;
+  }
+  
+  const inputAdapter_t::scalar_t* weights=arr;
+  ia.setWeights(ia.getPrimaryEntityType(),weights,1);
 
   if (ghost_metric) {
     const baseMeshAdapter_t *base_ia = dynamic_cast<const baseMeshAdapter_t*>(&ia);
@@ -422,7 +431,7 @@ int main(int narg, char *arg[]) {
   //Destroy the adapter
   ia.destroy();
   
-  Parma_PrintPtnStats(m,"after");
+  //Parma_PrintPtnStats(m,"after");
   
   if (ghost_metric) {
     inputAdapter_t ia2(*CommT, m,primary,adjacency,true);  

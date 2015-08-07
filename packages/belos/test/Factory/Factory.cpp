@@ -53,6 +53,7 @@
 #include "BelosLSQRSolMgr.hpp"
 #include "BelosPCPGSolMgr.hpp"
 #include "BelosRCGSolMgr.hpp"
+#include "BelosBiCGStabSolMgr.hpp"
 
 #include "MyMultiVec.hpp"
 #include "MyBetterOperator.hpp"
@@ -270,6 +271,10 @@ TEUCHOS_UNIT_TEST( Factory, Bug6383 )
   {
     typedef Belos::RCGSolMgr<ST, MV, OP> solver_impl_type;
     BELOS_TEST_SOLVER( "RCG" );
+  }
+  {
+    typedef Belos::BiCGStabSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "BiCGStab" );
   }
 
   if (! success) {

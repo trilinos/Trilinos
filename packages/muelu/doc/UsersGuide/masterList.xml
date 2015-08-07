@@ -865,6 +865,7 @@
       <type>\parameterlist</type>
       <description>Sublist for listing AMGX configuration parameters</description>
       <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
     </parameter>
   </amgx>
 

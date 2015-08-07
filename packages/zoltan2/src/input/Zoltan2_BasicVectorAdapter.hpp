@@ -297,15 +297,15 @@ private:
         ArrayRCP<const scalar_t> eltV(entries[v], 0, stride*numIds_, false);
         entries_[v] = input_t(eltV, stride);
       }
+    }
 
-      if (numWeights_) {
-        stride = 1;
-        weights_ = arcp(new input_t [numWeights_], 0, numWeights_, true);
-        for (int w=0; w < numWeights_; w++){
-          if (weightStrides.size()) stride = weightStrides[w];
-          ArrayRCP<const scalar_t> wgtV(weights[w], 0, stride*numIds_, false);
-          weights_[w] = input_t(wgtV, stride);
-        }
+    if (numWeights_) {
+      int stride = 1;
+      weights_ = arcp(new input_t [numWeights_], 0, numWeights_, true);
+      for (int w=0; w < numWeights_; w++){
+        if (weightStrides.size()) stride = weightStrides[w];
+        ArrayRCP<const scalar_t> wgtV(weights[w], 0, stride*numIds_, false);
+        weights_[w] = input_t(wgtV, stride);
       }
     }
   }

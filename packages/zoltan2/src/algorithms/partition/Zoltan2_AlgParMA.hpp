@@ -373,13 +373,16 @@ public:
     PCU_Switch_Comm(mpicomm);
 
     int dim;
-    if (adapter->getGlobalNumOf(MESH_REGION)>0)
+    if (adapter->getLocalNumOf(MESH_REGION)>0)
       dim=3;
-    else if (adapter->getGlobalNumOf(MESH_FACE)>0)
+    else if (adapter->getLocalNumOf(MESH_FACE)>0)
       dim=2;
     else
+      dim=0;
+    PCU_Max_Ints(&dim,1);
+    if (dim<2)
       throw std::runtime_error("ParMA neeeds faces or region information");
-
+    
     //GFD Currently not allowing ParMA to balance non element primary types
     if (dim!=adapter->getPrimaryEntityType())
       throw std::runtime_error("ParMA only supports balancing primary type==mesh element");
@@ -392,7 +395,10 @@ public:
 
     //Get entity topology types
     const EntityTopologyType* tops;
-    adapter->getTopologyViewOf(primary_type,tops);
+    try {
+      adapter->getTopologyViewOf(primary_type,tops);
+    }
+    Z2_FORWARD_EXCEPTIONS
     
     //Get element global ids and part ids
     const zgid_t* element_gids;
