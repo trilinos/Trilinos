@@ -700,6 +700,8 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& eleme
         }
 
         stk::mesh::PartVector add_parts_for_shared_sides = boundary_mesh_parts;
+        add_parts_for_shared_sides.push_back(&active);
+
         {
             const stk::mesh::PartVector & supersets = bulkData.bucket(element).supersets();
             for (size_t part_i=0 ; part_i<supersets.size() ; ++part_i)
@@ -748,6 +750,7 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& eleme
                             // create or delete a side with a particular id
 
                             stk::mesh::PartVector parts = add_parts;
+                            parts.push_back(&active);
                             parts.push_back(&bulkData.mesh_meta_data().get_topology_root_part(side_top));
 
                             std::string msg = "Program error. Please contact sierra-help@sandia.gov for support.";
@@ -856,6 +859,8 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& eleme
 
                     {
                         add_parts = boundary_mesh_parts;
+                        add_parts.push_back(&active);
+
                         const stk::mesh::PartVector & supersets = bulkData.bucket(this_elem_entity).supersets();
                         for (size_t part_i=0 ; part_i<supersets.size() ; ++part_i)
                         {
@@ -873,10 +878,21 @@ bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& eleme
         }
     }
 
+    stk::mesh::PartVector parts_to_de_induce;
+    parts_to_de_induce.push_back(&active);
+    for(size_t i=0; i<boundary_mesh_parts.size(); ++i)
+    {
+        stk::mesh::Part& part = *boundary_mesh_parts[i];
+        if (part.should_induce(side_rank) && !stk::mesh::is_topology_root_part(part) )
+        {
+            parts_to_de_induce.push_back(&part);
+        }
+    }
+
     ThrowRequireMsg(id_counter==0 || id_counter<requestedIds.size(), "Program error. Please contact sierra-help@sandia.gov for support.");
     elementGraph.set_num_side_ids_used(id_counter);
     stk::mesh::impl::delete_entities_and_upward_relations(bulkData, deletedEntities);
-    bulkData.modification_end_for_face_creation_and_deletion(shared_modified, deletedEntities, elementGraph, killedElements, locally_created_faces_not_shared, active);
+    bulkData.modification_end_for_face_creation_and_deletion(shared_modified, deletedEntities, elementGraph, killedElements, locally_created_faces_not_shared, active, parts_to_de_induce);
     return topology_modified;
 }
 

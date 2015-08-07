@@ -357,13 +357,12 @@ bool create_or_delete_shared_side(stk::mesh::BulkData& bulkData, const parallel_
     {
         // determine which element is active
         stk::mesh::Permutation perm = stk::mesh::DEFAULT_PERMUTATION;
-        int owning_proc = bulkData.parallel_rank();
         int other_proc = parallel_edge_info.m_other_proc;
+        int owning_proc = std::min(other_proc, bulkData.parallel_rank());
 
         if(parallel_edge_info.m_in_part)
         {
             perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
-            owning_proc = other_proc;
         }
 
         stk::mesh::PartVector parts = side_parts;
