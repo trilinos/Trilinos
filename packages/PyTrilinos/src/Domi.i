@@ -243,6 +243,75 @@ import numpy
 #endif
 %include "Domi_Utils.hpp"
 
+//////////////////////////////
+// Python utility functions //
+//////////////////////////////
+%pythoncode
+%{
+  def class_array_inplace_op(self, op_str, other):
+    in_op = getattr(self.array, "__i"+op_str+"__")
+    in_op(other.array)
+    return self
+
+  def class_array_math_op(self, op_str, other):
+    # Initialize the result by calling the copy constructor
+    result = self.__class__(self)
+    # Get the equivalent in-place operator for the result
+    in_op = getattr(result.array, "__i"+op_str+"__")
+    try:
+      in_op(other.array)
+    except AttributeError:
+      in_op(other)
+    return result
+
+  def class_array_rmath_op(self, op_str, other):
+    # Initialize the result by calling the copy constructor
+    result = self.__class__(self)
+    indices = (slice(None),) * len(self.array.shape)
+    result.array[indices] = other
+    in_op = getattr(result.array, "__i"+op_str+"__")
+    in_op(self.array)
+    return result
+
+  def class_array_add_math_ops(cls, op_str):
+    setattr(cls,
+            "__i"+op_str+"__",
+            lambda self, other: class_array_inplace_op(self, op_str, other))
+    setattr(cls,
+            "__"+op_str+"__",
+            lambda self, other: class_array_math_op(self, op_str, other))
+    setattr(cls,
+            "__r"+op_str+"__",
+            lambda self, other: class_array_rmath_op(self, op_str, other))
+
+  def class_array_add_math(cls):
+    class_array_add_math_ops(cls, "add")
+    class_array_add_math_ops(cls, "sub")
+    class_array_add_math_ops(cls, "mul")
+    class_array_add_math_ops(cls, "add")
+
+  def class_array_comp_op(self, op_str, other):
+    comp_op = getattr(self.array, "__"+op_str+"__")
+    try:
+      return comp_op(other.array)
+    except AttributeError:
+      return comp_op(other)
+
+  def class_array_add_comp_op(cls, op_str):
+    setattr(cls,
+            "__"+op_str+"__",
+            lambda self, other: class_array_comp_op(self, op_str, other))
+
+  def class_array_add_comp(cls):
+    class_array_add_comp_op(cls, "lt")
+    class_array_add_comp_op(cls, "le")
+    class_array_add_comp_op(cls, "eq")
+    class_array_add_comp_op(cls, "ne")
+    class_array_add_comp_op(cls, "gt")
+    class_array_add_comp_op(cls, "ge")
+
+%}
+
 //////////////////////////
 // Domi Version support //
 //////////////////////////
@@ -412,12 +481,6 @@ MDMap = MDMap_default
 ///////////////////////////
 // Domi MDVector support //
 ///////////////////////////
-%ignore Domi::MDVector::operator=;
-%ignore Domi::MDVector::operator[];
-%ignore Domi::MDVector::getTpetraVectorView;
-%ignore Domi::MDVector::getTpetraMultiVectorView;
-%ignore Domi::MDVector::getTpetraVectorCopy;
-%ignore Domi::MDVector::getTpetraMultiVectorCopy;
 %extend Domi::MDVector
 {
   Domi::MDVector< Scalar, Node > __getitem__(PyObject * indexes)
@@ -490,27 +553,77 @@ MDMap = MDMap_default
     return PyTrilinos::convertToDistArray(*self);
   }
 
-  PyObject * dtype()
-  {
-    return PyArray_TypeObjectFromType(PyTrilinos::NumPy_TypeCode< Scalar >());
-  }
+  // PyObject * dtype()
+  // {
+  //   return PyArray_TypeObjectFromType(PyTrilinos::NumPy_TypeCode< Scalar >());
+  // }
 }
+%ignore Domi::MDVector::operator=;
+%ignore Domi::MDVector::operator[];
+%ignore Domi::MDVector::getTpetraVectorView;
+%ignore Domi::MDVector::getTpetraMultiVectorView;
+%ignore Domi::MDVector::getTpetraVectorCopy;
+%ignore Domi::MDVector::getTpetraMultiVectorCopy;
 %ignore Domi::MDVector::getDataNonConst;
 %ignore Domi::MDVector::getData;
-
 %include "Domi_MDVector.hpp"
 %teuchos_rcp(Domi::MDVector< int   , Domi::DefaultNode::DefaultNodeType >)
 %teuchos_rcp(Domi::MDVector< long  , Domi::DefaultNode::DefaultNodeType >)
 %teuchos_rcp(Domi::MDVector< float , Domi::DefaultNode::DefaultNodeType >)
 %teuchos_rcp(Domi::MDVector< double, Domi::DefaultNode::DefaultNodeType >)
+%pythoncode
+%{
+  def MDVector_getattr(self, name):
+      if name == "array":
+          a = self.getData()
+          self.__dict__["array"] = a
+          return a
+      elif name == "shape":
+          return self.array.shape
+      elif name == "dtype":
+          return self.array.dtype
+      else:
+          raise AttributeError("'%s' not an attribute of MDVector" % name)
+  def MDVector_setattr(self, name, value):
+      if name in ("array", "shape", "dtype"):
+          raise AttributeError("Cannot change MDVector '%s' attribute", name)
+      else:
+          self.__dict__[name] = value
+  def upgradeMDVectorClass(cls):
+      cls.__getattr__ = MDVector_getattr
+      cls.__setattr__ = MDVector_setattr
+      cls.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
+      cls.__len__     = lambda self: self.array.__len__()
+      cls.__str__     = lambda self: self.array.__str__()
+      cls.copy        = lambda self: cls(self)
+      class_array_add_math(cls)
+      class_array_add_comp(cls)
+
+%}
 %template(MDVector_int   )
   Domi::MDVector< int   , Domi::DefaultNode::DefaultNodeType >;
+%pythoncode
+%{
+  upgradeMDVectorClass(MDVector_int)
+%}
 %template(MDVector_long  )
   Domi::MDVector< long  , Domi::DefaultNode::DefaultNodeType >;
+%pythoncode
+%{
+  upgradeMDVectorClass(MDVector_long)
+%}
 %template(MDVector_float )
   Domi::MDVector< float , Domi::DefaultNode::DefaultNodeType >;
+%pythoncode
+%{
+  upgradeMDVectorClass(MDVector_float)
+%}
 %template(MDVector_double)
   Domi::MDVector< double, Domi::DefaultNode::DefaultNodeType >;
+%pythoncode
+%{
+  upgradeMDVectorClass(MDVector_double)
+%}
 
 ////////////////////////////
 // from_DistArray support //

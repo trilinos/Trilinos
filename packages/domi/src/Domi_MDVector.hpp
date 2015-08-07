@@ -2409,10 +2409,10 @@ MDVector< Scalar, Node >::
 getTpetraMultiVectorView() const
 {
   // Determine the vector axis and related info
-  int vectorAxis = (getLayout() == C_ORDER) ? 0 : numDims()-1;
-  int padding    = getLowerPadSize(vectorAxis) + getUpperPadSize(vectorAxis);
-  int commDim    = getCommDim(vectorAxis);
-  int numVectors = getGlobalDim(vectorAxis);
+  int vectorAxis    = (getLayout() == C_ORDER) ? 0 : numDims()-1;
+  int padding       = getLowerPadSize(vectorAxis) + getUpperPadSize(vectorAxis);
+  int commDim       = getCommDim(vectorAxis);
+  size_t numVectors = getGlobalDim(vectorAxis);
 
   // Obtain the appropriate MDMap and check that it is contiguous
   Teuchos::RCP< const MDMap< Node > > newMdMap;
@@ -2453,7 +2453,7 @@ getTpetraMultiVectorView() const
                                                LocalOrdinal,
                                                GlobalOrdinal,
                                                Node2 >(tpetraMap,
-                                                       _mdArrayRcp.arrayRCP(),
+                                                       _mdArrayView.arrayView(),
                                                        lda,
                                                        numVectors));
 }
