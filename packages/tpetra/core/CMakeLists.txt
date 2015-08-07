@@ -338,208 +338,118 @@ MESSAGE(STATUS "   KokkosOpenMPWrapperNode:  ${HAVE_TPETRA_OPENMP}")
 MESSAGE(STATUS "   KokkosCudaWrapperNode:    ${HAVE_TPETRA_CUDA}")
 MESSAGE(STATUS "   SerialNode (DEPRECATED):  ${HAVE_TPETRA_SERIALCLASSIC}")
 
-#-----------------------------------------------------------------------
-#---------------------Global Ordinals-----------------------------------
-#-----------------------------------------------------------------------
-#The user gets what he asks for, and if nothing is asked for enable "int"
- 
-# Default logic
+# ============================================================
+# GlobalOrdinal types
+# ============================================================
+
+# Decide what GlobalOrdinal types to enable by default.  If ETI is ON,
+# "enabling a GlobalOrdinal type" means that Tpetra objects with
+# GlobalOrdinal as a template parameter will
+# 
+#   1. get instantiated explicitly for that GlobalOrdinal type, and
+#   2. get tested for that GlobalOrdinal type, if their test is also
+#      templated on GlobalOrdinal type.
+#
+# If ETI is OFF, #1 no longer holds, but #2 still holds.
+#
+# Currently, we always enable int, because MueLu requires it for
+# examples and tests (this is Bug 6358).  Furthermore, if Teuchos
+# enables long long support (it does not by default), we also enable
+# long long (which C++11 / C99 guarantees to be >= 64 bits).  We
+# currently only enable other types if the user asks for them.  (One
+# exception: for backwards compatibility, if ETI is OFF, we also
+# enable exactly one of long long or long.)
+#
 # Note that long is 64 bits on some platforms, and 32 bits on other
 # platforms.  On the latter, you may use long long instead, which
 # C++11 / C99 guarantees to be at least 64 bits long.
+#
+# Tpetra has the option to set GlobalOrdinal = unsigned int, because
+# it helps catch potential errors when GlobalOrdinal is unsigned and
+# smaller than global_size_t (e.g., using the wrong
+# Teuchos::OrdinalTraits<>::invalid().  This option is OFF by default.
 
-# NOTE: The unsigned int is used because they help catch errors with caused
-# when GlobalOrdinal is unsigned and GlobalOrdinal is smaller than
-# global_size_t (using wrong Teuchos::OrdinalTraits<>::invald(). 
+GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)
+GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
 
-IF (${${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION})
-  IF (Tpetra_INST_INT_LONG_LONG OR HAVE_TEUCHOS_LONG_LONG_INT) 
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ON)
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)  
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)  
-  ELSE()
-    IF (Tpetra_INST_INT_LONG) 
-      GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
-      GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
-      GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)  
-      GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)  
-    ELSE()
-      IF (Tpetra_INST_INT_UNSIGNED)
-        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
-        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
-        GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT ON)  
-        GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)  
-      ELSE()
-        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
-        GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
-        GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)  
-        GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)  
-      ENDIF()
-    ENDIF()
-  ENDIF() # Tpetra_INST_INT_LONG_LONG OR HAVE_TEUCHOS_LONG_LONG_INT
-
-  # Decide whether to enable various GlobalOrdinal types
-
-  TRIBITS_ADD_OPTION_AND_DEFINE(  
-    Tpetra_INST_INT_INT
-    HAVE_TPETRA_INST_INT_INT
-    "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over GlobalOrdinal = int.  This option is ${HAVE_TPETRA_INST_INT_INT_DEFAULT} by default."
-    ${HAVE_TPETRA_INST_INT_INT_DEFAULT}
-    )
-
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    Tpetra_INST_INT_UNSIGNED
-    HAVE_TPETRA_INST_INT_UNSIGNED
-    "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over GlobalOrdinal = unsigned.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT} by default."
-    ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT}
-    )
-  
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    Tpetra_INST_INT_LONG
-    HAVE_TPETRA_INST_INT_LONG
-    "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over GlobalOrdinal = long.  This option is ${HAVE_TPETRA_INST_INT_LONG_DEFAULT} by default."
-    ${HAVE_TPETRA_INST_INT_LONG_DEFAULT}
-    )
-
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    Tpetra_INST_INT_LONG_LONG
-    HAVE_TPETRA_INST_INT_LONG_LONG
-    "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over GlobalOrdinal = long long.  This option is ${HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT} by default."
-    ${HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT}
-    ) 
-
-  # Set availability macros for various GlobalOrdinal types
-
-  IF(Tpetra_INST_INT_INT) 
-    GLOBAL_SET(HAVE_TPETRA_INT_INT ON)
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_INT_INT OFF)
-  ENDIF()
-  IF(Tpetra_INST_INT_UNSIGNED) 
-    GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED ON)
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED OFF)
-  ENDIF()
-  IF(Tpetra_INST_INT_LONG) 
-    GLOBAL_SET(HAVE_TPETRA_INT_LONG ON)
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_INT_LONG OFF)
-  ENDIF()
-  IF(Tpetra_INST_INT_LONG_LONG) 
-    GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG ON)
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG OFF)
-  ENDIF()
-  
-  # Append GlobalOrdinal types to instantiation list.  Add them to
-  # Scalar types as well, since Tpetra needs Scalar=GlobalOrdinal for
-  # some communication routines.
-
-  IF(Tpetra_INST_INT_INT) 
-    LIST(APPEND TpetraCore_ETI_SCALARS "int")
-    LIST(APPEND TpetraCore_ETI_GORDS "int")
-  ENDIF()
-  IF(Tpetra_INST_INT_UNSIGNED) 
-    LIST(APPEND TpetraCore_ETI_SCALARS "unsigned")
-    LIST(APPEND TpetraCore_ETI_GORDS "unsigned")
-  ENDIF()
-  IF(Tpetra_INST_INT_LONG) 
-    LIST(APPEND TpetraCore_ETI_SCALARS "long")
-    LIST(APPEND TpetraCore_ETI_GORDS "long")
-  ENDIF()
-  IF(Tpetra_INST_INT_LONG_LONG) 
-    LIST(APPEND TpetraCore_ETI_SCALARS "long long")
-    LIST(APPEND TpetraCore_ETI_GORDS "long long")
-  ENDIF()
-
-  # Make sure that at least one GlobalOrdinal type got activated
-  
-  IF(Tpetra_INST_INT_INT OR Tpetra_INST_INT_UNSIGNED OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG)
-    GLOBAL_SET(HAVE_TPETRA_GLOBALORDINAL ON)
-  ELSE()
-    MESSAGE(FATAL_ERROR "Tpetra: No GlobalOrdinal type is enabled. One GlobalOrdinal type needs to be enabled to use ETI.")   
-  ENDIF()  
-  IF(Tpetra_INST_INT_LONG_LONG AND NOT Teuchos_ENABLE_LONG_LONG_INT)
-    MESSAGE(FATAL_ERROR "Tpetra: Long long enabled in Tpetra but not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT to ON or set Tpetra_INST_INT_LONG_LONG to OFF.")
-  ENDIF()
-
-ELSE() # ETI is OF
-
-  # If ETI is OFF, we follow the following rules:
-  #
-  # 1. Respect Tpetra_INST_* for determining nondefault behavior
-  #
-  # 2. By default, always enable GlobalOrdinal = int, as MueLu
-  #    currently (as of 05 Aug 2015) requires it
-  #
-  # 3. Enable exactly one of long long, or long.  Prefer long long,
-  #    as it is guaranteed always to be >= 64 bits.
-
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
-  IF (HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
+IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+ELSE ()
+  IF (${Teuchos_ENABLE_LONG_LONG_INT})
     GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
   ELSE ()
     GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
   ENDIF ()
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT OFF)
+ENDIF ()
+GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
 
-  IF (Tpetra_INST_INT_LONG_LONG OR HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT)
-    IF (NOT ${HAVE_TEUCHOS_LONG_LONG_INT})
-      MESSAGE (FATAL_ERROR "Tpetra: You enabled GlobalOrdinal = long long by setting Tpetra_INST_INT_LONG_LONG:BOOL=ON, but it is not enabled in Teuchos.  You must set Teuchos_ENABLE_LONG_LONG_INT:BOOL=ON as well if you wish to use long long as a GlobalOrdinal type.")
-     ENDIF ()
-     GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG ON)
-  ELSE ()
-     GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG OFF)
-  ENDIF ()
+#
+# Define options for enabling various GlobalOrdinal types
+#
 
-  IF (Tpetra_INST_INT_LONG OR HAVE_TPETRA_INST_INT_LONG_DEFAULT)
-    GLOBAL_SET(HAVE_TPETRA_INT_LONG ON)
-  ELSE ()
-    GLOBAL_SET(HAVE_TPETRA_INT_LONG OFF)
-  ENDIF ()
+TRIBITS_ADD_OPTION_AND_DEFINE(  
+  Tpetra_INST_INT_INT
+  HAVE_TPETRA_INST_INT_INT
+  "Enable GlobalOrdinal = int in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_INT_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_INT_INT_DEFAULT}
+  )
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_INT_UNSIGNED
+  HAVE_TPETRA_INST_INT_UNSIGNED
+  "Enable GlobalOrdinal = unsigned in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_INT_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT}
+  )
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_INT_LONG
+  HAVE_TPETRA_INST_INT_LONG
+  "Enable GlobalOrdinal = long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_INT_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_INT_LONG_DEFAULT}
+  )
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_INT_LONG_LONG
+  HAVE_TPETRA_INST_INT_LONG_LONG
+  "Enable GlobalOrdinal = long long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_INT_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT}
+  ) 
 
-  IF (Tpetra_INST_INT_UNSIGNED OR HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT)
-    GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED ON)
-  ELSE ()
-    GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED OFF)
-  ENDIF ()
+# Set availability macros for various GlobalOrdinal types
+GLOBAL_SET(HAVE_TPETRA_INT_INT ${Tpetra_INST_INT_INT})
+GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED ${Tpetra_INST_INT_UNSIGNED})
+GLOBAL_SET(HAVE_TPETRA_INT_LONG ${Tpetra_INST_INT_LONG})
+GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG ${Tpetra_INST_INT_LONG_LONG})
 
-  # mfh 05 Aug 2015: Unfortunately, MueLu still requires that this be
-  # ON, even if applications never use it.
-  GLOBAL_SET(HAVE_TPETRA_INT_INT ON)
-  
-
-  # Even though ETI is still OFF, we still require that Tpetra enable
-  # at least one GlobalOrdinal type.  This ensures that tests will
-  # actually test something (but see Bug 6380).
-  IF (HAVE_TPETRA_INT_INT OR HAVE_TPETRA_INT_UNSIGNED OR HAVE_TPETRA_INT_LONG OR HAVE_TPETRA_INT_LONG_LONG)
-    # If this is ON, then Tpetra has at least one GlobalOrdinal type enabled.
-    GLOBAL_SET(HAVE_TPETRA_GLOBALORDINAL ON)
-  ELSE()
-    MESSAGE(FATAL_ERROR "Tpetra: At least one GlobalOrdinal type must be enabled.  This generally should not happen for the ETI OFF case.  Please report this bug to the Tpetra developers.")
-  ENDIF()  
-
-  # GlobalOrdinal types get added to the list of Scalar types.
-  IF(HAVE_TPETRA_INT_INT) 
-    LIST(APPEND TpetraCore_ETI_SCALARS "int")
-    LIST(APPEND TpetraCore_ETI_GORDS "int")
-  ENDIF()
-  IF(HAVE_TPETRA_INT_UNSIGNED)
-    LIST(APPEND TpetraCore_ETI_SCALARS "unsigned")
-    LIST(APPEND TpetraCore_ETI_GORDS "unsigned")
-  ENDIF()
-  IF(HAVE_TPETRA_INT_LONG)
-    LIST(APPEND TpetraCore_ETI_SCALARS "long")
-    LIST(APPEND TpetraCore_ETI_GORDS "long")
-  ENDIF()
-  IF(HAVE_TPETRA_INT_LONG_LONG)
-    LIST(APPEND TpetraCore_ETI_SCALARS "long long")
-    LIST(APPEND TpetraCore_ETI_GORDS "long long")
-  ENDIF()
-
+# Make sure that at least one GlobalOrdinal type got enabled.
+# Even if ETI is OFF, this will ensure that Tpetra actually 
+# tests something.
+IF (Tpetra_INST_INT_INT OR Tpetra_INST_INT_UNSIGNED OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG)
+  GLOBAL_SET (HAVE_TPETRA_GLOBALORDINAL ON)
+ELSE()
+  MESSAGE (FATAL_ERROR "Tpetra: No GlobalOrdinal type is enabled.  At least one GlobalOrdinal type must be enabled.")
 ENDIF()
+IF (Tpetra_INST_INT_LONG_LONG AND NOT Teuchos_ENABLE_LONG_LONG_INT)
+  MESSAGE (FATAL_ERROR "Tpetra: GlobalOrdinal = long long is enabled in Tpetra but is not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT=ON or set Tpetra_INST_INT_LONG_LONG=OFF.")
+ENDIF()
+
+# Append GlobalOrdinal types to instantiation /test list.  Add them to
+# the list of Scalar types as well, since Tpetra needs Scalar =
+# GlobalOrdinal for some communication routines.
+IF(Tpetra_INST_INT_INT) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "int")
+  LIST(APPEND TpetraCore_ETI_GORDS "int")
+ENDIF()
+IF(Tpetra_INST_INT_UNSIGNED) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "unsigned")
+  LIST(APPEND TpetraCore_ETI_GORDS "unsigned")
+ENDIF()
+IF(Tpetra_INST_INT_LONG) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "long")
+  LIST(APPEND TpetraCore_ETI_GORDS "long")
+ENDIF()
+IF(Tpetra_INST_INT_LONG_LONG) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "long long")
+  LIST(APPEND TpetraCore_ETI_GORDS "long long")
+ENDIF()
+
 
 ######################################################################
 # Scalars
