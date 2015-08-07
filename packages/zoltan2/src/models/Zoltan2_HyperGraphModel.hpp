@@ -388,7 +388,8 @@ HyperGraphModel<Adapter>::HyperGraphModel(
   try {
     numLocalVertices_ = ia->getLocalNumOf(primaryEType);
     ia->getIDsViewOf(primaryEType, vtxIds);
-    reduceAll(*comm_,Teuchos::REDUCE_SUM,1,&numLocalVertices_,&numGlobalVertices_);
+    size_t maxId = *(std::max_element(vtxIds,vtxIds+numLocalVertices_));
+    reduceAll(*comm_,Teuchos::REDUCE_MAX,1,&maxId,&numGlobalVertices_);
   }
   Z2_FORWARD_EXCEPTIONS;
 
@@ -425,7 +426,8 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     try {
       numLocalEdges_ = ia->getLocalNumOf(adjacencyEType);
       ia->getIDsViewOf(adjacencyEType, edgeIds);
-      reduceAll(*comm_,Teuchos::REDUCE_SUM,1,&numLocalEdges_,&numGlobalEdges_);
+      size_t maxId = *(std::max_element(edgeIds,edgeIds+numLocalEdges_));
+      reduceAll(*comm_,Teuchos::REDUCE_MAX,1,&maxId,&numGlobalEdges_);
     }
     Z2_FORWARD_EXCEPTIONS;
     

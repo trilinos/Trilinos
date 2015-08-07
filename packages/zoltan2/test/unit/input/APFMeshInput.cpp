@@ -132,11 +132,11 @@ int main(int narg, char *arg[]) {
                                      Zoltan2::MESH_EDGE,
                                      Zoltan2::MESH_FACE,
                                      Zoltan2::MESH_REGION};
-  int* numberGlobal = new int[dim+1];
+
   //Check the local number of each entity
   bool* has = new bool[dim+1];
   for (int i=0;i<=dim;i++) {
-    numberGlobal[i]=0;
+
     has[i]=true;
     if (ia.getLocalNumOf(ents[i])==0) {
       has[i]=false;
@@ -146,21 +146,10 @@ int main(int narg, char *arg[]) {
       std::cerr<<"Local number of entities does not match in dimension "<<i<<"\n";
       return 1;
     }
-    numberGlobal[i] = countOwned(m,i);
+
   }
 
-  //Check the global number of each entity
-  PCU_Add_Ints(numberGlobal,dim+1);
-  for (int i=0;i<=dim;i++) {
-    if (!has[i])
-      continue;
-    if (ia.getGlobalNumOf(ents[i])!=static_cast<unsigned int>(numberGlobal[i])) {
-      std::cerr<<"Global number of entities does not match in dimension "<<i<<"\n";
-      return 1;
-    }
-  }
-  delete [] numberGlobal;
-
+  
   //Check the coordinate dimension
   apf::GlobalNumbering** gnums = new apf::GlobalNumbering*[dim];
   apf::Numbering** lnums = new apf::Numbering*[dim];
