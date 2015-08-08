@@ -139,7 +139,7 @@ namespace impl
 
       bool use_nodeset_for_part_nodes_fields() const;
       void use_nodeset_for_part_nodes_fields(bool true_false);
-      
+
     private:
       void define_output_fields(const stk::mesh::BulkData& bulk_data);
       void setup_output_file(const std::string &filename, MPI_Comm communicator,
@@ -618,10 +618,6 @@ namespace impl
       void validate_output_file_index(size_t output_file_index) const;
       void validate_input_file_index(size_t input_file_index) const;
 
-      // Returns 4 or 8 based on several hueristics to determine
-      // the integer size required for an output database.
-      int check_integer_size_requirements();
-      
       // The `m_property_manager` member data contains properties that
       // can be used to set database-specific options in the
       // Ioss::DatabaseIO class.  Examples include compression, name
