@@ -151,6 +151,7 @@ private:
     // TODO
   }
 
+#ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
   void setCallbacksHypergraph(
     const RCP<const MatrixAdapter<user_t,userCoord_t> > &adp)
   {
@@ -208,7 +209,7 @@ private:
     // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMeshAdapter<Adapter>,
     //                         (void *) &(*adp));
   }
-
+#endif
   
 public:
 
@@ -265,7 +266,9 @@ public:
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
     setCallbacksGraph(adapter);
+#ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
     setCallbacksHypergraph(adapter);
+#endif
     if (adapter->coordinatesAvailable()) {
       setCallbacksGeom(adapter->getCoordinateInput());
     }
@@ -281,9 +284,11 @@ public:
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
     setCallbacksGraph(adapter);
+#ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
     //TODO:: check parameter list to see if hypergraph is needed. We dont want to build the model
     //       if we don't have to
     setCallbacksHypergraph(adapter);
+#endif
     setCallbacksGeom(&(*adapter));
   }
 
@@ -383,6 +388,7 @@ void AlgZoltan<Adapter>::partition(
   for (int i = 0; i < nObj; i++) partList[oLids[i]] = oParts[i];
   //
   
+#ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
   if (model!=RCP<const Model<Adapter> >()) {
     //Ghosting cleanup for copies
     ArrayView<const gno_t> Ids;
@@ -419,6 +425,7 @@ void AlgZoltan<Adapter>::partition(
         partList[lid_mapping[i]] = new_part;
     }
   }
+#endif
   
   solution->setParts(partList);
 

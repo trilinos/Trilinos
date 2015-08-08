@@ -51,7 +51,9 @@
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_IdentifierAdapter.hpp>
 
+#ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
 #include <Zoltan2_HyperGraphModel.hpp>
+#endif
 
 #include <Zoltan2_Util.hpp>
 #include <Zoltan2_TPLTraits.hpp>
@@ -158,6 +160,7 @@ static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
 /////////////////////////////////////////////////////////////////////////////
 // MESH ADAPTER CALLBACKS
 
+#ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
 template <typename Adapter>
 static int zoltanHGModelNumObj(void *data, int *ierr) {
   const HyperGraphModel<Adapter>* mdl = static_cast<HyperGraphModel<Adapter>* >(data);
@@ -324,6 +327,7 @@ static void zoltanHGCSForMeshAdapter(
   for (int i=0;i<nPins;i++)
     pinIds[i] = adjIds[i];
 }
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // MATRIX ADAPTER CALLBACKS
