@@ -2,9 +2,10 @@
 
 <ParameterList name="MueLu">
   <Parameter name="aggregation: drop scheme" type="string" value="matlab"/>
+  <Parameter name="sa: use filtered matrix" type="bool" value="false"/>
   <ParameterList name="strength-of-connection: params">
+    <Parameter name="Provides" type="string" value="Graph, int DofsPerNode, bool Filtering"/>
     <Parameter name="Needs" type="string" value="A"/>
-    <Parameter name="Provides" type="string" value="Graph, DofsPerNode"/>
     <Parameter name="Function" type="string" value="evolutionSoCFactory"/>
   </ParameterList>
 </ParameterList>
