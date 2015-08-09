@@ -88,9 +88,9 @@ typically accept numpy arrays in python (or any python sequence that
 numpy can convert to an array).  Similarly, methods that return C
 arrays in C++ will return numpy arrays in python.  Also, certain
 Epetra classes that represent contiguous blocks of homogeneous data
-have been given the attributes of numpy arrays using multiple
-inheritance: Vector, MultiVector, IntVector, SerialDenseVector,
-SerialDenseMatrix, IntSerialDenseVector and IntSerialDenseMatrix.
+have been given the attributes of numpy arrays: Vector, MultiVector,
+IntVector, SerialDenseVector, SerialDenseMatrix, IntSerialDenseVector
+and IntSerialDenseMatrix.
 "
 %enddef
 
@@ -116,6 +116,10 @@ SerialDenseMatrix, IntSerialDenseVector and IntSerialDenseMatrix.
 // Import the numpy interface
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
+
+// PyTrilinos Epetra utilities
+#include "PyTrilinos_Epetra_Util.hpp"
+
 %}
 
 // Global swig features
