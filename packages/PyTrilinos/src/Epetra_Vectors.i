@@ -129,6 +129,11 @@
     Py_DECREF(array);
     return result;
   }
+
+  PyObject * __distarray__()
+  {
+    return PyTrilinos::convertToDistArray(*self);
+  }
 }
 %ignore Epetra_IntVector::Values;
 %ignore Epetra_IntVector::Epetra_IntVector(Epetra_DataAccess,
@@ -391,8 +396,13 @@
 
   const Epetra_Vector & __call__(int i) const
   {
-    const Epetra_Vector & result = *self->operator()(i);
+    const Epetra_Vector & result = *(self->operator()(i));
     return result;
+  }
+
+  PyObject * __distarray__() const
+  {
+    return PyTrilinos::convertToDistArray(*self);
   }
 }
 %ignore Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess,
@@ -833,6 +843,11 @@
     Py_DECREF(iArray);
     return result;
   }
+
+  PyObject * __distarray__() const
+  {
+    return PyTrilinos::convertToDistArray(*self);
+  }
 }
 %ignore Epetra_Vector::Epetra_Vector(Epetra_DataAccess,
                                      Epetra_BlockMap const &,
@@ -1000,6 +1015,11 @@
     Py_XDECREF(gid_array);
     Py_XDECREF(val_array);
     return -1;
+  }
+
+  PyObject * __distarray__() const
+  {
+    return PyTrilinos::convertToDistArray(*self);
   }
 }
 %ignore Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess,
