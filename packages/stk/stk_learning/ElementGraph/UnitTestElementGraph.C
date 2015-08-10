@@ -218,33 +218,6 @@ void setup_node_sharing(stk::mesh::BulkData &mesh, const std::vector< std::vecto
 
 ElemElemGraphTester test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::BulkData &bulkData);
 
-void put_all_faces_in_io_part(stk::mesh::BulkData &mesh, stk::mesh::Selector locally_owned, stk::mesh::Part& face_output_part)
-{
-    mesh.modification_begin();
-    stk::mesh::PartVector part_vector;
-    part_vector.push_back(&face_output_part);
-    stk::mesh::EntityVector stk_faces;
-    stk::mesh::get_entities(mesh, stk::topology::FACE_RANK, stk_faces);
-    for(size_t count = 0; count < stk_faces.size(); ++count)
-    {
-        if(locally_owned(mesh.bucket(stk_faces[count])))
-        {
-            mesh.change_entity_parts(stk_faces[count], part_vector);
-        }
-    }
-    mesh.modification_end();
-}
-
-void writeStkDebuggingFile(stk::io::StkMeshIoBroker &stkMeshIoBroker, stk::mesh::BulkData &mesh, const std::string &output_name)
-{
-    stk::mesh::Part & face_output_part = mesh.mesh_meta_data().declare_part_with_topology("output_face_name", stk::topology::TRI_3);
-    stk::io::put_io_part_attribute(face_output_part);
-    put_all_faces_in_io_part(mesh, mesh.mesh_meta_data().locally_owned_part(), face_output_part);
-
-    size_t resultFileIndex = stkMeshIoBroker.create_output_mesh(output_name, stk::io::WRITE_RESULTS);
-    stkMeshIoBroker.write_output_mesh(resultFileIndex);
-}
-
 void test_add_elements_to_empty_graph(stk::mesh::BulkData::AutomaticAuraOption auto_aura_option)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
@@ -280,7 +253,7 @@ void test_add_elements_to_empty_graph(stk::mesh::BulkData::AutomaticAuraOption a
         stk::mesh::Selector selector(bulkData.mesh_meta_data().locally_owned_part());
         bulkData.get_entities(stk::topology::ELEMENT_RANK, selector, elements_to_add);
 
-        elem_graph.add_elements_to_graph(elements_to_add);
+        elem_graph.add_elements(elements_to_add);
 
         stk::mesh::Entity elem1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
         stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
@@ -424,10 +397,6 @@ ElemElemGraphTester test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::
 
     stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulkData, comm);
 
-//    stk::io::StkMeshIoBroker stkio(comm);
-//    stkio.set_bulk_data(bulkData);
-//    writeStkDebuggingFile(stkio, bulkData, "hex1x2x2.exo");
-
     std::vector<unsigned> counts;
     stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
 
@@ -478,7 +447,7 @@ ElemElemGraphTester test_add_elements_to_pre_existing_graph_and_mesh(stk::mesh::
         elements_to_add.push_back(elem4);
     }
 
-    elem_graph.add_elements_to_graph(elements_to_add);
+    elem_graph.add_elements(elements_to_add);
 
     if (0 == p_rank)
     {
@@ -567,7 +536,7 @@ void test_delete_elements_from_graph(ElemElemGraphTester &elem_graph, std::vecto
         }
     }
 
-    elem_graph.delete_elements_from_graph(elements_to_delete);
+    elem_graph.delete_elements(elements_to_delete);
 
     bulkData.modification_begin();
     for (stk::mesh::Entity elem : elements_to_delete)
@@ -716,7 +685,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         	EXPECT_EQ(0, bulkData.parallel_owner_rank(elements_to_add[i]));
         }
 
-        elem_graph.add_elements_to_graph(elements_to_add);
+        elem_graph.add_elements(elements_to_add);
 
         EXPECT_EQ(4u, elem_graph.size());
         EXPECT_EQ(6u, elem_graph.num_edges());
@@ -735,7 +704,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         elems_to_delete.push_back(elem2);
         elems_to_delete.push_back(elem3);
 
-        elem_graph.delete_elements_from_graph(elems_to_delete);
+        elem_graph.delete_elements(elems_to_delete);
 
         EXPECT_EQ(2u, elem_graph.size());
         EXPECT_EQ(0u, elem_graph.num_edges());
@@ -754,7 +723,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         elements_to_add.push_back(elem2);
         elements_to_add.push_back(elem3);
 
-        elem_graph.add_elements_to_graph(elements_to_add);
+        elem_graph.add_elements(elements_to_add);
 
         EXPECT_EQ(4u, elem_graph.size());
         EXPECT_EQ(6u, elem_graph.num_edges());
@@ -775,7 +744,7 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         elems_to_delete.push_back(elem1);
         elems_to_delete.push_back(elem3);
 
-        elem_graph.delete_elements_from_graph(elems_to_delete);
+        elem_graph.delete_elements(elems_to_delete);
 
         EXPECT_EQ(0u, elem_graph.size());
         const stk::mesh::impl::ElementGraph &e_graph = elem_graph.get_element_graph();
@@ -857,7 +826,7 @@ TEST(ElementGraph, HexAddShellSerial)
     }
     mesh.modification_end();
 
-    elem_graph.add_elements_to_graph(added_shells);
+    elem_graph.add_elements(added_shells);
 
     EXPECT_EQ(2u, elem_graph.size());
     EXPECT_EQ(0u, elem_graph.num_parallel_edges());
@@ -944,7 +913,7 @@ TEST( ElementGraph, HexDelShellSerial )
     EntityVector elements_to_delete;
     elements_to_delete.push_back(shell2);
 
-    elemElemGraph.delete_elements_from_graph(elements_to_delete);
+    elemElemGraph.delete_elements(elements_to_delete);
 
     mesh.modification_begin();
     mesh.destroy_entity(shell2);
@@ -1022,7 +991,7 @@ TEST( ElementGraph, HexDelShellHexSerial )
     EntityVector elements_to_delete;
     elements_to_delete.push_back(shell3);
 
-    elemElemGraph.delete_elements_from_graph(elements_to_delete);
+    elemElemGraph.delete_elements(elements_to_delete);
 
     mesh.modification_begin();
     mesh.destroy_entity(shell3);
@@ -1106,7 +1075,7 @@ TEST( ElementGraph, DISABLED_HexAddShellAddShellSerial )
     }
     mesh.modification_end();
 
-    elemElemGraph.add_elements_to_graph(added_shells);
+    elemElemGraph.add_elements(added_shells);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -1199,7 +1168,7 @@ TEST( ElementGraph, HexAddShellHexSerial )
     }
     mesh.modification_end();
 
-    elemElemGraph.add_elements_to_graph(added_shells);
+    elemElemGraph.add_elements(added_shells);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -1293,7 +1262,7 @@ TEST( ElementGraph, DISABLED_HexAddShellAddShellHexSerial )
     }
     mesh.modification_end();
 
-    elemElemGraph.add_elements_to_graph(added_shells);
+    elemElemGraph.add_elements(added_shells);
 
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
@@ -2193,7 +2162,7 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
 
         bulkData.batch_change_entity_parts(killedElements, add_parts, remove_parts);
 
-        perform_element_death(bulkData, elem_graph, killedElements, active, boundary_mesh_parts);
+        process_killed_elements(bulkData, elem_graph, killedElements, active, boundary_mesh_parts);
 
         if (proc == 1)
         {
@@ -3259,7 +3228,7 @@ TEST(ElementGraph, test_element_death)
                 stk::mesh::EntityVector killedElements = get_killed_elements(bulkData, i, active);
                 move_killled_elements_to_part(bulkData, killedElements, block_1, active);
                 double start_time = stk::wall_time();
-                perform_element_death(bulkData, elementGraph, killedElements, active, boundary_mesh_parts);
+                process_killed_elements(bulkData, elementGraph, killedElements, active, boundary_mesh_parts);
                 elapsed_death_time += (stk::wall_time() - start_time);
             }
 
@@ -4472,7 +4441,7 @@ TEST( ElementGraph, Hex0DelShell1Parallel )
         elements_to_delete.push_back(shell2);
     }
 
-    elemElemGraph.delete_elements_from_graph( elements_to_delete );
+    elemElemGraph.delete_elements( elements_to_delete );
 
     mesh.modification_begin();
     if (p_rank == 1) {
@@ -4589,7 +4558,7 @@ TEST( ElementGraph, Hex0AddShell1Parallel )
     if (p_rank == 1) {
         elements_to_add.push_back(shell2);
     }
-    elemElemGraph.add_elements_to_graph(elements_to_add);
+    elemElemGraph.add_elements(elements_to_add);
 
     if (p_rank == 0) {
         // Connectivity for Hex Element 1
@@ -4713,7 +4682,7 @@ TEST( ElementGraph, Hex0AddShell0Hex1Parallel )
     if (0 == p_rank) {
         addVector.push_back(shell3);
     }
-    elemElemGraph.add_elements_to_graph(addVector);
+    elemElemGraph.add_elements(addVector);
 
     if (p_rank == 0) {
         // Connectivity for Hex Element 1
@@ -4866,7 +4835,7 @@ TEST( ElementGraph, Hex0AddShell1Hex2Parallel )
         addVector.push_back(shell3);
     }
 
-    elemElemGraph.add_elements_to_graph(addVector);
+    elemElemGraph.add_elements(addVector);
 
     if (p_rank == 0) {
         // Connectivity for Hex Element 1
@@ -5023,7 +4992,7 @@ TEST( ElementGraph, Hex0Shell1AddHex2Parallel )
         addVector.push_back(hex2);
     }
 
-    elemElemGraph.add_elements_to_graph(addVector);
+    elemElemGraph.add_elements(addVector);
 
     if (p_rank == 0) {
         // Connectivity for Hex Element 1
@@ -5637,7 +5606,7 @@ TEST( ElementGraph, Hex0DelShell0Hex1Parallel )
         elements_to_delete.push_back(shell3);
     }
 
-    elemElemGraph.delete_elements_from_graph( elements_to_delete );
+    elemElemGraph.delete_elements( elements_to_delete );
 
     mesh.modification_begin();
     if (p_rank == 0) {
@@ -5769,7 +5738,7 @@ TEST( ElementGraph, Hex0DelShell1Hex2Parallel )
         elements_to_delete.push_back(shell3);
     }
 
-    elemElemGraph.delete_elements_from_graph( elements_to_delete );
+    elemElemGraph.delete_elements( elements_to_delete );
 
     mesh.modification_begin();
     if (p_rank == 1) {
@@ -6153,7 +6122,7 @@ TEST( ElementGraph, Hex0AddShell1Hex0Parallel )
     if (1 == p_rank) {
         addVector.push_back(shell3);
     }
-    elemElemGraph.add_elements_to_graph(addVector);
+    elemElemGraph.add_elements(addVector);
 
     if (p_rank == 0) {
         // Connectivity for Hex Element 1
@@ -6275,7 +6244,7 @@ TEST( ElementGraph, Hex0DelShell1Hex0Parallel )
         elements_to_delete.push_back(shell3);
     }
 
-    elemElemGraph.delete_elements_from_graph( elements_to_delete );
+    elemElemGraph.delete_elements( elements_to_delete );
 
     mesh.modification_begin();
     if (p_rank == 1) {
@@ -6865,7 +6834,7 @@ void test_add_element_to_graph_with_element_death(stk::mesh::BulkData::Automatic
 
         ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
-        stk::mesh::perform_element_death(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
+        stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
 
         if (0 == pRank)
         {
@@ -6969,7 +6938,7 @@ void test_delete_element_from_graph_with_element_death(stk::mesh::BulkData::Auto
 
         ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
-        stk::mesh::perform_element_death(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
+        stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
 
         stk::mesh::comm_mesh_counts(bulkData, entity_counts);
 
@@ -7327,23 +7296,6 @@ TEST(ElementGraph, TestKeyHoleSimilarProblemBInParallel)
             EXPECT_EQ( 2u, graph.num_parallel_edges());
         }
     }
-}
-
-std::vector<stk::mesh::EntityId> get_ids_in_use(stk::mesh::BulkData& bulkData)
-{
-    std::vector<stk::mesh::EntityId> ids_in_use;
-
-    const stk::mesh::BucketVector& buckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
-    for(size_t i = 0; i < buckets.size(); ++i)
-    {
-        const stk::mesh::Bucket& bucket = *buckets[i];
-        for(size_t j = 0; j < bucket.size(); ++j)
-        {
-            stk::mesh::Entity element = bucket[j];
-            ids_in_use.push_back(bulkData.identifier(element));
-        }
-    }
-    return ids_in_use;
 }
 
 void test_parallel_uniqueness(const std::vector<stk::mesh::EntityId> &ids_in_use, const std::vector<stk::mesh::EntityId>& requested_ids, stk::ParallelMachine comm)

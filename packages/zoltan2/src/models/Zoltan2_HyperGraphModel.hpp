@@ -95,7 +95,7 @@ public:
   typedef typename Adapter::scalar_t    scalar_t;
   typedef typename Adapter::gno_t       gno_t;
   typedef typename Adapter::lno_t       lno_t;
-  typedef typename Adapter::zgid_t       zgid_t;
+  typedef typename Adapter::zgid_t      zgid_t;
   typedef typename Adapter::node_t      node_t;
   typedef typename Adapter::user_t      user_t;
   typedef typename Adapter::userCoord_t userCoord_t;
@@ -119,14 +119,14 @@ public:
   
   HyperGraphModel(const RCP<const MatrixAdapter<user_t,userCoord_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
-    modelFlag_t &modelFlags)
+    modelFlag_t &modelFlags, CentricView view)
   {
     throw std::runtime_error("Building HyperGraphModel from MatrixAdapter not implemented yet");
   }
 
   HyperGraphModel(const RCP<const GraphAdapter<user_t,userCoord_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
-    modelFlag_t &modelFlags)
+    modelFlag_t &modelFlags, CentricView view)
   {
     throw std::runtime_error("Building HyperGraphModel from GraphAdapter not implemented yet");
   }
@@ -137,14 +137,14 @@ public:
   
   HyperGraphModel(const RCP<const VectorAdapter<userCoord_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
-    modelFlag_t &flags)
+    modelFlag_t &flags, CentricView view)
   {
     throw std::runtime_error("cannot build HyperGraphModel from VectorAdapter");
   }
 
   HyperGraphModel(const RCP<const IdentifierAdapter<user_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
-    modelFlag_t &flags)
+    modelFlag_t &flags, CentricView view)
   {
     throw std::runtime_error("cannot build HyperGraphModel from IdentifierAdapter");
   }
@@ -154,9 +154,17 @@ public:
    */
   CentricView getCentricView() const {return view_;}
 
+  /*! \brief Returns true if the vertices are unique false otherwise
+   */
+  bool areVertexIDsUnique() const {return unique;}
+  
   /*! \brief Returns the number vertices on this process.
    */
   size_t getLocalNumVertices() const { return numLocalVertices_; }
+
+  /*! \brief Returns the number vertices on this process that are owned.
+   */
+  size_t getLocalNumOwnedVertices() const { return numOwnedVertices_; }
 
   /*! \brief Returns the global number vertices.
    */
@@ -213,6 +221,18 @@ public:
     return nv;
   }
 
+  /*! \brief Sets pointer to the ownership of this processes vertices.
+
+      \param isOwner will on return point to the list of ownership for
+        each vertex on this process.
+   */
+  size_t getOwnedList(ArrayView<bool> &isOwner) const
+  {
+    size_t nv = isOwner_.size();
+    isOwner = isOwner_(0, nv);
+    return nv;
+  }
+
   /*! \brief Sets pointers to this process' hyperedge Ids and their weights.
 
       \param Ids will on return point to the list of the global Ids for
@@ -231,7 +251,7 @@ public:
   }
 
   /*! \brief Sets pointers to this process' pins global Ids based on 
-    the centric view giveb by getCentricView()
+    the centric view given by getCentricView()
 
       \param pinIds This is the list of global neighbor Ids corresponding
         to the vertices or hyperedges listed in getVertexList/getEdgeList.
@@ -247,9 +267,9 @@ public:
     ArrayView<input_t> &wgts) const
   {
     pinIds = pinGids_(0, numLocalPins_);
-    offsets = offsets_.view(0, numLocalVertices_+1);
-    wgts = eWeights_.view(0, nWeightsPerPin_);
-    return numLocalPins_;
+    offsets = offsets_.view(0, offsets_.size());
+    wgts = pWeights_.view(0, nWeightsPerPin_);
+    return pinGids_.size();
   }
 
 
@@ -278,8 +298,10 @@ private:
   const RCP<const Comm<int> > comm_;
 
   CentricView view_;
-
+  bool unique;
   ArrayRCP<const gno_t> gids_;        // vertices of input graph
+  
+  ArrayRCP<bool> isOwner_;
 
   int numWeightsPerVertex_;
   ArrayRCP<input_t> vWeights_;
@@ -301,6 +323,7 @@ private:
   // For convenience
 
   size_t numLocalVertices_;
+  size_t numOwnedVertices_;
   size_t numGlobalVertices_;
   size_t numLocalEdges_;
   size_t numGlobalEdges_;
@@ -316,7 +339,7 @@ private:
 
 ////////////////////////////////////////////////////////////////
 //TODO get the weights for vertices and hyperedges
-//GFD Do we need weights for pins too? First adjacency weights
+//GFD Do we need weights for pins too?
 template <typename Adapter>
 HyperGraphModel<Adapter>::HyperGraphModel(
   const RCP<const MeshAdapter<user_t> > &ia,
@@ -328,6 +351,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
        comm_(comm),
        view_(view),
        gids_(),
+       isOwner_(),
        numWeightsPerVertex_(0),
        vWeights_(),
        vCoordDim_(0),
@@ -346,12 +370,12 @@ HyperGraphModel<Adapter>::HyperGraphModel(
        numLocalPins_(0)
 {
   env_->timerStart(MACRO_TIMERS, "HyperGraphModel constructed from MeshAdapter");
-
-  int me = comm_->getRank();
+  //int me = comm_->getRank();
+  //int all = comm_->getSize();
 
   // This HyperGraphModel is built with vertices == ia->getPrimaryEntityType()
   // and hyperedges == ia->getAdjacencyEntityType() from MeshAdapter.
-
+  
   std::string model_type("traditional");
   const Teuchos::ParameterList &pl = env->getParameters();
   const Teuchos::ParameterEntry *pe2 = pl.getEntryPtr("hypergraph_model_type");
@@ -365,35 +389,68 @@ HyperGraphModel<Adapter>::HyperGraphModel(
   Zoltan2::MeshEntityType adjacencyEType = ia->getAdjacencyEntityType();
 
   // Get the IDs of the primary entity type; these are hypergraph vertices
-  
   zgid_t const *vtxIds=NULL;
   try {
     numLocalVertices_ = ia->getLocalNumOf(primaryEType);
     ia->getIDsViewOf(primaryEType, vtxIds);
-    numGlobalVertices_ = ia->getGlobalNumOf(primaryEType);
+    size_t maxId = *(std::max_element(vtxIds,vtxIds+numLocalVertices_));
+    reduceAll(*comm_,Teuchos::REDUCE_MAX,1,&maxId,&numGlobalVertices_);
   }
   Z2_FORWARD_EXCEPTIONS;
 
   gids_ = arcp<const gno_t>(vtxIds, 0, numLocalVertices_, false);
 
-  // Get the IDs of the adjacency entity type; these are hypergraph hyperedges
+  //A mapping from gids to lids for efficiency
+  std::map<gno_t,lno_t> lid_mapping;
+  for (size_t i=0;i<numLocalVertices_;i++)
+    lid_mapping[gids_[i]]=i;
+
+  // Define owners for each hypergraph vertex by the minimum 
+  // process that has the vertex
+  typedef Tpetra::Map<lno_t, gno_t> map_t;
+
+  unique = ia->areEntityIDsUnique(ia->getPrimaryEntityType());
+  numOwnedVertices_=numLocalVertices_;
+  isOwner_ = ArrayRCP<bool>(numLocalVertices_,true);
+  if (!unique) {
+    
+    Tpetra::global_size_t numGlobalCoords = 
+      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+    Teuchos::RCP<const map_t> mapWithCopies =
+      rcp(new map_t(numGlobalCoords, gids_(), 0, comm));
+    Teuchos::RCP<const map_t> oneToOneMap =
+      Tpetra::createOneToOne<lno_t, gno_t>(mapWithCopies);
+
+    numOwnedVertices_=oneToOneMap->getNodeNumElements();
+    for (size_t i=0;i<numLocalVertices_;i++) {
+      isOwner_[i] = oneToOneMap->isNodeGlobalElement(gids_[i]);
+    }
+  }
+
+
   if (model_type=="traditional") {
+    // Traditional: Get the IDs of the adjacency entity type; 
+    //              these are hypergraph hyperedges
+  
     zgid_t const *edgeIds=NULL;
     try {
       numLocalEdges_ = ia->getLocalNumOf(adjacencyEType);
       ia->getIDsViewOf(adjacencyEType, edgeIds);
-      numGlobalEdges_ = ia->getGlobalNumOf(adjacencyEType);
+      size_t maxId = *(std::max_element(edgeIds,edgeIds+numLocalEdges_));
+      reduceAll(*comm_,Teuchos::REDUCE_MAX,1,&maxId,&numGlobalEdges_);
     }
     Z2_FORWARD_EXCEPTIONS;
     
     edgeGids_ = arcp<const gno_t>(edgeIds, 0, numLocalEdges_, false);
   }
   else if (model_type=="ghosting") {
+    // Ghosting: Use the vertices as the hyperedges as well
     numLocalEdges_ = numLocalVertices_;
     edgeGids_ = arcp<const gno_t>(vtxIds, 0, numLocalVertices_, false);
     numGlobalEdges_ = numGlobalVertices_;
   }
  
+  //Define the entity types to use for the pins based on the centric view
   Zoltan2::MeshEntityType primaryPinType = primaryEType;
   Zoltan2::MeshEntityType adjacencyPinType = adjacencyEType;
   size_t numPrimaryPins = numLocalVertices_;
@@ -403,7 +460,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     numPrimaryPins = numLocalEdges_;
   }
   if (model_type=="traditional") {
-    
+    //Get the pins from using the traditional method
     zgid_t const *nborIds=NULL;
     lno_t const *offsets=NULL;
     
@@ -417,138 +474,94 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     pinGids_ = arcp<const gno_t>(nborIds, 0, numLocalPins_, false);
     offsets_ = arcp<const lno_t>(offsets, 0, numPrimaryPins + 1, false);
   }
-  else if (model_type=="ghosting") {
-    typedef std::map<gno_t, unsigned int> ghost_t;
+  else if (model_type=="ghosting") { 
+    view_ = VERTEX_CENTRIC;
+    //The ghost and distance pairing
+    typedef std::set<gno_t> ghost_t;
+
+    //ghosting per each vertex
     typedef std::map<gno_t,ghost_t> ghost_map_t;
-    //Find local ghosting with second adjacency
-    if(!me) std::cout<<"\n\nPHASE ONE\n\n";
-    std::map<gno_t,lno_t> lid_mapping;
-    for (size_t i=0;i<numLocalVertices_;i++)
-      lid_mapping[gids_[i]]=i;
+    
     primaryPinType=primaryEType;
-    if (primaryEType==MESH_REGION||(primaryEType==MESH_FACE&&ia->getGlobalNumOf(MESH_REGION)==0)) {
-      throw std::runtime_error("This ghosting implementation does not work on primary type being mesh element");
-    }
     adjacencyPinType =ia->getSecondAdjacencyEntityType();
-    unsigned int layers=4;
-    const lno_t* offsets;
-    const zgid_t* adjacencyIds;
-    //size_t numSecondAdj;
+    unsigned int layers=2;
+    const Teuchos::ParameterEntry *pe3 = pl.getEntryPtr("ghost_layers");
+    if (pe3){
+      int l;
+      l = pe3->getValue<int>(&l);
+      layers = static_cast<unsigned int>(l);
+    }
+    
+    typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
+    typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>   sparse_matrix_type;
+    RCP<sparse_matrix_type> secondAdj;
     if (!ia->avail2ndAdjs(primaryPinType,adjacencyPinType)) {
-      Zoltan2::get2ndAdjsViewFromAdjs<user_t>(ia,primaryPinType, adjacencyPinType,
-                                          offsets, adjacencyIds);
+      secondAdj=Zoltan2::get2ndAdjsMatFromAdjs<user_t>(ia,comm_,primaryPinType, adjacencyPinType);
     }
     else {
-      //numSecondAdj = ia->getLocalNum2ndAdjs(primaryPinType,adjacencyPinType);
+      const lno_t* offsets;
+      const zgid_t* adjacencyIds;
       ia->get2ndAdjsView(primaryPinType,adjacencyPinType,offsets,adjacencyIds);
-    }
-    ghost_map_t ghosts;
-    for (size_t i=0;i<numLocalVertices_;i++) {
-      std::priority_queue<GhostCell> dist_queue;
-      dist_queue.push(GhostCell(static_cast<lno_t>(i),gids_[i],0));
-      ghosts[gids_[i]][gids_[i]]=0;
-      while (!dist_queue.empty()) {
-        GhostCell g = dist_queue.top();
-        dist_queue.pop();
-        if (g.lid==-1)
+      Tpetra::global_size_t numGlobalCoords = 
+        Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+      Teuchos::RCP<const map_t> mapWithCopies =
+        rcp(new map_t(numGlobalCoords, gids_(), 0, comm));
+      Teuchos::RCP<const map_t> oneToOneMap =
+        Tpetra::createOneToOne<lno_t, gno_t>(mapWithCopies);
+
+      secondAdj = rcp(new sparse_matrix_type(oneToOneMap,0));
+      for (size_t i=0; i<numLocalVertices_;i++) {
+        if (!isOwner_[i])
           continue;
-        if (g.dist==layers)
-          break;
-        for (int j =offsets[g.lid];j<offsets[g.lid+1];j++) {
-          if (ghosts[gids_[i]].find(adjacencyIds[j])==ghosts[gids_[i]].end()) {
-            if (lid_mapping.find(adjacencyIds[j])==lid_mapping.end())
-              dist_queue.push(GhostCell(-1,adjacencyIds[j],g.dist+1));
-            else
-              dist_queue.push(GhostCell(lid_mapping[adjacencyIds[j]],adjacencyIds[j],g.dist+1));
-            ghosts[gids_[i]][adjacencyIds[j]] = g.dist+1;
-          }
-        }
+        gno_t row = gids_[i];
+        lno_t num_adjs = offsets[i+1]-offsets[i];
+        ArrayRCP<nonzero_t> ones(num_adjs,1);
+        ArrayRCP<const gno_t> cols(adjacencyIds,offsets[i],num_adjs,false);
+        secondAdj->insertGlobalValues(row,cols(),ones());
+      }
+      secondAdj->fillComplete();
+    }
+    //ghosts for each local vertex
+    ghost_map_t ghosts; 
+
+    Array<gno_t> Indices;
+    Array<nonzero_t> Values;
+    for (unsigned int i=0;i<numLocalEdges_;i++) {
+      if (!isOwner_[i])
+        continue;
+      gno_t gid = edgeGids_[i];
+      size_t NumEntries = secondAdj->getNumEntriesInGlobalRow (gid);
+      Indices.resize (NumEntries);
+      Values.resize (NumEntries);
+      secondAdj->getGlobalRowCopy(gid,Indices(),Values(),NumEntries);
+      for (size_t j = 0; j < NumEntries; ++j) {
+	if(gid != Indices[j]) {
+          ghosts[gid].insert(Indices[j]);
+	}
       }
     }
-    size_t num_new_ghosts=1;
-    ghost_map_t new_ghosts = ghosts;
-    while (num_new_ghosts!=0) {
-      //Share off process ghosts
-      if (!me) std::cout<<"\n\nPHASE TWO\n\n";
-      ghost_map_t global_ghosts;
-      for (size_t i=0;i<numGlobalVertices_;i++) {
-        //Tell everyone how many ghosts this process has of the ith entity
-        size_t num =0;
-        int hasVertex=false; //Make the flag an int because Teuchos does not support bool
-        if (ghosts.find(i)!=ghosts.end()) {
-          num = new_ghosts[i].size();
-          hasVertex=true;
-        }
-        int *ownsVertex = new int[comm->getSize()];
-        gatherAll(*comm,1,&hasVertex,comm->getSize(),ownsVertex);
-
-        size_t *nums = new size_t[comm->getSize()];
-        gatherAll(*comm,1,&num,comm->getSize(),nums);
-      
-        //Send to those that also have the ith entity all of this processes ghosts
-        int num_messages=0;
-        for (int j=0;j<comm->getSize();j++) {
-          if (j==me || !ownsVertex[j] || !hasVertex)
-            continue;
-          num_messages+=nums[j];
-          typename ghost_t::iterator itr;
-          for (itr=new_ghosts[i].begin();itr!=new_ghosts[i].end();itr++) {
-            gno_t* send_vals = new gno_t[2];
-            send_vals[0] = itr->first;
-            send_vals[1] = itr->second;
-            ArrayRCP<const gno_t> rcp_send_vals = arcp(send_vals,0,2,true);
-            isend(*comm,rcp_send_vals,j);
-          }
-        }
-        delete nums;
-
-        //Receive
-        while (num_messages>0) {
-          ArrayRCP<gno_t> rcp_recv_vals(2);
-          typedef Teuchos::CommRequest<int> request_t;
-          RCP< request_t > request = ireceive(*comm,rcp_recv_vals,-1);
-          comm->wait(Teuchos::Ptr<RCP<request_t> >(&request));
-      
-          typename ghost_t::iterator itr = ghosts[i].find(rcp_recv_vals[0]);
-          if (itr==ghosts[i].end()||rcp_recv_vals[1]<static_cast<gno_t>(itr->second)) {
-            global_ghosts[i][rcp_recv_vals[0]] = rcp_recv_vals[1];
-            if (me) std::cout<<"Received: "<<i<<" "<<rcp_recv_vals[0]<<" "<<rcp_recv_vals[1]<<std::endl;
-          }
-          num_messages--;
-        }
-      
+    RCP<sparse_matrix_type> mat_old = secondAdj;
+    for (unsigned int i=1;i<layers;i++) {
+      RCP<sparse_matrix_type> mat_new = 
+        rcp (new sparse_matrix_type(secondAdj->getRowMap(),0));
+      Tpetra::MatrixMatrix::Multiply(*mat_old,false,*secondAdj,false,*mat_new);
+      for (unsigned int j=0;j<numLocalEdges_;j++) {
+        if (!isOwner_[j])
+          continue;
+        gno_t gid = edgeGids_[j];
+        size_t NumEntries = mat_new->getNumEntriesInGlobalRow (gid);
+        Indices.resize(NumEntries);
+        Values.resize(NumEntries);
+        mat_new->getGlobalRowCopy(gid,Indices(),Values(),NumEntries);
+        for (size_t k = 0; k < NumEntries; ++k) 
+          if(gid != Indices[k]) 
+            ghosts[gid].insert(Indices[k]);
+        
       }
-      new_ghosts.clear();
-      //update local ghosting information with new global ghosts
-      if (!me) std::cout<<"\n\nPHASE THREE\n\n";
-      for (size_t i=0;i<numLocalVertices_;i++) {//for each local entity
-        typename ghost_t::iterator itr;
-        for (itr=ghosts[gids_[i]].begin();itr!=ghosts[gids_[i]].end();itr++) { //for each ghost of this entity
-          if (itr->second<layers) {
-            typename ghost_t::iterator global_itr;
-            for (global_itr=global_ghosts[itr->first].begin();
-                 global_itr!=global_ghosts[itr->first].end(); global_itr++) { //for each global ghost of the ghost entity
-              typename ghost_t::iterator local_itr 
-                = ghosts[gids_[i]].find(global_itr->first);
-              if (i==0&&me)
-                std::cout<<global_itr->first<<" "<<global_itr->second<<' '<<local_itr->first<<" "<<local_itr->second<<std::endl;
-              if (global_itr->second+itr->second<=layers &&
-                  (local_itr==ghosts[gids_[i]].end() ||
-                   global_itr->second+itr->second<local_itr->second)) {
-                ghosts[gids_[i]][global_itr->first]=global_itr->second+itr->second;
-                std::cout<<me<<" New Ghost value: "<<gids_[i]<<" "<<global_itr->first<<" "<<global_itr->second+itr->second<<"\n";
-                new_ghosts[gids_[i]][global_itr->first] = global_itr->second+itr->second;
-              }
-            }
-          }
-        }
-      }
-      num_new_ghosts=new_ghosts.size();
-      reduceAll(*comm,Teuchos::REDUCE_SUM,1,&num_new_ghosts,&num_new_ghosts);
+      mat_old = mat_new;
     }
 
-    //Finally make the pins
-    if (!me) std::cout<<"\n\nPHASE FOUR\n\n";
+    //Make the pins from the ghosts
     for (size_t i=0;i<numLocalVertices_;i++) {//for each local entity
       numLocalPins_+=ghosts[gids_[i]].size();
     }
@@ -557,40 +570,58 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     gno_t j=0;
     for (size_t i=0;i<numLocalVertices_;i++) {//for each local entity
       temp_offsets[i]=j;
+      if (!isOwner_[i])
+        continue;
       typename ghost_t::iterator itr;
       for (itr=ghosts[gids_[i]].begin();itr!=ghosts[gids_[i]].end();itr++) { //for each ghost of this entity
-        temp_pins[j]=itr->first;
+        temp_pins[j]=*itr;
         j++;
         
       }
     }
     temp_offsets[numLocalVertices_]=numLocalPins_;
-    
     pinGids_ = arcp<const gno_t>(temp_pins,0,numLocalPins_,true);
     offsets_ = arcp<const lno_t>(temp_offsets,0,numLocalVertices_+1,true);
-
-    if (!me) std::cout<<"\n\nGhosting complete!\n\n";
-  }
-  // Get edge weights
-  /*
-  nWeightsPerEdge_ = ia->getNumWeightsPer2ndAdj(primaryEType, secondAdjEType);
-
-  if (nWeightsPerEdge_ > 0){
-    input_t *wgts = new input_t [nWeightsPerEdge_];
-    eWeights_ = arcp(wgts, 0, nWeightsPerEdge_, true);
+    
+    //==============================Ghosting complete=================================
   }
 
-  for (int w=0; w < nWeightsPerEdge_; w++){
-    const scalar_t *ewgts=NULL;
-    int stride=0;
 
-    ia->get2ndAdjWeightsView(primaryEType, secondAdjEType,
-			     ewgts, stride, w);
+  //Vertex Weights
+  numWeightsPerVertex_ = ia->getNumWeightsPerID();
 
-    ArrayRCP<const scalar_t> wgtArray(ewgts, 0, numLocalEdges_, false);
-    eWeights_[w] = input_t(wgtArray, stride);
+  if (numWeightsPerVertex_ > 0){
+    input_t *weightInfo = new input_t [numWeightsPerVertex_];
+    env_->localMemoryAssertion(__FILE__, __LINE__, numWeightsPerVertex_,
+                               weightInfo);
+
+    for (int idx=0; idx < numWeightsPerVertex_; idx++){
+      bool useNumNZ = ia->useDegreeAsWeight(idx);
+      if (useNumNZ){
+        scalar_t *wgts = new scalar_t [numLocalVertices_];
+        env_->localMemoryAssertion(__FILE__, __LINE__, numLocalVertices_, wgts);
+        ArrayRCP<const scalar_t> wgtArray =
+          arcp(wgts, 0, numLocalVertices_, true);
+        for (size_t i=0; i < numLocalVertices_; i++){
+          wgts[i] = offsets_[i+1] - offsets_[i];
+        }
+        weightInfo[idx] = input_t(wgtArray, 1);
+      }
+      else{
+        const scalar_t *weights=NULL;
+        int stride=0;
+        ia->getWeightsView(weights, stride, idx);
+        ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0,
+                                                 stride*numLocalVertices_,
+                                                 false);
+        weightInfo[idx] = input_t(wgtArray, stride);
+      }
+    }
+
+    vWeights_ = arcp<input_t>(weightInfo, 0, numWeightsPerVertex_, true);
   }
-  */
+
+  //TODO get the weights for edges, and pins(?)
 
 
   typedef MeshAdapter<user_t> adapterWithCoords_t;
@@ -651,9 +682,11 @@ void HyperGraphModel<Adapter>::print()
       << std::endl;
 
   for (lno_t i = 0; i < gids_.size(); i++) {
-    *os << me << fn << i << " VTXGID " << gids_[i];
+    *os << me << fn << i << " VTXGID " << gids_[i]<<" isOwner: "<<isOwner_[i];
+    if (numWeightsPerVertex_==1)
+      *os << " weight: " << vWeights_[0][i]; 
     if (view_==VERTEX_CENTRIC) {
-      *os <<":";
+      *os <<" pins:";
       for (lno_t j = offsets_[i]; j< offsets_[i+1];j++)
         *os <<" "<<pinGids_[j];
     }

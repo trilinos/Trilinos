@@ -98,7 +98,7 @@ void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<cons
 void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
 void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
 void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
-bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
+bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
         const stk::mesh::PartVector& boundary_mesh_parts);
 
 typedef std::unordered_map<EntityKey, size_t, stk::mesh::HashValueForEntityKey> GhostReuseMap;
@@ -215,8 +215,8 @@ public:
    *              a parallel-consistent exception will be thrown.
    */
 
-#ifndef STK_BUILT_IN_SIERRA // Deprecated 2015-06-10
-  STK_DEPRECATED(bool modification_end(impl::MeshModification::modification_optimization opt))
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after 2015-07-30
+  STK_DEPRECATED bool modification_end(impl::MeshModification::modification_optimization opt)
   {
       if (impl::MeshModification::MOD_END_SORT == opt) {
           return m_meshModification.modification_end();
@@ -848,7 +848,7 @@ protected: //functions
   void fill_shared_entities_of_rank(stk::mesh::EntityRank rank, std::vector<Entity> &shared_new);
 
   virtual void internal_resolve_send_ghost_membership();
-  virtual bool should_sort_buckets_by_first_entity_identifier() const;
+  virtual bool should_sort_buckets_by_first_entity_identifier() const { return false; }
   void resolve_ownership_of_modified_entities(const std::vector<stk::mesh::Entity> &shared_new); // Mod Mark
   void move_entities_to_proper_part_ownership( const std::vector<stk::mesh::Entity> &shared_modified ); // Mod Mark
 
@@ -1042,11 +1042,6 @@ private:
       if (entity_rank(entity) == stk::topology::NODE_RANK && m_closure_count[entity.local_offset()] >= BulkData::orphaned_node_marking)
       {
           m_closure_count[entity.local_offset()] -= BulkData::orphaned_node_marking;
-          if (identifier(entity) == 48)
-          {
-          std::cerr << "P" << parallel_rank() << "unprotecting orphaned node "
-                  << identifier(entity) <<", closure-count now "<<m_closure_count[entity.local_offset()]<< std::endl;
-          }
       }
   }
 
@@ -1173,6 +1168,7 @@ private:
   friend class ::stk::mesh::impl::MeshModification;
   friend class ::sierra::Fmwk::EntityCreationOperationList;
   friend class ::stk::mesh::ElemElemGraph;
+  friend class ::stk::mesh::EntityLess;
 
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
   friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
@@ -1182,7 +1178,7 @@ private:
   friend void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
   friend void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
   friend void internal_create_faces( BulkData & mesh, const Selector & element_selector, bool connect_faces_to_edges, FaceCreationBehavior faceCreationBehavior);
-  friend bool perform_element_death(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
+  friend bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
           const stk::mesh::PartVector& boundary_mesh_parts);
 
   bool ordered_comm( const Entity entity );
@@ -1260,6 +1256,8 @@ protected: //data
   bool m_add_fmwk_data; // flag that will add extra data to buckets to support fmwk
   std::vector<FmwkId> m_fmwk_global_ids;
   mutable std::vector<RelationVector* > m_fmwk_aux_relations;   // Relations that can't be managed by STK such as PARENT/CHILD
+  inline bool should_sort_faces_by_node_ids() const { return m_shouldSortFacesByNodeIds; }
+  bool m_shouldSortFacesByNodeIds;
 #endif
   bool m_do_create_aura;
   enum AutomaticAuraOption m_autoAuraOption;

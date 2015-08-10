@@ -258,6 +258,10 @@
     id=\"48\" name=\"hypergraph_model_type\" type=\"string\" validatorId=\"48\" value=\"traditional\" \
     docString='  construction type when creating a hypergraph model' \
     /> \
+   <Parameter  \
+    id=\"49\" name=\"ghost_layers\" type=\"int\" validatorId=\"49\" value=\"2\" \
+    docString='  number of layers for ghosting used in hypergraph ghost method' \
+    /> \
    <ParameterList  name=\"zoltan_parameters\"> \
    </ParameterList> \
    <ParameterList   name=\"parma_parameters\"> \
@@ -479,6 +483,7 @@
         <String value=\"traditional\"/> \
         <String value=\"ghosting\"/> \
       </Validator> \
+      <Validator max=\"10\" min=\"1\" precision=\"0\" step=\"1\" type=\"EnhancedNumberValidator(int)\" validatorId=\"49\"/> \
     </Validators> \
   </ParameterList>"
 

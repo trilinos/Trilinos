@@ -536,7 +536,7 @@ void SupportGraph<MatrixType>::initialize ()
     findSupport(); // Compute the support.
 
     // Set up the solver and compute the symbolic factorization.
-    solver_ = Amesos2::create<MatrixType, MV> ("amesos2_cholmod", Support_);
+    solver_ = Amesos2::create<crs_matrix_type, MV> ("amesos2_cholmod", Support_);
     solver_->symbolicFactorization();
 
     IsInitialized_ = true;

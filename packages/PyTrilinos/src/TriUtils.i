@@ -89,6 +89,7 @@ example subdirectory of the PyTrilinos package:
 
 // Trilinos includes
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_DefaultComm.hpp"
 
 // Epetra includes
 #ifdef HAVE_EPETRA
@@ -99,35 +100,29 @@ example subdirectory of the PyTrilinos package:
 #endif
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_FEVbrMatrix.h"
 #include "Epetra_IntVector.h"
+#include "Epetra_FEVector.h"
 #include "Epetra_InvOperator.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
+#include "Epetra_FEVbrMatrix.h"
 #include "Epetra_JadMatrix.h"
 #include "Epetra_SerialDistributor.h"
+#include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_Time.h"
+#include "Epetra_MapColoring.h"
+#include "PyTrilinos_Epetra_Util.hpp"
 
-// Epetra wrapper helper includes
+// NumPy include
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
-#include "Epetra_NumPyMultiVector.hpp"
-#include "Epetra_NumPyVector.hpp"
-#include "Epetra_NumPyFEVector.hpp"
-#include "Epetra_NumPyIntVector.hpp"
-#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-#include "Epetra_NumPyIntSerialDenseVector.hpp"
-#include "Epetra_NumPySerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialSymDenseMatrix.hpp"
-#include "Epetra_NumPySerialDenseVector.hpp"
 #endif
 
 // Trilinos utility includes

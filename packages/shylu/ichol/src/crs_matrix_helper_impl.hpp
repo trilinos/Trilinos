@@ -93,6 +93,9 @@ namespace Example {
         hier._aj[nnz] = j;
         hier._ax[nnz].setView(&flat, range[i], (range[i+1] - range[i]),
                               /**/   range[j], (range[j+1] - range[j]));
+        // this checking might more expensive 
+        if (!hier._ax[nnz].countNumNonZeros())
+          --nnz;
       }
     }
     

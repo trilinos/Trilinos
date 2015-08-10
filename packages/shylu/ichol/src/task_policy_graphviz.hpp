@@ -117,10 +117,14 @@ namespace Example {
 
     // Graphviz interface
     // --------------------------------
+    size_t size() const {
+      return _queue.size();
+    }
+
     void clear() {
       for (auto it=_queue.begin();it!=_queue.end();++it)
         delete (*it);
-      
+
       _queue.clear();
     }
 

@@ -23,24 +23,28 @@ namespace Kokkos {
           m_depart(0) {}
 
       KOKKOS_INLINE_FUNCTION 
-      void 
-      reset() { m_arrive = 0; m_depart = 0; }
+      int
+      set_arrive(const int team_rank) { 
+        const int flip = !((char*)&m_arrive)[team_rank];
+        ((char*)&m_arrive)[team_rank] = flip;
+        return flip;
+      }
 
       KOKKOS_INLINE_FUNCTION 
-      void 
-      set_arrive(const int team_rank) { ((char*)&m_arrive)[team_rank] = 1; }
-
-      KOKKOS_INLINE_FUNCTION 
-      void 
-      set_depart(const int team_rank) { ((char*)&m_depart)[team_rank] = 1; }
+      int
+      set_depart(const int team_rank) { 
+        const int flip = !((char*)&m_depart)[team_rank];
+        ((char*)&m_depart)[team_rank] = flip; 
+        return flip;
+      }
         
       KOKKOS_INLINE_FUNCTION 
-      int64_t 
-      arrive()  { return m_arrive; }
+      int64_t
+      arrive() const { return m_arrive; }
 
       KOKKOS_INLINE_FUNCTION 
       int64_t
-      depart()  { return m_depart; }
+      depart() const { return m_depart; }
 
     };
     typedef class SimpleCoreBarrier SimpleCoreBarrierType;
@@ -71,20 +75,20 @@ namespace Kokkos {
       bool 
       team_fan_in() const {
         if (m_team_size != 1) {
-          const int64_t mask = static_cast<int64_t>(BARRIER_MASK) >> CHAR_BIT*(sizeof(int64_t) - m_team_size);
-
-          m_core_barrier->set_arrive(m_team_rank);
-          while (m_core_barrier->arrive() == mask); 
-            
-          m_core_barrier->set_depart(m_team_rank);         
-          while (m_core_barrier->depart() == mask);  
+          const int flip = m_core_barrier->set_arrive(m_team_rank);
+          const int64_t mask = static_cast<int64_t>(flip*BARRIER_MASK) 
+            >> CHAR_BIT*(sizeof(int64_t) - m_team_size);
+          while (m_core_barrier->arrive() != mask); 
         }
         return !m_team_rank_rev;
       }
         
       KOKKOS_INLINE_FUNCTION void team_fan_out() const {
-        if (m_team_size != 1) {          
-          m_core_barrier->reset();
+        if (m_team_size != 1) {  
+          const int flip = m_core_barrier->set_depart(m_team_rank);
+          const int64_t mask = static_cast<int64_t>(flip*BARRIER_MASK) 
+            >> CHAR_BIT*(sizeof(int64_t) - m_team_size);
+          while (m_core_barrier->depart() != mask);  
         }
       } 
       KOKKOS_INLINE_FUNCTION void team_barrier() const {

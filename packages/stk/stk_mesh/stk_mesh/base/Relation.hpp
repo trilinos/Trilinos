@@ -248,33 +248,6 @@ private:
     return polarity;
   }
 
-// deprecated methods
-  // Deprecated 2015-04-14
-  attribute_type getOrientation() const
-  { ThrowRequireMsg(false, "This method is deprecated! Use getPermutation instead."); return attribute() & fmwk_permutation_mask; }
-  // Deprecated 2015-04-14
-  STK_DEPRECATED(void setOrientation(attribute_type orientation))
-  { ThrowRequireMsg(false, "This method is deprecated! Use setPermutation instead."); set_attribute( (getRelationType() << fmwk_permutation_digits) | orientation ); }
-  // Deprecated 2015-04-14
-  STK_DEPRECATED(static unsigned permutation(unsigned orient)) {
-    ThrowRequireMsg(false, "This method is deprecated! It is no longer needed because orientation=permutation.");
-    return orient & ~POLARITY_MASK;
-  }
-  // Deprecated 2015-04-14
-  STK_DEPRECATED(bool polarity(stk::topology to_topology) const)
-  { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return compute_polarity(to_topology, getPermutation()); }
-  // Deprecated 2015-04-14
-  STK_DEPRECATED(bool polarity() const)
-  { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return compute_polarity(getOrientation()); }
-  // Deprecated 2015-04-14
-  STK_DEPRECATED(static bool polarity(unsigned orient))
-  { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return (orient & POLARITY_MASK) == POLARITY_POSITIVE; }
-  // Deprecated 2015-04-14
-  static bool compute_polarity(attribute_type orientation)
-  { ThrowRequireMsg(false, "This method is deprecated! Use compute_polarity(topology, permutation) instead."); return (orientation & POLARITY_MASK) == POLARITY_POSITIVE; }
-  // Deprecated 2015-04-14
-  STK_DEPRECATED(unsigned permutation() const)
-  { ThrowRequireMsg(false, "This method is deprecated! Use getPermutation instead."); return getOrientation() & ~POLARITY_MASK; }
 
 private:
   bool has_fmwk_state() const { return getRelationType() != RelationType::INVALID; }

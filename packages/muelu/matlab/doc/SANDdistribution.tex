@@ -1,0 +1,49 @@
+%
+% This is an example of how to create the distribution page. Some
+% distributions are required by Sandia; e.g. the housekeeping copies.
+% Depending on the type of report; e.g. CRADA, Patent Caution, etc.
+% additional distribution lines may have to be added. See the
+% "Guide for Preparing SAND Reports"
+%
+% SANDdistribution takes CA or NM as an optional argument. If given,
+% the approrpiate housekeeping copies are inserted autmatically.
+% Inside the SANDdistribution environment, several commands can be used
+% insert the distributions for CRADA, LDRD, etc. See example below.
+%
+% You can leave the CA or NM option off and not use any of the SANDdist*
+% commands. This will allow you to create a distribution list manually.
+%
+\begin{SANDdistribution}[NM]
+    % Housekeeping copies necessary for every unclassified report:
+    % \SANDdistCRADA	% If this report is about CRADA work
+    % \SANDdistPatent	% If this report has a Patent Caution or Patent Interest
+    % \SANDdistLDRD	% If this report is about LDRD work
+
+    % Some external Addresses
+    %\SANDdistExternal{1}{An Address\\ 99 $99^{th}$ street NW\\City, State}
+    %\SANDdistExternal{3}{Some Address\\ and street\\City, State}
+    %\SANDdistExternal{12}{Another Address\\ On a street\\City, State\\U.S.A.}
+    \SANDdistExternal{1}{Tobias Wiesner\\Institute for Computational Mechanics \\Technische Universit\"at
+    M\"unchen\\Boltzmanstra\ss e 15 \\85747 Garching, Germany}
+    \bigskip
+
+
+    % The following MUST BE between the external and internal distributions!
+    % \SANDdistClassified % If this report is classified
+
+
+    % Internal Addresses
+    \SANDdistInternal{1}{1320}{Michael Heroux}{1446}
+    \SANDdistInternal{1}{1318}{Robert Hoekstra}{1446}
+    \SANDdistInternal{1}{1320}{Mark Hoemmen}{1446}
+    \SANDdistInternal{1}{1320}{Paul Lin}{1446}
+    \SANDdistInternal{1}{1318}{Andrey Prokopenko}{1426}
+    \SANDdistInternal{1}{1322}{Christopher Siefert}{1443}
+
+\end{SANDdistribution}
+
+\begin{SANDdistribution}[CA]
+    \SANDdistInternal{1}{9159}{Jonathan Hu}{1426}
+    \SANDdistInternal{1}{9159}{Paul Tsuji}{1442}
+    \SANDdistInternal{1}{9159}{Raymond Tuminaro}{1442}
+\end{SANDdistribution}

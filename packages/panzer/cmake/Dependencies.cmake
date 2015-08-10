@@ -3,7 +3,7 @@ SET(LIB_OPTIONAL_DEP_PACKAGES STKClassic SEACASIoss SEACASExodus Teko MueLu Ifpa
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES Stratimikos Piro NOX Rythmos)
 SET(LIB_REQUIRED_DEP_TPLS MPI BoostLib)
-SET(LIB_OPTIONAL_DEP_TPLS PAPI)
+SET(LIB_OPTIONAL_DEP_TPLS PAPI CAMAL)
 
 # The Boostlib dependency below should not be there for tests as it is
 # already in the lib requirement above, but there is an issue in

@@ -108,6 +108,7 @@ typedef Tpetra::Map<>::node_type znode_t;
     typedef float zscalar_t;
 # else
     typedef double zscalar_t;
+#   define HAVE_EPETRA_SCALAR_TYPE
 # endif
 
 # if defined HAVE_TPETRA_INT_LONG
@@ -122,6 +123,9 @@ typedef Tpetra::Map<>::node_type znode_t;
 # elif defined HAVE_TPETRA_INT_INT
     typedef int zlno_t;
     typedef int zgno_t;
+#   if defined HAVE_EPETRA_SCALAR_TYPE
+#     define HAVE_EPETRA_DATA_TYPES
+#   endif
 # else
 #   error "Tpetra uses ETI, but no lno/gno instantiation is recognized"
 # endif

@@ -98,8 +98,10 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     LinePartitioner
     Details::Chebyshev
     Details::DenseSolver
-    Details::TriDiSolver
+    Details::Factory
+    Details::LinearSolver
     Details::OneLevelFactory
+    Details::TriDiSolver
     Experimental::RBILUK
     )
   IF(Ifpack2_ENABLE_Amesos2)
@@ -208,3 +210,8 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES} ${IFPACK2_CPP_SOURCES}
   )
+
+#
+# Make a trivial change here if you want cmake to run,
+# due to changes you make to files in Ifpack2.
+#

@@ -137,8 +137,8 @@ class ChanProblemInterface(LOCA.Epetra.Interface.TimeDependent,
               F[i] = x[i]**2 - self.sigma * float(1)
               return True
       except Exception, e:
-          print "Proc", self.__myPID, \
-                "MyInterface.computeF() has thrown an exception:"
+          print "Proc", self.__comm.MyPID(), \
+                "ChanProblemInterface.computeF() has thrown an exception:"
           print str(type(e))[18:-2] + ":", e
           return False
 
@@ -146,15 +146,21 @@ class ChanProblemInterface(LOCA.Epetra.Interface.TimeDependent,
       return self.initGuess
 
   def computeJacobian(self, x, Jac):
-    self.Jaco_.x_jac = x.copy()
-    self.Jaco_.setShMat(1.0,0.0);
-    return True
+      try:
+          self.Jaco_.x_jac = x.copy()
+          self.Jaco_.setShMat(1.0,0.0);
+          return True
+      except Exception, e:
+          print "Proc", self.__comm.MyPID(), \
+                "ChanProblemInterface.computeJacobian() has thrown an exception:"
+          print str(type(e))[18:-2] + ":", e
+          return False
 
   def setParams(self, p):
-    self.sigma = p.getValue("sigma")
+      self.sigma = p.getValue("sigma")
     
   def setParameters(self, p):
-    self.sigma = p.getValue("sigma")
+      self.sigma = p.getValue("sigma")
     
   def computeShiftedMatrix(self, alpha, beta, x, A):
       pass

@@ -38,6 +38,8 @@ ENDIF()
 
 TRIBITS_ETI_GENERATE_MACROS("${Ifpack2_ETI_FIELDS}" "${Ifpack2_ETI_LIBRARYSET}" "${Ifpack2_ETI_EXCLUDE_SET}"  
                             list_of_manglings eti_typedefs
+                            "IFPACK2_INSTANTIATE_L(LO)"         IFPACK2_ETIMACRO_L
+                            "IFPACK2_INSTANTIATE_SL(S,LO)"      IFPACK2_ETIMACRO_SL
                             "IFPACK2_INSTANTIATE_LG(LO,GO)"         IFPACK2_ETIMACRO_LG
                             "IFPACK2_INSTANTIATE_SLG(S,LO,GO)"      IFPACK2_ETIMACRO_SLG
                             "IFPACK2_INSTANTIATE_LGN(S,LO,GO,N)"      IFPACK2_ETIMACRO_LGN
@@ -46,6 +48,7 @@ TRIBITS_ETI_GENERATE_MACROS("${Ifpack2_ETI_FIELDS}" "${Ifpack2_ETI_LIBRARYSET}" 
 TRIBITS_ETI_GENERATE_MACROS("${Ifpack2_ETI_FIELDS}" "${Ifpack2_ETI_LIBRARYSET}" 
                             "${Ifpack2_ETI_EXCLUDE_SET};S=std::complex<double> LO=.* GO=.*; S=std::complex<float> LO=.* GO=.*"  
                             list_of_manglings eti_typedefs
+                            "IFPACK2_INSTANTIATE_SL_REAL(S,LO,GO)" IFPACK2_ETIMACRO_SL_REAL
                             "IFPACK2_INSTANTIATE_SLG_REAL(S,LO,GO)" IFPACK2_ETIMACRO_SLG_REAL
                             "IFPACK2_INSTANTIATE_SLGN_REAL(S,LO,GO,N)" IFPACK2_ETIMACRO_SLGN_REAL
                             )

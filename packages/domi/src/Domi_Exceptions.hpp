@@ -57,9 +57,7 @@ public:
    *
    * \param msg [in] Error message
    */
-  InvalidArgument(std::string msg) :
-    std::invalid_argument(msg)
-  { }
+  InvalidArgument(std::string msg);
 };
 
 /** \brief Range Error exception type
@@ -71,9 +69,7 @@ public:
    *
    * \param msg [in] Error message
    */
-  RangeError(std::string msg) :
-    std::range_error(msg)
-  { }
+  RangeError(std::string msg);
 };
 
 /** \brief Subcommunicator Error exception type
@@ -86,10 +82,7 @@ public:
    * \param op [in] Should be the name of the operator or operation
    *        that is throwing the SubcommunicatorError
    */
-  SubcommunicatorError(std::string op) :
-    std::domain_error(op + " attempted on a processor that does "
-                      "not belong to the operative subcommunicator")
-  { }
+  SubcommunicatorError(std::string op);
 };
 
 /** \brief Map Ordinal Error exception type
@@ -101,9 +94,7 @@ public:
    *
    * \param msg [in] Error message
    */
-  MapOrdinalError(std::string msg) :
-    std::runtime_error(msg)
-  { }
+  MapOrdinalError(std::string msg);
 };
 
 /** \brief MDMap Error exception type
@@ -115,9 +106,7 @@ public:
    *
    * \param msg [in] Error message
    */
-  MDMapError(std::string msg) :
-    std::runtime_error(msg)
-  { }
+  MDMapError(std::string msg);
 };
 
 /** \brief MDMap Error exception type
@@ -129,9 +118,7 @@ public:
    *
    * \param msg [in] Error message
    */
-  MDMapNoncontiguousError(std::string msg) :
-    std::runtime_error(msg)
-  { }
+  MDMapNoncontiguousError(std::string msg);
 };
 
 /** \brief Type Error exception type
@@ -143,9 +130,7 @@ public:
    *
    * \param msg [in] Error message
    */
-  TypeError(std::string msg) :
-    std::runtime_error(msg)
-  { }
+  TypeError(std::string msg);
 };
 
 /** \brief Bounds Error exception type
@@ -157,9 +142,7 @@ public:
    *
    * \param msg [in] Error message
    */
-  BoundsError(std::string msg) :
-    std::runtime_error(msg)
-  { }
+  BoundsError(std::string msg);
 };
 
 }

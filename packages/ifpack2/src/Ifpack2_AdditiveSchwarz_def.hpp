@@ -190,16 +190,6 @@ public:
   }
 };
 
-#ifdef HAVE_IFPACK2_EXPERIMENTAL
-template<class MatrixType>
-class OneLevelPreconditionerNamer< ::Ifpack2::Experimental::RBILUK<MatrixType> > {
-public:
-  static std::string name () {
-    return "RBILUK";
-  }
-};
-#endif
-
 template<class MatrixType>
 class OneLevelPreconditionerNamer< ::Ifpack2::Krylov<MatrixType> > {
 public:
@@ -1636,7 +1626,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
       "setInnerPreconditioner with a nonnull inner preconditioner input before "
       "you may call initialize().");
 
-    Details::OneLevelFactory<MatrixType> factory;
+    Details::OneLevelFactory<row_matrix_type> factory;
     RCP<prec_type> innerPrec = factory.create (innerName, innerMatrix_);
     TEUCHOS_TEST_FOR_EXCEPTION(
       innerPrec.is_null (), std::logic_error,

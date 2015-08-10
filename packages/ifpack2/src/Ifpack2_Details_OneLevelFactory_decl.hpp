@@ -45,6 +45,7 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
+#include <type_traits> // std::is_same
 
 namespace Ifpack2 {
 namespace Details {
@@ -119,6 +120,10 @@ public:
                               local_ordinal_type,
                               global_ordinal_type,
                               node_type> row_matrix_type;
+
+  static_assert (std::is_same<MatrixType, row_matrix_type>::value,
+                 "Ifpack2::Details::OneLevelFactory: MatrixType must be a "
+                 "Tpetra::RowMatrix specialization.");
 
   /** \brief Create an instance of Preconditioner given the string
    * name of the preconditioner type.

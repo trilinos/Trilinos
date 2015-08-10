@@ -48,6 +48,7 @@
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVector.hpp>
 
+#include "MueLu_Monitor.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
 #include "MueLu_TwoLevelMatlabFactory_decl.hpp"
@@ -82,23 +83,25 @@ namespace MueLu {
     // Get needs strings
     const std::string str_nf = pL.get<std::string>("Needs Fine");
     const std::string str_nc = pL.get<std::string>("Needs Coarse");
-    needsFine_.clear();
-    needsCoarse_.clear();
-    TokenizeStringAndStripWhiteSpace(str_nf, needsFine_, " ,;");
-    TokenizeStringAndStripWhiteSpace(str_nc, needsCoarse_, " ,;");
+    needsFine_ = tokenizeList(str_nf);
+    needsCoarse_ = tokenizeList(str_nc);
     for(auto fineNeed : needsFine_)
     {
-      this->Input(fineLevel, fineNeed);
+      if(!IsParamMuemexVariable(fineNeed) && fineNeed != "Level")
+        this->Input(fineLevel, fineNeed);
     }
     for(auto coarseNeed : needsCoarse_)
     {
-      this->Input(coarseLevel, coarseNeed);
+      if(!IsParamMuemexVariable(coarseNeed) && coarseNeed != "Level")
+        this->Input(coarseLevel, coarseNeed);
     }
     hasDeclaredInput_ = true;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void TwoLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
+    FactoryMonitor m(*this, "Build", coarseLevel);
+
     const Teuchos::ParameterList& pL = GetParameterList();
     using Teuchos::rcp;
     using Teuchos::RCP;
@@ -121,6 +124,15 @@ namespace MueLu {
     vector<RCP<MuemexArg>> mexOutput = callMatlab(matlabFunction, numProvides, InputArgs);
     processProvides<Scalar, LocalOrdinal, GlobalOrdinal, Node>(mexOutput, this, provides, coarseLevel);
   }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  std::string TwoLevelMatlabFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::description() const {
+    std::ostringstream out;
+    const Teuchos::ParameterList& pL = GetParameterList();
+    out << "TwoLevelMatlabFactory["<<pL.get<std::string>("Function")<<"]";
+    return out.str();
+  }
+
 
 } //namespace MueLu
 

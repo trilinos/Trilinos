@@ -49,7 +49,7 @@
 
 namespace {
   const unsigned int HASHSIZE = 5939;
-  const char* version_string = "4.22 (2015/06/03)";
+  const char* version_string = "4.23 (2015/07/20)";
   
   unsigned hash_symbol (const char *symbol)
   {
@@ -69,7 +69,7 @@ namespace SEAMS {
       stringInteractive(false), stringScanner(NULL),
       errorStream(&std::cerr), warningStream(&std::cerr), 
       stateImmutable(false), doLoopSubstitution(true), doIncludeSubstitution(true),
-      isCollectingLoop(false)
+      isCollectingLoop(false), inIfdefGetvar(false)
   {
     ap_file_list.push(file_rec());
     init_table("#");

@@ -158,9 +158,18 @@ public:
   ////////////////////////////////////////////////////////////////////////////
   // Methods to be defined in derived classes.
 
+  /*! \brief Provide a pointer to the entity topology types
+      \param Types will on return point to the list of entity topology types
+      for this process.
+  */
+  virtual bool areEntityIDsUnique(MeshEntityType etype) const
+  {
+    return etype==this->getPrimaryEntityType();
+  }
+  
   /*! \brief Returns the global number of mesh entities of MeshEntityType
    */
-  virtual size_t getGlobalNumOf(MeshEntityType etype) const = 0;
+  //virtual size_t getGlobalNumOf(MeshEntityType etype) const = 0;
 
   /*! \brief Returns the number of mesh entities on this process.
    */
@@ -180,7 +189,11 @@ public:
       for this process.
   */
   virtual void getTopologyViewOf(MeshEntityType etype, 
-				     enum EntityTopologyType const *&Types) const = 0;
+                                 enum EntityTopologyType const *&Types) const
+  {
+    Types = NULL;
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+  }
 
   /*! \brief Return the number of weights per entity.
    *  \return the count of weights, zero or more per entity.
@@ -320,15 +333,10 @@ public:
                               const lno_t *&offsets,
                               const zgid_t *&adjacencyIds) const
   {
-    //if (!availAdjs(sourcetarget, through)) {
-      offsets = NULL;
-      adjacencyIds = NULL;
-      Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
-	/*} else {
-      get2ndAdjsFromAdjs(sourcetarget, through, offsets, adjacencyIds);
-      }*/
+    offsets = NULL;
+    adjacencyIds = NULL;
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
-
 
   /*! \brief Returns the number (0 or greater) of weights per second adjacency.
    */

@@ -126,6 +126,7 @@ convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
     // Check the distribution type
     if (distType == NONE)
     {
+      std::cout << "dist_type == None error!" << std::endl;
       PyErr_Format(PyExc_ValueError,
                    "'dist_type' for axis %d = 'NONE' is invalid",
                    axis);
@@ -174,7 +175,7 @@ convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
 
 ////////////////////////////////////////////////////////////////////////
 
-PyObject * convertToDimData(const Teuchos::RCP< const Domi::MDMap<> > mdMap)
+PyObject * convertToDimData(const Teuchos::RCP< const Domi::MDMap<> > & mdMap)
 {
   Py_ssize_t numDims = mdMap->numDims();
   PyObject * dimData = PyTuple_New(numDims);

@@ -63,10 +63,6 @@ void communicate_field_data(
   const Ghosting                        & ghosts ,
   const std::vector< const FieldBase *> & fields );
 
-void communicate_field_data(
-  const BulkData                        & mesh ,
-  const std::vector< const FieldBase *> & fields );
-
 /** Copy data for the given fields, from owned entities to shared-but-not-owned entities.
  * I.e., shared-but-not-owned entities get an update of the field-data from the owned entity.
 */
@@ -177,7 +173,17 @@ inline void parallel_data_exchange_nonsym_known_sizes_t(std::vector< std::vector
 #endif
 }
 
-inline void copy_from_owned(
+inline bool find_proc_before_index(const EntityCommInfoVector& infovec, int proc, int index)
+{
+    for(int i=0; i<index; ++i) {
+        if (proc == infovec[i].proc) {
+            return true;
+        }
+    }
+    return false;
+}
+
+inline void communicate_field_data(
   const BulkData                        & mesh ,
   const std::vector< const FieldBase *> & fields )
 {
@@ -232,7 +238,10 @@ inline void copy_from_owned(
               {
                   int proc = infovec[j].proc;
 
-                  send_sizes[proc] += e_size;
+                  bool proc_already_found = find_proc_before_index(infovec, proc, j); 
+                  if (!proc_already_found) {
+                      send_sizes[proc] += e_size;
+                  }
               }
           }
           else
@@ -298,17 +307,15 @@ inline void copy_from_owned(
               for(size_t j=0; j<infovec_size; ++j)
               {
                   int proc = infovec[j].proc;
-
-                  unsigned char* dest_ptr = send_data[proc].data()+send_sizes[proc];
-                  unsigned char* src_ptr = field_data_ptr;
-                  std::memcpy(dest_ptr, src_ptr, e_size);
-                  send_sizes[proc] += e_size;
-     //             send_data[proc].insert(send_data[proc].end(), field_data.begin(), field_data.end());
+    
+                  bool proc_already_found = find_proc_before_index(infovec, proc, j);
+                  if (!proc_already_found) {
+                      unsigned char* dest_ptr = send_data[proc].data()+send_sizes[proc];
+                      unsigned char* src_ptr = field_data_ptr;
+                      std::memcpy(dest_ptr, src_ptr, e_size);
+                      send_sizes[proc] += e_size;
+                  }
               }
-          }
-          else
-          {
-              recv_sizes[owner] += e_size;
           }
       }
   }
@@ -350,10 +357,6 @@ inline void copy_from_owned(
                   unsigned char * ptr = reinterpret_cast<unsigned char*>(stk::mesh::field_data(f, bucketId, comm_info_vec[i].bucket_ordinal, size));
 
                   std::memcpy(ptr, &(recv_data[owner][recv_sizes[owner]]), size);
-//                for(unsigned j = 0; j < size; ++j)
-//                {
-//                    ptr[j] = recv_data[owner][recv_sizes[owner]+j];
-//                }
                   recv_sizes[owner] += size;
               }
           }
@@ -507,7 +510,7 @@ inline void parallel_sum_including_ghosts(
       if (phase == 0) { sparse.communicate(); }
   }
 
-  copy_from_owned(mesh, fields);
+  communicate_field_data(mesh, fields);
 }
 
 //

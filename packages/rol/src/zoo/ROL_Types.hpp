@@ -1013,50 +1013,77 @@ namespace ROL {
 } // namespace ROL
 
 
-/*! \mainpage ROL Documentation (Development Version)
+/*! \mainpage %ROL Documentation (Development Version)
  
   \image html rol.png "Rapid Optimization Library" width=1in
   \image latex rol.pdf "Rapid Optimization Library" width=1in
 
   \section intro_sec Introduction
 
-  %ROL, the Rapid Optimization Library, is a Trilinos package for matrix-free
+  Rapid Optimization Library (%ROL) is a C++ package for large-scale
   optimization.
+  It is used for the solution of optimal design, optimal control and
+  inverse problems in large-scale engineering applications.
+  Other uses include mesh optimization and image processing. 
+
  
   \section overview_sec Overview
 
-  Current release of %ROL includes the following features:
-  \li Unconstrained optimization algorithms.
+  %ROL aims to combine flexibility, efficiency and robustness.  Key features:
+
+  \li  Matrix-free application programming interfaces (APIs) ---enable direct
+       use of application data structures and memory spaces, linear solvers,
+       nonlinear solvers and preconditioners.
+  \li  State-of-the-art algorithms for unconstrained optimization,
+       constrained optimization and optimization under uncertainty ---enable
+       inexact and adaptive function evaluations and iterative linear
+       system solves.
+  \li  Special APIs for simulation-based optimization ---enable a
+       streamlined embedding into engineering applications, rigorous
+       implementation verification and efficient use.
+  \li  Modular interfaces throughout the optimization process ---enable custom
+       and user-defined algorithms, stopping criteria, hierarchies of
+       algorithms, and selective use of a variety of tools and components.
+
+  For a detailed description of user interfaces and algorithms, see the
+  presentations ROL-Trilinos-xx.x.pptx (or .pdf) in the doc/presentations
+  directory.
+
+  To start using %ROL, including all its advanced algorithms and features,
+  jump to the <a href="modules.html">Modules</a> page.
+
+  For a basic example, see below.
 
   \section quickstart_sec Quick Start
 
-  The Rosenbrock example (rol/example/rosenbrock/example_01.cpp) demonstrates the use of %ROL.
-  It amounts to sixsteps:
+  The Rosenbrock example (rol/example/rosenbrock/example_01.cpp) demonstrates
+  the basic use of %ROL.
+  It amounts to six steps:
 
   \subsection vector_qs_sec Step 1: Implement linear algebra / vector interface.
   --- or try one of the provided implementations, such as ROL::StdVector in rol/vector.
   
-  \code
+  ~~~{.hpp}
       ROL::Vector
-  \endcode
+  ~~~
 
   \subsection objective_qs_sec Step 2: Implement objective function interface.
-  --- or try one of the provided functions, such as ROL::Objective_Rosenbrock in rol/zoo.
+  --- or try one of the provided functions, such as @b ROL::ZOO::Objective_Rosenbrock in rol/zoo.
 
   \code
       ROL::Objective
   \endcode
 
   \subsection step_qs_sec Step 3: Choose optimization step.
-  ---  with ParameterList settings in the variable parlist.
+  ---  with @b Teuchos::ParameterList settings in the variable @b parlist.
 
   \code
       ROL::LineSearchStep<RealT> step(parlist);
   \endcode
 
   \subsection status_qs_sec Step 4: Set status test.
-  ---  with gradient tolerance \textt{gtol}, step tolerance \texttt{stol} and the maximum
-  number of iterations \texttt{maxit}.
+  ---  with gradient tolerance, step tolerance, and the maximum
+  number of iterations, respectively.
 
   \code
       ROL::StatusTest<RealT> status(gtol, stol, maxit);
@@ -1070,17 +1097,11 @@ namespace ROL {
   \endcode
 
   \subsection run_qs_sec Step 6: Run algorithm.
-  ---  starting from the initial iterate \textt{x}, applied to objective function \texttt{obj}.
+  ---  starting from the initial iterate @b x, applied to objective function @b obj.
 
   \code
       algo.run(x, obj);
   \endcode
-
-  \subsection done_qs_sec Done!
-
-  \section devplans_sec Development Plans
-
-  Constrained optimization, optimization under uncertainty, etc.
 */
 
 /** @defgroup interface_group User Interface

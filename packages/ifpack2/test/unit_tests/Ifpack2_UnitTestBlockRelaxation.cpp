@@ -257,8 +257,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TriDi, Scalar, LocalOr
   global_size_t num_rows_per_proc = 5;
 
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
+  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> ROW;
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
-  typedef Ifpack2::TriDiContainer<CRS,Scalar> TriDi;
+  typedef Ifpack2::TriDiContainer<ROW,Scalar> TriDi;
 
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   Teuchos::RCP<const CRS > crsmatrix = tif_utest::create_test_matrix_variable_blocking<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
@@ -280,7 +281,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TriDi, Scalar, LocalOr
   ilist.set("relaxation: sweeps",1);
   ilist.set("relaxation: type","Gauss-Seidel");
 
-  Ifpack2::BlockRelaxation<CRS,TriDi> TDRelax(crsmatrix);
+  Ifpack2::BlockRelaxation<ROW,TriDi> TDRelax(crsmatrix);
 
   TDRelax.setParameters(ilist);
   TDRelax.initialize();
@@ -382,9 +383,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, LinePartition, Scalar,
 
   //typedef Tpetra::RowGraph<LocalOrdinal,GlobalOrdinal,Node> RG;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
+  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> ROW;
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MultiVector;
-  typedef Ifpack2::TriDiContainer<CRS,Scalar> TriDi;
+  typedef Ifpack2::TriDiContainer<ROW,Scalar> TriDi;
 
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
   Teuchos::RCP<const CRS > crsmatrix = tif_utest::create_test_matrix_variable_blocking<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
@@ -414,7 +416,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, LinePartition, Scalar,
   ilist.set("relaxation: sweeps",1);
   ilist.set("relaxation: type","Gauss-Seidel");
 
-  Ifpack2::BlockRelaxation<CRS,TriDi> TDRelax(crsmatrix);
+  Ifpack2::BlockRelaxation<ROW,TriDi> TDRelax(crsmatrix);
 
   TDRelax.setParameters(ilist);
   TDRelax.initialize();

@@ -5,6 +5,24 @@ Release Notes for Trilinos Package MueLu
 Trilinos 12.2:
 ---------------
 
+* Allow to dynamically switch transfer operators between different multigrid levels.
+  Can be used in context of semi-coarsening.
+
+* Enabled semi-coarsening (using Ray's line detection algorithm).
+
+* Add support for line smoothing (Ifpack/Ifpack2) [EXPERIMENTAL]
+
+* New AMGX Adapter [EXPERIMENTAL]
+
+  New experimental adapter which allows a user with AMGX installed to utilize
+  this software for the preconditioning and solution of linear systems. If a
+  user provides AMGX configuration options instead of a MueLu input deck, the
+  adapter will be called. Currently supported with Tpetra objects.
+
+* Matlab interface for MueLu [EXPERIMENTAL]
+
+  Setup and solve hierarchies from Matlab and use Matlab functions as MueLu factories.
+
 Trilinos 12.0:
 ---------------
 

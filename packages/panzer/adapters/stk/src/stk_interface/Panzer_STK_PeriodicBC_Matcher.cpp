@@ -187,7 +187,7 @@ getLocalSideIdsAndCoords(const STK_Interface & mesh,
    stk_classic::mesh::Selector mySides = (*side) & metaData->locally_owned_part();
 
    stk_classic::mesh::EntityRank rank;
-   const STK_Interface::VectorFieldType * field;
+   const STK_Interface::VectorFieldType * field = 0;
    unsigned int offset = 0;
    if(type_ == "coord"){
      rank = mesh.getNodeRank();

@@ -5680,6 +5680,12 @@ namespace Tpetra {
           dbg->pushTab ();
         }
 
+	// Make the output stream write floating-point numbers in
+        // scientific notation.  It will politely put the output
+        // stream back to its state on input, when this scope
+        // terminates.
+        Teuchos::MatrixMarket::details::SetScientific<scalar_type> sci (out);
+
         const size_t myNumRows = X.getLocalLength ();
         const size_t numCols = X.getNumVectors ();
         // Use a different tag for the "size" messages than for the

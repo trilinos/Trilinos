@@ -234,40 +234,78 @@ namespace MueLu {
       // Check for mach of the form "level X" where X is a positive integer
       if (paramList.isSublist(levelName) && levelName.find("level ") == 0 && levelName.size() > 6) {
         int levelID = strtol(levelName.substr(6).c_str(), 0, 0);
-        if (levelID > 0)  {
+        if (levelID > 0)
+        {
           // Do enough level adding so we can be sure to add the data to the right place
           for (int i = H.GetNumLevels(); i <= levelID; i++)
             H.AddNewLevel();
+        }
+        RCP<Level> level = H.GetLevel(levelID);
 
-          RCP<Level> level = H.GetLevel(levelID);
+        RCP<FactoryManager> M = Teuchos::rcp_dynamic_cast<FactoryManager>(HM.GetFactoryManager(levelID));
+        TEUCHOS_TEST_FOR_EXCEPTION(M.is_null(), Exceptions::InvalidArgument, "MueLu::Utils::AddNonSerializableDataToHierarchy: cannot get FactoryManager");
 
-          RCP<FactoryManager> M = Teuchos::rcp_dynamic_cast<FactoryManager>(HM.GetFactoryManager(levelID));
-          TEUCHOS_TEST_FOR_EXCEPTION(M.is_null(), Exceptions::InvalidArgument, "MueLu::Utils::AddNonSerializableDataToHierarchy: cannot get FactoryManager");
+        // Grab the level sublist & loop over parameters
+        const ParameterList& levelList = paramList.sublist(levelName);
+        for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
+          const std::string& name = it2->first;
+          TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" &&
+                                     name != "Nullspace" && name != "Coordinates" &&
+                                     !IsParamMuemexVariable(name), Exceptions::InvalidArgument,
+                                     "MueLu::Utils::AddNonSerializableDataToHierarchy: parameter list contains unknown data type");
 
-          // Grab the level sublist & loop over parameters
-          const ParameterList& levelList = paramList.sublist(levelName);
-          for (ParameterList::ConstIterator it2 = levelList.begin(); it2 != levelList.end(); it2++) {
-            const std::string& name = it2->first;
-            TEUCHOS_TEST_FOR_EXCEPTION(name != "A" && name != "P" && name != "R" &&
-                                       name != "Nullspace" && name != "Coordinates",
-                                       Exceptions::InvalidArgument,
-                                       "MueLu::Utils::AddNonSerializableDataToHierarchy: parameter list contains unknown data type");
-
-            if (name == "A") {
-              level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second),NoFactory::get());
-              M->SetFactory(name, NoFactory::getRCP());
-            }
-            else if( name == "P" || name == "R") {
-              // level->Request(name,M->GetFactory(name).get(),M->GetFactory("A").get());// won't work
-              level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
-              level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second), M->GetFactory(name).get());
-            }
-            else if (name == "Nullspace" || name == "Coordinates"){
-              level->Set(name, Teuchos::getValue<RCP<MultiVector > >(it2->second), NoFactory::get());
-              M->SetFactory(name, NoFactory::getRCP());
-            }
-
+          if (name == "A") {
+            level->Set(name, Teuchos::getValue<RCP<Matrix > > (it2->second),NoFactory::get());
+            M->SetFactory(name, NoFactory::getRCP());
           }
+          else if( name == "P" || name == "R") {
+            level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
+            level->Set(name, Teuchos::getValue<RCP<Matrix > >     (it2->second), M->GetFactory(name).get());
+          }
+          else if (name == "Nullspace")
+          {
+            level->Set(name, Teuchos::getValue<RCP<MultiVector > >(it2->second), NoFactory::get());
+            M->SetFactory(name, NoFactory::getRCP());
+          }
+          else if(name == "Coordinates") //Scalar of Coordinates MV is always double
+          {
+            level->Set(name, Teuchos::getValue<RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
+            M->SetFactory(name, NoFactory::getRCP());
+          }
+          #ifdef HAVE_MUELU_MATLAB
+          else
+          {
+            //Custom variable for Muemex
+            size_t typeNameStart = name.find_first_not_of(' ');
+            size_t typeNameEnd = name.find(' ', typeNameStart);
+            char* typeName = (char*) malloc(typeNameEnd - typeNameStart + 1);
+            strcpy(typeName, name.c_str() + typeNameStart);
+            typeName[typeNameEnd - typeNameStart] = 0;
+            //Convert to lowercase
+            for(char* iter = typeName; *iter; iter++)
+            {
+              *iter = (char) tolower(*iter);
+            }
+            level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
+            if(strstr(typeName, "matrix"))
+              level->Set(name, Teuchos::getValue<RCP<Matrix> >(it2->second), NoFactory::get());
+            else if(strstr(typeName, "multivector"))
+              level->Set(name, Teuchos::getValue<RCP<MultiVector> >(it2->second), NoFactory::get());
+            else if(strstr(typeName, "ordinalvector"))
+              level->Set(name, Teuchos::getValue<RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
+            else if(strstr(typeName, "scalar"))
+              level->Set(name, Teuchos::getValue<Scalar>(it2->second), NoFactory::get());
+            else if(strstr(typeName, "double"))
+              level->Set(name, Teuchos::getValue<double>(it2->second), NoFactory::get());
+            else if(strstr(typeName, "complex"))
+              level->Set(name, Teuchos::getValue<std::complex<double> >(it2->second), NoFactory::get());
+            else if(strstr(typeName, "int"))
+              level->Set(name, Teuchos::getValue<int>(it2->second), NoFactory::get());
+            else if(strstr(typeName, "string"))
+              level->Set(name, Teuchos::getValue<std::string>(it2->second), NoFactory::get());
+            free(typeName);
+          }
+          #endif
         }
       }
     }

@@ -127,6 +127,7 @@ struct OperatorData
 // Optional Teuchos support
 #ifdef HAVE_AZTECOO_TEUCHOS
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
@@ -136,11 +137,17 @@ struct OperatorData
 
 // Epetra includes
 #ifdef HAVE_EPETRA
+#include "Epetra_Object.h"
+#include "Epetra_Comm.h"
+#include "Epetra_SerialComm.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
-#include "Epetra_MapColoring.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
+#include "Epetra_CompObject.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_FEVector.h"
+#include "Epetra_Operator.h"
 #include "Epetra_InvOperator.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_CrsMatrix.h"
@@ -150,29 +157,23 @@ struct OperatorData
 #include "Epetra_FEVbrMatrix.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_JadMatrix.h"
+#include "Epetra_SerialDenseOperator.h"
+#include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_SerialDenseSolver.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
+#include "Epetra_SerialDistributor.h"
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_Time.h"
-#include "Epetra_SerialDistributor.h"
+#include "Epetra_MapColoring.h"
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #endif
+#include "PyTrilinos_Epetra_Util.hpp"
 
-// Epetra python includes
+// NumPy include
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
-#include "Epetra_NumPyIntVector.hpp"
-#include "Epetra_NumPyMultiVector.hpp"
-#include "Epetra_NumPyVector.hpp"
-#include "Epetra_NumPyFEVector.hpp"
-#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-#include "Epetra_NumPyIntSerialDenseVector.hpp"
-#include "Epetra_NumPySerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialSymDenseMatrix.hpp"
-#include "Epetra_NumPySerialDenseVector.hpp"
 #endif
 
 // AztecOO includes

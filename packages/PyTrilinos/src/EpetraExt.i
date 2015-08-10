@@ -103,8 +103,12 @@ example subdirectory of the PyTrilinos package:
 #undef HAVE_STDINT_H
 #endif
 
+// PyTrilinos includes
+#include "PyTrilinos_PythonException.hpp"
+
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
@@ -115,15 +119,17 @@ example subdirectory of the PyTrilinos package:
 // Epetra includes
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
-#include "Epetra_SrcDistObject.h"
-#include "Epetra_DistObject.h"
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #endif
 #include "Epetra_LocalMap.h"
+#include "Epetra_CompObject.h"
+#include "Epetra_DistObject.h"
+#include "Epetra_SrcDistObject.h"
 #include "Epetra_CrsGraph.h"
+#include "Epetra_Operator.h"
 #include "Epetra_InvOperator.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_CrsMatrix.h"
@@ -135,6 +141,9 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_FEVector.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_MapColoring.h"
+#include "Epetra_SerialDenseOperator.h"
+#include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_SerialDistributor.h"
@@ -148,15 +157,6 @@ example subdirectory of the PyTrilinos package:
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
 #include "PyTrilinos_Epetra_Util.hpp"
-#include "Epetra_NumPyIntVector.hpp"
-#include "Epetra_NumPyMultiVector.hpp"
-#include "Epetra_NumPyVector.hpp"
-#include "Epetra_NumPyFEVector.hpp"
-#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-#include "Epetra_NumPyIntSerialDenseVector.hpp"
-#include "Epetra_NumPySerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialSymDenseMatrix.hpp"
-#include "Epetra_NumPySerialDenseVector.hpp"
 
 // EpetraExt includes
 #include "EpetraExt_config.h"

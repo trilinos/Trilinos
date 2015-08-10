@@ -61,17 +61,6 @@ Entity declare_element( BulkData & mesh ,
   return declare_element(mesh, vec, elem_id, node_ids);
 }
 
-STK_DEPRECATED(Entity declare_element( BulkData & mesh ,
-                                       PartVector & parts , // parts[0] expected to have topology
-                                       const EntityId elem_id ,
-                                       const EntityId node_id[] ));  // Delete on 2015-07-09
-
-STK_DEPRECATED(Entity declare_element( BulkData & mesh ,
-                                       Part & part ,
-                                       const EntityId elem_id ,
-                                       const EntityId node_id[] ));  // Delete on 2015-07-09
-
-
 /** \brief  Create (or find) an element side.
  *
  *  The element must be a member of a Part with a topology.

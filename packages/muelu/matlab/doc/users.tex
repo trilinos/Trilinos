@@ -1,0 +1,157 @@
+Muemex - MueLu Interface for MATLAB
+
+\subsection{Basic Instructions}
+
+\begin{enumerate}
+  \item Run "matlab" script in this directory to launch matlab with proper shared libraries
+  \item Run "help muelu" from matlab to see detailed help for "muelu" function
+  \item Basic setup for muelu is "problemID = muelu('setup', A);"
+  \item Basic solve for muelu is "x = muelu(problemID, b);"
+  \item Run "ctest" in this directory to run the experimental matlab tests for MueLu
+\end{enumerate}
+
+\subsection{Full Instructions}
+
+Navigate to muelu/matlab/bin.\\
+Run MATLAB through the "matlab" script.\\
+Alternatively, find the value for {\tt \$LD\_PRELOAD} printed by the "./matlab" script and set it yourself.\\
+Then MATLAB can be run directly with
+
+\begin{lstlisting}[language=Matlab]
+    matlab -nosplash -nojvm
+\end{lstlisting}
+
+The "muelu" function will only be available if "muelu/matlab/bin" is in MATLAB's path.
+If you want to use it from a different directory, run
+
+\begin{lstlisting}[language=Matlab]
+    "addpath('path/to/matlab/bin');"
+\end{lstlisting}
+
+from within MATLAB.
+
+With a sparse matrix A, set up a MueLu hierarchy:
+
+\begin{lstlisting}[language=Matlab]
+    problemID = muelu('setup', A);
+\end{lstlisting}
+
+Run
+
+\begin{lstlisting}[language=Matlab]
+    A = laplacianfun([50, 50]);
+\end{lstlisting}
+
+to get a 50x50 2D Laplace matrix.
+
+Note: any number of problems can be set up at a time.
+Optionally, pass A and fine level coordinates:
+
+\begin{lstlisting}[language=Matlab]
+    problemID = muelu('setup', A, coords);
+\end{lstlisting}
+
+Parameters for the "easy parameter list" are listed after A and coords:
+
+\begin{lstlisting}[language=Matlab]
+    problemID = muelu('setup', A, coords, 'coarse: max size', 50);
+\end{lstlisting}
+
+Sublists can be passed using MATLAB cell arrays.
+
+\begin{lstlisting}[language=Matlab]
+    problemID = muelu('setup', A, 'level 0', {'aggregation: drop tol', 0.03}, 'level 1', {'aggregation: drop tol', 0.01});
+\end{lstlisting}
+
+XML parameter lists can also be used.
+
+\begin{lstlisting}[language=Matlab]
+    problemID = muelu('setup', A, 'xml parameter file', 'myParams.xml');
+\end{lstlisting}
+
+The setup function can also return operator complexity:
+
+\begin{lstlisting}[language=Matlab]
+    [problemID, oc] = muelu('setup', A);
+\end{lstlisting}
+
+By default, muemex uses Tpetra objects to store the MueLu preconditioner.
+This can be customized by setting the parameter "Linear Algebra".
+
+\begin{lstlisting}[language=Matlab]
+    problemID = muelu('setup', A, 'Linear Algebra', 'epetra');
+    problemID = muelu('setup', A, 'Linear Algebra', 'tpetra');
+\end{lstlisting}
+
+Parameters can be strings, integers, booleans or arrays (full or sparse, real
+or complex).
+
+Solve a problem with b as the right-hand side vector(s):
+
+\begin{lstlisting}[language=Matlab]
+    x = muelu(problemID, b);
+    x = muelu(problemID, A, b);
+\end{lstlisting}
+
+The solve function can also return the number of iterations taken by Belos:
+
+\begin{lstlisting}[language=Matlab]
+    [x, numIters] = muelu(problemID, b);
+\end{lstlisting}
+
+The first version uses the A that was passed when setting up the problem.
+The second version uses a new A with the same hierarchy.
+
+Parameters for Belos can be listed after the required parameters:
+
+\begin{lstlisting}[language=Matlab]
+    [x, numIters] = muelu(0, b, 'Maximum Iterations', 400);
+\end{lstlisting}
+
+Remove a specific problem and free memory associated with it:
+
+\begin{lstlisting}[language=Matlab]
+    muelu('cleanup', problemID);
+\end{lstlisting}
+
+or all problems:
+
+\begin{lstlisting}[language=Matlab]
+    muelu('cleanup');
+\end{lstlisting}
+
+List basic information about problem(s):
+
+\begin{lstlisting}[language=Matlab]
+    muelu('status', problemID);
+    muelu('status');
+\end{lstlisting}
+
+Get data from a level:
+
+\begin{lstlisting}[language=Matlab]
+    data = muelu('get', problemID, levelID, dataName);
+\end{lstlisting}
+
+This works if dataName is A, P, R, Nullspace, Coordinates, or Aggregates.
+Otherwise, the data type must also be specified.
+    
+\begin{lstlisting}[language=Matlab]
+    data = muelu('get', problemID, levelID, dataName, dataType);
+\end{lstlisting}
+
+For example, to get the finest prolongator matrix from problem 0, do
+
+\begin{lstlisting}[language=Matlab]
+    P = muelu('get', 0, 1, 'P');
+\end{lstlisting}
+
+Or, to get non-standard data:
+    
+\begin{lstlisting}[language=Matlab]
+    myList = muelu('get', 0, 0, 'SpecialNodeList', 'OrdinalVector');
+\end{lstlisting}
+
+Matrix, MultiVector, OrdinalVector, Int, Scalar, Double and Complex are the supported types.
+Note that any data retrieved this way must have a keep flag set on it during hierarchy setup.
+For example, "Aggregates" are not normally available since they are discarded after P is created.

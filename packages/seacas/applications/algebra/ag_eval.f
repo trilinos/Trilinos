@@ -436,7 +436,7 @@ C         --EXP
 C         --LOG
   300       CONTINUE
             call chkfnc ('LOG', nament(nent))
-            CALL CHKPAR ('LE0', 'LOG of a negative number',
+            CALL CHKPAR ('LE0', 'LOG of a non-positive number',
      &         IVTYPE, LENARY, NELBLK, IXELBO, ISEVOK(1,IEV),
      &         NUMIX, IXNODE, IXELEM,
      &         STACK(1,IPARM), RDUM, *630)
@@ -450,7 +450,7 @@ C         --LOG
 C         --LOG10
   310       CONTINUE
             call chkfnc ('LOG10', nament(nent))
-            CALL CHKPAR ('LE0', 'LOG10 of a negative number',
+            CALL CHKPAR ('LE0', 'LOG10 of a non-positive number',
      &         IVTYPE, LENARY, NELBLK, IXELBO, ISEVOK(1,IEV),
      &         NUMIX, IXNODE, IXELEM,
      &         STACK(1,IPARM), RDUM, *630)
@@ -494,7 +494,8 @@ C         --TAN
 C         --ASIN
   350       CONTINUE
             call chkfnc ('ASIN', nament(nent))
-            CALL CHKPAR ('GTABS1', 'ASIN of a number over abs(1.0)',
+            CALL CHKPAR ('GTABS1',
+     *        'ASIN of a number greater than abs(1.0)',
      &         IVTYPE, LENARY, NELBLK, IXELBO, ISEVOK(1,IEV),
      &         NUMIX, IXNODE, IXELEM,
      &         STACK(1,IPARM), RDUM, *630)
@@ -508,7 +509,8 @@ C         --ASIN
 C         --ACOS
   360       CONTINUE
             call chkfnc ('ACOS', nament(nent))
-            CALL CHKPAR ('GTABS1', 'ACOS of a number over abs(1.0)',
+            CALL CHKPAR ('GTABS1',
+     *        'ACOS of a number greater than abs(1.0)',
      &         IVTYPE, LENARY, NELBLK, IXELBO, ISEVOK(1,IEV),
      &         NUMIX, IXNODE, IXELEM,
      &         STACK(1,IPARM), RDUM, *630)

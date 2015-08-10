@@ -46,14 +46,8 @@
 #ifndef MUELU_TOGGLECOORDINATESTRANSFER_FACTORY_DEF_HPP
 #define MUELU_TOGGLECOORDINATESTRANSFER_FACTORY_DEF_HPP
 
-#include "Xpetra_ImportFactory.hpp"
-#include "Xpetra_MultiVectorFactory.hpp"
-#include "Xpetra_MapFactory.hpp"
 
-#include "MueLu_CoarseMapFactory.hpp"
-#include "MueLu_Aggregates.hpp"
 #include "MueLu_ToggleCoordinatesTransferFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
 
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"

@@ -1,0 +1,108 @@
+<!-- 
+    INPUT TYPES: coordinates,
+                 (x,t,e)petra_crs_matrix,
+                 (x,t,e)petra_crs_graph,
+                 (x,t,e)petra_vector,
+                 (x,t,e)petra_multivector
+
+    INPUT ADAPTERS: BasicIdentifier,
+                    XpetraMultiVector,
+                    XpetraCrsGraph,
+                    XpetraCrsMatrix
+-->
+
+<ParameterList name="chacoSimple3dTest">
+    
+        <ParameterList name="InputParameters">
+            <Parameter name="inputPath" type="string" value="/Users/davidson/trilinosall/trilinosrepo/packages/zoltan/test/ch_simple3d"/>
+            <Parameter name="inputFile" type="string" value="simple3d"/>
+            <Parameter name="fileType" type="string" value="Chaco"/>
+        </ParameterList>
+    
+    <ParameterList name="test1">
+        <Parameter name="Name" type="string" value="simple3dChaco_xpetmv"/>
+     
+        <ParameterList name="InputAdapterParameters">
+            <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
+            <Parameter name="inputType" type="string" value="coordinates"/> 
+            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+           <!-- <Parameter name="timer_output_stream" type="string" value="std::cout"/> -->
+            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+    
+      <!--  <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
+
+            <ParameterList name="weight 1">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
+        </ParameterList> -->
+
+    </ParameterList>
+    
+    <ParameterList name="test2">
+        <Parameter name="Name" type="string" value="simple3dChaco_xpet_crs_matrix"/>
+     
+        <ParameterList name="InputAdapterParameters">
+            <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
+            <Parameter name="inputType" type="string" value="xpetra_crs_matrix"/> 
+            <Parameter name="inputAdapter" type="string" value="XpetraCrsMatrix"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+           <!-- <Parameter name="timer_output_stream" type="string" value="std::cout"/> -->
+            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+    
+      <!--  <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
+
+            <ParameterList name="weight 1">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
+        </ParameterList> -->
+
+    </ParameterList>
+    
+    <ParameterList name="test3">
+        <Parameter name="Name" type="string" value="simple3dChaco_xpet_crs_graph"/>
+     
+        <ParameterList name="InputAdapterParameters">
+            <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
+            <Parameter name="inputType" type="string" value="xpetra_crs_graph"/> 
+            <Parameter name="inputAdapter" type="string" value="XpetraCrsGraph"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+           <!-- <Parameter name="timer_output_stream" type="string" value="std::cout"/> -->
+            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+    
+      <!--  <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
+
+            <ParameterList name="weight 1">
+                <Parameter name="min" type="double" value="0.99"/>
+                <Parameter name="max" type="double" value="1.4"/>
+            </ParameterList>
+        </ParameterList> -->
+
+    </ParameterList>
+</ParameterList>

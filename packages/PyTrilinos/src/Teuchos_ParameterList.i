@@ -202,9 +202,8 @@ class any;
 // Implement internal storage of Teuchos::ParameterList objects via
 // Teuchos::RCP<>
 %teuchos_rcp(Teuchos::ParameterList)
-#define EMPTYHACK
-%teuchos_rcp_pydict_overrides(EMPTYHACK, Teuchos::ParameterList)
-%teuchos_rcp_pydict_overrides(const,     Teuchos::ParameterList)
+%teuchos_rcp_pydict_overrides(SWIGEMPTYHACK, Teuchos::ParameterList)
+%teuchos_rcp_pydict_overrides(const        , Teuchos::ParameterList)
 
 %feature("docstring") Teuchos::ParameterList
 "The ``ParameterList`` class is an important utility class that is used

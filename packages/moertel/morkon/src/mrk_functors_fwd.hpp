@@ -58,17 +58,13 @@ namespace morkon_exp {
 //     Make sure all interfaces have primal and dual shape functions.
 //     What corresponds to array of ptrs to functions?!
 
-
-template <typename DeviceType, unsigned int DIM = 3 >
-struct Compute_Node_Normals;
-
 template <typename DeviceType, unsigned int DIM = 3 >
 struct Update_Node_Support;
 
 template <typename DeviceType, unsigned int DIM = 3 >
-struct Find_Potential_Sections;
+struct Search_For_Pallet_Generating_Faces;
 
-template <typename DeviceType, unsigned int DIM = 3 >
+template <>
 struct Generate_Pallets;
 
 template <typename DeviceType, unsigned int DIM = 3 >
