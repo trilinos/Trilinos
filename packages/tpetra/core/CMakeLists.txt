@@ -354,11 +354,10 @@ MESSAGE(STATUS "   SerialNode (DEPRECATED):  ${HAVE_TPETRA_SERIALCLASSIC}")
 #
 # Currently, we always enable int, because MueLu requires it for
 # examples and tests (this is Bug 6358).  Furthermore, if Teuchos
-# enables long long support (it does not by default), we also enable
-# long long (which C++11 / C99 guarantees to be >= 64 bits).  We
-# currently only enable other types if the user asks for them.  (One
-# exception: for backwards compatibility, if ETI is OFF, we also
-# enable exactly one of long long or long.)
+# enables long long support (which it now does by default with C++11),
+# we also enable long long (which C++11 / C99 guarantees to be >= 64
+# bits).  We currently only enable other types if the user asks for
+# them.
 #
 # Note that long is 64 bits on some platforms, and 32 bits on other
 # platforms.  On the latter, you may use long long instead, which
@@ -369,19 +368,33 @@ MESSAGE(STATUS "   SerialNode (DEPRECATED):  ${HAVE_TPETRA_SERIALCLASSIC}")
 # smaller than global_size_t (e.g., using the wrong
 # Teuchos::OrdinalTraits<>::invalid().  This option is OFF by default.
 
+# GO = int is enabled by default, but only because of Bug 6358.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_INT_DEFAULT ON)
-GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
 
-IF (${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-  GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
-ELSE ()
-  IF (${Teuchos_ENABLE_LONG_LONG_INT})
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
-  ELSE ()
-    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT ON)
+# GO = long long is enabled by default.  However, if the user enabled
+# GO = long EXPLICITLY, we disable GO = long long by default, because
+# we don't want to enable multiple "long" GO types by default.
+GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT ${Teuchos_ENABLE_LONG_LONG_INT})
+IF (DEFINED Tpetra_INST_INT_LONG) # if the user set it explicitly (either ON or OFF)
+  IF (Tpetra_INST_INT_LONG) # if the user set it to ON explicitly
+    # If the user explicitly set Tpetra_INST_INT_LONG=ON, then turn
+    # off GO = long long by default.  We have to go through the
+    # two-level IF statement because the Tpetra_INST_INT_LONG option
+    # doesn't exist yet; we have not yet encountered the
+    # TRIBITS_ADD_OPTION_AND_DEFINE statement (below) that defines it
+    # and gives it a default value.  (Note the circular dependency
+    # between the default value of Tpetra_INST_INT_LONG and
+    # Tpetra_INST_INT_LONG_LONG.  This is deliberate.  The point is
+    # that only one of them is defined by default at a time.
+    GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT OFF)
   ENDIF ()
 ENDIF ()
+
+# GO = long is NOT enabled by default.
+GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
+# GO = unsigned is NOT enabled by default.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
+
 
 #
 # Define options for enabling various GlobalOrdinal types
@@ -396,21 +409,21 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_UNSIGNED
   HAVE_TPETRA_INST_INT_UNSIGNED
-  "Enable GlobalOrdinal = unsigned in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_INT_DEFAULT} by default."
+  "Enable GlobalOrdinal = unsigned in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT} by default."
   ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT}
-  )
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  Tpetra_INST_INT_LONG
-  HAVE_TPETRA_INST_INT_LONG
-  "Enable GlobalOrdinal = long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_INT_DEFAULT} by default."
-  ${HAVE_TPETRA_INST_INT_LONG_DEFAULT}
   )
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_LONG_LONG
   HAVE_TPETRA_INST_INT_LONG_LONG
-  "Enable GlobalOrdinal = long long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_INT_DEFAULT} by default."
+  "Enable GlobalOrdinal = long long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT} by default."
   ${HAVE_TPETRA_INST_INT_LONG_LONG_DEFAULT}
   ) 
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_INT_LONG
+  HAVE_TPETRA_INST_INT_LONG
+  "Enable GlobalOrdinal = long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_LONG_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_INT_LONG_DEFAULT}
+  )
 
 # Set availability macros for various GlobalOrdinal types
 GLOBAL_SET(HAVE_TPETRA_INT_INT ${Tpetra_INST_INT_INT})
