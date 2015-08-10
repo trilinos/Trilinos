@@ -153,7 +153,6 @@ namespace Belos {
 
         const Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tX(rcpFromRef(temp_x));
         Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> tY(rcpFromRef(y));
-
         Hierarchy_->Iterate(tX, tY, 1, true);
       }
     }
@@ -188,7 +187,6 @@ namespace Belos {
 #ifdef HAVE_MUELU_AMGX
     MueLuOp(const RCP<MueLu::AMGXOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& A) : AMGX_(A) {}
 #endif
-
     virtual ~MueLuOp() {}
 
     void Apply(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x, Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y, ETrans trans = NOTRANS ) const {
