@@ -106,8 +106,10 @@ namespace ROL {
   struct StepState {
     Teuchos::RCP<Vector<Real> > gradientVec;
     Teuchos::RCP<Vector<Real> > descentVec;
+    Teuchos::RCP<Vector<Real> > constraintVec;
     Real searchSize; // line search parameter (alpha) or trust-region radius (delta)
-    StepState(void) : gradientVec(Teuchos::null), descentVec(Teuchos::null), searchSize(0) {}
+    StepState(void) : gradientVec(Teuchos::null), descentVec(Teuchos::null), constraintVec(Teuchos::null),
+                      searchSize(0) {}
   };  
       
   /** \brief  Platform-dependent machine epsilon. 
