@@ -148,14 +148,6 @@ convertEpetraOperatorToPython(const Teuchos::RCP< const Epetra_Operator > *eo);
 
 ////////////////////////////////////////////////////////////
 
-// Given a const Epetra_BlockMap &, return a reference counted pointer
-// to a const Epetra_Map.  If the downcast cannot be performed, throw a
-// PythonException.
-Teuchos::RCP< const Epetra_Map >
-getEpetraMapPtrFromEpetraBlockMap(const Epetra_BlockMap & ebm);
-
-////////////////////////////////////////////////////////////
-
 // Given a python object and an attribute name, return a reference
 // counted pointer to the Epetra_Vector value of the attribute.  If
 // the attribute does not exist or the attribute is not an
@@ -194,16 +186,6 @@ getConstEpetraVectorItemObjectAttr(PyObject   * object,
 Teuchos::RCP< Epetra_MultiVector >
 getEpetraMultiVectorObjectAttr(PyObject   * object,
                                CONST char * name);
-
-////////////////////////////////////////////////////////////
-
-// Given a python object and an attribute name, return a reference
-// counted pointer to the const Epetra_MultiVector value of the
-// attribute.  If the attribute does not exist or the attribute is not
-// an Epetra_MultiVector, throw a PythonException.
-Teuchos::RCP< const Epetra_MultiVector >
-getConstEpetraMultiVectorObjectAttr(PyObject   * object,
-                                    CONST char * name);
 
 ////////////////////////////////////////////////////////////
 

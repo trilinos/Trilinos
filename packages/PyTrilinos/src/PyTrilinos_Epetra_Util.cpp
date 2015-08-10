@@ -759,18 +759,6 @@ convertEpetraOperatorToPython(const Teuchos::RCP< const Epetra_Operator > *ceo)
 
 ////////////////////////////////////////////////////////////////////////
 
-Teuchos::RCP< const Epetra_Map >
-getEpetraMapPtrFromEpetraBlockMap(const Epetra_BlockMap & ebm)
-{
-  const Epetra_Map * em_ptr  = dynamic_cast< const Epetra_Map* >(&ebm);
-  if (!em_ptr)
-  {
-    PyErr_SetString(PyExc_TypeError, "Cannot upcast BlockMap to Map");
-    throw PythonException();
-  }
-  return Teuchos::rcp(em_ptr, false);
-}
-
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::RCP< Epetra_Vector >
@@ -883,33 +871,6 @@ getEpetraMultiVectorObjectAttr(PyObject   * object,
     *reinterpret_cast< Teuchos::RCP< Epetra_MultiVector > * >(argp);
   if (newmem)
     delete reinterpret_cast< Teuchos::RCP< Epetra_MultiVector > * >(argp);
-  Py_DECREF(value);
-  return result;
-}
-
-////////////////////////////////////////////////////////////////////////
-
-Teuchos::RCP< const Epetra_MultiVector >
-getConstEpetraMultiVectorObjectAttr(PyObject * object,
-                                    CONST char * name)
-{
-  static swig_type_info * swig_EMV_ptr =
-    SWIG_TypeQuery("Teuchos::RCP< Epetra_MultiVector > *");
-  void * argp;
-  PyObject * value = PyObject_GetAttrString(object, name);
-  int newmem = 0;
-  if (!SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(value, &argp, swig_EMV_ptr, 0, &newmem)))
-  {
-    PyErr_Format(PyExc_TypeError,
-                 "Attribute '%s' is not of type Epetra.MultiVector",
-                 name);
-    Py_DECREF(value);
-    throw PythonException();
-  }
-  Teuchos::RCP< const Epetra_MultiVector > result =
-    *reinterpret_cast< Teuchos::RCP< const Epetra_MultiVector > * >(argp);
-  if (newmem)
-    delete reinterpret_cast< Teuchos::RCP< const Epetra_MultiVector > * >(argp);
   Py_DECREF(value);
   return result;
 }
