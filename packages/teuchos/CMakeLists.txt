@@ -132,11 +132,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${ST_FOR_DEV_PT_FOR_RELEASE}
   )
 
+ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
+SET(${PACKAGE_NAME}_ENABLE_LONG_LONG_INT_DEFAULT ${${PROJECT_NAME}_ENABLE_CXX11})
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT
   HAVE_TEUCHOS_LONG_LONG_INT
-  "Enable Teuchos features for long long data type."
-  OFF
+  "Enable Teuchos features for the 'long long' data type.  This is ON by default if and only if C++11 is enabled.  Please remember that 'long long' only entered the C++ language standard with C++11, even though many compilers supported it before."
+  ${${PACKAGE_NAME}_ENABLE_LONG_LONG_INT_DEFAULT}
   )
 
 IF(WIN32 AND NOT CYGWIN AND NOT ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT)
