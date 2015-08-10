@@ -110,14 +110,15 @@ namespace {
     typedef Tpetra::Operator<SC,LO,GO,NT> OP;
     typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
     typedef Teuchos::ScalarTraits<SC> STS;
+    typedef typename MV::mag_type mag_type;
 
     Teuchos::OSTab tab0 (out);
     out << "Test solver \"" << solverName << "\" from Ifpack2 package" << endl;
     Teuchos::OSTab tab1 (out);
 
-    RCP<Trilinos::Details::LinearSolver<MV, OP> > solver;
+    RCP<Trilinos::Details::LinearSolver<MV, OP, mag_type> > solver;
     try {
-      solver = Trilinos::Details::getLinearSolver<MV, OP> ("Ifpack2", solverName);
+      solver = Trilinos::Details::getLinearSolver<MV, OP, mag_type> ("Ifpack2", solverName);
     } catch (std::exception& e) {
       out << "*** FAILED: getLinearSolver threw an exception: " << e.what () << endl;
       success = false;

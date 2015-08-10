@@ -160,9 +160,9 @@ namespace {
     out << "Test solver \"" << solverName << "\" from Amesos2 package" << endl;
     Teuchos::OSTab tab1 (out);
 
-    RCP<Trilinos::Details::LinearSolver<MV, OP> > solver;
+    RCP<Trilinos::Details::LinearSolver<MV, OP, mag_type> > solver;
     try {
-      solver = Trilinos::Details::getLinearSolver<MV, OP> ("Amesos2", solverName);
+      solver = Trilinos::Details::getLinearSolver<MV, OP, mag_type> ("Amesos2", solverName);
     } catch (std::exception& e) {
       out << "*** FAILED: getLinearSolver threw an exception: " << e.what () << endl;
       success = false;

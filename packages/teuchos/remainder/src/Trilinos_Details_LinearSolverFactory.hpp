@@ -100,7 +100,7 @@ namespace Trilinos {
 ///   contents.  They may change or disappear at any time.
 namespace Details {
 
-template<class MV, class OP>
+template<class MV, class OP, class NormType>
 class LinearSolver; // forward declaration
 
 /// \brief Get a LinearSolver instance.
@@ -116,6 +116,9 @@ class LinearSolver; // forward declaration
 ///   understands.  For example, for Tpetra, use a Tpetra::Operator
 ///   specialization.
 ///
+/// \tparam NormType Type of the norm of the residual.  See the
+///   documentation of LinearSolver for details.
+///
 /// Call this function to create a LinearSolver instance from a
 /// particular package.  LinearSolvers may create LinearSolvers.  The
 /// run-time registration system (see registerLinearSolverFactory()
@@ -126,8 +129,8 @@ class LinearSolver; // forward declaration
 /// \param packageName [in] Name of the package from which to get the
 ///   solver.  Names are case sensitive.
 /// \param solverName [in] The solver's name.  Names are case sensitive.
-template<class MV, class OP>
-Teuchos::RCP<LinearSolver<MV, OP> >
+template<class MV, class OP, class NormType>
+Teuchos::RCP<LinearSolver<MV, OP, NormType> >
 getLinearSolver (const std::string& packageName, const std::string& solverName);
 
 /// \class LinearSolverFactory
@@ -143,6 +146,9 @@ getLinearSolver (const std::string& packageName, const std::string& solverName);
 /// \tparam OP Type of a matrix or linear operator that the
 ///   LinearSolver to create understands.  For example, for Tpetra,
 ///   use a Tpetra::Operator specialization.
+///
+/// \tparam NormType Type of the norm of the residual.  See the
+///   documentation of LinearSolver for details.
 ///
 /// Every package that implements solvers needs to implement a
 /// concrete LinearSolverFactory subclass as well.  That subclass
@@ -192,7 +198,7 @@ getLinearSolver (const std::string& packageName, const std::string& solverName);
 /// 4. In the same anonymous outer namespace, use the
 ///    TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR macro, passing in the
 ///    name of your macro (see #2) as its one argument.
-template<class MV, class OP>
+template<class MV, class OP, class NormType>
 class LinearSolverFactory {
 public:
   /// \brief Get an instance of a solver from a particular package.
@@ -202,7 +208,7 @@ public:
   ///
   /// \return A pointer to the LinearSolver, if the name was valid;
   ///   else, a null pointer.
-  virtual Teuchos::RCP<LinearSolver<MV, OP> >
+  virtual Teuchos::RCP<LinearSolver<MV, OP, NormType> >
   getLinearSolver (const std::string& solverName) = 0;
 };
 
@@ -223,6 +229,9 @@ public:
 /// \tparam OP Type of a matrix or linear operator that the
 ///   LinearSolver instances to create understand.  For example, for
 ///   Tpetra, use a Tpetra::Operator specialization.
+///
+/// \tparam NormType Type of the norm of the residual.  See the
+///   documentation of LinearSolver for details.
 ///
 /// \param packageName [in] Name of the package registering the
 ///   factory.  Package names are case sensitive.
@@ -248,7 +257,7 @@ public:
 /// This function is templated with the same template parameters as
 /// LinearSolverFactory.  This means that it must be called for every
 /// combination of types (MV, OP) for which code will instantiate a
-/// LinearSolverFactory<MV, OP>.  Thus, if the solver package wants to
+/// LinearSolverFactory<MV, OP, NormType>.  Thus, if the solver package wants to
 /// do this before main() runs, it needs a list of all type
 /// combination in advance.  If using explicit template instantiation
 /// (ETI), you may plug this into the ETI system.  We thus recommend
@@ -256,7 +265,7 @@ public:
 /// for each ETI type combination.  For example, Ifpack2 should
 /// iterate over all enabled combinations of the four template
 /// parameters S, LO, GO, NT of Ifpack2::Preconditioner, creating a
-/// LinearSolverFactory<MV, OP> instance for each combination, with MV
+/// LinearSolverFactory<MV, OP, NormType> instance for each combination, with MV
 /// = Tpetra::MultiVector<S, LO, GO, NT> and OP = Tpetra::Operator<S,
 /// LO, GO, NT>.  Package developers may find it useful to write a
 /// macro that does this for that package's LinearSolverFactory
@@ -280,13 +289,13 @@ public:
 ///   instances.  This is because that is an implementation detail
 ///   that solvers themselves don't have to see, and because
 ///   std::shared_ptr is thread safe.
-template<class MV, class OP>
+template<class MV, class OP, class NormType>
 void
 registerLinearSolverFactory (const std::string& packageName,
 #ifdef HAVE_TEUCHOSCORE_CXX11
-                             const std::shared_ptr<LinearSolverFactory<MV, OP> >& factory);
+                             const std::shared_ptr<LinearSolverFactory<MV, OP, NormType> >& factory);
 #else
-                             const Teuchos::RCP<LinearSolverFactory<MV, OP> >& factory);
+                             const Teuchos::RCP<LinearSolverFactory<MV, OP, NormType> >& factory);
 #endif // HAVE_TEUCHOSCORE_CXX11
 
 //
@@ -333,6 +342,8 @@ bool registeredSomeLinearSolverFactory (const std::string& packageName);
 ///   understands.  For example, for Tpetra, use a Tpetra::Operator
 ///   specialization.
 ///
+/// \tparam NormType Type of the norm of a residual.
+///
 /// A LinearSolver knows how to solve linear systems AX=B.  A
 /// LinearSolverFactory knows how to create LinearSolver instances.
 /// Each independent unit of code ("package") that wants to
@@ -343,15 +354,18 @@ bool registeredSomeLinearSolverFactory (const std::string& packageName);
 /// Trilinos::Details::getLinearSolver() (see above in this file).
 /// Those two nonmember functions dispatch to this class' class
 /// (static) methods with the same names.
-template<class MV, class OP>
+template<class MV, class OP, class NormType>
 class LinearSolverFactoryRepository {
 public:
   /// \typedef factory_pointer_type
-  /// \brief Type of a reference-counted pointer to LinearSolverFactory<MV, OP>.
+  /// \brief Type of a reference-counted pointer to LinearSolverFactory.
+  ///
+  /// If C++11 is enabled, we use std::shared_ptr here, for improved
+  /// thread safety.  Teuchos does not require C++11.
 #ifdef HAVE_TEUCHOSCORE_CXX11
-  typedef std::shared_ptr<LinearSolverFactory<MV, OP> > factory_pointer_type;
+  typedef std::shared_ptr<LinearSolverFactory<MV, OP, NormType> > factory_pointer_type;
 #else
-  typedef Teuchos::RCP<LinearSolverFactory<MV, OP> > factory_pointer_type;
+  typedef Teuchos::RCP<LinearSolverFactory<MV, OP, NormType> > factory_pointer_type;
 #endif // HAVE_TEUCHOSCORE_CXX11
 
   /// \typedef map_type
@@ -463,8 +477,9 @@ private:
 // This is _not_ an explicit instantiation.  C++ wants it, because
 // LinearSolverFactoryRepository is a templated class with a static
 // (class) member.
-template<class MV, class OP> typename LinearSolverFactoryRepository<MV, OP>::map_type*
-LinearSolverFactoryRepository<MV, OP>::factories_ = NULL;
+template<class MV, class OP, class NormType>
+typename LinearSolverFactoryRepository<MV, OP, NormType>::map_type*
+LinearSolverFactoryRepository<MV, OP, NormType>::factories_ = NULL;
 
 } // namespace Impl
 
@@ -472,50 +487,54 @@ LinearSolverFactoryRepository<MV, OP>::factories_ = NULL;
 // Definitions of nonmember functions
 //
 
-template<class MV, class OP>
+template<class MV, class OP, class NormType>
 void
 registerLinearSolverFactory (const std::string& packageName,
 #ifdef HAVE_TEUCHOSCORE_CXX11
-                             const std::shared_ptr<LinearSolverFactory<MV, OP> >& factory)
+                             const std::shared_ptr<LinearSolverFactory<MV, OP, NormType> >& factory)
 #else
-                             const Teuchos::RCP<LinearSolverFactory<MV, OP> >& factory)
+                             const Teuchos::RCP<LinearSolverFactory<MV, OP, NormType> >& factory)
 #endif // HAVE_TEUCHOSCORE_CXX11
 {
-  Impl::LinearSolverFactoryRepository<MV, OP>::registerLinearSolverFactory (packageName, factory);
+  Impl::LinearSolverFactoryRepository<MV, OP, NormType>::registerLinearSolverFactory (packageName, factory);
   Impl::rememberRegisteredSomeLinearSolverFactory (packageName);
 }
 
-template<class MV, class OP>
-Teuchos::RCP<LinearSolver<MV, OP> >
+template<class MV, class OP, class NormType>
+Teuchos::RCP<LinearSolver<MV, OP, NormType> >
 getLinearSolver (const std::string& packageName, const std::string& solverName)
 {
   using Teuchos::RCP;
   using Teuchos::TypeNameTraits;
-  typedef typename Impl::LinearSolverFactoryRepository<MV, OP>::factory_pointer_type factory_pointer_type;
+  typedef Impl::LinearSolverFactoryRepository<MV, OP, NormType> repo_type;
+  typedef typename repo_type::factory_pointer_type factory_pointer_type;
+  typedef LinearSolver<MV, OP, NormType> solver_type;
   const char prefix[] = "Trilinos::Details::getLinearSolver: ";
 
   const bool pkgExists = Impl::registeredSomeLinearSolverFactory (packageName);
   TEUCHOS_TEST_FOR_EXCEPTION
     (! pkgExists, std::invalid_argument, prefix << "Package \"" << packageName
      << "\" never registered a LinearSolverFactory for _any_ combination of "
-     "template parameters MV and OP.  This means either that the package name "
-     "is invalid, or that the package is not enabled.");
+     "template parameters MV, OP, and NormType.  This means either that the "
+     "package name is invalid, or that the package is not enabled.");
 
-  factory_pointer_type factory =
-    Impl::LinearSolverFactoryRepository<MV, OP>::getFactory (packageName);
+  factory_pointer_type factory = repo_type::getFactory (packageName);
   TEUCHOS_TEST_FOR_EXCEPTION
     (factory.get () == NULL, std::invalid_argument, prefix << "Package \"" <<
      packageName << "\" is valid, but it never registered a LinearSolverFactory"
-     " for template parameters MV = " << TypeNameTraits<MV>::name () << " and "
-     "OP = " << TypeNameTraits<OP>::name () << ".");
+     " for template parameters "
+     "MV = " << TypeNameTraits<MV>::name () << ", "
+     "OP = " << TypeNameTraits<OP>::name () << ", "
+     "NormType = " << TypeNameTraits<NormType>::name () << ".");
 
-  RCP<LinearSolver<MV, OP> > solver = factory->getLinearSolver (solverName);
+  RCP<solver_type> solver = factory->getLinearSolver (solverName);
   TEUCHOS_TEST_FOR_EXCEPTION
     (solver.is_null (), std::invalid_argument, prefix << "Invalid solver name "
      "\"" << solverName << "\".  However, package \"" << packageName << "\" is "
      "valid, and it did register a LinearSolverFactory for template parameters "
-     "MV = " << TypeNameTraits<MV>::name () << " and "
-     "OP = " << TypeNameTraits<OP>::name () << ".");
+     "MV = " << TypeNameTraits<MV>::name () << ", "
+     "OP = " << TypeNameTraits<OP>::name () << ", "
+     "NormType = " << TypeNameTraits<NormType>::name () << ".");
 
   return solver;
 }

@@ -109,8 +109,8 @@ struct GetMatrixType<Tpetra::Operator<S, LO, GO, NT> > {
 };
 #endif // HAVE_AMESOS2_TPETRA
 
-template<class MV, class OP>
-class LinearSolver : public Trilinos::Details::LinearSolver<MV, OP> {
+template<class MV, class OP, class NormType>
+class LinearSolver : public Trilinos::Details::LinearSolver<MV, OP, NormType> {
 #ifdef HAVE_AMESOS2_EPETRA
   static_assert(! std::is_same<OP, Epetra_MultiVector>::value,
                 "Amesos2::Details::LinearSolver: OP = Epetra_MultiVector.  "
@@ -225,14 +225,15 @@ public:
 
   //! Solve the linear system(s) AX=B.
   void solve (MV& X, const MV& B) {
+    const char prefix[] = "Amesos2::Details::LinearSolver::solve: ";
     TEUCHOS_TEST_FOR_EXCEPTION
-      (solver_.is_null (), std::runtime_error, "Amesos2::Details::LinearSolver::"
-       "solve: The solver does not exist yet.  You must call setMatrix() "
-       "with a nonnull matrix before you may call this method.");
+      (solver_.is_null (), std::runtime_error, prefix << "The solver does not "
+       "exist yet.  You must call setMatrix() with a nonnull matrix before you "
+       "may call this method.");
     TEUCHOS_TEST_FOR_EXCEPTION
-      (A_.is_null (), std::runtime_error, "Amesos2::Details::LinearSolver::"
-       "solve: The matrix has not been set yet.  You must call setMatrix() "
-       "with a nonnull matrix before you may call this method.");
+      (A_.is_null (), std::runtime_error, prefix << "The matrix has not been "
+       "set yet.  You must call setMatrix() with a nonnull matrix before you "
+       "may call this method.");
     solver_->solve (&X, &B);
   }
 
@@ -249,28 +250,30 @@ public:
   /// \brief Set up any part of the solve that depends on the
   ///   structure of the input matrix, but not its numerical values.
   void symbolic () {
+    const char prefix[] = "Amesos2::Details::LinearSolver::symbolic: ";
     TEUCHOS_TEST_FOR_EXCEPTION
-      (solver_.is_null (), std::runtime_error, "Amesos2::Details::LinearSolver::"
-       "symbolic: The solver does not exist yet.  You must call setMatrix() "
-       "with a nonnull matrix before you may call this method.");
+      (solver_.is_null (), std::runtime_error, prefix << "The solver does not "
+       "exist yet.  You must call setMatrix() with a nonnull matrix before you "
+       "may call this method.");
     TEUCHOS_TEST_FOR_EXCEPTION
-      (A_.is_null (), std::runtime_error, "Amesos2::Details::LinearSolver::"
-       "symbolic: The matrix has not been set yet.  You must call setMatrix() "
-       "with a nonnull matrix before you may call this method.");
+      (A_.is_null (), std::runtime_error, prefix << "The matrix has not been "
+       "set yet.  You must call setMatrix() with a nonnull matrix before you "
+       "may call this method.");
     solver_->symbolicFactorization ();
   }
 
   /// \brief Set up any part of the solve that depends on both the
   ///   structure and the numerical values of the input matrix.
   void numeric () {
+    const char prefix[] = "Amesos2::Details::LinearSolver::numeric: ";
     TEUCHOS_TEST_FOR_EXCEPTION
-      (solver_.is_null (), std::runtime_error, "Amesos2::Details::LinearSolver::"
-       "numeric: The solver does not exist yet.  You must call setMatrix() "
-       "with a nonnull matrix before you may call this method.");
+      (solver_.is_null (), std::runtime_error, prefix << "The solver does not "
+       "exist yet.  You must call setMatrix() with a nonnull matrix before you "
+       "may call this method.");
     TEUCHOS_TEST_FOR_EXCEPTION
-      (A_.is_null (), std::runtime_error, "Amesos2::Details::LinearSolver::"
-       "numeric: The matrix has not been set yet.  You must call setMatrix() "
-       "with a nonnull matrix before you may call this method.");
+      (A_.is_null (), std::runtime_error, prefix << "The matrix has not been "
+       "set yet.  You must call setMatrix() with a nonnull matrix before you "
+       "may call this method.");
     solver_->numericFactorization ();
   }
 
@@ -281,11 +284,13 @@ private:
   Teuchos::RCP<Teuchos::ParameterList> params_;
 };
 
-template<class MV, class OP>
-Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP> >
-LinearSolverFactory<MV, OP>::getLinearSolver (const std::string& solverName)
+template<class MV, class OP, class NormType>
+Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP, NormType> >
+LinearSolverFactory<MV, OP, NormType>::
+getLinearSolver (const std::string& solverName)
 {
-  return Teuchos::rcp (new Amesos2::Details::LinearSolver<MV, OP> (solverName));
+  using Teuchos::rcp;
+  return rcp (new Amesos2::Details::LinearSolver<MV, OP, NormType> (solverName));
 }
 
 } // namespace Details

@@ -7,6 +7,7 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Trilinos_Details_LinearSolverFactory.hpp"
+#include "Tpetra_Operator.hpp"
 
 namespace Ifpack2 {
 namespace Details {
@@ -14,24 +15,20 @@ namespace Details {
   /// \class LinearSolverFactory
   /// \brief Interface for a "factory" that creates Ifpack2 solvers.
   ///
-  /// \tparam MV Type of a (multi)vector, representing either the
-  ///   solution(s) X or the right-hand side(s) B of a linear system
-  ///   AX=B.  For example, with Tpetra, use a Tpetra::MultiVector
-  ///   specialization.  A <i>multivector</i> is a single data structure
-  ///   containing zero or more vectors with the same dimensions and
-  ///   layout.
-  ///
-  /// \tparam OP Type of a matrix or linear operator that this Solver
-  ///   understands.  For example, for Tpetra, use a Tpetra::Operator
-  ///   specialization.  Always use the most abstract interface
-  ///   possible; solvers should dynamic_cast to the subclass they
-  ///   need.  Also, be consistent: using different classes here
-  ///   (e.g., Tpetra::RowMatrix instead of Tpetra::Operator) means
-  ///   more expensive explicit template instantiation.
-  template<class MV, class OP>
+  /// We use Tpetra's template parameters here, instead of MV, OP, and
+  /// NormType, because this is not a public-facing class.  We also
+  /// want to avoid mix-ups between MV and OP.
+  template<class SC, class LO, class GO, class NT>
   class LinearSolverFactory :
-    public Trilinos::Details::LinearSolverFactory<MV, OP> {
+    public Trilinos::Details::LinearSolverFactory<Tpetra::MultiVector<SC, LO, GO, NT>,
+                                                  Tpetra::Operator<SC, LO, GO, NT>,
+                                                  typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>
+  {
   public:
+    typedef Trilinos::Details::LinearSolver<Tpetra::MultiVector<SC, LO, GO, NT>,
+                                            Tpetra::Operator<SC, LO, GO, NT>,
+                                            typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type> solver_type;
+
     /// \brief Get an instance of a Ifpack2 solver.
     ///
     /// The solver is wrapped in a Trilinos::Details::LinearSolver
@@ -41,7 +38,7 @@ namespace Details {
     ///   sensitive.
     /// \return A pointer to the solver, if the name was valid; else,
     ///   a null pointer (Teuchos::null).
-    virtual Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP> >
+    virtual Teuchos::RCP<solver_type>
     getLinearSolver (const std::string& solverName);
   };
 

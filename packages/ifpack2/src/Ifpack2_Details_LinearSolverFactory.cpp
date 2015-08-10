@@ -15,8 +15,7 @@ TPETRA_ETI_MANGLING_TYPEDEFS()
 // given Tpetra template parameters (Scalar, LocalOrdinal,
 // GlobalOrdinal, Node).
 #define LCLINST(SC, LO, GO, NT) \
-  template class Ifpack2::Details::LinearSolverFactory<Tpetra::MultiVector<SC, LO, GO, NT>, \
-                                                       Tpetra::Operator<SC, LO, GO, NT> >;
+  template class Ifpack2::Details::LinearSolverFactory<SC, LO, GO, NT>;
 
 // Do explicit instantiation of Ifpack2::Details::LinearSolverFactory, for
 // Tpetra objects, for all combinations of Tpetra template parameters
@@ -33,18 +32,27 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCLINST )
 namespace Ifpack2 {
 namespace Details {
 
-template<class MV, class OP>
+template<class SC, class LO, class GO, class NT>
 class RegisterLinearSolverFactory {
 public:
   RegisterLinearSolverFactory () {
+    typedef Tpetra::MultiVector<SC, LO, GO, NT> MV;
+    typedef Tpetra::Operator<SC, LO, GO, NT> OP;
+    typedef typename MV::mag_type mag_type;
+    typedef Trilinos::Details::LinearSolverFactory<MV, OP, mag_type> factory_base_type;
+    typedef Ifpack2::Details::LinearSolverFactory<SC, LO, GO, NT> factory_impl_type;
+
 #ifdef HAVE_TEUCHOSCORE_CXX11
-    typedef std::shared_ptr<Ifpack2::Details::LinearSolverFactory<MV, OP> > ptr_type;
+    typedef std::shared_ptr<factory_base_type> base_ptr_type;
+    typedef std::shared_ptr<factory_impl_type> impl_ptr_type;
 #else
-    typedef Teuchos::RCP<Ifpack2::Details::LinearSolverFactory<MV, OP> > ptr_type;
+    typedef Teuchos::RCP<factory_base_type> base_ptr_type;
+    typedef Teuchos::RCP<factory_impl_type> impl_ptr_type;
 #endif // HAVE_TEUCHOSCORE_CXX11
 
-    ptr_type factory (new Ifpack2::Details::LinearSolverFactory<MV, OP> ());
-    Trilinos::Details::registerLinearSolverFactory<MV, OP> ("Ifpack2", factory);
+    impl_ptr_type factory (new factory_impl_type ());
+    base_ptr_type factoryBase = factory; // implicit cast to base class
+    Trilinos::Details::registerLinearSolverFactory<MV, OP, mag_type> ("Ifpack2", factoryBase);
   }
 };
 
@@ -57,8 +65,7 @@ namespace { // (anonymous)
 // For example, if LO=int, "_##LO##_" becomes "_int_".
 
 #define IFPACK2_DETAILS_REGISTER(SC, LO, GO, NT) \
-  Ifpack2::Details::RegisterLinearSolverFactory<Tpetra::MultiVector<SC, LO, GO, NT>, \
-                                                Tpetra::Operator<SC, LO, GO, NT> > \
+  Ifpack2::Details::RegisterLinearSolverFactory<SC, LO, GO, NT> \
     registerer_Tpetra_##SC##_##LO##_##GO##_##NT ;
 
 TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( IFPACK2_DETAILS_REGISTER )

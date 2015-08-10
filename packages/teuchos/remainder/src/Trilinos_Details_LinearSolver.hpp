@@ -86,6 +86,17 @@ namespace Details {
 ///   LinearSolver understands.  For example, for Tpetra, use a
 ///   Tpetra::Operator specialization.
 ///
+/// \tparam NormType Type of the norm of a vector (see \c MV); in
+///   particular, the type of the norm of a <i>residual</i>
+///   \f$b - A \tilde{x}\f$, where \f$\tilde{x}\f$ is an approximate
+///   solution of the linear system \f$Ax = b\f$.  For
+///   <tt>MV = Tpetra::MultiVector</tt>, use
+///   <tt>NormType = MV::mag_type</tt>.  In general, if the entries
+///   of \c MV have type \c double, and the solver uses the
+///   Euclidean norm (i.e., the 2-norm), then
+///   <tt>NormType = double</tt>.  If the entries of \c MV have type
+///   <tt>std::complex<float></tt>, then <tt>NormType = float</tt>.
+///
 /// A LinearSolver knows how to solve linear systems AX=B, where A is
 /// a linear operator ("matrix") and B the right-hand side(s).
 ///
@@ -130,7 +141,7 @@ namespace Details {
 ///   "consistently," because this makes explicit template
 ///   instantiation (ETI) easier, and helps keep build times and
 ///   library sizes small.
-template<class MV, class OP>
+template<class MV, class OP, class NormType>
 class LinearSolver {
 public:
   //! Destructor (virtual for memory safety of derived classes).
