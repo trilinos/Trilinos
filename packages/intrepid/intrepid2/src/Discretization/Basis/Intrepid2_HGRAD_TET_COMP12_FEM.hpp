@@ -46,12 +46,8 @@
     \author Created by P. Bochev, J. Ostien, K. Peterson and D. Ridzal.
 */
 
-#ifndef INTREPID2_HGRAD_TET_COMP12_FEM_HPP
-#define INTREPID2_HGRAD_TET_COMP12_FEM_HPP
-
-
-
-
+#ifndef INTREPID_HGRAD_TET_COMP12_FEM_HPP
+#define INTREPID_HGRAD_TET_COMP12_FEM_HPP
 #include "Intrepid2_Basis.hpp"
 
 namespace Intrepid2 {

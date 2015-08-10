@@ -1,9 +1,5 @@
-#ifndef INTREPID2_HGRAD_TRI_CN_FEM_ORTHDEF_HPP
-#define INTREPID2_HGRAD_TRI_CN_FEM_ORTHDEF_HPP
-
-
-
-
+#ifndef INTREPID_HGRAD_TRI_CN_FEM_ORTHDEF_HPP
+#define INTREPID_HGRAD_TRI_CN_FEM_ORTHDEF_HPP
 // @HEADER
 // ************************************************************************
 //

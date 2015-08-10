@@ -46,12 +46,8 @@
     \author Created by P. Bochev and D. Ridzal.
  */
 
-#ifndef INTREPID2_BASIS_HPP
-#define INTREPID2_BASIS_HPP
-
-
-
-
+#ifndef INTREPID_BASIS_HPP
+#define INTREPID_BASIS_HPP
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"

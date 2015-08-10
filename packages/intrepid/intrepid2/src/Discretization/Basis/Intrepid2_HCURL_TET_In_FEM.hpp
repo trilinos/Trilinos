@@ -46,12 +46,8 @@
     \author Created by R. Kirby 
 */
 
-#ifndef INTREPID2_HCURL_TET_In_FEM_HPP
-#define INTREPID2_HCURL_TET_In_FEM_HPP
-
-
-
-
+#ifndef INTREPID_HCURL_TET_In_FEM_HPP
+#define INTREPID_HCURL_TET_In_FEM_HPP
 
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Basis.hpp"

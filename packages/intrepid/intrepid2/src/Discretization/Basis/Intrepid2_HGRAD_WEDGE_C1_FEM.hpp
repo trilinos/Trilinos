@@ -46,12 +46,8 @@
     \author Created by P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID2_HGRAD_WEDGE_C1_FEM_HPP
-#define INTREPID2_HGRAD_WEDGE_C1_FEM_HPP
-
-
-
-
+#ifndef INTREPID_HGRAD_WEDGE_C1_FEM_HPP
+#define INTREPID_HGRAD_WEDGE_C1_FEM_HPP
 #include "Intrepid2_Basis.hpp"
 
 namespace Intrepid2 {

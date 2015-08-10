@@ -46,8 +46,8 @@
 \author Created by P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID2_DEFAULT_CUBATURE_FACTORY_HPP
-#define INTREPID2_DEFAULT_CUBATURE_FACTORY_HPP
+#ifndef INTREPID_DEFAULT_CUBATURE_FACTORY_HPP
+#define INTREPID_DEFAULT_CUBATURE_FACTORY_HPP
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Cubature.hpp"

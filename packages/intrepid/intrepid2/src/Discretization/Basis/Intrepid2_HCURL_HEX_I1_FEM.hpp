@@ -46,12 +46,8 @@
     \author Created by P. Bochev, D. Ridzal and K. Peterson.
  */
 
-#ifndef INTREPID2_HCURL_HEX_I1_FEM_HPP
-#define INTREPID2_HCURL_HEX_I1_FEM_HPP
-
-
-
-
+#ifndef INTREPID_HCURL_HEX_I1_FEM_HPP
+#define INTREPID_HCURL_HEX_I1_FEM_HPP
 #include "Intrepid2_Basis.hpp"
 
 namespace Intrepid2 {

@@ -46,8 +46,8 @@
     \author Created by P. Bochev, D. Ridzal and M. Perego.
 */
 
-#ifndef INTREPID2_CUBATURE_TENSOR_PYR_HPP
-#define INTREPID2_CUBATURE_TENSOR_PYR_HPP
+#ifndef INTREPID_CUBATURE_TENSOR_PYR_HPP
+#define INTREPID_CUBATURE_TENSOR_PYR_HPP
 
 #include "Intrepid2_CubatureTensor.hpp"
 
@@ -103,7 +103,18 @@ class CubatureTensorPyr : public Intrepid2::CubatureTensor<Scalar,ArrayPoint,Arr
       \param cubWeights      [out]     - Vector of corresponding cubature weights.
   */
   void getCubature(ArrayPoint  & cubPoints,
-                           ArrayWeight & cubWeights) const;
+                   ArrayWeight & cubWeights) const;
+
+ /** \brief Returns cubature points and weights.
+              Method for physical space cubature, throws an exception.
+
+       \param cubPoints             [out]        - Array containing the cubature points.
+       \param cubWeights            [out]        - Array of corresponding cubature weights.
+       \param cellCoords             [in]        - Array of cell coordinates
+  */
+  void getCubature(ArrayPoint& cubPoints,
+                   ArrayWeight& cubWeights,
+                   ArrayPoint& cellCoords) const;
 
   /** \brief Returns the number of cubature points.
   */

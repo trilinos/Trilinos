@@ -46,8 +46,8 @@
     \author Created by P. Bochev, D. Ridzal, and M. Keegan.
 */
 
-#ifndef INTREPID2_CUBATURE_SPARSE_HPP
-#define INTREPID2_CUBATURE_SPARSE_HPP
+#ifndef INTREPID_CUBATURE_SPARSE_HPP
+#define INTREPID_CUBATURE_SPARSE_HPP
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Cubature.hpp"
@@ -60,13 +60,13 @@
   \brief The maximum degree of the polynomial that can be integrated exactly by
          a sparse rule of the Gauss(-Legendre) type in 2D.
 */
-#define INTREPID2_CUBATURE_SPARSE2D_GAUSS_MAX 59
+#define INTREPID_CUBATURE_SPARSE2D_GAUSS_MAX 59
 
 /** \def INTREPID_CUBATURE_SPARSE3D_GAUSS_MAX
   \brief The maximum degree of the polynomial that can be integrated exactly by
          a sparse of the Gauss(-Legendre) type in 3D.
 */
-#define INTREPID2_CUBATURE_SPARSE3D_GAUSS_MAX 57
+#define INTREPID_CUBATURE_SPARSE3D_GAUSS_MAX 57
 
 
 namespace Intrepid2{
@@ -97,6 +97,17 @@ class CubatureSparse : public Intrepid2::Cubature<Scalar,ArrayPoint,ArrayWeight>
   */
   virtual void getCubature(ArrayPoint  & cubPoints,
                            ArrayWeight & cubWeights) const;
+
+  /** \brief Returns cubature points and weights.
+              Method for physical space cubature, throws an exception.
+
+       \param cubPoints             [out]        - Array containing the cubature points.
+       \param cubWeights            [out]        - Array of corresponding cubature weights.
+       \param cellCoords             [in]        - Array of cell coordinates
+  */
+  virtual void getCubature(ArrayPoint& cubPoints,
+                           ArrayWeight& cubWeights,
+                           ArrayPoint& cellCoords) const;
 
   /** \brief Returns the number of cubature points.
   */

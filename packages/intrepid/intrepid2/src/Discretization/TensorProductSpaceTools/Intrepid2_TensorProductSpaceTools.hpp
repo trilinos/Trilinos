@@ -32,8 +32,8 @@
     \author Created by R. Kirby
 */
 
-#ifndef INTREPID2_TENSORPRODUCTSPACETOOLS_HPP
-#define INTREPID2_TENSORPRODUCTSPACETOOLS_HPP
+#ifndef INTREPID_TENSORPRODUCTSPACETOOLS_HPP
+#define INTREPID_TENSORPRODUCTSPACETOOLS_HPP
 
 #include "Intrepid2_Basis.hpp"
 #include "Intrepid2_FieldContainer.hpp"

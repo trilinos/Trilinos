@@ -68,13 +68,13 @@ CubatureTensorPyr<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorPyr(Teuchos::RCP
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
 CubatureTensorPyr<Scalar,ArrayPoint,ArrayWeight>::CubatureTensorPyr(Teuchos::RCP<CubatureDirect<Scalar,ArrayPoint,ArrayWeight> > cubature, int n) :
-															CubatureTensor<Scalar,ArrayPoint,ArrayWeight>(cubature, n) {}
+CubatureTensor<Scalar,ArrayPoint,ArrayWeight>(cubature, n) {}
 
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
 void CubatureTensorPyr<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint  & cubPoints,
-                                                                ArrayWeight & cubWeights) const {
-															CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::getCubature(cubPoints, cubWeights);
+                                                                  ArrayWeight & cubWeights) const {
+  CubatureTensor<Scalar,ArrayPoint,ArrayWeight>::getCubature(cubPoints, cubWeights);
   
   int numCubPoints = getNumPoints();
 
@@ -89,7 +89,14 @@ void CubatureTensorPyr<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint  &
 
 } // end getCubature
 
-
+template<class Scalar, class ArrayPoint, class ArrayWeight>
+void CubatureTensorPyr<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoint& cubPoints,
+                                                                   ArrayWeight& cubWeights,
+                                                                   ArrayPoint& cellCoords) const
+{
+    TEUCHOS_TEST_FOR_EXCEPTION( (true), std::logic_error,
+                      ">>> ERROR (CubatureTensorPyr): Cubature defined in reference space calling method for physical space cubature.");
+}
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
 int CubatureTensorPyr<Scalar,ArrayPoint,ArrayWeight>::getNumPoints() const {

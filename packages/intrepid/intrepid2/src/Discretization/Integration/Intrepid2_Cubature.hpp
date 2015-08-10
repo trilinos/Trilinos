@@ -46,8 +46,8 @@
     \author Created by P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID2_CUBATURE_HPP
-#define INTREPID2_CUBATURE_HPP
+#ifndef INTREPID_CUBATURE_HPP
+#define INTREPID_CUBATURE_HPP
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_FieldContainer.hpp"
@@ -86,6 +86,16 @@ class Cubature {
   virtual void getCubature(ArrayPoint  & cubPoints,
                            ArrayWeight & cubWeights) const = 0;
 
+  /** \brief Returns cubature points and weights on physical cells
+             (return arrays must be pre-sized/pre-allocated).
+
+      \param cubPoints       [out]     - Array containing the cubature points.
+      \param cubWeights      [out]     - Array of corresponding cubature weights.
+      \param cellVertices    [in]      - Array containing the cell vertices.
+  */
+  virtual void getCubature(ArrayPoint  & cubPoints,
+                           ArrayWeight & cubWeights,
+                           ArrayPoint  & cellVertices) const = 0;
 
   /** \brief Returns the number of cubature points.
   */

@@ -1,9 +1,5 @@
-#ifndef INTREPID2_HGRAD_LINE_CN_FEM_JACOBIDEF_HPP
-#define INTREPID2_HGRAD_LINE_CN_FEM_JACOBIDEF_HPP
-
-
-
-
+#ifndef INTREPID_HGRAD_LINE_CN_FEM_JACOBIDEF_HPP
+#define INTREPID_HGRAD_LINE_CN_FEM_JACOBIDEF_HPP
 // @HEADER
 // ************************************************************************
 //

@@ -46,8 +46,8 @@
     \author Created by D. Kouri and D. Ridzal.
 */
 
-#ifndef INTREPID2_CUBATURE_TENSORSORTED_HPP
-#define INTREPID2_CUBATURE_TENSORSORTED_HPP
+#ifndef INTREPID_CUBATURE_TENSORSORTED_HPP
+#define INTREPID_CUBATURE_TENSORSORTED_HPP
 
 #include "Intrepid2_CubatureLineSorted.hpp"
 
@@ -162,6 +162,17 @@ public:
   */
   void getCubature(ArrayPoint  & cubPoints,
 		   ArrayWeight & cubWeights) const;
+
+  /** \brief Returns cubature points and weights.
+              Method for physical space cubature, throws an exception.
+
+       \param cubPoints             [out]        - Array containing the cubature points.
+       \param cubWeights            [out]        - Array of corresponding cubature weights.
+       \param cellCoords             [in]        - Array of cell coordinates
+  */
+  void getCubature(ArrayPoint& cubPoints,
+                   ArrayWeight& cubWeights,
+                   ArrayPoint& cellCoords) const;
 
   /** \brief Returns the number of cubature points.
   */
