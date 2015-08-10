@@ -162,10 +162,9 @@ public:
       \param Types will on return point to the list of entity topology types
       for this process.
   */
-  virtual bool isEntityTypeUnique(MeshEntityType etype) const
+  virtual bool areEntityIDsUnique(MeshEntityType etype) const
   {
-    return true;
-    // Should we throw this or assume it is not or is copied??? Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+    return etype==this->getPrimaryEntityType();
   }
   
   /*! \brief Returns the global number of mesh entities of MeshEntityType

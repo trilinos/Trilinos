@@ -207,8 +207,7 @@ public:
   // The MeshAdapter interface.
   // This is the interface that would be called by a model or a problem .
   ////////////////////////////////////////////////////////////////
-
-  bool isEntityTypeUnique(MeshEntityType etype) const {
+  bool areEntityIDsUnique(MeshEntityType etype) const {
     int dim = entityZ2toAPF(etype);
     return dim==m_dimension;
   }
