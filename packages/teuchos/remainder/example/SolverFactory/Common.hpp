@@ -35,8 +35,8 @@ namespace Common {
   // all the pure virtual methods of that interface.  This base class
   // only exists to make the example more concise.  Its subclasses
   // must implement solve(), name(), and the virtual destructor.
-  template<class MV, class OP>
-  class LinearSolverTestBase : public Trilinos::Details::LinearSolver<MV, OP> {
+  template<class MV, class OP, class NormType>
+  class LinearSolverTestBase : public Trilinos::Details::LinearSolver<MV, OP, NormType> {
   protected:
     virtual std::string name () const = 0;
 

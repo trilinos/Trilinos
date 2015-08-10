@@ -154,6 +154,10 @@ public:
    */
   CentricView getCentricView() const {return view_;}
 
+  /*! \brief Returns true if the vertices are unique false otherwise
+   */
+  bool areVertexIDsUnique() const {return unique;}
+  
   /*! \brief Returns the number vertices on this process.
    */
   size_t getLocalNumVertices() const { return numLocalVertices_; }
@@ -294,8 +298,9 @@ private:
   const RCP<const Comm<int> > comm_;
 
   CentricView view_;
-
+  bool unique;
   ArrayRCP<const gno_t> gids_;        // vertices of input graph
+  
   ArrayRCP<bool> isOwner_;
 
   int numWeightsPerVertex_;
@@ -404,9 +409,10 @@ HyperGraphModel<Adapter>::HyperGraphModel(
   // process that has the vertex
   typedef Tpetra::Map<lno_t, gno_t> map_t;
 
+  unique = ia->areEntityIDsUnique(ia->getPrimaryEntityType());
   numOwnedVertices_=numLocalVertices_;
   isOwner_ = ArrayRCP<bool>(numLocalVertices_,true);
-  if (!ia->isEntityTypeUnique(ia->getPrimaryEntityType())) {
+  if (!unique) {
     
     Tpetra::global_size_t numGlobalCoords = 
       Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();

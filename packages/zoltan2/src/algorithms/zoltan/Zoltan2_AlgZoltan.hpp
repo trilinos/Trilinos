@@ -174,7 +174,6 @@ private:
     // TODO:  If add parameter list to this function, can register 
     // TODO:  different callbacks depending on the hypergraph model to use
 
-    // TODO:  check params list if ghost model then need to do model version
     const Teuchos::ParameterList &pl = env->getParameters();
 
     const Teuchos::ParameterEntry *pe = pl.getEntryPtr("hypergraph_model_type");
@@ -183,7 +182,7 @@ private:
       model_type = pe->getValue<std::string>(&model_type);
     }
 
-    if (model_type=="ghosting"||!adp->isEntityTypeUnique(adp->getPrimaryEntityType())) {
+    if (model_type=="ghosting"||!adp->areEntityIDsUnique(adp->getPrimaryEntityType())) {
       Zoltan2::modelFlag_t flags;
       HyperGraphModel<Adapter>* mdl = new HyperGraphModel<Adapter>(adp,env,problemComm,
                                                                    flags,HYPEREDGE_CENTRIC);
@@ -286,7 +285,7 @@ public:
     setCallbacksGraph(adapter);
 #ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
     //TODO:: check parameter list to see if hypergraph is needed. We dont want to build the model
-    //       if we don't have to
+    //       if we don't have to and we shouldn't
     setCallbacksHypergraph(adapter);
 #endif
     setCallbacksGeom(&(*adapter));
@@ -380,16 +379,22 @@ void AlgZoltan<Adapter>::partition(
     (ierr==ZOLTAN_OK || ierr==ZOLTAN_WARN), BASIC_ASSERTION, problemComm);
 
   int numObjects=nObj;
-  if (model!=RCP<const Model<Adapter> >()) {
+#ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
+  if (model!=RCP<const Model<Adapter> >() &&
+      dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model)) &&
+      !dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique()) {
     numObjects=model->getLocalNumObjects();
   }
+#endif
   // Load answer into the solution.
   ArrayRCP<part_t> partList(new part_t[numObjects], 0, numObjects, true);
   for (int i = 0; i < nObj; i++) partList[oLids[i]] = oParts[i];
   //
   
 #ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
-  if (model!=RCP<const Model<Adapter> >()) {
+  if (model!=RCP<const Model<Adapter> >() &&
+      dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model)) &&
+      !dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique()) {
     //Ghosting cleanup for copies
     ArrayView<const gno_t> Ids;
     typedef StridedData<lno_t, scalar_t>  input_t;
@@ -419,7 +424,6 @@ void AlgZoltan<Adapter>::partition(
       broadcast(*problemComm,owner,&new_part);
       if (new_part>=all) {
         new_part=me;
-        std::cerr<<"PROBLEMS..."<<std::endl;
       }
       if (lid_mapping.find(i)!=lid_mapping.end())
         partList[lid_mapping[i]] = new_part;

@@ -171,22 +171,37 @@ private:
   }
 
   //Sets the weights of each entity in dimension 'dim' to 1
-  //TODO set the weights to those provided by the mesh adapter
   void setEntWeights(int dim, apf::MeshTag* tag) {
-    apf::MeshIterator* itr = m->begin(dim);
-    apf::MeshEntity* ent;
-    double w = 1.0;
-    while ((ent= m->iterate(itr)))  {
-      m->setDoubleTag(ent,tag,&w);
-      assert(m->hasTag(ent,tag));
+    MeshEntityType etype = entityAPFtoZ2(dim);
+    for (int i=0;i<m->getTagSize(tag);i++) {
+      apf::MeshIterator* itr = m->begin(dim);
+      apf::MeshEntity* ent;
+      const scalar_t* ws=NULL;
+      int stride;
+      if (i<adapter->getNumWeightsPerOf(etype)) 
+        adapter->getWeightsViewOf(etype,ws,stride,i);
+      int j=0;
+      while ((ent= m->iterate(itr)))  {
+        double w = 1.0;
+        if (ws!=NULL)
+          w = static_cast<double>(ws[j]);
+        m->setDoubleTag(ent,tag,&w);
+        j++;
+      }
+      m->end(itr);
     }
-    m->end(itr);
-   
   }
   
   //Helper function to set the weights of each dimension needed by the specific parma algorithm
   apf::MeshTag* setWeights(bool vtx, bool edge, bool elm) {
-    apf::MeshTag* tag = m->createDoubleTag("parma_weight",1);
+    int num_ws=1;
+    if (vtx)
+      num_ws = std::max(num_ws,adapter->getNumWeightsPerOf(MESH_VERTEX));
+    if (edge)
+      num_ws = std::max(num_ws,adapter->getNumWeightsPerOf(MESH_EDGE));
+    if (elm) 
+      num_ws = std::max(num_ws,adapter->getNumWeightsPerOf(entityAPFtoZ2(m->getDimension())));
+    apf::MeshTag* tag = m->createDoubleTag("parma_weight",num_ws);
     if (vtx)
       setEntWeights(0,tag);
     if (edge)
