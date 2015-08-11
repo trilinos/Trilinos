@@ -1896,8 +1896,6 @@ bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
 
   if (modified)
   {
-    if ( idx.bucket->entity_rank() > stk::topology::NODE_RANK && entity_rank(e_to) == stk::topology::NODE_RANK )
-    {
       if ( idx.bucket->owned() ) // owned entity with relation to node, true shared
       {
           unprotect_orphaned_node(e_to);
@@ -1906,12 +1904,11 @@ bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
       {
           unprotect_orphaned_node(e_to);
       }
-    }
 
-    if (idx.bucket->owned() && (idx.bucket->entity_rank() > entity_rank(e_to)) )
-    {
-      ++m_closure_count[e_to.local_offset()];
-    }
+      if (idx.bucket->owned() && (idx.bucket->entity_rank() > entity_rank(e_to)) )
+      {
+          ++m_closure_count[e_to.local_offset()];
+      }
 
   }
   return modified;
@@ -2716,14 +2713,11 @@ void BulkData::internal_change_entity_owner( const std::vector<EntityProc> & arg
     // Destroy backwards so as not to invalidate closures in the process.
 
     {
-      for ( EntityVector::reverse_iterator i = unique_list_of_send_closure.rbegin() ;
-            i != unique_list_of_send_closure.rend() ;
-            ++i) {
-        if ( ! this->owned_closure(*i) ) {
-          ThrowRequireMsg( internal_destroy_entity( *i ),
-                           "Failed to destroy entity " << identifier(*i) );
+        for ( EntityVector::reverse_iterator i = unique_list_of_send_closure.rbegin() ; i != unique_list_of_send_closure.rend() ; ++i) {
+            if ( ! this->owned_closure(*i) ) {
+                ThrowRequireMsg( internal_destroy_entity( *i ), "Failed to destroy entity " << identifier(*i) );
+            }
         }
-      }
     }
 
     send_closure.clear(); // Has been invalidated

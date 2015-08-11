@@ -1027,24 +1027,39 @@ private:
                                  const bool packShared ,
                                  stk::CommSparse & comm );
 
+  virtual bool does_entity_need_orphan_protection(stk::mesh::Entity entity) const
+  {
+      const bool isNode = (stk::topology::NODE_RANK == entity_rank(entity));
+      const bool isNotConnected = (1u == m_closure_count[entity.local_offset()]);
+      const bool isOwned = bucket(entity).owned();
+      const bool isCreatedState = (stk::mesh::Created == state(entity));
+      return isNode && isNotConnected && isCreatedState && isOwned;
+  }
+
+  virtual bool does_entity_have_orphan_protection(stk::mesh::Entity entity) const
+  {
+      bool hasOrphanProtection = false;
+      if (entity_rank(entity) == stk::topology::NODE_RANK && m_closure_count[entity.local_offset()] >= BulkData::orphaned_node_marking)
+      {
+          hasOrphanProtection = true;
+      }
+      return hasOrphanProtection;
+  }
+
   // Only to be called from add_node_sharing
   void protect_orphaned_node(Entity entity)
   {
-      if ( entity_rank(entity) == stk::topology::NODE_RANK
-              && state(entity) == Created
-              && m_closure_count[entity.local_offset()] == 1
-              && bucket(entity).owned()
-         )
+      if (does_entity_need_orphan_protection(entity))
       {
-          m_closure_count[entity.local_offset()] += BulkData::orphaned_node_marking;
+          internal_force_protect_orphaned_node(entity);
       }
   }
 
   void unprotect_orphaned_node(Entity entity)
   {
-      if (entity_rank(entity) == stk::topology::NODE_RANK && m_closure_count[entity.local_offset()] >= BulkData::orphaned_node_marking)
+      if (does_entity_have_orphan_protection(entity))
       {
-          m_closure_count[entity.local_offset()] -= BulkData::orphaned_node_marking;
+          internal_force_unprotect_orphaned_node(entity);
       }
   }
 
@@ -1271,6 +1286,16 @@ protected: //data
   bool m_do_create_aura;
   enum AutomaticAuraOption m_autoAuraOption;
   stk::mesh::impl::MeshModification m_meshModification;
+
+  void internal_force_protect_orphaned_node(stk::mesh::Entity entity)
+  {
+      m_closure_count[entity.local_offset()] += BulkData::orphaned_node_marking;
+  }
+
+  void internal_force_unprotect_orphaned_node(stk::mesh::Entity entity)
+  {
+      m_closure_count[entity.local_offset()] -= BulkData::orphaned_node_marking;
+  }
 
 private: // data
   Parallel m_parallel;
