@@ -136,7 +136,7 @@ void CubatureControlVolume<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoin
      for (int inode = 0; inode < numNodesPerCell; inode++){
          Scalar vol = 0;
          for (int ipt = 0; ipt < numSubcvCubPoints; ipt++){
-            vol += subcvCubWeights(inode,ipt)*subCVJacobDet(inode,ipt);
+            vol += subcvCubWeights(ipt)*subCVJacobDet(inode,ipt);
          }
          cubWeights(icell,inode) = vol;
      }
