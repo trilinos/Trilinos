@@ -46,8 +46,8 @@
     \author Created by P. Bochev, D. Ridzal and M. Perego
 */
 
-#ifndef INTREPID2_CUBATURE_DIRECT_LINE_GAUSSJACOBI20_HPP
-#define INTREPID2_CUBATURE_DIRECT_LINE_GAUSSJACOBI20_HPP
+#ifndef INTREPID_CUBATURE_DIRECT_LINE_GAUSSJACOBI20_HPP
+#define INTREPID_CUBATURE_DIRECT_LINE_GAUSSJACOBI20_HPP
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_CubatureDirect.hpp"

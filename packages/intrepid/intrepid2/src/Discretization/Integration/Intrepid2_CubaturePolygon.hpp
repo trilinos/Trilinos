@@ -46,8 +46,8 @@
     \author Created by P. Bochev and J. Lai.
 */
 
-#ifndef INTREPID2_CUBATURE_POLYGON_HPP
-#define INTREPID2_CUBATURE_POLYGON_HPP
+#ifndef INTREPID_CUBATURE_POLYGON_HPP
+#define INTREPID_CUBATURE_POLYGON_HPP
 
 #include "Intrepid2_Cubature.hpp"
 #include "Teuchos_Assert.hpp"
@@ -80,6 +80,18 @@ namespace Intrepid2{
     */
     void getCubature(ArrayPoint& cubPoints,
 		     ArrayWeight& cubWeights) const;
+
+    /** \brief Returns cubature points and weights.
+                Method for physical space cubature, throws an exception.
+
+        \param cubPoints             [out]        - Array containing the cubature points.
+        \param cubWeights            [out]        - Array of corresponding cubature weights.
+        \param cellCoords             [in]        - Array of cell coordinates
+    */
+    void getCubature(ArrayPoint& cubPoints,
+                     ArrayWeight& cubWeights,
+                     ArrayPoint& cellCoords) const;
+
     
     /** \brief Returns the number of cubature points.
      */

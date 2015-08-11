@@ -46,8 +46,8 @@
     \author Created by P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID2_CUBATURE_COMPOSITE_TET_HPP
-#define INTREPID2_CUBATURE_COMPOSITE_TET_HPP
+#ifndef INTREPID_CUBATURE_COMPOSITE_TET_HPP
+#define INTREPID_CUBATURE_COMPOSITE_TET_HPP
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_CubatureDirect.hpp"

@@ -46,8 +46,8 @@
     \author Created by R. Kirby
 */
 
-#ifndef INTREPID2_FUNCTIONSPACETOOLSINPLACE_HPP
-#define INTREPID2_FUNCTIONSPACETOOLSINPLACE_HPP
+#ifndef INTREPID_FUNCTIONSPACETOOLSINPLACE_HPP
+#define INTREPID_FUNCTIONSPACETOOLSINPLACE_HPP
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_ArrayTools.hpp"

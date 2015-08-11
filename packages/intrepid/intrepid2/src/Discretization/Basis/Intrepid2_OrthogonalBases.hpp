@@ -46,12 +46,8 @@
 \author Created by R. Kirby
 */
 
-#ifndef INTREPID2_ORTHOGONALBASES_HPP
-#define INTREPID2_ORTHOGONALBASES_HPP
-
-
-
-
+#ifndef INTREPID_ORTHOGONALBASES_HPP
+#define INTREPID_ORTHGONALBASES_HPP
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Types.hpp"

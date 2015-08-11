@@ -1042,6 +1042,15 @@ if(getrank(jacobian)==3){
           // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
           FieldContainer<Scalar> tempPoints( static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) );
           // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+ /*      if(CheckType<ArrayJac>::value==true){
+	#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CXX11)
+	      Kokkos::parallel_for (static_cast<size_t>(points.dimension(0)), [&] (int pt) {
+            for(int dm = 0; dm < static_cast<size_t>(points.dimension(1)) ; dm++){
+              tempPoints(pt, dm) = pointsWrap(pt, dm);
+            }//dm
+          });
+	    #endif
+	   }else{*/ 
 	      for(size_t pt = 0; pt < static_cast<size_t>(points.dimension(0)); pt++){
             for(size_t dm = 0; dm < static_cast<size_t>(points.dimension(1)) ; dm++){
               tempPoints(pt, dm) = pointsWrap(pt, dm);
@@ -1060,6 +1069,23 @@ if(getrank(jacobian)==3){
           size_t cellLoop = (whichCell == -1) ? numCells : 1 ;
           
           if(whichCell == -1) {
+ /*     if(CheckType<ArrayJac>::value==true){
+	#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CXX11)
+		Kokkos::parallel_for (cellLoop, [&] (int cellOrd) {  
+          for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+             for(int row = 0; row < spaceDim; row++){
+                for(int col = 0; col < spaceDim; col++){
+                    
+                    // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same.
+                    for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                      jacobianWrap(cellOrd, pointOrd, row, col) += cellWorksetWrap(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                    } // bfOrd
+                  } // col
+                } // row
+              } // pointOrd
+            }); // cellOrd
+		#endif
+	   }else{*/	  
             for(size_t cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
               for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
                 for(int row = 0; row < spaceDim; row++){
@@ -1078,6 +1104,24 @@ if(getrank(jacobian)==3){
             
           }
           else {
+/*	  if(CheckType<ArrayJac>::value==true){
+	#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CXX11)
+	   		 Kokkos::parallel_for (cellLoop, [&] (int cellOrd) {		  
+              for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+                for(int row = 0; row < spaceDim; row++){
+                  for(int col = 0; col < spaceDim; col++){
+                  
+                    // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same.
+                    for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                      jacobianWrap(pointOrd, row, col) += cellWorksetWrap(whichCell, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                    } // bfOrd
+                  } // col
+                } // row
+              } // pointOrd
+            }); // cellOrd
+	   
+	   #endif
+	   }else{		*/	  	  
             for(size_t cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
               for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
                 for(int row = 0; row < spaceDim; row++){
@@ -1101,6 +1145,36 @@ if(getrank(jacobian)==3){
         {
           // getValues requires rank-2 (P,D) input array, refPoints cannot be used as argument: need temp (P,D) array
           FieldContainer<Scalar> tempPoints( static_cast<size_t>(points.dimension(1)), static_cast<size_t>(points.dimension(2)) );
+ /*	  if(CheckType<ArrayJac>::value==true){
+	#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CXX11)
+	   	Kokkos::parallel_for (numCells, [&] (int cellOrd) {         
+        
+            
+            // Copy point set corresponding to this cell oridinal to the temp (P,D) array
+            for(int pt = 0; pt < static_cast<size_t>(points.dimension(1)); pt++){
+              for(int dm = 0; dm < static_cast<size_t>(points.dimension(2)) ; dm++){
+                tempPoints(pt, dm) = pointsWrap(cellOrd, pt, dm);
+              }//dm
+            }//pt
+            
+            // Compute gradients of basis functions at this set of ref. points
+            HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
+            
+            // Compute jacobians for the point set corresponding to the current cellordinal
+            for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+              for(int row = 0; row < spaceDim; row++){
+                for(int col = 0; col < spaceDim; col++){
+                  
+                  // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same
+                  for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+                    jacobianWrap(cellOrd, pointOrd, row, col) += cellWorksetWrap(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
+                  } // bfOrd
+                } // col
+              } // row
+            } // pointOrd
+          });//cellOrd
+	   #endif      
+      }else{*/
           for(size_t cellOrd = 0; cellOrd < numCells; cellOrd++) {
             
             // Copy point set corresponding to this cell oridinal to the temp (P,D) array
@@ -1146,6 +1220,28 @@ void CellTools<Scalar>::setJacobianInv(ArrayJacInv &     jacobianInv,
 
   RealSpaceTools<Scalar>::inverse(jacobianInv, jacobian);
 }
+/*
+template<class Scalar>
+template<class ArrayJacInv, class ArrayJac>
+void CellTools<Scalar>::setJacobianInvTemp(ArrayJacInv &     jacobianInv,
+                                       const ArrayJac &  jacobian) 
+{
+ 
+
+  RealSpaceTools<Scalar>::inverseTemp(jacobianInv, jacobian);
+}
+*/
+/*
+template<class Scalar>
+template<class ArrayJacDet, class ArrayJac>
+void CellTools<Scalar>::setJacobianDet(ArrayJacDet &     jacobianDet,
+                                       const ArrayJac &  jacobian)
+{
+  INTREPID_VALIDATE( validateArguments_setJacobianDetArgs(jacobianDet, jacobian) );
+
+  RealSpaceTools<Scalar>::det(jacobianDet, jacobian);
+}
+*/
 template<class Scalar>
 template<class ArrayJacDet, class ArrayJac>
 void CellTools<Scalar>::setJacobianDet(ArrayJacDet &     jacobianDet,
@@ -1564,7 +1660,7 @@ ArrayWrapper<Scalar,ArrayRefPoint, Rank<ArrayRefPoint >::value, false>refPointsW
     RealSpaceTools<Scalar>::vectorNorm( error, xTem, NORM_TWO );
 
     // Average L2 error for a multiple sets of physical points: error is rank-2 (C,P) array 
-    double totalError;
+    Scalar totalError;
     if(whichCell == -1) {
       FieldContainer<Scalar> cellWiseError(numCells);
       // error(C,P) -> cellWiseError(P)
@@ -2806,8 +2902,289 @@ void CellTools<Scalar>::printWorksetSubcell(const ArrayCell &             cellWo
   }
   std::cout << ")\n\n";
 }
+//============================================================================================//
+//                                                                                            //
+//                             Control Volume Coordinates                                     //
+//                                                                                            //
+//============================================================================================//
 
+  template<class Scalar>
+  template<class ArrayCVCoord, class ArrayCellCoord>
+  void CellTools<Scalar>::getSubCVCoords(ArrayCVCoord & subCVCoords, 
+                                         const ArrayCellCoord & cellCoords,
+                                         const shards::CellTopology& primaryCell)
+  {
 
+  // get array dimensions
+   int numCells        = cellCoords.dimension(0);
+   int numNodesPerCell = cellCoords.dimension(1);
+   int spaceDim        = cellCoords.dimension(2);
 
+   // num edges per primary cell
+   int numEdgesPerCell = primaryCell.getEdgeCount();
+
+   // num faces per primary cell
+   int numFacesPerCell = 0;
+   if (spaceDim > 2){
+      numFacesPerCell = primaryCell.getFaceCount();
+   }
+
+   // get cell centroids
+   Intrepid::FieldContainer<Scalar> barycenter(numCells,spaceDim);
+   getBarycenter(barycenter,cellCoords);
+
+   // loop over cells
+   for (int icell = 0; icell < numCells; icell++){
+
+       // get primary edge midpoints
+        Intrepid::FieldContainer<Scalar> edgeMidpts(numEdgesPerCell,spaceDim);
+        for (int iedge = 0; iedge < numEdgesPerCell; iedge++){
+          for (int idim = 0; idim < spaceDim; idim++){
+
+               int node0 = primaryCell.getNodeMap(1,iedge,0);
+               int node1 = primaryCell.getNodeMap(1,iedge,1);
+               edgeMidpts(iedge,idim) = (cellCoords(icell,node0,idim) +
+                                         cellCoords(icell,node1,idim))/2.0;
+
+          } // end loop over dimensions
+        } // end loop over cell edges
+
+       // get primary face midpoints in 3-D
+        int numNodesPerFace;
+        Intrepid::FieldContainer<Scalar> faceMidpts(numFacesPerCell,spaceDim);
+        if (spaceDim > 2) {
+           for (int iface = 0; iface < numFacesPerCell; iface++){
+               numNodesPerFace = primaryCell.getNodeCount(2,iface);
+
+               for (int idim = 0; idim < spaceDim; idim++){
+
+                  for (int inode0 = 0; inode0 < numNodesPerFace; inode0++) {
+                      int node1 = primaryCell.getNodeMap(2,iface,inode0);
+                      faceMidpts(iface,idim) += cellCoords(icell,node1,idim)/numNodesPerFace;
+                  }
+
+               } // end loop over dimensions
+           } // end loop over cell faces
+         }
+
+        // define coordinates for subcontrol volumes
+         switch(primaryCell.getKey() ) {
+
+          // 2-d  parent cells
+           case shards::Triangle<3>::key:
+           case shards::Quadrilateral<4>::key:
+
+            for (int inode = 0; inode < numNodesPerCell; inode++){
+              for (int idim = 0; idim < spaceDim; idim++){
+
+                // set first node to primary cell node
+                 subCVCoords(icell,inode,0,idim) = cellCoords(icell,inode,idim);
+
+                // set second node to adjacent edge midpoint
+                 subCVCoords(icell,inode,1,idim) = edgeMidpts(inode,idim);
+
+                // set third node to cell barycenter
+                 subCVCoords(icell,inode,2,idim) = barycenter(icell,idim);
+
+                // set fourth node to other adjacent edge midpoint
+                 int jnode = numNodesPerCell-1;
+                 if (inode > 0) jnode = inode - 1;
+                 subCVCoords(icell,inode,3,idim) = edgeMidpts(jnode,idim);
+
+              } // dim loop
+             } // node loop
+
+           break;
+
+         case shards::Hexahedron<8>::key:
+
+           for (int idim = 0; idim < spaceDim; idim++){
+
+             // loop over the horizontal quads that define the subcontrol volume coords
+              for (int icount = 0; icount < 4; icount++){
+
+                // set first node of bottom hex to primary cell node
+                // and fifth node of upper hex
+                subCVCoords(icell,icount,0,idim) = cellCoords(icell,icount,idim);
+                subCVCoords(icell,icount+4,4,idim) = cellCoords(icell,icount+4,idim);
+
+                // set second node of bottom hex to adjacent edge midpoint
+                // and sixth node of upper hex
+                subCVCoords(icell,icount,1,idim) = edgeMidpts(icount,idim);
+                subCVCoords(icell,icount+4,5,idim) = edgeMidpts(icount+4,idim);
+
+                // set third node of bottom hex to bottom face midpoint (number 4)
+                // and seventh node of upper hex to top face midpoint
+                subCVCoords(icell,icount,2,idim) = faceMidpts(4,idim);
+                subCVCoords(icell,icount+4,6,idim) = faceMidpts(5,idim);
+
+                // set fourth node of bottom hex to other adjacent edge midpoint
+                // and eight node of upper hex to other adjacent edge midpoint
+                 int jcount = 3;
+                 if (icount > 0) jcount = icount - 1;
+                 subCVCoords(icell,icount,3,idim) = edgeMidpts(jcount,idim);
+                 subCVCoords(icell,icount+4,7,idim) = edgeMidpts(jcount+4,idim);
+
+                // set fifth node to vertical edge
+                // same as first node of upper hex
+                subCVCoords(icell,icount,4,idim) = edgeMidpts(icount+numNodesPerCell,idim);
+                subCVCoords(icell,icount+4,0,idim) = edgeMidpts(icount+numNodesPerCell,idim);
+
+                // set sixth node to adjacent face midpoint
+                // same as second node of upper hex
+                subCVCoords(icell,icount,5,idim) = faceMidpts(icount,idim);
+                subCVCoords(icell,icount+4,1,idim) = faceMidpts(icount,idim);
+
+                // set seventh node to barycenter
+                // same as third node of upper hex
+                subCVCoords(icell,icount,6,idim) = barycenter(icell,idim);
+                subCVCoords(icell,icount+4,2,idim) = barycenter(icell,idim);
+
+                // set eighth node to other adjacent face midpoint
+                // same as fourth node of upper hex
+                jcount = 3;
+                if (icount > 0) jcount = icount - 1;
+                subCVCoords(icell,icount,7,idim) = faceMidpts(jcount,idim);
+                subCVCoords(icell,icount+4,3,idim) = faceMidpts(jcount,idim);
+
+             } // count loop
+
+           } // dim loop
+
+           break;
+
+         case shards::Tetrahedron<4>::key:
+
+           for (int idim = 0; idim < spaceDim; idim++){
+
+             // loop over the three bottom nodes
+              for (int icount = 0; icount < 3; icount++){
+
+                // set first node of bottom hex to primary cell node
+                subCVCoords(icell,icount,0,idim) = cellCoords(icell,icount,idim);
+
+                // set second node of bottom hex to adjacent edge midpoint
+                subCVCoords(icell,icount,1,idim) = edgeMidpts(icount,idim);
+
+                // set third node of bottom hex to bottom face midpoint (number 3)
+                subCVCoords(icell,icount,2,idim) = faceMidpts(3,idim);
+
+                // set fourth node of bottom hex to other adjacent edge midpoint
+                int jcount = 2;
+                if (icount > 0) jcount = icount - 1;
+                subCVCoords(icell,icount,3,idim) = edgeMidpts(jcount,idim);
+
+                // set fifth node to vertical edge
+                subCVCoords(icell,icount,4,idim) = edgeMidpts(icount+3,idim);
+
+                // set sixth node to adjacent face midpoint
+                subCVCoords(icell,icount,5,idim) = faceMidpts(icount,idim);
+
+                // set seventh node to barycenter
+                subCVCoords(icell,icount,6,idim) = barycenter(icell,idim);
+
+                // set eighth node to other adjacent face midpoint
+                jcount = 2;
+                if (icount > 0) jcount = icount - 1;
+                subCVCoords(icell,icount,7,idim) = faceMidpts(jcount,idim);
+
+              } //count loop
+
+            // Control volume attached to fourth node
+                // set first node of bottom hex to primary cell node
+                subCVCoords(icell,3,0,idim) = cellCoords(icell,3,idim);
+
+                // set second node of bottom hex to adjacent edge midpoint
+                subCVCoords(icell,3,1,idim) = edgeMidpts(3,idim);
+
+                // set third node of bottom hex to bottom face midpoint (number 3)
+                subCVCoords(icell,3,2,idim) = faceMidpts(2,idim);
+
+                // set fourth node of bottom hex to other adjacent edge midpoint
+                subCVCoords(icell,3,3,idim) = edgeMidpts(5,idim);
+
+                // set fifth node to vertical edge
+                subCVCoords(icell,3,4,idim) = edgeMidpts(4,idim);
+
+                // set sixth node to adjacent face midpoint
+                subCVCoords(icell,3,5,idim) = faceMidpts(0,idim);
+
+                // set seventh node to barycenter
+                subCVCoords(icell,3,6,idim) = barycenter(icell,idim);
+
+                // set eighth node to other adjacent face midpoint
+                subCVCoords(icell,3,7,idim) = faceMidpts(1,idim);
+
+         } // dim loop
+
+           break;
+
+       default:
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                            ">>> ERROR (getSubCVCoords: invalid cell topology.");
+       } // cell key
+
+     } // cell loop
+
+} // getSubCVCoords
+
+ template<class Scalar>
+ template<class ArrayCent, class ArrayCellCoord>
+ void CellTools<Scalar>::getBarycenter(ArrayCent & barycenter, const ArrayCellCoord & cellCoords)
+{
+   // get array dimensions
+   int numCells        = cellCoords.dimension(0);
+   int numVertsPerCell = cellCoords.dimension(1);
+   int spaceDim        = cellCoords.dimension(2);
+
+   if (spaceDim == 2)
+   {
+    // Method for general polygons
+     for (int icell = 0; icell < numCells; icell++){
+
+        Intrepid::FieldContainer<Scalar> cell_centroid(spaceDim);
+        Scalar area = 0;
+
+        for (int inode = 0; inode < numVertsPerCell; inode++){
+
+            int jnode = inode + 1;
+            if (jnode >= numVertsPerCell) {
+                  jnode = 0;
+            }
+
+            Scalar area_mult = cellCoords(icell,inode,0)*cellCoords(icell,jnode,1)
+                                 - cellCoords(icell,jnode,0)*cellCoords(icell,inode,1);
+            cell_centroid(0) += (cellCoords(icell,inode,0) + cellCoords(icell,jnode,0))*area_mult;
+            cell_centroid(1) += (cellCoords(icell,inode,1) + cellCoords(icell,jnode,1))*area_mult;
+
+            area += 0.5*area_mult;
+       }
+
+       barycenter(icell,0) = cell_centroid(0)/(6.0*area);
+       barycenter(icell,1) = cell_centroid(1)/(6.0*area);
+   }
+
+  }
+  else 
+  {
+     // This method works fine for simplices, but for other 3-d shapes
+     // is not precisely accurate. Could replace with approximate integration
+     // perhaps.
+     for (int icell = 0; icell < numCells; icell++){
+
+        Intrepid::FieldContainer<Scalar> cell_centroid(spaceDim);
+
+        for (int inode = 0; inode < numVertsPerCell; inode++){
+            for (int idim = 0; idim < spaceDim; idim++){
+                cell_centroid(idim) += cellCoords(icell,inode,idim)/numVertsPerCell;
+            }
+        }
+        for (std::size_t idim = 0; idim < spaceDim; idim++){
+             barycenter(icell,idim) = cell_centroid(idim);
+        }
+     }
+  }
+
+ } // get Barycenter
 } // namespace Intrepid
 #endif

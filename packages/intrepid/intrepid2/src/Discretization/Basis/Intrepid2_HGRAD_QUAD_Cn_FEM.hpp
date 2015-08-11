@@ -46,12 +46,8 @@
     \author Created by R. Kirby.
  */
 
-#ifndef INTREPID2_HGRAD_QUAD_Cn_FEM_HPP
-#define INTREPID2_HGRAD_QUAD_Cn_FEM_HPP
-
-
-
-
+#ifndef INTREPID_HGRAD_QUAD_Cn_FEM_HPP
+#define INTREPID_HGRAD_QUAD_Cn_FEM_HPP
 #include "Intrepid2_Basis.hpp"
 #include "Intrepid2_ProductTopology.hpp"
 #include "Intrepid2_HGRAD_LINE_Cn_FEM.hpp"

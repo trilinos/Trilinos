@@ -1,9 +1,5 @@
-#ifndef INTREPID2_HGRAD_TET_C1_FEMDEF_HPP
-#define INTREPID2_HGRAD_TET_C1_FEMDEF_HPP
-
-
-
-
+#ifndef INTREPID_HGRAD_TET_C1_FEMDEF_HPP
+#define INTREPID_HGRAD_TET_C1_FEMDEF_HPP
 // @HEADER
 // ************************************************************************
 //

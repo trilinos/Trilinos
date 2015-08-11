@@ -46,12 +46,8 @@
     \author Created by R. Kirby and P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID2_HGRAD_TRI_Cn_FEM_HPP
-#define INTREPID2_HGRAD_TRI_Cn_FEM_HPP
-
-
-
-
+#ifndef INTREPID_HGRAD_TRI_Cn_FEM_HPP
+#define INTREPID_HGRAD_TRI_Cn_FEM_HPP
 
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Basis.hpp"

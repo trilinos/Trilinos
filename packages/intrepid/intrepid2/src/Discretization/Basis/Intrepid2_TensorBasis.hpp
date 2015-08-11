@@ -46,12 +46,8 @@
     \author Created by P. Bochev and D. Ridzal.
  */
 
-#ifndef INTREPID2_TENSORBASIS_HPP
-#define INTREPID2_TENSORBASIS_HPP
-
-
-
-
+#ifndef INTREPID_TENSORBASIS_HPP
+#define INTREPID_TENSORBASIS_HPP
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Types.hpp"
 #include "Intrepid2_Utils.hpp"

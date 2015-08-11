@@ -46,8 +46,8 @@
     \author Created by P. Bochev and D. Ridzal.
 */
 
-#ifndef INTREPID2_CUBATURE_DIRECT_HPP
-#define INTREPID2_CUBATURE_DIRECT_HPP
+#ifndef INTREPID_CUBATURE_DIRECT_HPP
+#define INTREPID_CUBATURE_DIRECT_HPP
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Intrepid2_Cubature.hpp"
@@ -113,6 +113,17 @@ class CubatureDirect : public Intrepid2::Cubature<Scalar,ArrayPoint,ArrayWeight>
   */
   virtual void getCubature(ArrayPoint  & cubPoints,
                            ArrayWeight & cubWeights) const;
+
+  /** \brief Returns cubature points and weights.
+              Method for physical space cubature, throws an exception.
+
+       \param cubPoints             [out]        - Array containing the cubature points.
+       \param cubWeights            [out]        - Array of corresponding cubature weights.
+       \param cellCoords             [in]        - Array of cell coordinates
+  */
+  virtual void getCubature(ArrayPoint& cubPoints,
+                           ArrayWeight& cubWeights,
+                           ArrayPoint& cellCoords) const;
 
   /** \brief Returns the number of cubature points.
   */
