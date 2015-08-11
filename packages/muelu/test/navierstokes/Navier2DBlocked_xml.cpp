@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
     Time myTime("global");
     TimeMonitor MM(myTime);
 
-#ifndef HAVE_TEUCHOS_LONG_LONG_INT
+#ifndef HAVE_XPETRA_INT_LONG_LONG
     *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
 #endif
 
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
     GO maxCoarseSize=1; //FIXME clp doesn't like long long int
 
     int globalNumDofs = 1500;  // used for the maps
-    int nDofsPerNode = 3;	     // used for generating the fine level null-space
+    int nDofsPerNode = 3;            // used for generating the fine level null-space
 
     // build strided maps
     // striding information: 2 velocity dofs and 1 pressure dof = 3 dofs per node

@@ -104,7 +104,7 @@ namespace MueLu {
   template<>        class MpiTypeTraits<int>       { public: static MPI_Datatype getType() { return MPI_INT;       } };
   template<>        class MpiTypeTraits<short>     { public: static MPI_Datatype getType() { return MPI_SHORT;     } };
   template<>        class MpiTypeTraits<unsigned>  { public: static MPI_Datatype getType() { return MPI_UNSIGNED;  } };
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_XPETRA_INT_LONG_LONG
   template<>        class MpiTypeTraits<long long> { public: static MPI_Datatype getType() { return MPI_LONG_LONG; } };
 #endif
 
