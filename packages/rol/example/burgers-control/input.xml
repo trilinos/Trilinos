@@ -23,7 +23,7 @@
   <Parameter name="Krylov Method"                                                  type="string" value="Conjugate Gradients"     />
   <Parameter name="Absolute Krylov Tolerance"                                      type="double" value="1.e-4"                   />
   <Parameter name="Relative Krylov Tolerance"                                      type="double" value="1.e-2"                   />
-  <Parameter name="Maximum Number of Krylov Iterations"                            type="int"    value="20"                      />
+  <Parameter name="Maximum Number of Krylov Iterations"                            type="int"    value="100"                      />
   <Parameter name="Initial Trust-Region Radius"                                    type="double" value="-1.0"                    />
   <Parameter name="Minimum Trust-Region Radius"                                    type="double" value="1.e-12"                  />
   <Parameter name="Maximum Trust-Region Radius"                                    type="double" value="5.e3"                    />
@@ -49,6 +49,20 @@
   <Parameter name="Bundle Step: Removal Size for Bundle Update"                    type="int"    value="2"                       />
   <Parameter name="Bundle Step: Cutting Plane Solver Tolerance"                    type="double" value="1.e-8"                   />
   <Parameter name="Bundle Step: Cutting Plane Solver Maximum Number of Iterations" type="int"    value="1000"                    />
+  <Parameter name="Augmented Lagrangian: Initial Penalty Parameter"                type="double" value="10.0"                    />
+  <Parameter name="Augmented Lagrangian: Penalty Parameter Growth Factor"          type="double" value="100.0"                   />
+  <Parameter name="Augmented Lagrangian: Optimality Tolerance Update Exponent"     type="double" value="1.0"                     />
+  <Parameter name="Augmented Lagrangian: Feasibility Tolerance Update Exponent"    type="double" value="0.1"                     />
+  <Parameter name="Augmented Lagrangian: Optimality Tolerance Decrease Exponent"   type="double" value="1.0"                     />
+  <Parameter name="Augmented Lagrangian: Feasibility Tolerance Decrease Exponent"  type="double" value="0.9"                     />
+  <Parameter name="Augmented Lagrangian: Initial Optimality Tolerance"             type="double" value="1.0"                     />
+  <Parameter name="Augmented Lagrangian: Initial Feasibility Tolerance"            type="double" value="1.0"                     />
+  <Parameter name="Augmented Lagrangian: Optimality Tolerance"                     type="double" value="1.e-8"                   />
+  <Parameter name="Augmented Lagrangian: Feasibility Tolerance"                    type="double" value="1.e-8"                   />
+  <Parameter name="Augmented Lagrangian: Minimum Penalty Parameter Reciprocal"     type="double" value="0.1"                     />
+  <Parameter name="Augmented Lagrangian: Print Intermediate Optimization History"  type="bool"   value="false"                   />
+  <Parameter name="Augmented Lagrangian: Subproblem Step Type"                     type="int"    value="0"                       />
+  <Parameter name="Augmented Lagrangian: Subproblem Iteration Limit"               type="int"    value="1000"                    />
   <Parameter name="Gradient Tolerance"                                             type="double" value="1.e-8"                   />
   <Parameter name="Step Tolerance"                                                 type="double" value="1.e-12"                  />
   <Parameter name="Maximum Number of Iterations"                                   type="int"    value="500"                     />
