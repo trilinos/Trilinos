@@ -1109,7 +1109,7 @@ bool test_tpetra(const string& mm_file,
           else if( go == "long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(float,int,long int,DN);
           }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INST_INT_LONG_LONG
           else if( go == "long long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(float,int,long long int,DN);
           }
@@ -1127,13 +1127,13 @@ bool test_tpetra(const string& mm_file,
           else if( go == "long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(float,long int,long int,DN);
           }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
           else if( go == "long long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(float,long int,long long int,DN);
           }
 #endif
         }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
         else if( lo == "long long int" ){
           if( go == "default" ){
             AMESOS2_SOLVER_TPETRA_TEST(float,long long int,long long int,DN);
@@ -1165,7 +1165,7 @@ bool test_tpetra(const string& mm_file,
           else if( go == "long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(double,int,long int,DN);
           }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
           else if( go == "long long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(double,int,long long int,DN);
           }
@@ -1183,13 +1183,13 @@ bool test_tpetra(const string& mm_file,
           else if( go == "long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(double,long int,long int,DN);
           }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
           else if( go == "long long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(double,long int,long long int,DN);
           }
 #endif
         }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
         else if( lo == "long long int" ){
           if( go == "default" ){
             AMESOS2_SOLVER_TPETRA_TEST(double,long long int,long long int,DN);
@@ -1220,7 +1220,7 @@ bool test_tpetra(const string& mm_file,
           else if( go == "long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,long int,DN);
           }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
           else if( go == "long long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(dd_real,int,long long int,DN);
           }
@@ -1236,13 +1236,13 @@ bool test_tpetra(const string& mm_file,
           else if( go == "long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(dd_real,long int,long int,DN);
           }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
           else if( go == "long long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(dd_real,long int,long long int,DN);
           }
 #endif
         }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
         else if( lo == "long long int" ){
           if( go == "default" ){
             AMESOS2_SOLVER_TPETRA_TEST(dd_real,long long int,long long int,DN);
@@ -1270,7 +1270,7 @@ bool test_tpetra(const string& mm_file,
           else if( go == "long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,long int,DN);
           }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
           else if( go == "long long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(qd_real,int,long long int,DN);
           }
@@ -1286,13 +1286,13 @@ bool test_tpetra(const string& mm_file,
           else if( go == "long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(qd_real,long int,long int,DN);
           }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
           else if( go == "long long int" ){
             AMESOS2_SOLVER_TPETRA_TEST(qd_real,long int,long long int,DN);
           }
 #endif
         }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
         else if( lo == "long long int" ){
           if( go == "default" ){
             AMESOS2_SOLVER_TPETRA_TEST(qd_real,long long int,long long int,DN);
@@ -1326,7 +1326,7 @@ bool test_tpetra(const string& mm_file,
             else if( go == "long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx,int,long int,DN);
             }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
             else if( go == "long long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx,int,long long int,DN);
             }
@@ -1344,13 +1344,13 @@ bool test_tpetra(const string& mm_file,
             else if( go == "long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx,long int,long int,DN);
             }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
             else if( go == "long long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx,long int,long long int,DN);
             }
 #endif
           }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
           else if( lo == "long long int" ){
             if( go == "default" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx,long long int,long long int,DN);
@@ -1383,7 +1383,7 @@ bool test_tpetra(const string& mm_file,
             else if( go == "long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,int,long int,DN);
             }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
             else if( go == "long long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,int,long long int,DN);
             }
@@ -1401,13 +1401,13 @@ bool test_tpetra(const string& mm_file,
             else if( go == "long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,long int,long int,DN);
             }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
             else if( go == "long long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,long int,long long int,DN);
             }
 #endif
           }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
           else if( lo == "long long int" ){
             if( go == "default" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_double,long long int,long long int,DN);
@@ -1439,7 +1439,7 @@ bool test_tpetra(const string& mm_file,
             else if( go == "long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,int,long int,DN);
             }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
             else if( go == "long long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,int,long long int,DN);
             }
@@ -1455,13 +1455,13 @@ bool test_tpetra(const string& mm_file,
             else if( go == "long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,long int,long int,DN);
             }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
             else if( go == "long long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,long int,long long int,DN);
             }
 #endif
           }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
           else if( lo == "long long int" ){
             if( go == "default" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_dd,long long int,long long int,DN);
@@ -1490,7 +1490,7 @@ bool test_tpetra(const string& mm_file,
             else if( go == "long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,int,long int,DN);
             }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
             else if( go == "long long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,int,long long int,DN);
             }
@@ -1506,13 +1506,13 @@ bool test_tpetra(const string& mm_file,
             else if( go == "long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,long int,long int,DN);
             }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
             else if( go == "long long int" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,long int,long long int,DN);
             }
 #endif
           }
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
           else if( lo == "long long int" ){
             if( go == "default" ){
               AMESOS2_SOLVER_TPETRA_TEST(cmplx_qd,long long int,long long int,DN);
