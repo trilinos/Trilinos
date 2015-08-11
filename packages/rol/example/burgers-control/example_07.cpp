@@ -1107,11 +1107,11 @@ int main(int argc, char *argv[]) {
     // Initialize equality constraints
     std::vector<RealT> lo1(nx, 0.0), hi1(nx, 1.0);
     //std::vector<RealT> lo1(nx, -1.e6), hi1(nx, 1.e6);
-    L2BoundConstraint<RealT> bnd1(lo1,hi1,fem);
+    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd1 = Teuchos::rcp(new L2BoundConstraint<RealT>(lo1,hi1,fem));
     //bnd1.deactivate();
     //std::vector<RealT> lo2(nx+2, -0.1*ROL::ROL_OVERFLOW), hi2(nx+2, 0.1*ROL::ROL_OVERFLOW);
     std::vector<RealT> lo2(nx+2,0.0), hi2(nx+2,2.0);
-    L2BoundConstraint<RealT> bnd2(lo2,hi2,fem);
+    Teuchos::RCP<ROL::BoundConstraint<RealT> > bnd2 = Teuchos::rcp(new L2BoundConstraint<RealT>(lo2,hi2,fem));
     //bnd2.deactivate();
     ROL::BoundConstraint_SimOpt<RealT> bnd(bnd1,bnd2);
     // Initialize iteration vectors.
