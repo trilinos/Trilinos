@@ -563,13 +563,22 @@ void run_diffing_tool(stk::EnvData &env_data)
     output_message(globalss.str(), stk::parallel_machine_rank(env_data.m_parallelComm));
 }
 
-TEST(ParallelDebugTool, mockDiffingTool)
+TEST(ParallelDebugTool, mockDiffingToolUnit)
 {
     int color = 2;
     stk::EnvData &env_data = stk::EnvData::instance();
     setup_env_data(env_data, MPI_COMM_WORLD, color);
     expect_mpmd(env_data);
     run_diffing_tool(env_data);
+}
+
+TEST(ParallelDebugTool, mockDiffingToolApp)
+{
+    int color = 2;
+    stk::EnvData &env_data = stk::EnvData::instance();
+    setup_env_data(env_data, MPI_COMM_WORLD, color);
+    expect_mpmd(env_data);
+    //run_diffing_tool(env_data);
 }
 
 }
