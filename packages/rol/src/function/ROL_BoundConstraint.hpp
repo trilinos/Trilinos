@@ -255,7 +255,7 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   void pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) { 
-    Teuchos::RCP<Vector<Real> > tmp = x.clone(); 
+    Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
     tmp->set(v);
     this->pruneActive(*tmp,x,eps);
     v.axpy(-1.0,*tmp);
@@ -270,7 +270,7 @@ public:
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
   void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) { 
-    Teuchos::RCP<Vector<Real> > tmp = x.clone(); 
+    Teuchos::RCP<Vector<Real> > tmp = v.clone(); 
     tmp->set(v);
     this->pruneActive(*tmp,g,x,eps);
     v.axpy(-1.0,*tmp);
