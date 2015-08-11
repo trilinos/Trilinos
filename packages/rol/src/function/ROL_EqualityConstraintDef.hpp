@@ -658,7 +658,7 @@ std::vector<std::vector<Real> > EqualityConstraint<Real>::checkApplyAdjointHessi
 
     for(int j=0; j<order; ++j) {
 
-        xnew->axpy(eta*shifts[order-1][j],v);        
+        xnew->axpy(eta*shifts[order-1][j],v); 
 
         if( weights[order-1][j+1] != 0 ) {    
             this->update(*xnew);
