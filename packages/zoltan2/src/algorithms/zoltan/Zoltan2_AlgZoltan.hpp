@@ -171,9 +171,7 @@ private:
 
   void setCallbacksHypergraph(const RCP<const MeshAdapter<user_t> > &adp)
   {
-    // TODO:  If add parameter list to this function, can register 
-    // TODO:  different callbacks depending on the hypergraph model to use
-
+    
     const Teuchos::ParameterList &pl = env->getParameters();
 
     const Teuchos::ParameterEntry *pe = pl.getEntryPtr("hypergraph_model_type");
@@ -285,7 +283,8 @@ public:
     setCallbacksGraph(adapter);
 #ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
     //TODO:: check parameter list to see if hypergraph is needed. We dont want to build the model
-    //       if we don't have to and we shouldn't
+    //       if we don't have to and we shouldn't as it can take a decent amount of time if the
+    //       primary entity is copied
     setCallbacksHypergraph(adapter);
 #endif
     setCallbacksGeom(&(*adapter));
@@ -380,6 +379,7 @@ void AlgZoltan<Adapter>::partition(
 
   int numObjects=nObj;
 #ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
+  //The number of objects may be larger than zoltan knows due to copies that were removed by the hypergraph model
   if (model!=RCP<const Model<Adapter> >() &&
       dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model)) &&
       !dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique()) {
@@ -389,13 +389,14 @@ void AlgZoltan<Adapter>::partition(
   // Load answer into the solution.
   ArrayRCP<part_t> partList(new part_t[numObjects], 0, numObjects, true);
   for (int i = 0; i < nObj; i++) partList[oLids[i]] = oParts[i];
-  //
   
 #ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
   if (model!=RCP<const Model<Adapter> >() &&
       dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model)) &&
       !dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique()) {
-    //Ghosting cleanup for copies
+    //Cleanup for copied entities removed by ownership in hypergraph model.
+    //TODO replace global communication loop with a less expensive approach
+    //     potentially with Tpetra maps/vectors
     ArrayView<const gno_t> Ids;
     typedef StridedData<lno_t, scalar_t>  input_t;
     ArrayView<input_t> xyz;
