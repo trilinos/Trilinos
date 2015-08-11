@@ -127,7 +127,7 @@ namespace Xpetra {
 
   };
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_XPETRA_INT_LONG_LONG
   template <>
   class VectorFactory<double, int, long long> {
 
@@ -163,7 +163,7 @@ namespace Xpetra {
     }
 
   };
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
+#endif // HAVE_XPETRA_INT_LONG_LONG
 
 #define XPETRA_VECTORFACTORY_SHORT
 
@@ -203,7 +203,7 @@ namespace Xpetra {
 
   };
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_XPETRA_INT_LONG_LONG
   template <>
   class VectorFactory<int, int, long long> {
 
@@ -239,7 +239,7 @@ namespace Xpetra {
     }
 
   };
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
+#endif // HAVE_XPETRA_INT_LONG_LONG
 
 }
 
