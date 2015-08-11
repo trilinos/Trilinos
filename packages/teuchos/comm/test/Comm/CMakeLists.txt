@@ -46,12 +46,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRIBITS_ADD_EXECUTABLE(
-  ReduceAllAndScatter_test  
-  COMM serial mpi  
-  SOURCES ReduceAllAndScatter_test.cpp
-  )
-
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   DefaultMpiComm_TagTests  
   SOURCES

@@ -189,6 +189,10 @@ public:
                    Objective<Real> &obj, EqualityConstraint<Real> &con,
                    AlgorithmState<Real> &algo_state ) {
     //Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    state->descentVec    = x.clone();
+    state->gradientVec   = g.clone();
+    state->constraintVec = c.clone();
 
     xvec_ = x.clone();
     gvec_ = g.clone();
@@ -320,6 +324,10 @@ public:
     gl->set(*g); gl->plus(*ajl);
     algo_state.ngrad++;
     con.value(*c, x, zerotol);
+
+    Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
+    state->gradientVec->set(*gl);
+    state->constraintVec->set(*c);
 
     algo_state.value = val;
     algo_state.gnorm = gl->norm();

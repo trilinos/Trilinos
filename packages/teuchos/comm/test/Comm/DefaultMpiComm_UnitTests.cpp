@@ -191,91 +191,6 @@ TEUCHOS_UNIT_TEST( DefaultMpiComm, getRawMpiComm )
 #endif // HAVE_TEUCHOS_MPI
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_1, Ordinal, Packet )
-{
-
-  typedef Teuchos::ScalarTraits<Packet> PT;
-  typedef typename PT::magnitudeType PacketMag;
-  //typedef Teuchos::ScalarTraits<PacketMag> PMT; // unused
-
-  RCP<const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
-  const Ordinal numProcs = size(*comm);
-
-#ifdef TEUCHOS_MPI_COMM_DUMP
-  Teuchos::MpiComm<Ordinal>::show_dump = true;
-#endif
-
-  Array<Packet> sendBuffer(as<Ordinal>(numProcs));
-  for (Ordinal k = 0; k < numProcs; ++k) {
-    sendBuffer[k] = as<Packet>(1);
-  }
-
-  Array<Ordinal> recvCounts(as<Ordinal>(numProcs), as<Ordinal>(1));
-
-  Array<Packet> myGlobalReducts(1);
-
-  Teuchos::reduceAllAndScatter<Ordinal,Packet>(
-    *comm, Teuchos::REDUCE_SUM,
-    as<Ordinal>(sendBuffer.size()), &sendBuffer[0],
-    &recvCounts[0], &myGlobalReducts[0]
-    );
-
-  if (std::numeric_limits<Packet>::is_integer) {
-    TEST_EQUALITY( myGlobalReducts[0], as<Packet>(numProcs) );
-  }
-  else {
-    const PacketMag local_errorTolSlack = static_cast<PacketMag>(errorTolSlack);
-    TEST_FLOATING_EQUALITY( myGlobalReducts[0], as<Packet>(numProcs),
-      as<PacketMag>(defaultSmallNumber<PacketMag>() * local_errorTolSlack / numProcs)
-      );
-  }
-
-}
-
-
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, reduceAllAndScatter_2, Ordinal, Packet )
-{
-
-  typedef Teuchos::ScalarTraits<Packet> PT;
-  typedef typename PT::magnitudeType PacketMag;
-  //typedef Teuchos::ScalarTraits<PacketMag> PMT; // unused
-
-  RCP<const Comm<Ordinal> > comm = getDefaultComm<Ordinal>();
-  const Ordinal numProcs = size(*comm);
-  const Ordinal procRank = rank(*comm);
-
-  Array<Packet> sendBuffer(as<Ordinal>(numProcs));
-  for (Ordinal k = 0; k < numProcs; ++k) {
-    sendBuffer[k] = as<Packet>(procRank + k);
-  }
-
-  Array<Ordinal> recvCounts(as<Ordinal>(numProcs), as<Ordinal>(1));
-
-  Array<Packet> myGlobalReducts(1);
-
-  Teuchos::reduceAllAndScatter<Ordinal,Packet>(
-    *comm, Teuchos::REDUCE_SUM,
-    as<Ordinal>(sendBuffer.size()), &sendBuffer[0],
-    &recvCounts[0], &myGlobalReducts[0]
-    );
-
-  const Packet expectedMyGlobalReduct = as<Packet>(
-    numProcs * procRank + ((numProcs - 1) * numProcs)/2
-    );
-
-  if (std::numeric_limits<Packet>::is_integer) {
-    TEST_EQUALITY( myGlobalReducts[0], expectedMyGlobalReduct );
-  }
-  else {
-    const PacketMag local_errorTolSlack = static_cast<PacketMag>(errorTolSlack);
-    TEST_FLOATING_EQUALITY( myGlobalReducts[0], expectedMyGlobalReduct,
-      as<PacketMag>(defaultSmallNumber<PacketMag>() * local_errorTolSlack / numProcs)
-      );
-  }
-
-}
-
-
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, ReadySend1, Ordinal, Packet )
 {
 
@@ -890,8 +805,6 @@ TEUCHOS_UNIT_TEST(DefaultMpiComm, TagConsistency )
 
 
 #define UNIT_TEST_GROUP_ORDINAL_PACKET( ORDINAL, PACKET ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, reduceAllAndScatter_1, ORDINAL, PACKET ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, reduceAllAndScatter_2, ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceive, ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, NonblockingSendReceiveSet, ORDINAL, PACKET ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend1, ORDINAL, PACKET ) \
@@ -944,13 +857,9 @@ typedef std::pair<double,double> PairOfDoubles;
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, int) \
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, float) \
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, double) \
-    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, reduceAllAndScatter_1, ORDINAL) \
-    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, reduceAllAndScatter_2, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, NonblockingSendReceive, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, ReadySend1, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, ReadySend, ORDINAL) \
-    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, reduceAllAndScatter_1, ORDINAL) \
-    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, reduceAllAndScatter_2, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend1, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend, ORDINAL) \
@@ -967,13 +876,9 @@ typedef std::pair<double,double> PairOfDoubles;
     UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS(ORDINAL, PairOfInts) \
     UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS(ORDINAL, PairOfFloats) \
     UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS(ORDINAL, PairOfDoubles) \
-    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, reduceAllAndScatter_1, ORDINAL) \
-    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, reduceAllAndScatter_2, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, NonblockingSendReceive, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, ReadySend1, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_FLOAT(DefaultMpiComm, ReadySend, ORDINAL) \
-    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, reduceAllAndScatter_1, ORDINAL) \
-    UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, reduceAllAndScatter_2, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, NonblockingSendReceive, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend1, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend, ORDINAL)

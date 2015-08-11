@@ -506,6 +506,14 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>strength-of-connection: params</name>
+      <type>\parameterlist</type>
+      <visible>false</visible>
+      <description>Sublist of options for use by coalesce/drop.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
 
   </aggregation>
 

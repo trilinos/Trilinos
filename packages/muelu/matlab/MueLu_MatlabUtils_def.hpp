@@ -69,6 +69,7 @@ template<typename T> MuemexType getMuemexType(const T & data) {throw std::runtim
 
 template<> MuemexType getMuemexType(const int & data) {return INT;}
 template<> MuemexType getMuemexType<int>() {return INT;}
+template<> MuemexType getMuemexType<bool>() {return BOOL;}
 
 template<> MuemexType getMuemexType(const double & data) {return DOUBLE;}
 template<> MuemexType getMuemexType<double>() {return DOUBLE;}
@@ -147,6 +148,10 @@ int loadDataFromMatlab<int>(const mxArray* mxa)
   {
     rv = *((int*) mxGetData(mxa));
   }
+  else if(probIDtype == mxLOGICAL_CLASS)
+  {
+    rv = (int) *((bool*) mxGetData(mxa));
+  }
   else if(probIDtype == mxDOUBLE_CLASS)
   {
     rv = (int) *((double*) mxGetData(mxa));
@@ -161,6 +166,12 @@ int loadDataFromMatlab<int>(const mxArray* mxa)
     throw std::runtime_error("Error: Unrecognized numerical type.");
   }
   return rv;
+}
+
+template<>
+bool loadDataFromMatlab<bool>(const mxArray* mxa)
+{
+  return *((bool*) mxGetData(mxa));
 }
 
 template<>
@@ -625,6 +636,15 @@ mxArray* saveDataToMatlab(int& data)
   mwSize dims[] = {1, 1};
   mxArray* mxa = mxCreateNumericArray(2, dims, mxINT32_CLASS, mxREAL);
   *((int*) mxGetData(mxa)) = data;
+  return mxa;
+}
+
+template<>
+mxArray* saveDataToMatlab(bool& data)
+{
+  mwSize dims[] = {1, 1};
+  mxArray* mxa = mxCreateLogicalArray(2, dims);
+  *((bool*) mxGetData(mxa)) = data;
   return mxa;
 }
 
@@ -1229,10 +1249,10 @@ void MuemexData<T>::setData(T& newData)
 /* ***************************** */
 
 template<typename T>
-void addLevelVariable(const T& data, std::string& name, Level& lvl)
+void addLevelVariable(const T& data, std::string& name, Level& lvl, const Factory * fact)
 {
-  lvl.AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
-  lvl.Set<T>(name, data);
+  lvl.AddKeepFlag(name, fact, MueLu::UserData);
+  lvl.Set<T>(name, data, fact);
 }
 
 template<typename T>
@@ -1296,7 +1316,7 @@ std::vector<Teuchos::RCP<MuemexArg>> processNeeds(const Factory* factory, std::s
     else
     {
       vector<string> words;
-      string badNameMsg = "Custom Muemex variables require a type and a name, e.g. \"double myVal\". \n Leading and trailing spaces are OK.";
+      string badNameMsg = "Custom Muemex variables in \"Needs\" list require a type and a name, e.g. \"double myVal\". \n Leading and trailing spaces are OK. \n Don't know how to handle \"" + needsList[i] + "\".\n";
       //compare type without case sensitivity
       char* buf = (char*) malloc(needsList[i].size() + 1);
       strcpy(buf, needsList[i].c_str());
@@ -1416,7 +1436,7 @@ void processProvides(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Fact
     else
     {
       vector<string> words;
-      string badNameMsg = "Custom Muemex variables require a type and a name, e.g. \"double myVal\". \n Leading and trailing spaces are OK.";
+      string badNameMsg = "Custom Muemex variables in \"Provides\" list require a type and a name, e.g. \"double myVal\". \n Leading and trailing spaces are OK. \n Don't know how to handle \"" + provides[i] + "\".\n";
       //compare type without case sensitivity
       char* buf = (char*) malloc(provides[i].size() + 1);
       strcpy(buf, provides[i].c_str());
@@ -1447,42 +1467,47 @@ void processProvides(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Fact
       {
         typedef RCP<Xpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> LOVector_t;
         RCP<MuemexData<LOVector_t>> mydata = Teuchos::rcp_static_cast<MuemexData<LOVector_t>>(mexOutput[i]);
-        addLevelVariable<LOVector_t>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<LOVector_t>(mydata->getData(), words[1], lvl, factory);
       }
       else if(strstr(typeStr, "scalar"))
       {
         RCP<MuemexData<Scalar>> mydata = Teuchos::rcp_static_cast<MuemexData<Scalar>>(mexOutput[i]);
-        addLevelVariable<Scalar>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<Scalar>(mydata->getData(), words[1], lvl, factory);
       }
       else if(strstr(typeStr, "double"))
       {
         RCP<MuemexData<double>> mydata = Teuchos::rcp_static_cast<MuemexData<double>>(mexOutput[i]);
-        addLevelVariable<double>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<double>(mydata->getData(), words[1], lvl, factory);
       }
       else if(strstr(typeStr, "complex"))
       {
         RCP<MuemexData<complex_t>> mydata = Teuchos::rcp_static_cast<MuemexData<complex_t>>(mexOutput[i]);
-        addLevelVariable<complex_t>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<complex_t>(mydata->getData(), words[1], lvl, factory);
       }
       else if(strstr(typeStr, "matrix"))
       {
         RCP<MuemexData<Matrix_t>> mydata = Teuchos::rcp_static_cast<MuemexData<Matrix_t>>(mexOutput[i]);
-        addLevelVariable<Matrix_t>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<Matrix_t>(mydata->getData(), words[1], lvl, factory);
       }
       else if(strstr(typeStr, "multivector"))
       {
         RCP<MuemexData<MultiVector_t>> mydata = Teuchos::rcp_static_cast<MuemexData<MultiVector_t>>(mexOutput[i]);
-        addLevelVariable<MultiVector_t>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<MultiVector_t>(mydata->getData(), words[1], lvl, factory);
       }
       else if(strstr(typeStr, "int"))
       {
         RCP<MuemexData<int>> mydata = Teuchos::rcp_static_cast<MuemexData<int>>(mexOutput[i]);
-        addLevelVariable<int>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<int>(mydata->getData(), words[1], lvl, factory);
+      }
+      else if(strstr(typeStr, "bool"))
+      {
+        RCP<MuemexData<bool> > mydata = Teuchos::rcp_static_cast<MuemexData<bool> >(mexOutput[i]);
+        addLevelVariable<bool>(mydata->getData(), words[1], lvl, factory);
       }
       else if(strstr(typeStr, "string"))
       {
         RCP<MuemexData<string>> mydata = Teuchos::rcp_static_cast<MuemexData<string>>(mexOutput[i]);
-        addLevelVariable<string>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<string>(mydata->getData(), words[1], lvl, factory);
       }
       else
       {

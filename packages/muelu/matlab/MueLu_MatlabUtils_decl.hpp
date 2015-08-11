@@ -79,6 +79,7 @@ namespace MueLu
 enum MuemexType
 {
   INT,
+  BOOL,
   DOUBLE,
   COMPLEX,
   STRING,
@@ -156,7 +157,7 @@ mxArray* saveDataToMatlab(T& data);
 
 //Add data to level. Set the keep flag on the data to "user-provided" so it's not deleted.
 template<typename T>
-void addLevelVariable(const T& data, std::string& name, Level& lvl);
+void addLevelVariable(const T& data, std::string& name, Level& lvl, Factory *fact = NoFactory::get());
 
 template<typename T>
 const T& getLevelVariable(std::string& name, Level& lvl);
