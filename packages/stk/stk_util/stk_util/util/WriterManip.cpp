@@ -34,6 +34,7 @@
 #include <stk_util/util/WriterManip.hpp>
 #include <iosfwd>                       // for ostream
 #include "stk_util/util/Writer.hpp"     // for Writer
+#include <iostream>
 
 namespace stk {
 namespace diag {
@@ -58,17 +59,51 @@ operator<<(Writer &dout, _setfill set_fill) {
   return dout;
 }
 
+bool is_floatfield_hexfloat_or_defaultfloat(std::ios_base::fmtflags flags)
+{
+    bool neither_floatfield_bit_set = (std::ios_base::fmtflags(0) == (std::ios_base::floatfield & flags));
+    bool both_floatfield_bits_set = ((std::ios_base::fixed & flags) && (std::ios_base::scientific & flags));
+
+    return neither_floatfield_bit_set || both_floatfield_bits_set;
+}
+
+void reset_floatfield_flags_assuming_hexfloat_state(Writer &dout, std::ios_base::fmtflags reset_flags)
+{
+    if ((reset_flags & std::ios_base::scientific) && !(reset_flags & std::ios_base::fixed))
+        fixed(dout);
+    else if ((reset_flags & std::ios_base::fixed) && !(reset_flags & std::ios_base::scientific))
+        scientific(dout);
+}
+
 Writer &
-operator<<(Writer &dout, _resetiosflags reset_flags) {
+operator<<(Writer &dout, _resetiosflags reset_flags)
+{
   if (dout.shouldPrint())
-    dout.getStream().setf(std::ios_base::fmtflags(0), reset_flags.m_flags);
+  {
+    bool stream_floatfield_was_hexfloat_or_defaultfloat =
+            is_floatfield_hexfloat_or_defaultfloat(dout.getStream().flags());
+
+    dout.getStream().unsetf(reset_flags.m_flags);
+
+    if (stream_floatfield_was_hexfloat_or_defaultfloat)
+        reset_floatfield_flags_assuming_hexfloat_state(dout, reset_flags.m_flags);
+  }
   return dout;
 }
 
 Writer &
 operator<<(Writer &dout, _setiosflags set_flags) {
   if (dout.shouldPrint())
+  {
     dout.getStream().setf(set_flags.m_flags);
+
+    // As long as the compilers (and libstdc++ versions) we support have inconsistent
+    // support for the ios_base floatfield bits, automatically do hexfloat-to-defaultfloat
+    // transition.
+    std::ios_base::fmtflags newFlags = dout.getStream().flags();
+    if ((newFlags & std::ios_base::fixed) && (newFlags & std::ios_base::scientific))
+        dout.getStream().unsetf(std::ios_base::floatfield);
+  }
   return dout;
 }
 
