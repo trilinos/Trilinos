@@ -29,36 +29,6 @@ TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCLINST )
 // Do this whether or not ETI is on.
 //
 
-namespace Ifpack2 {
-namespace Details {
-
-template<class SC, class LO, class GO, class NT>
-class RegisterLinearSolverFactory {
-public:
-  RegisterLinearSolverFactory () {
-    typedef Tpetra::MultiVector<SC, LO, GO, NT> MV;
-    typedef Tpetra::Operator<SC, LO, GO, NT> OP;
-    typedef typename MV::mag_type mag_type;
-    typedef Trilinos::Details::LinearSolverFactory<MV, OP, mag_type> factory_base_type;
-    typedef Ifpack2::Details::LinearSolverFactory<SC, LO, GO, NT> factory_impl_type;
-
-#ifdef HAVE_TEUCHOSCORE_CXX11
-    typedef std::shared_ptr<factory_base_type> base_ptr_type;
-    typedef std::shared_ptr<factory_impl_type> impl_ptr_type;
-#else
-    typedef Teuchos::RCP<factory_base_type> base_ptr_type;
-    typedef Teuchos::RCP<factory_impl_type> impl_ptr_type;
-#endif // HAVE_TEUCHOSCORE_CXX11
-
-    impl_ptr_type factory (new factory_impl_type ());
-    base_ptr_type factoryBase = factory; // implicit cast to base class
-    Trilinos::Details::registerLinearSolverFactory<MV, OP, mag_type> ("Ifpack2", factoryBase);
-  }
-};
-
-} // namespace Details
-} // namespace Trilinos
-
 namespace { // (anonymous)
 
 // Inside a macro, ## means "join up the characters".

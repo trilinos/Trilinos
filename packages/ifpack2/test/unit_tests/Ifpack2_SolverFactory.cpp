@@ -1,10 +1,10 @@
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Ifpack2_Factory.hpp>
-#include <Trilinos_Details_LinearSolver.hpp>
-#include <Trilinos_Details_LinearSolverFactory.hpp>
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Ifpack2_Factory.hpp"
+#include "Trilinos_Details_LinearSolver.hpp"
+#include "Trilinos_Details_LinearSolverFactory.hpp"
 // Define typedefs and macros for testing over all Tpetra types.
 // They work whether or not ETI is enabled.
 #include "TpetraCore_ETIHelperMacros.h"
@@ -159,6 +159,12 @@ namespace {
     typedef Tpetra::CrsMatrix<SC,LO,GO,NT> MAT;
     typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
     typedef Tpetra::RowMatrix<SC,LO,GO,NT> row_matrix_type;
+
+#if ! defined(TRILINOS_HAVE_LINEAR_SOLVER_FACTORY_REGISTRATION)
+    out << "LinearSolverFactory run-time registration disabled; "
+      "not running test" << endl;
+    return;
+#endif // NOT TRILINOS_HAVE_LINEAR_SOLVER_FACTORY_REGISTRATION
 
     RCP<const Comm<int> > comm =
       Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
