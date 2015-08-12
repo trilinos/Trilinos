@@ -113,7 +113,7 @@ namespace {
   struct test_traits<std::complex<Mag> > {
     static const char* test_mat;
   };
-  
+
   template <typename Mag>
   const char* test_traits<std::complex<Mag> >::test_mat = "../matrices/amesos2_test_mat0_complex.mtx";
 
@@ -138,7 +138,7 @@ namespace {
     }
     return ret;
   }
-  
+
   /*
   RCP<FancyOStream> getDefaultOStream()
   {
@@ -265,7 +265,7 @@ namespace {
      */
     RCP<MAT> mat =
       Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
-							comm, node, true, true);
+                                                        comm, node, true, true);
     RCP<const Map<LO,GO,Node> > map = mat->getRowMap();
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
@@ -350,7 +350,7 @@ namespace {
      */
     RCP<MAT> mat =
       Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
-							comm, node, true, true);
+                                                        comm, node, true, true);
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
@@ -433,7 +433,7 @@ namespace {
      */
     RCP<MAT> mat =
       Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
-							comm, node, true, true);
+                                                        comm, node, true, true);
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
@@ -508,7 +508,7 @@ namespace {
      */
     RCP<MAT> mat =
       Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(test_traits<Scalar>::test_mat,
-							comm, node, true, true);
+                                                        comm, node, true, true);
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
@@ -564,13 +564,13 @@ namespace {
 #endif
 
 #ifdef HAVE_TPETRA_INST_FLOAT
-#  define UNIT_TEST_GROUP_ORDINAL_FLOAT( LO, GO )	\
+#  define UNIT_TEST_GROUP_ORDINAL_FLOAT( LO, GO )       \
   UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, float )
 #else
 #  define UNIT_TEST_GROUP_ORDINAL_FLOAT( LO, GO )
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-#  define UNIT_TEST_GROUP_ORDINAL_DOUBLE( LO, GO )	\
+#  define UNIT_TEST_GROUP_ORDINAL_DOUBLE( LO, GO )      \
   UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double )
 #else
 #  define UNIT_TEST_GROUP_ORDINAL_DOUBLE( LO, GO )
@@ -611,7 +611,7 @@ namespace {
 #  ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
   typedef long int LongInt;
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongInt )
-#    ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#    ifdef HAVE_TPETRA_INT_LONG_LONG
   typedef long long int LongLongInt;
   UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongLongInt )
 #    endif

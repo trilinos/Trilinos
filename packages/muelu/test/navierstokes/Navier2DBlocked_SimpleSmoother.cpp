@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
     Teuchos::Time myTime("global");
     Teuchos::TimeMonitor MM(myTime);
 
-#ifndef HAVE_TEUCHOS_LONG_LONG_INT
+#ifndef HAVE_XPETRA_INT_LONG_LONG
     *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
 #endif
 

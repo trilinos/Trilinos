@@ -42,6 +42,16 @@ namespace Details {
     getLinearSolver (const std::string& solverName);
   };
 
+  /// \class RegisterLinearSolverFactory
+  /// \brief Register Ifpack2's solver factory/ies with the central registry.
+  ///
+  /// \warning This is ONLY for expert users.
+  template<class SC, class LO, class GO, class NT>
+  class RegisterLinearSolverFactory {
+  public:
+    RegisterLinearSolverFactory ();
+  };
+
 } // namespace Details
 } // namespace Ifpack2
 

@@ -298,6 +298,11 @@ APPEND_SET(HEADERS
   Cell/Intrepid_CellTools.hpp
   Cell/Intrepid_CellToolsDef.hpp
   )
+IF(HAVE_INTREPID_KOKKOSCORE)
+  APPEND_SET(HEADERS
+    Cell/Intrepid_CellTools_Kokkos.hpp
+  )
+ENDIF()
 
 #
 # All sources

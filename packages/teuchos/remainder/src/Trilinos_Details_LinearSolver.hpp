@@ -53,7 +53,8 @@
 ///   bottom-most (most upstream) package from all solvers that depend
 ///   on it.
 
-#include <Teuchos_RCP.hpp>
+#include "TeuchosRemainder_config.h"
+#include "Teuchos_RCP.hpp"
 
 namespace Teuchos {
   // Forward declaration of ParameterList.  If you actually want to

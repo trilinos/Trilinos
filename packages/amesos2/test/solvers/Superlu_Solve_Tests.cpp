@@ -101,8 +101,8 @@ namespace {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.addOutputSetupOptions(true);
     clp.setOption("test-mpi", "test-serial", &testMpi,
-		  "Test Serial by default (for now) or force MPI test.  In a serial build,"
-		  " this option is ignored and a serial comm is always used." );
+                  "Test Serial by default (for now) or force MPI test.  In a serial build,"
+                  " this option is ignored and a serial comm is always used." );
   }
 
   // The Process:
@@ -130,18 +130,18 @@ namespace {
   typedef ScalarTraits<Mag> MT;                                         \
   const size_t numVecs = 5;                                             \
   ETransp trans = ((transpose) ? CONJ_TRANS : NO_TRANS);                \
-									\
+                                                                        \
   Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();   \
   RCP<const Comm<int> > comm = platform.getComm();                      \
   RCP<Node>             node = platform.getNode();                      \
-									\
+                                                                        \
   string path = string("../matrices/") + (MATNAME);                     \
   RCP<MAT> AMat =                                                       \
     Tpetra::MatrixMarket::Reader<MAT>::readSparseFile(path,comm,node);  \
-									\
+                                                                        \
   RCP<const Map<LO,GO,Node> > dmnmap = AMat->getDomainMap();            \
   RCP<const Map<LO,GO,Node> > rngmap = AMat->getRangeMap();             \
-									\
+                                                                        \
   RCP<MV> X, B, Xhat;                                                   \
   if( transpose ){                                                      \
     X = rcp(new MV(dmnmap,numVecs));                                    \
@@ -157,20 +157,20 @@ namespace {
   Xhat->setObjectLabel("Xhat");                                         \
   X->randomize();                                                       \
   AMat->apply(*X,*B,trans);                                             \
-									\
-  RCP<Amesos2::Solver<MAT,MV> > solver					\
-  = Amesos2::create<MAT,MV>("Superlu", AMat, Xhat, B );			\
-									\
-  Teuchos::ParameterList amesos2_params("Amesos2");			\
+                                                                        \
+  RCP<Amesos2::Solver<MAT,MV> > solver                                  \
+  = Amesos2::create<MAT,MV>("Superlu", AMat, Xhat, B );                 \
+                                                                        \
+  Teuchos::ParameterList amesos2_params("Amesos2");                     \
   if( transpose ){                                                      \
     amesos2_params.sublist("SuperLU").set("Trans","CONJ","Solve with transpose"); \
   } else {                                                              \
     amesos2_params.sublist("SuperLU"). set("Trans","NOTRANS","Do not solve with transpose"); \
   }                                                                     \
-									\
-  solver->setParameters( rcpFromRef(amesos2_params) );			\
+                                                                        \
+  solver->setParameters( rcpFromRef(amesos2_params) );                  \
   solver->symbolicFactorization().numericFactorization().solve();       \
-									\
+                                                                        \
   Array<Mag> xhatnorms(numVecs), xnorms(numVecs);                       \
   Xhat->norm2(xhatnorms());                                             \
   X->norm2(xnorms());                                                   \
@@ -188,7 +188,7 @@ namespace {
     Xhat->describe(out, Teuchos::VERB_EXTREME);                         \
     X->describe(out, Teuchos::VERB_EXTREME);                            \
   }                                                                     \
-									\
+                                                                        \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Superlu, MATNAME##_trans, LO, GO, SCALAR) \
   {                                                                     \
     string matfile = #MATNAME + string(".mtx");                         \
@@ -234,14 +234,14 @@ namespace {
   // Integer matrices not yet supported
 #define BCSSTM01_SOLVE(LO, GO, SCALAR)                  \
   // SUPERLU_MATRIX_TEST(bcsstm01, LO, GO, SCALAR)
-  
+
   // This is a rectangular matrix
   //
   //   Throw test that evaluated to true: *A.getMap() != *importer.getSourceMap()
   //   Source Maps don't match.
 #define BEACXC_SOLVE(LO, GO, SCALAR)                    \
   // SUPERLU_MATRIX_TEST(beacxc, LO, GO, SCALAR)
-  
+
 #define GEMAT12_SOLVE(LO, GO, SCALAR)           \
   SUPERLU_MATRIX_TEST(gemat12, LO, GO, SCALAR)
 
@@ -271,39 +271,39 @@ namespace {
   SHERMAN3_SOLVE(LO, GO, SCALAR)
 
 #ifdef HAVE_TPETRA_INST_FLOAT
-#  define UNIT_TEST_GROUP_ORDINALS_FLOAT(LO, GO)	\
+#  define UNIT_TEST_GROUP_ORDINALS_FLOAT(LO, GO)        \
   UNIT_TEST_GROUP_ORDINALS_SCALAR(LO, GO, float)
 #else
 #  define UNIT_TEST_GROUP_ORDINALS_FLOAT(LO, GO)
 #endif
 #ifdef HAVE_TPETRA_INST_DOUBLE
-#  define UNIT_TEST_GROUP_ORDINALS_DOUBLE(LO, GO)	\
+#  define UNIT_TEST_GROUP_ORDINALS_DOUBLE(LO, GO)       \
   UNIT_TEST_GROUP_ORDINALS_SCALAR(LO, GO, double)
 #else
 #  define UNIT_TEST_GROUP_ORDINALS_DOUBLE(LO, GO)
 #endif
-  
+
 #define UNIT_TEST_GROUP_ORDINALS_REALS(LO, GO)          \
-  UNIT_TEST_GROUP_ORDINALS_FLOAT(LO, GO)		\
+  UNIT_TEST_GROUP_ORDINALS_FLOAT(LO, GO)                \
   UNIT_TEST_GROUP_ORDINALS_DOUBLE(LO, GO)
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 #  ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
 #    define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO) \
-  typedef std::complex<float> ComplexFloat;		  \
+  typedef std::complex<float> ComplexFloat;               \
   UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexFloat)
 #  else
 #    define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
 #  endif
 #  ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
-#    define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)	\
+#    define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)      \
   typedef std::complex<double> ComplexDouble;                   \
   UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexDouble)
 #  else
 #    define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
 #  endif
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX(LO, GO)	\
-  UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)		\
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX(LO, GO)       \
+  UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)         \
   UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
 #else
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
@@ -311,7 +311,7 @@ namespace {
 #  define UNIT_TEST_GROUP_ORDINALS_COMPLEX(LO, GO)
 #endif
 
-#define UNIT_TEST_GROUP_ORDINALS(LO, GO)	\
+#define UNIT_TEST_GROUP_ORDINALS(LO, GO)        \
   UNIT_TEST_GROUP_ORDINALS_REALS(LO, GO)        \
   UNIT_TEST_GROUP_ORDINALS_COMPLEX(LO, GO)
 
@@ -321,10 +321,10 @@ namespace {
 #ifndef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
   typedef long int LongInt;
   UNIT_TEST_GROUP_ORDINALS(int, LongInt)
-#  ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#  ifdef HAVE_TPETRA_INT_LONG_LONG
   typedef long long int LongLongInt;
   UNIT_TEST_GROUP_ORDINALS(int, LongLongInt)
 #  endif
-#endif	// EXPL-INST
+#endif  // EXPL-INST
 
 } // end anonymous namespace
