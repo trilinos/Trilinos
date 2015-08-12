@@ -329,6 +329,14 @@ bool rememberRegisteredSomeLinearSolverFactory (const std::string& packageName);
 /// LinearSolverFactory with the correct template parameters.
 bool registeredSomeLinearSolverFactory (const std::string& packageName);
 
+/// \brief Whether the CMake run-time registration option is ON.
+///
+/// This doesn't actually say whether run-time registration has
+/// happened for a particular combination of (MV, OP, NormType)
+/// template parameters.  Also, some packages or users may have
+/// registered a factory manually; this has nothing to do with that.
+bool haveLinearSolverFactoryRunTimeRegistration ();
+
 /// \class LinearSolverFactoryRepository
 /// \brief Repository of solver factories
 ///
@@ -512,12 +520,21 @@ getLinearSolver (const std::string& packageName, const std::string& solverName)
   typedef LinearSolver<MV, OP, NormType> solver_type;
   const char prefix[] = "Trilinos::Details::getLinearSolver: ";
 
+  // Whether the CMake run-time registration option is ON.  This
+  // doesn't actually say whether run-time registration has happened
+  // for the current combination of (MV, OP, NormType) template
+  // parameters.
+  const bool haveRunTimeReg =
+    Impl::haveLinearSolverFactoryRunTimeRegistration ();
+
   const bool pkgExists = Impl::registeredSomeLinearSolverFactory (packageName);
   TEUCHOS_TEST_FOR_EXCEPTION
     (! pkgExists, std::invalid_argument, prefix << "Package \"" << packageName
      << "\" never registered a LinearSolverFactory for _any_ combination of "
      "template parameters MV, OP, and NormType.  This means either that the "
-     "package name is invalid, or that the package is not enabled.");
+     "package name is invalid, or that the package is not enabled.  "
+     "Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION = "
+     << (haveRunTimeReg ? "ON" : "OFF") << ".");
 
   factory_pointer_type factory = repo_type::getFactory (packageName);
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -526,7 +543,9 @@ getLinearSolver (const std::string& packageName, const std::string& solverName)
      " for template parameters "
      "MV = " << TypeNameTraits<MV>::name () << ", "
      "OP = " << TypeNameTraits<OP>::name () << ", "
-     "NormType = " << TypeNameTraits<NormType>::name () << ".");
+     "NormType = " << TypeNameTraits<NormType>::name () << ".  "
+     "Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION = "
+     << (haveRunTimeReg ? "ON" : "OFF") << ".");
 
   RCP<solver_type> solver = factory->getLinearSolver (solverName);
   TEUCHOS_TEST_FOR_EXCEPTION
@@ -535,7 +554,9 @@ getLinearSolver (const std::string& packageName, const std::string& solverName)
      "valid, and it did register a LinearSolverFactory for template parameters "
      "MV = " << TypeNameTraits<MV>::name () << ", "
      "OP = " << TypeNameTraits<OP>::name () << ", "
-     "NormType = " << TypeNameTraits<NormType>::name () << ".");
+     "NormType = " << TypeNameTraits<NormType>::name () << ".  "
+     "Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION = "
+     << (haveRunTimeReg ? "ON" : "OFF") << ".");
 
   return solver;
 }
