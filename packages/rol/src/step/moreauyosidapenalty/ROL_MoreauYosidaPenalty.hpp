@@ -76,6 +76,7 @@ private:
   Teuchos::RCP<Vector<Real> > xlam_;
   Teuchos::RCP<Vector<Real> > v_;
   Teuchos::RCP<Vector<Real> > dv_;
+  Teuchos::RCP<Vector<Real> > dv2_;
   Teuchos::RCP<Vector<Real> > lam_;
 
   Real mu_;
@@ -135,15 +136,16 @@ public:
     xlam_ = x.clone();
     v_    = x.clone();
     dv_   = x.dual().clone();
+    dv2_  = x.dual().clone();
     lam_  = x.clone();
 
     con_->setVectorToLowerBound(*l_);
     con_->setVectorToUpperBound(*u_);
 
-    lam_->zero();
-    //lam_->set(*u_);
-    //lam_->plus(*l_);
-    //lam_->scale(0.5);
+    //lam_->zero();
+    lam_->set(*u_);
+    lam_->plus(*l_);
+    lam_->scale(0.5);
   }
 
   void updateMultipliers(Real mu, const ROL::Vector<Real> &x) {
@@ -230,9 +232,25 @@ public:
     obj_->hessVec(hv,v,x,tol);
     // Add Hessian of the Moreau-Yosida penalty
     v_->set(v);
-    con_->pruneInactive(*v_,*xlam_);
+    con_->pruneLowerActive(*v_,*xlam_);
+    v_->scale(-1.0);
+    v_->plus(v);
     dv_->set(v_->dual());
-    con_->pruneInactive(*dv_,*xlam_);
+    dv2_->set(*dv_);
+    con_->pruneLowerActive(*dv_,*xlam_);
+    dv_->scale(-1.0);
+    dv_->plus(*dv2_);
+    hv.axpy(mu_,*dv_);
+
+    v_->set(v);
+    con_->pruneUpperActive(*v_,*xlam_);
+    v_->scale(-1.0);
+    v_->plus(v);
+    dv_->set(v_->dual());
+    dv2_->set(*dv_);
+    con_->pruneUpperActive(*dv_,*xlam_);
+    dv_->scale(-1.0);
+    dv_->plus(*dv2_);
     hv.axpy(mu_,*dv_);
   }
 
