@@ -423,15 +423,15 @@ main (int argc, char *argv[])
   // mfh 22 Feb 2011: Explicit instantiation of templates in the checkin
   // test script makes my life hard sometimes...
 #if 0
-#  ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#  ifdef HAVE_TPETRA_INT_LONG_LONG
   // Half the point of Tpetra is the capability of using global
   // ordinals that are bigger than local ordinals.  We should test
   // this whenever possible, even in code that is not specifically
   // testing Tpetra.
   typedef long long int global_ordinal_type;
-#  else // not HAVE_TEUCHOS_LONG_LONG_INT
+#  else // not HAVE_TPETRA_INT_LONG_LONG
   typedef long int global_ordinal_type;
-#  endif // HAVE_TEUCHOS_LONG_LONG_INT
+#  endif // HAVE_TPETRA_INT_LONG_LONG
 #else // not 0
   typedef int global_ordinal_type;
 #endif // 0

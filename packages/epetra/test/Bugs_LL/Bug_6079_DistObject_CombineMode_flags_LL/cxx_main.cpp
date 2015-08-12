@@ -17,7 +17,7 @@
 
 
 // check correct behavior of sadd of Trilinos vectors
-// if they have different Epetra maps 
+// if they have different Epetra maps
 
 #include <iostream>
 #include <vector>
@@ -33,7 +33,10 @@
 
 void test ()
 {
-  int n_proc; 
+  using std::cout;
+  using std::endl;
+
+  int n_proc;
 #ifdef HAVE_MPI
   MPI_Comm_size(MPI_COMM_WORLD, &n_proc);
 #else
@@ -70,7 +73,7 @@ void test ()
 #else
     Epetra_SerialComm());
 #endif
-  
+
   std::vector<unsigned long long> distributed_indices;
   distributed_indices.reserve(entries_per_process*n_proc);
   for (long long i = begin_index; i< end_index; ++i)
@@ -85,26 +88,41 @@ void test ()
 #else
     Epetra_SerialComm());
 #endif
- 
+
   Epetra_FEVector v_ghosted(map_ghosted);
   Epetra_FEVector v_distributed(map_distributed);
-  
+
   v_distributed.PutScalar(2.);
   v_ghosted.PutScalar(1.);
 
   Epetra_Import data_exchange (v_distributed.Map(), v_ghosted.Map());
   int ierr = v_distributed.Import(v_ghosted, data_exchange, Epetra_AddLocalAlso);
- 
-  std::cout << "Distributed:" << std::endl;
+
+  // Do a reduction over processes to ensure that the Import succeeded everywhere.
+  {
+    int lclErr = (ierr == 0) ? 0 : 1;
+    int gblErr = 0;
+    const int count = 1;
+
+    const Epetra_Comm& comm = map_ghosted.Comm ();
+    (void) comm.MinAll (&lclErr, &gblErr, count);
+    if (comm.MyPID () == 0 && gblErr != 0) {
+      // Match the test's expected failure string.
+      cout << "tests FAILED: Import failed (returned nonzero error code) "
+        "on at least one process." << endl;
+    }
+  }
+
+  cout << "Distributed:" << endl;
   for (long long i=begin_index; i<end_index; ++i)
   {
-    int trilinos_i
-      = v_distributed.Map().LID(i);
+    const int trilinos_i = v_distributed.Map().LID(i);
     double value = v_distributed[0][trilinos_i];
-    std::cout<<"proc "<<my_id<<" "<< i << ": " << value << std::endl;
-	if(value != 3)
-		std::cerr << "tests FAILED: value = " << value << std::endl;
-  }  
+    cout << "proc " << my_id << " " << i << ": " << value << endl;
+    if (value != 3) {
+      cout << "tests FAILED: value = " << value << endl;
+    }
+  }
 }
 
 

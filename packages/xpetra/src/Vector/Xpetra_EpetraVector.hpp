@@ -187,7 +187,7 @@ namespace Xpetra {
   typedef EpetraVectorT<int> EpetraVector;
 #endif
 
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+#ifdef HAVE_XPETRA_INT_LONG_LONG
   typedef EpetraVectorT<long long> EpetraVector64;
 #endif
 

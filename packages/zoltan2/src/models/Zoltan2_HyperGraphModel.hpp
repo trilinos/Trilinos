@@ -61,15 +61,15 @@
 #include <Zoltan2_MeshAdapter.hpp>
 
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <queue>
 #include <Teuchos_Hashtable.hpp>
 
 namespace Zoltan2 {
 
   /*! \brief Enumerate the views for the pins:
-   *    HYPEREDGE_CENTRIC: pins are the global ids of the vertices
-   *    VERTEX_CENTRIC: pins are the global ids of the hyperedges
+   *    HYPEREDGE_CENTRIC: pins are the global ids of the vertices as seen by the hyperedges
+   *    VERTEX_CENTRIC: pins are the global ids of the hyperedges as seen by the vertices
    */
 enum CentricView {
   HYPEREDGE_CENTRIC,
@@ -224,7 +224,8 @@ public:
   /*! \brief Sets pointer to the ownership of this processes vertices.
 
       \param isOwner will on return point to the list of ownership for
-        each vertex on this process.
+        each vertex on this process, true if this process owns the vertex
+        false otherwise.
    */
   size_t getOwnedList(ArrayView<bool> &isOwner) const
   {
@@ -338,7 +339,7 @@ private:
 ////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////
-//TODO get the weights for vertices and hyperedges
+//TODO get the weights hyperedges
 //GFD Do we need weights for pins too?
 template <typename Adapter>
 HyperGraphModel<Adapter>::HyperGraphModel(
@@ -370,12 +371,15 @@ HyperGraphModel<Adapter>::HyperGraphModel(
        numLocalPins_(0)
 {
   env_->timerStart(MACRO_TIMERS, "HyperGraphModel constructed from MeshAdapter");
-  //int me = comm_->getRank();
-  //int all = comm_->getSize();
-
-  // This HyperGraphModel is built with vertices == ia->getPrimaryEntityType()
-  // and hyperedges == ia->getAdjacencyEntityType() from MeshAdapter.
-  
+  //Model Type is either traditional or ghosting
+  //  Traditional:
+  //    vertices == ia->getPrimaryEntityType()
+  //    hyperedges == ia->getAdjacencyEntityType()
+  //    pins == first adjacency between primary and adjacency types
+  //  Ghosting:
+  //    vertices == ia->getPrimaryEntityType()
+  //    hyperedges == ia->getPrimaryEntityType()
+  //    pins == k layers of second adjacency from primary through second adjacency types
   std::string model_type("traditional");
   const Teuchos::ParameterList &pl = env->getParameters();
   const Teuchos::ParameterEntry *pe2 = pl.getEntryPtr("hypergraph_model_type");
@@ -383,8 +387,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     model_type = pe2->getValue<std::string>(&model_type);
   }
 
-  // Get the hypergraph from the input adapter
-
+  // Get the hypergraph types from adapter
   Zoltan2::MeshEntityType primaryEType = ia->getPrimaryEntityType();
   Zoltan2::MeshEntityType adjacencyEType = ia->getAdjacencyEntityType();
 
@@ -401,14 +404,16 @@ HyperGraphModel<Adapter>::HyperGraphModel(
   gids_ = arcp<const gno_t>(vtxIds, 0, numLocalVertices_, false);
 
   //A mapping from gids to lids for efficiency
-  std::map<gno_t,lno_t> lid_mapping;
+  std::unordered_map<gno_t,lno_t> lid_mapping;
   for (size_t i=0;i<numLocalVertices_;i++)
     lid_mapping[gids_[i]]=i;
 
-  // Define owners for each hypergraph vertex by the minimum 
-  // process that has the vertex
+  // Define owners for each hypergraph vertex using Tpetra 
+  // one to one map. This defines each hypergraph vertex to
+  // one process in the case that the adapter has copied 
+  // primary entity types
   typedef Tpetra::Map<lno_t, gno_t> map_t;
-
+  //If the mesh adapter knows the entities are unique we can optimize out the ownership
   unique = ia->areEntityIDsUnique(ia->getPrimaryEntityType());
   numOwnedVertices_=numLocalVertices_;
   isOwner_ = ArrayRCP<bool>(numLocalVertices_,true);
@@ -460,7 +465,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     numPrimaryPins = numLocalEdges_;
   }
   if (model_type=="traditional") {
-    //Get the pins from using the traditional method
+    //Get the pins from using the traditional method of first adjacency
     zgid_t const *nborIds=NULL;
     lno_t const *offsets=NULL;
     
@@ -475,15 +480,19 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     offsets_ = arcp<const lno_t>(offsets, 0, numPrimaryPins + 1, false);
   }
   else if (model_type=="ghosting") { 
+    // set the view to either since it doesn't matter 
+    // vertices==hyperedges
     view_ = VERTEX_CENTRIC;
-    //The ghost and distance pairing
+    // unique set of global ids for the ghosts
     typedef std::set<gno_t> ghost_t;
 
-    //ghosting per each vertex
-    typedef std::map<gno_t,ghost_t> ghost_map_t;
+    // mapping from global id to the set of ghosts 
+    typedef std::unordered_map<gno_t,ghost_t> ghost_map_t;
     
     primaryPinType=primaryEType;
     adjacencyPinType =ia->getSecondAdjacencyEntityType();
+
+    // number of layers of ghosting to do
     unsigned int layers=2;
     const Teuchos::ParameterEntry *pe3 = pl.getEntryPtr("ghost_layers");
     if (pe3){
@@ -491,9 +500,13 @@ HyperGraphModel<Adapter>::HyperGraphModel(
       l = pe3->getValue<int>(&l);
       layers = static_cast<unsigned int>(l);
     }
-    
+ 
     typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
     typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>   sparse_matrix_type;
+    
+    // Get an adjacency matrix representing the graph on the mesh 
+    // using second adjacencies. If second adjacencies are not 
+    // provided build the matrix from first adjacencies.
     RCP<sparse_matrix_type> secondAdj;
     if (!ia->avail2ndAdjs(primaryPinType,adjacencyPinType)) {
       secondAdj=Zoltan2::get2ndAdjsMatFromAdjs<user_t>(ia,comm_,primaryPinType, adjacencyPinType);
@@ -521,9 +534,11 @@ HyperGraphModel<Adapter>::HyperGraphModel(
       }
       secondAdj->fillComplete();
     }
-    //ghosts for each local vertex
+
+    //The mapping of the ghosts per hypergraph vertex
     ghost_map_t ghosts; 
 
+    //Read the 1 layer ghosts from the second adjacency matrix
     Array<gno_t> Indices;
     Array<nonzero_t> Values;
     for (unsigned int i=0;i<numLocalEdges_;i++) {
@@ -540,6 +555,10 @@ HyperGraphModel<Adapter>::HyperGraphModel(
 	}
       }
     }
+    
+    // The ith power of the second adjacency matrix is the ith layer of ghosts.
+    // Here we compute the ith power of the matrix and add the ith layer ghosts
+    // from the new matrix.
     RCP<sparse_matrix_type> mat_old = secondAdj;
     for (unsigned int i=1;i<layers;i++) {
       RCP<sparse_matrix_type> mat_new = 
@@ -587,7 +606,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
   }
 
 
-  //Vertex Weights
+  //Get the vertex weights
   numWeightsPerVertex_ = ia->getNumWeightsPerID();
 
   if (numWeightsPerVertex_ > 0){
@@ -623,7 +642,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
 
   //TODO get the weights for edges, and pins(?)
 
-
+  //Get the vertex coordinates from the primary types
   typedef MeshAdapter<user_t> adapterWithCoords_t;
   shared_GetVertexCoords<adapterWithCoords_t>(&(*ia));
 
@@ -663,6 +682,7 @@ void HyperGraphModel<Adapter>::shared_GetVertexCoords(const AdapterWithCoords *i
 template <typename Adapter>
 void HyperGraphModel<Adapter>::print()
 {
+  //only prints the model if debug status is verbose
   if (env_->getDebugLevel() < VERBOSE_DETAILED_STATUS)
     return;
 

@@ -79,7 +79,8 @@
 ///   Each solver package defines its own solvers, and its own factory
 ///   that knows how to create all the solvers in a given package.
 
-#include <Teuchos_RCP.hpp> // includes Teuchos_ConfigDefs.hpp
+#include "Teuchos_RCP.hpp" // includes Teuchos_ConfigDefs.hpp
+#include "TeuchosRemainder_config.h"
 #include <map>
 #ifdef HAVE_TEUCHOSCORE_CXX11
 #  include <memory> // std::shared_ptr
