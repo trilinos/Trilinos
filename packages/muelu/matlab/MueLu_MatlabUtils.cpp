@@ -418,6 +418,7 @@ Teuchos::RCP<MuemexArg> convertMatlabVar(const mxArray* mxa)
 /* Explicit Instantiations    */
 /******************************/
 
+template bool loadDataFromMatlab<bool>(const mxArray* mxa);
 template int loadDataFromMatlab<int>(const mxArray* mxa);
 template double loadDataFromMatlab<double>(const mxArray* mxa);
 template complex_t loadDataFromMatlab<complex_t>(const mxArray* mxa);
@@ -436,6 +437,7 @@ template RCP<Epetra_MultiVector> loadDataFromMatlab<RCP<Epetra_MultiVector>>(con
 template RCP<MAggregates> loadDataFromMatlab<RCP<MAggregates>>(const mxArray* mxa);
 template RCP<MAmalInfo> loadDataFromMatlab<RCP<MAmalInfo>>(const mxArray* mxa);
 
+template mxArray* saveDataToMatlab(bool& data);
 template mxArray* saveDataToMatlab(int& data);
 template mxArray* saveDataToMatlab(double& data);
 template mxArray* saveDataToMatlab(complex_t& data);
