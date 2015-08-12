@@ -71,17 +71,62 @@ namespace ROL {
 template <class Real>
 class BoundConstraint {
 private:
+  int dim_;
+  Teuchos::RCP<Vector<Real> > x_lo_;
+  Teuchos::RCP<Vector<Real> > x_up_;
+  Real scale_;  
   bool activated_; ///< Flag that determines whether or not the constraints are being used.
+  Real min_diff_;
+
+  Elementwise::ReductionMin<Real> minimum_;
+
+  // Add a constant to every element in a vector
+  class Shift : public Elementwise::UnaryFunction<Real> {
+    public:
+      Shift(Real offset) : offset_(offset) {}
+      Real apply( const Real &x ) const { return offset_ + x; }
+    private:
+      Real offset_;   
+  };
+  
+  class LogicalOr : public Elementwise::BinaryFunction<Real> {
+    public:
+      Real apply( const Real &x, const Real &y ) const {
+        return (x==0.0 && y==0.0) ? 0.0 : 1.0;
+      }
+  };
+
+  class Product : public Elementwise::BinaryFunction<Real> {
+    public:
+      Real apply( const Real &x, const Real &y ) const { return x*y; }
+  } product;
+
 
 public:
 
   virtual ~BoundConstraint() {}
 
+  BoundConstraint(void) : activated_(true) {}  
+
   /** \brief Default constructor.
 
       The default constructor automatically turns the constraints on.
   */
-  BoundConstraint(void) : activated_(true) {}
+  BoundConstraint(const Teuchos::RCP<Vector<Real> > &x_lo,
+                  const Teuchos::RCP<Vector<Real> > &x_up,
+                  Real scale = 1.0) : 
+                    x_lo_(x_lo), x_up_(x_up),scale_(scale),activated_(true) {
+
+    // Compute difference between upper and lower bounds
+    Teuchos::RCP<Vector<Real> > diff = x_up_->clone();
+    diff->set(*x_up_);
+    diff->axpy(-1.0,*x_lo_);  
+
+    // Compute minimum difference 
+    min_diff_ = diff->reduce(minimum_);
+    min_diff_ *= 0.5; 
+    
+  }
 
   /** \brief Update bounds. 
 
@@ -100,7 +145,20 @@ public:
       \f]
        @param[in,out]      x is the optimization variable.
   */
-  virtual void project( Vector<Real> &x ) {}
+  virtual void project( Vector<Real> &x ) {
+
+    struct Lesser : public Elementwise::BinaryFunction<Real> {
+      Real apply(const Real &x, const Real &y) const { return x<y ? x : y; }   
+    } lesser;
+   
+    struct Greater : public Elementwise::BinaryFunction<Real> {
+      Real apply(const Real &x, const Real &y) const { return x>y ? x : y; }   
+    } greater;
+
+    x.applyBinary(lesser, *x_up_); // Set x to the elementwise minimum of x and x_up_
+    x.applyBinary(greater,*x_lo_); // Set x to the elementwise minimum of x and x_lo_
+
+  }
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-active set.
   
@@ -113,7 +171,29 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {}
+  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+
+    Real epsn = std::min(scale_*eps,this->min_diff_);          
+
+    // Find the indices where x - u + epsn >= 0
+
+    Shift shift(epsn);    
+
+    Teuchos::RCP<Vector<Real> > mask = x.clone();
+    mask->set(x);
+    mask->axpy(-1.0,*x_up_);
+    mask->applyUnary(shift); 
+    
+    struct Condition : public Elementwise::UnaryFunction<Real> {
+      Real apply(const Real &x) const {
+        return x>=0 ? 0.0 : 1.0;
+      }
+    } condition;   
+
+    mask->applyUnary(condition); // mask = 0 anywhere x - u + epsn >= 0
+
+    v.applyBinary(product, *mask); // zeros elements of v where mask=0 
+  }
 
   /** \brief Set variables to zero if they correspond to the upper \f$\epsilon\f$-binding set.
   
@@ -128,7 +208,45 @@ public:
       @param[in]       g   is the negative search direction.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {}
+  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+
+    Real epsn = std::min(scale_*eps,this->min_diff_);          
+
+    // Find the indices where x - u + epsn >= 0
+
+    Shift shift(epsn);    
+
+    Teuchos::RCP<Vector<Real> > mask1 = x.clone();
+    mask1->set(x);
+    mask1->axpy(-1.0,*x_up_);
+    mask1->applyUnary(shift); 
+    
+    struct Condition1 : public Elementwise::UnaryFunction<Real> {
+      Real apply(const Real &x) const {
+        return x>=0 ? 0.0 : 1.0;
+      }
+    } condition1;   
+
+    mask1->applyUnary(condition1);
+
+    struct Condition2 : public Elementwise::UnaryFunction<Real> {  
+      Real apply(const Real &x) const {
+        return x < 0.0 ? 0.0 : 1.0;
+      }
+    } condition2;
+
+    Teuchos::RCP<Vector<Real> > mask2 = g.clone();
+    mask2->set(g);    
+
+    mask2->applyUnary(condition2); 
+
+    LogicalOr logicalOr;
+
+    mask1->applyBinary(logicalOr,*mask2); 
+
+    v.applyBinary(product,*mask1);
+ 
+  }
  
   /** \brief Set variables to zero if they correspond to the lower \f$\epsilon\f$-active set.
   
@@ -141,7 +259,30 @@ public:
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {}
+  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+
+    Real epsn = std::min(scale_*eps,this->min_diff_);          
+
+    // Find the indices where -x + l + epsn >= 0
+
+    Shift shift(epsn);    
+
+    Teuchos::RCP<Vector<Real> > mask = x_lo_->clone();
+    mask->set(*x_lo_);
+    mask->axpy(-1.0,x);
+    mask->applyUnary(shift); 
+    
+    struct Condition: public Elementwise::UnaryFunction<Real> {
+      Real apply(const Real &x) const {
+        return x>=0 ? 0.0 : 1.0;
+      }
+    } condition;   
+
+    mask->applyUnary(condition); // mask = 0 anywhere -x + l + epsn >= 0
+
+    v.applyBinary(product, *mask); // zeros elements of v where mask=0 
+
+  }
 
   /** \brief Set variables to zero if they correspond to the lower \f$\epsilon\f$-binding set.
   
@@ -156,21 +297,63 @@ public:
       @param[in]       g   is the negative search direction.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {}
+  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+
+    Real epsn = std::min(scale_*eps,this->min_diff_);          
+
+    // Find the indices where -x + l + epsn >= 0
+
+    Shift shift(epsn);    
+
+    Teuchos::RCP<Vector<Real> > mask1 = x_lo_->clone();
+    mask1->set(*x_lo_);
+    mask1->axpy(-1.0,x);
+    mask1->applyUnary(shift); 
+    
+    struct Condition1: public Elementwise::UnaryFunction<Real> {
+      Real apply(const Real &x) const {
+        return x>=0 ? 0.0 : 1.0;
+      }
+    } condition1;   
+
+    mask1->applyUnary(condition1); // mask = 0 anywhere -x + l + epsn >= 0
+
+    struct Condition2 : public Elementwise::UnaryFunction<Real> {  
+      Real apply(const Real &x) const {
+        return x > 0.0 ? 0.0 : 1.0;
+      }
+    } condition2;
+    
+    Teuchos::RCP<Vector<Real> > mask2 = g.clone();
+    mask2->set(g); 
+
+    mask2->applyUnary(condition2); 
+
+    LogicalOr logicalOr;
+
+    mask1->applyBinary(logicalOr,*mask2); 
+
+    v.applyBinary(product,*mask1);
+
+  }
  
   /** \brief Set the input vector to the upper bound.
 
       This function sets the input vector \f$u\f$ to the upper bound \f$b\f$.
       @param[out]    u   is the vector to be set to the upper bound.
   */ 
-  virtual void setVectorToUpperBound( Vector<Real> &u ) {}
+  virtual void setVectorToUpperBound( Vector<Real> &u ) {
+    u.set(*x_up_);
+  }
 
   /** \brief Set the input vector to the lower bound.
 
       This function sets the input vector \f$l\f$ to the lower bound \f$a\f$.
       @param[out]    l   is the vector to be set to the lower bound.
   */ 
-  virtual void setVectorToLowerBound( Vector<Real> &l ) {}
+  virtual void setVectorToLowerBound( Vector<Real> &l ) {
+    l.set(*x_lo_);
+  }
 
   /** \brief Set variables to zero if they correspond to the \f$\epsilon\f$-active set.
   
@@ -212,17 +395,25 @@ public:
   */
   virtual bool isFeasible( const Vector<Real> &v ) { 
     if ( this->activated_ ) {
-      Teuchos::RCP<Vector<Real> > pv = v.clone();
-      pv->set(v);
-      this->project(*pv);
-      pv->axpy(-1.0,v);
-      Real norm = pv->norm();
-      if ( norm < ROL_EPSILON ) {
+      Teuchos::RCP<Vector<Real> > s = v.clone();
+      s->set(*x_up_);
+
+      s->axpy(-1.0,v); // u-v
+
+      Real uminusv = s->reduce(minimum_);
+
+      s->set(v);
+      s->axpy(-1.0,*x_lo_);
+
+      Real vminusl = s->reduce(minimum_);
+
+      if( (uminusv<0) || (vminusl<0) ) {
+        return false;
+      } 
+      else {
         return true;
       }
-      else {
-        return false;
-      }
+
     }
     else {
       return true; 

@@ -54,15 +54,15 @@ namespace Elementwise {
 template<class Real> 
 class ReductionSum : public ReductionOp<Real> {
 public: 
-  void reduce( const Real &input, Real &output ) {
+  void reduce( const Real &input, Real &output ) const {
     output += input;
   }
 
-  Real initialValue() {
+  Real initialValue() const {
     return 0;
   }
 
-  Teuchos::EReductionType reductionType() {
+  Teuchos::EReductionType reductionType() const {
     return Teuchos::REDUCE_SUM;
   }
 
@@ -71,15 +71,15 @@ public:
 template<class Real> 
 class ReductionAnd : public ReductionOp<Real> {
 public:
-  void reduce( const Real &input, Real &output ) {
+  void reduce( const Real &input, Real &output ) const {
     output = (input*output)==0 ? 0.0 : 1.0;
   }
 
-  Real initialValue() {
+  Real initialValue() const {
     return 1.0;
   }
 
-  Teuchos::EReductionType reductionType() {
+  Teuchos::EReductionType reductionType() const {
     return Teuchos::REDUCE_AND;
   }
 };
@@ -93,15 +93,15 @@ public:
       << "be specialized on supplied template parameter." << std::endl); 
   }
 
-  void reduce( const Real &input, Real &output ) {
+  void reduce( const Real &input, Real &output ) const {
     output = (input<output) ? input : output;
   }
   
-  Real initialValue() {
+  Real initialValue() const {
     return std::numeric_limits<Real>::max();
   }
 
-  Teuchos::EReductionType reductionType() {
+  Teuchos::EReductionType reductionType() const {
     return Teuchos::REDUCE_MIN;
   }
 
@@ -116,15 +116,15 @@ public:
       << "be specialized on supplied template parameter." << std::endl); 
   }
 
-  void reduce( const Real &input, Real &output ) {
+  void reduce( const Real &input, Real &output ) const {
     output = (input>output) ? input : output;
   }
   
-  Real initialValue() {
+  Real initialValue() const {
     return std::numeric_limits<Real>::min();
   }
 
-  Teuchos::EReductionType reductionType() {
+  Teuchos::EReductionType reductionType() const {
     return Teuchos::REDUCE_MAX;
   }
 };

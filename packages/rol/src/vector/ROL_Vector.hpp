@@ -214,17 +214,17 @@ public:
     return *this;
   }
 
-  virtual void applyUnary( Elementwise::UnaryFunction<Real>* f ) {
+  virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method applyUnary is called but not implemented" << std::endl); 
   }
 
-  virtual void applyBinary( Elementwise::BinaryFunction<Real>* f, const Vector &x ) {
+  virtual void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector &x ) {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method applyBinary is called but not implemented" << std::endl); 
   }
 
-  virtual Real reduce( Elementwise::ReductionOp<Real>* f ) {
+  virtual Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
     TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
       "The method reduce is called but not implemented" << std::endl); 
   }

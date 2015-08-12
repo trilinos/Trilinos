@@ -42,20 +42,32 @@
 // @HEADER
 
 
-/*! \file  test_01.cpp
-    \brief Test std::vector interface for elementwise functions
+/*! \file  test_02.cpp
+    \brief Test of Tpetra::MultiVector interface for elementwise functions
 */
 
-#include "ROL_StdVector.hpp"
+#include "ROL_TpetraMultiVector.hpp"
+
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+
+#include "Tpetra_DefaultPlatform.hpp"
+
+typedef double RealT;
+
+typedef Tpetra::Map<>::local_ordinal_type         LO;
+typedef Tpetra::Map<>::global_ordinal_type        GO;
+typedef Tpetra::Map<>::node_type                  Node;
+typedef Tpetra::Map<LO, GO, Node>                 Map;
+typedef Tpetra::MultiVector<RealT, LO, GO, Node>  MV;
+typedef ROL::TpetraMultiVector<RealT,LO,GO,Node>  V;
 
 
 // Unary function
 template<class Real>
 Real Reciprocal( const Real &val ) {
   return 1.0/val;
-}     
+}    
 
 // Binary function
 template<class Real>
@@ -85,70 +97,69 @@ public:
 };
 
 
-
-
-
-typedef double RealT;
-
 int main(int argc, char *argv[]) {
 
-  using namespace Teuchos;
- 
-  typedef std::vector<RealT>     vec;
-  typedef ROL::StdVector<RealT>  V;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType Platform;
+  Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+  RCP<const Tpetra::Comm<int> > comm = platform.getComm();
 
-  GlobalMPISession mpiSession(&argc, &argv);
+  int iprint = argc - 1;
+  Teuchos::oblackholestream bhs; // outputs nothing
+  std::ostream& outStream = (iprint > 0) ? std::cout : bhs;
 
-  // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
-  int iprint     = argc - 1;
-  RCP<std::ostream> outStream;
-  oblackholestream bhs; // outputs nothing
-  if (iprint > 0)
-    outStream = rcp(&std::cout, false);
-  else
-    outStream = rcp(&bhs, false);
-
-  int errorFlag  = 0;
+  int errorFlag = 0;
 
   double errtol = ROL::ROL_THRESHOLD;
-
-  // *** Test body.
-
   try {
-
+    
     int k = 5;
     int dim = k*k;
     RealT threshValue = 4.0;
 
-    RCP<vec> w_rcp        = rcp( new vec(dim, 0.0) );
-    RCP<vec> w2_rcp       = rcp( new vec(dim, 0.0) );
-    RCP<vec> x_rcp        = rcp( new vec(dim, 0.0) );
-    RCP<vec> x_recip_rcp  = rcp( new vec(dim, 0.0) );
-    RCP<vec> y_rcp        = rcp( new vec(dim, 0.0) );
-    RCP<vec> z_rcp        = rcp( new vec(dim, 0.0) );
-    RCP<vec> z_thresh_rcp = rcp( new vec(dim, 0.0) );
+    RCP<Map> map = rcp( new Map(dim,0,comm) );
 
+    // Make RCPs to Tpetra::MultiVectors with single columns, dim elements, 
+    // set all elements initially to zero
+    RCP<MV> w_rcp        = rcp( new MV(map,1,true) );
+    RCP<MV> w2_rcp       = rcp( new MV(map,1,true) );
+    RCP<MV> x_rcp        = rcp( new MV(map,1,true) );
+    RCP<MV> x_recip_rcp  = rcp( new MV(map,1,true) );
+    RCP<MV> y_rcp        = rcp( new MV(map,1,true) );
+    RCP<MV> z_rcp        = rcp( new MV(map,1,true) );
+    RCP<MV> z_thresh_rcp = rcp( new MV(map,1,true) );
+ 
     V w(w_rcp);
     V w2(w2_rcp);
     V x(x_rcp);
-    V x_recip(x_recip_rcp);
+    V x_recip(x_recip_rcp); 
     V y(y_rcp);
     V z(z_rcp);
     V z_thresh(z_thresh_rcp);
 
-    for(int i=0; i<dim; ++i) {
-      (*w_rcp)[i] = 1.0+i;
+    LO numElements = static_cast<LO>( map->getNodeNumElements() );
+ 
+    for( LO lclRow = 0; lclRow < numElements; ++lclRow ) {
+      const GO gblRow = map->getGlobalElement(lclRow);
+      
+      w_rcp->replaceGlobalValue(gblRow,0,gblRow+1.0);
 
-      (*w2_rcp)[i] = std::pow(1.0+i,2);   
-      (*x_recip_rcp)[i]  = 1.0/(1.0+i);
-      (*z_thresh_rcp)[i] = std::min(1.0+i,threshValue);
+      w2_rcp->replaceGlobalValue(gblRow,0,std::pow(gblRow+1.0,2));
+
+      x_recip_rcp->replaceGlobalValue(gblRow,0,1.0/(gblRow+1.0));
+       
+      z_thresh_rcp->replaceGlobalValue(gblRow,0,std::min(1.0+gblRow,threshValue));
+   
     }
 
     x.set(w);
     y.set(w);
     z.set(w);
 
-    // Test Unary Function with inheritance
+    // Test Unary function with inheritance
     Square<RealT> square;
     w.applyUnary(square);
 
@@ -158,14 +169,14 @@ int main(int argc, char *argv[]) {
 
     // Test Unary Function with wrapper
     ROL::Elementwise::applyUnaryInPlace(x,Reciprocal<RealT>);
- 
+
     x.axpy(-1.0,x_recip);
 
     errorFlag += ( x.norm() > errtol ) ? 1 : 0;
 
     // Test Binary Function with wrapper
-    ROL::Elementwise::applyBinaryInPlace(y,x_recip,Product<RealT>);    
-    
+    ROL::Elementwise::applyBinaryInPlace(y,x_recip,Product<RealT>);
+
     errorFlag += ( std::abs(y.norm()-static_cast<RealT>(k)) > errtol ) ? 1 : 0; 
 
     // Test Unary Functor with wrapper
@@ -175,15 +186,15 @@ int main(int argc, char *argv[]) {
     z.axpy(-1.0,z_thresh);
 
     errorFlag += ( z.norm() > errtol ) ? 1 : 0;
-   
-    // Test reduce 
+
+    // Test reduce
     ROL::Elementwise::ReductionMax<RealT> maximum;
-
+    
     errorFlag += std::abs(w2.reduce(maximum)-pow(dim,2)) > errtol ? 1 : 0;
-
+ 
   }
   catch (std::logic_error err) {
-    *outStream << err.what() << std::endl;
+    outStream << err.what() << std::endl;
     errorFlag = -1000;
   }; // end try
 
@@ -191,8 +202,6 @@ int main(int argc, char *argv[]) {
     std::cout << "End Result: TEST FAILED\n";
   else
     std::cout << "End Result: TEST PASSED\n";
-
-  return 0;
-
+  
+  return 0;   
 }
-
