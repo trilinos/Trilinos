@@ -109,8 +109,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<std::vector<RealT> > gz_rcp = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
     Teuchos::RCP<std::vector<RealT> > yz_rcp = Teuchos::rcp( new std::vector<RealT> (nx+2, 1.0) );
     for (int i=0; i<nx+2; i++) {
-      (*z_rcp)[i]  = (RealT)rand()/(RealT)RAND_MAX;
-      (*yz_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
+      (*z_rcp)[i]  = 10.0*(RealT)rand()/(RealT)RAND_MAX-5.0;
+      (*yz_rcp)[i] = 10.0*(RealT)rand()/(RealT)RAND_MAX-5.0;
     }
     Teuchos::RCP<ROL::Vector<RealT> > zp  = Teuchos::rcp(new L2VectorPrimal<RealT>(z_rcp,fem));
     Teuchos::RCP<ROL::Vector<RealT> > gzp = Teuchos::rcp(new L2VectorDual<RealT>(gz_rcp,fem));
@@ -120,8 +120,8 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<std::vector<RealT> > gu_rcp = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
     Teuchos::RCP<std::vector<RealT> > yu_rcp = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
     for (int i=0; i<nx; i++) {
-      (*u_rcp)[i]  = (RealT)rand()/(RealT)RAND_MAX;
-      (*yu_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
+      (*u_rcp)[i]  = 10.0*(RealT)rand()/(RealT)RAND_MAX-5.0;
+      (*yu_rcp)[i] = 10.0*(RealT)rand()/(RealT)RAND_MAX-5.0;
     }
     Teuchos::RCP<ROL::Vector<RealT> > up  = Teuchos::rcp(new L2VectorPrimal<RealT>(u_rcp,fem));
     Teuchos::RCP<ROL::Vector<RealT> > gup = Teuchos::rcp(new L2VectorDual<RealT>(gu_rcp,fem));
@@ -162,10 +162,10 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Teuchos::ParameterList> parlist_tr = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist_tr) );
     // Define status test.
-    RealT gtol  = 1e-8;  // norm of gradient of Lagrangian tolerance
-    RealT ctol  = 1e-8;  // norm of constraint tolerance
-    RealT stol  = 1e-10;  // norm of step tolerance
-    int   maxit = 100;   // maximum number of iterations
+    RealT gtol  = 1e-10;  // norm of gradient of Lagrangian tolerance
+    RealT ctol  = 1e-10;  // norm of constraint tolerance
+    RealT stol  = 1e-12;  // norm of step tolerance
+    int   maxit = 1000;   // maximum number of iterations
     ROL::StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
     // Define step.
     ROL::MoreauYosidaPenaltyStep<RealT> step(*parlist_tr);
