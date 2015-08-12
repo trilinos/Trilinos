@@ -387,7 +387,7 @@ int main(int argc, char *argv[]) {
           else{
 #ifdef HAVE_MUELU_EPETRA
             RCP<Epetra_CrsMatrix> eA = Utils::Op2NonConstEpetraCrs(A);
-            RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, mueluList);
+            RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, mueluList, Utils::MV2NonConstEpetraMV(coordinates));
             H = eH->GetHierarchy();
 #endif //have_epetra
           }
@@ -431,7 +431,9 @@ int main(int argc, char *argv[]) {
           tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
 
           if(useAMGX){
+#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
             aH->apply(*(Utils::MV2TpetraMV(B)), *(Utils::MV2NonConstTpetraMV(X)));
+#endif
           }
           else{
             H->IsPreconditioner(false);
@@ -450,7 +452,7 @@ int main(int argc, char *argv[]) {
           Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
           Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
           if(useAMGX){
-#ifdef HAVE_MUELU_AMGX
+#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
             belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(aH)); // Turns a MueLu::Hierarchy object into a Belos operator
 #endif
           }
