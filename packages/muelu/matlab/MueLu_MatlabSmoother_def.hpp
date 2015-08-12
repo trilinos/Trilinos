@@ -167,6 +167,27 @@ namespace MueLu {
     }
   }
 
+
+// Dummy specializations for GO = long long
+template <>
+void MatlabSmoother<double,int,long long>::Setup(Level& currentLevel) {
+  throw std::runtime_error("MatlabSmoother does not support GlobalOrdinal == long long.");
+}
+template <>
+void MatlabSmoother<std::complex<double>,int,long long>::Setup(Level& currentLevel) {
+  throw std::runtime_error("MatlabSmoother does not support GlobalOrdinal == long long.");
+}
+
+template <>
+void MatlabSmoother<double,int,long long>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
+  throw std::runtime_error("MatlabSmoother does not support GlobalOrdinal == long long.");
+}
+template <>
+void MatlabSmoother<std::complex<double>,int,long long>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
+  throw std::runtime_error("MatlabSmoother does not support GlobalOrdinal == long long.");
+}
+
+
 } // namespace MueLu
 
 #endif // HAVE_MUELU_TPETRA && HAVE_MUELU_MATLAB
