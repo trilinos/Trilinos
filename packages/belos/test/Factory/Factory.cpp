@@ -235,9 +235,23 @@ TEUCHOS_UNIT_TEST( Factory, Bug6383 )
     typedef Belos::PseudoBlockGmresSolMgr<ST, MV, OP> solver_impl_type;
     BELOS_TEST_SOLVER( "GMRES" );
   }
+  // Make sure that the factory is case insensitive (Bug 6388).
+  {
+    typedef Belos::PseudoBlockGmresSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "gmres" );
+  }
   {
     typedef Belos::PseudoBlockCGSolMgr<ST, MV, OP> solver_impl_type;
     BELOS_TEST_SOLVER( "CG" );
+  }
+  // Make sure that the factory is case insensitive (Bug 6388).
+  {
+    typedef Belos::PseudoBlockCGSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "cg" );
+  }
+  {
+    typedef Belos::BlockGmresSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "Block GMRES" );
   }
   {
     typedef Belos::BlockGmresSolMgr<ST, MV, OP> solver_impl_type;
@@ -275,6 +289,11 @@ TEUCHOS_UNIT_TEST( Factory, Bug6383 )
   {
     typedef Belos::BiCGStabSolMgr<ST, MV, OP> solver_impl_type;
     BELOS_TEST_SOLVER( "BiCGStab" );
+  }
+  // Make sure that the factory is case insensitive (Bug 6388).
+  {
+    typedef Belos::BiCGStabSolMgr<ST, MV, OP> solver_impl_type;
+    BELOS_TEST_SOLVER( "bicgstab" );
   }
 
   if (! success) {
