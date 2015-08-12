@@ -99,6 +99,7 @@ public:
   typedef typename Adapter::node_t      node_t;
   typedef typename Adapter::user_t      user_t;
   typedef typename Adapter::userCoord_t userCoord_t;
+  typedef Tpetra::Map<lno_t, gno_t>     map_t;
   typedef IdentifierMap<user_t>         idmap_t;
   typedef StridedData<lno_t, scalar_t>  input_t;
 #endif
@@ -234,6 +235,18 @@ public:
     return nv;
   }
 
+  /*! \brief Sets pointers to the vertex map with copies and the vertex map without copies
+   *         Note: the pointers will not exist if the hypergraph has unique vertices
+   *               check the areVertexIDsUnique() function before calling this function
+   *
+   *  \param copiesMap on return points to the map of vertices with copies
+   *  \param onetooneMap on return points to the map of vertices without copies
+   */
+  void getVertexMaps(Teuchos::RCP<const map_t>& copiesMap, Teuchos::RCP<const map_t>& onetooneMap) const {
+    copiesMap = mapWithCopies;
+    onetooneMap = oneToOneMap;
+  }
+
   /*! \brief Sets pointers to this process' hyperedge Ids and their weights.
 
       \param Ids will on return point to the list of the global Ids for
@@ -330,6 +343,10 @@ private:
   size_t numGlobalEdges_;
   size_t numLocalPins_;
   
+  // For unique mapping
+  Teuchos::RCP<const map_t> mapWithCopies;
+  Teuchos::RCP<const map_t> oneToOneMap;
+
   // For debugging
   void print();
 
@@ -412,7 +429,6 @@ HyperGraphModel<Adapter>::HyperGraphModel(
   // one to one map. This defines each hypergraph vertex to
   // one process in the case that the adapter has copied 
   // primary entity types
-  typedef Tpetra::Map<lno_t, gno_t> map_t;
   //If the mesh adapter knows the entities are unique we can optimize out the ownership
   unique = ia->areEntityIDsUnique(ia->getPrimaryEntityType());
   numOwnedVertices_=numLocalVertices_;
@@ -421,10 +437,8 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     
     Tpetra::global_size_t numGlobalCoords = 
       Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-    Teuchos::RCP<const map_t> mapWithCopies =
-      rcp(new map_t(numGlobalCoords, gids_(), 0, comm));
-    Teuchos::RCP<const map_t> oneToOneMap =
-      Tpetra::createOneToOne<lno_t, gno_t>(mapWithCopies);
+    mapWithCopies = rcp(new map_t(numGlobalCoords, gids_(), 0, comm));
+    oneToOneMap = Tpetra::createOneToOne<lno_t, gno_t>(mapWithCopies);
 
     numOwnedVertices_=oneToOneMap->getNodeNumElements();
     for (size_t i=0;i<numLocalVertices_;i++) {
@@ -515,13 +529,11 @@ HyperGraphModel<Adapter>::HyperGraphModel(
       const lno_t* offsets;
       const zgid_t* adjacencyIds;
       ia->get2ndAdjsView(primaryPinType,adjacencyPinType,offsets,adjacencyIds);
-      Tpetra::global_size_t numGlobalCoords = 
-        Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-      Teuchos::RCP<const map_t> mapWithCopies =
-        rcp(new map_t(numGlobalCoords, gids_(), 0, comm));
-      Teuchos::RCP<const map_t> oneToOneMap =
-        Tpetra::createOneToOne<lno_t, gno_t>(mapWithCopies);
-
+      if (unique) {
+        Tpetra::global_size_t numGlobalCoords = 
+          Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+        oneToOneMap = rcp(new map_t(numGlobalCoords, gids_(), 0, comm));
+      }
       secondAdj = rcp(new sparse_matrix_type(oneToOneMap,0));
       for (size_t i=0; i<numLocalVertices_;i++) {
         if (!isOwner_[i])

@@ -394,41 +394,33 @@ void AlgZoltan<Adapter>::partition(
   if (model!=RCP<const Model<Adapter> >() &&
       dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model)) &&
       !dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique()) {
-    //Cleanup for copied entities removed by ownership in hypergraph model.
-    //TODO replace global communication loop with a less expensive approach
-    //     potentially with Tpetra maps/vectors
-    ArrayView<const gno_t> Ids;
-    typedef StridedData<lno_t, scalar_t>  input_t;
-    ArrayView<input_t> xyz;
-    ArrayView<input_t> wgts;
-    ArrayView<bool> isOwner;
+    //Setup the part ids for copied entities removed by ownership in hypergraph model.
     const HyperGraphModel<Adapter>* mdl = static_cast<const HyperGraphModel<Adapter>* >(&(*model));
-    nObj = mdl->getLocalNumVertices();        
-    mdl->getVertexList(Ids,xyz,wgts);
-    mdl->getOwnedList(isOwner);
-    int me = problemComm->getRank();
-    int all = problemComm->getSize();
-    //A mapping from gids to lids for efficiency
-    std::map<gno_t,lno_t> lid_mapping;
-    for (size_t i=0;i<mdl->getLocalNumVertices();i++) 
-      lid_mapping[Ids[i]]=i;
-   
-    for (size_t i=0;i<mdl->getGlobalNumVertices();i++) {
-      int amowner = all;
-      if (lid_mapping.find(i)!=lid_mapping.end() && isOwner[lid_mapping[i]])
-        amowner=me;
-      int owner;
-      reduceAll(*problemComm,Teuchos::REDUCE_MIN,1,&amowner,&owner);
-      part_t new_part;
-      if (owner==me)
-        new_part=partList[lid_mapping[i]];
-      broadcast(*problemComm,owner,&new_part);
-      if (new_part>=all) {
-        new_part=me;
-      }
-      if (lid_mapping.find(i)!=lid_mapping.end())
-        partList[lid_mapping[i]] = new_part;
-    }
+    
+    typedef typename HyperGraphModel<Adapter>::map_t map_t;
+    Teuchos::RCP<const map_t> mapWithCopies;
+    Teuchos::RCP<const map_t> oneToOneMap;
+    mdl->getVertexMaps(mapWithCopies,oneToOneMap);
+    
+    typedef Tpetra::Vector<scalar_t, lno_t, gno_t> vector_t;
+    vector_t vecWithCopies(mapWithCopies);
+    vector_t oneToOneVec(oneToOneMap);
+
+    // Set values in oneToOneVec:  each entry == rank
+    assert(nObj == lno_t(oneToOneMap->getNodeNumElements()));
+    for (lno_t i = 0; i < nObj; i++)
+      oneToOneVec.replaceLocalValue(i, oParts[i]);
+    
+    // Now import oneToOneVec's values back to vecWithCopies
+    Teuchos::RCP<const Tpetra::Import<lno_t, gno_t> > importer = 
+      Tpetra::createImport<lno_t, gno_t>(oneToOneMap, mapWithCopies);
+    vecWithCopies.doImport(oneToOneVec, *importer, Tpetra::REPLACE);
+
+    // Should see copied vector values when print VEC WITH COPIES
+    lno_t nlocal = lno_t(mapWithCopies->getNodeNumElements());
+    for (lno_t i = 0; i < nlocal; i++)
+      partList[i] = vecWithCopies.getData()[i];
+
   }
 #endif
   
