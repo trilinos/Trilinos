@@ -342,7 +342,7 @@ int main(int narg, char *arg[]) {
     zparams.set("LB_METHOD","HYPERGRAPH");
     zparams.set("LB_APPROACH","PARTITION");
     zparams.set("PHG_EDGE_SIZE_THRESHOLD", "1.0");
-    primary="face";
+    primary="vertex";
     adjacency="edge";
     needSecondAdj=true;
   }

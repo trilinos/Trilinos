@@ -1519,6 +1519,29 @@ void processProvides(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Fact
   }
 }
 
+// Throwable Stubs for long long
+
+template<>
+std::vector<Teuchos::RCP<MuemexArg>> processNeeds<double,mm_LocalOrd,long long,mm_node_t>(const Factory* factory, std::string& needsParam, Level& lvl) {
+  throw std::runtime_error("Muemex does not support long long for global indices");
+}
+
+template<>
+std::vector<Teuchos::RCP<MuemexArg>> processNeeds<complex_t,mm_LocalOrd,long long,mm_node_t>(const Factory* factory, std::string& needsParam, Level& lvl) {
+  throw std::runtime_error("Muemex does not support long long for global indices");
+}
+
+template<>
+void processProvides<double,mm_LocalOrd,long long,mm_node_t>(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Factory* factory, std::string& providesParam, Level& lvl) {
+  throw std::runtime_error("Muemex does not support long long for global indices");
+}
+
+template<>
+void processProvides<complex_t,mm_LocalOrd,long long,mm_node_t>(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Factory* factory, std::string& providesParam, Level& lvl) {
+  throw std::runtime_error("Muemex does not support long long for global indices");
+}
+
+
 }// end namespace
 #endif //HAVE_MUELU_MATLAB error handler
 #endif //MUELU_MATLABUTILS_DEF_HPP guard

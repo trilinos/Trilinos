@@ -42,6 +42,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM mpi
 )
 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  tpetraVecWithCopiesTest
+  SOURCES vecWithCopies.cpp
+  NUM_MPI_PROCS 4
+  COMM mpi
+)
+
 #TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  tpetraMapTest
 #  SOURCES mapMemoryLeak.cpp

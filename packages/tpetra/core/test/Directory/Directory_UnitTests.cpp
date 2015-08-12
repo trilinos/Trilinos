@@ -467,7 +467,7 @@ namespace {
     // typedef long int LongInt;
     // UNIT_TEST_GROUP_ORDINAL(int , LongInt)
 
-#   ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#   ifdef HAVE_TPETRA_INT_LONG_LONG
       // typedef long long int LongLongInt;
       // UNIT_TEST_GROUP_ORDINAL(char , LongLongInt)
       // UNIT_TEST_GROUP_ORDINAL(int , LongLongInt)

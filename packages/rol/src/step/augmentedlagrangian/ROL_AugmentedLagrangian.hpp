@@ -89,7 +89,7 @@ public:
     obj_ = Teuchos::rcp(&obj, false);
     con_ = Teuchos::rcp(&con, false);
     c_    = c.clone();
-    dc1_  = x.clone();
+    dc1_  = x.dual().clone();
     dc2_  = c.clone();
     lam_  = c.dual().clone();
     dlam_ = c.dual().clone();
@@ -160,9 +160,9 @@ public:
     // Compute objective function value
     fval_ = obj_->value(x,tol);
     // Apply Lagrange multiplier to constraint
-    Real cval = lam_->dot(*c_);
+    Real cval = lam_->dot(c_->dual());
     // Compute penalty term
-    Real pval = c_->dot(c_->dual());
+    Real pval = c_->dot(*c_);
     // Compute Augmented Lagrangian value
     Real val = 0.0;
     if (flag_) {
@@ -253,7 +253,7 @@ public:
       hv.plus(*dc1_);
     }
     con_->applyJacobian(*dc2_,v,x,tol);
-    con_->applyAdjointJacobian(*dc1_,*dc2_,x,tol);
+    con_->applyAdjointJacobian(*dc1_,dc2_->dual(),x,tol);
     if (flag_) {
       hv.plus(*dc1_);
     }

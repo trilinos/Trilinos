@@ -30,14 +30,14 @@ IF (${PACKAGE_NAME}_ENABLE_KokkosCore)
 #    PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
     )
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    Example_04
-    SOURCES example_04.cpp
-    ARGS PrintItAll
-    NUM_MPI_PROCS 1
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    Example_04
+#    SOURCES example_04.cpp
+#    ARGS PrintItAll
+#    NUM_MPI_PROCS 1
 #    PASS_REGULAR_EXPRESSION "TEST PASSED"
-    ADD_DIR_TO_NAME
-    )
+#    ADD_DIR_TO_NAME
+#    )
 #  TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #    Example_05
 #    SOURCES example_05.cpp
