@@ -107,7 +107,8 @@ namespace stk {
       bool build_field_part_associations(stk::io::MeshField &mesh_field,
 					 const stk::mesh::Part &part,
 					 const stk::mesh::EntityRank rank,
-					 Ioss::GroupingEntity *io_entity);
+					 Ioss::GroupingEntity *io_entity,
+					 std::map<stk::mesh::FieldBase *, const stk::io::MeshField *> *missing_fields = 0);
 
       DatabasePurpose m_db_purpose;
       Teuchos::RCP<Ioss::DatabaseIO> m_database;
