@@ -140,10 +140,10 @@ public:
     con_->setVectorToLowerBound(*l_);
     con_->setVectorToUpperBound(*u_);
 
-    lam_->zero();
-    //lam_->set(*u_);
-    //lam_->plus(*l_);
-    //lam_->scale(0.5);
+    //lam_->zero();
+    lam_->set(*u_);
+    lam_->plus(*l_);
+    lam_->scale(0.5);
   }
 
   void updateMultipliers(Real mu, const ROL::Vector<Real> &x) {

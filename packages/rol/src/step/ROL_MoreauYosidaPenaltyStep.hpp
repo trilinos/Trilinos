@@ -73,6 +73,8 @@ private:
   Teuchos::RCP<Vector<Real> > x_; 
   Teuchos::RCP<Vector<Real> > l_; 
 
+  Teuchos::RCP<Teuchos::ParameterList> parlist_;
+
   Real tau_;
   Real alpha1_;
   Real alpha2_;
@@ -111,8 +113,10 @@ public:
     gamma1_ = parlist.get("Moreau-Yosida Penalty: Minimum Penalty Parameter Reciprocal",0.1);
     print_  = parlist.get("Moreau-Yosida Penalty: Print Intermediate Optimization History",false);
     // Initialize subproblem step type
-    step_   = Teuchos::rcp(new CompositeStepSQP<Real>(parlist));
+    //step_   = Teuchos::rcp(new CompositeStepSQP<Real>(parlist));
     maxit_  = parlist.get("Moreau-Yosida Penalty: Subproblem Iteration Limit",1000);
+
+    parlist_ = Teuchos::rcp(&parlist,false);
   }
 
   /** \brief Initialize step with equality constraint.
@@ -120,14 +124,12 @@ public:
   void initialize( Vector<Real> &x, const Vector<Real> &g, Vector<Real> &l, const Vector<Real> &c,
                    Objective<Real> &obj, EqualityConstraint<Real> &con, BoundConstraint<Real> &bnd,
                    AlgorithmState<Real> &algo_state ) {
-    bnd.project(x);
     // Initialize step state
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     state->descentVec    = x.clone();
     state->gradientVec   = g.clone();
     state->constraintVec = c.clone();
     // Initialize intermediate stopping tolerances
-//    state->searchSize = 10.0;
     gamma_ = std::min(1.0/state->searchSize,gamma1_);
     omega_ = omega0_*std::pow(gamma_,alpha1_);
     eta_   = eta0_*std::pow(gamma_,alpha2_);
@@ -168,6 +170,7 @@ public:
                 AlgorithmState<Real> &algo_state ) {
     Real ftol = 1.e-8; //std::max(omega_,omega1_);
     Real ctol = 1.e-8; //std::max(eta_,eta1_);
+    step_   = Teuchos::rcp(new CompositeStepSQP<Real>(*parlist_));
     status_ = Teuchos::rcp(new StatusTestSQP<Real>(ftol,ctol,1.e-6*ftol,maxit_));
     algo_   = Teuchos::rcp(new DefaultAlgorithm<Real>(*step_,*status_,false));
     x_->set(x); l_->set(l);
@@ -187,7 +190,7 @@ public:
     state->gradientVec->set(*((step_->getStepState())->gradientVec));
     state->constraintVec->set(*((step_->getStepState())->constraintVec));
 
-//    state->searchSize *= tau_;
+    state->searchSize *= tau_;
     myPen_->updateMultipliers(state->searchSize,x);
 
     x.plus(s);

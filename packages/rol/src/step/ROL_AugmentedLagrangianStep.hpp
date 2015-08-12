@@ -73,6 +73,8 @@ private:
   Teuchos::RCP<DefaultAlgorithm<Real> > algo_;
   Teuchos::RCP<Vector<Real> > x_; 
 
+  Teuchos::RCP<Teuchos::ParameterList> parlist_;
+
   Real tau_;
   Real alpha1_;
   Real alpha2_;
@@ -111,13 +113,7 @@ public:
     gamma1_ = parlist.get("Augmented Lagrangian: Minimum Penalty Parameter Reciprocal",0.1);
     print_  = parlist.get("Augmented Lagrangian: Print Intermediate Optimization History",false);
     // Initialize subproblem step type
-    int useTR = parlist.get("Augmented Lagrangian: Subproblem Step Type",0);
-    if ( useTR == 0 ) {
-      step_ = Teuchos::rcp(new TrustRegionStep<Real>(parlist));
-    }
-    else {
-      step_ = Teuchos::rcp(new LineSearchStep<Real>(parlist));
-    }
+    parlist_ = Teuchos::rcp(&parlist,false);
     maxit_ = parlist.get("Augmented Lagrangian: Subproblem Iteration Limit",10000);
   }
 
@@ -180,6 +176,13 @@ public:
                 BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
     Real tol = std::max(omega_,omega1_);
+    int useTR = parlist_->get("Augmented Lagrangian: Subproblem Step Type",0);
+    if ( useTR == 0 ) {
+      step_ = Teuchos::rcp(new TrustRegionStep<Real>(*parlist_));
+    }
+    else {
+      step_ = Teuchos::rcp(new LineSearchStep<Real>(*parlist_));
+    }
     status_ = Teuchos::rcp(new StatusTest<Real>(tol,1.e-6*tol,maxit_));
     algo_   = Teuchos::rcp(new DefaultAlgorithm<Real>(*step_,*status_,false));
     x_->set(x);
@@ -219,7 +222,7 @@ public:
     state->descentVec->set(s);
     //if ( algo_state.cnorm < std::max(eta_,eta1_) ) {
     if ( algo_state.cnorm < eta_ ) {
-      l.axpy(-state->searchSize,*(state->constraintVec));
+      l.axpy(-state->searchSize,(state->constraintVec)->dual());
       algo_state.snorm += state->searchSize*algo_state.cnorm;
 
       gamma_  = std::min(1.0/state->searchSize,gamma1_);
