@@ -431,7 +431,11 @@ namespace MueLu {
 
     // Step 3: Construct importer
     RCP<Map>          newRowMap      = MapFactory   ::Build(lib, rowMap->getGlobalNumElements(), myGIDs(), indexBase, origComm);
-    RCP<const Import> rowMapImporter = ImportFactory::Build(rowMap, newRowMap);
+    RCP<const Import> rowMapImporter;
+    {
+      SubFactoryMonitor m1(*this, "Import construction", currentLevel);
+      rowMapImporter = ImportFactory::Build(rowMap, newRowMap);
+    }
 
     Set(currentLevel, "Importer", rowMapImporter);
 
