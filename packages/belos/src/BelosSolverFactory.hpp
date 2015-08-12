@@ -68,6 +68,7 @@
 #include <Teuchos_TypeNameTraits.hpp>
 
 #include <algorithm>
+#include <locale>
 #include <map>
 #include <sstream>
 #include <stdexcept>
@@ -527,52 +528,56 @@ makeSolverManagerTmpl (const Teuchos::RCP<Teuchos::ParameterList>& params)
 template<class Scalar, class MV, class OP>
 SolverFactory<Scalar, MV, OP>::SolverFactory()
 {
-  aliasToCanonicalName_["GMRES"] = "Pseudoblock GMRES";
+  aliasToCanonicalName_["GMRES"] = "PSEUDOBLOCK GMRES";
   // NOTE (mfh 29 Nov 2011) Accessing the flexible capability requires
   // setting a parameter in the solver's parameter list.  This affects
   // the SolverFactory's interface, since using the "Flexible GMRES"
   // alias requires modifying the user's parameter list if necessary.
   // This is a good idea because users may not know about the
   // parameter, or may have forgotten.
-  aliasToCanonicalName_["Block GMRES"] = "Block GMRES";
-  aliasToCanonicalName_["Flexible GMRES"] = "Block GMRES";
-  aliasToCanonicalName_["CG"] = "Pseudoblock CG";
-  aliasToCanonicalName_["PseudoBlockCG"] = "Pseudoblock CG";
-  aliasToCanonicalName_["Stochastic CG"] = "Pseudoblock Stochastic CG";
-  aliasToCanonicalName_["Recycling CG"] = "RCG";
-  aliasToCanonicalName_["Recycling GMRES"] = "GCRODR";
+  //
+  // NOTE (mfh 12 Aug 2015) The keys and values need to be all uppercase.
+  aliasToCanonicalName_["BLOCK GMRES"] = "BLOCK GMRES";
+  aliasToCanonicalName_["FLEXIBLE GMRES"] = "BLOCK GMRES";
+  aliasToCanonicalName_["CG"] = "PSEUDOBLOCK CG";
+  aliasToCanonicalName_["PSEUDOBLOCKCG"] = "PSEUDOBLOCK CG";
+  aliasToCanonicalName_["STOCHASTIC CG"] = "PSEUDOBLOCK STOCHASTIC CG";
+  aliasToCanonicalName_["RECYCLING CG"] = "RCG";
+  aliasToCanonicalName_["RECYCLING GMRES"] = "GCRODR";
   // For compatibility with Stratimikos' Belos adapter.
-  aliasToCanonicalName_["Pseudo Block GMRES"] = "Pseudoblock GMRES";
-  aliasToCanonicalName_["PseudoBlockGmres"] = "Pseudoblock GMRES";
-  aliasToCanonicalName_["Pseudo Block CG"] = "Pseudoblock CG";
-  aliasToCanonicalName_["PseudoBlockCG"] = "Pseudoblock CG";
-  aliasToCanonicalName_["Transpose-Free QMR"] = "TFQMR";
-  aliasToCanonicalName_["Pseudo Block TFQMR"] = "Pseudoblock TFQMR";
-  aliasToCanonicalName_["Pseudo Block Transpose-Free QMR"] = "Pseudoblock TFQMR";
-  aliasToCanonicalName_["GmresPoly"] = "Hybrid Block GMRES";
-  aliasToCanonicalName_["Seed GMRES"] = "Hybrid Block GMRES";
-  aliasToCanonicalName_["CGPoly"] = "PCPG";
-  aliasToCanonicalName_["Seed CG"] = "PCPG";
-  aliasToCanonicalName_["Fixed Point"] = "Fixed Point";
-  aliasToCanonicalName_["BiCGStab"] = "BiCGStab";
+  aliasToCanonicalName_["PSEUDO BLOCK GMRES"] = "PSEUDOBLOCK GMRES";
+  aliasToCanonicalName_["PSEUDOBLOCKGMRES"] = "PSEUDOBLOCK GMRES";
+  aliasToCanonicalName_["PSEUDO BLOCK CG"] = "PSEUDOBLOCK CG";
+  aliasToCanonicalName_["PSEUDOBLOCKCG"] = "PSEUDOBLOCK CG";
+  aliasToCanonicalName_["TRANSPOSE-FREE QMR"] = "TFQMR";
+  aliasToCanonicalName_["PSEUDO BLOCK TFQMR"] = "PSEUDOBLOCK TFQMR";
+  aliasToCanonicalName_["PSEUDO BLOCK TRANSPOSE-FREE QMR"] = "PSEUDOBLOCK TFQMR";
+  aliasToCanonicalName_["GMRESPOLY"] = "HYBRID BLOCK GMRES";
+  aliasToCanonicalName_["SEED GMRES"] = "HYBRID BLOCK GMRES";
+  aliasToCanonicalName_["CGPOLY"] = "PCPG";
+  aliasToCanonicalName_["SEED CG"] = "PCPG";
+  aliasToCanonicalName_["FIXED POINT"] = "FIXED POINT";
+  aliasToCanonicalName_["BICGSTAB"] = "BICGSTAB";
 
   // Mapping from canonical solver name (a string) to its
   // corresponding enum value.  This mapping is one-to-one.
-  canonicalNameToEnum_["Block GMRES"] = details::SOLVER_TYPE_BLOCK_GMRES;
-  canonicalNameToEnum_["Pseudoblock GMRES"] = details::SOLVER_TYPE_PSEUDO_BLOCK_GMRES;
-  canonicalNameToEnum_["Block CG"] = details::SOLVER_TYPE_BLOCK_CG;
-  canonicalNameToEnum_["Pseudoblock CG"] = details::SOLVER_TYPE_PSEUDO_BLOCK_CG;
-  canonicalNameToEnum_["Pseudoblock Stochastic CG"] = details::SOLVER_TYPE_STOCHASTIC_CG;
+  //
+  // NOTE (mfh 12 Aug 2015) The keys need to be all uppercase.
+  canonicalNameToEnum_["BLOCK GMRES"] = details::SOLVER_TYPE_BLOCK_GMRES;
+  canonicalNameToEnum_["PSEUDOBLOCK GMRES"] = details::SOLVER_TYPE_PSEUDO_BLOCK_GMRES;
+  canonicalNameToEnum_["BLOCK CG"] = details::SOLVER_TYPE_BLOCK_CG;
+  canonicalNameToEnum_["PSEUDOBLOCK CG"] = details::SOLVER_TYPE_PSEUDO_BLOCK_CG;
+  canonicalNameToEnum_["PSEUDOBLOCK STOCHASTIC CG"] = details::SOLVER_TYPE_STOCHASTIC_CG;
   canonicalNameToEnum_["GCRODR"] = details::SOLVER_TYPE_GCRODR;
   canonicalNameToEnum_["RCG"] = details::SOLVER_TYPE_RCG;
   canonicalNameToEnum_["MINRES"] = details::SOLVER_TYPE_MINRES;
   canonicalNameToEnum_["LSQR"] = details::SOLVER_TYPE_LSQR;
   canonicalNameToEnum_["TFQMR"] = details::SOLVER_TYPE_TFQMR;
-  canonicalNameToEnum_["Pseudoblock TFQMR"] = details::SOLVER_TYPE_PSEUDO_BLOCK_TFQMR;
-  canonicalNameToEnum_["Hybrid Block GMRES"] = details::SOLVER_TYPE_GMRES_POLY;
+  canonicalNameToEnum_["PSEUDOBLOCK TFQMR"] = details::SOLVER_TYPE_PSEUDO_BLOCK_TFQMR;
+  canonicalNameToEnum_["HYBRID BLOCK GMRES"] = details::SOLVER_TYPE_GMRES_POLY;
   canonicalNameToEnum_["PCPG"] = details::SOLVER_TYPE_PCPG;
-  canonicalNameToEnum_["Fixed Point"] = details::SOLVER_TYPE_FIXED_POINT;
-  canonicalNameToEnum_["BiCGStab"] = details::SOLVER_TYPE_BICGSTAB;
+  canonicalNameToEnum_["FIXED POINT"] = details::SOLVER_TYPE_FIXED_POINT;
+  canonicalNameToEnum_["BICGSTAB"] = details::SOLVER_TYPE_BICGSTAB;
 }
 
 
@@ -582,7 +587,7 @@ SolverFactory<Scalar, MV, OP>::
 reviseParameterListForAlias (const std::string& aliasName,
                              Teuchos::ParameterList& solverParams)
 {
-  if (aliasName == "Flexible GMRES") {
+  if (aliasName == "FLEXIBLE GMRES") {
     // "Gmres" uses title case in this solver's parameter list.  For
     // our alias, we prefer the all-capitals "GMRES" that the
     // algorithm's authors (Saad and Schultz) used.
@@ -597,12 +602,27 @@ SolverFactory<Scalar, MV, OP>::
 create (const std::string& solverName,
         const Teuchos::RCP<Teuchos::ParameterList>& solverParams)
 {
+  const char prefix[] = "Belos::SolverFactory: ";
+
+  // Upper-case version of the input solver name.
+  std::string solverNameUC (solverName);
+  {
+    typedef std::string::value_type char_t;
+    typedef std::ctype<char_t> facet_type;
+    const facet_type& facet = std::use_facet<facet_type> (std::locale ());
+
+    const std::string::size_type len = solverName.size ();
+    for (std::string::size_type k = 0; k < len; ++k) {
+      solverNameUC[k] = facet.toupper (solverName[k]);
+    }
+  }
+
   // Check whether the given name is an alias.
   std::map<std::string, std::string>::const_iterator aliasIter =
-    aliasToCanonicalName_.find (solverName);
+    aliasToCanonicalName_.find (solverNameUC);
   const bool isAnAlias = (aliasIter != aliasToCanonicalName_.end());
   const std::string candidateCanonicalName =
-    isAnAlias ? aliasIter->second : solverName;
+    isAnAlias ? aliasIter->second : solverNameUC;
 
   // Get the canonical name.
   std::map<std::string, details::EBelosSolverType>::const_iterator canonicalIter =
@@ -612,12 +632,14 @@ create (const std::string& solverName,
   // Check whether we found a canonical name.  If we didn't and the
   // input name is a valid alias, that's a bug.  Otherwise, the input
   // name is invalid.
-  TEUCHOS_TEST_FOR_EXCEPTION(! validCanonicalName && isAnAlias, std::logic_error,
-    "Valid alias \"" << solverName << "\" has candidate canonical name \""
-    << candidateCanonicalName << "\", which is not a canonical solver name.  "
-    "Please report this bug to the Belos developers.");
-  TEUCHOS_TEST_FOR_EXCEPTION(! validCanonicalName && ! isAnAlias,
-    std::invalid_argument, "Invalid solver name \"" << solverName << "\".");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! validCanonicalName && isAnAlias, std::logic_error,
+     prefix << "Valid alias \"" << solverName << "\" has candidate canonical "
+     "name \"" << candidateCanonicalName << "\", which is not a canonical "
+     "solver name.  Please report this bug to the Belos developers.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (! validCanonicalName && ! isAnAlias, std::invalid_argument,
+     prefix << "Invalid solver name \"" << solverName << "\".");
 
   // If the input list is null, we create a new list and use that.
   // This is OK because the effect of a null parameter list input is
@@ -628,7 +650,7 @@ create (const std::string& solverName,
 
   // Possibly modify the input parameter list as needed.
   if (isAnAlias) {
-    reviseParameterListForAlias (solverName, *pl);
+    reviseParameterListForAlias (solverNameUC, *pl);
   }
 
   return details::makeSolverManagerFromEnum<Scalar, MV, OP> (canonicalIter->second, pl);
