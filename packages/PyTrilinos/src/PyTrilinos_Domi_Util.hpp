@@ -116,7 +116,7 @@ convertToMDMap(const Teuchos::RCP< const Teuchos::Comm< int > > teuchosComm,
 
 ////////////////////////////////////////////////////////////////////////
 
-PyObject * convertToDimData(const Teuchos::RCP< const Domi::MDMap<> > mdMap);
+PyObject * convertToDimData(const Teuchos::RCP< const Domi::MDMap<> > & mdMap);
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -295,6 +295,7 @@ convertToDistArray(Domi::MDVector< Scalar > & mdVector)
 
   fail:
   if (distArrayProtocol) PyDict_Clear(distArrayProtocol);
+  Py_XDECREF(distArrayProtocol);
   Py_XDECREF(buffer);
   Py_XDECREF(dimData);
   return NULL;

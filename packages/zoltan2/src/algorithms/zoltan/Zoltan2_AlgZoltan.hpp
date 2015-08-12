@@ -151,6 +151,7 @@ private:
     // TODO
   }
 
+#ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
   void setCallbacksHypergraph(
     const RCP<const MatrixAdapter<user_t,userCoord_t> > &adp)
   {
@@ -168,25 +169,44 @@ private:
     //                             (void *) &(*adapter));
   }
 
-  void setCallbacksHypergraph(
-    const RCP<const Model<Adapter> > &mdl)
+  void setCallbacksHypergraph(const RCP<const MeshAdapter<user_t> > &adp)
   {
-    // TODO:  If add parameter list to this function, can register 
-    // TODO:  different callbacks depending on the hypergraph model to use
-    zz->Set_Num_Obj_Fn(zoltanHGNumObj<Adapter>, (void *) &(*mdl));
-    zz->Set_Obj_List_Fn(zoltanHGObjList<Adapter>, (void *) &(*mdl));
-
-    zz->Set_HG_Size_CS_Fn(zoltanHGSizeCSForMeshAdapter<Adapter>,
-                          (void *) &(*mdl));
-    zz->Set_HG_CS_Fn(zoltanHGCSForMeshAdapter<Adapter>,
-                     (void *) &(*mdl));
     
-    // zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMeshAdapter<Adapter>,
-    //                             (void *) &(*adapter));
-    // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMeshAdapter<Adapter>,
-    //                             (void *) &(*adapter));
-  }
+    const Teuchos::ParameterList &pl = env->getParameters();
 
+    const Teuchos::ParameterEntry *pe = pl.getEntryPtr("hypergraph_model_type");
+    std::string model_type("traditional");
+    if (pe){
+      model_type = pe->getValue<std::string>(&model_type);
+    }
+
+    if (model_type=="ghosting"||!adp->areEntityIDsUnique(adp->getPrimaryEntityType())) {
+      Zoltan2::modelFlag_t flags;
+      HyperGraphModel<Adapter>* mdl = new HyperGraphModel<Adapter>(adp,env,problemComm,
+                                                                   flags,HYPEREDGE_CENTRIC);
+      model = rcp(static_cast<const Model<Adapter>* >(mdl),true);
+      
+      zz->Set_Num_Obj_Fn(zoltanHGModelNumObj<Adapter>, (void *) &(*mdl));
+      zz->Set_Obj_List_Fn(zoltanHGModelObjList<Adapter>, (void *) &(*mdl));
+      
+      zz->Set_HG_Size_CS_Fn(zoltanHGModelSizeCSForMeshAdapter<Adapter>,
+                            (void *) &(*mdl));
+      zz->Set_HG_CS_Fn(zoltanHGModelCSForMeshAdapter<Adapter>,
+                       (void *) &(*mdl));
+    }
+    else {
+      //If entities are unique we dont need the extra cost of the model
+      zz->Set_HG_Size_CS_Fn(zoltanHGSizeCSForMeshAdapter<Adapter>,
+                            (void *) &(*adp));
+      zz->Set_HG_CS_Fn(zoltanHGCSForMeshAdapter<Adapter>,
+                       (void *) &(*adp));
+    }
+    // zz->Set_HG_Size_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMeshAdapter<Adapter>,
+    //                               (void *) &(*adp));
+    // zz->Set_HG_Edge_Wts_Fn(zoltanHGSizeEdgeWtsForMeshAdapter<Adapter>,
+    //                         (void *) &(*adp));
+  }
+#endif
   
 public:
 
@@ -243,7 +263,9 @@ public:
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
     setCallbacksGraph(adapter);
+#ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
     setCallbacksHypergraph(adapter);
+#endif
     if (adapter->coordinatesAvailable()) {
       setCallbacksGeom(adapter->getCoordinateInput());
     }
@@ -259,7 +281,12 @@ public:
     zz = rcp(new Zoltan(mpicomm)); 
     setCallbacksIDs();
     setCallbacksGraph(adapter);
-    //setCallbacksHypergraph(model);
+#ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
+    //TODO:: check parameter list to see if hypergraph is needed. We dont want to build the model
+    //       if we don't have to and we shouldn't as it can take a decent amount of time if the
+    //       primary entity is copied
+    setCallbacksHypergraph(adapter);
+#endif
     setCallbacksGeom(&(*adapter));
   }
 
@@ -306,15 +333,7 @@ void AlgZoltan<Adapter>::partition(
       const std::string &zname = pl.name(iter);
       // Convert the value to a string to pass to Zoltan
       std::string zval = pl.entry(iter).getValue(&zval);
-      zz->Set_Param(zname.c_str(), zval.c_str());
-      if (zval=="HYPERGRAPH") {
-        Zoltan2::modelFlag_t flags;
-        HyperGraphModel<Adapter>* mdl = new HyperGraphModel<Adapter>(adapter,env,problemComm,
-                                                                     flags,HYPEREDGE_CENTRIC);
-        model = rcp(static_cast<const Model<Adapter>* >(mdl),true);
-        setCallbacksHypergraph(model);
-      }
-      
+      zz->Set_Param(zname.c_str(), zval.c_str());      
     }
   }
   catch (std::exception &e) {
@@ -359,50 +378,51 @@ void AlgZoltan<Adapter>::partition(
     (ierr==ZOLTAN_OK || ierr==ZOLTAN_WARN), BASIC_ASSERTION, problemComm);
 
   int numObjects=nObj;
-  if (model!=RCP<const Model<Adapter> >()) {
+#ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
+  //The number of objects may be larger than zoltan knows due to copies that were removed by the hypergraph model
+  if (model!=RCP<const Model<Adapter> >() &&
+      dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model)) &&
+      !dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique()) {
     numObjects=model->getLocalNumObjects();
   }
+#endif
   // Load answer into the solution.
   ArrayRCP<part_t> partList(new part_t[numObjects], 0, numObjects, true);
   for (int i = 0; i < nObj; i++) partList[oLids[i]] = oParts[i];
-  //
   
-  if (model!=RCP<const Model<Adapter> >()) {
-    //Ghosting cleanup for copies
-    ArrayView<const gno_t> Ids;
-    typedef StridedData<lno_t, scalar_t>  input_t;
-    ArrayView<input_t> xyz;
-    ArrayView<input_t> wgts;
-    ArrayView<bool> isOwner;
+#ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
+  if (model!=RCP<const Model<Adapter> >() &&
+      dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model)) &&
+      !dynamic_cast<const HyperGraphModel<Adapter>* >(&(*model))->areVertexIDsUnique()) {
+    //Setup the part ids for copied entities removed by ownership in hypergraph model.
     const HyperGraphModel<Adapter>* mdl = static_cast<const HyperGraphModel<Adapter>* >(&(*model));
-    nObj = mdl->getLocalNumVertices();        
-    mdl->getVertexList(Ids,xyz,wgts);
-    mdl->getOwnedList(isOwner);
-    int me = problemComm->getRank();
-    int all = problemComm->getSize();
-    //A mapping from gids to lids for efficiency
-    std::map<gno_t,lno_t> lid_mapping;
-    for (size_t i=0;i<mdl->getLocalNumVertices();i++) 
-      lid_mapping[Ids[i]]=i;
-   
-    for (size_t i=0;i<mdl->getGlobalNumVertices();i++) {
-      int amowner = all;
-      if (lid_mapping.find(i)!=lid_mapping.end() && isOwner[lid_mapping[i]])
-        amowner=me;
-      int owner;
-      reduceAll(*problemComm,Teuchos::REDUCE_MIN,1,&amowner,&owner);
-      part_t new_part;
-      if (owner==me)
-        new_part=partList[lid_mapping[i]];
-      broadcast(*problemComm,owner,&new_part);
-      if (new_part>=all) {
-        new_part=me;
-        std::cerr<<"PROBLEMS..."<<std::endl;
-      }
-      if (lid_mapping.find(i)!=lid_mapping.end())
-        partList[lid_mapping[i]] = new_part;
-    }
+    
+    typedef typename HyperGraphModel<Adapter>::map_t map_t;
+    Teuchos::RCP<const map_t> mapWithCopies;
+    Teuchos::RCP<const map_t> oneToOneMap;
+    mdl->getVertexMaps(mapWithCopies,oneToOneMap);
+    
+    typedef Tpetra::Vector<scalar_t, lno_t, gno_t> vector_t;
+    vector_t vecWithCopies(mapWithCopies);
+    vector_t oneToOneVec(oneToOneMap);
+
+    // Set values in oneToOneVec:  each entry == rank
+    assert(nObj == lno_t(oneToOneMap->getNodeNumElements()));
+    for (lno_t i = 0; i < nObj; i++)
+      oneToOneVec.replaceLocalValue(i, oParts[i]);
+    
+    // Now import oneToOneVec's values back to vecWithCopies
+    Teuchos::RCP<const Tpetra::Import<lno_t, gno_t> > importer = 
+      Tpetra::createImport<lno_t, gno_t>(oneToOneMap, mapWithCopies);
+    vecWithCopies.doImport(oneToOneVec, *importer, Tpetra::REPLACE);
+
+    // Should see copied vector values when print VEC WITH COPIES
+    lno_t nlocal = lno_t(mapWithCopies->getNodeNumElements());
+    for (lno_t i = 0; i < nlocal; i++)
+      partList[i] = vecWithCopies.getData()[i];
+
   }
+#endif
   
   solution->setParts(partList);
 

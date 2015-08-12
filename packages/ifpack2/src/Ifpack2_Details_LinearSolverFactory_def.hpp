@@ -13,27 +13,34 @@
 namespace Ifpack2 {
 namespace Details {
 
-template<class MV, class OP>
-Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP> >
-LinearSolverFactory<MV, OP>::getLinearSolver (const std::string& solverName)
+template<class SC, class LO, class GO, class NT>
+Teuchos::RCP<typename LinearSolverFactory<SC, LO, GO, NT>::solver_type>
+LinearSolverFactory<SC, LO, GO, NT>::
+getLinearSolver (const std::string& solverName)
 {
-  typedef typename MV::scalar_type SC;
-  typedef typename MV::local_ordinal_type LO;
-  typedef typename MV::global_ordinal_type GO;
-  typedef typename MV::node_type NT;
-
-  static_assert(std::is_same<MV, Tpetra::MultiVector<SC, LO, GO, NT> >::value,
-                "Ifpack2::Details::LinearSolverFactory::getLinearSolver: "
-                "The MV template parameter must be a Tpetra::MultiVector "
-                "specialization.  The most likely reason for seeing this error "
-                "is that the two template parameters MV and OP got mixed up.");
-  static_assert(std::is_same<OP, Tpetra::Operator<SC, LO, GO, NT> >::value,
-                "Ifpack2::Details::LinearSolverFactory::getLinearSolver: "
-                "The MV template parameter must be a Tpetra::MultiVector "
-                "specialization.  The most likely reason for seeing this error "
-                "is that the two template parameters MV and OP got mixed up.");
-
   return Teuchos::rcp (new Ifpack2::Details::LinearSolver<SC, LO, GO, NT> (solverName));
+}
+
+template<class SC, class LO, class GO, class NT>
+RegisterLinearSolverFactory<SC, LO, GO, NT>::
+RegisterLinearSolverFactory () {
+  typedef Tpetra::MultiVector<SC, LO, GO, NT> MV;
+  typedef Tpetra::Operator<SC, LO, GO, NT> OP;
+  typedef typename MV::mag_type mag_type;
+  typedef Trilinos::Details::LinearSolverFactory<MV, OP, mag_type> factory_base_type;
+  typedef Ifpack2::Details::LinearSolverFactory<SC, LO, GO, NT> factory_impl_type;
+
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  typedef std::shared_ptr<factory_base_type> base_ptr_type;
+  typedef std::shared_ptr<factory_impl_type> impl_ptr_type;
+#else
+  typedef Teuchos::RCP<factory_base_type> base_ptr_type;
+  typedef Teuchos::RCP<factory_impl_type> impl_ptr_type;
+#endif // HAVE_TEUCHOSCORE_CXX11
+
+  impl_ptr_type factory (new factory_impl_type ());
+  base_ptr_type factoryBase = factory; // implicit cast to base class
+  Trilinos::Details::registerLinearSolverFactory<MV, OP, mag_type> ("Ifpack2", factoryBase);
 }
 
 } // namespace Details

@@ -116,7 +116,11 @@ public:
   // This is the interface that would be called by a model or a problem .
   ////////////////////////////////////////////////////////////////
 
-  size_t getGlobalNumOf(MeshEntityType etype) const
+  bool areEntityIDsUnique(MeshEntityType etype) const {
+    return etype==MESH_REGION;
+  }
+
+  /*size_t getGlobalNumOf(MeshEntityType etype) const
   {
 
     if ((MESH_REGION == etype && 3 == dimension_) ||
@@ -125,11 +129,11 @@ public:
     }
 
     if (MESH_VERTEX == etype) {
-      return Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+      return Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()
     }
 
     return 0;
-  }
+    }*/
 
   size_t getLocalNumOf(MeshEntityType etype) const
   {

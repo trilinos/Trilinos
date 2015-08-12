@@ -51,7 +51,7 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
 	  ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/testutil.py.in)
 
-ADD_CUSTOM_TARGET(test_testutil ALL
+ADD_CUSTOM_TARGET(PyTrilinos_Test_testutil ALL
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/testutil.py)
 
 PyTrilinos_MAKE_TEST(testTeuchos              )

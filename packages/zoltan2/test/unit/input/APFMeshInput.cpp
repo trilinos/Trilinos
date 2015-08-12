@@ -120,7 +120,7 @@ int main(int narg, char *arg[]) {
   typedef Adapter::scalar_t scalar_t;
 
   std::string pri = "face";
-  std::string adj = "edge";
+  std::string adj = "vertex";
   if (dim==3) {
     adj=pri;
     pri="region";
@@ -132,11 +132,11 @@ int main(int narg, char *arg[]) {
                                      Zoltan2::MESH_EDGE,
                                      Zoltan2::MESH_FACE,
                                      Zoltan2::MESH_REGION};
-  int* numberGlobal = new int[dim+1];
+
   //Check the local number of each entity
   bool* has = new bool[dim+1];
   for (int i=0;i<=dim;i++) {
-    numberGlobal[i]=0;
+
     has[i]=true;
     if (ia.getLocalNumOf(ents[i])==0) {
       has[i]=false;
@@ -146,21 +146,10 @@ int main(int narg, char *arg[]) {
       std::cerr<<"Local number of entities does not match in dimension "<<i<<"\n";
       return 1;
     }
-    numberGlobal[i] = countOwned(m,i);
+
   }
 
-  //Check the global number of each entity
-  PCU_Add_Ints(numberGlobal,dim+1);
-  for (int i=0;i<=dim;i++) {
-    if (!has[i])
-      continue;
-    if (ia.getGlobalNumOf(ents[i])!=static_cast<unsigned int>(numberGlobal[i])) {
-      std::cerr<<"Global number of entities does not match in dimension "<<i<<"\n";
-      return 1;
-    }
-  }
-  delete [] numberGlobal;
-
+  
   //Check the coordinate dimension
   apf::GlobalNumbering** gnums = new apf::GlobalNumbering*[dim];
   apf::Numbering** lnums = new apf::Numbering*[dim];
@@ -319,8 +308,64 @@ int main(int narg, char *arg[]) {
     
     }
   }
+  bool ifIdontfeellikeit = false;
+  apf::MeshTag* weights = m->createDoubleTag("weights",2);
+  apf::MeshIterator* itr = m->begin(0);
+  apf::MeshEntity* ent;
+  while ((ent=m->iterate(itr))) {
+    if (!ifIdontfeellikeit||PCU_Comm_Self()) {
+      double w[]={1.0,PCU_Comm_Self()+1.0};
+      m->setDoubleTag(ent,weights,w);
+    }
+    ifIdontfeellikeit=!ifIdontfeellikeit;
+  }
+  m->end(itr);
   
-  ia.print(PCU_Comm_Self(),5);
+
+
+  ia.setWeights(Zoltan2::MESH_VERTEX,m,weights);
+  if (ia.getNumWeightsPerOf(Zoltan2::MESH_VERTEX)!=2) {
+    std::cerr<<"Number of weights incorrect\n";
+    return 9;
+    
+  }
+  
+  ia.getWeightsViewOf(Zoltan2::MESH_VERTEX,arr2,stride,0);
+  
+  itr = m->begin(0);
+  
+  int i=0;
+  while ((ent=m->iterate(itr))) {
+    double w=1;
+    if (w!=arr2[i*stride]) {
+      std::cerr<<"Weights do not match the original input\n";
+      return 10;
+    
+    }
+    i++;
+  }
+  m->end(itr);
+
+  ia.getWeightsViewOf(Zoltan2::MESH_VERTEX,arr2,stride,1);
+  
+  itr = m->begin(0);
+  i=0;
+  while ((ent=m->iterate(itr))) {
+    double w[2];
+    if (PCU_Comm_Self())
+      m->getDoubleTag(ent,weights,w);
+    else
+      w[1]=1;
+    if (w[1]!=arr2[i*stride]) {
+      std::cerr<<"Weights do not match the original input\n";
+      return 10;
+    
+    }
+    i++;
+  }
+  m->end(itr);
+  
+  //ia.print(PCU_Comm_Self(),5);
   
   //Delete the MeshAdapter
   ia.destroy();

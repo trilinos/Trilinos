@@ -69,21 +69,21 @@ TEUCHOS_UNIT_TEST( Map, Bug5399 )
   // Teuchos unit test framework only prints on MPI process 0.
   using std::cerr;
   using std::endl;
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_TPETRA_INT_LONG_LONG
   typedef long long GO;
   if (sizeof (long long) <= 4) {
     out << "sizeof (long long) = " << sizeof (long long) << " <= 4.  "
         << "This test only makes sense if sizeof (long long) >= 8." << endl;
     return;
   }
-#else // NOT HAVE_TEUCHOS_LONG_LONG_INT
+#else // NOT HAVE_TPETRA_INT_LONG_LONG
   typedef long GO;
   if (sizeof (long) <= 4) {
     out << "sizeof (long) = " << sizeof (long) << " <= 4.  "
         << "This test only makes sense if sizeof (long) >= 8." << endl;
     return;
   }
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
+#endif // HAVE_TPETRA_INT_LONG_LONG
   typedef Tpetra::Map<int, GO> map_type;
 
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();

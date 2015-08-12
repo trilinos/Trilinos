@@ -71,9 +71,11 @@ namespace Details {
   ///   need.  Also, be consistent: using different classes here
   ///   (e.g., Tpetra::RowMatrix instead of Tpetra::Operator) means
   ///   more expensive explicit template instantiation.
-  template<class MV, class OP>
+  ///
+  /// \tparam NormType Type of the norm of a residual.
+  template<class MV, class OP, class NormType>
   class LinearSolverFactory :
-    public Trilinos::Details::LinearSolverFactory<MV, OP> {
+    public Trilinos::Details::LinearSolverFactory<MV, OP, NormType> {
   public:
     /// \brief Get an instance of a Amesos2 solver.
     ///
@@ -84,7 +86,7 @@ namespace Details {
     ///   sensitive.
     /// \return A pointer to the solver, if the name was valid; else,
     ///   a null pointer (Teuchos::null).
-    virtual Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP> >
+    virtual Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP, NormType> >
     getLinearSolver (const std::string& solverName);
   };
 

@@ -1150,6 +1150,20 @@ Epetra_CrsMatrix::__getitem__;
 %ignore Epetra_CrsMatrix::ExtractMyRowCopy;
 %ignore Epetra_CrsMatrix::ExtractMyRowView;
 %ignore Epetra_CrsMatrix::ExtractCrsDataPointers;
+// Note: the following three methods are ignored because there are
+// equivalent versions with Epetra_MultiVector arguments.  Having both
+// versions messes up my DAP typemaps, which look for a __distarray__
+// attribute and try to force an Epetra_MultiVector peg into an
+// Epetra_Vector hole.
+%ignore Epetra_CrsMatrix::Multiply(bool,
+                                   const Epetra_Vector &,
+                                   Epetra_Vector &) const;
+%ignore Epetra_CrsMatrix::Multiply1(bool,
+                                    const Epetra_Vector &,
+                                    Epetra_Vector &) const;
+%ignore Epetra_CrsMatrix::Solve(bool, bool, bool,
+                                const Epetra_Vector &,
+                                Epetra_Vector &) const;
 %include "Epetra_CrsMatrix.h"
 %clear (const int* NumEntriesPerRow, int NumRows   );
 %clear (double*    Values,           int NumValues );

@@ -66,6 +66,27 @@ IOClosureModelFactory(const Teuchos::RCP<const panzer::ClosureModelFactory<EvalT
 // ********************************************************************
 // ********************************************************************
 template<typename EvalT>
+panzer_stk_classic::IOClosureModelFactory<EvalT>::
+IOClosureModelFactory(const Teuchos::RCP<const panzer::ClosureModelFactory<EvalT> > userCMF,
+                      const Teuchos::RCP<STK_Interface> & mesh,
+                      const std::map<std::string,std::vector<std::string> > & nodalFields,
+                      const std::map<std::string,std::vector<std::string> > & cellFields)
+   : mesh_(mesh), userCMF_(userCMF)
+{
+   blockIdToNodalFields_ = nodalFields;
+   blockIdToCellFields_ = cellFields;
+
+   typedef std::map<std::string,std::vector<std::string> >::const_iterator const_iterator;
+
+   for(const_iterator itr=nodalFields.begin();itr!=nodalFields.end();++itr) 
+      blockIdEvaluated_[itr->first] = false;
+   for(const_iterator itr=cellFields.begin();itr!=cellFields.end();++itr) 
+      blockIdEvaluated_[itr->first] = false;
+}
+
+// ********************************************************************
+// ********************************************************************
+template<typename EvalT>
 void panzer_stk_classic::IOClosureModelFactory<EvalT>::
 parseOutputList(const Teuchos::ParameterList & pl,
                 std::map<std::string,std::vector<std::string> > & blockIdToFields) const

@@ -138,7 +138,7 @@ int main(int narg, char *arg[]) {
   cmdp.setOption("xmlfile", &xmlMeshInFileName,
                  "XML file with PamGen specifications");
   cmdp.setOption("action", &action,
-                 "Method to use:  mj, scotch, zoltan_rcb, zoltan_hg, "
+                 "Method to use:  mj, scotch, zoltan_rcb, zoltan_hg, hg_ghost, "
                  "parma or color");
   cmdp.setOption("nparts", &nParts,
                  "Number of parts to create");
@@ -235,6 +235,20 @@ int main(int narg, char *arg[]) {
     zparams.set("LB_METHOD","phg");
     zparams.set("FINAL_OUTPUT", "1");
   }
+  else if (action=="hg_ghost") {
+    do_partitioning = true;
+    params.set("debug_level", "no_status");
+    params.set("imbalance_tolerance", 1.1);
+    params.set("algorithm", "zoltan");
+    params.set("num_global_parts", nParts);
+    params.set("hypergraph_model_type","ghosting");
+    params.set("ghost_layers",2);
+    Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
+    zparams.set("LB_METHOD","HYPERGRAPH");
+    zparams.set("LB_APPROACH","PARTITION");
+    zparams.set("PHG_EDGE_SIZE_THRESHOLD", "1.0");
+  }
+
   else if (action == "parma") {
     do_partitioning = true;
     params.set("debug_level", "basic_status");

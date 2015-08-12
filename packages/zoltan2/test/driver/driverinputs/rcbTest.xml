@@ -7,8 +7,8 @@
 
     INPUT ADAPTERS: BasicIdentifier,
                     XpetraMultiVector,
-                    XpetraCRSGraph,
-                    XpetraCRSMatrix
+                    XpetraCrsGraph,
+                    XpetraCrsMatrix
 -->
 
 <ParameterList name="rcbTest">

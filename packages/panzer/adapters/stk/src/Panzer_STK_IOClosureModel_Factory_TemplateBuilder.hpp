@@ -59,19 +59,32 @@ namespace panzer_stk_classic {
     IOClosureModelFactory_TemplateBuilder(const panzer::ClosureModelFactory_TemplateManager<TraitsT> & cmf_tm,
                                           const Teuchos::RCP<STK_Interface> & mesh,
                                           const Teuchos::ParameterList & outputList)
-       : cmf_tm_(cmf_tm), mesh_(mesh), outputList_(outputList) {}
+       : cmf_tm_(cmf_tm), mesh_(mesh), outputList_(outputList), plConstr_(true) {}
+
+    IOClosureModelFactory_TemplateBuilder(const panzer::ClosureModelFactory_TemplateManager<TraitsT> & cmf_tm,
+                                          const Teuchos::RCP<STK_Interface> & mesh,
+                                          const std::map<std::string,std::vector<std::string> > & nodalFields,
+                                          const std::map<std::string,std::vector<std::string> > & cellFields)
+
+       : cmf_tm_(cmf_tm), mesh_(mesh), nodalFields_(nodalFields), cellFields_(cellFields), plConstr_(false) {}
     
     template <typename EvalT>
     Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const {
-      return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
-			   (new panzer_stk_classic::IOClosureModelFactory<EvalT>(cmf_tm_.template getAsObject<EvalT>(),mesh_,outputList_)) );
+      if(plConstr_)
+        return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
+                            (new panzer_stk_classic::IOClosureModelFactory<EvalT>(cmf_tm_.template getAsObject<EvalT>(),mesh_,outputList_)) );
+      else
+        return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
+                            (new panzer_stk_classic::IOClosureModelFactory<EvalT>(cmf_tm_.template getAsObject<EvalT>(),mesh_,nodalFields_,cellFields_)) );
     }
     
   private:
      const panzer::ClosureModelFactory_TemplateManager<TraitsT> & cmf_tm_;
      Teuchos::RCP<STK_Interface> mesh_;
      Teuchos::ParameterList outputList_;
-   
+     std::map<std::string,std::vector<std::string> > nodalFields_;
+     std::map<std::string,std::vector<std::string> > cellFields_;
+     bool plConstr_;
   };
   
 }

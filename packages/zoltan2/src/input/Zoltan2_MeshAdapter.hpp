@@ -158,9 +158,18 @@ public:
   ////////////////////////////////////////////////////////////////////////////
   // Methods to be defined in derived classes.
 
+  /*! \brief Provide a pointer to the entity topology types
+      \param Types will on return point to the list of entity topology types
+      for this process.
+  */
+  virtual bool areEntityIDsUnique(MeshEntityType etype) const
+  {
+    return etype==this->getPrimaryEntityType();
+  }
+  
   /*! \brief Returns the global number of mesh entities of MeshEntityType
    */
-  virtual size_t getGlobalNumOf(MeshEntityType etype) const = 0;
+  //virtual size_t getGlobalNumOf(MeshEntityType etype) const = 0;
 
   /*! \brief Returns the number of mesh entities on this process.
    */

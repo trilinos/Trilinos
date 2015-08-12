@@ -69,17 +69,6 @@ void buildPartTree(int level, int leftPart, int splitPart, int rightPart, std::v
 namespace Zoltan2
 {
 
-// /*! \brief The boolean parameters of interest to the Block algorithm.
-//  */
-// enum blockParams{
-//   block_balanceCount,            /*!< objective = balance_object_count */
-//   block_balanceWeight,          /*!< objective = balance_object_weight */
-//   block_minTotalWeight,      /*!< objective = mc_minimize_total_weight */
-//   block_minMaximumWeight,  /*!< objective = mc_minimize_maximum_weight */
-//   block_balanceTotalMaximum, /*!< objective = mc_balance_total_maximum */
-//   NUM_BLOCK_PARAMS
-// };
-
 ////////////////////////////////////////////////////////////////////////////////
 /*! Nested dissection based ordering method.
  *

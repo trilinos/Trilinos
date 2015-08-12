@@ -330,7 +330,7 @@ namespace Xpetra {
 
   };
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_XPETRA_INT_LONG_LONG
   template <>
   class CrsMatrixFactory<double, int, long long> {
     typedef double Scalar;
@@ -479,7 +479,7 @@ namespace Xpetra {
     }
 
   };
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
+#endif // HAVE_XPETRA_INT_LONG_LONG
 
 }
 

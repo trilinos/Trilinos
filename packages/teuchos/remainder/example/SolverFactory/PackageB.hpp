@@ -12,8 +12,8 @@ namespace B {
   //
   // This solver is independent of other solvers.
   //
-  template<class MV, class OP>
-  class Solver3 : public Common::LinearSolverTestBase<MV, OP> {
+  template<class MV, class OP, class NormType>
+  class Solver3 : public Common::LinearSolverTestBase<MV, OP, NormType> {
   protected:
     std::string name () const {
       return "Solver3";
@@ -31,8 +31,8 @@ namespace B {
   //
   // This solver uses Solver1 from package A.
   //
-  template<class MV, class OP>
-  class Solver4 : public Common::LinearSolverTestBase<MV, OP> {
+  template<class MV, class OP, class NormType>
+  class Solver4 : public Common::LinearSolverTestBase<MV, OP, NormType> {
   protected:
     std::string name () const {
       return "Solver3";
@@ -44,8 +44,8 @@ namespace B {
     void solve (MV& X, const MV& B) {
       std::cout << this->name () << "::solve START" << std::endl;
 
-      Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP> > solverA1 =
-        Trilinos::Details::getLinearSolver<MV, OP> ("A", "1");
+      Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP, NormType> > solverA1 =
+        Trilinos::Details::getLinearSolver<MV, OP, NormType> ("A", "1");
       if (solverA1.get () == NULL) {
         std::runtime_error ("Solver1 from package A has not been registered!");
       }
@@ -58,19 +58,19 @@ namespace B {
   //
   // Package B's solver factory.
   //
-  template<class MV, class OP>
-  class FactoryB : public Trilinos::Details::LinearSolverFactory<MV, OP> {
+  template<class MV, class OP, class NormType>
+  class FactoryB : public Trilinos::Details::LinearSolverFactory<MV, OP, NormType> {
   public:
-    Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP> >
+    Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP, NormType> >
     getLinearSolver (const std::string& solverName)
     {
-      typedef Trilinos::Details::LinearSolver<MV, OP> solver_type;
+      typedef Trilinos::Details::LinearSolver<MV, OP, NormType> solver_type;
 
       if (solverName == "3") {
-        return Teuchos::RCP<solver_type> (new Solver3<MV, OP> ());
+        return Teuchos::RCP<solver_type> (new Solver3<MV, OP, NormType> ());
       }
       else if (solverName == "4") {
-        return Teuchos::RCP<solver_type> (new Solver4<MV, OP> ());
+        return Teuchos::RCP<solver_type> (new Solver4<MV, OP, NormType> ());
       }
       else {
         std::ostringstream err;

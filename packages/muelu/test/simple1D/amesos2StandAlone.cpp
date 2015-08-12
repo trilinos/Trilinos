@@ -116,17 +116,17 @@
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
-  typedef double Scalar;
-  typedef int LO;
-  typedef int GO;
-  typedef int Ordinal; //TODO: remove
+  typedef Tpetra::MultiVector<> MV;
+  typedef MV::scalar_type Scalar;
+  typedef MV::local_ordinal_type LO;
+  typedef MV::global_ordinal_type GO;
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Tpetra::CrsMatrix<Scalar,LO,GO> MAT;
-  typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
 
   using Tpetra::global_size_t;
   using Teuchos::tuple;
+  using std::endl;
 
   std::ostream &out = std::cout;
   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(rcpFromRef(out));
@@ -136,14 +136,14 @@ int main(int argc, char *argv[]) {
 
   size_t myRank = comm->getRank();
 
-  out << Amesos::version() << std::endl << std::endl;
+  out << "Amesos2 stand-alone test" << endl << endl;
 
   const size_t numVectors = 1;
 
   int numGlobalElements = 1000;
-  RCP<const Tpetra::Map<Ordinal> > map = Tpetra::createUniformContigMap<Ordinal,Ordinal>(numGlobalElements, comm);
+  RCP<const Tpetra::Map<> > map = Tpetra::createUniformContigMap<LO, GO> (numGlobalElements, comm);
   const size_t numMyElements = map->getNodeNumElements();
-  Teuchos::ArrayView<const Ordinal> myGlobalElements = map->getNodeElementList();
+  Teuchos::ArrayView<const GO> myGlobalElements = map->getNodeElementList();
 
   RCP<MAT> A = Tpetra::createCrsMatrix<Scalar>(map,3);
 
@@ -151,17 +151,17 @@ int main(int argc, char *argv[]) {
   for (size_t i=0; i<numMyElements; i++) {
     if (myGlobalElements[i] == 0) {
       A->insertGlobalValues( myGlobalElements[i],
-          tuple<Ordinal>( myGlobalElements[i], myGlobalElements[i]+1 ),
+          tuple<GO>( myGlobalElements[i], myGlobalElements[i]+1 ),
           tuple<Scalar> ( 2.0, -1.0 ) );
     }
     else if (myGlobalElements[i] == numGlobalElements-1) {
       A->insertGlobalValues( myGlobalElements[i],
-          tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i] ),
+          tuple<GO>( myGlobalElements[i]-1, myGlobalElements[i] ),
           tuple<Scalar> ( -1.0, 2.0 ) );
     }
     else {
       A->insertGlobalValues( myGlobalElements[i],
-          tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
+          tuple<GO>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
           tuple<Scalar> ( -1.0, 2.0, -1.0 ) );
     }
   }
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
     Teuchos::Array<ST::magnitudeType> norms(1);
     X->norm2(norms);
     if (myRank == 0)
-      *fos << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+      *fos << "||X_true|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << endl;
   }
 
   /* Create B  */
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
   X->putScalar( (Scalar) 0.0);
 
   // Create solver interface to Superlu through Amesos::Factory
-  RCP<Amesos::Solver<MAT,MV> > solver = Amesos::create<MAT,MV>("Superlu", A, X, B);
+  RCP<Amesos2::Solver<MAT,MV> > solver = Amesos2::create<MAT,MV>("Superlu", A, X, B);
 
   // Solve
   solver->symbolicFactorization().numericFactorization().solve();
@@ -198,15 +198,15 @@ int main(int argc, char *argv[]) {
     Teuchos::Array<ST::magnitudeType> norms(1);
     X->norm2(norms);
     if (myRank == 0)
-      *fos << "||X_directSolve|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;
+      *fos << "||X_directSolve|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << endl;
   }
 
   //   /* Print the solution */
   //   RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(rcpFromRef(out));
 
-  //   *fos << "Solution :" << std::endl;
+  //   *fos << "Solution :" << endl;
   //   X->describe(*fos,Teuchos::VERB_EXTREME);
-  //   *fos << std::endl;
+  //   *fos << endl;
 
   // We are done.
   return 0;

@@ -70,7 +70,6 @@ if(TPL_ENABLE_MATLAB)
   # Copy these files over from src tree
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_Output_cp
     SOURCE_FILES muelu.m matlab setup.m constructAggregates.m constructGraph.m
-Muemex-DevGuide.txt Muemex-UserGuide.txt
     )
 
   TRIBITS_ADD_TEST_DIRECTORIES(Tests/UnsmoothedP)
@@ -78,6 +77,7 @@ Muemex-DevGuide.txt Muemex-UserGuide.txt
   TRIBITS_ADD_TEST_DIRECTORIES(Tests/Brick)
   TRIBITS_ADD_TEST_DIRECTORIES(Tests/ReentrantDemo)
   TRIBITS_ADD_TEST_DIRECTORIES(Tests/CustomP)
+  TRIBITS_ADD_TEST_DIRECTORIES(Tests/Evolution)
 
 ENDIF()
 

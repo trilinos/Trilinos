@@ -179,6 +179,17 @@ TRIBITS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
+TRIBITS_ADD_TEST(
+  pamgenMeshAdapterTest
+  NAME pamgenMeshAdapterTest_ghosthg
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+    "--action=hg_ghost --nparts=6"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
 IF (${PROJECT_NAME}_ENABLE_SCOREC)
   TRIBITS_ADD_TEST(
     pamgenMeshAdapterTest
@@ -410,27 +421,6 @@ TRIBITS_ADD_TEST(
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
-
-##########################################
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-
-IF (${PACKAGE_NAME}_ENABLE_Experimental_Wolf)
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ND
-  SOURCES nd.cpp
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  ARGS
-   "--inputFile=simple"
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-ENDIF()
-#
-ENDIF()
-##########################################
-
 
 # Command that copies files to the executable directory.
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_partition_tests

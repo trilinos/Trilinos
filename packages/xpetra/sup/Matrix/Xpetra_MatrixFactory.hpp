@@ -208,7 +208,7 @@ namespace Xpetra {
 
 #define XPETRA_MATRIXFACTORY2_SHORT
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_XPETRA_INT_LONG_LONG
   template<>
   class MatrixFactory2<double,int,long long> {
     typedef double                                        Scalar;
@@ -221,7 +221,7 @@ namespace Xpetra {
   public:
     static RCP<Matrix> BuildCopy(const RCP<const Matrix> A);
   };
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
+#endif // HAVE_XPETRA_INT_LONG_LONG
 
 #define XPETRA_MATRIXFACTORY2_SHORT
 
