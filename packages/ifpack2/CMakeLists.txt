@@ -3,6 +3,11 @@
 #
 TRIBITS_PACKAGE( Ifpack2 )
 
+# If deprecated warnings are on, and the compiler supports them, then
+# define IFPACK2_DEPRECATED to emit deprecated warnings.  Otherwise,
+# give it an empty definition.
+TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
 #
 # Set up package-specific options
 #
