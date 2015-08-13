@@ -157,31 +157,38 @@ bool minMaxTest(const metric_t & metric,
 {
   // run a comparison of min and max agains a given metric
   // return an error message on failure
-  bool pass = false;
+  bool pass = true;
   string test_name = metric.getName() + " test";
-  if (metricPlist.isParameter("min") && metricPlist.isParameter("max")) {
-    
-    double min = metricPlist.get<double>("min");
-    double max = metricPlist.get<double>("max");
+  if (metricPlist.isParameter("lower"))
+  {
+    double min = metricPlist.get<double>("lower");
     
     if(metric.getMinImbalance() < min)
     {
       msg << test_name << " FAILED: Minimum imbalance per part, "
       << metric.getMinImbalance() <<
       ", less than specified allowable minimum, " << min;
-      
-    }else if (metric.getMaxImbalance() > max)
+      pass = false;
+    }
+  }
+  
+  if(metricPlist.isParameter("upper" ) && pass != false) {
+    double max = metricPlist.get<double>("upper");
+    if (metric.getMaxImbalance() > max)
     {
       msg << test_name << " FAILED: Maximum imbalance per part, "
       << metric.getMaxImbalance() <<
       ", greater than specified allowable maximum, " << max;
-    }else{
-      msg << test_name << " PASSED.";
-      pass = true;
+      pass = false;
     }
-  }else{
-    msg << "Min and/or max criteria not specified for " << test_name;
+    
   }
+  
+  if(pass){
+    msg << test_name << " PASSED.";
+    pass = true;
+  }
+  
   return pass;
 }
 
@@ -199,6 +206,7 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   typedef AdapterForTests::xpetra_mv_adapter xpetra_mv_t; // xpetra_mv_type
   typedef AdapterForTests::xcrsGraph_adapter xcrsGraph_t;
   typedef AdapterForTests::xcrsMatrix_adapter xcrsMatrix_t;
+  typedef AdapterForTests::basic_vector_adapter basic_vector_t;
   
   typedef Zoltan2::Problem<base_t> problem_t;
   typedef Zoltan2::PartitioningProblem<base_t> partioning_problem_t; // base abstract type
@@ -206,7 +214,8 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mb problem type
   typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_mb problem type
   typedef Zoltan2::PartitioningProblem<xcrsMatrix_t> xcrsMatrix_problem_t; // xpetra_mb problem type
-  
+  typedef Zoltan2::PartitioningProblem<basic_vector_t> basicVector_problem_t; // xpetra_mb problem type
+
   
   int rank = comm->getRank();
   if(rank == 0)
@@ -267,6 +276,11 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
     problem = reinterpret_cast<problem_t * >(new xcrsMatrix_problem_t(reinterpret_cast<xcrsMatrix_t *>(ia),
                                                                       &zoltan2_parameters,
                                                                       MPI_COMM_WORLD));
+  }  else if(adapter_name == "BasicVector")
+  {
+    problem = reinterpret_cast<problem_t * >(new basicVector_problem_t(reinterpret_cast<basic_vector_t *>(ia),
+                                                                      &zoltan2_parameters,
+                                                                      MPI_COMM_WORLD));
   }
   else
     throw std::runtime_error("Input adapter type not avaible, or misspelled.");
@@ -288,6 +302,10 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   {
     problem = reinterpret_cast<problem_t * >(new xcrsMatrix_problem_t(reinterpret_cast<xcrsMatrix_t *>(ia),
                                                                       &zoltan2_parameters));
+  } else if(adapter_name == "BasicVector")
+  {
+    problem = reinterpret_cast<problem_t * >(new basicVector_problem_t(reinterpret_cast<basic_vector_t *>(ia),
+                                                                       &zoltan2_parameters);
   }
   else
     throw std::runtime_error("Input adapter type not avaible, or misspelled.");
@@ -337,8 +355,10 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
       if(all_tests_pass) cout << "All tests PASSED." << endl;
       else cout << "Testing FAILED." << endl;
       
-    }else
+    }else{
       cout << "No test metrics provided." << endl;
+      reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
+    }
   }
   // 4a. timers
   if(zoltan2_parameters.isParameter("timer_output_stream"))
