@@ -120,7 +120,7 @@ APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/elementwise)
 APPEND_SET(HEADERS
   elementwise/ROL_Elementwise_Function.hpp
-  elementwise/ROL_Elementwise_Implementation.hpp
+  elementwise/ROL_Elementwise_Reduce.hpp
   )
 
 #

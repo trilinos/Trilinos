@@ -76,7 +76,7 @@ public:
 template<class Real, class Func>
 class UnaryFunctionWrapper : public UnaryFunction<Real> {
 public:
-  UnaryFunctionWrapper( Func f ) : f_(f) {}
+  UnaryFunctionWrapper( const Func &f ) : f_(f) {}
   
   Real apply( const Real &x ) const {
     return f_(x);
@@ -113,7 +113,7 @@ public:
 template<class Real, class Func>
 class BinaryFunctionWrapper : public BinaryFunction<Real> {
 public:
-  BinaryFunctionWrapper( Func f ) : f_(f) {}
+  BinaryFunctionWrapper( const Func &f ) : f_(f) {}
   
   Real apply( const Real &x, const Real &y ) const {
     return f_(x,y); 
