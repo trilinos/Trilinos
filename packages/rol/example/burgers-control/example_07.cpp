@@ -62,6 +62,12 @@
 #include "example_07.hpp"
 
 typedef double RealT;
+typedef H1VectorPrimal<RealT> PrimalStateVector;
+typedef H1VectorDual<RealT> DualStateVector;
+typedef L2VectorPrimal<RealT> PrimalControlVector;
+typedef L2VectorDual<RealT> DualControlVector;
+typedef H1VectorDual<RealT> PrimalConstraintVector;
+typedef H1VectorPrimal<RealT> DualConstraintVector;
 
 int main(int argc, char *argv[]) {
 
@@ -142,11 +148,11 @@ int main(int argc, char *argv[]) {
       (*yz_rcp)[i] = 10.0*(RealT)rand()/(RealT)RAND_MAX-5.0;
     }
     Teuchos::RCP<ROL::Vector<RealT> > zp
-      = Teuchos::rcp(new L2VectorPrimal<RealT>(z_rcp,fem));
+      = Teuchos::rcp(new PrimalControlVector(z_rcp,fem));
     Teuchos::RCP<ROL::Vector<RealT> > gzp
-      = Teuchos::rcp(new L2VectorDual<RealT>(gz_rcp,fem));
+      = Teuchos::rcp(new DualControlVector(gz_rcp,fem));
     Teuchos::RCP<ROL::Vector<RealT> > yzp
-      = Teuchos::rcp(new L2VectorPrimal<RealT>(yz_rcp,fem));
+      = Teuchos::rcp(new PrimalControlVector(yz_rcp,fem));
     // INITIALIZE STATE VECTORS
     Teuchos::RCP<std::vector<RealT> > u_rcp
       = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
@@ -159,11 +165,11 @@ int main(int argc, char *argv[]) {
       (*yu_rcp)[i] = 10.0*(RealT)rand()/(RealT)RAND_MAX-5.0;
     }
     Teuchos::RCP<ROL::Vector<RealT> > up
-      = Teuchos::rcp(new H1VectorPrimal<RealT>(u_rcp,fem));
+      = Teuchos::rcp(new PrimalStateVector(u_rcp,fem));
     Teuchos::RCP<ROL::Vector<RealT> > gup
-      = Teuchos::rcp(new H1VectorDual<RealT>(gu_rcp,fem));
+      = Teuchos::rcp(new DualStateVector(gu_rcp,fem));
     Teuchos::RCP<ROL::Vector<RealT> > yup
-      = Teuchos::rcp(new H1VectorPrimal<RealT>(yu_rcp,fem));
+      = Teuchos::rcp(new PrimalStateVector(yu_rcp,fem));
     // INITIALIZE CONSTRAINT VECTORS
     Teuchos::RCP<std::vector<RealT> > c_rcp
       = Teuchos::rcp( new std::vector<RealT> (nx, 1.0) );
@@ -172,8 +178,8 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<nx; i++) {
       (*l_rcp)[i] = (RealT)rand()/(RealT)RAND_MAX;
     }
-    H1VectorDual<RealT> c(c_rcp,fem);
-    H1VectorPrimal<RealT> l(l_rcp,fem);
+    PrimalConstraintVector c(c_rcp,fem);
+    DualConstraintVector l(l_rcp,fem);
     // INITIALIZE SIMOPT VECTORS
     ROL::Vector_SimOpt<RealT> x(up,zp);
     ROL::Vector_SimOpt<RealT> g(gup,gzp);
