@@ -233,6 +233,7 @@ int main(int argc, char *argv[]) {
     *outStream << "\n";
     for ( int i = 0; i < nx+2; i++ ) {
       *outStream << std::scientific << std::setprecision(10);
+      *outStream << std::setw(20) << std::left << (RealT)i/((RealT)nx+1.0);
       *outStream << std::setw(20) << std::left << (*z_rcp)[i];
       if ( i == 0 ) {
         *outStream << std::setw(20) << std::left << 1.0;
