@@ -47,6 +47,10 @@ int main (int argc, char *argv[]) {
   clp.setOption("enable-team-interface", "disable-team-interface",
                 &team_interface, "Flag for team interface");
 
+  bool mkl_interface = false;
+  clp.setOption("enable-mkl-interface", "disable-mkl-interface",
+                &mkl_interface, "Flag for MKL interface");
+
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
@@ -89,6 +93,7 @@ int main (int argc, char *argv[]) {
        fill_level, league_size,
        team_interface,
        (nthreads != 1),
+       mkl_interface,
        verbose);
 
     exec_space::finalize();
