@@ -3179,7 +3179,7 @@ void CellTools<Scalar>::printWorksetSubcell(const ArrayCell &             cellWo
                 cell_centroid(idim) += cellCoords(icell,inode,idim)/numVertsPerCell;
             }
         }
-        for (std::size_t idim = 0; idim < spaceDim; idim++){
+        for (int idim = 0; idim < spaceDim; idim++){
              barycenter(icell,idim) = cell_centroid(idim);
         }
      }
