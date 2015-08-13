@@ -36,8 +36,8 @@
     
         <ParameterList name="Metrics">
             <ParameterList name="object count">
-                <Parameter name="min" type="double" value="0.99"/>
-                <Parameter name="max" type="double" value="1.4"/>
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
             </ParameterList>
         </ParameterList>
 
@@ -62,8 +62,8 @@
     
         <ParameterList name="Metrics">
             <ParameterList name="object count">
-                <Parameter name="min" type="double" value="0.99"/>
-                <Parameter name="max" type="double" value="1.4"/>
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
             </ParameterList>
         </ParameterList>
     </ParameterList>
@@ -88,8 +88,8 @@
     
         <ParameterList name="Metrics">
             <ParameterList name="object count">
-                <Parameter name="min" type="double" value="0.99"/>
-                <Parameter name="max" type="double" value="1.4"/>
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
             </ParameterList>
         </ParameterList>
 
@@ -114,11 +114,12 @@
     
         <ParameterList name="Metrics">
             <ParameterList name="object count">
-                <Parameter name="min" type="double" value="0.99"/>
-                <Parameter name="max" type="double" value="1.4"/>
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
             </ParameterList>
         </ParameterList>
 
     </ParameterList>
+    
 
 </ParameterList>

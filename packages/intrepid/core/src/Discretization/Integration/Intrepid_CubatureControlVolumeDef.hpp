@@ -111,7 +111,7 @@ void CubatureControlVolume<Scalar,ArrayPoint,ArrayWeight>::getCubature(ArrayPoin
   subCVCubature -> getCubature(subcvCubPoints, subcvCubWeights);
 
   // Loop over cells
-  for (std::size_t icell = 0; icell < numCells; icell++){
+  for (int icell = 0; icell < numCells; icell++){
 
     // get sub-control volume centers (integration points)
      Intrepid::FieldContainer<Scalar> subCVCenter(numNodesPerCell,1,spaceDim);

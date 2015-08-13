@@ -11,16 +11,16 @@
                     XpetraCrsMatrix
 -->
 
-<ParameterList name="mjTest">
+<ParameterList name="pamgenTest">
     
         <ParameterList name="InputParameters">
-            <Parameter name="inputPath" type="string" value="./driverinputs"/>
-            <Parameter name="inputFile" type="string" value="GeomGenWeight"/>
-            <Parameter name="fileType" type="string" value="Geometric Generator"/>
+            <Parameter name="inputPath" type="string" value="./"/>
+            <Parameter name="inputFile" type="string" value="Rectilinear.pmgen"/>
+            <Parameter name="fileType" type="string" value="Pamgen"/>
         </ParameterList>
     
     <ParameterList name="test1">
-        <Parameter name="Name" type="string" value="mj_testFromDataFile_coordinates"/>
+        <Parameter name="Name" type="string" value="readPamgenMesh"/>
      
         <ParameterList name="InputAdapterParameters">
             <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
@@ -29,22 +29,20 @@
         </ParameterList>
 
         <ParameterList name="Zoltan2Parameters">
-            <Parameter name="timer_output_stream" type="string" value="std::cout"/>
-            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="algorithm" type="string" value="multiJagged"/>
+            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
+            <Parameter name="imbalance_tolerance" type="double" value="1.1"/> 
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
     
-        <ParameterList name="Metrics">
+<!--        <ParameterList name="Metrics">
             <ParameterList name="object count">
                 <Parameter name="lower" type="double" value="0.99"/>
                 <Parameter name="upper" type="double" value="1.4"/>
             </ParameterList>
-
-            <ParameterList name="weight 1">
-                <Parameter name="lower" type="double" value="0.99"/>
-                <Parameter name="upper" type="double" value="1.4"/>
-            </ParameterList>
+-->
         </ParameterList>
 
     </ParameterList>
+
 </ParameterList>
