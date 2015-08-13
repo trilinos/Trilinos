@@ -120,6 +120,12 @@ IF(Kokkos_ENABLE_Pthread)
   )
 
   TRIBITS_ADD_EXECUTABLE(
+    ichol_performance_single_pthread
+    SOURCES example_ichol_performance_single_pthread.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
     tri_solve_performance_pthread
     SOURCES example_tri_solve_performance_pthread.cpp
     COMM serial mpi
