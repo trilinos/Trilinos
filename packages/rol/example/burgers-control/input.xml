@@ -75,7 +75,7 @@
   <Parameter name="Moreau-Yosida Penalty: Feasibility Tolerance"                    type="double" value="1.e-12"                  />
   <Parameter name="Moreau-Yosida Penalty: Minimum Penalty Parameter Reciprocal"     type="double" value="0.1"                     />
   <Parameter name="Moreau-Yosida Penalty: Print Intermediate Optimization History"  type="bool"   value="false"                   />
-  <Parameter name="Moreau-Yosida Penalty: Subproblem Iteration Limit"               type="int"    value="100"                     />
+  <Parameter name="Moreau-Yosida Penalty: Subproblem Iteration Limit"               type="int"    value="200"                     />
   <Parameter name="Gradient Tolerance"                                              type="double" value="1.e-10"                  />
   <Parameter name="Constraint Tolerance"                                            type="double" value="1.e-10"                  />
   <Parameter name="Step Tolerance"                                                  type="double" value="1.e-14"                  />
