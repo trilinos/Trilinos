@@ -51,7 +51,6 @@
 #include "Ifpack2_Relaxation.hpp"
 #include "Ifpack2_RILUK.hpp"
 #include "Ifpack2_Experimental_RBILUK.hpp"
-#include "Ifpack2_Krylov.hpp"
 #include "Ifpack2_BlockRelaxation.hpp"
 #include "Ifpack2_BandedContainer.hpp"
 #include "Ifpack2_DenseContainer.hpp"
@@ -118,7 +117,10 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
     prec = rcp (new Experimental::RBILUK<MatrixType>(matrix));
   }
   else if (precTypeUpper == "KRYLOV") {
-    prec = rcp (new Krylov<MatrixType> (matrix));
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::invalid_argument, "The \"KRYLOV\" preconditioner option has "
+       "been deprecated and removed.  If you want a Krylov solver, use the "
+       "Belos package.");
   }
   else if (precTypeUpper == "BLOCK_RELAXATION" ||
            precTypeUpper == "BLOCK RELAXATION" ||
