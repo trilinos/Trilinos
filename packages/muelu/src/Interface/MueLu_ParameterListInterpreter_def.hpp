@@ -711,6 +711,8 @@ namespace MueLu {
         RCP<FilteredAFactory> filterFactory = rcp(new FilteredAFactory());
         ParameterList fParams;
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, fParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph", bool, fParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
         filterFactory->SetParameterList(fParams);
         filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
         // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above
