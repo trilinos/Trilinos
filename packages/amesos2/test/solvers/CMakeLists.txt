@@ -146,14 +146,17 @@ if (${PACKAGE_NAME}_ENABLE_MUMPS)
    )
 ENDIF()
 
-# SolverFactory test
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  SolverFactory_UnitTests
-  SOURCES
+ASSERT_DEFINED (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
+IF (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
+  # SolverFactory test (doesn't make sense to run unless Trilinos is
+  # doing run-time registration of solver factories).
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SolverFactory_UnitTests
+    SOURCES
     SolverFactory
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
 
