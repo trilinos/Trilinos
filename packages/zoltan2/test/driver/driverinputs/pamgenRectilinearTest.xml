@@ -14,33 +14,31 @@
 <ParameterList name="pamgenTest">
     
         <ParameterList name="InputParameters">
-            <Parameter name="inputPath" type="string" value="./"/>
-            <Parameter name="inputFile" type="string" value="Rectilinear.pmgen"/>
+            <Parameter name="inputPath" type="string" value="./driverinputs"/>
+            <Parameter name="inputFile" type="string" value="Rectilinear2D"/>
             <Parameter name="fileType" type="string" value="Pamgen"/>
+            <Parameter name="dimension" type="int" value="2"/>
         </ParameterList>
     
     <ParameterList name="test1">
         <Parameter name="Name" type="string" value="readPamgenMesh"/>
      
         <ParameterList name="InputAdapterParameters">
-            <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
             <Parameter name="inputType" type="string" value="coordinates"/> 
-            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
+            <Parameter name="inputAdapter" type="string" value="BasicVector"/>
         </ParameterList>
 
         <ParameterList name="Zoltan2Parameters">
-            <Parameter name="algorithm" type="string" value="multiJagged"/>
-            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
-            <Parameter name="imbalance_tolerance" type="double" value="1.1"/> 
-            <Parameter name="compute_metrics" type="string" value="true"/> 
-        </ParameterList>
-    
-<!--        <ParameterList name="Metrics">
+            <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="compute_metrics" type="string" value="true"/>
+        </ParameterList>i
+ 
+       <ParameterList name="Metrics">
             <ParameterList name="object count">
                 <Parameter name="lower" type="double" value="0.99"/>
                 <Parameter name="upper" type="double" value="1.4"/>
             </ParameterList>
--->
         </ParameterList>
 
     </ParameterList>
