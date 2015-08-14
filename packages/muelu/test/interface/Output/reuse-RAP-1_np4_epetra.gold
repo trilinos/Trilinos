@@ -36,6 +36,7 @@ Level 1
       aggregation: preserve Dirichlet points = 0   [default]
       aggregation: allow user-specified singletons = 0   [default]
       OnePt aggregate map name =    [default]
+      OnePt aggregate map factory =    [default]
 
       Nullspace factory (MueLu::NullspaceFactory)
       Fine level nullspace = Nullspace
@@ -126,6 +127,7 @@ Level 2
       aggregation: preserve Dirichlet points = 0   [default]
       aggregation: allow user-specified singletons = 0   [default]
       OnePt aggregate map name =    [default]
+      OnePt aggregate map factory =    [default]
 
       Nullspace factory (MueLu::NullspaceFactory)
       Fine level nullspace = Nullspace
@@ -195,7 +197,7 @@ Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-al
 
 Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
-Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
+Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Klu}
 Smoother (level 2) post : no smoother
 
 Level 0
@@ -222,6 +224,6 @@ Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-al
 
 Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
-Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Superlu}
+Smoother (level 2) pre  : MueLu::AmesosSmoother{type = Klu}
 Smoother (level 2) post : no smoother
 
