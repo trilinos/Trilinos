@@ -552,62 +552,51 @@ RCP<MGraph> loadDataFromMatlab<RCP<MGraph>>(const mxArray* mxa)
   int* boundaryList = (int*) mxGetData(boundaryNodes);
   if(!mxIsSparse(edges) || mxGetClassID(edges) != mxLOGICAL_CLASS)
     throw runtime_error("Graph edges must be stored as a logical sparse matrix.");
-  mwIndex* rowIndices = mxGetIr(edges);
-  mwIndex* colPtrs = mxGetJc(edges);
+  // Note that Matlab stores sparse matrices in column major format.
+  mwIndex* matlabColPtrs = mxGetJc(edges);
+  mwIndex* matlabRowIndices = mxGetIr(edges);
   mm_GlobalOrd nRows = (mm_GlobalOrd) mxGetM(edges);
-  RCP<const Teuchos::Comm<mm_GlobalOrd>> comm = rcp(new Teuchos::SerialComm<mm_GlobalOrd>());
-  typedef Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MMap;
-  RCP<MMap> map = rcp(new MMap(nRows, 0, comm));
-  //Figure out max entries per row (for ideal CrsGraph constructor)
-  int nnz = colPtrs[mxGetN(edges)]; //last entry in colPtrs
-  int* entriesPerRow = new int[nRows];
-  mm_LocalOrd** colIndices = new mm_LocalOrd*[nRows]; //pointer to array of ints, inner array are col indices
-  int* numEnteredPerRow = new int[nRows];
-  int maxNzPerRow = 0;
-  for(int i = 0; i < nRows; i++)
-  {
-    entriesPerRow[i] = 0;
-    numEnteredPerRow[i] = 0;
-  }
+
+  // Create and populate row-major CRS data structures for Xpetra::TpetraCrsGraph.
+
+  // calculate number of nonzeros in each row
+  Teuchos::Array<int> entriesPerRow(nRows);
+  int nnz = matlabColPtrs[mxGetN(edges)]; //last entry in matlabColPtrs
   for(int i = 0; i < nnz; i++)
-  {
-    entriesPerRow[rowIndices[i]]++;
-  }
+    entriesPerRow[matlabRowIndices[i]]++;
+  // Populate usual row index array.  We don't need this for the Xpetra Graph ctor, but
+  // it's convenient for building up the column index array, which the ctor does need.
+  Teuchos::Array<int> rows(nRows+1);
+  rows[0] = 0;
   for(int i = 0; i < nRows; i++)
-  {
-    colIndices[i] = new int[entriesPerRow[i]]; //Allocate space for the column indices for CRS
-  }
-  //Another pass to populate colIndices now that we know # of entries per row
-  int colIter = 0; //keep track of the column that 'i' is in in the following loop
-  for(int i = 0; i < nnz; i++)
-  {
-    while(i > (int) colPtrs[colIter + 1]) //Seek to the column that entry i is in
-      colIter++;
-    mwIndex thisRow = rowIndices[i];
-    colIndices[thisRow][numEnteredPerRow[thisRow]] = (mm_LocalOrd) colIter;
-    numEnteredPerRow[thisRow]++;
+    rows[i+1] = rows[i] + entriesPerRow[i];
+  Teuchos::Array<int> cols(nnz);     //column index array
+  Teuchos::Array<int> insertionsPerRow(nRows,0); //track of #insertions done per row
+  int ncols = mxGetN(edges);
+  for (int colNum=0; colNum<ncols; ++colNum) {
+    int ci = matlabColPtrs[colNum];
+    for (int j=ci; j<Teuchos::as<int>(matlabColPtrs[colNum+1]); ++j) {
+      int rowNum = matlabRowIndices[j];
+      cols[ rows[rowNum] + insertionsPerRow[rowNum] ] = colNum;
+      insertionsPerRow[rowNum]++;
+    }
   }
   //Find maximum
-  for(int i = 0; i < nRows; i++)
-  {
+  int maxNzPerRow = 0;
+  for(int i = 0; i < nRows; i++) {
     if(maxNzPerRow < entriesPerRow[i])
       maxNzPerRow = entriesPerRow[i];
   }
+
+  RCP<const Teuchos::Comm<mm_GlobalOrd>> comm = rcp(new Teuchos::SerialComm<mm_GlobalOrd>());
+  typedef Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MMap;
+  RCP<MMap> map = rcp(new MMap(nRows, 0, comm));
   typedef Xpetra::TpetraCrsGraph<mm_LocalOrd, mm_GlobalOrd, mm_node_t> TpetraGraph;
   RCP<TpetraGraph> tgraph = rcp(new TpetraGraph(map, (size_t) maxNzPerRow));
   //Populate tgraph in compressed-row format. Must get each row individually...
-  for(int i = 0; i < nRows; i++)
-  {
-    ArrayView<mm_LocalOrd> rowData(colIndices[i], entriesPerRow[i]);
-    tgraph->insertGlobalIndices((mm_GlobalOrd) i, rowData);
+  for(int i = 0; i < nRows; ++i) {
+    tgraph->insertGlobalIndices((mm_GlobalOrd) i, cols(rows[i],entriesPerRow[i]));
   }
-  for(int i = 0; i < nRows; i++)
-  {
-    delete[] colIndices[i];
-  }
-  delete[] colIndices;
-  delete[] entriesPerRow;
-  delete[] numEnteredPerRow;
   tgraph->fillComplete(map, map);
   RCP<MGraph> mgraph = rcp(new MueLu::Graph<mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tgraph));
   //Set boundary nodes
