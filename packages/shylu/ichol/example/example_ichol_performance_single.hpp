@@ -45,6 +45,7 @@ namespace Example {
   int exampleICholPerformanceSingle(const string file_input,
                                     const int treecut,
                                     const int minblksize,
+                                    const int prunecut,
                                     const int seed,
                                     const int max_task_dependence,
                                     const int team_size,
@@ -123,6 +124,7 @@ namespace Example {
         timer.reset();
         
         S.computeOrdering(treecut, minblksize);
+        S.pruneTree(prunecut);
         
         PA.copy(S.PermVector(), S.InvPermVector(), AA);
         

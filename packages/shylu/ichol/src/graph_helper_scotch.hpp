@@ -257,6 +257,96 @@ namespace Example {
 
       return 0;
     }
+
+    int pruneTree(const ordinal_type cut) {
+      ordinal_type_array work = ordinal_type_array(_label+"::WorkArray", _cblk+1);
+      for (ordinal_type iter=0;iter<cut && _cblk > 1;++iter) {
+        // horizontal merging 
+        {        
+          ordinal_type cnt = 0;
+          ordinal_type parent = _tree[0];
+          work[0] = cnt;
+          for (ordinal_type i=1;i<_cblk;++i) {
+            const ordinal_type myparent = _tree[i];
+            if (myparent == parent) {
+              work[i] = cnt;
+            } else {
+              parent = _tree[i];
+              work[i] = ++cnt;
+            }
+          }
+          work[_cblk] = ++cnt;
+
+          ordinal_type prev = -2;
+          const ordinal_type root = _cblk - 1;
+          for (ordinal_type i=0;i<root;++i) {
+            const ordinal_type myparent = _tree[i]; 
+            const ordinal_type me = work[i];
+
+            _tree[me] = work[myparent]; 
+            if (prev != me) {
+              _range[me] = _range[i];
+              prev = me;
+            }
+          }
+          {
+            const ordinal_type me = work[root];
+            _tree[me] = -1;
+            _range[me] = _range[root];
+
+            _range[work[root+1]] = _range[root+1];
+            _cblk = cnt;
+          }
+        }
+
+        // vertical merging
+        if (_cblk == 2) {
+          _tree[0] = -1;
+          _range[0] = 0;
+          _range[1] = _range[2];
+          _cblk = 1;
+        } else {
+          ordinal_type cnt = 0;
+          for (ordinal_type i=0;i<_cblk;++i) {
+            const ordinal_type diff = _tree[i+1] - _tree[i];
+            work[i] = (diff == 1 ? cnt : cnt++);
+          }
+          work[_cblk] = cnt;
+
+          ordinal_type prev = -2;
+          const ordinal_type root = _cblk - 1;
+          for (ordinal_type i=0;i<root;++i) {
+            const ordinal_type myparent = _tree[i]; 
+            const ordinal_type me = work[i];
+
+            _tree[me] = work[myparent]; 
+            if (prev != me) {
+              _range[me] = _range[i];
+              prev = me;
+            }
+          }
+          {
+            const ordinal_type me = work[root];
+            _tree[me] = -1;
+            _range[me] = _range[root];
+
+            _range[work[root+1]] = _range[root+1];
+            _cblk = cnt;
+          }
+        }
+      }
+
+      // cleaning
+      {
+        for (ordinal_type i=(_cblk+1);i<_m;++i) {
+          _tree[i] = 0;
+          _range[i] = 0;
+        }
+        _tree[_cblk] = 0;
+      }
+
+      return 0;
+    }
     
     ostream& showMe(ostream &os) const {
       streamsize prec = os.precision();
