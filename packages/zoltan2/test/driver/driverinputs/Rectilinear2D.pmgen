@@ -1,11 +1,10 @@
 mesh
-  rectilinear
-    nx = 2
-    ny = 2
-    bx = 1
-    by = 1
-    gmin = 0.0 0.0
-    gmax = 1.0 1.0
-  end
+    rectilinear
+        nx = 10
+        ny = 5
+        bx = 3
+        by = 3
+        gmin = 0.0 0.0
+        gmax = 3.0 1.0
+    end
 end
-

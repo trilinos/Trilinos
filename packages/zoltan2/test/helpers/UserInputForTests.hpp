@@ -75,6 +75,10 @@
 #include <Epetra_SerialComm.h>
 #endif
 
+// pamgen required includes
+#include <Zoltan2_PamgenMeshStructure.hpp>
+
+
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using Teuchos::ArrayView;
@@ -116,10 +120,17 @@ using namespace std;
  *  \todo Zoltan1 mtx and mtxp files
  */
 
+typedef enum USERINPUT_FILE_FORMATS{CHACO, GEOMGEN, PAMGEN} USERINPUT_FILE_FORMATS;
+
 class UserInputForTests
 {
 public:
   
+  ~UserInputForTests()
+  {
+    if(this->pamgen_mesh)
+      delete this->pamgen_mesh;
+  }
   typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tcrsMatrix_t;
   typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> tcrsGraph_t;
   typedef Tpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t> tVector_t;
@@ -226,6 +237,8 @@ public:
   
   RCP<xMVector_t> getUIXpetraMultiVector(int nvec);
   
+  PamgenMesh * getPamGenMesh(){return this->pamgen_mesh;}
+  
 #ifdef HAVE_EPETRA_DATA_TYPES
   RCP<Epetra_CrsGraph> getUIEpetraCrsGraph();
   
@@ -267,6 +280,7 @@ public:
   bool hasUIEpetraVector();
   
   bool hasUIEpetraMultiVector();
+
 #endif
   
 private:
@@ -274,6 +288,8 @@ private:
   bool verbose_;
   
   const RCP<const Comm<int> > tcomm_;
+  
+  PamgenMesh * pamgen_mesh;
   
   RCP<tcrsMatrix_t> M_;
   RCP<xcrsMatrix_t> xM_;
@@ -342,13 +358,11 @@ private:
   // Read coordinates into xyz_.
   // If iti has weights read those to vtxWeights_
   // and edgeWeights_
-  void readGeometricGenTestData(string path, string testData,
-                                const RCP<const Comm<int> > &comm);
+  void readGeometricGenTestData(string path, string testData);
   
   // Geometry Gnearatory helper function
   void readGeoGenParams(string paramFileName,
-                        ParameterList &geoparams,
-                        const RCP<const Comm<int> > &comm);
+                        ParameterList &geoparams);
   
   // utility methods used when reading geom gen files
   
@@ -360,6 +374,10 @@ private:
   
   static string trim_copy(const string& s,
                           const string& delimiters = " \f\n\r\t\v" );
+  
+  
+  // Read a pamgen mesh
+  void readPamgenMeshFile(string path, string testData, int dimension = 3);
   
 };
 
@@ -445,26 +463,36 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
     string testData = pList.get<string>("inputFile");
     
     // find out if we are working from the zoltan1 test diretory
-    bool zoltan1 = false;
+    USERINPUT_FILE_FORMATS file_format;
     string::size_type loc = path.find("/zoltan/test/");  // Zoltan1 data
     if (loc != string::npos)
-      zoltan1 = true;
+      file_format = CHACO;
     
     // find out if we are using the geometric generator
-    bool geom_gen = false;
     if(pList.isParameter("fileType") && pList.get<string>("fileType") == "Geometric Generator")
-      geom_gen = true;
+      file_format = GEOMGEN;
+    else if(pList.isParameter("fileType") && pList.get<string>("fileType") == "Pamgen")
+    {
+      file_format = PAMGEN;
+    }
     else if(pList.isParameter("fileType") && pList.get<string>("fileType") == "Chaco")
-      zoltan1 = true; // this flag calls read ZoltanTestData, which calls the chaco readers...
+      file_format = CHACO; // this flag calls read ZoltanTestData, which calls the chaco readers...
     
     // read the input file
-    if (zoltan1){
-      readZoltanTestData(path, testData, distributeInput);
-    }else if(geom_gen)
-      readGeometricGenTestData(path,testData, c);
-    else
-      readMatrixMarketFile(path, testData);
-    
+    switch (file_format) {
+      case GEOMGEN: readGeometricGenTestData(path,testData); break;
+        
+      case PAMGEN:
+      {
+        int dimension = 3;
+        if(pList.isParameter("dimension")) dimension = pList.get<int>("dimension");
+        readPamgenMeshFile(path,testData,dimension);
+      } break;
+        
+      case CHACO: readZoltanTestData(path, testData, distributeInput); break;
+      default: readMatrixMarketFile(path, testData); break;
+    }
+
   }else if(pList.isParameter("x") || pList.isParameter("y") || pList.isParameter("z")){
     
     int x,y,z;
@@ -827,8 +855,7 @@ string UserInputForTests::trim_copy(
 }
 
 void UserInputForTests::readGeometricGenTestData(string path,
-                                                 string testData,
-                                                 const RCP<const Comm<int> > &comm)
+                                                 string testData)
 {
 
   std::ostringstream fname;
@@ -839,9 +866,9 @@ void UserInputForTests::readGeometricGenTestData(string path,
     std::cout << "UserInputForTests, Read: " << fname.str() << std::endl;
   
   Teuchos::ParameterList geoparams("geo params");
-  readGeoGenParams(fname.str(),geoparams,comm);
+  readGeoGenParams(fname.str(),geoparams);
   
-  geometricgen_t * gg =new geometricgen_t(geoparams, comm);
+  geometricgen_t * gg = new geometricgen_t(geoparams, this->tcomm_);
   
   // get coordinate and point info
   int coord_dim = gg->getCoordinateDimension();
@@ -876,7 +903,7 @@ void UserInputForTests::readGeometricGenTestData(string path,
   
   // make a Tpetra map
   RCP<Tpetra::Map<zlno_t, zgno_t, znode_t> > mp =
-  rcp(new Tpetra::Map<zlno_t, zgno_t, znode_t>(numGlobalPoints, numLocalPoints, 0, comm));
+  rcp(new Tpetra::Map<zlno_t, zgno_t, znode_t>(numGlobalPoints, numLocalPoints, 0, this->tcomm_));
   
   // make an array of array views containing the coordinate data
   Teuchos::Array<Teuchos::ArrayView<const zscalar_t> > coordView(coord_dim);
@@ -914,24 +941,10 @@ void UserInputForTests::readGeometricGenTestData(string path,
     vtxWeights_ = RCP<tMVector_t>(new tMVector_t(mp, weightView.view(0, numWeightsPerCoord),
                                                  numWeightsPerCoord));
   }
-  
-  // clean up
-//  if(numWeightsPerCoord){
-//    for(int i = 0; i < numWeightsPerCoord; ++i)
-//      delete [] weight[i];
-//    delete [] weight;
-//  }
-//  if(coord_dim){
-//    for(int i = 0; i < coord_dim; ++i)
-//      delete [] coords[i];
-//    delete [] coords;
-//  }
-  
 }
 
 void UserInputForTests::readGeoGenParams(string paramFileName,
-                                         ParameterList &geoparams,
-                                         const RCP<const Comm<int> > &comm){
+                                         ParameterList &geoparams){
   
   const char param_comment = '#';
   
@@ -942,7 +955,7 @@ void UserInputForTests::readGeoGenParams(string paramFileName,
   }
   
   bool fail = false;
-  if(comm->getRank() == 0){
+  if(this->tcomm_->getRank() == 0){
     
     fstream inParam(paramFileName.c_str());
     if (inParam.fail())
@@ -975,11 +988,11 @@ void UserInputForTests::readGeoGenParams(string paramFileName,
   if(fail){
     size = -1;
   }
-  comm->broadcast(0, sizeof(int), (char*) &size);
+  this->tcomm_->broadcast(0, sizeof(int), (char*) &size);
   if(size == -1){
     throw "File " + paramFileName + " cannot be opened.";
   }
-  comm->broadcast(0, size, inp);
+  this->tcomm_->broadcast(0, size, inp);
   istringstream inParam(inp);
   string str;
   getline (inParam,str);
@@ -2277,6 +2290,92 @@ int UserInputForTests::chaco_input_geom(
   return (0);
 }
 
+// Pamgen Reader
+void UserInputForTests::readPamgenMeshFile(string path, string testData, int dimension)
+{
+  int rank = this->tcomm_->getRank();
+  if (verbose_ && tcomm_->getRank() == 0)
+    std::cout << "UserInputForTestsBD::readPamgenFile, Read: " << testData << std::endl;
+  
+  size_t len;
+  std::fstream file;
+  if (rank == 0){
+    // set file name
+    std::ostringstream meshFileName;
+    meshFileName << path << "/" << testData << ".pmgen";
+    // open file
+    
+    file.open(meshFileName.str(), ios::in);
+    
+    if(!file.is_open()) // may be a problem with path or filename
+      throw std::runtime_error("Unable to open pamgen mesh. Please check file path and name");
+    
+    // write to character array
+    // get size of file
+    file.seekg (0,file.end);
+    len = file.tellg();
+    file.seekg (0);
+  }
+  
+  // broadcast the file size
+  this->tcomm_->broadcast(0,sizeof(size_t),(char *)&len);
+  this->tcomm_->barrier();
+  
+  char * file_data = new char[len];
+  file_data[len] = '\0'; // critical to null terminate buffer
+  if(rank == 0){
+    file.read(file_data,len); // if proc 0 then read file
+  }
+  
+  // broadcast the file to the world
+  this->tcomm_->broadcast(0,len,file_data);
+  this->tcomm_->barrier();
 
+  // Create the PamgenMesh
+  int nproc = this->tcomm_->getSize();
+  
+  this->pamgen_mesh = new PamgenMesh;
+  pamgen_mesh->createMesh(file_data,dimension,rank,nproc);
+  pamgen_mesh->storeMesh();
+  this->tcomm_->barrier();
+  
+  // set up coordinate vector
+  // get coordinate and point info;
+  zlno_t numLocalPoints = pamgen_mesh->num_nodes;
+  zgno_t numGlobalPoints = pamgen_mesh->num_nodes_global;
+  
+  // allocate and set an array of coordinate arrays
+  zscalar_t **coords = new zscalar_t * [dimension];
+  for(int i = 0; i < dimension; ++i){
+    coords[i] = new zscalar_t[numLocalPoints];
+    memcpy(coords[i],&pamgen_mesh->coord[i*numLocalPoints],sizeof(double) * numLocalPoints);
+  }
+  
+  // make a Tpetra map
+  RCP<Tpetra::Map<zlno_t, zgno_t, znode_t> > mp =
+  rcp(new Tpetra::Map<zlno_t, zgno_t, znode_t>(numGlobalPoints, numLocalPoints, 0, this->tcomm_));
+  
+  // make an array of array views containing the coordinate data
+  Teuchos::Array<Teuchos::ArrayView<const zscalar_t> > coordView(dimension);
+  for (int i = 0; i < dimension; i++){
+    if(numLocalPoints > 0){
+      Teuchos::ArrayView<const zscalar_t> a(coords[i], numLocalPoints);
+      coordView[i] = a;
+    }
+    else {
+      Teuchos::ArrayView<const zscalar_t> a;
+      coordView[i] = a;
+    }
+  }
+  
+  // set the xyz_ multivector
+  xyz_ = RCP<tMVector_t>(new
+                         tMVector_t(mp, coordView.view(0, dimension),
+                                    dimension));
+
+  
+  if(rank == 0) file.close();
+  delete [] file_data;
+}
 
 #endif

@@ -15,7 +15,7 @@
     
         <ParameterList name="InputParameters">
             <Parameter name="inputPath" type="string" value="./driverinputs"/>
-            <Parameter name="inputFile" type="string" value="Rectilinear"/>
+            <Parameter name="inputFile" type="string" value="Spherical"/>
             <Parameter name="fileType" type="string" value="Pamgen"/>
             <Parameter name="dimension" type="int" value="3"/>
         </ParameterList>
