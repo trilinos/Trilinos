@@ -171,11 +171,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, Test0, Scalar, LocalOrdinal, G
   TEST_EQUALITY(prec_cheby != Teuchos::null, true);
 
   check_precond_basics(prec_cheby, out, success);
-
-  RCP<prec_type> prec_krylov = factory.create<row_matrix_type> ("KRYLOV", crsmatrix);
-  TEST_EQUALITY(prec_krylov != Teuchos::null, true);
-
-  check_precond_basics(prec_krylov, out, success);
 }
 
 

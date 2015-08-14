@@ -28,6 +28,10 @@
 
 #include "ichol.hpp"
 
+#ifdef HAVE_SHYLUICHOL_VTUNE
+#include "ittnotify.h"
+#endif
+
 namespace Example {
 
   using namespace std;
@@ -41,6 +45,7 @@ namespace Example {
   int exampleICholPerformanceSingle(const string file_input,
                                     const int treecut,
                                     const int minblksize,
+                                    const int prunecut,
                                     const int seed,
                                     const int max_task_dependence,
                                     const int team_size,
@@ -48,6 +53,9 @@ namespace Example {
                                     const int league_size,
                                     const bool team_interface,
                                     const bool skip_serial,
+                                    const bool vtune_symbolic,
+                                    const bool vtune_serial,
+                                    const bool vtune_task,
                                     const bool verbose) {
     typedef ValueType   value_type;
     typedef OrdinalType ordinal_type;
@@ -69,6 +77,10 @@ namespace Example {
 
     typedef CrsMatrixView<CrsHierMatrixBaseType> CrsHierMatrixViewType;
     typedef TaskView<CrsHierMatrixViewType,TaskFactoryType> CrsHierTaskViewType;
+
+#ifdef HAVE_SHYLUICHOL_VTUNE
+    __itt_pause();
+#endif
 
     int r_val = 0;
 
@@ -112,6 +124,7 @@ namespace Example {
         timer.reset();
         
         S.computeOrdering(treecut, minblksize);
+        S.pruneTree(prunecut);
         
         PA.copy(S.PermVector(), S.InvPermVector(), AA);
         
@@ -125,11 +138,19 @@ namespace Example {
       cout << "ICholPerformance:: reorder the matrix::time = " << t_reorder << endl;            
       {
         SymbolicFactorHelperType F(PA, league_size);
+        if (vtune_symbolic) {
+#ifdef HAVE_SHYLUICHOL_VTUNE
+          __itt_resume();
+#endif
+        }
         timer.reset();
-        
         F.createNonZeroPattern(fill_level, Uplo::Upper, UU);
-        
         t_symbolic = timer.seconds();
+        if (vtune_symbolic) {
+#ifdef HAVE_SHYLUICHOL_VTUNE
+          __itt_pause();
+#endif
+        }
 
         cout << "ICholPerformance:: AA (nnz) = " << AA.NumNonZeros() << ", UU (nnz) = " << UU.NumNonZeros() << endl;
 
@@ -140,7 +161,6 @@ namespace Example {
       cout << "ICholPerformance:: symbolic factorization::time = " << t_symbolic << endl;            
       {
         timer.reset();
-
         CrsMatrixHelper::flat2hier(Uplo::Upper, UU, HU,
                                    S.NumBlocks(),
                                    S.RangeVector(),
@@ -176,6 +196,11 @@ namespace Example {
       cout << "ICholPerformance:: Serial factorize the matrix" << endl;
       {
         UU.copy(RR);
+        if (vtune_serial) {
+#ifdef HAVE_SHYLUICHOL_VTUNE
+          __itt_resume();
+#endif
+        }
         timer.reset();          
         {
           IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
@@ -184,7 +209,11 @@ namespace Example {
                               U);
         }
         t_factor_seq = timer.seconds();
-
+        if (vtune_serial) {
+#ifdef HAVE_SHYLUICHOL_VTUNE
+          __itt_pause();
+#endif
+        }
         if (verbose)
           cout << UU << endl;
       }
@@ -205,6 +234,11 @@ namespace Example {
       CrsHierTaskViewType H(&HU);
       {
         UU.copy(RR);
+        if (vtune_task) {
+#ifdef HAVE_SHYLUICHOL_VTUNE
+          __itt_resume();
+#endif
+        }
         timer.reset();
         {
           auto future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::ByBlocks>::
@@ -213,7 +247,11 @@ namespace Example {
           Kokkos::Experimental::wait(TaskFactoryType::Policy());
         }
         t_factor_task += timer.seconds();
-
+        if (vtune_task) {        
+#ifdef HAVE_SHYLUICHOL_VTUNE
+        __itt_pause();
+#endif
+        }
         if (verbose)
           cout << UU << endl;
       }  

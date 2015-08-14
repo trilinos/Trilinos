@@ -133,21 +133,21 @@ private:
   void setCallbacksGraph(
     const RCP<const GraphAdapter<user_t,userCoord_t> > &adp)
   {
-    cout << "NotReadyForGraphYet" << endl;
+    std::cout << "NotReadyForGraphYet" << std::endl;
     // TODO
   }
 
   void setCallbacksGraph(
     const RCP<const MatrixAdapter<user_t,userCoord_t> > &adp)
   {
-    cout << "NotReadyForGraphYet" << endl;
+    std::cout << "NotReadyForGraphYet" << std::endl;
     // TODO
   }
 
   void setCallbacksGraph(
     const RCP<const MeshAdapter<user_t> > &adp)
   {
-    cout << "NotReadyForGraphYet" << endl;
+    std::cout << "NotReadyForGraphYet" << std::endl;
     // TODO
   }
 

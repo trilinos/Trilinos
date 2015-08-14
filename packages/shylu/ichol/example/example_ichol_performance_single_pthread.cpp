@@ -47,6 +47,15 @@ int main (int argc, char *argv[]) {
   clp.setOption("enable-team-interface", "disable-team-interface",
                 &team_interface, "Flag for team interface");
 
+  bool vtune_symbolic = false;
+  clp.setOption("enable-vtune-symbolic", "disable-vtune-symbolic", &vtune_symbolic, "Flag for vtune symbolic");
+
+  bool vtune_serial = false;
+  clp.setOption("enable-vtune-serial", "disable-vtune-serial", &vtune_serial, "Flag for vtune serial");
+
+  bool vtune_task = false;
+  clp.setOption("enable-vtune-task", "disable-vtune-task", &vtune_task, "Flag for vtune task");
+
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
@@ -58,6 +67,9 @@ int main (int argc, char *argv[]) {
 
   int minblksize = 0;
   clp.setOption("minblksize", &minblksize, "Minimum block size for internal reordering");
+
+  int prunecut = 0;
+  clp.setOption("prunecut", &minblksize, "Level to prune tree from bottom");
 
   int seed = 0;
   clp.setOption("seed", &seed, "Seed for random number generator in graph partition");
@@ -80,11 +92,15 @@ int main (int argc, char *argv[]) {
       (file_input,
        treecut,
        minblksize,
+       prunecut,
        seed,
        max_task_dependence, team_size,
        fill_level, league_size,
        team_interface,
        (nthreads != 1),
+       vtune_symbolic,
+       vtune_serial,
+       vtune_task,
        verbose);
 
     exec_space::finalize();

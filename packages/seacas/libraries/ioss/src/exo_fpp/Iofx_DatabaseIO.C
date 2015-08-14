@@ -3120,12 +3120,21 @@ namespace Iofx {
               if (ierr < 0)
                 Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
 
-              // Need to convert 'double' to 'int' for Sierra use...
-              int* ids = static_cast<int*>(data);
-              for (ssize_t i = 0; i < num_to_get; i++) {
-                ids[i] = static_cast<int>(real_ids[i]);
-              }
-            }
+	      if (field.get_type() == Ioss::Field::INTEGER) {
+		// Need to convert 'double' to 'int' for Sierra use...
+		int* ids = static_cast<int*>(data);
+		for (ssize_t i = 0; i < num_to_get; i++) {
+		  ids[i] = static_cast<int>(real_ids[i]);
+		}
+	      }
+	      else {
+		// Need to convert 'double' to 'int' for Sierra use...
+		int64_t* ids = static_cast<int64_t*>(data);
+		for (ssize_t i = 0; i < num_to_get; i++) {
+		  ids[i] = static_cast<int64_t>(real_ids[i]);
+		}
+	      }
+	    }
           }
 
           else if (field.get_name() == "side_ids") {
@@ -4915,16 +4924,29 @@ namespace Iofx {
 
             // Need to convert 'ints' to 'double' for storage on mesh...
             // FIX 64
-            int* ids = static_cast<int*>(data);
-            std::vector<double> real_ids(num_to_get);
-            for (size_t i = 0; i < num_to_get; i++) {
-              real_ids[i] = static_cast<double>(ids[i]);
-            }
-            int ierr = ex_put_partial_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id,
+	    if (field.get_type() == Ioss::Field::INTEGER) {
+	      int* ids = static_cast<int*>(data);
+	      std::vector<double> real_ids(num_to_get);
+	      for (size_t i = 0; i < num_to_get; i++) {
+		real_ids[i] = static_cast<double>(ids[i]);
+	      }
+	      int ierr = ex_put_partial_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id,
                                                     offset+1, entity_count, TOPTR(real_ids));
-            if (ierr < 0)
-              Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
-          }
+	      if (ierr < 0)
+		Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	    }
+	    else {
+	      int64_t* ids = static_cast<int64_t*>(data);
+	      std::vector<double> real_ids(num_to_get);
+	      for (size_t i = 0; i < num_to_get; i++) {
+		real_ids[i] = static_cast<double>(ids[i]);
+	      }
+	      int ierr = ex_put_partial_set_dist_fact(get_file_pointer(), EX_SIDE_SET, id,
+                                                    offset+1, entity_count, TOPTR(real_ids));
+	      if (ierr < 0)
+		Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	    }
+	  }
 
           else if (field.get_name() == "side_ids") {
           }

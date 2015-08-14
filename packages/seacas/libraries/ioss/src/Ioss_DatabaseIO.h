@@ -181,6 +181,8 @@ namespace Ioss {
     void set_use_generic_canonical_name(bool yes_no) {useGenericCanonicalName = yes_no;}
 
     virtual int maximum_symbol_length() const {return 0;} // Default is unlimited...
+    virtual void set_maximum_symbol_length(int /* requested_symbol_size */) {}; // Default does nothing...
+
     char get_field_separator() const;
     void set_field_separator(const char separator);
     void set_lower_case_variable_names(bool true_false) const {lowerCaseVariableNames = true_false;}

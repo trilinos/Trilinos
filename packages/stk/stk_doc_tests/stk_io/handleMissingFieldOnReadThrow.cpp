@@ -49,7 +49,7 @@
 #include "stk_util/parallel/Parallel.hpp"
 namespace {
 
-  TEST(StkMeshIoBrokerHowTo, handleMissingFieldOnRead)
+  TEST(StkMeshIoBrokerHowTo, handleMissingFieldOnReadThrow)
   {
     std::string ic_name = "input_field_example.e";
     MPI_Comm communicator = MPI_COMM_WORLD;

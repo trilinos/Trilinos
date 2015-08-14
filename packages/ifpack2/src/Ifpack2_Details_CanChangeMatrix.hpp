@@ -81,8 +81,7 @@ namespace Details {
   /// NestedPreconditioner to give its new inner preconditioner the
   /// "inner matrix."  The inner matrix depends on the particular
   /// nested preconditioner.  For example, with AdditiveSchwarz, it is
-  /// the result of LocalFilter on an overlap matrix, and with Krylov,
-  /// it is the original matrix.
+  /// the result of LocalFilter on an overlap matrix.
   ///
   /// Changing the matrix puts the preconditioner back in an
   /// "pre-initialized" state.  You must first call initialize(), then

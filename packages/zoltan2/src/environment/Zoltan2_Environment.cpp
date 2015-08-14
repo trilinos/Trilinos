@@ -147,7 +147,6 @@ Environment::~Environment()
 
 void Environment::commitParameters()
 {
-  using std::string;
   using Teuchos::Array;
   using Teuchos::ParameterList;
 
@@ -189,7 +188,7 @@ void Environment::commitParameters()
 
 #ifndef Z2_OMIT_ALL_STATUS_MESSAGES
   int &level = params_.get<int>("debug_level", NUM_STATUS_OUTPUT_LEVELS);
-  string &fname = params_.get<string>("debug_output_file", Z2_UNSET_STRING);
+  std::string &fname = params_.get<std::string>("debug_output_file", Z2_UNSET_STRING);
   int &os = params_.get<int>("debug_output_stream", NUM_OUTPUT_STREAMS);
 
   if (fname==Z2_UNSET_STRING && os==NUM_OUTPUT_STREAMS)
@@ -218,8 +217,8 @@ void Environment::commitParameters()
   // Set up for memory usage output. 
   
 #ifndef Z2_OMIT_ALL_PROFILING
-  string &f2 = 
-    params_.get<string>("memory_output_file", Z2_UNSET_STRING);
+  std::string &f2 = 
+    params_.get<std::string>("memory_output_file", Z2_UNSET_STRING);
   int &os2 = 
     params_.get<int>("memory_output_stream", NUM_OUTPUT_STREAMS);
 
@@ -242,7 +241,7 @@ void Environment::commitParameters()
       os2 = NUM_OUTPUT_STREAMS;
       reporters2 = NULL;
       this->debug(BASIC_STATUS, 
-        string("Warning: memory profiling requested but not available."));
+        std::string("Warning: memory profiling requested but not available."));
       doMemory = false;   // can't do it
     }
   }
@@ -257,7 +256,7 @@ void Environment::commitParameters()
 
     try{
       makeMetricOutputManager<long>(myRank_, iPrint, f2, os2, memoryOut_,
-        string("KB"), 10, memoryOutputFile_);
+        std::string("KB"), 10, memoryOutputFile_);
     }
     catch (std::exception &e){
       std::ostringstream oss;
@@ -284,12 +283,11 @@ void Environment::convertStringToInt(Teuchos::ParameterList &params)
   using Teuchos::ParameterEntry;
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
-  using std::string;
   ParameterList::ConstIterator next = params.begin();
 
   // Data type of these parameters will now change from string to int
 
-  string validatorName("StringIntegralValidator(int)");
+  std::string validatorName("StringIntegralValidator(int)");
   typedef Teuchos::StringToIntegralParameterEntryValidator<int> s2i_t;
 
   while (next != params.end()){
@@ -305,8 +303,8 @@ void Environment::convertStringToInt(Teuchos::ParameterList &params)
     else{
       if ((entry.validator()).get()){
         if (entry.validator()->getXMLTypeName() == validatorName){
-          string dummy("");
-          string &entryValue = entry.getValue<string>(&dummy);
+          std::string dummy("");
+          std::string &entryValue = entry.getValue<std::string>(&dummy);
           RCP<const s2i_t> s2i =
             Teuchos::rcp_dynamic_cast<const s2i_t>(entry.validator(), true);
           int val = s2i->getIntegralValue(entryValue);

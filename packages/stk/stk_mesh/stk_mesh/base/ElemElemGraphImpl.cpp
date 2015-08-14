@@ -56,32 +56,6 @@ void fill_local_ids_and_fill_element_entities_and_topologies(stk::mesh::BulkData
     }
 }
 
-ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData)
-{
-    stk::mesh::EntityVector elements_to_communicate;
-    std::set<stk::mesh::Entity> element_set;
-    const stk::mesh::BucketVector& shared_node_buckets = bulkData.get_buckets(stk::topology::NODE_RANK, bulkData.mesh_meta_data().globally_shared_part());
-    for(size_t i=0; i<shared_node_buckets.size(); ++i)
-    {
-        const stk::mesh::Bucket& bucket = *shared_node_buckets[i];
-        for(size_t node_index=0; node_index<bucket.size(); ++node_index)
-        {
-            stk::mesh::Entity node = bucket[node_index];
-            const stk::mesh::Entity* elements = bulkData.begin_elements(node);
-            unsigned num_elements = bulkData.num_elements(node);
-            for(unsigned element_index=0; element_index<num_elements; ++element_index)
-            {
-                if (bulkData.bucket(elements[element_index]).owned())
-                {
-                    element_set.insert(elements[element_index]);
-                }
-            }
-        }
-    }
-    elements_to_communicate.assign(element_set.begin(), element_set.end());
-
-    return build_element_side_ids_to_proc_map(bulkData, elements_to_communicate);
-}
 
 
 ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &element_list)
@@ -383,13 +357,12 @@ bool create_or_delete_shared_side(stk::mesh::BulkData& bulkData, const parallel_
     {
         // determine which element is active
         stk::mesh::Permutation perm = stk::mesh::DEFAULT_PERMUTATION;
-        int owning_proc = bulkData.parallel_rank();
         int other_proc = parallel_edge_info.m_other_proc;
+        int owning_proc = std::min(other_proc, bulkData.parallel_rank());
 
         if(parallel_edge_info.m_in_part)
         {
             perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
-            owning_proc = other_proc;
         }
 
         stk::mesh::PartVector parts = side_parts;

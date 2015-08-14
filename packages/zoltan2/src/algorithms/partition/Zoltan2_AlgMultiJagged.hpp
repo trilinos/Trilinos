@@ -103,7 +103,6 @@
 
 
 
-using std::vector;
 namespace Teuchos{
 
 /*! \brief Zoltan2_BoxBoundaries is a reduction operation
@@ -1024,7 +1023,7 @@ private:
      * \param processor_ranks_for_subcomm is the vector that has the ranks of
      * the processors that will be in the same group.
      */
-    void create_sub_communicator(vector<mj_part_t> &processor_ranks_for_subcomm);
+    void create_sub_communicator(std::vector<mj_part_t> &processor_ranks_for_subcomm);
 
 
     /*! \brief Function writes the new permutation arrays after the migration.
@@ -6306,33 +6305,7 @@ void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
 
                 //multiJagged coordinate values assignment
                 this->mj_coordinates[dim] =  (mj_scalar_t *)ar.getRawPtr();
-#ifdef KDDKDD_DEBUG_BUG_6379
-{
-                int kddme = this->mj_problemComm->getRank();
-                for (int kdd=0; kdd < this->num_local_coords; kdd++)
-                     std::cout << kddme << " KDD BEFORE "
-                          << kdd << " " << this->initial_mj_gnos[kdd]
-                          << " DIM " << dim 
-                          << " COORD " << this->mj_coordinates[dim][kdd] 
-                          << std::endl;
-}
-#endif
         }
-
-#ifdef KDDKDD_DEBUG_BUG_6379
-{
-        int kddme = this->mj_problemComm->getRank();
-        for (int dim = 0; dim < this->coord_dim; dim++) {
-            for (int kdd = 0; kdd < this->num_local_coords; kdd++) {
-                     std::cout << kddme << " KDD AFTER "
-                          << kdd << " " << this->initial_mj_gnos[kdd]
-                          << " DIM " << dim 
-                          << " COORD " << this->mj_coordinates[dim][kdd] 
-                          << std::endl;
-            }
-        }
-}
-#endif
 
         //if no weights are provided set uniform weight.
         if (this->num_weights_per_coord == 0){

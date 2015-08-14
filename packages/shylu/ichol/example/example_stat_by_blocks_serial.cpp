@@ -40,6 +40,9 @@ int main (int argc, char *argv[]) {
   int minblksize = 0;
   clp.setOption("minblksize", &minblksize, "Minimum block size for internal reordering");
 
+  int prunecut = 0;
+  clp.setOption("prunecut", &prunecut, "Level to prune the tree from bottom");
+
   int seed = 0;
   clp.setOption("seed", &seed, "Seed for random number generator in graph partition");
 
@@ -62,7 +65,8 @@ int main (int argc, char *argv[]) {
       <value_type,ordinal_type,size_type,exec_space,void>
       (file_input,                                                                    
        treecut,                                                                          
-       minblksize,                                                                       
+       minblksize,
+       prunecut,
        seed,                                                                             
        fill_level,                                                                       
        league_size,                                                                      

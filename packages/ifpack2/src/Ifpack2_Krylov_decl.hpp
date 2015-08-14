@@ -43,6 +43,9 @@
 /// \file Ifpack2_Krylov_decl.hpp
 /// \brief Declaration of Ifpack2::Krylov class.
 /// \author Paul Tsuji
+///
+/// \warning This file and its contents are DEPRECATED.
+///   DO NOT USE THEM ANY MORE.  THEY MAY DISAPPEAR AT ANY TIME.
 
 #ifndef IFPACK2_KRYLOV_DECL_HPP
 #define IFPACK2_KRYLOV_DECL_HPP
@@ -98,13 +101,16 @@ namespace Ifpack2 {
   /// \class Krylov
   /// \brief Wrapper for iterative linear solvers (e.g., CG or GMRES).
   ///
-  /// Ifpack2::Krylov computes a few iterations of CG/GMRES with zero
+  /// \warning This class has been DEPRECATED.  DO NOT USE THIS CLASS.
+  ///   IT MAY GO AWAY AT ANY TIME.
+  ///
+  /// Krylov computes a few iterations of CG or GMRES with zero
   /// initial guess as a smoother for a given Tpetra::RowMatrix.
   ///
   /// For a list of all run-time parameters that this class accepts,
   /// see the documentation of setParameters().
   template<class MatrixType>
-  class Krylov :
+  class IFPACK2_DEPRECATED Krylov :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
                                            typename MatrixType::local_ordinal_type,
                                            typename MatrixType::global_ordinal_type,
