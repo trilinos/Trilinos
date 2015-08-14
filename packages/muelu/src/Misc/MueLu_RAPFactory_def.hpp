@@ -259,7 +259,8 @@ namespace MueLu {
       //
       // It would be nice to add the entries to the original matrix Ac. But then we would have to use
       // insertLocalValues. However we cannot add new entries for local column indices that do not exist in the column map
-      // of Ac (at least Epetra is not able to do this).
+      // of Ac (at least Epetra is not able to do this). With Tpetra it is also not possible to add new entries after the
+      // FillComplete call with a static map, since the column map already exists and the diagonal entries are completely missing.
       //
       // Here we build a diagonal matrix with zeros on the diagonal and ones on the diagonal for the rows where Ac has empty rows
       // We have to build a new matrix to be able to use insertGlobalValues. Then we add the original matrix Ac to our new block
@@ -267,8 +268,7 @@ namespace MueLu {
       // This is very inefficient.
       //
       // If you know something better, please let me know.
-      RCP<Matrix> fixDiagMatrix = Teuchos::null;
-      fixDiagMatrix = MatrixFactory::Build(rowMap, 1);
+      RCP<Matrix> fixDiagMatrix = MatrixFactory::Build(rowMap, 1);
       for (size_t r = 0; r < rowMap->getNodeNumElements(); r++) {
         if (diagVal[r] == zero) {
           GO grid = rowMap->getGlobalElement(r);
@@ -279,23 +279,26 @@ namespace MueLu {
       }
       {
         Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete1"));
+        if(rowMap->lib() == Xpetra::UseTpetra) Ac->resumeFill(); // TODO needed for refactored Tpetra because of the isFillActive flag???
         Ac->fillComplete(p);
       }
-
       MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node>::TwoMatrixAdd(*Ac, false, 1.0, *fixDiagMatrix, 1.0);
       if (Ac->IsView("stridedMaps"))
         fixDiagMatrix->CreateView("stridedMaps", Ac);
 
       Ac = Teuchos::null;     // free singular coarse level matrix
       Ac = fixDiagMatrix;     // set fixed non-singular coarse level matrix
-    }
 
-    // call fillComplete with optimized storage option set to true
-    // This is necessary for new faster Epetra MM kernels.
-    {
-      Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete2"));
-      Ac->fillComplete(p);
-    }
+      // call fillComplete with optimized storage option set to true
+      // This is necessary for new faster Epetra MM kernels.
+      {
+        Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("CheckRepairMainDiagonal: fillComplete2"));
+        if(rowMap->lib() == Xpetra::UseTpetra) Ac->resumeFill(); // TODO needed for refactored Tpetra because of the isFillActive flag???
+        Ac->fillComplete(p);
+      }
+    } // end repair
+
+
 
     // print some output
     if (IsPrint(Warnings0))
