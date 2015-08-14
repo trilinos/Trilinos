@@ -80,7 +80,6 @@ The first argument can assume the following values:
   - "ILUT": returns an instance of Ifpack2::ILUT.
   - "RILUK": returns an instance of Ifpack2::RILUK.
   - "RBILUK": returns an instance of Ifpack2::Experimental::RBILUK.
-  - "KRYLOV": returns an instance of Ifpack2::Krylov.
 
 The following fragment of code shows the basic usage of this class.
 \code

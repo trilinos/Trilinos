@@ -783,7 +783,6 @@ int testFromDataFile(
     }
     CATCH_EXCEPTIONS_AND_RETURN("solve()")
 
-#ifdef KDDKDD_DEBUG_BUG_6379
     {
     // Run a test with BasicVectorAdapter and xyzxyz format coordinates
     const int bvme = comm->getRank();
@@ -825,7 +824,6 @@ int testFromDataFile(
     bvadapter_t bvia(bvlen, bvgids, bvcoords, bvstrides,
                        bvwgts, bvwgtstrides);
 
-    cout << bvme << " SECOND CALL " << endl;
     Zoltan2::PartitioningProblem<bvadapter_t> *bvproblem;
     try {
       bvproblem = new Zoltan2::PartitioningProblem<bvadapter_t>(&bvia, 
@@ -841,14 +839,13 @@ int testFromDataFile(
 
     // Compare with MultiVectorAdapter result
     for (inputAdapter_t::lno_t i = 0; i < bvlen; i++) {
-      cout << bvme << " " << i << " " 
-           << coords->getMap()->getGlobalElement(i) << " " << bvgids[i] 
-           << ": XMV " << problem->getSolution().getPartListView()[i]
-           << "; BMV " << bvproblem->getSolution().getPartListView()[i];
       if (problem->getSolution().getPartListView()[i] !=
           bvproblem->getSolution().getPartListView()[i])
-        cout << "  BAD";
-      cout << endl;
+        cout << bvme << " " << i << " " 
+             << coords->getMap()->getGlobalElement(i) << " " << bvgids[i] 
+             << ": XMV " << problem->getSolution().getPartListView()[i]
+             << "; BMV " << bvproblem->getSolution().getPartListView()[i]
+             << "  :  FAIL" << endl;
     }
   
     delete [] bvgids;
@@ -856,8 +853,6 @@ int testFromDataFile(
     delete [] bvtpetravectors;
     delete bvproblem;
     }
-#endif  // KDDKDD_DEBUG_BUG_6379
-
 
     if (coordsConst->getGlobalLength() < 40) {
         int len = coordsConst->getLocalLength();

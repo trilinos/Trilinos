@@ -113,7 +113,7 @@ namespace GeometricGen{
 template <typename tMVector_t>
 class DOTS{
 public:
-  vector<vector<float> > weights;
+  std::vector<std::vector<float> > weights;
   tMVector_t *coordinates;
 };
 
@@ -2424,8 +2424,8 @@ public:
 
 
 	  RCP<const tMVector_t> coordsConst = Teuchos::rcp_const_cast<const tMVector_t>(tmVector);
-	  vector<const scalar_t *> weights;
-	  vector <int> stride;
+	  std::vector<const scalar_t *> weights;
+	  std::vector <int> stride;
 
 	  typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> inputAdapter_t;
 	  //inputAdapter_t ia(coordsConst);

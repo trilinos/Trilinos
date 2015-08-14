@@ -114,10 +114,7 @@ public:
   // Partitioning method
   void partition(const RCP<PartitioningSolution<Adapter> > &solution)
   {
-    using std::string;
-    using std::ostringstream;
-
-    env->debug(DETAILED_STATUS, string("Entering AlgBlock"));
+    env->debug(DETAILED_STATUS, std::string("Entering AlgBlock"));
 
     int rank = env->myRank_;
     int nprocs = env->numProcs_;
@@ -149,8 +146,8 @@ public:
 
     pe = pl.getEntryPtr("partitioning_objective");
     if (pe) {
-      string po = pe->getValue<string>(&po);
-      if (po == string("balance_object_count"))
+      std::string po = pe->getValue<std::string>(&po);
+      if (po == std::string("balance_object_count"))
         uniformWeights = true;    // User requests that we ignore weights
     }
 
@@ -209,7 +206,7 @@ public:
     scalar_t globalTotalWeight = scansum[nprocs];
 
     if (env->getDebugLevel() >= VERBOSE_DETAILED_STATUS) {
-      ostringstream oss("Part sizes: ");
+      std::ostringstream oss("Part sizes: ");
       for (unsigned int i=0; i < numGlobalParts; i++)
         oss << part_sizes[i] << " ";
       oss << std::endl << std::endl << "Weights : ";
@@ -245,7 +242,7 @@ public:
 
     solution->setParts(gnoPart);
 
-    env->debug(DETAILED_STATUS, string("Exiting AlgBlock"));
+    env->debug(DETAILED_STATUS, std::string("Exiting AlgBlock"));
   }
 };
 

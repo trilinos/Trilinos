@@ -216,14 +216,23 @@ int ex_copy (int in_exoid, int out_exoid)
     */
    status = nc_inq_dimid(in_exoid, DIM_STR_NAME, &dim_out_id);
    if (status != NC_NOERR) {
-     /* Not found; set to default value of 32+1. */
-     if ((status = nc_def_dim(out_exoid, DIM_STR_NAME, 33, &dim_out_id)) != NC_NOERR) {
-       exerrval = status;
-       sprintf(errmsg,
-	       "Error: failed to define string name dimension in file id %d",
-	       out_exoid);
-       ex_err("ex_copy",errmsg,exerrval);
-       return (EX_FATAL);
+     /*
+      * See if it already exists in the output file
+      * (ex_put_init_ext may have been called on the
+      * output file prior to calling ex_copy)
+      */
+     status = nc_inq_dimid(out_exoid, DIM_STR_NAME, &dim_out_id);
+     if (status != NC_NOERR) {
+       /* Not found; set to default value of 32+1. */
+
+       if ((status = nc_def_dim(out_exoid, DIM_STR_NAME, 33, &dim_out_id)) != NC_NOERR) {
+	 exerrval = status;
+	 sprintf(errmsg,
+		 "Error: failed to define string name dimension in file id %d",
+		 out_exoid);
+	 ex_err("ex_copy",errmsg,exerrval);
+	 return (EX_FATAL);
+       }
      }
    }
 

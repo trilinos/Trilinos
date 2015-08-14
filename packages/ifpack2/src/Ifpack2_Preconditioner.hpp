@@ -54,26 +54,28 @@
 
 namespace Ifpack2 {
 
-/// @class Preconditioner
-/// @brief Interface for all Ifpack2 preconditioners
-/// @tparam Scalar Type of the matrix's entries; same as the first
+/// \class Preconditioner
+/// \brief Interface for all Ifpack2 preconditioners
+/// \tparam Scalar Type of the matrix's entries; same as the first
 ///   template parameter of Tpetra::RowMatrix
-/// @tparam LocalOrdinal Type of the matrix's local indices; same as the
+/// \tparam LocalOrdinal Type of the matrix's local indices; same as the
 ///   second template parameter of Tpetra::RowMatrix
-/// @tparam GlobalOrdinal Type of the matrix's global indices; same as the
+/// \tparam GlobalOrdinal Type of the matrix's global indices; same as the
 ///   third template parameter of Tpetra::RowMatrix
-/// @tparam Node The matrix's Node type; same as the fourth template
+/// \tparam Node The matrix's Node type; same as the fourth template
 ///   parameter of Tpetra::RowMatrix
 ///
 /// The Preconditioner class defines the interface that all Ifpack2
 /// preconditioners must implement.  Preconditioner inherits from
-/// Tpetra::Operator.  Its apply() method applies the preconditioner.  (If
-/// you are familiar with the IFPACK package, please be aware that this is
-/// different from IFPACK.  In IFPACK, the ApplyInverse() method applies
-/// or "solves with" the preconditioner \f$M^{-1}\f$, and the Apply()
-/// method "applies" the preconditioner \f$M\f$.  In Ifpack2, the apply()
-/// method applies or "solves with" the preconditioner \f$M^{-1}\f$, and
-/// there is no method comparable to Apply() in IFPACK.)
+/// Tpetra::Operator.  Its apply() method applies the preconditioner.
+///
+/// If you are familiar with the IFPACK package, please be aware that
+/// this is different from IFPACK.  In IFPACK, the ApplyInverse()
+/// method applies or "solves with" the preconditioner \f$M^{-1}\f$,
+/// and the Apply() method "applies" the preconditioner \f$M\f$.  In
+/// Ifpack2, the apply() method applies or "solves with" the
+/// preconditioner \f$M^{-1}\f$.  Ifpack2 has no method comparable to
+/// IFPACK's Apply().
 ///
 /// Preconditioner provides the following methods
 ///   - initialize() performs all operations based on the graph of the
@@ -94,7 +96,6 @@ namespace Ifpack2 {
 /// allocated information, and reinitializes the preconditioner. Every
 /// time compute() is called, the object recomputes the actual values of
 /// the preconditioner.
-///
 template<class Scalar =
            Tpetra::Operator<>::scalar_type,
          class LocalOrdinal =

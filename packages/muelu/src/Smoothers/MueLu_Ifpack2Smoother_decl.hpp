@@ -130,7 +130,7 @@ namespace MueLu {
       - parameter list options
         - <tt>fact: level-of-fill</tt>
 
-    See also Ifpack2::Relaxation, Ifpack2::Chebyshev, Ifpack2::ILUT, Ifpack2::Krylov.
+    See also Ifpack2::Relaxation, Ifpack2::Chebyshev, or Ifpack2::ILUT.
     */
 
 #ifndef _MSC_VER

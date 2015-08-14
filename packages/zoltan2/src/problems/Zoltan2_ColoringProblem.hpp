@@ -237,9 +237,9 @@ void ColoringProblem<Adapter>::createColoringProblem()
   HELLO;
   using Teuchos::ParameterList;
 
-//  cout << __func__zoltan2__ << " input adapter type " 
+//  std::cout << __func__zoltan2__ << " input adapter type " 
 //       << this->inputAdapter_->inputAdapterType() << " " 
-//       << this->inputAdapter_->inputAdapterName() << endl;
+//       << this->inputAdapter_->inputAdapterName() << std::endl;
 
   // Create a copy of the user's communicator.
 
@@ -290,12 +290,13 @@ void ColoringProblem<Adapter>::createColoringProblem()
   case IdentifierModelType:
   case HypergraphModelType:
   case CoordinateModelType:
-    cout << __func__zoltan2__ << " Model type " << modelType << " not yet supported." 
-         << endl;
+    std::cout << __func__zoltan2__ << " Model type " << modelType 
+              << " not yet supported." << std::endl;
     break;
 
   default:
-    cout << __func__zoltan2__ << " Invalid model" << modelType << endl;
+    std::cout << __func__zoltan2__ << " Invalid model" << modelType 
+              << std::endl;
     break;
   }
 }

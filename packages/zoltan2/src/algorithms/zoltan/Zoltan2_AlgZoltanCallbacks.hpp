@@ -339,7 +339,7 @@ static void zoltanHGSizeCSForMatrixAdapter(
   int *format, int *ierr
 ) 
 {
-  cout << "HELLO FROM HGSizeCS with MATRIX ADAPTER" << endl;
+  std::cout << "HELLO FROM HGSizeCS with MATRIX ADAPTER" << std::endl;
   *ierr = ZOLTAN_FATAL;
 }
 
@@ -351,7 +351,7 @@ static void zoltanHGCSForMatrixAdapter(
   int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr
 )
 {
-  cout << "HELLO FROM HGCS with MATRIX ADAPTER" << endl;
+  std::cout << "HELLO FROM HGCS with MATRIX ADAPTER" << std::endl;
   *ierr = ZOLTAN_FATAL;
 }
 

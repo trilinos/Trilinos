@@ -61,14 +61,14 @@ bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
       }
       else
       {
-          stk::mesh::EntityVector nodes_lhs(num_nodes_lhs);
-          stk::mesh::EntityVector nodes_rhs(num_nodes_rhs);
+          std::vector<stk::mesh::EntityId> nodes_lhs(num_nodes_lhs);
+          std::vector<stk::mesh::EntityId> nodes_rhs(num_nodes_rhs);
           const stk::mesh::Entity* nodes_lhs_ptr = m_mesh->begin_nodes(lhs);
           const stk::mesh::Entity* nodes_rhs_ptr = m_mesh->begin_nodes(rhs);
           for(unsigned i=0;i<num_nodes_lhs;++i)
           {
-              nodes_lhs[i] = nodes_lhs_ptr[i];
-              nodes_rhs[i] = nodes_rhs_ptr[i];
+              nodes_lhs[i] = m_mesh->identifier(nodes_lhs_ptr[i]);
+              nodes_rhs[i] = m_mesh->identifier(nodes_rhs_ptr[i]);
           }
           std::sort(nodes_lhs.begin(), nodes_lhs.end());
           std::sort(nodes_rhs.begin(), nodes_rhs.end());

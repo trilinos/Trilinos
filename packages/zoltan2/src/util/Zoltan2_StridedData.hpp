@@ -77,9 +77,6 @@ class StridedData {
 private:
   ArrayRCP<const scalar_t> vec_;
   int stride_;
-#ifdef KDDKDD_DEBUG_BUG_6379
-  ArrayRCP<const scalar_t> unstridedVec_;
-#endif
 
 public:
 
@@ -91,17 +88,11 @@ public:
    */
   StridedData(ArrayRCP<const scalar_t> x, int stride) :  
     vec_(x), stride_(stride)
-#ifdef KDDKDD_DEBUG_BUG_6379
-    , unstridedVec_() 
-#endif
     { }
 
   /*! \brief Default constructor.  A zero-length strided array.
    */
   StridedData(): vec_(), stride_(0)
-#ifdef KDDKDD_DEBUG_BUG_6379
-    , unstridedVec_() 
-#endif
     { }
 
   /*! \brief Return the length of the strided array.
@@ -128,11 +119,7 @@ public:
    *   an exception is thrown.
    */
 
-  template <typename T> void getInputArray(ArrayRCP<const T> &array)
-#ifndef KDDKDD_DEBUG_BUG_6379
-const
-#endif
-;
+  template <typename T> void getInputArray(ArrayRCP<const T> &array) const;
 
   /*! \brief Get a reference counted pointer to the input.
       \param vec  on return is a reference counted pointer to the input.  
@@ -174,10 +161,7 @@ const
 template<typename lno_t, typename scalar_t>
   template<typename T>
      void StridedData<lno_t, scalar_t>::getInputArray(
-       ArrayRCP<const T> &array)
-#ifndef KDDKDD_DEBUG_BUG_6379
-const
-#endif
+       ArrayRCP<const T> &array) const
 {
   if (vec_.size() < 1){
     array = ArrayRCP<const T>();
@@ -185,11 +169,6 @@ const
   else if (stride_==1 && typeid(T()) == typeid(scalar_t())){
     array = vec_;
   }
-#ifdef KDDKDD_DEBUG_BUG_6379
-  else if (unstridedVec_ != Teuchos::null) {
-    array = unstridedVec_;
-  }
-#endif
   else {
     // Create an unstrided copy
     Environment env;           // a default environment for error reporting
@@ -200,9 +179,6 @@ const
       tmp[i] = static_cast<T>(vec_[j]);
     }
     array = arcp(tmp, 0, n);
-#ifdef KDDKDD_DEBUG_BUG_6379
-    unstridedVec_ = array;
-#endif
   }
   
   return;

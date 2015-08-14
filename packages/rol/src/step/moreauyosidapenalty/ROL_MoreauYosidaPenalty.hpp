@@ -78,6 +78,7 @@ private:
   Teuchos::RCP<Vector<Real> > dv_;
   Teuchos::RCP<Vector<Real> > dv2_;
   Teuchos::RCP<Vector<Real> > lam_;
+  Teuchos::RCP<Vector<Real> > tmp_;
 
   Real mu_;
   Real fval_;
@@ -90,29 +91,45 @@ private:
       xlam_->set(x);
       xlam_->axpy(1.0/mu_,*lam_);
 
-      l1_->set(*l_);
-      l1_->axpy(-1.0,*xlam_);
-      con_->pruneLowerActive(*l1_,*xlam_);
-      l1_->scale(-1.0);
-      l1_->plus(*l_);
-      l1_->axpy(-1.0,*xlam_);
+      if ( con_->isFeasible(*xlam_) ) {
+        l1_->zero(); dl1_->zero();
+        u1_->zero(); du1_->zero();
+      }
+      else {
+        // Compute lower penalty component
+        l1_->set(*l_);
+        con_->pruneLowerActive(*l1_,*xlam_);
+        l1_->scale(-1.0);
+        l1_->plus(*l_);
 
-      u1_->set(*xlam_);
-      u1_->axpy(-1.0,*u_);
-      con_->pruneUpperActive(*u1_,*xlam_);
-      u1_->scale(-1.0);
-      u1_->plus(*xlam_);
-      u1_->axpy(-1.0,*u_);
+        tmp_->set(*xlam_);
+        con_->pruneLowerActive(*tmp_,*xlam_);
+        tmp_->axpy(-1.0,*xlam_);
+        l1_->plus(*tmp_);
 
-      dl1_->set(l1_->dual());
-      con_->pruneLowerActive(*dl1_,*xlam_);
-      dl1_->scale(-1.0);
-      dl1_->plus(l1_->dual());
+        // Compute upper penalty component
+        u1_->set(*xlam_);
+        con_->pruneUpperActive(*u1_,*xlam_);
+        u1_->scale(-1.0);
+        u1_->plus(*xlam_);
 
-      du1_->set(u1_->dual());
-      con_->pruneUpperActive(*du1_,*xlam_);
-      du1_->scale(-1.0);
-      du1_->plus(u1_->dual());
+        tmp_->set(*u_);
+        con_->pruneUpperActive(*tmp_,*xlam_);
+        tmp_->axpy(-1.0,*u_);
+        u1_->plus(*tmp_);
+
+        // Compute derivative of lower penalty component
+        dl1_->set(l1_->dual());
+        con_->pruneLowerActive(*dl1_,*xlam_);
+        dl1_->scale(-1.0);
+        dl1_->plus(l1_->dual());
+
+        // Compute derivative of upper penalty component
+        du1_->set(u1_->dual());
+        con_->pruneUpperActive(*du1_,*xlam_);
+        du1_->scale(-1.0);
+        du1_->plus(u1_->dual());
+      }
 
       isConEvaluated_ = true;
     }
@@ -138,14 +155,15 @@ public:
     dv_   = x.dual().clone();
     dv2_  = x.dual().clone();
     lam_  = x.clone();
+    tmp_  = x.clone();
 
     con_->setVectorToLowerBound(*l_);
     con_->setVectorToUpperBound(*u_);
 
-    //lam_->zero();
-    lam_->set(*u_);
-    lam_->plus(*l_);
-    lam_->scale(0.5);
+    lam_->zero();
+    //lam_->set(*u_);
+    //lam_->plus(*l_);
+    //lam_->scale(0.5);
   }
 
   void updateMultipliers(Real mu, const ROL::Vector<Real> &x) {
