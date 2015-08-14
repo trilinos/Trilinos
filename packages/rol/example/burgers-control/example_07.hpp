@@ -240,7 +240,7 @@ public:
   // Compute H1 inner product
   Real compute_H1_dot(const std::vector<Real> &x, const std::vector<Real> &y) const {
     Real ip = 0.0;
-    for (unsigned i=0; i<nx_; i++) {
+    for (int i=0; i<nx_; i++) {
       if ( i == 0 ) {
         ip += cL2_*dx_/6.0*(4.0*x[i] + x[i+1])*y[i]; // Mass term
         ip += cH1_*(2.0*x[i] - x[i+1])/dx_*y[i];     // Stiffness term
@@ -265,7 +265,7 @@ public:
   // Apply H2 Reisz operator
   void apply_H1(std::vector<Real> &Mu, const std::vector<Real> &u ) const {
     Mu.resize(nx_,0.0);
-    for (unsigned i=0; i<nx_; i++) {
+    for (int i=0; i<nx_; i++) {
       if ( i == 0 ) {
         Mu[i] = cL2_*dx_/6.0*(4.0*u[i] + u[i+1])
               + cH1_*(2.0*u[i] - u[i+1])/dx_;
