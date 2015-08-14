@@ -226,7 +226,7 @@ public:
    */
   void printMetrics(std::ostream &os) const {
     if (metrics_.is_null())
-      os << "No metrics available." << endl;
+      os << "No metrics available." << std::endl;
     else
       metrics_->printMetrics(os);
   };
@@ -633,7 +633,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   this->env_->debug(DETAILED_STATUS, 
     "PartitioningProblem::createPartitioningProblem");
 
-  using std::string;
   using Teuchos::ParameterList;
 
   // A Problem object may be reused.  The input data may have changed and

@@ -168,8 +168,8 @@ public:
                 Objective<Real> &obj, EqualityConstraint<Real> &con, 
                 BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
-    Real ftol = 1.e-8; //std::max(omega_,omega1_);
-    Real ctol = 1.e-8; //std::max(eta_,eta1_);
+    Real ftol = omega1_; //std::max(omega_,omega1_);
+    Real ctol = eta1_; //std::max(eta_,eta1_);
     step_   = Teuchos::rcp(new CompositeStepSQP<Real>(*parlist_));
     status_ = Teuchos::rcp(new StatusTestSQP<Real>(ftol,ctol,1.e-6*ftol,maxit_));
     algo_   = Teuchos::rcp(new DefaultAlgorithm<Real>(*step_,*status_,false));

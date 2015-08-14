@@ -28,6 +28,7 @@ namespace Example {
   int exampleStatByBlocks(const string file_input,
                           const int treecut,
                           const int minblksize,
+                          const int prunecut,
                           const int seed,
                           const int fill_level,
                           const int league_size,
@@ -79,10 +80,14 @@ namespace Example {
         timer.reset();
         
         S.computeOrdering(treecut, minblksize);
+        S.pruneTree(prunecut);
 
         PA.copy(S.PermVector(), S.InvPermVector(), AA);
         
         t = timer.seconds();
+
+        if (verbose)
+          cout << S << endl;
       }
       cout << "StatByBlocks:: reorder the matrix::time = " << t << endl;            
 

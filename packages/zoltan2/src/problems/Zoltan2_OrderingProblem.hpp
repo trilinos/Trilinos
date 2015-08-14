@@ -149,7 +149,7 @@ public:
   //   \return  a reference to the solution to the most recent solve().
 
   OrderingSolution<zgid_t, lno_t> *getSolution() {
-    // cout << "havePerm= " << solution_->havePerm() <<  " haveInverse= " << solution_->haveInverse() << endl;
+    // std::cout << "havePerm= " << solution_->havePerm() <<  " haveInverse= " << solution_->haveInverse() << std::endl;
     // Compute Perm or InvPerm, if one is missing.
     if (!(solution_->havePerm()))
       solution_->computePerm();
@@ -279,9 +279,9 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   HELLO;
   using Teuchos::ParameterList;
 
-//  cout << __func__zoltan2__ << " input adapter type " 
+//  std::cout << __func__zoltan2__ << " input adapter type " 
 //       << this->inputAdapter_->inputAdapterType() << " " 
-//       << this->inputAdapter_->inputAdapterName() << endl;
+//       << this->inputAdapter_->inputAdapterName() << std::endl;
 
 #ifdef HAVE_ZOLTAN2_OVIS
   ovis_enabled(this->comm_->getRank());
@@ -357,12 +357,14 @@ void OrderingProblem<Adapter>::createOrderingProblem()
 
   case HypergraphModelType:
   case CoordinateModelType:
-    cout << __func__zoltan2__ << " Model type " << modelType << " not yet supported." 
-         << endl;
+    std::cout << __func__zoltan2__ 
+              << " Model type " << modelType << " not yet supported." 
+              << std::endl;
     break;
 
   default:
-    cout << __func__zoltan2__ << " Invalid model" << modelType << endl;
+    std::cout << __func__zoltan2__ << " Invalid model" << modelType 
+              << std::endl;
     break;
   }
 }

@@ -65,9 +65,18 @@ inline MPI_Comm splitComm(int color, MPI_Comm globalComm)
 inline int getDestinationProc(MPI_Comm globalComm)
 {
     int numLocalProcs = getProcSize(globalComm) / 3;
-    int myProc = getProcId(globalComm) % numLocalProcs;
-    int destinationProc = myProc + 2*numLocalProcs;
-    return destinationProc;
+    int myLocalProcId = getProcId(globalComm) % numLocalProcs;
+    int destinationGlobalProcId = myLocalProcId + 2*numLocalProcs;
+    return destinationGlobalProcId;
+}
+
+inline std::pair<int,int> getSourceProcs(MPI_Comm globalComm)
+{
+    int numLocalProcs = getProcSize(globalComm) / 3;
+    int myLocalProcId = getProcId(globalComm) % numLocalProcs;
+    int sourceGlobalIdProc1 = myLocalProcId;
+    int sourceGlobalIdProc2 = myLocalProcId+numLocalProcs;
+    return std::make_pair(sourceGlobalIdProc1, sourceGlobalIdProc2);
 }
 
 const int STRING_SIZE_TAG = 111;

@@ -712,11 +712,13 @@ public:
 protected: //functions
 
   bool modification_end_for_face_creation_and_deletion(const std::vector<sharing_info>& shared_modified,
-                                                         const stk::mesh::EntityVector& deletedEntities,
+                                                         const stk::mesh::EntityVector& deletedSides,
                                                          stk::mesh::ElemElemGraph &elementGraph,
                                                          const stk::mesh::EntityVector &killedElements,
-                                                         const stk::mesh::EntityVector &locally_created_faces,
-                                                         stk::mesh::Part & activePart);
+                                                         const stk::mesh::EntityVector &locally_created_sides,
+                                                         const stk::mesh::Part & activePart,
+                                                         const stk::mesh::PartVector& parts_to_de_induce = stk::mesh::PartVector());
+
 
   bool modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector,
                                              stk::mesh::impl::MeshModification::modification_optimization opt = stk::mesh::impl::MeshModification::MOD_END_SORT); // Mod Mark
@@ -974,11 +976,12 @@ protected: //functions
 
   std::vector<uint64_t> internal_get_ids_in_use(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId>& reserved_ids = std::vector<stk::mesh::EntityId>()) const;
 
-  virtual void de_induce_unranked_part_from_nodes(const stk::mesh::EntityVector & deactivatedElements,
-                                            stk::mesh::Part & activePart);
-  virtual void remove_boundary_faces_from_part(  stk::mesh::ElemElemGraph &graph,
+  virtual void de_induce_parts_from_nodes(const stk::mesh::EntityVector & deactivatedElements, const stk::mesh::Part & activePart,
+          const stk::mesh::PartVector& partsToDeInduce = stk::mesh::PartVector());
+
+  virtual void remove_boundary_faces_from_part(stk::mesh::ElemElemGraph &graph,
                                          const stk::mesh::EntityVector & deactivatedElements,
-                                         stk::mesh::Part & activePart);
+                                         const stk::mesh::Part & activePart);
 
   virtual void internal_adjust_entity_and_downward_connectivity_closure_count(stk::mesh::Entity entity,
                                                                       stk::mesh::Bucket *bucket_old,
@@ -1024,30 +1027,51 @@ private:
                                  const bool packShared ,
                                  stk::CommSparse & comm );
 
+  virtual bool does_entity_need_orphan_protection(stk::mesh::Entity entity) const
+  {
+      const bool isNode = (stk::topology::NODE_RANK == entity_rank(entity));
+      const bool isNotConnected = (1u == m_closure_count[entity.local_offset()]);
+      const bool isOwned = bucket(entity).owned();
+      const bool isCreatedState = (stk::mesh::Created == state(entity));
+      return isNode && isNotConnected && isCreatedState && isOwned;
+  }
+
+  virtual bool does_entity_have_orphan_protection(stk::mesh::Entity entity) const
+  {
+      bool hasOrphanProtection = false;
+      if (entity_rank(entity) == stk::topology::NODE_RANK && m_closure_count[entity.local_offset()] >= BulkData::orphaned_node_marking)
+      {
+          hasOrphanProtection = true;
+      }
+      return hasOrphanProtection;
+  }
+
   // Only to be called from add_node_sharing
   void protect_orphaned_node(Entity entity)
   {
-      if ( entity_rank(entity) == stk::topology::NODE_RANK
-              && state(entity) == Created
-              && m_closure_count[entity.local_offset()] == 1
-              && bucket(entity).owned()
-         )
+      if (does_entity_need_orphan_protection(entity))
       {
-          m_closure_count[entity.local_offset()] += BulkData::orphaned_node_marking;
+          internal_force_protect_orphaned_node(entity);
       }
   }
 
   void unprotect_orphaned_node(Entity entity)
   {
-      if (entity_rank(entity) == stk::topology::NODE_RANK && m_closure_count[entity.local_offset()] >= BulkData::orphaned_node_marking)
+      if (does_entity_have_orphan_protection(entity))
       {
-          m_closure_count[entity.local_offset()] -= BulkData::orphaned_node_marking;
+          internal_force_unprotect_orphaned_node(entity);
       }
   }
 
   inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
   inline void set_entity_key(Entity entity, EntityKey key);
-  void generate_send_list(const int p_rank, std::vector<EntityProc> & send_list);
+  void delete_sides_on_all_procs(const stk::mesh::EntityVector & deletedSides);
+  void set_shared_owned_parts_and_ownership_on_comm_data(const std::vector<sharing_info>& shared_modified);
+  bool is_entity_modified_or_created(const size_t entity_offset) const;
+  void sync_parts_on_downward_related_entities_for_created_sides(const stk::mesh::EntityVector& locally_created_sides);
+  void fill_entity_procs_for_owned_modified_or_created(std::vector<EntityProc> & send_list) const;
+  stk::mesh::EntityVector get_nodes_to_deactivate(const stk::mesh::EntityVector & deactivatedElements, const stk::mesh::Part & activePart) const;
+
 
   inline bool internal_add_node_sharing_called() const;
 
@@ -1262,6 +1286,16 @@ protected: //data
   bool m_do_create_aura;
   enum AutomaticAuraOption m_autoAuraOption;
   stk::mesh::impl::MeshModification m_meshModification;
+
+  void internal_force_protect_orphaned_node(stk::mesh::Entity entity)
+  {
+      m_closure_count[entity.local_offset()] += BulkData::orphaned_node_marking;
+  }
+
+  void internal_force_unprotect_orphaned_node(stk::mesh::Entity entity)
+  {
+      m_closure_count[entity.local_offset()] -= BulkData::orphaned_node_marking;
+  }
 
 private: // data
   Parallel m_parallel;

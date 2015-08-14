@@ -2,8 +2,16 @@
 Release Notes for Trilinos Package Ifpack2
 ------------------------------------------
 
-Dev version (11.9):
--------------------
+Develement version (12.3):
+--------------------------
+
+* Deprecated Ifpack2::Krylov
+
+If you want a Krylov solver, just use Belos.  Ifpack2::Factory now
+throws with an informative exception message if you ask for "KRYLOV".
+
+Trilinos 11.10:
+---------------
 
 * Fixed bug in ReorderFilter (related to Bug 6117)
 

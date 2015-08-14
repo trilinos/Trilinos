@@ -283,6 +283,8 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
   if (nIter == accelerationStartIteration) {
     // Initialize
     nStore = 1;
+    xMat.resize(0);
+    qMat.resize(0);
     xMat.push_back(solnPtr->getX().clone(NOX::DeepCopy));
     (xMat[0])->update(-1.0, oldSolnPtr->getX(), 1.0);
     oldPrecF->update(1.0, *precF, -1.0);

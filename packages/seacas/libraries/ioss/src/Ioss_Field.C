@@ -171,7 +171,8 @@ size_t Ioss::Field::verify(size_t data_size) const
 void Ioss::Field::check_type(BasicType the_type) const
 {
   if (type_ != the_type) {
-    if (the_type == Ioss::Field::INTEGER && type_ == Ioss::Field::REAL) {
+    if ((the_type == Ioss::Field::INTEGER && type_ == Ioss::Field::REAL) ||
+        (the_type == Ioss::Field::INT64   && type_ == Ioss::Field::REAL)) {
       // If Ioss created the field by reading the database, it may
       // think the field is a real but it is really an integer.  Make
       // sure that the field type is correct here...

@@ -1,0 +1,48 @@
+<!-- 
+    INPUT TYPES: coordinates,
+                 (x,t,e)petra_crs_matrix,
+                 (x,t,e)petra_crs_graph,
+                 (x,t,e)petra_vector,
+                 (x,t,e)petra_multivector
+
+    INPUT ADAPTERS: BasicIdentifier,
+                    XpetraMultiVector,
+                    XpetraCrsGraph,
+                    XpetraCrsMatrix
+-->
+
+<ParameterList name="pamgenTest">
+    
+        <ParameterList name="InputParameters">
+            <Parameter name="inputPath" type="string" value="./"/>
+            <Parameter name="inputFile" type="string" value="Rectilinear.pmgen"/>
+            <Parameter name="fileType" type="string" value="Pamgen"/>
+        </ParameterList>
+    
+    <ParameterList name="test1">
+        <Parameter name="Name" type="string" value="readPamgenMesh"/>
+     
+        <ParameterList name="InputAdapterParameters">
+            <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
+            <Parameter name="inputType" type="string" value="coordinates"/> 
+            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="algorithm" type="string" value="multiJagged"/>
+            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
+            <Parameter name="imbalance_tolerance" type="double" value="1.1"/> 
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+    
+<!--        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
+            </ParameterList>
+-->
+        </ParameterList>
+
+    </ParameterList>
+
+</ParameterList>

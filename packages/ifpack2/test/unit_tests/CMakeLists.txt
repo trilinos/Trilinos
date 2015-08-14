@@ -94,14 +94,19 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  SolverFactory
-  SOURCES 
+ASSERT_DEFINED (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
+IF (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
+  # SolverFactory test (doesn't make sense to run unless Trilinos is
+  # doing run-time registration of solver factories).
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SolverFactory
+    SOURCES 
     Ifpack2_SolverFactory.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS ""
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  TESTONLYLIBS ifpack2_tpetra_testinst
-  STANDARD_PASS_OUTPUT
-  )
+    ARGS ""
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    TESTONLYLIBS ifpack2_tpetra_testinst
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()

@@ -119,6 +119,45 @@ std::ostream & operator<<(std::ostream &out, topology t)
   return out << t.name();
 }
 
+bool isTriangle (topology topo)
+{
+    bool isTri  = ((topo.name() == "TRI_3")      || (topo.name() == "TRI_4")           || (topo.name() == "TRI_6")
+            ||(topo.name() == "TRIANGLE_3")      || (topo.name() == "TRIANGLE_4")      || (topo.name() == "TRIANGLE_6"));
+
+    isTri = isTri && (topo.rank() == topology::ELEMENT_RANK);
+
+    return isTri;
+}
+
+bool isQuadrilateral (topology topo)
+{
+    bool isQuad = ((topo.name() == "QUAD_4")     || (topo.name() == "QUAD_8")          || (topo.name() == "QUAD_9")
+            ||(topo.name() == "QUADRILATERAL_4") || (topo.name() == "QUADRILATERAL_8") || (topo.name() == "QUADRILATERAL_9"));
+
+    isQuad = isQuad && (topo.rank() == topology::ELEMENT_RANK);
+
+    return isQuad;
+}
+
+bool isTetrahedron (topology topo)
+{
+    bool isTet =  ((topo.name() == "TET_4")      || (topo.name() == "TET_8")           || (topo.name() == "TET_10")          || (topo.name() == "TET_11")
+            ||(topo.name() == "TETRAHEDRON_4")   || (topo.name() == "TETRAHEDRON_8")   || (topo.name() == "TETRAHEDRON_10")  || (topo.name() == "TETRAHEDRON_11"));
+
+    isTet = isTet && (topo.rank() == topology::ELEMENT_RANK);
+
+    return isTet;
+}
+
+bool isHexahedron (topology topo)
+{
+    bool isHex =    ((topo.name() == "HEX_8")    || (topo.name() == "HEX_20")          || (topo.name() == "HEX_27")
+            ||(topo.name() == "HEXAHEDRON_8")    || (topo.name() == "HEXAHEDRON_20")   || (topo.name() == "HEXAHEDRON_27"));
+
+    isHex = isHex && (topo.rank() == topology::ELEMENT_RANK);
+
+    return isHex;
+}
 
 void verbose_print_topology(std::ostream &out, topology t)
 {

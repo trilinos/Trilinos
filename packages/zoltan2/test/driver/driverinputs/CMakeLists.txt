@@ -10,6 +10,8 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
         chacoSimpleTest.xml
         chacoVwgt2Test.xml    
         chacoEdgeWeightTest.xml
+#        Rectilinear.pmgen
+        pamgenRectilinearTest.xml 
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )
