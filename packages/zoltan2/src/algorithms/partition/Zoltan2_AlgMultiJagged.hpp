@@ -103,7 +103,6 @@
 
 
 
-using std::vector;
 namespace Teuchos{
 
 /*! \brief Zoltan2_BoxBoundaries is a reduction operation
@@ -1024,7 +1023,7 @@ private:
      * \param processor_ranks_for_subcomm is the vector that has the ranks of
      * the processors that will be in the same group.
      */
-    void create_sub_communicator(vector<mj_part_t> &processor_ranks_for_subcomm);
+    void create_sub_communicator(std::vector<mj_part_t> &processor_ranks_for_subcomm);
 
 
     /*! \brief Function writes the new permutation arrays after the migration.
