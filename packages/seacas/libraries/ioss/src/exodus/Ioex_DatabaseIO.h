@@ -135,6 +135,15 @@ namespace Ioex {
       int    nodeset_count()       const     {return m_groupCount[EX_NODE_SET];}
       int    maximum_symbol_length() const   {return maximumNameLength;}
 
+      // NOTE: If this is called after write_meta_data, it will have no affect.
+      //       Also, it only affects output databases, not input.
+      void   set_maximum_symbol_length(int requested_symbol_size)
+      {
+	if (!is_input()) {
+	  maximumNameLength = requested_symbol_size;
+	}
+      }
+
       void get_block_adjacencies(const Ioss::ElementBlock *eb,
                                  std::vector<std::string> &block_adjacency) const;
 

@@ -101,6 +101,8 @@
 
 /* #undef HAVE_TEUCHOS_DEFAULT_STACKTRACE */
 
+/* #undef HAVE_TEUCHOS_GLOBALLY_REDUCE_UNITTEST_RESULTS */
+
 /* template qualifier required for calling template methods from non-template
    code */
 #define INVALID_TEMPLATE_QUALIFIER 

@@ -54,6 +54,7 @@ namespace Example {
                               const int league_size,
                               const bool team_interface,
                               const bool skip_serial,
+                              const bool mkl_interface,
                               const bool verbose) {
     typedef ValueType   value_type;
     typedef OrdinalType ordinal_type;
@@ -180,7 +181,7 @@ namespace Example {
     RR.copy(UU);
 
 #ifdef HAVE_SHYLUICHOL_MKL
-    if (!skip_serial) {
+    if (!skip_serial && mkl_interface) {
       cout << "ICholPerformance:: MKL factorize the matrix" << endl;
       CrsMatrixBaseType MM("MM");
       for (int i=start;i<niter;++i) {
