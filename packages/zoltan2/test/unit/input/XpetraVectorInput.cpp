@@ -180,10 +180,7 @@ int main(int argc, char *argv[])
   tV = uinput->getUITpetraVector();
   size_t vlen = tV->getLocalLength();
 
-  // To test migration in the input adapter we need a Solution
-  // object.  The Solution needs an IdentifierMap.
-
-  typedef Zoltan2::IdentifierMap<tvector_t> idmap_t;
+  // To test migration in the input adapter we need a Solution object.
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 
@@ -199,8 +196,7 @@ int main(int argc, char *argv[])
   std::vector<const zscalar_t *> emptyWeights;
   std::vector<int> emptyStrides;
 
-  Zoltan2::PartitioningSolution<adapter_t> solution(
-    env, comm, nWeights);
+  Zoltan2::PartitioningSolution<adapter_t> solution(env, comm, nWeights);
   solution.setParts(solnParts);
 
   /////////////////////////////////////////////////////////////
