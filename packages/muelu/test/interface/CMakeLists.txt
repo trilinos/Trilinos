@@ -86,10 +86,33 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
         COMM mpi
         )
 
+      # This test only runs on the dashboard, not at checkin.
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterEpetraHeavy"
+        ARGS "--linAlgebra=Epetra --heavytests"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        COMM mpi serial
+        CATEGORIES CONTINUOUS
+        )
+
+      # This test only runs on the dashboard, not at checkin.
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterEpetraHeavy"
+        ARGS "--linAlgebra=Epetra --heavytests"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 4
+        COMM mpi
+        CATEGORIES CONTINUOUS
+        )
+
     ENDIF()
 
     IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
+
       TRIBITS_ADD_TEST(
         ParameterListInterpreter
         NAME "ParameterListInterpreterTpetra"
@@ -122,6 +145,28 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
         STANDARD_PASS_OUTPUT
         NUM_MPI_PROCS 4
         COMM mpi
+        )
+
+      # This test only runs on the dashboard, not at checkin.
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterTpetraHeavy"
+        ARGS "--linAlgebra=Tpetra --heavytests"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 1
+        COMM mpi serial
+        CATEGORIES CONTINUOUS
+        )
+
+      # This test only runs on the dashboard, not at checkin.
+      TRIBITS_ADD_TEST(
+        ParameterListInterpreter
+        NAME "ParameterListInterpreterTpetraHeavy"
+        ARGS "--linAlgebra=Tpetra --heavytests"
+        STANDARD_PASS_OUTPUT
+        NUM_MPI_PROCS 4
+        COMM mpi
+        CATEGORIES CONTINUOUS
         )
 
     ENDIF()
@@ -131,6 +176,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 ENDIF()
 
 ADD_SUBDIRECTORY(EasyParameterListInterpreter)
+ADD_SUBDIRECTORY(EasyParameterListInterpreter-heavy)
 ADD_SUBDIRECTORY(FactoryParameterListInterpreter)
 ADD_SUBDIRECTORY(MLParameterListInterpreter)
 ADD_SUBDIRECTORY(MLParameterListInterpreter2)
