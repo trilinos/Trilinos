@@ -21,4 +21,6 @@ LIBGFORTRAN=`lfind libgfortran`
 PRELOAD="$LIBSTDCPP $LIBGCC_S $LIBGFORTRAN $LIBLAPACK $LIBBLAS"
 
 echo "Setting LD_PRELOAD to \"$PRELOAD\""
-LD_PRELOAD="$PRELOAD" matlab -nodisplay
+LD_PRELOAD="$PRELOAD" matlab -nosplash -nodisplay
+#LD_PRELOAD="$PRELOAD" matlab -nojvm -nosplash -r "evoEasyDriver" -D"valgrind --error-limit=no --tool=memcheck -v --log-file=/home/jhu/valMatlabLog"
+#LD_PRELOAD="$PRELOAD" matlab -nosplash -nodisplay -Dgdb
