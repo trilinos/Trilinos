@@ -181,6 +181,8 @@ MuemexType strToDataType(const char* str, char* typeName, bool complexFlag = fal
         return matrixType;
       if(wordString.find("multivector") != npos)
         return multivectorType;
+      if(wordString.find("map") != npos)
+        return XPETRA_MAP;
       if(wordString.find("ordinalvector") != npos)
         return XPETRA_ORDINAL_VECTOR;
       if(wordString.find("int") != npos)
@@ -211,6 +213,8 @@ MuemexType strToDataType(const char* str, char* typeName, bool complexFlag = fal
       return matrixType;
     if(typeString.find("multivector") != npos)
       return multivectorType;
+    if(typeString.find("map") != npos)
+      return XPETRA_MAP;
     if(typeString.find("ordinalvector") != npos)
       return XPETRA_ORDINAL_VECTOR;
     if(typeString.find("int") != npos)
@@ -315,7 +319,7 @@ mxArray* TpetraSystem<Scalar>::solve(RCP<ParameterList> params, RCP<Tpetra::CrsM
   return output;
 }
 
-template<> 
+template<>
 RCP<Hierarchy_double> getDatapackHierarchy<double>(MuemexSystem* dp)
 {
   RCP<MueLu::Hierarchy<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> hier;
@@ -507,6 +511,8 @@ mxArray* MuemexSystem::getHierarchyData(string dataName, MuemexType dataType, in
         }
       case XPETRA_MULTIVECTOR_COMPLEX:
         return saveDataToMatlab(level->Get<RCP<Xpetra_MultiVector_complex>>(dataName, factory));
+      case XPETRA_MAP:
+        return saveDataToMatlab(level->Get<RCP<Xpetra_map>>(dataName, factory));
       case XPETRA_ORDINAL_VECTOR:
         return saveDataToMatlab(level->Get<RCP<Xpetra_ordinal_vector>>(dataName, factory));
       case DOUBLE:
@@ -705,6 +711,10 @@ void TpetraSystem<Scalar>::normalSetup(const mxArray* matlabA, bool haveCoords, 
     mop = MueLu::CreateTpetraPreconditioner<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(A, *List);
   }
   prec = rcp_implicit_cast<Tpetra::Operator<Scalar, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>(mop);
+
+  // print data??
+  //mop->GetHierarchy()->GetLevel(0)->print(std::cout, MueLu::Debug);
+
   operatorComplexity = mop->GetHierarchy()->GetOperatorComplexity();
 }
 
@@ -1071,6 +1081,29 @@ void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *
   M = mxGetM(prhs);
   N = mxGetN(prhs);
   /* Add to the Teuchos list */
+
+  // check which type the integer data is.
+  // It could be either a plain ordinal vector or map data
+  vector<string> typestring = tokenizeList(option_name);
+  std::transform(typestring[0].begin(), typestring[0].end(), typestring[0].begin(), ::tolower);
+
+  vector<string> words;
+  const char* wordDelim = " ";
+  const char* mark = strtok(typestring[0].c_str(), wordDelim);
+  while(mark != NULL)
+  {
+    string wordStr(mark);
+    words.push_back(wordStr);
+    mark = strtok(NULL, wordDelim);
+  }
+  /*if(words.size() != 2) {
+    string badNameMsg = "Custom Muemex variables in \"Level XX\" list require a type and a name, e.g. \"double myVal\". \n Leading and trailing spaces are OK. \n Don't know how to handle \"" + typestring[0] + "\".\n";
+    throw runtime_error(badNameMsg);
+  }*/
+  const char* typeStr = words[0].c_str();
+
+  /////
+
   switch(cid)
   {
     case mxCHAR_CLASS:
@@ -1130,8 +1163,12 @@ void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *
         {
           if(mxIsSparse(prhs))
             List->set(option_name, loadDataFromMatlab<RCP<Xpetra_Matrix_double>>(prhs));
-          else
-            List->set(option_name, loadDataFromMatlab<RCP<Xpetra_MultiVector_double>>(prhs));
+          else {
+            if(strstr(typeStr, "map")) // data stored as Xpetra::Map type
+              List->set(option_name, loadDataFromMatlab<RCP<Xpetra_map>>(prhs));
+            else // data stored as MultiVector
+              List->set(option_name, loadDataFromMatlab<RCP<Xpetra_MultiVector_double>>(prhs));
+          }
         }
       }
       break;
@@ -1574,11 +1611,16 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         {
           throw runtime_error("Problem handle not allocated.");
         }
+
         //See if typeHint was given
         char* paramTypeName = NULL;
-        if(nrhs > 4)
+        if(nrhs > 4) {
           paramTypeName = mxArrayToString(prhs[4]);
+          mexPrintf("paramTypeName %s", paramTypeName);
+        }
         bool complexFlag = dp->type == TPETRA_COMPLEX;
+        //std::cout << "before strToDataType dataName=" << dataName << " paramTypeName " << paramTypeName << std::endl;
+
         outputType = strToDataType(dataName, paramTypeName, complexFlag);
         plhs[0] = dp->getHierarchyData(string(dataName), outputType, levelID);
       }

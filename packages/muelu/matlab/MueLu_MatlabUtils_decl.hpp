@@ -83,6 +83,7 @@ enum MuemexType
   DOUBLE,
   COMPLEX,
   STRING,
+  XPETRA_MAP,
   XPETRA_ORDINAL_VECTOR,
   TPETRA_MULTIVECTOR_DOUBLE,
   TPETRA_MULTIVECTOR_COMPLEX,
@@ -108,6 +109,7 @@ typedef Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_C
 typedef Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_CrsMatrix_complex;
 typedef Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_MultiVector_double;
 typedef Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_MultiVector_complex;
+typedef Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_map;
 typedef Xpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_ordinal_vector;
 typedef Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_double;
 typedef Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_complex;
@@ -126,7 +128,7 @@ class MuemexArg
     MuemexType type;
 };
 
-template<typename T> 
+template<typename T>
 MuemexType getMuemexType(const T & data);
 
 template<typename T>
@@ -143,7 +145,7 @@ class MuemexData : public MuemexArg
     T data;
 };
 
-template<typename T> 
+template<typename T>
 MuemexType getMuemexType(const T & data);
 
 template<typename T>
