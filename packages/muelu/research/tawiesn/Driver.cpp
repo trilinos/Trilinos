@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
     bool   printTimings     = true;              clp.setOption("timings", "notimings",  &printTimings,     "print timings to screen");
     int    writeMatricesOPT = -2;                clp.setOption("write",                 &writeMatricesOPT, "write matrices to file (-1 means all; i>=0 means level i)");
     double tol              = 1e-6;             clp.setOption("tol",                   &tol,              "solver convergence tolerance");
-    std::string krylovMethod = "cg"; clp.setOption("krylov",                   &krylovMethod,     "outer Krylov method");
+    std::string krylovMethod = "gmres"; clp.setOption("krylov",                   &krylovMethod,     "outer Krylov method");
     int maxIts = 100; clp.setOption("maxits",           &maxIts,   "maximum number of Krylov iterations");
     int output = 1; clp.setOption("output",           &output,   "how often to print Krylov residual history");
     std::string matrixFileName = "crada1/crada_A.mm"; clp.setOption("matrixfile",            &matrixFileName,   "matrix market file containing matrix");
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
     std::string nspFileName = "crada1/crada_ns.mm";   clp.setOption("nspfile",               &nspFileName,      "matrix market file containing fine level null space");
     std::string cooFileName = "crada1/crada_coordinates.mm"; clp.setOption("coordinatesfile",&cooFileName,      "matrix market file containing fine level coordinates");
     std::string spcFileName = "crada1/crada_special.mm"; clp.setOption("specialfile",        &spcFileName,      "matrix market file containing fine level special dofs");
-    int nPDE = 1; clp.setOption("numpdes",           &nPDE,   "number of PDE equations");
+    int nPDE = 3; clp.setOption("numpdes",           &nPDE,   "number of PDE equations");
     std::string convType = "r0"; clp.setOption("convtype",                   &convType,     "convergence type (r0 or none)");
 
     switch (clp.parse(argc,argv)) {
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
     RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("MatrixRead: S - Global Time"))), tm;
 
     comm->barrier();
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Matrix Build")));
 
     RCP<Matrix> A = Teuchos::null;
     if (matrixFileName != "") {
@@ -178,12 +178,22 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    /*RCP<MultiVector> coordinates = Teuchos::null; //MultiVectorFactory::Build(A->getDomainMap(),1);
+    RCP<MultiVector> coordinates = Teuchos::null; //MultiVectorFactory::Build(A->getDomainMap(),1);
     if (cooFileName != "") {
+      std::vector<GO> myGIDs (map->getNodeNumElements() / A->GetFixedBlockSize());
+      // reconstruct map for coordinates
+      for(LO r = 0; r < Teuchos::as<LO>(map->getNodeNumElements() / A->GetFixedBlockSize()); ++r) {
+        GO gid = map->getGlobalElement(r * A->GetFixedBlockSize());
+        myGIDs[r] = gid;
+      }
+
+      Teuchos::Array<GlobalOrdinal> eltList(myGIDs);
+      RCP<const Map> myCoordMap = MapFactory::Build (xpetraParameters.GetLib(),myGIDs.size(),eltList(),0,comm);
+
       fancyout << "Read fine level coordinates from file " << cooFileName << std::endl;
-      coordinates = Utils2::ReadMultiVector(std::string(cooFileName), A->getRowMap()); // TODO fix this!!!
-      fancyout << "Found " << nullspace->getNumVectors() << " null space vectors" << std::endl;
-    }*/
+      coordinates = Utils2::ReadMultiVector(std::string(cooFileName), myCoordMap);
+      fancyout << "Found " << nullspace->getNumVectors() << " null space vectors of length " << myCoordMap->getGlobalNumElements() << std::endl;
+    }
 
     RCP<Map> mySpecialMap = Teuchos::null;
     if (spcFileName != "") {
@@ -233,11 +243,11 @@ int main(int argc, char *argv[]) {
     // Preconditioner construction
     // =========================================================================
     comm->barrier();
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1.5 - MueLu read XML")));
     ParameterListInterpreter mueLuFactory(xmlFileName, *comm);
 
     comm->barrier();
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
+    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
 
     RCP<Hierarchy> H = mueLuFactory.CreateHierarchy();
 
@@ -247,8 +257,8 @@ int main(int argc, char *argv[]) {
 
     H->GetLevel(0)->Set("A",           A);
     H->GetLevel(0)->Set("Nullspace",   nullspace);
-    //H->GetLevel(0)->Set("Coordinates", fakeCoordinates); // TODO
-    if(mySpecialMap!=Teuchos::null) H->GetLevel(0)->Set("SpecialMap", mySpecialMap);
+    H->GetLevel(0)->Set("Coordinates", coordinates);
+    if(mySpecialMap!=Teuchos::null) H->GetLevel(0)->Set("map SpecialMap", mySpecialMap);
 
     mueLuFactory.SetupHierarchy(*H);
 
@@ -263,7 +273,7 @@ int main(int argc, char *argv[]) {
     // System solution (Ax = b)
     // =========================================================================
     comm->barrier();
-    tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
+    tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
 
     RCP<Vector> X = VectorFactory::Build(map,1);
     RCP<MultiVector> B = VectorFactory::Build(map,1);
@@ -290,7 +300,7 @@ int main(int argc, char *argv[]) {
 
     comm->barrier();
     if (amgAsSolver) {
-      tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
+      tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - Fixed Point Solve")));
 
       H->IsPreconditioner(false);
       Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
@@ -304,7 +314,7 @@ int main(int argc, char *argv[]) {
 
     } else if (amgAsPrecond) {
 #ifdef HAVE_MUELU_BELOS
-      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Belos Solve")));
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));
       // Operator and Multivector type that will be used with Belos
       typedef MultiVector          MV;
       typedef Belos::OperatorT<MV> OP;
