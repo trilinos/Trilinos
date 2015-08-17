@@ -5266,7 +5266,7 @@ namespace Tpetra {
                 << std::setw(width) << "Global Row"
                 << std::setw(width) << "Num Entries";
             if (vl == VERB_EXTREME) {
-              out << "Entries";
+              out << " Entries";
             }
             out << std::endl;
             for (size_t r=0; r < getNodeNumRows(); ++r) {
@@ -5276,6 +5276,7 @@ namespace Tpetra {
                   << std::setw(width) << gid
                   << std::setw(width) << rowinfo.numEntries;
               if (vl == VERB_EXTREME) {
+                out << " ";
                 if (isGloballyIndexed()) {
                   ArrayView<const GlobalOrdinal> rowview = getGlobalView(rowinfo);
                   for (size_t j=0; j < rowinfo.numEntries; ++j) out << rowview[j] << " ";

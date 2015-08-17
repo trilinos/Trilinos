@@ -140,113 +140,113 @@ namespace Example {
       }
 
       // provided blksize is greater than 0, reorder internally
-      if (treecut > 0 && minblksize > 0) {
-        // graph array
-        ordinal_type *rptr = reinterpret_cast<ordinal_type*>(_rptr.ptr_on_device());
-        ordinal_type *cidx = reinterpret_cast<ordinal_type*>(_cidx.ptr_on_device());
+      // if (treecut > 0 && minblksize > 0) {
+      //   // graph array
+      //   ordinal_type *rptr = reinterpret_cast<ordinal_type*>(_rptr.ptr_on_device());
+      //   ordinal_type *cidx = reinterpret_cast<ordinal_type*>(_cidx.ptr_on_device());
 
-        // create workspace in
-        size_type_array    rptr_work = size_type_array(_label+"::Block::RowPtrArray", _m+1);
-        ordinal_type_array cidx_work = ordinal_type_array(_label+"::Block::ColIndexArray", _nnz);
+      //   // create workspace in
+      //   size_type_array    rptr_work = size_type_array(_label+"::Block::RowPtrArray", _m+1);
+      //   ordinal_type_array cidx_work = ordinal_type_array(_label+"::Block::ColIndexArray", _nnz);
 
-        // create workspace output
-        ordinal_type_array perm_work  = ordinal_type_array(_label+"::Block::PermutationArray", _m);
-        ordinal_type_array peri_work  = ordinal_type_array(_label+"::Block::InvPermutationArray", _m);
-        ordinal_type_array range_work = ordinal_type_array(_label+"::Block::RangeArray", _m);
-        ordinal_type_array tree_work  = ordinal_type_array(_label+"::Block::TreeArray", _m);
+      //   // create workspace output
+      //   ordinal_type_array perm_work  = ordinal_type_array(_label+"::Block::PermutationArray", _m);
+      //   ordinal_type_array peri_work  = ordinal_type_array(_label+"::Block::InvPermutationArray", _m);
+      //   ordinal_type_array range_work = ordinal_type_array(_label+"::Block::RangeArray", _m);
+      //   ordinal_type_array tree_work  = ordinal_type_array(_label+"::Block::TreeArray", _m);
         
-        // scotch input
-        ordinal_type *rptr_blk = reinterpret_cast<ordinal_type*>(rptr_work.ptr_on_device());
-        ordinal_type *cidx_blk = reinterpret_cast<ordinal_type*>(cidx_work.ptr_on_device());
+      //   // scotch input
+      //   ordinal_type *rptr_blk = reinterpret_cast<ordinal_type*>(rptr_work.ptr_on_device());
+      //   ordinal_type *cidx_blk = reinterpret_cast<ordinal_type*>(cidx_work.ptr_on_device());
       
-        size_type nnz = 0;
-        rptr_blk[0] = nnz;        
+      //   size_type nnz = 0;
+      //   rptr_blk[0] = nnz;        
 
-        for (ordinal_type iblk=0;iblk<_cblk;++iblk) {
-          // allocate graph
-          SCOTCH_Graph graph;
+      //   for (ordinal_type iblk=0;iblk<_cblk;++iblk) {
+      //     // allocate graph
+      //     SCOTCH_Graph graph;
           
-          ierr = SCOTCH_graphInit(&graph);CHKERR(ierr);
+      //     ierr = SCOTCH_graphInit(&graph);CHKERR(ierr);
           
-          SCOTCH_Strat stradat;
-          SCOTCH_Num straval = (/*SCOTCH_STRATLEVELMAX   |
-                                  SCOTCH_STRATLEVELMIN   |*/
-                                SCOTCH_STRATLEAFSIMPLE |
-                                SCOTCH_STRATSEPASIMPLE);
+      //     SCOTCH_Strat stradat;
+      //     SCOTCH_Num straval = (/*SCOTCH_STRATLEVELMAX   |
+      //                             SCOTCH_STRATLEVELMIN   |*/
+      //                           SCOTCH_STRATLEAFSIMPLE |
+      //                           SCOTCH_STRATSEPASIMPLE);
           
-          ierr = SCOTCH_stratInit(&stradat);CHKERR(ierr);
-          ierr = SCOTCH_stratGraphOrderBuild(&stradat, straval, 0, 0.2);CHKERR(ierr);
+      //     ierr = SCOTCH_stratInit(&stradat);CHKERR(ierr);
+      //     ierr = SCOTCH_stratGraphOrderBuild(&stradat, straval, 0, 0.2);CHKERR(ierr);
           
-          const ordinal_type ibegin = range[iblk], iend = range[iblk+1], m = iend - ibegin;
+      //     const ordinal_type ibegin = range[iblk], iend = range[iblk+1], m = iend - ibegin;
 
-          // scotch output
-          ordinal_type cblk_blk = 0;
+      //     // scotch output
+      //     ordinal_type cblk_blk = 0;
           
-          ordinal_type *perm_blk  = perm_work.ptr_on_device()  + ibegin;
-          ordinal_type *peri_blk  = peri_work.ptr_on_device()  + ibegin;
-          ordinal_type *range_blk = range_work.ptr_on_device() + ibegin;
-          ordinal_type *tree_blk  = tree_work.ptr_on_device()  + ibegin;
+      //     ordinal_type *perm_blk  = perm_work.ptr_on_device()  + ibegin;
+      //     ordinal_type *peri_blk  = peri_work.ptr_on_device()  + ibegin;
+      //     ordinal_type *range_blk = range_work.ptr_on_device() + ibegin;
+      //     ordinal_type *tree_blk  = tree_work.ptr_on_device()  + ibegin;
           
-          // if each blk is greater than the given minblksize, reorder internally
-          if (m > minblksize) {
-            for (int i=ibegin;i<iend;++i) {
-              const ordinal_type ii = peri[i];
-              const ordinal_type jbegin = rptr[ii];
-              const ordinal_type jend = rptr[ii+1];
+      //     // if each blk is greater than the given minblksize, reorder internally
+      //     if (m > minblksize) {
+      //       for (int i=ibegin;i<iend;++i) {
+      //         const ordinal_type ii = peri[i];
+      //         const ordinal_type jbegin = rptr[ii];
+      //         const ordinal_type jend = rptr[ii+1];
               
-              for (int j=jbegin;j<jend;++j) {
-                const ordinal_type jj = perm[cidx[j]];
-                if (ibegin <= jj && jj < iend)  
-                  cidx_blk[nnz++] = (jj - ibegin);
-              }
-              rptr_blk[i+1] = nnz;
-            }
-            const size_type nnz_blk = nnz - rptr_blk[ibegin];
+      //         for (int j=jbegin;j<jend;++j) {
+      //           const ordinal_type jj = perm[cidx[j]];
+      //           if (ibegin <= jj && jj < iend)  
+      //             cidx_blk[nnz++] = (jj - ibegin);
+      //         }
+      //         rptr_blk[i+1] = nnz;
+      //       }
+      //       const size_type nnz_blk = nnz - rptr_blk[ibegin];
             
-            ierr = SCOTCH_graphBuild(&graph,             // scotch graph
-                                     0,                  // base value
-                                     m,                  // # of vertices
-                                     &rptr_blk[ibegin],  // column index array pointer begin
-                                     &rptr_blk[ibegin]+1,// column index array pointer end
-                                     NULL,               // weights on vertices (optional)
-                                     NULL,               // label array on vertices (optional)
-                                     nnz_blk,            // # of nonzeros
-                                     cidx_blk,           // column index array
-                                     NULL);CHKERR(ierr); // edge load array (optional)
-            ierr = SCOTCH_graphCheck(&graph);CHKERR(ierr);
-            ierr = SCOTCH_graphOrder(&graph,
-                                     &stradat,
-                                     perm_blk,
-                                     peri_blk,
-                                     &cblk_blk,
-                                     range_blk,
-                                     tree_blk);CHKERR(ierr);
-          } else {
-            for (ordinal_type i=0;i<m;++i) {
-              perm_blk[i] = i;
-              peri_blk[i] = i;
-            }
-            range_blk[1] = m;
-            tree_blk[0] = -1;
-          }
+      //       ierr = SCOTCH_graphBuild(&graph,             // scotch graph
+      //                                0,                  // base value
+      //                                m,                  // # of vertices
+      //                                &rptr_blk[ibegin],  // column index array pointer begin
+      //                                &rptr_blk[ibegin]+1,// column index array pointer end
+      //                                NULL,               // weights on vertices (optional)
+      //                                NULL,               // label array on vertices (optional)
+      //                                nnz_blk,            // # of nonzeros
+      //                                cidx_blk,           // column index array
+      //                                NULL);CHKERR(ierr); // edge load array (optional)
+      //       ierr = SCOTCH_graphCheck(&graph);CHKERR(ierr);
+      //       ierr = SCOTCH_graphOrder(&graph,
+      //                                &stradat,
+      //                                perm_blk,
+      //                                peri_blk,
+      //                                &cblk_blk,
+      //                                range_blk,
+      //                                tree_blk);CHKERR(ierr);
+      //     } else {
+      //       for (ordinal_type i=0;i<m;++i) {
+      //         perm_blk[i] = i;
+      //         peri_blk[i] = i;
+      //       }
+      //       range_blk[1] = m;
+      //       tree_blk[0] = -1;
+      //     }
           
-          SCOTCH_stratExit(&stradat);
-          SCOTCH_graphFree(&graph);
+      //     SCOTCH_stratExit(&stradat);
+      //     SCOTCH_graphFree(&graph);
           
-          for (ordinal_type i=0;i<m;++i) {
-            const ordinal_type ii = peri_blk[i] + ibegin;
-            peri_blk[i] = peri[ii];
-          }
-          for (ordinal_type i=0;i<m;++i) {
-            const ordinal_type ii = i + ibegin;
-            peri[ii] = peri_blk[i];
-          }
+      //     for (ordinal_type i=0;i<m;++i) {
+      //       const ordinal_type ii = peri_blk[i] + ibegin;
+      //       peri_blk[i] = peri[ii];
+      //     }
+      //     for (ordinal_type i=0;i<m;++i) {
+      //       const ordinal_type ii = i + ibegin;
+      //       peri[ii] = peri_blk[i];
+      //     }
           
-        }
+      //   }
         
-        for (ordinal_type i=0;i<_m;++i) 
-          perm[peri[i]] = i;
-      }
+      //   for (ordinal_type i=0;i<_m;++i) 
+      //     perm[peri[i]] = i;
+      // }
       
       _is_ordered = true;
       
