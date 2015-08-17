@@ -129,6 +129,8 @@ int strToMsgType(const char* str)
 
 MuemexType strToDataType(const char* str, char* typeName, bool complexFlag = false)
 {
+  std::string temp(str);
+  std::string myStr = trim(temp);
   MuemexType matrixType, multivectorType, scalarType;
   if(!complexFlag)
   {
@@ -143,72 +145,51 @@ MuemexType strToDataType(const char* str, char* typeName, bool complexFlag = fal
     scalarType = COMPLEX;
   }
   size_t npos = string::npos;
-  if(strcmp(str, "A") == 0)
+  if(myStr == "A" ||
+     myStr == "P" || myStr == "Ptent" ||
+     myStr == "R")
     return matrixType;
-  if(strcmp(str, "P") == 0)
-    return matrixType;
-  if(strcmp(str, "R") == 0)
-    return matrixType;
-  if(strcmp(str, "Ptent") == 0)
-    return matrixType;
-  if(strcmp(str, "Nullspace") == 0)
+  if(myStr == "Nullspace")
     return multivectorType;
-  if(strcmp(str, "Aggregates") == 0)
+  if(myStr == "Aggregates")
     return AGGREGATES;
-  if(strcmp(str, "Graph") == 0)
+  if(myStr == "Graph")
     return GRAPH;
-  if(strcmp(str, "Coordinates") == 0)
+  if(myStr == "Coordinates")
     return XPETRA_MULTIVECTOR_DOUBLE;
   //Check for custom variable
-  //Copy str into mutable buffer to make lowercase and compare type name
-  char* buf = (char*) malloc(strlen(str) + 1);
-  strcpy(buf, str);
-  char* firstWord = strtok(buf, " ");
-  if(firstWord)
-  {
-    string wordString(firstWord);
-    free(buf);
-    char* secondWord = strtok(NULL, " ");
-    if(secondWord)
-    {
+  size_t firstWordStart = myStr.find_first_not_of(' ');
+  size_t firstWordEnd   = myStr.find(' ', firstWordStart);
+  std::string firstWord = myStr.substr(firstWordStart, firstWordEnd - firstWordStart);
+  if(firstWord.length() > 0) {
+    temp = myStr.substr(firstWordEnd,myStr.length()-firstWordEnd);
+    std::string secondWord = trim(temp);
+    if(secondWord.length() > 0) {
       //make first word lowercase
-      for(char* iter = firstWord; *iter; iter++)
-      {
-        *iter = (char) tolower(*iter);
-      }
+      std::transform(firstWord.begin(), firstWord.end(), firstWord.begin(), ::tolower);
       //compare first word with possible values
-      if(wordString.find("matrix") != npos)
+      if(firstWord.find("matrix") != npos)
         return matrixType;
-      if(wordString.find("multivector") != npos)
+      if(firstWord.find("multivector") != npos)
         return multivectorType;
-      if(wordString.find("map") != npos)
+      if(firstWord.find("map") != npos)
         return XPETRA_MAP;
-      if(wordString.find("ordinalvector") != npos)
+      if(firstWord.find("ordinalvector") != npos)
         return XPETRA_ORDINAL_VECTOR;
-      if(wordString.find("int") != npos)
+      if(firstWord.find("int") != npos)
         return INT;
-      if(wordString.find("scalar") != npos)
+      if(firstWord.find("scalar") != npos)
         return scalarType;
-      if(wordString.find("double") != npos)
+      if(firstWord.find("double") != npos)
         return DOUBLE;
-      if(wordString.find("complex") != npos)
+      if(firstWord.find("complex") != npos)
         return COMPLEX;
     }
   }
-  else
-    free(buf);
   if(typeName)
   {
-    size_t typeLength = strlen(typeName);
-    char* typeBuf = (char*) malloc(typeLength + 1);
-    strcpy(typeBuf, typeName);
-    //convert to lowercase
-    for(size_t i = 0; i < typeLength; i++)
-    {
-      typeBuf[i] = (char) tolower(typeBuf[i]);
-    }
-    string typeString(typeBuf);
-    free(typeBuf);
+    std::string typeString(typeName);
+    std::transform(typeString.begin(), typeString.end(), typeString.begin(), ::tolower);
     if(typeString.find("matrix") != npos)
       return matrixType;
     if(typeString.find("multivector") != npos)
@@ -1082,25 +1063,14 @@ void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *
   N = mxGetN(prhs);
   /* Add to the Teuchos list */
 
-  // check which type the integer data is.
-  // It could be either a plain ordinal vector or map data
+  // extract potential typeStr. The code is based on the assumption that
+  // the typedefinition is the first word. It is necessary to distinguish
+  // between "map" type (representing a Xpetra::Map) and multivector (default)
   vector<string> typestring = tokenizeList(option_name);
   std::transform(typestring[0].begin(), typestring[0].end(), typestring[0].begin(), ::tolower);
-
-  vector<string> words;
-  const char* wordDelim = " ";
-  const char* mark = strtok(typestring[0].c_str(), wordDelim);
-  while(mark != NULL)
-  {
-    string wordStr(mark);
-    words.push_back(wordStr);
-    mark = strtok(NULL, wordDelim);
-  }
-  /*if(words.size() != 2) {
-    string badNameMsg = "Custom Muemex variables in \"Level XX\" list require a type and a name, e.g. \"double myVal\". \n Leading and trailing spaces are OK. \n Don't know how to handle \"" + typestring[0] + "\".\n";
-    throw runtime_error(badNameMsg);
-  }*/
-  const char* typeStr = words[0].c_str();
+  size_t WordStart = typestring[0].find_first_not_of(' ');
+  size_t WordEnd   = typestring[0].find(' ', WordStart);
+  std::string typeStr = typestring[0].substr(WordStart, WordEnd - WordStart);
 
   /////
 
@@ -1164,7 +1134,7 @@ void parse_list_item(RCP<ParameterList> List, char *option_name, const mxArray *
           if(mxIsSparse(prhs))
             List->set(option_name, loadDataFromMatlab<RCP<Xpetra_Matrix_double>>(prhs));
           else {
-            if(strstr(typeStr, "map")) // data stored as Xpetra::Map type
+            if(typeStr == "map") // data stored as Xpetra::Map type
               List->set(option_name, loadDataFromMatlab<RCP<Xpetra_map>>(prhs));
             else // data stored as MultiVector
               List->set(option_name, loadDataFromMatlab<RCP<Xpetra_MultiVector_double>>(prhs));

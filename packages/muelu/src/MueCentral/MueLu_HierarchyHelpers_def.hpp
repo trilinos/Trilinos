@@ -285,14 +285,6 @@ namespace MueLu {
             size_t typeNameEnd = name.find(' ', typeNameStart);
             std::string typeName = name.substr(typeNameStart, typeNameEnd - typeNameStart);
             std::transform(typeName.begin(), typeName.end(), typeName.begin(), ::tolower);
-            //char* typeName = (char*) malloc(typeNameEnd - typeNameStart + 1);
-            //strcpy(typeName, name.c_str() + typeNameStart);
-            //typeName[typeNameEnd - typeNameStart] = 0;
-            //Convert to lowercase
-            //for(char* iter = typeName; *iter; iter++)
-            //{
-            //  *iter = (char) tolower(*iter);
-            //}
             level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
             if(typeName == "matrix")
               level->Set(name, Teuchos::getValue<RCP<Matrix> >(it2->second), NoFactory::get());
@@ -312,7 +304,6 @@ namespace MueLu {
               level->Set(name, Teuchos::getValue<int>(it2->second), NoFactory::get());
             else if(typeName == "string")
               level->Set(name, Teuchos::getValue<std::string>(it2->second), NoFactory::get());
-            //free(typeName);
           }
           #endif
         }
