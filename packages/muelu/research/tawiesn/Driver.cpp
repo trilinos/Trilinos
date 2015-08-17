@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
       fancyout << "Found " << nullspace->getNumVectors() << " null space vectors" << std::endl;
     }*/
 
-    RCP<const Map> mySpecialMap = Teuchos::null;
+    RCP<Map> mySpecialMap = Teuchos::null;
     if (spcFileName != "") {
       // read file on each processor and pick out the special dof numbers which belong to the current proc
       std::ifstream infile(spcFileName);
