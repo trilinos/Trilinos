@@ -8,6 +8,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(MLP_Sys_Copy
-  SOURCE_FILES c1.dat c2.dat c3.dat elasticity.dat
+  SOURCE_FILES c1.dat c2.dat c3.dat elasticity1.dat
   EXEDEPS MLP_Sys
   )

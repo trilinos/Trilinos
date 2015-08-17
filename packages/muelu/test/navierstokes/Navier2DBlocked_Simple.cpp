@@ -193,10 +193,10 @@ int main(int argc, char *argv[]) {
 
     *out << "Reading matrix market file" << std::endl;
 
-    EpetraExt::MatrixMarketFileToCrsMatrix("A5932_re1000.txt",*fullmap,*fullmap,*fullmap,ptrA);
-    EpetraExt::MatrixMarketFileToVector("b5932_re1000.txt",*fullmap,ptrf);
-    //EpetraExt::MatrixMarketFileToCrsMatrix("/home/wiesner/promotion/trilinos/fc16-debug/packages/muelu/test/navierstokes/A5932_re1000.txt",*fullmap,*fullmap,*fullmap,ptrA);
-    //EpetraExt::MatrixMarketFileToVector("/home/wiesner/promotion/trilinos/fc16-debug/packages/muelu/test/navierstokes/b5932_re1000.txt",*fullmap,ptrf);
+    EpetraExt::MatrixMarketFileToCrsMatrix("A_re1000_5932.txt",*fullmap,*fullmap,*fullmap,ptrA);
+    EpetraExt::MatrixMarketFileToVector("b_re1000_5932.txt",*fullmap,ptrf);
+    //EpetraExt::MatrixMarketFileToCrsMatrix("/home/wiesner/promotion/trilinos/fc16-debug/packages/muelu/test/navierstokes/A_re1000_5932.txt",*fullmap,*fullmap,*fullmap,ptrA);
+    //EpetraExt::MatrixMarketFileToVector("/home/wiesner/promotion/trilinos/fc16-debug/packages/muelu/test/navierstokes/b_re1000_5932.txt",*fullmap,ptrf);
 
     RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
     RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);
