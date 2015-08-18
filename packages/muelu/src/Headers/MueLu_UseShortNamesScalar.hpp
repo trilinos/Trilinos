@@ -262,6 +262,10 @@ typedef MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SaPFactory;
 typedef MueLu::SchurComplementFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SchurComplementFactory;
 #endif
 
+#ifdef MUELU_SEGREGATEDAFACTORY_SHORT
+typedef MueLu::SegregatedAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SegregatedAFactory;
+#endif
+
 #ifdef MUELU_SHIFTEDLAPLACIAN_SHORT
 typedef MueLu::ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node> ShiftedLaplacian;
 #endif
