@@ -19,71 +19,115 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
 IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Zoltan2)
 
+  TRIBITS_ADD_EXECUTABLE(
+    Helmholtz1D
+    SOURCES Helmholtz1D.cpp
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    Helmholtz2D
+    SOURCES Helmholtz2D.cpp
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    Helmholtz3D
+    SOURCES Helmholtz3D.cpp
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    HelmholtzFEM2D
+    SOURCES HelmholtzFEM2D.cpp
+    COMM serial mpi
+    )
+
+  TRIBITS_ADD_EXECUTABLE(
+    HelmholtzFEM3D
+    SOURCES HelmholtzFEM3D.cpp
+    COMM serial mpi
+    )
+
+ENDIF()
+
+IF (${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Zoltan2)
+
   IF(HAVE_MUELU_COMPLEX)
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#      TRIBITS_ADD_TEST(
+#        CreateOperator
+#        NAME "CreateOperatorEpetra"
+#        ARGS "--linAlgebra=Epetra"
+#        STANDARD_PASS_OUTPUT
+#        NUM_MPI_PROCS 1
+#        COMM mpi serial
+#        )
+
+    TRIBITS_ADD_TEST(
       Helmholtz1D
-      SOURCES Helmholtz1D.cpp
+      NAME "Helmholtz1DSerial"
       COMM serial
     )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_TEST(
       Helmholtz2D
-      SOURCES Helmholtz2D.cpp
+      NAME "Helmholtz2DSerial"
       CATEGORIES NIGHTLY
       COMM serial
     )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_TEST(
       Helmholtz3D
-      SOURCES Helmholtz3D.cpp
+      NAME "Helmholtz3DSerial"
       COMM serial
     )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_TEST(
       HelmholtzFEM2D
-      SOURCES HelmholtzFEM2D.cpp
+      NAME "HelmholtzFEM2DSerial"
       COMM serial
     )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_TEST(
       HelmholtzFEM3D
-      SOURCES HelmholtzFEM3D.cpp
+      Name "HelmholtzFEM3DSerial"
       CATEGORIES NIGHTLY
       COMM serial
     )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_TEST(
       Helmholtz1D
-      SOURCES Helmholtz1D.cpp
+      Name "Helmholtz1DParallel"
       NUM_MPI_PROCS 4
       COMM mpi
     )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_TEST(
       Helmholtz2D
-      SOURCES Helmholtz2D.cpp
+      NAME "Helmholtz2DParallel"
+      CATEGORIES CONTINUOUS
       NUM_MPI_PROCS 4
       COMM mpi
     )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_TEST(
       Helmholtz3D
-      SOURCES Helmholtz3D.cpp
+      NAME "Helmholtz3DParallel"
       NUM_MPI_PROCS 4
       COMM mpi
     )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_TEST(
       HelmholtzFEM2D
-      SOURCES HelmholtzFEM2D.cpp
+      NAME "HelmholtzFEM2DParallel"
       NUM_MPI_PROCS 4
       COMM mpi
     )
 
-    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TRIBITS_ADD_TEST(
       HelmholtzFEM3D
-      SOURCES HelmholtzFEM3D.cpp
+      NAME "HelmholtzFEM3DParallel"
       NUM_MPI_PROCS 4
       COMM mpi
     )
