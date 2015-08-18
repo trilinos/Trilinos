@@ -82,6 +82,16 @@ public:
     }
   }
 
+  void axpy( const Real alpha, const Vector<Real> &x ) {
+    const StdVector &ex = Teuchos::dyn_cast<const StdVector>(x);
+    const std::vector<Element>& xval = *ex.getVector();
+    unsigned dimension  = std_vec_->size();
+    for (unsigned i=0; i<dimension; i++) {
+      (*std_vec_)[i] *= alpha;
+      (*std_vec_)[i] += xval[i];
+    }
+  }
+
   void scale( const Real alpha ) {
     unsigned dimension = std_vec_->size();
     for (unsigned i=0; i<dimension; i++) {
