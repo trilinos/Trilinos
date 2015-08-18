@@ -57,7 +57,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MatlabSmoother(const Teuchos::ParameterList& paramList)
   {
-    SetParameterList(paramList);  
+    SetParameterList(paramList);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -80,8 +80,8 @@ namespace MueLu {
     vector<string> needsList = tokenizeList(needsSetup_);
     for(size_t i = 0; i < needsList.size(); i++)
     {
-      if(!IsParamMuemexVariable(needsList[i]));
-      this->Input(currentLevel, needsList[i]);
+      if(!IsParamMuemexVariable(needsList[i]))
+        this->Input(currentLevel, needsList[i]);
     }
   }
 
