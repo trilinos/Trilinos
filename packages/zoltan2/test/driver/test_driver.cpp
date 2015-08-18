@@ -246,9 +246,7 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
     throw std::runtime_error("Input adapter parameters not provided");
   if(!problem_parameters.isParameter("Zoltan2Parameters"))
     throw std::runtime_error("Zoltan2 probnlem parameters not provided");
-
-
-
+  
   const ParameterList &adapterPlist = problem_parameters.sublist("InputAdapterParameters");
   base_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist); // a pointer to a basic type
   if(ia == nullptr)
@@ -331,7 +329,6 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   ////////////////////////////////////////////////////////////
   // 3. Solve the problem
   ////////////////////////////////////////////////////////////
-  if(rank == 0) cout << "...Solving problem..." << endl;
   reinterpret_cast<basic_problem_t *>(problem)->solve();
   if (rank == 0)
     cout << "Problem solved" << endl;
@@ -342,6 +339,7 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   if (comm->getRank() == 0)
   {
     // calculate pass fail based on imbalance
+    if(rank == 0) cout << "...analyzing metrics..." << endl;
     reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
 
     if(problem_parameters.isParameter("Metrics"))
@@ -380,24 +378,18 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   // 4a. timers
   if(zoltan2_parameters.isParameter("timer_output_stream"))
     reinterpret_cast<basic_problem_t *>(problem)->printTimers();
-<<<<<<< HEAD
-  
-  
+
   // 5a solution
-  auto solution = reinterpret_cast<basicVector_problem_t *>(problem)->getSolution();
-  size_t local_parts = ia->getLocalNumIDs();
-  writePartionSolution<basic_vector_t::part_t>(solution.getPartListView(),local_parts,comm);
+//  auto solution = reinterpret_cast<basicVector_problem_t *>(problem)->getSolution();
+//  size_t local_parts = ia->getLocalNumIDs();
+//  writePartionSolution<basic_vector_t::part_t>(solution.getPartListView(),local_parts,comm);
 //  for(size_t i = 0; i < local_parts; i++)
 //    printf("%i ", solution.getPartListView()[i]);
 //  printf("}\n\n");
-  
-=======
 
->>>>>>> a302a1b957949ae750c1bd5ea9719b38d805d815
   ////////////////////////////////////////////////////////////
   // 5. Clean up
   ////////////////////////////////////////////////////////////
-
   if(adapter_name == "XpetraCrsGraph")
     delete reinterpret_cast<xcrsGraph_t *>(ia)->getCoordinateInput();
   if(adapter_name == "XpetraCrsMatrix")
@@ -573,17 +565,7 @@ int main(int argc, char *argv[])
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   int rank = comm->getRank(); // get rank
-<<<<<<< HEAD
-  
-=======
-  //    if(rank == 0) // exit for rank 0
-  //    {
-  //        cout << "PASS" << endl;
-  //        cout << "FINISHING TEST DRIVER (RANK 0 EXIT)...." << endl;
-  //        return 0;
-  //    }
 
->>>>>>> a302a1b957949ae750c1bd5ea9719b38d805d815
   ////////////////////////////////////////////////////////////
   // (1) Get and read the input file
   // the input file defines tests to be run
@@ -612,17 +594,13 @@ int main(int argc, char *argv[])
   // get the user input for all tests
   UserInputForTests uinput(inputParameters, comm,true,true);
   pLists.pop();
-<<<<<<< HEAD
-  //  writeMesh(uinput,comm);
-=======
 
->>>>>>> a302a1b957949ae750c1bd5ea9719b38d805d815
   ////////////////////////////////////////////////////////////
   // (4) Perform all tests
   ////////////////////////////////////////////////////////////
   comm->barrier();
   
-  writeMesh(uinput,comm);
+//  writeMesh(uinput,comm);
   
   while (!pLists.empty()) {
     run(uinput, pLists.front(), comm);
