@@ -517,22 +517,29 @@ ENDIF ()
 # capability be tested.  In a release build, we disable this case, in
 # order to reduce build time.  Users may always enable it explicitly.
 ASSERT_DEFINED (Tpetra_ENABLE_DEBUG)
-ASSERT_DEFINED (HAVE_COMPLEX_BLAS)
-IF (HAVE_COMPLEX_BLAS)
-  IF (Tpetra_INST_DOUBLE)
-    GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ${Tpetra_ENABLE_DEBUG})
+# mfh 18 Aug 2015: Teuchos currently doesn't even define
+# HAVE_COMPLEX_BLAS, in the case where one would expect it to be OFF.
+# Thanks to Andrew Bradley for pointing this out.
+IF (DEFINED HAVE_COMPLEX_BLAS)
+  IF (HAVE_COMPLEX_BLAS)
+    IF (Tpetra_INST_DOUBLE)
+      GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ${Tpetra_ENABLE_DEBUG})
+    ELSE()
+      GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
+    ENDIF()
+    IF (Tpetra_INST_FLOAT)
+      GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT ${Tpetra_ENABLE_DEBUG})
+    ELSE()
+      GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
+    ENDIF()
   ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
-  ENDIF()
-  IF (Tpetra_INST_FLOAT)
-    GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT ${Tpetra_ENABLE_DEBUG})
-  ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-  ENDIF()
-ELSE()
+  ENDIF() # HAVE_COMPLEX_BLAS
+ELSE () # NOT DEFINED HAVE_COMPLEX_BLAS (consider OFF)
   GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
   GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-ENDIF() # HAVE_COMPLEX_BLAS
+ENDIF () # DEFINED HAVE_COMPLEX_BLAS
 
 # Set up the Tpetra_INST_COMPLEX_DOUBLE option: whether to instantiate
 # / test Scalar = std::complex<double>.
@@ -557,9 +564,16 @@ ENDIF ()
 # Tpetra requires that the BLAS work for Scalar, as long as Scalar is
 # one of the four types (S, D, C, Z) that the BLAS promises to
 # implement.  Check whether the BLAS works for complex arithmetic.
-ASSERT_DEFINED (HAVE_COMPLEX_BLAS)
-IF (Tpetra_INST_COMPLEX_DOUBLE AND NOT HAVE_COMPLEX_BLAS)
-  MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>), but HAVE_COMPLEX_BLAS is OFF.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
+
+# mfh 18 Aug 2015: Teuchos currently doesn't even define
+# HAVE_COMPLEX_BLAS, in the case where one would expect it to be OFF.
+# Thanks to Andrew Bradley for pointing this out.
+IF (Tpetra_INST_COMPLEX_DOUBLE)
+  IF (NOT DEFINED HAVE_COMPLEX_BLAS)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>), but HAVE_COMPLEX_BLAS is not defined.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
+  ELSEIF (NOT HAVE_COMPLEX_BLAS)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>), but HAVE_COMPLEX_BLAS is OFF.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
+  ENDIF ()
 ENDIF ()
 
 # Set up the Tpetra_INST_COMPLEX_FLOAT option: whether to instantiate
@@ -586,10 +600,13 @@ ENDIF ()
 # one of the four types (S, D, C, Z) that the BLAS promises to
 # implement.  Check whether the BLAS works for complex float (C)
 # arithmetic.
-ASSERT_DEFINED (HAVE_COMPLEX_BLAS)
-IF (Tpetra_INST_COMPLEX_FLOAT AND NOT HAVE_COMPLEX_BLAS)
-  MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>), but HAVE_COMPLEX_BLAS is OFF.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
-ENDIF()
+IF (Tpetra_INST_COMPLEX_FLOAT)
+  IF (NOT DEFINED HAVE_COMPLEX_BLAS)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>), but HAVE_COMPLEX_BLAS is not defined.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
+  ELSEIF (NOT HAVE_COMPLEX_BLAS)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>), but HAVE_COMPLEX_BLAS is OFF.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
+  ENDIF ()
+ENDIF ()
 
 # Optionally enable explicit template instantiation (ETI) and tests
 # for Scalar = __float128.  __float128 is a GCC-specific C++ language
