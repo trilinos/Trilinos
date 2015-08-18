@@ -183,6 +183,15 @@ ELSE()
   SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX OFF)
 ENDIF()
 
+# mfh 18 Aug 2015: Revise whether complex is enabled, based on
+# Tpetra's settings.  These are independent of whether ETI is enabled!
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Tpetra)
+IF(${PACKAGE_NAME}_ENABLE_Tpetra)
+  ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
+  IF(NOT Tpetra_INST_COMPLEX_DOUBLE)
+    SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX OFF)
+  ENDIF()
+ENDIF()
 
 # ML's MMM
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ML_MMM
