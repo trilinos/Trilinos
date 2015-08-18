@@ -2,19 +2,11 @@ mesh
     rectilinear
         nx = 3
         ny = 2
-        nz = 5
+        nz = 2
         bx = 3
-        by = 2
-        bz = 1
-        gmin = 0 0 0
-        gmax = 2 1 1
-    end
-    set assign
-        sideset,ilo,1
-        sideset,ihi,2
-        sideset,jlo,3
-        sideset,jhi,4
-        sideset,klo,5
-        sideset,khi,6
+        by = 1
+        bz = 3
+        gmin = 0.0 0.0 0.0
+        gmax = 2.0 2.0 2.0
     end
 end

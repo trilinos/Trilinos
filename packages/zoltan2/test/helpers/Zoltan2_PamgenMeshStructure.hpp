@@ -12,7 +12,10 @@ public:
   
   ~PamgenMesh(); // free memory
   void storeMesh(); // read mesh to memory
+  void computeElementCoordinates();
   void createMesh(char * file_data, int dimension, int rank, int nproc);
+  
+  
   
   int num_dim;
   int num_nodes;
@@ -34,6 +37,7 @@ public:
   int version;
   double version_number;
   double * coord;
+  double * element_coord;
   
   char buffer[3][MAX_STR_LENGTH + 1];
   char *bptr[3];
@@ -138,7 +142,8 @@ PamgenMesh::~PamgenMesh()
     }
   }
   
-  free(this->coord);
+  free(this->coord); // free vertex coords
+  free(this->element_coord);
   
   
   if (this->num_elem){
@@ -551,6 +556,47 @@ void PamgenMesh::storeMesh()
       }/*loop over num_elem_co*/
     }
   }
+  
+  // compute element center coordinates
+  this->computeElementCoordinates();
+}
+
+void PamgenMesh::computeElementCoordinates()
+{
+  this->element_coord = (double * )malloc(this->num_dim * this->num_elem * sizeof(double));
+  memset(this->element_coord, 0, this->num_dim * this->num_elem * sizeof(double));
+  
+  // loop over elements
+  int n_id = 0;
+  
+  int el_count = 0;
+  int idx_a = 0;
+  for(int i = 0; i <  this->num_elem_blk; i++)
+  {
+    int els = this->elements[i];
+    int nperel = this->nodes_per_element[i];
+    // nodes for el
+    int * connect = this->elmt_node_linkage[i]; // get node con
+    
+    for(int j = 0; j < els; j++)
+    {
+      
+      // sum
+      for(int k = 0; k < nperel; k++)
+      {
+        n_id = connect[j*nperel + k]-1;
+        for(int l = 0; l < this->num_dim; l++)
+          element_coord[el_count + l * this->num_elem] += this->coord[n_id + l *this->num_nodes];
+      }
+      
+      // complete average
+      for(int k = 0; k < this->num_dim; k++)
+        element_coord[el_count + k*this->num_elem] /= nperel;
+      
+      el_count ++;
+    }
+  }
+  
 }
 
 void PamgenMesh::createMesh(char * file_data, int dimension, int rank, int nproc)

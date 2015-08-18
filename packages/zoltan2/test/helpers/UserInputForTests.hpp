@@ -2343,23 +2343,34 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData, int dim
   // get coordinate and point info;
   zlno_t numLocalPoints = pamgen_mesh->num_nodes;
   zgno_t numGlobalPoints = pamgen_mesh->num_nodes_global;
-  
+  zgno_t numelements = pamgen_mesh->num_elem;
+  zgno_t numGlobalElements = pamgen_mesh->num_elems_global;
   // allocate and set an array of coordinate arrays
-  zscalar_t **coords = new zscalar_t * [dimension];
+  zscalar_t **elem_coords = new zscalar_t * [dimension];
   for(int i = 0; i < dimension; ++i){
-    coords[i] = new zscalar_t[numLocalPoints];
-    memcpy(coords[i],&pamgen_mesh->coord[i*numLocalPoints],sizeof(double) * numLocalPoints);
+    elem_coords[i] = new zscalar_t[numelements];
+    memcpy(elem_coords[i],&pamgen_mesh->element_coord[i*numelements],sizeof(double) * numelements);
   }
   
   // make a Tpetra map
-  RCP<Tpetra::Map<zlno_t, zgno_t, znode_t> > mp =
-  rcp(new Tpetra::Map<zlno_t, zgno_t, znode_t>(numGlobalPoints, numLocalPoints, 0, this->tcomm_));
+  typedef  Tpetra::Map<zlno_t, zgno_t, znode_t> map_t;
+  RCP<Tpetra::Map<zlno_t, zgno_t, znode_t> > mp;
+//   mp = rcp(new map_t(numGlobalElements, numelements, 0, this->tcomm_)); // constructo 1
+  
+  Array<zgno_t>::size_type numEltsPerProc = numelements;
+  Array<zgno_t> elementList(numelements);
+  for (Array<zgno_t>::size_type k = 0; k < numelements; ++k) {
+    elementList[k] = pamgen_mesh->element_order_map[k];
+  }
+  
+  mp = rcp (new map_t (numGlobalElements, elementList, 0, this->tcomm_)); // constructor 2
+
   
   // make an array of array views containing the coordinate data
   Teuchos::Array<Teuchos::ArrayView<const zscalar_t> > coordView(dimension);
   for (int i = 0; i < dimension; i++){
-    if(numLocalPoints > 0){
-      Teuchos::ArrayView<const zscalar_t> a(coords[i], numLocalPoints);
+    if(numelements > 0){
+      Teuchos::ArrayView<const zscalar_t> a(elem_coords[i], numelements);
       coordView[i] = a;
     }
     else {

@@ -192,6 +192,24 @@ bool minMaxTest(const metric_t & metric,
   return pass;
 }
 
+template<typename T>
+void writePartionSolution(const T * part, size_t N, const RCP<const Teuchos::Comm<int> > & comm)
+{
+  std::ofstream file;
+  char title[256];
+  
+  static const string path = "/Users/davidson/trilinosall/trilinosrepo/packages/zoltan2/test/driver/pamgen_mesh_data";
+  
+  sprintf(title, "/partition_%d", comm->getRank());
+  file.open(path + string(title));
+  for (size_t i = 0; i < N; i++) {
+    file << part[i] << "\n";
+  }
+  
+  file.close();
+  
+}
+
 void run(const UserInputForTests &uinput, const ParameterList &problem_parameters,const RCP<const Teuchos::Comm<int> > & comm)
 {
   // Major steps in running a problem in zoltan 2
@@ -222,159 +240,168 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
     cout << "\nPeforming test: " << problem_parameters.get<string>("Name") << endl;
   
   
-    ////////////////////////////////////////////////////////////
-    // 1. get basic input adapter
-    ////////////////////////////////////////////////////////////
-    if(!problem_parameters.isParameter("InputAdapterParameters"))
-      throw std::runtime_error("Input adapter parameters not provided");
-    if(!problem_parameters.isParameter("Zoltan2Parameters"))
-      throw std::runtime_error("Zoltan2 probnlem parameters not provided");
+  ////////////////////////////////////////////////////////////
+  // 1. get basic input adapter
+  ////////////////////////////////////////////////////////////
+  if(!problem_parameters.isParameter("InputAdapterParameters"))
+    throw std::runtime_error("Input adapter parameters not provided");
+  if(!problem_parameters.isParameter("Zoltan2Parameters"))
+    throw std::runtime_error("Zoltan2 probnlem parameters not provided");
   
   
   
-    const ParameterList &adapterPlist = problem_parameters.sublist("InputAdapterParameters");
-    base_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist); // a pointer to a basic type
-    if(ia == nullptr)
-    {
-      if(rank == 0)
-        cout << "Get adapter for input failed" << endl;
+  const ParameterList &adapterPlist = problem_parameters.sublist("InputAdapterParameters");
+  base_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist); // a pointer to a basic type
+  if(ia == nullptr)
+  {
+    if(rank == 0)
+      cout << "Get adapter for input failed" << endl;
+    
+    return;
+  }
   
-      return;
-    }
+  ////////////////////////////////////////////////////////////
+  // 2. construct partitioning problem
+  ////////////////////////////////////////////////////////////
+  problem_t * problem;
+  string adapter_name = adapterPlist.get<string>("inputAdapter"); // If we are here we have an input adapter, no need to check for one.
+  // get Zoltan2 partion parameters
+  ParameterList zoltan2_parameters = const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
+  zoltan2_parameters.set("num_global_parts", comm->getSize());
   
-    ////////////////////////////////////////////////////////////
-    // 2. construct partitioning problem
-    ////////////////////////////////////////////////////////////
-    problem_t * problem;
-    string adapter_name = adapterPlist.get<string>("inputAdapter"); // If we are here we have an input adapter, no need to check for one.
-    // get Zoltan2 partion parameters
-    ParameterList zoltan2_parameters = const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
-    zoltan2_parameters.set("num_global_parts", comm->getSize());
+  if(rank == 0){
+    readPList(zoltan2_parameters, "Zoltan 2 Params:\n");
+    cout <<"\n\n"<<endl;}
   
-    if(rank == 0){
-      readPList(zoltan2_parameters, "Zoltan 2 Params:\n");
-      cout <<"\n\n"<<endl;}
+#ifdef HAVE_ZOLTAN2_MPI
   
-  #ifdef HAVE_ZOLTAN2_MPI
-  
-    if(adapter_name == "BasicIdentifier"){
-      problem = reinterpret_cast<problem_t * >(new basic_problem_t(reinterpret_cast<basic_id_t *>(ia),
-                                                                   &zoltan2_parameters,
-                                                                   MPI_COMM_WORLD));
-    }else if(adapter_name == "XpetraMultiVector")
-    {
-      problem = reinterpret_cast<problem_t * >(new xpetra_mv_problem_t(reinterpret_cast<xpetra_mv_t *>(ia),
+  if(adapter_name == "BasicIdentifier"){
+    problem = reinterpret_cast<problem_t * >(new basic_problem_t(reinterpret_cast<basic_id_t *>(ia),
+                                                                 &zoltan2_parameters,
+                                                                 MPI_COMM_WORLD));
+  }else if(adapter_name == "XpetraMultiVector")
+  {
+    problem = reinterpret_cast<problem_t * >(new xpetra_mv_problem_t(reinterpret_cast<xpetra_mv_t *>(ia),
+                                                                     &zoltan2_parameters,
+                                                                     MPI_COMM_WORLD));
+  }else if(adapter_name == "XpetraCrsGraph"){
+    problem = reinterpret_cast<problem_t * >(new xcrsGraph_problem_t(reinterpret_cast<xcrsGraph_t *>(ia),
+                                                                     &zoltan2_parameters,
+                                                                     MPI_COMM_WORLD));
+  }
+  else if(adapter_name == "XpetraCrsMatrix")
+  {
+    problem = reinterpret_cast<problem_t * >(new xcrsMatrix_problem_t(reinterpret_cast<xcrsMatrix_t *>(ia),
+                                                                      &zoltan2_parameters,
+                                                                      MPI_COMM_WORLD));
+  }  else if(adapter_name == "BasicVector")
+  {
+    problem = reinterpret_cast<problem_t * >(new basicVector_problem_t(reinterpret_cast<basic_vector_t *>(ia),
                                                                        &zoltan2_parameters,
                                                                        MPI_COMM_WORLD));
-    }else if(adapter_name == "XpetraCrsGraph"){
-      problem = reinterpret_cast<problem_t * >(new xcrsGraph_problem_t(reinterpret_cast<xcrsGraph_t *>(ia),
-                                                                       &zoltan2_parameters,
-                                                                       MPI_COMM_WORLD));
-    }
-    else if(adapter_name == "XpetraCrsMatrix")
-    {
-      problem = reinterpret_cast<problem_t * >(new xcrsMatrix_problem_t(reinterpret_cast<xcrsMatrix_t *>(ia),
-                                                                        &zoltan2_parameters,
-                                                                        MPI_COMM_WORLD));
-    }  else if(adapter_name == "BasicVector")
-    {
-      problem = reinterpret_cast<problem_t * >(new basicVector_problem_t(reinterpret_cast<basic_vector_t *>(ia),
-                                                                        &zoltan2_parameters,
-                                                                        MPI_COMM_WORLD));
-    }
-    else
-      throw std::runtime_error("Input adapter type not avaible, or misspelled.");
+  }
+  else
+    throw std::runtime_error("Input adapter type not avaible, or misspelled.");
   
   
-  #else
-    if(adapter_name == "BasicIdentifier"){
-      problem = reinterpret_cast<problem_t * >(new basic_problem_t(reinterpret_cast<basic_id_t *>(ia),
-                                                                   &zoltan2_parameters));
-    }else if(adapter_name == "XpetraMultiVector")
-    {
-      problem = reinterpret_cast<problem_t * >(new xpetra_mv_problem_t(reinterpret_cast<xpetra_mv_t *>(ia),
+#else
+  if(adapter_name == "BasicIdentifier"){
+    problem = reinterpret_cast<problem_t * >(new basic_problem_t(reinterpret_cast<basic_id_t *>(ia),
+                                                                 &zoltan2_parameters));
+  }else if(adapter_name == "XpetraMultiVector")
+  {
+    problem = reinterpret_cast<problem_t * >(new xpetra_mv_problem_t(reinterpret_cast<xpetra_mv_t *>(ia),
+                                                                     &zoltan2_parameters));
+  }else if(adapter_name == "XpetraCrsGraph"){
+    problem = reinterpret_cast<problem_t * >(new xcrsGraph_problem_t(reinterpret_cast<xcrsGraph_t *>(ia),
+                                                                     &zoltan2_parameters));
+  }
+  else if(adapter_name == "XpetraCrsMatrix")
+  {
+    problem = reinterpret_cast<problem_t * >(new xcrsMatrix_problem_t(reinterpret_cast<xcrsMatrix_t *>(ia),
+                                                                      &zoltan2_parameters));
+  } else if(adapter_name == "BasicVector")
+  {
+    problem = reinterpret_cast<problem_t * >(new basicVector_problem_t(reinterpret_cast<basic_vector_t *>(ia),
                                                                        &zoltan2_parameters));
-    }else if(adapter_name == "XpetraCrsGraph"){
-      problem = reinterpret_cast<problem_t * >(new xcrsGraph_problem_t(reinterpret_cast<xcrsGraph_t *>(ia),
-                                                                       &zoltan2_parameters));
-    }
-    else if(adapter_name == "XpetraCrsMatrix")
-    {
-      problem = reinterpret_cast<problem_t * >(new xcrsMatrix_problem_t(reinterpret_cast<xcrsMatrix_t *>(ia),
-                                                                        &zoltan2_parameters));
-    } else if(adapter_name == "BasicVector")
-    {
-      problem = reinterpret_cast<problem_t * >(new basicVector_problem_t(reinterpret_cast<basic_vector_t *>(ia),
-                                                                         &zoltan2_parameters);
-    }
-    else
-      throw std::runtime_error("Input adapter type not avaible, or misspelled.");
-  #endif
+  }
+  else
+    throw std::runtime_error("Input adapter type not avaible, or misspelled.");
+#endif
   
-    ////////////////////////////////////////////////////////////
-    // 3. Solve the problem
-    ////////////////////////////////////////////////////////////
-    if(rank == 0) cout << "...Solving problem..." << endl;
-    reinterpret_cast<basic_problem_t *>(problem)->solve();
-    if (rank == 0)
-      cout << "Problem solved" << endl;
+  ////////////////////////////////////////////////////////////
+  // 3. Solve the problem
+  ////////////////////////////////////////////////////////////
+  if(rank == 0) cout << "...Solving problem..." << endl;
+  reinterpret_cast<basic_problem_t *>(problem)->solve();
+  if (rank == 0)
+    cout << "Problem solved" << endl;
   
-    ////////////////////////////////////////////////////////////
-    // 4. Print problem metrics
-    ////////////////////////////////////////////////////////////
-    if (comm->getRank() == 0)
+  ////////////////////////////////////////////////////////////
+  // 4. Print problem metrics
+  ////////////////////////////////////////////////////////////
+  if (comm->getRank() == 0)
+  {
+    // calculate pass fail based on imbalance
+    reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
+    
+    if(problem_parameters.isParameter("Metrics"))
     {
-      // calculate pass fail based on imbalance
-      reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
-  
-      if(problem_parameters.isParameter("Metrics"))
+      
+      ArrayRCP<const metric_t> metrics
+      = reinterpret_cast<basic_problem_t *>(problem)->getMetrics();
+      
+      // get metric plist
+      const ParameterList &metricsPlist = problem_parameters.sublist("Metrics");
+      
+      string test_name;
+      bool all_tests_pass = true;
+      for(int i = 0; i < metrics.size(); i++)
       {
-  
-        ArrayRCP<const metric_t> metrics
-        = reinterpret_cast<basic_problem_t *>(problem)->getMetrics();
-  
-        // get metric plist
-        const ParameterList &metricsPlist = problem_parameters.sublist("Metrics");
-  
-        string test_name;
-        bool all_tests_pass = true;
-        for(int i = 0; i < metrics.size(); i++)
+        // print their names...
+        ostringstream msg;
+        test_name = metrics[i].getName();
+        if(metricsPlist.isSublist(test_name))
         {
-          // print their names...
-          ostringstream msg;
-          test_name = metrics[i].getName();
-          if(metricsPlist.isSublist(test_name))
-          {
-            if(!minMaxTest(metrics[i], metricsPlist.sublist(test_name), msg))
-              all_tests_pass = false;
-            cout << msg.str() << endl;
-  
-          }
+          if(!minMaxTest(metrics[i], metricsPlist.sublist(test_name), msg))
+            all_tests_pass = false;
+          cout << msg.str() << endl;
+          
         }
-  
-        if(all_tests_pass) cout << "All tests PASSED." << endl;
-        else cout << "Testing FAILED." << endl;
-  
-      }else{
-        cout << "No test metrics provided." << endl;
-        reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
       }
+      
+      if(all_tests_pass) cout << "All tests PASSED." << endl;
+      else cout << "Testing FAILED." << endl;
+      
+    }else{
+      cout << "No test metrics provided." << endl;
+      reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
     }
-    // 4a. timers
-    if(zoltan2_parameters.isParameter("timer_output_stream"))
-      reinterpret_cast<basic_problem_t *>(problem)->printTimers();
+  }
+  // 4a. timers
+  if(zoltan2_parameters.isParameter("timer_output_stream"))
+    reinterpret_cast<basic_problem_t *>(problem)->printTimers();
   
-    ////////////////////////////////////////////////////////////
-    // 5. Clean up
-    ////////////////////////////////////////////////////////////
   
-    if(adapter_name == "XpetraCrsGraph")
-      delete reinterpret_cast<xcrsGraph_t *>(ia)->getCoordinateInput();
-    if(adapter_name == "XpetraCrsMatrix")
-      delete reinterpret_cast<xcrsMatrix_t *>(ia)->getCoordinateInput();
+  // 5a solution
+  auto solution = reinterpret_cast<basicVector_problem_t *>(problem)->getSolution();
+  size_t local_parts = ia->getLocalNumIDs();
+  writePartionSolution<basic_vector_t::part_t>(solution.getPartListView(),local_parts,comm);
+//  for(size_t i = 0; i < local_parts; i++)
+//    printf("%i ", solution.getPartListView()[i]);
+//  printf("}\n\n");
   
-    delete ia;
-    delete reinterpret_cast<basic_problem_t *>(problem);
+  ////////////////////////////////////////////////////////////
+  // 5. Clean up
+  ////////////////////////////////////////////////////////////
+  
+  if(adapter_name == "XpetraCrsGraph")
+    delete reinterpret_cast<xcrsGraph_t *>(ia)->getCoordinateInput();
+  if(adapter_name == "XpetraCrsMatrix")
+    delete reinterpret_cast<xcrsMatrix_t *>(ia)->getCoordinateInput();
+  
+  delete ia;
+  delete reinterpret_cast<basic_problem_t *>(problem);
 }
 
 
@@ -390,7 +417,7 @@ void readMesh(const UserInputForTests &uinput,const RCP<const Teuchos::Comm<int>
   
   printf("dimension: %d\n", mesh->num_dim);
   printf("local nodes: %d\n", nodes);
-  printf("local elem: %d\n", els);
+  printf("local elems: %d\n", els);
   
   int gnodes, gels;
   gnodes = mesh->num_nodes_global;
@@ -416,6 +443,7 @@ void readMesh(const UserInputForTests &uinput,const RCP<const Teuchos::Comm<int>
   }
   
   
+  int el_count = 0;
   printf("\nElements:\n");
   for(int i = 0; i < blks; i++)
   {
@@ -427,17 +455,33 @@ void readMesh(const UserInputForTests &uinput,const RCP<const Teuchos::Comm<int>
     
     for(int j = 0; j < elb; j++)
     {
-      printf("element:{");
+      printf("element %d:{", el_count);
       for(int k = 0; k < npel; k++)
         printf("%d ", connect[j*npel + k]);
       printf("}\n");
+      el_count++;
     }
     
-    
+  }
+  
+  el_count = 0;
+  printf("\nElements Centroids:\n");
+  for(int i = 0; i < blks; i++)
+  {
+    int elb = mesh->elements[i];
+    for(int j = 0; j < elb; j++)
+    {
+      printf("element %d:{", mesh->global_element_numbers[el_count]);
+      for(int k = 0; k < mesh->num_dim; k++)
+        printf("%1.2f ", mesh->element_coord[el_count + k * mesh->num_elem]);
+      printf("}\n");
+      el_count++;
+    }
   }
   
   comm->barrier();
 }
+
 
 void writeMesh(const UserInputForTests &uinput,const RCP<const Teuchos::Comm<int> > & comm)
 {
@@ -560,6 +604,9 @@ int main(int argc, char *argv[])
   // (4) Perform all tests
   ////////////////////////////////////////////////////////////
   comm->barrier();
+  
+  writeMesh(uinput,comm);
+  
   while (!pLists.empty()) {
     run(uinput, pLists.front(), comm);
     pLists.pop();
