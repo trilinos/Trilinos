@@ -187,8 +187,12 @@ int main(int argc, char *argv[]) {
         myGIDs[r] = gid;
       }
 
+      GO gCntGIDs  = 0;
+      GO glCntGIDs = Teuchos::as<GlobalOrdinal>(myGIDs.size());
+      MueLu_sumAll(comm,glCntGIDs,gCntGIDs);
+
       Teuchos::Array<GlobalOrdinal> eltList(myGIDs);
-      RCP<const Map> myCoordMap = MapFactory::Build (xpetraParameters.GetLib(),myGIDs.size(),eltList(),0,comm);
+      RCP<const Map> myCoordMap = MapFactory::Build (xpetraParameters.GetLib(),gCntGIDs,eltList(),0,comm);
 
       fancyout << "Read fine level coordinates from file " << cooFileName << std::endl;
       coordinates = Utils2::ReadMultiVector(std::string(cooFileName), myCoordMap);
