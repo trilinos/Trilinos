@@ -245,7 +245,7 @@ public:
         ip += cL2_*dx_/6.0*(4.0*x[i] + x[i+1])*y[i]; // Mass term
         ip += cH1_*(2.0*x[i] - x[i+1])/dx_*y[i];     // Stiffness term
       }
-      else if ( i == x.size()-1 ) {
+      else if ( i == nx_-1 ) {
         ip += cL2_*dx_/6.0*(x[i-1] + 4.0*x[i])*y[i]; // Mass term
         ip += cH1_*(2.0*x[i] - x[i-1])/dx_*y[i];     // Stiffness term
       }
@@ -270,7 +270,7 @@ public:
         Mu[i] = cL2_*dx_/6.0*(4.0*u[i] + u[i+1])
               + cH1_*(2.0*u[i] - u[i+1])/dx_;
       }
-      else if ( i == u.size()-1 ) {
+      else if ( i == nx_-1 ) {
         Mu[i] = cL2_*dx_/6.0*(u[i-1] + 4.0*u[i])
               + cH1_*(2.0*u[i] - u[i-1])/dx_;
       }

@@ -5,9 +5,9 @@
 #include "Ifpack2_Factory.hpp"
 #include "Trilinos_Details_LinearSolver.hpp"
 #include "Trilinos_Details_LinearSolverFactory.hpp"
-// Define typedefs and macros for testing over all Tpetra types.
-// They work whether or not ETI is enabled.
-#include "TpetraCore_ETIHelperMacros.h"
+// Define typedefs and macros for testing over all template parameter
+// combinations.
+#include "Ifpack2_ETIHelperMacros.h"
 
 namespace {
   // Create a very simple square test matrix.  We use the identity
@@ -216,13 +216,14 @@ namespace {
   }
 
   // Define typedefs that make the Tpetra macros work.
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
 
 // Macro that instantiates the unit test
 #define LCLINST( SC, LO, GO, NT ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( SolverFactory, Solve, SC, LO, GO, NT )
 
-  // Instantiate the unit test.
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCLINST )
+// Ifpack2's ETI will instantiate the unit test for all enabled type
+// combinations.
+IFPACK2_INSTANTIATE_SLGN( LCLINST )
 
 } // namespace (anonymous)

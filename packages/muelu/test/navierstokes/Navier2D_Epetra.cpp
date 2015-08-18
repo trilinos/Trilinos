@@ -199,8 +199,8 @@ int main(int argc, char *argv[]) {
     Epetra_MultiVector* ptrNS = 0;
 
     std::cout << "Reading matrix market file" << std::endl;
-    EpetraExt::MatrixMarketFileToCrsMatrix("A5932_re1000.txt",emap,emap,emap,ptrA);
-    EpetraExt::MatrixMarketFileToVector("b5932_re1000.txt",emap,ptrf);
+    EpetraExt::MatrixMarketFileToCrsMatrix("A_re1000_5932.txt",emap,emap,emap,ptrA);
+    EpetraExt::MatrixMarketFileToVector("b_re1000_5932.txt",emap,ptrf);
     //EpetraExt::MatrixMarketFileToMultiVector( "stru2d_ns.txt", emap, ptrNS);
     RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
     RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);

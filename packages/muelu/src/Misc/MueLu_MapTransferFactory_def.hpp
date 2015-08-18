@@ -118,7 +118,7 @@ namespace MueLu {
       GetOStream(Runtime0) << "MapTransferFactory::Build: User provided map " << mapName << " not found in Level class." << std::endl;
 
     // fetch map extractor from level
-    RCP<const Map> transferMap = fineLevel.Get<RCP<const Map> >(mapName,mapFact_.get());
+    RCP<Map> transferMap = fineLevel.Get<RCP<Map> >(mapName,mapFact_.get());
 
     // Get default tentative prolongator factory
     // Getting it that way ensure that the same factory instance will be used for both SaPFactory and NullspaceFactory.
@@ -154,7 +154,7 @@ namespace MueLu {
     std::sort(coarseMapGids.begin(), coarseMapGids.end());
     coarseMapGids.erase(std::unique(coarseMapGids.begin(), coarseMapGids.end()), coarseMapGids.end());
     Teuchos::ArrayView<GO> coarseMapGidsView(&coarseMapGids[0], coarseMapGids.size());
-    Teuchos::RCP<const Map> coarseTransferMap = MapFactory::Build(Ptent->getColMap()->lib(), INVALID, coarseMapGidsView, Ptent->getColMap()->getIndexBase(), Ptent->getColMap()->getComm());
+    Teuchos::RCP<Map> coarseTransferMap = MapFactory::Build(Ptent->getColMap()->lib(), INVALID, coarseMapGidsView, Ptent->getColMap()->getIndexBase(), Ptent->getColMap()->getComm());
 
     // store map extractor in coarse level
     coarseLevel.Set(mapName, coarseTransferMap, mapFact_.get());
