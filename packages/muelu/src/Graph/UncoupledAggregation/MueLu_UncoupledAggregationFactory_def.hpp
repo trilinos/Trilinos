@@ -162,14 +162,14 @@ namespace MueLu {
       //if (pL.get<bool>("UseEmergencyAggregationAlgorithm")         == true)   algos_.push_back(rcp(new EmergencyAggregationAlgorithm         (graphFact)));
 
     std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name");
-    RCP<const Map> OnePtMap = Teuchos::null;
+    RCP<Map> OnePtMap = Teuchos::null;
     if (mapOnePtName.length()) {
       std::string mapOnePtFactName = pL.get<std::string>("OnePt aggregate map factory");
       if (mapOnePtFactName == "" || mapOnePtFactName == "NoFactory") {
-        OnePtMap = currentLevel.Get<RCP<const Map> >(mapOnePtName, NoFactory::get());
+        OnePtMap = currentLevel.Get<RCP<Map> >(mapOnePtName, NoFactory::get());
       } else {
         RCP<const FactoryBase> mapOnePtFact = GetFactory(mapOnePtFactName);
-        OnePtMap = currentLevel.Get<RCP<const Map> >(mapOnePtName, mapOnePtFact.get());
+        OnePtMap = currentLevel.Get<RCP<Map> >(mapOnePtName, mapOnePtFact.get());
       }
     }
 

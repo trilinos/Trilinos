@@ -409,7 +409,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_UNSIGNED
   HAVE_TPETRA_INST_INT_UNSIGNED
-  "Enable GlobalOrdinal = unsigned in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT} by default."
+  "Enable GlobalOrdinal = unsigned in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT} by default.  Please don't set this option.  We only maintain it for backwards compatibility."
   ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT}
   )
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -425,6 +425,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${HAVE_TPETRA_INST_INT_LONG_DEFAULT}
   )
 
+# Warn on use of options that we don't like.
+IF (Tpetra_INST_INT_UNSIGNED)
+  MESSAGE (WARNING "Tpetra: You set Tpetra_INST_INT_UNSIGNED.  This means that you want to use GlobalOrdinal = unsigned with Tpetra objects.  Please don't do that.  I only maintain this option for backwards compatibility.  While I have gone through some effort to make unsigned GlobalOrdinal types work in Tpetra, they are not tested and thus I don't want to promise that they still work.")
+ENDIF ()
+
 # Set availability macros for various GlobalOrdinal types
 GLOBAL_SET(HAVE_TPETRA_INT_INT ${Tpetra_INST_INT_INT})
 GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED ${Tpetra_INST_INT_UNSIGNED})
@@ -437,10 +442,21 @@ GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG ${Tpetra_INST_INT_LONG_LONG})
 IF (Tpetra_INST_INT_INT OR Tpetra_INST_INT_UNSIGNED OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG)
   GLOBAL_SET (HAVE_TPETRA_GLOBALORDINAL ON)
 ELSE()
-  MESSAGE (FATAL_ERROR "Tpetra: No GlobalOrdinal type is enabled.  At least one GlobalOrdinal type must be enabled.")
+  # mfh 18 Aug 2015: CASL wants to set GlobalOrdinal = unsigned long.
+  # Tpetra doesn't have an option for this (for good reason: I don't
+  # want to promise support for unsigned GlobalOrdinal types --
+  # "unsigned" is already a bad idea).  Thus, CASL sets it using
+  # TriBITS' ETI support.  As a result, their build disables ALL
+  # GlobalOrdinal types that Tpetra claims to support; they explicitly
+  # set the four Tpetra_INST_INT_* options above to OFF.  Tpetra's
+  # CMakeLists.txt files get processed before its ETI logic, so the
+  # code here doesn't see the GlobalOrdinal type that CASL adds.  This
+  # is why we don't error out if none of the above options are ON.
+  GLOBAL_SET (HAVE_TPETRA_GLOBALORDINAL OFF)
+  MESSAGE (STATUS "Tpetra: NOTE: No GlobalOrdinal type is enabled.  This means that you, the user, explicitly disabled all GlobalOrdinal types that Tpetra enables by default.  If you know what you are doing, this might be OK.  If you don't know what you are doing, please don't do this.")
 ENDIF()
 IF (Tpetra_INST_INT_LONG_LONG AND NOT Teuchos_ENABLE_LONG_LONG_INT)
-  MESSAGE (FATAL_ERROR "Tpetra: GlobalOrdinal = long long is enabled in Tpetra but is not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT=ON or set Tpetra_INST_INT_LONG_LONG=OFF.")
+  MESSAGE (FATAL_ERROR "Tpetra: GlobalOrdinal = long long is enabled in Tpetra but is not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT=ON or set Tpetra_INST_INT_LONG_LONG=OFF.  Note that Tpetra requires C++11, and Teuchos_ENABLE_LONG_LONG_INT is ON by default if the compiler supports C++11.  Thus, if you are seeing this message, you probably set Teuchos_ENABLE_LONG_LONG_INT=OFF explicitly.  Please don't do that.  If you don't want to enable GlobalOrdinal = long long in Tpetra, set Tpetra_INST_INT_LONG_LONG=OFF and leave Teuchos alone.")
 ENDIF()
 
 # Append GlobalOrdinal types to instantiation /test list.  Add them to
@@ -517,22 +533,29 @@ ENDIF ()
 # capability be tested.  In a release build, we disable this case, in
 # order to reduce build time.  Users may always enable it explicitly.
 ASSERT_DEFINED (Tpetra_ENABLE_DEBUG)
-ASSERT_DEFINED (HAVE_COMPLEX_BLAS)
-IF (HAVE_COMPLEX_BLAS)
-  IF (Tpetra_INST_DOUBLE)
-    GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ${Tpetra_ENABLE_DEBUG})
+# mfh 18 Aug 2015: Teuchos currently doesn't even define
+# HAVE_COMPLEX_BLAS, in the case where one would expect it to be OFF.
+# Thanks to Andrew Bradley for pointing this out.
+IF (DEFINED HAVE_COMPLEX_BLAS)
+  IF (HAVE_COMPLEX_BLAS)
+    IF (Tpetra_INST_DOUBLE)
+      GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ${Tpetra_ENABLE_DEBUG})
+    ELSE()
+      GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
+    ENDIF()
+    IF (Tpetra_INST_FLOAT)
+      GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT ${Tpetra_ENABLE_DEBUG})
+    ELSE()
+      GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
+    ENDIF()
   ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
-  ENDIF()
-  IF (Tpetra_INST_FLOAT)
-    GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT ${Tpetra_ENABLE_DEBUG})
-  ELSE()
     GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-  ENDIF()
-ELSE()
+  ENDIF() # HAVE_COMPLEX_BLAS
+ELSE () # NOT DEFINED HAVE_COMPLEX_BLAS (consider OFF)
   GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
   GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
-ENDIF() # HAVE_COMPLEX_BLAS
+ENDIF () # DEFINED HAVE_COMPLEX_BLAS
 
 # Set up the Tpetra_INST_COMPLEX_DOUBLE option: whether to instantiate
 # / test Scalar = std::complex<double>.
@@ -557,9 +580,16 @@ ENDIF ()
 # Tpetra requires that the BLAS work for Scalar, as long as Scalar is
 # one of the four types (S, D, C, Z) that the BLAS promises to
 # implement.  Check whether the BLAS works for complex arithmetic.
-ASSERT_DEFINED (HAVE_COMPLEX_BLAS)
-IF (Tpetra_INST_COMPLEX_DOUBLE AND NOT HAVE_COMPLEX_BLAS)
-  MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>), but HAVE_COMPLEX_BLAS is OFF.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
+
+# mfh 18 Aug 2015: Teuchos currently doesn't even define
+# HAVE_COMPLEX_BLAS, in the case where one would expect it to be OFF.
+# Thanks to Andrew Bradley for pointing this out.
+IF (Tpetra_INST_COMPLEX_DOUBLE)
+  IF (NOT DEFINED HAVE_COMPLEX_BLAS)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>), but HAVE_COMPLEX_BLAS is not defined.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
+  ELSEIF (NOT HAVE_COMPLEX_BLAS)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>), but HAVE_COMPLEX_BLAS is OFF.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
+  ENDIF ()
 ENDIF ()
 
 # Set up the Tpetra_INST_COMPLEX_FLOAT option: whether to instantiate
@@ -586,10 +616,13 @@ ENDIF ()
 # one of the four types (S, D, C, Z) that the BLAS promises to
 # implement.  Check whether the BLAS works for complex float (C)
 # arithmetic.
-ASSERT_DEFINED (HAVE_COMPLEX_BLAS)
-IF (Tpetra_INST_COMPLEX_FLOAT AND NOT HAVE_COMPLEX_BLAS)
-  MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>), but HAVE_COMPLEX_BLAS is OFF.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
-ENDIF()
+IF (Tpetra_INST_COMPLEX_FLOAT)
+  IF (NOT DEFINED HAVE_COMPLEX_BLAS)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>), but HAVE_COMPLEX_BLAS is not defined.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
+  ELSEIF (NOT HAVE_COMPLEX_BLAS)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>), but HAVE_COMPLEX_BLAS is OFF.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
+  ENDIF ()
+ENDIF ()
 
 # Optionally enable explicit template instantiation (ETI) and tests
 # for Scalar = __float128.  __float128 is a GCC-specific C++ language
