@@ -58,6 +58,10 @@ public:
     output += input;
   }
 
+  void reduce( const volatile Real &input, volatile Real &output ) const {
+    output += input;
+  }
+
   Real initialValue() const {
     return 0;
   }
@@ -72,6 +76,10 @@ template<class Real>
 class ReductionAnd : public ReductionOp<Real> {
 public:
   void reduce( const Real &input, Real &output ) const {
+    output = (input*output)==0 ? 0.0 : 1.0;
+  }
+
+  void reduce( const volatile Real &input, volatile Real &output ) const {
     output = (input*output)==0 ? 0.0 : 1.0;
   }
 
@@ -96,7 +104,11 @@ public:
   void reduce( const Real &input, Real &output ) const {
     output = (input<output) ? input : output;
   }
-  
+
+  void reduce( const volatile Real &input, Real volatile &output ) const {
+    output = (input<output) ? input : output;
+  }
+ 
   Real initialValue() const {
     return std::numeric_limits<Real>::max();
   }
@@ -119,7 +131,11 @@ public:
   void reduce( const Real &input, Real &output ) const {
     output = (input>output) ? input : output;
   }
-  
+
+  void reduce( const volatile Real &input, volatile Real &output ) const {
+    output = (input>output) ? input : output;
+  }
+ 
   Real initialValue() const {
     return std::numeric_limits<Real>::min();
   }
