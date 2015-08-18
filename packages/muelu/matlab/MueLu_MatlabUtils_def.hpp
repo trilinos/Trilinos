@@ -317,6 +317,10 @@ RCP<Tpetra_CrsMatrix_double> loadDataFromMatlab<RCP<Tpetra_CrsMatrix_double>>(co
 {
   bool success = false;
   RCP<Tpetra_CrsMatrix_double> A;
+
+  int* colptr = NULL;
+  int* rowind = NULL;
+
   try
   {
     RCP<const Teuchos::Comm<int>> comm = rcp(new Teuchos::SerialComm<int>());
@@ -327,8 +331,6 @@ RCP<Tpetra_CrsMatrix_double> loadDataFromMatlab<RCP<Tpetra_CrsMatrix_double>>(co
     RCP<const muemex_map_type> domainMap = rcp(new muemex_map_type(mxGetN(mxa), indexBase, comm));
     A = Tpetra::createCrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(rowMap);
     double* valueArray = mxGetPr(mxa);
-    int* colptr;
-    int* rowind;
     int nc = mxGetN(mxa);
     if(rewrap_ints)
     {
@@ -355,13 +357,20 @@ RCP<Tpetra_CrsMatrix_double> loadDataFromMatlab<RCP<Tpetra_CrsMatrix_double>>(co
     A->fillComplete(domainMap, rowMap);
     if(rewrap_ints)
     {
-      delete[] rowind;
-      delete[] colptr;
+      delete[] rowind; rowind = NULL;
+      delete[] colptr; colptr = NULL;
     }
     success = true;
   }
   catch(std::exception& e)
   {
+    if(rewrap_ints)
+    {
+      if(rowind!=NULL) delete[] rowind;
+      if(colptr!=NULL) delete[] colptr;
+      rowind = NULL;
+      colptr = NULL;
+    }
     mexPrintf("Error while constructing Tpetra matrix:\n");
     std::cout << e.what() << std::endl;
   }
