@@ -128,8 +128,7 @@ public:
   
   ~UserInputForTests()
   {
-    if(this->pamgen_mesh)
-      delete this->pamgen_mesh;
+    if(this->hasPamgenMesh()) delete this->pamgen_mesh;
   }
   typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tcrsMatrix_t;
   typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> tcrsGraph_t;
@@ -272,6 +271,7 @@ public:
   
   bool hasUIXpetraMultiVector();
   
+  bool hasPamgenMesh();
 #ifdef HAVE_EPETRA_DATA_TYPES
   bool hasUIEpetraCrsGraph();
   
@@ -289,6 +289,7 @@ private:
   
   const RCP<const Comm<int> > tcomm_;
   
+  bool havePamgenMesh;
   PamgenMesh * pamgen_mesh;
   
   RCP<tcrsMatrix_t> M_;
@@ -384,7 +385,7 @@ private:
 UserInputForTests::UserInputForTests(string path, string testData,
                                      const RCP<const Comm<int> > &c,
                                      bool debugInfo, bool distributeInput):
-verbose_(debugInfo),
+verbose_(debugInfo), havePamgenMesh(false),
 tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_(),
 #ifdef HAVE_EPETRA_DATA_TYPES
 ecomm_(), eM_(), eG_(),
@@ -411,7 +412,7 @@ UserInputForTests::UserInputForTests(int x, int y, int z,
                                      const RCP<const Comm<int> > &c,
                                      bool debugInfo,
                                      bool distributeInput):
-verbose_(debugInfo),
+verbose_(debugInfo),havePamgenMesh(false),
 tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_(),
 #ifdef HAVE_EPETRA_DATA_TYPES
 ecomm_(), eM_(), eG_(),
@@ -447,7 +448,7 @@ UserInputForTests::UserInputForTests(const ParameterList &pList,
                                      const RCP<const Comm<int> > &c,
                                      bool debugInfo,
                                      bool distributeInput):
-verbose_(debugInfo),
+verbose_(debugInfo),havePamgenMesh(false),
 tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_(),
 #ifdef HAVE_EPETRA_DATA_TYPES
 ecomm_(), eM_(), eG_(),
@@ -783,6 +784,11 @@ bool UserInputForTests::hasUIXpetraVector()
 bool UserInputForTests::hasUIXpetraMultiVector()
 {
   return true;
+}
+
+bool UserInputForTests::hasPamgenMesh()
+{
+  return this->havePamgenMesh;
 }
 
 #ifdef HAVE_EPETRA_DATA_TYPES
@@ -2335,6 +2341,7 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData, int dim
   int nproc = this->tcomm_->getSize();
   
   this->pamgen_mesh = new PamgenMesh;
+  this->havePamgenMesh = true;
   pamgen_mesh->createMesh(file_data,dimension,rank,nproc);
   pamgen_mesh->storeMesh();
   this->tcomm_->barrier();
