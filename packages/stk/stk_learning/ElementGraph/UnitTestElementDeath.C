@@ -19,10 +19,12 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/memory_util.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 
 #include <stk_io/IossBridge.hpp>
 
@@ -92,6 +94,70 @@ void test_face_membership_for_death(stk::mesh::BulkData& bulkData, stk::mesh::En
                 EXPECT_FALSE(bucket->member_all(boundary_mesh_parts)) << " is entity not in boundary parts" << bulkData.entity_key(entity);
             }
         }
+    }
+}
+
+TEST(ElementDeath, replicate_random_death_test)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    if(stk::parallel_machine_size(comm) == 4)
+    {
+        unsigned spatialDim = 3;
+
+        stk::mesh::MetaData meta(spatialDim);
+        stk::mesh::Part& faces_part = meta.declare_part_with_topology("surface_5", stk::topology::QUAD_4);
+        stk::mesh::Part& death_1_part = meta.declare_part("death_1", stk::topology::FACE_RANK);
+        stk::mesh::PartVector boundary_mesh_parts {&faces_part, &death_1_part};
+        stk::mesh::BulkData bulkData(meta, comm, stk::mesh::BulkData::NO_AUTO_AURA);
+
+        stk::mesh::Part& active = meta.declare_part("active");
+        stk::unit_test_util::generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp("2x2x1", bulkData, "cyclic");
+
+        stk::mesh::create_faces(bulkData);
+
+        std::vector<size_t> mesh_counts;
+        stk::mesh::comm_mesh_counts(bulkData, mesh_counts);
+        ASSERT_EQ(20u, mesh_counts[stk::topology::FACE_RANK]);
+        stk::unit_test_util::put_mesh_into_part(bulkData, active);
+
+        stk::mesh::EntityVector elems;
+        stk::mesh::get_entities(bulkData, stk::topology::ELEM_RANK, elems);
+        ASSERT_EQ(1u, elems.size());
+        stk::mesh::EntityId goldId = bulkData.parallel_rank()+1;
+        ASSERT_EQ(goldId, bulkData.identifier(elems[0]));
+
+        stk::mesh::EntityVector elements_to_kill;
+        if (bulkData.parallel_rank() == 3)
+        {
+            elements_to_kill.push_back(elems[0]);
+        }
+
+        stk::mesh::ElemElemGraph graph(bulkData, active);
+        ElementDeathUtils::deactivate_elements(elements_to_kill, bulkData,  active);
+        EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, graph, elements_to_kill, active, boundary_mesh_parts));
+
+        stk::mesh::Selector sel = death_1_part;
+        stk::mesh::EntityVector faces;
+        stk::mesh::get_selected_entities(sel, bulkData.buckets(stk::topology::FACE_RANK), faces);
+
+        std::vector<size_t> gold_values = { 0, 1, 1, 2 };
+        ASSERT_EQ(gold_values[bulkData.parallel_rank()], faces.size());
+
+        stk::mesh::Entity node14 = bulkData.get_entity(stk::topology::NODE_RANK,14);
+        EXPECT_TRUE(bulkData.is_valid(node14));
+        EXPECT_TRUE(bulkData.bucket(node14).member(death_1_part));
+
+        elements_to_kill.clear();
+        if(bulkData.parallel_rank() == 2)
+        {
+            elements_to_kill.push_back(elems[0]);
+        }
+
+        ElementDeathUtils::deactivate_elements(elements_to_kill, bulkData,  active);
+        EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, graph, elements_to_kill, active, boundary_mesh_parts));
+
+        stk::mesh::comm_mesh_counts(bulkData, mesh_counts);
+        ASSERT_EQ(20u, mesh_counts[stk::topology::FACE_RANK]);
     }
 }
 

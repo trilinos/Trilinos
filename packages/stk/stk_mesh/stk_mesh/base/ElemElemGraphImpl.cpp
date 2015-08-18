@@ -337,11 +337,10 @@ stk::mesh::Entity get_side_for_element(const stk::mesh::BulkData& bulkData, stk:
     return side;
 }
 
-
 bool create_or_delete_shared_side(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
         stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, bool create_shared_side, const stk::mesh::PartVector& side_parts,
         stk::mesh::Part &activePart, std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities,
-        stk::mesh::EntityVector & facesWithNodesToBeMarkedInactive, stk::mesh::Part& sides_created_during_death)
+        stk::mesh::Part& sides_created_during_death)
 {
     bool topology_modified = false;
 
@@ -366,13 +365,13 @@ bool create_or_delete_shared_side(stk::mesh::BulkData& bulkData, const parallel_
         }
 
         stk::mesh::PartVector parts = side_parts;
-        parts.push_back(&bulkData.mesh_meta_data().get_topology_root_part(side_top));
 
         stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(bulkData, local_element, side_id);
 
         if(!bulkData.is_valid(side))
         {
             topology_modified = true;
+            parts.push_back(&bulkData.mesh_meta_data().get_topology_root_part(side_top));
             parts.push_back(&sides_created_during_death);
             ThrowRequireMsg(!impl::is_id_already_in_use_locally(bulkData, bulkData.mesh_meta_data().side_rank(), side_global_id), msg);
             side = connect_side_to_element(bulkData, local_element, side_global_id, side_ord, perm, parts);
@@ -384,13 +383,13 @@ bool create_or_delete_shared_side(stk::mesh::BulkData& bulkData, const parallel_
             if(bulkData.bucket(side).owned())
             {
                 bulkData.change_entity_parts(side, parts, stk::mesh::PartVector());
+                shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, bulkData.parallel_owner_rank(side)));
             }
         }
     }
     else
     {
         stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(bulkData, local_element, side_id);
-        facesWithNodesToBeMarkedInactive.push_back(side);
         if(bulkData.is_valid(side) && bulkData.bucket(side).member(sides_created_during_death))
         {
             deletedEntities.push_back(side);
