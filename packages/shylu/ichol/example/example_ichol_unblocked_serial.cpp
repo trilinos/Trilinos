@@ -24,7 +24,7 @@ int main (int argc, char *argv[]) {
   clp.setDocString("This example program demonstrates ICholUnblocked algorithm on Kokkos::Serial execution space.\n");
 
   int max_task_dependence = 10;
-  clp.setOption("max_task_dependence", &max_task_dependence, "Max number of task dependence");
+  clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
 
   int team_size = 1;
   clp.setOption("team-size", &team_size, "Team size");
