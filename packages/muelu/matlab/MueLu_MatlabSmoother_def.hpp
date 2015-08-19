@@ -80,7 +80,7 @@ namespace MueLu {
     vector<string> needsList = tokenizeList(needsSetup_);
     for(size_t i = 0; i < needsList.size(); i++)
     {
-      if(!IsParamMuemexVariable(needsList[i]))
+      if(!IsParamMuemexVariable(needsList[i]) && needsList[i] != "Level")
         this->Input(currentLevel, needsList[i]);
     }
   }
