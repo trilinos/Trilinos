@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
 
     // Define Status Test
     RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT stol  = 1e-14;  // norm of step tolerance
+    RealT stol  = 1e-13;  // norm of step tolerance
     int   maxit = 100;    // maximum number of iterations
     ROL::StatusTest<RealT> status(gtol, stol, maxit);    
 
