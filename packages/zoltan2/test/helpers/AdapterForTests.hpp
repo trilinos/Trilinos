@@ -235,7 +235,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getAdapterForInput(UserInputF
   else if(adapter_name == "BasicVector")
     ia = getBasicVectorAdapterForInput(uinput,pList);
   else
-    throw std::runtime_error("Input adapter type not avaible, or misspelled.");
+    throw std::runtime_error("Input adapter type not available, or misspelled.");
   
   return ia;
 }
@@ -250,7 +250,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
   string input_type = pList.get<string>("inputType"); // get the input type
   
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type not avaible, or misspelled."); // bad type
+    throw std::runtime_error("Input type not available, or misspelled."); // bad type
   
   vector<const zscalar_t *> weights;
   std::vector<int> weightStrides;
@@ -367,7 +367,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(Us
   
   string input_type = pList.get<string>("inputType");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type not avaible, or misspelled.");
+    throw std::runtime_error("Input type not available, or misspelled.");
   
   AdapterForTests::base_adapter_t * adapter = nullptr;
   vector<const zscalar_t *> weights;
@@ -447,7 +447,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
   
   string input_type = pList.get<string>("inputType");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type not avaible, or misspelled.");
+    throw std::runtime_error("Input type not available, or misspelled.");
   
   
   AdapterForTests::base_adapter_t * adapter = nullptr;
@@ -559,7 +559,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
   
   string input_type = pList.get<string>("inputType");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type not avaible, or misspelled.");
+    throw std::runtime_error("Input type not available, or misspelled.");
   
   AdapterForTests::base_adapter_t * adapter = nullptr;
   vector<const zscalar_t *> weights;
@@ -661,7 +661,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
   
   string input_type = pList.get<string>("inputType");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type not avaible, or misspelled.");
+    throw std::runtime_error("Input type not available, or misspelled.");
   
   AdapterForTests::basic_vector_adapter * ia = nullptr; // pointer for basic vector adapter
   

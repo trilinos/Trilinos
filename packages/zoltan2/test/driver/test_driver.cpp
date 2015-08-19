@@ -298,7 +298,7 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
                                                                        MPI_COMM_WORLD));
   }
   else
-    throw std::runtime_error("Input adapter type not avaible, or misspelled.");
+    throw std::runtime_error("Input adapter type not available, or misspelled.");
 
 
 #else
@@ -323,7 +323,7 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
                                                                        &zoltan2_parameters));
   }
   else
-    throw std::runtime_error("Input adapter type not avaible, or misspelled.");
+    throw std::runtime_error("Input adapter type not available, or misspelled.");
 #endif
 
   ////////////////////////////////////////////////////////////
@@ -619,7 +619,7 @@ void readXML(const XMLObject &xml, const string &title)
 }
 
 void readPList(const ParameterList &plist, const string &title, bool doc, bool unused)
-{
+{.  
   cout << "\nReading parameter list: " << title << " ...." << endl;
   plist.print(cout, ParameterList::PrintOptions().showDoc(doc).indent(3).showTypes(true));
 

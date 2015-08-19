@@ -717,7 +717,6 @@ bool UserInputForTests::hasInputDataType(const string &input_type)
   else if(input_type == "xpetra_crs_matrix")
     return this->hasUIXpetraCrsMatrix();
 #ifdef HAVE_EPETRA_DATA_TYPES
-  
   else if(input_type == "epetra_vector")
     return this->hasUIEpetraVector();
   else if(input_type == "epetra_multivector")
