@@ -26,7 +26,7 @@ int main (int argc, char *argv[]) {
   clp.setOption("nthreads", &nthreads, "Number of threads");
 
   int max_task_dependence = 10;
-  clp.setOption("max-task-depedence", &max_task_dependence, "Max number of task dependence");
+  clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
 
   int team_size = 1;
   clp.setOption("team-size", &team_size, "Team size");

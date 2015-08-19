@@ -95,11 +95,10 @@
 
     </ParameterList>
 
-    <ParameterList name="test4">
+<!--    <ParameterList name="test4">
         <Parameter name="Name" type="string" value="rcb_testFromDataFile_epet"/>
      
         <ParameterList name="InputAdapterParameters">
-            <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
             <Parameter name="inputType" type="string" value="epetra_multivector"/> 
             <Parameter name="number_of_vectors" type="int" value="2"/> 
             <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
@@ -119,7 +118,7 @@
             </ParameterList>
         </ParameterList>
 
-    </ParameterList>
+    </ParameterList> -->
     
 
 </ParameterList>

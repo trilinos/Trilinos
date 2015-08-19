@@ -94,7 +94,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # The instantiation macros have the pattern:          HAVE_TPETRA_INST_[TYPE]
 # The CMake options have the pattern:                 Tpetra_INST_[TYPE]
 #
-# The ordinal types are: INT_INT, INT_UNSIGNED, INT_LONG, INT_LONG_LONG
+# The availability and instantiation macros are THE SAME.
+#
+# The ordinal types are: INT_INT, INT_UNSIGNED, INT_LONG, INT_LONG_LONG, INT_UNSIGNED_LONG
 # The node types are:    SERIALCLASSIC, SERIAL, OPENMP, PTHREAD, CUDA
 # The scalar types are:  DOUBLE, FLOAT, COMPLEX_DOUBLE, COMPLEX_FLOAT
 #
@@ -394,7 +396,8 @@ ENDIF ()
 GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
 # GO = unsigned is NOT enabled by default.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
-
+# GO = unsigned long is NOT enabled by default.
+GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT OFF)
 
 #
 # Define options for enabling various GlobalOrdinal types
@@ -424,22 +427,36 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable GlobalOrdinal = long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_LONG_DEFAULT} by default."
   ${HAVE_TPETRA_INST_INT_LONG_DEFAULT}
   )
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_INT_UNSIGNED_LONG
+  HAVE_TPETRA_INST_INT_UNSIGNED_LONG
+  "Enable GlobalOrdinal = unsigned long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT} by default.  We do NOT recommend using this type.  We are NOT responsible for ensuring that it builds or passes tests.  If you want a 64-bit type, we prefer that you use long long (Tpetra_INST_INT_LONG_LONG=ON), or long (Tpetra_INST_INT_LONG=ON) if you know that it is 64 bits.  If you are interested in using unsigned long, Roger Pawlowski is the responsible party; please contact him."
+  ${HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT}
+  )
+
+IF (Tpetra_INST_INT_LONG_LONG AND NOT Teuchos_ENABLE_LONG_LONG_INT)
+  MESSAGE (FATAL_ERROR "Tpetra: GlobalOrdinal = long long is enabled in Tpetra but is not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT=ON or set Tpetra_INST_INT_LONG_LONG=OFF.  Note that Tpetra requires C++11, and Teuchos_ENABLE_LONG_LONG_INT is ON by default if the compiler supports C++11.  Thus, if you are seeing this message, you probably set Teuchos_ENABLE_LONG_LONG_INT=OFF explicitly.  Please don't do that.  If you don't want to enable GlobalOrdinal = long long in Tpetra, set Tpetra_INST_INT_LONG_LONG=OFF and leave Teuchos alone.")
+ENDIF()
 
 # Warn on use of options that we don't like.
 IF (Tpetra_INST_INT_UNSIGNED)
   MESSAGE (WARNING "Tpetra: You set Tpetra_INST_INT_UNSIGNED.  This means that you want to use GlobalOrdinal = unsigned with Tpetra objects.  Please don't do that.  I only maintain this option for backwards compatibility.  While I have gone through some effort to make unsigned GlobalOrdinal types work in Tpetra, they are not tested and thus I don't want to promise that they still work.")
 ENDIF ()
+IF (Tpetra_INST_INT_UNSIGNED_LONG)
+  MESSAGE (WARNING "Tpetra: You set Tpetra_INST_INT_UNSIGNED_LONG.  This means that you want to use GlobalOrdinal = unsigned long with Tpetra objects.  We do NOT recommend using this type.  We are NOT responsible for ensuring that it builds or passes tests.  If you want a 64-bit type, we prefer that you use long long (Tpetra_INST_INT_LONG_LONG=ON), or long (Tpetra_INST_INT_LONG=ON) if you know that it is 64 bits.  If you are interested in using unsigned long, Roger Pawlowski is the responsible party; please contact him.")
+ENDIF ()
 
 # Set availability macros for various GlobalOrdinal types
 GLOBAL_SET(HAVE_TPETRA_INT_INT ${Tpetra_INST_INT_INT})
-GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED ${Tpetra_INST_INT_UNSIGNED})
 GLOBAL_SET(HAVE_TPETRA_INT_LONG ${Tpetra_INST_INT_LONG})
 GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG ${Tpetra_INST_INT_LONG_LONG})
+GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED ${Tpetra_INST_INT_UNSIGNED})
+GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED_LONG ${Tpetra_INST_INT_UNSIGNED_LONG})
 
-# Make sure that at least one GlobalOrdinal type got enabled.
-# Even if ETI is OFF, this will ensure that Tpetra actually 
-# tests something.
-IF (Tpetra_INST_INT_INT OR Tpetra_INST_INT_UNSIGNED OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG)
+# Check if no GlobalOrdinal types are enabled.  Print a "warning"
+# (helpful message) in that case.  (Don't actually call it a WARNING;
+# that might break builds.)
+IF (Tpetra_INST_INT_INT OR Tpetra_INST_INT_UNSIGNED OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_UNSIGNED_LONG)
   GLOBAL_SET (HAVE_TPETRA_GLOBALORDINAL ON)
 ELSE()
   # mfh 18 Aug 2015: CASL wants to set GlobalOrdinal = unsigned long.
@@ -455,9 +472,6 @@ ELSE()
   GLOBAL_SET (HAVE_TPETRA_GLOBALORDINAL OFF)
   MESSAGE (STATUS "Tpetra: NOTE: No GlobalOrdinal type is enabled.  This means that you, the user, explicitly disabled all GlobalOrdinal types that Tpetra enables by default.  If you know what you are doing, this might be OK.  If you don't know what you are doing, please don't do this.")
 ENDIF()
-IF (Tpetra_INST_INT_LONG_LONG AND NOT Teuchos_ENABLE_LONG_LONG_INT)
-  MESSAGE (FATAL_ERROR "Tpetra: GlobalOrdinal = long long is enabled in Tpetra but is not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT=ON or set Tpetra_INST_INT_LONG_LONG=OFF.  Note that Tpetra requires C++11, and Teuchos_ENABLE_LONG_LONG_INT is ON by default if the compiler supports C++11.  Thus, if you are seeing this message, you probably set Teuchos_ENABLE_LONG_LONG_INT=OFF explicitly.  Please don't do that.  If you don't want to enable GlobalOrdinal = long long in Tpetra, set Tpetra_INST_INT_LONG_LONG=OFF and leave Teuchos alone.")
-ENDIF()
 
 # Append GlobalOrdinal types to instantiation /test list.  Add them to
 # the list of Scalar types as well, since Tpetra needs Scalar =
@@ -466,10 +480,6 @@ IF(Tpetra_INST_INT_INT)
   LIST(APPEND TpetraCore_ETI_SCALARS "int")
   LIST(APPEND TpetraCore_ETI_GORDS "int")
 ENDIF()
-IF(Tpetra_INST_INT_UNSIGNED) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "unsigned")
-  LIST(APPEND TpetraCore_ETI_GORDS "unsigned")
-ENDIF()
 IF(Tpetra_INST_INT_LONG) 
   LIST(APPEND TpetraCore_ETI_SCALARS "long")
   LIST(APPEND TpetraCore_ETI_GORDS "long")
@@ -477,6 +487,14 @@ ENDIF()
 IF(Tpetra_INST_INT_LONG_LONG) 
   LIST(APPEND TpetraCore_ETI_SCALARS "long long")
   LIST(APPEND TpetraCore_ETI_GORDS "long long")
+ENDIF()
+IF(Tpetra_INST_INT_UNSIGNED) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "unsigned")
+  LIST(APPEND TpetraCore_ETI_GORDS "unsigned")
+ENDIF()
+IF(Tpetra_INST_INT_UNSIGNED_LONG) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "unsigned long")
+  LIST(APPEND TpetraCore_ETI_GORDS "unsigned long")
 ENDIF()
 
 # ============================================================
@@ -753,13 +771,8 @@ IF (NOT HAVE_TPETRA_SCALAR)
   MESSAGE (FATAL_ERROR "You must enable at least one Scalar type in Tpetra.  If you see this message, you probably set nondefault CMake options to disable all of Tpetra's Scalar types.  Please don't do that.")
 ENDIF ()
 
-# Make sure that Tpetra enables at least one Scalar type, and at least
-# one GlobalOrdinal type.  If ETI is ON, this ensures that Tpetra does
-# a nontrivial build.  If ETI is OFF, it (should, but see Bug 6380)
-# ensure that Tpetra tests at least one combination of template
-# parameters.
+# Make sure that Tpetra enables at least one Scalar type.
 ASSERT_DEFINED(HAVE_TPETRA_SCALAR)
-ASSERT_DEFINED(HAVE_TPETRA_GLOBALORDINAL)
 
 #
 # Other Tpetra options
