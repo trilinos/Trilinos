@@ -619,7 +619,7 @@ void readXML(const XMLObject &xml, const string &title)
 }
 
 void readPList(const ParameterList &plist, const string &title, bool doc, bool unused)
-{.  
+{  
   cout << "\nReading parameter list: " << title << " ...." << endl;
   plist.print(cout, ParameterList::PrintOptions().showDoc(doc).indent(3).showTypes(true));
 
