@@ -32,7 +32,7 @@ int main (int argc, char *argv[]) {
   clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
 
   int max_task_dependence = 10;
-  clp.setOption("max-task-depedence", &max_task_dependence, "Max number of task dependence");
+  clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
 
   int team_size = 1;
   clp.setOption("team-size", &team_size, "Team size");
