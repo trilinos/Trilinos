@@ -89,6 +89,8 @@ int main(int argc, char *argv[]) {
     std::string paramfile = "parameters.xml";
     updateParametersFromXmlFile(paramfile,Ptr<ParameterList>(&*parlist));
 
+    parlist->set("Descent Type", "Newton-Krylov");
+
     // Define Step
     ROL::LineSearchStep<RealT> step(*parlist);
 
