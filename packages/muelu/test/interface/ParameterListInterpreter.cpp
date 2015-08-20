@@ -183,11 +183,14 @@ int main(int argc, char *argv[]) {
         // first to include "test" verbosity
         Teuchos::ParameterList paramList;
         Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
-        if      (dirList[k] == "EasyParameterListInterpreter/")     paramList                     .set("verbosity", "test");
-        else if (dirList[k] == "EasyParameterListInterpreter-heavy/")paramList                     .set("verbosity", "test");
-        else if (dirList[k] == "FactoryParameterListInterpreter/")  paramList.sublist("Hierarchy").set("verbosity", "Test");
-        else if (dirList[k] == "MLParameterListInterpreter/")       paramList                     .set("ML output",     42);
-        else if (dirList[k] == "MLParameterListInterpreter2/")      paramList                     .set("ML output",     10);
+        if      (dirList[k] == "EasyParameterListInterpreter/" || dirList[k] == "EasyParameterListInterpreter-heavy/")
+          paramList.set("verbosity", "test");
+        else if (dirList[k] == "FactoryParameterListInterpreter/" || dirList[k] == "FactoryParameterListInterpreter-heavy/")
+          paramList.sublist("Hierarchy").set("verbosity", "Test");
+        else if (dirList[k] == "MLParameterListInterpreter/")
+          paramList.set("ML output",     42);
+        else if (dirList[k] == "MLParameterListInterpreter2/")
+          paramList.set("ML output",     10);
 
         try {
           timer.start();
@@ -197,9 +200,10 @@ int main(int argc, char *argv[]) {
           // here we have to distinguish between the general MueLu parameter list interpreter
           // and the ML parameter list interpreter. Note that the ML paramter interpreter also
           // works with Tpetra matrices.
-          if (dirList[k] == "EasyParameterListInterpreter/" ||
-              dirList[k] == "EasyParameterListInterpreter-heavy/" ||
-              dirList[k] == "FactoryParameterListInterpreter/") {
+          if (dirList[k] == "EasyParameterListInterpreter/"         ||
+              dirList[k] == "EasyParameterListInterpreter-heavy/"   ||
+              dirList[k] == "FactoryParameterListInterpreter/"      ||
+              dirList[k] == "FactoryParameterListInterpreter-heavy/") {
             mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList));
 
           } else if (dirList[k] == "MLParameterListInterpreter/") {
