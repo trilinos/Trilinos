@@ -93,6 +93,9 @@ int main(int argc, char *argv[]) {
     Teuchos::CommandLineProcessor clp(false);
     ::Xpetra::Parameters xpetraParameters(clp);
 
+    bool runHeavyTests = false;
+    clp.setOption("heavytests", "noheavytests",  &runHeavyTests, "whether to exercise tests that take a long time to run");
+
     switch (clp.parse(argc,argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -114,8 +117,13 @@ int main(int argc, char *argv[]) {
     std::string outDir = "Output/";
 
     std::vector<std::string> dirList;
-    dirList.push_back("EasyParameterListInterpreter/");
-    dirList.push_back("FactoryParameterListInterpreter/");
+    if (runHeavyTests) {
+      dirList.push_back("EasyParameterListInterpreter-heavy/");
+      dirList.push_back("FactoryParameterListInterpreter-heavy/");
+    } else {
+      dirList.push_back("EasyParameterListInterpreter/");
+      dirList.push_back("FactoryParameterListInterpreter/");
+    }
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_AMESOS2_KLU2)
     // The ML interpreter have internal ifdef, which means that the resulting
     // output would depend on configuration (reguarl interpreter does not have
@@ -176,6 +184,7 @@ int main(int argc, char *argv[]) {
         Teuchos::ParameterList paramList;
         Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
         if      (dirList[k] == "EasyParameterListInterpreter/")     paramList                     .set("verbosity", "test");
+        else if (dirList[k] == "EasyParameterListInterpreter-heavy/")paramList                     .set("verbosity", "test");
         else if (dirList[k] == "FactoryParameterListInterpreter/")  paramList.sublist("Hierarchy").set("verbosity", "Test");
         else if (dirList[k] == "MLParameterListInterpreter/")       paramList                     .set("ML output",     42);
         else if (dirList[k] == "MLParameterListInterpreter2/")      paramList                     .set("ML output",     10);
@@ -189,6 +198,7 @@ int main(int argc, char *argv[]) {
           // and the ML parameter list interpreter. Note that the ML paramter interpreter also
           // works with Tpetra matrices.
           if (dirList[k] == "EasyParameterListInterpreter/" ||
+              dirList[k] == "EasyParameterListInterpreter-heavy/" ||
               dirList[k] == "FactoryParameterListInterpreter/") {
             mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList));
 

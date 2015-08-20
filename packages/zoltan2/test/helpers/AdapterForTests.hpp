@@ -173,9 +173,9 @@ private:
 #ifdef HAVE_EPETRA_DATA_TYPES
   template <typename T>
   static void InitializeEpetraVectorData(const RCP<T> &data,
-                                   vector<const zscalar_t *> &coords,
-                                   vector<int> & strides,
-                                   int stride);
+                                         vector<const zscalar_t *> &coords,
+                                         vector<int> & strides,
+                                         int stride);
 #endif
 };
 
@@ -235,7 +235,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getAdapterForInput(UserInputF
   else if(adapter_name == "BasicVector")
     ia = getBasicVectorAdapterForInput(uinput,pList);
   else
-    throw std::runtime_error("Input adapter type not avaible, or misspelled.");
+    throw std::runtime_error("Input adapter type not available, or misspelled.");
   
   return ia;
 }
@@ -250,7 +250,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
   string input_type = pList.get<string>("inputType"); // get the input type
   
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type not avaible, or misspelled."); // bad type
+    throw std::runtime_error("Input type not available, or misspelled."); // bad type
   
   vector<const zscalar_t *> weights;
   std::vector<int> weightStrides;
@@ -367,7 +367,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(Us
   
   string input_type = pList.get<string>("inputType");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type not avaible, or misspelled.");
+    throw std::runtime_error("Input type not available, or misspelled.");
   
   AdapterForTests::base_adapter_t * adapter = nullptr;
   vector<const zscalar_t *> weights;
@@ -447,7 +447,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
   
   string input_type = pList.get<string>("inputType");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type not avaible, or misspelled.");
+    throw std::runtime_error("Input type not available, or misspelled.");
   
   
   AdapterForTests::base_adapter_t * adapter = nullptr;
@@ -559,7 +559,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
   
   string input_type = pList.get<string>("inputType");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type not avaible, or misspelled.");
+    throw std::runtime_error("Input type not available, or misspelled.");
   
   AdapterForTests::base_adapter_t * adapter = nullptr;
   vector<const zscalar_t *> weights;
@@ -661,7 +661,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
   
   string input_type = pList.get<string>("inputType");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type not avaible, or misspelled.");
+    throw std::runtime_error("Input type not available, or misspelled.");
   
   AdapterForTests::basic_vector_adapter * ia = nullptr; // pointer for basic vector adapter
   
@@ -687,7 +687,6 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
   if(pList.isParameter("stride"))
     stride = pList.get<int>("stride");
   
-  
   if(input_type == "coordinates")
   {
     RCP<tMVector_t> data = uinput->getUICoordinates();
@@ -698,6 +697,22 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     vector<const zscalar_t *> coords;
     vector<int> entry_strides;
     AdapterForTests::InitializeVectorData(data,coords,entry_strides,stride);
+    
+//    if(weights.empty())
+//    {
+//      ia = new AdapterForTests::basic_vector_adapter(localCount, globalIds,
+//                                                     coords[0], entry_strides[0]);
+//    }else{
+//      ia = new AdapterForTests::basic_vector_adapter(localCount, globalIds,
+//                                                     coords[0], entry_strides[0],
+//                                                     true,
+//                                                     weights[0],
+//                                                     weightStrides[0]);
+//    }
+    
+    int dim = data->getNumVectors();
+    if(dim == 1) coords[1] = coords[2] = NULL;
+    else if(dim == 2) coords[2] = NULL;
     
     if(weights.empty())
     {
@@ -714,6 +729,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
                                                      weights[0],
                                                      weightStrides[0]);
     }
+    
   }
   else if(input_type == "tpetra_vector")
   {
@@ -865,26 +881,26 @@ void AdapterForTests::InitializeVectorData(const RCP<T> &data,
   const zlno_t localCount = data->getLocalLength();
   const zlno_t nvecs = data->getNumVectors();
   const zlno_t vecsize = data->getNumVectors() * data->getLocalLength();
-  printf("Number of vectors by data: %zu\n", nvecs);
-  printf("Size of data: %zu\n", vecsize);
+  //  printf("Number of vectors by data: %zu\n", nvecs);
+  //  printf("Size of data: %zu\n", vecsize);
   
   ArrayRCP<zscalar_t> *petravectors =
   new ArrayRCP<zscalar_t>[nvecs];
   
-  printf("Getting t-petra vectors...\n");
+  //  printf("Getting t-petra vectors...\n");
   for (size_t i = 0; i < nvecs; i++)
     petravectors[i] = data->getDataNonConst(i);
   
   // debugging
-  for (size_t i = 0; i < nvecs; i++){
-    printf("Tpetra vector %zu: {",i);
-    
-    for (size_t j = 0; j < localCount; j++)
-    {
-      printf("%1.2g ",petravectors[i][j]);
-    }
-    printf("}\n");
-  }
+  //  for (size_t i = 0; i < nvecs; i++){
+  //    printf("Tpetra vector %zu: {",i);
+  //
+  //    for (size_t j = 0; j < localCount; j++)
+  //    {
+  //      printf("%1.2g ",petravectors[i][j]);
+  //    }
+  //    printf("}\n");
+  //  }
   
   zlno_t idx = 0;
   zscalar_t *coordarr = new zscalar_t[vecsize];
@@ -906,11 +922,11 @@ void AdapterForTests::InitializeVectorData(const RCP<T> &data,
   }
   
   // debugging
-  printf("Made coordarr : {");
-  for (zlno_t i = 0; i < vecsize; i++){
-    printf("%1.2g ",coordarr[i]);
-  }
-  printf("}\n");
+  //  printf("Made coordarr : {");
+  //  for (zlno_t i = 0; i < vecsize; i++){
+  //    printf("%1.2g ",coordarr[i]);
+  //  }
+  //  printf("}\n");
   
   coords = std::vector<const zscalar_t *>(nvecs);
   strides = std::vector<int>(nvecs);
@@ -925,18 +941,18 @@ void AdapterForTests::InitializeVectorData(const RCP<T> &data,
   }
   
   // debugging
-  printf("Made coords...\n");
-  for (size_t i = 0; i < nvecs; i++){
-    const zscalar_t * tmp = coords[i];
-    printf("coord %zu: {",i);
-    for(size_t j = 0; j < localCount; j++)
-    {
-      printf("%1.2g ", tmp[j]);
-    }
-    printf("}\n");
-  }
+  //  printf("Made coords...\n");
+  //  for (size_t i = 0; i < nvecs; i++){
+  //    const zscalar_t * tmp = coords[i];
+  //    printf("coord %zu: {",i);
+  //    for(size_t j = 0; j < localCount; j++)
+  //    {
+  //      printf("%1.2g ", tmp[j]);
+  //    }
+  //    printf("}\n");
+  //  }
   
-  printf("clean up coordarr and tpetravectors...\n\n\n");
+  //  printf("clean up coordarr and tpetravectors...\n\n\n");
   delete [] petravectors;
 }
 
@@ -944,37 +960,37 @@ void AdapterForTests::InitializeVectorData(const RCP<T> &data,
 
 template <typename T>
 void AdapterForTests::InitializeEpetraVectorData(const RCP<T> &data,
-                                           vector<const zscalar_t *> &coords,
-                                           vector<int> & strides,
-                                           int stride){
+                                                 vector<const zscalar_t *> &coords,
+                                                 vector<int> & strides,
+                                                 int stride){
   const size_t localCount = data->MyLength();
   const size_t nvecs = data->NumVectors();
   const size_t vecsize = nvecs * localCount;
   
-  printf("Number of vectors by data: %zu\n", nvecs);
-  printf("Size of data: %zu\n", vecsize);
+  //  printf("Number of vectors by data: %zu\n", nvecs);
+  //  printf("Size of data: %zu\n", vecsize);
   
   vector<zscalar_t *> epetravectors(nvecs);
   zscalar_t ** arr;
-  printf("get data from epetra vector..\n");
+  //  printf("get data from epetra vector..\n");
   data->ExtractView(&arr);
-
+  
   for(size_t k = 0; k < nvecs; k++)
   {
     epetravectors[k] = arr[k];
   }
   
-  printf("Size of epetravectors: %lu\n", epetravectors.size());
+  //  printf("Size of epetravectors: %lu\n", epetravectors.size());
   // debugging
-  for (size_t i = 0; i < nvecs; i++){
-    printf("Epetra vector %zu: {", i);
-    
-    for (size_t j = 0; j < localCount; j++)
-    {
-       printf("%1.2g ",epetravectors[i][j]);
-    }
-    printf("}\n");
-  }
+  //  for (size_t i = 0; i < nvecs; i++){
+  //    printf("Epetra vector %zu: {", i);
+  //
+  //    for (size_t j = 0; j < localCount; j++)
+  //    {
+  //       printf("%1.2g ",epetravectors[i][j]);
+  //    }
+  //    printf("}\n");
+  //  }
   
   int idx = 0;
   basic_vector_adapter::scalar_t *coordarr = new basic_vector_adapter::scalar_t[vecsize];
@@ -1024,7 +1040,7 @@ void AdapterForTests::InitializeEpetraVectorData(const RCP<T> &data,
     }
     printf("}\n");
   }
-
+  
 }
 #endif
 #endif

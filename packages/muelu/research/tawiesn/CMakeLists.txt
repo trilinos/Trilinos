@@ -1,0 +1,13 @@
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+
+TRIBITS_ADD_EXECUTABLE(
+  CradaDriver
+  SOURCES Driver.cpp
+  COMM serial mpi
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(tawiesn_cp
+  SOURCE_FILES driver.xml
+  )
+

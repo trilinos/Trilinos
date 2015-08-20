@@ -24,7 +24,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra AND
       COMM mpi
       )
     TRIBITS_COPY_FILES_TO_BINARY_DIR(Navier2D_cpdata
-      SOURCE_FILES A5932_re1000.txt b5932_re1000.txt
+      SOURCE_FILES A_re1000_5932.txt b_re1000_5932.txt
       )
 
     # experimental tests (block operators)

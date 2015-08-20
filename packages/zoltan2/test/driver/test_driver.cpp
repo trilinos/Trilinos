@@ -192,6 +192,24 @@ bool minMaxTest(const metric_t & metric,
   return pass;
 }
 
+template<typename T>
+void writePartionSolution(const T * part, size_t N, const RCP<const Teuchos::Comm<int> > & comm)
+{
+  std::ofstream file;
+  char title[256];
+  
+  static const string path = "/Users/davidson/trilinosall/trilinosrepo/packages/zoltan2/test/driver/pamgen_mesh_data";
+  
+  sprintf(title, "/partition_%d", comm->getRank());
+  file.open(path + string(title));
+  for (size_t i = 0; i < N; i++) {
+    file << part[i] << "\n";
+  }
+  
+  file.close();
+  
+}
+
 void run(const UserInputForTests &uinput, const ParameterList &problem_parameters,const RCP<const Teuchos::Comm<int> > & comm)
 {
   // Major steps in running a problem in zoltan 2
@@ -215,8 +233,7 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_mb problem type
   typedef Zoltan2::PartitioningProblem<xcrsMatrix_t> xcrsMatrix_problem_t; // xpetra_mb problem type
   typedef Zoltan2::PartitioningProblem<basic_vector_t> basicVector_problem_t; // xpetra_mb problem type
-
-
+  
   int rank = comm->getRank();
   if(rank == 0)
     cout << "\nPeforming test: " << problem_parameters.get<string>("Name") << endl;
@@ -229,9 +246,7 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
     throw std::runtime_error("Input adapter parameters not provided");
   if(!problem_parameters.isParameter("Zoltan2Parameters"))
     throw std::runtime_error("Zoltan2 probnlem parameters not provided");
-
-
-
+  
   const ParameterList &adapterPlist = problem_parameters.sublist("InputAdapterParameters");
   base_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist); // a pointer to a basic type
   if(ia == nullptr)
@@ -279,11 +294,11 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   }  else if(adapter_name == "BasicVector")
   {
     problem = reinterpret_cast<problem_t * >(new basicVector_problem_t(reinterpret_cast<basic_vector_t *>(ia),
-                                                                      &zoltan2_parameters,
-                                                                      MPI_COMM_WORLD));
+                                                                       &zoltan2_parameters,
+                                                                       MPI_COMM_WORLD));
   }
   else
-    throw std::runtime_error("Input adapter type not avaible, or misspelled.");
+    throw std::runtime_error("Input adapter type not available, or misspelled.");
 
 
 #else
@@ -308,13 +323,12 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
                                                                        &zoltan2_parameters));
   }
   else
-    throw std::runtime_error("Input adapter type not avaible, or misspelled.");
+    throw std::runtime_error("Input adapter type not available, or misspelled.");
 #endif
 
   ////////////////////////////////////////////////////////////
   // 3. Solve the problem
   ////////////////////////////////////////////////////////////
-  if(rank == 0) cout << "...Solving problem..." << endl;
   reinterpret_cast<basic_problem_t *>(problem)->solve();
   if (rank == 0)
     cout << "Problem solved" << endl;
@@ -325,6 +339,7 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   if (comm->getRank() == 0)
   {
     // calculate pass fail based on imbalance
+    if(rank == 0) cout << "...analyzing metrics..." << endl;
     reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
 
     if(problem_parameters.isParameter("Metrics"))
@@ -364,10 +379,17 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   if(zoltan2_parameters.isParameter("timer_output_stream"))
     reinterpret_cast<basic_problem_t *>(problem)->printTimers();
 
+  // 5a solution
+//  auto solution = reinterpret_cast<basicVector_problem_t *>(problem)->getSolution();
+//  size_t local_parts = ia->getLocalNumIDs();
+//  writePartionSolution<basic_vector_t::part_t>(solution.getPartListView(),local_parts,comm);
+//  for(size_t i = 0; i < local_parts; i++)
+//    printf("%i ", solution.getPartListView()[i]);
+//  printf("}\n\n");
+
   ////////////////////////////////////////////////////////////
   // 5. Clean up
   ////////////////////////////////////////////////////////////
-
   if(adapter_name == "XpetraCrsGraph")
     delete reinterpret_cast<xcrsGraph_t *>(ia)->getCoordinateInput();
   if(adapter_name == "XpetraCrsMatrix")
@@ -375,6 +397,162 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
 
   delete ia;
   delete reinterpret_cast<basic_problem_t *>(problem);
+}
+
+
+void readMesh(const UserInputForTests &uinput,const RCP<const Teuchos::Comm<int> > & comm)
+{
+  comm->barrier();
+  PamgenMesh * mesh = const_cast<UserInputForTests *>(&uinput)->getPamGenMesh();
+  printf("\n\nProc %d mesh report:\n", comm->getRank());
+  
+  int nodes, els;
+  nodes = mesh->num_nodes;
+  els = mesh->num_elem;
+  
+  printf("dimension: %d\n", mesh->num_dim);
+  printf("local nodes: %d\n", nodes);
+  printf("local elems: %d\n", els);
+  
+  int gnodes, gels;
+  gnodes = mesh->num_nodes_global;
+  gels = mesh->num_elems_global;
+  printf("global nodes: %d\n", gnodes);
+  printf("global elem: %d\n", gels);
+  
+  int blks = mesh->num_elem_blk;
+  printf("num blocks: %d\n", blks);
+  
+  printf("\ncoordinates:\n");
+  double * coord = mesh->coord;
+  for (int i = 0; i < nodes; i++) {
+    if(mesh->num_dim == 2)
+    {
+      printf("lid %d, gid %d: {%1.2f, %1.2f}\n",i,mesh->global_node_numbers[i],
+             coord[i], coord[nodes+i]);
+    }else
+    {
+      printf("lid %d, gid %d: {%1.2f, %1.2f, %1.2f}\n",i,mesh->global_node_numbers[i],
+             coord[i], coord[nodes+i], coord[2*nodes+i]);
+    }
+  }
+  
+  
+  int el_count = 0;
+  printf("\nElements:\n");
+  for(int i = 0; i < blks; i++)
+  {
+    int elb = mesh->elements[i];
+    int npel = mesh->nodes_per_element[i];
+    printf("blkid %d has %d els, with %d nodes/element\n", mesh->block_id[i], elb, npel);
+    // nodes for el
+    int * connect = mesh->elmt_node_linkage[i];
+    
+    for(int j = 0; j < elb; j++)
+    {
+      printf("element %d:{", el_count);
+      for(int k = 0; k < npel; k++)
+        printf("%d ", connect[j*npel + k]);
+      printf("}\n");
+      el_count++;
+    }
+    
+  }
+  
+  el_count = 0;
+  printf("\nElements Centroids:\n");
+  for(int i = 0; i < blks; i++)
+  {
+    int elb = mesh->elements[i];
+    for(int j = 0; j < elb; j++)
+    {
+      printf("element %d:{", mesh->global_element_numbers[el_count]);
+      for(int k = 0; k < mesh->num_dim; k++)
+        printf("%1.2f ", mesh->element_coord[el_count + k * mesh->num_elem]);
+      printf("}\n");
+      el_count++;
+    }
+  }
+  
+  comm->barrier();
+}
+
+
+void writeMesh(const UserInputForTests &uinput,const RCP<const Teuchos::Comm<int> > & comm)
+{
+  comm->barrier();
+  std::ofstream file;
+  char title[256];
+  
+  static const string path = "/Users/davidson/trilinosall/trilinosrepo/packages/zoltan2/test/driver/pamgen_mesh_data";
+  
+  PamgenMesh * mesh = const_cast<UserInputForTests *>(&uinput)->getPamGenMesh();
+  
+  int nodes, els;
+  nodes = mesh->num_nodes;
+  els = mesh->num_elem;
+  
+  int gnodes, gels;
+  gnodes = mesh->num_nodes_global;
+  gels = mesh->num_elems_global;
+  
+  int blks = mesh->num_elem_blk;
+  
+  sprintf(title, "/coordinates_%d", comm->getRank());
+  file.open(path + string(title));
+  double * coord = mesh->coord;
+  for (int i = 0; i < nodes; i++) {
+    file << coord[i] << "\t" << coord[nodes + i];
+    if(mesh->num_dim == 3) file << "\t" << coord[2*nodes +i];
+    file << "\n";
+  }
+  
+  file.close();
+  
+  // write all elements
+  sprintf(title, "/elements_%d", comm->getRank());
+  file.open(path + string(title));
+  for(int i = 0; i < blks; i++)
+  {
+    int elb = mesh->elements[i];
+    int npel = mesh->nodes_per_element[i];
+    // nodes for el
+    int * connect = mesh->elmt_node_linkage[i];
+    
+    for(int j = 0; j < elb; j++)
+    {
+      for(int k = 0; k < npel-1; k++)
+        file << connect[j*npel + k] << "\t";
+      
+      file << connect[j*npel + npel-1] << "\n";
+    }
+  }
+  
+  file.close();
+  
+  // write boundary faces
+  if(mesh->num_dim == 3 && comm->getRank() == 0)
+  {
+    sprintf(title, "/element_map");
+    file.open(path + string(title));
+    file << 1 <<"\t"<<5<<"\t"<<8<<"\t"<<4<<"\n";
+    file << 2 <<"\t"<<3<<"\t"<<7<<"\t"<<6<<"\n";
+    file << 1 <<"\t"<<2<<"\t"<<6<<"\t"<<5<<"\n";
+    file << 4 <<"\t"<<8<<"\t"<<7<<"\t"<<3<<"\n";
+    file << 1 <<"\t"<<4<<"\t"<<3<<"\t"<<2<<"\n";
+    file << 5 <<"\t"<<6<<"\t"<<7<<"\t"<<8<<"\n";
+    file.close();
+  }
+  
+  // write info
+  if(comm->getRank() == 0)
+  {
+    sprintf(title,"/mesh_info");
+    file.open(path + string(title));
+    file << comm->getSize() <<"\n" << nodes << "\n" << els << "\n" << blks;
+    file.close();
+  }
+  comm->barrier();
 }
 
 int main(int argc, char *argv[])
@@ -387,12 +565,6 @@ int main(int argc, char *argv[])
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   int rank = comm->getRank(); // get rank
-  //    if(rank == 0) // exit for rank 0
-  //    {
-  //        cout << "PASS" << endl;
-  //        cout << "FINISHING TEST DRIVER (RANK 0 EXIT)...." << endl;
-  //        return 0;
-  //    }
 
   ////////////////////////////////////////////////////////////
   // (1) Get and read the input file
@@ -426,6 +598,10 @@ int main(int argc, char *argv[])
   ////////////////////////////////////////////////////////////
   // (4) Perform all tests
   ////////////////////////////////////////////////////////////
+  comm->barrier();
+  
+//  writeMesh(uinput,comm);
+  
   while (!pLists.empty()) {
     run(uinput, pLists.front(), comm);
     pLists.pop();
@@ -443,7 +619,7 @@ void readXML(const XMLObject &xml, const string &title)
 }
 
 void readPList(const ParameterList &plist, const string &title, bool doc, bool unused)
-{
+{  
   cout << "\nReading parameter list: " << title << " ...." << endl;
   plist.print(cout, ParameterList::PrintOptions().showDoc(doc).indent(3).showTypes(true));
 

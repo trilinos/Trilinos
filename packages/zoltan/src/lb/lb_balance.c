@@ -308,11 +308,7 @@ char msg[256];
 int comm[3],gcomm[3]; 
 float *part_sizes = NULL, *fdummy = NULL;
 int wgt_dim, part_dim;
-int all_num_obj, i, ts, idIdx;
-struct Hash_Node **ht;
-int *export_all_procs, *export_all_to_part, *parts=NULL;
-ZOLTAN_ID_PTR all_global_ids=NULL, all_local_ids=NULL;
-ZOLTAN_ID_PTR gid;
+int i;
 #ifdef ZOLTAN_OVIS
 struct OVIS_parameters ovisParameters;
 #endif
@@ -666,7 +662,12 @@ struct OVIS_parameters ovisParameters;
       if ((error != ZOLTAN_OK) && (error != ZOLTAN_WARN)) goto End;
     }
     else{
-      all_num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &error);
+      int ts;
+      struct Hash_Node **ht;
+      int all_num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &error);
+      int *all_export_procs=NULL, *all_export_to_part=NULL;
+      ZOLTAN_ID_PTR all_global_ids=NULL, all_local_ids=NULL;
+      ZOLTAN_ID_PTR gid;
 
       if (*num_export_objs < all_num_obj){
   
@@ -677,19 +678,15 @@ struct OVIS_parameters ovisParameters;
   
         /* Create a list of all gids, lids and parts */
   
-        error= Zoltan_Get_Obj_List_Special_Malloc(zz, &all_num_obj, 
-                 &all_global_ids, &all_local_ids,
-                 wgt_dim, &fdummy, &parts);
+        error = Zoltan_Get_Obj_List(zz, &all_num_obj, 
+                                        &all_global_ids, &all_local_ids,
+                                        wgt_dim, &fdummy, &all_export_to_part);
 
         if ((error == ZOLTAN_OK) || (error == ZOLTAN_WARN)){
           ZOLTAN_FREE(&fdummy);
-          if ((Zoltan_Special_Malloc(zz, (void **)(void*)&export_all_procs, 
-                 all_num_obj, ZOLTAN_SPECIAL_MALLOC_INT)==0) ||
-              (Zoltan_Special_Malloc(zz, (void **)(void*)&export_all_to_part, 
-                 all_num_obj, ZOLTAN_SPECIAL_MALLOC_INT)==0)){
-
+          all_export_procs = (int *) ZOLTAN_MALLOC(all_num_obj * sizeof(int));
+          if (all_num_obj && !all_export_procs)
             error = ZOLTAN_MEMERR;
-          }
         }
   
         if ((error != ZOLTAN_OK) && (error != ZOLTAN_WARN)){
@@ -703,16 +700,16 @@ struct OVIS_parameters ovisParameters;
   
         for (i=0; i < all_num_obj; i++, gid += zz->Num_GID){
   
-          idIdx = search_hash_table(zz, gid, ht, ts);
+          int idIdx = search_hash_table(zz, gid, ht, ts);
   
           if (idIdx >= 0){
 
-            export_all_procs[i] = (*export_procs)[idIdx];
-            export_all_to_part[i] = (*export_to_part)[idIdx];
+            all_export_procs[i] = (*export_procs)[idIdx];
+            all_export_to_part[i] = (*export_to_part)[idIdx];
           }
           else{
-            export_all_procs[i] = zz->Proc;
-            export_all_to_part[i] = parts[i];
+            all_export_procs[i] = zz->Proc;
+            // No change in all_export_to_part[i] so no assignment needed
           }
         }
   
@@ -720,14 +717,32 @@ struct OVIS_parameters ovisParameters;
 
         Zoltan_LB_Special_Free_Part(zz, export_global_ids, export_local_ids, 
                             export_procs, export_to_part);
-        Zoltan_Special_Free(zz, (void **)(void*)&parts, 
-                            ZOLTAN_SPECIAL_MALLOC_INT);
+        if (!Zoltan_Special_Malloc(zz, (void **)export_global_ids, 
+                                   all_num_obj, ZOLTAN_SPECIAL_MALLOC_GID)
+         || (zz->Num_LID && 
+            !Zoltan_Special_Malloc(zz, (void **)export_local_ids, 
+                                   all_num_obj, ZOLTAN_SPECIAL_MALLOC_LID))
+         || !Zoltan_Special_Malloc(zz, (void **)export_procs, 
+                                   all_num_obj, ZOLTAN_SPECIAL_MALLOC_INT)
+         || !Zoltan_Special_Malloc(zz, (void **)export_to_part, 
+                                   all_num_obj, ZOLTAN_SPECIAL_MALLOC_INT))
+        {
+          error = ZOLTAN_MEMERR;
+          goto End;
+        }
   
-        *export_global_ids = all_global_ids;
-        *export_local_ids = all_local_ids;
-        *export_procs = export_all_procs;
-        *export_to_part = export_all_to_part;
         *num_export_objs = all_num_obj;
+        for (i = 0; i < all_num_obj; i++) {
+          (*export_global_ids)[i] = all_global_ids[i];
+          if (zz->Num_LID) (*export_local_ids)[i] = all_local_ids[i];
+          (*export_procs)[i] = all_export_procs[i];
+          (*export_to_part)[i] = all_export_to_part[i];
+        }
+
+        ZOLTAN_FREE(&all_global_ids);
+        ZOLTAN_FREE(&all_local_ids);
+        ZOLTAN_FREE(&all_export_procs);
+        ZOLTAN_FREE(&all_export_to_part);
       }
     }
   }
@@ -834,8 +849,6 @@ int i, j, cnt, pcnt;
 int frac = 0, mod = 0;
 MPI_Op op;
 MPI_User_function Zoltan_PartDist_MPIOp;
-struct Zoltan_part_info *part_sizes=NULL;
-float sum_parts, part_total;
 
   MPI_Op_create(&Zoltan_PartDist_MPIOp,1,&op);
 

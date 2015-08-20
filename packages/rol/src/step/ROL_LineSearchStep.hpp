@@ -623,6 +623,10 @@ public:
     ls_nfval_ = 0;
     ls_ngrad_ = 0;
     lineSearch_->run(step_state->searchSize,fnew,ls_nfval_,ls_ngrad_,gs,s,x,obj,con);
+
+    // Make correction if maximum function evaluations reached
+    lineSearch_->setMaxitUpdate(step_state->searchSize,fnew,algo_state.value);
+
     algo_state.nfval += ls_nfval_;
     algo_state.ngrad += ls_ngrad_;
 
@@ -657,6 +661,8 @@ public:
                AlgorithmState<Real> &algo_state ) {
     Real tol = std::sqrt(ROL_EPSILON);
     Teuchos::RCP<StepState<Real> > step_state = Step<Real>::getState();
+
+    
 
     // Update iterate
     algo_state.iter++;
