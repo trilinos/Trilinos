@@ -134,11 +134,3 @@ RegisterLinearSolverFactory registerIt;
 
 } // namespace (anonymous)
 
-
-
-// static void
-// #ifdef HAVE_TEUCHOS_CXX_ATTRIBUTE_CONSTRUCTOR
-// __attribute__((constructor))
-// #endif // HAVE_TEUCHOS_CXX_ATTRIBUTE_CONSTRUCTOR
-
-
