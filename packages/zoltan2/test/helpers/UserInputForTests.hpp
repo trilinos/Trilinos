@@ -120,7 +120,7 @@ using namespace std;
  *  \todo Zoltan1 mtx and mtxp files
  */
 
-typedef enum USERINPUT_FILE_FORMATS{CHACO, GEOMGEN, PAMGEN} USERINPUT_FILE_FORMATS;
+typedef enum USERINPUT_FILE_FORMATS{MATRIX_MARKET, CHACO, GEOMGEN, PAMGEN} USERINPUT_FILE_FORMATS;
 
 class UserInputForTests
 {
@@ -457,6 +457,7 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
 {
   if(pList.isParameter("inputFile"))
   {
+
     string path(".");
     if(pList.isParameter("inputPath"))
       path = pList.get<string>("inputPath");
@@ -464,7 +465,7 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
     string testData = pList.get<string>("inputFile");
     
     // find out if we are working from the zoltan1 test diretory
-    USERINPUT_FILE_FORMATS file_format;
+    USERINPUT_FILE_FORMATS file_format = MATRIX_MARKET;
     string::size_type loc = path.find("/zoltan/test/");  // Zoltan1 data
     if (loc != string::npos)
       file_format = CHACO;
@@ -482,14 +483,12 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
     // read the input file
     switch (file_format) {
       case GEOMGEN: readGeometricGenTestData(path,testData); break;
-        
       case PAMGEN:
       {
         int dimension = 3;
         if(pList.isParameter("dimension")) dimension = pList.get<int>("dimension");
         readPamgenMeshFile(path,testData,dimension);
       } break;
-        
       case CHACO: readZoltanTestData(path, testData, distributeInput); break;
       default: readMatrixMarketFile(path, testData); break;
     }
@@ -1028,7 +1027,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   // cannot be read.  Until the
   // reader is fixed, we'll have to get inputs that are consistent with
   // the reader. (Tpetra bug 5611 and 5624)
-  
+
   bool aok = true;
   try{
     M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
