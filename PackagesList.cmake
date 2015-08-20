@@ -102,7 +102,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Stratimikos           packages/stratimikos              PS
   FEI                   packages/fei                      PS
   Teko                  packages/teko                     SS
-  RBGen                 packages/rbgen                    PS
   TriKota               packages/TriKota                  SS
   Intrepid              packages/intrepid                 PS
   STK                   packages/stk                      SS # Depends on boost
