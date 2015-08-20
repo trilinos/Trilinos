@@ -40,6 +40,21 @@ public:
   ///   a null pointer (Teuchos::null).
   virtual Teuchos::RCP<solver_type>
   getLinearSolver (const std::string& solverName);
+
+  /// \brief Register this LinearSolverFactory with the central registry.
+  ///
+  /// Register this LinearSolverFactory with the central registry, for
+  /// the given SC, LO, GO, NT template parameters.  This will let any
+  /// clients of Trilinos::Details::getLinearSolver create Ifpack2
+  /// solvers with those template parameters.
+  ///
+  /// You may call this function multiple times; it will only have an
+  /// effect the first time (it is idempotent).
+  ///
+  /// Users do not normally have to call this function.  Ifpack2
+  /// automatically registers its LinearSolverFactory with the central
+  /// repository, for all enabled template parameter combinations.
+  static void registerLinearSolverFactory ();
 };
 
 /// \class RegisterLinearSolverFactory

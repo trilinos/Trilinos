@@ -82,6 +82,10 @@ typedef std::complex<float> std_complex0float0;
 typedef long long longlong;
 #endif // HAVE_TPETRA_INT_LONG_LONG
 
+#ifdef HAVE_TPETRA_INT_UNSIGNED_LONG
+typedef unsigned long unsignedlong;
+#endif // HAVE_TPETRA_INT_UNSIGNED_LONG
+
 #ifdef HAVE_TPETRA_@NT_MACRO_NAME@
 typedef @NT@ @NT_MANGLED@;
 #endif // HAVE_TPETRA_@NT_MACRO_NAME@
@@ -89,7 +93,7 @@ typedef @NT@ @NT_MANGLED@;
 #endif // defined(HAVE_IFPACK2_EXPLICIT_INSTANTIATION)
 
 
-#if defined(HAVE_IFPACK2_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INT_@SC_MACRO_NAME@) && defined(HAVE_TPETRA_INST_@LO_MACRO_NAME@_@GO_MACRO_NAME@) && defined(HAVE_TPETRA_@NT_MACRO_NAME@)
+#if defined(HAVE_IFPACK2_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_@SC_MACRO_NAME@) && defined(HAVE_TPETRA_INST_@LO_MACRO_NAME@_@GO_MACRO_NAME@) && defined(HAVE_TPETRA_INST_@NT_MACRO_NAME@)
 
 // Do explicit instantiation of Ifpack2::Details::LinearSolverFactory,
 // for Tpetra objects, with the given Tpetra template parameters.

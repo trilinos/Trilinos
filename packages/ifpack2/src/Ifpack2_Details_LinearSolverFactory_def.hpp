@@ -22,8 +22,10 @@ getLinearSolver (const std::string& solverName)
 }
 
 template<class SC, class LO, class GO, class NT>
-RegisterLinearSolverFactory<SC, LO, GO, NT>::
-RegisterLinearSolverFactory () {
+void
+LinearSolverFactory<SC, LO, GO, NT>::
+registerLinearSolverFactory ()
+{
   typedef Tpetra::MultiVector<SC, LO, GO, NT> MV;
   typedef Tpetra::Operator<SC, LO, GO, NT> OP;
   typedef typename MV::mag_type mag_type;
@@ -60,6 +62,13 @@ RegisterLinearSolverFactory () {
   }
 #endif // HAVE_TEUCHOS_DEBUG
   Trilinos::Details::registerLinearSolverFactory<MV, OP, mag_type> ("Ifpack2", factoryBase);
+}
+
+
+template<class SC, class LO, class GO, class NT>
+RegisterLinearSolverFactory<SC, LO, GO, NT>::
+RegisterLinearSolverFactory () {
+  LinearSolverFactory<SC, LO, GO, NT>::registerLinearSolverFactory ();
 }
 
 } // namespace Details
