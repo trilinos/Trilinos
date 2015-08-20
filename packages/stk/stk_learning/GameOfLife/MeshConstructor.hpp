@@ -33,13 +33,13 @@ typedef stk::mesh::Field<int> ScalarIntField;
     hey, maybe you can come up with something else.
  */
 
-class MeshBuilder
+class MeshConstructor
 {
 public:
-    MeshBuilder(stk::ParallelMachine comm, stk::topology elemType, unsigned spacialDim,
+    MeshConstructor(stk::ParallelMachine comm, stk::topology elemType, unsigned spacialDim,
                 stk::mesh::BulkData::AutomaticAuraOption auraOption);
 
-    virtual ~MeshBuilder() {}
+    virtual ~MeshConstructor() {}
 
 
     // accessor funcitions for test functions and GameofLife
@@ -121,42 +121,42 @@ private:
     virtual void number_coordinate_field()=0;
 
 };
-inline stk::mesh::MetaData* MeshBuilder::meta_data()
+inline stk::mesh::MetaData* MeshConstructor::meta_data()
 {
     return &m_metaData;
 }
-inline stk::mesh::BulkData* MeshBuilder::bulk_data()
+inline stk::mesh::BulkData* MeshConstructor::bulk_data()
 {
     return &m_bulkData;
 }
-inline ScalarIntField* MeshBuilder::neighbor_field()
+inline ScalarIntField* MeshConstructor::neighbor_field()
 {
     return m_activeNeighborField;
 }
-inline stk::mesh::Part* MeshBuilder::active_part()
+inline stk::mesh::Part* MeshConstructor::active_part()
 {
     return m_activePart;
 }
-inline ScalarIntField* MeshBuilder::life_field() const
+inline ScalarIntField* MeshConstructor::life_field() const
 {
     return m_lifeField;
 }
-inline stk::topology MeshBuilder::element_type() const
+inline stk::topology MeshConstructor::element_type() const
 {
     return m_elemType;
 }
-inline stk::ParallelMachine MeshBuilder::comm() const
+inline stk::ParallelMachine MeshConstructor::comm() const
 {
     return m_comm;
 }
 
-class TwoDimensionalMeshBuilder : public MeshBuilder
+class TwoDimensionalMeshConstructor : public MeshConstructor
 {
 public:
-    TwoDimensionalMeshBuilder(stk::ParallelMachine comm, stk::topology elemType,
+    TwoDimensionalMeshConstructor(stk::ParallelMachine comm, stk::topology elemType,
                               unsigned width, unsigned height,
                               stk::mesh::BulkData::AutomaticAuraOption auraOption);
-    virtual ~TwoDimensionalMeshBuilder() {}
+    virtual ~TwoDimensionalMeshConstructor() {}
 protected:
     // coordinate field
     stk::mesh::Field<double,stk::mesh::Cartesian2d>* m_nodeCoords;
@@ -186,13 +186,13 @@ private:
 
 };
 
-class TriangleMeshBuilder : public TwoDimensionalMeshBuilder
+class TriangleMeshConstructor : public TwoDimensionalMeshConstructor
 {
 public:
-    TriangleMeshBuilder(stk::ParallelMachine comm, unsigned width, unsigned rowsPerProc,
+    TriangleMeshConstructor(stk::ParallelMachine comm, unsigned width, unsigned rowsPerProc,
                         stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::AUTO_AURA);
 
-    virtual ~TriangleMeshBuilder() {}
+    virtual ~TriangleMeshConstructor() {}
 
 private:
     //fill_mesh
@@ -205,12 +205,12 @@ private:
 
 };
 
-class QuadMeshBuilder : public TwoDimensionalMeshBuilder
+class QuadMeshConstructor : public TwoDimensionalMeshConstructor
 {
 public:
-    QuadMeshBuilder(stk::ParallelMachine comm, unsigned width, unsigned rowsPerProc,
+    QuadMeshConstructor(stk::ParallelMachine comm, unsigned width, unsigned rowsPerProc,
                     stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::AUTO_AURA);
-    virtual ~QuadMeshBuilder() {}
+    virtual ~QuadMeshConstructor() {}
 private:
     //fill_mesh
     virtual void declare_element_nodes_ids();
@@ -220,14 +220,14 @@ private:
 
 };
 
-class ThreeDimensionalMeshBuilder : public MeshBuilder
+class ThreeDimensionalMeshConstructor : public MeshConstructor
 {
 public:
-    ThreeDimensionalMeshBuilder(stk::ParallelMachine comm, stk::topology elemType, unsigned width,
+    ThreeDimensionalMeshConstructor(stk::ParallelMachine comm, stk::topology elemType, unsigned width,
                                 unsigned height, unsigned depth,
                                 stk::mesh::BulkData::AutomaticAuraOption auraOption);
 
-    virtual ~ThreeDimensionalMeshBuilder() {}
+    virtual ~ThreeDimensionalMeshConstructor() {}
 
 protected:
     // coordinate field
@@ -264,13 +264,13 @@ private:
 
 };
 
-class HexMeshBuilder : public ThreeDimensionalMeshBuilder
+class HexMeshConstructor : public ThreeDimensionalMeshConstructor
 {
 public:
-    HexMeshBuilder(stk::ParallelMachine comm, unsigned width, unsigned height, unsigned depth,
+    HexMeshConstructor(stk::ParallelMachine comm, unsigned width, unsigned height, unsigned depth,
                    stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::AUTO_AURA);
 
-    virtual ~HexMeshBuilder() {}
+    virtual ~HexMeshConstructor() {}
 
 private:
     //fill_mesh

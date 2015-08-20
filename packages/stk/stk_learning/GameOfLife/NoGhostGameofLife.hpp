@@ -35,8 +35,8 @@
 
 #include <time.h>
 
-#include "MeshBuilder.hpp"
 #include "EntityKeyHash.hpp"
+#include "MeshConstructor.hpp"
 /*
  * How to use:
  * Basically the same as GameofLife, but make sure the MeshBuilder had no aura.
@@ -45,7 +45,7 @@ class NoGhostGameofLife
 {
 public:
     //basics
-    NoGhostGameofLife(MeshBuilder* Mesh, std::string name);
+    NoGhostGameofLife(MeshConstructor* Mesh, std::string name);
 
     ~NoGhostGameofLife(){}
 
