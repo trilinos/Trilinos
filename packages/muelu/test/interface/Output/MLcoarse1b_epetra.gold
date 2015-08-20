@@ -5,7 +5,7 @@ ML output = 10   [unused]
 MueLu ParameterList:
 max levels = 10   [unused]
 cycle type = V   [unused]
-sa: damping factor = 1.333000   [unused]
+sa: damping factor = 1.333   [unused]
 sa: eigenvalue estimate num iterations = 10   [unused]
 smoother: type = RELAXATION   [unused]
 smoother: pre or post = both   [unused]
@@ -54,6 +54,7 @@ Level 1
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
@@ -113,6 +114,7 @@ Level 2
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
@@ -172,6 +174,7 @@ Level 3
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
