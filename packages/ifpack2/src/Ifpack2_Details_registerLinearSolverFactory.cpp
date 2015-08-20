@@ -106,6 +106,36 @@ registerLinearSolverFactory ()
 } // namespace Ifpack2
 
 
+namespace { // (anonymous)
+
+// \class RegisterLinearSolverFactory
+// \brief Register Ifpack2's solver factory/ies with the central registry.
+//
+// \warning FOR EXPERT USE ONLY.
+//
+// Invoke this class' constructor to register Ifpack2's solver
+// factory/ies with the central registry, for all template parameter
+// combinations that Ifpack2 enabled.  You need not keep the instance
+// of the class around; the constructor has a side effect if it
+// returns.  (This is the C++ way of doing
+// <tt>__attribute__((constructor))</tt>, without actually requiring
+// the syntax extension.)
+class RegisterLinearSolverFactory {
+public:
+  RegisterLinearSolverFactory () {
+    Ifpack2::Details::registerLinearSolverFactory ();
+  }
+};
+
+// Creating an instance of RegisterLinearSolverFactory invokes its
+// constructor, which has the side effect of calling
+// Ifpack2::Details::registerLinearSolverFactory().
+RegisterLinearSolverFactory registerIt;
+
+} // namespace (anonymous)
+
+
+
 // static void
 // #ifdef HAVE_TEUCHOS_CXX_ATTRIBUTE_CONSTRUCTOR
 // __attribute__((constructor))

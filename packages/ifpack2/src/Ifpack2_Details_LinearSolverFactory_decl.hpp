@@ -100,21 +100,6 @@ public:
   static void registerLinearSolverFactory ();
 };
 
-/// \class RegisterLinearSolverFactory
-/// \brief Register Ifpack2's solver factory/ies with the central registry.
-///
-/// \warning FOR EXPERT USE ONLY.
-///
-/// Invoke this class' constructor to register Ifpack2's solver
-/// factory/ies with the central registry, for the given SC, LO, GO,
-/// NT template parameters.  You need not keep the instance of the
-/// class around; the constructor has a side effect if it returns.
-template<class SC, class LO, class GO, class NT>
-class RegisterLinearSolverFactory {
-public:
-  RegisterLinearSolverFactory ();
-};
-
 } // namespace Details
 } // namespace Ifpack2
 

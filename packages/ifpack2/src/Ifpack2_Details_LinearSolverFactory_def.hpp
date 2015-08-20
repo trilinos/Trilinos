@@ -106,14 +106,12 @@ registerLinearSolverFactory ()
   Trilinos::Details::registerLinearSolverFactory<MV, OP, mag_type> ("Ifpack2", factoryBase);
 }
 
-
-template<class SC, class LO, class GO, class NT>
-RegisterLinearSolverFactory<SC, LO, GO, NT>::
-RegisterLinearSolverFactory () {
-  LinearSolverFactory<SC, LO, GO, NT>::registerLinearSolverFactory ();
-}
-
 } // namespace Details
 } // namespace Ifpack2
+
+// Do explicit instantiation of Ifpack2::Details::LinearSolverFactory,
+// for Tpetra objects, with the given Tpetra template parameters.
+#define IFPACK2_DETAILS_LINEARSOLVERFACTORY_INSTANT( SC, LO, GO, NT ) \
+  template class Ifpack2::Details::LinearSolverFactory<SC, LO, GO, NT>;
 
 #endif // IFPACK2_DETAILS_LINEARSOLVERFACTORY_DEF_HPP
