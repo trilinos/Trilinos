@@ -67,8 +67,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 6.16f
-#define EX_API_VERS_NODOT 616
+#define EX_API_VERS 6.17f
+#define EX_API_VERS_NODOT 617
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
