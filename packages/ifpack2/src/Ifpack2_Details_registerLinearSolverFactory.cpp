@@ -106,6 +106,8 @@ registerLinearSolverFactory ()
 } // namespace Ifpack2
 
 
+#if defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
+
 namespace { // (anonymous)
 
 // \class RegisterLinearSolverFactory
@@ -133,4 +135,14 @@ public:
 RegisterLinearSolverFactory registerIt;
 
 } // namespace (anonymous)
+
+#elif defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_CONSTRUCTOR)
+
+static void __attribute__((constructor))
+Ifpack2_registerLinearSolverFactory () {
+  Ifpack2::Details::registerLinearSolverFactory ();
+}
+
+#endif
+
 

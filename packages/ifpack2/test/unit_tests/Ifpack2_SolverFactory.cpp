@@ -9,7 +9,38 @@
 // combinations.
 #include "Ifpack2_ETIHelperMacros.h"
 
+// FIXME (mfh 21 Aug 2015) Temporary work-around for Bug 6392.
+#if ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
+namespace Ifpack2 {
+namespace Details {
+  // FIXME (mfh 21 Aug 2015) NONE of the commented-out things work.
+
+  // extern void __attribute__((weak)) registerLinearSolverFactory ();
+  // void __attribute__((weak)) registerLinearSolverFactory ();
+  //void __attribute__((weak)) registerLinearSolverFactory ();
+  //extern void registerLinearSolverFactory ();
+  //#pragma weak registerLinearSolverLibrary
+  extern void registerLinearSolverFactory ();
+
+} // namespace Details
+} // namespace Ifpack2
+#endif // ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
+
 namespace {
+// FIXME (mfh 21 Aug 2015) Temporary work-around for Bug 6392.
+#if ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
+  TEUCHOS_STATIC_SETUP()
+  {
+    std::cout << "STATIC SETUP" << std::endl;
+
+    if (Ifpack2::Details::registerLinearSolverFactory == NULL) {
+      std::cout << "-- Ifpack2::Details::registerLinearSolverFactory is NULL" << std::endl;
+    } else {
+      Ifpack2::Details::registerLinearSolverFactory ();
+    }
+  }
+#endif // ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
+
   // Create a very simple square test matrix.  We use the identity
   // matrix here.  The point of this test is NOT to exercise the
   // preconditioner; it's just to check that its LinearSolverFactory
