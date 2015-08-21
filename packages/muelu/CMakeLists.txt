@@ -17,6 +17,15 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "Neither Epetra nor Tpetra are enabled.  MueLu requires at least one of them to be enabled.")
 ENDIF()
 
+# JJH: pulled this logic from Tpetra.  Comments below about CUDA are from Tpetra developers.
+# "I left a special case for CUDA because I'm not sure whether TriBITS
+# counts C++11 as enabled in that case; please feel free to revise if
+# you know better."
+ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
+ASSERT_DEFINED(TPL_ENABLE_CUDA)
+IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT TPL_ENABLE_CUDA)
+  MESSAGE(FATAL_ERROR "MueLu requires that C++11 support in Trilinos be enabled.  This should happen automatically if your compiler is C++11 compliant.")
+ENDIF ()
 
 # The following Tribits macro sets MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # to be true if Trilinos_ENABLE_EXPLICIT_INSTANTIATION is true.
