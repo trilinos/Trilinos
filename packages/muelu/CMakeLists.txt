@@ -107,7 +107,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
 
 # Define option to enable code that is refactored to use Kokkos
 TRIBITS_ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_ENABLE_KOKKOS_REFACTOR
+  ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor
   HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
   "Enable MueLu code refactored to use Kokkos."
   NO)
