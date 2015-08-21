@@ -18,6 +18,7 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
 ENDIF()
 
 # JJH: pulled this logic from Tpetra.  Comments below about CUDA are from Tpetra developers.
+# This is redundant, since MueLu also requires Kokkos, and Kokkos requires C++11.
 # "I left a special case for CUDA because I'm not sure whether TriBITS
 # counts C++11 as enabled in that case; please feel free to revise if
 # you know better."
@@ -103,6 +104,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
   HAVE_${PACKAGE_NAME_UC}_BOOST_FOR_REAL
   "Enable Boost"
   OFF)
+
+# Define option to enable code that is refactored to use Kokkos
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_KOKKOS_REFACTOR
+  HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
+  "Enable MueLu code refactored to use Kokkos."
+  NO)
 
 # Explicit instantiation options:
 # - MueLu_ENABLE_EXPLICIT_INSTANTIATION
