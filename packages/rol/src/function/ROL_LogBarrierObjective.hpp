@@ -48,7 +48,7 @@ template <class Real>
 class LogBarrierObjective : public Objective<Real> {
 public:
 
-  /* \brief Objective value J(x) = \f$\sum_i \log(x_i) \f$ */
+  /* \brief Objective value J(x) = \f$-\sum_i \log(x_i) \f$ */
   Real value( const Vector<Real> &x, Real &tol ) {
 
     Teuchos::RCP<Vector<Real> > logx = x.clone();
@@ -64,46 +64,49 @@ public:
 
     Elementwise::ReductionSum<Real> sum;
 
-    return logx->reduce(sum);
+    Real result = -(logx->reduce(sum));
+
+    return result;
   }  
 
   /* \brief gradient g_i = \f$ 1/x_i \f$ */
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     
     g.set(x);
-    
-    struct Reciprocal : public UnaryFunction<Real> {
+     
+    struct Reciprocal : public Elementwise::UnaryFunction<Real> {
       Real apply( const Real &x ) const {
         return 1.0/x;
       }
     } reciprocal;
    
     g.applyUnary(reciprocal);
+    g.scale(-1.0);
   }
 
   Real dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol ) {
-  
+ 
     Teuchos::RCP<Vector<Real> > dbyx = d.clone();
     dbyx->set(x);
 
-    struct Division : public BinaryFunction<Real> {
-      Real apply( const Real &d, const Real &x ) {
+    struct Division : public Elementwise::BinaryFunction<Real> {
+      Real apply( const Real &x, const Real &d ) const {
         return d/x;    
       }
     } division;
 
-    dbyx->applyBinary( division, x );
+    dbyx->applyBinary( division, d );
     
     Elementwise::ReductionSum<Real> sum;
 
-    return dbyx->reduce(sum);
+    return -dbyx->reduce(sum);
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
     hv.set(v);
     
-    struct HessianApply : public BinaryFunction<Real> {
-      Real apply( const Real &v, const Real & ) { 
+    struct HessianApply : public Elementwise::BinaryFunction<Real> {
+      Real apply( const Real &v, const Real &x ) const { 
         return -v/(x*x);   
       }
     } hessian;
