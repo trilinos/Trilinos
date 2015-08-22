@@ -188,6 +188,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: output file: coarse graph edges\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: output file: build colormap\" type=\"bool\" value=\"false\"/>"
   "<ParameterList name=\"aggregation: params\"/>"
+  "<ParameterList name=\"strength-of-connection: params\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
@@ -431,6 +432,8 @@ namespace MueLu {
          ("aggregation: output file: build colormap","aggregation: output file: build colormap")
 
          ("aggregation: params","aggregation: params")
+
+         ("strength-of-connection: params","strength-of-connection: params")
 
          ("export data","export data")
 

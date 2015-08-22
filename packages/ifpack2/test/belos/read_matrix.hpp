@@ -63,7 +63,8 @@
 /// \param comm [in] Communicator object, over which to distribute the
 ///   sparse matrix to return.
 /// \param node [in] Node instance to be used by the returned sparse
-///   matrix.
+///   matrix.  This is an optional argument; if not provided or null,
+///   we make one for you.
 ///
 /// \return The sparse matrix, distributed over the given communicator.
 ///
@@ -73,7 +74,7 @@ template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 read_matrix_hb (const std::string& hb_file,
                 const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                Teuchos::RCP<Node> node)
+                const Teuchos::RCP<Node>& node = Teuchos::null)
 {
   using Teuchos::RCP;
   using std::cout;
@@ -83,7 +84,9 @@ read_matrix_hb (const std::string& hb_file,
   RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A;
   {
     Teuchos::TimeMonitor timeMon (*timer);
-    Tpetra::Utils::readHBMatrix (hb_file, comm, node, A);
+    Teuchos::RCP<Node> theNode =
+      node.is_null () ? Teuchos::rcp (new Node ()) : node;
+    Tpetra::Utils::readHBMatrix (hb_file, comm, theNode, A);
   }
   if (comm->getRank () == 0) {
     cout << "Proc 0: Time in seconds to read the Harwell-Boeing - format "

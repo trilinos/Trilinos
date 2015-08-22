@@ -352,8 +352,8 @@ C ******************************************************************
 C
 C read sizing data for mesh A
 C
-      WRITE (NOUT, 270) HED
-      WRITE (NTPOUT, 270) HED
+      WRITE (NOUT, 270) fntp2(:lenstr(fntp2)), HED
+      WRITE (NTPOUT, 270) fntp2(:lenstr(fntp2)), HED
       WRITE (NOUT, 280) NDIMA,NODESA,NUMELA,NBLKSA
       WRITE (NTPOUT, 280) NDIMA,NODESA,NUMELA,NBLKSA
 C
@@ -514,8 +514,8 @@ C
 C
 C read sizing data for mesh B
 C
-      WRITE (NOUT, 290) HED
-      WRITE (NTPOUT, 290) HED
+      WRITE (NOUT, 290) fntp3(:lenstr(fntp3)), HED
+      WRITE (NTPOUT, 290) fntp3(:lenstr(fntp3)), HED
       WRITE (NOUT, 300) NDIMB,NODESB,NUMELB,NBLKSB
       WRITE (NTPOUT, 300) NDIMB,NODESB,NUMELB,NBLKSB
 c
@@ -1620,12 +1620,14 @@ C
       call wrapup(qainfo(1))
       STOP
 C
-  270 FORMAT (3X,'DATA FROM MESH "A" FILE-',//,10X,'HEADING - ',A,/)
+  270 FORMAT (3X,/'DATA FROM MESH "A" (MESH & SOLUTION) FILE - ',A,
+     *        //,10X,'HEADING - ',A,/)
   280 FORMAT (10x,I1,'-DIMENSIONAL MODEL',/
      &       ,10X,'NUMBER OF NODES IN MESH A (nodesa) -      ',I9,/
      &       ,10X,'NUMBER OF ELEMENTS IN MESH A (numela) -   ',I9,/
      &       ,10X,'NUMBER OF ELEMENT BLOCKS IN A (nblksa) -  ',I9)
-  290 FORMAT (3X,'DATA FROM MESH "B" FILE-',//,10X,'HEADING - ',A,/)
+  290 FORMAT (3X,/,'DATA FROM MESH "B" (MESH) FILE - ',A,
+     *        //,10X,'HEADING - ',A,/)
   300 FORMAT (10x,I1,'-DIMENSIONAL MODEL',/
      &       ,10X,'NUMBER OF NODES IN MESH B (nodesb) -      ',I7,/
      &       ,10X,'NUMBER OF ELEMENTS IN MESH B (numelb) -   ',I7,/

@@ -10,6 +10,10 @@ template<class ScalarType>
 void testSolvers () {
   typedef Common::MultiVector<ScalarType> MV;
   typedef Common::Operator<ScalarType> OP;
+  // To make the example simpler, we assume that ScalarType =
+  // NormType.  For this to be correct, this would imply that
+  // ScalarType is real.
+  typedef ScalarType NormType;
 
   std::vector<std::pair<std::string, std::string> > solvers;
   solvers.push_back (std::make_pair ("A", "1"));
@@ -24,8 +28,8 @@ void testSolvers () {
     const std::string solverName = solvers[k].second;
     cout << "Package \"" << packageName << "\", solver \"" << solverName
          << "\":" << endl;
-    Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP> > solver =
-      Trilinos::Details::getLinearSolver<MV, OP> (packageName, solverName);
+    Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP, NormType> > solver =
+      Trilinos::Details::getLinearSolver<MV, OP, NormType> (packageName, solverName);
     if (solver.get () == NULL) {
       std::ostringstream err;
       err << "Solver \"" << solvers[k].second << "\" from package \""

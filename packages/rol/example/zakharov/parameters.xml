@@ -1,8 +1,8 @@
 <ParameterList name="Inputs">
-  <Parameter name="Descent Type"                            type="string"  value="Nonlinear CG"        />
-  <Parameter name="Nonlinear CG Type"                       type="string"  value="Fletcher-Reeves"     />
-  <Parameter name="Linesearch Type"                         type="string"  value="Bisection"           />
-  <Parameter name="Linesearch Curvature Condition"          type="string"  value="Wolfe Conditions"    />
+  <Parameter name="Descent Type"                            type="string"  value="Newton-Krylov"       />
+  <Parameter name="Linesearch Type"                         type="string"  value="Backtracking"        />
+  <Parameter name="Linesearch Curvature Condition"          type="string"  value="Strong Wolfe Conditions"    />
+  <Parameter name="Accept Linesearch Minimizer"             type="bool"    value="true"                />
   <Parameter name="Backtracking Rate"                       type="double"  value="0.5"                 />
   <Parameter name="User Defined Linesearch Parameter"       type="bool"    value="false"               />
   <Parameter name="Relative Krylov Tolerance"               type="double"  value="0.01"                />

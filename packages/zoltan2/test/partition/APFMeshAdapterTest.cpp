@@ -44,7 +44,7 @@
 // @HEADER
 
 /*! \file APFMeshAdapterTest.cpp
-    \brief An example of partitioning a SCOREC mesh with RCB.
+    \brief An example of partitioning a SCOREC APF mesh
 
     \author Created by G. Diamond, K. Devine.
 
@@ -370,6 +370,7 @@ int main(int narg, char *arg[]) {
   
   const inputAdapter_t::scalar_t* weights=arr;
   ia.setWeights(ia.getPrimaryEntityType(),weights,1);
+  
 
   if (ghost_metric) {
     const baseMeshAdapter_t *base_ia = dynamic_cast<const baseMeshAdapter_t*>(&ia);

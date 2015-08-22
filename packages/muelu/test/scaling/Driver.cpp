@@ -80,6 +80,13 @@
 #include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #endif
 
+#ifdef HAVE_MUELU_TPETRA
+#include <MueLu_CreateTpetraPreconditioner.hpp>
+#endif
+#ifdef HAVE_MUELU_EPETRA
+#include <MueLu_CreateEpetraPreconditioner.hpp>
+#endif
+
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
 
@@ -357,24 +364,34 @@ int main(int argc, char *argv[]) {
         // =========================================================================
         comm->barrier();
         tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
-
-        RCP<HierarchyManager> mueLuFactory = rcp(new ParameterListInterpreter(mueluList));
-
-        comm->barrier();
-        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
-
+        bool useAMGX = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "amgx");
         RCP<Hierarchy> H;
-        for (int i = 0; i <= numRebuilds; i++) {
-          A->SetMaxEigenvalueEstimate(-one);
-
-          H = mueLuFactory->CreateHierarchy();
-          H->GetLevel(0)->Set("A",           A);
-          H->GetLevel(0)->Set("Nullspace",   nullspace);
-          if (!coordinates.is_null())
-            H->GetLevel(0)->Set("Coordinates", coordinates);
-          mueLuFactory->SetupHierarchy(*H);
+#ifdef HAVE_MUELU_AMGX
+        RCP<MueLu::AMGXOperator<SC,LO,GO,NO>> aH;
+#endif
+        for(int i = 0; i <=numRebuilds; i++){
+          if(lib == Xpetra::UseTpetra){
+#ifdef HAVE_MUELU_TPETRA
+            RCP<Tpetra::CrsMatrix<SC, LO, GO, NO>> tA = Utils::Op2NonConstTpetraCrs(A);
+            RCP<MueLu::TpetraOperator<SC, LO, GO, NO>> tH = MueLu::CreateTpetraPreconditioner(tA, mueluList, Utils::MV2NonConstTpetraMV(coordinates));
+            if(useAMGX){
+#ifdef HAVE_MUELU_AMGX
+              aH = Teuchos::rcp_dynamic_cast<MueLu::AMGXOperator<SC, LO, GO, NO>>(tH);
+#endif
+            }
+            else{
+              H = tH->GetHierarchy();
+            }
+#endif //have_tpetra  
+          }
+          else{
+#ifdef HAVE_MUELU_EPETRA
+            RCP<Epetra_CrsMatrix> eA = Utils::Op2NonConstEpetraCrs(A);
+            RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, mueluList, Utils::MV2NonConstEpetraMV(coordinates));
+            H = eH->GetHierarchy();
+#endif //have_epetra
+          }
         }
-
         comm->barrier();
         tm = Teuchos::null;
 
@@ -413,8 +430,15 @@ int main(int argc, char *argv[]) {
         } else if (solveType == "standalone") {
           tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
 
-          H->IsPreconditioner(false);
-          H->Iterate(*B, *X, maxIts);
+          if(useAMGX){
+#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
+            aH->apply(*(Utils::MV2TpetraMV(B)), *(Utils::MV2NonConstTpetraMV(X)));
+#endif
+          }
+          else{
+            H->IsPreconditioner(false);
+            H->Iterate(*B, *X, maxIts);
+          }
 
         } else if (solveType == "cg" || solveType == "gmres") {
 #ifdef HAVE_MUELU_BELOS
@@ -424,11 +448,18 @@ int main(int argc, char *argv[]) {
           typedef MultiVector          MV;
           typedef Belos::OperatorT<MV> OP;
 
-          H->IsPreconditioner(true);
-
           // Define Operator and Preconditioner
           Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
-          Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
+          Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
+          if(useAMGX){
+#if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
+            belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(aH)); // Turns a MueLu::Hierarchy object into a Belos operator
+#endif
+          }
+          else{
+            H->IsPreconditioner(true);
+            belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
+          }
 
           // Construct a Belos LinearProblem object
           RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
@@ -464,7 +495,6 @@ int main(int argc, char *argv[]) {
 
           // Get the number of iterations for this solve.
           out << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
-
           // Check convergence
           if (ret != Belos::Converged)
             out << std::endl << "ERROR:  Belos did not converge! " << std::endl;

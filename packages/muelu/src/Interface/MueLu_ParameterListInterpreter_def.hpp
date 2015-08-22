@@ -583,17 +583,28 @@ namespace MueLu {
 
     // === Aggregation ===
     // Aggregation graph
-    RCP<CoalesceDropFactory> dropFactory = rcp(new CoalesceDropFactory());
-    ParameterList dropParams;
-    dropParams.set("lightweight wrap", true);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",     std::string, dropParams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",     std::string, dropParams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",             double, dropParams);
-    MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",  double, dropParams);
-    dropFactory->SetParameterList(dropParams);
+    RCP<Factory> dropFactory;
+
+    if (MUELU_TEST_PARAM_2LIST(paramList, paramList, "aggregation: drop scheme", std::string, "matlab")) {
+#ifdef HAVE_MUELU_MATLAB
+      dropFactory = rcp(new SingleLevelMatlabFactory<Scalar,LocalOrdinal, GlobalOrdinal, Node>());
+      ParameterList socParams  = paramList.sublist("strength-of-connection: params");
+      dropFactory->SetParameterList(socParams);
+#else
+      throw std::runtime_error("Cannot use MATLAB evolutionary strength-of-connection - MueLu was not configured with MATLAB support.");
+#endif
+    } else {
+      dropFactory = rcp(new CoalesceDropFactory());
+      ParameterList dropParams;
+      dropParams.set("lightweight wrap", true);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",     std::string, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",             double, dropParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",  double, dropParams);
+      dropFactory->SetParameterList(dropParams);
+    }
     manager.SetFactory("Graph",       dropFactory);
 
-    // Aggregation sheme
+    // Aggregation scheme
     MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
     TEUCHOS_TEST_FOR_EXCEPTION(aggType != "uncoupled" && aggType != "coupled" && aggType != "brick" && aggType != "matlab",
     Exceptions::RuntimeError, "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
@@ -700,6 +711,8 @@ namespace MueLu {
         RCP<FilteredAFactory> filterFactory = rcp(new FilteredAFactory());
         ParameterList fParams;
         MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: use lumping", bool, fParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse graph", bool, fParams);
+        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "filtered matrix: reuse eigenvalue", bool, fParams);
         filterFactory->SetParameterList(fParams);
         filterFactory->SetFactory("Graph",      manager.GetFactory("Graph"));
         // I'm not sure why we need this line. See comments for DofsPerNode for UncoupledAggregation above

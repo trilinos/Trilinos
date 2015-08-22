@@ -127,7 +127,7 @@ namespace Xpetra {
 
   };
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_XPETRA_INT_LONG_LONG
   template <>
   class VectorFactory<double, int, long long> {
 
@@ -152,18 +152,16 @@ namespace Xpetra {
         return rcp( new TpetraVector(map, zeroOut) );
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+#if defined(HAVE_XPETRA_EPETRA) && ! defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
       if (map->lib() == UseEpetra)
         return rcp( new EpetraVectorT<long long>(map, zeroOut) );
-#endif
 #endif
 
       XPETRA_FACTORY_END;
     }
 
   };
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
+#endif // HAVE_XPETRA_INT_LONG_LONG
 
 #define XPETRA_VECTORFACTORY_SHORT
 
@@ -203,7 +201,7 @@ namespace Xpetra {
 
   };
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_XPETRA_INT_LONG_LONG
   template <>
   class VectorFactory<int, int, long long> {
 
@@ -228,18 +226,16 @@ namespace Xpetra {
         return rcp( new TpetraVector(map, zeroOut) );
 #endif
 
-#ifdef HAVE_XPETRA_EPETRA
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+#if defined(HAVE_XPETRA_EPETRA) && ! defined(XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES)
       if (map->lib() == UseEpetra)
         return rcp( new EpetraIntVectorT<long long>(map, zeroOut) );
-#endif
 #endif
 
       XPETRA_FACTORY_END;
     }
 
   };
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
+#endif // HAVE_XPETRA_INT_LONG_LONG
 
 }
 

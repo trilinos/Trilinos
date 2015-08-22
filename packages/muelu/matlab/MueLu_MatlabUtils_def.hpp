@@ -69,6 +69,7 @@ template<typename T> MuemexType getMuemexType(const T & data) {throw std::runtim
 
 template<> MuemexType getMuemexType(const int & data) {return INT;}
 template<> MuemexType getMuemexType<int>() {return INT;}
+template<> MuemexType getMuemexType<bool>() {return BOOL;}
 
 template<> MuemexType getMuemexType(const double & data) {return DOUBLE;}
 template<> MuemexType getMuemexType<double>() {return DOUBLE;}
@@ -78,6 +79,9 @@ template<> MuemexType getMuemexType<string>() {return STRING;}
 
 template<> MuemexType getMuemexType(const complex_t& data) {return COMPLEX;}
 template<> MuemexType getMuemexType<complex_t>() {return COMPLEX;}
+
+template<> MuemexType getMuemexType(const RCP<Xpetra_map> & data) {return XPETRA_MAP;}
+template<> MuemexType getMuemexType<RCP<Xpetra_map> >() {return XPETRA_MAP;}
 
 template<> MuemexType getMuemexType(const RCP<Xpetra_ordinal_vector> & data) {return XPETRA_ORDINAL_VECTOR;}
 template<> MuemexType getMuemexType<RCP<Xpetra_ordinal_vector>>() {return XPETRA_ORDINAL_VECTOR;}
@@ -147,6 +151,10 @@ int loadDataFromMatlab<int>(const mxArray* mxa)
   {
     rv = *((int*) mxGetData(mxa));
   }
+  else if(probIDtype == mxLOGICAL_CLASS)
+  {
+    rv = (int) *((bool*) mxGetData(mxa));
+  }
   else if(probIDtype == mxDOUBLE_CLASS)
   {
     rv = (int) *((double*) mxGetData(mxa));
@@ -161,6 +169,12 @@ int loadDataFromMatlab<int>(const mxArray* mxa)
     throw std::runtime_error("Error: Unrecognized numerical type.");
   }
   return rv;
+}
+
+template<>
+bool loadDataFromMatlab<bool>(const mxArray* mxa)
+{
+  return *((bool*) mxGetData(mxa));
 }
 
 template<>
@@ -187,6 +201,35 @@ string loadDataFromMatlab<string>(const mxArray* mxa)
   }
   rv = string(mxArrayToString(mxa));
   return rv;
+}
+
+template<>
+RCP<Xpetra_map> loadDataFromMatlab<RCP<Xpetra_map>>(const mxArray* mxa)
+{
+  RCP<const Teuchos::Comm<int> > comm = rcp(new Teuchos::SerialComm<int>());
+  int nr = mxGetM(mxa);
+  int nc = mxGetN(mxa);
+  if(nr != 1)
+    throw std::runtime_error("A Xpetra::Map representation from MATLAB must be a single row vector.");
+  double* pr = mxGetPr(mxa);
+  mm_GlobalOrd numGlobalIndices = nc;
+
+  std::vector<mm_GlobalOrd> localGIDs(numGlobalIndices);
+  for(int i = 0; i < int(numGlobalIndices); i++) {
+    localGIDs[i] = Teuchos::as<mm_GlobalOrd>(pr[i]);
+  }
+
+  const Teuchos::ArrayView<const mm_GlobalOrd> localGIDs_view(&localGIDs[0],localGIDs.size());
+  RCP<Xpetra_map> map =
+      Xpetra::MapFactory<mm_LocalOrd, mm_GlobalOrd, mm_node_t>::Build(
+      Xpetra::UseTpetra,
+      Teuchos::OrdinalTraits<mm_GlobalOrd>::invalid(),
+      localGIDs_view,
+      0, comm);
+
+  if(map.is_null())
+    throw runtime_error("Failed to create Xpetra::Map.");
+  return map;
 }
 
 template<>
@@ -274,6 +317,10 @@ RCP<Tpetra_CrsMatrix_double> loadDataFromMatlab<RCP<Tpetra_CrsMatrix_double>>(co
 {
   bool success = false;
   RCP<Tpetra_CrsMatrix_double> A;
+
+  int* colptr = NULL;
+  int* rowind = NULL;
+
   try
   {
     RCP<const Teuchos::Comm<int>> comm = rcp(new Teuchos::SerialComm<int>());
@@ -284,8 +331,6 @@ RCP<Tpetra_CrsMatrix_double> loadDataFromMatlab<RCP<Tpetra_CrsMatrix_double>>(co
     RCP<const muemex_map_type> domainMap = rcp(new muemex_map_type(mxGetN(mxa), indexBase, comm));
     A = Tpetra::createCrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(rowMap);
     double* valueArray = mxGetPr(mxa);
-    int* colptr;
-    int* rowind;
     int nc = mxGetN(mxa);
     if(rewrap_ints)
     {
@@ -312,13 +357,20 @@ RCP<Tpetra_CrsMatrix_double> loadDataFromMatlab<RCP<Tpetra_CrsMatrix_double>>(co
     A->fillComplete(domainMap, rowMap);
     if(rewrap_ints)
     {
-      delete[] rowind;
-      delete[] colptr;
+      delete[] rowind; rowind = NULL;
+      delete[] colptr; colptr = NULL;
     }
     success = true;
   }
   catch(std::exception& e)
   {
+    if(rewrap_ints)
+    {
+      if(rowind!=NULL) delete[] rowind;
+      if(colptr!=NULL) delete[] colptr;
+      rowind = NULL;
+      colptr = NULL;
+    }
     mexPrintf("Error while constructing Tpetra matrix:\n");
     std::cout << e.what() << std::endl;
   }
@@ -541,62 +593,51 @@ RCP<MGraph> loadDataFromMatlab<RCP<MGraph>>(const mxArray* mxa)
   int* boundaryList = (int*) mxGetData(boundaryNodes);
   if(!mxIsSparse(edges) || mxGetClassID(edges) != mxLOGICAL_CLASS)
     throw runtime_error("Graph edges must be stored as a logical sparse matrix.");
-  mwIndex* rowIndices = mxGetIr(edges);
-  mwIndex* colPtrs = mxGetJc(edges);
+  // Note that Matlab stores sparse matrices in column major format.
+  mwIndex* matlabColPtrs = mxGetJc(edges);
+  mwIndex* matlabRowIndices = mxGetIr(edges);
   mm_GlobalOrd nRows = (mm_GlobalOrd) mxGetM(edges);
-  RCP<const Teuchos::Comm<mm_GlobalOrd>> comm = rcp(new Teuchos::SerialComm<mm_GlobalOrd>());
-  typedef Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MMap;
-  RCP<MMap> map = rcp(new MMap(nRows, 0, comm));
-  //Figure out max entries per row (for ideal CrsGraph constructor)
-  int nnz = colPtrs[mxGetN(edges)]; //last entry in colPtrs
-  int* entriesPerRow = new int[nRows];
-  mm_LocalOrd** colIndices = new mm_LocalOrd*[nRows]; //pointer to array of ints, inner array are col indices
-  int* numEnteredPerRow = new int[nRows];
-  int maxNzPerRow = 0;
-  for(int i = 0; i < nRows; i++)
-  {
-    entriesPerRow[i] = 0;
-    numEnteredPerRow[i] = 0;
-  }
+
+  // Create and populate row-major CRS data structures for Xpetra::TpetraCrsGraph.
+
+  // calculate number of nonzeros in each row
+  Teuchos::Array<int> entriesPerRow(nRows);
+  int nnz = matlabColPtrs[mxGetN(edges)]; //last entry in matlabColPtrs
   for(int i = 0; i < nnz; i++)
-  {
-    entriesPerRow[rowIndices[i]]++;
-  }
+    entriesPerRow[matlabRowIndices[i]]++;
+  // Populate usual row index array.  We don't need this for the Xpetra Graph ctor, but
+  // it's convenient for building up the column index array, which the ctor does need.
+  Teuchos::Array<int> rows(nRows+1);
+  rows[0] = 0;
   for(int i = 0; i < nRows; i++)
-  {
-    colIndices[i] = new int[entriesPerRow[i]]; //Allocate space for the column indices for CRS
-  }
-  //Another pass to populate colIndices now that we know # of entries per row
-  int colIter = 0; //keep track of the column that 'i' is in in the following loop
-  for(int i = 0; i < nnz; i++)
-  {
-    while(i > (int) colPtrs[colIter + 1]) //Seek to the column that entry i is in
-      colIter++;
-    mwIndex thisRow = rowIndices[i];
-    colIndices[thisRow][numEnteredPerRow[thisRow]] = (mm_LocalOrd) colIter;
-    numEnteredPerRow[thisRow]++;
+    rows[i+1] = rows[i] + entriesPerRow[i];
+  Teuchos::Array<int> cols(nnz);     //column index array
+  Teuchos::Array<int> insertionsPerRow(nRows,0); //track of #insertions done per row
+  int ncols = mxGetN(edges);
+  for (int colNum=0; colNum<ncols; ++colNum) {
+    int ci = matlabColPtrs[colNum];
+    for (int j=ci; j<Teuchos::as<int>(matlabColPtrs[colNum+1]); ++j) {
+      int rowNum = matlabRowIndices[j];
+      cols[ rows[rowNum] + insertionsPerRow[rowNum] ] = colNum;
+      insertionsPerRow[rowNum]++;
+    }
   }
   //Find maximum
-  for(int i = 0; i < nRows; i++)
-  {
+  int maxNzPerRow = 0;
+  for(int i = 0; i < nRows; i++) {
     if(maxNzPerRow < entriesPerRow[i])
       maxNzPerRow = entriesPerRow[i];
   }
+
+  RCP<const Teuchos::Comm<mm_GlobalOrd>> comm = rcp(new Teuchos::SerialComm<mm_GlobalOrd>());
+  typedef Xpetra::TpetraMap<mm_LocalOrd, mm_GlobalOrd, mm_node_t> MMap;
+  RCP<MMap> map = rcp(new MMap(nRows, 0, comm));
   typedef Xpetra::TpetraCrsGraph<mm_LocalOrd, mm_GlobalOrd, mm_node_t> TpetraGraph;
   RCP<TpetraGraph> tgraph = rcp(new TpetraGraph(map, (size_t) maxNzPerRow));
   //Populate tgraph in compressed-row format. Must get each row individually...
-  for(int i = 0; i < nRows; i++)
-  {
-    ArrayView<mm_LocalOrd> rowData(colIndices[i], entriesPerRow[i]);
-    tgraph->insertGlobalIndices((mm_GlobalOrd) i, rowData);
+  for(int i = 0; i < nRows; ++i) {
+    tgraph->insertGlobalIndices((mm_GlobalOrd) i, cols(rows[i],entriesPerRow[i]));
   }
-  for(int i = 0; i < nRows; i++)
-  {
-    delete[] colIndices[i];
-  }
-  delete[] colIndices;
-  delete[] entriesPerRow;
-  delete[] numEnteredPerRow;
   tgraph->fillComplete(map, map);
   RCP<MGraph> mgraph = rcp(new MueLu::Graph<mm_LocalOrd, mm_GlobalOrd, mm_node_t>(tgraph));
   //Set boundary nodes
@@ -629,6 +670,15 @@ mxArray* saveDataToMatlab(int& data)
 }
 
 template<>
+mxArray* saveDataToMatlab(bool& data)
+{
+  mwSize dims[] = {1, 1};
+  mxArray* mxa = mxCreateLogicalArray(2, dims);
+  *((bool*) mxGetData(mxa)) = data;
+  return mxa;
+}
+
+template<>
 mxArray* saveDataToMatlab(double& data)
 {
   return mxCreateDoubleScalar(data);
@@ -648,6 +698,24 @@ template<>
 mxArray* saveDataToMatlab(string& data)
 {
   return mxCreateString(data.c_str());
+}
+
+template<>
+mxArray* saveDataToMatlab(RCP<Xpetra_map>& data)
+{
+  //Precondition: Memory has already been allocated by MATLAB for the array.
+  int nc = data->getGlobalNumElements();
+  int nr = 1;
+  mxArray* output = createMatlabMultiVector<double>(nr, nc);
+  double* array = (double*) malloc(sizeof(double) * nr * nc);
+  for(int col = 0; col < nc; col++)
+  {
+    mm_GlobalOrd gid = data->getGlobalElement(col);
+    array[col] = Teuchos::as<double>(gid);
+  }
+  fillMatlabArray<double>(array, output, nc * nr);
+  free(array);
+  return output;
 }
 
 template<>
@@ -675,7 +743,7 @@ mxArray* saveDataToMatlab(RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_Global
 
 template<>
 mxArray* saveDataToMatlab(RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>& data)
-{ 
+{
   RCP<Xpetra_MultiVector_complex> xmv = MueLu::TpetraMultiVector_To_XpetraMultiVector(data);
   return saveDataToMatlab(xmv);
 }
@@ -935,7 +1003,7 @@ mxArray* saveDataToMatlab(RCP<Xpetra::MultiVector<Scalar, mm_LocalOrd, mm_Global
   }
   fillMatlabArray<Scalar>(array, output, nc * nr);
   free(array);
-  return output; 
+  return output;
 }
 */
 
@@ -957,7 +1025,7 @@ mxArray* saveDataToMatlab(RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_Global
   }
   fillMatlabArray<double>(array, output, nc * nr);
   free(array);
-  return output; 
+  return output;
 }
 
 template<>
@@ -978,7 +1046,7 @@ mxArray* saveDataToMatlab(RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_Glo
   }
   fillMatlabArray<complex_t>(array, output, nc * nr);
   free(array);
-  return output; 
+  return output;
 }
 
 template<>
@@ -1229,10 +1297,10 @@ void MuemexData<T>::setData(T& newData)
 /* ***************************** */
 
 template<typename T>
-void addLevelVariable(const T& data, std::string& name, Level& lvl)
+void addLevelVariable(const T& data, std::string& name, Level& lvl, const Factory * fact)
 {
-  lvl.AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
-  lvl.Set<T>(name, data);
+  lvl.AddKeepFlag(name, fact, MueLu::UserData);
+  lvl.Set<T>(name, data, fact);
 }
 
 template<typename T>
@@ -1296,7 +1364,7 @@ std::vector<Teuchos::RCP<MuemexArg>> processNeeds(const Factory* factory, std::s
     else
     {
       vector<string> words;
-      string badNameMsg = "Custom Muemex variables require a type and a name, e.g. \"double myVal\". \n Leading and trailing spaces are OK.";
+      string badNameMsg = "Custom Muemex variables in \"Needs\" list require a type and a name, e.g. \"double myVal\". \n Leading and trailing spaces are OK. \n Don't know how to handle \"" + needsList[i] + "\".\n";
       //compare type without case sensitivity
       char* buf = (char*) malloc(needsList[i].size() + 1);
       strcpy(buf, needsList[i].c_str());
@@ -1328,6 +1396,12 @@ std::vector<Teuchos::RCP<MuemexArg>> processNeeds(const Factory* factory, std::s
         typedef RCP<Xpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> LOVector_t;
         LOVector_t mydata = getLevelVariable<LOVector_t>(needsList[i], lvl);
         args.push_back(rcp(new MuemexData<LOVector_t>(mydata)));
+      }
+      else if(strstr(typeStr, "map"))
+      {
+        typedef RCP<Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t>> Map_t;
+        Map_t mydata = getLevelVariable<Map_t>(needsList[i], lvl);
+        args.push_back(rcp(new MuemexData<Map_t>(mydata)));
       }
       else if(strstr(typeStr, "scalar"))
       {
@@ -1416,7 +1490,7 @@ void processProvides(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Fact
     else
     {
       vector<string> words;
-      string badNameMsg = "Custom Muemex variables require a type and a name, e.g. \"double myVal\". \n Leading and trailing spaces are OK.";
+      string badNameMsg = "Custom Muemex variables in \"Provides\" list require a type and a name, e.g. \"double myVal\". \n Leading and trailing spaces are OK. \n Don't know how to handle \"" + provides[i] + "\".\n";
       //compare type without case sensitivity
       char* buf = (char*) malloc(provides[i].size() + 1);
       strcpy(buf, provides[i].c_str());
@@ -1447,42 +1521,53 @@ void processProvides(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Fact
       {
         typedef RCP<Xpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>> LOVector_t;
         RCP<MuemexData<LOVector_t>> mydata = Teuchos::rcp_static_cast<MuemexData<LOVector_t>>(mexOutput[i]);
-        addLevelVariable<LOVector_t>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<LOVector_t>(mydata->getData(), words[1], lvl, factory);
+      }
+      else if(strstr(typeStr, "map"))
+      {
+        typedef RCP<Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t>> Map_t;
+        RCP<MuemexData<Map_t>> mydata = Teuchos::rcp_static_cast<MuemexData<Map_t>>(mexOutput[i]);
+        addLevelVariable<Map_t>(mydata->getData(), words[1], lvl, factory);
       }
       else if(strstr(typeStr, "scalar"))
       {
         RCP<MuemexData<Scalar>> mydata = Teuchos::rcp_static_cast<MuemexData<Scalar>>(mexOutput[i]);
-        addLevelVariable<Scalar>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<Scalar>(mydata->getData(), words[1], lvl, factory);
       }
       else if(strstr(typeStr, "double"))
       {
         RCP<MuemexData<double>> mydata = Teuchos::rcp_static_cast<MuemexData<double>>(mexOutput[i]);
-        addLevelVariable<double>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<double>(mydata->getData(), words[1], lvl, factory);
       }
       else if(strstr(typeStr, "complex"))
       {
         RCP<MuemexData<complex_t>> mydata = Teuchos::rcp_static_cast<MuemexData<complex_t>>(mexOutput[i]);
-        addLevelVariable<complex_t>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<complex_t>(mydata->getData(), words[1], lvl, factory);
       }
       else if(strstr(typeStr, "matrix"))
       {
         RCP<MuemexData<Matrix_t>> mydata = Teuchos::rcp_static_cast<MuemexData<Matrix_t>>(mexOutput[i]);
-        addLevelVariable<Matrix_t>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<Matrix_t>(mydata->getData(), words[1], lvl, factory);
       }
       else if(strstr(typeStr, "multivector"))
       {
         RCP<MuemexData<MultiVector_t>> mydata = Teuchos::rcp_static_cast<MuemexData<MultiVector_t>>(mexOutput[i]);
-        addLevelVariable<MultiVector_t>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<MultiVector_t>(mydata->getData(), words[1], lvl, factory);
       }
       else if(strstr(typeStr, "int"))
       {
         RCP<MuemexData<int>> mydata = Teuchos::rcp_static_cast<MuemexData<int>>(mexOutput[i]);
-        addLevelVariable<int>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<int>(mydata->getData(), words[1], lvl, factory);
+      }
+      else if(strstr(typeStr, "bool"))
+      {
+        RCP<MuemexData<bool> > mydata = Teuchos::rcp_static_cast<MuemexData<bool> >(mexOutput[i]);
+        addLevelVariable<bool>(mydata->getData(), words[1], lvl, factory);
       }
       else if(strstr(typeStr, "string"))
       {
         RCP<MuemexData<string>> mydata = Teuchos::rcp_static_cast<MuemexData<string>>(mexOutput[i]);
-        addLevelVariable<string>(mydata->getData(), provides[i], lvl);
+        addLevelVariable<string>(mydata->getData(), words[1], lvl, factory);
       }
       else
       {
@@ -1493,6 +1578,29 @@ void processProvides(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Fact
     }
   }
 }
+
+// Throwable Stubs for long long
+
+template<>
+std::vector<Teuchos::RCP<MuemexArg>> processNeeds<double,mm_LocalOrd,long long,mm_node_t>(const Factory* factory, std::string& needsParam, Level& lvl) {
+  throw std::runtime_error("Muemex does not support long long for global indices");
+}
+
+template<>
+std::vector<Teuchos::RCP<MuemexArg>> processNeeds<complex_t,mm_LocalOrd,long long,mm_node_t>(const Factory* factory, std::string& needsParam, Level& lvl) {
+  throw std::runtime_error("Muemex does not support long long for global indices");
+}
+
+template<>
+void processProvides<double,mm_LocalOrd,long long,mm_node_t>(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Factory* factory, std::string& providesParam, Level& lvl) {
+  throw std::runtime_error("Muemex does not support long long for global indices");
+}
+
+template<>
+void processProvides<complex_t,mm_LocalOrd,long long,mm_node_t>(std::vector<Teuchos::RCP<MuemexArg>>& mexOutput, const Factory* factory, std::string& providesParam, Level& lvl) {
+  throw std::runtime_error("Muemex does not support long long for global indices");
+}
+
 
 }// end namespace
 #endif //HAVE_MUELU_MATLAB error handler

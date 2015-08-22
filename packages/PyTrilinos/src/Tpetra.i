@@ -66,6 +66,7 @@ operators, and dense and sparse matrices.
 #include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_NumPy_Util.hpp"
 #include "PyTrilinos_Teuchos_Util.hpp"
+#include "PyTrilinos_Tpetra_Util.hpp"
 #include "PyTrilinos_DAP.hpp"
 
 // Import the numpy interface
@@ -888,8 +889,6 @@ protected:
     Py_DECREF(array$argnum);
   }
 }
-// The refactor is making Tpetra::Vector difficult for SWIG to
-// parse, and so I provide a simplified prototype of the class here
 %feature("notabstract") Tpetra::MultiVector;
 %extend Tpetra::MultiVector
 {
@@ -909,7 +908,14 @@ protected:
                                      PyTrilinos::NumPy_TypeCode< Scalar >(),
                                      (void*)data);
   }
+
+  PyObject * __distarray__()
+  {
+    return PyTrilinos::convertToDistArray(*self);
+  }
 }
+// The refactor is making Tpetra::Vector difficult for SWIG to
+// parse, and so I provide a simplified prototype of the class here
 namespace Tpetra
 {
 template< class Scalar = DefaultScalarType,
@@ -1210,6 +1216,11 @@ public:
                                      dims,
                                      PyTrilinos::NumPy_TypeCode< Scalar >(),
                                      (void*)data);
+  }
+
+  PyObject * __distarray__()
+  {
+    return PyTrilinos::convertToDistArray(*self);
   }
 }
 namespace Tpetra

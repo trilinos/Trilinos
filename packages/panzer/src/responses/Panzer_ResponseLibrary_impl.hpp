@@ -224,21 +224,6 @@ addResponse(const std::string & responseName,
       wkst_desc.push_back(blockDescriptor(blocks[i]));
 
    addResponse(responseName,wkst_desc,modelFact_tm);
-/*
-   // build a response object for each evaluation type
-   ResponseBase_Builder<TraitsT> respData_builder(modelFact_tm,responseName,blocks);
-   responseObjects_[responseName].buildObjects(respData_builder);
-
-   // associate response objects with all element blocks required
-   for(std::size_t i=0;i<blocks.size();i++) {
-     std::string blockId = blocks[i];
-
-     // add response factory TM to vector that stores them
-     std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > & block_tm 
-        = respFactories_[blockDescriptor(blockId)];
-     block_tm.push_back(std::make_pair(responseName,modelFact_tm));
-   }
-*/
 }
 
 template <typename TraitsT>
@@ -271,6 +256,7 @@ addResponse(const std::string & responseName,
 
      BC bc(nextBC_id,BCT_Neumann,sideset,blockId,"Whatever",responseName+"_BCStrategy");
 
+     // allocate the vector for "bc", if it hasn't yet been allocated
      RCP<std::vector<std::pair<std::string,RCP<ResponseEvaluatorFactory_TemplateManager<TraitsT> > > > > block_tm
         = respBCFactories_[bc];
      if(block_tm==Teuchos::null) {

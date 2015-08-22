@@ -101,7 +101,7 @@ void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & pli
   // This method composes a plist for the problem
   Teuchos::XMLParameterListReader reader;
   plist = reader.toParameterList(xml);
-  
+
   //  Get list of valid Zoltan2 Parameters
   // Zoltan 2 parameters appear in the input file
   // Right now we have default values stored in
@@ -110,13 +110,13 @@ void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & pli
   // input file
   Teuchos::ParameterList zoltan2Parameters;
   Zoltan2::createAllParameters(zoltan2Parameters);
-  
+
   if (plist.isSublist("Zoltan2Parameters")) {
     // Apply user specified zoltan2Parameters
     ParameterList &sub = plist.sublist("Zoltan2Parameters");
     zoltan2Parameters.setParameters(sub);
   }
-  
+
   zoltan2Parameters.set("compute_metrics", "true");
   // update zoltan 2 parameters
   //        plist.remove("Zoltan2Parameters");
@@ -139,7 +139,7 @@ queue<ParameterList> getParameterLists(const string &inputFileName, int rank)
   {
     EXC_ERRMSG("Test Driver error: reading", e); // error reading input
   }
-  
+
   // get the parameter lists for each model
   for(int i = 0; i < xmlInput.numChildren(); i++)
   {
@@ -147,7 +147,7 @@ queue<ParameterList> getParameterLists(const string &inputFileName, int rank)
     xmlToModelPList(xmlInput.getChild(i), plist);
     pLists.emplace(plist);
   }
-  
+
   return pLists;
 }
 
@@ -157,32 +157,57 @@ bool minMaxTest(const metric_t & metric,
 {
   // run a comparison of min and max agains a given metric
   // return an error message on failure
-  bool pass = false;
+  bool pass = true;
   string test_name = metric.getName() + " test";
-  if (metricPlist.isParameter("min") && metricPlist.isParameter("max")) {
-    
-    double min = metricPlist.get<double>("min");
-    double max = metricPlist.get<double>("max");
-    
+  if (metricPlist.isParameter("lower"))
+  {
+    double min = metricPlist.get<double>("lower");
+
     if(metric.getMinImbalance() < min)
     {
       msg << test_name << " FAILED: Minimum imbalance per part, "
       << metric.getMinImbalance() <<
       ", less than specified allowable minimum, " << min;
-      
-    }else if (metric.getMaxImbalance() > max)
+      pass = false;
+    }
+  }
+
+  if(metricPlist.isParameter("upper" ) && pass != false) {
+    double max = metricPlist.get<double>("upper");
+    if (metric.getMaxImbalance() > max)
     {
       msg << test_name << " FAILED: Maximum imbalance per part, "
       << metric.getMaxImbalance() <<
       ", greater than specified allowable maximum, " << max;
-    }else{
-      msg << test_name << " PASSED.";
-      pass = true;
+      pass = false;
     }
-  }else{
-    msg << "Min and/or max criteria not specified for " << test_name;
+
   }
+
+  if(pass){
+    msg << test_name << " PASSED.";
+    pass = true;
+  }
+
   return pass;
+}
+
+template<typename T>
+void writePartionSolution(const T * part, size_t N, const RCP<const Teuchos::Comm<int> > & comm)
+{
+  std::ofstream file;
+  char title[256];
+  
+  static const string path = "/Users/davidson/trilinosall/trilinosrepo/packages/zoltan2/test/driver/pamgen_mesh_data";
+  
+  sprintf(title, "/partition_%d", comm->getRank());
+  file.open(path + string(title));
+  for (size_t i = 0; i < N; i++) {
+    file << part[i] << "\n";
+  }
+  
+  file.close();
+  
 }
 
 void run(const UserInputForTests &uinput, const ParameterList &problem_parameters,const RCP<const Teuchos::Comm<int> > & comm)
@@ -193,21 +218,27 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   // 3. solve the problem
   // 4. analyze metrics
   // 5. clean up
-  
+
   typedef AdapterForTests::base_adapter_t base_t;
   typedef AdapterForTests::basic_id_t basic_id_t; // basic_identifier_type
   typedef AdapterForTests::xpetra_mv_adapter xpetra_mv_t; // xpetra_mv_type
-  
+  typedef AdapterForTests::xcrsGraph_adapter xcrsGraph_t;
+  typedef AdapterForTests::xcrsMatrix_adapter xcrsMatrix_t;
+  typedef AdapterForTests::basic_vector_adapter basic_vector_t;
+
   typedef Zoltan2::Problem<base_t> problem_t;
   typedef Zoltan2::PartitioningProblem<base_t> partioning_problem_t; // base abstract type
   typedef Zoltan2::PartitioningProblem<basic_id_t> basic_problem_t; // basic id problem type
   typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mb problem type
+  typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_mb problem type
+  typedef Zoltan2::PartitioningProblem<xcrsMatrix_t> xcrsMatrix_problem_t; // xpetra_mb problem type
+  typedef Zoltan2::PartitioningProblem<basic_vector_t> basicVector_problem_t; // xpetra_mb problem type
   
   int rank = comm->getRank();
   if(rank == 0)
     cout << "\nPeforming test: " << problem_parameters.get<string>("Name") << endl;
-  
-  
+
+
   ////////////////////////////////////////////////////////////
   // 1. get basic input adapter
   ////////////////////////////////////////////////////////////
@@ -216,18 +247,16 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   if(!problem_parameters.isParameter("Zoltan2Parameters"))
     throw std::runtime_error("Zoltan2 probnlem parameters not provided");
   
-  
-  
   const ParameterList &adapterPlist = problem_parameters.sublist("InputAdapterParameters");
   base_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist); // a pointer to a basic type
   if(ia == nullptr)
   {
     if(rank == 0)
       cout << "Get adapter for input failed" << endl;
-    
+
     return;
   }
-  
+
   ////////////////////////////////////////////////////////////
   // 2. construct partitioning problem
   ////////////////////////////////////////////////////////////
@@ -236,13 +265,13 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
   // get Zoltan2 partion parameters
   ParameterList zoltan2_parameters = const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
   zoltan2_parameters.set("num_global_parts", comm->getSize());
-  
+
   if(rank == 0){
     readPList(zoltan2_parameters, "Zoltan 2 Params:\n");
     cout <<"\n\n"<<endl;}
-  
+
 #ifdef HAVE_ZOLTAN2_MPI
-  
+
   if(adapter_name == "BasicIdentifier"){
     problem = reinterpret_cast<problem_t * >(new basic_problem_t(reinterpret_cast<basic_id_t *>(ia),
                                                                  &zoltan2_parameters,
@@ -253,16 +282,25 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
                                                                      &zoltan2_parameters,
                                                                      MPI_COMM_WORLD));
   }else if(adapter_name == "XpetraCrsGraph"){
-    
+    problem = reinterpret_cast<problem_t * >(new xcrsGraph_problem_t(reinterpret_cast<xcrsGraph_t *>(ia),
+                                                                     &zoltan2_parameters,
+                                                                     MPI_COMM_WORLD));
   }
   else if(adapter_name == "XpetraCrsMatrix")
   {
-    
+    problem = reinterpret_cast<problem_t * >(new xcrsMatrix_problem_t(reinterpret_cast<xcrsMatrix_t *>(ia),
+                                                                      &zoltan2_parameters,
+                                                                      MPI_COMM_WORLD));
+  }  else if(adapter_name == "BasicVector")
+  {
+    problem = reinterpret_cast<problem_t * >(new basicVector_problem_t(reinterpret_cast<basic_vector_t *>(ia),
+                                                                       &zoltan2_parameters,
+                                                                       MPI_COMM_WORLD));
   }
   else
-    throw std::runtime_error("Input adapter type not avaible, or misspelled.");
-  
-  
+    throw std::runtime_error("Input adapter type not available, or misspelled.");
+
+
 #else
   if(adapter_name == "BasicIdentifier"){
     problem = reinterpret_cast<problem_t * >(new basic_problem_t(reinterpret_cast<basic_id_t *>(ia),
@@ -272,40 +310,47 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
     problem = reinterpret_cast<problem_t * >(new xpetra_mv_problem_t(reinterpret_cast<xpetra_mv_t *>(ia),
                                                                      &zoltan2_parameters));
   }else if(adapter_name == "XpetraCrsGraph"){
-    
+    problem = reinterpret_cast<problem_t * >(new xcrsGraph_problem_t(reinterpret_cast<xcrsGraph_t *>(ia),
+                                                                     &zoltan2_parameters));
   }
   else if(adapter_name == "XpetraCrsMatrix")
   {
-    
+    problem = reinterpret_cast<problem_t * >(new xcrsMatrix_problem_t(reinterpret_cast<xcrsMatrix_t *>(ia),
+                                                                      &zoltan2_parameters));
+  } else if(adapter_name == "BasicVector")
+  {
+    problem = reinterpret_cast<problem_t * >(new basicVector_problem_t(reinterpret_cast<basic_vector_t *>(ia),
+                                                                       &zoltan2_parameters));
   }
   else
-    throw std::runtime_error("Input adapter type not avaible, or misspelled.");
+    throw std::runtime_error("Input adapter type not available, or misspelled.");
 #endif
-  
+
   ////////////////////////////////////////////////////////////
   // 3. Solve the problem
   ////////////////////////////////////////////////////////////
   reinterpret_cast<basic_problem_t *>(problem)->solve();
   if (rank == 0)
     cout << "Problem solved" << endl;
-  
+
   ////////////////////////////////////////////////////////////
   // 4. Print problem metrics
   ////////////////////////////////////////////////////////////
   if (comm->getRank() == 0)
   {
     // calculate pass fail based on imbalance
+    if(rank == 0) cout << "...analyzing metrics..." << endl;
     reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
-    
+
     if(problem_parameters.isParameter("Metrics"))
     {
-      
+
       ArrayRCP<const metric_t> metrics
       = reinterpret_cast<basic_problem_t *>(problem)->getMetrics();
-      
+
       // get metric plist
       const ParameterList &metricsPlist = problem_parameters.sublist("Metrics");
-      
+
       string test_name;
       bool all_tests_pass = true;
       for(int i = 0; i < metrics.size(); i++)
@@ -318,44 +363,209 @@ void run(const UserInputForTests &uinput, const ParameterList &problem_parameter
           if(!minMaxTest(metrics[i], metricsPlist.sublist(test_name), msg))
             all_tests_pass = false;
           cout << msg.str() << endl;
-          
+
         }
       }
-      
+
       if(all_tests_pass) cout << "All tests PASSED." << endl;
       else cout << "Testing FAILED." << endl;
-      
-    }else
+
+    }else{
       cout << "No test metrics provided." << endl;
+      reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
+    }
   }
   // 4a. timers
   if(zoltan2_parameters.isParameter("timer_output_stream"))
     reinterpret_cast<basic_problem_t *>(problem)->printTimers();
-  
+
+  // 5a solution
+//  auto solution = reinterpret_cast<basicVector_problem_t *>(problem)->getSolution();
+//  size_t local_parts = ia->getLocalNumIDs();
+//  writePartionSolution<basic_vector_t::part_t>(solution.getPartListView(),local_parts,comm);
+//  for(size_t i = 0; i < local_parts; i++)
+//    printf("%i ", solution.getPartListView()[i]);
+//  printf("}\n\n");
+
   ////////////////////////////////////////////////////////////
   // 5. Clean up
   ////////////////////////////////////////////////////////////
+  if(adapter_name == "XpetraCrsGraph")
+    delete reinterpret_cast<xcrsGraph_t *>(ia)->getCoordinateInput();
+  if(adapter_name == "XpetraCrsMatrix")
+    delete reinterpret_cast<xcrsMatrix_t *>(ia)->getCoordinateInput();
+
   delete ia;
   delete reinterpret_cast<basic_problem_t *>(problem);
 }
 
+
+void readMesh(const UserInputForTests &uinput,const RCP<const Teuchos::Comm<int> > & comm)
+{
+  comm->barrier();
+  PamgenMesh * mesh = const_cast<UserInputForTests *>(&uinput)->getPamGenMesh();
+  printf("\n\nProc %d mesh report:\n", comm->getRank());
+  
+  int nodes, els;
+  nodes = mesh->num_nodes;
+  els = mesh->num_elem;
+  
+  printf("dimension: %d\n", mesh->num_dim);
+  printf("local nodes: %d\n", nodes);
+  printf("local elems: %d\n", els);
+  
+  int gnodes, gels;
+  gnodes = mesh->num_nodes_global;
+  gels = mesh->num_elems_global;
+  printf("global nodes: %d\n", gnodes);
+  printf("global elem: %d\n", gels);
+  
+  int blks = mesh->num_elem_blk;
+  printf("num blocks: %d\n", blks);
+  
+  printf("\ncoordinates:\n");
+  double * coord = mesh->coord;
+  for (int i = 0; i < nodes; i++) {
+    if(mesh->num_dim == 2)
+    {
+      printf("lid %d, gid %d: {%1.2f, %1.2f}\n",i,mesh->global_node_numbers[i],
+             coord[i], coord[nodes+i]);
+    }else
+    {
+      printf("lid %d, gid %d: {%1.2f, %1.2f, %1.2f}\n",i,mesh->global_node_numbers[i],
+             coord[i], coord[nodes+i], coord[2*nodes+i]);
+    }
+  }
+  
+  
+  int el_count = 0;
+  printf("\nElements:\n");
+  for(int i = 0; i < blks; i++)
+  {
+    int elb = mesh->elements[i];
+    int npel = mesh->nodes_per_element[i];
+    printf("blkid %d has %d els, with %d nodes/element\n", mesh->block_id[i], elb, npel);
+    // nodes for el
+    int * connect = mesh->elmt_node_linkage[i];
+    
+    for(int j = 0; j < elb; j++)
+    {
+      printf("element %d:{", el_count);
+      for(int k = 0; k < npel; k++)
+        printf("%d ", connect[j*npel + k]);
+      printf("}\n");
+      el_count++;
+    }
+    
+  }
+  
+  el_count = 0;
+  printf("\nElements Centroids:\n");
+  for(int i = 0; i < blks; i++)
+  {
+    int elb = mesh->elements[i];
+    for(int j = 0; j < elb; j++)
+    {
+      printf("element %d:{", mesh->global_element_numbers[el_count]);
+      for(int k = 0; k < mesh->num_dim; k++)
+        printf("%1.2f ", mesh->element_coord[el_count + k * mesh->num_elem]);
+      printf("}\n");
+      el_count++;
+    }
+  }
+  
+  comm->barrier();
+}
+
+
+void writeMesh(const UserInputForTests &uinput,const RCP<const Teuchos::Comm<int> > & comm)
+{
+  comm->barrier();
+  std::ofstream file;
+  char title[256];
+  
+  static const string path = "/Users/davidson/trilinosall/trilinosrepo/packages/zoltan2/test/driver/pamgen_mesh_data";
+  
+  PamgenMesh * mesh = const_cast<UserInputForTests *>(&uinput)->getPamGenMesh();
+  
+  int nodes, els;
+  nodes = mesh->num_nodes;
+  els = mesh->num_elem;
+  
+  int gnodes, gels;
+  gnodes = mesh->num_nodes_global;
+  gels = mesh->num_elems_global;
+  
+  int blks = mesh->num_elem_blk;
+  
+  sprintf(title, "/coordinates_%d", comm->getRank());
+  file.open(path + string(title));
+  double * coord = mesh->coord;
+  for (int i = 0; i < nodes; i++) {
+    file << coord[i] << "\t" << coord[nodes + i];
+    if(mesh->num_dim == 3) file << "\t" << coord[2*nodes +i];
+    file << "\n";
+  }
+  
+  file.close();
+  
+  // write all elements
+  sprintf(title, "/elements_%d", comm->getRank());
+  file.open(path + string(title));
+  for(int i = 0; i < blks; i++)
+  {
+    int elb = mesh->elements[i];
+    int npel = mesh->nodes_per_element[i];
+    // nodes for el
+    int * connect = mesh->elmt_node_linkage[i];
+    
+    for(int j = 0; j < elb; j++)
+    {
+      for(int k = 0; k < npel-1; k++)
+        file << connect[j*npel + k] << "\t";
+      
+      file << connect[j*npel + npel-1] << "\n";
+    }
+  }
+  
+  file.close();
+  
+  // write boundary faces
+  if(mesh->num_dim == 3 && comm->getRank() == 0)
+  {
+    sprintf(title, "/element_map");
+    file.open(path + string(title));
+    file << 1 <<"\t"<<5<<"\t"<<8<<"\t"<<4<<"\n";
+    file << 2 <<"\t"<<3<<"\t"<<7<<"\t"<<6<<"\n";
+    file << 1 <<"\t"<<2<<"\t"<<6<<"\t"<<5<<"\n";
+    file << 4 <<"\t"<<8<<"\t"<<7<<"\t"<<3<<"\n";
+    file << 1 <<"\t"<<4<<"\t"<<3<<"\t"<<2<<"\n";
+    file << 5 <<"\t"<<6<<"\t"<<7<<"\t"<<8<<"\n";
+    file.close();
+  }
+  
+  // write info
+  if(comm->getRank() == 0)
+  {
+    sprintf(title,"/mesh_info");
+    file.open(path + string(title));
+    file << comm->getSize() <<"\n" << nodes << "\n" << els << "\n" << blks;
+    file.close();
+  }
+  comm->barrier();
+}
+
 int main(int argc, char *argv[])
 {
-  
+
   ////////////////////////////////////////////////////////////
   // (0) Set up MPI environment
   ////////////////////////////////////////////////////////////
   Teuchos::GlobalMPISession session(&argc, &argv);
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  
+
   int rank = comm->getRank(); // get rank
-  //    if(rank == 0) // exit for rank 0
-  //    {
-  //        cout << "PASS" << endl;
-  //        cout << "FINISHING TEST DRIVER (RANK 0 EXIT)...." << endl;
-  //        return 0;
-  //    }
-  
+
   ////////////////////////////////////////////////////////////
   // (1) Get and read the input file
   // the input file defines tests to be run
@@ -363,12 +573,12 @@ int main(int argc, char *argv[])
   string inputFileName("driver.xml"); // assumes a default input file exists
   if(argc > 1)
     inputFileName = argv[1]; // user has provided an input file
-  
+
   ////////////////////////////////////////////////////////////
   // (2) Get All Input Parameter Lists
   ////////////////////////////////////////////////////////////
   queue<ParameterList>pLists = getParameterLists(inputFileName,rank);
-  
+
   ////////////////////////////////////////////////////////////
   // (3) Get Input Data Parameters
   ////////////////////////////////////////////////////////////
@@ -377,22 +587,26 @@ int main(int argc, char *argv[])
   {
     if(rank == 0)
       cout << "InputParameters not defined" << endl;
-    
+
     return 1;
   }
-  
+
   // get the user input for all tests
   UserInputForTests uinput(inputParameters, comm,true,true);
   pLists.pop();
-  
+
   ////////////////////////////////////////////////////////////
   // (4) Perform all tests
   ////////////////////////////////////////////////////////////
+  comm->barrier();
+  
+//  writeMesh(uinput,comm);
+  
   while (!pLists.empty()) {
     run(uinput, pLists.front(), comm);
     pLists.pop();
   }
-  
+
   return 0;
 }
 
@@ -405,10 +619,10 @@ void readXML(const XMLObject &xml, const string &title)
 }
 
 void readPList(const ParameterList &plist, const string &title, bool doc, bool unused)
-{
+{  
   cout << "\nReading parameter list: " << title << " ...." << endl;
   plist.print(cout, ParameterList::PrintOptions().showDoc(doc).indent(3).showTypes(true));
-  
+
   if(unused)
   {
     cout << "\nUnused fields: " << title << " ...." << endl;

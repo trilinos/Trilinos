@@ -353,9 +353,8 @@ namespace Belos {
     //
     std::string errstr("Belos::BlockPseudoCGIter::initialize(): Specified multivectors must have a consistent length and width.");
 
-    // Create convenience variables for zero and one.
+    // Create convenience variable for one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
 
     if (!Teuchos::is_null(newstate.R)) {
 
@@ -465,9 +464,8 @@ namespace Belos {
     std::vector<ScalarType> rho_new( numRHS_ ), beta( numRHS_ );
     std::vector<ScalarType> rhatV( numRHS_ ), tT( numRHS_ ), tS( numRHS_ );
 
-    // Create convenience variables for zero and one.
+    // Create convenience variable for one.
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
 
     // TODO: We may currently be using more space than is required
     RCP<MV> leftPrecVec, leftPrecVec2;

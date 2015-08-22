@@ -1368,7 +1368,6 @@ End:
 static int *
 objects_by_part(ZZ *zz, int num_obj, int *part, int *nparts, int *nonempty)
 {
-  char *yo = "objects_by_part";
   int i, num_parts, num_nonempty, max_part, gmax_part;
   int *partCounts = NULL, *totalCounts;
   int *returnBuf = NULL;
@@ -1439,7 +1438,6 @@ object_metrics(ZZ *zz, int num_obj, int *parts, float *part_sizes, int req_npart
                float *xtra_imbalance,  /* return if vertex weight dim > 1 */
     float (*xtra_obj_wgt)[EVAL_SIZE])  /* return if vertex weight dim > 1 */
 {
-  char *yo = "object_metrics";
   MPI_Comm comm = zz->Communicator;
 
   int i, j, idx, ierr, part_dim;

@@ -66,6 +66,11 @@ namespace panzer_stk_classic {
                           const Teuchos::RCP<STK_Interface> & mesh,
                           const Teuchos::ParameterList & outputList);
 
+    IOClosureModelFactory(const Teuchos::RCP<const panzer::ClosureModelFactory<EvalT> > userCMF_,
+                          const Teuchos::RCP<STK_Interface> & mesh,
+                          const std::map<std::string,std::vector<std::string> > & nodalFields,
+                          const std::map<std::string,std::vector<std::string> > & cellFields);
+
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
     buildClosureModels(const std::string& model_id,
 		       const Teuchos::ParameterList& models,

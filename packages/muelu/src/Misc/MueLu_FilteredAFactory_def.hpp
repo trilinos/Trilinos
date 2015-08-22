@@ -69,7 +69,7 @@ namespace MueLu {
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used for filtering");
-    validParamList->set< RCP<const FactoryBase> >("Graph",          Teuchos::null, "Generating fatory for coalesced filtered graph");
+    validParamList->set< RCP<const FactoryBase> >("Graph",          Teuchos::null, "Generating factory for coalesced filtered graph");
     validParamList->set< RCP<const FactoryBase> >("Filtering",      Teuchos::null, "Generating factory for filtering boolean");
 
     return validParamList;

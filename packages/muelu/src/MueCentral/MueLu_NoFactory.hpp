@@ -76,9 +76,7 @@ namespace MueLu {
     //@{
 
     //!
-    void CallBuild(Level& requestedLevel) const {
-      throw Exceptions::RuntimeError("MueLu::NoFactory::Build(): this method cannot be called.");
-    }
+    void CallBuild(Level& requestedLevel) const;
 
     //!
     void CallDeclareInput(Level& requestedLevel) const { }

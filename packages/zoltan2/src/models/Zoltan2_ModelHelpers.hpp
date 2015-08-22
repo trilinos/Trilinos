@@ -87,7 +87,7 @@ get2ndAdjsMatFromAdjs(const Teuchos::RCP<const MeshAdapter<User> > &ia,
     // Get node-element connectivity
 
     const lno_t *offsets=NULL;
-    const gno_t *adjacencyIds=NULL;
+    const zgid_t *adjacencyIds=NULL;
     ia->getAdjsView(sourcetarget, through, offsets, adjacencyIds);
 
     zgid_t const *Ids=NULL;

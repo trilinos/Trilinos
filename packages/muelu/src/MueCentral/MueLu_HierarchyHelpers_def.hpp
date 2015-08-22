@@ -256,7 +256,9 @@ namespace MueLu {
 
           if (name == "A") {
             level->Set(name, Teuchos::getValue<RCP<Matrix > > (it2->second),NoFactory::get());
-            M->SetFactory(name, NoFactory::getRCP());
+            M->SetFactory(name, NoFactory::getRCP()); // TAW: not sure about this: be aware that this affects all levels
+                                                      //      However, A is accessible through NoFactory anyway, so it should
+                                                      //      be fine here.
           }
           else if( name == "P" || name == "R") {
             level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
@@ -264,13 +266,16 @@ namespace MueLu {
           }
           else if (name == "Nullspace")
           {
+            level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<MultiVector > >(it2->second), NoFactory::get());
-            M->SetFactory(name, NoFactory::getRCP());
+            //M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
+                                                        // One should do this only in very special cases
           }
           else if(name == "Coordinates") //Scalar of Coordinates MV is always double
           {
+            level->AddKeepFlag(name,NoFactory::get(),MueLu::UserData);
             level->Set(name, Teuchos::getValue<RCP<Xpetra::MultiVector<double, LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
-            M->SetFactory(name, NoFactory::getRCP());
+            //M->SetFactory(name, NoFactory::getRCP()); // TAW: generally it is a bad idea to overwrite the factory manager data here
           }
           #ifdef HAVE_MUELU_MATLAB
           else
@@ -278,32 +283,27 @@ namespace MueLu {
             //Custom variable for Muemex
             size_t typeNameStart = name.find_first_not_of(' ');
             size_t typeNameEnd = name.find(' ', typeNameStart);
-            char* typeName = (char*) malloc(typeNameEnd - typeNameStart + 1);
-            strcpy(typeName, name.c_str() + typeNameStart);
-            typeName[typeNameEnd - typeNameStart] = 0;
-            //Convert to lowercase
-            for(char* iter = typeName; *iter; iter++)
-            {
-              *iter = (char) tolower(*iter);
-            }
+            std::string typeName = name.substr(typeNameStart, typeNameEnd - typeNameStart);
+            std::transform(typeName.begin(), typeName.end(), typeName.begin(), ::tolower);
             level->AddKeepFlag(name, NoFactory::get(), MueLu::UserData);
-            if(strstr(typeName, "matrix"))
+            if(typeName == "matrix")
               level->Set(name, Teuchos::getValue<RCP<Matrix> >(it2->second), NoFactory::get());
-            else if(strstr(typeName, "multivector"))
+            else if(typeName == "multivector")
               level->Set(name, Teuchos::getValue<RCP<MultiVector> >(it2->second), NoFactory::get());
-            else if(strstr(typeName, "ordinalvector"))
+            else if(typeName == "map")
+              level->Set(name, Teuchos::getValue<RCP<Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
+            else if(typeName == "ordinalvector")
               level->Set(name, Teuchos::getValue<RCP<Xpetra::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> > >(it2->second), NoFactory::get());
-            else if(strstr(typeName, "scalar"))
+            else if(typeName == "scalar")
               level->Set(name, Teuchos::getValue<Scalar>(it2->second), NoFactory::get());
-            else if(strstr(typeName, "double"))
+            else if(typeName == "double")
               level->Set(name, Teuchos::getValue<double>(it2->second), NoFactory::get());
-            else if(strstr(typeName, "complex"))
+            else if(typeName == "complex")
               level->Set(name, Teuchos::getValue<std::complex<double> >(it2->second), NoFactory::get());
-            else if(strstr(typeName, "int"))
+            else if(typeName == "int")
               level->Set(name, Teuchos::getValue<int>(it2->second), NoFactory::get());
-            else if(strstr(typeName, "string"))
+            else if(typeName == "string")
               level->Set(name, Teuchos::getValue<std::string>(it2->second), NoFactory::get());
-            free(typeName);
           }
           #endif
         }

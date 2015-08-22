@@ -73,8 +73,10 @@ struct search_for_pallet_generating_faces
     typedef typename fields_t::points_t                                          points_t;
     typedef typename fields_t::points_mrat                                    points_mrat;
     typedef Kokkos::View<local_idx_t *[2], execution_space>  face_to_interface_and_side_t;
-    typedef Kokkos::View<local_idx_t *[2], execution_space>      contact_search_results_t;
     typedef Kokkos::View<local_idx_t *, execution_space>                      faces_ids_t;
+
+    typedef MorkonCommonlyUsed<DeviceType, DIM>                           morkon_common_t;
+    typedef typename morkon_common_t::contact_search_results_t   contact_search_results_t;
 
     typedef typename AxisAlignedBB<DeviceType, float>::boxes_t           bounding_boxes_t;
 
@@ -103,16 +105,24 @@ struct search_for_pallet_generating_faces
     {
         faces_ids_t  non_mortarside_faces;
         faces_ids_t      mortarside_faces;
-        // Divide up the faces into non-mortarside and mortarside sets.
+        // In parallel, divide up the faces into non-mortarside and mortarside sets.
+        //
+        // One parallel_scan to create a view of offsets.  Resize these two views.
+        // Then a parallel_for (or two) to fill.
 
         bounding_boxes_t non_mortarside_boxes;
         bounding_boxes_t     mortarside_boxes;
         // Construct bounding boxes for the sets of spaces, using both the node_coords
         // and predicted node_coords and also the m_boxes_epsilon.
+        //
+        // Resize the these two views.  Then use two parallel_fors to fill.
 
         // Do a (brute-force, for now) search for pairs with bounding boxes that overlap
         // Extra points if you disallow face pairs whose normals are incompatible with
         // contact.
+        //
+        // Parallel_for to count.  Parallel_scan to compute offsets.  Parallel_for to fill.
+
     }
 
 };

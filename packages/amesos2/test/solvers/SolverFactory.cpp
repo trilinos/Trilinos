@@ -41,13 +41,13 @@
 //
 // @HEADER
 
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Amesos2_Factory.hpp>
-#include <Trilinos_Details_LinearSolver.hpp>
-#include <Trilinos_Details_LinearSolverFactory.hpp>
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Amesos2_Factory.hpp"
+#include "Trilinos_Details_LinearSolver.hpp"
+#include "Trilinos_Details_LinearSolverFactory.hpp"
 // Define typedefs and macros for testing over all Tpetra types.
 // They work whether or not ETI is enabled.
 #include "TpetraCore_ETIHelperMacros.h"
@@ -160,9 +160,9 @@ namespace {
     out << "Test solver \"" << solverName << "\" from Amesos2 package" << endl;
     Teuchos::OSTab tab1 (out);
 
-    RCP<Trilinos::Details::LinearSolver<MV, OP> > solver;
+    RCP<Trilinos::Details::LinearSolver<MV, OP, mag_type> > solver;
     try {
-      solver = Trilinos::Details::getLinearSolver<MV, OP> ("Amesos2", solverName);
+      solver = Trilinos::Details::getLinearSolver<MV, OP, mag_type> ("Amesos2", solverName);
     } catch (std::exception& e) {
       out << "*** FAILED: getLinearSolver threw an exception: " << e.what () << endl;
       success = false;
@@ -210,6 +210,12 @@ namespace {
     using std::endl;
     typedef Tpetra::CrsMatrix<SC,LO,GO,NT> MAT;
     typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
+
+#if ! defined(TRILINOS_HAVE_LINEAR_SOLVER_FACTORY_REGISTRATION)
+    out << "LinearSolverFactory run-time registration disabled; "
+      "not running test" << endl;
+    return;
+#endif // NOT TRILINOS_HAVE_LINEAR_SOLVER_FACTORY_REGISTRATION
 
     RCP<const Comm<int> > comm =
       Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();

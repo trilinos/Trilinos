@@ -18,7 +18,8 @@ namespace Details {
 template<class SC, class LO, class GO, class NT>
 class LinearSolver :
     public Trilinos::Details::LinearSolver<Tpetra::MultiVector<SC, LO, GO, NT>,
-                                           Tpetra::Operator<SC, LO, GO, NT> >
+                                           Tpetra::Operator<SC, LO, GO, NT>,
+                                           typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>
 {
 public:
   typedef Ifpack2::Preconditioner<SC, LO, GO, NT> prec_type;

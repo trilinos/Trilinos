@@ -759,18 +759,6 @@ convertEpetraOperatorToPython(const Teuchos::RCP< const Epetra_Operator > *ceo)
 
 ////////////////////////////////////////////////////////////////////////
 
-Teuchos::RCP< const Epetra_Map >
-getEpetraMapPtrFromEpetraBlockMap(const Epetra_BlockMap & ebm)
-{
-  const Epetra_Map * em_ptr  = dynamic_cast< const Epetra_Map* >(&ebm);
-  if (!em_ptr)
-  {
-    PyErr_SetString(PyExc_TypeError, "Cannot upcast BlockMap to Map");
-    throw PythonException();
-  }
-  return Teuchos::rcp(em_ptr, false);
-}
-
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::RCP< Epetra_Vector >
@@ -889,33 +877,6 @@ getEpetraMultiVectorObjectAttr(PyObject   * object,
 
 ////////////////////////////////////////////////////////////////////////
 
-Teuchos::RCP< const Epetra_MultiVector >
-getConstEpetraMultiVectorObjectAttr(PyObject * object,
-                                    CONST char * name)
-{
-  static swig_type_info * swig_EMV_ptr =
-    SWIG_TypeQuery("Teuchos::RCP< Epetra_MultiVector > *");
-  void * argp;
-  PyObject * value = PyObject_GetAttrString(object, name);
-  int newmem = 0;
-  if (!SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(value, &argp, swig_EMV_ptr, 0, &newmem)))
-  {
-    PyErr_Format(PyExc_TypeError,
-                 "Attribute '%s' is not of type Epetra.MultiVector",
-                 name);
-    Py_DECREF(value);
-    throw PythonException();
-  }
-  Teuchos::RCP< const Epetra_MultiVector > result =
-    *reinterpret_cast< Teuchos::RCP< const Epetra_MultiVector > * >(argp);
-  if (newmem)
-    delete reinterpret_cast< Teuchos::RCP< const Epetra_MultiVector > * >(argp);
-  Py_DECREF(value);
-  return result;
-}
-
-////////////////////////////////////////////////////////////////////////
-
 Teuchos::RCP< Epetra_Operator >
 getEpetraOperatorObjectAttr(PyObject   * object,
                             CONST char * name)
@@ -945,75 +906,11 @@ getEpetraOperatorObjectAttr(PyObject   * object,
   return result;
 }
 
-////////////////////////////////////////////////////////////////////////
-
-// Teuchos::RCP< const Epetra_Map >
-// convertToEpetraMap(const Epetra_Comm & epetraComm,
-//                    const DistArrayProtocol & distarray)
-// {
-// }
-
-////////////////////////////////////////////////////////////
-
-// Teuchos::RCP< Epetra_MultiVector >
-// convertDistArrayToEpetraMultiVector(PyObject * object)
-// {
-// }
-
-////////////////////////////////////////////////////////////
-
-// Teuchos::RCP< const Epetra_MultiVector >
-// convertDistArrayToConstEpetraMultiVector(PyObject * object)
-// {
-// }
-
-////////////////////////////////////////////////////////////
-
-// Teuchos::RCP< Epetra_Vector >
-// convertDistArrayToEpetraVector(PyObject * object)
-// {
-// }
-
-////////////////////////////////////////////////////////////
-
-// Teuchos::RCP< const Epetra_Vector >
-// convertDistArrayToConstEpetraVector(PyObject * object)
-// {
-// }
-
-////////////////////////////////////////////////////////////
-
-// Teuchos::RCP< Epetra_FEVector >
-// convertDistArrayToEpetraFEVector(PyObject * object)
-// {
-// }
-
-////////////////////////////////////////////////////////////
-
-// Teuchos::RCP< const Epetra_FEVector >
-// convertDistArrayToConstEpetraFEVector(PyObject * object)
-// {
-// }
-
-////////////////////////////////////////////////////////////
-
-// Teuchos::RCP< Epetra_IntVector >
-// convertDistArrayToEpetraIntVector(PyObject * object)
-// {
-// }
-
-////////////////////////////////////////////////////////////
-
-// Teuchos::RCP< const Epetra_IntVector >
-// convertDistArrayToConstEpetraIntVector(PyObject * object)
-// {
-// }
-
 ////////////////////////////////////////////////////////////
 
 PyObject *
-convertEpetraBlockMapToDimData(const Epetra_BlockMap & ebm,
-                               int   extraDim)
+convertToDimData(const Epetra_BlockMap & ebm,
+                 int   extraDim)
 {
   // Initialization
   PyObject * dim_data    = NULL;
@@ -1057,7 +954,7 @@ convertEpetraBlockMapToDimData(const Epetra_BlockMap & ebm,
   dim_data = PyTuple_New(ndim);
   if (!dim_data) goto fail;
 
-  // If we have an extra dimension argument grreater than one, then
+  // If we have an extra dimension argument greater than one, then
   // define a dimension associated with the multiple vectors
   if (extraDim > 1)
   {
@@ -1122,7 +1019,7 @@ convertEpetraBlockMapToDimData(const Epetra_BlockMap & ebm,
                              PyInt_FromLong(ebm.MinMyGID64())) == -1) goto fail;
     if (PyDict_SetItemString(dim_dict,
                              "stop",
-                             PyInt_FromLong(ebm.MaxMyGID64())) == -1) goto fail;
+                             PyInt_FromLong(ebm.MaxMyGID64()+1)) == -1) goto fail;
   }
   else
   {
@@ -1161,7 +1058,75 @@ convertEpetraBlockMapToDimData(const Epetra_BlockMap & ebm,
 ////////////////////////////////////////////////////////////////////////
 
 PyObject *
-convertEpetraMultiVectorToDistAarray(const Epetra_MultiVector & emv)
+convertToDistArray(const Epetra_IntVector & eiv)
+{
+  // Initialization
+  PyObject   * dap      = NULL;
+  PyObject   * dim_data = NULL;
+  PyObject   * dim_dict = NULL;
+  PyObject   * size     = NULL;
+  PyObject   * buffer   = NULL;
+  Py_ssize_t   ndim     = 1;
+  npy_intp     dims[3];
+
+  // Get the underlying Epetra_BlockMap
+  const Epetra_BlockMap & ebm = eiv.Map();
+
+  // Allocate the DistArray object and set the version key value
+  dap = PyDict_New();
+  if (!dap) goto fail;
+  if (PyDict_SetItemString(dap,
+                           "__version__",
+                           PyString_FromString("0.9.0")) == -1) goto fail;
+
+  // Get the Dimension Data and the number of dimensions.  If the
+  // underlying Epetra_BlockMap has variable element sizes, an error
+  // will be detected here.
+  dim_data = convertToDimData(ebm);
+  if (!dim_data) goto fail;
+  ndim = PyTuple_Size(dim_data);
+
+  // Assign the Dimension Data key value.
+  if (PyDict_SetItemString(dap,
+                           "dim_data",
+                           dim_data) == -1) goto fail;
+
+  // Extract the buffer dimensions from the Dimension Data, construct
+  // the buffer and assign the buffer key value
+  for (Py_ssize_t i = 0; i < ndim; ++i)
+  {
+    dim_dict = PyTuple_GetItem(dim_data, i);
+    if (!dim_dict) goto fail;
+    size = PyDict_GetItemString(dim_dict, "size");
+    if (!size) goto fail;
+    dims[i] = PyInt_AsLong(size);
+    if (PyErr_Occurred()) goto fail;
+  }
+  buffer = PyArray_SimpleNewFromData(ndim,
+                                     dims,
+                                     NPY_INT,
+                                     (void*)eiv.Values());
+  if (!buffer) goto fail;
+  if (PyDict_SetItemString(dap,
+                           "buffer",
+                           buffer) == -1) goto fail;
+
+  // Return the DistArray Protocol object
+  return dap;
+
+  // Error handling
+  fail:
+  Py_XDECREF(dap);
+  Py_XDECREF(dim_data);
+  Py_XDECREF(dim_dict);
+  Py_XDECREF(buffer);
+  return NULL;
+}
+
+////////////////////////////////////////////////////////////////////////
+
+PyObject *
+convertToDistArray(const Epetra_MultiVector & emv)
 {
   // Initialization
   PyObject   * dap      = NULL;
@@ -1185,8 +1150,8 @@ convertEpetraMultiVectorToDistAarray(const Epetra_MultiVector & emv)
   // Get the Dimension Data and the number of dimensions.  If the
   // underlying Epetra_BlockMap has variable element sizes, an error
   // will be detected here.
-  dim_data = convertEpetraBlockMapToDimData(ebm,
-                                            emv.NumVectors());
+  dim_data = convertToDimData(ebm,
+                              emv.NumVectors());
   if (!dim_data) goto fail;
   ndim = PyTuple_Size(dim_data);
 

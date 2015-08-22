@@ -197,6 +197,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   RTlib           "cmake/TPLs/"    SS
   AmgX            "cmake/TPLs/"    EX
   CGAL            "cmake/TPLs/"    EX
+  VTune           "cmake/TPLs/"    SS
   )
 
 # NOTES:

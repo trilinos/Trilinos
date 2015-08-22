@@ -7,8 +7,8 @@
 
     INPUT ADAPTERS: BasicIdentifier,
                     XpetraMultiVector,
-                    XpetraCRSGraph,
-                    XpetraCRSMatrix
+                    XpetraCrsGraph,
+                    XpetraCrsMatrix
 -->
 
 <ParameterList name="testDriverExample">
@@ -41,8 +41,8 @@
 
         <ParameterList name="Metrics">
             <ParameterList name="object count">
-                <Parameter name="min" type="double" value="0.99"/>
-                <Parameter name="max" type="double" value="1.4"/>
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
             </ParameterList>
         </ParameterList>
 
@@ -66,8 +66,8 @@
         
         <ParameterList name="Metrics">
             <ParameterList name="object count">
-                <Parameter name="min" type="double" value="0.99"/>
-                <Parameter name="max" type="double" value="1.4"/>
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
             </ParameterList>
         </ParameterList>
     </ParameterList>
@@ -90,15 +90,15 @@
     
         <ParameterList name="Metrics">
             <ParameterList name="object count">
-                <Parameter name="min" type="double" value="0.99"/>
-                <Parameter name="max" type="double" value="1.4"/>
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
             </ParameterList>
         </ParameterList>
 
     </ParameterList>
 
 
-    <ParameterList name="Test4">
+<!--    <ParameterList name="Test4">
         <Parameter name="Name" type="string" value="MeshCoordinateTest_rcb_epet"/>
      
         <ParameterList name="InputAdapterParameters">
@@ -116,9 +116,9 @@
     
         <ParameterList name="Metrics">
             <ParameterList name="object count">
-                <Parameter name="min" type="double" value="0.99"/>
-                <Parameter name="max" type="double" value="1.4"/>
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
             </ParameterList>
         </ParameterList>
-    </ParameterList>
+    </ParameterList> -->
 </ParameterList>

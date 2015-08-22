@@ -956,15 +956,21 @@ namespace stk {
         return io_entity->field_exists(field_name_with_suffix);
     }
 
-    bool all_field_states_exist_on_io_entity(const std::string& db_name, const stk::mesh::FieldBase* field, Ioss::GroupingEntity *io_entity)
+    bool all_field_states_exist_on_io_entity(const std::string& db_name, const stk::mesh::FieldBase* field, Ioss::GroupingEntity *io_entity,
+                                             std::vector<stk::mesh::FieldState> &missing_states)
     {
         bool all_states_exist = true;
         size_t state_count = field->number_of_states();
         for(size_t state = 0; state < state_count - 1; state++)
         {
             stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
-            all_states_exist = all_states_exist && field_state_exists_on_io_entity(db_name, field, state_identifier, io_entity);
+            if (!field_state_exists_on_io_entity(db_name, field, state_identifier, io_entity))
+            {
+                all_states_exist = false;
+                missing_states.push_back(state_identifier);
+            }
         }
+
         return all_states_exist;
     }
 

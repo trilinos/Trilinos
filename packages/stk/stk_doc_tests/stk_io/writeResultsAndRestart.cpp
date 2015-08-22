@@ -98,7 +98,7 @@ namespace {
       stk::mesh::put_field(field, stkIo.meta_data().universal_part());
 
       const stk::mesh::Part& block_1 = *stkIo.meta_data().get_part("block_1");
-      //create a 3-state field
+      //+ create a two-state field
       stk::mesh::Field<double> &fooSubset = stkIo.meta_data().
             declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "fooSubset", 2);
       stk::mesh::put_field(fooSubset, block_1);
@@ -215,13 +215,22 @@ namespace {
       //+ Read restart data
       stkIo.read_defined_input_fields(time, &missingFields);
 
-      EXPECT_EQ(2u, missingFields.size());
-      const stk::io::MeshField& missingField = missingFields[0];
-      std::string name = missingField.db_name();
-      EXPECT_EQ("FOOSUBSET", name);
-      const stk::io::MeshField& missingField2 = missingFields[1];
-      name = missingField2.db_name();
+      EXPECT_EQ(3u, missingFields.size());
+      const stk::io::MeshField& missingField0 = missingFields[0];
+      std::string name = missingField0.db_name();
+      std::string statedFieldName = missingField0.field()->name();
       EXPECT_EQ("FOO", name);
+      EXPECT_EQ("foo", statedFieldName);
+      const stk::io::MeshField& missingField1 = missingFields[1];
+      name = missingField1.db_name();
+      statedFieldName = missingField1.field()->name();
+      EXPECT_EQ("FOO", name);
+      EXPECT_EQ("foo_STKFS_N", statedFieldName);
+      const stk::io::MeshField& missingField2 = missingFields[2];
+      statedFieldName = missingField2.field()->name();
+      name = missingField2.db_name();
+      EXPECT_EQ("FOOSUBSET", name);
+      EXPECT_EQ("fooSubset_STKFS_N", statedFieldName);
     }
 
     // ============================================================

@@ -32,7 +32,7 @@ int main (int argc, char *argv[]) {
   clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
 
   int max_task_dependence = 10;
-  clp.setOption("max-task-depedence", &max_task_dependence, "Max number of task dependence");
+  clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
 
   int team_size = 1;
   clp.setOption("team-size", &team_size, "Team size");
@@ -47,6 +47,10 @@ int main (int argc, char *argv[]) {
   clp.setOption("enable-team-interface", "disable-team-interface",
                 &team_interface, "Flag for team interface");
 
+  bool mkl_interface = false;
+  clp.setOption("enable-mkl-interface", "disable-mkl-interface",
+                &mkl_interface, "Flag for MKL interface");
+
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
@@ -58,6 +62,9 @@ int main (int argc, char *argv[]) {
 
   int minblksize = 0;
   clp.setOption("minblksize", &minblksize, "Minimum block size for internal reordering");
+
+  int prunecut = 0;
+  clp.setOption("prunecut", &prunecut, "Leve to prune tree from bottom");
 
   int seed = 0;
   clp.setOption("seed", &seed, "Seed for random number generator in graph partition");
@@ -83,12 +90,14 @@ int main (int argc, char *argv[]) {
       (file_input,
        treecut,
        minblksize,
+       prunecut,
        seed,
        niter,
        nthreads, max_task_dependence, team_size,
        fill_level, league_size,
        team_interface,
        (nthreads != 1),
+       mkl_interface,
        verbose);
 
     exec_space::finalize();

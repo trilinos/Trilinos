@@ -183,8 +183,8 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
   ReportTimer(t_diff,"ML_LevelWrap::ComputePreconditioner",comm_);
   ML_Set_PrintLevel(printl);
   ML_Comm_Destroy(&comm_);
-  NumConstructions_++;
-  ConstructionTime_+=t_diff;
+  //  NumConstructions_++;
+  //  ConstructionTime_+=t_diff;
 #endif
   return 0;
 }
@@ -279,11 +279,11 @@ int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_Multi
   /* Output */
   ML_Comm *comm_;
   ML_Comm_Create(&comm_);
-  ApplicationTime_+= t_diff;
-  if(FirstApplication_){
+  //  ApplicationTime_+= t_diff;
+  /*  if(FirstApplication_){
     FirstApplication_=false;
     FirstApplicationTime_=ApplicationTime_;
-  }/*end if*/
+    }*//*end if*/
   ML_Comm_Destroy(&comm_);
 #endif
 
@@ -313,9 +313,9 @@ int ML_Epetra::LevelWrap::DestroyPreconditioner(){
 #ifdef ML_TIMING
   ML_Comm *comm_;
   ML_Comm_Create(&comm_);
-  ReportTimer(ConstructionTime_ ,   "ML_LevelWrap (construction  )",comm_);
-  ReportTimer(FirstApplicationTime_,"ML_LevelWrap (1st iter time )",comm_);
-  ReportTimer(ApplicationTime_ ,    "ML_LevelWrap (total itr cost)",comm_);
+  //  ReportTimer(ConstructionTime_ ,   "ML_LevelWrap (construction  )",comm_);
+  //  ReportTimer(FirstApplicationTime_,"ML_LevelWrap (1st iter time )",comm_);
+  // ReportTimer(ApplicationTime_ ,    "ML_LevelWrap (total itr cost)",comm_);
   ML_Set_PrintLevel(printl);
   ML_Comm_Destroy(&comm_);
 #else

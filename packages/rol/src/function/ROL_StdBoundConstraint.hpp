@@ -122,7 +122,7 @@ namespace ROL {
           (*ev)[i] = 0.0;
         }
       }
-    }           
+    }
 
     void pruneActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
       Teuchos::RCP<const std::vector<Real> > ex = 

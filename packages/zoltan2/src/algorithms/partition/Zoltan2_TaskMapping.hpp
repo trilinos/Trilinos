@@ -101,7 +101,7 @@ void ithPermutation(const IT n, IT i, IT *perm)
 }
 
 template <typename part_t>
-void getGridCommunicationGraph(part_t taskCount, part_t *&task_comm_xadj, part_t *&task_comm_adj, vector <int> grid_dims){
+void getGridCommunicationGraph(part_t taskCount, part_t *&task_comm_xadj, part_t *&task_comm_adj, std::vector <int> grid_dims){
   int dim = grid_dims.size();
   int neighborCount = 2 * dim;
   task_comm_xadj = allocMemory<part_t>(taskCount+1);
@@ -181,7 +181,7 @@ void getSolutionCenterCoordinates(
 
   envConst->timerStart(MACRO_TIMERS, "Mapping - Hashing Creation");
   //hash vector
-  vector< vector <GNO_LNO_PAIR<gno_t, part_t> > > hash(numLocalCoords);
+  std::vector< std::vector <GNO_LNO_PAIR<gno_t, part_t> > > hash(numLocalCoords);
 
   //insert each point in solution to hash.
   for (lno_t i=0; i < numLocalCoords; i++){
@@ -1310,7 +1310,7 @@ protected:
     file += toString<int>(comm_->getRank()) + exten;
     std::ofstream ff(file.c_str());
     //ff.seekg (0, ff.end);
-    vector <Zoltan2::coordinateModelPartBox <tcoord_t, part_t> > outPartBoxes = ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getPartBoxesView();
+    std::vector <Zoltan2::coordinateModelPartBox <tcoord_t, part_t> > outPartBoxes = ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getPartBoxesView();
 
     for (part_t i = 0; i < this->ntasks;++i){
       outPartBoxes[i].writeGnuPlot(ff, mm);

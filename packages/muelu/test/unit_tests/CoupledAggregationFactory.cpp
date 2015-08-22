@@ -148,7 +148,7 @@ namespace MueLuTests {
   typedef KokkosClassic::DefaultNode::DefaultNodeType Node; // Kokkos Node is not relevant for this test
 
   typedef long int LongInt;                          // macros dislike parameters with space...
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_XPETRA_INT_LONG_LONG
   typedef long long int LongLongInt;
 #endif
 
@@ -163,7 +163,7 @@ namespace MueLuTests {
     UNIT_TEST_GROUP_2(int, LongInt)
     UNIT_TEST_GROUP_2(LongInt, LongInt)
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_XPETRA_INT_LONG_LONG
     UNIT_TEST_GROUP_2(LongInt, LongLongInt)
 #endif
 

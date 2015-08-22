@@ -101,6 +101,15 @@ bool registeredSomeLinearSolverFactory (const std::string& packageName)
   return it != packageNames_->end ();
 }
 
+bool haveLinearSolverFactoryRunTimeRegistration ()
+{
+#if defined(TRILINOS_HAVE_LINEAR_SOLVER_FACTORY_REGISTRATION)
+  return true;
+#else // NOT defined(TRILINOS_HAVE_LINEAR_SOLVER_FACTORY_REGISTRATION)
+  return false;
+#endif // defined(TRILINOS_HAVE_LINEAR_SOLVER_FACTORY_REGISTRATION)
+}
+
 } // namespace Impl
 } // namespace Details
 } // namespace Trilinos

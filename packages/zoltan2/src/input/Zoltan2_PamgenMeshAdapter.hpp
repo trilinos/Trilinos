@@ -116,6 +116,10 @@ public:
   // This is the interface that would be called by a model or a problem .
   ////////////////////////////////////////////////////////////////
 
+  bool areEntityIDsUnique(MeshEntityType etype) const {
+    return etype==MESH_REGION;
+  }
+
   /*size_t getGlobalNumOf(MeshEntityType etype) const
   {
 

@@ -1,15 +1,46 @@
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_MultiVector.hpp>
-#include <Ifpack2_Factory.hpp>
-#include <Trilinos_Details_LinearSolver.hpp>
-#include <Trilinos_Details_LinearSolverFactory.hpp>
-// Define typedefs and macros for testing over all Tpetra types.
-// They work whether or not ETI is enabled.
-#include "TpetraCore_ETIHelperMacros.h"
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Ifpack2_Factory.hpp"
+#include "Trilinos_Details_LinearSolver.hpp"
+#include "Trilinos_Details_LinearSolverFactory.hpp"
+// Define typedefs and macros for testing over all template parameter
+// combinations.
+#include "Ifpack2_ETIHelperMacros.h"
+
+// FIXME (mfh 21 Aug 2015) Temporary work-around for Bug 6392.
+#if ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
+namespace Ifpack2 {
+namespace Details {
+  // FIXME (mfh 21 Aug 2015) NONE of the commented-out things work.
+
+  // extern void __attribute__((weak)) registerLinearSolverFactory ();
+  // void __attribute__((weak)) registerLinearSolverFactory ();
+  //void __attribute__((weak)) registerLinearSolverFactory ();
+  //extern void registerLinearSolverFactory ();
+  //#pragma weak registerLinearSolverLibrary
+  extern void registerLinearSolverFactory ();
+
+} // namespace Details
+} // namespace Ifpack2
+#endif // ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
 
 namespace {
+// FIXME (mfh 21 Aug 2015) Temporary work-around for Bug 6392.
+#if ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
+  TEUCHOS_STATIC_SETUP()
+  {
+    std::cout << "STATIC SETUP" << std::endl;
+
+    if (Ifpack2::Details::registerLinearSolverFactory == NULL) {
+      std::cout << "-- Ifpack2::Details::registerLinearSolverFactory is NULL" << std::endl;
+    } else {
+      Ifpack2::Details::registerLinearSolverFactory ();
+    }
+  }
+#endif // ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
+
   // Create a very simple square test matrix.  We use the identity
   // matrix here.  The point of this test is NOT to exercise the
   // preconditioner; it's just to check that its LinearSolverFactory
@@ -48,7 +79,7 @@ namespace {
     if (rowMap->getNodeNumElements () != 0) {
       Teuchos::Array<SC> vals (1);
       Teuchos::Array<LO> inds (1);
-      for (size_t lclRow = rowMap->getMinLocalIndex ();
+      for (LO lclRow = rowMap->getMinLocalIndex ();
            lclRow <= rowMap->getMaxLocalIndex (); ++lclRow) {
         inds[0] = lclRow;
         vals[0] = STS::one ();
@@ -110,14 +141,15 @@ namespace {
     typedef Tpetra::Operator<SC,LO,GO,NT> OP;
     typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
     typedef Teuchos::ScalarTraits<SC> STS;
+    typedef typename MV::mag_type mag_type;
 
     Teuchos::OSTab tab0 (out);
     out << "Test solver \"" << solverName << "\" from Ifpack2 package" << endl;
     Teuchos::OSTab tab1 (out);
 
-    RCP<Trilinos::Details::LinearSolver<MV, OP> > solver;
+    RCP<Trilinos::Details::LinearSolver<MV, OP, mag_type> > solver;
     try {
-      solver = Trilinos::Details::getLinearSolver<MV, OP> ("Ifpack2", solverName);
+      solver = Trilinos::Details::getLinearSolver<MV, OP, mag_type> ("Ifpack2", solverName);
     } catch (std::exception& e) {
       out << "*** FAILED: getLinearSolver threw an exception: " << e.what () << endl;
       success = false;
@@ -158,6 +190,12 @@ namespace {
     typedef Tpetra::CrsMatrix<SC,LO,GO,NT> MAT;
     typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
     typedef Tpetra::RowMatrix<SC,LO,GO,NT> row_matrix_type;
+
+#if ! defined(TRILINOS_HAVE_LINEAR_SOLVER_FACTORY_REGISTRATION)
+    out << "LinearSolverFactory run-time registration disabled; "
+      "not running test" << endl;
+    return;
+#endif // NOT TRILINOS_HAVE_LINEAR_SOLVER_FACTORY_REGISTRATION
 
     RCP<const Comm<int> > comm =
       Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
@@ -209,13 +247,14 @@ namespace {
   }
 
   // Define typedefs that make the Tpetra macros work.
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
 
 // Macro that instantiates the unit test
 #define LCLINST( SC, LO, GO, NT ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( SolverFactory, Solve, SC, LO, GO, NT )
 
-  // Instantiate the unit test.
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCLINST )
+// Ifpack2's ETI will instantiate the unit test for all enabled type
+// combinations.
+IFPACK2_INSTANTIATE_SLGN( LCLINST )
 
 } // namespace (anonymous)

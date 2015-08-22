@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
   // create linear problem //
   // ===================== //
   Epetra_CrsMatrix * Matrix;
-  MatlabFileToCrsMatrix("elasticity.dat",Comm,Matrix);
+  MatlabFileToCrsMatrix("elasticity1.dat",Comm,Matrix);
   Epetra_Map NodeMap(Matrix->NumGlobalRows()/3,0,Comm);
  
   MatrixMarketFileToVector("c1.dat",NodeMap,coord1);

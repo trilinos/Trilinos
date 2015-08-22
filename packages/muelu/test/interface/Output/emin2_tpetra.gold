@@ -36,6 +36,7 @@ Level 1
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
@@ -108,6 +109,7 @@ Level 2
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace

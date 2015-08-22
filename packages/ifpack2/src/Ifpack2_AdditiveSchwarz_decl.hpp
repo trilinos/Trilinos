@@ -547,9 +547,9 @@ public:
   /// AdditiveSchwarz only knows, on its own, how to create
   /// "non-nested" preconditioners as inner preconditioners (i.e.,
   /// subdomain solvers).  It can't create nested preconditioners
-  /// (e.g., AdditiveSchwarz, Krylov, and SupportGraph) on its own as
-  /// inner preconditioners, and it doesn't know how to create
-  /// arbitrary subclasses of Ifpack2::Preconditioner unless
+  /// (e.g., AdditiveSchwarz and SupportGraph) on its own as inner
+  /// preconditioners, and it doesn't know how to create arbitrary
+  /// subclasses of Ifpack2::Preconditioner unless
   /// Details::OneLevelFactory knows how to create them.
   ///
   /// This leaves users two options in order to have any
@@ -736,9 +736,9 @@ private:
   /// AdditiveSchwarz only knows, on its own, how to create
   /// "non-nested" preconditioners as inner preconditioners (i.e.,
   /// subdomain solvers).  It can't create nested preconditioners
-  /// (e.g., AdditiveSchwarz, Krylov, and SupportGraph) on its own as
-  /// inner preconditioners, and it doesn't know how to create
-  /// arbitrary subclasses of Ifpack2::Preconditioner unless
+  /// (e.g., AdditiveSchwarz and SupportGraph) on its own as inner
+  /// preconditioners, and it doesn't know how to create arbitrary
+  /// subclasses of Ifpack2::Preconditioner unless
   /// Details::OneLevelFactory knows how to create them.
   ///
   /// This leaves users two options in order to have any

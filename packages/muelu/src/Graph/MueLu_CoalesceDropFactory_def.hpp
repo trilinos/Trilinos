@@ -599,7 +599,11 @@ namespace MueLu {
           Teuchos::ArrayRCP<SC> ghostedLaplDiagData;
           if (threshold != STS::zero()) {
             // Get ghost coordinates
-            RCP<const Import> importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
+            RCP<const Import> importer;
+            {
+              SubFactoryMonitor m1(*this, "Import construction", currentLevel);
+              importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
+            }
             ghostedCoords = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(nonUniqueMap, Coords->getNumVectors());
             ghostedCoords->doImport(*Coords, *importer, Xpetra::INSERT);
 

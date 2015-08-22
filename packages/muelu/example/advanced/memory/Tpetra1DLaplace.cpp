@@ -65,18 +65,24 @@ int main(int argc, char *argv[]) {
   bool success = false;
   bool verbose = true;
   try {
-    typedef double                                                  Scalar;
-    typedef int                                                     Ordinal;
-    typedef Tpetra::DefaultPlatform::DefaultPlatformType            Platform;
-    typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  Node;
-    typedef Tpetra::Map<Ordinal,Ordinal,Node>                       Map;
-    typedef Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,Node>          CrsMatrix;
+    typedef double                                  Scalar;
+    typedef Tpetra::Map<>::local_ordinal_type       LO;
+#if defined(HAVE_TPETRA_INT_INT)
+    // mfh 07 Aug 2015: Prefer GO = int, for consistency with Epetra,
+    // but use the default GO type if GO = int is not enabled.
+    typedef int                                     GO;
+#else
+    typedef Tpetra::Map<LO>::global_ordinal_type    GO;
+#endif // HAVE_TPETRA_INT_INT
+    typedef Tpetra::Map<LO, GO>::node_type          Node;
+    typedef Tpetra::Map<LO, GO, Node>               Map;
+    typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node> CrsMatrix;
     using Teuchos::RCP;
+    using Teuchos::rcp;
     using Teuchos::tuple;
 
-    Platform &platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-    RCP<const Teuchos::Comm<int> > comm = platform.getComm();
-    RCP<Node>                      node = platform.getNode();
+    RCP<const Teuchos::Comm<int> > comm =
+      Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
     //const int myRank = comm->getRank();
 
     //int numGlobalElements = 10000000;
@@ -88,11 +94,14 @@ int main(int argc, char *argv[]) {
       return -1;
     }
 
-    RCP<const Map> map = Tpetra::createUniformContigMap<Ordinal,Ordinal>(numGlobalElements, comm);
+    const GO indexBase = 0;
+    RCP<const Map> map =
+      rcp (new Map (static_cast<Tpetra::global_size_t> (numGlobalElements),
+                    indexBase, comm));
     const size_t numMyElements = map->getNodeNumElements();
-    Teuchos::ArrayView<const Ordinal> myGlobalElements = map->getNodeElementList();
+    Teuchos::ArrayView<const GO> myGlobalElements = map->getNodeElementList();
 
-    MemoryUsageStart("Epetra");
+    MemoryUsageStart("Tpetra");
     PrintMemoryUsage("Initial memory usage", "tpetra-init.heap");
 
     RCP<CrsMatrix> A = Tpetra::createCrsMatrix<Scalar>(map,3);
@@ -102,24 +111,24 @@ int main(int argc, char *argv[]) {
     for (size_t i=0; i<numMyElements; i++) {
       if (myGlobalElements[i] == 0) {
         A->insertGlobalValues( myGlobalElements[i],
-            tuple<Ordinal>( myGlobalElements[i], myGlobalElements[i]+1 ),
+            tuple<GO>( myGlobalElements[i], myGlobalElements[i]+1 ),
             tuple<Scalar> ( 2.0, -1.0 ) );
       } else if (myGlobalElements[i] == numGlobalElements-1) {
         A->insertGlobalValues( myGlobalElements[i],
-            tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i] ),
+            tuple<GO>( myGlobalElements[i]-1, myGlobalElements[i] ),
             tuple<Scalar> ( -1.0, 2.0 ) );
       } else {
         A->insertGlobalValues( myGlobalElements[i],
-            tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
+            tuple<GO>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
             tuple<Scalar> ( -1.0, 2.0, -1.0 ) );
       }
     }
 
-    PrintMemoryUsage("Memory after InsertGlobalValues()", "tpetra-after-insert.heap");
+    PrintMemoryUsage("Memory after insertGlobalValues()", "tpetra-after-insert.heap");
 
     A->fillComplete(); // DoOptimizeStorage by default
 
-    PrintMemoryUsage("Memory after FillComplete()", "tpetra-after-fillcomplete.heap");
+    PrintMemoryUsage("Memory after fillComplete()", "tpetra-after-fillcomplete.heap");
 
     MemoryUsageStop();
 
