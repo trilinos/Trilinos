@@ -58,6 +58,7 @@ APPEND_SET(HEADERS
   function/ROL_ProjectedPreconditioner.hpp
   function/ROL_PrimalDualHessian.hpp
   function/ROL_PrimalDualPreconditioner.hpp
+  function/ROL_LogBarrierObjective.hpp
 )
 
 #
