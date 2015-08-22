@@ -535,6 +535,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   for (int ncnt = 0; ncnt < num_nodes_; ncnt++) {
     nodeOffsets_[ncnt] = telct_;
     nStart_[ncnt] = nNadj_;
+    typedef std::map<int, int> MapType;
+    MapType nAdjMap;
 
     for (size_t i = 0; i < sur_elem[ncnt].size(); i++) {
       nodeToElem_[telct_] = sur_elem[ncnt][i];
@@ -543,12 +545,15 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       for(int ecnt = 0; ecnt < num_elem_; ecnt++) {
 	if (element_num_map_[ecnt] == sur_elem[ncnt][i]) {
 	  for (int j = 0; j < nnodes_per_elem; j++) {
+	    MapType::iterator iter=
+	      nAdjMap.find(elemToNode_[elemOffsets_[ecnt]+j]);
+
 	    if (node_num_map_[ncnt] != elemToNode_[elemOffsets_[ecnt]+j] &&
-		in_list(elemToNode_[elemOffsets_[ecnt]+j],
-			nAdj.size()-nStart_[ncnt],
-			&nAdj[nStart_[ncnt]]) < 0) {
+		iter == nAdjMap.end() ) {
 	      nAdj.push_back(elemToNode_[elemOffsets_[ecnt]+j]);
 	      nNadj_++;
+	      nAdjMap.insert({elemToNode_[elemOffsets_[ecnt]+j],
+		    elemToNode_[elemOffsets_[ecnt]+j]});
 	    }
 	  }
 
@@ -556,6 +561,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 	}
       }
     }
+
+    nAdjMap.clear();
   }
 
   nodeOffsets_[num_nodes_] = telct_;
