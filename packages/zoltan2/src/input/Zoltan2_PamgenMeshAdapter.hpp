@@ -99,6 +99,7 @@ public:
   typedef typename InputTraits<User>::node_t   node_t;
   typedef MeshAdapter<User>       base_adapter_t;
   typedef User user_t;
+  typedef std::map<int, int> MapType;
 
   /*! \brief Constructor for mesh with identifiers but no coordinates or edges
    *  \param etype is the mesh entity type of the identifiers
@@ -337,16 +338,6 @@ private:
 // Definitions
 ////////////////////////////////////////////////////////////////
 
-static
-ssize_t in_list(const int value, size_t count, int *vector)
-{
-  for(size_t i=0; i < count; i++) {
-    if(vector[i] == value)
-      return i;
-  }
-  return -1;
-}
-
 template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 					   std::string typestr):
@@ -539,7 +530,6 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   for (int ncnt = 0; ncnt < num_nodes_; ncnt++) {
     nodeOffsets_[ncnt] = telct_;
     nStart_[ncnt] = nNadj_;
-    typedef std::map<int, int> MapType;
     MapType nAdjMap;
 
     for (size_t i = 0; i < sur_elem[ncnt].size(); i++) {
@@ -549,7 +539,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       for(int ecnt = 0; ecnt < num_elem_; ecnt++) {
 	if (element_num_map_[ecnt] == sur_elem[ncnt][i]) {
 	  for (int j = 0; j < nnodes_per_elem; j++) {
-	    MapType::iterator iter=
+	    MapType::iterator iter =
 	      nAdjMap.find(elemToNode_[elemOffsets_[ecnt]+j]);
 
 	    if (node_num_map_[ncnt] != elemToNode_[elemOffsets_[ecnt]+j] &&
@@ -811,21 +801,24 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 
   for(int ecnt=0; ecnt < num_elem_; ecnt++) {
     eStart_[ecnt] = nEadj_;
+    MapType eAdjMap;
     int nnodes = nnodes_per_elem;
     for(int ncnt=0; ncnt < nnodes; ncnt++) {
       int node = reconnect[ecnt][ncnt]-1;
       for(size_t i=0; i < sur_elem[node].size(); i++) {
 	int entry = sur_elem[node][i];
+	MapType::iterator iter = eAdjMap.find(entry);
 
 	if(element_num_map_[ecnt] != entry &&
-	   in_list(entry,
-		   eAdj.size()-eStart_[ecnt],
-		   &eAdj[eStart_[ecnt]]) < 0) {
+	   iter == eAdjMap.end()) {
 	  eAdj.push_back(entry);
 	  nEadj_++;
+	  eAdjMap.insert({entry, entry});
 	}
       }
     }
+
+    eAdjMap.clear();
   }
 
   for(int b = 0; b < num_elem_; b++) {
