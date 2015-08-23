@@ -107,7 +107,7 @@ public:
     
     struct HessianApply : public Elementwise::BinaryFunction<Real> {
       Real apply( const Real &v, const Real &x ) const { 
-        return -v/(x*x);   
+        return v/(x*x);   
       }
     } hessian;
 

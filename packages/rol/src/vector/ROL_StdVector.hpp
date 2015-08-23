@@ -87,8 +87,7 @@ public:
     const std::vector<Element>& xval = *ex.getVector();
     unsigned dimension  = std_vec_->size();
     for (unsigned i=0; i<dimension; i++) {
-      (*std_vec_)[i] *= alpha;
-      (*std_vec_)[i] += xval[i];
+      (*std_vec_)[i] += alpha*xval[i];
     }
   }
 
