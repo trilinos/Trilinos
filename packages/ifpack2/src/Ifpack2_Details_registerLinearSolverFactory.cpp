@@ -45,40 +45,10 @@
 #include "Ifpack2_Details_LinearSolverFactory.hpp"
 #include "Ifpack2_ETIHelperMacros.h"
 
-#if defined(HAVE_IFPACK2_EXPLICIT_INSTANTIATION)
-
 // Define the Ifpack2 ETI macros and Tpetra typedefs that go along
-// with them.
+// with them.  This works whether or not ETI is ON, because Bug 6380
+// was fixed.
 IFPACK2_ETI_MANGLING_TYPEDEFS()
-
-#else
-
-// Unfortunate hack for working around Bug 6380.  The Ifpack2 which
-// defines mangled (for use in macros) typedefs for certain Scalar,
-// GlobalOrdinal, and Node types, also has an empty definition if ETI
-// is OFF.
-
-#ifdef HAVE_TPETRA_COMPLEX_DOUBLE
-typedef std::complex<double> std_complex0double0;
-#endif // HAVE_TPETRA_COMPLEX_DOUBLE
-
-#ifdef HAVE_TPETRA_COMPLEX_FLOAT
-typedef std::complex<float> std_complex0float0;
-#endif // HAVE_TPETRA_COMPLEX_FLOAT
-
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-typedef long long longlong;
-#endif // HAVE_TPETRA_INT_LONG_LONG
-
-#ifdef HAVE_TPETRA_INT_UNSIGNED_LONG
-typedef unsigned long unsignedlong;
-#endif // HAVE_TPETRA_INT_UNSIGNED_LONG
-
-#ifdef HAVE_TPETRA_@NT_MACRO_NAME@
-typedef @NT@ @NT_MANGLED@;
-#endif // HAVE_TPETRA_@NT_MACRO_NAME@
-
-#endif // defined(HAVE_IFPACK2_EXPLICIT_INSTANTIATION)
 
 // Macro that registers Ifpack2's LinearSolverFactory for the given
 // four template parameters (Scalar = SC, LocalOrdinal = LO,
