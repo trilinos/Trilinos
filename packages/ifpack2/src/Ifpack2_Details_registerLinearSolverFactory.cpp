@@ -80,10 +80,14 @@ typedef @NT@ @NT_MANGLED@;
 
 #endif // defined(HAVE_IFPACK2_EXPLICIT_INSTANTIATION)
 
-
-// Local (to this file) macro that registers Ifpack2's
-// LinearSolverFactory for the given four template parameters (Scalar
-// = SC, LocalOrdinal = LO, GlobalOrdinal = GO, Node = NT).
+// Macro that registers Ifpack2's LinearSolverFactory for the given
+// four template parameters (Scalar = SC, LocalOrdinal = LO,
+// GlobalOrdinal = GO, Node = NT).  The macro is local to this file.
+//
+// NOTE: This macro does NOT do explicit instantiation!  That's why I
+// call it LCL_CALL and not LCL_INST.  We are just using the fix for
+// Bug 6380 to invoke this class method over the set of enabled
+// template parameters.
 #define LCL_CALL( SC, LO, GO, NT ) \
   ::Ifpack2::Details::LinearSolverFactory<SC, LO, GO, NT>::registerLinearSolverFactory ();
 
@@ -93,10 +97,6 @@ namespace Details {
 void
 registerLinearSolverFactory ()
 {
-#ifdef HAVE_IFPACK2_DEBUG
-  std::cerr << " *** Ifpack2::Details::registerLinearSolverFactory *** " << std::endl;
-#endif // HAVE_IFPACK2_DEBUG
-
   // Fill in the body of the function with all the type-specific
   // run-time registration functions.
   IFPACK2_INSTANTIATE_SLGN( LCL_CALL )
@@ -104,45 +104,5 @@ registerLinearSolverFactory ()
 
 } // namespace Details
 } // namespace Ifpack2
-
-
-#if defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
-
-namespace { // (anonymous)
-
-// \class RegisterLinearSolverFactory
-// \brief Register Ifpack2's solver factory/ies with the central registry.
-//
-// \warning FOR EXPERT USE ONLY.
-//
-// Invoke this class' constructor to register Ifpack2's solver
-// factory/ies with the central registry, for all template parameter
-// combinations that Ifpack2 enabled.  You need not keep the instance
-// of the class around; the constructor has a side effect if it
-// returns.  (This is the C++ way of doing
-// <tt>__attribute__((constructor))</tt>, without actually requiring
-// the syntax extension.)
-class RegisterLinearSolverFactory {
-public:
-  RegisterLinearSolverFactory () {
-    Ifpack2::Details::registerLinearSolverFactory ();
-  }
-};
-
-// Creating an instance of RegisterLinearSolverFactory invokes its
-// constructor, which has the side effect of calling
-// Ifpack2::Details::registerLinearSolverFactory().
-RegisterLinearSolverFactory registerIt;
-
-} // namespace (anonymous)
-
-#elif defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_CONSTRUCTOR)
-
-static void __attribute__((constructor))
-Ifpack2_registerLinearSolverFactory () {
-  Ifpack2::Details::registerLinearSolverFactory ();
-}
-
-#endif
 
 
