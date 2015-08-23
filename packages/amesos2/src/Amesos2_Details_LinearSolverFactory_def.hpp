@@ -293,7 +293,36 @@ getLinearSolver (const std::string& solverName)
   return rcp (new Amesos2::Details::LinearSolver<MV, OP, NormType> (solverName));
 }
 
+template<class MV, class OP, class NormType>
+void
+LinearSolverFactory<MV, OP, NormType>::
+registerLinearSolverFactory ()
+{
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  typedef std::shared_ptr<Amesos2::Details::LinearSolverFactory<MV, OP, NormType> > ptr_type;
+  //typedef std::shared_ptr<Trilinos::Details::LinearSolverFactory<MV, OP> > base_ptr_type;
+#else
+  typedef Teuchos::RCP<Amesos2::Details::LinearSolverFactory<MV, OP, NormType> > ptr_type;
+  //typedef Teuchos::RCP<Trilinos::Details::LinearSolverFactory<MV, OP> > base_ptr_type;
+#endif // HAVE_TEUCHOSCORE_CXX11
+
+  ptr_type factory (new Amesos2::Details::LinearSolverFactory<MV, OP, NormType> ());
+  Trilinos::Details::registerLinearSolverFactory<MV, OP, NormType> ("Amesos2", factory);
+}
+
 } // namespace Details
 } // namespace Amesos2
+
+// Macro for doing explicit instantiation of
+// Amesos2::Details::LinearSolverFactory, for Tpetra objects, with
+// given Tpetra template parameters (SC = Scalar, LO = LocalOrdinal,
+// GO = GlobalOrdinal, NT = Node).
+//
+// We don't have to protect use of Tpetra objects here, or include
+// any header files for them, because this is a macro definition.
+#define AMESOS2_DETAILS_LINEARSOLVERFACTORY_INSTANT(SC, LO, GO, NT) \
+  template class Amesos2::Details::LinearSolverFactory<Tpetra::MultiVector<SC, LO, GO, NT>, \
+                                                       Tpetra::Operator<SC, LO, GO, NT>, \
+                                                       typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>;
 
 #endif // AMESOS2_DETAILS_LINEARSOLVERFACTORY_DEF_HPP

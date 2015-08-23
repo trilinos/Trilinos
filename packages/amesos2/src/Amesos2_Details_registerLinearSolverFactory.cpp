@@ -41,33 +41,58 @@
 //
 // @HEADER
 
-#include "Amesos2_config.h"
-
-#if defined(HAVE_AMESOS2_EXPLICIT_INSTANTIATION)
-
-// We need both the _decl.hpp and _def.hpp files here, because if ETI
-// is ON, then the .hpp file will only include the _decl.hpp file.
-#include "Amesos2_Details_LinearSolverFactory_decl.hpp"
-#include "Amesos2_Details_LinearSolverFactory_def.hpp"
-// We need this whether or not ETI is on, in order to define typedefs
-// for making Tpetra's macros work.
+#include "Amesos2_Details_registerLinearSolverFactory.hpp"
+#include "Amesos2_Details_LinearSolverFactory.hpp"
+// Amesos2 has a required dependency on Tpetra, so we don't need to
+// protect inclusion of Tpetra header files with a macro.
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Operator.hpp"
+#ifdef HAVE_AMESOS2_EPETRA
+#  include "Epetra_MultiVector.h"
+#  include "Epetra_Operator.h"
+#endif // HAVE_AMESOS2_EPETRA
 #include "TpetraCore_ETIHelperMacros.h"
 
-#ifdef HAVE_AMESOS2_EPETRA
-// Do explicit instantiation of Amesos2::Details::LinearSolverFactory,
-// for Epetra objects.
-template class Amesos2::Details::LinearSolverFactory<Epetra_MultiVector, Epetra_Operator, double>;
-#endif // HAVE_AMESOS2_EPETRA
-
-// Define typedefs that make the Tpetra macros work.
+// Define Tpetra instantiation macros and typedefs that make the
+// macros work.  The fix for Bug 6380 makes this work whether or not
+// ETI is ON.  We use the Tpetra macros because Amesos2 doesn't have
+// its own macros.
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
-// Do explicit instantiation of Amesos2::Details::LinearSolverFactory, for
-// Tpetra objects, for all combinations of Tpetra template parameters
-// for which Tpetra does explicit template instantiation (ETI).
+// Macro that registers Amesos2's LinearSolverFactory for Tpetra
+// objects, for the given four template parameters (Scalar = SC,
+// LocalOrdinal = LO, GlobalOrdinal = GO, Node = NT).  The macro is
+// local to this file.
 //
-// NOTE (mfh 23 Jul 2015): Amesos2 has a required dependency on
-// Tpetra, so we don't have to protect use of Tpetra with a macro.
-TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( AMESOS2_DETAILS_LINEARSOLVERFACTORY_INSTANT )
+// NOTE: This macro does NOT do explicit instantiation!  That's why I
+// call it LCL_CALL and not LCL_INST.  We are just using the macros to
+// invoke this class method over the set of enabled template
+// parameters.
+#define LCL_CALL( SC, LO, GO, NT ) \
+  ::Amesos2::Details::LinearSolverFactory<Tpetra::MultiVector<SC, LO, GO, NT>, \
+                                          Tpetra::Operator<SC, LO, GO, NT>, \
+                                          typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>::registerLinearSolverFactory ();
 
-#endif // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+namespace Amesos2 {
+namespace Details {
+
+void
+registerLinearSolverFactory ()
+{
+  // Fill in the body of the function with all the type-specific
+  // run-time registration functions, for registering Amesos2's
+  // LinearSolverFactory with Tpetra objects.
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCL_CALL )
+
+  // If Epetra is enabled in Amesos2, also register Amesos2's
+  // LinearSolverFactory for Epetra objects.
+#ifdef HAVE_AMESOS2_EPETRA
+  ::Amesos2::Details::LinearSolverFactory<Epetra_MultiVector,
+    Epetra_Operator, double>::registerLinearSolverFactory ();
+#endif // HAVE_AMESOS2_EPETRA
+}
+
+} // namespace Details
+} // namespace Amesos2
+
+
