@@ -52,7 +52,15 @@
 #if ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
 namespace Belos {
 namespace Details {
-extern void registerLinearSolverFactory ();
+//extern void registerLinearSolverFactory ();
+
+// FIXME (mfh 24 Aug 2015) The weak symbol stuff in the main
+// registration function doesn't work.  I have to reference the
+// Tpetra registration function for now instead.
+namespace Tpetra {
+  extern void registerLinearSolverFactory ();
+} // namespace Tpetra
+
 } // namespace Details
 } // namespace Belos
 #endif // ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
@@ -63,7 +71,12 @@ namespace { // (anonymous)
 #if ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
 TEUCHOS_STATIC_SETUP()
 {
-  Belos::Details::registerLinearSolverFactory ();
+  // FIXME (mfh 24 Aug 2015) The weak symbol stuff in the main
+  // registration function doesn't work.  I have to reference the
+  // Tpetra registration function for now instead.
+
+  // Belos::Details::registerLinearSolverFactory ();
+  Belos::Details::Tpetra::registerLinearSolverFactory ();
 }
 #endif // ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
 
@@ -214,6 +227,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( LinearSolverFactory, Solve, SC, LO, GO, NT )
   typedef Tpetra::CrsMatrix<SC,LO,GO,NT> MAT;
   typedef Tpetra::MultiVector<SC,LO,GO,NT> MV;
   typedef Tpetra::Operator<SC,LO,GO,NT> OP;
+
+  return;
 
 #if ! defined(TRILINOS_HAVE_LINEAR_SOLVER_FACTORY_REGISTRATION)
   out << "LinearSolverFactory run-time registration disabled; "

@@ -88,7 +88,7 @@ registerLinearSolverFactory ()
 
 #if defined(HAVE_BELOS_EPETRA) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
   // It's a weak symbol, so it might be NULL.
-  if (::Belos::Details::Tpetra::registerLinearSolverFactory != NULL) {
+  if (::Belos::Details::Epetra::registerLinearSolverFactory != NULL) {
     ::Belos::Details::Epetra::registerLinearSolverFactory ();
   }
 #endif // defined(HAVE_BELOS_EPETRA) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
