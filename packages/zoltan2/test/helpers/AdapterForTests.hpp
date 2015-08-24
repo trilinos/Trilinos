@@ -250,7 +250,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
   string input_type = pList.get<string>("inputType"); // get the input type
   
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type not available, or misspelled."); // bad type
+    throw std::runtime_error("Input type:" + input_type + ", not available or misspelled."); // bad type
   
   vector<const zscalar_t *> weights;
   std::vector<int> weightStrides;
@@ -367,7 +367,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(Us
   
   string input_type = pList.get<string>("inputType");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type not available, or misspelled.");
+    throw std::runtime_error("Input type:" + input_type + ", not available or misspelled."); // bad type
   
   AdapterForTests::base_adapter_t * adapter = nullptr;
   vector<const zscalar_t *> weights;
@@ -447,7 +447,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
   
   string input_type = pList.get<string>("inputType");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type not available, or misspelled.");
+    throw std::runtime_error("Input type:" + input_type + ", not available or misspelled."); // bad type
   
   
   AdapterForTests::base_adapter_t * adapter = nullptr;
@@ -559,7 +559,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
   
   string input_type = pList.get<string>("inputType");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type not available, or misspelled.");
+    throw std::runtime_error("Input type:" + input_type + ", not available or misspelled."); // bad type
   
   AdapterForTests::base_adapter_t * adapter = nullptr;
   vector<const zscalar_t *> weights;
@@ -661,7 +661,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
   
   string input_type = pList.get<string>("inputType");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type not available, or misspelled.");
+    throw std::runtime_error("Input type:" + input_type + ", not available or misspelled."); // bad type
   
   AdapterForTests::basic_vector_adapter * ia = nullptr; // pointer for basic vector adapter
   
@@ -979,18 +979,6 @@ void AdapterForTests::InitializeEpetraVectorData(const RCP<T> &data,
   {
     epetravectors[k] = arr[k];
   }
-  
-  //  printf("Size of epetravectors: %lu\n", epetravectors.size());
-  // debugging
-  //  for (size_t i = 0; i < nvecs; i++){
-  //    printf("Epetra vector %zu: {", i);
-  //
-  //    for (size_t j = 0; j < localCount; j++)
-  //    {
-  //       printf("%1.2g ",epetravectors[i][j]);
-  //    }
-  //    printf("}\n");
-  //  }
   
   int idx = 0;
   basic_vector_adapter::scalar_t *coordarr = new basic_vector_adapter::scalar_t[vecsize];

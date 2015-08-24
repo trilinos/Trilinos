@@ -166,6 +166,8 @@ private:
 
   bool              softUp_;
 
+  bool acceptLastAlpha_;  ///< For backwards compatibility. When max function evaluations are reached take last step
+
   void LineSearchFactory(Teuchos::ParameterList &parlist) {
     switch(els_) {
       case LINESEARCH_ITERATIONSCALING: 
@@ -219,6 +221,7 @@ public:
     esec_  = StringToESecant(parlist.get("Secant Type","Limited-Memory BFGS"));
     ekv_   = StringToEKrylov(parlist.get("Krylov Type","Conjugate Gradients"));
 
+
     // Inexactness Information
     useInexact_.clear();
     useInexact_.push_back(parlist.get("Use Inexact Objective Function", false));
@@ -231,6 +234,8 @@ public:
 
     // Changing Objective Functions
     softUp_ = parlist.get("Variable Objective Function",false);
+
+    acceptLastAlpha_ = parlist.get("Accept Last Alpha", false);    
 
     // Initialize Krylov Object
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
@@ -292,6 +297,8 @@ public:
 
     // Changing Objective Functions
     softUp_ = parlist.get("Variable Objective Function",false);
+
+    acceptLastAlpha_ = parlist.get("Accept Last Alpha", false);    
 
     // Initialize Krylov Object
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
@@ -356,6 +363,8 @@ public:
     // Changing Objective Functions
     softUp_ = parlist.get("Variable Objective Function",false);
 
+    acceptLastAlpha_ = parlist.get("Accept Last Alpha", false);    
+
     // Initialize Krylov Object
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
     useSecantPrecond_ = parlist.get("Use Secant Preconditioner", false);
@@ -411,6 +420,8 @@ public:
 
     // Changing Objective Functions
     softUp_ = parlist.get("Variable Objective Function",false);
+
+    acceptLastAlpha_ = parlist.get("Accept Last Alpha", false);    
 
     // Initialize Krylov Object
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
@@ -470,6 +481,8 @@ public:
 
     // Changing Objective Functions
     softUp_ = parlist.get("Variable Objective Function",false);
+
+    acceptLastAlpha_ = parlist.get("Accept Last Alpha", false);    
 
     // Initialize Krylov Object
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
@@ -625,7 +638,10 @@ public:
     lineSearch_->run(step_state->searchSize,fnew,ls_nfval_,ls_ngrad_,gs,s,x,obj,con);
 
     // Make correction if maximum function evaluations reached
-    lineSearch_->setMaxitUpdate(step_state->searchSize,fnew,algo_state.value);
+    if(!acceptLastAlpha_)
+    {  
+      lineSearch_->setMaxitUpdate(step_state->searchSize,fnew,algo_state.value);
+    }
 
     algo_state.nfval += ls_nfval_;
     algo_state.ngrad += ls_ngrad_;

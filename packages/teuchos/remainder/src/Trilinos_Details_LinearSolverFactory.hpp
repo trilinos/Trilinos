@@ -89,6 +89,38 @@
 #include <sstream>
 #include <string>
 
+
+// Attempted fix for Bug 6392: declare all packages'
+// LinearSolverFactory registration functions here, with weak linkage.
+// This works whether or not the packages in question are actually
+// enabled.  In createPackageNames() below, actually call these
+// functions if they are linked in.  We only need to do this if
+// building with static libraries; if building with dynamic libraries,
+// each package takes care of this on its own.
+//
+// I wrote "attempted" because it DOESN'T WORK.  It doesn't matter
+// whether these or their uses are in the .cpp or .hpp file, or
+// whether they are in a regular function that gets compiled or a
+// templated function that might not.
+#if ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
+// FIXME (mfh 21 Aug 2015) NONE of the commented-out things work.
+
+// namespace Amesos2 {
+// namespace Details {
+//   extern void __attribute__((weak)) registerLinearSolverFactory ();
+// } // namespace Details
+// } // namespace Amesos2
+
+// namespace Ifpack2 {
+// namespace Details {
+//   // extern void __attribute__((weak)) registerLinearSolverFactory ();
+//   // void __attribute__((weak)) registerLinearSolverFactory ();
+//   // evoid __attribute__((weak)) registerLinearSolverFactory ();
+// } // namespace Details
+// } // namespace Ifpack2
+#endif // ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
+
+
 /// \namespace Trilinos
 /// \brief Namespace of things generally useful to many Trilinos packages
 namespace Trilinos {
@@ -546,6 +578,21 @@ getLinearSolver (const std::string& packageName, const std::string& solverName)
   typedef typename repo_type::factory_pointer_type factory_pointer_type;
   typedef LinearSolver<MV, OP, NormType> solver_type;
   const char prefix[] = "Trilinos::Details::getLinearSolver: ";
+
+  // FIXME (mfh 21 Aug 2015) Attempted fix for Bug 6392: DOES NOT WORK.
+  // (Compiles just fine, but test doesn't pass.)
+#if ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
+  // if (Amesos2::Details::registerLinearSolverFactory == NULL) {
+  //   std::cout << "-- Amesos2::Details::registerLinearSolverFactory is NULL" << std::endl;
+  // } else {
+  //   Amesos2::Details::registerLinearSolverFactory ();
+  // }
+  // if (Ifpack2::Details::registerLinearSolverFactory == NULL) {
+  //   std::cout << "-- Ifpack2::Details::registerLinearSolverFactory is NULL" << std::endl;
+  // } else {
+  //   Ifpack2::Details::registerLinearSolverFactory ();
+  // }
+#endif // ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
 
   // Whether the CMake run-time registration option is ON.  This
   // doesn't actually say whether run-time registration has happened

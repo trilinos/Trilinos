@@ -8,7 +8,7 @@
 
 
 //public
-NoGhostGameofLife::NoGhostGameofLife(MeshBuilder* Mesh, std::string name)
+NoGhostGameofLife::NoGhostGameofLife(MeshConstructor* Mesh, std::string name)
 : m_bulkData(Mesh->bulk_data()), m_numProcs(m_bulkData->parallel_size()),
   m_elemType(Mesh->element_type()),
   m_lifeField(Mesh->life_field()),

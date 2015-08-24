@@ -49,67 +49,23 @@
 // contents may change at any time.
 
 #include "TpetraCore_config.h"
+#include "Ifpack2_config.h"
 
-#if defined(HAVE_TPETRA_@SC_MACRO_NAME@) && defined(HAVE_TPETRA_@LO_MACRO_NAME@_@GO_MACRO_NAME@) && defined(HAVE_TPETRA_@NT_MACRO_NAME@)
+#if defined(HAVE_IFPACK2_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_@SC_MACRO_NAME@) && defined(HAVE_TPETRA_INST_@LO_MACRO_NAME@_@GO_MACRO_NAME@) && defined(HAVE_TPETRA_INST_@NT_MACRO_NAME@)
 
-// We need both the decl and def files here, whether or not ETI is on.
+// We need both the decl and def files here, because if ETI is ON,
+// then the (automatically generated) .hpp file will only include the
+// _decl.hpp file.
 #include "Ifpack2_Details_LinearSolverFactory_decl.hpp"
 #include "Ifpack2_Details_LinearSolverFactory_def.hpp"
 #include "Ifpack2_ETIHelperMacros.h"
-
-#if defined(HAVE_IFPACK2_EXPLICIT_INSTANTIATION)
 
 // Define the Ifpack2 ETI macros and Tpetra typedefs that go along
 // with them.
 IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-#else
-
-// Unfortunate hack for working around Bug 6380.  The Ifpack2 which
-// defines mangled (for use in macros) typedefs for certain Scalar,
-// GlobalOrdinal, and Node types, also has an empty definition if ETI
-// is OFF.
-
-#ifdef HAVE_TPETRA_COMPLEX_DOUBLE
-typedef std::complex<double> std_complex0double0;
-#endif // HAVE_TPETRA_COMPLEX_DOUBLE
-
-#ifdef HAVE_TPETRA_COMPLEX_FLOAT
-typedef std::complex<float> std_complex0float0;
-#endif // HAVE_TPETRA_COMPLEX_FLOAT
-
-#ifdef HAVE_TPETRA_INT_LONG_LONG
-typedef long long longlong;
-#endif // HAVE_TPETRA_INT_LONG_LONG
-
-#ifdef HAVE_TPETRA_@NT_MACRO_NAME@
-typedef @NT@ @NT_MANGLED@;
-#endif // HAVE_TPETRA_@NT_MACRO_NAME@
-
-#endif // defined(HAVE_IFPACK2_EXPLICIT_INSTANTIATION)
-
-
-#if defined(HAVE_IFPACK2_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INT_@SC_MACRO_NAME@) && defined(HAVE_TPETRA_INST_@LO_MACRO_NAME@_@GO_MACRO_NAME@) && defined(HAVE_TPETRA_@NT_MACRO_NAME@)
-
 // Do explicit instantiation of Ifpack2::Details::LinearSolverFactory,
 // for Tpetra objects, with the given Tpetra template parameters.
-template class Ifpack2::Details::LinearSolverFactory<@SC_MANGLED@, @LO_MANGLED@, @GO_MANGLED@, @NT_MANGLED@>;
-
-// Ditto for the thing that actually registers an Ifpack2::Details::LinearSolverFactory.
-template class Ifpack2::Details::RegisterLinearSolverFactory<@SC_MANGLED@, @LO_MANGLED@, @GO_MANGLED@, @NT_MANGLED@>;
+IFPACK2_DETAILS_LINEARSOLVERFACTORY_INSTANT( @SC_MANGLED@, @LO_MANGLED@, @GO_MANGLED@, @NT_MANGLED@ )
 
 #endif
-
-
-namespace { // (anonymous)
-
-// Register Ifpack2's LinearSolverFactory with the central registry,
-// for the given combination of template parameters.  Do this whether
-// or not ETI is ON.  This needs to live in an anonymous namespace, in
-// order to avoid link-time collisions with other code.
-Ifpack2::Details::RegisterLinearSolverFactory<@SC_MANGLED@, @LO_MANGLED@, @GO_MANGLED@, @NT_MANGLED@>
-  registerer_Tpetra_@SC_MACRO_NAME@_@LO_MACRO_NAME@_@GO_MACRO_NAME@_@NT_MACRO_NAME@ ;
-
-} // namespace (anonymous)
-
-#endif // defined(HAVE_TPETRA_@SC_MACRO_NAME@) && defined(HAVE_TPETRA_@LO_MACRO_NAME@_@GO_MACRO_NAME@) && defined(HAVE_TPETRA_@NT_MACRO_NAME@)

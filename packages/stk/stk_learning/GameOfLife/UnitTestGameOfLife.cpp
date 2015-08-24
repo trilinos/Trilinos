@@ -26,10 +26,10 @@
 
 #include <time.h>
 
-#include "MeshBuilder.hpp"
 #include "GameofLife.hpp"
 #include "PNGProcessor.hpp"
 #include "EntityKeyHash.hpp"
+#include "MeshConstructor.hpp"
 
 #include "NoGhostGameofLife.hpp"
 
@@ -46,7 +46,7 @@ TEST(GameofLifeClass, 1ProcTestTest)
     if (1 == numProcs)
     {
         std::string meshName = "1ProcTestTest";
-        QuadMeshBuilder* Mesh = new QuadMeshBuilder(comm, 4, 4);
+        QuadMeshConstructor* Mesh = new QuadMeshConstructor(comm, 4, 4);
 
         stk::mesh::EntityIdVector elemIds = {1, 2, 3, 4, 5, 8, 9, 12, 13, 14, 15, 16};
         PartGameofLife PartGame(Mesh, meshName);
@@ -74,7 +74,7 @@ TEST(GameofLifeClass, 4ProcTestTest)
     if (4 == numProcs)
     {
         std::string meshName = "4ProcTestTest";
-        QuadMeshBuilder* Mesh = new QuadMeshBuilder(comm, 4, 4);
+        QuadMeshConstructor* Mesh = new QuadMeshConstructor(comm, 4, 4);
 
         stk::mesh::EntityIdVector elemIds = {1, 2, 3, 4, 5, 8, 9, 12, 13, 14, 15, 16};
         PartGameofLife PartGame(Mesh, meshName);
@@ -115,8 +115,8 @@ TEST(TriangleGameofLifeClass, 1ProcRandomTest)
         std::string partMeshName = "1ProcPartRandomTest";
         std::string fieldMeshName = "1ProcFieldRandomTest";
 
-        TriangleMeshBuilder PartMesh(comm, 4, 4);
-        TriangleMeshBuilder FieldMesh(comm, 4, 4);
+        TriangleMeshConstructor PartMesh(comm, 4, 4);
+        TriangleMeshConstructor FieldMesh(comm, 4, 4);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, partMeshName);
@@ -156,8 +156,8 @@ TEST(TriangleGameofLifeClass, 4ProcRandomTest)
         std::string partMeshName = "4ProcPartRandomTest";
         std::string fieldMeshName = "4ProcFieldRandomTest";
 
-        TriangleMeshBuilder PartMesh(comm, 4, 4);
-        TriangleMeshBuilder FieldMesh(comm, 4, 4);
+        TriangleMeshConstructor PartMesh(comm, 4, 4);
+        TriangleMeshConstructor FieldMesh(comm, 4, 4);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
@@ -220,8 +220,8 @@ TEST(TriangleGameofLifeClass, 1ProcInfiniteTest)
         std::string partMeshName = "1ProcPartInfiniteTest";
         std::string fieldMeshName = "1ProcFieldInfiniteTest";
 
-        TriangleMeshBuilder PartMesh(comm, 10, 5);
-        TriangleMeshBuilder FieldMesh(comm, 10, 5);
+        TriangleMeshConstructor PartMesh(comm, 10, 5);
+        TriangleMeshConstructor FieldMesh(comm, 10, 5);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
@@ -266,8 +266,8 @@ TEST(TriangleGameofLifeClass, 4ProcInfiniteTest)
         std::string partMeshName = "4ProcPartInfiniteTest";
         std::string fieldMeshName = "4ProcFieldInfiniteTest";
 
-        TriangleMeshBuilder PartMesh(comm, 10, 5);
-        TriangleMeshBuilder FieldMesh(comm, 10, 5);
+        TriangleMeshConstructor PartMesh(comm, 10, 5);
+        TriangleMeshConstructor FieldMesh(comm, 10, 5);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
@@ -367,8 +367,8 @@ TEST(QuadGameofLifeClass, 1ProcGliderTest)
         std::string meshName1 = "1ProcPartGliderTest";
         std::string meshName2 = "1ProcFieldGliderTest";
 
-        QuadMeshBuilder* PartMesh = new QuadMeshBuilder(comm, 10, 10);
-        QuadMeshBuilder* FieldMesh = new QuadMeshBuilder(comm, 10, 10);
+        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, 10, 10);
+        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, 10, 10);
 
         PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
         FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName1);
@@ -403,8 +403,8 @@ TEST(QuadGameofLifeClass, 4ProcGliderTest)
         std::string meshName1 = "4ProcPartGliderTest";
         std::string meshName2 = "4ProcFieldGliderTest";
 
-        QuadMeshBuilder* PartMesh = new QuadMeshBuilder(comm, 10, 10);
-        QuadMeshBuilder* FieldMesh = new QuadMeshBuilder(comm, 10, 10);
+        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, 10, 10);
+        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, 10, 10);
 
         PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
         FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
@@ -478,8 +478,8 @@ TEST(QuadGameofLifeClass, 1ProcStillLife)
         std::string meshName1 = "1ProcPartStillLifeTest";
         std::string meshName2 = "1ProcFieldStillLifeTest";
 
-        QuadMeshBuilder* PartMesh = new QuadMeshBuilder(comm, 4, 4);
-        QuadMeshBuilder* FieldMesh = new QuadMeshBuilder(comm, 4, 4);
+        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, 4, 4);
+        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, 4, 4);
 
         PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
         FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
@@ -508,8 +508,8 @@ TEST(QuadGameofLifeClass, 4ProcStillLife)
         std::string meshName1 = "4ProcPartStillLifeTest";
         std::string meshName2 = "4ProcFieldStillLifeTest";
 
-        QuadMeshBuilder* PartMesh = new QuadMeshBuilder(comm, 4, 4);
-        QuadMeshBuilder* FieldMesh = new QuadMeshBuilder(comm, 4, 4);
+        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, 4, 4);
+        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, 4, 4);
 
         PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
         FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
@@ -552,8 +552,8 @@ TEST(QuadGameofLifeClass, 1ProcOscillatorPeriod2)
     {
         std::string meshName1 = "1ProcPartOscillatorPeriod2";
         std::string meshName2 = "1ProcOscillatorFieldPeriod2";
-        QuadMeshBuilder* PartMesh = new QuadMeshBuilder(comm, 3, 3);
-        QuadMeshBuilder* FieldMesh = new QuadMeshBuilder(comm, 3, 3);
+        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, 3, 3);
+        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, 3, 3);
 
         PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
         FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
@@ -596,8 +596,8 @@ TEST(QuadGameofLifeClass, 4ProcOscillatorPeriod2)
     {
         std::string meshName1 = "4ProcPartOscillatorPeriod2";
         std::string meshName2 = "4ProcFieldOscillatorPeriod2";
-        QuadMeshBuilder* PartMesh = new QuadMeshBuilder(comm, 3, 3);
-        QuadMeshBuilder* FieldMesh = new QuadMeshBuilder(comm, 3, 3);
+        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, 3, 3);
+        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, 3, 3);
 
         PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
         FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
@@ -664,8 +664,8 @@ TEST(QuadGameofLifeClass, 1ProcOscillatorPeriod8)
 
         unsigned width = 10;
         unsigned rowsPerProc = 10;
-        QuadMeshBuilder* PartMesh = new QuadMeshBuilder(comm, width, rowsPerProc);
-        QuadMeshBuilder* FieldMesh = new QuadMeshBuilder(comm, width, rowsPerProc);
+        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, width, rowsPerProc);
+        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, width, rowsPerProc);
 
         PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
         FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
@@ -712,8 +712,8 @@ TEST(QuadGameofLifeClass, 4ProcOscillatorPeriod8)
         unsigned width = 10;
         unsigned height = 10;
 
-        QuadMeshBuilder* PartMesh = new QuadMeshBuilder(comm, width, height);
-        QuadMeshBuilder* FieldMesh = new QuadMeshBuilder(comm, width, height);
+        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, width, height);
+        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, width, height);
 
         PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
         FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
@@ -791,8 +791,8 @@ TEST(HexGameofLifeClass, 1ProcBasicTest)
         std::string partMeshName = "1ProcPartBasic";
         std::string fieldMeshName = "1ProcFieldBasic";
 
-        HexMeshBuilder PartMesh(comm, 3, 3, 4);
-        HexMeshBuilder FieldMesh(comm, 3, 3, 4);
+        HexMeshConstructor PartMesh(comm, 3, 3, 4);
+        HexMeshConstructor FieldMesh(comm, 3, 3, 4);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
@@ -832,8 +832,8 @@ TEST(HexGameofLifeClass, 4ProcBasicTest)
         std::string partMeshName = "4ProcPartBasic";
         std::string fieldMeshName = "4ProcFieldBasic";
 
-        HexMeshBuilder PartMesh(comm, 3, 3, 4);
-        HexMeshBuilder FieldMesh(comm, 3, 3, 4);
+        HexMeshConstructor PartMesh(comm, 3, 3, 4);
+        HexMeshConstructor FieldMesh(comm, 3, 3, 4);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
@@ -879,8 +879,8 @@ TEST(HexGameofLifeClass, 1ProcOscillator)
     {
         std::string partMeshName = "1ProcPartOscillator";
         std::string fieldMeshName = "1ProcFieldOscillator";
-        HexMeshBuilder PartMesh(comm, 3, 3, 4);
-        HexMeshBuilder FieldMesh(comm, 3, 3, 4);
+        HexMeshConstructor PartMesh(comm, 3, 3, 4);
+        HexMeshConstructor FieldMesh(comm, 3, 3, 4);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
@@ -943,8 +943,8 @@ TEST(HexGameofLifeClass, 4ProcOscillator)
     {
         std::string partMeshName = "4ProcPartOscillator";
         std::string fieldMeshName = "4ProcFieldOscillator";
-        HexMeshBuilder PartMesh(comm, 3, 3, 4);
-        HexMeshBuilder FieldMesh(comm, 3, 3, 4);
+        HexMeshConstructor PartMesh(comm, 3, 3, 4);
+        HexMeshConstructor FieldMesh(comm, 3, 3, 4);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
@@ -1150,7 +1150,7 @@ TEST(PNGGameofLife, 1ProcCompressionTest)
         unsigned width = carrier.get_image_width();
         unsigned height = carrier.get_image_height();
 
-        QuadMeshBuilder* Mesh = new QuadMeshBuilder(comm, width, height);
+        QuadMeshConstructor* Mesh = new QuadMeshConstructor(comm, width, height);
 
         FieldGameofLife FieldGame(Mesh, meshName);
         FieldGame.activate_these_ids(elemIds);
@@ -1179,7 +1179,7 @@ TEST(PNGGameofLife, 4ProcCompressionTest)
         unsigned width = carrier.get_image_width();
         unsigned height = carrier.get_image_height();
 
-        QuadMeshBuilder* Mesh = new QuadMeshBuilder(comm, width, height);
+        QuadMeshConstructor* Mesh = new QuadMeshConstructor(comm, width, height);
         PartGameofLife PartGame(Mesh, meshName);
         PartGame.activate_these_ids(elemIds);
 
@@ -1226,8 +1226,8 @@ TEST(PNGGameofLife, 1ProcTiny)
         unsigned width = PNG.get_image_width();
         unsigned height = PNG.get_image_height();
 
-        QuadMeshBuilder* PartMesh = new QuadMeshBuilder(comm, width, height);
-        QuadMeshBuilder* FieldMesh = new QuadMeshBuilder(comm, width, height);
+        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, width, height);
+        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, width, height);
 
         PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
         FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
@@ -1287,8 +1287,8 @@ TEST(PNGGameofLife, 4ProcTiny)
         unsigned width = PNG.get_image_width();
         unsigned height = PNG.get_image_height();
 
-        QuadMeshBuilder* PartMesh = new QuadMeshBuilder(comm, width, height);
-        QuadMeshBuilder* FieldMesh = new QuadMeshBuilder(comm, width, height);
+        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, width, height);
+        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, width, height);
 
         PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
         FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName1);
@@ -1362,7 +1362,7 @@ TEST(NewNoGhostGame, 1ProcGeneralStuff)
     int numProcs = stk::parallel_machine_size(comm);
     if (1 == numProcs)
     {
-        HexMeshBuilder Mesh(comm, 1, 1, 1, stk::mesh::BulkData::NO_AUTO_AURA);
+        HexMeshConstructor Mesh(comm, 1, 1, 1, stk::mesh::BulkData::NO_AUTO_AURA);
         NoGhostGameofLife PacMan(&Mesh, "1ProcGeneralStuff");
 
         stk::mesh::EntityVector elements;
@@ -1382,7 +1382,7 @@ TEST(NewNoGhostGame, 4ProcGeneralStuff)
     int procRank = stk::parallel_machine_rank(comm);
     if (4 == numProcs)
     {
-        HexMeshBuilder Mesh(comm, 1, 1, 4, stk::mesh::BulkData::NO_AUTO_AURA);
+        HexMeshConstructor Mesh(comm, 1, 1, 4, stk::mesh::BulkData::NO_AUTO_AURA);
         NoGhostGameofLife PacMan(&Mesh, "4ProcGeneralStuff");
 
         stk::mesh::EntityVector elements;
@@ -1420,7 +1420,7 @@ TEST(NewNoGhostGame, 1ProcLessGeneralStuff)
     int numProcs = stk::parallel_machine_size(comm);
     if (1 == numProcs)
     {
-        HexMeshBuilder Mesh(comm, 2, 2, 2, stk::mesh::BulkData::NO_AUTO_AURA);
+        HexMeshConstructor Mesh(comm, 2, 2, 2, stk::mesh::BulkData::NO_AUTO_AURA);
         NoGhostGameofLife PacMan(&Mesh, "1ProcLessGeneralStuff");
 
         for (unsigned id = 1; id <= 8; id++)
@@ -1444,7 +1444,7 @@ TEST(NewNoGhostGame, 4ProcLessGeneralStuff)
     int procRank = stk::parallel_machine_rank(comm);
     if (4 == numProcs)
     {
-        HexMeshBuilder Mesh(comm, 1, 1, 8, stk::mesh::BulkData::NO_AUTO_AURA);
+        HexMeshConstructor Mesh(comm, 1, 1, 8, stk::mesh::BulkData::NO_AUTO_AURA);
         NoGhostGameofLife PacMan(&Mesh, "4ProcLessGeneralStuff4");
 
         if (0 == procRank)
@@ -1490,7 +1490,7 @@ TEST(NewNoGhostGame, 1ProcNeighbors)
 
     if (1 == numProcs)
     {
-        HexMeshBuilder Mesh(MPI_COMM_WORLD, 2, 2, 2);
+        HexMeshConstructor Mesh(MPI_COMM_WORLD, 2, 2, 2);
         NoGhostGameofLife Game(&Mesh, "1ProcNeighbors");
 
         stk::mesh::Entity elem1 = Game.element_with_id(1);
@@ -1516,7 +1516,7 @@ TEST(NewNoGhostGame, 4ProcNeighbors)
     int procNum = stk::parallel_machine_rank(comm);
     if (4 == numProcs)
     {
-        HexMeshBuilder Mesh(MPI_COMM_WORLD, 2, 2, 4, stk::mesh::BulkData::NO_AUTO_AURA);
+        HexMeshConstructor Mesh(MPI_COMM_WORLD, 2, 2, 4, stk::mesh::BulkData::NO_AUTO_AURA);
         NoGhostGameofLife Game(&Mesh, "4ProcNeighbors");
 
         stk::mesh::Entity elem;
@@ -1556,7 +1556,7 @@ TEST(NewNoGhostGame, 1ProcRunGame)
     int numProcs = stk::parallel_machine_size(comm);
     if (1 == numProcs)
     {
-        HexMeshBuilder Mesh(comm, 2, 2, 2);
+        HexMeshConstructor Mesh(comm, 2, 2, 2);
 
         NoGhostGameofLife Game(&Mesh, "1ProcRunGame");
 
@@ -1581,7 +1581,7 @@ TEST(NewNoGhostGame, 4ProcRunGame)
     int procNum = stk::parallel_machine_rank(comm);
     if (4 == numProcs)
     {
-        HexMeshBuilder Mesh(comm, 3, 3, 4, stk::mesh::BulkData::NO_AUTO_AURA);
+        HexMeshConstructor Mesh(comm, 3, 3, 4, stk::mesh::BulkData::NO_AUTO_AURA);
 
         NoGhostGameofLife Game(&Mesh, "4ProcRunGame");
 
@@ -1646,7 +1646,7 @@ TEST(NewNoGhostGame, 1ProcQuad)
     int numProcs = stk::parallel_machine_size(comm);
     if (1 == numProcs)
     {
-        QuadMeshBuilder Mesh(comm, 8, 8);
+        QuadMeshConstructor Mesh(comm, 8, 8);
 
         NoGhostGameofLife Game(&Mesh, "1ProcQuad");
         stk::mesh::EntityIdVector elemIds = {41, 42, 43, 51, 58};
@@ -1697,7 +1697,7 @@ TEST(NewNoGhostGame, 4ProcQuad)
     int procRank = stk::parallel_machine_rank(comm);
     if (4 == numProcs)
     {
-        QuadMeshBuilder Mesh(comm, 8, 8, stk::mesh::BulkData::NO_AUTO_AURA);
+        QuadMeshConstructor Mesh(comm, 8, 8, stk::mesh::BulkData::NO_AUTO_AURA);
 
         NoGhostGameofLife Game(&Mesh, "4ProcQuad");
         stk::mesh::EntityIdVector elemIds = {41, 42, 43, 51, 58};
@@ -1823,7 +1823,7 @@ TEST(NewNoGhostGame, 1ProcTri)
     int numProcs = stk::parallel_machine_size(comm);
     if (1 == numProcs)
     {
-       TriangleMeshBuilder Mesh(comm, 4, 4, stk::mesh::BulkData::NO_AUTO_AURA);
+       TriangleMeshConstructor Mesh(comm, 4, 4, stk::mesh::BulkData::NO_AUTO_AURA);
 
        NoGhostGameofLife Game(&Mesh, "1ProcTri");
        stk::mesh::EntityIdVector elemIds  = {1, 2, 3, 4, 5, 6, 7,
@@ -1878,7 +1878,7 @@ TEST(NewNoGhostGame, 4ProcTri)
     int procRank = stk::parallel_machine_rank(comm);
     if (4 == numProcs)
     {
-       TriangleMeshBuilder Mesh(comm, 4, 4, stk::mesh::BulkData::NO_AUTO_AURA);
+       TriangleMeshConstructor Mesh(comm, 4, 4, stk::mesh::BulkData::NO_AUTO_AURA);
 
        NoGhostGameofLife Game(&Mesh, "4ProcTri");
        stk::mesh::EntityIdVector elemIds  = {1, 2, 3, 4, 5, 6, 7, 8, 25, 26,

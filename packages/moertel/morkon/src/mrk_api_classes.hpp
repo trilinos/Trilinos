@@ -130,7 +130,8 @@ class Morkon_Manager
                            typename face_to_interface_and_side_t::array_layout,
                            typename face_to_interface_and_side_t::execution_space>  face_to_interface_and_side_dvt;
 
-  typedef Kokkos::View<local_idx_t *[2], execution_space>          contact_search_results_t;
+  typedef MorkonCommonlyUsed<DeviceType, DIM>                               morkon_common_t;
+  typedef typename morkon_common_t::contact_search_results_t       contact_search_results_t;
 
   // Need a DualView of this one
   typedef Kokkos::View<bool *, execution_space>                         on_boundary_table_t;

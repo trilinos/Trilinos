@@ -66,6 +66,14 @@ enum MorkonFaceType { MRK_LINE2=0,
                       MRK_TRI3,
                       MRK_QUAD4 };
 
+template  <typename DeviceType, unsigned int DIM>
+struct MorkonCommonlyUsed
+{
+  typedef typename DeviceType::execution_space                      execution_space;
+  typedef Kokkos::View<local_idx_t *[2], execution_space>  contact_search_results_t;
+};
+
+
 template <typename DeviceType, int DIM, int ORDER = 1>
 struct FaceType
 {
@@ -131,27 +139,27 @@ template  <typename DeviceType, unsigned int DIM>
 struct Mrk_MortarPallets
 {
   typedef typename DeviceType::execution_space                      execution_space;
-  typedef Kokkos::View<local_idx_t *[2], execution_space>                   faces_t;
+  typedef Kokkos::View<local_idx_t *[2], execution_space>        generating_faces_t;
   typedef Kokkos::View<double *[DIM], execution_space>                     points_t;
   typedef points_t                                                        normals_t;
   typedef Kokkos::View<double *[DIM][DIM], execution_space>              vertices_t;
 
-  //  each index quadruple is (pallet #, node # on pallet, interface side, psi or eta)
+  //  Each index quadruple is (pallet #, node # on pallet, interface side, psi or eta)
   typedef Kokkos::View<double *[DIM][2][DIM - 1], execution_space> shape_fn_parms_t;
 
   // Each pallet is associated with a mortar-side face and a non-mortar-side face.
-  faces_t          m_generating_faces;
+  generating_faces_t  m_generating_faces;
 
   // Each pallet has a projection (mortar) plane.
-  normals_t           m_plane_normals;
-  points_t          m_plane_witnesses;
+  normals_t              m_plane_normals;
+  points_t             m_plane_witnesses;
 
   // Each pallet has DIM vertices that lie on that plane.
-  vertices_t               m_vertices;
+  vertices_t                  m_vertices;
 
   // Each pallet has shape function parameters for the mortar and the non-mortar side
   // points that project to the pallet vertices.
-  shape_fn_parms_t  m_vertex_sf_parms;
+  shape_fn_parms_t     m_vertex_sf_parms;
 };
 
 }
