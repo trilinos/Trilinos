@@ -94,12 +94,16 @@ APPEND_SET(HEADERS
   BelosPseudoBlockTFQMRIter.hpp
   BelosPseudoBlockTFQMRSolMgr.hpp
   BelosTypes.hpp
+  Belos_Details_LinearSolver.hpp
+  Belos_Details_LinearSolverFactory.hpp
+  Belos_Details_registerLinearSolverFactory.hpp
   )
 
 # UTIL
 APPEND_SET(SOURCES
   BelosTypes.cpp
   BelosVersion.cpp
+  Belos_Details_registerLinearSolverFactory.cpp
   )
 
 # COMP_H
