@@ -710,7 +710,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
 //                                                     weightStrides[0]);
 //    }
     
-    int dim = data->getNumVectors();
+    size_t dim = data->getNumVectors();
     if(dim == 1) coords[1] = coords[2] = NULL;
     else if(dim == 2) coords[2] = NULL;
     

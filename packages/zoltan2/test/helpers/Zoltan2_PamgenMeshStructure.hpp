@@ -128,7 +128,6 @@ public:
 
 PamgenMesh::~PamgenMesh()
 {
-  
   // free mesh
   Delete_Pamgen_Mesh();
   
@@ -266,6 +265,7 @@ PamgenMesh::~PamgenMesh()
     }
     
   }
+  
 }
 
 void PamgenMesh::storeMesh()

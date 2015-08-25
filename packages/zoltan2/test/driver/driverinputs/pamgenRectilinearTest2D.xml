@@ -22,6 +22,7 @@
     
     <ParameterList name="test1">
         <Parameter name="Name" type="string" value="readPamgenMesh"/>
+        <Parameter name="kind" type="string" value="Partitioning"/>
      
         <ParameterList name="InputAdapterParameters">
             <Parameter name="inputType" type="string" value="coordinates"/> 
@@ -32,7 +33,7 @@
             <Parameter name="timer_output_stream" type="string" value="std::cout"/>
             <Parameter name="algorithm" type="string" value="multijagged"/>
             <Parameter name="compute_metrics" type="string" value="true"/>
-        </ParameterList>i
+        </ParameterList>
  
        <ParameterList name="Metrics">
             <ParameterList name="object count">

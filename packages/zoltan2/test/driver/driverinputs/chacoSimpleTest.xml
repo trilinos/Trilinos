@@ -19,17 +19,16 @@
             <Parameter name="fileType" type="string" value="Chaco"/>
         </ParameterList>
     
-    <ParameterList name="test1">
+    <ParameterList name="Problem 1">
         <Parameter name="Name" type="string" value="simpleChaco_xpetmv"/>
+        <Parameter name="kind" type="string" value="Partitioning"/>
      
         <ParameterList name="InputAdapterParameters">
-            <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
             <Parameter name="inputType" type="string" value="coordinates"/> 
             <Parameter name="inputAdapter" type="string" value="BasicVector"/>
         </ParameterList>
 
         <ParameterList name="Zoltan2Parameters">
-           <!-- <Parameter name="timer_output_stream" type="string" value="std::cout"/> -->
             <Parameter name="algorithm" type="string" value="multijagged"/>
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
@@ -48,17 +47,16 @@
 
     </ParameterList>
     
-    <ParameterList name="test2">
+    <ParameterList name="Problem 2">
         <Parameter name="Name" type="string" value="simpleChaco_xpetra_crs_matrix"/>
+        <Parameter name="kind" type="string" value="Partitioning"/>
      
         <ParameterList name="InputAdapterParameters">
-            <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
             <Parameter name="inputType" type="string" value="xpetra_crs_matrix"/> 
             <Parameter name="inputAdapter" type="string" value="XpetraCrsMatrix"/>
         </ParameterList>
 
         <ParameterList name="Zoltan2Parameters">
-           <!-- <Parameter name="timer_output_stream" type="string" value="std::cout"/> -->
             <Parameter name="algorithm" type="string" value="multijagged"/>
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
@@ -77,17 +75,16 @@
 
     </ParameterList>
     
-    <ParameterList name="test3">
+    <ParameterList name="Problem 3">
         <Parameter name="Name" type="string" value="simpleChaco_xpetra_crs_graph"/>
+        <Parameter name="kind" type="string" value="Partitioning"/>
      
         <ParameterList name="InputAdapterParameters">
-            <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
             <Parameter name="inputType" type="string" value="xpetra_crs_graph"/> 
             <Parameter name="inputAdapter" type="string" value="XpetraCrsGraph"/>
         </ParameterList>
 
         <ParameterList name="Zoltan2Parameters">
-           <!-- <Parameter name="timer_output_stream" type="string" value="std::cout"/> -->
             <Parameter name="algorithm" type="string" value="multijagged"/>
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
@@ -105,4 +102,20 @@
         </ParameterList> -->
 
     </ParameterList>
+
+    <ParameterList name="Comparison">
+        <Parameter name="A" type="string" value="Problem 1"/>
+        <Parameter name="B" type="string" value="Problem 2"/>
+    </ParameterList>
+    
+    <ParameterList name="Comparison">
+        <Parameter name="A" type="string" value="Problem 1"/>
+        <Parameter name="B" type="string" value="Problem 3"/>
+    </ParameterList>
+
+    <ParameterList name="Comparison">
+        <Parameter name="A" type="string" value="Problem 2"/>
+        <Parameter name="B" type="string" value="Problem 3"/>
+    </ParameterList>
+
 </ParameterList>
