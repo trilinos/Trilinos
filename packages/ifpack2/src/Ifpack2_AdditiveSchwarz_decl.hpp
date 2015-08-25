@@ -64,13 +64,11 @@ namespace Ifpack2 {
 \brief Additive Schwarz domain decomposition for Tpetra sparse matrices
 \tparam MatrixType A specialization of Tpetra::CrsMatrix
 \tparam LocalInverseType The type of the solver for the local
-  (subdomain) problem.  This must be a specialization of a concrete
-  subclass of Ifpack2::Preconditioner.  Using a type here other than
-  Ifpack2::Preconditioner is DEPRECATED, because the subdomain
-  solver's type is determined entirely at run time.  Please refer to
-  discussion below for more details.
+  (subdomain) problem.  DO NOT USE ANY TYPE HERE OTHER THAN
+  Ifpack2::Preconditioner.  The default is perfectly fine.  This
+  template parameter only exists for backwards compatibility.
 
-\section Ifpack2_AdditiveSchwarz_Summary Summary
+section Ifpack2_AdditiveSchwarz_Summary Summary
 
 This class implements Additive Schwarz domain decomposition, with
 optional overlap.  It operates on a given Tpetra::RowMatrix.  Each
@@ -118,10 +116,9 @@ modes include "ADD", "INSERT", "REPLACE", "ABSMAX", and "ZERO".  These
 correspond to the valid values of Tpetra::CombineMode.
 
 To solve linear systems involving \f$A_i\f$ on each subdomain, the
-user can adopt any subclass of Preconditioner.  Currently, users
-control this at compile time by setting the second template parameter
-\c LocalInverseType.  Soon, this option will be removed in favor of
-run-time control of the subdomain solver.
+user can adopt any subclass of Preconditioner.  Users must set this at
+run time by specifying the inner solver in the ParameterList, or by
+setting the inner solver instance explicitly.
 
 The local matrix \f$A_i\f$ can be filtered, to eliminate singletons,
 and reordered. At the present time, the only available reordering
@@ -261,13 +258,6 @@ parameters in the input to setParameters() or setParameterList().
 Second, you may construct the subdomain solver yourself, as an
 Ifpack2::Preconditioner instance, and give it to setInnerPreconditioner().
 
-A third, deprecated method is to specify the concrete type of the
-subdomain solver at compile time, as the second template parameter
-\c LocalInverseType.  This method has been DEPRECATED, because it
-causes a lot of trouble for explicit template instantiation.  Users
-may perfectly well pick the type of the subdomain solver at run time,
-using either of the above two methods.  This has no performance cost.
-
 Please refer to the documentation of setParameters for a complete
 discussion of subdomain solvers and their parameters.
 */
@@ -292,6 +282,13 @@ class AdditiveSchwarz :
                                                                 typename MatrixType::node_type> >
 {
 public:
+  static_assert(std::is_same<LocalInverseType,
+                  Preconditioner<typename MatrixType::scalar_type,
+                    typename MatrixType::local_ordinal_type,
+                    typename MatrixType::global_ordinal_type,
+                    typename MatrixType::node_type> >::value, "Ifpack2::AdditiveSchwarz: You are not allowed to use nondefault values for the LocalInverseType template parameter.  Please stop specifying this explicitly.  The default template parameter is perfectly fine.");
+
+
   //! \name Typedefs
   //@{
 
@@ -583,9 +580,6 @@ public:
   /// AdditiveSchwarz's ParameterList has "delta" (relative)
   /// semantics!  If you don't specify a parameter, the current state
   /// is not changed.
-  ///
-
-
   ///
   /// If you specify a sublist of parameters to give to the subdomain
   /// solver, setInnerPreconditioner() does <i>not</i> pass that
