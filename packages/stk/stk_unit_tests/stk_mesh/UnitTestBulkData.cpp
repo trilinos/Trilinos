@@ -6131,6 +6131,29 @@ TEST( BulkData, AddSharedNodesInTwoSteps)
 
 }
 
+TEST(ChangeEntityId, test_throw_on_shared_node)
+{
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    if (numProcs==2)
+    {
+        stk::mesh::MetaData meta(3);
+        stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+
+        const std::string generatedMeshSpec = "generated:1x1x2";
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh, MPI_COMM_WORLD);
+
+        stk::mesh::Entity sharedNode5 = mesh.get_entity(stk::topology::NODE_RANK, 5);
+
+        EXPECT_TRUE(mesh.bucket(sharedNode5).shared());
+
+#ifdef NDEBUG
+        EXPECT_NO_THROW(mesh.change_entity_id(99, sharedNode5));
+#else
+        EXPECT_THROW(mesh.change_entity_id(99, sharedNode5), std::logic_error);
+#endif
+    }
+}
+
 }// empty namespace
 
 
