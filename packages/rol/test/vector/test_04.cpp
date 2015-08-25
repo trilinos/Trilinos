@@ -62,8 +62,7 @@ void print_vector( const ROL::Vector<Real> &x ) {
   typedef ROL::PartitionedVector<Real> PV;
   typedef typename PV::size_type       size_type;
 
-  PV &eb = Teuchos::dyn_cast<PV>(const_cast <V&>(x));  
-  
+  const PV eb = Teuchos::dyn_cast<const PV>(x);
   size_type n = eb.numVectors();
     
   for(size_type k=0; k<n; ++k) {
@@ -146,7 +145,7 @@ int main(int argc, char *argv[]) {
     PV y(y_rcp);
     PV z(z_rcp);
 
-//    print_vector(x);
+    print_vector(x);
 
     // Standard tests.
     std::vector<RealT> consistency = x.checkVector(y, z, true, *outStream);

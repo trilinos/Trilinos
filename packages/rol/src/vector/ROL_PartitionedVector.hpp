@@ -199,7 +199,7 @@ public:
     (*vecs_)[i]->zero();
   }
 
-  size_type numVectors() {
+  size_type numVectors() const {
     return vecs_->size();
   }
 
