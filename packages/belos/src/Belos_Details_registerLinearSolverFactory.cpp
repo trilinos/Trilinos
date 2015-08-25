@@ -79,12 +79,12 @@ namespace Details {
 void
 registerLinearSolverFactory ()
 {
-#if defined(HAVE_BELOS_EPETRA) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
+#if defined(HAVE_BELOS_TPETRA) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
   // It's a weak symbol, so it might be NULL.
   if (::Belos::Details::Tpetra::registerLinearSolverFactory != NULL) {
     ::Belos::Details::Tpetra::registerLinearSolverFactory ();
   }
-#endif // defined(HAVE_BELOS_EPETRA) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
+#endif // defined(HAVE_BELOS_TPETRA) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
 
 #if defined(HAVE_BELOS_EPETRA) && defined(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
   // It's a weak symbol, so it might be NULL.
