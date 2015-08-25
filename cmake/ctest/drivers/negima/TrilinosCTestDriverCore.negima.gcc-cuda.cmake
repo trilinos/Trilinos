@@ -54,32 +54,86 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.negima.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
-# Set the options specific to this build case
+# Platform/compiler specific options for negima using gcc
 #
 
-SET(COMM_TYPE SERIAL)
-SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME SERIAL_RELEASE_DEV_MueLu_Experimental)
-SET(CTEST_PARALLEL_LEVEL 8)
-SET(CTEST_TEST_TYPE Experimental)
-SET(CTEST_TEST_TIMEOUT 900)
+MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
-SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
+  # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
 
-SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
-  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
-  "-DTPL_ENABLE_SuperLU=ON"
-  "-DMueLu_ENABLE_Experimental=ON"
-  "-DXpetra_ENABLE_Experimental=ON"
-  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
-)
+  SET(CTEST_DASHBOARD_ROOT  "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
+  SET(CTEST_NOTES_FILES     "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
+  SET(CTEST_BUILD_FLAGS     "-j12 -i" )
 
-#
-# Set the rest of the system-specific options and run the dashboard build/test
-#
+  SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "12" )
+  SET_DEFAULT(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
 
-TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER()
+  SET(OPENMP          "OFF")
+  SET(CUDA_ARCH       "35")
+
+  SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -gencode arch=compute_${CUDA_ARCH},code=sm_${CUDA_ARCH} -DKOKKOS_USE_CUDA_UVM -Xcompiler")
+
+  IF(OPENMP STREQUAL "ON")
+    SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wall,-ansi,-fopenmp")
+  ELSE()
+    SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Wall,-ansi")
+  ENDIF()
+
+  IF(BUILD_TYPE STREQUAL "DEBUG")
+    SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -g")
+  ELSE()
+    SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3")
+  ENDIF()
+
+  SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
+      "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
+
+      "-DBUILD_SHARED_LIBS:BOOL=ON"
+
+      ### COMPILERS AND FLAGS ###
+      "-DTrilinos_ENABLE_Fortran:BOOL=OFF"
+
+      ### TPLS ###
+      "-DTPL_ENABLE_CUDA:BOOL=ON"
+          "-DCUDA_VERBOSE_BUILD:BOOL=OFF"
+          "-DCUDA_NVCC_FLAGS:STRING=${CUDA_NVCC_FLAGS}"
+          "-DTPL_ENABLE_CUSPARSE:BOOL=ON"
+          "-DTPL_ENABLE_HWLOC:BOOL=ON"
+
+      ### PACKAGE CONFIGURATION ###
+          "-DKokkos_ENABLE_Cuda:BOOL=ON"
+          "-DKokkos_ENABLE_Cuda_UVM:BOOL=ON"
+          "-DTpetra_ENABLE_MPI_CUDA_RDMA:BOOL=ON"
+
+      ### MISC ###
+      "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
+  )
+
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.8.4")
+
+  # Ensure that MPI is on for all parallel builds that might be run.
+  IF(COMM_TYPE STREQUAL MPI)
+
+    SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
+        ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+        "-DTPL_ENABLE_MPI:BOOL=ON"
+            "-DMPI_BASE_DIR:PATH=/home/aprokop/local/opt/openmpi-1.10.0"
+       )
+
+  ELSE()
+
+    SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
+        ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+        "-DCMAKE_CXX_COMPILER=/home/aprokop/local/opt/gcc-4.8.4/bin/g++"
+        "-DCMAKE_C_COMPILER=/home/aprokop/local/opt/gcc-4.8.4/bin/gcc"
+      )
+
+  ENDIF()
+
+  TRILINOS_CTEST_DRIVER()
+
+ENDMACRO()
