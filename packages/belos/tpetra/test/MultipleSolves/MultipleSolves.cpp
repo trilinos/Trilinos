@@ -48,6 +48,80 @@
 
 namespace { // (anonymous)
 
+// 18x18 symmetric positive definite matrix from the University of
+// Florida sparse matrix collection: Oberwolfach/LF10 (the main (K)
+// matrix).
+const char symPosDefMatrixString[] =
+"%%MatrixMarket matrix coordinate real symmetric\n"
+"%-------------------------------------------------------------------------------\n"
+"% UF Sparse Matrix Collection, Tim Davis\n"
+"% http://www.cise.ufl.edu/research/sparse/matrices/Oberwolfach/LF10\n"
+"% name: Oberwolfach/LF10\n"
+"% [Oberwolfach: linear 1D beam]\n"
+"% id: 1438\n"
+"% date: 2004\n"
+"% author: J. Lienemann, A. Greiner, J. Korvink\n"
+"% ed: E. Rudnyi\n"
+"% fields: name title A id notes aux date author ed kind\n"
+"% aux: M E B C\n"
+"% kind: model reduction problem\n"
+"%-------------------------------------------------------------------------------\n"
+"% notes:\n"
+"% Primary matrix in this model reduction problem is the Oberwolfach K matrix\n"
+"%-------------------------------------------------------------------------------\n"
+"18 18 50\n"
+"1 1 3.5344800000000003\n"
+"2 1 -477.1548\n"
+"3 1 1.7672400000000001\n"
+"2 2 171775.728\n"
+"4 2 -85887.864\n"
+"5 2 477.1548\n"
+"3 3 7.068960000000001\n"
+"4 3 -477.1548\n"
+"5 3 1.7672400000000001\n"
+"4 4 171775.728\n"
+"6 4 -85887.864\n"
+"7 4 477.1548\n"
+"5 5 7.068960000000001\n"
+"6 5 -477.1548\n"
+"7 5 1.7672400000000001\n"
+"6 6 171775.728\n"
+"8 6 -85887.864\n"
+"9 6 477.1548\n"
+"7 7 7.068960000000001\n"
+"8 7 -477.1548\n"
+"9 7 1.7672400000000001\n"
+"8 8 171775.728\n"
+"10 8 -85887.864\n"
+"11 8 477.1548\n"
+"9 9 7.068960000000001\n"
+"10 9 -477.1548\n"
+"11 9 1.7672400000000001\n"
+"10 10 171775.728\n"
+"12 10 -85887.864\n"
+"13 10 477.1548\n"
+"11 11 7.068960000000001\n"
+"12 11 -477.1548\n"
+"13 11 1.7672400000000001\n"
+"12 12 171775.728\n"
+"14 12 -85887.864\n"
+"15 12 477.1548\n"
+"13 13 7.068960000000001\n"
+"14 13 -477.1548\n"
+"15 13 1.7672400000000001\n"
+"14 14 171775.728\n"
+"16 14 -85887.864\n"
+"17 14 477.1548\n"
+"15 15 7.068960000000001\n"
+"16 15 -477.1548\n"
+"17 15 1.7672400000000001\n"
+"16 16 171775.728\n"
+"18 16 477.1548\n"
+"17 17 7.068960000000001\n"
+"18 17 1.7672400000000001\n"
+"18 18 3.5344800000000003\n";
+
+#if 0
 // Test matrix: nonsymmetric real.  It's small enough to store as a
 // string, so we don't have to worry about adding a file to the
 // repository.
@@ -115,7 +189,7 @@ const char matrixString[] =
 "7 9 .183277999104159\n"
 "8 9 .25\n"
 "9 9 .166666666666667\n";
-
+#endif // 0
 
 using Teuchos::Comm;
 using Teuchos::ParameterList;
@@ -195,7 +269,8 @@ testResiduals (bool& success,
   }
 }
 
-TEUCHOS_UNIT_TEST( Solve2x, GMRES )
+
+TEUCHOS_UNIT_TEST( MultipleSolves, GMRES )
 {
   Teuchos::OSTab tab0 (out);
   out << "Test whether Belos correctly overwrites the initial guess with the "
@@ -204,17 +279,20 @@ TEUCHOS_UNIT_TEST( Solve2x, GMRES )
   Teuchos::OSTab tab1 (out);
 
   // Get the default communicator for tests.
-  RCP<const Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+  RCP<const Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-  std::istringstream matrixFile (matrixString);
+  std::istringstream matrixFile (symPosDefMatrixString);
   RCP<crs_matrix_type> A = reader_type::readSparse (matrixFile, comm);
 
   size_t numRhs = 1; // number of right-hand sides in the linear system
   int freq = 1; // frequency of status test output
 
-  // Maximum number of iterations per solve
-  const int maxIters = static_cast<int> (A->getRangeMap ()->getGlobalNumElements ());
+  // Maximum number of iterations per solve.  We use twice the problem
+  // size, since the problem to solve is pretty hard for being 18x18.
+  const int maxIters =
+    2 * static_cast<int> (A->getRangeMap ()->getGlobalNumElements ());
   // Relative residual tolerance
   const MT tol = static_cast<MT> (10) * STM::squareroot (STM::eps ());
 
@@ -223,7 +301,99 @@ TEUCHOS_UNIT_TEST( Solve2x, GMRES )
   belosList->set ("Maximum Iterations", maxIters);
   belosList->set ("Convergence Tolerance", tol);
   belosList->set ("Verbosity", Belos::Errors + Belos::Warnings +
-                  Belos::StatusTestDetails + Belos::FinalSummary);
+                  /* Belos::StatusTestDetails + */ Belos::FinalSummary);
+  belosList->set ("Output Frequency", freq);
+
+  auto X = rcp (new MV (A->getDomainMap (), numRhs));
+  auto X_exact = rcp (new MV (A->getDomainMap (), numRhs));
+  auto B = rcp (new MV (A->getRangeMap (), numRhs));
+
+  // Fill initial guess with zeros.
+  X->putScalar (STS::one ());
+
+  //
+  // First solve: Exact solution is all ones.
+  //
+  X_exact->putScalar (STS::one ());
+  A->apply (*X_exact, *B);
+
+  typedef Belos::LinearProblem<ST, MV, OP> problem_type;
+  auto problem = rcp (new problem_type (A, X, B));
+  bool set = problem->setProblem ();
+  TEUCHOS_TEST_FOR_EXCEPTION( ! set, std::logic_error, "Failed to set Belos::LinearProblem!");
+
+  // Create a Belos solver.
+  RCP<Belos::SolverManager<ST, MV, OP> > solver;
+  {
+    Belos::SolverFactory<ST, MV, OP> factory;
+    solver = factory.create (solverName, belosList);
+    solver->setProblem (problem);
+  }
+
+  // Ask Belos to solve the linear system.
+  Belos::ReturnType ret = solver->solve ();
+
+  // Evaluate the result.
+  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret);
+
+  //
+  // Second solve: Exact solution is all 1.5.  We pick this because
+  // it's not too far off from the previous exact solution -- e.g.,
+  // not the opposite sign -- so it shouldn't take too long to
+  // converge.
+  //
+  const ST one = STS::one ();
+  const ST two = one + one;
+  X_exact->putScalar (one + one / two);
+  A->apply (*X_exact, *B);
+
+  // Don't change the initial guess this time.  Keep the solution from
+  // last time.  The point is to make sure that the LinearProblem
+  // doesn't do something weird to it.
+
+  set = problem->setProblem ();
+  TEUCHOS_TEST_FOR_EXCEPTION( ! set, std::logic_error, "Failed to set Belos::LinearProblem!");
+
+  // Ask Belos to solve the linear system.
+  ret = solver->solve ();
+
+  // Evaluate the result.
+  testResiduals (success, out, *A, *X, *B, *X_exact, tol, ret);
+}
+
+
+TEUCHOS_UNIT_TEST( MultipleSolves, CG )
+{
+  Teuchos::OSTab tab0 (out);
+  out << "Test whether Belos correctly overwrites the initial guess with the "
+      << "computed solution, or incorrectly does a +=, as some users have "
+      << "reported" << endl;
+  Teuchos::OSTab tab1 (out);
+
+  // Get the default communicator for tests.
+  RCP<const Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
+
+  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
+  std::istringstream matrixFile (symPosDefMatrixString);
+  RCP<crs_matrix_type> A = reader_type::readSparse (matrixFile, comm);
+
+  size_t numRhs = 1; // number of right-hand sides in the linear system
+  int freq = 1; // frequency of status test output
+
+  // Maximum number of iterations per solve.  We use twice the problem
+  // size, since the problem to solve is pretty hard for being 18x18.
+  const int maxIters =
+    2 * static_cast<int> (A->getRangeMap ()->getGlobalNumElements ());
+  // Relative residual tolerance
+  const MT tol = static_cast<MT> (10) * STM::squareroot (STM::eps ());
+
+  const std::string solverName ("CG");
+  RCP<ParameterList> belosList (new ParameterList ("Belos"));
+  belosList->set ("Maximum Iterations", maxIters);
+  belosList->set ("Convergence Tolerance", tol);
+  belosList->set ("Verbosity", Belos::Errors + Belos::Warnings +
+                  /* Belos::StatusTestDetails + */ Belos::FinalSummary);
   belosList->set ("Output Frequency", freq);
 
   auto X = rcp (new MV (A->getDomainMap (), numRhs));

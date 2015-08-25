@@ -5,11 +5,41 @@
 #include "Ifpack2_Factory.hpp"
 #include "Trilinos_Details_LinearSolver.hpp"
 #include "Trilinos_Details_LinearSolverFactory.hpp"
-// Define typedefs and macros for testing over all Tpetra types.
-// They work whether or not ETI is enabled.
-#include "TpetraCore_ETIHelperMacros.h"
+// Define typedefs and macros for testing over all template parameter
+// combinations.
+#include "Ifpack2_ETIHelperMacros.h"
+
+// FIXME (mfh 21 Aug 2015) Temporary work-around for Bug 6392.
+#if ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
+namespace Ifpack2 {
+namespace Details {
+  // FIXME (mfh 21 Aug 2015) NONE of the commented-out things work.
+  //
+  // extern void __attribute__((weak)) registerLinearSolverFactory ();
+  // void __attribute__((weak)) registerLinearSolverFactory ();
+  // #pragma weak registerLinearSolverLibrary
+
+  extern void registerLinearSolverFactory ();
+
+} // namespace Details
+} // namespace Ifpack2
+#endif // ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
 
 namespace {
+// FIXME (mfh 21 Aug 2015) Temporary work-around for Bug 6392.
+#if ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
+  TEUCHOS_STATIC_SETUP()
+  {
+    // if (Ifpack2::Details::registerLinearSolverFactory == NULL) {
+    //   std::cout << "-- Ifpack2::Details::registerLinearSolverFactory is NULL" << std::endl;
+    // } else {
+    //   Ifpack2::Details::registerLinearSolverFactory ();
+    // }
+
+    Ifpack2::Details::registerLinearSolverFactory ();
+  }
+#endif // ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
+
   // Create a very simple square test matrix.  We use the identity
   // matrix here.  The point of this test is NOT to exercise the
   // preconditioner; it's just to check that its LinearSolverFactory
@@ -216,13 +246,14 @@ namespace {
   }
 
   // Define typedefs that make the Tpetra macros work.
-  TPETRA_ETI_MANGLING_TYPEDEFS()
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
 
 // Macro that instantiates the unit test
 #define LCLINST( SC, LO, GO, NT ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( SolverFactory, Solve, SC, LO, GO, NT )
 
-  // Instantiate the unit test.
-  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR( LCLINST )
+// Ifpack2's ETI will instantiate the unit test for all enabled type
+// combinations.
+IFPACK2_INSTANTIATE_SLGN( LCLINST )
 
 } // namespace (anonymous)

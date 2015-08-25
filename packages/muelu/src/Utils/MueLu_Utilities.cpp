@@ -478,6 +478,7 @@ namespace MueLu {
     //See if the first word is one of the custom variable names
     if(strstr(firstWord, "matrix") ||
        strstr(firstWord, "multivector") ||
+       strstr(firstWord, "map") ||
        strstr(firstWord, "ordinalvector") ||
        strstr(firstWord, "int") ||
        strstr(firstWord, "scalar") ||

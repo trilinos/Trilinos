@@ -145,6 +145,7 @@ APPEND_SET(HEADERS
   zoo/ROL_Minimax1.hpp
   zoo/ROL_Minimax2.hpp
   zoo/ROL_Minimax3.hpp
+  zoo/ROL_ParameterListConverters.hpp
   )
 
 

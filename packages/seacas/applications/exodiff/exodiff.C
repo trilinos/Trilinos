@@ -1488,8 +1488,13 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 		file2.Global_to_Block_Local(
 					    elmt_map[global_elmt_index] + 1, b2, e2);
 		SMART_ASSERT(blocks2[b2] != 0);
-		SMART_ASSERT(blocks2[b2]->Get_Results(vidx2) != 0);
-		v2 = blocks2[b2]->Get_Results(vidx2)[e2]; // Get value from file 2.
+		if (blocks2[b2]->is_valid_var(vidx2)) {
+		  v2 = blocks2[b2]->Get_Results(vidx2)[e2]; // Get value from file 2.
+		} else {
+		  // Easiest from logic standpoint to just set v2 equal to v1 at
+		  // this point and continue through rest of loop. 
+		  v2 = vals1[e];
+		}
 	      }
 	    }
           

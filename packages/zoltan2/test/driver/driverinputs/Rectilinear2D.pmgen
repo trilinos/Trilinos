@@ -1,0 +1,10 @@
+mesh
+    rectilinear
+        nx = 11
+        ny = 3
+        bx = 3
+        by = 6
+        gmin = 0.0 0.0
+        gmax = 3.0 2.0
+    end
+end

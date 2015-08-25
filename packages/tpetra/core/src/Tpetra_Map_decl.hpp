@@ -1048,8 +1048,9 @@ namespace Tpetra {
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createContigMapWithNode (global_size_t numElements,
                            size_t localNumElements,
-                           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                           const Teuchos::RCP<Node> &node);
+                           const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                           const Teuchos::RCP<Node>& node =
+                             defaultArgNode<Node> ());
 
   /** \brief Non-member constructor for a non-contiguous Map with the default Kokkos Node.
 

@@ -150,16 +150,6 @@ title(
 }
 
 
-template <typename T>
-std::string
-to_string(
-  const T &		t)
-{
-  std::ostringstream os;
-  os << t;
-  return os.str();
-}
-
 template std::string to_string<double>(const double &);
 template std::string to_string<float>(const float &);
 template std::string to_string<int>(const int &);

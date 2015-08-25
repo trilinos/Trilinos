@@ -61,21 +61,21 @@ using namespace Teuchos;
 namespace MueLu {
 
 /* Explicit instantiation of MuemexData variants */
-  template class MuemexData<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; 
+  template class MuemexData<RCP<Xpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
   template class MuemexData<RCP<Xpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
-  template class MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; 
+  template class MuemexData<RCP<Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
   template class MuemexData<RCP<Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
   template class MuemexData<RCP<MAggregates>>;
   template class MuemexData<RCP<MAmalInfo>>;
   template class MuemexData<int>;
   template class MuemexData<bool>;
-  template class MuemexData<complex_t>;	  
-  template class MuemexData<string>; 
-  template class MuemexData<double>;					
-  template class MuemexData<RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; 
-  template class MuemexData<RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; 
-  template class MuemexData<RCP<Epetra_MultiVector> >;			
-  template class MuemexData<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >; 
+  template class MuemexData<complex_t>;
+  template class MuemexData<string>;
+  template class MuemexData<double>;
+  template class MuemexData<RCP<Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+  template class MuemexData<RCP<Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
+  template class MuemexData<RCP<Epetra_MultiVector> >;
+  template class MuemexData<RCP<Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
   template class MuemexData<RCP<Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> > >;
   template class MuemexData<RCP<Xpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t>>>;
 
@@ -84,7 +84,8 @@ bool rewrap_ints = sizeof(int) != sizeof(mwIndex);
 
 int* mwIndex_to_int(int N, mwIndex* mwi_array)
 {
-  int* rv = (int*) malloc(N * sizeof(int));
+  //int* rv = (int*) malloc(N * sizeof(int));
+  int* rv = new int[N]; // not really better but may avoid confusion for valgrind
   for(int i = 0; i < N; i++)
     rv[i] = (int) mwi_array[i];
   return rv;
@@ -137,6 +138,7 @@ std::vector<RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std
   mxArray** matlabArgs = new mxArray* [args.size()];
   mxArray** matlabOutput = new mxArray* [numOutputs];
   std::vector<RCP<MuemexArg>> output;
+
   for(int i = 0; i < int(args.size()); i++)
   {
     try
@@ -157,6 +159,9 @@ std::vector<RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std
           break;
         case COMPLEX:
           matlabArgs[i] = rcp_static_cast<MuemexData<complex_t>, MuemexArg>(args[i])->convertToMatlab();
+          break;
+        case XPETRA_MAP:
+          matlabArgs[i] = rcp_static_cast<MuemexData<RCP<Xpetra_map>>, MuemexArg>(args[i])->convertToMatlab();
           break;
         case XPETRA_ORDINAL_VECTOR:
           matlabArgs[i] = rcp_static_cast<MuemexData<RCP<Xpetra_ordinal_vector>>, MuemexArg>(args[i])->convertToMatlab();

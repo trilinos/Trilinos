@@ -14,6 +14,8 @@
 #include <stk_mesh/base/CreateEdges.hpp>
 #include <stk_mesh/base/CreateFaces.hpp>
 
+#include <DiffingToolLib/DiffingTool.hpp>
+
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
@@ -22,6 +24,8 @@
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/environment/EnvData.hpp>
+
+#include <stk_util/util/SortAndUnique.hpp>
 
 #include <stk_util/parallel/DebugTool.hpp>
 
@@ -33,8 +37,213 @@
 
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
 
+using namespace stk::diff;
+
 namespace 
 {
+
+template <typename T>
+void compare_vectors(std::vector<T> items1, std::vector<T>& items2, int line_number)
+{
+    ASSERT_EQ(items1.size(), items2.size()) << "Vector sizes diff. Called from line: " << line_number << std::endl;;
+    for(size_t i=0;i<items1.size();++i)
+    {
+        EXPECT_EQ(items1[i], items2[i]) << "Vectors diff at index = " << i << ", called from line: " << line_number << std::endl;
+    }
+}
+
+std::vector<std::string> filter_out_empty_strings(const std::vector<std::string>& strings)
+{
+    std::vector<std::string> filtered_strings = strings;
+    filtered_strings.erase(std::remove(filtered_strings.begin(), filtered_strings.end(), ""), filtered_strings.end());
+    return filtered_strings;
+}
+
+std::string join_string_vector(const std::vector<std::string>& filtered_strings, char sep)
+{
+    std::ostringstream os;
+    for(size_t i=0;i<filtered_strings.size()-1;++i)
+    {
+        os << filtered_strings[i] << sep;
+    }
+    os << filtered_strings.back();
+    return os.str();
+}
+
+std::string join_string_vector_ignoring_empty_strings(const std::vector<std::string>& strings, char sep)
+{
+    std::vector<std::string> filtered_strings = filter_out_empty_strings(strings);
+    return join_string_vector(filtered_strings, sep);
+}
+
+std::vector<std::string> split_strings_from_stream(std::stringstream& ss, std::string& scratch_space, char delim)
+{
+    std::vector<std::string> split_strings;
+    while (std::getline(ss, scratch_space, delim))
+    {
+        if(scratch_space != "")
+        {
+            split_strings.push_back(scratch_space);
+        }
+    }
+    return split_strings;
+}
+
+std::vector<std::string> split(const std::string &s, char delim)
+{
+    std::stringstream ss(s);
+    std::string scratch_space;
+    return split_strings_from_stream(ss, scratch_space, delim);
+}
+
+void find_and_replace_within_string_vector(std::vector<std::string>& split_strings, const std::string& string_to_find, const std::string& new_string)
+{
+    size_t size_of_string_to_find = string_to_find.size();
+    for(size_t i=0;i<split_strings.size();++i)
+    {
+        if(split_strings[i].substr(0, size_of_string_to_find) == string_to_find)
+        {
+            split_strings[i] = new_string;
+        }
+    }
+}
+
+void replace_all_custom_ghostings_with_fmwk_recv_ghost_part(std::vector<std::string> &part_names)
+{
+    const std::string string_to_find = "{custom_ghosting_";
+    const std::string replace_found_string_with_this = "{FMWK_RECV_GHOST_PART}";
+    find_and_replace_within_string_vector(part_names, string_to_find, replace_found_string_with_this);
+    stk::util::sort_and_unique(part_names);
+}
+
+void replace_fmwk_stk_shared_part_with_shares(std::vector<std::string> &part_names)
+{
+    const std::string string_to_find = "{FMWK_STK_SHARED_PART}";
+    const std::string replace_found_string_with_this = "{SHARES}";
+    find_and_replace_within_string_vector(part_names, string_to_find, replace_found_string_with_this);
+}
+
+void replace_fmwk_send_ghost_part_with_send_ghost(std::vector<std::string> &part_names)
+{
+    const std::string string_to_find = "{FMWK_SEND_GHOST_PART}";
+    const std::string replace_found_string_with_this = "{SEND_GHOST}";
+    find_and_replace_within_string_vector(part_names, string_to_find, replace_found_string_with_this);
+}
+
+void replace_fmwk_locally_owned_context_bit_with_owns(std::vector<std::string> &part_names)
+{
+    const std::string string_to_find = "LOCALLY_OWNED_CONTEXT_BIT";
+    const std::string replace_found_string_with_this = "{OWNS}";
+    find_and_replace_within_string_vector(part_names, string_to_find, replace_found_string_with_this);
+}
+
+void yank_out_part(std::vector<std::string> &part_names, const std::string& part_to_yank_out)
+{
+    find_and_replace_within_string_vector(part_names, part_to_yank_out, "");
+    part_names.erase(std::remove(part_names.begin(), part_names.end(), ""), part_names.end());
+}
+
+void adjust_stk_part_names(std::vector<std::string>& stk_part_names)
+{
+    replace_all_custom_ghostings_with_fmwk_recv_ghost_part(stk_part_names);
+    yank_out_part(stk_part_names, "LOCALLY_OWNED_CONTEXT_BIT");
+    yank_out_part(stk_part_names, "sides_created_during_death");
+}
+
+void adjust_fmwk_part_names(std::vector<std::string>& fmwk_part_names)
+{
+    yank_out_part(fmwk_part_names, "{SHARES}");
+    yank_out_part(fmwk_part_names, "{OWNS}");
+    replace_fmwk_send_ghost_part_with_send_ghost(fmwk_part_names);
+    replace_fmwk_locally_owned_context_bit_with_owns(fmwk_part_names);
+    replace_fmwk_stk_shared_part_with_shares(fmwk_part_names);
+    stk::util::sort_and_unique(fmwk_part_names);
+}
+
+void adjust_stk_part_names_per_bucket(std::vector<std::string>& stk_part_names)
+{
+    for(size_t i=0;i<stk_part_names.size();++i)
+    {
+        std::vector<std::string> part_names_for_bucket = split(stk_part_names[i], ' ');
+        adjust_stk_part_names(part_names_for_bucket);
+        stk_part_names[i] = join_string_vector_ignoring_empty_strings(part_names_for_bucket, ' ');
+    }
+}
+
+void adjust_fmwk_part_names_per_bucket(std::vector<std::string>& fmwk_part_names)
+{
+    for(size_t i=0;i<fmwk_part_names.size();++i)
+    {
+        std::vector<std::string> part_names_for_bucket = split(fmwk_part_names[i], ' ');
+        adjust_fmwk_part_names(part_names_for_bucket);
+        fmwk_part_names[i] = join_string_vector_ignoring_empty_strings(part_names_for_bucket, ' ');
+    }
+}
+
+TEST(ParallelDebugTool, testStringManips)
+{
+    {
+        std::string part_name_before = "a b c {custom_ghosting_10} d e";
+        std::string gold_result = "a b c d e {FMWK_RECV_GHOST_PART}";
+
+        std::vector<std::string> part_names = split(part_name_before, ' ');
+        adjust_stk_part_names(part_names);
+        std::vector<std::string> gold_part_names = split(gold_result, ' ');
+        compare_vectors(part_names, gold_part_names, __LINE__);
+    }
+
+    {
+        std::string part_name_before = "a b c {custom_ghosting_2} {custom_ghosting_10} d e";
+        std::string gold_result = "a b c d e {FMWK_RECV_GHOST_PART}";
+
+        std::vector<std::string> part_names = split(part_name_before, ' ');
+        adjust_stk_part_names(part_names);
+        std::vector<std::string> gold_part_names = split(gold_result, ' ');
+        compare_vectors(part_names, gold_part_names, __LINE__);
+    }
+
+    {
+        std::string part_name_before = "a b c {SHARES} d e";
+        std::string gold_result = "a b c d e";
+
+        std::vector<std::string> part_names = split(part_name_before, ' ');
+        adjust_fmwk_part_names(part_names);
+        std::vector<std::string> gold_part_names = split(gold_result, ' ');
+        compare_vectors(part_names, gold_part_names, __LINE__);
+    }
+
+    {
+        std::string part_name_before = "a b c {FMWK_SEND_GHOST_PART} d e";
+        std::string gold_result = "a b c d e {SEND_GHOST}";
+
+        std::vector<std::string> part_names = split(part_name_before, ' ');
+        adjust_fmwk_part_names(part_names);
+        std::vector<std::string> gold_part_names = split(gold_result, ' ');
+        compare_vectors(part_names, gold_part_names, __LINE__);
+    }
+
+    {
+        std::string part_name_before = "a b c {FMWK_STK_SHARED_PART} d e";
+        std::string gold_result = "a b c d e {SHARES}";
+
+        std::vector<std::string> part_names = split(part_name_before, ' ');
+        adjust_fmwk_part_names(part_names);
+        std::vector<std::string> gold_part_names = split(gold_result, ' ');
+        compare_vectors(part_names, gold_part_names, __LINE__);
+    }
+
+    {
+        std::string stk_part_namesA  = "a b c {custom_ghosting_2} {custom_ghosting_3} {SEND_GHOST} {SHARES}";
+        std::string fmwk_part_namesB = "a b c {SHARES} {FMWK_RECV_GHOST_PART} {FMWK_SEND_GHOST_PART} {FMWK_STK_SHARED_PART}";
+
+        std::vector<std::string> stk_part_names = split(stk_part_namesA, ' ');
+        adjust_stk_part_names(stk_part_names);
+        std::vector<std::string> fmwk_part_names = split(fmwk_part_namesB, ' ');
+        adjust_fmwk_part_names(fmwk_part_names);
+
+        compare_vectors(stk_part_names, fmwk_part_names, __LINE__);
+    }
+}
 
 void setup_env_data(stk::EnvData& env_data, stk::ParallelMachine global_comm, int color)
 {
@@ -42,99 +251,15 @@ void setup_env_data(stk::EnvData& env_data, stk::ParallelMachine global_comm, in
     env_data.m_worldComm = global_comm;
 }
 
-void pack_string(stk::CommBuffer& buf, const std::string& name)
-{
-    buf.pack<size_t>(name.size());
-    buf.pack<char>(name.data(), name.size());
-}
-
-std::string unpack_string(stk::CommBuffer& buf)
-{
-    size_t num_chars = 0;
-    buf.unpack<size_t>(num_chars);
-    std::string name(num_chars, ' ');
-    buf.unpack<char>(&name[0], num_chars);
-    return name;
-}
-
-void pack_part_names(stk::CommBuffer& buf, const stk::mesh::PartVector& parts)
-{
-    for(size_t i=0; i<parts.size(); ++i)
-    {
-        pack_string(buf, parts[i]->name());
-    }
-}
-
-int parallel_sum(stk::ParallelMachine comm, int numLocal)
-{
-    int numGlobal = 0;
-    stk::all_reduce_sum(comm, &numLocal, &numGlobal, 1);
-    return numGlobal;
-}
-
-int get_global_part_differences(stk::ParallelMachine comm, int numLocalDiffs)
-{
-    return parallel_sum(comm, numLocalDiffs);
-}
-
 void communicate_part_differences_to_apps(stk::ParallelMachine comm, int numLocalDiffs)
 {
     get_global_part_differences(comm, numLocalDiffs);
-}
-
-int get_global_bucket_part_membership_differences(stk::ParallelMachine comm, int numLocalDiffs)
-{
-    return parallel_sum(comm, numLocalDiffs);
-}
-
-int get_global_part_differences_for_app(stk::ParallelMachine comm)
-{
-    int numLocalDiffs = 0;
-    return get_global_part_differences(comm, numLocalDiffs);
-}
-
-int get_global_bucket_count_differences(stk::ParallelMachine comm, int numLocalDiffs)
-{
-    return parallel_sum(comm, numLocalDiffs);
-}
-
-void allocate_or_communicate(int iphase, stk::CommSparse& comm)
-{
-    if (iphase == 0)
-    {
-        comm.allocate_buffers();
-    }
-    else
-    {
-        comm.communicate();
-    }
 }
 
 void wait_for_apps_to_pack_and_send_data(stk::CommSparse& comm)
 {
     comm.allocate_buffers();
     comm.communicate();
-}
-
-stk::CommBuffer& get_comm_buffer_for_destination_proc(stk::CommSparse& comm)
-{
-    return comm.send_buffer(getDestinationProc(comm.parallel()));
-}
-
-void send_part_names_to_diffing_tool(const stk::mesh::BulkData& bulk, stk::ParallelMachine communicator)
-{
-    stk::CommSparse comm(communicator);
-    for(int iphase = 0; iphase < 2; ++iphase)
-    {
-        pack_part_names(get_comm_buffer_for_destination_proc(comm), bulk.mesh_meta_data().get_parts());
-        allocate_or_communicate(iphase, comm);
-    }
-}
-
-bool parts_match(const stk::mesh::BulkData& bulk, stk::EnvData& env_data)
-{
-    send_part_names_to_diffing_tool(bulk, env_data.m_worldComm);
-    return get_global_part_differences_for_app(env_data.m_worldComm) == 0;
 }
 
 std::vector<std::string> unpack_buffer_to_string_vector(stk::CommBuffer& buff)
@@ -154,21 +279,15 @@ std::vector<std::string> get_sorted_part_names(stk::CommBuffer& buff)
     return partNames;
 }
 
-std::string join_string_vector(const std::vector<std::string>& strings, const std::string& sep)
-{
-    std::ostringstream os;
-    for(size_t i=0;i<strings.size();++i)
-    {
-        os << strings[i] << sep;
-    }
-    return os.str();
-}
-
 void create_output_message(std::ostringstream &os, std::vector<std::string>& part_diffs)
 {
     if(!part_diffs.empty())
     {
-        os << join_string_vector(part_diffs, "\t") << std::endl;
+        os << join_string_vector_ignoring_empty_strings(part_diffs, ' ') << std::endl;
+    }
+    else
+    {
+        os << std::endl;
     }
 }
 
@@ -184,12 +303,13 @@ int part_name_set_difference_message(const std::vector<std::string> & partNames1
 {
     std::vector<std::string> part_diffs = part_name_set_difference(partNames1, partNames2);
     create_output_message(os, part_diffs);
-    return part_diffs.size();
+    int num_diffs = part_diffs.size();
+    return num_diffs;
 }
 
 int get_parts_in_first_not_in_second(const std::vector<std::string> & partNames1, const std::vector<std::string> & partNames2, std::ostringstream & globalss)
 {
-    std::ostringstream os("Parts in first app, not in second app: ");
+    std::ostringstream os("Parts in first app, not in second app: ", std::ios_base::ate);
     int num_diffs = part_name_set_difference_message(partNames1, partNames2, os);
     if (num_diffs > 0)
     {
@@ -200,7 +320,7 @@ int get_parts_in_first_not_in_second(const std::vector<std::string> & partNames1
 
 int get_parts_in_second_not_in_first(const std::vector<std::string> & partNames1, const std::vector<std::string> & partNames2, std::ostringstream & globalss)
 {
-    std::ostringstream os("Parts in second app, not in first app: ");
+    std::ostringstream os("Parts in second app, not in first app: ", std::ios_base::ate);
     int num_diffs = part_name_set_difference_message(partNames2, partNames1, os);
     if (num_diffs > 0)
     {
@@ -224,12 +344,45 @@ void unpack_part_names(stk::EnvData & env_data, std::vector<std::string> & partN
     partNames2 = get_sorted_part_names(comm.recv_buffer(sourceProcs.second));
 }
 
-void compare_parts(stk::EnvData & env_data, std::ostringstream& globalss)
+void output_message(const std::string &message, int localProcId)
 {
-    std::vector<std::string> partNames1, partNames2;
-    unpack_part_names(env_data, partNames1, partNames2);
-    int num_diffs = compare_part_names(partNames1, partNames2, globalss);
+    if (!message.empty())
+    {
+        std::ostringstream massaged_output;
+        std::vector<std::string> tokens = split(message,'\n');
+        for(std::string& s: tokens)
+        {
+            massaged_output << "[" << localProcId << "] " << s << std::endl;
+        }
+        std::cerr << massaged_output.str();
+    }
+}
+
+enum DiffingOption { STK_VS_STK, FMWK_VS_STK, FMWK_DEATH_VS_STK_DEATH};
+
+void compare_parts(stk::EnvData & env_data,  DiffingOption diffing_option)
+{
+    std::ostringstream globalss;
+
+    std::vector<std::string> stkPartNames, fmwkPartNames;
+    unpack_part_names(env_data, stkPartNames, fmwkPartNames);
+    if(diffing_option == FMWK_VS_STK)
+    {
+        adjust_stk_part_names(stkPartNames);
+        adjust_fmwk_part_names(fmwkPartNames);
+    }
+    else if(diffing_option == FMWK_DEATH_VS_STK_DEATH)
+    {
+        adjust_stk_part_names(stkPartNames);
+        adjust_stk_part_names(fmwkPartNames);
+    }
+
+    int num_diffs = compare_part_names(stkPartNames, fmwkPartNames, globalss);
     communicate_part_differences_to_apps(env_data.m_worldComm, num_diffs);
+    if (num_diffs > 0)
+    {
+        output_message(globalss.str(), stk::parallel_machine_rank(env_data.m_parallelComm));
+    }
 }
 
 std::pair<int,int> getXYdim()
@@ -285,64 +438,6 @@ void expect_num_elements(const stk::mesh::BulkData & bulk)
     EXPECT_EQ(expected_num_elems, counts[stk::topology::ELEM_RANK]);
 }
 
-int bucket_counts_match(const stk::mesh::BulkData& bulk, stk::EnvData& env_data)
-{
-    stk::CommSparse comm(env_data.m_worldComm);
-    int destinationProc = getDestinationProc(env_data.m_worldComm);
-    stk::CommBuffer& buf = comm.send_buffer(destinationProc);
-    for(int iphase = 0; iphase < 2; ++iphase)
-    {
-        for(size_t irank = 0; irank < bulk.mesh_meta_data().entity_rank_count(); ++irank)
-        {
-            stk::mesh::EntityRank rank = static_cast<stk::mesh::EntityRank>(irank);
-            const stk::mesh::BucketVector& buckets = bulk.buckets(rank);
-            buf.pack<size_t>(buckets.size());
-        }
-        allocate_or_communicate(iphase, comm);
-    }
-    int num_diffs = 0;
-    return get_global_bucket_count_differences(env_data.m_worldComm, num_diffs);
-}
-
-std::string create_string_from_parts(const stk::mesh::PartVector& parts)
-{
-    std::string names;
-    for(size_t i=0; i<parts.size(); ++i)
-    {
-        names += parts[i]->name() + " ";
-    }
-    return names;
-}
-
-void pack_buckets_parts(const stk::mesh::BucketVector& buckets, stk::CommBuffer &buff)
-{
-    for(size_t i = 0; i < buckets.size(); ++i)
-    {
-        const stk::mesh::PartVector& parts = buckets[i]->supersets();
-        std::string part_names_for_bucket = create_string_from_parts(parts);
-        pack_string(buff, part_names_for_bucket);
-    }
-}
-
-
-bool bucket_part_memberships_match(const stk::mesh::BulkData& bulk, stk::EnvData& env_data)
-{
-    int numGlobalDiffs = bucket_counts_match(bulk, env_data);
-    for(size_t irank = 0; irank < bulk.mesh_meta_data().entity_rank_count(); ++irank)
-    {
-        stk::CommSparse comm(env_data.m_worldComm);
-        stk::mesh::EntityRank rank = static_cast<stk::mesh::EntityRank>(irank);
-        const stk::mesh::BucketVector& buckets = bulk.buckets(rank);
-        for(int iphase = 0; iphase < 2; ++iphase)
-        {
-            pack_buckets_parts(buckets, get_comm_buffer_for_destination_proc(comm));
-            allocate_or_communicate(iphase, comm);
-        }
-    }
-    numGlobalDiffs += get_global_bucket_part_membership_differences(env_data.m_worldComm, 0);
-    return numGlobalDiffs == 0;
-}
-
 std::vector<size_t> unpack_bucket_counts(stk::CommBuffer& buf)
 {
     std::vector<size_t> bucket_counts;
@@ -382,7 +477,7 @@ int compare_bucket_counts_message(int procId, const std::vector<size_t>& bucket_
     return num_diffs;
 }
 
-bool compare_bucket_part_names_message(size_t num_entity_ranks1, size_t num_entity_ranks2, stk::EnvData& env_data, std::ostringstream& globalss)
+bool compare_bucket_part_names_message(size_t num_entity_ranks1, size_t num_entity_ranks2, stk::EnvData& env_data, std::ostringstream& globalss, DiffingOption diffing_option)
 {
     size_t num_equal_counts = std::min(num_entity_ranks1, num_entity_ranks2);
     std::pair<int,int> sourceProcs = getSourceProcs(env_data.m_worldComm);
@@ -390,23 +485,50 @@ bool compare_bucket_part_names_message(size_t num_entity_ranks1, size_t num_enti
 
     for(size_t i=0;i<num_equal_counts;++i)
     {
-        std::ostringstream os;
         stk::CommSparse comm(env_data.m_worldComm);
         wait_for_apps_to_pack_and_send_data(comm);
 
-        std::vector<std::string> part_names1_for_buckets_of_rank= get_sorted_part_names(comm.recv_buffer(sourceProcs.first));
-        std::vector<std::string> part_names2_for_buckets_of_rank = get_sorted_part_names(comm.recv_buffer(sourceProcs.second));
+        std::vector<std::string> stk_part_names_for_buckets_of_rank = unpack_buffer_to_string_vector(comm.recv_buffer(sourceProcs.first));
+        std::vector<std::string> fmwk_part_names_for_buckets_of_rank = unpack_buffer_to_string_vector(comm.recv_buffer(sourceProcs.second));
 
-        os << "Buckets in first app, not in second app, with parts: ";
-        int num_local_diffs = part_name_set_difference_message(part_names1_for_buckets_of_rank, part_names2_for_buckets_of_rank, os);
-
-        os << "Buckets in second app, not in first app, with parts: ";
-        num_local_diffs += part_name_set_difference_message(part_names2_for_buckets_of_rank, part_names1_for_buckets_of_rank, os);
-
-        if (num_local_diffs > 0)
+        if(diffing_option == FMWK_VS_STK)
         {
-            globalss << os.str();
-            diffs_occurred = true;
+            adjust_stk_part_names_per_bucket(stk_part_names_for_buckets_of_rank);
+            adjust_fmwk_part_names_per_bucket(fmwk_part_names_for_buckets_of_rank);
+        }
+        else if(diffing_option == FMWK_DEATH_VS_STK_DEATH)
+        {
+            adjust_stk_part_names_per_bucket(stk_part_names_for_buckets_of_rank);
+            adjust_stk_part_names_per_bucket(fmwk_part_names_for_buckets_of_rank);
+        }
+
+        size_t min_bucket_compare = std::min(stk_part_names_for_buckets_of_rank.size(), fmwk_part_names_for_buckets_of_rank.size());
+        for(size_t j=0;j<min_bucket_compare;++j)
+        {
+            std::vector<std::string> names1 = split(stk_part_names_for_buckets_of_rank[j], ' ');
+            std::vector<std::string> names2 = split(fmwk_part_names_for_buckets_of_rank[j], ' ');
+
+            {
+                std::ostringstream os;
+                os << "Buckets in first app, not in second app, with parts for rank " << i << " for bucket index " << j << "\n";
+                int num_local_diffs = part_name_set_difference_message(names1, names2, os);
+                if (num_local_diffs > 0)
+                {
+                    globalss << os.str();
+                    diffs_occurred = true;
+                }
+            }
+
+            {
+                std::ostringstream os;
+                os << "Buckets in second app, not in first app, with parts for rank " << i << " for bucket index " << j << " \n";
+                int num_local_diffs = part_name_set_difference_message(names2, names1, os);
+                if (num_local_diffs > 0)
+                {
+                    globalss << os.str();
+                    diffs_occurred = true;
+                }
+            }
         }
     }
 
@@ -467,19 +589,87 @@ int bool_to_int(bool flag)
     return flag ? 1 : 0;
 }
 
-void compare_bucket_part_memberships(stk::EnvData& env_data, std::ostringstream& globalss)
+void compare_bucket_part_memberships(stk::EnvData& env_data, DiffingOption diffing_option)
 {
+    std::ostringstream globalss;
     size_t num_ranks1 = 0, num_ranks2 = 0;
-    compare_bucket_counts(env_data, num_ranks1, num_ranks2, globalss);
-    bool diffs_exist = compare_bucket_part_names_message(num_ranks1, num_ranks2, env_data, globalss);
+    int num_count_issues = compare_bucket_counts(env_data, num_ranks1, num_ranks2, globalss);
+
+    if(num_count_issues>0)
+    {
+        std::pair<int,int> sourceProcs = getSourceProcs(env_data.m_worldComm);
+        for(size_t i=0;i<num_ranks1;++i)
+        {
+            stk::CommSparse comm(env_data.m_worldComm);
+            wait_for_apps_to_pack_and_send_data(comm);
+            std::vector<std::string> stk_part_names_for_entities = unpack_buffer_to_string_vector(comm.recv_buffer(sourceProcs.first));
+            std::vector<std::string> fmwk_part_names_for_entities = unpack_buffer_to_string_vector(comm.recv_buffer(sourceProcs.second));
+
+            if(diffing_option == FMWK_VS_STK)
+            {
+                adjust_stk_part_names_per_bucket(stk_part_names_for_entities);
+                adjust_fmwk_part_names_per_bucket(fmwk_part_names_for_entities);
+            }
+            else if(diffing_option == FMWK_DEATH_VS_STK_DEATH)
+            {
+                adjust_stk_part_names_per_bucket(stk_part_names_for_entities);
+                adjust_stk_part_names_per_bucket(fmwk_part_names_for_entities);
+            }
+
+            if(stk_part_names_for_entities.size() != fmwk_part_names_for_entities.size())
+            {
+                globalss << "Num entities of rank " << i << " does not match! First app: " << stk_part_names_for_entities.size()
+                        << " and second app: " << fmwk_part_names_for_entities.size() << std::endl;
+            }
+            else
+            {
+                size_t num_entities = stk_part_names_for_entities.size();
+                for(size_t j=0;j<num_entities;++j)
+                {
+                    std::vector<std::string> names1 = split(stk_part_names_for_entities[j], ' ');
+                    std::vector<std::string> names2 = split(fmwk_part_names_for_entities[j], ' ');
+
+                    {
+                        std::ostringstream os;
+                        os << "Parts on entity in first app, not in second app, for rank " << i << " for entity index " << j << "\n";
+                        os << "App 1: " << stk_part_names_for_entities[j] << std::endl;
+                        os << "App 2: " << fmwk_part_names_for_entities[j] << std::endl;
+                        int num_local_diffs = part_name_set_difference_message(names1, names2, os);
+                        if (num_local_diffs > 0)
+                        {
+                            globalss << os.str();
+                        }
+                    }
+
+                    {
+                        std::ostringstream os;
+                        os << "Parts on entity in second app, not in first app, for rank " << i << " for entity index " << j << "\n";
+                        os << "App 1: " << stk_part_names_for_entities[j] << std::endl;
+                        os << "App 2: " << fmwk_part_names_for_entities[j] << std::endl;
+                        int num_local_diffs = part_name_set_difference_message(names2, names1, os);
+                        if (num_local_diffs > 0)
+                        {
+                            globalss << os.str();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    bool diffs_exist = compare_bucket_part_names_message(num_ranks1, num_ranks2, env_data, globalss, diffing_option);
     if (diffs_exist)
     {
         build_message_for_missing_ranks(env_data, num_ranks1, num_ranks2, globalss);
     }
-    get_global_bucket_part_membership_differences(env_data.m_worldComm, bool_to_int(diffs_exist));
+    int diffs = get_global_bucket_part_membership_differences(env_data.m_worldComm, bool_to_int(diffs_exist));
+    if (diffs > 0)
+    {
+        output_message(globalss.str(), stk::parallel_machine_rank(env_data.m_parallelComm));
+    }
 }
 
-void make_part_membership_different_on_app1(stk::mesh::BulkData& bulk)
+stk::mesh::Part& put_elem1_in_new_part_for_app1(stk::mesh::BulkData& bulk)
 {
     stk::mesh::Part& newPart = bulk.mesh_meta_data().declare_part("new_part");
     stk::mesh::Entity elem1 = bulk.get_entity(stk::topology::ELEM_RANK, 1);
@@ -489,78 +679,164 @@ void make_part_membership_different_on_app1(stk::mesh::BulkData& bulk)
         bulk.change_entity_parts(elem1, {&newPart}, {});
     }
     bulk.modification_end();
+    return newPart;
+}
+
+enum DifferentPartOption {
+    KeepPartsTheSame,
+    AddDifferentPartDoNotIgnore,
+    AddDifferentPartIgnore
+};
+
+void call_parts_match(DifferentPartOption differentPartOption, stk::mesh::BulkData& bulk, stk::EnvData& env_data, stk::mesh::Part* newPart)
+{
+    switch(differentPartOption) {
+        case AddDifferentPartDoNotIgnore:
+            EXPECT_FALSE(stk::diff::parts_match(bulk, env_data));
+            break;
+        case AddDifferentPartIgnore:
+            EXPECT_TRUE(stk::diff::parts_match_except(bulk, env_data, newPart));
+            break;
+        default:
+            EXPECT_TRUE(stk::diff::parts_match(bulk, env_data));
+            break;
+    }
+}
+
+void run_mock_app(int color, DifferentPartOption differentPartOption)
+{
+    stk::EnvData & env_data = stk::EnvData::instance();
+    setup_env_data(env_data, MPI_COMM_WORLD, color);
+    expect_mpmd(env_data);
+
+    TestMesh mesh(env_data.m_parallelComm);
+    stk::mesh::BulkData & bulk = mesh.get_bulk_data();
+    expect_num_elements(bulk);
+
+    stk::mesh::Part* newPart = nullptr;
+
+    if (differentPartOption != KeepPartsTheSame && color == 0)
+    {
+        newPart = &put_elem1_in_new_part_for_app1(bulk);
+    }
+
+    bool continue_runs = true;
+    size_t num_mock_steps = 4;
+    for(size_t i=0;i<num_mock_steps;++i)
+    {
+        communicate_run_state(env_data, continue_runs);
+        call_parts_match(differentPartOption, bulk, env_data, newPart);
+
+        if (differentPartOption == KeepPartsTheSame)
+        {
+            EXPECT_TRUE(bucket_part_memberships_match(bulk, env_data));
+        }
+        else
+        {
+            EXPECT_TRUE(!bucket_part_memberships_match(bulk, env_data));
+        }
+    }
+
+    continue_runs = false;
+    communicate_run_state(env_data, continue_runs);
+}
+
+TEST(ParallelDebugTool, mock_app_1_with_different_part)
+{
+    int color = 0;
+    DifferentPartOption partOption = AddDifferentPartDoNotIgnore;
+    run_mock_app(color, partOption);
+}
+
+TEST(ParallelDebugTool, mock_app_2_with_different_part)
+{
+    int color = 1;
+    DifferentPartOption partOption = AddDifferentPartDoNotIgnore;
+    run_mock_app(color, partOption);
+}
+
+TEST(ParallelDebugTool, mock_app_1_ignore_different_part)
+{
+    int color = 0;
+    DifferentPartOption partOption = AddDifferentPartIgnore;
+    run_mock_app(color, partOption);
+}
+
+TEST(ParallelDebugTool, mock_app_2_ignore_different_part)
+{
+    int color = 1;
+    DifferentPartOption partOption = AddDifferentPartIgnore;
+    run_mock_app(color, partOption);
 }
 
 TEST(ParallelDebugTool, mock_app_1)
 {
     int color = 0;
-    stk::EnvData & env_data = stk::EnvData::instance();
-    setup_env_data(env_data, MPI_COMM_WORLD, color);
-    expect_mpmd(env_data);
-
-    TestMesh mesh(env_data.m_parallelComm);
-    stk::mesh::BulkData & bulk = mesh.get_bulk_data();
-    expect_num_elements(bulk);
-
-    EXPECT_TRUE(parts_match(bulk, env_data));
-
-    make_part_membership_different_on_app1(bulk);
-    EXPECT_TRUE(!bucket_part_memberships_match(bulk, env_data));
+    DifferentPartOption partOption = KeepPartsTheSame;
+    run_mock_app(color, partOption);
 }
 
 TEST(ParallelDebugTool, mock_app_2)
 {
     int color = 1;
-    stk::EnvData & env_data = stk::EnvData::instance();
-    setup_env_data(env_data, MPI_COMM_WORLD, color);
-    expect_mpmd(env_data);
-
-    TestMesh mesh(env_data.m_parallelComm);
-    stk::mesh::BulkData & bulk = mesh.get_bulk_data();
-    expect_num_elements(bulk);
-
-    EXPECT_TRUE(parts_match(bulk, env_data));
-
-    EXPECT_TRUE(!bucket_part_memberships_match(bulk, env_data));
+    DifferentPartOption partOption = KeepPartsTheSame;
+    run_mock_app(color, partOption);
 }
 
-std::vector<std::string> get_delimited_strings_from_stream(std::stringstream& ss, std::string& scratch_space, char delim)
+bool check_if_continuing(stk::EnvData &env_data)
 {
-    std::vector<std::string> elems;
-    while (std::getline(ss, scratch_space, delim))
+    std::pair<int,int> sourceProcs = getSourceProcs(env_data.m_worldComm);
+    stk::CommSparse comm(env_data.m_worldComm);
+    wait_for_apps_to_pack_and_send_data(comm);
+
+    int receive_int1 = 0;
+    comm.recv_buffer(sourceProcs.first).unpack<int>(receive_int1);
+    int global_rec_int1 = parallel_sum(env_data.m_parallelComm, receive_int1);
+
+    if(receive_int1 !=0)
     {
-        elems.push_back(scratch_space);
+        ThrowRequireMsg(global_rec_int1 != 0, "Receiving mixed messages in diffing tool.\n");
     }
-    return elems;
-}
-
-std::vector<std::string> split(const std::string &s, char delim)
-{
-    std::stringstream ss(s);
-    std::string scratch_space;
-    return get_delimited_strings_from_stream(ss, scratch_space, delim);
-}
-
-void output_message(const std::string &message, int localProcId)
-{
-    if (!message.empty())
+    else
     {
-        std::ostringstream massaged_output;
-        std::vector<std::string> tokens = split(message,'\n');
-        for(std::string& s: tokens)
-        {
-            massaged_output << "[" << localProcId << "] " << s << std::endl;
-        }
-        std::cerr << massaged_output.str();
+        ThrowRequireMsg(global_rec_int1 == 0, "Receiving mixed messages in diffing tool.\n");
     }
+
+    int receive_int2 = 0;
+    comm.recv_buffer(sourceProcs.second).unpack<int>(receive_int2);
+    int global_rec_int2 = parallel_sum(env_data.m_parallelComm, receive_int2);
+
+    if(receive_int2 != 0)
+    {
+        ThrowRequireMsg(global_rec_int2 != 0, "Receiving mixed messages in diffing tool.\n");
+    }
+    else
+    {
+        ThrowRequireMsg(global_rec_int2 == 0, "Receiving mixed messages in diffing tool.\n");
+    }
+
+    ThrowRequireMsg(global_rec_int1 == global_rec_int2, "Receiving mixed messages in diffing tool.\n");
+
+    bool continue_runs = true;
+    if(global_rec_int1 == 0)
+    {
+        continue_runs = false;
+    }
+    return continue_runs;
 }
 
 void run_diffing_tool(stk::EnvData &env_data)
 {
-    std::ostringstream globalss;
-    compare_parts(env_data, globalss);
-    compare_bucket_part_memberships(env_data, globalss);
-    output_message(globalss.str(), stk::parallel_machine_rank(env_data.m_parallelComm));
+    bool continue_work = true;
+    while(continue_work)
+    {
+        continue_work = check_if_continuing(env_data);
+        if(continue_work)
+        {
+            compare_parts(env_data, DiffingOption::STK_VS_STK);
+            compare_bucket_part_memberships(env_data, DiffingOption::STK_VS_STK);
+        }
+    }
 }
 
 TEST(ParallelDebugTool, mockDiffingToolUnit)
@@ -578,7 +854,36 @@ TEST(ParallelDebugTool, mockDiffingToolApp)
     stk::EnvData &env_data = stk::EnvData::instance();
     setup_env_data(env_data, MPI_COMM_WORLD, color);
     expect_mpmd(env_data);
-    //run_diffing_tool(env_data);
+
+    bool continue_work = true;
+    while(continue_work)
+    {
+        continue_work = check_if_continuing(env_data);
+        if(continue_work)
+        {
+            compare_parts(env_data, DiffingOption::FMWK_VS_STK);
+            compare_bucket_part_memberships(env_data, DiffingOption::FMWK_VS_STK);
+        }
+    }
 }
 
+TEST(ParallelDebugTool, mockDiffingToolAppComparingDeathAlgorithms)
+{
+    int color = 2;
+    stk::EnvData &env_data = stk::EnvData::instance();
+    setup_env_data(env_data, MPI_COMM_WORLD, color);
+    expect_mpmd(env_data);
+
+    bool continue_work = true;
+    while(continue_work)
+    {
+        continue_work = check_if_continuing(env_data);
+        if(continue_work)
+        {
+            compare_parts(env_data, DiffingOption::FMWK_DEATH_VS_STK_DEATH);
+            compare_bucket_part_memberships(env_data, DiffingOption::FMWK_DEATH_VS_STK_DEATH);
+        }
+
+    }
+}
 }

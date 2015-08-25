@@ -83,6 +83,7 @@ enum MuemexType
   DOUBLE,
   COMPLEX,
   STRING,
+  XPETRA_MAP,
   XPETRA_ORDINAL_VECTOR,
   TPETRA_MULTIVECTOR_DOUBLE,
   TPETRA_MULTIVECTOR_COMPLEX,
@@ -108,6 +109,7 @@ typedef Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_C
 typedef Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_CrsMatrix_complex;
 typedef Tpetra::MultiVector<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_MultiVector_double;
 typedef Tpetra::MultiVector<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Tpetra_MultiVector_complex;
+typedef Xpetra::Map<mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_map;
 typedef Xpetra::Vector<mm_LocalOrd, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_ordinal_vector;
 typedef Xpetra::Matrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_double;
 typedef Xpetra::Matrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t> Xpetra_Matrix_complex;
@@ -126,7 +128,7 @@ class MuemexArg
     MuemexType type;
 };
 
-template<typename T> 
+template<typename T>
 MuemexType getMuemexType(const T & data);
 
 template<typename T>
@@ -143,7 +145,7 @@ class MuemexData : public MuemexArg
     T data;
 };
 
-template<typename T> 
+template<typename T>
 MuemexType getMuemexType(const T & data);
 
 template<typename T>
@@ -182,6 +184,23 @@ void callMatlabNoArgs(std::string function);
 std::vector<Teuchos::RCP<MuemexArg>> callMatlab(std::string function, int numOutputs, std::vector<Teuchos::RCP<MuemexArg>> args);
 Teuchos::RCP<Teuchos::ParameterList> getInputParamList();
 Teuchos::RCP<MuemexArg> convertMatlabVar(const mxArray* mxa);
+
+// trim from start
+static inline std::string &ltrim(std::string &s) {
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
+  return s;
+}
+
+// trim from end
+static inline std::string &rtrim(std::string &s) {
+  s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+  return s;
+}
+
+// trim from both ends
+static inline std::string &trim(std::string &s) {
+  return ltrim(rtrim(s));
+}
 
 }//end namespace
 

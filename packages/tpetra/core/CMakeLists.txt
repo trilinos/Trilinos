@@ -94,7 +94,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 # The instantiation macros have the pattern:          HAVE_TPETRA_INST_[TYPE]
 # The CMake options have the pattern:                 Tpetra_INST_[TYPE]
 #
-# The ordinal types are: INT_INT, INT_UNSIGNED, INT_LONG, INT_LONG_LONG
+# The availability and instantiation macros are THE SAME.
+#
+# The ordinal types are: INT_INT, INT_UNSIGNED, INT_LONG, INT_LONG_LONG, INT_UNSIGNED_LONG
 # The node types are:    SERIALCLASSIC, SERIAL, OPENMP, PTHREAD, CUDA
 # The scalar types are:  DOUBLE, FLOAT, COMPLEX_DOUBLE, COMPLEX_FLOAT
 #
@@ -201,7 +203,7 @@ ENDIF() # Tpetra_ENABLE_Kokkos_Refactor
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_SERIAL
   HAVE_TPETRA_INST_SERIAL
-  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Node = Kokkos::Compat::KokkosSerialWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_SERIAL_DEFAULT} by default."
+  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosSerialWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_SERIAL_DEFAULT} by default."
   ${HAVE_TPETRA_INST_SERIAL_DEFAULT}
   )
 GLOBAL_SET(HAVE_TPETRA_SERIAL ${Tpetra_INST_SERIAL})
@@ -222,7 +224,7 @@ ENDIF () # Tpetra_INST_SERIAL
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_OPENMP
   HAVE_TPETRA_INST_OPENMP
-  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Node = Kokkos::Compat::KokkosOpenMPWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_OPENMP_DEFAULT} by default."
+  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosOpenMPWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_OPENMP_DEFAULT} by default."
   ${HAVE_TPETRA_INST_OPENMP_DEFAULT}
   )
 GLOBAL_SET(HAVE_TPETRA_OPENMP ${Tpetra_INST_OPENMP})
@@ -243,7 +245,7 @@ ENDIF ()
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_PTHREAD
   HAVE_TPETRA_INST_PTHREAD
-  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Node = Kokkos::Compat::KokkosThreadsWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_PTHREAD_DEFAULT} by default."
+  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosThreadsWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_PTHREAD_DEFAULT} by default."
   ${HAVE_TPETRA_INST_PTHREAD_DEFAULT}
   )
 GLOBAL_SET(HAVE_TPETRA_PTHREAD ${Tpetra_INST_PTHREAD})
@@ -267,7 +269,7 @@ ENDIF () # Tpetra_INST_PTHREAD
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_CUDA
   HAVE_TPETRA_INST_CUDA
-  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Node = Kokkos::Compat::KokkosCudaWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_CUDA_DEFAULT} by default."
+  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosCudaWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_CUDA_DEFAULT} by default."
   ${HAVE_TPETRA_INST_CUDA_DEFAULT}
   )
 GLOBAL_SET(HAVE_TPETRA_CUDA ${Tpetra_INST_CUDA})
@@ -288,7 +290,7 @@ ENDIF () # Tpetra_INST_CUDA
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_SERIALCLASSIC
   HAVE_TPETRA_INST_SERIALCLASSIC
-  "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Node = KokkosClassic::DoNotUse::SerialNode.  If ETI is OFF, enable tests for that Node type.  This option is OFF by default."
+  "Instantiate and/or test Tpetra classes over Node = KokkosClassic::DoNotUse::SerialNode.  If ETI is OFF, enable tests for that Node type.  This option is OFF by default."
   ${HAVE_TPETRA_INST_SERIALCLASSIC_DEFAULT}
   )
 GLOBAL_SET(HAVE_TPETRA_SERIALCLASSIC ${Tpetra_INST_SERIALCLASSIC})
@@ -394,7 +396,8 @@ ENDIF ()
 GLOBAL_SET(HAVE_TPETRA_INST_INT_LONG_DEFAULT OFF)
 # GO = unsigned is NOT enabled by default.
 GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT OFF)
-
+# GO = unsigned long is NOT enabled by default.
+GLOBAL_SET(HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT OFF)
 
 #
 # Define options for enabling various GlobalOrdinal types
@@ -409,7 +412,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_INT_UNSIGNED
   HAVE_TPETRA_INST_INT_UNSIGNED
-  "Enable GlobalOrdinal = unsigned in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT} by default."
+  "Enable GlobalOrdinal = unsigned in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT} by default.  Please don't set this option.  We only maintain it for backwards compatibility."
   ${HAVE_TPETRA_INST_INT_UNSIGNED_DEFAULT}
   )
 TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -424,23 +427,50 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable GlobalOrdinal = long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_LONG_DEFAULT} by default."
   ${HAVE_TPETRA_INST_INT_LONG_DEFAULT}
   )
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_INT_UNSIGNED_LONG
+  HAVE_TPETRA_INST_INT_UNSIGNED_LONG
+  "Enable GlobalOrdinal = unsigned long in Tpetra.  This option is ${HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT} by default.  We do NOT recommend using this type.  We are NOT responsible for ensuring that it builds or passes tests.  If you want a 64-bit type, we prefer that you use long long (Tpetra_INST_INT_LONG_LONG=ON), or long (Tpetra_INST_INT_LONG=ON) if you know that it is 64 bits.  If you are interested in using unsigned long, Roger Pawlowski is the responsible party; please contact him."
+  ${HAVE_TPETRA_INST_INT_UNSIGNED_LONG_DEFAULT}
+  )
+
+IF (Tpetra_INST_INT_LONG_LONG AND NOT Teuchos_ENABLE_LONG_LONG_INT)
+  MESSAGE (FATAL_ERROR "Tpetra: GlobalOrdinal = long long is enabled in Tpetra but is not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT=ON or set Tpetra_INST_INT_LONG_LONG=OFF.  Note that Tpetra requires C++11, and Teuchos_ENABLE_LONG_LONG_INT is ON by default if the compiler supports C++11.  Thus, if you are seeing this message, you probably set Teuchos_ENABLE_LONG_LONG_INT=OFF explicitly.  Please don't do that.  If you don't want to enable GlobalOrdinal = long long in Tpetra, set Tpetra_INST_INT_LONG_LONG=OFF and leave Teuchos alone.")
+ENDIF()
+
+# Warn on use of options that we don't like.
+IF (Tpetra_INST_INT_UNSIGNED)
+  MESSAGE (WARNING "Tpetra: You set Tpetra_INST_INT_UNSIGNED.  This means that you want to use GlobalOrdinal = unsigned with Tpetra objects.  Please don't do that.  I only maintain this option for backwards compatibility.  While I have gone through some effort to make unsigned GlobalOrdinal types work in Tpetra, they are not tested and thus I don't want to promise that they still work.")
+ENDIF ()
+IF (Tpetra_INST_INT_UNSIGNED_LONG)
+  MESSAGE (WARNING "Tpetra: You set Tpetra_INST_INT_UNSIGNED_LONG.  This means that you want to use GlobalOrdinal = unsigned long with Tpetra objects.  We do NOT recommend using this type.  We are NOT responsible for ensuring that it builds or passes tests.  If you want a 64-bit type, we prefer that you use long long (Tpetra_INST_INT_LONG_LONG=ON), or long (Tpetra_INST_INT_LONG=ON) if you know that it is 64 bits.  If you are interested in using unsigned long, Roger Pawlowski is the responsible party; please contact him.")
+ENDIF ()
 
 # Set availability macros for various GlobalOrdinal types
 GLOBAL_SET(HAVE_TPETRA_INT_INT ${Tpetra_INST_INT_INT})
-GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED ${Tpetra_INST_INT_UNSIGNED})
 GLOBAL_SET(HAVE_TPETRA_INT_LONG ${Tpetra_INST_INT_LONG})
 GLOBAL_SET(HAVE_TPETRA_INT_LONG_LONG ${Tpetra_INST_INT_LONG_LONG})
+GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED ${Tpetra_INST_INT_UNSIGNED})
+GLOBAL_SET(HAVE_TPETRA_INT_UNSIGNED_LONG ${Tpetra_INST_INT_UNSIGNED_LONG})
 
-# Make sure that at least one GlobalOrdinal type got enabled.
-# Even if ETI is OFF, this will ensure that Tpetra actually 
-# tests something.
-IF (Tpetra_INST_INT_INT OR Tpetra_INST_INT_UNSIGNED OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG)
+# Check if no GlobalOrdinal types are enabled.  Print a "warning"
+# (helpful message) in that case.  (Don't actually call it a WARNING;
+# that might break builds.)
+IF (Tpetra_INST_INT_INT OR Tpetra_INST_INT_UNSIGNED OR Tpetra_INST_INT_LONG OR Tpetra_INST_INT_LONG_LONG OR Tpetra_INST_INT_UNSIGNED_LONG)
   GLOBAL_SET (HAVE_TPETRA_GLOBALORDINAL ON)
 ELSE()
-  MESSAGE (FATAL_ERROR "Tpetra: No GlobalOrdinal type is enabled.  At least one GlobalOrdinal type must be enabled.")
-ENDIF()
-IF (Tpetra_INST_INT_LONG_LONG AND NOT Teuchos_ENABLE_LONG_LONG_INT)
-  MESSAGE (FATAL_ERROR "Tpetra: GlobalOrdinal = long long is enabled in Tpetra but is not enabled in Teuchos. Set Teuchos_ENABLE_LONG_LONG_INT=ON or set Tpetra_INST_INT_LONG_LONG=OFF.")
+  # mfh 18 Aug 2015: CASL wants to set GlobalOrdinal = unsigned long.
+  # Tpetra doesn't have an option for this (for good reason: I don't
+  # want to promise support for unsigned GlobalOrdinal types --
+  # "unsigned" is already a bad idea).  Thus, CASL sets it using
+  # TriBITS' ETI support.  As a result, their build disables ALL
+  # GlobalOrdinal types that Tpetra claims to support; they explicitly
+  # set the four Tpetra_INST_INT_* options above to OFF.  Tpetra's
+  # CMakeLists.txt files get processed before its ETI logic, so the
+  # code here doesn't see the GlobalOrdinal type that CASL adds.  This
+  # is why we don't error out if none of the above options are ON.
+  GLOBAL_SET (HAVE_TPETRA_GLOBALORDINAL OFF)
+  MESSAGE (STATUS "Tpetra: NOTE: No GlobalOrdinal type is enabled.  This means that you, the user, explicitly disabled all GlobalOrdinal types that Tpetra enables by default.  If you know what you are doing, this might be OK.  If you don't know what you are doing, please don't do this.")
 ENDIF()
 
 # Append GlobalOrdinal types to instantiation /test list.  Add them to
@@ -450,10 +480,6 @@ IF(Tpetra_INST_INT_INT)
   LIST(APPEND TpetraCore_ETI_SCALARS "int")
   LIST(APPEND TpetraCore_ETI_GORDS "int")
 ENDIF()
-IF(Tpetra_INST_INT_UNSIGNED) 
-  LIST(APPEND TpetraCore_ETI_SCALARS "unsigned")
-  LIST(APPEND TpetraCore_ETI_GORDS "unsigned")
-ENDIF()
 IF(Tpetra_INST_INT_LONG) 
   LIST(APPEND TpetraCore_ETI_SCALARS "long")
   LIST(APPEND TpetraCore_ETI_GORDS "long")
@@ -462,345 +488,291 @@ IF(Tpetra_INST_INT_LONG_LONG)
   LIST(APPEND TpetraCore_ETI_SCALARS "long long")
   LIST(APPEND TpetraCore_ETI_GORDS "long long")
 ENDIF()
+IF(Tpetra_INST_INT_UNSIGNED) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "unsigned")
+  LIST(APPEND TpetraCore_ETI_GORDS "unsigned")
+ENDIF()
+IF(Tpetra_INST_INT_UNSIGNED_LONG) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "unsigned long")
+  LIST(APPEND TpetraCore_ETI_GORDS "unsigned long")
+ENDIF()
 
-
-######################################################################
-# Scalars
-######################################################################
-#
-# Users always get what they ask for.  If they don't ask for anything,
-# they get Scalar = double by default.  Scalar = double is always
-# enabled, since tests explicitly depend on it.
+# ============================================================
+# Scalar types
+# ============================================================
 
 # The warning makes sense whether or not ETI is enabled.
 IF (${PACKAGE_NAME}_ENABLE_quadmath AND ${PACKAGE_NAME}_ENABLE_CUDA)
   MESSAGE(WARNING "You have enabled the 'quadmath' TPL for __float128 support, but have also enabled CUDA.  __float128 does not work in CUDA code.  To simplify Tpetra's CMake logic, we have thus turned off Tpetra's ETI (explicit template instantiation) and tests for Scalar = __float128.  If you really want to use __float128 in Tpetra, AND really want to enable CUDA, please talk to the Tpetra developers.")
 ENDIF ()
 
+# Scalar = double is enabled by default.
+GLOBAL_SET(Tpetra_INST_DOUBLE_DEFAULT ON)
 
-IF (${${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION})
+# Set up the Tpetra_INST_DOUBLE option: whether to instantiate / test
+# Scalar = double.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_DOUBLE
+  HAVE_TPETRA_INST_DOUBLE
+  "Instantiate and/or test Tpetra classes over Scalar = double.  This option is ${Tpetra_INST_DOUBLE_DEFAULT} by default."
+  ${Tpetra_INST_DOUBLE_DEFAULT}
+  )
+ASSERT_DEFINED (Tpetra_INST_DOUBLE)
+GLOBAL_SET(HAVE_TPETRA_DOUBLE ${Tpetra_INST_DOUBLE})
 
-  # Instantiate Scalar=double by default.
-  # Users may shut this off explicitly by setting Tpetra_INST_DOUBLE=OFF.
-  GLOBAL_SET(HAVE_TPETRA_INST_DOUBLE_DEFAULT ON)
+# Scalar = float is NOT enabled by default.
+GLOBAL_SET(Tpetra_INST_FLOAT_DEFAULT OFF)
 
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    Tpetra_INST_DOUBLE
-    HAVE_TPETRA_INST_DOUBLE
-    "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Scalar = double.  This option is ${HAVE_TPETRA_INST_DOUBLE_DEFAULT} by default."
-    ${HAVE_TPETRA_INST_DOUBLE_DEFAULT}
-    )
-  ASSERT_DEFINED (Tpetra_INST_DOUBLE)
+# Set up the Tpetra_INST_FLOAT option: whether to instantiate / test
+# Scalar = float.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_FLOAT
+  HAVE_TPETRA_INST_FLOAT
+  "Instantiate and/or test classes over Scalar = float.  This option is ${Tpetra_INST_FLOAT_DEFAULT} by default."
+  ${Tpetra_INST_FLOAT_DEFAULT}
+  )
+ASSERT_DEFINED (Tpetra_INST_FLOAT)
+GLOBAL_SET(HAVE_TPETRA_FLOAT ${Tpetra_INST_FLOAT})
 
-  # Decide whether to instantiate Scalar=float.
+# Make sure that it's OK to instantiate/test over Scalar = float.
+# Tpetra requires BLAS support for this case.  It presumes that a BLAS
+# could exist without float (S) support.
+ASSERT_DEFINED (HAVE_TEUCHOS_BLASFLOAT)
+IF (Tpetra_INST_FLOAT AND NOT HAVE_TEUCHOS_BLASFLOAT)
+  MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_FLOAT is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = float), but HAVE_TEUCHOS_BLASFLOAT is OFF.  This means that you are linking with a BLAS library that lacks float (S) support.  Tpetra needs a BLAS implementation that supports float.")
+ENDIF ()
 
-  # FIXME (mfh 19 Mar 2015) It doesn't make sense to refer to
-  # Tpetra_INST_FLOAT before the TRIBITS_ADD_OPTION_AND_DEFINE call
-  # that supposedly defines it.
-
-  IF (Tpetra_INST_FLOAT) 
-    GLOBAL_SET(HAVE_TPETRA_INST_FLOAT_DEFAULT ON)
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_INST_FLOAT_DEFAULT OFF)
-  ENDIF()  
-
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    Tpetra_INST_FLOAT
-    HAVE_TPETRA_INST_FLOAT
-    "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Scalar = float.  This option is ${HAVE_TPETRA_INST_FLOAT_DEFAULT} by default."
-    ${HAVE_TPETRA_INST_FLOAT_DEFAULT}
-    )
-  ASSERT_DEFINED (Tpetra_INST_FLOAT)
-
-  # Decide whether to instantiate Scalar = std::complex<float> and
-  # std::complex<double>.  Both require a complex-arithmetic BLAS, and
-  # std::complex<T> requires the corresponding Scalar=T instantiation.
-  
+# Decide whether to instantiate / test Scalar = std::complex<float> or
+# std::complex<double> by default.  Both require a complex-arithmetic
+# BLAS.  Furthermore, std::complex<T> requires the corresponding
+# Scalar=T instantiation to be ON.
+#
+# In a debug build, we enable Scalar = complex, in order that this
+# capability be tested.  In a release build, we disable this case, in
+# order to reduce build time.  Users may always enable it explicitly.
+ASSERT_DEFINED (Tpetra_ENABLE_DEBUG)
+# mfh 18 Aug 2015: Teuchos currently doesn't even define
+# HAVE_COMPLEX_BLAS, in the case where one would expect it to be OFF.
+# Thanks to Andrew Bradley for pointing this out.
+IF (DEFINED HAVE_COMPLEX_BLAS)
   IF (HAVE_COMPLEX_BLAS)
     IF (Tpetra_INST_DOUBLE)
-      GLOBAL_SET(HAVE_Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ON)
+      GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT ${Tpetra_ENABLE_DEBUG})
     ELSE()
-      GLOBAL_SET(HAVE_Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
+      GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
     ENDIF()
     IF (Tpetra_INST_FLOAT)
-      GLOBAL_SET(HAVE_Tpetra_INST_COMPLEX_FLOAT_DEFAULT ON)
+      GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT ${Tpetra_ENABLE_DEBUG})
     ELSE()
-      GLOBAL_SET(HAVE_Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
+      GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
     ENDIF()
   ELSE()
-    GLOBAL_SET(HAVE_Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
-    GLOBAL_SET(HAVE_Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
+    GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
+    GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
   ENDIF() # HAVE_COMPLEX_BLAS
+ELSE () # NOT DEFINED HAVE_COMPLEX_BLAS (consider OFF)
+  GLOBAL_SET(Tpetra_INST_COMPLEX_DOUBLE_DEFAULT OFF)
+  GLOBAL_SET(Tpetra_INST_COMPLEX_FLOAT_DEFAULT OFF)
+ENDIF () # DEFINED HAVE_COMPLEX_BLAS
 
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    Tpetra_INST_COMPLEX_FLOAT
-    HAVE_TPETRA_INST_COMPLEX_FLOAT
-    "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes with Scalar = std::complex<float>.  This option is ${HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT} by default."
-    ${HAVE_Tpetra_INST_COMPLEX_FLOAT_DEFAULT}
-    )
-  ASSERT_DEFINED (Tpetra_INST_COMPLEX_FLOAT)
+# Set up the Tpetra_INST_COMPLEX_DOUBLE option: whether to instantiate
+# / test Scalar = std::complex<double>.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_COMPLEX_DOUBLE
+  HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  "Instantiate and/or test Tpetra classes with Scalar = std::complex<double>.  This option is ${HAVE_TPETRA_INST_COMPLEX_DOUBLE_DEFAULT} by default."
+  ${Tpetra_INST_COMPLEX_DOUBLE_DEFAULT}
+  )
+ASSERT_DEFINED (Tpetra_INST_COMPLEX_DOUBLE)
+GLOBAL_SET (HAVE_TPETRA_COMPLEX_DOUBLE ${Tpetra_INST_COMPLEX_DOUBLE})
 
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    Tpetra_INST_COMPLEX_DOUBLE
-    HAVE_TPETRA_INST_COMPLEX_DOUBLE
-    "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes with Scalar = std::complex<double>.  This option is ${HAVE_TPETRA_INST_COMPLEX_DOUBLE_DEFAULT} by default."
-    ${HAVE_Tpetra_INST_COMPLEX_DOUBLE_DEFAULT}
-    )
-  ASSERT_DEFINED (Tpetra_INST_COMPLEX_DOUBLE)
+# Enabling Scalar = std::complex<T> requires that the corresponding
+# Scalar=T instantiation be enabled as well.  
+#
+# FIXME (mfh 17 Aug 2015) It's not clear to me why this must be the
+# case.
+IF (Tpetra_INST_COMPLEX_DOUBLE AND NOT Tpetra_INST_DOUBLE)
+  MESSAGE (FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON, meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>.  However, Tpetra_INST_DOUBLE is OFF.  Enabling Scalar = std::complex<T> requires that the corresponding Scalar=T real instantiation be enabled as well.")
+ENDIF ()
 
-  # Optionally enable explicit template instantiation (ETI) and tests
-  # for Scalar = __float128.  __float128 is a GCC-specific C++ language
-  # extension.  It requires building with GCC, enabling the 'quadmath'
-  # TPL, and setting build flags -std=gnu+11 (not c++11, else warnings)
-  # and -fext-numeric-literals (else build errors).  Be sure also to
-  # turn off -ansi -pedantic; __float128 is a language extension, so it
-  # is NOT ANSI C++.
-  #
-  # __float128 won't work with Kokkos::Cuda.  We could try to be clever
-  # about turning off Tpetra's ETI and tests for __float128 with the
-  # Kokkos::Cuda execution space, but instead, we simply disable
-  # __float128 ETI and tests if CUDA is enabled.
+# Tpetra requires that the BLAS work for Scalar, as long as Scalar is
+# one of the four types (S, D, C, Z) that the BLAS promises to
+# implement.  Check whether the BLAS works for complex arithmetic.
 
-  ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_quadmath)
-  IF (${PACKAGE_NAME}_ENABLE_quadmath AND NOT ${PACKAGE_NAME}_ENABLE_CUDA)
-    # FIXME (mfh 19 Mar 2015) It doesn't currently build.
-    # Once it does, set this to ON.
-    SET (HAVE_Tpetra_INST_FLOAT128_DEFAULT OFF)
-  ELSE ()
-    SET (HAVE_Tpetra_INST_FLOAT128_DEFAULT OFF)
+# mfh 18 Aug 2015: Teuchos currently doesn't even define
+# HAVE_COMPLEX_BLAS, in the case where one would expect it to be OFF.
+# Thanks to Andrew Bradley for pointing this out.
+IF (Tpetra_INST_COMPLEX_DOUBLE)
+  IF (NOT DEFINED HAVE_COMPLEX_BLAS)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>), but HAVE_COMPLEX_BLAS is not defined.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
+  ELSEIF (NOT HAVE_COMPLEX_BLAS)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_DOUBLE is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<double>), but HAVE_COMPLEX_BLAS is OFF.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
   ENDIF ()
+ENDIF ()
 
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    Tpetra_INST_FLOAT128
-    HAVE_TPETRA_INST_FLOAT128
-    "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes with Scalar = __float128.  This option is ${HAVE_TPETRA_INST_FLOAT128_DEFAULT} by default.  __float128 is a GCC-specific C++ language extension.  It requires building with GCC, enabling the 'quadmath' TPL, and setting build flags -std=gnu+11 (not c++11, else warnings) and -fext-numeric-literals (else build errors).  Be sure also to turn off -ansi -pedantic; __float128 is a language extension, so it is NOT ANSI C++."
-    ${HAVE_Tpetra_INST_FLOAT128_DEFAULT}
-    )
-  ASSERT_DEFINED (Tpetra_INST_FLOAT128)
+# Set up the Tpetra_INST_COMPLEX_FLOAT option: whether to instantiate
+# / test Scalar = std::complex<float>.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_COMPLEX_FLOAT
+  HAVE_TPETRA_INST_COMPLEX_FLOAT
+  "Instantiate and/or test Tpetra classes with Scalar = std::complex<float>.  This option is ${HAVE_TPETRA_INST_COMPLEX_FLOAT_DEFAULT} by default."
+  ${Tpetra_INST_COMPLEX_FLOAT_DEFAULT}
+  )
+ASSERT_DEFINED (Tpetra_INST_COMPLEX_FLOAT)
+GLOBAL_SET (HAVE_TPETRA_COMPLEX_FLOAT ${Tpetra_INST_COMPLEX_FLOAT})
 
-  IF (Tpetra_INST_FLOAT128 AND NOT ${PACKAGE_NAME}_ENABLE_quadmath)
-    MESSAGE (FATAL_ERROR "You may not enable ETI (explicit template instantiation) or tests in Tpetra for Scalar = __float128, unless you enable the 'quadmath' TPL.  Please also note that __float128 is a GCC-specific C++ language extension.  It requires building with GCC, enabling the 'quadmath' TPL, and setting build flags -std=gnu+11 (not c++11, else warnings) and -fext-numeric-literals (else build errors).  Be sure also to turn off -ansi -pedantic; __float128 is a language extension, so it is NOT ANSI C++.")
+# Enabling Scalar = std::complex<T> requires that the corresponding
+# Scalar=T instantiation be enabled as well.
+#
+# FIXME (mfh 17 Aug 2015) It's not clear to me why this must be the
+# case.
+IF (Tpetra_INST_COMPLEX_FLOAT AND NOT Tpetra_INST_FLOAT)
+  MESSAGE (FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON, meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>.  However, Tpetra_INST_FLOAT is OFF.  Enabling Scalar = std::complex<T> requires that the corresponding Scalar=T real instantiation be enabled as well.")
+ENDIF ()
+
+# Tpetra requires that the BLAS work for Scalar, as long as Scalar is
+# one of the four types (S, D, C, Z) that the BLAS promises to
+# implement.  Check whether the BLAS works for complex float (C)
+# arithmetic.
+IF (Tpetra_INST_COMPLEX_FLOAT)
+  IF (NOT DEFINED HAVE_COMPLEX_BLAS)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>), but HAVE_COMPLEX_BLAS is not defined.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
+  ELSEIF (NOT HAVE_COMPLEX_BLAS)
+    MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_COMPLEX_FLOAT is ON (meaning that you want to want to instantiate and/or test Tpetra classes with Scalar = std::complex<float>), but HAVE_COMPLEX_BLAS is OFF.  This means that you are linking with a BLAS library that lacks complex arithmetic (Z) support.  Tpetra needs a BLAS implementation that supports complex arithmetic.")
   ENDIF ()
+ENDIF ()
 
-  # Enable explicit template instantiation (ETI) and tests for Scalar =
-  # qd_real ("quad-double," provided by the QD TPL).
-  #
-  # ST_FOR_DEV_PT_FOR_RELEASE means something like, "in a debug build."
-  # In a debug build, we do ETI for Scalar=std::complex<float>, in order
-  # that this capability be tested.  In a release build, we turn off ETI
-  # for Scalar=std::complex<float>, to reduce build time.
-  IF (ST_FOR_DEV_PT_FOR_RELEASE AND ${PACKAGE_NAME}_ENABLE_QD AND NOT Tpetra_ENABLE_Kokkos_Refactor)
-    # mfh 09 Jan 2015: qd_real does NOT currently work with the Kokkos
-    # refactor version of Tpetra, due to a missing Kokkos::atomic_*
-    # implementation for this class.  Feel free to remove "AND NOT
-    # Tpetra_ENABLE_Kokkos_Refactor" from the above test once that gets
-    # fixed.
-    GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT ON)
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT OFF)
-  ENDIF()
+# Optionally enable explicit template instantiation (ETI) and tests
+# for Scalar = __float128.  __float128 is a GCC-specific C++ language
+# extension.  It requires building with GCC, enabling the 'quadmath'
+# TPL, and setting build flags -std=gnu+11 (not c++11, else warnings)
+# and -fext-numeric-literals (else build errors).  Be sure also to
+# turn off -ansi -pedantic; __float128 is a language extension, so it
+# is NOT ANSI C++.
+#
+# __float128 won't work with Kokkos::Cuda.  We could try to be clever
+# about turning off Tpetra's ETI and tests for __float128 with the
+# Kokkos::Cuda execution space, but instead, we simply disable
+# __float128 ETI and tests if CUDA is enabled.
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_quadmath)
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_CUDA)
+IF (${PACKAGE_NAME}_ENABLE_quadmath AND NOT ${PACKAGE_NAME}_ENABLE_CUDA)
+  # FIXME (mfh 19 Mar 2015) It doesn't currently build.
+  # Once it does, set this to ON.
+  SET (Tpetra_INST_FLOAT128_DEFAULT OFF)
+ELSE ()
+  SET (Tpetra_INST_FLOAT128_DEFAULT OFF)
+ENDIF ()
 
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    Tpetra_INST_QD_REAL
-    HAVE_TPETRA_INST_QD_REAL
-    "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Scalar = qd_real (requries TPL QD).  This option is ${HAVE_TPETRA_INST_QD_REAL_DEFAULT} by default."
-    ${HAVE_TPETRA_INST_QD_REAL_DEFAULT}  
-    )
-  ASSERT_DEFINED (Tpetra_INST_QD_REAL)
-  
-  # Enable explicit template instantiation (ETI) and tests for Scalar =
-  # qd_real ("double-double," provided by the QD TPL).
-  #
-  # ST_FOR_DEV_PT_FOR_RELEASE means something like, "in a debug build."
-  # In a debug build, we do ETI for Scalar=std::complex<float>, in order
-  # that this capability be tested.  In a release build, we turn off ETI
-  # for Scalar=std::complex<float>, to reduce build time.
-  IF (ST_FOR_DEV_PT_FOR_RELEASE AND ${PACKAGE_NAME}_ENABLE_QD AND NOT Tpetra_ENABLE_Kokkos_Refactor)
-    # mfh 09 Jan 2015: dd_real does NOT currently work with the Kokkos
-    # refactor version of Tpetra, due to a missing Kokkos::atomic_*
-    # implementation for this class.  Feel free to remove "AND NOT
-    # Tpetra_ENABLE_Kokkos_Refactor" from the above test once that gets
-    # fixed.
-    GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT ON)
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT OFF)
-  ENDIF()
-  TRIBITS_ADD_OPTION_AND_DEFINE(
-    Tpetra_INST_DD_REAL
-    HAVE_TPETRA_INST_DD_REAL
-    "If explicit template instantiation (ETI) is enabled, instantiate Tpetra classes over Scalar = dd_real (requries TPL QD).  This option is ${HAVE_TPETRA_INST_DD_REAL_DEFAULT} by default."
-    ${HAVE_TPETRA_INST_DD_REAL_DEFAULT}  
-    ) 
-  ASSERT_DEFINED (Tpetra_INST_DD_REAL)
-  
-  # Check for support in BLAS
-  
-  IF(Tpetra_INST_FLOAT AND NOT HAVE_TEUCHOS_BLASFLOAT)
-    MESSAGE(SEND_ERROR "You may not instantiate Tpetra classes with Scalar = float, if the BLAS library you are using does not support float (S) arithmetic.")
-  ENDIF()
-  IF(Tpetra_INST_COMPLEX_FLOAT AND (NOT HAVE_COMPLEX_BLAS OR NOT HAVE_TEUCHOS_BLASFLOAT))
-    MESSAGE(SEND_ERROR "You may not instantiate Tpetra classes with Scalar = std::complex<float>, if the BLAS library you are using does not support complex (C) or float (S) arithmetic.")
-  ENDIF()
-  IF(Tpetra_INST_COMPLEX_DOUBLE AND NOT HAVE_COMPLEX_BLAS)
-    MESSAGE(SEND_ERROR "You may not instantiate Tpetra classes with Scalar = std::complex<double>, if the BLAS library you are using does not support double-complex (Z) arithmetic.")
-  ENDIF()
-  IF(Tpetra_INST_QD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
-    MESSAGE(SEND_ERROR "Scalar = qd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
-  ENDIF()
-  IF(Tpetra_INST_DD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
-    MESSAGE(SEND_ERROR "Scalar = dd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
-  ENDIF()
+# Set up the Tpetra_INST_FLOAT128 option: whether to instantiate /
+# test Scalar = std::complex<float>.  It is OFF by default.  Users may
+# shut this off explicitly by setting Tpetra_INST_FLOAT128=OFF.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_FLOAT128
+  HAVE_TPETRA_INST_FLOAT128
+  "Instantiate and/or test Tpetra classes with Scalar = __float128.  This option is ${HAVE_TPETRA_INST_FLOAT128_DEFAULT} by default.  __float128 is a GCC-specific C++ language extension.  It requires building with GCC, enabling the 'quadmath' TPL, and setting build flags -std=gnu+11 (not c++11, else warnings) and -fext-numeric-literals (else build errors).  Be sure also to turn off -ansi -pedantic; __float128 is a language extension, so it is NOT ANSI C++."
+  ${Tpetra_INST_FLOAT128_DEFAULT}
+  )
+ASSERT_DEFINED (Tpetra_INST_FLOAT128)
+GLOBAL_SET (HAVE_TPETRA_FLOAT128 ${Tpetra_INST_FLOAT128})
 
-  # Set availability macros for Scalar types
+IF (Tpetra_INST_FLOAT128 AND NOT ${PACKAGE_NAME}_ENABLE_quadmath)
+  MESSAGE (FATAL_ERROR "You may not enable ETI (explicit template instantiation) or tests in Tpetra for Scalar = __float128, unless you enable the 'quadmath' TPL.  Please also note that __float128 is a GCC-specific C++ language extension.  It requires building with GCC, enabling the 'quadmath' TPL, and setting build flags -std=gnu+11 (not c++11, else warnings) and -fext-numeric-literals (else build errors).  Be sure also to turn off -ansi -pedantic; __float128 is a language extension, so it is NOT ANSI C++.")
+ENDIF ()
 
-  IF(Tpetra_INST_FLOAT) 
-    GLOBAL_SET(HAVE_TPETRA_FLOAT ON)
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_FLOAT OFF)
-  ENDIF()
-  IF(Tpetra_INST_DOUBLE) 
-    GLOBAL_SET(HAVE_TPETRA_DOUBLE ON)
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_DOUBLE OFF)
-  ENDIF()
-  IF(Tpetra_INST_COMPLEX_FLOAT) 
-    GLOBAL_SET(HAVE_TPETRA_COMPLEX_FLOAT ON)
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_COMPLEX_FLOAT OFF)
-  ENDIF()
-  IF(Tpetra_INST_COMPLEX_DOUBLE) 
-    GLOBAL_SET(HAVE_TPETRA_COMPLEX_DOUBLE ON)
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_COMPLEX_DOUBLE OFF)
-  ENDIF()
-  IF(Tpetra_INST_FLOAT128) 
-    GLOBAL_SET(HAVE_TPETRA_FLOAT128 ON)
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_FLOAT128 OFF)
-  ENDIF()
-  IF(Tpetra_INST_QD_REAL) 
-    GLOBAL_SET(HAVE_TPETRA_QD_REAL ON)
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_QD_REAL OFF)
-  ENDIF()
-  IF(Tpetra_INST_DD_REAL) 
-    GLOBAL_SET(HAVE_TPETRA_DD_REAL ON)
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_DD_REAL OFF)
-  ENDIF()
+# Decide whether to instantiate / test Scalar = qd_real ("quad
+# double", provided by the QD TPL) by default.  It requires the QD TPL
+# and does not work with the Kokkos refactor version of Tpetra (due to
+# the missing Kokkos::atomic_* and volatile overloaded functions /
+# methods).
+ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_QD)
+ASSERT_DEFINED (Tpetra_ENABLE_Kokkos_Refactor)
+IF (${PACKAGE_NAME}_ENABLE_QD AND NOT Tpetra_ENABLE_Kokkos_Refactor)
+  GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT ON)
+ELSE()
+  GLOBAL_SET(HAVE_TPETRA_INST_QD_REAL_DEFAULT OFF)
+ENDIF()
 
-  # Build list of ETI Scalar types
+# Set up the Tpetra_INST_QD_REAL option: whether to instantiate / test
+# Scalar = qd_real.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_QD_REAL
+  HAVE_TPETRA_INST_QD_REAL
+  "Instantiate and/or test Tpetra classes over Scalar = qd_real (requries TPL QD).  This option is ${HAVE_TPETRA_INST_QD_REAL_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_QD_REAL_DEFAULT}  
+  )
+ASSERT_DEFINED (Tpetra_INST_QD_REAL)
+GLOBAL_SET (HAVE_TPETRA_QD_REAL ${Tpetra_INST_QD_REAL})
 
-  IF(Tpetra_INST_FLOAT) 
-    LIST(APPEND TpetraCore_ETI_SCALARS "float")
-  ENDIF()
-  IF(Tpetra_INST_DOUBLE) 
-    LIST(APPEND TpetraCore_ETI_SCALARS "double")
-  ENDIF()
-  IF(Tpetra_INST_COMPLEX_FLOAT) 
-    LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<float>")
-  ENDIF()
-  IF(Tpetra_INST_COMPLEX_DOUBLE) 
-    LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<double>")
-  ENDIF()
-  IF(Tpetra_INST_FLOAT128) 
-    LIST(APPEND TpetraCore_ETI_SCALARS "__float128")
-  ENDIF()
-  IF(Tpetra_INST_QD_REAL) 
-    LIST(APPEND TpetraCore_ETI_SCALARS "qd_real")
-  ENDIF()
-  IF(Tpetra_INST_DD_REAL) 
-    LIST(APPEND TpetraCore_ETI_SCALARS "dd_real")
-  ENDIF()
+IF (Tpetra_INST_QD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
+  MESSAGE (SEND_ERROR "Scalar = qd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
+ENDIF ()
 
-  # Make sure that at one Scalar type got activated
-  
-  IF(Tpetra_INST_FLOAT OR Tpetra_INST_DOUBLE OR Tpetra_INST_COMPLEX_FLOAT OR Tpetra_INST_COMPLEX_DOUBLE OR Tpetra_INST_FLOAT128 OR Tpetra_INST_QD_REAL OR Tpetra_INST_DD_REAL)
-    GLOBAL_SET(HAVE_TPETRA_SCALAR ON)
-  ELSE()
-    MESSAGE(FATAL_ERROR "You must enable at least one Scalar type in Tpetra in order to enable ETI (explicit template instantiation).  If you see this message, you probably set nondefault CMake options to disable all of Tpetra's Scalar types.  Please don't do that.")
-  ENDIF()
+# Decide whether to instantiate / test Scalar = dd_real ("double
+# double", provided by the QD TPL) by default.  It requires the QD TPL
+# and does not work with the Kokkos refactor version of Tpetra (due to
+# the missing Kokkos::atomic_* and volatile overloaded functions /
+# methods).
+IF (${PACKAGE_NAME}_ENABLE_QD AND NOT Tpetra_ENABLE_Kokkos_Refactor)
+  GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT ON)
+ELSE()
+  GLOBAL_SET(HAVE_TPETRA_INST_DD_REAL_DEFAULT OFF)
+ENDIF()
 
-ELSE() # ETI NOT enabled
+# Set up the Tpetra_INST_DD_REAL option: whether to instantiate / test
+# Scalar = dd_real.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_DD_REAL
+  HAVE_TPETRA_INST_DD_REAL
+  "Instantiate and/or test Tpetra classes over Scalar = dd_real (requries TPL QD).  This option is ${HAVE_TPETRA_INST_DD_REAL_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_DD_REAL_DEFAULT}  
+  )
+ASSERT_DEFINED (Tpetra_INST_DD_REAL)
+GLOBAL_SET (HAVE_TPETRA_DD_REAL ${Tpetra_INST_DD_REAL})
 
-  GLOBAL_SET(HAVE_TPETRA_SCALAR ON)
+IF (Tpetra_INST_DD_REAL AND Tpetra_ENABLE_Kokkos_Refactor)
+  MESSAGE (SEND_ERROR "Scalar = dd_real does not currently work with the Kokkos refactor version of Tpetra.  We will fix this at some point.  Please let us know if you need this capability urgently.")
+ENDIF ()
 
-  # Always test with Scalar=double.
-  GLOBAL_SET(HAVE_TPETRA_DOUBLE ON)
+#
+# Build list of Scalar types over which to instantiate / test.
+#
+IF(Tpetra_INST_FLOAT) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "float")
+  GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
+ENDIF()
+IF(Tpetra_INST_DOUBLE) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "double")
+  GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
+ENDIF()
+IF(Tpetra_INST_COMPLEX_FLOAT) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<float>")
+  GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
+ENDIF()
+IF(Tpetra_INST_COMPLEX_DOUBLE) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<double>")
+  GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
+ENDIF()
+IF(Tpetra_INST_FLOAT128) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "__float128")
+  GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
+ENDIF()
+IF(Tpetra_INST_QD_REAL) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "qd_real")
+  GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
+ENDIF()
+IF(Tpetra_INST_DD_REAL) 
+  LIST(APPEND TpetraCore_ETI_SCALARS "dd_real")
+  GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
+ENDIF()
 
-  # Only test Scalar=float if the BLAS supports it.
-  IF (HAVE_TEUCHOS_BLASFLOAT)
-    GLOBAL_SET(HAVE_TPETRA_FLOAT ON)
-  ELSE ()
-    GLOBAL_SET(HAVE_TPETRA_FLOAT OFF)
-  ENDIF ()
+# Make sure that at one Scalar type got activated
+IF (NOT HAVE_TPETRA_SCALAR)
+  MESSAGE (FATAL_ERROR "You must enable at least one Scalar type in Tpetra.  If you see this message, you probably set nondefault CMake options to disable all of Tpetra's Scalar types.  Please don't do that.")
+ENDIF ()
 
-  # Only test Scalar=std::complex<T> (for T in {float, double}) if the
-  # BLAS supports them, and if the corresponding Scalar=T is enabled.
-  IF (HAVE_COMPLEX_BLAS)
-    IF (HAVE_TPETRA_FLOAT)
-      GLOBAL_SET(HAVE_TPETRA_COMPLEX_FLOAT ON)
-    ENDIF ()
-    IF (HAVE_TPETRA_DOUBLE)
-      GLOBAL_SET(HAVE_TPETRA_COMPLEX_DOUBLE ON)
-    ENDIF ()
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_COMPLEX_FLOAT OFF)
-    GLOBAL_SET(HAVE_TPETRA_COMPLEX_DOUBLE OFF)
-  ENDIF() # HAVE_COMPLEX_BLAS
-
-  # Only test Scalar=__float128 if 'quadmath' TPL is enabled and CUDA
-  # is disabled.  (See discussion above about why the two don't work
-  # together.)
-  ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_quadmath)
-  IF (${PACKAGE_NAME}_ENABLE_quadmath AND NOT ${PACKAGE_NAME}_ENABLE_CUDA)
-    # FIXME (mfh 19 Mar 2015) It doesn't currently build.
-    # Once it does, set this to ON.
-    GLOBAL_SET (HAVE_TPETRA_FLOAT128 OFF)
-  ELSE ()
-    GLOBAL_SET (HAVE_TPETRA_FLOAT128 OFF)
-  ENDIF ()
-
-  # Both dd_real and qd_real live in the QD TPL.
-  IF (${PACKAGE_NAME}_ENABLE_QD)
-    GLOBAL_SET(HAVE_TPETRA_DD_REAL ON)
-    GLOBAL_SET(HAVE_TPETRA_QD_REAL ON)
-  ELSE()
-    GLOBAL_SET(HAVE_TPETRA_DD_REAL OFF)
-    GLOBAL_SET(HAVE_TPETRA_QD_REAL OFF)
-  ENDIF()
-
-  IF(HAVE_TPETRA_DOUBLE)
-    LIST(APPEND TpetraCore_ETI_SCALARS "double")
-  ENDIF()
-  IF(HAVE_TPETRA_FLOAT)
-    LIST(APPEND TpetraCore_ETI_SCALARS "float")
-  ENDIF()
-  IF(HAVE_TPETRA_COMPLEX_FLOAT)
-    LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<float>")
-  ENDIF()
-  IF(HAVE_TPETRA_COMPLEX_DOUBLE)
-    LIST(APPEND TpetraCore_ETI_SCALARS "std::complex<double>")
-  ENDIF()
-  IF(HAVE_TPETRA_FLOAT128) 
-    LIST(APPEND TpetraCore_ETI_SCALARS "__float128")
-  ENDIF()
-  IF(HAVE_TPETRA_QD_REAL) 
-    LIST(APPEND TpetraCore_ETI_SCALARS "qd_real")
-  ENDIF()
-  IF(HAVE_TPETRA_DD_REAL) 
-    LIST(APPEND TpetraCore_ETI_SCALARS "dd_real")
-  ENDIF()
-
-ENDIF() # whether ETI is enabled
-
-# Make sure that Tpetra enables at least one Scalar type, and at least
-# one GlobalOrdinal type.  If ETI is ON, this ensures that Tpetra does
-# a nontrivial build.  If ETI is OFF, it (should, but see Bug 6380)
-# ensure that Tpetra tests at least one combination of template
-# parameters.
+# Make sure that Tpetra enables at least one Scalar type.
 ASSERT_DEFINED(HAVE_TPETRA_SCALAR)
-ASSERT_DEFINED(HAVE_TPETRA_GLOBALORDINAL)
 
 #
 # Other Tpetra options

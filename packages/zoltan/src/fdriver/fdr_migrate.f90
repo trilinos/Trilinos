@@ -131,6 +131,26 @@ logical function migrate_elements(Proc, zz_obj, &
 
 !**************************** BEGIN EXECUTION *****************************
 
+  if (num_imp == -1) then
+    if (Zoltan_Invert_Lists(zz_obj, &
+                            num_exp, exp_gids, exp_lids,  &
+                            exp_procs, exp_to_part, &
+                            num_imp, imp_gids, imp_lids,  &
+                            imp_procs, imp_to_part) .ne. ZOLTAN_OK) then
+      print *, "fatal:  error returned from Zoltan_Invert_Lists()"
+      migrate_elements = .false.; return
+    endif
+  else if (num_exp == -1) then
+    if (Zoltan_Invert_Lists(zz_obj, &
+                            num_imp, imp_gids, imp_lids,  &
+                            imp_procs, imp_to_part, &
+                            num_exp, exp_gids, exp_lids,  &
+                            exp_procs, exp_to_part) .ne. ZOLTAN_OK) then
+      print *, "fatal:  error returned from Zoltan_Invert_Lists()"
+      migrate_elements = .false.; return
+    endif
+  endif
+
 !  
 !   * register migration functions
 !   

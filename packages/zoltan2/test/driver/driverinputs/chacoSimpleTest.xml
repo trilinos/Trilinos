@@ -25,7 +25,7 @@
         <ParameterList name="InputAdapterParameters">
             <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
             <Parameter name="inputType" type="string" value="coordinates"/> 
-            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
+            <Parameter name="inputAdapter" type="string" value="BasicVector"/>
         </ParameterList>
 
         <ParameterList name="Zoltan2Parameters">

@@ -150,9 +150,10 @@ namespace MueLu {
         Ac->SetMaxEigenvalueEstimate(-Teuchos::ScalarTraits<SC>::one());
       }
 
-      // If we do not modify matrix later, allow optimization of storage.
+      // Allow optimization of storage.
       // This is necessary for new faster Epetra MM kernels.
-      bool doOptimizeStorage = !pL.get<bool>("RepairMainDiagonal");
+      // Seems to work with matrix modifications to repair diagonal entries.
+      bool doOptimizeStorage = true; //!pL.get<bool>("RepairMainDiagonal");
 
       const bool doTranspose    = true;
       const bool doFillComplete = true;
