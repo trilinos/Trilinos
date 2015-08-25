@@ -1757,11 +1757,7 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 // more specific than RowMatrix.
 #define IFPACK2_ADDITIVESCHWARZ_INSTANT(S,LO,GO,N) \
   template class Ifpack2::AdditiveSchwarz< Tpetra::RowMatrix<S, LO, GO, N> >; \
-  template class Ifpack2::AdditiveSchwarz< Tpetra::CrsMatrix<S, LO, GO, N> >; \
-  template class Ifpack2::AdditiveSchwarz< Tpetra::RowMatrix<S, LO, GO, N>, \
-                                           Ifpack2::ILUT<Tpetra::RowMatrix< S, LO, GO, N > > >; \
-  template class Ifpack2::AdditiveSchwarz< Tpetra::CrsMatrix<S, LO, GO, N>, \
-                                           Ifpack2::ILUT<Tpetra::CrsMatrix< S, LO, GO, N > > >;
+  template class Ifpack2::AdditiveSchwarz< Tpetra::CrsMatrix<S, LO, GO, N> >;
 
 
 #endif // IFPACK2_ADDITIVESCHWARZ_DECL_HPP

@@ -159,13 +159,14 @@ main (int argc, char *argv[])
   // Matrix stuff
   typedef Tpetra::Map<LO,GO,Node> MAP;
   typedef Tpetra::CrsMatrix<ST,LO,GO,Node> CRS;
+  typedef Tpetra::RowMatrix<ST,LO,GO,Node> ROW;
   typedef Tpetra::Vector<ST,LO,GO,Node> VEC;
 
   // Ifpack2 stuff
   typedef Ifpack2::Preconditioner< ST, LO, GO, Node > PrecType;
   typedef Ifpack2::DenseContainer< CRS, ST > ContainerType;
   typedef Ifpack2::BlockRelaxation< CRS, ContainerType > BlockRelax;
-  typedef Ifpack2::AdditiveSchwarz< CRS > TheSchwarz;
+  typedef Ifpack2::AdditiveSchwarz< ROW > TheSchwarz;
 
   // using stuff
   using Teuchos::Array;

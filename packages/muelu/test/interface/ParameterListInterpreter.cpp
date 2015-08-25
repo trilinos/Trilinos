@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
 
     bool failed = false;
     Teuchos::Time timer("Interpreter timer");
-    double lastTime = timer.wallTime();
+    //double lastTime = timer.wallTime();
     for (int k = 0; k < numLists; k++) {
       Teuchos::ArrayRCP<std::string> fileList = MueLuTests::TestHelpers::GetFileList(dirList[k],
             (numProc == 1 ? std::string(".xml") : std::string("_np" + Teuchos::toString(numProc) + ".xml")));
@@ -316,12 +316,13 @@ int main(int argc, char *argv[]) {
           if (ret)
             failed = true;
 
-          std::ios_base::fmtflags ff(std::cout.flags());
-          std::cout.precision(2);
-          std::cout << xmlFile << " (" << std::setiosflags(std::ios::fixed)
-                    << timer.wallTime() - lastTime << " sec.) : " << (ret ? "failed" : "passed") << std::endl;
-          lastTime = timer.wallTime();
-          std::cout.flags(ff); // reset flags to whatever they were prior to printing time
+          //std::ios_base::fmtflags ff(std::cout.flags());
+          //std::cout.precision(2);
+          //std::cout << xmlFile << " (" << std::setiosflags(std::ios::fixed)
+          //          << timer.wallTime() - lastTime << " sec.) : " << (ret ? "failed" : "passed") << std::endl;
+          //lastTime = timer.wallTime();
+          //std::cout.flags(ff); // reset flags to whatever they were prior to printing time
+          std::cout << xmlFile << " : " << (ret ? "failed" : "passed") << std::endl;
         }
       }
     }

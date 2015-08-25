@@ -182,7 +182,7 @@ SphericalParametrization<T, N>::operator()(
 
   // Localization tensor
   Tensor<T, N> const
-  Q = dot(normal, dot(tangent_, normal));
+  Q = dot2(normal, dot(tangent_, normal));
 
   T const
   determinant = det(Q);
@@ -257,7 +257,7 @@ StereographicParametrization<T, N>::operator()(
 
   // Localization tensor
   Tensor<T, N> const
-  Q = dot(normal, dot(tangent_, normal));
+  Q = dot2(normal, dot(tangent_, normal));
 
   T const
   determinant = det(Q);
@@ -339,7 +339,7 @@ ProjectiveParametrization<T, N>::operator()(
 
   // Localization tensor
   Tensor<T, N> const
-  Q = dot(normal, dot(tangent_, normal));
+  Q = dot2(normal, dot(tangent_, normal));
 
   T const
   determinant = det(Q);
@@ -420,7 +420,7 @@ TangentParametrization<T, N>::operator()(
 
   // Localization tensor
   Tensor<T, N> const
-  Q = dot(normal, dot(tangent_, normal));
+  Q = dot2(normal, dot(tangent_, normal));
 
   T const
   determinant = det(Q);
@@ -491,7 +491,7 @@ CartesianParametrization<T, N>::operator()(
 
   // Localization tensor
   Tensor<T, N> const
-  Q = dot(normal, dot(tangent_, normal));
+  Q = dot2(normal, dot(tangent_, normal));
 
   T const
   determinant = det(Q);

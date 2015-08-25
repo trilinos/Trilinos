@@ -3905,9 +3905,11 @@ void BulkData::add_comm_list_entries_for_entities(const std::vector<stk::mesh::E
     {
       Entity entity = sharedModifiedEntities[i];
       const MeshIndex& mesh_index = this->mesh_index(entity);
-      EntityCommListInfo comm_info = {entity_key(entity), entity,
+      EntityKey key = entity_key(entity);
+      const EntityComm* entity_comm = m_entity_comm_map.entity_comm(key);
+      EntityCommListInfo comm_info = {key, entity,
                                       mesh_index.bucket, mesh_index.bucket_ordinal,
-                                      parallel_owner_rank(entity), NULL};
+                                      parallel_owner_rank(entity), entity_comm};
       m_entity_comm_list.push_back(comm_info);
     }
 
@@ -3921,13 +3923,6 @@ void BulkData::add_comm_list_entries_for_entities(const std::vector<stk::mesh::E
       std::unique( m_entity_comm_list.begin() , m_entity_comm_list.end() );
 
     m_entity_comm_list.erase( iter , m_entity_comm_list.end() );
-
-    for(size_t i=0; i<m_entity_comm_list.size(); ++i)
-    {
-      EntityKey key = m_entity_comm_list[i].key;
-      const EntityComm* entity_comm = m_entity_comm_map.entity_comm(key);
-      m_entity_comm_list[i].entity_comm = entity_comm;
-    }
 
     internal_sync_comm_list_owners();
 }

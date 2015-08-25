@@ -14,12 +14,11 @@
 namespace Ifpack2 {
 namespace Details {
   // FIXME (mfh 21 Aug 2015) NONE of the commented-out things work.
-
+  //
   // extern void __attribute__((weak)) registerLinearSolverFactory ();
   // void __attribute__((weak)) registerLinearSolverFactory ();
-  //void __attribute__((weak)) registerLinearSolverFactory ();
-  //extern void registerLinearSolverFactory ();
-  //#pragma weak registerLinearSolverLibrary
+  // #pragma weak registerLinearSolverLibrary
+
   extern void registerLinearSolverFactory ();
 
 } // namespace Details
@@ -31,13 +30,13 @@ namespace {
 #if ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
   TEUCHOS_STATIC_SETUP()
   {
-    std::cout << "STATIC SETUP" << std::endl;
+    // if (Ifpack2::Details::registerLinearSolverFactory == NULL) {
+    //   std::cout << "-- Ifpack2::Details::registerLinearSolverFactory is NULL" << std::endl;
+    // } else {
+    //   Ifpack2::Details::registerLinearSolverFactory ();
+    // }
 
-    if (Ifpack2::Details::registerLinearSolverFactory == NULL) {
-      std::cout << "-- Ifpack2::Details::registerLinearSolverFactory is NULL" << std::endl;
-    } else {
-      Ifpack2::Details::registerLinearSolverFactory ();
-    }
+    Ifpack2::Details::registerLinearSolverFactory ();
   }
 #endif // ! defined(HAVE_TEUCHOS_DYNAMIC_LIBS)
 

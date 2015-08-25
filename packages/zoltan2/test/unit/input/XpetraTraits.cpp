@@ -233,7 +233,8 @@ int main(int argc, char *argv[])
     RCP<tvector_t> V;
   
     try{
-      V = uinput->getUITpetraVector();
+      V = rcp(new tvector_t(uinput->getUITpetraCrsGraph()->getRowMap(),  1));
+      V->randomize();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -271,7 +272,8 @@ int main(int argc, char *argv[])
     RCP<tmvector_t> MV;
   
     try{
-      MV = uinput->getUITpetraMultiVector(3);
+      MV = rcp(new tmvector_t(uinput->getUITpetraCrsGraph()->getRowMap(), 3));
+      MV->randomize();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -390,7 +392,10 @@ int main(int argc, char *argv[])
     RCP<xvector_t> V;
   
     try{
-      V = uinput->getUIXpetraVector();
+      RCP<tvector_t> tV = 
+          rcp(new tvector_t(uinput->getUITpetraCrsGraph()->getRowMap(),  1));
+      tV->randomize();
+      V = Zoltan2::XpetraTraits<tvector_t>::convertToXpetra(tV);
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -427,7 +432,10 @@ int main(int argc, char *argv[])
     RCP<xmvector_t> MV;
   
     try{
-      MV = uinput->getUIXpetraMultiVector(3);
+      RCP<tmvector_t> tMV =
+          rcp(new tmvector_t(uinput->getUITpetraCrsGraph()->getRowMap(), 3));
+      tMV->randomize();
+      MV = Zoltan2::XpetraTraits<tmvector_t>::convertToXpetra(tMV);
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -570,7 +578,8 @@ int main(int argc, char *argv[])
     RCP<evector_t> V;
   
     try{
-      V = euinput->getUIEpetraVector();
+      V = rcp(new Epetra_Vector(euinput->getUIEpetraCrsGraph()->RowMap()));
+      V->Random();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 
@@ -609,7 +618,9 @@ int main(int argc, char *argv[])
     RCP<emvector_t> MV;
   
     try{
-      MV = euinput->getUIEpetraMultiVector(3);
+      MV =
+        rcp(new Epetra_MultiVector(euinput->getUIEpetraCrsGraph()->RowMap(),3));
+      MV->Random();
     }
     catch(std::exception &e){
       TEST_FAIL_AND_EXIT(*comm, 0, 

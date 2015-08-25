@@ -143,7 +143,7 @@ int ex_put_sets (int   exoid,
       }
       else {
 	cur_num_sets=ex_get_file_item(exoid, ex_get_counter_list(sets[i].type));
-	set_id_ndx = cur_num_sets;
+	set_id_ndx = cur_num_sets - set_count + i + 1;
 	sets_to_define[i] = set_id_ndx;
       }
 

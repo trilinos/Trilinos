@@ -1,12 +1,11 @@
-/*
 //@HEADER
-// ***********************************************************************
+// ************************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
+//                 Belos: Block Linear Solvers Package
+//                  Copyright 2004 Sandia Corporation
 //
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -37,42 +36,27 @@
 //
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ***********************************************************************
+// ************************************************************************
 //@HEADER
-*/
 
-#include "Ifpack2_Details_registerLinearSolverFactory.hpp"
-#include "Ifpack2_Details_LinearSolverFactory.hpp"
-#include "Ifpack2_ETIHelperMacros.h"
+#ifndef BELOS_DETAILS_EPETRA_REGISTERLINEARSOLVERFACTORY_HPP
+#define BELOS_DETAILS_EPETRA_REGISTERLINEARSOLVERFACTORY_HPP
 
-// Define the Ifpack2 ETI macros and Tpetra typedefs that go along
-// with them.  This works whether or not ETI is ON, because Bug 6380
-// was fixed.
-IFPACK2_ETI_MANGLING_TYPEDEFS()
+#include "BelosConfigDefs.hpp"
 
-// Macro that registers Ifpack2's LinearSolverFactory for the given
-// four template parameters (Scalar = SC, LocalOrdinal = LO,
-// GlobalOrdinal = GO, Node = NT).  The macro is local to this file.
-//
-// NOTE: This macro does NOT do explicit instantiation!  That's why I
-// call it LCL_CALL and not LCL_INST.  We are just using the fix for
-// Bug 6380 to invoke this class method over the set of enabled
-// template parameters.
-#define LCL_CALL( SC, LO, GO, NT ) \
-  ::Ifpack2::Details::LinearSolverFactory<SC, LO, GO, NT>::registerLinearSolverFactory ();
+#ifdef HAVE_BELOS_EPETRA
 
-namespace Ifpack2 {
+namespace Belos {
 namespace Details {
+namespace Epetra {
 
-void
-registerLinearSolverFactory ()
-{
-  // Fill in the body of the function with all the type-specific
-  // run-time registration functions.
-  IFPACK2_INSTANTIATE_SLGN( LCL_CALL )
-}
+/// \brief Register Belos' LinearSolverFactory for Epetra objects.
+void registerLinearSolverFactory ();
 
+} // namespace Epetra
 } // namespace Details
-} // namespace Ifpack2
+} // namespace Belos
 
+#endif // HAVE_BELOS_EPETRA
 
+#endif // BELOS_DETAILS_EPETRA_REGISTERLINEARSOLVERFACTORY_HPP
