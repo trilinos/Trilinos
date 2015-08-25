@@ -385,7 +385,7 @@ void Amesos2Wrapper<MatrixType>::compute ()
     initialize ();
   }
 
-  const std::string timerName ("Ifpack2::AdditiveSchwarz::compute");
+  const std::string timerName ("Ifpack2::Details::Amesos2Wrapper::compute");
   RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) {
     timer = TimeMonitor::getNewCounter (timerName);
