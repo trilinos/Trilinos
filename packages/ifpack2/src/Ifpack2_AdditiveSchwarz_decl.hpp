@@ -62,7 +62,7 @@ namespace Ifpack2 {
 
 /** \class AdditiveSchwarz
 \brief Additive Schwarz domain decomposition for Tpetra sparse matrices
-\tparam MatrixType A specialization of Tpetra::CrsMatrix
+\tparam MatrixType A specialization of Tpetra::RowMatrix
 \tparam LocalInverseType The type of the solver for the local
   (subdomain) problem.  DO NOT USE ANY TYPE HERE OTHER THAN
   Ifpack2::Preconditioner.  The default is perfectly fine.  This
@@ -307,12 +307,7 @@ public:
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
-  /// \brief The Tpetra::RowMatrix specialization matching MatrixType.
-  ///
-  /// MatrixType may be either a Tpetra::CrsMatrix specialization or a
-  /// Tpetra::RowMatrix specialization.  This typedef will always be a
-  /// Tpetra::RowMatrix specialization which is either the same as
-  /// MatrixType, or the parent class of MatrixType.
+  //! The Tpetra::RowMatrix specialization matching MatrixType.
   typedef Tpetra::RowMatrix<scalar_type,
                             local_ordinal_type,
                             global_ordinal_type,
