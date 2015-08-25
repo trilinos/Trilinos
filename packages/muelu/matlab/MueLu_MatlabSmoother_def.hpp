@@ -169,7 +169,7 @@ namespace MueLu {
 
 
 // Dummy specializations for GO = long long
-template <>
+/*template <>
 void MatlabSmoother<double,int,long long>::Setup(Level& currentLevel) {
   throw std::runtime_error("MatlabSmoother does not support GlobalOrdinal == long long.");
 }
@@ -185,7 +185,7 @@ void MatlabSmoother<double,int,long long>::Apply(MultiVector& X, const MultiVect
 template <>
 void MatlabSmoother<std::complex<double>,int,long long>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
   throw std::runtime_error("MatlabSmoother does not support GlobalOrdinal == long long.");
-}
+}*/
 
 
 } // namespace MueLu
