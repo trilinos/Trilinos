@@ -462,19 +462,6 @@ public:
   registerLinearSolverFactory (const std::string& packageName,
                                const factory_pointer_type& factory)
   {
-#ifdef HAVE_TEUCHOS_DEBUG
-    {
-      using std::cerr;
-      using std::endl;
-      using Teuchos::TypeNameTraits;
-      cerr << "*** Calling Trilinos::Details::LinearSolverFactoryRepository::"
-           << "registerLinearSolverFactory for package \"" << packageName
-           << "\", MV = " << TypeNameTraits<MV>::name () << ", OP = "
-           << TypeNameTraits<OP>::name () << ", NormType = "
-           << TypeNameTraits<NormType>::name () << endl;
-    }
-#endif // HAVE_TEUCHOS_DEBUG
-
     TEUCHOS_TEST_FOR_EXCEPTION
       (factory.get () == NULL, std::invalid_argument, "Trilinos::Details::"
        "LinearSolverFactoryRepository::registerLinearSolverFactory: Input "
@@ -482,16 +469,6 @@ public:
     createFactories ();
     if (factories_->find (packageName) == factories_->end ()) {
       factories_->insert (std::make_pair (packageName, factory));
-
-#ifdef HAVE_TEUCHOS_DEBUG
-      using std::cerr;
-      using std::endl;
-      using Teuchos::TypeNameTraits;
-      cerr << "*** Registered LinearSolverFactory for package \""
-           << packageName << "\", MV = " << TypeNameTraits<MV>::name ()
-           << ", OP = " << TypeNameTraits<OP>::name () << ", NormType = "
-           << TypeNameTraits<NormType>::name () << endl;
-#endif // HAVE_TEUCHOS_DEBUG
     }
   }
 
