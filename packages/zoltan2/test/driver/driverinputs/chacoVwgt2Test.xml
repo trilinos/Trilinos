@@ -23,13 +23,11 @@
         <Parameter name="Name" type="string" value="chacoVertexWeight2_xpetmv"/>
      
         <ParameterList name="InputAdapterParameters">
-            <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
             <Parameter name="inputType" type="string" value="coordinates"/> 
             <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
         </ParameterList>
 
         <ParameterList name="Zoltan2Parameters">
-           <!-- <Parameter name="timer_output_stream" type="string" value="std::cout"/> -->
             <Parameter name="algorithm" type="string" value="multijagged"/>
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
@@ -52,13 +50,11 @@
         <Parameter name="Name" type="string" value="chacoVertexWeight2_xpet_crs_matrix"/>
      
         <ParameterList name="InputAdapterParameters">
-            <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
             <Parameter name="inputType" type="string" value="xpetra_crs_matrix"/> 
             <Parameter name="inputAdapter" type="string" value="XpetraCrsMatrix"/>
         </ParameterList>
 
         <ParameterList name="Zoltan2Parameters">
-           <!-- <Parameter name="timer_output_stream" type="string" value="std::cout"/> -->
             <Parameter name="algorithm" type="string" value="multijagged"/>
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
@@ -81,13 +77,11 @@
         <Parameter name="Name" type="string" value="chacoVertexWeight2_xpet_crs_graph"/>
      
         <ParameterList name="InputAdapterParameters">
-            <!--<Parameter name="inputtype" type="string" value="tpetra_multivector"/>--> 
             <Parameter name="inputType" type="string" value="xpetra_crs_graph"/> 
             <Parameter name="inputAdapter" type="string" value="XpetraCrsGraph"/>
         </ParameterList>
 
         <ParameterList name="Zoltan2Parameters">
-           <!-- <Parameter name="timer_output_stream" type="string" value="std::cout"/> -->
             <Parameter name="algorithm" type="string" value="multijagged"/>
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>

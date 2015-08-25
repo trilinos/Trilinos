@@ -22,6 +22,12 @@ TRIBITS_ADD_EXECUTABLE(
    COMM serial mpi
 )
 
+TRIBITS_ADD_EXECUTABLE(
+   test_crs
+   SOURCES ${HEADERS} tpetra-crs-hello.cpp
+   COMM serial mpi
+)
+
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
 # MultiJagged Tests
 TRIBITS_ADD_TEST(
