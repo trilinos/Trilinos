@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
 
     bool failed = false;
     Teuchos::Time timer("Interpreter timer");
-    double lastTime = timer.wallTime();
+    //double lastTime = timer.wallTime();
     for (int k = 0; k < numLists; k++) {
       Teuchos::ArrayRCP<std::string> fileList = MueLuTests::TestHelpers::GetFileList(dirList[k],
             (numProc == 1 ? std::string(".xml") : std::string("_np" + Teuchos::toString(numProc) + ".xml")));
