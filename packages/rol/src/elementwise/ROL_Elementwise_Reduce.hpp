@@ -51,6 +51,17 @@
 namespace ROL {
 namespace Elementwise {
 
+// Generic reduction operation
+template<class Real>
+class ReductionOp {
+public:
+  virtual ~ReductionOp() {}
+  virtual void reduce( const Real &input, Real &output ) const = 0;
+  virtual void reduce( const volatile Real &input, volatile Real &output ) const = 0; 
+  virtual Real initialValue() const = 0;
+  virtual Teuchos::EReductionType reductionType() const = 0;
+};
+
 template<class Real> 
 class ReductionSum : public ReductionOp<Real> {
 public: 
