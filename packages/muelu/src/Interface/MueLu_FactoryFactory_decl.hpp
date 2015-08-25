@@ -337,15 +337,8 @@ namespace MueLu {
 
         if (validParamList->isType< RCP<const FactoryBase> >(pName)) {
           // Generate or get factory described by param
-          RCP<const FactoryBase> generatingFact = Teuchos::null;
-          std::string factoryName = Teuchos::getValue<std::string>(paramList.getEntry(pName));
-          if(factoryName == "NoFactory") {
-            generatingFact = MueLu::NoFactory::getRCP();
-          } else {
-            generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn, factoryManagersIn);
-          }
+          RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn, factoryManagersIn);
           paramListWithFactories.set(pName, generatingFact);
-
         } else if (validParamList->isType<RCP<const ParameterList> >(pName)) {
           if (pName == "ParameterList") {
             // NOTE: we cannot use
