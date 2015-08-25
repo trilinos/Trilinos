@@ -45,14 +45,20 @@
 
 #ifdef HAVE_IFPACK2_AMESOS2
 
-#include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
+#include "Ifpack2_LocalFilter.hpp"
+#include "Trilinos_Details_LinearSolverFactory.hpp"
+#include "Trilinos_Details_LinearSolver.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
-#include <Ifpack2_Heap.hpp>
-#include <Ifpack2_LocalFilter.hpp>
-#include <Ifpack2_Details_Amesos2Wrapper.hpp>
-
-#include <Amesos2.hpp>
+// FIXME (mfh 25 Aug 2015) Work-around for Bug 6392.  This doesn't
+// need to be a weak symbol as long as the Ifpack2 package depends on
+// Amesos2.
+namespace Amesos2 {
+namespace Details {
+  extern void registerLinearSolverFactory ();
+} // namespace Details
+} // namespace Amesos2
 
 namespace Ifpack2 {
 namespace Details {
@@ -90,7 +96,6 @@ void Amesos2Wrapper<MatrixType>::setParameters (const Teuchos::ParameterList& pa
   // solver's options.
   RCP<ParameterList> theList;
   if (params.name () == "Amesos2") {
-
     theList = rcp (new ParameterList (params));
   } else if (params.isSublist ("Amesos2")) {
     // FIXME (mfh 12 Sep 2014) This code actually makes _two_ deep copies.
@@ -108,14 +113,16 @@ void Amesos2Wrapper<MatrixType>::setParameters (const Teuchos::ParameterList& pa
       "called \"Amesos2\".");
   }
 
-  // If amesos2solver_ hasn't been allocated yet, cache the parameters and set them
+  // If solver_ hasn't been allocated yet, cache the parameters and set them
   // once the concrete solver does exist.
-  if (amesos2solver_ == Teuchos::null) {
+  if (solver_.is_null ()) {
     parameterList_ = theList;
     return;
   }
+  // FIXME (mfh 25 Aug 2015) Why doesn't this code set parameterList_
+  // when the solver is NOT null?
 
-  amesos2solver_->setParameters(theList);
+  solver_->setParameters(theList);
 }
 
 
@@ -220,14 +227,14 @@ void Amesos2Wrapper<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_
   }
 
   // FIXME (mfh 10 Dec 2013) Currently, initialize() recreates
-  // amesos2solver_ unconditionally, so this code won't have any
+  // solver_ unconditionally, so this code won't have any
   // effect.  Once we fix initialize() so that it keeps
-  // amesos2solver_, the code below will be effective.
-  //if (! amesos2solver_.is_null ()) {
-  //  amesos2solver_->setA (A_);
+  // solver_, the code below will be effective.
+  //if (! solver_.is_null ()) {
+  //  solver_->setA (A_);
   //}
   // FIXME JJH 2014-July18 A_ might not be a locally filtered CRS matrix, which
-  // means we have to do that dance all over again before calling amesos2solver_->setA ....
+  // means we have to do that dance all over again before calling solver_->setA ....
 }
 
 template<class MatrixType>
@@ -329,45 +336,33 @@ void Amesos2Wrapper<MatrixType>::initialize ()
       A_local_crs_ = A_local_crs;
     }
 
-    // (9 May 2014) JJH Ifpack2 shouldn't be checking the availability direct solvers.
-    // It's up to Amesos2 to test for this and throw an exception
-    // (which it does in Amesos2::Factory::create).
+    // FIXME (10 Dec 2013, 25 Aug 2015) It shouldn't be necessary to
+    // recreate the solver each time, since
+    // Trilinos::Details::LinearSolver has a setA() method.  See the
+    // implementation of setMatrix().  I don't want to break anything
+    // so I will leave the code as it is, possibly inefficient.
 
-    if (SolverName_ == "") {
-      if (Amesos2::query("klu"))
-        SolverName_ = "klu";
-      else if (Amesos2::query("superlu"))
-        SolverName_ = "superlu";
-      else if (Amesos2::query("superludist"))
-        SolverName_ = "superludist";
-      else if (Amesos2::query("cholmod"))
-        SolverName_ = "cholmod";
-      else {
-        // FIXME (9 May 2014) JJH Amesos2 does not yet expose KLU2,
-        // its internal direct solver.  This means there's no fallback
-        // option, thus we throw an exception here.
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          true, std::invalid_argument, "Amesos2 has not been configured with "
-          "any direct solver support.");
-      }
+
+    // FIXME (mfh 25 Aug 2015) This is a work-around for Bug 6392.
+    if (! Trilinos::Details::Impl::rememberRegisteredSomeLinearSolverFactory ("Amesos2")) {
+      Amesos2::Details::registerLinearSolverFactory ();
     }
 
-    // FIXME (10 Dec 2013) It shouldn't be necessary to recreate the
-    // solver each time, since Amesos2::Solver has a setA() method.
-    // See the implementation of setMatrix().
+    solver_ = Trilinos::Details::getLinearSolver<MV, OP, typename MV::mag_type> ("Amesos2", SolverName_);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (solver_.is_null (), std::runtime_error, "Ifpack2::Details::"
+       "Amesos2Wrapper::initialize: Failed to create Amesos2 solver!");
 
-    amesos2solver_ = Amesos2::create<crs_matrix_type, MV> (SolverName_, A_local_crs_);
+    solver_->setMatrix (A_local_crs_);
     // If parameters have been already been cached via setParameters, set them now.
     if (parameterList_ != Teuchos::null) {
-      setParameters(*parameterList_);
+      setParameters (*parameterList_);
       parameterList_ = Teuchos::null;
     }
-    amesos2solver_->preOrdering ();
-
     // The symbolic factorization properly belongs to initialize(),
     // since initialize() is concerned with the matrix's structure
     // (and compute() with the matrix's values).
-    amesos2solver_->symbolicFactorization ();
+    solver_->symbolic ();
   } // Stop timing here.
 
   IsInitialized_ = true;
@@ -398,7 +393,7 @@ void Amesos2Wrapper<MatrixType>::compute ()
 
   { // Start timing here.
     TimeMonitor timeMon (*timer);
-    amesos2solver_->numericFactorization ();
+    solver_->numeric ();
   } // Stop timing here.
 
   IsComputed_ = true;
@@ -489,9 +484,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     }
 
     // Use the precomputed factorization to solve.
-    amesos2solver_->setX (Y_local);
-    amesos2solver_->setB (X_local);
-    amesos2solver_->solve ();
+    solver_->solve (*Y_local, *X_local);
 
     if (alpha != STS::one () || beta != STS::zero ()) {
       Y.update (alpha, *Y_temp, beta);
@@ -528,11 +521,17 @@ std::string Amesos2Wrapper<MatrixType>::description () const {
     os << ", Global matrix dimensions: ["
        << A_local_crs_->getGlobalNumRows () << ", " << A_local_crs_->getGlobalNumCols () << "]";
   }
-  //describe the Amesos2 method being called
-  os << ", {";
-  os << amesos2solver_->description();
-  os << "}";
 
+  // If the actual solver happens to implement Describable, have it
+  // describe itself.  Otherwise, don't print anything.
+  if (! solver_.is_null ()) {
+    Teuchos::Describable* d = dynamic_cast<Teuchos::Describable*> (solver_.getRawPtr ());
+    if (d != NULL) {
+      os << ", {";
+      os << d->description ();
+      os << "}";
+    }
+  }
   os << "}";
   return os.str ();
 }
