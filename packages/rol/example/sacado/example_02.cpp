@@ -57,10 +57,10 @@
 #include "ROL_Sacado_Objective.hpp"
 #include "ROL_Sacado_EqualityConstraint.hpp"
 
-#include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
-#include "ROL_EqualityConstraint.hpp"
 #include "ROL_CompositeStepSQP.hpp"
+#include "ROL_StatusTestSQP.hpp"
+#include "ROL_EqualityConstraint.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"

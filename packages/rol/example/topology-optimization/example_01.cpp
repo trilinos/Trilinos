@@ -47,9 +47,8 @@
 */
 
 #include "ROL_Algorithm.hpp"
-#include "ROL_CompositeStepSQP.hpp"
-#include "ROL_TrustRegionStep.hpp"
 #include "ROL_LineSearchStep.hpp"
+#include "ROL_TrustRegionStep.hpp"
 #include "ROL_StatusTest.hpp"
 #include "ROL_Types.hpp"
 #include "Teuchos_oblackholestream.hpp"

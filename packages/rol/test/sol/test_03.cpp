@@ -52,13 +52,13 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_StdBoundConstraint.hpp"
 #include "ROL_Types.hpp"
-#include "ROL_StatusTest.hpp"
-#include "ROL_LineSearchStep.hpp"
-#include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_StatusTest.hpp"
 
 #include "ROL_CVaRVector.hpp"
 #include "ROL_CVaRBoundConstraint.hpp"
+#include "ROL_BPOEBoundConstraint.hpp"
 #include "ROL_ParametrizedObjective.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_AbsoluteValue.hpp"
@@ -70,7 +70,9 @@
 #include "ROL_MeanVarianceFromTarget.hpp"
 #include "ROL_CVaR.hpp"
 #include "ROL_CVaRQuadrangle.hpp"
-//#include "ROL_HMCR.hpp"
+#include "ROL_HMCR.hpp"
+#include "ROL_HMCRObjective.hpp"
+#include "ROL_BPOEObjective.hpp"
 #include "ROL_ExpUtility.hpp"
 #include "ROL_RiskAverseObjective.hpp"
 #include "ROL_RiskNeutralObjective.hpp"
@@ -164,10 +166,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
     // Build ROL algorithm
-    double gtol = parlist->get("Gradient Tolerance",1.e-6);
-    double stol = parlist->get("Step Tolerance",1.e-12);
-    int maxit   = parlist->get("Maximum Number of Iterations",100);
-    ROL::StatusTest<double> status(gtol,stol,maxit);
+    ROL::StatusTest<double> status(*parlist);
     //ROL::LineSearchStep<double> step(*parlist);
     Teuchos::RCP<ROL::Step<double> > step;
     Teuchos::RCP<ROL::DefaultAlgorithm<double> > algo;
@@ -540,7 +539,6 @@ int main(int argc, char* argv[]) {
     // Test objective functions
     xv = 10.0*random<double>(commptr)-5.0;
     dv = 10.0*random<double>(commptr)-5.0;
-    dv = 0.0;
     xp = Teuchos::rcp(&x,false);
     dp = Teuchos::rcp(&d,false);
     ROL::CVaRVector<double> xq(xv,xp);
@@ -563,41 +561,102 @@ int main(int argc, char* argv[]) {
       *outStream << (*x_rcp)[i] << ", ";
     }
     *outStream << (*x_rcp)[dim-1] << ")\n";
-//    /**********************************************************************************************/
-//    /************************* MEAN PLUS CVAR *****************************************************/
-//    /**********************************************************************************************/
-//    *outStream << "\nMEAN PLUS HIGHER MOMENT COHERENT RISK MEASURE\n";
-//    unsigned ord = 3;
-//    dist2 = Teuchos::rcp(new ROL::Distribution<double>(ROL::DISTRIBUTION_DIRAC));
-//    plusf = Teuchos::rcp(new ROL::PlusFunction<double>(dist2));
-//    rm  = Teuchos::rcp( new ROL::HMCR<double>(prob,c,ord,plusf) );
-//    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
-//    // Test objective functions
-//    xv = 10.0*random<double>(commptr)-5.0;
-//    dv = 10.0*random<double>(commptr)-5.0;
-//    dv = 0.0;
-//    xp = Teuchos::rcp(&x,false);
-//    dp = Teuchos::rcp(&d,false);
-//    ROL::CVaRVector<double> xh(xv,xp);
-//    ROL::CVaRVector<double> dh(dv,dp);
-//    *outStream << "\nCheck Derivatives of Risk-Averse Objective Function\n";
-//    x.set(xr);
-//    obj->checkGradient(xh,dh,true,*outStream);
-//    obj->checkHessVec(xh,dh,true,*outStream);
-//    // Run ROL algorithm
-//    step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
-//    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
-//    x.set(x0);
-//    start = clock();
-//    algo->run(xh,*obj,*CVaRcon,true,*outStream);
-//    *outStream << "Optimization time: " << (double)(clock()-start)/(double)CLOCKS_PER_SEC << " seconds.\n";
-//    // Print Solution
-//    *outStream << "t = " << xh.getVaR() << "\n";
-//    *outStream << "x = (";
-//    for ( unsigned i = 0; i < dim-1; i++ ) {
-//      *outStream << (*x_rcp)[i] << ", ";
-//    }
-//    *outStream << (*x_rcp)[dim-1] << ")\n";
+    /**********************************************************************************************/
+    /************************* MEAN PLUS CVAR *****************************************************/
+    /**********************************************************************************************/
+    *outStream << "\nMEAN PLUS HIGHER MOMENT COHERENT RISK MEASURE\n";
+    unsigned ord = 5;
+    //dist2 = Teuchos::rcp(new ROL::Distribution<double>(ROL::DISTRIBUTION_DIRAC));
+    plusf = Teuchos::rcp(new ROL::PlusFunction<double>(dist2));
+    rm  = Teuchos::rcp( new ROL::HMCR<double>(prob,c,ord,plusf) );
+    obj = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
+    // Test objective functions
+    xv = 10.0*random<double>(commptr)-5.0;
+    dv = 10.0*random<double>(commptr)-5.0;
+    xp = Teuchos::rcp(&x,false);
+    dp = Teuchos::rcp(&d,false);
+    ROL::CVaRVector<double> xh(xv,xp);
+    ROL::CVaRVector<double> dh(dv,dp);
+    *outStream << "\nCheck Derivatives of Risk-Averse Objective Function\n";
+    x.set(xr);
+    obj->checkGradient(xh,dh,true,*outStream);
+    obj->checkHessVec(xh,dh,true,*outStream);
+    // Run ROL algorithm
+    step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
+    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    x.set(x0);
+    start = clock();
+    algo->run(xh,*obj,*CVaRcon,true,*outStream);
+    *outStream << "Optimization time: " << (double)(clock()-start)/(double)CLOCKS_PER_SEC << " seconds.\n";
+    // Print Solution
+    *outStream << "t = " << xh.getVaR() << "\n";
+    *outStream << "x = (";
+    for ( unsigned i = 0; i < dim-1; i++ ) {
+      *outStream << (*x_rcp)[i] << ", ";
+    }
+    *outStream << (*x_rcp)[dim-1] << ")\n";
+    /**********************************************************************************************/
+    /************************* MEAN PLUS CVAR *****************************************************/
+    /**********************************************************************************************/
+    *outStream << "\nMEAN PLUS HIGHER MOMENT COHERENT RISK MEASURE\n";
+    obj = Teuchos::rcp( new ROL::HMCRObjective<double>(pObj,3.0,0.95,sampler,storage) );
+    Teuchos::RCP<ROL::BoundConstraint<double> > BPOEcon = 
+      Teuchos::rcp( new ROL::BPOEBoundConstraint<double>(con) );
+    // Test objective functions
+    xv = 10.0*random<double>(commptr)-5.0;
+    dv = 10.0*random<double>(commptr)-5.0;
+    xp = Teuchos::rcp(&x,false);
+    dp = Teuchos::rcp(&d,false);
+    ROL::CVaRVector<double> xh0(xv,xp);
+    ROL::CVaRVector<double> dh0(dv,dp);
+    *outStream << "\nCheck Derivatives of Risk-Averse Objective Function\n";
+    x.set(xr);
+    obj->checkGradient(xh0,dh0,true,*outStream);
+    obj->checkHessVec(xh0,dh0,true,*outStream);
+    // Run ROL algorithm
+    step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
+    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    x.set(x0);
+    start = clock();
+    algo->run(xh0,*obj,*BPOEcon,true,*outStream);
+    *outStream << "Optimization time: " << (double)(clock()-start)/(double)CLOCKS_PER_SEC << " seconds.\n";
+    // Print Solution
+    *outStream << "t = " << xh0.getVaR() << "\n";
+    *outStream << "x = (";
+    for ( unsigned i = 0; i < dim-1; i++ ) {
+      *outStream << (*x_rcp)[i] << ", ";
+    }
+    *outStream << (*x_rcp)[dim-1] << ")\n";
+    /**********************************************************************************************/
+    /************************* MEAN PLUS CVAR *****************************************************/
+    /**********************************************************************************************/
+    *outStream << "\nHIGHER MOMENT BUFFERED PROBABILITY\n";
+    obj = Teuchos::rcp( new ROL::BPOEObjective<double>(pObj,3.0,1.e-1,sampler,storage) );
+    // Test objective functions
+    xv = 10.0*random<double>(commptr)-5.0;
+    dv = 10.0*random<double>(commptr)-5.0;
+    xp = Teuchos::rcp(&x,false);
+    dp = Teuchos::rcp(&d,false);
+    ROL::CVaRVector<double> xh1(xv,xp);
+    ROL::CVaRVector<double> dh1(dv,dp);
+    *outStream << "\nCheck Derivatives of Risk-Averse Objective Function\n";
+    x.set(xr);
+    obj->checkGradient(xh1,dh1,true,*outStream);
+    obj->checkHessVec(xh1,dh1,true,*outStream);
+    // Run ROL algorithm
+    step = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
+    algo = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,status,false) );
+    x.set(x0);
+    start = clock();
+    algo->run(xh1,*obj,*CVaRcon,true,*outStream);
+    *outStream << "Optimization time: " << (double)(clock()-start)/(double)CLOCKS_PER_SEC << " seconds.\n";
+    // Print Solution
+    *outStream << "t = " << xh1.getVaR() << "\n";
+    *outStream << "x = (";
+    for ( unsigned i = 0; i < dim-1; i++ ) {
+      *outStream << (*x_rcp)[i] << ", ";
+    }
+    *outStream << (*x_rcp)[dim-1] << ")\n";
     /**********************************************************************************************/
     /************************* EXPONENTIAL UTILITY FUNCTION ***************************************/
     /**********************************************************************************************/

@@ -68,6 +68,7 @@
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_CompositeStepSQP.hpp"
 #include "ROL_StatusTest.hpp"
+#include "ROL_StatusTestSQP.hpp"
 #include "ROL_Types.hpp"
 
 #include "ROL_StdVector.hpp"

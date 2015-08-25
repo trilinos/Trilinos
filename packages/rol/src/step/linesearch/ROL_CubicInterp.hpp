@@ -64,7 +64,7 @@ public:
 
   // Constructor
   CubicInterp( Teuchos::ParameterList &parlist ) : LineSearch<Real>(parlist) { 
-    rho_ = parlist.get("Backtracking Rate",0.5);
+    rho_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Backtracking Rate",0.5);
   }
 
   void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g,

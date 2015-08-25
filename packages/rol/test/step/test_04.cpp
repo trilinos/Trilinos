@@ -48,8 +48,9 @@
 #define USE_HESSVEC 1
 
 #include "ROL_TestObjectives.hpp"
-#include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_StatusTest.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -80,33 +81,30 @@ int main(int argc, char *argv[]) {
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
-    parlist->set("Use Inexact Hessian-Times-A-Vector",true);
+    parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",true);
 #if USE_HESSVEC
-    parlist->set("Use Inexact Hessian-Times-A-Vector",false);
+    parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",false);
 #endif
 
     // Define Status Test
-    RealT gtol = parlist->get("Gradient Tolerance",1.e-6);
-    RealT stol = parlist->get("Step Tolerance",1.e-12);
-    int maxit  = parlist->get("Maximum Number of Iterations",100);
-    ROL::StatusTest<RealT> status(gtol,stol,maxit);
+    ROL::StatusTest<RealT> status(*parlist);
 
     for ( ROL::ETestOptProblem prob = ROL::TESTOPTPROBLEM_HS1; prob < ROL::TESTOPTPROBLEM_LAST; prob++ ) { 
       if ( prob == ROL::TESTOPTPROBLEM_HS2 || prob == ROL::TESTOPTPROBLEM_BVP ) {
-        parlist->set("Initial Linesearch Parameter",1.e-4);
-        parlist->set("Initial Trust-Region Radius",-1.e1);
+        parlist->sublist("Step").sublist("Line Search").set("Initial Step Size",1.e-4);
+        parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",-1.e1);
       }
       else if ( prob == ROL::TESTOPTPROBLEM_HS25 ) {
-        parlist->set("Initial Linesearch Parameter",1.0);
-        parlist->set("Initial Trust-Region Radius",-1.e3);
+        parlist->sublist("Step").sublist("Line Search").set("Initial Step Size",1.0);
+        parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",-1.e3);
       }
       else {
-        parlist->set("Initial Linesearch Parameter",1.0);
-        parlist->set("Initial Trust-Region Radius",-1.e1);
+        parlist->sublist("Step").sublist("Line Search").set("Initial Step Size",1.0);
+        parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",-1.e1);
       }
-      parlist->set("Scale for Epsilon Active Sets",1.0);
+      parlist->sublist("General").set("Scale for Epsilon Active Sets",1.0);
       if ( prob == ROL::TESTOPTPROBLEM_HS4 ) {
-        parlist->set("Scale for Epsilon Active Sets",1.e-2);
+        parlist->sublist("General").set("Scale for Epsilon Active Sets",1.e-2);
       }
       *outStream << "\n\n" << ROL:: ETestOptProblemToString(prob)  << "\n\n";
 
@@ -126,7 +124,7 @@ int main(int argc, char *argv[]) {
       // Get Dimension of Problem
       int dim = Teuchos::rcp_const_cast<std::vector<RealT> >(
                 (Teuchos::dyn_cast<ROL::StdVector<RealT> >(x0)).getVector())->size();
-      parlist->set("Maximum Number of Krylov Iterations", 2*dim);
+      parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
 
       // Check Derivatives
       //Teuchos::RCP<std::vector<RealT> > d_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 1.0) );
@@ -148,7 +146,7 @@ int main(int argc, char *argv[]) {
       //ROL::ETrustRegion tr = ROL::TRUSTREGION_DOGLEG; 
       //ROL::ETrustRegion tr = ROL::TRUSTREGION_DOUBLEDOGLEG; 
       ROL::ETrustRegion tr = ROL::TRUSTREGION_TRUNCATEDCG; 
-      parlist->set("Trust-Region Subproblem Solver Type", ROL::ETrustRegionToString(tr));
+      parlist->sublist("Step").sublist("Trust Region").set("Subproblem Solver", ROL::ETrustRegionToString(tr));
       *outStream << "\n\n" << ROL::ETrustRegionToString(tr) << "\n\n";
 
       // Define Step

@@ -73,48 +73,31 @@ private:
   Teuchos::RCP<Vector<Real> > x_; 
   Teuchos::RCP<Vector<Real> > l_; 
 
-  Teuchos::RCP<Teuchos::ParameterList> parlist_;
-
   Real tau_;
-  Real alpha1_;
-  Real alpha2_;
-  Real beta1_;
-  Real beta2_;
-  Real eta0_;
-  Real eta1_;
-  Real omega0_;
-  Real omega1_;
-  Real gamma1_;
-
-  bool print_;
-
   Real eta_;
   Real omega_;
-  Real gamma_;
-
+  bool print_;
   int maxit_;
+
+  Teuchos::RCP<Teuchos::ParameterList> parlist_;
   int subproblemIter_;
 
 public:
   ~MoreauYosidaPenaltyStep() {}
 
   MoreauYosidaPenaltyStep(Teuchos::ParameterList &parlist)
-    : Step<Real>(), myPen_(Teuchos::null), subproblemIter_(0) {
-    Step<Real>::getState()->searchSize = parlist.get("Moreau-Yosida Penalty: Initial Penalty Parameter",10.0);
-    tau_    = parlist.get("Moreau-Yosida Penalty: Penalty Parameter Growth Factor",10.0);
-    alpha1_ = parlist.get("Moreau-Yosida Penalty: Optimality Tolerance Update Exponent",1.0);
-    alpha2_ = parlist.get("Moreau-Yosida Penalty: Feasibility Tolerance Update Exponent",0.1);
-    beta1_  = parlist.get("Moreau-Yosida Penalty: Optimality Tolerance Decrease Exponent",1.0);
-    beta2_  = parlist.get("Moreau-Yosida Penalty: Feasibility Tolerance Decrease Exponent",0.9);
-    eta0_   = parlist.get("Moreau-Yosida Penalty: Initial Optimality Tolerance",1.0);
-    omega0_ = parlist.get("Moreau-Yosida Penalty: Initial Feasibility Tolerance",1.0);
-    eta1_   = parlist.get("Moreau-Yosida Penalty: Optimality Tolerance",1.e-8);
-    omega1_ = parlist.get("Moreau-Yosida Penalty: Feasibility Tolerance",1.e-8);
-    gamma1_ = parlist.get("Moreau-Yosida Penalty: Minimum Penalty Parameter Reciprocal",0.1);
-    print_  = parlist.get("Moreau-Yosida Penalty: Print Intermediate Optimization History",false);
-    // Initialize subproblem step type
-    //step_   = Teuchos::rcp(new CompositeStepSQP<Real>(parlist));
-    maxit_  = parlist.get("Moreau-Yosida Penalty: Subproblem Iteration Limit",1000);
+    : Step<Real>(), myPen_(Teuchos::null),
+      step_(Teuchos::null), status_(Teuchos::null), algo_(Teuchos::null),
+      x_(Teuchos::null), l_(Teuchos::null),
+      tau_(10.), eta_(1.e-8), omega_(1.e-8), print_(false), maxit_(1000),
+      parlist_(Teuchos::null), subproblemIter_(0) {
+    Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
+    Step<Real>::getState()->searchSize = steplist.get("Initial Penalty Parameter",10.0);
+    tau_   = steplist.get("Penalty Parameter Growth Factor",10.0);
+    eta_   = steplist.sublist("Subproblem").get("Optimality Tolerance",1.e-8);
+    omega_ = steplist.sublist("Subproblem").get("Feasibility Tolerance",1.e-8);
+    maxit_ = steplist.sublist("Subproblem").get("Iteration Limit",1000);
+    print_ = steplist.sublist("Subproblem").get("Print History",false);
 
     parlist_ = Teuchos::rcp(&parlist,false);
   }
@@ -129,10 +112,6 @@ public:
     state->descentVec    = x.clone();
     state->gradientVec   = g.clone();
     state->constraintVec = c.clone();
-    // Initialize intermediate stopping tolerances
-    gamma_ = std::min(1.0/state->searchSize,gamma1_);
-    omega_ = omega0_*std::pow(gamma_,alpha1_);
-    eta_   = eta0_*std::pow(gamma_,alpha2_);
     // Project x onto the feasible set
     if ( bnd.isActivated() ) {
       bnd.project(x);
@@ -168,10 +147,8 @@ public:
                 Objective<Real> &obj, EqualityConstraint<Real> &con, 
                 BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
-    Real ftol = omega1_; //std::max(omega_,omega1_);
-    Real ctol = eta1_; //std::max(eta_,eta1_);
     step_   = Teuchos::rcp(new CompositeStepSQP<Real>(*parlist_));
-    status_ = Teuchos::rcp(new StatusTestSQP<Real>(ftol,ctol,1.e-6*ftol,maxit_));
+    status_ = Teuchos::rcp(new StatusTestSQP<Real>(eta_,omega_,1.e-6*eta_,maxit_));
     algo_   = Teuchos::rcp(new DefaultAlgorithm<Real>(*step_,*status_,false));
     x_->set(x); l_->set(l);
     algo_->run(*x_,*l_,*myPen_,con,print_);
@@ -187,14 +164,19 @@ public:
                AlgorithmState<Real> &algo_state ) {
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     state->descentVec->set(s);
-    state->gradientVec->set(*((step_->getStepState())->gradientVec));
-    state->constraintVec->set(*((step_->getStepState())->constraintVec));
+
+    x.plus(s);
+    l.set(*l_);
+
+    algo_state.iter++;
+    con.update(x,true,algo_state.iter);
+    myPen_->update(x,true,algo_state.iter);
 
     state->searchSize *= tau_;
     myPen_->updateMultipliers(state->searchSize,x);
 
-    x.plus(s);
-    l.set(*l_);
+    state->gradientVec->set(*((step_->getStepState())->gradientVec));
+    state->constraintVec->set(*((step_->getStepState())->constraintVec));
 
     if (bnd.isActivated()) {
       x_->set(x);
@@ -211,12 +193,10 @@ public:
     algo_state.ngrad += myPen_->getNumberGradientEvaluations() + ((algo_->getState())->ngrad);
     algo_state.ncval += (algo_->getState())->ncval;
     algo_state.value = myPen_->getObjectiveValue();
-    //algo_state.gnorm = (state->gradientVec)->norm();
     algo_state.cnorm = (state->constraintVec)->norm();
     algo_state.snorm = s.norm();
     algo_state.iterateVec->set(x);
     algo_state.lagmultVec->set(l);
-    algo_state.iter++;
   }
 
   /** \brief Print iterate header.
@@ -230,8 +210,6 @@ public:
     hist << std::setw(15) << std::left << "gnorm";
     hist << std::setw(15) << std::left << "snorm";
     hist << std::setw(15) << std::left << "penalty";
-//    hist << std::setw(15) << std::left << "feasTol";
-//    hist << std::setw(15) << std::left << "optTol";
     hist << std::setw(8) << std::left << "#fval";
     hist << std::setw(8) << std::left << "#grad";
     hist << std::setw(8) << std::left << "#cval";
@@ -268,8 +246,6 @@ public:
       hist << std::setw(15) << std::left << algo_state.gnorm;
       hist << std::setw(15) << std::left << " ";
       hist << std::setw(15) << std::left << Step<Real>::getStepState()->searchSize;
-//      hist << std::setw(15) << std::left << std::max(eta_,eta1_);
-//      hist << std::setw(15) << std::left << std::max(omega_,omega1_);
       hist << "\n";
     }
     else {
@@ -280,8 +256,6 @@ public:
       hist << std::setw(15) << std::left << algo_state.gnorm;
       hist << std::setw(15) << std::left << algo_state.snorm;
       hist << std::setw(15) << std::left << Step<Real>::getStepState()->searchSize;
-//      hist << std::setw(15) << std::left << eta_;
-//      hist << std::setw(15) << std::left << omega_;
       hist << std::scientific << std::setprecision(6);
       hist << std::setw(8) << std::left << algo_state.nfval;
       hist << std::setw(8) << std::left << algo_state.ngrad;

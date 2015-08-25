@@ -47,9 +47,8 @@
 */
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_StatusTestSQP.hpp"
 #include "ROL_CompositeStepSQP.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_StatusTest.hpp"
 #include "ROL_Types.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -682,16 +681,16 @@ int main(int argc, char *argv[]) {
 
     // Optimization 
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist_tr = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist_tr) );
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
     // Define status test.
-    RealT gtol  = 1e-14;  // norm of gradient of Lagrangian tolerance
-    RealT ctol  = 1e-14;  // norm of constraint tolerance
-    RealT stol  = 1e-16;  // norm of step tolerance
-    int   maxit = 100;   // maximum number of iterations
-    ROL::StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
+    parlist->sublist("Status Test").set("Gradient Tolerance",1.e-14);
+    parlist->sublist("Status Test").set("Constraint Tolerance",1.e-14);
+    parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
+    parlist->sublist("Status Test").set("Iteration Limit",100);
+    ROL::StatusTestSQP<RealT> status(*parlist); 
     // Define step.
-    ROL::CompositeStepSQP<RealT> step(*parlist_tr);
+    ROL::CompositeStepSQP<RealT> step(*parlist);
     // Define algorithm.
     ROL::DefaultAlgorithm<RealT> algo(step,status,false);
     // Run Algorithm

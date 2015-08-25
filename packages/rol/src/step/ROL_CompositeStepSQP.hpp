@@ -142,10 +142,11 @@ public:
     flagAC_ = 0;
     iterCG_ = 0;
 
-    Real nominal_tol = parlist.get("Nominal SQP Optimality Solver Tolerance", 1e-3);
+    Teuchos::ParameterList& steplist = parlist.sublist("Step").sublist("Composite Step SQP");
+    Real nominal_tol = steplist.get("Nominal Optimality Solver Tolerance", 1e-3);
  
-    maxiterCG_  = parlist.get("Maximum Number of Krylov Iterations",20);
-    tolCG_      = parlist.get("Absolute Krylov Tolerance",1e-2);
+    maxiterCG_ = parlist.sublist("General").sublist("Krylov").get("Iteration Limit",20);
+    tolCG_     = parlist.sublist("General").sublist("Krylov").get("Absolute Tolerance",1e-2);
 
     lmhtol_  = nominal_tol;
     qntol_   = nominal_tol;

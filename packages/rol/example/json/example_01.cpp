@@ -59,10 +59,11 @@
 
 */
 
-#include "example_01.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Zakharov.hpp"
+
+#include "example_01.hpp"
 
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"

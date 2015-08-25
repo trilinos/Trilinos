@@ -88,8 +88,9 @@
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_EqualityConstraint.hpp"
-#include "ROL_CompositeStepSQP.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_CompositeStepSQP.hpp"
+#include "ROL_StatusTestSQP.hpp"
 
 #include "numerics/FiniteDifference.hpp"
 

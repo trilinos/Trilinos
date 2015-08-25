@@ -53,11 +53,9 @@
 // ROL_Types contains predefined constants and objects
 #include "ROL_Types.hpp"
 // ROL algorithmic information
-#include "ROL_StatusTest.hpp"
-#include "ROL_BundleStatusTest.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_BundleStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_StatusTestFactory.hpp"
+#include "ROL_StepFactory.hpp"
 // ROL vectors
 #include "ROL_StdVector.hpp"
 #include "ROL_CVaRVector.hpp"
@@ -656,9 +654,9 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
     // Build ROL algorithm
-    double gtol = parlist->get("Gradient Tolerance",1.e-6);
-    double stol = parlist->get("Step Tolerance",1.e-12);
-    int maxit   = parlist->get("Maximum Number of Iterations",100);
+    parlist->sublist("Status Test").set("Gradient Tolerance",1.e-10);
+    parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
+    parlist->sublist("Status Test").set("Iteration Limit",100);
     Teuchos::RCP<ROL::StatusTest<double> > status;
     Teuchos::RCP<ROL::Step<double> > step;
     Teuchos::RCP<ROL::DefaultAlgorithm<double> > algo;
@@ -741,8 +739,8 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > x1p = Teuchos::rcp(&x1,false);
     ROL::CVaRVector<double> x1c(x1v,x1p);
     // Run ROL algorithm
-    status = Teuchos::rcp( new ROL::StatusTest<double>(gtol,stol,maxit) );
-    step   = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
+    status = ROL::StatusTestFactory<double>("Trust Region",*parlist);
+    step   = ROL::StepFactory<double>("Trust Region",*parlist);
     algo   = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,*status,false) );
     x1c.zero();
     clock_t start = clock();
@@ -762,8 +760,8 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > x2p = Teuchos::rcp(&x2,false);
     ROL::CVaRVector<double> x2c(x2v,x2p);
     // Run ROL algorithm
-    status = Teuchos::rcp( new ROL::StatusTest<double>(gtol,stol,maxit) );
-    step   = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
+    status = ROL::StatusTestFactory<double>("Trust Region",*parlist);
+    step   = ROL::StepFactory<double>("Trust Region",*parlist);
     algo   = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,*status,false) );
     x2c.set(x1c);
     start = clock();
@@ -783,8 +781,8 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > x3p = Teuchos::rcp(&x3,false);
     ROL::CVaRVector<double> x3c(x3v,x3p);
     // Run ROL algorithm
-    status = Teuchos::rcp( new ROL::StatusTest<double>(gtol,stol,maxit) );
-    step   = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
+    status = ROL::StatusTestFactory<double>("Trust Region",*parlist);
+    step   = ROL::StepFactory<double>("Trust Region",*parlist);
     algo   = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,*status,false) );
     x3c.set(x2c);
     start = clock();
@@ -804,9 +802,10 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > zp = Teuchos::rcp(&z,false);
     ROL::CVaRVector<double> zc(zv,zp);
     // Run ROL algorithm
-    status = Teuchos::rcp( new ROL::BundleStatusTest<double>(gtol,100*maxit) );
-    parlist->set("Bundle Step: Epsilon Solution Tolerance",gtol);
-    step   = Teuchos::rcp( new ROL::BundleStep<double>(*parlist) );
+    parlist->sublist("Status Test").set("Iteration Limit",10000);
+    parlist->sublist("Step").sublist("Bundle").set("Epsilon Solution Tolerance",1.e-8);
+    status = ROL::StatusTestFactory<double>("Bundle",*parlist);
+    step   = ROL::StepFactory<double>("Bundle",*parlist);
     algo   = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,*status,false) );
     zc.set(x3c);
     start = clock();
