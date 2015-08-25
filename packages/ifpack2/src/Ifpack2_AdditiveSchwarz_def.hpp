@@ -43,8 +43,6 @@
 #ifndef IFPACK2_ADDITIVESCHWARZ_DEF_HPP
 #define IFPACK2_ADDITIVESCHWARZ_DEF_HPP
 
-#include "Ifpack2_AdditiveSchwarz_decl.hpp"
-
 // AdditiveSchwarz uses OneLevelFactory to create a default inner
 // preconditioner.
 //
