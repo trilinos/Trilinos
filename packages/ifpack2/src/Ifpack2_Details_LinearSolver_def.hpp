@@ -1,7 +1,8 @@
 #ifndef IFPACK2_DETAILS_LINEARSOLVER_DEF_HPP
 #define IFPACK2_DETAILS_LINEARSOLVER_DEF_HPP
 
-#include <Ifpack2_Factory.hpp>
+#include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Ifpack2_Factory.hpp"
 
 // Ifpack2: key is for Ifpack2's factory to have subordinate
 // factories.  That way, each package still has one factory, but we
@@ -21,15 +22,67 @@ LinearSolver (const std::string& solverName) :
 {}
 
 template<class SC, class LO, class GO, class NT>
+LinearSolver<SC, LO, GO, NT>::
+LinearSolver (const Teuchos::RCP<prec_type>& userPrec) :
+  solverName_ ("CUSTOM"), // convention, inherited from Ifpack2::AdditiveSchwarz
+  solver_ (userPrec)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (userPrec.is_null (), std::invalid_argument,
+     "Ifpack2::Details::LinearSolver: The input custom preconditioner is NULL."
+     "  If you want to make an instance of LinearSolver directly from an "
+     "Ifpack2::Preconditioner, the latter must NOT be NULL.");
+
+  // We inherit the idea from Ifpack2::AdditiveSchwarz of letting
+  // users provide a custom Ifpack2::Preconditioner.  It could even be
+  // one that they implement.  This means that we don't know the
+  // preconditioner's name (the string used to identify it in the
+  // LinearSolverFactory).  As a result, we can't actually recreate it
+  // on demand, so the custom preconditioner must support changing the
+  // matrix.
+  typedef ::Ifpack2::Details::CanChangeMatrix<row_matrix_type> mixin_type;
+  mixin_type* innerSolver = dynamic_cast<mixin_type*> (userPrec.getRawPtr ());
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (innerSolver == NULL, std::invalid_argument,
+     "Ifpack2::Details::LinearSolver: The input preconditioner does not "
+     "implement the setMatrix() feature.  Only input preconditioners that "
+     "inherit from Ifpack2::Details::CanChangeMatrix implement this feature.");
+}
+
+template<class SC, class LO, class GO, class NT>
 void
 LinearSolver<SC, LO, GO, NT>::
 setMatrix (const Teuchos::RCP<const OP>& A)
 {
   using Teuchos::null;
   using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
   using Teuchos::TypeNameTraits;
   typedef row_matrix_type MAT;
   const char prefix[] = "Ifpack2::Details::LinearSolver::setMatrix: ";
+
+  if (solverName_ == "CUSTOM") {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (solver_.is_null (), std::logic_error, "Ifpack2::Details::LinearSolver::"
+       "setMatrix: The custom user-set preconditioner is NULL.  It should not "
+       "be at this point.  Please report this bug to the Ifpack2 developers.");
+    typedef ::Ifpack2::Details::CanChangeMatrix<row_matrix_type> mixin_type;
+    RCP<mixin_type> innerSolver = rcp_dynamic_cast<mixin_type> (solver_);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (innerSolver.is_null (), std::logic_error,
+       "Ifpack2::Details::LinearSolver::setMatrix: The input preconditioner "
+       "does not implement the setMatrix() feature.  We should have already "
+       "tested this in the constructor.  Please report this bug to the Ifpack2 "
+       "developers.");
+    RCP<const row_matrix_type> A_row = rcp_dynamic_cast<const row_matrix_type> (A);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (A_row.is_null (), std::invalid_argument,
+       "Ifpack2::Details::LinearSolver::setMatrix: This instance was "
+       "constructed with a custom user-set preconditioner.  In that case, the "
+       "input matrix A must be a Tpetra::RowMatrix.");
+    innerSolver->setMatrix (A_row);
+    return;
+  }
 
   // This needs to invoke Ifpack2's (internal) factory, in order to
   // create the solver on demand if necessary.  That's because

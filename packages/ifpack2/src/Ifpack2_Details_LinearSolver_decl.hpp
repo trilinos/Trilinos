@@ -44,6 +44,23 @@ public:
   ///   test in the constructor whether the solver exists.
   LinearSolver (const std::string& solverName);
 
+  /// \brief Special constructor for use ONLY by Ifpack2::AdditiveSchwarz.
+  ///
+  /// \param userPrec Input custom preconditioner.  It MUST implement
+  ///   <tt>Ifpack2::Details::CanChangeMatrix<row_matrix_type></tt>.
+  ///
+  /// This constructor exists because Ifpack2::AdditiveSchwarz has a
+  /// method that takes an Ifpack2::Preconditioner from the user as
+  /// input.  In that case, we don't know the preconditioner's name.
+  /// It could even be a custom subclass of Ifpack2::Preconditioner
+  /// that the user wrote.  However, it <i>does</i> have a setMatrix()
+  /// method, since it must implement
+  /// Ifpack2::Details::CanChangeMatrix.  As a result, we can use it
+  /// directly; we don't need to know how to (re)create it.  We set
+  /// solverName_ = "CUSTOM" to mark this case, just as
+  /// Ifpack2::AdditiveSchwarz does.
+  LinearSolver (const Teuchos::RCP<prec_type>& userPrec);
+
   //! Destructor (virtual for memory safety).
   virtual ~LinearSolver () {}
 
