@@ -316,12 +316,13 @@ int main(int argc, char *argv[]) {
           if (ret)
             failed = true;
 
-          std::ios_base::fmtflags ff(std::cout.flags());
-          std::cout.precision(2);
-          std::cout << xmlFile << " (" << std::setiosflags(std::ios::fixed)
-                    << timer.wallTime() - lastTime << " sec.) : " << (ret ? "failed" : "passed") << std::endl;
-          lastTime = timer.wallTime();
-          std::cout.flags(ff); // reset flags to whatever they were prior to printing time
+          //std::ios_base::fmtflags ff(std::cout.flags());
+          //std::cout.precision(2);
+          //std::cout << xmlFile << " (" << std::setiosflags(std::ios::fixed)
+          //          << timer.wallTime() - lastTime << " sec.) : " << (ret ? "failed" : "passed") << std::endl;
+          //lastTime = timer.wallTime();
+          //std::cout.flags(ff); // reset flags to whatever they were prior to printing time
+          std::cout << xmlFile << " : " << (ret ? "failed" : "passed") << std::endl;
         }
       }
     }
