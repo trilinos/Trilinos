@@ -860,6 +860,7 @@ void PamgenMeshAdapter<User>::print(int me)
     std::cout << std::endl;
   }
 
+#ifndef USE_MESH_ADAPTER
   for (int i = 0; i < num_elem_; i++) {
     std::cout << me << fn << i 
               << " Elem " << element_num_map_[i]
@@ -868,6 +869,7 @@ void PamgenMeshAdapter<User>::print(int me)
       std::cout << eAdj_[j] << " ";
     std::cout << std::endl;
   }
+#endif
 }
   
 }  //namespace Zoltan2
