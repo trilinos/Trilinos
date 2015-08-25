@@ -60,18 +60,26 @@ class PartitionedVector : public Vector<Real> {
   typedef Vector<Real>                  V;
   typedef Teuchos::RCP<V>               RCPV;
   typedef PartitionedVector<Real>       PV;
-  typedef std::vector<Real>::size_type  size_type;
 
 private:
-  std::vector<RCPV> vecs_;
-  mutable std::vector<RCPV> dual_vecs_;
-  mutable Teuchos::RCP<PartitionedVector<Real> > dual_pvec_;
+  Teuchos::RCP<std::vector<RCPV> >      vecs_;
+//  mutable std::vector<RCPV>             dual_vecs_;  
 
 public:
-  PartitionedVector( const std::vector<RCPV> &vecs ) : vecs_(vecs) {
-   
-    for( size_type i=0; i<vecs.size(); ++i ) {
-      dual_vecs[i] = (vecs[i]->dual()).clone();  
+
+  typedef typename std::vector<PV>::size_type    size_type;
+
+  PartitionedVector( const Teuchos::RCP<std::vector<RCPV> > &vecs ) : 
+    vecs_(vecs) {
+  }
+
+  void set( const V &x ) {
+    using Teuchos::dyn_cast;
+    const PV &xs = dyn_cast<const PV>(dyn_cast<const V>(x));
+    
+    for( size_type i=0; i<vecs_->size(); ++i ) { 
+      (*vecs_)[i]->set(*xs.get(i));
+//      dual_vecs_.push_back(((*vecs_)[i]->dual()).clone());
     }
   }
 
@@ -79,92 +87,118 @@ public:
     using Teuchos::dyn_cast;
     const PV &xs = dyn_cast<const PV>(dyn_cast<const V>(x));
     
-    for( size_type i=0; i<vecs.size(); ++i ) { 
-      vecs_[i]->plus(*xs.get(i));
+    for( size_type i=0; i<vecs_->size(); ++i ) { 
+      (*vecs_)[i]->plus(*xs.get(i));
     }
   }
 
   void scale( const Real alpha ) {
-    for( size_type i=0; i<vecs.size(); ++i ) { 
-      vecs_[i]->scale(alpha);
+    for( size_type i=0; i<vecs_->size(); ++i ) { 
+      (*vecs_)[i]->scale(alpha);
     }
   }
 
   void axpy( const Real alpha, const V &x ) {
     using Teuchos::dyn_cast;
     const PV &xs = dyn_cast<const PV>(dyn_cast<const V>(x));
-    for( size_type i=0; i<vecs.size(); ++i ) { 
-      vecs_[i]->axpy(alpha,xs.get(i));
+    for( size_type i=0; i<vecs_->size(); ++i ) { 
+      (*vecs_)[i]->axpy(alpha,*xs.get(i));
     }
   } 
  
   Real dot( const V &x ) const {
+    using Teuchos::dyn_cast;
     const PV &xs = dyn_cast<const PV>(dyn_cast<const V>(x));
     Real result = 0; 
-      for( size_type i=0; i<vecs.size(); ++i ) { 
-        result += vecs_[i]->dot(xs.get(i));
+      for( size_type i=0; i<vecs_->size(); ++i ) { 
+        result += (*vecs_)[i]->dot(*xs.get(i));
       }
     return result;  
   }
  
   Real norm() const {
     Real result = 0; 
-      for( size_type i=0; i<vecs_.size(); ++i ) {   
-        result += vecs_[i]->(vecs_[i]);
+      for( size_type i=0; i<vecs_->size(); ++i ) {   
+        result += std::pow((*vecs_)[i]->norm(),2);
       }
-    return result;  
+    return std::sqrt(result);  
   }
 
   RCPV clone() const {
-    std::vector<RCPV> clonevec;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    RCP<std::vector<RCPV> > clonevec = rcp( new std::vector<RCPV> );
     
-    for( size_type i=0; i<vecs_.size(); ++i ) {   
-      clonevec.push_back(vecs_[i]->clone());
+    for( size_type i=0; i<vecs_->size(); ++i ) {   
+      clonevec->push_back((*vecs_)[i]->clone());
     }
-    return Teuchos::rcp( new PV(clonevec) );
+    return rcp( new PV(clonevec) );
   }
 
   const V& dual(void) const {
-    for( size_type i=0; i<vecs_.size(); ++i ) {  
-      dual_vecs_[i]->set(vecs_[i]); 
-    }
-    return Teuchos::rcp( new PV(dual_vecs_) );
+//    for( size_type i=0; i<vecs_->size(); ++i ) {  
+//      dual_vecs_[i]->set((*vecs_)[i]->dual());
+//    }
+//    dual_pvec_ = PV( Teuchos::rcp( &dual_vecs_, true ) );
+    return *this;
   }
 
   RCPV basis( const int i ) const {
-    std::vector<RCPV> basisvecs;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+
+    RCPV bvec = this->clone();
+
+    // Downcast
+    PV & eb = Teuchos::dyn_cast<PV>(const_cast <V&>(*bvec));    
+
     int begin = 0;   
     int end = 0;
-    for( size_type j=0; j<vecs_.size(); ++j ) { 
-      end += vecs_[j].dimension();
+    for( size_type j=0; j<vecs_->size(); ++j ) { 
+      end += (*vecs_)[j]->dimension();
         
       if( begin<= i && i<end ) {
-        RCPV e = vecs_[j]->basis(i-begin);    
-        basisvecs.push_back(e);  
+        eb.set(j, *((*vecs_)[j]->basis(i-begin)) );    
       }
       else {
-        RCPV e = vecs_[j]->clone();
-        e->zero();
-        basisvecs.push_back(e);     
+        eb.zero(j);  
       }
       begin = end+1;      
     } 
+    return bvec;
   }
 
   int dimension() const {
     int total_dim = 0;
-    for( size_type j=0; j<vecs_.size(); ++j ) { 
-      total_dim += vecs_[j].dimension(); 
+    for( size_type j=0; j<vecs_->size(); ++j ) { 
+      total_dim += (*vecs_)[j]->dimension(); 
     }
     return total_dim;
   }
 
-  RCPV get(size_type i) const {
-    return vecs_[i];
+  void zero() {
+    for( size_type j=0; j<vecs_->size(); ++j ) { 
+      (*vecs_)[j]->zero();
+    } 
+  }
+
+  // Methods that do not exist in the base class
+
+  Teuchos::RCP<const Vector<Real> > get(size_type i) const {
+    return (*vecs_)[i];
   }
 
   void set(size_type i, const V &x) {
-    vecs_[i]->set(x); 
+    (*vecs_)[i]->set(x); 
+  }
+
+  void zero(size_type i) {
+    (*vecs_)[i]->zero();
+  }
+
+  size_type numVectors() {
+    return vecs_->size();
   }
 
 };
