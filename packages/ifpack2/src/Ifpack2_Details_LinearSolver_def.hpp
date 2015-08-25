@@ -159,6 +159,50 @@ numeric ()
   solver_->compute ();
 }
 
+template<class SC, class LO, class GO, class NT>
+std::string
+LinearSolver<SC, LO, GO, NT>::
+description () const
+{
+  using Teuchos::TypeNameTraits;
+  if (solver_.is_null ()) {
+    std::ostringstream os;
+    os << "\"Ifpack2::Details::LinearSolver\": {"
+       << "SC: " << TypeNameTraits<SC>::name ()
+       << ", LO: " << TypeNameTraits<LO>::name ()
+       << ", GO: " << TypeNameTraits<GO>::name ()
+       << ", NT: " << TypeNameTraits<NT>::name ()
+       << "}";
+    return os.str ();
+  } else {
+    return solver_->description ();
+  }
+}
+
+template<class SC, class LO, class GO, class NT>
+void
+LinearSolver<SC, LO, GO, NT>::
+describe (Teuchos::FancyOStream& out,
+          const Teuchos::EVerbosityLevel verbLevel) const
+{
+  using Teuchos::TypeNameTraits;
+  using std::endl;
+  if (solver_.is_null ()) {
+    if (verbLevel > Teuchos::VERB_NONE) {
+      Teuchos::OSTab tab0 (out);
+      out << "\"Ifpack2::Details::LinearSolver\":" << endl;
+      Teuchos::OSTab tab1 (out);
+      out << "SC: " << TypeNameTraits<SC>::name () << endl
+          << "LO: " << TypeNameTraits<LO>::name () << endl
+          << "GO: " << TypeNameTraits<GO>::name () << endl
+          << "NT: " << TypeNameTraits<NT>::name () << endl;
+    }
+  }
+  else {
+    solver_->describe (out, verbLevel);
+  }
+}
+
 } // namespace Details
 } // namespace Ifpack2
 

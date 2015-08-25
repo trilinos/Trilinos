@@ -1,9 +1,10 @@
 #ifndef IFPACK2_DETAILS_LINEARSOLVER_DECL_HPP
 #define IFPACK2_DETAILS_LINEARSOLVER_DECL_HPP
 
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Trilinos_Details_LinearSolver.hpp>
-#include <Ifpack2_Preconditioner.hpp>
+#include "Ifpack2_ConfigDefs.hpp"
+#include "Trilinos_Details_LinearSolver.hpp"
+#include "Ifpack2_Preconditioner.hpp"
+#include "Teuchos_Describable.hpp"
 
 namespace Ifpack2 {
 namespace Details {
@@ -19,7 +20,8 @@ template<class SC, class LO, class GO, class NT>
 class LinearSolver :
     public Trilinos::Details::LinearSolver<Tpetra::MultiVector<SC, LO, GO, NT>,
                                            Tpetra::Operator<SC, LO, GO, NT>,
-                                           typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>
+                                           typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>,
+    virtual public Teuchos::Describable
 {
 public:
   typedef Ifpack2::Preconditioner<SC, LO, GO, NT> prec_type;
@@ -65,6 +67,15 @@ public:
 
   //! Precompute for matrix values' changes.
   void numeric ();
+
+  //! Implementation of Teuchos::Describable::description.
+  std::string description () const;
+
+  //! Implementation of Teuchos::Describable::describe.
+  void
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const;
 
 private:
   //! Name of the Ifpack2 solver to wrap.
