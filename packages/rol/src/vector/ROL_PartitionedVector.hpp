@@ -63,14 +63,17 @@ class PartitionedVector : public Vector<Real> {
 
 private:
   Teuchos::RCP<std::vector<RCPV> >      vecs_;
-//  mutable std::vector<RCPV>             dual_vecs_;  
-
+  mutable std::vector<RCPV>             dual_vecs_;  
+  mutable Teuchos::RCP<PV>              dual_pvec_;
 public:
 
   typedef typename std::vector<PV>::size_type    size_type;
 
   PartitionedVector( const Teuchos::RCP<std::vector<RCPV> > &vecs ) : 
     vecs_(vecs) {
+     for( size_type i=0; i<vecs_->size(); ++i ) { 
+      dual_vecs_.push_back(((*vecs_)[i]->dual()).clone());
+    }
   }
 
   void set( const V &x ) {
@@ -79,7 +82,6 @@ public:
     
     for( size_type i=0; i<vecs_->size(); ++i ) { 
       (*vecs_)[i]->set(*xs.get(i));
-//      dual_vecs_.push_back(((*vecs_)[i]->dual()).clone());
     }
   }
 
@@ -137,11 +139,11 @@ public:
   }
 
   const V& dual(void) const {
-//    for( size_type i=0; i<vecs_->size(); ++i ) {  
-//      dual_vecs_[i]->set((*vecs_)[i]->dual());
-//    }
-//    dual_pvec_ = PV( Teuchos::rcp( &dual_vecs_, true ) );
-    return *this;
+    for( size_type i=0; i<vecs_->size(); ++i ) {  
+      dual_vecs_[i]->set((*vecs_)[i]->dual());
+    }
+    dual_pvec_ = Teuchos::rcp( new PV( Teuchos::rcp( &dual_vecs_, false ) ) );
+    return *dual_pvec_;
   }
 
   RCPV basis( const int i ) const {
