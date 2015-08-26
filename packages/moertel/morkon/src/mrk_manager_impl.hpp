@@ -181,14 +181,14 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
   // Count up the numbers of nodes, faces, and interfaces.  Fill in the following
   // on the host side, then migrate the data to the device.
 
-  local_to_global_idx_dvt                  node_to_global_id;
-  local_to_global_idx_dvt                  face_to_global_id;
-  face_to_interface_and_side_dvt  face_to_interface_and_side;
-  face_to_num_nodes_dvt                    face_to_num_nodes;
-  face_to_nodes_dvt                            face_to_nodes;
-  points_dvt                                     node_coords;
-  points_dvt                           predicted_node_coords;
-  on_boundary_table_dvt                  is_node_on_boundary;
+  local_to_global_idx_dvt                  node_to_global_id("node_to_global_id");
+  local_to_global_idx_dvt                  face_to_global_id("face_to_global_id");
+  face_to_interface_and_side_dvt  face_to_interface_and_side("face_to_interface_and_side");
+  face_to_num_nodes_dvt                    face_to_num_nodes("face_to_num_nodes");
+  face_to_nodes_dvt                            face_to_nodes("face_to_nodes");
+  points_dvt                                     node_coords("node_coords");
+  points_dvt                           predicted_node_coords("predicted_node_coords");
+  on_boundary_table_dvt                  is_node_on_boundary("is_node_on_boundary");
 
   for (typename interfaces_map_t::iterator ifcs_i = m_interfaces.begin(); ifcs_i != m_interfaces.end(); ++ifcs_i)
   {

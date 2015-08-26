@@ -79,12 +79,18 @@ class Interface : public InterfaceBase
 
 public:
 
+  typedef Interface_HostSideAdapter<DIM>           host_side_adapter_t;
+
   // For pulling data in from the host space.
   bool hsa_add_node(SideEnum which_side, global_idx_t gbl_node_id, const double coords[]);
   bool hsa_add_face(SideEnum which_side, global_idx_t gbl_face_id, int num_nodes, const global_idx_t gbl_node_id[]);
 
   // No more changes via public API after this.
   bool commited() const { return m_committed; }
+
+  const Interface_HostSideAdapter<DIM> *get_HostSideAdapter(SideEnum side) const {
+    return m_hs_adapters[side];
+  }
 
 private:
 

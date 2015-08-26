@@ -66,6 +66,19 @@ enum MorkonFaceType { MRK_LINE2=0,
                       MRK_TRI3,
                       MRK_QUAD4 };
 
+template <unsigned int MORKON_FACE_TYPE>
+struct NodesPerFace { };
+
+template <> struct NodesPerFace<MRK_TRI3>
+{
+    enum {value = 3u};
+};
+
+template <> struct NodesPerFace<MRK_QUAD4>
+{
+    enum {value = 4u};
+};
+
 template  <typename DeviceType, unsigned int DIM>
 struct MorkonCommonlyUsed
 {

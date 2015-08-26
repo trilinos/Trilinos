@@ -46,8 +46,9 @@
 /* ******************************************************************** */
 
 
-
 #include <gtest/gtest.h>
+
+#include <array>
 
 #include "mrk_default_kokkos_device_type.hpp"
 #include "mrk_data_types.hpp"
@@ -63,6 +64,7 @@
 // the SetUpTestCase() and TearDownTestCase() static member functions in a
 // test fixture class.  See, e.g., kokkos/core/unit_test/TestOpenMP.cpp.
 
+
 TEST(morkon,just_check_if_it_compiles) {
   using namespace morkon_exp;
   typedef Morkon_Manager<default_kokkos_device_t, 3, MRK_QUAD4>    default_manager_3d_t;
@@ -75,6 +77,49 @@ TEST(morkon,just_check_if_it_compiles) {
   Tpetra::CrsMatrix<> *dummy_D = 0;
   Tpetra::CrsMatrix<> *dummy_M = 0;
   manager_0->mortar_integrate(dummy_D, dummy_M);
+}
+
+TEST(morkon, add_nodes_and_faces_to_interface) {
+  using namespace morkon_exp;
+  typedef Morkon_Manager<default_kokkos_device_t, 3, MRK_TRI3>  manager_3d_t;
+  typedef Teuchos::RCP< manager_3d_t >                        manager_3d_ptr;
+  typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>     interface_3d_t;
+  typedef Teuchos::RCP< interface_3d_t >                    interface_3d_ptr;
+
+  manager_3d_ptr manager_0 = manager_3d_t::MakeInstance(0, 0);
+  interface_3d_ptr interface_0 = manager_0->create_interface(0,0);
+
+  const size_t NumNodes = 8;
+  const global_idx_t node_gids[NumNodes] = {1,2,3,4,5,6,7,8};
+  typedef InterfaceBase::SideEnum interface_side_t;
+  const interface_side_t node_side[NumNodes] = {
+                                    InterfaceBase::NON_MORTAR_SIDE, InterfaceBase::NON_MORTAR_SIDE,
+                                    InterfaceBase::NON_MORTAR_SIDE, InterfaceBase::NON_MORTAR_SIDE,
+                                    InterfaceBase::MORTAR_SIDE, InterfaceBase::MORTAR_SIDE,
+                                    InterfaceBase::MORTAR_SIDE, InterfaceBase::MORTAR_SIDE };
+  const double node_coords[NumNodes][3] = { {0,0,0}, {1,0,0}, {1,1,0}, {0,1,0},
+                                            {0,0,0.1}, {0,1,0.1}, {1,1,0.1}, {1,0,0.1} };
+  for (size_t node_i = 0; node_i < NumNodes; ++node_i)
+  {
+    interface_0->hsa_add_node(node_side[node_i], node_gids[node_i], node_coords[node_i]);
+  }
+
+  const size_t NumFaces = 4;
+  const size_t NodesPerFace = 3;
+  const global_idx_t face_gids[NumFaces] = {1,2,3,4};
+  const interface_side_t face_sides[NumFaces] = {
+                                            InterfaceBase::NON_MORTAR_SIDE, InterfaceBase::NON_MORTAR_SIDE,
+                                            InterfaceBase::MORTAR_SIDE, InterfaceBase::MORTAR_SIDE};
+  global_idx_t face_node_gids[NumFaces][NodesPerFace]  = { {1,2,3}, {1,3,4}, {5,6,7}, {5,7,8}};
+
+  for (size_t face_i = 0; face_i < NumFaces; ++face_i)
+  {
+    interface_0->hsa_add_face(face_sides[face_i], face_gids[face_i], NodesPerFace, face_node_gids[face_i]);
+  }
+
+  const interface_3d_t::host_side_adapter_t *non_mortar_side_hsa =
+        interface_0->get_HostSideAdapter(InterfaceBase::NON_MORTAR_SIDE);
+  EXPECT_NE(static_cast<interface_3d_t::host_side_adapter_t *>(0), non_mortar_side_hsa);
 }
 
 
