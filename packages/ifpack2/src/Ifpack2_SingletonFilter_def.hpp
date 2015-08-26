@@ -585,6 +585,6 @@ typename SingletonFilter<MatrixType>::mag_type SingletonFilter<MatrixType>::getF
 } // namespace Ifpack2
 
 #define IFPACK2_SINGLETONFILTER_INSTANT(S,LO,GO,N)                            \
-  template class Ifpack2::SingletonFilter< Tpetra::CrsMatrix<S, LO, GO, N> >;
+  template class Ifpack2::SingletonFilter< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif
