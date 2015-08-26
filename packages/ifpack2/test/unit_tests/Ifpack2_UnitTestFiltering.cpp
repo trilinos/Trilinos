@@ -166,7 +166,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // ========================================= //
   //
   // Mantain 3 off-diagonal elements & 3 bandwidth, which is pretty boring since this is a noop.
-  Ifpack2::SparsityFilter<CRS> SparsityA(RCP<ROW >(&LocalA,false),3,3);
+  Ifpack2::SparsityFilter<ROW> SparsityA(RCP<ROW >(&LocalA,false),3,3);
 
   // Apply w/ filter
   SparsityA.apply(lx,ly);
