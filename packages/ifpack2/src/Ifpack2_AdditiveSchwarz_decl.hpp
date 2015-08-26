@@ -45,6 +45,7 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
+#include "Trilinos_Details_LinearSolver.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
@@ -483,9 +484,8 @@ public:
   /// calling setInnerPreconditioner().  However, users may instead
   /// specify the subdomain solver by setting the "inner
   /// preconditioner name" parameter (or any of its aliases).  If they
-  /// choose to do so, they may only use inner preconditioners
-  /// supported by Ifpack2::Details::OneLevelFactory.  These include
-  /// but are not necessarily limited to the following:
+  /// choose to do so, they may use any Ifpack2 preconditioner.  These
+  /// include but are not necessarily limited to the following:
   ///
   ///   - "AMESOS2": Use Amesos2's interface to sparse direct solvers.
   ///     This is only allowed if Trilinos was built with the Amesos2
@@ -536,8 +536,8 @@ public:
   /// subdomain solvers).  It can't create nested preconditioners
   /// (e.g., AdditiveSchwarz and SupportGraph) on its own as inner
   /// preconditioners, and it doesn't know how to create arbitrary
-  /// subclasses of Ifpack2::Preconditioner unless
-  /// Details::OneLevelFactory knows how to create them.
+  /// subclasses of Ifpack2::Preconditioner unless Ifpack2::Factory
+  /// knows how to create them.
   ///
   /// This leaves users two options in order to have any
   /// preconditioner as AdditiveSchwarz's inner preconditioner:
@@ -691,11 +691,19 @@ private:
                               local_ordinal_type,
                               global_ordinal_type,
                               node_type> MV;
+  //! Specialization of Tpetra::Operator.
+  typedef Tpetra::Operator<scalar_type,
+                           local_ordinal_type,
+                           global_ordinal_type,
+                           node_type> OP;
   //! Specialization of Preconditioner.
   typedef Preconditioner<scalar_type,
                          local_ordinal_type,
                          global_ordinal_type,
                          node_type> prec_type;
+
+  //! Type of the inner (subdomain) solver.
+  typedef Trilinos::Details::LinearSolver<MV, OP, typename MV::mag_type> inner_solver_type;
 
   //! Copy constructor (unimplemented; do not use)
   AdditiveSchwarz (const AdditiveSchwarz& RHS);
@@ -710,41 +718,6 @@ private:
   ///   inner preconditioner's name.
   bool hasInnerPrecName () const;
 
-
-  // mfh 28 Jan 2014: Re-enable in next commit to Ifpack2_AdditiveSchwarz_def.hpp.
-#if 0
-  /// \brief Whether the given inner preconditioner name is "custom,"
-  ///   that is, whether AdditiveSchwarz does <i>not</i> know on its
-  ///   own how to create it.
-  ///
-  /// AdditiveSchwarz only knows, on its own, how to create
-  /// "non-nested" preconditioners as inner preconditioners (i.e.,
-  /// subdomain solvers).  It can't create nested preconditioners
-  /// (e.g., AdditiveSchwarz and SupportGraph) on its own as inner
-  /// preconditioners, and it doesn't know how to create arbitrary
-  /// subclasses of Ifpack2::Preconditioner unless
-  /// Details::OneLevelFactory knows how to create them.
-  ///
-  /// This leaves users two options in order to have any
-  /// preconditioner as AdditiveSchwarz's inner preconditioner:
-  ///
-  /// 1. If Ifpack2::Factory knows how to create a preconditioner
-  ///    whose string name is \c prec, then users who don't want to
-  ///    create the inner preconditioner themselves must create
-  ///    AdditiveSchwarz using Factory, <i>not</i> by invoking
-  ///    AdditiveSchwarz's constructor themselves.  Factory will set
-  ///    up the inner preconditioner for them before it returns the
-  ///    AdditiveSchwarz instance.
-  ///
-  /// 2. If Ifpack2::Factory does <i>not</i> know how to create a
-  ///    preconditioner \c prec (for example, if it is not even
-  ///    implemented in Ifpack2), then users must create the inner
-  ///    preconditioner instance themselves, and give it to
-  ///    AdditiveSchwarz using setInnerPreconditioner.  In this case,
-  ///    AdditiveSchwarz's ParameterList must not specify the inner
-  ///    preconditioner's name.
-  bool isCustomPrecName (const std::string& prec) const;
-#endif // 0
 
   //! The current inner preconditioner name.
   std::string innerPrecName () const;
@@ -834,7 +807,7 @@ private:
   //! The total number of floating-point operations over all apply() calls.
   mutable double ApplyFlops_;
   //! The inner (that is, per subdomain local) solver.
-  Teuchos::RCP<prec_type> Inverse_;
+  Teuchos::RCP<inner_solver_type> Inverse_;
   //! Local distributed map for filtering multivector with no overlap.
   Teuchos::RCP<const map_type> localMap_;
 
