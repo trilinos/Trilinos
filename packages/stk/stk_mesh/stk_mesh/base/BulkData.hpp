@@ -89,6 +89,7 @@ namespace stk {
 namespace mesh {
 
 class BulkData;
+struct PartStorage;
 enum class FaceCreationBehavior;
 
 void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
@@ -838,6 +839,10 @@ protected: //functions
 
   void internal_resolve_ghosted_modify_delete(); // Mod Mark
   void internal_resolve_shared_part_membership_for_element_death(); // Mod Mark
+
+  void remove_unneeded_induced_parts(stk::mesh::Entity entity, const EntityCommInfoVector& entity_comm_info,
+          PartStorage& part_storage, stk::CommSparse& comm);
+
   void internal_resolve_shared_membership(); // Mod Mark
   void internal_resolve_parallel_create(); // Mod Mark
   void internal_update_sharing_comm_map_and_fill_list_modified_shared_entities_of_rank(stk::mesh::EntityRank entityRank, std::vector<stk::mesh::Entity> & shared_new ); // Mod Mark

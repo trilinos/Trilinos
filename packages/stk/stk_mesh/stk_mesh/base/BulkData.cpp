@@ -4554,10 +4554,6 @@ void BulkData::fill_entity_procs_for_owned_modified_or_created(std::vector<Entit
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-enum { PART_ORD_UNIVERSAL = 0 };
-enum { PART_ORD_OWNED     = 1 };
-enum { PART_ORD_SHARED    = 2 };
-
 namespace {
 
 bool shared_with_proc(const EntityCommListInfo& info, int proc) {
@@ -4624,6 +4620,7 @@ void pack_induced_memberships( BulkData& bulk_data,
 
       unsigned tmp = induced.size();
 
+      buf.pack<stk::mesh::EntityKey>(entity_comm[i].key);
       buf.pack<unsigned>( tmp );
 
       for ( size_t j=0; j<induced.size(); ++j) {
@@ -4636,6 +4633,7 @@ void pack_induced_memberships( BulkData& bulk_data,
 void pack_part_memberships( BulkData& meshbulk, stk::CommSparse & comm ,
                             const std::vector<EntityProc> & send_list )
 {
+  const unsigned part_ord_shared = meshbulk.mesh_meta_data().globally_shared_part().mesh_meta_data_ordinal();
   for ( std::vector<EntityProc>::const_iterator
         i = send_list.begin() ; i != send_list.end() ; ++i ) {
 
@@ -4650,7 +4648,7 @@ void pack_part_memberships( BulkData& meshbulk, stk::CommSparse & comm ,
 
     const unsigned count_all  = part_ord.second - part_ord.first ;
     const unsigned count_skip =
-      ( 2 < count_all && part_ord.first[2] == PART_ORD_SHARED ) ? 3 : 2 ;
+      ( 2 < count_all && part_ord.first[2] == part_ord_shared ) ? 3 : 2 ;
 
     const unsigned count_send = count_all - count_skip ;
 
@@ -4674,248 +4672,147 @@ void pack_part_memberships( BulkData& meshbulk, stk::CommSparse & comm ,
 //  either explicitly or indirectly via entity relationships
 //  being added or removed.q
 
+void unpack_induced_parts_from_sharers(OrdinalVector& induced_parts, const EntityCommInfoVector& entity_comm_info, stk::CommSparse& comm, stk::mesh::EntityKey expected_key)
+{
+    for(PairIterEntityComm ec = shared_comm_info_range(entity_comm_info); !ec.empty(); ++ec)
+    {
+        CommBuffer & buf = comm.recv_buffer(ec->proc);
+
+        unsigned count = 0;
+        stk::mesh::EntityKey key;
+        buf.unpack<stk::mesh::EntityKey>(key);
+        ThrowRequireMsg(key == expected_key, "Program error. Contact sierra-help@sandia.gov for support. Key mismatch!" << key << " not same as " << expected_key);
+
+        buf.unpack<unsigned>(count);
+        for(unsigned j = 0; j < count; ++j)
+        {
+            unsigned part_ord = 0;
+            buf.unpack<unsigned>(part_ord);
+            insert_ordinal(induced_parts, part_ord);
+        }
+    }
+}
+
+void pack_and_send_induced_parts_from_sharers_to_owners(stk::mesh::BulkData& bulkData, stk::CommSparse& comm, EntityCommListInfoVector& entity_comm_list)
+{
+    pack_induced_memberships(bulkData, comm, entity_comm_list);
+    comm.allocate_buffers();
+    pack_induced_memberships(bulkData, comm, entity_comm_list);
+    comm.communicate();
+}
+
+void filter_out_unneeded_induced_parts(stk::mesh::BulkData& bulkData, stk::mesh::Entity entity,
+        const OrdinalVector& induced_parts, stk::mesh::PartVector& remove_parts)
+{
+    remove_parts.clear();
+    stk::mesh::EntityRank rank = bulkData.entity_rank(entity);
+    const stk::mesh::PartVector& current_parts = bulkData.bucket(entity).supersets();
+
+    OrdinalVector::const_iterator induced_parts_begin = induced_parts.begin(),
+            induced_parts_end = induced_parts.end();
+
+    for(stk::mesh::Part* part : current_parts)
+    {
+        if(part->was_induced(rank) &&
+           !contains_ordinal(induced_parts_begin, induced_parts_end, part->mesh_meta_data_ordinal()))
+        {
+            remove_parts.push_back(part);
+        }
+    }
+}
+
+void convert_part_ordinals_to_parts(const stk::mesh::MetaData& meta, const OrdinalVector& input_ordinals, stk::mesh::PartVector& output_parts)
+{
+    output_parts.clear();
+    output_parts.reserve(input_ordinals.size());
+    for(unsigned ipart = 0; ipart < input_ordinals.size(); ++ipart)
+    {
+        output_parts.push_back(&meta.get_part(input_ordinals[ipart]));
+    }
+}
+
+struct PartStorage
+{
+   OrdinalVector empty;
+   OrdinalVector induced_part_ordinals;
+   PartVector inducedParts;
+   PartVector removeParts;
+};
+
+void BulkData::remove_unneeded_induced_parts(stk::mesh::Entity entity, const EntityCommInfoVector& entity_comm_info,
+        PartStorage& part_storage, stk::CommSparse& comm)
+{
+    part_storage.induced_part_ordinals.clear();
+    induced_part_membership(*this, entity, part_storage.empty, part_storage.induced_part_ordinals);
+    unpack_induced_parts_from_sharers(part_storage.induced_part_ordinals, entity_comm_info, comm, entity_key(entity));
+    filter_out_unneeded_induced_parts(*this, entity, part_storage.induced_part_ordinals, part_storage.removeParts);
+    convert_part_ordinals_to_parts(mesh_meta_data(), part_storage.induced_part_ordinals, part_storage.inducedParts);
+    internal_change_entity_parts(entity, part_storage.inducedParts, part_storage.removeParts);
+}
+
 void BulkData::internal_resolve_shared_membership()
 {
     ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 
-    const MetaData & meta = m_mesh_meta_data;
     ParallelMachine p_comm = parallel();
     const int p_rank = parallel_rank();
 
-    const Part & part_universal = meta.universal_part();
-    const Part & part_owned = meta.locally_owned_part();
-    const Part & part_shared = meta.globally_shared_part();
+    stk::CommSparse comm(p_comm);
+    pack_and_send_induced_parts_from_sharers_to_owners(*this, comm, m_entity_comm_list);
 
-    // Quick verification of part ordinal assumptions
+    PartStorage part_storage;
 
-    ThrowRequireMsg(PART_ORD_UNIVERSAL == part_universal.mesh_meta_data_ordinal(),
-            "Universal part ordinal is wrong, expected "
-            << PART_ORD_UNIVERSAL << ", got: "
-            << part_universal.mesh_meta_data_ordinal());
-
-    ThrowRequireMsg(PART_ORD_OWNED == part_owned.mesh_meta_data_ordinal(),
-            "Owned part ordinal is wrong, expected "
-            << PART_ORD_OWNED << ", got: "
-            << part_owned.mesh_meta_data_ordinal());
-
-    ThrowRequireMsg(PART_ORD_SHARED == part_shared.mesh_meta_data_ordinal(),
-            "Shared part ordinal is wrong, expected "
-            << PART_ORD_SHARED << ", got: "
-            << part_shared.mesh_meta_data_ordinal());
-
-    //  Shared entities may have been modified due to relationship changes.
-    //  Send just the current induced memberships from the sharing to
-    //  the owning processes.
+    for(EntityCommListInfoVector::iterator i = m_entity_comm_list.begin(); i != m_entity_comm_list.end(); ++i)
     {
-        stk::CommSparse comm(p_comm);
+        stk::mesh::Entity entity = i->entity;
 
-        pack_induced_memberships(*this, comm, m_entity_comm_list);
-
-        comm.allocate_buffers();
-
-        pack_induced_memberships(*this, comm, m_entity_comm_list);
-
-        comm.communicate();
-
-        OrdinalVector empty, induced_parts, current_parts, remove_parts;
-        PartVector inducedParts, removeParts;
-
-        for(EntityCommListInfoVector::iterator i = m_entity_comm_list.begin(); i != m_entity_comm_list.end(); ++i)
+        bool i_own_this_entity_in_comm_list = i->owner == p_rank;
+        if( i_own_this_entity_in_comm_list )
         {
-            bool i_own_this_entity_in_comm_list = i->owner == p_rank;
-            if( i_own_this_entity_in_comm_list )
-            {
-                // Receiving from all sharing processes
-
-                empty.clear();
-                induced_parts.clear();
-                current_parts.clear();
-                remove_parts.clear();
-
-                induced_part_membership(*this, i->entity, empty, induced_parts);
-
-                for(PairIterEntityComm ec = shared_comm_info_range(i->entity_comm->comm_map); !ec.empty(); ++ec)
-                {
-                    CommBuffer & buf = comm.recv_buffer(ec->proc);
-
-                    unsigned count = 0;
-                    buf.unpack<unsigned>(count);
-                    for(unsigned j = 0; j < count; ++j)
-                    {
-                        unsigned part_ord = 0;
-                        buf.unpack<unsigned>(part_ord);
-                        insert_ordinal(induced_parts, part_ord);
-                    }
-                }
-
-                // Remove any part that is an induced part but is not
-                // in the induced parts list.
-
-                this->bucket(i->entity).supersets(current_parts);
-
-                OrdinalVector::const_iterator induced_parts_begin = induced_parts.begin(),
-                        induced_parts_end = induced_parts.end();
-
-                for(OrdinalVector::iterator
-                p = current_parts.begin(); p != current_parts.end(); ++p)
-                {
-                    if(meta.get_parts()[*p]->was_induced(i->key.rank()) &&
-                            !contains_ordinal(induced_parts_begin, induced_parts_end, *p))
-                    {
-                        remove_parts.push_back(*p);
-                    }
-                }
-
-                inducedParts.clear();
-                removeParts.clear();
-
-                inducedParts.reserve(induced_parts.size());
-                for(unsigned ipart = 0; ipart < induced_parts.size(); ++ipart)
-                {
-                    inducedParts.push_back(&m_mesh_meta_data.get_part(induced_parts[ipart]));
-                }
-                removeParts.reserve(remove_parts.size());
-                for(unsigned ipart = 0; ipart < remove_parts.size(); ++ipart)
-                {
-                    removeParts.push_back(&m_mesh_meta_data.get_part(remove_parts[ipart]));
-                }
-                internal_change_entity_parts(i->entity, inducedParts, removeParts);
-            }
+            remove_unneeded_induced_parts(entity, i->entity_comm->comm_map, part_storage,  comm);
         }
     }
 
-    //------------------------------
-    // The owners have complete knowledge of memberships.
-    // Send membership information to sync the shared and ghosted copies.
-    // Only need to do this for entities that have actually changed.
     std::vector<EntityProc> send_list;
     fill_entity_procs_for_owned_modified_or_created(send_list);
-
     internal_send_part_memberships_from_owner(send_list);
+}
+
+void pack_and_send_induced_parts_for_entities_less_than_element_rank(stk::mesh::BulkData& bulkData, stk::CommSparse& comm, const EntityCommListInfoVector &entity_comm_list)
+{
+    pack_induced_memberships_for_entities_less_than_element_rank(bulkData, comm, entity_comm_list);
+    comm.allocate_buffers();
+    pack_induced_memberships_for_entities_less_than_element_rank(bulkData, comm, entity_comm_list);
+    comm.communicate();
 }
 
 void BulkData::internal_resolve_shared_part_membership_for_element_death()
 {
     ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 
-    const MetaData & meta = m_mesh_meta_data;
     ParallelMachine p_comm = parallel();
     const int p_rank = parallel_rank();
 
-    const Part & part_universal = meta.universal_part();
-    const Part & part_owned = meta.locally_owned_part();
-    const Part & part_shared = meta.globally_shared_part();
+    stk::CommSparse comm(p_comm);
+    pack_and_send_induced_parts_for_entities_less_than_element_rank(*this, comm, m_entity_comm_list);
 
-    // Quick verification of part ordinal assumptions
+    OrdinalVector empty, induced_part_ordinals;
+    PartStorage part_storage;
 
-    ThrowRequireMsg(PART_ORD_UNIVERSAL == part_universal.mesh_meta_data_ordinal(),
-            "Universal part ordinal is wrong, expected "
-            << PART_ORD_UNIVERSAL << ", got: "
-            << part_universal.mesh_meta_data_ordinal());
-
-    ThrowRequireMsg(PART_ORD_OWNED == part_owned.mesh_meta_data_ordinal(),
-            "Owned part ordinal is wrong, expected "
-            << PART_ORD_OWNED << ", got: "
-            << part_owned.mesh_meta_data_ordinal());
-
-    ThrowRequireMsg(PART_ORD_SHARED == part_shared.mesh_meta_data_ordinal(),
-            "Shared part ordinal is wrong, expected "
-            << PART_ORD_SHARED << ", got: "
-            << part_shared.mesh_meta_data_ordinal());
-
-    //  Shared entities may have been modified due to relationship changes.
-    //  Send just the current induced memberships from the sharing to
-    //  the owning processes.
+    for(EntityCommListInfoVector::iterator i = m_entity_comm_list.begin(); i != m_entity_comm_list.end(); ++i)
     {
-        stk::CommSparse comm(p_comm);
+        stk::mesh::Entity entity = i->entity;
 
-        pack_induced_memberships_for_entities_less_than_element_rank(*this, comm, m_entity_comm_list);
-
-        comm.allocate_buffers();
-
-        pack_induced_memberships_for_entities_less_than_element_rank(*this, comm, m_entity_comm_list);
-
-        comm.communicate();
-
-        OrdinalVector empty, induced_parts, current_parts, remove_parts;
-        PartVector inducedParts, removeParts;
-
-        for(EntityCommListInfoVector::iterator i = m_entity_comm_list.begin(); i != m_entity_comm_list.end(); ++i)
+        if(is_less_than_element_rank(*this, entity) && is_modified_or_created(*this, entity))
         {
             bool i_own_this_entity_in_comm_list = i->owner == p_rank;
-            stk::mesh::Entity entity = i->entity;
-
-            if(is_less_than_element_rank(*this, entity) && is_modified_or_created(*this, entity))
+            if( i_own_this_entity_in_comm_list )
             {
-                if( i_own_this_entity_in_comm_list )
-                {
-                    // Receiving from all sharing processes
-
-                    empty.clear();
-                    induced_parts.clear();
-                    current_parts.clear();
-                    remove_parts.clear();
-
-                    induced_part_membership(*this, entity, empty, induced_parts);
-
-                    for(PairIterEntityComm ec = shared_comm_info_range(i->entity_comm->comm_map); !ec.empty(); ++ec)
-                    {
-                        CommBuffer & buf = comm.recv_buffer(ec->proc);
-
-                        unsigned count = 0;
-                        stk::mesh::EntityKey key;
-                        buf.unpack<stk::mesh::EntityKey>(key);
-                        ThrowRequireMsg(key == i->key, "oops!" << key << " not same as " << i->key);
-                        buf.unpack<unsigned>(count);
-                        for(unsigned j = 0; j < count; ++j)
-                        {
-                            unsigned part_ord = 0;
-                            buf.unpack<unsigned>(part_ord);
-                            insert_ordinal(induced_parts, part_ord);
-                        }
-                    }
-
-                    // Remove any part that is an induced part but is not
-                    // in the induced parts list.
-
-                    this->bucket(entity).supersets(current_parts);
-
-                    OrdinalVector::const_iterator induced_parts_begin = induced_parts.begin(),
-                            induced_parts_end = induced_parts.end();
-
-                    for(OrdinalVector::iterator
-                    p = current_parts.begin(); p != current_parts.end(); ++p)
-                    {
-                        if(meta.get_parts()[*p]->was_induced(i->key.rank()) &&
-                                !contains_ordinal(induced_parts_begin, induced_parts_end, *p))
-                        {
-                            remove_parts.push_back(*p);
-                        }
-                    }
-
-                    inducedParts.clear();
-                    removeParts.clear();
-
-                    inducedParts.reserve(induced_parts.size());
-                    for(unsigned ipart = 0; ipart < induced_parts.size(); ++ipart)
-                    {
-                        inducedParts.push_back(&m_mesh_meta_data.get_part(induced_parts[ipart]));
-                    }
-                    removeParts.reserve(remove_parts.size());
-                    for(unsigned ipart = 0; ipart < remove_parts.size(); ++ipart)
-                    {
-                        removeParts.push_back(&m_mesh_meta_data.get_part(remove_parts[ipart]));
-                    }
-                    internal_change_entity_parts(i->entity, inducedParts, removeParts);
-                }
+                remove_unneeded_induced_parts(entity, i->entity_comm->comm_map, part_storage,  comm);
             }
         }
     }
 
-    //------------------------------
-    // The owners have complete knowledge of memberships.
-    // Send membership information to sync the shared and ghosted copies.
-    // Only need to do this for entities that have actually changed.
     std::vector<EntityProc> send_list;
     fill_entity_procs_for_owned_modified_or_created(send_list);
     internal_send_part_memberships_from_owner(send_list);
@@ -4938,7 +4835,7 @@ void BulkData::internal_send_part_memberships_from_owner(const std::vector<Entit
     comm.communicate();
     PartVector owner_parts, remove_parts;
 
-
+    const MetaData & meta = m_mesh_meta_data;
     for(int p = 0; p < p_size; ++p)
     {
         CommBuffer & buf = comm.recv_buffer(p);
@@ -4972,11 +4869,11 @@ void BulkData::internal_send_part_memberships_from_owner(const std::vector<Entit
             {
                 Part * const part = *ip;
                 const unsigned part_ord = part->mesh_meta_data_ordinal();
-                if(PART_ORD_UNIVERSAL != part_ord &&
-                        PART_ORD_OWNED != part_ord &&
-                        PART_ORD_SHARED != part_ord &&
-                        !contain(m_ghost_parts, *part) &&
-                        !contain(owner_parts, *part))
+                if(meta.universal_part().mesh_meta_data_ordinal() != part_ord &&
+                   meta.locally_owned_part().mesh_meta_data_ordinal() != part_ord &&
+                   meta.globally_shared_part().mesh_meta_data_ordinal() != part_ord &&
+                   !contain(m_ghost_parts, *part) &&
+                   !contain(owner_parts, *part))
                 {
                     remove_parts.push_back(part);
                 }
