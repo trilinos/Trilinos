@@ -290,6 +290,11 @@ public:
                     typename MatrixType::global_ordinal_type,
                     typename MatrixType::node_type> >::value, "Ifpack2::AdditiveSchwarz: You are not allowed to use nondefault values for the LocalInverseType template parameter.  Please stop specifying this explicitly.  The default template parameter is perfectly fine.");
 
+  static_assert(std::is_same<MatrixType,
+                  Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                    typename MatrixType::local_ordinal_type,
+                    typename MatrixType::global_ordinal_type,
+                    typename MatrixType::node_type> >::value, "Ifpack2::AdditiveSchwarz: Please use MatrixType = Tpetra::RowMatrix instead of MatrixType = Tpetra::CrsMatrix.  Don't worry, AdditiveSchwarz's constructor can take either type of matrix; it does a dynamic cast if necessary inside.  Restricting the set of allowed types here will improve build times and reduce library and executable sizes.");
 
   //! \name Typedefs
   //@{
