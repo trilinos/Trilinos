@@ -120,7 +120,7 @@ struct search_for_pallet_generating_faces
             Kokkos::resize(m_offsets, output_size);
             Kokkos::parallel_scan(m_face_to_interface_and_side.dimension_0(), *this);
         }
-        std::cout << "count_mortarside_faces found " << /* m_total_found() <<  */ " faces" << std::endl;
+        std::cout << "count_mortarside_faces found " << m_total_found() << " faces" << std::endl;
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -146,8 +146,8 @@ struct search_for_pallet_generating_faces
                           face_ids_on_a_side_t mortarside_faces)
         : m_non_mortarside_faces(non_mortarside_faces)
         , m_mortarside_faces(mortarside_faces)
-        , m_total_faces()
-        , m_num_mortarside()
+        , m_total_faces("tot_faces")
+        , m_num_mortarside("num_mortarside")
       {
         std::cout << "In separate_into_sides(..)" << std::endl;
 
@@ -171,7 +171,7 @@ struct search_for_pallet_generating_faces
         int interface_id = m_face_to_interface_and_side(idx, 0);
         if (m_face_to_interface_and_side(idx, 1) == InterfaceBase::NON_MORTAR_SIDE)
         {
-          int non_mortarside_offset = m_total_faces - mortarside_offset;
+          int non_mortarside_offset = m_total_faces() - mortarside_offset;
           m_non_mortarside_faces(non_mortarside_offset, 0) = idx;
           m_non_mortarside_faces(non_mortarside_offset, 1) = interface_id;
         }

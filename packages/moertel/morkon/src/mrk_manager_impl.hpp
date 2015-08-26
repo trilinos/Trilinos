@@ -279,14 +279,14 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_face_and_node_normals()
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::find_possible_contact_face_pairs(contact_search_results_t search_results)
 {
-//  const double bounding_boxes_epsilon = 0.001;
+  const double bounding_boxes_epsilon = 0.001;
 
-//  search_for_pallet_generating_faces<DeviceType, DIM>(m_surface_mesh,
-//                                                      m_fields.m_node_coords,
-//                                                      m_fields.m_predicted_node_coords,
-//                                                      m_face_to_interface_and_side,
-//                                                      bounding_boxes_epsilon,
-//                                                      search_results);
+  search_for_pallet_generating_faces<DeviceType, DIM>(m_surface_mesh,
+                                                      m_fields.m_node_coords,
+                                                      m_fields.m_predicted_node_coords,
+                                                      m_face_to_interface_and_side,
+                                                      bounding_boxes_epsilon,
+                                                      search_results);
   return false;
 }
 
