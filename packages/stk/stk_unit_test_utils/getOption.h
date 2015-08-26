@@ -2,6 +2,7 @@
 #define UNITTESTUTILS_OPTIONS_PARSING
 
 #include <string>
+#include <sstream>
 
 extern int gl_argc;
 extern char** gl_argv;
