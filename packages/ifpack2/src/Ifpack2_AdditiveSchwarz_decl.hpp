@@ -45,7 +45,6 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_OverlappingRowMatrix_decl.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Ifpack2_Details_NestedPreconditioner.hpp"
 #include "Tpetra_Map.hpp"
@@ -54,10 +53,10 @@
 
 
 namespace Trilinos {
-  namespace Details {
-    template<class MV, class OP, class NormType>
-    class LinearSolver; // forward declaration
-  } // namespace Details
+namespace Details {
+template<class MV, class OP, class NormType>
+class LinearSolver; // forward declaration
+} // namespace Details
 } // namespace Trilinos
 
 
@@ -752,8 +751,10 @@ private:
   /// This is the same matrix as the input argument to this class' constructor.
   Teuchos::RCP<const row_matrix_type> Matrix_;
 
-  //! The overlapping matrix.
-  Teuchos::RCP<OverlappingRowMatrix<row_matrix_type> > OverlappingMatrix_;
+  /// \brief The overlapping matrix.
+  ///
+  /// If nonnull, this is an instance of OverlappingRowMatrix<row_matrix_type>.
+  Teuchos::RCP<row_matrix_type> OverlappingMatrix_;
 
   //! The reordered matrix.
   Teuchos::RCP<row_matrix_type> ReorderedLocalizedMatrix_;

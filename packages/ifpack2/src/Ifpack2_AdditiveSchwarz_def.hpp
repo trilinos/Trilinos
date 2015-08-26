@@ -59,7 +59,7 @@
 
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Ifpack2_LocalFilter.hpp"
-#include "Ifpack2_OverlappingRowMatrix_def.hpp"
+#include "Ifpack2_OverlappingRowMatrix.hpp"
 #include "Ifpack2_Parameters.hpp"
 #include "Ifpack2_ReorderFilter.hpp"
 #include "Ifpack2_SingletonFilter.hpp"
@@ -310,14 +310,15 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   using Teuchos::TimeMonitor;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
+  const char prefix[] = "Ifpack2::AdditiveSchwarz::apply: ";
 
   TEUCHOS_TEST_FOR_EXCEPTION
     (! IsComputed_, std::runtime_error,
-     "Ifpack2::AdditiveSchwarz::apply: "
-     "isComputed() must be true before you may call apply().");
+     prefix << "isComputed() must be true before you may call apply().");
   TEUCHOS_TEST_FOR_EXCEPTION
-    (Matrix_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::apply: "
+    (Matrix_.is_null (), std::logic_error, prefix <<
      "The input matrix A is null, but the preconditioner says that it has "
      "been computed (isComputed() is true).  This should never happen, since "
      "setMatrix() should always mark the preconditioner as not computed if "
@@ -325,32 +326,31 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
      "Please report this bug to the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION
     (Inverse_.is_null (), std::runtime_error,
-     "Ifpack2::AdditiveSchwarz::apply: The subdomain solver is null.  "
+     prefix << "The subdomain solver is null.  "
      "This can only happen if you called setInnerPreconditioner() with a null "
      "input, after calling initialize() or compute().  If you choose to call "
      "setInnerPreconditioner() with a null input, you must then call it with "
      "a nonnull input before you may call initialize() or compute().");
   TEUCHOS_TEST_FOR_EXCEPTION
     (B.getNumVectors() != Y.getNumVectors(), std::invalid_argument,
-     "Ifpack2::AdditiveSchwarz::apply: B and Y must have the same number of "
-     "columns.  B has " << B.getNumVectors () << " columns, but Y has "
-     << Y.getNumVectors() << ".");
+     prefix << "B and Y must have the same number of columns.  B has " <<
+     B.getNumVectors () << " columns, but Y has " << Y.getNumVectors() << ".");
   TEUCHOS_TEST_FOR_EXCEPTION
     (IsOverlapping_ && OverlappingMatrix_.is_null (), std::logic_error,
-     "Ifpack2::AdditiveSchwarz::apply: The overlapping matrix is null.  "
+     prefix << "The overlapping matrix is null.  "
      "This should never happen if IsOverlapping_ is true.  "
      "Please report this bug to the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION
     (! IsOverlapping_ && localMap_.is_null (), std::logic_error,
-     "Ifpack2::AdditiveSchwarz::apply: localMap_ is null.  "
+     prefix << "localMap_ is null.  "
      "This should never happen if IsOverlapping_ is false.  "
      "Please report this bug to the Ifpack2 developers.");
   TEUCHOS_TEST_FOR_EXCEPTION
     (alpha != STS::one (), std::logic_error,
-     "Ifpack2::AdditiveSchwarz::apply: Not implemented for alpha != 1.");
+     prefix << "Not implemented for alpha != 1.");
   TEUCHOS_TEST_FOR_EXCEPTION
     (beta != STS::zero (), std::logic_error,
-     "Ifpack2::AdditiveSchwarz::apply: Not implemented for beta != 0.");
+     prefix << "Not implemented for beta != 0.");
 
 #ifdef HAVE_IFPACK2_DEBUG
   {
@@ -497,12 +497,28 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 #endif // HAVE_IFPACK2_DEBUG
       }
 
+      typedef OverlappingRowMatrix<row_matrix_type> overlap_mat_type;
+      RCP<overlap_mat_type> overlapMatrix;
+      if (IsOverlapping_) {
+        overlapMatrix = rcp_dynamic_cast<overlap_mat_type> (OverlappingMatrix_);
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (overlapMatrix.is_null (), std::logic_error, prefix <<
+           "IsOverlapping_ is true, but OverlappingMatrix_, while nonnull, is "
+           "not an OverlappingRowMatrix<row_matrix_type>.  Please report this "
+           "bug to the Ifpack2 developers.");
+      }
+
       // do communication if necessary
       if (IsOverlapping_) {
-        OverlappingMatrix_->importMultiVector (*R, *OverlappingB, Tpetra::INSERT);
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (overlapMatrix.is_null (), std::logic_error, prefix
+           << "overlapMatrix is null when it shouldn't be.  "
+           "Please report this bug to the Ifpack2 developers.");
+        overlapMatrix->importMultiVector (*R, *OverlappingB, Tpetra::INSERT);
+
         //JJH We don't need to import the solution Y we are always solving AY=R with initial guess zero
         //if (ZeroStartingSolution_ == false)
-        //  OverlappingMatrix_->importMultiVector (Y, *OverlappingY, Tpetra::INSERT);
+        //  overlapMatrix->importMultiVector (Y, *OverlappingY, Tpetra::INSERT);
         /*
           FIXME from Ifpack1: Will not work with non-zero starting solutions.
           TODO  JJH 3/20/15   I don't know whether this comment is still valid.
@@ -628,7 +644,11 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 
       // do communication if necessary
       if (IsOverlapping_) {
-        OverlappingMatrix_->exportMultiVector (*OverlappingY, *C, CombineMode_);
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (overlapMatrix.is_null (), std::logic_error, prefix
+           << "overlapMatrix is null when it shouldn't be.  "
+           "Please report this bug to the Ifpack2 developers.");
+        overlapMatrix->exportMultiVector (*OverlappingY, *C, CombineMode_);
       }
       else {
         // mfh 16 Apr 2014: Make a view of Y with the same Map as
