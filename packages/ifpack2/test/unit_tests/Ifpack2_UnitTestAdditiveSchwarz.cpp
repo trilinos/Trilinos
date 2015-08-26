@@ -80,10 +80,6 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Ifpack2_Version.hpp>
 
-#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
-#include <qd/dd_real.h>
-#endif
-
 // Xpetra / Galeri
 #ifdef HAVE_IFPACK2_XPETRA
 #include <Xpetra_ConfigDefs.hpp>
@@ -969,14 +965,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2AdditiveSchwarz, MultipleSweeps, Scalar
      IFPACK2_RBILUK_SCALAR_ORDINAL(Scalar, LocalOrdinal,GlobalOrdinal) \
      IFPACK2_AMESOS2_SUPERLU_SCALAR_ORDINAL(Scalar, LocalOrdinal, GlobalOrdinal)
 
-UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
-#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
-#endif
+// mfh 26 Aug 2015: Ifpack2::AdditiveSchwarz was only getting tested
+// for Scalar = double, LocalOrdinal = int, GlobalOrdinal = int, and
+// the default Node type.  As part of the fix for Bug 6358, I'm
+// removing the assumption that GlobalOrdinal = int exists.
 
-#if defined(HAVE_IFPACK2_QD) && !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION)
-UNIT_TEST_GROUP_SCALAR_ORDINAL(dd_real, int, int)
-#endif
+typedef Tpetra::MultiVector<>::scalar_type default_scalar_type;
+typedef Tpetra::MultiVector<>::local_ordinal_type default_local_ordinal_type;
+typedef Tpetra::MultiVector<>::global_ordinal_type default_global_ordinal_type;
 
-}//namespace <anonymous>
+UNIT_TEST_GROUP_SCALAR_ORDINAL(default_scalar_type, default_local_ordinal_type, default_global_ordinal_type)
+
+} // namespace <anonymous>
 
