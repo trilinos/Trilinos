@@ -694,8 +694,12 @@ void report_error_with_invalid_ordinal(std::pair<stk::mesh::ConnectivityOrdinal,
     ThrowRequireMsg(ord_and_perm.second != stk::mesh::INVALID_PERMUTATION, "yikes!");
 }
 
-bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
-        const stk::mesh::PartVector& parts_for_creating_side, const stk::mesh::PartVector* boundary_mesh_parts)
+bool process_killed_elements(stk::mesh::BulkData& bulkData,
+                             ElemElemGraph& elementGraph,
+                             const stk::mesh::EntityVector& killedElements,
+                             stk::mesh::Part& active,
+                             const stk::mesh::PartVector& parts_for_creating_side, 
+                             const stk::mesh::PartVector* boundary_mesh_parts)
 {
     bool topology_modified = false;
 
