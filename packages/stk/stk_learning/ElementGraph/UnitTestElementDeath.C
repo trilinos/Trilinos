@@ -120,6 +120,8 @@ TEST(ElementDeath, replicate_random_death_test)
         ASSERT_EQ(20u, mesh_counts[stk::topology::FACE_RANK]);
         stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
+        boundary_mesh_parts.push_back(&active);
+
         stk::mesh::EntityVector elems;
         stk::mesh::get_entities(bulkData, stk::topology::ELEM_RANK, elems);
         ASSERT_EQ(1u, elems.size());
@@ -131,10 +133,11 @@ TEST(ElementDeath, replicate_random_death_test)
         {
             elements_to_kill.push_back(elems[0]);
         }
+        boundary_mesh_parts.push_back(&active);
 
         stk::mesh::ElemElemGraph graph(bulkData, active);
         ElementDeathUtils::deactivate_elements(elements_to_kill, bulkData,  active);
-        EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, graph, elements_to_kill, active, boundary_mesh_parts));
+        EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, graph, elements_to_kill, active, boundary_mesh_parts, &boundary_mesh_parts));
 
         stk::mesh::Selector sel = death_1_part;
         stk::mesh::EntityVector faces;
@@ -154,7 +157,7 @@ TEST(ElementDeath, replicate_random_death_test)
         }
 
         ElementDeathUtils::deactivate_elements(elements_to_kill, bulkData,  active);
-        EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, graph, elements_to_kill, active, boundary_mesh_parts));
+        EXPECT_NO_THROW(stk::mesh::process_killed_elements(bulkData, graph, elements_to_kill, active, boundary_mesh_parts, &boundary_mesh_parts));
 
         stk::mesh::comm_mesh_counts(bulkData, mesh_counts);
         ASSERT_EQ(20u, mesh_counts[stk::topology::FACE_RANK]);
@@ -223,9 +226,11 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
                 }
             }
 
+            boundary_mesh_parts.push_back(&active);
+
             ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
-            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
+            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
 
             test_active_part_membership(bulkData, skin_faces_of_elem2, active);
 
@@ -264,11 +269,13 @@ TEST(ElementDeath, keep_faces_after_element_death_after_calling_create_faces)
                 }
             }
 
+            boundary_mesh_parts.push_back(&active);
+
             ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
             stk::mesh::EntityId face_id;
 
-            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
+            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
 
             stk::mesh::Entity face_between_elem2_and_elem3 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
             EXPECT_TRUE(bulkData.is_valid(face_between_elem2_and_elem3));
@@ -344,11 +351,13 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
                 }
             }
 
+            boundary_mesh_parts.push_back(&active);
+
             ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
             test_active_part_membership(bulkData, skin_faces_of_elem2, active);
 
-            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
+            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
 
             stk::mesh::Entity face_between_elem2_and_elem3 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
 
@@ -384,11 +393,13 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
                 }
             }
 
+            boundary_mesh_parts.push_back(&active);
+
             ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
             stk::mesh::Entity face_between_elem2_and_elem3 = ElementDeathUtils::get_face_between_element_ids(graph, bulkData, elem2Id, elem3Id);
 
-            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
+            stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
 
             EXPECT_FALSE(bulkData.is_valid(face_between_elem2_and_elem3));
         }
@@ -396,6 +407,41 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
         stk::mesh::comm_mesh_counts(bulkData, entity_counts);
         ASSERT_TRUE(entity_counts[stk::topology::FACE_RANK] == 2);
     }
+}
+
+TEST(ElementDeath, alan)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+
+     if(stk::parallel_machine_size(comm) == 4)
+     {
+         unsigned spatialDim = 3;
+
+         stk::mesh::MetaData meta(spatialDim);
+         stk::mesh::Part& skin = meta.declare_part_with_topology("skin", stk::topology::QUAD_4);
+         stk::mesh::PartVector boundary_mesh_parts {&skin};
+         stk::io::put_io_part_attribute(skin);
+         stk::mesh::BulkData bulkData(meta, comm);
+
+         stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
+
+         ASSERT_TRUE(active.primary_entity_rank() == stk::topology::INVALID_RANK);
+
+         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+
+         stk::unit_test_util::put_mesh_into_part(bulkData, active);
+
+         stk::mesh::ElemElemGraph graph(bulkData, active);
+         stk::mesh::skin_mesh(bulkData, {&skin});
+         stk::unit_test_util::write_mesh_using_stk_io("skin.exo", bulkData, comm);
+
+         stk::mesh::Selector sel = skin & bulkData.mesh_meta_data().locally_owned_part();
+         stk::mesh::EntityVector skinned_faces;
+         stk::mesh::get_selected_entities(sel, bulkData.buckets(stk::topology::FACE_RANK), skinned_faces);
+
+         std::vector<size_t> num_gold_skinned_faces = { 5, 4, 4, 5 };
+         EXPECT_EQ(num_gold_skinned_faces[bulkData.parallel_rank()], skinned_faces.size());
+     }
 }
 
 } // end namespace

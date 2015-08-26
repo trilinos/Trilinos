@@ -354,8 +354,7 @@ stk::mesh::PartVector get_stk_parts_for_moving_parts_into_death_boundary(const s
             stk::mesh::PartVector::const_iterator isup = mp->supersets().begin();
             for(; isup != mp->supersets().end(); ++isup)
             {
-                //if(sierra::Fmwk::is_fmwk_part(**isup))
-                if(!stk::mesh::is_topology_root_part(**isup))
+                if(!stk::mesh::is_auto_declared_part(**isup))
                 {
                     sideParts.push_back(*isup);
                 }

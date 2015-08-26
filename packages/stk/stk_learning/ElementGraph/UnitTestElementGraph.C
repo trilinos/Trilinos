@@ -2161,8 +2161,9 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
         }
 
         bulkData.batch_change_entity_parts(killedElements, add_parts, remove_parts);
+        boundary_mesh_parts.push_back(&active);
 
-        process_killed_elements(bulkData, elem_graph, killedElements, active, boundary_mesh_parts);
+        process_killed_elements(bulkData, elem_graph, killedElements, active, boundary_mesh_parts, &boundary_mesh_parts);
 
         if (proc == 1)
         {
@@ -3223,12 +3224,14 @@ TEST(ElementGraph, test_element_death)
             int num_time_steps = xdim * ydim * zdim;
             double elapsed_death_time = 0;
 
+            boundary_mesh_parts.push_back(&active);
+
             for(int i = 0; i < num_time_steps; ++i)
             {
                 stk::mesh::EntityVector killedElements = get_killed_elements(bulkData, i, active);
                 move_killled_elements_to_part(bulkData, killedElements, block_1, active);
                 double start_time = stk::wall_time();
-                process_killed_elements(bulkData, elementGraph, killedElements, active, boundary_mesh_parts);
+                process_killed_elements(bulkData, elementGraph, killedElements, active, boundary_mesh_parts, &boundary_mesh_parts);
                 elapsed_death_time += (stk::wall_time() - start_time);
             }
 
@@ -6832,9 +6835,11 @@ void test_add_element_to_graph_with_element_death(stk::mesh::BulkData::Automatic
         stk::mesh::comm_mesh_counts(bulkData, entity_counts);
         ASSERT_TRUE(entity_counts[stk::topology::FACE_RANK] == 0);
 
+        boundary_mesh_parts.push_back(&active);
+
         ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
-        stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
+        stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
 
         if (0 == pRank)
         {
@@ -6936,9 +6941,11 @@ void test_delete_element_from_graph_with_element_death(stk::mesh::BulkData::Auto
         stk::mesh::comm_mesh_counts(bulkData, entity_counts);
         ASSERT_TRUE(entity_counts[stk::topology::FACE_RANK] == 0);
 
+        boundary_mesh_parts.push_back(&active);
+
         ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
 
-        stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts);
+        stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
 
         stk::mesh::comm_mesh_counts(bulkData, entity_counts);
 
