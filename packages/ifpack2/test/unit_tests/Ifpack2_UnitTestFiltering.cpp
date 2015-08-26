@@ -149,7 +149,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // create a new matrix, dropping by value //
   // ====================================== //
   // drop all elements below 1.5. The matrix then becomes diagonal
-  Ifpack2::DropFilter<CRS> DropA(RCP<ROW >(&LocalA,false),1.5);
+  Ifpack2::DropFilter<ROW> DropA(RCP<ROW >(&LocalA,false),1.5);
 
   // Apply w/ filter
   DropA.apply(lx,ly);
