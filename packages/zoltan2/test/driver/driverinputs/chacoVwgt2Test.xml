@@ -19,7 +19,7 @@
             <Parameter name="fileType" type="string" value="Chaco"/>
         </ParameterList>
     
-    <ParameterList name="test1">
+    <ParameterList name="Problem 1">
         <Parameter name="Name" type="string" value="chacoVertexWeight2_xpetmv"/>
      
         <ParameterList name="InputAdapterParameters">
@@ -32,7 +32,7 @@
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
     
-      <!--  <ParameterList name="Metrics">
+       <ParameterList name="Metrics">
             <ParameterList name="object count">
                 <Parameter name="lower" type="double" value="0.99"/>
                 <Parameter name="upper" type="double" value="1.4"/>
@@ -42,11 +42,11 @@
                 <Parameter name="lower" type="double" value="0.99"/>
                 <Parameter name="upper" type="double" value="1.4"/>
             </ParameterList>
-        </ParameterList> -->
+        </ParameterList>
 
     </ParameterList>
     
-    <ParameterList name="test2">
+    <ParameterList name="Problem 2">
         <Parameter name="Name" type="string" value="chacoVertexWeight2_xpet_crs_matrix"/>
      
         <ParameterList name="InputAdapterParameters">
@@ -59,21 +59,26 @@
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
     
-      <!--  <ParameterList name="Metrics">
+        <ParameterList name="Metrics">
             <ParameterList name="object count">
                 <Parameter name="lower" type="double" value="0.99"/>
-                <Parameter name="upper" type="double" value="1.4"/>
+                <Parameter name="upper" type="double" value="3.4"/>
             </ParameterList>
 
             <ParameterList name="weight 1">
                 <Parameter name="lower" type="double" value="0.99"/>
-                <Parameter name="upper" type="double" value="1.4"/>
+                <Parameter name="upper" type="double" value="2"/>
             </ParameterList>
-        </ParameterList> -->
+            
+            <ParameterList name="weight 2">
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="3"/>
+            </ParameterList>
+        </ParameterList> 
 
     </ParameterList>
     
-    <ParameterList name="test3">
+    <ParameterList name="Problem 3">
         <Parameter name="Name" type="string" value="chacoVertexWeight2_xpet_crs_graph"/>
      
         <ParameterList name="InputAdapterParameters">
@@ -86,17 +91,17 @@
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
     
-      <!--  <ParameterList name="Metrics">
+      <ParameterList name="Metrics">
             <ParameterList name="object count">
                 <Parameter name="lower" type="double" value="0.99"/>
                 <Parameter name="upper" type="double" value="1.4"/>
             </ParameterList>
 
-            <ParameterList name="weight 1">
+            <ParameterList name="weight 2">
                 <Parameter name="lower" type="double" value="0.99"/>
-                <Parameter name="upper" type="double" value="1.4"/>
+                <Parameter name="upper" type="double" value="3.4"/>
             </ParameterList>
-        </ParameterList> -->
-
+        </ParameterList>
     </ParameterList>
+    
 </ParameterList>

@@ -250,11 +250,11 @@ public:
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
       offsets = elemOffsets_;
-      adjacencyIds = elemToNode_;
+      adjacencyIds = (zgid_t *)elemToNode_;
     } else if ((MESH_REGION==target && MESH_VERTEX==source && 3==dimension_) ||
 	       (MESH_FACE==target && MESH_VERTEX==source && 2==dimension_)) {
       offsets = nodeOffsets_;
-      adjacencyIds = nodeToElem_;
+      adjacencyIds = (zgid_t *)nodeToElem_;
     } else if (MESH_REGION == source && 2 == dimension_) {
       offsets = NULL;
       adjacencyIds = NULL;
@@ -366,11 +366,11 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   error += im_ex_get_coord(exoid, coords_, coords_ + num_nodes_,
 			   coords_ + 2 * num_nodes_);
 
-  element_num_map_ = new int [num_elem_];
-  error += im_ex_get_elem_num_map(exoid, element_num_map_);
+  element_num_map_ = new zgid_t [num_elem_];
+  error += im_ex_get_elem_num_map(exoid, (int *)element_num_map_);
 
-  node_num_map_ = new int [num_nodes_];
-  error += im_ex_get_node_num_map(exoid, node_num_map_);
+  node_num_map_ = new zgid_t [num_nodes_];
+  error += im_ex_get_node_num_map(exoid, (int *)node_num_map_);
 
   nodeTopology = new enum EntityTopologyType[num_nodes_];
   for (int i=0;i<num_nodes_;i++)

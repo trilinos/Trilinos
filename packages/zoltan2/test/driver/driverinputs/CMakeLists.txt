@@ -8,6 +8,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
         GeomGenWeight.txt
         chacoSimple3dTest.xml
         chacoSimpleTest.xml
+        chacoVwgtTest.xml    
         chacoVwgt2Test.xml    
         chacoEdgeWeightTest.xml
         Rectilinear.pmgen

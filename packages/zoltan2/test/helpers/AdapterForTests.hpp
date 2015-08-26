@@ -62,6 +62,7 @@
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
 #include <Zoltan2_BasicVectorAdapter.hpp>
+#include <Zoltan2_PamgenMeshAdapter.hpp>
 
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_XMLObject.hpp>
@@ -107,8 +108,9 @@ public:
   typedef Zoltan2::XpetraCrsGraphAdapter<tcrsGraph_t, tMVector_t> xcrsGraph_adapter;
   typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t, tMVector_t> xcrsMatrix_adapter;
   typedef Zoltan2::BasicVectorAdapter<tMVector_t> basic_vector_adapter;
+  typedef Zoltan2::PamgenMeshAdapter<tMVector_t> pamgen_adapter_t;
   
-  static base_adapter_t* getAdapterForInput(UserInputForTests *uinput, const ParameterList &pList);
+  static base_adapter_t* getAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
 private:
   /*! \brief Method to choose and call the correct constructor
@@ -118,7 +120,7 @@ private:
    *   \param  adapter is a reference to the input adapter to be constructed.
    */
   static base_adapter_t*
-  getBasicIdentiferAdapterForInput(UserInputForTests *uinput, const ParameterList &pList);
+  getBasicIdentiferAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
   /*! \brief Method to choose and call the correct constructor
    *      for a XpetraMultiVectorAdapter from a UserInputForTests input file.
@@ -127,7 +129,7 @@ private:
    *   \param  adapter is a reference to the input adapter to be constructed.
    */
   static base_adapter_t*
-  getXpetraMVAdapterForInput(UserInputForTests *uinput, const ParameterList &pList);
+  getXpetraMVAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
   /*! \brief Method to choose and call the correct constructor
    *      for a XpetraMultiVectorAdapter from a UserInputForTests input file.
@@ -136,7 +138,7 @@ private:
    *   \param  adapter is a reference to the input adapter to be constructed.
    */
   static base_adapter_t*
-  getXpetraCrsGraphAdapterForInput(UserInputForTests *uinput, const ParameterList &pList);
+  getXpetraCrsGraphAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
   /*! \brief Method to choose and call the correct constructor
    *      for a XpetraMultiVectorAdapter from a UserInputForTests input file.
@@ -145,7 +147,7 @@ private:
    *   \param  adapter is a reference to the input adapter to be constructed.
    */
   static base_adapter_t*
-  getXpetraCrsMatrixAdapterForInput(UserInputForTests *uinput, const ParameterList &pList);
+  getXpetraCrsMatrixAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
   /*! \brief Method to choose and call the correct constructor
    *      for a BasicVectorAdapter from a UserInputForTests input file.
@@ -154,9 +156,11 @@ private:
    *   \param  adapter is a reference to the input adapter to be constructed.
    */
   static base_adapter_t*
-  getBasicVectorAdapterForInput(UserInputForTests *uinput, const ParameterList &pList);
+  getBasicVectorAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
   
+  static base_adapter_t*
+  getPamgenMeshAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   /*! \brief Method to set up strided vector data from a Multivector
    *  \param data is the Multivector
    *  \param coords is the vector of strided data
@@ -180,43 +184,10 @@ private:
 };
 
 
-AdapterForTests::base_adapter_t * AdapterForTests::getAdapterForInput(UserInputForTests *uinput, const ParameterList &pList)
+AdapterForTests::base_adapter_t * AdapterForTests::getAdapterForInput(UserInputForTests *uinput,
+                                                                      const ParameterList &pList,
+                                                                      const RCP<const Comm<int> > &comm)
 {
-  // ask chaco gen what data types are available! -> for debugging
-  
-  //  if(uinput->hasUICoordinates())
-  //    std::cout << "coordinates available" << std::endl;
-  //  if(uinput->hasUIWeights())
-  //    std::cout << "vtx weights available" << std::endl;
-  //  if(uinput->hasUIEdgeWeights())
-  //    std::cout << "edge weights available" << std::endl;
-  //  if(uinput->hasUITpetraCrsMatrix())
-  //    std::cout << "tpet crs matrix available" << std::endl;
-  //  if(uinput->hasUITpetraCrsGraph())
-  //    std::cout << "tpet crs graph available" << std::endl;
-  //  if(uinput->hasUITpetraVector())
-  //    std::cout << "teptra vector available" << std::endl;
-  //  if(uinput->hasUITpetraMultiVector())
-  //    std::cout << "tpet mv available" << std::endl;
-  //  if(uinput->hasUIXpetraCrsMatrix())
-  //    std::cout << "xpet crs matrix available" << std::endl;
-  //  if(uinput->hasUIXpetraCrsGraph())
-  //    std::cout << "xpet crs graph available" << std::endl;
-  //  if(uinput->hasUIXpetraVector())
-  //    std::cout << "xpet vector available" << std::endl;
-  //  if(uinput->hasUIXpetraMultiVector())
-  //    std::cout << "xpet mv available" << std::endl;
-  //#ifdef HAVE_EPETRA_DATA_TYPES
-  //  if(uinput->hasUIEpetraCrsGraph())
-  //    std::cout << "epet crs graph available" << std::endl;
-  //  if(uinput->hasUIEpetraCrsMatrix())
-  //    std::cout << "epet crs matrix available" << std::endl;
-  //  if(uinput->hasUIEpetraVector())
-  //    std::cout << "epet vector available" << std::endl;
-  //  if(uinput->hasUIEpetraMultiVector())
-  //    std::cout << "epet mv available" << std::endl;
-  //#endif
-  
   
   if(!pList.isParameter("inputAdapter"))
     throw std::runtime_error("Input adapter not specified");
@@ -225,15 +196,17 @@ AdapterForTests::base_adapter_t * AdapterForTests::getAdapterForInput(UserInputF
   string adapter_name = pList.get<string>("inputAdapter");
   AdapterForTests::base_adapter_t * ia = nullptr; // input adapter
   if(adapter_name == "BasicIdentifier")
-    ia = AdapterForTests::getBasicIdentiferAdapterForInput(uinput, pList);
+    ia = AdapterForTests::getBasicIdentiferAdapterForInput(uinput, pList, comm);
   else if(adapter_name == "XpetraMultiVector")
-    ia = AdapterForTests::getXpetraMVAdapterForInput(uinput, pList);
+    ia = AdapterForTests::getXpetraMVAdapterForInput(uinput, pList, comm);
   else if(adapter_name == "XpetraCrsGraph")
-    ia = getXpetraCrsGraphAdapterForInput(uinput,pList);
+    ia = getXpetraCrsGraphAdapterForInput(uinput,pList, comm);
   else if(adapter_name == "XpetraCrsMatrix")
-    ia = getXpetraCrsMatrixAdapterForInput(uinput,pList);
+    ia = getXpetraCrsMatrixAdapterForInput(uinput,pList, comm);
   else if(adapter_name == "BasicVector")
-    ia = getBasicVectorAdapterForInput(uinput,pList);
+    ia = getBasicVectorAdapterForInput(uinput,pList, comm);
+  else if(adapter_name == "PamgenMesh")
+    ia = getPamgenMeshAdapterForInput(uinput,pList, comm);
   else
     throw std::runtime_error("Input adapter type not available, or misspelled.");
   
@@ -241,7 +214,9 @@ AdapterForTests::base_adapter_t * AdapterForTests::getAdapterForInput(UserInputF
 }
 
 
-AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForInput(UserInputForTests *uinput, const ParameterList &pList)
+AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForInput(UserInputForTests *uinput,
+                                                                                    const ParameterList &pList,
+                                                                                    const RCP<const Comm<int> > &comm)
 {
   
   if(!pList.isParameter("inputType"))
@@ -359,7 +334,9 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
 }
 
 
-AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(UserInputForTests *uinput, const ParameterList &pList)
+AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(UserInputForTests *uinput,
+                                                                              const ParameterList &pList,
+                                                                              const RCP<const Comm<int> > &comm)
 {
   
   if(!pList.isParameter("inputType"))
@@ -378,9 +355,10 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(Us
   {
     RCP<tMVector_t> vtx_weights = uinput->getUIWeights();
     // copy to weight
-    size_t cols = vtx_weights->getNumVectors();
-    for (size_t i = 0; i< cols; i++) {
+    size_t weightsPerRow = vtx_weights->getNumVectors();
+    for (size_t i = 0; i< weightsPerRow; i++) {
       weights.push_back(vtx_weights->getData(i).getRawPtr());
+      weightStrides.push_back(1);
     }
   }
   
@@ -440,7 +418,8 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(Us
 
 
 AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForInput(UserInputForTests *uinput,
-                                                                                    const ParameterList &pList)
+                                                                                    const ParameterList &pList,
+                                                                                    const RCP<const Comm<int> > &comm)
 {
   if(!pList.isParameter("inputType"))
     throw std::runtime_error("Input data type not specified");
@@ -453,19 +432,18 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
   AdapterForTests::base_adapter_t * adapter = nullptr;
   vector<const zscalar_t *> vtx_weights;
   vector<const zscalar_t *> edge_weights;
-  int vtx_weightStride = 1;
-  int edge_weightStride = 1;
-  int vtx_idx = 0;
-  int edge_idx = 0;
+  vector<int> vtx_weightStride;
+  vector<int> edge_weightStride;
   
   // get vtx weights if any
   if(uinput->hasUIWeights())
   {
     RCP<tMVector_t> vtx_weights_tmp = uinput->getUIWeights();
     // copy to weight
-    size_t cols = vtx_weights_tmp->getNumVectors();
-    for (size_t i = 0; i< cols; i++) {
+    size_t weightsPerRow = vtx_weights_tmp->getNumVectors();
+    for (size_t i = 0; i< weightsPerRow; i++) {
       vtx_weights.push_back(vtx_weights_tmp->getData(i).getRawPtr());
+      vtx_weightStride.push_back(1);
     }
   }
   
@@ -473,11 +451,11 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
   if(uinput->hasUIEdgeWeights())
   {
     RCP<tMVector_t> edge_weights_tmp = uinput->getUIEdgeWeights();
-    
     // copy to weight
-    size_t cols = edge_weights_tmp->getNumVectors();
-    for (size_t i = 0; i< cols; i++) {
+    size_t weightsPerRow = edge_weights_tmp->getNumVectors();
+    for (size_t i = 0; i< weightsPerRow; i++) {
       edge_weights.push_back(edge_weights_tmp->getData(i).getRawPtr());
+      edge_weightStride.push_back(1);
     }
   }
   
@@ -491,8 +469,17 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
     RCP<const tcrsGraph_t> const_data = rcp_const_cast<const tcrsGraph_t>(data);
     problem_t *ia = new problem_t(const_data,(int)vtx_weights.size(),(int)edge_weights.size());
     
-    if(!vtx_weights.empty()) ia->setVertexWeights(vtx_weights[0],vtx_weightStride,vtx_idx);
-    if(!edge_weights.empty()) ia->setEdgeWeights(edge_weights[0],edge_weightStride,edge_idx);
+    if(!vtx_weights.empty())
+    {
+      for(int i = 0; i < (int)vtx_weights.size(); i++)
+        ia->setVertexWeights(vtx_weights[i],vtx_weightStride[i],i);
+    }
+    
+    if(!edge_weights.empty())
+    {
+      for(int i = 0; i < (int)edge_weights.size(); i++)
+        ia->setEdgeWeights(edge_weights[i],edge_weightStride[i],i);
+    }
     
     adapter =  reinterpret_cast<AdapterForTests::base_adapter_t *>(ia);
   }
@@ -504,8 +491,17 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
     RCP<const xcrsGraph_t> const_data = rcp_const_cast<const xcrsGraph_t>(data);
     problem_t *ia = new problem_t(const_data, (int)vtx_weights.size(), (int)edge_weights.size());
     
-    if(!vtx_weights.empty()) ia->setVertexWeights(vtx_weights[0],vtx_weightStride,vtx_idx);
-    if(!edge_weights.empty()) ia->setEdgeWeights(edge_weights[0],edge_weightStride,edge_idx);
+    if(!vtx_weights.empty())
+    {
+      for(int i = 0; i < (int)vtx_weights.size(); i++)
+        ia->setVertexWeights(vtx_weights[i],vtx_weightStride[i],i);
+    }
+    
+    if(!edge_weights.empty())
+    {
+      for(int i = 0; i < (int)edge_weights.size(); i++)
+        ia->setEdgeWeights(edge_weights[i],edge_weightStride[i],i);
+    }
     
     adapter =  reinterpret_cast<AdapterForTests::base_adapter_t *>(ia);
   }
@@ -519,8 +515,17 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
     RCP<const Epetra_CrsGraph> const_data = rcp_const_cast<const Epetra_CrsGraph>(data);
     problem_t *ia = new problem_t(const_data,(int)vtx_weights.size(),(int)edge_weights.size());
     
-    if(!vtx_weights.empty()) ia->setVertexWeights(vtx_weights[0],vtx_weightStride,vtx_idx);
-    if(!edge_weights.empty()) ia->setEdgeWeights(edge_weights[0],edge_weightStride,edge_idx);
+    if(!vtx_weights.empty())
+    {
+      for(int i = 0; i < (int)vtx_weights.size(); i++)
+        ia->setVertexWeights(vtx_weights[i],vtx_weightStride[i],i);
+    }
+    
+    if(!edge_weights.empty())
+    {
+      for(int i = 0; i < (int)edge_weights.size(); i++)
+        ia->setEdgeWeights(edge_weights[i],edge_weightStride[i],i);
+    }
     
     adapter =  reinterpret_cast<AdapterForTests::base_adapter_t *>(ia);
     
@@ -534,11 +539,10 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
     // get an adapter for the coordinates
     // need to make a copy of the plist and change the vector type
     Teuchos::ParameterList pCopy(pList);
-    pCopy = pCopy.set<std::string>("inputType","xpetra_multivector");
-    pCopy = pCopy.set<int>("number_of_vectors", 1);// what is the proper value!?
+    pCopy = pCopy.set<std::string>("inputType","coordinates");
     
     AdapterForTests::base_adapter_t * ca = nullptr;
-    ca = getXpetraMVAdapterForInput(uinput,pCopy);
+    ca = getXpetraMVAdapterForInput(uinput,pCopy, comm);
     
     if(ca == nullptr)
       throw std::runtime_error("Failed to create coordinate vector adapter for xpetra crs-matrix adapter.");
@@ -552,7 +556,8 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
 
 
 AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForInput(UserInputForTests *uinput,
-                                                                                     const ParameterList &pList)
+                                                                                     const ParameterList &pList,
+                                                                                     const RCP<const Comm<int> > &comm)
 {
   if(!pList.isParameter("inputType"))
     throw std::runtime_error("Input data type not specified");
@@ -563,40 +568,50 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
   
   AdapterForTests::base_adapter_t * adapter = nullptr;
   vector<const zscalar_t *> weights;
-  int weightStride = 0;
+  vector<int> strides;
   
   // get weights if any
   if(uinput->hasUIWeights())
   {
+    if(comm->getRank() == 0) cout << "Have weights...." << endl;
     RCP<tMVector_t> vtx_weights = uinput->getUIWeights();
     
     // copy to weight
-    size_t cols = vtx_weights->getNumVectors();
-    for (size_t i = 0; i< cols; i++) {
+    int weightsPerRow = (int)vtx_weights->getNumVectors();
+    for (size_t i = 0; i< weightsPerRow; i++)
+    {
       weights.push_back(vtx_weights->getData(i).getRawPtr());
+      strides.push_back(1);
     }
+    
   }
   
   // set adapter
   if(input_type == "tpetra_crs_matrix")
   {
-    typedef Zoltan2::XpetraCrsMatrixAdapter<tcrsMatrix_t, tMVector_t> problem_t;
+    if(comm->getRank() == 0) cout << "Make tpetra crs matrix adapter...." << endl;
     
     // get pointer to data
     RCP<tcrsMatrix_t> data = uinput->getUITpetraCrsMatrix();
     RCP<const tcrsMatrix_t> const_data = rcp_const_cast<const tcrsMatrix_t>(data); // const cast data
     
     // new adapter
-    problem_t *ia = new problem_t(const_data, (int)weights.size());
+    xcrsMatrix_adapter *ia = new xcrsMatrix_adapter(const_data, (int)weights.size());
     
     // if we have weights set them
-    if(!weights.empty()) ia->setWeights(weights[0],weightStride);
+    if(!weights.empty())
+    {
+      for(int i = 0; i < (int)weights.size(); i++)
+        ia->setWeights(weights[i],strides[i],i);
+    }
     
     // cast to base type
     adapter = reinterpret_cast<AdapterForTests::base_adapter_t *>(ia);
+    
   }
   else if(input_type == "xpetra_crs_matrix")
   {
+    // type def this adapter type
     typedef Zoltan2::XpetraCrsMatrixAdapter<xcrsMatrix_t, tMVector_t> problem_t;
     
     RCP<xcrsMatrix_t> data = uinput->getUIXpetraCrsMatrix();
@@ -606,9 +621,14 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
     problem_t *ia = new problem_t(const_data, (int)weights.size());
     
     // if we have weights set them
-    if(!weights.empty()) ia->setWeights(weights[0],weightStride);
+    if(!weights.empty())
+    {
+      for(int i = 0; i < (int)weights.size(); i++)
+         ia->setWeights(weights[i],strides[i],i);
+    }
     
     adapter =  reinterpret_cast<AdapterForTests::base_adapter_t *>(ia);
+    
   }
 #ifdef HAVE_EPETRA_DATA_TYPES
   
@@ -623,7 +643,11 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
     problem_t *ia = new problem_t(const_data, (int)weights.size());
     
     // if we have weights set them
-    if(!weights.empty()) ia->setWeights(weights[0],weightStride);
+    if(!weights.empty())
+    {
+      for(int i = 0; i < (int)weights.size(); i++)
+         ia->setWeights(weights[i],strides[i],i);
+    }
     
     adapter =  reinterpret_cast<AdapterForTests::base_adapter_t *>(ia);
   }
@@ -638,10 +662,10 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
     // need to make a copy of the plist and change the vector type
     Teuchos::ParameterList pCopy(pList);
     pCopy = pCopy.set<std::string>("inputType","coordinates");
-    pCopy = pCopy.set<int>("number_of_vectors", 2);// what is the proper value!?
+//    pCopy = pCopy.set<int>("number_of_vectors", 1); // what is the proper value!?
     
     AdapterForTests::base_adapter_t * ca = nullptr;
-    ca = getXpetraMVAdapterForInput(uinput,pCopy);
+    ca = getXpetraMVAdapterForInput(uinput,pCopy,comm);
     
     if(ca == nullptr)
       throw std::runtime_error("Failed to create coordinate vector adapter for xpetra crs-matrix adapter.");
@@ -654,7 +678,9 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
 }
 
 
-AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput(UserInputForTests *uinput, const ParameterList &pList)
+AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput(UserInputForTests *uinput,
+                                                                                 const ParameterList &pList,
+                                                                                 const RCP<const Comm<int> > &comm)
 {
   if(!pList.isParameter("inputType"))
     throw std::runtime_error("Input data type not specified");
@@ -666,7 +692,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
   AdapterForTests::basic_vector_adapter * ia = nullptr; // pointer for basic vector adapter
   
   vector<const zscalar_t *> weights;
-  std::vector<int> weightStrides(1,0);
+  std::vector<int> weightStrides;
   const zgno_t * globalIds;
   size_t localCount = 0;
   
@@ -679,6 +705,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     size_t cols = vtx_weights->getNumVectors();
     for (size_t i = 0; i< cols; i++) {
       weights.push_back(vtx_weights->getData(i).getRawPtr());
+      weightStrides.push_back(1);
     }
   }
   
@@ -697,18 +724,6 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     vector<const zscalar_t *> coords;
     vector<int> entry_strides;
     AdapterForTests::InitializeVectorData(data,coords,entry_strides,stride);
-    
-//    if(weights.empty())
-//    {
-//      ia = new AdapterForTests::basic_vector_adapter(localCount, globalIds,
-//                                                     coords[0], entry_strides[0]);
-//    }else{
-//      ia = new AdapterForTests::basic_vector_adapter(localCount, globalIds,
-//                                                     coords[0], entry_strides[0],
-//                                                     true,
-//                                                     weights[0],
-//                                                     weightStrides[0]);
-//    }
     
     size_t dim = data->getNumVectors();
     if(dim == 1) coords[1] = coords[2] = NULL;
@@ -1031,6 +1046,25 @@ void AdapterForTests::InitializeEpetraVectorData(const RCP<T> &data,
   
 }
 #endif
+
+
+// pamgen adapter
+AdapterForTests::base_adapter_t*
+AdapterForTests::getPamgenMeshAdapterForInput(UserInputForTests *uinput,
+                                              const ParameterList &pList,
+                                              const RCP<const Comm<int> > &comm)
+{
+  pamgen_adapter_t * ia = nullptr; // pointer for basic vector adapter
+  if(uinput->hasPamgenMesh())
+  {
+    
+    ia = new pamgen_adapter_t(*comm.getRawPtr());
+  }else{
+    throw std::runtime_error("Pamgen mesh is not available for PamgenMeshAdapter!");
+  }
+  
+  return  reinterpret_cast<AdapterForTests::base_adapter_t *>(ia);
+}
 #endif
 
 

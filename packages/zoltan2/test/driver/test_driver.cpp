@@ -241,15 +241,17 @@ void run(const UserInputForTests &uinput,
   typedef AdapterForTests::xcrsGraph_adapter xcrsGraph_t;
   typedef AdapterForTests::xcrsMatrix_adapter xcrsMatrix_t;
   typedef AdapterForTests::basic_vector_adapter basic_vector_t;
-  
+  typedef AdapterForTests::pamgen_adapter_t pamgen_t;
+
   typedef Zoltan2::Problem<base_t> problem_t;
   typedef Zoltan2::PartitioningProblem<base_t> partioning_problem_t; // base abstract type
   typedef Zoltan2::PartitioningProblem<basic_id_t> basic_problem_t; // basic id problem type
-  typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mb problem type
-  typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_mb problem type
-  typedef Zoltan2::PartitioningProblem<xcrsMatrix_t> xcrsMatrix_problem_t; // xpetra_mb problem type
-  typedef Zoltan2::PartitioningProblem<basic_vector_t> basicVector_problem_t; // xpetra_mb problem type
-  
+  typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mv problem type
+  typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_graph problem type
+  typedef Zoltan2::PartitioningProblem<xcrsMatrix_t> xcrsMatrix_problem_t; // xpetra_matrix problem type
+  typedef Zoltan2::PartitioningProblem<basic_vector_t> basicVector_problem_t; // vector problem type
+//  typedef Zoltan2::PartitioningProblem<pamgen_t> pamgen_problem_t; // pamgen mesh problem type
+
   int rank = comm->getRank();
   if(rank == 0)
     cout << "\nPeforming test: " << problem_parameters.get<string>("Name") << endl;
@@ -264,12 +266,11 @@ void run(const UserInputForTests &uinput,
     throw std::runtime_error("Zoltan2 probnlem parameters not provided");
   
   const ParameterList &adapterPlist = problem_parameters.sublist("InputAdapterParameters");
-  base_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist); // a pointer to a basic type
+  base_t * ia = AdapterForTests::getAdapterForInput(const_cast<UserInputForTests *>(&uinput), adapterPlist,comm); // a pointer to a basic type
   if(ia == nullptr)
   {
     if(rank == 0)
       cout << "Get adapter for input failed" << endl;
-    
     return;
   }
   
@@ -307,11 +308,16 @@ void run(const UserInputForTests &uinput,
     problem = reinterpret_cast<problem_t * >(new xcrsMatrix_problem_t(reinterpret_cast<xcrsMatrix_t *>(ia),
                                                                       &zoltan2_parameters,
                                                                       MPI_COMM_WORLD));
-  }  else if(adapter_name == "BasicVector")
+  }else if(adapter_name == "BasicVector")
   {
     problem = reinterpret_cast<problem_t * >(new basicVector_problem_t(reinterpret_cast<basic_vector_t *>(ia),
                                                                        &zoltan2_parameters,
                                                                        MPI_COMM_WORLD));
+  }else if(adapter_name == "PamgenMesh")
+  {
+//    problem = reinterpret_cast<problem_t * >(new pamgen_problem_t(reinterpret_cast<pamgen_t *>(ia),
+//                                                                       &zoltan2_parameters,
+//                                                                       MPI_COMM_WORLD));
   }
   else
     throw std::runtime_error("Input adapter type not available, or misspelled.");
@@ -337,6 +343,10 @@ void run(const UserInputForTests &uinput,
   {
     problem = reinterpret_cast<problem_t * >(new basicVector_problem_t(reinterpret_cast<basic_vector_t *>(ia),
                                                                        &zoltan2_parameters));
+  }else if(adapter_name == "PamgenMesh")
+  {
+//    problem = reinterpret_cast<problem_t * >(new pamgen_problem_t(reinterpret_cast<pamgen_t *>(ia),
+//                                                                  &zoltan2_parameters));
   }
   else
     throw std::runtime_error("Input adapter type not available, or misspelled.");
@@ -357,11 +367,9 @@ void run(const UserInputForTests &uinput,
   {
     // calculate pass fail based on imbalance
     if(rank == 0) cout << "analyzing metrics...\n" << endl;
-    reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
-    
     if(problem_parameters.isParameter("Metrics"))
     {
-      
+      reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
       ArrayRCP<const metric_t> metrics
       = reinterpret_cast<basic_problem_t *>(problem)->getMetrics();
       
@@ -405,7 +413,6 @@ void run(const UserInputForTests &uinput,
   comparison_source->problem = RCP<basic_problem_t>(reinterpret_cast<basic_problem_t *>(problem));
   comparison_source->problem_kind = problem_parameters.isParameter("kind") ? problem_parameters.get<string>("kind") : "?";
   comparison_source->adapter_kind = adapter_name;
-
   comparison_helper->AddSource(problem_parameters.name(), comparison_source);
   
   ////////////////////////////////////////////////////////////
@@ -739,7 +746,6 @@ void getConnectivityGraph(const UserInputForTests &uinput,const RCP<const Teucho
 
 int main(int argc, char *argv[])
 {
-  
   ////////////////////////////////////////////////////////////
   // (0) Set up MPI environment
   ////////////////////////////////////////////////////////////

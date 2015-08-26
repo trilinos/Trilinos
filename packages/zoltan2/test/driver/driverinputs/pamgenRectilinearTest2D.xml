@@ -20,7 +20,7 @@
             <Parameter name="dimension" type="int" value="2"/>
         </ParameterList>
     
-    <ParameterList name="test1">
+    <ParameterList name="Problem 1">
         <Parameter name="Name" type="string" value="readPamgenMesh"/>
         <Parameter name="kind" type="string" value="Partitioning"/>
      
@@ -43,5 +43,6 @@
         </ParameterList>
 
     </ParameterList>
+    
 
 </ParameterList>
