@@ -349,7 +349,7 @@ void Krylov<MatrixType>::initialize ()
       ifpack2_prec_ = rcp (new RILUK<MatrixType> (A_));
     }
     else if (PreconditionerType_==4) {
-      ifpack2_prec_ = rcp (new Chebyshev<MatrixType> (A_));
+      ifpack2_prec_ = rcp (new Chebyshev<row_matrix_type> (A_));
     }
     if (PreconditionerType_>0) {
       ifpack2_prec_->initialize();

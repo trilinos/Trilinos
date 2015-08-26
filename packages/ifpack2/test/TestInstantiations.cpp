@@ -93,11 +93,11 @@
   }  \
   namespace Ifpack2 { \
     template class BorderedOperator<dd_real,int,int,NODE>; \
-    template class Relaxation<Tpetra::CrsMatrix<dd_real,int,int,NODE> >; \
-    template class ILUT<Tpetra::CrsMatrix<dd_real,int,int,NODE> >; \
-    template class RILUK<Tpetra::CrsMatrix<dd_real,int,int,NODE> >; \
-    template class Diagonal<Tpetra::CrsMatrix<dd_real,int,int,NODE> >; \
-    template class Chebyshev<Tpetra::CrsMatrix<dd_real,int,int,NODE> >; \
+    template class Relaxation<Tpetra::RowMatrix<dd_real,int,int,NODE> >; \
+    template class ILUT<Tpetra::RowMatrix<dd_real,int,int,NODE> >; \
+    template class RILUK<Tpetra::RowMatrix<dd_real,int,int,NODE> >; \
+    template class Diagonal<Tpetra::RowMatrix<dd_real,int,int,NODE> >; \
+    template class Chebyshev<Tpetra::RowMatrix<dd_real,int,int,NODE> >; \
   }
 
 // Get the default Node type directly from Tpetra.
