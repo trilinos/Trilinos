@@ -40,6 +40,18 @@
 //@HEADER
 */
 
+/// \file Ifpack2_AdditiveSchwarz_def.hpp
+/// \brief Definition of Ifpack2::AdditiveSchwarz, which implements
+///   additive Schwarz preconditioning with an arbitrary subdomain
+///   solver.  For the declaration and class documentation, please see
+///   Ifpack2_AdditiveSchwarz_decl.hpp in this directory.
+///
+/// If you want to use Ifpack2::AdditiveSchwarz directly in your
+/// application, please include the automatically generated header
+/// file Ifpack2_AdditiveSchwarz.hpp.  In general, you should never
+/// need to include Ifpack2_AdditiveSchwarz_def.hpp in your
+/// application directly.
+
 #ifndef IFPACK2_ADDITIVESCHWARZ_DEF_HPP
 #define IFPACK2_ADDITIVESCHWARZ_DEF_HPP
 
