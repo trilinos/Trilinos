@@ -124,6 +124,13 @@ public:
   //! The Node type of the input (global) matrix.
   typedef typename MatrixType::node_type node_type;
 
+  static_assert(std::is_same<MatrixType,
+                  Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                    typename MatrixType::local_ordinal_type,
+                    typename MatrixType::global_ordinal_type,
+                    typename MatrixType::node_type> >::value,
+                "Ifpack2::BandedContainer: Please use MatrixType = Tpetra::RowMatrix.");
+
   /// \brief The (base class) type of the input matrix.
   ///
   /// The input matrix to the constructor may be either a

@@ -118,7 +118,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test0, Scalar, Loca
 
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
-  Ifpack2::RILUK<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec(crsmatrix);
+  Ifpack2::RILUK<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec(crsmatrix);
 
   Teuchos::ParameterList params;
   int fill_level = 1;
@@ -168,6 +168,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, Loca
   typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
 
   out << "Testing Ifpack2::RILUK" << endl;
 
@@ -184,7 +185,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, Test1, Scalar, Loca
   RCP<const crs_matrix_type> crsmatrix = tif_utest::create_test_matrix2<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
   out << "Creating preconditioner" << endl;
-  Ifpack2::RILUK<crs_matrix_type> prec (crsmatrix);
+  Ifpack2::RILUK<row_matrix_type> prec (crsmatrix);
 
   out << "Setting preconditioner's parameters" << endl;
 
@@ -272,6 +273,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
   //    Note that Ifpack2 stores the inverse of the diagonal separately and scales U.
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                map_type;
@@ -301,7 +303,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
     //std::string aFile = "A_bw=" + Teuchos::toString(lof+2) + ".mm";
     //RCP<crs_matrix_type> crsmatrix = reader_type::readSparseFile (aFile, comm, platform.getNode());
     //crsmatrix->describe(out,Teuchos::VERB_EXTREME);
-    Ifpack2::RILUK<crs_matrix_type> prec(crsmatrix);
+    Ifpack2::RILUK<row_matrix_type> prec(crsmatrix);
 
     Teuchos::ParameterList params;
     params.set("fact: iluk level-of-fill", lof);
@@ -373,8 +375,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
   // 2) Compute ILU(lof) of A.
   // 3) The incomplete factors should be equal to those of an exact LU decomposition without pivoting.
   //    Note that Ifpack2 stores the inverse of the diagonal separately and scales U.
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
+  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                map_type;
@@ -437,7 +440,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
     }
     permutedMatrix->fillComplete();
 
-    Ifpack2::RILUK<crs_matrix_type> prec(Teuchos::as< RCP<const crs_matrix_type> >(permutedMatrix));
+    Ifpack2::RILUK<row_matrix_type> prec(Teuchos::as< RCP<const crs_matrix_type> >(permutedMatrix));
 
     Teuchos::ParameterList params;
     params.set("fact: iluk level-of-fill", lof);
@@ -528,6 +531,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, TestGIDConsistency,
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
   typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node> crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar, LO, GO, Node> row_matrix_type;
   typedef Tpetra::Map<LO, GO, Node> map_type;
   typedef Tpetra::global_size_t GST;
 
@@ -586,7 +590,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, TestGIDConsistency,
   A->fillComplete ();
 
   RCP<const crs_matrix_type> constA = A;
-  Ifpack2::RILUK<crs_matrix_type> prec (constA);
+  Ifpack2::RILUK<row_matrix_type> prec (constA);
 
   Teuchos::ParameterList params;
   GO lof = 1;

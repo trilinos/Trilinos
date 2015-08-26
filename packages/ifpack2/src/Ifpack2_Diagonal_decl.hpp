@@ -309,10 +309,18 @@ private:
 * \endcode
 */
 template<class MatrixType, class VectorType>
-Teuchos::RCP<Ifpack2::Diagonal<MatrixType> >
+Teuchos::RCP<Ifpack2::Diagonal<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                 typename MatrixType::local_ordinal_type,
+                                                 typename MatrixType::global_ordinal_type,
+                                                 typename MatrixType::node_type> > >
 createDiagonalPreconditioner (const Teuchos::RCP<const VectorType>& invdiag)
 {
-  return Teuchos::rcp (new Ifpack2::Diagonal<MatrixType> (invdiag));
+  typedef Tpetra::RowMatrix<typename MatrixType::scalar_type,
+    typename MatrixType::local_ordinal_type,
+    typename MatrixType::global_ordinal_type,
+    typename MatrixType::node_type> row_matrix_type;
+
+  return Teuchos::rcp (new Ifpack2::Diagonal<row_matrix_type> (invdiag));
 }
 
 }//namespace Ifpack2

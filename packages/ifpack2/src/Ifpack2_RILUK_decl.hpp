@@ -46,10 +46,9 @@
 #ifndef IFPACK2_CRSRILUK_DECL_HPP
 #define IFPACK2_CRSRILUK_DECL_HPP
 
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Ifpack2_Preconditioner.hpp>
-#include <Ifpack2_Details_CanChangeMatrix.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include "Ifpack2_Preconditioner.hpp"
+#include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Tpetra_CrsMatrix_decl.hpp"
 
 #include "Ifpack2_ScalingType.hpp"
 #include "Ifpack2_IlukGraph.hpp"
@@ -613,8 +612,14 @@ clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+
+  typedef typename NewMatrixType::scalar_type new_scalar_type;
+  typedef typename NewMatrixType::local_ordinal_type new_local_ordinal_type;
+  typedef typename NewMatrixType::global_ordinal_type new_global_ordinal_type;
   typedef typename NewMatrixType::node_type new_node_type;
-  typedef RILUK<NewMatrixType> new_riluk_type;
+  typedef Tpetra::RowMatrix<new_scalar_type, new_local_ordinal_type,
+    new_global_ordinal_type, new_node_type> new_row_matrix_type;
+  typedef RILUK<new_row_matrix_type> new_riluk_type;
 
   RCP<new_riluk_type> new_riluk = rcp (new new_riluk_type (A_newnode));
 

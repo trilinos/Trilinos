@@ -43,14 +43,14 @@
 #ifndef IFPACK2_RELAXATION_DECL_HPP
 #define IFPACK2_RELAXATION_DECL_HPP
 
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Ifpack2_Preconditioner.hpp>
-#include <Ifpack2_Details_CanChangeMatrix.hpp>
-#include <Ifpack2_Parameters.hpp>
-#include <Tpetra_Vector.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Tpetra_CrsMatrix_decl.hpp> // Don't need the definition here
-#include <Tpetra_Experimental_BlockCrsMatrix_decl.hpp>
+#include "Ifpack2_Preconditioner.hpp"
+#include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Ifpack2_Parameters.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Tpetra_CrsMatrix_decl.hpp" // Don't need the definition here
+#include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
+#include <type_traits>
 
 namespace Teuchos {
   // forward declarations
@@ -256,6 +256,9 @@ public:
   //! Tpetra::RowMatrix specialization used by this class.
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> row_matrix_type;
+
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::Relaxation: Please use MatrixType = Tpetra::RowMatrix.  This saves build times, library sizes, and executable sizes.  Don't worry, this class still works with CrsMatrix and BlockCrsMatrix; those are both subclasses of RowMatrix.");
+
   //@}
   //! @name Constructors and destructors
   //@{

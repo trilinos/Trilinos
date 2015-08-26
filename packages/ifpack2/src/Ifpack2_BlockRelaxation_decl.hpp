@@ -46,23 +46,18 @@
 /// \file Ifpack2_BlockRelaxation_decl.hpp
 /// \brief Ifpack2::BlockRelaxation class declaration
 
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Ifpack2_Preconditioner.hpp>
-#include <Ifpack2_Partitioner.hpp>
-#include <Ifpack2_Details_CanChangeMatrix.hpp>
-#include <Teuchos_Time.hpp>
-#include <string>
-#include <iostream>
-#include <sstream>
-
+#include "Ifpack2_Preconditioner.hpp"
+#include "Ifpack2_Partitioner.hpp"
+#include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Teuchos_Time.hpp"
+#include <type_traits>
 
 namespace Ifpack2 {
 
 /// \class BlockRelaxation
 /// \brief Block relaxation preconditioners (or smoothers) for
 ///   Tpetra::RowMatrix and Tpetra::CrsMatrix sparse matrices.
-/// \tparam MatrixType A specialization of Tpetra::CrsMatrix (better)
-///   or Tpetra::RowMatrix (acceptable).
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
 /// \tparam ContainerType A specialization or subclass of Container; a
 ///   type that knows how to solve linear systems with diagonal blocks
 ///   of MatrixType.  Those blocks may be either sparse or dense; the
@@ -114,6 +109,9 @@ public:
   //! Tpetra::RowMatrix specialization corresponding to \c MatrixType.
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> row_matrix_type;
 
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value,
+                "Ifpack2::BlockRelaxation: Please use MatrixType = Tpetra::RowMatrix.");
+
   //@}
   // \name Constructors and Destructors
   //@{
@@ -137,12 +135,12 @@ public:
   /// brevity):
   /// \code
   /// RCP<const CrsMatrix<...> > A = ...;
-  /// BlockRelaxation<CrsMatrix<...> > R (A);
+  /// BlockRelaxation<RowMatrix<...> > R (A);
   /// \endcode
   /// but you may not do this:
   /// \code
   /// // Declaration of some user-defined function.
-  /// void foo (const BlockRelaxation<CrsMatrix<...> >& R);
+  /// void foo (const BlockRelaxation<RowMatrix<...> >& R);
   ///
   /// RCP<const CrsMatrix<...> > A = ...;
   /// foo (A);
@@ -309,7 +307,7 @@ public:
             Teuchos::Describable::verbLevel_default) const;
 
   //@}
-  
+
   //! For diagnostic purposes
   Teuchos::RCP<Ifpack2::Partitioner<Tpetra::RowGraph<local_ordinal_type,global_ordinal_type,node_type> > > getPartitioner(){return Partitioner_;}
 

@@ -45,6 +45,8 @@
 
 #include "Teuchos_LAPACK.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include <iostream>
+#include <sstream>
 
 #ifdef HAVE_MPI
 #  include <mpi.h>
@@ -860,7 +862,6 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
 } // namespace Ifpack2
 
 #define IFPACK2_BANDEDCONTAINER_INSTANT(S,LO,GO,N) \
-  template class Ifpack2::BandedContainer< Tpetra::CrsMatrix<S, LO, GO, N>, S >; \
   template class Ifpack2::BandedContainer< Tpetra::RowMatrix<S, LO, GO, N>, S >;
 
 #endif // IFPACK2_BANDEDCONTAINER_HPP

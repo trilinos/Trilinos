@@ -107,6 +107,7 @@ namespace MueLu {
 
     typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                                        TMap;
     typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>                           TCRS;
+    typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>                           TROW;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>                         TMV;
     typedef Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                                        XMap;
     typedef Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>                         XMV;
@@ -149,7 +150,7 @@ namespace MueLu {
       * \param[in] SM_Matrix Jacobian
       * \param[in] D0_Matrix Discrete Gradient
       * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
-      * \param[in] M1_Matrix Edge mass matrix for the 
+      * \param[in] M1_Matrix Edge mass matrix for the
       * \param[in] Nullspace Null space (needed for periodic)
       * \param[in] coords Nodal coordinates
       * \param[in] precList Parameter list
@@ -177,7 +178,7 @@ namespace MueLu {
       *
       * \param[in] D0_Matrix Discrete Gradient
       * \param[in] M0inv_Matrix Inverse of lumped nodal mass matrix (add on only)
-      * \param[in] M1_Matrix Edge mass matrix for the 
+      * \param[in] M1_Matrix Edge mass matrix for the
       * \param[in] Nullspace Null space (needed for periodic)
       * \param[in] coords Nodal coordinates
       * \param[in] precList Parameter list
@@ -196,7 +197,7 @@ namespace MueLu {
       *
       * \param[in] SM_Matrix Jacobian
       * \param[in] D0_Matrix Discrete Gradient
-      * \param[in] M1_Matrix Edge mass matrix for the 
+      * \param[in] M1_Matrix Edge mass matrix for the
       * \param[in] Nullspace Null space (needed for periodic)
       * \param[in] coords Nodal coordinates
       * \param[in] precList Parameter list
@@ -222,7 +223,7 @@ namespace MueLu {
     /** Constructor without Jacobian (no add on)
       *
       * \param[in] D0_Matrix Discrete Gradient
-      * \param[in] M1_Matrix Edge mass matrix for the 
+      * \param[in] M1_Matrix Edge mass matrix for the
       * \param[in] Nullspace Null space (needed for periodic)
       * \param[in] coords Nodal coordinates
       * \param[in] precList Parameter list

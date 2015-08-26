@@ -453,6 +453,6 @@ describe (Teuchos::FancyOStream &out,
 } // namespace Ifpack2
 
 #define IFPACK2_HIPTMAIR_INSTANT(S,LO,GO,N) \
-  template class Ifpack2::Hiptmair< Tpetra::CrsMatrix<S, LO, GO, N> >;
+  template class Ifpack2::Hiptmair< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif /* IFPACK2_HIPTMAIR_DEF_HPP */
