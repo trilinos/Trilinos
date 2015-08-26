@@ -45,6 +45,7 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
+#include "Tpetra_RowMatrix.hpp"
 #include <type_traits> // std::is_same
 
 namespace Ifpack2 {
