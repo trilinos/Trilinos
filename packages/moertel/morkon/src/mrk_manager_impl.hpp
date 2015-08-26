@@ -196,7 +196,12 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
 
     for (unsigned hsa_i = 0; hsa_i < interface.m_hs_adapters.size(); ++hsa_i)
     {
-      Interface_HostSideAdapter<DIM> &adapter = *interface.m_hs_adapters[hsa_i];
+      Interface_HostSideAdapter<DIM> *adapter_rp = interface.m_hs_adapters[hsa_i];
+
+      if (!adapter_rp)
+        continue;
+
+      Interface_HostSideAdapter<DIM> &adapter = *adapter_rp;
 
       // Convert the adapter's version of the side to one in terms of the internal face_ids in the
       // surface_mesh, inserting nodes and faces as needed.

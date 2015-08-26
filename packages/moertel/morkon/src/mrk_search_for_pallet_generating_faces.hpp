@@ -120,7 +120,7 @@ struct search_for_pallet_generating_faces
             Kokkos::resize(m_offsets, output_size);
             Kokkos::parallel_scan(m_face_to_interface_and_side.dimension_0(), *this);
         }
-        std::cout << "count_mortarside_faces found " << m_total_found() << " faces" << std::endl;
+        std::cout << "count_mortarside_faces found " << /* m_total_found() <<  */ " faces" << std::endl;
       }
 
       KOKKOS_INLINE_FUNCTION
