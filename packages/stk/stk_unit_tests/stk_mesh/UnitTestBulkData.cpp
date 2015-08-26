@@ -6146,11 +6146,14 @@ TEST(ChangeEntityId, test_throw_on_shared_node)
 
         EXPECT_TRUE(mesh.bucket(sharedNode5).shared());
 
+        mesh.modification_begin();
+
 #ifdef NDEBUG
         EXPECT_NO_THROW(mesh.change_entity_id(99, sharedNode5));
 #else
         EXPECT_THROW(mesh.change_entity_id(99, sharedNode5), std::logic_error);
 #endif
+        mesh.modification_end();
     }
 }
 
