@@ -45,13 +45,20 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
-#include "Trilinos_Details_LinearSolver.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Map.hpp"
 #include "Ifpack2_OverlappingRowMatrix_decl.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Ifpack2_Details_NestedPreconditioner.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+
+
+namespace Trilinos {
+  namespace Details {
+    template<class MV, class OP, class NormType>
+    class LinearSolver; // forward declaration
+  } // namespace Details
+} // namespace Trilinos
 
 
 namespace Ifpack2 {

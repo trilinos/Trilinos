@@ -44,6 +44,9 @@
 #define IFPACK2_ADDITIVESCHWARZ_DEF_HPP
 
 #include "Trilinos_Details_LinearSolverFactory.hpp"
+// We need Ifpack2's implementation of LinearSolver, because we use it
+// to wrap the user-provided Ifpack2::Preconditioner in
+// Ifpack2::AdditiveSchwarz::setInnerPreconditioner.
 #include "Ifpack2_Details_LinearSolver.hpp"
 
 #if defined(HAVE_IFPACK2_XPETRA) && defined(HAVE_IFPACK2_ZOLTAN2)
