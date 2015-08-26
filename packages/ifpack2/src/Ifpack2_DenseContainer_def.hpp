@@ -43,7 +43,7 @@
 #ifndef IFPACK2_DENSECONTAINER_DEF_HPP
 #define IFPACK2_DENSECONTAINER_DEF_HPP
 
-#include "Ifpack2_DenseContainer_decl.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 #ifdef HAVE_MPI
