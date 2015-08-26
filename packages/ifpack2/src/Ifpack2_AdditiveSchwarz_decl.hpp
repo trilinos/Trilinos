@@ -49,7 +49,7 @@
 #include "Ifpack2_Details_NestedPreconditioner.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
-#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_RowMatrix.hpp"
 
 
 namespace Trilinos {

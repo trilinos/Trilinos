@@ -1694,13 +1694,10 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 
 } // namespace Ifpack2
 
-// FIXME (mfh 16 Sep 2014) We should really only use RowMatrix here!
-// There's no need to instantiate for CrsMatrix too.  All Ifpack2
-// preconditioners can and should do dynamic casts if they need a type
-// more specific than RowMatrix.
+// NOTE (mfh 26 Aug 2015) There's no need to instantiate for CrsMatrix
+// too.  All Ifpack2 preconditioners can and should do dynamic casts
+// internally, if they need a type more specific than RowMatrix.
 #define IFPACK2_ADDITIVESCHWARZ_INSTANT(S,LO,GO,N) \
-  template class Ifpack2::AdditiveSchwarz< Tpetra::RowMatrix<S, LO, GO, N> >; \
-  template class Ifpack2::AdditiveSchwarz< Tpetra::CrsMatrix<S, LO, GO, N> >;
-
+  template class Ifpack2::AdditiveSchwarz< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif // IFPACK2_ADDITIVESCHWARZ_DECL_HPP
