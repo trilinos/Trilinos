@@ -10,6 +10,7 @@ TEST(RunTimer, runs)
     const size_t minRuns = unitTestUtils::get_command_line_option<double>("-min", "10000");
     ASSERT_TRUE(tolerance > 0);
 
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
     unitTestUtils::RunInfo runInfo = unitTestUtils::time_algorithm(tolerance, minRuns, MPI_COMM_WORLD,
         [numWork]()
         {
@@ -24,6 +25,8 @@ TEST(RunTimer, runs)
     EXPECT_TRUE(runInfo.mean > 0.0);
     EXPECT_TRUE(runInfo.numRuns > 0);
 
-    std::cerr << "num runs = " << runInfo.numRuns << std::endl;
-    std::cerr << "mean = " << runInfo.mean << std::endl;
+    unitTestUtils::print_run_info(std::cerr,
+                                  "test",
+                                  stk::parallel_machine_size(comm),
+                                  runInfo);
 }

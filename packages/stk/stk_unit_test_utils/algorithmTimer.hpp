@@ -4,6 +4,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/environment/CPUTime.hpp>
 #include <iostream>
+#include <iomanip>
 #include <cmath>
 #include <stddef.h>
 
@@ -105,6 +106,15 @@ RunInfo time_algorithm(const double tolerance, const size_t minRuns, stk::Parall
         lastMean = runInfo.mean;
     }
     return runInfo;
+}
+
+void print_run_info(std::ostream &os, const std::string &tag, const int numProcs, const RunInfo &runInfo)
+{
+    os      << tag << " "
+            << std::setw(10) << runInfo.numRuns << " runs"
+            << " over " << numProcs << " procs"
+            << " mean was "<< std::setw(15) << runInfo.mean
+            << " with (min " << runInfo.min << ", max " << runInfo.max << ")" << std::endl;
 }
 
 }
