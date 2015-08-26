@@ -61,16 +61,12 @@
 #include "Zoltan2_OrderingSolution.hpp"
 #endif
 
-#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
-#include "Ifpack2_SupportGraph_decl.hpp"
-#endif
-
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
-#include "Ifpack2_LocalFilter_def.hpp"
+#include "Ifpack2_LocalFilter.hpp"
 #include "Ifpack2_OverlappingRowMatrix_def.hpp"
 #include "Ifpack2_Parameters.hpp"
-#include "Ifpack2_ReorderFilter_def.hpp"
-#include "Ifpack2_SingletonFilter_def.hpp"
+#include "Ifpack2_ReorderFilter.hpp"
+#include "Ifpack2_SingletonFilter.hpp"
 
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
@@ -79,7 +75,6 @@
 #include <locale> // std::toupper
 
 namespace Ifpack2 {
-
 namespace Details {
 
 /// \class OneLevelPreconditionerNamer
@@ -860,28 +855,47 @@ void
 AdditiveSchwarz<MatrixType,LocalInverseType>::
 localApply(MV &OverlappingB, MV &OverlappingY) const
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+
   const size_t numVectors = OverlappingB.getNumVectors ();
   if (FilterSingletons_) {
     // process singleton filter
     MV ReducedB (SingletonMatrix_->getRowMap (), numVectors);
     MV ReducedY (SingletonMatrix_->getRowMap (), numVectors);
-    SingletonMatrix_->SolveSingletons (OverlappingB, OverlappingY);
-    SingletonMatrix_->CreateReducedRHS (OverlappingY, OverlappingB, ReducedB);
+
+    RCP<SingletonFilter<row_matrix_type> > singletonFilter =
+      rcp_dynamic_cast<SingletonFilter<row_matrix_type> > (SingletonMatrix_);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (! SingletonMatrix_.is_null () && singletonFilter.is_null (),
+       std::logic_error, "Ifpack2::AdditiveSchwarz::localApply: "
+       "SingletonFilter_ is nonnull but is not a SingletonFilter"
+       "<row_matrix_type>.  This should never happen.  Please report this bug "
+       "to the Ifpack2 developers.");
+    singletonFilter->SolveSingletons (OverlappingB, OverlappingY);
+    singletonFilter->CreateReducedRHS (OverlappingY, OverlappingB, ReducedB);
 
     // process reordering
     if (! UseReordering_) {
       Inverse_->apply (ReducedB, ReducedY);
     }
     else {
+      RCP<ReorderFilter<row_matrix_type> > rf =
+        rcp_dynamic_cast<ReorderFilter<row_matrix_type> > (ReorderedLocalizedMatrix_);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! ReorderedLocalizedMatrix_.is_null () && rf.is_null (), std::logic_error,
+         "Ifpack2::AdditiveSchwarz::localApply: ReorderedLocalizedMatrix_ is "
+         "nonnull but is not a ReorderFilter<row_matrix_type>.  This should "
+         "never happen.  Please report this bug to the Ifpack2 developers.");
       MV ReorderedB (ReducedB, Teuchos::Copy);
       MV ReorderedY (ReducedY, Teuchos::Copy);
-      ReorderedLocalizedMatrix_->permuteOriginalToReordered (ReducedB, ReorderedB);
+      rf->permuteOriginalToReordered (ReducedB, ReorderedB);
       Inverse_->apply (ReorderedB, ReorderedY);
-      ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, ReducedY);
+      rf->permuteReorderedToOriginal (ReorderedY, ReducedY);
     }
 
     // finish up with singletons
-    SingletonMatrix_->UpdateLHS (ReducedY, OverlappingY);
+    singletonFilter->UpdateLHS (ReducedY, OverlappingY);
   }
   else {
 
@@ -892,9 +906,17 @@ localApply(MV &OverlappingB, MV &OverlappingY) const
     else {
       MV ReorderedB (OverlappingB, Teuchos::Copy);
       MV ReorderedY (OverlappingY, Teuchos::Copy);
-      ReorderedLocalizedMatrix_->permuteOriginalToReordered (OverlappingB, ReorderedB);
+
+      RCP<ReorderFilter<row_matrix_type> > rf =
+        rcp_dynamic_cast<ReorderFilter<row_matrix_type> > (ReorderedLocalizedMatrix_);
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (! ReorderedLocalizedMatrix_.is_null () && rf.is_null (), std::logic_error,
+         "Ifpack2::AdditiveSchwarz::localApply: ReorderedLocalizedMatrix_ is "
+         "nonnull but is not a ReorderFilter<row_matrix_type>.  This should "
+         "never happen.  Please report this bug to the Ifpack2 developers.");
+      rf->permuteOriginalToReordered (OverlappingB, ReorderedB);
       Inverse_->apply (ReorderedB, ReorderedY);
-      ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, OverlappingY);
+      rf->permuteReorderedToOriginal (ReorderedY, OverlappingY);
     }
   }
 }

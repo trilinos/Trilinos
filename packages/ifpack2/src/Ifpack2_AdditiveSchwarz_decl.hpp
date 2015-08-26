@@ -48,12 +48,7 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
-
-#include "Ifpack2_LocalFilter_decl.hpp"
 #include "Ifpack2_OverlappingRowMatrix_decl.hpp"
-#include "Ifpack2_ReorderFilter_decl.hpp"
-#include "Ifpack2_SingletonFilter_decl.hpp"
-
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Ifpack2_Details_NestedPreconditioner.hpp"
 
@@ -781,7 +776,7 @@ private:
   Teuchos::RCP<OverlappingRowMatrix<row_matrix_type> > OverlappingMatrix_;
 
   //! The reordered matrix.
-  Teuchos::RCP<ReorderFilter<row_matrix_type> > ReorderedLocalizedMatrix_;
+  Teuchos::RCP<row_matrix_type> ReorderedLocalizedMatrix_;
 
   //! The "inner matrix" given to the inner (subdomain) solver.
   Teuchos::RCP<row_matrix_type> innerMatrix_;
@@ -814,7 +809,7 @@ private:
   //! Whether to filter singleton rows.
   bool FilterSingletons_;
   //! Matrix from which singleton rows have been filtered.
-  Teuchos::RCP<SingletonFilter<row_matrix_type> > SingletonMatrix_;
+  Teuchos::RCP<row_matrix_type> SingletonMatrix_;
   //! The number of iterations to be done.
   int NumIterations_;
   //! True if and only if the initial guess is zero.
