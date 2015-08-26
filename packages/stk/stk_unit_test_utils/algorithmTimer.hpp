@@ -115,6 +115,9 @@ void print_run_info(std::ostream &os, const std::string &tag, const int numProcs
             << " over " << numProcs << " procs"
             << " mean was "<< std::setw(15) << runInfo.mean
             << " with (min " << runInfo.min << ", max " << runInfo.max << ")" << std::endl;
+//    os      << tag << ", "
+//            << numProcs << ", "
+//            << std::setw(15) << runInfo.mean << std::endl;
 }
 
 }
