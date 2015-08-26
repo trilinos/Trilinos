@@ -204,7 +204,7 @@ private:
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
-        const stk::mesh::PartVector& boundary_mesh_parts);
+        const stk::mesh::PartVector& side_parts, const stk::mesh::PartVector* boundary_mesh_parts = nullptr);
 
 }} // end stk mesh namespaces
 
