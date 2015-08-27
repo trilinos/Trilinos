@@ -62,13 +62,14 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.negima.gcc.cmake")
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME OPENMPI_1.8.7_DEBUG_DEV_MueLu_Coverage)
+SET(BUILD_DIR_NAME OPENMPI_1.10.0_DEBUG_DEV_MueLu_Coverage)
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
 SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
 SET(CTEST_DO_COVERAGE_TESTING TRUE) #The quickstart says this is redundant, but I'm setting it just in case.
 
-SET(Trilinos_PACKAGES Teuchos Kokkos Epetra Tpetra Xpetra Amesos Amesos2 Ifpack Ifpack2 Zoltan Zoltan2)
+#SET(Trilinos_PACKAGES Teuchos Kokkos Epetra Tpetra Xpetra Amesos Amesos2 Ifpack Ifpack2 Zoltan Zoltan2)
+SET(Trilinos_PACKAGES MueLu)
 
 SET(EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"

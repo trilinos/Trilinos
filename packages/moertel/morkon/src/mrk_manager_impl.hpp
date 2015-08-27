@@ -52,6 +52,7 @@
 #include <mrk_compute_normals.hpp>
 #include <mrk_search_for_pallet_generating_faces.hpp>
 #include <mrk_interface_impl.hpp>
+#include <mrk_interface_host_side_adapter.hpp>
 
 namespace morkon_exp {
 
@@ -180,14 +181,14 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
   // Count up the numbers of nodes, faces, and interfaces.  Fill in the following
   // on the host side, then migrate the data to the device.
 
-  local_to_global_idx_dvt                  node_to_global_id;
-  local_to_global_idx_dvt                  face_to_global_id;
-  face_to_interface_and_side_dvt  face_to_interface_and_side;
-  face_to_num_nodes_dvt                    face_to_num_nodes;
-  face_to_nodes_dvt                            face_to_nodes;
-  points_dvt                                     node_coords;
-  points_dvt                           predicted_node_coords;
-  on_boundary_table_dvt                  is_node_on_boundary;
+  local_to_global_idx_dvt                  node_to_global_id("node_to_global_id");
+  local_to_global_idx_dvt                  face_to_global_id("face_to_global_id");
+  face_to_interface_and_side_dvt  face_to_interface_and_side("face_to_interface_and_side");
+  face_to_num_nodes_dvt                    face_to_num_nodes("face_to_num_nodes");
+  face_to_nodes_dvt                            face_to_nodes("face_to_nodes");
+  points_dvt                                     node_coords("node_coords");
+  points_dvt                           predicted_node_coords("predicted_node_coords");
+  on_boundary_table_dvt                  is_node_on_boundary("is_node_on_boundary");
 
   for (typename interfaces_map_t::iterator ifcs_i = m_interfaces.begin(); ifcs_i != m_interfaces.end(); ++ifcs_i)
   {
@@ -195,11 +196,18 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::internalize_interfaces()
 
     for (unsigned hsa_i = 0; hsa_i < interface.m_hs_adapters.size(); ++hsa_i)
     {
-      Interface_HostSideAdapter<DIM> &adapter = *interface.m_hs_adapters[hsa_i];
+      Interface_HostSideAdapter<DIM> *adapter_rp = interface.m_hs_adapters[hsa_i];
+
+      if (!adapter_rp)
+        continue;
+
+      Interface_HostSideAdapter<DIM> &adapter = *adapter_rp;
 
       // Convert the adapter's version of the side to one in terms of the internal face_ids in the
       // surface_mesh, inserting nodes and faces as needed.
       // WRITE ME!
+      std::cout << "Let's see what faces are on this adapter!" << std::endl;
+      adapter.m_faces.begin();
     }
   }
 
@@ -221,6 +229,8 @@ Morkon_Manager<DeviceType, DIM, FACE_TYPE>::migrate_to_device(
                                         points_dvt predicted_node_coords,
                                         on_boundary_table_dvt is_node_on_boundary)
 {
+    std::cout << "In migrate_to_device()!"  << std::endl;
+
     face_to_global_id.template modify<typename local_to_global_idx_dvt::t_host>();
     node_to_global_id.template modify<typename local_to_global_idx_dvt::t_host>();
     face_to_interface_and_side.template modify<typename face_to_interface_and_side_dvt::t_host>();

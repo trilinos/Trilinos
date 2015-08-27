@@ -385,7 +385,7 @@ void Amesos2Wrapper<MatrixType>::compute ()
     initialize ();
   }
 
-  const std::string timerName ("Ifpack2::AdditiveSchwarz::compute");
+  const std::string timerName ("Ifpack2::Details::Amesos2Wrapper::compute");
   RCP<Time> timer = TimeMonitor::lookupCounter (timerName);
   if (timer.is_null ()) {
     timer = TimeMonitor::getNewCounter (timerName);
@@ -583,14 +583,12 @@ describe (Teuchos::FancyOStream& out,
 } // namespace Details
 } // namespace Ifpack2
 
-// FIXME (mfh 16 Sep 2014) We should really only use RowMatrix here!
 // There's no need to instantiate for CrsMatrix too.  All Ifpack2
 // preconditioners can and should do dynamic casts if they need a type
 // more specific than RowMatrix.
 
 #define IFPACK2_DETAILS_AMESOS2WRAPPER_INSTANT(S,LO,GO,N) \
-  template class Ifpack2::Details::Amesos2Wrapper< Tpetra::RowMatrix<S, LO, GO, N> >; \
-  template class Ifpack2::Details::Amesos2Wrapper< Tpetra::CrsMatrix<S, LO, GO, N> >;
+  template class Ifpack2::Details::Amesos2Wrapper< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #else
 

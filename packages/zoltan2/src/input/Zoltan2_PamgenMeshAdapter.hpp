@@ -536,6 +536,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       nodeToElem_[telct_] = sur_elem[ncnt][i];
       ++telct_;
 
+#ifndef USE_MESH_ADAPTER
       for(int ecnt = 0; ecnt < num_elem_; ecnt++) {
 	if (element_num_map_[ecnt] == sur_elem[ncnt][i]) {
 	  for (int j = 0; j < nnodes_per_elem; j++) {
@@ -554,6 +555,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 	  break;
 	}
       }
+#endif
     }
 
     nAdjMap.clear();
@@ -799,6 +801,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     delete[] rbuf;
     //}
 
+#ifndef USE_MESH_ADAPTER
   for(int ecnt=0; ecnt < num_elem_; ecnt++) {
     eStart_[ecnt] = nEadj_;
     MapType eAdjMap;
@@ -820,6 +823,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 
     eAdjMap.clear();
   }
+#endif
 
   for(int b = 0; b < num_elem_; b++) {
     delete[] reconnect[b];
@@ -860,6 +864,7 @@ void PamgenMeshAdapter<User>::print(int me)
     std::cout << std::endl;
   }
 
+#ifndef USE_MESH_ADAPTER
   for (int i = 0; i < num_elem_; i++) {
     std::cout << me << fn << i 
               << " Elem " << element_num_map_[i]
@@ -868,6 +873,7 @@ void PamgenMeshAdapter<User>::print(int me)
       std::cout << eAdj_[j] << " ";
     std::cout << std::endl;
   }
+#endif
 }
   
 }  //namespace Zoltan2

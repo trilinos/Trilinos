@@ -630,6 +630,6 @@ permuteReorderedToOriginalTempl (const Tpetra::MultiVector<DomainScalar,local_or
 } // namespace Ifpack2
 
 #define IFPACK2_REORDERFILTER_INSTANT(S,LO,GO,N)                        \
-  template class Ifpack2::ReorderFilter< Tpetra::CrsMatrix<S, LO, GO, N> >;
+  template class Ifpack2::ReorderFilter< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif

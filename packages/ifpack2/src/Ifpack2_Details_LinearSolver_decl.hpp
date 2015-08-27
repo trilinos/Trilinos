@@ -1,9 +1,10 @@
 #ifndef IFPACK2_DETAILS_LINEARSOLVER_DECL_HPP
 #define IFPACK2_DETAILS_LINEARSOLVER_DECL_HPP
 
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Trilinos_Details_LinearSolver.hpp>
-#include <Ifpack2_Preconditioner.hpp>
+#include "Ifpack2_ConfigDefs.hpp"
+#include "Trilinos_Details_LinearSolver.hpp"
+#include "Ifpack2_Preconditioner.hpp"
+#include "Teuchos_Describable.hpp"
 
 namespace Ifpack2 {
 namespace Details {
@@ -19,7 +20,8 @@ template<class SC, class LO, class GO, class NT>
 class LinearSolver :
     public Trilinos::Details::LinearSolver<Tpetra::MultiVector<SC, LO, GO, NT>,
                                            Tpetra::Operator<SC, LO, GO, NT>,
-                                           typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>
+                                           typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>,
+    virtual public Teuchos::Describable
 {
 public:
   typedef Ifpack2::Preconditioner<SC, LO, GO, NT> prec_type;
@@ -41,6 +43,23 @@ public:
   ///   without attempting to create the solver, we can't actually
   ///   test in the constructor whether the solver exists.
   LinearSolver (const std::string& solverName);
+
+  /// \brief Special constructor for use ONLY by Ifpack2::AdditiveSchwarz.
+  ///
+  /// \param userPrec Input custom preconditioner.  It MUST implement
+  ///   <tt>Ifpack2::Details::CanChangeMatrix<row_matrix_type></tt>.
+  ///
+  /// This constructor exists because Ifpack2::AdditiveSchwarz has a
+  /// method that takes an Ifpack2::Preconditioner from the user as
+  /// input.  In that case, we don't know the preconditioner's name.
+  /// It could even be a custom subclass of Ifpack2::Preconditioner
+  /// that the user wrote.  However, it <i>does</i> have a setMatrix()
+  /// method, since it must implement
+  /// Ifpack2::Details::CanChangeMatrix.  As a result, we can use it
+  /// directly; we don't need to know how to (re)create it.  We set
+  /// solverName_ = "CUSTOM" to mark this case, just as
+  /// Ifpack2::AdditiveSchwarz does.
+  LinearSolver (const Teuchos::RCP<prec_type>& userPrec);
 
   //! Destructor (virtual for memory safety).
   virtual ~LinearSolver () {}
@@ -65,6 +84,15 @@ public:
 
   //! Precompute for matrix values' changes.
   void numeric ();
+
+  //! Implementation of Teuchos::Describable::description.
+  std::string description () const;
+
+  //! Implementation of Teuchos::Describable::describe.
+  void
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const;
 
 private:
   //! Name of the Ifpack2 solver to wrap.
