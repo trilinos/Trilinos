@@ -44,6 +44,7 @@
 #define IFPACK2_DETAILS_TRIDISOLVER_DEF_HPP
 
 #include "Ifpack2_LocalFilter.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 #ifdef HAVE_MPI

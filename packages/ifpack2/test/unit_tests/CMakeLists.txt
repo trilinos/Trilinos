@@ -53,7 +53,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SOURCES ${SOURCES}
     ARGS ""
     COMM serial mpi
-    TESTONLYLIBS ifpack2_tpetra_testinst
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -63,7 +62,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
   COMM serial mpi
-  TESTONLYLIBS ifpack2_tpetra_testinst
   STANDARD_PASS_OUTPUT
   )
 
@@ -78,7 +76,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS ""
   COMM mpi
   NUM_MPI_PROCS 2
-  TESTONLYLIBS ifpack2_tpetra_testinst
   STANDARD_PASS_OUTPUT
   )
 
@@ -90,7 +87,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS ""
   COMM serial mpi
   NUM_MPI_PROCS 1
-  TESTONLYLIBS ifpack2_tpetra_testinst
   STANDARD_PASS_OUTPUT
   )
 
@@ -106,7 +102,6 @@ IF (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1
-    TESTONLYLIBS ifpack2_tpetra_testinst
     STANDARD_PASS_OUTPUT
     )
 ENDIF ()

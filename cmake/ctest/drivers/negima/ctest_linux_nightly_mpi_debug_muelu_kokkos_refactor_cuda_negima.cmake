@@ -54,15 +54,15 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.negima.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.negima.gcc-cuda.cmake")
 
 #
 # Set the options specific to this build case
 #
 
-SET(COMM_TYPE SERIAL)
-SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME SERIAL_RELEASE_DEV_MueLu_Experimental)
+SET(COMM_TYPE MPI)
+SET(BUILD_TYPE DEBUG)
+SET(BUILD_DIR_NAME OPENMPI_1.10.0_DEBUG_DEV_KOKKOS_REFACTOR_CUDA_MueLu)
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Experimental)
 SET(CTEST_TEST_TIMEOUT 900)
@@ -70,12 +70,22 @@ SET(CTEST_TEST_TIMEOUT 900)
 SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
-  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
-  "-DTPL_ENABLE_SuperLU=ON"
-  "-DMueLu_ENABLE_Experimental=ON"
-  "-DXpetra_ENABLE_Experimental=ON"
-  "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
+  ### ETI ###
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+
+  ### MISC ###
+  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
+
+  ### TPLS ###
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
+      "-DSuperLU_INCLUDE_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/include"
+      "-DSuperLU_LIBRARY_DIRS:PATH=/home/aprokop/local/opt/superlu-4.3/lib"
+      "-DSuperLU_LIBRARY_NAMES:STRING=superlu_4.3"
+
+  ### PACKAGES CONFIGURATION ###
+      "-DMueLu_ENABLE_Experimental:BOOL=ON"
+      "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
+      "-DXpetra_ENABLE_Experimental:BOOL=ON"
 )
 
 #

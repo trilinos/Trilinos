@@ -43,7 +43,23 @@
 #ifndef IFPACK2_KRYLOV_DEF_HPP
 #define IFPACK2_KRYLOV_DEF_HPP
 
-#include "Ifpack2_Krylov_decl.hpp"
+#include "Ifpack2_Chebyshev.hpp"
+#include "Ifpack2_Heap.hpp"
+#include "Ifpack2_ILUT.hpp"
+#include "Ifpack2_Parameters.hpp"
+#include "Ifpack2_Relaxation.hpp"
+#include "Ifpack2_RILUK.hpp"
+
+#include "BelosBlockGmresSolMgr.hpp"
+#include "BelosBlockCGSolMgr.hpp"
+
+#include "Teuchos_Assert.hpp"
+#include "Teuchos_Time.hpp"
+
+#include <iostream>
+#include <sstream>
+#include <cmath>
+
 
 namespace Ifpack2 {
 
@@ -349,7 +365,7 @@ void Krylov<MatrixType>::initialize ()
       ifpack2_prec_ = rcp (new RILUK<MatrixType> (A_));
     }
     else if (PreconditionerType_==4) {
-      ifpack2_prec_ = rcp (new Chebyshev<MatrixType> (A_));
+      ifpack2_prec_ = rcp (new Chebyshev<row_matrix_type> (A_));
     }
     if (PreconditionerType_>0) {
       ifpack2_prec_->initialize();

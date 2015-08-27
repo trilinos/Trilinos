@@ -146,8 +146,8 @@ struct search_for_pallet_generating_faces
                           face_ids_on_a_side_t mortarside_faces)
         : m_non_mortarside_faces(non_mortarside_faces)
         , m_mortarside_faces(mortarside_faces)
-        , m_total_faces()
-        , m_num_mortarside()
+        , m_total_faces("tot_faces")
+        , m_num_mortarside("num_mortarside")
       {
         std::cout << "In separate_into_sides(..)" << std::endl;
 
@@ -171,7 +171,7 @@ struct search_for_pallet_generating_faces
         int interface_id = m_face_to_interface_and_side(idx, 0);
         if (m_face_to_interface_and_side(idx, 1) == InterfaceBase::NON_MORTAR_SIDE)
         {
-          int non_mortarside_offset = m_total_faces - mortarside_offset;
+          int non_mortarside_offset = m_total_faces() - mortarside_offset;
           m_non_mortarside_faces(non_mortarside_offset, 0) = idx;
           m_non_mortarside_faces(non_mortarside_offset, 1) = interface_id;
         }
@@ -182,6 +182,12 @@ struct search_for_pallet_generating_faces
         }
       }
     };
+
+    struct construct_bounding_boxes
+    {
+
+    };
+
 
     struct filter_to_sides_tag {};
     struct construct__bounding_boxes_tag {};
@@ -200,18 +206,16 @@ struct search_for_pallet_generating_faces
         , m_search_results(search_results)
         , m_boxes_epsilon(static_cast<float>(epsilon))
     {
-
         std::cout << "In search_for_pallet_generating_faces(..)" << std::endl;
-        face_ids_on_a_side_t  non_mortarside_faces;
-        face_ids_on_a_side_t      mortarside_faces;
+
+        face_ids_on_a_side_t  non_mortarside_faces("non_mortarside_faces");
+        face_ids_on_a_side_t      mortarside_faces("mortarside_faces");
         separate_into_sides(*this, non_mortarside_faces, mortarside_faces);
 
-        bounding_boxes_t non_mortarside_boxes;
-        bounding_boxes_t     mortarside_boxes;
-        // Construct bounding boxes for the sets of spaces, using both the node_coords
-        // and predicted node_coords and also the m_boxes_epsilon.
-        //
-        // Resize the these two views.  Then use two parallel_fors to fill.
+        bounding_boxes_t non_mortarside_aabbs("non_mortarside_aabbs");
+        bounding_boxes_t     mortarside_aabbs("mortarside_aabbs");
+        // construct_bounding_boxes(*this, non_mortarside_faces, non_mortarside_aabbs);
+        // construct_bounding_boxes(*this, mortarside_faces, mortarside_aabbs);
 
         // Do a (brute-force, for now) search for pairs with bounding boxes that overlap
         // Extra points if you disallow face pairs whose normals are incompatible with

@@ -50,32 +50,12 @@
 #ifndef IFPACK2_KRYLOV_DECL_HPP
 #define IFPACK2_KRYLOV_DECL_HPP
 
-#include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Heap.hpp"
-#include "Ifpack2_Parameters.hpp"
-#include "Ifpack2_Relaxation.hpp"
-#include "Ifpack2_ILUT.hpp"
-#include "Ifpack2_RILUK.hpp"
-#include "Ifpack2_Chebyshev.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 
-#include <BelosConfigDefs.hpp>
-#include <BelosSolverManager.hpp>
-#include <BelosTpetraAdapter.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
-#include <BelosBlockCGSolMgr.hpp>
-
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <cmath>
+#include "BelosSolverManager.hpp"
+#include "BelosTpetraAdapter.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 namespace Teuchos {
   class ParameterList; // forward declaration

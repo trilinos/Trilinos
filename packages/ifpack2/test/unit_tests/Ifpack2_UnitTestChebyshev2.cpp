@@ -387,9 +387,10 @@ TEUCHOS_UNIT_TEST(Ifpack2Chebyshev, Convergence)
   // Convenience typedefs.
   typedef Tpetra::Map<LO, GO, NT> map_type;
   typedef Tpetra::CrsMatrix<ST, LO, GO, NT> crs_matrix_type;
+  typedef Tpetra::RowMatrix<ST, LO, GO, NT> row_matrix_type;
   typedef Tpetra::MultiVector<ST, LO, GO, NT> MV;
   typedef Tpetra::Vector<ST, LO, GO, NT> V;
-  typedef Ifpack2::Chebyshev<crs_matrix_type> prec_type;
+  typedef Ifpack2::Chebyshev<row_matrix_type> prec_type;
   typedef Teuchos::ScalarTraits<ST> STS;
   typedef STS::magnitudeType MT;
 

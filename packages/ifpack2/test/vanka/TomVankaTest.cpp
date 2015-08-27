@@ -120,7 +120,7 @@
 
 // Ifpack2
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_AdditiveSchwarz_def.hpp"
+#include "Ifpack2_AdditiveSchwarz.hpp"
 #include "Ifpack2_BlockRelaxation_decl.hpp"
 #include "Ifpack2_BlockRelaxation_def.hpp"
 #include "Ifpack2_DenseContainer_decl.hpp"

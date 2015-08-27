@@ -43,8 +43,8 @@
 #ifndef IFPACK2_BANDEDCONTAINER_DEF_HPP
 #define IFPACK2_BANDEDCONTAINER_DEF_HPP
 
-#include "Ifpack2_BandedContainer_decl.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 #ifdef HAVE_MPI
 #  include <mpi.h>
