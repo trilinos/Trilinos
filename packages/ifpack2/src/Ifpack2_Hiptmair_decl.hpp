@@ -47,21 +47,7 @@
 #ifndef IFPACK2_HIPTMAIR_DECL_HPP
 #define IFPACK2_HIPTMAIR_DECL_HPP
 
-#include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Heap.hpp"
-#include "Ifpack2_Parameters.hpp"
-
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <cmath>
 #include <type_traits>
 
 namespace Teuchos {
