@@ -45,6 +45,7 @@ SET(INCLUDES
 	mrk_manager_impl.hpp
 	mrk_manager_tester.hpp
     mrk_search_for_pallet_generating_faces.hpp
+    morkon_unit_test_utils_TRI3.hpp
    )
 
 
@@ -54,6 +55,7 @@ SET(INCLUDES
 ##
 
 SET(CPPSOURCES
+    morkon_unit_test_utils_TRI3.cpp
     morkon_core_unit_test.cpp
    )
 
@@ -63,7 +65,7 @@ SET(CPPSOURCES
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   morkon_core_unit_test
   NAME morkon_core_unit_test
-  SOURCES morkon_core_unit_test.cpp
+  SOURCES morkon_core_unit_test.cpp morkon_unit_test_utils_TRI3.cpp
   ARGS
   COMM mpi
   PASS_REGULAR_EXPRESSION "Test passed!"
