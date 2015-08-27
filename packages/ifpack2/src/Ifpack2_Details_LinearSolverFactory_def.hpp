@@ -2,7 +2,7 @@
 //@HEADER
 // ***********************************************************************
 //
-//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -48,8 +48,11 @@
 #ifndef IFPACK2_DETAILS_LINEARSOLVERFACTORY_DEF_HPP
 #define IFPACK2_DETAILS_LINEARSOLVERFACTORY_DEF_HPP
 
-#include <Ifpack2_Details_LinearSolver.hpp>
-#include <Trilinos_Details_LinearSolverFactory.hpp>
+#include "Trilinos_Details_LinearSolverFactory.hpp"
+#include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Ifpack2_Details_LinearSolver.hpp"
+#include "Ifpack2_Factory.hpp"
+#include "Tpetra_RowMatrix.hpp"
 #include <type_traits> // std::is_same
 
 namespace Ifpack2 {
@@ -60,7 +63,45 @@ Teuchos::RCP<typename LinearSolverFactory<SC, LO, GO, NT>::solver_type>
 LinearSolverFactory<SC, LO, GO, NT>::
 getLinearSolver (const std::string& solverName)
 {
-  return Teuchos::rcp (new Ifpack2::Details::LinearSolver<SC, LO, GO, NT> (solverName));
+  using Teuchos::null;
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::TypeNameTraits;
+  typedef Ifpack2::Preconditioner<SC, LO, GO, NT> prec_type;
+  typedef Tpetra::RowMatrix<SC, LO, GO, NT> ROW;
+  const char prefix[] = "Ifpack2::Details::LinearSolverFactory::getLinearSolver: ";
+
+  RCP<prec_type> solver;
+  try {
+    // The solver to create must be a subclass of
+    // Ifpack2::Details::CanChangeMatrix (see documentation of
+    // Ifpack2::Details::LinearSolver).  As a result, it should be
+    // possible to create the solver with a null matrix.
+    solver = Ifpack2::Factory::template create<ROW> (solverName, null);
+  }
+  catch (std::exception& e) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::invalid_argument, prefix << "Failed to create Ifpack2 "
+       "preconditioner named \"" << solverName << "\", for the following "
+       "template parameters: "
+       << "SC = " << TypeNameTraits<SC>::name ()
+       << ", LO = " << TypeNameTraits<LO>::name ()
+       << ", GO = " << TypeNameTraits<GO>::name ()
+       << ", NT = " << TypeNameTraits<NT>::name ()
+       << ".  Ifpack2::Factory::create threw an exception: " << e.what ());
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (solver.is_null (), std::invalid_argument, prefix << "Failed to create "
+     "Ifpack2 preconditioner named \"" << solverName << "\", for the "
+     "following template parameters: "
+     << "SC = " << TypeNameTraits<SC>::name ()
+     << ", LO = " << TypeNameTraits<LO>::name ()
+     << ", GO = " << TypeNameTraits<GO>::name ()
+     << ", NT = " << TypeNameTraits<NT>::name ()
+     << ".  Ifpack2::Factory::create returned null.");
+
+  typedef Ifpack2::Details::LinearSolver<SC, LO, GO, NT> impl_type;
+  return Teuchos::rcp (new impl_type (solver, solverName));
 }
 
 template<class SC, class LO, class GO, class NT>

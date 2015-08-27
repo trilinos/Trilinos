@@ -1680,7 +1680,7 @@ setInnerPreconditioner (const Teuchos::RCP<Preconditioner<scalar_type,
   // Set the new inner solver.
   typedef Ifpack2::Details::LinearSolver<scalar_type, local_ordinal_type,
     global_ordinal_type, node_type> inner_solver_impl_type;
-  Inverse_ = Teuchos::rcp (new inner_solver_impl_type (innerPrec));
+  Inverse_ = Teuchos::rcp (new inner_solver_impl_type (innerPrec, "CUSTOM"));
 }
 
 template<class MatrixType, class LocalInverseType>
