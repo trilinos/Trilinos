@@ -828,12 +828,10 @@ bool entity_is_purely_local(const BulkData& mesh, Entity entity)
             && !bucket.in_aura() && !mesh.in_send_ghost(mesh.entity_key(entity));
 }
 
-void debug_require_fmwk_or_entity_purely_local(const BulkData& mesh, Entity entity, const std::string& caller)
+void require_fmwk_or_entity_purely_local(const BulkData& mesh, Entity entity, const std::string& caller)
 {
-#ifndef NDEBUG
-    ThrowAssertMsg(mesh.add_fmwk_data() || entity_is_purely_local(mesh, entity),
-                   "Error, "<<caller<< " requires that entity "<<mesh.entity_key(entity)<<" must be purely local.");
-#endif
+    ThrowRequireMsg(mesh.add_fmwk_data() || entity_is_purely_local(mesh, entity),
+                   "Error, "<<caller<< " requires that stk-mesh is running under fmwk, or entity "<<mesh.entity_key(entity)<<" must be purely local.");
 }
 
 void BulkData::change_entity_id( EntityId id, Entity entity)
@@ -846,7 +844,7 @@ void BulkData::change_entity_id( EntityId id, Entity entity)
                  "change_entity_id only supported in serial");
 #endif
 
-  debug_require_fmwk_or_entity_purely_local(*this, entity, "BulkData::change_entity_id");
+  require_fmwk_or_entity_purely_local(*this, entity, "BulkData::change_entity_id");
 
   EntityRank e_rank = entity_rank(entity);
 

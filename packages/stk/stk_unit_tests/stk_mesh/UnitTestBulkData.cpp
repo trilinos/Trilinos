@@ -6148,11 +6148,8 @@ TEST(ChangeEntityId, test_throw_on_shared_node)
 
         mesh.modification_begin();
 
-#ifdef NDEBUG
-        EXPECT_NO_THROW(mesh.change_entity_id(99, sharedNode5));
-#else
         EXPECT_THROW(mesh.change_entity_id(99, sharedNode5), std::logic_error);
-#endif
+
         mesh.modification_end();
     }
 }
