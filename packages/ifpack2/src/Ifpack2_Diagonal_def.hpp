@@ -44,7 +44,7 @@
 #define IFPACK2_DIAGONAL_DEF_HPP
 
 #include "Ifpack2_Diagonal_decl.hpp"
-#include "Tpetra_CrsMatrix_def.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 namespace Ifpack2 {
 
