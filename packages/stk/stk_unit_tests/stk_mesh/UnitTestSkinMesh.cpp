@@ -956,8 +956,8 @@ void test_2_hex_2_block_with_second_selector(stk::mesh::BulkData::AutomaticAuraO
         stk::mesh::PartVector skin_parts;
         skin_parts.push_back(&skin_part);
 
-        stk::mesh::Selector onlyConsiderTheseElementsWhenFindingBoundary(!stk::mesh::Selector(*meta.get_part("block_1")));
-        stk::mesh::skin_mesh(mesh, block_2, skin_parts, &onlyConsiderTheseElementsWhenFindingBoundary);
+        stk::mesh::Selector block_1_becomes_air(!stk::mesh::Selector(*meta.get_part("block_1")));
+        stk::mesh::skin_mesh(mesh, block_2, skin_parts, &block_1_becomes_air);
 
         stk::mesh::Entity element2 = mesh.get_entity(stk::topology::ELEM_RANK, element_id);
 

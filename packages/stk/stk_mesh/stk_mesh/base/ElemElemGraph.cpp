@@ -2024,5 +2024,70 @@ void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph
 
 }
 
+void ElemElemGraph::add_side_to_mesh(stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts, stk::mesh::EntityId side_id)
+{
+    stk::mesh::Entity element = m_local_id_to_element_entity[side_pair.first];
+    int side_ordinal = side_pair.second;
+    stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(m_bulk_data, element, side_ordinal);
+
+    if(m_bulk_data.is_valid(side))
+    {
+        if(m_bulk_data.bucket(side).owned())
+        {
+            m_bulk_data.change_entity_parts(side, skin_parts, stk::mesh::PartVector());
+        }
+    }
+    else
+    {
+        ThrowRequireMsg(!impl::is_id_already_in_use_locally(m_bulk_data, m_bulk_data.mesh_meta_data().side_rank(), side_id), "Program error. Id in use.");
+        stk::mesh::declare_element_side(m_bulk_data, side_id, element, side_ordinal, skin_parts);
+    }
+}
+
+void ElemElemGraph::skin_mesh(stk::mesh::Selector &sel, const stk::mesh::PartVector& skin_parts, const stk::mesh::Selector *air)
+{
+    const stk::mesh::BucketVector& buckets = m_bulk_data.get_buckets(stk::topology::ELEM_RANK, sel);
+    unsigned num_elements = stk::mesh::count_selected_entities(sel, buckets);
+    const unsigned max_sides_per_elem = 6;
+    unsigned num_side_ids_needed = max_sides_per_elem*num_elements;
+    std::vector<stk::mesh::EntityId> available_ids;
+    m_bulk_data.generate_new_ids(m_bulk_data.mesh_meta_data().side_rank(), num_side_ids_needed, available_ids);
+    size_t ids_used = 0;
+
+    m_bulk_data.modification_begin();
+    for(size_t i=0;i<buckets.size();++i)
+    {
+        const stk::mesh::Bucket &bucket = *buckets[i];
+        for(size_t j=0;j<bucket.size();++j)
+        {
+            stk::mesh::Entity element = bucket[j];
+            stk::mesh::impl::LocalId local_id = this->get_local_element_id(element);
+
+            std::vector<stk::mesh::impl::ElementSidePair> element_side_pairs;
+            impl::add_element_side_pairs_for_unused_sides(local_id, m_element_topologies[local_id], m_via_sides[local_id], element_side_pairs);
+
+            if(air!=nullptr)
+            {
+                for(size_t k=0;k<this->get_num_connected_elems(element);++k)
+                {
+                    stk::mesh::Entity other_element = this->get_connected_element(element, k);
+                    if (((*air)(m_bulk_data.bucket(other_element))))
+                    {
+                        element_side_pairs.push_back( std::make_pair(m_entity_to_local_id[element.local_offset()], this->get_side_from_element1_to_locally_owned_element2(element, other_element))       );
+                        element_side_pairs.push_back( std::make_pair(m_entity_to_local_id[other_element.local_offset()], this->get_side_from_element1_to_locally_owned_element2(other_element, element)) );
+                    }
+                }
+            }
+
+            for(size_t side_pair=0;side_pair<element_side_pairs.size();++side_pair)
+            {
+                this->add_side_to_mesh(element_side_pairs[side_pair], skin_parts, available_ids[ids_used]);
+                ids_used++;
+            }
+        }
+    }
+    m_bulk_data.modification_end();
+}
+
 }} // end namespaces stk mesh
 

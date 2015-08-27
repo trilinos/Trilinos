@@ -409,40 +409,104 @@ TEST(ElementDeath, keep_faces_after_element_death_without_calling_create_faces)
     }
 }
 
-TEST(ElementDeath, alan)
+class BulkDataTester : public stk::mesh::BulkData
+{
+public:
+    BulkDataTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm) :
+            stk::mesh::BulkData(mesh_meta_data, comm)
+    {
+    }
+
+    virtual ~BulkDataTester()
+    {
+    }
+
+    void set_sorting_by_face()
+    {
+        m_shouldSortFacesByNodeIds = true;
+    }
+};
+
+
+void kill_element(stk::mesh::Entity element, stk::mesh::BulkData& bulkData, stk::mesh::Part& active, stk::mesh::Part& skin)
+{
+    stk::mesh::ElemElemGraph graph(bulkData, active);
+    stk::mesh::EntityVector deactivated_elems;
+    if(bulkData.is_valid(element) && bulkData.parallel_owner_rank(element) == bulkData.parallel_rank())
+    {
+        deactivated_elems.push_back(element);
+    }
+
+    stk::mesh::PartVector boundary_mesh_parts={&active, &skin};
+    ElementDeathUtils::deactivate_elements(deactivated_elems, bulkData,  active);
+    stk::mesh::process_killed_elements(bulkData, graph, deactivated_elems, active, boundary_mesh_parts, &boundary_mesh_parts);
+}
+
+stk::mesh::EntityVector get_entities(stk::mesh::BulkData& bulkData, stk::mesh::Part& part)
+{
+    stk::mesh::EntityVector entities;
+    stk::mesh::Selector sel = part & bulkData.mesh_meta_data().locally_owned_part();
+    stk::mesh::get_selected_entities(sel, bulkData.buckets(stk::topology::FACE_RANK), entities);
+    return entities;
+}
+
+void compare_faces(const stk::mesh::BulkData& bulkData, const std::vector<size_t> num_gold_skinned_faces, const stk::mesh::EntityVector& skinned_faces, const stk::mesh::EntityVector &active_faces)
+{
+    EXPECT_EQ(num_gold_skinned_faces[bulkData.parallel_rank()], skinned_faces.size());
+    EXPECT_EQ(num_gold_skinned_faces[bulkData.parallel_rank()], active_faces.size());
+
+    for(size_t i=0;i<skinned_faces.size();++i)
+    {
+        if (bulkData.identifier(skinned_faces[i]) != bulkData.identifier(active_faces[i]))
+        {
+            std::cerr << "Skinned faces: ";
+            for(size_t j=0;j<skinned_faces.size();++j)
+            {
+                std::cerr << skinned_faces[j] << "\t";
+            }
+            std::cerr << std::endl;
+
+            std::cerr << "active faces: ";
+            for(size_t j=0;j<active_faces.size();++j)
+            {
+                std::cerr << active_faces[j] << "\t";
+            }
+            std::cerr << std::endl;
+            break;
+        }
+    }
+}
+
+TEST(ElementDeath, compare_death_and_skin_mesh)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-     if(stk::parallel_machine_size(comm) == 4)
+     if(stk::parallel_machine_size(comm) == 1)
      {
          unsigned spatialDim = 3;
 
          stk::mesh::MetaData meta(spatialDim);
-         stk::mesh::Part& skin = meta.declare_part_with_topology("skin", stk::topology::QUAD_4);
-         stk::mesh::PartVector boundary_mesh_parts {&skin};
+         stk::mesh::Part& skin  = meta.declare_part_with_topology("skin", stk::topology::QUAD_4);
          stk::io::put_io_part_attribute(skin);
-         stk::mesh::BulkData bulkData(meta, comm);
+         BulkDataTester bulkData(meta, comm);
+         bulkData.set_sorting_by_face();
 
          stk::mesh::Part& active = meta.declare_part("active"); // can't specify rank, because it gets checked against size of rank_names
-
-         ASSERT_TRUE(active.primary_entity_rank() == stk::topology::INVALID_RANK);
-
          stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
-
          stk::unit_test_util::put_mesh_into_part(bulkData, active);
 
-         stk::mesh::ElemElemGraph graph(bulkData, active);
-         stk::mesh::skin_mesh(bulkData, {&skin});
-         stk::unit_test_util::write_mesh_using_stk_io("skin.exo", bulkData, comm);
+         stk::mesh::Entity element1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
+         kill_element(element1, bulkData, active, skin);
 
-         stk::mesh::Selector sel = skin & bulkData.mesh_meta_data().locally_owned_part();
-         stk::mesh::EntityVector skinned_faces;
-         stk::mesh::get_selected_entities(sel, bulkData.buckets(stk::topology::FACE_RANK), skinned_faces);
+         ElementDeathUtils::skin_part(bulkData, active, {&skin, &active});
+         std::vector<size_t> num_gold_skinned_faces = { 14 };
 
-         std::vector<size_t> num_gold_skinned_faces = { 5, 4, 4, 5 };
-         EXPECT_EQ(num_gold_skinned_faces[bulkData.parallel_rank()], skinned_faces.size());
+         stk::mesh::EntityVector skinned_faces = get_entities(bulkData, skin);
+         stk::mesh::EntityVector active_faces  = get_entities(bulkData, active);
+         compare_faces(bulkData, num_gold_skinned_faces, skinned_faces, active_faces);
      }
 }
+
 
 } // end namespace
 

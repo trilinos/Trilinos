@@ -163,6 +163,9 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
 
 bool does_element_have_side(stk::mesh::BulkData& bulkData, stk::mesh::Entity element);
 
+void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const std::vector<int> &internal_sides,
+        std::vector<ElementSidePair>& element_side_pairs);
+
 }
 }} // end namespaces stk mesh
 

@@ -577,5 +577,31 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
     }
 }
 
+void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const std::vector<int> &internal_sides,
+        std::vector<ElementSidePair>& element_side_pairs)
+{
+    size_t num_sides = topology.num_sides();
+    std::vector<int> elem_sides;
+
+    if (internal_sides.size() < num_sides)
+    {
+        elem_sides.assign(num_sides, -1);
+        for(size_t j=0; j<internal_sides.size(); ++j)
+        {
+            int sideId = internal_sides[j];
+            elem_sides[sideId] = internal_sides[j];
+        }
+
+        for(size_t j=0; j<num_sides; ++j)
+        {
+            if (elem_sides[j] == -1)
+            {
+                int sideId = j;
+                element_side_pairs.push_back(std::make_pair(elementId, sideId));
+            }
+        }
+    }
+}
+
 }}} // end namespaces stk mesh impl
 

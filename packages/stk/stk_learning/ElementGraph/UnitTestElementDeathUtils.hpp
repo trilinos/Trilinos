@@ -76,6 +76,21 @@ inline stk::mesh::Entity get_face_between_element_ids(stk::mesh::ElemElemGraph& 
     return face_between_elem1_and_elem2;
 }
 
+inline void skin_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Part &active, const stk::mesh::PartVector& skin_parts)
+{
+    stk::mesh::ElemElemGraph elem_elem_graph(bulkData, active);
+    stk::mesh::Selector sel = active;
+    elem_elem_graph.skin_mesh(sel, skin_parts);
+}
+
+inline void skin_part(stk::mesh::BulkData& bulkData, stk::mesh::Part &active, const stk::mesh::PartVector& skin_parts)
+{
+    stk::mesh::ElemElemGraph elem_elem_graph(bulkData, active);
+    stk::mesh::Selector sel = active;
+    stk::mesh::Selector air = !active;
+    elem_elem_graph.skin_mesh(sel, skin_parts, &air);
+}
+
 } // end namespace
 
 

@@ -46,6 +46,9 @@ public:
     ElemElemGraphTester(stk::mesh::BulkData& bulkData)
       : ElemElemGraph(bulkData, bulkData.mesh_meta_data().universal_part()) {};
 
+    ElemElemGraphTester(stk::mesh::BulkData& bulkData, stk::mesh::Part &part)
+      : ElemElemGraph(bulkData, part) {};
+
     virtual ~ElemElemGraphTester() {}
 
     void fill_graph() { ElemElemGraph::fill_graph(); }
@@ -206,9 +209,6 @@ int get_side_from_element1_to_element2(const impl::ElementGraph &elem_graph,
                                        const impl::SidesForElementGraph &via_sides,
                                        stk::mesh::impl::LocalId element1_local_id,
                                        stk::mesh::impl::LocalId other_element_id);
-
-void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const std::vector<int> &internal_sides,
-        std::vector<ElementSidePair>& element_side_pairs);
 
 void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::Part& part);
 
@@ -1308,34 +1308,6 @@ TEST( ElementGraph, DISABLED_HexAddShellAddShellHexSerial )
     EXPECT_EQ(0u, elemElemGraph.num_parallel_edges());
 }
 
-
-void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const std::vector<int> &internal_sides,
-        std::vector<ElementSidePair>& element_side_pairs)
-{
-    size_t num_sides = topology.num_sides();
-    std::vector<int> elem_sides;
-
-    if (internal_sides.size() < num_sides)
-    {
-        elem_sides.assign(num_sides, -1);
-        for(size_t j=0; j<internal_sides.size(); ++j)
-        {
-            int sideId = internal_sides[j];
-            elem_sides[sideId] = internal_sides[j];
-        }
-
-        for(size_t j=0; j<num_sides; ++j)
-        {
-            if (elem_sides[j] == -1)
-            {
-                int sideId = j;
-                element_side_pairs.push_back(std::make_pair(elementId, sideId));
-            }
-        }
-    }
-}
-
-
 stk::mesh::Entity get_element_side(stk::mesh::BulkData& bulkData, stk::mesh::Entity element, stk::mesh::ConnectivityOrdinal side_ordinal)
 {
     stk::mesh::Entity side = stk::mesh::Entity();
@@ -1495,7 +1467,7 @@ void create_faces_using_graph(BulkDataElementGraphTester& bulkData, stk::mesh::P
         }
 
         std::vector<ElementSidePair> element_side_pairs;
-        add_element_side_pairs_for_unused_sides(i, element_topologies[i], via_sides[i], element_side_pairs);
+        stk::mesh::impl::add_element_side_pairs_for_unused_sides(i, element_topologies[i], via_sides[i], element_side_pairs);
 
         for(size_t j = 0; j < element_side_pairs.size(); j++)
         {
@@ -1533,7 +1505,7 @@ skin_mesh(const SidesForElementGraph &via_side, const std::vector<stk::topology>
     for(size_t i=0; i<num_elems; ++i)
     {
         const std::vector<int>& internal_sides = via_side[i];
-        add_element_side_pairs_for_unused_sides(i, element_topologies[i], internal_sides, element_side_pairs);
+        stk::mesh::impl::add_element_side_pairs_for_unused_sides(i, element_topologies[i], internal_sides, element_side_pairs);
     }
     return element_side_pairs;
 }
@@ -7452,6 +7424,78 @@ TEST(ElemGraph, test_initial_graph_creation_with_deactivated_elements)
             EXPECT_EQ(elem3, graph.get_connected_element(elem4, 0));
         }
     }
+}
+
+TEST(ElementGraph, skin_exposed_boundary)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+
+     if(stk::parallel_machine_size(comm) == 1)
+     {
+         unsigned spatialDim = 3;
+
+         stk::mesh::MetaData meta(spatialDim);
+         stk::mesh::BulkData bulkData(meta, comm);
+         stk::mesh::Part& skin = meta.declare_part_with_topology("skin", stk::topology::QUAD_4);
+         stk::mesh::Part& active = meta.declare_part("active");
+         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulkData, comm);
+
+         stk::mesh::EntityVector entitiesToMakeActive;
+         std::vector<stk::mesh::PartVector> add_parts;
+         std::vector<stk::mesh::PartVector> rm_parts;
+
+         stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
+         stk::mesh::Entity element1 = bulkData.get_entity(rank, 1);
+         stk::mesh::Entity element2 = bulkData.get_entity(rank, 2);
+
+         entitiesToMakeActive.push_back(element1);
+         add_parts.push_back(stk::mesh::PartVector(1, &active));
+         rm_parts.push_back(stk::mesh::PartVector());
+         bulkData.batch_change_entity_parts(entitiesToMakeActive, add_parts, rm_parts);
+
+         ElementDeathUtils::skin_boundary(bulkData, active, {&active, &skin});
+
+         unsigned num_faces_elem1 = bulkData.num_faces(element1);
+         EXPECT_EQ(5u, num_faces_elem1);
+         unsigned num_faces_elem2 = bulkData.num_faces(element2);
+         EXPECT_EQ(0u, num_faces_elem2);
+     }
+}
+
+TEST(ElementGraph, skin_part)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+
+     if(stk::parallel_machine_size(comm) == 1)
+     {
+         unsigned spatialDim = 3;
+
+         stk::mesh::MetaData meta(spatialDim);
+         stk::mesh::BulkData bulkData(meta, comm);
+         stk::mesh::Part& skin = meta.declare_part_with_topology("skin", stk::topology::QUAD_4);
+         stk::mesh::Part& active = meta.declare_part("active");
+         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulkData, comm);
+
+         stk::mesh::EntityVector entitiesToMakeActive;
+         std::vector<stk::mesh::PartVector> add_parts;
+         std::vector<stk::mesh::PartVector> rm_parts;
+
+         stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
+         stk::mesh::Entity element1 = bulkData.get_entity(rank, 1);
+         stk::mesh::Entity element2 = bulkData.get_entity(rank, 2);
+
+         entitiesToMakeActive.push_back(element1);
+         add_parts.push_back(stk::mesh::PartVector(1, &active));
+         rm_parts.push_back(stk::mesh::PartVector());
+         bulkData.batch_change_entity_parts(entitiesToMakeActive, add_parts, rm_parts);
+
+         ElementDeathUtils::skin_part(bulkData, active, {&active, &skin});
+
+         unsigned num_faces_elem1 = bulkData.num_faces(element1);
+         EXPECT_EQ(6u, num_faces_elem1);
+         unsigned num_faces_elem2 = bulkData.num_faces(element2);
+         EXPECT_EQ(1u, num_faces_elem2);
+     }
 }
 
 }
