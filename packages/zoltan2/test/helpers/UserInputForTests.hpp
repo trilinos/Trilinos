@@ -2342,9 +2342,11 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData, int dim
   this->pamgen_mesh = rcp(new PamgenMesh);
   this->havePamgenMesh = true;
   pamgen_mesh->createMesh(file_data,dimension,rank,nproc);
+
+  // save mesh info
   pamgen_mesh->storeMesh();
   this->tcomm_->barrier();
-  
+
   // set coordinates
   this->setPamgenCoordinateMV();
 
@@ -2506,8 +2508,10 @@ void UserInputForTests::setPamgenAdjacencyGraph()
     Array<zgno_t> mod_rowinds;
     A->getGlobalRowCopy (gid, rowinds (), rowvals (), numEntriesInRow);
     for (size_t i = 0; i < numEntriesInRow; i++) {
-      if (static_cast<int>(rowvals[i]) == 2*(pamgen_mesh->num_dim-1))
+      if (static_cast<int>(rowvals[i]) >= 2*(pamgen_mesh->num_dim-1))
       {
+//      if (static_cast<int>(rowvals[i]) >= pamgen_mesh->num_dim-1)
+//      {
         mod_rowvals.push_back(1);
         mod_rowinds.push_back(rowinds[i]);
       }

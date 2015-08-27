@@ -250,7 +250,7 @@ void run(const UserInputForTests &uinput,
   typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_graph problem type
   typedef Zoltan2::PartitioningProblem<xcrsMatrix_t> xcrsMatrix_problem_t; // xpetra_matrix problem type
   typedef Zoltan2::PartitioningProblem<basic_vector_t> basicVector_problem_t; // vector problem type
-//  typedef Zoltan2::PartitioningProblem<pamgen_t> pamgen_problem_t; // pamgen mesh problem type
+  typedef Zoltan2::PartitioningProblem<pamgen_t> pamgen_problem_t; // pamgen mesh problem type
 
   int rank = comm->getRank();
   if(rank == 0)
@@ -315,9 +315,9 @@ void run(const UserInputForTests &uinput,
                                                                        MPI_COMM_WORLD));
   }else if(adapter_name == "PamgenMesh")
   {
-//    problem = reinterpret_cast<problem_t * >(new pamgen_problem_t(reinterpret_cast<pamgen_t *>(ia),
-//                                                                       &zoltan2_parameters,
-//                                                                       MPI_COMM_WORLD));
+    problem = reinterpret_cast<problem_t * >(new pamgen_problem_t(reinterpret_cast<pamgen_t *>(ia),
+                                                                       &zoltan2_parameters,
+                                                                       MPI_COMM_WORLD));
   }
   else
     throw std::runtime_error("Input adapter type not available, or misspelled.");
@@ -345,8 +345,8 @@ void run(const UserInputForTests &uinput,
                                                                        &zoltan2_parameters));
   }else if(adapter_name == "PamgenMesh")
   {
-//    problem = reinterpret_cast<problem_t * >(new pamgen_problem_t(reinterpret_cast<pamgen_t *>(ia),
-//                                                                  &zoltan2_parameters));
+    problem = reinterpret_cast<problem_t * >(new pamgen_problem_t(reinterpret_cast<pamgen_t *>(ia),
+                                                                  &zoltan2_parameters));
   }
   else
     throw std::runtime_error("Input adapter type not available, or misspelled.");
@@ -415,6 +415,11 @@ void run(const UserInputForTests &uinput,
   comparison_source->adapter_kind = adapter_name;
   comparison_helper->AddSource(problem_parameters.name(), comparison_source);
   
+  
+  // write mesh solution
+  auto sol = reinterpret_cast<basic_problem_t *>(problem)->getSolution();
+  writePartionSolution(sol.getPartListView(), ia->getLocalNumIDs(), comm);
+
   ////////////////////////////////////////////////////////////
   // 6. Clean up
   ////////////////////////////////////////////////////////////
@@ -587,6 +592,22 @@ void writeMesh(const UserInputForTests &uinput,const RCP<const Teuchos::Comm<int
     file.close();
   }
   
+  sprintf(title, "/element_centroids_%d",comm->getRank());
+  file.open(path + string(title));
+  el = 0;
+  for(int i = 0; i < blks; i++)
+  {
+    int elb = mesh->elements[i];
+    for(int j = 0; j < elb; j++)
+    {
+      file << "Element " << el+1 <<":\t";
+      for(int k = 0; k < mesh->num_dim; k++)
+        file << mesh->element_coord[el + k * mesh->num_elem] << "\t";
+      file <<"\n";
+      el++;
+    }
+  }
+  file.close();
   // write info
   if(comm->getRank() == 0)
   {
@@ -679,14 +700,14 @@ void getConnectivityGraph(const UserInputForTests &uinput,const RCP<const Teucho
   RCP<crs_matrix_type> A = rcp(new crs_matrix_type(range_map,0));
   Tpetra::MatrixMatrix::Multiply(*C, false, *C, true, *A);
   if(rank == 0) cout << "Completed Multiply" << endl;
-  if(rank == 0)
-  {
-    cout << "C: \n" << endl;
-    C->print(std::cout);
-    
-    cout <<"\nA:\n" << endl;
-    A->print(std::cout);
-  }
+//  if(rank == 0)
+//  {
+//    cout << "C: \n" << endl;
+//    C->print(std::cout);
+//    
+//    cout <<"\nA:\n" << endl;
+//    A->print(std::cout);
+//  }
   // remove entris not adjacent
   // make graph
   RCP<crs_matrix_type> modA = rcp(new crs_matrix_type(range_map,0));
@@ -703,7 +724,9 @@ void getConnectivityGraph(const UserInputForTests &uinput,const RCP<const Teucho
     Array<global_ordinal_type> mod_rowinds;
     A->getGlobalRowCopy (gid, rowinds (), rowvals (), numEntriesInRow);
     for (size_t i = 0; i < numEntriesInRow; i++) {
-      if (rowvals[i] == 2*(mesh->num_dim-1))
+//      if (rowvals[i] >= 2*(mesh->num_dim-1))
+//      {
+      if (rowvals[i] >= mesh->num_dim-1)
       {
         mod_rowvals.push_back(one);
         mod_rowinds.push_back(rowinds[i]);
@@ -790,9 +813,9 @@ int main(int argc, char *argv[])
   ////////////////////////////////////////////////////////////
   // (4) Perform all tests
   ////////////////////////////////////////////////////////////
-  
-  //  writeMesh(uinput,comm);
-  //  getConnectivityGraph(uinput, comm);
+  // pamgen debugging
+    writeMesh(uinput,comm);
+    getConnectivityGraph(uinput, comm);
   
   RCP<ComparisonHelper> comparison_manager = rcp(new ComparisonHelper);
   while (!problems.empty()) {

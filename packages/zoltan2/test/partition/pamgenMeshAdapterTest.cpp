@@ -275,6 +275,7 @@ int main(int narg, char *arg[]) {
     params.set("debug_procs", "all");
   }
 
+  if(me == 0) cout << "Action: " << action << endl;
   // create Partitioning problem
   if (do_partitioning) {
     if (me == 0) cout << "Creating partitioning problem ... \n\n";
