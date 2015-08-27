@@ -2352,7 +2352,7 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
   SET(${PROJECT_NAME}_CPACK_SOURCE_GENERATOR
     ${${PROJECT_NAME}_CPACK_SOURCE_GENERATOR_DEFAULT}
     CACHE STRING
-    "The types of soruce generators to use for CPACK_SOURCE_GENERATOR.")
+    "The types of source generators to use for CPACK_SOURCE_GENERATOR.")
   SET(CPACK_SOURCE_GENERATOR ${${PROJECT_NAME}_CPACK_SOURCE_GENERATOR})
 
   # K.6) Loop through the Repositories and run their callback functions.
