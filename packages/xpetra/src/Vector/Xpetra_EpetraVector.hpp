@@ -174,6 +174,21 @@ namespace Xpetra {
     //! The newly created Xpetra::EpetraVectorT will remain valid after the disappearance of the references to 'mv' in user code.
     EpetraVectorT(const RCP<Epetra_MultiVector> &mv, size_t j);
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::unmanaged_host_view_type unmanaged_host_view_type;
+    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::unmanaged_device_view_type unmanaged_device_view_type;
+
+    unmanaged_host_view_type getHostLocalView () const {
+      return this->EpetraMultiVectorT<GlobalOrdinal>::getHostLocalView();
+    }
+
+    unmanaged_device_view_type getDeviceLocalView() const {
+      throw std::runtime_error("Epetra does not support device views!");
+      unmanaged_device_view_type ret;
+      return ret; // make compiler happy
+    }
+#endif
+
     //@}
 
   private:

@@ -329,6 +329,26 @@ namespace Xpetra {
     //! Set seed for Random function.
     void setSeed(unsigned int seed) { XPETRA_MONITOR("TpetraMultiVector::seedrandom"); Teuchos::ScalarTraits< Scalar >::seedrandom(seed); }
 
+
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+
+    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::unmanaged_host_view_type unmanaged_host_view_type;
+    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::unmanaged_device_view_type unmanaged_device_view_type;
+    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::host_execution_space host_execution_space;
+    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dev_execution_space dev_execution_space;
+
+    unmanaged_host_view_type getHostLocalView () const {
+      return subview(vec_->getDualView().template view<host_execution_space> (),
+          Kokkos::ALL(), Kokkos::ALL());
+    }
+
+    unmanaged_device_view_type getDeviceLocalView() const {
+      return subview(vec_->getDualView().template view<dev_execution_space> (),
+          Kokkos::ALL(), Kokkos::ALL());
+    }
+
+#endif
+
     //@}
 
   protected:

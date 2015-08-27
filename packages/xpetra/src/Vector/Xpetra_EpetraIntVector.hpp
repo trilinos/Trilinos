@@ -280,6 +280,28 @@ namespace Xpetra {
       // do nothing
     }
 
+
+    //! @name Xpetra specific
+    //@{
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::unmanaged_host_view_type unmanaged_host_view_type;
+    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::unmanaged_device_view_type unmanaged_device_view_type;
+
+    unmanaged_host_view_type getHostLocalView () const {
+      throw std::runtime_error("EpetraIntVector does not support device views! Must be implemented extra...");
+      unmanaged_host_view_type ret;
+      return ret;
+    }
+
+    unmanaged_device_view_type getDeviceLocalView() const {
+      throw std::runtime_error("Epetra does not support device views!");
+      unmanaged_device_view_type ret;
+      return ret; // make compiler happy
+    }
+#endif
+
+    //@}
+
   protected:
     /// \brief Implementation of the assignment operator (operator=);
     ///   does a deep copy.

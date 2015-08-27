@@ -180,6 +180,23 @@ namespace Xpetra {
     //! Get the underlying Tpetra multivector
     RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getTpetra_Vector() const { return this->TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::getTpetra_MultiVector()->getVectorNonConst(0); }
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+
+    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::unmanaged_host_view_type unmanaged_host_view_type;
+    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::unmanaged_device_view_type unmanaged_device_view_type;
+    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::host_execution_space host_execution_space;
+    typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dev_execution_space dev_execution_space;
+
+    unmanaged_host_view_type getHostLocalView () const {
+      return this->TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::getHostLocalView();
+    }
+
+    unmanaged_device_view_type getDeviceLocalView() const {
+      return this->TpetraMultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::getDeviceLocalView();
+    }
+
+#endif
+
     //@}
 
   }; // TpetraVector class
