@@ -1436,7 +1436,6 @@ namespace Tpetra {
              class NodeType>
     void
     testMultiVectorFiller (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                           const Teuchos::RCP<NodeType>& node,
                            const size_t unknownsPerNode,
                            const GlobalOrdinalType unknownsPerElt,
                            const size_t numCols,
@@ -1457,15 +1456,16 @@ namespace Tpetra {
       typedef LocalOrdinalType LO;
       typedef GlobalOrdinalType GO;
       typedef NodeType NT;
-      typedef ::Tpetra::Map<LO, GO, NT> MT;
+      typedef ::Tpetra::Map<LO, GO, NT> map_type;
       typedef Tpetra::MultiVector<ST, LO, GO, NT> MV;
+      typedef Tpetra::global_size_t GST;
 
       RCP<FancyOStream> out = outStream.is_null() ?
         getFancyOStream (rcp (new oblackholestream)) : outStream;
-      const Tpetra::global_size_t invalid =
-        Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-      RCP<const MT> targetMap =
-        createContigMapWithNode<LO, GO, NT> (invalid, unknownsPerNode, comm, node);
+      const GST INV = Teuchos::OrdinalTraits<GST>::invalid ();
+      const GO indexBase = 0;
+      RCP<const map_type> targetMap =
+        rcp (new map_type (INV, unknownsPerNode, indexBase, comm));
 
       std::ostringstream os;
       try {
