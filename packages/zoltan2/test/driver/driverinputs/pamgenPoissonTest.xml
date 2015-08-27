@@ -15,7 +15,7 @@
     
         <ParameterList name="InputParameters">
             <Parameter name="inputPath" type="string" value="./driverinputs"/>
-            <Parameter name="inputFile" type="string" value="Rectilinear"/>
+            <Parameter name="inputFile" type="string" value="Poisson"/>
             <Parameter name="fileType" type="string" value="Pamgen"/>
             <Parameter name="dimension" type="int" value="3"/>
         </ParameterList>
@@ -32,6 +32,7 @@
 
         <ParameterList name="Zoltan2Parameters">
             <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+            <Parameter name="debug_level" type="string" value="basic_status"/>
             <Parameter name="algorithm" type="string" value="parmetis"/>
             <Parameter name="compute_metrics" type="string" value="true"/>
         </ParameterList>i
@@ -44,6 +45,35 @@
         </ParameterList>
 
     </ParameterList>
+    
+    <!--<ParameterList name="problem 1">
+        <Parameter name="Name" type="string" value="readPamgenMesh"/>
+        <Parameter name="kind" type="string" value="Partitioning"/>
+ 
+        <ParameterList name="InputAdapterParameters">
+            <Parameter name="inputType" type="string" value="tpetra_crs_matrix"/> 
+            <Parameter name="inputAdapter" type="string" value="XpetraCrsMatrix"/>
+            <Parameter name="stride" type="int" value="3"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+            <Parameter name="debug_level" type="string" value="basic_status"/>
+            <Parameter name="imbalance_tolerance" type="double" value="1.1"/>
+            <Parameter name="rectilinear" type="string" value="yes"/>
+            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="compute_metrics" type="string" value="true"/>
+        </ParameterList>i
+ 
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
+            </ParameterList>
+        </ParameterList>
+
+    </ParameterList>-->
+
 
     <!--<ParameterList name="problem 2">
         <Parameter name="Name" type="string" value="testPamgenAdapter"/>

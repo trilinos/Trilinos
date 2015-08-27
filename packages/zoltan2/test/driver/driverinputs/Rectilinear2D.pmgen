@@ -1,9 +1,9 @@
 mesh
     rectilinear
-        nx = 11
+        nx = 5
         ny = 3
-        bx = 3
-        by = 6
+        bx = 2
+        by = 2
         gmin = 0.0 0.0
         gmax = 3.0 2.0
     end

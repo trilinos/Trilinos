@@ -50,10 +50,12 @@
 #ifndef USERINPUTFORTESTS
 #define USERINPUTFORTESTS
 
-#include <Zoltan2_TestHelpers.hpp>
+#include "Zoltan2_TestHelpers.hpp"
 #include <Zoltan2_XpetraTraits.hpp>
 
 #include <Tpetra_MultiVector.hpp>
+#include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsGraph.hpp>
@@ -64,9 +66,11 @@
 
 #include <Kokkos_DefaultNode.hpp>
 
-#include <GeometricGenerator.hpp>
+#include "GeometricGenerator.hpp"
 #include <fstream>
 #include <string>
+
+#include <TpetraExt_MatrixMatrix_def.hpp>
 
 //#include <Xpetra_EpetraUtils.hpp>
 #ifdef HAVE_ZOLTAN2_MPI
@@ -76,7 +80,7 @@
 #endif
 
 // pamgen required includes
-#include <Zoltan2_PamgenMeshStructure.hpp>
+#include "Zoltan2_PamgenMeshStructure.hpp"
 
 
 using Teuchos::RCP;
@@ -126,10 +130,6 @@ class UserInputForTests
 {
 public:
   
-  ~UserInputForTests()
-  {
-    if(this->hasPamgenMesh()) delete this->pamgen_mesh;
-  }
   typedef Tpetra::CrsMatrix<zscalar_t, zlno_t, zgno_t, znode_t> tcrsMatrix_t;
   typedef Tpetra::CrsGraph<zlno_t, zgno_t, znode_t> tcrsGraph_t;
   typedef Tpetra::Vector<zscalar_t, zlno_t, zgno_t, znode_t> tVector_t;
@@ -236,7 +236,7 @@ public:
   
   RCP<xMVector_t> getUIXpetraMultiVector(int nvec);
   
-  PamgenMesh * getPamGenMesh(){return this->pamgen_mesh;}
+  PamgenMesh * getPamGenMesh(){return this->pamgen_mesh.operator->();}
   
 #ifdef HAVE_EPETRA_DATA_TYPES
   RCP<Epetra_CrsGraph> getUIEpetraCrsGraph();
@@ -290,7 +290,7 @@ private:
   const RCP<const Comm<int> > tcomm_;
   
   bool havePamgenMesh;
-  PamgenMesh * pamgen_mesh;
+  RCP<PamgenMesh> pamgen_mesh;
   
   RCP<tcrsMatrix_t> M_;
   RCP<xcrsMatrix_t> xM_;
@@ -379,7 +379,8 @@ private:
   
   // Read a pamgen mesh
   void readPamgenMeshFile(string path, string testData, int dimension = 3);
-  
+  void setPamgenAdjacencyGraph();
+  void setPamgenCoordinateMV();
 };
 
 UserInputForTests::UserInputForTests(string path, string testData,
@@ -2338,13 +2339,28 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData, int dim
   // Create the PamgenMesh
   int nproc = this->tcomm_->getSize();
   
-  this->pamgen_mesh = new PamgenMesh;
+  this->pamgen_mesh = rcp(new PamgenMesh);
   this->havePamgenMesh = true;
   pamgen_mesh->createMesh(file_data,dimension,rank,nproc);
+
+  // save mesh info
   pamgen_mesh->storeMesh();
   this->tcomm_->barrier();
+
+  // set coordinates
+  this->setPamgenCoordinateMV();
+
+  // set adjacency graph
+  this->setPamgenAdjacencyGraph();
   
-  // set up coordinate vector
+  this->tcomm_->barrier();
+  if(rank == 0) file.close();
+  delete [] file_data;
+}
+
+void UserInputForTests::setPamgenCoordinateMV()
+{
+  int dimension = pamgen_mesh->num_dim;
   // get coordinate and point info;
   zlno_t numLocalPoints = pamgen_mesh->num_nodes;
   zgno_t numGlobalPoints = pamgen_mesh->num_nodes_global;
@@ -2360,7 +2376,7 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData, int dim
   // make a Tpetra map
   typedef  Tpetra::Map<zlno_t, zgno_t, znode_t> map_t;
   RCP<Tpetra::Map<zlno_t, zgno_t, znode_t> > mp;
-//   mp = rcp(new map_t(numGlobalElements, numelements, 0, this->tcomm_)); // constructo 1
+  //   mp = rcp(new map_t(numGlobalElements, numelements, 0, this->tcomm_)); // constructo 1
   
   Array<zgno_t>::size_type numEltsPerProc = numelements;
   Array<zgno_t> elementList(numelements);
@@ -2369,7 +2385,7 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData, int dim
   }
   
   mp = rcp (new map_t (numGlobalElements, elementList, 0, this->tcomm_)); // constructor 2
-
+  
   
   // make an array of array views containing the coordinate data
   Teuchos::Array<Teuchos::ArrayView<const zscalar_t> > coordView(dimension);
@@ -2388,10 +2404,123 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData, int dim
   xyz_ = RCP<tMVector_t>(new
                          tMVector_t(mp, coordView.view(0, dimension),
                                     dimension));
+}
 
+
+void UserInputForTests::setPamgenAdjacencyGraph()
+{
+  int rank = this->tcomm_->getRank();
+  if(rank == 0) cout << "Making a graph from our pamgen mesh...." << endl;
   
-  if(rank == 0) file.close();
-  delete [] file_data;
+  typedef Tpetra::Vector<>::local_ordinal_type scalar_type;
+//  typedef Tpetra::Map<> map_type;
+  typedef Tpetra::Vector<>::local_ordinal_type local_ordinal_type;
+  typedef Tpetra::Vector<>::global_ordinal_type global_ordinal_type;
+  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, znode_t> crs_matrix_type;
+  
+  typedef  Tpetra::Map<zlno_t, zgno_t, znode_t> map_type;
+  // get info for setting up map
+  zlno_t local_nodes, local_els;
+  local_nodes = pamgen_mesh->num_nodes;
+  local_els = pamgen_mesh->num_elem;
+  
+  zgno_t global_nodes, global_els;
+  global_nodes = pamgen_mesh->num_nodes_global;
+  global_els = pamgen_mesh->num_elems_global;
+  
+  // make map with global elements assigned to this mesh
+  const zgno_t idxBase = 0;
+  
+  Array<zgno_t> g_el_ids(local_els);
+  for (Array<zgno_t>::size_type k = 0; k < local_els; ++k) {
+    g_el_ids[k] = pamgen_mesh->global_element_numbers[k]-1;
+  }
+  RCP<const map_type> range_map = rcp(new map_type(global_els,
+                                                   g_el_ids,
+                                                   idxBase,
+                                                   this->tcomm_));
+  
+  // make domain map
+  Array<zgno_t> g_node_ids(local_nodes);
+  for (Array<zgno_t>::size_type k = 0; k < local_nodes; ++k) {
+    g_node_ids[k] = pamgen_mesh->global_node_numbers[k]-1;
+  }
+  RCP<const map_type> domain_map = rcp(new map_type(global_nodes,
+                                                    g_node_ids,
+                                                    idxBase,
+                                                    this->tcomm_));
+  
+  // make a connectivity matrix
+  Teuchos::RCP<tcrsMatrix_t> C = rcp(new tcrsMatrix_t(range_map,domain_map,0));
+  
+  
+  // write all nodes per el to matrix
+  int blks = pamgen_mesh->num_elem_blk;
+  zlno_t el_no = 0;
+  zscalar_t one = static_cast<zscalar_t>(1);
+  for(int i = 0; i < blks; i++)
+  {
+    int el_per_block = pamgen_mesh->elements[i];
+    int nodes_per_el = pamgen_mesh->nodes_per_element[i];
+    int * connect = pamgen_mesh->elmt_node_linkage[i];
+    
+    for(int j = 0; j < el_per_block; j++)
+    {
+      const zgno_t gid = g_el_ids[el_no];
+      //      const zgno_t gid = domain_map->getGlobalElement(el_no);
+      for(int k = 0; k < nodes_per_el; k++)
+      {
+        int g_node_i = g_node_ids[connect[j*nodes_per_el+k]-1];
+        C->insertGlobalValues(gid,
+                              Teuchos::tuple<zgno_t>(g_node_i),
+                              Teuchos::tuple<zscalar_t>(one));
+      }
+      el_no++;
+    }
+  }
+  
+  C->fillComplete(domain_map, range_map);
+  
+  // Matrix multiply by Transpose to get El connectivity
+  RCP<tcrsMatrix_t> A = rcp(new tcrsMatrix_t(range_map,0));
+  Tpetra::MatrixMatrix::Multiply(*C, false, *C, true, *A);
+//  if(rank == 0) cout << "Completed Multiply" << endl;
+//  if(rank == 0)
+//  {
+//    cout << "C: \n" << endl;
+//    C->print(std::cout);
+//    
+//    cout <<"\nA:\n" << endl;
+//    A->print(std::cout);
+//  }
+  
+  // remove entris not adjacent
+//  if(rank == 0) cout << "modify adjacency graph..." << endl;
+  this->M_ = rcp(new tcrsMatrix_t(range_map,0));
+  for(zgno_t gid : range_map->getNodeElementList())
+  {
+    size_t numEntriesInRow = A->getNumEntriesInGlobalRow (gid);
+    Array<zscalar_t> rowvals (numEntriesInRow);
+    Array<zgno_t> rowinds (numEntriesInRow);
+    
+    // modified
+    Array<zscalar_t> mod_rowvals;
+    Array<zgno_t> mod_rowinds;
+    A->getGlobalRowCopy (gid, rowinds (), rowvals (), numEntriesInRow);
+    for (size_t i = 0; i < numEntriesInRow; i++) {
+//      if (static_cast<int>(rowvals[i]) == 2*(pamgen_mesh->num_dim-1))
+//      {
+      if (static_cast<int>(rowvals[i]) >= pamgen_mesh->num_dim-1)
+      {
+        mod_rowvals.push_back(1);
+        mod_rowinds.push_back(rowinds[i]);
+      }
+    }
+    this->M_->insertGlobalValues(gid, mod_rowinds, mod_rowvals);
+  }
+  
+  this->M_->fillComplete();
+  
 }
 
 #endif

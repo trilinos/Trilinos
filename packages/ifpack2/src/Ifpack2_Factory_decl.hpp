@@ -138,6 +138,7 @@ public:
   create (const std::string& precType,
           const Teuchos::RCP<const MatrixType>& matrix)
   {
+    using Teuchos::RCP;
     using Teuchos::rcp_implicit_cast;
     typedef typename MatrixType::scalar_type SC;
     typedef typename MatrixType::local_ordinal_type LO;
@@ -145,7 +146,10 @@ public:
     typedef typename MatrixType::node_type NT;
     typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
 
-    auto A = rcp_implicit_cast<const row_matrix_type> (matrix);
+    RCP<const row_matrix_type> A;
+    if (! matrix.is_null ()) {
+      A = rcp_implicit_cast<const row_matrix_type> (matrix);
+    }
     Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
     return factory.create (precType, A);
   }
@@ -175,6 +179,7 @@ public:
           const Teuchos::RCP<const MatrixType>& matrix,
           const int overlap)
   {
+    using Teuchos::RCP;
     using Teuchos::rcp_implicit_cast;
     typedef typename MatrixType::scalar_type SC;
     typedef typename MatrixType::local_ordinal_type LO;
@@ -182,7 +187,10 @@ public:
     typedef typename MatrixType::node_type NT;
     typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
 
-    auto A = rcp_implicit_cast<const row_matrix_type> (matrix);
+    RCP<const row_matrix_type> A;
+    if (! matrix.is_null ()) {
+      A = rcp_implicit_cast<const row_matrix_type> (matrix);
+    }
     Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
     return factory.create (precType, A, overlap);
   }
