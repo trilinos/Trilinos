@@ -79,7 +79,7 @@ TEST(morkon,just_check_if_it_compiles) {
   manager_0->mortar_integrate(dummy_D, dummy_M);
 }
 
-TEST(morkon, add_nodes_and_faces_to_interface) {
+TEST(morkon, interface_host_side_adapter_stores_data) {
   using namespace morkon_exp;
   typedef Morkon_Manager<default_kokkos_device_t, 3, MRK_TRI3>  manager_3d_t;
   typedef Teuchos::RCP< manager_3d_t >                        manager_3d_ptr;
@@ -105,7 +105,7 @@ TEST(morkon, add_nodes_and_faces_to_interface) {
   }
 
   const size_t NumFaces = 4;
-  const size_t NodesPerFace = 3;
+  const size_t NodesPerFace = TopoConsts<MRK_TRI3>::NODES_PER_FACE;
   const global_idx_t face_gids[NumFaces] = {1,2,3,4};
   const interface_side_t face_sides[NumFaces] = {
                                             InterfaceBase::NON_MORTAR_SIDE, InterfaceBase::NON_MORTAR_SIDE,
@@ -114,12 +114,63 @@ TEST(morkon, add_nodes_and_faces_to_interface) {
 
   for (size_t face_i = 0; face_i < NumFaces; ++face_i)
   {
-    interface_0->hsa_add_face(face_sides[face_i], face_gids[face_i], NodesPerFace, face_node_gids[face_i]);
+    bool ok = interface_0->hsa_add_face(face_sides[face_i], face_gids[face_i], NodesPerFace, face_node_gids[face_i]);
+    EXPECT_EQ(true, ok);
   }
 
   const interface_3d_t::host_side_adapter_t *non_mortar_side_hsa =
         interface_0->get_HostSideAdapter(InterfaceBase::NON_MORTAR_SIDE);
   EXPECT_NE(static_cast<interface_3d_t::host_side_adapter_t *>(0), non_mortar_side_hsa);
+
+  const interface_3d_t::host_side_adapter_t *mortar_side_hsa =
+        interface_0->get_HostSideAdapter(InterfaceBase::MORTAR_SIDE);
+  EXPECT_NE(static_cast<interface_3d_t::host_side_adapter_t *>(0), mortar_side_hsa);
+
+  size_t node_i = 0;
+  for (auto node_entry : non_mortar_side_hsa->m_nodes)
+  {
+    EXPECT_EQ(node_gids[node_i], node_entry.first);
+    EXPECT_EQ(node_gids[node_i], node_entry.second.m_id);
+    EXPECT_EQ(InterfaceBase::NON_MORTAR_SIDE, node_entry.second.m_side);
+    for (size_t j = 0; j < NodesPerFace; ++j) {
+      EXPECT_EQ(node_coords[node_i][j], node_entry.second.m_coords[j]);
+    }
+    ++node_i;
+  }
+  for (auto node_entry : mortar_side_hsa->m_nodes)
+  {
+    EXPECT_EQ(node_gids[node_i], node_entry.first);
+    EXPECT_EQ(node_gids[node_i], node_entry.second.m_id);
+    EXPECT_EQ(InterfaceBase::MORTAR_SIDE, node_entry.second.m_side);
+    for (size_t j = 0; j < NodesPerFace; ++j) {
+      EXPECT_EQ(node_coords[node_i][j], node_entry.second.m_coords[j]);
+    }
+    ++node_i;
+  }
+  EXPECT_EQ(NumNodes, node_i);
+
+  size_t face_i = 0;
+  for (auto face_entry : non_mortar_side_hsa->m_faces)
+  {
+    EXPECT_EQ(face_gids[face_i], face_entry.first);
+    EXPECT_EQ(node_gids[face_i], face_entry.second.m_id);
+    EXPECT_EQ(InterfaceBase::NON_MORTAR_SIDE, face_entry.second.m_side);
+    for (size_t j = 0; j < NodesPerFace; ++j) {
+      EXPECT_EQ(face_node_gids[face_i][j], face_entry.second.m_nodes[j]);
+    }
+    ++face_i;
+  }
+  for (auto face_entry : mortar_side_hsa->m_faces)
+  {
+    EXPECT_EQ(face_gids[face_i], face_entry.first);
+    EXPECT_EQ(node_gids[face_i], face_entry.second.m_id);
+    EXPECT_EQ(InterfaceBase::MORTAR_SIDE, face_entry.second.m_side);
+    for (size_t j = 0; j < NodesPerFace; ++j) {
+      EXPECT_EQ(face_node_gids[face_i][j], face_entry.second.m_nodes[j]);
+    }
+    ++face_i;
+  }
+  EXPECT_EQ(NumFaces, face_i);
 }
 
 

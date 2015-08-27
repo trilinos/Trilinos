@@ -61,6 +61,8 @@ enum Ordinal_enums { INVALID_ORDINAL = -1 };
 struct InterfaceBase
 {
   enum SideEnum { NON_MORTAR_SIDE = 0, MORTAR_SIDE, NUM_INTERFACE_SIDES };
+
+  virtual ~InterfaceBase() {}
 };
 
 
