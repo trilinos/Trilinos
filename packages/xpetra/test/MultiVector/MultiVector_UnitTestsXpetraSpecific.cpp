@@ -153,7 +153,7 @@ namespace {
 #endif
 
     typedef Xpetra::MultiVector<double, int, GO> mv_type;
-    typedef typename mv_type::unmanaged_host_view_type unmanaged_host_view_type;
+    typedef typename mv_type::dual_view_type dual_view_type;
 
     RCP<const Teuchos::Comm<int> > comm = Xpetra::DefaultPlatform::getDefaultPlatform().getComm();
     const Xpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
@@ -162,7 +162,7 @@ namespace {
 
     RCP<const Xpetra::Map<int, GO> > map = Xpetra::MapFactory<int, GO>::createContigMap(lib, INVALID, numLocal, comm);
 
-
+    // create new vector and fill it with data
     RCP< mv_type > mv = Xpetra::MultiVectorFactory<double, int, GO>::Build(map, 3, false);
     for(size_t k=0; k < 3; k++) {
       Teuchos::ArrayRCP<double> mvData = mv->getDataNonConst(k);
@@ -172,31 +172,8 @@ namespace {
       }
     }
 
-    /// For example, suppose you create a Tpetra::MultiVector for the
-    /// Kokkos::Cuda device, like this:
-    /// \code
-    /// typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > node_type;
-    /// typedef Tpetra::Map<int, int, node_type> map_type;
-    /// typedef Tpetra::MultiVector<float, int, int, node_type> mv_type;
-    ///
-    /// RCP<const map_type> map = ...;
-    /// mv_type DV (map, 3);
-    /// \endcode
-    /// If you want to get the CUDA device Kokkos::View, do this:
-    /// \code
-    /// typedef typename mv_type::dual_view_type dual_view_type;
-    /// typedef typename dual_view_type::t_dev device_view_type;
-    /// device_view_type cudaView = DV.getLocalView<Kokkos::Cuda> ();
-    /// \endcode
-    /// and if you want to get the host mirror of that View, do this:
-    /// \code
-    /// typedef typename dual_view_type::host_mirror_space host_execution_space;
-    /// typedef typename dual_view_type::t_host host_view_type;
-    /// host_view_type hostView = DV.getLocalView<host_execution_space> ();
-    /// \endcode
-
     // get a view of the multivector data on the host memory
-    unmanaged_host_view_type hostView = mv->getHostLocalView ();
+    dual_view_type::t_host_um hostView = mv->getHostLocalView ();
 
     TEST_EQUALITY(hostView.dimension_0(), numLocal);
     TEST_EQUALITY(hostView.dimension_1(), 3);

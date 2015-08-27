@@ -245,21 +245,21 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
     typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
-    typedef Kokkos::View<impl_scalar_type**, typename node_type::execution_space>  view_type;
     typedef Kokkos::DualView<impl_scalar_type**, Kokkos::LayoutStride,
-        typename node_type::execution_space> dual_view_type;
+        typename node_type::execution_space,
+        Kokkos::MemoryUnmanaged> dual_view_type;
     typedef typename dual_view_type::host_mirror_space host_execution_space;
     typedef typename dual_view_type::t_dev::execution_space dev_execution_space;
 
-    typedef Kokkos::View<impl_scalar_type**,
+    /*typedef Kokkos::View<impl_scalar_type**,
               Kokkos::LayoutStride,
-              host_execution_space,
+              typename node_type::execution_space,
               Kokkos::MemoryUnmanaged> unmanaged_host_view_type;
 
     typedef Kokkos::View<impl_scalar_type**,
               Kokkos::LayoutStride,
-              dev_execution_space,
-              Kokkos::MemoryUnmanaged> unmanaged_device_view_type;
+              typename node_type::execution_space,
+              Kokkos::MemoryUnmanaged> unmanaged_device_view_type;*/
 
     /// \brief Return an unmanaged non-const view of the local data on a specific device.
     /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
@@ -271,8 +271,8 @@ namespace Xpetra {
       Kokkos::Impl::is_same<
         typename dev_execution_space::memory_space,
         typename TargetDeviceType::memory_space>::value,
-      unmanaged_device_view_type,
-      unmanaged_host_view_type>::type
+        typename dual_view_type::t_dev_um,
+        typename dual_view_type::t_host_um>::type
     getLocalView () const {
       if(Kokkos::Impl::is_same<
           typename dev_execution_space::memory_space,
@@ -281,8 +281,14 @@ namespace Xpetra {
       } else return getHostLocalView();
     }
 
-    virtual unmanaged_host_view_type   getHostLocalView ()  const = 0;
-    virtual unmanaged_device_view_type getDeviceLocalView() const = 0;
+    virtual typename dual_view_type::t_host_um getHostLocalView ()  const {
+      typename dual_view_type::t_host_um test;
+      return test;
+    }
+    virtual typename dual_view_type::t_dev_um  getDeviceLocalView() const {
+      typename dual_view_type::t_dev_um test;
+      return test;
+    }
 
 #endif
 
