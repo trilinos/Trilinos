@@ -53,6 +53,8 @@
 #include "Ifpack2_ScalingType.hpp"
 #include "Ifpack2_IlukGraph.hpp"
 
+#include <type_traits>
+
 namespace Teuchos {
   class ParameterList; // forward declaration
 }
@@ -63,8 +65,10 @@ namespace Ifpack2 {
 \brief ILU(k) factorization of a given Tpetra::RowMatrix.
 \tparam MatrixType A specialization of Tpetra::RowMatrix.
 
-This class implements a "relaxed" incomplete ILU (ILU) factorization with level k fill.  It is based upon the ILU algorithms
-outlined in Yousef Saad's "Iterative Methods for Sparse Linear Systems", 2nd edition, Chapter 10.
+This class implements a "relaxed" incomplete ILU (ILU) factorization
+with level k fill.  It is based upon the ILU algorithms outlined in
+Yousef Saad's "Iterative Methods for Sparse Linear Systems", 2nd
+edition, Chapter 10.
 
 \section Ifpack2_RILUK_Parameters Parameters
 
@@ -267,6 +271,8 @@ class RILUK:
                             local_ordinal_type,
                             global_ordinal_type,
                             node_type> row_matrix_type;
+
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::RILUK: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.");
 
   //! Tpetra::CrsMatrix specialization used by this class for representing L and U.
   typedef Tpetra::CrsMatrix<scalar_type,

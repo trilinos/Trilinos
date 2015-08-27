@@ -59,7 +59,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_RowMatrix.hpp"
-
+#include <type_traits>
 
 namespace Trilinos {
 namespace Details {

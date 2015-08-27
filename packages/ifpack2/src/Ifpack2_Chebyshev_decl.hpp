@@ -65,6 +65,8 @@
 // dynamic_cast yourself).
 #include "Tpetra_CrsMatrix_decl.hpp"
 
+#include <type_traits>
+
 namespace Ifpack2 {
 
 /// \class Chebyshev
@@ -231,6 +233,9 @@ public:
   /// MatrixType must be a Tpetra::RowMatrix specialization.  This
   /// typedef will always be a Tpetra::RowMatrix specialization.
   typedef Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> row_matrix_type;
+
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value,
+                "Ifpack2::Chebyshev: Please use MatrixType = Tpetra::RowMatrix.");
 
   //! The Tpetra::Map specialization matching MatrixType.
   typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> map_type;

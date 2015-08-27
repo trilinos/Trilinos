@@ -57,6 +57,7 @@ namespace Ifpack2 {
 
 /// \class BandedContainer
 /// \brief Store and solve a local Banded linear problem.
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
 ///
 /// Please refer to the documentation of the Container
 /// interface. Currently, Containers are used by BlockRelaxation.
@@ -71,11 +72,11 @@ namespace Ifpack2 {
 /// supported by LAPACK).
 ///
 /// As with Ifpack2::Container, <tt>MatrixType</tt> must be a
-/// specialization of Tpetra::RowMatrix or of its subclass
-/// Tpetra::CrsMatrix.  Using a Banded matrix for each block is a good
-/// idea when the blocks are small.  For large and / or sparse blocks,
-/// it would probably be better to use an implementation of Container
-/// that stores the blocks sparsely, in particular SparseContainer.
+/// specialization of Tpetra::RowMatrix.  Using a Banded matrix for
+/// each block is a good idea when the blocks are small.  For large
+/// and / or sparse blocks, it would probably be better to use an
+/// implementation of Container that stores the blocks sparsely, in
+/// particular SparseContainer.
 ///
 /// This class may store the Banded local matrix using values of a
 /// different type (\c LocalScalarType) than those in \c MatrixType.
@@ -92,13 +93,13 @@ namespace Ifpack2 {
 /// <li> On all processes, all off-process indices in the column Map
 ///      of the input matrix occur after that initial set.</li>
 /// </ol>
-/// These assumptions may be violated if \c MatrixType is a
-/// Tpetra::CrsMatrix specialization and was constructed with a
-/// user-provided column Map.  The assumptions are not mathematically
-/// necessary and could be relaxed at any time.  Implementers who wish
-/// to do so will need to modify the extract() method, so that it
-/// translates explicitly between local row and column indices,
-/// instead of just assuming that they are the same.
+/// These assumptions may be violated if the input matrix is a
+/// Tpetra::CrsMatrix that was constructed with a user-provided column
+/// Map.  The assumptions are not mathematically necessary and could
+/// be relaxed at any time.  Implementers who wish to do so will need
+/// to modify the extract() method, so that it translates explicitly
+/// between local row and column indices, instead of just assuming
+/// that they are the same.
 template<typename MatrixType, typename LocalScalarType>
 class BandedContainer : public Container<MatrixType> {
 public:

@@ -59,6 +59,7 @@ namespace Ifpack2 {
 
 /// \class SparseContainer
 /// \brief Store and solve a local sparse linear problem.
+/// \tparam A specialization of Tpetra::RowMatrix.
 ///
 /// Please refer to the documentation of the Container
 /// interface. Currently, Containers are used by BlockRelaxation.
@@ -72,12 +73,12 @@ namespace Ifpack2 {
 /// <li> \c MatrixType, which stores a sparse matrix </li>
 /// <li> \c InverseType, which solves linear systems with that matrix </li>
 /// </ol>
-/// This class stores each block as a sparse matrix.  Thus,
-/// <tt>MatrixType</tt> must be a specialization of Tpetra::RowMatrix
-/// or of its subclass Tpetra::CrsMatrix.  Using a sparse matrix for
-/// each block is a good idea when the blocks are large and sparse.
-/// For small and / or dense blocks, it would probably be better to
-/// use an implementation of Container that stores the blocks densely.
+/// This class stores each block as a sparse matrix.  Using a sparse
+/// matrix for each block is a good idea when the blocks are large and
+/// sparse.  For small and / or dense blocks, it would probably be
+/// better to use an implementation of Container that stores the
+/// blocks densely, like DenseContainer.  You may also want to
+/// consider BandedContainer.
 ///
 /// The \c InverseType template parameter represents the class to use
 /// for solving linear systems with a block.  In SparseContainer, this
@@ -118,13 +119,13 @@ namespace Ifpack2 {
 /// <li> On all processes, all off-process indices in the column Map
 ///      of the input matrix occur after that initial set.</li>
 /// </ol>
-/// These assumptions may be violated if \c MatrixType is a
-/// Tpetra::CrsMatrix specialization and was constructed with a
-/// user-provided column Map.  The assumptions are not mathematically
-/// necessary and could be relaxed at any time.  Implementers who wish
-/// to do so will need to modify the extract() method, so that it
-/// translates explicitly between local row and column indices,
-/// instead of just assuming that they are the same.
+/// These assumptions may be violated if the input matrix is a
+/// Tpetra::CrsMatrix that was constructed with a user-provided column
+/// Map.  The assumptions are not mathematically necessary and could
+/// be relaxed at any time.  Implementers who wish to do so will need
+/// to modify the extract() method, so that it translates explicitly
+/// between local row and column indices, instead of just assuming
+/// that they are the same.
 template<typename MatrixType, typename InverseType>
 class SparseContainer : public Container<MatrixType> {
 public:

@@ -63,8 +63,7 @@ namespace Ifpack2 {
 /** \class Relaxation
 \brief Relaxation preconditioners for Tpetra::RowMatrix and Tpetra::CrsMatrix sparse matrices.
 \author Michael A. Heroux (Sandia)
-\tparam MatrixType A specialization of Tpetra::CrsMatrix (better) or
-  Tpetra::RowMatrix (acceptable).
+\tparam MatrixType A specialization of Tpetra::RowMatrix.
 
 \section Ifpack_Relaxation_Summary Summary
 
@@ -109,12 +108,8 @@ thread-parallel Node type.
 Relaxation works with any Tpetra::RowMatrix input.  If your
 Tpetra::RowMatrix happens to be a Tpetra::CrsMatrix, the Gauss-Seidel
 and symmetric Gauss-Seidel relaxations may be able to exploit this for
-better performance.  You normally don't have to do anything to figure
-this out (we test via \c dynamic_cast), but it may help to use a
-Tpetra::CrsMatrix specialization as the \c MatrixType template
-parameter, rather than a Tpetra::RowMatrix specialization.  (This
-matters if you are using a nondefault value of the fifth template
-parameter of Tpetra::CrsMatrix.)
+better performance.  You don't have to do anything to figure this out
+(we test via \c dynamic_cast).
 
 \section Ifpack_Relaxation_Create Creating a Relaxation preconditioner
 

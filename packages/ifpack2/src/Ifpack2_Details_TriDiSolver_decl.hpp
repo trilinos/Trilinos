@@ -99,7 +99,7 @@ struct LapackSupportsScalar<std::complex<double> > {
 
 /// \class TriDiSolver
 /// \brief "Preconditioner" that uses LAPACK's tridi LU.
-/// \tparam MatrixType Specialization of Tpetra::RowMatrix.
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
 /// \tparam stub Whether this is a stub implementation.  The default
 ///   is false.  If true, then this class does nothing and its
 ///   constructor throws an exception.  You should always use the

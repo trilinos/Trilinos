@@ -62,6 +62,7 @@
 #include <string>
 #include <sstream>
 #include <cmath>
+#include <type_traits>
 
 namespace Teuchos {
   class ParameterList; // forward declaration
@@ -71,6 +72,7 @@ namespace Ifpack2 {
 
   /// \class Hiptmair
   /// \brief Wrapper for Hiptmair smoothers.
+  /// \tparam A specialization of Tpetra::RowMatrix.
   ///
   /// Ifpack2::Hiptmair does smoothing on two spaces; a primary space
   /// and an auxiliary space. This situation arises when preconditioning
@@ -109,6 +111,8 @@ namespace Ifpack2 {
                               local_ordinal_type,
                               global_ordinal_type,
                               node_type> row_matrix_type;
+
+    static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::Hiptmair: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
     //! Type of the Ifpack2::Preconditioner specialization from which this class inherits.
     typedef Ifpack2::Preconditioner<scalar_type,
