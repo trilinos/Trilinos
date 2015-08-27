@@ -417,8 +417,8 @@ void run(const UserInputForTests &uinput,
   
   
   // write mesh solution
-  auto sol = reinterpret_cast<basic_problem_t *>(problem)->getSolution();
-  writePartionSolution(sol.getPartListView(), ia->getLocalNumIDs(), comm);
+//  auto sol = reinterpret_cast<basic_problem_t *>(problem)->getSolution();
+//  writePartionSolution(sol.getPartListView(), ia->getLocalNumIDs(), comm);
 
   ////////////////////////////////////////////////////////////
   // 6. Clean up
@@ -814,8 +814,8 @@ int main(int argc, char *argv[])
   // (4) Perform all tests
   ////////////////////////////////////////////////////////////
   // pamgen debugging
-    writeMesh(uinput,comm);
-    getConnectivityGraph(uinput, comm);
+//    writeMesh(uinput,comm);
+//    getConnectivityGraph(uinput, comm);
   
   RCP<ComparisonHelper> comparison_manager = rcp(new ComparisonHelper);
   while (!problems.empty()) {
