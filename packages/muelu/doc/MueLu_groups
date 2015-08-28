@@ -6,6 +6,9 @@
 /*! @defgroup MueLuTransferClasses The main MueLu prolongator classes
 */
 
+/*! @defgroup MueLuAdapters The main MueLu adapters (interfaces).
+*/
+
 /*! @defgroup MueLuTimerClasses The MueLu timing classes.
 
 
