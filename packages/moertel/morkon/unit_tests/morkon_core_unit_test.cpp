@@ -71,12 +71,12 @@ TEST(morkon,just_check_if_it_compiles)
   typedef Teuchos::RCP< default_manager_3d_t >        default_manager_3d_ptr;
   typedef Interface<default_kokkos_device_t, 3, MRK_QUAD4>     default_interface_3d_t;
   typedef Teuchos::RCP< default_interface_3d_t >  default_interface_3d_ptr;
-  default_manager_3d_ptr manager_0 = default_manager_3d_t::MakeInstance(0, 0);
-  default_interface_3d_ptr interface_0 = manager_0->create_interface(0,0);
-  manager_0->commit_interfaces();
+  default_manager_3d_ptr manager = default_manager_3d_t::MakeInstance(0, 0);
+  default_interface_3d_ptr interface = manager->create_interface(0,0);
+  manager->commit_interfaces();
   Tpetra::CrsMatrix<> *dummy_D = 0;
   Tpetra::CrsMatrix<> *dummy_M = 0;
-  manager_0->mortar_integrate(dummy_D, dummy_M);
+  manager->mortar_integrate(dummy_D, dummy_M);
 }
 
 
@@ -88,17 +88,17 @@ TEST(morkon, interface_host_side_adapter_stores_data)
   typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>     interface_3d_t;
   typedef Teuchos::RCP< interface_3d_t >                    interface_3d_ptr;
 
-  manager_3d_ptr manager_0 = manager_3d_t::MakeInstance(0, 0);
-  interface_3d_ptr interface_0 = manager_0->create_interface(0,0);
+  manager_3d_ptr manager = manager_3d_t::MakeInstance(0, 0);
+  interface_3d_ptr interface = manager->create_interface(0,0);
 
-  Mrk_2x4_TriangleInterfaceFixture tris_2x4(interface_0);
+  Mrk_2x4_TriangleInterfaceFixture tris_2x4(interface);
 
   const interface_3d_t::host_side_adapter_t *non_mortar_side_hsa =
-        interface_0->get_HostSideAdapter(InterfaceBase::NON_MORTAR_SIDE);
+        interface->get_HostSideAdapter(InterfaceBase::NON_MORTAR_SIDE);
   EXPECT_NE(static_cast<interface_3d_t::host_side_adapter_t *>(0), non_mortar_side_hsa);
 
   const interface_3d_t::host_side_adapter_t *mortar_side_hsa =
-        interface_0->get_HostSideAdapter(InterfaceBase::MORTAR_SIDE);
+        interface->get_HostSideAdapter(InterfaceBase::MORTAR_SIDE);
   EXPECT_NE(static_cast<interface_3d_t::host_side_adapter_t *>(0), mortar_side_hsa);
 
   size_t node_i = 0;
@@ -159,31 +159,56 @@ TEST(morkon, manager_commit_interfaces_one_interface)
   typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>     interface_3d_t;
   typedef Teuchos::RCP< interface_3d_t >                    interface_3d_ptr;
 
-  manager_3d_ptr manager_0 = manager_3d_t::MakeInstance(0, 0);
-  interface_3d_ptr interface_0 = manager_0->create_interface(0,0);
+  manager_3d_ptr manager = manager_3d_t::MakeInstance(0, 0);
 
-  Mrk_2x4_TriangleInterfaceFixture tris_2x4(interface_0);
+  const int interface_id = 17;
+  interface_3d_ptr interface = manager->create_interface(interface_id, 0);
 
-  EXPECT_EQ(true, manager_0->commit_interfaces());
+  Mrk_2x4_TriangleInterfaceFixture tris_2x4(interface);
+
+  EXPECT_EQ(true, manager->commit_interfaces());
 
   typedef typename manager_3d_t::local_to_global_idx_t               local_to_global_idx_t;
   typedef typename manager_3d_t::surface_mesh_t                             surface_mesh_t;
   typedef typename manager_3d_t::fields_t                                         fields_t;
   typedef typename manager_3d_t::face_to_interface_and_side_t face_to_interface_and_side_t;
 
-  const local_to_global_idx_t &global_node_ids = manager_0->get_node_global_ids_ref();
-  const local_to_global_idx_t &global_face_ids = manager_0->get_face_global_ids_ref();
-  const surface_mesh_t           &surface_mesh = manager_0->get_surface_mesh_ref();
-  const fields_t                       &fields = manager_0->get_fields_ref();
-  const face_to_interface_and_side_t &
-                    face_to_interface_and_side = manager_0->get_face_to_interface_and_side_ref();
+  manager->get_node_global_ids();
+  manager->get_node_coords();
+  manager->get_predicted_node_coords();
 
-  const size_t num_nodes = tris_2x4.NumNodes;
-  EXPECT_EQ(num_nodes, global_node_ids.dimension_0());
-  const size_t num_faces = tris_2x4.NumFaces;
-  EXPECT_EQ(num_faces, global_face_ids.dimension_0());
+  const size_t interface_num_nodes = tris_2x4.NumNodes;
+  EXPECT_EQ(interface_num_nodes, manager->hm_node_global_ids.dimension_0());
+  for (size_t i = 0; i < interface_num_nodes; ++i)
+  {
+    EXPECT_EQ(tris_2x4.node_gids[i], manager->hm_node_global_ids(i));
+    for (size_t j = 0; j < tris_2x4.NodesPerFace; ++j) {
+      EXPECT_EQ(tris_2x4.node_coords[i][j], manager->hm_node_coords(i, j));
+      EXPECT_EQ(tris_2x4.node_coords[i][j], manager->hm_predicted_node_coords(i, j));
+    }
+  }
 
-  // YOU ARE HERE.
+  manager->get_face_global_ids();
+  manager->get_face_to_interface_and_side();
+  manager->get_face_to_num_nodes();
+  manager->get_face_to_nodes();
+
+  const size_t interface_num_faces = tris_2x4.NumFaces;
+  const size_t interface_num_nodes_per_face = tris_2x4.NodesPerFace;
+  EXPECT_EQ(interface_num_faces, manager->hm_face_global_ids.dimension_0());
+  for (size_t i = 0; i < interface_num_faces; ++i)
+  {
+    EXPECT_EQ(tris_2x4.face_gids[i], manager->hm_face_global_ids(i));
+    EXPECT_EQ(interface_id, manager->hm_face_to_interface_and_side(i, 0));
+    EXPECT_EQ(tris_2x4.face_sides[i], manager->hm_face_to_interface_and_side(i, 1));
+    EXPECT_EQ(interface_num_nodes_per_face, manager->hm_face_to_num_nodes(i));
+
+    // WHOA!  Want to store local node ids here, not the global ones.
+    for (size_t j = 0; j < tris_2x4.NodesPerFace; ++j) {
+      EXPECT_EQ(tris_2x4.face_node_gids[i][j], manager->hm_face_to_nodes(i, j));
+    }
+  }
+
 }
 
 TEST(morkon,compute_normals_single_tri) {

@@ -68,22 +68,58 @@ public:
   typedef typename morkon_manager::on_boundary_table_t          on_boundary_table_t;
   typedef typename morkon_manager::node_support_sets_t          node_support_sets_t;
 
-  typedef typename morkon_manager::local_to_global_idx_dvt  local_to_global_idx_dvt;
-  typedef typename morkon_manager::face_to_num_nodes_dvt      face_to_num_nodes_dvt;
-  typedef typename morkon_manager::face_to_nodes_dvt              face_to_nodes_dvt;
-  typedef typename morkon_manager::points_dvt                            points_dvt;
-  typedef typename morkon_manager::on_boundary_table_dvt      on_boundary_table_dvt;
+  typedef typename morkon_manager::local_to_global_idx_hmt  local_to_global_idx_hmt;
+  typedef typename morkon_manager::face_to_num_nodes_hmt      face_to_num_nodes_hmt;
+  typedef typename morkon_manager::face_to_nodes_hmt              face_to_nodes_hmt;
+  typedef typename morkon_manager::points_hmt                            points_hmt;
+  typedef typename morkon_manager::on_boundary_table_hmt      on_boundary_table_hmt;
 
   typedef typename morkon_manager::face_to_interface_and_side_t      face_to_interface_and_side_t;
-  typedef typename morkon_manager::face_to_interface_and_side_dvt  face_to_interface_and_side_dvt;
+  typedef typename morkon_manager::face_to_interface_and_side_hmt  face_to_interface_and_side_hmt;
 
   typedef typename morkon_manager::contact_search_results_t  contact_search_results_t;
   typedef typename morkon_manager::mortar_pallets_t                  mortar_pallets_t;
+
+  local_to_global_idx_hmt                    hm_node_global_ids;
+  local_to_global_idx_hmt                    hm_face_global_ids;
+  face_to_interface_and_side_hmt  hm_face_to_interface_and_side;
+  face_to_num_nodes_hmt                    hm_face_to_num_nodes;
+  face_to_nodes_hmt                            hm_face_to_nodes;
+  points_hmt                                     hm_node_coords;
+  points_hmt                           hm_predicted_node_coords;
 
   static Teuchos::RCP< Morkon_Manager_Tester<DeviceType, DIM, FACE_TYPE> > MakeInstance(MPI_Comm mpi_comm, int printlevel);
 
   MPI_Comm  get_mpi_comm() const     { return morkon_manager::m_mpi_comm; }
   int       get_printlevel() const { return morkon_manager::m_printlevel; }
+
+  template <typename ViewType>
+  void CopyToHostMirror(typename ViewType::HostMirror &dest, ViewType &src)
+  {
+    DeviceType::fence();
+    if (dest.shape() != src.shape())
+      dest = Kokkos::create_mirror_view(src);
+
+    Kokkos::deep_copy(dest, src);
+  }
+
+  void get_node_global_ids() { CopyToHostMirror(hm_node_global_ids, morkon_manager::m_node_global_ids); }
+  void get_face_global_ids() { CopyToHostMirror(hm_face_global_ids, morkon_manager::m_face_global_ids); }
+  void get_face_to_interface_and_side() {
+    CopyToHostMirror(hm_face_to_interface_and_side, morkon_manager::m_face_to_interface_and_side);
+  }
+  void get_face_to_num_nodes() {
+    CopyToHostMirror(hm_face_to_num_nodes, morkon_manager::m_surface_mesh.m_face_to_num_nodes);
+  }
+  void get_face_to_nodes() {
+    CopyToHostMirror(hm_face_to_nodes, morkon_manager::m_surface_mesh.m_face_to_nodes);
+  }
+  void get_node_coords() {
+    CopyToHostMirror(hm_node_coords, morkon_manager::m_fields.m_node_coords);
+  }
+  void get_predicted_node_coords() {
+      CopyToHostMirror(hm_predicted_node_coords, morkon_manager::m_fields.m_predicted_node_coords);
+  }
 
   Teuchos::RCP<Tpetra::Map<> > get_problem_map_ptr() const { return morkon_manager::m_problem_map; }
 
@@ -102,47 +138,6 @@ public:
   Morkon_Manager_Tester(MPI_Comm mpi_comm, int printlevel)
       : morkon_manager(mpi_comm, printlevel) {}
 
-  bool internalize_interfaces() { return morkon_manager::internalize_interfaces(); }
-
-  bool migrate_to_device(local_to_global_idx_dvt node_to_global_id,
-                         local_to_global_idx_dvt face_to_global_id,
-                         face_to_interface_and_side_dvt face_to_interface_and_side,
-                         face_to_num_nodes_dvt face_to_num_nodes,
-                         face_to_nodes_dvt face_to_nodes,
-                         points_dvt node_coords,
-                         on_boundary_table_dvt is_node_on_boundary)
-  {
-      return morkon_manager::migrate_to_device(node_to_global_id,
-                                               face_to_global_id,
-                                               face_to_interface_and_side,
-                                               face_to_num_nodes,
-                                               face_to_nodes,
-                                               node_coords,
-                                               is_node_on_boundary);
-  }
-
-  bool compute_face_and_node_normals() { return morkon_manager::compute_face_and_node_normals(); }
-
-  bool find_possible_contact_face_pairs(contact_search_results_t coarse_search_results) {
-      return morkon_manager::find_possible_contact_face_pairs(coarse_search_results);
-  }
-
-  bool compute_boundary_node_support_sets(contact_search_results_t coarse_search_results) {
-      return morkon_manager::compute_boundary_node_support_sets(coarse_search_results);
-  }
-
-  bool compute_contact_pallets(contact_search_results_t coarse_search_results,
-                               mortar_pallets_t &resulting_pallets) {
-      return morkon_manager::compute_contact_pallets(coarse_search_results, resulting_pallets);
-  }
-
-  bool integrate_pallets_into_onrank_D(mortar_pallets_t pallets_to_integrate_on) {
-      return morkon_manager::integrate_pallets_into_onrank_D(pallets_to_integrate_on);
-  }
-
-  bool integrate_pallets_into_onrank_M(mortar_pallets_t pallets_to_integrate_on) {
-      return morkon_manager::integrate_pallets_into_onrank_M(pallets_to_integrate_on);
-  }
 };
 
 template  <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>
