@@ -74,22 +74,20 @@
 #include "Ifpack2_Factory_def.hpp"
 #include "Ifpack2_Hiptmair.hpp"
 
-/*
-
-  @class RefMaxwell
-
-  Preconditioner for Maxwell's equations in curl-curl form using a 2x2 block reformulation,
-  wrapped as a Tpetra::Operator.
-
-  Reference:
-  P. Bochev, J. Hu, C. Siefert, and R. Tuminaro. "An algebraic multigrid approach based on
-  a compatible gauge reformulation of Maxwell's equations." SIAM Journal on Scientific
-  Computing, 31(1), 557-583.
-
-*/
-
 namespace MueLu {
 
+  /*!
+    @brief Preconditioner (wrapped as a Tpetra::Operator) for Maxwell's equations in curl-curl form.
+    
+    This uses a 2x2 block reformulation.
+
+    Reference:
+    P. Bochev, J. Hu, C. Siefert, and R. Tuminaro. "An algebraic multigrid approach based on
+    a compatible gauge reformulation of Maxwell's equations." SIAM Journal on Scientific
+    Computing, 31(1), 557-583.
+
+    @ingroup MueLuAdapters
+  */
   template <class Scalar =
               Tpetra::Operator<>::scalar_type,
             class LocalOrdinal =
