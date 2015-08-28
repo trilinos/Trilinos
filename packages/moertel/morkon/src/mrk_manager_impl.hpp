@@ -263,7 +263,7 @@ void Morkon_Manager<DeviceType, DIM, FACE_TYPE>::copy_data_from_interfaces_to_du
           for (size_t node_i = 0; node_i < num_face_nodes; ++node_i)
           {
             face_to_nodes.h_view(local_face_id, node_i) =
-                face_entry.second.m_nodes[node_i];
+                global_to_local_node_id[face_entry.second.m_nodes[node_i]];
           }
           ++local_face_id;
         }

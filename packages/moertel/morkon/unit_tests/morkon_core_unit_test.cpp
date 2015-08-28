@@ -203,9 +203,9 @@ TEST(morkon, manager_commit_interfaces_one_interface)
     EXPECT_EQ(tris_2x4.face_sides[i], manager->hm_face_to_interface_and_side(i, 1));
     EXPECT_EQ(interface_num_nodes_per_face, manager->hm_face_to_num_nodes(i));
 
-    // WHOA!  Want to store local node ids here, not the global ones.
     for (size_t j = 0; j < tris_2x4.NodesPerFace; ++j) {
-      EXPECT_EQ(tris_2x4.face_node_gids[i][j], manager->hm_face_to_nodes(i, j));
+      EXPECT_EQ(tris_2x4.face_node_gids[i][j],
+                manager->hm_node_global_ids(manager->hm_face_to_nodes(i, j)));
     }
   }
 
