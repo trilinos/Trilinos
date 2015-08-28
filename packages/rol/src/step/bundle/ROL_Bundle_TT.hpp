@@ -663,12 +663,16 @@ private:
 	      lhTz1 += tmp*z1(i);
 	      lhTz2 += tmp*z2(i); 
 	      lh[i] = tmp;
-	    }	    
+	    }
+#if( DEBUG_TT )
 	    bool singular = false;
+#endif
 	    // Test for singularity
 	    if (std::abs(lhTz1-1.0) <= tol*kappa){ 
 	      // tempv is an infinite direction
+#if( DEBUG_TT )
 	      singular = true;
+#endif
 	      tempv = lh;  
 	      solveSystem(currSize_-1,'T',LBprime,tempv);
 	      tempv.resize(currSize_);   // add last entry
@@ -709,7 +713,8 @@ private:
 	       L = | l_h^T 0 0 | | currSize
 	           | l_j^T 0 0 | /
 	    */
-	    Teuchos::SerialDenseMatrix<int,Real> LBprime( Teuchos::Copy,L,currSize_-2,currSize_-2 );    	    lj.size(currSize_-2); // initialize to zeros;
+	    Teuchos::SerialDenseMatrix<int,Real> LBprime( Teuchos::Copy,L,currSize_-2,currSize_-2 );
+   	    lj.size(currSize_-2); // initialize to zeros;
 	    lh.size(currSize_-2); // initialize to zeros;
 	    ljTz1 = 0.0;
 	    lhTz1 = 0.0;

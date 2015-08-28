@@ -49,8 +49,9 @@
 #include "ROL_Types.hpp"
 #include "ROL_Vector.hpp"
 #include "ROL_BoundConstraint.hpp"
-#include "ROL_EqualityConstraint_SimOpt.hpp"
-#include "ROL_Objective_SimOpt.hpp"
+#include "ROL_ParametrizedEqualityConstraint_SimOpt.hpp"
+#include "ROL_ParametrizedObjective_SimOpt.hpp"
+#include "ROL_TeuchosBatchManager.hpp"
 
 #include "Teuchos_LAPACK.hpp"
 
@@ -129,12 +130,15 @@ private:
   }
 
 public:
-  BurgersFEM(int nx = 128, Real nu = 1.e-2, Real nl = 1.0,
-             Real u0 = 1.0, Real u1 = 0.0, Real f = 0.0,
-             Real cH1 = 1.0, Real cL2 = 1.0) 
-    : nx_(nx), dx_(1.0/((Real)nx+1.0)),
-      nu_(nu), nl_(nl), u0_(u0), u1_(u1), f_(f),
-      cH1_(cH1), cL2_(cL2) {}
+  BurgersFEM(int nx = 128, Real nl = 1.0, Real cH1 = 1.0, Real cL2 = 1.0) 
+    : nx_(nx), dx_(1.0/((Real)nx+1.0)), nl_(nl), cH1_(cH1), cL2_(cL2) {}
+
+  void set_problem_data(const Real nu, const Real f, const Real u0, const Real u1) {
+    nu_ = std::pow(10.0,nu-2.0);
+    f_  = 0.01*f;
+    u0_ = 1.0+0.001*u0;
+    u1_ = 0.001*u1;
+  }
 
   int num_dof(void) const {
     return nx_;
@@ -345,6 +349,7 @@ public:
 
   // Solve PDE
   void solve(std::vector<Real> &u, const std::vector<Real> &z) const {
+    u.assign(nx_,1.0);
     // Compute residual and residual norm
     std::vector<Real> r(u.size(),0.0);
     compute_residual(r,u,z);
@@ -903,7 +908,7 @@ public:
 };
 
 template<class Real>
-class EqualityConstraint_BurgersControl : public ROL::EqualityConstraint_SimOpt<Real> {
+class EqualityConstraint_BurgersControl : public ROL::ParametrizedEqualityConstraint_SimOpt<Real> {
 private:
 
   typedef H1VectorPrimal<Real> PrimalStateVector;
@@ -930,6 +935,11 @@ public:
       (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    const std::vector<Real> param
+      = ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+    fem_->set_problem_data(param[0],param[1],param[2],param[3]);
+
     fem_->compute_residual(*cp,*up,*zp);
   }
 
@@ -939,6 +949,11 @@ public:
     up->assign(up->size(),z.norm()/up->size());
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    const std::vector<Real> param
+      = ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+    fem_->set_problem_data(param[0],param[1],param[2],param[3]);
+
     fem_->solve(*up,*zp);
   }
 
@@ -952,6 +967,11 @@ public:
       (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    const std::vector<Real> param
+      = ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+    fem_->set_problem_data(param[0],param[1],param[2],param[3]);
+
     fem_->apply_pde_jacobian(*jvp,*vp,*up,*zp);
   }
 
@@ -965,6 +985,11 @@ public:
       (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    const std::vector<Real> param
+      = ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+    fem_->set_problem_data(param[0],param[1],param[2],param[3]);
+
     fem_->apply_control_jacobian(*jvp,*vp,*up,*zp);
   }
 
@@ -978,6 +1003,11 @@ public:
       (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    const std::vector<Real> param
+      = ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+    fem_->set_problem_data(param[0],param[1],param[2],param[3]);
+
     fem_->apply_inverse_pde_jacobian(*ijvp,*vp,*up,*zp);
   }
 
@@ -991,6 +1021,11 @@ public:
       (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    const std::vector<Real> param
+      = ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+    fem_->set_problem_data(param[0],param[1],param[2],param[3]);
+
     fem_->apply_adjoint_pde_jacobian(*jvp,*vp,*up,*zp);
   }
 
@@ -1004,6 +1039,11 @@ public:
       (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    const std::vector<Real> param
+      = ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+    fem_->set_problem_data(param[0],param[1],param[2],param[3]);
+
     fem_->apply_adjoint_control_jacobian(*jvp,*vp,*up,*zp);
   }
 
@@ -1017,6 +1057,11 @@ public:
       (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
     Teuchos::RCP<const std::vector<Real> > zp =
       (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+    const std::vector<Real> param
+      = ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+    fem_->set_problem_data(param[0],param[1],param[2],param[3]);
+
     fem_->apply_inverse_adjoint_pde_jacobian(*iajvp,*vp,*up,*zp);
   }
 
@@ -1033,6 +1078,11 @@ public:
         (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
       Teuchos::RCP<const std::vector<Real> > zp =
         (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+      const std::vector<Real> param
+        = ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+      fem_->set_problem_data(param[0],param[1],param[2],param[3]);
+
       fem_->apply_adjoint_pde_hessian(*ahwvp,*wp,*vp,*up,*zp);
     }
     else {
@@ -1053,6 +1103,11 @@ public:
         (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
       Teuchos::RCP<const std::vector<Real> > zp =
         (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+      const std::vector<Real> param
+        = ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+      fem_->set_problem_data(param[0],param[1],param[2],param[3]);
+
       fem_->apply_adjoint_control_pde_hessian(*ahwvp,*wp,*vp,*up,*zp);
     }
     else {
@@ -1072,6 +1127,11 @@ public:
         (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
       Teuchos::RCP<const std::vector<Real> > zp =
         (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+      const std::vector<Real> param
+        = ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+      fem_->set_problem_data(param[0],param[1],param[2],param[3]);
+
       fem_->apply_adjoint_pde_control_hessian(*ahwvp,*wp,*vp,*up,*zp);
     }
     else {
@@ -1091,6 +1151,11 @@ public:
         (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
       Teuchos::RCP<const std::vector<Real> > zp =
         (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+
+      const std::vector<Real> param
+        = ROL::ParametrizedEqualityConstraint_SimOpt<Real>::getParameter();
+      fem_->set_problem_data(param[0],param[1],param[2],param[3]);
+
       fem_->apply_adjoint_control_hessian(*ahwvp,*wp,*vp,*up,*zp);
     }
     else {
@@ -1100,7 +1165,7 @@ public:
 };
 
 template<class Real>
-class Objective_BurgersControl : public ROL::Objective_SimOpt<Real> {
+class Objective_BurgersControl : public ROL::ParametrizedObjective_SimOpt<Real> {
 private:
 
   typedef H1VectorPrimal<Real> PrimalStateVector;
@@ -1530,3 +1595,83 @@ public:
     l.set(*lp);
   }
 };
+
+template<class Real, class Ordinal>
+class L2VectorBatchManager : public ROL::TeuchosBatchManager<Real,Ordinal> {
+private:
+  void cast_vector(Teuchos::RCP<std::vector<Real> > &xvec,
+                   ROL::Vector<Real> &x) const {
+    try {
+      xvec = Teuchos::rcp_const_cast<std::vector<Real> >(
+               (Teuchos::dyn_cast<L2VectorPrimal<Real> >(x)).getVector());
+    }
+    catch (std::exception &e) {
+      xvec = Teuchos::rcp_const_cast<std::vector<Real> >(
+               (Teuchos::dyn_cast<L2VectorDual<Real> >(x)).getVector());
+    }
+  }
+
+public:
+  L2VectorBatchManager(const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm)
+    : ROL::TeuchosBatchManager<Real,Ordinal>(comm) {}
+  void sumAll(ROL::Vector<Real> &input, ROL::Vector<Real> &output) {
+    Teuchos::RCP<std::vector<Real> > input_ptr;
+    cast_vector(input_ptr,input);
+    int dim_i = input_ptr->size();
+    Teuchos::RCP<std::vector<Real> > output_ptr;
+    cast_vector(output_ptr,output);
+    int dim_o = output_ptr->size();
+    if ( dim_i != dim_o ) {
+      std::cout << "L2VectorBatchManager: DIMENSION MISMATCH ON RANK "
+                << ROL::TeuchosBatchManager<Real,Ordinal>::batchID() << "\n";
+    }
+    else {
+      ROL::TeuchosBatchManager<Real,Ordinal>::sumAll(&(*input_ptr)[0],&(*output_ptr)[0],dim_i);
+    }
+  }
+};
+
+template<class Real, class Ordinal>
+class H1VectorBatchManager : public ROL::TeuchosBatchManager<Real,Ordinal> {
+private:
+  void cast_vector(Teuchos::RCP<std::vector<Real> > &xvec,
+                   ROL::Vector<Real> &x) const {
+    try {
+      xvec = Teuchos::rcp_const_cast<std::vector<Real> >(
+               (Teuchos::dyn_cast<H1VectorPrimal<Real> >(x)).getVector());
+    }
+    catch (std::exception &e) {
+      xvec = Teuchos::rcp_const_cast<std::vector<Real> >(
+               (Teuchos::dyn_cast<H1VectorDual<Real> >(x)).getVector());
+    }
+  }
+
+public:
+  H1VectorBatchManager(const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm)
+    : ROL::TeuchosBatchManager<Real,Ordinal>(comm) {}
+  void sumAll(ROL::Vector<Real> &input, ROL::Vector<Real> &output) {
+    Teuchos::RCP<std::vector<Real> > input_ptr;
+    cast_vector(input_ptr,input);
+    int dim_i = input_ptr->size();
+    Teuchos::RCP<std::vector<Real> > output_ptr;
+    cast_vector(output_ptr,output);
+    int dim_o = output_ptr->size();
+    if ( dim_i != dim_o ) {
+      std::cout << "H1VectorBatchManager: DIMENSION MISMATCH ON RANK "
+                << ROL::TeuchosBatchManager<Real,Ordinal>::batchID() << "\n";
+    }
+    else {
+      ROL::TeuchosBatchManager<Real,Ordinal>::sumAll(&(*input_ptr)[0],&(*output_ptr)[0],dim_i);
+    }
+  }
+};
+
+template<class Real>
+Real random(const Teuchos::RCP<const Teuchos::Comm<int> > &comm) {
+  Real val = 0.0;
+  if ( Teuchos::rank<int>(*comm)==0 ) {
+    val = (Real)rand()/(Real)RAND_MAX;
+  }
+  Teuchos::broadcast<int,Real>(*comm,0,1,&val);
+  return val;
+}

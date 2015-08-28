@@ -531,7 +531,7 @@ public:
           xnew_->axpy(-alpha*alpha_init_,gp_->dual());
           con.project(*xnew_);
           if ( softUp_ ) {
-            obj.update(*xnew_);
+            obj.update(*xnew_,false,algo_state.iter);
           }
           else {
             obj.update(*xnew_,true,algo_state.iter);
@@ -553,6 +553,11 @@ public:
           algo_state.nfval++;
         }
         algo_state.value = fnew; 
+      }
+      else {
+        if (softUp_) {
+          pObj.update(x,true,algo_state.iter);
+        }
       }
 
       // Store previous gradient for secant update
