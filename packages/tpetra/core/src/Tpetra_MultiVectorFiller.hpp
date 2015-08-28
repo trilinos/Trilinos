@@ -41,8 +41,9 @@
 #ifndef __Tpetra_MultiVectorFiller_hpp
 #define __Tpetra_MultiVectorFiller_hpp
 
-#include <Tpetra_MultiVector.hpp>
-#include <Teuchos_CommHelpers.hpp>
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Teuchos_CommHelpers.hpp"
 #include <iterator>
 
 namespace Tpetra {
@@ -174,9 +175,9 @@ namespace Details {
     }
 
     void
-    sumIntoGlobalValues (Teuchos::ArrayView<const global_ordinal_type> rows,
-                         size_t column,
-                         Teuchos::ArrayView<const scalar_type> values)
+    sumIntoGlobalValues (const Teuchos::ArrayView<const global_ordinal_type>& rows,
+                         const size_t column,
+                         const Teuchos::ArrayView<const scalar_type>& values)
     {
       if (column >= getNumColumns()) {
         for (size_t j = column; j < getNumColumns(); ++j) {
@@ -196,8 +197,8 @@ namespace Details {
     /// Be sure that the number of columns is set correctly before
     /// calling this.
     void
-    sumIntoGlobalValues (Teuchos::ArrayView<const global_ordinal_type> rows,
-                         Teuchos::ArrayView<const scalar_type> values)
+    sumIntoGlobalValues (const Teuchos::ArrayView<const global_ordinal_type>& rows,
+                         const Teuchos::ArrayView<const scalar_type>& values)
     {
       typedef global_ordinal_type GO;
       typedef scalar_type ST;
@@ -610,12 +611,15 @@ namespace Details {
     }
 
     /// \brief Set entry (rows[i],columnIndex) to values[i], for all i.
+    ///
+    /// \param rows [in] Which rows of the MultiVector to modify.
+    /// \param columnIndex [in] Which column of the MultiVector to modify.
+    /// \param values [in] The new values.
     void
-    sumIntoGlobalValues (Teuchos::ArrayView<const global_ordinal_type> rows,
-                         size_t columnIndex,
-                         Teuchos::ArrayView<const scalar_type> values)
+    sumIntoGlobalValues (const Teuchos::ArrayView<const global_ordinal_type>& rows,
+                         const size_t columnIndex,
+                         const Teuchos::ArrayView<const scalar_type>& values)
     {
-      using Teuchos::ArrayRCP;
       using Teuchos::ArrayView;
       typedef local_ordinal_type LO;
       typedef global_ordinal_type GO;
@@ -626,6 +630,12 @@ namespace Details {
         // implicitly ensures that localVec_ is not null.
         setNumColumns (columnIndex + 1);
       }
+
+      // It would be a lot more efficient for users to get the Kokkos
+      // view outside of their fill loop, and fill into it directly.
+      auto X_j = localVec_->getVector (columnIndex);
+      auto X_j_2d = X_j->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+      auto X_j_1d = Kokkos::subview (X_j_2d, Kokkos::ALL (), 0);
 
       typename ArrayView<const GO>::const_iterator rowIter = rows.begin();
       typename ArrayView<const ST>::const_iterator valIter = values.begin();
@@ -642,16 +652,10 @@ namespace Details {
           nonlocalValues_[columnIndex].push_back (*valIter);
         }
         else {
-          // FIXME (mfh 27 Feb 2012) This will be very slow for GPU
-          // Node types.  In that case, we should hold on to the view
-          // of localVec_ as long as the number of columns doesn't
-          // change, and make modifications to the view until
-          // localAssemble() is called.
-          ArrayRCP<ST> X_j = localVec_->getDataNonConst (columnIndex);
           // FIXME (mfh 27 Feb 2012) Allow different combine modes.
           // The current combine mode just adds to the current value
           // at that location.
-          X_j[localRowIndex] += *valIter;
+          X_j_1d[localRowIndex] += *valIter;
         }
       }
     }
@@ -666,8 +670,8 @@ namespace Details {
     /// Be sure that the number of columns is set correctly before
     /// calling this.
     void
-    sumIntoGlobalValues (Teuchos::ArrayView<const global_ordinal_type> rows,
-                         Teuchos::ArrayView<const scalar_type> values)
+    sumIntoGlobalValues (const Teuchos::ArrayView<const global_ordinal_type>& rows,
+                         const Teuchos::ArrayView<const scalar_type>& values)
     {
       using Teuchos::ArrayView;
       typedef typename ArrayView<const global_ordinal_type>::size_type size_type;
@@ -676,7 +680,7 @@ namespace Details {
       for (size_t j = 0; j < numCols; ++j) {
         const size_type offset = numCols*j;
         const size_type len = numCols;
-        sumIntoGlobalValues (rows.view (offset, len), j, values.view (offset, len));
+        this->sumIntoGlobalValues (rows.view (offset, len), j, values.view (offset, len));
       }
     }
 
@@ -708,34 +712,26 @@ namespace Details {
     void
     locallyAssemble (MV& X, BinaryFunction& f)
     {
-      using Teuchos::ArrayRCP;
       using Teuchos::ArrayView;
-      using Teuchos::FancyOStream;
-      using Teuchos::getFancyOStream;
-      using Teuchos::oblackholestream;
       using Teuchos::RCP;
       using Teuchos::rcp;
-      using std::endl;
-
       typedef local_ordinal_type LO;
       typedef global_ordinal_type GO;
       typedef scalar_type ST;
-
-      // Default output stream prints nothing.
-      RCP<FancyOStream> out = out_.is_null() ?
-        getFancyOStream (rcp (new oblackholestream)) : out_;
-
-      Teuchos::OSTab tab (out);
-      *out << "locallyAssemble:" << endl;
 
       RCP<const map_type> srcMap = X.getMap();
       ArrayView<const GO> localIndices = map_->getNodeElementList ();
 
       for (size_t j = 0; j < X.getNumVectors(); ++j) {
-        ArrayRCP<ST> X_j = X.getDataNonConst (j);
+        auto X_j = X.getVector (j);
+        auto X_j_2d = X_j->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+        auto X_j_1d = Kokkos::subview (X_j_2d, Kokkos::ALL (), 0);
 
-        // First add all the local data into X_j.
-        ArrayRCP<const ST> local_j = localVec_->getDataNonConst (j);
+        // First add all the local data into X_j_1d.
+        auto local_j = X.getVector (j);
+        auto local_j_2d = local_j->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+        auto local_j_1d = Kokkos::subview (local_j_2d, Kokkos::ALL (), 0);
+
         for (typename ArrayView<const GO>::const_iterator it = localIndices.begin();
              it != localIndices.end(); ++it) {
           const LO rowIndLocal = map_->getLocalElement (*it);
@@ -745,10 +741,10 @@ namespace Details {
             std::invalid_argument, "locallyAssemble(): Input multivector X does "
             "not own the global index " << *it << ".  This probably means that "
             "X was not constructed with the right Map.");
-          X_j[rowIndX] = f (X_j[rowIndX], local_j[rowIndLocal]);
+          X_j_1d[rowIndX] = f (X_j_1d[rowIndX], local_j_1d[rowIndLocal]);
         }
 
-        // Now add the nonlocal data into X_j.
+        // Now add the nonlocal data into X_j_1d.
         ArrayView<const GO> nonlocalIndices = nonlocalIndices_[j]();
         typename ArrayView<const GO>::const_iterator indexIter = nonlocalIndices.begin();
         ArrayView<const ST> nonlocalValues = nonlocalValues_[j]();
@@ -756,12 +752,9 @@ namespace Details {
         for ( ; indexIter != nonlocalIndices.end() && valueIter != nonlocalValues.end();
               ++indexIter, ++valueIter) {
           const LO rowIndX = srcMap->getLocalElement (*indexIter);
-          X_j[rowIndX] = f (X_j[rowIndX], *valueIter);
+          X_j_1d[rowIndX] = f (X_j_1d[rowIndX], *valueIter);
         }
       }
-
-      *out << "Locally assembled vector:" << endl;
-      X.describe (*out, Teuchos::VERB_EXTREME);
     }
 
     //! \c locallyAssemble() for the usual Tpetra::ADD combine mode.
@@ -967,6 +960,11 @@ namespace Tpetra {
     ///   called before, then assume that X_out has the same Map as
     ///   the argument to the constructor of this object.
     void globalAssemble (MV& X_out, const bool forceReuseMap = false);
+
+    //! Clear contents, in preparation for another fill cycle.
+    void clear () {
+      data_.clear ();
+    }
 
     void
     describe (Teuchos::FancyOStream& out,
@@ -1218,6 +1216,12 @@ namespace Tpetra {
     // Do the Export.
     const Tpetra::CombineMode combineMode = Tpetra::ADD;
     X_out.doExport (*X_in, *exporter_, combineMode);
+
+    // Clean out the locally owned data for next time.
+    X_in->putScalar (Teuchos::ScalarTraits<scalar_type>::zero ());
+
+    // FIXME (mfh 27 Aug 2015) Clean out the remote data for next
+    // time.  See Bug 6398.
   }
 
   namespace Test {
@@ -1436,7 +1440,6 @@ namespace Tpetra {
              class NodeType>
     void
     testMultiVectorFiller (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                           const Teuchos::RCP<NodeType>& node,
                            const size_t unknownsPerNode,
                            const GlobalOrdinalType unknownsPerElt,
                            const size_t numCols,
@@ -1457,15 +1460,16 @@ namespace Tpetra {
       typedef LocalOrdinalType LO;
       typedef GlobalOrdinalType GO;
       typedef NodeType NT;
-      typedef ::Tpetra::Map<LO, GO, NT> MT;
+      typedef ::Tpetra::Map<LO, GO, NT> map_type;
       typedef Tpetra::MultiVector<ST, LO, GO, NT> MV;
+      typedef Tpetra::global_size_t GST;
 
       RCP<FancyOStream> out = outStream.is_null() ?
         getFancyOStream (rcp (new oblackholestream)) : outStream;
-      const Tpetra::global_size_t invalid =
-        Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-      RCP<const MT> targetMap =
-        createContigMapWithNode<LO, GO, NT> (invalid, unknownsPerNode, comm, node);
+      const GST INV = Teuchos::OrdinalTraits<GST>::invalid ();
+      const GO indexBase = 0;
+      RCP<const map_type> targetMap =
+        rcp (new map_type (INV, unknownsPerNode, indexBase, comm));
 
       std::ostringstream os;
       try {

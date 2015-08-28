@@ -1,14 +1,12 @@
 
-# As of <= 14 Mar 2012, MultiVectorFiller doesn't work yet with
-# multiple MPI processes.  Thus, I'll leave it out of the MPI tests
-# for now.
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  MultiVectorFiller_SerialNodeTest
-  SOURCES 
-    MultiVectorFiller_SerialNodeTest
-  COMM serial
-  STANDARD_PASS_OUTPUT
-  )
-
+ASSERT_DEFINED (Tpetra_ENABLE_Kokkos_Refactor)
+IF (Tpetra_ENABLE_Kokkos_Refactor)
+  # MultiVectorFiller may use Kokkos data structures.
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    MultiVectorFiller
+    SOURCES MultiVectorFiller.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
 

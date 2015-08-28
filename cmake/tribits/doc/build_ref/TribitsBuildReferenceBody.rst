@@ -94,7 +94,7 @@ with::
   $ cd <SOME_BUILD_DIR>
 
 but it is generally recommended to create a build directory parallel from the
-soruce tree.
+source tree.
 
 NOTE: If you mistakenly try to configure for an in-source build (e.g. with
 'cmake .') you will get an error message and instructions on how to resolve
@@ -187,7 +187,7 @@ Selecting the list of packages to enable
 ----------------------------------------
 
 The <Project> project is broken up into a set of packages that can be enabled
-(or disbled).  For details and generic examples, see `Package Dependencies and
+(or disabled).  For details and generic examples, see `Package Dependencies and
 Enable/Disable Logic`_ and `TriBITS Dependency Handling Behaviors`_.
 
 See the following use cases:

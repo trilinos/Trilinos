@@ -51,6 +51,7 @@ namespace Ifpack2 {
 
 /// \class SparsityFilter
 /// \brief Drop entries of a matrix, based on the sparsity pattern.
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
 ///
 /// This class takes an existing Tpetra::RowMatrix, and wraps it in a
 /// matrix interface that drops entries using the following criteria:
@@ -60,10 +61,10 @@ namespace Ifpack2 {
 ///
 /// Here is a typical use case:
 /// \code
-/// Teuchos::RCP<Tpetra::RowMatrix> A = ...;
+/// Teuchos::RCP<Tpetra::RowMatrix<> > A = ...;
 /// // First filter out all entries in columns
 /// // which are not in A's domain Map.
-/// Ifpack2::LocalFilter<Tpetra::RowMatrix> A_local (A);
+/// Ifpack2::LocalFilter<Tpetra::RowMatrix<> > A_local (A);
 /// // Drop all but the largest 20 elements in each row.
 /// const size_t maxEntriesPerRow = 20;
 /// // Exclude elements in each row whose local column index
@@ -72,7 +73,7 @@ namespace Ifpack2 {
 /// const int maxBw = 10;
 /// // Now create the sparsity filter. Elements dropped are
 /// // not included in calls to getLocalRowCopy() and apply().
-/// Ifpack2::SparsityFilter<Tpetra::RowMatrix> A_drop (A_local, maxEntriesPerRow, maxBw);
+/// Ifpack2::SparsityFilter<Tpetra::RowMatrix<> > A_drop (A_local, maxEntriesPerRow, maxBw);
 /// \endcode
 ///
 /// This class currently only works if the matrix is the result of a
@@ -89,16 +90,19 @@ public:
   typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
   typedef typename MatrixType::node_type Node;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
+  typedef typename row_matrix_type::mag_type mag_type;
 
-  typedef typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::SparsityFilter: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.");
+
 
   //! \name Constructor & destructor methods
   //@{
 
   //! Constructor.
-  explicit SparsityFilter(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
-                          size_t AllowedNumEntries,
-                          LocalOrdinal AllowedBandwidth = -Teuchos::ScalarTraits<LocalOrdinal>::one());
+  explicit SparsityFilter (const Teuchos::RCP<const row_matrix_type>& Matrix,
+                           size_t AllowedNumEntries,
+                           LocalOrdinal AllowedBandwidth = -Teuchos::ScalarTraits<LocalOrdinal>::one());
   //! Destructor.
   virtual ~SparsityFilter();
 

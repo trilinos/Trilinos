@@ -782,9 +782,12 @@ std::string RBILUK<MatrixType>::description () const
 
 } // namespace Ifpack2
 
+// FIXME (mfh 26 Aug 2015) We only need to do instantiation for
+// MatrixType = Tpetra::RowMatrix.  Conversions to BlockCrsMatrix are
+// handled internally via dynamic cast.
+
 #define IFPACK2_EXPERIMENTAL_RBILUK_INSTANT(S,LO,GO,N)                            \
   template class Ifpack2::Experimental::RBILUK< Tpetra::Experimental::BlockCrsMatrix<S, LO, GO, N> >; \
-  template class Ifpack2::Experimental::RBILUK< Tpetra::RowMatrix<S, LO, GO, N> >; \
-  template class Ifpack2::Experimental::RBILUK< Tpetra::CrsMatrix<S, LO, GO, N> >;
+  template class Ifpack2::Experimental::RBILUK< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif

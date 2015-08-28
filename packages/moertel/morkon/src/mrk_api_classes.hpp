@@ -108,6 +108,7 @@ private:
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 class Morkon_Manager
 {
+protected:
   typedef typename DeviceType::execution_space                              execution_space;
   typedef Interface<DeviceType, DIM, FACE_TYPE>                                 interface_t;
   typedef Teuchos::RCP<interface_t>                                           interface_ptr;
@@ -222,6 +223,17 @@ protected:
   bool integrate_pallets_into_onrank_D(mortar_pallets_t pallets_to_integrate_on);
   bool integrate_pallets_into_onrank_M(mortar_pallets_t pallets_to_integrate_on);
 
+private:
+
+  void count_global_node_and_face_ids(size_t &num_global_node_ids, size_t &num_global_face_ids);
+  void copy_data_from_interfaces_to_dualview_hostsides(
+      const local_to_global_idx_dvt& node_to_global_id,
+      const points_dvt& node_coords, const points_dvt& predicted_node_coords,
+      const on_boundary_table_dvt& is_node_on_boundary,
+      const local_to_global_idx_dvt& face_to_global_id,
+      const face_to_interface_and_side_dvt& face_to_interface_and_side,
+      const face_to_num_nodes_dvt& face_to_num_nodes,
+      const face_to_nodes_dvt& face_to_nodes);
 };
 
 

@@ -57,6 +57,8 @@ namespace morkon_exp {
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 class Morkon_Manager_Tester : public Morkon_Manager<DeviceType, DIM, FACE_TYPE>
 {
+public:
+
   typedef Morkon_Manager<DeviceType, DIM, FACE_TYPE>                 morkon_manager;
 
   typedef typename morkon_manager::interfaces_map_t                interfaces_map_t;
@@ -78,19 +80,19 @@ class Morkon_Manager_Tester : public Morkon_Manager<DeviceType, DIM, FACE_TYPE>
   typedef typename morkon_manager::contact_search_results_t  contact_search_results_t;
   typedef typename morkon_manager::mortar_pallets_t                  mortar_pallets_t;
 
-public:
+  static Teuchos::RCP< Morkon_Manager_Tester<DeviceType, DIM, FACE_TYPE> > MakeInstance(MPI_Comm mpi_comm, int printlevel);
 
   MPI_Comm  get_mpi_comm() const     { return morkon_manager::m_mpi_comm; }
   int       get_printlevel() const { return morkon_manager::m_printlevel; }
 
   Teuchos::RCP<Tpetra::Map<> > get_problem_map_ptr() const { return morkon_manager::m_problem_map; }
 
-  interfaces_map_t             & get_interfaces_ref() const { return morkon_manager::m_interfaces; }
-  local_to_global_idx_t        & get_node_global_ids_ref() const { return morkon_manager::m_node_global_ids; }
-  local_to_global_idx_t        & get_face_global_ids_ref() const { return morkon_manager::m_face_global_ids; }
-  surface_mesh_t               & get_surface_mesh_ref() const { return  morkon_manager::m_surface_mesh; }
-  fields_t                     & get_fields_ref() const { return morkon_manager::m_fields; }
-  face_to_interface_and_side_t & get_face_to_interface_and_side_ref() const {
+  const interfaces_map_t             & get_interfaces_ref() const { return morkon_manager::m_interfaces; }
+  const local_to_global_idx_t        & get_node_global_ids_ref() const { return morkon_manager::m_node_global_ids; }
+  const local_to_global_idx_t        & get_face_global_ids_ref() const { return morkon_manager::m_face_global_ids; }
+  const surface_mesh_t               & get_surface_mesh_ref() const { return  morkon_manager::m_surface_mesh; }
+  const fields_t                     & get_fields_ref() const { return morkon_manager::m_fields; }
+  const face_to_interface_and_side_t & get_face_to_interface_and_side_ref() const {
       return morkon_manager::m_face_to_interface_and_side;
   }
 
@@ -142,6 +144,16 @@ public:
       return morkon_manager::integrate_pallets_into_onrank_M(pallets_to_integrate_on);
   }
 };
+
+template  <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>
+Teuchos::RCP< Morkon_Manager_Tester<DeviceType, DIM, FACE_TYPE> >
+Morkon_Manager_Tester<DeviceType, DIM, FACE_TYPE>::MakeInstance(MPI_Comm mpi_comm, int printlevel)
+{
+  typedef Morkon_Manager_Tester<DeviceType, DIM, FACE_TYPE> morkon_manager_t;
+
+  return Teuchos::RCP<morkon_manager_t>(new morkon_manager_t(mpi_comm, printlevel) );
+}
+
 
 }
 
