@@ -191,6 +191,10 @@ public:
     return (*vecs_)[i];
   }
 
+  Teuchos::RCP<Vector<Real> > get(size_type i) {
+    return (*vecs_)[i];
+  }
+
   void set(size_type i, const V &x) {
     (*vecs_)[i]->set(x); 
   }
@@ -204,6 +208,34 @@ public:
   }
 
 };
+
+// Helper methods
+
+template<class Real> 
+Teuchos::RCP<Vector<Real> > CreatePartitionedVector( Teuchos::RCP<Vector<Real> > &a, 
+                                                     Teuchos::RCP<Vector<Real> > &b ) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef RCP<Vector<Real> >      RCPV;
+  typedef PartitionedVector<Real> PV;
+
+  RCPV temp[] = {a,b};
+  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+2) ) ) );
+}
+
+template<class Real> 
+Teuchos::RCP<const Vector<Real> > CreatePartitionedVector( Teuchos::RCP<const Vector<Real> > &a, 
+                                                           Teuchos::RCP<const Vector<Real> > &b ) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef RCP<const Vector<Real> >      RCPV;
+  typedef const PartitionedVector<Real> PV;
+
+  RCPV temp[] = {a,b};
+  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+2) ) ) );
+}
+
+
 
 } // namespace ROL
 
