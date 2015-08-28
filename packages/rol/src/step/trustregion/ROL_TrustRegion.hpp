@@ -264,6 +264,11 @@ public:
         del = std::min(gamma2_*del,delmax_);
       }
     }
+    else { // step rejected 
+      if(softUp_) { // Variable Objective Function
+        pObj.update(x,true,iter); 
+      }
+    }
   }
 
   void setPredictedReduction(const Real pRed) {
