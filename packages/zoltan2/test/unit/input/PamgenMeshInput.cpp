@@ -250,11 +250,17 @@ int main(int narg, char *arg[]) {
     }
 
     telct = 0;
+    int *num_adj = new int[num_nodes];
+
+    for (int i = 0; i < num_nodes; i++) {
+      num_adj[i] = 0;
+    }
 
     for (int b = 0; b < num_elem_blk; b++) {
       for (int i = 0; i < num_elem_this_blk[b]; i++) {
 	for (int j = 0; j < num_nodes_per_elem[b]; j++) {
 	  ssize_t in_list = -1;
+	  ++num_adj[connect[b][i * num_nodes_per_elem[b] + j] - 1];
 
 	  for(inputAdapter_t::lno_t k =
 		offsets[connect[b][i * num_nodes_per_elem[b] + j] - 1];
@@ -274,6 +280,16 @@ int main(int narg, char *arg[]) {
 	++telct;
       }
     }
+
+    for (int i = 0; i < num_nodes; i++) {
+      if (offsets[i + 1] - offsets[i] != num_adj[i]) {
+	std::cout << "Number of adjacencies do not match" << std::endl;
+	return 3;
+      }
+    }
+
+    delete[] num_adj;
+    num_adj = NULL;
   }
   else{
     std::cout << "Adjacencies not available" << std::endl;
