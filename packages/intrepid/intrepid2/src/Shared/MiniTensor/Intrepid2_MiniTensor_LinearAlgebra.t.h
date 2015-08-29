@@ -99,7 +99,11 @@ inverse(Tensor<T, N> const & A)
     }
     break;
 
-  default:
+  case 1:
+    return Tensor<T, N>(ONES) / A(0,0);
+    break;
+
+ default:
     break;
   }
 
