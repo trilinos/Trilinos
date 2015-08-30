@@ -329,6 +329,44 @@ namespace Xpetra {
     //! Get the underlying Epetra matrix
     RCP<Epetra_CrsMatrix> getEpetra_CrsMatrixNonConst() const { return mtx_; } //TODO: remove
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
+    typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::node_type node_type;
+
+    /// \brief Compatibility layer for accessing the matrix data through a Kokkos interface
+    local_matrix_type getLocalMatrix () const {
+      if(isFillComplete() == false)
+        throw std::runtime_error("Xpetra::EpetraCrsMatrix::getLocalMatrix: matrix must be filled and completed before you can access the data through the Kokkos interface!");
+      RCP<Epetra_CrsMatrix> matrix = getEpetra_CrsMatrixNonConst();
+
+      const int annz = matrix->NumMyNonzeros();
+      int* Source_rowptr;
+      int* Source_colind;
+      double* Source_vals;
+      int rv = matrix->ExtractCrsDataPointers(Source_rowptr,Source_colind,Source_vals);
+      if(rv) throw std::runtime_error("Xpetra::CrsMatrix<>::getLocalMatrix: failed in ExtractCrsDataPointers");
+
+      // fix rowptr array
+      long unsigned int* rowptr = new long unsigned int[annz+1];
+      for (int i=0; i<annz; i++)
+        rowptr[i] = (long unsigned int) Source_rowptr[i];
+      rowptr[annz] = annz;
+
+      // create Kokkos::Views
+      typedef typename local_matrix_type::values_type values_type;
+      typedef typename local_matrix_type::row_map_type row_map_type;
+      typedef typename local_matrix_type::index_type index_type;
+      values_type myValues = values_type(Source_vals, annz);
+      row_map_type myRowMapView = row_map_type(rowptr,annz+1);
+      index_type myColIndices = index_type(Source_colind,annz);
+
+      const int nrows = matrix->NumMyRows();
+      const int ncols = matrix->NumMyCols();
+      const std::string label("LocalMatrix");
+      local_matrix_type ret(label,nrows,ncols,annz,myValues,myRowMapView,myColIndices);
+      return ret;
+    }
+#endif
    //@}
 
   private:
