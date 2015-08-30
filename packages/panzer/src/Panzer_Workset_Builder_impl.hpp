@@ -705,7 +705,7 @@ panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
     // fill the BasisValues and IntegrationValues arrays
     std::size_t max_workset_size = needs_a.cellData.numCells();
     populateValueArrays(max_workset_size,true,needs_a,*wkst->details[0]); // populate "side" values
-    populateValueArrays(max_workset_size,true,needs_b,*wkst->details[1]);
+    populateValueArrays(max_workset_size,true,needs_b,*wkst->details[1],wkst->details[0]);
 
     wkst++;
   }

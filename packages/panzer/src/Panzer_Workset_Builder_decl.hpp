@@ -170,11 +170,13 @@ namespace panzer {
   void populateValueArrays(std::size_t num_cells,
                            bool isSide,
                            const PhysicsBlock & pb,
-                           WorksetDetails & details);
+                           WorksetDetails & details,
+                           const Teuchos::RCP<WorksetDetails> other_details = Teuchos::null);
   void populateValueArrays(std::size_t num_cells,
                            bool isSide,
                            const WorksetNeeds & pb,
-                           WorksetDetails & details);
+                           WorksetDetails & details,
+                           const Teuchos::RCP<WorksetDetails> other_details = Teuchos::null);
 
 }
 
