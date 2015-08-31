@@ -81,6 +81,7 @@ namespace Example {
 // right looking algorithm with upper triangular
 //#include "ichol_unblocked.hpp"
 #include "ichol_unblocked_opt1.hpp"
+//#include "ichol_unblocked_opt2.hpp"
 #include "ichol_blocked.hpp"
 #include "ichol_by_blocks.hpp"
 
