@@ -401,6 +401,9 @@ namespace MueLu {
     }
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "use kokkos refactor", bool, useKokkos);
+    if (useKokkos) {
+      this->GetOStream(Warnings0) << "Using kokkos refactor code" << std::endl;
+    }
 
     // == Non-serializable data ===
     // Check both the parameter and the type
