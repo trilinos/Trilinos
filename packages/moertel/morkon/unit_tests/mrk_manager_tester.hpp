@@ -121,20 +121,6 @@ public:
       CopyToHostMirror(hm_predicted_node_coords, morkon_manager::m_fields.m_predicted_node_coords);
   }
 
-  Teuchos::RCP<Tpetra::Map<> > get_problem_map_ptr() const { return morkon_manager::m_problem_map; }
-
-  const interfaces_map_t             & get_interfaces_ref() const { return morkon_manager::m_interfaces; }
-  const local_to_global_idx_t        & get_node_global_ids_ref() const { return morkon_manager::m_node_global_ids; }
-  const local_to_global_idx_t        & get_face_global_ids_ref() const { return morkon_manager::m_face_global_ids; }
-  const surface_mesh_t               & get_surface_mesh_ref() const { return  morkon_manager::m_surface_mesh; }
-  const fields_t                     & get_fields_ref() const { return morkon_manager::m_fields; }
-  const face_to_interface_and_side_t & get_face_to_interface_and_side_ref() const {
-      return morkon_manager::m_face_to_interface_and_side;
-  }
-
-  on_boundary_table_t          & get_on_boundary_table_ref() const { return morkon_manager::m_is_ifc_boundary_node; }
-  node_support_sets_t          & get_node_support_sets_ref() const { return morkon_manager::m_node_support_sets; }
-
   Morkon_Manager_Tester(MPI_Comm mpi_comm, int printlevel)
       : morkon_manager(mpi_comm, printlevel) {}
 
