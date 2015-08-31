@@ -105,6 +105,11 @@ namespace Example {
                                                        ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
         break;
       }
+      case AlgoIChol::Dummy: {
+        future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::Dummy>
+                                                       ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+        break;
+      }
       default:
         ERROR(">> Not supported algorithm variant");
         break;

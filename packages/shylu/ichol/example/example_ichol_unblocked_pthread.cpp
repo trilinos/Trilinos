@@ -44,7 +44,7 @@ int main (int argc, char *argv[]) {
   clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
 
   string algorithm = "UnblockedOpt1";
-  clp.setOption("algorithm-variant", &algorithm, "Algorithm variant (UnblockedOpt1, UnblockedOpt2)");
+  clp.setOption("algorithm-variant", &algorithm, "Algorithm variant (Dummy, UnblockedOpt1, UnblockedOpt2)");
 
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
@@ -64,7 +64,9 @@ int main (int argc, char *argv[]) {
       variant = AlgoIChol::UnblockedOpt1;
     else if (algorithm == "UnblockedOpt2")
       variant = AlgoIChol::UnblockedOpt2;
-    else
+    else if (algorithm == "Dummy")
+      variant = AlgoIChol::Dummy;
+    else      
       ERROR(">> Not supported algorithm variant");
     
     r_val = exampleICholUnblocked

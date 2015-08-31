@@ -119,6 +119,7 @@ namespace Example {
   class AlgoChol {
   public:
     // One side factorization on flat matrices
+    static const int Dummy         = 1000;
     static const int Unblocked     = 1001;
     static const int UnblockedOpt1 = 1002;
     static const int UnblockedOpt2 = 1003;
