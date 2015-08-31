@@ -2028,7 +2028,7 @@ void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph
 
 }
 
-void ElemElemGraph::add_side_to_mesh(stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts, stk::mesh::EntityId side_id)
+stk::mesh::Entity ElemElemGraph::add_side_to_mesh(stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts, stk::mesh::EntityId side_id)
 {
     stk::mesh::Entity element = m_local_id_to_element_entity[side_pair.first];
     int side_ordinal = side_pair.second;
@@ -2044,8 +2044,9 @@ void ElemElemGraph::add_side_to_mesh(stk::mesh::impl::ElementSidePair& side_pair
     else
     {
         ThrowRequireMsg(!impl::is_id_already_in_use_locally(m_bulk_data, m_bulk_data.mesh_meta_data().side_rank(), side_id), "Program error. Id in use.");
-        stk::mesh::declare_element_side(m_bulk_data, side_id, element, side_ordinal, skin_parts);
+        side = stk::mesh::declare_element_side(m_bulk_data, side_id, element, side_ordinal, skin_parts);
     }
+    return side;
 }
 
 void ElemElemGraph::skin_mesh(stk::mesh::Selector &sel, const stk::mesh::PartVector& skin_parts, const stk::mesh::Selector *air)
@@ -2053,7 +2054,7 @@ void ElemElemGraph::skin_mesh(stk::mesh::Selector &sel, const stk::mesh::PartVec
     const stk::mesh::BucketVector& buckets = m_bulk_data.get_buckets(stk::topology::ELEM_RANK, sel);
     unsigned num_elements = stk::mesh::count_selected_entities(sel, buckets);
     const unsigned max_sides_per_elem = 6;
-    unsigned num_side_ids_needed = max_sides_per_elem*num_elements;
+    unsigned num_side_ids_needed = 2*max_sides_per_elem*num_elements;
     std::vector<stk::mesh::EntityId> available_ids;
     m_bulk_data.generate_new_ids(m_bulk_data.mesh_meta_data().side_rank(), num_side_ids_needed, available_ids);
     size_t ids_used = 0;
@@ -2070,6 +2071,12 @@ void ElemElemGraph::skin_mesh(stk::mesh::Selector &sel, const stk::mesh::PartVec
             std::vector<stk::mesh::impl::ElementSidePair> element_side_pairs;
             impl::add_element_side_pairs_for_unused_sides(local_id, m_element_topologies[local_id], m_via_sides[local_id], element_side_pairs);
 
+            for(size_t side_pair=0;side_pair<element_side_pairs.size();++side_pair)
+            {
+                this->add_side_to_mesh(element_side_pairs[side_pair], skin_parts, available_ids[ids_used]);
+                ids_used++;
+            }
+
             if(air!=nullptr)
             {
                 for(size_t k=0;k<this->get_num_connected_elems(element);++k)
@@ -2077,16 +2084,14 @@ void ElemElemGraph::skin_mesh(stk::mesh::Selector &sel, const stk::mesh::PartVec
                     stk::mesh::Entity other_element = this->get_connected_element(element, k);
                     if (((*air)(m_bulk_data.bucket(other_element))))
                     {
-                        element_side_pairs.push_back( std::make_pair(m_entity_to_local_id[element.local_offset()], this->get_side_from_element1_to_locally_owned_element2(element, other_element))       );
-                        element_side_pairs.push_back( std::make_pair(m_entity_to_local_id[other_element.local_offset()], this->get_side_from_element1_to_locally_owned_element2(other_element, element)) );
+                        stk::mesh::impl::ElementSidePair side_pair = std::make_pair(m_entity_to_local_id[element.local_offset()], this->get_side_from_element1_to_locally_owned_element2(element, other_element));
+                        stk::mesh::Entity side = this->add_side_to_mesh(side_pair, skin_parts, available_ids[ids_used]);
+                        int side_other = this->get_side_from_element1_to_locally_owned_element2(other_element, element);
+                        stk::mesh::Permutation perm = static_cast<stk::mesh::Permutation>(m_bulk_data.bucket(other_element).topology().num_positive_permutations());
+                        m_bulk_data.declare_relation(other_element, side, side_other, perm);
+                        ids_used++;
                     }
                 }
-            }
-
-            for(size_t side_pair=0;side_pair<element_side_pairs.size();++side_pair)
-            {
-                this->add_side_to_mesh(element_side_pairs[side_pair], skin_parts, available_ids[ids_used]);
-                ids_used++;
             }
         }
     }

@@ -7671,6 +7671,129 @@ TEST(ElemGraph, test_initial_graph_creation_with_deactivated_elements)
     }
 }
 
+stk::mesh::PartVector get_skin_parts(stk::mesh::MetaData &meta)
+{
+    stk::mesh::PartVector skin_parts;
+    skin_parts.push_back(meta.get_part("skin"));
+    skin_parts.push_back(meta.get_part("active"));
+    return skin_parts;
+}
+
+void make_2_hex_mesh_with_element1_inactive(stk::mesh::BulkData& bulkData)
+{
+    stk::mesh::MetaData &meta = bulkData.mesh_meta_data();
+    meta.declare_part_with_topology("skin", stk::topology::QUAD_4);
+    stk::mesh::Part& active = meta.declare_part("active");
+    stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulkData, bulkData.parallel());
+
+    stk::mesh::EntityVector entitiesToMakeActive;
+    std::vector<stk::mesh::PartVector> add_parts;
+    std::vector<stk::mesh::PartVector> rm_parts;
+
+    stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
+    stk::mesh::Entity element1 = bulkData.get_entity(rank, 1);
+
+    entitiesToMakeActive.push_back(element1);
+    add_parts.push_back(stk::mesh::PartVector(1, &active));
+    rm_parts.push_back(stk::mesh::PartVector());
+    bulkData.batch_change_entity_parts(entitiesToMakeActive, add_parts, rm_parts);
+}
+
+void test_num_faces_per_element(const stk::mesh::BulkData& bulkData, const std::vector<size_t>& gold_num_faces_per_elem)
+{
+    stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
+    stk::mesh::Entity element1 = bulkData.get_entity(rank, 1);
+    stk::mesh::Entity element2 = bulkData.get_entity(rank, 2);
+    unsigned num_faces_elem1 = bulkData.num_faces(element1);
+    EXPECT_EQ(gold_num_faces_per_elem[0], num_faces_elem1);
+    unsigned num_faces_elem2 = bulkData.num_faces(element2);
+    EXPECT_EQ(gold_num_faces_per_elem[1], num_faces_elem2);
+}
+
+void add_element_to_block(stk::mesh::BulkData& bulkData, stk::mesh::Entity element, stk::mesh::Part& block)
+{
+    bulkData.change_entity_parts(element, {&block}, {});
+}
+
+stk::mesh::PartVector create_element_blocks(stk::mesh::MetaData& meta)
+{
+    stk::mesh::PartVector blocks;
+    blocks.push_back(&meta.declare_part_with_topology("block_2", stk::topology::HEX_8));
+    blocks.push_back(&meta.declare_part_with_topology("block_3", stk::topology::HEX_8));
+    blocks.push_back(&meta.declare_part_with_topology("block_4", stk::topology::HEX_8));
+    return blocks;
+}
+
+stk::mesh::EntityVector get_elements(stk::mesh::BulkData& bulkData)
+{
+    stk::mesh::EntityVector elements;
+    stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
+    elements.push_back(bulkData.get_entity(rank, 2));
+    elements.push_back(bulkData.get_entity(rank, 3));
+    elements.push_back(bulkData.get_entity(rank, 4));
+    return elements;
+}
+
+void add_elements_to_various_blocks(stk::mesh::BulkData& bulkData, stk::mesh::PartVector& blocks, stk::mesh::EntityVector& elements)
+{
+    bulkData.modification_begin();
+    for(size_t i=0;i<elements.size();++i)
+    {
+        add_element_to_block(bulkData, elements[i], *blocks[i]);
+    }
+    bulkData.modification_end();
+}
+
+std::vector<size_t> get_num_faces_per_elements(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector& elements)
+{
+    std::vector<size_t> num_faces_on_element(elements.size(),0);
+    for(size_t i=0;i<elements.size();++i)
+    {
+        num_faces_on_element[i] = bulkData.num_faces(elements[i]);
+    }
+    return num_faces_on_element;
+}
+
+void skin_block_and_test(stk::mesh::BulkData& bulkData, const std::vector<size_t>& num_gold_faces, const size_t gold_num_faces, const stk::mesh::Part& block, const stk::mesh::PartVector &skin_parts, const stk::mesh::EntityVector& elements)
+{
+    ElementDeathUtils::skin_part(bulkData, block, skin_parts);
+
+    std::vector<size_t> num_faces_on_element = get_num_faces_per_elements(bulkData, elements);
+    EXPECT_TRUE(num_faces_on_element == num_gold_faces);
+
+    stk::mesh::MetaData &meta = bulkData.mesh_meta_data();
+    size_t total_num_faces = stk::mesh::count_selected_entities(meta.locally_owned_part(), bulkData.buckets(meta.side_rank()));
+    EXPECT_EQ(gold_num_faces, total_num_faces);
+}
+
+void test_skinning_by_adding_skin_of_block_4(stk::mesh::BulkData& bulkData, const stk::mesh::Part& block_4, const stk::mesh::PartVector& skin_parts, const stk::mesh::EntityVector &elements)
+{
+    std::vector<size_t> gold_num_faces_per_element = { 1, 6, 6, 6 };
+    size_t gold_num_total_faces = 16u;
+    skin_block_and_test(bulkData, gold_num_faces_per_element, gold_num_total_faces, block_4, skin_parts, elements);
+}
+
+void test_skinning_by_adding_skin_of_block_1(stk::mesh::BulkData& bulkData, const stk::mesh::Part& block_1, const stk::mesh::PartVector& skin_parts, const stk::mesh::EntityVector &elements)
+{
+    std::vector<size_t> gold_num_faces_per_element = { 6, 6, 6, 6 };
+    size_t gold_num_total_faces = 21u;
+    skin_block_and_test(bulkData, gold_num_faces_per_element, gold_num_total_faces, block_1, skin_parts, elements);
+}
+
+void test_skinning_of_block_2(stk::mesh::BulkData& bulkData, const stk::mesh::Part& block_2, const stk::mesh::PartVector& skin_parts, const stk::mesh::EntityVector &elements)
+{
+    std::vector<size_t> gold_num_faces_per_element = { 1, 6, 1, 0 };
+    size_t gold_num_total_faces = 6u;
+    skin_block_and_test(bulkData, gold_num_faces_per_element, gold_num_total_faces, block_2, skin_parts, elements);
+}
+
+void test_skinning_by_adding_skin_of_block_3(stk::mesh::BulkData& bulkData, const stk::mesh::Part& block_3, const stk::mesh::PartVector& skin_parts, const stk::mesh::EntityVector &elements)
+{
+    std::vector<size_t> gold_num_faces_per_element = { 1, 6, 6, 1 };
+    size_t gold_num_total_faces = 11u;
+    skin_block_and_test(bulkData, gold_num_faces_per_element, gold_num_total_faces, block_3, skin_parts, elements);
+}
+
 TEST(ElementGraph, skin_exposed_boundary)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
@@ -7681,29 +7804,10 @@ TEST(ElementGraph, skin_exposed_boundary)
 
          stk::mesh::MetaData meta(spatialDim);
          stk::mesh::BulkData bulkData(meta, comm);
-         stk::mesh::Part& skin = meta.declare_part_with_topology("skin", stk::topology::QUAD_4);
-         stk::mesh::Part& active = meta.declare_part("active");
-         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulkData, comm);
-
-         stk::mesh::EntityVector entitiesToMakeActive;
-         std::vector<stk::mesh::PartVector> add_parts;
-         std::vector<stk::mesh::PartVector> rm_parts;
-
-         stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
-         stk::mesh::Entity element1 = bulkData.get_entity(rank, 1);
-         stk::mesh::Entity element2 = bulkData.get_entity(rank, 2);
-
-         entitiesToMakeActive.push_back(element1);
-         add_parts.push_back(stk::mesh::PartVector(1, &active));
-         rm_parts.push_back(stk::mesh::PartVector());
-         bulkData.batch_change_entity_parts(entitiesToMakeActive, add_parts, rm_parts);
-
-         ElementDeathUtils::skin_boundary(bulkData, active, {&active, &skin});
-
-         unsigned num_faces_elem1 = bulkData.num_faces(element1);
-         EXPECT_EQ(5u, num_faces_elem1);
-         unsigned num_faces_elem2 = bulkData.num_faces(element2);
-         EXPECT_EQ(0u, num_faces_elem2);
+         make_2_hex_mesh_with_element1_inactive(bulkData);
+         stk::mesh::PartVector skin_parts = get_skin_parts(meta);
+         ElementDeathUtils::skin_boundary(bulkData, *meta.get_part("active"), skin_parts);
+         test_num_faces_per_element(bulkData, {5u, 0u});
      }
 }
 
@@ -7717,29 +7821,40 @@ TEST(ElementGraph, skin_part)
 
          stk::mesh::MetaData meta(spatialDim);
          stk::mesh::BulkData bulkData(meta, comm);
+         make_2_hex_mesh_with_element1_inactive(bulkData);
+         stk::mesh::PartVector skin_parts = get_skin_parts(meta);
+         ElementDeathUtils::skin_part(bulkData, *meta.get_part("active"), skin_parts);
+         test_num_faces_per_element(bulkData, {6u, 1u});
+     }
+}
+
+TEST(ElementGraph, skin_part_3_blocks)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+
+     if(stk::parallel_machine_size(comm) == 1)
+     {
+         unsigned spatialDim = 3;
+
+         stk::mesh::MetaData meta(spatialDim);
+         stk::mesh::BulkData bulkData(meta, comm);
          stk::mesh::Part& skin = meta.declare_part_with_topology("skin", stk::topology::QUAD_4);
+
+         stk::mesh::PartVector blocks = create_element_blocks(meta);
+
          stk::mesh::Part& active = meta.declare_part("active");
-         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x2", bulkData, comm);
+         stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
 
-         stk::mesh::EntityVector entitiesToMakeActive;
-         std::vector<stk::mesh::PartVector> add_parts;
-         std::vector<stk::mesh::PartVector> rm_parts;
+         stk::mesh::EntityVector elements = get_elements(bulkData);
+         add_elements_to_various_blocks(bulkData, blocks, elements);
 
-         stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
-         stk::mesh::Entity element1 = bulkData.get_entity(rank, 1);
-         stk::mesh::Entity element2 = bulkData.get_entity(rank, 2);
+         elements.insert(elements.begin(), bulkData.get_entity(stk::topology::ELEM_RANK, 1));
+         blocks.insert(blocks.begin(), meta.get_part("block_1"));
 
-         entitiesToMakeActive.push_back(element1);
-         add_parts.push_back(stk::mesh::PartVector(1, &active));
-         rm_parts.push_back(stk::mesh::PartVector());
-         bulkData.batch_change_entity_parts(entitiesToMakeActive, add_parts, rm_parts);
-
-         ElementDeathUtils::skin_part(bulkData, active, {&active, &skin});
-
-         unsigned num_faces_elem1 = bulkData.num_faces(element1);
-         EXPECT_EQ(6u, num_faces_elem1);
-         unsigned num_faces_elem2 = bulkData.num_faces(element2);
-         EXPECT_EQ(1u, num_faces_elem2);
+         test_skinning_of_block_2(bulkData, *blocks[1], {&active, &skin}, elements);
+         test_skinning_by_adding_skin_of_block_3(bulkData, *blocks[2], {&active, &skin}, elements);
+         test_skinning_by_adding_skin_of_block_4(bulkData, *blocks[3], {&active, &skin}, elements);
+         test_skinning_by_adding_skin_of_block_1(bulkData, *blocks[0], {&active, &skin}, elements);
      }
 }
 
