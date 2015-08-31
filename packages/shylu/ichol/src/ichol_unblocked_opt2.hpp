@@ -71,7 +71,7 @@ namespace Example {
           ordinal_type idx_team[MAX_TEAM_SIZE] = {};
           ParallelForType(team_factory_type::createThreadLoopRegion(member, i, nnz_r1t),
                           [&](const ordinal_type j) {
-                            ordinal_type &idx = idx_team[member.rank()];
+                            ordinal_type &idx = idx_team[member.team_rank()];
                             if (idx > -2) {
                               const ordinal_type col_at_j = r1t.Col(j);
                               idx = r2t.Index(col_at_j, idx);
@@ -81,6 +81,7 @@ namespace Example {
                               }
                             }
                           });
+        }
       }
     }
     return 0;

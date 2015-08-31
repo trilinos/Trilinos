@@ -35,6 +35,7 @@ namespace Example {
   int exampleICholUnblocked(const string file_input,
                             const int max_task_dependence,
                             const int team_size,
+                            const int variant,
                             const bool verbose) {
     typedef ValueType   value_type;
     typedef OrdinalType ordinal_type;
@@ -92,8 +93,22 @@ namespace Example {
     {
       timer.reset();
     
-      auto future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
-                                                          ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+      typename TaskFactoryType::future_type future;
+      switch (variant) {
+      case AlgoIChol::UnblockedOpt1: {
+        future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
+                                                       ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+        break;
+      }
+      case AlgoIChol::UnblockedOpt2: {
+        future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt2>
+                                                       ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+        break;
+      }
+      default:
+        ERROR(">> Not supported algorithm variant");
+        break;
+      }
       TaskFactoryType::Policy().spawn(future);
       Kokkos::Experimental::wait(TaskFactoryType::Policy());
 
