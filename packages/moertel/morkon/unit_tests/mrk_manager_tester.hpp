@@ -49,6 +49,7 @@
 #define MORKON_MORKON_MANAGER_TESTER_HPP
 
 #include <mrk_api_classes.hpp>
+#include <mrk_compute_normals.hpp>
 
 namespace morkon_exp {
 
@@ -124,6 +125,9 @@ public:
   Morkon_Manager_Tester(MPI_Comm mpi_comm, int printlevel)
       : morkon_manager(mpi_comm, printlevel) {}
 
+  void try_compute_face_normals() {
+    compute_face_normals<DeviceType, DIM, FACE_TYPE>(morkon_manager::m_surface_mesh, morkon_manager::m_fields);
+  }
 };
 
 template  <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>
@@ -134,7 +138,6 @@ Morkon_Manager_Tester<DeviceType, DIM, FACE_TYPE>::MakeInstance(MPI_Comm mpi_com
 
   return Teuchos::RCP<morkon_manager_t>(new morkon_manager_t(mpi_comm, printlevel) );
 }
-
 
 }
 

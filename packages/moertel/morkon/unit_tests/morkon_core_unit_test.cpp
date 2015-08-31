@@ -281,6 +281,29 @@ TEST(morkon,compute_normals_single_tri) {
 }//end TEST(morkon,compute_normals_single_tri) 
 
 
+TEST(morkon, manager_compute_face_normals)
+{
+  using namespace morkon_exp;
+  typedef Morkon_Manager_Tester<default_kokkos_device_t, 3, MRK_TRI3>  manager_3d_t;
+  typedef Teuchos::RCP< manager_3d_t >                        manager_3d_ptr;
+  typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>     interface_3d_t;
+  typedef Teuchos::RCP< interface_3d_t >                    interface_3d_ptr;
+
+  manager_3d_ptr manager = manager_3d_t::MakeInstance(0, 0);
+
+  const int interface_id = 17;
+  interface_3d_ptr interface = manager->create_interface(interface_id, 0);
+
+  Mrk_2x4_aligned_TriangleInterfaceFixture tris_2x4(interface);
+
+  EXPECT_EQ(true, manager->commit_interfaces());
+
+  manager->try_compute_face_normals();
+
+  // NEED TO ADD SOME CHECKS.
+}
+
+
 int main( int argc, char *argv[] ) {
   ::testing::InitGoogleTest(&argc,argv);
   return RUN_ALL_TESTS();

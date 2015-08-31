@@ -352,6 +352,11 @@ Morkon_Manager<DeviceType, DIM, FACE_TYPE>::migrate_to_device(
     m_fields.m_predicted_node_coords   = predicted_node_coords.d_view;
     m_is_ifc_boundary_node             = is_node_on_boundary.h_view;
 
+    Kokkos::resize(m_fields.m_node_normals, m_node_global_ids.dimension_0());
+    Kokkos::deep_copy(m_fields.m_node_normals, 0);
+    Kokkos::resize(m_fields.m_face_normals, m_face_global_ids.dimension_0());
+    Kokkos::deep_copy(m_fields.m_face_normals, 0);
+
     // TO DO: compute upward connectivities on the surface mesh, if needed.
 
     return true;
