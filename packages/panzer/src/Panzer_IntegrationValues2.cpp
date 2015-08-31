@@ -324,7 +324,7 @@ namespace panzer {
       size_type i_min = 0;
       Scalar d_min = -1;
       for (size_type other_ip = 0; other_ip < num_ip; ++other_ip) {
-        // For speek, skip other points that are already associated.
+        // For speed, skip other points that are already associated.
         if (taken[other_ip]) continue;
         // Compute the distance between the two points.
         Scalar d(0);
