@@ -25,6 +25,12 @@ int main (int argc, char *argv[]) {
   int nthreads = 1;
   clp.setOption("nthreads", &nthreads, "Number of threads");
 
+  int numa = 0;
+  clp.setOption("numa", &numa, "Number of numa node");
+
+  int core_per_numa = 0;
+  clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
+
   int max_task_dependence = 10;
   clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
 
@@ -50,7 +56,7 @@ int main (int argc, char *argv[]) {
   
   int r_val = 0;
   {
-    exec_space::initialize(nthreads);
+    exec_space::initialize(nthreads, numa, core_per_numa);
     exec_space::print_configuration(cout, true);
     
     int variant = 0;
