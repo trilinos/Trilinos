@@ -72,7 +72,8 @@ namespace panzer {
   //! Type of boundary condition.
   enum BCType {
     BCT_Dirichlet,
-    BCT_Neumann
+    BCT_Neumann,
+    BCT_Interface
   };
 
   //! Stores input information for a boundary condition.
@@ -124,7 +125,7 @@ namespace panzer {
     //! Returns a unique identifier for this bc - needed for unique parameter setting in LOCA and for map key comparisons (strict weak ordering).
     std::size_t bcID() const;
 
-    //! Returns the boundary condition type (Dirichlet or Neumann).
+    //! Returns the boundary condition type (Dirichlet or Neumann or Interface).
     BCType bcType() const;
 
     //! Returns the set id.
