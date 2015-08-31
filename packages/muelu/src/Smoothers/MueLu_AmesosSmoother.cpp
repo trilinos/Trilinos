@@ -76,6 +76,7 @@ namespace MueLu {
     if (type_ == "Klu2")            type_ = "Klu";
     if (type_ == "Amesos_umfpack")  type_ = "Umfpack";
     if (type_ == "Superlu_dist")    type_ = "Superludist";
+    if (type_ == "Amesos_mumps")    type_ = "Mumps";
 
     // Try to come up with something availble
     // Order corresponds to our preference
