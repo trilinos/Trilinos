@@ -91,7 +91,7 @@ TEST(morkon, interface_host_side_adapter_stores_data)
   manager_3d_ptr manager = manager_3d_t::MakeInstance(0, 0);
   interface_3d_ptr interface = manager->create_interface(0,0);
 
-  Mrk_2x4_TriangleInterfaceFixture tris_2x4(interface);
+  Mrk_2x4_aligned_TriangleInterfaceFixture tris_2x4(interface);
 
   const interface_3d_t::host_side_adapter_t *non_mortar_side_hsa =
         interface->get_HostSideAdapter(InterfaceBase::NON_MORTAR_SIDE);
@@ -164,14 +164,9 @@ TEST(morkon, manager_commit_interfaces_one_interface)
   const int interface_id = 17;
   interface_3d_ptr interface = manager->create_interface(interface_id, 0);
 
-  Mrk_2x4_TriangleInterfaceFixture tris_2x4(interface);
+  Mrk_2x4_aligned_TriangleInterfaceFixture tris_2x4(interface);
 
   EXPECT_EQ(true, manager->commit_interfaces());
-
-  typedef typename manager_3d_t::local_to_global_idx_t               local_to_global_idx_t;
-  typedef typename manager_3d_t::surface_mesh_t                             surface_mesh_t;
-  typedef typename manager_3d_t::fields_t                                         fields_t;
-  typedef typename manager_3d_t::face_to_interface_and_side_t face_to_interface_and_side_t;
 
   manager->get_node_global_ids();
   manager->get_node_coords();
@@ -208,8 +203,8 @@ TEST(morkon, manager_commit_interfaces_one_interface)
                 manager->hm_node_global_ids(manager->hm_face_to_nodes(i, j)));
     }
   }
-
 }
+
 
 TEST(morkon,compute_normals_single_tri) {
   using namespace morkon_exp;
@@ -284,6 +279,7 @@ TEST(morkon,compute_normals_single_tri) {
   }
 
 }//end TEST(morkon,compute_normals_single_tri) 
+
 
 int main( int argc, char *argv[] ) {
   ::testing::InitGoogleTest(&argc,argv);
