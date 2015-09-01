@@ -1,124 +1,146 @@
-<!-- 
-    INPUT TYPES: coordinates,
-                 (x,t,e)petra_crs_matrix,
-                 (x,t,e)petra_crs_graph,
-                 (x,t,e)petra_vector,
-                 (x,t,e)petra_multivector
-
-    INPUT ADAPTERS: BasicIdentifier,
-                    XpetraMultiVector,
-                    XpetraCrsGraph,
-                    XpetraCrsMatrix
--->
+<!--////////////////////////////////////////////////////////////////////////////
+ ////////////////////////////////////////////////////////////////////////////////
+ 
+ REQUIRED BLOCKS:
+ 1. Input parameters
+ 2. Problem parameters
+ 
+ OPTIONAL Blocks:
+ 3. Comparison
+ 
+ SUPPORTED INPUT FILE TYPES:
+ 1. Geometric Generator
+ 2. Pamgen
+ 3. Chaco
+ 4. Matrix Market
+ 
+ SUPPORTED PROBLEM TYPES:
+ 1. partitioning
+ 
+ SUPPORTED INPUT DATA TYPES:
+ 1. coordinates
+ 2. (x,t,e)petra_crs_matrix
+ 3. (x,t,e)petra_crs_graph
+ 4. (x,t,e)petra_vector
+ 5. (x,t,e)petra_multivector
+ 
+ SUPPORTED INPUT ADAPTERS:
+ 1. BasicIdentifier
+ 2. XpetraMultiVector
+ 3. XpetraCrsGraph
+ 4. XpetraCrsMatrix
+ 5. BasicVector
+ 5. PamgenMesh
+ 
+ ** REFER TO THE README FOR A MORE DETAILED EXPLANATION
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////-->
 
 <ParameterList name="testDriverExample">
-    
-    
-    <ParameterList name="InputParameters">
-        <Parameter name="x" type="int" value="40"/>
-        <Parameter name="y" type="int" value="60"/>
-        <Parameter name="z" type="int" value="20"/>
-        <Parameter name="ProblemType" type="string" value="Laplace3D"/>
-        <!--<Parameter name="inputType" type="string" value="tpetra_multivector"/>--> 
-    </ParameterList>
-        
-    <ParameterList name="Test1">
-        <Parameter name="Name" type="string" value="MeshCoordinateTest_rcb_coord"/>
-     
-        <ParameterList name="InputAdapterParameters">
-            <!--<Parameter name="inputType" type="string" value="tpetra_multivector"/>--> 
-            <Parameter name="inputType" type="string" value="coordinates"/> 
-            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
-        </ParameterList>
-
-
-        <ParameterList name="Zoltan2Parameters">
-            <!-- <Parameter name="algorithm" type="string" value="rcb"/>-->
-            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
-            <Parameter name="rectilinear" type="string" value="yes"/>            
-            <Parameter name="compute_metrics" type="string" value="true"/> 
-        </ParameterList>
-
-        <ParameterList name="Metrics">
-            <ParameterList name="object count">
-                <Parameter name="lower" type="double" value="0.99"/>
-                <Parameter name="upper" type="double" value="1.4"/>
-            </ParameterList>
-        </ParameterList>
-
-    </ParameterList>
-
-    <ParameterList name="Test2">
-        <Parameter name="Name" type="string" value="MeshCoordinateTest_rcb_tpet"/>
-     
-        <ParameterList name="InputAdapterParameters">
-            <Parameter name="inputType" type="string" value="tpetra_multivector"/> 
-            <Parameter name="number_of_vectors" type="int" value="3"/> 
-            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
-        </ParameterList>
-
-
-        <ParameterList name="Zoltan2Parameters">
-            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
-            <Parameter name="rectilinear" type="string" value="yes"/>            
-            <Parameter name="compute_metrics" type="string" value="true"/> 
-        </ParameterList>
-        
-        <ParameterList name="Metrics">
-            <ParameterList name="object count">
-                <Parameter name="lower" type="double" value="0.99"/>
-                <Parameter name="upper" type="double" value="1.4"/>
-            </ParameterList>
-        </ParameterList>
+  
+  
+  <ParameterList name="InputParameters">
+    <Parameter name="x" type="int" value="40"/>
+    <Parameter name="y" type="int" value="60"/>
+    <Parameter name="z" type="int" value="20"/>
+    <Parameter name="equation type" type="string" value="Laplace3D"/>
+    <!--<Parameter name="data type" type="string" value="tpetra_multivector"/>-->
+  </ParameterList>
+  
+  <ParameterList name="Test1">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <!--<Parameter name="data type" type="string" value="tpetra_multivector"/>-->
+      <Parameter name="data type" type="string" value="coordinates"/>
+      <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
     </ParameterList>
     
-    <ParameterList name="Test3">
-        <Parameter name="Name" type="string" value="MeshCoordinateTest_rcb_xpet"/>
-     
-        <ParameterList name="InputAdapterParameters">
-            <Parameter name="inputType" type="string" value="xpetra_multivector"/> 
-            <Parameter name="number_of_vectors" type="int" value="3"/>
-            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
-        </ParameterList>
-
-
-        <ParameterList name="Zoltan2Parameters">
-            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
-            <Parameter name="rectilinear" type="string" value="yes"/>            
-            <Parameter name="compute_metrics" type="string" value="true"/> 
-        </ParameterList>
     
-        <ParameterList name="Metrics">
-            <ParameterList name="object count">
-                <Parameter name="lower" type="double" value="0.99"/>
-                <Parameter name="upper" type="double" value="1.4"/>
-            </ParameterList>
-        </ParameterList>
-
+    <ParameterList name="Zoltan2Parameters">
+      <!-- <Parameter name="algorithm" type="string" value="rcb"/>-->
+      <Parameter name="bisection_num_test_cuts" type="int" value="7" />
+      <Parameter name="rectilinear" type="string" value="yes"/>
+      <Parameter name="compute_metrics" type="string" value="true"/>
     </ParameterList>
-
-
-<!--    <ParameterList name="Test4">
-        <Parameter name="Name" type="string" value="MeshCoordinateTest_rcb_epet"/>
-     
-        <ParameterList name="InputAdapterParameters">
-            <Parameter name="inputType" type="string" value="epetra_multivector"/> 
-            <Parameter name="number_of_vectors" type="int" value="3"/>
-            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
-        </ParameterList>
-
-
-        <ParameterList name="Zoltan2Parameters">
-            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
-            <Parameter name="rectilinear" type="string" value="yes"/>            
-            <Parameter name="compute_metrics" type="string" value="true"/> 
-        </ParameterList>
     
-        <ParameterList name="Metrics">
-            <ParameterList name="object count">
-                <Parameter name="lower" type="double" value="0.99"/>
-                <Parameter name="upper" type="double" value="1.4"/>
-            </ParameterList>
-        </ParameterList>
-    </ParameterList> -->
+    <ParameterList name="Metrics">
+      <ParameterList name="object count">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
+    </ParameterList>
+    
+  </ParameterList>
+  
+  <ParameterList name="Test2">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="tpetra_multivector"/>
+      <Parameter name="vector_dimension" type="int" value="3"/>
+      <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+    </ParameterList>
+    
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="bisection_num_test_cuts" type="int" value="7" />
+      <Parameter name="rectilinear" type="string" value="yes"/>
+      <Parameter name="compute_metrics" type="string" value="true"/>
+    </ParameterList>
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="object count">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  
+  <ParameterList name="Test3">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="xpetra_multivector"/>
+      <Parameter name="vector_dimension" type="int" value="3"/>
+      <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+    </ParameterList>
+    
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="bisection_num_test_cuts" type="int" value="7" />
+      <Parameter name="rectilinear" type="string" value="yes"/>
+      <Parameter name="compute_metrics" type="string" value="true"/>
+    </ParameterList>
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="object count">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
+    </ParameterList>
+    
+  </ParameterList>
+  
+  
+  <!--    <ParameterList name="Test4">
+   <Parameter name="kind" type="string" value="partitioning"/>
+   <ParameterList name="InputAdapterParameters">
+   <Parameter name="data type" type="string" value="epetra_multivector"/>
+   <Parameter name="vector_dimension" type="int" value="3"/>
+   <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+   </ParameterList>
+   
+   
+   <ParameterList name="Zoltan2Parameters">
+   <Parameter name="bisection_num_test_cuts" type="int" value="7" />
+   <Parameter name="rectilinear" type="string" value="yes"/>
+   <Parameter name="compute_metrics" type="string" value="true"/>
+   </ParameterList>
+   
+   <ParameterList name="Metrics">
+   <ParameterList name="object count">
+   <Parameter name="lower" type="double" value="0.99"/>
+   <Parameter name="upper" type="double" value="1.4"/>
+   </ParameterList>
+   </ParameterList>
+   </ParameterList> -->
 </ParameterList>

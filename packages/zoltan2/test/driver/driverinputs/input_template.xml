@@ -1,0 +1,163 @@
+<!--////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+    REQUIRED BLOCKS:
+        1. Input parameters
+        2. Problem parameters
+        
+    OPTIONAL Blocks:
+        3. Comparison
+
+    SUPPORTED INPUT FILE TYPES:
+        1. Geometric Generator
+        2. Pamgen 
+        3. Chaco
+        4. Matrix Market
+    
+    SUPPORTED PROBLEM TYPES:
+        1. partitioning
+    
+    SUPPORTED INPUT DATA TYPES:
+        1. coordinates
+        2. (x,t,e)petra_crs_matrix
+        3. (x,t,e)petra_crs_graph
+        4. (x,t,e)petra_vector
+        5. (x,t,e)petra_multivector
+    
+    SUPPORTED INPUT ADAPTERS: 
+        1. BasicIdentifier
+        2. XpetraMultiVector
+        3. XpetraCrsGraph
+        4. XpetraCrsMatrix
+        5. BasicVector
+        5. PamgenMesh
+
+** REFER TO THE README FOR A MORE DETAILED EXPLANATION
+
+////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////-->
+
+
+<!-- ALL DEFINITION BLOCKS MUST BE WRAPPED IN A MAIN BLOCK.
+     THE NAME OF THE MAIN BLOCK IS ARBITRAY.            -->
+
+<ParameterList name="test_driver template">
+    
+
+<!--////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+ 
+1. INPUT SOURCE BLOCK DEFINITION
+
+////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////-->
+    
+    <ParameterList name="InputParameters">
+        <Parameter name="x" type="int" value="40"/>
+        <Parameter name="y" type="int" value="60"/>
+        <Parameter name="z" type="int" value="20"/>
+        <Parameter name="equation type" type="string" value="Laplace3D"/>
+    </ParameterList>
+
+<!--////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+ 
+2. PROBLEM BLOCK DEFINITION
+
+////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////-->
+
+    <ParameterList name="TEST/PROBLEM TITLE #1">
+       
+        <!--####################################################
+             specify the problem type
+        #####################################################-->
+        
+        <Parameter name="kind" type="string" value="PROBLEM TYPE"/>
+     
+        
+        <!--####################################################
+             define block for the input adapter
+                * must define a data type
+                    ** multivector data types require you to 
+                       define a 'vector_dimension' parameter,
+                       which is an int value corresponding to
+                       the multivector dimension
+                * must define an adapter type
+        #####################################################-->
+
+        <ParameterList name="InputAdapterParameters">
+            <Parameter name="data type" type="string" value="INPUT DATA TYPE"/> 
+            <Parameter name="input adapter" type="string" value="INPUT ADAPTER TYPE"/>
+        </ParameterList>
+
+        
+        <!--####################################################
+             define block of Zoltan2 problem parameters
+                * all Zoltan2 parameters are valid
+                * tell Zoltan to compute metrics if you are 
+                  going to run a pass fail test defined
+                  by the following metrics block
+        #####################################################-->
+        
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="algorithm" type="string" value="SPECIFY ALGORITHM" />
+            <Parameter name="bisection_num_test_cuts" type="int" value="###" />
+            <Parameter name="rectilinear" type="string" value="YES/NO"/>            
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+
+        
+        <!--####################################################
+             (OPTIONAL) define block of metric tolerances
+                * block names must == Zoltan2 metric name
+                    * object count, weight ##, edge ## etc
+        #####################################################-->
+        
+        <ParameterList name="Metrics">
+            <ParameterList name="METRIC NAME">
+                <Parameter name="lower" type="double" value="##.####"/>
+                <Parameter name="upper" type="double" value="##.####"/>
+            </ParameterList>
+        </ParameterList>
+
+    </ParameterList>
+    
+    <ParameterList name="TEST/PROBLEM TITLE #2">
+            <!-- define second problem here... -->     
+    </ParameterList>
+
+    <ParameterList name="TEST/PROBLEM TITLE #3">
+            <!-- define 3rd problem here, etc... -->     
+    </ParameterList>
+
+
+
+<!--////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+ 
+3. (OPTIONA) COMPARISON BLOCK DEFINITION
+
+////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////-->
+
+    <!--####################################################
+        define comparison block to compare solutions of
+        problems A and B
+            * define problems to compare by block name
+              as shown below
+    #####################################################-->
+    
+    <ParameterList name="Comparison">
+        <Parameter name="A" type="string" value="TEST/PROBLEM TITLE #1"/>
+        <Parameter name="B" type="string" value="TEST/PROBLEM TITLE #2"/>
+    </ParameterList>
+
+    <ParameterList name="Comparison">
+        <Parameter name="A" type="string" value="TEST/PROBLEM TITLE #1"/>
+        <Parameter name="B" type="string" value="TEST/PROBLEM TITLE #3"/>
+    </ParameterList>
+    
+</ParameterList>
+
+<!-- EOF-->

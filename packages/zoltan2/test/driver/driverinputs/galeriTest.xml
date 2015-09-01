@@ -1,38 +1,62 @@
-<!-- 
-    INPUT TYPES: coordinates,
-                 (x,t,e)petra_crs_matrix,
-                 (x,t,e)petra_crs_graph,
-                 (x,t,e)petra_vector,
-                 (x,t,e)petra_multivector
-
-    INPUT ADAPTERS: BasicIdentifier,
-                    XpetraMultiVector,
-                    XpetraCrsGraph,
-                    XpetraCrsMatrix
--->
+<!--////////////////////////////////////////////////////////////////////////////
+ ////////////////////////////////////////////////////////////////////////////////
+ 
+ REQUIRED BLOCKS:
+ 1. Input parameters
+ 2. Problem parameters
+ 
+ OPTIONAL Blocks:
+ 3. Comparison
+ 
+ SUPPORTED INPUT FILE TYPES:
+ 1. Geometric Generator
+ 2. Pamgen
+ 3. Chaco
+ 4. Matrix Market
+ 
+ SUPPORTED PROBLEM TYPES:
+ 1. partitioning
+ 
+ SUPPORTED INPUT DATA TYPES:
+ 1. coordinates
+ 2. (x,t,e)petra_crs_matrix
+ 3. (x,t,e)petra_crs_graph
+ 4. (x,t,e)petra_vector
+ 5. (x,t,e)petra_multivector
+ 
+ SUPPORTED INPUT ADAPTERS:
+ 1. BasicIdentifier
+ 2. XpetraMultiVector
+ 3. XpetraCrsGraph
+ 4. XpetraCrsMatrix
+ 5. BasicVector
+ 5. PamgenMesh
+ 
+ ** REFER TO THE README FOR A MORE DETAILED EXPLANATION
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////-->
 
 <ParameterList name="testDriverExample">
-    
+  
 <!-- 1. INPUT BLOCK DEFINITION -->
-    
+
     <ParameterList name="InputParameters">
         <Parameter name="x" type="int" value="40"/>
         <Parameter name="y" type="int" value="60"/>
         <Parameter name="z" type="int" value="20"/>
-        <Parameter name="ProblemType" type="string" value="Laplace3D"/>
-        <!--<Parameter name="inputType" type="string" value="tpetra_multivector"/>--> 
+        <Parameter name="equation type" type="string" value="Laplace3D"/>
     </ParameterList>
         
 <!-- 2. PROBLEM BLOCK DEFINITIONS -->
 
     <ParameterList name="Problem 1">
-        <Parameter name="Name" type="string" value="MeshCoordinateTest_rcb_coord"/>
-        <Parameter name="kind" type="string" value="Partitioning"/>
+        <Parameter name="kind" type="string" value="partitioning"/>
      
         <ParameterList name="InputAdapterParameters">
-            <!--<Parameter name="inputType" type="string" value="tpetra_multivector"/>--> 
-            <Parameter name="inputType" type="string" value="coordinates"/> 
-            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
+            <!--<Parameter name="data type" type="string" value="tpetra_multivector"/>--> 
+            <Parameter name="data type" type="string" value="coordinates"/> 
+            <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
         </ParameterList>
 
         <ParameterList name="Zoltan2Parameters">
@@ -52,13 +76,12 @@
     </ParameterList>
 
     <ParameterList name="Problem 2">
-        <Parameter name="Name" type="string" value="MeshCoordinateTest_rcb_tpet"/>
-        <Parameter name="kind" type="string" value="Partitioning"/>
+        <Parameter name="kind" type="string" value="partitioning"/>
      
         <ParameterList name="InputAdapterParameters">
-            <Parameter name="inputType" type="string" value="tpetra_multivector"/> 
-            <Parameter name="number_of_vectors" type="int" value="3"/> 
-            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
+            <Parameter name="data type" type="string" value="tpetra_multivector"/> 
+            <Parameter name="vector_dimension" type="int" value="3"/> 
+            <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
         </ParameterList>
 
         <ParameterList name="Zoltan2Parameters">
@@ -76,13 +99,12 @@
     </ParameterList>
     
     <ParameterList name="Problem 3">
-        <Parameter name="Name" type="string" value="MeshCoordinateTest_rcb_xpet"/>
-        <Parameter name="kind" type="string" value="Partitioning"/>
+        <Parameter name="kind" type="string" value="partitioning"/>
  
         <ParameterList name="InputAdapterParameters">
-            <Parameter name="inputType" type="string" value="xpetra_multivector"/> 
-            <Parameter name="number_of_vectors" type="int" value="3"/>
-            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
+            <Parameter name="data type" type="string" value="xpetra_multivector"/> 
+            <Parameter name="vector_dimension" type="int" value="3"/>
+            <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
         </ParameterList>
 
 
@@ -103,13 +125,12 @@
 
 
 <!--    <ParameterList name="Problem 4">
-        <Parameter name="Name" type="string" value="MeshCoordinateTest_rcb_epet"/>
-        <Parameter name="kind" type="string" value="Partitioning"/>
+        <Parameter name="kind" type="string" value="partitioning"/>
      
         <ParameterList name="InputAdapterParameters">
-            <Parameter name="inputType" type="string" value="epetra_multivector"/> 
-            <Parameter name="number_of_vectors" type="int" value="3"/>
-            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
+            <Parameter name="data type" type="string" value="epetra_multivector"/> 
+            <Parameter name="vector_dimension" type="int" value="3"/>
+            <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
         </ParameterList>
 
 

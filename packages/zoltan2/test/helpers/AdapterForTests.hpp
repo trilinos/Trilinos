@@ -189,11 +189,11 @@ AdapterForTests::base_adapter_t * AdapterForTests::getAdapterForInput(UserInputF
                                                                       const RCP<const Comm<int> > &comm)
 {
   
-  if(!pList.isParameter("inputAdapter"))
+  if(!pList.isParameter("input adapter"))
     throw std::runtime_error("Input adapter not specified");
   
   // pick method for chosen adapter
-  string adapter_name = pList.get<string>("inputAdapter");
+  string adapter_name = pList.get<string>("input adapter");
   AdapterForTests::base_adapter_t * ia = nullptr; // input adapter
   if(adapter_name == "BasicIdentifier")
     ia = AdapterForTests::getBasicIdentiferAdapterForInput(uinput, pList, comm);
@@ -219,10 +219,10 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
                                                                                     const RCP<const Comm<int> > &comm)
 {
   
-  if(!pList.isParameter("inputType"))
+  if(!pList.isParameter("data type"))
     throw std::runtime_error("Input data type not specified");
   
-  string input_type = pList.get<string>("inputType"); // get the input type
+  string input_type = pList.get<string>("data type"); // get the input type
   
   if (!uinput->hasInputDataType(input_type))
     throw std::runtime_error("Input type:" + input_type + ", not available or misspelled."); // bad type
@@ -259,7 +259,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
   }
   else if(input_type == "tpetra_multivector")
   {
-    int nvec = pList.get<int>("number_of_vectors");
+    int nvec = pList.get<int>("vector_dimension");
     RCP<tMVector_t> data = uinput->getUITpetraMultiVector(nvec);
     globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getLocalLength();
@@ -284,7 +284,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
   }
   else if(input_type == "xpetra_multivector")
   {
-    int nvec = pList.get<int>("number_of_vectors");
+    int nvec = pList.get<int>("vector_dimension");
     RCP<xMVector_t> data = uinput->getUIXpetraMultiVector(nvec);
     globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getLocalLength();
@@ -310,7 +310,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
   }
   else if(input_type == "epetra_multivector")
   {
-    int nvec = pList.get<int>("number_of_vectors");
+    int nvec = pList.get<int>("vector_dimension");
     RCP<Epetra_MultiVector> data = uinput->getUIEpetraMultiVector(nvec);
     globalIds = (zzgid_t *)data->Map().MyGlobalElements();
     localCount = data->MyLength();
@@ -339,10 +339,10 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(Us
                                                                               const RCP<const Comm<int> > &comm)
 {
   
-  if(!pList.isParameter("inputType"))
+  if(!pList.isParameter("data type"))
     throw std::runtime_error("Input data type not specified");
   
-  string input_type = pList.get<string>("inputType");
+  string input_type = pList.get<string>("data type");
   if (!uinput->hasInputDataType(input_type))
     throw std::runtime_error("Input type:" + input_type + ", not available or misspelled."); // bad type
   
@@ -374,7 +374,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(Us
   }
   else if(input_type == "tpetra_multivector")
   {
-    int nvec = pList.get<int>("number_of_vectors");
+    int nvec = pList.get<int>("vector_dimension");
     RCP<tMVector_t> data = uinput->getUITpetraMultiVector(nvec);
     RCP<const tMVector_t> const_data = rcp_const_cast<const tMVector_t>(data);
     if(weights.empty())
@@ -384,7 +384,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(Us
   }
   else if(input_type == "xpetra_multivector")
   {
-    int nvec = pList.get<int>("number_of_vectors");
+    int nvec = pList.get<int>("vector_dimension");
     RCP<xMVector_t> data = uinput->getUIXpetraMultiVector(nvec);
     RCP<const xMVector_t> const_data = rcp_const_cast<const xMVector_t>(data);
     if(weights.empty())
@@ -397,7 +397,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(Us
   
   else if(input_type == "epetra_multivector")
   {
-    int nvec = pList.get<int>("number_of_vectors");
+    int nvec = pList.get<int>("vector_dimension");
     RCP<Epetra_MultiVector> data = uinput->getUIEpetraMultiVector(nvec);
     RCP<const Epetra_MultiVector> const_data = rcp_const_cast<const Epetra_MultiVector>(data);
     
@@ -421,10 +421,10 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
                                                                                     const ParameterList &pList,
                                                                                     const RCP<const Comm<int> > &comm)
 {
-  if(!pList.isParameter("inputType"))
+  if(!pList.isParameter("data type"))
     throw std::runtime_error("Input data type not specified");
   
-  string input_type = pList.get<string>("inputType");
+  string input_type = pList.get<string>("data type");
   if (!uinput->hasInputDataType(input_type))
     throw std::runtime_error("Input type:" + input_type + ", not available or misspelled."); // bad type
   
@@ -539,7 +539,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
     // get an adapter for the coordinates
     // need to make a copy of the plist and change the vector type
     Teuchos::ParameterList pCopy(pList);
-    pCopy = pCopy.set<std::string>("inputType","coordinates");
+    pCopy = pCopy.set<std::string>("data type","coordinates");
     
     AdapterForTests::base_adapter_t * ca = nullptr;
     ca = getXpetraMVAdapterForInput(uinput,pCopy, comm);
@@ -559,10 +559,10 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
                                                                                      const ParameterList &pList,
                                                                                      const RCP<const Comm<int> > &comm)
 {
-  if(!pList.isParameter("inputType"))
+  if(!pList.isParameter("data type"))
     throw std::runtime_error("Input data type not specified");
   
-  string input_type = pList.get<string>("inputType");
+  string input_type = pList.get<string>("data type");
   if (!uinput->hasInputDataType(input_type))
     throw std::runtime_error("Input type:" + input_type + ", not available or misspelled."); // bad type
   
@@ -661,8 +661,8 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
     // get an adapter for the coordinates
     // need to make a copy of the plist and change the vector type
     Teuchos::ParameterList pCopy(pList);
-    pCopy = pCopy.set<std::string>("inputType","coordinates");
-//    pCopy = pCopy.set<int>("number_of_vectors", 1); // what is the proper value!?
+    pCopy = pCopy.set<std::string>("data type","coordinates");
+//    pCopy = pCopy.set<int>("vector_dimension", 1); // what is the proper value!?
     
     AdapterForTests::base_adapter_t * ca = nullptr;
     ca = getXpetraMVAdapterForInput(uinput,pCopy,comm);
@@ -682,10 +682,10 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
                                                                                  const ParameterList &pList,
                                                                                  const RCP<const Comm<int> > &comm)
 {
-  if(!pList.isParameter("inputType"))
+  if(!pList.isParameter("data type"))
     throw std::runtime_error("Input data type not specified");
   
-  string input_type = pList.get<string>("inputType");
+  string input_type = pList.get<string>("data type");
   if (!uinput->hasInputDataType(input_type))
     throw std::runtime_error("Input type:" + input_type + ", not available or misspelled."); // bad type
   
@@ -773,7 +773,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
   }
   else if(input_type == "tpetra_multivector")
   {
-    int nvec = pList.get<int>("number_of_vectors");
+    int nvec = pList.get<int>("vector_dimension");
     
     RCP<tMVector_t> data = uinput->getUITpetraMultiVector(nvec);
     globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
@@ -815,7 +815,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
   }
   else if(input_type == "xpetra_multivector")
   {
-    int nvec = pList.get<int>("number_of_vectors");
+    int nvec = pList.get<int>("vector_dimension");
     RCP<xMVector_t> data = uinput->getUIXpetraMultiVector(nvec);
     globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getLocalLength();
@@ -860,7 +860,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
   }
   else if(input_type == "epetra_multivector")
   {
-    int nvec = pList.get<int>("number_of_vectors");
+    int nvec = pList.get<int>("vector_dimension");
     RCP<Epetra_MultiVector> data = uinput->getUIEpetraMultiVector(nvec);
     globalIds = (zgno_t *)data->Map().MyGlobalElements();
     localCount = data->MyLength();
