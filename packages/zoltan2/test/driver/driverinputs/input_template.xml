@@ -1,0 +1,193 @@
+<!--////////////////////////////////////////////////////////////////////////////
+ ////////////////////////////////////////////////////////////////////////////////
+ 
+ REQUIRED BLOCKS:
+ 1. Input parameters
+ 2. Problem parameters
+ 
+ OPTIONAL Blocks:
+ 3. Comparison
+ 
+ SUPPORTED INPUT FILE TYPES:
+ 1. Geometric Generator
+ 2. Pamgen
+ 3. Chaco
+ 4. Matrix Market
+ 
+ SUPPORTED PROBLEM TYPES:
+ 1. partitioning
+ 
+ SUPPORTED INPUT DATA TYPES:
+ 1. coordinates
+ 2. (x,t,e)petra_crs_matrix
+ 3. (x,t,e)petra_crs_graph
+ 4. (x,t,e)petra_vector
+ 5. (x,t,e)petra_multivector
+ 
+ SUPPORTED INPUT ADAPTERS:
+ 1. BasicIdentifier
+ 2. XpetraMultiVector
+ 3. XpetraCrsGraph
+ 4. XpetraCrsMatrix
+ 5. BasicVector
+ 5. PamgenMesh
+ 
+ ** REFER TO THE README FOR A MORE DETAILED EXPLANATION
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////-->
+
+
+<!-- ALL DEFINITION BLOCKS MUST BE WRAPPED IN A MAIN BLOCK.
+ THE NAME OF THE MAIN BLOCK IS ARBITRAY.            -->
+
+<ParameterList name="test_driver template">
+  
+  
+  <!--////////////////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////////////////
+   
+   1. INPUT SOURCE BLOCK DEFINITION
+   
+   ////////////////////////////////////////////////////////////////////////////////
+   /////////////////////////////////////////////////////////////////////////////-->
+  
+  <!--####################################################
+   Specify input source
+   * Note only once input source per driver input
+   is allowed, i.e. one data source for all
+   tests.  There are 2 main input block formats,
+   both of which are illustrated below. You may only
+   use one of these blocks per input file!!!!
+   
+   The first is for a data source to be read
+   from file. If your data source is a pamgen mesh, then
+   you must define a dimension parameter specifying the 
+   dimension of the mesh.
+   
+   The second is for galari generate data on
+   a structured grid. Galari grids can be 1, 2, or 3D.
+   The dimension is infered by which coordinate parameters
+   (x,y,z) are defined, e.g. if only the x parameter is 
+   defined then the problem is assumed to be 1D.
+   #####################################################-->
+  
+  <ParameterList name="InputParameters">
+    <Parameter name="input path" type="string" value="PATH/TO/INPUT/DIRECTORY"/>
+    <Parameter name="input file" type="string" value="FILE NAME (NO EXTENSION)"/>
+    <Parameter name="file type" type="string" value="INPUT FILE TYPE"/>
+    <!--    PAMGEN MESHES REQUIRE THAT A DIMINSION PARAMTER BE SET-->
+    <!--    <Parameter name="dimension" type="int" value="##"/>-->
+  </ParameterList>
+  
+  <!--  GALERI GRIDS MAY BE 1,2, OR 3D.-->
+  <!--  FOR A 1D PROBLEM EXCLUDE x AND y PARAMETERS, ETC.-->
+  <ParameterList name="InputParameters">
+    <Parameter name="x" type="int" value="##"/>
+    <Parameter name="y" type="int" value="##"/>
+    <Parameter name="z" type="int" value="##"/>
+    <Parameter name="equation type" type="string" value="GALERI EQUATION"/>
+  </ParameterList>
+  
+  <!--////////////////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////////////////
+   
+   2. PROBLEM BLOCK DEFINITION
+   
+   ////////////////////////////////////////////////////////////////////////////////
+   /////////////////////////////////////////////////////////////////////////////-->
+  
+  <ParameterList name="TEST/PROBLEM TITLE #1">
+    
+    <!--####################################################
+     Specify the problem type
+     #####################################################-->
+    
+    <Parameter name="kind" type="string" value="PROBLEM TYPE"/>
+    
+    
+    <!--####################################################
+     Define block for the input adapter
+     * must define a data type
+     ** multivector data types require you to
+     define a 'vector_dimension' parameter,
+     which is an int value corresponding to
+     the multivector dimension
+     * must define an adapter type
+     #####################################################-->
+    
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="INPUT DATA TYPE"/>
+      <Parameter name="input adapter" type="string" value="INPUT ADAPTER TYPE"/>
+    </ParameterList>
+    
+    
+    <!--####################################################
+     Define block of Zoltan2 problem parameters
+     * all Zoltan2 parameters are valid
+     * tell Zoltan to compute metrics if you are
+     going to run a pass fail test defined
+     by the following metrics block
+     #####################################################-->
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="algorithm" type="string" value="SPECIFY ALGORITHM" />
+      <Parameter name="bisection_num_test_cuts" type="int" value="###" />
+      <Parameter name="rectilinear" type="string" value="YES/NO"/>
+      <Parameter name="compute_metrics" type="string" value="true"/>
+    </ParameterList>
+    
+    
+    <!--####################################################
+     (OPTIONAL) Define block of metric tolerances
+     * block names must == Zoltan2 metric name
+     * object count, weight ##, edge ## etc
+     #####################################################-->
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="METRIC NAME">
+        <Parameter name="lower" type="double" value="##.####"/>
+        <Parameter name="upper" type="double" value="##.####"/>
+      </ParameterList>
+    </ParameterList>
+    
+  </ParameterList>
+  
+  <ParameterList name="TEST/PROBLEM TITLE #2">
+    <!-- Define second problem here... -->
+  </ParameterList>
+  
+  <ParameterList name="TEST/PROBLEM TITLE #3">
+    <!-- Define 3rd problem here, etc... -->
+  </ParameterList>
+  
+  
+  
+  <!--////////////////////////////////////////////////////////////////////////////
+   ////////////////////////////////////////////////////////////////////////////////
+   
+   3. (OPTIONA) COMPARISON BLOCK DEFINITION
+   
+   ////////////////////////////////////////////////////////////////////////////////
+   /////////////////////////////////////////////////////////////////////////////-->
+  
+  <!--####################################################
+   Define comparison block to compare solutions of
+   problems A and B
+   * define problems to compare by block name
+   as shown below
+   #####################################################-->
+  
+  <ParameterList name="Comparison">
+    <Parameter name="A" type="string" value="TEST/PROBLEM TITLE #1"/>
+    <Parameter name="B" type="string" value="TEST/PROBLEM TITLE #2"/>
+  </ParameterList>
+  
+  <ParameterList name="Comparison">
+    <Parameter name="A" type="string" value="TEST/PROBLEM TITLE #1"/>
+    <Parameter name="B" type="string" value="TEST/PROBLEM TITLE #3"/>
+  </ParameterList>
+  
+</ParameterList>
+
+<!-- EOF-->

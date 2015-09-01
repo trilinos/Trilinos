@@ -456,14 +456,14 @@ ecomm_(), eM_(), eG_(),
 #endif
 chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
 {
-  if(pList.isParameter("inputFile"))
+  if(pList.isParameter("input file"))
   {
 
     string path(".");
-    if(pList.isParameter("inputPath"))
-      path = pList.get<string>("inputPath");
+    if(pList.isParameter("input path"))
+      path = pList.get<string>("input path");
     
-    string testData = pList.get<string>("inputFile");
+    string testData = pList.get<string>("input file");
     
     // find out if we are working from the zoltan1 test diretory
     USERINPUT_FILE_FORMATS file_format = MATRIX_MARKET;
@@ -472,13 +472,13 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
       file_format = CHACO;
     
     // find out if we are using the geometric generator
-    if(pList.isParameter("fileType") && pList.get<string>("fileType") == "Geometric Generator")
+    if(pList.isParameter("file type") && pList.get<string>("file type") == "Geometric Generator")
       file_format = GEOMGEN;
-    else if(pList.isParameter("fileType") && pList.get<string>("fileType") == "Pamgen")
+    else if(pList.isParameter("file type") && pList.get<string>("file type") == "Pamgen")
     {
       file_format = PAMGEN;
     }
-    else if(pList.isParameter("fileType") && pList.get<string>("fileType") == "Chaco")
+    else if(pList.isParameter("file type") && pList.get<string>("file type") == "Chaco")
       file_format = CHACO; // this flag calls read ZoltanTestData, which calls the chaco readers...
     
     // read the input file
@@ -503,7 +503,7 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
     if(pList.isParameter("z")) z = pList.get<int>("z");
     
     string problemType = "";
-    if(pList.isParameter("ProblemType")) problemType = pList.get<string>("ProblemType");
+    if(pList.isParameter("equation type")) problemType = pList.get<string>("equation type");
     
     if (problemType.size() == 0){ /** default behavior */
       int dim = 0;

@@ -254,7 +254,7 @@ void run(const UserInputForTests &uinput,
 
   int rank = comm->getRank();
   if(rank == 0)
-    cout << "\nPeforming test: " << problem_parameters.get<string>("Name") << endl;
+    cout << "\nRunning test: " << problem_parameters.name() << endl;
   
   
   ////////////////////////////////////////////////////////////
@@ -278,7 +278,7 @@ void run(const UserInputForTests &uinput,
   // 2. construct partitioning problem
   ////////////////////////////////////////////////////////////
   problem_t * problem;
-  string adapter_name = adapterPlist.get<string>("inputAdapter"); // If we are here we have an input adapter, no need to check for one.
+  string adapter_name = adapterPlist.get<string>("input adapter"); // If we are here we have an input adapter, no need to check for one.
   // get Zoltan2 partion parameters
   ParameterList zoltan2_parameters = const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
   zoltan2_parameters.set("num_global_parts", comm->getSize());

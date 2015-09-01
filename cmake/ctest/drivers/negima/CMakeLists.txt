@@ -141,7 +141,7 @@ elseif($ENV{CTEST_CONFIGURATION} MATCHES "nvcc_wrapper")
     ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_cuda_negima.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
-    TIMEOUT_MINUTES 330
+    TIMEOUT_MINUTES 420
     )
 
 
