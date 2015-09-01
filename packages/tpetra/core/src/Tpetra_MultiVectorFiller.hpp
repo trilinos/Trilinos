@@ -102,10 +102,10 @@ namespace Details {
   }
 
   /// \class MultiVectorFillerData
-  /// \brief Implementation of fill and local assembly for \c MultiVectorFiller.
+  /// \brief Implementation of fill and local assembly for MultiVectorFiller.
   /// \author Mark Hoemmen
   ///
-  /// \tparam MV Specialization of \c Tpetra::MultiVector.
+  /// \tparam MV Specialization of Tpetra::MultiVector.
   template<class MV>
   class MultiVectorFillerData {
   public:
@@ -120,13 +120,13 @@ namespace Details {
     ///
     /// \param map [in] Map, which this object may or may not use as a
     ///   hint to separate local from nonlocal data.  This need not be
-    ///   the same Map as that of the multivector output of \c
+    ///   the same Map as that of the multivector output of
     ///   globalAssemble().
     ///
-    /// Before using this object, you should call \c setNumColumns()
-    /// to set the number of columns in the output multivector.
-    /// Otherwise, the two-argument version of \c
-    /// sumIntoGlobalValues() won't actually do anything.
+    /// Before using this object, you should call setNumColumns() to
+    /// set the number of columns in the output multivector.
+    /// Otherwise, the two-argument version of sumIntoGlobalValues()
+    /// won't actually do anything.
     MultiVectorFillerData (const Teuchos::RCP<const map_type>& map) :
       map_ (map),
       numCols_ (0)
@@ -136,18 +136,18 @@ namespace Details {
     ///
     /// \param map [in] Map, which this object may or may not use as a
     ///   hint to separate local from nonlocal data.  This need not be
-    ///   the same Map as that of the multivector output of \c
+    ///   the same Map as that of the multivector output of
     ///   globalAssemble().
     ///
     /// \param numColumns [in] The (expected) number of columns in the
     ///   output multivector.  You can always change this later by
-    ///   calling \c setNumColumns().
+    ///   calling setNumColumns().
     ///
     /// \note If the number of columns given here is not the same as
     ///   the number of columns in the output multivector, you should
-    ///   call \c setNumColumns() first before inserting any data.
-    ///   Otherwise, the two-argument version of \c
-    ///   sumIntoGlobalValues() won't do the right thing.
+    ///   call setNumColumns() first before inserting any data.
+    ///   Otherwise, the two-argument version of sumIntoGlobalValues()
+    ///   won't do the right thing.
     MultiVectorFillerData (const Teuchos::RCP<const map_type>& map,
                            const size_t numColumns) :
       map_ (map),
@@ -235,7 +235,7 @@ namespace Details {
     /// X is distributed by the source Map (with possible overlap) of
     /// the Export operation.  The source Map of the Export includes
     /// both the elements owned by this object's constructor's input
-    /// Map, and the indices inserted by \c sumIntoGlobalValues().
+    /// Map, and the indices inserted by sumIntoGlobalValues().
     ///
     /// Precondition: The set of global indices in X's Map equals the
     /// the union of the entries of nonlocalIndices_[j] for all valid
@@ -283,7 +283,7 @@ namespace Details {
       }
     }
 
-    //! \c locallyAssemble() for the usual ADD combine mode.
+    //! Overload of locallyAssemble() for the usual ADD combine mode.
     void
     locallyAssemble (MV& X)
     {
@@ -360,10 +360,11 @@ namespace Details {
   };
 
   /// \class MultiVectorFillerData2
-  /// \brief Second implementation of fill and local assembly for \c MultiVectorFiller.
+  /// \brief Second implementation of fill and local assembly for
+  ///   MultiVectorFiller.
   /// \author Mark Hoemmen
   ///
-  /// \tparam MV Specialization of \c Tpetra::MultiVector.
+  /// \tparam MV Specialization of Tpetra::MultiVector.
   template<class MV>
   class MultiVectorFillerData2 : public Teuchos::Describable {
   public:
@@ -378,12 +379,12 @@ namespace Details {
     ///
     /// \param map [in] Map over which to distribute the initial fill.
     ///   This need not be the same Map as that of the multivector
-    ///   output of \c globalAssemble().
+    ///   output of globalAssemble().
     ///
-    /// Before using this object, you should call \c setNumColumns()
-    /// to set the number of columns in the output multivector.
-    /// Otherwise, the two-argument version of \c
-    /// sumIntoGlobalValues() won't actually do anything.
+    /// Before using this object, you should call setNumColumns() to
+    /// set the number of columns in the output multivector.
+    /// Otherwise, the two-argument version of sumIntoGlobalValues()
+    /// won't actually do anything.
     MultiVectorFillerData2 (const Teuchos::RCP<const map_type>& map,
                             const Teuchos::EVerbosityLevel verbLevel=Teuchos::VERB_DEFAULT,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out=Teuchos::null) :
@@ -397,19 +398,19 @@ namespace Details {
     ///
     /// \param map [in] Map over which to distribute the initial fill.
     ///   This need not be the same Map as that of the multivector
-    ///   output of \c globalAssemble(), but the Map must have the
-    ///   same communicator as the multivector output of \c
+    ///   output of globalAssemble(), but the Map must have the
+    ///   same communicator as the multivector output of
     ///   globalAssemble().
     ///
     /// \param numColumns [in] The (expected) number of columns in the
     ///   output multivector.  You can always change this later by
-    ///   calling \c setNumColumns().
+    ///   calling setNumColumns().
     ///
     /// \note If the number of columns given here is not the same as
     ///   the number of columns in the output multivector, you should
-    ///   call \c setNumColumns() first before inserting any data.
-    ///   Otherwise, the two-argument version of \c
-    ///   sumIntoGlobalValues() won't do the right thing.
+    ///   call setNumColumns() first before inserting any data.
+    ///   Otherwise, the two-argument version of sumIntoGlobalValues()
+    ///   won't do the right thing.
     MultiVectorFillerData2 (const Teuchos::RCP<const map_type>& map,
                             const size_t numColumns,
                             const Teuchos::EVerbosityLevel verbLevel=Teuchos::VERB_DEFAULT,
@@ -618,7 +619,7 @@ namespace Details {
     ///
     /// Setting the number of columns to zero effectively clears out
     /// all local storage, but may not necessarily deallocate nonlocal
-    /// storage.  Call \c clear() to clear out all nonlocal storage.
+    /// storage.  Call clear() to clear out all nonlocal storage.
     void
     setNumColumns (const size_t newNumColumns)
     {
@@ -762,7 +763,7 @@ namespace Details {
     /// X is distributed by the source Map (with possible overlap) of
     /// the Export operation.  The source Map of the Export includes
     /// both the elements owned by this object's constructor's input
-    /// Map, and the indices inserted by \c sumIntoGlobalValues().
+    /// Map, and the indices inserted by sumIntoGlobalValues().
     ///
     /// Precondition: The set of global indices in X's Map equals the
     /// union of the global indices in map_ and (the union of the
@@ -986,24 +987,24 @@ namespace Tpetra {
     /// MultiVectorFiller as you would a standard MV.
     ///
     /// \param map [in] A Map with the same communicator and Kokkos
-    ///   Node as the output multivector of \c globalAssemble().  This
+    ///   Node as the output multivector of globalAssemble().  This
     ///   need not be the same Map as that output multivector's Map.
     ///
     /// \param numCols [in] Expected number of columns in the output
-    ///   multivector of \c globalAssemble().
+    ///   multivector of globalAssemble().
     ///
     /// \note If the number of columns given here is not the same as
     ///   the number of columns in the output multivector, the
-    ///   two-argument version of \c sumIntoGlobalValues() won't do
+    ///   two-argument version of sumIntoGlobalValues() won't do
     ///   the right thing.  Use the three-argument version of that
     ///   method if you don't know how many columns there will be in
     ///   advance.
     ///
     /// \note Not providing the output multivector in the constructor
-    ///   gives \c globalAssemble() more flexibility.  For example,
-    ///   its output multivector may have any distribution with the
-    ///   same global number of rows.  Furthermore, decoupling
-    ///   insertion from the output multivector lets this object store
+    ///   gives globalAssemble() more flexibility.  For example, its
+    ///   output multivector may have any distribution with the same
+    ///   global number of rows.  Furthermore, decoupling insertion
+    ///   from the output multivector lets this object store
     ///   preassembled data in whatever format it likes.  It doesn't
     ///   have to insert directly into the output multivector until
     ///   assembly time.  (This may improve performance by amortizing
@@ -1017,7 +1018,7 @@ namespace Tpetra {
     /// multivector output arguments.  If those arguments have the
     /// same Map, this method will attempt to reuse the Export object
     /// each time.  It will only reuse if the new target Map is the
-    /// same as (in the sense of \c isSameAs()) the previous target
+    /// same as (in the sense of Map::isSameAs()) the previous target
     /// Map, unless you force reuse with the second argument (that
     /// saves a few global reductions for the check).
     ///
@@ -1026,7 +1027,7 @@ namespace Tpetra {
     ///   object was created.
     ///
     /// \param forceReuseMap [in] If true, assume that X_out has the
-    ///   same Map (in the sense of \c isSameAs()) as the target Map
+    ///   same Map (in the sense of Map::isSameAs()) as the target Map
     ///   in the previous call to this method.  If this method was not
     ///   called before, then assume that X_out has the same Map as
     ///   the argument to the constructor of this object.
@@ -1089,27 +1090,27 @@ namespace Tpetra {
     //! Map with which this object was created ("ctor" == "constructor").
     Teuchos::RCP<const map_type> ctorMap_;
 
-    /// \brief Source Map of the last call to \c globalAssemble().
+    /// \brief Source Map of the last call to globalAssemble().
     ///
     /// A possibly overlapping Map that describes the distribution of
     /// input data, and is the source of the Export.
     Teuchos::RCP<const map_type> sourceMap_;
 
-    /// \brief The target Map of the last call to \c globalAssemble().
+    /// \brief The target Map of the last call to globalAssemble().
     ///
     /// A nonoverlapping Map which is the target of the Export, and
-    /// describes the distribution of the output multivector of \c
+    /// describes the distribution of the output multivector of
     /// globalAssemble().
     Teuchos::RCP<const map_type> targetMap_;
 
-    /// \brief The source MV of the Export operation in \c globalAssemble().
+    /// \brief The source MV of the Export operation in globalAssemble().
     ///
-    /// The \c globalAssemble() method uses this multivector as the
+    /// The globalAssemble() method uses this multivector as the
     /// source of the Export operation.  The Export redistributes the
     /// data from a possibly overlapping distribution (reflecting how
     /// elements were inserted) to a nonoverlapping distribution (that
-    /// of the output multivector \c X_out of \c globalAssemble()).
-    /// This is the simplest way to implement redistribution
+    /// of the output multivector \c X_out of globalAssemble()).  This
+    /// is the simplest way to implement redistribution.
     ///
     /// We avoid resizing and reallocating \c sourceVec_ by using a
     /// contiguous subview as the source of the Export, if \c X_out
@@ -1127,7 +1128,7 @@ namespace Tpetra {
 
     /// \brief Assemble the local data into \c X_in.
     ///
-    /// This method is called by \c globalAssemble(), in which \c X_in
+    /// This method is called by globalAssemble(), in which \c X_in
     /// is the multivector with the (possibly overlapping) source
     /// distribution.
     void locallyAssemble (MV& X_in) {
@@ -1388,10 +1389,10 @@ namespace Tpetra {
   namespace Test {
 
     /// \class MultiVectorFillerTester
-    /// \brief Tests for \c MultiVectorFiller
+    /// \brief Tests for MultiVectorFiller
     /// \author Mark Hoemmen
     ///
-    /// \tparam MV A specialization of \c Tpetra::MultiVector.
+    /// \tparam MV A specialization of Tpetra::MultiVector.
     template<class MV>
     class MultiVectorFillerTester {
     public:
@@ -1404,9 +1405,9 @@ namespace Tpetra {
       /// \brief Test global assembly when constructor Map = target Map.
       ///
       /// Constructor Map = target Map is a common case for finite
-      /// element assembly.  This method current only tests the version
-      /// of \c sumIntoGlobalValues() that works on one column at a
-      /// time.
+      /// element assembly.  This method current only tests the
+      /// version of MultiVectorFiller::sumIntoGlobalValues() that
+      /// works on one column at a time.
       ///
       /// If any test fails, this method throws an exception.
       static void
@@ -1594,7 +1595,7 @@ namespace Tpetra {
       }
     };
 
-    //! Instantiate a \c MultiVectorFillerTester and run the test.
+    //! Instantiate a MultiVectorFillerTester and run the test.
     template<class ScalarType,
              class LocalOrdinalType,
              class GlobalOrdinalType,
@@ -1649,7 +1650,7 @@ namespace Tpetra {
       }
     }
 
-    /// \brief Test the \c sortAndMergeIn() utility function.
+    /// \brief Test the sortAndMergeIn() utility function.
     ///
     /// If any test fails, this function throws std::logic_error with
     /// an informative message.  If all tests pass, this function
