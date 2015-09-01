@@ -342,8 +342,10 @@ namespace MueLu {
 
     (Shamelessly grabbed from tpetra/examples.)
     */
-    static Scalar PowerMethod(const Matrix& A, bool scaleByDiag = true,
-                              LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123); // FIXME
+    static SC PowerMethod(const Matrix& A, bool scaleByDiag = true,
+                          LO niters = 10, Magnitude tolerance = 1e-2, bool verbose = false, unsigned int seed = 123) {
+      return Utils::PowerMethod(A, scaleByDiag, niters, tolerance, verbose, seed);
+    }
 
     static void MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse = true,
                                  bool doFillComplete = true, bool doOptimizeStorage = true); // FIXME
