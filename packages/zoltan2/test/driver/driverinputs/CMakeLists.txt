@@ -1,8 +1,8 @@
 # command that copies files during build
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
     SOURCE_FILES
-        input_071315.xml
-        input_072315.xml
+#        input_071315.xml
+#        input_072315.xml
         rcbTest.xml
         multiJaggedTest.xml
         GeomGenWeight.txt
@@ -11,6 +11,9 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_input_files_for_driver
         chacoVwgtTest.xml    
         chacoVwgt2Test.xml    
         chacoEdgeWeightTest.xml
+        geometricTest.xml
+        geometricVwgtTest.xml
+        geometricVwgt2Test.xml
         Rectilinear.pmgen
         Rectilinear2D.pmgen
         Spherical.pmgen
