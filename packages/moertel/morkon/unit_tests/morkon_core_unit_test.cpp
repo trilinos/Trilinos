@@ -285,16 +285,16 @@ TEST(morkon, manager_compute_face_normals)
 {
   using namespace morkon_exp;
   typedef Morkon_Manager_Tester<default_kokkos_device_t, 3, MRK_TRI3>  manager_3d_t;
-  typedef Teuchos::RCP< manager_3d_t >                        manager_3d_ptr;
-  typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>     interface_3d_t;
-  typedef Teuchos::RCP< interface_3d_t >                    interface_3d_ptr;
+  typedef Teuchos::RCP< manager_3d_t >                               manager_3d_ptr;
+  typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>            interface_3d_t;
+  typedef Teuchos::RCP< interface_3d_t >                           interface_3d_ptr;
 
   manager_3d_ptr manager = manager_3d_t::MakeInstance(0, FACET_NORMAL_PROJECTION, 0);
 
   const int interface_id = 17;
   interface_3d_ptr interface = manager->create_interface(interface_id, 0);
 
-  Mrk_2x2_aligned_TriangleInterfaceFixture tris_2x2(interface);
+  Mrk_2x2_offset_TriangleInterfaceFixture tris_2x2(interface);
 
   EXPECT_EQ(true, manager->commit_interfaces());
 
@@ -311,6 +311,35 @@ TEST(morkon, manager_compute_face_normals)
   EXPECT_DOUBLE_EQ(1.0, manager->hm_face_normals(1, 2));
   EXPECT_DOUBLE_EQ(-1.0, manager->hm_face_normals(2, 2));
   EXPECT_DOUBLE_EQ(-1.0, manager->hm_face_normals(3, 2));
+}
+
+TEST(morkon, manager_find_possible_contact_face_pairs)
+{
+  using namespace morkon_exp;
+  typedef Morkon_Manager_Tester<default_kokkos_device_t, 3, MRK_TRI3>  manager_3d_t;
+  typedef Teuchos::RCP< manager_3d_t >                               manager_3d_ptr;
+  typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>            interface_3d_t;
+  typedef Teuchos::RCP< interface_3d_t >                           interface_3d_ptr;
+  typedef MorkonCommonlyUsed<default_kokkos_device_t, 3>              morkon_common;
+  typedef typename morkon_common::contact_search_results_dvt       coarse_search_pairs_dvt;
+
+  manager_3d_ptr manager = manager_3d_t::MakeInstance(0, FACET_NORMAL_PROJECTION, 0);
+
+  const int interface_id = 17;
+  interface_3d_ptr interface = manager->create_interface(interface_id, 0);
+
+  Mrk_2x2_offset_TriangleInterfaceFixture tris_2x2(interface);
+
+  EXPECT_EQ(true, manager->commit_interfaces());
+  EXPECT_EQ(true, manager->compute_normals());
+
+  coarse_search_pairs_dvt search_results("coarse_search_results");
+  search_results.modify<coarse_search_pairs_dvt::t_dev>();
+
+  // YOU ARE WORKING ON THIS..
+  // EXPECT_EQ(true, manager->find_possible_contact_face_pairs(search_results.d_view));
+  EXPECT_EQ(false, manager->find_possible_contact_face_pairs(search_results.d_view));
+  search_results.sync<coarse_search_pairs_dvt::t_host>();
 }
 
 

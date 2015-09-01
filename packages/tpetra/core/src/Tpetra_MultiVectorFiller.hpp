@@ -45,6 +45,7 @@
 #include "Tpetra_Vector.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include <iterator>
+#include <set>
 
 namespace Tpetra {
 namespace Details {
@@ -101,10 +102,10 @@ namespace Details {
   }
 
   /// \class MultiVectorFillerData
-  /// \brief Implementation of fill and local assembly for \c MultiVectorFiller.
+  /// \brief Implementation of fill and local assembly for MultiVectorFiller.
   /// \author Mark Hoemmen
   ///
-  /// \tparam MV Specialization of \c Tpetra::MultiVector.
+  /// \tparam MV Specialization of Tpetra::MultiVector.
   template<class MV>
   class MultiVectorFillerData {
   public:
@@ -119,13 +120,13 @@ namespace Details {
     ///
     /// \param map [in] Map, which this object may or may not use as a
     ///   hint to separate local from nonlocal data.  This need not be
-    ///   the same Map as that of the multivector output of \c
+    ///   the same Map as that of the multivector output of
     ///   globalAssemble().
     ///
-    /// Before using this object, you should call \c setNumColumns()
-    /// to set the number of columns in the output multivector.
-    /// Otherwise, the two-argument version of \c
-    /// sumIntoGlobalValues() won't actually do anything.
+    /// Before using this object, you should call setNumColumns() to
+    /// set the number of columns in the output multivector.
+    /// Otherwise, the two-argument version of sumIntoGlobalValues()
+    /// won't actually do anything.
     MultiVectorFillerData (const Teuchos::RCP<const map_type>& map) :
       map_ (map),
       numCols_ (0)
@@ -135,18 +136,18 @@ namespace Details {
     ///
     /// \param map [in] Map, which this object may or may not use as a
     ///   hint to separate local from nonlocal data.  This need not be
-    ///   the same Map as that of the multivector output of \c
+    ///   the same Map as that of the multivector output of
     ///   globalAssemble().
     ///
     /// \param numColumns [in] The (expected) number of columns in the
     ///   output multivector.  You can always change this later by
-    ///   calling \c setNumColumns().
+    ///   calling setNumColumns().
     ///
     /// \note If the number of columns given here is not the same as
     ///   the number of columns in the output multivector, you should
-    ///   call \c setNumColumns() first before inserting any data.
-    ///   Otherwise, the two-argument version of \c
-    ///   sumIntoGlobalValues() won't do the right thing.
+    ///   call setNumColumns() first before inserting any data.
+    ///   Otherwise, the two-argument version of sumIntoGlobalValues()
+    ///   won't do the right thing.
     MultiVectorFillerData (const Teuchos::RCP<const map_type>& map,
                            const size_t numColumns) :
       map_ (map),
@@ -234,7 +235,7 @@ namespace Details {
     /// X is distributed by the source Map (with possible overlap) of
     /// the Export operation.  The source Map of the Export includes
     /// both the elements owned by this object's constructor's input
-    /// Map, and the indices inserted by \c sumIntoGlobalValues().
+    /// Map, and the indices inserted by sumIntoGlobalValues().
     ///
     /// Precondition: The set of global indices in X's Map equals the
     /// the union of the entries of nonlocalIndices_[j] for all valid
@@ -282,7 +283,7 @@ namespace Details {
       }
     }
 
-    //! \c locallyAssemble() for the usual ADD combine mode.
+    //! Overload of locallyAssemble() for the usual ADD combine mode.
     void
     locallyAssemble (MV& X)
     {
@@ -359,10 +360,11 @@ namespace Details {
   };
 
   /// \class MultiVectorFillerData2
-  /// \brief Second implementation of fill and local assembly for \c MultiVectorFiller.
+  /// \brief Second implementation of fill and local assembly for
+  ///   MultiVectorFiller.
   /// \author Mark Hoemmen
   ///
-  /// \tparam MV Specialization of \c Tpetra::MultiVector.
+  /// \tparam MV Specialization of Tpetra::MultiVector.
   template<class MV>
   class MultiVectorFillerData2 : public Teuchos::Describable {
   public:
@@ -377,12 +379,12 @@ namespace Details {
     ///
     /// \param map [in] Map over which to distribute the initial fill.
     ///   This need not be the same Map as that of the multivector
-    ///   output of \c globalAssemble().
+    ///   output of globalAssemble().
     ///
-    /// Before using this object, you should call \c setNumColumns()
-    /// to set the number of columns in the output multivector.
-    /// Otherwise, the two-argument version of \c
-    /// sumIntoGlobalValues() won't actually do anything.
+    /// Before using this object, you should call setNumColumns() to
+    /// set the number of columns in the output multivector.
+    /// Otherwise, the two-argument version of sumIntoGlobalValues()
+    /// won't actually do anything.
     MultiVectorFillerData2 (const Teuchos::RCP<const map_type>& map,
                             const Teuchos::EVerbosityLevel verbLevel=Teuchos::VERB_DEFAULT,
                             const Teuchos::RCP<Teuchos::FancyOStream>& out=Teuchos::null) :
@@ -396,19 +398,19 @@ namespace Details {
     ///
     /// \param map [in] Map over which to distribute the initial fill.
     ///   This need not be the same Map as that of the multivector
-    ///   output of \c globalAssemble(), but the Map must have the
-    ///   same communicator as the multivector output of \c
+    ///   output of globalAssemble(), but the Map must have the
+    ///   same communicator as the multivector output of
     ///   globalAssemble().
     ///
     /// \param numColumns [in] The (expected) number of columns in the
     ///   output multivector.  You can always change this later by
-    ///   calling \c setNumColumns().
+    ///   calling setNumColumns().
     ///
     /// \note If the number of columns given here is not the same as
     ///   the number of columns in the output multivector, you should
-    ///   call \c setNumColumns() first before inserting any data.
-    ///   Otherwise, the two-argument version of \c
-    ///   sumIntoGlobalValues() won't do the right thing.
+    ///   call setNumColumns() first before inserting any data.
+    ///   Otherwise, the two-argument version of sumIntoGlobalValues()
+    ///   won't do the right thing.
     MultiVectorFillerData2 (const Teuchos::RCP<const map_type>& map,
                             const size_t numColumns,
                             const Teuchos::EVerbosityLevel verbLevel=Teuchos::VERB_DEFAULT,
@@ -416,8 +418,10 @@ namespace Details {
       map_ (map),
       numCols_ (numColumns),
       localVec_ (new MV (map, numColumns)),
+#if 0
       nonlocalIndices_ (numColumns),
       nonlocalValues_ (numColumns),
+#endif // 0
       verbLevel_ (verbLevel),
       out_ (out)
     {}
@@ -494,15 +498,17 @@ namespace Details {
                     out << endl;
                   } // for each row
 
+#if 0
                   out << "Nonlocal indices and values:" << endl;
                   for (size_t j = 0; j < (size_t)nonlocalIndices_.size(); ++j) {
                     ArrayView<const global_ordinal_type> inds = nonlocalIndices_[j]();
                     ArrayView<const scalar_type> vals = nonlocalValues_[j]();
-
-                    for (typename ArrayView<const global_ordinal_type>::size_type k = 0; k < inds.size(); ++k) {
+                    for (typename ArrayView<const global_ordinal_type>::size_type k = 0;
+                         k < inds.size(); ++k) {
                       out << "X(" << inds[k] << "," << j << ") = " << vals[k] << endl;
                     }
                   }
+#endif // 0
                 } // if vl == VERB_EXTREME
               } // if (vl != VERB_MEDIUM)
               else { // vl == VERB_LOW
@@ -516,7 +522,9 @@ namespace Details {
 
     //! All source indices (local and nonlocal) of the source Map, sorted and unique.
     Teuchos::Array<global_ordinal_type>
-    getSourceIndices () const
+    getSourceIndices (const Teuchos::Comm<int>& comm,
+                      const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null,
+                      const bool debug = false) const
     {
       using Teuchos::Array;
       using Teuchos::ArrayView;
@@ -524,10 +532,17 @@ namespace Details {
       using Teuchos::rcp;
       using Tpetra::global_size_t;
       typedef global_ordinal_type GO;
+      const char prefix[] = "Tpetra::MultiVectorFiller::getSourceIndices: ";
+
+      if (debug && ! out.is_null ()) {
+        std::ostringstream os;
+        os << "Proc " << comm.getRank () << ": getSourceIndices" << std::endl;
+        *out << os.str ();
+      }
 
       // Get the nonlocal row indices, sorted and made unique.
       // It's fair to assume that these are not contiguous.
-      Array<GO> nonlocalIndices = getSortedUniqueNonlocalIndices();
+      Array<GO> nonlocalIndices = getSortedUniqueNonlocalIndices (comm, out, debug);
 
       // Get the local row indices, not necessarily sorted or unique.
       ArrayView<const GO> localIndices = getLocalIndices ();
@@ -536,26 +551,62 @@ namespace Details {
       // them there.  We'll merge in the nonlocal indices below.  This
       // can be more efficient than just sorting all the indices, if
       // there are a lot of nonlocal indices.
-      Array<GO> indices (localIndices.size() + nonlocalIndices.size());
-      ArrayView<GO> localIndView = indices.view (0, localIndices.size());
-      std::copy (localIndices.begin(), localIndices.end(), localIndView.begin());
-      std::sort (localIndView.begin(), localIndView.end());
+      Array<GO> indices (localIndices.size () + nonlocalIndices.size ());
+      ArrayView<GO> localIndView = indices.view (0, localIndices.size ());
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (localIndView.size () > indices.size (), std::logic_error,
+         prefix << "localIndView.size() = " << localIndView.size ()
+         << " > indices.size() = " << indices.size () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (localIndView.size () != localIndices.size (), std::logic_error,
+         prefix << "localIndView.size() = " << localIndView.size ()
+         << " != localIndices.size() = " << localIndices.size () << ".");
+
+      std::copy (localIndices.begin (), localIndices.end (), localIndView.begin ());
+      std::sort (localIndView.begin (), localIndView.end ());
+
+      if (debug && ! out.is_null ()) {
+        std::ostringstream os;
+        os << "Proc " << comm.getRank () << ": Right after copying and sorting" << std::endl;
+        *out << os.str ();
+      }
 
       // Merge the local and nonlocal indices.
-      if (nonlocalIndices.size() > 0) {
-        typedef typename ArrayView<GO>::iterator iter_type;
+      if (nonlocalIndices.size () > 0) {
+        ArrayView<GO> nonlclIndView =
+          indices.view (localIndices.size (), nonlocalIndices.size ());
 
-        iter_type middle = localIndView.end();
-        // We need a view, because std::inplace_merge needs all its
-        // iterator inputs to have the same type.  Debug mode builds
-        // are pickier than release mode builds, because the iterators
-        // in a debug mode build are of a different type that does
-        // run-time checking (they aren't just raw pointers).
-        ArrayView<GO> indView = indices.view (0, indices.size());
+        // We need a view of the output array, because
+        // std::inplace_merge needs all its iterator inputs to have
+        // the same type.  Debug mode builds are pickier than release
+        // mode builds, because the iterators in a debug mode build
+        // are of a different type that does run-time checking (they
+        // aren't just raw pointers).
+        ArrayView<GO> indView = indices.view (0, indices.size ());
+        if (debug && ! out.is_null ()) {
+          std::ostringstream os;
+          os << "Right before std::copy" << std::endl;
+          *out << os.str ();
+        }
+        std::copy (nonlocalIndices.begin (),
+                   nonlocalIndices.end (),
+                   nonlclIndView.begin ());
+        if (debug && ! out.is_null ()) {
+          std::ostringstream os;
+          os << "Proc " << comm.getRank () << ": Right before std::inplace_merge"
+             << std::endl;
+          *out << os.str ();
+        }
+        std::inplace_merge (indView.begin (),
+                            indView.begin () + localIndices.size (),
+                            indView.end ());
+      }
 
-        //iter_type middle = &indices[nonlocalIndices.size()];
-        std::copy (nonlocalIndices.begin(), nonlocalIndices.end(), middle);
-        std::inplace_merge (indView.begin(), middle, indView.end());
+      if (debug && ! out.is_null ()) {
+        std::ostringstream os;
+        os << "Proc " << comm.getRank () << ": Done with getSourceIndices"
+           << std::endl;
+        *out << os.str ();
       }
       return indices;
     }
@@ -568,7 +619,7 @@ namespace Details {
     ///
     /// Setting the number of columns to zero effectively clears out
     /// all local storage, but may not necessarily deallocate nonlocal
-    /// storage.  Call \c clear() to clear out all nonlocal storage.
+    /// storage.  Call clear() to clear out all nonlocal storage.
     void
     setNumColumns (const size_t newNumColumns)
     {
@@ -581,32 +632,29 @@ namespace Details {
         return; // No side effects if no change.
       }
 
-      RCP<MV> newLocalVec;
+      RCP<MV> newLclVec;
       if (newNumColumns > oldNumColumns) {
-        newLocalVec = rcp (new MV (map_, newNumColumns));
+        newLclVec = rcp (new MV (map_, newNumColumns));
         // Assign the contents of the old local multivector to the
         // first oldNumColumns columns of the new local multivector,
         // then get rid of the old local multivector.
-        RCP<MV> newLocalVecView =
-          newLocalVec->subViewNonConst (Range1D (0, oldNumColumns-1));
-        *newLocalVecView = *localVec_;
+        RCP<MV> newLclVecView =
+          newLclVec->subViewNonConst (Range1D (0, oldNumColumns-1));
+        *newLclVecView = *localVec_;
       }
       else {
         if (newNumColumns == 0) {
           // Tpetra::MultiVector doesn't let you construct a
           // multivector with zero columns.
-          newLocalVec = Teuchos::null;
+          newLclVec = Teuchos::null;
         }
         else {
-          newLocalVec =
-            localVec_->subViewNonConst (Range1D (0, newNumColumns-1));
+          newLclVec = localVec_->subViewNonConst (Range1D (0, newNumColumns-1));
         }
       }
 
       // Leave most side effects until the end, for exception safety.
-      nonlocalIndices_.resize (newNumColumns);
-      nonlocalValues_.resize (newNumColumns);
-      localVec_ = newLocalVec;
+      localVec_ = newLclVec;
       numCols_ = newNumColumns;
     }
 
@@ -624,7 +672,19 @@ namespace Details {
       typedef local_ordinal_type LO;
       typedef global_ordinal_type GO;
       typedef scalar_type ST;
+      typedef decltype (rows.size ()) size_type;
+      const char prefix[] = "Tpetra::MultiVectorFiller::sumIntoGlobalValues: ";
 
+      if (map_.is_null ()) {
+        return; // the calling process is not participating
+      }
+      const size_type numEnt = rows.size ();
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (numEnt != values.size (), std::invalid_argument, prefix
+         << "rows.size() = " << numEnt << " != values.size() = "
+         << values.size () << ".");
+
+      // FIXME (31 Aug 2015) Don't do this.
       if (columnIndex >= getNumColumns()) {
         // Automatically expand the number of columns.  This
         // implicitly ensures that localVec_ is not null.
@@ -637,25 +697,28 @@ namespace Details {
       auto X_j_2d = X_j->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
       auto X_j_1d = Kokkos::subview (X_j_2d, Kokkos::ALL (), 0);
 
-      typename ArrayView<const GO>::const_iterator rowIter = rows.begin();
-      typename ArrayView<const ST>::const_iterator valIter = values.begin();
-      for ( ; rowIter != rows.end() && valIter != values.end(); ++rowIter, ++valIter) {
-        const GO globalRowIndex = *rowIter;
-        // Converting from global to local index could be logarithmic
-        // in the number of global indices that this process owns,
-        // depending on the Map implementation.  However, the lookup
-        // allows us to store data in the local multivector, rather
-        // than in a separate data structure.
-        const LO localRowIndex = map_->getLocalElement (globalRowIndex);
-        if (localRowIndex == Teuchos::OrdinalTraits<LO>::invalid()) {
-          nonlocalIndices_[columnIndex].push_back (globalRowIndex);
-          nonlocalValues_[columnIndex].push_back (*valIter);
+      const map_type& theMap = *map_;
+      for (size_type k = 0; k < numEnt; ++k) {
+        const ST val = values[k];
+        const GO gblRowInd = rows[k];
+        const LO lclRowInd = theMap.getLocalElement (gblRowInd);
+        if (lclRowInd == Teuchos::OrdinalTraits<LO>::invalid ()) {
+          // The row doesn't belong to the calling process, so stuff
+          // its data in nonlocals_.
+
+          auto& innerMap = nonlocals_[columnIndex];
+          auto innerIter = innerMap.find (gblRowInd);
+          if (innerIter == innerMap.end ()) {
+            innerMap.insert (std::make_pair (gblRowInd, values[k]));
+          } else {
+            innerIter->second += val;
+          }
         }
         else {
           // FIXME (mfh 27 Feb 2012) Allow different combine modes.
           // The current combine mode just adds to the current value
           // at that location.
-          X_j_1d[localRowIndex] += *valIter;
+          X_j_1d[lclRowInd] += val;
         }
       }
     }
@@ -700,7 +763,7 @@ namespace Details {
     /// X is distributed by the source Map (with possible overlap) of
     /// the Export operation.  The source Map of the Export includes
     /// both the elements owned by this object's constructor's input
-    /// Map, and the indices inserted by \c sumIntoGlobalValues().
+    /// Map, and the indices inserted by sumIntoGlobalValues().
     ///
     /// Precondition: The set of global indices in X's Map equals the
     /// union of the global indices in map_ and (the union of the
@@ -712,52 +775,65 @@ namespace Details {
     void
     locallyAssemble (MV& X, BinaryFunction& f)
     {
-      using Teuchos::ArrayView;
-      using Teuchos::RCP;
-      using Teuchos::rcp;
+      typedef scalar_type ST;
       typedef local_ordinal_type LO;
       typedef global_ordinal_type GO;
-      typedef scalar_type ST;
+      typedef typename MV::dual_view_type::t_host::memory_space host_memory_space;
 
-      RCP<const map_type> srcMap = X.getMap();
-      ArrayView<const GO> localIndices = map_->getNodeElementList ();
+      if (X.getMap ().is_null ()) {
+        return; // this process is not participating
+      }
+      const map_type& srcMap = * (X.getMap ());
 
-      for (size_t j = 0; j < X.getNumVectors(); ++j) {
+
+
+      for (size_t j = 0; j < X.getNumVectors (); ++j) {
         auto X_j = X.getVector (j);
-        auto X_j_2d = X_j->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
+        auto X_j_2d = X_j->template getLocalView<host_memory_space> ();
         auto X_j_1d = Kokkos::subview (X_j_2d, Kokkos::ALL (), 0);
 
-        // First add all the local data into X_j_1d.
-        auto local_j = X.getVector (j);
-        auto local_j_2d = local_j->template getLocalView<typename MV::dual_view_type::t_host::memory_space> ();
-        auto local_j_1d = Kokkos::subview (local_j_2d, Kokkos::ALL (), 0);
+        // First, assemble in the local components from localVec_.
+        if (! localVec_.is_null () && ! localVec_->getMap ().is_null ()
+            && j < localVec_->getNumVectors ()) {
+          auto lcl_j = localVec_->getVector (j);
+          auto lcl_j_2d = lcl_j->template getLocalView<host_memory_space> ();
+          auto lcl_j_1d = Kokkos::subview (lcl_j_2d, Kokkos::ALL (), 0);
 
-        for (typename ArrayView<const GO>::const_iterator it = localIndices.begin();
-             it != localIndices.end(); ++it) {
-          const LO rowIndLocal = map_->getLocalElement (*it);
-          const LO rowIndX = srcMap->getLocalElement (*it);
-
-          TEUCHOS_TEST_FOR_EXCEPTION(rowIndX == Teuchos::OrdinalTraits<LO>::invalid(),
-            std::invalid_argument, "locallyAssemble(): Input multivector X does "
-            "not own the global index " << *it << ".  This probably means that "
-            "X was not constructed with the right Map.");
-          X_j_1d[rowIndX] = f (X_j_1d[rowIndX], local_j_1d[rowIndLocal]);
+          // Iterate over all rows of localVec_.  i_lcl is a local
+          // index with respect to localVec_'s Map, which may differ
+          // from X's Map.
+          const map_type& lclMap = * (localVec_->getMap ());
+          const LO lclNumRows = static_cast<LO> (lcl_j->getLocalLength ());
+          for (LO i_lcl = 0; i_lcl < lclNumRows; ++i_lcl) {
+            const GO i_gbl = lclMap.getGlobalElement (i_lcl);
+            const LO i_X = srcMap.getLocalElement (i_gbl);
+            X_j_1d(i_X) = f (X_j_1d(i_X), lcl_j_1d(i_lcl));
+          }
         }
 
-        // Now add the nonlocal data into X_j_1d.
-        ArrayView<const GO> nonlocalIndices = nonlocalIndices_[j]();
-        typename ArrayView<const GO>::const_iterator indexIter = nonlocalIndices.begin();
-        ArrayView<const ST> nonlocalValues = nonlocalValues_[j]();
-        typename ArrayView<const ST>::const_iterator valueIter = nonlocalValues.begin();
-        for ( ; indexIter != nonlocalIndices.end() && valueIter != nonlocalValues.end();
-              ++indexIter, ++valueIter) {
-          const LO rowIndX = srcMap->getLocalElement (*indexIter);
-          X_j_1d[rowIndX] = f (X_j_1d[rowIndX], *valueIter);
+        // Second, assemble in the nonlocal components.
+        auto outerIter = nonlocals_.find (j);
+        if (outerIter != nonlocals_.end ()) {
+          auto beg = outerIter->second.begin ();
+          auto end = outerIter->second.end ();
+          for (auto innerIter = beg; innerIter != end; ++innerIter) {
+            const GO gblRowInd = innerIter->first;
+            const LO lclRowInd = srcMap.getLocalElement (gblRowInd);
+
+            if (lclRowInd != Teuchos::OrdinalTraits<LO>::invalid ()) {
+              const ST val = innerIter->second;
+              X_j_1d(lclRowInd) = f (X_j_1d(lclRowInd), val);
+            }
+          }
         }
       }
     }
 
-    //! \c locallyAssemble() for the usual Tpetra::ADD combine mode.
+    /// \brief Do the "local" (not MPI) part of assembly
+    ///
+    /// Call this method for the usual Tpetra::ADD combine mode.  If
+    /// you want a different combine mode, call the overload that
+    /// takes two arguments, one of which is a binary function.
     void
     locallyAssemble (MV& X)
     {
@@ -770,19 +846,18 @@ namespace Details {
     /// This fills the vector with zeros, and also removes nonlocal
     /// data.  It does <i>not</i> deallocate all storage.  For that,
     /// you need to set the number of columns to zero.
-    void clear() {
-      Teuchos::Array<Teuchos::Array<global_ordinal_type> > newNonlocalIndices;
-      Teuchos::Array<Teuchos::Array<scalar_type> > newNonlocalValues;
-      // The standard STL idiom for clearing the contents of a vector
-      // completely.  Setting the size to zero may not necessarily
-      // deallocate data.
-      std::swap (nonlocalIndices_, newNonlocalIndices);
-      std::swap (nonlocalValues_, newNonlocalValues);
+    void clear ()
+    {
+      std::map<size_t, std::map<global_ordinal_type, scalar_type> > newNonlcls;
+      // The standard STL idiom for clearing the contents of a
+      // container completely.  Setting the size to zero may not
+      // necessarily deallocate data.
+      std::swap (nonlocals_, newNonlcls);
 
       // Don't actually deallocate the multivector of local entries.
       // Just fill it with zero.  This is because the caller hasn't
       // reset the number of columns.
-      if (! localVec_.is_null()) {
+      if (! localVec_.is_null ()) {
         localVec_->putScalar (Teuchos::ScalarTraits<scalar_type>::zero());
       }
     }
@@ -797,11 +872,8 @@ namespace Details {
     //! Multivector of locally stored (i.e., owned by \c map_) entries.
     Teuchos::RCP<MV> localVec_;
 
-    //! Nonlocal global indices: one array for each column of the multivector.
-    Teuchos::Array<Teuchos::Array<global_ordinal_type> > nonlocalIndices_;
-
-    //! Nonlocal global values: one array for each column of the multivector.
-    Teuchos::Array<Teuchos::Array<scalar_type> > nonlocalValues_;
+    //! Map from column index to (map from row index to value).
+    std::map<size_t, std::map<global_ordinal_type, scalar_type> > nonlocals_;
 
     //! Verbosity level of this object (mainly used for debugging output).
     Teuchos::EVerbosityLevel verbLevel_;
@@ -821,51 +893,51 @@ namespace Details {
 
     //! The inserted nonlocal row indices, sorted and made unique.
     Teuchos::Array<global_ordinal_type>
-    getSortedUniqueNonlocalIndices() const
+    getSortedUniqueNonlocalIndices (const Teuchos::Comm<int>& comm,
+                                    const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null,
+                                    const bool debug = false) const
     {
       using Teuchos::Array;
       using Teuchos::ArrayView;
       using Teuchos::as;
       typedef global_ordinal_type GO;
-      typedef typename Array<GO>::size_type size_type;
 
-      Array<GO> allNonlocals (0); // will resize below
-      const size_t numCols = getNumColumns();
-
-      if (numCols == 1) {
-        // Special case for 1 column avoids copying indices twice.
-        // Pick the size of the array exactly the first time so there
-        // are at most two allocations (the constructor may choose to
-        // allocate).
-        const size_type numNew = nonlocalIndices_[0].size();
-        allNonlocals.resize (allNonlocals.size() + numNew);
-        std::copy (nonlocalIndices_[0].begin(), nonlocalIndices_[0].end(),
-                   allNonlocals.begin());
-        std::sort (allNonlocals.begin(), allNonlocals.end());
-        typename Array<GO>::iterator it =
-          std::unique (allNonlocals.begin(), allNonlocals.end());
-        const size_type numFinal = as<size_type> (it - allNonlocals.begin());
-        allNonlocals.resize (numFinal);
+      if (debug && ! out.is_null ()) {
+        std::ostringstream os;
+        os << "Proc " << comm.getRank () << ": getSortedUniqueNonlocalIndices"
+           << std::endl;
+        *out << os.str ();
       }
-      else {
-        // Carefully collect all the row indices one column at a time.
-        // This ensures that the total allocation size in this routine
-        // is independent of the number of columns.  Also, only sort
-        // the current column's indices.  Use merges to ensure sorted
-        // order in the collected final result.
-        ArrayView<GO> curNonlocalsView = allNonlocals.view (0, 0); // will grow
-        Array<GO> newNonlocals;
-        for (size_t j = 0; j < numCols; ++j) {
-          const size_type numNew = nonlocalIndices_[j].size();
-          if (numNew > newNonlocals.size()) {
-            newNonlocals.resize (numNew);
+
+      // FIXME (mfh 30 Aug 2015) The std::set algorithm is harder to
+      // thread-parallelize, but it should be easier to make the new
+      // test pass with this.
+      std::set<GO> indsOut;
+      const size_t numCols = getNumColumns ();
+      for (size_t j = 0; j < numCols; ++j) {
+        auto outerIter = nonlocals_.find (j);
+        if (outerIter != nonlocals_.end ()) {
+          auto beg = outerIter->second.begin ();
+          auto end = outerIter->second.end ();
+          for (auto innerIter = beg; innerIter != end; ++innerIter) {
+            // *innerIter: (global row index, value) pair.
+            indsOut.insert (innerIter->first);
           }
-          ArrayView<GO> newNonlocalsView = newNonlocals.view (0, numNew);
-          std::copy (nonlocalIndices_[j].begin(), nonlocalIndices_[j].end(),
-                     newNonlocalsView.begin());
-          curNonlocalsView = sortAndMergeIn<GO> (allNonlocals, curNonlocalsView,
-                                                 newNonlocalsView);
         }
+      }
+
+      if (debug && ! out.is_null ()) {
+        std::ostringstream os;
+        os << "Proc " << comm.getRank () << ": Made nonlocals set" << std::endl;
+        *out << os.str ();
+      }
+
+      Array<GO> allNonlocals (indsOut.begin (), indsOut.end ());
+      if (debug && ! out.is_null ()) {
+        std::ostringstream os;
+        os << "Proc " << comm.getRank () << ": Done with "
+          "getSortedUniqueNonlocalIndices" << std::endl;
+        *out << os.str ();
       }
       return allNonlocals;
     }
@@ -915,24 +987,24 @@ namespace Tpetra {
     /// MultiVectorFiller as you would a standard MV.
     ///
     /// \param map [in] A Map with the same communicator and Kokkos
-    ///   Node as the output multivector of \c globalAssemble().  This
+    ///   Node as the output multivector of globalAssemble().  This
     ///   need not be the same Map as that output multivector's Map.
     ///
     /// \param numCols [in] Expected number of columns in the output
-    ///   multivector of \c globalAssemble().
+    ///   multivector of globalAssemble().
     ///
     /// \note If the number of columns given here is not the same as
     ///   the number of columns in the output multivector, the
-    ///   two-argument version of \c sumIntoGlobalValues() won't do
+    ///   two-argument version of sumIntoGlobalValues() won't do
     ///   the right thing.  Use the three-argument version of that
     ///   method if you don't know how many columns there will be in
     ///   advance.
     ///
     /// \note Not providing the output multivector in the constructor
-    ///   gives \c globalAssemble() more flexibility.  For example,
-    ///   its output multivector may have any distribution with the
-    ///   same global number of rows.  Furthermore, decoupling
-    ///   insertion from the output multivector lets this object store
+    ///   gives globalAssemble() more flexibility.  For example, its
+    ///   output multivector may have any distribution with the same
+    ///   global number of rows.  Furthermore, decoupling insertion
+    ///   from the output multivector lets this object store
     ///   preassembled data in whatever format it likes.  It doesn't
     ///   have to insert directly into the output multivector until
     ///   assembly time.  (This may improve performance by amortizing
@@ -946,7 +1018,7 @@ namespace Tpetra {
     /// multivector output arguments.  If those arguments have the
     /// same Map, this method will attempt to reuse the Export object
     /// each time.  It will only reuse if the new target Map is the
-    /// same as (in the sense of \c isSameAs()) the previous target
+    /// same as (in the sense of Map::isSameAs()) the previous target
     /// Map, unless you force reuse with the second argument (that
     /// saves a few global reductions for the check).
     ///
@@ -955,11 +1027,12 @@ namespace Tpetra {
     ///   object was created.
     ///
     /// \param forceReuseMap [in] If true, assume that X_out has the
-    ///   same Map (in the sense of \c isSameAs()) as the target Map
+    ///   same Map (in the sense of Map::isSameAs()) as the target Map
     ///   in the previous call to this method.  If this method was not
     ///   called before, then assume that X_out has the same Map as
     ///   the argument to the constructor of this object.
-    void globalAssemble (MV& X_out, const bool forceReuseMap = false);
+    void
+    globalAssemble (MV& X_out, const bool forceReuseMap = false);
 
     //! Clear contents, in preparation for another fill cycle.
     void clear () {
@@ -1017,27 +1090,27 @@ namespace Tpetra {
     //! Map with which this object was created ("ctor" == "constructor").
     Teuchos::RCP<const map_type> ctorMap_;
 
-    /// \brief Source Map of the last call to \c globalAssemble().
+    /// \brief Source Map of the last call to globalAssemble().
     ///
     /// A possibly overlapping Map that describes the distribution of
     /// input data, and is the source of the Export.
     Teuchos::RCP<const map_type> sourceMap_;
 
-    /// \brief The target Map of the last call to \c globalAssemble().
+    /// \brief The target Map of the last call to globalAssemble().
     ///
     /// A nonoverlapping Map which is the target of the Export, and
-    /// describes the distribution of the output multivector of \c
+    /// describes the distribution of the output multivector of
     /// globalAssemble().
     Teuchos::RCP<const map_type> targetMap_;
 
-    /// \brief The source MV of the Export operation in \c globalAssemble().
+    /// \brief The source MV of the Export operation in globalAssemble().
     ///
-    /// The \c globalAssemble() method uses this multivector as the
+    /// The globalAssemble() method uses this multivector as the
     /// source of the Export operation.  The Export redistributes the
     /// data from a possibly overlapping distribution (reflecting how
     /// elements were inserted) to a nonoverlapping distribution (that
-    /// of the output multivector \c X_out of \c globalAssemble()).
-    /// This is the simplest way to implement redistribution
+    /// of the output multivector \c X_out of globalAssemble()).  This
+    /// is the simplest way to implement redistribution.
     ///
     /// We avoid resizing and reallocating \c sourceVec_ by using a
     /// contiguous subview as the source of the Export, if \c X_out
@@ -1055,7 +1128,7 @@ namespace Tpetra {
 
     /// \brief Assemble the local data into \c X_in.
     ///
-    /// This method is called by \c globalAssemble(), in which \c X_in
+    /// This method is called by globalAssemble(), in which \c X_in
     /// is the multivector with the (possibly overlapping) source
     /// distribution.
     void locallyAssemble (MV& X_in) {
@@ -1063,8 +1136,12 @@ namespace Tpetra {
     }
 
     //! All source indices (local and nonlocal) of the source Map.
-    Teuchos::Array<global_ordinal_type> getSourceIndices () const {
-      return data_.getSourceIndices();
+    Teuchos::Array<global_ordinal_type>
+    getSourceIndices (const Teuchos::Comm<int>& comm,
+                      const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null,
+                      const bool debug = false) const
+    {
+      return data_.getSourceIndices (comm, out, debug);
     }
 
     /// \brief Compute the source Map (for the Export) from the source indices.
@@ -1078,7 +1155,8 @@ namespace Tpetra {
     Teuchos::RCP<const map_type>
     computeSourceMap (const global_ordinal_type indexBase,
                       const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                      const Teuchos::RCP<node_type>& node);
+                      const Teuchos::RCP<Teuchos::FancyOStream>& out = Teuchos::null,
+                      const bool debug = false);
   };
 
   template<class MV>
@@ -1095,35 +1173,60 @@ namespace Tpetra {
   MultiVectorFiller<MV>::
   computeSourceMap (const global_ordinal_type indexBase,
                     const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                    const Teuchos::RCP<node_type>& node)
+                    const Teuchos::RCP<Teuchos::FancyOStream>& out,
+                    const bool debug)
   {
     using Teuchos::Array;
     using Teuchos::ArrayView;
     using Teuchos::rcp;
     typedef global_ordinal_type GO;
 
-    Array<GO> indices = getSourceIndices ();
+    if (debug && ! out.is_null ()) {
+      out->pushTab ();
+      std::ostringstream os;
+      const int myRank = comm->getRank ();
+      os << "Proc " << myRank << ": computeSourceMap" << std::endl;
+      *out << os.str ();
+    }
+
+    Array<GO> indices = getSourceIndices (*comm, out, debug);
+
+    if (debug && ! out.is_null ()) {
+      std::ostringstream os;
+      const int myRank = comm->getRank ();
+      os << "Proc " << myRank << ": computeSourceMap: About to create Map"
+         << std::endl;
+      *out << os.str ();
+      out->popTab ();
+    }
 
     // Passing "invalid" for the numGlobalElements argument of the Map
     // constructor tells the Map to compute the global number of
     // elements itself.
-    const Tpetra::global_size_t invalid =
-      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-    return rcp (new map_type (invalid, indices, indexBase, comm, node));
+    typedef Tpetra::global_size_t GST;
+    const GST INV = Teuchos::OrdinalTraits<GST>::invalid ();
+    return rcp (new map_type (INV, indices, indexBase, comm));
   }
 
   template<class MV>
   void
-  MultiVectorFiller<MV>::globalAssemble (MV& X_out, const bool forceReuseMap)
+  MultiVectorFiller<MV>::
+  globalAssemble (MV& X_out, const bool forceReuseMap)
   {
     using Teuchos::ArrayView;
     using Teuchos::Array;
     using Teuchos::Range1D;
     using Teuchos::RCP;
     using Teuchos::rcp;
+    RCP<Teuchos::FancyOStream> outPtr;
+    const bool debug = false;
 
-    const size_t numVecs = X_out.getNumVectors();
+    if (debug) {
+      outPtr = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr));
+      outPtr->pushTab ();
+    }
 
+    const size_t numVecs = X_out.getNumVectors ();
     if (numVecs == 0) {
       // Nothing to do!  Of course, this does not check for whether
       // X_out has the right number of rows.  That's OK, though.
@@ -1161,6 +1264,15 @@ namespace Tpetra {
         }
       }
     }
+
+    if (debug && ! outPtr.is_null ()) {
+      std::ostringstream os;
+      const Teuchos::Comm<int>& comm = * (X_out.getMap ()->getComm ());
+      const int myRank = comm.getRank ();
+      os << "Proc " << myRank << ": Right before getting source Map" << std::endl;
+      *outPtr << os.str ();
+    }
+
     //
     // Get the source Map of the Export.  If the source Map of the
     // Export is the same as last time, then we may be able to recycle
@@ -1173,15 +1285,24 @@ namespace Tpetra {
         sourceMap = sourceMap_;
       }
       else {
-        sourceMap = computeSourceMap (ctorMap_->getIndexBase(),
-                                      ctorMap_->getComm(),
-                                      ctorMap_->getNode());
+        sourceMap = computeSourceMap (ctorMap_->getIndexBase (),
+                                      ctorMap_->getComm (),
+                                      outPtr, debug);
         computedSourceMap = true;
       }
     }
     if (computedSourceMap) {
       sourceMap_ = sourceMap;
     }
+
+    if (debug && ! outPtr.is_null ()) {
+      std::ostringstream os;
+      const Teuchos::Comm<int>& comm = * (X_out.getMap ()->getComm ());
+      const int myRank = comm.getRank ();
+      os << "Proc " << myRank << ": Right before computing Export" << std::endl;
+      *outPtr << os.str ();
+    }
+
     //
     // Now that we have the source and target Maps of the Export, we
     // can check whether we can recycle the Export from last time.
@@ -1190,6 +1311,14 @@ namespace Tpetra {
       (exporter_.is_null() || (assumeSameTargetMap && ! computedSourceMap));
     if (mustComputeExport) {
       exporter_ = rcp (new export_type (sourceMap_, targetMap_));
+    }
+
+    if (debug && ! outPtr.is_null ()) {
+      std::ostringstream os;
+      const Teuchos::Comm<int>& comm = * (X_out.getMap ()->getComm ());
+      const int myRank = comm.getRank ();
+      os << "Proc " << myRank << ": Right after computing Export" << std::endl;
+      *outPtr << os.str ();
     }
 
     // Source multivector for the Export.
@@ -1209,28 +1338,61 @@ namespace Tpetra {
       }
     }
 
+    if (debug && ! outPtr.is_null ()) {
+      std::ostringstream os;
+      const Teuchos::Comm<int>& comm = * (X_out.getMap ()->getComm ());
+      const int myRank = comm.getRank ();
+      os << "Proc " << myRank << ": Right before locallyAssemble" << std::endl;
+      *outPtr << os.str ();
+    }
+
     // "Locally assemble" the data into X_in by summing together
     // entries with the same indices.
     locallyAssemble (*X_in);
 
+    if (debug && ! outPtr.is_null ()) {
+      std::ostringstream os;
+      const Teuchos::Comm<int>& comm = * (X_out.getMap ()->getComm ());
+      const int myRank = comm.getRank ();
+      os << "Proc " << myRank << ": Right after locallyAssemble" << std::endl;
+      *outPtr << os.str ();
+    }
+
     // Do the Export.
     const Tpetra::CombineMode combineMode = Tpetra::ADD;
     X_out.doExport (*X_in, *exporter_, combineMode);
+
+    if (debug && ! outPtr.is_null ()) {
+      std::ostringstream os;
+      const Teuchos::Comm<int>& comm = * (X_out.getMap ()->getComm ());
+      const int myRank = comm.getRank ();
+      os << "Proc " << myRank << ": Right after Export" << std::endl;
+      *outPtr << os.str ();
+    }
 
     // Clean out the locally owned data for next time.
     X_in->putScalar (Teuchos::ScalarTraits<scalar_type>::zero ());
 
     // FIXME (mfh 27 Aug 2015) Clean out the remote data for next
     // time.  See Bug 6398.
+
+    if (debug && ! outPtr.is_null ()) {
+      std::ostringstream os;
+      const Teuchos::Comm<int>& comm = * (X_out.getMap ()->getComm ());
+      const int myRank = comm.getRank ();
+      os << "Proc " << myRank << ": Done with globalAssemble" << std::endl;
+      *outPtr << os.str ();
+      outPtr->pushTab ();
+    }
   }
 
   namespace Test {
 
     /// \class MultiVectorFillerTester
-    /// \brief Tests for \c MultiVectorFiller
+    /// \brief Tests for MultiVectorFiller
     /// \author Mark Hoemmen
     ///
-    /// \tparam MV A specialization of \c Tpetra::MultiVector.
+    /// \tparam MV A specialization of Tpetra::MultiVector.
     template<class MV>
     class MultiVectorFillerTester {
     public:
@@ -1243,9 +1405,9 @@ namespace Tpetra {
       /// \brief Test global assembly when constructor Map = target Map.
       ///
       /// Constructor Map = target Map is a common case for finite
-      /// element assembly.  This method current only tests the version
-      /// of \c sumIntoGlobalValues() that works on one column at a
-      /// time.
+      /// element assembly.  This method current only tests the
+      /// version of MultiVectorFiller::sumIntoGlobalValues() that
+      /// works on one column at a time.
       ///
       /// If any test fails, this method throws an exception.
       static void
@@ -1433,7 +1595,7 @@ namespace Tpetra {
       }
     };
 
-    //! Instantiate a \c MultiVectorFillerTester and run the test.
+    //! Instantiate a MultiVectorFillerTester and run the test.
     template<class ScalarType,
              class LocalOrdinalType,
              class GlobalOrdinalType,
@@ -1488,7 +1650,7 @@ namespace Tpetra {
       }
     }
 
-    /// \brief Test the \c sortAndMergeIn() utility function.
+    /// \brief Test the sortAndMergeIn() utility function.
     ///
     /// If any test fails, this function throws std::logic_error with
     /// an informative message.  If all tests pass, this function

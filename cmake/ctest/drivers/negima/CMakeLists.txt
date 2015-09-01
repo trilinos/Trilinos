@@ -37,48 +37,8 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_DEBUG_MueLu_ExtraTypes
-    ctest_linux_nightly_serial_debug_muelu_extratypes_negima.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
-
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_DEBUG_MueLu_ExtraTypes_EI
-    ctest_linux_nightly_mpi_debug_muelu_extratypes_ei_negima.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
-
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_RELEASE_MueLu_Experimental
-    ctest_linux_nightly_serial_release_muelu_experimental_negima.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
-
-  TRILINOS_DRIVER_ADD_DASHBOARD(
     OPENMPI_1.10.0_RELEASE_MueLu
     ctest_linux_nightly_mpi_release_muelu_negima.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
-
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_DEBUG_MueLu_KLU2
-    ctest_linux_nightly_mpi_debug_muelu_klu2_negima.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
-
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_DEBUG_MueLu_Basker
-    ctest_linux_nightly_mpi_debug_muelu_basker_negima.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 330
