@@ -44,7 +44,6 @@
 #define IFPACK2_DETAILS_TRIDISOLVER_DEF_HPP
 
 #include "Ifpack2_LocalFilter.hpp"
-#include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 #ifdef HAVE_MPI
@@ -813,7 +812,6 @@ void TriDiSolver<MatrixType, true>::describe(Teuchos::FancyOStream& out,
 } // namespace Ifpack2
 
 #define IFPACK2_DETAILS_TRIDISOLVER_INSTANT(S,LO,GO,N)                  \
-  template class Ifpack2::Details::TriDiSolver< Tpetra::CrsMatrix<S, LO, GO, N> >; \
   template class Ifpack2::Details::TriDiSolver< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif // IFPACK2_DETAILS_TRIDISOLVER_HPP

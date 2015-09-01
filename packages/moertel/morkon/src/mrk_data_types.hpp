@@ -67,16 +67,18 @@ enum MorkonFaceType { MRK_LINE2=0,
                       MRK_QUAD4 };
 
 template <unsigned int MORKON_FACE_TYPE>
-struct NodesPerFace { };
+struct TopoConsts { };
 
-template <> struct NodesPerFace<MRK_TRI3>
+template <> struct TopoConsts<MRK_TRI3>
 {
-    enum {value = 3u};
+    enum {SPATIAL_DIM = 3u,
+          NODES_PER_FACE = 3u};
 };
 
-template <> struct NodesPerFace<MRK_QUAD4>
+template <> struct TopoConsts<MRK_QUAD4>
 {
-    enum {value = 4u};
+    enum {SPATIAL_DIM = 3u,
+          NODES_PER_FACE = 4u};
 };
 
 template  <typename DeviceType, unsigned int DIM>

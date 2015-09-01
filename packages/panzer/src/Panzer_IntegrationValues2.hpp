@@ -79,8 +79,18 @@ namespace panzer {
 
     void setupArraysForNodeRule(const Teuchos::RCP<const panzer::IntegrationRule>& ir);
 
-    //! Cell vertex coordinates, not basis coordinates
+    //! Cell vertex coordinates, not basis coordinates.
     void evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates);
+
+    //! \brief Match IP.
+    //
+    // Optionally provide IP coordinates for an element 'other' that shares the
+    // same side. If provided, a permutation of the cubature points is
+    // calculated so that the integration values are ordered according to the
+    // other element's. This permutation is then applied so that all fields are
+    // ordered accordingly in their IP dimension.
+    void evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & vertex_coordinates,
+                        const PHX::MDField<Scalar,Cell,IP,Dim> & other_ip_coordinates);
 
     Array_IPDim cub_points;              // <IP,Dim>
     Array_IPDim side_cub_points;         // <IP,Dim> points on face topology (dim-1)
@@ -109,6 +119,9 @@ namespace panzer {
     bool alloc_arrays;
     std::string prefix;
     std::vector<PHX::index_size_type> ddims_;
+
+    void getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates);
+    void evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates);
   };
 
 } // namespace panzer

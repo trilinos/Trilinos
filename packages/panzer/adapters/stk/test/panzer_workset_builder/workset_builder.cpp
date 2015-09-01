@@ -357,7 +357,7 @@ namespace panzer {
 
     {
       std::string sideset = "vertical_0";
-      Teuchos::RCP<std::vector<panzer::Workset> > worksets = panzer_stk_classic::buildWorksets(*mesh,
+      Teuchos::RCP<std::vector<panzer::Workset> > worksets = panzer_stk_classic::buildBCWorksets(*mesh,
                                           *(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)),
                                           *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)),
                                           sideset);

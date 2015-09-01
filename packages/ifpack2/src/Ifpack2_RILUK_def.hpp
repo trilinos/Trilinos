@@ -43,8 +43,8 @@
 #ifndef IFPACK2_CRSRILUK_DEF_HPP
 #define IFPACK2_CRSRILUK_DEF_HPP
 
-#include <Ifpack2_LocalFilter.hpp>
-#include <Ifpack2_RILUK.hpp>
+#include "Ifpack2_LocalFilter.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 namespace Ifpack2 {
 
@@ -1011,7 +1011,6 @@ std::string RILUK<MatrixType>::description () const
 } // namespace Ifpack2
 
 #define IFPACK2_RILUK_INSTANT(S,LO,GO,N)                            \
-  template class Ifpack2::RILUK< Tpetra::CrsMatrix<S, LO, GO, N> >; \
   template class Ifpack2::RILUK< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif

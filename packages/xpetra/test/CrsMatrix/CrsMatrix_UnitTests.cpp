@@ -56,6 +56,10 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#include <Kokkos_CrsMatrix.hpp>
+#endif
+
 #include <Xpetra_ConfigDefs.hpp>
 
 #ifdef HAVE_XPETRA_EPETRAEXT
@@ -892,6 +896,146 @@ namespace {
 #endif
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, GetLocalMatrixEpetra, Scalar, LO, GO, Node )
+  {
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_EPETRA
+
+    typedef Xpetra::Map<LO, GO, Node> MapClass;
+    typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
+    typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node>::local_matrix_type local_matrix_type;
+
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+
+    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
+
+    // generate problem
+    LO nEle = 63;
+    const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
+
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
+        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10);
+
+    LO NumMyElements = map->getNodeNumElements();
+    Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
+
+    for (LO i = 0; i < NumMyElements; ++i) {
+        A->insertGlobalValues(MyGlobalElements[i],
+                                Teuchos::tuple<GO>(MyGlobalElements[i]),
+                                Teuchos::tuple<Scalar>(1.0) );
+    }
+
+    // access data before fill complete!
+    bool bSuccess = true;
+    TEUCHOS_TEST_THROW( local_matrix_type view1 = A->getLocalMatrix(), std::runtime_error, std::cout, bSuccess);
+    TEST_EQUALITY(bSuccess, true);
+
+    A->fillComplete();
+
+    // access data after fill complete!
+    local_matrix_type view2 = A->getLocalMatrix();
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()), A->getNodeNumEntries());
+
+    Teuchos::ArrayView< const LO > indices;
+    Teuchos::ArrayView< const Scalar > values;
+    A->getLocalRowView(0, indices, values);
+    TEST_EQUALITY(indices.size(), 1);
+    TEST_EQUALITY(values[0], 1.0);
+
+    // check whether later changes are updated in view!
+    int nColIdx = 0;
+    double value = 42.0;
+    view2.replaceValues (0, &nColIdx, 1, &value);
+
+    A->getLocalRowView(0, indices, values);
+    TEST_EQUALITY(indices.size(), 1);
+    TEST_EQUALITY(values[0], 42.0);  // changes in the view also changes matrix values
+
+    A->resumeFill();
+    A->setAllToScalar(-123.4);
+    A->fillComplete();
+    // TODO check the content of the view!!! failed to extract the row information...
+
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()), A->getNodeNumEntries());
+
+#endif
+#endif
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, GetLocalMatrixTpetra, Scalar, LO, GO, Node )
+  {
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#ifdef HAVE_XPETRA_TPETRA
+
+    typedef Xpetra::Map<LO, GO, Node> MapClass;
+    typedef Xpetra::MapFactory<LO, GO, Node> MapFactoryClass;
+    typedef typename Xpetra::CrsMatrix<Scalar, LO, GO, Node>::local_matrix_type local_matrix_type;
+
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+
+    Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
+
+    // generate problem
+    LO nEle = 63;
+    const RCP<const MapClass> map = MapFactoryClass::Build(lib, nEle, 0, comm);
+
+    RCP<Xpetra::CrsMatrix<Scalar, LO, GO, Node> > A =
+        Xpetra::CrsMatrixFactory<Scalar,LO,GO,Node>::Build(map, 10);
+
+    LO NumMyElements = map->getNodeNumElements();
+    Teuchos::ArrayView<const GO> MyGlobalElements = map->getNodeElementList();
+
+    for (LO i = 0; i < NumMyElements; ++i) {
+        A->insertGlobalValues(MyGlobalElements[i],
+                                Teuchos::tuple<GO>(MyGlobalElements[i]),
+                                Teuchos::tuple<Scalar>(1.0) );
+    }
+
+    // access data before fill complete!
+    bool bSuccess = true;
+    TEUCHOS_TEST_THROW( local_matrix_type view1 = A->getLocalMatrix(), std::runtime_error, std::cout, bSuccess);
+    TEST_EQUALITY(bSuccess, true);
+
+    A->fillComplete();
+
+    // access data after fill complete!
+    local_matrix_type view2 = A->getLocalMatrix();
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()), A->getNodeNumEntries());
+
+    Teuchos::ArrayView< const LO > indices;
+    Teuchos::ArrayView< const Scalar > values;
+    A->getLocalRowView(0, indices, values);
+    TEST_EQUALITY(indices.size(), 1);
+    TEST_EQUALITY(values[0], 1.0);
+
+    // check whether later changes are updated in view!
+    int nColIdx = 0;
+    double value = 42.0;
+    view2.replaceValues (0, &nColIdx, 1, &value);
+
+    A->getLocalRowView(0, indices, values);
+    TEST_EQUALITY(indices.size(), 1);
+    TEST_EQUALITY(values[0], 42.0);  // changes in the view do affect the matrix data
+
+    A->resumeFill();
+    A->setAllToScalar(-123.4);
+    A->fillComplete();
+    // TODO check the content of the view!!! failed to extract the row information...
+
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.numRows()), A->getNodeNumRows());
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.numCols()), A->getNodeNumCols());
+    TEST_EQUALITY(Teuchos::as<size_t>(view2.nnz()), A->getNodeNumEntries());
+#endif
+#endif
+  }
   //
   // INSTANTIATIONS
   //
@@ -904,11 +1048,16 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TpetraDeepCopy, SC, LO, GO, Node )
 #define UNIT_TEST_GROUP_ORDINAL2( SC, LO, GO, Node )                     \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EpetraDeepCopy, SC, LO, GO, Node )
+// for Kokkos-specific tests
+#define UNIT_TEST_GROUP_ORDINAL3( SC, LO, GO, Node )                     \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, GetLocalMatrixEpetra, SC, LO, GO, Node ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, GetLocalMatrixTpetra, SC, LO, GO, Node )
 
   typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
 
   UNIT_TEST_GROUP_ORDINAL(double, int, int, DefaultNodeType)
   UNIT_TEST_GROUP_ORDINAL1(double, int, int, DefaultNodeType)
   UNIT_TEST_GROUP_ORDINAL2(double, int, int, DefaultNodeType)
+  UNIT_TEST_GROUP_ORDINAL3(double, int, int, DefaultNodeType)
 }
 

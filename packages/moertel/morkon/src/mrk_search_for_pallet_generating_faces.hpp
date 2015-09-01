@@ -113,14 +113,11 @@ struct search_for_pallet_generating_faces
         , m_face_to_interface_and_side(parent.m_face_to_interface_and_side)
       {
         size_type output_size = m_face_to_interface_and_side.dimension_0();
-        std::cout << "In count_mortarside_faces(.) " << output_size << " faces in" << std::endl;
-
         if (output_size > 0)
         {
             Kokkos::resize(m_offsets, output_size);
             Kokkos::parallel_scan(m_face_to_interface_and_side.dimension_0(), *this);
         }
-        std::cout << "count_mortarside_faces found " << m_total_found() << " faces" << std::endl;
       }
 
       KOKKOS_INLINE_FUNCTION
@@ -149,14 +146,9 @@ struct search_for_pallet_generating_faces
         , m_total_faces("tot_faces")
         , m_num_mortarside("num_mortarside")
       {
-        std::cout << "In separate_into_sides(..)" << std::endl;
-
         ints_vec_t mortarside_offsets;
         m_num_mortarside. template modify<typename int_dualview_t::t_dev>();
         count_mortarside_faces(parent, mortarside_offsets, m_num_mortarside.d_view);
-
-        std::cout << "Back from counting mortarside faces " << std::endl;
-
         m_num_mortarside. template sync<typename int_dualview_t::t_host>();
         int num_mortarside_faces = m_num_mortarside.h_view();
         int total_faces = parent.m_face_to_interface_and_side.dimension_0();

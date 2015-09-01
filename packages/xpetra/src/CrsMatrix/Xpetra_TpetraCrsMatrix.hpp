@@ -460,6 +460,18 @@ namespace Xpetra {
     //! Get the underlying Tpetra matrix
     RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsMatrixNonConst() const { return mtx_; } //TODO: remove
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
+
+    /// \brief Access the local Kokkos::CrsMatrix data
+    local_matrix_type getLocalMatrix () const {
+      if(isFillComplete() == false)
+        throw std::runtime_error("Xpetra::EpetraCrsMatrix::getLocalMatrix: matrix must be filled and completed before you can access the data through the Kokkos interface!");
+
+      return getTpetra_CrsMatrixNonConst()->getLocalMatrix();
+    }
+#endif
+
    //@}
 
   private:

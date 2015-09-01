@@ -193,6 +193,7 @@ namespace MueLu {
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"transpose: use implicit\" type=\"bool\" value=\"false\"/>"
+  "<Parameter name=\"use kokkos refactor\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"multigrid algorithm\" type=\"string\" value=\"sa\"/>"
   "<Parameter name=\"toggle: mode\" type=\"string\" value=\"semicoarsen\"/>"
   "<Parameter name=\"semicoarsen: coarsen rate\" type=\"int\" value=\"3\"/>"
@@ -442,6 +443,8 @@ namespace MueLu {
          ("print unused","print unused parameters")
 
          ("transpose: use implicit","transpose: use implicit")
+
+         ("use kokkos refactor","use kokkos refactor")
 
          ("energy minimization: enable","multigrid algorithm")
 

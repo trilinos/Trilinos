@@ -36,19 +36,9 @@ APPEND_SET(SOURCES
 #
 # C) Define the targets for package's library(s)
 #
-# If Kokkos was built with TSQR (Tall Skinny QR) support, link with
-# the TSQR libraries.
-#
-IF (${PACKAGE_NAME}_ENABLE_TSQR)
-  TRIBITS_ADD_LIBRARY(
-    belostpetra
-    HEADERS ${HEADERS}
-    SOURCES ${SOURCES}
-    )
-ELSE ()
-  TRIBITS_ADD_LIBRARY(
-    belostpetra
-    HEADERS ${HEADERS}
-    SOURCES ${SOURCES}
-    )
-ENDIF ()
+TRIBITS_ADD_LIBRARY(
+  belostpetra
+  HEADERS ${HEADERS}
+  SOURCES ${SOURCES}
+  DEPLIBS belos
+  )

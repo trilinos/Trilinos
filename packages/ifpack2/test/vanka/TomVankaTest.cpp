@@ -164,8 +164,8 @@ main (int argc, char *argv[])
 
   // Ifpack2 stuff
   typedef Ifpack2::Preconditioner< ST, LO, GO, Node > PrecType;
-  typedef Ifpack2::DenseContainer< CRS, ST > ContainerType;
-  typedef Ifpack2::BlockRelaxation< CRS, ContainerType > BlockRelax;
+  typedef Ifpack2::DenseContainer< ROW, ST > ContainerType;
+  typedef Ifpack2::BlockRelaxation< ROW, ContainerType > BlockRelax;
   typedef Ifpack2::AdditiveSchwarz< ROW > TheSchwarz;
 
   // using stuff

@@ -161,7 +161,7 @@ int main(int narg, char *arg[]) {
   }
   else {
     cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
-    return 0;
+    return 5;
   }
 
   // Get pamgen mesh definition

@@ -85,6 +85,10 @@
 #include "MueLu_ZoltanInterface_fwd.hpp"
 #include "MueLu_Zoltan2Interface_fwd.hpp"
 
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_SaPFactoryK_fwd.hpp"
+#endif
+
 namespace MueLu {
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>

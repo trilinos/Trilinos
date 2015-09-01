@@ -41,24 +41,14 @@
 // @HEADER
 */
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_DefaultComm.hpp>
-#include <Tpetra_MultiVectorFiller.hpp>
-
-typedef Tpetra::MultiVector<>::node_type default_node_type;
-
-Teuchos::RCP<default_node_type>
-makeDefaultNode (const Teuchos::RCP<Teuchos::ParameterList>& nodeParams)
-{
-  return Teuchos::rcp (new default_node_type (*nodeParams));
-}
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_DefaultComm.hpp"
+#include "Tpetra_MultiVectorFiller.hpp"
 
 int
 main (int argc, char *argv[])
 {
-  using Teuchos::as;
   using Teuchos::Comm;
   using Teuchos::FancyOStream;
   using Teuchos::getFancyOStream;
@@ -71,18 +61,18 @@ main (int argc, char *argv[])
   using std::cout;
   using std::endl;
 
-  typedef double scalar_type;
-  typedef int local_ordinal_type;
-#if defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_INST_INT_LONG)
-  typedef long global_ordinal_type;
+  typedef Tpetra::MultiVector<>::scalar_type ST;
+  typedef Tpetra::MultiVector<>::local_ordinal_type LO;
+#if defined (HAVE_TPETRA_INT_LONG_LONG)
+  typedef long long GO;
 #else
-  typedef int  global_ordinal_type;
+  typedef Tpetra::MultiVector<>::global_ordinal_type GO;
 #endif
-  typedef default_node_type node_type;
+  typedef Tpetra::MultiVector<>::node_type NT;
 
   Teuchos::oblackholestream blackHole;
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &blackHole);
-  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
 
   //
   // Read in command line arguments.
@@ -111,17 +101,14 @@ main (int argc, char *argv[])
     getFancyOStream (rcpFromRef (blackHole));
 
   RCP<ParameterList> nodeParams = parameterList ("Kokkos Node");
-  RCP<node_type> node = makeDefaultNode (nodeParams);
 
   // Run the test.
   bool succeeded = true;
   try {
-    Tpetra::Test::testMultiVectorFiller<scalar_type,
-      local_ordinal_type,
-      global_ordinal_type,
-      node_type> (comm, node, as<size_t> (unknownsPerNode),
-                  as<global_ordinal_type> (unknownsPerElt),
-                  as<size_t> (numCols), out, verbLevel);
+    using Tpetra::Test::testMultiVectorFiller;
+    testMultiVectorFiller<ST, LO, GO, NT> (comm, static_cast<size_t> (unknownsPerNode),
+                                           static_cast<GO> (unknownsPerElt),
+                                           static_cast<size_t> (numCols), out, verbLevel);
     succeeded = true;
   } catch (std::exception& e) {
     *out << "MultiVectorFiller test threw an exception:  " << e.what() << endl;
@@ -130,10 +117,12 @@ main (int argc, char *argv[])
 
   const int localSuccess = succeeded ? 1 : 0;
   int globalSuccess = localSuccess;
-  Teuchos::reduceAll (*comm, Teuchos::REDUCE_SUM, localSuccess,
-                      Teuchos::ptr (&globalSuccess));
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+  using Teuchos::outArg;
+  reduceAll<int, int> (*comm, REDUCE_MIN, localSuccess, outArg (globalSuccess));
 
-  if (globalSuccess) {
+  if (globalSuccess == 1) {
     std::cout << "End Result: TEST PASSED" << endl;
     return EXIT_SUCCESS;
   }

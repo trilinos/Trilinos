@@ -51,11 +51,13 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_Describable.hpp>
 #include <iostream>
+#include <type_traits>
 
 namespace Ifpack2 {
 
 /// \class Container
 /// \brief Interface for creating and solving a local linear problem.
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
 ///
 /// This class is mainly useful for the implementation of
 /// BlockRelaxation, and other preconditioners that need to solve
@@ -106,6 +108,9 @@ public:
   typedef typename MatrixType::node_type            node_type;
 
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> row_matrix_type;
+
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value,
+                "Ifpack2::Container: Please use MatrixType = Tpetra::RowMatrix.");
 
   /// \brief Constructor.
   ///

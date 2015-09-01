@@ -200,8 +200,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   Teuchos::RCP<const TCRS> EdgeMatrix = Utils::Op2NonConstTpetraCrs(SM_Matrix_ );
   Teuchos::RCP<const TCRS> NodeMatrix = Utils::Op2NonConstTpetraCrs(TMT_Matrix_);
   Teuchos::RCP<const TCRS> PMatrix    = Utils::Op2NonConstTpetraCrs(D0_Matrix_);
-  edgePreSmoother_  = Teuchos::rcp( new Ifpack2::Hiptmair<TCRS>(EdgeMatrix,NodeMatrix,PMatrix) );
-  edgePostSmoother_ = Teuchos::rcp( new Ifpack2::Hiptmair<TCRS>(EdgeMatrix,NodeMatrix,PMatrix) );
+  edgePreSmoother_  = Teuchos::rcp( new Ifpack2::Hiptmair<TROW>(EdgeMatrix,NodeMatrix,PMatrix) );
+  edgePostSmoother_ = Teuchos::rcp( new Ifpack2::Hiptmair<TROW>(EdgeMatrix,NodeMatrix,PMatrix) );
   edgePreSmoother_ -> setParameters(hiptmairPreList_);
   edgePreSmoother_ -> initialize();
   edgePreSmoother_ -> compute();

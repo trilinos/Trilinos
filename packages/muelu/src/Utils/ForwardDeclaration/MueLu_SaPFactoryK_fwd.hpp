@@ -1,8 +1,9 @@
 // @HEADER
+//
 // ***********************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//        MueLu: A package for multigrid based preconditioning
+//                  Copyright 2012 Sandia Corporation
 //
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
@@ -34,20 +35,29 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact
+//                    Jonathan Hu       (jhu@sandia.gov)
+//                    Andrey Prokopenko (aprokop@sandia.gov)
+//                    Ray Tuminaro      (rstumin@sandia.gov)
 //
-// ************************************************************************
+// ***********************************************************************
+//
 // @HEADER
+#ifndef MUELU_SAPFACTORYK_FWD_HPP
+#define MUELU_SAPFACTORYK_FWD_HPP
 
-#ifndef TPETRA_CRSMATRIXMULTIPLYOP_DECL_HPP
-#define TPETRA_CRSMATRIXMULTIPLYOP_DECL_HPP
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 
-/// \file Tpetra_CrsMatrixMultiplyOp_decl.hpp
-///
-/// \warning This file exists ONLY for backwards compatibility!
-///   Include Tpetra_CrsMatrixMultiplyOp.hpp instead.
+namespace MueLu {
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  class SaPFactoryK;
+}
 
-#include <Tpetra_CrsMatrixMultiplyOp.hpp>
+#ifndef MUELU_SAPFACTORYK_SHORT
+#define MUELU_SAPFACTORYK_SHORT
+#endif
 
-#endif // TPETRA_CRSMATRIXMULTIPLYOP_DECL_HPP
+#endif
 
+#endif // MUELU_SAPFACTORYK_FWD_HPP

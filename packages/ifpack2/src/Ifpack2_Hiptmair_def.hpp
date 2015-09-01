@@ -43,9 +43,12 @@
 #ifndef IFPACK2_HIPTMAIR_DEF_HPP
 #define IFPACK2_HIPTMAIR_DEF_HPP
 
-#include "Ifpack2_Hiptmair_decl.hpp"
-#include "Ifpack2_Details_OneLevelFactory_decl.hpp"
-#include "Ifpack2_Details_OneLevelFactory_def.hpp"
+#include "Ifpack2_Details_OneLevelFactory.hpp"
+#include "Ifpack2_Parameters.hpp"
+#include "Teuchos_TimeMonitor.hpp"
+#include <cmath>
+#include <iostream>
+#include <sstream>
 
 namespace Ifpack2 {
 
@@ -453,6 +456,6 @@ describe (Teuchos::FancyOStream &out,
 } // namespace Ifpack2
 
 #define IFPACK2_HIPTMAIR_INSTANT(S,LO,GO,N) \
-  template class Ifpack2::Hiptmair< Tpetra::CrsMatrix<S, LO, GO, N> >;
+  template class Ifpack2::Hiptmair< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif /* IFPACK2_HIPTMAIR_DEF_HPP */
