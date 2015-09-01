@@ -46,9 +46,7 @@
            full-space methods.
 */
 
-#include "ROL_Algorithm.hpp"
-#include "ROL_StepFactory.hpp"
-#include "ROL_StatusTestFactory.hpp"
+#include "ROL_DefaultAlgorithmFactory.hpp"
 
 #include "ROL_Reduced_ParametrizedObjective_SimOpt.hpp"
 #include "ROL_BPOEObjective.hpp"
@@ -244,17 +242,10 @@ int main(int argc, char *argv[]) {
       = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename,
       Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
-    // DEFINE STATUS TEST
-    Teuchos::RCP<ROL::StatusTest<RealT> > status
-      = ROL::StatusTestFactory<RealT>("Trust Region",*parlist);
-    // DEFINE STEP
-    Teuchos::RCP<ROL::Step<RealT> > step
-      = ROL::StepFactory<RealT>("Trust Region",*parlist);
-    // DEFINE ALGORITHM
-    ROL::DefaultAlgorithm<RealT> algo(*step,*status,false);
     // RUN OPTIMIZATION
+    ROL::DefaultAlgorithmFactory<RealT> algo("Trust Region",*parlist,false);
     zp->zero();
-    algo.run(z, g, *obj, *bnd, print, *outStream);
+    algo.get()->run(z, g, *obj, *bnd, print, *outStream);
     /*************************************************************************/
     /************* PRINT CONTROL AND STATE TO SCREEN *************************/
     /*************************************************************************/
