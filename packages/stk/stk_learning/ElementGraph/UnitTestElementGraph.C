@@ -3384,7 +3384,7 @@ public:
             for (size_t elementI=0 ; elementI<bucket.size() ; ++elementI) {
                 stk::mesh::Entity element = bucket[elementI];
                 double* activeData = stk::mesh::field_data(*activeStatusField,element);
-                if (abs(activeData[0] - 1.0) < 0.001) {
+                if (std::abs(activeData[0] - 1.0) < 0.001) {
                     entities.push_back(element);
                     addParts.push_back({activePart});
                     removeParts.push_back({});
