@@ -58,11 +58,13 @@ namespace morkon_exp {
 
 template  <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>
 Teuchos::RCP< Morkon_Manager<DeviceType, DIM, FACE_TYPE> >
-Morkon_Manager<DeviceType, DIM, FACE_TYPE>::MakeInstance(MPI_Comm mpi_comm, int printlevel)
+Morkon_Manager<DeviceType, DIM, FACE_TYPE>::MakeInstance(MPI_Comm mpi_comm,
+                                                         FaceProjectionMethod projection_method,
+                                                         int printlevel)
 {
   typedef Morkon_Manager<DeviceType, DIM, FACE_TYPE> morkon_manager_t;
 
-  return Teuchos::RCP<morkon_manager_t>(new morkon_manager_t(mpi_comm, printlevel) );
+  return Teuchos::RCP<morkon_manager_t>(new morkon_manager_t(mpi_comm, projection_method, printlevel) );
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>
@@ -113,7 +115,7 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::mortar_integrate(Tpetra::CrsMat
   // Using the internal SurfaceMesh, populate
   //   - m_fields.m_node_normals
   //   - m_fields.m_face_normals
-  if (!compute_face_and_node_normals())
+  if (!compute_normals())
   {
     return false;
   }
@@ -168,9 +170,12 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::build_sys_M_and_D(Tpetra::CrsMa
 
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
-Morkon_Manager<DeviceType, DIM, FACE_TYPE>::Morkon_Manager(MPI_Comm mpi_comm, int printlevel)
+Morkon_Manager<DeviceType, DIM, FACE_TYPE>::Morkon_Manager(MPI_Comm mpi_comm,
+                                                           FaceProjectionMethod projection_method,
+                                                           int printlevel)
     : m_mpi_comm(mpi_comm)
     , m_printlevel(printlevel)
+    , m_projection_method(projection_method)
 {
 }
 
@@ -361,14 +366,19 @@ Morkon_Manager<DeviceType, DIM, FACE_TYPE>::migrate_to_device(
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>
-bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_face_and_node_normals()
+bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_normals()
 {
   // We can make this function provide a useful return value having the implementations
   // do a parallel_reduce with a num_errs reduction variable as argument.
 
   compute_face_normals<DeviceType, DIM, FACE_TYPE>(m_surface_mesh, m_fields);
 
-  compute_node_normals_from_faces<DeviceType, DIM >(m_surface_mesh, m_fields);
+  if (m_projection_method == NODE_NORMALS_PROECTION)
+  {
+    return false;
+    // Can't use this until internalize_interfaces() properly fills out m_surface_mesh.m_nodes_to_faces.
+    compute_node_normals_from_faces<DeviceType, DIM >(m_surface_mesh, m_fields);
+  }
 
   return true;
 }

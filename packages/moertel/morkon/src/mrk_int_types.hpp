@@ -58,6 +58,10 @@ typedef local_idx_t    polarity_t;
 
 enum Ordinal_enums { INVALID_ORDINAL = -1 };
 
+enum FaceProjectionMethod { FACET_NORMAL_PROJECTION = 0,
+                              NODE_NORMALS_PROECTION
+};
+
 struct InterfaceBase
 {
   enum SideEnum { NON_MORTAR_SIDE = 0, MORTAR_SIDE, NUM_INTERFACE_SIDES };

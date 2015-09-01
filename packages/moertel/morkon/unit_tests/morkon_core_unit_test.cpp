@@ -71,7 +71,7 @@ TEST(morkon,just_check_if_it_compiles)
   typedef Teuchos::RCP< default_manager_3d_t >        default_manager_3d_ptr;
   typedef Interface<default_kokkos_device_t, 3, MRK_QUAD4>     default_interface_3d_t;
   typedef Teuchos::RCP< default_interface_3d_t >  default_interface_3d_ptr;
-  default_manager_3d_ptr manager = default_manager_3d_t::MakeInstance(0, 0);
+  default_manager_3d_ptr manager = default_manager_3d_t::MakeInstance(0, FACET_NORMAL_PROJECTION, 0);
   default_interface_3d_ptr interface = manager->create_interface(0,0);
   manager->commit_interfaces();
   Tpetra::CrsMatrix<> *dummy_D = 0;
@@ -88,7 +88,7 @@ TEST(morkon, interface_host_side_adapter_stores_data)
   typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>     interface_3d_t;
   typedef Teuchos::RCP< interface_3d_t >                    interface_3d_ptr;
 
-  manager_3d_ptr manager = manager_3d_t::MakeInstance(0, 0);
+  manager_3d_ptr manager = manager_3d_t::MakeInstance(0, FACET_NORMAL_PROJECTION, 0);
   interface_3d_ptr interface = manager->create_interface(0,0);
 
   Mrk_2x2_aligned_TriangleInterfaceFixture tris_2x2(interface);
@@ -159,7 +159,7 @@ TEST(morkon, manager_commit_interfaces_one_interface)
   typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>     interface_3d_t;
   typedef Teuchos::RCP< interface_3d_t >                    interface_3d_ptr;
 
-  manager_3d_ptr manager = manager_3d_t::MakeInstance(0, 0);
+  manager_3d_ptr manager = manager_3d_t::MakeInstance(0, FACET_NORMAL_PROJECTION, 0);
 
   const int interface_id = 17;
   interface_3d_ptr interface = manager->create_interface(interface_id, 0);
@@ -289,7 +289,7 @@ TEST(morkon, manager_compute_face_normals)
   typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>     interface_3d_t;
   typedef Teuchos::RCP< interface_3d_t >                    interface_3d_ptr;
 
-  manager_3d_ptr manager = manager_3d_t::MakeInstance(0, 0);
+  manager_3d_ptr manager = manager_3d_t::MakeInstance(0, FACET_NORMAL_PROJECTION, 0);
 
   const int interface_id = 17;
   interface_3d_ptr interface = manager->create_interface(interface_id, 0);
@@ -298,7 +298,7 @@ TEST(morkon, manager_compute_face_normals)
 
   EXPECT_EQ(true, manager->commit_interfaces());
 
-  manager->try_compute_face_normals();
+  EXPECT_EQ(true, manager->compute_normals());
   manager->get_face_normals();
 
   for (size_t face_i = 0; face_i < tris_2x2.NumFaces; ++face_i)
