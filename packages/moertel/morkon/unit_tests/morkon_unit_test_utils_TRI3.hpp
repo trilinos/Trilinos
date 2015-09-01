@@ -62,7 +62,7 @@ struct Mrk_InterfaceFixtureBase
   typedef InterfaceBase::SideEnum                           interface_side_t;
 };
 
-struct Mrk_2x4_TriangleInterfaceFixtureBase : public Mrk_InterfaceFixtureBase
+struct Mrk_2x2_TriangleInterfaceFixtureBase : public Mrk_InterfaceFixtureBase
 {
   static const size_t NumNodes = 8;
   static const global_idx_t node_gids[NumNodes];
@@ -83,11 +83,11 @@ struct Mrk_2x4_TriangleInterfaceFixtureBase : public Mrk_InterfaceFixtureBase
   }
 };
 
-struct Mrk_2x4_aligned_TriangleInterfaceFixture : public Mrk_2x4_TriangleInterfaceFixtureBase
+struct Mrk_2x2_aligned_TriangleInterfaceFixture : public Mrk_2x2_TriangleInterfaceFixtureBase
 {
   static const double node_coords[NumNodes][3];
 
-  Mrk_2x4_aligned_TriangleInterfaceFixture(interface_3d_ptr interface)
+  Mrk_2x2_aligned_TriangleInterfaceFixture(interface_3d_ptr interface)
   {
     for (size_t node_i = 0; node_i < NumNodes; ++node_i)
     {
@@ -97,7 +97,7 @@ struct Mrk_2x4_aligned_TriangleInterfaceFixture : public Mrk_2x4_TriangleInterfa
   }
 };
 
-struct Mrk_2x4_offset_TriangleInterfaceFixture : public Mrk_2x4_TriangleInterfaceFixtureBase
+struct Mrk_2x4_offset_TriangleInterfaceFixture : public Mrk_2x2_TriangleInterfaceFixtureBase
 {
   static const double node_coords[NumNodes][3];
 

@@ -88,6 +88,7 @@ public:
   face_to_nodes_hmt                            hm_face_to_nodes;
   points_hmt                                     hm_node_coords;
   points_hmt                           hm_predicted_node_coords;
+  points_hmt                                    hm_face_normals;
 
   static Teuchos::RCP< Morkon_Manager_Tester<DeviceType, DIM, FACE_TYPE> > MakeInstance(MPI_Comm mpi_comm, int printlevel);
 
@@ -119,7 +120,10 @@ public:
     CopyToHostMirror(hm_node_coords, morkon_manager::m_fields.m_node_coords);
   }
   void get_predicted_node_coords() {
-      CopyToHostMirror(hm_predicted_node_coords, morkon_manager::m_fields.m_predicted_node_coords);
+    CopyToHostMirror(hm_predicted_node_coords, morkon_manager::m_fields.m_predicted_node_coords);
+  }
+  void get_face_normals() {
+    CopyToHostMirror(hm_face_normals, morkon_manager::m_fields.m_face_normals);
   }
 
   Morkon_Manager_Tester(MPI_Comm mpi_comm, int printlevel)

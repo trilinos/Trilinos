@@ -323,8 +323,6 @@ Morkon_Manager<DeviceType, DIM, FACE_TYPE>::migrate_to_device(
                                         points_dvt predicted_node_coords,
                                         on_boundary_table_dvt is_node_on_boundary)
 {
-    std::cout << "In migrate_to_device()!"  << std::endl;
-
     face_to_global_id.template modify<typename local_to_global_idx_dvt::t_host>();
     node_to_global_id.template modify<typename local_to_global_idx_dvt::t_host>();
     face_to_interface_and_side.template modify<typename face_to_interface_and_side_dvt::t_host>();
