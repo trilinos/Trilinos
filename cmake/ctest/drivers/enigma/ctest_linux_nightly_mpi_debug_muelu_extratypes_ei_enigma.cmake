@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.negima.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.enigma.gcc.cmake")
 
 #
 # Set the options specific to this build case
@@ -62,18 +62,19 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.negima.gcc.cmake")
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME OPENMPI_1.10.0_DEBUG_DEV_MueLu_Basker)
+SET(BUILD_DIR_NAME OPENMPI_1.6.4_DEBUG_DEV_MueLu_ExtraTypes_EI)
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
-SET(CTEST_TEST_TIMEOUT 14400) # twice the default value, for valgrind
+SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_PACKAGES MueLu Xpetra Amesos2)
 
 SET(EXTRA_CONFIGURE_OPTIONS
-  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON"
-  "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS=OFF"
-  "-DTPL_ENABLE_SuperLU=OFF"
-  "-DAmesos2_ENABLE_Basker=ON"
+  "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
+  "-DTeuchos_ENABLE_LONG_LONG_INT:BOOL=ON"
+
+  "-DZoltan2_ENABLE_Experimental:BOOL=ON"
+  "-DTPL_ENABLE_SuperLU:BOOL=ON"
 )
 
 #
