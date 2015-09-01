@@ -39,6 +39,7 @@
 
 #include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <stk_mesh/fixtures/heterogeneous_mesh.hpp>
+#include <stk_mesh/fixtures/degenerate_mesh.hpp>
 
 namespace {
 
@@ -7948,6 +7949,31 @@ TEST(ElementGraph, heterogeneous_mesh)
         stk::mesh::fixtures::heterogeneous_mesh_bulk_data( bulk_data , node_coord );
 
         EXPECT_NO_FATAL_FAILURE(ElementDeathUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
+    }
+}
+
+TEST(ElementGraph, degenerate_mesh)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+
+    if(stk::parallel_machine_size(comm) == 1)
+    {
+        stk::mesh::MetaData meta_data(3);
+        stk::mesh::fixtures::VectorFieldType & node_coord =
+        meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
+        stk::mesh::put_field( node_coord , meta_data.universal_part() , 3);
+
+        stk::mesh::fixtures::degenerate_mesh_meta_data( meta_data , node_coord );
+        stk::mesh::Part &skin = meta_data.declare_part("skin", meta_data.side_rank());
+        stk::io::put_io_part_attribute(skin);
+        meta_data.commit();
+
+        stk::mesh::BulkData bulk_data( meta_data, comm, stk::mesh::BulkData::NO_AUTO_AURA );
+        stk::mesh::fixtures::degenerate_mesh_bulk_data( bulk_data , node_coord );
+
+        EXPECT_NO_FATAL_FAILURE(ElementDeathUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
+        unsigned num_faces = stk::mesh::count_selected_entities(meta_data.locally_owned_part(), bulk_data.buckets(meta_data.side_rank()));
+        EXPECT_EQ(10u, num_faces);
     }
 }
 
