@@ -642,6 +642,7 @@ public:
   inline unsigned num_edges(Entity entity) const;
   inline unsigned num_faces(Entity entity) const;
   inline unsigned num_elements(Entity entity) const;
+  unsigned num_sides(Entity entity) const;
 
   unsigned count_valid_connectivity(Entity entity, EntityRank rank) const;
 

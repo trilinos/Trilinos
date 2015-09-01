@@ -2043,8 +2043,12 @@ stk::mesh::Entity ElemElemGraph::add_side_to_mesh(stk::mesh::impl::ElementSidePa
     }
     else
     {
+        stk::mesh::PartVector add_parts = skin_parts;
+        stk::topology elem_top = m_bulk_data.bucket(element).topology();
+        stk::topology side_top = elem_top.side_topology(side_ordinal);
+        add_parts.push_back(&m_bulk_data.mesh_meta_data().get_topology_root_part(side_top));
         ThrowRequireMsg(!impl::is_id_already_in_use_locally(m_bulk_data, m_bulk_data.mesh_meta_data().side_rank(), side_id), "Program error. Id in use.");
-        side = stk::mesh::declare_element_side(m_bulk_data, side_id, element, side_ordinal, skin_parts);
+        side = stk::mesh::declare_element_side(m_bulk_data, side_id, element, side_ordinal, add_parts);
     }
     return side;
 }

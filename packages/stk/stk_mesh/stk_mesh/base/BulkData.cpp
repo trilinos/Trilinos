@@ -6864,6 +6864,11 @@ void BulkData::de_induce_parts_from_nodes(const stk::mesh::EntityVector & deacti
     }
 }
 
+unsigned BulkData::num_sides(Entity entity) const
+{
+    return num_connectivity(entity, mesh_meta_data().side_rank());
+}
+
 #ifdef SIERRA_MIGRATION
 EntityLess::EntityLess(const BulkData& mesh)
   : m_mesh(&mesh),
