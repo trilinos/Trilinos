@@ -1,9 +1,197 @@
-/////////////////////////////////////////////////////////////////////////
+README: Zoltan2 Test Driver XML input files
 
-This document details general formatting for Zoltan2 .xml input
- files for use with the Zoltan2 test driver (test_driver.exe)
+This document details general formatting and requirements for Zoltan2 .xml input files used by the Zoltan2 test driver (/packages/zoltan2/test/driver/test_driver.exe).  A template for creating you own input files is included in this directory (input_template.xml).
 
-/////////////////////////////////////////////////////////////////////////
+Every Zoltan2 test driver input file must contain 2 required sections sections and may contain a 3rd optional section:
 
+	1. Input source definition
+	2. Test/Problem parameters and components definitions
+	3. Comparison definitions (optional)
 
+Each section is detailed below.  Please note that the sections described must be continued within a “Main” xml block whose name is arbitrary (ex. 0). Please not that the general use of the word “block” in the following refers to an xml parameter list block unless otherwise stated.
 
+Section 1: Input source definition (REQUIRED)
+
+In the first section of your input file you should define the input data source and type.  The test driver is designed such that all problems defined in section 2 share a common data source, therefore only 1 XML input source definition block per input file source is supported.  Currently there are 2 different flavors of input source definitions: one defining input from some supported file type, and the second defining Galari generated data.  Input parameter blocks should be named “InputParameters” and be the first defined block with in the main XML block.
+
+ A block defining input from an existing file source must contain the following parameters (ex. 1):
+
+	* input path: path to the directory containing the input file (relative or absolute)
+	* input file: the name of the source file — EXCLUDING extension.
+	* file type: Matrix Market, Pamgen, Chaco, or Geometric Generator
+
+If your input source is a pamgen mesh definition you are required to define an integer typed “dimension” parameter specifying the dimension of the mesh.
+
+A Galari generated block should contain the following parameters (ex. 2):
+	
+	* x: number of grid points in the x-direction
+	* y (optional): number of grid points in the y-direction
+	* z (optional): number of grid points in the z-direction
+	* equation type: Galari specific equation name, i.e. Laplace3D
+
+An input source block defining a Galari generated data source may define a problem in 1, 2, or 3D.  The dimension of the problem is inferred by which coordinate parameters (x,y,z) have been defined, e.g., if only the x parameter has been defined then the problem is assumed to be 1D.
+
+ 
+ Section 2: Zoltan2 problem definition (REQUIRED)
+
+This section contains all of the blocks and associated sub-blocks that define a Zoltan2 problem.  This section must contain at least one problem definition and may contain as many as the user likes for the sake of testing and comparison. Each problem definition block should be uniquely named and must contain a ‘kind’ parameter specifying the kind of Zoltan2 problem: partitioning, coloring, ordering etc. (currently only partitioning problems are supported by the test driver). Each problem definition block must contain the following 2 sub-blocks (ex. 3):
+	
+	* InputAdapterParameters
+	* Zoltan2Parameters
+
+InputAdapterParameters:  This block defines the type of input adapter to be passed to the Zoltan2 problem as well as which data structure it should be constructed with.  Therefore this block is required to contain the following 2 parameters:
+	
+	* data type:
+		- coordinates
+		- (x,t,e)petra_vector
+		- (x,t,e)petra_multivector
+		- (x,t,e)petra_crs_matrix
+		- (x,t,e)petra_crs_graph
+	* input adapter
+		- BasicIdentifier
+		- BasicVector
+		- XpetraMultivector
+		- XpetraCrsMatrix
+		- XpetraCrsGraph
+		- PamgenMesh
+
+Please note that if you choose to use a multi-vector data type with an adapter then you must additionally define an integer typed “vector_dimension” parameter specifying the dimension of the (x,t, e)petra multi-vector data type.
+
+Zoltan2Parameters:  This block defines all of the parameters applicable to a given problem.  Please consult the Zoltan2 documentation for a complete list of parameters.
+
+In addition to the aforementioned required blocks, a problem definition block may contain an optional 3rd “Metrics” block.  The “Metrics” block may contain multiple sub-blocks defining lower and/or upper tolerances for pass/fail testing of specific Zoltan2 calculated metrics.  Each sub-block of “Metrics” should be named according the metric being tested, must include a double typed parameter definition for “lower” and /or “upper’, which refer to an acceptable lower/upper bound on the defined metric.  If any of the tolerances are violated then the test driver will report a failure.
+
+  Section 3: Comparison definitions (OPTIONAL)
+
+ This section is optional, and may be defined to direct comparison of solutions for different algorithms that may be defined within section 2.  Like section 2 this section may include multiple “Comparison” blocks each specifying two problems/tests to compare— problem A and problem B.  A “Comparison” block parameter list must contain the following 2 parameters (ex. 4):
+	
+	* A: the name of problem A
+	* B: the name of problem B
+
+The value of parameter A and B must be identical to the names of the blocks defining problems A and B in section 2.  EXAMPLES:
+
+Example 0: General xml input structure
+
+<ParameterList name=“ARBITRAY NAME”>
+
+SECTION 1 (REQUIRED)
+	<ParameterList name=“InputParameters”>
+		…
+	</ParameterList>
+
+SECTION 2 (REQUIRED)
+	<ParameterList name=“Problem 1”>
+		…
+	<ParameterList name=“InputAdapterParameters”>
+		…
+	</ParameterList>
+
+	<ParameterList name=“Zoltan2Parameters”>
+		…
+	</ParameterList>
+
+	<ParameterList name=“Metrics”>
+			<ParameterList name=“metic name”>
+				…
+			</ParameterList>
+	</ParameterList>
+	</ParameterList>
+
+SECTION 3 (OPTIONAL)
+	<ParameterList name=“Comparison”>
+		…
+	</ParameterList>
+
+	<ParameterList name=“Comparison”>
+		…
+	</ParameterList>
+
+</ParameterList>
+ Example 1: input from file
+
+  <ParameterList name="InputParameters">
+    <Parameter name="input path" type="string" value="PATH/TO/INPUT/DIRECTORY"/>
+    <Parameter name="input file" type="string" value="FILE NAME (NO EXTENSION)"/>
+    <Parameter name="file type" type="string" value="INPUT FILE TYPE"/>
+    <!--    PAMGEN MESHES REQUIRE THAT A DIMINSION PARAMTER BE SET-->
+    <!--    <Parameter name="dimension" type="int" value="##"/>-->
+  </ParameterList>
+
+Example 2: Galari generated input
+
+<ParameterList name="InputParameters">
+    <Parameter name="x" type="int" value="##"/>
+    <Parameter name="y" type="int" value="##"/>
+    <Parameter name="z" type="int" value="##"/>
+    <Parameter name="equation type" type="string" value="GALERI EQUATION"/>
+  </ParameterList>
+
+Example 3: A problem definition block.
+
+  <ParameterList name="TEST/PROBLEM TITLE #1">
+    
+    <!--####################################################
+     Specify the problem type
+     #####################################################-->
+    
+    <Parameter name="kind" type="string" value="PROBLEM TYPE"/>
+    
+    
+    <!--####################################################
+     Define block for the input adapter
+     * must define a data type
+     ** multivector data types require you to
+     define a 'vector_dimension' parameter,
+     which is an int value corresponding to
+     the multivector dimension
+     * must define an adapter type
+     #####################################################-->
+    
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="INPUT DATA TYPE"/>
+      <Parameter name="input adapter" type="string" value="INPUT ADAPTER TYPE"/>
+    </ParameterList>
+    
+    
+    <!--####################################################
+     Define block of Zoltan2 problem parameters
+     * all Zoltan2 parameters are valid
+     * tell Zoltan to compute metrics if you are
+     going to run a pass fail test defined
+     by the following metrics block
+     #####################################################-->
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="algorithm" type="string" value="SPECIFY ALGORITHM" />
+      <Parameter name="bisection_num_test_cuts" type="int" value="###" />
+      <Parameter name="rectilinear" type="string" value="YES/NO"/>
+      <Parameter name="compute_metrics" type="string" value="true"/>
+    </ParameterList>
+    
+    
+    <!--####################################################
+     (OPTIONAL) Define block of metric tolerances
+     * block names must == Zoltan2 metric name
+     * object count, weight ##, edge ## etc
+     #####################################################-->
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="METRIC NAME">
+        <Parameter name="lower" type="double" value="##.####"/>
+        <Parameter name="upper" type="double" value="##.####"/>
+      </ParameterList>
+    </ParameterList>
+    
+  </ParameterList>
+
+Example 4.
+
+  <ParameterList name="Comparison">
+    <Parameter name="A" type="string" value="TEST/PROBLEM TITLE #1"/>
+    <Parameter name="B" type="string" value="TEST/PROBLEM TITLE #2"/>
+  </ParameterList>
+  
+  <ParameterList name="Comparison">
+    <Parameter name="A" type="string" value="TEST/PROBLEM TITLE #1"/>
+    <Parameter name="B" type="string" value="TEST/PROBLEM TITLE #3"/>
+  </ParameterList>
