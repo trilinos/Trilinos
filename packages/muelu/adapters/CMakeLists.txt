@@ -125,7 +125,7 @@ TRIBITS_ADD_LIBRARY(
   muelu-adapters
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-#  DEPLIBS muelu muelu-interface
+  DEPLIBS muelu muelu-interface
   ADDED_LIB_TARGET_NAME_OUT MUELU_ADAPTERS_LIBNAME
   )
 

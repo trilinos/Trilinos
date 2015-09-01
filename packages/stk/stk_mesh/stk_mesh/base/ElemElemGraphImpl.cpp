@@ -337,14 +337,37 @@ stk::mesh::Entity get_side_for_element(const stk::mesh::BulkData& bulkData, stk:
     return side;
 }
 
-
-bool create_or_delete_shared_side(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
-        stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, bool create_shared_side, const stk::mesh::PartVector& side_parts,
-        stk::mesh::Part &activePart, std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities,
-        stk::mesh::EntityVector & facesWithNodesToBeMarkedInactive, stk::mesh::Part& sides_created_during_death)
+stk::mesh::PartVector get_stk_parts_for_moving_parts_into_death_boundary(const stk::mesh::PartVector *bc_mesh_parts)
 {
-    bool topology_modified = false;
+    stk::mesh::PartVector sideParts;
+    if(bc_mesh_parts != nullptr)
+    {
+        const stk::mesh::PartVector * meshparts_to_apply = bc_mesh_parts;
+        unsigned int number_of_meshparts = meshparts_to_apply->size();
 
+        for(unsigned int index = 0; index < number_of_meshparts; ++index)
+        {
+            stk::mesh::Part * mp = (*meshparts_to_apply)[index];
+
+            sideParts.push_back(mp);
+
+            stk::mesh::PartVector::const_iterator isup = mp->supersets().begin();
+            for(; isup != mp->supersets().end(); ++isup)
+            {
+                if(!stk::mesh::is_auto_declared_part(**isup))
+                {
+                    sideParts.push_back(*isup);
+                }
+            }
+        }
+    }
+    return sideParts;
+}
+
+void add_side_into_death_boundary(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
+        stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& side_parts,
+        std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::Part& sides_created_during_death, const stk::mesh::PartVector *boundary_mesh_parts)
+{
     int side_id = elementGraph.get_side_from_element1_to_remote_element2(local_element, remote_id);
     ThrowRequireMsg(side_id != -1, "Program error. Please contact sierra-help@sandia.gov for support.");
 
@@ -352,58 +375,58 @@ bool create_or_delete_shared_side(stk::mesh::BulkData& bulkData, const parallel_
     stk::mesh::ConnectivityOrdinal side_ord = static_cast<stk::mesh::ConnectivityOrdinal>(side_id);
     std::string msg = "Program error. Contact sierra-help@sandia.gov for support.";
 
-    stk::topology side_top = bulkData.bucket(local_element).topology().side_topology(side_ord);
-    if(create_shared_side)
+    // determine which element is active
+    stk::mesh::Permutation perm = stk::mesh::DEFAULT_PERMUTATION;
+    int other_proc = parallel_edge_info.m_other_proc;
+    int owning_proc = std::min(other_proc, bulkData.parallel_rank());
+
+    if(parallel_edge_info.m_in_part)
     {
-        // determine which element is active
-        stk::mesh::Permutation perm = stk::mesh::DEFAULT_PERMUTATION;
-        int other_proc = parallel_edge_info.m_other_proc;
-        int owning_proc = std::min(other_proc, bulkData.parallel_rank());
+        perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
+    }
 
-        if(parallel_edge_info.m_in_part)
-        {
-            perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
-        }
+    stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(bulkData, local_element, side_id);
 
+    if(!bulkData.is_valid(side))
+    {
         stk::mesh::PartVector parts = side_parts;
+        stk::topology side_top = bulkData.bucket(local_element).topology().side_topology(side_ord);
         parts.push_back(&bulkData.mesh_meta_data().get_topology_root_part(side_top));
-
-        stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(bulkData, local_element, side_id);
-
-        if(!bulkData.is_valid(side))
-        {
-            topology_modified = true;
-            parts.push_back(&sides_created_during_death);
-            ThrowRequireMsg(!impl::is_id_already_in_use_locally(bulkData, bulkData.mesh_meta_data().side_rank(), side_global_id), msg);
-            side = connect_side_to_element(bulkData, local_element, side_global_id, side_ord, perm, parts);
-            shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owning_proc));
-        }
-        else
-        {
-            topology_modified = true;
-            if(bulkData.bucket(side).owned())
-            {
-                bulkData.change_entity_parts(side, parts, stk::mesh::PartVector());
-            }
-        }
+        parts.push_back(&sides_created_during_death);
+        ThrowRequireMsg(!impl::is_id_already_in_use_locally(bulkData, bulkData.mesh_meta_data().side_rank(), side_global_id), msg);
+        side = connect_side_to_element(bulkData, local_element, side_global_id, side_ord, perm, parts);
+        shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, owning_proc));
     }
     else
     {
-        stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(bulkData, local_element, side_id);
-        facesWithNodesToBeMarkedInactive.push_back(side);
-        if(bulkData.is_valid(side) && bulkData.bucket(side).member(sides_created_during_death))
+        if(bulkData.bucket(side).owned())
         {
-            deletedEntities.push_back(side);
-            topology_modified = true;
-        }
-        else if(bulkData.is_valid(side) && bulkData.bucket(side).owned())
-        {
-            topology_modified = true;
-            bulkData.change_entity_parts(side, {}, {&activePart});
+            stk::mesh::PartVector parts = get_stk_parts_for_moving_parts_into_death_boundary(boundary_mesh_parts);
+            bulkData.change_entity_parts(side, parts, stk::mesh::PartVector());
+            shared_modified.push_back(stk::mesh::sharing_info(side, other_proc, bulkData.parallel_owner_rank(side)));
         }
     }
-    return topology_modified;
 }
+
+void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, const ElemElemGraph& elementGraph,
+        stk::mesh::Entity local_element, stk::mesh::EntityId remote_id,
+        stk::mesh::Part &activePart, stk::mesh::EntityVector &deletedEntities,
+        stk::mesh::Part& sides_created_during_death)
+{
+    int side_id = elementGraph.get_side_from_element1_to_remote_element2(local_element, remote_id);
+    ThrowRequireMsg(side_id != -1, "Program error. Please contact sierra-help@sandia.gov for support.");
+
+    stk::mesh::Entity side = stk::mesh::impl::get_side_for_element(bulkData, local_element, side_id);
+    if(bulkData.is_valid(side) && bulkData.bucket(side).member(sides_created_during_death))
+    {
+        deletedEntities.push_back(side);
+    }
+    else if(bulkData.is_valid(side) && bulkData.bucket(side).owned())
+    {
+        bulkData.change_entity_parts(side, {}, {&activePart});
+    }
+}
+
 
 stk::mesh::Entity connect_side_to_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity element,
         stk::mesh::EntityId side_global_id, stk::mesh::ConnectivityOrdinal side_ordinal,
@@ -550,6 +573,32 @@ void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::Bulk
         for(size_t i=0; i<numNodes; ++i)
         {
             comm.send_buffer(sharing_proc).pack<stk::mesh::EntityKey>(side_node_entity_keys[i]);
+        }
+    }
+}
+
+void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const std::vector<int> &internal_sides,
+        std::vector<ElementSidePair>& element_side_pairs)
+{
+    size_t num_sides = topology.num_sides();
+    std::vector<int> elem_sides;
+
+    if (internal_sides.size() < num_sides)
+    {
+        elem_sides.assign(num_sides, -1);
+        for(size_t j=0; j<internal_sides.size(); ++j)
+        {
+            int sideId = internal_sides[j];
+            elem_sides[sideId] = internal_sides[j];
+        }
+
+        for(size_t j=0; j<num_sides; ++j)
+        {
+            if (elem_sides[j] == -1)
+            {
+                int sideId = j;
+                element_side_pairs.push_back(std::make_pair(elementId, sideId));
+            }
         }
     }
 }

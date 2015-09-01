@@ -72,11 +72,12 @@ namespace Example {
 
                           for (ordinal_type j=i;j<nnz_r1t && (idx > -2);++j) {
                             const ordinal_type col_at_j = r1t.Col(j);
-                            const value_type   val_at_j = r1t.Value(j);
-
                             idx = r2t.Index(col_at_j, idx);
-                            if (idx >= 0)
+
+                            if (idx >= 0) {
+                              const value_type val_at_j = r1t.Value(j);
                               r2t.Value(idx) -= val_at_i*val_at_j;
+                            }
                           }
                         });
       }

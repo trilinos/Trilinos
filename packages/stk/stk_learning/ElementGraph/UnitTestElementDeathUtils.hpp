@@ -23,7 +23,7 @@ public:
     void my_de_induce_unranked_part_from_nodes(const stk::mesh::EntityVector & deactivatedElements,
                                                stk::mesh::Part & activePart)
     {
-        this->de_induce_parts_from_nodes(deactivatedElements, activePart, {&activePart});
+        this->de_induce_parts_from_nodes(deactivatedElements, activePart);
     }
     void my_remove_boundary_faces_from_part(stk::mesh::ElemElemGraph &graph,
                                             const stk::mesh::EntityVector & deactivatedElements,
@@ -74,6 +74,21 @@ inline stk::mesh::Entity get_face_between_element_ids(stk::mesh::ElemElemGraph& 
         face_between_elem1_and_elem2 = stk::mesh::impl::get_side_for_element(bulkData, elem2, side);
     }
     return face_between_elem1_and_elem2;
+}
+
+inline void skin_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Part &active, const stk::mesh::PartVector& skin_parts)
+{
+    stk::mesh::ElemElemGraph elem_elem_graph(bulkData, active);
+    stk::mesh::Selector sel = active;
+    elem_elem_graph.skin_mesh(sel, skin_parts);
+}
+
+inline void skin_part(stk::mesh::BulkData& bulkData, stk::mesh::Part &active, const stk::mesh::PartVector& skin_parts)
+{
+    stk::mesh::ElemElemGraph elem_elem_graph(bulkData, active);
+    stk::mesh::Selector sel = active;
+    stk::mesh::Selector air = !active;
+    elem_elem_graph.skin_mesh(sel, skin_parts, &air);
 }
 
 } // end namespace

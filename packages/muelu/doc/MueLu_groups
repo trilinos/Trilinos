@@ -1,15 +1,18 @@
 /*! @defgroup MueLuBaseClasses The main MueLu base classes
-
-   some text
 */
 
 /*! @defgroup MueLuTransferClasses The main MueLu prolongator classes
 */
 
-/*! @defgroup MueLuAdapters The main MueLu adapters (interfaces).
+/*! @defgroup MueLuAdapters The main MueLu adapters (interfaces)
+
+  Most applications will use these interfaces to create preconditioners with MueLu.  Options are passed to the adapters via
+  Teuchos::ParameterLists or XML input files.  Applications can optionally provide nullspace vectors (if known)
+  and/or mesh coordinate vectors (for parallel rebalancing and auxiliary dropping).
+  Adapters are available for Epetra and Tpetra, and return Epetra_Operators and Tpetra::Operators, respectively.
 */
 
-/*! @defgroup MueLuTimerClasses The MueLu timing classes.
+/*! @defgroup MueLuTimerClasses The MueLu timing classes
 
 
   You should use FactoryMonitor and SubFactoryMonitor within factories.

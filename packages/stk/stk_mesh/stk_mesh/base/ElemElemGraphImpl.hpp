@@ -121,10 +121,16 @@ void communicate_killed_entities(stk::mesh::BulkData& bulkData, const std::vecto
 
 void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<graphEdgeProc>& elements_to_comm);
 
-bool create_or_delete_shared_side(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
-        stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, bool create_face, const stk::mesh::PartVector& face_parts,
-        stk::mesh::Part &activePart, std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::EntityVector &deletedEntities,
-        stk::mesh::EntityVector &facesWithNodesToBeMarkedInactive, stk::mesh::Part& faces_created_during_death);
+void add_side_into_death_boundary(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
+        stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& face_parts,
+        std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::Part& faces_created_during_death, const stk::mesh::PartVector *boundary_mesh_parts = nullptr);
+
+void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, const ElemElemGraph& elementGraph,
+        stk::mesh::Entity local_element, stk::mesh::EntityId remote_id,
+        stk::mesh::Part &activePart, /* shared_modified */stk::mesh::EntityVector &deletedEntities,
+        stk::mesh::Part& sides_created_during_death);
+
+stk::mesh::PartVector get_stk_parts_for_moving_parts_into_death_boundary(const stk::mesh::PartVector *bc_mesh_parts);
 
 stk::mesh::Entity get_side_for_element(const stk::mesh::BulkData& bulkData, stk::mesh::Entity this_elem_entity, int side_id);
 
@@ -156,6 +162,9 @@ void break_volume_element_connections_across_shells(const std::set<EntityId> & l
 void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::BulkData &m_bulk_data, const std::vector<SharedEdgeInfo> &newlySharedEdges);
 
 bool does_element_have_side(stk::mesh::BulkData& bulkData, stk::mesh::Entity element);
+
+void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const std::vector<int> &internal_sides,
+        std::vector<ElementSidePair>& element_side_pairs);
 
 }
 }} // end namespaces stk mesh

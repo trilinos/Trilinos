@@ -86,6 +86,7 @@ TRIBITS_ADD_LIBRARY(
   muelu-interface
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  DEPLIBS muelu
   )
 
 # for debugging

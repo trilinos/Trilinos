@@ -49,6 +49,7 @@
 #define MORKON_MORKON_MANAGER_TESTER_HPP
 
 #include <mrk_api_classes.hpp>
+#include <mrk_compute_normals.hpp>
 
 namespace morkon_exp {
 
@@ -87,8 +88,10 @@ public:
   face_to_nodes_hmt                            hm_face_to_nodes;
   points_hmt                                     hm_node_coords;
   points_hmt                           hm_predicted_node_coords;
+  points_hmt                                    hm_face_normals;
 
-  static Teuchos::RCP< Morkon_Manager_Tester<DeviceType, DIM, FACE_TYPE> > MakeInstance(MPI_Comm mpi_comm, int printlevel);
+  static Teuchos::RCP< Morkon_Manager_Tester<DeviceType, DIM, FACE_TYPE> >
+    MakeInstance(MPI_Comm mpi_comm,  FaceProjectionMethod projection_method, int printlevel);
 
   MPI_Comm  get_mpi_comm() const     { return morkon_manager::m_mpi_comm; }
   int       get_printlevel() const { return morkon_manager::m_printlevel; }
@@ -118,37 +121,28 @@ public:
     CopyToHostMirror(hm_node_coords, morkon_manager::m_fields.m_node_coords);
   }
   void get_predicted_node_coords() {
-      CopyToHostMirror(hm_predicted_node_coords, morkon_manager::m_fields.m_predicted_node_coords);
+    CopyToHostMirror(hm_predicted_node_coords, morkon_manager::m_fields.m_predicted_node_coords);
+  }
+  void get_face_normals() {
+    CopyToHostMirror(hm_face_normals, morkon_manager::m_fields.m_face_normals);
   }
 
-  Teuchos::RCP<Tpetra::Map<> > get_problem_map_ptr() const { return morkon_manager::m_problem_map; }
+  Morkon_Manager_Tester(MPI_Comm mpi_comm, FaceProjectionMethod projection_method, int printlevel)
+      : morkon_manager(mpi_comm, projection_method, printlevel) {}
 
-  const interfaces_map_t             & get_interfaces_ref() const { return morkon_manager::m_interfaces; }
-  const local_to_global_idx_t        & get_node_global_ids_ref() const { return morkon_manager::m_node_global_ids; }
-  const local_to_global_idx_t        & get_face_global_ids_ref() const { return morkon_manager::m_face_global_ids; }
-  const surface_mesh_t               & get_surface_mesh_ref() const { return  morkon_manager::m_surface_mesh; }
-  const fields_t                     & get_fields_ref() const { return morkon_manager::m_fields; }
-  const face_to_interface_and_side_t & get_face_to_interface_and_side_ref() const {
-      return morkon_manager::m_face_to_interface_and_side;
-  }
-
-  on_boundary_table_t          & get_on_boundary_table_ref() const { return morkon_manager::m_is_ifc_boundary_node; }
-  node_support_sets_t          & get_node_support_sets_ref() const { return morkon_manager::m_node_support_sets; }
-
-  Morkon_Manager_Tester(MPI_Comm mpi_comm, int printlevel)
-      : morkon_manager(mpi_comm, printlevel) {}
-
+  bool compute_normals() { return morkon_manager::compute_normals(); }
 };
 
 template  <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>
 Teuchos::RCP< Morkon_Manager_Tester<DeviceType, DIM, FACE_TYPE> >
-Morkon_Manager_Tester<DeviceType, DIM, FACE_TYPE>::MakeInstance(MPI_Comm mpi_comm, int printlevel)
+Morkon_Manager_Tester<DeviceType, DIM, FACE_TYPE>::MakeInstance(MPI_Comm mpi_comm,
+                                                                FaceProjectionMethod projection_method,
+                                                                int printlevel)
 {
   typedef Morkon_Manager_Tester<DeviceType, DIM, FACE_TYPE> morkon_manager_t;
 
-  return Teuchos::RCP<morkon_manager_t>(new morkon_manager_t(mpi_comm, printlevel) );
+  return Teuchos::RCP<morkon_manager_t>(new morkon_manager_t(mpi_comm, projection_method, printlevel) );
 }
-
 
 }
 
