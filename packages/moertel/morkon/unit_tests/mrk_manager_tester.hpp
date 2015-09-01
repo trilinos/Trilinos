@@ -131,6 +131,10 @@ public:
       : morkon_manager(mpi_comm, projection_method, printlevel) {}
 
   bool compute_normals() { return morkon_manager::compute_normals(); }
+
+  bool find_possible_contact_face_pairs(contact_search_results_t coarse_search_results) {
+    return morkon_manager::find_possible_contact_face_pairs(coarse_search_results);
+  }
 };
 
 template  <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>
