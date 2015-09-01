@@ -134,8 +134,14 @@ namespace panzer {
     //! Returns the element block id associated with this sideset.
     std::string elementBlockID() const;
 
+    //! Returns the second element block id associated with this sideset.
+    std::string elementBlockID2() const;
+
     //! Returns the unknown name/keyword.
     std::string equationSetName() const;
+
+    //! Returns the second unknown name/keyword.
+    std::string equationSetName2() const;
 
     //! Returns the keyword used to construct a bc strategy.
     std::string strategy() const;
@@ -169,7 +175,11 @@ namespace panzer {
 
     std::string m_element_block_id;
 
+    std::string m_element_block_id2;
+
     std::string m_equation_set_name;
+
+    std::string m_equation_set_name2;
 
     std::string m_strategy;
 
