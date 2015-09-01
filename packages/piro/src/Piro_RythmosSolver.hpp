@@ -140,12 +140,14 @@ private:
 
   /** \brief . */
   Teuchos::RCP<const Teuchos::ParameterList> getValidRythmosParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidRythmosSolverParameters() const;
 
   Teuchos::RCP<Rythmos::DefaultIntegrator<Scalar> > fwdStateIntegrator;
   Teuchos::RCP<Rythmos::StepperBase<Scalar> > fwdStateStepper;
   Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > fwdTimeStepSolver;
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model;
+  Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyraModel;
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > initialConditionModel;
 
   Scalar t_initial;

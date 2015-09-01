@@ -47,7 +47,7 @@
 #include "Sacado_MP_VectorTraits.hpp"
 
 #include "Kokkos_Core.hpp"
-#include "Kokkos_AnalyzeSacadoShape.hpp"
+#include "Kokkos_AnalyzeStokhosShape.hpp"
 #include "Kokkos_View_Utils.hpp"
 #include "Kokkos_View_MP_Vector_Utils.hpp"
 
@@ -296,7 +296,7 @@ private:
   typedef Impl::ViewOffset< typename traits::shape_type ,
                             typename traits::array_layout > offset_map_type ;
 
-  typedef Impl::AnalyzeSacadoShape< typename traits::data_type,
+  typedef Impl::AnalyzeStokhosShape< typename traits::data_type,
                                     typename traits::array_layout > analyze_sacado_shape;
 
   typedef Impl::MPVectorAllocation<stokhos_storage_type> allocation_type;
@@ -1343,12 +1343,12 @@ public:
  *  This treats Sacado::MP::Vector as an array.
  */
 template< class StorageType, class Layout >
-struct AnalyzeSacadoShape< Sacado::MP::Vector< StorageType >, Layout >
+struct AnalyzeStokhosShape< Sacado::MP::Vector< StorageType >, Layout >
   : Shape< sizeof(Sacado::MP::Vector< StorageType >) , 0 > // Treat as a scalar
 {
 private:
 
-  typedef AnalyzeSacadoShape< typename StorageType::value_type, Layout > nested ;
+  typedef AnalyzeStokhosShape< typename StorageType::value_type, Layout > nested ;
 
 public:
 

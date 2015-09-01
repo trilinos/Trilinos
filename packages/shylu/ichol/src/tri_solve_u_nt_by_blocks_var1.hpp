@@ -3,7 +3,7 @@
 #define __TRI_SOLVE_U_NT_BY_BLOCKS_VAR1_HPP__
 
 /// \file tri_solve_u_nt_by_blocks_var1.hpp
-/// \brief Sparse incomplete Cholesky factorization by blocks.
+/// \brief Sparse triangular solve on given sparse patterns and multiple rhs.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 ///
 /// This naively generates tasks without any merging of task blocks.
@@ -17,18 +17,18 @@ namespace Example {
            typename DenseTaskViewTypeB,
            typename DenseTaskViewTypeC>
   KOKKOS_INLINE_FUNCTION
-  int genGemmTasks_UpperByBlocks(typename CrsTaskViewTypeA::policy_type &policy,
-                                 CrsTaskViewTypeA &A,
-                                 DenseTaskViewTypeB &B,
-                                 DenseTaskViewTypeC &C) {
+  int genGemmTasks_TriSolveUpperNoTransposeByBlocks(typename CrsTaskViewTypeA::policy_type &policy,
+                                                    CrsTaskViewTypeA &A,
+                                                    DenseTaskViewTypeB &B,
+                                                    DenseTaskViewTypeC &C) {
     typedef typename CrsTaskViewTypeA::ordinal_type      ordinal_type;
     typedef typename CrsTaskViewTypeA::value_type        crs_value_type;
     typedef typename CrsTaskViewTypeA::row_view_type     row_view_type;
     
-    typedef typename CrsTaskViewType::future_type       future_type;
-    typedef typename CrsTaskViewType::task_factory_type task_factory_type;
+    typedef typename CrsTaskViewTypeA::future_type       future_type;
+    typedef typename CrsTaskViewTypeA::task_factory_type task_factory_type;
     
-    typedef typename DenseTaskViewType::value_type      dense_value_typ;
+    typedef typename DenseTaskViewTypeB::value_type      dense_value_type;
     
     row_view_type a(A,0);
     const ordinal_type nnz = a.NumNonZeros();
@@ -66,15 +66,15 @@ namespace Example {
 
     return 0;
   }
-
+  
   template<typename ParallelForType,
            typename CrsTaskViewTypeA,
            typename DenseTaskViewTypeB>
   KOKKOS_INLINE_FUNCTION
-  int genTrsmTasks_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                 const int diagA,
-                                 CrsTaskViewTypeA &A,
-                                 DenseTaskViewTypeB &B) {
+  int genTrsmTasks_TriSolveUpperNoTransposeByBlocks(typename CrsTaskViewTypeA::policy_type &policy,
+                                                    const int diagA,
+                                                    CrsTaskViewTypeA &A,
+                                                    DenseTaskViewTypeB &B) {
     typedef typename CrsTaskViewTypeA::ordinal_type      ordinal_type;
     typedef typename CrsTaskViewTypeA::value_type        crs_value_type;
     typedef typename CrsTaskViewTypeA::row_view_type     row_view_type;
@@ -88,7 +88,7 @@ namespace Example {
     crs_value_type &aa = a.Value(0);
 
     for (ordinal_type j=0;j<B.NumCols();++j) {
-      dense_value_type &bb = b.Value(0, j);
+      dense_value_type &bb = B.Value(0, j);
 
       future_type f = task_factory_type
         ::create(policy,

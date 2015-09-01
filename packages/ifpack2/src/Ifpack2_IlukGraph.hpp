@@ -163,7 +163,7 @@ public:
   }
 
   //! Returns the the overlapped graph.
-  Teuchos::RCP<crs_graph_type> getOverlapGraph () const {
+  Teuchos::RCP<const crs_graph_type> getOverlapGraph () const {
     return OverlapGraph_;
   }
 

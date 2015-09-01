@@ -18,6 +18,8 @@
 #include <cmath>
 #include <complex>
 
+#include <limits>
+
 /// \file util.hpp
 /// \brief Utility functions and constant integer class like an enum class.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
@@ -33,16 +35,27 @@
 using namespace std;
 
 namespace Example {
-  
+
+#ifndef MAX_TEAM_SIZE
+#define MAX_TEAM_SIZE 8
+#endif  
+
 #undef CHKERR
 #define CHKERR(ierr)                                                    \
-  if (ierr != 0) { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << endl; }
+  if (ierr != 0) { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << " : " << ierr << endl; }
 
 #define MSG_NOT_YET_IMPLEMENTED ">> Not yet implemented"
 #define MSG_INVALID_INPUT(what) ">> Invaid input argument: " #what
 #define MSG_INVALID_TEMPLATE_ARGS ">> Invaid template arguments"
 #define ERROR(msg)                                                      \
   { cout << endl << ">> Error in " << __FILE__ << ", " << __LINE__ << endl << msg << endl; }
+  
+  /// \class GraphHelper
+  class GraphHelper {
+  public:
+    static const int DefaultRandomSeed = -1;
+  };
+
   
   /// \class Partition
   /// \brief Matrix partition parameters.
@@ -106,8 +119,10 @@ namespace Example {
   class AlgoChol {
   public:
     // One side factorization on flat matrices
+    static const int Dummy         = 1000;
     static const int Unblocked     = 1001;
     static const int UnblockedOpt1 = 1002;
+    static const int UnblockedOpt2 = 1003;
     static const int Blocked       = 1101; // testing only
 
     static const int ByBlocks      = 1201;
@@ -144,7 +159,7 @@ namespace Example {
   /// \brief Interface for overloaded stream operators.
   template<typename T> 
   inline 
-  ostream& operator<<(ostream &os, const auto_ptr<T> &p) {
+  ostream& operator<<(ostream &os, const unique_ptr<T> &p) {
     return p->showMe(os);
   }
 
@@ -164,6 +179,29 @@ namespace Example {
   ostream& operator<<(ostream &os, const Disp &disp) {
     return disp.showMe(os);
   }  
+
+  template<typename T> struct NumericTraits {};
+
+  template<>
+  struct NumericTraits<float> {
+    typedef float real_type;
+    static real_type epsilon() { return numeric_limits<float>::epsilon(); }
+  };
+  template<>
+  struct NumericTraits<double> {
+    typedef double real_type;
+    static real_type epsilon() { return numeric_limits<double>::epsilon(); }
+  };
+  template<>
+  struct NumericTraits<complex<float> > {
+    typedef float real_type;
+    static real_type epsilon() { return numeric_limits<float>::epsilon(); }
+  };
+  template<>
+  struct NumericTraits<complex<double> > {
+    typedef double real_type;
+    static real_type epsilon() { return numeric_limits<double>::epsilon(); }
+  };
 
 }
 

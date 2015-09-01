@@ -122,6 +122,8 @@ panzer::BC::BC(std::size_t bc_id,const Teuchos::ParameterList& p)
     m_bc_type = BCT_Dirichlet;
   else if (type == "Neumann")
     m_bc_type = BCT_Neumann;
+  else if (type == "Interface")
+    m_bc_type = BCT_Interface;
 
   m_sideset_id = params->get<std::string>("Sideset ID");
   m_element_block_id = params->get<std::string>("Element Block ID");
@@ -147,6 +149,8 @@ panzer::BC::BC(std::size_t bc_id,const Teuchos::ParameterList& p, const Teuchos:
     m_bc_type = BCT_Dirichlet;
   else if (type == "Neumann")
     m_bc_type = BCT_Neumann;
+  else if (type == "Interface")
+    m_bc_type = BCT_Interface;
 
   m_sideset_id = params->get<std::string>("Sideset ID");
   m_element_block_id = params->get<std::string>("Element Block ID");
@@ -246,6 +250,10 @@ void panzer::BC::print(std::ostream& os) const
   std::string type;
   if (m_bc_type == BCT_Dirichlet)
     type = "Dirichlet";
+  else if (m_bc_type == BCT_Neumann)
+    type = "Neumann";
+  else if (m_bc_type == BCT_Interface)
+    type = "Interface";
   else
     type = "Neumann";
 

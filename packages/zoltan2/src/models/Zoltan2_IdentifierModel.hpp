@@ -87,7 +87,8 @@ public:
        \param modelFlags   bit map of Zoltan2::IdentifierModelFlags
    */
   
-  IdentifierModel(const Adapter *ia, const RCP<const Environment> &env,
+  IdentifierModel(const RCP<const Adapter> &ia, 
+                  const RCP<const Environment> &env,
                   const RCP<const Comm<int> > &comm, modelFlag_t &modelFlags);
 
   /*! Returns the number of identifiers on this process.
@@ -148,7 +149,7 @@ private:
 ////////////////////////////////////////////////////
 template <typename Adapter>
   IdentifierModel<Adapter>::IdentifierModel( 
-    const Adapter *ia,
+    const RCP<const Adapter> &ia,
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags):

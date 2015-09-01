@@ -48,19 +48,19 @@
 
 #include <stdlib.h>
 
+#include <Teuchos_LAPACK.hpp>
+
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_ImportFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
+#include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_SemiCoarsenPFactory_decl.hpp"
 
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_PerfUtils.hpp"
-#include "MueLu_Utilities.hpp"
-#include <Teuchos_LAPACK.hpp>
 
 namespace MueLu {
 
@@ -71,12 +71,13 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("semicoarsen: coarsen rate");
 #undef  SET_VALID_ENTRY
-    validParamList->set<ArrayRCP<LO> >("SemiCoarsenInfo",  Teuchos::null, "Generating factory of the array SemiCoarsenInfo");
+    validParamList->set< RCP<const FactoryBase> >("A",               Teuchos::null, "Generating factory of the matrix A");
+    validParamList->set< RCP<const FactoryBase> >("Nullspace",       Teuchos::null, "Generating factory of the nullspace");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates",     Teuchos::null, "Generating factory for coorindates");
 
-    validParamList->set< RCP<const FactoryBase> >("A",            Teuchos::null, "Generating factory of the matrix A");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace",    Teuchos::null, "Generating factory of the nullspace");
-    validParamList->set< RCP<const FactoryBase> >("Coordinates",  Teuchos::null, "Generating factory for coorindates");
-
+    validParamList->set< RCP<const FactoryBase> >("LineDetection_VertLineIds", Teuchos::null, "Generating factory for LineDetection information");
+    validParamList->set< RCP<const FactoryBase> >("LineDetection_Layers",      Teuchos::null, "Generating factory for LineDetection information");
+    validParamList->set< RCP<const FactoryBase> >("CoarseNumZLayers",          Teuchos::null, "Generating factory for LineDetection information");
 
     return validParamList;
   }
@@ -85,9 +86,30 @@ namespace MueLu {
   void SemiCoarsenPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level& fineLevel, Level& coarseLevel) const {
     Input(fineLevel, "A");
     Input(fineLevel, "Nullspace");
-    //    Input(fineLevel, "Coordinates");   // rst: this didn't work last time I tried?
-    //    Input(fineLevel, "SemiCoarsenInfo");    // rst: this didn't work last time I tried?
 
+    Input(fineLevel, "LineDetection_VertLineIds");
+    Input(fineLevel, "LineDetection_Layers");
+    Input(fineLevel, "CoarseNumZLayers");
+
+    // check whether fine level coordinate information is available.
+    // If yes, request the fine level coordinates and generate coarse coordinates
+    // during the Build call
+    if (fineLevel.GetLevelID() == 0) {
+      if (fineLevel.IsAvailable("Coordinates", NoFactory::get())) {
+        fineLevel.DeclareInput("Coordinates", NoFactory::get(), this);
+        bTransferCoordinates_ = true;
+      }
+    } else if (bTransferCoordinates_ == true){
+      // on coarser levels we check the default factory providing "Coordinates"
+      // or the factory declared to provide "Coordinates"
+      // first, check which factory is providing coordinate information
+      RCP<const FactoryBase> myCoordsFact = GetFactory("Coordinates");
+      if (myCoordsFact == Teuchos::null) { myCoordsFact = fineLevel.GetFactoryManager()->GetFactory("Coordinates"); }
+      if (fineLevel.IsAvailable("Coordinates", myCoordsFact.get())) {
+        fineLevel.DeclareInput("Coordinates", myCoordsFact.get(), this);
+        bTransferCoordinates_ = true;
+      }
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -99,77 +121,146 @@ namespace MueLu {
   void SemiCoarsenPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
-    LO               NumZDir = 0, Zorientation = GRID_SUPPLIED;
-    RCP<MultiVector> fineCoords;
-    ArrayRCP<Scalar> x, y, z;
-    Scalar           *xptr = NULL, *yptr = NULL, *zptr = NULL;
-
+    // obtain general variables
     RCP<Matrix>      A             = Get< RCP<Matrix> >      (fineLevel, "A");
     RCP<MultiVector> fineNullspace = Get< RCP<MultiVector> > (fineLevel, "Nullspace");
 
-    if (fineLevel.IsAvailable("SemiCoarsenInfo")) {
-      ArrayRCP<LO>  FineSemiInfo = fineLevel.Get<ArrayRCP<LO> >("SemiCoarsenInfo");
-      NumZDir      = FineSemiInfo[NUM_ZPTS];
-      Zorientation = FineSemiInfo[ORIENTATION];
-    }
-    if (Zorientation == GRID_SUPPLIED) {
-      bool CoordsAvail = fineLevel.IsAvailable("Coordinates");
+    // get user-provided coarsening rate parameter (constant over all levels)
+    const ParameterList& pL = GetParameterList();
+    LO CoarsenRate = as<LO>(pL.get<int>("semicoarsen: coarsen rate"));
 
-      if (CoordsAvail == false) {
-        if (fineLevel.GetLevelID() == 0)
-          throw Exceptions::RuntimeError("Coordinates must be supplied if semicoarsen orientation not given.");
-        else
-          throw Exceptions::RuntimeError("Coordinates not generated by previous invocation of SemiCoarsenPFactory's BuildP() method.");
-      }
-      fineCoords = Get< RCP<MultiVector> > (fineLevel, "Coordinates");
-      TEUCHOS_TEST_FOR_EXCEPTION(fineCoords->getNumVectors() != 3, Exceptions::RuntimeError, "Three coordinates arrays must be supplied if semicoarsen orientation not given.");
-      x = fineCoords->getDataNonConst(0);
-      y = fineCoords->getDataNonConst(1);
-      z = fineCoords->getDataNonConst(2);
-      xptr = x.getRawPtr();
-      yptr = y.getRawPtr();
-      zptr = z.getRawPtr();
-    }
-
-    LO BlkSize = A->GetFixedBlockSize();
-    TEUCHOS_TEST_FOR_EXCEPTION(BlkSize != 1, Exceptions::RuntimeError, "Block size > 1 has not been implemented");
-
+    // collect general input data
+    LO BlkSize            = A->GetFixedBlockSize();
     RCP<const Map> rowMap = A->getRowMap();
+    LO Ndofs              = rowMap->getNodeNumElements();
+    LO Nnodes             = Ndofs/BlkSize;
 
-    LO   Ndofs, Nnodes, *LayerId, *VertLineId, CoarsenRate;
-    GO   Ncoarse;
+    // collect line detection information generated by the LineDetectionFactory instance
+    LO FineNumZLayers = Get< LO >(fineLevel, "CoarseNumZLayers");
+    LO CoarseNumZLayers = FineNumZLayers;
+    Teuchos::ArrayRCP<LO>     TVertLineId = Get< Teuchos::ArrayRCP<LO> > (fineLevel, "LineDetection_VertLineIds");
+    Teuchos::ArrayRCP<LO>     TLayerId    = Get< Teuchos::ArrayRCP<LO> > (fineLevel, "LineDetection_Layers");
+    LO* VertLineId = TVertLineId.getRawPtr();
+    LO* LayerId    = TLayerId.getRawPtr();
 
-    const ParameterList &pL = GetParameterList();
-    CoarsenRate = as<LO>(pL.get<int>("semicoarsen: coarsen rate"));
-
-    Ndofs   = rowMap->getNodeNumElements();
-    Nnodes  = Ndofs/BlkSize;
-
-    Teuchos::ArrayRCP<LO>     TLayerId   = Teuchos::arcp<LO>(Nnodes+1);  LayerId   = TLayerId.getRawPtr();
-    Teuchos::ArrayRCP<LO>     TVertLineId= Teuchos::arcp<LO>(Nnodes+1);  VertLineId= TVertLineId.getRawPtr();
-
-    NumZDir = ML_compute_line_info(LayerId, VertLineId,Ndofs, BlkSize,
-                                   Zorientation, NumZDir,xptr,yptr,zptr, *(rowMap->getComm()));
-
+    // generate transfer operator with semicoarsening
     RCP<const Map> theCoarseMap;
     RCP<Matrix>    P;
-
-    Ncoarse = MakeSemiCoarsenP(Nnodes,NumZDir,CoarsenRate,LayerId,VertLineId,
+    GO Ncoarse = MakeSemiCoarsenP(Nnodes,CoarseNumZLayers,CoarsenRate,LayerId,VertLineId,
                                BlkSize, A, P, theCoarseMap);
 
-    Teuchos::ArrayRCP<LO> coarseSemiInfo = Teuchos::arcp<LO>(3);
-    coarseSemiInfo[NUM_ZPTS] = NumZDir*Ncoarse/Ndofs;
-    coarseSemiInfo[ORIENTATION] = VERTICAL;
-    coarseLevel.Set("SemiCoarsenInfo", coarseSemiInfo, MueLu::NoFactory::get());  // rst: why do I need NoFactory?
-    Set(coarseLevel, "CoarseMap", P->getDomainMap());
+    // set StridingInformation of P
+    if (A->IsView("stridedMaps") == true)
+      P->CreateView("stridedMaps", A->getRowMap("stridedMaps"), theCoarseMap);
+    else
+      P->CreateView("stridedMaps", P->getRangeMap(), theCoarseMap);
+
+    // Store number of coarse z-layers on the coarse level container
+    // This information is used by the LineDetectionAlgorithm
+    // TODO get rid of the NoFactory
+    coarseLevel.Set("NumZLayers", Teuchos::as<LO>(CoarseNumZLayers * Ncoarse/Ndofs), MueLu::NoFactory::get());
+
+    // store semicoarsening transfer on coarse level
     Set(coarseLevel, "P", P);
 
     // rst: null space might get scaled here ... do we care. We could just inject at the cpoints, but I don't
     //  feel that this is needed.
-
     RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(P->getDomainMap(), fineNullspace->getNumVectors());
     P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, Teuchos::ScalarTraits<SC>::one(), Teuchos::ScalarTraits<SC>::zero());
     Set(coarseLevel, "Nullspace", coarseNullspace);
+
+    // transfer coordinates
+    if(bTransferCoordinates_) {
+      //Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      typedef Xpetra::MultiVector<double,LO,GO,NO> xdMV;
+      RCP<xdMV>    fineCoords = Teuchos::null;
+      if (fineLevel.GetLevelID() == 0 &&
+          fineLevel.IsAvailable("Coordinates", NoFactory::get())) {
+        fineCoords = fineLevel.Get< RCP<xdMV> >("Coordinates", NoFactory::get());
+      } else {
+        RCP<const FactoryBase> myCoordsFact = GetFactory("Coordinates");
+        if (myCoordsFact == Teuchos::null) { myCoordsFact = fineLevel.GetFactoryManager()->GetFactory("Coordinates"); }
+        if (fineLevel.IsAvailable("Coordinates", myCoordsFact.get())) {
+          fineCoords = fineLevel.Get< RCP<xdMV> >("Coordinates", myCoordsFact.get());
+        }
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(fineCoords==Teuchos::null, Exceptions::RuntimeError, "No Coordinates found provided by the user.");
+
+      TEUCHOS_TEST_FOR_EXCEPTION(fineCoords->getNumVectors() != 3, Exceptions::RuntimeError, "Three coordinates arrays must be supplied if line detection orientation not given.");
+      ArrayRCP<double> x = fineCoords->getDataNonConst(0);
+      ArrayRCP<double> y = fineCoords->getDataNonConst(1);
+      ArrayRCP<double> z = fineCoords->getDataNonConst(2);
+
+      // determine the maximum and minimum z coordinate value on the current processor.
+      double zval_max = -Teuchos::ScalarTraits<double>::one() / Teuchos::ScalarTraits<double>::sfmin();
+      double zval_min =  Teuchos::ScalarTraits<double>::one() / Teuchos::ScalarTraits<double>::sfmin();
+      for ( ArrayRCP<double>::iterator it = z.begin(); it != z.end(); ++it) {
+        if(*it > zval_max) zval_max = *it;
+        if(*it < zval_min) zval_min = *it;
+      }
+
+      LO myCoarseZLayers = Teuchos::as<LO>(CoarseNumZLayers * Ncoarse/Ndofs);
+
+      ArrayRCP<double> myZLayerCoords = Teuchos::arcp<double>(myCoarseZLayers);
+      if(myCoarseZLayers == 1) {
+        myZLayerCoords[0] = zval_min;
+      } else {
+        double dz = (zval_max-zval_min)/(myCoarseZLayers-1);
+        for(LO k = 0; k<myCoarseZLayers; ++k) {
+          myZLayerCoords[k] = k*dz;
+        }
+      }
+
+      // Note, that the coarse level node coordinates have to be in vertical ordering according
+      // to the numbering of the vertical lines
+
+      // number of vertical lines on current node:
+      LO numVertLines = Nnodes / FineNumZLayers;
+      LO numLocalCoarseNodes = numVertLines * myCoarseZLayers;
+
+      //std::cout << "rowMap elements: " << rowMap->getNodeNumElements() << std::endl;
+      //std::cout << "fineCoords: " << fineCoords->getNodeNumElements() << std::endl;
+      //std::cout << "TVertLineId.size(): " << TVertLineId.size() << std::endl;
+      //std::cout << "numVertLines=" << numVertLines << std::endl;
+      //std::cout << "numLocalCoarseNodes=" << numLocalCoarseNodes << std::endl;
+
+      RCP<const Map>   coarseCoordMap =
+          MapFactory::Build (fineCoords->getMap()->lib(),
+              Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+              Teuchos::as<size_t>(numLocalCoarseNodes),
+              fineCoords->getMap()->getIndexBase(),
+              fineCoords->getMap()->getComm());
+      RCP<xdMV> coarseCoords   = Xpetra::MultiVectorFactory<double,LO,GO,NO>::Build(coarseCoordMap, fineCoords->getNumVectors());
+      coarseCoords->putScalar(-1.0);
+      ArrayRCP<double> cx = coarseCoords->getDataNonConst(0);
+      ArrayRCP<double> cy = coarseCoords->getDataNonConst(1);
+      ArrayRCP<double> cz = coarseCoords->getDataNonConst(2);
+
+      // loop over all vert line indices (stop as soon as possible)
+      LO cntCoarseNodes = 0;
+      for( LO vt = 0; vt < TVertLineId.size(); ++vt) {
+        //vertical line id in *vt
+        LO curVertLineId = TVertLineId[vt];
+
+        if(cx[curVertLineId * myCoarseZLayers] == -1.0 &&
+           cy[curVertLineId * myCoarseZLayers] == -1.0) {
+          // loop over all local myCoarseZLayers
+          for (LO n=0; n<myCoarseZLayers; ++n) {
+            cx[curVertLineId * myCoarseZLayers + n] = x[vt];
+            cy[curVertLineId * myCoarseZLayers + n] = y[vt];
+            cz[curVertLineId * myCoarseZLayers + n] = myZLayerCoords[n];
+          }
+          cntCoarseNodes += myCoarseZLayers;
+        }
+
+        TEUCHOS_TEST_FOR_EXCEPTION(cntCoarseNodes > numLocalCoarseNodes, Exceptions::RuntimeError, "number of coarse nodes is inconsistent.");
+        if(cntCoarseNodes == numLocalCoarseNodes) break;
+      }
+
+      // set coarse level coordinates
+      Set(coarseLevel, "Coordinates", coarseCoords);
+    } /* end bool bTransferCoordinates */
 
   }
 
@@ -206,10 +297,9 @@ namespace MueLu {
     if  (Thin == 1) NCpts = (LO) ceil(temp);
     else            NCpts = (LO) floor(temp);
 
-    if (PtsPerLine == 1) { printf("cannot coarsen further\n"); return -1; }
+    TEUCHOS_TEST_FOR_EXCEPTION(PtsPerLine == 1, Exceptions::RuntimeError, "SemiCoarsenPFactory::FindCpts: cannot coarsen further.");
+
     if (NCpts < 1) NCpts = 1;
-
-
 
     FirstStride= (LO) ceil( ((double) PtsPerLine+1)/( (double) (NCpts+1)));
     RestStride = ((double) (PtsPerLine-FirstStride+1))/((double) NCpts);
@@ -417,7 +507,24 @@ namespace MueLu {
 
     RCP<const Map> rowMap = Amat->getRowMap();
     int GNdofs= rowMap->getGlobalNumElements();
-    coarseMap = MapFactory::createContigMapWithNode(rowMap->lib(),(NCLayers*GNdofs)/nz, NCLayers*NVertLines*DofsPerNode,(rowMap->getComm()), rowMap->getNode());
+
+    std::vector<size_t> stridingInfo_;
+    stridingInfo_.push_back(DofsPerNode);
+
+    coarseMap = StridedMapFactory::Build(rowMap->lib(),
+        (NCLayers*GNdofs)/nz,
+        NCLayers*NVertLines*DofsPerNode,
+        0, /* index base */
+        stridingInfo_,
+        rowMap->getComm(),
+        -1, /* strided block id */
+        0, /* domain gid offset */
+        rowMap->getNode());
+
+
+    //coarseMap = MapFactory::createContigMapWithNode(rowMap->lib(),(NCLayers*GNdofs)/nz, NCLayers*NVertLines*DofsPerNode,(rowMap->getComm()), rowMap->getNode());
+
+
     P       = rcp(new CrsMatrixWrap(rowMap, coarseMap , 0, Xpetra::StaticProfile));
 
 
@@ -666,232 +773,6 @@ namespace MueLu {
 
 
     return NCLayers*NVertLines*DofsPerNode;
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  LocalOrdinal SemiCoarsenPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ML_compute_line_info(LocalOrdinal LayerId[], LocalOrdinal VertLineId[], LocalOrdinal Ndof, LocalOrdinal DofsPerNode, LocalOrdinal MeshNumbering, LocalOrdinal NumNodesPerVertLine, Scalar *xvals, Scalar *yvals, Scalar *zvals, const Teuchos::Comm<int>& comm) const {
-
-    LO    Nnodes, NVertLines, MyNode;
-    LO    NumCoords, NumBlocks, index, next, subindex, subnext;
-    SC xfirst, yfirst;
-    SC *xtemp, *ytemp, *ztemp;
-    LO    *OrigLoc;
-    LO    i,j,count;
-    LO    RetVal;
-    //LO    mypid; // Not used
-
-    //mypid = comm.getRank();
-    RetVal = 0;
-    if ((MeshNumbering != VERTICAL) && (MeshNumbering != HORIZONTAL)) {
-      if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) RetVal = -1;
-    }
-    else {
-      if  (NumNodesPerVertLine == -1)                     RetVal = -4;
-      if ( ((Ndof/DofsPerNode)%NumNodesPerVertLine) != 0) RetVal = -3;
-    }
-    if ( (Ndof%DofsPerNode) != 0) RetVal = -2;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(RetVal == -1, Exceptions::RuntimeError, "Not semicoarsening as no mesh numbering information or coordinates are given\n");
-    TEUCHOS_TEST_FOR_EXCEPTION(RetVal == -4, Exceptions::RuntimeError, "Not semicoarsening as the number of z nodes is not given.\n");
-    TEUCHOS_TEST_FOR_EXCEPTION(RetVal == -3, Exceptions::RuntimeError, "Not semicoarsening as the total number of nodes is not evenly divisible by the number of z direction nodes .\n");
-    TEUCHOS_TEST_FOR_EXCEPTION(RetVal == -2, Exceptions::RuntimeError, "Not semicoarsening as something is off with the number of degrees-of-freedom per node.\n");
-
-    Nnodes = Ndof/DofsPerNode;
-
-    for (MyNode = 0; MyNode < Nnodes;  MyNode++) VertLineId[MyNode]= -1;
-    for (MyNode = 0; MyNode < Nnodes;  MyNode++) LayerId[MyNode]   = -1;
-
-
-    if (MeshNumbering == VERTICAL) {
-      for (MyNode = 0; MyNode < Nnodes; MyNode++) {
-        LayerId[MyNode]= MyNode%NumNodesPerVertLine;
-        VertLineId[MyNode]= (MyNode- LayerId[MyNode])/NumNodesPerVertLine;
-      }
-    }
-    else if (MeshNumbering == HORIZONTAL) {
-      NVertLines = Nnodes/NumNodesPerVertLine;
-      for (MyNode = 0; MyNode < Nnodes; MyNode++) {
-        VertLineId[MyNode]   = MyNode%NVertLines;
-        LayerId[MyNode]   = (MyNode- VertLineId[MyNode])/NVertLines;
-      }
-    }
-    else {
-
-
-      NumCoords = Ndof/DofsPerNode;
-
-      /* sort coordinates so that we can order things according to lines */
-
-      Teuchos::ArrayRCP<LO> TOrigLoc= Teuchos::arcp<LO>(NumCoords+1);       OrigLoc= TOrigLoc.getRawPtr();
-      Teuchos::ArrayRCP<SC> Txtemp  = Teuchos::arcp<SC>(NumCoords+1);       xtemp  = Txtemp.getRawPtr();
-      Teuchos::ArrayRCP<SC> Tytemp  = Teuchos::arcp<SC>(NumCoords+1);       ytemp  = Tytemp.getRawPtr();
-      Teuchos::ArrayRCP<SC> Tztemp  = Teuchos::arcp<SC>(NumCoords+1);       ztemp  = Tztemp.getRawPtr();
-
-      TEUCHOS_TEST_FOR_EXCEPTION(ztemp == NULL, Exceptions::RuntimeError, "Not enough memory for line algorithms");
-      for (i = 0; i < NumCoords; i++) ytemp[i]= yvals[i];
-      for (i = 0; i < NumCoords; i++) OrigLoc[i]= i;
-
-      ML_az_dsort2(ytemp,NumCoords,OrigLoc);
-      for (i = 0; i < NumCoords; i++) xtemp[i]= xvals[OrigLoc[i]];
-
-      index = 0;
-
-      while ( index < NumCoords ) {
-        yfirst = ytemp[index];
-        next   = index+1;
-        while ( (next != NumCoords) && (ytemp[next] == yfirst))
-          next++;
-        ML_az_dsort2(&(xtemp[index]),next-index,&(OrigLoc[index]));
-        for (i = index; i < next; i++) ztemp[i]= zvals[OrigLoc[i]];
-        /* One final sort so that the ztemps are in order */
-        subindex = index;
-        while (subindex != next) {
-          xfirst = xtemp[subindex]; subnext = subindex+1;
-          while ( (subnext != next) && (xtemp[subnext] == xfirst)) subnext++;
-          ML_az_dsort2(&(ztemp[subindex]),subnext-subindex,&(OrigLoc[subindex]));
-          subindex = subnext;
-        }
-        index = next;
-      }
-
-      /* go through each vertical line and populate blockIndices so all   */
-      /* dofs within a PDE within a vertical line correspond to one block.*/
-
-      NumBlocks = 0;
-      index = 0;
-
-      while ( index < NumCoords ) {
-        xfirst = xtemp[index];  yfirst = ytemp[index];
-        next = index+1;
-        while ( (next != NumCoords) && (xtemp[next] == xfirst) &&
-                (ytemp[next] == yfirst))
-          next++;
-        if (NumBlocks == 0) NumNodesPerVertLine = next-index;
-        TEUCHOS_TEST_FOR_EXCEPTION(next-index != NumNodesPerVertLine,Exceptions::RuntimeError, "Error code only works for constant block size now!!!\n");
-        count = 0;
-        for (j= index; j < next; j++) {
-          VertLineId[OrigLoc[j]] = NumBlocks;
-          LayerId[OrigLoc[j]] = count++;
-        }
-        NumBlocks++;
-        index = next;
-      }
-    }
-
-    /* check that everyone was assigned */
-
-    for (i = 0; i < Nnodes;  i++) {
-      if (VertLineId[i] == -1) {
-        printf("Warning: did not assign %d to a vertical line?????\n",i);
-      }
-      if (LayerId[i] == -1) {
-        printf("Warning: did not assign %d to a Layer?????\n",i);
-      }
-    }
-    maxAll(&comm, NumNodesPerVertLine, i);
-    if (NumNodesPerVertLine == -1)  NumNodesPerVertLine = i;
-
-    TEUCHOS_TEST_FOR_EXCEPTION(NumNodesPerVertLine != i,Exceptions::RuntimeError, "Different processors have different z direction line lengths?\n");
-    return NumNodesPerVertLine;
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void SemiCoarsenPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ML_az_dsort2(Scalar dlist[], LocalOrdinal N, LocalOrdinal list2[]) const {
-    LO l, r, j, i, flag;
-    LO RR2;
-    SC       dRR, dK;
-    typedef Teuchos::ScalarTraits<SC> STS;
-
-    if (N <= 1) return;
-
-    l    = N / 2 + 1;
-    r    = N - 1;
-    l    = l - 1;
-    dRR  = dlist[l - 1];
-    dK   = dlist[l - 1];
-
-    if (list2 != NULL) {
-      RR2 = list2[l - 1];
-      while (r != 0) {
-        j = l;
-        flag = 1;
-
-        while (flag == 1) {
-          i = j;
-          j = j + j;
-
-          if (j > r + 1)
-            flag = 0;
-          else {
-            if (j < r + 1)
-              if (STS::magnitude(dlist[j]) > STS::magnitude(dlist[j - 1])) j = j + 1;
-
-            if (STS::magnitude(dlist[j - 1]) > STS::magnitude(dK)) {
-              dlist[ i - 1] = dlist[ j - 1];
-              list2[i - 1] = list2[j - 1];
-            }
-            else {
-              flag = 0;
-            }
-          }
-        }
-        dlist[ i - 1] = dRR;
-        list2[i - 1] = RR2;
-
-        if (l == 1) {
-          dRR  = dlist [r];
-          RR2 = list2[r];
-          dK = dlist[r];
-          dlist[r ] = dlist[0];
-          list2[r] = list2[0];
-          r = r - 1;
-        }
-        else {
-          l   = l - 1;
-          dRR  = dlist[ l - 1];
-          RR2 = list2[l - 1];
-          dK   = dlist[l - 1];
-        }
-      }
-      dlist[ 0] = dRR;
-      list2[0] = RR2;
-    }
-    else {
-      while (r != 0) {
-        j = l;
-        flag = 1;
-        while (flag == 1) {
-          i = j;
-          j = j + j;
-          if (j > r + 1)
-            flag = 0;
-          else {
-            if (j < r + 1)
-              if (STS::magnitude(dlist[j]) > STS::magnitude(dlist[j - 1])) j = j + 1;
-            if (STS::magnitude(dlist[j - 1]) > STS::magnitude(dK)) {
-              dlist[ i - 1] = dlist[ j - 1];
-            }
-            else {
-              flag = 0;
-            }
-          }
-        }
-        dlist[ i - 1] = dRR;
-        if (l == 1) {
-          dRR  = dlist [r];
-          dK = dlist[r];
-          dlist[r ] = dlist[0];
-          r = r - 1;
-        }
-        else {
-          l   = l - 1;
-          dRR  = dlist[ l - 1];
-          dK   = dlist[l - 1];
-        }
-      }
-      dlist[ 0] = dRR;
-    }
-
   }
 } //namespace MueLu
 

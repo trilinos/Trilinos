@@ -52,6 +52,10 @@ public:
     {
     }
 
+    void track_set_global_id(stk::mesh::Entity entity, stk::mesh::EntityId newId)
+    {
+    }
+
     void track_change_entity_id(stk::mesh::EntityId newId, stk::mesh::Entity entity)
     {
     }
@@ -118,6 +122,8 @@ public:
 
     void track_change_entity_id(stk::mesh::EntityId newId, stk::mesh::Entity entity);
 
+    void track_set_global_id(stk::mesh::Entity entity, stk::mesh::EntityId newId);
+
     void track_destroy_entity(stk::mesh::Entity entity);
 
     void track_change_entity_parts(stk::mesh::Entity entity, const stk::mesh::PartVector& addParts, const stk::mesh::PartVector& rmParts);
@@ -154,6 +160,7 @@ private:
     std::vector<std::pair<stk::mesh::EntityKey, std::string> > m_stringTracker;
     int m_lastModCycle;
     int m_modCounter;
+    int m_modificationSummaryNumber;
 };
 
 } // namespace

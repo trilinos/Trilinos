@@ -61,8 +61,6 @@
 
 #include <Zoltan2_XML_Parameters.hpp>  
 
-using namespace std;
-
 namespace Zoltan2 {
 
 /*! \brief  Create a list of all Zoltan2 parameters and validators.
@@ -94,7 +92,7 @@ void createAllParameters(Teuchos::ParameterList &pList)
   Teuchos::StringInputSource src(xmlParameterString);
 
   Teuchos::XMLObject xmlObj;
-  ostringstream errMsg;
+  std::ostringstream errMsg;
 
   Teuchos::XMLParser parser(src.stream());
 
@@ -156,10 +154,8 @@ static void setValidatorsInList(
     const ParameterEntry &entryAll = plAll.getEntry(name);
 
     if (entrySome.isList()){
-      const ParameterList &sublistSome = plSome.sublist(name);   // get
-      const ParameterList &sublistAll = plAll.sublist(name);     // get
-      ParameterList &sublistVal = plVal.sublist(name);     // create & get
-      setValidatorsInList(sublistSome, sublistAll, sublistVal);
+      plVal.sublist(name);     // create & get
+      // Don't set validators for sublists; sublists are for TPL's parameters
     }
     else{
       plVal.setEntry(name, entryAll);
@@ -196,23 +192,22 @@ void printListDocumentation(
   std::ostream &os,
   std::string listNames)
 {
-  using std::string;
 
   if (listNames.size() == 0)
-    listNames = string("top");
+    listNames = std::string("top");
 
-  Array<string> subLists;
+  Array<std::string> subLists;
   ParameterList::ConstIterator next = pl.begin();
 
   while (next != pl.end()){
-    const string &name = next->first;
+    const std::string &name = next->first;
     const ParameterEntry &entry = pl.getEntry(name);
 
     if (entry.isList()){
       subLists.append(name);
     }
     else{
-      string doc = entry.docString();
+      std::string doc = entry.docString();
       os << "List: "<< listNames << ", parameter: " << name << "\n";
       if (doc.size())
         os << doc << "\n";
@@ -222,7 +217,7 @@ void printListDocumentation(
   }
 
   for (int i=0; i < subLists.size(); i++){
-    string newListName = listNames + string("/") + subLists[i];
+    std::string newListName = listNames + std::string("/") + subLists[i];
     const ParameterList &sublist = pl.sublist(subLists[i]);
     printListDocumentation(sublist, os, newListName);
   }

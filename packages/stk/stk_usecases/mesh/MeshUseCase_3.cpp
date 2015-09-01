@@ -121,36 +121,36 @@ static const double node_coord_data[ node_count ][ SpatialDim ] = {
   { 1 , 1 , -2 } };
 
 // Hard coded hex node ids for all the hex nodes in the entire mesh
-static const EntityId hex_node_ids[number_hex][ Hex8::node_count ] = {
+static const EntityIdVector hex_node_ids[number_hex] {
   { 1 , 2 , 12 , 11 , 5 , 6 , 16 , 15 } ,
   { 2 , 3 , 13 , 12 , 6 , 7 , 17 , 16 } ,
   { 3 , 4 , 14 , 13 , 7 , 8 , 18 , 17 } };
 
 // Hard coded wedge node ids for all the wedge nodes in the entire mesh
-static const EntityId wedge_node_ids[number_wedge][ Wedge6::node_count ] = {
+static const EntityIdVector wedge_node_ids[number_wedge] {
   { 15 , 16 , 19 ,  5 ,  6 ,  9 } ,
   { 10 ,  9 ,  6 , 20 , 19 , 16 } ,
   { 16 , 17 , 20 ,  6 ,  7 , 10 } };
 
 // Hard coded tetra node ids for all the tetra nodes in the entire mesh
-static const EntityId tetra_node_ids[number_tetra][ Tet4::node_count ] = {
+static const EntityIdVector tetra_node_ids[number_tetra] {
   { 15 , 19 , 16 , 21 } ,
   { 19 , 20 , 16 , 21 } ,
   { 16 , 20 , 17 , 21 } };
 
 // Hard coded pyramid node ids for all the pyramid nodes in the entire mesh
-static const EntityId pyramid_node_ids[number_pyramid][ Pyramid4::node_count ] = {
+static const EntityIdVector pyramid_node_ids[number_pyramid] {
   { 11 , 15 , 16 , 12 , 21 } ,
   { 12 , 16 , 17 , 13 , 21 } };
 
 // Hard coded shell quad node ids for all the shell quad nodes in the entire mesh
-static const EntityId shell_quad_node_ids[number_shell_quad][ ShellQuad4::node_count ]={
+static const EntityIdVector shell_quad_node_ids[number_shell_quad] {
   { 9 , 6 , 16 , 19 } ,
   { 6 , 7 , 17 , 16 } ,
   { 7 , 8 , 18 , 17 } };
 
 // Hard coded shell tri node ids for all the shell tri nodes in the entire mesh
-static const EntityId shell_tri_node_ids[number_shell_tri][ ShellTriangle3::node_count ] ={
+static const EntityIdVector shell_tri_node_ids[number_shell_tri] {
   { 19 , 16 , 21 } ,
   { 16 , 17 , 21 } ,
   { 17 , 13 , 21 } };

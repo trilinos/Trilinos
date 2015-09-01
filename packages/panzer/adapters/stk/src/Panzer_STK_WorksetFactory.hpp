@@ -45,6 +45,7 @@
 
 #include "Panzer_WorksetFactoryBase.hpp"
 #include "Panzer_WorksetDescriptor.hpp"
+#include "Panzer_WorksetNeeds.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 
@@ -65,12 +66,26 @@ public:
    getSideWorksets(const panzer::BC & bc,
                  const panzer::PhysicsBlock & pb) const;
 
+   /** Build sets of boundary condition worksets
+     */
+   virtual
+   Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
+   getSideWorksets(const panzer::BC & bc,
+                   const panzer::WorksetNeeds & needs) const;
+
    /** Build workssets specified by the workset descriptor.
      */
    virtual
    Teuchos::RCP<std::vector<panzer::Workset> >
    getWorksets(const panzer::WorksetDescriptor & worksetDesc,
                const panzer::PhysicsBlock & pb) const;
+
+   /** Build workssets specified by the workset descriptor.
+     */
+   virtual
+   Teuchos::RCP<std::vector<panzer::Workset> >
+   getWorksets(const panzer::WorksetDescriptor & worksetDesc,
+               const panzer::WorksetNeeds & needs) const;
 
 private:
 

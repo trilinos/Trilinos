@@ -42,7 +42,6 @@
 // ***********************************************************************
 //
 // @HEADER
-
 /*! \file Zoltan2_AlgMultiJagged.hpp
   \brief Contains the Multi-jagged algorthm.
  */
@@ -69,14 +68,13 @@
 #include <Teuchos_Hashtable.hpp>
 #endif // C++11 is enabled
 
-#ifdef HAVE_ZOLTAN2_ZOLTAN
+#ifdef ZOLTAN2_USEZOLTANCOMM
 #ifdef HAVE_ZOLTAN2_MPI
 #define ENABLE_ZOLTAN_MIGRATION
 #include "zoltan_comm_cpp.h"
 #include "zoltan_types.h" // for error codes
 #endif
 #endif
-
 
 #ifdef HAVE_ZOLTAN2_OMP
 #include <omp.h>
@@ -96,7 +94,7 @@
 
 
 
-#define ABS(x) ((x) >= 0 ? (x) : -(x))
+#define ZOLTAN2_ABS(x) ((x) >= 0 ? (x) : -(x))
 //imbalance calculation. Wreal / Wexpected - 1
 #define imbalanceOf(Wachieved, totalW, expectedRatio) \
         (Wachieved) / ((totalW) * (expectedRatio)) - 1
@@ -104,8 +102,6 @@
         (Wachieved) / (wExpected) - 1
 
 
-
-using std::vector;
 
 namespace Teuchos{
 
@@ -250,7 +246,7 @@ public:
         assert (this->count == other.count);
         for(CT i = 0; i < this->count; ++i){
             //if the values are equal go to next one.
-            if (ABS(this->val[i] - other.val[i]) < this->_EPSILON){
+            if (ZOLTAN2_ABS(this->val[i] - other.val[i]) < this->_EPSILON){
                 continue;
             }
             //if next value is smaller return true;
@@ -269,7 +265,7 @@ public:
         assert (this->count == other.count);
         for(CT i = 0; i < this->count; ++i){
             //if the values are equal go to next one.
-            if (ABS(this->val[i] - other.val[i]) < this->_EPSILON){
+            if (ZOLTAN2_ABS(this->val[i] - other.val[i]) < this->_EPSILON){
                 continue;
             }
             //if next value is bigger return true;
@@ -1027,7 +1023,7 @@ private:
      * \param processor_ranks_for_subcomm is the vector that has the ranks of
      * the processors that will be in the same group.
      */
-    void create_sub_communicator(vector<mj_part_t> &processor_ranks_for_subcomm);
+    void create_sub_communicator(std::vector<mj_part_t> &processor_ranks_for_subcomm);
 
 
     /*! \brief Function writes the new permutation arrays after the migration.
@@ -2422,7 +2418,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::set_initial_coordinate_p
 
     //if there is single point, or if all points are along a line.
     //set initial part to 0 for all.
-    if(ABS(coordinate_range) < this->sEpsilon ){
+    if(ZOLTAN2_ABS(coordinate_range) < this->sEpsilon ){
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif
@@ -2807,7 +2803,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part_get_thread_pa
                         is_on_right_of_cut = false;
                         mj_scalar_t cut = temp_current_cut_coords[j];
                         mj_scalar_t distance_to_cut = coord - cut;
-                        mj_scalar_t abs_distance_to_cut = ABS(distance_to_cut);
+                        mj_scalar_t abs_distance_to_cut = ZOLTAN2_ABS(distance_to_cut);
 
                         //if it is on the line.
                         if(abs_distance_to_cut < this->sEpsilon){
@@ -2823,7 +2819,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part_get_thread_pa
                                 mj_part_t kk = j + 1;
                                 while(kk < num_cuts){
                                         // Needed when cuts shared the same position
-                                        distance_to_cut =ABS(temp_current_cut_coords[kk] - cut);
+                                        distance_to_cut =ZOLTAN2_ABS(temp_current_cut_coords[kk] - cut);
                                         if(distance_to_cut < this->sEpsilon){
                                                 my_current_part_weights[2 * kk + 1] += w;
                                                 my_current_left_closest[kk] = coord;
@@ -2844,7 +2840,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part_get_thread_pa
                                 kk = j - 1;
                                 //continue checking for the cuts on the left if they share the same coordinate.
                                 while(kk >= 0){
-                                        distance_to_cut =ABS(temp_current_cut_coords[kk] - cut);
+                                        distance_to_cut =ZOLTAN2_ABS(temp_current_cut_coords[kk] - cut);
                                         if(distance_to_cut < this->sEpsilon){
                                                 my_current_part_weights[2 * kk + 1] += w;
                                                 //try to write the partId as the leftmost cut.
@@ -2959,7 +2955,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_1D_part_get_thread_pa
                 // have the same weight == total weight for all cuts sharing the position.
                 // don't want to accumulate that total weight more than once.
                 if(i % 2 == 0 && i > 1 && i < total_part_count - 1 &&
-                                ABS(temp_current_cut_coords[i / 2] - temp_current_cut_coords[i /2 - 1])
+                                ZOLTAN2_ABS(temp_current_cut_coords[i / 2] - temp_current_cut_coords[i /2 - 1])
                 < this->sEpsilon){
                         //i % 2 = 0 when part i represents the cut coordinate.
                         //if it is a cut, and if the next cut also have the same coordinate, then
@@ -3088,12 +3084,12 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_calculate_new_cut_pos
     mj_scalar_t expected_weight,
     mj_scalar_t &new_cut_position){
 
-    if(ABS(cut_upper_bound - cut_lower_bound) < this->sEpsilon){
+    if(ZOLTAN2_ABS(cut_upper_bound - cut_lower_bound) < this->sEpsilon){
         new_cut_position = cut_upper_bound; //or lower bound does not matter.
     }
 
 
-    if(ABS(cut_upper_weight - cut_lower_weight) < this->sEpsilon){
+    if(ZOLTAN2_ABS(cut_upper_weight - cut_lower_weight) < this->sEpsilon){
         new_cut_position = cut_lower_bound;
     }
 
@@ -3181,7 +3177,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_create_new_partitions
                                 //this is a special case. If cutlines share the same coordinate, their weights are equal.
                                 //we need to adjust the ratio for that.
                                 for (mj_part_t i = num_cuts - 1; i > 0 ; --i){
-                                        if(ABS(current_concurrent_cut_coordinate[i] - current_concurrent_cut_coordinate[i -1]) < this->sEpsilon){
+                                        if(ZOLTAN2_ABS(current_concurrent_cut_coordinate[i] - current_concurrent_cut_coordinate[i -1]) < this->sEpsilon){
                                                 my_local_thread_cut_weights_to_put_left[i] -= my_local_thread_cut_weights_to_put_left[i - 1] ;
                                         }
                                         my_local_thread_cut_weights_to_put_left[i] = int ((my_local_thread_cut_weights_to_put_left[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL)
@@ -3219,7 +3215,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_create_new_partitions
                                         //in order to take care of the imbalance.
                                         if(my_local_thread_cut_weights_to_put_left[coordinate_assigned_part] < 0
                                                         && coordinate_assigned_part < num_cuts - 1
-                                                        && ABS(current_concurrent_cut_coordinate[coordinate_assigned_part+1] -
+                                                        && ZOLTAN2_ABS(current_concurrent_cut_coordinate[coordinate_assigned_part+1] -
                                                                         current_concurrent_cut_coordinate[coordinate_assigned_part]) < this->sEpsilon){
                                                 my_local_thread_cut_weights_to_put_left[coordinate_assigned_part + 1] += my_local_thread_cut_weights_to_put_left[coordinate_assigned_part];
                                         }
@@ -3233,20 +3229,20 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_create_new_partitions
                                         while(this->distribute_points_on_cut_lines &&
                                                         coordinate_assigned_part < num_cuts){
                                                 //traverse all the cut lines having the same partitiong
-                                                if(ABS(current_concurrent_cut_coordinate[coordinate_assigned_part] -
+                                                if(ZOLTAN2_ABS(current_concurrent_cut_coordinate[coordinate_assigned_part] -
                                                                 current_concurrent_cut_coordinate[coordinate_assigned_part - 1])
                                                                 < this->sEpsilon){
                                                         //if line has enough space on left, put it there.
                                                         if(my_local_thread_cut_weights_to_put_left[coordinate_assigned_part] >
                                                         this->sEpsilon &&
                                                         my_local_thread_cut_weights_to_put_left[coordinate_assigned_part] >=
-                                                        ABS(my_local_thread_cut_weights_to_put_left[coordinate_assigned_part] - coordinate_weight)){
+                                                        ZOLTAN2_ABS(my_local_thread_cut_weights_to_put_left[coordinate_assigned_part] - coordinate_weight)){
                                                                 my_local_thread_cut_weights_to_put_left[coordinate_assigned_part] -= coordinate_weight;
                                                                 //Again if it put too much on left of the cut,
                                                                 //update how much the next cut sharing the same coordinate will put to its left.
                                                                 if(my_local_thread_cut_weights_to_put_left[coordinate_assigned_part] < 0 &&
                                                                                 coordinate_assigned_part < num_cuts - 1 &&
-                                                                                ABS(current_concurrent_cut_coordinate[coordinate_assigned_part+1] -
+                                                                                ZOLTAN2_ABS(current_concurrent_cut_coordinate[coordinate_assigned_part+1] -
                                                                                                 current_concurrent_cut_coordinate[coordinate_assigned_part]) < this->sEpsilon){
                                                                         my_local_thread_cut_weights_to_put_left[coordinate_assigned_part + 1] += my_local_thread_cut_weights_to_put_left[coordinate_assigned_part];
                                                                 }
@@ -3429,8 +3425,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinat
                 //rightImbalance = imbalanceOf(globalTotalWeight - seenW, globalTotalWeight, 1 - expected);
                 imbalance_on_right = imbalanceOf2(global_total_weight - seen_weight_in_part, global_total_weight - expected_weight_in_part);
 
-                bool is_left_imbalance_valid = ABS(imbalance_on_left) - used_imbalance_tolerance < this->sEpsilon ;
-                bool is_right_imbalance_valid = ABS(imbalance_on_right) - used_imbalance_tolerance < this->sEpsilon;
+                bool is_left_imbalance_valid = ZOLTAN2_ABS(imbalance_on_left) - used_imbalance_tolerance < this->sEpsilon ;
+                bool is_right_imbalance_valid = ZOLTAN2_ABS(imbalance_on_right) - used_imbalance_tolerance < this->sEpsilon;
 
                 //if the cut line reaches to desired imbalance.
                 if(is_left_imbalance_valid && is_right_imbalance_valid){
@@ -3546,7 +3542,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinat
 
                         //if cut line does not move significantly.
                         //then finalize the search.
-                        if (ABS(current_cut_coordinates[i] - new_cut_position) < this->sEpsilon
+                        if (ZOLTAN2_ABS(current_cut_coordinates[i] - new_cut_position) < this->sEpsilon
                                 /*|| current_cut_lower_bounds[i] - current_cut_upper_bounds[i] > this->sEpsilon*/
                                 ){
                                 current_cut_line_determined[i] = true;
@@ -3622,7 +3618,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_get_new_cut_coordinat
                                         new_cut_position);
 
                         //if cut line does not move significantly.
-                        if (ABS(current_cut_coordinates[i] - new_cut_position) < this->sEpsilon
+                        if (ZOLTAN2_ABS(current_cut_coordinates[i] - new_cut_position) < this->sEpsilon
                                         /*|| current_cut_lower_bounds[i] - current_cut_upper_bounds[i] > this->sEpsilon*/ ){
                                 current_cut_line_determined[i] = true;
 #ifdef HAVE_ZOLTAN2_OMP
@@ -3814,7 +3810,7 @@ bool AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_check_to_migrate(
                         double ideal_num = num_points_in_all_processor_parts[global_shift + i]
                                                                 / double(num_procs);
 
-                        global_imbalance += ABS(ideal_num -
+                        global_imbalance += ZOLTAN2_ABS(ideal_num -
                                         num_points_in_all_processor_parts[ii * num_parts + i]) /  (ideal_num);
                 }
         }
@@ -4997,7 +4993,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::create_consistent_chunks
                         //this is a special case. If cutlines share the same coordinate, their weights are equal.
                         //we need to adjust the ratio for that.
                         for (mj_part_t i = no_cuts - 1; i > 0 ; --i){
-                                if(ABS(current_concurrent_cut_coordinate[i] - current_concurrent_cut_coordinate[i -1]) < this->sEpsilon){
+                                if(ZOLTAN2_ABS(current_concurrent_cut_coordinate[i] - current_concurrent_cut_coordinate[i -1]) < this->sEpsilon){
                                         my_local_thread_cut_weights_to_put_left[i] -= my_local_thread_cut_weights_to_put_left[i - 1] ;
                                 }
                                 my_local_thread_cut_weights_to_put_left[i] = int ((my_local_thread_cut_weights_to_put_left[i] + LEAST_SIGNIFICANCE) * SIGNIFICANCE_MUL)
@@ -5044,7 +5040,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::create_consistent_chunks
         for (mj_part_t i = 1; i < no_cuts ; ++i){
                 //if cuts share the same cut coordinates
                 //set the cutmap accordingly.
-                if(ABS(current_concurrent_cut_coordinate[i] - current_concurrent_cut_coordinate[i -1]) < this->sEpsilon){
+                if(ZOLTAN2_ABS(current_concurrent_cut_coordinate[i] - current_concurrent_cut_coordinate[i -1]) < this->sEpsilon){
                         cut_map[i] = cut_map[i-1];
                 }
                 else {
@@ -5129,7 +5125,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::create_consistent_chunks
 
                         //part p has enough space for point i, then put it to point i.
                         if(     my_local_thread_cut_weights_to_put_left[p] + weight_stolen_from_previous_part> this->sEpsilon &&
-                                my_local_thread_cut_weights_to_put_left[p] + weight_stolen_from_previous_part - ABS(my_local_thread_cut_weights_to_put_left[p] + weight_stolen_from_previous_part - w)
+                                my_local_thread_cut_weights_to_put_left[p] + weight_stolen_from_previous_part - ZOLTAN2_ABS(my_local_thread_cut_weights_to_put_left[p] + weight_stolen_from_previous_part - w)
                                         > this->sEpsilon){
 
                                 my_local_thread_cut_weights_to_put_left[p] -= w;
@@ -6080,6 +6076,12 @@ private:
 
     ArrayRCP<mj_part_t> comXAdj_; //communication graph xadj
     ArrayRCP<mj_part_t> comAdj_; //communication graph adj.
+    
+
+    //when we have strided data, it returns a unstrided data in RCP form.
+    //we need to hold on to that data, during the execution of mj, so that the data is not released.
+    //coordinate_rcp_holder will hold that data, and release it when MJ is deleted.
+    ArrayRCP<const mj_scalar_t> * coordinate_ArrayRCP_holder;
 
     void set_up_partitioning_data(
       const RCP<PartitioningSolution<Adapter> >&solution);
@@ -6112,9 +6114,14 @@ public:
                         check_migrate_avoid_migration_option(0),
                         minimum_migration_imbalance(0.30),
                         mj_keep_part_boxes(0), num_threads(1), mj_run_as_rcb(0),
-                        comXAdj_(), comAdj_()
+                        comXAdj_(), comAdj_(), coordinate_ArrayRCP_holder (NULL)
     {}
-    ~Zoltan2_AlgMJ(){}
+    ~Zoltan2_AlgMJ(){
+      if (coordinate_ArrayRCP_holder != NULL){  
+        delete [] this->coordinate_ArrayRCP_holder;
+        this->coordinate_ArrayRCP_holder = NULL;
+      }
+    }
 
     /*! \brief Multi Jagged  coordinate partitioning algorithm.
      *
@@ -6282,6 +6289,9 @@ void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
         ArrayView<input_t> xyz;
         ArrayView<input_t> wgts;
 
+
+        this->coordinate_ArrayRCP_holder = new ArrayRCP<const mj_scalar_t> [this->coord_dim + this->num_weights_per_coord];
+
         this->mj_coords->getCoordinates(gnos, xyz, wgts);
         //obtain global ids.
         ArrayView<const mj_gno_t> mj_gnos = gnos;
@@ -6291,6 +6301,8 @@ void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
         for (int dim=0; dim < this->coord_dim; dim++){
                 ArrayRCP<const mj_scalar_t> ar;
                 xyz[dim].getInputArray(ar);
+                this->coordinate_ArrayRCP_holder[dim] = ar;
+
                 //multiJagged coordinate values assignment
                 this->mj_coordinates[dim] =  (mj_scalar_t *)ar.getRawPtr();
         }
@@ -6305,6 +6317,7 @@ void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
                 for (int wdim = 0; wdim < this->num_weights_per_coord; wdim++){
                         ArrayRCP<const mj_scalar_t> ar;
                         wgts[wdim].getInputArray(ar);
+                        this->coordinate_ArrayRCP_holder[this->coord_dim + wdim] = ar;
                         this->mj_uniform_weights[wdim] = false;
                         this->mj_weights[wdim] = (mj_scalar_t *) ar.getRawPtr();
                 }

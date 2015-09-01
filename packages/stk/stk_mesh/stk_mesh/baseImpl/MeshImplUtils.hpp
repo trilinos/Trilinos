@@ -54,20 +54,23 @@ namespace impl {
 //stk-mesh capabilities.
 //----------------------------------------------------------------------
 
-void find_elements_these_nodes_have_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems);
-void find_faces_these_nodes_have_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& faces);
+void find_elements_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems);
+void find_faces_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& faces);
 
 bool do_these_nodes_have_any_shell_elements_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes);
 
-void find_locally_owned_elements_these_nodes_have_in_common(BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems);
+void find_locally_owned_elements_these_nodes_have_in_common(const BulkData& mesh, unsigned numNodes, const Entity* nodes, std::vector<Entity>& elems);
 
 bool find_element_edge_ordinal_and_equivalent_nodes(BulkData& mesh, Entity element, unsigned numEdgeNodes, const Entity* edgeNodes, unsigned& elemEdgeOrdinal, Entity* elemEdgeNodes);
 
 bool shared_entities_modified_on_any_proc(const BulkData& mesh, stk::ParallelMachine comm);
 
 void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<EntityGhostData> & dataVector );
-void connectEntityToEdge(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity entity,
-        stk::mesh::Entity edge, const stk::mesh::Entity* nodes, size_t numNodes);
+
+void connectUpwardEntityToEntity(stk::mesh::BulkData& mesh, stk::mesh::Entity upward_entity,
+        stk::mesh::Entity entity, const stk::mesh::Entity* nodes);
+
+void delete_entities_and_upward_relations(stk::mesh::BulkData &bulkData, const stk::mesh::EntityVector &entities);
 
 void internal_generate_parallel_change_lists( const BulkData & mesh ,
                                               const std::vector<EntityProc> & local_change ,
@@ -349,7 +352,7 @@ stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::Entity elem,
                                                      int side_ordinal,
                                                      stk::mesh::EntityId new_face_global_id,
-                                                     stk::mesh::Part & part);
+                                                     const stk::mesh::PartVector & parts = stk::mesh::PartVector());
 
 void connect_face_to_other_elements(stk::mesh::BulkData & bulk,
                                     stk::mesh::Entity face,

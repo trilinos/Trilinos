@@ -78,19 +78,12 @@ the following classes:
 #include "PyTrilinos_Teuchos_Util.hpp"
 #include "PyTrilinos_Epetra_Util.hpp"
 
-// Local Epetra includes
-#include "Epetra_NumPyMultiVector.hpp"
-#include "Epetra_NumPyVector.hpp"
-#include "Epetra_NumPyIntVector.hpp"
-#include "Epetra_NumPyFEVector.hpp"
-#include "Epetra_NumPySerialDenseVector.hpp"
-#include "Epetra_NumPySerialDenseMatrix.hpp"
-#include "Epetra_NumPyIntSerialDenseVector.hpp"
-#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialSymDenseMatrix.hpp"
-
 // Epetra includes
 #include "Epetra_DLLExportMacro.h"
+#include "Epetra_SerialComm.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_LocalMap.h"
 #include "Epetra_MapColoring.h"
 #include "Epetra_SrcDistObject.h"
@@ -106,15 +99,13 @@ the following classes:
 #include "Epetra_FEVbrMatrix.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_SerialDistributor.h"
+#include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_Time.h"
-#ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
-#endif
 
 // NOX includes
 #include "NOX.H"

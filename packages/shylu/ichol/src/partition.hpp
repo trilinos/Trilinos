@@ -18,16 +18,28 @@ namespace Example {
            const typename MatView::ordinal_type bm, 
            const typename MatView::ordinal_type bn,
            const int quadrant) {
+    typename MatView::ordinal_type bmm, bnn;
+
     switch (quadrant) {
     case Partition::TopLeft:
+      bmm = min(bm, A.NumRows());
+      bnn = min(bn, A.NumCols());                
+      
       ATL.setView(A.BaseObject(),
-                  A.OffsetRows(), min(bm, A.NumRows()),
-                  A.OffsetCols(), min(bn, A.NumCols()));
+                  A.OffsetRows(), bmm,
+                  A.OffsetCols(), bnn);
       break;
     case Partition::TopRight:
     case Partition::BottomLeft:
-    case Partition::BottomRight:
       ERROR(MSG_NOT_YET_IMPLEMENTED);
+      break;
+    case Partition::BottomRight:
+      bmm = A.NumRows() - min(bm, A.NumRows());
+      bnn = A.NumCols() - min(bn, A.NumCols());                
+      
+      ATL.setView(A.BaseObject(),
+                  A.OffsetRows(), bmm,
+                  A.OffsetCols(), bnn);
       break;
     default:
       ERROR(MSG_INVALID_INPUT(quadrant));
@@ -53,16 +65,24 @@ namespace Example {
   Part_1x2(const MatView A, MatView &AL, MatView &AR, 
            const typename MatView::ordinal_type bn,
            const int side) {
+    typename MatView::ordinal_type bmm, bnn;
+
     switch (side) {
     case Partition::Left:
+      bmm = A.NumRows();
+      bnn = min(bn, A.NumCols());
+      
       AL.setView(A.BaseObject(),
-                 A.OffsetRows(), A.NumRows(),
-                 A.OffsetCols(), min(bn, A.NumCols()));
+                 A.OffsetRows(), bmm,
+                 A.OffsetCols(), bnn);
       break;
     case Partition::Right:
+      bmm = A.NumRows();
+      bnn = A.NumCols() - min(bn, A.NumCols());
+
       AL.setView(A.BaseObject(),
-                 A.OffsetRows(), A.NumRows(),
-                 A.OffsetCols(), A.NumCols() - min(bn, A.NumCols()));
+                 A.OffsetRows(), bmm,
+                 A.OffsetCols(), bnn);
       break;
     default:
       ERROR(MSG_INVALID_INPUT(side));
@@ -81,16 +101,24 @@ namespace Example {
            /*************/  MatView &AB, 
            const typename MatView::ordinal_type bm,
            const int side) {
+    typename MatView::ordinal_type bmm, bnn;
+    
     switch (side) {
     case Partition::Top:
+      bmm = min(bm, A.NumRows());
+      bnn = A.NumCols();
+      
       AT.setView(A.BaseObject(),
-                 A.OffsetRows(), min(bm, A.NumRows()),
-                 A.OffsetCols(), A.NumCols());
+                 A.OffsetRows(), bmm,
+                 A.OffsetCols(), bnn);
       break;
     case Partition::Bottom:
+      bmm = A.NumRows() - min(bm, A.NumRows());
+      bnn = A.NumCols();
+
       AT.setView(A.BaseObject(),
-                 A.OffsetRows(), A.NumRows() - min(bm, A.NumRows()),
-                 A.OffsetCols(), A.NumCols());
+                 A.OffsetRows(), bmm,
+                 A.OffsetCols(), bnn);
       break;
     default:
       ERROR(MSG_INVALID_INPUT(side));
@@ -113,6 +141,21 @@ namespace Example {
                   const int quadrant) {
     switch (quadrant) {
     case Partition::TopLeft:
+      Part_2x2(ATL, A00, A01,
+               /**/ A10, A11, 
+               bm, bn, Partition::BottomRight);
+
+      Part_2x1(ATR, A02, 
+               /**/ A12,
+               bm, Partition::Bottom);
+
+      Part_1x2(ABL, A20, A21,
+               bn, Partition::Right);
+
+      A22.setView(ABR.BaseObject(),
+                  ABR.OffsetRows(), ABR.NumRows(),
+                  ABR.OffsetCols(), ABR.NumCols());
+      break;
     case Partition::TopRight:
     case Partition::BottomLeft:
       ERROR(MSG_NOT_YET_IMPLEMENTED);
@@ -149,7 +192,13 @@ namespace Example {
                   const int side) {
     switch (side) {
     case Partition::Top:
-      ERROR(MSG_NOT_YET_IMPLEMENTED);
+      Part_2x1(AT,  A0, 
+               /**/ A1,
+               bm, Partition::Bottom);
+
+      A2.setView(AB.BaseObject(),
+                 AB.OffsetRows(), AB.NumRows(),
+                 AB.OffsetCols(), AB.NumCols());
       break;
     case Partition::Bottom:
       A0.setView(AT.BaseObject(),
@@ -175,7 +224,12 @@ namespace Example {
                   const int side) {
     switch (side) {
     case Partition::Left:
-      ERROR(MSG_NOT_YET_IMPLEMENTED);
+      Part_1x2(AL,  A0, A1,
+               bn, Partition::Right);
+
+      A2.setView(AR.BaseObaject(),
+                 AR.OffsetRows(), AR.NumRows(),
+                 AR.OffsetCols(), AR.NumCols());
       break;
     case Partition::Right:
       A0.setView(AL.BaseObject(),
@@ -229,7 +283,6 @@ namespace Example {
                    const int quadrant) {
     switch (quadrant) {
     case Partition::TopLeft:
-      
       Merge_2x2(A00, A01, 
                 A10, A11, ATL);
       
@@ -241,12 +294,23 @@ namespace Example {
       ABR.setView(A22.BaseObject(),
                   A22.OffsetRows(), A22.NumRows(),
                   A22.OffsetCols(), A22.NumCols());
-
       break;
     case Partition::TopRight:
     case Partition::BottomLeft:
-    case Partition::BottomRight:
       ERROR(MSG_NOT_YET_IMPLEMENTED);
+      break;
+    case Partition::BottomRight:
+      ATL.setView(A00.BaseObject(),
+                  A00.OffsetRows(), A00.NumRows(),
+                  A00.OffsetCols(), A00.NumCols());
+
+      Merge_1x2(A01, A02, ATR);
+
+      Merge_2x1(A10, 
+                A20, ABL);
+
+      Merge_2x2(A11, A12, 
+                A21, A22, ABR);
       break;
     default:
       ERROR(MSG_INVALID_INPUT(side));
@@ -271,7 +335,12 @@ namespace Example {
                  A2.OffsetCols(), A2.NumCols());
       break;
     case Partition::Bottom:
-      ERROR(MSG_NOT_YET_IMPLEMENTED);
+      AT.setView(A0.BaseObject(),
+                 A0.OffsetRows(), A0.NumRows(),
+                 A0.OffsetCols(), A0.NumCols());
+
+      Merge_2x1(A1, 
+                A2, AB);
       break;
     default:
       ERROR(MSG_INVALID_INPUT(side));
@@ -294,7 +363,11 @@ namespace Example {
                  A2.OffsetCols(), A2.NumCols());
       break;
     case Partition::Right:
-      ERROR(MSG_NOT_YET_IMPLEMENTED);
+      AL.setView(A0.BaseObject(),
+                 A0.OffsetRows(), A0.NumRows(),
+                 A0.OffsetCols(), A0.NumCols());
+
+      Merge_1x2(A1, A2, AR);
       break;
     default:
       ERROR(MSG_INVALID_INPUT(side));

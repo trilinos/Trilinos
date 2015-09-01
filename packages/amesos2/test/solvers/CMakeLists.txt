@@ -133,3 +133,30 @@ IF (${PACKAGE_NAME}_ENABLE_Basker)
     STANDARD_PASS_OUTPUT
     )
 ENDIF()
+
+##### MUMPS Tests ####
+if (${PACKAGE_NAME}_ENABLE_MUMPS)
+   TRIBITS_ADD_EXECUTABLE_AND_TEST(
+   MUMPS_UnitTests
+   SOURCES
+      MUMPS_UnitTests
+      ${TEUCHOS_STD_UNIT_TEST_MAIN}
+   COMM serial mpi
+   STANDARD_PASS_OUTPUT
+   )
+ENDIF()
+
+ASSERT_DEFINED (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
+IF (Trilinos_ENABLE_LINEAR_SOLVER_FACTORY_REGISTRATION)
+  # SolverFactory test (doesn't make sense to run unless Trilinos is
+  # doing run-time registration of solver factories).
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    SolverFactory_UnitTests
+    SOURCES
+    SolverFactory
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+ENDIF ()
+

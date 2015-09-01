@@ -81,6 +81,7 @@ class SystemInterface
                           // case, just return first match instead of aborting.
 
   bool ignore_attributes; // Don't compare attributes...
+  bool ignore_sideset_df; // Don't compare sideset df
 
   bool ints_64_bits;
 
@@ -90,7 +91,8 @@ class SystemInterface
   bool show_unmatched;       // Show elements not matched in partial mode
   bool noSymmetricNameCheck; // By default, the second file's variable
   bool allowNameMismatch;    // By default, name in 1st db must be in second also.
-  bool doNorms;
+  bool doL2Norm;
+  bool doL1Norm;
   bool pedantic;             // Be most picky on what is different (not fully picky yet)
   
   bool interpolating;        // Interpolate times on file2 to match times on file1;
@@ -143,6 +145,8 @@ class SystemInterface
   bool                      ss_var_do_all_flag;
   Tolerance                 ss_var_default;
   std::vector<Tolerance>    ss_var;
+  
+  Tolerance                 ss_df_tol;
   
   // time step exclusion data
   std::vector<int> exclude_steps;

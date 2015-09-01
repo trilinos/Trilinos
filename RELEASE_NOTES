@@ -1,5 +1,261 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 12.0 Release Notes                                        #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 12.0 general release contains 57 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Domi, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, MueLu, NOX, Optika, OptiPack,
+Pamgen, Phalanx, Pike, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS,
+Shards, ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos, ThreadPool,
+Thyra, Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra, Zoltan,
+Zoltan2.
+
+Domi
+
+  Domi provides distributed data structures for multi-dimensional data.
+  The inspirational use case is parallel domain decomposition for finite
+  difference applications.  To that end, Domi provides the following
+  classes:
+
+  - MDArray, MDArrayView, MDArrayRCP
+      These classes define multi-dimensional arrays, with arbitrary
+      runtime-defined dimensions, built on top of the Teuchos Array,
+      ArrayView, and ArrayRCP classes, respectively.  These are serial
+      in nature and provide the mechanism for data manipulation on each
+      processor of distributed MDVectors.
+
+  - Slice
+      The Slice class is inspired by the Python slice object, which
+      stores a start, stop, and step index, and can be constructed to
+      utilize a variety of logical default values.  Slices can be used
+      on all multi-dimensional objects to return views into subsets of
+      those objects.
+
+  - MDComm
+      Multi-dimensional communicator.  This communicator provides a map
+      between a multi-dimensional array of processors and their ranks,
+      and can be queried for neighbor ranks.  MDComms can be sliced,
+      which returns a sub-sommunicator.
+
+  - MDMap
+      An MDMap describes the decomposition of an MDVector on an MDComm.
+      It stores the start and stop indexes along each dimension,
+      including boundary padding for algorithms that require extra
+      indexes along boundaries, and communication padding used to
+      update values from neighboring processors.  MDMaps can be sliced,
+      and the resulting MDMap may reside on a sub-communicator.  An
+      MDMap can be converted to an equivalent Epetra or Tpetra Map.
+
+  - MDVector
+      An MDVector is a multi-dimensional array, distrubuted in a
+      structured manner across multiple processors.  This distribution
+      is described by an MDVector's MDMap.  The MDVector's data is
+      stored locally on each processor with an MDArrayRCP.  An MDVector
+      can update its communication padding from neighboring processors
+      automatically.  An MDVector can be sliced, and the resulting
+      MDVector may reside on a sub-communicator.  An MDVector can be
+      converted to equivalent Epetra or Tpetra Vectors or MultiVectors.
+      If there are no stride gaps in the data due to slicing, these
+      converted Epetra and Tpetra objects may be views of the original
+      data.
+
+MueLU
+
+  - Hierarchy::Iterate now understands tolerance
+
+      When MueLu::Hierarchy is being used as a standalone solver, and not as a
+      preconditioner, a user may now create a stopping criteria based on a
+      provided tolerance for the relative residual in addition to the maximum
+      number of iterations
+
+  - New reuse options option: "tP"
+
+      This reuse option allows reuse of only tentative prolongators, while
+      rebuilding smoothed prolongator and coarse level operators.
+
+  - Selected bugfixes:
+      6301:  Operator complexity was computed incorrectly for large size
+      problems
+
+Pike
+
+  PIKE: Physics Integration KErnels
+
+  Pike is a blackbox multiphysics coupling tool.  It provides basic
+  interfaces and implementations for building high level multiphysics
+  coupling strategies.  In particular, PIKE provides utilities for
+  Picard-style couplings.  For Newton-based couplings, use the NOX and
+  Thyra packages to build the block phsyics systems.  In the future,
+  interoperability tools between NOX, PIKE and PIRO will be added.
+
+  - Initial release!
+
+  - Supports block Jacobi and block Gauss-Seidel coupling.
+
+  - Supports global and local convergence criteria.
+
+  - Supports hierarchical solves.
+
+  - Supports subcycled transient solves and steady-state.
+
+  - Support both Parameter and Response interfaces.
+
+  - Contains a multiphysics distributor to support parallel
+    distribution of applications.
+
+  - Provides abstract factories for solvers and global status tests
+
+  - Supports observers for user injection of code.  Special observers
+    for logging and debugging are implemeted.
+
+  - Pure virtual interfaces for applications and data transfers.
+
+  - Adapter for nesting a solver as a model evaluator for hierarchical
+    solves.
+
+  ****************************************
+
+
+PyTrilinos
+
+  - General
+      - Changed to BSD license
+      - Mpi4Py support has been made optional.  Previously, if Mpi4Py was
+        found, it was automatically enabled within PyTrilinos.  Now that
+        behavior can be turned off.
+
+  - LOCA
+      - The LOCA module has been refactored and now has been demonstrated
+        to work for the Chan problem.  We have two example problems
+        working, one without preconditioning, and one with.
+
+  - Tpetra
+      - Package is still experimental.  The recent refactor has broken
+        MultiVectors and Vectors.
+      - Map support has been improved
+
+  - Anasazi
+      - Fixed a bug where return eigenvalues are converted to a NumPy
+        array, but the dimension used the wrong type.
+
+  - Kokkos
+      - Fixed a macro issue
+
+  - NOX
+      - Started PETSc compatibility.  This is still experimental, and
+        includes compatibility with petsc4py.
+
+  - STK
+      - Removed PyPercept, as it is currently not a part of the new STK.
+
+  - Domi
+      - Added package
+
+
+Tpetra
+
+  - Tpetra now requires C++11
+
+      This requirement comes in part from Tpetra itself, and in part from
+      the Kokkos package, on which Tpetra depends.
+
+  - "Kokkos refactor" (new) version of Tpetra is the only version
+
+      We no longer enable or support the old ("classic") version of Tpetra.
+      The new ("Kokkos refactor") implementation of Tpetra is now the only
+      supported version.
+
+      Do not use any of the Node types in the KokkosClassic namespace.  We
+      do not support any of those Node types anymore.  Instead, use any of
+      the following Node types:
+
+        - Kokkos::Compat::KokkosOpenMPWrapperNode (OpenMP)
+        - Kokkos::Compat::KokkosCudaWrapperNode (NVIDIA CUDA)
+        - Kokkos::Compat::KokkosSerialWrapperNode (no threads)
+        - Kokkos::Compat::KokkosThreadsWrapperNode (Pthreads)
+
+      Each of these is a typedef for
+      Kokkos::Compat::KokkosDeviceWrapperNode<ExecSpace>, for the
+      corresponding Kokkos execution space.
+
+  - Set / rely on the default Node type as much as possible
+
+      Tpetra classes have a template parameter, "Node", which determines
+      what thread-level parallel programming model Tpetra will use.  This
+      corresponds directly to the "execution space" concept in Kokkos.
+
+      Tpetra classes have a default Node type.  Users do NOT need to specify
+      this explicitly.  I cannot emphasize this enough:
+
+      IF YOU ONLY EVER USE THE DEFAULT VALUES OF TEMPLATE PARAMETERS, DO NOT
+      SPECIFY THEM EXPLICITLY.
+
+      If you need to refer to the default values of template parameters, ask
+      Tpetra classes.  For example, 'Tpetra::Map<>::node_type' is the
+      default Node type.
+
+      Tpetra pays attention to Kokkos' build configuration when determining
+      the default Node type.  For example, it will not use a disabled
+      execution space.  If you do not like the default Node type, but you
+      only ever use one Node type in your application, you should change the
+      default Node type at Trilinos configure time.  You may do this by
+      setting the 'KokkosClassic_DefaultNode' CMake option.  Here is a list
+      of reasonable values:
+
+        "Kokkos::Compat::KokkosSerialWrapperNode": use Kokkos::Serial
+        execution space (execute in a single thread on the CPU)
+
+        "Kokkos::Compat::KokkosOpenMPWrapperNode": use Kokkos::OpenMP
+        execution space (use OpenMP for thread-level parallelism on the CPU)
+
+        "Kokkos::Compat::KokkosThreadsWrapperNode": use Kokkos::Threads
+        execution space (use Pthreads (the POSIX Threads library) for
+        thread-level parallelism on the CPU)
+
+        "Kokkos::Compat::KokkosCudaWrapperNode": use Kokkos::Cuda execution
+        space (use NVIDIA's CUDA programming model for thread-level
+        parallelism on the CPU)
+
+      You must use the above strings with the 'KokkosClassic_DefaultNode'
+      CMake option.  If you choose (unwisely, in many cases) to specify the
+      Node template parameter directly in your code, you may use those
+      names.  Alternately, you may let the Kokkos execution space determine
+      the Node type, by using the templated class
+      Kokkos::Compat::KokkosDeviceWrapperNode.  This class is templated on
+      the Kokkos execution space.  The above four types are typedefs to
+      their corresponding specializations of KokkosDeviceWrapperNode.  For
+      example, KokkosSerialWrapperNode is a typedef of
+      KokkosDeviceWrapperNode<Kokkos::Serial>.  This may be useful if your
+      code already makes use of Kokkos execution spaces.
+
+  - Removed (deprecated classes) Tpetra::VbrMatrix, Tpetra::BlockMap,
+    Tpetra::BlockCrsGraph, and Tpetra::BlockMultiVector.
+
+      All these classes relate to VBR (variable-block-size block sparse
+      matrix) functionality.  We may reimplement that at some point, but for
+      now it's going away.
+
+  - Removed (deprecated class) Tpetra::HybridPlatform
+
+Teuchos
+
+  - Fixed Teuchos::Ptr::operator=() to catch dangling references (6 April 2015)
+
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 11.14 Release Notes                                        #
 #                                                                             #
 ###############################################################################

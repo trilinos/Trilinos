@@ -71,7 +71,6 @@ using Teuchos::rcp_const_cast;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
-typedef UserInputForTests uinput_t;
 typedef Tpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> tvector_t;
 typedef Xpetra::MultiVector<zscalar_t, zlno_t, zgno_t, znode_t> xvector_t;
 typedef Epetra_MultiVector evector_t;
@@ -152,11 +151,11 @@ int main(int argc, char *argv[])
   // Create object that can give us test Tpetra, Xpetra
   // and Epetra vectors for testing.
 
-  RCP<uinput_t> uinput;
+  RCP<UserInputForTests> uinput;
 
   try{
     uinput = 
-      rcp(new uinput_t(testDataFilePath,std::string("simple"), comm, true));
+      rcp(new UserInputForTests(testDataFilePath,std::string("simple"), comm, true));
   }
   catch(std::exception &e){
     TEST_FAIL_AND_EXIT(*comm, 0, string("input ")+e.what(), 1);
@@ -165,21 +164,16 @@ int main(int argc, char *argv[])
   RCP<tvector_t> tV;     // original vector (for checking)
   RCP<tvector_t> newV;   // migrated vector
 
-  int numVectors = 2;
+  int nVec = 2;
 
-  tV = uinput->getUITpetraMultiVector(numVectors);
+  tV = rcp(new tvector_t(uinput->getUITpetraCrsGraph()->getRowMap(), nVec));
+  tV->randomize();
+
   size_t vlen = tV->getLocalLength();
-  Teuchos::ArrayView<const zgno_t> rowGids = tV->getMap()->getNodeElementList();
 
-  // To test migration in the input adapter we need a Solution
-  // object.  The Solution needs an IdentifierMap.
-
-  typedef Zoltan2::IdentifierMap<tvector_t> idmap_t;
+  // To test migration in the input adapter we need a Solution object.
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
-
-  ArrayRCP<const zgno_t> gidArray = arcpFromArrayView(rowGids);
-  RCP<const idmap_t> idMap = rcp(new idmap_t(env, comm, gidArray));
 
   int nWeights = 1;
 
@@ -191,7 +185,7 @@ int main(int argc, char *argv[])
   memset(p, 0, sizeof(part_t) * vlen);
   ArrayRCP<part_t> solnParts(p, 0, vlen, true);
 
-  soln_t solution(env, comm, idMap, nWeights);
+  soln_t solution(env, comm, nWeights);
   solution.setParts(solnParts);
 
   std::vector<const zscalar_t *> emptyWeights;
@@ -218,7 +212,7 @@ int main(int argc, char *argv[])
       std::cout  << "Tpetra::MultiVector" << std::endl;
     }
     
-    fail = verifyInputAdapter<tvector_t>(*tVInput, *tV, numVectors, 0, NULL, NULL);
+    fail = verifyInputAdapter<tvector_t>(*tVInput, *tV, nVec, 0, NULL, NULL);
   
     gfail = globalFail(comm, fail);
   
@@ -250,7 +244,7 @@ int main(int argc, char *argv[])
           std::cout << "Constructed with ";
           std::cout << "Tpetra::MultiVector migrated to proc 0" << std::endl;
         }
-        fail = verifyInputAdapter<tvector_t>(*newInput, *newV, numVectors, 0, NULL, NULL);
+        fail = verifyInputAdapter<tvector_t>(*newInput, *newV, nVec, 0, NULL, NULL);
         if (fail) fail += 100;
         gfail = globalFail(comm, fail);
       }
@@ -263,7 +257,10 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Xpetra::MultiVector
   if (!gfail){ 
-    RCP<xvector_t> xV = uinput->getUIXpetraMultiVector(numVectors);
+    RCP<tvector_t> tMV = 
+        rcp(new tvector_t(uinput->getUITpetraCrsGraph()->getRowMap(), nVec));
+    tMV->randomize();
+    RCP<xvector_t> xV = Zoltan2::XpetraTraits<tvector_t>::convertToXpetra(tMV);
     RCP<const xvector_t> cxV = rcp_const_cast<const xvector_t>(xV);
     RCP<Zoltan2::XpetraMultiVectorAdapter<xvector_t> > xVInput;
   
@@ -281,7 +278,7 @@ int main(int argc, char *argv[])
       std::cout << "Constructed with ";
       std::cout << "Xpetra::MultiVector" << std::endl;
     }
-    fail = verifyInputAdapter<xvector_t>(*xVInput, *tV, numVectors, 0, NULL, NULL);
+    fail = verifyInputAdapter<xvector_t>(*xVInput, *tV, nVec, 0, NULL, NULL);
   
     gfail = globalFail(comm, fail);
   
@@ -313,7 +310,7 @@ int main(int argc, char *argv[])
           std::cout << "Constructed with ";
           std::cout << "Xpetra::MultiVector migrated to proc 0" << std::endl;
         }
-        fail = verifyInputAdapter<xvector_t>(*newInput, *newV, numVectors, 0, NULL, NULL);
+        fail = verifyInputAdapter<xvector_t>(*newInput, *newV, nVec, 0, NULL, NULL);
         if (fail) fail += 100;
         gfail = globalFail(comm, fail);
       }
@@ -327,7 +324,10 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Epetra_MultiVector
   if (!gfail){ 
-    RCP<evector_t> eV = uinput->getUIEpetraMultiVector(numVectors);
+    RCP<evector_t> eV = 
+        rcp(new Epetra_MultiVector(uinput->getUIEpetraCrsGraph()->RowMap(),
+                                   nVec));
+    eV->Random();
     RCP<const evector_t> ceV = rcp_const_cast<const evector_t>(eV);
     RCP<Zoltan2::XpetraMultiVectorAdapter<evector_t> > eVInput;
   
@@ -345,7 +345,7 @@ int main(int argc, char *argv[])
       std::cout << "Constructed with ";
       std::cout << "Epetra_MultiVector" << std::endl;
     }
-    fail = verifyInputAdapter<evector_t>(*eVInput, *tV, numVectors, 0, NULL, NULL);
+    fail = verifyInputAdapter<evector_t>(*eVInput, *tV, nVec, 0, NULL, NULL);
   
     gfail = globalFail(comm, fail);
   
@@ -377,7 +377,7 @@ int main(int argc, char *argv[])
           std::cout << "Constructed with ";
           std::cout << "Epetra_MultiVector migrated to proc 0" << std::endl;
         }
-        fail = verifyInputAdapter<evector_t>(*newInput, *newV, numVectors, 0, NULL, NULL);
+        fail = verifyInputAdapter<evector_t>(*newInput, *newV, nVec, 0, NULL, NULL);
         if (fail) fail += 100;
         gfail = globalFail(comm, fail);
       }

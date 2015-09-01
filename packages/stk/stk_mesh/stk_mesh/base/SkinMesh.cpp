@@ -31,6 +31,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+#include <cassert>
 #include <stk_mesh/base/SkinMesh.hpp>
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for sort, set_intersection
@@ -181,7 +182,7 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
                 const stk::mesh::PartVector &parts2 = mesh.bucket(potential_element).supersets();
                 for (size_t mm=0;mm<parts1.size();mm++)
                 {
-                    if ( !stk::mesh::is_auto_declared_part(*parts2[mm]) )
+                    if ( !stk::mesh::is_auto_declared_part(*parts1[mm]) )
                     {
                         user_parts_elem1.push_back(parts1[mm]);
                     }
@@ -271,6 +272,7 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
       if (existing_side_ordinals[s] == side_ordinal) {
         side_exists=true;
         side = existing_sides[s];
+
       }
     }
 
@@ -297,15 +299,25 @@ void skin_mesh_attach_new_sides_to_connected_entities(BulkData & mesh,
               mesh.find_permutation(element_topology, elem_nodes,
                                     side_topology, &ordered_side_nodes[0], side_ordinal);
       ThrowRequireMsg(permut != INVALID_PERMUTATION, ":  skin_mesh_attach_new_sides_to_connected_entities could not find valid permutation to connect face to element");
+
       mesh.declare_relation(elem, side, static_cast<RelationIdentifier>(side_ordinal), permut);
-      // mesh.declare_relation( elem, side, static_cast<RelationIdentifier>(side_ordinal), static_cast<Permutation>(perm_id));
+    // mesh.declare_relation( elem, side, static_cast<RelationIdentifier>(side_ordinal), static_cast<Permutation>(perm_id));
 
     }
 
-    PartVector add_parts(skin_parts);
-    add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( side_topology )));
+    bool need_to_add_side_to_skin_part_reason1 = side_exists && !mesh.bucket(side).shared();
+    bool need_to_add_side_to_skin_part_reason2 = !side_exists;
 
-    mesh.change_entity_parts(side,add_parts);
+    if (need_to_add_side_to_skin_part_reason1 || need_to_add_side_to_skin_part_reason2)
+    {
+        bool only_owner_can_change_parts = mesh.bucket(side).owned();
+        if (only_owner_can_change_parts)
+        {
+          PartVector add_parts(skin_parts);
+          add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( side_topology )));
+          mesh.change_entity_parts(side,add_parts);
+        }
+    }
   }
 }
 
@@ -342,7 +354,7 @@ void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector co
   // attach new sides to connected entities
   skin_mesh_attach_new_sides_to_connected_entities(mesh, boundary, sides, skin_parts);
 
-  mesh.modification_end();
+  mesh.internal_modification_end_for_skin_mesh(mesh.mesh_meta_data().side_rank(), impl::MeshModification::MOD_END_SORT, element_selector, secondary_selector);
 }
 
 }} // namespace stk::mesh

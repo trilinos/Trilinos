@@ -83,6 +83,7 @@ namespace panzer {
                           const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 			  const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& lof,
 			  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+			  const std::vector<Teuchos::RCP<Teuchos::Array<double> > >& p_values,
 			  const Teuchos::RCP<panzer::GlobalData>& global_data,
 			  bool build_transient_support);
     
@@ -90,6 +91,7 @@ namespace panzer {
                           const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> >& rLibrary,
 			  const Teuchos::RCP<panzer::EpetraLinearObjFactory<panzer::Traits,int> >& lof,
 			  const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+			  const std::vector<Teuchos::RCP<Teuchos::Array<double> > >& p_values,
 			  const Teuchos::RCP<panzer::GlobalData>& global_data,
 			  bool build_transient_support);
 
@@ -239,6 +241,7 @@ namespace panzer {
 
     /** Initialize the parameter vector object */
     void initializeParameterVector(const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+                                   const std::vector<Teuchos::RCP<Teuchos::Array<double> > >& p_values,
 				   const Teuchos::RCP<panzer::ParamLib>& parameter_library);
 
     // /////////////////////////////////////
@@ -435,6 +438,7 @@ namespace panzer {
                 const Teuchos::RCP<ResponseLibrary<panzer::Traits> >& rLibrary,
 	        const Teuchos::RCP<LinearObjFactory<panzer::Traits> >& lof,
 	        const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > >& p_names,
+	        const std::vector<Teuchos::RCP<Teuchos::Array<double> > >& p_values,
 		const Teuchos::RCP<panzer::GlobalData>& global_data,
 	        bool build_transient_support);
   

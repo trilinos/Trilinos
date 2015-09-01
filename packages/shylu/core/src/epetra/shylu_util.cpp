@@ -80,12 +80,12 @@ using namespace std;
 Epetra_CrsMatrix *balanceAndRedistribute(Epetra_CrsMatrix *A,
                 Teuchos::ParameterList isoList)
 {
-    int myPID = A->Comm().MyPID();
+    // int myPID = A->Comm().MyPID(); // unused
 
     // Debug [
     Epetra_Map ARowMap = A->RowMap();
-    int nrows = ARowMap.NumMyElements();
-    int *rows = ARowMap.MyGlobalElements();
+    // int nrows = ARowMap.NumMyElements(); // unused
+    // int *rows = ARowMap.MyGlobalElements(); // unused
     // ]
 
     // ==================== Symbolic factorization =========================
@@ -109,23 +109,36 @@ void checkMaps(Epetra_CrsMatrix *A)
 {
     // Get column map
     Epetra_Map AColMap = A->ColMap();
-    int ncols = AColMap.NumMyElements();
-    int *cols = AColMap.MyGlobalElements();
+    // int ncols = AColMap.NumMyElements(); // unused
+    // int *cols = AColMap.MyGlobalElements(); // unused
 
     // Get domain map
     Epetra_Map ADomainMap =  A->DomainMap();
+
     int nelems = ADomainMap.NumMyElements();
+#ifndef NDEBUG
+    // mfh 25 May 2015: Only used in an assert() below.
+    // assert() is defined to nothing in a release build.
     int *dom_cols = ADomainMap.MyGlobalElements();
+#endif // NDEBUG
 
     // Get range map
     Epetra_Map ARangeMap =  A->RangeMap();
-    int npts = ARangeMap.NumMyElements();
+    // int npts = ARangeMap.NumMyElements(); // unused
+#ifndef NDEBUG
+    // mfh 25 May 2015: Only used in an assert() below.
+    // assert() is defined to nothing in a release build.
     int *ran_cols = ARangeMap.MyGlobalElements();
+#endif // NDEBUG
 
     // Get row map
     Epetra_Map ARowMap = A->RowMap();
-    int nrows = ARowMap.NumMyElements();
+    // int nrows = ARowMap.NumMyElements(); // unused
+#ifndef NDEBUG
+    // mfh 25 May 2015: Only used in an assert() below.
+    // assert() is defined to nothing in a release build.
     int *rows = ARowMap.MyGlobalElements();
+#endif // NDEBUG
 
     //cout <<"In PID ="<< A->Comm().MyPID() <<" #cols="<< ncols << " #rows="<<
         //nrows <<" #domain elems="<< nelems <<" #range elems="<< npts << endl;
@@ -224,7 +237,7 @@ void findNarrowSeparator(Epetra_CrsMatrix *A, int *gvals)
     for (int i = 0; i < n ; i++) // initialize to zero
         vals[i] = 0;
 
-    int gid, err, cgid;
+    int gid, cgid;
     for (int i = 0; i < relems; i++)
     {
         gid = rows[i];
@@ -233,7 +246,11 @@ void findNarrowSeparator(Epetra_CrsMatrix *A, int *gvals)
         {
             //cout << " in the sep ";
             bool movetoBlockDiagonal = false;
-            err = A->ExtractMyRowView(i, nentries, values, indices);
+            // mfh 25 May 2015: This call used to assign its (int)
+            // return value to 'err'.  I got rid of this, because
+            // 'err' was unused.  This resulted in a "set but unused
+            // variable" warning.
+            (void) A->ExtractMyRowView(i, nentries, values, indices);
             //cout << " with nentries= "<< nentries;
 
             assert(nentries != 0);

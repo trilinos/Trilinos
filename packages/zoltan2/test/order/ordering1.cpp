@@ -76,10 +76,10 @@ using namespace std;
 
 typedef zlno_t z2TestLO;
 typedef zgno_t z2TestGO;
-typedef zscalar_t Scalar;
+typedef zscalar_t z2TestScalar;
 
-typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
-typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
+typedef Tpetra::CrsMatrix<z2TestScalar, z2TestLO, z2TestGO> SparseMatrix;
+typedef Tpetra::Vector<z2TestScalar, z2TestLO, z2TestGO> Vector;
 typedef Vector::node_type Node;
 
 typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
@@ -121,7 +121,7 @@ size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *perm)
   z2TestLO ii, i, j, k;
   z2TestLO *iperm = 0;
   ArrayView<const z2TestLO> indices;
-  ArrayView<const Scalar> values;
+  ArrayView<const z2TestScalar> values;
   z2TestLO bw_left = 0;
   z2TestLO bw_right = 0;
 
@@ -239,9 +239,9 @@ int main(int narg, char** arg)
 
   ////// Create a vector to use with the matrix.
   RCP<Vector> origVector, origProd;
-  origProd   = Tpetra::createVector<Scalar,z2TestLO,z2TestGO>(
+  origProd   = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                     origMatrix->getRangeMap());
-  origVector = Tpetra::createVector<Scalar,z2TestLO,z2TestGO>(
+  origVector = Tpetra::createVector<z2TestScalar,z2TestLO,z2TestGO>(
                                     origMatrix->getDomainMap());
   origVector->randomize();
 

@@ -64,8 +64,8 @@ def main(buildDir):
     print "**********************************************************"
     print
     print "trilinosBasePath: " + trilinosBasePath
-    print 'package source directory: ' + packageSrcDir + '/' + package
-    print 'package build directory: ' + packageBuildDir + '/' + package
+    print 'package source directory: ' + packageSrcDir
+    print 'package build directory: ' + packageBuildDir
     print
     print "*********************************************************"
 

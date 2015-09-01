@@ -101,7 +101,7 @@ Ifpack_Amesos::Ifpack_Amesos(const Ifpack_Amesos& rhs) :
   List_ = RHSList;
 
   // I do not have a copy constructor for Amesos,
-  // so Initialize() and Compute() of this object 
+  // so Initialize() and Compute() of this object
   // are called if the rhs did so
   if (rhs.IsInitialized()) {
     IsInitialized_ = true;
@@ -125,6 +125,8 @@ int Ifpack_Amesos::SetParameters(Teuchos::ParameterList& List_in)
 //==============================================================================
 int Ifpack_Amesos::Initialize()
 {
+  using std::cerr;
+  using std::endl;
 
   IsEmpty_ = false;
   IsInitialized_ = false;
@@ -134,11 +136,13 @@ int Ifpack_Amesos::Initialize()
     IFPACK_CHK_ERR(-1);
 
 #if 0
+  using std::cout;
+
   // better to avoid strange games with maps, this class should be
   // used for Ifpack_LocalFilter'd matrices only
   if (Comm().NumProc() != 1) {
     cout << "Class Ifpack_Amesos must be used for serial runs;" << endl;
-    cout << "for parallel runs you should declare objects as:" << endl; 
+    cout << "for parallel runs you should declare objects as:" << endl;
     cout << "Ifpack_AdditiveSchwarz<Ifpack_Amesos> APrec(Matrix)" << endl;
     exit(EXIT_FAILURE);
   }
@@ -164,8 +168,8 @@ int Ifpack_Amesos::Initialize()
 
   Amesos Factory;
   Solver_ = Teuchos::rcp( Factory.Create((char*)Label_.c_str(),*Problem_) );
-  
-  if (Solver_ == Teuchos::null) 
+
+  if (Solver_ == Teuchos::null)
   {
     // try to create KLU, it is generally enabled
     Label_ = "Amesos_Klu";
@@ -183,7 +187,7 @@ int Ifpack_Amesos::Initialize()
       cerr << "IFPACK WARNING: solvers are not available. LAPACK" << endl;
       cerr << "IFPACK WARNING: allocates memory to store the matrix as" << endl;
       cerr << "IFPACK WARNING: dense, I hope you have enough memory..." << endl;
-      cerr << "IFPACK WARNING: (file " << __FILE__ << ", line " << __LINE__ 
+      cerr << "IFPACK WARNING: (file " << __FILE__ << ", line " << __LINE__
            << ")" << endl;
       FirstTime = false;
     }
@@ -266,7 +270,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   if (X.NumVectors() != Y.NumVectors())
     IFPACK_CHK_ERR(-1); // wrong input
-  
+
   Time_->ResetStartTime();
 
   // AztecOO gives X and Y pointing to the same memory location,
@@ -276,7 +280,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     Xcopy = Teuchos::rcp( new Epetra_MultiVector(X) );
   else
     Xcopy = Teuchos::rcp( &X, false );
-    
+
   Problem_->SetLHS(&Y);
   Problem_->SetRHS((Epetra_MultiVector*)Xcopy.get());
   IFPACK_CHK_ERR(Solver_->Solve());
@@ -332,7 +336,7 @@ const Epetra_Map & Ifpack_Amesos::OperatorRangeMap() const
 //==============================================================================
 double Ifpack_Amesos::Condest(const Ifpack_CondestType CT,
                               const int MaxIters, const double Tol,
-			      Epetra_RowMatrix* Matrix_in)
+                              Epetra_RowMatrix* Matrix_in)
 {
 
   if (!IsComputed()) // cannot compute right now
@@ -347,6 +351,8 @@ double Ifpack_Amesos::Condest(const Ifpack_CondestType CT,
 //==============================================================================
 std::ostream& Ifpack_Amesos::Print(std::ostream& os) const
 {
+  using std::endl;
+
   if (!Comm().MyPID()) {
     os << endl;
     os << "================================================================================" << endl;
@@ -356,20 +362,20 @@ std::ostream& Ifpack_Amesos::Print(std::ostream& os) const
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
     os << "-----           -------   --------------       ------------     --------" << endl;
-    os << "Initialize()    "   << std::setw(5) << NumInitialize_ 
-       << "  " << std::setw(15) << InitializeTime_ 
+    os << "Initialize()    "   << std::setw(5) << NumInitialize_
+       << "  " << std::setw(15) << InitializeTime_
        << "              0.0              0.0" << endl;
-    os << "Compute()       "   << std::setw(5) << NumCompute_ 
+    os << "Compute()       "   << std::setw(5) << NumCompute_
        << "  " << std::setw(15) << ComputeTime_
        << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_;
-    if (ComputeTime_ != 0.0) 
+    if (ComputeTime_ != 0.0)
       os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << endl;
     else
       os << "  " << std::setw(15) << 0.0 << endl;
-    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_ 
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_
        << "  " << std::setw(15) << ApplyInverseTime_
        << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_;
-    if (ApplyInverseTime_ != 0.0) 
+    if (ApplyInverseTime_ != 0.0)
       os << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_ / ApplyInverseTime_ << endl;
     else
       os << "  " << std::setw(15) << 0.0 << endl;

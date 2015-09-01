@@ -78,7 +78,7 @@ namespace Galeri {
         dims.push_back(ny_-1);
 
         TEUCHOS_TEST_FOR_EXCEPTION(nx_ <= 0 || ny_ <= 0, std::logic_error, "nx and ny must be positive");
-        mode_ = list.get<string>("mode", "plane stress");
+        mode_ = list.get<std::string>("mode", "plane stress");
       }
 
       Teuchos::RCP<Matrix>      BuildMatrix();

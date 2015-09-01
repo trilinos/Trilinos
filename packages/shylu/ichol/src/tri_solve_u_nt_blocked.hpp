@@ -18,10 +18,11 @@ namespace Example {
   KOKKOS_INLINE_FUNCTION
   int
   TriSolve<Uplo::Upper,Trans::NoTranspose,AlgoTriSolve::Blocked>
-  ::invoke(const typename CrsExecViewTypeA::policy_type::member_type &member,
+  ::invoke(typename CrsExecViewTypeA::policy_type &policy,
+           const typename CrsExecViewTypeA::policy_type::member_type &member,
            const int diagA,
-           CrsExecViewType &A,
-           DenseExecViewType &B) {
+           CrsExecViewTypeA &A,
+           DenseExecViewTypeB &B) {
     typedef typename CrsExecViewTypeA::ordinal_type ordinal_type;
     const ordinal_type mb = blocksize;
 
@@ -53,16 +54,18 @@ namespace Example {
                       mb, Partition::Top);
 
       // -----------------------------------------------------
-      A11.fillRowArrays();
-      A12.fillRowArrays();
+      A11.fillRowViewArray();
+      A12.fillRowViewArray();
 
       // B1 = B1 - A12*B2;
       Gemm<Trans::NoTranspose,Trans::NoTranspose,AlgoGemm::ForTriSolveBlocked>
-        ::TaskFunctor<ParallelForType>(member, -1.0, A12, B2, 1.0, B1);
+        ::invoke<ParallelForType>(policy, member, 
+                                  -1.0, A12, B2, 1.0, B1);
 
       // B1 = inv(triu(A11))*B1
       Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,AlgoTrsm::ForTriSolveBlocked>
-        ::TaskFunctor<ParallelForType>(member, diagA, 1.0, A11, B1);
+        ::invoke<ParallelForType>(policy, member, 
+                                  diagA, 1.0, A11, B1);
 
       // -----------------------------------------------------
       Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,

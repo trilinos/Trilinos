@@ -52,7 +52,7 @@ namespace Teuchos {
 //! Ifpack_Container: a pure virtual class for creating and solving local linear problems.
 
 /*!
-Class Ifpack_Container provides the abstract interfaces for 
+Class Ifpack_Container provides the abstract interfaces for
 containers. A "container" is an object that hosts all it is necessary
 to create, populate, and solve local linear problems. The local
 linear problem matrix, B, is a submatrix of the local components
@@ -92,7 +92,7 @@ Epetra_SerialDenseMatrix's).
 \author Marzio Sala, SNL 9214.
 
 \date Last update Oct-04.
-  
+
 */
 
 class Ifpack_Container {
@@ -113,11 +113,11 @@ public:
 
   //! Returns the i-th component of the vector Vector of LHS.
   virtual double& LHS(const int i, const int Vector = 0) = 0;
-  
+
   //! Returns the i-th component of the vector Vector of RHS.
   virtual double& RHS(const int i, const int Vector = 0) = 0;
 
-  //! Returns the ID associated to local row i. 
+  //! Returns the ID associated to local row i.
   /*!
    * The set of (local) rows assigned to this container is defined
    * by calling ID(i) = j, where i (from 0 to NumRows()) indicates
@@ -131,7 +131,7 @@ public:
 
   //! Set the matrix element (row,col) to \c value.
   virtual int SetMatrixElement(const int row, const int col,
-			       const double value) = 0;
+                               const double value) = 0;
 
   //! Initializes the container, by performing all operations that only require matrix structure.
   virtual int Initialize() = 0;
@@ -170,10 +170,10 @@ public:
   virtual double ApplyInverseFlops() const = 0;
 
   //! Prints out basic information about the container.
-  virtual ostream& Print(std::ostream& os) const = 0;
+  virtual std::ostream& Print(std::ostream& os) const = 0;
 };
 
-inline ostream& operator<<(ostream& os, const Ifpack_Container& obj)
+inline std::ostream& operator<<(std::ostream& os, const Ifpack_Container& obj)
 {
   return(obj.Print(os));
 }

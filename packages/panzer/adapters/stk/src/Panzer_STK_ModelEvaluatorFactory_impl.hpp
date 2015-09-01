@@ -75,6 +75,7 @@
 #include "Panzer_String_Utilities.hpp"
 #include "Panzer_UniqueGlobalIndexer_Utilities.hpp"
 #include "Panzer_ExplicitModelEvaluator.hpp"
+#include "Panzer_ParameterLibraryUtilities.hpp"
 
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_ExodusReaderFactory.hpp"
@@ -190,6 +191,9 @@ namespace panzer_stk_classic {
         p.set<bool>("Use Tpetra",false);
         p.set<bool>("Use Epetra ME",true);
         p.set<bool>("Lump Explicit Mass",false);
+        p.set<bool>("Constant Mass Matrix",true);
+        p.set<bool>("Apply Mass Matrix Inverse in Explicit Evaluator",true);
+        p.set<bool>("Use Conservative IMEX",false);
         p.set<Teuchos::RCP<const panzer::EquationSetFactory> >("Equation Set Factory", Teuchos::null);
         p.set<Teuchos::RCP<const panzer::ClosureModelFactory_TemplateManager<panzer::Traits> > >("Closure Model Factory", Teuchos::null);
         p.set<Teuchos::RCP<const panzer::BCStrategyFactory> >("BC Factory",Teuchos::null);
@@ -199,6 +203,7 @@ namespace panzer_stk_classic {
       pl->sublist("Block ID to Physics ID Mapping").disableRecursiveValidation();
       pl->sublist("Options").disableRecursiveValidation();
       pl->sublist("Active Parameters").disableRecursiveValidation();
+      pl->sublist("Controls").disableRecursiveValidation();
       pl->sublist("User Data").disableRecursiveValidation();
       pl->sublist("User Data").sublist("Panzer Data").disableRecursiveValidation();
 
@@ -331,88 +336,6 @@ namespace panzer_stk_classic {
     // add fields automatically written through the closure model
     ////////////////////////////////////////////////////////////////////////////////////////
     addUserFieldsToMesh(*mesh,output_list);
-/*
-    {
-      // register cell averaged scalar fields
-      Teuchos::ParameterList & cellAvgQuants = output_list.sublist("Cell Average Quantities");
-      for(Teuchos::ParameterList::ConstIterator itr=cellAvgQuants.begin();
-          itr!=cellAvgQuants.end();++itr) {
-         const std::string & blockId = itr->first;
-         const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
-         std::vector<std::string> tokens;
-  
-         // break up comma seperated fields
-         panzer::StringTokenizer(tokens,fields,",",true);
-  
-         for(std::size_t i=0;i<tokens.size();i++)
-            mesh->addCellField(tokens[i],blockId);
-      }
-  
-      // register cell averaged components of vector fields 
-      // just allocate space for the fields here. The actual calculation and writing 
-      // are done by panzer_stk_classic::ScatterCellAvgVector.
-      Teuchos::ParameterList & cellAvgVectors = output_list.sublist("Cell Average Vectors");
-      for(Teuchos::ParameterList::ConstIterator itr = cellAvgVectors.begin();
-          itr != cellAvgVectors.end(); ++itr) {
-         const std::string & blockId = itr->first;
-         const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
-         std::vector<std::string> tokens;
-  
-         // break up comma seperated fields
-         panzer::StringTokenizer(tokens,fields,",",true);
-  
-         for(std::size_t i = 0; i < tokens.size(); i++) {
-            std::string d_mod[3] = {"X","Y","Z"};
-            for(std::size_t d = 0; d < mesh->getDimension(); d++) 
-                mesh->addCellField(tokens[i]+d_mod[d],blockId);  
-         }   
-      }
-  
-      // register cell quantities
-      Teuchos::ParameterList & cellQuants = output_list.sublist("Cell Quantities");
-      for(Teuchos::ParameterList::ConstIterator itr=cellQuants.begin();
-          itr!=cellQuants.end();++itr) {
-         const std::string & blockId = itr->first;
-         const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
-         std::vector<std::string> tokens;
-  
-         // break up comma seperated fields
-         panzer::StringTokenizer(tokens,fields,",",true);
-  
-         for(std::size_t i=0;i<tokens.size();i++)
-            mesh->addCellField(tokens[i],blockId);
-      }
-  
-      // register ndoal quantities
-      Teuchos::ParameterList & nodalQuants = output_list.sublist("Nodal Quantities");
-      for(Teuchos::ParameterList::ConstIterator itr=nodalQuants.begin();
-          itr!=nodalQuants.end();++itr) {
-         const std::string & blockId = itr->first;
-         const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
-         std::vector<std::string> tokens;
-  
-         // break up comma seperated fields
-         panzer::StringTokenizer(tokens,fields,",",true);
-  
-         for(std::size_t i=0;i<tokens.size();i++)
-            mesh->addSolutionField(tokens[i],blockId);
-      }
-  
-      Teuchos::ParameterList & allocNodalQuants = output_list.sublist("Allocate Nodal Quantities");
-      for(Teuchos::ParameterList::ConstIterator itr=allocNodalQuants.begin();
-          itr!=allocNodalQuants.end();++itr) {
-         const std::string & blockId = itr->first;
-         const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
-         std::vector<std::string> tokens;
-  
-         // break up comma seperated fields
-         panzer::StringTokenizer(tokens,fields,",",true);
-  
-         for(std::size_t i=0;i<tokens.size();i++)
-            mesh->addSolutionField(tokens[i],blockId);
-      }
-    } 
-*/
 
     // finish building mesh, set required field variables and mesh bulk data
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -640,6 +563,45 @@ namespace panzer_stk_classic {
     if(!meConstructionOn)
       return;
 
+    // Setup active parameters
+    /////////////////////////////////////////////////////////////
+
+    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
+    std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values;
+    if (p.isSublist("Active Parameters")) {
+      Teuchos::ParameterList& active_params = p.sublist("Active Parameters");
+
+      int num_param_vecs = active_params.get<int>("Number of Parameter Vectors",0);
+      p_names.resize(num_param_vecs);
+      p_values.resize(num_param_vecs);
+      for (int i=0; i<num_param_vecs; i++) {
+        std::stringstream ss;
+        ss << "Parameter Vector " << i;
+        Teuchos::ParameterList& pList = active_params.sublist(ss.str());
+        int numParameters = pList.get<int>("Number");
+        TEUCHOS_TEST_FOR_EXCEPTION(numParameters == 0,
+                                   Teuchos::Exceptions::InvalidParameter,
+                                   std::endl << "Error!  panzer::ModelEvaluator::ModelEvaluator():  " <<
+                                   "Parameter vector " << i << " has zero parameters!" << std::endl);
+        p_names[i] =
+          Teuchos::rcp(new Teuchos::Array<std::string>(numParameters));
+        p_values[i] =
+          Teuchos::rcp(new Teuchos::Array<double>(numParameters));
+        for (int j=0; j<numParameters; j++) {
+          std::stringstream ss2;
+          ss2 << "Parameter " << j;
+          (*p_names[i])[j] = pList.get<std::string>(ss2.str());
+          ss2.str("");
+
+          ss2 << "Initial Value " << j;
+          (*p_values[i])[j] = pList.get<double>(ss2.str());
+
+          // this is a band-aid/hack to make sure parameters are registered before they are accessed
+          panzer::registerScalarParameter((*p_names[i])[j],*global_data->pl,(*p_values[i])[j]);
+        }
+      }
+    }
+
     // setup the closure model for automatic writing (during residual/jacobian update)
     ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -680,34 +642,6 @@ namespace panzer_stk_classic {
        user_data.set<int>("Workset Size",workset_size);
     }
 
-    // Setup active parameters
-    /////////////////////////////////////////////////////////////
-
-    std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names;
-    if (p.isSublist("Active Parameters")) {
-      Teuchos::ParameterList& active_params = p.sublist("Active Parameters");
-
-      int num_param_vecs = active_params.get<int>("Number of Parameter Vectors",0);
-      p_names.resize(num_param_vecs);
-      for (int i=0; i<num_param_vecs; i++) {
-        std::stringstream ss;
-        ss << "Parameter Vector " << i;
-        Teuchos::ParameterList& pList = active_params.sublist(ss.str());
-        int numParameters = pList.get<int>("Number");
-        TEUCHOS_TEST_FOR_EXCEPTION(numParameters == 0,
-                                   Teuchos::Exceptions::InvalidParameter,
-                                   std::endl << "Error!  panzer::ModelEvaluator::ModelEvaluator():  " <<
-                                   "Parameter vector " << i << " has zero parameters!" << std::endl);
-        p_names[i] =
-          Teuchos::rcp(new Teuchos::Array<std::string>(numParameters));
-        for (int j=0; j<numParameters; j++) {
-          std::stringstream ss2;
-          ss2 << "Parameter " << j;
-          (*p_names[i])[j] = pList.get<std::string>(ss2.str());
-        }
-      }
-    }
-
     // Setup solver factory
     /////////////////////////////////////////////////////////////
 
@@ -730,6 +664,7 @@ namespace panzer_stk_classic {
                                      m_response_library,
                                      linObjFactory,
                                      p_names,
+                                     p_values,
                                      lowsFactory,
                                      global_data,
                                      is_transient,
@@ -1069,7 +1004,7 @@ namespace panzer_stk_classic {
 
           // remove the already added coordinate fields
           std::set<std::string>::const_iterator rmItr;
-            for (rmItr=fields_to_remove.begin();rmItr!=fields_to_remove.end();++rmItr) 
+          for (rmItr=fields_to_remove.begin();rmItr!=fields_to_remove.end();++rmItr) 
             fieldNames.erase(fieldNames.find(panzer::StrPureBasisPair(*rmItr,Teuchos::null)));
         }
 
@@ -1377,8 +1312,11 @@ namespace panzer_stk_classic {
   
       // get parameter names
       std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > p_names(physics_me->Np());
-      for(std::size_t i=0;i<p_names.size();i++) 
+      std::vector<Teuchos::RCP<Teuchos::Array<double> > > p_values(physics_me->Np());
+      for(std::size_t i=0;i<p_names.size();i++) {
         p_names[i] = Teuchos::rcp(new Teuchos::Array<std::string>(*physics_me->get_p_names(i)));
+        p_values[i] = Teuchos::rcp(new Teuchos::Array<double>(p_names[i]->size(),0.0));
+      }
   
       Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me
           = buildPhysicsModelEvaluator(useThyra,
@@ -1386,6 +1324,7 @@ namespace panzer_stk_classic {
                                        response_library,
                                        m_lin_obj_factory,
                                        p_names,
+                                       p_values,
                                        solverFactory,
                                        m_global_data,
                                        is_transient,
@@ -1411,8 +1350,9 @@ namespace panzer_stk_classic {
   buildPhysicsModelEvaluator(bool buildThyraME,
                              const Teuchos::RCP<panzer::FieldManagerBuilder> & fmb,
                              const Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > & rLibrary,
-                                   const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
+                             const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > & lof,
                              const std::vector<Teuchos::RCP<Teuchos::Array<std::string> > > & p_names,
+                             const std::vector<Teuchos::RCP<Teuchos::Array<double> > > & p_values,
                              const Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<ScalarT> > & solverFactory,
                              const Teuchos::RCP<panzer::GlobalData> & global_data,
                              bool is_transient,double t_init) const
@@ -1420,7 +1360,7 @@ namespace panzer_stk_classic {
     Teuchos::RCP<Thyra::ModelEvaluatorDefaultBase<double> > thyra_me;
     if(!buildThyraME) {
       Teuchos::RCP<panzer::ModelEvaluator_Epetra> ep_me 
-          = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,lof, p_names, global_data, is_transient));
+          = Teuchos::rcp(new panzer::ModelEvaluator_Epetra(fmb,rLibrary,lof, p_names,p_values, global_data, is_transient));
 
       if (is_transient)
         ep_me->set_t_init(t_init);
@@ -1430,14 +1370,14 @@ namespace panzer_stk_classic {
     }
     else {
       thyra_me = Teuchos::rcp(new panzer::ModelEvaluator<double>
-                  (fmb,rLibrary,lof,p_names,solverFactory,global_data,is_transient,t_init));
+                  (fmb,rLibrary,lof,p_names,p_values,solverFactory,global_data,is_transient,t_init));
     }
 
     return thyra_me;
   }
 
   template<typename ScalarT>
-  bool ModelEvaluatorFactory<ScalarT>::determineCoordinateField(const panzer::UniqueGlobalIndexerBase & globalIndexer,std::string & fieldName) const
+  bool ModelEvaluatorFactory<ScalarT>::determineCoordinateField(const panzer::UniqueGlobalIndexerBase & globalIndexer,std::string & fieldName)
   {
     std::vector<std::string> elementBlocks;
     globalIndexer.getElementBlockIds(elementBlocks);
@@ -1470,7 +1410,7 @@ namespace panzer_stk_classic {
   template<typename ScalarT>
   void ModelEvaluatorFactory<ScalarT>::fillFieldPatternMap(const panzer::UniqueGlobalIndexerBase & globalIndexer,
                                                                   const std::string & fieldName,
-                                                                  std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const
+                                                                  std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns)
   {
     using Teuchos::Ptr;
     using Teuchos::ptrFromRef;
@@ -1524,7 +1464,7 @@ namespace panzer_stk_classic {
   template<typename GO>
   void ModelEvaluatorFactory<ScalarT>::fillFieldPatternMap(const panzer::DOFManagerFEI<int,GO> & globalIndexer,
                                                                   const std::string & fieldName,
-                                                                  std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const
+                                                                  std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns)
   {
      std::vector<std::string> elementBlocks;
      globalIndexer.getElementBlockIds(elementBlocks);
@@ -1543,7 +1483,7 @@ namespace panzer_stk_classic {
   template<typename GO>
   void ModelEvaluatorFactory<ScalarT>::fillFieldPatternMap(const panzer::DOFManager<int,GO> & globalIndexer,
                                                                   const std::string & fieldName,
-                                                                  std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns) const
+                                                                  std::map<std::string,Teuchos::RCP<const panzer::IntrepidFieldPattern> > & fieldPatterns)
   {
      std::vector<std::string> elementBlocks;
      globalIndexer.getElementBlockIds(elementBlocks);
@@ -1643,10 +1583,21 @@ namespace panzer_stk_classic {
        = Teuchos::rcp(new Teuchos::ParameterList(solncntl_params.sublist("NOX").sublist("Direction").
                       sublist("Newton").sublist("Stratimikos Linear Solver").sublist("Stratimikos")));
 
-    return buildLOWSFactory(blockedAssembly,globalIndexer,conn_manager,mesh,mpi_comm,strat_params
+    bool writeCoordinates = false;
+    if(p.sublist("Options").isType<bool>("Write Coordinates"))
+      writeCoordinates = p.sublist("Options").get<bool>("Write Coordinates");
+
+    bool writeTopo = false;
+    if(p.sublist("Options").isType<bool>("Write Topology"))
+      writeTopo = p.sublist("Options").get<bool>("Write Topology");
+
+
+    return buildLOWSFactory(blockedAssembly,globalIndexer,conn_manager,mesh,mpi_comm,strat_params,
                             #ifdef HAVE_TEKO 
-                            , reqHandler
+                            reqHandler,
                             #endif 
+                            writeCoordinates,
+                            writeTopo
                             );
   }
 
@@ -1657,11 +1608,13 @@ namespace panzer_stk_classic {
                    const Teuchos::RCP<panzer::ConnManagerBase<int> > & conn_manager,
                    const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
-                   const Teuchos::RCP<Teuchos::ParameterList> & strat_params
+                   const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
                    #ifdef HAVE_TEKO 
-                   , const Teuchos::RCP<Teko::RequestHandler> & reqHandler
+                   const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
                    #endif 
-                   ) const
+                   bool writeCoordinates,
+                   bool writeTopo
+                   )
   {
     #ifdef HAVE_TEKO 
     Teuchos::RCP<Teko::RequestHandler> reqHandler_local = reqHandler;
@@ -1671,18 +1624,22 @@ namespace panzer_stk_classic {
 
     RCP<panzer_stk_classic::STKConnManager<panzer::Ordinal64> > long_conn = Teuchos::rcp_dynamic_cast<panzer_stk_classic::STKConnManager<panzer::Ordinal64> >(conn_manager);
     if(long_conn!=Teuchos::null)
-      return buildLOWSFactory(blockedAssembly,globalIndexer,long_conn,mesh,mpi_comm,strat_params
+      return buildLOWSFactory(blockedAssembly,globalIndexer,long_conn,mesh,mpi_comm,strat_params,
                               #ifdef HAVE_TEKO 
-                              , reqHandler_local
+                              reqHandler_local,
                               #endif 
+                              writeCoordinates,
+                              writeTopo
                               );
 
     RCP<panzer_stk_classic::STKConnManager<int> > int_conn = Teuchos::rcp_dynamic_cast<panzer_stk_classic::STKConnManager<int> >(conn_manager);
     if(int_conn!=Teuchos::null)
-      return buildLOWSFactory(blockedAssembly,globalIndexer,int_conn,mesh,mpi_comm,strat_params
+      return buildLOWSFactory(blockedAssembly,globalIndexer,int_conn,mesh,mpi_comm,strat_params,
                               #ifdef HAVE_TEKO 
-                              , reqHandler_local
+                              reqHandler_local,
                               #endif 
+                              writeCoordinates,
+                              writeTopo
                               );
 
     // should never reach this
@@ -1698,22 +1655,14 @@ namespace panzer_stk_classic {
                    const Teuchos::RCP<panzer_stk_classic::STKConnManager<GO> > & stkConn_manager,
                    const Teuchos::RCP<panzer_stk_classic::STK_Interface> & mesh,
                    const Teuchos::RCP<const Teuchos::MpiComm<int> > & mpi_comm,
-                   const Teuchos::RCP<Teuchos::ParameterList> & strat_params
+                   const Teuchos::RCP<Teuchos::ParameterList> & strat_params,
                    #ifdef HAVE_TEKO 
-                   , const Teuchos::RCP<Teko::RequestHandler> & reqHandler
+                   const Teuchos::RCP<Teko::RequestHandler> & reqHandler,
                    #endif 
-                   ) const
+                   bool writeCoordinates,
+                   bool writeTopo
+                   )
   {
-    const Teuchos::ParameterList & p = *this->getParameterList();
-
-    bool writeCoordinates = false;
-    if(p.sublist("Options").isType<bool>("Write Coordinates"))
-      writeCoordinates = p.sublist("Options").get<bool>("Write Coordinates");
-
-    bool writeTopo = false;
-    if(p.sublist("Options").isType<bool>("Write Topology"))
-      writeCoordinates = p.sublist("Options").get<bool>("Write Topology");
-
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
     // Note if you want to use new solvers within Teko they have to be added to the solver builer
@@ -1918,7 +1867,7 @@ namespace panzer_stk_classic {
   template<typename ScalarT>
   template<typename GO>
   void ModelEvaluatorFactory<ScalarT>::
-  writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs) const
+  writeTopology(const panzer::BlockedDOFManager<int,GO> & blkDofs)
   {
     using Teuchos::RCP;
 
@@ -1949,7 +1898,7 @@ namespace panzer_stk_classic {
   template<typename ScalarT>
   template <typename GO>
   void ModelEvaluatorFactory<ScalarT>::
-  writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os) const
+  writeTopology(const panzer::DOFManagerFEI<int,GO> & dofs,const std::string & block,std::ostream & os)
   {
     std::vector<std::string> fields(dofs.getElementBlockGIDCount(block));
 

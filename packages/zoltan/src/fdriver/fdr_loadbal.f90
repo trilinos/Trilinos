@@ -56,58 +56,58 @@ implicit none
 
 public :: run_zoltan
 
-!/*--------------------------------------------------------------------------*/
-!/* Purpose: Call Zoltan to determine a new load balance.                    */
-!/*          Contains all of the callback functions that Zoltan needs        */
-!/*          for the load balancing.                                         */
-!/*--------------------------------------------------------------------------*/
-!/* Author(s):  Matthew M. St.John (9226)                                    */
+!--------------------------------------------------------------------------
+! Purpose: Call Zoltan to determine a new load balance.                    
+!          Contains all of the callback functions that Zoltan needs        
+!          for the load balancing.                                         
+!--------------------------------------------------------------------------
+! Author(s):  Matthew M. St.John (9226)                                    
 !   Translated to Fortran by William F. Mitchell
-!/*--------------------------------------------------------------------------*/
-!/*--------------------------------------------------------------------------*/
-!/* Revision History:                                                        */
-!/*    10 May 1999:       Date of creation.                                  */
+!--------------------------------------------------------------------------
+!--------------------------------------------------------------------------
+! Revision History:                                                        
+!    10 May 1999:       Date of creation.                                  
 !       1 September 1999: Fortran translation
-!/*--------------------------------------------------------------------------*/
+!--------------------------------------------------------------------------
 
 contains
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 
 logical function run_zoltan(Proc, prob, pio_info)
 integer(Zoltan_INT) :: Proc
 type(PROB_INFO) :: prob
 type(PARIO_INFO) :: pio_info
 
-!/* Local declarations. */
+! Local declarations. 
   type(Zoltan_Struct), pointer :: zz_obj
   type(Zoltan_Struct), pointer :: zz_obj_copy
 
-!  /* Variables returned by the load balancer */
-  integer(Zoltan_INT),pointer :: import_gids(:)  !/* Global nums of elements to
+!   Variables returned by the load balancer 
+  integer(Zoltan_INT),pointer :: import_gids(:)  ! Global nums of elements to
                                                  ! be imported
-  integer(Zoltan_INT),pointer :: import_lids(:)  !/* Pointers to elements to be
+  integer(Zoltan_INT),pointer :: import_lids(:)  ! Pointers to elements to be
                                                  ! imported
-  integer(Zoltan_INT),pointer :: import_procs(:) !/* Proc IDs of procs owning
+  integer(Zoltan_INT),pointer :: import_procs(:) ! Proc IDs of procs owning
                                                  ! elements to be imported.
-  integer(Zoltan_INT),pointer :: import_to_part(:)!/* Partition to which 
+  integer(Zoltan_INT),pointer :: import_to_part(:)! Partition to which 
                                                  ! elements are to be imported.
-  integer(Zoltan_INT),pointer :: export_gids(:)  !/* Global nums of elements to
+  integer(Zoltan_INT),pointer :: export_gids(:)  ! Global nums of elements to
                                                  ! be exported
-  integer(Zoltan_INT),pointer :: export_lids(:)  !/* Pointers to elements to be
+  integer(Zoltan_INT),pointer :: export_lids(:)  ! Pointers to elements to be
                                                  ! exported
-  integer(Zoltan_INT),pointer :: export_procs(:) !/* Proc IDs of destination 
+  integer(Zoltan_INT),pointer :: export_procs(:) ! Proc IDs of destination 
                                                  ! for elements to be exported.
-  integer(Zoltan_INT),pointer :: export_to_part(:)!/* Partition to which 
+  integer(Zoltan_INT),pointer :: export_to_part(:)! Partition to which 
                                                  ! elements are to be exported.
-  integer(Zoltan_INT) :: num_imported !/* Number of nodes to be imported.
-  integer(Zoltan_INT) :: num_exported !/* Number of nodes to be exported.
-  logical :: new_decomp           !/* Flag indicating whether the decomposition
+  integer(Zoltan_INT) :: num_imported ! Number of nodes to be imported.
+  integer(Zoltan_INT) :: num_exported ! Number of nodes to be exported.
+  logical :: new_decomp           ! Flag indicating whether the decomposition
                                   !   has changed
 
-  integer(Zoltan_INT) :: i            !/* Loop index
+  integer(Zoltan_INT) :: i            ! Loop index
   integer(Zoltan_INT) :: ierr         !   Return code
   integer(Zoltan_INT) :: num_gid_entries  ! # of array entries in global IDs
   integer(Zoltan_INT) :: num_lid_entries  ! # of array entries in local IDs
@@ -125,7 +125,7 @@ type(PARIO_INFO) :: pio_info
   real(Zoltan_DOUBLE) :: xmin, ymin, zmin, xmax, ymax, zmax
   type(ELEM_INFO), pointer :: current_elem
   integer(Zoltan_INT) :: curr_idx
-!/***************************** BEGIN EXECUTION ******************************/
+!**************************** BEGIN EXECUTION *****************************
 
   run_zoltan = .true.
   num_gid_entries = 1
@@ -134,15 +134,15 @@ type(PARIO_INFO) :: pio_info
     import_to_part, export_gids, export_lids, export_procs, export_to_part)
 
 
-! /* Allocate space for arrays. */
+!  Allocate space for arrays. 
   call MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr)
   allocate(psize(nprocs))
   allocate(partid(nprocs))
   allocate(idx(nprocs))
 
-!  /*
+!  
 !   *  Create a load-balancing object.
-!   */
+!   
   zz_obj => Zoltan_Create(MPI_COMM_WORLD)
   if (.not.associated(zz_obj)) then
     print *, "fatal:  NULL object returned from Zoltan_Create()"
@@ -150,33 +150,33 @@ type(PARIO_INFO) :: pio_info
     goto 9999
   endif
 
-!  /* Set the user-specified parameters */
+!   Set the user-specified parameters 
   do i = 0, prob%num_params-1
     ierr = Zoltan_Set_Param(zz_obj, trim(prob%params(i)%str(0)), &
                                 trim(prob%params(i)%str(1)))
   end do
 
 
-!  /* Set the method */
+!   Set the method 
   if (Zoltan_Set_Param(zz_obj, "LB_METHOD", prob%method) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Param(LB_METHOD)"
     run_zoltan = .false.
     goto 9999
   endif
 
-!  /* if there is a paramfile specified, read it
-!     note: contents of this file may override the parameters set above */
+!   if there is a paramfile specified, read it
+!     note: contents of this file may override the parameters set above 
   if (prob%ztnPrm_file /= "") then  
     call ztnPrm_read_file(zz_obj, prob%ztnPrm_file, &
          MPI_COMM_WORLD)
   endif
 
-!  /*
+!  
 !   * Set the callback functions
-!   */
+!   
 
   if (Test_Local_Partitions == 1) then
-!   /* Compute Proc partitions for each processor */
+!    Compute Proc partitions for each processor 
     s(1:1) = achar(Proc/100 + iachar('0'))
     s(2:2) = achar(Proc/10 + iachar('0'))
     s(3:3) = achar(modulo(Proc,10) + iachar('0'))
@@ -188,8 +188,8 @@ type(PARIO_INFO) :: pio_info
     endif
 
   else if (Test_Local_Partitions == 2) then
-!   /* Compute Proc partitions for odd-ranked processors let remaining
-!    * partitions be in even-ranked processors. */
+!    Compute Proc partitions for odd-ranked processors let remaining
+!    * partitions be in even-ranked processors. 
    if (modulo(Proc,2) == 1) then
       s(1:1) = achar(Proc/100 + iachar('0'))
       s(2:2) = achar(Proc/10 + iachar('0'))
@@ -203,14 +203,14 @@ type(PARIO_INFO) :: pio_info
     endif
 
   else if (Test_Local_Partitions == 3 .or. Test_Local_Partitions == 5) then
-!   /* Variable partition sizes, but one partition per proc */
+!    Variable partition sizes, but one partition per proc 
     partid(1) = Proc
     idx(1) = 0
-    psize(1) = Proc   !/* Partition size = myproc */
+    psize(1) = Proc   ! Partition size = myproc 
     if (Test_Local_Partitions == 5) psize(1) = psize(1) + 1
-!   /* Set partition sizes using global numbers. */
+!    Set partition sizes using global numbers. 
     ierr = Zoltan_LB_Set_Part_Sizes(zz_obj, 1, 1, partid, idx, psize)
-!   /* Reset partition sizes for upper half of procs. */
+!    Reset partition sizes for upper half of procs. 
     if (Proc >= nprocs/2) then
       psize(1) = 0.5 + modulo(Proc,2)
       if (Test_Local_Partitions == 5) psize(1) = psize(1) + 1
@@ -218,8 +218,8 @@ type(PARIO_INFO) :: pio_info
     endif
 
   else if (Test_Local_Partitions == 4) then
-!   /* Variable number of partitions per proc and variable sizes. */
-!   /* Request Proc partitions for each processor, of size 1/Proc.  */
+!    Variable number of partitions per proc and variable sizes. 
+!    Request Proc partitions for each processor, of size 1/Proc.  
     s(1:1) = achar(Proc/100 + iachar('0'))
     s(2:2) = achar(Proc/10 + iachar('0'))
     s(3:3) = achar(modulo(Proc,10) + iachar('0'))
@@ -229,16 +229,16 @@ type(PARIO_INFO) :: pio_info
       run_zoltan = .false.
       goto 9999
     endif
-!   /* Each partition size is inverse to the no. of partitions on a proc. */
+!    Each partition size is inverse to the no. of partitions on a proc. 
     do i = 1, Proc
-      partid(i) = i-1                 !  /* Local partition number */
+      partid(i) = i-1                 !   Local partition number 
       idx(i) = 0
       psize(i) = 1.0/Proc
     end do
     ierr = Zoltan_LB_Set_Part_Sizes(zz_obj, 0, Proc, partid, idx, psize)
   endif
 
-! /* Free tenmporary arrays for partition sizes. */
+!  Free tenmporary arrays for partition sizes. 
   deallocate(psize)
   deallocate(partid)
   deallocate(idx)
@@ -270,7 +270,7 @@ type(PARIO_INFO) :: pio_info
     endif
   endif
 
-!  /* Functions for geometry based algorithms */
+!   Functions for geometry based algorithms 
 ! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_NUM_GEOM_FN_TYPE, get_num_geom) == ZOLTAN_FATAL) then
   if (Zoltan_Set_Num_Geom_Fn(zz_obj, get_num_geom) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
@@ -312,7 +312,7 @@ type(PARIO_INFO) :: pio_info
     endif
   endif
 
-!  /* Functions for graph based algorithms */
+!   Functions for graph based algorithms 
   if (Test_Graph_Callbacks .eq. 1)  then
     if (Test_Multi_Callbacks .eq. 1)  then
       if (Zoltan_Set_Num_Edges_Multi_Fn(zz_obj, get_num_edges_multi) == ZOLTAN_FATAL) then
@@ -342,7 +342,7 @@ type(PARIO_INFO) :: pio_info
     endif
   endif
 
-!  /* Functions for hypergraph based algorithms */
+!   Functions for hypergraph based algorithms 
   if (Test_Hypergraph_Callbacks .eq. 1)  then
     if (Zoltan_Set_Hg_Size_Cs_Fn(zz_obj, get_hg_size_compressed_pins) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
@@ -396,14 +396,14 @@ type(PARIO_INFO) :: pio_info
     ierr = Zoltan_LB_Eval(zz_obj, .true.)
 
     if (Test_Gen_Files .ne. 0) then
-!     /* Write output files. */
+!      Write output files. 
       fname = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".before"
       ierr = Zoltan_Generate_Files(zz_obj, fname, 1, 1, 1, 0);
     endif
 
-!  /*
+!  
 !   * Call the load balancer
-!   */
+!   
     if (Zoltan_LB_Partition(zz_obj, new_decomp, &
                    num_gid_entries, num_lid_entries, &
                    num_imported, import_gids, import_lids, &
@@ -415,9 +415,9 @@ type(PARIO_INFO) :: pio_info
       goto 9996
     endif
 
-!  /*
+!  
 !   * Call another routine to perform the migration
-!   */
+!   
     if (new_decomp) then
       if (.not.migrate_elements(Proc,zz_obj, &
                             num_gid_entries, num_lid_entries, &
@@ -431,7 +431,7 @@ type(PARIO_INFO) :: pio_info
       endif
     endif
 
-!   /* Test the copy function */
+!    Test the copy function 
 
     zz_obj_copy => Zoltan_Copy(zz_obj)
     if (.not.associated(zz_obj_copy)) then
@@ -450,14 +450,14 @@ type(PARIO_INFO) :: pio_info
     call Zoltan_Destroy(zz_obj_copy)
     
 
-!  /* Evaluate the new balance */
+!   Evaluate the new balance 
     if (Proc == 0) then
       print *,"AFTER load balancing"
     endif
     ierr = Zoltan_LB_Eval(zz_obj, .true.)
 
     if (Test_Gen_Files .ne. 0) then
-!     /* Write output files. */
+!      Write output files. 
       fname = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".after"
       ierr = Zoltan_Generate_Files(zz_obj, fname, 1, 1, 1, 0);
     endif
@@ -472,7 +472,7 @@ type(PARIO_INFO) :: pio_info
              xmin, ",", ymin, ",", zmin, ") (", xmax, ",", ymax, ",", zmax, ")"
     endif
 
-!  /* Clean up */
+!   Clean up 
 9996 continue
     ierr = Zoltan_LB_Free_Part(import_gids,  import_lids, &
                                import_procs, import_to_part) 
@@ -482,7 +482,7 @@ type(PARIO_INFO) :: pio_info
   endif  ! End Driver_Action ==> Do balancing
 
   if (IAND(Driver_Action,2).gt.0) then
-!   /* Do only ordering if this was specified in the driver input file */
+!    Do only ordering if this was specified in the driver input file 
 
     allocate(order(mesh%num_elems*num_gid_entries));
     allocate(order_gids(mesh%num_elems*num_gid_entries));
@@ -501,10 +501,10 @@ type(PARIO_INFO) :: pio_info
       goto 9998
     endif
 
-!   /* Evaluate the new ordering */
+!    Evaluate the new ordering 
     if (Proc == 0) print *, "AFTER ordering"
 
-!   /* Copy ordering permutation into mesh structure */
+!    Copy ordering permutation into mesh structure 
     do i = 1, mesh%num_elems
       current_elem => search_by_global_id(Mesh, order_gids(num_gid_entries*i), &
                                           curr_idx)
@@ -514,7 +514,7 @@ type(PARIO_INFO) :: pio_info
     enddo
 
 9998 continue
-!   /* Free order data */
+!    Free order data 
     deallocate(order);
     deallocate(order_gids);
 
@@ -522,7 +522,7 @@ type(PARIO_INFO) :: pio_info
   endif  ! End Driver_Action ==> Do ordering
 
   if (IAND(Driver_Action,4).gt.0) then
-!   /* Do only coloring if this was specified in the driver input file */
+!    Do only coloring if this was specified in the driver input file 
 
     allocate(color(mesh%num_elems));
     allocate(gids(mesh%num_elems*num_gid_entries));
@@ -541,7 +541,7 @@ type(PARIO_INFO) :: pio_info
       goto 9994
     endif
 
-!   /* Verify coloring */
+!    Verify coloring 
     if (Proc == 0) print *, "Verifying coloring result"
     ierr = Zoltan_Color_Test(zz_obj, num_gid_entries, num_lid_entries, &
          mesh%num_elems, gids, lids, &
@@ -552,14 +552,14 @@ type(PARIO_INFO) :: pio_info
        goto 9994
     endif
 
-!   /* Copy coloring permutation into mesh structure */
+!    Copy coloring permutation into mesh structure 
     do i = 0, mesh%num_elems-1
       lid = lids(num_lid_entries * (i + 1))
       mesh%elements(lid)%perm_value = color(i+1);
     enddo
 
 9994 continue
-!   /* Free color data */
+!    Free color data 
     deallocate(color);
     deallocate(gids);
     deallocate(lids);
@@ -573,21 +573,21 @@ type(PARIO_INFO) :: pio_info
 
 end function run_zoltan
 
-!/*****************************************************************************/
-!/******* zfdrive query functions below ***************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!****** zfdrive query functions below **************************************
+!***************************************************************************
 integer(Zoltan_INT) function get_num_elements(data, ierr)
 INTEGER(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(out) :: ierr
 
-  ierr = ZOLTAN_OK !/* set error code */
+  ierr = ZOLTAN_OK ! set error code 
 
   get_num_elements = Mesh%num_elems
 end function get_num_elements
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 subroutine get_elements(data, num_gid_entries, num_lid_entries, &
                         global_id, local_id, wdim, wgt, ierr)
 
@@ -622,7 +622,7 @@ subroutine get_elements(data, num_gid_entries, num_lid_entries, &
     endif
 
     if (wdim>1) then
-      ierr = ZOLTAN_WARN ! /* we didn't expect multidimensional weights */
+      ierr = ZOLTAN_WARN !  we didn't expect multidimensional weights 
     else
       ierr = ZOLTAN_OK
     endif
@@ -630,9 +630,9 @@ subroutine get_elements(data, num_gid_entries, num_lid_entries, &
 
 end subroutine get_elements
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 integer(Zoltan_INT) function get_first_element(data, &
                                           num_gid_entries, num_lid_entries, &
                                           global_id, local_id, &
@@ -675,7 +675,7 @@ integer(Zoltan_INT) function get_first_element(data, &
   endif
 
   if (wdim>1) then
-    ierr = ZOLTAN_WARN ! /* we didn't expect multidimensional weights */
+    ierr = ZOLTAN_WARN !  we didn't expect multidimensional weights 
   else
     ierr = ZOLTAN_OK
   endif
@@ -683,9 +683,9 @@ integer(Zoltan_INT) function get_first_element(data, &
   get_first_element = 1
 end function get_first_element
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 integer(Zoltan_INT) function get_next_element(data, &
                      num_gid_entries, num_lid_entries, global_id, local_id, &
                      next_global_id, next_local_id, wdim, next_wgt, ierr)
@@ -718,7 +718,7 @@ integer(Zoltan_INT) function get_next_element(data, &
     idx = local_id(lid)
     current_elem => Mesh%elements(idx)
   else 
-    !/* testing zero-length local IDs search by global ID for current elem */
+    ! testing zero-length local IDs search by global ID for current elem 
     current_elem => search_by_global_id(mesh, global_id(gid), idx)
   endif
 
@@ -732,7 +732,7 @@ integer(Zoltan_INT) function get_next_element(data, &
     endif
 
     if (wdim>1) then
-      ierr = ZOLTAN_WARN !/* we didn't expect multidimensional weights */
+      ierr = ZOLTAN_WARN ! we didn't expect multidimensional weights 
     else
       ierr = ZOLTAN_OK
     endif
@@ -741,21 +741,21 @@ integer(Zoltan_INT) function get_next_element(data, &
   get_next_element = found
 end function get_next_element
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 integer(Zoltan_INT) function get_num_geom(data, ierr)
 INTEGER(Zoltan_INT), intent(in) :: data(*)
 integer(Zoltan_INT), intent(out) :: ierr
 
-  ierr = ZOLTAN_OK ! /* set error flag */
+  ierr = ZOLTAN_OK !  set error flag 
 
   get_num_geom = Mesh%num_dims
 end function get_num_geom
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 subroutine get_part_multi(data, num_gid_entries, num_lid_entries, &
                     num_obj, global_id, local_id, parts, ierr)
 INTEGER(Zoltan_INT), intent(in) :: data(*)
@@ -794,9 +794,9 @@ integer(Zoltan_INT), intent(out) :: parts(*), ierr
 
 end subroutine get_part_multi
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 function get_part(data, num_gid_entries, num_lid_entries, &
                     global_id, local_id, ierr)
 integer(Zoltan_INT) :: get_part
@@ -832,9 +832,9 @@ integer(Zoltan_INT), intent(out) :: ierr
 
 end function get_part
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 
 subroutine get_geom(data, num_gid_entries, num_lid_entries, &
                     global_id, local_id, coor, ierr)
@@ -868,15 +868,15 @@ integer(Zoltan_INT), intent(out) :: ierr
   endif
 
   if (Mesh%eb_nnodes(current_elem%elem_blk) == 0) then
-    !/* No geometry info was read. */
+    ! No geometry info was read. 
     ierr = ZOLTAN_FATAL
     return
   endif
   
-!  /*
+!  
 !   * calculate the geometry of the element by averaging
 !   * the coordinates of the nodes in its connect table
-!   */
+!   
   do i = 0, Mesh%num_dims-1
     tmp = 0.0_Zoltan_DOUBLE
     do j = 0, Mesh%eb_nnodes(current_elem%elem_blk)-1
@@ -889,9 +889,9 @@ integer(Zoltan_INT), intent(out) :: ierr
   ierr = ZOLTAN_OK
 end subroutine get_geom
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 subroutine get_geom_multi(data, num_gid_entries, num_lid_entries, &
                     num_obj, global_id, local_id, num_dim, coor, ierr)
 INTEGER(Zoltan_INT), intent(in) :: data(*)
@@ -922,9 +922,9 @@ integer(Zoltan_INT) :: i
     
 end subroutine get_geom_multi
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 integer(Zoltan_INT) function get_num_edges(data, num_gid_entries, num_lid_entries, &
                                        global_id, local_id, ierr)
 INTEGER(Zoltan_INT), intent(in) :: data(*)
@@ -959,9 +959,9 @@ integer(Zoltan_INT) :: lid
   get_num_edges = current_elem%nadj
 end function get_num_edges
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 
 subroutine get_num_edges_multi (data, num_gid_entries, num_lid_entries, &
   num_obj, global_id, local_id, num_edges, ierr)
@@ -990,9 +990,9 @@ integer(Zoltan_INT) :: i
 
 end subroutine get_num_edges_multi
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 subroutine get_edge_list (data, num_gid_entries, num_lid_entries, &
                           global_id, local_id, nbor_global_id, &
                           nbor_procs, get_ewgts, nbor_ewgts, ierr)
@@ -1026,26 +1026,26 @@ integer(Zoltan_INT), intent(out) :: ierr
     current_elem => search_by_global_id(Mesh, global_id(gid), idx)
   endif
 
-!  /* get the processor number */
+!   get the processor number 
   call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
 
   j = 1
   do i = 0, current_elem%adj_len-1
 
-!    /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
+!     Skip NULL adjacencies (sides that are not adjacent to another elem). 
     if (current_elem%adj(i) == -1) cycle
 
     if (current_elem%adj_proc(i) == proc) then
       local_elem = current_elem%adj(i)
       nbor_global_id(gid+(j-1)*num_gid_entries) = Mesh%elements(local_elem)%globalID
-    else  ! /* adjacent element on another processor */
+    else  !  adjacent element on another processor 
       nbor_global_id(gid+(j-1)*num_gid_entries) = current_elem%adj(i)
     endif
     nbor_procs(j) = current_elem%adj_proc(i)
 
     if (get_ewgts /= 0) then
       if (.not. associated(current_elem%edge_wgt)) then
-        nbor_ewgts(j) = 1 !/* uniform weights is default */
+        nbor_ewgts(j) = 1 ! uniform weights is default 
       else
         nbor_ewgts(j) = current_elem%edge_wgt(i)
       endif
@@ -1056,9 +1056,9 @@ integer(Zoltan_INT), intent(out) :: ierr
   ierr = ZOLTAN_OK
 end subroutine get_edge_list
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 
 subroutine get_edge_list_multi(data, num_gid_entries, num_lid_entries, &
   num_obj, global_id, local_id, num_edges, nbor_global_id, nbor_procs, &
@@ -1098,9 +1098,9 @@ integer(Zoltan_INT) :: sum, i
 
 end subroutine get_edge_list_multi
 
-!/*****************************************************************************/
-!/******** Hypergraph query functions *****************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!******* Hypergraph query functions ****************************************
+!***************************************************************************
 
 subroutine get_hg_size_compressed_pins(data, &
   num_lists, num_pins, fmat, ierr)
@@ -1210,9 +1210,9 @@ integer i, k, q
 
 end subroutine get_hg_edge_weights
 
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
+!***************************************************************************
+!***************************************************************************
+!***************************************************************************
 
 
 subroutine test_drops_rtn(Proc, mesh, pio_info, zz)
@@ -1232,13 +1232,13 @@ integer(Zoltan_INT) :: Num_Proc
 integer(Zoltan_INT) :: max_part, gmax_part
 integer(Zoltan_INT) :: gid(1), lid(1)
 integer(Zoltan_INT) :: test_both  
-              !/* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
-              !/* If false, test only Zoltan_*_PP_Assign.                    */
-              !/* True if # partitions == # processors.                      */
+              ! If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. 
+              ! If false, test only Zoltan_*_PP_Assign.                    
+              ! True if # partitions == # processors.                      
 
   mesh => Mesh
 
-  !/* Find maximum partition number across all processors. */
+  ! Find maximum partition number across all processors. 
   call MPI_Comm_size(MPI_COMM_WORLD, Num_Proc, ierr)
   max_part = -1
   gmax_part = -1
@@ -1255,13 +1255,13 @@ integer(Zoltan_INT) :: test_both
     test_both = 0
   endif
 
-  !/* generate the parallel filename for this processor */
+  ! generate the parallel filename for this processor 
   ctemp = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".drops"
   call gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc)
   fp = 12
   open(unit=fp,file=par_out_fname,action="write")
 
-  !/* Test unit box */
+  ! Test unit box 
   xlo(1) = 0.0
   xlo(2) = 0.0
   xlo(3) = 0.0
@@ -1270,7 +1270,7 @@ integer(Zoltan_INT) :: test_both
   xhi(3) = 1.0
   call test_box_drops(fp, xlo, xhi, zz, Proc, -1, -1, test_both)
 
-  !/* Test box based on this processor */
+  ! Test box based on this processor 
   if (mesh%num_elems > 0) then
     x(1) = 0.
     x(2) = 0.
@@ -1297,8 +1297,8 @@ integer(Zoltan_INT) :: test_both
                         test_both)
   endif
 
-  !/* Test box that (most likely) includes the entire domain. */
-  !/* All partitions and processors with partitions should be in the output.  */
+  ! Test box that (most likely) includes the entire domain. 
+  ! All partitions and processors with partitions should be in the output.  
   xlo(1) = -1000000.
   xlo(2) = -1000000.
   xlo(3) = -1000000.
@@ -1308,7 +1308,7 @@ integer(Zoltan_INT) :: test_both
   if (max_part >= 0) then
     tmp = Proc
   else
-    !/* do not test for proc if proc has no partitions */
+    ! do not test for proc if proc has no partitions 
     tmp = -1
   endif
   call test_box_drops(fp, xlo, xhi, zz, Proc, tmp, -1, test_both)
@@ -1317,7 +1317,7 @@ integer(Zoltan_INT) :: test_both
 
 end subroutine test_drops_rtn
 
-!/*****************************************************************************/
+!***************************************************************************
 subroutine test_point_drops(fp, x, zz, Proc, procs, proccnt, parts, partcnt, &
                             test_both)
 integer :: fp 
@@ -1402,7 +1402,7 @@ integer(Zoltan_INT) :: found
   endif
 end subroutine test_point_drops
 
-!/*****************************************************************************/
+!***************************************************************************
 
 subroutine test_box_drops(fp, xlo, xhi, zz, Proc, answer_proc, answer_part, &
                           test_both)
@@ -1411,8 +1411,8 @@ real(Zoltan_DOUBLE) ::  xlo(*)
 real(Zoltan_DOUBLE) ::  xhi(*)
 type(Zoltan_Struct), pointer :: zz
 integer(Zoltan_INT) :: Proc 
-integer(Zoltan_INT) :: answer_proc !/* If >= 0, an expected answer for proc. */
-integer(Zoltan_INT) :: answer_part !/* If >= 0, an expected answer for part. */
+integer(Zoltan_INT) :: answer_proc ! If >= 0, an expected answer for proc. 
+integer(Zoltan_INT) :: answer_part ! If >= 0, an expected answer for part. 
 integer(Zoltan_INT) :: test_both
  
 integer(Zoltan_INT) ::  status, procfound, partfound
@@ -1482,7 +1482,7 @@ integer(Zoltan_INT) ::  i
                   "expected part ", answer_part, "not in output part list"
     endif
 
-    !/* Test point assign */
+    ! Test point assign 
     call test_point_drops(fp, xlo, zz, Proc, procs, proccnt, parts, partcnt, &
                           test_both)
     call test_point_drops(fp, xhi, zz, Proc, procs, proccnt, parts, partcnt, &

@@ -49,24 +49,28 @@
 #include "Epetra_MapColoring.h"
 %}
 
+/////////////////////////////////////////////////////////
+// Teuchos::RCP<> support for all classes in this file //
+/////////////////////////////////////////////////////////
+%teuchos_rcp(Epetra_SrcDistObject)
+%teuchos_rcp(Epetra_DistObject)
+%teuchos_rcp(Epetra_MapColoring)
+
 //////////////////////////////////
 // Epetra_SrcDistObject support //
 //////////////////////////////////
-%teuchos_rcp(Epetra_SrcDistObject)
 %rename(SrcDistObject) Epetra_SrcDistObject;
 %include "Epetra_SrcDistObject.h"
 
 ///////////////////////////////
 // Epetra_DistObject support //
 ///////////////////////////////
-%teuchos_rcp(Epetra_DistObject)
 %rename(DistObject) Epetra_DistObject;
 %include "Epetra_DistObject.h"
 
 ////////////////////////////////
 // Epetra_MapColoring support //
 ////////////////////////////////
-%teuchos_rcp(Epetra_MapColoring)
 %rename(MapColoring) Epetra_MapColoring;
 %ignore Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap &, int*, const int);
 %ignore Epetra_MapColoring::operator()(int) const;

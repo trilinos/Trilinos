@@ -252,6 +252,7 @@ preEvaluate(typename TRAITS::PreEvalData d)
   std::vector<std::string> activeParameters = 
     rcp_dynamic_cast<ParameterList_GlobalEvaluationData>(d.gedc.getDataObject("PARAMETER_NAMES"))->getActiveParameters();
 
+  dfdp_vectors_.clear();
   for(std::size_t i=0;i<activeParameters.size();i++) {
     RCP<Epetra_Vector> vec = rcp_dynamic_cast<EpetraLinearObjContainer>(d.gedc.getDataObject(activeParameters[i]),true)->get_f();
     dfdp_vectors_.push_back(vec);
@@ -290,12 +291,8 @@ evaluateFields(typename TRAITS::EvalData workset)
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
 
+            // scatter the sensitivity vectors
             ScalarT value = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
-            // // first scatter the residual (WE ARE NOT DOING THIS!)
-            // if(r!=Teuchos::null)
-            //   (*r)[lid] += value.val();
-
-            // then scatter the sensitivity vectors
             for(int d=0;d<value.size();d++)
               (*dfdp_vectors_[d])[lid] += value.fastAccessDx(d);
          }

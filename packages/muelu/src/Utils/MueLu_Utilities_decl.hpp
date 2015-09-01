@@ -98,11 +98,11 @@ class Epetra_Vector;
 
 namespace MueLu {
 // MPI helpers
-#define sumAll(rcpComm, in, out)                                        \
+#define MueLu_sumAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out))
-#define minAll(rcpComm, in, out)                                        \
+#define MueLu_minAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out))
-#define maxAll(rcpComm, in, out)                                        \
+#define MueLu_maxAll(rcpComm, in, out)                                        \
   Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out))
 
 #ifdef HAVE_MUELU_EPETRA
@@ -110,6 +110,25 @@ namespace MueLu {
   template<typename SC,typename LO,typename GO,typename NO>
   RCP<Xpetra::CrsMatrixWrap<SC,LO,GO,NO> >
   Convert_Epetra_CrsMatrix_ToXpetra_CrsMatrixWrap(RCP<Epetra_CrsMatrix> &epAB);
+
+  template<typename SC,typename LO,typename GO,typename NO>
+  RCP<Xpetra::Matrix<SC, LO, GO, NO> >
+  EpetraCrs_To_XpetraMatrix(const Teuchos::RCP<Epetra_CrsMatrix>& A);
+
+  template<typename SC,typename LO,typename GO,typename NO>
+  RCP<Xpetra::MultiVector<SC, LO, GO, NO> >
+  EpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Epetra_MultiVector>& V);
+#endif
+
+#ifdef HAVE_MUELU_TPETRA
+  template<typename SC,typename LO,typename GO,typename NO>
+  RCP<Xpetra::Matrix<SC, LO, GO, NO> >
+  TpetraCrs_To_XpetraMatrix(const Teuchos::RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >& Atpetra);
+
+
+  template<typename SC,typename LO,typename GO,typename NO>
+  RCP<Xpetra::MultiVector<SC, LO, GO, NO> >
+  TpetraCrs_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<SC, LO, GO, NO> >& Vtpetra);
 #endif
 
   /*!
@@ -159,18 +178,20 @@ namespace MueLu {
     static const Tpetra::MultiVector<SC,LO,GO,NO>&          MV2TpetraMV(const MultiVector& Vec);
     static       Tpetra::MultiVector<SC,LO,GO,NO>&          MV2NonConstTpetraMV(MultiVector& Vec);
 
-    static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO> >   Op2TpetraCrs(RCP<const Matrix> Op);
-    static RCP<      Tpetra::CrsMatrix<SC,LO,GO,NO> >   Op2NonConstTpetraCrs(RCP<Matrix> Op);
+    static RCP<const Tpetra::CrsMatrix<SC,LO,GO,NO> >       Op2TpetraCrs(RCP<const Matrix> Op);
+    static RCP<      Tpetra::CrsMatrix<SC,LO,GO,NO> >       Op2NonConstTpetraCrs(RCP<Matrix> Op);
 
-    static const Tpetra::CrsMatrix<SC,LO,GO,NO>&        Op2TpetraCrs(const Matrix& Op);
-    static       Tpetra::CrsMatrix<SC,LO,GO,NO>&        Op2NonConstTpetraCrs(Matrix& Op);
+    static const Tpetra::CrsMatrix<SC,LO,GO,NO>&            Op2TpetraCrs(const Matrix& Op);
+    static       Tpetra::CrsMatrix<SC,LO,GO,NO>&            Op2NonConstTpetraCrs(Matrix& Op);
 
-    static RCP<const Tpetra::RowMatrix<SC,LO,GO,NO> >   Op2TpetraRow(RCP<const Matrix> Op);
-    static RCP<      Tpetra::RowMatrix<SC,LO,GO,NO> >   Op2NonConstTpetraRow(RCP<Matrix> Op);
+    static RCP<const Tpetra::RowMatrix<SC,LO,GO,NO> >       Op2TpetraRow(RCP<const Matrix> Op);
+    static RCP<      Tpetra::RowMatrix<SC,LO,GO,NO> >       Op2NonConstTpetraRow(RCP<Matrix> Op);
 
 
     static const RCP<const Tpetra::Map<LO, GO, NO> >        Map2TpetraMap(const Map& map);
 #endif
+
+    static RCP<Xpetra::Matrix<SC,LO,GO,NO> >                Crs2Op(RCP<CrsMatrix> Op);
 
     /*! @brief Helper function to do matrix-matrix multiply
 
@@ -190,7 +211,7 @@ namespace MueLu {
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
                                 bool doOptimizeStorage        = true,
-				const std::string & label     = std::string()){
+                                const std::string & label     = std::string()){
       return Utils<SC,LO,GO,NO>::Multiply(A, transposeA, B, transposeB, Teuchos::null, fos, callFillCompleteOnResult, doOptimizeStorage,label);
     }
 
@@ -200,7 +221,7 @@ namespace MueLu {
                               const Matrix& B,
                               RCP<Matrix> C_in,
                               Teuchos::FancyOStream &fos,
-			      const std::string & label     = std::string());
+                              const std::string & label     = std::string());
 
 
     /*! @brief Helper function to do matrix-matrix multiply
@@ -228,7 +249,7 @@ namespace MueLu {
                                 Teuchos::FancyOStream &fos,
                                 bool callFillCompleteOnResult = true,
                                 bool doOptimizeStorage        = true,
-				const std::string & label     = std::string());
+                                const std::string & label     = std::string());
 
 #ifdef HAVE_MUELU_EPETRAEXT
     // Michael Gee's MLMultiply
@@ -414,6 +435,14 @@ namespace MueLu {
   long ExtractNonSerializableData(const Teuchos::ParameterList& inList, Teuchos::ParameterList& serialList, Teuchos::ParameterList& nonSerialList);
 
 
+  /*! Tokenizes a (comma)-separated string, removing all leading and trailing whitespace 
+    WARNING: This routine is not threadsafe on most architectures 
+  */
+  void TokenizeStringAndStripWhiteSpace(const std::string & stream, std::vector<std::string> & tokenList, const char* token = ",");
+
+  /*! Returns true if a parameter name is a valid Muemex custom level variable, e.g. "MultiVector myArray"
+  */
+  bool IsParamMuemexVariable(const std::string& name);
 
 #ifdef HAVE_MUELU_EPETRA
   //This non-member templated function exists so that the matrix-matrix multiply will compile if Epetra, Tpetra, and ML are enabled.
@@ -434,6 +463,58 @@ namespace MueLu {
     RCP<Xpetra::CrsMatrix<double,int,int,KDNT> > tmpC2 = rcp_implicit_cast<Xpetra::CrsMatrix<double,int,int,KDNT> >(tmpC1);
     RCP<Xpetra::CrsMatrixWrap<double,int,int,KDNT> > tmpC3 = rcp(new Xpetra::CrsMatrixWrap<double,int,int,KDNT>(tmpC2));
     return tmpC3;
+  }
+
+  /*! \fn EpetraCrs_To_XpetraMatrix
+    @brief Helper function to convert a Epetra::CrsMatrix to an Xpetra::Matrix
+    TODO move this function to an Xpetra utility file
+  */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  EpetraCrs_To_XpetraMatrix(const Teuchos::RCP<Epetra_CrsMatrix>& A) {
+    typedef Xpetra::EpetraCrsMatrix                                            XECrsMatrix;
+    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       XCrsMatrix;
+    typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>   XCrsMatrixWrap;
+
+    RCP<XCrsMatrix> Atmp = rcp(new XECrsMatrix(A));
+    return rcp(new XCrsMatrixWrap(Atmp));
+  }
+
+  /*! \fn EpetraMultiVector_To_XpetraMultiVector
+    @brief Helper function to convert a Epetra::MultiVector to an Xpetra::MultiVector
+    TODO move this function to an Xpetra utility file
+    */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  EpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Epetra_MultiVector>& V) {
+    return rcp(new Xpetra::EpetraMultiVector(V));
+  }
+#endif
+
+#ifdef HAVE_MUELU_TPETRA
+ /*! \fn TpetraCrs_To_XpetraMatrix
+    @brief Helper function to convert a Tpetra::CrsMatrix to an Xpetra::Matrix
+    TODO move this function to an Xpetra utility file
+    */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  TpetraCrs_To_XpetraMatrix(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Atpetra) {
+    typedef Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> XTCrsMatrix;
+    typedef Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>       XCrsMatrix;
+    typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>   XCrsMatrixWrap;
+
+    RCP<XCrsMatrix> Atmp = rcp(new XTCrsMatrix(Atpetra));
+    return rcp(new XCrsMatrixWrap(Atmp));
+  }
+
+  /*! \fn TpetraMultiVector_To_XpetraMultiVector
+    @brief Helper function to convert a Tpetra::MultiVector to an Xpetra::MultiVector
+    TODO move this function to an Xpetra utility file
+    */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  TpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Vtpetra) {
+    return rcp(new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Vtpetra));
   }
 #endif
 
@@ -529,6 +610,42 @@ namespace MueLu {
 
   };
 
+
+#ifdef HAVE_MUELU_EPETRA
+  /*! \fn EpetraCrs_To_XpetraMatrix
+    @brief Helper function to convert a Epetra::CrsMatrix to an Xpetra::Matrix
+    TODO move this function to an Xpetra utility file
+    */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  EpetraCrs_To_XpetraMatrix(const Teuchos::RCP<Epetra_CrsMatrix>& A);
+
+  /*! \fn EpetraMultiVector_To_XpetraMultiVector
+    @brief Helper function to convert a Epetra::MultiVector to an Xpetra::MultiVector
+    TODO move this function to an Xpetra utility file
+    */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  EpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Epetra_MultiVector>& V);
+#endif
+
+#ifdef HAVE_MUELU_TPETRA
+ /*! \fn TpetraCrs_To_XpetraMatrix
+    @brief Helper function to convert a Tpetra::CrsMatrix to an Xpetra::Matrix
+    TODO move this function to an Xpetra utility file
+    */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  TpetraCrs_To_XpetraMatrix(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Atpetra);
+
+  /*! \fn TpetraMultiVector_To_XpetraMultiVector
+    @brief Helper function to convert a Tpetra::MultiVector to an Xpetra::MultiVector
+    TODO move this function to an Xpetra utility file
+    */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
+  TpetraMultiVector_To_XpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Vtpetra);
+#endif
 
 } //namespace MueLu
 

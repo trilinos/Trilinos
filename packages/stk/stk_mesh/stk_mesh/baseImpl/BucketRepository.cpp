@@ -44,6 +44,7 @@
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/util/SortAndUnique.hpp"
 
 namespace stk {
 namespace mesh {
@@ -307,9 +308,7 @@ struct bucket_less_by_first_entity_identifier
         else
         {
             const stk::mesh::BulkData& mesh = first->mesh();
-            stk::mesh::EntityId firstId = mesh.identifier((*first)[0]);
-            stk::mesh::EntityId secondId = mesh.identifier((*second)[0]);
-            return firstId < secondId;
+            return EntityLess(mesh)((*first)[0], (*second)[0]);
        }
     }
 };
@@ -378,6 +377,7 @@ Bucket *BucketRepository::allocate_bucket(EntityRank arg_entity_rank,
                                           const std::vector<unsigned> & arg_key,
                                           size_t arg_capacity )
 {
+  ThrowAssertMsg(stk::util::is_sorted_and_unique(std::vector<unsigned>(arg_key.begin()+1,arg_key.end()-1),std::less<unsigned>()),"bucket created with 'key' vector that's not sorted and unique");
   BucketVector &bucket_vec = m_buckets[arg_entity_rank];
   const unsigned bucket_id = bucket_vec.size();
 

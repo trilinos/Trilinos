@@ -56,7 +56,7 @@ ENDFOREACH(TRIBITS_PACKAGE ${PyTrilinos_PACKAGES})
 SET(PyTrilinos_ALL "${PyTrilinos_ALL}]")
 
 # Define a trigger target
-ADD_CUSTOM_TARGET(Pure_Python_Modules ALL)
+ADD_CUSTOM_TARGET(PyTrilinos_Pure_Python_Modules ALL)
 
 # Define the list of local modules
 SET(LOCAL_MODULES __init__ PropertyBase typed_tuple typed_list typed_dict)
@@ -70,7 +70,7 @@ FOREACH(MODULE ${LOCAL_MODULES})
 
   CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}.py.in
     ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.py)
-  ADD_CUSTOM_COMMAND(TARGET Pure_Python_Modules
+  ADD_CUSTOM_COMMAND(TARGET PyTrilinos_Pure_Python_Modules
     COMMAND ${PYTHON_EXECUTABLE} -c "import py_compile; py_compile.compile('${MODULE}.py')"
     COMMENT "Byte compiling ${MODULE}.py"
     VERBATIM)

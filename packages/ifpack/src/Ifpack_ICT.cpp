@@ -103,6 +103,8 @@ void Ifpack_ICT::Destroy()
 //==========================================================================
 int Ifpack_ICT::SetParameters(Teuchos::ParameterList& List)
 {
+  using std::cerr;
+  using std::endl;
 
   try
   {
@@ -114,7 +116,7 @@ int Ifpack_ICT::SetParameters(Teuchos::ParameterList& List)
 
     // set label
     Label_ = "ICT (fill=" + Ifpack_toString(LevelOfFill())
-      + ", athr=" + Ifpack_toString(AbsoluteThreshold()) 
+      + ", athr=" + Ifpack_toString(AbsoluteThreshold())
       + ", rthr=" + Ifpack_toString(RelativeThreshold())
       + ", relax=" + Ifpack_toString(RelaxValue())
       + ", droptol=" + Ifpack_toString(DropTolerance())
@@ -127,7 +129,7 @@ int Ifpack_ICT::SetParameters(Teuchos::ParameterList& List)
     cerr << "Caught an exception while parsing the parameter list" << endl;
     cerr << "This typically means that a parameter was set with the" << endl;
     cerr << "wrong type (for example, int instead of double). " << endl;
-    cerr << "please check the documentation for the type required by each parameer." << endl;
+    cerr << "please check the documentation for the type required by each parameter." << endl;
     IFPACK_CHK_ERR(-1);
   }
 }
@@ -143,7 +145,7 @@ int Ifpack_ICT::Initialize()
   // matrix must be square. Check only on one processor
   if (Comm().NumProc() == 1 && Matrix().NumMyRows() != Matrix().NumMyCols())
     IFPACK_CHK_ERR(-2);
-    
+
   NumMyRows_ = Matrix().NumMyRows();
 
   // nothing else to do here
@@ -156,9 +158,9 @@ int Ifpack_ICT::Initialize()
 
 //==========================================================================
 template<typename int_type>
-int Ifpack_ICT::TCompute() 
+int Ifpack_ICT::TCompute()
 {
-  if (!IsInitialized()) 
+  if (!IsInitialized())
     IFPACK_CHK_ERR(Initialize());
 
   Time_.ResetStartTime();
@@ -210,7 +212,7 @@ int Ifpack_ICT::TCompute()
   if (distributed)
   {
     int count = 0;
-    for (int i = 0 ;i < RowNnz ; ++i) 
+    for (int i = 0 ;i < RowNnz ; ++i)
     {
       if (RowIndices[i] < NumMyRows_){
         RowIndices[count] = RowIndices[i];
@@ -254,7 +256,7 @@ int Ifpack_ICT::TCompute()
     if (distributed)
     {
       int count = 0;
-      for (int i = 0 ;i < RowNnz ; ++i) 
+      for (int i = 0 ;i < RowNnz ; ++i)
       {
         if (RowIndices[i] < NumMyRows_){
           RowIndices[count] = RowIndices[i];
@@ -268,7 +270,7 @@ int Ifpack_ICT::TCompute()
     }
 
     // number of nonzeros in this row are defined as the nonzeros
-    // of the matrix, plus the level of fill 
+    // of the matrix, plus the level of fill
     int LOF = (int)(LevelOfFill() * RowNnz);
     if (LOF == 0) LOF = 1;
 
@@ -286,7 +288,7 @@ int Ifpack_ICT::TCompute()
         Hash.set(RowIndices[i], RowValues[i], true);
       }
     }
-      
+
     // form element (row_i, col_j)
     // I start from the first row that has a nonzero column
     // index in row_i.
@@ -300,7 +302,7 @@ int Ifpack_ICT::TCompute()
       int_type* ColIndices;
       double* ColValues;
       int ColNnz;
-	  int_type col_j_GID = (int_type) H_->RowMap().GID64(col_j);
+          int_type col_j_GID = (int_type) H_->RowMap().GID64(col_j);
       H_->ExtractGlobalRowView(col_j_GID, ColNnz, ColValues, ColIndices);
 
       for (int k = 0 ; k < ColNnz ; ++k) {
@@ -326,7 +328,7 @@ int Ifpack_ICT::TCompute()
       {
         Hash.set(col_j, h_ij);
       }
-    
+
 #ifdef IFPACK_FLOPCOUNTERS
       // only approx
       ComputeFlops_ += 2.0 * flops + 1.0;
@@ -337,7 +339,7 @@ int Ifpack_ICT::TCompute()
 
     std::vector<double> AbsRow(size);
     int count = 0;
-    
+
     // +1 because I use the extra position for diagonal in insert
     std::vector<int_type> keys(size + 1);
     std::vector<double> values(size + 1);
@@ -352,9 +354,9 @@ int Ifpack_ICT::TCompute()
 
     double cutoff = 0.0;
     if (count > LOF) {
-      nth_element(AbsRow.begin(), AbsRow.begin() + LOF, AbsRow.begin() + count, 
+      nth_element(AbsRow.begin(), AbsRow.begin() + LOF, AbsRow.begin() + count,
 
-		  std::greater<double>());
+                  std::greater<double>());
       cutoff = AbsRow[LOF];
     }
 
@@ -375,15 +377,15 @@ int Ifpack_ICT::TCompute()
     double DiscardedElements = 0.0;
 
     count = 0;
-    for (int i = 0 ; i < size ; ++i)    
-    { 
+    for (int i = 0 ; i < size ; ++i)
+    {
       if (IFPACK_ABS(values[i]) > cutoff)
       {
         values[count] = values[i];
         keys[count] = keys[i];
         ++count;
       }
-      else  
+      else
         DiscardedElements += values[i];
     }
 
@@ -414,8 +416,8 @@ int Ifpack_ICT::TCompute()
   H_->Multiply(false,RHS2,RHS3);
 
   RHS1.Update(-1.0, RHS3, 1.0);
-  cout << endl;
-  cout << RHS1;
+  std::cout << endl;
+  std::cout << RHS1;
 #endif
   long long MyNonzeros = H_->NumGlobalNonzeros64();
   Comm().SumAll(&MyNonzeros, &GlobalNonzeros_, 1);
@@ -450,14 +452,14 @@ int Ifpack_ICT::Compute() {
 }
 
 //=============================================================================
-int Ifpack_ICT::ApplyInverse(const Epetra_MultiVector& X, 
-			     Epetra_MultiVector& Y) const
+int Ifpack_ICT::ApplyInverse(const Epetra_MultiVector& X,
+                             Epetra_MultiVector& Y) const
 {
 
   if (!IsComputed())
     IFPACK_CHK_ERR(-3); // compute preconditioner first
 
-  if (X.NumVectors() != Y.NumVectors()) 
+  if (X.NumVectors() != Y.NumVectors())
     IFPACK_CHK_ERR(-2); // Return error: X and Y not the same size
 
   Time_.ResetStartTime();
@@ -489,17 +491,17 @@ int Ifpack_ICT::ApplyInverse(const Epetra_MultiVector& X,
 }
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Ifpack_ICT::Apply(const Epetra_MultiVector& X, 
-		      Epetra_MultiVector& Y) const 
+int Ifpack_ICT::Apply(const Epetra_MultiVector& X,
+                      Epetra_MultiVector& Y) const
 {
 
   IFPACK_CHK_ERR(-98);
 }
 
 //=============================================================================
-double Ifpack_ICT::Condest(const Ifpack_CondestType CT, 
+double Ifpack_ICT::Condest(const Ifpack_CondestType CT,
                             const int MaxIters, const double Tol,
-			    Epetra_RowMatrix* Matrix_in)
+                            Epetra_RowMatrix* Matrix_in)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
@@ -515,6 +517,8 @@ double Ifpack_ICT::Condest(const Ifpack_CondestType CT,
 std::ostream&
 Ifpack_ICT::Print(std::ostream& os) const
 {
+  using std::endl;
+
   if (!Comm().MyPID()) {
     os << endl;
     os << "================================================================================" << endl;
@@ -527,23 +531,23 @@ Ifpack_ICT::Print(std::ostream& os) const
     os << "Global number of rows            = " << Matrix().NumGlobalRows64() << endl;
     if (IsComputed_) {
       os << "Number of nonzeros of H         = " << H_->NumGlobalNonzeros64() << endl;
-      os << "nonzeros / rows                 = " 
+      os << "nonzeros / rows                 = "
          << 1.0 * H_->NumGlobalNonzeros64() / H_->NumGlobalRows64() << endl;
     }
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
     os << "-----           -------   --------------       ------------     --------" << endl;
-    os << "Initialize()    "   << std::setw(5) << NumInitialize() 
-       << "  " << std::setw(15) << InitializeTime() 
+    os << "Initialize()    "   << std::setw(5) << NumInitialize()
+       << "  " << std::setw(15) << InitializeTime()
        << "               0.0            0.0" << endl;
-    os << "Compute()       "   << std::setw(5) << NumCompute() 
+    os << "Compute()       "   << std::setw(5) << NumCompute()
        << "  " << std::setw(15) << ComputeTime()
        << "  " << std::setw(15) << 1.0e-6 * ComputeFlops();
-    if (ComputeTime() != 0.0) 
+    if (ComputeTime() != 0.0)
       os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() / ComputeTime() << endl;
     else
       os << "  " << std::setw(15) << 0.0 << endl;
-    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse() 
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse()
        << "  " << std::setw(15) << ApplyInverseTime()
        << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops();
     if (ApplyInverseTime() != 0.0)
@@ -554,6 +558,6 @@ Ifpack_ICT::Print(std::ostream& os) const
     os << endl;
   }
 
-  
+
   return(os);
 }

@@ -855,12 +855,9 @@ namespace MueLu {
     int root = comm->getRank();
 
 #ifdef HAVE_MPI
-    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
-    MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
-
-    std::vector<int> numGlobalLevels(comm->getSize());
-    MPI_Allgather(&numLevels, 1, MPI_INT, &numGlobalLevels[0], 1, MPI_INT, rawComm);
-    root = std::max_element(numGlobalLevels.begin(), numGlobalLevels.end()) - numGlobalLevels.begin();
+    int smartData = numLevels*comm->getSize() + comm->getRank(), maxSmartData;
+    reduceAll(*comm, Teuchos::REDUCE_MAX, smartData, Teuchos::ptr(&maxSmartData));
+    root = maxSmartData % comm->getSize();
 #endif
 
     std::string outstr;
@@ -906,14 +903,16 @@ namespace MueLu {
         int nnzspacer = 2; while (tt != 0) { tt /= 10; nnzspacer++; }
         tt = numProcsPerLevel[0];
         int npspacer = 2;  while (tt != 0) { tt /= 10; npspacer++; }
-        oss  << "matrix" << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " <<  " nnz/row" << std::setw(npspacer)  << " procs" << std::endl;
+        oss  << "level " << std::setw(rowspacer) << " rows " << std::setw(nnzspacer) << " nnz " << " nnz/row" << std::setw(npspacer) << "  c ratio" << "  procs" << std::endl;
         for (size_t i = 0; i < nnzPerLevel.size(); ++i) {
-          oss << "A " << i << "  "
-              << std::setw(rowspacer) << rowsPerLevel[i]
-              << std::setw(nnzspacer) << nnzPerLevel[i]
-              << std::setw(9) << std::setprecision(2) << std::setiosflags(std::ios::fixed)
-              << Teuchos::as<double>(nnzPerLevel[i]) / rowsPerLevel[i]
-              << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
+          oss << "  " << i << "  ";
+          oss << std::setw(rowspacer) << rowsPerLevel[i];
+          oss << std::setw(nnzspacer) << nnzPerLevel[i];
+          oss << std::setprecision(2) << std::setiosflags(std::ios::fixed);
+          oss << std::setw(9) << as<double>(nnzPerLevel[i]) / rowsPerLevel[i];
+          if (i) oss << std::setw(9) << as<double>(rowsPerLevel[i-1])/rowsPerLevel[i];
+          else   oss << std::setw(9) << "     ";
+          oss << "    " << std::setw(npspacer) << numProcsPerLevel[i] << std::endl;
         }
         oss << std::endl;
         for (int i = 0; i < GetNumLevels(); ++i) {
@@ -940,6 +939,9 @@ namespace MueLu {
     }
 
 #ifdef HAVE_MPI
+    RCP<const Teuchos::MpiComm<int> > mpiComm = rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+    MPI_Comm rawComm = (*mpiComm->getRawMpiComm())();
+
     int strLength = outstr.size();
     MPI_Bcast(&strLength, 1, MPI_INT, root, rawComm);
     if (comm->getRank() != root)

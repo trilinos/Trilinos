@@ -132,6 +132,13 @@ testImpl (Teuchos::FancyOStream& out,
   int lclSuccess = 1;
   if (myRank == 0) {
     std::ostringstream exp;
+
+    // FIXME (mfh 22 Jul 2015) This forces scientific notation and a
+    // minimum number of digits to represent the precision correctly.
+    // The test really shouldn't depend as much on the printed digits;
+    // it should depend on the values not changing.
+    Teuchos::MatrixMarket::details::SetScientific<scalar_type> sci (exp);
+
     exp << "%%MatrixMarket matrix array real general" << endl
         << gblNumRows << " " << numCols << endl;
     for (size_t j = 0; j < numCols; ++j) {
@@ -202,6 +209,10 @@ main (int argc, char **argv)
   using Teuchos::RCP;
   using Teuchos::rcp;
   using std::endl;
+  // Common text in exception messages below.
+  const char suffix[] = ".  This suggests a bug in Teuchos::MpiComm::split.  "
+    "Please report this bug to the Teuchos and Tpetra developers.";
+
   int curGblSuccess = 1;
   int gblSuccess = 1;
 
@@ -229,11 +240,15 @@ main (int argc, char **argv)
     const int key = 0; // we only need to use the 'color' argument here
     RCP<Comm<int> > curComm = commWorld->split (color, key);
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      curComm->getSize () != newNumProcs, std::logic_error,
-      "curComm->getSize() = " << curComm->getSize () << " != newNumProcs = "
-      << newNumProcs << ".  This should never happen.  Please report this "
-      "bug to the Teuchos and Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (color == 0 && curComm->getSize () != newNumProcs, std::logic_error,
+       "For color = " << color << ", curComm->getSize() = " <<
+       curComm->getSize () << " != newNumProcs = " << newNumProcs << suffix);
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (color == 1 && curComm->getSize () != (numProcs - newNumProcs),
+       std::logic_error, "For color = " << color << ", curComm->getSize() = "
+       << curComm->getSize () << " != numProcs - newNumProcs = "
+       << (numProcs - newNumProcs) << suffix);
 
     if (color == 0) { // participating processes
       curGblSuccess = test (curComm);

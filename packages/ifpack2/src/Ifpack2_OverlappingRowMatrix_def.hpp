@@ -55,8 +55,7 @@ OverlappingRowMatrix<MatrixType>::
 OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
                       const int overlapLevel) :
   A_ (A),
-  OverlapLevel_ (overlapLevel),
-  UseSubComm_ (false)
+  OverlapLevel_ (overlapLevel)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -222,19 +221,6 @@ OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
   // Resize temp arrays
   Indices_.resize (MaxNumEntries_);
   Values_.resize (MaxNumEntries_);
-}
-
-
-template<class MatrixType>
-OverlappingRowMatrix<MatrixType>::
-OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
-                      const int overlapLevel,
-                      const int subdomainID)
-{
-  //FIXME
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    true, std::logic_error,
-    "Ifpack2::OverlappingRowMatrix: Subdomain code not implemented yet.");
 }
 
 
@@ -896,10 +882,17 @@ void OverlappingRowMatrix<MatrixType>::describe(Teuchos::FancyOStream &out,
     }
 }
 
+template<class MatrixType>
+Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> >
+OverlappingRowMatrix<MatrixType>::getUnderlyingMatrix() const
+{
+  return A_;
+}
+
 
 } // namespace Ifpack2
 
 #define IFPACK2_OVERLAPPINGROWMATRIX_INSTANT(S,LO,GO,N)                 \
-  template class Ifpack2::OverlappingRowMatrix< Tpetra::CrsMatrix<S, LO, GO, N> >;
+  template class Ifpack2::OverlappingRowMatrix< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif // IFPACK2_OVERLAPPINGROWMATRIX_DEF_HPP

@@ -293,7 +293,7 @@ class AmesosSchurOperator: public Epetra_Operator
 
     bool UseTranspose_;
 
-    double Condest_;
+    // double Condest_; // unused
 
     bool IsParallel_;
     //! If \c true, the preconditioner has been successfully initialized.

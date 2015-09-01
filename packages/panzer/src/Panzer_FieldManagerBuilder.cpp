@@ -294,6 +294,8 @@ writeBCGraphvizDependencyFiles(std::string filename_prefix) const
 	type = "_Dirichlet";
     else if (bc_type == BCT_Neumann)
         type = "_Neumann";
+    else if (bc_type == BCT_Interface)
+        type = "_Interface";
     else
         TEUCHOS_ASSERT(false);
 

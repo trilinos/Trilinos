@@ -157,6 +157,126 @@ TRIBITS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
+TRIBITS_ADD_TEST(
+  pamgenMeshAdapterTest
+  NAME pamgenMeshAdapterTest_zoltanrcb
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+    "--action=zoltan_rcb --nparts=6"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+  pamgenMeshAdapterTest
+  NAME pamgenMeshAdapterTest_zoltanhg
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+    "--action=zoltan_hg --nparts=6"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+  pamgenMeshAdapterTest
+  NAME pamgenMeshAdapterTest_ghosthg
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS
+    "--action=hg_ghost --nparts=6"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+IF (${PROJECT_NAME}_ENABLE_SCOREC)
+  TRIBITS_ADD_TEST(
+    pamgenMeshAdapterTest
+    NAME pamgenMeshAdapterTest_ParMA
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "--action=parma"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    APFMeshAdapterTest
+    NAME APFMeshAdapterTest_ParMA
+    SOURCES APFMeshAdapterTest.cpp
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "--action=parma --meshfile=4/ --modelfile=torus.dmg"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+  TRIBITS_ADD_TEST(
+    APFMeshAdapterTest
+    NAME APFMeshAdapterTest_ParMA_Vtx_Edge_Elm
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "--action=parma --parma_method=VtxEdgeElm --meshfile=4/ --modelfile=torus.dmg"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+  TRIBITS_ADD_TEST(
+    APFMeshAdapterTest
+    NAME APFMeshAdapterTest_ParMA_Ghost
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "--action=parma --parma_method=Ghost --meshfile=4/ --modelfile=torus.dmg"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+  TRIBITS_ADD_TEST(
+    APFMeshAdapterTest
+    NAME APFMeshAdapterTest_ParMA_Shape
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "--action=parma --parma_method=Shape --meshfile=4/ --modelfile=torus.dmg"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+  
+  TRIBITS_ADD_TEST(
+    APFMeshAdapterTest
+    NAME APFMeshAdapterTest_ZOLTAN_HG
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "--action=zoltan_hg --meshfile=4/ --modelfile=torus.dmg"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+  TRIBITS_ADD_TEST(
+    APFMeshAdapterTest
+    NAME APFMeshAdapterTest_ZOLTAN_GHOST_HG
+    NUM_MPI_PROCS 2
+    COMM serial mpi
+    ARGS
+    "--action=hg_ghost --meshfile=pumiTri14/2/ --modelfile=pumiTri14/plate.dmg --layers=1"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    PartitionAndParMATest
+    NAME ZoltanHGAndParMA_VtxElm
+    SOURCES PartitionAndParMATest.cpp
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "--action=zoltan_hg --meshfile=4/ --modelfile=torus.dmg"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+ENDIF()
+
 IF (${PACKAGE_NAME}_ENABLE_Scotch)
   TRIBITS_ADD_TEST(
     pamgenMeshAdapterTest
@@ -302,29 +422,6 @@ TRIBITS_ADD_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-##########################################
-#IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Experimental_Wolf)
-
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
-
-IF (${PACKAGE_NAME}_ENABLE_Experimental_Wolf)
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Wolf
-  SOURCES wolf.cpp
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  ARGS
-   "--inputFile=simple"
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
-ENDIF()
-#
-ENDIF()
-##########################################
-
-
 # Command that copies files to the executable directory.
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_partition_tests
   SOURCE_FILES
@@ -344,6 +441,16 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_partition_tests
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_more_files_for_partition_tests
   SOURCE_FILES
     Poisson.xml
+    torus.dmg
+    4/0.smb
+    4/1.smb	
+    4/2.smb
+    4/3.smb
+    torus16k0.smb
+    pumiTri14/plate.dmg
+    pumiTri14/plate0.smb
+    pumiTri14/2/0.smb
+    pumiTri14/2/1.smb
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )

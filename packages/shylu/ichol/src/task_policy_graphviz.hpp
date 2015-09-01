@@ -10,20 +10,18 @@ namespace Example {
 
   using namespace std;
 
-  static map<string,string> g_graphviz_color = {
-    { "ichol-scalar", "indianred2"},
-    { "ichol-trsm",   "orange2"   },
-    { "ichol-gemm",   "lightblue2"} };
+  static vector<string> g_graphviz_color;
 
   class Task : public Disp  {
   private:
     string _label;
     set<Task*> _dep_tasks;
-    
+    int _phase;
+
   public:
-    Task() : _label("no-name") { }
-    Task(const Task &b) : _label(b._label) { }
-    Task(const string label) : _label(label) { }
+    Task() : _label("no-name"), _phase(0) { }
+    Task(const Task &b) : _label(b._label), _phase(b._phase) { }
+    Task(const string label, const int phase) : _label(label), _phase(phase) { }
     virtual~Task() { }
 
     void addDependence(Task *b) {  if (b != NULL) _dep_tasks.insert(b); }
@@ -42,13 +40,21 @@ namespace Example {
     }
     
     ostream& graphviz(ostream &os, const size_t cnt) const {
+      if (g_graphviz_color.size() == 0) {
+        g_graphviz_color.push_back("indianred2");
+        g_graphviz_color.push_back("lightblue2");
+        g_graphviz_color.push_back("skyblue2");
+        g_graphviz_color.push_back("lightgoldenrod2");
+        g_graphviz_color.push_back("orange2");
+        g_graphviz_color.push_back("mistyrose2");
+      }
+
       // os << (long)(this)
       //    << " [label=\"" << cnt << " "<< _label;
       os << (long)(this)
          << " [label=\"" << _label;
-      auto it = g_graphviz_color.find(_label);
-      if (it != g_graphviz_color.end())
-        os << "\" ,style=filled,color=\"" << it->second << "\" ];";
+      if (_phase > 0)
+        os << "\" ,style=filled,color=\"" << g_graphviz_color.at(_phase%g_graphviz_color.size()) << "\" ];";
       else 
         os << "\"];";
       
@@ -70,21 +76,30 @@ namespace Example {
 
   };
 
-  static vector<Task*> _queue;
-  
   class TaskPolicy : public Disp {
+  private:
+    vector<Task*> _queue;
+    int _work_phase;
+
   public:
+    TaskPolicy() 
+      : _queue(), 
+        _work_phase(0) 
+    { }
+
+    // Kokkos interface
+    // --------------------------------
     typedef class TeamThreadMember member_type;
-    static member_type member_null() { return member_type(); }
+    static member_type member_single() { return member_type(); }
 
     template<typename TaskFunctorType> 
     Future create(const TaskFunctorType &func, const int dep_size) {
-      return Future(new Task(func.Label()));
+      return Future(new Task(func.Label(), _work_phase));
     }
 
     template<typename TaskFunctorType> 
     Future create_team(const TaskFunctorType &func, const int dep_size) {
-      return Future(new Task(func.Label()));
+      return Future(new Task(func.Label(), _work_phase));
     }
     
     void spawn(const Future &obj) {
@@ -100,11 +115,25 @@ namespace Example {
       // do nothing
     }
 
+    // Graphviz interface
+    // --------------------------------
+    size_t size() const {
+      return _queue.size();
+    }
+
     void clear() {
       for (auto it=_queue.begin();it!=_queue.end();++it)
         delete (*it);
-      
+
       _queue.clear();
+    }
+
+    void set_work_phase(const int phase) {
+      _work_phase = phase;
+    }
+
+    int get_work_phase() const {
+      return _work_phase;
     }
     
     ostream& showMe(ostream &os) const {
@@ -125,7 +154,7 @@ namespace Example {
       os << "size=\"" << width << "," << length << "\";" << endl;
       size_t count = 0;
       for (auto it=_queue.begin();it!=_queue.end();++it)
-        (*it)->graphviz(os, count++);
+        (*it)->graphviz(os,count++);
       os << "}" << endl;
       os << "# total number of tasks = " << count << endl;
       

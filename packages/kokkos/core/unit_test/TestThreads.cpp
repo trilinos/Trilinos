@@ -53,6 +53,9 @@
 
 //----------------------------------------------------------------------------
 
+#include <TestSharedAlloc.hpp>
+#include <TestViewMapping.hpp>
+
 #include <TestViewImpl.hpp>
 
 #include <TestViewAPI.hpp>
@@ -129,6 +132,18 @@ protected:
 TEST_F( threads , init ) {
   ;
 }
+
+TEST_F( threads , impl_shared_alloc ) {
+  test_shared_alloc< Kokkos::HostSpace , Kokkos::Threads >();
+}
+
+TEST_F( threads , impl_view_mapping ) {
+  test_view_mapping< Kokkos::Threads >();
+  test_view_mapping_subview< Kokkos::Threads >();
+  test_view_mapping_operator< Kokkos::Threads >();
+  TestViewMappingAtomic< Kokkos::Threads >::run();
+}
+
 
 TEST_F( threads, view_impl) {
   test_view_impl< Kokkos::Threads >();
@@ -314,6 +329,8 @@ TEST_F( threads , atomics )
   ASSERT_TRUE( ( TestAtomic::Loop<Kokkos::complex<double> ,Kokkos::Threads>(100,3) ) );
 #endif
 
+  ASSERT_TRUE( ( TestAtomic::Loop<TestAtomic::SuperScalar<3>, Kokkos::Threads>(loop_count,1) ) );
+  ASSERT_TRUE( ( TestAtomic::Loop<TestAtomic::SuperScalar<3>, Kokkos::Threads>(loop_count,2) ) );
 }
 
 //----------------------------------------------------------------------------
@@ -370,7 +387,7 @@ TEST_F( threads , template_meta_functions )
 
 //----------------------------------------------------------------------------
 
-#if defined( KOKKOS_HAVE_CXX11 ) && defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS )
+#if defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS )
 TEST_F( threads , cxx11 )
 {
   if ( Kokkos::Impl::is_same< Kokkos::DefaultExecutionSpace , Kokkos::Threads >::value ) {
@@ -380,14 +397,12 @@ TEST_F( threads , cxx11 )
     ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(4) ) );
   }
 }
-#endif
-
-#if defined (KOKKOS_HAVE_CXX11)
 
 TEST_F( threads , reduction_deduction )
 {
   TestCXX11::test_reduction_deduction< Kokkos::Threads >();
 }
+#endif /* #if defined( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS ) */
 
 TEST_F( threads , team_vector )
 {
@@ -404,8 +419,6 @@ TEST_F( threads , team_vector )
   ASSERT_TRUE( ( TestTeamVector::Test< Kokkos::Threads >(10) ) );
 }
 
-#endif
-
 TEST_F( threads , task_policy )
 {
   TestTaskPolicy::test_task_dep< Kokkos::Threads >( 10 );
@@ -413,13 +426,10 @@ TEST_F( threads , task_policy )
   for ( long i = 0 ; i < 35 ; ++i ) TestTaskPolicy::test_fib2< Kokkos::Threads >(i);
 }
 
-#if defined( KOKKOS_HAVE_CXX11 )
 TEST_F( threads , task_team )
 {
   TestTaskPolicy::test_task_team< Kokkos::Threads >(1000);
 }
-#endif
-
 
 } // namespace Test
 

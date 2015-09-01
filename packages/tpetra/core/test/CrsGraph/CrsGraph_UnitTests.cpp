@@ -238,6 +238,12 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, EmptyFillComplete, LO, GO , Node )
   {
+    using Teuchos::Comm;
+    using Teuchos::outArg;
+    using Teuchos::RCP;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+
     typedef CrsGraph<LO,GO,Node> GRAPH;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
@@ -247,21 +253,40 @@ namespace {
     const size_t numLocal = 10;
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     {
-      // create static-profile graph, fill-complete without inserting (and therefore, without allocating)
+      // create static-profile graph, fill-complete without inserting
+      // (and therefore, without allocating)
       GRAPH graph(map,1,StaticProfile);
       graph.fillComplete();
     }
     {
-      // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
+      // create dynamic-profile graph, fill-complete without inserting
+      // (and therefore, without allocating)
       GRAPH graph(map,1,DynamicProfile);
       graph.fillComplete();
     }
+
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+
+    if (gblSuccess == 1) {
+      out << "Succeeded on all processes!" << endl;
+    } else {
+      out << "FAILED on at least one process!" << endl;
+    }
+    TEST_EQUALITY_CONST(gblSuccess, 1);
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, ExcessAllocation, LO, GO , Node )
   {
+    using Teuchos::Comm;
+    using Teuchos::outArg;
+    using Teuchos::RCP;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+
     typedef CrsGraph<LO,GO,Node>  GRPH;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
@@ -310,12 +335,29 @@ namespace {
       TEST_EQUALITY_CONST(graph.getProfileType(), StaticProfile);
       TEST_EQUALITY_CONST(graph.isStorageOptimized(), true);
     }
+
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+
+    if (gblSuccess == 1) {
+      out << "Succeeded on all processes!" << endl;
+    } else {
+      out << "FAILED on at least one process!" << endl;
+    }
+    TEST_EQUALITY_CONST(gblSuccess, 1);
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, insert_remove_LIDs, LO, GO , Node )
   {
+    using Teuchos::Comm;
+    using Teuchos::outArg;
+    using Teuchos::RCP;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+
     typedef CrsGraph<LO,GO,Node> GRAPH;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
@@ -341,11 +383,28 @@ namespace {
       diaggraph.insertLocalIndices(row, lids());
       TEST_EQUALITY(as<Array_size_type>(diaggraph.getNumEntriesInLocalRow(row)), lids.size())
     }
+
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+
+    if (gblSuccess == 1) {
+      out << "Succeeded on all processes!" << endl;
+    } else {
+      out << "FAILED on at least one process!" << endl;
+    }
+    TEST_EQUALITY_CONST(gblSuccess, 1);
   }
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, SortingTests, LO, GO , Node )
   {
+    using Teuchos::Comm;
+    using Teuchos::outArg;
+    using Teuchos::RCP;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+
     typedef CrsGraph<LO,GO,Node> GRAPH;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<Node> node = getNode<Node>();
@@ -417,12 +476,28 @@ namespace {
       }
       TEST_EQUALITY_CONST(sortingCheck, graph.isSorted() );
     }
-  }
 
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+
+    if (gblSuccess == 1) {
+      out << "Succeeded on all processes!" << endl;
+    } else {
+      out << "FAILED on at least one process!" << endl;
+    }
+    TEST_EQUALITY_CONST(gblSuccess, 1);
+  }
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, Bug20100622K, LO, GO , Node )
   {
+    using Teuchos::Comm;
+    using Teuchos::outArg;
+    using Teuchos::RCP;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+
     typedef CrsGraph<LO,GO,Node> GRAPH;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
@@ -430,6 +505,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
+
     // test filtering
     if (numImages > 1) {
       // we only need two procs to demonstrate this bug. ignore the others.
@@ -443,8 +519,11 @@ namespace {
         mygids.push_back(2);
         mygids.push_back(3);
       }
-      const RCP<const Map<LO,GO,Node> > rmap = rcp(new Map<LO,GO,Node>(INVALID,mygids(),0,comm,node));
+      const RCP<const Map<LO,GO,Node> > rmap =
+        rcp(new Map<LO,GO,Node>(INVALID,mygids(),0,comm,node));
+
       RCP<GRAPH> G = rcp(new GRAPH(rmap,2) );
+
       if (myImageID == 0) {
         G->insertGlobalIndices(0, tuple<GO>(0));
         G->insertGlobalIndices(1, tuple<GO>(0,1));
@@ -454,18 +533,39 @@ namespace {
         G->insertGlobalIndices(2, tuple<GO>(2, 1));
         G->insertGlobalIndices(3, tuple<GO>(3));
       }
-      G->fillComplete();
+
+      try {
+        G->fillComplete();
+      }
+      catch (std::exception& e) {
+        std::cerr << "G->fillComplete() raised an exception! "
+                  << e.what () << std::endl;
+        success = false;
+      }
     }
     // All procs fail if any node fails
-    int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+
+    if (gblSuccess == 1) {
+      out << "Succeeded on all processes!" << endl;
+    } else {
+      out << "FAILED on at least one process!" << endl;
+    }
+    TEST_EQUALITY_CONST(gblSuccess, 1);
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, WithColMap, LO, GO , Node )
   {
+    using Teuchos::Comm;
+    using Teuchos::outArg;
+    using Teuchos::RCP;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+
     typedef CrsGraph<LO,GO,Node> GRAPH;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     RCP<Node> node = getNode<Node>();
@@ -497,9 +597,16 @@ namespace {
       TEST_EQUALITY( G->getNumEntriesInGlobalRow(myrowind), 1 );
     }
     // All procs fail if any node fails
-    int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+
+    if (gblSuccess == 1) {
+      out << "Succeeded on all processes!" << endl;
+    } else {
+      out << "FAILED on at least one process!" << endl;
+    }
+    TEST_EQUALITY_CONST(gblSuccess, 1);
   }
 
 
@@ -1063,6 +1170,12 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, ActiveFill, LO, GO , Node )
   {
+    using Teuchos::Comm;
+    using Teuchos::outArg;
+    using Teuchos::RCP;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+
     typedef CrsGraph<LO,GO,Node> GRAPH;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
@@ -1106,11 +1219,28 @@ namespace {
       TEST_EQUALITY_CONST( graph.isFillActive(),   false );
       TEST_EQUALITY_CONST( graph.isFillComplete(), true );
     }
+
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+
+    if (gblSuccess == 1) {
+      out << "Succeeded on all processes!" << endl;
+    } else {
+      out << "FAILED on at least one process!" << endl;
+    }
+    TEST_EQUALITY_CONST(gblSuccess, 1);
   }
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, Typedefs, LO, GO , Node )
   {
+    using Teuchos::Comm;
+    using Teuchos::outArg;
+    using Teuchos::RCP;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+
     typedef CrsGraph<LO,GO,Node> GRAPH;
     typedef typename GRAPH::local_ordinal_type  local_ordinal_type;
     typedef typename GRAPH::global_ordinal_type global_ordinal_type;
@@ -1125,6 +1255,18 @@ namespace {
     TEST_EQUALITY_CONST( (is_same< rgraph_local_ordinal_type  , LO  >::value) == true, true );
     TEST_EQUALITY_CONST( (is_same< rgraph_global_ordinal_type , GO  >::value) == true, true );
     TEST_EQUALITY_CONST( (is_same< rgraph_node_type           , Node>::value) == true, true );
+
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+
+    if (gblSuccess == 1) {
+      out << "Succeeded on all processes!" << endl;
+    } else {
+      out << "FAILED on at least one process!" << endl;
+    }
+    TEST_EQUALITY_CONST(gblSuccess , 1);
   }
 
   ////
@@ -1280,6 +1422,12 @@ namespace {
  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, TwoArraysESFC, LO, GO , Node )
   {
+    using Teuchos::Comm;
+    using Teuchos::outArg;
+    using Teuchos::RCP;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+
     typedef CrsGraph<LO,GO,Node> GRAPH;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm
@@ -1305,9 +1453,15 @@ namespace {
     }
 
     // All procs fail if any node fails
-    int globalSuccess_int = -1;
-    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
-    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+    int lclSuccess = success ? 1 : 0;
+    int gblSuccess = 1;
+    reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
+    if (gblSuccess == 1) {
+      out << "Succeeded on all processes!" << endl;
+    } else {
+      out << "FAILED on at least one process!" << endl;
+    }
+    TEST_EQUALITY_CONST(gblSuccess, 1);
   }
 
  ////
@@ -1374,8 +1528,8 @@ namespace {
 // Test(s) for "Node conversion" (i.e., the clone() template method of
 // CrsGraph).  We will instantiate them over all enabled Kokkos Node
 // (N2) types.
-#define NC_TESTS(N2) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NodeConversion, int, int, N2 )
+#define NC_TESTS(N2)
+  //    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NodeConversion, int, int, N2 )
 
 // mfh 05 Apr 2013: CrsGraph only tests for bad nonowned GIDs in a
 // debug build.  The BadGIDs test fails in a release build.

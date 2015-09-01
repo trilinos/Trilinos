@@ -100,7 +100,7 @@ namespace response_bc_adapters {
         Teuchos::RCP<const ResponseEvaluatorFactoryBase> respEvalFact = refVec_[i].second->template getAsBase<EvalT>();
 
         // only register evaluators if the type is supported
-        if(respEvalFact->typeSupported())
+        if(respEvalFact!=Teuchos::null && respEvalFact->typeSupported())
           respEvalFact->buildAndRegisterEvaluators(refVec_[i].first,fm,side_pb,user_data); 
       }
     }

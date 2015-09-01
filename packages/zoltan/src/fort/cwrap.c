@@ -72,7 +72,7 @@ extern "C" {
    unsigned char *p; \
    int i; \
    p = (unsigned char *) &(lb); \
-   for (i=0; i<sizeof(struct Zoltan_Struct *); i++) \
+   for (i=0; i<(int)(sizeof(struct Zoltan_Struct *)); i++) \
      {*p = (unsigned char)(addr_lb)[i]; p++;} }
 
 /* construct the nbyte 1-byte integers from the lb pointer */
@@ -82,11 +82,11 @@ extern "C" {
    unsigned char *p; \
    int i; \
    p = (unsigned char *) &(lb); \
-   for (i = 0; i < sizeof(struct Zoltan_Struct *); i++) { \
+   for (i = 0; i < (int)(sizeof(struct Zoltan_Struct *)); i++) { \
      (addr_lb)[i] = (int) *p;  \
      p++; \
    } \
-   for (i = sizeof(struct Zoltan_Struct *); i < (nbytes); i++) \
+   for (i = (int)(sizeof(struct Zoltan_Struct *)); i < (nbytes); i++) \
      (addr_lb)[i] = 0; \
  }
 

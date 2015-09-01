@@ -248,6 +248,7 @@ belos_solve(
   const Mesh& mesh,
   const int use_muelu,
   const int use_mean_based,
+  const Teuchos::RCP<Teuchos::ParameterList>& fenlParams,
   const unsigned max_iter = 200,
   const typename Kokkos::Details::ArithTraits<SV>::mag_type tolerance =
     Kokkos::Details::ArithTraits<SV>::epsilon())

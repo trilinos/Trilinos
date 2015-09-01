@@ -322,6 +322,9 @@ void STKConnManager<GO>::applyPeriodicBCs( const panzer::FieldPattern & fp, Glob
       else if((*matchTypes)[m] == 1){
         offset0 = stkMeshDB_->getMaxEntityId(stkMeshDB_->getNodeRank());
         offset1 = edgeOffset-offset0;
+      } else if((*matchTypes)[m] == 2){
+        offset0 = stkMeshDB_->getMaxEntityId(stkMeshDB_->getNodeRank())+stkMeshDB_->getMaxEntityId(stkMeshDB_->getEdgeRank());
+        offset1 = faceOffset-offset0;
       } else
         TEUCHOS_ASSERT(false);
 

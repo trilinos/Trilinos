@@ -69,17 +69,22 @@
 /* Define if Boost is enabled */
 /* #undef HAVE_STOKHOS_BOOST */
 
-/* Define if KokkosCore is enabled */
-/* #undef HAVE_STOKHOS_KOKKOSCORE */
-
-/* Define if KokkosLinAlg is enabled */
-/* #undef HAVE_STOKHOS_KOKKOSLINALG */
+/* Define if TpetraKernels is enabled */
+#define HAVE_STOKHOS_TPETRAKERNELS
+#ifdef HAVE_STOKHOS_TPETRAKERNELS
+// Define old macro for backwards compatibility.
+#  define HAVE_STOKHOS_KOKKOSLINALG
+#endif // HAVE_STOKHOS_TPETRAKERNELS
 
 /* Define if KokkosMpiCom is enabled */
-/* #undef HAVE_STOKHOS_KOKKOSMPICOMM */
+#define HAVE_STOKHOS_TEUCHOSKOKKOSCOMM
+#ifdef HAVE_STOKHOS_TEUCHOSKOKKOSCOMM
+// For backwards compatibility
+#  define HAVE_STOKHOS_KOKKOSMPICOMM
+#endif // HAVE_STOKHOS_TEUCHOSKOKKOSCOMM
 
 /* Define if KokkosAlgorithms is enabled */
-/* #undef HAVE_STOKHOS_KOKKOSALGORITHMS */
+#define HAVE_STOKHOS_KOKKOSALGORITHMS
 
 /* Define if MueLu is enabled */
 #define HAVE_STOKHOS_MUELU
@@ -106,4 +111,7 @@
 #define HAVE_STOKHOS_INTRINSICS
 
 /* Define if C++11 is enabled */
-/* #undef HAVE_STOKHOS_CXX11 */
+#define HAVE_STOKHOS_CXX11
+
+/* Define if Thyra is enabled */
+#define HAVE_STOKHOS_THYRA

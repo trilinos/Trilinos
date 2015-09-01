@@ -82,6 +82,25 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  PamgenMeshInput
+  SOURCES input/PamgenMeshInput.cpp
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+)
+IF (${PROJECT_NAME}_ENABLE_SCOREC)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    APFMeshInput
+    SOURCES input/APFMeshInput.cpp
+    NUM_MPI_PROCS 2
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+ENDIF()
  
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   XpetraTraits
@@ -135,6 +154,28 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   GraphModel
   SOURCES models/GraphModel.cpp 
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+IF (${PROJECT_NAME}_ENABLE_SCOREC)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    HyperGraphModel
+    SOURCES models/HyperGraphModel.cpp
+    NUM_MPI_PROCS 2
+    COMM mpi serial
+  )
+ENDIF()
+
+#
+# Tests for src/models
+#
+#
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  GraphModel2ndAdjsFromAdjs
+  SOURCES models/GraphModel2ndAdjsFromAdjs.cpp 
   NUM_MPI_PROCS 4
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "PASS"
@@ -244,8 +285,12 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 # Command that copies files to the executable directory.
 TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_unit_tests
   SOURCE_FILES
+    Poisson.xml
     simple.mtx
     simple_coord.mtx
+    pumiTri14/2/0.smb
+    pumiTri14/2/1.smb
+    pumiTri14/plate.dmg
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../data
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )

@@ -33,15 +33,10 @@
 
 ### Imakefile --- 
 
-ALTINC = -I../include
+ALTINC = -I../include -I../../exodus/cbind/include
 
-#if defined CatamountArchitecture
-EXOIITEST = -L../.. -lexoIIv2for32 -lexodus
-LOCALEXO = ../../libexoIIv2for32.a ../../libexodus.a
-#else
-EXOIITEST = -L../.. -lexoIIv2for -lexodus
-LOCALEXO = ../../libexoIIv2for.a ../../libexodus.a
-#endif
+EXOIITEST = -L../.. -lexoIIv2for -L../../../exodus -lexodus
+LOCALEXO = ../../libexoIIv2for.a ../../../exodus/libexodus.a
 
 LIBS = $(LOCALEXO) -L$(USRLIBDIR) $(NETCDF)
 
@@ -70,7 +65,7 @@ testall: testall.in1 $(CONFIGDIR)/$(MACROFILE)
 
 test:  check
 check: $(PROGS) testall
-	csh -f ./testall
+	sh ./testall
 
 ExtraStuffToClean(*.res)
 ExtraStuffToClean(*.exo)

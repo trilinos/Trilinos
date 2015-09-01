@@ -40,7 +40,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresFiles
     SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/BlockGmres
-    SOURCE_FILES orsirr1.hb fidap036.hb
+    SOURCE_FILES orsirr1.hb 
     EXEDEPS bl_gmres_diag
     )
 

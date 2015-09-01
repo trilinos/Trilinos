@@ -46,6 +46,7 @@
 /// \brief Class which defines basic traits for the operator type.
 ///
 #include "BelosConfigDefs.hpp"
+#include "BelosTypes.hpp"
 
 namespace Belos {
 

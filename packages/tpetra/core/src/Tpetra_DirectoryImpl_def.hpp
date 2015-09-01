@@ -737,13 +737,15 @@ namespace Tpetra {
           // Set up the hash tables.  The hash tables' constructor
           // detects whether there are duplicates, so that we can set
           // locallyOneToOne_.
+          typedef Kokkos::Device<typename NT::execution_space,
+            typename NT::memory_space> DT;
           lidToPidTable_ =
-            rcp (new Details::FixedHashTable<LO, int> (tableKeys (),
-                                                       tablePids ()));
+            rcp (new Details::FixedHashTable<LO, int, DT> (tableKeys (),
+                                                           tablePids ()));
           locallyOneToOne_ = ! (lidToPidTable_->hasDuplicateKeys ());
           lidToLidTable_ =
-            rcp (new Details::FixedHashTable<LO, LO> (tableKeys (),
-                                                      tableLids ()));
+            rcp (new Details::FixedHashTable<LO, LO, DT> (tableKeys (),
+                                                          tableLids ()));
         }
         else { // tie_break is NOT null
 
@@ -814,12 +816,14 @@ namespace Tpetra {
           }
 
           // Set up the hash tables.
+          typedef Kokkos::Device<typename NT::execution_space,
+            typename NT::memory_space> DT;
           lidToPidTable_ =
-            rcp (new Details::FixedHashTable<LO, int> (tableKeys (),
-                                                       tablePids ()));
+            rcp (new Details::FixedHashTable<LO, int, DT> (tableKeys (),
+                                                           tablePids ()));
           lidToLidTable_ =
-            rcp (new Details::FixedHashTable<LO, LO> (tableKeys (),
-                                                      tableLids ()));
+            rcp (new Details::FixedHashTable<LO, LO, DT> (tableKeys (),
+                                                          tableLids ()));
         }
       }
       else {

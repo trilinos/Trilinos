@@ -66,18 +66,20 @@ int main(int argc, char *argv[])
 #endif
 
   try {
-    
-    // Prepares the computational domain. For simplicity,           
-    // the computation domain has (nx * NumProcs, ny, nz) elements, 
-    // and it is partitioned into (NumProcs, 1, 1) subdomains. 
-    
+
+    // Prepares the computational domain. For simplicity,
+    // the computation domain has (nx * NumProcs, ny, nz) elements,
+    // and it is partitioned into (NumProcs, 1, 1) subdomains.
+
     int nx = 2 * Comm.NumProc();
-    int ny = 2; 
-    int nz = 2;
-    int mx = Comm.NumProc(), my = 1, mz = 1;
+    int ny = 2;
+    // int nz = 2; // unused
+    int mx = Comm.NumProc();
+    int my = 1;
+    // int mz = 1; // unused
     double lx = 1.0 * Comm.NumProc();
     double ly = 1.0;
-    double lz = 1.0;
+    // double lz = 1.0; // unused
 
     // Uncomment one of the following:
     TriangleRectangleGrid Grid(Comm, nx, ny, mx, my, lx, ly);
@@ -86,10 +88,10 @@ int main(int argc, char *argv[])
     //HexCubeGrid Grid(Comm, nx, ny, nz, mx, my, mz, lx, ly, lz);
 
     // just work on processor 0, only to reduce the output
-    if (!Comm.MyPID()) 
+    if (!Comm.MyPID())
     {
-      // Extracts the information from the Grid using AbstractGrid 
-      // methods. First, some general information. 
+      // Extracts the information from the Grid using AbstractGrid
+      // methods. First, some general information.
 
       cout << "Number of dimensions = " << Grid.NumDimensions() << endl;
       cout << "Number of vertices per element = " << Grid.NumVerticesPerElement() << endl;
@@ -104,13 +106,13 @@ int main(int argc, char *argv[])
       cout << "Number of boundary faces: "
         "on proc 0 = " << Grid.NumMyBoundaryFaces() << endl;
 
-      // Now loop over all the local elements, and print  
+      // Now loop over all the local elements, and print
       // the local ID of each vertex.
 
       std::vector<double> coord(3);
       std::vector<int> vertices(Grid.NumVerticesPerElement());
 
-      for (int i = 0 ; i < Grid.NumMyElements() ; ++i) 
+      for (int i = 0 ; i < Grid.NumMyElements() ; ++i)
       {
         cout << "Element " << i << ": ";
         Grid.ElementVertices(i, &vertices[0]);
@@ -141,7 +143,7 @@ int main(int argc, char *argv[])
         cout << endl;
       }
     }
-    
+
     // The following instructions can be used to visualize with MEDIT
 #if 0
     MEDITInterface MEDIT(Comm);

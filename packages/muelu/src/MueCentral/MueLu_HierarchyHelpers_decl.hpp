@@ -135,16 +135,17 @@ namespace MueLu {
 
 
   template <class Scalar,
-	    class LocalOrdinal  = int,
-	    class GlobalOrdinal = LocalOrdinal,
-	    class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
+            class LocalOrdinal  = int,
+            class GlobalOrdinal = LocalOrdinal,
+            class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
   class HierarchyUtils {
 #include "MueLu_UseShortNames.hpp"
   public:
-    /*! Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
-     *  calling AddNewLevel as appropriate.
+    /*!
+     * This routine is used by the CreateE/TpetraPreconditioner routines.
+     * Adds the following non-serializable data (A,P,R,Nullspace,Coordinates) from level-specific sublist nonSerialList,
+     * calling AddNewLevel as appropriate.
      */
-
     static void AddNonSerializableDataToHierarchy(HierarchyManager& HM, Hierarchy& H, const ParameterList& nonSerialList);
   };
 

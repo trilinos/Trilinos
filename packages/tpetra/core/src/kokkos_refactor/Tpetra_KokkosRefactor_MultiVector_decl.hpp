@@ -42,7 +42,6 @@
 #ifndef TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DECL_HPP
 #define TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DECL_HPP
 
-#include <Kokkos_DualView.hpp>
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 #include <Kokkos_ArithTraits.hpp>

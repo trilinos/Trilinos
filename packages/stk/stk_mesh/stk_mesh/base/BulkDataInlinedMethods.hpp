@@ -44,18 +44,60 @@ size_t get_connectivity( const BulkData & mesh,
 
 
  /** \brief  Comparator functor for entities compares the entities' keys */
+#ifdef SIERRA_MIGRATION
 inline
-EntityLess::EntityLess(const BulkData& mesh) : m_mesh(&mesh) {}
+bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
+{
+  bool result = false;
+  if (m_shouldSortFacesByNodeIds &&
+      m_mesh->entity_rank(lhs) == m_sideRank &&
+      m_mesh->entity_rank(rhs) == m_sideRank)
+  {
+      unsigned num_nodes_lhs = m_mesh->num_nodes(lhs);
+      unsigned num_nodes_rhs = m_mesh->num_nodes(rhs);
+      if (num_nodes_lhs != num_nodes_rhs)
+      {
+          result = num_nodes_lhs < num_nodes_rhs;
+      }
+      else
+      {
+          std::vector<stk::mesh::EntityId> nodes_lhs(num_nodes_lhs);
+          std::vector<stk::mesh::EntityId> nodes_rhs(num_nodes_rhs);
+          const stk::mesh::Entity* nodes_lhs_ptr = m_mesh->begin_nodes(lhs);
+          const stk::mesh::Entity* nodes_rhs_ptr = m_mesh->begin_nodes(rhs);
+          for(unsigned i=0;i<num_nodes_lhs;++i)
+          {
+              nodes_lhs[i] = m_mesh->identifier(nodes_lhs_ptr[i]);
+              nodes_rhs[i] = m_mesh->identifier(nodes_rhs_ptr[i]);
+          }
+          std::sort(nodes_lhs.begin(), nodes_lhs.end());
+          std::sort(nodes_rhs.begin(), nodes_rhs.end());
+          result = nodes_lhs < nodes_rhs;
+      }
+  }
+  else
+  {
+      const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
+      const EntityKey rhs_key = m_mesh->in_index_range(rhs) ? m_mesh->entity_key(rhs) : EntityKey();
+      result = lhs_key < rhs_key;
+  }
+  return result;
+}
 
-/** \brief  Comparison operator */
+#else
+
+inline EntityLess::EntityLess(const BulkData& mesh) : m_mesh(&mesh) {}
+
 inline
 bool EntityLess::operator()(const Entity lhs, const Entity rhs) const
 {
   const EntityKey lhs_key = m_mesh->in_index_range(lhs) ? m_mesh->entity_key(lhs) : EntityKey();
   const EntityKey rhs_key = m_mesh->in_index_range(rhs) ? m_mesh->entity_key(rhs) : EntityKey();
-  return lhs_key < rhs_key;
+  return (lhs_key < rhs_key);
 }
+#endif
 
+/** \brief  Comparison operator */
 inline
 bool EntityLess::operator()(const Entity lhs, const EntityKey & rhs) const
 {
@@ -118,6 +160,7 @@ unsigned BulkData::find_ordinal(Entity entity, EntityRank rank, ConnectivityOrdi
   const MeshIndex &mesh_idx = mesh_index(entity);
   unsigned num_rels = mesh_idx.bucket->num_connectivity(mesh_idx.bucket_ordinal, rank);
   ConnectivityOrdinal const *ords = mesh_idx.bucket->begin_ordinals(mesh_idx.bucket_ordinal, rank);
+  ThrowAssert(ords);
 
   unsigned i = 0;
   for (; i < num_rels; ++i)
@@ -408,11 +451,6 @@ bool BulkData::has_permutation(Entity entity, EntityRank rank) const
 }
 
 inline
-int BulkData::entity_comm_map_owner(const EntityKey & key) const
-{
-    return internal_entity_comm_map_owner(key);
-}
-inline
 int BulkData::internal_entity_comm_map_owner(const EntityKey & key) const
 {
   const int owner_rank = m_entity_comm_map.owner_rank(key);
@@ -464,7 +502,10 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
     const MeshIndex &mesh_idx = mesh_index(entity);
     const Bucket &b = *mesh_idx.bucket;
     Bucket::size_type bucket_ord = mesh_idx.bucket_ordinal;
-    ThrowAssert(count_valid_connectivity(entity, rank) == b.num_connectivity(bucket_ord, rank));
+    ThrowAssertMsg(count_valid_connectivity(entity, rank) == b.num_connectivity(bucket_ord, rank),
+                   count_valid_connectivity(entity,rank) << " = count_valid_connectivity("<<entity_key(entity)<<","<<rank<<") != b.num_connectivity("<<bucket_ord<<","<<rank<<") = " << b.num_connectivity(bucket_ord,rank);
+                  );
+
   }
 #endif
 }
@@ -817,6 +858,8 @@ inline RelationVector& BulkData::aux_relations(Entity entity)
 inline void BulkData::set_global_id(stk::mesh::Entity entity, int id)
 {
   entity_setter_debug_check(entity);
+
+  m_modSummary.track_set_global_id(entity, id);
 
   m_fmwk_global_ids[entity.local_offset()] = id;
 }

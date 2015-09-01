@@ -194,7 +194,7 @@ void donate_one_element(stk::mesh::unit_test::BulkDataTester & mesh)
         }
     }
 
-    mesh.change_entity_owner(change, BulkData::MOD_END_COMPRESS_AND_SORT);
+    mesh.change_entity_owner(change);
 
     count_entities(select_owned, mesh, after_count);
 
@@ -237,7 +237,7 @@ void donate_all_shared_nodes(stk::mesh::unit_test::BulkDataTester & mesh)
         }
     }
 
-    mesh.change_entity_owner(change, BulkData::MOD_END_COMPRESS_AND_SORT);
+    mesh.change_entity_owner(change);
 
     count_entities(select_used, mesh, after_count);
 
@@ -773,7 +773,7 @@ TEST(BulkData, testChangeOwner_ring)
         ring_mesh.generate_mesh();
         ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk));
 
-        ring_mesh.fixup_node_ownership(BulkData::MOD_END_COMPRESS_AND_SORT);
+        ring_mesh.fixup_node_ownership();
 
         const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() | ring_mesh.m_meta_data.globally_shared_part();
         const Selector select_all = ring_mesh.m_meta_data.universal_part();
@@ -957,7 +957,7 @@ TEST(BulkData, testChangeOwner_ring)
             change.push_back(entry);
         }
 
-        ring_mesh.m_bulk_data.change_entity_owner(change, BulkData::MOD_END_COMPRESS_AND_SORT);
+        ring_mesh.m_bulk_data.change_entity_owner(change);
 
         count_entities(select_owned, ring_mesh.m_bulk_data, local_count);
         const unsigned n_node = p_rank == 0 ? nPerProc + 1 : (p_rank + 1 == p_size ? nPerProc - 1 : nPerProc );
@@ -1440,7 +1440,10 @@ TEST(BulkData, test_internal_generate_parallel_change_lists_2EltsChown1ChownItsN
   //   2/0---3/0---6/0      2/0---3/1---6/1
 
   stk::mesh::EntityId element_ids [2] = {1, 2};
-  stk::mesh::EntityId elem_node_ids [][4] = {{1, 2, 3, 4}, {4, 3, 6, 5}};
+  stk::mesh::EntityIdVector elem_node_ids[] {
+      {1, 2, 3, 4},
+      {4, 3, 6, 5}
+  };
 
   stk::mesh::Part &elem_part = meta.declare_part_with_topology("elem_part",stk::topology::QUAD_4_2D);
   meta.commit();
@@ -1494,7 +1497,10 @@ TEST(BulkData, test_internal_generate_parallel_change_lists_2EltsFlip)
   //   2/0---3/0---6/1      2/1---3/0---6/0
 
   stk::mesh::EntityId element_ids [2] = {1, 2};
-  stk::mesh::EntityId elem_node_ids [][4] = {{1, 2, 3, 4}, {4, 3, 6, 5}};
+  stk::mesh::EntityIdVector elem_node_ids [] = {
+      {1, 2, 3, 4},
+      {4, 3, 6, 5}
+  };
 
   stk::mesh::Part &elem_part = meta.declare_part_with_topology("elem_part",stk::topology::QUAD_4_2D);
   meta.commit();
@@ -5229,20 +5235,14 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
     {
       bulk.declare_entity(stk::topology::NODE_RANK, 3);
 
-      stk::mesh::EntityId connected_nodes[3];
-      connected_nodes[0] = 1;
-      connected_nodes[1] = 2;
-      connected_nodes[2] = 3;
+      stk::mesh::EntityIdVector connected_nodes {1, 2, 3 };
       stk::mesh::declare_element(bulk, elem_part, 1, connected_nodes);
     }
     else
     {
       bulk.declare_entity(stk::topology::NODE_RANK, 4);
 
-      stk::mesh::EntityId connected_nodes[3];
-      connected_nodes[0] = 2;
-      connected_nodes[1] = 1;
-      connected_nodes[2] = 4;
+      stk::mesh::EntityIdVector connected_nodes {2, 1, 4 };
       stk::mesh::declare_element(bulk, elem_part, 2, connected_nodes);
     }
 
@@ -5288,7 +5288,7 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
 
     if ( bulk.parallel_rank() == 0 )
     {
-      stk::mesh::EntityId connected_nodes[3];
+      stk::mesh::EntityIdVector connected_nodes(3);
       connected_nodes[0] = 1;
       connected_nodes[1] = bulk.identifier(node6);
       connected_nodes[2] = 3;
@@ -5306,7 +5306,7 @@ TEST(BulkData, show_API_for_batch_create_child_nodes)
     }
     else
     {
-      stk::mesh::EntityId connected_nodes[3];
+      stk::mesh::EntityIdVector connected_nodes(3);
       connected_nodes[0] = bulk.identifier(node6);
       connected_nodes[1] = 1;
       connected_nodes[2] = 4;
@@ -5384,7 +5384,7 @@ void Test_STK_ParallelPartConsistency_ChangeBlock(stk::mesh::BulkData::Automatic
   int * elem_nodes[] = { elem_nodes0, elem_nodes1 };
 
   //Next create nodes and set up connectivity to use later for creating the element.
-  stk::mesh::EntityId connected_nodes[nodesPerElem];
+  stk::mesh::EntityIdVector connected_nodes(nodesPerElem);
   for(size_t n=0; n<nodesPerElem; ++n) {
     size_t e = parallel_rank;
     stk::mesh::EntityId nodeGlobalId = elem_nodes[e][n]+1;
@@ -5526,9 +5526,10 @@ TEST(BulkData, STK_Deimprint)
 
   const size_t nodesPerElem = 4;
 
-  stk::mesh::EntityId elem_nodes0[] = {1, 2, 5, 6};
-  stk::mesh::EntityId elem_nodes1[] = {2, 3, 4, 5};
-  stk::mesh::EntityId * elem_nodes[] = { elem_nodes0, elem_nodes1 };
+  stk::mesh::EntityIdVector elem_nodes[] {
+      {1, 2, 5, 6},
+      {2, 3, 4, 5}
+  };
 
   const size_t numElem = 2;
 
@@ -5652,12 +5653,12 @@ TEST(BulkData, ChangeAuraElementPart)
 
   const size_t nodesPerElem = 4;
 
-  stk::mesh::EntityId elem_nodes1[] = {1, 2, 5, 4};
-  stk::mesh::EntityId elem_nodes2[] = {2, 3, 6, 5};
-  stk::mesh::EntityId elem_nodes3[] = {4, 5, 8, 7};
-  stk::mesh::EntityId elem_nodes4[] = {5, 6, 9, 8};
-
-  stk::mesh::EntityId * elem_nodes[] = { elem_nodes1, elem_nodes2, elem_nodes3, elem_nodes4 };
+  stk::mesh::EntityIdVector elem_nodes[] {
+      {1, 2, 5, 4},
+      {2, 3, 6, 5},
+      {4, 5, 8, 7},
+      {5, 6, 9, 8}
+  };
 
   int node_sharing[9][4] = { {0}, {0,1}, {1}, {0,2}, {0,1,2,3}, {1,3}, {2}, {2,3}, {3} };
   int num_node_sharing[] = {1, 2, 1, 2, 4, 2, 1, 2, 1};
@@ -5984,7 +5985,7 @@ TEST(FaceCreation, test_face_creation_2Hexes_2procs)
 
         mesh.resolveUniqueIdForSharedEntityAndCreateCommMapInfoForSharingProcs(shared_entity_map);
 
-        mesh.modification_end_for_entity_creation(stk::topology::FACE_RANK);
+        mesh.my_modification_end_for_entity_creation(stk::topology::FACE_RANK);
 
         std::vector<size_t> counts;
         stk::mesh::comm_mesh_counts(mesh, counts);
@@ -6040,6 +6041,117 @@ TEST(BulkData, test_parallel_entity_sharing)
 
     int matching_index = stk::mesh::unit_test::does_entity_exist_in_list(shared_entity_map, entity_from_other_proc);
     EXPECT_TRUE(matching_index >= 0);
+}
+
+TEST(BulkData, makeElementWithConflictingTopologies)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  const int p_size = stk::parallel_machine_size(pm);
+
+  if(p_size != 1)
+  {
+    return;
+  }
+  const int spatial_dimension = 2;
+  stk::mesh::MetaData meta(spatial_dimension);
+  stk::mesh::BulkData mesh(meta, pm);
+
+  stk::mesh::EntityId element_ids[1] = {1};
+  stk::mesh::EntityIdVector elem_node_ids[] { {1, 2, 3, 4} };
+
+  stk::mesh::Part * quad_part = &meta.declare_part_with_topology("quad_part", stk::topology::QUAD_4_2D);
+  stk::mesh::Part * tri_part  = &meta.declare_part_with_topology( "tri_part", stk::topology::TRI_3_2D);
+  meta.commit();
+
+  stk::mesh::PartVector parts;
+  parts.push_back(quad_part);
+  parts.push_back(tri_part);
+
+  mesh.modification_begin();
+
+  EXPECT_THROW(stk::mesh::declare_element(mesh, parts, element_ids[0], elem_node_ids[0]), std::runtime_error);
+
+  mesh.modification_end();
+}
+
+TEST( BulkData, AddSharedNodesInTwoSteps)
+{
+
+
+    stk::ParallelMachine pm = MPI_COMM_WORLD;
+    unsigned p_size = stk::parallel_machine_size(pm);
+    unsigned p_rank = stk::parallel_machine_rank(pm);
+
+    if(p_size != 3u)
+    {
+        return;
+    }
+
+    int nodeId = 1;
+    const unsigned spatialDim = 3;
+    stk::mesh::MetaData meta(spatialDim);
+    stk::mesh::BulkData mesh(meta, pm);
+
+    meta.commit();
+
+
+    mesh.modification_begin();
+    Entity node;
+    if (0 == p_rank || 1 == p_rank) {
+        node = mesh.declare_entity(stk::topology::NODE_RANK, nodeId);
+    }
+    if (0 == p_rank) {
+        mesh.add_node_sharing(node, 1);
+    }
+    if (1 == p_rank) {
+        mesh.add_node_sharing(node, 0);
+    }
+    mesh.modification_end();
+
+
+
+    mesh.modification_begin();
+    if (2 == p_rank) {
+        node = mesh.declare_entity(stk::topology::NODE_RANK, nodeId);
+    }
+    if (0 == p_rank) {
+        mesh.add_node_sharing(node, 2);
+    }
+    if (1 == p_rank) {
+        mesh.add_node_sharing(node, 2);
+    }
+    if (2 == p_rank) {
+        mesh.add_node_sharing(node, 0);
+        mesh.add_node_sharing(node, 1);
+    }
+
+    //    EXPECT_THROW(mesh.modification_end(), std::logic_error);
+    //this only throws on processor 2, but not in a parallel consistent way
+    //this is because you apparently can't create the node on a new processor where it didn't exist before
+
+}
+
+TEST(ChangeEntityId, test_throw_on_shared_node)
+{
+    int numProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+    if (numProcs==2)
+    {
+        stk::mesh::MetaData meta(3);
+        stk::mesh::BulkData mesh(meta, MPI_COMM_WORLD);
+
+        const std::string generatedMeshSpec = "generated:1x1x2";
+        stk::unit_test_util::fill_mesh_using_stk_io(generatedMeshSpec, mesh, MPI_COMM_WORLD);
+
+        stk::mesh::Entity sharedNode5 = mesh.get_entity(stk::topology::NODE_RANK, 5);
+
+        EXPECT_TRUE(mesh.bucket(sharedNode5).shared());
+
+        mesh.modification_begin();
+
+        EXPECT_THROW(mesh.change_entity_id(99, sharedNode5), std::logic_error);
+
+        mesh.modification_end();
+    }
 }
 
 }// empty namespace

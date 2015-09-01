@@ -87,6 +87,7 @@
 #include <Ifpack2_UnitTestHelpers.hpp>
 #include <Ifpack2_DenseContainer.hpp>
 #include <Ifpack2_SparseContainer.hpp>
+#include <Ifpack2_BandedContainer.hpp>
 #include <Ifpack2_ILUT.hpp>
 
 // kgd 04 Sep 2013: Commented out <float,short,short> tests
@@ -103,8 +104,8 @@
 // turned off, because we don't know how to find out if explicit
 // instantiation is enabled for these types.
 //#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-//template class Ifpack2::SparseContainer<Tpetra::CrsMatrix<float, short, int>,
-//                                        Ifpack2::ILUT<Tpetra::CrsMatrix<float, short, short> > >;
+//template class Ifpack2::SparseContainer<Tpetra::RowMatrix<float, short, int>,
+//                                        Ifpack2::ILUT<Tpetra::RowMatrix<float, short, short> > >;
 //#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
 
@@ -120,8 +121,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SparseContainer, ILUT, Scalar, LocalOrdinal, G
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> vec_type;
-  typedef Ifpack2::ILUT< Tpetra::CrsMatrix<Scalar,LocalOrdinal,LocalOrdinal,Node>    > ILUTlo;
-  typedef Ifpack2::ILUT< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   > ILUTgo;
+  typedef Ifpack2::ILUT< Tpetra::RowMatrix<Scalar,LocalOrdinal,LocalOrdinal,Node>    > ILUTlo;
+  typedef Ifpack2::ILUT< Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   > ILUTgo;
+  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> ROW;
 
 //we are now in a class method declared by the above macro, and
 //that method has these input arguments:
@@ -158,7 +160,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(SparseContainer, ILUT, Scalar, LocalOrdinal, G
 
   out << "SparseContainer constructor" << endl;
 
-  Ifpack2::SparseContainer<CRS, ILUTlo> MyContainer (crsmatrix, localRows);
+  Ifpack2::SparseContainer<ROW, ILUTlo> MyContainer (crsmatrix, localRows);
 
   out << "Setting SparseContainer parameters" << endl;
 
@@ -225,8 +227,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   using std::endl;
   typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
   typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
   typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vec_type;
-  typedef Ifpack2::DenseContainer<crs_matrix_type, Scalar> container_type;
+  typedef Ifpack2::DenseContainer<row_matrix_type, Scalar> container_type;
   typedef Teuchos::ScalarTraits<Scalar> STS;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
@@ -351,9 +354,175 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   TEST_COMPARE_FLOATING_ARRAYS( x.get1dView(), y.get1dView(), 1.0e2*STS::eps () );
 }
 
+// Unit test for BandedContainer.
+//
+// 1. Create a global test matrix A, exact solution x_exact, and
+//    right-hand side b (defined as b = A*x_exact).
+// 2. Define the local submatrix as the entire local matrix.
+// 3. Apply BandedContainer to approximate the solution x of Ax=b.
+//
+// If running on only one (MPI) process, x should equal x_exact (to
+// within a reasonable tolerance).
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(BandedContainer, FullMatrixSameScalar, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  using Teuchos::Array;
+  using Teuchos::ArrayRCP;
+  using Teuchos::outArg;
+  using Teuchos::RCP;
+  using Teuchos::REDUCE_MIN;
+  using Teuchos::reduceAll;
+  using std::cerr;
+  using std::endl;
+  typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
+  typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
+  typedef Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> vec_type;
+  typedef Ifpack2::BandedContainer<row_matrix_type, Scalar> container_type;
+  typedef Teuchos::ScalarTraits<Scalar> STS;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
+  typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+  int localSuccess = 1;
+  int globalSuccess = 1;
+
+  out << "Ifpack2::Version(): " << Ifpack2::Version () << endl
+      << "Creating test problem" << endl;
+
+  global_size_t numRowsPerProc = 5;
+  RCP<const map_type> rowMap =
+    tif_utest::create_tpetra_map<LocalOrdinal, GlobalOrdinal, Node> (numRowsPerProc);
+
+  out << "Creating the test matrix A" << endl;
+  RCP<const crs_matrix_type> A =
+    tif_utest::create_banded_matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> (rowMap,3);
+
+  out << "Creating an exact solution vector x" << endl;
+  vec_type x_exact (rowMap);
+  Teuchos::ScalarTraits<double>::seedrandom (24601);
+  x_exact.randomize ();
+
+  out << "Creating the right-hand side vector b of the linear system Ax=b" << endl;
+  vec_type b (rowMap);
+  A->apply (x_exact, b);
+
+  vec_type y (rowMap);
+  vec_type d (rowMap);
+
+  // Set indices to grab the whole matrix
+  Array<LocalOrdinal> localRows (numRowsPerProc);
+  for (size_t i = 0; i < numRowsPerProc; ++i) {
+    localRows[i] = i;
+  }
+
+  // For all the BandedContainer operations, we take special care to
+  // ensure that all processes successfully make it through each
+  // operation without throwing an exception.  This helped me a lot
+  // when I was debugging BandedContainer::extract(), for example.  I
+  // found that printing the exception message on each process to cerr
+  // (instead of to out) actually let me read the exception message
+  // before the test quit.  Otherwise, I wouldn't get to see the
+  // exception message.
+
+  out << "BandedContainer constructor" << endl;
+  RCP<container_type> MyContainer;
+  try {
+    const Teuchos::ParameterList params = Teuchos::ParameterList();
+    MyContainer = Teuchos::rcp (new container_type (A, localRows));
+    MyContainer->setParameters(params);
+    localSuccess = 1;
+  } catch (std::exception& e) {
+    localSuccess = 0;
+    cerr << e.what () << endl;
+  }
+  reduceAll<int, int> (* (rowMap->getComm ()), REDUCE_MIN,
+                       localSuccess, outArg (globalSuccess));
+  TEST_EQUALITY_CONST( globalSuccess, 1 );
+
+  out << "DenseContainer::setParameters" << endl;
+  try {
+    const Teuchos::ParameterList params = Teuchos::ParameterList();
+    MyContainer->setParameters(params);
+    localSuccess = 1;
+  } catch (std::exception& e) {
+    localSuccess = 0;
+    cerr << e.what () << endl;
+  }
+  reduceAll<int, int> (* (rowMap->getComm ()), REDUCE_MIN,
+                       localSuccess, outArg (globalSuccess));
+  TEST_EQUALITY_CONST( globalSuccess, 1 );
+
+  out << "DenseContainer::initialize" << endl;
+  try {
+    MyContainer->initialize ();
+    localSuccess = 1;
+  } catch (std::exception& e) {
+    localSuccess = 0;
+    cerr << e.what () << endl;
+  }
+  reduceAll<int, int> (* (rowMap->getComm ()), REDUCE_MIN,
+                       localSuccess, outArg (globalSuccess));
+  TEST_EQUALITY_CONST( globalSuccess, 1 );
+
+  out << "DenseContainer::compute" << endl;
+  try {
+    MyContainer->compute ();
+    localSuccess = 1;
+  } catch (std::exception& e) {
+    localSuccess = 0;
+    cerr << e.what () << endl;
+  }
+  reduceAll<int, int> (* (rowMap->getComm ()), REDUCE_MIN,
+                       localSuccess, outArg (globalSuccess));
+  TEST_EQUALITY_CONST( globalSuccess, 1 );
+
+  // Apply the DenseContainer to solve the linear system Ax=b for x.
+  vec_type x (rowMap);
+  x.putScalar (0.0);
+  out << "DenseContainer::apply" << endl;
+  try {
+    MyContainer->apply (b, x);
+    localSuccess = 1;
+  } catch (std::exception& e) {
+    localSuccess = 0;
+    cerr << e.what () << endl;
+  }
+  reduceAll<int, int> (* (rowMap->getComm ()), REDUCE_MIN,
+                       localSuccess, outArg (globalSuccess));
+  TEST_EQUALITY_CONST( globalSuccess, 1 );
+
+  out << "Computing results:" << endl;
+  magnitude_type errNorm = STM::zero ();
+  {
+    vec_type e (x, Teuchos::Copy);
+    e.update (-1.0, x_exact, 1.0); // e = x - x_exact
+    errNorm = e.norm2 ();
+    out << "  ||x - x_exact||_2 = " << errNorm << endl;
+  }
+
+  // DenseContainer only solves the global system exactly
+  // if there is only one MPI process in the communicator.
+  if (rowMap->getComm ()->getSize () == 1) {
+    localSuccess = (errNorm <= 1.0e2 * STS::eps ()) ? 1 : 0;
+    globalSuccess = 1;
+    reduceAll<int, int> (* (rowMap->getComm ()), REDUCE_MIN,
+                         localSuccess, outArg (globalSuccess));
+  }
+
+  // FIXME: why is this not working?? It seems that the gather call from X to X_local is failing (maybe due to problems with localRows?)
+  // TODO second call to apply not working due to problems with local rows???
+  //out << "DenseContainer::weightedApply" << endl;
+  //d.putScalar (1.0);
+  //MyContainer->weightedApply (b, y, d);
+  //
+  //out << "Computing results of apply() and weightedApply() "
+  //    << "(they should be the same in this case)" << endl;
+  //TEST_COMPARE_FLOATING_ARRAYS( x.get1dView(), y.get1dView(), 1.0e2*STS::eps () );
+}
+
 // Define the set of unit tests to instantiate in this file.
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( SparseContainer, ILUT, Scalar, LocalOrdinal, GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BandedContainer, FullMatrixSameScalar, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DenseContainer, FullMatrixSameScalar, Scalar, LocalOrdinal,GlobalOrdinal) \
 
 // Instantiate the unit tests for Scalar=double, LO=int, and GO=int.

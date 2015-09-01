@@ -40,6 +40,11 @@ ifeq ($(KOKKOS_INTERNAL_USE_PTHREADS), 1)
 	CONDITIONAL_COPIES += copy-threads
 endif
 
+ifeq ($(KOKKOS_INTERNAL_USE_QTHREAD), 1)
+	KOKKOS_HEADERS_QTHREAD += $(wildcard $(KOKKOS_PATH)/core/src/Qthread/*.hpp)
+	CONDITIONAL_COPIES += copy-qthread
+endif
+
 ifeq ($(KOKKOS_INTERNAL_USE_OPENMP), 1)
 	KOKKOS_HEADERS_OPENMP += $(wildcard $(KOKKOS_PATH)/core/src/OpenMP/*.hpp)
 	CONDITIONAL_COPIES += copy-openmp
@@ -70,12 +75,13 @@ build-makefile-kokkos:
 	echo "KOKKOS_CPPFLAGS = $(KOKKOS_CPPFLAGS)" >> Makefile.kokkos
 	echo "KOKKOS_LINK_DEPENDS  = $(KOKKOS_LINK_DEPENDS)" >> Makefile.kokkos
 	echo "KOKKOS_LIBS = $(KOKKOS_LIBS)" >> Makefile.kokkos
-	echo "KOKKOS_LD_FLAGS = $(KOKKOS_LDFLAGS)" >> Makefile.kokkos
+	echo "KOKKOS_LDFLAGS = $(KOKKOS_LDFLAGS)" >> Makefile.kokkos
 	sed \
-		-e 's|\.\./\.\./core/src|$(PREFIX)/include|g' \
-		-e 's|\.\./\.\./containers/src|$(PREFIX)/include|g' \
-		-e 's|\.\./\.\./algorithms/src|$(PREFIX)/include|g' \
+		-e 's|$(KOKKOS_PATH)/core/src|$(PREFIX)/include|g' \
+		-e 's|$(KOKKOS_PATH)/containers/src|$(PREFIX)/include|g' \
+		-e 's|$(KOKKOS_PATH)/algorithms/src|$(PREFIX)/include|g' \
 		-e 's|-L$(PWD)|-L$(PREFIX)/lib|g' \
+		-e 's|= libkokkos.a|= $(PREFIX)/lib/libkokkos.a|g' \
 		-e 's|= KokkosCore_config.h|= $(PREFIX)/include/KokkosCore_config.h|g' Makefile.kokkos \
 		> Makefile.kokkos.tmp
 	mv -f Makefile.kokkos.tmp Makefile.kokkos
@@ -95,6 +101,10 @@ copy-cuda: mkdir
 copy-threads: mkdir
 	mkdir -p $(PREFIX)/include/Threads
 	cp $(KOKKOS_HEADERS_THREADS) $(PREFIX)/include/Threads
+
+copy-qthread: mkdir
+	mkdir -p $(PREFIX)/include/Qthread
+	cp $(KOKKOS_HEADERS_QTHREAD) $(PREFIX)/include/Qthread
 
 copy-openmp: mkdir
 	mkdir -p $(PREFIX)/include/OpenMP

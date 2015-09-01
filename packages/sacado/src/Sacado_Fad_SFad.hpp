@@ -76,7 +76,7 @@ namespace Sacado {
      * This classes specializes Expr to SFad expressions.
      */
     template <typename T, int Num>
-    class Expr< SFadExprTag<T,Num> > {
+    class Expr< SFadExprTag<T,Num>, ExprSpecDefault > {
 
     public:
 

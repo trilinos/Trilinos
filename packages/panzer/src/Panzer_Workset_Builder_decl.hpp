@@ -46,7 +46,11 @@
 
 #include <vector>
 #include <map>
+
 #include "Teuchos_RCP.hpp"
+
+#include "Panzer_ConfigDefs.hpp"
+#include "Panzer_WorksetNeeds.hpp"
 
 namespace shards {
   class CellTopology;
@@ -66,10 +70,25 @@ namespace panzer {
   buildWorksets(const PhysicsBlock & pb,
 		const std::vector<std::size_t>& local_cell_ids,
 		const ArrayT& vertex_coordinates);
-  
+
+  template<typename ArrayT>
+  Teuchos::RCP<std::vector<Workset> > 
+  buildWorksets(const WorksetNeeds & needs,
+                const std::string & elementBlock,
+		const std::vector<std::size_t>& local_cell_ids,
+		const ArrayT& vertex_coordinates);
+
   template<typename ArrayT>
   Teuchos::RCP<std::map<unsigned,Workset> >
   buildBCWorkset(const PhysicsBlock & volume_pb,
+		 const std::vector<std::size_t>& local_cell_ids,
+		 const std::vector<std::size_t>& local_side_ids,
+		 const ArrayT& vertex_coordinates);
+
+  template<typename ArrayT>
+  Teuchos::RCP<std::map<unsigned,Workset> >
+  buildBCWorkset(const WorksetNeeds & needs,
+                 const std::string & elementBlock,
 		 const std::vector<std::size_t>& local_cell_ids,
 		 const std::vector<std::size_t>& local_side_ids,
 		 const ArrayT& vertex_coordinates);
@@ -92,6 +111,19 @@ namespace panzer {
 		   const ArrayT& vertex_coordinates_b);
 
   template<typename ArrayT>
+  Teuchos::RCP<std::vector<Workset> > 
+  buildEdgeWorksets(const WorksetNeeds & needs_a,
+                   const std::string & eblock_a,
+	 	   const std::vector<std::size_t>& local_cell_ids_a,
+		   const std::vector<std::size_t>& local_side_ids_a,
+		   const ArrayT& vertex_coordinates_a,
+                   const WorksetNeeds & needs_b,
+                   const std::string & eblock_b,
+		   const std::vector<std::size_t>& local_cell_ids_b,
+		   const std::vector<std::size_t>& local_side_ids_b,
+		   const ArrayT& vertex_coordinates_b);
+
+  template<typename ArrayT>
   std::vector<Workset>::iterator
   buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
                    const PhysicsBlock & pb_a,
@@ -103,6 +135,21 @@ namespace panzer {
 		   const std::vector<std::size_t>& local_side_ids_b,
 		   const ArrayT& vertex_coordinates_b,
                    std::vector<Workset>::iterator beg);
+
+  template<typename ArrayT>
+  std::vector<Workset>::iterator
+  buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
+                    const WorksetNeeds & needs_a,
+                    const std::string & eblock_a,
+                    const std::vector<std::size_t>& local_cell_ids_a,
+                    const std::vector<std::size_t>& local_side_ids_a,
+                    const ArrayT& vertex_coordinates_a,
+                    const WorksetNeeds & needs_b,
+                    const std::string & eblock_b,
+                    const std::vector<std::size_t>& local_cell_ids_b,
+                    const std::vector<std::size_t>& local_side_ids_b,
+                    const ArrayT& vertex_coordinates_b,
+                    std::vector<Workset>::iterator beg);
 
   /** Populate basis values and integration values data structures in
     * the WorksetDetails object being passed in. Note that this works for
@@ -123,7 +170,13 @@ namespace panzer {
   void populateValueArrays(std::size_t num_cells,
                            bool isSide,
                            const PhysicsBlock & pb,
-                           WorksetDetails & details);
+                           WorksetDetails & details,
+                           const Teuchos::RCP<WorksetDetails> other_details = Teuchos::null);
+  void populateValueArrays(std::size_t num_cells,
+                           bool isSide,
+                           const WorksetNeeds & pb,
+                           WorksetDetails & details,
+                           const Teuchos::RCP<WorksetDetails> other_details = Teuchos::null);
 
 }
 

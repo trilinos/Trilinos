@@ -43,8 +43,8 @@
 #ifndef IFPACK2_CRSRILUK_DEF_HPP
 #define IFPACK2_CRSRILUK_DEF_HPP
 
-#include <Ifpack2_LocalFilter.hpp>
-#include <Ifpack2_RILUK.hpp>
+#include "Ifpack2_LocalFilter.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 namespace Ifpack2 {
 
@@ -397,24 +397,18 @@ RILUK<MatrixType>::makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A
 
   // If A_ is already a LocalFilter, then use it directly.  This
   // should be the case if RILUK is being used through
-  // AdditiveSchwarz, for example.  There are (unfortunately) two
-  // kinds of LocalFilter, depending on the template parameter, so we
-  // have to test for both.
+  // AdditiveSchwarz, for example.
   RCP<const LocalFilter<row_matrix_type> > A_lf_r =
     rcp_dynamic_cast<const LocalFilter<row_matrix_type> > (A);
   if (! A_lf_r.is_null ()) {
     return rcp_implicit_cast<const row_matrix_type> (A_lf_r);
   }
-  RCP<const LocalFilter<crs_matrix_type> > A_lf_c =
-    rcp_dynamic_cast<const LocalFilter<crs_matrix_type> > (A);
-  if (! A_lf_c.is_null ()) {
-    return rcp_implicit_cast<const row_matrix_type> (A_lf_c);
+  else {
+    // A_'s communicator has more than one process, its row Map and
+    // its column Map differ, and A_ is not a LocalFilter.  Thus, we
+    // have to wrap it in a LocalFilter.
+    return rcp (new LocalFilter<row_matrix_type> (A));
   }
-
-  // A_'s communicator has more than one process, its row Map and
-  // its column Map differ, and A_ is not a LocalFilter.  Thus, we
-  // have to wrap it in a LocalFilter.
-  return rcp (new LocalFilter<row_matrix_type> (A));
 }
 
 
@@ -861,7 +855,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     Teuchos::Array<magnitude_type> norms (X.getNumVectors ());
     X.norm1 (norms ());
     bool good = true;
-    for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < X.getNumVectors (); ++j) {
+    for (size_t j = 0; j < X.getNumVectors (); ++j) {
       if (STM::isnaninf (norms[j])) {
         good = false;
         break;
@@ -938,7 +932,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
     Y.norm1 (norms ());
     bool good = true;
-    for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < Y.getNumVectors (); ++j) {
+    for (size_t j = 0; j < Y.getNumVectors (); ++j) {
       if (STM::isnaninf (norms[j])) {
         good = false;
         break;
@@ -1017,7 +1011,6 @@ std::string RILUK<MatrixType>::description () const
 } // namespace Ifpack2
 
 #define IFPACK2_RILUK_INSTANT(S,LO,GO,N)                            \
-  template class Ifpack2::RILUK< Tpetra::CrsMatrix<S, LO, GO, N> >; \
   template class Ifpack2::RILUK< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif

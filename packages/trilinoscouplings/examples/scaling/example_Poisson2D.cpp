@@ -1209,7 +1209,7 @@ int main(int argc, char *argv[]) {
    delete [] element_attributes;
    delete [] element_types;
    delete [] elmt_node_linkage;
-  // delete [] ownedGIDs;
+   delete [] ownedGIDs;
    delete [] elements;
    delete [] globalNodeIds;
    delete [] nodeIsOwned;

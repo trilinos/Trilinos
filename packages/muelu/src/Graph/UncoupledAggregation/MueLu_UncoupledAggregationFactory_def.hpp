@@ -107,7 +107,8 @@ namespace MueLu {
 
     // special variables necessary for OnePtAggregationAlgorithm
     validParamList->set< std::string >           ("OnePt aggregate map name",         "", "Name of input map for single node aggregates. (default='')");
-    validParamList->set< RCP<const FactoryBase> >("OnePt aggregate map factory",    null, "Generating factory of (DOF) map for single node aggregates.");
+    validParamList->set< std::string >           ("OnePt aggregate map factory",      "", "Generating factory of (DOF) map for single node aggregates.");
+    //validParamList->set< RCP<const FactoryBase> >("OnePt aggregate map factory",    NoFactory::getRCP(), "Generating factory of (DOF) map for single node aggregates.");
 
     return validParamList;
   }
@@ -122,8 +123,13 @@ namespace MueLu {
     // request special data necessary for OnePtAggregationAlgorithm
     std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name");
     if (mapOnePtName.length() > 0) {
-      RCP<const FactoryBase> mapOnePtFact = GetFactory("OnePt aggregate map factory");
-      currentLevel.DeclareInput(mapOnePtName, mapOnePtFact.get());
+      std::string mapOnePtFactName = pL.get<std::string>("OnePt aggregate map factory");
+      if (mapOnePtFactName == "" || mapOnePtFactName == "NoFactory") {
+        currentLevel.DeclareInput(mapOnePtName, NoFactory::get());
+      } else {
+        RCP<const FactoryBase> mapOnePtFact = GetFactory(mapOnePtFactName);
+        currentLevel.DeclareInput(mapOnePtName, mapOnePtFact.get());
+      }
     }
   }
 
@@ -156,10 +162,15 @@ namespace MueLu {
       //if (pL.get<bool>("UseEmergencyAggregationAlgorithm")         == true)   algos_.push_back(rcp(new EmergencyAggregationAlgorithm         (graphFact)));
 
     std::string mapOnePtName = pL.get<std::string>("OnePt aggregate map name");
-    RCP<const Map> OnePtMap;
+    RCP<Map> OnePtMap = Teuchos::null;
     if (mapOnePtName.length()) {
-      RCP<const FactoryBase> mapOnePtFact = GetFactory("OnePt aggregate map factory");
-      OnePtMap = currentLevel.Get<RCP<const Map> >(mapOnePtName, mapOnePtFact.get());
+      std::string mapOnePtFactName = pL.get<std::string>("OnePt aggregate map factory");
+      if (mapOnePtFactName == "" || mapOnePtFactName == "NoFactory") {
+        OnePtMap = currentLevel.Get<RCP<Map> >(mapOnePtName, NoFactory::get());
+      } else {
+        RCP<const FactoryBase> mapOnePtFact = GetFactory(mapOnePtFactName);
+        OnePtMap = currentLevel.Get<RCP<Map> >(mapOnePtName, mapOnePtFact.get());
+      }
     }
 
     RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
@@ -196,7 +207,7 @@ namespace MueLu {
     const RCP<const Teuchos::Comm<int> > comm = graph->GetComm();
     GO numGlobalRows = 0;
     if (IsPrint(Statistics1))
-      sumAll(comm, as<GO>(numRows), numGlobalRows);
+      MueLu_sumAll(comm, as<GO>(numRows), numGlobalRows);
 
     LO numNonAggregatedNodes = numRows;
     GO numGlobalAggregatedPrev = 0, numGlobalAggsPrev = 0;
@@ -211,8 +222,8 @@ namespace MueLu {
       if (IsPrint(Statistics1)) {
         GO numLocalAggregated = numRows - numNonAggregatedNodes, numGlobalAggregated = 0;
         GO numLocalAggs       = aggregates->GetNumAggregates(),  numGlobalAggs = 0;
-        sumAll(comm, numLocalAggregated, numGlobalAggregated);
-        sumAll(comm, numLocalAggs,       numGlobalAggs);
+        MueLu_sumAll(comm, numLocalAggregated, numGlobalAggregated);
+        MueLu_sumAll(comm, numLocalAggs,       numGlobalAggs);
 
         double aggPercent = 100*as<double>(numGlobalAggregated)/as<double>(numGlobalRows);
         if (aggPercent > 99.99 && aggPercent < 100.00) {

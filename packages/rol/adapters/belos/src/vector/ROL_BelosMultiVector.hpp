@@ -60,7 +60,7 @@
 namespace Belos {
 
     template<class Scalar>
-    class MultiVecTraits<Scalar, ROL::MultiVector<Scalar>> {
+    class MultiVecTraits<Scalar, ROL::MultiVector<Scalar> > {
 
         typedef ROL::MultiVector<Scalar>  MV;      // ROL::MultiVector object
         typedef Teuchos::RCP<MV>          PMV;     // Pointer to ROL::MultiVector object
@@ -239,7 +239,7 @@ namespace Belos {
                                NormType type=TwoNorm) {
 
                 TEUCHOS_TEST_FOR_EXCEPTION( (type !=TwoNorm) , std::invalid_argument,
-                    "Belos::MultiVecTraits<Scalar,ROL::MultiVector<Scalar>>::MvNorm()\n"
+                    "Belos::MultiVecTraits<Scalar,ROL::MultiVector<Scalar> >::MvNorm()\n"
                     "ROL::MultiVector supports only Euclidean norm"); 
 
                 mv.norms(normvec);
@@ -275,7 +275,7 @@ namespace Belos {
             */           
             static void MvRandom(MV& mv) {
                 TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-                    "Belos::MultiVecTraits<Scalar,ROL::MultiVector<Scalar>>::Random()\n"
+                    "Belos::MultiVecTraits<Scalar,ROL::MultiVector<Scalar> >::Random()\n"
                     "Random initialization not implemented for ROL::MultiVector");
             }
 
@@ -283,14 +283,14 @@ namespace Belos {
             static void MvInit(MV& mv, 
                                const Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero()) {
                 TEUCHOS_TEST_FOR_EXCEPTION(alpha != 0,std::invalid_argument,
-                    "Belos::MultiVecTraits<Scalar,ROL::MultiVector<Scalar>>::MvInit()\n");
+                    "Belos::MultiVecTraits<Scalar,ROL::MultiVector<Scalar> >::MvInit()\n");
                 mv.zero();      
             }
 
 
             static void MvPrint(const MV& mv, std::ostream& os) {
                 TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-                    "Belos::MultiVecTraits<Scalar,ROL::MultiVector<Scalar>>::MvPrint()\n"
+                    "Belos::MultiVecTraits<Scalar,ROL::MultiVector<Scalar> >::MvPrint()\n"
                     "Print not implemented for ROL::MultiVector");
             }
 

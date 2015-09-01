@@ -44,10 +44,8 @@
 #define IFPACK2_DIAGONALFILTER_DECL_HPP
 
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix.hpp"
-#include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_ScalarTraits.hpp"
+#include <type_traits>
 
 namespace Ifpack2 {
 
@@ -58,14 +56,14 @@ Ifpack2_DiagonalFilter modifies the elements on the diagonal.
 
 A typical use is as follows:
 \code
-Teuchos::RCP<Tpetra::RowMatrix> A;
+Teuchos::RCP<Tpetra::RowMatrix<> > A;
 // creates a matrix B such that
 // B(i,i) = AbsoluteThreshold * sgn(B(i,i)) +
 //          RelativeThreshold * B(i,i)
 double AbsoluteThreshold = 1e-3;
 double RelativeThreshold = 1.01;
 
-Ifpack2_DiagonalFilter<Tpetra::RowMatrix> B(A, AbsoluteThreshold, RelativeThreshold);
+Ifpack2_DiagonalFilter<Tpetra::RowMatrix<> > B(A, AbsoluteThreshold, RelativeThreshold);
 \endcode
 
 Note: This operation only really makes sense if the Thresholds are not complex.
@@ -88,6 +86,8 @@ public:
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
   typedef typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
+
+  static_assert(std::is_same<MatrixType, Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::value, "Ifpack2::DiagonalFilter: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
   //! \name Constructor & destructor methods
   //@{

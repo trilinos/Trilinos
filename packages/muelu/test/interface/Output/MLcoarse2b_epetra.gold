@@ -6,7 +6,7 @@ ML output = 10   [unused]
 MueLu ParameterList:
 max levels = 10   [unused]
 cycle type = V   [unused]
-sa: damping factor = 1.333   [unused]
+sa: damping factor = 1.333000   [unused]
 sa: eigenvalue estimate num iterations = 10   [unused]
 smoother: type = RELAXATION   [unused]
 smoother: pre or post = both   [unused]
@@ -55,6 +55,7 @@ Level 1
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
@@ -114,6 +115,7 @@ Level 2
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
@@ -173,6 +175,7 @@ Level 3
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
@@ -232,6 +235,7 @@ Level 4
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
@@ -291,6 +295,7 @@ Level 5
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
@@ -326,13 +331,13 @@ Level 5
 Number of levels    = 6
 Operator complexity = 1.50
 
-matrix rows    nnz  nnz/row procs
-A 0    9999  29995     3.00  1
-A 1    3333   9997     3.00  1
-A 2    1111   3331     3.00  1
-A 3     371   1111     2.99  1
-A 4     124    370     2.98  1
-A 5      42    124     2.95  1
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               1
+  1    3333   9997     3.00     3.00      1
+  2    1111   3331     3.00     3.00      1
+  3     371   1111     2.99     2.99      1
+  4     124    370     2.98     2.99      1
+  5      42    124     2.95     2.95      1
 
 Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 

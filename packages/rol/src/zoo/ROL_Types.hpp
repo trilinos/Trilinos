@@ -84,6 +84,9 @@ namespace ROL {
     Real gnorm;
     Real cnorm;
     Real snorm;
+    Real aggregateGradientNorm;
+    Real aggregateModelError;
+    bool flag;
     Teuchos::RCP<Vector<Real> > iterateVec;
     Teuchos::RCP<Vector<Real> > lagmultVec;
     Teuchos::RCP<Vector<Real> > minIterVec;
@@ -91,6 +94,9 @@ namespace ROL {
       gnorm(std::numeric_limits<Real>::max()),
       cnorm(std::numeric_limits<Real>::max()),
       snorm(std::numeric_limits<Real>::max()), 
+      aggregateGradientNorm(std::numeric_limits<Real>::max()),
+      aggregateModelError(std::numeric_limits<Real>::max()),
+      flag(false),
       iterateVec(Teuchos::null), lagmultVec(Teuchos::null), minIterVec(Teuchos::null) {}
   };  
   
@@ -100,8 +106,10 @@ namespace ROL {
   struct StepState {
     Teuchos::RCP<Vector<Real> > gradientVec;
     Teuchos::RCP<Vector<Real> > descentVec;
+    Teuchos::RCP<Vector<Real> > constraintVec;
     Real searchSize; // line search parameter (alpha) or trust-region radius (delta)
-    StepState(void) : gradientVec(Teuchos::null), descentVec(Teuchos::null), searchSize(0) {}
+    StepState(void) : gradientVec(Teuchos::null), descentVec(Teuchos::null), constraintVec(Teuchos::null),
+                      searchSize(0) {}
   };  
       
   /** \brief  Platform-dependent machine epsilon. 
@@ -419,14 +427,15 @@ namespace ROL {
   /** \enum   ROL::ENonlinearCG
       \brief  Enumeration of nonlinear CG algorithms.
 
-      \arg    HESTENES_STIEFEL   describe
-      \arg    FLETCHER_REEVES    describe
-      \arg    DANIEL             describe 
-      \arg    POLAK_RIBIERE      describe
-      \arg    FLETCHER_CONJDESC  describe
-      \arg    LIU_STOREY         describe
-      \arg    DAI_YUAN           describe
-      \arg    HAGAR_ZHANG        describe
+      \arg    HESTENES_STIEFEL   \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k } \f$
+      \arg    FLETCHER_REEVES    \f$ \frac{\|g_{k+1}\|^2}{\|g_k\|^2} \f$
+      \arg    DANIEL             \f$ \frac{g_{k+1}^\top \nabla^2 f(x_k) d_k}{d_k^\top \nabla^2 f(x_k) d_k} \f$
+      \arg    POLAK_RIBIERE      \f$ \frac{g_{k+1}^\top y_k}{\|g_k\|^2} \f$
+      \arg    FLETCHER_CONJDESC  \f$ -\frac{\|g_{k+1}\|^2}{d_k^\top g_k} \f$
+      \arg    LIU_STOREY         \f$ -\frac{g_k^\top y_{k-1} }{d_{k-1}^\top g_{k-1} \f$
+      \arg    DAI_YUAN           \f$ \frac{\|g_{k+1}\|^2}{d_k^\top y_k} \f$
+      \arg    HAGAR_ZHANG        \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - 2 \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$
+      \arg    OREN_LUENBERGER    \f$ \frac{g_{k+1}^\top y_k}{d_k^\top y_k} - \frac{\|y_k\|^2}{d_k^\top y_k} \frac{g_{k+1}^\top d_k}{d_k^\top y_k} \f$ 
    */
   enum ENonlinearCG{
     NONLINEARCG_HESTENES_STIEFEL = 0,
@@ -437,6 +446,7 @@ namespace ROL {
     NONLINEARCG_LIU_STOREY,
     NONLINEARCG_DAI_YUAN,
     NONLINEARCG_HAGAR_ZHANG,
+    NONLINEARCG_OREN_LUENBERGER,
     NONLINEARCG_LAST
   };
 
@@ -451,6 +461,7 @@ namespace ROL {
       case NONLINEARCG_LIU_STOREY:            retString = "Liu-Storey";                  break;
       case NONLINEARCG_DAI_YUAN:              retString = "Dai-Yuan";                    break;
       case NONLINEARCG_HAGAR_ZHANG:           retString = "Hagar-Zhang";                 break;
+      case NONLINEARCG_OREN_LUENBERGER:       retString = "Oren-Luenberger";             break;
       case NONLINEARCG_LAST:                  retString = "Last Type (Dummy)";           break;
       default:                                retString = "INVALID ENonlinearCG";
     }
@@ -470,7 +481,8 @@ namespace ROL {
             (s == NONLINEARCG_FLETCHER_CONJDESC) ||
             (s == NONLINEARCG_LIU_STOREY)        ||
             (s == NONLINEARCG_DAI_YUAN)          ||
-            (s == NONLINEARCG_HAGAR_ZHANG)
+            (s == NONLINEARCG_HAGAR_ZHANG)       ||
+            (s == NONLINEARCG_OREN_LUENBERGER)      
           );
   }
 
@@ -1001,50 +1013,77 @@ namespace ROL {
 } // namespace ROL
 
 
-/*! \mainpage ROL Documentation (Development Version)
+/*! \mainpage %ROL Documentation (Development Version)
  
   \image html rol.png "Rapid Optimization Library" width=1in
   \image latex rol.pdf "Rapid Optimization Library" width=1in
 
   \section intro_sec Introduction
 
-  %ROL, the Rapid Optimization Library, is a Trilinos package for matrix-free
+  Rapid Optimization Library (%ROL) is a C++ package for large-scale
   optimization.
+  It is used for the solution of optimal design, optimal control and
+  inverse problems in large-scale engineering applications.
+  Other uses include mesh optimization and image processing. 
+
  
   \section overview_sec Overview
 
-  Current release of %ROL includes the following features:
-  \li Unconstrained optimization algorithms.
+  %ROL aims to combine flexibility, efficiency and robustness.  Key features:
+
+  \li  Matrix-free application programming interfaces (APIs) ---enable direct
+       use of application data structures and memory spaces, linear solvers,
+       nonlinear solvers and preconditioners.
+  \li  State-of-the-art algorithms for unconstrained optimization,
+       constrained optimization and optimization under uncertainty ---enable
+       inexact and adaptive function evaluations and iterative linear
+       system solves.
+  \li  Special APIs for simulation-based optimization ---enable a
+       streamlined embedding into engineering applications, rigorous
+       implementation verification and efficient use.
+  \li  Modular interfaces throughout the optimization process ---enable custom
+       and user-defined algorithms, stopping criteria, hierarchies of
+       algorithms, and selective use of a variety of tools and components.
+
+  For a detailed description of user interfaces and algorithms, see the
+  presentations ROL-Trilinos-xx.x.pptx (or .pdf) in the doc/presentations
+  directory.
+
+  To start using %ROL, including all its advanced algorithms and features,
+  jump to the <a href="modules.html">Modules</a> page.
+
+  For a basic example, see below.
 
   \section quickstart_sec Quick Start
 
-  The Rosenbrock example (rol/example/rosenbrock/example_01.cpp) demonstrates the use of %ROL.
-  It amounts to sixsteps:
+  The Rosenbrock example (rol/example/rosenbrock/example_01.cpp) demonstrates
+  the basic use of %ROL.
+  It amounts to six steps:
 
   \subsection vector_qs_sec Step 1: Implement linear algebra / vector interface.
   --- or try one of the provided implementations, such as ROL::StdVector in rol/vector.
   
-  \code
+  ~~~{.hpp}
       ROL::Vector
-  \endcode
+  ~~~
 
   \subsection objective_qs_sec Step 2: Implement objective function interface.
-  --- or try one of the provided functions, such as ROL::Objective_Rosenbrock in rol/zoo.
+  --- or try one of the provided functions, such as @b ROL::ZOO::Objective_Rosenbrock in rol/zoo.
 
   \code
       ROL::Objective
   \endcode
 
   \subsection step_qs_sec Step 3: Choose optimization step.
-  ---  with ParameterList settings in the variable parlist.
+  ---  with @b Teuchos::ParameterList settings in the variable @b parlist.
 
   \code
       ROL::LineSearchStep<RealT> step(parlist);
   \endcode
 
   \subsection status_qs_sec Step 4: Set status test.
-  ---  with gradient tolerance \textt{gtol}, step tolerance \texttt{stol} and the maximum
-  number of iterations \texttt{maxit}.
+  ---  with gradient tolerance, step tolerance, and the maximum
+  number of iterations, respectively.
 
   \code
       ROL::StatusTest<RealT> status(gtol, stol, maxit);
@@ -1058,17 +1097,11 @@ namespace ROL {
   \endcode
 
   \subsection run_qs_sec Step 6: Run algorithm.
-  ---  starting from the initial iterate \textt{x}, applied to objective function \texttt{obj}.
+  ---  starting from the initial iterate @b x, applied to objective function @b obj.
 
   \code
       algo.run(x, obj);
   \endcode
-
-  \subsection done_qs_sec Done!
-
-  \section devplans_sec Development Plans
-
-  Constrained optimization, optimization under uncertainty, etc.
 */
 
 /** @defgroup interface_group User Interface
@@ -1087,7 +1120,7 @@ namespace ROL {
     ROL is used for the numerical solution of smooth optimization problems
     \f[
       \begin{array}{rl}
-        \min_{x} & f(x) \\
+        \displaystyle \min_{x} & f(x) \\
         \mbox{subject to} & c(x) = 0 \,, \\
                           & a \le x \le b \,,
       \end{array}
@@ -1113,7 +1146,7 @@ namespace ROL {
       \li @b Type-U. No constraints (where \f$c(x) = 0\f$ and \f$a \le x \le b\f$ are absent):
           \f[
             \begin{array}{rl}
-              \min_{x} & f(x)
+              \displaystyle \min_{x} & f(x)
             \end{array}
           \f]
           These problems are known as unconstrained optimization problems.
@@ -1121,7 +1154,7 @@ namespace ROL {
       \li @b Type-B. Bound constraints (where \f$c(x) = 0\f$ is absent):
           \f[
             \begin{array}{rl}
-              \min_{x} & f(x) \\
+              \displaystyle \min_{x} & f(x) \\
               \mbox{subject to} & a \le x \le b \,.
             \end{array}
           \f]
@@ -1132,7 +1165,7 @@ namespace ROL {
       \li @b Type-E. Equality constraints, generally nonlinear and nonconvex (where \f$a \le x \le b\f$ is absent):
           \f[
             \begin{array}{rl}
-              \min_{x} & f(x) \\
+              \displaystyle \min_{x} & f(x) \\
               \mbox{subject to} & c(x) = 0 \,.
             \end{array}
           \f]
@@ -1141,7 +1174,7 @@ namespace ROL {
       \li @b Type-EB. Equality and bound constraints:
           \f[
             \begin{array}{rl}
-              \min_{x} & f(x) \\
+              \displaystyle \min_{x} & f(x) \\
               \mbox{subject to} & c(x) = 0 \\
                                 & a \le x \le b \,.
             \end{array}
@@ -1150,7 +1183,7 @@ namespace ROL {
           For example, we can consider the reformulation:
           \f[
             \begin{array}{rlcccrl}
-              \min_{x} & f(x) &&&& \min_{x,s} & f(x) \\
+              \displaystyle \min_{x} & f(x) &&&& \displaystyle \min_{x,s} & f(x) \\
               \mbox{subject to} & c(x) \le 0 & & \quad \longleftrightarrow \quad & & \mbox{subject to} & c(x) + s = 0 \,, \\
               &&&&&& s \ge 0 \,.
             \end{array}

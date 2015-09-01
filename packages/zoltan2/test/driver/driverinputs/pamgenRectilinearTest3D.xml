@@ -1,0 +1,72 @@
+<!-- 
+    INPUT TYPES: coordinates,
+                 (x,t,e)petra_crs_matrix,
+                 (x,t,e)petra_crs_graph,
+                 (x,t,e)petra_vector,
+                 (x,t,e)petra_multivector
+
+    INPUT ADAPTERS: BasicIdentifier,
+                    XpetraMultiVector,
+                    XpetraCrsGraph,
+                    XpetraCrsMatrix
+-->
+
+<ParameterList name="pamgenTest">
+    
+        <ParameterList name="InputParameters">
+            <Parameter name="inputPath" type="string" value="./driverinputs"/>
+            <Parameter name="inputFile" type="string" value="Rectilinear"/>
+            <Parameter name="fileType" type="string" value="Pamgen"/>
+            <Parameter name="dimension" type="int" value="3"/>
+        </ParameterList>
+    
+    <ParameterList name="problem 1">
+        <Parameter name="Name" type="string" value="readPamgenMesh"/>
+        <Parameter name="kind" type="string" value="Partitioning"/>
+ 
+        <ParameterList name="InputAdapterParameters">
+            <Parameter name="inputType" type="string" value="tpetra_crs_graph"/> 
+            <Parameter name="inputAdapter" type="string" value="XpetraCrsGraph"/>
+            <Parameter name="stride" type="int" value="3"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+            <Parameter name="algorithm" type="string" value="parmetis"/>
+            <Parameter name="compute_metrics" type="string" value="true"/>
+        </ParameterList>i
+ 
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
+            </ParameterList>
+        </ParameterList>
+
+    </ParameterList>
+
+    <!--<ParameterList name="problem 2">
+        <Parameter name="Name" type="string" value="testPamgenAdapter"/>
+        <Parameter name="kind" type="string" value="Partitioning"/>
+ 
+        <ParameterList name="InputAdapterParameters">
+            <Parameter name="inputType" type="string" value="na"/> 
+            <Parameter name="inputAdapter" type="string" value="PamgenMesh"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+            <Parameter name="algorithm" type="string" value="rcb"/>
+            <Parameter name="compute_metrics" type="string" value="true"/>
+        </ParameterList>i
+ 
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
+            </ParameterList>
+        </ParameterList>
+
+    </ParameterList>-->
+
+</ParameterList>

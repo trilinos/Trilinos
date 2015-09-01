@@ -104,8 +104,6 @@ ADD_SUBDIRECTORY(src)
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
 
-TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
-
 IF (Belos_ENABLE_Epetra)
   ADD_SUBDIRECTORY(epetra)
 ENDIF()
@@ -128,24 +126,10 @@ TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 # Files and directories to exclude from the release tarball.
 #
 TRIBITS_EXCLUDE_FILES(
-  src/BelosAkxFactory.hpp
-  src/BelosAkx.hpp
-  src/BelosCaGmres.hpp
-  src/BelosGmresBaseFactory.hpp
-  src/BelosGmresBase.hpp
-  src/BelosGmresBaseIteration.hpp
-  src/BelosGmresInnerSolver.hpp
-  src/BelosGmresSolMgr.hpp
   src/BelosInnerSolveResult.hpp
   src/BelosInnerSolver.hpp
-  src/BelosMonomialOpAkx.hpp
-  src/BelosNewtonBasis.hpp
-  src/BelosNewtonOpAkx.hpp
-  src/BelosOpAkx.hpp
   src/BelosProjectedLeastSquaresSolver.hpp
-  src/BelosStandardGmres.hpp
   src/BelosInnerSolveResult.cpp
-  tpetra/test/Gmres
   test/ProjectedLeastSquaresSolver
 )
 

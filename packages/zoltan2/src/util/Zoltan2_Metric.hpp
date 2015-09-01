@@ -478,11 +478,8 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
     }
     Z2_FORWARD_EXCEPTIONS
   
-//KDDKDD TODO  This code assumes the solution has the part ordered the
-//KDDKDD TODO  same way as the user input.  That assumption is not
-//KDDKDD TODO  currently true, although we plan to make it true.
-//KDDKDD TODO  As a results, currently the weight metrics may be wrong.
-//KDDKDD TODO  See bug 5891.  April 5, 2013
+    // This code assumes the solution has the part ordered the
+    // same way as the user input.  (Bug 5891 is resolved.)
     if (vwgtDim > 1){
       wgt += nparts;         // individual weights
       for (int vdim = 0; vdim < vwgtDim; vdim++){
@@ -890,7 +887,7 @@ template <typename Adapter>
 
   const part_t *parts = solution->getPartListView();
   env->localInputAssertion(__FILE__, __LINE__, "parts not set", 
-    parts, BASIC_ASSERTION);
+    ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
   ArrayView<const part_t> partArray(parts, numLocalObjects);
 
   // Weights, if any, for each object.

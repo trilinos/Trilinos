@@ -1928,7 +1928,6 @@ int nssi_create_request(
     int retries=0;
 
     trios_declare_timer(total_time);
-    trios_declare_timer(call_time);
 
     unsigned long len=0;
 
@@ -1968,9 +1967,9 @@ int nssi_create_request(
     request->short_result_hdl         = &request->short_result;
     request->result                   = result;                /* where to put the result */
 
-    log_debug(rpc_debug_level, "exit");
-
 cleanup:
+    trios_stop_timer("nssi_create_request - total", total_time);
+    log_debug(rpc_debug_level, "exit");
 
     return rc;
 }

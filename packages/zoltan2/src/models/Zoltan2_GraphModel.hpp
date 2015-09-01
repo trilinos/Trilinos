@@ -51,6 +51,7 @@
 #define _ZOLTAN2_GRAPHMODEL_HPP_
 
 #include <Zoltan2_Model.hpp>
+#include <Zoltan2_ModelHelpers.hpp>
 #include <Zoltan2_InputTraits.hpp>
 #include <Zoltan2_MatrixAdapter.hpp>
 #include <Zoltan2_GraphAdapter.hpp>
@@ -456,31 +457,35 @@ public:
    *  \todo document the model flags that might be set
    */
 
-  GraphModel(const MatrixAdapter<user_t,userCoord_t> *ia,
+  GraphModel(const RCP<const MatrixAdapter<user_t,userCoord_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags);
 
-  GraphModel(const GraphAdapter<user_t,userCoord_t> *ia,
+  GraphModel(const RCP<const GraphAdapter<user_t,userCoord_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags);
 
-  GraphModel(const MeshAdapter<user_t> *ia,
+  GraphModel(const RCP<const MeshAdapter<user_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &modelflags);
 
-  GraphModel(const VectorAdapter<userCoord_t> *ia,
+  GraphModel(const RCP<const VectorAdapter<userCoord_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
   {
     throw std::runtime_error("cannot build GraphModel from VectorAdapter");
   }
 
-  GraphModel(const IdentifierAdapter<user_t> *ia,
+  GraphModel(const RCP<const IdentifierAdapter<user_t> > &ia,
     const RCP<const Environment> &env, const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
   {
     throw std::runtime_error("cannot build GraphModel from IdentifierAdapter");
   }
+
+  /*! \brief Return the communicator used by the model
+   */
+  const RCP<const Comm<int> > getComm() { return comm_; }
 
   /*! \brief Returns the number vertices on this process.
    */
@@ -639,12 +644,7 @@ public:
   size_t getGlobalNumObjects() const { return numGlobalVertices_; }
 
 private:
-  void get2ndAdjsViewFromAdjs(const Adapter *ia,
-			      Zoltan2::MeshEntityType sourcetarget,
-			      Zoltan2::MeshEntityType through,
-			      const lno_t *&offsets,
-			      const zgid_t *&adjacencyIds);
-  void shared_constructor(const Adapter *ia, modelFlag_t &modelFlags);
+  void shared_constructor(const RCP<const Adapter>&ia, modelFlag_t &modelFlags);
 
   template <typename AdapterWithCoords>
   void shared_GetVertexCoords(const AdapterWithCoords *ia);
@@ -701,7 +701,7 @@ private:
 ////////////////////////////////////////////////////////////////
 template <typename Adapter>
 GraphModel<Adapter>::GraphModel(
-  const MatrixAdapter<user_t,userCoord_t> *ia,
+  const RCP<const MatrixAdapter<user_t,userCoord_t> > &ia,
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &comm,
   modelFlag_t &modelFlags):
@@ -785,7 +785,7 @@ GraphModel<Adapter>::GraphModel(
 ////////////////////////////////////////////////////////////////
 template <typename Adapter>
 GraphModel<Adapter>::GraphModel(
-  const GraphAdapter<user_t,userCoord_t> *ia,
+  const RCP<const GraphAdapter<user_t,userCoord_t> > &ia,
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &comm,
   modelFlag_t &modelFlags):
@@ -871,7 +871,7 @@ GraphModel<Adapter>::GraphModel(
 ////////////////////////////////////////////////////////////////
 template <typename Adapter>
 GraphModel<Adapter>::GraphModel(
-  const MeshAdapter<user_t> *ia,
+  const RCP<const MeshAdapter<user_t> > &ia,
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &comm,
   modelFlag_t &modelFlags):
@@ -932,7 +932,8 @@ GraphModel<Adapter>::GraphModel(
   if (!ia->avail2ndAdjs(primaryEType, secondAdjEType)) {
 
     try {
-      get2ndAdjsViewFromAdjs(ia,primaryEType,secondAdjEType,offsets,nborIds);
+      get2ndAdjsViewFromAdjs(ia, comm_, primaryEType, secondAdjEType, offsets,
+			     nborIds);
     }
     Z2_FORWARD_EXCEPTIONS;
     /*throw std::logic_error("MeshAdapter must provide 2nd adjacencies for "
@@ -975,184 +976,17 @@ GraphModel<Adapter>::GraphModel(
   shared_constructor(ia, modelFlags);
 
   typedef MeshAdapter<user_t> adapterWithCoords_t;
-  shared_GetVertexCoords<adapterWithCoords_t>(ia);
+  shared_GetVertexCoords<adapterWithCoords_t>(&(*ia));
 
   env_->timerStop(MACRO_TIMERS, "GraphModel constructed from MeshAdapter");
   print();
 }
 
-template <typename Adapter>
-void GraphModel<Adapter>::get2ndAdjsViewFromAdjs(
-  const Adapter *ia,
-  Zoltan2::MeshEntityType sourcetarget, Zoltan2::MeshEntityType through,
-  const lno_t *&offsets, const zgid_t *&adjacencyIds)
-{
-  typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
-  typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>   sparse_matrix_type;
-  typedef Tpetra::Map<lno_t, gno_t, node_t>                 map_type;
-  //typedef Tpetra::global_size_t GST;
-  //const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
-
-  /* Find the adjacency for a nodal based decomposition */
-  size_t nadj = 0;
-  if (ia->availAdjs(sourcetarget, through)) {
-    using Tpetra::DefaultPlatform;
-    using Teuchos::Array;
-    using Teuchos::as;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-
-    // Get the default communicator and Kokkos Node instance
-    // TODO:  Default communicator is not correct here; need to get
-    // TODO:  communicator from the problem
-    RCP<const Comm<int> > comm =
-      DefaultPlatform::getDefaultPlatform ().getComm ();
-
-    // Get node-element connectivity
-
-    offsets=NULL;
-    adjacencyIds=NULL;
-    ia->getAdjsView(sourcetarget, through, offsets, adjacencyIds);
-
-    zgid_t const *Ids=NULL;
-    ia->getIDsViewOf(sourcetarget, Ids);
-
-    zgid_t const *throughIds=NULL;
-    ia->getIDsViewOf(through, throughIds);
-
-    size_t LocalNumIDs = ia->getLocalNumOf(sourcetarget);
-
-    /***********************************************************************/
-    /************************* BUILD MAPS FOR ADJS *************************/
-    /***********************************************************************/
-
-    Array<gno_t> sourcetargetGIDs;
-    RCP<const map_type> sourcetargetMapG;
-    RCP<const map_type> throughMapG;
-
-    // count owned nodes
-    size_t LocalNumOfThrough = ia->getLocalNumOf(through);
-
-    // Build a list of the global sourcetarget ids...
-    sourcetargetGIDs.resize (LocalNumIDs);
-    gno_t min[2];
-    min[0] = as<gno_t> (Ids[0]);
-    for (size_t i = 0; i < LocalNumIDs; ++i) {
-      sourcetargetGIDs[i] = as<gno_t> (Ids[i]);
-
-      if (sourcetargetGIDs[i] < min[0]) {
-	min[0] = sourcetargetGIDs[i];
-      }
-    }
-
-    // min(throughIds[i])
-    min[1] = as<gno_t> (throughIds[0]);
-    for (size_t i = 0; i < LocalNumOfThrough; ++i) {
-      gno_t tmp = as<gno_t> (throughIds[i]);
-
-      if (tmp < min[1]) {
-	min[1] = tmp;
-      }
-    }
-
-    gno_t gmin[2];
-    Teuchos::reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_MIN, 2, min, gmin);
-
-    //Generate Map for sourcetarget.
-    sourcetargetMapG = rcp(new map_type(ia->getGlobalNumOf(sourcetarget),
-					sourcetargetGIDs(), gmin[0], comm));
-
-    //Generate Map for through.
-// TODO
-// TODO Could check for max through id as well, and if all through ids are
-// TODO in gmin to gmax, then default constructors works below.
-// TODO Otherwise, may need a constructor that is not one-to-one containing
-// TODO all through entities on processor, followed by call to createOneToOne
-// TODO
-
-    throughMapG = rcp (new map_type(ia->getGlobalNumOf(through),gmin[1],comm));
-
-    /***********************************************************************/
-    /************************* BUILD GRAPH FOR ADJS ************************/
-    /***********************************************************************/
-
-    RCP<sparse_matrix_type> adjsMatrix;
-
-    // Construct Tpetra::CrsGraph objects.
-    adjsMatrix = rcp (new sparse_matrix_type (sourcetargetMapG, 0));
-
-    nonzero_t justOne = 1;
-    ArrayView<nonzero_t> justOneAV = Teuchos::arrayView (&justOne, 1);
-
-    for (size_t localElement=0; localElement<LocalNumIDs; ++localElement){
-
-      //globalRow for Tpetra Graph
-      gno_t globalRowT = as<gno_t> (Ids[localElement]);
-
-// KDD can we insert all adjacencies at once instead of one at a time
-// (since they are contiguous in adjacencyIds)?
-// KDD maybe not until we get rid of zgid_t, as we need the conversion to gno_t.
-      for (lno_t j=offsets[localElement]; j<offsets[localElement+1]; ++j){
-	gno_t globalCol = as<gno_t> (adjacencyIds[j]);
-	//create ArrayView globalCol object for Tpetra
-	ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
-
-	//Update Tpetra adjs Graph
-	adjsMatrix->insertGlobalValues(globalRowT,globalColAV,justOneAV);
-      }// *** through loop ***
-    }// *** source loop ***
-
-    //Fill-complete adjs Graph
-    adjsMatrix->fillComplete (throughMapG, adjsMatrix->getRowMap());
-
-    // Form 2ndAdjs
-    RCP<sparse_matrix_type> secondAdjs =
-      rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
-    Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*adjsMatrix,
-                                     true,*secondAdjs);
-    Array<gno_t> Indices;
-    Array<nonzero_t> Values;
-
-    /* Allocate memory necessary for the adjacency */
-    lno_t *start = new lno_t [LocalNumIDs+1];
-    std::vector<gno_t> adj;
-
-    for (size_t localElement=0; localElement<LocalNumIDs; ++localElement){
-      start[localElement] = nadj;
-      const gno_t globalRow = Ids[localElement];
-      size_t NumEntries = secondAdjs->getNumEntriesInGlobalRow (globalRow);
-      Indices.resize (NumEntries);
-      Values.resize (NumEntries);
-      secondAdjs->getGlobalRowCopy (globalRow,Indices(),Values(),NumEntries);
-
-      for (size_t j = 0; j < NumEntries; ++j) {
-	if(globalRow != Indices[j]) {
-	  adj.push_back(Indices[j]);
-	  nadj++;;
-	}
-      }
-    }
-
-    Ids = NULL;
-    start[LocalNumIDs] = nadj;
-
-    zgid_t *adj_ = new zgid_t [nadj];
-
-    for (size_t i=0; i < nadj; i++) {
-      adj_[i] = adj[i];
-    }
-
-    offsets = start;
-    adjacencyIds = adj_;
-  }
-
-  //return nadj;
-}
 
 //////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
 void GraphModel<Adapter>::shared_constructor(
-  const Adapter *ia,
+  const RCP<const Adapter> &ia,
   modelFlag_t &modelFlags)
 {
   // Model creation flags

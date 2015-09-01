@@ -53,13 +53,12 @@ CXXEXTRA_DEFINES = -DNO_MPI -DNO_PAMGEN_SUPPORT -DNO_PARAVIEWIMESH_SUPPORT
 #endif
 
 #if defined(BuildParallelAwareExodus)
-IOPX=par_exo
+IOPX=exo_par
 LIB_IOPX=libIopx.a
 #endif
 
 LIBRARY = libIoss.a
-SUBDIRS = exodusII generated init transform heartbeat main utest ${IOPX}
-
+SUBDIRS = exodus exo_fpp ${IOPX} exo_fac generated init transform heartbeat main utest
 
 SRCS = \
 Ioss_Bar2.C \
@@ -139,7 +138,7 @@ tokenize.C
 
 OBJS = ${SRCS:.C=.o}
 
-all:: libIoex.a libIoss.a libIotr.a libIonit.a libIogn.a libIohb.a ${LIB_IOPX} SEACASIoss_config.h
+all:: libIoex.a libIofx.a libIofacx.a libIoss.a libIotr.a libIonit.a libIogn.a libIohb.a ${LIB_IOPX} SEACASIoss_config.h
 
 INCLIST = \
 	SEACASIoss_config.h \
@@ -201,7 +200,9 @@ install:: SEACASIoss_config.h
 
 
 NormalLibraryTarget(Ioss,$(OBJS))
-NamedTargetSubdirs(libIoex.a,  exodusII,  "making Ioss/exodusII",  PassDebugFlags ExtraOptions,libIoex.a)
+NamedTargetSubdirs(libIoex.a,  exodus,  "making Ioss/exodus",  PassDebugFlags ExtraOptions,libIoex.a)
+NamedTargetSubdirs(libIofx.a,  exo_fpp,  "making Ioss/exo_fpp",  PassDebugFlags ExtraOptions,libIofx.a)
+NamedTargetSubdirs(libIofacx.a,  exo_fac,  "making Ioss/exo_fac",  PassDebugFlags ExtraOptions,libIofacx.a)
 NamedTargetSubdirs(libIogn.a,  generated, "making Ioss/generated", PassDebugFlags ExtraOptions,libIogn.a)
 NamedTargetSubdirs(libIotr.a,  transform, "making Ioss/transform", PassDebugFlags ExtraOptions,libIotr.a)
 NamedTargetSubdirs(libIohb.a,  heartbeat, "making Ioss/heartbeat", PassDebugFlags ExtraOptions,libIohb.a)
@@ -210,6 +211,8 @@ NamedTargetSubdirs(all,        main,      "making Ioss/main",      PassDebugFlag
 
 AllTarget(libIoss.a)
 AllTarget(libIoex.a)
+AllTarget(libIofx.a)
+AllTarget(libIofacx.a)
 AllTarget(libIogn.a)
 AllTarget(libIotr.a)
 AllTarget(libIohb.a)
@@ -217,6 +220,8 @@ AllTarget(libIonit.a)
 
 InstallLibrary(Ioss,$(LIBDIR))
 InstallLibrary(Ioex,$(LIBDIR))
+InstallLibrary(Iofx,$(LIBDIR))
+InstallLibrary(Iofacx,$(LIBDIR))
 InstallLibrary(Iogn,$(LIBDIR))
 InstallLibrary(Iotr,$(LIBDIR))
 InstallLibrary(Iohb,$(LIBDIR))
@@ -224,7 +229,7 @@ InstallLibrary(Ionit,$(LIBDIR))
 
 #if defined(BuildParallelAwareExodus)
 AllTarget(libIopx.a)
-NamedTargetSubdirs(libIopx.a,  par_exo,   "making Ioss/par_exo",   PassDebugFlags ExtraOptions,libIopx.a)
+NamedTargetSubdirs(libIopx.a,  exo_par,   "making Ioss/exo_par",   PassDebugFlags ExtraOptions,libIopx.a)
 InstallLibrary(Iopx,$(LIBDIR))
 #endif
 

@@ -85,9 +85,9 @@ following classes:
 
 // NOX-Epetra includes
 #ifdef HAVE_NOX_EPETRA
+#include "Epetra_Vector.h"
 #include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
-#include "Epetra_NumPyVector.hpp"
 #endif
 
 // NOX-PETSc includes

@@ -92,7 +92,7 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
    if (pre_or_post == ML_PRESMOOTHER) {
      sprintf(str,"IFPACK_pre%d",nl);
      status = ML_Smoother_Set(&(ml->pre_smoother[nl]), (void*)Ifpack_Handle,
-			      fun, sweeps, 0.0, str);
+                              fun, sweeps, 0.0, str);
      ml->pre_smoother[nl].data_destroy = ML_Smoother_Clean_Ifpack;
 #ifdef ML_TIMING
      ml->pre_smoother[nl].build_time = GetClock() - t0;
@@ -102,7 +102,7 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
    else if (pre_or_post == ML_POSTSMOOTHER) {
      sprintf(str,"IFPACK_post%d",nl);
      status = ML_Smoother_Set(&(ml->post_smoother[nl]),
-			      (void*)Ifpack_Handle, fun, sweeps, 0.0, str);
+                              (void*)Ifpack_Handle, fun, sweeps, 0.0, str);
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Ifpack;
 #ifdef ML_TIMING
      ml->post_smoother[nl].build_time = GetClock() - t0;
@@ -112,11 +112,11 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
    else if (pre_or_post == ML_BOTH) {
      sprintf(str,"IFPACK_pre%d",nl);
      status = ML_Smoother_Set(&(ml->pre_smoother[nl]),
-			      (void*)Ifpack_Handle,
-			      fun, sweeps,  0.0, str);
+                              (void*)Ifpack_Handle,
+                              fun, sweeps,  0.0, str);
      sprintf(str,"IFPACK_post%d",nl);
      status = ML_Smoother_Set(&(ml->post_smoother[nl]),
-			      (void*)Ifpack_Handle, fun, sweeps, 0.0, str);
+                              (void*)Ifpack_Handle, fun, sweeps, 0.0, str);
      ml->post_smoother[nl].data_destroy = ML_Smoother_Clean_Ifpack;
 #ifdef ML_TIMING
      ml->pre_smoother[nl].build_time = GetClock() - t0;
@@ -195,7 +195,7 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
 
       if (hasRows == 1) {
         if(!use_crs){
-	// RowMatrix wrapper
+        // RowMatrix wrapper
           Ifpack_Matrix = new RowMatrix(Ke, 0, false, ifpackComm );
           assert (Ifpack_Matrix != 0);
         }
@@ -360,7 +360,7 @@ void ML_Ifpack_Destroy(void * data)
 
   // a bit nasty, but I don't like the extensive output any more...
   if (ML_Get_PrintLevel() > 10)
-    cout << *Prec;
+    std::cout << *Prec;
 
 # ifdef ML_MPI
   const Epetra_MpiComm *comm = dynamic_cast<const Epetra_MpiComm*>(&(Prec->Matrix().Comm()));

@@ -1,4 +1,5 @@
-
+#ifndef MUELU_CONFIG_HPP
+#define MUELU_CONFIG_HPP
 #cmakedefine F77_BLAS_MANGLE@F77_BLAS_MANGLE@
 
 /* Options */
@@ -16,6 +17,8 @@
 #cmakedefine HAVE_MUELU_EXPERIMENTAL
 
 #cmakedefine HAVE_MUELU_BOOST_FOR_REAL
+
+#cmakedefine HAVE_MUELU_KOKKOS_REFACTOR
 
 /* Optional Dependencies */
 
@@ -60,3 +63,16 @@
 #cmakedefine HAVE_MUELU_TIMER_SYNCHRONIZATION
 
 #cmakedefine HAVE_MUELU_MATLAB
+
+#cmakedefine HAVE_MUELU_AMGX
+
+#cmakedefine HAVE_MUELU_CGAL
+
+/*  
+ If deprecated warnings are on, and the compiler supports them, then
+ define MUELU_DEPRECATED to emit deprecated warnings.  Otherwise,
+ give it an empty definition.
+*/
+@MUELU_DEPRECATED_DECLARATIONS@
+
+#endif /* MUELU_CONFIG_HPP */

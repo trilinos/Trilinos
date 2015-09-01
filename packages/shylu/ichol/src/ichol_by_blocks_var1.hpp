@@ -15,8 +15,8 @@ namespace Example {
   template<typename ParallelForType,
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
-  int genScalarTask_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                  CrsTaskViewType &A) {
+  int genScalarTask_ICholUpperByBlocks(typename CrsTaskViewType::policy_type &policy,
+                                       CrsTaskViewType &A) {
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;
 
@@ -44,9 +44,9 @@ namespace Example {
   template<typename ParallelForType,
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
-  int genTrsmTasks_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                 CrsTaskViewType &A,
-                                 CrsTaskViewType &B) {
+  int genTrsmTasks_ICholUpperByBlocks(typename CrsTaskViewType::policy_type &policy,
+                                      CrsTaskViewType &A,
+                                      CrsTaskViewType &B) {
     typedef typename CrsTaskViewType::ordinal_type      ordinal_type;
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;
@@ -86,9 +86,9 @@ namespace Example {
   template<typename ParallelForType,
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
-  int genHerkTasks_UpperByBlocks(typename CrsTaskViewType::policy_type &policy,
-                                 CrsTaskViewType &A,
-                                 CrsTaskViewType &C) {
+  int genHerkTasks_ICholUpperByBlocks(typename CrsTaskViewType::policy_type &policy,
+                                      CrsTaskViewType &A,
+                                      CrsTaskViewType &C) {
     typedef typename CrsTaskViewType::ordinal_type      ordinal_type;
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;

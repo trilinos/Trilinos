@@ -6,8 +6,6 @@
 /// \brief CRS matrix view object creates 2D view to setup a computing region.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include <Kokkos_Core.hpp>
-
 #include "util.hpp"
 
 namespace Example { 
@@ -49,7 +47,7 @@ namespace Example {
     KOKKOS_INLINE_FUNCTION
     void fillRowViewArray(const bool flag = true) {
       if (flag) {
-        if (_rows.dimension_0() < _m)
+        if (static_cast<ordinal_type>(_rows.dimension_0()) < _m)
           _rows = row_view_type_array(_base->Label() + "::View::RowViewArray", _m);
         
         for (ordinal_type i=0;i<_m;++i)
@@ -87,6 +85,20 @@ namespace Example {
     KOKKOS_INLINE_FUNCTION
     ordinal_type  NumCols() const { return _n; }
 
+    KOKKOS_INLINE_FUNCTION
+    size_type countNumNonZeros() const { 
+      size_type nnz = 0;
+      const ordinal_type m = NumRows();
+
+      for (ordinal_type i=0;i<m;++i) {
+        row_view_type row;
+        row.setView(*this, i);
+        nnz += row.NumNonZeros();
+      }
+
+      return nnz; 
+    }
+
     CrsMatrixView()
       : _base(NULL),
         _offm(0),
@@ -110,7 +122,8 @@ namespace Example {
         _offm(0),
         _offn(0),
         _m(b->NumRows()),
-        _n(b->NumCols())
+        _n(b->NumCols()),
+        _rows()
     { } 
 
     CrsMatrixView(CrsMatBaseType *b,
@@ -120,7 +133,8 @@ namespace Example {
         _offm(offm),
         _offn(offn),
         _m(m),
-        _n(n) 
+        _n(n),
+        _rows()
     { } 
 
     ostream& showMe(ostream &os) const {
@@ -128,7 +142,8 @@ namespace Example {
       if (_base != NULL) 
         os << _base->Label() << "::View, "
            << " Offs ( " << setw(w) << _offm << ", " << setw(w) << _offn << " ); "
-           << " Dims ( " << setw(w) << _m    << ", " << setw(w) << _n    << " ); ";
+           << " Dims ( " << setw(w) << _m    << ", " << setw(w) << _n    << " ); "
+           << " NumNonZeros = " << countNumNonZeros() << ";";
       else 
         os << "-- Base object is null --";
       
@@ -138,60 +153,61 @@ namespace Example {
   };
 }
 
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
-namespace Impl {
-
-//  The Kokkos::View allocation will by default assign each allocated datum to zero.
-//  This is not the required initialization behavior when
-//  Example::CrsRowView and Example::CrsMatrixView
-//  are used within a Kokkos::View.
-//  Create a partial specialization of the Kokkos::Impl::AViewDefaultConstruct
-//  to replace the assignment initialization with placement new initialization.
-//
-//  This work-around is necessary until a TBD design refactorization of Kokkos::View.
-
-template< class ExecSpace , typename T >
-struct ViewDefaultConstruct< ExecSpace , Example::CrsRowView<T> , true >
-{
-  typedef Example::CrsRowView<T> type ;
-  type * const m_ptr ;
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  void operator()( const typename ExecSpace::size_type& i ) const
-    { new(m_ptr+i) type(); }
-
-  ViewDefaultConstruct( type * pointer , size_t capacity )
-    : m_ptr( pointer )
+  namespace Impl {
+    
+    //  The Kokkos::View allocation will by default assign each allocated datum to zero.
+    //  This is not the required initialization behavior when
+    //  Example::CrsRowView and Example::CrsMatrixView
+    //  are used within a Kokkos::View.
+    //  Create a partial specialization of the Kokkos::Impl::AViewDefaultConstruct
+    //  to replace the assignment initialization with placement new initialization.
+    //
+    //  This work-around is necessary until a TBD design refactorization of Kokkos::View.
+    
+    template< class ExecSpace , typename T >
+    struct ViewDefaultConstruct< ExecSpace , Example::CrsRowView<T> , true >
     {
-      Kokkos::RangePolicy< ExecSpace > range( 0 , capacity );
-      parallel_for( range , *this );
-      ExecSpace::fence();
-    }
-};
-
-template< class ExecSpace , typename T >
-struct ViewDefaultConstruct< ExecSpace , Example::CrsMatrixView<T> , true >
-{
-  typedef Example::CrsMatrixView<T> type ;
-  type * const m_ptr ;
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  void operator()( const typename ExecSpace::size_type& i ) const
-    { new(m_ptr+i) type(); }
-
-  ViewDefaultConstruct( type * pointer , size_t capacity )
-    : m_ptr( pointer )
+      typedef Example::CrsRowView<T> type ;
+      type * const m_ptr ;
+      
+      KOKKOS_FORCEINLINE_FUNCTION
+      void operator()( const typename ExecSpace::size_type& i ) const
+      { new(m_ptr+i) type(); }
+      
+      ViewDefaultConstruct( type * pointer , size_t capacity )
+        : m_ptr( pointer )
+      {
+        Kokkos::RangePolicy< ExecSpace > range( 0 , capacity );
+        parallel_for( range , *this );
+        ExecSpace::fence();
+      }
+    };
+    
+    template< class ExecSpace , typename T >
+    struct ViewDefaultConstruct< ExecSpace , Example::CrsMatrixView<T> , true >
     {
-      Kokkos::RangePolicy< ExecSpace > range( 0 , capacity );
-      parallel_for( range , *this );
-      ExecSpace::fence();
-    }
-};
+      typedef Example::CrsMatrixView<T> type ;
+      type * const m_ptr ;
+      
+      KOKKOS_FORCEINLINE_FUNCTION
+      void operator()( const typename ExecSpace::size_type& i ) const
+      { new(m_ptr+i) type(); }
+      
+      ViewDefaultConstruct( type * pointer , size_t capacity )
+        : m_ptr( pointer )
+      {
+        Kokkos::RangePolicy< ExecSpace > range( 0 , capacity );
+        parallel_for( range , *this );
+        ExecSpace::fence();
+      }
+    };
 
-} // namespace Impl
+  } // namespace Impl
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------

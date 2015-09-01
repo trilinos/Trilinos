@@ -40,37 +40,46 @@
 //@HEADER
 */
 
+/// \file Ifpack2_AdditiveSchwarz_decl.hpp
+/// \brief Declaration of Ifpack2::AdditiveSchwarz, which implements
+///   additive Schwarz preconditioning with an arbitrary subdomain
+///   solver.
+///
+/// If you want to use Ifpack2::AdditiveSchwarz directly in your
+/// application, please include the automatically generated header
+/// file Ifpack2_AdditiveSchwarz.hpp.
+
 #ifndef IFPACK2_ADDITIVESCHWARZ_DECL_HPP
 #define IFPACK2_ADDITIVESCHWARZ_DECL_HPP
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Map.hpp"
-
-#include "Ifpack2_LocalFilter_decl.hpp"
-#include "Ifpack2_OverlappingRowMatrix_decl.hpp"
-#include "Ifpack2_ReorderFilter_decl.hpp"
-#include "Ifpack2_SingletonFilter_decl.hpp"
-
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Ifpack2_Details_NestedPreconditioner.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Tpetra_RowMatrix.hpp"
+#include <type_traits>
+
+namespace Trilinos {
+namespace Details {
+template<class MV, class OP, class NormType>
+class LinearSolver; // forward declaration
+} // namespace Details
+} // namespace Trilinos
 
 
 namespace Ifpack2 {
 
 /** \class AdditiveSchwarz
 \brief Additive Schwarz domain decomposition for Tpetra sparse matrices
-\tparam MatrixType A specialization of Tpetra::CrsMatrix
+\tparam MatrixType A specialization of Tpetra::RowMatrix
 \tparam LocalInverseType The type of the solver for the local
-  (subdomain) problem.  This must be a specialization of a concrete
-  subclass of Ifpack2::Preconditioner.  Using a type here other than
-  Ifpack2::Preconditioner is DEPRECATED, because the subdomain
-  solver's type is determined entirely at run time.  Please refer to
-  discussion below for more details.
+  (subdomain) problem.  DO NOT USE ANY TYPE HERE OTHER THAN
+  Ifpack2::Preconditioner.  The default is perfectly fine.  This
+  template parameter only exists for backwards compatibility.
 
-\section Ifpack2_AdditiveSchwarz_Summary Summary
+section Ifpack2_AdditiveSchwarz_Summary Summary
 
 This class implements Additive Schwarz domain decomposition, with
 optional overlap.  It operates on a given Tpetra::RowMatrix.  Each
@@ -118,10 +127,9 @@ modes include "ADD", "INSERT", "REPLACE", "ABSMAX", and "ZERO".  These
 correspond to the valid values of Tpetra::CombineMode.
 
 To solve linear systems involving \f$A_i\f$ on each subdomain, the
-user can adopt any subclass of Preconditioner.  Currently, users
-control this at compile time by setting the second template parameter
-\c LocalInverseType.  Soon, this option will be removed in favor of
-run-time control of the subdomain solver.
+user can adopt any subclass of Preconditioner.  Users must set this at
+run time by specifying the inner solver in the ParameterList, or by
+setting the inner solver instance explicitly.
 
 The local matrix \f$A_i\f$ can be filtered, to eliminate singletons,
 and reordered. At the present time, the only available reordering
@@ -261,13 +269,6 @@ parameters in the input to setParameters() or setParameterList().
 Second, you may construct the subdomain solver yourself, as an
 Ifpack2::Preconditioner instance, and give it to setInnerPreconditioner().
 
-A third, deprecated method is to specify the concrete type of the
-subdomain solver at compile time, as the second template parameter
-\c LocalInverseType.  This method has been DEPRECATED, because it
-causes a lot of trouble for explicit template instantiation.  Users
-may perfectly well pick the type of the subdomain solver at run time,
-using either of the above two methods.  This has no performance cost.
-
 Please refer to the documentation of setParameters for a complete
 discussion of subdomain solvers and their parameters.
 */
@@ -292,6 +293,18 @@ class AdditiveSchwarz :
                                                                 typename MatrixType::node_type> >
 {
 public:
+  static_assert(std::is_same<LocalInverseType,
+                  Preconditioner<typename MatrixType::scalar_type,
+                    typename MatrixType::local_ordinal_type,
+                    typename MatrixType::global_ordinal_type,
+                    typename MatrixType::node_type> >::value, "Ifpack2::AdditiveSchwarz: You are not allowed to use nondefault values for the LocalInverseType template parameter.  Please stop specifying this explicitly.  The default template parameter is perfectly fine.");
+
+  static_assert(std::is_same<MatrixType,
+                  Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                    typename MatrixType::local_ordinal_type,
+                    typename MatrixType::global_ordinal_type,
+                    typename MatrixType::node_type> >::value, "Ifpack2::AdditiveSchwarz: Please use MatrixType = Tpetra::RowMatrix instead of MatrixType = Tpetra::CrsMatrix.  Don't worry, AdditiveSchwarz's constructor can take either type of matrix; it does a dynamic cast if necessary inside.  Restricting the set of allowed types here will improve build times and reduce library and executable sizes.");
+
   //! \name Typedefs
   //@{
 
@@ -310,12 +323,7 @@ public:
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
 
-  /// \brief The Tpetra::RowMatrix specialization matching MatrixType.
-  ///
-  /// MatrixType may be either a Tpetra::CrsMatrix specialization or a
-  /// Tpetra::RowMatrix specialization.  This typedef will always be a
-  /// Tpetra::RowMatrix specialization which is either the same as
-  /// MatrixType, or the parent class of MatrixType.
+  //! The Tpetra::RowMatrix specialization matching MatrixType.
   typedef Tpetra::RowMatrix<scalar_type,
                             local_ordinal_type,
                             global_ordinal_type,
@@ -496,9 +504,8 @@ public:
   /// calling setInnerPreconditioner().  However, users may instead
   /// specify the subdomain solver by setting the "inner
   /// preconditioner name" parameter (or any of its aliases).  If they
-  /// choose to do so, they may only use inner preconditioners
-  /// supported by Ifpack2::Details::OneLevelFactory.  These include
-  /// but are not necessarily limited to the following:
+  /// choose to do so, they may use any Ifpack2 preconditioner.  These
+  /// include but are not necessarily limited to the following:
   ///
   ///   - "AMESOS2": Use Amesos2's interface to sparse direct solvers.
   ///     This is only allowed if Trilinos was built with the Amesos2
@@ -547,10 +554,10 @@ public:
   /// AdditiveSchwarz only knows, on its own, how to create
   /// "non-nested" preconditioners as inner preconditioners (i.e.,
   /// subdomain solvers).  It can't create nested preconditioners
-  /// (e.g., AdditiveSchwarz, Krylov, and SupportGraph) on its own as
-  /// inner preconditioners, and it doesn't know how to create
-  /// arbitrary subclasses of Ifpack2::Preconditioner unless
-  /// Details::OneLevelFactory knows how to create them.
+  /// (e.g., AdditiveSchwarz and SupportGraph) on its own as inner
+  /// preconditioners, and it doesn't know how to create arbitrary
+  /// subclasses of Ifpack2::Preconditioner unless Ifpack2::Factory
+  /// knows how to create them.
   ///
   /// This leaves users two options in order to have any
   /// preconditioner as AdditiveSchwarz's inner preconditioner:
@@ -583,9 +590,6 @@ public:
   /// AdditiveSchwarz's ParameterList has "delta" (relative)
   /// semantics!  If you don't specify a parameter, the current state
   /// is not changed.
-  ///
-
-
   ///
   /// If you specify a sublist of parameters to give to the subdomain
   /// solver, setInnerPreconditioner() does <i>not</i> pass that
@@ -707,11 +711,19 @@ private:
                               local_ordinal_type,
                               global_ordinal_type,
                               node_type> MV;
+  //! Specialization of Tpetra::Operator.
+  typedef Tpetra::Operator<scalar_type,
+                           local_ordinal_type,
+                           global_ordinal_type,
+                           node_type> OP;
   //! Specialization of Preconditioner.
   typedef Preconditioner<scalar_type,
                          local_ordinal_type,
                          global_ordinal_type,
                          node_type> prec_type;
+
+  //! Type of the inner (subdomain) solver.
+  typedef Trilinos::Details::LinearSolver<MV, OP, typename MV::mag_type> inner_solver_type;
 
   //! Copy constructor (unimplemented; do not use)
   AdditiveSchwarz (const AdditiveSchwarz& RHS);
@@ -726,41 +738,6 @@ private:
   ///   inner preconditioner's name.
   bool hasInnerPrecName () const;
 
-
-  // mfh 28 Jan 2014: Re-enable in next commit to Ifpack2_AdditiveSchwarz_def.hpp.
-#if 0
-  /// \brief Whether the given inner preconditioner name is "custom,"
-  ///   that is, whether AdditiveSchwarz does <i>not</i> know on its
-  ///   own how to create it.
-  ///
-  /// AdditiveSchwarz only knows, on its own, how to create
-  /// "non-nested" preconditioners as inner preconditioners (i.e.,
-  /// subdomain solvers).  It can't create nested preconditioners
-  /// (e.g., AdditiveSchwarz, Krylov, and SupportGraph) on its own as
-  /// inner preconditioners, and it doesn't know how to create
-  /// arbitrary subclasses of Ifpack2::Preconditioner unless
-  /// Details::OneLevelFactory knows how to create them.
-  ///
-  /// This leaves users two options in order to have any
-  /// preconditioner as AdditiveSchwarz's inner preconditioner:
-  ///
-  /// 1. If Ifpack2::Factory knows how to create a preconditioner
-  ///    whose string name is \c prec, then users who don't want to
-  ///    create the inner preconditioner themselves must create
-  ///    AdditiveSchwarz using Factory, <i>not</i> by invoking
-  ///    AdditiveSchwarz's constructor themselves.  Factory will set
-  ///    up the inner preconditioner for them before it returns the
-  ///    AdditiveSchwarz instance.
-  ///
-  /// 2. If Ifpack2::Factory does <i>not</i> know how to create a
-  ///    preconditioner \c prec (for example, if it is not even
-  ///    implemented in Ifpack2), then users must create the inner
-  ///    preconditioner instance themselves, and give it to
-  ///    AdditiveSchwarz using setInnerPreconditioner.  In this case,
-  ///    AdditiveSchwarz's ParameterList must not specify the inner
-  ///    preconditioner's name.
-  bool isCustomPrecName (const std::string& prec) const;
-#endif // 0
 
   //! The current inner preconditioner name.
   std::string innerPrecName () const;
@@ -788,11 +765,13 @@ private:
   /// This is the same matrix as the input argument to this class' constructor.
   Teuchos::RCP<const row_matrix_type> Matrix_;
 
-  //! The overlapping matrix.
-  Teuchos::RCP<OverlappingRowMatrix<row_matrix_type> > OverlappingMatrix_;
+  /// \brief The overlapping matrix.
+  ///
+  /// If nonnull, this is an instance of OverlappingRowMatrix<row_matrix_type>.
+  Teuchos::RCP<row_matrix_type> OverlappingMatrix_;
 
   //! The reordered matrix.
-  Teuchos::RCP<ReorderFilter<row_matrix_type> > ReorderedLocalizedMatrix_;
+  Teuchos::RCP<row_matrix_type> ReorderedLocalizedMatrix_;
 
   //! The "inner matrix" given to the inner (subdomain) solver.
   Teuchos::RCP<row_matrix_type> innerMatrix_;
@@ -822,12 +801,10 @@ private:
   bool UseReordering_;
   //! Record reordering for output purposes.
   std::string ReorderingAlgorithm_;
-  //! If true, subdomain filtering is used
-  bool UseSubdomain_;
   //! Whether to filter singleton rows.
   bool FilterSingletons_;
   //! Matrix from which singleton rows have been filtered.
-  Teuchos::RCP<SingletonFilter<row_matrix_type> > SingletonMatrix_;
+  Teuchos::RCP<row_matrix_type> SingletonMatrix_;
   //! The number of iterations to be done.
   int NumIterations_;
   //! True if and only if the initial guess is zero.
@@ -852,7 +829,7 @@ private:
   //! The total number of floating-point operations over all apply() calls.
   mutable double ApplyFlops_;
   //! The inner (that is, per subdomain local) solver.
-  Teuchos::RCP<prec_type> Inverse_;
+  Teuchos::RCP<inner_solver_type> Inverse_;
   //! Local distributed map for filtering multivector with no overlap.
   Teuchos::RCP<const map_type> localMap_;
 

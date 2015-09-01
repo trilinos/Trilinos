@@ -21,6 +21,9 @@
 /* Define if want to build anasazi-experimental */
 /* #undef HAVE_ANASAZI_EXPERIMENTAL */
 
+/* Define if want to build with RBGen enabled */
+/* #undef HAVE_ANASAZI_RBGEN */
+
 /* Define if want to build with tpetra enabled */
 #define HAVE_ANASAZI_TPETRA
 
@@ -60,6 +63,11 @@
 /* #undef HAVE_ANASAZI_TSQR */
 
 #define ANASAZI_TEUCHOS_TIME_MONITOR
+
+/* Add macros for declaring functions deprecated */
+#define ANASAZI_DEPRECATED
+#define ANASAZI_DEPRECATED_MSG(MSG)
+
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */

@@ -61,7 +61,7 @@ IFPACK classes.
 class Ifpack_Graph {
 
 public:
-    
+
   //! Destructor.
   virtual ~Ifpack_Graph() {};
 
@@ -122,18 +122,18 @@ public:
 #endif
 
   //! Extracts a copy of input local row.
-  virtual int ExtractMyRowCopy(int MyRow, int LenOfIndices, 
-			       int &NumIndices, int *Indices) const = 0;
+  virtual int ExtractMyRowCopy(int MyRow, int LenOfIndices,
+                               int &NumIndices, int *Indices) const = 0;
 
   //! Returns the communicator object of the graph.
   virtual const Epetra_Comm& Comm() const = 0;
 
   //! Prints basic information about the graph object.
-  virtual ostream& Print(std::ostream& os) const = 0;
+  virtual std::ostream& Print(std::ostream& os) const = 0;
 
 };
 
-inline ostream& operator<<(ostream& os, const Ifpack_Graph& obj)
+inline std::ostream& operator<<(std::ostream& os, const Ifpack_Graph& obj)
 {
   return(obj.Print(os));
 }

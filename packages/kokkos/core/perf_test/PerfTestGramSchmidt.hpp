@@ -71,8 +71,8 @@ struct InvNorm2 : public Kokkos::DotSingle< VectorView > {
   void final( value_type & result ) const
   {
     result = sqrt( result );
-    *Rjj = result ;
-    *inv = ( 0 < result ) ? 1.0 / result : 0 ;
+    Rjj() = result ;
+    inv() = ( 0 < result ) ? 1.0 / result : 0 ;
   }
 };
 
@@ -106,8 +106,8 @@ struct DotM : public Kokkos::Dot< VectorView > {
   KOKKOS_INLINE_FUNCTION
   void final( value_type & result ) const
   {
-     *Rjk  = result ;
-     *tmp  = - result ;
+     Rjk()  = result ;
+     tmp()  = - result ;
   }
 };
 
@@ -144,11 +144,10 @@ struct ModifiedGramSchmidt
   multivector_type Q ;
   multivector_type R ;
 
-  static double factorization( const multivector_type Q ,
-                               const multivector_type R )
+  static double factorization( const multivector_type Q_ ,
+                               const multivector_type R_ )
   {
-    const Kokkos::ALL ALL ;
-    const size_type count  = Q.dimension_1();
+    const size_type count  = Q_.dimension_1();
     value_view tmp("tmp");
     value_view one("one");
 
@@ -159,8 +158,8 @@ struct ModifiedGramSchmidt
     for ( size_type j = 0 ; j < count ; ++j ) {
       // Reduction   : tmp = dot( Q(:,j) , Q(:,j) );
       // PostProcess : tmp = sqrt( tmp ); R(j,j) = tmp ; tmp = 1 / tmp ;
-      const vector_type Qj  = Kokkos::subview( Q , ALL , j );
-      const value_view  Rjj = Kokkos::subview( R , j , j );
+      const vector_type Qj  = Kokkos::subview( Q_ , Kokkos::ALL() , j );
+      const value_view  Rjj = Kokkos::subview( R_ , j , j );
 
       invnorm2( Qj , Rjj , tmp );
 
@@ -168,8 +167,8 @@ struct ModifiedGramSchmidt
       Kokkos::scale( tmp , Qj );
 
       for ( size_t k = j + 1 ; k < count ; ++k ) {
-        const vector_type Qk = Kokkos::subview( Q , ALL , k );
-        const value_view  Rjk = Kokkos::subview( R , j , k );
+        const vector_type Qk = Kokkos::subview( Q_ , Kokkos::ALL() , k );
+        const value_view  Rjk = Kokkos::subview( R_ , j , k );
 
         // Reduction   : R(j,k) = dot( Q(:,j) , Q(:,k) );
         // PostProcess : tmp = - R(j,k);
@@ -191,11 +190,11 @@ struct ModifiedGramSchmidt
                       const size_t count ,
                       const size_t iter = 1 )
   {
-    multivector_type Q( "Q" , length , count );
-    multivector_type R( "R" , count , count );
+    multivector_type Q_( "Q" , length , count );
+    multivector_type R_( "R" , count , count );
 
     typename multivector_type::HostMirror A =
-      Kokkos::create_mirror( Q );
+      Kokkos::create_mirror( Q_ );
 
     // Create and fill A on the host
 
@@ -209,11 +208,11 @@ struct ModifiedGramSchmidt
 
     for ( size_t i = 0 ; i < iter ; ++i ) {
 
-      Kokkos::deep_copy( Q , A );
+      Kokkos::deep_copy( Q_ , A );
 
       // A = Q * R
 
-      const double dt = factorization( Q , R );
+      const double dt = factorization( Q_ , R_ );
 
       if ( 0 == i ) dt_min = dt ;
       else dt_min = dt < dt_min ? dt : dt_min ;

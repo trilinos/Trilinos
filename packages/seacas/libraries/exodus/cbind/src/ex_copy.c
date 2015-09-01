@@ -216,14 +216,23 @@ int ex_copy (int in_exoid, int out_exoid)
     */
    status = nc_inq_dimid(in_exoid, DIM_STR_NAME, &dim_out_id);
    if (status != NC_NOERR) {
-     /* Not found; set to default value of 32+1. */
-     if ((status = nc_def_dim(out_exoid, DIM_STR_NAME, 33, &dim_out_id)) != NC_NOERR) {
-       exerrval = status;
-       sprintf(errmsg,
-	       "Error: failed to define string name dimension in file id %d",
-	       out_exoid);
-       ex_err("ex_copy",errmsg,exerrval);
-       return (EX_FATAL);
+     /*
+      * See if it already exists in the output file
+      * (ex_put_init_ext may have been called on the
+      * output file prior to calling ex_copy)
+      */
+     status = nc_inq_dimid(out_exoid, DIM_STR_NAME, &dim_out_id);
+     if (status != NC_NOERR) {
+       /* Not found; set to default value of 32+1. */
+
+       if ((status = nc_def_dim(out_exoid, DIM_STR_NAME, 33, &dim_out_id)) != NC_NOERR) {
+	 exerrval = status;
+	 sprintf(errmsg,
+		 "Error: failed to define string name dimension in file id %d",
+		 out_exoid);
+	 ex_err("ex_copy",errmsg,exerrval);
+	 return (EX_FATAL);
+       }
      }
    }
 
@@ -375,6 +384,8 @@ int ex_copy (int in_exoid, int out_exoid)
    update_internal_structs( out_exoid, EX_INQ_FACE_MAP, ex_get_counter_list(EX_FACE_MAP));
    update_internal_structs( out_exoid, EX_INQ_ELEM_MAP, ex_get_counter_list(EX_ELEM_MAP));
 
+   (void)ex_update(out_exoid);
+   
    return(EX_NOERR);
 }
 
@@ -608,7 +619,8 @@ cpy_var_val(int in_id,int out_id,char *var_nm)
    * to an output netCDF file. 
    */
 
-  int *dim_id;
+  int *dim_id_in;
+  int *dim_id_out;
   int idx;
   int nbr_dim;
   int var_in_id;
@@ -627,22 +639,20 @@ cpy_var_val(int in_id,int out_id,char *var_nm)
  
   /* Get the number of dimensions for the variable. */
   (void)nc_inq_vartype( out_id, var_out_id, &var_type_out);
-  (void)nc_inq_varndims(out_id, var_out_id, &nbr_dim);
 
   (void)nc_inq_vartype( in_id,   var_in_id, &var_type_in);
   (void)nc_inq_varndims(in_id,   var_in_id, &nbr_dim);
  
   /* Allocate space to hold the dimension IDs */
-  dim_cnt = malloc(nbr_dim*sizeof(size_t));
-
-  dim_id=malloc(nbr_dim*sizeof(int));
-
-  dim_sz=malloc(nbr_dim*sizeof(size_t));
-
-  dim_srt=malloc(nbr_dim*sizeof(size_t));
+  dim_cnt = calloc(nbr_dim, sizeof(size_t));
+  dim_id_in  = calloc(nbr_dim, sizeof(int));
+  dim_id_out = calloc(nbr_dim, sizeof(int));
+  dim_sz  = calloc(nbr_dim, sizeof(size_t));
+  dim_srt = calloc(nbr_dim, sizeof(size_t));
  
   /* Get the dimension IDs from the input file */
-  (void)nc_inq_vardimid(in_id, var_in_id, dim_id);
+  (void)nc_inq_vardimid(in_id, var_in_id, dim_id_in);
+  (void)nc_inq_vardimid(out_id, var_out_id, dim_id_out);
  
   /* Get the dimension sizes and names from the input file */
   for(idx=0;idx<nbr_dim;idx++){
@@ -653,9 +663,15 @@ cpy_var_val(int in_id,int out_id,char *var_nm)
      until a variable has been written with that dimension. This is
      the reason for always reading the input file for the dimension
      sizes. */
+    size_t dim_in = 0;
+    size_t dim_out = 0;
 
-    (void)nc_inq_dimlen(in_id,dim_id[idx],dim_cnt+idx);
-
+    /* If client is increasing any sizes, then need to make sure
+       the void_ptr is large enough to hold new dimension */
+    (void)nc_inq_dimlen(in_id,dim_id_in[idx],&dim_in);
+    (void)nc_inq_dimlen(out_id,dim_id_out[idx],&dim_out);
+    dim_cnt[idx] = dim_in > dim_out ? dim_in : dim_out;
+    
     /* Initialize the indicial offset and stride arrays */
     dim_srt[idx]=0L;
     var_sz*=dim_cnt[idx];
@@ -663,7 +679,7 @@ cpy_var_val(int in_id,int out_id,char *var_nm)
 
   /* Allocate enough space to hold the variable */
   if (var_sz > 0)
-      void_ptr=malloc(var_sz * type_size(var_type_in));
+    void_ptr=calloc(var_sz, type_size(var_type_in));
 
   /* Get the variable */
 
@@ -733,7 +749,8 @@ cpy_var_val(int in_id,int out_id,char *var_nm)
 
   /* Free the space that held the dimension IDs */
   (void)free(dim_cnt);
-  (void)free(dim_id);
+  (void)free(dim_id_in);
+  (void)free(dim_id_out);
   (void)free(dim_sz);
   (void)free(dim_srt);
 

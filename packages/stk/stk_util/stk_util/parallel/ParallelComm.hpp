@@ -461,6 +461,14 @@ CommBuffer &CommBuffer::unpack( T * value , size_t number )
   if ( m_end < m_ptr ) { unpack_overflow(); }
   return *this;
 }
+template<typename item>
+inline
+item unpack(stk::CommBuffer& buf)
+{
+    item object;
+    buf.unpack<item>(object);
+    return object;
+}
 
 template<typename T>
 inline

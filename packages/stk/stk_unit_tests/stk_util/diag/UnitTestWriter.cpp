@@ -35,7 +35,7 @@
 #include <functional>                   // for less
 #include <list>                         // for list, _List_iterator, etc
 #include <map>                          // for multimap, map, etc
-#include <memory>                       // for auto_ptr
+#include <memory>                       // for
 #include <set>                          // for multiset, set, etc
 #include <sstream>                      // for ostringstream, ostream, etc
 #include <stk_util/diag/WriterExt.hpp>  // for operator<<
@@ -48,9 +48,9 @@
 #include <vector>                       // for vector, vector<>::iterator
 #include "stk_util/diag/WriterOStream.hpp"  // for operator<<
 #include "stk_util/util/Writer_fwd.hpp"  // for LogMask::LOG_ALWAYS, etc
+#include <iostream>
 
-
-
+#include <cmath>
 
 
 using namespace stk::diag;
@@ -97,6 +97,31 @@ dw()
 
 TEST(UnitTestWriter, UnitTest)
 {
+
+// #define SHOW_IOS_BASE_FLOATFIELD_BEHAVIORS
+#ifdef SHOW_IOS_BASE_FLOATFIELD_BEHAVIORS
+// Show libstdc++ std:ios_base floatfield bit behaviors, which have been inconsistent across platforms.
+// Once they are consistent, the automatic hexfloat-to-defaultfloat transition in WriterManip.{hpp,cpp}
+// can be removed, and "proper C++ 11" behavior can be supported.  (With changes to this unit test.)
+  const float ten_pi = M_PI * 10.0;
+  std::cout << "const float ten_pi = M_PI * 10.0;" << std::endl;
+
+  std::cout << "With default floatfieldflags (" << (std::cout.flags() & std::ios_base::floatfield)
+            << ") and default precision (" << std::cout.precision() << ")                                " << ten_pi << std::endl;
+
+  std::cout.unsetf(std::ios_base::floatfield);
+  std::cout << "With unsetf(std::ios_base::floatfield)                                                    " << ten_pi << std::endl;
+
+  std::cout.setf(std::ios_base::fixed, std::ios_base::floatfield);
+  std::cout << "With setf(std::ios_base::fixed, std::ios_base::floatfield)                                " << ten_pi << std::endl;
+
+  std::cout.setf(std::ios_base::scientific, std::ios_base::floatfield);
+  std::cout << "With setf(std::ios_base::scientific, std::ios_base::floatfield)                           " << ten_pi << std::endl;
+
+  std::cout.setf((std::ios_base::fixed | std::ios_base::scientific), std::ios_base::floatfield);
+  std::cout << "With setf((std::ios_base::fixed | std::ios_base::scientific), std::ios_base::floatfield)  " << ten_pi << std::endl;
+#endif
+
   dw() << "This is a test" << dendl << dflush;
 
   ASSERT_EQ((std::string("This is a test\n") == oss().str()), true);
@@ -170,9 +195,27 @@ TEST(UnitTestWriter, UnitTest)
   dw() << stk::diag::setw(5) << 3.14159265 << dendl;
   dw() << stk::diag::setprecision(5) << 3.14159265 << dendl;
   dw() << stk::diag::setiosflags(std::ios::fixed) << 3.14159265 << dendl;
+  // Check internal workarounds for inconsistent C++11 iostream manipulator support in libstdc++ and compilers.
+  ASSERT_EQ(dw().getStream().flags() & std::ios_base::floatfield, std::ios_base::fmtflags(0));
   dw() << stk::diag::resetiosflags(std::ios::fixed) << 3.14159265 << dendl;
+  dw() << stk::diag::resetiosflags(std::ios::scientific) << 3.14159265 << dendl;
+  ASSERT_EQ(dw().getStream().flags() & std::ios_base::floatfield, std::ios_base::fmtflags(0));
+  dw() << stk::diag::resetiosflags(std::ios::scientific) << 3.14159265 << dendl;
+  dw() << stk::diag::resetiosflags(std::ios::fixed);
+  ASSERT_EQ(dw().getStream().flags() & std::ios_base::floatfield, std::ios_base::fmtflags(0));
   dw() << stk::diag::setfill('#') << stk::diag::setw(10) << "x" << dendl;
-  ASSERT_EQ((std::string("10\n20\n16\n3.141593\n3.141593e+00\n10\n20\n16\n3.141593\n3.141593e+00\n3.141593e+00\n3.14159e+00\n3.1416\n3.14159e+00\n#########x\n") == oss().str()), true);
+  if (std::string("10\n20\n16\n3.141593\n3.141593e+00\n10\n20\n16\n3.141593\n3.141593e+00\n3.141593e+00\n3.14159e+00\n3.1416\n3.14159e+00\n3.1416\n3.14159\n#########x\n") != oss().str())
+  {
+      std::cerr << "expected string: 10\n20\n16\n3.141593\n3.141593e+00\n10\n20\n16\n3.141593\n3.141593e+00\n3.141593e+00\n3.14159e+00\n3.1416\n3.14159e+00\n3.1416\n3.14159\n#########x\n" << std::endl;
+      std::cerr << "oss().str(): " << oss().str() << std::endl;
+  }
+  ASSERT_EQ((std::string("10\n20\n16\n3.141593\n3.141593e+00\n10\n20\n16\n3.141593\n3.141593e+00\n3.141593e+00\n3.14159e+00\n3.1416\n3.14159e+00\n3.1416\n3.14159\n#########x\n") == oss().str()), true);
+
+  oss().str("");
+  dw() << std::fixed << 3.25 << dendl;
+  dw() << std::scientific << 4.25 << dendl;
+  dw() << std::fixed << 5.25 << dendl;
+  ASSERT_EQ((std::string("3.25000\n4.25000e+00\n5.25000\n") == oss().str()), true);
 
   oss().str("");
   {

@@ -458,16 +458,14 @@ template <typename mvector_t>
 
   recvCount.clear();
 
-  RCP<const mvector_t> newMultiVector;
-  RCP<const mvector_t> constInput = rcp_const_cast<const mvector_t>(vectors);
-
+  RCP<mvector_t> newMultiVector;
   try{
     newMultiVector = XpetraTraits<mvector_t>::doMigration(
-      constInput, numMyNewGnos, recvBuf.getRawPtr());
+      *vectors, numMyNewGnos, recvBuf.getRawPtr());
   }
   Z2_FORWARD_EXCEPTIONS
 
-  vectors = rcp_const_cast<mvector_t>(newMultiVector);
+  vectors = newMultiVector;
   env->memory("Former problem data replaced with new data");
   env->debug(DETAILED_STATUS, "Exiting migrateData");
 }
@@ -764,9 +762,9 @@ template <typename mvector_t>
     info << "Num weights " << nWeightsPerCoord << ", Fraction left:";
     for (int i=0; i < nVecs; i++)
       info << " " << fractionLeft[i];
-    info << endl << "Dimension " << cutDim << " [";
+    info << std::endl << "Dimension " << cutDim << " [";
     info << coordGlobalMin << ", " << coordGlobalMax << "]";
-    info << endl << "# test cuts " << numTestCuts;
+    info << std::endl << "# test cuts " << numTestCuts;
     info << ", tolerance " << tolerance << std::endl;
     env->debug(DETAILED_STATUS, info.str());
   }
@@ -933,16 +931,16 @@ template <typename mvector_t>
       info << "  Boundaries: ";
       for (int i=0; i < numBoundaries; i++)
         info << boundaries[i] << " ";
-      info << endl << "  For searching: ";
+      info << std::endl << "  For searching: ";
       for (int i=0; i < numBoundaries; i++)
         info << searchBoundaries[i] << " ";
-      info << endl << "  Global sums: ";
+      info << std::endl << "  Global sums: ";
       double sumTotal=0;
       for (int i=0; i < numSums; i++){
         sumTotal += sums[i];
         info << sums[i] << " ";
       }
-      info << " total: " << sumTotal << endl;
+      info << " total: " << sumTotal << std::endl;
       env->debug(DETAILED_STATUS, info.str());
     }
 
@@ -1156,7 +1154,7 @@ template <typename mvector_t>
             "left/right flags", false, BASIC_ASSERTION);
       }
       std::ostringstream msg;
-      msg << ossLeft.str() << endl << ossRight.str() << std::endl;
+      msg << ossLeft.str() << std::endl << ossRight.str() << std::endl;
       env->debug(VERBOSE_DETAILED_STATUS, msg.str());
     }
 

@@ -56,7 +56,7 @@ namespace Domi
 Teuchos::Array< int >
 regularizeCommDims(int numProcs,
                    int numDims,
-                   const Teuchos::ArrayView< int > & commDims)
+                   const Teuchos::ArrayView< const int > & commDims)
 {
   // Allocate the return array, filled with the value -1
   Teuchos::Array< int > result(numDims, -1);
@@ -122,7 +122,7 @@ computeCommIndexes(int rank,
 
 Teuchos::Array< int >
 computePeriodic(int numDims,
-                const Teuchos::ArrayView< int > & periodic)
+                const Teuchos::ArrayView< const int > & periodic)
 {
   Teuchos::Array< int > result(numDims, 0);
   for (int axis = 0; axis < numDims && axis < periodic.size(); ++axis)

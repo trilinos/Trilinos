@@ -14,8 +14,15 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestRCGFiles
-    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/example/RCG
-    SOURCE_FILES bcsstk14.hb gr_30_30.hb
+    SOURCE_DIR ${Belos_SOURCE_DIR}/epetra/test/RCG
+    SOURCE_FILES gr_30_30.hb
+    EXEDEPS rcg_hb
+    )
+
+  ASSERT_DEFINED(Anasazi_SOURCE_DIR)
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(CopyTestRCGFiles2
+    SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
+    SOURCE_FILES bcsstk14.hb
     EXEDEPS rcg_hb
     )
 

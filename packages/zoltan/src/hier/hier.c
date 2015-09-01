@@ -366,10 +366,10 @@ static int set_hier_part_sizes(HierPartParams *hpp, float *part_sizes) {
                            part_ids, wgt_idx, level_part_sizes);
 
 End:
-  if (my_level_part_sizes) ZOLTAN_FREE(&my_level_part_sizes);
-  if (level_part_sizes) ZOLTAN_FREE(&level_part_sizes);
-  if (part_ids) ZOLTAN_FREE(&part_ids);
-  if (wgt_idx) ZOLTAN_FREE(&wgt_idx);
+  ZOLTAN_FREE(&my_level_part_sizes);
+  ZOLTAN_FREE(&level_part_sizes);
+  ZOLTAN_FREE(&part_ids);
+  ZOLTAN_FREE(&wgt_idx);
 
   return ierr;
 }
@@ -1601,29 +1601,31 @@ int Zoltan_Hier(
 
       /* specify the callbacks */
 
-      ierr = Zoltan_Set_Num_Obj_Fn(hpp.hierzz,
-                           Zoltan_Hier_Num_Obj_Fn,
-                           (void *) &hpp);
+      ierr = Zoltan_Set_Num_Obj_Fn(hpp.hierzz, Zoltan_Hier_Num_Obj_Fn,
+                                   (void *) &hpp);
 
-      ierr = Zoltan_Set_Obj_List_Fn(hpp.hierzz,
-                           Zoltan_Hier_Obj_List_Fn,
-                           (void *) &hpp);
+      ierr = Zoltan_Set_Obj_List_Fn(hpp.hierzz, Zoltan_Hier_Obj_List_Fn,
+                                    (void *) &hpp);
 
-      ierr = Zoltan_Set_Num_Geom_Fn(hpp.hierzz,
-                           Zoltan_Hier_Num_Geom_Fn,
-                           (void *) &hpp);
+      if (hpp.use_geom) {
 
-      ierr = Zoltan_Set_Geom_Multi_Fn(hpp.hierzz,
-                           Zoltan_Hier_Geom_Multi_Fn,
-                           (void *) &hpp);
+        ierr = Zoltan_Set_Num_Geom_Fn(hpp.hierzz, Zoltan_Hier_Num_Geom_Fn,
+                                      (void *) &hpp);
 
-      ierr = Zoltan_Set_Num_Edges_Multi_Fn(hpp.hierzz,
-                           Zoltan_Hier_Num_Edges_Multi_Fn,
-                           (void *) &hpp);
+        ierr = Zoltan_Set_Geom_Multi_Fn(hpp.hierzz, Zoltan_Hier_Geom_Multi_Fn,
+                                        (void *) &hpp);
+      }
 
-      ierr = Zoltan_Set_Edge_List_Multi_Fn(hpp.hierzz,
-                           Zoltan_Hier_Edge_List_Multi_Fn,
-                           (void *) &hpp);
+      if (hpp.use_graph) {
+
+        ierr = Zoltan_Set_Num_Edges_Multi_Fn(hpp.hierzz,
+                                             Zoltan_Hier_Num_Edges_Multi_Fn,
+                                             (void *) &hpp);
+
+        ierr = Zoltan_Set_Edge_List_Multi_Fn(hpp.hierzz,
+                                             Zoltan_Hier_Edge_List_Multi_Fn,
+                                             (void *) &hpp);
+      }
 
       /* specify the GIDs (just the global numbering) */
       Zoltan_Set_Param(hpp.hierzz, "NUM_GID_ENTRIES", "1");
@@ -1657,6 +1659,7 @@ int Zoltan_Hier(
       }
 
       /* call partitioning method to compute the part at this level */
+
       ierr = Zoltan_LB_Partition(hpp.hierzz, &hier_changes,
                                  &hier_num_gid_entries, &hier_num_lid_entries,
                                  &hier_num_import_objs,

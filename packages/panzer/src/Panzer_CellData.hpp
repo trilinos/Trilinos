@@ -68,7 +68,7 @@ namespace panzer {
 
     /** for testing purposes only */
     explicit CellData() 
-    { std::cout << "WARNING: Default constructor for panzer::CellData is for testing purposes only!" << std::endl; } 
+    { }
     
     /** Build cell data that uses volume data.  CellTopology is on the
       * volume cells!

@@ -121,7 +121,11 @@ C
       CALL FREFLD (0,0,'CMD >',MFIELD,IOSTAT,NFIELD,KVALUE,CVAL,     
      1IVALUE,RVALUE)
 C
+      if (iostat .ne. 0) go to 100
+      if (nfield .eq. 0) go to 5
       IF (KVALUE(1)      .NE. 0)     GO TO 10
+      if (cval(1)(1:1) .EQ. '#') go to 5
+      if (cval(1)(1:1) .EQ. '$') go to 5
       IF (CVAL(1)(1:3) .EQ. 'HEL') GO TO 20
       IF (CVAL(1)(1:3) .EQ. 'TIM') GO TO 30
       IF (CVAL(1)(1:3) .EQ. 'STE') GO TO 35

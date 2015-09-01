@@ -1,0 +1,103 @@
+<!-- 
+    INPUT TYPES: coordinates,
+                 (x,t,e)petra_crs_matrix,
+                 (x,t,e)petra_crs_graph,
+                 (x,t,e)petra_vector,
+                 (x,t,e)petra_multivector
+
+    INPUT ADAPTERS: BasicIdentifier,
+                    XpetraMultiVector,
+                    XpetraCrsGraph,
+                    XpetraCrsMatrix
+-->
+
+<ParameterList name="chacoVertexWeight2">
+    
+        <ParameterList name="InputParameters">
+            <Parameter name="inputPath" type="string" value="/Users/davidson/trilinosall/trilinosrepo/packages/zoltan/test/ch_vwgt"/>
+            <Parameter name="inputFile" type="string" value="vwgt"/>
+            <Parameter name="fileType" type="string" value="Chaco"/>
+        </ParameterList>
+    
+    <ParameterList name="Problem 1">
+        <Parameter name="Name" type="string" value="chacoVertexWeight_xpetmv"/>
+     
+        <ParameterList name="InputAdapterParameters">
+            <Parameter name="inputType" type="string" value="coordinates"/> 
+            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+    
+      <!--  <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
+            </ParameterList>
+
+            <ParameterList name="weight 1">
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
+            </ParameterList>
+        </ParameterList> -->
+
+    </ParameterList>
+    
+    <ParameterList name="Problem 2">
+        <Parameter name="Name" type="string" value="chacoVertexWeight_xpet_crs_matrix"/>
+     
+        <ParameterList name="InputAdapterParameters">
+            <Parameter name="inputType" type="string" value="xpetra_crs_matrix"/> 
+            <Parameter name="inputAdapter" type="string" value="XpetraCrsMatrix"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+    
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
+            </ParameterList>
+
+            <ParameterList name="weight 1">
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="2"/>
+            </ParameterList>
+            
+        </ParameterList> 
+
+    </ParameterList>
+    
+    <ParameterList name="Problem 3">
+        <Parameter name="Name" type="string" value="chacoVertexWeight2_xpet_crs_graph"/>
+     
+        <ParameterList name="InputAdapterParameters">
+            <Parameter name="inputType" type="string" value="xpetra_crs_graph"/> 
+            <Parameter name="inputAdapter" type="string" value="XpetraCrsGraph"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+    
+      <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
+            </ParameterList>
+
+            <ParameterList name="weight 1">
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="3"/>
+            </ParameterList>
+        </ParameterList>
+
+    </ParameterList>
+</ParameterList>

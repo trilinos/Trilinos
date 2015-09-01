@@ -142,18 +142,9 @@ NOX.Epetra provides the following user-level classes:
 #include "NOX_Epetra_LinearSystem_AztecOO.H"
 #include "NOX_Epetra_ModelEvaluatorInterface.H"
 
-// Local includes
+// NumPy include
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
-#include "Epetra_NumPyFEVector.hpp"
-#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-#include "Epetra_NumPyIntSerialDenseVector.hpp"
-#include "Epetra_NumPyIntVector.hpp"
-#include "Epetra_NumPyMultiVector.hpp"
-#include "Epetra_NumPySerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialDenseVector.hpp"
-#include "Epetra_NumPySerialSymDenseMatrix.hpp"
-#include "Epetra_NumPyVector.hpp"
 
 // Namespace flattening
 using Teuchos::RCP;
@@ -165,6 +156,40 @@ using namespace NOX::Epetra;
 
 // Configuration
 %include "Epetra_DLLExportMacro.h"
+
+// Include NOX documentation
+%include "NOX_dox.i"
+
+// General ignore directives
+%ignore *::print(ostream &);
+%ignore *::print(std::ostream &) const;
+%ignore *::print(std::ostream &, int) const;
+%ignore *::operator=;
+%ignore *::operator<<;
+
+// SWIG library includes
+%include "stl.i"
+
+// Trilinos interface import
+%import "Teuchos.i"
+
+// Support for Teuchos::RCPs
+%teuchos_rcp(NOX::Epetra::LinearSystem)
+%teuchos_rcp(NOX::Epetra::LinearSystemAztecOO)
+%teuchos_rcp(NOX::Epetra::Scaling)
+%teuchos_rcp(NOX::Epetra::VectorSpace)
+
+// Include typemaps for converting raw types to NOX.Abstract types
+%include "NOX.Abstract_typemaps.i"
+
+// Epetra import
+%import "Epetra.i"
+
+// EpetraExt import
+#ifdef HAVE_NOX_EPETRAEXT
+%ignore EpetraExt::Add;
+%include "EpetraExt.i"
+#endif
 
 // General exception handling
 %include "exception.i"
@@ -203,40 +228,6 @@ using namespace NOX::Epetra;
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
   }
 }
-
-// Include NOX documentation
-%include "NOX_dox.i"
-
-// General ignore directives
-%ignore *::print(ostream &);
-%ignore *::print(std::ostream &) const;
-%ignore *::print(std::ostream &, int) const;
-%ignore *::operator=;
-%ignore *::operator<<;
-
-// SWIG library includes
-%include "stl.i"
-
-// Trilinos interface import
-%import "Teuchos.i"
-
-// Support for Teuchos::RCPs
-%teuchos_rcp(NOX::Epetra::LinearSystem)
-%teuchos_rcp(NOX::Epetra::LinearSystemAztecOO)
-%teuchos_rcp(NOX::Epetra::Scaling)
-%teuchos_rcp(NOX::Epetra::VectorSpace)
-
-// Include typemaps for converting raw types to NOX.Abstract types
-%include "NOX.Abstract_typemaps.i"
-
-// Epetra import
-%import "Epetra.i"
-
-// EpetraExt import
-#ifdef HAVE_NOX_EPETRAEXT
-%ignore EpetraExt::Add;
-%include "EpetraExt.i"
-#endif
 
 // Allow import from the parent directory
 %pythoncode

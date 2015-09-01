@@ -48,13 +48,13 @@
 #include "Tpetra_CrsMatrix_decl.hpp" // only need the declaration here
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Map.hpp"
-
+#include <type_traits>
 
 namespace Ifpack2 {
 
 /// \class OverlappingRowMatrix
 /// \brief Sparse matrix (Tpetra::RowMatrix subclass) with ghost rows.
-/// \tparam MatrixType Tpetra::RowMatrix or Tpetra::CrsMatrix specialization.
+/// \tparam MatrixType Tpetra::RowMatrix specialization.
 template<class MatrixType>
 class OverlappingRowMatrix :
     virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
@@ -71,6 +71,8 @@ public:
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> row_matrix_type;
+
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::OverlappingRowMatrix: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
   typedef typename row_matrix_type::mag_type mag_type;
 
@@ -91,10 +93,6 @@ public:
   OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
                         const int overlapLevel);
 
-  //! Subdomain constructor (NOT CURRENTLY IMPLEMENTED).
-  OverlappingRowMatrix (const Teuchos::RCP<const row_matrix_type>& A,
-                        const int overlapLevel,
-                        const int subdomainID);
   //! Destructor
   ~OverlappingRowMatrix ();
 
@@ -354,6 +352,8 @@ public:
 
   void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const;
 
+  virtual Teuchos::RCP<const row_matrix_type> getUnderlyingMatrix() const;
+
 private:
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
@@ -368,10 +368,6 @@ private:
   Tpetra::global_size_t NumGlobalNonzeros_;
   size_t MaxNumEntries_;
   int OverlapLevel_;
-
-  // Subcommunicator stuff
-  bool UseSubComm_;
-  int subdomainID_;
 
   // Wrapper matrix objects
   Teuchos::RCP<const map_type> RowMap_;

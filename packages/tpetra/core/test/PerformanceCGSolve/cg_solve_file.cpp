@@ -51,8 +51,11 @@
 #ifdef HAVE_TPETRA_INST_PTHREAD
   int run_threadswrapper(int& argc, char* argv[]);
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  int run_tpi(int& argc, char* argv[]);
+#ifdef HAVE_TPETRA_INST_SERIAL
+  int run_serialwrapper(int& argc, char* argv[]);
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+  int run_serialclassic(int& argc, char* argv[]);
 #endif
 
 int main(int argc, char *argv[]) {
@@ -75,9 +78,13 @@ int main(int argc, char *argv[]) {
   std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
   run_threadswrapper(argc,argv);
 #endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+#ifdef HAVE_TPETRA_INST_SERIAL
   std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
-  run_tpi(argc,argv);
+  run_serialwrapper(argc,argv);
+#endif
+#ifdef HAVE_KOKKOSCLASSIC_SERIAL
+  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
+  run_serialclassic(argc,argv);
 #endif
 
   return 0;

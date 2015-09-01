@@ -43,6 +43,12 @@
 #include <boost/mpl/for_each.hpp>
 #include <boost/mpl/assert.hpp>
 
+
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
+
+
 #define STKTOPOLOGY_META_FUNCTION_SWITCH(ordinal, meta_function)  \
   switch (ordinal)                                                \
   {                                                               \
@@ -162,6 +168,9 @@ struct topology::topology_type
   }
 
   /// node ordinals that make up the given edge
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename OrdinalOutputIterator>
   BOOST_GPU_ENABLED
   static void edge_node_ordinals(unsigned edge_ordinal, OrdinalOutputIterator output_ordinals)
@@ -174,6 +183,9 @@ struct topology::topology_type
   }
 
   /// the node ordinals that make up the given face
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename OrdinalOutputIterator>
   BOOST_GPU_ENABLED
   static void face_node_ordinals(unsigned face_ordinal, OrdinalOutputIterator output_ordinals)
@@ -186,6 +198,9 @@ struct topology::topology_type
   }
 
   /// the node ordinals of the topology in the given permutation order
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename OrdinalOutputIterator>
   BOOST_GPU_ENABLED
   static void permutation_node_ordinals(unsigned permutation_ordinal, OrdinalOutputIterator output_ordinals)
@@ -198,6 +213,9 @@ struct topology::topology_type
   }
 
   /// node that make up the given edge
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename NodeArray, typename NodeOutputIterator>
   BOOST_GPU_ENABLED
   static void edge_nodes(const NodeArray & nodes, unsigned edge_ordinal, NodeOutputIterator output_nodes)
@@ -210,18 +228,23 @@ struct topology::topology_type
   }
 
   /// node that make up the given face
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename NodeArray, typename NodeOutputIterator>
   BOOST_GPU_ENABLED
   static void face_nodes(const NodeArray & nodes, unsigned face_ordinal, NodeOutputIterator output_nodes)
   {
     topology_detail::fill_node_container<NodeArray,NodeOutputIterator> f(nodes,output_nodes);
-
     STKTOPOLOGY_META_FUNCTION_SWITCH_WITH_FOR_EACH_FUNCTOR(face_ordinal, topology_detail::face_node_ordinals_, f)
 
     return;
   }
 
   /// node that make up the given permutation
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename NodeArray, typename NodeOutputIterator>
   BOOST_GPU_ENABLED
   static void permutation_nodes(const NodeArray & nodes, unsigned permutation_ordinal, NodeOutputIterator output_nodes)
@@ -234,6 +257,9 @@ struct topology::topology_type
   }
 
   /// fill the output ordinals with the ordinals that make up the given sub topology
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename OrdinalOutputIterator>
   BOOST_GPU_ENABLED
   static void sub_topology_node_ordinals(unsigned sub_rank, unsigned sub_ordinal, OrdinalOutputIterator output_ordinals)
@@ -248,6 +274,9 @@ struct topology::topology_type
   }
 
   /// fill the output nodes with the nodes that make up the given sub topology
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename NodeArray, typename NodeOutputIterator>
   BOOST_GPU_ENABLED
   static void sub_topology_nodes(const NodeArray & nodes, unsigned sub_rank, unsigned sub_ordinal, NodeOutputIterator output_nodes)
@@ -293,6 +322,9 @@ struct topology::topology_type
 
   /// do the two arrays defined equivalent entities (same nodes, but maybe a different permutation)
   /// return a pair<bool, permutation_number> bool and permutation number from a to b
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename NodeArrayA, typename NodeArrayB>
   BOOST_GPU_ENABLED
   static std::pair<bool,unsigned> equivalent(const NodeArrayA & a, const NodeArrayB & b)

@@ -12,7 +12,7 @@ Level 1
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
 
- Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
+ Setup Smoother (MueLu::AmesosSmoother{type = Klu})
  presmoother ->
   [empty list]
 
@@ -23,12 +23,12 @@ Level 1
 Number of levels    = 2
 Operator complexity = 1.31
 
-matrix  rows    nnz  nnz/row procs
-A 0    10000  49600     4.96  4
-A 1     1700  15318     9.01  4
+level   rows    nnz  nnz/row  c ratio  procs
+  0    10000  49600     4.96               4
+  1     1700  15318     9.01     5.88      4
 
 Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
-Smoother (level 1) pre  : MueLu::AmesosSmoother{type = Superlu}
+Smoother (level 1) pre  : MueLu::AmesosSmoother{type = Klu}
 Smoother (level 1) post : no smoother
 

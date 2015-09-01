@@ -101,7 +101,7 @@ void ithPermutation(const IT n, IT i, IT *perm)
 }
 
 template <typename part_t>
-void getGridCommunicationGraph(part_t taskCount, part_t *&task_comm_xadj, part_t *&task_comm_adj, vector <int> grid_dims){
+void getGridCommunicationGraph(part_t taskCount, part_t *&task_comm_xadj, part_t *&task_comm_adj, std::vector <int> grid_dims){
   int dim = grid_dims.size();
   int neighborCount = 2 * dim;
   task_comm_xadj = allocMemory<part_t>(taskCount+1);
@@ -181,7 +181,7 @@ void getSolutionCenterCoordinates(
 
   envConst->timerStart(MACRO_TIMERS, "Mapping - Hashing Creation");
   //hash vector
-  vector< vector <GNO_LNO_PAIR<gno_t, part_t> > > hash(numLocalCoords);
+  std::vector< std::vector <GNO_LNO_PAIR<gno_t, part_t> > > hash(numLocalCoords);
 
   //insert each point in solution to hash.
   for (lno_t i=0; i < numLocalCoords; i++){
@@ -353,7 +353,7 @@ public:
         nc += coords[i][k];
       }
       nc /= this->heapSize;
-      moved = (ABS(center[i] - nc) > this->_EPSILON || moved );
+      moved = (ZOLTAN2_ABS(center[i] - nc) > this->_EPSILON || moved );
       center[i] = nc;
 
     }
@@ -664,7 +664,7 @@ public:
    */
   virtual void getMapping(
       int myRank,
-      RCP<const Environment> env,
+      const RCP<const Environment> &env,
       ArrayRCP <part_t> &proc_to_task_xadj, //  = allocMemory<part_t> (this->no_procs+1); //holds the pointer to the task array
       ArrayRCP <part_t> &proc_to_task_adj, // = allocMemory<part_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
       ArrayRCP <part_t> &task_to_proc //allocMemory<part_t>(this->no_tasks); //holds the processors mapped to tasks.
@@ -783,7 +783,7 @@ public:
   virtual double getProcDistance(int procId1, int procId2) const{
     double distance = 0;
     for (int i = 0 ; i < this->proc_coord_dim; ++i){
-      distance += ABS(proc_coords[i][procId1] - proc_coords[i][procId2]);
+      distance += ZOLTAN2_ABS(proc_coords[i][procId1] - proc_coords[i][procId2]);
     }
     return distance;
   }
@@ -837,7 +837,7 @@ public:
    */
   virtual void getMapping(
       int myRank,
-      RCP<const Environment> env,
+      const RCP<const Environment> &env,
       ArrayRCP <part_t> &rcp_proc_to_task_xadj, //  = allocMemory<part_t> (this->no_procs+1); //holds the pointer to the task array
       ArrayRCP <part_t> &rcp_proc_to_task_adj, // = allocMemory<part_t>(this->no_tasks); //holds the indices of tasks wrt to proc_to_task_xadj array.
       ArrayRCP <part_t> &rcp_task_to_proc //allocMemory<part_t>(this->no_tasks); //holds the processors mapped to tasks.
@@ -1310,7 +1310,7 @@ protected:
     file += toString<int>(comm_->getRank()) + exten;
     std::ofstream ff(file.c_str());
     //ff.seekg (0, ff.end);
-    vector <Zoltan2::coordinateModelPartBox <tcoord_t, part_t> > outPartBoxes = ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getPartBoxesView();
+    std::vector <Zoltan2::coordinateModelPartBox <tcoord_t, part_t> > outPartBoxes = ((Zoltan2::PartitioningSolution<Adapter> *)soln_)->getPartBoxesView();
 
     for (part_t i = 0; i < this->ntasks;++i){
       outPartBoxes[i].writeGnuPlot(ff, mm);

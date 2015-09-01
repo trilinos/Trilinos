@@ -43,36 +43,20 @@
 /// \file Ifpack2_Krylov_decl.hpp
 /// \brief Declaration of Ifpack2::Krylov class.
 /// \author Paul Tsuji
+///
+/// \warning This file and its contents are DEPRECATED.
+///   DO NOT USE THEM ANY MORE.  THEY MAY DISAPPEAR AT ANY TIME.
 
 #ifndef IFPACK2_KRYLOV_DECL_HPP
 #define IFPACK2_KRYLOV_DECL_HPP
 
-#include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Heap.hpp"
-#include "Ifpack2_Parameters.hpp"
-#include "Ifpack2_Relaxation.hpp"
-#include "Ifpack2_ILUT.hpp"
-#include "Ifpack2_RILUK.hpp"
-#include "Ifpack2_Chebyshev.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 
-#include <BelosConfigDefs.hpp>
-#include <BelosSolverManager.hpp>
-#include <BelosTpetraAdapter.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
-#include <BelosBlockCGSolMgr.hpp>
-
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <cmath>
+#include "BelosSolverManager.hpp"
+#include "BelosTpetraAdapter.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include <type_traits>
 
 namespace Teuchos {
   class ParameterList; // forward declaration
@@ -97,14 +81,18 @@ namespace Ifpack2 {
 
   /// \class Krylov
   /// \brief Wrapper for iterative linear solvers (e.g., CG or GMRES).
+  /// \tparam MatrixType A specialization of Tpetra::RowMatrix.
   ///
-  /// Ifpack2::Krylov computes a few iterations of CG/GMRES with zero
+  /// \warning This class has been DEPRECATED.  DO NOT USE THIS CLASS.
+  ///   IT MAY GO AWAY AT ANY TIME.
+  ///
+  /// Krylov computes a few iterations of CG or GMRES with zero
   /// initial guess as a smoother for a given Tpetra::RowMatrix.
   ///
   /// For a list of all run-time parameters that this class accepts,
   /// see the documentation of setParameters().
   template<class MatrixType>
-  class Krylov :
+  class IFPACK2_DEPRECATED Krylov :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
                                            typename MatrixType::local_ordinal_type,
                                            typename MatrixType::global_ordinal_type,
@@ -141,6 +129,8 @@ namespace Ifpack2 {
                               local_ordinal_type,
                               global_ordinal_type,
                               node_type> row_matrix_type;
+
+    static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::Krylov: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
     //! Type of the Ifpack2::Preconditioner specialization from which this class inherits.
     typedef Ifpack2::Preconditioner<scalar_type,

@@ -601,7 +601,7 @@ TEST(UnderstandingDistributedIndex, CreateDisconnectedElement)
         stk::mesh::EntityId elementId = static_cast<stk::mesh::EntityId>(-1);
         if(myProc == owningProc)
         {
-            std::vector<stk::mesh::EntityId> nodeIds;
+            stk::mesh::EntityIdVector nodeIds;
             for(size_t i=0; i < generatedEntities.size(); i++)
             {
                 stk::mesh::Entity current = generatedEntities[i];
@@ -620,7 +620,7 @@ TEST(UnderstandingDistributedIndex, CreateDisconnectedElement)
             stk::mesh::PartVector justBlock1Really(1, block1);
 
             stkMeshBulkData.change_entity_parts(generatedEntities[0], justBlock1Really);
-            stk::mesh::declare_element(stkMeshBulkData, justBlock1Really, elementId, &nodeIds[0]);
+            stk::mesh::declare_element(stkMeshBulkData, justBlock1Really, elementId, nodeIds);
         }
         stkMeshBulkData.modification_end();
 

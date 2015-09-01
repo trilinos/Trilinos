@@ -2,8 +2,6 @@
 #ifndef __CRS_ROW_VIEW_HPP__
 #define __CRS_ROW_VIEW_HPP__
 
-#include <Kokkos_Core.hpp>
-
 /// \file crs_row_view.hpp
 /// \brief A view to a row extracted from CrsMatrixView.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)

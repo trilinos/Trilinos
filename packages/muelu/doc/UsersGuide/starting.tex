@@ -165,18 +165,19 @@ The preferred way to configure and build \muelu{} is to do that outside of the s
 Here we provide a sample configure script that will enable \muelu{} and all of its optional dependencies:
 \begin{lstlisting}
   export TRILINOS_HOME=/path/to/your/Trilinos/source/directory
-  cmake -D BUILD_SHARED_LIBS:BOOL=ON \
-        -D CMAKE_BUILD_TYPE:STRING="RELEASE" \
-        -D CMAKE_CXX_FLAGS:STRING="-g" \
-        -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
-        -D Trilinos_ENABLE_TESTS:BOOL=OFF \
-        -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
-        -D Trilinos_ENABLE_MueLu:BOOL=ON \
-        -D MueLu_ENABLE_TESTS:STRING=ON \
-        -D MueLu_ENABLE_EXAMPLES:STRING=ON \
-        -D TPL_ENABLE_BLAS:BOOL=ON \
-        -D TPL_ENABLE_MPI:BOOL=ON \
-        ${TRILINOS_HOME}
+  cmake \
+      -D BUILD_SHARED_LIBS:BOOL=ON \
+      -D CMAKE_BUILD_TYPE:STRING="RELEASE" \
+      -D CMAKE_CXX_FLAGS:STRING="-g" \
+      -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+      -D Trilinos_ENABLE_TESTS:BOOL=OFF \
+      -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
+      -D Trilinos_ENABLE_MueLu:BOOL=ON \
+      -D MueLu_ENABLE_TESTS:STRING=ON \
+      -D MueLu_ENABLE_EXAMPLES:STRING=ON \
+      -D TPL_ENABLE_BLAS:BOOL=ON \
+      -D TPL_ENABLE_MPI:BOOL=ON \
+  ${TRILINOS_HOME}
 \end{lstlisting}
 
 \noindent

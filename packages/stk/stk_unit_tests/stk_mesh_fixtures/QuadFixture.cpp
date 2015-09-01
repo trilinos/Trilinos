@@ -67,6 +67,25 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
       );
 }
 
+QuadFixture::QuadFixture( stk::ParallelMachine pm ,
+                          unsigned nx , unsigned ny,
+                          bool auraOn )
+  : m_spatial_dimension(2),
+    m_meta( m_spatial_dimension),
+    m_bulk_data( m_meta, pm, (auraOn ? stk::mesh::BulkData::AUTO_AURA : stk::mesh::BulkData::NO_AUTO_AURA) ),
+    m_quad_part( m_meta.declare_part_with_topology("quad_part", stk::topology::QUAD_4 ) ),
+    m_coord_field( m_meta.declare_field<CoordFieldType>(stk::topology::NODE_RANK, "Coordinates") ),
+    m_nx( nx ),
+    m_ny( ny )
+{
+  //put coord-field on all nodes:
+  put_field(
+      m_coord_field,
+      m_meta.universal_part(),
+      m_spatial_dimension
+      );
+}
+
 void QuadFixture::node_x_y( EntityId entity_id, unsigned &x , unsigned &y ) const
 {
   entity_id -= 1;
@@ -130,12 +149,12 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
 
     std::vector<EntityId>::const_iterator ib = element_ids_on_this_processor.begin();
     const std::vector<EntityId>::const_iterator ie = element_ids_on_this_processor.end();
+    stk::mesh::EntityIdVector elem_nodes(4) ;
+
     for (; ib != ie; ++ib) {
       EntityId entity_id = *ib;
       unsigned ix = 0, iy = 0;
       elem_x_y(entity_id, ix, iy);
-
-      stk::mesh::EntityId elem_nodes[4] ;
 
       elem_nodes[0] = node_id( ix   , iy );
       elem_nodes[1] = node_id( ix+1 , iy );

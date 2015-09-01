@@ -48,16 +48,13 @@
 #include <vector>
 #include <map>
 #include <iostream>
-#include "Teuchos_ArrayRCP.hpp"
+
 #include "Panzer_Dimension.hpp"
-#include "Shards_Array.hpp"
 #include "Panzer_BasisValues2.hpp"
 #include "Panzer_IntegrationValues2.hpp"
 #include "Panzer_Dimension.hpp"
 
 #include "Phalanx_KokkosDeviceTypes.hpp"
-
-#include "Intrepid_FieldContainer.hpp"
 
 namespace panzer {
 

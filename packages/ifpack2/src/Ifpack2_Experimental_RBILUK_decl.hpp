@@ -164,10 +164,13 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
 {
  public:
 
+  //! @name Public type definitions. 
+  //@{
   //! The type of the entries of the input MatrixType.
   typedef typename MatrixType::scalar_type scalar_type;
 
-  typedef typename MatrixType::impl_scalar_type impl_scalar_type;
+  //typedef typename MatrixType::impl_scalar_type impl_scalar_type;
+  typedef typename MatrixType::scalar_type impl_scalar_type;
 
   //! The type of local indices in the input MatrixType.
   typedef typename MatrixType::local_ordinal_type local_ordinal_type;
@@ -199,6 +202,14 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
                             node_type> block_crs_matrix_type;
 
   template <class NewMatrixType> friend class RBILUK;
+  //@}
+
+  //! @name Constructors/Destructors.
+  //@{
+  /// \brief Constructor that takes a Tpetra::RowMatrix
+  ///
+  /// \param A_in [in] The input matrix.
+  RBILUK (const Teuchos::RCP<const row_matrix_type>& A_in);
 
   /// \brief Constructor that takes a Tpetra::Experimental::BlockCrsMatrix
   ///
@@ -214,6 +225,7 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
 
   //! Destructor (declared virtual for memory safety).
   virtual ~RBILUK ();
+  //@}
 
   //! Initialize by computing the symbolic incomplete factorization.
   void initialize ();
@@ -230,6 +242,18 @@ class RBILUK : virtual public Ifpack2::RILUK< Tpetra::RowMatrix< typename Matrix
 
   //! \name Implementation of Ifpack2::Details::CanChangeMatrix
   //@{
+
+  // Declare that we intend to overload RILUK::setMatrix, not hide it.
+  // This avoids build warnings that the method below "hides
+  // overloaded virtual function" (e.g., Clang 3.5).
+  //
+  // NOTE: If the base class of this class changes, e.g., if its
+  // template parameter changes, then be sure to change the code below
+  // to refer to the proper base class.
+  using RILUK<Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                typename MatrixType::local_ordinal_type,
+                                typename MatrixType::global_ordinal_type,
+                                typename MatrixType::node_type> >::setMatrix;
 
   /// \brief Change the matrix to be preconditioned.
   ///
@@ -329,18 +353,13 @@ private:
   void initAllValues (const block_crs_matrix_type& A);
 
   //! The (original) input matrix for which to compute ILU(k).
+  Teuchos::RCP<const row_matrix_type> A_;
+
+  //! The underlying constant block matrix.
   Teuchos::RCP<const block_crs_matrix_type> A_block_;
 
-  /// \brief The matrix used to to compute ILU(k).
-  ///
-  /// If A_local (the local filter of the original input matrix) is a
-  /// Tpetra::CrsMatrix, then this is just A_local.  Otherwise, this
-  /// class reserves the right for A_local_crs_ to be a copy of
-  /// A_local.  This is because the current implementation of ILU(k)
-  /// only knows how to factor a Tpetra::CrsMatrix.  That may change
-  /// in the future.
-  Teuchos::RCP<const block_crs_matrix_type> A_local_block_crs_;
-
+  //! The block size of the input matrix.
+  local_ordinal_type blockSize_;
 
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<block_crs_matrix_type> L_block_;

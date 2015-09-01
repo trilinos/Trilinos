@@ -71,7 +71,7 @@ bool Ifpack_Graph_Epetra_RowMatrix::Filled() const
 {
   return(RowMatrix_->Filled());
 }
- 
+
 //==============================================================================
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 int Ifpack_Graph_Epetra_RowMatrix::GRID(int LRID_in) const
@@ -125,12 +125,12 @@ int Ifpack_Graph_Epetra_RowMatrix::LCID(long long GCID_in) const
 #endif
 //==============================================================================
 int Ifpack_Graph_Epetra_RowMatrix::
-ExtractMyRowCopy(int MyRow, int LenOfIndices, 
-		 int &NumIndices, int *Indices) const
+ExtractMyRowCopy(int MyRow, int LenOfIndices,
+                 int &NumIndices, int *Indices) const
 {
   return(RowMatrix_->ExtractMyRowCopy(MyRow, LenOfIndices,
-				      NumIndices, &Values_[0],
-				      Indices));
+                                      NumIndices, &Values_[0],
+                                      Indices));
 }
 
 //==============================================================================
@@ -140,8 +140,9 @@ int Ifpack_Graph_Epetra_RowMatrix::NumMyNonzeros() const
 }
 
 // ======================================================================
-ostream& Ifpack_Graph_Epetra_RowMatrix::Print(std::ostream& os) const
+std::ostream& Ifpack_Graph_Epetra_RowMatrix::Print(std::ostream& os) const
 {
+  using std::endl;
 
   if (Comm().MyPID())
     return(os);

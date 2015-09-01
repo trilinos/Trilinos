@@ -1903,7 +1903,8 @@ namespace Tpetra {
                                                             dir.c_str ());
     }
 
-    /// \brief Solves a linear system when the underlying matrix is triangular.
+    /// \brief Solves a linear system when the underlying matrix is
+    ///   locally triangular.
     ///
     /// X is required to be post-imported, i.e., described by the
     /// column map of the matrix. Y is required to be pre-exported,
@@ -1911,10 +1912,11 @@ namespace Tpetra {
     ///
     /// This method is templated on the scalar type of MultiVector
     /// objects, allowing this method to be applied to MultiVector
-    /// objects of arbitrary type. However, it is recommended that
-    /// solve() not be called directly; instead, use the
-    /// CrsMatrixSolveOp, as it will handle the Import/Export operations
-    /// required to apply a matrix with non-trivial communication needs.
+    /// objects of arbitrary type. However, if you intend to use this
+    /// with template parameters not equal to Scalar, we recommend
+    /// that you wrap this matrix in a CrsMatrixSolveOp.  That class
+    /// will handle the Import/Export operations required to apply a
+    /// matrix with non-trivial communication needs.
     ///
     /// Both X and Y are required to have constant stride. However,
     /// unlike multiply(), it is permissible for <tt>&X == &Y</tt>. No

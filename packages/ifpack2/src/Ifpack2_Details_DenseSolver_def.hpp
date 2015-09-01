@@ -242,7 +242,7 @@ void DenseSolver<MatrixType, false>::initialize ()
 
     // Make the local filter of the input matrix A.
     if (A_->getComm ()->getSize () > 1) {
-      A_local_ = rcp (new LocalFilter<MatrixType> (A_));
+      A_local_ = rcp (new LocalFilter<row_matrix_type> (A_));
     } else {
       A_local_ = A_;
     }
@@ -831,7 +831,6 @@ describe (Teuchos::FancyOStream& out,
 } // namespace Ifpack2
 
 #define IFPACK2_DETAILS_DENSESOLVER_INSTANT(S,LO,GO,N)                  \
-  template class Ifpack2::Details::DenseSolver< Tpetra::CrsMatrix<S, LO, GO, N> >; \
   template class Ifpack2::Details::DenseSolver< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif // IFPACK2_DETAILS_DENSESOLVER_HPP

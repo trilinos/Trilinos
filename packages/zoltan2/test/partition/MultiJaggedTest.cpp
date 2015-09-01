@@ -50,6 +50,7 @@
 
 #include <Zoltan2_TestHelpers.hpp>
 #include <Zoltan2_XpetraMultiVectorAdapter.hpp>
+#include <Zoltan2_BasicVectorAdapter.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_PartitioningProblem.hpp>
 #include <GeometricGenerator.hpp>
@@ -781,6 +782,77 @@ int testFromDataFile(
         problem->solve();
     }
     CATCH_EXCEPTIONS_AND_RETURN("solve()")
+
+    {
+    // Run a test with BasicVectorAdapter and xyzxyz format coordinates
+    const int bvme = comm->getRank();
+    const inputAdapter_t::lno_t bvlen =
+                          inputAdapter_t::lno_t(coords->getLocalLength());
+    const size_t bvnvecs = coords->getNumVectors();
+    const size_t bvsize = coords->getNumVectors() * coords->getLocalLength();
+
+    ArrayRCP<inputAdapter_t::scalar_t> *bvtpetravectors = 
+            new ArrayRCP<inputAdapter_t::scalar_t>[bvnvecs];
+    for (size_t i = 0; i < bvnvecs; i++)
+      bvtpetravectors[i] = coords->getDataNonConst(i);
+
+    int idx = 0;
+    inputAdapter_t::gno_t *bvgids = new 
+                           inputAdapter_t::gno_t[coords->getLocalLength()];
+    inputAdapter_t::scalar_t *bvcoordarr = new inputAdapter_t::scalar_t[bvsize];
+    for (inputAdapter_t::lno_t j = 0; j < bvlen; j++) {
+      bvgids[j] = coords->getMap()->getGlobalElement(j);
+      for (size_t i = 0; i < bvnvecs; i++) {
+        bvcoordarr[idx++] = bvtpetravectors[i][j];
+      }
+    }
+
+    typedef Zoltan2::BasicUserTypes<inputAdapter_t::scalar_t,
+                                    inputAdapter_t::gno_t,
+                                    inputAdapter_t::lno_t,
+                                    inputAdapter_t::gno_t> bvtypes_t;
+    typedef Zoltan2::BasicVectorAdapter<bvtypes_t> bvadapter_t;
+    std::vector<const inputAdapter_t::scalar_t *> bvcoords(bvnvecs);
+    std::vector<int> bvstrides(bvnvecs);
+    for (size_t i = 0; i < bvnvecs; i++) {
+      bvcoords[i] = &bvcoordarr[i];
+      bvstrides[i] = bvnvecs;
+    }
+    std::vector<const inputAdapter_t::scalar_t *> bvwgts;
+    std::vector<int> bvwgtstrides;
+
+    bvadapter_t bvia(bvlen, bvgids, bvcoords, bvstrides,
+                       bvwgts, bvwgtstrides);
+
+    Zoltan2::PartitioningProblem<bvadapter_t> *bvproblem;
+    try {
+      bvproblem = new Zoltan2::PartitioningProblem<bvadapter_t>(&bvia, 
+                                                 params.getRawPtr(),
+                                                 comm);
+    }
+    CATCH_EXCEPTIONS_AND_RETURN("PartitioningProblem()")
+
+    try {
+        bvproblem->solve();
+    }
+    CATCH_EXCEPTIONS_AND_RETURN("solve()")
+
+    // Compare with MultiVectorAdapter result
+    for (inputAdapter_t::lno_t i = 0; i < bvlen; i++) {
+      if (problem->getSolution().getPartListView()[i] !=
+          bvproblem->getSolution().getPartListView()[i])
+        cout << bvme << " " << i << " " 
+             << coords->getMap()->getGlobalElement(i) << " " << bvgids[i] 
+             << ": XMV " << problem->getSolution().getPartListView()[i]
+             << "; BMV " << bvproblem->getSolution().getPartListView()[i]
+             << "  :  FAIL" << endl;
+    }
+  
+    delete [] bvgids;
+    delete [] bvcoordarr;
+    delete [] bvtpetravectors;
+    delete bvproblem;
+    }
 
     if (coordsConst->getGlobalLength() < 40) {
         int len = coordsConst->getLocalLength();

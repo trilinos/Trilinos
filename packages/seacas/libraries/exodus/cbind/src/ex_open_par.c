@@ -57,9 +57,6 @@
 #include <stdio.h>                      // for sprintf, fprintf, stderr
 #include "exodusII.h"                   // for exerrval, ex_err, etc
 #include "exodusII_int.h"               // for EX_FATAL, etc
-#include "netcdf.h"                     // for NC_NOERR, NC_GLOBAL, etc
-#include "netcdf_par.h"                 // for nc_open_par
-
 
 /*!  
 
@@ -138,6 +135,8 @@ int ex_open_par_int (const char  *path,
   int dim_str_name;
   int int64_status = 0;
   int pariomode = NC_MPIPOSIX;
+  int is_mpiio = 0;
+  int is_pnetcdf = 0;
   
   char errmsg[MAX_ERR_LENGTH];
 
@@ -167,12 +166,17 @@ int ex_open_par_int (const char  *path,
   /* Check parallel io mode.  Valid is NC_MPIPOSIX or NC_MPIIO or NC_PNETCDF
    * Exodus uses different flag values; map to netcdf values
    */
-  if (mode & EX_MPIPOSIX)
+  if (mode & EX_MPIPOSIX) {
     pariomode = NC_MPIPOSIX;
-  else if (mode & EX_MPIIO)
+  }
+  else if (mode & EX_MPIIO) {
     pariomode = NC_MPIIO;
-  else if (mode & EX_PNETCDF)
+    is_mpiio = 1;
+  }
+  else if (mode & EX_PNETCDF) {
     pariomode = NC_PNETCDF;
+    is_pnetcdf = 1;
+  }
   
   
   /* The EX_READ mode is the default if EX_WRITE is not specified... */
@@ -185,38 +189,52 @@ int ex_open_par_int (const char  *path,
 	 netcdf library, so the netcdf4 capabilities aren't known
 	 until runtime...
 	  
-	 Netcdf-4.X does not (yet?) have a function that can be
+	 Later versions of netcdf-4.X have a function that can be
 	 queried to determine whether the library being used was
-	 compiled with --enable-netcdf4, so that isn't very
-	 helpful.. 
+	 compiled with --enable-netcdf4, but not everyone is using that
+	 version yet, so we may have to do some guessing...
 
 	 At this time, query the beginning of the file and see if it
 	 is an HDF-5 file and if it is assume that the open failure
-	 is due to the netcdf library not enabling netcdf4 features...
+	 is due to the netcdf library not enabling netcdf4 features unless
+	 we have the define that shows it is enabled, then assume other error...
       */
       int type = 0;
       ex_check_file_type(path, &type);
 	  
       if (type == 5) {
-	/* This is an hdf5 (netcdf4) file. Since the nc_open failed,
-	   the assumption is that the netcdf doesn't have netcdf4
-	   capabilities enabled.  Tell the user...
+#if !defined(NC_HAS_HDF5)	  
+	/* This is an hdf5 (netcdf4) file. If NC_HAS_HDF5 is not defined,
+	   then we either don't have hdf5 support in this netcdf version, 
+	   OR this is an older netcdf version that doesn't provide that define.
+	   
+	   In either case, we don't have enough information, so we
+	   assume that the netcdf doesn't have netcdf4 capabilities
+	   enabled.  Tell the user...
 	*/
 	fprintf(stderr,
-		"EXODUS: Error: Attempting to open the netcdf-4 file:\n\t'%s'\n\twith a netcdf library that (potentially) does not support netcdf-4\n",
+		"EXODUS: Error: Attempting to open the netcdf-4 file:\n\t'%s'\n\t. Either the netcdf library does not support netcdf-4 or there is a filesystem or some other issue \n",
 		path);
+#else
+	fprintf(stderr,
+		"EXODUS: Error: Attempting to open the netcdf-4 file:\n\t'%s'\n\t failed. The netcdf library supports netcdf-4 so there must be a filesystem or some other issue \n",
+		path);
+#endif
       }
       exerrval = status;
-      
+
       sprintf(errmsg,"Error: failed to open %s read only",path);
       ex_err("ex_open",errmsg,exerrval); 
       return(EX_FATAL);
-    } 
+    }
   }
   else /* (mode & EX_WRITE) READ/WRITE */
     {
       if ((status = nc_open_par (path, NC_WRITE|NC_SHARE|pariomode, comm, info, &exoid)) != NC_NOERR) {
 	exerrval = status;
+#if defined(NC_HAVE_META_H) && !defined(NC_HAS_PARALLEL) && !defined(NC_HAS_PNETCDF)
+	sprintf(errmsg,"Error: The underyling netcdf library was not compiled with parallel support!\n");
+#endif
 	sprintf(errmsg,"Error: failed to open %s write only",path);
 	ex_err("ex_open",errmsg,exerrval); 
 	return(EX_FATAL);
@@ -295,7 +313,7 @@ int ex_open_par_int (const char  *path,
   int64_status |= (mode & EX_ALL_INT64_API);
   
   /* initialize floating point and integer size conversion. */
-  if (ex_conv_ini(exoid, comp_ws, io_ws, file_wordsize, int64_status, 1) != EX_NOERR ) {
+  if (ex_conv_ini(exoid, comp_ws, io_ws, file_wordsize, int64_status, 1, is_mpiio, is_pnetcdf) != EX_NOERR ) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
 	    "Error: failed to initialize conversion routines in file id %d",

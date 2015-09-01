@@ -183,7 +183,11 @@ namespace MueLu {
           {
             SubFactoryMonitor subM(*this, "Rebalancing prolongator -- fast map replacement", coarseLevel);
 
-            RCP<const Import> newImporter = ImportFactory::Build(importer->getTargetMap(), rebalancedP->getColMap());
+            RCP<const Import> newImporter;
+            {
+              SubFactoryMonitor(*this, "Import construction", coarseLevel);
+              newImporter = ImportFactory::Build(importer->getTargetMap(), rebalancedP->getColMap());
+            }
             rebalancedP2->replaceDomainMapAndImporter(importer->getTargetMap(), newImporter);
           }
 
@@ -226,7 +230,7 @@ namespace MueLu {
         LO myBlkSize = 0, blkSize = 0;
         if (nodeNumElts > 0)
           myBlkSize = importer->getSourceMap()->getNodeNumElements() / nodeNumElts;
-        maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
+        MueLu_maxAll(coords->getMap()->getComm(), myBlkSize, blkSize);
 
         RCP<const Import> coordImporter;
         if (blkSize == 1) {
@@ -293,8 +297,8 @@ namespace MueLu {
             SubFactoryMonitor subM(*this, "Rebalancing restriction -- fusedImport", coarseLevel);
 
             RCP<Map> dummy;         // meaning: use originalR's domain map.
-	    Teuchos::ParameterList listLabel;
-	    listLabel.set("Timer Label","MueLu::RebalanceR-" + Teuchos::toString(coarseLevel.GetLevelID()));
+            Teuchos::ParameterList listLabel;
+            listLabel.set("Timer Label","MueLu::RebalanceR-" + Teuchos::toString(coarseLevel.GetLevelID()));
             rebalancedR = MatrixFactory::Build(originalR, *importer, dummy, importer->getTargetMap(),Teuchos::rcp(&listLabel,false));
           }
           Set(coarseLevel, "R", rebalancedR);

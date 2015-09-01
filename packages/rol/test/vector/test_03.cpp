@@ -1,3 +1,51 @@
+// @HEADER
+// ************************************************************************
+//
+//               Rapid Optimization Library (ROL) Package
+//                 Copyright (2014) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact lead developers:
+//              Drew Kouri   (dpkouri@sandia.gov) and
+//              Denis Ridzal (dridzal@sandia.gov)
+//
+// ************************************************************************
+// @HEADER
+
+/*! \file  test_03.cpp
+    \brief Test MultiVector interface.
+
+*/
+
 #include "ROL_MultiVectorDefault.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Types.hpp"
@@ -75,8 +123,8 @@ int main(int argc, char *argv[]) {
 	RCP<Vector<RealT> > y = rcp(new StdVector<RealT>(y_rcp)); 
 	RCP<Vector<RealT> > z = rcp(new StdVector<RealT>(z_rcp)); 
 
-	ArrayRCP<RCP<Vector<RealT>>> A_rcp(2);
-	ArrayRCP<RCP<Vector<RealT>>> B_rcp(2);
+	ArrayRCP<RCP<Vector<RealT> > > A_rcp(2);
+	ArrayRCP<RCP<Vector<RealT> > > B_rcp(2);
 
 	A_rcp[0] = x;     
 	A_rcp[1] = y;     
@@ -84,23 +132,26 @@ int main(int argc, char *argv[]) {
 	B_rcp[0] = w;     
 	B_rcp[1] = z;     
 
-	RCP<MultiVector<RealT>> A = rcp(new MultiVectorDefault<RealT>(A_rcp));
-	RCP<MultiVector<RealT>> B = rcp(new MultiVectorDefault<RealT>(B_rcp));
+	RCP<MultiVector<RealT> > A = rcp(new MultiVectorDefault<RealT>(A_rcp));
+	RCP<MultiVector<RealT> > B = rcp(new MultiVectorDefault<RealT>(B_rcp));
        
 	// Test norm
 	if(static_cast<int>(norm_sum(*A)) != 6) {
+            *outStream << "Norm test failed!\n";
 	    ++errorFlag;
 	}
 
 	// Test clone
-	RCP<MultiVector<RealT>> C = A->clone();    
+	RCP<MultiVector<RealT> > C = A->clone();    
 	if(norm_sum(*C) != 0) {
+            *outStream << "Clone test failed!\n";
 	    ++errorFlag;
 	}
 
 	// Test deep copy
-        RCP<MultiVector<RealT>> D = A->deepCopy();
+        RCP<MultiVector<RealT> > D = A->deepCopy();
 	if(static_cast<int>(norm_sum(*D)) != 6) {
+            *outStream << "Deep copy test failed!\n";
 	    ++errorFlag;
 	}
         
@@ -108,8 +159,9 @@ int main(int argc, char *argv[]) {
 	std::vector<int> index(1);
 	index[0] = 0;
 
-        RCP<MultiVector<RealT>> S = A->shallowCopy(index);
+        RCP<MultiVector<RealT> > S = A->shallowCopy(index);
 	if(static_cast<int>(norm_sum(*S)) != 1) {
+            *outStream << "Shallow copy test failed!\n";
 	    ++errorFlag;
 	}
 
@@ -119,18 +171,21 @@ int main(int argc, char *argv[]) {
 	alpha[1] = 9.0;
 	A->scale(alpha);
 	if(static_cast<int>(norm_sum(*A)) != 49) {
+            *outStream << "Scaling test failed!\n";
 	    ++errorFlag;
 	}
 
 	// Test matrix multiplication 
 	A->gemm(2.0,*B,M,1.0);
-	if(static_cast<int>(norm_sum(*A)) != 49) {
+	if(static_cast<int>(norm_sum(*A)) != 53) {
+            *outStream << "Matmat multiply test failed!  The norm_sum is " << static_cast<int>(norm_sum(*A)) << ", not equal to 49.\n";
 	    ++errorFlag;
 	}
 
 	// Test set
         A->set(*B);
 	if(static_cast<int>(norm_sum(*A)) != 2) {
+            *outStream << "Set test failed!\n";
 	    ++errorFlag;
 	}
 
@@ -143,6 +198,7 @@ int main(int argc, char *argv[]) {
         Check(1,0) = 1.0;   
         Check(1,1) = 2.0;   
         if( P != Check ) {
+            *outStream << "Inner product test failed!\n";
 	    ++errorFlag;
         }
 
@@ -151,6 +207,7 @@ int main(int argc, char *argv[]) {
         D->dots(*D,dots);
         if(static_cast<int>(dots[0]) != 1 || 
            static_cast<int>(dots[1]) != 25 ) {
+            *outStream << "Dot product test failed!\n";
             ++errorFlag;
         }
 
@@ -167,10 +224,13 @@ int main(int argc, char *argv[]) {
         *outStream << err.what() << "\n";
         errorFlag = -1000;
     }; // end try
-    if (errorFlag != 0)
+
+    if (errorFlag != 0) {
         std::cout << "End Result: TEST FAILED\n";
-    else
+    }
+    else {
         std::cout << "End Result: TEST PASSED\n";
+    }
 
     return 0;
 }

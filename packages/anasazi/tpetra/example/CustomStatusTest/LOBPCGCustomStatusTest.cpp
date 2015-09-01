@@ -105,7 +105,7 @@ private:
   std::vector<int> ind_;
   int quorum_;
   bool scaled_;
-  bool throwExceptionOnNaN_;
+  // bool throwExceptionOnNaN_; (unused)
   RCP<const TOP> A_;
 
   const Scalar ONE;
@@ -114,12 +114,13 @@ private:
 // Constructor for our custom status test
 StatusTestFolding::
 StatusTestFolding (Scalar tol, int quorum, bool scaled,
-                   bool throwExceptionOnNaN, const RCP<const TOP>& A)
+                   bool /* throwExceptionOnNaN (unused) */,
+                   const RCP<const TOP>& A)
   : state_ (Anasazi::Undefined),
     tol_ (tol),
     quorum_ (quorum),
     scaled_ (scaled),
-    throwExceptionOnNaN_ (throwExceptionOnNaN),
+    /* throwExceptionOnNaN_ (throwExceptionOnNaN), (unused) */
     A_ (A),
     ONE (Teuchos::ScalarTraits<Scalar>::one ())
 {}

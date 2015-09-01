@@ -56,6 +56,10 @@
 #include "elb_output.h"           // for write_nemesis, write_vis
 #include "elb_format.h"
 
+#ifdef USE_ZOLTAN
+#include <mpi.h>                        // for MPI_Finalize, etc
+#endif
+
 #ifdef SGI10K
 #include <sys/resource.h>
 #endif
@@ -199,6 +203,9 @@ int internal_main(int argc, char *argv[], INT /* dummy */)
   Graph_Description<INT>   graph;
 
 /*-----------------------------Execution Begins------------------------------*/
+#ifdef USE_ZOLTAN
+  MPI_Init(&argc, &argv);
+#endif
 
   mesh.title[0]          = '\0';
   
@@ -524,6 +531,10 @@ int internal_main(int argc, char *argv[], INT /* dummy */)
 
   vec_free(lb.bor_nodes);
   free(lb.vertex2proc);
+
+#ifdef USE_ZOLTAN
+  MPI_Finalize();
+#endif
 
   return 0;
 }

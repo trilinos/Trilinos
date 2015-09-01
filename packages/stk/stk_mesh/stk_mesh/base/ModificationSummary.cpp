@@ -5,9 +5,12 @@
 namespace stk
 {
 
+static int modificationSummaryNumber = 0;
+
 ModificationSummary::ModificationSummary(stk::mesh::BulkData& bulkData) :
 m_bulkData(bulkData), m_stringTracker(), m_lastModCycle(-1), m_modCounter(0)
 {
+    m_modificationSummaryNumber = modificationSummaryNumber++;
 }
 
 ModificationSummary::~ModificationSummary()
@@ -85,6 +88,17 @@ void ModificationSummary::track_declare_entity(stk::mesh::EntityRank rank, stk::
     os << "Declaring new entity with entity key " << key << " on parts: " << std::endl;
     writeParts(os, "adding parts:", addParts);
     addEntityKeyAndStringToTracker(key, os.str());
+}
+
+void ModificationSummary::track_set_global_id(stk::mesh::Entity entity, stk::mesh::EntityId newId)
+{
+    if (isValid(entity)) {
+        stk::mesh::EntityKey oldKey = getEntityKey(entity);
+        stk::mesh::EntityId oldId = oldKey.id();
+        std::ostringstream os;
+        os << "Changing Fmwk global id for entity " << oldKey << " from " << oldId << " to " << newId << std::endl;
+        addEntityKeyAndStringToTracker(oldKey, os.str());
+    }
 }
 
 void ModificationSummary::track_change_entity_owner(const std::vector<stk::mesh::EntityProc> &changes)
@@ -211,6 +225,7 @@ void ModificationSummary::write_summary(int mod_cycle_count, bool sort)
             {
                 out << m_stringTracker[i].first << "\t" << m_stringTracker[i].second;
             }
+//            m_bulkData.dump_all_mesh_info(out);
         }
 
         out.close();
@@ -249,10 +264,36 @@ void ModificationSummary::addEntityKeyAndStringToTracker(stk::mesh::EntityKey ke
     m_modCounter++;
 }
 
+int find_how_much_to_pad(int number, int width)
+{
+    std::ostringstream tempStream;
+    tempStream << number;
+    return width - tempStream.str().length();
+}
+
+std::string string_of_zeros(int number)
+{
+    std::ostringstream tempStream;
+    for (int i=0 ; i<number ; ++i) tempStream << 0;
+    return tempStream.str();
+}
+
+std::string pad_int_with_zeros(int number, int width)
+{
+    const int howMuchToPad = find_how_much_to_pad(number,width);
+    std::string zerosString = string_of_zeros(howMuchToPad);
+    std::ostringstream tempStream;
+    tempStream << zerosString << number;
+    return tempStream.str();
+}
+
 std::string ModificationSummary::get_filename(int mod_cycle_count) const
-        {
+{
     std::ostringstream os;
-    os << "modification_cycle_" << mod_cycle_count << "_P" << my_proc_id() << ".txt";
+    os << "modification_cycle_P" << pad_int_with_zeros(my_proc_id(),3)
+            << "_B" << pad_int_with_zeros(m_modificationSummaryNumber,3)
+            << "_C" << pad_int_with_zeros(mod_cycle_count,6)
+            << ".txt";
     return os.str();
 }
 

@@ -1,23 +1,23 @@
 // Copyright (c) 2013, Sandia Corporation.
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-// 
+//
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-// 
+//
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-// 
+//
 //     * Neither the name of Sandia Corporation nor the names of its
 //       contributors may be used to endorse or promote products derived
 //       from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 // "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 // LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -29,7 +29,7 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 
 #ifndef STKTOPOLOGY_TOPOLOGY_HPP
 #define STKTOPOLOGY_TOPOLOGY_HPP
@@ -243,6 +243,9 @@ struct topology
   unsigned lexicographical_smallest_permutation_preserve_polarity(const NodeArray &nodes, const NodeArray &element_nodes) const;
 
   /// fill the output ordinals with the ordinals that make up the given sub topology
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename OrdinalOutputIterator>
   BOOST_GPU_ENABLED
   void sub_topology_node_ordinals(unsigned sub_rank, unsigned sub_ordinal, OrdinalOutputIterator output_ordinals) const
@@ -258,6 +261,9 @@ struct topology
 
   /// fill the output nodes with the nodes that make up the given sub topology
   /// input 'nodes' is expected to be of length num_nodes.
+#ifdef __CUDACC__
+#pragma hd_warning_disable
+#endif
   template <typename NodeArray, typename NodeOutputIterator>
   BOOST_GPU_ENABLED
   void sub_topology_nodes(const NodeArray & nodes, unsigned sub_rank, unsigned sub_ordinal, NodeOutputIterator output_nodes) const
@@ -323,7 +329,11 @@ struct topology
   BOOST_GPU_ENABLED
   unsigned num_sides() const
   {
-    return side_rank() > NODE_RANK? num_sub_topology(side_rank()) : num_vertices();
+    unsigned num_sides_out = 0u;
+    if (side_rank() != INVALID_RANK) {
+      num_sides_out = side_rank() > NODE_RANK? num_sub_topology(side_rank()) : num_vertices();
+    }
+    return num_sides_out;
   }
 
 
@@ -535,6 +545,10 @@ topology create_superelement_topology(int num_nodes)
 std::ostream & operator<<(std::ostream &out, topology::rank_t r);
 std::ostream & operator<<(std::ostream &out, topology t);
 void verbose_print_topology(std::ostream &out, topology t);
+bool isTriangle (topology topo);
+bool isQuadrilateral (topology topo);
+bool isTetrahedron (topology topo);
+bool isHexahedron (topology topo);
 
 
 } //namespace stk

@@ -51,6 +51,6 @@
 #   Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS in relationship to 'Domi'.
 
 TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
-  LIB_REQUIRED_PACKAGES Teuchos Kokkos
+  LIB_REQUIRED_PACKAGES Teuchos Kokkos TeuchosKokkosCompat
   LIB_OPTIONAL_PACKAGES Epetra TpetraClassic TpetraCore
 )

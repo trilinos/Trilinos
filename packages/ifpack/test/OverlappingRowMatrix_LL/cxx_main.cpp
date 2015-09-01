@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
   }
 
   Teuchos::ParameterList GaleriList;
-  int nx = 100; 
+  int nx = 100;
   GaleriList.set("n", nx * nx);
   GaleriList.set("nx", nx);
   GaleriList.set("ny", nx);
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
   // Build the overlapping matrix using class //
   // Ifpack_OverlappingRowMatrix.             //
   // ======================================== //
- 
+
   Time.ResetStartTime();
   Ifpack_OverlappingRowMatrix B(A,OverlapLevel);
   if (Comm.MyPID() == 0)
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 
   Epetra_Vector X(A->RowMatrixRowMap());
   Epetra_Vector Y(A->RowMatrixRowMap());
-  for (int i = 0 ; i < A->NumMyRows() ; ++i) 
+  for (int i = 0 ; i < A->NumMyRows() ; ++i)
     X[i] = 1.0* A->RowMatrixRowMap().GID64(i);
   Y.PutScalar(0.0);
 
@@ -121,13 +121,13 @@ int main(int argc, char *argv[])
   Y.Norm2(&Norm_B);
   if (Comm.MyPID() == 0)
     cout << "Norm of Y using B = " << Norm_B << endl;
-  
+
   // ================================================== //
   //Build the overlapping matrix as an Epetra_CrsMatrix //
   // ================================================== //
 
   Time.ResetStartTime();
-  Epetra_CrsMatrix& C = 
+  Epetra_CrsMatrix& C =
     *(Ifpack_CreateOverlappingCrsMatrix(&*A,OverlapLevel));
   if (Comm.MyPID() == 0)
     cout << "Time to create C = " << Time.ElapsedTime() << endl;
@@ -135,8 +135,18 @@ int main(int argc, char *argv[])
   // simple checks on global quantities
   long long NumGlobalRowsC = C.NumGlobalRows64();
   long long NumGlobalNonzerosC = C.NumGlobalNonzeros64();
-  assert (NumGlobalRowsB == NumGlobalRowsC);
-  assert (NumGlobalNonzerosB == NumGlobalNonzerosC);
+  if (NumGlobalRowsB != NumGlobalRowsC) {
+    std::ostringstream os;
+    os << "NumGlobalRowsB = " << NumGlobalRowsB
+       << " != NumGlobalRowsC = " << NumGlobalRowsC << ".";
+    throw std::logic_error (os.str ());
+  }
+  if (NumGlobalNonzerosB != NumGlobalNonzerosC) {
+    std::ostringstream os;
+    os << "NumGlobalNonzerosB = " << NumGlobalNonzerosB
+       << " != NumGlobalNonzerosC = " << NumGlobalNonzerosC << ".";
+    throw std::logic_error (os.str ());
+  }
 
   Epetra_Vector ExtX_C(C.RowMatrixRowMap());
   Epetra_Vector ExtY_C(C.RowMatrixRowMap());
@@ -160,7 +170,7 @@ int main(int argc, char *argv[])
   Ifpack_LocalFilter D(Teuchos::rcp(&B, false));
 
 #ifdef HAVE_MPI
-  MPI_Finalize() ; 
+  MPI_Finalize() ;
 #endif
 
   if (Comm.MyPID() == 0)

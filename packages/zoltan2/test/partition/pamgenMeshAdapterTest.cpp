@@ -138,7 +138,8 @@ int main(int narg, char *arg[]) {
   cmdp.setOption("xmlfile", &xmlMeshInFileName,
                  "XML file with PamGen specifications");
   cmdp.setOption("action", &action,
-                 "Method to use:  mj or scotch or color");
+                 "Method to use:  mj, scotch, zoltan_rcb, zoltan_hg, hg_ghost, "
+                 "parma or color");
   cmdp.setOption("nparts", &nParts,
                  "Number of parts to create");
   cmdp.parse(narg, arg);
@@ -149,10 +150,10 @@ int main(int narg, char *arg[]) {
   if(xmlMeshInFileName.length()) {
     if (me == 0) {
       cout << "\nReading parameter list from the XML file \""
-		<<xmlMeshInFileName<<"\" ...\n\n";
+                <<xmlMeshInFileName<<"\" ...\n\n";
     }
     Teuchos::updateParametersFromXmlFile(xmlMeshInFileName, 
-					 Teuchos::inoutArg(inputMeshList));
+                                         Teuchos::inoutArg(inputMeshList));
     if (me == 0) {
       inputMeshList.print(cout,2,true,true);
       cout << "\n";
@@ -160,12 +161,12 @@ int main(int narg, char *arg[]) {
   }
   else {
     cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
-    return 0;
+    return 5;
   }
 
   // Get pamgen mesh definition
   std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,
-							     "meshInput");
+                                                             "meshInput");
 
   /***************************************************************************/
   /********************** GET CELL TOPOLOGY **********************************/
@@ -189,7 +190,7 @@ int main(int narg, char *arg[]) {
 
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> inputAdapter_t;
 
-  inputAdapter_t ia(*CommT);
+  inputAdapter_t ia(*CommT, "region");
   ia.print(me);
 
   // Set parameters for partitioning
@@ -215,12 +216,66 @@ int main(int narg, char *arg[]) {
     params.set("partitioning_approach", "partition");
     params.set("algorithm", "scotch");
   }
+  else if (action == "zoltan_rcb") {
+    do_partitioning = true;
+    params.set("debug_level", "verbose_detailed_status");
+    params.set("imbalance_tolerance", 1.1);
+    params.set("num_global_parts", nParts);
+    params.set("partitioning_approach", "partition");
+    params.set("algorithm", "zoltan");
+  }
+  else if (action == "zoltan_hg") {
+    do_partitioning = true;
+    params.set("debug_level", "verbose_detailed_status");
+    params.set("imbalance_tolerance", 1.1);
+    params.set("num_global_parts", nParts);
+    params.set("partitioning_approach", "partition");
+    params.set("algorithm", "zoltan");
+    Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
+    zparams.set("LB_METHOD","phg");
+    zparams.set("FINAL_OUTPUT", "1");
+  }
+  else if (action=="hg_ghost") {
+    do_partitioning = true;
+    params.set("debug_level", "no_status");
+    params.set("imbalance_tolerance", 1.1);
+    params.set("algorithm", "zoltan");
+    params.set("num_global_parts", nParts);
+    params.set("hypergraph_model_type","ghosting");
+    params.set("ghost_layers",2);
+    Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
+    zparams.set("LB_METHOD","HYPERGRAPH");
+    zparams.set("LB_APPROACH","PARTITION");
+    zparams.set("PHG_EDGE_SIZE_THRESHOLD", "1.0");
+  }
+
+  else if (action == "parma") {
+    do_partitioning = true;
+    params.set("debug_level", "basic_status");
+    params.set("imbalance_tolerance", 1.05);
+    params.set("algorithm", "parma");
+    Teuchos::ParameterList &pparams = params.sublist("parma_parameters",false);
+    pparams.set("parma_method","VtxElm");
+  }
+  else if (action=="zoltan_hg") {
+    do_partitioning = true;
+    params.set("debug_level", "no_status");
+    params.set("imbalance_tolerance", 1.1);
+    params.set("algorithm", "zoltan");
+    params.set("num_global_parts", nParts);
+    Teuchos::ParameterList &zparams = params.sublist("zoltan_parameters",false);
+    zparams.set("LB_METHOD","HYPERGRAPH");
+    params.set("compute_metrics","yes");
+
+  }
+  
   else if (action == "color") {
     params.set("debug_level", "verbose_detailed_status");
     params.set("debug_output_file", "kdd");
     params.set("debug_procs", "all");
   }
 
+  if(me == 0) cout << "Action: " << action << endl;
   // create Partitioning problem
   if (do_partitioning) {
     if (me == 0) cout << "Creating partitioning problem ... \n\n";

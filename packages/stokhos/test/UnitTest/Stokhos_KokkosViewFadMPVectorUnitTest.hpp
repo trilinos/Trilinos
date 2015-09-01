@@ -157,6 +157,45 @@ checkConstantFadVectorView(const ViewType& view,
   return success;
 }
 
+template <typename ViewType>
+bool
+checkConstantFadVectorView2(const ViewType& view,
+                            const typename ViewType::value_type& v,
+                            Teuchos::FancyOStream& out) {
+  typedef ViewType view_type;
+  typedef typename view_type::value_type fad_vector_type;
+  typedef typename fad_vector_type::value_type vector_type;
+  typedef typename vector_type::storage_type storage_type;
+  typedef typename view_type::size_type size_type;
+  typedef typename view_type::HostMirror host_view_type;
+
+  // Copy to host
+  host_view_type h_view = Kokkos::create_mirror_view(view);
+  Kokkos::deep_copy(h_view, view);
+
+  bool success = true;
+  const size_type num_fad = h_view.storage_size()-1;
+  const size_type num_ensemble = storage_type::static_size;
+  for (size_type i0=0; i0<h_view.dimension_0(); ++i0) {
+  for (size_type i1=0; i1<h_view.dimension_1(); ++i1) {
+  for (size_type i2=0; i2<h_view.dimension_2(); ++i2) {
+  for (size_type i3=0; i3<h_view.dimension_3(); ++i3) {
+  for (size_type i4=0; i4<h_view.dimension_4(); ++i4) {
+  for (size_type i5=0; i5<h_view.dimension_5(); ++i5) {
+  for (size_type i6=0; i6<h_view.dimension_6(); ++i6) {
+    for (size_type k=0; k<num_ensemble; ++k)
+      TEUCHOS_TEST_EQUALITY(h_view.at(i0,i1,i2,i3,i4,i5,i6,0).val().coeff(k),
+                            v.val().coeff(k), out, success);
+    for (size_type j=0; j<num_fad; ++j) {
+      for (size_type k=0; k<num_ensemble; ++k)
+        TEUCHOS_TEST_EQUALITY(h_view.at(i0,i1,i2,i3,i4,i5,i6,0).dx(j).coeff(k),
+                              v.dx(j).coeff(k), out, success);
+    }
+  }}}}}}}
+
+  return success;
+}
+
 template <typename DataType, typename LayoutType, typename ExecutionSpace>
 struct ApplyView {
   typedef Kokkos::View<DataType,LayoutType,ExecutionSpace> type;
@@ -207,11 +246,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_Fad_MP, DeepCopy_ConstantScalar, 
   success = checkConstantFadVectorView(v, Scalar(val), out);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_Fad_MP, Rank7, Scalar, Layout )
+{
+  // Try and create a rank-7 view
+  typedef typename Scalar::value_type Vector;
+  typedef typename Vector::value_type BaseScalar;
+  typedef typename Vector::execution_space Device;
+  typedef typename ApplyView<Scalar*******,Layout,Device>::type ViewType;
+
+  ViewType v("view", 1, 2, 3, 4, 4, 3, 2, global_fad_size+1);
+  BaseScalar val = 1.2345;
+
+  Kokkos::deep_copy( v, val );
+
+  success = checkConstantFadVectorView2(v, Scalar(val), out);
+}
+
 #define VIEW_FAD_MP_VECTOR_TESTS_SCALAR_LAYOUT( SCALAR, LAYOUT )        \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_Fad_MP, Size, SCALAR, LAYOUT )                          \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
-    Kokkos_View_Fad_MP, DeepCopy_ConstantScalar, SCALAR, LAYOUT )
+    Kokkos_View_Fad_MP, DeepCopy_ConstantScalar, SCALAR, LAYOUT )       \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_Fad_MP, Rank7, SCALAR, LAYOUT )
 
 #define VIEW_FAD_MP_VECTOR_TESTS_SCALAR( SCALAR )                       \
   using Kokkos::LayoutLeft;                                             \

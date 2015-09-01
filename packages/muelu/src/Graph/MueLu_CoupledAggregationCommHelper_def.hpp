@@ -53,7 +53,7 @@
 
 #include "MueLu_CoupledAggregationCommHelper_decl.hpp"
 
-#include "MueLu_Utilities.hpp" // maxAll
+#include "MueLu_Utilities.hpp" // MueLu_maxAll
 
 namespace MueLu {
 
@@ -290,7 +290,7 @@ namespace MueLu {
       int irealloc,orealloc;
       if (realloc) irealloc=1;
       else         irealloc=0;
-      maxAll(comm,irealloc,orealloc);
+      MueLu_maxAll(comm,irealloc,orealloc);
       if (orealloc == 1) realloc=true;
       else               realloc=false;
 #endif

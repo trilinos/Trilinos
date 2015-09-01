@@ -256,7 +256,7 @@ namespace Belos {
      * \note For any pointer in \c newstate which directly points to the multivectors in 
      * the solver, the data is not (supposed to be) copied.
      */
-    void initialize(PCPGIterState<ScalarType,MV> newstate);
+    void initialize(PCPGIterState<ScalarType,MV>& newstate);
     
     /*! \brief Initialize the solver with the initial vectors from the linear problem.
      *  An exception is thrown if initialzed is called and newstate.R is null.
@@ -587,7 +587,7 @@ namespace Belos {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Initialize the iteration object
   template <class ScalarType, class MV, class OP>
-  void PCPGIter<ScalarType,MV,OP>::initialize(PCPGIterState<ScalarType,MV> newstate)
+  void PCPGIter<ScalarType,MV,OP>::initialize(PCPGIterState<ScalarType,MV>& newstate)
   {
 
     TEUCHOS_TEST_FOR_EXCEPTION(!stateStorageInitialized_,std::invalid_argument,

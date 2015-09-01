@@ -52,11 +52,13 @@
 #include "Tpetra_RowMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_SerialTriDiMatrix.hpp"
+#include <type_traits>
 
 namespace Ifpack2 {
 
 /// \class TriDiContainer
 /// \brief Store and solve a local TriDi linear problem.
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
 ///
 /// Please refer to the documentation of the Container
 /// interface. Currently, Containers are used by BlockRelaxation.
@@ -70,12 +72,12 @@ namespace Ifpack2 {
 /// supports) or a custom LU factorization (for Scalar types not
 /// supported by LAPACK).
 ///
-/// As with Ifpack2::Container, <tt>MatrixType</tt> must be a
-/// specialization of Tpetra::RowMatrix or of its subclass
-/// Tpetra::CrsMatrix.  Using a TriDi matrix for each block is a good
+/// As with Ifpack2::Container, MatrixType must be a specialization of
+/// Tpetra::RowMatrix.  Using a TriDi matrix for each block is a good
 /// idea when the blocks are small.  For large and / or sparse blocks,
 /// it would probably be better to use an implementation of Container
 /// that stores the blocks sparsely, in particular SparseContainer.
+/// If your matrix is banded but not tridiagonal, use BandedContainer.
 ///
 /// This class may store the TriDi local matrix using values of a
 /// different type (\c LocalScalarType) than those in \c MatrixType.
@@ -92,8 +94,8 @@ namespace Ifpack2 {
 /// <li> On all processes, all off-process indices in the column Map
 ///      of the input matrix occur after that initial set.</li>
 /// </ol>
-/// These assumptions may be violated if \c MatrixType is a
-/// Tpetra::CrsMatrix specialization and was constructed with a
+/// These assumptions may be violated if the input matrix is a
+/// Tpetra::CrsMatrix specialization that was constructed with a
 /// user-provided column Map.  The assumptions are not mathematically
 /// necessary and could be relaxed at any time.  Implementers who wish
 /// to do so will need to modify the extract() method, so that it
@@ -107,10 +109,9 @@ public:
 
   /// \brief The first template parameter of this class.
   ///
-  /// This must be either a Tpetra::RowMatrix specialization or a
-  /// Tpetra::CrsMatrix specialization.  It may have entirely
-  /// different template parameters (e.g., \c scalar_type) than
-  /// <tt>InverseType</tt>.
+  /// This must be a Tpetra::RowMatrix specialization.  It may have
+  /// entirely different template parameters (e.g., \c scalar_type)
+  /// than \c InverseType.
   typedef MatrixType matrix_type;
   //! The second template parameter of this class.
   typedef LocalScalarType local_scalar_type;
@@ -123,6 +124,9 @@ public:
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
   //! The Node type of the input (global) matrix.
   typedef typename MatrixType::node_type node_type;
+
+  static_assert (std::is_same<MatrixType, Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> >::value,
+                 "Ifpack2::TriDiContainer: MatrixType must be a Tpetra::RowMatrix specialization.");
 
   /// \brief The (base class) type of the input matrix.
   ///

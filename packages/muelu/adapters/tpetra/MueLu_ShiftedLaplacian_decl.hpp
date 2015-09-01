@@ -56,6 +56,8 @@
 #include "MueLu.hpp"
 #include "MueLu_ConfigDefs.hpp"
 
+#if defined(HAVE_MUELU_IFPACK2) and defined(HAVE_MUELU_TPETRA)
+
 #include <MueLu_BaseClass.hpp>
 #include <MueLu_CoalesceDropFactory_fwd.hpp>
 #include <MueLu_CoupledAggregationFactory_fwd.hpp>
@@ -82,14 +84,18 @@
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosSolverFactory.hpp>
+#include <BelosTpetraAdapter.hpp>
 
 namespace MueLu {
 
-  //! @brief Shifted Laplacian Helmholtz solver
   /*!
+    @brief Shifted Laplacian Helmholtz solver
+
     This class provides a black box solver for indefinite Helmholtz problems.
     An AMG-Shifted Laplacian is used as a preconditioner for Krylov iterative
     solvers in Belos.
+
+    @ingroup MueLuAdapters
   */
   template <class Scalar        = Xpetra::Matrix<>::scalar_type,
             class LocalOrdinal  = typename Xpetra::Matrix<Scalar>::local_ordinal_type,
@@ -107,6 +113,11 @@ namespace MueLu {
     typedef Belos::SolverFactory<SC,TMV,OP>              SolverFactory;
 
   public:
+
+  /*
+    FIXME  26-June-2015 JJH:  This contructor is setting numerous defaults.  However, they don't match the defaults
+    FIXME  int the method setParameters().  There also isn't any parameter validation that I can see.
+  */
 
     //! Constructors
     ShiftedLaplacian():
@@ -291,4 +302,7 @@ namespace MueLu {
 }
 
 #define MUELU_SHIFTEDLAPLACIAN_SHORT
+
+#endif //if defined(HAVE_MUELU_IFPACK2) and defined(HAVE_MUELU_TPETRA)
+
 #endif // MUELU_SHIFTEDLAPLACIAN_DECL_HPP

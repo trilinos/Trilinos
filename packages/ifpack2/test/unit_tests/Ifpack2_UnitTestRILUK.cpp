@@ -76,6 +76,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Parallel, Scalar, LocalOrdinal, 
   // Test that ILU(k) can be done on a parallel sparse matrix with noncontiguous row map.
   // See bug #6033.
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   row_matrix_type;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                map_type;
 
   using Teuchos::RCP;
@@ -116,7 +117,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Parallel, Scalar, LocalOrdinal, 
   A->fillComplete();
 
   RCP<const crs_matrix_type> constA = A;
-  Ifpack2::RILUK<crs_matrix_type> prec(constA);
+  Ifpack2::RILUK<row_matrix_type> prec(constA);
 
   Teuchos::ParameterList params;
   GlobalOrdinal lof=1;

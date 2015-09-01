@@ -48,6 +48,9 @@
 #ifndef MORKON_EXP_INTERFACE_HOST_SIDE_ADAPTER_H
 #define MORKON_EXP_INTERFACE_HOST_SIDE_ADAPTER_H
 
+#include <map>
+#include <mrk_data_types.hpp>
+
 namespace morkon_exp {
 
 template <unsigned int DIM>
@@ -55,22 +58,22 @@ struct Interface_HostSideAdapter
 {
   struct NodeInfo
   {
-    global_idx_t                   m_id;
-    InterfaceBase::SideEnum      m_side;
-    double[DIM]                m_coords;
+    global_idx_t                 m_id;
+    InterfaceBase::SideEnum    m_side;
+    double              m_coords[DIM];
   };
 
   struct FaceInfo
   {
-    global_idx_t                     m_id;
-    InterfaceBase::SideEnum        m_side;
-    std::vector<global_idx_t>     m_nodes;
+    global_idx_t                 m_id;
+    InterfaceBase::SideEnum    m_side;
+    std::vector<global_idx_t> m_nodes;
   };
 
-  typedef typename std::map<typename global_idx_t, NodeInfo>   node_map_type;
-  typedef typename std::map<typename global_idx_t, FaceInfo> face_map_type;
+  typedef std::map<global_idx_t, NodeInfo>  node_map_type;
+  typedef std::map<global_idx_t, FaceInfo>  face_map_type;
 
-  node_map_type   m_nodes;
+  node_map_type m_nodes;
   face_map_type m_faces;
 };
 

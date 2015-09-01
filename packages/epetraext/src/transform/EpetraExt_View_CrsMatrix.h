@@ -52,7 +52,7 @@ namespace EpetraExt {
 //! Generates a sub-block view of a Epetra_CrsMatrix
 class CrsMatrix_View : public ViewTransform<Epetra_CrsMatrix> {
 
-  const Epetra_CrsGraph & OrigGraph_;
+  /* const Epetra_CrsGraph & OrigGraph_; (unused private field) */
   const Epetra_CrsGraph & NewGraph_;
 
  public:
@@ -61,10 +61,10 @@ class CrsMatrix_View : public ViewTransform<Epetra_CrsMatrix> {
   ~CrsMatrix_View();
 
   //! Constructor
-  CrsMatrix_View( const Epetra_CrsGraph & orig_graph,
+  CrsMatrix_View( const Epetra_CrsGraph & /* orig_graph (unused) */,
                   const Epetra_CrsGraph & new_graph )
-  : OrigGraph_(orig_graph),
-    NewGraph_(new_graph)
+    : /* OrigGraph_(orig_graph), (unused private field) */
+  NewGraph_ (new_graph)
   { /*Should test graphs for requirements*/ }
 
   //! Transformation Operator

@@ -48,8 +48,12 @@ IF(PyTrilinos_ENABLE_Epetra)
   SET(HAVE_EPETRA ON)
 ENDIF()
 
-IF(PyTrilinos_ENABLE_Teuchos)
-  SET(HAVE_TEUCHOS ON)
+IF(PyTrilinos_ENABLE_Tpetra)
+  SET(HAVE_TPETRA ON)
+ENDIF()
+
+IF(PyTrilinos_ENABLE_Domi)
+  SET(HAVE_DOMI ON)
 ENDIF()
 
 IF(PyTrilinos_ENABLE_STK)
@@ -141,45 +145,23 @@ LIST(APPEND SOURCES
 
 #
 # PyTrilinos + Teuchos headers and sources
-IF(PyTrilinos_ENABLE_Teuchos)
+LIST(APPEND HEADERS
+  PyTrilinos_Teuchos_Util.hpp
+  )
 
-  LIST(APPEND HEADERS
-    PyTrilinos_Teuchos_Util.hpp
-    )
-
-  LIST(APPEND SOURCES
-    PyTrilinos_Teuchos_Util.cpp
-    )
-
-ENDIF(PyTrilinos_ENABLE_Teuchos)
+LIST(APPEND SOURCES
+  PyTrilinos_Teuchos_Util.cpp
+  )
 
 #
 # PyTrilinos + Epetra headers and sources
 IF(PyTrilinos_ENABLE_Epetra)
 
   LIST(APPEND HEADERS
-    Epetra_NumPyFEVector.hpp
-    Epetra_NumPyIntSerialDenseMatrix.hpp
-    Epetra_NumPyIntSerialDenseVector.hpp
-    Epetra_NumPyIntVector.hpp
-    Epetra_NumPyMultiVector.hpp
-    Epetra_NumPySerialDenseMatrix.hpp
-    Epetra_NumPySerialSymDenseMatrix.hpp
-    Epetra_NumPySerialDenseVector.hpp
-    Epetra_NumPyVector.hpp
     PyTrilinos_Epetra_Util.hpp
     )
 
   LIST(APPEND SOURCES
-    Epetra_NumPyFEVector.cpp
-    Epetra_NumPyIntSerialDenseMatrix.cpp
-    Epetra_NumPyIntSerialDenseVector.cpp
-    Epetra_NumPyIntVector.cpp
-    Epetra_NumPyMultiVector.cpp
-    Epetra_NumPySerialDenseMatrix.cpp
-    Epetra_NumPySerialSymDenseMatrix.cpp
-    Epetra_NumPySerialDenseVector.cpp
-    Epetra_NumPyVector.cpp
     PyTrilinos_Epetra_Util.cpp
     )
 
@@ -200,20 +182,6 @@ IF(PyTrilinos_ENABLE_Tpetra)
 ENDIF(PyTrilinos_ENABLE_Tpetra)
 
 #
-# PyTrilinos + EpetraExt headers and sources
-IF(PyTrilinos_ENABLE_EpetraExt)
-
-  LIST(APPEND HEADERS
-    PyTrilinos_EpetraExt_Util.hpp
-    )
-
-  LIST(APPEND SOURCES
-    PyTrilinos_EpetraExt_Util.cpp
-    )
-
-ENDIF(PyTrilinos_ENABLE_EpetraExt)
-
-#
 # PyTrilinos + Domi headers and sources
 IF(PyTrilinos_ENABLE_Domi)
 
@@ -226,6 +194,20 @@ IF(PyTrilinos_ENABLE_Domi)
     )
 
 ENDIF(PyTrilinos_ENABLE_Domi)
+
+#
+# PyTrilinos + EpetraExt headers and sources
+IF(PyTrilinos_ENABLE_EpetraExt)
+
+  LIST(APPEND HEADERS
+    PyTrilinos_EpetraExt_Util.hpp
+    )
+
+  LIST(APPEND SOURCES
+    PyTrilinos_EpetraExt_Util.cpp
+    )
+
+ENDIF(PyTrilinos_ENABLE_EpetraExt)
 
 #
 # PyTrilinos + ML headers and sources
@@ -299,6 +281,12 @@ ADD_SUBDIRECTORY(scripts)
 SET(ADDITIONAL_CLEAN_FILES "")
 
 #
+# Set the Domi library name
+IF(PyTrilinos_ENABLE_Domi)
+  SET(DOMI_LIB domi)
+ENDIF(PyTrilinos_ENABLE_Domi)
+
+#
 # Loop over the PyTrilinos-enabled Trilinos modules and define the
 # swig-generated PyTrilinos extension modules
 FOREACH(MODULE ${PyTrilinos_MODULES})
@@ -313,14 +301,14 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   SWIG_MODULE_GET_OUTDIR_AND_MODULE(${MODULE}.i MODULE_OUTDIR MODULE_NAME)
 
   # Define the target for this module
-  SET(PyTrilinos_TARGET_NAME ${MODULE_NODOT})
+  SET(PyTrilinos_TARGET_NAME "PyTrilinos_${MODULE_NODOT}")
   SWIG_ADD_MODULE(${PyTrilinos_TARGET_NAME}
     python
     "${MODULE}.i"
     "${MODULE_OUTDIR}"
     "${MODULE_NAME}")
   SET_PROPERTY(TARGET ${PyTrilinos_TARGET_NAME} PROPERTY NO_SONAME 1)
-  SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} pytrilinos)
+  SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} pytrilinos ${DOMI_LIB})
 
   # Add the header file to the list of additional "make clean" files
   LIST(APPEND ADDITIONAL_CLEAN_FILES "${MODULE}PYTHON_wrap.h")

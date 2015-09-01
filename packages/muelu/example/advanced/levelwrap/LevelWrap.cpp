@@ -62,6 +62,7 @@
 #include <MueLu_MLParameterListInterpreter.hpp>
 #ifdef HAVE_MUELU_TPETRA
 #include <Tpetra_Operator.hpp>
+#include <Tpetra_CrsMatrixMultiplyOp.hpp>
 #include <MueLu_TpetraOperator.hpp>
 #include <Xpetra_TpetraVector.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
@@ -79,6 +80,9 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverFactory.hpp"
+#ifdef HAVE_MUELU_TPETRA
+#include <BelosTpetraAdapter.hpp>
+#endif
 
 #ifdef HAVE_MUELU_EPETRA
 #include "BelosEpetraAdapter.hpp"

@@ -370,8 +370,16 @@ Toperator( OriginalTypeRef orig  )
         for( int j = 0 ; iterIS != iendIS; ++iterIS, ++j ) ColVec[j] = *iterIS;
         Adj2->InsertMyIndices( i, nCols2, &ColVec[0] );
       }
+
+#ifdef NDEBUG
+      (void) Adj2->FillComplete();
+#else
+      // assert() statements go away if NDEBUG is defined.  Don't
+      // declare the 'flag' variable if it never gets used.
       int flag = Adj2->FillComplete();
       assert( flag == 0 );
+#endif // NDEBUG
+
       RowMap.Comm().Barrier();
       if( verbosity_ > 1 ) std::cout << "Adjacency 2 Graph!\n" << *Adj2;
     }

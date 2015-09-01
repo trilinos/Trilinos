@@ -80,13 +80,12 @@ void create_entities( BulkData & bulk,
     node_map[nid] = e;
   }
 
+  EntityIdVector elem_node(8);
   for (unsigned entity_id = eid_start; entity_id < eid_end; ++entity_id)  {
     unsigned ix = 0, iy = 0, iz = 0;
     refine_info.elem_x_y_z(entity_id, ix, iy, iz);
     EntityId ie_check = refine_info.elem_id(ix, iy, iz);
     EXPECT_EQ(ie_check, entity_id);
-
-    stk::mesh::EntityId elem_node[8] ;
 
     elem_node[0] = refine_info.node_id( ix   , iy   , iz   );
     elem_node[1] = refine_info.node_id( ix+1 , iy   , iz   );

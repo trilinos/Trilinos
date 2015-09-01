@@ -73,22 +73,23 @@ int power_method(Epetra_CrsMatrix& A,
 
 int main(int argc, char *argv[])
 {
-        int ierr = 0, i;
+  using std::cout;
+  using std::endl;
+
+  int ierr = 0, i;
 
 #ifdef EPETRA_MPI
 
-        // Initialize MPI
+  // Initialize MPI
 
-        MPI_Init(&argc,&argv);
-        int size, rank; // Number of MPI processes, My process ID
+  MPI_Init(&argc,&argv);
+  int rank; // My process ID
 
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
 
 #else
 
-  int size = 1; // Serial case (not using MPI)
   int rank = 0;
   Epetra_SerialComm Comm;
 
@@ -339,6 +340,8 @@ int power_method(Epetra_CrsMatrix& A,
                  Epetra_Vector& resid,
                  double * lambda, int niters, double tolerance,
                  bool verbose) {
+  using std::cout;
+  using std::endl;
 
   // Fill z with random Numbers
   z.Random();

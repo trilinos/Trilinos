@@ -1,4 +1,4 @@
- 
+
 %\documentclass{article}
 \documentclass[10pt,fleqn]{book}
 \usepackage[top=3cm,bottom=3cm,left=3.2cm,right=3.2cm,headsep=10pt,a4paper]{geometry} % Page margins
@@ -28,13 +28,14 @@
 
 \usepackage{flowchart} % also loads tikz
 \usepackage{tikz}
-\usetikzlibrary{arrows}
+\usetikzlibrary{arrows,shapes}
+\usepackage{dot2texi}
 
 \usepackage[explicit]{titlesec}
 \usepackage{titletoc}
 \usepackage{keystroke}
 
-\input{bookstyle} 
+\input{bookstyle}
 
 %
 \definecolor{hellgelb}{rgb}{1,1,0.8}
@@ -80,13 +81,13 @@
   {5pt plus 1pt minus 1pt} % HEADSPACE
   {}          % CUSTOM-HEAD-SPEC
 
-  
+
 \definecolor{MyGray}{rgb}{0.96,0.97,0.98}
 \makeatletter\newenvironment{graybox}{%
    \noindent\begin{lrbox}{\@tempboxa}\begin{minipage}{0.95\textwidth}}{\end{minipage}\end{lrbox}%
    \colorbox{MyGray}{\usebox{\@tempboxa}}
-}\makeatother  
-  
+}\makeatother
+
 \newcommand\printScreenOutput[1]{
 \lstinputlisting[firstline=2]{#1}
 {\vspace{-0.3cm}\hfill\tiny{created with \muelu version \input{version.txt}}}
@@ -106,20 +107,20 @@
 #1
 \end{lstlisting}
 }
-  
+
 \title{A MueLu hands-on tutorial}
 \author{Tobias A. Wiesner  \\
 	Institute for Computational Mechanics \\
 	Technische Universit\"at M\"unchen  \\
 	Boltzmannstr. 15 \\
 	85747 Garching
-	\and 
+	\and
 Michael W. Gee\\
 Mechanics \& High Performance Computing Group \\
 	Technische Universit\"at M\"unchen  \\
 	Parkring 35 \\
 	85748 Garching
-	\and 
+	\and
 Andrey Prokopenko \\
 Scalable Algorithms \\
 Sandia National Laboratories\\
@@ -195,7 +196,7 @@ Livermore, CA 94551-0969\\
 \noindent Sandia National Laboratories is a multi-program laboratory managed
 and operated by Sandia Corporation, a wholly owned subsidiary of Lockheed
 Martin Corporation, for the U.S. Department of Energy's National Nuclear
-Security Administration under contract DE-AC04-94AL85000 
+Security Administration under contract DE-AC04-94AL85000
 
 %\noindent Copyright \copyright\ 2013 John Smith\\ % Copyright notice
 %
@@ -231,11 +232,11 @@ The third part is meant for expert users who want to use \muelu within their own
 
 \section*{References}
 
-For a complete overview of all features and available parameters in \muelu the reader may refer to the \muelu user guide \cite{Mue}. For the most current version of \muelu it is recommended to visit the homepage 
+For a complete overview of all features and available parameters in \muelu the reader may refer to the \muelu user guide \cite{Mue}. For the most current version of \muelu it is recommended to visit the homepage
 \begin{verbatim}
 http://trilinos.org/packages/muelu/
 \end{verbatim}
-If you find errors in this tutorial, please contact the \muelu user list 
+If you find errors in this tutorial, please contact the \muelu user list
 \begin{verbatim}
 muelu-users@software.sandia.gov
 \end{verbatim}
@@ -255,7 +256,7 @@ Many people have helped to develop \muelu, and we would like to acknowledge thei
 \chapterimage{pics/ch_bg1_small.png} % Table of contents heading image
 \chapter{Quick start}
 
-The first example is meant to quickly get into touch with \muelu. 
+The first example is meant to quickly get into touch with \muelu.
 
 \section{Example problem}
 \label{lab:examplesym}
@@ -346,11 +347,11 @@ Choose option 9 to close the program.
 
 \section{The XML input deck -- multigrid parameters}
 
-After we have learned the basics of the driver program for our experiments we now perform some experiments with our multigrid methods. We again use the simple 2D Laplace problem. First, we create a copy of the solver parameters using 
+After we have learned the basics of the driver program for our experiments we now perform some experiments with our multigrid methods. We again use the simple 2D Laplace problem. First, we create a copy of the solver parameters using
 \begin{verbatim}
 cp xml/s1_easy.xml mysolver.xml
 \end{verbatim}
-Then, we run the driver program again using 
+Then, we run the driver program again using
 \begin{verbatim}
 ./hands-on.sh
 \end{verbatim}
@@ -390,7 +391,7 @@ Compare the screen output of the unsmoothed multigrid method and the smoothed ag
 \end{exercise}
 \begin{exercise}
 Performing 10 multigrid sweeps both with the unsmoothed and the smoothed aggregation multigrid method gives the following error plots
- \begin{center}\includegraphics[width=8cm]{pics/tut1_11.png} 
+ \begin{center}\includegraphics[width=8cm]{pics/tut1_11.png}
 \includegraphics[width=8cm]{pics/tut1_12.png} \end{center}
  Which one belongs to the unsmoothed multigrid method?
 \end{exercise}
@@ -424,7 +425,7 @@ Note that the relaxation based methods provided by the \ifpack package are embed
 \end{mycomment}
 
 Of course, there exist other smoother methods such as polynomial smoothers (Chebyshev) and ILU based methods.
-A detailed overview of the different available smoothers can be found in the \muelu users guide (\cite{Mue}). 
+A detailed overview of the different available smoothers can be found in the \muelu users guide (\cite{Mue}).
 
 
 \begin{figure}
@@ -623,7 +624,7 @@ Then, one should think about the transfer operators. In the symmetric case one c
 Once the multigrid skeleton is fixed by the choice of transfer operators one can start with optimizing the level smoothers. When using relaxation based level smoothers one should first try different smoothing parameters and increase the number of smoothing sweeps only when necessary.
 
 \subsection{Fine tuning}
-Sometimes it is very helpful to have a look at the multigrid matrices. 
+Sometimes it is very helpful to have a look at the multigrid matrices.
 First of all, one should check whether the aggregation is working properly. This can be done by checking the screen output for the coarsening rate and the aggregation details (this is often the only way to do it if aggregates cannot be visualized due to missing node coordinates). If there is some problem with the aggregation one should try to adapt the aggregation parameters. Here it might make sense to export the coarse level matrices first and study their properties. For finding aggregation parameters one should, e.g., check the number of non-zeros in each row and choose the minimum aggregation size accordingly.
 
 \part{Advanced topics}
@@ -634,7 +635,7 @@ This tutorial introduces the more advanced (and more flexible) XML interface tha
 Again we use the 2D Laplace problem on a $50\times 50$ mesh as introduced in \S\ref{lab:examplesym}. That is, in the \verb|hands-on.py| script  you have to choose option 0 for the problem type.
 
 
-\section{One-level method} 
+\section{One-level method}
 Before applying a multigrid method as solver, we start with a simple Jacobi iteration as solver and look at the error. By setting the maximum number of multigrid levels to 1 and using a Jacobi smoother as coarse solver we obtain a pseudo multigrid method which corresponds to a simple Jacobi iteration.
 
 \lstinputlisting{../src/xml/s2_adv_a.xml}
@@ -657,7 +658,7 @@ Run the \verb|hands-on.py| script and choose the XML file \texttt{xml/s2\_adv\_a
 Note that the relaxation based smoothers are based on a Schwarz method (see \ifpack documentation). Repeat above steps using 2 processors. What do you observe in the error plots?
 \end{exercise}
 
-\section{Multigrid method} 
+\section{Multigrid method}
 The next step is to introduce a full multigrid algorithm. First one should increase the number of multigrid levels. Second, we switch to a direct solver on the coarsest level.\\
 
 \begin{exercise}
@@ -667,12 +668,12 @@ Create your own copy of the \texttt{xml/s2\_adv\_a.xml} parameter file. Adapt it
 Change to a direct solver on the coarsest level. You can do this by using \texttt{<Parameter name="CoarseSolver" type="string" value="DirectSolver"/>} in the \textit{Hierarchy} block of the xml file. Check the output of the multigrid hierarchy.
 \end{exercise}
 
-\section{Level smoothers} 
+\section{Level smoothers}
 Next, we give some building blocks for different types of level smoothers that you can use. Note that all these xml blocks can be put into the \textit{Factories} block of the advanced \muelu XML file format. Then you can use them by adding the corresponding link into the \textit{Hierarchy} block using the name of the parameter block.
 
 \begin{itemize}
 
-\item Chebyshev smoother: 
+\item Chebyshev smoother:
 \begin{lstlisting}
     <ParameterList name="Chebyshev">
       <Parameter name="factory"                     type="string" value="TrilinosSmoother"/>
@@ -696,7 +697,7 @@ Next, we give some building blocks for different types of level smoothers that y
         <Parameter name="relaxation: sweeps"                type="int"    value="1"/>
         <Parameter name="relaxation: damping factor"        type="double" value="0.9"/>
       </ParameterList>
-    </ParameterList>   
+    </ParameterList>
 \end{lstlisting}
 \item Gauss--Seidel smoother variants:
 \begin{lstlisting}
@@ -746,19 +747,19 @@ Beside above level smoothers there are more level smoothers such as ILU methods.
 Pick out one level smoother from above and use them for your problem. Note that you may have to adapt the \texttt{relaxation: damping factor} for reasonable results.
 \end{exercise}
 
-\section{Advanced features} 
+\section{Advanced features}
 \muelu allows full control over the behavior of the multigrid levels. Here, we demonstrate the capabilities of \muelu using the level smoothers.
 Take a look at the following example XML parameter list
 \lstinputlisting{../src/xml/s2_adv_b.xml}
 
-You can find the parameters in \texttt{xml/s2\_adv\_b.xml}. We have one building block \textit{BackwardGaussSeidel} representing the level smoother that we want to use in our multigrid hierarchy. As one can see from the \textit{Hierarchy} block we request a 4 level multigrid method. There are two blocks called \textit{Finest} and \textit{Remaining} describing the behavior of the different multigrid levels. Note the \texttt{startLevel} parameter in the block \textit{Remaining}. This parameter is missing in the \textit{Finest} block (where it is assumed to be the default value which is zero). That is, in this example we use the backward Gauss--Seidel method as pre-smoother on the finest level (note the keyword \textit{NoFactory} for \texttt{PostSmoother}). The parameter \texttt{startLevel=1} in the \textit{Remaining} block means that for level 1 and all coarser levels (unless there is another block with \texttt{startLevel > 1}) the building blocks from \textit{Remaining} shall be used for the multigrid setup. 
+You can find the parameters in \texttt{xml/s2\_adv\_b.xml}. We have one building block \textit{BackwardGaussSeidel} representing the level smoother that we want to use in our multigrid hierarchy. As one can see from the \textit{Hierarchy} block we request a 4 level multigrid method. There are two blocks called \textit{Finest} and \textit{Remaining} describing the behavior of the different multigrid levels. Note the \texttt{startLevel} parameter in the block \textit{Remaining}. This parameter is missing in the \textit{Finest} block (where it is assumed to be the default value which is zero). That is, in this example we use the backward Gauss--Seidel method as pre-smoother on the finest level (note the keyword \textit{NoFactory} for \texttt{PostSmoother}). The parameter \texttt{startLevel=1} in the \textit{Remaining} block means that for level 1 and all coarser levels (unless there is another block with \texttt{startLevel > 1}) the building blocks from \textit{Remaining} shall be used for the multigrid setup.
 That is, on the multigrid levels 1 and 2 the backward Gauss--Seidel method is used for post smoothing only. The corresponding multigrid hierarchy has the form
 \printScreenOutput{s2_adv_b.txt_3.fragment_3.fragment}
 
 \begin{exercise}
   Create an XML file in advanced format which produces the following multigrid layout
-  \printScreenOutput{s2_adv_c.txt_3.fragment_3.fragment}. 
-  
+  \printScreenOutput{s2_adv_c.txt_3.fragment_3.fragment}.
+
   Hint: create a copy of the file \texttt{xml/s2\_adv\_b.xml} and extend it accordingly. A possible solution can be found in \texttt{xml/s2\_adv\_c.xml}.
 \end{exercise}
 
@@ -900,7 +901,7 @@ A more advanced transfer operator smoothing strategy for non-symmetric linear sy
 
 \section{XML interface}
 
-\subsection{Unsmoothed transfer operators} 
+\subsection{Unsmoothed transfer operators}
 To construct a multigrid hierarchy with unsmoothed transfer operators one can use the following XML file (stored in \texttt{xml/s3a.xml})
 
 \lstinputlisting{../src/xml/s3a.xml}
@@ -917,7 +918,7 @@ Note that one can also use the \verb|Ptent| variable for registering a \verb|Ten
 That is, the following code would explicitly use the \verb|TentativePFactory| object that is created as \verb|myTentativePFact|. Since no factory is specified for the prolongation operator \verb|P| \muelu would decide to use a smoothed aggregation prolongation operator (represented by the \verb|SaPFactory|) which correctly uses the factory for \verb|Ptent| for the unsmoothed transfers with all its dependencies.
 \begin{lstlisting}
 <ParameterList name="MueLu">
-  <ParameterList name="Factories">   
+  <ParameterList name="Factories">
     <ParameterList name="myTentativePFact">
       <Parameter name="factory"   type="string" value="TentativePFactory"/>
     </ParameterList>
@@ -1064,7 +1065,7 @@ The \verb|RepartitionFactory| is the most important factory and responsible for 
 \end{figure}
 
 \section{XML interface}
-The corresponding XML parameter file looks as 
+The corresponding XML parameter file looks as
 
 \lstinputlisting{../src/xml/s5a.xml}
 
@@ -1110,7 +1111,7 @@ Figure \ref{fig:simpledesignaggregates} shows the extended transfer operator des
 \node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=TentativePFactory] (SaPFactory) {SaPFactory};
 \node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=SaPFactory,node distance=6cm] (TransPFactory) {TransPFactory};
 \node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=SaPFactory] (RAPFactory) {RAPFactory};
-\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=RAPFactory,node distance=9cm] (AggExportFactory) {AggregationExportFactory};
+%\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=RAPFactory,node distance=9cm] (AggExportFactory) {AggregationExportFactory};
 \node(A2) at (-3,-2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A_c$};
 \draw[->] (A) -- (CoalesceDropFactory);
 \draw[->] (CoalesceDropFactory) -- node [near start, left] {Graph} (AggregationFactory);
@@ -1123,9 +1124,9 @@ Figure \ref{fig:simpledesignaggregates} shows the extended transfer operator des
 \draw[->] (SaPFactory) -- node [near start, left] {P} (RAPFactory);
 \draw[->] (TransPFactory) -- node [near start, below] {R} (RAPFactory);
 \draw[->] (RAPFactory) -- node [near start, below] {} (A2);
-\draw[o->] (RAPFactory) -- (AggExportFactory);
-\draw[->] (AggregationFactory) to[out=0,in=100] node [near start, right] {Aggregates} (AggExportFactory);
-\draw[->] (CoalesceDropFactory) to[out=0,in=80] node [near start, right] {DofsPerNode} (AggExportFactory);
+%\draw[o->] (RAPFactory) -- (AggExportFactory);
+%\draw[->] (AggregationFactory) to[out=0,in=100] node [near start, right] {Aggregates} (AggExportFactory);
+%\draw[->] (CoalesceDropFactory) to[out=0,in=80] node [near start, right] {DofsPerNode} (AggExportFactory);
 \end{scope}
 \end{tikzpicture}
 } % end scalebox
@@ -1137,12 +1138,12 @@ Figure \ref{fig:simpledesignaggregates} shows the extended transfer operator des
 
 Especially for anisotropic or non-symmetric problems it may be advantageous to drop small entries from the graph of $A$ and use a filtered graph for generating aggregates.
 
-The following listing shows the definition of the \verb|myCoalesceDropFactory| which drops all values of the fine level matrix $A$ with the absolute value smaller than $0.01$. Of course, the \verb|myCoalesceDropFactory| has to be registered to generate the variable \verb|Graph|, which is used by the aggregation factory. 
+The following listing shows the definition of the \verb|myCoalesceDropFactory| which drops all values of the fine level matrix $A$ with the absolute value smaller than $0.01$. Of course, the \verb|myCoalesceDropFactory| has to be registered to generate the variable \verb|Graph|, which is used by the aggregation factory.
 The \verb|Graph| and the variable \verb|DofsPerNode| generated by the \verb|myCoalesceDropFactory| are needed as input by the \verb|UncoupledAggregationFact|. Note that the aggregation routine always works on the node-based information instead of DOF-based information. Therefore, we first have to build the graph of $A$ which then can be processed by the aggregation algorithm.
 
 \lstinputlisting{../src/xml/s4a.xml}
 
-The listing shows how the \verb|Graph| and the variable \verb|DofsPerNode| generated by the coalescing factory \verb|myCoalesceDropFact| are explicitly used as input for the aggregation routine. This is an example for a direct link of variables from output to the corresponding input. In addition, the \verb|myCoalesceDropFact| is registered to produce the variable \verb|Graph| in the \textit{Hierarchy} section of the XML file. One should also register \verb|myCoalesceDropFact| to produce the \verb|DofsPerNode| information. In our case it is not really necessary, since all factories which rely on information from \verb|DofsPerNode| get the information directly in the XML file (see also \verb|myAggExportFact| in above listing). So, one has in general two possibilities to declare inter-factory dependencies. One can either explicitly describe the input for each factory (as demonstrated for the \verb|Graph| in \verb|UncoupledAggregationFact|) or use the default factories (provided either by \muelu or explicitly 
+The listing shows how the \verb|Graph| and the variable \verb|DofsPerNode| generated by the coalescing factory \verb|myCoalesceDropFact| are explicitly used as input for the aggregation routine. This is an example for a direct link of variables from output to the corresponding input. In addition, the \verb|myCoalesceDropFact| is registered to produce the variable \verb|Graph| in the \textit{Hierarchy} section of the XML file. One should also register \verb|myCoalesceDropFact| to produce the \verb|DofsPerNode| information. In our case it is not really necessary, since all factories which rely on information from \verb|DofsPerNode| get the information directly in the XML file (see also \verb|myAggExportFact| in above listing). So, one has in general two possibilities to declare inter-factory dependencies. One can either explicitly describe the input for each factory (as demonstrated for the \verb|Graph| in \verb|UncoupledAggregationFact|) or use the default factories (provided either by \muelu or explicitly
 set by the user in the \textit{Hierarchy} section). \muelu uses the following ordering: first, the explicit input dependencies within the factories are used by \muelu. If a user does not define input variables (e.g., there is no input for \verb|Aggregates| in \verb|myTentativePFact|), \muelu checks whether there is a default factory for the data variable set in the \textit{Hierarchy} section (in above listing it will find \verb|UncoupledAggregationFact| to be responsible to provide the \verb|Aggregates|). Otherwise \muelu will use some internal default factory.
 
 For demonstration purposes we also introduced a \verb|RAPFactory| which makes use of the user-defined transfer factories \verb|myProlongatorFact| as well as \verb|myRestrictorFact|. The full XML file can be found in \verb|xml/s4a.xml|.\\
@@ -1151,34 +1152,576 @@ For demonstration purposes we also introduced a \verb|RAPFactory| which makes us
 
 \section{Visualization of aggregates}
 
-For debugging purposes it can be very useful to visualize the aggregates. In \muelu there is a helper factory named \verb|AggregationExportFactory| which can be used to export the aggregates for visualization purposes.
+For debugging purposes it can be very useful to visualize the aggregates. \muelu~provides several ways to graphically visualize the coarsening process and the aggregates. In order to visualize aggregates one needs the coordinates of the mesh nodes as geometric information. Whereas the user is expected to provide the mesh node coordinates in the \verb|Coordinates| variable on the finest level, we have to transfer the mesh information to the coarser levels.
 
-The \verb|AggregationExportFactory| acts as a small helper factory within the \verb|RAPFactory| which writes out some aggregation information to files on the hard disk (see figure \ref{fig:simpledesignaggregates}). In a post-processing step one can use these files together with some mesh information to generate pictures of the aggregates on each level. For post-processing we use the \verb|MueLu_Agg2VTK.py| python script which is stored in the \texttt{src} folder of this tutorial. It works both for 2D and 3D problems. You have to provide the output files from the \verb|AggregationExportFactory| as well as a list of node coordinates, that are needed to produce the output in the vtk format which can be opened in paraview.
+\subsection{General data transfer}
+
+The \verb|RAPFactory| is responsible to generate the coarse level matrix $A_c$, which is beside the transfer operators $P$ and $R$ the only information needed for an algebraic multigrid method to further coarsen the problem. However, in some situations the user might be able to transfer further user-specific information to coarser levels. The \verb|RAPFactory| can be extended by further helper transfer functions. These helper factories have to be registered in the \verb|RAPFactory| and then are called during the multigrid setup phase after the Galerkin product has been built. A typical example for such a helper factory is the \verb|CoordinatesTransferFactory| which transfers the \verb|Coordinates| variable to the coarser level and builds coarse node coordinates using the aggregation information. Further examples for special helper transfer factories are the \verb|AggregationExportFactory| and the \verb|CoarseningVisualizationFactory| which are all introduced in the following sections.
+
+\subsection{Use the AggregationExportFactory}
+
+\begin{figure}
+\begin{center}
+\scalebox{0.6}{
+\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
+\def\datawidth{2cm}
+\def\dataheight{0.5cm}
+\def\factorywidth{4cm}
+\def\factoryheight{0.75cm}
+%\draw[help lines] (-10,-10) grid (10,10);
+\begin{scope}[>=triangle 60]
+\node(A) at (-3,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A$};
+\node(Coordinates) at (12,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{Coordinates};
+\node(CoalesceDropFactory) at (-3,8) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{CoalesceDropFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=nothing] (AggregationFactory) {AggregationFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFactory] (TentativePFactory) {TentativePFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=TentativePFactory] (SaPFactory) {SaPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=SaPFactory,node distance=6cm] (TransPFactory) {TransPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=SaPFactory] (RAPFactory) {RAPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=RAPFactory,node distance=9cm] (AggExportFactory) {AggregationExportFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=AggExportFactory,node distance=6cm] (CoordinatesTransferFactory) {CoordinatesTransferFactory};
+\node(A2) at (-3,-2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A_c$};
+\node(Coordinates2) at (12,-2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{Coordinates};
+\draw[->] (A) -- (CoalesceDropFactory);
+\draw[->] (CoalesceDropFactory) -- node [near start, left] {Graph} (AggregationFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (TentativePFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (SaPFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (RAPFactory);
+\draw[->] (AggregationFactory) -- node [near start, left] {Aggregates} (TentativePFactory);
+\draw[->] (TentativePFactory) -- node [near start, left] {P} (SaPFactory);
+\draw[->] (SaPFactory) -- node [near start, below] {} (TransPFactory);
+\draw[->] (SaPFactory) -- node [near start, left] {P} (RAPFactory);
+\draw[->] (TransPFactory) -- node [near start, below] {R} (RAPFactory);
+\draw[->] (RAPFactory) -- node [near start, below] {} (A2);
+\draw[o->] (RAPFactory) -- (AggExportFactory);
+\draw[o->] (RAPFactory) to[out=-20,in=200] node [near start, right] {} (CoordinatesTransferFactory);
+\draw[->] (AggregationFactory) to[out=0,in=100] node [near start, right] {Aggregates} (AggExportFactory);
+\draw[->] (CoalesceDropFactory) to[out=0,in=80] node [near start, right] {DofsPerNode} (AggExportFactory);
+\draw[->] (Coordinates) to[out=270,in=70] node [near end, right] {} (AggExportFactory);
+\draw[->] (AggregationFactory) to[out=0,in=100] node [near end, right] {} (CoordinatesTransferFactory);
+\draw[->] (Coordinates) to[out=270,in=90] node [near end, right] {} (CoordinatesTransferFactory);
+\draw[->] (CoordinatesTransferFactory) to[out=270,in=90] node [near end, right] {} (Coordinates2);
+\draw[->,dashed] (TentativePFactory) to[out=0,in=100] node [near start, below] {CoarseMap} (CoordinatesTransferFactory);
+\end{scope}
+\end{tikzpicture}
+} % end scalebox
+\end{center}
+\caption{Visualization of aggregates using the AggregationExportFactory.}
+\label{fig:simpledesignaggregatesvis}
+\end{figure}
+
+If you have an aggregation-based algebraic multigrid method, the \verb|AggregationExportFactory| is the first choice to export the aggregates for visualization purposes.
+
+The file \verb|xml/s4av.xml| extends the multigrid hierarchy from file \verb|xml/s4a.xml| for support of visualization of aggregates.
+The important changes are the following:
+
+{\small
+\begin{lstlisting}
+<ParameterList name="myAggExportFact">
+  <Parameter name="factory"         type="string" value="AggregationExportFactory"/>
+  <Parameter name="aggregation: output filename"  type="string"
+             value="aggs_level%LEVELID_proc%PROCID.out"/>
+  <Parameter name="aggregation: output file: agg style" type="string"
+             value="Convex Hulls"/>
+</ParameterList>
+
+<ParameterList name="myCoordTransferFact">
+  <Parameter name="factory"         type="string" value="CoordinatesTransferFactory"/>
+</ParameterList>
+
+<ParameterList name="myRAPFact">
+  <Parameter name="factory"                  type="string" value="RAPFactory"/>
+  <Parameter name="P"                        type="string" value="myProlongatorFact"/>
+  <Parameter name="R"                        type="string" value="myRestrictorFact"/>
+  <ParameterList name="TransferFactories">
+    <Parameter name="CoordinateTransfer"     type="string" value="myCoordTransferFact"/>
+    <Parameter name="Visualization"          type="string" value="myAggExportFact"/>
+  </ParameterList>
+</ParameterList>
+\end{lstlisting}
+}
+
+The \verb|AggregationExportFactory| acts as a small helper factory within the \verb|RAPFactory| which writes out some aggregation information to VTK files on the hard disk (see Figure \ref{fig:simpledesignaggregatesvis}). For visualization the user has to provide the coordinates associated with the mesh nodes in the \verb|Coordinates| variable. The coordinates are transferred to the coarse level by the \verb|CoordinatesTransferFactory| which is also a helper transfer factory called by the \verb|RAPFactory| as the \verb|AggregationExportFactory|. The \verb|CoordinatesTransferFactory| needs the aggregation information to build a coarse coordinate by using the midpoint of each aggregate.
+Note, that the \verb|RAPFactory| accepts a sublist \verb|TransferFactories| to register all the additional helper transfer factories which are called after the Galerkin product is calculated. The helper transfer factories are called in the ordering in which they are registered in the \verb|RAPFactory|, but for this example the ordering is not important.
+
+To complete the xml file one has to declare the \verb|CoordinatesTransferFactory| to be the default factory for producing \verb|coordinates| by making the following statements in the \verb|Hierarchy| sublist of the xml file.
+
+\begin{lstlisting}
+<ParameterList name="Hierarchy">
+  <Parameter name="max levels"       type="int"    value="10"/>
+  <Parameter name="coarse: max size" type="int"    value="10"/>
+  <Parameter name="verbosity"        type="string" value="High"/>
+
+  <ParameterList name="All">
+    <Parameter name="Smoother"       type="string" value="SymGaussSeidel"/>
+    <Parameter name="Graph"          type="string" value="myCoalesceDropFact"/>
+    <Parameter name="Aggregates"     type="string" value="UncoupledAggregationFact"/>
+    <Parameter name="Nullspace"      type="string" value="myTentativePFact"/>
+    <Parameter name="P"              type="string" value="myProlongatorFact"/>
+    <Parameter name="R"              type="string" value="myRestrictorFact"/>
+    <Parameter name="A"              type="string" value="myRAPFact"/>
+    <Parameter name="CoarseSolver"   type="string" value="DirectSolver"/>
+    <Parameter name="Coordinates"    type="string" value="myCoordTransferFact"/>
+  </ParameterList>
+</ParameterList>
+\end{lstlisting}
+
+This way, the \verb|myCoordTransferFact| is declared as the default factory to generate the coarse coordinates in \verb|Coordinates| on the coarser levels.
 
 \begin{mycomment}
-The visualization script has successfully been tested with VTK 5.x. Note that it is not compatible to VTK 6.x.
+The fine level coordinates have to be provided by the user in the \verb|Coordinates| variable on the finest level. They are automatically used as input for the \verb|CoordinatesTransferFactory| to produce the coarse level coordinates for level 1. On the coarser levels then the \verb|CoordinatesTransferFactory| serves as input factory for being responsible to produce the coarse coordinates vector. Therefore, it is not a problem to declare \verb|myCoordTransferFact| as generating factory for the \verb|Coordinates| on all multigrid levels as per default input data on level 0 provided by the user has always precedence over factory-generated data.
+\end{mycomment}
+
+\begin{figure}
+\centering
+%\subfigure[Aggregates with settings from \texttt{xml/s4a.xml}]{\includegraphics[width=0.3\textwidth]{pics/s4al1.png}\includegraphics[width=0.3\textwidth]{pics/s4al2.png}\includegraphics[width=0.3\textwidth]{pics/s4al3.png}}
+%\subfigure[Aggregates with settings from \texttt{xml/s4b.xml} (default parameters)]{\includegraphics[width=0.3\textwidth]{pics/s4bl1.png}\includegraphics[width=0.3\textwidth]{pics/s4bl2.png}\includegraphics[width=0.3\textwidth]{pics/s4bl3.png}}
+\includegraphics[width=0.3\textwidth]{pics/s4al1.png}\includegraphics[width=0.3\textwidth]{pics/s4al2.png}\includegraphics[width=0.3\textwidth]{pics/s4al3.png}
+\caption{Aggregates with settings from \texttt{xml/s4av.xml}}
+\label{fig:diffaggregates}
+\end{figure}
+
+\begin{exercise}
+Run the \verb|Laplace 2D| example on a $50\times 50$ mesh using the XML file \verb|xml/s4av.xml|. Open \verb|paraview| and load the \verb|aggs\_level*\_proc.out-master.pvtu| file.
+\end{exercise}
+\begin{exercise}
+In the \verb|xml/s4av.xml| file an uncoupled aggregation factory has been explicitly defined using with some user-chosen aggregation parameters. Make a copy of \verb|xml/s4av.xml| and use the default (uncoupled) aggregation routine that is provided by \muelu if no user-specified aggregation algorithm with parameters is prescribed. Which line in the XML file do you have to remove to obtain this behavior? Compare the results (screen output of aggregates, multigrid hierarchy). Try to visualize the aggregates.
+\end{exercise}
+
+\begin{figure}
+\centering
+%\subfigure[Aggregates with settings from \texttt{xml/s4a.xml}]{\includegraphics[width=0.3\textwidth]{pics/s4al1.png}\includegraphics[width=0.3\textwidth]{pics/s4al2.png}\includegraphics[width=0.3\textwidth]{pics/s4al3.png}}
+%\subfigure[Aggregates with settings from \texttt{xml/s4b.xml} (default parameters)]{\includegraphics[width=0.3\textwidth]{pics/s4bl1.png}\includegraphics[width=0.3\textwidth]{pics/s4bl2.png}\includegraphics[width=0.3\textwidth]{pics/s4bl3.png}}
+\includegraphics[width=0.3\textwidth]{pics/s4bl1.png}\includegraphics[width=0.3\textwidth]{pics/s4bl2.png}\includegraphics[width=0.3\textwidth]{pics/s4bl3.png}
+\caption{Demonstration of different visualization options. Convex hulls with fine level mesh, coarse level mesh and jacks.}
+\label{fig:diffaggregatesstyles}
+\end{figure}
+
+The \verb|AggregationExportFactory| has several parameters which allow to change the visualization of the aggregates. The
+\verb|aggregation: output file: agg style| parameter allows to change the style of the aggregates. It can be \verb|Point Cloud|, \verb|Jacks| or \verb|Convex Hulls|. With the boolean parameter \verb|aggregation: output file: fine graph edges| the factory also writes out mesh information for visualization. Figure \ref{fig:diffaggregatesstyles} shows some examples of visualization. All data is exported to vtk files and can be loaded into \verb|paraview| where it can be combined in overlays. One can, e.g., show the fine level aggregates with the "mesh information" from the next coarser levels which visualizes the connections between aggregates. The \verb|Jacks| style in the rightmost picture of Figure \ref{fig:diffaggregatesstyles} shows which nodes are attached to the supernode in each aggregate.
+
+
+\subsection{Use the CoarseningVisualizationFactory}
+
+A more general alternative to visualize coarsening information is available with the so-called \verb|CoarseningVisualizationFactory|. It uses the same graphical VTK backend for writing out data. But instead of \verb|Aggregates| as input it expects a prolongation operator \verb|P| or \verb|Ptent|. Internally, the coarsening information is reconstructed from the prolongator basis functions through reverse engineering.
+
+\begin{mycomment}
+The prolongator basis functions must not overlap. That is, only transfer operators generated by the \verb|TentativePFactory| or the \verb|SemiCoarsenPFactory| are valid input transfer operators.
+\end{mycomment}
+
+The usage is very similar to the \verb|AggregationExportFactory|:
+\begin{lstlisting}
+<ParameterList name="myCoordTransferFact">
+  <Parameter name="factory"         type="string" value="CoordinatesTransferFactory"/>
+</ParameterList>
+
+<ParameterList name="myVizFact">
+  <Parameter name="factory"   type="string" value="CoarseningVisualizationFactory"/>
+  <Parameter name="P"                      type="string" value="myPFact"/>
+  <Parameter name="visualization: style"   type="string" value="Jacks"/>
+  <Parameter name="visualization: fine graph edges"   type="bool" value="true"/>
+</ParameterList>
+
+<ParameterList name="myRAPFact">
+  <Parameter name="factory"                 type="string" value="RAPFactory"/>
+  <Parameter name="P"                       type="string" value="myPFact"/>
+  <Parameter name="R"                       type="string" value="myRFact"/>
+  <ParameterList name="TransferFactories">
+    <Parameter name="For Coordinates"       type="string" value="myCoordTransferFact"/>
+    <Parameter name="Viz"                   type="string" value="myVizFact"/>
+  </ParameterList>
+</ParameterList>
+\end{lstlisting}
+
+\begin{figure}
+\begin{center}
+\scalebox{0.6}{
+\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
+\def\datawidth{2cm}
+\def\dataheight{0.5cm}
+\def\factorywidth{4cm}
+\def\factoryheight{0.75cm}
+%\draw[help lines] (-10,-10) grid (10,10);
+\begin{scope}[>=triangle 60]
+\node(A) at (-3,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A$};
+\node(Coordinates) at (12,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{Coordinates};
+\node(CoalesceDropFactory) at (-3,8) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{CoalesceDropFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=nothing] (AggregationFactory) {AggregationFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFactory] (TentativePFactory) {TentativePFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=TentativePFactory] (SaPFactory) {SaPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=SaPFactory,node distance=6cm] (TransPFactory) {TransPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=SaPFactory] (RAPFactory) {RAPFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=RAPFactory,node distance=9cm] (AggExportFactory) {CoarseningVisualizationFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=AggExportFactory,node distance=6cm] (CoordinatesTransferFactory) {CoordinatesTransferFactory};
+\node(A2) at (-3,-2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A_c$};
+\node(Coordinates2) at (12,-2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{Coordinates};
+\draw[->] (A) -- (CoalesceDropFactory);
+\draw[->] (CoalesceDropFactory) -- node [near start, left] {Graph} (AggregationFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (TentativePFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (SaPFactory);
+\draw[->] (A) to[out=180,in=180] node [near start, left] {} (RAPFactory);
+\draw[->] (AggregationFactory) -- node [near start, left] {Aggregates} (TentativePFactory);
+\draw[->] (TentativePFactory) -- node [near start, left] {P} (SaPFactory);
+\draw[->] (SaPFactory) -- node [near start, below] {} (TransPFactory);
+\draw[->] (SaPFactory) -- node [near start, left] {P} (RAPFactory);
+\draw[->] (TransPFactory) -- node [near start, below] {R} (RAPFactory);
+\draw[->] (RAPFactory) -- node [near start, below] {} (A2);
+\draw[o->] (RAPFactory) -- (AggExportFactory);
+\draw[o->] (RAPFactory) to[out=-20,in=200] node [near start, right] {} (CoordinatesTransferFactory);
+\draw[->] (TentativePFactory) to[out=0,in=90] node [near start, below] {P} (AggExportFactory);
+\draw[->] (CoalesceDropFactory) to[out=0,in=80] node [near start, right] {DofsPerNode} (AggExportFactory);
+\draw[->] (Coordinates) to[out=270,in=70] node [near end, right] {} (AggExportFactory);
+\draw[->] (AggregationFactory) to[out=0,in=100] node [near start, below] {Aggregates} (CoordinatesTransferFactory);
+\draw[->] (Coordinates) to[out=270,in=90] node [near end, right] {} (CoordinatesTransferFactory);
+\draw[->] (CoordinatesTransferFactory) to[out=270,in=90] node [near end, right] {} (Coordinates2);
+\draw[->,dashed] (TentativePFactory) to[out=0,in=100] node [near start, above] {CoarseMap} (CoordinatesTransferFactory);
+\end{scope}
+\end{tikzpicture}
+} % end scalebox
+\end{center}
+\caption{Visualization of aggregates using the CoarseningVisualizationFactory.}
+\label{fig:simpledesignaggregatesvis2}
+\end{figure}
+
+The most important difference is, that the user has to specify either \verb|P| or \verb|Ptent| as input for visualization. Furthermore, the parameter names for the \verb|CoarseningVisualizationFactory| are different to the corresponding parameters of the \verb|AggregationExportFactory|.
+
+\begin{mycomment}
+Note, that in the factory configuration as shown in Figure \ref{fig:simpledesignaggregatesvis2} one still needs the \verb|Aggregates| for building the coarse level node coordinates in the \verb|CoordinatesTransferFacotory|. That is, for coarsening methods other than aggregation-based coarsening the user has to provide a mechanism to generate the coarse level coordinates (e.g., using geometric considerations).
 \end{mycomment}
 
 \begin{exercise}
-Run the \verb|Laplace 2D| example on a $50\times 50$ mesh using the XML file \verb|xml/s4a.xml|. Visualize the aggregates.
-\end{exercise}
-\begin{exercise}
-In the \verb|xml/s4a.xml| file an uncoupled aggregation factory has been explicitly defined using with some user-chosen aggregation parameters. Make a copy of \verb|xml/s4a.xml| and use the default (uncoupled) aggregation routine that is provided by \muelu if no user-specified aggregation algorithm with parameters is prescribed. Which line in the XML file do you have to remove to obtain this behavior? Compare the results (screen output of aggregates, multigrid hierarchy). Try to visualize the aggregates.
+Run the \verb|Laplace 2D| example on a $50\times 50$ mesh using the XML file \verb|xml/s4av.xml|. Create a copy of the \verb|xml/s4av.xml| file and try to adapt it to use the \verb|CoarseningVisualizationFactory| instead of the \verb|AggregationExportFactory|. The aggregates should be the same in both cases.
 \end{exercise}
 
+\subsection{General remarks}
 Before we close this tutorial there are some general remarks that might help in setting up valid XML files.
 \begin{mycomment}
 In general it is a good idea to use the \textit{Hierarchy} section to register the factories to generate the variables. It is very hard to declare all dependencies in the factory sections itself. In the worst case you declare, e.g., a \verb|UncoupledAggregationFactory| and use it as input for the \verb|TentativePFactory| but forget to declare it also explicitly as input for the aggregation export factory \verb|AggregationExportFactory|. If you \verb|UncoupledAggregationFactory| is not declared as default for \verb|Aggregates| in the \verb|AggregationExportFactory|, the \verb|AggregationExportFactory| will use default aggregates provided by \muelu which are not identical to the aggregates used for building the transfer operators! Missing or wrong dependencies in the factory list are very hard to debug. Therefore one should always start with the \textit{Hierarchy} section and only locally overwrite the dependencies where necessary.
 \end{mycomment}
 
+\chapter{Advanced concepts}
+
+As already mentioned in the beginning, \muelu~is designed as a multigrid framework, and, even though initiated as an aggregation-based algebraic multigrid method, it can also be used for other kinds of coarsening methods. In this chapter we demonstrate the combination of a semi-coarsening method with an aggregation-based coarsening on the coarser levels. Semi-coarsening is combined with a line-smoothing method which then changes to a point-relaxation smoothing once no further semi-coarsening is possible. In both cases, the semi-coarsening and the line-smoothing, the key element here is the dynamic switch from one to the another coarsening or smoothing strategy during runtime.
+
+\section{Semi-coarsening}
+
+\subsection{Basic idea}
+Assuming that you have a 3D problem which is based on an extruded 2D mesh, semi-coarsening might be an interesting option. That is, on the finer levels we apply a semi-coarsening transfer operator which basically reduces the problem to a pseudo 2D problem which then is handled by any other type of (smoothed aggregation based) transfer operator the usual way.
+
+\subsection{Factory layout without rebalancing}
+
+The semi-coarsening is provided by the \texttt{SemiCoarsenPFactory} for generating the semi-coarsening transfer operators in combination with the \texttt{LineDetectionFactory} which performs the line detection, i.e. it searchs for the vertical node lines along the extrusion axis of the 2D mesh.
+Once all mesh layers are reduced to one by the \texttt{SemiCoarsenPFactory} we switch to the aggregation-based standard coarsening process. There is a \texttt{TogglePFactory} which allows to switch back and forth between two different transfer operator strategies (such as semi-coarsening and standard aggregation-based coarsening). In principle, any combination of two different transfer operator strategies is allowed. However, the current implementation only contains decision criteria to switch between semi-coarsening and aggregation-based types of coarsening.
+
+Figure \ref{fig:rebalancedtoggledesign} shows a typical factory layout for the combination of semi-coarsening with a standard (non-smoothed) aggregation-based coarsening with repartitioning enabled. First, one can see the \texttt{TogglePFactor} which has knowledge about the two different transfer operator branches and makes a decision which transfer operator is used and provided to the restriction operator factory and the \texttt{RAPFactory}. Depending on the line detection algorithm in \texttt{LineDetectionFactory} one might also need some information about the fine level mesh (such as the fine level coordinates). The user only has to provide the mesh on the finest level. On the coarser levels the \texttt{LineDetectionFactory} uses a standard ordering of the degrees of freedom which corresponds to a vertical node ordering.
 
 \begin{figure}
-\centering
-\subfigure[Aggregates with settings from \texttt{xml/s4a.xml}]{\includegraphics[width=0.3\textwidth]{pics/s4al1.png}\includegraphics[width=0.3\textwidth]{pics/s4al2.png}\includegraphics[width=0.3\textwidth]{pics/s4al3.png}}
-\subfigure[Aggregates with settings from \texttt{xml/s4b.xml} (default parameters)]{\includegraphics[width=0.3\textwidth]{pics/s4bl1.png}\includegraphics[width=0.3\textwidth]{pics/s4bl2.png}\includegraphics[width=0.3\textwidth]{pics/s4bl3.png}}
-\caption{Different aggregation parameters and the corresponding aggregates}
-\label{fig:diffaggregates}
+\begin{center}
+\scalebox{0.8}{
+\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
+\def\datawidth{2cm}
+\def\dataheight{0.5cm}
+\def\factorywidth{4cm}
+\def\factoryheight{0.75cm}
+%\draw[help lines] (-10,-10) grid (10,10);
+\begin{scope}[>=triangle 60]
+\node(A) at (0,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A$};
+\node [draw, terminal, minimum width=\datawidth, minimum height=\dataheight, left of=A,node distance=6cm] (Coords) {Coordinates};
+
+\node(nothing) at (-3,8) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{...};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=nothing] (AggregationFactory) {AggregationFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFactory] (TentativePFactory) {TentativePFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=TentativePFactory] (TogglePFactory) {TogglePFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=SaPFactory,node distance=6cm] (TransPFactory) {TransPFactory};
+\node(RAPFactory) at(0,0) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RAPFactory};
+
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, left of=TentativePFactory,node distance=6cm] (SemiCoarsenPFactory) {SemiCoarsenPFactory};
+
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, left of=AggregationFactory,node distance=6cm] (LineDetectionFactory) {LineDetectionFactory};
+
+\node(A2) at (0,-3) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A_c$};
+\node(P2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight,node distance=3cm, left of=A2]{$P$};
+\node(R2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight,node distance=3cm, right of=A2]{$R$};
+\draw[->] (A) -- (nothing);
+\draw[->] (nothing) -- (AggregationFactory);
+\draw[->] (A) to[out=270,in=25] node [near start, left] {} (TentativePFactory);
+\draw[->] (A) to[out=270,in=25] node [near start, left] {} (TogglePFactory);
+\draw[->] (A) to[out=270,in=90] node [near start, left] {} (RAPFactory);
+%\draw[->] (A) to[out=0,in=90] node [near end, right] {$A^T$} (GenericRFactory);
+\draw[->] (AggregationFactory) -- node [near start, right] {Aggregates} (TentativePFactory);
+\draw[->] (TentativePFactory) -- node [near start, right] {P} (TogglePFactory);
+\draw[->] (TentativePFactory) -- node [near start, left] {Nullspace} (TogglePFactory);
+\draw[->] (LineDetectionFactory) -- node [near start, right] {VertLineIds,$\ldots$} (SemiCoarsenPFactory);
+\draw[->] (SemiCoarsenPFactory) -- node [near end, below] {P} (TogglePFactory);
+\draw[->] (SemiCoarsenPFactory) -- node [near start, below] {Nullspace} (TogglePFactory);
+\draw[->] (TogglePFactory) -- node [near start, below] {P} (TransPFactory);
+\draw[->] (TogglePFactory) -- node [near start, below] {P} (RAPFactory);
+\draw[->] (TransPFactory) -- node [near start, below] {R} (RAPFactory);
+%\draw[->] (RAPFactory) -- node [near start, below] {} (A2);
+\draw[->] (RAPFactory) -- node [near start, left] {$A_c$} (A2);
+
+\draw[->] (Coords) to[out=200,in=90] node [near end, left] {} (LineDetectionFactory);
+\draw[->] (Coords) to[out=270,in=20] node [near end, left] {} (SemiCoarsenPFactory);
+%\draw[->] (SaPFactory) to[out=230,in=130] node [near end, left] {P} (RebalanceTransferFactory);
+%\draw[->] (GenericRFactory) to[out=310,in=50] node [near end, left] {R} (RebalanceTransferFactory2);
+\draw[->] (TogglePFactory) -- (P2);
+\draw[->] (TransPFactory) -- (R2);
+\end{scope}
+\end{tikzpicture}
+} % end scalebox
+\end{center}
+\caption{Factory design for semi-coarsening with rebalancing enabled on the coarser levels.}
+\label{fig:rebalancedtoggledesign}
 \end{figure}
+
+\subsection{Factory layout with rebalancing}
+
+Figure \ref{fig:rebalancedtogglerebalancingdesign} gives the extended factory layout when rebalancing is enabled.
+There is a new \texttt{ToggleCoordinatesTransferFactory} which is controlled by the \texttt{TogglePFactory} and appropriately generates the coarse coordinates depending on the used transfer operator. In case of semi-coarsening, the \texttt{SemiCoarsenPFactory} provides the coarse coordinates which are then piped through the \texttt{ToggleCoordinatesTransferFactory}. In case of standard aggregation the \texttt{CoordinatesTransferFactory} calculates the coarse coordinates using the aggregation information provided by the \texttt{AggregationFactory}. The coarse coordinate information is finally rebalanced by the \texttt{RebalanceTransferFactory} based on the rebalancing information provided by the \texttt{RepartitionFactory}.
+
+\begin{mycomment}
+Note, that the \texttt{LineDetectionFactory} algorithm expects all nodes of a vertical line along the extrusion axis of the underlying 2D mesh to be owned by the same processor. Do not allow for rebalancing before semi-coarsening is complete! Alternatively, you can implement a new interface class to replace the \texttt{ZoltanInterface} which makes sure that the nodes are rebalanced appropriately. This could be easily done by rebalancing the \texttt{VertLineIds} info that is provided by the \texttt{LineDetectionFactory} and reconstruct the node based \texttt{Partition} data. The \texttt{Chosen P} variable provided by the \texttt{TogglePFactory} would tell the new interface class whether we are in semi-coarsening mode or in standard aggregation mode.
+\end{mycomment}
+
+\begin{figure}
+\begin{center}
+\scalebox{0.8}{
+\begin{tikzpicture}[>=latex',font={\sf \small}, node distance=2cm]
+\def\datawidth{2cm}
+\def\dataheight{0.5cm}
+\def\factorywidth{4cm}
+\def\factoryheight{0.75cm}
+%\draw[help lines] (-10,-10) grid (10,10);
+\begin{scope}[>=triangle 60]
+\node(A) at (0,10) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A$};
+\node [draw, terminal, minimum width=\datawidth, minimum height=\dataheight, left of=A,node distance=6cm] (Coords) {Coordinates};
+
+\node(nothing) at (-3,8) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]{...};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=nothing] (AggregationFactory) {AggregationFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=AggregationFactory] (TentativePFactory) {TentativePFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=TentativePFactory] (TogglePFactory) {TogglePFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=SaPFactory,node distance=6cm] (TransPFactory) {TransPFactory};
+\node(RAPFactory) at(0,-2) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RAPFactory};
+
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=RAPFactory] (ZoltanInterface) {ZoltanInterface};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, below of=ZoltanInterface] (RepartitionFactory) {RepartitionFactory};
+\node(RebalanceTransferFactory) at(-3,-8) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebalanceTransferFactory};
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, right of=RebalanceTransferFactory,node distance=6cm] (RebalanceTransferFactory2) {RebalanceTransferFactory};
+\node(RebalanceAcFactory) at (0,-10) [draw, process, minimum width=\factorywidth, minimum height=\factoryheight]  {RebalanceAcFactory};
+
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, left of=TentativePFactory,node distance=6cm] (SemiCoarsenPFactory) {SemiCoarsenPFactory};
+
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, left of=AggregationFactory,node distance=6cm] (LineDetectionFactory) {LineDetectionFactory};
+
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, left of=RAPFactory,node distance=6cm] (ToggleCoordinatesTransferFactory) {ToggleCoordinatesTransferFactory};
+
+\node [draw, process, minimum width=\factorywidth, minimum height=\factoryheight, above of=ToggleCoordinatesTransferFactory,node distance=2cm] (CoordinatesTransferFactory) {CoordinatesTransferFactory};
+
+\node [right of=RebalanceTransferFactory2,node distance=3cm] (H1) {};
+
+\node(A2) at (0,-14) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight]{$A_c$};
+\node(P2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight,node distance=3cm, left of=A2]{$P$};
+\node(R2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight,node distance=3cm, right of=A2]{$R$};
+\node(Coords2) [draw, terminal, minimum width=\datawidth, minimum height=\dataheight,node distance=3cm, left of=P2]{Coordinates};
+\draw[->] (A) -- (nothing);
+\draw[->] (nothing) -- (AggregationFactory);
+\draw[->] (A) to[out=270,in=25] node [near start, left] {} (TentativePFactory);
+\draw[->] (A) to[out=270,in=25] node [near start, left] {} (TogglePFactory);
+\draw[->] (A) to[out=270,in=90] node [near start, left] {} (RAPFactory);
+%\draw[->] (A) to[out=0,in=90] node [near end, right] {$A^T$} (GenericRFactory);
+\draw[->] (AggregationFactory) -- node [near start, right] {Aggregates} (TentativePFactory);
+\draw[->] (TentativePFactory) -- node [near start, right] {P} (TogglePFactory);
+\draw[->] (TentativePFactory) -- node [near start, left] {Nullspace} (TogglePFactory);
+\draw[->] (LineDetectionFactory) -- node [near start, right] {VertLineIds,$\ldots$} (SemiCoarsenPFactory);
+\draw[->] (SemiCoarsenPFactory) -- node [near end, below] {P} (TogglePFactory);
+\draw[->] (SemiCoarsenPFactory) -- node [near start, below] {Nullspace} (TogglePFactory);
+\draw[->] (TogglePFactory) to[out=270,in=25] node [near end, right] {Chosen P} (ToggleCoordinatesTransferFactory);
+\draw[->] (TogglePFactory) -- node [near start, below] {P} (TransPFactory);
+\draw[->] (TogglePFactory) -- node [near start, below] {P} (RAPFactory);
+\draw[->] (TransPFactory) -- node [near start, below] {R} (RAPFactory);
+%\draw[->] (RAPFactory) -- node [near start, below] {} (A2);
+\draw[->] (RAPFactory) -- node [near start, left] {$A_c$} (ZoltanInterface);
+\draw[<->,dashed] (RAPFactory) -- (ToggleCoordinatesTransferFactory);
+\draw[->] (RAPFactory) to[out=190,in=180] node [near end, left] {$A_c$} (RepartitionFactory);
+\draw[->] (ZoltanInterface) -- node [near start, left] {Partition} (RepartitionFactory);
+\draw[->] (CoordinatesTransferFactory) -- node [near start, left] {Coordinates} (ToggleCoordinatesTransferFactory);
+\draw[->] (SemiCoarsenPFactory) to[out=270,in=160] node [near start, left] {Coordinates} (ToggleCoordinatesTransferFactory);
+\draw[->] (ToggleCoordinatesTransferFactory) to[out=270,in=160] node [near start, left] {Coordinates} (RebalanceTransferFactory);
+\draw[-] (RAPFactory) to[out=0,in=90] node [near end, left] {$A_c$}  (H1.north east);
+\draw[->] (H1.north east) to[out=270,in=0] node [near end, left] {}  (RebalanceAcFactory);
+\draw[->] (RepartitionFactory) -- node [near start, left] {Importer} (RebalanceTransferFactory);
+\draw[->] (RepartitionFactory) -- node [near start, right] {Importer} (RebalanceTransferFactory2);
+\draw[->] (RepartitionFactory) -- node [near end, left] {Importer} (RebalanceAcFactory);
+\draw[->] (RebalanceAcFactory) -- node [near end, left] {} (A2);
+\draw[->] (AggregationFactory) to[out=200,in=80] node [near start, right] {Aggregates}  (CoordinatesTransferFactory);
+\draw[->] (Coords) -- node [near end, left] {} (CoordinatesTransferFactory);
+\draw[->] (Coords) to[out=200,in=90] node [near end, left] {} (LineDetectionFactory);
+\draw[->] (Coords) to[out=270,in=20] node [near end, left] {} (SemiCoarsenPFactory);
+\draw[->] (RebalanceTransferFactory) to[out=220,in=90] node [near end, left] {} (Coords2);
+%\draw[->] (SaPFactory) to[out=230,in=130] node [near end, left] {P} (RebalanceTransferFactory);
+%\draw[->] (GenericRFactory) to[out=310,in=50] node [near end, left] {R} (RebalanceTransferFactory2);
+\draw[->] (RebalanceTransferFactory) -- (P2);
+\draw[->] (RebalanceTransferFactory2) -- (R2);
+\end{scope}
+\end{tikzpicture}
+} % end scalebox
+\end{center}
+\caption{Factory design for semi-coarsening with rebalancing enabled on the coarser levels.}
+\label{fig:rebalancedtogglerebalancingdesign}
+\end{figure}
+
+The following listing shows exemplary the content of the xml file to set up a factory hierarchy similar to the one shown in Figure \ref{fig:rebalancedtogglerebalancingdesign}.
+
+In the \verb|Factories| section, first the \verb|SemiCoarsenPFactory| and the line detection algorithm are defined representing the left transfer operator branch. Next, the smoothed aggregation coarsening branch is defined in Part II together with an instance of the \verb|TransferCoordinatesTransferFactory| for calculating the corresponding coarse coordinates.
+In Part III the \verb|TogglePFactory| is defined. It contains a \verb|TransferFactories| sublist where all different coarsening branches (i.e., the semi-coarsening and aggregation-based coarsening) are defined. The corresponding prolongation operators are listed using the variable name \verb|P| with a number between 1 and 9. In addition to the prolongation operator factories one has also to declare the factories providing the coarse level null space. In case of semi-coarsening this is the \verb|SemiCoarsenPFactory| and for the aggregation-based coarsening this is the \verb|TentativePFactory|. These factories are declared for generating the \verb|Nullspace| variable with a number between 1 and 9 corresponding to the associated transfer operator branch.
+
+Similarly, a \verb|ToggleCoordinatesTransferFactory| is declared with an internal list of all factories providing the coarse level coordinates. This is the previously defined \verb|CoordinatesTransferFactory| for the standard aggregation-based coarsening branch and the \verb|SemiCoarsenPFactory| for the semi-coarsening branch.
+
+Part IV contains the standard factories for the rebalancing.
+
+Finally, it is important to declare all necessary main factories in the \verb|Hierarchy| section of the xml file.
+
+\begin{lstlisting}
+<ParameterList name="MueLu">
+  <ParameterList name="Factories">
+
+    <!-- =======================  PART I  ======================= -->
+    <ParameterList name="myLineDetectionFact">
+      <Parameter name="factory" type="string" value="LineDetectionFactory"/>
+      <Parameter name="linedetection: orientation" type="string" value="coordinates"/>
+    </ParameterList>
+
+    <ParameterList name="mySemiCoarsenPFact1">
+      <Parameter name="factory" type="string" value="SemiCoarsenPFactory"/>
+      <Parameter name="semicoarsen: coarsen rate" type="int" value="6"/>
+    </ParameterList>
+
+    <!-- =======================  PART II  ======================= -->
+    <ParameterList name="UncoupledAggregationFact2">
+      <Parameter name="factory" type="string" value="UncoupledAggregationFactory"/>
+      <Parameter name="aggregation: ordering" type="string" value="graph"/>
+      <Parameter name="aggregation: min agg size" type="int"    value="9"/>
+    </ParameterList>
+
+    <ParameterList name="MyCoarseMap2">
+      <Parameter name="factory" type="string" value="CoarseMapFactory"/>
+      <Parameter name="Aggregates" type="string" value="UncoupledAggregationFact2"/>
+    </ParameterList>
+
+
+    <ParameterList name="myTentativePFact2">
+      <Parameter name="factory"     type="string" value="TentativePFactory"/>
+      <Parameter name="Aggregates"  type="string" value="UncoupledAggregationFact2"/>
+      <Parameter name="CoarseMap"   type="string" value="MyCoarseMap2"/>
+    </ParameterList>
+
+    <ParameterList name="mySaPFact2">
+      <Parameter name="factory"     type="string" value="SaPFactory"/>
+      <Parameter name="P"           type="string" value="myTentativePFact2"/>
+    </ParameterList>
+
+    <ParameterList name="myTransferCoordinatesFact">
+      <Parameter name="factory"     type="string" value="CoordinatesTransferFactory"/>
+      <Parameter name="CoarseMap"   type="string" value="MyCoarseMap2"/>
+      <Parameter name="Aggregates"  type="string" value="UncoupledAggregationFact2"/>
+    </ParameterList>
+
+    <!-- =======================  PART III  ======================= -->
+
+    <ParameterList name="myTogglePFact">
+      <Parameter name="factory"              type="string" value="TogglePFactory"/>
+      <Parameter name="semicoarsen: number of levels"       type="int" value="2"/>
+      <ParameterList name="TransferFactories">
+         <Parameter name="P1"                type="string" value="mySemiCoarsenPFact1"/>
+         <Parameter name="P2"                type="string" value="mySaPFact2"/>
+         <Parameter name="Nullspace1"        type="string" value="mySemiCoarsenPFact1"/>
+         <Parameter name="Nullspace2"        type="string" value="myTentativePFact2"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="myRestrictorFact">
+      <Parameter name="factory"   type="string" value="TransPFactory"/>
+      <Parameter name="P"         type="string" value="myTogglePFact"/>
+    </ParameterList>
+
+    <ParameterList name="myToggleTransferCoordinatesFact">
+      <Parameter name="factory"   type="string" value="ToggleCoordinatesTransferFactory"/>
+      <Parameter name="Chosen P"  type="string" value="myTogglePFact"/>
+      <ParameterList name="TransferFactories">
+        <Parameter name="Coordinates1" type="string" value="mySemiCoarsenPFact1"/>
+        <Parameter name="Coordinates2" type="string" value="myTransferCoordinatesFact"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="myRAPFact">
+      <Parameter name="factory" type="string" value="RAPFactory"/>
+      <Parameter name="P"       type="string" value="myTogglePFact"/>
+      <Parameter name="R"       type="string" value="myRestrictorFact"/>
+      <ParameterList name="TransferFactories">
+        <Parameter name="For Coordinates" type="string" value="myToggleTransferCoordinatesFact"/>
+      </ParameterList>
+    </ParameterList>
+
+    <!-- =======================  PART IV (Repartitioning)  ======================= -->
+    <ParameterList name="myZoltanInterface">
+       <Parameter name="factory"      type="string" value="ZoltanInterface"/>
+       <Parameter name="A"            type="string" value="myRAPFact"/>
+       <Parameter name="Coordinates"  type="string" value="myToggleTransferCoordinatesFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRepartitionFact">
+      <Parameter name="factory"    type="string" value="RepartitionFactory"/>
+      <Parameter name="A"          type="string" value="myRAPFact"/>
+      <Parameter name="Partition"  type="string" value="myZoltanInterface"/>
+      <Parameter name="repartition: min rows per proc"  type="int"    value="800"/>
+      <Parameter name="repartition: max imbalance"      type="double" value="1.1"/>
+      <Parameter name="repartition: start level"        type="int"    value="3"/>
+      <Parameter name="repartition: remap parts"        type="bool"   value="false"/>
+    </ParameterList>
+
+    <ParameterList name="myRebalanceProlongatorFact">
+      <Parameter name="factory"      type="string" value="RebalanceTransferFactory"/>
+      <Parameter name="type"         type="string" value="Interpolation"/>
+      <Parameter name="P"            type="string" value="myTogglePFact"/>
+      <Parameter name="Coordinates"  type="string" value="myToggleTransferCoordinatesFact"/>
+      <Parameter name="Nullspace"    type="string" value="myTogglePFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRebalanceRestrictionFact">
+      <Parameter name="factory"      type="string" value="RebalanceTransferFactory"/>
+      <Parameter name="type"         type="string" value="Restriction"/>
+      <Parameter name="R"            type="string" value="myRestrictorFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRebalanceAFact">
+      <Parameter name="factory"      type="string" value="RebalanceAcFactory"/>
+      <Parameter name="A"            type="string" value="myRAPFact"/>
+    </ParameterList>
+  </ParameterList>
+
+  <!-- Definition of the multigrid preconditioner -->
+  <ParameterList name="Hierarchy">
+    <Parameter name="max levels"       type="int"      value="6"/>
+    <Parameter name="coarse: max size" type="int"      value="100"/>
+    <Parameter name="verbosity"        type="string"   value="High"/>
+    <ParameterList name="All">
+      <Parameter name="P"              type="string"   value="myRebalanceProlongatorFact"/>
+      <Parameter name="Nullspace"      type="string"   value="myRebalanceProlongatorFact"/>
+      <Parameter name="CoarseNumZLayers" type="string"   value="myLineDetectionFact"/>
+      <Parameter name="LineDetection_Layers" type="string"   value="myLineDetectionFact"/>
+      <Parameter name="LineDetection_VertLineIds" type="string"   value="myLineDetectionFact"/>
+      <Parameter name="A"              type="string"   value="myRebalanceAFact"/>
+      <Parameter name="Coordinates"    type="string"   value="myRebalanceProlongatorFact"/>
+      <Parameter name="Importer"       type="string"   value="myRepartitionFact"/>
+      <!--<Parameter name="R"          type="string"   value="myRebalanceRestrictionFact"/>-->
+   </ParameterList>
+ </ParameterList>
+</ParameterList>
+\end{lstlisting}
+
+\section{Line-smoothing}
+
+
 
 \chapter{Useful commands and debugging}
 
@@ -1198,7 +1741,7 @@ To write out the dependencies you just have to put in the \verb|dependencyOutput
 \lstinputlisting{../src/xml/s6_dep.xml}
 
 After running the example you should find a file named \verb|dep_graph.dot| in the current folder which you can transform into a graph using the \verb|dot| utility from the graphviz package.
-Run, e.g. the following commands in your terminal to obtain the following graph:
+Run, e.g. the commands
 \begin{verbatim}
 sed -i 's/label=Graph\]/label=\"Graph\"\]/' dep_graph.dot
 sed -i 's/\\"/"/g' dep_graph.dot
@@ -1206,17 +1749,55 @@ sed -i 's/"</</' dep_graph.dot
 sed -i 's/>"/>/' dep_graph.dot
 dot -Tpng dep_graph.dot -o dep_graph.dot.png
 \end{verbatim}
-\includegraphics[width=1.0\textwidth]{pics/dep_graph} 
+in your terminal to obtain the graph as given in Figure \ref{fig:autograph}.
+\begin{figure}
+\begin{center}
+\includegraphics[width=1.0\textwidth]{pics/dep_graph}
+\end{center}
+\caption{Visualization of aggregates using the CoarseningVisualizationFactory.}
+\label{fig:autograph}
+\end{figure}
 
 Note that the red arrows correspond to the fine level (level 1) and the blue arrows correspond to data on the coarse level (level 2).
-Compare the factory layout in Figure \ref{fig:simpledesignaggregates} with above dependency graph. Try to read it from bottom to top.
 
 \begin{mycomment}
 In case that the file \verb|dep_graph.dot| is not generated you have to check the prerequisites. To be able to auto-generate the dependency graphs you have to compile \muelu with Boost enabled. Furthermore you have to set the \verb|MueLu_ENABLE_Boost_for_real:BOOL = ON| defines flag in your configuration script. If these requirements are not fulfilled you should find the error message \textit{Dependency graph output requires boost and MueLu\_ENABLE\_Boost\_for\_real} in the screen output of \muelu.
 \end{mycomment}
 
 As one can see from the dependency output there are also some internal factories which have not been visualized in the Figures \ref{fig:simpledesign}. A good example is the \verb|NullspaceFactory| which seems to build a dependency cycle with the \verb|TentativePFactory|. In fact, the \verb|NullspaceFactory| is a helper factory which allows to use the user-provided near null space vectors as input on the finest level. On the coarser levels it just loops through the generated coarse set of near null space vectors from the \verb|TentativePFactory|. This is a technical detail which sometimes can cause some problems when the corresponding dependency is not defined properly in the XML file.
+Another example for a special factory is the \verb|NoFactory|. This special factory is used for all data which is kept in memory and needed by the level smoothers during the iteration. Usually, the final transfer operators $P$ and $R$ as well as the level matrix $A$ are transformed to \verb|NoFactory| objects after the setup phase has completed. However, expert users can also use the \verb|NoFactory| mechanism for special data during the setup phase. But this is not recommended.
 
+\begin{exercise}
+Compare the factory layout in Figure \ref{fig:simpledesignaggregates} with above dependency graph. Try to read it from bottom to top. Which factories are missing in Figure \ref{fig:simpledesignaggregates}? Which variables are missing in Figure \ref{fig:simpledesignaggregates}?
+\end{exercise}
+
+\section{Helper routines for mathematical analysis of level operators}
+
+There is a small helper transfer factory \verb|MatrixAnalysisFactory| which can be registered in the \verb|RAPFactory|. It checks the current fine level operator $A$ for certain properties and prints the result on screen. The intention of this helper factory is to provide a simple tool for tracking mathematical problems, such as nan's or inf entries during the calculation.
+
+The \verb|MatrixAnalysisFactory| is used as follows:
+\begin{lstlisting}
+<ParameterList name="myAnaFact">
+  <Parameter name="factory"   type="string" value="MatrixAnalysisFactory"/>
+</ParameterList>
+
+<ParameterList name="myRAPFact">
+  <Parameter name="factory"                 type="string" value="RAPFactory"/>
+  <ParameterList name="TransferFactories">
+    <Parameter name="Analysis"              type="string" value="myAnaFact"/>
+  </ParameterList>
+</ParameterList>
+\end{lstlisting}
+
+
+In particular, the factory performs the following checks:
+\begin{itemize}
+\item Check for empty processors in distribution. In contrary to the \ml~package, empty processors should technically not be a problem for \muelu, but it can be an indicator for a failure in the rebalancing mechanism.
+\item Check the matrix diagonal for zero entries or nan's/inf values. Zero entries on the diagonal are usually catastrophic for any kind of smoothing, including relaxation-based level smoothers or transfer operator smoothing. Infinite values are a sign of defect operators or can result from incited error modes (e.g., missing or insufficient damping for the level smoothers).
+\item Check whether matrix is diagonally dominant. Diagonal dominance is an important property for (relaxation-based) level smoothers.
+\item Apply a one-vector and a random vector to the operator $A$ and check the result for zeros and inf values.
+\item Perform one sweep with a damped Jacobi method applied to the one-vector and a random vector. Check the result for zeros and inf values.
+\end{itemize}
 
 \section{Graphical assistant for XML file generation}
 
@@ -1273,7 +1854,7 @@ This tutorial demonstrates how to use \muelu from within user applications in C+
 This tutorial aims at more advanced methods to use \muelu, creating an explicit instance of some \muelu classes like \texttt{MueLu::Hierarchy} and \texttt{MueLu::HierarchyManager}. In the next sections we give some code snippets. Most of them are borrowed form the \texttt{laplace2d.cpp} file in the tutorial.
 
 \section{Preparations}
-First of all, we have to define a communicator object. 
+First of all, we have to define a communicator object.
 \printCppListing{laplace2d.cpp_2.fragment}
 
 For the multigrid method we need a linear operator $A$. For demonstration purposes, here we just generate a 2D Laplacian operator using the \textsc{Galeri} package (see \ref{lab:examplesym}). In this example we use \epetra for the underlying linear algebra framework, but it shall be mentioned that it works for \tpetra in a similar way (refer to the code examples in the \muelu examples folder).
@@ -1292,7 +1873,7 @@ With a fine level operator $A$ available as \texttt{Xpetra::Matrix} object and a
 
 \subsection{XML Interface}
 
-The most comfortable way to declare the multigrid parameters for \muelu is using the XML interface. In fact, \muelu provides two different XML interfaces. There is a simplified XML interface for multigrid users and a more advanced XML interface for expert which allows to make use of all features of \muelu as a multigrid framework. Both XML file formats are introduced in the previous sections of this hands on tutorial. 
+The most comfortable way to declare the multigrid parameters for \muelu is using the XML interface. In fact, \muelu provides two different XML interfaces. There is a simplified XML interface for multigrid users and a more advanced XML interface for expert which allows to make use of all features of \muelu as a multigrid framework. Both XML file formats are introduced in the previous sections of this hands on tutorial.
 However, for the C++ code it makes no difference which type of XML interface is used.
 
 Assuming that we have a \texttt{Teuchos::ParameterList} object with valid \muelu parameters we can create a \texttt{MueLu::HierarchyManager} object
@@ -1303,13 +1884,13 @@ For an example how to fill the parameter list the reader may refer to \cite[Sect
 Next a new \texttt{MueLu::Hierarchy} object is generated
 \printCppListing{ScalingTestParamList.cpp_4.fragment}
 The \texttt{CreateHierarchy} creates a new empty multigrid hierarchy with a finest level only. The user has to feed in the linear operator $A$ and the near null space vector. If further information is available, such as the node coordinates, they can be also stored in the finest level. The coordinates are needed, e.g., for rebalancing the coarse levels.
-Finally, the \texttt{SetupHierarchy} call initiates the coarsening process and the multigrid hierarchy is built according to the parameters from the \texttt{mueluList} parameters. 
+Finally, the \texttt{SetupHierarchy} call initiates the coarsening process and the multigrid hierarchy is built according to the parameters from the \texttt{mueluList} parameters.
 \printCppListing{ScalingTestParamList.cpp_6.fragment}
 
 As XML parameter file any of the files shown in the previous tutorials can be used.
 
 \begin{mycomment}
-As one can see from the last code snippet, the \texttt{Hierarchy} allows access to all important parts of the multigrid method before setup. So, if you have to feed in some non-standard information, this is the way how it works. Using the \texttt{CreateE/TpetraPreconditioner} interface may be easier but does not allow to access the finest level before setup. 
+As one can see from the last code snippet, the \texttt{Hierarchy} allows access to all important parts of the multigrid method before setup. So, if you have to feed in some non-standard information, this is the way how it works. Using the \texttt{CreateE/TpetraPreconditioner} interface may be easier but does not allow to access the finest level before setup.
 \end{mycomment}
 
 Once the \texttt{SetupHierarchy} call is completed, the multigrid hierarchy is ready to use. The reader can skip the next section about the C++ interface and proceed with \S\ref{sec:muelu_belospreconditioner} for an example how to use the multigrid method as preconditioner within a Krylov subspace method from the \belos package.
@@ -1358,7 +1939,7 @@ There are several ways how to use the multigrid method. One can apply the multig
 
 In the next subsections it is demonstrated how to use \muelu as standalone solver and as preconditioner for iterative solvers from the \belos and \aztecoo package in \trilinos.
 
-For solving a linear system $Ax=b$ we need a right hand side vector $b$. When using iterative solvers we also need an initial guess for the solution vector. 
+For solving a linear system $Ax=b$ we need a right hand side vector $b$. When using iterative solvers we also need an initial guess for the solution vector.
 \printCppListing{laplace2d.cpp_7.fragment}
 In this example we just create \epetra vectors and wrap them into \xpetra objects. The right hand side vector is initialized with one and the solution vector is filled with random values.
 
@@ -1370,7 +1951,7 @@ to perform \texttt{mgridSweeps} sweeps with the chosen multigrid cycle. If succe
 
 \subsection{\muelu as preconditioner for \aztecoo}
 Commonly, multigrid methods are used as preconditioners for iterative linear solvers. Here, we show how to use the \texttt{MueLu::Hierarchy} as preconditioner within an \aztecoo solver (using \epetra).
-After an \epetra solution vector has been created by 
+After an \epetra solution vector has been created by
 \lstinputlisting[firstline=2]{laplace2d.cpp_14.fragment}
 the following code can be used to apply the \muelu hierarchy as preconditioner within the \aztecoo CG solver
 \lstinputlisting[firstline=2]{laplace2d.cpp_16.fragment}
@@ -1454,12 +2035,12 @@ Once we have the multigrid hierarchy set up we can use it the same way as descri
 \begin{exercise}
 Study the source code of \texttt{../src/MLParameterList.cpp} and compile it. Run the executable \verb|MueLu_tutorial_MLParameterList.exe| with the \verb|--help| command line parameter to get an overview of all available command line parameters. Run the example using
 \begin{verbatim}
-./MueLu_tutorial_MLParameterList.exe --ml=1 --muelu=0 
+./MueLu_tutorial_MLParameterList.exe --ml=1 --muelu=0
    --xml=xml/ml_ParameterList.xml --linAlgebra=Epetra
 \end{verbatim}
 and study the \ml output. Compare the output and results when switching to \muelu using the same input file
 \begin{verbatim}
-./MueLu_tutorial_MLParameterList.exe --ml=0 --muelu=1 
+./MueLu_tutorial_MLParameterList.exe --ml=0 --muelu=1
    --xml=xml/ml_ParameterList.xml --linAlgebra=Epetra
 \end{verbatim}
 \end{exercise}
@@ -1468,6 +2049,87 @@ and study the \ml output. Compare the output and results when switching to \muel
 Play around with the parameters from \verb|MueLu_tutorial_MLParameterList.exe|. Change, e.g., the problem type to a 2D Laplace problem (\verb|--matrixType=Laplace2D|) and adapt the \verb|--nx| and \verb|--ny| parameters accordingly.
 Try to run both \ml and \muelu and compare the results. Do you find significant differences?
 \end{exercise}
+
+
+
+
+% \begin{tikzpicture}[>=latex',scale=0.24]
+% \tikzstyle{nodestyle} = [draw, shape=rectangle, inner sep=1pt, fill=red!20, font=\tiny]
+% \tikzstyle{edgestyle} = [draw, font=\tiny]
+%
+%\begin{dot2tex}[dot,tikz,styleonly,codeonly]
+%digraph G {
+%size="7.5,7.5";
+%d2ttikzedgelabels = true;
+%{
+%node [shape=plaintext, fontsize=16];
+%edge [style=invisible];
+%l0 -> l1 -> l2 -> l3 -> l4 -> l5 -> l6 -> l7 -> l8 -> l9 -> l10 -> l11 -> l12 -> l13 -> l14 -> l15;
+%}
+%node[style="nodestyle"];
+%edge[style="edgestyle"];
+%0 [label="MueLu::CoarseMapFactory"];
+%1 [label="MueLu::TentativePFactory"];
+%2 [label="MueLu::CoordinatesTransferFactory"];
+%3 [label="MueLu::ZoltanInterface"];
+%4 [label="MueLu::RAPFactory"];
+%5 [label="MueLu::TogglePFactory"];
+%6 [label="MueLu::ToggleCoordinatesTransferFactory"];
+%7 [label="MueLu::SaPFactory"];
+%8 [label="MueLu::RebalanceTransferFactory"];
+%9 [label="MueLu::SemiCoarsenPFactory"];
+%10 [label="MueLu::NoFactory"];
+%11 [label="MueLu::RebalanceAcFactory"];
+%12 [label="MueLu::CoalesceDropFactory"];
+%13 [label="MueLu::AmalgamationFactory"];
+%14 [label="MueLu::UncoupledAggregationFactory"];
+%16 [label="MueLu::TransPFactory"];
+%17 [label="MueLu::RepartitionFactory"];
+%18 [label="MueLu::LineDetectionFactory"];
+%19 [label="MueLu::TransPFactory"];
+%
+%{rank = same; l1; 13}
+%{rank = same; l2; 12}
+%{rank = same; l3; 14}
+%{rank = same; l4; 18; 1}
+%{rank = same; l5; 9; 7}
+%{rank = same; l6; 5; 19}
+%{rank = same; l7; 13}
+%{rank = same; l8; 2}
+%{rank = same; l9; 6;4}
+%{rank = same; l10; 3}
+%{rank = same; l11; 17}
+%{rank = same; l12; 8; 11}
+%
+%0->8  [color=red, label=Nullspace];
+%0->14  [color=red, label=Aggregates];
+%1->0  [color=red, label=CoarseMap];
+%1->8  [color=red, label=Nullspace];
+%1->11  [color=red, label=A];
+%1->13  [color=red, label=UnAmalgamationInfo];
+%1->14  [color=red, label=Aggregates];
+%2->0  [color=red, label=CoarseMap];
+%2->8  [color=red, label=Coordinates];
+%2->14  [color=red, label=Aggregates];
+%4->11  [color=red, label=A];
+%5->10  [color=red, label=NumZLayers];
+%7->11  [color=red, label=A];
+%8->17  [color=red, label=Importer];
+%9->8  [color=red, label=Nullspace];
+%9->11  [color=red, label=A];
+%9->18  [color=red, label=LineDetection_VertLineIds];
+%10->8  [color=red, label=P];
+%10->11  [color=red, label=A];
+%10->19  [color=red, label=R];
+%11->17  [color=red, label=Importer];
+%12->11  [color=red, label=A];
+%12->13  [color=red, label=UnAmalgamationInfo];
+%13->11  [color=red, label=A];
+%14->12  [color=red, label="Graph"];
+%}
+%\end{dot2tex}
+% \end{tikzpicture}
+
 
 \appendix
 \part{Appendix}
@@ -1485,9 +2147,9 @@ To use the virtual machine you basically have to perform the following steps.
 \item Download the \verb|MueLu_Tutorial.ova| virtual machine. The image file has 4 GB.
 \item Run \verb|VirtualBox| and import the \verb|MueLu_Tutorial.ova| machine.
 \begin{center}\includegraphics[width=0.8\textwidth]{pics/installation_1.png} \end{center}
-Then, check and adapt the settings of the virtual machine. 
+Then, check and adapt the settings of the virtual machine.
 \begin{center}\includegraphics[width=0.8\textwidth]{pics/installation_2.png} \end{center}
-In general, one processor should be enough. But if you want to make some more reasonable tests with parallel multigrid you should increase the number of processors accordingly. 
+In general, one processor should be enough. But if you want to make some more reasonable tests with parallel multigrid you should increase the number of processors accordingly.
 Click import, to import the virtual machine.
 \item With a click on the start button the virtual machine is booting.
 \end{enumerate}
@@ -1496,7 +2158,7 @@ Click import, to import the virtual machine.
 
 \subsection{Login and setup}
 
-Once the virtual machine is started you first have to login. 
+Once the virtual machine is started you first have to login.
 
 \begin{center}\includegraphics[width=0.8\textwidth]{pics/lubuntu_1.png} \end{center}
 
@@ -1543,7 +2205,7 @@ The virtual machine has all software installed that you need to follow the tutor
 
 \section{Software}
 
-The virtual machine is based on a minimal installation of \textbf{Lubuntu 14.04}. The image file has 4 GB with about 250 MB free for the user. 
+The virtual machine is based on a minimal installation of \textbf{Lubuntu 14.04}. The image file has 4 GB with about 250 MB free for the user.
 
 The following software is pre-installed:
 
@@ -1613,7 +2275,7 @@ Check line 15 for an invalid xml format. The reason can be, e.g., a missing clos
 All child nodes of a ParameterList must have a name attribute!
 \end{lstlisting}
 \end{cBox}
-You probably forgot to add a name attribute in one or more elements of your xml file, that is you used, e.g., 
+You probably forgot to add a name attribute in one or more elements of your xml file, that is you used, e.g.,
 \begin{lstlisting}
 <Parameter  type="string" value="RELAXATION"/>
 \end{lstlisting}
@@ -1633,10 +2295,10 @@ exists in the list of valid parameters but has the wrong type.
 The correct type is "string".
 \end{lstlisting}
 \end{cBox}
-Use the correct (proposed) value type for the given parameter name, i.e., 
+Use the correct (proposed) value type for the given parameter name, i.e.,
 \begin{lstlisting}
 <Parameter name="smoother: type" type="string" value="RELAXATION"/>
-\end{lstlisting} 
+\end{lstlisting}
 instead of
 \begin{lstlisting}
 <Parameter name="smoother: type" type="int" value="RELAXATION"/>
@@ -1738,7 +2400,7 @@ For example, above error is caused by the following XML file
 }
 \begin{lstlisting}
 <ParameterList name="MueLu">
-  <ParameterList name="Factories">   
+  <ParameterList name="Factories">
     <ParameterList name="myTentativePFact">
       <Parameter name="factory"                             type="string" value="TentativePFactory"/>
     </ParameterList>

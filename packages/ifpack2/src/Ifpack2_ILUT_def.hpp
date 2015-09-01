@@ -51,9 +51,7 @@
 #include <Ifpack2_Heap.hpp>
 #include <Ifpack2_LocalFilter.hpp>
 #include <Ifpack2_Parameters.hpp>
-#include <Tpetra_CrsMatrix_def.hpp>
-#include <Ifpack2_ILUT.hpp>
-
+#include <Tpetra_CrsMatrix.hpp>
 #include <Teuchos_Time.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
@@ -952,7 +950,7 @@ Teuchos::RCP<const typename ILUT<MatrixType>::row_matrix_type>
 ILUT<MatrixType>::makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A)
 {
   if (A->getComm ()->getSize () > 1) {
-    return Teuchos::rcp (new LocalFilter<MatrixType> (A));
+    return Teuchos::rcp (new LocalFilter<row_matrix_type> (A));
   } else {
     return A;
   }
@@ -967,7 +965,6 @@ ILUT<MatrixType>::makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A)
 // more specific than RowMatrix.
 
 #define IFPACK2_ILUT_INSTANT(S,LO,GO,N) \
-  template class Ifpack2::ILUT< Tpetra::RowMatrix<S, LO, GO, N> >; \
-  template class Ifpack2::ILUT< Tpetra::CrsMatrix<S, LO, GO, N> >;
+  template class Ifpack2::ILUT< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif /* IFPACK2_ILUT_DEF_HPP */

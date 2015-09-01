@@ -1,0 +1,37 @@
+================================================================================
+                       TriBITS Build Reference Files
+================================================================================
+
+This directory contains files to create a project-specific build quick
+reference document <Project>BuildReference.[rst,html,pdf].  The generic files
+used for this purpose are:
+
+  create-project-build-ref.py
+  TribitsBuildReferenceBody.rst
+
+See `create-project-build-ref.py --help` for details.
+
+This directory also contains a generic build of a <Project>BuildReference
+document.  The template file:
+
+  TribitsBuildReferenceTemplate.rst
+
+is used to create the auto-generated (read-only) output files:
+
+  TribitsBuildReference.html
+  TribitsBuildReference.pdf
+  TribitsBuildReference.rst
+
+using the script:
+
+  create-build-ref.sh
+
+To run the script and update the output files, just do:
+
+  $ cd <this-dir>
+  $ ./create-build-ref.sh
+
+That is all there is to it!
+
+The generated documents are then referred to by other general TriBITS
+documentation.

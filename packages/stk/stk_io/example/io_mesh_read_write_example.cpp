@@ -57,7 +57,7 @@ namespace {
 		       const std::string &working_directory,
 		       const std::string &filename,
 		       stk::io::StkMeshIoBroker &mesh_data,
-		       int db_integer_size,
+		       int integer_size,
 		       stk::io::HeartbeatType hb_type,
 		       int interpolation_intervals)
   {
@@ -224,7 +224,7 @@ namespace {
 	      bool compose_output,
 	      int  compression_level,
 	      bool compression_shuffle,
-	      int  db_integer_size,
+	      int  integer_size,
 	      stk::io::HeartbeatType hb_type,
 	      int interpolation_intervals)
   {
@@ -253,12 +253,12 @@ namespace {
     if (use_netcdf4) {
       mesh_data.property_add(Ioss::Property("FILE_TYPE", "netcdf4"));
     }
-    if (db_integer_size == 8) {
-      mesh_data.property_add(Ioss::Property("INTEGER_SIZE_DB", db_integer_size));
-      mesh_data.property_add(Ioss::Property("INTEGER_SIZE_API", db_integer_size));
+    if (integer_size == 8) {
+      mesh_data.property_add(Ioss::Property("INTEGER_SIZE_DB", integer_size));
+      mesh_data.property_add(Ioss::Property("INTEGER_SIZE_API", integer_size));
     }
 
-    mesh_read_write(type, working_directory, filename, mesh_data, db_integer_size, hb_type,
+    mesh_read_write(type, working_directory, filename, mesh_data, integer_size, hb_type,
 		    interpolation_intervals);
   }
 }
@@ -274,7 +274,7 @@ int main(int argc, char** argv)
   int compression_level = 0;
   int interpolation_intervals = 0;
   bool compression_shuffle = false;
-  int db_integer_size = 4;
+  int integer_size = 4;
   bool compose_output = false;
   std::string parallel_io = "";
   std::string heartbeat_format = "none";
@@ -298,7 +298,7 @@ int main(int argc, char** argv)
     ("heartbeat_format", bopt::value<std::string>(&heartbeat_format),
      "Format of heartbeat output. One of binary, csv, text, ts_text, spyhis, [none]")
     ("interpolate", bopt::value<int>(&interpolation_intervals), "number of intervals to divide each input time step into")
-    ("db_integer_size", bopt::value<int>(&db_integer_size), "use 4 or 8-byte integers on output database" );
+    ("integer_size", bopt::value<int>(&integer_size), "use 4 or 8-byte integers for input and output" );
 
 
   stk::parallel_machine_init(&argc, &argv);
@@ -341,7 +341,7 @@ int main(int argc, char** argv)
 
   driver(parallel_io,
 	 working_directory, mesh, type, decomp_method, compose_output, 
-	 compression_level, compression_shuffle, db_integer_size, hb_type,
+	 compression_level, compression_shuffle, integer_size, hb_type,
 	 interpolation_intervals);
 
   stk::parallel_machine_finalize();

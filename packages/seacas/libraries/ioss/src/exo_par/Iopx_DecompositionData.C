@@ -50,6 +50,7 @@
 #include <map>                          // for map
 #include <numeric>                      // for accumulate
 #include <utility>                      // for pair, make_pair
+#include <cstring>
 
 #if !defined(NO_PARMETIS_SUPPORT)
 #include <parmetis.h>                   // for ParMETIS_V3_Mesh2Dual, etc
@@ -101,6 +102,14 @@ namespace {
     return pow2;
   }
 
+  void check_dynamic_cast(const void *ptr)
+  {
+    if (ptr == NULL) {
+      std::cerr << "INTERNAL ERROR: Invalid dynamic cast returned NULL\n";
+      exit(EXIT_FAILURE);
+    }
+  }
+
   template <typename T>
   int MY_Alltoallv64(std::vector<T> &sendbuf, const std::vector<int64_t> &sendcounts, const std::vector<int64_t> &senddisp,
                      std::vector<T> &recvbuf, const std::vector<int64_t> &recvcounts, const std::vector<int64_t> &recvdisp, MPI_Comm  comm)
@@ -117,8 +126,8 @@ namespace {
       if ((int64_t)snd_cnt != sendcounts[i]) {
         std::ostringstream errmsg;
         errmsg << "ERROR: The number of items that must be communicated via MPI calls from\n"
-            << "       processor " << my_processor << " to processor " << i << " is " << sendcounts[i]
-                                                                                                    << "\n       which exceeds the storage capacity of the integers used by MPI functions.\n";
+	       << "       processor " << my_processor << " to processor " << i << " is " << sendcounts[i]
+	       << "\n       which exceeds the storage capacity of the integers used by MPI functions.\n";
         std::cerr << errmsg.str();
         exit(EXIT_FAILURE);
       }
@@ -146,7 +155,9 @@ namespace {
     }
 
     // Take care of this processor's data movement...
-    std::copy(&sendbuf[senddisp[my_processor]], &sendbuf[senddisp[my_processor]+sendcounts[my_processor]], &recvbuf[recvdisp[my_processor]]);
+    std::copy(&sendbuf[senddisp[my_processor]],
+	      &sendbuf[senddisp[my_processor]+sendcounts[my_processor]],
+	      &recvbuf[recvdisp[my_processor]]);
     return 0;
   }
 
@@ -215,18 +226,6 @@ namespace {
     vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
     // shrink-to-fit...
     std::vector<T>(vec).swap(vec);
-  }
-
-  template <typename T>
-  void assert_sorted(std::vector<T> &list)
-  {
-    size_t size = list.size();
-    if (size == 0)
-      return;
-
-    for (size_t i=1; i < size; i++) {
-      assert(list[i-1] <= list[i]);
-    }
   }
 
   template <typename T>
@@ -735,15 +734,11 @@ namespace Iopx {
 
   template <typename INT>
   void DecompositionData<INT>::internal_metis_decompose(const std::string &method,
-      idx_t *element_dist,
-      idx_t *pointer,
-      idx_t *adjacency,
-      idx_t *elem_partition)
-      {
-    // Determine whether sizeof(INT) matches sizeof(idx_t).
-    // If not, decide how to proceed...
-
-
+							idx_t *element_dist,
+							idx_t *pointer,
+							idx_t *adjacency,
+							idx_t *elem_partition)
+  {
     idx_t wgt_flag = 0; // No weights
     idx_t *elm_wgt = NULL;
     idx_t ncon = 1;
@@ -1306,7 +1301,7 @@ namespace Iopx {
       }
       fileBlockIndex[b+1] = fileBlockIndex[b] + ebs[b].num_entry;
       el_blocks[b].topologyType = ebs[b].topology;
-      if (ebs[b].num_entry == 0 && (strcmp(ebs[b].topology, "NULL") == 0))
+      if (ebs[b].num_entry == 0 && (std::strcmp(ebs[b].topology, "NULL") == 0))
 	el_blocks[b].topologyType = "sphere";
 	
       el_blocks[b].nodesPerEntity = ebs[b].num_nodes_per_entry;
@@ -2507,9 +2502,11 @@ namespace Iopx {
   {
     if (int_size() == sizeof(int)) {
       const DecompositionData<int> *this32 = dynamic_cast<const DecompositionData<int>*>(this);
+      check_dynamic_cast(this32);
       this32->communicate_node_data(file_data, ioss_data, comp_count);
     } else {
       const DecompositionData<int64_t> *this64 = dynamic_cast<const DecompositionData<int64_t>*>(this);
+      check_dynamic_cast(this64);
       this64->communicate_node_data(file_data, ioss_data, comp_count);
     }
   }
@@ -2523,9 +2520,11 @@ namespace Iopx {
   {
     if (int_size() == sizeof(int)) {
       const DecompositionData<int> *this32 = dynamic_cast<const DecompositionData<int>*>(this);
+      check_dynamic_cast(this32);
       this32->communicate_element_data(file_data, ioss_data, comp_count);
     } else {
       const DecompositionData<int64_t> *this64 = dynamic_cast<const DecompositionData<int64_t>*>(this);
+      check_dynamic_cast(this64);
       this64->communicate_element_data(file_data, ioss_data, comp_count);
     }
   }
@@ -2536,9 +2535,11 @@ namespace Iopx {
   {
     if (int_size() == sizeof(int)) {
       const DecompositionData<int> *this32 = dynamic_cast<const DecompositionData<int>*>(this);
+      check_dynamic_cast(this32);
       return this32->get_set_mesh_var(exodusId, type, id, field, ioss_data);
     } else {
       const DecompositionData<int64_t> *this64 = dynamic_cast<const DecompositionData<int64_t>*>(this);
+      check_dynamic_cast(this64);
       return this64->get_set_mesh_var(exodusId, type, id, field, ioss_data);
     }
   }
@@ -2547,9 +2548,11 @@ namespace Iopx {
   {
     if (int_size() == sizeof(int)) {
       const DecompositionData<int> *this32 = dynamic_cast<const DecompositionData<int>*>(this);
+      check_dynamic_cast(this32);
       this32->get_block_connectivity(exodusId, (int*)data, id, blk_seq, nnpe);
     } else {
       const DecompositionData<int64_t> *this64 = dynamic_cast<const DecompositionData<int64_t>*>(this);
+      check_dynamic_cast(this64);
       this64->get_block_connectivity(exodusId,  (int64_t*)data, id, blk_seq, nnpe);
     }
   }
@@ -2931,14 +2934,14 @@ namespace Iopx {
         set_param[0].entry_list = NULL;
         set_param[0].extra_list = NULL;
         set_param[0].distribution_factor_list = NULL;
-        ierr = ex_get_sets(exodusId, 1, set_param);
+        ex_get_sets(exodusId, 1, set_param);
         if (set_param[0].num_distribution_factor == 0) {
           // This should have been caught above.
           assert(1==0 && "Internal error in handle_sset_df");
         } else {
           // Read data directly into ioss_data.
           set_param[0].distribution_factor_list = ioss_data;
-          ierr = ex_get_sets(exodusId, 1, set_param);
+          ex_get_sets(exodusId, 1, set_param);
         }
       }
       return 0;
@@ -2983,7 +2986,7 @@ namespace Iopx {
       set_param[0].entry_list = NULL;
       set_param[0].extra_list = NULL;
       set_param[0].distribution_factor_list = NULL;
-      ierr = ex_get_sets(exodusId, 1, set_param);
+      ex_get_sets(exodusId, 1, set_param);
       df_count = set_param[0].num_distribution_factor;
     }
 
@@ -3034,7 +3037,7 @@ namespace Iopx {
       set_param[0].entry_list = NULL;
       set_param[0].extra_list = NULL;
       set_param[0].distribution_factor_list = TOPTR(file_data);
-      ierr = ex_get_sets(exodusId, 1, set_param);
+      ex_get_sets(exodusId, 1, set_param);
     }
 
     // Send this data to the other processors

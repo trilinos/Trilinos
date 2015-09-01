@@ -32,11 +32,19 @@
 #define KOKKOS_HAVE_SERIAL
 /* #undef KOKKOS_HAVE_QTHREAD */
 /* #undef KOKKOS_HAVE_Winthread */
-#define KOKKOS_HAVE_OPENMP
+/* #undef KOKKOS_HAVE_OPENMP */
 /* #undef KOKKOS_HAVE_HWLOC */
-/* #undef KOKKOS_EXPRESSION_CHECK */
-/* #undef KOKKOS_HAVE_CXX11 */
+/* #undef KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK */
+#define KOKKOS_HAVE_CXX11
+/* #undef KOKKOS_HAVE_CUSPARSE */
+/* #undef KOKKOS_ENABLE_PROFILING_COLLECT_KERNEL_DATA */
+/* #undef KOKKOS_ENABLE_PROFILING_AGGREGATE_MPI */
 
-#endif
+// Don't forbid users from defining this macro on the command line,
+// but still make sure that CMake logic can control its definition.
+#if ! defined(KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA)
+#define KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA 1
+#endif // KOKKOS_HAVE_CXX11_DISPATCH_LAMBDA
 
-#endif
+#endif // KOKKOS_FOR_SIERRA
+#endif // KOKKOS_CORE_CONFIG_H

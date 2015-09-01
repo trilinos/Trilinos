@@ -66,6 +66,7 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
+#if defined( KOKKOS_HAVE_CUDA )
 template <typename ViewType>
 struct LocalViewTraits<
   ViewType,
@@ -110,6 +111,7 @@ struct CreateDeviceConfigs< Sacado::MP::Vector<StorageType> > {
     }
   }
 };
+#endif
 
 } /* namespace FENL */
 } /* namespace Example */

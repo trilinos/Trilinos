@@ -195,7 +195,7 @@ void testCoordinateModel(std::string &fname, int nWeights,
     }
   }
 
-  RCP<base_ia_t> base_ia = Teuchos::rcp_implicit_cast<base_ia_t>(ia);
+  RCP<const base_ia_t> base_ia = Teuchos::rcp_dynamic_cast<const base_ia_t>(ia);
 
   TEST_FAIL_AND_EXIT(*comm, !fail, "making input adapter", 1);
 
@@ -216,7 +216,7 @@ void testCoordinateModel(std::string &fname, int nWeights,
   
 
   try{
-    model = rcp(new model_t(base_ia.getRawPtr(), env, comm, modelFlags));
+    model = rcp(new model_t(base_ia, env, comm, modelFlags));
   }
   catch (std::exception &e){
     fail = 5;

@@ -40,7 +40,7 @@
 #include <iostream>                     // for ostream, endl
 #include <list>                         // for list
 #include <map>                          // for map, multimap
-#include <memory>                       // for auto_ptr
+#include <memory>                       //
 #include <set>                          // for multiset, set
 #include <stk_util/diag/Mapv.hpp>       // for Mapv, MapvNode, etc
 #include <stk_util/diag/String.hpp>     // for String, Identifier
@@ -84,27 +84,6 @@ namespace diag {
  * @return    a <b>Writer</b> reference to this object
  */
 Writer &operator<<(Writer &dout, const std::type_info &t);
-
-/**
- * @brief Template function <b>operator<<</b> writes an std::auto_ptr object
- * address and content to the diagnostic writer.
- *
- * @param dout    a <b>Writer</b> reference to the diagnostic writer to
- *      write the std::auto_ptr object.
- *
- * @param t    a <b>std::auto_ptr</b> const reference to the object.
- *
- * @return    a <b>Writer</b> reference to this object
- */
-template <class T>
-Writer &operator<<(Writer &dout, const std::auto_ptr<T> &t) {
-  if (t.get())
-    dout << " " << typeid(t) << ", " << t.get() << ", " << *t;
-  else
-    dout << " " << typeid(t) << ", <not created or not owner>";
-
-  return dout;
-}
 
 /**
  * @brief Template function <b>operator<<</b> writes the members of an arbitrary

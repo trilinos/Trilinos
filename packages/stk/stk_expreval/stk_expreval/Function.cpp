@@ -282,32 +282,32 @@ extern "C" {
   }
 
   /// Returns the minimum value among its arguments
-  inline double min2(double a, double b) {
+  inline double min_2(double a, double b) {
     return std::min(a, b);
   }
 
   /// Returns the minimum value among its arguments
-  inline double min3(double a, double b, double c) {
+  inline double min_3(double a, double b, double c) {
     return std::min(std::min(a, b), c);
   }
 
   /// Returns the minimum value among its arguments
-  inline double min4(double a, double b, double c, double d) {
+  inline double min_4(double a, double b, double c, double d) {
     return std::min(std::min(a, b), std::min(c,d));
   }
 
   /// Returns the maximum value among its arguments
-  inline double max2(double a, double b) {
+  inline double max_2(double a, double b) {
     return std::max(a, b);
   }
 
   /// Returns the maximum value among its arguments
-  inline double max3(double a, double b, double c) {
+  inline double max_3(double a, double b, double c) {
     return std::max(std::max(a, b), c);
   }
 
   /// Returns the maximum value among its arguments
-  double max4(double a, double b, double c, double d) {
+  double max_4(double a, double b, double c, double d) {
     return std::max(std::max(a, b), std::max(c,d));
   }
 
@@ -489,12 +489,12 @@ CFunctionMap::CFunctionMap()
   (*this).insert(std::make_pair("fmod",            new CFunction2(std::fmod)));
   (*this).insert(std::make_pair("ipart",           new CFunction1(ipart)));
   (*this).insert(std::make_pair("fpart",           new CFunction1(fpart)));
-  (*this).insert(std::make_pair("max",             new CFunction2(max2)));
-  (*this).insert(std::make_pair("max",             new CFunction3(max3)));
-  (*this).insert(std::make_pair("max",             new CFunction4(max4)));
-  (*this).insert(std::make_pair("min",             new CFunction2(min2)));
-  (*this).insert(std::make_pair("min",             new CFunction3(min3)));
-  (*this).insert(std::make_pair("min",             new CFunction4(min4)));
+  (*this).insert(std::make_pair("max",             new CFunction2(max_2)));
+  (*this).insert(std::make_pair("max",             new CFunction3(max_3)));
+  (*this).insert(std::make_pair("max",             new CFunction4(max_4)));
+  (*this).insert(std::make_pair("min",             new CFunction2(min_2)));
+  (*this).insert(std::make_pair("min",             new CFunction3(min_3)));
+  (*this).insert(std::make_pair("min",             new CFunction4(min_4)));
   (*this).insert(std::make_pair("poltorectx",      new CFunction2(poltorectx)));
   (*this).insert(std::make_pair("poltorecty",      new CFunction2(poltorecty)));
   (*this).insert(std::make_pair("rad",             new CFunction1(rad)));

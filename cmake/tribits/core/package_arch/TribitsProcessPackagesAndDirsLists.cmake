@@ -152,25 +152,30 @@ ENDMACRO()
 #   TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(<pkg0> <plg1> ...)
 #
 # If the missing upstream SE package ``<pkgi>`` is optional, then the effect
-# will be to simply ignore the missing package (never added to package's list
-# and not added to dependency data-structures) and remove it from the
-# dependency lists for downstream SE packages that have an optional dependency
-# on the missing upstream SE package ``<pkgi>``.  However, all downstream SE
-# packages that have a required dependency on the missing upstream SE package
-# ``<pkgi>`` will be hard disabled,
-# i.e. ``${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF``.
+# will be to simply ignore the missing package (i.e. it will never be added to
+# package's list and not added to dependency data-structures) and remove it
+# from the dependency lists for downstream SE packages that have an optional
+# dependency on the missing upstream SE package ``<pkgi>``.  However, all
+# downstream SE packages that have a required dependency on the missing
+# upstream SE package ``<pkgi>`` will be hard disabled,
+# i.e. ``${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF`` and a note on the
+# disable will be printed.
 # 
-# This macro just sets the cache variable
+# **WARNING**: This macro just sets the cache variable
 # ``<pkgi>_ALLOW_MISSING_EXTERNAL_PACKAGE=TRUE`` for each SE package
-# ``<pkgi>``.  **WARNING**: Using this function effectively turns off error
+# ``<pkgi>``.  Therefore, using this function effectively turns off error
 # checking for misspelled package names so it is important to only use it when
-# it absolutely is needed.  Therefore, when doing development involving these
-# packages, it is usually a good idea to set::
+# it absolutely is needed (use cases mentioned below).  Also note that missing
+# packages are silently ignored by default.  Therefore, when doing development
+# involving these packages, it is usually a good idea to set::
 #
 #   -D<pkgi>_ALLOW_MISSING_EXTERNAL_PACKAGE=FALSE
 #
-# so that it will catch errors in the mispelling of package names or source
-# directories.
+# so that it will catch errors in the misspelling of package names or source
+# directories.  However, notes on what missing packages are being ignored can
+# printed by configuring with::
+#
+#   -D <Project>_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES=TRUE
 #
 # This macro is typically called in one of two different contexts:
 #
@@ -185,7 +190,7 @@ ENDMACRO()
 #   package into an upstream repo`_).
 #
 # For some meta-projects that composes packages from may different TriBITS
-# repositories, one might need to call this function from the file
+# repositories, one might need to also call this function from the file
 # `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_.
 #
 FUNCTION(TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES)
@@ -483,7 +488,7 @@ MACRO(TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
             REPOSITORY_AND_PACKAGE_DIR)
         ELSE()
           MESSAGE_WRAPPER(FATAL_ERROR
-            "Error: The pacakge '${TRIBITS_PACKAGE}' was given an absolute directory '${PACKAGE_ABS_DIR}' which is *not* under the project's soruce directory '${PROJECT_SOURCE_DIR}/'!")
+            "Error: The pacakge '${TRIBITS_PACKAGE}' was given an absolute directory '${PACKAGE_ABS_DIR}' which is *not* under the project's source directory '${PROJECT_SOURCE_DIR}/'!")
           SET(REPOSITORY_AND_PACKAGE_DIR "ERROR-BAD-PACKAGE-ABS-DIR")
           # ToDo: We could just put in a relative path but that requries
           # knowing the common path between the two directory paths but CMake

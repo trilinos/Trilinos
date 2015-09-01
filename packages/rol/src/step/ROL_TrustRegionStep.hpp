@@ -352,11 +352,8 @@ public:
 
     trustRegion_->initialize(x,s,g);
 
-    algo_state.nfval = 0;
-    algo_state.ngrad = 0;
-
     Real htol = std::sqrt(ROL_EPSILON);
-    Real ftol = ROL_OVERFLOW; 
+    Real ftol = 0.1*ROL_OVERFLOW; 
 
     step_state->descentVec  = s.clone();
     step_state->gradientVec = g.clone();
@@ -459,6 +456,14 @@ public:
     CGiter_ = 0;
     trustRegion_->run(s,algo_state.snorm,step_state->searchSize,CGflag_,CGiter_,
                             x,*(step_state->gradientVec),algo_state.gnorm,pObj);
+
+    if ( con.isActivated() ) {
+      xnew_->set(x);
+      xnew_->plus(s);
+      con.project(*xnew_);
+      s.set(*xnew_);
+      s.axpy(-1.0,x);
+    }
   }
 
   /** \brief Update step, if successful.
@@ -489,7 +494,8 @@ public:
       xold_->set(x);
     }
 
-    // Update trust-region information
+    // Update trust-region information;
+    // Performs a hard update on the objective function
     TRflag_   = 0;
     TR_nfval_ = 0;
     TR_ngrad_ = 0;
@@ -497,15 +503,10 @@ public:
     Real fnew = 0.0;
     algo_state.iter++;
     trustRegion_->update(x,fnew,state->searchSize,TR_nfval_,TR_ngrad_,TRflag_,
-                               s,algo_state.snorm,fold,*(state->gradientVec),algo_state.iter,pObj);
+                         s,algo_state.snorm,fold,*(state->gradientVec),algo_state.iter,pObj);
     algo_state.nfval += TR_nfval_;
     algo_state.ngrad += TR_ngrad_;
-    if ( softUp_ ) {
-      pObj.update(x,true,algo_state.iter);
-      fnew = pObj.value(x,tol);
-      algo_state.nfval++;
-    }
-    algo_state.value = fnew;
+    algo_state.value  = fnew;
 
     // If step is accepted ...
     // Compute new gradient and update secant storage
@@ -567,7 +568,6 @@ public:
       }
 
       // Update objective function and approximate model
-      //obj.update(x,true,algo_state.iter);
       updateGradient(x,obj,con,algo_state);
 
       // Update secant information
@@ -584,13 +584,6 @@ public:
 
       // Update algorithm state
       (algo_state.iterateVec)->set(x);
-    }
-    else {
-      // If step is rejected and soft updates are performed, 
-      // then update gradient. 
-      if ( softUp_ ) {
-        updateGradient(x,obj,con,algo_state);
-      }
     }
   }
 

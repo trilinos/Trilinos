@@ -54,6 +54,8 @@
 
 using std::string;
 using std::endl;
+using std::ostream;
+using KokkosClassic::ArrayView;
 
 template <typename lno_t, typename gno_t>
  void printTpetraGraph(const Tpetra::CrsGraph<lno_t, gno_t> &graph, 

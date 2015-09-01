@@ -52,7 +52,7 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
 	  ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/testutil.py.in)
 
-ADD_CUSTOM_TARGET(ex_testutil ALL
+ADD_CUSTOM_TARGET(PyTrilinos_Example_testutil ALL
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/testutil.py)
 
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/gre__115.rua
@@ -61,18 +61,14 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/gre__115.rua
 	  ${CMAKE_CURRENT_BINARY_DIR}/gre__115.rua
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gre__115.mx)
 
-ADD_CUSTOM_TARGET(gre__115 ALL
+ADD_CUSTOM_TARGET(PyTrilinos_gre__115 ALL
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/gre__115.rua)
 
-IF(PyTrilinos_ENABLE_Teuchos)
-  IF(PyTrilinos_ENABLE_Epetra)
-    PyTrilinos_MAKE_TEST(exMPI_Init)
-  ENDIF(PyTrilinos_ENABLE_Epetra)
-ENDIF(PyTrilinos_ENABLE_Teuchos)
+IF(PyTrilinos_ENABLE_Epetra)
+  PyTrilinos_MAKE_TEST(exMPI_Init)
+ENDIF(PyTrilinos_ENABLE_Epetra)
 
-IF(PyTrilinos_ENABLE_Teuchos)
-  PyTrilinos_MAKE_TEST(exTeuchos)
-ENDIF(PyTrilinos_ENABLE_Teuchos)
+PyTrilinos_MAKE_TEST(exTeuchos)
 
 IF(PyTrilinos_ENABLE_Epetra)
   PyTrilinos_MAKE_TEST(exEpetra                    )
@@ -81,6 +77,9 @@ IF(PyTrilinos_ENABLE_Epetra)
   PyTrilinos_MAKE_TEST(exEpetra_CrsMatrix_Efficient)
   PyTrilinos_MAKE_TEST(exEpetra_FECrsMatrix_Easy   )
   PyTrilinos_MAKE_TEST(exEpetra_ImportExport       )
+  IF(PyTrilinos_ENABLE_Domi)
+    PyTrilinos_MAKE_TEST(exEpetra_DAP)
+  ENDIF(PyTrilinos_ENABLE_Domi)
 ENDIF(PyTrilinos_ENABLE_Epetra)
 
 IF(PyTrilinos_ENABLE_TriUtils)
@@ -99,6 +98,10 @@ IF(PyTrilinos_ENABLE_EpetraExt)
     #PyTrilinos_MAKE_TEST(exEpetraExt_IO_XML)
   ENDIF(PyTrilinos_ENABLE_Epetra)
 ENDIF(PyTrilinos_ENABLE_EpetraExt)
+
+IF(PyTrilinos_ENABLE_Domi)
+  PyTrilinos_MAKE_TEST(exDomi_Simple)
+ENDIF(PyTrilinos_ENABLE_Domi)
 
 IF(PyTrilinos_ENABLE_Isorropia)
   IF(PyTrilinos_ENABLE_Epetra)
@@ -198,9 +201,7 @@ IF(PyTrilinos_ENABLE_NOX)
       ENDIF(PyTrilinos_ENABLE_EpetraExt)
     ENDIF(NOT TPL_ENABLE_MPI)
     IF(PyTrilinos_ENABLE_EpetraExt)
-      IF(PyTrilinos_ENABLE_Teuchos)
-	PyTrilinos_MAKE_TEST(exNOX_1Dfdm)
-      ENDIF(PyTrilinos_ENABLE_Teuchos)
+      PyTrilinos_MAKE_TEST(exNOX_1Dfdm)
     ENDIF(PyTrilinos_ENABLE_EpetraExt)
   ENDIF(PyTrilinos_ENABLE_Epetra)
 ENDIF(PyTrilinos_ENABLE_NOX)
@@ -209,9 +210,8 @@ IF(NOX_ENABLE_LOCA)
   IF(PyTrilinos_ENABLE_NOX)
     IF(PyTrilinos_ENABLE_EpetraExt)
       IF(PyTrilinos_ENABLE_Epetra)
-	IF(PyTrilinos_ENABLE_Teuchos)
-	  PyTrilinos_MAKE_TEST(exLOCA_Chan NUM_MPI_PROCS 1)
-	ENDIF(PyTrilinos_ENABLE_Teuchos)
+	PyTrilinos_MAKE_TEST(exLOCA_Chan     NUM_MPI_PROCS 1)
+	PyTrilinos_MAKE_TEST(exLOCA_Chan_Jac NUM_MPI_PROCS 1)
       ENDIF(PyTrilinos_ENABLE_Epetra)
     ENDIF(PyTrilinos_ENABLE_EpetraExt)
   ENDIF(PyTrilinos_ENABLE_NOX)

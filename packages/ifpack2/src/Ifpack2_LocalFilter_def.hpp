@@ -749,7 +749,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     Teuchos::Array<magnitude_type> norms (X.getNumVectors ());
     X.norm1 (norms ());
     bool good = true;
-    for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < X.getNumVectors (); ++j) {
+    for (size_t j = 0; j < X.getNumVectors (); ++j) {
       if (STM::isnaninf (norms[j])) {
         good = false;
         break;
@@ -777,7 +777,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     Teuchos::Array<magnitude_type> norms (Y.getNumVectors ());
     Y.norm1 (norms ());
     bool good = true;
-    for (typename Teuchos::Array<magnitude_type>::size_type j = 0; j < Y.getNumVectors (); ++j) {
+    for (size_t j = 0; j < Y.getNumVectors (); ++j) {
       if (STM::isnaninf (norms[j])) {
         good = false;
         break;
@@ -1007,10 +1007,20 @@ describe (Teuchos::FancyOStream &out,
   }
 }
 
+template<class MatrixType>
+Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                     typename MatrixType::local_ordinal_type,
+                                     typename MatrixType::global_ordinal_type,
+                                     typename MatrixType::node_type> >
+LocalFilter<MatrixType>::getUnderlyingMatrix() const
+{
+  return A_;
+}
+
 
 } // namespace Ifpack2
 
-#define IFPACK2_LOCALFILTER_INSTANT(S,LO,GO,N)                            \
-  template class Ifpack2::LocalFilter< Tpetra::CrsMatrix<S, LO, GO, N> >;
+#define IFPACK2_LOCALFILTER_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::LocalFilter< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif

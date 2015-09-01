@@ -77,13 +77,13 @@ namespace stk {
       void add_input_field(const stk::io::MeshField &mesh_field);
       void add_all_mesh_fields_as_input_fields(stk::mesh::MetaData &meta, MeshField::TimeMatchOption tmo);
       bool read_input_field(stk::io::MeshField &mf, stk::mesh::BulkData &bulk);
-      double read_defined_input_fields(double time, std::vector<stk::io::MeshField> *missing,
+      double read_defined_input_fields(double time, std::vector<stk::io::MeshField> *missingFields,
 				       stk::mesh::BulkData &bulk);
-      double read_defined_input_fields(int step, std::vector<stk::io::MeshField> *missing,
+      double read_defined_input_fields(int step, std::vector<stk::io::MeshField> *missingFields,
 				       stk::mesh::BulkData &bulk);
       void get_global_variable_names(std::vector<std::string> &names);
 
-      void build_field_part_associations(stk::mesh::BulkData &bulk);
+      void build_field_part_associations(stk::mesh::BulkData &bulk, std::vector<stk::io::MeshField> *missing);
 
       Teuchos::RCP<Ioss::Region> get_input_io_region()
       {
@@ -104,12 +104,11 @@ namespace stk {
       double map_analysis_to_db_time(double time) const;
 
     private:
-      void build_field_part_associations(stk::io::MeshField &mesh_field,
+      bool build_field_part_associations(stk::io::MeshField &mesh_field,
 					 const stk::mesh::Part &part,
 					 const stk::mesh::EntityRank rank,
-					 Ioss::GroupingEntity *io_entity);
-
-      void report_missing_fields(std::vector<stk::io::MeshField> *missing) const;
+					 Ioss::GroupingEntity *io_entity,
+					 std::map<stk::mesh::FieldBase *, const stk::io::MeshField *> *missing_fields = 0);
 
       DatabasePurpose m_db_purpose;
       Teuchos::RCP<Ioss::DatabaseIO> m_database;

@@ -56,12 +56,12 @@ using namespace Galeri::FiniteElements;
 //
 //   - \mu \nabla u + c_x * u_x + c_y * u_y = f    on \Omega
 //                                        u = g    on \partial \Omega
-// 
+//
 // where \Omega is a 2D rectangle, divided into triangles.
 // `f' is specified by function `Force()', the Dirichlet boundary condition
 // by function `BoundaryValue()', and the value of \mu and
 // c_x and c_y can be changed in the functions Diffusion() and
-// ConvX() and ConvY(). The code solves the corresponding 
+// ConvX() and ConvY(). The code solves the corresponding
 // linear system using a simple LAPACK interface, and writes
 // the solution inot a MEDIT-compatible format.
 //
@@ -102,7 +102,7 @@ double Force(const double& x, const double& y, const double& z)
 }
 
 // Specifies the boundary condition.
-double BoundaryValue(const double& x, const double& y, 
+double BoundaryValue(const double& x, const double& y,
                      const double& z, const int& Patch)
 {
   if ((x == 0.0 && y >= 0.0) || (y == 1.0 && x <= 0.2))
@@ -122,7 +122,7 @@ int BoundaryType(const int& Patch)
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -139,10 +139,10 @@ int main(int argc, char *argv[])
     // axes, and the number of processors on each axix.   //
     // ================================================== //
 
-    int nx = 40 * Comm.NumProc();
-    int ny = 40;
-    int mx = Comm.NumProc();
-    int my = 1;
+    // int nx = 40 * Comm.NumProc(); // unused
+    // int ny = 40; // unused
+    // int mx = Comm.NumProc(); // unused
+    // int my = 1; // unused
 
     //TriangleRectangleGrid Grid(Comm, nx, ny, mx, my);
     FileGrid Grid(Comm, "Square.grid");
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
     // variational formulation, and a problem object which take //
     // care of filling matrix and right-hand side.              //
     // ======================================================== //
-    
+
     Epetra_CrsMatrix A(Copy, Grid.RowMap(), 0);
     Epetra_Vector    LHS(Grid.RowMap());
     Epetra_Vector    RHS(Grid.RowMap());
@@ -161,10 +161,10 @@ int main(int argc, char *argv[])
     int NumQuadratureNodes = 3;
 
     SUPGVariational<TriangleQuadrature>
-      AdvDiff(NumQuadratureNodes, Diffusion, ConvX, ConvY, ConvZ, 
+      AdvDiff(NumQuadratureNodes, Diffusion, ConvX, ConvY, ConvZ,
               Source, Force, BoundaryValue, BoundaryType);
 
-    LinearProblem FiniteElementProblem(Grid, AdvDiff, A, LHS, RHS); 
+    LinearProblem FiniteElementProblem(Grid, AdvDiff, A, LHS, RHS);
     FiniteElementProblem.Compute();
 
     // =================================================== //
@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
     // ================== //
     // Output using MEDIT //
     // ================== //
-    
+
     MEDITInterface MEDIT(Comm);
     MEDIT.Write(Grid, "AdvDiff2D", LHS);
 

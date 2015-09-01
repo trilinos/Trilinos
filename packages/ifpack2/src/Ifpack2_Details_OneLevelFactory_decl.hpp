@@ -45,6 +45,8 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
+#include "Tpetra_RowMatrix.hpp"
+#include <type_traits> // std::is_same
 
 namespace Ifpack2 {
 namespace Details {
@@ -58,12 +60,12 @@ namespace Details {
   contents.
 
 This class exists so that Ifpack2's "multi-level" (nested)
-preconditioners -- AdditiveSchwarz, Krylov, and SupportGraph -- can
-create a default inner preconditioner.  These preconditioners can't
-use Factory, because that would introduce a circular dependency
-between them and Factory.  (Factory has to be able to create
-AdditiveSchwarz, for example.)  Ifpack2 indicates that a
-preconditioner is multi-level if it implements
+preconditioners -- AdditiveSchwarz and SupportGraph (if enabled) --
+can create a default inner preconditioner.  These preconditioners
+can't use Ifpack2::Factory, because that would introduce a circular
+dependency between them and Ifpack2::Factory.  (Ifpack2::Factory has
+to be able to create AdditiveSchwarz, for example.)  Ifpack2 indicates
+that a preconditioner is multi-level if it implements
 Details::NestedPreconditioner.
 
 We resolve the circular dependency using this class, OneLevelFactory.
@@ -119,6 +121,10 @@ public:
                               local_ordinal_type,
                               global_ordinal_type,
                               node_type> row_matrix_type;
+
+  static_assert (std::is_same<MatrixType, row_matrix_type>::value,
+                 "Ifpack2::Details::OneLevelFactory: MatrixType must be a "
+                 "Tpetra::RowMatrix specialization.");
 
   /** \brief Create an instance of Preconditioner given the string
    * name of the preconditioner type.

@@ -51,15 +51,13 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
 	  ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/testutil.py.in)
 
-ADD_CUSTOM_TARGET(test_testutil ALL
+ADD_CUSTOM_TARGET(PyTrilinos_Test_testutil ALL
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/testutil.py)
 
-IF(PyTrilinos_ENABLE_Teuchos)
-  PyTrilinos_MAKE_TEST(testTeuchos              )
-  PyTrilinos_MAKE_TEST(testTeuchos_Comm         )
-  PyTrilinos_MAKE_TEST(testTeuchos_ParameterList)
-  PyTrilinos_MAKE_TEST(testTeuchos_ScalarTraits )
-ENDIF(PyTrilinos_ENABLE_Teuchos)
+PyTrilinos_MAKE_TEST(testTeuchos              )
+PyTrilinos_MAKE_TEST(testTeuchos_Comm         )
+PyTrilinos_MAKE_TEST(testTeuchos_ParameterList)
+PyTrilinos_MAKE_TEST(testTeuchos_ScalarTraits )
 
 IF(PyTrilinos_ENABLE_Epetra)
   PyTrilinos_MAKE_TEST(testEpetra_BlockMap      )
@@ -88,8 +86,9 @@ IF(PyTrilinos_ENABLE_Triutils)
 ENDIF(PyTrilinos_ENABLE_Triutils)
 
 IF(PyTrilinos_ENABLE_Tpetra)
-  PyTrilinos_MAKE_TEST(testTpetra_Map)
-  PyTrilinos_MAKE_TEST(testTpetra_Vector)
+  PyTrilinos_MAKE_TEST(testTpetra_Map        )
+  PyTrilinos_MAKE_TEST(testTpetra_Vector     )
+  PyTrilinos_MAKE_TEST(testTpetra_MultiVector)
 ENDIF(PyTrilinos_ENABLE_Tpetra)
 
 IF(PyTrilinos_ENABLE_EpetraExt)

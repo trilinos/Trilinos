@@ -109,30 +109,6 @@ the following classes:
   }
 }
 
-// General exception handling
-%exception
-{
-  try
-  {
-    $action
-    if (PyErr_Occurred()) SWIG_fail;
-  }
-  catch(PyTrilinos::PythonException & e)
-  {
-    e.restore();
-    SWIG_fail;
-  }
-  SWIG_CATCH_STDEXCEPT
-  catch (Swig::DirectorException & e)
-  {
-    SWIG_fail;
-  }
-  catch(...)
-  {
-    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
-  }
-}
-
 // General ignore directives
 %ignore *::operator=;
 %ignore operator=;
@@ -180,6 +156,34 @@ the following classes:
 %import(module="Hopf.MinimallyAugmented") "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
 %import(module="Hopf.MinimallyAugmented") "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
 %import(module="PhaseTransition") "LOCA_PhaseTransition_AbstractGroup.H"
+
+// General exception handling
+%exception
+{
+  try
+  {
+    $action
+    if (PyErr_Occurred()) SWIG_fail;
+  }
+  catch(PyTrilinos::PythonException & e)
+  {
+    e.restore();
+    SWIG_fail;
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch (Swig::DirectorException & e)
+  {
+    SWIG_fail;
+  }
+  catch (Swig::DirectorMethodException & e)
+  {
+    SWIG_fail;
+  }
+  catch(...)
+  {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+  }
+}
 
 // LOCA::Abstract Group class
 // The following #define is to change the name of LOCA method

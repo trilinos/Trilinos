@@ -112,8 +112,14 @@ analyze( LinearProblem_CrsSingletonFilter::OriginalTypeRef orig )
 
   FullMatrix_ = orig.GetMatrix();
 
+#ifdef NDEBUG
+  (void) Analyze( FullMatrix_ );
+#else
+  // assert() statements go away if NDEBUG is defined.  Don't declare
+  // the 'flag' variable if it never gets used.
   int flag = Analyze( FullMatrix_ );
   assert( flag >= 0 );
+#endif // NDEBUG
 
   if ( verbose_ && FullMatrix_->Comm().MyPID()==0 ) {
     std::cout << "\nAnalyzed Singleton Problem:\n";
@@ -154,8 +160,14 @@ construct()
 {
   if( !origObj_ ) abort();
 
+#ifdef NDEBUG
+  (void) ConstructReducedProblem( origObj_ );
+#else
+  // assert() statements go away if NDEBUG is defined.  Don't declare
+  // the 'flag' variable if it never gets used.
   int flag = ConstructReducedProblem( origObj_ );
   assert( flag >= 0 );
+#endif // NDEBUG
 
   newObj_ = ReducedProblem();
 

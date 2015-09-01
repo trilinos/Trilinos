@@ -69,6 +69,7 @@
 #include <Ifpack2_Preconditioner.hpp>
 
 #include "MueLu_FactoryBase_fwd.hpp"
+#include "MueLu_FactoryManagerBase_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities_fwd.hpp"
@@ -129,7 +130,7 @@ namespace MueLu {
       - parameter list options
         - <tt>fact: level-of-fill</tt>
 
-    See also Ifpack2::Relaxation, Ifpack2::Chebyshev, Ifpack2::ILUT, Ifpack2::Krylov.
+    See also Ifpack2::Relaxation, Ifpack2::Chebyshev, or Ifpack2::ILUT.
     */
 
 #ifndef _MSC_VER

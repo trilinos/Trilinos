@@ -6,8 +6,6 @@
 /// \brief CRS matrix base object interfaces to user provided input matrices.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include <Kokkos_Core.hpp>
-
 #include "util.hpp"
 #include "coo.hpp"
 
@@ -40,7 +38,7 @@ namespace Example {
     typedef typename value_type_array::value_type*   value_type_array_ptr;
 
     // range type
-    // template<typename T> using range_type = pair<T,T>;
+    template<typename T> using range_type = pair<T,T>;
 
     // external interface
     typedef Coo<CrsMatrixBase> ijv_type;
@@ -65,16 +63,54 @@ namespace Example {
       _n = n;
       _nnz = nnz;
 
-      if (_ap.dimension_0() < m+1)
+      if (static_cast<ordinal_type>(_ap.dimension_0()) < m+1)
         _ap = size_type_array(_label+"::RowPtrArray", m+1);
       
-      if (_aj.dimension_0() < nnz)
+      if (static_cast<size_type>(_aj.dimension_0()) < nnz)
         _aj = ordinal_type_array(_label+"::ColsArray", nnz);
-      
-      if (_ax.dimension_0() < nnz)
+
+      if (static_cast<size_type>(_ax.dimension_0()) < nnz)
         _ax = value_type_array(_label+"::ValuesArray", nnz);
+      //_ax = value_type_array(Kokkos::ViewAllocateWithoutInitializing(_label+"::ValuesArray"), nnz);
     }
 
+
+    void ijv2crs(const vector<ijv_type> &mm) {
+      ordinal_type ii = 0;
+      size_type jj = 0;
+      
+      ijv_type prev = mm[0];
+      _ap[ii++] = 0;
+      _aj[jj] = prev.Col();
+      _ax[jj] = prev.Val();
+      ++jj;
+      
+      for (typename vector<ijv_type>::const_iterator it=(mm.begin()+1);it<mm.end();++it) {
+        ijv_type aij = (*it);
+        
+        // row index
+        if (aij.Row() != prev.Row()) {
+          _ap[ii++] = jj; 
+        }
+        
+        if (aij == prev) {
+          --jj;
+          _aj[jj]  = aij.Col();
+          _ax[jj] += aij.Val();
+        } else {
+          _aj[jj] = aij.Col();
+          _ax[jj] = aij.Val();
+        }
+        ++jj;
+        
+        prev = aij;
+      }
+      
+      // add the last index to terminate the storage
+      _ap[ii++] = jj;
+      _nnz = jj;
+    }
+    
   public:
 
     KOKKOS_INLINE_FUNCTION
@@ -94,6 +130,12 @@ namespace Example {
 
     KOKKOS_INLINE_FUNCTION
     size_type_array_ptr RowPtr() const { return &_ap[0]; }
+
+    KOKKOS_INLINE_FUNCTION
+    ordinal_type_array_ptr ColPtr() const { return &_aj[0]; }
+
+    KOKKOS_INLINE_FUNCTION
+    value_type_array_ptr ValuePtr() const { return &_ax[0];}
 
     KOKKOS_INLINE_FUNCTION
     size_type RowPtr(const ordinal_type i) const { return _ap[i]; }
@@ -192,9 +234,16 @@ namespace Example {
     copy(const CrsMatrixBase<VT,OT,ST,SpT,MT> &b) {
       createInternalArrays(b._m, b._n, b._nnz);
 
-      Kokkos::deep_copy(_ap, b._ap);
-      Kokkos::deep_copy(_aj, b._aj);
-      Kokkos::deep_copy(_ax, b._ax);
+      const auto ap_range = range_type<ordinal_type>(0, min(_ap.dimension_0(), b._ap.dimension_0()));
+      const auto aj_range = range_type<size_type>   (0, min(_aj.dimension_0(), b._aj.dimension_0()));
+      const auto ax_range = range_type<size_type>   (0, min(_ax.dimension_0(), b._ax.dimension_0()));
+
+      Kokkos::deep_copy(Kokkos::subview(  _ap, ap_range), 
+                        Kokkos::subview(b._ap, ap_range));
+      Kokkos::deep_copy(Kokkos::subview(  _aj, aj_range),
+                        Kokkos::subview(b._aj, aj_range));
+      Kokkos::deep_copy(Kokkos::subview(  _ax, ax_range),
+                        Kokkos::subview(b._ax, ax_range));
 
       return 0;
     }
@@ -216,10 +265,10 @@ namespace Example {
       case Uplo::Lower: {
         _nnz = 0;
         for (ordinal_type i=0;i<_m;++i) {
-          ordinal_type jbegin = b._ap[i];
-          ordinal_type jend   = b._ap[i+1];
+          size_type jbegin = b._ap[i];
+          size_type jend   = b._ap[i+1];
           _ap[i] = _nnz;
-          for (ordinal_type j=jbegin;j<jend && (i >= b._aj[j]);++j,++_nnz) {
+          for (size_type j=jbegin;j<jend && (i >= b._aj[j]);++j,++_nnz) {
             _aj[_nnz] = b._aj[j];
             _ax[_nnz] = b._ax[j]; 
           }
@@ -230,8 +279,8 @@ namespace Example {
       case Uplo::Upper: {
         _nnz = 0;
         for (ordinal_type i=0;i<_m;++i) {
-          ordinal_type j = b._ap[i];
-          ordinal_type jend = b._ap[i+1];
+          size_type j = b._ap[i];
+          size_type jend = b._ap[i+1];
           _ap[i] = _nnz;
           for ( ;j<jend && (i > b._aj[j]);++j) ;
           for ( ;j<jend;++j,++_nnz) {
@@ -270,11 +319,11 @@ namespace Example {
       for (ordinal_type i=0;i<_m;++i) {
         ordinal_type ii = ip[i];
 
-        ordinal_type jbegin = b._ap[ii];
-        ordinal_type jend   = b._ap[ii+1];
+        size_type jbegin = b._ap[ii];
+        size_type jend   = b._ap[ii+1];
 
         _ap[i] = _nnz;
-        for (ordinal_type j=jbegin;j<jend;++j) {
+        for (size_type j=jbegin;j<jend;++j) {
           ordinal_type jj = p[b._aj[j]];
           ijv_type aij(i, jj, b._ax[j]);
           tmp.push_back(aij);
@@ -293,6 +342,67 @@ namespace Example {
       _ap[_m] = _nnz;
 
       return 0;
+    }
+
+    /// \brief add the matrix b into this non-zero entires
+    template<typename VT,
+             typename OT,
+             typename ST,
+             typename SpT,
+             typename MT>
+    int 
+    add(const CrsMatrixBase<VT,OT,ST,SpT,MT> &b) { 
+
+      const ordinal_type m = min(b._m, _m);
+      for (ordinal_type i=0;i<m;++i) {
+        const size_type jaend = _ap[i+1];
+        const size_type jbend = b._ap[i+1];
+
+        size_type ja = _ap[i];
+        size_type jb = b._ap[i];
+        
+        for ( ;jb<jbend;++jb) {
+          for ( ;(_aj[ja]<b._aj[jb] && ja<jaend);++ja);
+          _ax[ja] += (_aj[ja] == b._aj[jb])*b._ax[jb];
+        }
+      }
+
+      return 0;
+    }
+
+    int symmetrize(const int uplo, 
+                   const bool conjugate = false) {
+      vector<ijv_type> mm;
+      mm.reserve(_nnz*2);
+
+      for (ordinal_type i=0;i<_m;++i) {
+        const size_type jbegin = _ap[i];
+        const size_type jend   = _ap[i+1];
+        for (size_type jj=jbegin;jj<jend;++jj) {
+          const ordinal_type j = _aj[jj];
+          const value_type val = (conjugate ? conj(_ax[j]) : _ax[j]);
+          if        (uplo == Uplo::Lower && i > j) {
+            mm.push_back(ijv_type(i, j, val));
+            mm.push_back(ijv_type(j, i, val));
+          } else if (uplo == Uplo::Upper && i < j) {
+            mm.push_back(ijv_type(i, j, val));
+            mm.push_back(ijv_type(j, i, val));
+          } else if (i == j) {
+            mm.push_back(ijv_type(i, i, val));
+          }
+        }
+      }
+      sort(mm.begin(), mm.end(), less<ijv_type>());
+
+      createInternalArrays(_m, _n, mm.size());
+      
+      ijv2crs(mm);
+      
+      return 0;
+    }
+
+    int hermitianize(int uplo) {
+      return symmetrize(uplo, true);
     }
 
     ostream& showMe(ostream &os) const {
@@ -382,41 +492,7 @@ namespace Example {
       }
       
       // change mm to crs
-      {
-        ordinal_type ii = 0;
-        size_type jj = 0;
-        
-        ijv_type prev = mm[0];
-        _ap[ii++] = 0;
-        _aj[jj] = prev.Col();
-        _ax[jj] = prev.Val();
-        ++jj;
-        
-        for (typename vector<ijv_type>::iterator it=(mm.begin()+1);it<mm.end();++it) {
-          ijv_type aij = (*it);
-          
-          // row index
-          if (aij.Row() != prev.Row()) {
-            _ap[ii++] = jj; 
-          }
-          
-          if (aij == prev) {
-            --jj;
-            _aj[jj]  = aij.Col();
-            _ax[jj] += aij.Val();
-          } else {
-            _aj[jj] = aij.Col();
-            _ax[jj] = aij.Val();
-          }
-          ++jj;
-          
-          prev = aij;
-        }
-        
-        // add the last index to terminate the storage
-        _ap[ii++] = jj;
-        _nnz = jj;
-      }
+      ijv2crs(mm);
       
       return 0;
     }

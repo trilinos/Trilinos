@@ -80,7 +80,7 @@ namespace stk {
      */
     void create_faces( BulkData & mesh );
 
-    enum FaceCreationBehavior {
+    enum class FaceCreationBehavior {
         CREATE_FACES_FACE_CREATION_CLASSIC = 42,
         CREATE_FACES_FACE_CREATION_CURRENT = 73
     };

@@ -107,7 +107,7 @@ A person acting in this role needs to know little about CMake other than
 basics about how to run the ``cmake`` and ``ctest`` executables, how to set
 CMake cache variables, and the basics of building software by typing ``make``
 and running tests with ``ctest``.  The proper reference for a TriBITS Project
-User is the `Project-Specific Build Quick Reference`_.  The `TriBITS
+User is the `Project-Specific Build Reference`_.  The `TriBITS
 Overview`_ document may also be of some help.  A TriBITS project user does not
 need to know anything about the CMake language itself or any of the TriBITS
 macros or functions described in `TriBITS Macros and Functions`_ or really
@@ -125,8 +125,8 @@ tests and therefore this role includes all of the necessary knowledge and
 functions of a TriBITS Project User.  A casual TriBITS Project Developer
 typically does not need to know a lot about CMake and really only needs to
 know a subset of the `TriBITS Macros and Functions`_ defined in this document
-in addition to the genetic `TriBITS Build Quick Reference
-<../build_quick_ref/TribitsBuildQuickRef.html>`_ document.  A slightly more
+in addition to the genetic `TriBITS Build Reference
+<TribitsBuildReference.html>`_ document.  A slightly more
 sophisticated TriBITS Project Developer will also add new packages, add new
 package dependencies, and define new TPLs.  This current TriBITS Developers
 Guide and Reference document should supply everything such a developer needs
@@ -181,7 +181,7 @@ TriBITS matures and its requirements further stabilize, the need for a
 
 So depending on the particular role that a reader falls into, this document
 may or may not be necessary but instead the `TriBITS Overview`_ or the
-`<Project>BuildQuickRef`_ documents may be more appropriate.  Hopefully the
+`<Project>BuildReference`_ documents may be more appropriate.  Hopefully the
 above roles and discussion will help the reader select the right document to
 start with.
 
@@ -1497,17 +1497,20 @@ ${${PACKAGE_NAME}_SOURCE_DIR}``) are::
       Dependencies.cmake  # Always processed if its repo is processed
       <packageName>_config.h.in  # [Optional], name is not fixed
 
-**NOTE:** Before a TriBITS Package's files are described in more detail, it is
-important to note that all of the package's files that define its behavior and
-tests should strictly be contained under the package's base source directory
-``<packageDir>/`` if at all possible.  While this is not a requirement for the
-basic TriBITS build system, the approach for automatically detecting when a
-package has changed by looking at what files have changed (which is used in
-the `checkin-test.py`_ script and `TRIBITS_CTEST_DRIVER()`_) requires that the
-package's files be listed under ``<packageDir>/`` (see `Pre-push Testing using
-checkin-test.py`_).  Without this, the TriBITS development tools will not be
-able to automatically determine what needs to be rebuilt and retested which
-can lead to pushing broken software.
+There are a few simple rules for the location and the contents of the
+``<packageDir>/`` directory:
+
+* The directory ``<packageDir>/`` must not be a subdirectory of the package
+  directory of any other SE package (e.g. not ``pkga/pkgb``).
+* All of the source files, test files, etc. for the package should be included
+  under ``<packageDir>/``.
+
+The above rules are not needed for basic building and testing but are needed
+for extended features like automatically detecting when a package has changed
+by looking at what files have changed (see `Pre-push Testing using
+checkin-test.py`_) and for creating source tarballs correctly (see `Creating
+Source Distributions`_).  Therefore, it would be wise to abide by the above
+rules when defining packages.
 
 The following TriBITS Package files are documented in more detail below:
 
@@ -1906,6 +1909,23 @@ Core Files`_ and are::
 `SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS`_ to
 `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_).
 
+There are a few simple rules for the location and the contents of the
+``<spkgDir>/`` directory:
+
+* The relative directory ``<spkgDir>/`` should be a strict subdirectory of
+  ``<packageDir>/`` (e.g. not ``../../somewhereelse``).
+* The directory ``<spkgDir>/`` must not be a subdirectory of the package
+  directory of any other subpackage (e.g. not ``spkga/spkgb``).
+* All of the source files, test files, etc. for the subpackage should be
+  included under ``<spkgDir>/``.
+
+The above rules are not needed for basic building and testing but are needed
+for extended features like automatically detecting when a package has changed
+by looking at what files have changed (see `Pre-push Testing using
+checkin-test.py`_) and for creating source tarballs correctly (see `Creating
+Source Distributions`_).  Therefore, it would be wise to abide by the above
+rules when defining subpackages.
+
 These TriBITS Subpackage files are documented in more detail below:
 
 * `<packageDir>/<spkgDir>/cmake/Dependencies.cmake`_
@@ -2083,11 +2103,11 @@ packages that depend on that TPL will be automatically disabled as well (see
 For each TPL referenced in a `<repoDir>/TPLsList.cmake`_ file using the macro
 `TRIBITS_REPOSITORY_DEFINE_TPLS()`_, there must exist a file, typically called
 ``FindTPL${TPL_NAME}.cmake``, that once processed, produces the variables
-``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  Most
+``TPL_${TPL_NAME}_LIBRARIES`` and ``TPL_${TPL_NAME}_INCLUDE_DIRS``.  Most
 ``FindTPL${TPL_NAME}.cmake`` files just use the function
-`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ the define the TriBITS TPL.  A simple
-example of such a file is the common TriBITS ``FindTPLPETSC.cmake`` module
-which is currently:
+`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ the define the TriBITS TPL.
+A simple example of such a file is the common TriBITS ``FindTPLPETSC.cmake``
+module which is currently:
 
 .. include:: ../../common_tpls/FindTPLPETSC.cmake
    :literal:
@@ -2097,6 +2117,9 @@ Some concrete ``FindTPL${TPL_NAME}.cmake`` files actually do use
 guts of finding at TPL which is perfectly fine.  In this case, the purpose for
 the wrapping ``FindTPL${TPL_NAME}.cmake`` is to standardize the output
 variables ``TPL_${TPL_NAME}_INCLUDE_DIRS`` and ``TPL_${TPL_NAME}_LIBRARIES``.
+For more details on properly using ``FIND_PACKAGE()`` to define a
+``FindTPL${TPL_NAME}.cmake`` file, see `How to use FIND_PACKAGE() for a
+TriBITS TPL`_.
 
 Once the `<repoDir>/TPLsList.cmake`_ files are all processed, then each
 defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
@@ -2716,7 +2739,7 @@ order listed in the ``TribitsExampleProject/PackagesList.cmake`` file:
 From this file, we get the list of top-level packages ``SimpleCxx``,
 ``MixedLang``, ``WithSubpackages``, and ``WrapExternal`` (and their base
 package directories and testing group, see `<repoDir>/PackagesList.cmake`_).
-(NOTE: By default the package ``ExternalPkg`` is not defined because its
+(NOTE: By default the package ``InsertedPkg`` is not defined because its
 directory is missing, see `How to insert a package into an upstream repo`_.)
 
 A full listing of package files in `TribitsExampleProject Files and
@@ -5080,8 +5103,7 @@ then pushes updates.  The major difference is that a well constructed
 development process will use the `checkin-test.py`_ script to test and push
 all changes that affect the build or the tests.  The basic steps in
 configuring, building, running tests, etc., are given in the project's
-`<Project>BuildQuickRef`_. file (see `Project-Specific Build Quick
-Reference`_).
+`<Project>BuildReference`_. file (see `Project-Specific Build Reference`_).
 
 Multi-Repository Development Workflow
 -------------------------------------
@@ -5105,7 +5127,7 @@ This section provides short, succinct lists of the steps to accomplish a few
 common tasks.  Extra details are referenced.
 
 
-How to Add a new TriBITS Package
+How to add a new TriBITS Package
 --------------------------------
 
 To add a new TriBITS package, it is recommended to take the template from one
@@ -5146,11 +5168,11 @@ dependencies on this new package.
 .. ToDo: Expand on the above bullets a lot!
 
 
-How to Add a new TriBITS Package with Subpackages
+How to add a new TriBITS Package with Subpackages
 -------------------------------------------------
 
 Adding a new package with subpackages is similar to adding a new regular
-package described in `How to Add a new TriBITS Package`_.  Again, it is
+package described in `How to add a new TriBITS Package`_.  Again, it is
 recommended that one copies an example package from `TribitsExampleProject`_.
 For example, one could copy files and directories from the example package
 ``WithSubpackages``.
@@ -5175,18 +5197,18 @@ To add a new TriBITS package with packages, do the following:
 4) Configure the TriBITS project enabling the new empty package
    ``<packageName>``.
 
-5) Incrementally add the subpackages as described in `How to Add a new TriBITS
+5) Incrementally add the subpackages as described in `How to add a new TriBITS
    Subpackage`_, filling out the various ``CMakeLists.txt`` files defining
    libraries, executables, tests and examples.
 
 Once the new SE packages are defined, downstream SE packages can define
 dependencies on these.
 
-How to Add a new TriBITS Subpackage
+How to add a new TriBITS Subpackage
 -----------------------------------
 
 Given an existing top-level TriBITS package that is already broken down into
-subpackages (see `How to Add a new TriBITS Package with Subpackages`_), adding
+subpackages (see `How to add a new TriBITS Package with Subpackages`_), adding
 a new subpackage does not require changing any project-level or
 repository-level files.  One only needs to add the declaration for the new
 subpackages in its parent's `<packageDir>/cmake/Dependencies.cmake`_ file then
@@ -5227,7 +5249,7 @@ subpackages, do the following:
    and tests run as new pieces are added.
 
 
-How to Add a new TriBITS TPL
+How to add a new TriBITS TPL
 ----------------------------
 
 In order for an SE package to define a dependency on a new TPL (i.e. one that
@@ -5244,9 +5266,11 @@ To add a new TriBITS TPL, do the following:
    dependency.
 
 2) Create the TPL find module, e.g. ``<repoDir>/tpls/FindTPL<tplName>.cmake``
-   (see `TriBITS TPL`_ and `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ for details).
-   List the default required header files and/or libraries that must be
-   provided by the TPL.
+   (see `TriBITS TPL`_ and `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_
+   for details).  List the default required header files and/or libraries that
+   must be provided by the TPL.  NOTE: This find module can also (optionally)
+   use ``FIND_PACKAGE(<tplName> ...)`` for the default find operation.  For
+   details, see `How to use FIND_PACKAGE() for a TriBITS TPL`_.
 
 3) Add a row for the new TPL to the `<repoDir>/TPLsList.cmake`_ file after any
    TPLs that this new TPL may depend on.
@@ -5276,7 +5300,88 @@ To add a new TriBITS TPL, do the following:
 .. package and refer to it here.
 
 
-How to Add a new TriBITS Repository
+How to use FIND_PACKAGE() for a TriBITS TPL
+-------------------------------------------
+
+When defining a ``FindTPL<tplName>.cmake`` file, it is possible (and
+encouraged) to utilize ``FIND_PACKAGE(<tplName> ...)`` to provide the default
+find operation.  In order for the resulting ``FindTPL<tplName>.cmake`` to
+behave consistently between all the various TriBITS TPLs (and allow the
+standard TriBITS TPL find overrides) one must use the TriBITS function
+`TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE()`_ in combination with the function
+`TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_.  The basic form of the
+resulting TriBITS TPL module file ``FindTPL<tplName>.cmake`` looks like::
+
+  # First, set up the variables for the (backward-compatible) TriBITS way of
+  # finding <tplName>.  These are used in case FIND_PACKAGE(<tplName> ...) is
+  # not called or does not find <tplName>.  Also, these variables need to be
+  # non-null in order to trigger the right behavior in the function
+  # TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES().
+  SET(REQUIRED_HEADERS <header0> <header1> ...)
+  SET(REQUIRED_LIBS_NAMES <libname0> <libname1> ...)
+  
+  # Second, search for <tplName> components (if allowed) using the standard
+  # FIND_PACKAGE(<tplName> ...).
+  TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE(<tplName>  <tplName>_ALLOW_PREFIND)
+  IF (<tplName>_ALLOW_PREFIND)
+    MESSAGE("-- Using FIND_PACKAGE(<tplName> ...) ...") 
+    FIND_PACKAGE(<tplName>)
+    IF (<tplName>_FOUND)
+      # Tell TriBITS that we found <tplName> and there no need to look any further!
+      SET(TPL_<tplName>_INCLUDE_DIRS ${<tplName>_INCLUDE_DIRS} CACHE PATH "...")
+      SET(TPL_<tplName>_LIBRARIES ${<tplName>_LIBRARIES} CACHE FILEPATH "...")
+      SET(TPL_<tplName>_LIBRARY_DIRS ${<tplName>_LIBRARY_DIRS} CACHE PATH "...")
+    ENDIF()
+  ENDIF()
+  
+  # Third, call TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()
+  TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES( <tplName>
+    REQUIRED_HEADERS ${REQUIRED_HEADERS}
+    REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES}
+    )
+  # NOTE: If FIND_PACKAGE(<tplName> ...) was called and successfully found
+  # <tplName>, then TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES() will use the
+  # already-set variables and just print them out.  This is the final "hook"
+  # into the TriBITS TPL system.
+
+With this approach, the ``FindTPL<tplName>.cmake`` module preserves all of the
+user behavior described in `Enabling support for an optional Third-Party
+Library (TPL)`_ for overriding what TPL componets to look for, where to look
+and finally to override what is actually used.  That is, if the user sets the
+cache variables ``TPL_<tplName>_INCLUDE_DIRS``, ``TPL_<tplName>_LIBRARIES``,
+or ``TPL_<tplName>_LIBRARY_DIRS``, then they should be used without question
+(which is why the ``SET( ... CACHE ...)`` calls in the above example do not
+use ``FORCE``).
+
+If one wants to skip and ignore the standard TriBITS TPL override variables
+``<tplName>_INCLUDE_DIRS``, ``<tplName>_LIBRARY_NAMES``, or
+``<tplName>_LIBRARY_DIRS``, then one can set::
+
+  SET(<tplName>_FORCE_PRE_FIND_PACKAGE TRUE CACHE BOOL
+    "Always first call FIND_PACKAGE(<tplName> ...) unless explicit override")
+
+at the top of the ``FindTPL<tplName>.cmake`` and it will ignore these
+variables.  This avoids name classes with the variables
+``<tplName>_INCLUDE_DIRS`` and ``<tplName>_LIBRARY_DIRS`` which are often used
+in the concrete CMake ``Find<tplName>.cmake`` module files themselves.
+
+For a slightly more complex (but real-life) example, see ``FindTPLHDF5.cmake``
+which is:
+
+.. include:: ../../common_tpls/FindTPLHDF5.cmake
+   :literal:
+
+Note that some specialized ``Find<tplName>.cmake`` modules do more than just
+return a list of include directories and libraries.  Some, like
+``FindQt4.cmake`` also return other variables that are used in downstream
+packages. therefore, in these cases, ``FIND_PACKAGE(Qt4 ...)`` must be called
+on every configure.  In specialized cases such as this, one must write a more
+specialized ``FindTPL<tplName>.cmake`` file and can't use the
+`TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE()`_ function like shown shown above.  Such
+find modules cannot completely adhere to the standard behavior described in
+`Enabling support for an optional Third-Party Library (TPL)`_.
+
+How to add a new TriBITS Repository
 -----------------------------------
 
 To add a new TriBITS and/ git VC repository to a TriBITS project that already
@@ -5455,37 +5560,41 @@ supported in TriBITS is to just list the inserted package into the
 depends on and before the packages that will use it then call the
 `TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_ function to allow the package to
 be missing.  This is demonstrated in `TribitsExampleProject`_ with the package
-``ExternalPkg`` which is **not** included in the default
+``InsertedPkg`` which is **not** included in the default
 ``TribitsExampleProject`` source tree.  The
 `TribitsExampleProject`_/``PackagesList.cmake`` file looks like:
 
 .. include:: ../../examples/TribitsExampleProject/PackagesList.cmake
    :literal:
 
-In this example, the subpackage ``ExternalPkg`` has a required dependency on
-``SimpleCxx`` and ``WithSubpackagesB`` has an optional dependency on
-``ExternalPkg``.  Therefore, the inserted package ``ExternalPkg`` has upstream
-and downstream dependencies.
+In this example, ``InsertedPkg`` has a required dependency on on ``SimpleCxx``
+and the SE package ``WithSubpackagesB`` has an optional dependency on
+``InsertedPkg``.  Therefore, the inserted package ``InsertedPkg`` has upstream
+and downstream dependencies on packages in the ``TribitsExampleProject`` repo.
 
-What the function ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`` does is to
-tell TriBITS to treat ``ExternalPkg`` the same as any other package if the
-directory ``TribitsExampleProject/ExternalPkg`` exists and to otherwise
-complete ignore the package ``ExternalPkg`` if the source for the package does
-not exist.  In addition, TriBITS will automatically disable of all downstream
-package dependencies for the missing package.
+The function ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`` tells TriBITS to
+treat ``InsertedPkg`` the same as any other package if the directory
+``TribitsExampleProject/InsertedPkg`` exists or to completely ignore the
+package ``InsertedPkg`` otherwise.  In addition, TriBITS will automatically
+disable of all downstream package dependencies for the missing package (and
+print a note about the disables).  NOTE: By default TriBITS will silently
+ignore missing inserted packages and disable optional support for the missing
+package.  To see what packages are missing and being ignored, configure with::
 
-The way one would set up ``TribitsExampleProject`` to enable ``ExternalPkg``,
+  -D <Project>_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES=TRUE
+
+The way one would set up ``TribitsExampleProject`` to enable ``InsertedPkg``,
 if these were in separate VC (e.g. git) repos for example, would be to do::
 
   $ git clone <some-url-base>/TribitsExampleProject
   $ cd TribitsExampleProject
   $ git clone <some-other-url-base>/ExteranlPkg
-  $ echo /ExternalPkg/ >> .git/info/excludes
+  $ echo /InsertedPkg/ >> .git/info/excludes
 
 Then, when you configure ``TribitsExampleProject``, the package
-``ExternalPkg`` would automatically appear and could then be enabled or
+``InsertedPkg`` would automatically appear and could then be enabled or
 disabled like any other TriBITS package.  The TriBITS test
-``Tribits_TribitsExampleProject_ExternalPkg`` demonstrates this.
+``Tribits_TribitsExampleProject_InsertedPkg`` demonstrates this.
 
 Assuming that one would put the (new) external package in a separate VC repo,
 one would perform the following steps:
@@ -5505,7 +5614,7 @@ one would perform the following steps:
    under the repository directory.)
 
 4) Insert the package into the `<repoDir>/PackagesList.cmake`_ file as
-   described in `How to Add a new TriBITS Package`_ except one must also call
+   described in `How to add a new TriBITS Package`_ except one must also call
    ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(<insertedPackageName>)`` as
    described above.
 
@@ -5517,6 +5626,9 @@ one would perform the following steps:
 6) When configuring and building to get the package working, add
    ``-D<insertedPackageName>_ALLOW_MISSING_EXTERNAL_PACKAGE=FALSE`` so that
    TriBITS will catch mistakes in specifying the package directory.
+   Otherwise, to see notes about ignoring missing inserted/external packages,
+   set the variable ``-D<Project>_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES=TRUE``
+   and TriBITS will print warnings about missing external packages.
 
 
 Additional Topics
@@ -5621,48 +5733,47 @@ behavior such as:
    such a system typically requires this version or higher.
 
 
-Project-Specific Build Quick Reference
---------------------------------------
+Project-Specific Build Reference
+--------------------------------
 
 If a project that uses TriBITS is going to have a significant user base that
 will configure, build, and test the project, then having some documentation
 that explains how to do this would be useful.  For this purpose, TriBITS
-provides a mechanism to quickly create a project-specific build quick
-reference document in restructured text (RST) format and with HTML and
-LaTeX/PDF outputs.  This document are generally created in the base project
-source tree and given then name ``<Project>BuildQuickRef.[rst,html,pdf]``.
-This document consists of two parts.  One part is a generic template
-document::
+provides a mechanism to quickly create a project-specific build reference
+document in restructured text (RST) format and with HTML and LaTeX/PDF
+outputs.  This document are generally created in the base project source tree
+and given then name ``<Project>BuildReference.[rst,html,pdf]``.  This document
+consists of two parts.  One part is a generic template document::
 
-  tribits/doc/build_quick_ref/TribitsBuildQuickRefBody.rst
+  tribits/doc/TribitsBuildReferenceBody.rst
 
 provided in the TriBITS source tree that uses the place-holder ``<Project>``
 for the for the real project name.  The second part is a project-specific
 template file::
 
-  <projectDir>/cmake/<Project>BuildQuickRefTemplate.rst
+  <projectDir>/cmake/<Project>BuildReferenceTemplate.rst
 
 which provides the outer RST document (with title, authors, abstract,
 introduction, other introductory sections).  From these two files, the
 script::
 
-  tribits/doc/build_quick_ref/create-project-build-quickref.py
+  tribits/doc/build_ref/create-project-build-quickref.py
 
-is used to replace ``<Project>`` in the ``TribitsBuildQuickRefBody.rst`` file
+is used to replace ``<Project>`` in the ``TribitsBuildReferenceBody.rst`` file
 with the real project name (read from the project's ``ProjectName.cmake`` file
 by default) and then generates the read-only files::
 
   <projectDir>/
-    <Project>BuildQuickRef.rst
-    <Project>BuildQuickRef.html
-    <Project>BuildQuickRef.pdf
+    <Project>BuildReference.rst
+    <Project>BuildReference.html
+    <Project>BuildReference.pdf
 
 For a simple example of this, see::
 
   tribits/doc/examples/TribitsExampleProject/cmake/create-build-quickref.sh
 
 A project-independent version of this file is provided in the
-`TribitsBuildQuickRef`_.[rst,html,pdf] which is referred to many times in this
+`TribitsBuildReference`_.[rst,html,pdf] which is referred to many times in this
 developers guide.
 
 
@@ -5757,7 +5868,7 @@ The commands for creating a source distribution are described in `Creating a
 tarball of the source tree`_ using the built-in ``package_source`` build
 target. The value added by TriBITS is that TriBITS will automatically exclude
 the source for any defined packages that are not enabled and TriBITS provides
-a framework for systematically excluded files and directories from individual
+a framework for systematically excluding files and directories from individual
 repositories and packages.  In addition, the source for non-enabled
 subpackages can also be excluded depending on the value of
 `${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION`_.  All of
@@ -5822,6 +5933,20 @@ lack of understanding of this fact will cost someone hours of lost time
 debugging what happens when random files are missing when one tries to
 configure what is left.  Somethings, what is left will actually configure and
 might almost build!
+
+**NOTE:** As warned in `TriBITS Package Core Files`_ and `TriBITS Subpackage
+Core Files`_, SE Packages must have directories that are strictly independent
+of the directories of other SE packages.  If they don't, then the source
+directory for an enabled package will get excluded from the source
+distribution if its directory is under the directory of a package that is not
+enabled.  For example, if ``PackageA`` is enabled but its package directory
+``packageb/packagea/`` is under the package directory ``packageb/`` for the
+disabled package ``PackageB``, then every file and directory under
+``packageb/`` will be excluded from the source distribution (tarball),
+including everything under ``packageb/packagea/``!  It would be too expensive
+to put in an automated check for cases like this so package developers should
+just take care not to nest the directories of packages inside of each other to
+avoid problems like this.
 
 **NOTE:** Extra repositories that are sitting in the source tree but not
 processed by TriBITS for some reason (e.g. due to explicitly listing in the
@@ -6945,10 +7070,10 @@ be overridden by the user when calling ``cmake`` in a number of ways.
 
 Most of these global options that can be overridden externally by setting the
 cache variable ``${PROJECT_NAME}_<SOME_OPTION>`` should be documented in the
-`Project-Specific Build Quick Reference`_ document.  A generic version of this
-document is found in `TribitsBuildQuickRef`_.  Some of the more unusual
+`Project-Specific Build Reference`_ document.  A generic version of this
+document is found in `TribitsBuildReference`_.  Some of the more unusual
 options that might only be of interest to developers mentioned below may not
-be documented in `TribitsBuildQuickRef`_.
+be documented in `TribitsBuildReference`_.
 
 The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
@@ -7007,7 +7132,7 @@ These options are described below.
   `upstream`_ required packages or TPLs will be disabled.  If
   `${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF`_, then an
   configure error will occur.  For more details also see
-  `TribitsBuildQuickRef`_ and `Disables trump enables where there is a
+  `TribitsBuildReference`_ and `Disables trump enables where there is a
   conflict`_.  A project can define a different default value by setting::
   
     SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT FALSE)
@@ -7108,7 +7233,7 @@ These options are described below.
   
   If ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` is ``ON``, then
   ``Makefile.export.<PackageName>`` will get created at configure time in the
-  build tree and installed into the install tree.  See `TribitsBuildQuickRef`_
+  build tree and installed into the install tree.  See `TribitsBuildReference`_
   for details.  The TriBITS default is ``ON`` but a project can decide to turn
   this off by default by setting::
   
@@ -7202,7 +7327,7 @@ These options are described below.
   installs).  If set to ``OFF``, then headers and libraries will *not* be
   installed by default and only ``INSTALLABLE`` executables added with
   `TRIBITS_ADD_EXECUTABLE()`_ will be installed.  However, as described in
-  `TribitsBuildQuickRef`_, shared libraries will always be installed if
+  `TribitsBuildReference`_, shared libraries will always be installed if
   enabled since they are needed by the installed executables.
   
   For a TriBITS project that is primarily delivering libraries
@@ -7240,7 +7365,8 @@ These options are described below.
     SET(${PROJECT_NAME}_SHOW_TEST_START_END_DATE_TIME_DEFAULT ON)
 
   The implementation of this feature currently uses ``EXECUTE_PROCESS(date)``
-  and therefore will only on Linux/Unix/Mac systems and not Windows systems.
+  and therefore will only work on Linux/Unix/Mac systems and not Windows
+  systems.
 
   NOTE: In a future version of CTest, this option may turn on start and end
   date/time for regular tests added with `TRIBITS_ADD_TEST()`_ (which uses a
@@ -7279,16 +7405,43 @@ These options are described below.
 
   If ``${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS`` is set to ``TRUE``, then the
   ``SYSTEM`` flag will be passed into the ``INCLUDE_DIRECTORIES()`` command
-  for TPL include directories.  On some systems this will result in include
-  directories being passed to the compiler with ``-isystem`` instead of
-  ``-I``.  This helps to avoid compiler warning coming from TPL header files
-  for C and C++.  However, with CMake version 2.8.11, this also results in
-  ``-isystem`` being passed to the Fortran compiler (e.g. gfortran) as well.
-  This breaks the reading of Fortran module files (perhaps a bug in gfortran).
-  Because if the issue with Fortran, the default for this option is ``FALSE``
-  but project can override the default using::
+  for TPL include directories for every TPL for every package, by default.  On
+  some systems this will result in include directories being passed to the
+  compiler with ``-isystem`` instead of ``-I``.  This helps to avoid compiler
+  warning coming from TPL header files for C and C++.  However, with CMake
+  version 3.2 and less, this also results in ``-isystem`` being passed to the
+  Fortran compiler (e.g. gfortran) as well.  This breaks the reading of
+  Fortran module files (perhaps a bug in gfortran).  Because of this issue
+  with Fortran, the TriBITS default for this option is set to ``FALSE`` but a
+  project can override the default using::
 
     SET(${PROJECT_NAME}_TPL_SYSTEM_INCLUDE_DIRS_DEFAULT  TRUE)
+
+  (This would be a good default if the project has not Fortran files or has
+  not Fortran files that use modules provided by TPLs).
+
+  However, if a package or subpackage sets::
+
+    SET(${PACKAGE_NAME}_SKIP_TPL_SYSTEM_INCLUDE_DIRS  TRUE)
+
+  in its ``CMakeLists.txt`` files before the ``TRIBITS_ADD_LIBRARY()`` or
+  ``TRIBITS_ADD_EXECUTABLE()`` commands are called in that package, then
+  ``SYSTEM`` will **not** be passed into ``INCLUDE_DIRECTORIES()`` for TPL
+  include dirs.  This is how some TriBITS packages with Fortran files that use
+  Fortran modules avoid passing in ``-isystem`` to the Fortran compiles and
+  thereby avoid the defect with gfortran described above.  If CMake version
+  3.3 or greater is used, this variable is not required.
+
+  NOTE: Currently, a TriBITS SE package must have a direct dependency on a TPL
+  to have ``-isystem`` added to a TPL's include directories on the compile
+  lines for that package.  That is, the TPL must be listed in the
+  ``LIB_REQUIRED_TPLS`` or ``LIB_OPTIONAL_TPLS`` arguments passed into the
+  `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ function in the SE package's
+  `<packageDir>/cmake/Dependencies.cmake`_ file.  In addition, to have
+  ``-isystem`` added to the include directories for a TPL when compiling the
+  tests for an SE package, it must be listed in the ``TEST_REQUIRED_TPLS`` or
+  ``TEST_OPTIONAL_TPLS`` arguments.  This is a limitation of the TriBITS
+  implementation that will be removed in a future version of TriBITS.
 
 .. _${PROJECT_NAME}_TRACE_ADD_TEST:
 .. _${PROJECT_NAME}_TRACE_ADD_TEST_DEFAULT:
@@ -7587,41 +7740,44 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 .. *** Common references
 .. **
 
-.. Common references to TribitsBuildQuickRef document
+.. Common references to TribitsBuildReference document
 
-.. _<Project>BuildQuickRef: ../build_quick_ref/TribitsBuildQuickRef.html
+.. NOTE: These references
+.. are for when published in the same directory using public_docs.sh
 
-.. _TribitsBuildQuickRef: `<Project>BuildQuickRef`_
+.. _<Project>BuildReference: TribitsBuildReference.html
 
-.. _Selecting the list of packages to enable: ../build_quick_ref/TribitsBuildQuickRef.html#selecting-the-list-of-packages-to-enable
+.. _TribitsBuildReference: `<Project>BuildReference`_
 
-.. _Enabling extra repositories with add-on packages: ../build_quick_ref/TribitsBuildQuickRef.html#enabling-extra-repositories-with-add-on-packages
+.. _Selecting the list of packages to enable: TribitsBuildReference.html#selecting-the-list-of-packages-to-enable
 
-.. _Getting set up to use CMake: ../build_quick_ref/TribitsBuildQuickRef.html#getting-set-up-to-use-cmake
+.. _Enabling extra repositories with add-on packages: TribitsBuildReference.html#enabling-extra-repositories-with-add-on-packages
 
-.. _Dashboard Submissions: ../build_quick_ref/TribitsBuildQuickRef.html#dashboard-submissions
+.. _Getting set up to use CMake: TribitsBuildReference.html#getting-set-up-to-use-cmake
 
-.. _<Project>_EXTRAREPOS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-extrarepos-file
+.. _Dashboard Submissions: TribitsBuildReference.html#dashboard-submissions
+
+.. _<Project>_EXTRAREPOS_FILE: TribitsBuildReference.html#project-extrarepos-file
 
 .. _${PROJECT_NAME}_EXTRAREPOS_FILE: `<Project>_EXTRAREPOS_FILE`_
 
-.. _${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#generating-a-project-repo-version-file
+.. _${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE: TribitsBuildReference.html#generating-a-project-repo-version-file
 
-.. _Creating a tarball of the source tree: ../build_quick_ref/TribitsBuildQuickRef.html#creating-a-tarball-of-the-source-tree
+.. _Creating a tarball of the source tree: TribitsBuildReference.html#creating-a-tarball-of-the-source-tree
 
-.. _Enabling support for an optional Third-Party Library (TPL): ../build_quick_ref/TribitsBuildQuickRef.html#enabling-support-for-an-optional-third-party-library-tpl
+.. _Enabling support for an optional Third-Party Library (TPL): TribitsBuildReference.html#enabling-support-for-an-optional-third-party-library-tpl
 
-.. _${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-configure-options-file
+.. _${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE: TribitsBuildReference.html#project-configure-options-file
 
-.. _${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#outputting-package-dependency-information
+.. _${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE: TribitsBuildReference.html#outputting-package-dependency-information
 
-.. _${PROJECT_NAME}_TRACE_FILE_PROCESSING: ../build_quick_ref/TribitsBuildQuickRef.html#project-trace-file-processing
+.. _${PROJECT_NAME}_TRACE_FILE_PROCESSING: TribitsBuildReference.html#project-trace-file-processing
 
-.. _${PROJECT_NAME}_SCALE_TEST_TIMEOUT: ../build_quick_ref/TribitsBuildQuickRef.html#project-scale-test-timeout-testing-timeout
+.. _${PROJECT_NAME}_SCALE_TEST_TIMEOUT: TribitsBuildReference.html#project-scale-test-timeout-testing-timeout
 
-.. _make dashboard: ../build_quick_ref/TribitsBuildQuickRef.html#dashboard-submissions
+.. _make dashboard: TribitsBuildReference.html#dashboard-submissions
 
-.. _Setting the install prefix at configure time: ../build_quick_ref/TribitsBuildQuickRef.html#setting-the-install-prefix-at-configure-time
+.. _Setting the install prefix at configure time: TribitsBuildReference.html#setting-the-install-prefix-at-configure-time
 
 .. Common references to the TribitsOverview document
 

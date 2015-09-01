@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
     Teuchos::Time myTime("global");
     Teuchos::TimeMonitor m(myTime);
 
-#ifndef HAVE_TEUCHOS_LONG_LONG_INT
+#ifndef HAVE_XPETRA_INT_LONG_LONG
     *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
 #endif
 
@@ -176,14 +176,14 @@ int main(int argc, char *argv[]) {
     int minPerAgg=3;
     int maxNbrAlreadySelected=0;
 
-    int globalNumDofs = 8898;
+    int globalNumDofs = 1500;
     int nProcs = comm->getSize();
     int nDofsPerNode = 3;
 
     int nLocalDofs = (int) globalNumDofs / nProcs;
     nLocalDofs = nLocalDofs - (nLocalDofs % nDofsPerNode);
     int nCumulatedDofs = 0;
-    sumAll(comm,nLocalDofs, nCumulatedDofs);
+    MueLu_sumAll(comm,nLocalDofs, nCumulatedDofs);
     //Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_SUM, 1, nLocalDofs, &nCumulatedDofs );
 
     if(comm->getRank() == nProcs-1) {
@@ -199,8 +199,8 @@ int main(int argc, char *argv[]) {
     Epetra_MultiVector* ptrNS = 0;
 
     std::cout << "Reading matrix market file" << std::endl;
-    EpetraExt::MatrixMarketFileToCrsMatrix("A5932_re1000.txt",emap,emap,emap,ptrA);
-    EpetraExt::MatrixMarketFileToVector("b5932_re1000.txt",emap,ptrf);
+    EpetraExt::MatrixMarketFileToCrsMatrix("A_re1000_5932.txt",emap,emap,emap,ptrA);
+    EpetraExt::MatrixMarketFileToVector("b_re1000_5932.txt",emap,ptrf);
     //EpetraExt::MatrixMarketFileToMultiVector( "stru2d_ns.txt", emap, ptrNS);
     RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
     RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);

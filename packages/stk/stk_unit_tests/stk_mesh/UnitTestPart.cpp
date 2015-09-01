@@ -40,6 +40,7 @@
 #include <string>                       // for string, char_traits
 #include "stk_mesh/base/Types.hpp"      // for PartVector
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/util/SortAndUnique.hpp"
 
 
 
@@ -159,9 +160,9 @@ TEST(UnitTestPart, testPartVector)
   vdef.push_back( pe );
   vdef.push_back( pf );
 
-  sort_and_unique( vabc );
-  sort_and_unique( vbcd );
-  sort_and_unique( vdef );
+  stk::util::sort_and_unique( vabc, stk::mesh::PartLess() );
+  stk::util::sort_and_unique( vbcd, stk::mesh::PartLess() );
+  stk::util::sort_and_unique( vdef, stk::mesh::PartLess() );
 
   vresult.clear();
   ASSERT_EQ( size_t(2) , intersect( vabc , vbcd ) );

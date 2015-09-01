@@ -52,7 +52,7 @@ IF(NOT BUILD_SHARED_LIBS)
 ENDIF()
 
 # Set the package version number
-SET(PyTrilinos_VERSION 12.1 (Dev))
+SET(PyTrilinos_VERSION 12.3 (Dev))
 
 # Define the list of PyTrilinos packages and modules.  Packages are
 # the top-level names only, such as Epetra, AztecOO and NOX.  The list
@@ -62,10 +62,8 @@ SET(PyTrilinos_VERSION 12.1 (Dev))
 SET(PyTrilinos_PACKAGES "")
 SET(PyTrilinos_MODULES  "")
 
-IF(PyTrilinos_ENABLE_Teuchos)
-  APPEND_SET(PyTrilinos_PACKAGES Teuchos)
-  APPEND_SET(PyTrilinos_MODULES  Teuchos)
-ENDIF(PyTrilinos_ENABLE_Teuchos)
+APPEND_SET(PyTrilinos_PACKAGES Teuchos)
+APPEND_SET(PyTrilinos_MODULES  Teuchos)
 
 IF(PyTrilinos_ENABLE_Epetra)
   APPEND_SET(PyTrilinos_PACKAGES Epetra)
@@ -82,15 +80,20 @@ IF(PyTrilinos_ENABLE_Tpetra)
   APPEND_SET(PyTrilinos_MODULES  Tpetra)
 ENDIF(PyTrilinos_ENABLE_Tpetra)
 
+IF(PyTrilinos_ENABLE_Domi)
+  APPEND_SET(PyTrilinos_PACKAGES Domi)
+  APPEND_SET(PyTrilinos_MODULES  Domi)
+ENDIF(PyTrilinos_ENABLE_Domi)
+
 IF(PyTrilinos_ENABLE_EpetraExt)
   APPEND_SET(PyTrilinos_PACKAGES EpetraExt)
   APPEND_SET(PyTrilinos_MODULES  EpetraExt)
 ENDIF(PyTrilinos_ENABLE_EpetraExt)
 
 IF(PyTrilinos_ENABLE_Isorropia)
-  APPEND_SET(PyTrilinos_PACKAGES Isorropia)
-  APPEND_SET(PyTrilinos_MODULES  Isorropia.__init__    )
-  Append_SET(PyTrilinos_MODULES  Isorropia.Epetra)
+  APPEND_SET(PyTrilinos_PACKAGES Isorropia         )
+  APPEND_SET(PyTrilinos_MODULES  Isorropia.__init__)
+  Append_SET(PyTrilinos_MODULES  Isorropia.Epetra  )
 ENDIF(PyTrilinos_ENABLE_Isorropia)
 
 IF(PyTrilinos_ENABLE_Pliris)
@@ -183,11 +186,6 @@ IF(NOX_ENABLE_LOCA)
     APPEND_SET(PyTrilinos_MODULES  LOCA.Epetra.Interface)
   ENDIF(NOX_ENABLE_Epetra)
 ENDIF(NOX_ENABLE_LOCA)
-
-IF(PyTrilinos_ENABLE_Domi)
-  APPEND_SET(PyTrilinos_PACKAGES Domi)
-  APPEND_SET(PyTrilinos_MODULES  Domi)
-ENDIF(PyTrilinos_ENABLE_Domi)
 
 # Python interpreter, library, and header files are required.
 FIND_PACKAGE(PythonInterp 2.5 REQUIRED)

@@ -23,6 +23,11 @@ namespace Example {
   template<typename PolicyType,        
            typename FutureType>
   class TaskFactory {
+  private:
+    static PolicyType *_policy;
+    static int _max_task_dependence;
+    static bool _use_team_interface;
+
   public:
     typedef PolicyType policy_type;
     typedef FutureType future_type;
@@ -30,7 +35,9 @@ namespace Example {
     template<typename TaskFunctorType>
     static 
     future_type create(policy_type &policy, const TaskFunctorType &func) {
-      return policy.create_team(func, 20); 
+      return (_use_team_interface ? 
+              policy.create_team(func, _max_task_dependence) : 
+              policy.create     (func, _max_task_dependence)); 
     }
     
     static
@@ -44,8 +51,36 @@ namespace Example {
       policy.add_dependence(after, before);
     }
 
+    static
+    void setPolicy(policy_type *policy) {
+      _policy = policy;
+    }
+
+    static 
+    void setUseTeamInterface(const bool use_team_interface) {
+      _use_team_interface = use_team_interface;
+    }
+
+    static 
+    void setMaxTaskDependence(const int max_task_dependence) {
+      _max_task_dependence = max_task_dependence;
+    }
+
+    static
+    policy_type& Policy() { 
+      return *_policy;
+    } 
+
   };
 
+  template<typename PolicyType, typename FutureType> 
+  PolicyType* TaskFactory<PolicyType,FutureType>::_policy = NULL;
+
+  template<typename PolicyType, typename FutureType> 
+  bool TaskFactory<PolicyType,FutureType>::_use_team_interface = true;
+
+  template<typename PolicyType, typename FutureType> 
+  int TaskFactory<PolicyType,FutureType>::_max_task_dependence = 10;
 }
 
 #endif

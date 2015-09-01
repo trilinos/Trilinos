@@ -44,6 +44,7 @@ Level 1
       aggregation: preserve Dirichlet points = 0   [default]
       aggregation: allow user-specified singletons = 0   [default]
       OnePt aggregate map name =    [default]
+      OnePt aggregate map factory =    [default]
 
       Nullspace factory (MueLu::NullspaceFactory)
       Fine level nullspace = Nullspace
@@ -142,6 +143,7 @@ Level 2
       aggregation: preserve Dirichlet points = 0   [default]
       aggregation: allow user-specified singletons = 0   [default]
       OnePt aggregate map name =    [default]
+      OnePt aggregate map factory =    [default]
 
       Nullspace factory (MueLu::NullspaceFactory)
       Fine level nullspace = Nullspace
@@ -206,10 +208,10 @@ Level 2
 Number of levels    = 3
 Operator complexity = 1.45
 
-matrix rows    nnz  nnz/row procs
-A 0    9999  29995     3.00  4
-A 1    3335  10015     3.00  4
-A 2    1112   3340     3.00  4
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               4
+  1    3335  10015     3.00     3.00      4
+  2    1112   3340     3.00     3.00      4
 
 Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
 

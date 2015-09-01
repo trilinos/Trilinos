@@ -11,6 +11,11 @@
 
 \cbb{problem: symmetric}{bool}{true}{Symmetry of a problem. This setting affects the construction of a restrictor. If set to true, the restrictor is set to be the transpose of a prolongator. If set to false, underlying multigrid algorithm makes the decision.}
 
+\cbb{xml parameter file}{string}{""}{An XML file from which to read additional
+      parameters.  In case of a conflict, parameters manually set on
+      the list will override parameters in the file. If the string is
+      empty a file will not be read.}
+
 \cbb{parameterlist: syntax}{string}{muelu}{Syntax of ParameterList to use.  This should either be "muelu" or "ml." }
 
 \cbb{smoother: pre or post}{string}{"both"}{Pre- and post-smoother combination. Possible values: "pre" (only pre-smoother), "post" (only post-smoother), "both" (both pre-and post-smoothers), "none" (no smoothing).}
@@ -77,6 +82,24 @@
 
 \cbb{aggregation: export visualization data}{bool}{false}{Export data for visualization post-processing.}
 
+\cbb{aggregation: output filename}{string}{""}{Filename to write VTK visualization data to.}
+
+\cbb{aggregation: output file: time step}{int}{0}{Time step ID for non-linear problems.}
+
+\cbb{aggregation: output file: iter}{int}{0}{Iteration for non-linear problems.}
+
+\cbb{aggregation: output file: agg style}{string}{Point Cloud}{Style of aggregate visualization.}
+
+\cbb{aggregation: output file: fine graph edges}{bool}{false}{Whether to draw all fine node connections along with the aggregates.}
+
+\cbb{aggregation: output file: coarse graph edges}{bool}{false}{Whether to draw all coarse node connections along with the aggregates.}
+
+\cbb{aggregation: output file: build colormap}{bool}{false}{Whether to output a random colormap in a separate XML file.}
+
+\cba{aggregation: params}{\parameterlist}{Sublist of options for use by aggregation.}
+
+\cba{strength-of-connection: params}{\parameterlist}{Sublist of options for use by coalesce/drop.}
+
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a file. Currently, the list can contain any of three parameter names ("A", ``P'', ``R'') of type \texttt{string} and value ``\{levels separated by commas\}''. A matrix with a name ``X'' is saved in three MatrixMarket files: a) data is saved in \textit{X\_level.mm}; b) its row map is saved in \textit{rowmap\_X\_level.mm}; c) its column map is saved in \textit{colmap\_X\_level.mm}.}
 
 \cbb{print initial parameters}{bool}{true}{Print parameters provided for a hierarchy construction.}
@@ -85,9 +108,19 @@
 
 \cbb{transpose: use implicit}{bool}{false}{Use implicit transpose for the restriction operator.}
 
+\cbb{use kokkos refactor}{bool}{false}{Switch on the new Kokkos based version.}
+
 \cbb{multigrid algorithm}{string}{"sa"}{Multigrid method. Possible values: see Table~\ref{t:mgs}.}
 
+\cbb{toggle: mode}{string}{semicoarsen}{Toggling strategy for transfer operators (default=semicoarsen)}
+
 \cbb{semicoarsen: coarsen rate}{int}{3}{Rate at which to coarsen unknowns in the z direction.}
+
+\cbb{semicoarsen: number of levels}{int}{3}{Determines the maximum number of times that semicoarsening is applied.}
+
+\cbb{linedetection: orientation}{string}{vertical}{Line orientation: can be either 'vertical', 'horizontal' or 'coordinates'.}
+
+\cbb{linedetection: num layers}{int}{-1}{Line detection: number of layers on finest level. Alternatively, set the number of layers on the finest level as \"NumZLayers\" in the finest level container class.}
 
 \cbb{sa: damping factor}{double}{1.33}{Damping factor for smoothed aggregation.}
 
@@ -96,6 +129,8 @@
 \cbb{sa: calculate eigenvalue estimate}{bool}{false}{Force calculation of eigenvalue estimate during prolongator smoothing.}
 
 \cbb{sa: eigenvalue estimate num iterations}{int}{10}{Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.}
+
+\cba{transfer: params}{\parameterlist}{Sublist of options for use by transfer.}
 
 \cbb{filtered matrix: use lumping}{bool}{true}{Lump (add to diagonal) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace.}
 
@@ -136,5 +171,9 @@
 \cbb{repartition: use subcommunicators}{bool}{true}{Use subcommunicators on coarser levels.}
 
 \cbb{reuse: type}{string}{"none"}{Reuse options for consecutive hierarchy construction. This speeds up the setup phase, but may lead to poorer convergence. Possible values: see Table~\ref{t:reuse_types}.}
+
+\cbb{use external multigrid package}{string}{"none"}{Option to utilize external multigrid package for computations, for example allows for use of AMGX}
+
+\cba{amgx:params}{\parameterlist}{Sublist for listing AMGX configuration parameters}
 
 \cbb{debug: graph level}{int}{-1}{Output dependency graph.}

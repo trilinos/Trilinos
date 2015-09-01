@@ -53,6 +53,97 @@ INCLUDE(MultilineSet)
 INCLUDE(ParseVariableArguments)
 INCLUDE(SetNotFound)
 
+#
+# @FUNCTION: TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE()
+#
+# Function that determines if a TriBITS find module file
+# ``FindTPL<tplName>.cmake`` is allowed to call ``FIND_PACKAGE(<tplName>
+# ...)`` before calling `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_.
+#
+# Usage::
+#
+#   TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE( <tplName>
+#     <allowPackagePrefindOut> )
+#
+# The required arguments are:
+#
+#   ``<tplName>`` : The input name of the TriBITS TPL (e.g. ``HDF5``).
+#
+#   ``<allowPackagePrefindOut>`` : Name of a variable which will be set to
+#   ``TRUE`` on output if ``FIND_PACKAGE(<tplName> ...)`` should be called to
+#   find the TPL ``<tplName>`` or ``FALSE`` if it should not be called.
+#
+# This function will set ``<allowPackagePrefindOut>`` to ``FALSE`` if any of
+# the variables ``TPL_<tplName>_INCLUDE_DIRS``, ``${TPL_<tplName>_LIBRARIES``,
+# or ``TPL_<tplName>_LIBRARY_DIRS`` are set.  This allows the user to override
+# the search for the library components and just specify the absolute
+# locations.  The function will also set ``<allowPackagePrefindOut>`` to
+# ``FALSE`` if ``<tplName>_INCLUDE_DIRS``, ``<tplName>_LIBRARY_NAMES``, or
+# ``<tplName>_LIBRARY_DIRS`` is set and ``<tplName>_FORCE_PRE_FIND_PACKAGE`` is
+# set to ``FALSE``.  Otherwise, if ``<tplName>_FORCE_PRE_FIND_PACKAGE`` is set
+# to ``TRUE``, the function will not return ``FALSE`` for
+# ``<allowPackagePrefindOut>`` no matter what the values of
+# ``<tplName>_INCLUDE_DIRS``, ``<tplName>_LIBRARY_NAMES``, or
+# ``<tplName>_LIBRARY_DIRS``.
+#
+# The variable ``<tplName>_FORCE_PRE_FIND_PACKAGE`` is needed to allow users
+# (or the ``FindTPL<tplName>.cmake`` module itself) to avoid name clashes with
+# the variables ``<tplName>_INCLUDE_DIRS`` or ``<tplName>_LIBRARY_DIRS`` in
+# the usage of ``FIND_PACKAGE(<tplName> ...)`` because a lot of default
+# ``Find<tplName>.cmake`` modules also use these variables.  This function
+# sets ``<tplName>_FORCE_PRE_FIND_PACKAGE`` as a cache variable with default
+# value ``FALSE`` to maintain backward compatibility with existing
+# ``FindTPL<tplName>.cmake`` modules.
+#
+# See `How to use FIND_PACKAGE() for a TriBITS TPL`_ for details in how to use
+# this function to create a ``FindTPL<tplName>.cmake`` module file.
+#
+FUNCTION(TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE  TPL_NAME  ALLOW_PACAKGE_PREFIND_OUT)
+
+  IF (TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE_DEBUG)
+    MESSAGE("TRIBITS_TPL_ALLOW_PRE_FIND_PACKAGE: '${TPL_NAME}'  '${ALLOW_PACAKGE_PREFIND_OUT}'")
+    PRINT_VAR(${TPL_NAME}_INCLUDE_DIRS)
+    PRINT_VAR(${TPL_NAME}_LIBRARY_NAMES)
+    PRINT_VAR(${TPL_NAME}_LIBRARY_DIRS)
+    PRINT_VAR(${TPL_NAME}_FORCE_PRE_FIND_PACKAGE)
+  ENDIF()
+
+  ADVANCED_SET(${TPL_NAME}_FORCE_PRE_FIND_PACKAGE  FALSE
+    CACHE BOOL
+    "Determines if the variables ${TPL_NAME}_[INCLUDE_DIRS,LIBRARY_NAMES,LIBRARY_DIRS] should be ignored and the pre-find FIND_PACKAGE(${TPL_NAME} should be performed anyway.  But this will *not* do the pre-find if any of the TPL_${TPL_NAME}_[INCLUDE_DIRS,LIBRARY_NAMES,LIBRARY_DIRS] vars are set." )
+
+  # Start out with TRUE and set to FALSE in logic below
+  SET(ALLOW_PACAKGE_PREFIND TRUE)
+
+  IF (
+    (NOT "${TPL_${TPL_NAME}_INCLUDE_DIRS}" STREQUAL "")
+    OR (NOT "${TPL_${TPL_NAME}_LIBRARIES}" STREQUAL "")
+    OR (NOT "${TPL_${TPL_NAME}_LIBRARY_DIRS}" STREQUAL "")
+    )
+    # The user has selected one or more of the final vars so skip calling
+    # FIND_PACKAGE(${TPL_NAME} ...) ...
+    SET(ALLOW_PACAKGE_PREFIND FALSE)
+  ELSEIF (
+    (NOT "${${TPL_NAME}_INCLUDE_DIRS}" STREQUAL "")
+    OR (NOT "${${TPL_NAME}_LIBRARY_NAMES}" STREQUAL "")
+    OR (NOT "${${TPL_NAME}_LIBRARY_DIRS}" STREQUAL "")
+    )
+    # One ore more of the ${TPL_NAME}_XXX variables are set
+    IF (${TPL_NAME}_FORCE_PRE_FIND_PACKAGE)
+      # Even with one or more of the ${TPL_NAME}_XXX vars set, we still want
+      # to do the FIND_PACKAGE(${TPL_NAME} ...) search and ignore this
+      # override.
+    ELSE()
+      # We will not ignore the override of these variables and will instead go
+      # ahead and skip the pre-find.
+      SET(ALLOW_PACAKGE_PREFIND FALSE)
+    ENDIF()
+  ENDIF()
+
+  SET(${ALLOW_PACAKGE_PREFIND_OUT} ${ALLOW_PACAKGE_PREFIND} PARENT_SCOPE)
+
+ENDFUNCTION()
+
 
 #
 # @FUNCTION: TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()

@@ -83,7 +83,7 @@ class ChanProblemInterface(NOX.Epetra.Interface.Jacobian,
     return False
 
   def setParams(self, p):
-    self.sigma   = p.getValue("sigma"  )
+    #self.sigma   = p.getValue("sigma"  )
     self.lambda_ = p.getValue("lambda_")
     
   def setParameters(self, p):
@@ -107,7 +107,8 @@ def main():
   # Get the number of elements from the command line
   numGlobalElements = options.numelem + 1
   if numGlobalElements < numProc:
-    msg = "numGlobalBlocks = %d cannot be < number of processors = %d" % (numGlobalElements,numProc)
+    msg = "numGlobalBlocks = %d cannot be < number of processors = %d" % \
+          (numGlobalElements,numProc)
     msg += "\nTest failed!"
     raise RuntimeError, msg
 
@@ -116,16 +117,19 @@ def main():
   maxNewtonIters = options.maxNewtonIters
   N = options.N
 
-  paramList = LOCA.Epetra.defaultContinuationParameters(comm=comm,
-                                                        verbosity=options.verbosity)
+  paramList = \
+    LOCA.Epetra.defaultContinuationParameters(comm=comm,
+                                              verbosity=options.verbosity)
   printParams = paramList["NOX"]["Printing"]
   lsParams    = paramList["NOX"]["Direction"]["Newton"]["Linear Solver"]
-  paramList["LOCA"]["Stepper"]["Continuation Parameter"] = "lambda_"
-  paramList["LOCA"]["Stepper"]["Initial Value"] = 1.09
-  paramList["LOCA"]["Stepper"]["Max Value"] = 2.8
-  paramList["LOCA"]["Stepper"]["Max Steps"] = 400
-  paramList["LOCA"]["Step Size"]["Initial Step Size"] = -0.001
-  paramList["LOCA"]["Step Size"]["Max Step Size"] = 0.001
+  stepper     = paramList["LOCA"]["Stepper"]
+  stepSize    = paramList["LOCA"]["Step Size"]
+  stepper["Continuation Parameter"] = "lambda_"
+  stepper["Initial Value"] = 1.09
+  stepper["Max Value"] = 2.8
+  stepper["Max Steps"] = 400
+  stepSize["Initial Step Size"] = -0.001
+  stepSize["Max Step Size"] = 0.001
   lsParams["Size of Krylov Subspace"] = 200
 
   p = LOCA.ParameterVector()

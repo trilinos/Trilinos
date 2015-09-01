@@ -21,19 +21,11 @@ doxygen_objdb_*.tmp
 /DrekarResearch/
 /LIMEExt/
 /TerminalApplication/
-
-# CASL-related extra repos
-/CASLBOA/
-/CASLRAVE/
-/DeCARTExt/
-/Nemesis/
-/Denovo/
-/PSSDriversExt/
-/RELAP5Ext/
-/StarCCMExt/
-/Coupler/
 /DataTransferKit/
 /TeuchosWrappersExt
+
+# Allow github Kokkos to be cloned under Trilinos
+/kokkos/
 
 # RPI SCOREC extra repos
 /SCOREC
@@ -113,6 +105,10 @@ packages/tpetra/doc/MatrixMatrixReport/matmatreport.pdf
 packages/tpetra/doc/MatrixMatrixReport/tpetraDevData/*pdf
 packages/tpetra/doc/MatrixMatrixReport/allMatsData/*pdf
 packages/tpetra/doc/MatrixMatrixReport/atransData/*pdf
+
+packages/muelu/doc/UsersGuide/mueluguide.lof
+packages/muelu/doc/UsersGuide/mueluguide.lot
+packages/muelu/doc/UsersGuide/mueluguide.pdf
 
 rsync.*
 .project

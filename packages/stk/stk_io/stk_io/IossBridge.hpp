@@ -316,12 +316,19 @@ void delete_selector_property(Ioss::GroupingEntity *io_entity);
 
 std::string get_stated_field_name(const std::string &field_base_name, stk::mesh::FieldState state_identifier);
 
+bool field_state_exists_on_io_entity(const std::string& db_name, const stk::mesh::FieldBase* field, stk::mesh::FieldState state_identifier,
+                                     Ioss::GroupingEntity *io_entity);
+
+bool all_field_states_exist_on_io_entity(const std::string& db_name, const stk::mesh::FieldBase* field, Ioss::GroupingEntity *io_entity,
+                                         std::vector<stk::mesh::FieldState> &missing_states);
+
 void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                           const stk::mesh::FieldBase *field,
                           std::vector<stk::mesh::Entity> &entity_list,
                           Ioss::GroupingEntity *io_entity,
                           const std::string &name,
-                          const size_t state_count);
+                          const size_t state_count,
+                          bool ignore_missing_fields = false);
 
 void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
 					       const stk::mesh::FieldBase *field,
@@ -329,7 +336,8 @@ void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
 					       Ioss::GroupingEntity *io_entity,
 					       const stk::mesh::Part *stk_part,
 					       const std::string &name,
-					       const size_t state_count);
+					       const size_t state_count,
+					       bool ignore_missing_fields = false);
 
 /**
  * Fill the specified 'field' with data from the Ioss field named

@@ -803,7 +803,7 @@ TEST(BulkDataModificationEnd, create_a_ghosted_edge_using_only_needed_pieces)
         size_t numEdgesTotal = 2;
         EXPECT_EQ(numEdgesTotal, globalCounts[stk::topology::EDGE_RANK]);
 
-        stkMeshBulkData.modification_end_for_entity_creation(stk::topology::EDGE_RANK);
+        stkMeshBulkData.my_modification_end_for_entity_creation(stk::topology::EDGE_RANK);
 
         checkItAllForThisGhostedCase(stkMeshBulkData);
     }
@@ -1329,7 +1329,8 @@ void connectElementToEdge(stk::mesh::unit_test::BulkDataTester& stkMeshBulkData,
         stk::mesh::EntityKey nodeKey(stk::topology::NODE_RANK, nodeIdsForEdge[i]);
         nodes[i] = stkMeshBulkData.get_entity(nodeKey);
     }
-    stk::mesh::impl::connectEntityToEdge(stkMeshBulkData, element, edge, &nodes[0], nodes.size());
+
+    stk::mesh::impl::connectUpwardEntityToEntity(stkMeshBulkData, element, edge, &nodes[0]);
 }
 
 void create_edges(stk::mesh::unit_test::BulkDataTester& stkMeshBulkData, std::vector<stk::mesh::EntityId>& edgeIds,

@@ -64,7 +64,12 @@ namespace Sacado {                                                      \
     class OP {};                                                        \
                                                                         \
     template <typename ExprT>                                           \
-    class Expr< OP<ExprT> > {                                           \
+    struct ExprSpec< OP<ExprT> > {                                      \
+      typedef typename ExprSpec<ExprT>::type type;                      \
+    };                                                                  \
+                                                                        \
+    template <typename ExprT>                                           \
+    class Expr< OP<ExprT>,ExprSpecDefault > {                           \
     public:                                                             \
                                                                         \
       typedef typename ExprT::value_type value_type;                    \
@@ -116,6 +121,7 @@ namespace Sacado {                                                      \
       return Expr<expr_t>(expr);                                        \
     }                                                                   \
   }                                                                     \
+                                                                        \
 }
 
 FAD_UNARYOP_MACRO(operator+,
@@ -249,7 +255,12 @@ namespace Sacado {                                                      \
     class OP {};                                                        \
                                                                         \
     template <typename ExprT1, typename ExprT2>                         \
-    class Expr< OP< ExprT1, ExprT2 > > {                                \
+    struct ExprSpec< OP< ExprT1, ExprT2 > > {                           \
+      typedef typename ExprSpec<ExprT1>::type type;                     \
+    };                                                                  \
+                                                                        \
+    template <typename ExprT1, typename ExprT2>                         \
+    class Expr< OP< ExprT1, ExprT2 >,ExprSpecDefault > {                \
                                                                         \
     public:                                                             \
                                                                         \
@@ -316,7 +327,12 @@ namespace Sacado {                                                      \
     };                                                                  \
                                                                         \
     template <typename ExprT1, typename T2>                             \
-    class Expr< OP< ExprT1, ConstExpr<T2> > > {                         \
+    struct ExprSpec< OP< ExprT1, ConstExpr<T2> > > {                    \
+      typedef typename ExprSpec<ExprT1>::type type;                     \
+    };                                                                  \
+                                                                        \
+    template <typename ExprT1, typename T2>                             \
+    class Expr< OP< ExprT1, ConstExpr<T2> >,ExprSpecDefault > {         \
                                                                         \
     public:                                                             \
                                                                         \
@@ -381,7 +397,12 @@ namespace Sacado {                                                      \
     };                                                                  \
                                                                         \
     template <typename T1, typename ExprT2>                             \
-    class Expr< OP< ConstExpr<T1>, ExprT2 > > {                         \
+    struct ExprSpec< OP< ConstExpr<T1>, ExprT2 > > {                    \
+      typedef typename ExprSpec<ExprT2>::type type;                     \
+    };                                                                  \
+                                                                        \
+    template <typename T1, typename ExprT2>                             \
+    class Expr< OP< ConstExpr<T1>, ExprT2 >,ExprSpecDefault > {         \
                                                                         \
     public:                                                             \
                                                                         \
@@ -516,6 +537,7 @@ namespace Sacado {                                                      \
       return Expr<expr_t>(expr, ConstT(c));                             \
     }                                                                   \
   }                                                                     \
+                                                                        \
 }
 
 
@@ -626,7 +648,12 @@ namespace Sacado {
     class MultiplicationOp {};
 
     template <typename ExprT1, typename ExprT2>
-    class Expr< MultiplicationOp< ExprT1, ExprT2 > > {
+    struct ExprSpec< MultiplicationOp< ExprT1, ExprT2 > > {
+      typedef typename ExprSpec<ExprT1>::type type;
+    };
+
+    template <typename ExprT1, typename ExprT2>
+    class Expr< MultiplicationOp< ExprT1, ExprT2 >,ExprSpecDefault > {
 
     public:
 
@@ -699,7 +726,12 @@ namespace Sacado {
     };
 
     template <typename ExprT1, typename T2>
-    class Expr< MultiplicationOp< ExprT1, ConstExpr<T2> > > {
+    struct ExprSpec< MultiplicationOp< ExprT1, ConstExpr<T2> > > {
+      typedef typename ExprSpec<ExprT1>::type type;
+    };
+
+    template <typename ExprT1, typename T2>
+    class Expr< MultiplicationOp< ExprT1, ConstExpr<T2> >,ExprSpecDefault > {
 
     public:
 
@@ -764,7 +796,12 @@ namespace Sacado {
     };
 
     template <typename T1, typename ExprT2>
-    class Expr< MultiplicationOp< ConstExpr<T1>, ExprT2 > > {
+    struct ExprSpec< MultiplicationOp< ConstExpr<T1>, ExprT2 > > {
+      typedef typename ExprSpec<ExprT2>::type type;
+    };
+
+    template <typename T1, typename ExprT2>
+    class Expr< MultiplicationOp< ConstExpr<T1>, ExprT2 >,ExprSpecDefault > {
 
     public:
 

@@ -43,6 +43,7 @@
 #include "Ifpack2_Parameters.hpp"
 
 #include <Teuchos_ArrayRCP.hpp>
+#include <Tpetra_MultiVector.hpp>
 
 namespace Ifpack2 {
 
@@ -105,6 +106,8 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("relaxation: backward mode",false);
   params.set("relaxation: use l1",false);
   params.set("relaxation: l1 eta",(double)1.5);
+  params.set("relaxation: banded container superdiagonals", -1);
+  params.set("relaxation: banded container subdiagonals", -1);
 
   // Ifpack2_SPARSKIT.cpp
   params.set("fact: sparskit: lfil", (int)0);
@@ -131,20 +134,18 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("partitioner: local parts", (int)1);
   params.set("partitioner: overlap", (int)0);
 
-  // Krylov smoother
-  params.set("krylov: iteration type",(int)1);
-  params.set("krylov: number of iterations",(int)5);
-  params.set("krylov: residual tolerance",(double)0.001);
-  params.set("krylov: block size",(int)1);
-  params.set("krylov: zero starting solution", true);
-  params.set("krylov: preconditioner type",(int)1);
-
   // Ifpack2_METISPartitioner.hpp
   params.set("partitioner: use symmetric graph", true);
 
   // Ifpack2_Details_UserPartitioner.hpp
   Teuchos::ArrayRCP<int> tmp;
   params.set("partitioner: map", tmp);
+
+  // Ifpack2_LinePartitioner.hpp (FIXME)
+  params.set("partitioner: line detection threshold",(double)0.0);
+  params.set("partitioner: PDE equations",(int)1);
+  Teuchos::RCP<Tpetra::MultiVector<> > dummy;
+  params.set("partitioner: coordinates",dummy);
 }
 
 }//namespace Ifpack2

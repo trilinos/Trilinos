@@ -552,6 +552,14 @@ void ThreadsExec::initialize( unsigned thread_count ,
 
     const bool hwloc_avail = hwloc::available();
 
+    if ( thread_count == 0 ) {
+      thread_count = hwloc_avail
+      ? Kokkos::hwloc::get_available_numa_count() *
+        Kokkos::hwloc::get_available_cores_per_numa() *
+        Kokkos::hwloc::get_available_threads_per_core()
+      : 1 ;
+    }
+
     const unsigned thread_spawn_begin =
       hwloc::thread_mapping( "Kokkos::Threads::initialize" ,
                              allow_asynchronous_threadpool ,
@@ -657,6 +665,10 @@ void ThreadsExec::initialize( unsigned thread_count ,
 
     Kokkos::Impl::throw_runtime_exception( msg.str() );
   }
+
+  // Init the array for used for arbitrarily sized atomics
+  Impl::init_lock_array_host_space();
+
 }
 
 //----------------------------------------------------------------------------

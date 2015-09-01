@@ -25,12 +25,15 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable experimental code."
   NO)
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Tpetra)
 GLOBAL_SET(HAVE_XPETRA_TPETRA ${${PACKAGE_NAME}_ENABLE_Tpetra})
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Epetra)
 GLOBAL_SET(HAVE_XPETRA_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra})
 
 GLOBAL_SET(HAVE_XPETRA_EPETRAEXT ${${PACKAGE_NAME}_ENABLE_EpetraExt})
 
+# If Epetra is enabled, does it provide 64-bit global indices?
 IF(${PACKAGE_NAME}_ENABLE_Epetra)
 
   # Set default value of whether Xpetra should allow for 32 bit Epetra data structures or not.
@@ -60,7 +63,7 @@ ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES
   ${PACKAGE_NAME_UC}_EPETRA_NO_32BIT_GLOBAL_INDICES
-  "If option is enabled, 32 bit Epetra global indices are disabled in Xpetra.  One must use long long global indices only."
+  "If option is enabled, 32-bit Epetra global indices are disabled in Xpetra.  One must use GlobalOrdinal = long long only."
   ${${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES_DEFAULT} )
 
 IF(${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES_DEFAULT AND (NOT ${PACKAGE_NAME}_Epetra_NO_32BIT_GLOBAL_INDICES))
@@ -69,17 +72,57 @@ ENDIF()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES
   ${PACKAGE_NAME_UC}_EPETRA_NO_64BIT_GLOBAL_INDICES
-  "If option is enabled, 64 bit Epetra global indices are disabled in Xpetra.  One must use int global indices only."
+  "If option is enabled, 64-bit Epetra global indices are disabled in Xpetra.  One must use GlobalOrdinal = int only."
   ${${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES_DEFAULT} )
 
 IF(${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES_DEFAULT AND (NOT ${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES))
   MESSAGE(FATAL_ERROR "There are no 64 bit Epetra classes available possibly because they are disabled or Teuchos_ENABLE_LONG_LONG_INT is OFF or long long support is not present in Tpetra but user requested Xpetra use them by setting ${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES OFF.")
 ENDIF()
 
+#
+# Decide whether it makes sense to enable LocalOrdinal = int and
+# GlobalOrdinal = long long.  This requires support for long long in
+# Teuchos, and at least one of Epetra or Tpetra must also support
+# LocalOrdinal = int and GlobalOrdinal = long long.
+#
+ASSERT_DEFINED (Teuchos_ENABLE_LONG_LONG_INT)
+IF (NOT Teuchos_ENABLE_LONG_LONG_INT)
+  # If Teuchos doesn't have support for long long, we won't get anywhere.
+  SET (${PACKAGE_NAME}_INT_LONG_LONG OFF)
+ELSE ()
+  # Teuchos supports long long.  How about Epetra or Tpetra?
+  IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+    # Does Tpetra provide LocalOrdinal = int and GlobalOrdinal = long long?
+    ASSERT_DEFINED(Tpetra_INST_INT_LONG_LONG)
+    SET (${PACKAGE_NAME}_INT_LONG_LONG ${Tpetra_INST_INT_LONG_LONG})
+  ELSE () # Tpetra NOT enabled
+    IF (${PACKAGE_NAME}_ENABLE_Epetra)
+      # Does Epetra provide LocalOrdinal = int and GlobalOrdinal = long long?
+      IF (${PACKAGE_NAME}_Epetra_NO_64BIT_GLOBAL_INDICES)
+        SET (${PACKAGE_NAME}_INT_LONG_LONG OFF)
+      ELSE ()
+        SET (${PACKAGE_NAME}_INT_LONG_LONG ON)
+      ENDIF ()
+    ELSE () # Neither Epetra nor Tpetra are enabled
+      SET (${PACKAGE_NAME}_INT_LONG_LONG OFF)
+    ENDIF ()
+  ENDIF ()
+ENDIF ()  
+
+# If int, long long works, define the HAVE_XPETRA_INT_LONG_LONG macro.
+GLOBAL_SET (HAVE_XPETRA_INT_LONG_LONG ${${PACKAGE_NAME}_INT_LONG_LONG})
+
 TRIBITS_ADD_OPTION_AND_DEFINE(XPETRA_ENABLE_PROFILING
   HAVE_XPETRA_PROFILING
   "Enable detailed timing of Xpetra."
   OFF)
+
+# Define option to enable code that is refactored to use Kokkos
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor
+  HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
+  "Enable Xpetra code refactored to use Kokkos."
+  NO)
 
 #
 #

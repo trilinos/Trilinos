@@ -1494,9 +1494,12 @@ namespace Tpetra {
       this->storageStatus_ = Details::STORAGE_1D_PACKED;
     }
 
-    // Build the local sparse matrix object.
+    // Build the local sparse matrix object.  At this point, the local
+    // matrix certainly has a column Map.  Remember that the local
+    // matrix's number of columns comes from the column Map, not the
+    // domain Map.
     lclMatrix_ = local_matrix_type ("Tpetra::CrsMatrix::lclMatrix_",
-                                    getDomainMap ()->getNodeNumElements (),
+                                    getColMap ()->getNodeNumElements (),
                                     k_vals,
                                     staticGraph_->getLocalGraph ());
   }
@@ -4001,6 +4004,15 @@ namespace Tpetra {
                             const Teuchos::RCP<const export_type>& exporter,
                             const Teuchos::RCP<Teuchos::ParameterList> &params)
   {
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    std::string label;
+    if(!params.is_null())
+      label = params->get("Timer Label",label);
+    std::string prefix = std::string("Tpetra ")+ label + std::string(": ");
+    using Teuchos::TimeMonitor;
+    Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-Graph"))));
+#endif
+    
     const char tfecfFuncName[] = "expertStaticFillComplete: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
       std::runtime_error, "Matrix fill state must be active (isFillActive() "
@@ -4008,10 +4020,19 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       myGraph_.is_null (), std::logic_error, "myGraph_ is null.  This is not allowed.");
 
+
     // We will presume globalAssemble is not needed, so we do the ESFC on the graph
-    myGraph_->expertStaticFillComplete (domainMap, rangeMap, importer, exporter);
+    myGraph_->expertStaticFillComplete (domainMap, rangeMap, importer, exporter,params);
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cGC"))));
+#endif
 
     computeGlobalConstants ();
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-fLGAM"))));
+#endif
 
     // Fill the local graph and matrix
     fillLocalGraphAndMatrix (params);
@@ -4030,6 +4051,11 @@ namespace Tpetra {
       ": We're at the end of fillComplete(), but isFillActive() is true.  "
       "Please report this bug to the Tpetra developers.");
 #endif // HAVE_TPETRA_DEBUG
+
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("ESFC-M-cIS"))));
+#endif
+
     checkInternalState();
   }
 
@@ -5360,11 +5386,21 @@ namespace Tpetra {
       return; // all done!
     }
 
-    // Describe the Map Map.
+    // Describe the row Map.
     if (myRank == 0) {
       out << endl << "Row Map:" << endl;
     }
-    getRowMap ()->describe (out, vl);
+    if (getRowMap ().is_null ()) {
+      if (myRank == 0) {
+        out << "null" << endl;
+      }
+    }
+    else {
+      if (myRank == 0) {
+        out << endl;
+      }
+      getRowMap ()->describe (out, vl);
+    }
 
     // Describe the column Map.
     if (myRank == 0) {
@@ -5405,7 +5441,7 @@ namespace Tpetra {
       if (myRank == 0) {
         out << endl;
       }
-      getColMap ()->describe (out, vl);
+      getDomainMap ()->describe (out, vl);
     }
 
     // Describe the range Map.
@@ -5428,7 +5464,7 @@ namespace Tpetra {
       if (myRank == 0) {
         out << endl;
       }
-      getColMap ()->describe (out, vl);
+      getRangeMap ()->describe (out, vl);
     }
 
     // O(P) data
@@ -7322,11 +7358,18 @@ namespace Tpetra {
     /**** 7) Build Importer & Call ESFC             ****/
     /***************************************************/
     // Pre-build the importer using the existing PIDs
+    Teuchos::ParameterList esfc_params;
 #ifdef HAVE_TPETRA_MMM_TIMINGS
-    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC ESFC"))));
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC CreateImporter"))));
 #endif
     RCP<import_type> MyImport = rcp (new import_type (MyDomainMap, MyColMap, RemotePids));
-    destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport);
+#ifdef HAVE_TPETRA_MMM_TIMINGS
+    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer(prefix + std::string("TAFC ESFC"))));
+
+    esfc_params.set("Timer Label",prefix + std::string("TAFC"));
+#endif
+    
+    destMat->expertStaticFillComplete (MyDomainMap, MyRangeMap, MyImport,Teuchos::null,rcp(&esfc_params,false));
   }
 
   template <class Scalar,

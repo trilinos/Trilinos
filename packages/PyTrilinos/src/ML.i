@@ -103,22 +103,28 @@ example subdirectory of the PyTrilinos package:
 #endif
 
 // Teuchos includes
-#ifdef HAVE_TEUCHOS
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
 #include "PyTrilinos_Teuchos_Util.hpp"
-#endif
 
 // Epetra includes
 #ifdef HAVE_EPETRA
+#include "Epetra_SerialComm.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_MapColoring.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_InvOperator.h"
@@ -130,23 +136,16 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_JadMatrix.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_SerialDistributor.h"
+#include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_OffsetIndex.h"
+#include "PyTrilinos_Epetra_Util.hpp"
 
-// Epetra python includes
+// NumPy include
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
-#include "Epetra_NumPyIntVector.hpp"
-#include "Epetra_NumPyMultiVector.hpp"
-#include "Epetra_NumPyVector.hpp"
-#include "Epetra_NumPyFEVector.hpp"
-#include "Epetra_NumPyIntSerialDenseMatrix.hpp"
-#include "Epetra_NumPyIntSerialDenseVector.hpp"
-#include "Epetra_NumPySerialDenseMatrix.hpp"
-#include "Epetra_NumPySerialSymDenseMatrix.hpp"
-#include "Epetra_NumPySerialDenseVector.hpp"
 #endif
 
 // IFPACK includes
@@ -189,9 +188,8 @@ example subdirectory of the PyTrilinos package:
 %ignore *::operator[];
 
 // External Trilinos package imports
-#ifdef HAVE_TEUCHOS
 %import "Teuchos.i"
-#endif
+
 #ifdef HAVE_EPETRA
 %include "Epetra_RowMatrix_Utils.i"
 %ignore Epetra_Version;
@@ -202,6 +200,7 @@ example subdirectory of the PyTrilinos package:
 import Epetra
 %}
 #endif
+
 #ifdef HAVE_IFPACK
 %ignore Ifpack_Version;
 %import  "IFPACK.i"
@@ -209,12 +208,10 @@ import Epetra
 #endif
 
 // Teuchos::RCP handling
-#ifdef HAVE_TEUCHOS
 %teuchos_rcp(MLAPI::DoubleVector)
 %teuchos_rcp(MLAPI::ML_Operator_Box)
 #ifdef HAVE_EPETRA
 %teuchos_rcp(ML_Epetra::MultiLevelPreconditioner)
-#endif
 #endif
 
 // General exception handling
@@ -791,7 +788,6 @@ namespace MLAPI
 // ml_MultiLevelPreconditioner support //
 /////////////////////////////////////////
 %include "ml_MultiLevelPreconditioner.h"
-#ifdef HAVE_TEUCHOS
 #ifdef HAVE_EPETRA
 namespace ML_Epetra
 {
@@ -818,13 +814,11 @@ namespace ML_Epetra
 }
 }
 #endif
-#endif
 
 ///////////////////////////////////
 // MLAPI_InverseOperator support //
 ///////////////////////////////////
 %include "MLAPI_InverseOperator.h"
-#ifdef HAVE_TEUCHOS
 namespace MLAPI
 {
   %extend InverseOperator
@@ -846,7 +840,6 @@ namespace MLAPI
     }
   }
 }
-#endif
 
 //////////////////////////////////
 // MLAPI_Operator_Utils support //
@@ -886,7 +879,6 @@ namespace MLAPI
 ///////////////////////////
 %include "MLAPI_Gallery.h"
 
-#ifdef HAVE_TEUCHOS
 %inline
 {
   MLAPI::Operator GetPNonSmoothed(const MLAPI::Operator& A,
@@ -912,7 +904,6 @@ namespace MLAPI
     return(true);
   }
 }
-#endif
 
 // Turn off the exception handling
 %exception;
