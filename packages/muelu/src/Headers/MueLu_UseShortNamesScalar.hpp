@@ -258,6 +258,10 @@ typedef MueLu::RigidBodyModeFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Rigi
 typedef MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SaPFactory;
 #endif
 
+#ifdef MUELU_SAPFACTORYK_SHORT
+typedef MueLu::SaPFactoryK<Scalar,LocalOrdinal,GlobalOrdinal,Node> SaPFactoryK;
+#endif
+
 #ifdef MUELU_SCHURCOMPLEMENTFACTORY_SHORT
 typedef MueLu::SchurComplementFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SchurComplementFactory;
 #endif
@@ -354,10 +358,16 @@ typedef MueLu::VisualizationHelpers<Scalar,LocalOrdinal,GlobalOrdinal,Node> Visu
 typedef MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node> Zoltan2Interface;
 #endif
 
+#ifdef MUELU_UTILITIESK_SHORT
+typedef MueLu::UtilsK<Scalar,LocalOrdinal,GlobalOrdinal,Node> UtilsK;
+typedef MueLu::Utils2K<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2K;
+#endif
+
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2;
 #endif
+
 #ifdef MUELU_TWOLEVELMATLABFACTORY_SHORT
 typedef MueLu::TwoLevelMatlabFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> TwoLevelMatlabFactory;
 #endif
