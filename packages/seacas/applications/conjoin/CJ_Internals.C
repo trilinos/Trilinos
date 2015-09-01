@@ -838,12 +838,9 @@ int Excn::Internals::put_metadata(const std::vector<NodeSet<INT> > &nodesets)
   int dims[2];
 
   int status  = 0; // clear error code
-  char *cdum = 0;
-  float fdum;
 
   // Get number of node sets defined for this file
   int dimid;
-  int num_node_sets = 0;
   status=nc_inq_dimid (exodusFilePtr, DIM_NUM_NS, &dimid);
   if (status  != NC_NOERR) {
     ex_opts(EX_VERBOSE);
@@ -860,15 +857,7 @@ int Excn::Internals::put_metadata(const std::vector<NodeSet<INT> > &nodesets)
   }
 
   // inquire how many node sets are to be stored
-  if (ex_inquire(exodusFilePtr, EX_INQ_NODE_SETS, &num_node_sets, &fdum, cdum) != NC_NOERR) {
-    ex_opts(EX_VERBOSE);
-    sprintf(errmsg,
-	    "Error: failed to get number of node sets defined for file id %d",
-	    exodusFilePtr);
-    ex_err(routine, errmsg, status);
-    return (EX_FATAL);
-  }
-
+  int num_node_sets = ex_inquire_int(exodusFilePtr, EX_INQ_NODE_SETS);
   SMART_ASSERT(static_cast<int>(nodesets.size()) == num_node_sets);
 
   for (int i=0; i<num_node_sets; i++) {
@@ -1001,12 +990,9 @@ int Excn::Internals::put_metadata(const std::vector<SideSet<INT> > &sidesets)
   int dims[2];
 
   int status  = 0; // clear error code
-  char *cdum = 0;
-  float fdum;
 
   // Get number of side sets defined for this file
   int dimid;
-  int num_side_sets = 0;
   status=nc_inq_dimid (exodusFilePtr, DIM_NUM_SS, &dimid);
   if (status  != NC_NOERR) {
     ex_opts(EX_VERBOSE);
@@ -1023,15 +1009,7 @@ int Excn::Internals::put_metadata(const std::vector<SideSet<INT> > &sidesets)
   }
 
   // inquire how many side sets are to be stored
-  if (ex_inquire(exodusFilePtr, EX_INQ_SIDE_SETS, &num_side_sets, &fdum, cdum) != NC_NOERR) {
-    ex_opts(EX_VERBOSE);
-    sprintf(errmsg,
-	    "Error: failed to get number of side sets defined for file id %d",
-	    exodusFilePtr);
-    ex_err(routine, errmsg, status);
-    return (EX_FATAL);
-  }
-
+  int num_side_sets = ex_inquire_int(exodusFilePtr, EX_INQ_SIDE_SETS);
   SMART_ASSERT(static_cast<int>(sidesets.size()) == num_side_sets);
 
   for (int i=0; i<num_side_sets; i++) {
