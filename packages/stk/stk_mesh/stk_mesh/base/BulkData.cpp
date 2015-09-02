@@ -44,7 +44,6 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, print_entity_key, etc
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
-#include <stk_mesh/baseImpl/Partition.hpp>  // for Partition
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg, etc
 #include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, all_reduce, etc
@@ -863,7 +862,7 @@ void BulkData::internal_change_entity_key( EntityKey old_key, EntityKey new_key,
 {
   m_entity_repo.update_entity_key(new_key, old_key, entity);
   set_entity_key(entity, new_key);
-  this->bucket(entity).getPartition()->set_flag_needs_to_be_sorted(true);
+  m_bucket_repository.set_needs_to_be_sorted(this->bucket(entity), true);
 }
 
 //----------------------------------------------------------------------
@@ -962,7 +961,7 @@ bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
 
   remove_entity_callback(erank, bucket(entity).bucket_id(), bucket_ordinal(entity));
 
-  bucket(entity).getPartition()->remove(entity);
+  m_bucket_repository.remove_entity(bucket(entity), entity);
   m_entity_repo.destroy_entity(key, entity );
   m_meshModification.mark_entity_as_deleted(entity.local_offset());
   m_mark_entity[entity.local_offset()] = NOT_MARKED;
@@ -5217,20 +5216,19 @@ void BulkData::internal_move_entity_to_new_bucket(stk::mesh::Entity entity, cons
 {
     Bucket *bucket_old = bucket_ptr(entity);
     EntityRank e_rank = entity_rank(entity);
-    stk::mesh::impl::Partition *partition = m_bucket_repository.get_or_create_partition(e_rank, newBucketPartList);
 
-     if ( !m_meshModification.did_any_shared_entity_change_parts() && bucket_old && (bucket_old->shared() || this->in_send_ghost(entity_key(entity)) || this->in_receive_ghost(entity_key(entity)) ))
+    if (!m_meshModification.did_any_shared_entity_change_parts() && bucket_old && (bucket_old->shared() || this->in_send_ghost(entity_key(entity)) || this->in_receive_ghost(entity_key(entity)) ))
     {
         m_meshModification.set_shared_entity_changed_parts();
     }
 
     if (bucket_old != NULL)
     {
-      bucket_old->getPartition()->move_to(entity, *partition);
+        m_bucket_repository.change_entity_part_membership(bucket_old, entity, e_rank, newBucketPartList);
     }
     else
     {
-      partition->add(entity);
+        m_bucket_repository.add_entity_with_part_memberships(entity, e_rank, newBucketPartList);
     }
 }
 

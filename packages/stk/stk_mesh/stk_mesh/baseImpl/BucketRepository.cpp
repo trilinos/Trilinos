@@ -112,6 +112,11 @@ size_t BucketRepository::total_field_data_footprint(const FieldBase& f, EntityRa
   return retval;
 }
 
+void BucketRepository::set_needs_to_be_sorted(stk::mesh::Bucket &bucket, bool needsSorting)
+{
+    bucket.getPartition()->set_flag_needs_to_be_sorted(needsSorting);
+}
+
 void BucketRepository::internal_sort_bucket_entities()
 {
   for (std::vector<std::vector<Partition *> >::const_iterator
@@ -138,6 +143,29 @@ void BucketRepository::optimize_buckets()
       (*ip)->compress();
     }
   }
+}
+
+
+void BucketRepository::add_entity_with_part_memberships(const stk::mesh::Entity entity,
+                                                        const EntityRank arg_entity_rank,
+                                                        const OrdinalVector &parts)
+{
+    Partition *partition = get_or_create_partition(arg_entity_rank, parts);
+    partition->add(entity);
+}
+
+void BucketRepository::change_entity_part_membership(Bucket *bucketOld,
+                                                     const stk::mesh::Entity entity,
+                                                     const EntityRank arg_entity_rank,
+                                                     const OrdinalVector &parts)
+{
+    Partition *partition = get_or_create_partition(arg_entity_rank, parts);
+    bucketOld->getPartition()->move_to(entity, *partition);
+}
+
+void BucketRepository::remove_entity(Bucket &bucket, Entity entity)
+{
+    bucket.getPartition()->remove(entity);
 }
 
 ////

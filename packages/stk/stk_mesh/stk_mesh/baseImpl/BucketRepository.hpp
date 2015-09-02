@@ -94,6 +94,7 @@ public:
   //------------------------------------
   size_t total_field_data_footprint(const FieldBase &f, EntityRank rank) const;
 
+  void set_needs_to_be_sorted(stk::mesh::Bucket &bucket, bool needsSorting);
   void internal_sort_bucket_entities();
 
   void optimize_buckets();
@@ -115,6 +116,17 @@ public:
 
   friend class Partition;
   friend struct stk::mesh::utest::SyncToPartitions;
+
+  void add_entity_with_part_memberships(const Entity entity,
+                                        const EntityRank arg_entity_rank,
+                                        const OrdinalVector &parts);
+
+  void change_entity_part_membership(Bucket *bucket_old,
+                                     const Entity entity,
+                                     const EntityRank arg_entity_rank,
+                                     const OrdinalVector &parts);
+
+  void remove_entity(Bucket &bucket, Entity entity);
 
   Partition *get_or_create_partition(const EntityRank arg_entity_rank ,
                                      const OrdinalVector &parts);
