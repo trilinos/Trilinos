@@ -247,6 +247,8 @@ public:
   
   RCP<Epetra_MultiVector> getUIEpetraMultiVector(int nvec);
 #endif
+  bool hasInput();
+  
   bool hasInputDataType(const string &input_type);
   
   bool hasUICoordinates();
@@ -668,8 +670,7 @@ RCP<Epetra_CrsMatrix> UserInputForTests::getUIEpetraCrsMatrix()
     for (size_t j=0; j < rowSize; j++){
       colGid[j] = colMap.GID(colLid[j]);
     }
-    eM_->InsertGlobalValues(
-                            rowGid, rowSize, nz.getRawPtr(), colGid.getRawPtr());
+    eM_->InsertGlobalValues(rowGid, (int)rowSize, nz.getRawPtr(), colGid.getRawPtr());
   }
   eM_->FillComplete();
   return eM_;
@@ -692,6 +693,15 @@ RCP<Epetra_MultiVector> UserInputForTests::getUIEpetraMultiVector(int nvec)
   return mV;
 }
 #endif
+
+bool UserInputForTests::hasInput()
+{
+  // find out if an input source has been loaded
+  return  this->hasUICoordinates() || \
+          this->hasUITpetraCrsMatrix() || \
+          this->hasUITpetraCrsGraph() || \
+          this->hasPamgenMesh();
+}
 
 bool UserInputForTests::hasInputDataType(const string &input_type)
 {
@@ -986,7 +996,7 @@ void UserInputForTests::readGeoGenParams(string paramFileName,
   
   
   
-  int size = input.size();
+  int size = (int)input.size();
   if(fail){
     size = -1;
   }
@@ -1041,7 +1051,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   }
   else{
     if (tcomm_->getRank() == 0)
-      std::cout << "UserInputForTests unable to read matrix." << std::endl;
+      std::cout << "UserInputForTests unable to read matrix market file:" << fname.str() << std::endl;
   }
   
   // Open the coordinate file.
@@ -1138,7 +1148,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   Teuchos::broadcast<int, size_t>(*tcomm_, 0, 2, msg);
   
   coordDim = msg[0];
-  numGlobalCoords= msg[1];
+  numGlobalCoords = msg[1];
   
   if (coordDim == 0)
     return;
@@ -1173,7 +1183,7 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
     
     ArrayRCP<const zgno_t> rowIds = Teuchos::arcp(tmp, 0, numGlobalCoords);
     
-    zgno_t basePlusNumGlobalCoords = base+numGlobalCoords;
+    zgno_t basePlusNumGlobalCoords = base + static_cast<zgno_t>(numGlobalCoords);
     for (zgno_t id=base; id < basePlusNumGlobalCoords; id++)
       *tmp++ = id;
     
@@ -1251,7 +1261,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
     std::endl;
   
   ArrayView<const zgno_t> gids = map->getNodeElementList();
-  zlno_t count = gids.size();
+  zlno_t count = static_cast<zlno_t>(gids.size());
   int dim = 3;
   size_t pos = problemType.find("2D");
   if (pos != string::npos)
@@ -1352,6 +1362,11 @@ void UserInputForTests::readZoltanTestData(string path, string testData,
         if (verbose_ && tcomm_->getRank() == 0)
           std::cout << "UserInputForTests, open " <<
           chCoordFileName.str () << std::endl;
+      }
+    }else{
+      if (verbose_ && tcomm_->getRank() == 0){
+        std::cout << "UserInputForTests, unable to open file: ";
+        std::cout << chGraphFileName.str() << std::endl;
       }
     }
   }
@@ -1476,7 +1491,7 @@ void UserInputForTests::getUIChacoGraph(FILE *fptr, string fname,
     graphCounts[1] = nedges;
     graphCounts[2] = nVwgts;
     graphCounts[3] = nEwgts;
-    graphCounts[4] = maxRowLen; // size_t maxRowLen will fit; it is <= (int-int)
+    graphCounts[4] = (int)maxRowLen; // size_t maxRowLen will fit; it is <= (int-int)
   }
   
   Teuchos::broadcast<int, int>(*tcomm_, 0, 5, graphCounts);
@@ -1674,7 +1689,7 @@ void UserInputForTests::getUIChacoCoords(FILE *fptr, string fname)
     // Reads in the file and closes it when done.
     char *nonConstName = new char [fname.size() + 1];
     strcpy(nonConstName, fname.c_str());
-    fail = chaco_input_geom(fptr, nonConstName, globalNumVtx,
+    fail = chaco_input_geom(fptr, nonConstName, (int)globalNumVtx,
                             &ndim, &x, &y, &z);
     delete [] nonConstName;
     
@@ -1709,7 +1724,7 @@ void UserInputForTests::getUIChacoCoords(FILE *fptr, string fname)
       free(val);
     }
     
-    len = globalNumVtx;;
+    len = static_cast<zlno_t>(globalNumVtx);
   }
   
   RCP<const map_t> fromMap = rcp(new map_t(globalNumVtx, len, 0, tcomm_));
@@ -2310,18 +2325,32 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData, int dim
     file.open(meshFileName.str(), ios::in);
     
     if(!file.is_open()) // may be a problem with path or filename
-      throw std::runtime_error("Unable to open pamgen mesh. Please check file path and name");
-    
-    // write to character array
-    // get size of file
-    file.seekg (0,file.end);
-    len = file.tellg();
-    file.seekg (0);
+    {
+      if(verbose_ && tcomm_->getRank() == 0)
+      {
+        std::cout << "Unable to open pamgen mesh: ";
+        std::cout << meshFileName.str();
+        std::cout <<"\nPlease check file path and name." << std::endl;
+      }
+      len = 0; // broadcaset 0 length ->will cause exit
+    }else{
+      // write to character array
+      // get size of file
+      file.seekg (0,file.end);
+      len = file.tellg();
+      file.seekg (0);
+    }
   }
   
   // broadcast the file size
   this->tcomm_->broadcast(0,sizeof(size_t),(char *)&len);
   this->tcomm_->barrier();
+  
+  if(len == 0){
+    if(verbose_ && tcomm_->getRank() == 0)
+      std::cout << "Pamgen Mesh file size == 0, exiting UserInputForTests early." << endl;
+    return;
+  }
   
   char * file_data = new char[len];
   file_data[len] = '\0'; // critical to null terminate buffer
@@ -2330,7 +2359,7 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData, int dim
   }
   
   // broadcast the file to the world
-  this->tcomm_->broadcast(0,len,file_data);
+  this->tcomm_->broadcast(0,(int)len,file_data);
   this->tcomm_->barrier();
 
   // Create the PamgenMesh
@@ -2359,8 +2388,8 @@ void UserInputForTests::setPamgenCoordinateMV()
 {
   int dimension = pamgen_mesh->num_dim;
   // get coordinate and point info;
-  zlno_t numLocalPoints = pamgen_mesh->num_nodes;
-  zgno_t numGlobalPoints = pamgen_mesh->num_nodes_global;
+//  zlno_t numLocalPoints = pamgen_mesh->num_nodes;
+//  zgno_t numGlobalPoints = pamgen_mesh->num_nodes_global;
   zgno_t numelements = pamgen_mesh->num_elem;
   zgno_t numGlobalElements = pamgen_mesh->num_elems_global;
   // allocate and set an array of coordinate arrays
@@ -2375,7 +2404,7 @@ void UserInputForTests::setPamgenCoordinateMV()
   RCP<Tpetra::Map<zlno_t, zgno_t, znode_t> > mp;
   //   mp = rcp(new map_t(numGlobalElements, numelements, 0, this->tcomm_)); // constructo 1
   
-  Array<zgno_t>::size_type numEltsPerProc = numelements;
+//  Array<zgno_t>::size_type numEltsPerProc = numelements;
   Array<zgno_t> elementList(numelements);
   for (Array<zgno_t>::size_type k = 0; k < numelements; ++k) {
     elementList[k] = pamgen_mesh->element_order_map[k];
