@@ -1183,7 +1183,7 @@ void fill_sorted_procs(const PairIterEntityComm& ec, std::vector<int>& procs)
     stk::util::sort_and_unique(procs);
 }
 
-void fill_sorted_ghosting_procs(const PairIterEntityComm& ec, unsigned ghost_id, std::vector<int>& procs)
+void fill_ghosting_procs(const PairIterEntityComm& ec, unsigned ghost_id, std::vector<int>& procs)
 {
     procs.clear();
     int n = ec.size();
@@ -1192,7 +1192,6 @@ void fill_sorted_ghosting_procs(const PairIterEntityComm& ec, unsigned ghost_id,
             procs.push_back( ec[i].proc );
         }
     }
-    stk::util::sort_and_unique(procs);
 }
 
 void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
@@ -1249,7 +1248,7 @@ void BulkData::shared_procs_intersection( std::vector<EntityKey> & keys, std::ve
 void BulkData::comm_procs( const Ghosting & ghost ,
                            EntityKey key, std::vector<int> & procs ) const
 {
-  fill_sorted_ghosting_procs(internal_entity_comm_map(key), ghost.ordinal(), procs);
+  fill_ghosting_procs(internal_entity_comm_map(key), ghost.ordinal(), procs);
 }
 
 void BulkData::internal_change_owner_in_comm_data(const EntityKey& key, int new_owner)
@@ -6093,7 +6092,7 @@ void BulkData::pack_owned_verify( CommAll & all )
         // see if we also have ghosts
         unsigned ghost_count = 0 ;
         for ( size_t kk = 0 ; kk < comm.size() ; ++kk ) {
-          if ( comm[kk].ghost_id > 1 && comm[kk].proc == share_proc ) {
+          if ( comm[kk].ghost_id > BulkData::AURA && comm[kk].proc == share_proc ) {
             ++ghost_count ;
           }
         }
@@ -6317,8 +6316,8 @@ bool BulkData::verify_parallel_attributes_comm_list_info( size_t comm_count, std
       result = false ;
     }
 
-    fill_sorted_ghosting_procs(ec, shared_ghosting().ordinal(), sharing_procs);
-    fill_sorted_ghosting_procs(ec, aura_ghosting().ordinal(), aura_procs);
+    fill_ghosting_procs(ec, shared_ghosting().ordinal(), sharing_procs);
+    fill_ghosting_procs(ec, aura_ghosting().ordinal(), aura_procs);
     std::vector<int> shared_and_aura_procs;
     std::back_insert_iterator<std::vector<int> > intersect_itr(shared_and_aura_procs);
     std::set_intersection(sharing_procs.begin(), sharing_procs.end(),
