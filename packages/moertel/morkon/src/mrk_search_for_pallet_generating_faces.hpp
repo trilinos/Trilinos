@@ -129,7 +129,7 @@ struct search_for_pallet_generating_faces
         , m_face_to_interface_and_side(parent.m_face_to_interface_and_side)
       {
         assert(m_offsets.dimension_0() == parent.m_face_to_interface_and_side.dimension_0());
-        size_type output_size = m_face_to_interface_and_side.dimension_0();
+        const size_type output_size = m_face_to_interface_and_side.dimension_0();
         if (output_size > 0)
           Kokkos::parallel_scan(m_face_to_interface_and_side.dimension_0(), *this);
       }
@@ -182,7 +182,7 @@ struct search_for_pallet_generating_faces
         int interface_id = m_face_to_interface_and_side(face_id, 0);
         if (m_face_to_interface_and_side(face_id, 1) == InterfaceBase::NON_MORTAR_SIDE)
         {
-          int non_mortarside_offset = face_id - mortarside_offset;
+          const int non_mortarside_offset = face_id - mortarside_offset;
           m_non_mortarside_faces(non_mortarside_offset, 0) = face_id;
           m_non_mortarside_faces(non_mortarside_offset, 1) = interface_id;
         }
@@ -214,37 +214,34 @@ struct search_for_pallet_generating_faces
         m_predicted_node_coords(parent.m_predicted_node_coords),
         m_epsilon(parent.m_boxes_epsilon),
         m_aabbs_out(aabbs_out)
-       {}
+      {
+        Kokkos::parallel_for(m_face_interface_pairs.dimension_0(), *this);
+      }
 
       KOKKOS_INLINE_FUNCTION
       void operator() (const unsigned &idx) const
       {
-        aabb_scalar_type min_corner[3] =  { bounding_boxes_t::max_scalar,
-                                            bounding_boxes_t::max_scalar,
-                                            bounding_boxes_t::max_scalar };
+        aabb_scalar_type min_corner[3] =  { aabb_t::max_scalar, aabb_t::max_scalar, aabb_t::max_scalar };
+        aabb_scalar_type max_corner[3] =  { aabb_t::min_scalar, aabb_t::min_scalar, aabb_t::min_scalar };
 
-        aabb_scalar_type max_corner[3] =  { bounding_boxes_t::min_scalar,
-                                            bounding_boxes_t::min_scalar,
-                                            bounding_boxes_t::min_scalar };
+        const local_idx_t face_id   = m_face_interface_pairs(idx, 0);
+        const local_idx_t num_nodes = m_face_to_num_nodes(idx);
 
-        local_idx_t face_id   = m_face_interface_pairs(idx, 0);
-        local_idx_t num_nodes = m_face_to_num_nodes(idx);
-
-        for (local_idx_t node_i = 0; node_i < num_nodes; ++num_nodes)
+        for (local_idx_t node_i = 0; node_i < num_nodes; ++node_i)
         {
-          local_idx_t node_id = m_face_to_nodes(face_id, node_i);
-          for (local_idx_t dim_j = 0; dim_j < DIM; ++dim_j)
+          const local_idx_t node_id = m_face_to_nodes(face_id, node_i);
+          for (unsigned dim_j = 0; dim_j < DIM; ++dim_j)
           {
-            aabb_scalar_type val_j = m_node_coords(node_id, dim_j);
-            aabb_scalar_type pred_val_j = m_node_coords(node_id, dim_j);
-            aabb_scalar_type lb_val_j = (val_j < pred_val_j ? val_j : pred_val_j);
-            aabb_scalar_type ub_val_j = (val_j > pred_val_j ? val_j : pred_val_j);
+            const aabb_scalar_type val_j = m_node_coords(node_id, dim_j);
+            const aabb_scalar_type pred_val_j = m_node_coords(node_id, dim_j);
+            const aabb_scalar_type lb_val_j = (val_j < pred_val_j ? val_j : pred_val_j);
+            const aabb_scalar_type ub_val_j = (val_j > pred_val_j ? val_j : pred_val_j);
             min_corner[dim_j] = (lb_val_j < min_corner[dim_j] ? lb_val_j : min_corner[dim_j]);
             max_corner[dim_j] = (ub_val_j > max_corner[dim_j] ? ub_val_j : max_corner[dim_j]);
           }
         }
 
-        for (local_idx_t dim_j= 0; dim_j < DIM; ++dim_j)
+        for (unsigned dim_j= 0; dim_j < DIM; ++dim_j)
         {
           m_aabbs_out(idx, aabb_t::min_val_idx_for_dim(dim_j)) = min_corner[dim_j] - m_epsilon;
           m_aabbs_out(idx, aabb_t::max_val_idx_for_dim(dim_j)) = max_corner[dim_j] + m_epsilon;
@@ -273,9 +270,9 @@ struct search_for_pallet_generating_faces
       KOKKOS_INLINE_FUNCTION
       void find_intersections (const int &idx, const IntersectsFunctionMode mode) const
       {
-        local_idx_t non_mortar_face_idx = idx;
-        local_idx_t fill_offset = (mode == FILL? m_offsets[idx] : 0);
-        local_idx_t face_A = m_non_mortarside_face_interface_pairs(non_mortar_face_idx, 0);
+        const local_idx_t non_mortar_face_idx = idx;
+        const local_idx_t fill_offset = (mode == FILL? m_offsets[idx] : 0);
+        const local_idx_t face_A = m_non_mortarside_face_interface_pairs(non_mortar_face_idx, 0);
 
         local_idx_t aabb_min_idx[DIM], aabb_max_idx[DIM];
         aabb_scalar_type min_corner_A[DIM], max_corner_A[DIM];
@@ -287,26 +284,24 @@ struct search_for_pallet_generating_faces
           min_corner_A[i] = m_non_mortarside_aabbs(non_mortar_face_idx, aabb_min_idx[i]);
           max_corner_A[i] = m_non_mortarside_aabbs(non_mortar_face_idx, aabb_max_idx[i]);
         }
-        local_idx_t interface_A = m_non_mortarside_face_interface_pairs(non_mortar_face_idx, 1);
+        const local_idx_t interface_A = m_non_mortarside_face_interface_pairs(non_mortar_face_idx, 1);
 
         int count = 0;
         for (local_idx_t mortar_face_idx = 0; mortar_face_idx < m_num_nonmortar_faces; ++mortar_face_idx)
         {
-          local_idx_t interface_B = m_mortarside_face_interface_pairs(mortar_face_idx, 1);
+          const local_idx_t interface_B = m_mortarside_face_interface_pairs(mortar_face_idx, 1);
 
           if (interface_A != interface_B)
             continue;
 
           local_idx_t face_B = m_mortarside_face_interface_pairs(mortar_face_idx, 0);
           bool intersects_along_all = true;;
-
           for (unsigned i = 0; i < DIM; ++i)
           {
-            aabb_scalar_type min_A = min_corner_A[i];
-            aabb_scalar_type max_A = max_corner_A[i];
-            aabb_scalar_type min_B = m_mortarside_aabbs(mortar_face_idx, aabb_min_idx[i]);
-            aabb_scalar_type max_B = m_mortarside_aabbs(mortar_face_idx, aabb_max_idx[i]);
-
+            const aabb_scalar_type min_A = min_corner_A[i];
+            const aabb_scalar_type max_A = max_corner_A[i];
+            const aabb_scalar_type min_B = m_mortarside_aabbs(mortar_face_idx, aabb_min_idx[i]);
+            const aabb_scalar_type max_B = m_mortarside_aabbs(mortar_face_idx, aabb_max_idx[i]);
             intersects_along_all &= ((min_A <= min_B) & (min_B <= max_A)) | ((min_A <= max_B) & (max_B <= max_A));
           }
           if (intersects_along_all)
@@ -386,8 +381,6 @@ struct search_for_pallet_generating_faces
         , m_face_to_interface_and_side(face_to_interface_and_side)
         , m_boxes_epsilon(static_cast<float>(epsilon))
     {
-        std::cout << "In search_for_pallet_generating_faces(..)" << std::endl;
-
         separate_into_sides(*this);
 
         bounding_boxes_t non_mortarside_aabbs, mortarside_aabbs;

@@ -383,7 +383,7 @@ template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 typename Morkon_Manager<DeviceType, DIM, FACE_TYPE>::coarse_search_results_t
 Morkon_Manager<DeviceType, DIM, FACE_TYPE>::find_possible_contact_face_pairs()
 {
-  const double bounding_boxes_epsilon = 0.001;
+  const double bounding_boxes_epsilon = 0.1;
 
   search_for_pallet_generating_faces<DeviceType, DIM>
     coarse_search(m_surface_mesh, m_fields.m_node_coords, m_fields.m_predicted_node_coords,
