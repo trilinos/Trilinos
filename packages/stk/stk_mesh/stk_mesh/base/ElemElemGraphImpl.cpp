@@ -118,7 +118,7 @@ size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
                                         const stk::mesh::BulkData& bulkData,
                                         ElemSideToProcAndFaceId &elements_to_communicate,
                                         const std::vector<stk::mesh::EntityId>& suggested_side_ids,
-                                        const stk::mesh::Selector &sel)
+                                        const stk::mesh::Selector &sel, stk::mesh::Selector* air)
 {
     ElemSideToProcAndFaceId::iterator iter = elements_to_communicate.begin();
     ElemSideToProcAndFaceId::const_iterator end = elements_to_communicate.end();
@@ -153,6 +153,12 @@ size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
         comm.send_buffer(sharing_proc).pack<unsigned>(side_index);
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(suggested_side_id);
         comm.send_buffer(sharing_proc).pack<bool>(isSelected);
+        if(air!=nullptr)
+        {
+            bool is_in_air = (*air)(bulkData.bucket(elem));
+            comm.send_buffer(sharing_proc).pack<bool>(is_in_air);
+        }
+
         comm.send_buffer(sharing_proc).pack<unsigned>(num_nodes_this_side);
         for(size_t i=0; i<num_nodes_this_side; ++i)
         {
@@ -378,7 +384,7 @@ stk::mesh::PartVector get_parts_for_creating_side(stk::mesh::BulkData& bulkData,
     return side_parts;
 }
 
-void add_side_into_death_boundary(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
+void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
         stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
         std::vector<stk::mesh::sharing_info> &shared_modified, const stk::mesh::PartVector *boundary_mesh_parts)
 {
@@ -394,7 +400,7 @@ void add_side_into_death_boundary(stk::mesh::BulkData& bulkData, const parallel_
     int other_proc = parallel_edge_info.m_other_proc;
     int owning_proc = std::min(other_proc, bulkData.parallel_rank());
 
-    if(parallel_edge_info.m_in_part)
+    if(parallel_edge_info.m_in_body_to_be_skinned)
     {
         perm = static_cast<stk::mesh::Permutation>(parallel_edge_info.m_permutation);
     }

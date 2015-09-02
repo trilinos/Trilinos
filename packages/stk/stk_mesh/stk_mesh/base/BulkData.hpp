@@ -716,7 +716,7 @@ protected: //functions
                                                          const stk::mesh::EntityVector& deletedSides,
                                                          stk::mesh::ElemElemGraph &elementGraph,
                                                          const stk::mesh::EntityVector &killedElements,
-                                                         stk::mesh::Part & activePart);
+                                                         stk::mesh::Part* activePart = nullptr);
 
 
   bool modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector,

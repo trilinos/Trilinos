@@ -61,6 +61,16 @@ void generated_mesh_to_file_in_serial(const std::string &meshSizeSpec, const std
     }
 }
 
+void read_from_serial_file_and_decompose(const std::string& fileName, stk::mesh::BulkData &mesh, const std::string &decompositionMethod)
+{
+    stk::io::StkMeshIoBroker broker;
+    broker.set_bulk_data(mesh);
+    broker.property_add(Ioss::Property("DECOMPOSITION_METHOD", decompositionMethod));
+    broker.add_mesh_database(fileName, stk::io::READ_MESH);
+    broker.create_input_mesh();
+    broker.populate_bulk_data();
+    unlink(fileName.c_str());
+}
 
 void generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp(const std::string &meshSizeSpec, stk::mesh::BulkData &mesh, const std::string &decompositionMethod)
 {
@@ -68,13 +78,8 @@ void generate_mesh_from_serial_spec_and_load_in_parallel_with_auto_decomp(const 
     // decomposition methods: "linear", "rcb", "rib", "hsfc", "block", "cyclic", "random", "kway", "geom_kway", "metis_sfc"
     const std::string tempFilename = "exodus_" + meshSizeSpec + ".e";
     generated_mesh_to_file_in_serial(meshSizeSpec,tempFilename);
-    stk::io::StkMeshIoBroker broker;
-    broker.set_bulk_data(mesh);
-    broker.property_add(Ioss::Property("DECOMPOSITION_METHOD", decompositionMethod));
-    broker.add_mesh_database(tempFilename, stk::io::READ_MESH);
-    broker.create_input_mesh();
-    broker.populate_bulk_data();
-    unlink(tempFilename.c_str());
+
+    read_from_serial_file_and_decompose(tempFilename, mesh, decompositionMethod);
 }
 
 

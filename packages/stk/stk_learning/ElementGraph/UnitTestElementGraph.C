@@ -2170,7 +2170,7 @@ void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
             stk::mesh::Entity elem_1 = bulkData.get_entity(stk::topology::ELEM_RANK, 1);
             impl::parallel_info &elem1_to_elem2_info = elem_graph.get_parallel_edge_info(elem_1, stk::mesh::EntityId(2));
 
-            EXPECT_FALSE(elem1_to_elem2_info.m_in_part);
+            EXPECT_FALSE(elem1_to_elem2_info.m_in_body_to_be_skinned);
 
             EXPECT_EQ(4, elem1_to_elem2_info.m_other_side_ord);
 
@@ -7647,7 +7647,7 @@ TEST(ElemGraph, test_initial_graph_creation_with_deactivated_elements)
             EXPECT_EQ(remoteElemId, graph.get_entity_id_of_remote_element(elem2, 1));
             stk::mesh::impl::parallel_info &parallelInfo = graph.get_parallel_edge_info(elem2, remoteElemId);
             EXPECT_EQ(1, parallelInfo.m_other_proc);
-            EXPECT_TRUE(parallelInfo.m_in_part);
+            EXPECT_TRUE(parallelInfo.m_in_body_to_be_skinned);
         }
         else if (bulkData.parallel_rank() == 1) {
             stk::mesh::Entity elem3 = bulkData.get_entity(stk::topology::ELEM_RANK,3);
@@ -7664,7 +7664,7 @@ TEST(ElemGraph, test_initial_graph_creation_with_deactivated_elements)
             EXPECT_EQ(remoteElemId, graph.get_entity_id_of_remote_element(elem3, 1));
             stk::mesh::impl::parallel_info &parallelInfo = graph.get_parallel_edge_info(elem3, remoteElemId);
             EXPECT_EQ(0, parallelInfo.m_other_proc);
-            EXPECT_TRUE(!parallelInfo.m_in_part);
+            EXPECT_TRUE(!parallelInfo.m_in_body_to_be_skinned);
 
 
             ASSERT_EQ(1u, graph.get_num_connected_elems(elem4));
@@ -7754,7 +7754,10 @@ void add_elements_to_various_blocks(stk::mesh::BulkData& bulkData, stk::mesh::Pa
     bulkData.modification_begin();
     for(size_t i=0;i<elements.size();++i)
     {
-        add_element_to_block(bulkData, elements[i], *blocks[i]);
+        if (bulkData.is_valid(elements[i]) && bulkData.bucket(elements[i]).owned())
+        {
+            add_element_to_block(bulkData, elements[i], *blocks[i]);
+        }
     }
     bulkData.modification_end();
 }
@@ -7764,21 +7767,30 @@ std::vector<size_t> get_num_faces_per_elements(const stk::mesh::BulkData& bulkDa
     std::vector<size_t> num_sides_on_element(elements.size(),0);
     for(size_t i=0;i<elements.size();++i)
     {
-        num_sides_on_element[i] = bulkData.num_sides(elements[i]);
+        if (bulkData.is_valid(elements[i]))
+        {
+            num_sides_on_element[i] = bulkData.num_sides(elements[i]);
+        }
     }
     return num_sides_on_element;
 }
 
-void skin_block_and_test(stk::mesh::BulkData& bulkData, const std::vector<size_t>& num_gold_faces, const size_t gold_num_faces, const stk::mesh::Part& block, const stk::mesh::PartVector &skin_parts, const stk::mesh::EntityVector& elements)
+void skin_block_and_test(stk::mesh::BulkData& bulkData, const std::vector<size_t>& num_gold_faces_per_element, const size_t gold_num_faces, const stk::mesh::Part& block, const stk::mesh::PartVector &skin_parts, const stk::mesh::EntityVector& elements)
 {
     ElementDeathUtils::skin_part(bulkData, block, skin_parts);
 
     std::vector<size_t> num_faces_on_element = get_num_faces_per_elements(bulkData, elements);
-    EXPECT_TRUE(num_faces_on_element == num_gold_faces);
+    for(size_t i=0; i<elements.size(); ++i)
+    {
+        if (bulkData.is_valid(elements[i]))
+        {
+            EXPECT_EQ(num_faces_on_element[i], num_gold_faces_per_element[i]);
+        }
+    }
 
-    stk::mesh::MetaData &meta = bulkData.mesh_meta_data();
-    size_t total_num_faces = stk::mesh::count_selected_entities(meta.locally_owned_part(), bulkData.buckets(meta.side_rank()));
-    EXPECT_EQ(gold_num_faces, total_num_faces);
+    std::vector<size_t> mesh_counts;
+    stk::mesh::comm_mesh_counts(bulkData, mesh_counts);
+    EXPECT_EQ(gold_num_faces, mesh_counts[bulkData.mesh_meta_data().side_rank()]);
 }
 
 
@@ -7866,7 +7878,7 @@ TEST(ElementGraph, skin_part)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-     if(stk::parallel_machine_size(comm) == 1)
+     if(stk::parallel_machine_size(comm) <= 2)
      {
          unsigned spatialDim = 3;
 
@@ -7876,6 +7888,9 @@ TEST(ElementGraph, skin_part)
          stk::mesh::PartVector skin_parts = get_skin_parts(meta);
          ElementDeathUtils::skin_part(bulkData, *meta.get_part("active"), skin_parts);
          test_num_faces_per_element(bulkData, {6u, 1u});
+         std::vector<size_t> global_mesh_counts;
+         stk::mesh::comm_mesh_counts(bulkData, global_mesh_counts);
+         EXPECT_EQ(6u, global_mesh_counts[meta.side_rank()]);
      }
 }
 
@@ -7883,7 +7898,7 @@ TEST(ElementGraph, skin_part_3_blocks)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-     if(stk::parallel_machine_size(comm) == 1)
+     if(stk::parallel_machine_size(comm) <= 2)
      {
          unsigned spatialDim = 3;
 
@@ -7913,7 +7928,7 @@ TEST(ElementGraph, skin_part_3_blocks_2D)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-    if(stk::parallel_machine_size(comm) == 1)
+    if(stk::parallel_machine_size(comm) <= 2)
     {
         const unsigned X = 4, Y = 1;
         bool auraOn = true;
@@ -7947,21 +7962,30 @@ TEST(ElementGraph, heterogeneous_mesh)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-    if(stk::parallel_machine_size(comm) == 1)
+    if(stk::parallel_machine_size(comm) <= 2)
     {
-        stk::mesh::MetaData meta_data(3);
-        stk::mesh::fixtures::VectorFieldType & node_coord =
-        meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
-        stk::mesh::put_field( node_coord , meta_data.universal_part() , 3);
+        std::string fileName("hetero.g");
+        {
+            stk::mesh::MetaData meta_data(3);
+            stk::mesh::fixtures::VectorFieldType & node_coord =
+            meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
+            stk::mesh::put_field( node_coord , meta_data.universal_part() , 3);
 
-        stk::mesh::fixtures::heterogeneous_mesh_meta_data( meta_data , node_coord );
+            stk::mesh::fixtures::heterogeneous_mesh_meta_data( meta_data , node_coord );
+            meta_data.commit();
+
+            stk::mesh::BulkData bulk_data( meta_data, MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA );
+            stk::mesh::fixtures::heterogeneous_mesh_bulk_data( bulk_data , node_coord );
+            if (stk::parallel_machine_rank(comm) == 0)
+            {
+                stk::unit_test_util::write_mesh_using_stk_io(fileName, bulk_data, comm);
+            }
+        }
+        stk::mesh::MetaData meta_data(3);
         stk::mesh::Part &skin = meta_data.declare_part("skin", meta_data.side_rank());
         stk::io::put_io_part_attribute(skin);
-        meta_data.commit();
-
         stk::mesh::BulkData bulk_data( meta_data, comm, stk::mesh::BulkData::NO_AUTO_AURA );
-        stk::mesh::fixtures::heterogeneous_mesh_bulk_data( bulk_data , node_coord );
-
+        stk::unit_test_util::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
         EXPECT_NO_FATAL_FAILURE(ElementDeathUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
     }
 }
@@ -7970,24 +7994,34 @@ TEST(ElementGraph, degenerate_mesh)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-    if(stk::parallel_machine_size(comm) == 1)
+    if(stk::parallel_machine_size(comm) <= 2)
     {
-        stk::mesh::MetaData meta_data(3);
-        stk::mesh::fixtures::VectorFieldType & node_coord =
-        meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
-        stk::mesh::put_field( node_coord , meta_data.universal_part() , 3);
+        std::string fileName("degenerate.g");
+        {
+            stk::mesh::MetaData meta_data(3);
+            stk::mesh::fixtures::VectorFieldType & node_coord =
+                    meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
+            stk::mesh::put_field(node_coord, meta_data.universal_part(), 3);
 
-        stk::mesh::fixtures::degenerate_mesh_meta_data( meta_data , node_coord );
+            stk::mesh::fixtures::degenerate_mesh_meta_data(meta_data, node_coord);
+            meta_data.commit();
+
+            stk::mesh::BulkData bulk_data(meta_data, MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA);
+            stk::mesh::fixtures::degenerate_mesh_bulk_data(bulk_data, node_coord);
+            if(stk::parallel_machine_rank(comm) == 0)
+            {
+                stk::unit_test_util::write_mesh_using_stk_io(fileName, bulk_data, comm);
+            }
+        }
+        stk::mesh::MetaData meta_data(3);
         stk::mesh::Part &skin = meta_data.declare_part("skin", meta_data.side_rank());
         stk::io::put_io_part_attribute(skin);
-        meta_data.commit();
-
-        stk::mesh::BulkData bulk_data( meta_data, comm, stk::mesh::BulkData::NO_AUTO_AURA );
-        stk::mesh::fixtures::degenerate_mesh_bulk_data( bulk_data , node_coord );
-
+        stk::mesh::BulkData bulk_data(meta_data, comm, stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::unit_test_util::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
         EXPECT_NO_FATAL_FAILURE(ElementDeathUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
-        unsigned num_faces = stk::mesh::count_selected_entities(meta_data.locally_owned_part(), bulk_data.buckets(meta_data.side_rank()));
-        EXPECT_EQ(10u, num_faces);
+        std::vector<size_t> mesh_counts;
+        stk::mesh::comm_mesh_counts(bulk_data, mesh_counts);
+        EXPECT_EQ(10u, mesh_counts[meta_data.side_rank()]);
     }
 }
 

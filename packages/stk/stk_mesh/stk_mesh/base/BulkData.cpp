@@ -6614,7 +6614,7 @@ bool BulkData::make_mesh_parallel_consistent_after_element_death(const std::vect
                                                                const stk::mesh::EntityVector& deletedSides,
                                                                stk::mesh::ElemElemGraph &elementGraph,
                                                                const stk::mesh::EntityVector &killedElements,
-                                                               stk::mesh::Part & activePart)
+                                                               stk::mesh::Part* activePart)
 {
     if(this->in_synchronized_state())
     {
@@ -6636,8 +6636,11 @@ bool BulkData::make_mesh_parallel_consistent_after_element_death(const std::vect
         delete_sides_on_all_procs(deletedSides);
         set_shared_owned_parts_and_ownership_on_comm_data(shared_modified);
 
-        this->de_induce_parts_from_nodes(killedElements, activePart);
-        this->remove_boundary_faces_from_part(elementGraph, killedElements, activePart);
+        if(activePart!=nullptr)
+        {
+            this->de_induce_parts_from_nodes(killedElements, *activePart);
+            this->remove_boundary_faces_from_part(elementGraph, killedElements, *activePart);
+        }
 
         internal_resolve_shared_modify_delete();
         internal_resolve_shared_part_membership_for_element_death();
@@ -6652,8 +6655,11 @@ bool BulkData::make_mesh_parallel_consistent_after_element_death(const std::vect
     }
     else
     {
-        this->de_induce_parts_from_nodes(killedElements, activePart);
-        this->remove_boundary_faces_from_part(elementGraph, killedElements, activePart);
+        if(activePart!=nullptr)
+        {
+            this->de_induce_parts_from_nodes(killedElements, *activePart);
+            this->remove_boundary_faces_from_part(elementGraph, killedElements, *activePart);
+        }
     }
 
     // -----------------------

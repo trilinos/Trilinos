@@ -35,7 +35,7 @@ class ElemElemGraph
 {
 public:
 
-    ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Selector &selector);
+    ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Selector &selector, stk::mesh::Selector *air = nullptr);
 
     virtual ~ElemElemGraph();
 
@@ -78,7 +78,7 @@ public:
 
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
 
-    void skin_mesh(stk::mesh::Selector sel, const stk::mesh::PartVector& skin_parts, const stk::mesh::Selector *air = nullptr);
+    void skin_mesh(const stk::mesh::PartVector& skin_parts);
 
 protected:
     friend void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph,
@@ -172,7 +172,8 @@ protected:
     void unpack_remote_edge_across_shell(stk::CommSparse &comm);
 
     stk::mesh::BulkData &m_bulk_data;
-    const stk::mesh::Selector m_selector;
+    const stk::mesh::Selector m_skinned_selector;
+    stk::mesh::Selector* m_air_selector;
     impl::ElementGraph m_elem_graph;
     impl::SidesForElementGraph m_via_sides;
     impl::ParallelGraphInfo m_parallel_graph_info;

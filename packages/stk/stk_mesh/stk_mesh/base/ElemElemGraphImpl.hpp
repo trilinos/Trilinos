@@ -32,11 +32,13 @@ struct parallel_info
     int m_other_proc;
     int m_other_side_ord;
     int m_permutation;
-    bool m_in_part;
+    bool m_in_body_to_be_skinned;
+    bool m_is_air;
+
     stk::mesh::EntityId m_chosen_side_id;
 
-    parallel_info(int proc, int side_ord, int perm, stk::mesh::EntityId chosen_face_id, bool inPart) :
-        m_other_proc(proc), m_other_side_ord(side_ord), m_permutation(perm), m_in_part(inPart),
+    parallel_info(int proc, int side_ord, int perm, stk::mesh::EntityId chosen_face_id, bool inPart, bool isInAir=false) :
+        m_other_proc(proc), m_other_side_ord(side_ord), m_permutation(perm), m_in_body_to_be_skinned(inPart), m_is_air(isInAir),
         m_chosen_side_id(chosen_face_id) {}
 };
 
@@ -49,6 +51,7 @@ struct ConnectedElementData
     stk::mesh::EntityId m_suggestedFaceId;
     stk::mesh::EntityVector m_sideNodes;
     bool m_isInPart;
+    bool m_isAir;
 
     ConnectedElementData()
     : m_procId(-1),
@@ -56,7 +59,7 @@ struct ConnectedElementData
       m_elementTopology(stk::topology::INVALID_TOPOLOGY),
       m_sideIndex(std::numeric_limits<unsigned>::max()),
       m_suggestedFaceId(std::numeric_limits<impl::LocalId>::max()),
-      m_isInPart(true)
+      m_isInPart(true), m_isAir(false)
     {}
 };
 
@@ -111,7 +114,7 @@ ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::Bul
 ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate);
 
 size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, ElemSideToProcAndFaceId& elements_to_communicate,
-        const std::vector<stk::mesh::EntityId>& suggested_face_ids, const stk::mesh::Selector &sel);
+        const std::vector<stk::mesh::EntityId>& suggested_face_ids, const stk::mesh::Selector &sel, stk::mesh::Selector*air = nullptr);
 
 std::vector<graphEdgeProc> get_elements_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
         const ElemElemGraph& elem_graph);
@@ -120,7 +123,7 @@ std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> > communicate_ki
 
 void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<graphEdgeProc>& elements_to_comm);
 
-void add_side_into_death_boundary(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
+void add_side_into_exposed_boundary(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
         stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
         std::vector<stk::mesh::sharing_info> &shared_modified, const stk::mesh::PartVector *boundary_mesh_parts = nullptr);
 
