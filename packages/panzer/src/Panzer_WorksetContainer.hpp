@@ -101,6 +101,16 @@ public:
                     const std::vector<Teuchos::RCP<PhysicsBlock> > & physicsBlocks,
                     std::size_t wkstSz);
 
+   /** Instantiate a workset object with a specified factory and input workset needs
+     * map.
+     *
+     * \param[in] factory Factory to be used for constructing worksets
+     * \param[in] needs Workset needs mapped from the elemetn blocks
+     *                  (integration rules and basis values for each element block)
+     */ 
+   WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
+                    const std::map<std::string,WorksetNeeds> & needs);
+
    /** Copies the workset factory, the PhysicsBlock vector, and the workset size,
      * but not constructed worksets.
      */
