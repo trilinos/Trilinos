@@ -321,7 +321,7 @@ TEST(morkon, manager_find_possible_contact_face_pairs)
   typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>            interface_3d_t;
   typedef Teuchos::RCP< interface_3d_t >                           interface_3d_ptr;
   typedef MorkonCommonlyUsed<default_kokkos_device_t, 3>              morkon_common;
-  typedef typename morkon_common::contact_search_results_dvt       coarse_search_pairs_dvt;
+  typedef typename morkon_common::coarse_search_results_t    coarse_search_results_t;
 
   manager_3d_ptr manager = manager_3d_t::MakeInstance(0, FACET_NORMAL_PROJECTION, 0);
 
@@ -333,13 +333,21 @@ TEST(morkon, manager_find_possible_contact_face_pairs)
   EXPECT_EQ(true, manager->commit_interfaces());
   EXPECT_EQ(true, manager->compute_normals());
 
-  coarse_search_pairs_dvt search_results("coarse_search_results");
-  search_results.modify<coarse_search_pairs_dvt::t_dev>();
+  coarse_search_results_t search_results= manager->find_possible_contact_face_pairs();
+  coarse_search_results_t::HostMirror search_results_host = Kokkos::create_mirror_view(search_results);
+  Kokkos::deep_copy(search_results_host, search_results);
 
-  // YOU ARE WORKING ON THIS..
-  // EXPECT_EQ(true, manager->find_possible_contact_face_pairs(search_results.d_view));
-  EXPECT_EQ(false, manager->find_possible_contact_face_pairs(search_results.d_view));
-  search_results.sync<coarse_search_pairs_dvt::t_host>();
+  EXPECT_EQ(4, search_results_host.dimension_0());
+
+  EXPECT_EQ(0, search_results_host(0,0));
+  EXPECT_EQ(2, search_results_host(0,1));
+  EXPECT_EQ(0, search_results_host(1,0));
+  EXPECT_EQ(3, search_results_host(1,1));
+
+  EXPECT_EQ(1, search_results_host(2,0));
+  EXPECT_EQ(2, search_results_host(2,1));
+  EXPECT_EQ(1, search_results_host(3,0));
+  EXPECT_EQ(3, search_results_host(3,1));
 }
 
 

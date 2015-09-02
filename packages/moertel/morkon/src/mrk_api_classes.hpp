@@ -140,7 +140,7 @@ protected:
                            typename face_to_interface_and_side_t::execution_space>  face_to_interface_and_side_dvt;
 
   typedef MorkonCommonlyUsed<DeviceType, DIM>                               morkon_common_t;
-  typedef typename morkon_common_t::contact_search_results_t       contact_search_results_t;
+  typedef typename morkon_common_t::coarse_search_results_t         coarse_search_results_t;
 
   // Need a DualView of this one
   typedef Kokkos::View<bool *, execution_space>                         on_boundary_table_t;
@@ -213,11 +213,11 @@ protected:
 
   bool compute_normals();
 
-  bool find_possible_contact_face_pairs(contact_search_results_t coarse_search_results);
+  coarse_search_results_t find_possible_contact_face_pairs();
 
-  bool compute_boundary_node_support_sets(contact_search_results_t coarse_search_results);
+  bool compute_boundary_node_support_sets(coarse_search_results_t coarse_search_results);
 
-  bool compute_contact_pallets(contact_search_results_t coarse_search_results,
+  bool compute_contact_pallets(coarse_search_results_t coarse_search_results,
                                mortar_pallets_t &resulting_pallets);
 
   // Note that the non-mortar-side integration points needed in computing D are also
