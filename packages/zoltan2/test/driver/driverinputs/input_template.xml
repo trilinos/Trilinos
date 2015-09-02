@@ -65,8 +65,8 @@
    you must define a dimension parameter specifying the 
    dimension of the mesh.
    
-   The second is for galari generate data on
-   a structured grid. Galari grids can be 1, 2, or 3D.
+   The second is for galeri generate data on
+   a structured grid. Galeri grids can be 1, 2, or 3D.
    The dimension is infered by which coordinate parameters
    (x,y,z) are defined, e.g. if only the x parameter is 
    defined then the problem is assumed to be 1D.
