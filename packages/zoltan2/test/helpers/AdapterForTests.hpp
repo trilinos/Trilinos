@@ -694,7 +694,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
   vector<const zscalar_t *> weights;
   std::vector<int> weightStrides;
   const zgno_t * globalIds;
-  size_t localCount = 0;
+  zlno_t localCount = 0;
   
   // get weights if any
   // get weights if any
@@ -718,7 +718,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
   {
     RCP<tMVector_t> data = uinput->getUICoordinates();
     globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
-    localCount = data->getLocalLength();
+    localCount = static_cast<zlno_t>(data->getLocalLength());
     
     // get strided data
     vector<const zscalar_t *> coords;
@@ -727,7 +727,11 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     
     size_t dim = data->getNumVectors();
     if(dim == 1) coords[1] = coords[2] = NULL;
-    else if(dim == 2) coords[2] = NULL;
+    else if(dim == 2)
+    {
+      if(comm->getRank() == 0) cout << "2D setting coords 2 to nullll" << endl;
+      coords[2] = NULL;
+    }
     
     if(weights.empty())
     {
@@ -750,7 +754,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
   {
     RCP<tVector_t> data = uinput->getUITpetraVector();
     globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
-    localCount = data->getLocalLength();
+    localCount = static_cast<zlno_t>(data->getLocalLength());
     
     // get strided data
     vector<const zscalar_t *> coords;
@@ -777,7 +781,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     
     RCP<tMVector_t> data = uinput->getUITpetraMultiVector(nvec);
     globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
-    localCount = data->getLocalLength();
+    localCount = static_cast<zlno_t>(data->getLocalLength());
     
     // get strided data
     vector<const zscalar_t *> coords;
@@ -793,7 +797,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
   {
     RCP<xVector_t> data = uinput->getUIXpetraVector();
     globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
-    localCount = data->getLocalLength();
+    localCount = static_cast<zlno_t>(data->getLocalLength());
     
     // get strided data
     vector<const zscalar_t *> coords;
@@ -818,7 +822,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     int nvec = pList.get<int>("vector_dimension");
     RCP<xMVector_t> data = uinput->getUIXpetraMultiVector(nvec);
     globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
-    localCount = data->getLocalLength();
+    localCount = static_cast<zlno_t>(data->getLocalLength());
     
     // get strided data
     vector<const zscalar_t *> coords;
@@ -836,7 +840,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
   {
     RCP<Epetra_Vector> data = uinput->getUIEpetraVector();
     globalIds = (zgno_t *)data->Map().MyGlobalElements();
-    localCount = data->MyLength();
+    localCount = static_cast<zlno_t>(data->MyLength());
     
     // get strided data
     vector<const zscalar_t *> coords;
@@ -896,7 +900,7 @@ void AdapterForTests::InitializeVectorData(const RCP<T> &data,
   const zlno_t localCount = data->getLocalLength();
   const zlno_t nvecs = data->getNumVectors();
   const zlno_t vecsize = data->getNumVectors() * data->getLocalLength();
-  //  printf("Number of vectors by data: %zu\n", nvecs);
+//    printf("Number of vectors by data: %zu\n", nvecs);
   //  printf("Size of data: %zu\n", vecsize);
   
   ArrayRCP<zscalar_t> *petravectors =
@@ -943,7 +947,8 @@ void AdapterForTests::InitializeVectorData(const RCP<T> &data,
   //  }
   //  printf("}\n");
   
-  coords = std::vector<const zscalar_t *>(nvecs);
+  // always build for dim 3
+  coords = std::vector<const zscalar_t *>(3);
   strides = std::vector<int>(nvecs);
   
   for (size_t i = 0; i < nvecs; i++) {
@@ -1015,13 +1020,13 @@ void AdapterForTests::InitializeEpetraVectorData(const RCP<T> &data,
   }
   
   // debugging
-  printf("Made coordarr : {");
-  for (zlno_t i = 0; i < vecsize; i++){
-    printf("%1.2g ",coordarr[i]);
-  }
-  printf("}\n");
+//  printf("Made coordarr : {");
+//  for (zlno_t i = 0; i < vecsize; i++){
+//    printf("%1.2g ",coordarr[i]);
+//  }
+//  printf("}\n");
   
-  coords = std::vector<const zscalar_t *>(nvecs);
+  coords = std::vector<const zscalar_t *>(3);
   strides = std::vector<int>(nvecs);
   
   for (size_t i = 0; i < nvecs; i++) {
@@ -1033,16 +1038,16 @@ void AdapterForTests::InitializeEpetraVectorData(const RCP<T> &data,
     strides[i] = stride;
   }
   
-  printf("Made coords...\n");
-  for (size_t i = 0; i < nvecs; i++){
-    const zscalar_t * tmp = coords[i];
-    printf("coord %zu: {",i);
-    for(size_t j = 0; j < localCount; j++)
-    {
-      printf("%1.2g ", tmp[j]);
-    }
-    printf("}\n");
-  }
+//  printf("Made coords...\n");
+//  for (size_t i = 0; i < nvecs; i++){
+//    const zscalar_t * tmp = coords[i];
+//    printf("coord %zu: {",i);
+//    for(size_t j = 0; j < localCount; j++)
+//    {
+//      printf("%1.2g ", tmp[j]);
+//    }
+//    printf("}\n");
+//  }
   
 }
 #endif
