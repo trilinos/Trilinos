@@ -71,7 +71,6 @@
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
-namespace stk { namespace mesh { namespace impl { class Partition; } } }
 namespace stk { namespace mesh { struct ConnectivityMap; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
@@ -990,6 +989,9 @@ protected: //functions
                                                                       stk::mesh::Bucket *bucket_old,
                                                                       int closureCountAdjustment); // Mod Mark
 
+  inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
+
+  stk::mesh::impl::BucketRepository& get_bucket_repository() { return m_bucket_repository; }
 private: //functions
 
   void internal_dump_all_mesh_info(std::ostream& out = std::cout) const;
@@ -1066,7 +1068,6 @@ private:
       }
   }
 
-  inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
   inline void set_entity_key(Entity entity, EntityKey key);
   void delete_sides_on_all_procs(const stk::mesh::EntityVector & deletedSides);
   void set_shared_owned_parts_and_ownership_on_comm_data(const std::vector<sharing_info>& shared_modified);
@@ -1188,7 +1189,6 @@ private:
   // FIXME: Remove this friend once unit-testing has been refactored
   friend class UnitTestModificationEndWrapper;
   friend class ::stk::mesh::MetaData;
-  friend class ::stk::mesh::impl::Partition;
   friend class ::stk::mesh::impl::EntityRepository;
   friend class ::stk::mesh::impl::BucketRepository;
   friend class stk::mesh::Bucket; // for field callback

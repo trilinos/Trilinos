@@ -962,6 +962,8 @@ bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
   remove_entity_callback(erank, bucket(entity).bucket_id(), bucket_ordinal(entity));
 
   m_bucket_repository.remove_entity(bucket(entity), entity);
+  set_mesh_index(entity, 0, 0);
+
   m_entity_repo.destroy_entity(key, entity );
   m_meshModification.mark_entity_as_deleted(entity.local_offset());
   m_mark_entity[entity.local_offset()] = NOT_MARKED;
@@ -5230,6 +5232,8 @@ void BulkData::internal_move_entity_to_new_bucket(stk::mesh::Entity entity, cons
     {
         m_bucket_repository.add_entity_with_part_memberships(entity, e_rank, newBucketPartList);
     }
+
+    mark_entity_and_upward_related_entities_as_modified(entity);
 }
 
 void BulkData::internal_fill_new_part_list_and_removed_part_list(stk::mesh::Entity entity,
