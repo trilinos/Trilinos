@@ -467,9 +467,6 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
     
     // find out if we are working from the zoltan1 test diretory
     USERINPUT_FILE_FORMATS file_format = MATRIX_MARKET;
-    string::size_type loc = path.find("/zoltan/test/");  // Zoltan1 data
-    if (loc != string::npos)
-      file_format = CHACO;
     
     // find out if we are using the geometric generator
     if(pList.isParameter("file type") && pList.get<string>("file type") == "Geometric Generator")
