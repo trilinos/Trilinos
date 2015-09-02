@@ -113,22 +113,19 @@ ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::Bulk
 size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, ElemSideToProcAndFaceId& elements_to_communicate,
         const std::vector<stk::mesh::EntityId>& suggested_face_ids, const stk::mesh::Selector &sel);
 
-std::vector<graphEdgeProc> get_elements_to_communicate(stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
+std::vector<graphEdgeProc> get_elements_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
         const ElemElemGraph& elem_graph);
 
-void communicate_killed_entities(stk::mesh::BulkData& bulkData, const std::vector<graphEdgeProc>& elements_to_comm,
-        std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> >& remote_edges);
+std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> > communicate_killed_entities(stk::ParallelMachine communicator, const std::vector<graphEdgeProc>& elements_to_comm);
 
 void pack_elements_to_comm(stk::CommSparse &comm, const std::vector<graphEdgeProc>& elements_to_comm);
 
 void add_side_into_death_boundary(stk::mesh::BulkData& bulkData, const parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
-        stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& face_parts,
-        std::vector<stk::mesh::sharing_info> &shared_modified, stk::mesh::Part& faces_created_during_death, const stk::mesh::PartVector *boundary_mesh_parts = nullptr);
+        stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
+        std::vector<stk::mesh::sharing_info> &shared_modified, const stk::mesh::PartVector *boundary_mesh_parts = nullptr);
 
-void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, const ElemElemGraph& elementGraph,
-        stk::mesh::Entity local_element, stk::mesh::EntityId remote_id,
-        stk::mesh::Part &activePart, /* shared_modified */stk::mesh::EntityVector &deletedEntities,
-        stk::mesh::Part& sides_created_during_death);
+void remove_side_from_death_boundary(stk::mesh::BulkData& bulkData, stk::mesh::Entity local_element,
+        stk::mesh::Part &activePart, stk::mesh::EntityVector &deletedEntities, int side_id);
 
 stk::mesh::PartVector get_stk_parts_for_moving_parts_into_death_boundary(const stk::mesh::PartVector *bc_mesh_parts);
 
@@ -161,10 +158,16 @@ void break_volume_element_connections_across_shells(const std::set<EntityId> & l
 
 void pack_newly_shared_remote_edges(stk::CommSparse &comm, const stk::mesh::BulkData &m_bulk_data, const std::vector<SharedEdgeInfo> &newlySharedEdges);
 
-bool does_element_have_side(stk::mesh::BulkData& bulkData, stk::mesh::Entity element);
+bool does_element_have_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element);
 
 void add_element_side_pairs_for_unused_sides(LocalId elementId, stk::topology topology, const std::vector<int> &internal_sides,
         std::vector<ElementSidePair>& element_side_pairs);
+
+void create_sides_created_during_death_part(stk::mesh::MetaData &metaData);
+stk::mesh::Part* get_sides_created_during_death_part(const stk::mesh::MetaData &metaData);
+void add_parts_from_element(stk::mesh::BulkData& bulkData, stk::mesh::Entity element, stk::mesh::PartVector& side_parts);
+stk::mesh::PartVector get_parts_for_creating_side(stk::mesh::BulkData& bulkData, const stk::mesh::PartVector& parts_for_creating_side, stk::mesh::Entity element, int side_ord);
+bool side_created_during_death(stk::mesh::BulkData& bulkData, stk::mesh::Entity side);
 
 }
 }} // end namespaces stk mesh
