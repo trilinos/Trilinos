@@ -50,13 +50,13 @@
     <Parameter name="kind" type="string" value="partitioning"/>
     
     <ParameterList name="InputAdapterParameters">
-      <Parameter name="data type" type="string" value="tpetra_crs_graph"/>
-      <Parameter name="input adapter" type="string" value="XpetraCrsGraph"/>
+      <Parameter name="data type" type="string" value="coordinates"/>
+      <Parameter name="input adapter" type="string" value="BasicVector"/>
     </ParameterList>
     
     <ParameterList name="Zoltan2Parameters">
       <Parameter name="timer_output_stream" type="string" value="std::cout"/>
-      <Parameter name="algorithm" type="string" value="parmetis"/>
+      <Parameter name="algorithm" type="string" value="multijagged"/>
       <Parameter name="compute_metrics" type="string" value="true"/>
     </ParameterList>
     

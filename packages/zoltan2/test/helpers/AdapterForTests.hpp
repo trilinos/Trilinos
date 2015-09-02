@@ -241,7 +241,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
     size_t cols = vtx_weights->getNumVectors();
     for (size_t i = 0; i< cols; i++) {
       weights.push_back(vtx_weights->getData(i).getRawPtr());
-      weightStrides.push_back(vtx_weights->getStride());
+      weightStrides.push_back((int)vtx_weights->getStride());
     }
   }
   
