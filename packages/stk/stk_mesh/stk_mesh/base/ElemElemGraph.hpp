@@ -6,6 +6,7 @@
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/Selector.hpp>
 
 #include "ElemElemGraphImpl.hpp"
 
@@ -34,7 +35,7 @@ class ElemElemGraph
 {
 public:
 
-    ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Part &part);
+    ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Selector &selector);
 
     virtual ~ElemElemGraph();
 
@@ -89,7 +90,7 @@ protected:
 
     void fill_graph();
     void update_number_of_parallel_edges();
-    void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm, const stk::mesh::Part &part);
+    void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
 
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm, const stk::mesh::EntityVector & elements_to_ignore);
 
@@ -171,7 +172,7 @@ protected:
     void unpack_remote_edge_across_shell(stk::CommSparse &comm);
 
     stk::mesh::BulkData &m_bulk_data;
-    const stk::mesh::Part &m_part;
+    const stk::mesh::Selector m_selector;
     impl::ElementGraph m_elem_graph;
     impl::SidesForElementGraph m_via_sides;
     impl::ParallelGraphInfo m_parallel_graph_info;

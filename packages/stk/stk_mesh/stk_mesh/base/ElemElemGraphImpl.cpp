@@ -118,7 +118,7 @@ size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
                                         const stk::mesh::BulkData& bulkData,
                                         ElemSideToProcAndFaceId &elements_to_communicate,
                                         const std::vector<stk::mesh::EntityId>& suggested_side_ids,
-                                        const stk::mesh::Part &part)
+                                        const stk::mesh::Selector &sel)
 {
     ElemSideToProcAndFaceId::iterator iter = elements_to_communicate.begin();
     ElemSideToProcAndFaceId::const_iterator end = elements_to_communicate.end();
@@ -135,7 +135,7 @@ size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
         iter->second.side_id = suggested_side_id;
 
         stk::topology topology = bulkData.bucket(elem).topology();
-        const bool isInPart = bulkData.bucket(elem).member(part);
+        const bool isSelected = sel(bulkData.bucket(elem));
         const stk::mesh::Entity* elem_nodes = bulkData.begin_nodes(elem);
 
         unsigned num_nodes_this_side = topology.side_topology(side_index).num_nodes();
@@ -152,7 +152,7 @@ size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
         comm.send_buffer(sharing_proc).pack<stk::topology>(topology);
         comm.send_buffer(sharing_proc).pack<unsigned>(side_index);
         comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(suggested_side_id);
-        comm.send_buffer(sharing_proc).pack<bool>(isInPart);
+        comm.send_buffer(sharing_proc).pack<bool>(isSelected);
         comm.send_buffer(sharing_proc).pack<unsigned>(num_nodes_this_side);
         for(size_t i=0; i<num_nodes_this_side; ++i)
         {

@@ -47,7 +47,7 @@ impl::ElemSideToProcAndFaceId ElemElemGraph::get_element_side_ids_to_communicate
     return impl::build_element_side_ids_to_proc_map(m_bulk_data, elements_to_communicate);
 }
 
-ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Part &part) : m_bulk_data(bulkData), m_part(part)
+ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Selector& sel) : m_bulk_data(bulkData), m_selector(sel)
 {
     int numElems = size_data_members();
 
@@ -65,7 +65,7 @@ ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Par
 
     bulkData.generate_new_ids(bulkData.mesh_meta_data().side_rank(), num_side_ids_needed, m_suggested_side_ids);
 
-    fill_parallel_graph(elem_side_comm, part);
+    fill_parallel_graph(elem_side_comm);
 
     update_number_of_parallel_edges();
 
@@ -312,8 +312,7 @@ void ElemElemGraph::fill_graph()
     }
 }
 
-void ElemElemGraph::fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm,
-                                        const stk::mesh::Part &part)
+void ElemElemGraph::fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm)
 {
     stk::mesh::EntityVector elements_to_ignore;
     fill_parallel_graph(elem_side_comm, elements_to_ignore);
@@ -323,10 +322,10 @@ void ElemElemGraph::fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side
 {
     stk::CommSparse comm(m_bulk_data.parallel());
 
-    impl::pack_shared_side_nodes_of_elements(comm, m_bulk_data, elem_side_comm, this->get_suggested_side_ids(), m_part);
+    impl::pack_shared_side_nodes_of_elements(comm, m_bulk_data, elem_side_comm, this->get_suggested_side_ids(), m_selector);
     comm.allocate_buffers();
 
-    size_t num_edge_ids_used = impl::pack_shared_side_nodes_of_elements(comm, m_bulk_data, elem_side_comm, this->get_suggested_side_ids(), m_part);
+    size_t num_edge_ids_used = impl::pack_shared_side_nodes_of_elements(comm, m_bulk_data, elem_side_comm, this->get_suggested_side_ids(), m_selector);
     this->set_num_side_ids_used(num_edge_ids_used);
     comm.communicate();
 
@@ -1788,7 +1787,7 @@ void ElemElemGraph::add_elements(const stk::mesh::EntityVector &allUnfilteredEle
         }
     }
 
-    fill_parallel_graph(only_added_elements, m_part);
+    fill_parallel_graph(only_added_elements);
 
     stk::mesh::EntityVector addedShellsVector;
     for (auto &shell : addedShells)
