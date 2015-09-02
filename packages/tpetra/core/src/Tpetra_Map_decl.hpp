@@ -46,10 +46,10 @@
 /// \brief Declarations for the Tpetra::Map class and related
 ///   nonmember constructors.
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Kokkos_DefaultNode.hpp>
-#include <Teuchos_Describable.hpp>
-#include <Tpetra_Details_FixedHashTable_decl.hpp>
+#include "Tpetra_ConfigDefs.hpp"
+#include "Kokkos_DefaultNode.hpp"
+#include "Teuchos_Describable.hpp"
+#include "Tpetra_Details_FixedHashTable_decl.hpp"
 
 // mfh 27 Apr 2013: If HAVE_TPETRA_FIXED_HASH_TABLE is defined (which
 // it is by default), then Map will used the fixed-structure hash
