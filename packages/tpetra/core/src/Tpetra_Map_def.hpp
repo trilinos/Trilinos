@@ -53,8 +53,6 @@
 #include <Teuchos_as.hpp>
 #include <stdexcept>
 
-#include "Tpetra_Map_decl.hpp"
-
 namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
