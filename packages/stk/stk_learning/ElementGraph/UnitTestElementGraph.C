@@ -7697,21 +7697,32 @@ void make_2_hex_mesh_with_element1_inactive(stk::mesh::BulkData& bulkData)
     stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
     stk::mesh::Entity element1 = bulkData.get_entity(rank, 1);
 
-    entitiesToMakeActive.push_back(element1);
-    add_parts.push_back(stk::mesh::PartVector(1, &active));
-    rm_parts.push_back(stk::mesh::PartVector());
+    if(bulkData.is_valid(element1) && bulkData.bucket(element1).owned())
+    {
+        entitiesToMakeActive.push_back(element1);
+        add_parts.push_back(stk::mesh::PartVector(1, &active));
+        rm_parts.push_back(stk::mesh::PartVector());
+    }
     bulkData.batch_change_entity_parts(entitiesToMakeActive, add_parts, rm_parts);
+}
+
+void test_num_faces_on_this_element(const stk::mesh::BulkData& bulkData, stk::mesh::EntityId id, size_t gold_num_faces_this_elem)
+{
+    stk::mesh::Entity element = bulkData.get_entity(stk::topology::ELEM_RANK, id);
+    if(bulkData.is_valid(element))
+    {
+        unsigned num_faces_this_elem = bulkData.num_faces(element);
+        EXPECT_EQ(gold_num_faces_this_elem, num_faces_this_elem);
+    }
 }
 
 void test_num_faces_per_element(const stk::mesh::BulkData& bulkData, const std::vector<size_t>& gold_num_faces_per_elem)
 {
-    stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
-    stk::mesh::Entity element1 = bulkData.get_entity(rank, 1);
-    stk::mesh::Entity element2 = bulkData.get_entity(rank, 2);
-    unsigned num_faces_elem1 = bulkData.num_faces(element1);
-    EXPECT_EQ(gold_num_faces_per_elem[0], num_faces_elem1);
-    unsigned num_faces_elem2 = bulkData.num_faces(element2);
-    EXPECT_EQ(gold_num_faces_per_elem[1], num_faces_elem2);
+    for(size_t i=0;i<gold_num_faces_per_elem.size();++i)
+    {
+        stk::mesh::EntityId element_id = i+1;
+        test_num_faces_on_this_element(bulkData, element_id, gold_num_faces_per_elem[i]);
+    }
 }
 
 void add_element_to_block(stk::mesh::BulkData& bulkData, stk::mesh::Entity element, stk::mesh::Part& block)
@@ -7835,7 +7846,7 @@ TEST(ElementGraph, skin_exposed_boundary)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-     if(stk::parallel_machine_size(comm) == 1)
+     if(stk::parallel_machine_size(comm) <= 2)
      {
          unsigned spatialDim = 3;
 
@@ -7845,6 +7856,9 @@ TEST(ElementGraph, skin_exposed_boundary)
          stk::mesh::PartVector skin_parts = get_skin_parts(meta);
          ElementDeathUtils::skin_boundary(bulkData, *meta.get_part("active"), skin_parts);
          test_num_faces_per_element(bulkData, {5u, 0u});
+         std::vector<size_t> global_mesh_counts;
+         stk::mesh::comm_mesh_counts(bulkData, global_mesh_counts);
+         EXPECT_EQ(5u, global_mesh_counts[meta.side_rank()]);
      }
 }
 

@@ -78,7 +78,7 @@ public:
 
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
 
-    void skin_mesh(stk::mesh::Selector &sel, const stk::mesh::PartVector& skin_parts, const stk::mesh::Selector *air = nullptr);
+    void skin_mesh(stk::mesh::Selector sel, const stk::mesh::PartVector& skin_parts, const stk::mesh::Selector *air = nullptr);
 
 protected:
     friend void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph,

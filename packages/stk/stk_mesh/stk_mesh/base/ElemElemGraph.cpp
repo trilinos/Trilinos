@@ -2052,8 +2052,10 @@ stk::mesh::Entity ElemElemGraph::add_side_to_mesh(stk::mesh::impl::ElementSidePa
     return side;
 }
 
-void ElemElemGraph::skin_mesh(stk::mesh::Selector &sel, const stk::mesh::PartVector& skin_parts, const stk::mesh::Selector *air)
+void ElemElemGraph::skin_mesh(stk::mesh::Selector sel, const stk::mesh::PartVector& skin_parts, const stk::mesh::Selector *air)
 {
+    sel = sel & m_bulk_data.mesh_meta_data().locally_owned_part();
+
     const stk::mesh::BucketVector& buckets = m_bulk_data.get_buckets(stk::topology::ELEM_RANK, sel);
     unsigned num_elements = stk::mesh::count_selected_entities(sel, buckets);
     const unsigned max_sides_per_elem = 6;
