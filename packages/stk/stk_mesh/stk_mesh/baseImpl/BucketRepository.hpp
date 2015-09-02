@@ -121,12 +121,9 @@ public:
                                         const EntityRank arg_entity_rank,
                                         const OrdinalVector &parts);
 
-  void change_entity_part_membership(Bucket *bucket_old,
-                                     const Entity entity,
-                                     const EntityRank arg_entity_rank,
-                                     const OrdinalVector &parts);
+  void change_entity_part_membership(const MeshIndex &meshIndex, const OrdinalVector &parts);
 
-  void remove_entity(Bucket &bucket, Entity entity);
+  void remove_entity(const MeshIndex &meshIndex);
 
   Partition *get_or_create_partition(const EntityRank arg_entity_rank ,
                                      const OrdinalVector &parts);

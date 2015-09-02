@@ -961,7 +961,7 @@ bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
 
   remove_entity_callback(erank, bucket(entity).bucket_id(), bucket_ordinal(entity));
 
-  m_bucket_repository.remove_entity(bucket(entity), entity);
+  m_bucket_repository.remove_entity(mesh_index(entity));
   set_mesh_index(entity, 0, 0);
 
   m_entity_repo.destroy_entity(key, entity );
@@ -5216,21 +5216,22 @@ void BulkData::internal_change_entity_parts(
 
 void BulkData::internal_move_entity_to_new_bucket(stk::mesh::Entity entity, const OrdinalVector &newBucketPartList)
 {
-    Bucket *bucket_old = bucket_ptr(entity);
-    EntityRank e_rank = entity_rank(entity);
-
-    if (!m_meshModification.did_any_shared_entity_change_parts() && bucket_old && (bucket_old->shared() || this->in_send_ghost(entity_key(entity)) || this->in_receive_ghost(entity_key(entity)) ))
+    const MeshIndex &meshIndex = mesh_index(entity);
+    Bucket *bucketOld = meshIndex.bucket;
+    if (bucketOld != nullptr)
     {
-        m_meshModification.set_shared_entity_changed_parts();
-    }
+        bool isEntityCommunicated = (bucketOld->shared() || in_send_ghost(entity_key(entity)) || in_receive_ghost(entity_key(entity)));
+        if (!m_meshModification.did_any_shared_entity_change_parts() && isEntityCommunicated)
+        {
+            m_meshModification.set_shared_entity_changed_parts();
+        }
 
-    if (bucket_old != NULL)
-    {
-        m_bucket_repository.change_entity_part_membership(bucket_old, entity, e_rank, newBucketPartList);
+        m_bucket_repository.change_entity_part_membership(meshIndex, newBucketPartList);
     }
     else
     {
-        m_bucket_repository.add_entity_with_part_memberships(entity, e_rank, newBucketPartList);
+        EntityRank rank = entity_rank(entity);
+        m_bucket_repository.add_entity_with_part_memberships(entity, rank, newBucketPartList);
     }
 
     mark_entity_and_upward_related_entities_as_modified(entity);

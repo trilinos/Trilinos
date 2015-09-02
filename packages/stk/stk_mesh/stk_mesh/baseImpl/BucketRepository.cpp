@@ -39,6 +39,7 @@
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket, raw_part_equal
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition, lower_bound
+#include <stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp>
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
@@ -154,18 +155,21 @@ void BucketRepository::add_entity_with_part_memberships(const stk::mesh::Entity 
     partition->add(entity);
 }
 
-void BucketRepository::change_entity_part_membership(Bucket *bucketOld,
-                                                     const stk::mesh::Entity entity,
-                                                     const EntityRank arg_entity_rank,
-                                                     const OrdinalVector &parts)
+void BucketRepository::change_entity_part_membership(const MeshIndex &meshIndex, const OrdinalVector &parts)
 {
-    Partition *partition = get_or_create_partition(arg_entity_rank, parts);
-    bucketOld->getPartition()->move_to(entity, *partition);
+    Bucket *bucket = meshIndex.bucket;
+    Partition *destinationPartition = get_or_create_partition(bucket->entity_rank(), parts);
+    Entity entity = get_entity(meshIndex);
+    Partition *sourcePartition = bucket->getPartition();
+    sourcePartition->move_to(entity, *destinationPartition);
 }
 
-void BucketRepository::remove_entity(Bucket &bucket, Entity entity)
+void BucketRepository::remove_entity(const MeshIndex &meshIndex)
 {
-    bucket.getPartition()->remove(entity);
+    Bucket *bucket = meshIndex.bucket;
+    Partition *partition = bucket->getPartition();
+    Entity entity = get_entity(meshIndex);
+    partition->remove(entity);
 }
 
 ////
