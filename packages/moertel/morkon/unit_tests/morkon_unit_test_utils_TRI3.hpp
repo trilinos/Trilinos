@@ -97,11 +97,11 @@ struct Mrk_2x2_aligned_TriangleInterfaceFixture : public Mrk_2x2_TriangleInterfa
   }
 };
 
-struct Mrk_2x4_offset_TriangleInterfaceFixture : public Mrk_2x2_TriangleInterfaceFixtureBase
+struct Mrk_2x2_offset_TriangleInterfaceFixture : public Mrk_2x2_TriangleInterfaceFixtureBase
 {
   static const double node_coords[NumNodes][3];
 
-  Mrk_2x4_offset_TriangleInterfaceFixture(interface_3d_ptr interface)
+  Mrk_2x2_offset_TriangleInterfaceFixture(interface_3d_ptr interface)
   {
     for (size_t node_i = 0; node_i < NumNodes; ++node_i)
     {

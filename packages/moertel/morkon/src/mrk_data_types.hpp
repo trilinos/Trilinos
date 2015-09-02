@@ -86,6 +86,9 @@ struct MorkonCommonlyUsed
 {
   typedef typename DeviceType::execution_space                      execution_space;
   typedef Kokkos::View<local_idx_t *[2], execution_space>  contact_search_results_t;
+  typedef Kokkos::DualView<typename contact_search_results_t::value_type *[2],
+                           typename contact_search_results_t::array_layout,
+                           typename contact_search_results_t::execution_space>  contact_search_results_dvt;
 };
 
 

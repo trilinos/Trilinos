@@ -48,6 +48,7 @@
 #ifndef MORKON_EXP_SEARCH_FOR_PALLET_GENERATING_FACES_H
 #define MORKON_EXP_SEARCH_FOR_PALLET_GENERATING_FACES_H
 
+#include <limits>
 #include <mrk_data_types.hpp>
 
 namespace morkon_exp {
@@ -60,6 +61,10 @@ struct AxisAlignedBB
     typedef ScalarType                                        scalar_type;
     typedef typename DeviceType::execution_space          execution_space;
     typedef Kokkos::View<ScalarType *[NUM_AABB_INDICES]>          boxes_t;
+
+    constexpr static const scalar_type min_scalar = std::numeric_limits<scalar_type>::min();
+    constexpr static const scalar_type max_scalar = std::numeric_limits<scalar_type>::max();
+
 };
 
 template <typename DeviceType, unsigned int DIM>
@@ -74,6 +79,7 @@ struct search_for_pallet_generating_faces
     typedef typename fields_t::points_t                                          points_t;
     typedef typename fields_t::points_mrat                                    points_mrat;
     typedef Kokkos::View<local_idx_t *[2], execution_space>  face_to_interface_and_side_t;
+    typedef Kokkos::View<const local_idx_t *[2], execution_space>  face_to_interface_and_side_ct;
     typedef Kokkos::View<local_idx_t *[2], execution_space>          face_ids_on_a_side_t;
     typedef Kokkos::View<int *, execution_space>                               ints_vec_t;
     typedef Kokkos::View<int, execution_space>                                 int_view_t;
@@ -88,45 +94,46 @@ struct search_for_pallet_generating_faces
     face_to_nodes_t                             m_face_to_nodes;
     points_mrat                                   m_node_coords;
     points_mrat                         m_predicted_node_coords;
-    face_to_interface_and_side_t   m_face_to_interface_and_side;
+    face_to_interface_and_side_ct  m_face_to_interface_and_side;
+
+    face_ids_on_a_side_t                 m_non_mortarside_faces;
+    face_ids_on_a_side_t                     m_mortarside_faces;
+
     contact_search_results_t                   m_search_results;
 
     const float                                 m_boxes_epsilon;
 
     struct count_mortarside_faces
     {
-      typedef Kokkos::DualView<int, execution_space>                        total_found_dvt;
       typedef int                                                                value_type;
 
       ints_vec_t                m_offsets;
       const size_type        m_last_index;
       int_view_t            m_total_found;
-      face_to_interface_and_side_t   m_face_to_interface_and_side;
+      face_to_interface_and_side_ct  m_face_to_interface_and_side;
 
       count_mortarside_faces(search_for_pallet_generating_faces &parent,
                              ints_vec_t offsets_out,
                              int_view_t total_found)
         : m_offsets(offsets_out)
-        , m_last_index(parent.m_face_to_interface_and_side.dimension_0() == 0
-                       ? 0 : parent.m_face_to_interface_and_side.dimension_0() - 1)
+        , m_last_index(m_offsets.dimension_0() == 0 ? 0 : m_offsets.dimension_0() - 1)
         , m_total_found(total_found)
         , m_face_to_interface_and_side(parent.m_face_to_interface_and_side)
       {
+        assert(m_offsets.dimension_0() == parent.m_face_to_interface_and_side.dimension_0());
         size_type output_size = m_face_to_interface_and_side.dimension_0();
         if (output_size > 0)
-        {
-            Kokkos::resize(m_offsets, output_size);
-            Kokkos::parallel_scan(m_face_to_interface_and_side.dimension_0(), *this);
-        }
+          Kokkos::parallel_scan(m_face_to_interface_and_side.dimension_0(), *this);
       }
 
       KOKKOS_INLINE_FUNCTION
-      void operator() (const size_type& idx, int& offset, const bool& final_pass)  const {
+      void operator() (const size_type& face_id, value_type& offset, const bool& final_pass)  const
+      {
         if(final_pass) {
-          m_offsets(idx) = offset;
+          m_offsets(face_id) = offset;
         }
-        offset += m_face_to_interface_and_side(idx, 1);
-        if (final_pass && idx == m_last_index) {
+        offset += m_face_to_interface_and_side(face_id, 1);
+        if (final_pass && face_id == m_last_index) {
           m_total_found = offset;
         }
       }
@@ -134,42 +141,46 @@ struct search_for_pallet_generating_faces
 
     struct separate_into_sides
     {
-      face_ids_on_a_side_t m_non_mortarside_faces, m_mortarside_faces;
-      int_view_t        m_total_faces;
-      int_dualview_t m_num_mortarside;
+      face_to_interface_and_side_ct  m_face_to_interface_and_side;
+      size_type                                     m_total_faces;
+      ints_vec_t                             m_mortarside_offsets;
+      int_dualview_t                             m_num_mortarside;
+      face_ids_on_a_side_t                 m_non_mortarside_faces;
+      face_ids_on_a_side_t                     m_mortarside_faces;
 
-      separate_into_sides(search_for_pallet_generating_faces &parent,
-                          face_ids_on_a_side_t non_mortarside_faces,
-                          face_ids_on_a_side_t mortarside_faces)
-        : m_non_mortarside_faces(non_mortarside_faces)
-        , m_mortarside_faces(mortarside_faces)
-        , m_total_faces("tot_faces")
+      separate_into_sides(search_for_pallet_generating_faces &parent)
+        : m_face_to_interface_and_side(parent.m_face_to_interface_and_side)
+        , m_total_faces(m_face_to_interface_and_side.dimension_0())
         , m_num_mortarside("num_mortarside")
       {
-        ints_vec_t mortarside_offsets;
+        Kokkos::resize(m_mortarside_offsets, m_total_faces);
         m_num_mortarside. template modify<typename int_dualview_t::t_dev>();
-        count_mortarside_faces(parent, mortarside_offsets, m_num_mortarside.d_view);
+        count_mortarside_faces(parent, m_mortarside_offsets, m_num_mortarside.d_view);
         m_num_mortarside. template sync<typename int_dualview_t::t_host>();
         int num_mortarside_faces = m_num_mortarside.h_view();
-        int total_faces = parent.m_face_to_interface_and_side.dimension_0();
-        Kokkos::deep_copy(m_total_faces, total_faces);
-        Kokkos::resize(m_non_mortarside_faces, total_faces - num_mortarside_faces);
+
+        Kokkos::resize(m_non_mortarside_faces, m_total_faces - num_mortarside_faces);
         Kokkos::resize(m_mortarside_faces, num_mortarside_faces);
+        Kokkos::parallel_for(m_total_faces, *this);
+
+        parent.m_non_mortarside_faces = m_non_mortarside_faces;
+        parent.m_mortarside_faces = m_mortarside_faces;
       }
 
       KOKKOS_INLINE_FUNCTION
-      void operator() (const size_type& idx) {
-        int mortarside_offset = m_mortarside_offsets(idx);
-        int interface_id = m_face_to_interface_and_side(idx, 0);
-        if (m_face_to_interface_and_side(idx, 1) == InterfaceBase::NON_MORTAR_SIDE)
+      void operator() (const size_type& face_id) const
+      {
+        int mortarside_offset = m_mortarside_offsets(face_id);
+        int interface_id = m_face_to_interface_and_side(face_id, 0);
+        if (m_face_to_interface_and_side(face_id, 1) == InterfaceBase::NON_MORTAR_SIDE)
         {
-          int non_mortarside_offset = m_total_faces() - mortarside_offset;
-          m_non_mortarside_faces(non_mortarside_offset, 0) = idx;
+          int non_mortarside_offset = face_id - mortarside_offset;
+          m_non_mortarside_faces(non_mortarside_offset, 0) = face_id;
           m_non_mortarside_faces(non_mortarside_offset, 1) = interface_id;
         }
         else
         {
-          m_mortarside_faces(mortarside_offset, 0) = idx;
+          m_mortarside_faces(mortarside_offset, 0) = face_id;
           m_mortarside_faces(mortarside_offset, 1) = interface_id;
         }
       }
@@ -177,7 +188,20 @@ struct search_for_pallet_generating_faces
 
     struct construct_bounding_boxes
     {
+      face_ids_on_a_side_t       m_face_interface_pairs;
+      KOKKOS_INLINE_FUNCTION
+      void operator() (const unsigned &idx) const
+      {
+        typename bounding_boxes_t::scalar_type min_corner[3] =  { bounding_boxes_t::max_scalar,
+                                                                  bounding_boxes_t::max_scalar,
+                                                                  bounding_boxes_t::max_scalar};
 
+        typename bounding_boxes_t::scalar_type max_corner[3] =  { bounding_boxes_t::min_scalar,
+                                                                  bounding_boxes_t::min_scalar,
+                                                                  bounding_boxes_t::min_scalar};
+
+        // YOU ARE HERE
+      }
     };
 
 
@@ -200,12 +224,13 @@ struct search_for_pallet_generating_faces
     {
         std::cout << "In search_for_pallet_generating_faces(..)" << std::endl;
 
-        face_ids_on_a_side_t  non_mortarside_faces("non_mortarside_faces");
-        face_ids_on_a_side_t      mortarside_faces("mortarside_faces");
-        separate_into_sides(*this, non_mortarside_faces, mortarside_faces);
+        separate_into_sides(*this);
 
-        bounding_boxes_t non_mortarside_aabbs("non_mortarside_aabbs");
-        bounding_boxes_t     mortarside_aabbs("mortarside_aabbs");
+        bounding_boxes_t non_mortarside_aabbs, mortarside_aabbs;
+        Kokkos::resize(non_mortarside_aabbs, m_non_mortarside_faces.dimension_0());
+        Kokkos::resize(mortarside_aabbs, m_mortarside_faces.dimension_0());
+
+
         // construct_bounding_boxes(*this, non_mortarside_faces, non_mortarside_aabbs);
         // construct_bounding_boxes(*this, mortarside_faces, mortarside_aabbs);
 
