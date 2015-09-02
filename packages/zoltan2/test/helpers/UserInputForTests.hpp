@@ -386,8 +386,8 @@ private:
 UserInputForTests::UserInputForTests(string path, string testData,
                                      const RCP<const Comm<int> > &c,
                                      bool debugInfo, bool distributeInput):
-verbose_(debugInfo), havePamgenMesh(false),
-tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_(),
+verbose_(debugInfo), tcomm_(c), havePamgenMesh(false),
+M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_(),
 #ifdef HAVE_EPETRA_DATA_TYPES
 ecomm_(), eM_(), eG_(),
 #endif
@@ -413,8 +413,8 @@ UserInputForTests::UserInputForTests(int x, int y, int z,
                                      const RCP<const Comm<int> > &c,
                                      bool debugInfo,
                                      bool distributeInput):
-verbose_(debugInfo),havePamgenMesh(false),
-tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_(),
+verbose_(debugInfo), tcomm_(c), havePamgenMesh(false),
+M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_(),
 #ifdef HAVE_EPETRA_DATA_TYPES
 ecomm_(), eM_(), eG_(),
 #endif
@@ -449,8 +449,8 @@ UserInputForTests::UserInputForTests(const ParameterList &pList,
                                      const RCP<const Comm<int> > &c,
                                      bool debugInfo,
                                      bool distributeInput):
-verbose_(debugInfo),havePamgenMesh(false),
-tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_(),
+verbose_(debugInfo), tcomm_(c), havePamgenMesh(false),
+M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_(),
 #ifdef HAVE_EPETRA_DATA_TYPES
 ecomm_(), eM_(), eG_(),
 #endif

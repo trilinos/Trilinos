@@ -570,7 +570,6 @@ void PamgenMesh::computeElementCoordinates()
   int n_id = 0;
   
   int el_count = 0;
-  int idx_a = 0;
   for(int i = 0; i <  this->num_elem_blk; i++)
   {
     int els = this->elements[i];

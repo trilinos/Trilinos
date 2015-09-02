@@ -517,15 +517,15 @@ void AlgParMA<Adapter>::partition(
 	 iter != ppl.end(); iter++) {
       const std::string &zname = pl.name(iter);
       if (zname == "parma_method") {
-	std::string &zval = pl.entry(iter).getValue(&zval);
+	std::string zval = pl.entry(iter).getValue(&zval);
 	alg_name = zval;
       }
       else if (zname == "step_size") {
-	double &zval = pl.entry(iter).getValue(&zval);
+	double zval = pl.entry(iter).getValue(&zval);
 	step = zval;
       }
       else if (zname=="ghost_layers" || zname=="ghost_bridge") {
-	int &zval = pl.entry(iter).getValue(&zval);
+	int zval = pl.entry(iter).getValue(&zval);
 	if (zname=="ghost_layers")
 	  ghost_layers = zval;
 	else

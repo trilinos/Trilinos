@@ -69,6 +69,6 @@ const double Mrk_2x2_aligned_TriangleInterfaceFixture::node_coords[NumNodes][3] 
                                                             { {0,0,0}, {1,0,0}, {1,1,0}, {0,1,0},
                                                               {0,0,0.1}, {0,1,0.1}, {1,1,0.1}, {1,0,0.1} };
 
-const double Mrk_2x4_offset_TriangleInterfaceFixture::node_coords[NumNodes][3] =
+const double Mrk_2x2_offset_TriangleInterfaceFixture::node_coords[NumNodes][3] =
                                             { {0,0,0},         {1,0,0},         {1,1,0},         {0,1,0},
                                               {0.6, 0.6, 0.1}, {0.6, 1.6, 0.1}, {1.6, 1.6, 0.1}, {1.6, 0.6, 0.1} };
