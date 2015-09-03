@@ -281,7 +281,7 @@ TEST(morkon,compute_normals_single_tri) {
 }//end TEST(morkon,compute_normals_single_tri) 
 
 
-TEST(morkon, manager_compute_face_normals)
+TEST(morkon, manager_compute_face_normals_2x2)
 {
   using namespace morkon_exp;
   typedef Morkon_Manager_Tester<default_kokkos_device_t, 3, MRK_TRI3>  manager_3d_t;
@@ -313,7 +313,7 @@ TEST(morkon, manager_compute_face_normals)
   EXPECT_DOUBLE_EQ(-1.0, manager->hm_face_normals(3, 2));
 }
 
-TEST(morkon, manager_find_possible_contact_face_pairs)
+TEST(morkon, manager_find_possible_contact_face_pairs_2x2)
 {
   using namespace morkon_exp;
   typedef Morkon_Manager_Tester<default_kokkos_device_t, 3, MRK_TRI3>  manager_3d_t;
@@ -321,7 +321,7 @@ TEST(morkon, manager_find_possible_contact_face_pairs)
   typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>            interface_3d_t;
   typedef Teuchos::RCP< interface_3d_t >                           interface_3d_ptr;
   typedef MorkonCommonlyUsed<default_kokkos_device_t, 3>              morkon_common;
-  typedef typename morkon_common::contact_search_results_dvt       coarse_search_pairs_dvt;
+  typedef typename morkon_common::coarse_search_results_t    coarse_search_results_t;
 
   manager_3d_ptr manager = manager_3d_t::MakeInstance(0, FACET_NORMAL_PROJECTION, 0);
 
@@ -333,15 +333,124 @@ TEST(morkon, manager_find_possible_contact_face_pairs)
   EXPECT_EQ(true, manager->commit_interfaces());
   EXPECT_EQ(true, manager->compute_normals());
 
-  coarse_search_pairs_dvt search_results("coarse_search_results");
-  search_results.modify<coarse_search_pairs_dvt::t_dev>();
+  coarse_search_results_t search_results= manager->find_possible_contact_face_pairs();
+  coarse_search_results_t::HostMirror search_results_host = Kokkos::create_mirror_view(search_results);
+  Kokkos::deep_copy(search_results_host, search_results);
 
-  // YOU ARE WORKING ON THIS..
-  // EXPECT_EQ(true, manager->find_possible_contact_face_pairs(search_results.d_view));
-  EXPECT_EQ(false, manager->find_possible_contact_face_pairs(search_results.d_view));
-  search_results.sync<coarse_search_pairs_dvt::t_host>();
+  EXPECT_EQ(4, search_results_host.dimension_0());
+
+  EXPECT_EQ(0, search_results_host(0,0));
+  EXPECT_EQ(2, search_results_host(0,1));
+  EXPECT_EQ(0, search_results_host(1,0));
+  EXPECT_EQ(3, search_results_host(1,1));
+
+  EXPECT_EQ(1, search_results_host(2,0));
+  EXPECT_EQ(2, search_results_host(2,1));
+  EXPECT_EQ(1, search_results_host(3,0));
+  EXPECT_EQ(3, search_results_host(3,1));
 }
 
+TEST(morkon, manager_compute_face_normals_2x4)
+{
+  using namespace morkon_exp;
+  typedef Morkon_Manager_Tester<default_kokkos_device_t, 3, MRK_TRI3>  manager_3d_t;
+  typedef Teuchos::RCP< manager_3d_t >                               manager_3d_ptr;
+  typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>            interface_3d_t;
+  typedef Teuchos::RCP< interface_3d_t >                           interface_3d_ptr;
+
+  manager_3d_ptr manager = manager_3d_t::MakeInstance(0, FACET_NORMAL_PROJECTION, 0);
+
+  const int interface_id = 17;
+  interface_3d_ptr interface = manager->create_interface(interface_id, 0);
+
+  Mrk_2x4_offset_TriangleInterfaceFixture tris_2x4(interface);
+
+  EXPECT_EQ(true, manager->commit_interfaces());
+
+  EXPECT_EQ(true, manager->compute_normals());
+  manager->get_face_normals();
+
+  for (size_t face_i = 0; face_i < tris_2x4.NumFaces; ++face_i)
+  {
+    EXPECT_DOUBLE_EQ(0.0, manager->hm_face_normals(face_i, 0));
+    EXPECT_DOUBLE_EQ(0.0, manager->hm_face_normals(face_i, 1));
+  }
+
+  EXPECT_DOUBLE_EQ(1.0, manager->hm_face_normals(0, 2));
+  EXPECT_DOUBLE_EQ(1.0, manager->hm_face_normals(1, 2));
+  EXPECT_DOUBLE_EQ(1.0, manager->hm_face_normals(2, 2));
+  EXPECT_DOUBLE_EQ(1.0, manager->hm_face_normals(3, 2));
+  EXPECT_DOUBLE_EQ(-1.0, manager->hm_face_normals(4, 2));
+  EXPECT_DOUBLE_EQ(-1.0, manager->hm_face_normals(5, 2));
+  EXPECT_DOUBLE_EQ(-1.0, manager->hm_face_normals(6, 2));
+  EXPECT_DOUBLE_EQ(-1.0, manager->hm_face_normals(7, 2));
+}
+
+TEST(morkon, manager_find_possible_contact_face_pairs_2x4)
+{
+  using namespace morkon_exp;
+  typedef Morkon_Manager_Tester<default_kokkos_device_t, 3, MRK_TRI3>  manager_3d_t;
+  typedef Teuchos::RCP< manager_3d_t >                               manager_3d_ptr;
+  typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>            interface_3d_t;
+  typedef Teuchos::RCP< interface_3d_t >                           interface_3d_ptr;
+  typedef MorkonCommonlyUsed<default_kokkos_device_t, 3>              morkon_common;
+  typedef typename morkon_common::coarse_search_results_t    coarse_search_results_t;
+
+  manager_3d_ptr manager = manager_3d_t::MakeInstance(0, FACET_NORMAL_PROJECTION, 0);
+
+  const int interface_id = 17;
+  interface_3d_ptr interface = manager->create_interface(interface_id, 0);
+
+  Mrk_2x4_offset_TriangleInterfaceFixture tris_2x4(interface);
+
+  EXPECT_EQ(true, manager->commit_interfaces());
+  EXPECT_EQ(true, manager->compute_normals());
+
+  coarse_search_results_t search_results= manager->find_possible_contact_face_pairs();
+  coarse_search_results_t::HostMirror search_results_host = Kokkos::create_mirror_view(search_results);
+  Kokkos::deep_copy(search_results_host, search_results);
+
+  EXPECT_EQ(4, search_results_host.dimension_0());
+
+  EXPECT_EQ(2, search_results_host(0,0));
+  EXPECT_EQ(4, search_results_host(0,1));
+  EXPECT_EQ(2, search_results_host(1,0));
+  EXPECT_EQ(5, search_results_host(1,1));
+
+  EXPECT_EQ(3, search_results_host(2,0));
+  EXPECT_EQ(4, search_results_host(2,1));
+  EXPECT_EQ(3, search_results_host(3,0));
+  EXPECT_EQ(5, search_results_host(3,1));
+}
+
+TEST(morkon, manager_compute_contact_pallets_2x4)
+{
+  using namespace morkon_exp;
+  typedef Morkon_Manager_Tester<default_kokkos_device_t, 3, MRK_TRI3>  manager_3d_t;
+  typedef Teuchos::RCP< manager_3d_t >                               manager_3d_ptr;
+  typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>            interface_3d_t;
+  typedef Teuchos::RCP< interface_3d_t >                           interface_3d_ptr;
+  typedef MorkonCommonlyUsed<default_kokkos_device_t, 3>              morkon_common;
+  typedef typename morkon_common::coarse_search_results_t    coarse_search_results_t;
+  typedef typename manager_3d_t::mortar_pallets_t mortar_pallets_t;
+
+  manager_3d_ptr manager = manager_3d_t::MakeInstance(0, FACET_NORMAL_PROJECTION, 0);
+
+  const int interface_id = 17;
+  interface_3d_ptr interface = manager->create_interface(interface_id, 0);
+
+  Mrk_2x4_offset_TriangleInterfaceFixture tris_2x4(interface);
+
+  EXPECT_EQ(true, manager->commit_interfaces());
+  EXPECT_EQ(true, manager->compute_normals());
+
+  coarse_search_results_t search_results= manager->find_possible_contact_face_pairs();
+  coarse_search_results_t::HostMirror search_results_host = Kokkos::create_mirror_view(search_results);
+  Kokkos::deep_copy(search_results_host, search_results);
+  EXPECT_EQ(4, search_results_host.dimension_0());
+
+  mortar_pallets_t mortar_pallets = manager->compute_contact_pallets(search_results);
+}
 
 int main( int argc, char *argv[] ) {
   ::testing::InitGoogleTest(&argc,argv);

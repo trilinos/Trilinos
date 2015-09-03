@@ -12,7 +12,7 @@ Each section is detailed below.  Please note that the sections described must be
 
 Section 1: Input source definition (REQUIRED)
 
-In the first section of your input file you should define the input data source and type.  The test driver is designed such that all problems defined in section 2 share a common data source, therefore only 1 XML input source definition block per input file source is supported.  Currently there are 2 different flavors of input source definitions: one defining input from some supported file type, and the second defining Galari generated data.  Input parameter blocks should be named “InputParameters” and be the first defined block with in the main XML block.
+In the first section of your input file you should define the input data source and type.  The test driver is designed such that all problems defined in section 2 share a common data source, therefore only 1 XML input source definition block per input file source is supported.  Currently there are 2 different flavors of input source definitions: one defining input from some supported file type, and the second defining Galeri generated data.  Input parameter blocks should be named “InputParameters” and be the first defined block with in the main XML block.
 
  A block defining input from an existing file source must contain the following parameters (ex. 1):
 
@@ -22,14 +22,14 @@ In the first section of your input file you should define the input data source 
 
 If your input source is a pamgen mesh definition you are required to define an integer typed “dimension” parameter specifying the dimension of the mesh.
 
-A Galari generated block should contain the following parameters (ex. 2):
+A Galeri generated block should contain the following parameters (ex. 2):
 	
 	* x: number of grid points in the x-direction
 	* y (optional): number of grid points in the y-direction
 	* z (optional): number of grid points in the z-direction
-	* equation type: Galari specific equation name, i.e. Laplace3D
+	* equation type: Galeri specific equation name, i.e. Laplace3D
 
-An input source block defining a Galari generated data source may define a problem in 1, 2, or 3D.  The dimension of the problem is inferred by which coordinate parameters (x,y,z) have been defined, e.g., if only the x parameter has been defined then the problem is assumed to be 1D.
+An input source block defining a Galeri generated data source may define a problem in 1, 2, or 3D.  The dimension of the problem is inferred by which coordinate parameters (x,y,z) have been defined, e.g., if only the x parameter has been defined then the problem is assumed to be 1D.
 
  
  Section 2: Zoltan2 problem definition (REQUIRED)
@@ -117,7 +117,7 @@ SECTION 3 (OPTIONAL)
     <!--    <Parameter name="dimension" type="int" value="##"/>-->
   </ParameterList>
 
-Example 2: Galari generated input
+Example 2: Galeri generated input
 
 <ParameterList name="InputParameters">
     <Parameter name="x" type="int" value="##"/>

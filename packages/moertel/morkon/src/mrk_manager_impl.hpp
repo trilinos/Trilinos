@@ -53,6 +53,7 @@
 #include <mrk_search_for_pallet_generating_faces.hpp>
 #include <mrk_interface_impl.hpp>
 #include <mrk_interface_host_side_adapter.hpp>
+#include <mrk_compute_pallets_from_candidate_face_pairs.hpp>
 
 namespace morkon_exp {
 
@@ -120,12 +121,7 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::mortar_integrate(Tpetra::CrsMat
     return false;
   }
 
-  // Generate vector of (nms_face_id, ms_face_id, interface_id) triples.
-  contact_search_results_t  coarse_contacts;
-  if (!find_possible_contact_face_pairs(coarse_contacts))
-  {
-    return false;
-  }
+  coarse_search_results_t coarse_contacts = find_possible_contact_face_pairs();
 
   if (!compute_boundary_node_support_sets(coarse_contacts))
   {
@@ -133,12 +129,7 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::mortar_integrate(Tpetra::CrsMat
   }
 
   // Will our integration scheme require node_support_sets the way the legacy version does?
-
-  mortar_pallets_t pallets_for_integration;
-  if (!compute_contact_pallets(coarse_contacts, pallets_for_integration))
-  {
-    return false;
-  }
+  mortar_pallets_t pallets_for_integration = compute_contact_pallets(coarse_contacts);
 
   if (!integrate_pallets_into_onrank_D(pallets_for_integration))
   {
@@ -384,39 +375,35 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_normals()
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
-bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::find_possible_contact_face_pairs(contact_search_results_t search_results)
+typename Morkon_Manager<DeviceType, DIM, FACE_TYPE>::coarse_search_results_t
+Morkon_Manager<DeviceType, DIM, FACE_TYPE>::find_possible_contact_face_pairs()
 {
-  const double bounding_boxes_epsilon = 0.001;
+  const double bounding_boxes_epsilon = 0.1;
 
-  search_for_pallet_generating_faces<DeviceType, DIM>(m_surface_mesh,
-                                                      m_fields.m_node_coords,
-                                                      m_fields.m_predicted_node_coords,
-                                                      m_face_to_interface_and_side,
-                                                      bounding_boxes_epsilon,
-                                                      search_results);
-  return false;
+  search_for_pallet_generating_faces<DeviceType, DIM>
+    coarse_search(m_surface_mesh, m_fields.m_node_coords, m_fields.m_predicted_node_coords,
+                  m_face_to_interface_and_side, bounding_boxes_epsilon);
+
+  return coarse_search.m_search_results;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool 
-Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_boundary_node_support_sets(contact_search_results_t course_search_results)
+Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_boundary_node_support_sets(coarse_search_results_t course_search_results)
 {
   std::cout << "Need to write compute_boundary_node_support_sets()" << std::endl;
   return false;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
-bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_contact_pallets(contact_search_results_t course_search_results,
-                                                                         mortar_pallets_t &resulting_pallets)
+typename Morkon_Manager<DeviceType, DIM, FACE_TYPE>::mortar_pallets_t
+Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_contact_pallets(coarse_search_results_t course_search_results)
 {
-  // In the Serial prototype and the Cuda version, we can use atomic fetch and adds to allocate space for the
-  // pallets resulting from pair of faces.
-  //
-  // In the OpenMP friendly version, the counting pass functor does the minimal work possible to figure out
-  // how many pallets for each pair, and the compute-and-fill pass does the complete version of the work.
+  compute_pallets_from_candidate_face_pairs<DeviceType, DIM> compute_pallets(this->m_surface_mesh,
+                                                                             this->m_fields,
+                                                                             course_search_results);
 
-  std::cout << "Need to write compute_contact_pallets()" << std::endl;
-  return false;
+  return compute_pallets.m_result_pallets;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >

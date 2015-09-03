@@ -233,7 +233,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       
       // does this field need a time derivative?
       if(desc->second.timeDerivative.first) {
-        // time derivaitive needed
+        // time derivative needed
         t_dof_names->push_back(*dof_name);
         t_field_names->push_back(desc->second.timeDerivative.second);
       }

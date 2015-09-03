@@ -810,29 +810,37 @@ int main(int argc, char *argv[])
   problems.pop();
   comm->barrier();
   
-  ////////////////////////////////////////////////////////////
-  // (4) Perform all tests
-  ////////////////////////////////////////////////////////////
-  // pamgen debugging
-//    writeMesh(uinput,comm);
-//    getConnectivityGraph(uinput, comm);
-  
-  RCP<ComparisonHelper> comparison_manager = rcp(new ComparisonHelper);
-  while (!problems.empty()) {
-    run(uinput, problems.front(), comparison_manager, comm);
-    problems.pop();
-  }
-  
-  ////////////////////////////////////////////////////////////
-  // (5) Compare solutions
-  ////////////////////////////////////////////////////////////
-  while (!comparisons.empty()) {
+  if(uinput.hasInput())
+  {
+    ////////////////////////////////////////////////////////////
+    // (4) Perform all tests
+    ////////////////////////////////////////////////////////////
+    // pamgen debugging
+    //    writeMesh(uinput,comm);
+    //    getConnectivityGraph(uinput, comm);
     
-    comparison_manager->CompareSolutions(comparisons.front().get<string>("A"),
-                                        comparisons.front().get<string>("B"),
-                                        comm);
+    RCP<ComparisonHelper> comparison_manager = rcp(new ComparisonHelper);
+    while (!problems.empty()) {
+      run(uinput, problems.front(), comparison_manager, comm);
+      problems.pop();
+    }
     
-    comparisons.pop();
+    ////////////////////////////////////////////////////////////
+    // (5) Compare solutions
+    ////////////////////////////////////////////////////////////
+    while (!comparisons.empty()) {
+      
+      comparison_manager->CompareSolutions(comparisons.front().get<string>("A"),
+                                           comparisons.front().get<string>("B"),
+                                           comm);
+      
+      comparisons.pop();
+    }
+  }else{
+    if(rank == 0){
+      cout << "\nFAILED to load input data source.";
+      cout << "\nSkipping all tests." << endl;
+    }
   }
   
   return 0;

@@ -78,7 +78,7 @@ public:
   typedef typename morkon_manager::face_to_interface_and_side_t      face_to_interface_and_side_t;
   typedef typename morkon_manager::face_to_interface_and_side_hmt  face_to_interface_and_side_hmt;
 
-  typedef typename morkon_manager::contact_search_results_t  contact_search_results_t;
+  typedef typename morkon_manager::coarse_search_results_t  contact_search_results_t;
   typedef typename morkon_manager::mortar_pallets_t                  mortar_pallets_t;
 
   local_to_global_idx_hmt                    hm_node_global_ids;
@@ -132,8 +132,13 @@ public:
 
   bool compute_normals() { return morkon_manager::compute_normals(); }
 
-  bool find_possible_contact_face_pairs(contact_search_results_t coarse_search_results) {
-    return morkon_manager::find_possible_contact_face_pairs(coarse_search_results);
+  typename morkon_manager::coarse_search_results_t find_possible_contact_face_pairs() {
+    return morkon_manager::find_possible_contact_face_pairs();
+  }
+
+  typename morkon_manager::mortar_pallets_t
+  compute_contact_pallets(typename morkon_manager::coarse_search_results_t coarse_search_results) {
+      return morkon_manager::compute_contact_pallets(coarse_search_results);
   }
 };
 
