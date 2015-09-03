@@ -64,6 +64,8 @@
 #include "Xpetra_EpetraMultiVector.hpp"
 #include "Xpetra_EpetraCrsGraph.hpp"
 
+#include "Xpetra_MapFactory.hpp"
+
 #include "Xpetra_Utils.hpp"
 #include "Xpetra_Exceptions.hpp"
 
@@ -77,6 +79,12 @@ namespace Xpetra {
     typedef typename CrsMatrix<double, int, GlobalOrdinal>::scalar_type         Scalar;
     typedef typename CrsMatrix<double, int, GlobalOrdinal>::local_ordinal_type  LocalOrdinal;
     typedef typename CrsMatrix<double, int, GlobalOrdinal>::node_type           Node;
+
+    // The following typedefs are used by the Kokkos interface
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type    local_matrix_type;
+    typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::node_type            node_type;
+#endif
 
   public:
 
@@ -112,6 +120,84 @@ namespace Xpetra {
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap = Teuchos::null,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap = Teuchos::null,
                     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
+    /// \brief Constructor specifying column Map and a local matrix,
+    ///   which the resulting CrsMatrix views.
+    ///
+    /// Unlike most other CrsMatrix constructors, successful
+    /// completion of this constructor will result in a fill-complete
+    /// matrix.
+    ///
+    /// \param rowMap [in] Distribution of rows of the matrix.
+    ///
+    /// \param colMap [in] Distribution of columns of the matrix.
+    ///
+    /// \param lclMatrix [in] A local CrsMatrix containing all local
+    ///    matrix values as well as a local graph.  The graph's local
+    ///    row indices must come from the specified row Map, and its
+    ///    local column indices must come from the specified column
+    ///    Map.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    EpetraCrsMatrixT (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+        const local_matrix_type& lclMatrix,
+        const Teuchos::RCP<Teuchos::ParameterList>& params = null) {
+      // local typedefs from local_matrix_type
+      typedef typename local_matrix_type::size_type size_type;
+      typedef typename local_matrix_type::value_type value_type;
+      typedef typename local_matrix_type::ordinal_type ordinal_type;
+
+      // The number of rows in the sparse matrix.
+      ordinal_type lclNumRows = lclMatrix.numRows ();
+      ordinal_type lclNumCols = lclMatrix.numCols ();  // do we need this?
+
+      // plausibility checks
+      TEUCHOS_TEST_FOR_EXCEPTION(lclNumRows != Teuchos::as<ordinal_type>(rowMap->getNodeNumElements()), Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsMatrixT: number of rows in local matrix and number of local entries in row map do not match!");
+      TEUCHOS_TEST_FOR_EXCEPTION(lclNumCols != Teuchos::as<ordinal_type>(colMap->getNodeNumElements()), Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsMatrixT: number of columns in local matrix and number of local entries in column map do not match!");
+
+      std::vector<GlobalOrdinal> domainMapGids;  // vector for collecting domain map GIDs
+
+      // loop over all rows and colums of local matrix
+      for (ordinal_type r = 0; r < lclNumRows; ++r) {
+        // extract data from current row r
+        Kokkos::SparseRowView<local_matrix_type,size_type> rowview = lclMatrix.template row<size_type>(r);
+
+        // arrays for current row data
+        Teuchos::ArrayRCP<ordinal_type> indout(rowview.length,Teuchos::ScalarTraits<ordinal_type>::zero());
+        Teuchos::ArrayRCP<value_type>   valout(rowview.length,Teuchos::ScalarTraits<value_type>::zero());
+
+        for(ordinal_type c = 0; c < rowview.length; c++) {
+          value_type   value  = rowview.value  (c);
+          ordinal_type colidx = rowview.colidx (c);
+
+          TEUCHOS_TEST_FOR_EXCEPTION(colMap->isNodeLocalElement(colidx) == false, Xpetra::Exceptions::RuntimeError, "Xpetra::EpetraCrsMatrixT: local matrix contains column elements which are not in the provided column map!");
+
+          indout [c] = colidx;
+          valout [c] = value;
+
+          // collect GIDs for domain map
+          GlobalOrdinal gcid = colMap->getGlobalElement(c);
+          if(rowMap->isNodeGlobalElement(gcid)) domainMapGids.push_back(gcid);
+        }
+        this->insertLocalValues(r, indout.view(0,indout.size()), valout.view(0,valout.size()));
+      }
+
+      // sort entries in domainMapGids and remove duplicates
+      const GlobalOrdinal INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+      std::sort(domainMapGids.begin(), domainMapGids.end());
+      domainMapGids.erase(std::unique(domainMapGids.begin(), domainMapGids.end()), domainMapGids.end());
+      Teuchos::ArrayView<GlobalOrdinal> domainMapGidsView(&domainMapGids[0], domainMapGids.size());
+      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > domainMap =
+          Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(colMap->lib(), INVALID, domainMapGidsView, colMap->getIndexBase(), colMap->getComm());
+
+      // call fill complete
+      this->fillComplete(domainMap, rowMap, params);
+    }
+#endif
 
     //! Destructor.
     virtual ~EpetraCrsMatrixT() { }
@@ -334,9 +420,6 @@ namespace Xpetra {
     RCP<Epetra_CrsMatrix> getEpetra_CrsMatrixNonConst() const { return mtx_; } //TODO: remove
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
-    typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type    local_matrix_type;
-    typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::node_type            node_type;
-
     /// \brief Compatibility layer for accessing the matrix data through a Kokkos interface
     local_matrix_type getLocalMatrix () const {
       TEUCHOS_TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
