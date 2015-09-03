@@ -17,6 +17,8 @@
 
 /* #undef HAVE_MUELU_BOOST_FOR_REAL */
 
+/* #undef HAVE_MUELU_KOKKOS_REFACTOR */
+
 /* Optional Dependencies */
 
 #define HAVE_MUELU_AMESOS

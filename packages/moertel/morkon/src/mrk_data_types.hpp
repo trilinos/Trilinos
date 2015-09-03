@@ -85,7 +85,10 @@ template  <typename DeviceType, unsigned int DIM>
 struct MorkonCommonlyUsed
 {
   typedef typename DeviceType::execution_space                      execution_space;
-  typedef Kokkos::View<local_idx_t *[2], execution_space>  contact_search_results_t;
+  typedef Kokkos::View<local_idx_t *[2], execution_space>  coarse_search_results_t;
+  typedef Kokkos::DualView<typename coarse_search_results_t::value_type *[2],
+                           typename coarse_search_results_t::array_layout,
+                           typename coarse_search_results_t::execution_space>  coarse_search_results_dvt;
 };
 
 
@@ -106,9 +109,12 @@ struct Mrk_SurfaceMesh<DeviceType, 3>
 {
   typedef typename DeviceType::execution_space                                execution_space;
   typedef Kokkos::View<global_idx_t *, execution_space>                 local_to_global_idx_t;
+  typedef Kokkos::View<local_idx_t *, execution_space>                   local_to_local_idx_t;
   typedef Kokkos::CrsMatrix<local_idx_t, local_idx_t, execution_space >       node_to_faces_t;
   typedef Kokkos::View<local_idx_t *, execution_space>                    face_to_num_nodes_t;
   typedef Kokkos::View<local_idx_t *[4], execution_space>                     face_to_nodes_t;
+  typedef Kokkos::View<const local_idx_t *[4], execution_space,
+                              Kokkos::MemoryRandomAccess>                  face_to_nodes_mrat;
 
   node_to_faces_t          m_node_to_faces;
   face_to_num_nodes_t  m_face_to_num_nodes;

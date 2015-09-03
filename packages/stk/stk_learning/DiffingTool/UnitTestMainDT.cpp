@@ -42,14 +42,10 @@ int main(int argc, char **argv)
 {
     stk::parallel_machine_init(&argc, &argv);
 
-    int procId = stk::parallel_machine_rank(MPI_COMM_WORLD);
-
     testing::InitGoogleTest(&argc, argv);
 
     gl_argc = argc;
     gl_argv = argv;
-
-    stk::unit_test_util::create_parallel_output(procId);
 
     int errorCode = RUN_ALL_TESTS();
     

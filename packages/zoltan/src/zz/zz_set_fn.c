@@ -301,7 +301,7 @@ int Zoltan_Get_Fn(ZZ *zz, ZOLTAN_FN_TYPE fn_type,
 
 char *yo = "Zoltan_Get_Fn";
 char msg[256];
-int ierr;
+int ierr = ZOLTAN_OK;
 
   switch (fn_type) {
   case ZOLTAN_PART_FN_TYPE:

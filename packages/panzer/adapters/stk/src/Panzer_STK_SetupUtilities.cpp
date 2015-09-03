@@ -327,10 +327,10 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> >  
-buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
-              const panzer::PhysicsBlock & pb_a,
-              const panzer::PhysicsBlock & pb_b,
-              const std::string & sideset)
+buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
+                const panzer::PhysicsBlock & pb_a,
+                const panzer::PhysicsBlock & pb_b,
+                const std::string & sideset)
 {
   using namespace workset_utils;
   using Teuchos::RCP;

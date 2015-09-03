@@ -150,8 +150,6 @@ panzer::buildWorksets(const WorksetNeeds & needs,
 
      }
 
-     i->details.push_back(Teuchos::rcpFromRef(*i));
-
      return worksets_ptr;
   } // end special case
 
@@ -193,7 +191,6 @@ panzer::buildWorksets(const WorksetNeeds & needs,
     wkst->block_id = elementBlock;
     wkst->subcell_dim = needs.cellData.baseCellDimension();
     wkst->subcell_index = 0;
-    wkst->details.push_back(Teuchos::rcpFromRef(*wkst));
   }
   
   TEUCHOS_ASSERT(local_begin == local_cell_ids.end());
@@ -321,7 +318,6 @@ panzer::buildBCWorkset(const WorksetNeeds & needs,
     worksets[side->first].block_id = elementBlock;
     worksets[side->first].subcell_dim = needs.cellData.baseCellDimension() - 1;
     worksets[side->first].subcell_index = side->first;
-    worksets[side->first].details.push_back(Teuchos::rcpFromRef(worksets[side->first]));
   }
 
   // setup the integration rules and bases
@@ -414,11 +410,9 @@ panzer::buildEdgeWorksets(const panzer::PhysicsBlock & pb_a,
      worksets.resize(1);
      std::vector<panzer::Workset>::iterator i = worksets.begin();
 
-     i->details.resize(2);
-     i->details[0] = Teuchos::rcpFromRef(*i);
-     i->details[0]->block_id = pb_a.elementBlockID();
-     i->details[1] = Teuchos::rcp(new panzer::WorksetDetails);
-     i->details[1]->block_id = pb_b.elementBlockID();
+     i->details(0)->block_id = pb_a.elementBlockID();
+     i->other = Teuchos::rcp(new panzer::WorksetDetails);
+     i->details(1).block_id = pb_b.elementBlockID();
 
      i->num_cells = 0;
      i->ir_degrees = ir_degrees;
@@ -548,11 +542,9 @@ panzer::buildEdgeWorksets(const WorksetNeeds & needs_a,
      worksets.resize(1);
      std::vector<panzer::Workset>::iterator i = worksets.begin();
 
-     i->details.resize(2);
-     i->details[0] = Teuchos::rcpFromRef(*i);
-     i->details[0]->block_id = eblock_a;
-     i->details[1] = Teuchos::rcp(new panzer::WorksetDetails);
-     i->details[1]->block_id = eblock_b;
+     i->details(0).block_id = eblock_a;
+     i->other = Teuchos::rcp(new panzer::WorksetDetails);
+     i->details(1).block_id = eblock_b;
 
      i->num_cells = 0;
      i->ir_degrees = ir_degrees;
@@ -651,23 +643,21 @@ panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
   while (current_cell_index<cell_indices.size()) {
     std::size_t workset_size = needs_a.cellData.numCells();
 
-    // allocate workset details (associate one with the workset
-    // object itself)
-    wkst->details.resize(2);
-    wkst->details[0] = Teuchos::rcpFromRef(*wkst);
-    wkst->details[1] = Teuchos::rcp(new panzer::WorksetDetails);
+    // allocate workset details (details(0) is already associated with the
+    // workset object itself)
+    wkst->other = Teuchos::rcp(new panzer::WorksetDetails);
 
     wkst->subcell_dim = needs_a.cellData.baseCellDimension()-1;
 
-    wkst->details[0]->subcell_index = local_side_ids_a[cell_indices[current_cell_index]];
-    wkst->details[0]->block_id = eblock_a;
-    wkst->details[0]->cell_vertex_coordinates = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("cvc",workset_size,
+    wkst->details(0).subcell_index = local_side_ids_a[cell_indices[current_cell_index]];
+    wkst->details(0).block_id = eblock_a;
+    wkst->details(0).cell_vertex_coordinates = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("cvc",workset_size,
 					 vertex_coordinates_a.dimension(1),
 					 vertex_coordinates_a.dimension(2));
 
-    wkst->details[1]->subcell_index = local_side_ids_b[cell_indices[current_cell_index]];
-    wkst->details[1]->block_id = eblock_b; 
-    wkst->details[1]->cell_vertex_coordinates = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("cvc",workset_size,
+    wkst->details(1).subcell_index = local_side_ids_b[cell_indices[current_cell_index]];
+    wkst->details(1).block_id = eblock_b; 
+    wkst->details(1).cell_vertex_coordinates = mdArrayFactory.buildStaticArray<double,Cell,NODE,Dim>("cvc",workset_size,
 					 vertex_coordinates_a.dimension(1),
 					 vertex_coordinates_a.dimension(2));
 
@@ -677,35 +667,35 @@ panzer::buildEdgeWorksets(const std::vector<std::size_t> & cell_indices,
 
     // this is the true number of cells in this workset
     wkst->num_cells = workset_size;
-    wkst->details[0]->cell_local_ids.resize(workset_size);
-    wkst->details[1]->cell_local_ids.resize(workset_size);
+    wkst->details(0).cell_local_ids.resize(workset_size);
+    wkst->details(1).cell_local_ids.resize(workset_size);
 
     for(std::size_t cell=0;cell<workset_size; cell++,current_cell_index++) {
 
-      wkst->details[0]->cell_local_ids[cell] = local_cell_ids_a[cell_indices[current_cell_index]];
-      wkst->details[1]->cell_local_ids[cell] = local_cell_ids_b[cell_indices[current_cell_index]];
+      wkst->details(0).cell_local_ids[cell] = local_cell_ids_a[cell_indices[current_cell_index]];
+      wkst->details(1).cell_local_ids[cell] = local_cell_ids_b[cell_indices[current_cell_index]];
 
       for (std::size_t vertex = 0; vertex < Teuchos::as<std::size_t>(vertex_coordinates_a.dimension(1)); ++ vertex) {
 	for (std::size_t dim = 0; dim < Teuchos::as<std::size_t>(vertex_coordinates_a.dimension(2)); ++ dim) {
-          wkst->details[0]->cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates_a(cell_indices[current_cell_index],vertex,dim);
-          wkst->details[1]->cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates_b(cell_indices[current_cell_index],vertex,dim);
+          wkst->details(0).cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates_a(cell_indices[current_cell_index],vertex,dim);
+          wkst->details(1).cell_vertex_coordinates(cell,vertex,dim) = vertex_coordinates_b(cell_indices[current_cell_index],vertex,dim);
         }
       }
     }
 
-    Kokkos::View<int*,PHX::Device> cell_local_ids_k_0 = Kokkos::View<int*,PHX::Device>("Workset:cell_local_ids",wkst->details[0]->cell_local_ids.size());
-    Kokkos::View<int*,PHX::Device> cell_local_ids_k_1 = Kokkos::View<int*,PHX::Device>("Workset:cell_local_ids",wkst->details[1]->cell_local_ids.size());
-    for(std::size_t i=0;i<wkst->details[0]->cell_local_ids.size();i++) 
-      cell_local_ids_k_0(i) = wkst->details[0]->cell_local_ids[i];
-    for(std::size_t i=0;i<wkst->details[1]->cell_local_ids.size();i++) 
-      cell_local_ids_k_1(i) = wkst->details[1]->cell_local_ids[i];
-    wkst->details[0]->cell_local_ids_k = cell_local_ids_k_0;
-    wkst->details[1]->cell_local_ids_k = cell_local_ids_k_1;
+    Kokkos::View<int*,PHX::Device> cell_local_ids_k_0 = Kokkos::View<int*,PHX::Device>("Workset:cell_local_ids",wkst->details(0).cell_local_ids.size());
+    Kokkos::View<int*,PHX::Device> cell_local_ids_k_1 = Kokkos::View<int*,PHX::Device>("Workset:cell_local_ids",wkst->details(1).cell_local_ids.size());
+    for(std::size_t i=0;i<wkst->details(0).cell_local_ids.size();i++) 
+      cell_local_ids_k_0(i) = wkst->details(0).cell_local_ids[i];
+    for(std::size_t i=0;i<wkst->details(1).cell_local_ids.size();i++) 
+      cell_local_ids_k_1(i) = wkst->details(1).cell_local_ids[i];
+    wkst->details(0).cell_local_ids_k = cell_local_ids_k_0;
+    wkst->details(1).cell_local_ids_k = cell_local_ids_k_1;
 
     // fill the BasisValues and IntegrationValues arrays
     std::size_t max_workset_size = needs_a.cellData.numCells();
-    populateValueArrays(max_workset_size,true,needs_a,*wkst->details[0]); // populate "side" values
-    populateValueArrays(max_workset_size,true,needs_b,*wkst->details[1]);
+    populateValueArrays(max_workset_size,true,needs_a,wkst->details(0)); // populate "side" values
+    populateValueArrays(max_workset_size,true,needs_b,wkst->details(1),Teuchos::rcpFromRef(wkst->details(0)));
 
     wkst++;
   }

@@ -73,12 +73,6 @@ typedef unsigned long PrintMask;
 namespace sierra {
 
 enum LogMask {
-  LOG_ALWAYS = stk::LOG_ALWAYS,
-  LOG_TRACE    = stk::LOG_TRACE,
-  LOG_TRACE_STATS  = stk::LOG_TRACE_STATS,
-  LOG_TRACE_SUB_CALLS  = stk::LOG_TRACE_SUB_CALLS,
-  LOG_MEMBERS    = stk::LOG_MEMBERS,
-
   LOG_STREAM_COMMON  = stk::LOG_STREAM_COMMON,
   LOG_PARAMETERS  = stk::LOG_PARAMETERS
 };
@@ -95,11 +89,11 @@ typedef stk::diag::PrintMask PrintMask;
 
 namespace Slib {
 enum {
-  LOG_ALWAYS		= sierra::LOG_ALWAYS,
-  LOG_TRACE		= sierra::LOG_TRACE,
-  LOG_TRACE_STATS	= sierra::LOG_TRACE_STATS,
-  LOG_TRACE_SUB_CALLS	= sierra::LOG_TRACE_SUB_CALLS,
-  LOG_MEMBERS		= sierra::LOG_MEMBERS,
+  LOG_ALWAYS		= stk::LOG_ALWAYS,
+  LOG_TRACE		= stk::LOG_TRACE,
+  LOG_TRACE_STATS	= stk::LOG_TRACE_STATS,
+  LOG_TRACE_SUB_CALLS	= stk::LOG_TRACE_SUB_CALLS,
+  LOG_MEMBERS		= stk::LOG_MEMBERS,
 
   LOG_RESOURCE		= 0x00000100,
   LOG_PLUGIN		= 0x00000200,

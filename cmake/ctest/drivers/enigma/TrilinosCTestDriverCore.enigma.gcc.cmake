@@ -53,7 +53,7 @@
 # ************************************************************************
 # @HEADER
 
-  
+
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
@@ -67,7 +67,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
 
   SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-  
+
   SET( CTEST_BUILD_FLAGS "-j12 -i" )
 
   SET_DEFAULT( CTEST_PARALLEL_LEVEL "12" )
@@ -76,7 +76,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   # Only turn on PyTrilinos for shared libraries
   SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
-  
+
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DBUILD_SHARED_LIBS:BOOL=ON"
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
@@ -85,11 +85,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     "-DMPI_BASE_DIR=/usr/lib64/openmpi"
     "-D MPI_CXX_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpicxx"
-    "-D MPI_C_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpicc" 
-    "-D MPI_FORTRAN_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpifort" 
+    "-D MPI_C_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpicc"
+    "-D MPI_FORTRAN_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpifort"
     "-D CMAKE_CXX_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpicxx"
-    "-D CMAKE_C_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpicc" 
-    "-D CMAKE_FORTRAN_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpifort" 
+    "-D CMAKE_C_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpicc"
+    "-D CMAKE_FORTRAN_COMPILER:FILEPATH=/usr/lib64/openmpi/bin/mpifort"
     "-D MPI_EXEC:FILEPATH=/usr/lib64/openmpi/bin/mpirun"
 
     "-DTPL_ENABLE_MPI:BOOL=ON"
@@ -119,7 +119,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   #       "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi"
   #       "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi"
   #       "-DMPI_EXEC:FILEPATH=${MPI_PATH}/bin/mpirun"
-  #       "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to-socket" 
+  #       "-DMPI_EXEC_POST_NUMPROCS_FLAGS:STRING=-bind-to-socket"
   ENDIF()
 
   TRILINOS_CTEST_DRIVER()

@@ -78,6 +78,8 @@ private:
 
   PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
   bool is_vector_basis;
+
+  WorksetDetailsAccessor wda;
 };
 
 /** Interpolates basis DOF values to IP DOF Curl values (specialization for the jacobian)
@@ -118,6 +120,8 @@ private:
                                   // and thus which DOF operations can use accelerated jacobians
 
   bool is_vector_basis;
+
+  WorksetDetailsAccessor wda;
 };
 
 }

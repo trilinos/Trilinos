@@ -140,7 +140,7 @@ protected:
                            typename face_to_interface_and_side_t::execution_space>  face_to_interface_and_side_dvt;
 
   typedef MorkonCommonlyUsed<DeviceType, DIM>                               morkon_common_t;
-  typedef typename morkon_common_t::contact_search_results_t       contact_search_results_t;
+  typedef typename morkon_common_t::coarse_search_results_t         coarse_search_results_t;
 
   // Need a DualView of this one
   typedef Kokkos::View<bool *, execution_space>                         on_boundary_table_t;
@@ -155,7 +155,8 @@ protected:
 
 public:
 
-  static Teuchos::RCP< Morkon_Manager<DeviceType, DIM, FACE_TYPE> > MakeInstance(MPI_Comm mpi_comm, int printlevel);
+  static Teuchos::RCP< Morkon_Manager<DeviceType, DIM, FACE_TYPE> >
+    MakeInstance(MPI_Comm mpi_comm, FaceProjectionMethod projection_method, int printlevel);
 
   bool set_problem_map(Tpetra::Map<> *gp_map);
 
@@ -176,8 +177,9 @@ public:
 protected:
 
   // Set in constructor.
-  MPI_Comm    m_mpi_comm;
-  int       m_printlevel;
+  MPI_Comm                       m_mpi_comm;
+  int                          m_printlevel;
+  FaceProjectionMethod  m_projection_method;
 
   // Input set/manipulated functions called from application, on the host side for now.
   Teuchos::RCP<Tpetra::Map<> >                 m_problem_map;
@@ -193,7 +195,7 @@ protected:
   on_boundary_table_t                 m_is_ifc_boundary_node;  // Is node_id on an interface boundary?
   node_support_sets_t                    m_node_support_sets;
 
-  Morkon_Manager(MPI_Comm mpi_comm, int printlevel);
+  Morkon_Manager(MPI_Comm mpi_comm, FaceProjectionMethod projection_type, int printlevel);
 
   // Consider changing the following into free functions in the file that contains
   // the implementation of Morkon_Manager::mortar_integrate().
@@ -209,13 +211,13 @@ protected:
                          points_dvt predicted_node_coords,
                          on_boundary_table_dvt is_node_on_boundary);
 
-  bool compute_face_and_node_normals();
+  bool compute_normals();
 
-  bool find_possible_contact_face_pairs(contact_search_results_t coarse_search_results);
+  coarse_search_results_t find_possible_contact_face_pairs();
 
-  bool compute_boundary_node_support_sets(contact_search_results_t coarse_search_results);
+  bool compute_boundary_node_support_sets(coarse_search_results_t coarse_search_results);
 
-  bool compute_contact_pallets(contact_search_results_t coarse_search_results,
+  bool compute_contact_pallets(coarse_search_results_t coarse_search_results,
                                mortar_pallets_t &resulting_pallets);
 
   // Note that the non-mortar-side integration points needed in computing D are also

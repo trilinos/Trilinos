@@ -92,6 +92,10 @@
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_SaPFactoryK.hpp"
+#endif
+
 #ifdef HAVE_MUELU_MATLAB
 #include "../matlab/MueLu_MatlabSmoother_decl.hpp"
 #include "../matlab/MueLu_MatlabSmoother_def.hpp"
@@ -186,6 +190,16 @@ namespace MueLu {
                  paramList.isParameter(paramName)   ? paramList  .get<paramType>(paramName) : ( \
                                                                                                 defaultList.isParameter(paramName) ? defaultList.get<paramType>(paramName) : \
                                                                                                 MasterList::getDefault<paramType>(paramName) ) ) )
+
+#ifndef HAVE_MUELU_KOKKOS_REFACTOR
+#define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory) \
+  RCP<Factory> varName = rcp(new oldFactory());
+#else
+#define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory) \
+  RCP<Factory> varName; \
+  if (!useKokkos) varName = rcp(new oldFactory()); \
+  else            varName = rcp(new newFactory());
+#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetEasyParameterList(const ParameterList& constParamList) {
@@ -401,6 +415,7 @@ namespace MueLu {
     }
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "use kokkos refactor", bool, useKokkos);
+    (void) useKokkos;
 
     // == Non-serializable data ===
     // Check both the parameter and the type
@@ -697,7 +712,7 @@ namespace MueLu {
       manager.SetFactory("P", Ptent);
     } else if (multigridAlgo == "sa") {
       // Smoothed aggregation
-      RCP<SaPFactory> P = rcp(new SaPFactory());
+      MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactoryK);
       ParameterList Pparams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
 #if REUSE_MATRIX_GRAPHS
@@ -783,10 +798,10 @@ namespace MueLu {
       ParameterList togglePParams;
       ParameterList semicoarsenPParams;
       ParameterList linedetectionParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: number of levels", int, togglePParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: coarsen rate", int, semicoarsenPParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: orientation", std::string, linedetectionParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: num layers", int, linedetectionParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: number of levels", int,         togglePParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: coarsen rate",     int,         semicoarsenPParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: orientation",    std::string, linedetectionParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: num layers",     int,         linedetectionParams);
 
       semicoarsenFactory                             = rcp(new SemiCoarsenPFactory());
       RCP<LineDetectionFactory> linedetectionFactory = rcp(new LineDetectionFactory());

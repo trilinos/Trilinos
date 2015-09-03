@@ -58,11 +58,13 @@ namespace morkon_exp {
 
 template  <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>
 Teuchos::RCP< Morkon_Manager<DeviceType, DIM, FACE_TYPE> >
-Morkon_Manager<DeviceType, DIM, FACE_TYPE>::MakeInstance(MPI_Comm mpi_comm, int printlevel)
+Morkon_Manager<DeviceType, DIM, FACE_TYPE>::MakeInstance(MPI_Comm mpi_comm,
+                                                         FaceProjectionMethod projection_method,
+                                                         int printlevel)
 {
   typedef Morkon_Manager<DeviceType, DIM, FACE_TYPE> morkon_manager_t;
 
-  return Teuchos::RCP<morkon_manager_t>(new morkon_manager_t(mpi_comm, printlevel) );
+  return Teuchos::RCP<morkon_manager_t>(new morkon_manager_t(mpi_comm, projection_method, printlevel) );
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>
@@ -113,17 +115,13 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::mortar_integrate(Tpetra::CrsMat
   // Using the internal SurfaceMesh, populate
   //   - m_fields.m_node_normals
   //   - m_fields.m_face_normals
-  if (!compute_face_and_node_normals())
+  if (!compute_normals())
   {
     return false;
   }
 
   // Generate vector of (nms_face_id, ms_face_id, interface_id) triples.
-  contact_search_results_t  coarse_contacts;
-  if (!find_possible_contact_face_pairs(coarse_contacts))
-  {
-    return false;
-  }
+  coarse_search_results_t coarse_contacts = find_possible_contact_face_pairs();
 
   if (!compute_boundary_node_support_sets(coarse_contacts))
   {
@@ -168,9 +166,12 @@ bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::build_sys_M_and_D(Tpetra::CrsMa
 
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
-Morkon_Manager<DeviceType, DIM, FACE_TYPE>::Morkon_Manager(MPI_Comm mpi_comm, int printlevel)
+Morkon_Manager<DeviceType, DIM, FACE_TYPE>::Morkon_Manager(MPI_Comm mpi_comm,
+                                                           FaceProjectionMethod projection_method,
+                                                           int printlevel)
     : m_mpi_comm(mpi_comm)
     , m_printlevel(printlevel)
+    , m_projection_method(projection_method)
 {
 }
 
@@ -323,8 +324,6 @@ Morkon_Manager<DeviceType, DIM, FACE_TYPE>::migrate_to_device(
                                         points_dvt predicted_node_coords,
                                         on_boundary_table_dvt is_node_on_boundary)
 {
-    std::cout << "In migrate_to_device()!"  << std::endl;
-
     face_to_global_id.template modify<typename local_to_global_idx_dvt::t_host>();
     node_to_global_id.template modify<typename local_to_global_idx_dvt::t_host>();
     face_to_interface_and_side.template modify<typename face_to_interface_and_side_dvt::t_host>();
@@ -352,48 +351,57 @@ Morkon_Manager<DeviceType, DIM, FACE_TYPE>::migrate_to_device(
     m_fields.m_predicted_node_coords   = predicted_node_coords.d_view;
     m_is_ifc_boundary_node             = is_node_on_boundary.h_view;
 
+    Kokkos::resize(m_fields.m_node_normals, m_node_global_ids.dimension_0());
+    Kokkos::deep_copy(m_fields.m_node_normals, 0);
+    Kokkos::resize(m_fields.m_face_normals, m_face_global_ids.dimension_0());
+    Kokkos::deep_copy(m_fields.m_face_normals, 0);
+
     // TO DO: compute upward connectivities on the surface mesh, if needed.
 
     return true;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>
-bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_face_and_node_normals()
+bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_normals()
 {
   // We can make this function provide a useful return value having the implementations
   // do a parallel_reduce with a num_errs reduction variable as argument.
 
   compute_face_normals<DeviceType, DIM, FACE_TYPE>(m_surface_mesh, m_fields);
 
-  compute_node_normals_from_faces<DeviceType, DIM >(m_surface_mesh, m_fields);
+  if (m_projection_method == NODE_NORMALS_PROECTION)
+  {
+    return false;
+    // Can't use this until internalize_interfaces() properly fills out m_surface_mesh.m_nodes_to_faces.
+    compute_node_normals_from_faces<DeviceType, DIM >(m_surface_mesh, m_fields);
+  }
 
   return true;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
-bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::find_possible_contact_face_pairs(contact_search_results_t search_results)
+typename Morkon_Manager<DeviceType, DIM, FACE_TYPE>::coarse_search_results_t
+Morkon_Manager<DeviceType, DIM, FACE_TYPE>::find_possible_contact_face_pairs()
 {
-  const double bounding_boxes_epsilon = 0.001;
+  const double bounding_boxes_epsilon = 0.1;
 
-  search_for_pallet_generating_faces<DeviceType, DIM>(m_surface_mesh,
-                                                      m_fields.m_node_coords,
-                                                      m_fields.m_predicted_node_coords,
-                                                      m_face_to_interface_and_side,
-                                                      bounding_boxes_epsilon,
-                                                      search_results);
-  return false;
+  search_for_pallet_generating_faces<DeviceType, DIM>
+    coarse_search(m_surface_mesh, m_fields.m_node_coords, m_fields.m_predicted_node_coords,
+                  m_face_to_interface_and_side, bounding_boxes_epsilon);
+
+  return coarse_search.m_search_results;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 bool 
-Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_boundary_node_support_sets(contact_search_results_t course_search_results)
+Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_boundary_node_support_sets(coarse_search_results_t course_search_results)
 {
   std::cout << "Need to write compute_boundary_node_support_sets()" << std::endl;
   return false;
 }
 
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
-bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_contact_pallets(contact_search_results_t course_search_results,
+bool Morkon_Manager<DeviceType, DIM, FACE_TYPE>::compute_contact_pallets(coarse_search_results_t course_search_results,
                                                                          mortar_pallets_t &resulting_pallets)
 {
   // In the Serial prototype and the Cuda version, we can use atomic fetch and adds to allocate space for the

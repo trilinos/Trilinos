@@ -25,6 +25,12 @@ int main (int argc, char *argv[]) {
   int nthreads = 1;
   clp.setOption("nthreads", &nthreads, "Number of threads");
 
+  int numa = 0;
+  clp.setOption("numa", &numa, "Number of numa node");
+
+  int core_per_numa = 0;
+  clp.setOption("core-per-numa", &core_per_numa, "Number of cores per numa node");
+
   int max_task_dependence = 10;
   clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
 
@@ -37,6 +43,9 @@ int main (int argc, char *argv[]) {
   string file_input = "test.mtx";
   clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
 
+  string algorithm = "UnblockedOpt1";
+  clp.setOption("algorithm-variant", &algorithm, "Algorithm variant (Dummy, UnblockedOpt1, UnblockedOpt2)");
+
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
 
@@ -47,12 +56,22 @@ int main (int argc, char *argv[]) {
   
   int r_val = 0;
   {
-    exec_space::initialize(nthreads);
+    exec_space::initialize(nthreads, numa, core_per_numa);
     exec_space::print_configuration(cout, true);
+    
+    int variant = 0;
+    if      (algorithm == "UnblockedOpt1")
+      variant = AlgoIChol::UnblockedOpt1;
+    else if (algorithm == "UnblockedOpt2")
+      variant = AlgoIChol::UnblockedOpt2;
+    else if (algorithm == "Dummy")
+      variant = AlgoIChol::Dummy;
+    else      
+      ERROR(">> Not supported algorithm variant");
     
     r_val = exampleICholUnblocked
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, max_task_dependence, team_size, verbose);
+      (file_input, max_task_dependence, team_size, variant, verbose);
     
     exec_space::finalize();
   }

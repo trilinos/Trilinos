@@ -159,15 +159,15 @@ void ComparisonHelper::CompareSolutions(const string &p1,
     cout <<"\nSolution comparison FAILED." << endl;
   }else{
     
-    if(A->problem_kind == "Partitioning")
+    if(A->problem_kind == "partitioning")
     {
       this->ComparePartitionSolutions(A.getRawPtr(), B.getRawPtr(), comm);
       
-    }else if(A->problem_kind == "Partitioning")
+    }else if(A->problem_kind == "coloring")
     {
       this->CompareColoringSolutions(A.getRawPtr(), B.getRawPtr(), comm);
       
-    }else if(A->problem_kind == "Partitioning"){
+    }else if(A->problem_kind == "ordering"){
       
       this->CompareOrderingSolutions(A.getRawPtr(), B.getRawPtr(), comm);
       
