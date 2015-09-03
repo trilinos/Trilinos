@@ -344,7 +344,7 @@ void panzer::PhysicsBlock::
 buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                           const LinearObjFactory<panzer::Traits> & lof,
 					  const Teuchos::ParameterList& user_data,
-					  const bool opposite_interface_side) const
+					  const int workset_details_index) const
 {
   using namespace std;
   using namespace panzer;

@@ -200,8 +200,8 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
     // Interface BCs require two passes
     int num_element_block_ids = (bc_type == BCT_Interface) ? 2 : 1;
 
-    for (int k=0; k<num_element_block_ids; ++k) {
-      std::string element_block_id = (k == 0) ? bc->elementBlockID() : bc->elementBlockID2();
+    for (int block_id_index=0; block_id_index<num_element_block_ids; ++block_id_index) {
+      std::string element_block_id = (block_id_index == 0) ? bc->elementBlockID() : bc->elementBlockID2();
 
       std::map<std::string,Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator volume_pb_itr 
 	= physicsBlocks_map.find(element_block_id);
