@@ -7987,6 +7987,9 @@ TEST(ElementGraph, heterogeneous_mesh)
         stk::mesh::BulkData bulk_data( meta_data, comm, stk::mesh::BulkData::NO_AUTO_AURA );
         stk::unit_test_util::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
         EXPECT_NO_FATAL_FAILURE(ElementDeathUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
+        std::vector<size_t> mesh_counts;
+        stk::mesh::comm_mesh_counts(bulk_data, mesh_counts);
+        EXPECT_EQ(23u, mesh_counts[meta_data.side_rank()]);
     }
 }
 

@@ -35,7 +35,7 @@ class ElemElemGraph
 {
 public:
 
-    ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Selector &selector, stk::mesh::Selector *air = nullptr);
+    ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Selector &selector, const stk::mesh::Selector *air = nullptr);
 
     virtual ~ElemElemGraph();
 
@@ -173,7 +173,7 @@ protected:
 
     stk::mesh::BulkData &m_bulk_data;
     const stk::mesh::Selector m_skinned_selector;
-    stk::mesh::Selector* m_air_selector;
+    const stk::mesh::Selector* m_air_selector;
     impl::ElementGraph m_elem_graph;
     impl::SidesForElementGraph m_via_sides;
     impl::ParallelGraphInfo m_parallel_graph_info;

@@ -114,7 +114,7 @@ ElemSideToProcAndFaceId get_element_side_ids_to_communicate(const stk::mesh::Bul
 ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &elements_to_communicate);
 
 size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm, const stk::mesh::BulkData& bulkData, ElemSideToProcAndFaceId& elements_to_communicate,
-        const std::vector<stk::mesh::EntityId>& suggested_face_ids, const stk::mesh::Selector &sel, stk::mesh::Selector*air = nullptr);
+        const std::vector<stk::mesh::EntityId>& suggested_face_ids, const stk::mesh::Selector &sel, const stk::mesh::Selector*air = nullptr);
 
 std::vector<graphEdgeProc> get_elements_to_communicate(const stk::mesh::BulkData& bulkData, const stk::mesh::EntityVector &killedElements,
         const ElemElemGraph& elem_graph);

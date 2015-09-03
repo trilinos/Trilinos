@@ -87,6 +87,7 @@ inline void skin_part(stk::mesh::BulkData& bulkData, const stk::mesh::Part &acti
 {
     stk::mesh::Selector sel = active;
     stk::mesh::Selector air = !active;
+
     stk::mesh::ElemElemGraph elem_elem_graph(bulkData, sel, &air);
     elem_elem_graph.skin_mesh(skin_parts);
 }

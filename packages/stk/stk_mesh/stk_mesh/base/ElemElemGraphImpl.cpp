@@ -118,7 +118,7 @@ size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
                                         const stk::mesh::BulkData& bulkData,
                                         ElemSideToProcAndFaceId &elements_to_communicate,
                                         const std::vector<stk::mesh::EntityId>& suggested_side_ids,
-                                        const stk::mesh::Selector &sel, stk::mesh::Selector* air)
+                                        const stk::mesh::Selector &sel, const stk::mesh::Selector* air)
 {
     ElemSideToProcAndFaceId::iterator iter = elements_to_communicate.begin();
     ElemSideToProcAndFaceId::const_iterator end = elements_to_communicate.end();

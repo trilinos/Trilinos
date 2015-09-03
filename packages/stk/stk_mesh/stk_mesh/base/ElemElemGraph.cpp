@@ -47,7 +47,7 @@ impl::ElemSideToProcAndFaceId ElemElemGraph::get_element_side_ids_to_communicate
     return impl::build_element_side_ids_to_proc_map(m_bulk_data, elements_to_communicate);
 }
 
-ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Selector& sel, stk::mesh::Selector* air) : m_bulk_data(bulkData), m_skinned_selector(sel), m_air_selector(air)
+ElemElemGraph::ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Selector& sel, const stk::mesh::Selector* air) : m_bulk_data(bulkData), m_skinned_selector(sel), m_air_selector(air)
 {
     int numElems = size_data_members();
 
@@ -2097,7 +2097,7 @@ stk::mesh::Entity ElemElemGraph::add_side_to_mesh(stk::mesh::impl::ElementSidePa
     return side;
 }
 
-void add_skinned_side(stk::mesh::BulkData& bulkData, const impl::parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
+void add_skinned_shared_side_to_element(stk::mesh::BulkData& bulkData, const impl::parallel_info& parallel_edge_info, const ElemElemGraph& elementGraph,
         stk::mesh::Entity local_element, stk::mesh::EntityId remote_id, const stk::mesh::PartVector& parts_for_creating_side,
         std::vector<stk::mesh::sharing_info> &shared_modified, const stk::mesh::PartVector *boundary_mesh_parts = nullptr)
 {
@@ -2153,7 +2153,7 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skin_parts)
         for(size_t j=0;j<bucket.size();++j)
         {
             stk::mesh::Entity element = bucket[j];
-            if(m_skinned_selector(bucket))
+            if(m_skinned_selector(bucket) && impl::does_element_have_side(m_bulk_data, element))
             {
                 stk::mesh::impl::LocalId local_id = this->get_local_element_id(element);
 
@@ -2178,7 +2178,7 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skin_parts)
                         if(this->is_connected_elem_locally_owned(element, k))
                         {
                             stk::mesh::Entity other_element = this->get_connected_element(element, k);
-                            if (((*m_air_selector)(m_bulk_data.bucket(other_element))))
+                            if (((*m_air_selector)(m_bulk_data.bucket(other_element))) && impl::does_element_have_side(m_bulk_data, other_element))
                             {
                                 stk::mesh::impl::ElementSidePair side_pair = std::make_pair(m_entity_to_local_id[element.local_offset()], this->get_side_from_element1_to_locally_owned_element2(element, other_element));
                                 stk::mesh::Entity side = this->add_side_to_mesh(side_pair, skin_parts, available_ids[ids_used]);
@@ -2197,13 +2197,13 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skin_parts)
                             if(other_element_is_air)
                             {
                                 skinned_elements.push_back(element);
-                                add_skinned_side(m_bulk_data, parallel_edge_info, *this, element, remote_id, skin_parts, shared_modified);
+                                add_skinned_shared_side_to_element(m_bulk_data, parallel_edge_info, *this, element, remote_id, skin_parts, shared_modified);
                             }
                         }
                     }
                 }
             }
-            else
+            else if (impl::does_element_have_side(m_bulk_data, element))
             {
                 if(m_air_selector!=nullptr)
                 {
@@ -2217,7 +2217,7 @@ void ElemElemGraph::skin_mesh(const stk::mesh::PartVector& skin_parts)
                             if( (*m_air_selector)(m_bulk_data.bucket(element)) && !other_element_is_air)
                             {
                                 skinned_elements.push_back(element);
-                                add_skinned_side(m_bulk_data, parallel_edge_info, *this, element, remote_id, skin_parts, shared_modified);
+                                add_skinned_shared_side_to_element(m_bulk_data, parallel_edge_info, *this, element, remote_id, skin_parts, shared_modified);
                             }
                         }
                     }
