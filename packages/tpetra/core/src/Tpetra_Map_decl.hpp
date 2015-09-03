@@ -429,22 +429,38 @@ namespace Tpetra {
     /// Map's communicator.
     bool isOneToOne () const;
 
-    //! The number of elements in this Map.
+    /// \brief The number of elements in this Map.
+    ///
+    /// \note This function should be thread safe and thread scalable,
+    ///   assuming that you refer to the Map by value or reference,
+    ///   not by Teuchos::RCP.
     global_size_t getGlobalNumElements () const {
       return numGlobalElements_;
     }
 
-    //! The number of elements belonging to the calling process.
+    /// \brief The number of elements belonging to the calling process.
+    ///
+    /// \note This function should be thread safe and thread scalable,
+    ///   assuming that you refer to the Map by value or reference,
+    ///   not by Teuchos::RCP.
     size_t getNodeNumElements () const {
       return numLocalElements_;
     }
 
-    //! The index base for this Map.
+    /// \brief The index base for this Map.
+    ///
+    /// \note This function should be thread safe and thread scalable,
+    ///   assuming that you refer to the Map by value or reference,
+    ///   not by Teuchos::RCP.
     GlobalOrdinal getIndexBase () const {
       return indexBase_;
     }
 
-    //! The minimum local index.
+    /// \brief The minimum local index.
+    ///
+    /// \note This function should be thread safe and thread scalable,
+    ///   assuming that you refer to the Map by value or reference,
+    ///   not by Teuchos::RCP.
     LocalOrdinal getMinLocalIndex () const {
       return static_cast<LocalOrdinal> (0);
     }
@@ -455,6 +471,10 @@ namespace Tpetra {
     /// <tt>getNodeNumElements() == 0</tt>, then this method returns
     /// the same value as
     /// <tt>Teuchos::OrdinalTraits<LocalOrdinal>::invalid()</tt>.
+    ///
+    /// \note This function should be thread safe and thread scalable,
+    ///   assuming that you refer to the Map by value or reference,
+    ///   not by Teuchos::RCP.
     LocalOrdinal getMaxLocalIndex () const {
       if (this->getNodeNumElements () == 0) {
         return Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid ();
@@ -463,22 +483,38 @@ namespace Tpetra {
       }
     }
 
-    //! The minimum global index owned by the calling process.
+    /// \brief The minimum global index owned by the calling process.
+    ///
+    /// \note This function should be thread safe and thread scalable,
+    ///   assuming that you refer to the Map by value or reference,
+    ///   not by Teuchos::RCP.
     GlobalOrdinal getMinGlobalIndex () const {
       return minMyGID_;
     }
 
-    //! The maximum global index owned by the calling process.
+    /// \brief The maximum global index owned by the calling process.
+    ///
+    /// \note This function should be thread safe and thread scalable,
+    ///   assuming that you refer to the Map by value or reference,
+    ///   not by Teuchos::RCP.
     GlobalOrdinal getMaxGlobalIndex () const {
       return maxMyGID_;
     }
 
-    //! The minimum global index over all processes in the communicator.
+    /// \brief The minimum global index over all processes in the communicator.
+    ///
+    /// \note This function should be thread safe and thread scalable,
+    ///   assuming that you refer to the Map by value or reference,
+    ///   not by Teuchos::RCP.
     GlobalOrdinal getMinAllGlobalIndex () const {
       return minAllGID_;
     }
 
-    //! The maximum global index over all processes in the communicator.
+    /// \brief The maximum global index over all processes in the communicator.
+    ///
+    /// \note This function should be thread safe and thread scalable,
+    ///   assuming that you refer to the Map by value or reference,
+    ///   not by Teuchos::RCP.
     GlobalOrdinal getMaxAllGlobalIndex () const {
       return maxAllGID_;
     }
@@ -488,8 +524,13 @@ namespace Tpetra {
     /// \param globalIndex [in] The global index.
     ///
     /// \return If the given global index is owned by the calling
-    ///   process, the corresponding local index, else
+    ///   process, return the corresponding local index, else return
+    ///   the same value as
     ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
+    ///
+    /// \note This function should be thread safe and thread scalable,
+    ///   assuming that you refer to the Map by value or reference,
+    ///   not by Teuchos::RCP.
     LocalOrdinal getLocalElement (GlobalOrdinal globalIndex) const;
 
     /// \brief The global index corresponding to the given local index.
@@ -575,10 +616,20 @@ namespace Tpetra {
     //! @name Boolean tests
     //@{
 
-    //! Whether the given local index is valid for this Map on this process.
+    /// \brief Whether the given local index is valid for this Map on
+    ///   the calling process.
+    ///
+    /// \note This function should be thread safe and thread scalable,
+    ///   assuming that you refer to the Map by value or reference,
+    ///   not by Teuchos::RCP.
     bool isNodeLocalElement (LocalOrdinal localIndex) const;
 
-    //! Whether the given global index is valid for this Map on this process.
+    /// \brief Whether the given global index is owned by this Map on
+    ///   the calling process.
+    ///
+    /// \note This function should be thread safe and thread scalable,
+    ///   assuming that you refer to the Map by value or reference,
+    ///   not by Teuchos::RCP.
     bool isNodeGlobalElement (GlobalOrdinal globalIndex) const;
 
     /// \brief Whether the range of global indices is uniform.
@@ -602,7 +653,8 @@ namespace Tpetra {
     /// the constructors for contiguous elements.
     bool isContiguous () const;
 
-    /// \brief Whether this Map is globally distributed or locally replicated.
+    /// \brief Whether this Map is globally distributed or locally
+    ///   replicated.
     ///
     /// \return True if this Map is globally distributed, else false.
     ///
