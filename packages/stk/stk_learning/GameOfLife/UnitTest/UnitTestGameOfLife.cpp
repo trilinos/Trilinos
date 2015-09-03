@@ -26,12 +26,11 @@
 
 #include <time.h>
 
-#include "GameofLife.hpp"
-#include "PNGProcessor.hpp"
-#include "EntityKeyHash.hpp"
-#include "MeshConstructor.hpp"
-
-#include "NoGhostGameofLife.hpp"
+#include <GameOfLife/GameofLife.hpp>
+#include <GameOfLife/PNGProcessor.hpp>
+#include <GameOfLife/EntityKeyHash.hpp>
+#include <GameOfLife/GameofLifeMesh.hpp>
+#include <GameOfLife/NoGhostGameofLife.hpp>
 
 /*
  * There are 1 proc and 4 proc tests, mostly clones of each other to test parallel
@@ -46,7 +45,7 @@ TEST(GameofLifeClass, 1ProcTestTest)
     if (1 == numProcs)
     {
         std::string meshName = "1ProcTestTest";
-        QuadMeshConstructor* Mesh = new QuadMeshConstructor(comm, 4, 4);
+        QuadGameofLifeMesh* Mesh = new QuadGameofLifeMesh(comm, 4, 4);
 
         stk::mesh::EntityIdVector elemIds = {1, 2, 3, 4, 5, 8, 9, 12, 13, 14, 15, 16};
         PartGameofLife PartGame(Mesh, meshName);
@@ -74,7 +73,7 @@ TEST(GameofLifeClass, 4ProcTestTest)
     if (4 == numProcs)
     {
         std::string meshName = "4ProcTestTest";
-        QuadMeshConstructor* Mesh = new QuadMeshConstructor(comm, 4, 4);
+        QuadGameofLifeMesh* Mesh = new QuadGameofLifeMesh(comm, 4, 4);
 
         stk::mesh::EntityIdVector elemIds = {1, 2, 3, 4, 5, 8, 9, 12, 13, 14, 15, 16};
         PartGameofLife PartGame(Mesh, meshName);
@@ -115,8 +114,8 @@ TEST(TriangleGameofLifeClass, 1ProcRandomTest)
         std::string partMeshName = "1ProcPartRandomTest";
         std::string fieldMeshName = "1ProcFieldRandomTest";
 
-        TriangleMeshConstructor PartMesh(comm, 4, 4);
-        TriangleMeshConstructor FieldMesh(comm, 4, 4);
+        TriGameofLifeMesh PartMesh(comm, 4, 4);
+        TriGameofLifeMesh FieldMesh(comm, 4, 4);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, partMeshName);
@@ -156,8 +155,8 @@ TEST(TriangleGameofLifeClass, 4ProcRandomTest)
         std::string partMeshName = "4ProcPartRandomTest";
         std::string fieldMeshName = "4ProcFieldRandomTest";
 
-        TriangleMeshConstructor PartMesh(comm, 4, 4);
-        TriangleMeshConstructor FieldMesh(comm, 4, 4);
+        TriGameofLifeMesh PartMesh(comm, 4, 4);
+        TriGameofLifeMesh FieldMesh(comm, 4, 4);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
@@ -220,8 +219,8 @@ TEST(TriangleGameofLifeClass, 1ProcInfiniteTest)
         std::string partMeshName = "1ProcPartInfiniteTest";
         std::string fieldMeshName = "1ProcFieldInfiniteTest";
 
-        TriangleMeshConstructor PartMesh(comm, 10, 5);
-        TriangleMeshConstructor FieldMesh(comm, 10, 5);
+        TriGameofLifeMesh PartMesh(comm, 10, 5);
+        TriGameofLifeMesh FieldMesh(comm, 10, 5);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
@@ -266,8 +265,8 @@ TEST(TriangleGameofLifeClass, 4ProcInfiniteTest)
         std::string partMeshName = "4ProcPartInfiniteTest";
         std::string fieldMeshName = "4ProcFieldInfiniteTest";
 
-        TriangleMeshConstructor PartMesh(comm, 10, 5);
-        TriangleMeshConstructor FieldMesh(comm, 10, 5);
+        TriGameofLifeMesh PartMesh(comm, 10, 5);
+        TriGameofLifeMesh FieldMesh(comm, 10, 5);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
@@ -367,30 +366,30 @@ TEST(QuadGameofLifeClass, 1ProcGliderTest)
         std::string meshName1 = "1ProcPartGliderTest";
         std::string meshName2 = "1ProcFieldGliderTest";
 
-        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, 10, 10);
-        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, 10, 10);
+        QuadGameofLifeMesh PartMesh(comm, 10, 10);
+        QuadGameofLifeMesh FieldMesh(comm, 10, 10);
 
-        PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
-        FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName1);
+        PartGameofLife PartGame(&PartMesh, meshName1);
+        FieldGameofLife FieldGame(&FieldMesh, meshName1);
 
         stk::mesh::EntityIdVector elemIds = {71, 72, 73, 83, 92};
-        PartGame->activate_these_ids(elemIds);
-        FieldGame->activate_these_ids(elemIds);
+        PartGame.activate_these_ids(elemIds);
+        FieldGame.activate_these_ids(elemIds);
 
-        EXPECT_EQ(5u, PartGame->get_num_active_elements());
-        EXPECT_EQ(5u, FieldGame->get_num_active_elements());
+        EXPECT_EQ(5u, PartGame.get_num_active_elements());
+        EXPECT_EQ(5u, FieldGame.get_num_active_elements());
 
-        PartGame->run_game_of_life(10);
-        FieldGame->run_game_of_life(10);
+        PartGame.run_game_of_life(10);
+        FieldGame.run_game_of_life(10);
 
-        EXPECT_EQ(5u, PartGame->get_num_active_elements());
-        EXPECT_EQ(5u, FieldGame->get_num_active_elements());
+        EXPECT_EQ(5u, PartGame.get_num_active_elements());
+        EXPECT_EQ(5u, FieldGame.get_num_active_elements());
 
-        PartGame->run_game_of_life(10);
-        FieldGame->run_game_of_life(10);
+        PartGame.run_game_of_life(10);
+        FieldGame.run_game_of_life(10);
 
-        EXPECT_EQ(5u, PartGame->get_num_active_elements());
-        EXPECT_EQ(5u, FieldGame->get_num_active_elements());
+        EXPECT_EQ(5u, PartGame.get_num_active_elements());
+        EXPECT_EQ(5u, FieldGame.get_num_active_elements());
     }
 }
 TEST(QuadGameofLifeClass, 4ProcGliderTest)
@@ -403,69 +402,69 @@ TEST(QuadGameofLifeClass, 4ProcGliderTest)
         std::string meshName1 = "4ProcPartGliderTest";
         std::string meshName2 = "4ProcFieldGliderTest";
 
-        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, 10, 10);
-        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, 10, 10);
+        QuadGameofLifeMesh PartMesh(comm, 10, 10);
+        QuadGameofLifeMesh FieldMesh(comm, 10, 10);
 
-        PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
-        FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
+        PartGameofLife PartGame(&PartMesh, meshName1);
+        FieldGameofLife FieldGame(&FieldMesh, meshName2);
 
         if (3 == procRank)
         {
-            EXPECT_EQ(40u, PartGame->get_num_elems_on_proc());
-            EXPECT_EQ(40u, FieldGame->get_num_elems_on_proc());
+            EXPECT_EQ(40u, PartGame.get_num_elems_on_proc());
+            EXPECT_EQ(40u, FieldGame.get_num_elems_on_proc());
         }
         else
         {
-            EXPECT_EQ(20u, PartGame->get_num_elems_on_proc());
-            EXPECT_EQ(20u, FieldGame->get_num_elems_on_proc());
+            EXPECT_EQ(20u, PartGame.get_num_elems_on_proc());
+            EXPECT_EQ(20u, FieldGame.get_num_elems_on_proc());
         }
 
         stk::mesh::EntityIdVector elemIds = {71, 72, 73, 83, 92};
-        PartGame->activate_these_ids(elemIds);
-        FieldGame->activate_these_ids(elemIds);
+        PartGame.activate_these_ids(elemIds);
+        FieldGame.activate_these_ids(elemIds);
         if (3 == procRank)
         {
-            EXPECT_EQ(5u, PartGame->get_num_active_elements());
-            EXPECT_EQ(5u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(5u, PartGame.get_num_active_elements());
+            EXPECT_EQ(5u, FieldGame.get_num_active_elements());
         }
         else
         {
-            EXPECT_EQ(0u, PartGame->get_num_active_elements());
-            EXPECT_EQ(0u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(0u, PartGame.get_num_active_elements());
+            EXPECT_EQ(0u, FieldGame.get_num_active_elements());
         }
-        PartGame->run_game_of_life(10);
-        FieldGame->run_game_of_life(10);
+        PartGame.run_game_of_life(10);
+        FieldGame.run_game_of_life(10);
         if (3 == procRank)
         {
-            EXPECT_EQ(1u, PartGame->get_num_active_elements());
-            EXPECT_EQ(1u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(1u, PartGame.get_num_active_elements());
+            EXPECT_EQ(1u, FieldGame.get_num_active_elements());
         }
         else if (2 == procRank)
         {
-            EXPECT_EQ(4u, PartGame->get_num_active_elements());
-            EXPECT_EQ(4u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(4u, PartGame.get_num_active_elements());
+            EXPECT_EQ(4u, FieldGame.get_num_active_elements());
         }
         else
         {
-            EXPECT_EQ(0u, PartGame->get_num_active_elements());
-            EXPECT_EQ(0u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(0u, PartGame.get_num_active_elements());
+            EXPECT_EQ(0u, FieldGame.get_num_active_elements());
         }
-        PartGame->run_game_of_life(10);
-        FieldGame->run_game_of_life(10);
+        PartGame.run_game_of_life(10);
+        FieldGame.run_game_of_life(10);
         if (2 == procRank)
         {
-            EXPECT_EQ(1u, PartGame->get_num_active_elements());
-            EXPECT_EQ(1u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(1u, PartGame.get_num_active_elements());
+            EXPECT_EQ(1u, FieldGame.get_num_active_elements());
         }
         else if (1 == procRank)
         {
-            EXPECT_EQ(4u, PartGame->get_num_active_elements());
-            EXPECT_EQ(4u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(4u, PartGame.get_num_active_elements());
+            EXPECT_EQ(4u, FieldGame.get_num_active_elements());
         }
         else
         {
-            EXPECT_EQ(0u, PartGame->get_num_active_elements());
-            EXPECT_EQ(0u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(0u, PartGame.get_num_active_elements());
+            EXPECT_EQ(0u, FieldGame.get_num_active_elements());
         }
     }
 }
@@ -478,24 +477,24 @@ TEST(QuadGameofLifeClass, 1ProcStillLife)
         std::string meshName1 = "1ProcPartStillLifeTest";
         std::string meshName2 = "1ProcFieldStillLifeTest";
 
-        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, 4, 4);
-        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, 4, 4);
+        QuadGameofLifeMesh PartMesh(comm, 4, 4);
+        QuadGameofLifeMesh FieldMesh(comm, 4, 4);
 
-        PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
-        FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
+        PartGameofLife PartGame(&PartMesh, meshName1);
+        FieldGameofLife FieldGame(&FieldMesh, meshName2);
 
         stk::mesh::EntityIdVector elemIds = {6, 7, 10, 11};
-        PartGame->activate_these_ids(elemIds);
-        FieldGame->activate_these_ids(elemIds);
+        PartGame.activate_these_ids(elemIds);
+        FieldGame.activate_these_ids(elemIds);
 
-        ASSERT_EQ(4u, PartGame->get_num_active_elements());
-        ASSERT_EQ(4u, FieldGame->get_num_active_elements());
+        ASSERT_EQ(4u, PartGame.get_num_active_elements());
+        ASSERT_EQ(4u, FieldGame.get_num_active_elements());
 
-        PartGame->run_game_of_life(10);
-        FieldGame->run_game_of_life(10);
+        PartGame.run_game_of_life(10);
+        FieldGame.run_game_of_life(10);
 
-        ASSERT_EQ(4u, PartGame->get_num_active_elements());
-        ASSERT_EQ(4u, FieldGame->get_num_active_elements());
+        ASSERT_EQ(4u, PartGame.get_num_active_elements());
+        ASSERT_EQ(4u, FieldGame.get_num_active_elements());
     }
 }
 TEST(QuadGameofLifeClass, 4ProcStillLife)
@@ -508,39 +507,39 @@ TEST(QuadGameofLifeClass, 4ProcStillLife)
         std::string meshName1 = "4ProcPartStillLifeTest";
         std::string meshName2 = "4ProcFieldStillLifeTest";
 
-        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, 4, 4);
-        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, 4, 4);
+        QuadGameofLifeMesh PartMesh(comm, 4, 4);
+        QuadGameofLifeMesh FieldMesh(comm, 4, 4);
 
-        PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
-        FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
+        PartGameofLife PartGame(&PartMesh, meshName1);
+        FieldGameofLife FieldGame(&FieldMesh, meshName2);
 
         stk::mesh::EntityIdVector elemIds = {6, 7, 10, 11};
-        PartGame->activate_these_ids(elemIds);
-        FieldGame->activate_these_ids(elemIds);
+        PartGame.activate_these_ids(elemIds);
+        FieldGame.activate_these_ids(elemIds);
 
         if (1 == procRank || 2 == procRank)
         {
-            ASSERT_EQ(2u, PartGame->get_num_active_elements());
-            ASSERT_EQ(2u, FieldGame->get_num_active_elements());
+            ASSERT_EQ(2u, PartGame.get_num_active_elements());
+            ASSERT_EQ(2u, FieldGame.get_num_active_elements());
         }
         else
         {
-            ASSERT_EQ(0u, PartGame->get_num_active_elements());
-            ASSERT_EQ(0u, FieldGame->get_num_active_elements());
+            ASSERT_EQ(0u, PartGame.get_num_active_elements());
+            ASSERT_EQ(0u, FieldGame.get_num_active_elements());
         }
 
-        PartGame->run_game_of_life(10);
-        FieldGame->run_game_of_life(10);
+        PartGame.run_game_of_life(10);
+        FieldGame.run_game_of_life(10);
 
         if (1 == procRank || 2 == procRank)
         {
-            ASSERT_EQ(2u, PartGame->get_num_active_elements());
-            ASSERT_EQ(2u, FieldGame->get_num_active_elements());
+            ASSERT_EQ(2u, PartGame.get_num_active_elements());
+            ASSERT_EQ(2u, FieldGame.get_num_active_elements());
         }
         else
         {
-            ASSERT_EQ(0u, PartGame->get_num_active_elements());
-            ASSERT_EQ(0u, FieldGame->get_num_active_elements());
+            ASSERT_EQ(0u, PartGame.get_num_active_elements());
+            ASSERT_EQ(0u, FieldGame.get_num_active_elements());
         }
     }
 }
@@ -552,37 +551,37 @@ TEST(QuadGameofLifeClass, 1ProcOscillatorPeriod2)
     {
         std::string meshName1 = "1ProcPartOscillatorPeriod2";
         std::string meshName2 = "1ProcOscillatorFieldPeriod2";
-        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, 3, 3);
-        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, 3, 3);
+        QuadGameofLifeMesh PartMesh(comm, 3, 3);
+        QuadGameofLifeMesh FieldMesh(comm, 3, 3);
 
-        PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
-        FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
+        PartGameofLife PartGame(&PartMesh, meshName1);
+        FieldGameofLife FieldGame(&FieldMesh, meshName2);
 
         stk::mesh::EntityIdVector elemIds = {4, 5, 6};
-        PartGame->activate_these_ids(elemIds);
-        FieldGame->activate_these_ids(elemIds);
+        PartGame.activate_these_ids(elemIds);
+        FieldGame.activate_these_ids(elemIds);
 
-        EXPECT_EQ(3u, PartGame->get_num_active_elements());
-        EXPECT_EQ(3u, FieldGame->get_num_active_elements());
+        EXPECT_EQ(3u, PartGame.get_num_active_elements());
+        EXPECT_EQ(3u, FieldGame.get_num_active_elements());
 
-        PartGame->run_game_of_life(1);
-        FieldGame->run_game_of_life(1);
+        PartGame.run_game_of_life(1);
+        FieldGame.run_game_of_life(1);
 
         stk::mesh::EntityIdVector elemIds2 = {2, 5, 8};
 
-        EXPECT_TRUE(PartGame->are_these_ids_active(elemIds2));
-        EXPECT_TRUE(FieldGame->are_these_ids_active(elemIds2));
-        EXPECT_EQ(3u, PartGame->get_num_active_elements());
-        EXPECT_EQ(3u, FieldGame->get_num_active_elements());
+        EXPECT_TRUE(PartGame.are_these_ids_active(elemIds2));
+        EXPECT_TRUE(FieldGame.are_these_ids_active(elemIds2));
+        EXPECT_EQ(3u, PartGame.get_num_active_elements());
+        EXPECT_EQ(3u, FieldGame.get_num_active_elements());
 
-        PartGame->run_game_of_life(1);
-        FieldGame->run_game_of_life(1);
+        PartGame.run_game_of_life(1);
+        FieldGame.run_game_of_life(1);
 
         stk::mesh::EntityIdVector elemIds3 = {4, 5, 6};
-        EXPECT_TRUE(PartGame->are_these_ids_active(elemIds3));
-        EXPECT_TRUE(FieldGame->are_these_ids_active(elemIds3));
-        EXPECT_EQ(3u, PartGame->get_num_active_elements());
-        EXPECT_EQ(3u, FieldGame->get_num_active_elements());
+        EXPECT_TRUE(PartGame.are_these_ids_active(elemIds3));
+        EXPECT_TRUE(FieldGame.are_these_ids_active(elemIds3));
+        EXPECT_EQ(3u, PartGame.get_num_active_elements());
+        EXPECT_EQ(3u, FieldGame.get_num_active_elements());
     }
 
 }
@@ -596,60 +595,61 @@ TEST(QuadGameofLifeClass, 4ProcOscillatorPeriod2)
     {
         std::string meshName1 = "4ProcPartOscillatorPeriod2";
         std::string meshName2 = "4ProcFieldOscillatorPeriod2";
-        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, 3, 3);
-        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, 3, 3);
 
-        PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
-        FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
+        QuadGameofLifeMesh PartMesh(comm, 3, 3);
+        QuadGameofLifeMesh FieldMesh(comm, 3, 3);
+
+        PartGameofLife PartGame(&PartMesh, meshName1);
+        FieldGameofLife FieldGame(&FieldMesh, meshName2);
 
         stk::mesh::EntityIdVector elemIds = {4, 5, 6};
-        PartGame->activate_these_ids(elemIds);
-        FieldGame->activate_these_ids(elemIds);
+        PartGame.activate_these_ids(elemIds);
+        FieldGame.activate_these_ids(elemIds);
 
-        EXPECT_TRUE(PartGame->are_these_ids_active(elemIds));
-        EXPECT_TRUE(FieldGame->are_these_ids_active(elemIds));
+        EXPECT_TRUE(PartGame.are_these_ids_active(elemIds));
+        EXPECT_TRUE(FieldGame.are_these_ids_active(elemIds));
         if (3 == procRank)
         {
-            EXPECT_EQ(3u, PartGame->get_num_active_elements());
-            EXPECT_EQ(3u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(3u, PartGame.get_num_active_elements());
+            EXPECT_EQ(3u, FieldGame.get_num_active_elements());
         }
         else
         {
-            EXPECT_EQ(0u, PartGame->get_num_active_elements());
-            EXPECT_EQ(0u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(0u, PartGame.get_num_active_elements());
+            EXPECT_EQ(0u, FieldGame.get_num_active_elements());
         }
 
-        PartGame->run_game_of_life(1);
-        FieldGame->run_game_of_life(1);
+        PartGame.run_game_of_life(1);
+        FieldGame.run_game_of_life(1);
 
         stk::mesh::EntityIdVector elemIds2 = {2, 5, 8};
-        EXPECT_TRUE(PartGame->are_these_ids_active(elemIds2));
-        EXPECT_TRUE(FieldGame->are_these_ids_active(elemIds2));
+        EXPECT_TRUE(PartGame.are_these_ids_active(elemIds2));
+        EXPECT_TRUE(FieldGame.are_these_ids_active(elemIds2));
         if (3 == procRank)
         {
-            EXPECT_EQ(3u, PartGame->get_num_active_elements());
-            EXPECT_EQ(3u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(3u, PartGame.get_num_active_elements());
+            EXPECT_EQ(3u, FieldGame.get_num_active_elements());
         }
         else if (3 != procRank)
         {
-            EXPECT_EQ(0u, PartGame->get_num_active_elements());
-            EXPECT_EQ(0u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(0u, PartGame.get_num_active_elements());
+            EXPECT_EQ(0u, FieldGame.get_num_active_elements());
         }
 
-        PartGame->run_game_of_life(1);
-        FieldGame->run_game_of_life(1);
+        PartGame.run_game_of_life(1);
+        FieldGame.run_game_of_life(1);
 
-        EXPECT_TRUE(PartGame->are_these_ids_active(elemIds));
-        EXPECT_TRUE(FieldGame->are_these_ids_active(elemIds));
+        EXPECT_TRUE(PartGame.are_these_ids_active(elemIds));
+        EXPECT_TRUE(FieldGame.are_these_ids_active(elemIds));
         if (3 == procRank)
         {
-            EXPECT_EQ(3u, PartGame->get_num_active_elements());
-            EXPECT_EQ(3u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(3u, PartGame.get_num_active_elements());
+            EXPECT_EQ(3u, FieldGame.get_num_active_elements());
         }
         else
         {
-            EXPECT_EQ(0u, PartGame->get_num_active_elements());
-            EXPECT_EQ(0u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(0u, PartGame.get_num_active_elements());
+            EXPECT_EQ(0u, FieldGame.get_num_active_elements());
         }
     }
 }
@@ -664,40 +664,40 @@ TEST(QuadGameofLifeClass, 1ProcOscillatorPeriod8)
 
         unsigned width = 10;
         unsigned rowsPerProc = 10;
-        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, width, rowsPerProc);
-        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, width, rowsPerProc);
+        QuadGameofLifeMesh PartMesh(comm, width, rowsPerProc);
+        QuadGameofLifeMesh FieldMesh(comm, width, rowsPerProc);
 
-        PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
-        FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
+        PartGameofLife PartGame(&PartMesh, meshName1);
+        FieldGameofLife FieldGame(&FieldMesh, meshName2);
 
         stk::mesh::EntityIdVector elemIdsToActivate = {26, 27, 28, 36, 37, 38, 46, 47, 48,
                                                        53, 54, 55, 63, 64, 65, 73, 74, 75};
-        PartGame->activate_these_ids(elemIdsToActivate);
-        FieldGame->activate_these_ids(elemIdsToActivate);
+        PartGame.activate_these_ids(elemIdsToActivate);
+        FieldGame.activate_these_ids(elemIdsToActivate);
 
-        EXPECT_TRUE(PartGame->are_these_ids_active(elemIdsToActivate));
-        EXPECT_TRUE(FieldGame->are_these_ids_active(elemIdsToActivate));
-        EXPECT_EQ(18u, PartGame->get_num_active_elements());
-        EXPECT_EQ(18u, FieldGame->get_num_active_elements());
+        EXPECT_TRUE(PartGame.are_these_ids_active(elemIdsToActivate));
+        EXPECT_TRUE(FieldGame.are_these_ids_active(elemIdsToActivate));
+        EXPECT_EQ(18u, PartGame.get_num_active_elements());
+        EXPECT_EQ(18u, FieldGame.get_num_active_elements());
 
-        PartGame->run_game_of_life(4);
-        FieldGame->run_game_of_life(4);
+        PartGame.run_game_of_life(4);
+        FieldGame.run_game_of_life(4);
 
         stk::mesh::EntityIdVector exElemIds = {7, 17, 18, 26, 27, 29, 35, 38, 39, 40,
                                                44, 46, 48, 53, 55, 57, 61, 62, 63, 66,
                                                72, 74, 75, 83, 84, 94};
-        EXPECT_TRUE(PartGame->are_these_ids_active(exElemIds));
-        EXPECT_TRUE(FieldGame->are_these_ids_active(exElemIds));
-        EXPECT_EQ(26u, PartGame->get_num_active_elements());
-        EXPECT_EQ(26u, FieldGame->get_num_active_elements());
+        EXPECT_TRUE(PartGame.are_these_ids_active(exElemIds));
+        EXPECT_TRUE(FieldGame.are_these_ids_active(exElemIds));
+        EXPECT_EQ(26u, PartGame.get_num_active_elements());
+        EXPECT_EQ(26u, FieldGame.get_num_active_elements());
 
-        PartGame->run_game_of_life(4);
-        FieldGame->run_game_of_life(4);
+        PartGame.run_game_of_life(4);
+        FieldGame.run_game_of_life(4);
 
-        EXPECT_TRUE(PartGame->are_these_ids_active(elemIdsToActivate));
-        EXPECT_TRUE(FieldGame->are_these_ids_active(elemIdsToActivate));
-        EXPECT_EQ(18u, PartGame->get_num_active_elements());
-        EXPECT_EQ(18u, FieldGame->get_num_active_elements());
+        EXPECT_TRUE(PartGame.are_these_ids_active(elemIdsToActivate));
+        EXPECT_TRUE(FieldGame.are_these_ids_active(elemIdsToActivate));
+        EXPECT_EQ(18u, PartGame.get_num_active_elements());
+        EXPECT_EQ(18u, FieldGame.get_num_active_elements());
     }
 }
 TEST(QuadGameofLifeClass, 4ProcOscillatorPeriod8)
@@ -712,73 +712,73 @@ TEST(QuadGameofLifeClass, 4ProcOscillatorPeriod8)
         unsigned width = 10;
         unsigned height = 10;
 
-        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, width, height);
-        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, width, height);
+        QuadGameofLifeMesh PartMesh(comm, width, height);
+        QuadGameofLifeMesh FieldMesh(comm, width, height);
 
-        PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
-        FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
+        PartGameofLife PartGame(&PartMesh, meshName1);
+        FieldGameofLife FieldGame(&FieldMesh, meshName2);
 
         stk::mesh::EntityIdVector elemIdsToActivate = {26, 27, 28, 36, 37, 38, 46, 47, 48,
                                                        53, 54, 55, 63, 64, 65, 73, 74, 75};
-        PartGame->activate_these_ids(elemIdsToActivate);
-        FieldGame->activate_these_ids(elemIdsToActivate);
+        PartGame.activate_these_ids(elemIdsToActivate);
+        FieldGame.activate_these_ids(elemIdsToActivate);
 
-        EXPECT_TRUE(PartGame->are_these_ids_active(elemIdsToActivate));
-        EXPECT_TRUE(FieldGame->are_these_ids_active(elemIdsToActivate));
+        EXPECT_TRUE(PartGame.are_these_ids_active(elemIdsToActivate));
+        EXPECT_TRUE(FieldGame.are_these_ids_active(elemIdsToActivate));
         if (0 != procNum)
         {
-            EXPECT_EQ(6u, PartGame->get_num_active_elements());
-            EXPECT_EQ(6u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(6u, PartGame.get_num_active_elements());
+            EXPECT_EQ(6u, FieldGame.get_num_active_elements());
         }
         else
         {
-            EXPECT_EQ(0u, PartGame->get_num_active_elements());
-            EXPECT_EQ(0u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(0u, PartGame.get_num_active_elements());
+            EXPECT_EQ(0u, FieldGame.get_num_active_elements());
         }
 
-        PartGame->run_game_of_life(4);
-        FieldGame->run_game_of_life(4);
+        PartGame.run_game_of_life(4);
+        FieldGame.run_game_of_life(4);
 
         stk::mesh::EntityIdVector exElemIds = {7, 17, 18, 26, 27, 29, 35, 38, 39, 40,
                                                44, 46, 48, 53, 55, 57, 61, 62, 63, 66,
                                                72, 74, 75, 83, 84, 94};
-        EXPECT_TRUE(PartGame->are_these_ids_active(exElemIds));
-        EXPECT_TRUE(FieldGame->are_these_ids_active(exElemIds));
+        EXPECT_TRUE(PartGame.are_these_ids_active(exElemIds));
+        EXPECT_TRUE(FieldGame.are_these_ids_active(exElemIds));
         if (0 == procNum)
         {
-            EXPECT_EQ(3u, PartGame->get_num_active_elements());
-            EXPECT_EQ(3u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(3u, PartGame.get_num_active_elements());
+            EXPECT_EQ(3u, FieldGame.get_num_active_elements());
         }
         else if (1 == procNum)
         {
-            EXPECT_EQ(7u, PartGame->get_num_active_elements());
-            EXPECT_EQ(7u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(7u, PartGame.get_num_active_elements());
+            EXPECT_EQ(7u, FieldGame.get_num_active_elements());
         }
         else if (2 == procNum)
         {
-            EXPECT_EQ(6u, PartGame->get_num_active_elements());
-            EXPECT_EQ(6u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(6u, PartGame.get_num_active_elements());
+            EXPECT_EQ(6u, FieldGame.get_num_active_elements());
         }
         else if (3 == procNum)
         {
-            EXPECT_EQ(10u, PartGame->get_num_active_elements());
-            EXPECT_EQ(10u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(10u, PartGame.get_num_active_elements());
+            EXPECT_EQ(10u, FieldGame.get_num_active_elements());
         }
 
-        PartGame->run_game_of_life(4);
-        FieldGame->run_game_of_life(4);
+        PartGame.run_game_of_life(4);
+        FieldGame.run_game_of_life(4);
 
-        EXPECT_TRUE(PartGame->are_these_ids_active(elemIdsToActivate));
-        EXPECT_TRUE(FieldGame->are_these_ids_active(elemIdsToActivate));
+        EXPECT_TRUE(PartGame.are_these_ids_active(elemIdsToActivate));
+        EXPECT_TRUE(FieldGame.are_these_ids_active(elemIdsToActivate));
         if (0 != procNum)
         {
-            EXPECT_EQ(6u, PartGame->get_num_active_elements());
-            EXPECT_EQ(6u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(6u, PartGame.get_num_active_elements());
+            EXPECT_EQ(6u, FieldGame.get_num_active_elements());
         }
         else
         {
-            EXPECT_EQ(0u, PartGame->get_num_active_elements());
-            EXPECT_EQ(0u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(0u, PartGame.get_num_active_elements());
+            EXPECT_EQ(0u, FieldGame.get_num_active_elements());
         }
     }
 }
@@ -791,8 +791,8 @@ TEST(HexGameofLifeClass, 1ProcBasicTest)
         std::string partMeshName = "1ProcPartBasic";
         std::string fieldMeshName = "1ProcFieldBasic";
 
-        HexMeshConstructor PartMesh(comm, 3, 3, 4);
-        HexMeshConstructor FieldMesh(comm, 3, 3, 4);
+        HexGameofLifeMesh PartMesh(comm, 3, 3, 4);
+        HexGameofLifeMesh FieldMesh(comm, 3, 3, 4);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
@@ -832,8 +832,8 @@ TEST(HexGameofLifeClass, 4ProcBasicTest)
         std::string partMeshName = "4ProcPartBasic";
         std::string fieldMeshName = "4ProcFieldBasic";
 
-        HexMeshConstructor PartMesh(comm, 3, 3, 4);
-        HexMeshConstructor FieldMesh(comm, 3, 3, 4);
+        HexGameofLifeMesh PartMesh(comm, 3, 3, 4);
+        HexGameofLifeMesh FieldMesh(comm, 3, 3, 4);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
@@ -879,8 +879,8 @@ TEST(HexGameofLifeClass, 1ProcOscillator)
     {
         std::string partMeshName = "1ProcPartOscillator";
         std::string fieldMeshName = "1ProcFieldOscillator";
-        HexMeshConstructor PartMesh(comm, 3, 3, 4);
-        HexMeshConstructor FieldMesh(comm, 3, 3, 4);
+        HexGameofLifeMesh PartMesh(comm, 3, 3, 4);
+        HexGameofLifeMesh FieldMesh(comm, 3, 3, 4);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
@@ -943,8 +943,8 @@ TEST(HexGameofLifeClass, 4ProcOscillator)
     {
         std::string partMeshName = "4ProcPartOscillator";
         std::string fieldMeshName = "4ProcFieldOscillator";
-        HexMeshConstructor PartMesh(comm, 3, 3, 4);
-        HexMeshConstructor FieldMesh(comm, 3, 3, 4);
+        HexGameofLifeMesh PartMesh(comm, 3, 3, 4);
+        HexGameofLifeMesh FieldMesh(comm, 3, 3, 4);
 
         PartGameofLife PartGame(&PartMesh, partMeshName);
         FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
@@ -1095,42 +1095,42 @@ TEST(HexGameofLifeClass, 4ProcOscillator)
 TEST(PNG, Borderless)
 {
     std::string fileName = "P44guns.png";
-    PNGProcessor* png = new PNGProcessor(fileName);
-    png->commit_image_vector_to_pixel_vector();
+    PNGProcessor png(fileName);
+    png.commit_image_vector_to_pixel_vector();
 
-    EXPECT_EQ(476u, png->get_image_width());
-    EXPECT_EQ(172u, png->get_image_height());
+    EXPECT_EQ(476u, png.get_image_width());
+    EXPECT_EQ(172u, png.get_image_height());
 }
 TEST(PNG, Bordered)
 {
     std::string fileName = "Boss.png";
-    BorderedPNGProcessor* png = new BorderedPNGProcessor(fileName);
-    png->commit_image_vector_to_pixel_vector();
+    BorderedPNGProcessor png(fileName);
+    png.commit_image_vector_to_pixel_vector();
 
-    EXPECT_EQ(13u, png->get_image_width());
-    EXPECT_EQ(16u, png->get_image_height());
+    EXPECT_EQ(13u, png.get_image_width());
+    EXPECT_EQ(16u, png.get_image_height());
 
 }
 TEST(PNG, PaddingImages)
 {
     std::string fileName = "Tiny.png";
-    PNGProcessor* png = new PNGProcessor(fileName);
-    png->commit_image_vector_to_pixel_vector();
+    PNGProcessor png(fileName);
+    png.commit_image_vector_to_pixel_vector();
 
-    EXPECT_EQ(9u, png->get_image_width());
-    EXPECT_EQ(10u, png->get_image_height());
+    EXPECT_EQ(9u, png.get_image_width());
+    EXPECT_EQ(10u, png.get_image_height());
 
-    png->add_this_much_pixel_padding_to_bottom(2);
-    EXPECT_EQ(12u, png->get_image_height());
+    png.add_this_much_pixel_padding_to_bottom(2);
+    EXPECT_EQ(12u, png.get_image_height());
 
-    png->add_this_much_pixel_padding_to_top(2);
-    EXPECT_EQ(14u, png->get_image_height());
+    png.add_this_much_pixel_padding_to_top(2);
+    EXPECT_EQ(14u, png.get_image_height());
 
-    png->add_this_much_pixel_padding_to_left(2);
-    EXPECT_EQ(11u, png->get_image_width());
+    png.add_this_much_pixel_padding_to_left(2);
+    EXPECT_EQ(11u, png.get_image_width());
 
-    png->add_this_much_pixel_padding_to_right(2);
-    EXPECT_EQ(13u, png->get_image_width());
+    png.add_this_much_pixel_padding_to_right(2);
+    EXPECT_EQ(13u, png.get_image_width());
 }
 TEST(PNGGameofLife, 1ProcCompressionTest)
 {
@@ -1150,9 +1150,9 @@ TEST(PNGGameofLife, 1ProcCompressionTest)
         unsigned width = carrier.get_image_width();
         unsigned height = carrier.get_image_height();
 
-        QuadMeshConstructor* Mesh = new QuadMeshConstructor(comm, width, height);
+        QuadGameofLifeMesh Mesh(comm, width, height);
 
-        FieldGameofLife FieldGame(Mesh, meshName);
+        FieldGameofLife FieldGame(&Mesh, meshName);
         FieldGame.activate_these_ids(elemIds);
 
         stk::mesh::EntityIdVector exElemIds = {10, 11, 17, 14, 20,21};
@@ -1179,8 +1179,8 @@ TEST(PNGGameofLife, 4ProcCompressionTest)
         unsigned width = carrier.get_image_width();
         unsigned height = carrier.get_image_height();
 
-        QuadMeshConstructor* Mesh = new QuadMeshConstructor(comm, width, height);
-        PartGameofLife PartGame(Mesh, meshName);
+        QuadGameofLifeMesh Mesh (comm, width, height);
+        PartGameofLife PartGame(&Mesh, meshName);
         PartGame.activate_these_ids(elemIds);
 
         stk::mesh::EntityIdVector exElemIds = {10, 11, 14, 17, 20, 21};
@@ -1226,30 +1226,30 @@ TEST(PNGGameofLife, 1ProcTiny)
         unsigned width = PNG.get_image_width();
         unsigned height = PNG.get_image_height();
 
-        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, width, height);
-        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, width, height);
+        QuadGameofLifeMesh PartMesh(comm, width, height);
+        QuadGameofLifeMesh FieldMesh(comm, width, height);
 
-        PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
-        FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName2);
+        PartGameofLife PartGame(&PartMesh, meshName1);
+        FieldGameofLife FieldGame(&FieldMesh, meshName2);
 
 
         stk::mesh::EntityIdVector elemIds;
         PNG.fill_id_vector_with_active_pixels(elemIds);
-        PartGame->activate_these_ids(elemIds);
-        FieldGame->activate_these_ids(elemIds);
+        PartGame.activate_these_ids(elemIds);
+        FieldGame.activate_these_ids(elemIds);
 
         stk::mesh::EntityIdVector exElemIds1 =
         {14, 22, 23, 24, 30, 31, 32, 33, 34, 38,
          39, 40, 41, 42, 43, 44, 48, 49, 50, 51,
          52, 58, 59, 60, 68};
 
-        EXPECT_TRUE(PartGame->are_these_ids_active(exElemIds1));
-        EXPECT_TRUE(FieldGame->are_these_ids_active(exElemIds1));
-        EXPECT_EQ(25u, PartGame->get_num_active_elements());
-        EXPECT_EQ(25u, FieldGame->get_num_active_elements());
+        EXPECT_TRUE(PartGame.are_these_ids_active(exElemIds1));
+        EXPECT_TRUE(FieldGame.are_these_ids_active(exElemIds1));
+        EXPECT_EQ(25u, PartGame.get_num_active_elements());
+        EXPECT_EQ(25u, FieldGame.get_num_active_elements());
 
-        PartGame->run_game_of_life(5);
-        FieldGame->run_game_of_life(5);
+        PartGame.run_game_of_life(5);
+        FieldGame.run_game_of_life(5);
 
         stk::mesh::EntityIdVector exElemIds2 =
         {
@@ -1257,10 +1257,10 @@ TEST(PNGGameofLife, 1ProcTiny)
          40, 42, 50, 55, 56, 62, 63, 66,
          70, 75, 79, 85, 86, 87
         };
-        EXPECT_TRUE(PartGame->are_these_ids_active(exElemIds2));
-        EXPECT_TRUE(FieldGame->are_these_ids_active(exElemIds2));
-        EXPECT_EQ(23u, PartGame->get_num_active_elements());
-        EXPECT_EQ(23u, FieldGame->get_num_active_elements());
+        EXPECT_TRUE(PartGame.are_these_ids_active(exElemIds2));
+        EXPECT_TRUE(FieldGame.are_these_ids_active(exElemIds2));
+        EXPECT_EQ(23u, PartGame.get_num_active_elements());
+        EXPECT_EQ(23u, FieldGame.get_num_active_elements());
     }
 }
 TEST(PNGGameofLife, 4ProcTiny)
@@ -1287,72 +1287,72 @@ TEST(PNGGameofLife, 4ProcTiny)
         unsigned width = PNG.get_image_width();
         unsigned height = PNG.get_image_height();
 
-        QuadMeshConstructor* PartMesh = new QuadMeshConstructor(comm, width, height);
-        QuadMeshConstructor* FieldMesh = new QuadMeshConstructor(comm, width, height);
+        QuadGameofLifeMesh PartMesh(comm, width, height);
+        QuadGameofLifeMesh FieldMesh(comm, width, height);
 
-        PartGameofLife* PartGame = new PartGameofLife(PartMesh, meshName1);
-        FieldGameofLife* FieldGame = new FieldGameofLife(FieldMesh, meshName1);
+        PartGameofLife PartGame(&PartMesh, meshName1);
+        FieldGameofLife FieldGame(&FieldMesh, meshName1);
 
         stk::mesh::EntityIdVector elemIds;
         PNG.fill_id_vector_with_active_pixels(elemIds);
-        PartGame->activate_these_ids(elemIds);
-        FieldGame->activate_these_ids(elemIds);
+        PartGame.activate_these_ids(elemIds);
+        FieldGame.activate_these_ids(elemIds);
 
         stk::mesh::EntityIdVector exElemIds = {14, 22, 23, 24, 30, 31, 32, 33, 34, 38,
                                                39, 40, 41, 42, 43, 44, 48, 49, 50, 51,
                                                52, 58, 59, 50, 58};
 
-        EXPECT_TRUE(PartGame->are_these_ids_active(exElemIds));
-        EXPECT_TRUE(FieldGame->are_these_ids_active(exElemIds));
+        EXPECT_TRUE(PartGame.are_these_ids_active(exElemIds));
+        EXPECT_TRUE(FieldGame.are_these_ids_active(exElemIds));
         if (0 == procRank)
         {
-            EXPECT_EQ(1u, PartGame->get_num_active_elements());
-            EXPECT_EQ(1u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(1u, PartGame.get_num_active_elements());
+            EXPECT_EQ(1u, FieldGame.get_num_active_elements());
         }
         else if (1 == procRank)
         {
-            EXPECT_EQ(8u, PartGame->get_num_active_elements());
-            EXPECT_EQ(8u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(8u, PartGame.get_num_active_elements());
+            EXPECT_EQ(8u, FieldGame.get_num_active_elements());
         }
         else if (2 == procRank)
         {
-            EXPECT_EQ(12u, PartGame->get_num_active_elements());
-            EXPECT_EQ(12u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(12u, PartGame.get_num_active_elements());
+            EXPECT_EQ(12u, FieldGame.get_num_active_elements());
         }
         else if (3 == procRank)
         {
-            EXPECT_EQ(4u, PartGame->get_num_active_elements());
-            EXPECT_EQ(4u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(4u, PartGame.get_num_active_elements());
+            EXPECT_EQ(4u, FieldGame.get_num_active_elements());
         }
 
 
-        PartGame->run_game_of_life(5);
-        FieldGame->run_game_of_life(5);
+        PartGame.run_game_of_life(5);
+        FieldGame.run_game_of_life(5);
 
         stk::mesh::EntityIdVector exElemIds2 = {3, 7, 12, 16, 19, 20, 26, 27, 32, 40, 42, 50,
                                                 55, 56, 62, 63, 66, 70, 75, 79};
 
-        EXPECT_TRUE(PartGame->are_these_ids_active(exElemIds2));
-        EXPECT_TRUE(FieldGame->are_these_ids_active(exElemIds2));
+        EXPECT_TRUE(PartGame.are_these_ids_active(exElemIds2));
+        EXPECT_TRUE(FieldGame.are_these_ids_active(exElemIds2));
         if (0 == procRank)
         {
-            EXPECT_EQ(4u, PartGame->get_num_active_elements());
-            EXPECT_EQ(4u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(4u, PartGame.get_num_active_elements());
+            EXPECT_EQ(4u, FieldGame.get_num_active_elements());
         }
         else if (1 == procRank)
         {
-            EXPECT_EQ(5u, PartGame->get_num_active_elements());
-            EXPECT_EQ(5u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(5u, PartGame.get_num_active_elements());
+            EXPECT_EQ(5u, FieldGame.get_num_active_elements());
         }
         else if (2 == procRank)
         {
-            EXPECT_EQ(3u, PartGame->get_num_active_elements());
-            EXPECT_EQ(3u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(3u, PartGame.get_num_active_elements());
+            EXPECT_EQ(3u, FieldGame.get_num_active_elements());
         }
         else if (3 == procRank)
         {
-            EXPECT_EQ(11u, PartGame->get_num_active_elements());
-            EXPECT_EQ(11u, FieldGame->get_num_active_elements());
+            EXPECT_EQ(11u, PartGame.get_num_active_elements());
+            EXPECT_EQ(11u, FieldGame.get_num_active_elements());
         }
     }
 }
@@ -1362,7 +1362,7 @@ TEST(NewNoGhostGame, 1ProcGeneralStuff)
     int numProcs = stk::parallel_machine_size(comm);
     if (1 == numProcs)
     {
-        HexMeshConstructor Mesh(comm, 1, 1, 1, stk::mesh::BulkData::NO_AUTO_AURA);
+        HexGameofLifeMesh Mesh(comm, 1, 1, 1, stk::mesh::BulkData::NO_AUTO_AURA);
         NoGhostGameofLife PacMan(&Mesh, "1ProcGeneralStuff");
 
         stk::mesh::EntityVector elements;
@@ -1382,7 +1382,7 @@ TEST(NewNoGhostGame, 4ProcGeneralStuff)
     int procRank = stk::parallel_machine_rank(comm);
     if (4 == numProcs)
     {
-        HexMeshConstructor Mesh(comm, 1, 1, 4, stk::mesh::BulkData::NO_AUTO_AURA);
+        HexGameofLifeMesh Mesh(comm, 1, 1, 4, stk::mesh::BulkData::NO_AUTO_AURA);
         NoGhostGameofLife PacMan(&Mesh, "4ProcGeneralStuff");
 
         stk::mesh::EntityVector elements;
@@ -1420,7 +1420,7 @@ TEST(NewNoGhostGame, 1ProcLessGeneralStuff)
     int numProcs = stk::parallel_machine_size(comm);
     if (1 == numProcs)
     {
-        HexMeshConstructor Mesh(comm, 2, 2, 2, stk::mesh::BulkData::NO_AUTO_AURA);
+        HexGameofLifeMesh Mesh(comm, 2, 2, 2, stk::mesh::BulkData::NO_AUTO_AURA);
         NoGhostGameofLife PacMan(&Mesh, "1ProcLessGeneralStuff");
 
         for (unsigned id = 1; id <= 8; id++)
@@ -1444,7 +1444,7 @@ TEST(NewNoGhostGame, 4ProcLessGeneralStuff)
     int procRank = stk::parallel_machine_rank(comm);
     if (4 == numProcs)
     {
-        HexMeshConstructor Mesh(comm, 1, 1, 8, stk::mesh::BulkData::NO_AUTO_AURA);
+        HexGameofLifeMesh Mesh(comm, 1, 1, 8, stk::mesh::BulkData::NO_AUTO_AURA);
         NoGhostGameofLife PacMan(&Mesh, "4ProcLessGeneralStuff4");
 
         if (0 == procRank)
@@ -1490,7 +1490,7 @@ TEST(NewNoGhostGame, 1ProcNeighbors)
 
     if (1 == numProcs)
     {
-        HexMeshConstructor Mesh(MPI_COMM_WORLD, 2, 2, 2);
+        HexGameofLifeMesh Mesh(MPI_COMM_WORLD, 2, 2, 2);
         NoGhostGameofLife Game(&Mesh, "1ProcNeighbors");
 
         stk::mesh::Entity elem1 = Game.element_with_id(1);
@@ -1516,7 +1516,7 @@ TEST(NewNoGhostGame, 4ProcNeighbors)
     int procNum = stk::parallel_machine_rank(comm);
     if (4 == numProcs)
     {
-        HexMeshConstructor Mesh(MPI_COMM_WORLD, 2, 2, 4, stk::mesh::BulkData::NO_AUTO_AURA);
+        HexGameofLifeMesh Mesh(MPI_COMM_WORLD, 2, 2, 4, stk::mesh::BulkData::NO_AUTO_AURA);
         NoGhostGameofLife Game(&Mesh, "4ProcNeighbors");
 
         stk::mesh::Entity elem;
@@ -1556,7 +1556,7 @@ TEST(NewNoGhostGame, 1ProcRunGame)
     int numProcs = stk::parallel_machine_size(comm);
     if (1 == numProcs)
     {
-        HexMeshConstructor Mesh(comm, 2, 2, 2);
+        HexGameofLifeMesh Mesh(comm, 2, 2, 2);
 
         NoGhostGameofLife Game(&Mesh, "1ProcRunGame");
 
@@ -1581,7 +1581,7 @@ TEST(NewNoGhostGame, 4ProcRunGame)
     int procNum = stk::parallel_machine_rank(comm);
     if (4 == numProcs)
     {
-        HexMeshConstructor Mesh(comm, 3, 3, 4, stk::mesh::BulkData::NO_AUTO_AURA);
+        HexGameofLifeMesh Mesh(comm, 3, 3, 4, stk::mesh::BulkData::NO_AUTO_AURA);
 
         NoGhostGameofLife Game(&Mesh, "4ProcRunGame");
 
@@ -1646,7 +1646,7 @@ TEST(NewNoGhostGame, 1ProcQuad)
     int numProcs = stk::parallel_machine_size(comm);
     if (1 == numProcs)
     {
-        QuadMeshConstructor Mesh(comm, 8, 8);
+        QuadGameofLifeMesh Mesh(comm, 8, 8);
 
         NoGhostGameofLife Game(&Mesh, "1ProcQuad");
         stk::mesh::EntityIdVector elemIds = {41, 42, 43, 51, 58};
@@ -1697,7 +1697,7 @@ TEST(NewNoGhostGame, 4ProcQuad)
     int procRank = stk::parallel_machine_rank(comm);
     if (4 == numProcs)
     {
-        QuadMeshConstructor Mesh(comm, 8, 8, stk::mesh::BulkData::NO_AUTO_AURA);
+        QuadGameofLifeMesh Mesh(comm, 8, 8, stk::mesh::BulkData::NO_AUTO_AURA);
 
         NoGhostGameofLife Game(&Mesh, "4ProcQuad");
         stk::mesh::EntityIdVector elemIds = {41, 42, 43, 51, 58};
@@ -1823,7 +1823,7 @@ TEST(NewNoGhostGame, 1ProcTri)
     int numProcs = stk::parallel_machine_size(comm);
     if (1 == numProcs)
     {
-       TriangleMeshConstructor Mesh(comm, 4, 4, stk::mesh::BulkData::NO_AUTO_AURA);
+       TriGameofLifeMesh Mesh(comm, 4, 4, stk::mesh::BulkData::NO_AUTO_AURA);
 
        NoGhostGameofLife Game(&Mesh, "1ProcTri");
        stk::mesh::EntityIdVector elemIds  = {1, 2, 3, 4, 5, 6, 7,
@@ -1878,7 +1878,7 @@ TEST(NewNoGhostGame, 4ProcTri)
     int procRank = stk::parallel_machine_rank(comm);
     if (4 == numProcs)
     {
-       TriangleMeshConstructor Mesh(comm, 4, 4, stk::mesh::BulkData::NO_AUTO_AURA);
+       TriGameofLifeMesh Mesh(comm, 4, 4, stk::mesh::BulkData::NO_AUTO_AURA);
 
        NoGhostGameofLife Game(&Mesh, "4ProcTri");
        stk::mesh::EntityIdVector elemIds  = {1, 2, 3, 4, 5, 6, 7, 8, 25, 26,

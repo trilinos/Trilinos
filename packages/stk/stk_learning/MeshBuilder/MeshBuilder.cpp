@@ -4,31 +4,34 @@
  *  Created on: Aug 17, 2015
  *      Author: jonchu
  */
-#include "MeshPrinter.h"
+#include "MeshBuilder.hpp"
 
-MeshPrinter::MeshPrinter(stk::ParallelMachine comm, std::string name, stk::topology::topology_t
+// change for meshing big things
+unsigned zOffset = 1;
+
+MeshBuilder::MeshBuilder(stk::ParallelMachine comm, std::string name, stk::topology::topology_t
                          elemType, int spacialDim)
 :m_metaData(spacialDim), m_bulkData(m_metaData, comm, stk::mesh::BulkData::NO_AUTO_AURA),
- m_numProcs(stk::parallel_machine_size(comm)), m_procRank(stk::parallel_machine_rank(comm)),
- m_name(name), m_time(0)
+ m_spacialDim(spacialDim), m_numProcs(stk::parallel_machine_size(comm)),
+ m_procRank(stk::parallel_machine_rank(comm)), m_name(name), m_time(0)
 {
     m_elemPart = &m_metaData.declare_part_with_topology("Elem Part", elemType);
     stk::io::put_io_part_attribute(m_metaData.universal_part());
     stk::io::put_io_part_attribute(*m_elemPart);
 }
-void MeshPrinter::commit_meta()
+void MeshBuilder::commit_meta()
 {
     m_metaData.commit();
 }
-void MeshPrinter::begin_modification()
+void MeshBuilder::begin_modification()
 {
     m_bulkData.modification_begin();
 }
-void MeshPrinter::end_modification()
+void MeshBuilder::end_modification()
 {
     m_bulkData.modification_end();
 }
-stk::mesh::Entity MeshPrinter::create_element(stk::mesh::EntityId elemId,
+stk::mesh::Entity MeshBuilder::create_element(stk::mesh::EntityId elemId,
                                               const stk::mesh::EntityIdVector& nodeIds,
                                               int chosenProc)
 {
@@ -44,10 +47,10 @@ stk::mesh::Entity MeshPrinter::create_element(stk::mesh::EntityId elemId,
     return elem;
 }
 
-void MeshPrinter::write_mesh()
+void MeshBuilder::write_mesh()
 {
     std::string timeStep = std::to_string(m_time);
-    while (timeStep.size() < 4)
+    while (timeStep.size() < 8)
         timeStep = "0" + timeStep;
 
     stk::io::StkMeshIoBroker stkIo(m_bulkData.parallel());
@@ -59,13 +62,21 @@ void MeshPrinter::write_mesh()
     stkIo.end_output_step(fh);
 }
 
+//test
+unsigned MeshBuilder::num_elems() const
+{
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_entities(m_bulkData, stk::topology::ELEM_RANK, elements);
+    return elements.size();
+}
+
 //private
-void MeshPrinter::update_node_to_processor_map(const stk::mesh::EntityIdVector& nodeIds, int proc)
+void MeshBuilder::update_node_to_processor_map(const stk::mesh::EntityIdVector& nodeIds, int proc)
 {
     for (const stk::mesh::EntityId nodeId : nodeIds)
         m_nodeIdToSharingProcs[nodeId].insert(proc);
 }
-stk::mesh::Entity MeshPrinter::generate_element(stk::mesh::EntityId elemId,
+stk::mesh::Entity MeshBuilder::generate_element(stk::mesh::EntityId elemId,
                                                 const stk::mesh::EntityIdVector& nodeIds)
 {
     stk::mesh::Entity elem = stk::mesh::Entity();
@@ -76,13 +87,13 @@ stk::mesh::Entity MeshPrinter::generate_element(stk::mesh::EntityId elemId,
     }
     return elem;
 }
-bool MeshPrinter::elem_id_not_used(stk::mesh::EntityId elemId)
+bool MeshBuilder::elem_id_not_used(stk::mesh::EntityId elemId)
 {
     std::unordered_set<stk::mesh::EntityId>::iterator idIter =
             m_usedElemIds.find(elemId);
     return (m_usedElemIds.end() == idIter);
 }
-void MeshPrinter::share_nodes(const stk::mesh::EntityIdVector& nodeIds)
+void MeshBuilder::share_nodes(const stk::mesh::EntityIdVector& nodeIds)
 {
     for (stk::mesh::EntityId nodeId : nodeIds)
     {
@@ -91,7 +102,7 @@ void MeshPrinter::share_nodes(const stk::mesh::EntityIdVector& nodeIds)
            m_bulkData.add_node_sharing(node, procNum);
     }
 }
-void MeshPrinter::share_shared_nodes(const stk::mesh::EntityIdVector& nodeIds, int chosenProc)
+void MeshBuilder::share_shared_nodes(const stk::mesh::EntityIdVector& nodeIds, int chosenProc)
 {
     update_node_to_processor_map(nodeIds, chosenProc);
     for (stk::mesh::EntityId nodeId : nodeIds)
@@ -102,39 +113,69 @@ void MeshPrinter::share_shared_nodes(const stk::mesh::EntityIdVector& nodeIds, i
     }
 }
 
-//Quad mesh printer
+//Quad mesh Builder
 //public
-QuadMeshPrinter::QuadMeshPrinter(stk::ParallelMachine comm, std::string name)
-:MeshPrinter(comm, name, stk::topology::QUAD_4, 2)
+QuadMeshBuilder::QuadMeshBuilder(stk::ParallelMachine comm, std::string name)
+:MeshBuilder(comm, name, stk::topology::QUAD_4, 2)
 {
-    m_coordinates = &meta_data().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian2d>>(
-            stk::topology::NODE_RANK, "coordinates");
-    stk::mesh::put_field(*m_coordinates, meta_data().universal_part(), 2);
+    declare_coordinates();
 }
-void QuadMeshPrinter::create_element(unsigned xCoord, unsigned yCoord, int chosenProc)
+void QuadMeshBuilder::create_element(unsigned xCoord, unsigned yCoord, int chosenProc)
 {
     ElemCoordPair elemCoord(xCoord, yCoord);
-    stk::mesh::Entity elem = MeshPrinter::create_element(elemCoord.elemId,
+    stk::mesh::Entity elem = MeshBuilder::create_element(elemCoord.elemId,
                                                          elemCoord.nodeIds, chosenProc);
-
     if (stk::mesh::Entity() != elem)
         label_node_coordinates(elemCoord);
 }
+void QuadMeshBuilder::fill_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper)
+{
+    int procCounter = 0;
+    for (unsigned x = xLower; x <= xUpper; x++)
+        for (unsigned y = yLower; y <= yUpper; y++)
+           create_element(x, y, procCounter++%num_procs());
+}
+void QuadMeshBuilder::fill_area_on_proc(unsigned xLower, unsigned xUpper, unsigned yLower,
+                                        unsigned yUpper, int chosenProc)
+{
+    for (unsigned x = xLower; x <= xUpper; x++)
+        for (unsigned y = yLower; y <= yUpper; y++)
+           create_element(x, y, chosenProc);
+}
+void QuadMeshBuilder::remove_element(unsigned xCoord, unsigned yCoord)
+{
+    stk::mesh::EntityId elemId = generate_two_dim_elem_id(xCoord, yCoord);
+    stk::mesh::Entity elem = bulk_data().get_entity(stk::topology::ELEM_RANK, elemId);
+    if (bulk_data().is_valid(elem))
+       bulk_data().destroy_entity(elem);
+}
+void QuadMeshBuilder::remove_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper)
+{
+    for (unsigned x = xLower; x <= xUpper; x++)
+        for (unsigned y = yLower; y <= yUpper; y++)
+            remove_element(x, y);
+}
 
 //test
-double QuadMeshPrinter::node_x_coord(stk::mesh::Entity node) const
+double QuadMeshBuilder::node_x_coord(stk::mesh::Entity node) const
 {
     double* const coord = stk::mesh::field_data(*m_coordinates, node);
     return coord[0];
 }
-double QuadMeshPrinter::node_y_coord(stk::mesh::Entity node) const
+double QuadMeshBuilder::node_y_coord(stk::mesh::Entity node) const
 {
     double* const coord = stk::mesh::field_data(*m_coordinates, node);
     return coord[1];
 }
 
 //private
-void QuadMeshPrinter::label_node_coordinates(const ElemCoordPair& elemCoords)
+void QuadMeshBuilder::declare_coordinates()
+{
+    m_coordinates = &meta_data().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian2d>>(
+            stk::topology::NODE_RANK, "coordinates");
+    stk::mesh::put_field(*m_coordinates, meta_data().universal_part(), 2);
+}
+void QuadMeshBuilder::label_node_coordinates(const ElemCoordPair& elemCoords)
 {
     for (unsigned nodeIndex = 0; nodeIndex < 4; nodeIndex++)
     {
@@ -150,50 +191,77 @@ void QuadMeshPrinter::label_node_coordinates(const ElemCoordPair& elemCoords)
           label_coordinates(node, elemCoords.x-1, elemCoords.y);
     }
 }
-void QuadMeshPrinter::label_coordinates(stk::mesh::Entity node, unsigned nodeX, unsigned nodeY)
+void QuadMeshBuilder::label_coordinates(stk::mesh::Entity node, unsigned nodeX, unsigned nodeY)
 {
     double* const coord = stk::mesh::field_data(*m_coordinates, node);
     coord[0] = nodeX;
     coord[1] = nodeY;
 }
 
-//HexMeshPrinter
+//HexMeshBuilder
 //public
-HexMeshPrinter::HexMeshPrinter(stk::ParallelMachine comm, std::string name)
-:MeshPrinter(comm, name, stk::topology::HEX_8, 3)
+HexMeshBuilder::HexMeshBuilder(stk::ParallelMachine comm, std::string name)
+:MeshBuilder(comm, name, stk::topology::HEX_8, 3)
 {
-   m_coordinates = &meta_data().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d>>(
-           stk::topology::NODE_RANK, "coordinates");
-   stk::mesh::put_field(*m_coordinates, meta_data().universal_part(), 3);
+    declare_coordinates();
 }
-void HexMeshPrinter::create_element(unsigned xCoord, unsigned yCoord, unsigned zCoord, int chosenProc)
+void HexMeshBuilder::create_element(unsigned xCoord, unsigned yCoord, unsigned zCoord, int chosenProc)
 {
 
     ElemCoordTriple elemCoord(xCoord, yCoord, zCoord);
-    stk::mesh::Entity elem = MeshPrinter::create_element(elemCoord.elemId,
+    stk::mesh::Entity elem = MeshBuilder::create_element(elemCoord.elemId,
                                                          elemCoord.nodeIds, chosenProc);
-
     if (stk::mesh::Entity() != elem)
         label_node_coordinates(elemCoord);
 }
+void HexMeshBuilder::fill_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper,
+                               unsigned zLower, unsigned zUpper)
+{
+    int currentProc = 0;
+    for (unsigned x = xLower; x <= xUpper; x++)
+        for (unsigned y = yLower; y <= yUpper; y++)
+            for (unsigned z = zLower; z <= zUpper; z++)
+                create_element(x, y, z, currentProc++%num_procs());
+}
+void HexMeshBuilder::remove_element(unsigned xCoord, unsigned yCoord, unsigned zCoord)
+{
+    stk::mesh::EntityId elemId = generate_three_dim_elem_id(xCoord, yCoord, zCoord);
+    stk::mesh::Entity elem = bulk_data().get_entity(stk::topology::ELEM_RANK, elemId);
+    if (bulk_data().is_valid(elem))
+        bulk_data().destroy_entity(elem);
+}
+void HexMeshBuilder::remove_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper,
+                                 unsigned zLower, unsigned zUpper)
+{
+    for (unsigned x = xLower; x <= xUpper; x++)
+        for (unsigned y = yLower; y <= yUpper; y++)
+            for (unsigned z = zLower; z <= zUpper; z++)
+                remove_element(x, y, z);
+}
 //test function
-double HexMeshPrinter::node_x_coord(stk::mesh::Entity node) const
+double HexMeshBuilder::node_x_coord(stk::mesh::Entity node) const
 {
     double* const coord = stk::mesh::field_data(*m_coordinates, node);
     return coord[0];
 }
-double HexMeshPrinter::node_y_coord(stk::mesh::Entity node) const
+double HexMeshBuilder::node_y_coord(stk::mesh::Entity node) const
 {
     double* const coord = stk::mesh::field_data(*m_coordinates, node);
     return coord[1];
 }
-double HexMeshPrinter::node_z_coord(stk::mesh::Entity node) const
+double HexMeshBuilder::node_z_coord(stk::mesh::Entity node) const
 {
     double* const coord = stk::mesh::field_data(*m_coordinates, node);
     return coord[2];
 }
 //private
-void HexMeshPrinter::label_node_coordinates(const ElemCoordTriple& elemCoords)
+void HexMeshBuilder::declare_coordinates()
+{
+   m_coordinates = &meta_data().declare_field<stk::mesh::Field<double, stk::mesh::Cartesian3d>>(
+           stk::topology::NODE_RANK, "coordinates");
+   stk::mesh::put_field(*m_coordinates, meta_data().universal_part(), 3);
+}
+void HexMeshBuilder::label_node_coordinates(const ElemCoordTriple& elemCoords)
 {
     for (unsigned nodeIndex = 0; nodeIndex < 8; nodeIndex++)
     {
@@ -229,11 +297,11 @@ void HexMeshPrinter::label_node_coordinates(const ElemCoordTriple& elemCoords)
     }
 }
 
-void HexMeshPrinter::label_coordinates(stk::mesh::Entity node, unsigned nodeX, unsigned nodeY,
+void HexMeshBuilder::label_coordinates(stk::mesh::Entity node, unsigned nodeX, unsigned nodeY,
                                        unsigned nodeZ)
 {
     double* const coord = stk::mesh::field_data(*m_coordinates, node);
     coord[0] = nodeX;
     coord[1] = nodeY;
-    coord[2] = nodeZ;
+    coord[2] = nodeZ*zOffset;
 }

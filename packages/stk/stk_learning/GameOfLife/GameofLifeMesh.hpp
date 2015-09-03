@@ -33,13 +33,14 @@ typedef stk::mesh::Field<int> ScalarIntField;
     hey, maybe you can come up with something else.
  */
 
-class MeshConstructor
+class GameofLifeMesh
 {
 public:
-    MeshConstructor(stk::ParallelMachine comm, stk::topology elemType, unsigned spacialDim,
+    GameofLifeMesh(stk::ParallelMachine comm, stk::topology elemType,
+                   unsigned spacialDim,
                 stk::mesh::BulkData::AutomaticAuraOption auraOption);
 
-    virtual ~MeshConstructor() {}
+    virtual ~GameofLifeMesh() {}
 
 
     // accessor funcitions for test functions and GameofLife
@@ -121,42 +122,42 @@ private:
     virtual void number_coordinate_field()=0;
 
 };
-inline stk::mesh::MetaData* MeshConstructor::meta_data()
+inline stk::mesh::MetaData* GameofLifeMesh::meta_data()
 {
     return &m_metaData;
 }
-inline stk::mesh::BulkData* MeshConstructor::bulk_data()
+inline stk::mesh::BulkData* GameofLifeMesh::bulk_data()
 {
     return &m_bulkData;
 }
-inline ScalarIntField* MeshConstructor::neighbor_field()
+inline ScalarIntField* GameofLifeMesh::neighbor_field()
 {
     return m_activeNeighborField;
 }
-inline stk::mesh::Part* MeshConstructor::active_part()
+inline stk::mesh::Part* GameofLifeMesh::active_part()
 {
     return m_activePart;
 }
-inline ScalarIntField* MeshConstructor::life_field() const
+inline ScalarIntField* GameofLifeMesh::life_field() const
 {
     return m_lifeField;
 }
-inline stk::topology MeshConstructor::element_type() const
+inline stk::topology GameofLifeMesh::element_type() const
 {
     return m_elemType;
 }
-inline stk::ParallelMachine MeshConstructor::comm() const
+inline stk::ParallelMachine GameofLifeMesh::comm() const
 {
     return m_comm;
 }
 
-class TwoDimensionalMeshConstructor : public MeshConstructor
+class TwoDimGameofLifeMesh : public GameofLifeMesh
 {
 public:
-    TwoDimensionalMeshConstructor(stk::ParallelMachine comm, stk::topology elemType,
+    TwoDimGameofLifeMesh(stk::ParallelMachine comm, stk::topology elemType,
                               unsigned width, unsigned height,
                               stk::mesh::BulkData::AutomaticAuraOption auraOption);
-    virtual ~TwoDimensionalMeshConstructor() {}
+    virtual ~TwoDimGameofLifeMesh() {}
 protected:
     // coordinate field
     stk::mesh::Field<double,stk::mesh::Cartesian2d>* m_nodeCoords;
@@ -186,13 +187,15 @@ private:
 
 };
 
-class TriangleMeshConstructor : public TwoDimensionalMeshConstructor
+class TriGameofLifeMesh : public TwoDimGameofLifeMesh
 {
 public:
-    TriangleMeshConstructor(stk::ParallelMachine comm, unsigned width, unsigned rowsPerProc,
-                        stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::AUTO_AURA);
+    TriGameofLifeMesh(stk::ParallelMachine comm, unsigned width, unsigned
+                      rowsPerProc,
+                        stk::mesh::BulkData::AutomaticAuraOption auraOption =
+                                stk::mesh::BulkData::AUTO_AURA);
 
-    virtual ~TriangleMeshConstructor() {}
+    virtual ~TriGameofLifeMesh() {}
 
 private:
     //fill_mesh
@@ -205,12 +208,14 @@ private:
 
 };
 
-class QuadMeshConstructor : public TwoDimensionalMeshConstructor
+class QuadGameofLifeMesh : public TwoDimGameofLifeMesh
 {
 public:
-    QuadMeshConstructor(stk::ParallelMachine comm, unsigned width, unsigned rowsPerProc,
-                    stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::AUTO_AURA);
-    virtual ~QuadMeshConstructor() {}
+    QuadGameofLifeMesh(stk::ParallelMachine comm, unsigned width, unsigned
+                       rowsPerProc,
+                       stk::mesh::BulkData::AutomaticAuraOption auraOption =
+                            stk::mesh::BulkData::AUTO_AURA);
+    virtual ~QuadGameofLifeMesh() {}
 private:
     //fill_mesh
     virtual void declare_element_nodes_ids();
@@ -220,14 +225,15 @@ private:
 
 };
 
-class ThreeDimensionalMeshConstructor : public MeshConstructor
+class ThreeDimGameofLifeMesh : public GameofLifeMesh
 {
 public:
-    ThreeDimensionalMeshConstructor(stk::ParallelMachine comm, stk::topology elemType, unsigned width,
-                                unsigned height, unsigned depth,
-                                stk::mesh::BulkData::AutomaticAuraOption auraOption);
+    ThreeDimGameofLifeMesh(stk::ParallelMachine comm, stk::topology elemType,
+                           unsigned width, unsigned height, unsigned depth,
+                           stk::mesh::BulkData::AutomaticAuraOption
+                           auraOption);
 
-    virtual ~ThreeDimensionalMeshConstructor() {}
+    virtual ~ThreeDimGameofLifeMesh() {}
 
 protected:
     // coordinate field
@@ -257,28 +263,33 @@ private:
     virtual void share_nodes_between_processors();
     void share_nodes_in_back();
     void share_nodes_in_front();
-    void share_node_with_this_id_to_this_processor(unsigned nodeId, unsigned procNum);
+    void share_node_with_this_id_to_this_processor(unsigned nodeId,
+                                                   unsigned procNum);
 
     virtual void number_coordinate_field();
     void number_coordinate_field_for_node(unsigned nodeIndex);
 
 };
 
-class HexMeshConstructor : public ThreeDimensionalMeshConstructor
+class HexGameofLifeMesh : public ThreeDimGameofLifeMesh
 {
 public:
-    HexMeshConstructor(stk::ParallelMachine comm, unsigned width, unsigned height, unsigned depth,
-                   stk::mesh::BulkData::AutomaticAuraOption auraOption = stk::mesh::BulkData::AUTO_AURA);
+    HexGameofLifeMesh(stk::ParallelMachine comm, unsigned width, unsigned height,
+                      unsigned depth,
+                      stk::mesh::BulkData::AutomaticAuraOption auraOption =
+                           stk::mesh::BulkData::AUTO_AURA);
 
-    virtual ~HexMeshConstructor() {}
+    virtual ~HexGameofLifeMesh() {}
 
 private:
     //fill_mesh
     virtual void declare_element_nodes_ids();
     void declare_node_ids_of_element(unsigned index, unsigned offset);
-    void declare_first_slice_element_node_ids(stk::mesh::EntityIdVector& V, unsigned index,
+    void declare_first_slice_element_node_ids(stk::mesh::EntityIdVector& V,
+                                              unsigned index,
                                               unsigned offset);
     void declare_remaining_element_node_ids(stk::mesh::EntityIdVector& newer,
-                                            stk::mesh::EntityIdVector& older, unsigned index);
+                                            stk::mesh::EntityIdVector& older,
+                                            unsigned index);
 };
 #endif /* MeshBuilder.hpp */

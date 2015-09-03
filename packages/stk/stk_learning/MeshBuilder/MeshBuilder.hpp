@@ -5,8 +5,8 @@
  *      Author: jonchu
  */
 
-#ifndef MESHPRINTER_MESHPRINTER_H_
-#define MESHPRINTER_MESHPRINTER_H_
+#ifndef _MESHBUILDER_HPP_
+#define _MESHBUILDER_HPP_
 
 #include <iostream>
 #include <vector>
@@ -23,18 +23,17 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 
-#include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 
-#include "CoordinateSets.h"
+#include "../../../TPLs_src/Trilinos/packages/stk/stk_learning/MeshBuilder/CoordinateSets.hpp"
 
-class MeshPrinter
+class MeshBuilder
 {
 public:
-    MeshPrinter(stk::ParallelMachine comm, std::string name, stk::topology::topology_t m_elemType,
+    MeshBuilder(stk::ParallelMachine comm, std::string name, stk::topology::topology_t m_elemType,
                 int spacialDim);
 
-    virtual ~MeshPrinter() {}
+    virtual ~MeshBuilder() {}
 
     //public methods
     void commit_meta();
@@ -45,12 +44,16 @@ public:
 
     void write_mesh();
 
-    //accessor
+    //test functions
     inline stk::mesh::MetaData& meta_data();
 
     inline stk::mesh::BulkData& bulk_data();
 
     inline int num_procs() const;
+
+    inline int spacial_dim() const;
+
+    unsigned num_elems() const;
 
 protected:
     stk::mesh::Entity create_element(stk::mesh::EntityId elemId,
@@ -60,6 +63,7 @@ protected:
 private:
    stk::mesh::MetaData m_metaData;
    stk::mesh::BulkData m_bulkData;
+   const int m_spacialDim;
    const int m_numProcs;
    const int m_procRank;
 
@@ -71,6 +75,9 @@ private:
    std::unordered_map<stk::mesh::EntityId, std::unordered_set<int>> m_nodeIdToSharingProcs;
 
    std::unordered_set<stk::mesh::EntityId> m_usedElemIds;
+
+   //cojknstructor
+   virtual void declare_coordinates() = 0;
 
    //create element
    stk::mesh::Entity generate_element(stk::mesh::EntityId elemId,
@@ -87,29 +94,42 @@ private:
 };
 
 //accessor
-inline stk::mesh::MetaData& MeshPrinter::meta_data()
+inline stk::mesh::MetaData& MeshBuilder::meta_data()
 {
     return m_metaData;
 }
 
-inline stk::mesh::BulkData& MeshPrinter::bulk_data()
+inline stk::mesh::BulkData& MeshBuilder::bulk_data()
 {
     return m_bulkData;
 }
 
-inline int MeshPrinter::num_procs() const
+inline int MeshBuilder::num_procs() const
 {
     return m_numProcs;
 }
+inline int MeshBuilder::spacial_dim() const
+{
+    return m_spacialDim;
+}
 
-class QuadMeshPrinter : public MeshPrinter
+class QuadMeshBuilder : public MeshBuilder
 {
 public:
-    QuadMeshPrinter(stk::ParallelMachine comm, std::string name);
+    QuadMeshBuilder(stk::ParallelMachine comm, std::string name);
 
-    virtual ~QuadMeshPrinter() {}
+    virtual ~QuadMeshBuilder() {}
 
     void create_element(unsigned xCoord, unsigned yCoord, int chosenProc = 0);
+
+    void fill_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper);
+
+    void fill_area_on_proc(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper,
+                           int chosenProc);
+
+    void remove_element(unsigned xCoord, unsigned yCoord);
+
+    void remove_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper);
 
     //test functions
     double node_x_coord(stk::mesh::Entity node) const;
@@ -119,20 +139,30 @@ public:
 private:
     stk::mesh::Field<double, stk::mesh::Cartesian2d>* m_coordinates;
 
+    virtual void declare_coordinates();
+
     void label_node_coordinates(const ElemCoordPair& elemCoords);
 
         void label_coordinates(stk::mesh::Entity node, unsigned nodeX, unsigned nodeY);
 
 };
 
-class HexMeshPrinter : public MeshPrinter
+class HexMeshBuilder : public MeshBuilder
 {
 public:
-    HexMeshPrinter(stk::ParallelMachine comm, std::string name);
+    HexMeshBuilder(stk::ParallelMachine comm, std::string name);
 
-    virtual ~HexMeshPrinter(){}
+    virtual ~HexMeshBuilder(){}
 
     void create_element(unsigned xCoord, unsigned yCoord, unsigned zCoord, int chosenProc = 0);
+
+    void fill_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper, unsigned
+                   zLower, unsigned zUpper);
+
+    void remove_element(unsigned xCoord, unsigned yCoord, unsigned zCoord);
+
+    void remove_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper, unsigned
+                   zLower, unsigned zUpper);
 
     //test functions
     double node_x_coord(stk::mesh::Entity node) const;
@@ -144,6 +174,8 @@ public:
 private:
     stk::mesh::Field<double, stk::mesh::Cartesian3d>* m_coordinates;
 
+    virtual void declare_coordinates();
+
     void label_node_coordinates(const ElemCoordTriple& elemCoords);
 
         void label_coordinates(stk::mesh::Entity node, unsigned nodeX, unsigned nodeY, unsigned nodeZ);
@@ -152,4 +184,4 @@ private:
 };
 
 
-#endif /* MESHPRINTER_MESHPRINTER_H_ */
+#endif /* R_MESHPRINTER_HPP_ */

@@ -28,7 +28,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 
 #include "EntityKeyHash.hpp"
-#include "MeshConstructor.hpp"
+#include "GameofLifeMesh.hpp"
 
 typedef stk::mesh::Field<int> ScalarIntField;
 
@@ -41,7 +41,7 @@ typedef stk::mesh::Field<int> ScalarIntField;
 class GameofLife
 {
 public:
-    GameofLife(MeshConstructor* Mesh, std::string meshName);
+    GameofLife(GameofLifeMesh* Mesh, std::string meshName);
 
     virtual ~GameofLife() {}
 
@@ -130,7 +130,7 @@ inline unsigned GameofLife::get_num_elems_on_proc() const
 class PartGameofLife : public GameofLife
 {
 public:
-    PartGameofLife(MeshConstructor* Mesh, std::string meshName);
+    PartGameofLife(GameofLifeMesh* Mesh, std::string meshName);
     virtual ~PartGameofLife(){}
 private:
     //members
@@ -154,7 +154,7 @@ private:
 class FieldGameofLife : public GameofLife
 {
 public:
-    FieldGameofLife(MeshConstructor* Mesh, std::string meshName);
+    FieldGameofLife(GameofLifeMesh* Mesh, std::string meshName);
     virtual ~FieldGameofLife(){}
 private:
     //activate element ids

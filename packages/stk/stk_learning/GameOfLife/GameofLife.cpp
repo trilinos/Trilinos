@@ -10,7 +10,7 @@
  * GameofLife
  */
 //public
-GameofLife::GameofLife(MeshConstructor* Mesh, std::string meshName)
+GameofLife::GameofLife(GameofLifeMesh* Mesh, std::string meshName)
 :m_metaData(Mesh->meta_data()), m_bulkData(Mesh->bulk_data()),
   m_lifeField(Mesh->life_field()), m_stkIo(Mesh->comm()), m_meshName(meshName), m_time(0),
  m_elemType(Mesh->element_type()),m_activeNeighborField(Mesh->neighbor_field())
@@ -215,7 +215,7 @@ void GameofLife::write_output_step()
  * PartGameofLife
  */
 //public
-PartGameofLife::PartGameofLife(MeshConstructor* Mesh, std::string meshName)
+PartGameofLife::PartGameofLife(GameofLifeMesh* Mesh, std::string meshName)
 :GameofLife(Mesh, meshName), m_activePart(Mesh->active_part())
 {
     m_active.push_back(m_activePart);
@@ -276,7 +276,7 @@ void PartGameofLife::deactivate_element(stk::mesh::Entity elem)
  * FieldGameofLife
  */
 //public
-FieldGameofLife::FieldGameofLife(MeshConstructor* Mesh, std::string meshName)
+FieldGameofLife::FieldGameofLife(GameofLifeMesh* Mesh, std::string meshName)
 :GameofLife(Mesh, meshName)
 {
 }
