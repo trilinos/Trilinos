@@ -92,7 +92,7 @@ struct search_for_pallet_generating_faces
     typedef Kokkos::DualView<int, execution_space>                         int_dualview_t;
 
     typedef MorkonCommonlyUsed<DeviceType, DIM>                           morkon_common_t;
-    typedef typename morkon_common_t::coarse_search_results_t    coarse_search_results_t;
+    typedef typename morkon_common_t::coarse_search_results_t     coarse_search_results_t;
 
     typedef float                                                        aabb_scalar_type;
     typedef AxisAlignedBB<DeviceType, aabb_scalar_type>                            aabb_t;
@@ -369,7 +369,7 @@ struct search_for_pallet_generating_faces
       }
     };
 
-    search_for_pallet_generating_faces(surface_mesh_t surface_mesh,
+    search_for_pallet_generating_faces(const surface_mesh_t surface_mesh,
                                        points_t node_coords,
                                        points_t predicted_node_coords,
                                        face_to_interface_and_side_t face_to_interface_and_side,

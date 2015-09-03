@@ -217,8 +217,7 @@ protected:
 
   bool compute_boundary_node_support_sets(coarse_search_results_t coarse_search_results);
 
-  bool compute_contact_pallets(coarse_search_results_t coarse_search_results,
-                               mortar_pallets_t &resulting_pallets);
+  mortar_pallets_t compute_contact_pallets(coarse_search_results_t coarse_search_results);
 
   // Note that the non-mortar-side integration points needed in computing D are also
   // needed to compute M.  Store and re-use, or re-compute?

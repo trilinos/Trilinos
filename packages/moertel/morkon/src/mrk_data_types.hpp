@@ -84,8 +84,9 @@ template <> struct TopoConsts<MRK_QUAD4>
 template  <typename DeviceType, unsigned int DIM>
 struct MorkonCommonlyUsed
 {
-  typedef typename DeviceType::execution_space                      execution_space;
-  typedef Kokkos::View<local_idx_t *[2], execution_space>  coarse_search_results_t;
+  typedef typename DeviceType::execution_space                            execution_space;
+  typedef Kokkos::View<local_idx_t *[2], execution_space>         coarse_search_results_t;
+  typedef Kokkos::View<local_idx_t *[2], execution_space>   const_coarse_search_results_t;
   typedef Kokkos::DualView<typename coarse_search_results_t::value_type *[2],
                            typename coarse_search_results_t::array_layout,
                            typename coarse_search_results_t::execution_space>  coarse_search_results_dvt;
@@ -181,6 +182,15 @@ struct Mrk_MortarPallets
   // Each pallet has shape function parameters for the mortar and the non-mortar side
   // points that project to the pallet vertices.
   shape_fn_parms_t     m_vertex_sf_parms;
+
+  void resize(int newsize)
+  {
+    Kokkos::resize(m_generating_faces, newsize);
+    Kokkos::resize(m_plane_normals, newsize);
+    Kokkos::resize(m_plane_witnesses, newsize);
+    Kokkos::resize(m_vertices, newsize);
+    Kokkos::resize(m_vertex_sf_parms, newsize);
+  }
 };
 
 }

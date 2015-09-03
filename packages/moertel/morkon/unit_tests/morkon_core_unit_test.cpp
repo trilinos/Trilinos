@@ -423,6 +423,35 @@ TEST(morkon, manager_find_possible_contact_face_pairs_2x4)
   EXPECT_EQ(5, search_results_host(3,1));
 }
 
+TEST(morkon, manager_compute_contact_pallets_2x4)
+{
+  using namespace morkon_exp;
+  typedef Morkon_Manager_Tester<default_kokkos_device_t, 3, MRK_TRI3>  manager_3d_t;
+  typedef Teuchos::RCP< manager_3d_t >                               manager_3d_ptr;
+  typedef Interface<default_kokkos_device_t, 3, MRK_TRI3>            interface_3d_t;
+  typedef Teuchos::RCP< interface_3d_t >                           interface_3d_ptr;
+  typedef MorkonCommonlyUsed<default_kokkos_device_t, 3>              morkon_common;
+  typedef typename morkon_common::coarse_search_results_t    coarse_search_results_t;
+  typedef typename manager_3d_t::mortar_pallets_t mortar_pallets_t;
+
+  manager_3d_ptr manager = manager_3d_t::MakeInstance(0, FACET_NORMAL_PROJECTION, 0);
+
+  const int interface_id = 17;
+  interface_3d_ptr interface = manager->create_interface(interface_id, 0);
+
+  Mrk_2x4_offset_TriangleInterfaceFixture tris_2x4(interface);
+
+  EXPECT_EQ(true, manager->commit_interfaces());
+  EXPECT_EQ(true, manager->compute_normals());
+
+  coarse_search_results_t search_results= manager->find_possible_contact_face_pairs();
+  coarse_search_results_t::HostMirror search_results_host = Kokkos::create_mirror_view(search_results);
+  Kokkos::deep_copy(search_results_host, search_results);
+  EXPECT_EQ(4, search_results_host.dimension_0());
+
+  mortar_pallets_t mortar_pallets = manager->compute_contact_pallets(search_results);
+}
+
 int main( int argc, char *argv[] ) {
   ::testing::InitGoogleTest(&argc,argv);
   return RUN_ALL_TESTS();

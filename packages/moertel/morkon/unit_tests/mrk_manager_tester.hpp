@@ -135,6 +135,11 @@ public:
   typename morkon_manager::coarse_search_results_t find_possible_contact_face_pairs() {
     return morkon_manager::find_possible_contact_face_pairs();
   }
+
+  typename morkon_manager::mortar_pallets_t
+  compute_contact_pallets(typename morkon_manager::coarse_search_results_t coarse_search_results) {
+      return morkon_manager::compute_contact_pallets(coarse_search_results);
+  }
 };
 
 template  <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE>
