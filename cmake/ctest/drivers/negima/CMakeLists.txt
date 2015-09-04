@@ -10,12 +10,15 @@ execute_process(COMMAND date +%A OUTPUT_VARIABLE DAYOFWEEK)
 if(${DAYOFWEEK} MATCHES "Sunday")
   SET(RUN_HEAVY_MEMORY_TESTS ON)
   SET(RUN_COVERAGE_TESTS OFF)
+  SET(RUN_CUDA_OLD_TESTS ON)
 elseif(${DAYOFWEEK} MATCHES "Saturday")
   SET(RUN_HEAVY_MEMORY_TESTS OFF)
   SET(RUN_COVERAGE_TESTS ON)
+  SET(RUN_CUDA_OLD_TESTS OFF)
 else()
   SET(RUN_HEAVY_MEMORY_TESTS OFF)
   SET(RUN_COVERAGE_TESTS OFF)
+  SET(RUN_CUDA_OLD_TESTS OFF)
 endif()
 
 if($ENV{CTEST_CONFIGURATION} MATCHES "default")
@@ -96,13 +99,17 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
 elseif($ENV{CTEST_CONFIGURATION} MATCHES "nvcc_wrapper")
 
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_DEBUG_MueLu_Kokkos_Refactor_CUDA
-    ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_cuda_negima.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 420
-    )
+  if(RUN_CUDA_OLD_TESTS)
+
+    TRILINOS_DRIVER_ADD_DASHBOARD(
+      OPENMPI_1.10.0_DEBUG_MueLu_Kokkos_Refactor_CUDA
+      ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_cuda_negima.cmake
+      CTEST_INSTALLER_TYPE release
+      RUN_SERIAL
+      TIMEOUT_MINUTES 420
+      )
+
+  endif()
 
 
 endif()
