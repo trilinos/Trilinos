@@ -93,7 +93,7 @@
 #include "MueLu_Zoltan2Interface.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-#include "MueLu_SaPFactoryK.hpp"
+#include "MueLu_SaPFactory_kokkos.hpp"
 #endif
 
 #ifdef HAVE_MUELU_MATLAB
@@ -712,7 +712,7 @@ namespace MueLu {
       manager.SetFactory("P", Ptent);
     } else if (multigridAlgo == "sa") {
       // Smoothed aggregation
-      MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactoryK);
+      MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactory_kokkos);
       ParameterList Pparams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
 #if REUSE_MATRIX_GRAPHS

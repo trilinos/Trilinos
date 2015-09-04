@@ -51,7 +51,7 @@
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class SaPFactoryK;
+  class SaPFactory_kokkos;
 }
 
 #ifndef MUELU_SAPFACTORYK_SHORT

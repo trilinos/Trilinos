@@ -48,7 +48,7 @@
 
 #include <Xpetra_Matrix.hpp>
 
-#include "MueLu_SaPFactoryK_decl.hpp"
+#include "MueLu_SaPFactory_kokkos_decl.hpp"
 
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Level.hpp"
@@ -64,7 +64,7 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<const ParameterList> SaPFactoryK<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
+  RCP<const ParameterList> SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
@@ -80,23 +80,23 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void SaPFactoryK<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
+  void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
     Input(fineLevel, "A");
 
     // Get default tentative prolongator factory
-    // Getting it that way ensure that the same factory instance will be used for both SaPFactoryK and NullspaceFactory.
+    // Getting it that way ensure that the same factory instance will be used for both SaPFactory_kokkos and NullspaceFactory.
     RCP<const FactoryBase> initialPFact = GetFactory("P");
     if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
     coarseLevel.DeclareInput("P", initialPFact.get(), this); // --
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void SaPFactoryK<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level &coarseLevel) const {
+  void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level &coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void SaPFactoryK<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level &fineLevel, Level &coarseLevel) const {
+  void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level &fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
     std::ostringstream levelstr;
     levelstr << coarseLevel.GetLevelID();
@@ -107,7 +107,7 @@ namespace MueLu {
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
     // Get default tentative prolongator factory
-    // Getting it that way ensure that the same factory instance will be used for both SaPFactoryK and NullspaceFactory.
+    // Getting it that way ensure that the same factory instance will be used for both SaPFactory_kokkos and NullspaceFactory.
     // -- Warning: Do not use directly initialPFact_. Use initialPFact instead everywhere!
     RCP<const FactoryBase> initialPFact = GetFactory("P");
     if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
@@ -189,13 +189,13 @@ namespace MueLu {
 
   // deprecated
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void SaPFactoryK<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetDampingFactor(Scalar dampingFactor) {
+  void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetDampingFactor(Scalar dampingFactor) {
     SetParameter("sa: damping factor", ParameterEntry(dampingFactor)); // revalidate
   }
 
   // deprecated
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Scalar SaPFactoryK<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDampingFactor() {
+  Scalar SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDampingFactor() {
     const ParameterList & pL = GetParameterList();
     return as<Scalar>(pL.get<double>("sa: damping factor"));
   }

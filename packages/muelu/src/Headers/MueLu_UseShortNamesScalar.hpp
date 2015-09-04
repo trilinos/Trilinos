@@ -259,7 +259,7 @@ typedef MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SaPFactory;
 #endif
 
 #ifdef MUELU_SAPFACTORYK_SHORT
-typedef MueLu::SaPFactoryK<Scalar,LocalOrdinal,GlobalOrdinal,Node> SaPFactoryK;
+typedef MueLu::SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> SaPFactory_kokkos;
 #endif
 
 #ifdef MUELU_SCHURCOMPLEMENTFACTORY_SHORT

@@ -47,12 +47,12 @@
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 #include "MueLu_ExplicitInstantiation.hpp"
 
-#include "MueLu_SaPFactoryK_def.hpp"
+#include "MueLu_SaPFactory_kokkos_def.hpp"
 
 #include "TpetraCore_ETIHelperMacros.h"
 
 #define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
-        template class MueLu::SaPFactoryK<S,LO,GO,N>;
+        template class MueLu::SaPFactory_kokkos<S,LO,GO,N>;
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
