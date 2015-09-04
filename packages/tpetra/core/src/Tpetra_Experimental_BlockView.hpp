@@ -79,6 +79,39 @@ namespace { // anonymous
   };
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
+#ifdef HAVE_TPETRA_INST_FLOAT128
+  class Lapack128 {
+  public:
+    void
+    GETRF (const int /* M */, const int /* N */, __float128 /* A */ [],
+           const int /* LDA */, int /* IPIV */ [], int* /*INFO */) const
+    {
+      // stub for now, just so that it compiles
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "Teuchos::LAPACK::GETRF not yet implemented "
+         "for ScalarType = __float128.");
+    }
+
+    void
+    GETRS (const char /* TRANS */, const int /* N */, const int /* NRHS */,
+           const __float128 /* A */[], const int /* LDA */,
+           const int /* IPIV */[], __float128 /* B */ [], const int /* LDB */,
+           int* /* INFO */) const
+    {
+      // stub for now, just so that it compiles
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "Teuchos::LAPACK::GETRS not yet implemented "
+         "for ScalarType = __float128.");
+    }
+  };
+
+  template<>
+  struct GetLapackType<__float128> {
+    typedef __float128 lapack_scalar_type;
+    typedef Lapack128 lapack_type;
+  };
+#endif // HAVE_TPETRA_INST_FLOAT128
+
 } // namespace (anonymous)
 
 //#include "Teuchos_LAPACK_wrappers.hpp"
