@@ -184,8 +184,10 @@ int main(int argc, char *argv[]) {
     "the angular frequency omega based on noisy measurements" << std::endl <<
     "y_meas(t) of y(t) at discrete points in time." << std::endl;
 
-    int num_samples=pow(2,8);
-    double num_periods=12.3456;
+    // Our FFT is only robust for integer periods and numbers of samples that are powers of 2.
+    int num_samples=pow(2,10);
+    //double num_periods=12.3456;
+    int num_periods=12;
     double epsilon = 3;
     double k=1;
     double phase = M_PI/7;
@@ -196,10 +198,10 @@ int main(int argc, char *argv[]) {
 
     // This is for a decay
     double decay=200; // number of periods for an e decay
-    double noise_frequency = 4.5; // ratio of this to real frequency
-    double noise_amplitude = 0.124; // ratio of this to real amplitude
-    //double noise_frequency = 0; // ratio of this to real frequency
-    //double noise_amplitude = 0; // ratio of this to real amplitude
+    double noise_frequency = 2*4.5; // ratio of this to real frequency
+    double noise_amplitude = 12*0.124; // ratio of this to real amplitude
+    //double noise_frequency)0); // ratio of this to real frequency
+    //double noise_amplitude(0); // ratio of this to real amplitude
     double noise_phase = M_PI*exp(1.);
 
     double epsilon_0=8.854187817e-12;
@@ -224,8 +226,14 @@ int main(int argc, char *argv[]) {
       double t = dt*i;
       //double t = total_time*(double)rand()/(double)RAND_MAX;
       (*time_rcp)[i] = t;
+      // additive noise
       (*data_rcp)[i] = amplitude*(sin(t*omega+phase)+ noise_amplitude*sin(t*noise_omega+noise_phase))*exp(-exp_const*t);
-      measfile   << "   " <<  std::scientific << std::left << std::setprecision(4) << std::setw(6) << t 
+      (*data_rcp)[i] += amplitude*(0.5*noise_amplitude*sin(t*0.5*noise_omega+noise_phase))*exp(-exp_const*t);
+      (*data_rcp)[i] += amplitude*(0.4*noise_amplitude*sin(t*0.4*noise_omega+noise_phase))*exp(-exp_const*t);
+      (*data_rcp)[i] += amplitude*(0.3*noise_amplitude*sin(t*0.3*noise_omega+noise_phase))*exp(-exp_const*t);
+      (*data_rcp)[i] += amplitude*(0.2*noise_amplitude*sin(t*0.2*noise_omega+noise_phase))*exp(-exp_const*t);
+      (*data_rcp)[i] += amplitude*(0.1*noise_amplitude*sin(t*0.1*noise_omega+noise_phase))*exp(-exp_const*t);
+      measfile   << "   " << std::scientific << std::left << std::setprecision(4) << std::setw(6) << t 
                  << "   " << std::right << std::setw(14) << (*data_rcp)[i] << std::endl;
       data_fft[i].real((*data_rcp)[i]);
       data_fft[i].imag(0);
@@ -247,7 +255,7 @@ int main(int argc, char *argv[]) {
     RealT omega_i(0);
     for (int i = 0; i < num_samples/2; ++i)
     {
-      omega_i = 2*M_PI*i/(num_samples*dt);
+      omega_i = 2*M_PI*i/((num_samples-1)*dt);
       magn_r[i] = magn[i].real();
       // compute frequency with max FFT magnitude
       if (maxmagn < magn_r[i]) {
@@ -273,7 +281,7 @@ int main(int argc, char *argv[]) {
     // Output objective values to file given a sweep of parameters.
     *outStream << std::endl << "Sampling calibration objective function:" << std::endl;
     double omega_first = 0.0*omega;
-    double omega_last = 2*omega;
+    double omega_last = 10*omega;
     int num_omegas = 10000;
     double tol = 0.0;
     std::ofstream objfile;
@@ -290,12 +298,12 @@ int main(int argc, char *argv[]) {
     *outStream << std::endl << "Matching measurements to calibrate frequency:" << std::endl;
     
     // Set initial guess for omega.
-    RealT omega_init = maxomega;
+    RealT omega_init = 1.05*omega;
     (*omega_vec_rcp)[0] = omega_init;
 
     // Define ROL step, status test, and algorithm.
-    RealT gtol     = 1e-12;          // gradient tolerance
-    RealT stol     = 1e-14;          // step tolerance
+    RealT gtol     = 1e-15;          // gradient tolerance
+    RealT stol     = 1e-16;          // step tolerance
     int   max_iter = 100;            // maximum number of optimization iterations
     Teuchos::ParameterList parlist;  // list of algorithmic parameters
       // Line-search step parameters.
@@ -312,17 +320,22 @@ int main(int argc, char *argv[]) {
 
     // Run algorithm.
     algo.run(omega_rol_vec, cal_obj, true, *outStream);
+    double solution = (*omega_vec_rcp)[0];
 
     *outStream << std::endl << "'True' frequency:             omega = " << std::left << std::scientific << std::setprecision(8) << std::setw(12) << omega; 
     *outStream << std::endl << "FFT frequency:            omega_fft = " << maxomega; 
     *outStream << std::endl << "Initial frequency:       omega_init = " << omega_init; 
-    *outStream << std::endl << "Computed optimal frequency:  omega* = " << (*omega_vec_rcp)[0] << std::endl; 
+    *outStream << std::endl << "Computed optimal frequency:  omega* = " << solution << std::endl; 
     *outStream << std::endl << "'True' epsilon:                 eps = " << std::left << std::setprecision(8) << std::setw(12) << epsilon; 
     *outStream << std::endl << "FFT epsilon:                eps_fft = " << 1/(pow(maxomega*k,2)*epsilon_0*mu); 
-    *outStream << std::endl << "Computed optimal epsilon       eps* = " << 1/(pow((*omega_vec_rcp)[0]*k,2)*epsilon_0*mu) << std::endl; 
+    *outStream << std::endl << "Computed optimal epsilon       eps* = " << 1/(pow(solution*k,2)*epsilon_0*mu) << std::endl; 
+    (*omega_vec_rcp)[0] = maxomega;
+    *outStream << std::endl << "Objective value at FFT freq     val = " << cal_obj.value(omega_rol_vec, tol); 
+    (*omega_vec_rcp)[0] = solution;
+    *outStream << std::endl << "Objective value at opt freq    val* = " << cal_obj.value(omega_rol_vec, tol) << std::endl; 
 
-    if ( abs((*omega_vec_rcp)[0] - omega)/omega > 1e-3 ) {
-      *outStream << std::endl << "WARNING: Relative error = " << abs((*omega_vec_rcp)[0] - omega)/omega << std::endl; 
+    if ( abs((*omega_vec_rcp)[0] - omega)/omega > 1e-2 ) {
+      *outStream << std::endl << "WARNING: Relative error = " << abs(solution - omega)/omega << std::endl; 
       errorFlag += 1;
     }
 
