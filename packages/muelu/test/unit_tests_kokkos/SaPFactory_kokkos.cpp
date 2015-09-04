@@ -73,17 +73,6 @@ namespace MueLuTests {
 #if 0
   TEUCHOS_UNIT_TEST(SaPFactory_kokkos, Build)
   {
-    out << "version: " << MueLu::Version() << std::endl;
-
-    RCP<SaPFactory_kokkos> sapFactory = rcp(new SaPFactory_kokkos);
-    SC damping = ((SC)4)/3;
-    sapFactory->SetDampingFactor(damping);
-    TEST_EQUALITY(sapFactory->GetDampingFactor() == damping, true);
-
-  }
-
-  TEUCHOS_UNIT_TEST(SaPFactory_kokkos, Build)
-  {
     MueLu::Level level;
     level.SetLevelID(1);
 
@@ -93,7 +82,6 @@ namespace MueLuTests {
 
     RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
     SC damping = 1.1;
-    sapFactory->SetDampingFactor(damping);
   }
 #endif
 

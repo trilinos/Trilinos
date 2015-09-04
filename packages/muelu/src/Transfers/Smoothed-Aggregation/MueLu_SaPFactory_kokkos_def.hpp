@@ -187,19 +187,6 @@ namespace MueLu {
 
   } //Build()
 
-  // deprecated
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetDampingFactor(Scalar dampingFactor) {
-    SetParameter("sa: damping factor", ParameterEntry(dampingFactor)); // revalidate
-  }
-
-  // deprecated
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Scalar SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetDampingFactor() {
-    const ParameterList & pL = GetParameterList();
-    return as<Scalar>(pL.get<double>("sa: damping factor"));
-  }
-
 } //namespace MueLu
 
 #endif // MUELU_SAPFACTORYK_DEF_HPP
