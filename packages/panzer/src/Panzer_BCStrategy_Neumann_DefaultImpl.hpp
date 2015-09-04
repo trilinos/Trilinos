@@ -59,12 +59,14 @@
 #include "Phalanx_FieldManager.hpp"
 #include "Phalanx_MDField.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
   
   template <typename EvalT>
   class BCStrategy_Neumann_DefaultImpl : public panzer::BCStrategy<EvalT>,
 					 public panzer::GlobalDataAcceptorDefaultImpl,
-					 public PHX::EvaluatorWithBaseImpl<panzer::Traits>
+					 public panzer::EvaluatorWithBaseImpl<panzer::Traits>
   {
     
   public:    

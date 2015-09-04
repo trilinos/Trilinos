@@ -77,7 +77,7 @@ void SimpleSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupDat
 
   this->utils.setFieldData(source,fm);
 
-  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0]);
+  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -87,8 +87,8 @@ void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workse
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     for (int point = 0; point < source.dimension(1); ++point) {
 
-      const double & x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
-      const double & y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
+      const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
+      const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
 
       source(cell,point,0) = 2.0+y-y*y;
       source(cell,point,1) = 2.0+x-x*x;

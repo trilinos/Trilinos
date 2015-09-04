@@ -49,6 +49,8 @@
 #include "Phalanx_MDField.hpp"
 #include "Intrepid_FieldContainer.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
     
 /** This integrates a scalar quanity over each cell.
@@ -64,7 +66,7 @@ namespace panzer {
     </ParameterList>
   \endverbatim
   */
-PHX_EVALUATOR_CLASS(CellAverage)
+PANZER_EVALUATOR_CLASS(CellAverage)
   
   PHX::MDField<ScalarT,Cell> average;  // result
     
@@ -85,7 +87,7 @@ public:
 private:
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
 
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 /** This is a function constructor for an evaluator
   * that builds scalars from a single vector field. The user specifies

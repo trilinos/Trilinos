@@ -51,10 +51,12 @@
 #include "Panzer_PointValues2.hpp"
 #include "Panzer_BasisValues2.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF values
-PHX_EVALUATOR_CLASS(BasisValues_Evaluator)
+PANZER_EVALUATOR_CLASS(BasisValues_Evaluator)
  
   Teuchos::RCP<const panzer::PureBasis> basis;
   
@@ -79,7 +81,7 @@ public:
                         const Teuchos::RCP<const panzer::PureBasis> & basis,
                         bool derivativesRequired);
 
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 }
 

@@ -133,7 +133,7 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
   if(workset.subcell_dim==1) {
     Intrepid::CellTools<ScalarT>::getPhysicalEdgeTangents(edgeTan,
                                             pointValues.jac,
-                                            workset.subcell_index, 
+                                            this->wda(workset).subcell_index, 
                                            *basis->getCellTopology());
 
     for(std::size_t c=0;c<workset.num_cells;c++) {

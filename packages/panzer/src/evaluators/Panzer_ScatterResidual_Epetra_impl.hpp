@@ -150,8 +150,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<Epetra_Vector> r = epetraContainer_->get_f(); 
 
@@ -267,8 +267,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -399,8 +399,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
 
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<Epetra_Vector> r = epetraContainer_->get_f(); 
    Teuchos::RCP<Epetra_CrsMatrix> Jac = epetraContainer_->get_A();

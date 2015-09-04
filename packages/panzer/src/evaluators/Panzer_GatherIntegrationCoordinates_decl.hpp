@@ -55,6 +55,8 @@
 
 #include "Panzer_PureBasis.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
 
 /** \brief Gathers coordinates for the quadrature from the
@@ -62,7 +64,7 @@ namespace panzer {
 */
 template<typename EvalT, typename TRAITS>
 class GatherIntegrationCoordinates
-  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+  : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<EvalT, TRAITS> {
 public:
   

@@ -115,7 +115,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_BasisTimesVector,sd,fm)
   num_qp = vectorField.dimension(1); 
   num_dim = vectorField.dimension(2); // dimension of a vector
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
   // tmp = Intrepid:FieldContainer<ScalarT>(vectorField.dimension(0), num_qp, num_dim);
   MDFieldArrayFactory af("",fm.template getKokkosExtendedDataTypeDimensions<EvalT>(),true);
@@ -210,7 +210,7 @@ PHX_EVALUATE_FIELDS(Integrator_BasisTimesVector,workset)
   if(workset.num_cells>0) {
 
     Integrate_Values<ScalarT> integrate_V;
-    integrate_V.weighted_basis_vector = workset.bases[basis_index]->weighted_basis_vector;
+    integrate_V.weighted_basis_vector = this->wda(workset).bases[basis_index]->weighted_basis_vector;
     integrate_V.residual = residual;
     integrate_V.scratch = scratch;
 

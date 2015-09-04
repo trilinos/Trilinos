@@ -48,14 +48,16 @@
 #include "Phalanx_Field.hpp"
 #include "Panzer_IntegrationRule.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
 
-PHX_EVALUATOR_CLASS(TestEvaluator)
+PANZER_EVALUATOR_CLASS(TestEvaluator)
 
   PHX::MDField<ScalarT,Cell> dogValues;
   PHX::MDField<ScalarT,Cell> hrsValues;
 
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 //**********************************************************************
 PHX_EVALUATOR_CTOR(TestEvaluator,p)
@@ -86,7 +88,7 @@ PHX_POST_REGISTRATION_SETUP(TestEvaluator,sd,fm)
 PHX_EVALUATE_FIELDS(TestEvaluator,workset)
 { 
    double extra = 0.0;
-   if(workset.block_id=="block_1")
+   if(this->wda(workset).block_id=="block_1")
       extra = 44.3;
 
    for(int i=0;i<dogValues.dimension(0);i++) {

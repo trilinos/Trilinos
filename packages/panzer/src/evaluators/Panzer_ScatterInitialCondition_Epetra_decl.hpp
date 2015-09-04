@@ -53,6 +53,8 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 class Epetra_Vector;
 class Epetra_CrsMatrix;
 
@@ -83,7 +85,7 @@ template<typename EvalT, typename TRAITS,typename LO,typename GO> class ScatterI
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO>
 class ScatterInitialCondition_Epetra<panzer::Traits::Residual,TRAITS,LO,GO>
-  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+  : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Residual, TRAITS>,
     public panzer::CloneableEvaluator {
   
@@ -128,7 +130,7 @@ private:
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO>
 class ScatterInitialCondition_Epetra<panzer::Traits::Tangent,TRAITS,LO,GO>
-  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+  : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Tangent, TRAITS>,
     public panzer::CloneableEvaluator {
   
@@ -174,7 +176,7 @@ private:
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO>
 class ScatterInitialCondition_Epetra<panzer::Traits::Jacobian,TRAITS,LO,GO>
-  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+  : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>, 
     public panzer::CloneableEvaluator {
   

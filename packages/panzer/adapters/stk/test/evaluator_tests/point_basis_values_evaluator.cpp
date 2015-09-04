@@ -85,6 +85,8 @@ using Teuchos::rcp;
 #include <vector>
 #include <string>
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
 
   Teuchos::RCP<panzer::PureBasis> buildBasis(std::size_t worksetSize,const std::string & basisName);
@@ -330,7 +332,8 @@ namespace panzer {
     fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian>(basis);
     out << basis << std::endl;
 
-    std::size_t basisIndex = panzer::getBasisIndex(layout->name(), workset);
+    WorksetDetailsAccessor wda;
+    std::size_t basisIndex = panzer::getBasisIndex(layout->name(), workset, wda);
     Teuchos::RCP<panzer::BasisValues2<double> > bases = workset.bases[basisIndex];
     TEST_ASSERT(bases!=Teuchos::null);
     // TEST_EQUALITY(bases->basis.size(),basis.size());
@@ -443,7 +446,8 @@ namespace panzer {
     fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian,Cell,BASIS,IP>(curl_basis);
     fm.getFieldData<panzer::Traits::Jacobian::ScalarT,panzer::Traits::Jacobian,Cell,IP,Dim,Dim>(jac_inv);
 
-    std::size_t basisIndex = panzer::getBasisIndex(layout->name(), workset);
+    WorksetDetailsAccessor wda;
+    std::size_t basisIndex = panzer::getBasisIndex(layout->name(), workset, wda);
     Teuchos::RCP<panzer::BasisValues2<double> > bases = workset.bases[basisIndex];
     TEST_ASSERT(bases!=Teuchos::null);
     TEST_EQUALITY(bases->basis_vector.size(),basis.size());

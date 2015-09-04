@@ -59,6 +59,8 @@
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>

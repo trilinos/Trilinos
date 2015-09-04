@@ -51,6 +51,8 @@
 
 #include "Panzer_Evaluator_WithBaseImpl.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF values

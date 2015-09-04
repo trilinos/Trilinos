@@ -110,7 +110,7 @@ PHX_POST_REGISTRATION_SETUP(WeakDirichletResidual,sd,fm)
   TEUCHOS_ASSERT(flux.dimension(1) == normal.dimension(1));
   TEUCHOS_ASSERT(flux.dimension(2) == normal.dimension(2));
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -129,7 +129,7 @@ PHX_EVALUATE_FIELDS(WeakDirichletResidual,workset)
   if(workset.num_cells>0)
     Intrepid::FunctionSpaceTools::
       integrate<ScalarT>(residual, normal_dot_flux_plus_pen, 
-			 (workset.bases[basis_index])->weighted_basis_scalar, 
+			 (this->wda(workset).bases[basis_index])->weighted_basis_scalar, 
 			 Intrepid::COMP_BLAS);
   
 }
