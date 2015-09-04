@@ -137,17 +137,9 @@ namespace panzer {
   public:
     //! Default value is 0, which is backwards compatible.
     WorksetDetailsAccessor() : details_index_(0) {}
-    //! Initialize the details index using the evaluator constructor's ParameterList.
-    WorksetDetailsAccessor(const Teuchos::ParameterList& p) : details_index_(0) { init(p); }
-    //! Initialize using a function call.
-    void init(const Teuchos::ParameterList& p) {
-      if (p.isType<int>("Details Index"))
-        details_index_ = p.get<int>("Details Index");
-      TEUCHOS_TEST_FOR_EXCEPTION( ! (details_index_ == 0 || details_index_ == 1),
-                                 std::logic_error, "Details Index must be 0 or 1.");
-    }
-    //! Workset wrapper to extract the correct details. Example:
-    //! wda(workset).bases[i].
+    //! An evaluator builder sets the details index.
+    void setDetailsIndex(const int di) { details_index_ = di; }
+    //! Workset wrapper to extract the correct details. Example: wda(workset).bases[i].
     WorksetDetails& operator()(Workset& workset) const {
       return workset(details_index_);
     }
