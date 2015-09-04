@@ -101,7 +101,7 @@ namespace MueLu {
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
             class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
-  class UtilsK {
+  class Utils_kokkos {
 #undef MUELU_UTILITIESK_SHORT
 #include "MueLu_UseShortNames.hpp"
 

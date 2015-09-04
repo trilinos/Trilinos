@@ -43,24 +43,25 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_UTILITIESK_FWD_HPP
-#define MUELU_UTILITIESK_FWD_HPP
-
 #include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+#include "MueLu_ExplicitInstantiation.hpp"
 
-namespace MueLu {
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class UtilsK;
+#include "MueLu_Utilities_kokkos_def.hpp"
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  class Utils2K;
-}
+#include "TpetraCore_ETIHelperMacros.h"
 
-#ifndef MUELU_UTILITIESK_SHORT
-#define MUELU_UTILITIESK_SHORT
+#ifndef _MSC_VER // error C2950: 'MueLu::Utils2K<double,int,int>' : cannot explicitly instantiate an explicit specialization
+#define MUELU_LOCAL_INSTANT(S,LO,GO,N)          \
+  template class MueLu::Utils_kokkos<S,LO,GO,N>;       \
+  template class MueLu::Utils2K<S,LO,GO,N>;
+#else
+#define MUELU_LOCAL_INSTANT(S,LO,GO,N)           \
+  template class MueLu::Utils_kokkos<S,LO,GO,N>;
 #endif
 
-#endif
+TPETRA_ETI_MANGLING_TYPEDEFS()
 
-#endif // MUELU_UTILITIESK_FWD_HPP
+TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
+
+#endif

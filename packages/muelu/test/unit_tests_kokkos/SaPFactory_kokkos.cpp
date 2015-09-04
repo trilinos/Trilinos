@@ -59,7 +59,7 @@ namespace MueLuTests {
 
 #include "MueLu_UseShortNames.hpp"
 
-  TEUCHOS_UNIT_TEST(SaPFactory_kokkos, Test0)
+  TEUCHOS_UNIT_TEST(SaPFactory_kokkos, Constructor)
   {
     out << "version: " << MueLu::Version() << std::endl;
 
@@ -75,10 +75,25 @@ namespace MueLuTests {
   {
     out << "version: " << MueLu::Version() << std::endl;
 
-    RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
-    sapFactory->SetDampingFactor( (Scalar)4/3 );
-    TEST_EQUALITY(((Scalar)4/3) == sapFactory->GetDampingFactor(), true);
+    RCP<SaPFactory_kokkos> sapFactory = rcp(new SaPFactory_kokkos);
+    SC damping = ((SC)4)/3;
+    sapFactory->SetDampingFactor(damping);
+    TEST_EQUALITY(sapFactory->GetDampingFactor() == damping, true);
 
+  }
+
+  TEUCHOS_UNIT_TEST(SaPFactory_kokkos, Build)
+  {
+    MueLu::Level level;
+    level.SetLevelID(1);
+
+    level.Set("A",     A);
+    level.Set("P",     P);
+    level.Set("Graph", filteredGraph);
+
+    RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
+    SC damping = 1.1;
+    sapFactory->SetDampingFactor(damping);
   }
 #endif
 

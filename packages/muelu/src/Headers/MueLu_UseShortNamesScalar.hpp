@@ -359,7 +359,7 @@ typedef MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node> Zoltan2I
 #endif
 
 #ifdef MUELU_UTILITIESK_SHORT
-typedef MueLu::UtilsK<Scalar,LocalOrdinal,GlobalOrdinal,Node> UtilsK;
+typedef MueLu::Utils_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils_kokkos;
 typedef MueLu::Utils2K<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2K;
 #endif
 

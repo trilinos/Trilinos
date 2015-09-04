@@ -57,7 +57,7 @@
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_TentativePFactory.hpp"
-#include "MueLu_UtilitiesK.hpp"
+#include "MueLu_Utilities_kokkos.hpp"
 
 #include <sstream>
 
@@ -152,7 +152,7 @@ namespace MueLu {
         SC omega = dampingFactor / lambdaMax;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = UtilsK::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2),std::string("MueLu::SaP-")+levelstr.str());
+        finalP = Utils_kokkos::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2),std::string("MueLu::SaP-")+levelstr.str());
       }
 
     } else {

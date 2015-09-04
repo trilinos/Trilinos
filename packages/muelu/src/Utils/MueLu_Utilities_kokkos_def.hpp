@@ -98,7 +98,7 @@
 
 #include <XpetraExt_MatrixMatrix.hpp>
 
-#include <MueLu_UtilitiesK_decl.hpp>
+#include <MueLu_Utilities_kokkos_decl.hpp>
 
 namespace MueLu {
 
@@ -108,7 +108,7 @@ namespace MueLu {
 #endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayRCP<Scalar> UtilsK<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonal(const Matrix& A) {
+  Teuchos::ArrayRCP<Scalar> Utils_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonal(const Matrix& A) {
     // FIXME Kokkos
 
     size_t numRows = A.getRowMap()->getNodeNumElements();
@@ -136,7 +136,7 @@ namespace MueLu {
   } //GetMatrixDiagonal
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > UtilsK<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol) {
+  Teuchos::RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utils_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixDiagonalInverse(const Matrix& A, Magnitude tol) {
     // FIXME Kokkos
     RCP<const Map> rowMap = A.getRowMap();
     RCP<Vector> diag      = VectorFactory::Build(rowMap);
@@ -170,7 +170,7 @@ namespace MueLu {
   } //GetMatrixDiagonalInverse
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::ArrayRCP<Scalar> UtilsK<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetLumpedMatrixDiagonal(const Matrix &A) {
+  Teuchos::ArrayRCP<Scalar> Utils_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetLumpedMatrixDiagonal(const Matrix &A) {
     // FIXME: Kokkos
     size_t numRows = A.getRowMap()->getNodeNumElements();
     Teuchos::ArrayRCP<SC> diag(numRows);
@@ -190,7 +190,7 @@ namespace MueLu {
   } //GetMatrixDiagonal
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > UtilsK<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(const Matrix& A) {
+  RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utils_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::GetMatrixOverlappedDiagonal(const Matrix& A) {
     // FIXME: Kokkos
     RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
     RCP<Vector>    localDiag     = VectorFactory::Build(rowMap);
@@ -224,7 +224,7 @@ namespace MueLu {
   } //GetMatrixOverlappedDiagonal
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void UtilsK<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector, bool doInverse) {
+  void Utils_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector, bool doInverse) {
     // FIXME: Kokkos
 #ifdef HAVE_MUELU_TPETRA
     try {
@@ -247,64 +247,8 @@ namespace MueLu {
 #endif // HAVE_MUELU_TPETRA
   } //ScaleMatrix()
 
-
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Scalar UtilsK<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PowerMethod(const Matrix& A, bool scaleByDiag, LO niters, Magnitude tolerance, bool verbose, unsigned int seed) {
-    TEUCHOS_TEST_FOR_EXCEPTION(!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))), Exceptions::Incompatible,
-        "UtilsK::PowerMethod: operator must have domain and range maps that are equivalent.");
-
-    // Create three vectors, fill z with random numbers
-    RCP<Vector> q = VectorFactory::Build(A.getDomainMap());
-    RCP<Vector> r = VectorFactory::Build(A.getRangeMap());
-    RCP<Vector> z = VectorFactory::Build(A.getRangeMap());
-
-    z->setSeed(seed);           // seed random number generator
-    z->randomize(true);         // use Xpetra implementation: -> same results for Epetra and Tpetra
-
-    Teuchos::Array<Magnitude> norms(1);
-
-    typedef Teuchos::ScalarTraits<Scalar> STS;
-
-    const SC zero = STS::zero(), one = STS::one();
-
-    SC lambda = zero;
-    Magnitude residual = STS::magnitude(zero);
-
-    // power iteration
-    RCP<Vector> diagVec, oneOverDiagonal;
-    if (scaleByDiag) {
-      diagVec = VectorFactory::Build(A.getRowMap());
-      A.getLocalDiagCopy(*diagVec);
-      oneOverDiagonal = VectorFactory::Build(A.getRowMap());
-      oneOverDiagonal->reciprocal(*diagVec);
-    }
-
-    for (int iter = 0; iter < niters; ++iter) {
-      z->norm2(norms);                                  // Compute 2-norm of z
-      q->update(one / norms[0],*z,zero);                // Set q = z / normz
-      A.apply(*q, *z);                                  // Compute z = A*q
-      if (scaleByDiag) z->elementWiseMultiply(one, *oneOverDiagonal, *z, zero);
-      lambda = q->dot(*z);                              // Approximate maximum eigenvalue: lamba = dot(q,z)
-      if (iter % 100 == 0 || iter + 1 == niters) {
-        r->update(1.0, *z, -lambda, *q, zero);          // Compute A*q - lambda*q
-        r->norm2(norms);
-        residual = STS::magnitude(norms[0] / lambda);
-        if (verbose) {
-          std::cout << "Iter = " << iter
-                    << "  Lambda = " << lambda
-                    << "  Residual of A*q - lambda*q = " << residual
-                    << std::endl;
-        }
-      }
-      if (residual < tolerance)
-        break;
-    }
-
-    return lambda;
-  } //PowerMethod
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void UtilsK<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse,
+  void Utils_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse,
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {
@@ -336,7 +280,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void UtilsK<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Tpetra(Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector,
+  void Utils_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Tpetra(Matrix& Op, const Teuchos::ArrayRCP<SC>& scalingVector,
                                bool doFillComplete,
                                bool doOptimizeStorage)
   {
@@ -401,7 +345,7 @@ namespace MueLu {
 
       if (doFillComplete) {
         if (domainMap == Teuchos::null || rangeMap == Teuchos::null)
-          throw Exceptions::RuntimeError("In UtilsK::Scaling: cannot fillComplete because the domain and/or range map hasn't been defined");
+          throw Exceptions::RuntimeError("In Utils_kokkos::Scaling: cannot fillComplete because the domain and/or range map hasn't been defined");
 
         RCP<Teuchos::ParameterList> params = rcp(new Teuchos::ParameterList());
         params->set("Optimize Storage",    doOptimizeStorage);
@@ -417,7 +361,7 @@ namespace MueLu {
   } //MyOldScaleMatrix_Tpetra()
 
   template <class SC, class LO, class GO, class NO>
-  ArrayRCP<const bool> UtilsK<SC, LO, GO, NO>::DetectDirichletRows(const Matrix& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
+  ArrayRCP<const bool> Utils_kokkos<SC, LO, GO, NO>::DetectDirichletRows(const Matrix& A, const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol) {
     LO numRows = A.getNodeNumRows();
 
     typedef Teuchos::ScalarTraits<SC> STS;
@@ -441,7 +385,7 @@ namespace MueLu {
   }
 
   template <class SC, class LO, class GO, class NO>
-  void UtilsK<SC, LO, GO, NO>::findDirichletRows(Teuchos::RCP<Matrix> A,
+  void Utils_kokkos<SC, LO, GO, NO>::findDirichletRows(Teuchos::RCP<Matrix> A,
                                                      std::vector<LO>& dirichletRows) {
     dirichletRows.resize(0);
     for(size_t i=0; i<A->getNodeNumRows(); i++) {
@@ -461,7 +405,7 @@ namespace MueLu {
   }
 
   template<class SC, class LO, class GO, class NO>
-  void UtilsK<SC, LO, GO, NO>::findDirichletCols(Teuchos::RCP<Matrix> A,
+  void Utils_kokkos<SC, LO, GO, NO>::findDirichletCols(Teuchos::RCP<Matrix> A,
                                                      std::vector<LO>& dirichletRows,
                                                      std::vector<LO>& dirichletCols) {
     Teuchos::RCP<const Map> domMap = A->getDomainMap();
@@ -492,7 +436,7 @@ namespace MueLu {
   }
 
   template<class SC, class LO, class GO, class NO>
-  void UtilsK<SC, LO, GO, NO>::Apply_BCsToMatrixRows(Teuchos::RCP<Matrix>& A,
+  void Utils_kokkos<SC, LO, GO, NO>::Apply_BCsToMatrixRows(Teuchos::RCP<Matrix>& A,
                                                          std::vector<LO>& dirichletRows) {
     for(size_t i=0; i<dirichletRows.size(); i++) {
       Teuchos::ArrayView<const LO> indices;
@@ -508,7 +452,7 @@ namespace MueLu {
   }
 
   template<class SC, class LO, class GO, class NO>
-  void UtilsK<SC, LO, GO, NO>::Apply_BCsToMatrixCols(Teuchos::RCP<Matrix>& A,
+  void Utils_kokkos<SC, LO, GO, NO>::Apply_BCsToMatrixCols(Teuchos::RCP<Matrix>& A,
                                                          std::vector<LO>& dirichletCols) {
     for(size_t i=0; i<A->getNodeNumRows(); i++) {
       Teuchos::ArrayView<const LO> indices;
@@ -528,7 +472,7 @@ namespace MueLu {
   }
 
   template<class SC, class LO, class GO, class NO>
-  void UtilsK<SC, LO, GO, NO>::Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A, double tol) {
+  void Utils_kokkos<SC, LO, GO, NO>::Remove_Zeroed_Rows(Teuchos::RCP<Matrix>& A, double tol) {
     Teuchos::RCP<const Map> rowMap = A->getRowMap();
     RCP<Matrix> DiagMatrix = MatrixFactory::Build(rowMap,1);
     RCP<Matrix> NewMatrix = MatrixFactory::Build(rowMap,1);
