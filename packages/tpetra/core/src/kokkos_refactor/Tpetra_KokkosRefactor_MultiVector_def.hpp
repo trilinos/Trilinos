@@ -53,6 +53,34 @@
 #include <Kokkos_Blas1_MV.hpp>
 #include <Kokkos_Random.hpp>
 
+#ifdef HAVE_TPETRA_INST_FLOAT128
+namespace Kokkos {
+  // FIXME (mfh 04 Sep 2015) Just a stub for now!
+  template<class Generator>
+  struct rand<Generator, __float128> {
+    static KOKKOS_INLINE_FUNCTION __float128 max ()
+    {
+      return static_cast<__float128> (1.0);
+    }
+    static KOKKOS_INLINE_FUNCTION __float128
+    draw (Generator& gen)
+    {
+      return gen.drand ();
+    }
+    static KOKKOS_INLINE_FUNCTION __float128
+    draw (Generator& gen, const __float128& range)
+    {
+      return gen.drand (range);
+    }
+    static KOKKOS_INLINE_FUNCTION __float128
+    draw (Generator& gen, const __float128& start, const __float128& end)
+    {
+      return gen.drand (start, end);
+    }
+  };
+} // namespace Kokkos
+#endif // HAVE_TPETRA_INST_FLOAT128
+
 namespace { // (anonymous)
 
   /// \brief Allocate and return a 2-D Kokkos::DualView for Tpetra::MultiVector.
