@@ -47,6 +47,7 @@
 //#define TEUCHOS_SCALAR_TRAITS_THROW_NAN_INF_ERR
 
 #ifdef HAVE_TEUCHOSCORE_QUADMATH
+namespace std {
 std::ostream&
 operator<< (std::ostream& out, const __float128& x)
 {
@@ -64,6 +65,7 @@ operator<< (std::ostream& out, const __float128& x)
   out << buf;
   return out;
 }
+} // namespace std
 #endif // HAVE_TEUCHOSCORE_QUADMATH
 
 namespace {

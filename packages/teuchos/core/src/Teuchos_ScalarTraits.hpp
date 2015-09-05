@@ -61,7 +61,9 @@
 
 #ifdef HAVE_TEUCHOSCORE_QUADMATH
 #include <quadmath.h>
-#include <ostream>
+
+// Teuchos_ConfigDefs.hpp includes <iostream>, which includes
+// <ostream>.  If this ever changes, include <ostream> here.
 
 /// \brief Overload of operator<<(std::ostream&, const T&) for T =
 ///   __float128.
@@ -72,11 +74,11 @@
 ///
 /// FIXME (mfh 19 Mar 2015) This will break if users have already
 /// defined their own operator<< in the global namespace.
-std::ostream&
+namespace std {
+ostream&
 operator<< (std::ostream& out, const __float128& x);
+} // namespace std
 
-#else
-#  error "HAVE_TEUCHOSCORE_QUADMATH not defined"
 #endif // HAVE_TEUCHOSCORE_QUADMATH
 
 #ifdef HAVE_TEUCHOS_QD
