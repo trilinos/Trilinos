@@ -61,16 +61,22 @@
 
 #ifdef HAVE_TEUCHOSCORE_QUADMATH
 #include <quadmath.h>
+#include <ostream>
 
-// GCC / libquadmath doesn't implement an std::ostream operator<< for
-// __float128, so we have to write our own.  At least libquadmath
-// provides a printing function specifically for __float128.
-//
-// FIXME (mfh 19 Mar 2015) This will break if users have already
-// defined their own operator<< in the global namespace.
+/// \brief Overload of operator<<(std::ostream&, const T&) for T =
+///   __float128.
+///
+/// GCC / libquadmath doesn't implement an std::ostream operator<< for
+/// __float128, so we have to write our own.  At least libquadmath
+/// provides a printing function specifically for __float128.
+///
+/// FIXME (mfh 19 Mar 2015) This will break if users have already
+/// defined their own operator<< in the global namespace.
 std::ostream&
 operator<< (std::ostream& out, const __float128& x);
 
+#else
+#  error "HAVE_TEUCHOSCORE_QUADMATH not defined"
 #endif // HAVE_TEUCHOSCORE_QUADMATH
 
 #ifdef HAVE_TEUCHOS_QD
@@ -816,6 +822,13 @@ struct ScalarTraits<__float128> {
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
     random ();
 #endif
+  }
+  static __float128 random () {
+    // FIXME (mfh 04 Sep 2015) STUB IMPLEMENTATION; OBVIOUSLY WRONG.
+    // I would rather have something completely wrong here than
+    // something that appears to be right but actually isn't, e.g.,
+    // the implementation for double above.
+    return static_cast<__float128> (9.0);
   }
   static std::string name () {
     return "__float128";
