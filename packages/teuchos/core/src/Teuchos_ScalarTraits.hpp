@@ -826,11 +826,17 @@ struct ScalarTraits<__float128> {
 #endif
   }
   static __float128 random () {
-    // FIXME (mfh 04 Sep 2015) STUB IMPLEMENTATION; OBVIOUSLY WRONG.
-    // I would rather have something completely wrong here than
-    // something that appears to be right but actually isn't, e.g.,
-    // the implementation for double above.
-    return static_cast<__float128> (9.0);
+    // Half the smallest normalized double, is the scaling factor of
+    // the lower-order term in the double-double representation.
+    const __float128 scalingFactor =
+      static_cast<__float128> (std::numeric_limits<double>::min ()) /
+      static_cast<__float128> (2.0);
+    const __float128 higherOrderTerm =
+      static_cast<__float128> (ScalarTraits<double>::random ());
+    const __float128 lowerOrderTerm =
+      static_cast<__float128> (ScalarTraits<double>::random ()) *
+      scalingFactor;
+    return higherOrderTerm + lowerOrderTerm;
   }
   static std::string name () {
     return "__float128";
