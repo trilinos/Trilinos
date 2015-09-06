@@ -153,7 +153,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
 
   // Diffusion Operator
@@ -170,7 +170,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::Integrator_GradBasisDotVector<EvalT,panzer::Traits>(p));
 
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
   
   // Convection Operator
@@ -190,7 +190,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       RCP< PHX::Evaluator<panzer::Traits> > op = 
 	rcp(new panzer::ScalarToVector<EvalT,panzer::Traits>(p));
       
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
     }
 
     // Evaluator to assemble convection term
@@ -205,7 +205,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       RCP< PHX::Evaluator<panzer::Traits> > op = 
 	rcp(new user_app::Convection<EvalT,panzer::Traits>(p));
       
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
     }
 
     // Integration operator (could sum this into source for efficiency)
@@ -225,7 +225,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       RCP< PHX::Evaluator<panzer::Traits> > op = 
 	rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
       
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
     }
   }
 
@@ -241,7 +241,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
 
   // Use a sum operator to form the overall residual for the equation

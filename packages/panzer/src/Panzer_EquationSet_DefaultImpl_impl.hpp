@@ -186,7 +186,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
     
     RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
 
   // **************************
@@ -198,7 +198,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
          basis != m_unique_bases.end(); ++ basis) {
       RCP< PHX::Evaluator<panzer::Traits> > basis_op
         = rcp(new panzer::GatherBasisCoordinates<EvalT,panzer::Traits>(*basis->second));
-      fm.template registerEvaluator<EvalT>(basis_op);
+      this->template registerEvaluator<EvalT>(fm, basis_op);
     }
 
     // add integration coordinates
@@ -206,7 +206,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
          ir != m_int_rules.end(); ++ir)   {
       RCP< PHX::Evaluator<panzer::Traits> > quad_op
         = rcp(new panzer::GatherIntegrationCoordinates<EvalT,panzer::Traits>(*ir->second));
-      fm.template registerEvaluator<EvalT>(quad_op);
+      this->template registerEvaluator<EvalT>(fm, quad_op);
     }
 
     // NOTE: You can look up the name of either coordinate field name by doing
@@ -247,7 +247,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
     
     RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
 
   // **************************
@@ -263,7 +263,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
      
       RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGatherOrientation<EvalT>(p);
       
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
     }
   }
 
@@ -306,7 +306,7 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
 
   // Gradients of DOFs: Scalar value @ basis --> Vector value @ IP
@@ -332,7 +332,7 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
       RCP< PHX::Evaluator<panzer::Traits> > op = 
         rcp(new panzer::DOFGradient<EvalT,panzer::Traits>(p));
 
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
     }
   }
 
@@ -370,7 +370,7 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
       RCP< PHX::Evaluator<panzer::Traits> > op = 
         rcp(new panzer::DOFCurl<EvalT,panzer::Traits>(p));
 
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
     }
 
   }
@@ -409,7 +409,7 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
       RCP< PHX::Evaluator<panzer::Traits> > op = 
         rcp(new panzer::DOFDiv<EvalT,panzer::Traits>(p));
 
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
     }
   }
 
@@ -444,7 +444,7 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
 
 }
@@ -490,7 +490,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
         
         RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatter<EvalT>(p);
         
-        fm.template registerEvaluator<EvalT>(op);
+        this->template registerEvaluator<EvalT>(fm, op);
       }
       
       // Require variables
@@ -547,7 +547,7 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                      fm);
   
   for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
-    fm.template registerEvaluator<EvalT>((*evaluators)[i]);
+    this->template registerEvaluator<EvalT>(fm, (*evaluators)[i]);
 }
 
 // ***********************************************************************
@@ -566,7 +566,7 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
        basis != m_unique_bases.end(); ++ basis) {
     Teuchos::RCP< PHX::Evaluator<panzer::Traits> > basis_op
       = Teuchos::rcp(new panzer::GatherBasisCoordinates<EvalT,panzer::Traits>(*basis->second));
-    fm.template registerEvaluator<EvalT>(basis_op);
+    this->template registerEvaluator<EvalT>(fm, basis_op);
   }
 
   for(typename std::map<std::string,DOFDescriptor>::const_iterator itr=m_provided_dofs_desc.begin();
@@ -590,7 +590,7 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
     // Use ScatterDirichlet to scatter the initial condition
     Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterDirichlet<EvalT>(p);
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
 
 
     // Require field
@@ -617,7 +617,7 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
       factory.getAsObject<EvalT>()->buildClosureModels(model_name, models, *fll, dummy_ir, *(this->m_eval_plist), user_data, this->getGlobalData(), fm);
     
     for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators->size(); ++i)
-      fm.template registerEvaluator<EvalT>((*evaluators)[i]);
+      this->template registerEvaluator<EvalT>(fm, (*evaluators)[i]);
   }
 
   // **************************
@@ -633,7 +633,7 @@ buildAndRegisterInitialConditionEvaluators(PHX::FieldManager<panzer::Traits>& fm
      
       Teuchos::RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGatherOrientation<EvalT>(p);
       
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
     }
   }
 
@@ -995,7 +995,7 @@ buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm
 
   RCP< PHX::Evaluator<panzer::Traits> > op = rcp(new panzer::SumStatic<EvalT,panzer::Traits,panzer::Cell,panzer::BASIS>(p));
   
-  fm.template registerEvaluator<EvalT>(op);
+  this->template registerEvaluator<EvalT>(fm, op);
 }
 
 // ***********************************************************************
@@ -1031,7 +1031,7 @@ buildAndRegisterResidualSummationEvalautor(PHX::FieldManager<panzer::Traits>& fm
 
   RCP< PHX::Evaluator<panzer::Traits> > op = rcp(new panzer::SumStatic<EvalT,panzer::Traits,panzer::Cell,panzer::BASIS>(p));
   
-  fm.template registerEvaluator<EvalT>(op);
+  this->template registerEvaluator<EvalT>(fm, op);
 }
 
 // ***********************************************************************

@@ -131,7 +131,7 @@ using std::string;
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::Constant<EvalT,panzer::Traits>(p));
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
 
   // add contribution to the residual 
@@ -146,7 +146,7 @@ using std::string;
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
 }
 
