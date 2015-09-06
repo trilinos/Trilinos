@@ -143,7 +143,6 @@ PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
   // const Intrepid::FieldContainer<double>& rightFields = (this->wda(workset).int_rules[quad_index])->weighted_measure;
   const IntegrationValues2<double> & iv = *this->wda(workset).int_rules[quad_index];
 
-  int numCells        = tmp.dimension(0);
   int numPoints       = tmp.dimension(1);
  
   for(int cl = 0; cl < workset.num_cells; cl++) {
