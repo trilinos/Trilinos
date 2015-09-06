@@ -40,24 +40,60 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EVALUATOR_WITHBASEIMPL_HPP
-#define PANZER_EVALUATOR_WITHBASEIMPL_HPP
+#ifndef PANZER_EVALUATORS_REGISTRAR_HPP
+#define PANZER_EVALUATORS_REGISTRAR_HPP
 
-#include "Phalanx_Evaluator_WithBaseImpl.hpp"
-#include "Panzer_Workset.hpp"
+#include "Phalanx_FieldManager.hpp"
+
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
 
 namespace panzer {
 
-//! Wrapper to PHX::EvaluatorWithBaseImpl that implements Panzer-specific helpers.
-template<typename TRAITS>
-class EvaluatorWithBaseImpl : public PHX::EvaluatorWithBaseImpl<TRAITS> {
+/** Classes that call PHX::FieldManager::registerEvaluator on
+  * panzer::EvaluatorWithBaseImpl objects inherit from this class to wrap the
+  * registerEvaluator call. This class injects the WorksetDetails index into the
+  * evaluator.
+ */
+class EvaluatorsRegistrar {
 public:
-  //! An evaluator builder sets the details index.
-  void setDetailsIndex(const int di) { wda.setDetailsIndex(di); }
-  
+  //! Set the WorksetDetails index in all evaluators regisetred through
+  //! EquationSetBase::registerEvaluator. The details index can be set multiple
+  //! times. The current value applies at registration.
+  void setDetailsIndex(const int details_index) { details_index_ = details_index; }
+
 protected:
-  WorksetDetailsAccessor wda;
+  //! Default ctor initializes WorksetDetails index to 0.
+  EvaluatorsRegistrar() : details_index_(0) {}
+  virtual ~EvaluatorsRegistrar() {}
+
+  //! Register the evaluator and initialize it with any information in
+  //! panzer::EvaluatorWithBaseImpl.
+  template <typename EvalT>
+  void registerEvaluator(PHX::FieldManager<panzer::Traits>& fm,
+                         const Teuchos::RCP< PHX::Evaluator<panzer::Traits> >& op) const;
+
+private:
+  int details_index_;
 };
+
+template<typename EvalT>
+void EvaluatorsRegistrar::
+registerEvaluator(PHX::FieldManager<panzer::Traits>& fm,
+                  const Teuchos::RCP< PHX::Evaluator<panzer::Traits> >& op) const
+{
+  Teuchos::RCP< panzer::EvaluatorWithBaseImpl<panzer::Traits> >
+    pop = Teuchos::rcp_dynamic_cast< panzer::EvaluatorWithBaseImpl<panzer::Traits> >(op);
+  // Temporarily allow casting failure so that Charon Charon continues to work.
+#if 0
+  TEUCHOS_TEST_FOR_EXCEPTION(pop.is_null(), std::runtime_error,
+                             op->getName() + " does not inherit from panzer::EvaluatorWithBaseImpl.");
+  pop->setDetailsIndex(details_index_);
+#else
+  if (Teuchos::nonnull(pop))
+    pop->setDetailsIndex(details_index_);
+#endif
+  fm.template registerEvaluator<EvalT>(op);
+}
 
 }
 
