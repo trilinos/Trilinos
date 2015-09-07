@@ -81,6 +81,7 @@ namespace stk { class CommAll; }
 #include "EntityCommListInfo.hpp"
 #include "EntityLess.hpp"
 #include "SharedEntityType.hpp"
+#include "CommListUpdater.hpp"
 
 namespace sierra { namespace Fmwk { class EntityCreationOperationList; } }
 
@@ -1276,6 +1277,7 @@ protected: //data
   std::vector<MeshIndex> m_mesh_indexes; //indexed by Entity
   impl::EntityRepository m_entity_repo;
   EntityCommListInfoVector m_entity_comm_list;
+  CommListUpdater m_comm_list_updater;
   std::list<size_t> m_deleted_entities_current_modification_cycle;
   GhostReuseMap m_ghost_reuse_map;
   std::vector<EntityKey> m_entity_keys; //indexed by Entity

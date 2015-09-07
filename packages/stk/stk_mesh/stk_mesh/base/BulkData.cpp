@@ -432,6 +432,7 @@ BulkData::BulkData( MetaData & mesh_meta_data
     m_mesh_indexes(),
     m_entity_repo(*this),
     m_entity_comm_list(),
+    m_comm_list_updater(m_entity_comm_list),
     m_deleted_entities_current_modification_cycle(),
     m_ghost_reuse_map(),
     m_entity_keys(),
@@ -464,6 +465,7 @@ BulkData::BulkData( MetaData & mesh_meta_data
     m_modSummary(*this)
 {
   mesh_meta_data.set_mesh_bulk_data(this);
+  m_entity_comm_map.setCommMapChangeListener(&m_comm_list_updater);
 
   if (m_field_data_manager == NULL)
   {
@@ -3496,20 +3498,22 @@ bool BulkData::pack_entity_modification( const BulkData & mesh ,
   for ( EntityCommListInfoVector::const_iterator
         i = entityCommList.begin() ; i != entityCommList.end() ; ++i ) {
 
-    Entity entity = i->entity;
-    EntityState status = mesh.is_valid(entity) ? mesh.state(entity) : Deleted;
+    if (i->entity_comm != nullptr) {
+      Entity entity = i->entity;
+      EntityState status = mesh.is_valid(entity) ? mesh.state(entity) : Deleted;
 
-    if ( status == Modified || status == Deleted ) {
-
-      for ( PairIterEntityComm ec = mesh.internal_entity_comm_map(i->key); ! ec.empty() ; ++ec )
-      {
-        if ( ( packGhosted && ec->ghost_id > BulkData::SHARED ) || ( packShared && ec->ghost_id == BulkData::SHARED ) )
+      if ( status == Modified || status == Deleted ) {
+  
+        for ( PairIterEntityComm ec(i->entity_comm->comm_map); ! ec.empty() ; ++ec )
         {
-          comm.send_buffer( ec->proc )
-              .pack<EntityKey>( i->key )
-              .pack<EntityState>( status );
-
-          flag = true ;
+          if ( ( packGhosted && ec->ghost_id > BulkData::SHARED ) || ( packShared && ec->ghost_id == BulkData::SHARED ) )
+          {
+            comm.send_buffer( ec->proc )
+                .pack<EntityKey>( i->key )
+                .pack<EntityState>( status );
+  
+            flag = true ;
+          }
         }
       }
     }
@@ -4050,13 +4054,9 @@ void BulkData::update_comm_list_based_on_changes_in_comm_map()
   EntityCommListInfoVector::iterator i = m_entity_comm_list.begin();
   bool changed = false ;
   for ( ; i != m_entity_comm_list.end() ; ++i ) {
-      const EntityComm* entity_comm = m_entity_comm_map.entity_comm(i->key);
-      if ( entity_comm == NULL || entity_comm->comm_map.empty() ) {
+      if ( i->entity_comm == NULL || i->entity_comm->comm_map.empty() ) {
           i->key = EntityKey();
           changed = true;
-      }
-      else {
-          i->entity_comm = entity_comm;
       }
   }
   if ( changed ) {
@@ -4532,15 +4532,17 @@ void BulkData::fill_entity_procs_for_owned_modified_or_created(std::vector<Entit
     for(size_t i=0; i < m_entity_comm_list.size(); ++i)
     {
         const int owner = m_entity_comm_list[i].owner;
-        const EntityKey key = m_entity_comm_list[i].key;
         stk::mesh::Entity entity = m_entity_comm_list[i].entity;
 
         if(owner == p_rank && is_modified_or_created(*this, entity))
         {
-            for(PairIterEntityComm ec = this->internal_entity_comm_map(key); !ec.empty(); ++ec)
-            {
-                EntityProc tmp(entity, ec->proc);
-                send_list.push_back(tmp);
+            const EntityComm* entity_comm = m_entity_comm_list[i].entity_comm;
+            if (entity_comm != nullptr) {
+                for(PairIterEntityComm ec(entity_comm->comm_map); !ec.empty(); ++ec)
+                {
+                    EntityProc tmp(entity, ec->proc);
+                    send_list.push_back(tmp);
+                }
             }
         }
     }
@@ -4917,9 +4919,11 @@ void BulkData::internal_update_fast_comm_maps()
       fast_idx.bucket_id  = idx.bucket->bucket_id();
       fast_idx.bucket_ord = idx.bucket_ordinal;
 
-      PairIterEntityComm ec = internal_entity_comm_map(key);
-      for (; !ec.empty() && ec->ghost_id == BulkData::SHARED; ++ec) {
-        m_volatile_fast_shared_comm_map[rank][ec->proc].push_back(fast_idx);
+      if (all_comm[i].entity_comm != nullptr) {
+          PairIterEntityComm ec(all_comm[i].entity_comm->comm_map);
+          for(; !ec.empty() && ec->ghost_id == BulkData::SHARED; ++ec) {
+              m_volatile_fast_shared_comm_map[rank][ec->proc].push_back(fast_idx);
+          }
       }
     }
 

@@ -502,6 +502,8 @@ void filter_for_candidate_elements_to_connect(const stk::mesh::BulkData & mesh,
     stk::topology localElemTopology = mesh.bucket(localElement).topology();
     stk::topology localFaceTopology = localElemTopology.face_topology(sideOrdinal);
     bool foundEquivalent = false;
+    const stk::mesh::Entity* localElemNodes = mesh.begin_nodes(localElement);
+    stk::mesh::EntityVector localElemSideNodes;
 
     if (localElemTopology.is_shell()) {
         // Make sure we only try to connect to volume elements on the designated
@@ -526,8 +528,7 @@ void filter_for_candidate_elements_to_connect(const stk::mesh::BulkData & mesh,
         // elements that also share the same side nodes.
         //
         for (const ConnectedElementData & connectedElem: connectedElementData) {
-            const stk::mesh::Entity* localElemNodes = mesh.begin_nodes(localElement);
-            stk::mesh::EntityVector localElemSideNodes(connectedElem.m_sideNodes.size());
+            localElemSideNodes.resize(connectedElem.m_sideNodes.size());
             localElemTopology.side_nodes(localElemNodes, sideOrdinal, localElemSideNodes.begin());
 
             std::pair<bool,unsigned> result = localFaceTopology.equivalent(localElemSideNodes, connectedElem.m_sideNodes);
