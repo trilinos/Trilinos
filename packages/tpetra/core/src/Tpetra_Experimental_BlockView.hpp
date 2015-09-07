@@ -58,6 +58,55 @@
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 
+#ifdef HAVE_TPETRA_INST_FLOAT128
+namespace Tpetra {
+namespace Details {
+
+//! Partial implementation of Teuchos::LAPACK for Scalar = __float128.
+class Lapack128 {
+public:
+  void
+  SWAP (const int N, __float128* X, const int INCX,
+        __float128* Y, const int INCY) const;
+
+  /// \brief Compute the LU factorization with partial pivoting of
+  ///   the matrix A.
+  void
+  GETRF (const int M, const int N, __float128 A[],
+         const int LDA, int IPIV[], int* INFO) const;
+
+  /// \brief Perform a series of row interchanges on the matrix A.
+  ///
+  /// Do one row interchange for each of rows K1 through K2 of A.
+  ///
+  /// \param N [in] Number of columns of the matrix A.
+  /// \param A [in/out] 2-D column-major array of dimension (LDA,N).
+  ///   On entry, the matrix of column dimension N to which the row
+  ///   interchanges will be applied.  On exit, the permuted matrix.
+  /// \param LDA [in] The leading dimension (stride) of the 2-D
+  ///   column-major array A.
+  /// \param K1 [in] Start row interchanges with IPIV[K1-1].
+  /// \param K2 [in] Stop row interchanges with IPIV[K2-1].
+  /// \param INCX [in] Increment between successive entries of IPIV.
+  ///   If IPIV is negative, apply the pivots in reverse order.
+  void
+  LASWP (const int N, __float128 A[], const int LDA, const int K1,
+         const int K2, const int IPIV[], const int INCX) const;
+
+  /// \brief Solve the linear system(s) AX=B, using the result of
+  ///   the LU factorization computed by GETRF (above).
+  void
+  GETRS (const char TRANS, const int N, const int NRHS,
+         const __float128 A[], const int LDA, const int IPIV[],
+         __float128 B[], const int LDB, int* INFO) const;
+};
+
+} // namespace Details
+} // namespace Tpetra
+#endif // HAVE_TPETRA_INST_FLOAT128
+
+
+
 namespace { // anonymous
 
   /// \brief Return the Teuchos::LAPACK specialization corresponding
@@ -84,106 +133,13 @@ namespace { // anonymous
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 #ifdef HAVE_TPETRA_INST_FLOAT128
-  class Lapack128 {
-  public:
-    void
-    GETRF (const int M, const int N, __float128 A[],
-           const int LDA, int IPIV[], int* INFO) const
-    {
-      Teuchos::BLAS<int, __float128> blas;
-
-      // NOTE (mfh 05 Sep 2015) This is a direct translation of LAPACK
-      // 3.5.0's DGETF2 routine.  LAPACK is under a BSD license.
-
-      *INFO = 0;
-      if (M < 0) {
-        *INFO = -1;
-      } else if (N < 0) {
-        *INFO = -2;
-      } else if (LDA < std::max (1, M)) {
-        *INFO = -4;
-      }
-      if (*INFO != 0) {
-        return;
-      }
-
-      // Quick return if possible
-      if (M == 0 || N == 0) {
-        return;
-      }
-
-      // Compute machine safe minimum sfmin (such that 1/sfmin does
-      // not overflow).  LAPACK 3.1 just returns for this the smallest
-      // normalized number.
-      const __float128 sfmin = FLT128_MIN;
-      const __float128 zero = 0.0;
-      const __float128 one = 1.0;
-
-      for (int j = 1; j <= std::min (M, N); ++j) {
-        // Find pivot and test for singularity.
-        const __float128* const A_jj = A + (j-1)*LDA + (j-1);
-        const int jp = j - 1 + blas.IAMAX (N - j + 1, A_jj, 1);
-        IPIV[j-1] = jp;
-
-        const __float128* A_jp_j = A + (jp-1)*LDA + (j-1);
-        if (*A_jp_j != zero) {
-          // Apply the interchange to columns 1:N.
-          __float128* const A_j1 = A + (j-1)*LDA;
-          __float128* const A_jp_1 = A + (jp-1)*LDA;
-          if (jp != j) {
-            // mfh 05 Sep 2015: Teuchos::BLAS doesn't implement SWAP
-            // (e.g., DSWAP), so I'll roll my own here.
-            //
-            //blas.SWAP (N, A_j1, LDA, A_jp_1, LDA);
-            for (int kk = 0; kk < N; ++kk) {
-              std::swap (A_j1[LDA*kk], A_jp_1[LDA*kk]);
-            }
-          }
-
-          // Compute elements J+1:M of J-th column.
-          if (j < M) {
-            __float128* const A_jj = A + (j-1)*LDA + (j-1);
-            __float128* const A_j1_j = A + j*LDA + (j-1);
-
-            if (fabsq (*A_jj) >= sfmin) {
-              blas.SCAL (M-j, one / *A_jj, A_j1_j, 1);
-            } else {
-              for (int i = 1; i <= M-j; ++i) {
-                A_j1_j[i] /= *A_jj; // assumes column-major layout
-              }
-            }
-          }
-        } else if (*INFO == 0) {
-          *INFO = j;
-        }
-
-        if (j < std::min (M, N)) {
-          // Update trailing submatrix.
-          const __float128* A_j1_j = A + j*LDA + (j-1);
-          const __float128* A_j_j1 = A + (j-1)*LDA + j;
-          __float128* A_j1_j1 = A + j*LDA * j;
-          blas.GER (M-j, N-j, -one, A_j1_j, 1, A_j_j1, LDA, A_j1_j1, LDA);
-        }
-      }
-    }
-
-    void
-    GETRS (const char /* TRANS */, const int /* N */, const int /* NRHS */,
-           const __float128 /* A */[], const int /* LDA */,
-           const int /* IPIV */[], __float128 /* B */ [], const int /* LDB */,
-           int* /* INFO */) const
-    {
-      // stub for now, just so that it compiles
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (true, std::logic_error, "Teuchos::LAPACK::GETRS not yet implemented "
-         "for ScalarType = __float128.");
-    }
-  };
-
   template<>
   struct GetLapackType<__float128> {
     typedef __float128 lapack_scalar_type;
-    typedef Lapack128 lapack_type;
+    // Use the Lapack128 class we declared above to implement the
+    // linear algebra operations needed for small dense blocks and
+    // vectors.
+    typedef Tpetra::Details::Lapack128 lapack_type;
   };
 #endif // HAVE_TPETRA_INST_FLOAT128
 

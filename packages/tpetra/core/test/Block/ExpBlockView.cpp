@@ -99,12 +99,15 @@ namespace {
       }
 
       int info = 0;
+      std::cerr << "Factor A for blockSize = " << blockSize << std::endl;
       A.factorize (ipiv.getRawPtr (), info);
 
       TEST_EQUALITY_CONST( info, 0 );
       if (info == 0) {
+        std::cerr << "Solve: blockSize = " << blockSize << std::endl;
         A.solve (x, ipiv.getRawPtr ());
       }
+      std::cerr << "Done with factor and solve" << std::endl;
 
       // Re-fill b, in case A.solve brokenly clobbered it.
       for (LO i = 0; i < blockSize; ++i) {
