@@ -52,6 +52,8 @@
 // Add my bcstrategies here
 #include "Example_BCStrategy_Dirichlet_Constant.hpp"
 #include "Example_BCStrategy_Neumann_Constant.hpp"
+#include "Example_BCStrategy_Interface_WeakDirichletMatch.hpp"
+#include "Example_BCStrategy_Interface_NeumannMatch.hpp"
 
 namespace Example {
   
@@ -61,6 +63,12 @@ PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Constant",
 PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Neumann Constant",
                                            BCStrategy_Neumann_Constant,
                                            BCStrategy_Neumann_Constant)
+PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Weak Dirichlet Match Interface",
+                                           BCStrategy_Interface_WeakDirichletMatch,
+                                           BCStrategy_Interface_WeakDirichletMatch)
+PANZER_DECLARE_BCSTRATEGY_TEMPLATE_BUILDER("Neumann Match Interface",
+                                           BCStrategy_Interface_NeumannMatch,
+                                           BCStrategy_Interface_NeumannMatch)
 
 struct BCStrategyFactory : public panzer::BCStrategyFactory {
 
@@ -80,6 +88,14 @@ struct BCStrategyFactory : public panzer::BCStrategyFactory {
       PANZER_BUILD_BCSTRATEGY_OBJECTS("Neumann Constant",
                                       Example::BCStrategy_Neumann_Constant,
                                       BCStrategy_Neumann_Constant)
+
+      PANZER_BUILD_BCSTRATEGY_OBJECTS("Weak Dirichlet Match Interface",
+                                      Example::BCStrategy_Interface_WeakDirichletMatch,
+                                      BCStrategy_Interface_WeakDirichletMatch)
+
+      PANZER_BUILD_BCSTRATEGY_OBJECTS("Neumann Match Interface",
+                                      Example::BCStrategy_Interface_NeumannMatch,
+                                      BCStrategy_Interface_NeumannMatch)
 
       TEUCHOS_TEST_FOR_EXCEPTION(!found, std::logic_error, 
 			 "Error - the BC Strategy called \"" << bc.strategy() <<
