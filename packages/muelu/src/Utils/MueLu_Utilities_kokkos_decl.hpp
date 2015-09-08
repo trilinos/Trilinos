@@ -228,7 +228,7 @@ namespace MueLu {
                                                         Teuchos::FancyOStream& fos,
                                                         bool doFillComplete    = true,
                                                         bool doOptimizeStorage = true) {
-      Utils::TwoMatrixMultiplyBlock(A, transposeA, B, transposeB, fos, doFillComplete, doOptimizeStorage);
+      return Utils::TwoMatrixMultiplyBlock(A, transposeA, B, transposeB, fos, doFillComplete, doOptimizeStorage);
     }
 
     /*! @brief Extract Matrix Diagonal
