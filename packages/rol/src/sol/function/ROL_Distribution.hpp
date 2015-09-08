@@ -103,6 +103,8 @@ protected:
         test_centered(X[k],outStream);
       }
     }
+    size_t order = 2;
+    test_moment(order,outStream);
   }
 
 private:
@@ -256,6 +258,25 @@ private:
               << std::setw(20) << vy
               << std::setw(20) << err
               << std::endl << std::endl;
+  }
+
+  void test_moment(const size_t order, std::ostream &outStream = std::cout) const {
+    const size_t numPts = 10000;
+    Real pt = 0., wt = 1./(Real)numPts;
+    std::vector<Real> mVec(order,0.);
+    for (size_t i = 0; i < numPts; i++) {
+      pt = invertCDF((Real)rand()/(Real)RAND_MAX);
+      mVec[0] += wt*pt;
+      for (size_t q = 1; q < order; q++) {
+        mVec[q] += wt*std::pow(pt,q);
+      }
+    }
+    outStream << std::scientific << std::setprecision(11);
+    for (size_t q = 0; q < order; q++) {
+      outStream << std::right << std::setw(20) << "Error in " << q << " moment: "
+                << std::abs(mVec[q]-moment(q)) << std::endl;
+    }
+    outStream << std::endl;
   }
 };
 
