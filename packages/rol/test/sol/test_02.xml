@@ -66,6 +66,12 @@
         <Parameter name="Peak Location" type="double" value="0.5" />
         <Parameter name="Upper Bound"   type="double" value="1."  />
       </ParameterList>
+      <!-- ===========  TRUNCATED EXPONENTIAL DISTRIBUTION SUBLIST  =========== -->
+      <ParameterList name="Exponential">
+        <Parameter name="Lower Bound" type="double" value="0." />
+        <Parameter name="Upper Bound" type="double" value="1." />
+        <Parameter name="Scale"       type="double" value="1." />
+      </ParameterList>
       <!-- ===========  TRUNCATED GAUSSIAN DISTRIBUTION SUBLIST  =========== -->
       <ParameterList name="Truncated Gaussian">
         <Parameter name="Lower Bound"        type="double" value="-1." />
