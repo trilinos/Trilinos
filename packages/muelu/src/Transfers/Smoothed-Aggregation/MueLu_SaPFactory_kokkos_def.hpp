@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_SAPFACTORYK_DEF_HPP
-#define MUELU_SAPFACTORYK_DEF_HPP
+#ifndef MUELU_SAPFACTORY_KOKKOS_DEF_HPP
+#define MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
 #include <Xpetra_Matrix.hpp>
 
@@ -118,7 +118,7 @@ namespace MueLu {
 
     if(restrictionMode_) {
       SubFactoryMonitor m2(*this, "Transpose A", coarseLevel);
-      A = Utils2K::Transpose(*A, true); // build transpose of A explicitely
+      A = MueLu::Utils2_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Transpose(*A, true); // build transpose of A explicitely
     }
 
     //Build final prolongator
@@ -152,7 +152,7 @@ namespace MueLu {
         SC omega = dampingFactor / lambdaMax;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = Utils_kokkos::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2),std::string("MueLu::SaP-")+levelstr.str());
+        finalP = MueLu::Utils_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2),std::string("MueLu::SaP-")+levelstr.str());
       }
 
     } else {
@@ -189,6 +189,6 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#endif // MUELU_SAPFACTORYK_DEF_HPP
+#endif // MUELU_SAPFACTORY_KOKKOS_DEF_HPP
 
 //TODO: restrictionMode_ should use the parameter list.

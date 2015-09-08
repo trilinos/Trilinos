@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_UTILITIESK_DECL_HPP
-#define MUELU_UTILITIESK_DECL_HPP
+#ifndef MUELU_UTILITIES_KOKKOS_DECL_HPP
+#define MUELU_UTILITIES_KOKKOS_DECL_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
@@ -102,7 +102,7 @@ namespace MueLu {
             class GlobalOrdinal = LocalOrdinal,
             class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
   class Utils_kokkos {
-#undef MUELU_UTILITIESK_SHORT
+#undef MUELU_UTILITIES_KOKKOS_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -404,7 +404,7 @@ namespace MueLu {
             class LocalOrdinal  = int,
             class GlobalOrdinal = LocalOrdinal,
             class Node          = KokkosClassic::DefaultNode::DefaultNodeType>
-  class Utils2K {
+  class Utils2_kokkos {
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -459,12 +459,12 @@ namespace MueLu {
       return Utils2::ReadMap(fileName, lib, comm);
     }
 
-  }; // class Utils2
+  }; // class Utils2_kokkos
 
 } //namespace MueLu
 
-#define MUELU_UTILITIESK_SHORT
+#define MUELU_UTILITIES_KOKKOS_SHORT
 
 #endif // #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 
-#endif // MUELU_UTILITIESK_DECL_HPP
+#endif // MUELU_UTILITIES_KOKKOS_DECL_HPP

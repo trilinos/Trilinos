@@ -94,7 +94,7 @@ namespace MueLu {
   */
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
   class SaPFactory_kokkos : public PFactory {
-#undef MUELU_SAPFACTORYK_SHORT
+#undef MUELU_SAPFACTORY_KOKKOS_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -140,6 +140,6 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#define MUELU_SAPFACTORYK_SHORT
+#define MUELU_SAPFACTORY_KOKKOS_SHORT
 #endif // HAVE_MUELU_KOKKOS_REFACTOR
 #endif // MUELU_SAPFACTORYK_DECL_HPP

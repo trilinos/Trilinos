@@ -51,10 +51,10 @@
 
 #include "TpetraCore_ETIHelperMacros.h"
 
-#ifndef _MSC_VER // error C2950: 'MueLu::Utils2K<double,int,int>' : cannot explicitly instantiate an explicit specialization
+#ifndef _MSC_VER // error C2950: 'MueLu::Utils2_kokkos<double,int,int>' : cannot explicitly instantiate an explicit specialization
 #define MUELU_LOCAL_INSTANT(S,LO,GO,N)          \
   template class MueLu::Utils_kokkos<S,LO,GO,N>;       \
-  template class MueLu::Utils2K<S,LO,GO,N>;
+  template class MueLu::Utils2_kokkos<S,LO,GO,N>;
 #else
 #define MUELU_LOCAL_INSTANT(S,LO,GO,N)           \
   template class MueLu::Utils_kokkos<S,LO,GO,N>;

@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_SAPFACTORYK_FWD_HPP
-#define MUELU_SAPFACTORYK_FWD_HPP
+#ifndef MUELU_SAPFACTORY_KOKKOS_FWD_HPP
+#define MUELU_SAPFACTORY_KOKKOS_FWD_HPP
 
 #include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
@@ -54,10 +54,10 @@ namespace MueLu {
   class SaPFactory_kokkos;
 }
 
-#ifndef MUELU_SAPFACTORYK_SHORT
-#define MUELU_SAPFACTORYK_SHORT
+#ifndef MUELU_SAPFACTORY_KOKKOS_SHORT
+#define MUELU_SAPFACTORY_KOKKOS_SHORT
 #endif
 
 #endif
 
-#endif // MUELU_SAPFACTORYK_FWD_HPP
+#endif // MUELU_SAPFACTORY_KOKKOS_FWD_HPP
