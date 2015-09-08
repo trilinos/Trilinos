@@ -105,6 +105,8 @@ TEST(GameofLifeClass, 4ProcTestTest)
         }
         EXPECT_TRUE(PartGame.are_these_ids_active(elemIds1));
         EXPECT_TRUE(PartGame.are_these_ids_active(elemIds2));
+
+	delete Mesh;
     }
 }
 TEST(TriangleGameofLifeClass, 1ProcRandomTest)
