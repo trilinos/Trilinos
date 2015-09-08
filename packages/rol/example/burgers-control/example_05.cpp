@@ -68,6 +68,7 @@
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StdTeuchosBatchManager.hpp"
 // ROL CVaR definitions
+#include "ROL_DistributionFactory.hpp"
 #include "ROL_PlusFunction.hpp"
 #include "ROL_CVaR.hpp"
 
@@ -728,9 +729,11 @@ int main(int argc, char* argv[]) {
     *outStream << "\nSOLVE SMOOTHED CONDITIONAL VALUE AT RISK WITH TRUST REGION\n";
     // Build CVaR objective function
     double prob = 0.99, coeff = 1.0, gamma = 1.e-2;
-    std::vector<double> data(2,0.0);
-    data[0] = -0.5; data[1] = 0.5;
-    dist = Teuchos::rcp( new ROL::Distribution<double>(ROL::DISTRIBUTION_PARABOLIC,data) );
+    Teuchos::ParameterList distlist;
+    distlist.sublist("SOL").sublist("Distribution").set("Name","Parabolic");
+    distlist.sublist("SOL").sublist("Distribution").sublist("Parabolic").set("Lower Bound",-0.5);
+    distlist.sublist("SOL").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 0.5);
+    dist = ROL::DistributionFactory<double>(distlist);
     pf   = Teuchos::rcp( new ROL::PlusFunction<double>(dist,gamma) );
     rm   = Teuchos::rcp( new ROL::CVaR<double>(prob,coeff,pf) );
     obj  = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
@@ -793,7 +796,9 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     *outStream << "\nSOLVE NONSMOOTH CVAR PROBLEM WITH BUNDLE TRUST REGION\n";
     // Build CVaR objective function
-    dist = Teuchos::rcp( new ROL::Distribution<double>(ROL::DISTRIBUTION_DIRAC) );
+    distlist.sublist("SOL").sublist("Distribution").set("Name","Dirac");
+    distlist.sublist("SOL").sublist("Distribution").sublist("Dirac").set("Location",0.);
+    dist = ROL::DistributionFactory<double>(distlist);
     pf   = Teuchos::rcp( new ROL::PlusFunction<double>(dist,1.0) );
     rm   = Teuchos::rcp( new ROL::CVaR<double>(prob,coeff,pf) );
     obj  = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );

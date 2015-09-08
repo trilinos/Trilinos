@@ -32,6 +32,7 @@ IF(${PROJECT_NAME}_ENABLE_Epetra)
       solDataCopy
       SOURCE_FILES
 	input.xml
+	test_02.xml
       SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
       DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
     )
