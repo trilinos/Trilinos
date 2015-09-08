@@ -98,11 +98,11 @@ public:
       a   = 1.0;
       xs  = x + a*s;
       tmp = fx;
-      fx  = smale_cdf(xs)-input;
+      fx  = evaluateCDF(xs)-input;
       while ( std::abs(fx) > (1.0 - 1.e-4*a)*std::abs(tmp) ) {
         a *= 0.5;
         xs = x + a*s;
-        fx = smale_cdf(xs)-input;
+        fx = evaluateCDF(xs)-input;
       }
       x = xs;
     }

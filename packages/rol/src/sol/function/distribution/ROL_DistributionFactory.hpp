@@ -60,6 +60,7 @@
 #include "ROL_Arcsine.hpp"
 #include "ROL_Kumaraswamy.hpp"
 #include "ROL_Exponential.hpp"
+#include "ROL_TruncatedExponential.hpp"
 
 namespace ROL {
 
@@ -78,28 +79,30 @@ namespace ROL {
     DISTRIBUTION_ARCSINE,
     DISTRIBUTION_KUMARASWAMY,
     DISTRIBUTION_EXPONENTIAL,
+    DISTRIBUTION_TRUNCATEDEXPONENTIAL,
     DISTRIBUTION_LAST
   };
 
   inline std::string EDistributionToString(EDistribution ed) {
     std::string retString;
     switch(ed) {
-      case DISTRIBUTION_DIRAC:             retString = "Dirac";                 break;
-      case DISTRIBUTION_GAUSSIAN:          retString = "Gaussian";              break;
-      case DISTRIBUTION_TRUNCATEDGAUSSIAN: retString = "Truncated Gaussian";    break;
-      case DISTRIBUTION_UNIFORM:           retString = "Uniform";               break;
-      case DISTRIBUTION_LOGISTIC:          retString = "Logistic";              break;
-      case DISTRIBUTION_TRIANGLE:          retString = "Triangle";              break;
-      case DISTRIBUTION_PARABOLIC:         retString = "Parabolic";             break;
-      case DISTRIBUTION_RAISEDCOSINE:      retString = "Raised Cosine";         break;
-      case DISTRIBUTION_LAPLACE:           retString = "Laplace";               break;
-      case DISTRIBUTION_CAUCHY:            retString = "Cauchy";                break;
-      case DISTRIBUTION_SMALE:             retString = "Smale";                 break;
-      case DISTRIBUTION_ARCSINE:           retString = "Arcsine";               break;
-      case DISTRIBUTION_KUMARASWAMY:       retString = "Kumaraswamy";           break;
-      case DISTRIBUTION_EXPONENTIAL:       retString = "Exponential";           break;
-      case DISTRIBUTION_LAST:              retString = "Last Type (Dummy)";     break;
-      default:                             retString = "INVALID EDistribution"; break;
+      case DISTRIBUTION_DIRAC:                retString = "Dirac";                 break;
+      case DISTRIBUTION_GAUSSIAN:             retString = "Gaussian";              break;
+      case DISTRIBUTION_TRUNCATEDGAUSSIAN:    retString = "Truncated Gaussian";    break;
+      case DISTRIBUTION_UNIFORM:              retString = "Uniform";               break;
+      case DISTRIBUTION_LOGISTIC:             retString = "Logistic";              break;
+      case DISTRIBUTION_TRIANGLE:             retString = "Triangle";              break;
+      case DISTRIBUTION_PARABOLIC:            retString = "Parabolic";             break;
+      case DISTRIBUTION_RAISEDCOSINE:         retString = "Raised Cosine";         break;
+      case DISTRIBUTION_LAPLACE:              retString = "Laplace";               break;
+      case DISTRIBUTION_CAUCHY:               retString = "Cauchy";                break;
+      case DISTRIBUTION_SMALE:                retString = "Smale";                 break;
+      case DISTRIBUTION_ARCSINE:              retString = "Arcsine";               break;
+      case DISTRIBUTION_KUMARASWAMY:          retString = "Kumaraswamy";           break;
+      case DISTRIBUTION_EXPONENTIAL:          retString = "Exponential";           break;
+      case DISTRIBUTION_TRUNCATEDEXPONENTIAL: retString = "Truncated Exponential"; break;
+      case DISTRIBUTION_LAST:                 retString = "Last Type (Dummy)";     break;
+      default:                                retString = "INVALID EDistribution"; break;
     }
     return retString;
   }
@@ -118,7 +121,8 @@ namespace ROL {
             (ed == DISTRIBUTION_SMALE) ||
             (ed == DISTRIBUTION_ARCSINE) ||
             (ed == DISTRIBUTION_KUMARASWAMY) || 
-            (ed == DISTRIBUTION_EXPONENTIAL) );
+            (ed == DISTRIBUTION_EXPONENTIAL) ||
+            (ed == DISTRIBUTION_TRUNCATEDEXPONENTIAL) );
   }
 
   inline EDistribution & operator++(EDistribution &type) {
@@ -156,21 +160,22 @@ namespace ROL {
     std::string dist = parlist.sublist("SOL").sublist("Distribution").get("Name","Dirac");
     EDistribution ed = StringToEDistribution(dist);
     switch(ed) {
-      case DISTRIBUTION_DIRAC:             return Teuchos::rcp(new Dirac<Real>(parlist));
-      case DISTRIBUTION_GAUSSIAN:          return Teuchos::rcp(new Gaussian<Real>(parlist));
-      case DISTRIBUTION_TRUNCATEDGAUSSIAN: return Teuchos::rcp(new TruncatedGaussian<Real>(parlist));
-      case DISTRIBUTION_UNIFORM:           return Teuchos::rcp(new Uniform<Real>(parlist));
-      case DISTRIBUTION_LOGISTIC:          return Teuchos::rcp(new Logistic<Real>(parlist));
-      case DISTRIBUTION_TRIANGLE:          return Teuchos::rcp(new Triangle<Real>(parlist));
-      case DISTRIBUTION_PARABOLIC:         return Teuchos::rcp(new Parabolic<Real>(parlist));
-      case DISTRIBUTION_RAISEDCOSINE:      return Teuchos::rcp(new RaisedCosine<Real>(parlist));
-      case DISTRIBUTION_LAPLACE:           return Teuchos::rcp(new Laplace<Real>(parlist));
-      case DISTRIBUTION_CAUCHY:            return Teuchos::rcp(new Cauchy<Real>(parlist));
-      case DISTRIBUTION_SMALE:             return Teuchos::rcp(new Smale<Real>(parlist));
-      case DISTRIBUTION_ARCSINE:           return Teuchos::rcp(new Arcsine<Real>(parlist));
-      case DISTRIBUTION_KUMARASWAMY:       return Teuchos::rcp(new Kumaraswamy<Real>(parlist));
-      case DISTRIBUTION_EXPONENTIAL:       return Teuchos::rcp(new Exponential<Real>(parlist));
-      default:                             return Teuchos::null;
+      case DISTRIBUTION_DIRAC:                return Teuchos::rcp(new Dirac<Real>(parlist));
+      case DISTRIBUTION_GAUSSIAN:             return Teuchos::rcp(new Gaussian<Real>(parlist));
+      case DISTRIBUTION_TRUNCATEDGAUSSIAN:    return Teuchos::rcp(new TruncatedGaussian<Real>(parlist));
+      case DISTRIBUTION_UNIFORM:              return Teuchos::rcp(new Uniform<Real>(parlist));
+      case DISTRIBUTION_LOGISTIC:             return Teuchos::rcp(new Logistic<Real>(parlist));
+      case DISTRIBUTION_TRIANGLE:             return Teuchos::rcp(new Triangle<Real>(parlist));
+      case DISTRIBUTION_PARABOLIC:            return Teuchos::rcp(new Parabolic<Real>(parlist));
+      case DISTRIBUTION_RAISEDCOSINE:         return Teuchos::rcp(new RaisedCosine<Real>(parlist));
+      case DISTRIBUTION_LAPLACE:              return Teuchos::rcp(new Laplace<Real>(parlist));
+      case DISTRIBUTION_CAUCHY:               return Teuchos::rcp(new Cauchy<Real>(parlist));
+      case DISTRIBUTION_SMALE:                return Teuchos::rcp(new Smale<Real>(parlist));
+      case DISTRIBUTION_ARCSINE:              return Teuchos::rcp(new Arcsine<Real>(parlist));
+      case DISTRIBUTION_KUMARASWAMY:          return Teuchos::rcp(new Kumaraswamy<Real>(parlist));
+      case DISTRIBUTION_EXPONENTIAL:          return Teuchos::rcp(new Exponential<Real>(parlist));
+      case DISTRIBUTION_TRUNCATEDEXPONENTIAL: return Teuchos::rcp(new TruncatedExponential<Real>(parlist));
+      default:                                return Teuchos::null;
     }
   }
 }

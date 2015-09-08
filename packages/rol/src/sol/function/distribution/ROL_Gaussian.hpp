@@ -55,23 +55,62 @@ private:
   Real mean_;
   Real variance_;
 
+  std::vector<Real> a_;
+  std::vector<Real> b_;
+  std::vector<Real> c_;
+  std::vector<Real> d_;
+
+  Real erfi(const Real p) const {
+    Real val = 0., z = 0.;
+    if ( p < -0.7 ) {
+      z   = std::sqrt(-std::log((1.+p)*0.5));
+      val = -(((c_[3]*z+c_[2])*z+c_[1])*z + c_[0])/((d_[1]*z+d_[0])*z + 1.);
+    }
+    else {
+      if ( p < 0.7 ) {
+        z   = p*p;
+        val = p*(((a_[3]*z+a_[2])*z+a_[1])*z + a_[0])/((((b_[3]*z+b_[2])*z+b_[1])*z+b_[0])*z+1.);
+      }
+      else {
+        z   = std::sqrt(-std::log((1.-p)*0.5));
+        val = (((c_[3]*z+c_[2])*z+c_[1])*z+c_[0])/((d_[1]*z+d_[0])*z+1.);
+      }
+    }
+    val -= (erf(val)-p)/(2.0/std::sqrt(M_PI) * std::exp(-val*val));
+    val -= (erf(val)-p)/(2.0/std::sqrt(M_PI) * std::exp(-val*val));
+    return val;
+  }
+
 public: 
 
   Gaussian(const Real mean = 0., const Real variance = 1.)
-    : mean_(mean), variance_((variance>0.) ? variance : 1.) {}
+    : mean_(mean), variance_((variance>0.) ? variance : 1.) {
+    a_.clear(); a_.resize(4,0.); b_.clear(); b_.resize(4,0.);
+    c_.clear(); c_.resize(4,0.); d_.clear(); d_.resize(2,0.);
+    a_[0] =  0.886226899; a_[1] = -1.645349621; a_[2] =  0.914624893; a_[3] = -0.140543331;
+    b_[0] = -2.118377725; b_[1] =  1.442710462; b_[2] = -0.329097515; b_[3] =  0.012229801;
+    c_[0] = -1.970840454; c_[1] = -1.624906493; c_[2] =  3.429567803; c_[3] =  1.641345311;
+    d_[0] =  3.543889200; d_[1] =  1.637067800;
+  }
 
   Gaussian(Teuchos::ParameterList &parlist) {
     mean_     = parlist.sublist("SOL").sublist("Distribution").sublist("Gaussian").get("Mean",0.);
     variance_ = parlist.sublist("SOL").sublist("Distribution").sublist("Gaussian").get("Variance",1.);
     variance_ = (variance_ > 0.) ? variance_ : 1.;
+    a_.clear(); a_.resize(4,0.); b_.clear(); b_.resize(4,0.);
+    c_.clear(); c_.resize(4,0.); d_.clear(); d_.resize(2,0.);
+    a_[0] =  0.886226899; a_[1] = -1.645349621; a_[2] =  0.914624893; a_[3] = -0.140543331;
+    b_[0] = -2.118377725; b_[1] =  1.442710462; b_[2] = -0.329097515; b_[3] =  0.012229801;
+    c_[0] = -1.970840454; c_[1] = -1.624906493; c_[2] =  3.429567803; c_[3] =  1.641345311;
+    d_[0] =  3.543889200; d_[1] =  1.637067800;
   }
 
   Real evaluatePDF(const Real input) const {
-    return std::exp(-std::pow(input-mean_,2.0)/(2.0*variance_))/(std::sqrt(2.0*M_PI*variance_));
+    return std::exp(-std::pow(input-mean_,2)/(2.*variance_))/(std::sqrt(2.*M_PI*variance_));
   }
 
   Real evaluateCDF(const Real input) const {
-    return 0.5*(1.0+erf((input-mean_)/std::sqrt(2.0*variance_)));
+    return 0.5*(1.+erf((input-mean_)/std::sqrt(2.*variance_)));
   }
 
   Real integrateCDF(const Real input) const {
@@ -81,28 +120,11 @@ public:
   }
 
   Real invertCDF(const Real input) const {
-    std::vector<Real> coeff;
-    Real x   = 2.0*input - 1.0;
-    Real c   = 1.0;
-    Real tmp = c * (std::sqrt(M_PI)/2.0 * x);
-    Real val = tmp;
-    coeff.push_back(c);
-    int  cnt = 1;
-    while (std::abs(tmp) > std::sqrt(ROL_EPSILON)*std::abs(val)) {
-      c = 0.0;
-      for ( unsigned i = 0; i < coeff.size(); i++ ) {
-        c += coeff[i]*coeff[coeff.size()-1-i]/((i+1)*(2*i+1));
-      }
-      tmp  = c/(2.0*(Real)cnt+1.0) * std::pow(std::sqrt(M_PI)/2.0 * x,2.0*(Real)cnt+1.0);
-      val += tmp;
-      coeff.push_back(c);
-      cnt++;
-    }
-    return std::sqrt(2*variance_)*val + mean_;
+    return std::sqrt(2.*variance_)*erfi(2.*input-1.) + mean_;
   }
 
   Real moment(const size_t m) const {
-    Real val = 0.0;
+    Real val = 0.;
     switch(m) {
       case 1: val = mean_;                                         break;
       case 2: val = std::pow(mean_,2) + variance_;                 break;

@@ -55,8 +55,15 @@ private:
   Real mean_;
   Real scale_;
 
-  size_t factorial(const size_t m) const {
-    return (m==1 ? m : m * factorial(m-1));
+  size_t compute_coeff(const size_t m, const size_t k) const {
+    if ( k == 0 || m == 0 || m == 1 ) {
+      return 1;
+    }
+    size_t val = 1;
+    for (size_t i = m-k; i < m; i++) {
+      val *= (i+1);
+    }
+    return val;
   }
 
 public: 
@@ -89,13 +96,20 @@ public:
   }
 
   Real moment(const size_t m) const {
-    Real mfact = (Real)factorial(m), kfact = 0.;
-    Real val = 0.;
-    for (size_t k = 0; k < m; k++) {
-      kfact = (Real)factorial(k);
-      val += (mfact/(Real)(kfact*factorial(m-k)))
-             *std::pow(scale_,k)*std::pow(mean_,m-k)*kfact*(1.+((k%2) ? 1. : -1.));
+    if ( m == 1 ) {
+      return mean_;
     }
+    if ( m == 2 ) {
+      return std::pow(mean_,2) + 2.*std::pow(scale_,2);
+    }
+    Real coeff = 0., val = 0.;
+    for (size_t k = 0; k < m+1; k++) {
+      if ( k%2 == 0 ) {
+        coeff = compute_coeff(m,k);
+        val  += coeff*std::pow(scale_,k)*std::pow(mean_,m-k);
+      }
+    }
+    return val;
   }
  
   void test(std::ostream &outStream = std::cout ) const {

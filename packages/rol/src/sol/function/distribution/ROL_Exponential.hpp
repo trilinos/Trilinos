@@ -55,8 +55,15 @@ private:
   Real loc_;
   Real scale_;
 
-  size_t factorial(const size_t m) const {
-    return (m==1 ? m : m * factorial(m-1));
+  size_t compute_coeff(const size_t m, const size_t k) const {
+    if ( k == 0 || m == 0 || m == 1 ) {
+      return 1;
+    }
+    size_t val = 1;
+    for (size_t i = m-k; i < m; i++) {
+      val *= (i+1);
+    }
+    return val;
   }
 
 public: 
@@ -87,18 +94,24 @@ public:
   }
 
   Real moment(const size_t m) const {
-    Real val = 0., coeff = 0., factm = (Real)factorial(m);
-    for (size_t i = 0; i < m; i++) {
-      coeff = factm/(Real)factorial(m-i);
+    Real val = 0., coeff = 0.;
+    for (size_t i = 0; i < m+1; i++) {
+      coeff = compute_coeff(m,i);
       val  += coeff*std::pow(loc_,(Real)(m-i))/std::pow(scale_,(Real)i);
     } 
     return val;
   }
  
   void test(std::ostream &outStream = std::cout ) const {
-    size_t size = 0;
-    std::vector<Real> X(size,4.*(Real)rand()/(Real)RAND_MAX - 2.);
+    size_t size = 3;
+    std::vector<Real> X(size,0.);
     std::vector<int> T(size,0);
+    X[0] = loc_-4.0*(Real)rand()/(Real)RAND_MAX;
+    T[0] = 0;
+    X[1] = loc_;
+    T[1] = 1;
+    X[2] = loc_+4.0*(Real)rand()/(Real)RAND_MAX;
+    T[2] = 0;
     Distribution<Real>::test(X,T,outStream);
   }
 };

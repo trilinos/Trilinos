@@ -78,6 +78,9 @@ public:
   }
 
   Real moment(const size_t m) const {
+    if (m==1) {
+      return data_;
+    }
     return std::pow(data_,(Real)m); 
   }
  

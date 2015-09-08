@@ -41,116 +41,101 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_TRUNCATEDGAUSSIAN_HPP
-#define ROL_TRUNCATEDGAUSSIAN_HPP
+#ifndef ROL_TRUNCATEDEXPONENTIAL_HPP
+#define ROL_TRUNCATEDEXPONENTIAL_HPP
 
 #include "ROL_Distribution.hpp"
-#include "ROL_Gaussian.hpp"
-#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 namespace ROL {
 
 template<class Real>
-class TruncatedGaussian : public Distribution<Real> {
+class TruncatedExponential : public Distribution<Real> {
 private:
   Real a_;
   Real b_;
-  Real mean_;
-  Real sdev_;
+  Real scale_;
+  Real expa_;
+  Real expb_;
+  Real diff_;
+  Real coeff_;
 
-  Teuchos::RCP<Gaussian<Real> > gauss_;
-
-  Real alpha_;
-  Real beta_;
-  Real phi_;
-  Real Z_;
-
-public: 
-
-  TruncatedGaussian(const Real lo = -1., const Real up = 1.,
-                    const Real mean = 0., const Real sdev = 1.)
-    : a_((lo < up) ? lo : up), b_((up > lo) ? up : lo),
-      mean_(mean), sdev_((sdev>0) ? sdev : 1.) {
-    gauss_ = Teuchos::rcp(new Gaussian<Real>(mean_,sdev_));
-    alpha_ = (a_-mean_)/sdev_;
-    beta_  = (b_-mean_)/sdev_;
-    phi_   = gauss_->evaluateCDF(alpha_);
-    Z_     = gauss_->evaluateCDF(beta_)-gauss_->evaluateCDF(alpha_);
+  size_t compute_coeff(const size_t m, const size_t k) const {
+    if ( k == m || m == 0 || m == 1 ) {
+      return 1;
+    }
+    size_t val = 1;
+    for (size_t i = k; i < m; i++) {
+      val *= (i+1);
+    }
+    return val;
   }
 
-  TruncatedGaussian(Teuchos::ParameterList &parlist) {
-    Teuchos::ParameterList TGlist
-      = parlist.sublist("SOL").sublist("Distribution").sublist("Truncated Gaussian");
-    a_ = TGlist.get("Lower Bound",-1.);
-    b_ = TGlist.get("Upper Bound",1.);
+public: 
+  TruncatedExponential(const Real a = 0., const Real b = 1., const Real scale = 1.)
+    : a_(std::min(a,b)), b_(std::max(a,b)), scale_((scale>0.) ? scale : 1.) {
+    expa_  = std::exp(-scale_*a_);
+    expb_  = std::exp(-scale_*b_);
+    diff_  = expa_ - expb_;
+    coeff_ = scale_/diff_;
+  }
+
+  TruncatedExponential(Teuchos::ParameterList &parlist) {
+    Teuchos::ParameterList TElist
+      = parlist.sublist("SOL").sublist("Distribution").sublist("Truncated Exponential");
+    a_ = TElist.get("Lower Bound",0.);
+    b_ = TElist.get("Upper Bound",1.);
     Real tmp = a_;
     a_ = std::min(a_,b_);
     b_ = std::max(b_,tmp);
-
-    mean_ = TGlist.get("Mean",0.);
-    sdev_ = TGlist.get("Standard Deviation",1.);
-    sdev_ = (sdev_ > 0.) ? sdev_ : 1.;
-
-    gauss_ = Teuchos::rcp(new Gaussian<Real>(mean_,sdev_));
-    alpha_ = (a_-mean_)/sdev_;
-    beta_  = (b_-mean_)/sdev_;
-    phi_   = gauss_->evaluateCDF(alpha_);
-    Z_     = gauss_->evaluateCDF(beta_)-gauss_->evaluateCDF(alpha_);
+    scale_ = TElist.get("Scale",1.);
+    scale_ = (scale_ > 0.) ? scale_ : 1.;
+    expa_  = std::exp(-scale_*a_);
+    expb_  = std::exp(-scale_*b_);
+    diff_  = expa_ - expb_;
+    coeff_ = scale_/diff_;
   }
 
   Real evaluatePDF(const Real input) const {
-    Real xi = (input-mean_)/sdev_;
-    return ((input <= a_) ? 0.0 : ((input >= b_) ? 0.0 :
-             gauss_->evaluatePDF(xi)/(sdev_*Z_)));
+    return ((input >= a_) ? ((input <= b_) ? coeff_*std::exp(-scale_*input) : 0.) : 0.);
   }
 
   Real evaluateCDF(const Real input) const {
-    Real xi = (input-mean_)/sdev_;
-    return ((input <= a_) ? 0.0 : ((input >= b_) ? 1.0 : 
-             (gauss_->evaluateCDF(xi)-phi_)/Z_));
+    return ((input > a_) ? ((input < b_) ? (expa_-std::exp(-scale_*input))/diff_ : 1.) : 0.);
   }
 
   Real integrateCDF(const Real input) const {
-    TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-      ">>> ERROR (ROL::TruncatedGaussian): Truncated Gaussian integrateCDF not implemented!");
-    return ((input < 0.5*(a_+b_)) ? 0.0 : input - 0.5*(a_+b_));
+    return ((input > a_) ? ((input < b_) ?
+      (expa_*(input-a_) - (expa_ - std::exp(-scale_*input))/scale_)/diff_ :
+        (expa_*(b_-a_) - (expa_ - expb_)/scale_)/diff_ + (input - b_)) : 0.);
   }
 
   Real invertCDF(const Real input) const {
-    Real x = gauss_->invertCDF(Z_*input+phi_);
-    return sdev_*x + mean_;
+    return ((input > 0.) ? ((input < 1.) ? -std::log(expa_-diff_*input)/scale_ : b_) : a_);
   }
 
   Real moment(const size_t m) const {
-    Real phiA  = gauss_->evaluatePDF(alpha_);
-    Real phiB  = gauss_->evaluatePDF(beta_);
-    Real mean  = mean_ + sdev_*(phiA-phiB)/Z_;
-    Real var   = sdev_*sdev_;
-    Real val   = 0.0;
-    switch(m) {
-      case 1: val = mean;                                                                      break;
-      case 2: val = var*(1.+(alpha_*phiA-beta_*phiB)/Z_-std::pow((phiA-phiB)/Z_,2))+mean*mean; break;
-      default:
-        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-          ">>> ERROR (ROL::TruncatedGaussian): Truncated Gaussian moment not implemented for m > 2!");
-    }
-    return val;
+    Real val = 0., coeff = 0.;
+    for (size_t i = 0; i < m+1; i++) {
+      coeff = compute_coeff(m,i);
+      val  += coeff*(std::pow(a_,i)*expa_-std::pow(b_,i)*expb_)/std::pow(scale_,m-i+1);
+    } 
+    return coeff_*val;
   }
  
   void test(std::ostream &outStream = std::cout ) const {
     size_t size = 5;
     std::vector<Real> X(size,0.);
     std::vector<int> T(size,0);
-    X[0] = a_-4.0*(Real)rand()/(Real)RAND_MAX; 
+    X[0] = a_-4.0*(Real)rand()/(Real)RAND_MAX;
     T[0] = 0;
     X[1] = a_; 
     T[1] = 1;
-    X[2] = (b_-a_)*(Real)rand()/(Real)RAND_MAX + a_; 
+    X[2] = (b_-a_)*(Real)rand()/(Real)RAND_MAX + a_;
     T[2] = 0;
     X[3] = b_; 
     T[3] = 1;
-    X[4] = b_+4.0*(Real)rand()/(Real)RAND_MAX; 
+    X[4] = b_+4.0*(Real)rand()/(Real)RAND_MAX;
     T[4] = 0;
     Distribution<Real>::test(X,T,outStream);
   }

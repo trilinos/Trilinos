@@ -88,13 +88,13 @@ public:
   }
   Real invertCDF(const Real input) const {
     Real a = mean_-var_, b = mean_+var_, c  = 0.;
-    Real fa = raisedcosine_cdf(a) - input;
+    Real fa = evaluateCDF(a) - input;
     Real fc = 0.;
     Real sa = ((fa < 0.) ? -1. : ((fa > 0.) ? 1. : 0.));
     Real sc = 0.;
     for (size_t i = 0; i < 100; i++) {
       c  = (a+b)*0.5;
-      fc = raisedcosine_cdf(c) - input;
+      fc = evaluateCDF(c) - input;
       sc = ((fc < 0.) ? -1. : ((fc > 0.) ? 1. : 0.));
       if ( fc == 0. || (b-a)*0.5 < ROL_EPSILON ) {
         break;
