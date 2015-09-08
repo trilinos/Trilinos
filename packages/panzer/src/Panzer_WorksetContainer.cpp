@@ -170,10 +170,15 @@ WorksetContainer::getSideWorksets(const BC & bc)
    SideMap::iterator itr = sideWorksets_.find(side);
    if(itr==sideWorksets_.end()) {
       // couldn't find workset, build it!
-      const std::string & eBlock = side.eblk_id;
-      //const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
-      const WorksetNeeds & needs = lookupNeeds(eBlock);
-      worksetMap = wkstFactory_->getSideWorksets(bc,needs);
+      if (bc.bcType() == BCT_Interface)
+        worksetMap = wkstFactory_->getSideWorksets(bc, lookupPhysicsBlock(bc.elementBlockID()),
+                                                   lookupPhysicsBlock(bc.elementBlockID2()));
+      else {
+        const std::string & eBlock = side.eblk_id;
+        //const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
+        const WorksetNeeds & needs = lookupNeeds(eBlock);
+        worksetMap = wkstFactory_->getSideWorksets(bc,needs);
+      }
 
       // apply orientations to the worksets for this side
       if(worksetMap!=Teuchos::null)

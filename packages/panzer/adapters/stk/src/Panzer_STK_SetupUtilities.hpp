@@ -132,7 +132,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
   *
   * \returns vector of worksets for the corresponding edge
   */
-Teuchos::RCP<std::vector<panzer::Workset> >  
+Teuchos::RCP<std::map<unsigned,panzer::Workset> >
 buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
                 const panzer::PhysicsBlock & pb_a,
                 const panzer::PhysicsBlock & pb_b,

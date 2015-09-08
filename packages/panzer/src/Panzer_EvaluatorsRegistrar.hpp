@@ -56,10 +56,12 @@ namespace panzer {
  */
 class EvaluatorsRegistrar {
 public:
-  //! Set the WorksetDetails index in all evaluators regisetred through
+  //! Set the WorksetDetails index in all evaluators registered through
   //! EquationSetBase::registerEvaluator. The details index can be set multiple
   //! times. The current value applies at registration.
   void setDetailsIndex(const int details_index) { details_index_ = details_index; }
+  //! Get the WorksetDetails index.
+  int getDetailsIndex() const { return details_index_; }
 
 protected:
   //! Default ctor initializes WorksetDetails index to 0.

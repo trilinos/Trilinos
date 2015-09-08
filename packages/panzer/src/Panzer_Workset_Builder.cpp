@@ -80,6 +80,17 @@ panzer::buildEdgeWorksets(const panzer::PhysicsBlock &,
 		          const std::vector<std::size_t>&,
 		          const Intrepid::FieldContainer<double>&);
 
+template
+Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+panzer::buildBCWorkset(const panzer::PhysicsBlock& pb_a,
+                       const std::vector<std::size_t>& local_cell_ids_a,
+                       const std::vector<std::size_t>& local_side_ids_a,
+                       const Intrepid::FieldContainer<double>& vertex_coordinates_a,
+                       const panzer::PhysicsBlock& pb_b,
+                       const std::vector<std::size_t>& local_cell_ids_b,
+                       const std::vector<std::size_t>& local_side_ids_b,
+                       const Intrepid::FieldContainer<double>& vertex_coordinates_b);
+
 namespace panzer {
 
 void populateValueArrays(std::size_t num_cells,bool isSide,const WorksetNeeds & needs,
