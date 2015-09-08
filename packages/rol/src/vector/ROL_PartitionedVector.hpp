@@ -42,6 +42,8 @@
 // @HEADER
 
 #include "ROL_Vector.hpp"
+#include "Teuchos_getConst.hpp"
+
 
 #ifndef ROL_PARTITIONED_VECTOR_H
 #define ROL_PARTITIONED_VECTOR_H
@@ -102,7 +104,8 @@ public:
 
   void axpy( const Real alpha, const V &x ) {
     using Teuchos::dyn_cast;
-    const PV &xs = dyn_cast<const PV>(dyn_cast<const V>(x));
+    using Teuchos::getConst;
+    const PV &xs = dyn_cast<const PV>(getConst(x));
     for( size_type i=0; i<vecs_->size(); ++i ) { 
       (*vecs_)[i]->axpy(alpha,*xs.get(i));
     }
@@ -110,7 +113,8 @@ public:
  
   Real dot( const V &x ) const {
     using Teuchos::dyn_cast;
-    const PV &xs = dyn_cast<const PV>(dyn_cast<const V>(x));
+    using Teuchos::getConst;
+    const PV &xs = dyn_cast<const PV>(getConst(x));
     Real result = 0; 
       for( size_type i=0; i<vecs_->size(); ++i ) { 
         result += (*vecs_)[i]->dot(*xs.get(i));
@@ -139,34 +143,43 @@ public:
   }
 
   const V& dual(void) const {
+ 
+    using Teuchos::rcp;
+
     for( size_type i=0; i<vecs_->size(); ++i ) {  
       dual_vecs_[i]->set((*vecs_)[i]->dual());
     }
-    dual_pvec_ = Teuchos::rcp( new PV( Teuchos::rcp( &dual_vecs_, false ) ) );
+    dual_pvec_ = rcp( new PV( rcp( &dual_vecs_, false ) ) );
     return *dual_pvec_;
   }
 
   RCPV basis( const int i ) const {
     using Teuchos::RCP;
     using Teuchos::rcp;
+    using Teuchos::dyn_cast;
 
     RCPV bvec = this->clone();
 
     // Downcast
-    PV & eb = Teuchos::dyn_cast<PV>(const_cast <V&>(*bvec));    
+    PV &eb = dyn_cast<PV>(const_cast <V&>(*bvec));    
 
     int begin = 0;   
     int end = 0;
+
+    // Iterate over subvectors
     for( size_type j=0; j<vecs_->size(); ++j ) { 
+
       end += (*vecs_)[j]->dimension();
-        
+
       if( begin<= i && i<end ) {
         eb.set(j, *((*vecs_)[j]->basis(i-begin)) );    
       }
       else {
         eb.zero(j);  
       }
-      begin = end+1;      
+
+      begin = end;
+
     } 
     return bvec;
   }
