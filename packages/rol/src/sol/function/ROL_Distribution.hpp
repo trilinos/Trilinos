@@ -308,9 +308,14 @@ private:
           mVec[q] += wt*std::pow(pt,q+1);
         }
       }
+      outStream << std::scientific << std::setprecision(0);
+      outStream << std::right << std::setw(20) << "CHECK DENSITY: Check first " << order
+                << " moments against Monte Carlo using " << numPts << " samples"
+                << std::endl;
+      outStream << std::setw(20) << "Error should be O(" << 1./std::sqrt(numPts) << ")" << std::endl;
       outStream << std::scientific << std::setprecision(11);
       for (size_t q = 0; q < order; q++) {
-        outStream << std::right << std::setw(20) << "Error in " << q+1 << " moment: "
+        outStream << std::setw(20) << "Error in " << q+1 << " moment: "
                   << std::abs(mVec[q]-moment(q+1)) << std::endl;
       }
       outStream << std::endl;
