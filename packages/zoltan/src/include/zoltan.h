@@ -2344,6 +2344,27 @@ extern int Zoltan_Set_Fn(
   void *data_ptr
 );
 
+/*****************************************************************************/
+/*
+ *  General function to retrieve a pointer to a given Zoltan callback function.
+ *  Input:
+ *    zz                  --  Pointer to a Zoltan structure.
+ *    fn_type             --  Enum type indicating the function to be
+ *                            retrieved.
+ *  Output:
+ *    fn_ptr              --  Pointer to the function retrieved.
+ *    data_ptr            --  Pointer to data associated with the function.
+ *                            May be NULL.
+ *  Returned value:       --  Error code
+ */
+
+extern int Zoltan_Get_Fn(
+  struct Zoltan_Struct *zz,
+  ZOLTAN_FN_TYPE fn_type,
+  ZOLTAN_VOID_FN **fn_ptr,
+  void **data_ptr
+);
+
 /*
  *  Functions to initialize specific Zoltan callback functions.  One function
  *  exists for each callback function type, as listed in Zoltan_Fn_Type above.

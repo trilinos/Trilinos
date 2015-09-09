@@ -48,7 +48,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
      Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
          = Teuchos::rcp(new ResponseScatterEvaluator_IPCoordinates<EvalT,panzer::Traits>(responseName,cubatureDegree_));
 
-     fm.template registerEvaluator<EvalT>(eval);
+     this->template registerEvaluator<EvalT>(fm, eval);
 
      // require last field
      fm.template requireField<EvalT>(*eval->evaluatedFields()[0]);

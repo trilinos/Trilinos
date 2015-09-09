@@ -149,8 +149,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<LO> LIDs;
 
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f();
    Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
@@ -271,8 +271,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<LO> LIDs;
 
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f();
    Teuchos::ArrayRCP<double> r_array = r->get1dViewNonConst();
@@ -356,7 +356,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   fieldIds_.resize(scatterFields_.size());
 
   const Workset & workset_0 = (*d.worksets_)[0];
-  std::string blockId = workset_0.block_id;
+  std::string blockId = this->wda(workset_0).block_id;
 
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
@@ -460,8 +460,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<double> jacRow;
 
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f();
    Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer_->get_A();
@@ -510,12 +510,12 @@ evaluateFields(typename TRAITS::EvalData workset)
    typedef typename LOC::CrsMatrixType::local_matrix_type LocalMatrixT;
 
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
+   std::string blockId = this->wda(workset).block_id;
 
    Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f();
    Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer_->get_A();
 
-   globalIndexer_->getElementLIDs(workset.cell_local_ids_k,scratch_lids_);
+   globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
 
    ScatterResidual_Jacobian_Functor<ScalarT,LO,GO,NodeT,LocalMatrixT> functor;
    functor.fillResidual = (r!=Teuchos::null);

@@ -91,14 +91,10 @@ namespace panzer {
     * of a details vector supports things like DG based assembly.
     */
   struct Workset : public WorksetDetails {
-
     Workset() : sensitivities_name("") {}
 
     std::size_t num_cells;
     int subcell_dim; //! If workset corresponds to a sub cell, what is the dimension?
-
-    std::vector<Teuchos::RCP<WorksetDetails> > details; // note that (*this) is set to index [0]
-                                                        // when using panzers workset construction
     
     double alpha;
     double beta;
@@ -106,9 +102,54 @@ namespace panzer {
     std::vector<double> gather_seeds; // generic gather seeds
     bool evaluate_transient_terms;
     std::string sensitivities_name;
+
+    //! other contains details about the side-sharing elements on the other side
+    //! of the interface. If Teuchos::nonnull(other), then Workset contains two
+    //! WorksetDetails: itself, and other.
+    Teuchos::RCP<WorksetDetails> other;
+
+    //! op(0) return *this; op(1) returns *other.
+    WorksetDetails& operator()(const int i) {
+      TEUCHOS_ASSERT(i == 0 || (i == 1 && Teuchos::nonnull(other)));
+      return i == 0 ? static_cast<WorksetDetails&>(*this) : *other;
+    }
+    //! const accessor.
+    const WorksetDetails& operator()(const int i) const {
+      TEUCHOS_ASSERT(i == 0 || (i == 1 && Teuchos::nonnull(other)));
+      return i == 0 ? static_cast<const WorksetDetails&>(*this) : *other;
+    }
+    //! Convenience wrapper to operator() for pointer access.
+    WorksetDetails& details(const int i) { return operator()(i); }
+    const WorksetDetails& details(const int i) const { return operator()(i); }
+    //! Return the number of WorksetDetails this Workset holds.
+    size_t numDetails() const { return Teuchos::nonnull(other) ? 2 : 1; }
   };
 
   std::ostream& operator<<(std::ostream& os, const panzer::Workset& w);
+
+  /** This accessor may be used by an evaluator to abstract Details
+    * Index. "Details Index" may be in the evaluator's constructor
+    * ParameterList. If it is, then this accessor's constructor reads it and
+    * checks for error. Regardless of whether it is, operator() then wraps
+    * workset's access to WorksetDetails fields to provide the correct ones.
+    */
+  class WorksetDetailsAccessor {
+  public:
+    //! Default value is 0, which is backwards compatible.
+    WorksetDetailsAccessor() : details_index_(0) {}
+    //! An evaluator builder sets the details index.
+    void setDetailsIndex(const int di) { details_index_ = di; }
+    //! Workset wrapper to extract the correct details. Example: wda(workset).bases[i].
+    WorksetDetails& operator()(Workset& workset) const {
+      return workset(details_index_);
+    }
+    //! const accessor.
+    const WorksetDetails& operator()(const Workset& workset) const {
+      return workset(details_index_);
+    }
+  private:
+    int details_index_;
+  };
 
 } // namespace panzer
 

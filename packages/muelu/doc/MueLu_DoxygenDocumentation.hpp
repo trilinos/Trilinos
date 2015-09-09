@@ -66,16 +66,19 @@
 
 MueLu is a flexible and extensible multigrid solver framework.  It is intended for the research and
 development of new multigrid preconditioning techniques.
+More information can be found at https://trilinos.org/packages/muelu.
 
 \section muelu_authors Authors and Contributors
 
-  - Jeremie Gaidamour, Sandia National Labs
+  - Emily Furst, University of Washington (summer intern, 2015)
+  - Jeremie Gaidamour, INRIA (Nancy, France)
   - Axel Gerstenberger, Rolls Royce
   - Jonathan Hu, Sandia National Labs
+  - Brian Kelley, Texas A&M (summer intern, 2015)
   - Andrey Prokopenko, Sandia National Labs
   - Chris Siefert, Sandia National Labs
   - Ray Tuminaro, Sandia National Labs
-  - Tobias Wiesner, Technical University Munich
+  - Tobias Wiesner, Sandia National Labs
 
 \section muelu_copyright Copyright and License
 
@@ -83,58 +86,7 @@ development of new multigrid preconditioning techniques.
 
 \section muelu_questions For All Questions and Comments...
 
-   Please contact Jonathan Hu (jhu@sandia.gov), Andrey Prokopenko (aprokop@sandia.gov),
-   or Ray Tuminaro (rstumin@sandia.gov).
-
-*/
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-
-/*! \page user_guide Users Guide
-
-\section user_guide_index Index
-
-- \ref user_guide_getting_started
-- \ref questions
-
-\section user_guide_getting_started Getting Started
-
-*/
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-
-/*! \page todo ToDo List
-
-Short Term:
-<ul>
-<li> ???
-</ul>
-
-Long Term:
-<ul>
-<li> ???
-<li>
-</ul>
-
-*/
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-
-/*! \page faq Frequently Asked Questions
-
-\section Questions
-\ref faq1
-
-\ref faq2
-
-\section faq1 1. Why name the code MueLu?
-Why not?
-
-\section faq2 2. Put your question here?
-Answer your question here.
+   Please contact Jonathan Hu (jhu@sandia.gov), Andrey Prokopenko (aprokop@sandia.gov), Ray Tuminaro (rstumin@sandia.gov), or Tobias Wiesner (tawiesn@sandia.gov).
 
 */
 

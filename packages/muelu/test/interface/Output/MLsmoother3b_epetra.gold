@@ -1,24 +1,3 @@
-ML ParameterList:
-smoother: pre or post = post   [unused]
-ML output = 10   [unused]
-
-MueLu ParameterList:
-max levels = 10   [unused]
-cycle type = V   [unused]
-sa: damping factor = 1.333000   [unused]
-sa: eigenvalue estimate num iterations = 10   [unused]
-smoother: post type = RELAXATION   [unused]
-smoother: pre or post = post   [unused]
-verbosity = test   [unused]
-coarse: type = klu   [unused]
-coarse: max size = 128   [unused]
-smoother: post params ->
- relaxation: type = Symmetric Gauss-Seidel   [unused]
- relaxation: sweeps = 2   [unused]
- relaxation: damping factor = 1   [unused]
-coarse: params ->
- [empty list]
-
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  relaxation: type = symmetric Gauss-Seidel   [unused]

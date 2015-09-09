@@ -1,107 +1,130 @@
-<!-- 
-    INPUT TYPES: coordinates,
-                 (x,t,e)petra_crs_matrix,
-                 (x,t,e)petra_crs_graph,
-                 (x,t,e)petra_vector,
-                 (x,t,e)petra_multivector
-
-    INPUT ADAPTERS: BasicIdentifier,
-                    XpetraMultiVector,
-                    XpetraCrsGraph,
-                    XpetraCrsMatrix
--->
+<!--////////////////////////////////////////////////////////////////////////////
+ ////////////////////////////////////////////////////////////////////////////////
+ 
+ REQUIRED BLOCKS:
+ 1. Input parameters
+ 2. Problem parameters
+ 
+ OPTIONAL Blocks:
+ 3. Comparison
+ 
+ SUPPORTED INPUT FILE TYPES:
+ 1. Geometric Generator
+ 2. Pamgen
+ 3. Chaco
+ 4. Matrix Market
+ 
+ SUPPORTED PROBLEM TYPES:
+ 1. partitioning
+ 
+ SUPPORTED INPUT DATA TYPES:
+ 1. coordinates
+ 2. (x,t,e)petra_crs_matrix
+ 3. (x,t,e)petra_crs_graph
+ 4. (x,t,e)petra_vector
+ 5. (x,t,e)petra_multivector
+ 
+ SUPPORTED INPUT ADAPTERS:
+ 1. BasicIdentifier
+ 2. XpetraMultiVector
+ 3. XpetraCrsGraph
+ 4. XpetraCrsMatrix
+ 5. BasicVector
+ 5. PamgenMesh
+ 
+ ** REFER TO THE README FOR A MORE DETAILED EXPLANATION
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////-->
 
 <ParameterList name="chacoVertexWeight2">
-    
-        <ParameterList name="InputParameters">
-            <Parameter name="inputPath" type="string" value="/Users/davidson/trilinosall/trilinosrepo/packages/zoltan/test/ch_vwgt2"/>
-            <Parameter name="inputFile" type="string" value="vwgt2"/>
-            <Parameter name="fileType" type="string" value="Chaco"/>
-        </ParameterList>
-    
-    <ParameterList name="Problem 1">
-        <Parameter name="Name" type="string" value="chacoVertexWeight2_xpetmv"/>
-     
-        <ParameterList name="InputAdapterParameters">
-            <Parameter name="inputType" type="string" value="coordinates"/> 
-            <Parameter name="inputAdapter" type="string" value="XpetraMultiVector"/>
-        </ParameterList>
-
-        <ParameterList name="Zoltan2Parameters">
-            <Parameter name="algorithm" type="string" value="multijagged"/>
-            <Parameter name="compute_metrics" type="string" value="true"/> 
-        </ParameterList>
-    
-       <ParameterList name="Metrics">
-            <ParameterList name="object count">
-                <Parameter name="lower" type="double" value="0.99"/>
-                <Parameter name="upper" type="double" value="1.4"/>
-            </ParameterList>
-
-            <ParameterList name="weight 1">
-                <Parameter name="lower" type="double" value="0.99"/>
-                <Parameter name="upper" type="double" value="1.4"/>
-            </ParameterList>
-        </ParameterList>
-
+  
+  <ParameterList name="InputParameters">
+    <Parameter name="input path" type="string" value="/Users/davidson/trilinosall/trilinosrepo/packages/zoltan/test/ch_vwgt2"/>
+    <Parameter name="input file" type="string" value="vwgt2"/>
+    <Parameter name="file type" type="string" value="Chaco"/>
+  </ParameterList>
+  
+  <ParameterList name="Problem 1">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="coordinates"/>
+      <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
     </ParameterList>
     
-    <ParameterList name="Problem 2">
-        <Parameter name="Name" type="string" value="chacoVertexWeight2_xpet_crs_matrix"/>
-     
-        <ParameterList name="InputAdapterParameters">
-            <Parameter name="inputType" type="string" value="xpetra_crs_matrix"/> 
-            <Parameter name="inputAdapter" type="string" value="XpetraCrsMatrix"/>
-        </ParameterList>
-
-        <ParameterList name="Zoltan2Parameters">
-            <Parameter name="algorithm" type="string" value="multijagged"/>
-            <Parameter name="compute_metrics" type="string" value="true"/> 
-        </ParameterList>
-    
-        <ParameterList name="Metrics">
-            <ParameterList name="object count">
-                <Parameter name="lower" type="double" value="0.99"/>
-                <Parameter name="upper" type="double" value="3.4"/>
-            </ParameterList>
-
-            <ParameterList name="weight 1">
-                <Parameter name="lower" type="double" value="0.99"/>
-                <Parameter name="upper" type="double" value="2"/>
-            </ParameterList>
-            
-            <ParameterList name="weight 2">
-                <Parameter name="lower" type="double" value="0.99"/>
-                <Parameter name="upper" type="double" value="3"/>
-            </ParameterList>
-        </ParameterList> 
-
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="algorithm" type="string" value="multijagged"/>
+      <Parameter name="compute_metrics" type="string" value="true"/>
     </ParameterList>
     
-    <ParameterList name="Problem 3">
-        <Parameter name="Name" type="string" value="chacoVertexWeight2_xpet_crs_graph"/>
-     
-        <ParameterList name="InputAdapterParameters">
-            <Parameter name="inputType" type="string" value="xpetra_crs_graph"/> 
-            <Parameter name="inputAdapter" type="string" value="XpetraCrsGraph"/>
-        </ParameterList>
-
-        <ParameterList name="Zoltan2Parameters">
-            <Parameter name="algorithm" type="string" value="multijagged"/>
-            <Parameter name="compute_metrics" type="string" value="true"/> 
-        </ParameterList>
-    
-      <ParameterList name="Metrics">
-            <ParameterList name="object count">
-                <Parameter name="lower" type="double" value="0.99"/>
-                <Parameter name="upper" type="double" value="1.4"/>
-            </ParameterList>
-
-            <ParameterList name="weight 2">
-                <Parameter name="lower" type="double" value="0.99"/>
-                <Parameter name="upper" type="double" value="3.4"/>
-            </ParameterList>
-        </ParameterList>
+    <ParameterList name="Metrics">
+      <ParameterList name="object count">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
+      
+      <ParameterList name="weight 1">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
     </ParameterList>
     
+  </ParameterList>
+  
+  <ParameterList name="Problem 2">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="xpetra_crs_matrix"/>
+      <Parameter name="input adapter" type="string" value="XpetraCrsMatrix"/>
+    </ParameterList>
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="algorithm" type="string" value="multijagged"/>
+      <Parameter name="compute_metrics" type="string" value="true"/>
+    </ParameterList>
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="object count">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="3.4"/>
+      </ParameterList>
+      
+      <ParameterList name="weight 1">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="2"/>
+      </ParameterList>
+      
+      <ParameterList name="weight 2">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="3"/>
+      </ParameterList>
+    </ParameterList>
+    
+  </ParameterList>
+  
+  <ParameterList name="Problem 3">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="xpetra_crs_graph"/>
+      <Parameter name="input adapter" type="string" value="XpetraCrsGraph"/>
+    </ParameterList>
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="algorithm" type="string" value="multijagged"/>
+      <Parameter name="compute_metrics" type="string" value="true"/>
+    </ParameterList>
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="object count">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
+      
+      <ParameterList name="weight 2">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="3.4"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  
 </ParameterList>

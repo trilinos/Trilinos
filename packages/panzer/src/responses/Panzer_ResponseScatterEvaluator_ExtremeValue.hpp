@@ -55,6 +55,8 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
 
 class ExtremeValueScatterBase {
@@ -63,6 +65,7 @@ public:
 
   virtual void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellExtremeValue,
                                  panzer::Traits::EvalData workset, 
+                                 WorksetDetailsAccessor& wda,
                                  Teuchos::ArrayRCP<double> & dgdx) const = 0;
 };
  
@@ -74,6 +77,7 @@ public:
 
    void scatterDerivative(const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellExtremeValue,
                          panzer::Traits::EvalData workset, 
+                         WorksetDetailsAccessor& wda,
                          Teuchos::ArrayRCP<double> & dgdx) const;
 private:
  
@@ -84,7 +88,7 @@ private:
   * on each finite element cell.
   */
 template<typename EvalT, typename Traits>
-class ResponseScatterEvaluator_ExtremeValue : public PHX::EvaluatorWithBaseImpl<Traits>,
+class ResponseScatterEvaluator_ExtremeValue : public panzer::EvaluatorWithBaseImpl<Traits>,
                                             public PHX::EvaluatorDerived<EvalT, Traits>  { 
 public:
 
@@ -119,6 +123,7 @@ template <typename LO,typename GO>
 void ExtremeValueScatter<LO,GO>::scatterDerivative(
                                         const PHX::MDField<const panzer::Traits::Jacobian::ScalarT,panzer::Cell> & cellExtremeValue,
                                         panzer::Traits::EvalData workset, 
+                                        WorksetDetailsAccessor& wda,
                                         Teuchos::ArrayRCP<double> & dgdx) const
 {
   TEUCHOS_ASSERT(false);

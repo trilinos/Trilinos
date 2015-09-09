@@ -104,7 +104,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_Scalar,sd,fm)
 
   tmp = Intrepid::FieldContainer<ScalarT>(scalar.dimension(0), num_qp); 
 
-  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0]);
+  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -132,7 +132,7 @@ PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
   if(workset.num_cells>0)
     Intrepid::FunctionSpaceTools::
       integrate<ScalarT>(integral, tmp, 
-			 (workset.int_rules[quad_index])->weighted_measure, 
+			 (this->wda(workset).int_rules[quad_index])->weighted_measure, 
 			 Intrepid::COMP_BLAS);
   */
   
@@ -140,10 +140,9 @@ PHX_EVALUATE_FIELDS(Integrator_Scalar,workset)
   // intrepid field container for MDFields.  This is rather involved
   // since we need to change the Worksets.
 
-  // const Intrepid::FieldContainer<double>& rightFields = (workset.int_rules[quad_index])->weighted_measure;
-  const IntegrationValues2<double> & iv = *workset.int_rules[quad_index];
+  // const Intrepid::FieldContainer<double>& rightFields = (this->wda(workset).int_rules[quad_index])->weighted_measure;
+  const IntegrationValues2<double> & iv = *this->wda(workset).int_rules[quad_index];
 
-  int numCells        = tmp.dimension(0);
   int numPoints       = tmp.dimension(1);
  
   for(int cl = 0; cl < workset.num_cells; cl++) {

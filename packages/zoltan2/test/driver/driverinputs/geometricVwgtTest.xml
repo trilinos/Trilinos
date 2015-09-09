@@ -1,0 +1,195 @@
+<!--////////////////////////////////////////////////////////////////////////////
+ ////////////////////////////////////////////////////////////////////////////////
+ 
+ REQUIRED BLOCKS:
+ 1. Input parameters
+ 2. Problem parameters
+ 
+ OPTIONAL Blocks:
+ 3. Comparison
+ 
+ SUPPORTED INPUT FILE TYPES:
+ 1. Geometric Generator
+ 2. Pamgen
+ 3. Chaco
+ 4. Matrix Market
+ 
+ SUPPORTED PROBLEM TYPES:
+ 1. partitioning
+ 
+ SUPPORTED INPUT DATA TYPES:
+ 1. coordinates
+ 2. (x,t,e)petra_crs_matrix
+ 3. (x,t,e)petra_crs_graph
+ 4. (x,t,e)petra_vector
+ 5. (x,t,e)petra_multivector
+ 
+ SUPPORTED INPUT ADAPTERS:
+ 1. BasicIdentifier
+ 2. XpetraMultiVector
+ 3. XpetraCrsGraph
+ 4. XpetraCrsMatrix
+ 5. BasicVector
+ 5. PamgenMesh
+ 
+ ** REFER TO THE README FOR A MORE DETAILED EXPLANATION
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////-->
+
+<ParameterList name="geometricTest">
+  
+  <ParameterList name="InputParameters">
+    <Parameter name="input file" type="string" value="vwgt"/>
+    <Parameter name="file type" type="string" value="Chaco"/>
+  </ParameterList>
+  
+  <ParameterList name="zoltan2rcb">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="coordinates"/>
+      <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+    </ParameterList>
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="algorithm" type="string" value="rcb"/>
+      <Parameter name="compute_metrics" type="string" value="true"/>
+    </ParameterList>
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="weight 1">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.2"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="zoltanrcb">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="coordinates"/>
+      <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+    </ParameterList>
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="algorithm" type="string" value="zoltan"/>
+      <ParameterList name="zoltan_parameters">
+          <Parameter name="LB_METHOD" type="string" value="rcb"/>
+      </ParameterList>
+      <Parameter name="compute_metrics" type="string" value="true"/>
+    </ParameterList>
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="weight 1">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.2"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!---->
+  
+  <ParameterList name="zoltan2rib">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="coordinates"/>
+      <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+    </ParameterList>
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="algorithm" type="string" value="rib"/>
+      <Parameter name="compute_metrics" type="string" value="true"/>
+    </ParameterList>
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="weight 1">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.2"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="zoltanrib">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="coordinates"/>
+      <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+    </ParameterList>
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="algorithm" type="string" value="zoltan"/>
+      <ParameterList name="zoltan_parameters">
+          <Parameter name="LB_METHOD" type="string" value="rib"/>
+      </ParameterList>
+      <Parameter name="compute_metrics" type="string" value="true"/>
+    </ParameterList>
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="weight 1">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.2"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <!---->
+  
+  <ParameterList name="zoltan2hsfc">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="coordinates"/>
+      <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+    </ParameterList>
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="algorithm" type="string" value="hsfc"/>
+      <Parameter name="compute_metrics" type="string" value="true"/>
+    </ParameterList>
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="weight 1">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.2"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="zoltanhsfc">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="coordinates"/>
+      <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+    </ParameterList>
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="algorithm" type="string" value="zoltan"/>
+      <ParameterList name="zoltan_parameters">
+          <Parameter name="LB_METHOD" type="string" value="hsfc"/>
+      </ParameterList>
+      <Parameter name="compute_metrics" type="string" value="true"/>
+    </ParameterList>
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="weight 1">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.2"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+
+  <ParameterList name="Comparison">
+    <Parameter name="A" type="string" value="zoltan2rcb"/>
+    <Parameter name="B" type="string" value="zoltanrcb"/>
+  </ParameterList>
+
+  <ParameterList name="Comparison">
+    <Parameter name="A" type="string" value="zoltan2rib"/>
+    <Parameter name="B" type="string" value="zoltanrib"/>
+  </ParameterList>
+
+  <ParameterList name="Comparison">
+    <Parameter name="A" type="string" value="zoltan2hsfc"/>
+    <Parameter name="B" type="string" value="zoltanhsfc"/>
+  </ParameterList>
+
+</ParameterList>

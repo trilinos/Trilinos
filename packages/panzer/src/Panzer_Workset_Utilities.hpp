@@ -53,20 +53,28 @@ namespace panzer {
   /** \brief Returns the index in the workset bases for a particular PureBasis name.
       \param[in] basis_name Name of the basis that corresponds to a particular PureBasis
       \param[in] workset Worksets to perform the search over
+      \param[in] wda WorksetDetailsAccessor to access the correct WorksetDetails in workset.
   */
   std::vector<std::string>::size_type 
-  getPureBasisIndex(std::string basis_name, panzer::Workset& workset);
+  getPureBasisIndex(std::string basis_name, panzer::Workset& workset, WorksetDetailsAccessor& wda);
 
   /** \brief Returns the index in the workset bases for a particular BasisIRLayout name.
       \param[in] basis_name Name of the basis that corresponds to a particular BasisIRLayout
       \param[in] workset Worksets to perform the search over
+      \param[in] wda WorksetDetailsAccessor to access the correct WorksetDetails in workset.
   */
   std::vector<std::string>::size_type 
-  getBasisIndex(std::string basis_name, panzer::Workset& workset);
+  getBasisIndex(std::string basis_name, panzer::Workset& workset, WorksetDetailsAccessor& wda);
 
   std::vector<int>::size_type
-  getIntegrationRuleIndex(int ir_degree, panzer::Workset& workset);
+  getIntegrationRuleIndex(int ir_degree, panzer::Workset& workset, WorksetDetailsAccessor& wda);
 
+  void printWorkset(std::ostream& os, const panzer::Workset & workset, WorksetDetailsAccessor& wda);
+
+  // Temporarily provide non-wda versions so that Charon continues to build and work.
+  std::vector<std::string>::size_type getPureBasisIndex(std::string basis_name, panzer::Workset& workset);
+  std::vector<std::string>::size_type getBasisIndex(std::string basis_name, panzer::Workset& workset);
+  std::vector<int>::size_type getIntegrationRuleIndex(int ir_degree, panzer::Workset& workset);
   void printWorkset(std::ostream& os, const panzer::Workset & workset);
 }
 

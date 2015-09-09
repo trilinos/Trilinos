@@ -343,7 +343,8 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 void panzer::PhysicsBlock::
 buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                           const LinearObjFactory<panzer::Traits> & lof,
-                                          const Teuchos::ParameterList& user_data) const
+					  const Teuchos::ParameterList& user_data,
+					  const int workset_details_index) const
 {
   using namespace std;
   using namespace panzer;

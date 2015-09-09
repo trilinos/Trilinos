@@ -62,14 +62,22 @@
 #ifdef HAVE_TEUCHOSCORE_QUADMATH
 #include <quadmath.h>
 
-// GCC / libquadmath doesn't implement an std::ostream operator<< for
-// __float128, so we have to write our own.  At least libquadmath
-// provides a printing function specifically for __float128.
-//
-// FIXME (mfh 19 Mar 2015) This will break if users have already
-// defined their own operator<< in the global namespace.
-std::ostream&
+// Teuchos_ConfigDefs.hpp includes <iostream>, which includes
+// <ostream>.  If this ever changes, include <ostream> here.
+
+/// \brief Overload of operator<<(std::ostream&, const T&) for T =
+///   __float128.
+///
+/// GCC / libquadmath doesn't implement an std::ostream operator<< for
+/// __float128, so we have to write our own.  At least libquadmath
+/// provides a printing function specifically for __float128.
+///
+/// FIXME (mfh 19 Mar 2015) This will break if users have already
+/// defined their own operator<< in the global namespace.
+namespace std {
+ostream&
 operator<< (std::ostream& out, const __float128& x);
+} // namespace std
 
 #endif // HAVE_TEUCHOSCORE_QUADMATH
 
@@ -816,6 +824,19 @@ struct ScalarTraits<__float128> {
     // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
     random ();
 #endif
+  }
+  static __float128 random () {
+    // Half the smallest normalized double, is the scaling factor of
+    // the lower-order term in the double-double representation.
+    const __float128 scalingFactor =
+      static_cast<__float128> (std::numeric_limits<double>::min ()) /
+      static_cast<__float128> (2.0);
+    const __float128 higherOrderTerm =
+      static_cast<__float128> (ScalarTraits<double>::random ());
+    const __float128 lowerOrderTerm =
+      static_cast<__float128> (ScalarTraits<double>::random ()) *
+      scalingFactor;
+    return higherOrderTerm + lowerOrderTerm;
   }
   static std::string name () {
     return "__float128";

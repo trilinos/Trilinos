@@ -258,6 +258,10 @@ typedef MueLu::RigidBodyModeFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Rigi
 typedef MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SaPFactory;
 #endif
 
+#ifdef MUELU_SAPFACTORY_KOKKOS_SHORT
+typedef MueLu::SaPFactory_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> SaPFactory_kokkos;
+#endif
+
 #ifdef MUELU_SCHURCOMPLEMENTFACTORY_SHORT
 typedef MueLu::SchurComplementFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> SchurComplementFactory;
 #endif
@@ -354,6 +358,10 @@ typedef MueLu::VisualizationHelpers<Scalar,LocalOrdinal,GlobalOrdinal,Node> Visu
 typedef MueLu::Zoltan2Interface<Scalar,LocalOrdinal,GlobalOrdinal,Node> Zoltan2Interface;
 #endif
 
+#ifdef MUELU_UTILITIES_KOKKOS_SHORT
+typedef MueLu::Utils_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils_kokkos;
+typedef MueLu::Utils2_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2_kokkos;
+#endif
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node> Utils2;

@@ -54,13 +54,15 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
 
 /** This class handles responses with values aggregated
   * on each finite element cell.
   */
 template<typename EvalT, typename Traits>
-class ResponseScatterEvaluator_IPCoordinates : public PHX::EvaluatorWithBaseImpl<Traits>,
+class ResponseScatterEvaluator_IPCoordinates : public panzer::EvaluatorWithBaseImpl<Traits>,
                                                public PHX::EvaluatorDerived<EvalT, Traits>  { 
 public:
 

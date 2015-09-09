@@ -46,6 +46,8 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
     
   /** \brief Evaluates a Neumann BC residual contribution
@@ -55,7 +57,7 @@ namespace panzer {
 
       int(n \cdot (flux * phi) )
   */
-PHX_EVALUATOR_CLASS(NeumannResidual)
+PANZER_EVALUATOR_CLASS(NeumannResidual)
   
   PHX::MDField<ScalarT> residual;
   PHX::MDField<ScalarT> normal_dot_flux;
@@ -67,7 +69,7 @@ PHX_EVALUATOR_CLASS(NeumannResidual)
   std::size_t num_ip;
   std::size_t num_dim;
 
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 }
 

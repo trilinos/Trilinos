@@ -82,7 +82,7 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
 {
   this->utils.setFieldData(quadCoordinates_,fm);
 
-  quadIndex_ = panzer::getIntegrationRuleIndex(quadDegree_, (*sd.worksets_)[0]);
+  quadIndex_ = panzer::getIntegrationRuleIndex(quadDegree_, (*sd.worksets_)[0], this->wda);
 }
 
 // **********************************************************************
@@ -90,8 +90,8 @@ template<typename EvalT,typename TRAITS>
 void panzer::GatherIntegrationCoordinates<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  // const Intrepid::FieldContainer<double> & quadCoords = workset.int_rules[quadIndex_]->ip_coordinates;  
-  const IntegrationValues2<double> & iv = *workset.int_rules[quadIndex_];
+  // const Intrepid::FieldContainer<double> & quadCoords = this->wda(workset).int_rules[quadIndex_]->ip_coordinates;  
+  const IntegrationValues2<double> & iv = *this->wda(workset).int_rules[quadIndex_];
 
   // just copy the array
   for(int i=0;i<iv.ip_coordinates.dimension(0);i++)

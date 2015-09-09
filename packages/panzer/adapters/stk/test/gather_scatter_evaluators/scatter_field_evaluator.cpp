@@ -86,14 +86,16 @@ using Teuchos::rcp;
 #include <vector>
 #include <string>
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
   Teuchos::RCP<panzer::PureBasis> linBasis;
 
   //! Interpolates basis DOF values to IP DOF values
-  PHX_EVALUATOR_CLASS(XCoordinate)
+  PANZER_EVALUATOR_CLASS(XCoordinate)
      PHX::MDField<ScalarT,Cell,NODE> xcoord;
      int nodes;
-  PHX_EVALUATOR_CLASS_END
+  PANZER_EVALUATOR_CLASS_END
 
   PHX_EVALUATOR_CTOR(XCoordinate,p)
   {
@@ -114,7 +116,7 @@ namespace panzer {
 
      for(std::size_t n=0;n<numcells;n++) {
         for(std::size_t v=0;v<nodes;v++) {
-           xcoord(n,v) = workset.cell_vertex_coordinates(n,v,0);
+           xcoord(n,v) = this->wda(workset).cell_vertex_coordinates(n,v,0);
         }
      }
   }

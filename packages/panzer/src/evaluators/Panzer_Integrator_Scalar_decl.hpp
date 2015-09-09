@@ -49,6 +49,8 @@
 #include "Phalanx_MDField.hpp"
 #include "Intrepid_FieldContainer.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
     
 /** This integrates a scalar quanity over each cell.
@@ -64,7 +66,7 @@ namespace panzer {
     </ParameterList>
   \endverbatim
   */
-PHX_EVALUATOR_CLASS(Integrator_Scalar)
+PANZER_EVALUATOR_CLASS(Integrator_Scalar)
   
   PHX::MDField<ScalarT> integral;  // result
     
@@ -88,7 +90,7 @@ public:
 private:
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
 
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 }
 

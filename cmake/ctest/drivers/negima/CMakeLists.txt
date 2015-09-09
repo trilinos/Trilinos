@@ -10,12 +10,15 @@ execute_process(COMMAND date +%A OUTPUT_VARIABLE DAYOFWEEK)
 if(${DAYOFWEEK} MATCHES "Sunday")
   SET(RUN_HEAVY_MEMORY_TESTS ON)
   SET(RUN_COVERAGE_TESTS OFF)
+  SET(RUN_CUDA_OLD_TESTS ON)
 elseif(${DAYOFWEEK} MATCHES "Saturday")
   SET(RUN_HEAVY_MEMORY_TESTS OFF)
   SET(RUN_COVERAGE_TESTS ON)
+  SET(RUN_CUDA_OLD_TESTS OFF)
 else()
   SET(RUN_HEAVY_MEMORY_TESTS OFF)
   SET(RUN_COVERAGE_TESTS OFF)
+  SET(RUN_CUDA_OLD_TESTS OFF)
 endif()
 
 if($ENV{CTEST_CONFIGURATION} MATCHES "default")
@@ -37,48 +40,8 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
     )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_DEBUG_MueLu_ExtraTypes
-    ctest_linux_nightly_serial_debug_muelu_extratypes_negima.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
-
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_DEBUG_MueLu_ExtraTypes_EI
-    ctest_linux_nightly_mpi_debug_muelu_extratypes_ei_negima.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
-
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_RELEASE_MueLu_Experimental
-    ctest_linux_nightly_serial_release_muelu_experimental_negima.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
-
-  TRILINOS_DRIVER_ADD_DASHBOARD(
     OPENMPI_1.10.0_RELEASE_MueLu
     ctest_linux_nightly_mpi_release_muelu_negima.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
-
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_DEBUG_MueLu_KLU2
-    ctest_linux_nightly_mpi_debug_muelu_klu2_negima.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
-
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_DEBUG_MueLu_Basker
-    ctest_linux_nightly_mpi_debug_muelu_basker_negima.cmake
     CTEST_INSTALLER_TYPE release
     RUN_SERIAL
     TIMEOUT_MINUTES 330
@@ -136,13 +99,17 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
 
 elseif($ENV{CTEST_CONFIGURATION} MATCHES "nvcc_wrapper")
 
-  TRILINOS_DRIVER_ADD_DASHBOARD(
-    OPENMPI_1.10.0_DEBUG_MueLu_Kokkos_Refactor_CUDA
-    ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_cuda_negima.cmake
-    CTEST_INSTALLER_TYPE release
-    RUN_SERIAL
-    TIMEOUT_MINUTES 330
-    )
+  if(RUN_CUDA_OLD_TESTS)
+
+    TRILINOS_DRIVER_ADD_DASHBOARD(
+      OPENMPI_1.10.0_DEBUG_MueLu_Kokkos_Refactor_CUDA
+      ctest_linux_nightly_mpi_debug_muelu_kokkos_refactor_cuda_negima.cmake
+      CTEST_INSTALLER_TYPE release
+      RUN_SERIAL
+      TIMEOUT_MINUTES 420
+      )
+
+  endif()
 
 
 endif()

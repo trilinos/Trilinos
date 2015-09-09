@@ -49,9 +49,11 @@
 #include "Phalanx_MDField.hpp"
 #include "Intrepid_FieldContainer.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
     
-PHX_EVALUATOR_CLASS(Integrator_GradBasisDotVector)
+PANZER_EVALUATOR_CLASS(Integrator_GradBasisDotVector)
   
   PHX::MDField<ScalarT,Cell,BASIS> residual;
     
@@ -72,7 +74,7 @@ PHX_EVALUATOR_CLASS(Integrator_GradBasisDotVector)
 
   Intrepid::FieldContainer<ScalarT> tmp;
 
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 }
 

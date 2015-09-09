@@ -46,16 +46,18 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
 
-PHX_EVALUATOR_CLASS(TestScatter)
+PANZER_EVALUATOR_CLASS(TestScatter)
   PHX::MDField<ScalarT,Cell,NODE> scatter_value;
   PHX::MDField<ScalarT,Cell,NODE> value;
   int localOffset;
 
   std::size_t num_nodes;
   static int offset;
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 }
 

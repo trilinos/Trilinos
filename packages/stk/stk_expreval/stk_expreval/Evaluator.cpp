@@ -1015,7 +1015,10 @@ Eval::evaluate() const
   double returnValue = 0.0;
   try
   {
-    returnValue = m_headNode->eval();
+    if(m_headNode != nullptr)
+    {
+      returnValue = m_headNode->eval();
+    }
   }
   catch(expression_evaluation_exception &)
   {

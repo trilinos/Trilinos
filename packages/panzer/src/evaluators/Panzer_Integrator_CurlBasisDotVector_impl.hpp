@@ -133,7 +133,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_CurlBasisDotVector,sd,fm)
     num_qp = flux_vector.dimension(1);
     num_dim = 3;
 
-    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
     scratch_vector = af.buildStaticArray<ScalarT,Cell,IP,Dim>("btv_scratch",flux_vector.dimension(0),num_qp,num_dim);
     // tmp = Intrepid::FieldContainer<ScalarT>(flux.dimension(0), num_qp, num_dim); 
@@ -145,7 +145,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_CurlBasisDotVector,sd,fm)
     num_qp = flux_scalar.dimension(1);
     num_dim = 2;
 
-    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+    basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
     scratch_scalar = af.buildStaticArray<ScalarT,Cell,IP>("btv_scratch",flux_scalar.dimension(0),num_qp);
     // tmp = Intrepid::FieldContainer<ScalarT>(flux.dimension(0), num_qp); 
@@ -267,7 +267,7 @@ public:
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
 { 
-  const BasisValues2<double> & bv = *workset.bases[basis_index];
+  const BasisValues2<double> & bv = *this->wda(workset).bases[basis_index];
 
   if(!useScalarField) {
     typedef FillScratchVector<ScalarT> FillScratch;

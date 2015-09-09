@@ -1,15 +1,10 @@
+#ifndef _PNGPROCESSOR_HPP_
+#define _PNGPROCESSOR_HPP_
+
 #include <vector>
 #include <string>
 
-#include <stk_topology/topology.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
-
+#include <stk_mesh/base/Types.hpp>
 #include "LodePNG.hpp"
 
 /*
@@ -47,6 +42,10 @@ public:
     unsigned get_ideal_rows_per_processor(unsigned numProcs) const;
 
     void fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& elemIds) const;
+
+    void get_coordinates_of_active_pixels(std::vector<std::pair<unsigned, unsigned>>& coordinates) const;
+
+    void get_coordinates_of_inactive_pixels(std::vector<std::pair<unsigned, unsigned>>& coordinates) const;
 
     //data dump
     void print_image();
@@ -116,6 +115,11 @@ public:
 
     void commit_image_vector_to_pixel_vector_with_exclusion();
 
+    void commit_image_vector_to_pixel_vector_with_greyscale();
+
+    //io
+    void print_grey_bits();
+
 private:
     // members
     unsigned char m_medianValue;
@@ -127,12 +131,17 @@ private:
     void convert_to_grey_bits();
     void process_unsigned_int_to_grey_bit(unsigned row, unsigned col);
 
-    void find_medium_grey_bit_value();
+    void find_median_grey_bit_value();
 
     // commit image
     void update_image_value_according_to_relation_with_median_value(unsigned row, unsigned col);
 
     void update_image_value_according_to_proximity_with_median_value(unsigned row, unsigned col);
 
+    void update_image_value_according_to_grayscale(unsigned row, unsigned col);
+
     void find_upper_and_lower_bounds();
 };
+
+
+#endif /*_PNGPROCESSOR_HPP_ */

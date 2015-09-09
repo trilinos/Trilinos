@@ -76,7 +76,16 @@ Teuchos::RCP<std::map<unsigned,panzer::Workset> > WorksetFactory::
 getSideWorksets(const panzer::BC & bc,
               const panzer::WorksetNeeds & needs) const
 {
-   return panzer_stk_classic::buildBCWorksets(*mesh_,needs,bc.elementBlockID(),bc.sidesetID());
+  return panzer_stk_classic::buildBCWorksets(*mesh_,needs,bc.elementBlockID(),bc.sidesetID());
+}
+
+Teuchos::RCP<std::map<unsigned,panzer::Workset> > WorksetFactory::
+getSideWorksets(const panzer::BC & bc,
+                const panzer::PhysicsBlock & pb_a,
+                const panzer::PhysicsBlock & pb_b) const
+{
+  TEUCHOS_ASSERT(bc.bcType() == panzer::BCT_Interface);
+  return panzer_stk_classic::buildBCWorksets(*mesh_, pb_a, pb_b, bc.sidesetID());
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> > WorksetFactory::

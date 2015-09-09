@@ -77,16 +77,6 @@ namespace MueLuTests {
 
   }
 
-  TEUCHOS_UNIT_TEST(SaPFactory, GetSetMethods)
-  {
-    out << "version: " << MueLu::Version() << std::endl;
-
-    RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
-    sapFactory->SetDampingFactor( (Scalar)4/3 );
-    TEST_EQUALITY(((Scalar)4/3) == sapFactory->GetDampingFactor(), true);
-
-  } //GetSetMethods
-
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_IFPACK2)
   TEUCHOS_UNIT_TEST(SaPFactory, EpetraVsTpetra)
   {

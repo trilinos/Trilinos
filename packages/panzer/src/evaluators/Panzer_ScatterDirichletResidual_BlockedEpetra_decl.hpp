@@ -55,6 +55,8 @@
 #include "Panzer_CloneableEvaluator.hpp"
 #include "Panzer_BlockedEpetraLinearObjContainer.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace Thyra {
    template <typename ScalarT> class ProductVectorBase;
 }
@@ -76,7 +78,7 @@ class BlockedDOFManager; //forward declaration
 
 */
 template<typename EvalT, typename TRAITS,typename LO,typename GO> class ScatterDirichletResidual_BlockedEpetra
-  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+  : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Residual, TRAITS>,
     public panzer::CloneableEvaluator  {
 public:
@@ -109,7 +111,7 @@ public:
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO>
 class ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Residual,TRAITS,LO,GO>
-  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+  : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Residual, TRAITS>,
     public panzer::CloneableEvaluator  {
   
@@ -177,7 +179,7 @@ private:
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO>
 class ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Tangent,TRAITS,LO,GO>
-  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+  : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Tangent, TRAITS>,
     public panzer::CloneableEvaluator  {
   
@@ -245,7 +247,7 @@ private:
 // **************************************************************
 template<typename TRAITS,typename LO,typename GO>
 class ScatterDirichletResidual_BlockedEpetra<panzer::Traits::Jacobian,TRAITS,LO,GO>
-  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+  : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<panzer::Traits::Jacobian, TRAITS>,
     public panzer::CloneableEvaluator  {
   
