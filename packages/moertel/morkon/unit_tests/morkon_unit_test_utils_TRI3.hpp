@@ -45,8 +45,8 @@
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
 
-#ifndef MRK_UNIT_TEST_UTILS_HPP
-#define MRK_UNIT_TEST_UTILS_HPP
+#ifndef MRK_UNIT_TEST_UTILS_TRI3_HPP
+#define MRK_UNIT_TEST_UTILS_TRI3_HPP
 
 #include "mrk_default_kokkos_device_type.hpp"
 #include <mrk_api_classes.hpp>
