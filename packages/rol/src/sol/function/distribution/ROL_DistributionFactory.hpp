@@ -62,11 +62,13 @@
 #include "ROL_Exponential.hpp"
 #include "ROL_TruncatedExponential.hpp"
 #include "ROL_Gamma.hpp"
+#include "ROL_Beta.hpp"
 
 namespace ROL {
 
   enum EDistribution {
     DISTRIBUTION_ARCSINE = 0,
+    DISTRIBUTION_BETA,
     DISTRIBUTION_CAUCHY,
     DISTRIBUTION_DIRAC, 
     DISTRIBUTION_EXPONENTIAL,
@@ -89,6 +91,7 @@ namespace ROL {
     std::string retString;
     switch(ed) {
       case DISTRIBUTION_ARCSINE:              retString = "Arcsine";               break;
+      case DISTRIBUTION_BETA:                 retString = "Beta";                  break;
       case DISTRIBUTION_CAUCHY:               retString = "Cauchy";                break;
       case DISTRIBUTION_DIRAC:                retString = "Dirac";                 break;
       case DISTRIBUTION_EXPONENTIAL:          retString = "Exponential";           break;
@@ -112,6 +115,7 @@ namespace ROL {
 
   inline int isValidDistribution(EDistribution ed) {
     return( (ed == DISTRIBUTION_DIRAC) ||
+            (ed == DISTRIBUTION_BETA) ||
             (ed == DISTRIBUTION_GAMMA) ||
             (ed == DISTRIBUTION_GAUSSIAN) ||
             (ed == DISTRIBUTION_TRUNCATEDGAUSSIAN) ||
@@ -151,7 +155,7 @@ namespace ROL {
 
   inline EDistribution StringToEDistribution(std::string s) {
     s = removeStringFormat(s);
-    for ( EDistribution tr = DISTRIBUTION_DIRAC; tr < DISTRIBUTION_LAST; tr++ ) {
+    for ( EDistribution tr = DISTRIBUTION_ARCSINE; tr < DISTRIBUTION_LAST; tr++ ) {
       if ( !s.compare(removeStringFormat(EDistributionToString(tr))) ) {
         return tr;
       }
@@ -165,6 +169,7 @@ namespace ROL {
     EDistribution ed = StringToEDistribution(dist);
     switch(ed) {
       case DISTRIBUTION_ARCSINE:              return Teuchos::rcp(new Arcsine<Real>(parlist));
+      case DISTRIBUTION_BETA:                 return Teuchos::rcp(new Beta<Real>(parlist));
       case DISTRIBUTION_CAUCHY:               return Teuchos::rcp(new Cauchy<Real>(parlist));
       case DISTRIBUTION_DIRAC:                return Teuchos::rcp(new Dirac<Real>(parlist));
       case DISTRIBUTION_EXPONENTIAL:          return Teuchos::rcp(new Exponential<Real>(parlist));
