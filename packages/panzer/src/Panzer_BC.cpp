@@ -122,12 +122,18 @@ panzer::BC::BC(std::size_t bc_id,const Teuchos::ParameterList& p)
     m_bc_type = BCT_Dirichlet;
   else if (type == "Neumann")
     m_bc_type = BCT_Neumann;
+  else if (type == "Interface")
+    m_bc_type = BCT_Interface;
 
   m_sideset_id = params->get<std::string>("Sideset ID");
   m_element_block_id = params->get<std::string>("Element Block ID");
   m_equation_set_name = params->get<std::string>("Equation Set Name");
   m_strategy = params->get<std::string>("Strategy");
   m_params = Teuchos::sublist(params,"Data");
+  if (type == "Interface") {
+     m_element_block_id2 = params->get<std::string>("Element Block ID2");
+     m_equation_set_name2 = params->get<std::string>("Equation Set Name2");
+  }
 }
 
 //=======================================================================
@@ -147,12 +153,18 @@ panzer::BC::BC(std::size_t bc_id,const Teuchos::ParameterList& p, const Teuchos:
     m_bc_type = BCT_Dirichlet;
   else if (type == "Neumann")
     m_bc_type = BCT_Neumann;
+  else if (type == "Interface")
+    m_bc_type = BCT_Interface;
 
   m_sideset_id = params->get<std::string>("Sideset ID");
   m_element_block_id = params->get<std::string>("Element Block ID");
   m_equation_set_name = params->get<std::string>("Equation Set Name");
   m_strategy = params->get<std::string>("Strategy");
   m_params = Teuchos::sublist(params,"Data");
+  if (type == "Interface") {
+    m_element_block_id2 = params->get<std::string>("Element Block ID2");
+    m_equation_set_name2 = params->get<std::string>("Equation Set Name2");
+  }
 }
 
 //=======================================================================
@@ -190,9 +202,23 @@ std::string panzer::BC::elementBlockID() const
 
 //=======================================================================
 //=======================================================================
+std::string panzer::BC::elementBlockID2() const
+{
+  return m_element_block_id2;
+}
+
+//=======================================================================
+//=======================================================================
 std::string panzer::BC::equationSetName() const
 {
   return m_equation_set_name;
+}
+
+//=======================================================================
+//=======================================================================
+std::string panzer::BC::equationSetName2() const
+{
+  return m_equation_set_name2;
 }
 
 //=======================================================================
@@ -246,14 +272,22 @@ void panzer::BC::print(std::ostream& os) const
   std::string type;
   if (m_bc_type == BCT_Dirichlet)
     type = "Dirichlet";
+  else if (m_bc_type == BCT_Neumann)
+    type = "Neumann";
+  else if (m_bc_type == BCT_Interface)
+    type = "Interface";
   else
     type = "Neumann";
 
   os << "  Type = " << type << endl;
   os << "  Side Set ID = " << m_sideset_id << endl;
   os << "  Element Block ID = " << m_element_block_id << endl;
+  if (m_bc_type == BCT_Interface)
+    os << "  Second Element Block ID = " << m_element_block_id2 << endl;
   os << "  Strategy = " << m_strategy << endl;
   os << "  Variable Name(s) = " << m_equation_set_name << endl;
+  if (m_bc_type == BCT_Interface)
+    os << "  Second Variable Name(s) = " << m_equation_set_name2 << endl;
   os << "  Strategy Name = " << m_strategy;
   
   if (!Teuchos::is_null(m_params))
@@ -270,7 +304,9 @@ void panzer::BC::validateParameters(Teuchos::ParameterList& p) const
   valid_params.set<std::string>("Type", "Dirichlet");
   valid_params.set<std::string>("Sideset ID", "???");
   valid_params.set<std::string>("Element Block ID", "???");
+  valid_params.set<std::string>("Element Block ID2", "???");
   valid_params.set<std::string>("Equation Set Name", "???");
+  valid_params.set<std::string>("Equation Set Name2", "???");
   valid_params.set<std::string>("Strategy", "???");
   valid_params.sublist("Data").disableRecursiveValidation();
 

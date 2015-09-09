@@ -143,8 +143,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<Epetra_Vector> x_template = (*sgEpetraContainer_->begin())->get_x();
    const Epetra_BlockMap & map = x_template->Map();

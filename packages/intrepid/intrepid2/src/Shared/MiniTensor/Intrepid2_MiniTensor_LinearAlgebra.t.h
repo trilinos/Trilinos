@@ -108,7 +108,11 @@ Index const maximum_dimension = NPP_MAX_32U ;
     }
     break;
 
-  default:
+  case 1:
+    return Tensor<T, N>(ONES) / A(0,0);
+    break;
+
+ default:
     break;
   }
 

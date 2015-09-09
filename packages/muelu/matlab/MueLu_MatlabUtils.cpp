@@ -84,7 +84,8 @@ bool rewrap_ints = sizeof(int) != sizeof(mwIndex);
 
 int* mwIndex_to_int(int N, mwIndex* mwi_array)
 {
-  int* rv = (int*) malloc(N * sizeof(int));
+  //int* rv = (int*) malloc(N * sizeof(int));
+  int* rv = new int[N]; // not really better but may avoid confusion for valgrind
   for(int i = 0; i < N; i++)
     rv[i] = (int) mwi_array[i];
   return rv;

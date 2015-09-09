@@ -1230,47 +1230,47 @@ namespace MueLu {
 #endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Scalar Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::PowerMethod(const Matrix& A, bool scaleByDiag,
-                                                                                    LO niters, Magnitude tolerance, bool verbose, unsigned int seed)
-  {
-    if (!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))))
-      throw Exceptions::Incompatible("Utils::PowerMethod: operator must have domain and range maps that are equivalent.");
+  Scalar Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  PowerMethod(const Matrix& A, bool scaleByDiag, LO niters, Magnitude tolerance, bool verbose, unsigned int seed) {
+    TEUCHOS_TEST_FOR_EXCEPTION(!(A.getRangeMap()->isSameAs(*(A.getDomainMap()))), Exceptions::Incompatible,
+        "Utils::PowerMethod: operator must have domain and range maps that are equivalent.");
 
     // Create three vectors, fill z with random numbers
-    RCP<Vector> q     = VectorFactory::Build(A.getDomainMap());
-    RCP<Vector> qinit = VectorFactory::Build(A.getDomainMap());
-    RCP<Vector> r     = VectorFactory::Build(A.getRangeMap());
-    RCP<Vector> z     = VectorFactory::Build(A.getRangeMap());
+    RCP<Vector> q = VectorFactory::Build(A.getDomainMap());
+    RCP<Vector> r = VectorFactory::Build(A.getRangeMap());
+    RCP<Vector> z = VectorFactory::Build(A.getRangeMap());
+
     z->setSeed(seed);  // seed random number generator
     z->randomize(true);// use Xpetra implementation: -> same results for Epetra and Tpetra
 
     Teuchos::Array<Magnitude> norms(1);
 
-    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef Teuchos::ScalarTraits<SC> STS;
 
-    const Scalar zero = STS::zero();
-    const Scalar one  = STS::one();
+    const SC zero = STS::zero(), one = STS::one();
 
-    Scalar lambda = zero;
+    SC lambda = zero;
     Magnitude residual = STS::magnitude(zero);
 
     // power iteration
-    RCP<Vector> diagVec, oneOverDiagonal;
+    RCP<Vector> diagInvVec;
     if (scaleByDiag) {
-      diagVec = VectorFactory::Build(A.getRowMap());
+      RCP<Vector> diagVec = VectorFactory::Build(A.getRowMap());
       A.getLocalDiagCopy(*diagVec);
-      oneOverDiagonal = VectorFactory::Build(A.getRowMap());
-      oneOverDiagonal->reciprocal(*diagVec);
+      diagInvVec = VectorFactory::Build(A.getRowMap());
+      diagInvVec->reciprocal(*diagVec);
     }
 
     for (int iter = 0; iter < niters; ++iter) {
-      z->norm2(norms);                               // Compute 2-norm of z
-      q->update(one / norms[0],*z,zero);                 // Set q = z / normz
-      A.apply(*q, *z);                               // Compute z = A*q
-      if (scaleByDiag) z->elementWiseMultiply(one, *oneOverDiagonal, *z, zero);
-      lambda = q->dot(*z);                            // Approximate maximum eigenvalue: lamba = dot(q,z)
+      z->norm2(norms);                                  // Compute 2-norm of z
+      q->update(one/norms[0], *z, zero);                // Set q = z / normz
+      A.apply(*q, *z);                                  // Compute z = A*q
+      if (scaleByDiag)
+        z->elementWiseMultiply(one, *diagInvVec, *z, zero);
+      lambda = q->dot(*z);                              // Approximate maximum eigenvalue: lamba = dot(q,z)
+
       if (iter % 100 == 0 || iter + 1 == niters) {
-        r->update(1.0, *z, -lambda, *q, zero);         // Compute A*q - lambda*q
+        r->update(1.0, *z, -lambda, *q, zero);          // Compute A*q - lambda*q
         r->norm2(norms);
         residual = STS::magnitude(norms[0] / lambda);
         if (verbose) {
@@ -1285,7 +1285,7 @@ namespace MueLu {
     }
 
     return lambda;
-  } //PowerMethod
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix(Matrix& Op, const Teuchos::ArrayRCP<const SC>& scalingVector, bool doInverse,

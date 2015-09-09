@@ -49,6 +49,8 @@
 #include "Phalanx_MDField.hpp"
 #include "Intrepid_FieldContainer.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
 
 /** Computes the integral
@@ -69,7 +71,7 @@ namespace panzer {
     </ParameterList>
     \endverbatim
   */
-PHX_EVALUATOR_CLASS(Integrator_BasisTimesScalar)
+PANZER_EVALUATOR_CLASS(Integrator_BasisTimesScalar)
   
   PHX::MDField<ScalarT,Cell,BASIS> residual;
     
@@ -91,7 +93,7 @@ PHX_EVALUATOR_CLASS(Integrator_BasisTimesScalar)
 private:
   Teuchos::RCP<Teuchos::ParameterList> getValidParameters() const;
 
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 }
 

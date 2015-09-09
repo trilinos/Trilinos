@@ -13,7 +13,6 @@ IF(Ifpack2_ENABLE_QD)
   TRIBITS_ADD_EXECUTABLE(
     tif_extprec_belos
     SOURCES belos_extprec_solve.cpp
-    DEPLIBS ifpack2_tpetra_testinst
   )
 ENDIF()
 

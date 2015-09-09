@@ -179,8 +179,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<LO> LIDs;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    RCP<ProductVectorBase<double> > x = rcp_dynamic_cast<ProductVectorBase<double> >(blockedContainer_->get_x(),true);
 

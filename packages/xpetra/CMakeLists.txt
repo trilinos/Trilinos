@@ -117,6 +117,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(XPETRA_ENABLE_PROFILING
   "Enable detailed timing of Xpetra."
   OFF)
 
+# Define option to enable code that is refactored to use Kokkos
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor
+  HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
+  "Enable Xpetra code refactored to use Kokkos."
+  NO)
+
 #
 #
 #

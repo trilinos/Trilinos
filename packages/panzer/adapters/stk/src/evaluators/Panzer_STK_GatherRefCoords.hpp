@@ -53,6 +53,8 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_STK_Interface.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer_stk_classic {
 
 /** This class is a gather operation from the mesh. It
@@ -66,7 +68,7 @@ namespace panzer_stk_classic {
   */
 template<typename EvalT, typename Traits> 
 class GatherRefCoords
-  : public PHX::EvaluatorWithBaseImpl<Traits>,
+  : public panzer::EvaluatorWithBaseImpl<Traits>,
     public PHX::EvaluatorDerived<EvalT, Traits> {
 
 public:

@@ -56,13 +56,15 @@
 
 #include "Intrepid_FieldContainer.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
     
 /** Evaluates a Dirichlet BC residual corresponding to a field value
   * at a set of points defined by a point rule. Note that this assumes
   * a vector basis is used.
   */
-PHX_EVALUATOR_CLASS(DirichletResidual_EdgeBasis)
+PANZER_EVALUATOR_CLASS(DirichletResidual_EdgeBasis)
   
   PHX::MDField<ScalarT,Cell,BASIS> residual;
   PHX::MDField<ScalarT,Cell,Point,Dim> dof;
@@ -78,7 +80,7 @@ PHX_EVALUATOR_CLASS(DirichletResidual_EdgeBasis)
 
   PointValues<ScalarT,PHX::MDField<ScalarT> > pointValues;
 
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 }
 

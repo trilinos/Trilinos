@@ -89,12 +89,14 @@ int main(int argc, char *argv[]) {
     std::string paramfile = "parameters.xml";
     updateParametersFromXmlFile(paramfile,Ptr<ParameterList>(&*parlist));
 
+    parlist->set("Descent Type", "Newton-Krylov");
+
     // Define Step
     ROL::LineSearchStep<RealT> step(*parlist);
 
     // Define Status Test
     RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT stol  = 1e-14;  // norm of step tolerance
+    RealT stol  = 1e-13;  // norm of step tolerance
     int   maxit = 100;    // maximum number of iterations
     ROL::StatusTest<RealT> status(gtol, stol, maxit);    
 

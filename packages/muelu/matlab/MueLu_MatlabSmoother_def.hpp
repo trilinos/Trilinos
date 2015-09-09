@@ -57,7 +57,7 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   MatlabSmoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MatlabSmoother(const Teuchos::ParameterList& paramList)
   {
-    SetParameterList(paramList);  
+    SetParameterList(paramList);
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -80,8 +80,8 @@ namespace MueLu {
     vector<string> needsList = tokenizeList(needsSetup_);
     for(size_t i = 0; i < needsList.size(); i++)
     {
-      if(!IsParamMuemexVariable(needsList[i]));
-      this->Input(currentLevel, needsList[i]);
+      if(!IsParamMuemexVariable(needsList[i]) && needsList[i] != "Level")
+        this->Input(currentLevel, needsList[i]);
     }
   }
 
@@ -169,7 +169,7 @@ namespace MueLu {
 
 
 // Dummy specializations for GO = long long
-template <>
+/*template <>
 void MatlabSmoother<double,int,long long>::Setup(Level& currentLevel) {
   throw std::runtime_error("MatlabSmoother does not support GlobalOrdinal == long long.");
 }
@@ -185,7 +185,7 @@ void MatlabSmoother<double,int,long long>::Apply(MultiVector& X, const MultiVect
 template <>
 void MatlabSmoother<std::complex<double>,int,long long>::Apply(MultiVector& X, const MultiVector& B, bool InitialGuessIsZero) const {
   throw std::runtime_error("MatlabSmoother does not support GlobalOrdinal == long long.");
-}
+}*/
 
 
 } // namespace MueLu

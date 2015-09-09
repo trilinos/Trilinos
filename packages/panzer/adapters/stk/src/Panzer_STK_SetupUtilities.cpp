@@ -326,11 +326,11 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
   return Teuchos::rcp(new std::vector<panzer::Workset>());
 }
 
-Teuchos::RCP<std::vector<panzer::Workset> >  
-buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
-              const panzer::PhysicsBlock & pb_a,
-              const panzer::PhysicsBlock & pb_b,
-              const std::string & sideset)
+Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+buildBCWorksets(const panzer_stk_classic::STK_Interface & mesh,
+                const panzer::PhysicsBlock & pb_a,
+                const panzer::PhysicsBlock & pb_b,
+                const std::string & sideset)
 {
   using namespace workset_utils;
   using Teuchos::RCP;
@@ -391,7 +391,7 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
   // condition may have not elements and thus no contribution
   // on this processor
   if(elements_a.size()==0)
-    return Teuchos::rcp(new std::vector<panzer::Workset>());
+    return Teuchos::rcp(new std::map<unsigned,panzer::Workset>);
 
   // loop over elements of this block (note the assures that element_a and element_b
   // are the same size, the ordering is the same because the order of sideEntities is
@@ -409,11 +409,8 @@ buildWorksets(const panzer_stk_classic::STK_Interface & mesh,
   mesh.getElementVertices(local_cell_ids_b,pb_b.elementBlockID(),vertex_coordinates_b);
 
   // worksets to be returned
-  Teuchos::RCP<std::vector<panzer::Workset> > worksets;
-  worksets = buildEdgeWorksets(pb_a, local_cell_ids_a, local_side_ids_a, vertex_coordinates_a,
-                               pb_b, local_cell_ids_b, local_side_ids_b, vertex_coordinates_b);
-
-  return worksets;
+  return buildBCWorkset(pb_a, local_cell_ids_a, local_side_ids_a, vertex_coordinates_a,
+                        pb_b, local_cell_ids_b, local_side_ids_b, vertex_coordinates_b);
 }
 
 Teuchos::RCP<std::map<unsigned,panzer::Workset> >

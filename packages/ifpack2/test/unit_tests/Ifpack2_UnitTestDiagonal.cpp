@@ -107,7 +107,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Diagonal, Test0, Scalar, LocalOrdinal, 
 
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
-  Ifpack2::Diagonal<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec(crsmatrix);
+  Ifpack2::Diagonal<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec(crsmatrix);
 
   prec.initialize();
   //trivial tests to insist that the preconditioner's domain/range maps are

@@ -132,6 +132,7 @@ int main(int argc, char *argv[]) {
     std::string cooFileName = "crada1/crada_coordinates.mm"; clp.setOption("coordinatesfile",&cooFileName,      "matrix market file containing fine level coordinates");
     std::string spcFileName = "crada1/crada_special.mm"; clp.setOption("specialfile",        &spcFileName,      "matrix market file containing fine level special dofs");
     int nPDE = 3; clp.setOption("numpdes",           &nPDE,   "number of PDE equations");
+    int nNspVectors = 3; clp.setOption("numnsp", &nNspVectors, "number of nullspace vectors. Only used if null space is read from file. Must be smaller or equal than the number of null space vectors read in from file.");
     std::string convType = "r0"; clp.setOption("convtype",                   &convType,     "convergence type (r0 or none)");
 
     switch (clp.parse(argc,argv)) {
@@ -163,6 +164,26 @@ int main(int argc, char *argv[]) {
       fancyout << "Read null space from file " << nspFileName << std::endl;
       nullspace = Utils2::ReadMultiVector(std::string(nspFileName), A->getRowMap());
       fancyout << "Found " << nullspace->getNumVectors() << " null space vectors" << std::endl;
+      if (nNspVectors > Teuchos::as<int>(nullspace->getNumVectors())) {
+        fancyout << "Set number of null space vectors from " << nNspVectors << " to " << nullspace->getNumVectors() << " as only " << nullspace->getNumVectors() << " are provided by " << nspFileName << std::endl;
+        nNspVectors = nullspace->getNumVectors();
+      }
+      if (nNspVectors < 1) {
+        fancyout << "Set number of null space vectors from " << nNspVectors << " to " << nullspace->getNumVectors() << ". Note: we need at least one null space vector!!!" << std::endl;
+        nNspVectors = nullspace->getNumVectors();
+      }
+      if (nNspVectors < Teuchos::as<int>(nullspace->getNumVectors())) {
+        RCP<MultiVector> temp = MultiVectorFactory::Build(A->getDomainMap(),nNspVectors);
+        for(int j=0; j<nNspVectors; j++) {
+          Teuchos::ArrayRCP<SC> tempData = temp->getDataNonConst(j);
+          Teuchos::ArrayRCP<const SC> nsData   = nullspace->getData(j);
+          for (int i=0; i<nsData.size(); ++i) {
+            tempData[i] = nsData[i];
+          }
+        }
+        nullspace = Teuchos::null;
+        nullspace = temp;
+      }
     } else {
       if (nPDE == 1)
         nullspace->putScalar( Teuchos::ScalarTraits<SC>::one() );
@@ -187,8 +208,12 @@ int main(int argc, char *argv[]) {
         myGIDs[r] = gid;
       }
 
+      GO gCntGIDs  = 0;
+      GO glCntGIDs = Teuchos::as<GlobalOrdinal>(myGIDs.size());
+      MueLu_sumAll(comm,glCntGIDs,gCntGIDs);
+
       Teuchos::Array<GlobalOrdinal> eltList(myGIDs);
-      RCP<const Map> myCoordMap = MapFactory::Build (xpetraParameters.GetLib(),myGIDs.size(),eltList(),0,comm);
+      RCP<const Map> myCoordMap = MapFactory::Build (xpetraParameters.GetLib(),gCntGIDs,eltList(),0,comm);
 
       fancyout << "Read fine level coordinates from file " << cooFileName << std::endl;
       coordinates = Utils2::ReadMultiVector(std::string(cooFileName), myCoordMap);

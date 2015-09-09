@@ -57,8 +57,6 @@ using Teuchos::rcp;
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
-#include "Panzer_STK_SquareTriMeshFactory.hpp"
-#include "Panzer_STK_CubeTetMeshFactory.hpp"
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_PhysicsBlock.hpp"
@@ -73,8 +71,10 @@ namespace panzer {
 		  std::vector<stk_classic::mesh::EntityId> & nodeIds);
 
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
-			 std::vector<panzer::BC>& bcs);
+			 std::vector<panzer::BC>& bcs, const int integration_order);
 
+  void testIpMatch(const panzer::WorksetDetails& d0, const panzer::WorksetDetails& d1,
+                   const std::size_t num_cells, Teuchos::FancyOStream& out, bool& success);
 
   TEUCHOS_UNIT_TEST(workset_builder, stk_edge)
   {
@@ -102,16 +102,17 @@ namespace panzer {
     mesh->getElementBlockNames(element_blocks);
     const std::size_t workset_size = 20;
 
+    // Use a high integration order to test ordering of the fields in
+    // IntegrationValues2.
+    const int default_integration_order = 4;
     Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
     std::vector<panzer::BC> bcs;
-    testInitialzation(ipb, bcs);
+    testInitialzation(ipb, bcs, default_integration_order);
 
     // build physics blocks
     //////////////////////////////////////////////////////////////
     std::vector<Teuchos::RCP<panzer::PhysicsBlock> > physicsBlocks;
     {
-      const int default_integration_order = 1;
-
       Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     
       std::map<std::string,std::string> block_ids_to_physics_ids;
@@ -137,97 +138,104 @@ namespace panzer {
 
     {
       std::string sideset = "vertical_0";
-      Teuchos::RCP<std::vector<panzer::Workset> > worksets = panzer_stk_classic::buildWorksets(*mesh,
-                                          *(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)),
-                                          *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)),
-                                          sideset);
+      Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk_classic::buildBCWorksets(
+        *mesh, *(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)),
+        *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)), sideset);
      
       if(myRank==0) {
-        TEST_EQUALITY((*worksets).size(),0); // no elements on this processor
+        TEST_EQUALITY(worksets->size(),0); // no elements on this processor
       }
       else {
-        TEST_EQUALITY((*worksets).size(),1);
-        TEST_EQUALITY((*worksets)[0].num_cells,2);
-        TEST_EQUALITY((*worksets)[0].subcell_dim,1);
-        TEST_EQUALITY((*worksets)[0].details.size(),2);
-  
-        // this is identical to details[0]
-        TEST_EQUALITY((*worksets)[0].subcell_index, 1);
-        TEST_EQUALITY((*worksets)[0].block_id, "eblock-0_0");
-        TEST_EQUALITY((*worksets)[0].cell_local_ids.size(),2);
-        TEST_EQUALITY((*worksets)[0].cell_local_ids[0],0);
-        TEST_EQUALITY((*worksets)[0].cell_local_ids[1],2);
-        TEST_EQUALITY((*worksets)[0].ir_degrees->size(),1);
-        TEST_EQUALITY((*worksets)[0].int_rules.size(),1);
-        TEST_EQUALITY((*worksets)[0].basis_names->size(),2);
-        TEST_EQUALITY((*worksets)[0].bases.size(),2);
+        TEST_EQUALITY(worksets->size(),1);
+        panzer::Workset& workset = worksets->begin()->second;
 
-        TEST_EQUALITY((*worksets)[0].details[0]->subcell_index, 1);
-        TEST_EQUALITY((*worksets)[0].details[0]->block_id, "eblock-0_0");
-        TEST_EQUALITY((*worksets)[0].details[0]->cell_local_ids.size(),2);
-        TEST_EQUALITY((*worksets)[0].details[0]->cell_local_ids[0],0);
-        TEST_EQUALITY((*worksets)[0].details[0]->cell_local_ids[1],2);
-        TEST_EQUALITY((*worksets)[0].details[0]->ir_degrees->size(),1);
-        TEST_EQUALITY((*worksets)[0].details[0]->int_rules.size(),1);
-        TEST_EQUALITY((*worksets)[0].details[0]->basis_names->size(),2);
-        TEST_EQUALITY((*worksets)[0].details[0]->bases.size(),2);
+        TEST_EQUALITY((*worksets).size(),1);
+        TEST_EQUALITY(workset.num_cells,2);
+        TEST_EQUALITY(workset.subcell_dim,1);
+        TEST_EQUALITY(workset.numDetails(),2);
   
-        TEST_EQUALITY((*worksets)[0].details[1]->subcell_index, 3);
-        TEST_EQUALITY((*worksets)[0].details[1]->block_id, "eblock-1_0");
-        TEST_EQUALITY((*worksets)[0].details[1]->cell_local_ids[0],5);
-        TEST_EQUALITY((*worksets)[0].details[1]->cell_local_ids[1],7);
-        TEST_EQUALITY((*worksets)[0].details[1]->ir_degrees->size(),1);
-        TEST_EQUALITY((*worksets)[0].details[1]->int_rules.size(),1);
-        TEST_EQUALITY((*worksets)[0].details[1]->basis_names->size(),2);
-        TEST_EQUALITY((*worksets)[0].details[1]->bases.size(),2);
+        // this is identical to workset(0)
+        TEST_EQUALITY(workset.subcell_index, 1);
+        TEST_EQUALITY(workset.block_id, "eblock-0_0");
+        TEST_EQUALITY(workset.cell_local_ids.size(),2);
+        TEST_EQUALITY(workset.cell_local_ids[0],0);
+        TEST_EQUALITY(workset.cell_local_ids[1],2);
+        TEST_EQUALITY(workset.ir_degrees->size(),1);
+        TEST_EQUALITY(workset.int_rules.size(),1);
+        TEST_EQUALITY(workset.basis_names->size(),2);
+        TEST_EQUALITY(workset.bases.size(),2);
+
+        TEST_EQUALITY(workset(0).subcell_index, 1);
+        TEST_EQUALITY(workset(0).block_id, "eblock-0_0");
+        TEST_EQUALITY(workset(0).cell_local_ids.size(),2);
+        TEST_EQUALITY(workset(0).cell_local_ids[0],0);
+        TEST_EQUALITY(workset(0).cell_local_ids[1],2);
+        TEST_EQUALITY(workset(0).ir_degrees->size(),1);
+        TEST_EQUALITY(workset(0).int_rules.size(),1);
+        TEST_EQUALITY(workset(0).basis_names->size(),2);
+        TEST_EQUALITY(workset(0).bases.size(),2);
+  
+        TEST_EQUALITY(workset(1).subcell_index, 3);
+        TEST_EQUALITY(workset(1).block_id, "eblock-1_0");
+        TEST_EQUALITY(workset(1).cell_local_ids[0],5);
+        TEST_EQUALITY(workset(1).cell_local_ids[1],7);
+        TEST_EQUALITY(workset(1).ir_degrees->size(),1);
+        TEST_EQUALITY(workset(1).int_rules.size(),1);
+        TEST_EQUALITY(workset(1).basis_names->size(),2);
+        TEST_EQUALITY(workset(1).bases.size(),2);
+
+        testIpMatch(workset(0), workset(1), workset.num_cells, out, success);
       }
     }
 
     {
       std::string sideset = "vertical_0";
-      Teuchos::RCP<std::vector<panzer::Workset> > worksets = panzer_stk_classic::buildWorksets(*mesh,
-                                          *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)),
-                                          *(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)),
-                                          sideset);
+      Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk_classic::buildBCWorksets(
+        *mesh, *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)),
+        *(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)), sideset);
      
       if(myRank==1) {
-        TEST_EQUALITY((*worksets).size(),0); // no elements on this processor
+        TEST_EQUALITY(worksets->size(),0); // no elements on this processor
       }
       else {
-        TEST_EQUALITY((*worksets).size(),1);
-        TEST_EQUALITY((*worksets)[0].num_cells,2);
-        TEST_EQUALITY((*worksets)[0].subcell_dim,1);
-        TEST_EQUALITY((*worksets)[0].details.size(),2);
+        TEST_EQUALITY(worksets->size(),1);
+        panzer::Workset& workset = worksets->begin()->second;
+
+        TEST_EQUALITY(workset.num_cells,2);
+        TEST_EQUALITY(workset.subcell_dim,1);
+        TEST_EQUALITY(workset.numDetails(),2);
   
         // this is identical to details[0]
-        TEST_EQUALITY((*worksets)[0].subcell_index, 3);
-        TEST_EQUALITY((*worksets)[0].block_id, "eblock-1_0");
-        TEST_EQUALITY((*worksets)[0].cell_local_ids.size(),2);
-        TEST_EQUALITY((*worksets)[0].cell_local_ids[0],1);
-        TEST_EQUALITY((*worksets)[0].cell_local_ids[1],3);
-        TEST_EQUALITY((*worksets)[0].ir_degrees->size(),1);
-        TEST_EQUALITY((*worksets)[0].int_rules.size(),1);
-        TEST_EQUALITY((*worksets)[0].basis_names->size(),2);
-        TEST_EQUALITY((*worksets)[0].bases.size(),2);
+        TEST_EQUALITY(workset.subcell_index, 3);
+        TEST_EQUALITY(workset.block_id, "eblock-1_0");
+        TEST_EQUALITY(workset.cell_local_ids.size(),2);
+        TEST_EQUALITY(workset.cell_local_ids[0],1);
+        TEST_EQUALITY(workset.cell_local_ids[1],3);
+        TEST_EQUALITY(workset.ir_degrees->size(),1);
+        TEST_EQUALITY(workset.int_rules.size(),1);
+        TEST_EQUALITY(workset.basis_names->size(),2);
+        TEST_EQUALITY(workset.bases.size(),2);
 
-        TEST_EQUALITY((*worksets)[0].details[0]->subcell_index, 3);
-        TEST_EQUALITY((*worksets)[0].details[0]->block_id, "eblock-1_0");
-        TEST_EQUALITY((*worksets)[0].details[0]->cell_local_ids.size(),2);
-        TEST_EQUALITY((*worksets)[0].details[0]->cell_local_ids[0],1);
-        TEST_EQUALITY((*worksets)[0].details[0]->cell_local_ids[1],3);
-        TEST_EQUALITY((*worksets)[0].details[0]->ir_degrees->size(),1);
-        TEST_EQUALITY((*worksets)[0].details[0]->int_rules.size(),1);
-        TEST_EQUALITY((*worksets)[0].details[0]->basis_names->size(),2);
-        TEST_EQUALITY((*worksets)[0].details[0]->bases.size(),2);
+        TEST_EQUALITY(workset(0).subcell_index, 3);
+        TEST_EQUALITY(workset(0).block_id, "eblock-1_0");
+        TEST_EQUALITY(workset(0).cell_local_ids.size(),2);
+        TEST_EQUALITY(workset(0).cell_local_ids[0],1);
+        TEST_EQUALITY(workset(0).cell_local_ids[1],3);
+        TEST_EQUALITY(workset(0).ir_degrees->size(),1);
+        TEST_EQUALITY(workset(0).int_rules.size(),1);
+        TEST_EQUALITY(workset(0).basis_names->size(),2);
+        TEST_EQUALITY(workset(0).bases.size(),2);
   
-        TEST_EQUALITY((*worksets)[0].details[1]->subcell_index, 1);
-        TEST_EQUALITY((*worksets)[0].details[1]->block_id, "eblock-0_0");
-        TEST_EQUALITY((*worksets)[0].details[1]->cell_local_ids[0],4);
-        TEST_EQUALITY((*worksets)[0].details[1]->cell_local_ids[1],6);
-        TEST_EQUALITY((*worksets)[0].details[1]->ir_degrees->size(),1);
-        TEST_EQUALITY((*worksets)[0].details[1]->int_rules.size(),1);
-        TEST_EQUALITY((*worksets)[0].details[1]->basis_names->size(),2);
-        TEST_EQUALITY((*worksets)[0].details[1]->bases.size(),2);
+        TEST_EQUALITY(workset(1).subcell_index, 1);
+        TEST_EQUALITY(workset(1).block_id, "eblock-0_0");
+        TEST_EQUALITY(workset(1).cell_local_ids[0],4);
+        TEST_EQUALITY(workset(1).cell_local_ids[1],6);
+        TEST_EQUALITY(workset(1).ir_degrees->size(),1);
+        TEST_EQUALITY(workset(1).int_rules.size(),1);
+        TEST_EQUALITY(workset(1).basis_names->size(),2);
+        TEST_EQUALITY(workset(1).bases.size(),2);
+
+        testIpMatch(workset(0), workset(1), workset.num_cells, out, success);
       }
     }
     
@@ -244,7 +252,7 @@ namespace panzer {
   }
   
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
-			 std::vector<panzer::BC>& bcs)
+			 std::vector<panzer::BC>& bcs, const int integration_order)
   {
     // Physics block
     Teuchos::ParameterList& physics_block = ipb->sublist("test physics");
@@ -255,7 +263,7 @@ namespace panzer {
       p.set("Model ID","solid");
       p.set("Basis Type","HGrad");
       p.set("Basis Order",2);
-      p.set("Integration Order",1);
+      p.set("Integration Order",integration_order);
     }
     {
       Teuchos::ParameterList& p = physics_block.sublist("b");
@@ -264,7 +272,7 @@ namespace panzer {
       p.set("Model ID","ion solid");
       p.set("Basis Type","HGrad");
       p.set("Basis Order",1);
-      p.set("Integration Order",1);
+      p.set("Integration Order",integration_order);
     }
 
     {
@@ -309,6 +317,22 @@ namespace panzer {
 		    strategy, p);
       bcs.push_back(bc);
     }
+  }
+
+  void testIpMatch(const panzer::WorksetDetails& d0, const panzer::WorksetDetails& d1,
+                   const std::size_t num_cells, Teuchos::FancyOStream& out, bool& success)
+  {
+#define TED01(m) TEST_EQUALITY(d0.m, d1.m)
+    TED01(int_rules.size());
+    for (std::size_t iri = 0; iri < d0.int_rules.size(); ++iri) {
+      const std::size_t num_ip = d0.int_rules[iri]->cub_points.dimension(0),
+        num_dim = d0.int_rules[iri]->cub_points.dimension(1);
+      for (std::size_t cell = 0; cell < num_cells; ++cell)
+        for (std::size_t ip = 0; ip < num_ip; ++ip)
+          for (std::size_t dim = 0; dim < num_dim; ++dim)
+            TED01(int_rules[iri]->ip_coordinates(cell, ip, dim));
+    }
+#undef TEST_EQUALITY
   }
 
 }

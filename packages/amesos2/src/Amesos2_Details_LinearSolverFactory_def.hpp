@@ -110,7 +110,10 @@ struct GetMatrixType<Tpetra::Operator<S, LO, GO, NT> > {
 #endif // HAVE_AMESOS2_TPETRA
 
 template<class MV, class OP, class NormType>
-class LinearSolver : public Trilinos::Details::LinearSolver<MV, OP, NormType> {
+class LinearSolver :
+    public Trilinos::Details::LinearSolver<MV, OP, NormType>,
+    virtual public Teuchos::Describable
+{
 #ifdef HAVE_AMESOS2_EPETRA
   static_assert(! std::is_same<OP, Epetra_MultiVector>::value,
                 "Amesos2::Details::LinearSolver: OP = Epetra_MultiVector.  "
@@ -148,7 +151,48 @@ public:
   ///   whether a solver supports a given set of template parameters
   ///   without attempting to create the solver, we can't actually
   ///   test in the constructor whether the solver exists.
-  LinearSolver (const std::string& solverName) : solverName_ (solverName) {}
+  LinearSolver (const std::string& solverName) :
+    solverName_ (solverName)
+  {
+    // FIXME (mfh 25 Aug 2015) Ifpack2::Details::Amesos2Wrapper made
+    // the unfortunate choice to attempt to guess solvers that exist.
+    // Thus, alas, for the sake of backwards compatibility, we must
+    // make an attempt to guess for the user.  Furthermore, for strict
+    // backwards compatibility, we should preserve the same (rather
+    // arbitrary) list of choices, in the same order.
+    if (solverName == "") {
+      // KLU2 is the default solver.
+      if (Amesos2::query ("klu2")) {
+        solverName_ = "klu2";
+      }
+      else if (Amesos2::query ("superlu")) {
+        solverName_ = "superlu";
+      }
+      else if (Amesos2::query ("superludist")) {
+        solverName_ = "superludist";
+      }
+      else if (Amesos2::query ("cholmod")) {
+        solverName_ = "cholmod";
+      }
+      else if (Amesos2::query ("basker")) {
+        solverName_ = "basker";
+      }
+      else if (Amesos2::query ("superlumt")) {
+        solverName_ = "superlumt";
+      }
+      else if (Amesos2::query ("pardiso_mkl")) {
+        solverName_ = "pardiso_mkl";
+      }
+      else if (Amesos2::query ("mumps")) {
+        solverName_ = "mumps";
+      }
+      else if (Amesos2::query ("lapack")) {
+        solverName_ = "lapack";
+      }
+      // We don't have to try to rescue the user if their empty solver
+      // name didn't catch any of the above choices.
+    }
+  }
 
   //! Destructor (virtual for memory safety).
   virtual ~LinearSolver () {}
@@ -277,6 +321,45 @@ public:
     solver_->numericFactorization ();
   }
 
+  //! Implementation of Teuchos::Describable::description.
+  std::string description () const {
+    using Teuchos::TypeNameTraits;
+    if (solver_.is_null ()) {
+      std::ostringstream os;
+      os << "\"Amesos2::Details::LinearSolver\": {"
+         << "MV: " << TypeNameTraits<MV>::name ()
+         << ", OP: " << TypeNameTraits<OP>::name ()
+         << ", NormType: " << TypeNameTraits<NormType>::name ()
+         << "}";
+      return os.str ();
+    } else {
+      return solver_->description ();
+    }
+  }
+
+  //! Implementation of Teuchos::Describable::describe.
+  void
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const
+  {
+    using Teuchos::TypeNameTraits;
+    using std::endl;
+    if (solver_.is_null ()) {
+      if (verbLevel > Teuchos::VERB_NONE) {
+        Teuchos::OSTab tab0 (out);
+        out << "\"Amesos2::Details::LinearSolver\":" << endl;
+        Teuchos::OSTab tab1 (out);
+        out << "MV: " << TypeNameTraits<MV>::name () << endl
+            << "OP: " << TypeNameTraits<OP>::name () << endl
+            << "NormType: " << TypeNameTraits<NormType>::name () << endl;
+      }
+    }
+    if (! solver_.is_null ()) {
+      solver_->describe (out, verbLevel);
+    }
+  }
+
 private:
   std::string solverName_;
   Teuchos::RCP<solver_type> solver_;
@@ -293,7 +376,36 @@ getLinearSolver (const std::string& solverName)
   return rcp (new Amesos2::Details::LinearSolver<MV, OP, NormType> (solverName));
 }
 
+template<class MV, class OP, class NormType>
+void
+LinearSolverFactory<MV, OP, NormType>::
+registerLinearSolverFactory ()
+{
+#ifdef HAVE_TEUCHOSCORE_CXX11
+  typedef std::shared_ptr<Amesos2::Details::LinearSolverFactory<MV, OP, NormType> > ptr_type;
+  //typedef std::shared_ptr<Trilinos::Details::LinearSolverFactory<MV, OP> > base_ptr_type;
+#else
+  typedef Teuchos::RCP<Amesos2::Details::LinearSolverFactory<MV, OP, NormType> > ptr_type;
+  //typedef Teuchos::RCP<Trilinos::Details::LinearSolverFactory<MV, OP> > base_ptr_type;
+#endif // HAVE_TEUCHOSCORE_CXX11
+
+  ptr_type factory (new Amesos2::Details::LinearSolverFactory<MV, OP, NormType> ());
+  Trilinos::Details::registerLinearSolverFactory<MV, OP, NormType> ("Amesos2", factory);
+}
+
 } // namespace Details
 } // namespace Amesos2
+
+// Macro for doing explicit instantiation of
+// Amesos2::Details::LinearSolverFactory, for Tpetra objects, with
+// given Tpetra template parameters (SC = Scalar, LO = LocalOrdinal,
+// GO = GlobalOrdinal, NT = Node).
+//
+// We don't have to protect use of Tpetra objects here, or include
+// any header files for them, because this is a macro definition.
+#define AMESOS2_DETAILS_LINEARSOLVERFACTORY_INSTANT(SC, LO, GO, NT) \
+  template class Amesos2::Details::LinearSolverFactory<Tpetra::MultiVector<SC, LO, GO, NT>, \
+                                                       Tpetra::Operator<SC, LO, GO, NT>, \
+                                                       typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>;
 
 #endif // AMESOS2_DETAILS_LINEARSOLVERFACTORY_DEF_HPP

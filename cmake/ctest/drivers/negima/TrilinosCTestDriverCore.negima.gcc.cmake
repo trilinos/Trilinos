@@ -64,23 +64,18 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
 
-  SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
+  SET(CTEST_DASHBOARD_ROOT  "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
+  SET(CTEST_NOTES_FILES     "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
+  SET(CTEST_BUILD_FLAGS     "-j12 -i" )
 
-  SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
+  SET_DEFAULT(CTEST_PARALLEL_LEVEL                  "12" )
+  SET_DEFAULT(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
+  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
 
-  SET( CTEST_BUILD_FLAGS "-j12 -i" )
-
-  SET_DEFAULT( CTEST_PARALLEL_LEVEL "12" )
-
-  SET_DEFAULT( Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
-
-  # Only turn on PyTrilinos for shared libraries
-  SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika)
-
-  SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-    "-DBUILD_SHARED_LIBS:BOOL=ON"
-    "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
-    "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
+  SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
+    "-DBUILD_SHARED_LIBS=ON"
+    "-DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
+    "-DCMAKE_VERBOSE_MAKEFILE=ON"
 
     "-DTrilinos_ENABLE_Fortran=OFF"
 
@@ -91,23 +86,24 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   SET_DEFAULT(COMPILER_VERSION "GCC-5.2.0")
 
-  #Ensuring that MPI is on for all parallel builds that might be run.
+  # Ensure that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-         ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-         "-DTPL_ENABLE_MPI:BOOL=ON"
-         "-DMPI_BASE_DIR:PATH=/home/aprokop/local/opt/openmpi-1.8.7"
+
+    SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
+        ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+        "-DTPL_ENABLE_MPI=ON"
+            "-DMPI_BASE_DIR=/home/aprokop/local/opt/openmpi-1.10.0"
        )
 
-    SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
+    SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS
         "--gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
 
   ELSE()
 
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-5.2.0/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/home/aprokop/local/opt/gcc-5.2.0/bin/gcc"
+      "-DCMAKE_CXX_COMPILER=/home/aprokop/local/opt/gcc-5.2.0/bin/g++"
+      "-DCMAKE_C_COMPILER=/home/aprokop/local/opt/gcc-5.2.0/bin/gcc"
       )
 
   ENDIF()

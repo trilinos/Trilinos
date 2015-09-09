@@ -77,7 +77,7 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
        ${DIR}/Thyra_MueLuTpetraPreconditionerFactory_def.hpp
        ${DIR}/Thyra_MueLuTpetraPreconditionerFactory.hpp
        )
-     IF (${PACKAGE_NAME}_ENABLE_Teko)
+     IF (${PACKAGE_NAME}_ENABLE_Teko AND ${PACKAGE_NAME}_ENABLE_Experimental)
        APPEND_SET(HEADERS
          ${DIR}/Thyra_MueLuTpetraQ2Q1PreconditionerFactory_decl.hpp
          ${DIR}/Thyra_MueLuTpetraQ2Q1PreconditionerFactory_def.hpp
@@ -125,7 +125,7 @@ TRIBITS_ADD_LIBRARY(
   muelu-adapters
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-#  DEPLIBS muelu muelu-interface
+  DEPLIBS muelu muelu-interface
   ADDED_LIB_TARGET_NAME_OUT MUELU_ADAPTERS_LIBNAME
   )
 

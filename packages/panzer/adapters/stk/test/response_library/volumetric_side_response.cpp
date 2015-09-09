@@ -85,6 +85,8 @@ using Teuchos::rcp;
 
 #include "Sacado_mpl_vector.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 using Teuchos::RCP;
 
 namespace panzer_stk_classic {

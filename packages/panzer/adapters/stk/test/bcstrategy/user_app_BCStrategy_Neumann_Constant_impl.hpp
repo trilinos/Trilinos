@@ -111,7 +111,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::ConstantFlux<EvalT,panzer::Traits>(p));
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
 
 }

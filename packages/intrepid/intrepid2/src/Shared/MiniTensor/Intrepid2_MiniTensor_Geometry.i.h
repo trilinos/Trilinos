@@ -362,7 +362,7 @@ inline
 #endif
 Vector<T, N, ES>
 ProjectiveParametrization<T, N, ES>::get_normal(
-    Vector<T, dimension_const<N, 3>::value> const & parameters
+    Vector<T, dimension_const<N, 3>::value, ES> const & parameters
 ) const
 {
   T const &
@@ -400,7 +400,7 @@ inline
 #endif
 void
 ProjectiveParametrization<T, N, ES>::operator()(
-    Vector<T, dimension_const<N, 3>::value> const & parameters
+    Vector<T, dimension_const<N, 3>::value, ES> const & parameters
 )
 {
   assert(parameters.get_dimension() == 3);
@@ -461,7 +461,7 @@ inline
 #endif
 Vector<T, N, ES>
 TangentParametrization<T, N, ES>::get_normal(
-    Vector<T, dimension_const<N, 2>::value> const & parameters
+    Vector<T, dimension_const<N, 2>::value, ES> const & parameters
 ) const
 {
   T const &
@@ -498,7 +498,7 @@ inline
 #endif
 void
 TangentParametrization<T, N, ES>::operator()(
-    Vector<T, dimension_const<N, 2>::value> const & parameters
+    Vector<T, dimension_const<N, 2>::value, ES> const & parameters
 )
 {
   assert(parameters.get_dimension() == 2);
@@ -559,7 +559,7 @@ inline
 #endif
 Vector<T, N, ES>
 CartesianParametrization<T, N, ES>::get_normal(
-    Vector<T, dimension_const<N, 3>::value> const & parameters
+    Vector<T, dimension_const<N, 3>::value,ES> const & parameters
 ) const
 {
   T const &
@@ -588,7 +588,7 @@ inline
 #endif
 void
 CartesianParametrization<T, N, ES>::operator()(
-    Vector<T, dimension_const<N, 3>::value> const & parameters
+    Vector<T, dimension_const<N, 3>::value, ES> const & parameters
 )
 {
   Vector<T, N, ES>
@@ -626,7 +626,7 @@ inline
 ParametricGrid<T, N, ES>::ParametricGrid(
     Vector<T, N, ES> const & lower,
     Vector<T, N, ES> const & upper,
-    Vector<Index, N> const & points_per_dimension)
+    Vector<Index, N, ES> const & points_per_dimension)
 {
   assert(lower.get_dimension() == upper.get_dimension());
   assert(lower.get_dimension() == points_per_dimension.get_dimension());
@@ -670,7 +670,7 @@ ParametricGrid<T, N, ES>::traverse(Visitor & visitor) const
         steps(dimension - 1) * points_per_dimension_(dimension - 1);
   }
 
-  Vector<Index, N>
+  Vector<Index, N, ES>
   indices(number_parameters, ZEROS);
 
   Vector<T, N, ES>

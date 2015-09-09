@@ -47,6 +47,8 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 using panzer::Cell;
 using panzer::Point;
 using panzer::Dim;
@@ -54,7 +56,7 @@ using panzer::Dim;
 namespace user_app {
     
   //! Convection: conv = multiplier * a \cdot \nabla x
-PHX_EVALUATOR_CLASS(Convection)
+PANZER_EVALUATOR_CLASS(Convection)
 
   PHX::MDField<ScalarT,Cell,Point> conv;
     
@@ -64,7 +66,7 @@ PHX_EVALUATOR_CLASS(Convection)
     
   double multiplier;
 
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 }
 

@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     // __TestSuiteDoUnitTests__(complex<double>,int,unsigned int,Kokkos::Serial,void);
     // __TestSuiteDoUnitTests__(complex<double>,long,unsigned long,Kokkos::Serial,void);
     
-    Kokkos::Threads::finalize();
+    Kokkos::Qthread::finalize();
   }
 
   string eval;

@@ -55,6 +55,8 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_STK_Interface.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer_stk_classic {
 
 /** This class is a scatter operation to the mesh. It
@@ -64,7 +66,7 @@ namespace panzer_stk_classic {
   * is applied to each field.
   */
 template <typename EvalT,typename TraitsT>
-class ScatterFields : public PHX::EvaluatorWithBaseImpl<TraitsT>,
+class ScatterFields : public panzer::EvaluatorWithBaseImpl<TraitsT>,
                       public PHX::EvaluatorDerived<EvalT, TraitsT>  { 
   typedef typename EvalT::ScalarT ScalarT;
   typedef panzer_stk_classic::STK_Interface::SolutionFieldType VariableField;

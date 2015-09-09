@@ -170,10 +170,15 @@ WorksetContainer::getSideWorksets(const BC & bc)
    SideMap::iterator itr = sideWorksets_.find(side);
    if(itr==sideWorksets_.end()) {
       // couldn't find workset, build it!
-      const std::string & eBlock = side.eblk_id;
-      //const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
-      const WorksetNeeds & needs = lookupNeeds(eBlock);
-      worksetMap = wkstFactory_->getSideWorksets(bc,needs);
+      if (bc.bcType() == BCT_Interface)
+        worksetMap = wkstFactory_->getSideWorksets(bc, lookupPhysicsBlock(bc.elementBlockID()),
+                                                   lookupPhysicsBlock(bc.elementBlockID2()));
+      else {
+        const std::string & eBlock = side.eblk_id;
+        //const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
+        const WorksetNeeds & needs = lookupNeeds(eBlock);
+        worksetMap = wkstFactory_->getSideWorksets(bc,needs);
+      }
 
       // apply orientations to the worksets for this side
       if(worksetMap!=Teuchos::null)
@@ -325,7 +330,7 @@ applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) co
  
     // loop over worksets compute and apply orientations
     for(std::size_t i=0;i<worksets.size();i++) {
-      for(std::size_t j=0;j<worksets[i].details.size();j++) {
+      for(std::size_t j=0;j<worksets[i].numDetails();j++) {
 
         // break out of the workset loop
         if(worksets[i].num_cells<=0) continue;
@@ -334,7 +339,7 @@ applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) co
         int array1_sz = basis.functional->dimension(1);
         Array orientations = fc_factory.buildStaticArray<double,panzer::Cell,panzer::BASIS>("orientations",array0_sz,array1_sz);
 
-        WorksetDetails & details = *worksets[i].details[j];
+        WorksetDetails & details = worksets[i](j);
 
         // compute orientations using the orientation container (and global indexer eventually)
         orientationContainer->getOrientations(eBlock,details.cell_local_ids,orientations);
@@ -431,9 +436,9 @@ applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) c
       MDFieldArrayFactory fc_factory("",true);
       Array orientations = fc_factory.buildStaticArray<double,panzer::Cell,panzer::BASIS>("orientations",array0_sz,array1_sz);
 
-      for(std::size_t j=0;j<itr->second.details.size();j++) {
+      for(std::size_t j=0;j<itr->second.numDetails();j++) {
 
-        WorksetDetails & details = *itr->second.details[j];
+        WorksetDetails & details = itr->second(j);
 
         // compute orientations using the orientation container (and global indexer eventually)
         orientationContainer->getOrientations(sideId.eblk_id,details.cell_local_ids,orientations);

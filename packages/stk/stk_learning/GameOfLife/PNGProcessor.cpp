@@ -1,5 +1,7 @@
 #include "PNGProcessor.hpp"
 
+unsigned char greyDivisor = 0x2f;
+
 PNGProcessor::PNGProcessor(std::string fileName)
 {
     lodepng::decode(m_byteVector, m_imageWidth, m_imageHeight, fileName);
@@ -53,6 +55,24 @@ void PNGProcessor::fill_id_vector_with_active_pixels(stk::mesh::EntityIdVector& 
             if (m_pixelVector[rowIndex][colIndex])
                 elemIds.push_back(id);
 }
+void PNGProcessor::get_coordinates_of_active_pixels(std::vector<std::pair<unsigned, unsigned>>&
+                                                    coordinates) const
+{
+    coordinates.clear();
+    for (unsigned rowIndex = 0; rowIndex < m_imageHeight; rowIndex++)
+        for (unsigned colIndex = 0; colIndex < m_imageWidth; colIndex++)
+            if (m_pixelVector[rowIndex][colIndex])
+                coordinates.emplace_back(colIndex+1, m_imageHeight-rowIndex);
+}
+void PNGProcessor::get_coordinates_of_inactive_pixels(std::vector<std::pair<unsigned,
+                                                      unsigned>>& coordinates) const
+{
+    coordinates.clear();
+    for (unsigned rowIndex = 0; rowIndex < m_imageHeight; rowIndex++)
+        for (unsigned colIndex = 0; colIndex < m_imageWidth; colIndex++)
+            if (!m_pixelVector[rowIndex][colIndex])
+                coordinates.emplace_back(colIndex+1, m_imageHeight-rowIndex);
+}
 
 void PNGProcessor::print_image()
 {
@@ -60,7 +80,7 @@ void PNGProcessor::print_image()
     {
         for (unsigned col = 0; col < m_imageWidth;
                 col++)
-            printf("%d ", m_imageVector[row][col]);
+            printf("%8x ", m_imageVector[row][col]);
         printf("\n");
     }
 }
@@ -152,10 +172,10 @@ ColoredPNGProcessor::ColoredPNGProcessor(std::string fileName)
 :PNGProcessor(fileName)
 {
     convert_to_grey_bits();
-    find_medium_grey_bit_value();
 }
 void ColoredPNGProcessor::commit_image_vector_to_pixel_vector()
 {
+    find_median_grey_bit_value();
     for (unsigned row = 0; row < m_imageHeight; row++)
         for (unsigned col = 0; col < m_imageWidth; col++)
             update_image_value_according_to_relation_with_median_value(row, col);
@@ -163,6 +183,7 @@ void ColoredPNGProcessor::commit_image_vector_to_pixel_vector()
 }
 void ColoredPNGProcessor::commit_image_vector_to_pixel_vector_with_exclusion()
 {
+    find_median_grey_bit_value();
     find_upper_and_lower_bounds();
     for (unsigned row = 0; row < m_imageHeight; row++)
         for (unsigned col = 0; col < m_imageWidth; col++)
@@ -170,6 +191,25 @@ void ColoredPNGProcessor::commit_image_vector_to_pixel_vector_with_exclusion()
     PNGProcessor::commit_image_vector_to_pixel_vector();
 }
 
+void ColoredPNGProcessor::commit_image_vector_to_pixel_vector_with_greyscale()
+{
+    for (unsigned row = 0; row < m_imageHeight; row++)
+        for (unsigned col = 0; col < m_imageWidth; col++)
+            update_image_value_according_to_grayscale(row, col);
+    PNGProcessor::commit_image_vector_to_pixel_vector();
+}
+
+//io and checking
+void ColoredPNGProcessor::print_grey_bits()
+{
+    for (unsigned row = 0; row < m_imageHeight; row++)
+    {
+        for (unsigned col = 0; col < m_imageWidth;
+                col++)
+            printf("%4x ", m_greyBits[row*m_imageWidth + col]);
+        printf("\n");
+    }
+}
 //private
 void ColoredPNGProcessor::convert_to_grey_bits()
 {
@@ -188,7 +228,7 @@ void ColoredPNGProcessor::process_unsigned_int_to_grey_bit(unsigned row, unsigne
     m_greyBits.push_back(greyBit);
 }
 
-void ColoredPNGProcessor::find_medium_grey_bit_value()
+void ColoredPNGProcessor::find_median_grey_bit_value()
 {
     std::sort(m_greyBits.begin(), m_greyBits.end());
     unsigned middleIndex = m_greyBits.size()/2;
@@ -198,7 +238,7 @@ void ColoredPNGProcessor::find_medium_grey_bit_value()
 void ColoredPNGProcessor::update_image_value_according_to_relation_with_median_value(unsigned row,
                                                                                      unsigned col)
 {
-    if (m_imageVector[row][col] < m_medianValue)
+    if (m_imageVector[row][col] <= m_medianValue)
         m_imageVector[row][col] = 0xff;
     else
         m_imageVector[row][col] = 0xffffffff;
@@ -207,6 +247,13 @@ void ColoredPNGProcessor::update_image_value_according_to_proximity_with_median_
                                                                                       unsigned col)
 {
     if (m_imageVector[row][col] >= m_lowerBound && m_imageVector[row][col] <= m_upperBound)
+        m_imageVector[row][col] = 0xff;
+    else
+        m_imageVector[row][col] = 0xffffffff;
+}
+void ColoredPNGProcessor::update_image_value_according_to_grayscale(unsigned row, unsigned col)
+{
+    if (m_greyBits[row*m_imageWidth + col] < greyDivisor)
         m_imageVector[row][col] = 0xff;
     else
         m_imageVector[row][col] = 0xffffffff;

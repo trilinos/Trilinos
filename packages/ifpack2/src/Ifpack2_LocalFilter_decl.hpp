@@ -43,8 +43,9 @@
 #ifndef IFPACK2_LOCALFILTER_DECL_HPP
 #define IFPACK2_LOCALFILTER_DECL_HPP
 
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Tpetra_RowMatrix.hpp>
+#include "Ifpack2_ConfigDefs.hpp"
+#include "Tpetra_RowMatrix.hpp"
+#include <type_traits>
 #include <vector>
 
 

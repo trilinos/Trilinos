@@ -161,7 +161,7 @@ int main(int narg, char *arg[]) {
   }
   else {
     cout << "Cannot read input file: " << xmlMeshInFileName << "\n";
-    return 0;
+    return 5;
   }
 
   // Get pamgen mesh definition
@@ -275,6 +275,7 @@ int main(int narg, char *arg[]) {
     params.set("debug_procs", "all");
   }
 
+  if(me == 0) cout << "Action: " << action << endl;
   // create Partitioning problem
   if (do_partitioning) {
     if (me == 0) cout << "Creating partitioning problem ... \n\n";

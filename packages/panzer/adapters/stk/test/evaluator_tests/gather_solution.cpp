@@ -85,6 +85,8 @@ using Teuchos::rcp;
 #include <vector>
 #include <string>
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 typedef double ScalarT;
 typedef int LocalOrdinalT;
 typedef int GlobalOrdinalT;

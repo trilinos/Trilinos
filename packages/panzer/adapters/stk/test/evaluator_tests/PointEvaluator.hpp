@@ -51,6 +51,8 @@
 #include "Panzer_IntegrationRule.hpp"
 #include "Panzer_Workset_Utilities.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 template <typename ScalarT>
 class PointEvaluation {
 public:
@@ -59,7 +61,7 @@ public:
                                   PHX::MDField<ScalarT> & field) const = 0;
 };
 
-PHX_EVALUATOR_CLASS(PointEvaluator)
+PANZER_EVALUATOR_CLASS(PointEvaluator)
 
   PHX::MDField<ScalarT> scalar;
   PHX::MDField<ScalarT> vectorField;
@@ -68,7 +70,7 @@ PHX_EVALUATOR_CLASS(PointEvaluator)
   int quad_order;
   int quad_index;
   Teuchos::RCP<const PointEvaluation<ScalarT> > function;
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 //**********************************************************************
 PHX_EVALUATOR_CTOR(PointEvaluator,p)
@@ -105,16 +107,16 @@ PHX_POST_REGISTRATION_SETUP(PointEvaluator,sd,fm)
   else
      this->utils.setFieldData(scalar,fm);
 
-  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0]);
+  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(PointEvaluator,workset)
 {
    if(isVector)
-      function->evaluateContainer(workset.int_rules[quad_index]->ip_coordinates,vectorField);
+      function->evaluateContainer(this->wda(workset).int_rules[quad_index]->ip_coordinates,vectorField);
    else 
-      function->evaluateContainer(workset.int_rules[quad_index]->ip_coordinates,vectorField);
+      function->evaluateContainer(this->wda(workset).int_rules[quad_index]->ip_coordinates,vectorField);
 }
 
 //**********************************************************************

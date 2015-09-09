@@ -179,7 +179,7 @@ bool bucket_part_memberships_match(const stk::mesh::BulkData& bulk, stk::EnvData
                     std::string string_to_send;
                     if(irank != 1 && irank != 2)
                     {
-                        string_to_send = sierra::to_string(bulk.identifier(entities[i])) + " " + part_names_for_entity;
+                        string_to_send = std::to_string(bulk.identifier(entities[i])) + " " + part_names_for_entity;
                     }
                     else
                     {

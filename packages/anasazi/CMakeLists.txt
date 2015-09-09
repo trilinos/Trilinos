@@ -15,6 +15,12 @@ TRIBITS_PACKAGE( Anasazi ENABLE_SHADOWING_WARNINGS )
 
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
+# RBGen support
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_RBGen
+  HAVE_ANASAZI_RBGEN
+  "Enable Reduced Basis Generation (RBGen) support in Anasazi"
+  OFF )
+
 # Anasazi includes tests that may require complex arithmetic in order
 # to build.  These include especially (but not exclusively) the
 # Tpetra-specific tests, since Tpetra objects are templated on the
@@ -71,6 +77,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 #
 
 ADD_SUBDIRECTORY(src)
+
+IF (${PACKAGE_NAME}_ENABLE_RBGen)
+  ADD_SUBDIRECTORY(src-rbgen)
+ENDIF()
 
 IF (Anasazi_ENABLE_Epetra)
   ADD_SUBDIRECTORY(epetra)

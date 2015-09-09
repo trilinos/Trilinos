@@ -286,7 +286,6 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 } // namespace Ifpack2
 
 #define IFPACK2_IDENTITYSOLVER_INSTANT(S,LO,GO,N)                            \
-  template class Ifpack2::IdentitySolver< Tpetra::CrsMatrix<S, LO, GO, N> >; \
   template class Ifpack2::IdentitySolver< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif // IFPACK2_IDENTITY_SOLVER_DEF_HPP

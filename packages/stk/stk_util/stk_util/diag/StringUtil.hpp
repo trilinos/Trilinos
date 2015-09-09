@@ -373,7 +373,13 @@ std::string to_string(const float &r, int precision = 4);
  *			<b>r</b>.
  */
 template <typename T>
-std::string to_string(const T &t);
+inline std::string
+to_string( const T &		t)
+{
+  std::ostringstream os;
+  os << t;
+  return os.str();
+}
 
 /**
  * @brief Function <b>demangle</b> returns the demangled C++ symbol from the mangled

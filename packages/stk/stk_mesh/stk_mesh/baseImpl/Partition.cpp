@@ -128,11 +128,6 @@ Partition::~Partition()
   }
 }
 
-BucketRepository &Partition::getRepository(stk::mesh::BulkData &mesh)
-{
-  return mesh.m_bucket_repository;
-}
-
 bool Partition::remove(Entity entity)
 {
   ThrowAssert(belongs(m_mesh.bucket(entity)));
@@ -140,8 +135,6 @@ bool Partition::remove(Entity entity)
   Bucket &bucket   = m_mesh.bucket(entity);
   unsigned ordinal = m_mesh.bucket_ordinal(entity);
   overwrite_from_end(bucket, ordinal);
-
-  m_mesh.set_mesh_index(entity, 0, 0);
 
   remove_impl();
   internal_check_invariants();
@@ -158,9 +151,7 @@ bool Partition::add(Entity entity)
 
   // If the last bucket is full, automatically create a new one.
   Bucket *bucket = get_bucket_for_adds();
-
   bucket->add_entity(entity);
-  bucket->mesh().mark_entity_and_upward_related_entities_as_modified(entity);
   ++m_size;
 
   m_updated_since_compress = m_updated_since_sort = true;
@@ -193,8 +184,6 @@ bool Partition::move_to(Entity entity, Partition &dst_partition)
                   << ", global_id: " << m_mesh.identifier(entity) << ") from "
                   << src_bucket->topology() << "to " << dst_bucket->topology() << "."
                   );
-
-  dst_bucket->mesh().mark_entity_and_upward_related_entities_as_modified(entity);
 
   // Copy the entity's data to the new bucket before removing the entity from its old bucket.
   dst_bucket->copy_entity(entity);

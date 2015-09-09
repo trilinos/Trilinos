@@ -211,7 +211,7 @@ Because tutorials and detailed documentation for the CMake language already
 exists, this document will not even attempt to provide a first reference to
 CMake (which is a large topic in itself).  However, what we try to provide
 below is a short overview of the more quirky or surprising aspects of the
-CMake language that an programmer experienced in another language might get
+CMake language that a programmer experienced in another language might get
 tripped up or surprised by.  Some of the more unique features of the language
 are described in order to help avoid some of these common mistakes and provide
 greater understanding of how TriBITS works.
@@ -224,19 +224,19 @@ Project Dependencies`_) is a fairly simple programming language with fairly
 simple rules (for the most part).  However, compared to other programming
 languages, there are a few peculiar aspects to the CMake language like strange
 variable scoping rules, and how arguments are passed to macros and functions,
-that can make working with it difficult if you don't understand these.  Also,
-CMake has some interesting gotchas.  In order to effectively use TriBITS (or
-just raw CMake) to construct and maintain a project's CMake files, one must
-know the basic rules of CMake and be aware of these gotchas.
+that can make working with it difficult if you don't understand these rules.
+Also, CMake has some interesting gotchas.  In order to effectively use TriBITS
+(or just raw CMake) to construct and maintain a project's CMake files, one
+must know the basic rules of CMake and be aware of these gotchas.
 
 The first thing to understand about the CMake language is that nearly every
 line of CMake code is just a command taking a string (or an array of strings)
 and functions that operate on strings.  An array argument is just a single
 string literal with elements separated by semi-colons ``"<str0>;<str1>;..."``.
-CMake is a bit odd in how it deals with these arrays (which are just
-represented as a string with elements separated with semi-colons ``';'``).
-For example, all of the following are equivalent and pass in a CMake array
-with 3 elements [``A``], [``B``], and [``C``]::
+CMake is a bit odd in how it deals with these arrays, which are just
+represented as a string with elements separated with semi-colons ``';'``.  For
+example, all of the following are equivalent and pass in a CMake array with 3
+elements [``A``], [``B``], and [``C``]::
 
   SOME_FUNC(A B C)
   SOME_FUNC("A" "B" "C")
@@ -270,7 +270,7 @@ In CMake, the above is identical, in every way, to::
 
 The function ``SET()`` simply interprets the first argument to as the name of
 a variable to set in the local scope.  Many other built-in and user-defined
-CMake functions work the same way.  That is some of the string arguments are
+CMake functions work the same way.  That is, some of the string arguments are
 interpreted as the names of variables.  There is no special language feature
 that interprets them as variables (except in an ``IF()`` statement).
 
@@ -4867,17 +4867,17 @@ users (same name as the email list name) and sets up a mapping of Labels
 (which are used for TriBITS package names) to CDash user emails
 addresses. CDash is automatically set up to process this XML file and create
 and update CDash users. It is not, however, set up to remove labels from
-existing users.  Therefore, if you change a TriBITS package's CDash regression
-email address (using one of the methods described above), then you need to
-manually remove the associated labels from the old email address.  CDash will
-not remove them for you.
+existing users.  Therefore, if one changes a TriBITS package's CDash
+regression email address (using one of the methods described above), then one
+needs to manually remove the associated labels from the old email address.
+CDash will not remove them for you.
 
 Therefore, to change the mapping of CDash regression email addresses to
-TriBITS packages, you must perform the actions:
+TriBITS packages, one must perform the actions:
 
 1) Change the TriBITS CMake files as described above that will result in the
    desired email addresses in the ``CDashSubprojectDependencies.xml``
-   file. You can debug this by running the `checkin-test.py`_ script and
+   file. One can debug this by running the `checkin-test.py`_ script and
    seeing what gets written in the generated
    `<Project>PackageDependencies.xml`_ file in the ``CHECKIN`` directory.
 
@@ -4895,8 +4895,9 @@ TriBITS packages, you must perform the actions:
    ``CDashSubprojectDependencies.xml`` file).  Also, any new CDash users for
    new email addresses will be created.
 
-Hopefully that should be enough clues to manage the mapping of CDash
-regression email lists to TriBITS packages.
+Hopefully that should be enough information to manage the mapping of CDash
+regression email lists to TriBITS packages for single and multi-repository
+TriBITS projects.
 
 
 Multi-Repository Support

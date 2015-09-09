@@ -565,11 +565,13 @@ int Ifpack_BlockRelaxation<T>::ExtractSubmatrices()
     // otherwise leave Containers_[i] as null
   }
 
+#ifdef SINGLETON_DEBUG
   int issing = 0;
 
   for (int i = 0 ; i < NumLocalBlocks() ; ++i)
     issing += (int) ( Partitioner_->NumRowsInPart(i) == 1);
   printf( " %d of %d containers are singleton \n",issing,NumLocalBlocks());
+#endif
 
   return(0);
 }

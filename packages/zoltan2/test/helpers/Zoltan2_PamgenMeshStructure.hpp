@@ -128,7 +128,6 @@ public:
 
 PamgenMesh::~PamgenMesh()
 {
-  
   // free mesh
   Delete_Pamgen_Mesh();
   
@@ -266,6 +265,7 @@ PamgenMesh::~PamgenMesh()
     }
     
   }
+  
 }
 
 void PamgenMesh::storeMesh()
@@ -570,7 +570,6 @@ void PamgenMesh::computeElementCoordinates()
   int n_id = 0;
   
   int el_count = 0;
-  int idx_a = 0;
   for(int i = 0; i <  this->num_elem_blk; i++)
   {
     int els = this->elements[i];
@@ -601,10 +600,10 @@ void PamgenMesh::computeElementCoordinates()
 
 void PamgenMesh::createMesh(char * file_data, int dimension, int rank, int nproc)
 {
-  int cr_result = Create_Pamgen_Mesh(file_data, dimension, rank, nproc, INT_MAX);
+  long long cr_result = Create_Pamgen_Mesh(file_data, dimension, rank, nproc, INT_MAX);
   
   if (cr_result == ERROR_PARSING_DEFINITION){
-    int essz = getPamgenEchoStreamSize();
+    long long essz = getPamgenEchoStreamSize();
     char * echo_char_array = (char *)malloc(essz+1);
     printf("PARSE ERROR\n");
     echo_char_array[essz] = '\0';
@@ -615,7 +614,7 @@ void PamgenMesh::createMesh(char * file_data, int dimension, int rank, int nproc
   }
   
   if(cr_result == ERROR_CREATING_MS){
-    int essz = getPamgenErrorStreamSize();
+    long long essz = getPamgenErrorStreamSize();
     char * error_char_array = (char *)malloc(essz+1);
     error_char_array[essz] = '\0';
     error_char_array = getPamgenErrorStream(error_char_array);
@@ -625,7 +624,7 @@ void PamgenMesh::createMesh(char * file_data, int dimension, int rank, int nproc
   }
   
   
-  int wssz = getPamgenWarningStreamSize();
+  long long wssz = getPamgenWarningStreamSize();
   if(wssz){
     char * warning_char_array = (char *)malloc(wssz+1);
     warning_char_array[wssz] = '\0';

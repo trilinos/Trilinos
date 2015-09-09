@@ -108,7 +108,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_TransientBasisTimesScalar,sd,fm)
   num_nodes = residual.dimension(1);
   num_qp = scalar.dimension(1);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
   tmp = Intrepid::FieldContainer<ScalarT>(scalar.dimension(0), num_qp); 
 }
@@ -135,7 +135,7 @@ PHX_EVALUATE_FIELDS(Integrator_TransientBasisTimesScalar,workset)
     if(workset.num_cells>0)
       Intrepid::FunctionSpaceTools::
         integrate<ScalarT>(residual, tmp, 
-			   (workset.bases[basis_index])->weighted_basis_scalar, 
+			   (this->wda(workset).bases[basis_index])->weighted_basis_scalar, 
 			   Intrepid::COMP_BLAS);
   }
 }

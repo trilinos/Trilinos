@@ -163,7 +163,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::Integrator_DivBasisTimesScalar<EvalT,panzer::Traits>(p));
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
 
   // Source operator (-f,-\nabla\cdot w)
@@ -180,7 +180,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::Integrator_DivBasisTimesScalar<EvalT,panzer::Traits>(p));
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
 
   // "diffusion" operator (\nabla \phi,\nabla q)
@@ -195,7 +195,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::Integrator_GradBasisDotVector<EvalT,panzer::Traits>(p));
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
 
   // "diffusion" operator (-v,\nabla q)
@@ -210,7 +210,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::Integrator_GradBasisDotVector<EvalT,panzer::Traits>(p));
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
   
   // Use a sum operator to form the overall residual for the equation

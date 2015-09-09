@@ -45,13 +45,14 @@
 
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix.hpp"
-
+#include <type_traits>
 
 namespace Ifpack2 {
 
 /*!
 \class ReorderFilter
 \brief Wraps a Tpetra::RowMatrix in a filter that reorders local rows and columns.
+\tparam MatrixType A specialization of Tpetra::RowMatrix.
 
 This class is used in AdditiveSchwarz to reorder (if required by the
 user) the localized matrix.  As the localized matrix is defined on a
@@ -80,6 +81,9 @@ public:
                             local_ordinal_type,
                             global_ordinal_type,
                             node_type> row_matrix_type;
+
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::ReorderFilter: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
+
   typedef Tpetra::Map<local_ordinal_type,
                       global_ordinal_type,
                       node_type> map_type;

@@ -17,6 +17,7 @@
 # Non-zdrive tests
 #
 TRIBITS_ADD_TEST_DIRECTORIES(Large_Data)
+TRIBITS_ADD_TEST_DIRECTORIES(misc_tests)
 #
 
 IF(PERL_EXECUTABLE)

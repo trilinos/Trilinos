@@ -54,6 +54,8 @@
 #include "Ifpack2_RILUK.hpp"
 #include "Ifpack2_Experimental_RBILUK.hpp"
 
+#include <type_traits>
+
 namespace Ifpack2 {
 
 //! \c true if the specified preconditioner type supports nonsymmetric matrices, else false.
@@ -136,6 +138,7 @@ public:
   create (const std::string& precType,
           const Teuchos::RCP<const MatrixType>& matrix)
   {
+    using Teuchos::RCP;
     using Teuchos::rcp_implicit_cast;
     typedef typename MatrixType::scalar_type SC;
     typedef typename MatrixType::local_ordinal_type LO;
@@ -143,7 +146,10 @@ public:
     typedef typename MatrixType::node_type NT;
     typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
 
-    auto A = rcp_implicit_cast<const row_matrix_type> (matrix);
+    RCP<const row_matrix_type> A;
+    if (! matrix.is_null ()) {
+      A = rcp_implicit_cast<const row_matrix_type> (matrix);
+    }
     Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
     return factory.create (precType, A);
   }
@@ -173,6 +179,7 @@ public:
           const Teuchos::RCP<const MatrixType>& matrix,
           const int overlap)
   {
+    using Teuchos::RCP;
     using Teuchos::rcp_implicit_cast;
     typedef typename MatrixType::scalar_type SC;
     typedef typename MatrixType::local_ordinal_type LO;
@@ -180,7 +187,10 @@ public:
     typedef typename MatrixType::node_type NT;
     typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
 
-    auto A = rcp_implicit_cast<const row_matrix_type> (matrix);
+    RCP<const row_matrix_type> A;
+    if (! matrix.is_null ()) {
+      A = rcp_implicit_cast<const row_matrix_type> (matrix);
+    }
     Ifpack2::Details::Factory<SC, LO, GO, NT> factory;
     return factory.create (precType, A, overlap);
   }
@@ -208,9 +218,19 @@ public:
     // FIXME (mfh 09 Nov 2013) The code below assumes that the old and
     // new scalar, local ordinal, and global ordinal types are the same.
 
-    typedef typename OutputMatrixType::scalar_type scalar_type;
-    typedef typename OutputMatrixType::local_ordinal_type local_ordinal_type;
-    typedef typename OutputMatrixType::global_ordinal_type global_ordinal_type;
+    typedef typename InputMatrixType::scalar_type scalar_type;
+    typedef typename InputMatrixType::local_ordinal_type local_ordinal_type;
+    typedef typename InputMatrixType::global_ordinal_type global_ordinal_type;
+    typedef typename InputMatrixType::node_type old_node_type;
+    typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
+      global_ordinal_type, old_node_type> input_row_matrix_type;
+
+    static_assert (std::is_same<typename OutputMatrixType::scalar_type, scalar_type>::value,
+                   "Input and output scalar_type must be the same.");
+    static_assert (std::is_same<typename OutputMatrixType::local_ordinal_type, local_ordinal_type>::value,
+                   "Input and output local_ordinal_type must be the same.");
+    static_assert (std::is_same<typename OutputMatrixType::global_ordinal_type, global_ordinal_type>::value,
+                   "Input and output global_ordinal_type must be the same.");
     typedef typename OutputMatrixType::node_type new_node_type;
     typedef Preconditioner<scalar_type, local_ordinal_type,
       global_ordinal_type, new_node_type> output_prec_type;
@@ -220,20 +240,20 @@ public:
     // only two subclasses of Preconditioner implement a clone() method.
 
     RCP<output_prec_type> new_prec;
-    RCP<Chebyshev<InputMatrixType> > chebyPrec;
-    chebyPrec = rcp_dynamic_cast<Chebyshev<InputMatrixType> > (prec);
-    if (chebyPrec != null) {
+    RCP<Chebyshev<input_row_matrix_type> > chebyPrec =
+      rcp_dynamic_cast<Chebyshev<input_row_matrix_type> > (prec);
+    if (! chebyPrec.is_null ()) {
       new_prec = chebyPrec->clone (matrix, params);
       return new_prec;
     }
-    RCP<RILUK<InputMatrixType> > luPrec;
-    luPrec = rcp_dynamic_cast<RILUK<InputMatrixType> > (prec);
+    RCP<RILUK<input_row_matrix_type> > luPrec;
+    luPrec = rcp_dynamic_cast<RILUK<input_row_matrix_type> > (prec);
     if (luPrec != null) {
       new_prec = luPrec->clone (matrix);
       return new_prec;
     }
-    RCP<Experimental::RBILUK<InputMatrixType> > rbilukPrec;
-    rbilukPrec = rcp_dynamic_cast<Experimental::RBILUK<InputMatrixType> > (prec);
+    RCP<Experimental::RBILUK<input_row_matrix_type> > rbilukPrec;
+    rbilukPrec = rcp_dynamic_cast<Experimental::RBILUK<input_row_matrix_type> > (prec);
     if (rbilukPrec != null) {
       new_prec = rbilukPrec->clone (matrix);
       return new_prec;

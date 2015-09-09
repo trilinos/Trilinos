@@ -51,28 +51,27 @@
 #ifndef IFPACK2_CHEBYSHEV_DECL_HPP
 #define IFPACK2_CHEBYSHEV_DECL_HPP
 
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Ifpack2_Preconditioner.hpp>
-#include <Ifpack2_Details_CanChangeMatrix.hpp>
+#include "Ifpack2_Preconditioner.hpp"
+#include "Ifpack2_Details_CanChangeMatrix.hpp"
 
-// FIXME (mfh 20 Nov 2013) We really shouldn't have to include both of
-// these, if we were to handle the implementation by pointer instead
-// of by value.
-#include <Ifpack2_Details_Chebyshev_decl.hpp>
-#include <Ifpack2_Details_Chebyshev_def.hpp>
+// FIXME (mfh 20 Nov 2013) We really shouldn't have to include this.
+// We should handle the implementation by pointer instead of by value.
+#include "Ifpack2_Details_Chebyshev.hpp"
 
-#include <Tpetra_CrsMatrix.hpp>
+// We only need the declaration here, and only for the method
+// getCrsMatrix.  I would very much prefer that this method not exist.
+// Furthermore, it is both unsafe (MatrixType need not be CrsMatrix)
+// and completely redundant (just call getMatrix() and do the
+// dynamic_cast yourself).
+#include "Tpetra_CrsMatrix_decl.hpp"
 
-#include <iostream>
-#include <string>
-#include <sstream>
-
+#include <type_traits>
 
 namespace Ifpack2 {
 
 /// \class Chebyshev
 /// \brief Diagonally scaled Chebyshev iteration for Tpetra sparse matrices.
-/// \tparam MatrixType A specialization of Tpetra::RowMatrix or Tpetra::CrsMatrix.
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
 ///
 /// \section Ifpack_Chebyshev_Summary Summary
 ///
@@ -80,9 +79,9 @@ namespace Ifpack2 {
 /// smoother for a Tpetra sparse matrix.  Given a matrix A, it applies
 /// Chebyshev iteration to the left-scaled matrix \f$D^{-1} A\f$,
 /// where D = diag(A) is the matrix of the diagonal entries of A.
-/// This class' constructor accepts either a Tpetra::RowMatrix or a
-/// Tpetra::CrsMatrix.  Its template parameter may be a specialization
-/// of either class.
+/// This class' constructor accepts a Tpetra::RowMatrix or any
+/// subclass thereof (including Tpetra::CrsMatrix).  Its template
+/// parameter may be a specialization of either class.
 ///
 /// Chebyshev is derived from Preconditioner, which itself is derived
 /// from Tpetra::Operator.  Therefore, a Chebyshev instance may be
@@ -231,11 +230,12 @@ public:
 
   /// \brief The Tpetra::RowMatrix specialization matching MatrixType.
   ///
-  /// MatrixType may be either a Tpetra::CrsMatrix specialization or a
-  /// Tpetra::RowMatrix specialization.  This typedef will always be a
-  /// Tpetra::RowMatrix specialization which is either the same as
-  /// MatrixType, or the parent class of MatrixType.
+  /// MatrixType must be a Tpetra::RowMatrix specialization.  This
+  /// typedef will always be a Tpetra::RowMatrix specialization.
   typedef Tpetra::RowMatrix<scalar_type,local_ordinal_type,global_ordinal_type,node_type> row_matrix_type;
+
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value,
+                "Ifpack2::Chebyshev: Please use MatrixType = Tpetra::RowMatrix.");
 
   //! The Tpetra::Map specialization matching MatrixType.
   typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> map_type;
@@ -592,8 +592,12 @@ public:
   //! The matrix for which this is a preconditioner.
   Teuchos::RCP<const row_matrix_type> getMatrix() const;
 
-   //! Returns A as a CRS Matrix
-  Teuchos::RCP<const MatrixType > getCrsMatrix() const;
+  /// \brief Attempt to return the matrix A as a Tpetra::CrsMatrix.
+  ///
+  /// This class does not require that A be a Tpetra::CrsMatrix.
+  /// If it is NOT, this method will return Teuchos::null.
+  Teuchos::RCP<const Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> >
+  getCrsMatrix() const;
 
   //! The total number of floating-point operations taken by all calls to compute().
   double getComputeFlops() const;
@@ -645,18 +649,15 @@ public:
   ///
   /// \tparam NewMatrixType The template parameter of the new
   ///   preconditioner to return; a specialization of
-  ///   Tpetra::RowMatrix or Tpetra::CrsMatrix.  The intent is that
+  ///   Tpetra::RowMatrix or any subclass thereof.  The intent is that
   ///   this type differ from \c MatrixType only in its fourth Node
   ///   template parameter.  However, this is not strictly required.
   ///
   /// \param[in] A_newnode  The matrix, with the new Node type.
-  ///   This would generally be the result of cloning (calling
-  ///   <tt>Tpetra::CrsMatrix::clone()</tt> on) the original input
-  ///   matrix A, though the implementation does not require this.
   ///
   /// \param[in,out] params Parameters for the new preconditioner.
   ///
-  /// \pre If \c A_newnode is a Tpetra::CrsMatrix, it must be fill
+  /// \pre If \c A_newnode is a Tpetra::RowMatrix, it must be fill
   ///   complete.
   ///
   /// \post <tt>P->isInitialized() && P->isComputed()</tt>, where \c P
@@ -664,7 +665,7 @@ public:
   ///   to be called; P is ready for use as a preconditioner.  This is
   ///   true regardless of the current state of <tt>*this</tt>.
   template <typename NewMatrixType>
-  Teuchos::RCP<Chebyshev<NewMatrixType> >
+  Teuchos::RCP<Chebyshev<Tpetra::RowMatrix<typename NewMatrixType::scalar_type, typename NewMatrixType::local_ordinal_type, typename NewMatrixType::global_ordinal_type, typename NewMatrixType::node_type> > >
   clone (const Teuchos::RCP<const NewMatrixType>& A_newnode,
          const Teuchos::ParameterList& params) const;
 
@@ -746,13 +747,17 @@ private:
 
 template <typename MatrixType>
 template <typename NewMatrixType>
-Teuchos::RCP<Chebyshev<NewMatrixType> >
+Teuchos::RCP<Chebyshev<Tpetra::RowMatrix<typename NewMatrixType::scalar_type, typename NewMatrixType::local_ordinal_type, typename NewMatrixType::global_ordinal_type, typename NewMatrixType::node_type> > >
 Chebyshev<MatrixType>::
 clone (const Teuchos::RCP<const NewMatrixType>& A_newnode,
        const Teuchos::ParameterList& params) const
 {
   using Teuchos::RCP;
-  typedef Ifpack2::Chebyshev<NewMatrixType> new_prec_type;
+  typedef Tpetra::RowMatrix<typename NewMatrixType::scalar_type,
+    typename NewMatrixType::local_ordinal_type,
+    typename NewMatrixType::global_ordinal_type,
+    typename NewMatrixType::node_type> new_row_matrix_type;
+  typedef Ifpack2::Chebyshev<new_row_matrix_type> new_prec_type;
 
   RCP<new_prec_type> prec (new new_prec_type (A_newnode));
   prec->setParameters (params);

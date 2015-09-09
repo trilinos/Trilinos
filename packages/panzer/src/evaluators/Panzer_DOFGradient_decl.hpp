@@ -46,10 +46,12 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_Field.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF Gradient values
-PHX_EVALUATOR_CLASS(DOFGradient)
+PANZER_EVALUATOR_CLASS(DOFGradient)
   
   // <cell,point>
   PHX::MDField<ScalarT,Cell,Point> dof_value;
@@ -59,7 +61,7 @@ PHX_EVALUATOR_CLASS(DOFGradient)
   std::string basis_name;
   std::size_t basis_index;
 
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 }
 

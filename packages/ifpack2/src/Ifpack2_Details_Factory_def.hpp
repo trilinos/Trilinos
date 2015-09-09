@@ -72,10 +72,6 @@ create (const std::string& precType,
     }
   }
 
-  const bool one_mpi_rank = (matrix->getComm ()->getSize () == 1);
-  // Forestall "unused variable" warnings.
-  (void) one_mpi_rank;
-
   if (precTypeUpper == "SCHWARZ") {
     // Discussion related to Bug 5987: The line of code below will
     // give AdditiveSchwarz a default subdomain solver by default.
@@ -135,10 +131,6 @@ create (const std::string& precType,
       precTypeUpper[k] = std::toupper<char> (precTypeUpper[k], locale);
     }
   }
-
-  const bool one_mpi_rank = (matrix->getComm ()->getSize () == 1);
-  // Forestall "unused variable" warnings.
-  (void) one_mpi_rank;
 
   if (precTypeUpper == "SCHWARZ") {
     // Discussion related to Bug 5987: The line of code below will

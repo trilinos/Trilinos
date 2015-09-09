@@ -201,7 +201,6 @@ int main(int argc, char *argv[]) {
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory(CoupledAggFact));
 
   RCP<SaPFactory>       Pfact = rcp( new SaPFactory(TentPFact) );
-  //Pfact->SetDampingFactor(0.);
   RCP<Factory>         Rfact = rcp( new TransPFactory() );
   RCP<GenericPRFactory> PRfact = rcp( new GenericPRFactory(Pfact,Rfact));
   RCP<RAPFactory>       Acfact = rcp( new RAPFactory() );

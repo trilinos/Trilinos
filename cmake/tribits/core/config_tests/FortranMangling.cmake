@@ -159,7 +159,7 @@ ENDFUNCTION()
 
 
 # 2008/10/26: rabartl: Below, these were macros that were also present in the
-# file that I got off of the web but I did not need them so they are disbled
+# file that I got off of the web but I did not need them so they are disabled
 # (for now)
 
 ## - Guess if the Fortran compiler returns REAL in C doubles.

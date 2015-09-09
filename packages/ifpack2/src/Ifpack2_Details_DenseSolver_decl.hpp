@@ -50,7 +50,7 @@
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-
+#include <type_traits>
 
 namespace Ifpack2 {
 namespace Details {
@@ -97,7 +97,7 @@ struct LapackSupportsScalar<std::complex<double> > {
 
 /// \class DenseSolver
 /// \brief "Preconditioner" that uses LAPACK's dense LU.
-/// \tparam MatrixType Specialization of Tpetra::RowMatrix.
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
 /// \tparam stub Whether this is a stub implementation.  The default
 ///   is false.  If true, then this class does nothing and its
 ///   constructor throws an exception.  You should always use the
@@ -138,8 +138,7 @@ public:
 
   /// \brief The first template parameter of this class.
   ///
-  /// This must be either a Tpetra::RowMatrix specialization
-  /// (preferred) or a Tpetra::CrsMatrix specialization.
+  /// This must be a Tpetra::RowMatrix specialization.
   typedef MatrixType matrix_type;
 
   //! The type of entries in the input (global) matrix.
@@ -159,6 +158,9 @@ public:
 
   //! Specialization of Tpetra::RowMatrix used by this class.
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type, global_ordinal_type, node_type> row_matrix_type;
+
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value,
+                "Ifpack2::Details::DenseSolver: Please use MatrixType = Tpetra::RowMatrix.");
 
   //! Specialization of Tpetra::Map used by this class.
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
