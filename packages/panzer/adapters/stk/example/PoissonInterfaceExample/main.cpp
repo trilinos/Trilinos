@@ -89,8 +89,87 @@
 using Teuchos::RCP;
 using Teuchos::rcp;
 
-void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
-                        std::vector<panzer::BC>& bcs);
+static void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
+                               std::vector<panzer::BC>& bcs);
+
+static void solve_Ax_eq_b(const Teuchos::RCP<panzer::EpetraLinearObjContainer>& ep_container,
+                          const Teuchos::RCP<Epetra_Vector>& x)
+{
+  // Setup the linear solve: notice A is used directly 
+  Epetra_LinearProblem problem(&*ep_container->get_A(),&*x,&*ep_container->get_f()); 
+
+  // build the solver
+  AztecOO solver(problem);
+  solver.SetAztecOption(AZ_solver,AZ_gmres); // we don't push out dirichlet conditions
+  solver.SetAztecOption(AZ_precond,AZ_none);
+  solver.SetAztecOption(AZ_kspace,300);
+  solver.SetAztecOption(AZ_output,10);
+  solver.SetAztecOption(AZ_precond,AZ_Jacobi);
+
+  // solve the linear system
+  solver.Iterate(1000,1e-5);
+
+  // we have now solved for the residual correction from
+  // zero in the context of a Newton solve.
+  //     J*e = -r = -(f - J*0) where f = J*u
+  // Therefore we have  J*e=-J*u which implies e = -u
+  // thus we will scale the solution vector 
+  x->Scale(-1.0);
+}
+
+static void
+assembleAndSolve(panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
+                 const Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> >& linObjFactory,
+                 Teuchos::RCP<panzer::EpetraLinearObjContainer>& ep_container,
+                 Teuchos::RCP<panzer::LinearObjContainer>& ghostCont,
+                 const double rtol = 1e-10)
+{
+  double bnorm;
+  Teuchos::RCP<Epetra_Vector> x, dx;
+  for (int it = 0; it < 5; ++it) {
+    // assemble linear system
+    // build linear algebra objects: Ghost is for parallel assembly, it contains
+    //                               local element contributions summed, the global IDs
+    //                               are not unique. The non-ghosted or "global"
+    //                               container will contain the sum over all processors
+    //                               of the ghosted objects. The global indices are unique.
+    ghostCont = linObjFactory->buildGhostedLinearObjContainer();
+    const Teuchos::RCP<panzer::LinearObjContainer> container = linObjFactory->buildLinearObjContainer();
+    linObjFactory->initializeGhostedContainer(panzer::LinearObjContainer::X |
+                                              panzer::LinearObjContainer::F |
+                                              panzer::LinearObjContainer::Mat, *ghostCont);
+    linObjFactory->initializeContainer(panzer::LinearObjContainer::X |
+                                       panzer::LinearObjContainer::F |
+                                       panzer::LinearObjContainer::Mat, *container);
+    ghostCont->initialize();
+    container->initialize();
+
+    // Convert generic linear object container to epetra container.
+    ep_container = Teuchos::rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(container);
+    if (x.is_null()) {
+      x = ep_container->get_x();
+      dx = Teuchos::rcp(new Epetra_Vector(ep_container->get_x()->Map()));
+    } else
+      ep_container->set_x(x);
+
+    panzer::AssemblyEngineInArgs input(ghostCont, ep_container);
+    input.alpha = 0;
+    input.beta = 1;
+
+    // Evaluate physics. This does both the Jacobian and residual at once.
+    ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+
+    double rnorm;
+    ep_container->get_f()->Norm2(&rnorm);
+    if (it == 0) bnorm = rnorm;
+    printf("\nit %2d rnorm %1.3e\n", it, rnorm);
+    if (rnorm <= rtol*bnorm) break;
+
+    solve_Ax_eq_b(ep_container, dx);
+
+    ep_container->get_x()->Update(1, *dx, 1);
+  }
+}
 
 // calls MPI_Init and MPI_Finalize
 int main(int argc,char * argv[])
@@ -259,59 +338,11 @@ int main(int argc,char * argv[])
   panzer::AssemblyEngine_TemplateBuilder builder(fmb,linObjFactory);
   ae_tm.buildObjects(builder);
 
-  // assemble linear system
+  // assemble and solve
   /////////////////////////////////////////////////////////////
-
-  // build linear algebra objects: Ghost is for parallel assembly, it contains
-  //                               local element contributions summed, the global IDs
-  //                               are not unique. The non-ghosted or "global"
-  //                               container will contain the sum over all processors
-  //                               of the ghosted objects. The global indices are unique.
-  RCP<panzer::LinearObjContainer> ghostCont = linObjFactory->buildGhostedLinearObjContainer();
-  RCP<panzer::LinearObjContainer> container = linObjFactory->buildLinearObjContainer();
-  linObjFactory->initializeGhostedContainer(panzer::LinearObjContainer::X |
-                                            panzer::LinearObjContainer::F |
-                                            panzer::LinearObjContainer::Mat,*ghostCont);
-  linObjFactory->initializeContainer(panzer::LinearObjContainer::X |
-                                     panzer::LinearObjContainer::F |
-                                     panzer::LinearObjContainer::Mat,*container);
-  ghostCont->initialize();
-  container->initialize();
-
-  panzer::AssemblyEngineInArgs input(ghostCont,container);
-  input.alpha = 0;
-  input.beta = 1;
-
-  // evaluate physics: This does both the Jacobian and residual at once
-  ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
-
-  // solve linear system
-  /////////////////////////////////////////////////////////////
-
-  // convert generic linear object container to epetra container
-  RCP<panzer::EpetraLinearObjContainer> ep_container 
-    = rcp_dynamic_cast<panzer::EpetraLinearObjContainer>(container);
-
-  // Setup the linear solve: notice A is used directly 
-  Epetra_LinearProblem problem(&*ep_container->get_A(),&*ep_container->get_x(),&*ep_container->get_f()); 
-
-  // build the solver
-  AztecOO solver(problem);
-  solver.SetAztecOption(AZ_solver,AZ_gmres); // we don't push out dirichlet conditions
-  solver.SetAztecOption(AZ_precond,AZ_none);
-  solver.SetAztecOption(AZ_kspace,300);
-  solver.SetAztecOption(AZ_output,10);
-  solver.SetAztecOption(AZ_precond,AZ_Jacobi);
-
-  // solve the linear system
-  solver.Iterate(1000,1e-5);
-
-  // we have now solved for the residual correction from
-  // zero in the context of a Newton solve.
-  //     J*e = -r = -(f - J*0) where f = J*u
-  // Therefore we have  J*e=-J*u which implies e = -u
-  // thus we will scale the solution vector 
-  ep_container->get_x()->Scale(-1.0);
+  Teuchos::RCP<panzer::EpetraLinearObjContainer> ep_container;
+  Teuchos::RCP<panzer::LinearObjContainer> ghostCont;
+  assembleAndSolve(ae_tm, linObjFactory, ep_container, ghostCont);
   
   // output data (optional)
   /////////////////////////////////////////////////////////////
@@ -326,7 +357,7 @@ int main(int argc,char * argv[])
   // write out solution to matrix
   if(true) {
     // redistribute solution vector to ghosted vector
-    linObjFactory->globalToGhostContainer(*container,*ghostCont, panzer::EpetraLinearObjContainer::X 
+    linObjFactory->globalToGhostContainer(*ep_container,*ghostCont, panzer::EpetraLinearObjContainer::X 
                                           | panzer::EpetraLinearObjContainer::DxDt); 
 
     // get X Epetra_Vector from ghosted container
@@ -395,7 +426,7 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
     bcs.push_back(bc);
   }
 
-#if 0
+#if 1
   {
     std::size_t bc_id = 1;
     panzer::BCType bctype = panzer::BCT_Neumann;
@@ -425,18 +456,17 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
     bcs.push_back(bc);
   }
 #else
-  for (int strategy = 0; strategy < 1; ++strategy)
-    for (int di = 0; di < 1; ++di) {
-      std::size_t bc_id = 4 + 2*strategy + di;
-      Teuchos::ParameterList p;
-      p.set("Type", "Interface");
-      p.set("Sideset ID", "vertical_0");
-      p.set("Element Block ID", di == 0 ? "eblock-0_0" : "eblock-1_0");
-      p.set("Equation Set Name", di == 0 ? "TEMPERATURE1" : "TEMPERATURE2");
-      p.set("Strategy", strategy == 0 ? "Neumann Match Interface" : "Weak Dirichlet Match Interface");
-      p.set("Element Block ID2", di == 0 ? "eblock-1_0" : "eblock-0_0");
-      p.set("Equation Set Name2", di == 0 ? "TEMPERATURE2" : "TEMPERATURE1");
-      bcs.push_back(panzer::BC(bc_id, p));
-    }
+  for (int di = 0; di < 1 /* just NeumannMatch atm */; ++di) {
+    std::size_t bc_id = 4 + di;
+    Teuchos::ParameterList p;
+    p.set("Type", "Interface");
+    p.set("Sideset ID", "vertical_0");
+    p.set("Element Block ID", di == 0 ? "eblock-0_0" : "eblock-1_0");
+    p.set("Equation Set Name", di == 0 ? "TEMPERATURE1" : "TEMPERATURE2");
+    p.set("Strategy", di == 0 ? "Neumann Match Interface" : "Weak Dirichlet Match Interface");
+    p.set("Element Block ID2", di == 0 ? "eblock-1_0" : "eblock-0_0");
+    p.set("Equation Set Name2", di == 0 ? "TEMPERATURE2" : "TEMPERATURE1");
+    bcs.push_back(panzer::BC(bc_id, p));
+  }
 #endif
 }
