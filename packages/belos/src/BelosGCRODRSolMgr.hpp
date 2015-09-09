@@ -60,12 +60,15 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp"
+#include "Teuchos_BLAS.hpp" // includes Teuchos_ConfigDefs.hpp
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-#include "Teuchos_TimeMonitor.hpp"
+#  include "Teuchos_TimeMonitor.hpp"
 #endif // BELOS_TEUCHOS_TIME_MONITOR
+#if defined(HAVE_TEUCHOSCORE_CXX11)
+#  include <type_traits>
+#endif // defined(HAVE_TEUCHOSCORE_CXX11)
 
 /** \example GCRODR/GCRODREpetraExFile.cpp
     This is an example of how to use the Belos::GCRODRSolMgr solver manager.
@@ -151,9 +154,24 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
 
   template<class ScalarType, class MV, class OP>
   class GCRODRSolMgr : public SolverManager<ScalarType,MV,OP> {
+#if defined(HAVE_TEUCHOSCORE_CXX11)
+#  if defined(HAVE_BELOS_COMPLEX)
+    static_assert (std::is_same<ScalarType, std::complex<float> >::value ||
+                   std::is_same<ScalarType, std::complex<double> >::value ||
+                   std::is_same<ScalarType, float>::value ||
+                   std::is_same<ScalarType, double>::value,
+                   "Belos::GCRODRSolMgr: ScalarType must be one of the four "
+                   "types (S,D,C,Z) supported by LAPACK.");
+#  else
+    static_assert (std::is_same<ScalarType, float>::value ||
+                   std::is_same<ScalarType, double>::value,
+                   "Belos::GCRODRSolMgr: ScalarType must be float or double.  "
+                   "Complex arithmetic support is currently disabled.  To "
+                   "enable it, set Teuchos_ENABLE_COMPLEX=ON.");
+#  endif // defined(HAVE_BELOS_COMPLEX)
+#endif // defined(HAVE_TEUCHOSCORE_CXX11)
 
   private:
-
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
