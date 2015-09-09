@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );   
   
-    for (ROL::EDistribution ed = ROL::DISTRIBUTION_DIRAC; ed != ROL::DISTRIBUTION_LAST; ed++) {
+    for (ROL::EDistribution ed = ROL::DISTRIBUTION_ARCSINE; ed != ROL::DISTRIBUTION_LAST; ed++) {
       *outStream << ROL::EDistributionToString(ed) << std::endl << std::endl;
       parlist->sublist("SOL").sublist("Distribution").set("Name",ROL::EDistributionToString(ed));
       dist = ROL::DistributionFactory<double>(*parlist);

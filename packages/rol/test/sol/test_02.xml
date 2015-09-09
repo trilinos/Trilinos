@@ -14,7 +14,7 @@
         <Parameter name="Location" type="double" value="0." />
         <Parameter name="Scale"    type="double" value="1." />
       </ParameterList>
-      <!-- ===========  Dirac DISTRIBUTION SUBLIST  =========== -->
+      <!-- ===========  DIRAC DISTRIBUTION SUBLIST  =========== -->
       <ParameterList name="Dirac">
         <Parameter name="Location" type="double" value="0." />
       </ParameterList>
@@ -22,6 +22,11 @@
       <ParameterList name="Exponential">
         <Parameter name="Location" type="double" value="0." />
         <Parameter name="Scale"    type="double" value="1." />
+      </ParameterList>
+      <!-- ===========  GAMMA DISTRIBUTION SUBLIST  =========== -->
+      <ParameterList name="Gamma">
+        <Parameter name="Shape" type="double" value="1." />
+        <Parameter name="Scale" type="double" value="1." />
       </ParameterList>
       <!-- ===========  GAUSSIAN DISTRIBUTION SUBLIST  =========== -->
       <ParameterList name="Gaussian">
@@ -67,7 +72,7 @@
         <Parameter name="Upper Bound"   type="double" value="1."  />
       </ParameterList>
       <!-- ===========  TRUNCATED EXPONENTIAL DISTRIBUTION SUBLIST  =========== -->
-      <ParameterList name="Exponential">
+      <ParameterList name="Truncated Exponential">
         <Parameter name="Lower Bound" type="double" value="0." />
         <Parameter name="Upper Bound" type="double" value="1." />
         <Parameter name="Scale"       type="double" value="1." />
