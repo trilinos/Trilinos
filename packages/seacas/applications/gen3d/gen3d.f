@@ -376,7 +376,7 @@ C   --Get the side sets, and the front and back side sets
       END IF
 
       LESSEO = INTADD (NUMESS, IA(KNESS)) * NEREPL
-      LESSNO = INTADD (NUMESS, IA(KNNSS)) * NEREPL * 4
+      LESSNO = 4 * LESSEO
       CALL MDRSRV ('NEES3', KNES3, NUMESS)
       CALL MDRSRV ('NNES3', KNNS3, NUMESS)
       CALL MDRSRV ('IXEES3', KIXES3, NUMESS)
