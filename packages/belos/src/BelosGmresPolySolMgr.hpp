@@ -65,7 +65,6 @@
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
 #include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
@@ -1084,9 +1083,6 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve ()
   if (! isSet_) {
     setParameters (Teuchos::parameterList (*getValidParameters ()));
   }
-
-  Teuchos::BLAS<int,ScalarType> blas;
-  Teuchos::LAPACK<int,ScalarType> lapack;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     problem_.is_null (), GmresPolySolMgrLinearProblemFailure,
