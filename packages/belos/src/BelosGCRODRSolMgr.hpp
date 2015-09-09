@@ -2248,7 +2248,8 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keffloc, int m,
   // Construct magnitude of each harmonic Ritz value
   // NOTE : Forming alpha/beta *should* be okay here, given assumptions on construction of matrix pencil above
   for( i=0; i<ld; i++ ) {
-    w[i] = Teuchos::ScalarTraits<MagnitudeType>::squareroot( wr[i]*wr[i] + wi[i]*wi[i] ) / std::abs( beta[i] );
+    w[i] = Teuchos::ScalarTraits<MagnitudeType>::squareroot (wr[i]*wr[i] + wi[i]*wi[i]) /
+      Teuchos::ScalarTraits<ScalarType>::magnitude (beta[i]);
   }
 
   // Construct magnitude of each harmonic Ritz value
