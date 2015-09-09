@@ -223,6 +223,27 @@ public:
 };
 
 // Helper methods
+template<class Real> 
+Teuchos::RCP<Vector<Real> > CreatePartitionedVector( Teuchos::RCP<Vector<Real> > &a ) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef RCP<Vector<Real> >       RCPV;
+  typedef PartitionedVector<Real>  PV;
+
+  RCPV temp[] = {a};
+  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+1) ) ) );
+}
+
+template<class Real> 
+Teuchos::RCP<const Vector<Real> > CreatePartitionedVector( Teuchos::RCP<const Vector<Real> > &a ) {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef RCP<const Vector<Real> >      RCPV;
+  typedef const PartitionedVector<Real> PV;
+
+  RCPV temp[] = {a};
+  return rcp( new PV( rcp( new std::vector<RCPV>(temp, temp+1) ) ) );
+}
 
 template<class Real> 
 Teuchos::RCP<Vector<Real> > CreatePartitionedVector( Teuchos::RCP<Vector<Real> > &a, 

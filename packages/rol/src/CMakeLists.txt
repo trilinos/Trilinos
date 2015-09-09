@@ -149,6 +149,7 @@ APPEND_SET(HEADERS
   zoo/ROL_HS4.hpp
   zoo/ROL_HS5.hpp
   zoo/ROL_HS25.hpp
+  zoo/ROL_HS29.hpp
   zoo/ROL_HS32.hpp
   zoo/ROL_HS38.hpp
   zoo/ROL_HS45.hpp

@@ -43,11 +43,11 @@
 
 /** \file
  *  \brief Contains definitions for W. Hock and K. Schittkowski 32nd test problem
- *         which contains both inequality and equality constraints.
+ *         which contains only inequality constraints.
  */
 
-#ifndef ROL_HS32_HPP
-#define ROL_HS32_HPP
+#ifndef ROL_HS29_HPP
+#define ROL_HS29_HPP
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
@@ -60,7 +60,7 @@ namespace ROL {
 namespace ZOO {
 
 template<class Real> 
-class Objective_HS32 : public Objective<Real> {
+class Objective_HS29 : public Objective<Real> {
 
   typedef StdVector<Real> SV;
 
@@ -73,9 +73,8 @@ public:
     const SV &xs = dyn_cast<const SV>(getConst(x));
     RCP<const std::vector<Real> > xp = xs.getVector();
 
-    Real term1 = (*xp)[0]+3*(*xp)[1]+(*xp)[2];
-    Real term2 = (*xp)[0]-(*xp)[1];
-    return term1*term1 + 4*term2*term2;
+    return -(*xp)[0]*(*xp)[1]*(*xp)[2];
+
   }
 
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
@@ -88,9 +87,10 @@ public:
     const SV &xs = dyn_cast<const SV>(getConst(x));
     RCP<const std::vector<Real> > xp = xs.getVector();
 
-    (*gp)[0] = 10*(*xp)[0] -  2*(*xp)[1] + 2*(*xp)[2];
-    (*gp)[1] = -2*(*xp)[0] + 26*(*xp)[1] + 6*(*xp)[2];
-    (*gp)[2] =  2*(*xp)[0] +  6*(*xp)[1] + 2*(*xp)[2];
+    (*gp)[0] = -(*xp)[1]*(*xp)[2];
+    (*gp)[1] = -(*xp)[0]*(*xp)[2];
+    (*gp)[2] = -(*xp)[0]*(*xp)[1];
+
   }
 
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
@@ -103,77 +103,20 @@ public:
     const SV &vs = dyn_cast<const SV>(getConst(v));
     RCP<const std::vector<Real> > vp = vs.getVector();
 
-    (*hvp)[0] = 10*(*vp)[0] -  2*(*vp)[1] + 2*(*vp)[2];
-    (*hvp)[1] = -2*(*vp)[0] + 26*(*vp)[1] + 6*(*vp)[2];
-    (*hvp)[2] =  2*(*vp)[0] +  6*(*vp)[1] + 2*(*vp)[2];
- 
-  }
-
-}; // class Objective_HS32
-
-
-template<class Real>
-class EqualityConstraint_HS32 : public EqualityConstraint<Real> {
-
-  typedef StdVector<Real> SV;
-
-public:
-
-  void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
-
-    using namespace Teuchos;
-
-    SV &cs = dyn_cast<SV>(c);
-    RCP<std::vector<Real> > cp = cs.getVector();
- 
     const SV &xs = dyn_cast<const SV>(getConst(x));
     RCP<const std::vector<Real> > xp = xs.getVector();
+
+    (*hvp)[0] = -( (*xp)[2]*(*vp)[1] + (*xp)[1]*(*vp)[2] );
+    (*hvp)[1] = -( (*xp)[2]*(*vp)[0] + (*xp)[0]*(*vp)[2] );
+    (*hvp)[2] = -( (*xp)[1]*(*vp)[0] + (*xp)[0]*(*vp)[1] );
  
-    (*cp)[0] = 1.0 - (*xp)[0] - (*xp)[1] - (*xp)[2];
   }
 
-  void applyJacobian( Vector<Real> &jv, const Vector<Real> &v,
-                      const Vector<Real> &x, Real &tol ) {
-
-    using namespace Teuchos;
-
-    SV &jvs = dyn_cast<SV>(jv);
-    RCP<std::vector<Real> > jvp = jvs.getVector();
-   
-    const SV &vs = dyn_cast<const SV>(getConst(v));
-    RCP<const std::vector<Real> > vp = vs.getVector();
-   
-    (*jvp)[0] = - (*vp)[0] - (*vp)[1] - (*vp)[2];
-
-  } 
-
-  void applyAdjointJacobian( Vector<Real> &ajv, const Vector<Real> &v,
-                             const Vector<Real> &x, Real &tol ) {
-
-    using namespace Teuchos;
-
-    SV &ajvs = dyn_cast<SV>(ajv);
-    RCP<std::vector<Real> > ajvp = ajvs.getVector();
-  
-    const SV &vs = dyn_cast<const SV>(getConst(v));
-    RCP<const std::vector<Real> > vp = vs.getVector();
-     
-    (*ajvp)[0] = -(*vp)[0];
-    (*ajvp)[1] = -(*vp)[0];
-    (*ajvp)[2] = -(*vp)[0];
-
-  }
-
-  void applyAdjointHessian( Vector<Real> &ahuv, const Vector<Real> &u,
-                            const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    ahuv.zero();
-  }
-
-}; // class EqualityConstraint_HS32
+}; // class Objective_HS29
 
 
 template<class Real>
-class InequalityConstraint_HS32 : public EqualityConstraint<Real> {
+class InequalityConstraint_HS29 : public EqualityConstraint<Real> {
   
   typedef StdVector<Real> SV;
 
@@ -189,10 +132,7 @@ public:
     const SV &xs = dyn_cast<const SV>(getConst(x));
     RCP<const std::vector<Real> > xp = xs.getVector();
 
-    (*cp)[0] = 6*(*xp)[1]+4*(*xp)[2]-std::pow((*xp)[0],3)-3.0;
-    (*cp)[1] = (*xp)[0];
-    (*cp)[2] = (*xp)[1];
-    (*cp)[3] = (*xp)[2];
+    (*cp)[0] = -std::pow((*xp)[0],2) - 2*std::pow((*xp)[1],2) - 4*std::pow((*xp)[2],2) + 48;
 
   }
  
@@ -210,11 +150,8 @@ public:
     const SV &xs = dyn_cast<const SV>(getConst(x));
     RCP<const std::vector<Real> > xp = xs.getVector();
 
-    (*jvp)[0] = -3*(*xp)[0]*(*xp)[0]*(*vp)[0]+6*(*vp)[1]+4*(*vp)[2];
-    (*jvp)[1] = (*vp)[0];
-    (*jvp)[2] = (*vp)[1];
-    (*jvp)[3] = (*vp)[2];
-        
+    (*jvp)[0] = -2*(*xp)[0]*(*vp)[0] - 4*(*xp)[1]*(*vp)[1] - 8*(*xp)[2]*(*vp)[2];
+       
   }
    
   void applyAdjointJacobian( Vector<Real> &ajv, const Vector<Real> &v,
@@ -231,10 +168,10 @@ public:
     const SV &xs = dyn_cast<const SV>(getConst(x));
     RCP<const std::vector<Real> > xp = xs.getVector();
 
-    (*ajvp)[0] = -3*(*xp)[0]*(*xp)[0]*(*vp)[0] + (*vp)[1];
-    (*ajvp)[1] =  6*(*vp)[0] + (*vp)[2]; 
-    (*ajvp)[2] =  4*(*vp)[0] + (*vp)[3];
-    
+    (*ajvp)[0] = -2*(*xp)[0]*(*vp)[0];
+    (*ajvp)[1] = -4*(*xp)[1]*(*vp)[0];
+    (*ajvp)[2] = -8*(*xp)[2]*(*vp)[0];
+ 
   }
 
   void applyAdjointHessian( Vector<Real> &ahuv, const Vector<Real> &u,
@@ -254,16 +191,16 @@ public:
     const SV &xs = dyn_cast<const SV>(getConst(x));
     RCP<const std::vector<Real> > xp = xs.getVector();
 
-    (*ahuvp)[0] = -6*(*up)[0]*(*vp)[0]*(*xp)[0];
-    (*ahuvp)[1] = 0.0;
-    (*ahuvp)[2] = 0.0;
-
+    (*ahuvp)[0] = -2*(*up)[0]*(*vp)[0];
+    (*ahuvp)[1] = -4*(*up)[0]*(*vp)[1];
+    (*ahuvp)[2] = -8*(*up)[0]*(*vp)[2];
+ 
   }
 
-}; // class InequalityConstraint_HS32
+}; // class InequalityConstraint_HS29
 
 }
 } // namespace ROL
 
 
-#endif // ROL_HS32_HPP
+#endif // ROL_HS29_HPP
