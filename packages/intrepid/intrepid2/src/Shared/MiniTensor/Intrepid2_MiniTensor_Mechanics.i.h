@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid Package
+//                           Intrepid2 Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Mechanics_i_h)
-#define Intrepid_MiniTensor_Mechanics_i_h
+#if !defined(Intrepid2_MiniTensor_Mechanics_i_h)
+#define Intrepid2_MiniTensor_Mechanics_i_h
 
 namespace Intrepid2 {
 
@@ -48,10 +48,14 @@ namespace Intrepid2 {
 // R^N volumetric part of 2nd-order tensor
 // \return \f$ \frac{1}{N} \mathrm{tr}\:(A) I \f$
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor<T, N>
-vol(Tensor<T, N> const & A)
+#endif
+Tensor<T, N, ES>
+vol(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -59,21 +63,25 @@ vol(Tensor<T, N> const & A)
   T const
   theta = (1.0/dimension) * trace(A);
 
-  return theta * eye<T, N>(dimension);
+  return theta * eye<T, N, ES>(dimension);
 }
 
 //
 // R^N deviatoric part of 2nd-order tensor
 // \return \f$ A - vol(A) \f$
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor<T, N>
-dev(Tensor<T, N> const & A)
+#endif
+Tensor<T, N, ES>
+dev(Tensor<T, N, ES> const & A)
 {
   return A - vol(A);
 }
 
-} // namespace Intrepid2
+} // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Mechanics_i_h
+#endif // Intrepid2_MiniTensor_Mechanics_i_h

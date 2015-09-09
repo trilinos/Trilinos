@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid Package
+//                           Intrepid2 Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_LinearAlgebra_t_h)
-#define Intrepid_MiniTensor_LinearAlgebra_t_h
+#if !defined(Intrepid2_MiniTensor_LinearAlgebra_t_h)
+#define Intrepid2_MiniTensor_LinearAlgebra_t_h
 
 namespace Intrepid2 {
 
@@ -52,13 +52,21 @@ namespace Intrepid2 {
 // \param A nonsingular tensor
 // \return \f$ A^{-1} \f$
 //
-template<typename T, Index N>
-Tensor<T, N>
-inverse(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+inverse(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
 
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+Index const maximum_dimension = NPP_MAX_32U ;
+  if (dimension> maximum_dimension)
+   Kokkos::abort("ERROR (IntrepidMiniTensor:inverse): Requested dimension exceeds maximum allowed for inverse");
+#else
   Index const
   maximum_dimension = static_cast<Index>(std::numeric_limits<Index>::digits);
 
@@ -70,6 +78,7 @@ inverse(Tensor<T, N> const & A)
     std::cerr << std::endl;
     exit(1);
   }
+#endif
 
   switch (dimension) {
 
@@ -77,7 +86,7 @@ inverse(Tensor<T, N> const & A)
     {
       T const determinant = det(A);
       assert(determinant != 0.0);
-      return Tensor<T, N>(
+      return Tensor<T, N, ES>(
         -A(1,2)*A(2,1) + A(1,1)*A(2,2),
          A(0,2)*A(2,1) - A(0,1)*A(2,2),
         -A(0,2)*A(1,1) + A(0,1)*A(1,2),
@@ -87,7 +96,7 @@ inverse(Tensor<T, N> const & A)
         -A(1,1)*A(2,0) + A(1,0)*A(2,1),
          A(0,1)*A(2,0) - A(0,0)*A(2,1),
         -A(0,1)*A(1,0) + A(0,0)*A(1,1)
-        ) / determinant;
+        )/ determinant;
     }
     break;
 
@@ -95,7 +104,7 @@ inverse(Tensor<T, N> const & A)
     {
       T const determinant = det(A);
       assert(determinant != 0.0);
-      return Tensor<T, N>(A(1,1), -A(0,1), -A(1,0), A(0,0)) / determinant;
+      return Tensor<T, N, ES>(A(1,1), -A(0,1), -A(1,0), A(0,0)) / determinant;
     }
     break;
 
@@ -103,11 +112,11 @@ inverse(Tensor<T, N> const & A)
     break;
   }
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   S = A;
 
-  Tensor<T, N>
-  B = identity<T, N>(dimension);
+  Tensor<T, N, ES>
+  B = identity<T, N, ES>(dimension);
 
   // Set 1 ... dimension bits to one.
   Index
@@ -137,9 +146,13 @@ inverse(Tensor<T, N> const & A)
 
         if (!(intact_cols & (1 << col))) continue;
 
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+        T
+        s = abs(S(row, col));
+#else
         T
         s = std::abs(S(row, col));
-
+#endif
         if (s > pivot) {
 
           pivot_row = row;
@@ -182,7 +195,7 @@ inverse(Tensor<T, N> const & A)
 
   }
 
-  Tensor<T, N> const
+  Tensor<T, N, ES> const
   X = t_dot(S, B);
 
   return X;
@@ -195,9 +208,12 @@ inverse(Tensor<T, N> const & A)
 // \param j index
 // \return Subtensor with i-row and j-col deleted.
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
 Tensor<T, dimension_subtract<N, 1>::value >
-subtensor(Tensor<T, N> const & A, Index const i, Index const j)
+subtensor(Tensor<T, N, ES> const & A, Index const i, Index const j)
 {
   Index const
   dimension = A.get_dimension();
@@ -226,9 +242,12 @@ subtensor(Tensor<T, N> const & A, Index const i, Index const j)
 //
 // Exponential map
 //
-template<typename T, Index N>
-Tensor<T, N>
-exp(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+exp(Tensor<T, N, ES> const & A)
 {
   return exp_pade(A);
 }
@@ -238,9 +257,12 @@ exp(Tensor<T, N> const & A)
 // \param A tensor
 // \return \f$ \exp A \f$
 //
-template<typename T, Index N>
-Tensor<T, N>
-exp_taylor(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+exp_taylor(Tensor<T, N, ES> const & A)
 {
   Index const
   max_iter = 128;
@@ -251,14 +273,14 @@ exp_taylor(Tensor<T, N> const & A)
   Index const
   dimension = A.get_dimension();
 
-  Tensor<T, N>
-  term = identity<T, N>(dimension);
+  Tensor<T, N, ES>
+  term = identity<T, N, ES>(dimension);
 
   // Relative error taken wrt to the first term, which is I and norm = 1
   T
   relative_error = 1.0;
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   B = term;
 
   Index
@@ -280,6 +302,9 @@ namespace {
 // Scaling parameter theta for scaling and squaring exponential.
 //
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
 T
 scaling_squaring_theta(Index const order)
 {
@@ -299,6 +324,9 @@ scaling_squaring_theta(Index const order)
 // Polynomial coefficients for Padé approximants.
 //
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
 T
 polynomial_coefficient(Index const order, Index const index)
 {
@@ -310,11 +338,15 @@ polynomial_coefficient(Index const order, Index const index)
   switch (order) {
 
     default:
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+     Kokkos::abort("ERROR(polynomial_coefficient): Wrong order in Pade' polynomial coefficient ");
+#else
       std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
       std::cerr << std::endl;
       std::cerr << "Wrong order in Pade' polynomial coefficient: ";
       std::cerr << order << std::endl;
       exit(1);
+#endif
       break;
 
     case 3:
@@ -375,33 +407,33 @@ polynomial_coefficient(Index const order, Index const index)
 //
 // Padé approximant polynomial odd and even terms.
 //
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-pade_polynomial_terms(Tensor<T, N> const & A, Index const order)
+template<typename T, Index N, class ES>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+pade_polynomial_terms(Tensor<T, N, ES> const & A, Index const order)
 {
   Index const
   dimension = A.get_dimension();
 
-  Tensor<T, N>
-  B = identity<T, N>(dimension);
+  Tensor<T, N, ES>
+  B = identity<T, N, ES>(dimension);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   U = polynomial_coefficient<Real>(order, 1) * B;
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   V = polynomial_coefficient<Real>(order, 0) * B;
 
-  Tensor<T, N> const
+  Tensor<T, N, ES> const
   A2 = A * A;
 
   for (Index i = 3; i <= order; i += 2) {
 
     B = B * A2;
 
-    Tensor<T, N> const
+    Tensor<T, N, ES> const
     O = polynomial_coefficient<Real>(order, i) * B;
 
-    Tensor<T, N> const
+    Tensor<T, N, ES> const
     E = polynomial_coefficient<Real>(order, i - 1) * B;
 
     U += O;
@@ -418,17 +450,25 @@ pade_polynomial_terms(Tensor<T, N> const & A, Index const order)
 //
 // Compute a non-negative integer power of a tensor by binary manipulation.
 //
-template<typename T, Index N>
-Tensor<T, N>
-binary_powering(Tensor<T, N> const & A, Index const exponent)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+binary_powering(Tensor<T, N, ES> const & A, Index const exponent)
 {
-  if (exponent == 0) return eye<T, N>(A.get_dimension());
+  if (exponent == 0) return eye<T, N, ES>(A.get_dimension());
 
   Index const
   rightmost_bit = 1;
 
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+  Index const
+  number_digits =  NPP_MAX_32U;
+#else
   Index const
   number_digits = std::numeric_limits<Index>::digits;
+#endif
 
   Index const
   leftmost_bit = rightmost_bit << (number_digits - 1);
@@ -447,7 +487,7 @@ binary_powering(Tensor<T, N> const & A, Index const exponent)
 
   }
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   P = A;
 
   Index
@@ -462,7 +502,7 @@ binary_powering(Tensor<T, N> const & A, Index const exponent)
     m = m >> 1;
   }
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   X = P;
 
   for (Index j = i + 1; j <= t; ++j) {
@@ -484,9 +524,12 @@ binary_powering(Tensor<T, N> const & A, Index const exponent)
 // \param A tensor
 // \return \f$ \exp A \f$
 //
-template<typename T, Index N>
-Tensor<T, N>
-exp_pade(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+exp_pade(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -500,7 +543,7 @@ exp_pade(Tensor<T, N> const & A)
   Index const
   highest_order = orders[number_orders - 1];
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   B;
 
   Real const
@@ -516,10 +559,10 @@ exp_pade(Tensor<T, N> const & A)
 
     if (order < highest_order && norm < theta) {
 
-      Tensor<T, N>
+      Tensor<T, N, ES>
       U;
 
-      Tensor<T, N>
+      Tensor<T, N, ES>
       V;
 
       boost::tie(U, V) = pade_polynomial_terms(A, order);
@@ -533,9 +576,13 @@ exp_pade(Tensor<T, N> const & A)
       Real const
       theta_highest = scaling_squaring_theta<Real>(order);
 
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+     int const
+      signed_power = static_cast<int>(ceil(log2(norm / theta_highest)));
+#else
       int const
       signed_power = static_cast<int>(std::ceil(log2(norm / theta_highest)));
-
+#endif
       Index const
       power_two = signed_power > 0 ? static_cast<Index>(signed_power) : 0;
 
@@ -546,19 +593,19 @@ exp_pade(Tensor<T, N> const & A)
         scale /= 2.0;
       }
 
-      Tensor<T, N> const
-      I = identity<T, N>(dimension);
+      Tensor<T, N, ES> const
+      I = identity<T, N, ES>(dimension);
 
-      Tensor<T, N> const
+      Tensor<T, N, ES> const
       A1 = scale * A;
 
-      Tensor<T, N> const
+      Tensor<T, N, ES> const
       A2 = A1 * A1;
 
-      Tensor<T, N> const
+      Tensor<T, N, ES> const
       A4 = A2 * A2;
 
-      Tensor<T, N> const
+      Tensor<T, N, ES> const
       A6 = A2 * A4;
 
       Real const b0  = polynomial_coefficient<Real>(order, 0);
@@ -576,16 +623,16 @@ exp_pade(Tensor<T, N> const & A)
       Real const b12 = polynomial_coefficient<Real>(order, 12);
       Real const b13 = polynomial_coefficient<Real>(order, 13);
 
-      Tensor<T, N> const
+      Tensor<T, N, ES> const
       U = A1 * (
           (A6 * (b13 * A6 + b11 * A4 + b9 * A2) +
               b7 * A6 + b5 * A4 + b3 * A2 + b1 * I));
 
-      Tensor<T, N> const
+      Tensor<T, N, ES> const
       V = A6 * (b12 * A6 + b10 * A4 + b8 * A2) +
       b6 * A6 + b4 * A4 + b2 * A2 + b0 * I;
 
-      Tensor<T, N> const
+      Tensor<T, N, ES> const
       R = inverse(V - U) * (U + V);
 
       Index const
@@ -603,9 +650,12 @@ exp_pade(Tensor<T, N> const & A)
 //
 // Logarithmic map by Taylor series.
 //
-template<typename T, Index N>
-Tensor<T, N>
-log_taylor(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+log_taylor(Tensor<T, N, ES> const & A)
 {
   Index const
   max_iter = 128;
@@ -619,10 +669,10 @@ log_taylor(Tensor<T, N> const & A)
   Index const
   dimension = A.get_dimension();
 
-  Tensor<T, N> const
-  A_minus_I = A - identity<T, N>(dimension);
+  Tensor<T, N, ES> const
+  A_minus_I = A - identity<T, N, ES>(dimension);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   term = A_minus_I;
 
   T
@@ -631,7 +681,7 @@ log_taylor(Tensor<T, N> const & A)
   T
   relative_error = norm_term / norm_tensor;
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   B = term;
 
   Index
@@ -651,9 +701,12 @@ log_taylor(Tensor<T, N> const & A)
 //
 // Logarithmic map.
 //
-template<typename T, Index N>
-Tensor<T, N>
-log(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+log(Tensor<T, N, ES> const & A)
 {
   return log_gregory(A);
 }
@@ -661,9 +714,12 @@ log(Tensor<T, N> const & A)
 //
 // Logarithmic map by Gregory series.
 //
-template<typename T, Index N>
-Tensor<T, N>
-log_gregory(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+log_gregory(Tensor<T, N, ES> const & A)
 {
   Index const
   max_iter = 128;
@@ -677,13 +733,13 @@ log_gregory(Tensor<T, N> const & A)
   Index const
   dimension = A.get_dimension();
 
-  Tensor<T, N> const
-  I_minus_A = identity<T, N>(dimension) - A;
+  Tensor<T, N, ES> const
+  I_minus_A = identity<T, N, ES>(dimension) - A;
 
-  Tensor<T, N> const
-  I_plus_A = identity<T, N>(dimension) + A;
+  Tensor<T, N, ES> const
+  I_plus_A = identity<T, N, ES>(dimension) + A;
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   term = I_minus_A * inverse(I_plus_A);
 
   T
@@ -692,10 +748,10 @@ log_gregory(Tensor<T, N> const & A)
   T
   relative_error = norm_term / norm_tensor;
 
-  Tensor<T, N> const
+  Tensor<T, N, ES> const
   C = term * term;
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   B = term;
 
   Index
@@ -717,9 +773,12 @@ log_gregory(Tensor<T, N> const & A)
 //
 // Logarithmic map for symmetric tensor.
 //
-template<typename T, Index N>
-Tensor<T, N>
-log_sym(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+log_sym(Tensor<T, N, ES> const & A)
 {
   return log_eig_sym(A);
 }
@@ -727,26 +786,33 @@ log_sym(Tensor<T, N> const & A)
 //
 // Logarithmic map for symmetric tensor using eigenvalue decomposition.
 //
-template<typename T, Index N>
-Tensor<T, N>
-log_eig_sym(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+log_eig_sym(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   V(dimension);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   D(dimension);
 
   boost::tie(V, D) = eig_sym(A);
 
   for (Index i = 0; i < dimension; ++i) {
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+    D(i, i) = log(D(i, i));
+#else
     D(i, i) = std::log(D(i, i));
+#endif
   }
 
-  Tensor<T, N> const
+  Tensor<T, N, ES> const
   B = dot_t(dot(V, D), V);
 
   return B;
@@ -757,18 +823,24 @@ log_eig_sym(Tensor<T, N> const & A)
 // \param R with \f$ R \in SO(N) \f$
 // \return \f$ r = \log R \f$ with \f$ r \in so(N) \f$
 //
-template<typename T, Index N>
-Tensor<T, N>
-log_rotation(Tensor<T, N> const & R)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+log_rotation(Tensor<T, N, ES> const & R)
 {
   Index const
   dimension = R.get_dimension();
 
   //firewalls, make sure R \in SO(N)
-  assert(norm(dot_t(R,R) - eye<T, N>(dimension)) <
+  assert(norm(dot_t(R,R) - eye<T, N, ES>(dimension)) <
       100.0 * machine_epsilon<T>());
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+  assert(abs(det(R) - 1.0) < 100.0 * machine_epsilon<T>());
+#else
   assert(std::abs(det(R) - 1.0) < 100.0 * machine_epsilon<T>());
-
+#endif
   // acos requires input between -1 and +1
   T
   cosine = 0.5 * (trace(R) - 1.0);
@@ -778,24 +850,48 @@ log_rotation(Tensor<T, N> const & R)
   } else if(cosine > 1.0) {
     cosine = 1.0;
   }
-
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+  T
+  theta = acos(cosine);
+#else
   T
   theta = std::acos(cosine);
+#endif
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   r(dimension);
 
   switch (dimension) {
 
     default:
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+     Kokkos::abort("Logarithm of SO(N) N != 2,3 not implemented.");
+#else
       std::cerr << "Logarithm of SO(N) N != 2,3 not implemented." << std::endl;
       exit(1);
+#endif
       break;
 
     case 3:
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
       if (theta == 0.0) {
 
-        r = zero<T, N>(3);
+        r = zero<T, N, ES>(3);
+
+      } else if (abs(cosine + 1.0) < 10.0 * machine_epsilon<T>())  {
+
+        r = log_rotation_pi(R);
+
+      } else {
+
+        r = theta / sin(theta) * skew(R);
+
+      }
+
+#else
+      if (theta == 0.0) {
+
+        r = zero<T, N, ES>(3);
 
       } else if (std::abs(cosine + 1.0) < 10.0 * machine_epsilon<T>())  {
 
@@ -806,6 +902,7 @@ log_rotation(Tensor<T, N> const & R)
         r = theta / std::sin(theta) * skew(R);
 
       }
+#endif
       break;
 
     case 2:
@@ -824,9 +921,12 @@ log_rotation(Tensor<T, N> const & R)
 // \param R with \f$ R \in SO(N) \f$
 // \return \f$ r = \log R \f$ with \f$ r \in so(N) \f$
 //
-template<typename T, Index N>
-Tensor<T, N>
-log_rotation_pi(Tensor<T, N> const & R)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+log_rotation_pi(Tensor<T, N, ES> const & R)
 {
   Index const
   dimension = R.get_dimension();
@@ -834,28 +934,54 @@ log_rotation_pi(Tensor<T, N> const & R)
   T
   cosine = 0.5*(trace(R) - 1.0);
   // set firewall to make sure the rotation is indeed 180 degrees
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+  assert(abs(cosine + 1.0) < 10.0 * machine_epsilon<T>());
+#else
   assert(std::abs(cosine + 1.0) < 10.0 * machine_epsilon<T>());
+#endif
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   r(dimension);
 
   switch (dimension) {
 
     default:
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+     Kokkos::abort("Logarithm of SO(N) N != 2,3 not implemented.");
+#else
       std::cerr << "Logarithm of SO(N) N != 2,3 not implemented." << std::endl;
       exit(1);
+#endif
       break;
 
     case 3:
     {
       // obtain U from R = LU
-      r = gaussian_elimination((R - identity<T, N>(3)));
+      r = gaussian_elimination((R - identity<T, N, ES>(3)));
 
       // backward substitution (for rotation exp(R) only)
       T const tol = 10.0 * machine_epsilon<T>();
 
-      Vector<T, N> normal(3);
+      Vector<T, N, ES> normal(3);
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+if (std::abs(r(2,2)) < tol){
+        normal(2) = 1.0;
+      } else {
+        normal(2) = 0.0;
+      }
 
+      if (std::abs(r(1,1)) < tol){
+        normal(1) = 1.0;
+      } else {
+        normal(1) = -normal(2)*r(1,2)/r(1,1);
+      }
+
+      if (std::abs(r(0,0)) < tol){
+        normal(0) = 1.0;
+      } else {
+        normal(0) = -normal(1)*r(0,1) - normal(2)*r(0,2)/r(0,0);
+      }
+#else
       if (std::abs(r(2,2)) < tol){
         normal(2) = 1.0;
       } else {
@@ -873,7 +999,7 @@ log_rotation_pi(Tensor<T, N> const & R)
       } else {
         normal(0) = -normal(1)*r(0,1) - normal(2)*r(0,2)/r(0,0);
       }
-
+#endif
       normal = normal / norm(normal);
 
       r.fill(ZEROS);
@@ -883,17 +1009,22 @@ log_rotation_pi(Tensor<T, N> const & R)
       r(1,2) = -normal(0);
       r(2,0) = -normal(1);
       r(2,1) =  normal(0);
-
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+      T const pi = acos(-1.0);
+#else
       T const pi = std::acos(-1.0);
-
+#endif
       r = pi * r;
     }
     break;
 
     case 2:
     {
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+      T theta = acos(-1.0);
+#else
       T theta = std::acos(-1.0);
-
+#endif
       if (R(0,0) > 0.0) {
         theta = -theta;
       }
@@ -914,14 +1045,17 @@ log_rotation_pi(Tensor<T, N> const & R)
 // \param matrix \f$ A \f$
 // \return \f$ U \f$ where \f$ A = LU \f$
 //
-template<typename T, Index N>
-Tensor<T, N>
-gaussian_elimination(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+gaussian_elimination(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   U = A;
 
   T const
@@ -935,19 +1069,30 @@ gaussian_elimination(Tensor<T, N> const & A)
     // find pivot in column j, starting in row i
     i_max = i;
     for (Index k = i + 1; k < dimension; ++k) {
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+      if (abs(U(k,j)) > abs(U(i_max,j))) {
+#else
       if (std::abs(U(k,j)) > std::abs(U(i_max,j))) {
+#endif
         i_max = k;
       }
     }
 
     // Check if A(i_max,j) equal to or very close to 0
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+    if (abs(U(i_max,j)) > tol){
+      // swap rows i and i_max and divide each entry in row i
+       for (Index k = 0; k < dimension; ++k) {
+         swap(U(i,k), U(i_max,k));
+      }
+#else
     if (std::abs(U(i_max,j)) > tol){
       // swap rows i and i_max and divide each entry in row i
       // by U(i,j)
       for (Index k = 0; k < dimension; ++k) {
         std::swap(U(i,k), U(i_max,k));
       }
-
+#endif
       for (Index k = 0; k < dimension; ++k) {
         U(i,k) = U(i,k) / U(i,j);
       }
@@ -968,9 +1113,12 @@ gaussian_elimination(Tensor<T, N> const & A)
 //
 // Apply Givens-Jacobi rotation on the left in place.
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
 void
-givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A)
+givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N, ES> & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -987,9 +1135,12 @@ givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A)
 //
 // Apply Givens-Jacobi rotation on the right in place.
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
 void
-givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A)
+givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N, ES> & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -1006,9 +1157,12 @@ givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A)
 ///
 /// Apply rank-one update on the left in place
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
 void
-rank_one_left(T const & beta, Vector<T, N> const & v, Tensor<T, N> & A)
+rank_one_left(T const & beta, Vector<T, N, ES> const & v, Tensor<T, N, ES> & A)
 {
   A -= beta * dyad(v, dot(v, A));
   return;
@@ -1017,9 +1171,12 @@ rank_one_left(T const & beta, Vector<T, N> const & v, Tensor<T, N> & A)
 ///
 /// Apply rank-one update on the right in place
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
 void
-rank_one_right(T const & beta, Vector<T, N> const & v, Tensor<T, N> & A)
+rank_one_right(T const & beta, Vector<T, N, ES> const & v, Tensor<T, N, ES> & A)
 {
   A -= beta * dyad(dot(A, v), v);
   return;
@@ -1028,9 +1185,12 @@ rank_one_right(T const & beta, Vector<T, N> const & v, Tensor<T, N> & A)
 //
 // R^N exponential map of a skew-symmetric tensor.
 //
-template<typename T, Index N>
-Tensor<T, N>
-exp_skew_symmetric(Tensor<T, N> const & r)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+exp_skew_symmetric(Tensor<T, N, ES> const & r)
 {
   // Check whether skew-symmetry holds
   assert(norm(sym(r)) < machine_epsilon<T>());
@@ -1038,8 +1198,8 @@ exp_skew_symmetric(Tensor<T, N> const & r)
   Index const
   dimension = r.get_dimension();
 
-  Tensor<T, N>
-  R = identity<T, N>(dimension);
+  Tensor<T, N, ES>
+  R = identity<T, N, ES>(dimension);
 
   T
   theta = 0.0;
@@ -1051,23 +1211,40 @@ exp_skew_symmetric(Tensor<T, N> const & r)
       break;
 
     case 3:
-      theta = std::sqrt(r(2,1)*r(2,1)+r(0,2)*r(0,2)+r(1,0)*r(1,0));
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+      theta = sqrt(r(2,1)*r(2,1)+r(0,2)*r(0,2)+r(1,0)*r(1,0));
 
       //Check whether norm == 0. If so, return identity.
       if (theta >= machine_epsilon<T>()) {
-        R += std::sin(theta) / theta * r +
-            (1.0 - std::cos(theta)) / (theta * theta) * r * r;
+        R += sin(theta) / theta * r +
+            (1.0 - cos(theta)) / (theta * theta) * r * r;
       }
+#else
+      theta = sqrt(r(2,1)*r(2,1)+r(0,2)*r(0,2)+r(1,0)*r(1,0));
+
+      //Check whether norm == 0. If so, return identity.
+      if (theta >= machine_epsilon<T>()) {
+        R += sin(theta) / theta * r +
+            (1.0 - cos(theta)) / (theta * theta) * r * r;
+      }
+#endif
       break;
 
     case 2:
       theta = r(1,0);
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+     T
+      c = cos(theta);
 
+      T
+      s = sin(theta);
+#else
       T
       c = std::cos(theta);
 
       T
       s = std::sin(theta);
+#endif
 
       R(0,0) = c;
       R(0,1) = -s;
@@ -1087,9 +1264,12 @@ exp_skew_symmetric(Tensor<T, N> const & r)
 // \param A
 // \return \f$ \sqrt(\sum_i \sum_{j, j\neq i} a_{ij}^2) \f$
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
 T
-norm_off_diagonal(Tensor<T, N> const & A)
+norm_off_diagonal(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -1117,8 +1297,11 @@ norm_off_diagonal(Tensor<T, N> const & A)
       break;
 
   }
-
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+  return sqrt(s);
+#else
   return std::sqrt(s);
+#endif
 }
 
 //
@@ -1127,10 +1310,11 @@ norm_off_diagonal(Tensor<T, N> const & A)
 // \param A
 // \return \f$ (p,q) = arg max_{i,j} |a_{ij}| \f$
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
 std::pair<Index, Index>
-arg_max_abs(Tensor<T, N> const & A)
+arg_max_abs(Tensor<T, N, ES> const & A)
 {
+
   Index p = 0;
   Index q = 0;
 
@@ -1159,9 +1343,9 @@ arg_max_abs(Tensor<T, N> const & A)
 // \param A
 // \return \f$ (p,q) = arg max_{i \neq j} |a_{ij}| \f$
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
 std::pair<Index, Index>
-arg_max_off_diagonal(Tensor<T, N> const & A)
+arg_max_off_diagonal(Tensor<T, N, ES> const & A)
 {
   Index p = 0;
   Index q = 1;
@@ -1194,13 +1378,22 @@ namespace {
 // \param f, g, h where A = [f, g; 0, h]
 // \return \f$ A = USV^T\f$
 //
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 svd_bidiagonal(T f, T g, T h)
 {
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+  T fa = abs(f);
+  T ga = abs(g);
+  T ha = abs(h);
+#else
   T fa = std::abs(f);
   T ga = std::abs(g);
   T ha = std::abs(h);
+#endif
 
   T s0 = 0.0;
   T s1 = 0.0;
@@ -1213,8 +1406,13 @@ svd_bidiagonal(T f, T g, T h)
   bool swap_diag = (ha > fa);
 
   if (swap_diag) {
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+    swap(fa, ha);
+    swap(f, h);
+#else
     std::swap(fa, ha);
     std::swap(f, h);
+#endif
   }
 
   if (ga == 0.0) {
@@ -1240,10 +1438,17 @@ svd_bidiagonal(T f, T g, T h)
     T t = 2.0 - l; // t \in [1,2]
     T mm = m * m;
     T tt = t * t;
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+    T s = sqrt(tt + mm); // s \in [1,1 + 1/macheps]
+    T r = l != 0.0 ?
+        T(sqrt(l * l + mm)) :
+        T(abs(m)); // r \in [0,1 + 1/macheps]
+#else
     T s = std::sqrt(tt + mm); // s \in [1,1 + 1/macheps]
     T r = l != 0.0 ?
         T(std::sqrt(l * l + mm)) :
         T(std::abs(m)); // r \in [0,1 + 1/macheps]
+#endif
     T a = 0.5 * (s + r); // a \in [1,1 + |m|]
     s1 = ha / a;
     s0 = fa * a;
@@ -1258,7 +1463,11 @@ svd_bidiagonal(T f, T g, T h)
           T(copysign(T(2.0), f) * copysign(T(1.0), g)) :
           T(g / copysign(d, f) + m / t);
     }
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+    T lv = sqrt(tau * tau + 4.0); 
+#else
     T lv = std::sqrt(tau * tau + 4.0); // second assignment to L in DLASV2
+#endif
     cv = 2.0 / lv;
     sv = tau / lv;
     cu = (cv + sv * m) / a;
@@ -1270,15 +1479,20 @@ svd_bidiagonal(T f, T g, T h)
   s1 = copysign(s1, h);
 
   if (swap_diag) {
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+    swap(cu, sv);
+    swap(su, cv);
+#else
     std::swap(cu, sv);
     std::swap(su, cv);
+#endif
   }
 
-  Tensor<T, N> U(cu, -su, su, cu);
+  Tensor<T, N, ES> U(cu, -su, su, cu);
 
-  Tensor<T, N> S(s0, 0.0, 0.0, s1);
+  Tensor<T, N, ES> S(s0, 0.0, 0.0, s1);
 
-  Tensor<T, N> V(cv, -sv, sv, cv);
+  Tensor<T, N, ES> V(cv, -sv, sv, cv);
 
   return boost::make_tuple(U, S, V);
 }
@@ -1288,9 +1502,12 @@ svd_bidiagonal(T f, T g, T h)
 // \param A tensor
 // \return \f$ A = USV^T\f$
 //
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
-svd_2x2(Tensor<T, N> const & A)
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+svd_2x2(Tensor<T, N, ES> const & A)
 {
   assert(A.get_dimension() == 2);
 
@@ -1299,20 +1516,20 @@ svd_2x2(Tensor<T, N> const & A)
   T s = 0.0;
   boost::tie(c, s) = givens(A(0,0), A(1,0));
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   R(c, -s, s, c);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   B = R * A;
 
   // B is bidiagonal. Use specialized algorithm to compute its SVD
-  Tensor<T, N>
+  Tensor<T, N, ES>
   X(2), S(2), V(2);
 
-  boost::tie(X, S, V) = svd_bidiagonal<T, N>(B(0,0), B(0,1), B(1,1));
+  boost::tie(X, S, V) = svd_bidiagonal<T, N, ES>(B(0,0), B(0,1), B(1,1));
 
   // Complete general 2x2 SVD with givens rotation calculated above
-  Tensor<T, N>
+  Tensor<T, N, ES>
   U = transpose(R) * X;
 
   return boost::make_tuple(U, S, V);
@@ -1323,21 +1540,24 @@ svd_2x2(Tensor<T, N> const & A)
 // \param A tensor
 // \return \f$ A = USV^T\f$
 //
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
-svd_NxN(Tensor<T, N> const & A)
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+svd_NxN(Tensor<T, N, ES> const & A)
 {
-  Tensor<T, N>
+  Tensor<T, N, ES>
   S = A;
 
   Index const
   dimension = A.get_dimension();
 
-  Tensor<T, N>
-  U = identity<T, N>(dimension);
+  Tensor<T, N, ES>
+  U = identity<T, N, ES>(dimension);
 
-  Tensor<T, N>
-  V = identity<T, N>(dimension);
+  Tensor<T, N, ES>
+  V = identity<T, N, ES>(dimension);
 
   T
   off = norm_off_diagonal(S);
@@ -1363,7 +1583,11 @@ svd_NxN(Tensor<T, N> const & A)
     boost::tie(p,q) = arg_max_off_diagonal(S);
 
     if (p > q) {
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+     swap(p, q);
+#else
       std::swap(p, q);
+#endif
     }
 
     // Obtain left and right Givens rotations by using 2x2 SVD
@@ -1400,7 +1624,11 @@ svd_NxN(Tensor<T, N> const & A)
   }
 
   if (num_iter == max_iter) {
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+    Kokkos::abort("WARNING: SVD iteration did not converge.");
+#else
     std::cerr << "WARNING: SVD iteration did not converge." << std::endl;
+#endif
   }
 
   // Fix signs for entries in the diagonal matrix S
@@ -1414,8 +1642,8 @@ svd_NxN(Tensor<T, N> const & A)
     }
   }
 
-  Vector<T, N> s(dimension);
-  Tensor<T, N> P(dimension);
+  Vector<T, N, ES> s(dimension);
+  Tensor<T, N, ES> P(dimension);
 
   boost::tie(s, P) = sort_permutation(diag(S));
   S = diag(s);
@@ -1432,14 +1660,17 @@ svd_NxN(Tensor<T, N> const & A)
 // \param A tensor
 // \return \f$ A = USV^T\f$
 //
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
-svd(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+svd(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   U(dimension), S(dimension), V(dimension);
 
   switch (dimension) {
@@ -1466,9 +1697,12 @@ svd(Tensor<T, N> const & A)
 // The rotation/reflection obtained through this projection is
 // the orthogonal component of the real polar decomposition
 //
-template<typename T, Index N>
-Tensor<T, N>
-polar_rotation(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+polar_rotation(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -1479,10 +1713,15 @@ polar_rotation(Tensor<T, N> const & A)
   T const
   tol_scale = 0.01;
 
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+  T const
+  tol_conv = sqrt(dimension) * machine_epsilon<T>();
+#else
   T const
   tol_conv = std::sqrt(dimension) * machine_epsilon<T>();
+#endif
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   X = A;
 
   T
@@ -1496,7 +1735,7 @@ polar_rotation(Tensor<T, N> const & A)
  
   while (num_iter < max_iter) {
 
-    Tensor<T, N>
+    Tensor<T, N, ES>
     Y = inverse(X);
 
     T
@@ -1504,13 +1743,17 @@ polar_rotation(Tensor<T, N> const & A)
 
     if (scale == true) {
       mu = (norm_1(Y) * norm_infinity(Y)) / (norm_1(X) * norm_infinity(X));
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+      mu = sqrt(sqrt(mu));
+#else
       mu = std::sqrt(std::sqrt(mu));
+#endif
     }
 
-    Tensor<T, N>
+    Tensor<T, N, ES>
     Z = 0.5 * (mu * X + transpose(Y) / mu);
 
-    Tensor<T, N>
+    Tensor<T, N, ES>
     D = Z - X;
 
     T
@@ -1520,10 +1763,17 @@ polar_rotation(Tensor<T, N> const & A)
       scale = false;
     }
 
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+    bool
+    end_iter =
+        norm(D) <= sqrt(tol_conv) ||
+        (delta > 0.5 * gamma && scale == false);
+#else
     bool
     end_iter =
         norm(D) <= std::sqrt(tol_conv) ||
         (delta > 0.5 * gamma && scale == false);
+#endif
 
     X = Z;
     gamma = delta;
@@ -1537,7 +1787,11 @@ polar_rotation(Tensor<T, N> const & A)
   }
 
   if (num_iter == max_iter) {
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+    Kokkos::abort("WARNING: Polar iteration did not converge.");
+#else
     std::cerr << "WARNING: Polar iteration did not converge." << std::endl;
+#endif
   }
 
   return X;
@@ -1548,14 +1802,14 @@ polar_rotation(Tensor<T, N> const & A)
 // \param A tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = A \f$ with \f$ R \in SO(N) \f$ and \f$ V \in SPD(N) \f$
 //
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-polar_left(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+polar_left(Tensor<T, N, ES> const & A)
 {
-  Tensor<T, N>
+  Tensor<T, N, ES>
   R = polar_rotation(A);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   V = sym(A * transpose(R));
 
   return std::make_pair(V, R);
@@ -1566,14 +1820,14 @@ polar_left(Tensor<T, N> const & A)
 // \param A tensor (often a deformation-gradient-like tensor)
 // \return \f$ RU = A \f$ with \f$ R \in SO(N) \f$ and \f$ U \in SPD(N) \f$
 //
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-polar_right(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+polar_right(Tensor<T, N, ES> const & A)
 {
-  Tensor<T, N>
+  Tensor<T, N, ES>
   R = polar_rotation(A);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   U = sym(transpose(R) * A);
 
   return std::make_pair(R, U);
@@ -1584,46 +1838,52 @@ polar_right(Tensor<T, N> const & A)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = F \f$ with \f$ R \in SO(3) \f$ and V SPD(3)
 //
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-polar_left_eig(Tensor<T, N> const & F)
+template<typename T, Index N, class ES>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+polar_left_eig(Tensor<T, N, ES> const & F)
 {
   assert(F.get_dimension() == 3);
 
   // set up return tensors
-  Tensor<T, N>
+  Tensor<T, N, ES>
   R(3);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   V(3);
 
   // temporary tensor used to compute R
-  Tensor<T, N>
+  Tensor<T, N, ES>
   Vinv(3);
 
   // compute spd tensor
-  Tensor<T, N>
+  Tensor<T, N, ES>
   b = F * transpose(F);
 
   // get eigenvalues/eigenvectors
-  Tensor<T, N>
+  Tensor<T, N, ES>
   eVal(3);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   eVec(3);
 
   boost::tie(eVec, eVal) = eig_spd(b);
 
   // compute sqrt() and inv(sqrt()) of eigenvalues
-  Tensor<T, N>
-  x = zero<T, N>(3);
+  Tensor<T, N, ES>
+  x = zero<T, N, ES>(3);
 
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+  x(0,0) = sqrt(eVal(0,0));
+  x(1,1) = sqrt(eVal(1,1));
+  x(2,2) = sqrt(eVal(2,2));
+#else
   x(0,0) = std::sqrt(eVal(0,0));
   x(1,1) = std::sqrt(eVal(1,1));
   x(2,2) = std::sqrt(eVal(2,2));
+#endif
 
-  Tensor<T, N>
-  xi = zero<T, N>(3);
+  Tensor<T, N, ES>
+  xi = zero<T, N, ES>(3);
 
   xi(0,0) = 1.0 / x(0,0);
   xi(1,1) = 1.0 / x(1,1);
@@ -1633,7 +1893,11 @@ polar_left_eig(Tensor<T, N> const & F)
   V    = eVec * x * transpose(eVec);
   Vinv = eVec * xi * transpose(eVec);
   R    = Vinv * F;
-
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+//Irina TOFIX
+ //if (ES==Kokkos::CUDA)
+   Kokkos::abort("ERROR:: polar_left_eig function can't be used on CUDA ");
+#endif
   return std::make_pair(V, R);
 }
 
@@ -1642,49 +1906,53 @@ polar_left_eig(Tensor<T, N> const & F)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ RU = F \f$ with \f$ R \in SO(3) \f$ and U SPD(3)
 //
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-polar_right_eig(Tensor<T, N> const & F)
+template<typename T, Index N, class ES>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+polar_right_eig(Tensor<T, N, ES> const & F)
 {
-
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+//Irina TOFIX
+// if (ES==Kokkos::CUDA)
+   Kokkos::abort("ERROR:: polar_right_eig function can't be used on CUDA ");
+#endif
   Index const
   dimension = F.get_dimension();
 
   assert(dimension == 3);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   R(dimension);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   U(dimension);
 
   // temporary tensor used to compute R
-  Tensor<T, N>
+  Tensor<T, N, ES>
   Uinv(dimension);
 
   // compute spd tensor
-  Tensor<T, N>
+  Tensor<T, N, ES>
   C = transpose(F) * F;
 
   // get eigenvalues/eigenvectors
-  Tensor<T, N>
+  Tensor<T, N, ES>
   eVal(dimension);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   eVec(dimension);
 
   boost::tie(eVec, eVal) = eig_spd(C);
 
   // compute sqrt() and inv(sqrt()) of eigenvalues
-  Tensor<T, N>
-  x = zero<T, N>(dimension);
+  Tensor<T, N, ES>
+  x = zero<T, N, ES>(dimension);
 
   x(0,0) = std::sqrt(eVal(0,0));
   x(1,1) = std::sqrt(eVal(1,1));
   x(2,2) = std::sqrt(eVal(2,2));
 
-  Tensor<T, N>
-  xi = zero<T, N>(dimension);
+  Tensor<T, N, ES>
+  xi = zero<T, N, ES>(dimension);
 
   xi(0,0) = 1.0 / x(0,0);
   xi(1,1) = 1.0 / x(1,1);
@@ -1703,68 +1971,86 @@ polar_right_eig(Tensor<T, N> const & F)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD(N), and log V
 //
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
-polar_left_logV(Tensor<T, N> const & F)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+polar_left_logV(Tensor<T, N, ES> const & F)
 {
   Index const
   dimension = F.get_dimension();
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   X(dimension), S(dimension), Y(dimension);
 
   boost::tie(X, S, Y) = svd(F);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   R = X * transpose(Y);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   V = X * S * transpose(X);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   s = S;
 
   for (Index i = 0; i < dimension; ++i) {
+#if defined (KOKKOS_HAVE_CUDA) && defined(HAVE_INTREPID_KOKKOSCORE)
+//IRINA D tofix
+  Kokkos::abort("ERROR: polar_left_logV: need to implement log() function for CUDS");
     s(i,i) = std::log(s(i,i));
+#else
+    s(i,i) = std::log(s(i,i));
+#endif
   }
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   v = X * s * transpose(X);
 
   return boost::make_tuple(V, R, v);
 }
 
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
-polar_left_logV_eig(Tensor<T, N> const & F)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+polar_left_logV_eig(Tensor<T, N, ES> const & F)
 {
   Index const
   dimension = F.get_dimension();
 
-  Tensor<T, N> const
+  Tensor<T, N, ES> const
   b = dot_t(F, F);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   V(dimension), D(dimension);
 
   boost::tie(V, D) = eig_sym(b);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   DQ(dimension, ZEROS), DI(dimension, ZEROS), DL(dimension, ZEROS);
 
   for (Index i = 0; i < dimension; ++i) {
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+    DQ(i,i) = sqrt(D(i,i));
+    DI(i,i) = 1.0 / DQ(i,i);
+    DL(i,i) = log(DQ(i,i));
+#else
     DQ(i,i) = std::sqrt(D(i,i));
     DI(i,i) = 1.0 / DQ(i,i);
     DL(i,i) = std::log(DQ(i,i));
+#endif
   }
 
-  Tensor<T, N> const
+  Tensor<T, N, ES> const
   R = dot(V, DI) * t_dot(V, F);
 
-  Tensor<T, N> const
+  Tensor<T, N, ES> const
   X = V * dot_t(DQ, V);
 
-  Tensor<T, N> const
+  Tensor<T, N, ES> const
   x = V * dot_t(DL, V);
 
   return boost::make_tuple(X, R, x);
@@ -1775,38 +2061,54 @@ polar_left_logV_eig(Tensor<T, N> const & F)
 // \param F tensor (often a deformation-gradient-like tensor)
 // \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD(N), and log V
 //
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
-polar_left_logV_lame(Tensor<T, N> const & F)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+polar_left_logV_lame(Tensor<T, N, ES> const & F)
 {
   Index const
   dimension = F.get_dimension();
 
   // set up return tensors
-  Tensor<T, N> R(dimension), V(dimension), v(dimension), Vinv(dimension);
+  Tensor<T, N, ES> R(dimension), V(dimension), v(dimension), Vinv(dimension);
 
   // compute spd tensor
-  Tensor<T, N> b = F*transpose(F);
+  Tensor<T, N, ES> b = F*transpose(F);
 
   // get eigenvalues/eigenvectors
-  Tensor<T, N> eVal(dimension);
-  Tensor<T, N> eVec(dimension);
+  Tensor<T, N, ES> eVal(dimension);
+  Tensor<T, N, ES> eVec(dimension);
   boost::tie(eVec,eVal) = eig_spd_cos(b);
 
   // compute sqrt() and inv(sqrt()) of eigenvalues
-  Tensor<T, N> x = zero<T, N>(3);
-  x(0,0) = std::sqrt(eVal(0,0));
-  x(1,1) = std::sqrt(eVal(1,1));
-  x(2,2) = std::sqrt(eVal(2,2));
-  Tensor<T, N> xi = zero<T, N>(3);
+  Tensor<T, N, ES> x = zero<T, N, ES>(3);
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+  x(0,0) = sqrt(eVal(0,0));
+  x(1,1) = sqrt(eVal(1,1));
+  x(2,2) = sqrt(eVal(2,2));
+  Tensor<T, N, ES> xi = zero<T, N, ES>(3);
   xi(0,0) = 1.0/x(0,0);
   xi(1,1) = 1.0/x(1,1);
   xi(2,2) = 1.0/x(2,2);
-  Tensor<T, N> lnx = zero<T, N>(3);
+  Tensor<T, N, ES> lnx = zero<T, N, ES>(3);
+  lnx(0,0) = log(x(0,0));
+  lnx(1,1) = log(x(1,1));
+  lnx(2,2) = log(x(2,2));
+#else
+  x(0,0) = std::sqrt(eVal(0,0));
+  x(1,1) = std::sqrt(eVal(1,1));
+  x(2,2) = std::sqrt(eVal(2,2));
+  Tensor<T, N, ES> xi = zero<T, N, ES>(3);
+  xi(0,0) = 1.0/x(0,0);
+  xi(1,1) = 1.0/x(1,1);
+  xi(2,2) = 1.0/x(2,2);
+  Tensor<T, N, ES> lnx = zero<T, N, ES>(3);
   lnx(0,0) = std::log(x(0,0));
   lnx(1,1) = std::log(x(1,1));
   lnx(2,2) = std::log(x(2,2));
-
+#endif
   // compute V, Vinv, log(V)=v, and R
   V    = eVec*x*transpose(eVec);
   Vinv = eVec*xi*transpose(eVec);
@@ -1822,9 +2124,12 @@ polar_left_logV_lame(Tensor<T, N> const & F)
 // \param y tensor
 // \return Baker-Campbell-Hausdorff series up to 4 terms
 //
-template<typename T, Index N>
-Tensor<T, N>
-bch(Tensor<T, N> const & x, Tensor<T, N> const & y)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+bch(Tensor<T, N, ES> const & x, Tensor<T, N, ES> const & y)
 {
   return
       // first order term
@@ -1904,18 +2209,18 @@ namespace {
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 // See algorithm 8.4.2 in Matrix Computations, Golub & Van Loan 1996
 //
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-eig_sym_NxN(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+eig_sym_NxN(Tensor<T, N, ES> const & A)
 {
-  Tensor<T, N>
+  Tensor<T, N, ES>
   D = sym(A);
 
   Index const
   dimension = A.get_dimension();
 
-  Tensor<T, N>
-  V = identity<T, N>(dimension);
+  Tensor<T, N, ES>
+  V = identity<T, N, ES>(dimension);
 
   T
   off = norm_off_diagonal(D);
@@ -1971,8 +2276,8 @@ eig_sym_NxN(Tensor<T, N> const & A)
     num_iter++;
   }
 
-  Vector<T, N> d(dimension);
-  Tensor<T, N> P(dimension);
+  Vector<T, N, ES> d(dimension);
+  Tensor<T, N, ES> P(dimension);
 
   boost::tie(d, P) = sort_permutation(diag(D));
   D = diag(d);
@@ -1986,9 +2291,9 @@ eig_sym_NxN(Tensor<T, N> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-eig_sym_2x2(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+eig_sym_2x2(Tensor<T, N, ES> const & A)
 {
   assert(A.get_dimension() == 2);
 
@@ -2039,7 +2344,7 @@ eig_sym_2x2(Tensor<T, N> const & A)
     s1 = -0.5 * r;
   }
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   D(s0, 0.0, 0.0, s1);
 
   //
@@ -2050,7 +2355,7 @@ eig_sym_2x2(Tensor<T, N> const & A)
 
   boost::tie(c, s) = schur_sym(f, g, h);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   V(c, -s, s, c);
 
   if (swap_diag == true) {
@@ -2069,14 +2374,14 @@ eig_sym_2x2(Tensor<T, N> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-eig_sym(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+eig_sym(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   V(dimension), D(dimension);
 
   switch (dimension) {
@@ -2099,9 +2404,9 @@ eig_sym(Tensor<T, N> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-eig_spd(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+eig_spd(Tensor<T, N, ES> const & A)
 {
   return eig_sym(A);
 }
@@ -2111,9 +2416,9 @@ eig_spd(Tensor<T, N> const & A)
 // \param A tensor
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-eig_spd_cos(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+eig_spd_cos(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -2125,31 +2430,31 @@ eig_spd_cos(Tensor<T, N> const & A)
 
   // this algorithm will return the eigenvalues in D
   // and the eigenvectors in V
-  Tensor<T, N>
-  D = zero<T, N>(dimension);
+  Tensor<T, N, ES>
+  D = zero<T, N, ES>(dimension);
 
-  Tensor<T, N>
-  V = zero<T, N>(dimension);
+  Tensor<T, N, ES>
+  V = zero<T, N, ES>(dimension);
 
   // not sure if this is necessary...
   T
   pi = std::acos(-1);
 
   // convenience operators
-  Tensor<T, N> const
-  I = identity<T, N>(dimension);
+  Tensor<T, N, ES> const
+  I = identity<T, N, ES>(dimension);
 
   int
   ii[3][2] = { { 1, 2 }, { 2, 0 }, { 0, 1 } };
 
-  Tensor<T, N>
-  rm = zero<T, N>(dimension);
+  Tensor<T, N, ES>
+  rm = zero<T, N, ES>(dimension);
 
   // scale the matrix to reduce the characteristic equation
   T
   trA = (1.0/3.0) * I1(A);
 
-  Tensor<T, N>
+  Tensor<T, N, ES>
   Ap(A - trA*I);
 
   // compute other invariants
@@ -2202,11 +2507,11 @@ eig_spd_cos(Tensor<T, N> const & A)
     D(2,2) = 2.0 * std::cos(thetad3) * std::sqrt(-J2 / 3.0);
 
     // now reduce the system
-    Tensor<T, N>
+    Tensor<T, N, ES>
     R = Ap - D(2,2) * I;
 
     // QR factorization with column pivoting
-    Vector<T, N> a(dimension);
+    Vector<T, N, ES> a(dimension);
     a(0) = R(0,0)*R(0,0) + R(1,0)*R(1,0) + R(2,0)*R(2,0);
     a(1) = R(0,1)*R(0,1) + R(1,1)*R(1,1) + R(2,1)*R(2,1);
     a(2) = R(0,2)*R(0,2) + R(1,2)*R(1,2) + R(2,2)*R(2,2);
@@ -2277,17 +2582,17 @@ eig_spd_cos(Tensor<T, N> const & A)
     V(2,2) /= mag;
 
     // now for the other two eigenvalues, extract vectors
-    Vector<T, N>
+    Vector<T, N, ES>
     rk(R(0,k), R(1,k), R(2,k));
 
-    Vector<T, N>
+    Vector<T, N, ES>
     rk2(R(0,k2), R(1,k2), R(2,k2));
 
     // compute projections
-    Vector<T, N>
+    Vector<T, N, ES>
     ak = Ap * rk;
 
-    Vector<T, N>
+    Vector<T, N, ES>
     ak2 = Ap * rk2;
 
     // set up reduced remainder matrix
@@ -2367,11 +2672,11 @@ eig_spd_cos(Tensor<T, N> const & A)
 // \return G Cholesky factor A = GG^T
 // \return completed (bool) algorithm ran to completion
 //
-template<typename T, Index N>
-std::pair<Tensor<T, N>, bool >
-cholesky(Tensor<T, N> const & A)
+template<typename T, Index N, class ES>
+std::pair<Tensor<T, N, ES>, bool >
+cholesky(Tensor<T, N, ES> const & A)
 {
-  Tensor<T, N>
+  Tensor<T, N, ES>
   G = sym(A);
 
   Index const
@@ -2418,16 +2723,22 @@ cholesky(Tensor<T, N> const & A)
 // as it just uses the inverse function. It is intended to be used in
 // conjunction with Kokkos to take advantage of thread parallelism.
 //
-template<typename T, Index N>
-Vector<T, N>
-solve(Tensor<T, N> const & A, Vector<T, N> const & b)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Vector<T, N, ES>
+solve(Tensor<T, N, ES> const & A, Vector<T, N, ES> const & b)
 {
   return dot(inverse(A), b);
 }
 
-template<typename T, Index N, Index P>
-Matrix<T, N, P>
-solve(Tensor<T, N> const & A, Matrix<T, N, P> const & B)
+template<typename T, Index N, Index P, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Matrix<T, N, P, ES>
+solve(Tensor<T, N, ES> const & A, Matrix<T, N, P, ES> const & B)
 {
   auto const
   I = inverse(A);
@@ -2435,10 +2746,10 @@ solve(Tensor<T, N> const & A, Matrix<T, N, P> const & B)
   auto
   X = B;
 
-  Vector<T, N>
+  Vector<T, N, ES>
   b(A.get_dimension());
 
-  Vector<T, N>
+  Vector<T, N, ES>
   x(A.get_dimension());
 
   for (auto j = 0; j < B.get_num_cols(); ++j) {
@@ -2454,6 +2765,6 @@ solve(Tensor<T, N> const & A, Matrix<T, N, P> const & B)
   return X;
 }
 
-} // namespace Intrepid2
+} // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_LinearAlgebra_t_h
+#endif // Intrepid2_MiniTensor_LinearAlgebra_t_h

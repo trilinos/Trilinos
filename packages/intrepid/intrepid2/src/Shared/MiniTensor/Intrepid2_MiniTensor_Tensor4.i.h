@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid Package
+//                           Intrepid2 Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -39,26 +39,34 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Tensor4_i_h)
-#define Intrepid_MiniTensor_Tensor4_i_h
+#if !defined(Intrepid2_MiniTensor_Tensor4_i_h)
+#define Intrepid2_MiniTensor_Tensor4_i_h
 
-namespace Intrepid2
+namespace Intrepid
 {
 
 //
 // 4th-order tensor constructor with NaNs
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor4<T, N>::Tensor4() :
+#endif
+Tensor4<T, N, ES>::Tensor4() :
 TensorBase<T, Store>::TensorBase()
 {
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor4<T, N>::Tensor4(Index const dimension) :
+#endif
+Tensor4<T, N, ES>::Tensor4(Index const dimension) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER)
 {
   return;
@@ -67,17 +75,25 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER)
 //
 // 4th-order tensor constructor with a specified value
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor4<T, N>::Tensor4(ComponentValue const value) :
+#endif
+Tensor4<T, N, ES>::Tensor4(ComponentValue const value) :
 TensorBase<T, Store>::TensorBase(N, ORDER, value)
 {
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor4<T, N>::Tensor4(Index const dimension, ComponentValue const value) :
+#endif
+Tensor4<T, N, ES>::Tensor4(Index const dimension, ComponentValue const value) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 {
   return;
@@ -86,17 +102,25 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 //
 //  Create 4th-order tensor from array
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor4<T, N>::Tensor4(T const * data_ptr) :
+#endif
+Tensor4<T, N, ES>::Tensor4(T const * data_ptr) :
 TensorBase<T, Store>::TensorBase(N, ORDER, data_ptr)
 {
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor4<T, N>::Tensor4(Index const dimension, T const * data_ptr) :
+#endif
+Tensor4<T, N, ES>::Tensor4(Index const dimension, T const * data_ptr) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 {
   return;
@@ -105,9 +129,13 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 //
 // Copy constructor
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor4<T, N>::Tensor4(Tensor4<T, N> const & A) :
+#endif
+Tensor4<T, N, ES>::Tensor4(Tensor4<T, N, ES> const & A) :
 TensorBase<T, Store>::TensorBase(A)
 {
   return;
@@ -119,7 +147,11 @@ TensorBase<T, Store>::TensorBase(A)
 
 namespace {
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 Index
 second_to_fourth_dimension(Index const dimension_2nd)
 {
@@ -129,11 +161,15 @@ second_to_fourth_dimension(Index const dimension_2nd)
   switch (dimension_2nd) {
 
   default:
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+    Kokkos::abort("ERROR (Tensor 4 (second_to_fourth_dimension): Invalid dimension for 2nd-order tensor.");
+#else
     std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
     std::cerr << std::endl;
     std::cerr << "Invalid dimension for 2nd-order tensor.";
     std::cerr << std::endl;
     exit(1);
+#endif
     break;
 
   case 1:
@@ -159,9 +195,13 @@ second_to_fourth_dimension(Index const dimension_2nd)
 
 } //anonymous namespace
 
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor4<T, N>::Tensor4(Tensor<T, dimension_square<N>::value> const & A)
+#endif
+Tensor4<T, N, ES>::Tensor4(Tensor<T, dimension_square<N>::value, ES> const & A)
 {
   Index const
   dimension_2nd = A.get_dimension();
@@ -169,7 +209,7 @@ Tensor4<T, N>::Tensor4(Tensor<T, dimension_square<N>::value> const & A)
   Index const
   dimension_4th = second_to_fourth_dimension(dimension_2nd);
 
-  Tensor4<T, N> &
+  Tensor4<T, N, ES> &
   self = (*this);
 
   self.set_dimension(dimension_4th);
@@ -186,9 +226,13 @@ Tensor4<T, N>::Tensor4(Tensor<T, dimension_square<N>::value> const & A)
 //
 // 4th-order tensor simple destructor
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor4<T, N>::~Tensor4()
+#endif
+Tensor4<T, N, ES>::~Tensor4()
 {
   return;
 }
@@ -196,10 +240,14 @@ Tensor4<T, N>::~Tensor4()
 //
 // Get dimension
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 Index
-Tensor4<T, N>::get_dimension() const
+Tensor4<T, N, ES>::get_dimension() const
 {
   return IS_DYNAMIC == true ? TensorBase<T, Store>::get_dimension() : N;
 }
@@ -207,10 +255,14 @@ Tensor4<T, N>::get_dimension() const
 //
 // Set dimension
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 void
-Tensor4<T, N>::set_dimension(Index const dimension)
+Tensor4<T, N, ES>::set_dimension(Index const dimension)
 {
   if (IS_DYNAMIC == true) {
     TensorBase<T, Store>::set_dimension(dimension, ORDER);
@@ -225,12 +277,16 @@ Tensor4<T, N>::set_dimension(Index const dimension)
 //
 // 4th-order tensor addition
 //
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor4<typename Promote<S, T>::type, N>
-operator+(Tensor4<S, N> const & A, Tensor4<T, N> const & B)
+#endif
+Tensor4<typename Promote<S, T>::type, N, ES>
+operator+(Tensor4<S, N, ES> const & A, Tensor4<T, N, ES> const & B)
 {
-  Tensor4<typename Promote<S, T>::type, N>
+  Tensor4<typename Promote<S, T>::type, N, ES>
   C(A.get_dimension());
 
   add(A, B, C);
@@ -241,12 +297,16 @@ operator+(Tensor4<S, N> const & A, Tensor4<T, N> const & B)
 //
 // 4th-order tensor subtraction
 //
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor4<typename Promote<S, T>::type, N>
-operator-(Tensor4<S, N> const & A, Tensor4<T, N> const & B)
+#endif
+Tensor4<typename Promote<S, T>::type, N, ES>
+operator-(Tensor4<S, N, ES> const & A, Tensor4<T, N, ES> const & B)
 {
-  Tensor4<typename Promote<S, T>::type, N>
+  Tensor4<typename Promote<S, T>::type, N, ES>
   C(A.get_dimension());
 
   subtract(A, B, C);
@@ -257,12 +317,16 @@ operator-(Tensor4<S, N> const & A, Tensor4<T, N> const & B)
 //
 // 4th-order tensor minus
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor4<T, N>
-operator-(Tensor4<T, N> const & A)
+#endif
+Tensor4<T, N, ES>
+operator-(Tensor4<T, N, ES> const & A)
 {
-  Tensor4<T, N>
+  Tensor4<T, N, ES>
   B(A.get_dimension());
 
   minus(A, B);
@@ -273,10 +337,14 @@ operator-(Tensor4<T, N> const & A)
 //
 // 4th-order equality
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 bool
-operator==(Tensor4<T, N> const & A, Tensor4<T, N> const & B)
+operator==(Tensor4<T, N, ES> const & A, Tensor4<T, N, ES> const & B)
 {
   return equal(A, B);
 }
@@ -284,10 +352,14 @@ operator==(Tensor4<T, N> const & A, Tensor4<T, N> const & B)
 //
 // 4th-order inequality
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 bool
-operator!=(Tensor4<T, N> const & A, Tensor4<T, N> const & B)
+operator!=(Tensor4<T, N, ES> const & A, Tensor4<T, N, ES> const & B)
 {
   return not_equal(A, B);
 }
@@ -295,12 +367,16 @@ operator!=(Tensor4<T, N> const & A, Tensor4<T, N> const & B)
 //
 // Scalar 4th-order tensor product
 //
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N> >::type
-operator*(S const & s, Tensor4<T, N> const & A)
+#endif
+typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N, ES> >::type
+operator*(S const & s, Tensor4<T, N, ES> const & A)
 {
-  Tensor4<typename Promote<S, T>::type, N>
+  Tensor4<typename Promote<S, T>::type, N, ES>
   B(A.get_dimension());
 
   scale(A, s, B);
@@ -311,12 +387,16 @@ operator*(S const & s, Tensor4<T, N> const & A)
 //
 // 4th-order tensor scalar product
 //
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N> >::type
-operator*(Tensor4<T, N> const & A, S const & s)
+#endif
+typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N, ES> >::type
+operator*(Tensor4<T, N, ES> const & A, S const & s)
 {
-  Tensor4<typename Promote<S, T>::type, N>
+  Tensor4<typename Promote<S, T>::type, N, ES>
   B(A.get_dimension());
 
   scale(A, s, B);
@@ -327,12 +407,16 @@ operator*(Tensor4<T, N> const & A, S const & s)
 //
 // 4th-order tensor scalar division
 //
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor4<typename Promote<S, T>::type, N>
-operator/(Tensor4<T, N> const & A, S const & s)
+#endif
+Tensor4<typename Promote<S, T>::type, N, ES>
+operator/(Tensor4<T, N, ES> const & A, S const & s)
 {
-  Tensor4<typename Promote<S, T>::type, N>
+  Tensor4<typename Promote<S, T>::type, N, ES>
   B(A.get_dimension());
 
   divide(A, s, B);
@@ -343,12 +427,16 @@ operator/(Tensor4<T, N> const & A, S const & s)
 //
 // 4th-order scalar tensor division
 //
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor4<typename Promote<S, T>::type, N>
-operator/(S const & s, Tensor4<T, N> const & A)
+#endif
+Tensor4<typename Promote<S, T>::type, N, ES>
+operator/(S const & s, Tensor4<T, N, ES> const & A)
 {
-  Tensor4<typename Promote<S, T>::type, N>
+  Tensor4<typename Promote<S, T>::type, N, ES>
   B(A.get_dimension());
 
   split(A, s, B);
@@ -363,13 +451,17 @@ operator/(S const & s, Tensor4<T, N> const & A)
 // \param k index
 // \param l index
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 T const &
-Tensor4<T, N>::operator()(
+Tensor4<T, N, ES>::operator()(
     Index const i, Index const j, Index const k, Index const l) const
 {
-  Tensor4<T, N> const &
+  Tensor4<T, N, ES> const &
   self = (*this);
 
   Index const
@@ -385,13 +477,17 @@ Tensor4<T, N>::operator()(
 // \param k index
 // \param l index
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 T &
-Tensor4<T, N>::operator()(
+Tensor4<T, N, ES>::operator()(
     Index const i, Index const j, Index const k, Index const l)
 {
-  Tensor4<T, N> &
+  Tensor4<T, N, ES> &
   self = (*this);
 
   Index const
@@ -403,13 +499,16 @@ Tensor4<T, N>::operator()(
 ///
 /// 4th-order inverse
 ///
-template<typename T, Index N>
-Tensor4<T, N>
-inverse(Tensor4<T, N> const & A)
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor4<T, N, ES>
+inverse(Tensor4<T, N, ES> const & A)
 {
-  return Tensor4<T, N>(inverse(Tensor<T, N>(A)));
+  return Tensor4<T, N, ES>(inverse(Tensor<T, dimension_square<N>::value, ES>(A)));
 }
 
-} // namespace Intrepid2
+} // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Tensor4_i_h
+#endif // Intrepid2_MiniTensor_Tensor4_i_h

@@ -1158,4 +1158,4 @@ TEUCHOS_UNIT_TEST(MiniTensor, TemplateMetaProgramming)
 
 }
 
-} // namespace Intrepid
+} // namespace Intrepid2

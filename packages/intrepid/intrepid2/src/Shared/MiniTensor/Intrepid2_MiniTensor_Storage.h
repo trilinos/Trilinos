@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid Package
+//                           Intrepid2 Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Storage_h)
-#define Intrepid_MiniTensor_Storage_h
+#if !defined(Intrepid2_MiniTensor_Storage_h)
+#define Intrepid2_MiniTensor_Storage_h
 
 #include "Intrepid2_MiniTensor_Definitions.h"
 
@@ -60,30 +60,48 @@ struct dimension_const<DYNAMIC, C> {
 /// Validate dimension
 template <Index D>
 struct check_static {
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+  static Index const
+  maximum_dimension =  NPP_MAX_32U;
+#else
   static Index const
   maximum_dimension = static_cast<Index>(std::numeric_limits<Index>::digits);
+#endif
 
   STATIC_ASSERT(D < maximum_dimension, dimension_too_large);
   static Index const value = D;
 };
 
 template <typename Store>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 void
 check_dynamic(Index const dimension)
 {
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+  static Index const
+  maximum_dimension =  NPP_MAX_32U;
+#else
   Index const
   maximum_dimension = static_cast<Index>(std::numeric_limits<Index>::digits);
+#endif
 
   assert(Store::IS_DYNAMIC == true);
 
   if (dimension > maximum_dimension) {
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+    Kokkos::abort("ERROR (check_dynamic) : Requested dimension exceeds maximum allowed");
+#else
     std::cerr << "ERROR: " << __PRETTY_FUNCTION__;
     std::cerr << std::endl;
     std::cerr << "Requested dimension (" << dimension;
     std::cerr << ") exceeds maximum allowed: " << maximum_dimension;
     std::cerr << std::endl;
     exit(1);
+#endif
   }
 }
 
@@ -221,7 +239,11 @@ struct dimension_product<DYNAMIC, DYNAMIC> {
 ///
 /// Base static storage class. Simple linear access memory model.
 ///
-template<typename T, Index N>
+#if defined (HAVE_INTREPID_KOKKOSCORE)
+template<typename T, Index N, class ES=NOKOKKOS>
+#else //intrepidKokkosCore
+template<typename T, Index N,  class ES>
+#endif
 class Storage
 {
 public:
@@ -239,42 +261,88 @@ public:
   bool const
   IS_DYNAMIC = false;
 
+  static
+  bool const
+  IS_KOKKOS = false;
+
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   Storage() {}
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   explicit
   Storage(Index const number_entries) {resize(number_entries);}
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   ~Storage() {}
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   T const &
   operator[](Index const i) const
   {assert(i < N); return storage_[i];}
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   T &
   operator[](Index const i)
   {assert(i < N); return storage_[i];}
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   Index
   size() const {return N;}
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   void
-  resize(Index const number_entries) {assert(number_entries == N);}
+  resize(Index const number_entries) {
+#if defined (HAVE_INTREPID_KOKKOSCORE)
+   if(number_entries == N) ;
+   else Kokkos::abort("ERROR (MiniTensor): wrong # of entries in MiniTensor resize()");
+#else
+    assert(number_entries == N);
+#endif
+   }
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   void
   clear() {}
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   pointer_type
   get_pointer() {return &storage_[0];}
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   const_pointer_type
   get_const_pointer() const {return &storage_[0];}
 
 private:
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  Storage(Storage<T, N, ES> const & s);
 
-  Storage(Storage<T, N> const & s);
-
-  Storage<T, N> &
-  operator=(Storage<T, N> const & s);
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  Storage<T, N, ES> &
+  operator=(Storage<T, N, ES> const & s);
 
   T
   storage_[N];
@@ -284,15 +352,16 @@ private:
 ///
 /// Base dynamic storage class. Simple linear access memory model.
 ///
-template<typename T>
-class Storage<T, DYNAMIC>
+//Kokkos specialization of Storage
+template<typename T, class ES>
+class Storage<T, DYNAMIC, ES>
 {
 public:
-  typedef T value_type;
-  typedef T * pointer_type;
-  typedef T & reference_type;
-  typedef T const * const_pointer_type;
-  typedef T const & const_reference_type;
+  using value_type = T;
+  using pointer_type = T *;
+  using reference_type = T &;
+  using const_pointer_type = T const *;
+  using const_reference_type = T const &;ypedef T const & const_reference_type;
 
   static
   bool const
@@ -302,26 +371,51 @@ public:
   bool const
   IS_STATIC = false;
 
+  static 
+  bool const
+  IS_KOKKOS = true;
+
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   Storage() : storage_(NULL), size_(0) {}
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   explicit
   Storage(Index const number_entries) : storage_(NULL), size_(0)
   {resize(number_entries);}
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   ~Storage() {clear();}
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   T const &
   operator[](Index const i) const
   {assert(i < size()); return storage_[i];}
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   T &
   operator[](Index const i)
   {assert(i < size()); return storage_[i];}
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   Index
   size() const
   {return size_;}
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   void
   resize(Index const number_entries)
   {
@@ -330,6 +424,9 @@ public:
     }
   }
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   void
   clear()
   {
@@ -338,18 +435,25 @@ public:
     }
   }
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   pointer_type
   get_pointer() {return storage_;}
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   const_pointer_type
   get_const_pointer() const {return storage_;}
 
 private:
-
-  Storage(Storage<T, DYNAMIC> const & s);
-
-  Storage<T, DYNAMIC> &
-  operator=(Storage<T, DYNAMIC> const & s);
+  Storage(Storage<T, DYNAMIC,ES> const & s);
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  Storage<T, DYNAMIC, ES> &
+  operator=(Storage<T, DYNAMIC, ES> const & s);
 
   T *
   storage_;
@@ -358,8 +462,126 @@ private:
   size_;
 };
 
-} // namespace Intrepid2
+#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+//CUDA specialization for the DYNAMIC storage
+template<typename T>
+class Storage<T, DYNAMIC, Kokkos::Cuda>
+{
+public:
+  using value_type = T;
+  using pointer_type = T *;
+  using reference_type = T &;
+  using const_pointer_type = T const *;
+  using const_reference_type = T const &;
+
+  static
+  bool const
+  IS_DYNAMIC = true;
+
+  static
+  bool const
+  IS_STATIC = false;
+
+  static
+  bool const
+  IS_KOKKOS = true;
+
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  Storage() : storage_(NULL), size_(0) {}
+
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  explicit
+  Storage(Index const number_entries) : storage_(NULL), size_(0)
+  {resize(number_entries);}
+
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  ~Storage() {clear();}
+
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  T const &
+  operator[](Index const i) const
+  {assert(i < size()); return storage_[i];}
+
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  T &
+  operator[](Index const i)
+  {assert(i < size()); return storage_[i];}
+
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  Index
+  size() const
+  {return size_;}
+
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  void
+  resize(Index const number_entries)
+  {
+    if (number_entries != size_) {
+      clear(); storage_ = (T*)malloc(number_entries); size_ = number_entries;
+    }
+  }
+
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  void
+  clear()
+  {
+    if (storage_ != NULL) {
+      free(storage_); storage_ = NULL; size_ = 0;
+    }
+  }
+
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  pointer_type
+  get_pointer() {return storage_;}
+
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  const_pointer_type
+  get_const_pointer() const {return storage_;}
+
+private:
+
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  Storage(Storage<T, DYNAMIC, Kokkos::Cuda> const & s);
+
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  Storage<T, DYNAMIC, Kokkos::Cuda> &
+  operator=(Storage<T, DYNAMIC, Kokkos::Cuda> const & s);
+
+  T *
+  storage_;
+
+  Index
+  size_;
+};
+
+#endif
+
+} // namespace Intrepid
 
 #include "Intrepid2_MiniTensor_Storage.i.h"
 
-#endif // Intrepid_MiniTensor_Storage_h
+#endif // Intrepid2_MiniTensor_Storage_h

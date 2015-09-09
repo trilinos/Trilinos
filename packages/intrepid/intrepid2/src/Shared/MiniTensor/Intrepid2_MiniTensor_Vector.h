@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid Package
+//                           Intrepid2 Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Vector_h)
-#define Intrepid_MiniTensor_Vector_h
+#if !defined(Intrepid2_MiniTensor_Vector_h)
+#define Intrepid2_MiniTensor_Vector_h
 
 #include <algorithm>
 #include <cassert>
@@ -53,7 +53,7 @@
 
 namespace Intrepid2 {
 
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
 struct vector_store
 {
   typedef Storage<T, dimension_power<N, 1>::value> type;
@@ -62,8 +62,8 @@ struct vector_store
 ///
 /// Vector class.
 ///
-template<typename T, Index N = DYNAMIC>
-class Vector: public TensorBase<T, typename vector_store<T, N>::type>
+template<typename T, Index N = DYNAMIC, class ES>
+class Vector: public TensorBase<T, typename vector_store<T, N, ES>::type>
 {
 public:
 
@@ -84,12 +84,15 @@ public:
   ///
   /// Storage type
   ///
-  typedef typename vector_store<T, N>::type
+  typedef typename vector_store<T, N, ES>::type
   Store;
 
   ///
   /// Vector order
   ///
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   static
   Index
   get_order()
@@ -102,9 +105,15 @@ public:
   /// \param dimension the space dimension
   ///
   explicit
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   Vector();
 
   explicit
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   Vector(Index const dimension);
 
   ///
@@ -113,9 +122,15 @@ public:
   /// \param value all components are set equal to this
   ///
   explicit
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   Vector(ComponentValue const value);
 
   explicit
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   Vector(Index const dimension, ComponentValue const value);
 
   ///
@@ -125,12 +140,14 @@ public:
   ///
 #if defined(HAVE_INTREPID_KOKKOSCORE)
   template<class ArrayT, typename iType>
+KOKKOS_INLINE_FUNCTION
   Vector(
       typename Kokkos::Impl::enable_if<
       !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
       iType index1);
 
   template<class ArrayT, typename iType>
+KOKKOS_INLINE_FUNCTION
   Vector(
       typename Kokkos::Impl::enable_if<
       !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
@@ -138,6 +155,7 @@ public:
       iType index2);
 
   template<class ArrayT, typename iType>
+KOKKOS_INLINE_FUNCTION
   Vector(
       typename Kokkos::Impl::enable_if<
       !Kokkos::Impl::is_same<ArrayT, Index>::value, ArrayT>::type & data,
@@ -146,6 +164,7 @@ public:
       iType index3);
 
   template<class ArrayT, typename iType>
+KOKKOS_INLINE_FUNCTION
   Vector(
       ArrayT & data,
       iType index1,
@@ -154,6 +173,7 @@ public:
       iType index4);
 
   template<class ArrayT, typename iType>
+KOKKOS_INLINE_FUNCTION
   Vector(
       ArrayT & data,
       iType index1,
@@ -163,6 +183,7 @@ public:
       iType index5);
 
   template<class ArrayT, typename iType>
+KOKKOS_INLINE_FUNCTION
   Vector(
       ArrayT & data,
       iType index1,
@@ -173,6 +194,7 @@ public:
       iType index6);
 
   template<class ArrayT, typename iType>
+KOKKOS_INLINE_FUNCTION
   Vector(
       Index const dimension,
       typename Kokkos::Impl::enable_if<
@@ -180,6 +202,7 @@ public:
       iType index1);
 
   template<class ArrayT, typename iType>
+KOKKOS_INLINE_FUNCTION
   Vector(
       Index const dimension,
       typename Kokkos::Impl::enable_if<
@@ -188,6 +211,7 @@ public:
       iType index2);
 
   template<class ArrayT, typename iType>
+KOKKOS_INLINE_FUNCTION
   Vector(
       Index const dimension,
       ArrayT & data,
@@ -196,6 +220,7 @@ public:
       iType index3);
 
   template<class ArrayT, typename iType>
+KOKKOS_INLINE_FUNCTION
   Vector(
       Index const dimension,
       ArrayT & data,
@@ -205,6 +230,7 @@ public:
       iType index4);
 
   template<class ArrayT, typename iType>
+KOKKOS_INLINE_FUNCTION
   Vector(
       Index const dimension,
       ArrayT & data,
@@ -215,6 +241,8 @@ public:
       iType index5);
 
   template<class ArrayT, typename iType>
+
+KOKKOS_INLINE_FUNCTION  
   Vector(
       Index const dimension,
       ArrayT & data,
@@ -226,19 +254,31 @@ public:
       iType index6);
  #endif
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   Vector(T const * data_ptr);
 
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   Vector(Index const dimension, T const * data_ptr);
 
   ///
   /// Copy constructor
   ///
-  Vector(Vector<T, N> const & v);
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+  Vector(Vector<T, N, ES> const & v);
 
   ///
   /// Create vector specifying components
   /// \param s0 s1 are the vector components in the R^2 canonical basis
   ///
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   Vector(T const & s0, T const & s1);
 
   ///
@@ -246,17 +286,26 @@ public:
   /// the vector components in the R^3 canonical basis
   /// \param s0 s1 s2 are the vector components in the R^3 canonical basis
   ///
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   Vector(T const & s0, T const & s1, T const & s2);
 
   ///
   /// Simple destructor
   ///
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   ~Vector();
 
   ///
   /// Indexing for constant vector
   /// \param i the index
   ///
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
   T const &
   operator()(Index const i) const;
 
@@ -264,18 +313,27 @@ public:
   /// Vector indexing
   /// \param i the index
   ///
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
   T &
   operator()(Index const i);
 
   ///
   /// \return dimension
   ///
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
   Index
   get_dimension() const;
 
   ///
   /// \param dimension of vector
   ///
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
   void
   set_dimension(Index const dimension);
 
@@ -285,49 +343,67 @@ public:
 /// Vector addition
 /// \return \f$ u + v \f$
 ///
-template<typename S, typename T, Index N>
-Vector<typename Promote<S, T>::type, N>
-operator+(Vector<S, N> const & u, Vector<T, N> const & v);
+template<typename S, typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
+Vector<typename Promote<S, T>::type, N, ES>
+operator+(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
 
 ///
 /// Vector substraction
 /// \return \f$ u - v \f$
 ///
-template<typename S, typename T, Index N>
-Vector<typename Promote<S, T>::type, N>
-operator-(Vector<S, N> const & u, Vector<T, N> const & v);
+template<typename S, typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
+Vector<typename Promote<S, T>::type, N, ES>
+operator-(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
 
 ///
 /// Vector minus
 /// \return \f$ -u \f$
 ///
-template<typename T, Index N>
-Vector<T, N>
-operator-(Vector<T, N> const & u);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
+Vector<T, N, ES>
+operator-(Vector<T, N, ES> const & u);
 
 ///
 /// Vector dot product
 /// \return \f$ u \cdot v \f$
 ///
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
 typename Promote<S, T>::type
-operator*(Vector<S, N> const & u, Vector<T, N> const & v);
+operator*(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
 
 ///
 /// Vector equality tested by components
 /// \return \f$ u \equiv v \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
 bool
-operator==(Vector<T, N> const & u, Vector<T, N> const & v);
+operator==(Vector<T, N, ES> const & u, Vector<T, N, ES> const & v);
 
 ///
 /// Vector inequality tested by components
 /// \return \f$ u \neq v \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
 bool
-operator!=(Vector<T, N> const & u, Vector<T, N> const & v);
+operator!=(Vector<T, N, ES> const & u, Vector<T, N, ES> const & v);
 
 ///
 /// Scalar vector product
@@ -335,9 +411,12 @@ operator!=(Vector<T, N> const & u, Vector<T, N> const & v);
 /// \param u vector factor
 /// \return \f$ s u \f$
 ///
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
 typename lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N> >::type
-operator*(S const & s, Vector<T, N> const & u);
+operator*(S const & s, Vector<T, N, ES> const & u);
 
 ///
 /// Vector scalar product
@@ -345,9 +424,12 @@ operator*(S const & s, Vector<T, N> const & u);
 /// \param s scalar factor
 /// \return \f$ s u \f$
 ///
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
 typename lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N> >::type
-operator*(Vector<T, N> const & u, S const & s);
+operator*(Vector<T, N, ES> const & u, S const & s);
 
 ///
 /// Vector scalar division
@@ -355,9 +437,12 @@ operator*(Vector<T, N> const & u, S const & s);
 /// \param s scalar that divides each component of vector
 /// \return \f$ u / s \f$
 ///
-template<typename S, typename T, Index N>
-Vector<typename Promote<S, T>::type, N>
-operator/(Vector<T, N> const & u, S const & s);
+template<typename S, typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
+Vector<typename Promote<S, T>::type, N, ES>
+operator/(Vector<T, N, ES> const & u, S const & s);
 
 ///
 /// Scalar vector division
@@ -365,65 +450,89 @@ operator/(Vector<T, N> const & u, S const & s);
 /// \param u vector that divides scalar with each component
 /// \return \f$ s / u \f$
 ///
-template<typename S, typename T, Index N>
-Vector<typename Promote<S, T>::type, N>
-operator/(S const & s, Vector<T, N> const & u);
+template<typename S, typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
+Vector<typename Promote<S, T>::type, N, ES>
+operator/(S const & s, Vector<T, N, ES> const & u);
 
 ///
 /// Vector dot product
 /// \return \f$ u \cdot v \f$
 ///
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
 typename Promote<S, T>::type
-dot(Vector<S, N> const & u, Vector<T, N> const & v);
+dot(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
 
 ///
 /// Cross product only valid for R^3.
 /// R^N with N != 3 will produce an error.
 /// \return \f$ u \times v \f$
 ///
-template<typename S, typename T, Index N>
-Vector<typename Promote<S, T>::type, N>
-cross(Vector<S, N> const & u, Vector<T, N> const & v);
+template<typename S, typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
+Vector<typename Promote<S, T>::type, N, ES>
+cross(Vector<S, N, ES> const & u, Vector<T, N, ES> const & v);
 
 ///
 /// Vector 2-norm
 /// \return \f$ \sqrt{u \cdot u} \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
 T
-norm(Vector<T, N> const & u);
+norm(Vector<T, N, ES> const & u);
 
 ///
 /// Vector 2-norm square. Used for fast distance calculation.
 /// \return \f$ u \cdot u \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
 T
-norm_square(Vector<T, N> const & u);
+norm_square(Vector<T, N, ES> const & u);
 
 ///
 /// Vector 1-norm
 /// \return \f$ |u_0|+|u_1|+|u_2| \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
 T
-norm_1(Vector<T, N> const & u);
+norm_1(Vector<T, N, ES> const & u);
 
 ///
 /// Vector infinity-norm
 /// \return \f$ \max(|u_0|,|u_1|,|u_2|) \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
 T
-norm_infinity(Vector<T, N> const & u);
+norm_infinity(Vector<T, N, ES> const & u);
 
 ///
 /// \return u / |u|, fails for |u| = 0
 ///
-template<typename T, Index N>
-Vector<T, N>
-unit(Vector<T, N> const & u);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif  
+Vector<T, N, ES>
+unit(Vector<T, N, ES> const & u);
 
 ///
 /// Compute Householder vector
@@ -431,9 +540,9 @@ unit(Vector<T, N> const & u);
 /// \f$ Px = |X|e_1, P := I - \beta v v^T\f$
 /// \return v, beta
 ///
-template<typename T, Index N>
-std::pair<Vector<T, N>, T>
-house(Vector<T, N> const & x);
+template<typename T, Index N, class ES=NOKOKKOS>
+std::pair<Vector<T, N, ES>, T>
+house(Vector<T, N, ES> const & x);
 
 ///
 /// Vector input
@@ -441,9 +550,9 @@ house(Vector<T, N> const & x);
 /// \param is input stream
 /// \return is input stream
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
 std::istream &
-operator>>(std::istream & is, Vector<T, N> & u);
+operator>>(std::istream & is, Vector<T, N, ES> & u);
 
 ///
 /// Vector output
@@ -451,13 +560,13 @@ operator>>(std::istream & is, Vector<T, N> & u);
 /// \param os output stream
 /// \return os output stream
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
 std::ostream &
-operator<<(std::ostream & os, Vector<T, N> const & u);
+operator<<(std::ostream & os, Vector<T, N, ES> const & u);
 
-} // namespace Intrepid2
+} // namespace Intrepid
 
 #include "Intrepid2_MiniTensor_Vector.i.h"
 #include "Intrepid2_MiniTensor_Vector.t.h"
 
-#endif //Intrepid_MiniTensor_Vector_h
+#endif //Intrepid2_MiniTensor_Vector_h

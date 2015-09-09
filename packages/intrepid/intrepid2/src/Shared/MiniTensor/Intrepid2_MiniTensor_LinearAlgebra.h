@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid Package
+//                           Intrepid2 Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -39,8 +39,8 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_LinearAlgebra_h)
-#define Intrepid_MiniTensor_LinearAlgebra_h
+#if !defined(Intrepid2_MiniTensor_LinearAlgebra_h)
+#define Intrepid2_MiniTensor_LinearAlgebra_h
 
 #include "Intrepid2_MiniTensor_Tensor.h"
 
@@ -50,34 +50,46 @@ namespace Intrepid2 {
 /// Tensor Frobenius norm
 /// \return \f$ \sqrt{A:A} \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
-norm(Tensor<T, N> const & A);
+norm(Tensor<T, N, ES> const & A);
 
 ///
 /// Tensor 1-norm
 /// \return \f$ \max_{j \in {0,1,2}}\Sigma_{i=0}^2 |A_{ij}| \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
-norm_1(Tensor<T, N> const & A);
+norm_1(Tensor<T, N, ES> const & A);
 
 ///
 /// Tensor infinity-norm
 /// \return \f$ \max_{i \in {0,1,2}}\Sigma_{j=0}^2 |A_{ij}| \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
-norm_infinity(Tensor<T, N> const & A);
+norm_infinity(Tensor<T, N, ES> const & A);
 
 ///
 /// 2nd-order tensor inverse
 /// \param A nonsingular tensor
 /// \return \f$ A^{-1} \f$
 ///
-template<typename T, Index N>
-Tensor<T, N>
-inverse(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N,ES>
+inverse(Tensor<T, N, ES> const & A);
 
 ///
 /// Subtensor
@@ -85,159 +97,216 @@ inverse(Tensor<T, N> const & A);
 /// \param j index
 /// \return Subtensor with i-row and j-col deleted.
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 Tensor<T, dimension_subtract<N, 1>::value >
-subtensor(Tensor<T, N> const & A, Index const i, Index const j);
+subtensor(Tensor<T, N, ES> const & A, Index const i, Index const j);
 
 ///
 /// Swap row. Echange rows i and j in place
 /// \param i index
 /// \param j index
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 void
-swap_row(Tensor<T, N> & A, Index const i, Index const j);
+swap_row(Tensor<T, N, ES> & A, Index const i, Index const j);
 
 ///
 /// Swap column. Echange columns i and j in place
 /// \param i index
 /// \param j index
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 void
-swap_col(Tensor<T, N> & A, Index const i, Index const j);
+swap_col(Tensor<T, N, ES> & A, Index const i, Index const j);
 
 ///
 /// Determinant
 /// \return \f$ \det A \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
-det(Tensor<T, N> const & A);
+det(Tensor<T, N, ES> const & A);
 
 ///
 /// Trace
 /// \return \f$ A:I \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
-trace(Tensor<T, N> const & A);
+trace(Tensor<T, N, ES> const & A);
 
 ///
 /// First invariant, trace
 /// \return \f$ I_A = A:I \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
-I1(Tensor<T, N> const & A);
+I1(Tensor<T, N, ES> const & A);
 
 ///
 /// Second invariant
 /// \return \f$ II_A = \frac{1}{2}((I_A)^2-I_{A^2}) \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
-I2(Tensor<T, N> const & A);
+I2(Tensor<T, N, ES> const & A);
 
 ///
 /// Third invariant
 /// \return \f$ III_A = \det A \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
-I3(Tensor<T, N> const & A);
+I3(Tensor<T, N, ES> const & A);
 
 ///
 /// Exponential map.
 /// \return \f$ \exp A \f$
 ///
-template<typename T, Index N>
-Tensor<T, N>
-exp(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+exp(Tensor<T, N, ES> const & A);
 
 ///
 /// Exponential map by Taylor series, radius of convergence is infinity
 /// \return \f$ \exp A \f$
 ///
-template<typename T, Index N>
-Tensor<T, N>
-exp_taylor(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+exp_taylor(Tensor<T, N, ES> const & A);
 
 ///
 /// Exponential map by squaring and scaling and Padé approximants.
 /// See algorithm 10.20 in Functions of Matrices, N.J. Higham, SIAM, 2008.
 /// \return \f$ \exp A \f$
 ///
-template<typename T, Index N>
-Tensor<T, N>
-exp_pade(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+exp_pade(Tensor<T, N, ES> const & A);
 
 ///
 /// Logarithmic map.
 /// \return \f$ \log A \f$
 ///
-template<typename T, Index N>
-Tensor<T, N>
-log(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+log(Tensor<T, N, ES> const & A);
 
 ///
 /// Logarithmic map by Taylor series, converges for \f$ |A-I| < 1 \f$
 /// \return \f$ \log A \f$
 ///
-template<typename T, Index N>
-Tensor<T, N>
-log_taylor(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+log_taylor(Tensor<T, N, ES> const & A);
 
 ///
 /// Logarithmic map by Gregory series,
 /// converges for \f$ \min_i \text{Re} \lambda_i(A) > 0 \f$
 /// \return \f$ \log A \f$
 ///
-template<typename T, Index N>
-Tensor<T, N>
-log_gregory(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+log_gregory(Tensor<T, N, ES> const & A);
 
 ///
 /// Logarithmic map for symmetric tensor.
 /// \return \f$ \log A \f$
 ///
-template<typename T, Index N>
-Tensor<T, N>
-log_sym(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+log_sym(Tensor<T, N, ES> const & A);
 
 ///
 /// Logarithmic map for symmetric tensor using eigenvalue decomposition.
 /// \return \f$ \log A \f$
 ///
-template<typename T, Index N>
-Tensor<T, N>
-log_eig_sym(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+log_eig_sym(Tensor<T, N, ES> const & A);
 
 ///
 /// Logarithmic map of a rotation
 /// \param R with \f$ R \in SO(3) \f$
 /// \return \f$ r = \log R \f$ with \f$ r \in so(3) \f$
 ///
-template<typename T, Index N>
-Tensor<T, N>
-log_rotation(Tensor<T, N> const & R);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+log_rotation(Tensor<T, N, ES> const & R);
 
 ///
 /// Logarithmic map of a 180 degree rotation
 /// \param R with \f$ R \in SO(3) \f$
 /// \return \f$ r = \log R \f$ with \f$ r \in so(3) \f$
 ///
-template<typename T, Index N>
-Tensor<T, N>
-log_rotation_pi(Tensor<T, N> const & R);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+log_rotation_pi(Tensor<T, N, ES> const & R);
 
 ///
 /// Gaussian Elimination with partial pivot
 /// \return \f$ xvec \f$
 ///
-template<typename T, Index N>
-Tensor<T, N>
-gaussian_elimination(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+gaussian_elimination(Tensor<T, N, ES> const & A);
 
 ///
 /// Apply Givens-Jacobi rotation on the left in place.
@@ -245,9 +314,12 @@ gaussian_elimination(Tensor<T, N> const & A);
 /// \param i and k indices for rows and columns where rotation is applied.
 /// \param A tensor to rotate
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 void
-givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A);
+givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N, ES> & A);
 
 ///
 /// Apply Givens-Jacobi rotation on the right in place.
@@ -255,61 +327,76 @@ givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A);
 /// \param i and k indices for rows and columns where rotation is applied.
 /// \param A tensor to rotate
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 void
-givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N> & A);
+givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N, ES> & A);
 
 ///
 /// Apply rank-one update on the left in place
 /// \f$ A = (I - beta v v^T) A \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 void
-rank_one_left(T const & beta, Vector<T, N> const & v, Tensor<T, N> & A);
+rank_one_left(T const & beta, Vector<T, N, ES> const & v, Tensor<T, N, ES> & A);
 
 ///
 /// Apply rank-one update on the right in place
 /// \f$ A = A (I - beta v v^T) \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 void
-rank_one_right(T const & beta, Vector<T, N> const & v, Tensor<T, N> & A);
+rank_one_right(T const & beta, Vector<T, N, ES> const & v, Tensor<T, N, ES> & A);
 
 ///
 /// Exponential map of a skew-symmetric tensor
 /// \param r \f$ r \in so(3) \f$
 /// \return \f$ R = \exp R \f$ with \f$ R \in SO(3) \f$
 ///
-template<typename T, Index N>
-Tensor<T, N>
-exp_skew_symmetric(Tensor<T, N> const & r);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+exp_skew_symmetric(Tensor<T, N, ES> const & r);
 
 ///
 /// Off-diagonal norm. Useful for SVD and other algorithms
 /// that rely on Jacobi-type procedures.
 /// \return \f$ \sqrt(\sum_i \sum_{j, j\neq i} a_{ij}^2) \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
-norm_off_diagonal(Tensor<T, N> const & A);
+norm_off_diagonal(Tensor<T, N, ES> const & A);
 
 ///
 /// Arg max abs. Useful for inverse and other algorithms
 /// that rely on Jacobi-type procedures.
 /// \return \f$ (p,q) = arg max_{i,j} |a_{ij}| \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
 std::pair<Index, Index>
-arg_max_abs(Tensor<T, N> const & A);
+arg_max_abs(Tensor<T, N, ES> const & A);
 
 ///
 /// Arg max off-diagonal. Useful for SVD and other algorithms
 /// that rely on Jacobi-type procedures.
 /// \return \f$ (p,q) = arg max_{i \neq j} |a_{ij}| \f$
 ///
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
 std::pair<Index, Index>
-arg_max_off_diagonal(Tensor<T, N> const & A);
+arg_max_off_diagonal(Tensor<T, N, ES> const & A);
 
 ///
 /// Sort and index. Useful for ordering singular values
@@ -318,17 +405,20 @@ arg_max_off_diagonal(Tensor<T, N> const & A);
 /// \param u vector to sort
 /// \return v P sorted vector, permutation matrix such that v = P^T u
 ///
-template<typename T, Index N>
-std::pair<Vector<T, N>, Tensor<T, N> >
-sort_permutation(Vector<T, N> const & u);
+template<typename T, Index N, class ES>
+std::pair<Vector<T, N, ES>, Tensor<T, N, ES> >
+sort_permutation(Vector<T, N, ES> const & u);
 
 ///
 /// Singular value decomposition (SVD)
 /// \return \f$ A = USV^T\f$
 ///
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
-svd(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N,ES>, Tensor<T, N,ES> >
+svd(Tensor<T, N, ES> const & A);
 
 ///
 /// Project to O(N) (Orthogonal Group) using a Newton-type algorithm.
@@ -339,67 +429,79 @@ svd(Tensor<T, N> const & A);
 /// The rotation/reflection obtained through this projection is
 /// the orthogonal component of the real polar decomposition
 ///
-template<typename T, Index N>
-Tensor<T, N>
-polar_rotation(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+polar_rotation(Tensor<T, N, ES> const & A);
 
 ///
 /// Left polar decomposition
 /// \param A tensor (often a deformation-gradient-like tensor)
 /// \return \f$ VR = A \f$ with \f$ R \in SO(N) \f$ and \f$ V \in SPD(N) \f$
 ///
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-polar_left(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+polar_left(Tensor<T, N, ES> const & A);
 
 ///
 /// Right polar decomposition
 /// \param A tensor (often a deformation-gradient-like tensor)
 /// \return \f$ RU = A \f$ with \f$ R \in SO(N) \f$ and \f$ U \in SPD(N) \f$
 ///
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-polar_right(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+polar_right(Tensor<T, N, ES> const & A);
 
 ///
 /// Left polar decomposition computed with eigenvalue decomposition
 /// \param A tensor (often a deformation-gradient-like tensor)
 /// \return \f$ VR = A \f$ with \f$ R \in SO(N) \f$ and \f$ V \in SPD(N) \f$
 ///
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-polar_left_eig(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+polar_left_eig(Tensor<T, N, ES> const & A);
 
 ///
 /// R^3 right polar decomposition
 /// \param A tensor (often a deformation-gradient-like tensor)
 /// \return \f$ RU = F \f$ with \f$ R \in SO(N) \f$ and \f$ U \in SPD(N) \f$
 ///
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-polar_right_eig(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+polar_right_eig(Tensor<T, N, ES> const & A);
 
 ///
 /// Left polar decomposition with matrix logarithm for V
 /// \param F tensor (often a deformation-gradient-like tensor)
 /// \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD, and log V
 ///
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
-polar_left_logV(Tensor<T, N> const & F);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+polar_left_logV(Tensor<T, N, ES> const & F);
 
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
-polar_left_logV_eig(Tensor<T, N> const & F);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+polar_left_logV_eig(Tensor<T, N, ES> const & F);
 
 ///
 /// Left polar decomposition with matrix logarithm for V using eig_spd_cos
 /// \param F tensor (often a deformation-gradient-like tensor)
 /// \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD, and log V
 ///
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
-polar_left_logV_lame(Tensor<T, N> const & F);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
+polar_left_logV_lame(Tensor<T, N, ES> const & F);
 
 ///
 /// Logarithmic map using BCH expansion (4 terms)
@@ -407,9 +509,12 @@ polar_left_logV_lame(Tensor<T, N> const & F);
 /// \param r tensor
 /// \return Baker-Campbell-Hausdorff series up to 4 terms
 ///
-template<typename T, Index N>
-Tensor<T, N>
-bch(Tensor<T, N> const & v, Tensor<T, N> const & r);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Tensor<T, N, ES>
+bch(Tensor<T, N, ES> const & v, Tensor<T, N, ES> const & r);
 
 ///
 /// Symmetric Schur algorithm for R^2.
@@ -432,17 +537,17 @@ givens(T const & a, T const & b);
 /// Eigenvalue decomposition for symmetric 2nd-order tensor
 /// \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 ///
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-eig_sym(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+eig_sym(Tensor<T, N, ES> const & A);
 
 ///
 /// Eigenvalue decomposition for SPD 2nd-order tensor
 /// \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 ///
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-eig_spd(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+eig_spd(Tensor<T, N, ES> const & A);
 
 ///
 /// Eigenvalue decomposition for SPD 2nd-order tensor
@@ -450,9 +555,9 @@ eig_spd(Tensor<T, N> const & A);
 /// This algorithm comes from the journal article
 /// Scherzinger and Dohrmann, CMAME 197 (2008) 4007-4015
 ///
-template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
-eig_spd_cos(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+eig_spd_cos(Tensor<T, N, ES> const & A);
 
 ///
 /// Cholesky decomposition, rank-1 update algorithm
@@ -461,9 +566,9 @@ eig_spd_cos(Tensor<T, N> const & A);
 /// \return G Cholesky factor A = GG^T and completed (bool)
 /// algorithm ran to completion
 ///
-template<typename T, Index N>
-std::pair<Tensor<T, N>, bool >
-cholesky(Tensor<T, N> const & A);
+template<typename T, Index N, class ES=NOKOKKOS>
+std::pair<Tensor<T, N, ES>, bool >
+cholesky(Tensor<T, N, ES> const & A);
 
 ///
 /// Solve linear system of equations.
@@ -476,17 +581,23 @@ cholesky(Tensor<T, N> const & A);
 /// \param b rhs of the system Ax=b
 /// \return x solution to the system Ax=b
 ///
-template<typename T, Index N>
-Vector<T, N>
-solve(Tensor<T, N> const & A, Vector<T, N> const & b);
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Vector<T, N, ES>
+solve(Tensor<T, N, ES> const & A, Vector<T, N, ES> const & b);
 
-template<typename T, Index N, Index P>
-Matrix<T, N, P>
-solve(Tensor<T, N> const & A, Matrix<T, N, P> const & B);
+template<typename T, Index N, Index P, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE) 
+KOKKOS_INLINE_FUNCTION
+#endif
+Matrix<T, N, P, ES>
+solve(Tensor<T, N, ES> const & A, Matrix<T, N, P, ES> const & B);
 
-} // namespace Intrepid2
+} // namespace Intrepid
 
 #include "Intrepid2_MiniTensor_LinearAlgebra.i.h"
 #include "Intrepid2_MiniTensor_LinearAlgebra.t.h"
 
-#endif // Intrepid_MiniTensor_LinearAlgebra_h
+#endif // Intrepid2_MiniTensor_LinearAlgebra_h

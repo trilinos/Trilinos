@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid Package
+//                           Intrepid2 Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -39,25 +39,33 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Tensor3_i_h)
-#define Intrepid_MiniTensor_Tensor3_i_h
+#if !defined(Intrepid2_MiniTensor_Tensor3_i_h)
+#define Intrepid2_MiniTensor_Tensor3_i_h
 
 namespace Intrepid2 {
 
 //
 // 3rd-order tensor constructor with NaNs
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, N>::Tensor3() :
+#endif
+Tensor3<T, N, ES>::Tensor3() :
 TensorBase<T, Store>::TensorBase()
 {
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, N>::Tensor3(Index const dimension) :
+#endif
+Tensor3<T, N, ES>::Tensor3(Index const dimension) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER)
 {
   return;
@@ -66,17 +74,25 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER)
 //
 // 3rd-order tensor constructor with a specified value
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, N>::Tensor3(ComponentValue const value) :
+#endif
+Tensor3<T, N, ES>::Tensor3(ComponentValue const value) :
 TensorBase<T, Store>::TensorBase(N, ORDER, value)
 {
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, N>::Tensor3(Index const dimension, ComponentValue const value) :
+#endif
+Tensor3<T, N, ES>::Tensor3(Index const dimension, ComponentValue const value) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 {
   return;
@@ -85,17 +101,25 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER, value)
 //
 //  Create 3rd-order tensor from array
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, N>::Tensor3(T const * data_ptr) :
+#endif
+Tensor3<T, N, ES>::Tensor3(T const * data_ptr) :
 TensorBase<T, Store>::TensorBase(N, ORDER, data_ptr)
 {
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, N>::Tensor3(Index const dimension, T const * data_ptr) :
+#endif
+Tensor3<T, N, ES>::Tensor3(Index const dimension, T const * data_ptr) :
 TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 {
   return;
@@ -104,9 +128,13 @@ TensorBase<T, Store>::TensorBase(dimension, ORDER, data_ptr)
 //
 // Copy constructor
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, N>::Tensor3(Tensor3<T, N> const & A) :
+#endif
+Tensor3<T, N, ES>::Tensor3(Tensor3<T, N, ES> const & A) :
 TensorBase<T, Store>::TensorBase(A)
 {
   return;
@@ -115,9 +143,13 @@ TensorBase<T, Store>::TensorBase(A)
 //
 // 3rd-order tensor simple destructor
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, N>::~Tensor3()
+#endif
+Tensor3<T, N, ES>::~Tensor3()
 {
   return;
 }
@@ -125,10 +157,14 @@ Tensor3<T, N>::~Tensor3()
 //
 // Get dimension
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 Index
-Tensor3<T, N>::get_dimension() const
+Tensor3<T, N, ES>::get_dimension() const
 {
   return IS_DYNAMIC == true ? TensorBase<T, Store>::get_dimension() : N;
 }
@@ -136,10 +172,14 @@ Tensor3<T, N>::get_dimension() const
 //
 // Set dimension
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 void
-Tensor3<T, N>::set_dimension(Index const dimension)
+Tensor3<T, N, ES>::set_dimension(Index const dimension)
 {
   if (IS_DYNAMIC == true) {
     TensorBase<T, Store>::set_dimension(dimension, ORDER);
@@ -154,12 +194,16 @@ Tensor3<T, N>::set_dimension(Index const dimension)
 //
 // 3rd-order tensor addition
 //
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<typename Promote<S, T>::type, N>
-operator+(Tensor3<S, N> const & A, Tensor3<T, N> const & B)
+#endif
+Tensor3<typename Promote<S, T>::type, N,  ES>
+operator+(Tensor3<S, N, ES>const & A, Tensor3<T, N, ES> const & B)
 {
-  Tensor3<typename Promote<S, T>::type, N>
+  Tensor3<typename Promote<S, T>::type, N, ES>
   C(A.get_dimension());
 
   add(A, B, C);
@@ -170,12 +214,16 @@ operator+(Tensor3<S, N> const & A, Tensor3<T, N> const & B)
 //
 // 3rd-order tensor subtraction
 //
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<typename Promote<S, T>::type, N>
-operator-(Tensor3<S, N> const & A, Tensor3<T, N> const & B)
+#endif
+Tensor3<typename Promote<S, T>::type, N, ES>
+operator-(Tensor3<S, N, ES> const & A, Tensor3<T, N, ES> const & B)
 {
-  Tensor3<typename Promote<S, T>::type, N>
+  Tensor3<typename Promote<S, T>::type, N, ES>
   C(A.get_dimension());
 
   subtract(A, B, C);
@@ -186,12 +234,16 @@ operator-(Tensor3<S, N> const & A, Tensor3<T, N> const & B)
 //
 // 3rd-order tensor minus
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, N>
-operator-(Tensor3<T, N> const & A)
+#endif
+Tensor3<T, N, ES>
+operator-(Tensor3<T, N, ES> const & A)
 {
-  Tensor3<T, N>
+  Tensor3<T, N, ES>
   B(A.get_dimension());
 
   minus(A, B);
@@ -202,10 +254,14 @@ operator-(Tensor3<T, N> const & A)
 //
 // 3rd-order tensor equality
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 bool
-operator==(Tensor3<T, N> const & A, Tensor3<T, N> const & B)
+operator==(Tensor3<T, N, ES> const & A, Tensor3<T, N, ES> const & B)
 {
   return equal(A, B);
 }
@@ -213,10 +269,14 @@ operator==(Tensor3<T, N> const & A, Tensor3<T, N> const & B)
 //
 // 3rd-order tensor inequality
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 bool
-operator!=(Tensor3<T, N> const & A, Tensor3<T, N> const & B)
+operator!=(Tensor3<T, N, ES> const & A, Tensor3<T, N, ES> const & B)
 {
   return not_equal(A, B);
 }
@@ -224,12 +284,16 @@ operator!=(Tensor3<T, N> const & A, Tensor3<T, N> const & B)
 //
 // Scalar 3rd-order tensor product
 //
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N> >::type
-operator*(S const & s, Tensor3<T, N> const & A)
+operator*(S const & s, Tensor3<T, N, ES> const & A)
 {
-  Tensor3<typename Promote<S, T>::type, N>
+  Tensor3<typename Promote<S, T>::type, N, ES>
   B(A.get_dimension());
 
   scale(A, s, B);
@@ -240,12 +304,16 @@ operator*(S const & s, Tensor3<T, N> const & A)
 //
 // 3rd-order tensor scalar product
 //
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N> >::type
-operator*(Tensor3<T, N> const & A, S const & s)
+operator*(Tensor3<T, N, ES> const & A, S const & s)
 {
-  Tensor3<typename Promote<S, T>::type, N>
+  Tensor3<typename Promote<S, T>::type, N, ES>
   B(A.get_dimension());
 
   scale(A, s, B);
@@ -256,12 +324,16 @@ operator*(Tensor3<T, N> const & A, S const & s)
 //
 // 3rd-order tensor scalar division
 //
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<typename Promote<S, T>::type, N>
-operator/(Tensor3<T, N> const & A, S const & s)
+#endif
+Tensor3<typename Promote<S, T>::type, N, ES>
+operator/(Tensor3<T, N, ES> const & A, S const & s)
 {
-  Tensor3<typename Promote<S, T>::type, N>
+  Tensor3<typename Promote<S, T>::type, N, ES>
   B(A.get_dimension());
 
   divide(A, s, B);
@@ -272,12 +344,16 @@ operator/(Tensor3<T, N> const & A, S const & s)
 //
 // 3rd-order scalar tensor division
 //
-template<typename S, typename T, Index N>
+template<typename S, typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<typename Promote<S, T>::type, N>
-operator/(S const & s, Tensor3<T, N> const & A)
+#endif
+Tensor3<typename Promote<S, T>::type, N, ES>
+operator/(S const & s, Tensor3<T, N, ES> const & A)
 {
-  Tensor3<typename Promote<S, T>::type, N>
+  Tensor3<typename Promote<S, T>::type, N, ES>
   B(A.get_dimension());
 
   split(A, s, B);
@@ -288,12 +364,16 @@ operator/(S const & s, Tensor3<T, N> const & A)
 //
 // Indexing for constant 3rd order tensor
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 T const &
-Tensor3<T, N>::operator()(Index const i, Index const j, Index const k) const
+Tensor3<T, N, ES>::operator()(Index const i, Index const j, Index const k) const
 {
-  Tensor3<T, N> const &
+  Tensor3<T, N, ES> const &
   self = (*this);
 
   Index const
@@ -305,12 +385,16 @@ Tensor3<T, N>::operator()(Index const i, Index const j, Index const k) const
 //
 // 3rd-order tensor indexing
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 T &
-Tensor3<T, N>::operator()(Index const i, Index const j, Index const k)
+Tensor3<T, N, ES>::operator()(Index const i, Index const j, Index const k)
 {
-  Tensor3<T, N> &
+  Tensor3<T, N, ES> &
   self = (*this);
 
   Index const
@@ -322,9 +406,13 @@ Tensor3<T, N>::operator()(Index const i, Index const j, Index const k)
 // Local utility functions
 namespace {
 
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-void ones_in_diagonal(Tensor3<T, N> & A)
+#endif
+void ones_in_diagonal(Tensor3<T, N, ES> & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -353,9 +441,13 @@ void ones_in_diagonal(Tensor3<T, N> & A)
   return;
 }
 
-template<typename T, Index N>
+template<typename T, Index N, class ES=NOKOKKOS>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-void fill_levi_civita(Tensor3<T, N> & A)
+#endif
+void fill_levi_civita(Tensor3<T, N, ES> & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -376,12 +468,16 @@ void fill_levi_civita(Tensor3<T, N> & A)
 //
 // Levi-Civita symbol
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, N> const
+#endif
+Tensor3<T, N, ES> const
 levi_civita_3()
 {
-  Tensor3<T, N>
+  Tensor3<T, N, ES>
   A(N, ZEROS);
 
   fill_levi_civita(A);
@@ -389,12 +485,16 @@ levi_civita_3()
   return A;
 }
 
-template<typename T>
+template<typename T, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, DYNAMIC> const
+#endif
+Tensor3<T, DYNAMIC,ES> const
 levi_civita_3(Index const dimension)
 {
-  Tensor3<T, DYNAMIC>
+  Tensor3<T, DYNAMIC,ES>
   A(dimension, ZEROS);
 
   fill_levi_civita(A);
@@ -402,14 +502,18 @@ levi_civita_3(Index const dimension)
   return A;
 }
 
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, N> const
+#endif
+Tensor3<T, N, ES> const
 levi_civita_3(Index const dimension)
 {
   if (N != DYNAMIC) assert(dimension == N);
 
-  Tensor3<T, DYNAMIC>
+  Tensor3<T, DYNAMIC,ES>
   A(dimension, ZEROS);
 
   fill_levi_civita(A);
@@ -420,57 +524,81 @@ levi_civita_3(Index const dimension)
 //
 // Permutation symbol
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, N> const
+#endif
+Tensor3<T, N, ES> const
 permutation_3()
 {
-  return levi_civita_3<T, N>();
+  return levi_civita_3<T, N, ES>();
 }
 
-template<typename T>
+template<typename T, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, DYNAMIC> const
+#endif
+Tensor3<T, DYNAMIC,ES> const
 permutation_3(Index const dimension)
 {
   return levi_civita_3<T>(dimension);
 }
 
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, N> const
+#endif
+Tensor3<T, N, ES> const
 permutation_3(Index const dimension)
 {
-  return levi_civita_3<T, N>(dimension);
+  return levi_civita_3<T, N, ES>(dimension);
 }
 
 //
 // Alternating symbol
 //
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, N> const
+#endif
+Tensor3<T, N, ES> const
 alternator_3()
 {
-  return levi_civita_3<T, N>();
+  return levi_civita_3<T, N, ES>();
 }
 
-template<typename T>
+template<typename T, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, DYNAMIC> const
+#endif
+Tensor3<T, DYNAMIC,ES> const
 alternator_3(Index const dimension)
 {
   return levi_civita_3<T>(dimension);
 }
 
-template<typename T, Index N>
+template<typename T, Index N, class ES>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
-Tensor3<T, N> const
+#endif
+Tensor3<T, N, ES> const
 alternator_3(Index const dimension)
 {
-  return levi_civita_3<T, N>(dimension);
+  return levi_civita_3<T, N, ES>(dimension);
 }
 
-} // namespace Intrepid2
+} // namespace Intrepid
 
-#endif // Intrepid_MiniTensor_Tensor3_i_h
+#endif // Intrepid2_MiniTensor_Tensor3_i_h

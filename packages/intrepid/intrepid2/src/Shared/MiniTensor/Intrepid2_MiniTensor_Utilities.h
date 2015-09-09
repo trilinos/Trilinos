@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//                           Intrepid Package
+//                           Intrepid2 Package
 //                 Copyright (2007) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -39,18 +39,41 @@
 // ************************************************************************
 // @HEADER
 
-#if !defined(Intrepid_MiniTensor_Utilities_h)
-#define Intrepid_MiniTensor_Utilities_h
+#if !defined(Intrepid2_MiniTensor_Utilities_h)
+#define Intrepid2_MiniTensor_Utilities_h
 
 #include "Intrepid2_ConfigDefs.hpp"
 #include "Sacado.hpp"
 
 namespace Intrepid2 {
+//
+//swap function
+//
+template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+void
+swap(T & a, T & b);
+
+//
+//max function
+//
+template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
+T
+max(const T & a,const  T & b);
+
 
 ///
 /// Sign function
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 int
 sgn(T const & s);
 
@@ -58,6 +81,9 @@ sgn(T const & s);
 /// Copysign function
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
 copysign(T const & a, T const & b);
 
@@ -68,6 +94,9 @@ copysign(T const & a, T const & b);
 /// determines the underlying floating-point type.
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 typename Sacado::ScalarType<T>::type
 not_a_number();
 
@@ -78,6 +107,9 @@ not_a_number();
 /// determines the underlying floating-point type.
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 typename Sacado::ScalarType<T>::type
 machine_epsilon();
 
@@ -85,6 +117,9 @@ machine_epsilon();
 /// The circle constant
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 typename Sacado::ScalarType<T>::type
 tau();
 
@@ -93,6 +128,9 @@ tau();
 /// which is the Teuchos default (!).
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 typename Sacado::ScalarType<T>::type
 random();
 
@@ -100,6 +138,9 @@ random();
 /// Random number generation. Uniform distribution U(0,1).
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 typename Sacado::ScalarType<T>::type
 random_uniform();
 
@@ -107,6 +148,9 @@ random_uniform();
 /// Random number generation. Normal distribution N(0,1).
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 typename Sacado::ScalarType<T>::type
 random_normal();
 
@@ -114,6 +158,9 @@ random_normal();
 /// Compute a non-negative integer power by binary manipulation.
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
 integer_power(T const & X, Index const exponent);
 
@@ -121,6 +168,9 @@ integer_power(T const & X, Index const exponent);
 /// Utility for Kronecker delta in 2D
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
 kronecker_delta(Index const i, Index const j);
 
@@ -128,6 +178,9 @@ kronecker_delta(Index const i, Index const j);
 /// Utility for Kronecker delta in 3D
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
 kronecker_delta(Index const i, Index const j, Index const k);
 
@@ -135,6 +188,9 @@ kronecker_delta(Index const i, Index const j, Index const k);
 /// Utility for Kronecker delta in 4D
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
 kronecker_delta(Index const i, Index const j, Index const k, Index const l);
 
@@ -142,6 +198,9 @@ kronecker_delta(Index const i, Index const j, Index const k, Index const l);
 /// Utility for Levi-Civita/permutation/alternating symbol in 2D
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
 levi_civita(Index const i, Index const j);
 
@@ -149,6 +208,9 @@ levi_civita(Index const i, Index const j);
 /// Utility for Levi-Civita/permutation/alternating symbol in 3D
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
 levi_civita(Index const i, Index const j, Index const k);
 
@@ -156,6 +218,9 @@ levi_civita(Index const i, Index const j, Index const k);
 /// Utility for Levi-Civita/permutation/alternating symbol in 4D
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#endif
 T
 levi_civita(Index const i, Index const j, Index const k, Index const l);
 
@@ -186,7 +251,11 @@ struct Triplet
 /// Create a Duet structure.
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 Duet<T>
 make_duet(T const & a, T const & b);
 
@@ -194,7 +263,11 @@ make_duet(T const & a, T const & b);
 /// Create a Triplet structure.
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 Triplet<T>
 make_triplet(T const & a, T const & b, T const & c);
 
@@ -203,7 +276,11 @@ make_triplet(T const & a, T const & b, T const & c);
 /// that return a Duet.
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 Duet<T>
 tie(T & a, T& b);
 
@@ -212,12 +289,16 @@ tie(T & a, T& b);
 /// that return a Duet.
 ///
 template<typename T>
+#if defined(HAVE_INTREPID_KOKKOSCORE)
+KOKKOS_INLINE_FUNCTION
+#else
 inline
+#endif
 Triplet<T>
 tie(T & a, T & b, T & c);
 
-} // namespace Intrepid2
+} // namespace Intrepid
 
 #include "Intrepid2_MiniTensor_Utilities.i.h"
 
-#endif // Intrepid_MiniTensor_Utilities_h
+#endif // Intrepid2_MiniTensor_Utilities_h
