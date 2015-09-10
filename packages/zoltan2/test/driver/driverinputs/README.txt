@@ -22,6 +22,8 @@ In the first section of your input file you should define the input data source 
 
 If your input source is a pamgen mesh definition you are required to define an integer typed “dimension” parameter specifying the dimension of the mesh.
 
+KDD:  Isn't this dimension parameter specified in the Pamgen input file?
+
 A Galeri generated block should contain the following parameters (ex. 2):
 	
 	* x: number of grid points in the x-direction
@@ -57,9 +59,15 @@ InputAdapterParameters:  This block defines the type of input adapter to be pass
 
 Please note that if you choose to use a multi-vector data type with an adapter then you must additionally define an integer typed “vector_dimension” parameter specifying the dimension of the (x,t, e)petra multi-vector data type.
 
+KDD:  Can the dimension be inferred from the input data?
+
 Zoltan2Parameters:  This block defines all of the parameters applicable to a given problem.  Please consult the Zoltan2 documentation for a complete list of parameters.
 
+KDD:  It appears that parameter sublists for TPLs also work -- nice!  Perhaps that fact can be added to this documentation.
+
 In addition to the aforementioned required blocks, a problem definition block may contain an optional 3rd “Metrics” block.  The “Metrics” block may contain multiple sub-blocks defining lower and/or upper tolerances for pass/fail testing of specific Zoltan2 calculated metrics.  Each sub-block of “Metrics” should be named according the metric being tested, must include a double typed parameter definition for “lower” and /or “upper’, which refer to an acceptable lower/upper bound on the defined metric.  If any of the tolerances are violated then the test driver will report a failure.
+
+KDD:  If metrics are specified but no bounds are specify, the metrics are just printed, right?
 
   Section 3: Comparison definitions (OPTIONAL)
 
