@@ -149,13 +149,13 @@ public:
 
 
 /** @ingroup func_group
- *  \class ROL::InteriorPointConstraints
+ *  \class ROL::InteriorPointEqualityConstraint
  *  \brief Has both inequality and equality constraints. 
  *        Treat inequality constraint as equality with slack variable
  */
 
 template<class Real> 
-class InteriorPointConstraints : public EqualityConstraint<Real> {
+class InteriorPointEqualityConstraint : public EqualityConstraint<Real> {
 private:
   typedef Vector<Real>            V;
   typedef PartitionedVector<Real> PV;
@@ -188,12 +188,12 @@ private:
 public:
 
   // Constructor with inequality and equality constraints
-  InteriorPointConstraints( const Teuchos::RCP<EqualityConstraint<Real> > &incon, 
+  InteriorPointEqualityConstraint( const Teuchos::RCP<EqualityConstraint<Real> > &incon, 
                             const Teuchos::RCP<EqualityConstraint<Real> > &eqcon ) :
      incon_(incon), eqcon_(eqcon),hasEquality_(true) {}
 
   // Constructor with inequality constraint only
-  InteriorPointConstraints( const Teuchos::RCP<EqualityConstraint<Real> > &incon ) :
+  InteriorPointEqualityConstraint( const Teuchos::RCP<EqualityConstraint<Real> > &incon ) :
     incon_(incon), hasEquality_(false) {}
 
 
@@ -325,7 +325,7 @@ public:
 
   }
    
-}; // class InteriorPointConstraints
+}; // class InteriorPointEqualityConstraint
 
 
 /** @ingroup func_group

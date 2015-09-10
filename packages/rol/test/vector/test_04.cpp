@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
     PV y(y_rcp);
     PV z(z_rcp);
 
-/*
+
     // Standard tests.
     std::vector<RealT> consistency = x.checkVector(y, z, true, *outStream);
     ROL::StdVector<RealT> checkvec(Teuchos::rcp(&consistency, false));
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
     if (checkvec.norm() > 0.0) {
       errorFlag++;
     }
-*/
+
     if(argc>1) {
       int m = atoi(argv[1]);
       print_vector(*(x.basis(m)));

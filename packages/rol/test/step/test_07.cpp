@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
 
     // Interior point constraint
     RCP<ROL::EqualityConstraint<RealT> > ipcon = 
-      rcp( new ROL::InteriorPointConstraints<RealT>(incon_hs32,eqcon_hs32) );
+      rcp( new ROL::InteriorPointEqualityConstraint<RealT>(incon_hs32,eqcon_hs32) );
 
     *outStream << "\nChecking individual objectives and constraints separately\n" << std::endl;
 
