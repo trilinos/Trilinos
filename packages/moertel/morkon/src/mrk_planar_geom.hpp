@@ -49,6 +49,8 @@
 #define MORKON_EXP_PLANAR_GEOM_H
 
 #include <cmath>
+#include <iostream>
+
 #include <mrk_data_types.hpp>
 
 namespace morkon_exp {
@@ -187,12 +189,32 @@ void find_crossing_point_2d(const ScalarType pointA[2], const ScalarType pointB[
 }
 
 
+
+template <typename ScalarType, unsigned DIM>
+std::ostream &streamit(std::ostream &os, int list_len, const ScalarType vec_list[][DIM])
+{
+  os << "{ ";
+  for (int i = 0; i < list_len; ++i)
+  {
+    os << "{";
+    for (unsigned j = 0; j < DIM; ++j)
+    {
+      if (j != 0)
+        os << ",";
+      os << vec_list[i][j];
+    }
+    os << "} ";
+  }
+  os << "}";
+  return os;
+}
+
 // Assumes that gon_in is convex!
 template <typename ScalarType>
 KOKKOS_INLINE_FUNCTION
-int clip_convex_polygon(int num_pts, const ScalarType gon_in[][2],
-                        const ScalarType line_witness[2], const ScalarType outward_normal[2],
-                        ScalarType gon_out[][2] // Assume big enough!
+int clip_convex_polygon_with_line(int num_pts, const ScalarType gon_in[][2],
+                                  const ScalarType line_witness[2], const ScalarType outward_normal[2],
+                                  ScalarType gon_out[][2] // Assume big enough!
                                       )
 {
   int out_idx = 0;
@@ -229,16 +251,71 @@ int clip_convex_polygon(int num_pts, const ScalarType gon_in[][2],
 }
 
 
+template <typename ScalarType, unsigned DIM>
+KOKKOS_INLINE_FUNCTION
+void copy_2d_array(int len, const ScalarType gon_in[][DIM], ScalarType gon_out[][DIM])
+{
+  for (int i = 0; i < len; ++i)
+  {
+    for (unsigned j = 0; j < DIM; ++j)
+    {
+      gon_out[i][j] = gon_in[i][j];
+    }
+  }
+}
+
+
+template <typename ScalarType>
+KOKKOS_INLINE_FUNCTION
+bool is_point_in_convex_polygon(const ScalarType point[2], const int num_gon_verts, const ScalarType gon[][2])
+{
+  for (int tail_i = 0; tail_i < num_gon_verts; ++tail_i)
+  {
+    int head_i = (tail_i + 1) % num_gon_verts;
+    ScalarType witness[2], outward_nml[2];
+    compute_supporting_line(gon[tail_i], gon[head_i], witness, outward_nml);
+    if (classify_point_2d(point, witness, outward_nml) != POINT_ABOVE)
+      return false;
+  }
+  return true;
+}
+
 template <typename ScalarType, int MAX_VERTS_IN = 3>
 KOKKOS_INLINE_FUNCTION
-void clip_convex_polygon(int num_subject_gon_verts, ScalarType subject_gon[][2],
-                         int num_clip_gon_verts, ScalarType clip_gon[][2],
-                         ScalarType gon_out[][2])
+int clip_convex_polygon(const int num_subject_gon_verts, const ScalarType subject_gon[][2],
+                        const int num_clip_gon_verts, const ScalarType clip_gon[][2],
+                        ScalarType gon_out[][2])
 {
+  // Sutherland-Hedgeman algorithm, but restricted to the case where the subject polygon
+  // is convex.
+
   const int BuffGonCapacity= 2 * MAX_VERTS_IN;
   ScalarType scratch_gons[2][BuffGonCapacity][2];
+  ScalarType (*curr_gon)[BuffGonCapacity][2]   = &scratch_gons[0];
+  ScalarType (*update_gon)[BuffGonCapacity][2] = &scratch_gons[1];
 
-  // YOU ARE HERE!
+  copy_2d_array(num_subject_gon_verts, subject_gon, *curr_gon);
+  int num_curr_gon_verts = num_subject_gon_verts;
+  ScalarType witness[2] = {0,0};
+  ScalarType outward_nml[2] = {0,0};
+
+  for (int tail_i = 0; tail_i < num_clip_gon_verts; ++tail_i)
+  {
+    int head_i = (tail_i + 1) % num_clip_gon_verts;
+    compute_supporting_line(clip_gon[tail_i], clip_gon[head_i], witness, outward_nml);
+    int num_update_gon_verts =
+        clip_convex_polygon_with_line(num_curr_gon_verts, *curr_gon, witness, outward_nml, *update_gon);
+
+    curr_gon = update_gon;
+    num_curr_gon_verts = num_update_gon_verts;
+    update_gon = &scratch_gons[(head_i + 1) % 2];
+
+    if (num_curr_gon_verts == 0)
+      break;
+  }
+
+  copy_2d_array(num_curr_gon_verts, *curr_gon, gon_out);
+  return num_curr_gon_verts;
 }
 
 

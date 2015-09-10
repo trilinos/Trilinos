@@ -423,7 +423,7 @@ main (int argc, char *argv[])
         }
       }
     }
-#if defined(HAVE_BELOS_COMPLEX) && defined(HAVE_TPETRA_COMPLEX)
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_COMPLEX)
     {
       typedef std::complex<double> scalar_type;
       success = runTest<scalar_type, local_ordinal_type,
@@ -440,7 +440,7 @@ main (int argc, char *argv[])
         }
       }
     }
-#endif // defined(HAVE_BELOS_COMPLEX) && defined(HAVE_TPETRA_COMPLEX)
+#endif // defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TPETRA_COMPLEX)
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 

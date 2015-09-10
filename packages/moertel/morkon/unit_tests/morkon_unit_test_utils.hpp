@@ -49,28 +49,6 @@
 #ifndef MRK_UNIT_TEST_UTILS_HPP
 #define MRK_UNIT_TEST_UTILS_HPP
 
-#include <iostream>
-
-template <typename ScalarType, unsigned DIM>
-std::ostream &streamit(std::ostream &os, int list_len, const ScalarType vec_list[][DIM])
-{
-  os << "{ ";
-  for (int i = 0; i < list_len; ++i)
-  {
-    os << "{";
-    for (unsigned j = 0; j < DIM; ++j)
-    {
-      if (j != 0)
-        os << ",";
-      os << vec_list[i][j];
-    }
-    os << "} ";
-  }
-  os << "}";
-  return os;
-}
-
-
 template <typename ScalarType, unsigned DIM>
 bool are_lists_epsilon_equal(int cmp_len, const ScalarType vec_listA[][DIM], const ScalarType vec_listB[][DIM],
                       ScalarType cmp_epsilon = std::numeric_limits<ScalarType>::epsilon())
