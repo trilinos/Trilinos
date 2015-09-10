@@ -192,6 +192,41 @@ scalar_t getAvgImbalance() const { return values_[evalAvgImbalance];}
 
 };  // end class
 
+/*! \brief A class containing the metrics for one measurable item.
+ */
+
+template <typename scalar_t>
+  class graphMetricValues{
+
+private:
+  void resetValues(){
+    scalar_t *tmp = new scalar_t [evalNumMetrics];
+    memset(tmp, 0, sizeof(scalar_t) * evalNumMetrics);
+    values_ = arcp(tmp, 0, evalNumMetrics, true);
+  }
+  ArrayRCP<scalar_t> values_;
+  std::string metricName_;
+
+public:
+
+/*! \brief  Enumerator for offsets into metric data.
+ */
+enum metricOffset{
+  evalGlobalSum,   /*!< the global total on all parts */
+  evalGlobalMax,   /*!< the maximum across all parts */
+  evalNumMetrics    /*!< the number of metric values_ */
+};
+
+/*! \brief Constructor */
+graphMetricValues(std::string mname) :
+  values_(), metricName_(mname) {
+  resetValues();}
+
+/*! \brief Constructor */
+graphMetricValues() : 
+  values_(), metricName_("unset") { 
+    resetValues();}
+};  // end class
 
 template <typename scalar_t>
   void MetricValues<scalar_t>::printLine(std::ostream &os) const
