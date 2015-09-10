@@ -71,6 +71,7 @@ c	09/07/93 V.R. Yarberry - Modified for API 2.00
       real vers, fdum
 
       character*(MXSTLN) coord_names(3), qa_record(4,2), var_names(3)
+      character*(MXSTLN) name
       character*(MXSTLN) blk_names(5)
       character*(MXSTLN) nset_names(2)
       character*(MXSTLN) sset_names(5)
@@ -182,12 +183,15 @@ c
      1                num_nodes_per_elem(i), num_attr(i), ierr)
          write (iout, '(/"after exgelb, error = ", i3)' ) ierr
 
+         call exgnam (exoid, EXEBLK, ids(i), name, ierr)
          write (iout, '("element block id = ", i2,/
      1                  "element type = ", a9,/
+     *                  "block name = ", a32,/
      2                  "num_elem_in_block = ", i2,/
      3                  "num_nodes_per_elem = ", i2,/
      4                  "num_attr = ", i2)')
-     5                  ids(i), typ, num_elem_in_block(i), 
+     5                  ids(i), typ, name,
+     *                  num_elem_in_block(i), 
      6                  num_nodes_per_elem(i), num_attr(i)
 
 40    continue
