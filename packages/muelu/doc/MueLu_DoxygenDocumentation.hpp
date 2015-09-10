@@ -70,6 +70,7 @@ More information can be found at https://trilinos.org/packages/muelu.
 
 \section muelu_authors Authors and Contributors
 
+  - Tom Benson, LLNL
   - Emily Furst, University of Washington (summer intern, 2015)
   - Jeremie Gaidamour, INRIA (Nancy, France)
   - Axel Gerstenberger, Rolls Royce
@@ -77,6 +78,7 @@ More information can be found at https://trilinos.org/packages/muelu.
   - Brian Kelley, Texas A&M (summer intern, 2015)
   - Andrey Prokopenko, Sandia National Labs
   - Chris Siefert, Sandia National Labs
+  - Paul Tsuji, LLNL
   - Ray Tuminaro, Sandia National Labs
   - Tobias Wiesner, Sandia National Labs
 
