@@ -20,7 +20,7 @@ In the first section of your input file you should define the input data source 
 	* input file: the name of the source file — EXCLUDING extension.
 	* file type: Matrix Market, Pamgen, Chaco, or Geometric Generator
 
-If your input source is a pamgen mesh definition you are required to define an integer typed “dimension” parameter specifying the dimension of the mesh.
+**If your input source is a pamgen mesh definition you are required to define an integer typed “dimension” parameter specifying the dimension of the mesh.
 
 A Galeri generated block should contain the following parameters (ex. 2):
 	

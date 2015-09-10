@@ -49,12 +49,17 @@
     <ParameterList name="problem 1">
         <Parameter name="kind" type="string" value="partitioning"/>
  
-        <ParameterList name="InputAdapterParameters">
+       <!-- <ParameterList name="InputAdapterParameters">
             <Parameter name="data type" type="string" value="tpetra_crs_graph"/> 
             <Parameter name="input adapter" type="string" value="XpetraCrsGraph"/>
             <Parameter name="stride" type="int" value="3"/>
-        </ParameterList>
+        </ParameterList> -->
 
+        <ParameterList name="InputAdapterParameters">
+            <Parameter name="input adapter" type="string" value="PamgenMesh"/>
+            <Parameter name="stride" type="int" value="3"/>
+        </ParameterList>
+        
         <ParameterList name="Zoltan2Parameters">
             <Parameter name="timer_output_stream" type="string" value="std::cout"/>
             <Parameter name="algorithm" type="string" value="parmetis"/>
