@@ -181,8 +181,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer = epetraContainer_;
    Teuchos::RCP<Epetra_Vector> r = (!scatterIC_) ? 
@@ -383,8 +383,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer = epetraContainer_;
    Teuchos::RCP<Epetra_Vector> r = (!scatterIC_) ? 
@@ -594,8 +594,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    bool useColumnIndexer = colGlobalIndexer_!=Teuchos::null;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer = epetraContainer_;
    TEUCHOS_ASSERT(epetraContainer!=Teuchos::null);

@@ -86,7 +86,7 @@
 #include "MueLu_Zoltan2Interface_fwd.hpp"
 
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
-#include "MueLu_SaPFactoryK_fwd.hpp"
+#include "MueLu_SaPFactory_kokkos_fwd.hpp"
 #endif
 
 namespace MueLu {

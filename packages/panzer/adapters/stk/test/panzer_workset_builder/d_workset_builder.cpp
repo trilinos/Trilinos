@@ -138,101 +138,104 @@ namespace panzer {
 
     {
       std::string sideset = "vertical_0";
-      Teuchos::RCP<std::vector<panzer::Workset> > worksets = panzer_stk_classic::buildBCWorksets(*mesh,
-                                          *(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)),
-                                          *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)),
-                                          sideset);
+      Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk_classic::buildBCWorksets(
+        *mesh, *(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)),
+        *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)), sideset);
      
       if(myRank==0) {
-        TEST_EQUALITY((*worksets).size(),0); // no elements on this processor
+        TEST_EQUALITY(worksets->size(),0); // no elements on this processor
       }
       else {
+        TEST_EQUALITY(worksets->size(),1);
+        panzer::Workset& workset = worksets->begin()->second;
+
         TEST_EQUALITY((*worksets).size(),1);
-        TEST_EQUALITY((*worksets)[0].num_cells,2);
-        TEST_EQUALITY((*worksets)[0].subcell_dim,1);
-        TEST_EQUALITY((*worksets)[0].numDetails(),2);
+        TEST_EQUALITY(workset.num_cells,2);
+        TEST_EQUALITY(workset.subcell_dim,1);
+        TEST_EQUALITY(workset.numDetails(),2);
   
-        // this is identical to (*worksets)[0](0)
-        TEST_EQUALITY((*worksets)[0].subcell_index, 1);
-        TEST_EQUALITY((*worksets)[0].block_id, "eblock-0_0");
-        TEST_EQUALITY((*worksets)[0].cell_local_ids.size(),2);
-        TEST_EQUALITY((*worksets)[0].cell_local_ids[0],0);
-        TEST_EQUALITY((*worksets)[0].cell_local_ids[1],2);
-        TEST_EQUALITY((*worksets)[0].ir_degrees->size(),1);
-        TEST_EQUALITY((*worksets)[0].int_rules.size(),1);
-        TEST_EQUALITY((*worksets)[0].basis_names->size(),2);
-        TEST_EQUALITY((*worksets)[0].bases.size(),2);
+        // this is identical to workset(0)
+        TEST_EQUALITY(workset.subcell_index, 1);
+        TEST_EQUALITY(workset.block_id, "eblock-0_0");
+        TEST_EQUALITY(workset.cell_local_ids.size(),2);
+        TEST_EQUALITY(workset.cell_local_ids[0],0);
+        TEST_EQUALITY(workset.cell_local_ids[1],2);
+        TEST_EQUALITY(workset.ir_degrees->size(),1);
+        TEST_EQUALITY(workset.int_rules.size(),1);
+        TEST_EQUALITY(workset.basis_names->size(),2);
+        TEST_EQUALITY(workset.bases.size(),2);
 
-        TEST_EQUALITY((*worksets)[0](0).subcell_index, 1);
-        TEST_EQUALITY((*worksets)[0](0).block_id, "eblock-0_0");
-        TEST_EQUALITY((*worksets)[0](0).cell_local_ids.size(),2);
-        TEST_EQUALITY((*worksets)[0](0).cell_local_ids[0],0);
-        TEST_EQUALITY((*worksets)[0](0).cell_local_ids[1],2);
-        TEST_EQUALITY((*worksets)[0](0).ir_degrees->size(),1);
-        TEST_EQUALITY((*worksets)[0](0).int_rules.size(),1);
-        TEST_EQUALITY((*worksets)[0](0).basis_names->size(),2);
-        TEST_EQUALITY((*worksets)[0](0).bases.size(),2);
+        TEST_EQUALITY(workset(0).subcell_index, 1);
+        TEST_EQUALITY(workset(0).block_id, "eblock-0_0");
+        TEST_EQUALITY(workset(0).cell_local_ids.size(),2);
+        TEST_EQUALITY(workset(0).cell_local_ids[0],0);
+        TEST_EQUALITY(workset(0).cell_local_ids[1],2);
+        TEST_EQUALITY(workset(0).ir_degrees->size(),1);
+        TEST_EQUALITY(workset(0).int_rules.size(),1);
+        TEST_EQUALITY(workset(0).basis_names->size(),2);
+        TEST_EQUALITY(workset(0).bases.size(),2);
   
-        TEST_EQUALITY((*worksets)[0](1).subcell_index, 3);
-        TEST_EQUALITY((*worksets)[0](1).block_id, "eblock-1_0");
-        TEST_EQUALITY((*worksets)[0](1).cell_local_ids[0],5);
-        TEST_EQUALITY((*worksets)[0](1).cell_local_ids[1],7);
-        TEST_EQUALITY((*worksets)[0](1).ir_degrees->size(),1);
-        TEST_EQUALITY((*worksets)[0](1).int_rules.size(),1);
-        TEST_EQUALITY((*worksets)[0](1).basis_names->size(),2);
-        TEST_EQUALITY((*worksets)[0](1).bases.size(),2);
+        TEST_EQUALITY(workset(1).subcell_index, 3);
+        TEST_EQUALITY(workset(1).block_id, "eblock-1_0");
+        TEST_EQUALITY(workset(1).cell_local_ids[0],5);
+        TEST_EQUALITY(workset(1).cell_local_ids[1],7);
+        TEST_EQUALITY(workset(1).ir_degrees->size(),1);
+        TEST_EQUALITY(workset(1).int_rules.size(),1);
+        TEST_EQUALITY(workset(1).basis_names->size(),2);
+        TEST_EQUALITY(workset(1).bases.size(),2);
 
-        testIpMatch((*worksets)[0](0), (*worksets)[0](1), (*worksets)[0].num_cells, out, success);
+        testIpMatch(workset(0), workset(1), workset.num_cells, out, success);
       }
     }
 
     {
       std::string sideset = "vertical_0";
-      Teuchos::RCP<std::vector<panzer::Workset> > worksets = panzer_stk_classic::buildBCWorksets(*mesh,
-                                          *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)),
-                                          *(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)),
-                                          sideset);
+      Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets = panzer_stk_classic::buildBCWorksets(
+        *mesh, *(panzer::findPhysicsBlock(element_blocks[1],physicsBlocks)),
+        *(panzer::findPhysicsBlock(element_blocks[0],physicsBlocks)), sideset);
      
       if(myRank==1) {
-        TEST_EQUALITY((*worksets).size(),0); // no elements on this processor
+        TEST_EQUALITY(worksets->size(),0); // no elements on this processor
       }
       else {
-        TEST_EQUALITY((*worksets).size(),1);
-        TEST_EQUALITY((*worksets)[0].num_cells,2);
-        TEST_EQUALITY((*worksets)[0].subcell_dim,1);
-        TEST_EQUALITY((*worksets)[0].numDetails(),2);
+        TEST_EQUALITY(worksets->size(),1);
+        panzer::Workset& workset = worksets->begin()->second;
+
+        TEST_EQUALITY(workset.num_cells,2);
+        TEST_EQUALITY(workset.subcell_dim,1);
+        TEST_EQUALITY(workset.numDetails(),2);
   
         // this is identical to details[0]
-        TEST_EQUALITY((*worksets)[0].subcell_index, 3);
-        TEST_EQUALITY((*worksets)[0].block_id, "eblock-1_0");
-        TEST_EQUALITY((*worksets)[0].cell_local_ids.size(),2);
-        TEST_EQUALITY((*worksets)[0].cell_local_ids[0],1);
-        TEST_EQUALITY((*worksets)[0].cell_local_ids[1],3);
-        TEST_EQUALITY((*worksets)[0].ir_degrees->size(),1);
-        TEST_EQUALITY((*worksets)[0].int_rules.size(),1);
-        TEST_EQUALITY((*worksets)[0].basis_names->size(),2);
-        TEST_EQUALITY((*worksets)[0].bases.size(),2);
+        TEST_EQUALITY(workset.subcell_index, 3);
+        TEST_EQUALITY(workset.block_id, "eblock-1_0");
+        TEST_EQUALITY(workset.cell_local_ids.size(),2);
+        TEST_EQUALITY(workset.cell_local_ids[0],1);
+        TEST_EQUALITY(workset.cell_local_ids[1],3);
+        TEST_EQUALITY(workset.ir_degrees->size(),1);
+        TEST_EQUALITY(workset.int_rules.size(),1);
+        TEST_EQUALITY(workset.basis_names->size(),2);
+        TEST_EQUALITY(workset.bases.size(),2);
 
-        TEST_EQUALITY((*worksets)[0](0).subcell_index, 3);
-        TEST_EQUALITY((*worksets)[0](0).block_id, "eblock-1_0");
-        TEST_EQUALITY((*worksets)[0](0).cell_local_ids.size(),2);
-        TEST_EQUALITY((*worksets)[0](0).cell_local_ids[0],1);
-        TEST_EQUALITY((*worksets)[0](0).cell_local_ids[1],3);
-        TEST_EQUALITY((*worksets)[0](0).ir_degrees->size(),1);
-        TEST_EQUALITY((*worksets)[0](0).int_rules.size(),1);
-        TEST_EQUALITY((*worksets)[0](0).basis_names->size(),2);
-        TEST_EQUALITY((*worksets)[0](0).bases.size(),2);
+        TEST_EQUALITY(workset(0).subcell_index, 3);
+        TEST_EQUALITY(workset(0).block_id, "eblock-1_0");
+        TEST_EQUALITY(workset(0).cell_local_ids.size(),2);
+        TEST_EQUALITY(workset(0).cell_local_ids[0],1);
+        TEST_EQUALITY(workset(0).cell_local_ids[1],3);
+        TEST_EQUALITY(workset(0).ir_degrees->size(),1);
+        TEST_EQUALITY(workset(0).int_rules.size(),1);
+        TEST_EQUALITY(workset(0).basis_names->size(),2);
+        TEST_EQUALITY(workset(0).bases.size(),2);
   
-        TEST_EQUALITY((*worksets)[0](1).subcell_index, 1);
-        TEST_EQUALITY((*worksets)[0](1).block_id, "eblock-0_0");
-        TEST_EQUALITY((*worksets)[0](1).cell_local_ids[0],4);
-        TEST_EQUALITY((*worksets)[0](1).cell_local_ids[1],6);
-        TEST_EQUALITY((*worksets)[0](1).ir_degrees->size(),1);
-        TEST_EQUALITY((*worksets)[0](1).int_rules.size(),1);
-        TEST_EQUALITY((*worksets)[0](1).basis_names->size(),2);
-        TEST_EQUALITY((*worksets)[0](1).bases.size(),2);
+        TEST_EQUALITY(workset(1).subcell_index, 1);
+        TEST_EQUALITY(workset(1).block_id, "eblock-0_0");
+        TEST_EQUALITY(workset(1).cell_local_ids[0],4);
+        TEST_EQUALITY(workset(1).cell_local_ids[1],6);
+        TEST_EQUALITY(workset(1).ir_degrees->size(),1);
+        TEST_EQUALITY(workset(1).int_rules.size(),1);
+        TEST_EQUALITY(workset(1).basis_names->size(),2);
+        TEST_EQUALITY(workset(1).bases.size(),2);
 
-        testIpMatch((*worksets)[0](0), (*worksets)[0](1), (*worksets)[0].num_cells, out, success);
+        testIpMatch(workset(0), workset(1), workset.num_cells, out, success);
       }
     }
     

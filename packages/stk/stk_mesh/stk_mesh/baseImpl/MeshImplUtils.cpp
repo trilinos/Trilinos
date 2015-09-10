@@ -56,6 +56,7 @@ void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::E
 {
   entity_vector.clear();
   std::vector<Entity> tmp;
+  std::vector<Entity> intersect;
   for(unsigned i=0; i<numNodes; ++i) {
     const Entity* entities = mesh.begin(nodes[i],rank);
     unsigned numEntities = mesh.num_connectivity(nodes[i],rank);
@@ -65,7 +66,7 @@ void find_entities_these_nodes_have_in_common(const BulkData& mesh, stk::mesh::E
       entity_vector.assign(tmp.begin(), tmp.end());
     }
     else {
-       std::vector<Entity> intersect;
+       intersect.clear();
        std::back_insert_iterator<std::vector<Entity> > intersect_itr(intersect);
        std::set_intersection(entity_vector.begin(), entity_vector.end(),
                              tmp.begin(), tmp.end(),
@@ -140,7 +141,7 @@ int check_for_connected_nodes(const BulkData& mesh)
     const stk::mesh::BucketVector& buckets = mesh.buckets(rank);
     for(size_t i=0; i<buckets.size(); ++i) {
       const stk::mesh::Bucket& bucket = *buckets[i];
-      if (bucket.topology() == stk::topology::INVALID_TOPOLOGY)
+      if (bucket.topology() == stk::topology::INVALID_TOPOLOGY && bucket.size() > 0)
       {
         std::cerr << "Entities on rank " << rank << " bucket " << i << " have no topology defined" << std::endl;
         return -1;

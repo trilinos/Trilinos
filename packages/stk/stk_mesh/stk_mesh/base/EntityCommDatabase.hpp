@@ -58,6 +58,12 @@ namespace stk { namespace mesh { struct Entity; } }
 namespace stk {
 namespace mesh {
 
+class CommMapChangeListener {
+public:
+    virtual ~CommMapChangeListener(){}
+    virtual void removedKey(const EntityKey& key) = 0;
+};
+
 // Struct containing things the system must know about an entity to
 // handle communication. The Entity object itself won't necessarily be
 // available, so there's some duplication here (owner_rank).
@@ -78,7 +84,7 @@ class EntityCommDatabase
                               > map_type;
 
 public:
-  EntityCommDatabase() : m_comm_map(), m_last_lookup(m_comm_map.end()) {}
+  EntityCommDatabase() : m_comm_map(), m_last_lookup(m_comm_map.end()), m_comm_map_change_listener(nullptr) {}
 
   PairIterEntityComm shared_comm_info( const EntityKey & key ) const;
   PairIterEntityComm comm( const EntityKey & key ) const;
@@ -93,6 +99,10 @@ public:
   bool change_owner_rank(const EntityKey& key, int owner);
 
   const EntityComm* entity_comm(const EntityKey& key) const;
+        EntityComm* entity_comm(const EntityKey& key);
+
+  void setCommMapChangeListener(CommMapChangeListener* listener)
+  { m_comm_map_change_listener = listener; }
 
 private:
   bool cached_find(const EntityKey& key) const;
@@ -100,6 +110,7 @@ private:
 
   map_type m_comm_map;
   mutable map_type::iterator m_last_lookup;
+  mutable CommMapChangeListener* m_comm_map_change_listener;
 };
 
 //----------------------------------------------------------------------

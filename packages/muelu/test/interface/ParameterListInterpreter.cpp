@@ -208,11 +208,11 @@ int main(int argc, char *argv[]) {
             mueluFactory = Teuchos::rcp(new MLParameterListInterpreter(paramList));
 
           } else if (dirList[k] == "MLParameterListInterpreter2/") {
-            std::cout << "ML ParameterList: " << std::endl;
-            std::cout << paramList << std::endl;
+            //std::cout << "ML ParameterList: " << std::endl;
+            //std::cout << paramList << std::endl;
             RCP<ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
-            std::cout << "MueLu ParameterList: " << std::endl;
-            std::cout << *mueluParamList << std::endl;
+            //std::cout << "MueLu ParameterList: " << std::endl;
+            //std::cout << *mueluParamList << std::endl;
             mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
           }
 

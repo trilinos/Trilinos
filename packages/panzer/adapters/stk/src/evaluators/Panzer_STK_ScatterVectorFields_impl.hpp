@@ -123,8 +123,8 @@ evaluateFields(panzer::Traits::EvalData workset)
    dimStrings[2] = "Z";
 
    // for convenience pull out some objects from workset
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
-   std::string blockId = workset.block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
 
 /*
    std::cout << "Point Field " << std::endl;

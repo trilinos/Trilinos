@@ -109,7 +109,7 @@ PHX_POST_REGISTRATION_SETUP(CellExtreme,sd,fm)
 
   num_qp = scalar.dimension(1);
 
-  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0]);
+  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************

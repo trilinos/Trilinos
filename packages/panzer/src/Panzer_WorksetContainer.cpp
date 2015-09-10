@@ -62,11 +62,20 @@ WorksetContainer::WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> 
    setPhysicsBlockVector(physicsBlocks);
 }
 
+WorksetContainer::WorksetContainer(const Teuchos::RCP<const WorksetFactoryBase> & factory,
+                                   const std::map<std::string,WorksetNeeds> & needs)
+   : wkstFactory_(factory), worksetSize_(-1)
+{
+  // thats all!
+  ebToNeeds_ = needs;
+}
+
 /** Copies the workset factory and the workset size, but not constructed
   * worksets.
   */
 WorksetContainer::WorksetContainer(const WorksetContainer & wc)
-   : wkstFactory_(wc.wkstFactory_), ebToPb_(wc.ebToPb_), worksetSize_(wc.worksetSize_)
+   : wkstFactory_(wc.wkstFactory_)
+   , worksetSize_(wc.worksetSize_)
 {
 }
 
@@ -88,10 +97,26 @@ void WorksetContainer::setPhysicsBlockVector(const std::vector<Teuchos::RCP<Phys
           ir_itr != int_rules.end(); ++ir_itr)
         needs.int_rules.push_back(ir_itr->second);
   
-     const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases= physicsBlocks[i]->getBases();
+     const std::map<std::string,Teuchos::RCP<panzer::PureBasis> >& bases = physicsBlocks[i]->getBases();
+     const std::vector<StrPureBasisPair>& fieldToBasis = physicsBlocks[i]->getProvidedDOFs();
      for(std::map<std::string,Teuchos::RCP<panzer::PureBasis> >::const_iterator b_itr = bases.begin();
-         b_itr != bases.end(); ++b_itr)
+         b_itr != bases.end(); ++b_itr) {
        needs.bases.push_back(b_itr->second);
+
+       bool found = false;
+       for(std::size_t d=0;d<fieldToBasis.size();d++) {
+         if(fieldToBasis[d].second->name()==b_itr->second->name()) {
+           // add representative basis for this field 
+           needs.rep_field_name.push_back(fieldToBasis[d].first);
+           found = true;
+
+           break;
+         }
+       }
+
+       // this should always work if physics blocks are correctly constructed
+       TEUCHOS_ASSERT(found);
+     }
    }
 }
 
@@ -144,7 +169,6 @@ WorksetContainer::getWorksets(const WorksetDescriptor & wd)
    VolumeMap::iterator itr = volWorksets_.find(wd);
    if(itr==volWorksets_.end()) {
       // couldn't find workset, build it!
-      // const PhysicsBlock & pb = lookupPhysicsBlock(wd.getElementBlock());
       const WorksetNeeds & needs = lookupNeeds(wd.getElementBlock());
       worksetVector = wkstFactory_->getWorksets(wd,needs);
 
@@ -170,10 +194,15 @@ WorksetContainer::getSideWorksets(const BC & bc)
    SideMap::iterator itr = sideWorksets_.find(side);
    if(itr==sideWorksets_.end()) {
       // couldn't find workset, build it!
-      const std::string & eBlock = side.eblk_id;
-      //const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
-      const WorksetNeeds & needs = lookupNeeds(eBlock);
-      worksetMap = wkstFactory_->getSideWorksets(bc,needs);
+      if (bc.bcType() == BCT_Interface)
+        worksetMap = wkstFactory_->getSideWorksets(bc, lookupPhysicsBlock(bc.elementBlockID()),
+                                                   lookupPhysicsBlock(bc.elementBlockID2()));
+      else {
+        const std::string & eBlock = side.eblk_id;
+        //const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
+        const WorksetNeeds & needs = lookupNeeds(eBlock);
+        worksetMap = wkstFactory_->getSideWorksets(bc,needs);
+      }
 
       // apply orientations to the worksets for this side
       if(worksetMap!=Teuchos::null)
@@ -194,7 +223,6 @@ void WorksetContainer::allocateVolumeWorksets(const std::vector<std::string> & e
    for(std::size_t i=0;i<eBlocks.size();i++) {
       // couldn't find workset, build it!
       const std::string & eBlock = eBlocks[i];
-      // const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
       const WorksetNeeds & needs = lookupNeeds(eBlock);
 
       // store vector for reuse in the future
@@ -214,7 +242,6 @@ void WorksetContainer::allocateSideWorksets(const std::vector<BC> & bcs)
       const BC & bc = bcs[i];
       SideId side(bc);
       const std::string & eBlock = bc.elementBlockID();
-      // const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
       const WorksetNeeds & needs = lookupNeeds(eBlock);
 
       // store map for reuse in the future
@@ -264,7 +291,6 @@ applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) co
   using Teuchos::RCP;
 
   typedef double Scalar;                          // orientation container scalar type
-  // typedef Intrepid::FieldContainer<Scalar> Array; // orientation container array type
   typedef PHX::MDField<Scalar,Cell,BASIS> Array; // orientation container array type
   typedef std::pair<std::string,Teuchos::RCP<const PureBasis> > StrConstBasisPair;
 
@@ -283,39 +309,20 @@ applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) co
     return;
   }
 
-  // extract a map from basis name to string/basis pairs that require orientations
-  //////////////////////////////////////////////////////////////////////////////////
-  std::map<std::string, StrConstBasisPair> orientedBasisFields;
-  {
-    const PhysicsBlock & pb = lookupPhysicsBlock(eBlock);
-
-    // get all field/basis pairs
-    std::vector<StrConstBasisPair> fieldBasisPairs;
-    pb.getFieldLibraryBase()->basisPairs(fieldBasisPairs);
-  
-    // now use a map to extract only unique basis functions that
-    // require orientations
-    for(std::size_t i=0;i<fieldBasisPairs.size();i++) {
-      StrConstBasisPair pair = fieldBasisPairs[i];
-  
-      if(pair.second->requiresOrientations()) {
-        // name is guranteed to be unique for basis. 
-        // just removes duplicate basis objects
-        orientedBasisFields[pair.second->name()] = pair;
-      }
-    }
-  }
-
   // loop over each basis requiring orientations, then apply them
   //////////////////////////////////////////////////////////////////////////////////
 
   // Note: It may be faster to loop over the basis pairs on the inside (not really sure)
+ 
+  const WorksetNeeds & needs = lookupNeeds(eBlock);
+  TEUCHOS_ASSERT(needs.bases.size()==needs.rep_field_name.size());
   
-  for(std::map<std::string, StrConstBasisPair>::const_iterator itr=orientedBasisFields.begin();
-      itr!=orientedBasisFields.end();++itr) {
-    // extract field name and basis name 
-    const std::string & fieldName = itr->second.first;
-    const PureBasis & basis = *itr->second.second;
+  for(std::size_t i=0;i<needs.bases.size();i++) {
+    const std::string & fieldName = needs.rep_field_name[i];
+    const PureBasis & basis = *needs.bases[i];
+
+    // no need for this if orientations are not required!
+    if(!basis.requiresOrientations()) continue;
 
     // build accessors for orientation fields
     RCP<const OrientationContainerBase<Scalar,Array> > orientationContainer 
@@ -340,13 +347,11 @@ applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) co
         orientationContainer->getOrientations(eBlock,details.cell_local_ids,orientations);
 
         for(std::size_t basis_index=0;basis_index<details.bases.size();basis_index++) {
-          // Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
           Teuchos::RCP<const BasisIRLayout> layout = details.bases[basis_index]->basis_layout;
           TEUCHOS_ASSERT(layout!=Teuchos::null);
           TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
           if(layout->getBasis()->name()==basis.name()) {
             // apply orientations for this basis
-            // details.bases[basis_index]->applyOrientations(orientations);
             details.bases[basis_index]->applyOrientations(orientations);
           }
         }
@@ -361,7 +366,6 @@ applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) c
   using Teuchos::RCP;
 
   typedef double Scalar;                          // orientation container scalar type
-  // typedef Intrepid::FieldContainer<Scalar> Array; // orientation container array type
   typedef PHX::MDField<Scalar,Cell,BASIS> Array; // orientation container array type
   typedef std::pair<std::string,Teuchos::RCP<const PureBasis> > StrConstBasisPair;
 
@@ -380,39 +384,20 @@ applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) c
     return;
   }
 
-  // extract a map from basis name to string/basis pairs that require orientations
-  //////////////////////////////////////////////////////////////////////////////////
-  std::map<std::string, StrConstBasisPair> orientedBasisFields;
-  {
-    const PhysicsBlock & pb = lookupPhysicsBlock(sideId.eblk_id);
-
-    // get all field/basis pairs
-    std::vector<StrConstBasisPair> fieldBasisPairs;
-    pb.getFieldLibraryBase()->basisPairs(fieldBasisPairs);
-  
-    // now use a map to extract only unique basis functions that
-    // require orientations
-    for(std::size_t i=0;i<fieldBasisPairs.size();i++) {
-      StrConstBasisPair pair = fieldBasisPairs[i];
-  
-      if(pair.second->requiresOrientations()) {
-        // name is guranteed to be unique for basis. 
-        // just removes duplicate basis objects
-        orientedBasisFields[pair.second->name()] = pair;
-      }
-    }
-  }
-
   // loop over each basis requiring orientations, then apply them
   //////////////////////////////////////////////////////////////////////////////////
 
   // Note: It may be faster to loop over the basis pairs on the inside (not really sure)
   
-  for(std::map<std::string, StrConstBasisPair>::const_iterator itr=orientedBasisFields.begin();
-      itr!=orientedBasisFields.end();++itr) {
-    // extract field name and basis name 
-    const std::string & fieldName = itr->second.first;
-    const PureBasis & basis = *itr->second.second;
+  const WorksetNeeds & needs = lookupNeeds(sideId.eblk_id);
+  TEUCHOS_ASSERT(needs.bases.size()==needs.rep_field_name.size());
+  
+  for(std::size_t i=0;i<needs.bases.size();i++) {
+    const std::string & fieldName = needs.rep_field_name[i];
+    const PureBasis & basis = *needs.bases[i];
+
+    // no need for this if orientations are not required!
+    if(!basis.requiresOrientations()) continue;
 
     // build accessors for orientation fields
     RCP<const OrientationContainerBase<Scalar,Array> > orientationContainer 
@@ -444,7 +429,6 @@ applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) c
           TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
           if(layout->getBasis()->name()==basis.name()) {
             // apply orientations for this basis
-            // details.bases[basis_index]->applyOrientations(orientations);
             details.bases[basis_index]->applyOrientations(orientations);
           }
         }

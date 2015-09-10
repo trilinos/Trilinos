@@ -43,36 +43,20 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
-namespace stk { namespace mesh { namespace impl { class BucketRepository; } } }
-namespace stk { namespace mesh { namespace utest { struct SyncToPartitions; } } }
 namespace stk { namespace mesh { struct Entity; } }
 
 namespace stk {
 namespace mesh {
-
-namespace utest {
-}
-
 namespace impl {
-
 
 class Partition
 {
-  friend class BucketRepository;
-  friend struct stk::mesh::utest::SyncToPartitions;
-
 public:
-
   Partition(BulkData& mesh, BucketRepository *repo, EntityRank rank,
             const std::vector<PartOrdinal> &key);
 
   virtual ~Partition();
 
-  ////
-  //// The main part of the interface is Bucket-free.
-  ////
-
-  /// Rank of the entities in this partition.
   EntityRank get_rank() const { return m_rank; }
 
   bool empty() const { return m_size == 0; }
@@ -89,13 +73,13 @@ public:
   /// of another partition.
   bool add(Entity entity);
 
-  /// Move an entity from this partion to a destination partition.
+  /// Move an entity from this partition to a destination partition.
   bool move_to(Entity entity, Partition &dst_partition);
 
   /// Remove an entity from this partition.
   bool remove(Entity entity);
 
-  /// Compress this partion into a single bucket of sorted Entities.
+  /// Compress this partition into a single bucket of sorted Entities.
   void compress(bool force = false);
 
   /// Sort the entities in this partition by EntityKey without changing
@@ -145,15 +129,7 @@ public:
   std::ostream &dumpit(std::ostream &os) const;
   std::string dumpit() const;
 
-  // Just for unit testing.  Remove after refactor.
-  static BucketRepository &getRepository(stk::mesh::BulkData &mesh);
-
 private:
-
-  //
-  // Members
-  //
-
   BulkData& m_mesh;
   BucketRepository *m_repository;
 

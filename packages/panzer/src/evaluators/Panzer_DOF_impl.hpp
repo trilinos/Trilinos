@@ -68,8 +68,7 @@ DOF<EvalT, TRAITS>::
 DOF(const Teuchos::ParameterList & p) :
   dof_basis( p.get<std::string>("Name"), 
 	     p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->functional),
-  basis_name(p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->name()),
-  wda(p)
+  basis_name(p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->name())
 {
   Teuchos::RCP<const PureBasis> basis 
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
@@ -109,7 +108,7 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
   else
     this->utils.setFieldData(dof_ip_scalar,fm);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -117,7 +116,7 @@ template<typename EvalT, typename TRAITS>
 void DOF<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  panzer::BasisValues2<double> & basisValues = *wda(workset).bases[basis_index];
+  panzer::BasisValues2<double> & basisValues = *this->wda(workset).bases[basis_index];
 
   if(is_vector_basis) {
     int spaceDim  = basisValues.basis_vector.dimension(3);
@@ -148,8 +147,7 @@ DOF<typename TRAITS::Jacobian, TRAITS>::
 DOF(const Teuchos::ParameterList & p) :
   dof_basis( p.get<std::string>("Name"), 
 	     p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->functional),
-  basis_name(p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->name()),
-  wda(p)
+  basis_name(p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->name())
 {
   Teuchos::RCP<const PureBasis> basis 
      = p.get< Teuchos::RCP<BasisIRLayout> >("Basis")->getBasis();
@@ -209,7 +207,7 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
   else
     this->utils.setFieldData(dof_ip_scalar,fm);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 // **********************************************************************
@@ -230,7 +228,7 @@ template<typename TRAITS>
 void DOF<typename TRAITS::Jacobian, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  panzer::BasisValues2<double> & basisValues = *wda(workset).bases[basis_index];
+  panzer::BasisValues2<double> & basisValues = *this->wda(workset).bases[basis_index];
 
   if(is_vector_basis) {
     if(accelerate_jacobian) {

@@ -124,7 +124,7 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
   this->utils.setFieldData(dof_value,fm);
   this->utils.setFieldData(dof_div,fm);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -132,7 +132,7 @@ template<typename EvalT, typename TRAITS>
 void DOFDiv<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  evaluateDiv_withSens<ScalarT>(workset.num_cells,basis_dimension,dof_div,dof_value,workset.bases[basis_index]->div_basis);
+  evaluateDiv_withSens<ScalarT>(workset.num_cells,basis_dimension,dof_div,dof_value,this->wda(workset).bases[basis_index]->div_basis);
 }
 
 //**********************************************************************
@@ -190,7 +190,7 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
   this->utils.setFieldData(dof_value,fm);
   this->utils.setFieldData(dof_div,fm);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 template<typename TRAITS>                   
@@ -199,7 +199,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 { 
   if(!accelerate_jacobian) {
     // do the case where we use the AD types to determine the derivatives
-    evaluateDiv_withSens(workset.num_cells,basis_dimension,dof_div,dof_value,workset.bases[basis_index]->div_basis);
+    evaluateDiv_withSens(workset.num_cells,basis_dimension,dof_div,dof_value,this->wda(workset).bases[basis_index]->div_basis);
     return;
   }
 

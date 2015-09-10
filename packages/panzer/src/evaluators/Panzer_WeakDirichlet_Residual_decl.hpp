@@ -46,6 +46,8 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
     
   /** \brief Evaluates a Weak Dirichlet BC residual contribution
@@ -56,7 +58,7 @@ namespace panzer {
       int(n \cdot flux * phi) + int(\sigma (u-g) * phi)
       
   */
-PHX_EVALUATOR_CLASS(WeakDirichletResidual)
+PANZER_EVALUATOR_CLASS(WeakDirichletResidual)
   
   PHX::MDField<ScalarT> residual;
   PHX::MDField<ScalarT> normal_dot_flux_plus_pen;
@@ -71,7 +73,7 @@ PHX_EVALUATOR_CLASS(WeakDirichletResidual)
   std::size_t num_ip;
   std::size_t num_dim;
 
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 }
 

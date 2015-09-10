@@ -62,7 +62,7 @@ RefMaxwell - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 RepartitionFactory - #ifdef HAVE_MPI
 RigidBodyModeFactory
 SaPFactory
-SaPFactoryK - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
+SaPFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 SchurComplementFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 SegregatedAFactory
 ShiftedLaplacian - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_BELOS)

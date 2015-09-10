@@ -177,8 +177,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<LO> LIDs;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<typename LOC::VectorType> r = (!scatterIC_) ? 
      tpetraContainer_->get_f() :
@@ -376,8 +376,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<LO> LIDs;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<typename LOC::VectorType> r = (!scatterIC_) ? 
      tpetraContainer_->get_f() :
@@ -566,8 +566,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<GO> GIDs;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<typename LOC::VectorType> r = tpetraContainer_->get_f(); 
    Teuchos::RCP<typename LOC::CrsMatrixType> Jac = tpetraContainer_->get_A();

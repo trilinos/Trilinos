@@ -60,3 +60,41 @@ TRIBITS_ADD_TEST(
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
 
+# Command that copies files to the executable directory.
+# KDD: I am using this for Zoltan data files.  When Zoltan tests are not built,
+# KDD: we can't point driver to files in build directory (as they won't be 
+# KDD: there.  Also, we don't want to use hard-code paths in XML files.
+# KDD: Copying the files here seems to be best, unless we can make CMAKE
+# KDD: do macro substitution in the XML files.
+TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_zoltan_simple_for_driver_tests_
+  SOURCE_FILES
+    simple.coords
+    simple.graph
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../zoltan/test/ch_simple
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_zoltan_vwgt_for_driver_tests_
+  SOURCE_FILES
+    vwgt.coords
+    vwgt.graph
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../zoltan/test/ch_vwgt
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_zoltan_vwgt2_for_driver_tests_
+  SOURCE_FILES
+    vwgt2.coords
+    vwgt2.graph
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../zoltan/test/ch_vwgt2
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+)
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_zoltan_ewgt_for_driver_tests_
+  SOURCE_FILES
+    ewgt.coords
+    ewgt.graph
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../zoltan/test/ch_ewgt
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+)
+

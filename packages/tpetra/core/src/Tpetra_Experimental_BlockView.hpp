@@ -45,14 +45,67 @@
 /// \file Tpetra_Experimental_BlockView.hpp
 /// \brief Declaration and definition of LittleBlock and LittleVector
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_LAPACK.hpp>
+#include "Tpetra_ConfigDefs.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_LAPACK.hpp"
+#ifdef HAVE_TPETRA_INST_FLOAT128
+#  include "Teuchos_BLAS.hpp"
+#endif // HAVE_TPETRA_INST_FLOAT128
 
 #ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-#  include <Kokkos_ArithTraits.hpp>
-#  include <Kokkos_Complex.hpp>
+#  include "Kokkos_ArithTraits.hpp"
+#  include "Kokkos_Complex.hpp"
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
+
+
+#ifdef HAVE_TPETRA_INST_FLOAT128
+namespace Tpetra {
+namespace Details {
+
+//! Partial implementation of Teuchos::LAPACK for Scalar = __float128.
+class Lapack128 {
+public:
+  void
+  SWAP (const int N, __float128* X, const int INCX,
+        __float128* Y, const int INCY) const;
+
+  /// \brief Compute the LU factorization with partial pivoting of
+  ///   the matrix A.
+  void
+  GETRF (const int M, const int N, __float128 A[],
+         const int LDA, int IPIV[], int* INFO) const;
+
+  /// \brief Perform a series of row interchanges on the matrix A.
+  ///
+  /// Do one row interchange for each of rows K1 through K2 of A.
+  ///
+  /// \param N [in] Number of columns of the matrix A.
+  /// \param A [in/out] 2-D column-major array of dimension (LDA,N).
+  ///   On entry, the matrix of column dimension N to which the row
+  ///   interchanges will be applied.  On exit, the permuted matrix.
+  /// \param LDA [in] The leading dimension (stride) of the 2-D
+  ///   column-major array A.
+  /// \param K1 [in] Start row interchanges with IPIV[K1-1].
+  /// \param K2 [in] Stop row interchanges with IPIV[K2-1].
+  /// \param INCX [in] Increment between successive entries of IPIV.
+  ///   If IPIV is negative, apply the pivots in reverse order.
+  void
+  LASWP (const int N, __float128 A[], const int LDA, const int K1,
+         const int K2, const int IPIV[], const int INCX) const;
+
+  /// \brief Solve the linear system(s) AX=B, using the result of
+  ///   the LU factorization computed by GETRF (above).
+  void
+  GETRS (const char TRANS, const int N, const int NRHS,
+         const __float128 A[], const int LDA, const int IPIV[],
+         __float128 B[], const int LDB, int* INFO) const;
+};
+
+} // namespace Details
+} // namespace Tpetra
+#endif // HAVE_TPETRA_INST_FLOAT128
+
+
 
 namespace { // anonymous
 
@@ -78,6 +131,17 @@ namespace { // anonymous
     typedef Teuchos::LAPACK<int, std::complex<T> > lapack_type;
   };
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
+
+#ifdef HAVE_TPETRA_INST_FLOAT128
+  template<>
+  struct GetLapackType<__float128> {
+    typedef __float128 lapack_scalar_type;
+    // Use the Lapack128 class we declared above to implement the
+    // linear algebra operations needed for small dense blocks and
+    // vectors.
+    typedef Tpetra::Details::Lapack128 lapack_type;
+  };
+#endif // HAVE_TPETRA_INST_FLOAT128
 
 } // namespace (anonymous)
 

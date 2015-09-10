@@ -45,8 +45,8 @@
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
 
-#ifndef MRK_UNIT_TEST_UTILS_HPP
-#define MRK_UNIT_TEST_UTILS_HPP
+#ifndef MRK_UNIT_TEST_UTILS_TRI3_HPP
+#define MRK_UNIT_TEST_UTILS_TRI3_HPP
 
 #include "mrk_default_kokkos_device_type.hpp"
 #include <mrk_api_classes.hpp>
@@ -111,6 +111,56 @@ struct Mrk_2x2_offset_TriangleInterfaceFixture : public Mrk_2x2_TriangleInterfac
   }
 };
 
+
+struct Mrk_2x4_TriangleInterfaceFixtureBase : public Mrk_InterfaceFixtureBase
+{
+  static const size_t NumNodes = 12;
+  static const global_idx_t node_gids[NumNodes];
+  static const interface_side_t node_side[NumNodes];
+
+  static const size_t NumFaces = 8;
+  static const size_t NodesPerFace = TopoConsts<MRK_TRI3>::NODES_PER_FACE;
+  static const global_idx_t face_gids[NumFaces];
+  static const interface_side_t face_sides[NumFaces];
+  static const global_idx_t face_node_gids[NumFaces][NodesPerFace];
+
+  void connect_faces_to_nodes(interface_3d_ptr interface)
+  {
+    for (size_t face_i = 0; face_i < NumFaces; ++face_i)
+    {
+      interface->hsa_add_face(face_sides[face_i], face_gids[face_i], NodesPerFace, face_node_gids[face_i]);
+    }
+  }
+};
+
+struct Mrk_2x4_aligned_TriangleInterfaceFixture : public Mrk_2x4_TriangleInterfaceFixtureBase
+{
+  static const double node_coords[NumNodes][3];
+
+  Mrk_2x4_aligned_TriangleInterfaceFixture(interface_3d_ptr interface)
+  {
+    for (size_t node_i = 0; node_i < NumNodes; ++node_i)
+    {
+      interface->hsa_add_node(node_side[node_i], node_gids[node_i], node_coords[node_i]);
+    }
+    connect_faces_to_nodes(interface);
+  }
+};
+
+
+struct Mrk_2x4_offset_TriangleInterfaceFixture : public Mrk_2x4_TriangleInterfaceFixtureBase
+{
+  static const double node_coords[NumNodes][3];
+
+  Mrk_2x4_offset_TriangleInterfaceFixture(interface_3d_ptr interface)
+  {
+    for (size_t node_i = 0; node_i < NumNodes; ++node_i)
+    {
+      interface->hsa_add_node(node_side[node_i], node_gids[node_i], node_coords[node_i]);
+    }
+    connect_faces_to_nodes(interface);
+  }
+};
 }
 
 #endif

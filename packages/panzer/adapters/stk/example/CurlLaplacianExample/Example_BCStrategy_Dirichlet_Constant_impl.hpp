@@ -127,7 +127,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::Constant<EvalT,panzer::Traits>(p));
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
   else if(basis->isVectorBasis()) {
     ParameterList p("BC Constant Dirichlet");
@@ -138,7 +138,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::Constant<EvalT,panzer::Traits>(p));
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
   }
 
 }

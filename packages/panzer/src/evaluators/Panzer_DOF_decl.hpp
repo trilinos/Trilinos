@@ -49,11 +49,15 @@
 
 #include "Panzer_config.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF values
 template<typename EvalT, typename TRAITS>                   
-class DOF : public PHX::EvaluatorWithBaseImpl<TRAITS>,      
+class DOF : public panzer::EvaluatorWithBaseImpl<TRAITS>,      
             public PHX::EvaluatorDerived<EvalT, TRAITS>  {   
 public:
 
@@ -78,8 +82,6 @@ private:
 
   PHX::MDField<ScalarT,Cell,BASIS> dof_orientation;
   bool is_vector_basis;
-
-  WorksetDetailsAccessor wda;
 };
 
 /** Interpolates basis DOF values to IP DOF Curl values (specialization for the jacobian)
@@ -87,7 +89,7 @@ private:
   */
 template<typename TRAITS>                   
 class DOF<typename TRAITS::Jacobian,TRAITS> : 
-            public PHX::EvaluatorWithBaseImpl<TRAITS>,      
+            public panzer::EvaluatorWithBaseImpl<TRAITS>,      
             public PHX::EvaluatorDerived<typename TRAITS::Jacobian, TRAITS>  {   
 public:
 
@@ -120,8 +122,6 @@ private:
                                   // and thus which DOF operations can use accelerated jacobians
 
   bool is_vector_basis;
-
-  WorksetDetailsAccessor wda;
 };
 
 }

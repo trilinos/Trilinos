@@ -71,7 +71,6 @@
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class Part; } }
-namespace stk { namespace mesh { namespace impl { class Partition; } } }
 namespace stk { namespace mesh { struct ConnectivityMap; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
@@ -82,6 +81,7 @@ namespace stk { class CommAll; }
 #include "EntityCommListInfo.hpp"
 #include "EntityLess.hpp"
 #include "SharedEntityType.hpp"
+#include "CommListUpdater.hpp"
 
 namespace sierra { namespace Fmwk { class EntityCreationOperationList; } }
 
@@ -642,6 +642,7 @@ public:
   inline unsigned num_edges(Entity entity) const;
   inline unsigned num_faces(Entity entity) const;
   inline unsigned num_elements(Entity entity) const;
+  unsigned num_sides(Entity entity) const;
 
   unsigned count_valid_connectivity(Entity entity, EntityRank rank) const;
 
@@ -716,7 +717,7 @@ protected: //functions
                                                          const stk::mesh::EntityVector& deletedSides,
                                                          stk::mesh::ElemElemGraph &elementGraph,
                                                          const stk::mesh::EntityVector &killedElements,
-                                                         stk::mesh::Part & activePart);
+                                                         stk::mesh::Part* activePart = nullptr);
 
 
   bool modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector,
@@ -989,6 +990,9 @@ protected: //functions
                                                                       stk::mesh::Bucket *bucket_old,
                                                                       int closureCountAdjustment); // Mod Mark
 
+  inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
+
+  stk::mesh::impl::BucketRepository& get_bucket_repository() { return m_bucket_repository; }
 private: //functions
 
   void internal_dump_all_mesh_info(std::ostream& out = std::cout) const;
@@ -1065,7 +1069,6 @@ private:
       }
   }
 
-  inline void set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal );
   inline void set_entity_key(Entity entity, EntityKey key);
   void delete_sides_on_all_procs(const stk::mesh::EntityVector & deletedSides);
   void set_shared_owned_parts_and_ownership_on_comm_data(const std::vector<sharing_info>& shared_modified);
@@ -1187,7 +1190,6 @@ private:
   // FIXME: Remove this friend once unit-testing has been refactored
   friend class UnitTestModificationEndWrapper;
   friend class ::stk::mesh::MetaData;
-  friend class ::stk::mesh::impl::Partition;
   friend class ::stk::mesh::impl::EntityRepository;
   friend class ::stk::mesh::impl::BucketRepository;
   friend class stk::mesh::Bucket; // for field callback
@@ -1275,6 +1277,7 @@ protected: //data
   std::vector<MeshIndex> m_mesh_indexes; //indexed by Entity
   impl::EntityRepository m_entity_repo;
   EntityCommListInfoVector m_entity_comm_list;
+  CommListUpdater m_comm_list_updater;
   std::list<size_t> m_deleted_entities_current_modification_cycle;
   GhostReuseMap m_ghost_reuse_map;
   std::vector<EntityKey> m_entity_keys; //indexed by Entity

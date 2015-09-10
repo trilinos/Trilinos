@@ -64,7 +64,6 @@ const global_idx_t Mrk_2x2_TriangleInterfaceFixtureBase::face_node_gids[NumFaces
                                                                             { {1,2,3}, {1,3,4}, {5,6,7}, {5,7,8}};
 
 
-
 const double Mrk_2x2_aligned_TriangleInterfaceFixture::node_coords[NumNodes][3] =
                                                             { {0,0,0}, {1,0,0}, {1,1,0}, {0,1,0},
                                                               {0,0,0.1}, {0,1,0.1}, {1,1,0.1}, {1,0,0.1} };
@@ -72,3 +71,36 @@ const double Mrk_2x2_aligned_TriangleInterfaceFixture::node_coords[NumNodes][3] 
 const double Mrk_2x2_offset_TriangleInterfaceFixture::node_coords[NumNodes][3] =
                                             { {0,0,0},         {1,0,0},         {1,1,0},         {0,1,0},
                                               {0.6, 0.6, 0.1}, {0.6, 1.6, 0.1}, {1.6, 1.6, 0.1}, {1.6, 0.6, 0.1} };
+
+
+
+const global_idx_t Mrk_2x4_TriangleInterfaceFixtureBase::node_gids[NumNodes] = {1,2,3,4,5,6,7,8,9,10,11,12};
+const Mrk_InterfaceFixtureBase::interface_side_t Mrk_2x4_TriangleInterfaceFixtureBase::node_side[NumNodes] =
+                        { InterfaceBase::NON_MORTAR_SIDE, InterfaceBase::NON_MORTAR_SIDE,
+                          InterfaceBase::NON_MORTAR_SIDE, InterfaceBase::NON_MORTAR_SIDE,
+                          InterfaceBase::NON_MORTAR_SIDE, InterfaceBase::NON_MORTAR_SIDE,
+                          InterfaceBase::MORTAR_SIDE, InterfaceBase::MORTAR_SIDE,
+                          InterfaceBase::MORTAR_SIDE, InterfaceBase::MORTAR_SIDE,
+                          InterfaceBase::MORTAR_SIDE, InterfaceBase::MORTAR_SIDE };
+
+const global_idx_t Mrk_2x4_TriangleInterfaceFixtureBase::face_gids[NumFaces] = {1,2,3,4,5,6,7,8};
+const Mrk_InterfaceFixtureBase::interface_side_t Mrk_2x4_TriangleInterfaceFixtureBase::face_sides[NumFaces] =
+                        { InterfaceBase::NON_MORTAR_SIDE, InterfaceBase::NON_MORTAR_SIDE,
+                          InterfaceBase::NON_MORTAR_SIDE, InterfaceBase::NON_MORTAR_SIDE,
+                          InterfaceBase::MORTAR_SIDE, InterfaceBase::MORTAR_SIDE,
+                          InterfaceBase::MORTAR_SIDE, InterfaceBase::MORTAR_SIDE
+                        };
+
+const global_idx_t
+Mrk_2x4_TriangleInterfaceFixtureBase::face_node_gids[NumFaces][NodesPerFace] =
+                              { {1,3,4}, {1,4,2}, {3,5,6}, {3,6,4}, {7,10,9}, {7,8,10}, {9,12,11}, {9,10,12} };
+
+const double Mrk_2x4_aligned_TriangleInterfaceFixture::node_coords[NumNodes][3] =
+                                        { {0,0,0},   {0,1,0},   {1,0,0},   {1,1,0},   {2,0,0},   {2,1,0},
+                                          {0,0,0.1}, {0,1,0.1}, {1,0,0.1}, {1,1,0.1}, {2,0,0.1}, {2,1,0.1}};
+
+const double Mrk_2x4_offset_TriangleInterfaceFixture::node_coords[NumNodes][3] =
+                               { {0,0,0},     {0,1,0},     {1,0,0},     {1,1,0},     {2,0,0},     {2,1,0},
+                                 {1.5,0,0.1}, {1.5,1,0.1}, {2.5,0,0.1}, {2.5,1,0.1}, {3.5,0,0.1}, {3.5,1,0.1}};
+
+

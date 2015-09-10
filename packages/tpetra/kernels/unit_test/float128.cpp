@@ -99,6 +99,7 @@ using std::endl;
 int
 main (int argc, char* argv[])
 {
+  bool success = true;
   Kokkos::initialize (argc, argv);
 
   __float128 x = 1.0;
@@ -112,6 +113,36 @@ main (int argc, char* argv[])
        << "(double) z = " << static_cast<double> (z) << endl
        << "z - (double) z = " << (z - static_cast<__float128> (static_cast<double> (z))) << endl;
 
+  // FIXME (mfh 04 Sep 2015) The results of printing could depend on
+  // the locale.  This works fine for the default locale on my system.
+  {
+    std::ostringstream os;
+    os << x;
+    if (os.str () != "1.000000000000000000000000000000e+00") {
+      success = false;
+      cout << "'_float128 x = 1.0' does not print correctly!  It prints as "
+           << os.str () << "." << endl;
+    }
+  }
+  {
+    std::ostringstream os;
+    os << y;
+    if (os.str () != "1.111112222233333000000000000000e+00") {
+      success = false;
+      cout << "'__float128 y = strtoflt128 (\"1.111112222233333\", NULL);' "
+        "does not print correctly!  It prints as " << os.str () << "." << endl;
+    }
+  }
+  {
+    std::ostringstream os;
+    os << z;
+    if (os.str () != "1.111112222233333444445555566666e+00") {
+      success = false;
+      cout << "'__float128 z = strtoflt128 (\"1.111112222233333444445555566666\", NULL);' "
+        "does not print correctly!  It prints as " << os.str () << "." << endl;
+    }
+  }
+
   // Create a Kokkos::View on the host (CUDA doesn't work yet, since
   // __float128 is a GCC extension not available in CUDA).
   Kokkos::View<__float128*, Kokkos::HostSpace> view ("view", 20);
@@ -119,16 +150,29 @@ main (int argc, char* argv[])
   // Increment the first entry, nonatomically.
   view(0)++;
   cout << "view(0) after increment = " << view(0) << endl;
+  if (view(0) != static_cast<__float128> (1.0)) {
+    success = false;
+  }
 
   // Increment the first entry, atomically.
   Kokkos::atomic_add (&view(0), x);
   cout << "view(0) after atomic_add (x) = " << view(0) << endl;
+  if (view(0) != static_cast<__float128> (2.0)) {
+    success = false;
+  }
 
   // Assign to the first entry, atomically.
   Kokkos::atomic_assign (&view(0), z);
   cout << "view(0) after atomic_assign (z) = " << view(0) << endl;
+  if (view(0) != z) {
+    success = false;
+  }
 
-  cout << "Test PASSED" << endl;
+  if (success) {
+    cout << "Test PASSED" << endl;
+  } else {
+    cout << "Test FAILED" << endl;
+  }
 
   Kokkos::finalize ();
   return 0;

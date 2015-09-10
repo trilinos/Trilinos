@@ -66,16 +66,19 @@
 
 MueLu is a flexible and extensible multigrid solver framework.  It is intended for the research and
 development of new multigrid preconditioning techniques.
+More information can be found at https://trilinos.org/packages/muelu.
 
 \section muelu_authors Authors and Contributors
 
-  - Jeremie Gaidamour, Sandia National Labs
+  - Emily Furst, University of Washington (summer intern, 2015)
+  - Jeremie Gaidamour, INRIA (Nancy, France)
   - Axel Gerstenberger, Rolls Royce
   - Jonathan Hu, Sandia National Labs
+  - Brian Kelley, Texas A&M (summer intern, 2015)
   - Andrey Prokopenko, Sandia National Labs
   - Chris Siefert, Sandia National Labs
   - Ray Tuminaro, Sandia National Labs
-  - Tobias Wiesner, Technical University Munich
+  - Tobias Wiesner, Sandia National Labs
 
 \section muelu_copyright Copyright and License
 
@@ -83,8 +86,7 @@ development of new multigrid preconditioning techniques.
 
 \section muelu_questions For All Questions and Comments...
 
-   Please contact Jonathan Hu (jhu@sandia.gov), Andrey Prokopenko (aprokop@sandia.gov),
-   or Ray Tuminaro (rstumin@sandia.gov).
+   Please contact Jonathan Hu (jhu@sandia.gov), Andrey Prokopenko (aprokop@sandia.gov), Ray Tuminaro (rstumin@sandia.gov), or Tobias Wiesner (tawiesn@sandia.gov).
 
 */
 

@@ -100,6 +100,9 @@ namespace Xpetra {
     typedef Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> CrsGraph;
     typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
     typedef Xpetra::MatrixView<Scalar, LocalOrdinal, GlobalOrdinal, Node> MatrixView;
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    typedef typename CrsMatrix::local_matrix_type local_matrix_type;
+#endif
 
   public:
     typedef Scalar scalar_type;
@@ -513,7 +516,7 @@ namespace Xpetra {
     // "TEMPORARY" VIEW MECHANISM
     /**
      * Set fixed block size of operator (e.g., 3 for 3 DOFs per node).
-     * 
+     *
      * @param blksize: block size denoting how many DOFs per node are used (LocalOrdinal)
      * @param offset:  global offset allows to define operators with global indices starting from a given value "offset" instead of 0. (GlobalOrdinal, default = 0)
      * */
@@ -569,6 +572,11 @@ namespace Xpetra {
       return operatorViewTable_.get(GetCurrentViewLabel())->GetMaxEigenvalueEstimate();
     }
 
+    // ----------------------------------------------------------------------------------
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    /// \brief Access the underlying local Kokkos::CrsMatrix object
+    virtual local_matrix_type getLocalMatrix () const = 0;
+#endif
     // ----------------------------------------------------------------------------------
 
     protected:

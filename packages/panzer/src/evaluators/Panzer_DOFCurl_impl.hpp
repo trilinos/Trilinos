@@ -364,7 +364,7 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
   else
     this->utils.setFieldData(dof_curl_scalar,fm);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -372,7 +372,7 @@ template<typename EvalT, typename TRAITS>
 void DOFCurl<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  panzer::BasisValues2<double> & basisValues = *workset.bases[basis_index];
+  panzer::BasisValues2<double> & basisValues = *this->wda(workset).bases[basis_index];
 
   if(basis_dimension==3) {
     EvaluateCurlWithSens_Vector<ScalarT,typename BasisValues2<double>::Array_CellBasisIPDim,3> functor(dof_value,dof_curl_vector,basisValues.curl_basis_vector);
@@ -458,14 +458,14 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
   else
     this->utils.setFieldData(dof_curl_scalar,fm);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 template<typename TRAITS>                   
 void DOFCurl<typename TRAITS::Jacobian,TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  panzer::BasisValues2<double> & basisValues = *workset.bases[basis_index];
+  panzer::BasisValues2<double> & basisValues = *this->wda(workset).bases[basis_index];
 
   if(!accelerate_jacobian) {
     if(basis_dimension==3) {

@@ -6,25 +6,29 @@
  */
 #include "NoGhostGameofLife.hpp"
 
-
 //public
-NoGhostGameofLife::NoGhostGameofLife(MeshConstructor* Mesh, std::string name)
-: m_bulkData(Mesh->bulk_data()), m_numProcs(m_bulkData->parallel_size()),
-  m_elemType(Mesh->element_type()),
+NoGhostGameofLife::NoGhostGameofLife(GameofLifeMesh* Mesh, std::string name)
+: m_bulkData(Mesh->bulk_data()),
   m_lifeField(Mesh->life_field()),
-  m_neighborField(Mesh->neighbor_field()),m_activePart(Mesh->active_part()),
-  m_name(name), m_stkIo(Mesh->comm()), m_time(0)
+  m_neighborField(Mesh->neighbor_field()),
+  m_name(name), m_stkIo(Mesh->comm())
 {
-    get_elements();
-    create_element_connectivity_maps();
-    write_output_mesh();
+    finish_construction();
+}
+NoGhostGameofLife::NoGhostGameofLife(stk::mesh::BulkData* bulkData,
+                                     ScalarIntField* lifeField,
+                                     ScalarIntField* neighborField,
+                                     std::string name)
+: m_bulkData(bulkData), m_numProcs(m_bulkData->parallel_size()),
+  m_lifeField(lifeField), m_neighborField(neighborField), m_name(name),
+  m_stkIo(m_bulkData->parallel())
+{
+    finish_construction();
 }
 void NoGhostGameofLife::activate_these_ids(stk::mesh::EntityIdVector& elemIds)
 {
-   //m_bulkData->modification_begin(); // part
    for (stk::mesh::EntityId elemId : elemIds)
        activate_element_id(elemId);
-   //m_bulkData->modification_end(); // part
 }
 void NoGhostGameofLife::run_game_of_life(int numSteps)
 {
@@ -32,10 +36,7 @@ void NoGhostGameofLife::run_game_of_life(int numSteps)
         write_output_step();
 
     for (int timeStep = 0; timeStep < numSteps; timeStep++)
-    {
-       //std::cerr << timeStep << std::endl;
         run_game_of_life_step();
-    }
 }
 
 //test functions
@@ -132,18 +133,23 @@ unsigned NoGhostGameofLife::num_active_neighbors(stk::mesh::Entity elem)
 //private
 bool NoGhostGameofLife::is_element_active(stk::mesh::Entity elem)
 {
-    //return m_bulkData->bucket(elem).member(*m_activePart); // part
     return *stk::mesh::field_data(*m_lifeField, elem); // field
 }
 void NoGhostGameofLife::activate_element(stk::mesh::Entity elem)
 {
-    //m_bulkData->change_entity_parts(elem, {m_activePart}, {}); // part
     *stk::mesh::field_data(*m_lifeField, elem) = 1;
 }
 void NoGhostGameofLife::deactivate_element(stk::mesh::Entity elem)
 {
-    //m_bulkData->change_entity_parts(elem, {}, {m_activePart}); // part
     *stk::mesh::field_data(*m_lifeField, elem) = 0;
+}
+void NoGhostGameofLife::finish_construction()
+{
+    m_numProcs = m_bulkData->parallel_size();
+    m_time = 0;
+    get_elements();
+    create_element_connectivity_maps();
+    write_output_mesh();
 }
 void NoGhostGameofLife::get_elements()
 {
@@ -364,7 +370,6 @@ void NoGhostGameofLife::refresh_element_maps()
 {
     m_localElementsToVisit.clear();
     m_remoteElementKeysToVisit.clear();
-    //m_bulkData->get_entities(stk::topology::ELEM_RANK, *m_activePart, m_localActiveElements); // part
     get_elements_to_visit();
 }
 void NoGhostGameofLife::get_elements_to_visit()
@@ -475,28 +480,26 @@ void NoGhostGameofLife::update_local_element_with_remote_neighbor_data(stk::Comm
 }
 void NoGhostGameofLife::update_element_membership()
 {
-    //m_bulkData->modification_begin(); // part
     m_localActiveElements.clear(); // field
     for (stk::mesh::Entity localElem : m_localElementsToVisit)
     {
-        switch (m_elemType)
+        switch (m_bulkData->bucket(localElem).topology())
         {
-            case stk::topology::TRIANGLE_3:
+            case stk::topology::TRI_3_2D:
                 update_tri_membership(localElem);
                 break;
-            case stk::topology::QUAD_4:
+            case stk::topology::QUAD_4_2D:
                 update_quad_membership(localElem);
                 break;
             case stk::topology::HEX_8:
                 update_hex_membership(localElem);
                 break;
             default:
-                ThrowRequire(true);
+                ThrowRequire(false);
         }
         if (is_element_active(localElem)) // field
             m_localActiveElements.push_back(localElem);
     }
-    //m_bulkData->modification_end(); // part
 }
 void NoGhostGameofLife::update_tri_membership(stk::mesh::Entity elem)
 {

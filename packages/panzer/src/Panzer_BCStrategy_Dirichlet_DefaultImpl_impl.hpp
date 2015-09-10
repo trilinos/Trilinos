@@ -183,7 +183,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
     RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatterDirichlet<EvalT>(p);
     
-    fm.template registerEvaluator<EvalT>(op);
+    this->template registerEvaluator<EvalT>(fm, op);
     
     // Require variables
     {
@@ -233,7 +233,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
        {
          RCP< PHX::Evaluator<panzer::Traits> > basis_op
             = rcp(new panzer::GatherBasisCoordinates<EvalT,panzer::Traits>(*it->second));
-         fm.template registerEvaluator<EvalT>(basis_op);
+         this->template registerEvaluator<EvalT>(fm, basis_op);
        }
 
        // add point values and basis values
@@ -244,14 +244,14 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
            RCP< PHX::Evaluator<panzer::Traits> > eval 
              = rcp(new panzer::PointValues_Evaluator<EvalT,panzer::Traits>(pointRule,basis));
          
-           fm.template registerEvaluator<EvalT>(eval);
+           this->template registerEvaluator<EvalT>(fm, eval);
          }
          {
            // note basis values are not constructed!
            RCP< PHX::Evaluator<panzer::Traits> > eval 
              = rcp(new panzer::BasisValues_Evaluator<EvalT,panzer::Traits>(pointRule,basis,false));
          
-           fm.template registerEvaluator<EvalT>(eval);
+           this->template registerEvaluator<EvalT>(fm, eval);
          }
        }
     }
@@ -292,7 +292,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       p.set("Use Time Derivative Solution Vector",itr->second.timeDerivative.first);
     
       RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGather<EvalT>(p);
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
     } 
 
     if(basis->requiresOrientations())  {
@@ -308,7 +308,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       
       RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGatherOrientation<EvalT>(p);
       
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
     }
 
     // evaluator a vector basis at the basis points
@@ -322,7 +322,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
  
       RCP< PHX::Evaluator<panzer::Traits> > eval 
              = rcp(new panzer::DOF_PointValues<EvalT,panzer::Traits>(p));
-      fm.template registerEvaluator<EvalT>(eval);
+      this->template registerEvaluator<EvalT>(fm, eval);
     } 
     
   }
@@ -366,7 +366,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       RCP< PHX::Evaluator<panzer::Traits> > op = 
         rcp(new panzer::DirichletResidual<EvalT,panzer::Traits>(p));
     
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
     }
     // This assumes that dofs on faces are all named "<dof>_face"
     else if(basis->isVectorBasis()&&(dofName.compare(dofName.substr(0,dofName.find_last_of("_"))+"_face")==0)) {
@@ -382,7 +382,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       RCP< PHX::Evaluator<panzer::Traits> > op =
         rcp(new panzer::DirichletResidual_FaceBasis<EvalT,panzer::Traits>(p));
 
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
     }
     else if(basis->isVectorBasis()) {
       RCP<const panzer::PointRule> pointRule = rcp(new panzer::PointRule(basis->name()+":BasisPoints",basis->cardinality(),cellData)); 
@@ -397,7 +397,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       RCP< PHX::Evaluator<panzer::Traits> > op = 
         rcp(new panzer::DirichletResidual_EdgeBasis<EvalT,panzer::Traits>(p));
     
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
     }
 
   }
