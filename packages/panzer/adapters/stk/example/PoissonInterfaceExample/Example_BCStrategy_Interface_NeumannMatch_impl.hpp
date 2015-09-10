@@ -52,6 +52,8 @@
 // Evaluators
 #include "Panzer_Integrator_BasisTimesScalar.hpp"
 #include "Panzer_Constant.hpp"
+#include "Panzer_DOFGradient.hpp"
+#include "Panzer_DotProduct.hpp"
 
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
@@ -86,8 +88,8 @@ setup(const panzer::PhysicsBlock& side_pb,
   this->requireDOFGather(dof_name);
 
   // unique residual name
-  const string residual_name = "Residual_" + dof_name;
-  const string flux_name = std::string("Constant_Flux") + (di == 0 ? "" : "2");
+  const string residual_name = "Residual_" + this->m_bc.equationSetName();
+  const string flux_name = "Other_Flux";
 
   const std::map<int,RCP< panzer::IntegrationRule > >& ir = side_pb.getIntegrationRules();
   TEUCHOS_ASSERT(ir.size() == 1); 
@@ -122,33 +124,50 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   RCP<const panzer::FieldLayoutLibrary> fll = pb.getFieldLibrary()->buildFieldLayoutLibrary(*ir);
   RCP<panzer::BasisIRLayout> basis = fll->lookupLayout(dof_name);
 
-  // provide a constant flux target value to map into residual
-  {
-    ParameterList p("Constant Neumann BC");
-    p.set("Data Layout", ir->dl_scalar);
-    std::stringstream ss;
-    p.set("Name", flux_name);
-    p.set("Value", this->getDetailsIndex() == 0 ? 1.0 : -1.0); // bogus value for now
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Constant<EvalT,panzer::Traits>(p));
-    
-    this->template registerEvaluator<EvalT>(fm, op);
-  }
-
-  // add contribution to the residual 
-  {
-    ParameterList p("Constant Neumann Residual");
-    p.set("Residual Name", residual_name);
-    p.set("Value Name", flux_name);
-    p.set("Basis", basis);
-    p.set("IR", ir);
-    p.set("Multiplier", 1.0);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-    
-    this->template registerEvaluator<EvalT>(fm, op);
+  if (this->getDetailsIndex() == 0) {
+    { // add contribution to the residual 
+      ParameterList p("Neumann Match Residual");
+      p.set("Residual Name", residual_name);
+      p.set("Value Name", flux_name);
+      p.set("Basis", basis);
+      p.set("IR", ir);
+      p.set("Multiplier", -1.0);
+      const RCP< PHX::Evaluator<panzer::Traits> >
+        op = rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
+      this->template registerEvaluator<EvalT>(fm, op);
+    }
+  } else {
+    const std::string dof_grad_name = dof_name + "grad";
+    { // Compute side 2 normal.
+      ParameterList p("Side Normal");
+      p.set("Name", "Other_Side_Normal");
+      p.set("Side ID", pb.cellData().side());
+      p.set("IR", ir);
+      p.set("Normalize", true);
+      const RCP< PHX::Evaluator<panzer::Traits> >
+        op = rcp(new panzer::Normals<EvalT,panzer::Traits>(p));
+      this->template registerEvaluator<EvalT>(fm, op);
+    }
+    { // Compute dof side 2 gradient.
+      ParameterList p("Other DOF gradient");
+      p.set("Name", dof_name);
+      p.set("Gradient Name", dof_grad_name);
+      p.set("Basis", basis); 
+      p.set("IR", ir);
+      const RCP< PHX::Evaluator<panzer::Traits> >
+        op = rcp(new panzer::DOFGradient<EvalT,panzer::Traits>(p));
+      this->template registerEvaluator<EvalT>(fm, op);
+    }
+    { // Compute dot(dof side 2 gradient, side 2 normal).
+      ParameterList p("dot(Other DOF gradient, other normal)");
+      p.set("Result Name", flux_name);
+      p.set("Vector A Name", dof_grad_name);
+      p.set("Vector B Name", "Other_Side_Normal");
+      p.set("Point Rule", Teuchos::rcp_dynamic_cast<const panzer::PointRule>(ir));
+      const RCP< PHX::Evaluator<panzer::Traits> >
+        op = rcp(new panzer::DotProduct<EvalT,panzer::Traits>(p));
+      this->template registerEvaluator<EvalT>(fm, op);
+    }
   }
 }
 
