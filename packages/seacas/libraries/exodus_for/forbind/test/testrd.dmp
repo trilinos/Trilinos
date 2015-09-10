@@ -206,6 +206,13 @@ connect array for elem block 14
  25
  26
 
+after exgnams, error =   0
+element block  1 name: block_a                         
+element block  2 name: block_b                         
+element block  3 name: block_c                         
+element block  4 name: block_d                         
+element block  5 name: block_e                         
+
 after exgeat, error =   0
 
 after exgean, error =   0
@@ -277,6 +284,10 @@ dist factors for node set 21
  1.10
  2.10
  3.10
+
+after exgnams, error =   0
+node set  1 name: nodeset_a1                      
+node set  2 name: nodeset_b2                      
 
 after exinq, error =   0
 
@@ -515,6 +526,13 @@ node list for side set 34
  25
  26
 no dist factors for side set 34
+
+after exgnams, error =   0
+side set  1 name: surf_first                      
+side set  2 name: surf_second                     
+side set  3 name: surf_third                      
+side set  4 name: surf_fourth                     
+side set  5 name: surf_fifth                      
 
 after exinq, error =   0
 
