@@ -45,10 +45,10 @@ class NoGhostGameofLife
 {
 public:
     //basics
-    NoGhostGameofLife(GameofLifeMesh* Mesh, std::string name);
+    NoGhostGameofLife(GameofLifeMesh& Mesh, std::string name);
 
-    NoGhostGameofLife(stk::mesh::BulkData* bulkData, ScalarIntField* lifeField,
-                      ScalarIntField* neighborField, std::string name);
+    NoGhostGameofLife(stk::mesh::BulkData& bulkData, ScalarIntField& lifeField,
+                      ScalarIntField& neighborField, std::string name);
 
     ~NoGhostGameofLife(){}
 
@@ -68,7 +68,7 @@ public:
     unsigned num_active_neighbors(stk::mesh::Entity elem);
 
     //accessors
-    inline stk::mesh::BulkData* bulk_data();
+    inline stk::mesh::BulkData& bulk_data();
 
     inline unsigned num_procs() const;
 
@@ -77,13 +77,13 @@ public:
 
 private:
     //basic stuff
-    stk::mesh::BulkData* m_bulkData;
+    stk::mesh::BulkData& m_bulkData;
     int m_numProcs;
     stk::mesh::EntityVector m_elements;
 
     //game stuff
-    ScalarIntField* m_lifeField;
-    ScalarIntField* m_neighborField;
+    ScalarIntField& m_lifeField;
+    ScalarIntField& m_neighborField;
 
     //io
     std::string m_name;
@@ -191,7 +191,7 @@ private:
 };
 
 //accessors
-inline stk::mesh::BulkData* NoGhostGameofLife::bulk_data()
+inline stk::mesh::BulkData& NoGhostGameofLife::bulk_data()
 {
     return m_bulkData;
 }

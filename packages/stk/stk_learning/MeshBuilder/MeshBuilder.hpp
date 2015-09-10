@@ -27,6 +27,8 @@
 
 #include "../../../TPLs_src/Trilinos/packages/stk/stk_learning/MeshBuilder/CoordinateSets.hpp"
 
+typedef stk::mesh::Field<int> ScalarIntField;
+
 class MeshBuilder
 {
 public:
@@ -43,6 +45,9 @@ public:
     void end_modification();
 
     void write_mesh();
+
+    //gol
+    void create_life_and_neighbor_fields(ScalarIntField*& lifeField, ScalarIntField*& neighborField);
 
     //test functions
     inline stk::mesh::MetaData& meta_data();

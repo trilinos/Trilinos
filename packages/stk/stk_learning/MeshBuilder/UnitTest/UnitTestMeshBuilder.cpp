@@ -898,72 +898,7 @@ TEST(MeshSnake, 1ProcHexSnakeBegin)
         EXPECT_NE(INVALID_DIR, Snake.dir());
     }
 }
-TEST(MeshSnake, 8ProcHexSnakeCrawl)
-{
-    stk::ParallelMachine comm = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(comm);
-    if (8 == numProcs)
-    {
-        HexMeshBuilder Mesh(comm, "8ProcHexSnakeCrawl");
-        Mesh.commit_meta();
-
-        Mesh.begin_modification();
-        Mesh.fill_area(1, 25, 1, 25, 1, 25);
-        Mesh.end_modification();
-
-        HexMeshSnake Snake(Mesh);
-        Snake.set_x_bounds(1, 25);
-        Snake.set_y_bounds(1, 25);
-        Snake.set_z_bounds(1, 25);
-
-        Snake.begin_snake();
-
-        Snake.crawl(10000);
-    }
-}
-//TEST(Mesh3D, MultiImage)
-//{
-//    MultiImageReader Image("melon", 90);
-//}
-
-TEST(Mesh3D, DISABLED_Body)
-{
-    stk::ParallelMachine comm = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(comm);
-    if (8 == numProcs)
-    {
-        unsigned numFiles = 90;
-
-        HexMeshBuilder Mesh(comm, "Melon");
-
-        unsigned procCounter = 0;
-        std::vector<std::pair<unsigned, unsigned>> sliceCoordinates;
-
-        Mesh.begin_modification();
-        for (unsigned index = 0; index < numFiles; index++)
-        {
-            sliceCoordinates.clear();
-
-            std::string fileName = "melon"+std::to_string(index)+".png";
-            ColoredPNGProcessor image(fileName);
-            image.commit_image_vector_to_pixel_vector_with_greyscale();
-
-            image.get_coordinates_of_inactive_pixels(sliceCoordinates);
-
-            for (std::pair<unsigned, unsigned> xyCoord : sliceCoordinates)
-                Mesh.create_element(xyCoord.first, xyCoord.second, index+1, procCounter%numProcs);
-
-        Mesh.write_mesh();
-            std::cout << index << std::endl;
-            procCounter++;
-        }
-
-        std::cout << "done" << std::endl;
-
-        Mesh.end_modification();
-    }
-}
-TEST(MeshSnake, DISABLED_8ProcCrawl)
+TEST(MeshSnake, DISABLED_8ProcQuadCrawl)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     int numProcs = stk::parallel_machine_size(comm);
@@ -986,95 +921,393 @@ TEST(MeshSnake, DISABLED_8ProcCrawl)
         Snake.crawl(10000);
     }
 }
-TEST(JFF, DISABLED_GoL)
+TEST(MeshSnake, DISABLED_8ProcHexSnakeCrawl)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(comm);
+    if (8 == numProcs)
+    {
+        HexMeshBuilder Mesh(comm, "8ProcHexSnakeCrawl");
+        Mesh.commit_meta();
+
+        Mesh.begin_modification();
+        Mesh.fill_area(1, 25, 1, 25, 1, 25);
+        Mesh.end_modification();
+
+        HexMeshSnake Snake(Mesh);
+        Snake.set_x_bounds(1, 25);
+        Snake.set_y_bounds(1, 25);
+        Snake.set_z_bounds(1, 25);
+
+        Snake.begin_snake();
+
+        Snake.crawl(10000);
+    }
+}
+TEST(Mesh3D, DISABLED_FullBodyPerformanceTest)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int procRank = stk::parallel_machine_rank(comm);
+
+    MultiImageReader reader("fullbody", 146);
+
+    {
+        HexMeshBuilder meshRandom(comm, "RandomBody");
+        meshRandom.commit_meta();
+        meshRandom.begin_modification();
+        reader.create_randomly_decomposed_mesh(meshRandom);
+        double t1 = MPI_Wtime();
+        meshRandom.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t1 << std::endl;
+        meshRandom.write_mesh();
+    }
+
+    {
+        HexMeshBuilder meshX(comm, "SingleXBody");
+        meshX.commit_meta();
+        meshX.begin_modification();
+        reader.create_x_layered_decomposed_mesh(meshX);
+        double t2 = MPI_Wtime();
+        meshX.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t2 << std::endl;
+        meshX.write_mesh();
+    }
+
+    {
+        HexMeshBuilder meshY(comm, "SingleYBody");
+        meshY.commit_meta();
+        meshY.begin_modification();
+        reader.create_y_layered_decomposed_mesh(meshY);
+        double t3 = MPI_Wtime();
+        meshY.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t3 << std::endl;
+        meshY.write_mesh();
+    }
+
+    {
+        HexMeshBuilder meshZ(comm, "SingleZBody");
+        meshZ.commit_meta();
+        meshZ.begin_modification();
+        reader.create_z_layered_decomposed_mesh(meshZ);
+        double t4 = MPI_Wtime();
+        meshZ.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t4 << std::endl;
+        meshZ.write_mesh();
+    }
+
+    {
+        HexMeshBuilder MeshX(comm, "BlockXBody");
+        MeshX.commit_meta();
+        MeshX.begin_modification();
+        reader.create_x_blocked_decomposed_mesh(MeshX);
+        double t5 = MPI_Wtime();
+        MeshX.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t5 << std::endl;
+        MeshX.write_mesh();
+    }
+
+    {
+        HexMeshBuilder MeshY(comm, "BlockYBody");
+        MeshY.commit_meta();
+        MeshY.begin_modification();
+        reader.create_y_blocked_decomposed_mesh(MeshY);
+        double t6 = MPI_Wtime();
+        MeshY.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t6 << std::endl;
+        MeshY.write_mesh();
+    }
+
+    {
+        HexMeshBuilder MeshZ(comm, "BlockZBody");
+        MeshZ.commit_meta();
+        MeshZ.begin_modification();
+        reader.create_z_blocked_decomposed_mesh(MeshZ);
+        double t7 = MPI_Wtime();
+        MeshZ.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t7 << std::endl << std::endl;
+        MeshZ.write_mesh();
+    }
+}
+TEST(Mesh3D, DISABLED_BroccoliPerformanceTest)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int procRank = stk::parallel_machine_rank(comm);
+
+    MultiImageReader reader("broccoli", 50);
+
+    {
+        HexMeshBuilder meshRandom(comm, "RandomBroccoli");
+        meshRandom.commit_meta();
+        meshRandom.begin_modification();
+        reader.create_randomly_decomposed_mesh(meshRandom);
+        double t1 = MPI_Wtime();
+        meshRandom.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t1 << std::endl;
+        meshRandom.write_mesh();
+    }
+
+    {
+        HexMeshBuilder meshX(comm, "SingleXBroccoli");
+        meshX.commit_meta();
+        meshX.begin_modification();
+        reader.create_x_layered_decomposed_mesh(meshX);
+        double t2 = MPI_Wtime();
+        meshX.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t2 << std::endl;
+        meshX.write_mesh();
+    }
+
+    {
+        HexMeshBuilder meshY(comm, "SingleYBroccoli");
+        meshY.commit_meta();
+        meshY.begin_modification();
+        reader.create_y_layered_decomposed_mesh(meshY);
+        double t3 = MPI_Wtime();
+        meshY.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t3 << std::endl;
+        meshY.write_mesh();
+    }
+
+    {
+        HexMeshBuilder meshZ(comm, "SingleZBroccoli");
+        meshZ.commit_meta();
+        meshZ.begin_modification();
+        reader.create_z_layered_decomposed_mesh(meshZ);
+        double t4 = MPI_Wtime();
+        meshZ.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t4 << std::endl;
+        meshZ.write_mesh();
+    }
+
+    {
+        HexMeshBuilder MeshX(comm, "BlockXBroccoli");
+        MeshX.commit_meta();
+        MeshX.begin_modification();
+        reader.create_x_blocked_decomposed_mesh(MeshX);
+        double t5 = MPI_Wtime();
+        MeshX.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t5 << std::endl;
+        MeshX.write_mesh();
+    }
+
+    {
+        HexMeshBuilder MeshY(comm, "BlockYBroccoli");
+        MeshY.commit_meta();
+        MeshY.begin_modification();
+        reader.create_y_blocked_decomposed_mesh(MeshY);
+        double t6 = MPI_Wtime();
+        MeshY.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t6 << std::endl;
+        MeshY.write_mesh();
+    }
+
+    {
+        HexMeshBuilder MeshZ(comm, "BlockZBroccoli");
+        MeshZ.commit_meta();
+        MeshZ.begin_modification();
+        reader.create_z_blocked_decomposed_mesh(MeshZ);
+        double t7 = MPI_Wtime();
+        MeshZ.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t7 << std::endl << std::endl;
+        MeshZ.write_mesh();
+    }
+}
+TEST(Mesh3D, DISABLED_HeadPerformanceTest)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int procRank = stk::parallel_machine_rank(comm);
+
+    MultiImageReader reader("brain3", 80);
+
+    {
+        HexMeshBuilder meshRandom(comm, "RandomHead");
+        meshRandom.commit_meta();
+        meshRandom.begin_modification();
+        reader.create_randomly_decomposed_mesh(meshRandom);
+        double t1 = MPI_Wtime();
+        meshRandom.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t1 << std::endl;
+        meshRandom.write_mesh();
+    }
+
+    {
+        HexMeshBuilder meshX(comm, "SingleXHead");
+        meshX.commit_meta();
+        meshX.begin_modification();
+        reader.create_x_layered_decomposed_mesh(meshX);
+        double t2 = MPI_Wtime();
+        meshX.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t2 << std::endl;
+        meshX.write_mesh();
+    }
+
+    {
+        HexMeshBuilder meshY(comm, "SingleYHead");
+        meshY.commit_meta();
+        meshY.begin_modification();
+        reader.create_y_layered_decomposed_mesh(meshY);
+        double t3 = MPI_Wtime();
+        meshY.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t3 << std::endl;
+        meshY.write_mesh();
+    }
+
+    {
+        HexMeshBuilder meshZ(comm, "SingleZHead");
+        meshZ.commit_meta();
+        meshZ.begin_modification();
+        reader.create_z_layered_decomposed_mesh(meshZ);
+        double t4 = MPI_Wtime();
+        meshZ.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t4 << std::endl;
+        meshZ.write_mesh();
+    }
+
+    {
+        HexMeshBuilder MeshX(comm, "BlockXHead");
+        MeshX.commit_meta();
+        MeshX.begin_modification();
+        reader.create_x_blocked_decomposed_mesh(MeshX);
+        double t5 = MPI_Wtime();
+        MeshX.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t5 << std::endl;
+        MeshX.write_mesh();
+    }
+
+    {
+        HexMeshBuilder MeshY(comm, "BlockYHead");
+        MeshY.commit_meta();
+        MeshY.begin_modification();
+        reader.create_y_blocked_decomposed_mesh(MeshY);
+        double t6 = MPI_Wtime();
+        MeshY.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t6 << std::endl;
+        MeshY.write_mesh();
+    }
+
+    {
+        HexMeshBuilder MeshZ(comm, "BlockZHead");
+        MeshZ.commit_meta();
+        MeshZ.begin_modification();
+        reader.create_z_blocked_decomposed_mesh(MeshZ);
+        double t7 = MPI_Wtime();
+        MeshZ.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t7 << std::endl << std::endl;
+        MeshZ.write_mesh();
+    }
+}
+TEST(JFF, DISABLED_GoLTuring)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     int numProcs = stk::parallel_machine_size(comm);
     if (8 == numProcs)
     {
         QuadMeshBuilder Mesh(comm, "8ProcRainbowGoL");
+        stk::mesh::Field<int>* lifeField = nullptr;
+        stk::mesh::Field<int>* neighborField = nullptr;
+        Mesh.create_life_and_neighbor_fields(lifeField, neighborField);
+        Mesh.commit_meta();
 
-        stk::mesh::Field<int>* lifeField = &Mesh.meta_data().declare_field<stk::mesh::Field<int>>(
-                stk::topology::ELEM_RANK, "lifeField");
-        stk::mesh::Field<int>* neighborField = &Mesh.meta_data().declare_field<stk::mesh::Field<int>>(
-                stk::topology::ELEM_RANK, "neighborField");
-        int val = 0;
-        stk::mesh::put_field(*lifeField, Mesh.meta_data().universal_part(), &val);
-        stk::mesh::put_field(*neighborField, Mesh.meta_data().universal_part(), &val);
+        PNGProcessor PNG("turing.png");
+        PNG.commit_image_vector_to_pixel_vector();
 
+        Mesh.begin_modification();
+        unsigned width = PNG.get_image_width();
+        unsigned height = PNG.get_image_height();
+        Mesh.fill_area(1, width, 1, height);
+        Mesh.end_modification();
+
+        NoGhostGameofLife Game(Mesh.bulk_data(), *lifeField, *neighborField, "RainbowTuring");
+
+        std::vector<std::pair<unsigned, unsigned>> coords;
+        PNG.get_coordinates_of_active_pixels(coords);
+
+        stk::mesh::EntityIdVector elemIds;
+        for (std::pair<unsigned, unsigned>& pair : coords)
+            elemIds.push_back(generate_two_dim_elem_id(pair.first, pair.second));
+
+        Game.activate_these_ids(elemIds);
+        Game.run_game_of_life(29);
+    }
+}
+TEST(JFF, DISABLED_GoLArk)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(comm);
+    if (8 == numProcs)
+    {
+        BorderedPNGProcessor PNG("Noahsark.png");
+        PNG.commit_image_vector_to_pixel_vector();
+
+        PNG.add_this_much_pixel_padding_to_left(200);
+        PNG.add_this_much_pixel_padding_to_top(200);
+        PNG.add_this_much_pixel_padding_to_right(5);
+        PNG.add_this_much_pixel_padding_to_bottom(5);
+
+        QuadMeshBuilder Mesh(comm, "8ProcRainbowGoL");
+        stk::mesh::Field<int>* lifeField = nullptr;
+        stk::mesh::Field<int>* neighborField = nullptr;
+        Mesh.create_life_and_neighbor_fields(lifeField, neighborField);
         Mesh.commit_meta();
 
         Mesh.begin_modification();
-        Mesh.fill_area(1,100, 1, 100);
+        unsigned width = PNG.get_image_width();
+        unsigned height = PNG.get_image_height();
+        Mesh.fill_area(1, width, 1, height);
         Mesh.end_modification();
 
-        NoGhostGameofLife Game(&Mesh.bulk_data(), lifeField, neighborField, "Rainbow");
+        NoGhostGameofLife Game(Mesh.bulk_data(), *lifeField, *neighborField, "RainbowArk");
+
+        std::vector<std::pair<unsigned, unsigned>> coords;
+        PNG.get_coordinates_of_active_pixels(coords);
 
         stk::mesh::EntityIdVector elemIds;
-
-        for (unsigned x = 1; x <= 100; x++)
-            for (unsigned y = 1; y <= 100; y++)
-                if (!((100*x + y)%5) || !((100*x + y)%7))
-                    elemIds.push_back(generate_two_dim_elem_id(x, y));
+        for (std::pair<unsigned, unsigned>& pair : coords)
+            elemIds.push_back(generate_two_dim_elem_id(pair.first, pair.second));
 
         Game.activate_these_ids(elemIds);
-        Game.run_game_of_life(100);
+        Game.run_game_of_life(2000);
     }
 }
-TEST(JFF, DISABLED_PNGPrint)
+TEST(JFF, DISABLED_Maze)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-    QuadMeshBuilder Mesh(comm, "RainbowOceanPrint");
+    QuadMeshBuilder Mesh(comm, "Maze");
+    stk::mesh::Field<int>* lifeField = nullptr;
+    stk::mesh::Field<int>* neighborField = nullptr;
+    Mesh.create_life_and_neighbor_fields(lifeField, neighborField);
     Mesh.commit_meta();
 
-    ColoredPNGProcessor PNG("ocean.png");
-    PNG.commit_image_vector_to_pixel_vector();
-    std::vector<std::pair<unsigned, unsigned>> activePoints;
-    PNG.get_coordinates_of_active_pixels(activePoints);
-
-    std::random_shuffle(activePoints.begin(), activePoints.end());
-
     Mesh.begin_modification();
-    for (unsigned index = 0, size = activePoints.size(); index < size; index++)
-    {
-        Mesh.create_element(activePoints[index].first, activePoints[index].second);
-        if (!(index%500))
-            Mesh.write_mesh();
-
-        std::cout << index << std::endl;
-    }
-    Mesh.end_modification();
-    Mesh.write_mesh();
-}
-TEST(JFF, DISABLED_PNGErase)
-{
-    stk::ParallelMachine comm = MPI_COMM_WORLD;
-
-    QuadMeshBuilder Mesh(comm, "RainbowSandiaErase");
-    Mesh.commit_meta();
-
-    ColoredPNGProcessor PNG("index.png");
-    PNG.commit_image_vector_to_pixel_vector();
-    std::vector<std::pair<unsigned, unsigned>> inactivePoints;
-    PNG.get_coordinates_of_inactive_pixels(inactivePoints);
-
-    std::random_shuffle(inactivePoints.begin(), inactivePoints.end());
-
-    Mesh.begin_modification();
-    Mesh.fill_area(1, PNG.get_image_width(), 1, PNG.get_image_height());
+    Mesh.fill_area(1, 201, 1, 201);
     Mesh.end_modification();
 
-    Mesh.begin_modification();
-    for (unsigned index = 0, size = inactivePoints.size(); index < size; index++)
-    {
-        Mesh.remove_element(inactivePoints[index].first, inactivePoints[index].second);
-        if (!(index%100))
-            Mesh.write_mesh();
+    stk::mesh::EntityIdVector elemIds = {generate_two_dim_elem_id(100, 100)};
 
-        std::cout << index << std::endl;
-    }
-    Mesh.end_modification();
-    Mesh.write_mesh();
+    NoGhostGameofLife Game(Mesh.bulk_data(), *lifeField, *neighborField, "Maze");
+    Game.activate_these_ids(elemIds);
+    Game.run_game_of_life(500);
 }
 }
