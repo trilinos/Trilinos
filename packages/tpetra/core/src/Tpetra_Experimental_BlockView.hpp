@@ -65,6 +65,7 @@ namespace Details {
 //! Partial implementation of Teuchos::LAPACK for Scalar = __float128.
 class Lapack128 {
 public:
+  //! Swap the entries of X with the entries of Y.
   void
   SWAP (const int N, __float128* X, const int INCX,
         __float128* Y, const int INCY) const;
@@ -99,6 +100,12 @@ public:
   GETRS (const char TRANS, const int N, const int NRHS,
          const __float128 A[], const int LDA, const int IPIV[],
          __float128 B[], const int LDB, int* INFO) const;
+
+  /// \brief Compute the inverse in place of the matrix A, using the
+  ///   results of GETRF.
+  void
+  GETRI (const int N, __float128 A[], const int LDA, int IPIV[],
+         __float128 WORK[], const int LWORK, int* INFO) const;
 };
 
 } // namespace Details
