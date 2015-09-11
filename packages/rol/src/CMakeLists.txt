@@ -110,11 +110,13 @@ INCLUDE_DIRECTORIES(${DIR}/function
                     ${DIR}/function/distribution
                     ${DIR}/vector
                     ${DIR}/sampler
+                    ${DIR}/sampler/SROM
                    )
 APPEND_GLOB(HEADERS ${DIR}/function/*.hpp 
                     ${DIR}/function/distribution/*.hpp
                     ${DIR}/vector/*.hpp
                     ${DIR}/sampler/*.hpp
+                    ${DIR}/sampler/SROM/*.hpp
                    )
 
 #
