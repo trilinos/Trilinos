@@ -73,7 +73,7 @@ public:
    /** Take a vector of (std::string (field name), RCP<PureBasis>) pairs and bucket them
      * by basis name. What is returned is a map pairing the basis to a vector of field names.
      */
-   static void bucketByBasisType(const std::vector<panzer::StrPureBasisPair> & providedDofs,
+   static void bucketByBasisType(const std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & providedDofs,
                                  std::map<std::string,std::vector<std::string> > & basisBucket);
 
    /** Scale a field before writing out to STK by a prescribed value (the implicit default is 1.0). 
@@ -89,7 +89,7 @@ public:
 
    /** Add an additional (solution) field to write out that is not in the physics blocks.
      */
-   void addAdditionalField(const std::string & fieldName,const Teuchos::RCP<panzer::PureBasis> & basis);
+   void addAdditionalField(const std::string & fieldName,const Teuchos::RCP<const panzer::PureBasis> & basis);
 
    /** Enable/disable addition of solution fields. Note that this "true" by default.
      */
@@ -109,17 +109,17 @@ public:
    { removedFields_.push_back(fieldName); }
 
 private:
-   void computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<panzer::PureBasis> > & bases,
+   void computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<const panzer::PureBasis> > & bases,
                                  int baseDimension,
                                  Intrepid::FieldContainer<double> & centroid) const;
 
    //! Delete from the argument all the fields that are in the removedFields array
    void deleteRemovedFields(const std::vector<std::string> & removedFields,
-                            std::vector<panzer::StrPureBasisPair> & fields) const;
+                            std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > & fields) const;
 
-   struct RemovedFieldsSearchUnaryFunctor : public std::unary_function<panzer::StrPureBasisPair,bool> {
+   struct RemovedFieldsSearchUnaryFunctor : public std::unary_function<std::pair<std::string,const panzer::PureBasis>,bool> {
      std::vector<std::string> removedFields_;
-     bool operator() (const panzer::StrPureBasisPair & field) 
+     bool operator() (const std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > & field) 
      { return std::find(removedFields_.begin(),removedFields_.end(),field.first)!=removedFields_.end(); }
    };
 
@@ -128,7 +128,7 @@ private:
    boost::unordered_map<std::string,double> fieldToScalar_;
    boost::unordered_set<std::string> scaledFieldsHash_; // used to print the warning about unused scaling
 
-   std::vector<panzer::StrPureBasisPair> additionalFields_;
+   std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > additionalFields_;
    std::vector<std::string> removedFields_;
    bool addSolutionFields_;
    bool addCoordinateFields_;
@@ -145,7 +145,7 @@ struct RespFactorySolnWriter_Builder {
   void scaleField(const std::string & fieldName,double fieldScalar)
   { fieldToScalar_[fieldName] = fieldScalar; }
 
-  void addAdditionalField(const std::string & fieldName,const Teuchos::RCP<panzer::PureBasis> & basis)
+  void addAdditionalField(const std::string & fieldName,const Teuchos::RCP<const panzer::PureBasis> & basis)
   { additionalFields_.push_back(std::make_pair(fieldName,basis)); }
 
   /** Remove a field (even a solution field) from the response. Note that even if a field has not
@@ -194,7 +194,7 @@ struct RespFactorySolnWriter_Builder {
 
 private:
   boost::unordered_map<std::string,double> fieldToScalar_;
-  std::vector<panzer::StrPureBasisPair> additionalFields_;
+  std::vector<std::pair<std::string,Teuchos::RCP<const panzer::PureBasis> > > additionalFields_;
   std::vector<std::string> removedFields_;
   bool addSolutionFields_;
   bool addCoordinateFields_;

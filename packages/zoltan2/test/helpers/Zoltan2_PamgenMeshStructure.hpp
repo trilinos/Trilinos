@@ -13,10 +13,9 @@ public:
   ~PamgenMesh(); // free memory
   void storeMesh(); // read mesh to memory
   void computeElementCoordinates();
-  void createMesh(char * file_data, int dimension, int rank, int nproc);
+  void createMesh(char * file_data, int dimension, const RCP<const Comm<int>> &comm);
   
-  
-  
+
   int num_dim;
   int num_nodes;
   int num_elem;
@@ -598,8 +597,10 @@ void PamgenMesh::computeElementCoordinates()
   
 }
 
-void PamgenMesh::createMesh(char * file_data, int dimension, int rank, int nproc)
+void PamgenMesh::createMesh(char * file_data, int dimension, const RCP<const Comm<int>> &comm)
 {
+  int rank = comm->getRank();
+  int nproc = comm->getSize();
   long long cr_result = Create_Pamgen_Mesh(file_data, dimension, rank, nproc, INT_MAX);
   
   if (cr_result == ERROR_PARSING_DEFINITION){

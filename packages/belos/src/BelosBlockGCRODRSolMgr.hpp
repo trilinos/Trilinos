@@ -1261,7 +1261,7 @@ lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_
 TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure, "Belos::BlockGCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
 
 // Step #2: Compute QR factorization of HP
-lwork = (int)std::abs(work_[0]);
+ lwork = static_cast<int> (Teuchos::ScalarTraits<ScalarType>::magnitude (work_[0]));
 work_.resize(lwork);
 lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
 TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure,  "Belos::BlockGCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
@@ -1397,7 +1397,7 @@ void BlockGCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpaceAugKryl(Teuchos::RCP<
   lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0,BlockGCRODRSolMgrLAPACKFailure,"Belos::BlockGCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
 
-  lwork = (int)std::abs( work_[0] );
+  lwork = static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work_[0]));
   work_.resize(lwork);
   lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0,BlockGCRODRSolMgrLAPACKFailure,"Belos::BlockGCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
@@ -1552,9 +1552,9 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecsAugKryl(int keff, int m,
   //             &beta[0], vl, ldvl, vr.values(), ldvr, &ilo, &ihi, &lscale[0], &rscale[0],
   //             &abnrm, &bbnrm, &rconde[0], &rcondv[0], &work[0], lwork, &iwork[0], bwork, &info);
   lapack.GGEVX(balanc, jobvl, jobvr, sense, ld, A.values(), ld, B.values(), ld, &wr[0], &wi[0],
-               &beta[0], vl, ldvl, vr.values(), ldvr, &ilo, &ihi, &lscale[0], &rscale[0], 
+               &beta[0], vl, ldvl, vr.values(), ldvr, &ilo, &ihi, &lscale[0], &rscale[0],
                &abnrm, &bbnrm, &rconde[0], &rcondv[0], &work[0], lwork, &rwork[0],
-	       &iwork[0], bwork, &info);
+               &iwork[0], bwork, &info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure, "Belos::BlockGCRODRSolMgr::solve(): LAPACK GGEVX failed to compute eigensolutions.");
 
   // Construct magnitude of each harmonic Ritz value
@@ -1572,27 +1572,27 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecsAugKryl(int keff, int m,
       PP(j,i) = vr(j,iperm[ld-recycledBlocks_+i]);
 
   if(scalarTypeIsComplex==false) {
-    
+
     // Determine exact size for PP (i.e., determine if we need to store an additional vector)
     if (wi[iperm[ld-recycledBlocks_]] != 0.0) {
       int countImag = 0;
       for ( i=ld-recycledBlocks_; i<ld; i++ )
-	if (wi[iperm[i]] != 0.0) countImag++;
+        if (wi[iperm[i]] != 0.0) countImag++;
       // Check to see if this count is even or odd:
       if (countImag % 2) xtraVec = true;
     }
-    
+
     if (xtraVec) { // we need to store one more vector
       if (wi[iperm[ld-recycledBlocks_]] > 0.0) { // I picked the "real" component
-	for( j=0; j<ld; j++ )                  // so get the "imag" component
-	  PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]+1);
+        for( j=0; j<ld; j++ )                  // so get the "imag" component
+          PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]+1);
       }
       else {                  // I picked the "imag" component
-	for( j=0; j<ld; j++ ) // so get the "real" component
-	  PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]-1);
+        for( j=0; j<ld; j++ ) // so get the "real" component
+          PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]-1);
       }
     }
-    
+
   }
 
   // Return whether we needed to store an additional vector
@@ -1680,7 +1680,7 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecsKryl(int m, const SDM& H
   //lapack.GEEV('N', 'V', m, harmRitzMatrix -> values(), harmRitzMatrix -> stride(), &wr[0], &wi[0],
   //            vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &info);
   lapack.GEEV('N', 'V', m, harmRitzMatrix -> values(), harmRitzMatrix -> stride(), &wr[0], &wi[0],
-	      vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &rwork[0], &info);
+              vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &rwork[0], &info);
 
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure,"Belos::BlockGCRODRSolMgr::solve(): LAPACK GEEV failed to compute eigensolutions.");
 
@@ -1702,22 +1702,22 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecsKryl(int m, const SDM& H
     if (wi[iperm[recycledBlocks_-1]] != 0.0) {
       int countImag = 0;
       for (int i=0; i<recycledBlocks_; ++i )
-	if (wi[iperm[i]] != 0.0) countImag++;
+        if (wi[iperm[i]] != 0.0) countImag++;
       // Check to see if this count is even or odd:
       if (countImag % 2) xtraVec = true;
     }
-    
+
     if (xtraVec) { // we need to store one more vector
       if (wi[iperm[recycledBlocks_-1]] > 0.0) { // I picked the "real" component
-	for(int j=0; j<m; ++j )               // so get the "imag" component
-	  PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]+1);
+        for(int j=0; j<m; ++j )               // so get the "imag" component
+          PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]+1);
       }
       else{                         // I picked the "imag" component
-	for(int j=0; j<m; ++j )     // so get the "real" component
-	  PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]-1);
+        for(int j=0; j<m; ++j )     // so get the "real" component
+          PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]-1);
       }
     }
-    
+
   }
 
   // Return whether we needed to store an additional vector
@@ -2335,13 +2335,13 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
   const std::vector<MagnitudeType>* pTestValues = NULL;
   pTestValues = impConvTest_->getTestValue();
   TEUCHOS_TEST_FOR_EXCEPTION(pTestValues == NULL, std::logic_error,
-			     "Belos::BlockGCRODRSolMgr::solve(): The implicit convergence test's "
-			     "getTestValue() method returned NULL.  Please report this bug to the "
-			     "Belos developers.");
+                             "Belos::BlockGCRODRSolMgr::solve(): The implicit convergence test's "
+                             "getTestValue() method returned NULL.  Please report this bug to the "
+                             "Belos developers.");
   TEUCHOS_TEST_FOR_EXCEPTION(pTestValues->size() < 1, std::logic_error,
-			     "Belos::BlockGCRODRSolMgr::solve(): The implicit convergence test's "
-			     "getTestValue() method returned a vector of length zero.  Please report "
-			     "this bug to the Belos developers.");
+                             "Belos::BlockGCRODRSolMgr::solve(): The implicit convergence test's "
+                             "getTestValue() method returned a vector of length zero.  Please report "
+                             "this bug to the Belos developers.");
   // FIXME (mfh 12 Dec 2011) Does pTestValues really contain the
   // achieved tolerances for all vectors in the current solve(), or
   // just for the vectors from the last deflation?

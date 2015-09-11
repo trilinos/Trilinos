@@ -55,6 +55,7 @@
 #include "Panzer_EquationSet_TemplateManager.hpp"
 #include "Panzer_LinearObjFactory.hpp"
 #include "Panzer_FieldLibrary.hpp"
+#include "Panzer_EvaluatorsRegistrar.hpp"
 
 namespace Teuchos {
   class ParameterList;
@@ -102,7 +103,7 @@ namespace panzer {
                                                       bool throw_on_failure = true);
   
   //! Object that contains information on the physics and discretization of a block of elements with the SAME topology.
-  class PhysicsBlock {
+  class PhysicsBlock : public EvaluatorsRegistrar {
 
   public:    
     /** for testing purposes only */
@@ -286,7 +287,9 @@ void panzer::PhysicsBlock::buildAndRegisterEquationSetEvaluatorsForType(PHX::Fie
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
 
+    const int di = eqstm.getAsObject<EvalT>()->setDetailsIndex(this->getDetailsIndex());
     eqstm.getAsObject<EvalT>()->buildAndRegisterEquationSetEvaluators(fm, *m_field_lib, user_data);
+    eqstm.getAsObject<EvalT>()->setDetailsIndex(di);
   }
 }
 
@@ -306,8 +309,9 @@ void panzer::PhysicsBlock::buildAndRegisterGatherAndOrientationEvaluatorsForType
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
 
+    const int di = eqstm.getAsObject<EvalT>()->setDetailsIndex(this->getDetailsIndex());
     eqstm.getAsObject<EvalT>()->buildAndRegisterGatherAndOrientationEvaluators(fm,*m_field_lib,lof,user_data);
-
+    eqstm.getAsObject<EvalT>()->setDetailsIndex(di);
   }
 }
 
@@ -332,8 +336,9 @@ void panzer::PhysicsBlock::buildAndRegisterDOFProjectionsToIPEvaluatorsForType(P
       
       Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
       
+      const int di = eqstm.getAsObject<EvalT>()->setDetailsIndex(this->getDetailsIndex());
       eqstm.getAsObject<EvalT>()->buildAndRegisterDOFProjectionsToIPEvaluators(fm,*m_field_lib->buildFieldLayoutLibrary(*ir),ir,lof,user_data);
-
+      eqstm.getAsObject<EvalT>()->setDetailsIndex(di);
     }
 
   }
@@ -355,8 +360,9 @@ void panzer::PhysicsBlock::buildAndRegisterScatterEvaluatorsForType(PHX::FieldMa
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
 
+    const int di = eqstm.getAsObject<EvalT>()->setDetailsIndex(this->getDetailsIndex());
     eqstm.getAsObject<EvalT>()->buildAndRegisterScatterEvaluators(fm,*m_field_lib,lof,user_data);
-
+    eqstm.getAsObject<EvalT>()->setDetailsIndex(di);
   }
 }
 
@@ -383,7 +389,9 @@ void panzer::PhysicsBlock::buildAndRegisterClosureModelEvaluatorsForType(PHX::Fi
       
       Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
       
+      const int di = eqstm.getAsObject<EvalT>()->setDetailsIndex(this->getDetailsIndex());
       eqstm.getAsObject<EvalT>()->buildAndRegisterClosureModelEvaluators(fm,*m_field_lib->buildFieldLayoutLibrary(*ir),ir,factory,models,user_data);
+      eqstm.getAsObject<EvalT>()->setDetailsIndex(di);
     }
 
   }
@@ -409,8 +417,9 @@ void panzer::PhysicsBlock::buildAndRegisterInitialConditionEvaluatorsForType(PHX
 
     EquationSet_TemplateManager<panzer::Traits> eqstm = *(*eq_set);
 
+    const int di = eqstm.getAsObject<EvalT>()->setDetailsIndex(this->getDetailsIndex());
     eqstm.getAsObject<EvalT>()->buildAndRegisterInitialConditionEvaluators(fm, *m_field_lib, factory, model_name, models, lof, user_data);
-
+    eqstm.getAsObject<EvalT>()->setDetailsIndex(di);
   }
 }
 

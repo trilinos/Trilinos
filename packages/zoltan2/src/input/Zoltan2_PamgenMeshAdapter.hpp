@@ -365,13 +365,29 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 
   error += im_ex_get_coord(exoid, coords_, coords_ + num_nodes_,
 			   coords_ + 2 * num_nodes_);
-
+  
   element_num_map_ = new zgid_t [num_elem_];
-  error += im_ex_get_elem_num_map(exoid, (int *)element_num_map_);
-
+  std::vector<int> tmp;
+  tmp.resize(num_elem_);
+  
+  // BDD cast to int did not always work!
+  // error += im_ex_get_elem_num_map(exoid, (int *)element_num_map_)
+  // This may be a case of calling the wrong method
+  error += im_ex_get_elem_num_map(exoid, &tmp[0]);
+  for(size_t i = 0; i < tmp.size(); i++)
+    element_num_map_[i] = static_cast<zgid_t>(tmp[i]);
+    
+  tmp.clear();
+  tmp.resize(num_nodes_);
   node_num_map_ = new zgid_t [num_nodes_];
-  error += im_ex_get_node_num_map(exoid, (int *)node_num_map_);
-
+  
+  // BDD cast to int did not always work!
+  // error += im_ex_get_node_num_map(exoid, (int *)node_num_map_);
+  // This may be a case of calling the wrong method
+  error += im_ex_get_node_num_map(exoid, &tmp[0]);
+  for(size_t i = 0; i < tmp.size(); i++)
+    node_num_map_[i] = static_cast<zgid_t>(tmp[i]);
+  
   nodeTopology = new enum EntityTopologyType[num_nodes_];
   for (int i=0;i<num_nodes_;i++)
     nodeTopology[i] = POINT;
@@ -851,7 +867,7 @@ void PamgenMeshAdapter<User>::print(int me)
   std::string fn(" PamgenMesh ");
   std::cout << me << fn
             << " dim = " << dimension_
-            << " nnodes = " << num_nodes_
+            << " nodes = " << num_nodes_
             << " nelems = " << num_elem_
             << std::endl;
 
