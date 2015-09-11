@@ -819,6 +819,10 @@ log_rotation(Tensor<T, N> const & R)
       r(1,1) = 0.0;
       break;
 
+    case 1:
+      r(0,0) = 0.0;
+      break;
+
   }
 
   return r;
@@ -1067,20 +1071,26 @@ exp_skew_symmetric(Tensor<T, N> const & r)
     case 2:
       theta = r(1,0);
 
-      T
-      c = std::cos(theta);
+      {
+        T const
+        c = std::cos(theta);
 
-      T
-      s = std::sin(theta);
+        T const
+        s = std::sin(theta);
 
-      R(0,0) = c;
-      R(0,1) = -s;
-      R(1,0) = s;
-      R(1,1) = c;
+        R(0,0) = c;
+        R(0,1) = -s;
+        R(1,0) = s;
+        R(1,1) = c;
+      }
 
       break;
 
-  }
+    case 1:
+      R(0,0) = 1.0;
+      break;
+
+ }
 
   return R;
 }
@@ -1118,6 +1128,10 @@ norm_off_diagonal(Tensor<T, N> const & A)
 
     case 2:
       s = A(0,1)*A(0,1) + A(1,0)*A(1,0);
+      break;
+
+    case 1:
+      s = 0.0;
       break;
 
   }
