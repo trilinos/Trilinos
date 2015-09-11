@@ -161,6 +161,7 @@ int main(int argc, char* argv[]) {
       Teuchos::rcp(new ROL::SROMGenerator<double>(bman,obj,bnd,xptr,dimension,nSamp));
 
     double val = 0., error = 0.;
+    *outStream << std::endl;
     *outStream << std::scientific << std::setprecision(11);
     *outStream << std::right << std::setw(20) << "Computed Moment"
                              << std::setw(20) << "True Moment"
