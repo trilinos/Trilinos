@@ -65,6 +65,16 @@
 
 #include "Xpetra_Matrix.hpp"
 
+#ifdef HAVE_XPETRA_THYRA
+#include <Thyra_ProductVectorSpaceBase.hpp>
+#include <Thyra_VectorSpaceBase.hpp>
+#include <Thyra_LinearOpBase.hpp>
+#include <Thyra_BlockedLinearOpBase.hpp>
+#include <Thyra_PhysicallyBlockedLinearOpBase.hpp>
+#include "Xpetra_ThyraUtils.hpp"
+#endif
+
+
 /** \file Xpetra_BlockedCrsMatrix.hpp
 
   Declarations for the class Xpetra::BlockedCrsMatrix.
@@ -119,6 +129,121 @@ namespace Xpetra {
       // Default view
       CreateDefaultView();
     }
+
+#ifdef HAVE_XPETRA_THYRA
+    //! Constructor
+    /*!
+     * \param rangeMaps range maps for all blocks
+     * \param domainMaps domain maps for all blocks
+     * \param npr extimated number of entries per row in each block(!)
+     * \param pftype Xpetra profile type
+     * TODO: create a new constructor which accepts striding information!!!
+     */
+    BlockedCrsMatrix(const Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar> >& thyraOp, const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+    : thyraOp_(thyraOp)
+    {
+      // extract information from Thyra blocked operator and rebuilt information
+      const Teuchos::RCP<const Thyra::ProductVectorSpaceBase<Scalar> > productRangeSpace  = thyraOp->productRange();
+      const Teuchos::RCP<const Thyra::ProductVectorSpaceBase<Scalar> > productDomainSpace = thyraOp->productDomain();
+
+      int numRangeBlocks  = productRangeSpace->numBlocks();
+      int numDomainBlocks = productDomainSpace->numBlocks();
+
+      // build range map extractor from Thyra::BlockedLinearOpBase object
+      std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > subRangeMaps(numRangeBlocks);
+      for (size_t r=0; r<numRangeBlocks; ++r) {
+        for (size_t c=0; c<numDomainBlocks; ++c) {
+          if (thyraOp->blockExists(r,c)) {
+            // we only need at least one block in each block row to extract the range map
+            Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > const_op = thyraOp->getBlock(r,c); // nonConst access is not allowed.
+            Teuchos::RCP<const Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
+                            Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(const_op);
+            subRangeMaps[r] = xop->getRangeMap();
+            break;
+          }
+        }
+      }
+      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > fullRangeMap = mergeMaps(subRangeMaps);
+      rangemaps_ = Teuchos::rcp(new Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node>(fullRangeMap, subRangeMaps));
+
+      // build domain map extractor from Thyra::BlockedLinearOpBase object
+      std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > subDomainMaps(numDomainBlocks);
+      for (size_t c=0; c<numDomainBlocks; ++c) {
+        for (size_t r=0; r<numRangeBlocks; ++r) {
+          if (thyraOp->blockExists(r,c)) {
+            // we only need at least one block in each block row to extract the range map
+            Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > const_op = thyraOp->getBlock(r,c); // nonConst access is not allowed.
+            Teuchos::RCP<const Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
+                            Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(const_op);
+            subDomainMaps[c] = xop->getDomainMap();
+            break;
+          }
+        }
+      }
+      Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > fullDomainMap = mergeMaps(subDomainMaps);
+      domainmaps_ = Teuchos::rcp(new Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node>(fullDomainMap, subDomainMaps));
+
+
+      //std::cout << *(rangemaps_->getFullMap()) << std::endl;
+      //Teuchos::RCP<const Xpetra::EpetraMap> epmap2 = Teuchos::rcp_dynamic_cast<const Xpetra::EpetraMap>(rangemaps_->getFullMap());
+      //std::cout << epmap2->getEpetra_Map() << std::endl;
+
+      //Teuchos::RCP<Thyra::LinearOpBase<Scalar> > fullOp = Teuchos::rcp_dynamic_cast<Thyra::LinearOpBase<Scalar> >(thyraOp);
+
+      //Teuchos::RCP<const Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xFullOp =
+      //                            Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(fullOp);
+      //std::cout << *(xFullOp->getRangeMap()) << std::endl;
+      /////
+
+      blocks_.reserve(Rows()*Cols());
+      // add CrsMatrix objects in row,column order
+      for (size_t r = 0; r < Rows(); ++r) {
+        for (size_t c = 0; c < Cols(); ++c) {
+          if(thyraOp->blockExists(r,c)) {
+            Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > const_op = thyraOp->getBlock(r,c); // nonConst access is not allowed.
+            Teuchos::RCP<Thyra::LinearOpBase<Scalar> > op = Teuchos::rcp_const_cast<Thyra::LinearOpBase<Scalar> >(const_op); // cast away const
+            Teuchos::RCP<Xpetra::CrsMatrix<Scalar,LO,GO,Node> > xop =
+                Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toXpetra(op);
+            blocks_.push_back(xop);
+          } else {
+            // add empty block
+            blocks_.push_back(CrsMatrixFactory::Build(getRangeMap(r), 0, Xpetra::DynamicProfile));
+          }
+        }
+      }
+      // Default view
+      CreateDefaultView();
+    }
+
+  private:
+    //! mergeMaps
+    /*!
+     * \param subMaps
+     *
+     * Merges all Xpetra::Map objects in std::vector subMaps and returns a new Xpetra::Map containing all entries.
+     * Helper function only used in constructor of Xpetra_BlockedCrsMatrix for transforming a Thyra::BlockedLinearOp object
+     */
+    Teuchos::RCP<const Map> mergeMaps(std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > & subMaps) {
+      // merge submaps to global map
+      std::vector<GlobalOrdinal> gids;
+      for(size_t tt = 0; tt<subMaps.size(); ++tt) {
+        Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > subMap = subMaps[tt];
+        for(LocalOrdinal l = 0; l < Teuchos::as<LocalOrdinal>(subMap->getNodeNumElements()); ++l) {
+          GlobalOrdinal gid = subMap->getGlobalElement(l);
+          gids.push_back(gid);
+        }
+      }
+
+      const GO INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+      std::sort(gids.begin(), gids.end());
+      gids.erase(std::unique(gids.begin(), gids.end()), gids.end());
+      Teuchos::ArrayView<GO> gidsView(&gids[0], gids.size());
+      Teuchos::RCP<Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > fullMap = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(subMaps[0]->lib(), INVALID, gidsView, subMaps[0]->getIndexBase(), subMaps[0]->getComm());
+      return fullMap;
+    }
+
+  public:
+#endif
 
     //! Destructor
     virtual ~BlockedCrsMatrix() {}
@@ -739,6 +864,18 @@ namespace Xpetra {
     }
 #endif
 
+#ifdef HAVE_XPETRA_THYRA
+    Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar> > getThyraOperator() {
+      Teuchos::RCP<Thyra::LinearOpBase<Scalar> > thOp =
+          Xpetra::ThyraUtils<Scalar,LO,GO,Node>::toThyra(this);
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thOp));
+
+    	Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar> > thbOp =
+    	    Teuchos::rcp_dynamic_cast<Thyra::BlockedLinearOpBase<Scalar> >(thOp);
+    	TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(thbOp));
+    	return thbOp;
+    }
+#endif
 
   private:
 
@@ -812,6 +949,9 @@ namespace Xpetra {
     Teuchos::RCP<Map>                     fullcolmap_;        // full matrix column map
 
     std::vector<Teuchos::RCP<CrsMatrix> > blocks_;            // row major matrix block storage
+#ifdef HAVE_XPETRA_THYRA
+    Teuchos::RCP<Thyra::BlockedLinearOpBase<Scalar> > thyraOp_; ///< underlying thyra operator
+#endif
 };
 
 } //namespace Xpetra

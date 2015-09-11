@@ -76,6 +76,10 @@ norm(Tensor<T, N> const & A)
       s+= A(1,0)*A(1,0) + A(1,1)*A(1,1);
       break;
 
+    case 1:
+      s+= A(0,0)*A(0,0);
+      break;
+
   }
 
   if (s > 0.0) return std::sqrt(s);
@@ -134,6 +138,10 @@ norm_1(Tensor<T, N> const & A)
       s = std::max(v(0),v(1));
       break;
 
+    case 1:
+      s = std::abs(A(0,0));
+      break;
+
   }
 
   return s;
@@ -185,6 +193,10 @@ norm_infinity(Tensor<T, N> const & A)
       v(1) = std::abs(A(1,0)) + std::abs(A(1,1));
 
       s = std::max(v(0),v(1));
+      break;
+
+    case 1:
+      s = std::abs(A(0,0));
       break;
 
   }
@@ -276,6 +288,10 @@ det(Tensor<T, N> const & A)
       s = A(0,0) * A(1,1) - A(1,0) * A(0,1);
       break;
 
+    case 1:
+      s = A(0,0);
+      break;
+
   }
 
   return s;
@@ -312,7 +328,11 @@ trace(Tensor<T, N> const & A)
       s = A(0,0) + A(1,1);
       break;
 
-  }
+    case 1:
+      s = A(0,0);
+      break;
+
+ }
 
   return s;
 }
@@ -333,7 +353,7 @@ I1(Tensor<T, N> const & A)
 //
 // R^N second invariant
 // \param A tensor
-// \return \f$ II_A = \frac{1}{2}((I_A)^2-I_{A^2}) \f$
+// \return \f$ II_A \f$
 //
 template<typename T, Index N>
 inline
@@ -352,7 +372,8 @@ I2(Tensor<T, N> const & A)
   switch (dimension) {
 
     default:
-      s = 0.5 * (trA * trA - trace(A * A));
+      std::cerr << "I2 for N > 3 not implemented." << std::endl;
+      exit(1);
       break;
 
     case 3:
@@ -361,7 +382,11 @@ I2(Tensor<T, N> const & A)
       break;
 
     case 2:
-      s =  0.5 * (trA * trA - trace(A * A));
+      s = - det(A);
+      break;
+
+    case 1:
+      s = 0.0;
       break;
 
   }
@@ -372,14 +397,60 @@ I2(Tensor<T, N> const & A)
 //
 // R^N third invariant
 // \param A tensor
-// \return \f$ III_A = \det A \f$
+// \return \f$ III_A \f$
 //
 template<typename T, Index N>
 inline
 T
 I3(Tensor<T, N> const & A)
 {
-  return det(A);
+  Index const
+  dimension = A.get_dimension();
+
+  T
+  s = 0.0;
+
+  switch (dimension) {
+
+    default:
+      std::cerr << "I3 for N > 3 not implemented." << std::endl;
+      exit(1);
+      break;
+
+    case 3:
+      s = det(A);
+      break;
+
+    case 2:
+      s = 0.0;
+      break;
+
+    case 1:
+      s = 0.0;
+      break;
+
+  }
+
+  return s;
+}
+
+//
+// Condition number.
+//
+template<typename T, Index N>
+T
+cond(Tensor<T, N> const & A)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  Tensor<T, N> const
+  S = svd(A).second;
+
+  T const
+  k = S(dimension, dimension) / S(0, 0);
+
+  return k;
 }
 
 } // namespace Intrepid2

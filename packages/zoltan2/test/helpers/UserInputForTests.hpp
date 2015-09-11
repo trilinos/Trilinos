@@ -147,6 +147,7 @@ public:
   typedef GeometricGen::GeometricGenerator<zscalar_t, zlno_t, zgno_t, znode_t>
   geometricgen_t;
   
+
   /*! \brief Constructor that reads in a matrix/graph from disk.
    *   \param path is the path to the test data.  In the case of
    *       Zoltan2 test data it is the path to the "data" directory.
@@ -2363,12 +2364,11 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData, int dim
   this->tcomm_->barrier();
 
   // Create the PamgenMesh
-  int nproc = this->tcomm_->getSize();
   
   this->pamgen_mesh = rcp(new PamgenMesh);
   this->havePamgenMesh = true;
-  pamgen_mesh->createMesh(file_data,dimension,rank,nproc);
-
+  pamgen_mesh->createMesh(file_data,dimension,this->tcomm_);
+  
   // save mesh info
   pamgen_mesh->storeMesh();
   this->tcomm_->barrier();
@@ -2536,7 +2536,7 @@ void UserInputForTests::setPamgenAdjacencyGraph()
     for (size_t i = 0; i < numEntriesInRow; i++) {
 //      if (static_cast<int>(rowvals[i]) == 2*(pamgen_mesh->num_dim-1))
 //      {
-      if (static_cast<int>(rowvals[i]) >= pamgen_mesh->num_dim-1)
+      if (static_cast<int>(rowvals[i]) >= 1)
       {
         mod_rowvals.push_back(1);
         mod_rowinds.push_back(rowinds[i]);

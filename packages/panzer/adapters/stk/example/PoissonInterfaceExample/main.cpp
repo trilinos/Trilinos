@@ -92,18 +92,17 @@ using Teuchos::rcp;
 static void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
                                std::vector<panzer::BC>& bcs);
 
-static void solve_Ax_eq_b(const Teuchos::RCP<panzer::EpetraLinearObjContainer>& ep_container,
-                          const Teuchos::RCP<Epetra_Vector>& x)
+static void solve_Ax_eq_b(Epetra_CrsMatrix& A, Epetra_Vector& b, Epetra_Vector& x)
 {
   // Setup the linear solve: notice A is used directly 
-  Epetra_LinearProblem problem(&*ep_container->get_A(),&*x,&*ep_container->get_f()); 
+  Epetra_LinearProblem problem(&A, &x, &b);
 
   // build the solver
   AztecOO solver(problem);
   solver.SetAztecOption(AZ_solver,AZ_gmres); // we don't push out dirichlet conditions
   solver.SetAztecOption(AZ_precond,AZ_none);
   solver.SetAztecOption(AZ_kspace,300);
-  solver.SetAztecOption(AZ_output,10);
+  solver.SetAztecOption(AZ_output,0);
   solver.SetAztecOption(AZ_precond,AZ_Jacobi);
 
   // solve the linear system
@@ -114,7 +113,7 @@ static void solve_Ax_eq_b(const Teuchos::RCP<panzer::EpetraLinearObjContainer>& 
   //     J*e = -r = -(f - J*0) where f = J*u
   // Therefore we have  J*e=-J*u which implies e = -u
   // thus we will scale the solution vector 
-  x->Scale(-1.0);
+  x.Scale(-1.0);
 }
 
 static void
@@ -126,7 +125,8 @@ assembleAndSolve(panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
 {
   double bnorm;
   Teuchos::RCP<Epetra_Vector> x, dx;
-  for (int it = 0; it < 5; ++it) {
+  Teuchos::RCP<Epetra_CrsMatrix> A;
+  for (int it = 0; it < 1500; ++it) {
     // assemble linear system
     // build linear algebra objects: Ghost is for parallel assembly, it contains
     //                               local element contributions summed, the global IDs
@@ -156,18 +156,42 @@ assembleAndSolve(panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
     input.alpha = 0;
     input.beta = 1;
 
-    // Evaluate physics. This does both the Jacobian and residual at once.
-    ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+    // Evaluate physics. Evaluate the Residual by itself because the Jacobian
+    // gather/scatter evaluators don't work yet.
+    ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
+    Teuchos::RCP<Epetra_Vector> r;
+    if (it == 0) {
+      r = Teuchos::rcp(new Epetra_Vector(*ep_container->get_f()));
+      // Get the inexact Jacobian. This is a linear problem, so need to evaluate
+      // it just once.
+      ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
+      {
+        A = Teuchos::rcp(new Epetra_CrsMatrix(*ep_container->get_A()));
+        // The Jacobian is rank deficient at the moment. It's wrong, anyway. For
+        // now, just add I to the diag.
+        Epetra_Vector diag(r->Map());
+        A->ExtractDiagonalCopy(diag);
+        for (int i = 0; i < diag.MyLength(); ++i)
+          diag[i] += 1;
+        A->ReplaceDiagonalValues(diag);
+        //EpetraExt::RowMatrixToMatrixMarketFile("A.mm", *A);
+      }
+      // Set f to its correct value. Some side effect makes evaluating Jacobian
+      // then Residual wrong.
+      ep_container->set_f(r);
+    } else
+      r = ep_container->get_f();
 
     double rnorm;
-    ep_container->get_f()->Norm2(&rnorm);
+    r->Norm2(&rnorm);
     if (it == 0) bnorm = rnorm;
-    printf("\nit %2d rnorm %1.3e\n", it, rnorm);
+    if (it % 50 == 0)
+      printf("it %3d rnorm %1.3e\n", it, rnorm);
     if (rnorm <= rtol*bnorm) break;
 
-    solve_Ax_eq_b(ep_container, dx);
+    solve_Ax_eq_b(*A, *r, *dx);
 
-    ep_container->get_x()->Update(1, *dx, 1);
+    x->Update(0.5, *dx, 1);
   }
 }
 
@@ -216,17 +240,17 @@ int main(int argc,char * argv[])
   // construct input physics and physics block
   ////////////////////////////////////////////////////////
 
-  Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
+  const Teuchos::RCP<Teuchos::ParameterList> ipb = Teuchos::parameterList("Physics Blocks");
   std::vector<panzer::BC> bcs;
   std::vector<RCP<panzer::PhysicsBlock> > physicsBlocks;
   {
+    testInitialization(ipb, bcs);
+
     std::map<std::string,std::string> block_ids_to_physics_ids;
     std::map<std::string,Teuchos::RCP<const shards::CellTopology> > block_ids_to_cell_topo;
 
-    testInitialization(ipb, bcs);
-
-    block_ids_to_physics_ids["eblock-0_0"] = "Poisson Physics";
-    block_ids_to_physics_ids["eblock-1_0"] = "Poisson Physics";
+    block_ids_to_physics_ids["eblock-0_0"] = "Poisson Physics Left";
+    block_ids_to_physics_ids["eblock-1_0"] = "Poisson Physics Right";
 
     block_ids_to_cell_topo["eblock-0_0"] = mesh->getCellTopology("eblock-0_0");
     block_ids_to_cell_topo["eblock-1_0"] = mesh->getCellTopology("eblock-1_0");
@@ -310,9 +334,14 @@ int main(int argc,char * argv[])
   cm_factory.buildObjects(cm_builder);
 
   Teuchos::ParameterList closure_models("Closure Models");
-  closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE1").set<double>("Value",0.0); // a constant source
-  closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE2").set<double>("Value",0.0); // a constant source
-  // SOURCE_TEMPERATURE field is required by the PoissonEquationSet
+  {
+    // a constant source
+    //closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE1").set<double>("Value",10.0);
+    //closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE2").set<double>("Value",10.0);
+    // SOURCE_TEMPERATURE field is required by the PoissonEquationSet
+    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE1").set<std::string>("Type","SIMPLE SOURCE");
+    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE2").set<std::string>("Type","SIMPLE SOURCE");
+  }
 
   Teuchos::ParameterList user_data("User Data"); // user data can be empty here
 
@@ -377,28 +406,28 @@ int main(int argc,char * argv[])
 void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
                         std::vector<panzer::BC>& bcs)
 {
-  Teuchos::ParameterList& physics_block = ipb->sublist("Poisson Physics");
+  const int io = 2;
   {
-    Teuchos::ParameterList& p = physics_block.sublist("a");
+    Teuchos::ParameterList& p = ipb->sublist("Poisson Physics Left").sublist("Equation Set 1");
     p.set("Type","Poisson");
     p.set("Model ID","solid");
     p.set("Basis Type","HGrad");
     p.set("Basis Order",1);
-    p.set("Integration Order",2);
+    p.set("Integration Order",io);
     p.set("Suffix","1");
   }
   {
-    Teuchos::ParameterList& p = physics_block.sublist("b");
+    Teuchos::ParameterList& p = ipb->sublist("Poisson Physics Right").sublist("Equation Set 2");
     p.set("Type","Poisson");
     p.set("Model ID","solid");
     p.set("Basis Type","HGrad");
     p.set("Basis Order",1);
-    p.set("Integration Order",2);
+    p.set("Integration Order",io);
     p.set("Suffix","2");
   }
-  
+
+  size_t bc_id = 0;
   {
-    std::size_t bc_id = 0;
     panzer::BCType bctype = panzer::BCT_Dirichlet;
     std::string sideset_id = "left";
     std::string element_block_id = "eblock-0_0";
@@ -407,66 +436,69 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
     double value = 0.5;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
-                  strategy, p);
+    panzer::BC bc(bc_id++, bctype, sideset_id, element_block_id, dof_name, strategy, p);
     bcs.push_back(bc);
   }
   {
-    std::size_t bc_id = 3;
     panzer::BCType bctype = panzer::BCT_Dirichlet;
     std::string sideset_id = "right";
     std::string element_block_id = "eblock-1_0";
     std::string dof_name = "TEMPERATURE2";
     std::string strategy = "Constant";
-    double value = -0.5;
+    double value = -0.3;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
-                  strategy, p);
+    panzer::BC bc(bc_id++, bctype, sideset_id, element_block_id, dof_name, strategy, p);
     bcs.push_back(bc);
   }
 
-#if 1
-  {
-    std::size_t bc_id = 1;
-    panzer::BCType bctype = panzer::BCT_Neumann;
-    std::string sideset_id = "vertical_0";
-    std::string element_block_id = "eblock-0_0";
-    std::string dof_name = "TEMPERATURE1";
-    std::string strategy = "Neumann Constant";
-    double value = 1.0;
-    Teuchos::ParameterList p;
-    p.set("Value",value);
-    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
-                  strategy, p);
-    bcs.push_back(bc);
-  }
-  {
-    std::size_t bc_id = 2;
-    panzer::BCType bctype = panzer::BCT_Neumann;
-    std::string sideset_id = "vertical_0";
-    std::string element_block_id = "eblock-1_0";
-    std::string dof_name = "TEMPERATURE2";
-    std::string strategy = "Neumann Constant";
-    double value = -1.0;
-    Teuchos::ParameterList p;
-    p.set("Value",value);
-    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
-                  strategy, p);
-    bcs.push_back(bc);
-  }
-#else
-  for (int di = 0; di < 1 /* just NeumannMatch atm */; ++di) {
-    std::size_t bc_id = 4 + di;
+  const bool
+    neumann_match = 1,
+    weak_dirichlet_match = 1;
+
+  if (neumann_match) {
     Teuchos::ParameterList p;
     p.set("Type", "Interface");
     p.set("Sideset ID", "vertical_0");
-    p.set("Element Block ID", di == 0 ? "eblock-0_0" : "eblock-1_0");
-    p.set("Equation Set Name", di == 0 ? "TEMPERATURE1" : "TEMPERATURE2");
-    p.set("Strategy", di == 0 ? "Neumann Match Interface" : "Weak Dirichlet Match Interface");
-    p.set("Element Block ID2", di == 0 ? "eblock-1_0" : "eblock-0_0");
-    p.set("Equation Set Name2", di == 0 ? "TEMPERATURE2" : "TEMPERATURE1");
-    bcs.push_back(panzer::BC(bc_id, p));
+    p.set("Element Block ID" , "eblock-0_0");
+    p.set("Element Block ID2", "eblock-1_0");
+    p.set("Equation Set Name" , "TEMPERATURE1");
+    p.set("Equation Set Name2", "TEMPERATURE2");
+    p.set("Strategy", "Neumann Match Interface");
+    bcs.push_back(panzer::BC(bc_id++, p));
+  } else {
+    panzer::BCType bctype = panzer::BCT_Dirichlet;
+    std::string sideset_id = "vertical_0";
+    std::string element_block_id = "eblock-0_0";
+    std::string dof_name = "TEMPERATURE1";
+    std::string strategy = "Constant";
+    double value = -0.4;
+    Teuchos::ParameterList p;
+    p.set("Value",value);
+    panzer::BC bc(bc_id++, bctype, sideset_id, element_block_id, dof_name, strategy, p);
+    bcs.push_back(bc);
   }
-#endif
+
+  if (weak_dirichlet_match) {
+    Teuchos::ParameterList p;
+    p.set("Type", "Interface");
+    p.set("Sideset ID", "vertical_0");
+    p.set("Element Block ID" , "eblock-1_0");
+    p.set("Element Block ID2", "eblock-0_0");
+    p.set("Equation Set Name" , "TEMPERATURE2");
+    p.set("Equation Set Name2", "TEMPERATURE1");
+    p.set("Strategy", "Weak Dirichlet Match Interface");
+    bcs.push_back(panzer::BC(bc_id++, p));
+  } else {
+    panzer::BCType bctype = panzer::BCT_Dirichlet;
+    std::string sideset_id = "vertical_0";
+    std::string element_block_id = "eblock-1_0";
+    std::string dof_name = "TEMPERATURE2";
+    std::string strategy = "Constant";
+    double value = 0.4;
+    Teuchos::ParameterList p;
+    p.set("Value",value);
+    panzer::BC bc(bc_id++, bctype, sideset_id, element_block_id, dof_name, strategy, p);
+    bcs.push_back(bc);
+  }
 }

@@ -217,6 +217,13 @@ enum metricOffset{
   evalNumMetrics    /*!< the number of metric values_ */
 };
 
+/*! \brief Print a standard header
+ */
+static void printHeader(std::ostream &os);
+
+/*! \brief Print a standard line of data that fits under the header. */
+void printLine(std::ostream &os) const;
+
 /*! \brief Constructor */
 graphMetricValues(std::string mname) :
   values_(), metricName_(mname) {
@@ -226,6 +233,25 @@ graphMetricValues(std::string mname) :
 graphMetricValues() : 
   values_(), metricName_("unset") { 
     resetValues();}
+
+/*! \brief Set or reset the name.  */
+void setName(std::string name) { metricName_ = name;}
+
+/*! \brief Set the global sum.  */
+void setGlobalSum(scalar_t x) { values_[evalGlobalSum] = x;}
+
+/*! \brief Set the global maximum across parts.  */
+void setGlobalMax(scalar_t x) { values_[evalGlobalMax] = x;}
+
+/*! \brief Get the name of the item measured. */
+const std::string &getName() const { return metricName_; }
+
+/*! \brief Get the global sum for all parts. */
+scalar_t getGlobalSum() const { return values_[evalGlobalSum];}
+
+/*! \brief Get the global maximum across all parts. */
+scalar_t getGlobalMax() const { return values_[evalGlobalMax];}
+
 };  // end class
 
 template <typename scalar_t>
@@ -277,6 +303,29 @@ template <typename scalar_t>
   os << std::setw(12) << "min" << std::setw(12) << "max" << std::setw(12) << "avg";
   os << std::setw(2) << " ";
   os << std::setw(6) << "min" << std::setw(6) << "max" << std::setw(6) << "avg";
+  os << std::endl;
+}
+
+template <typename scalar_t>
+  void graphMetricValues<scalar_t>::printLine(std::ostream &os) const
+{
+  std::string label(metricName_);
+
+  os << std::setw(20) << label;
+  os << std::setw(12) << std::setprecision(4) << values_[evalGlobalSum];
+  os << std::setw(12) << std::setprecision(4) << values_[evalGlobalMax];
+  os << std::endl;
+}
+
+template <typename scalar_t>
+  void graphMetricValues<scalar_t>::printHeader(std::ostream &os)
+{
+  os << std::setw(20) << " ";
+  os << std::setw(24) << "----------SUM----------";
+  os << std::endl;
+
+  os << std::setw(20) << " ";
+  os << std::setw(12) << "sum" << std::setw(12) << "max";
   os << std::endl;
 }
 
