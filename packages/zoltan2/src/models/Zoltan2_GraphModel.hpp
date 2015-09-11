@@ -984,7 +984,7 @@ GraphModel<Adapter>::GraphModel(
   shared_GetVertexCoords<adapterWithCoords_t>(&(*ia));
 
   env_->timerStop(MACRO_TIMERS, "GraphModel constructed from MeshAdapter");
-  print();
+  //print();
 }
 
 
