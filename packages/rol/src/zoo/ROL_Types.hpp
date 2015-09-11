@@ -106,8 +106,10 @@ namespace ROL {
   struct StepState {
     Teuchos::RCP<Vector<Real> > gradientVec;
     Teuchos::RCP<Vector<Real> > descentVec;
+    Teuchos::RCP<Vector<Real> > constraintVec;
     Real searchSize; // line search parameter (alpha) or trust-region radius (delta)
-    StepState(void) : gradientVec(Teuchos::null), descentVec(Teuchos::null), searchSize(0) {}
+    StepState(void) : gradientVec(Teuchos::null), descentVec(Teuchos::null), constraintVec(Teuchos::null),
+                      searchSize(0) {}
   };  
       
   /** \brief  Platform-dependent machine epsilon. 
@@ -137,6 +139,89 @@ namespace ROL {
     output.erase( std::remove_if( output.begin(), output.end(), removeSpecialCharacters()), output.end() );
     std::transform( output.begin(), output.end(), output.begin(), ::tolower );
     return output;
+  }
+
+  /** \enum   ROL::EStep
+      \brief  Enumeration of step types.
+
+      \arg    AUGMENTEDLAGRANGIAN     describe
+      \arg    BUNDLE                  describe
+      \arg    COMPOSITESTEPSQP        describe
+      \arg    LINESEARCH              describe
+      \arg    MOREAUYOSIDAPENALTY     describe
+      \arg    PRIMALDUALACTIVESET     describe
+      \arg    TRUSTREGION             describe
+   */
+  enum EStep{
+    STEP_AUGMENTEDLAGRANGIAN = 0,
+    STEP_BUNDLE,
+    STEP_COMPOSITESTEPSQP,
+    STEP_LINESEARCH,
+    STEP_MOREAUYOSIDAPENALTY,
+    STEP_PRIMALDUALACTIVESET,
+    STEP_TRUSTREGION,
+    STEP_LAST
+  };
+
+  inline std::string EStepToString(EStep tr) {
+    std::string retString;
+    switch(tr) {
+      case STEP_AUGMENTEDLAGRANGIAN: retString = "Augmented Lagrangian";   break;
+      case STEP_BUNDLE:              retString = "Bundle";                 break;
+      case STEP_COMPOSITESTEPSQP:    retString = "Composite Step SQP";     break;
+      case STEP_LINESEARCH:          retString = "Line Search";            break;
+      case STEP_MOREAUYOSIDAPENALTY: retString = "Moreau-Yosida Penalty";  break;
+      case STEP_PRIMALDUALACTIVESET: retString = "Primal Dual Active Set"; break;
+      case STEP_TRUSTREGION:         retString = "Trust Region";           break;
+      case STEP_LAST:                retString = "Last Type (Dummy)";      break;
+      default:                       retString = "INVALID EStep";
+    }
+    return retString;
+  }
+  
+  /** \brief  Verifies validity of a TrustRegion enum.
+    
+      \param  tr  [in]  - enum of the TrustRegion
+      \return 1 if the argument is a valid TrustRegion; 0 otherwise.
+    */
+  inline int isValidStep(EStep ls) {
+    return( (ls == STEP_AUGMENTEDLAGRANGIAN) ||
+            (ls == STEP_BUNDLE) ||
+            (ls == STEP_COMPOSITESTEPSQP) ||
+            (ls == STEP_LINESEARCH) ||
+            (ls == STEP_MOREAUYOSIDAPENALTY) ||
+            (ls == STEP_PRIMALDUALACTIVESET) ||
+            (ls == STEP_TRUSTREGION) );
+  }
+
+  inline EStep & operator++(EStep &type) {
+    return type = static_cast<EStep>(type+1);
+  }
+
+  inline EStep operator++(EStep &type, int) {
+    EStep oldval = type;
+    ++type;
+    return oldval;
+  }
+
+  inline EStep & operator--(EStep &type) {
+    return type = static_cast<EStep>(type-1);
+  }
+
+  inline EStep operator--(EStep &type, int) {
+    EStep oldval = type;
+    --type;
+    return oldval;
+  }
+
+  inline EStep StringToEStep(std::string s) {
+    s = removeStringFormat(s);
+    for ( EStep tr = STEP_AUGMENTEDLAGRANGIAN; tr < STEP_LAST; tr++ ) {
+      if ( !s.compare(removeStringFormat(EStepToString(tr))) ) {
+        return tr;
+      }
+    }
+    return STEP_TRUSTREGION;
   }
 
   /** \enum   ROL::EBoundAlgorithm
@@ -368,16 +453,18 @@ namespace ROL {
   enum EKrylov{
     KRYLOV_CG = 0,
     KRYLOV_CR,
+    KRYLOV_USERDEFINED,
     KRYLOV_LAST
   };
 
   inline std::string EKrylovToString(EKrylov tr) {
     std::string retString;
     switch(tr) {
-      case KRYLOV_CG:   retString = "Conjugate Gradients";                          break;
-      case KRYLOV_CR:   retString = "Conjugate Residuals";                          break;
-      case KRYLOV_LAST: retString = "Last Type (Dummy)";                            break;
-      default:                    retString = "INVALID EKrylov";
+      case KRYLOV_CG:          retString = "Conjugate Gradients"; break;
+      case KRYLOV_CR:          retString = "Conjugate Residuals"; break;
+      case KRYLOV_USERDEFINED: retString = "User Defined";        break;
+      case KRYLOV_LAST:        retString = "Last Type (Dummy)";   break;
+      default:                 retString = "INVALID EKrylov";
     }
     return retString;
   }
@@ -389,7 +476,8 @@ namespace ROL {
     */
   inline int isValidKrylov(EKrylov d){
     return( (d == KRYLOV_CG)      ||
-            (d == KRYLOV_CR) );
+            (d == KRYLOV_CR)      ||
+            (d == KRYLOV_USERDEFINED) );
   }
 
   inline EKrylov & operator++(EKrylov &type) {
@@ -782,6 +870,7 @@ namespace ROL {
       case TESTOBJECTIVES_LEASTSQUARES:        retString = "Least Squares Function";           break;
       case TESTOBJECTIVES_POISSONCONTROL:      retString = "Poisson Optimal Control";          break;
       case TESTOBJECTIVES_POISSONINVERSION:    retString = "Poisson Inversion Problem";        break;
+      case TESTOBJECTIVES_ZAKHAROV:            retString = "Zakharov's Function";              break;
       case TESTOBJECTIVES_LAST:                retString = "Last Type (Dummy)";                break;
       default:                                 retString = "INVALID ETestObjectives";
     }
@@ -801,7 +890,8 @@ namespace ROL {
             (to == TESTOBJECTIVES_SUMOFSQUARES)        ||
             (to == TESTOBJECTIVES_LEASTSQUARES)        ||
             (to == TESTOBJECTIVES_POISSONCONTROL)      ||
-            (to == TESTOBJECTIVES_POISSONINVERSION)
+            (to == TESTOBJECTIVES_POISSONINVERSION)    ||
+            (to == TESTOBJECTIVES_ZAKHAROV)
           );
   }
 
