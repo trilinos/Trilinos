@@ -65,6 +65,8 @@
 // Teuchos_ConfigDefs.hpp includes <iostream>, which includes
 // <ostream>.  If this ever changes, include <ostream> here.
 
+namespace std {
+
 /// \brief Overload of operator<<(std::ostream&, const T&) for T =
 ///   __float128.
 ///
@@ -73,10 +75,22 @@
 /// provides a printing function specifically for __float128.
 ///
 /// FIXME (mfh 19 Mar 2015) This will break if users have already
-/// defined their own operator<< in the global namespace.
-namespace std {
+/// defined their own operator<< in this namespace.
 ostream&
 operator<< (std::ostream& out, const __float128& x);
+
+/// \brief Overload of operator>>(std::istream&, const T&) for T =
+///   __float128.
+///
+/// GCC / libquadmath doesn't implement an std::istream operator>> for
+/// __float128, so we have to write our own.  At least libquadmath
+/// provides an input function specifically for __float128.
+///
+/// FIXME (mfh 10 Sep 2015) This will break if users have already
+/// defined their own operator>> in this namespace.
+istream&
+operator>> (std::istream& in, __float128& x);
+
 } // namespace std
 
 #endif // HAVE_TEUCHOSCORE_QUADMATH
