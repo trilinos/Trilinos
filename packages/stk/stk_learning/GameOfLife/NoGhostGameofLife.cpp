@@ -518,44 +518,44 @@ void NoGhostGameofLife::update_tri_membership(stk::mesh::Entity elem)
 }
 void NoGhostGameofLife::update_quad_membership(stk::mesh::Entity elem)
 {
-    if (*stk::mesh::field_data(m_lifeField, elem))
-    {
-    switch (*stk::mesh::field_data(m_neighborField, elem))
-    {
-        case 3:
-            activate_element(elem);
-            break;
-        default:
-            deactivate_element(elem);
-    }
-    }
-    else
-    {
-    switch (*stk::mesh::field_data(m_neighborField, elem))
-    {
-        case 1:
-        case 2:
-        case 3:
-        case 4:
-        case 5:
-            activate_element(elem);
-            break;
-        default:
-            deactivate_element(elem);
-    }
-    }
-
+//    if (*stk::mesh::field_data(m_lifeField, elem))
+//    {
 //    switch (*stk::mesh::field_data(m_neighborField, elem))
 //    {
-//        case 2:
-//            break;
 //        case 3:
 //            activate_element(elem);
 //            break;
 //        default:
 //            deactivate_element(elem);
-//            break;
 //    }
+//    }
+//    else
+//    {
+//    switch (*stk::mesh::field_data(m_neighborField, elem))
+//    {
+//        case 1:
+//        case 2:
+//        case 3:
+//        case 4:
+//        case 5:
+//            activate_element(elem);
+//            break;
+//        default:
+//            deactivate_element(elem);
+//    }
+//    }
+
+    switch (*stk::mesh::field_data(m_neighborField, elem))
+    {
+        case 2:
+            break;
+        case 3:
+            activate_element(elem);
+            break;
+        default:
+            deactivate_element(elem);
+            break;
+    }
 }
 void NoGhostGameofLife::update_hex_membership(stk::mesh::Entity elem)
 {

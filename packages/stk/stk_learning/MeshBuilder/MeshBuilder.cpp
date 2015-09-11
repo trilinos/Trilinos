@@ -150,6 +150,14 @@ void QuadMeshBuilder::fill_area(unsigned xLower, unsigned xUpper, unsigned yLowe
         for (unsigned y = yLower; y <= yUpper; y++)
            create_element(x, y, procCounter++%num_procs());
 }
+void QuadMeshBuilder::fill_area_randomly(unsigned xLower, unsigned xUpper,
+                                         unsigned yLower, unsigned yUpper)
+{
+    int procCounter = 0;
+    for (unsigned x = xLower; x <= xUpper; x++)
+        for (unsigned y = yLower; y <= yUpper; y++)
+           create_element(x, y, procCounter++%num_procs());
+}
 void QuadMeshBuilder::fill_area_on_proc(unsigned xLower, unsigned xUpper, unsigned yLower,
                                         unsigned yUpper, int chosenProc)
 {

@@ -129,6 +129,8 @@ public:
 
     void fill_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper);
 
+    void fill_area_randomly(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper);
+
     void fill_area_on_proc(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper,
                            int chosenProc);
 

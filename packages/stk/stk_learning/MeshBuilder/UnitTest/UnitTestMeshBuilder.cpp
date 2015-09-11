@@ -197,27 +197,6 @@ TEST(MeshBuilder, 4ProcShareNodes)
        }
     }
 }
-//TEST(MeshBuilder, 4ProcOwnNodes)
-//{
-//    stk::ParallelMachine comm = MPI_COMM_WORLD;
-//    int procSize = stk::parallel_machine_size(comm);
-//    int procRank = stk::parallel_machine_rank(comm);
-//    if (4 == procSize)
-//    {
-//       QuadMeshBuilder Mesh(comm, "4ProcOwnNodes");
-//       Mesh.commit_meta();
-//
-//       Mesh.begin_modification();
-//       Mesh.create_element(1, 1);
-//       Mesh.create_element(2, 1);
-//       Mesh.create_element(1, 2);
-//       Mesh.create_element(2, 2);
-//       Mesh.end_modification();
-//
-//
-//
-//    }
-//}
 TEST(MeshBuilder, 1ProcHexCreation)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
@@ -462,10 +441,11 @@ TEST(MeshBuilder, 1ProcQuadFillArea)
         EXPECT_EQ(4u, Mesh.num_elems());
     }
 }
-TEST(MeshBuilder, 4ProcQuadFillArea)
+TEST(MeshBuilder, DISABLED_4ProcQuadFillAreaRandom)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     int numProcs = stk::parallel_machine_size(comm);
+    int procRank = stk::parallel_machine_size(comm);
     if (4 == numProcs)
     {
         QuadMeshBuilder Mesh(comm, "4ProcQuadFillArea");
@@ -478,6 +458,25 @@ TEST(MeshBuilder, 4ProcQuadFillArea)
         Mesh.end_modification();
 
         EXPECT_EQ(4u, Mesh.num_elems());
+
+        stk::mesh::EntityIdVector elemIds(4);
+
+        if (0 == procRank)
+            elemIds = {1, 2, 4, 7};
+        else if (1 == procRank)
+            elemIds = {3, 5, 8, 12};
+
+        else if (2 == procRank)
+            elemIds = {6, 9, 13, 18};
+
+        else if (3 == procRank)
+            elemIds = {10, 14, 19, 25};
+
+        for (stk::mesh::EntityId elemId : elemIds)
+        {
+            stk::mesh::Entity elem = Mesh.bulk_data().get_entity(stk::topology::ELEM_RANK, elemId);
+            EXPECT_TRUE(Mesh.bulk_data().is_valid(elem));
+        }
     }
 }
 TEST(MeshBuilder, 1ProcHexFillArea)
