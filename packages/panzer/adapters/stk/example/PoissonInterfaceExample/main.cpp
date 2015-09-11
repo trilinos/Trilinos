@@ -185,12 +185,13 @@ assembleAndSolve(panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
     double rnorm;
     r->Norm2(&rnorm);
     if (it == 0) bnorm = rnorm;
-    if (it % 10 == 0) printf("it %2d rnorm %1.3e\n", it, rnorm);
+    if (it % 50 == 0)
+      printf("it %3d rnorm %1.3e\n", it, rnorm);
     if (rnorm <= rtol*bnorm) break;
 
     solve_Ax_eq_b(*A, *r, *dx);
 
-    x->Update(1, *dx, 1);
+    x->Update(0.5, *dx, 1);
   }
 }
 
@@ -333,9 +334,13 @@ int main(int argc,char * argv[])
   cm_factory.buildObjects(cm_builder);
 
   Teuchos::ParameterList closure_models("Closure Models");
-  closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE1").set<double>("Value",0.0); // a constant source
-  closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE2").set<double>("Value",0.0); // a constant source
-  // SOURCE_TEMPERATURE field is required by the PoissonEquationSet
+  {
+    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE1").set<double>("Value",1.0); // a constant source
+    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE2").set<double>("Value",1.0); // a constant source
+    // SOURCE_TEMPERATURE field is required by the PoissonEquationSet
+    //closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE1").set<std::string>("Type","SIMPLE SOURCE");
+    //closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE2").set<std::string>("Type","SIMPLE SOURCE");
+  }
 
   Teuchos::ParameterList user_data("User Data"); // user data can be empty here
 
@@ -400,13 +405,14 @@ int main(int argc,char * argv[])
 void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
                         std::vector<panzer::BC>& bcs)
 {
+  const int io = 2;
   {
     Teuchos::ParameterList& p = ipb->sublist("Poisson Physics Left").sublist("Equation Set 1");
     p.set("Type","Poisson");
     p.set("Model ID","solid");
     p.set("Basis Type","HGrad");
     p.set("Basis Order",1);
-    p.set("Integration Order",2);
+    p.set("Integration Order",io);
     p.set("Suffix","1");
   }
   {
@@ -415,12 +421,12 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
     p.set("Model ID","solid");
     p.set("Basis Type","HGrad");
     p.set("Basis Order",1);
-    p.set("Integration Order",2);
+    p.set("Integration Order",io);
     p.set("Suffix","2");
   }
-  
+
+  size_t bc_id = 0;
   {
-    std::size_t bc_id = 0;
     panzer::BCType bctype = panzer::BCT_Dirichlet;
     std::string sideset_id = "left";
     std::string element_block_id = "eblock-0_0";
@@ -429,65 +435,69 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
     double value = 0.5;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
-                  strategy, p);
+    panzer::BC bc(bc_id++, bctype, sideset_id, element_block_id, dof_name, strategy, p);
     bcs.push_back(bc);
   }
   {
-    std::size_t bc_id = 3;
     panzer::BCType bctype = panzer::BCT_Dirichlet;
     std::string sideset_id = "right";
     std::string element_block_id = "eblock-1_0";
     std::string dof_name = "TEMPERATURE2";
     std::string strategy = "Constant";
-    double value = -0.5;
+    double value = -0.3;
     Teuchos::ParameterList p;
     p.set("Value",value);
-    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
-                  strategy, p);
+    panzer::BC bc(bc_id++, bctype, sideset_id, element_block_id, dof_name, strategy, p);
     bcs.push_back(bc);
   }
 
-  const bool doit = true;
-  if ( ! doit) {
-    std::size_t bc_id = 1;
-    panzer::BCType bctype = panzer::BCT_Neumann;
-    std::string sideset_id = "vertical_0";
-    std::string element_block_id = "eblock-0_0";
-    std::string dof_name = "TEMPERATURE1";
-    std::string strategy = "Neumann Constant";
-    double value = 1.4;
-    Teuchos::ParameterList p;
-    p.set("Value",value);
-    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
-                  strategy, p);
-    bcs.push_back(bc);
-  }
-  if (true) {
-    std::size_t bc_id = 2;
-    panzer::BCType bctype = panzer::BCT_Neumann;
-    std::string sideset_id = "vertical_0";
-    std::string element_block_id = "eblock-1_0";
-    std::string dof_name = "TEMPERATURE2";
-    std::string strategy = "Neumann Constant";
-    double value = 1.4;
-    Teuchos::ParameterList p;
-    p.set("Value",value);
-    panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name, 
-                  strategy, p);
-    bcs.push_back(bc);
-  }
-  if ( ! doit) return;
-  for (int di = 0; di < 1 /* just NeumannMatch atm */; ++di) {
-    std::size_t bc_id = 4 + di;
+  const bool
+    neumann_match = 1,
+    weak_dirichlet_match = 1;
+
+  if (neumann_match) {
     Teuchos::ParameterList p;
     p.set("Type", "Interface");
     p.set("Sideset ID", "vertical_0");
-    p.set("Element Block ID", di == 0 ? "eblock-0_0" : "eblock-1_0");
-    p.set("Equation Set Name", di == 0 ? "TEMPERATURE1" : "TEMPERATURE2");
-    p.set("Strategy", di == 0 ? "Neumann Match Interface" : "Weak Dirichlet Match Interface");
-    p.set("Element Block ID2", di == 0 ? "eblock-1_0" : "eblock-0_0");
-    p.set("Equation Set Name2", di == 0 ? "TEMPERATURE2" : "TEMPERATURE1");
-    bcs.push_back(panzer::BC(bc_id, p));
+    p.set("Element Block ID" , "eblock-0_0");
+    p.set("Element Block ID2", "eblock-1_0");
+    p.set("Equation Set Name" , "TEMPERATURE1");
+    p.set("Equation Set Name2", "TEMPERATURE2");
+    p.set("Strategy", "Neumann Match Interface");
+    bcs.push_back(panzer::BC(bc_id++, p));
+  } else {
+    panzer::BCType bctype = panzer::BCT_Dirichlet;
+    std::string sideset_id = "vertical_0";
+    std::string element_block_id = "eblock-0_0";
+    std::string dof_name = "TEMPERATURE1";
+    std::string strategy = "Constant";
+    double value = -0.4;
+    Teuchos::ParameterList p;
+    p.set("Value",value);
+    panzer::BC bc(bc_id++, bctype, sideset_id, element_block_id, dof_name, strategy, p);
+    bcs.push_back(bc);
+  }
+
+  if (weak_dirichlet_match) {
+    Teuchos::ParameterList p;
+    p.set("Type", "Interface");
+    p.set("Sideset ID", "vertical_0");
+    p.set("Element Block ID" , "eblock-1_0");
+    p.set("Element Block ID2", "eblock-0_0");
+    p.set("Equation Set Name" , "TEMPERATURE2");
+    p.set("Equation Set Name2", "TEMPERATURE1");
+    p.set("Strategy", "Weak Dirichlet Match Interface");
+    bcs.push_back(panzer::BC(bc_id++, p));
+  } else {
+    panzer::BCType bctype = panzer::BCT_Dirichlet;
+    std::string sideset_id = "vertical_0";
+    std::string element_block_id = "eblock-1_0";
+    std::string dof_name = "TEMPERATURE2";
+    std::string strategy = "Constant";
+    double value = 0.4;
+    Teuchos::ParameterList p;
+    p.set("Value",value);
+    panzer::BC bc(bc_id++, bctype, sideset_id, element_block_id, dof_name, strategy, p);
+    bcs.push_back(bc);
   }
 }
