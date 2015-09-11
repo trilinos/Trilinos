@@ -11,6 +11,8 @@
 
 #cmakedefine HAVE_XPETRA_KOKKOSCLASSIC
 
+#cmakedefine HAVE_XPETRA_THYRA
+
 #cmakedefine HAVE_XPETRA_EPETRAEXT
 
 #cmakedefine HAVE_XPETRA_PROFILING
