@@ -112,6 +112,39 @@ private:
     }
   }
 
+  void splitSamples(const std::vector<std::vector<Real> > &allPoints,
+                    const std::vector<Real> &allWeights) {
+    // Separate samples/weights across batches
+    size_t rank  = (size_t)SampleGenerator<Real>::batchID();
+    size_t nProc = (size_t)SampleGenerator<Real>::numBatches();
+    size_t frac  = nSamp_ / nProc;
+    size_t rem   = nSamp_ % nProc;
+    size_t N     = frac + ((rank < rem) ? 1 : 0);
+    size_t index = 0;
+
+    std::vector<std::vector<Real> > pts;
+    std::vector<Real> wts;
+    for (size_t i = 0; i < N; i++) {
+      index = i*nProc + rank;
+      pts.push_back(allPoints[index]);
+      wts.push_back(allWeights[index]);
+    }
+    SampleGenerator<Real>::setPoints(pts);
+    SampleGenerator<Real>::setWeights(wts);
+  }
+
+  void pruneSamples(std::vector<std::vector<Real> > &pts, std::vector<Real> &wts,
+              const SROMVector<Real> &x) {
+    // Remove points with zero weight
+    for (size_t i = 0; i < nSamp_; i++) {
+      if ( x.getWeight(i) > ROL_EPSILON ) {
+        pts.push_back(*(x.getPoint(i)));
+        wts.push_back(x.getWeight(i));
+      }
+    }
+    nSamp_ = wts.size();
+  }
+
 public:
   SROMGenerator(Teuchos::RCP<BatchManager<Real> > &bman, 
                 Teuchos::RCP<Objective<Real> > &obj,
@@ -130,35 +163,11 @@ public:
     bool useAugLag = false;
     buildOptimizer(useAugLag);
     algo_->get()->run(x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
-
-    // Remove points with zero weight
+    // Prune samples with zero weight and set samples/weights
     std::vector<std::vector<Real> > allPoints;
     std::vector<Real> allWeights;
-    for (size_t i = 0; i < nSamp_; i++) {
-      if ( x.getWeight(i) > ROL_EPSILON ) {
-        allPoints.push_back(*(x.getPoint(i)));
-        allWeights.push_back(x.getWeight(i));
-      }
-    }
-    nSamp_ = allWeights.size();
-
-    // Separate samples/weights across batches
-    size_t rank  = (size_t)SampleGenerator<Real>::batchID();
-    size_t nProc = (size_t)SampleGenerator<Real>::numBatches();
-    size_t frac  = nSamp_ / nProc;
-    size_t rem   = nSamp_ % nProc;
-    size_t N     = frac + ((rank < rem) ? 1 : 0);
-    size_t index = 0;
-
-    std::vector<std::vector<Real> > pts;
-    std::vector<Real> wts;
-    for (size_t i = 0; i < N; i++) {
-      index = i*nProc + rank;
-      pts.push_back(allPoints[index]);
-      wts.push_back(allWeights[index]);
-    }
-    SampleGenerator<Real>::setPoints(pts);
-    SampleGenerator<Real>::setWeights(wts);
+    pruneSamples(allPoints,allWeights,x);
+    splitSamples(allPoints,allWeights);
   }
 
   SROMGenerator(Teuchos::RCP<BatchManager<Real> > &bman, 
@@ -178,35 +187,11 @@ public:
     bool useAugLag = false;
     buildOptimizer(useAugLag);
     algo_->get()->run(x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
-
-    // Remove points with zero weight
+    // Prune samples with zero weight and set samples/weights
     std::vector<std::vector<Real> > allPoints;
     std::vector<Real> allWeights;
-    for (size_t i = 0; i < nSamp_; i++) {
-      if ( x.getWeight(i) > ROL_EPSILON ) {
-        allPoints.push_back(*(x.getPoint(i)));
-        allWeights.push_back(x.getWeight(i));
-      }
-    }
-    nSamp_ = allWeights.size();
-
-    // Separate samples/weights across batches
-    size_t rank  = (size_t)SampleGenerator<Real>::batchID();
-    size_t nProc = (size_t)SampleGenerator<Real>::numBatches();
-    size_t frac  = nSamp_ / nProc;
-    size_t rem   = nSamp_ % nProc;
-    size_t N     = frac + ((rank < rem) ? 1 : 0);
-    size_t index = 0;
-
-    std::vector<std::vector<Real> > pts;
-    std::vector<Real> wts;
-    for (size_t i = 0; i < N; i++) {
-      index = i*nProc + rank;
-      pts.push_back(allPoints[index]);
-      wts.push_back(allWeights[index]);
-    }
-    SampleGenerator<Real>::setPoints(pts);
-    SampleGenerator<Real>::setWeights(wts);
+    pruneSamples(allPoints,allWeights,x);
+    splitSamples(allPoints,allWeights);
   }
 
   SROMGenerator(Teuchos::RCP<BatchManager<Real> > &bman, 
@@ -225,36 +210,12 @@ public:
     bool useAugLag = true;
     buildOptimizer(useAugLag);
     algo_->get()->run(*x,l,*obj_,*con_,*bnd_,!SampleGenerator<Real>::batchID());
-
-    // Remove points with zero weight
+    // Prune samples with zero weight and set samples/weights
     const SROMVector<Real> &ex = Teuchos::dyn_cast<const SROMVector<Real> >(*x);
     std::vector<std::vector<Real> > allPoints;
     std::vector<Real> allWeights;
-    for (size_t i = 0; i < nSamp_; i++) {
-      if ( ex.getWeight(i) > ROL_EPSILON ) {
-        allPoints.push_back(*(ex.getPoint(i)));
-        allWeights.push_back(ex.getWeight(i));
-      }
-    }
-    nSamp_ = allWeights.size();
-
-    // Separate samples/weights across batches
-    size_t rank  = (size_t)SampleGenerator<Real>::batchID();
-    size_t nProc = (size_t)SampleGenerator<Real>::numBatches();
-    size_t frac  = nSamp_ / nProc;
-    size_t rem   = nSamp_ % nProc;
-    size_t N     = frac + ((rank < rem) ? 1 : 0);
-    size_t index = 0;
-
-    std::vector<std::vector<Real> > pts;
-    std::vector<Real> wts;
-    for (size_t i = 0; i < N; i++) {
-      index = i*nProc + rank;
-      pts.push_back(allPoints[index]);
-      wts.push_back(allWeights[index]);
-    }
-    SampleGenerator<Real>::setPoints(pts);
-    SampleGenerator<Real>::setWeights(wts);
+    pruneSamples(allPoints,allWeights,ex);
+    splitSamples(allPoints,allWeights);
   }
 
   void refine(void) {}
