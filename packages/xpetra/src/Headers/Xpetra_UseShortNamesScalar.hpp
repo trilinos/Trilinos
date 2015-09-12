@@ -77,6 +77,12 @@ typedef Xpetra::TpetraOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node> Tpetra
 typedef Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> BlockedCrsMatrix;
 #endif
 
+#ifdef HAVE_XPETRA_THYRA
+#ifdef XPETRA_THYRAUTILS_SHORT
+typedef Xpetra::ThyraUtils<Scalar, LocalOrdinal, GlobalOrdinal, Node> ThyraUtils;
+#endif
+#endif
+
 #ifdef XPETRA_CRSMATRIXWRAP_SHORT
 typedef Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixWrap;
 #endif

@@ -137,7 +137,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       this->template registerEvaluator<EvalT>(fm, op);
     }
   } else {
-    const std::string dof_grad_name = dof_name + "grad";
+    const std::string dof_grad_name = dof_name + "_gradient";
     { // Compute side 2 normal.
       ParameterList p("Side Normal");
       p.set("Name", "Other_Side_Normal");

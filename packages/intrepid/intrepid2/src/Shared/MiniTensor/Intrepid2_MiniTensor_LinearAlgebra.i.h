@@ -434,6 +434,25 @@ I3(Tensor<T, N> const & A)
   return s;
 }
 
+//
+// Condition number.
+//
+template<typename T, Index N>
+T
+cond(Tensor<T, N> const & A)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  Tensor<T, N> const
+  S = svd(A).second;
+
+  T const
+  k = S(dimension, dimension) / S(0, 0);
+
+  return k;
+}
+
 } // namespace Intrepid2
 
 #endif // Intrepid_MiniTensor_LinearAlgebra_i_h

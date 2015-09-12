@@ -484,6 +484,13 @@ template<typename T, Index N, Index P>
 Matrix<T, N, P>
 solve(Tensor<T, N> const & A, Matrix<T, N, P> const & B);
 
+///
+/// Condition number: ratio of largest to smallest singular values.
+///
+template<typename T, Index N>
+T
+cond(Tensor<T, N> const & A);
+
 } // namespace Intrepid
 
 #include "Intrepid_MiniTensor_LinearAlgebra.i.h"

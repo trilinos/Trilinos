@@ -40,53 +40,62 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EXAMPLE_BCSTRATEGY_INTERFACE_WEAKDIRICHLETMATCH_HPP
-#define PANZER_EXAMPLE_BCSTRATEGY_INTERFACE_WEAKDIRICHLETMATCH_HPP
+#ifndef EXAMPLE_SIMPLE_SOURCE_IMPL_HPP
+#define EXAMPLE_SIMPLE_SOURCE_IMPL_HPP
 
-#include <vector>
-#include <string>
+#include <cmath>
 
-#include "Teuchos_RCP.hpp"
-#include "Panzer_BCStrategy_Interface_DefaultImpl.hpp"
-#include "Panzer_Traits.hpp"
-#include "Panzer_PureBasis.hpp"
-#include "Phalanx_FieldManager.hpp"
+#include "Panzer_BasisIRLayout.hpp"
+#include "Panzer_Workset.hpp"
+#include "Panzer_Workset_Utilities.hpp"
 
 namespace Example {
 
-template <typename EvalT>
-class BCStrategy_Interface_WeakDirichletMatch : public panzer::BCStrategy_Interface_DefaultImpl<EvalT> {
-public:
-  BCStrategy_Interface_WeakDirichletMatch(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data);
-    
-  void setup(const panzer::PhysicsBlock& side_pb,
-             const Teuchos::ParameterList& user_data);
-    
-  void buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-                                  const panzer::PhysicsBlock& pb,
-                                  const panzer::ClosureModelFactory_TemplateManager<panzer::Traits>& factory,
-                                  const Teuchos::ParameterList& models,
-                                  const Teuchos::ParameterList& user_data) const;
+//**********************************************************************
+template <typename EvalT,typename Traits>
+SimpleSource<EvalT,Traits>::SimpleSource(const std::string & name,
+                                         const panzer::IntegrationRule & ir)
+{
+  using Teuchos::RCP;
 
-  virtual void buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-                                                              const panzer::PhysicsBlock& side_pb,
-                                                              const panzer::LinearObjFactory<panzer::Traits> & lof,
-                                                              const Teuchos::ParameterList& user_data) const;
+  Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_scalar;
+  ir_degree = ir.cubature_degree;
 
-  virtual void postRegistrationSetup(typename panzer::Traits::SetupData d,
-                                     PHX::FieldManager<panzer::Traits>& vm);
+  source = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
 
-  virtual void evaluateFields(typename panzer::Traits::EvalData d);
-
-private:
-  std::vector<std::string> paramName; 
-  double value; 
-  double temp;
-  std::string other_dof_name;
-};
-
+  this->addEvaluatedField(source);
+  
+  std::string n = "Simple Source";
+  this->setName(n);
 }
 
-#include "Example_BCStrategy_Interface_WeakDirichletMatch_impl.hpp"
+//**********************************************************************
+template <typename EvalT,typename Traits>
+void SimpleSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
+                                                       PHX::FieldManager<Traits>& fm)
+{
+
+  this->utils.setFieldData(source,fm);
+
+  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
+}
+
+//**********************************************************************
+template <typename EvalT,typename Traits>
+void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
+{ 
+  for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
+    for (int point = 0; point < source.dimension(1); ++point) {
+
+      const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
+      const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
+
+      source(cell,point) = 2.0 + x - 10*y*y;
+    }
+  }
+}
+
+//**********************************************************************
+}
 
 #endif

@@ -60,9 +60,8 @@
         </ParameterList>
 
         <ParameterList name="Zoltan2Parameters">
-            <!-- <Parameter name="algorithm" type="string" value="rcb"/>-->
-            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
-            <Parameter name="rectilinear" type="string" value="yes"/>            
+            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="rectilinear" type="string" value="yes"/>
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
 
@@ -85,8 +84,8 @@
         </ParameterList>
 
         <ParameterList name="Zoltan2Parameters">
-            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
-            <Parameter name="rectilinear" type="string" value="yes"/>            
+            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="rectilinear" type="string" value="yes"/> 
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
         
@@ -109,8 +108,8 @@
 
 
         <ParameterList name="Zoltan2Parameters">
-            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
-            <Parameter name="rectilinear" type="string" value="yes"/>            
+            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="rectilinear" type="string" value="yes"/> 
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
     
@@ -135,8 +134,8 @@
 
 
         <ParameterList name="Zoltan2Parameters">
-            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
-            <Parameter name="rectilinear" type="string" value="yes"/>            
+            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="rectilinear" type="string" value="yes"/> 
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
     

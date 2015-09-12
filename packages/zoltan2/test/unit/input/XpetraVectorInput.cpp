@@ -266,10 +266,10 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////
   // User object is Xpetra::Vector
   if (!gfail){ 
-    RCP<tvector_t> tV =
+    RCP<tvector_t> xtV =
         rcp(new tvector_t(uinput->getUITpetraCrsGraph()->getRowMap()));
-    tV->randomize();
-    RCP<xvector_t> xV = Zoltan2::XpetraTraits<tvector_t>::convertToXpetra(tV);
+    xtV->randomize();
+    RCP<xvector_t> xV = Zoltan2::XpetraTraits<tvector_t>::convertToXpetra(xtV);
     RCP<const xvector_t> cxV = rcp_const_cast<const xvector_t>(xV);
     RCP<Zoltan2::XpetraMultiVectorAdapter<xvector_t> > xVInput;
   
