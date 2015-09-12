@@ -356,6 +356,27 @@ template <typename scalar_t>
   }
 }
 
+/*! \brief Find max and sum of graph metric values.
+ *   \param v  a list of values
+ *   \param stride  the value such that \c v[offset + stride*i]
+ *             will be included in the calculation for all possible i.
+ *   \param offset  the offset at which calculation will begin.
+ *   \param max  on return, max will hold the maximum of the values.
+ *   \param sum on return, sum will hold the sum of the values.
+ */
+template <typename scalar_t>
+ void getStridedGraphStats(const ArrayView<scalar_t> &v, int stride, 
+   int offset, scalar_t &max, scalar_t &sum)
+{
+  if (v.size() < 1) return;
+  max = sum = v[offset];
+
+  for (int i=offset+stride; i < v.size(); i += stride){
+    if (v[i] > max) max = v[i];
+    sum += v[i];
+  }
+}
+
 /*! \brief Compute the total weight in each part on this process.
  *
  * \param env the Environment for error messages
