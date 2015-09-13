@@ -1482,7 +1482,12 @@ namespace MueLu {
       A->getLocalRowView(i,indices,values);
       int nnz=0;
       for (int j=0; j<indices.size(); j++) {
-        if (abs(values[j]) > 1.0e-16) {
+        // FIXME (mfh 12 Sep 2015) I just replaced abs with the
+        // appropriate ScalarTraits call.  However, this is NOT
+        // correct for arbitrary scalar types!!!  I'm guessing you
+        // should use the equivalent of LAPACK's SFMIN or machine
+        // epsilon here.
+        if (Teuchos::ScalarTraits<SC>::magnitude(values[j]) > 1.0e-16) {
           nnz++;
         }
       }
@@ -1516,7 +1521,7 @@ namespace MueLu {
     Teuchos::ArrayRCP<const SC> myCols = myColsToZero->getData(0);
     dirichletCols.resize(colMap->getNodeNumElements());
     for(size_t i=0; i<colMap->getNodeNumElements(); i++) {
-      if(abs(myCols[i])>0.0)
+      if(Teuchos::ScalarTraits<SC>::magnitude(myCols[i])>0.0)
         dirichletCols[i]=1;
       else
         dirichletCols[i]=0;
@@ -1571,7 +1576,7 @@ namespace MueLu {
       A->getLocalRowView(i,indices,values);
       int nnz=0;
       for (int j=0; j<indices.size(); j++) {
-        if (abs(values[j]) > tol) {
+        if (Teuchos::ScalarTraits<SC>::magnitude(values[j]) > tol) {
           nnz++;
         }
       }
