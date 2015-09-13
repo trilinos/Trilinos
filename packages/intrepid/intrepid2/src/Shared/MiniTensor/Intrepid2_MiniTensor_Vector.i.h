@@ -42,7 +42,7 @@
 #if !defined(Intrepid2_MiniTensor_Vector_i_h)
 #define Intrepid2_MiniTensor_Vector_i_h
 
-namespace Intrepid
+namespace Intrepid2
 {
 
 //

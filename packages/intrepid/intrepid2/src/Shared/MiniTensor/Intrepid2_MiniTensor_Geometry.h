@@ -298,7 +298,7 @@ KOKKOS_INLINE_FUNCTION
 #endif
 Vector<T, N, ES>
 interpolate_quadrilateral(
-    Vector<T, dimension_const<N, 2>::value> & xi,
+    Vector<T, dimension_const<N, 2>::value, ES> & xi,
     Vector<T, N, ES> const & p0,
     Vector<T, N, ES> const & p1,
     Vector<T, N, ES> const & p2,
@@ -317,7 +317,7 @@ KOKKOS_INLINE_FUNCTION
 #endif
 Vector<T, N, ES>
 interpolate_triangle(
-    Vector<T, dimension_const<N, 3>::value> & xi,
+    Vector<T, dimension_const<N, 3>::value, ES> & xi,
     Vector<T, N, ES> const & p0,
     Vector<T, N, ES> const & p1,
     Vector<T, N, ES> const & p2);
@@ -335,7 +335,7 @@ KOKKOS_INLINE_FUNCTION
 #endif
 Vector<T, N, ES>
 interpolate_hexahedron(
-    Vector<T, dimension_const<N, 3>::value> & xi,
+    Vector<T, dimension_const<N, 3>::value, ES> & xi,
     Vector<T, N, ES> const & p0,
     Vector<T, N, ES> const & p1,
     Vector<T, N, ES> const & p2,
@@ -426,13 +426,13 @@ KOKKOS_INLINE_FUNCTION
 KOKKOS_INLINE_FUNCTION
 #endif
   void
-  operator()(Vector<T, dimension_const<N, 2>::value> const & parameters);
+  operator()(Vector<T, dimension_const<N, 2>::value, ES> const & parameters);
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
   Vector<T, N, ES>
-  get_normal(Vector<T, dimension_const<N, 2>::value> const & parameters) const;
+  get_normal(Vector<T, dimension_const<N, 2>::value, ES> const & parameters) const;
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
@@ -449,13 +449,13 @@ KOKKOS_INLINE_FUNCTION
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
-  Vector<T, 2>
+  Vector<T, 2, ES>
   get_arg_minimum() const {return arg_minimum_;}
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
-  Vector<T, 2>
+  Vector<T, 2, ES>
   get_arg_maximum() const {return arg_maximum_;}
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
@@ -478,13 +478,13 @@ private:
   T
   minimum_;
 
-  Vector<T, 2>
+  Vector<T, 2, ES>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T, 2>
+  Vector<T, 2, ES>
   arg_maximum_;
 };
 
@@ -505,13 +505,13 @@ KOKKOS_INLINE_FUNCTION
 KOKKOS_INLINE_FUNCTION
 #endif
   Vector<T, N, ES>
-  get_normal(Vector<T, dimension_const<N, 2>::value> const & parameters) const;
+  get_normal(Vector<T, dimension_const<N, 2>::value, ES> const & parameters) const;
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
   void
-  operator()(Vector<T, dimension_const<N, 2>::value> const & parameters);
+  operator()(Vector<T, dimension_const<N, 2>::value, ES> const & parameters);
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
@@ -528,13 +528,13 @@ KOKKOS_INLINE_FUNCTION
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
-  Vector<T, 2>
+  Vector<T, 2, ES>
   get_arg_minimum() const {return arg_minimum_;}
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
-  Vector<T, 2>
+  Vector<T, 2, ES>
   get_arg_maximum() const {return arg_maximum_;}
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
@@ -557,13 +557,13 @@ private:
   T
   minimum_;
 
-  Vector<T, 2>
+  Vector<T, 2, ES>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T, 2>
+  Vector<T, 2, ES>
   arg_maximum_;
 };
 
@@ -587,13 +587,13 @@ KOKKOS_INLINE_FUNCTION
 KOKKOS_INLINE_FUNCTION
 #endif
   void
-  operator()(Vector<T, dimension_const<N, 3>::value> const & parameters);
+  operator()(Vector<T, dimension_const<N, 3>::value, ES> const & parameters);
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
   Vector<T, N, ES>
-  get_normal(Vector<T, dimension_const<N, 3>::value> const & parameters) const;
+  get_normal(Vector<T, dimension_const<N, 3>::value, ES> const & parameters) const;
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
@@ -610,13 +610,13 @@ KOKKOS_INLINE_FUNCTION
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
-  Vector<T, 3>
+  Vector<T, 3, ES>
   get_arg_minimum() const {return arg_minimum_;}
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
-  Vector<T, 3>
+  Vector<T, 3, ES>
   get_arg_maximum() const {return arg_maximum_;}
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
@@ -639,13 +639,13 @@ private:
   T
   minimum_;
 
-  Vector<T, 3>
+  Vector<T, 3, ES>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T, 3>
+  Vector<T, 3, ES>
   arg_maximum_;
 };
 
@@ -672,13 +672,13 @@ KOKKOS_INLINE_FUNCTION
 KOKKOS_INLINE_FUNCTION
 #endif
   void
-  operator()(Vector<T, dimension_const<N, 2>::value> const & parameters);
+  operator()(Vector<T, dimension_const<N, 2>::value, ES> const & parameters);
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
   Vector<T, N, ES>
-  get_normal(Vector<T, dimension_const<N, 2>::value> const & parameters) const;
+  get_normal(Vector<T, dimension_const<N, 2>::value, ES> const & parameters) const;
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
@@ -695,13 +695,13 @@ KOKKOS_INLINE_FUNCTION
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
-  Vector<T, 2>
+  Vector<T, 2, ES>
   get_arg_minimum() const {return arg_minimum_;}
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
-  Vector<T, 2>
+  Vector<T, 2, ES>
   get_arg_maximum() const {return arg_maximum_;}
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
@@ -724,13 +724,13 @@ private:
   T
   minimum_;
 
-  Vector<T, 2>
+  Vector<T, 2, ES>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T, 2>
+  Vector<T, 2, ES>
   arg_maximum_;
 };
 
@@ -751,13 +751,13 @@ KOKKOS_INLINE_FUNCTION
 KOKKOS_INLINE_FUNCTION
 #endif
   void
-  operator()(Vector<T, dimension_const<N, 3>::value> const & parameters);
+  operator()(Vector<T, dimension_const<N, 3>::value, ES> const & parameters);
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
   Vector<T, N, ES>
-  get_normal(Vector<T, dimension_const<N, 3>::value> const & parameters) const;
+  get_normal(Vector<T, dimension_const<N, 3>::value, ES> const & parameters) const;
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
@@ -774,13 +774,13 @@ KOKKOS_INLINE_FUNCTION
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
-  Vector<T, 3>
+  Vector<T, 3, ES>
   get_arg_minimum() const {return arg_minimum_;}
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
 #endif
-  Vector<T, 3>
+  Vector<T, 3, ES>
   get_arg_maximum() const {return arg_maximum_;}
 
 #if defined(HAVE_INTREPID_KOKKOSCORE)
@@ -803,13 +803,13 @@ private:
   T
   minimum_;
 
-  Vector<T, 3>
+  Vector<T, 3, ES>
   arg_minimum_;
 
   T
   maximum_;
 
-  Vector<T, 3>
+  Vector<T, 3, ES>
   arg_maximum_;
 };
 
@@ -842,7 +842,7 @@ KOKKOS_INLINE_FUNCTION
   ParametricGrid(
       Vector<T, N, ES> const & lower,
       Vector<T, N, ES> const & upper,
-      Vector<Index, N> const & points_per_dimension);
+      Vector<Index, N, ES> const & points_per_dimension);
 
   ///
   ///
@@ -861,7 +861,7 @@ private:
   Vector<T, N, ES>
   upper_;
 
-  Vector<Index, N>
+  Vector<Index, N, ES>
   points_per_dimension_;
 
 };

@@ -580,13 +580,13 @@ exp_pade(Tensor<T, N, ES> const & A)
       Real const
       theta_highest = scaling_squaring_theta<Real>(order);
 
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-     int const
-      signed_power = static_cast<int>(ceil(log2(norm / theta_highest)));
-#else
+//#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
+//     int const
+//      signed_power = static_cast<int>(ceil(log2(norm / theta_highest)));
+//#else
       int const
       signed_power = static_cast<int>(std::ceil(log2(norm / theta_highest)));
-#endif
+//#endif
       Index const
       power_two = signed_power > 0 ? static_cast<Index>(signed_power) : 0;
 
@@ -1595,10 +1595,10 @@ svd_NxN(Tensor<T, N, ES> const & A)
     }
 
     // Obtain left and right Givens rotations by using 2x2 SVD
-    Tensor <T, 2>
+    Tensor <T, 2, ES>
     Spq(S(p,p), S(p,q), S(q,p), S(q,q));
 
-    Tensor <T, 2>
+    Tensor <T, 2, ES>
     L(2), D(2), R(2);
 
     boost::tie(L, D, R) = svd_2x2(Spq);

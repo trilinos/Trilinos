@@ -183,7 +183,7 @@ inline
 #endif
 Vector<T, N, ES>
 SphericalParametrization<T, N, ES>::get_normal(
-    Vector<T, dimension_const<N, 2>::value> const & parameters
+    Vector<T, dimension_const<N, 2>::value, ES> const & parameters
 ) const
 {
   T const &
@@ -209,7 +209,7 @@ inline
 #endif
 void
 SphericalParametrization<T, N, ES>::operator()(
-    Vector<T, dimension_const<N, 2>::value> const & parameters
+    Vector<T, dimension_const<N, 2>::value, ES> const & parameters
 )
 {
   assert(parameters.get_dimension() == 2);
@@ -270,7 +270,7 @@ inline
 #endif
 Vector<T, N, ES>
 StereographicParametrization<T, N, ES>::get_normal(
-    Vector<T, dimension_const<N, 2>::value> const & parameters
+    Vector<T, dimension_const<N, 2>::value, ES> const & parameters
 ) const
 {
   T const &
@@ -301,7 +301,7 @@ inline
 #endif
 void
 StereographicParametrization<T, N, ES>::operator()(
-    Vector<T, dimension_const<N, 2>::value> const & parameters
+    Vector<T, dimension_const<N, 2>::value, ES> const & parameters
 )
 {
   assert(parameters.get_dimension() == 2);

@@ -588,7 +588,7 @@ KOKKOS_INLINE_FUNCTION
 #endif
 Vector<T, N, ES>
 interpolate_quadrilateral(
-    Vector<T, dimension_const<N, 2>::value> & xi,
+    Vector<T, dimension_const<N, 2>::value, ES> & xi,
     Vector<T, N, ES> const & p0,
     Vector<T, N, ES> const & p1,
     Vector<T, N, ES> const & p2,
@@ -626,7 +626,7 @@ KOKKOS_INLINE_FUNCTION
 #endif
 Vector<T, N, ES>
 interpolate_triangle(
-    Vector<T, dimension_const<N, 3>::value> & xi,
+    Vector<T, dimension_const<N, 3>::value, ES> & xi,
     Vector<T, N, ES> const & p0,
     Vector<T, N, ES> const & p1,
     Vector<T, N, ES> const & p2)
@@ -652,7 +652,7 @@ KOKKOS_INLINE_FUNCTION
 #endif
 Vector<T, N, ES>
 interpolate_hexahedron(
-    Vector<T, dimension_const<N, 3>::value> & xi,
+    Vector<T, dimension_const<N, 3>::value, ES> & xi,
     Vector<T, N, ES> const & p0,
     Vector<T, N, ES> const & p1,
     Vector<T, N, ES> const & p2,

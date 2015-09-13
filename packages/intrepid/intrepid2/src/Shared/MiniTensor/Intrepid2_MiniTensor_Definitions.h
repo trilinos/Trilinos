@@ -49,7 +49,7 @@
 
 class NOKOKKOS{};
 
-#define         NPP_MAX_32U   ( 4294967295 )
+#define         NPP_MAX_32U   (32 )
 
 namespace Intrepid2 {
 

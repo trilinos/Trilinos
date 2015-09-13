@@ -361,7 +361,7 @@ public:
   using pointer_type = T *;
   using reference_type = T &;
   using const_pointer_type = T const *;
-  using const_reference_type = T const &;ypedef T const & const_reference_type;
+  using const_reference_type = T const &;
 
   static
   bool const

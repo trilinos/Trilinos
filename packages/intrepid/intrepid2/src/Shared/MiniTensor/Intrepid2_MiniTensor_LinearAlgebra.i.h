@@ -200,21 +200,13 @@ norm_infinity(Tensor<T, N, ES> const & A)
       for (Index i = 0; i < dimension; ++i) {
         T t = 0.0;
         for (Index j = 0; j < dimension; ++j) {
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-           t += abs(A(i, j));
-#else
           t += std::abs(A(i, j));
-#endif
         }
         v(i) = t;
       }
 
       for (Index i = 0; i < dimension; ++i) {
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-        s = max(s, v(i));
-#else
         s = std::max(s, v(i));
-#endif
       }
       break;
 
