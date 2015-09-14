@@ -278,6 +278,8 @@ private:
   template <typename AdapterWithCoords>
   void shared_GetVertexCoords(const AdapterWithCoords *ia);
 
+  void print(); // For debugging
+
   const RCP<const Environment > env_;
   const RCP<const Comm<int> > comm_;
 
@@ -319,50 +321,41 @@ private:
                                           // due to renumbering, self-edge
                                           // removal, or local graph.
 
-  ArrayRCP<int> procIds_;  // TODO REMOVE
-
   int nWeightsPerEdge_;
   ArrayRCP<input_t> eWeights_;
 
-  // For debugging
-  void print();
 };
 
 
 ////////////////////////////////////////////////////////////////
+// GraphModel from MatrixAdapter
 template <typename Adapter>
 GraphModel<Adapter>::GraphModel(
   const RCP<const MatrixAdapter<user_t,userCoord_t> > &ia,
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &comm,
   modelFlag_t &modelFlags):
-       env_(env),
-       comm_(comm),
-       localGraph_(false),
-       adapterVGids_(),
-       vGids_(),
-       numWeightsPerVertex_(0),
-       vWeights_(),
-       vCoordDim_(0),
-       vCoords_(),
-       edgeGids_(),
-       edgeGnos_(),
-       procIds_(),
-       offsets_(),
-       nWeightsPerEdge_(0),
-       eWeights_(),
-       gnosConst_(),
-       edgeGnosConst_(),
-       procIdsConst_(),
-       gnosAreGids_(false),
-       localGraphEdgeLnos_(),
-       localGraphEdgeOffsets_(),
-       localGraphEdgeWeights_(),
-       numLocalVertices_(0),
-       numGlobalVertices_(0),
-       numLocalEdges_(0),
-       numGlobalEdges_(0),
-       numLocalGraphEdges_(0)
+        env_(env),
+        comm_(comm),
+        localGraph_(false),
+        adapterNumLocalVertices_(0),
+        adapterVGids_(),
+        numLocalVertices_(0),
+        numGlobalVertices_(0),
+        vGids_(),
+        numWeightsPerVertex_(0),
+        vWeights_(),
+        vCoordDim_(0),
+        vCoords_(),
+        adapterNumLocalEdges_(0),
+        adapterEGids_(),
+        adapterEOffsets_(),
+        numLocalEdges_(0),
+        numGlobalEdges_(0),
+        eGids_(),
+        eOffsets_(),
+        nWeightsPerEdge_(0),
+        eWeights_()
 {
   // Model creation flags
   localGraph_ = modelFlags.test(BUILD_LOCAL_GRAPH);
@@ -419,39 +412,34 @@ GraphModel<Adapter>::GraphModel(
 
 
 ////////////////////////////////////////////////////////////////
+// GraphModel from GraphAdapter
 template <typename Adapter>
 GraphModel<Adapter>::GraphModel(
   const RCP<const GraphAdapter<user_t,userCoord_t> > &ia,
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &comm,
   modelFlag_t &modelFlags):
-       env_(env),
-       comm_(comm),
-       localGraph_(false),
-       gids_(),
-       gnos_(),
-       numWeightsPerVertex_(0),
-       vWeights_(),
-       vCoordDim_(0),
-       vCoords_(),
-       edgeGids_(),
-       edgeGnos_(),
-       procIds_(),
-       offsets_(),
-       nWeightsPerEdge_(0),
-       eWeights_(),
-       gnosConst_(),
-       edgeGnosConst_(),
-       procIdsConst_(),
-       gnosAreGids_(false),
-       localGraphEdgeLnos_(),
-       localGraphEdgeOffsets_(),
-       localGraphEdgeWeights_(),
-       numLocalVertices_(0),
-       numGlobalVertices_(0),
-       numLocalEdges_(0),
-       numGlobalEdges_(0),
-       numLocalGraphEdges_(0)
+        env_(env),
+        comm_(comm),
+        localGraph_(false),
+        adapterNumLocalVertices_(0),
+        adapterVGids_(),
+        numLocalVertices_(0),
+        numGlobalVertices_(0),
+        vGids_(),
+        numWeightsPerVertex_(0),
+        vWeights_(),
+        vCoordDim_(0),
+        vCoords_(),
+        adapterNumLocalEdges_(0),
+        adapterEGids_(),
+        adapterEOffsets_(),
+        numLocalEdges_(0),
+        numGlobalEdges_(0),
+        eGids_(),
+        eOffsets_(),
+        nWeightsPerEdge_(0),
+        eWeights_()
 {
   // Model creation flags
   localGraph_ = modelFlags.test(BUILD_LOCAL_GRAPH);
@@ -509,39 +497,34 @@ GraphModel<Adapter>::GraphModel(
 }
 
 ////////////////////////////////////////////////////////////////
+// GraphModel from MeshAdapter
 template <typename Adapter>
 GraphModel<Adapter>::GraphModel(
   const RCP<const MeshAdapter<user_t> > &ia,
   const RCP<const Environment> &env,
   const RCP<const Comm<int> > &comm,
   modelFlag_t &modelFlags):
-       env_(env),
-       comm_(comm),
-       localGraph_(false),
-       gids_(),
-       gnos_(),
-       numWeightsPerVertex_(0),
-       vWeights_(),
-       vCoordDim_(0),
-       vCoords_(),
-       edgeGids_(),
-       edgeGnos_(),
-       procIds_(),
-       offsets_(),
-       nWeightsPerEdge_(0),
-       eWeights_(),
-       gnosConst_(),
-       edgeGnosConst_(),
-       procIdsConst_(),
-       gnosAreGids_(false),
-       localGraphEdgeLnos_(),
-       localGraphEdgeOffsets_(),
-       localGraphEdgeWeights_(),
-       numLocalVertices_(0),
-       numGlobalVertices_(0),
-       numLocalEdges_(0),
-       numGlobalEdges_(0),
-       numLocalGraphEdges_(0)
+        env_(env),
+        comm_(comm),
+        localGraph_(false),
+        adapterNumLocalVertices_(0),
+        adapterVGids_(),
+        numLocalVertices_(0),
+        numGlobalVertices_(0),
+        vGids_(),
+        numWeightsPerVertex_(0),
+        vWeights_(),
+        vCoordDim_(0),
+        vCoords_(),
+        adapterNumLocalEdges_(0),
+        adapterEGids_(),
+        adapterEOffsets_(),
+        numLocalEdges_(0),
+        numGlobalEdges_(0),
+        eGids_(),
+        eOffsets_(),
+        nWeightsPerEdge_(0),
+        eWeights_()
 {
   env_->timerStart(MACRO_TIMERS, "GraphModel constructed from MeshAdapter");
 
@@ -685,7 +668,8 @@ void GraphModel<Adapter>::shared_constructor(
     lno_t ecnt = 0;
     for (size_t i = 0; i < numLocalVertices_; i++) {
       for (lno_t j = adapterEOffsets[i]; j < adapterEOffsets[i+1]; j++) {
-        if ((lno_t localidx = globalToLocal[adapterEGids[j]]) != NULL) { // TODO FIX
+        if ((lno_t localidx = globalToLocal.find(adapterEGids[j])) != 
+                              globalToLocal.end()) {
           // neighbor vertex is local
 
           if (removeSelfEdges && (localidx == i))  
@@ -708,21 +692,32 @@ void GraphModel<Adapter>::shared_constructor(
     // removing self edges, or converting to consecutive IDs, or subsetting
     // the graph.
 
-    if (subsetGraph || consecutiveIDsRequired) {
-      // TODO Build a directory with local vertices, with local idx as user data
-      // TODO Do a directory find with the edge list from the adapter
-    }
 
-    // Allocate new memory for vertices, if required
+    // Determine vertex GIDs for the global GraphModel
+    Teuchos::ArrayRCP<size_t> vtxDist; // TODO keep vtxDist & add to interface?
+
     numLocalVertices_ = adapterNumLocalVertices_;
     if (!consecutiveIdsRequired) 
       vGids_ = arcp_const_cast<gno_t>(adapterVGids_);
-    else {
+    else  {
+      // Allocate new memory for vertices for consecutiveIds
       vGids_ = arcp(new gno_t[numLocalVertices_], 0, numLocalVertices_, true);
-      // TODO:  Do prefix-sum on numLocalVertices_ to compute vtxDist
+
+      // Build vtxDist array with starting vGid on each rank
+      int np = comm_->getSize();
+      vtxDist = arcp(new size_t[np+1], 0, np+1, true);
+      vtxDist[0] = 0;
+      Teuchos::Comm::gatherAll(*comm_, 1, &numLocalVertices_, 1, &vtxDist[1]);
+      for (int i = 0; i < np; i++)
+        vtxDist[i+1] += vtxdist[i];
     }
 
-    // Allocate new memory for edges.
+    // Allocate new memory for edges and offsets, as needed
+    // Note that eGids_ may or may not be larger than needed; 
+    // would have to pre-count number of edges kept otherwise
+    eGids_ = arcp(new gno_t[adapterNumLocalEdges_],
+                  0, adapterNumLocalEdges_, true);
+
     if (!subsetGraph && !removeSelfEdges) 
       // Not changing number of edges and, thus, the offsets
       // Probably only relabeling to consecutive IDs
@@ -731,22 +726,38 @@ void GraphModel<Adapter>::shared_constructor(
       eOffsets_ = arcp(new lno_t[numLocalVertices_+1],
                        0, numLocalVertices_+1, true);
 
-    // Note that eGids_ may or may not be larger than needed; 
-    // would have to pre-count number of edges kept otherwise
-    eGids_ = arcp(new gno_t[adapterNumLocalEdges_],
-                  0, adapterNumLocalEdges_, true);
 
+    // If needed, determine the owning ranks and its local index off-proc
+    Teuchos::ArrayRCP<int> edgeRemoteRanks;
+    Teuchos::ArrayRCP<lno_t> edgeRemoteLids;
+
+    if (subsetGraph || consecutiveIDsRequired) {
+      gno_t dummy = Teuchos::OrdinalTraits<gno_t>::invalid();
+      Tpetra::Map<lno_t,gno_t> vtxMap(dummy, adapterVGids_, 0, comm_);
+
+      edgeRemoteRanks = arcp(new int[adapterNumLocalEdges_],
+                             0, adapterNumLocalEdges_, true);
+      edgeRemoteLids = arcp(new lno_t[adapterNumLocalEdges_],
+                            0, adapterNumLocalEdges_, true);
+      vtxMap.getRemoteIndexList(adapterEGids_, edgeRemoteRanks, edgeRemoteLids);
+    }
+
+    // Renumber and/or filter the edges
     lno_t ecnt = 0;
     for (size_t i = 0; i < numLocalVertices_; i++) {
-      for (size_t j = adapterEOffsets[i]; j < adapterEOffsets[i+1]; j++) {
-        if (removeSelfEdges && (adapterVGids_[i] == adapterEGids[j]))
+      for (size_t j = adapterEOffsets_[i]; j < adapterEOffsets_[i+1]; j++) {
+
+        if (removeSelfEdges && (adapterVGids_[i] == adapterEGids_[j]))
           continue;  // Skipping self edge
-        if (subsetGraph && (ddProcs[j] == -1)) // TODO CHECK NOT FOUND CONDITION
-          continue;  // Skipping edge with neighbor vertex that was not in DD
-        // Keep the edge
+
+        if (subsetGraph && (edgeRemoteRanks[j] == -1)) 
+          continue;  // Skipping edge with neighbor vertex that was not found 
+                     // in communicator
+
         if (consecutiveIDsRequired)
-          // Use local number on ddProcs[j] plus first vtx number for ddProcs[j]
-          eGids_[ecnt] = ddUser[j] + vtxDist[ddProcs[j]];  
+          // Renumber edge using local number on remote rank plus first 
+          // vtx number for remote rank
+          eGids_[ecnt] = edgeRemoteLids[j] + vtxDist[edgeRemoteRanks[j]];  
         else
           eGids_[ecnt] = adapterEGids_[j];
 // TODO EDGE WEIGHTS:  DON'T NEED TO COPY THEM IF ONLY RENUMBERING
@@ -772,11 +783,10 @@ void GraphModel<Adapter>::shared_constructor(
       if (useNumNZ){
         scalar_t *wgts = new scalar_t [numLocalVertices_];
         env_->localMemoryAssertion(__FILE__, __LINE__, numLocalVertices_, wgts);
-        ArrayRCP<const scalar_t> wgtArray =
-          arcp(wgts, 0, numLocalVertices_, true);
-        for (size_t i=0; i < numLocalVertices_; i++){
+        ArrayRCP<const scalar_t> wgtArray = arcp(wgts,
+                                                 0, numLocalVertices_, true);
+        for (size_t i=0; i < numLocalVertices_; i++)
           wgts[i] = eOffsets_[i+1] - eOffsets_[i];
-        }
         weightInfo[idx] = input_t(wgtArray, 1);
       }
       else{
@@ -845,28 +855,17 @@ void GraphModel<Adapter>::print()
   *os << me << fn
       << " Nvtx  " << gids_.size()
       << " Nedge " << edgeGids_.size()
-      << " NLocalEdge " << numLocalGraphEdges_
       << " NVWgt " << numWeightsPerVertex_
       << " NEWgt " << nWeightsPerEdge_
       << " CDim  " << vCoordDim_
-      << " GnosAreGids " << gnosAreGids_ << std::endl;
+      << std::endl;
 
-  for (lno_t i = 0; i < gids_.size(); i++) {
+  for (lno_t i = 0; i < numLocalVertices; i++) {
     *os << me << fn << i << " GID " << gids_[i] << ": ";
     for (lno_t j = offsets_[i]; j < offsets_[i+1]; j++)
-      *os << edgeGids_[j] << " " << "(" << procIds_[j] << ") ";
+      *os << edgeGids_[j] << " " ;
     *os << std::endl;
   }
-
-  if (gnos_.size())
-    for (lno_t i = 0; i < gnos_.size(); i++) {
-      *os << me << fn << i << " GNO " << gnos_[i] << ": ";
-      for (lno_t j = offsets_[i]; j < offsets_[i+1]; j++)
-        *os << edgeGnos_[j] << " ";//<< "(" << procIds_[j] << ") ";
-      *os << std::endl;
-    }
-  else
-    *os << me << fn << " GNOS NOT AVAILABLE " << std::endl;
 
   if (comm_->getSize() > 1) {
     // Print local graph, with no off-process edges.
