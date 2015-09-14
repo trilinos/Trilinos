@@ -45,7 +45,7 @@ TEST(GameofLifeClass, 1ProcTestTest)
     if (1 == numProcs)
     {
         std::string meshName = "1ProcTestTest";
-        QuadGameofLifeMesh* Mesh = new QuadGameofLifeMesh(comm, 4, 4);
+        QuadGameofLifeMesh Mesh(comm, 4, 4);
 
         stk::mesh::EntityIdVector elemIds = {1, 2, 3, 4, 5, 8, 9, 12, 13, 14, 15, 16};
         PartGameofLife PartGame(Mesh, meshName);
@@ -63,8 +63,6 @@ TEST(GameofLifeClass, 1ProcTestTest)
         EXPECT_FALSE(PartGame.are_these_ids_active(notElemIds2));
         EXPECT_TRUE(PartGame.are_these_ids_active(elemIds1));
         EXPECT_TRUE(PartGame.are_these_ids_active(elemIds2));
-
-	delete Mesh;	
     }
 }
 TEST(GameofLifeClass, 4ProcTestTest)
@@ -75,7 +73,7 @@ TEST(GameofLifeClass, 4ProcTestTest)
     if (4 == numProcs)
     {
         std::string meshName = "4ProcTestTest";
-        QuadGameofLifeMesh* Mesh = new QuadGameofLifeMesh(comm, 4, 4);
+        QuadGameofLifeMesh Mesh(comm, 4, 4);
 
         stk::mesh::EntityIdVector elemIds = {1, 2, 3, 4, 5, 8, 9, 12, 13, 14, 15, 16};
         PartGameofLife PartGame(Mesh, meshName);
@@ -105,8 +103,6 @@ TEST(GameofLifeClass, 4ProcTestTest)
         }
         EXPECT_TRUE(PartGame.are_these_ids_active(elemIds1));
         EXPECT_TRUE(PartGame.are_these_ids_active(elemIds2));
-
-	delete Mesh;
     }
 }
 TEST(TriangleGameofLifeClass, 1ProcRandomTest)
@@ -121,8 +117,8 @@ TEST(TriangleGameofLifeClass, 1ProcRandomTest)
         TriGameofLifeMesh PartMesh(comm, 4, 4);
         TriGameofLifeMesh FieldMesh(comm, 4, 4);
 
-        PartGameofLife PartGame(&PartMesh, partMeshName);
-        FieldGameofLife FieldGame(&FieldMesh, partMeshName);
+        PartGameofLife PartGame(PartMesh, partMeshName);
+        FieldGameofLife FieldGame(FieldMesh, partMeshName);
 
         stk::mesh::EntityIdVector elemIds = {1, 2, 3, 4, 5, 6, 7, 8,
                                              25, 26, 27, 28, 29, 30, 31, 32};
@@ -162,8 +158,8 @@ TEST(TriangleGameofLifeClass, 4ProcRandomTest)
         TriGameofLifeMesh PartMesh(comm, 4, 4);
         TriGameofLifeMesh FieldMesh(comm, 4, 4);
 
-        PartGameofLife PartGame(&PartMesh, partMeshName);
-        FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
+        PartGameofLife PartGame(PartMesh, partMeshName);
+        FieldGameofLife FieldGame(FieldMesh, fieldMeshName);
 
         stk::mesh::EntityIdVector elemIds = {1, 2, 3, 4, 5, 6, 7, 8,
                                              25, 26, 27, 28, 29, 30, 31, 32};
@@ -226,8 +222,8 @@ TEST(TriangleGameofLifeClass, 1ProcInfiniteTest)
         TriGameofLifeMesh PartMesh(comm, 10, 5);
         TriGameofLifeMesh FieldMesh(comm, 10, 5);
 
-        PartGameofLife PartGame(&PartMesh, partMeshName);
-        FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
+        PartGameofLife PartGame(PartMesh, partMeshName);
+        FieldGameofLife FieldGame(FieldMesh, fieldMeshName);
 
         EXPECT_EQ(100u, PartGame.get_num_elems_on_proc());
         EXPECT_EQ(100u, FieldGame.get_num_elems_on_proc());
@@ -272,8 +268,8 @@ TEST(TriangleGameofLifeClass, 4ProcInfiniteTest)
         TriGameofLifeMesh PartMesh(comm, 10, 5);
         TriGameofLifeMesh FieldMesh(comm, 10, 5);
 
-        PartGameofLife PartGame(&PartMesh, partMeshName);
-        FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
+        PartGameofLife PartGame(PartMesh, partMeshName);
+        FieldGameofLife FieldGame(FieldMesh, fieldMeshName);
 
         if (3 == procRank)
         {
@@ -373,8 +369,8 @@ TEST(QuadGameofLifeClass, 1ProcGliderTest)
         QuadGameofLifeMesh PartMesh(comm, 10, 10);
         QuadGameofLifeMesh FieldMesh(comm, 10, 10);
 
-        PartGameofLife PartGame(&PartMesh, meshName1);
-        FieldGameofLife FieldGame(&FieldMesh, meshName1);
+        PartGameofLife PartGame(PartMesh, meshName1);
+        FieldGameofLife FieldGame(FieldMesh, meshName1);
 
         stk::mesh::EntityIdVector elemIds = {71, 72, 73, 83, 92};
         PartGame.activate_these_ids(elemIds);
@@ -409,8 +405,8 @@ TEST(QuadGameofLifeClass, 4ProcGliderTest)
         QuadGameofLifeMesh PartMesh(comm, 10, 10);
         QuadGameofLifeMesh FieldMesh(comm, 10, 10);
 
-        PartGameofLife PartGame(&PartMesh, meshName1);
-        FieldGameofLife FieldGame(&FieldMesh, meshName2);
+        PartGameofLife PartGame(PartMesh, meshName1);
+        FieldGameofLife FieldGame(FieldMesh, meshName2);
 
         if (3 == procRank)
         {
@@ -484,8 +480,8 @@ TEST(QuadGameofLifeClass, 1ProcStillLife)
         QuadGameofLifeMesh PartMesh(comm, 4, 4);
         QuadGameofLifeMesh FieldMesh(comm, 4, 4);
 
-        PartGameofLife PartGame(&PartMesh, meshName1);
-        FieldGameofLife FieldGame(&FieldMesh, meshName2);
+        PartGameofLife PartGame(PartMesh, meshName1);
+        FieldGameofLife FieldGame(FieldMesh, meshName2);
 
         stk::mesh::EntityIdVector elemIds = {6, 7, 10, 11};
         PartGame.activate_these_ids(elemIds);
@@ -514,8 +510,8 @@ TEST(QuadGameofLifeClass, 4ProcStillLife)
         QuadGameofLifeMesh PartMesh(comm, 4, 4);
         QuadGameofLifeMesh FieldMesh(comm, 4, 4);
 
-        PartGameofLife PartGame(&PartMesh, meshName1);
-        FieldGameofLife FieldGame(&FieldMesh, meshName2);
+        PartGameofLife PartGame(PartMesh, meshName1);
+        FieldGameofLife FieldGame(FieldMesh, meshName2);
 
         stk::mesh::EntityIdVector elemIds = {6, 7, 10, 11};
         PartGame.activate_these_ids(elemIds);
@@ -558,8 +554,8 @@ TEST(QuadGameofLifeClass, 1ProcOscillatorPeriod2)
         QuadGameofLifeMesh PartMesh(comm, 3, 3);
         QuadGameofLifeMesh FieldMesh(comm, 3, 3);
 
-        PartGameofLife PartGame(&PartMesh, meshName1);
-        FieldGameofLife FieldGame(&FieldMesh, meshName2);
+        PartGameofLife PartGame(PartMesh, meshName1);
+        FieldGameofLife FieldGame(FieldMesh, meshName2);
 
         stk::mesh::EntityIdVector elemIds = {4, 5, 6};
         PartGame.activate_these_ids(elemIds);
@@ -603,8 +599,8 @@ TEST(QuadGameofLifeClass, 4ProcOscillatorPeriod2)
         QuadGameofLifeMesh PartMesh(comm, 3, 3);
         QuadGameofLifeMesh FieldMesh(comm, 3, 3);
 
-        PartGameofLife PartGame(&PartMesh, meshName1);
-        FieldGameofLife FieldGame(&FieldMesh, meshName2);
+        PartGameofLife PartGame(PartMesh, meshName1);
+        FieldGameofLife FieldGame(FieldMesh, meshName2);
 
         stk::mesh::EntityIdVector elemIds = {4, 5, 6};
         PartGame.activate_these_ids(elemIds);
@@ -671,8 +667,8 @@ TEST(QuadGameofLifeClass, 1ProcOscillatorPeriod8)
         QuadGameofLifeMesh PartMesh(comm, width, rowsPerProc);
         QuadGameofLifeMesh FieldMesh(comm, width, rowsPerProc);
 
-        PartGameofLife PartGame(&PartMesh, meshName1);
-        FieldGameofLife FieldGame(&FieldMesh, meshName2);
+        PartGameofLife PartGame(PartMesh, meshName1);
+        FieldGameofLife FieldGame(FieldMesh, meshName2);
 
         stk::mesh::EntityIdVector elemIdsToActivate = {26, 27, 28, 36, 37, 38, 46, 47, 48,
                                                        53, 54, 55, 63, 64, 65, 73, 74, 75};
@@ -719,8 +715,8 @@ TEST(QuadGameofLifeClass, 4ProcOscillatorPeriod8)
         QuadGameofLifeMesh PartMesh(comm, width, height);
         QuadGameofLifeMesh FieldMesh(comm, width, height);
 
-        PartGameofLife PartGame(&PartMesh, meshName1);
-        FieldGameofLife FieldGame(&FieldMesh, meshName2);
+        PartGameofLife PartGame(PartMesh, meshName1);
+        FieldGameofLife FieldGame(FieldMesh, meshName2);
 
         stk::mesh::EntityIdVector elemIdsToActivate = {26, 27, 28, 36, 37, 38, 46, 47, 48,
                                                        53, 54, 55, 63, 64, 65, 73, 74, 75};
@@ -798,8 +794,8 @@ TEST(HexGameofLifeClass, 1ProcBasicTest)
         HexGameofLifeMesh PartMesh(comm, 3, 3, 4);
         HexGameofLifeMesh FieldMesh(comm, 3, 3, 4);
 
-        PartGameofLife PartGame(&PartMesh, partMeshName);
-        FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
+        PartGameofLife PartGame(PartMesh, partMeshName);
+        FieldGameofLife FieldGame(FieldMesh, fieldMeshName);
 
         EXPECT_EQ(36u, PartGame.get_num_elems_on_proc());
         EXPECT_EQ(36u, FieldGame.get_num_elems_on_proc());
@@ -839,8 +835,8 @@ TEST(HexGameofLifeClass, 4ProcBasicTest)
         HexGameofLifeMesh PartMesh(comm, 3, 3, 4);
         HexGameofLifeMesh FieldMesh(comm, 3, 3, 4);
 
-        PartGameofLife PartGame(&PartMesh, partMeshName);
-        FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
+        PartGameofLife PartGame(PartMesh, partMeshName);
+        FieldGameofLife FieldGame(FieldMesh, fieldMeshName);
 
         EXPECT_EQ(9u, PartGame.get_num_elems_on_proc());
         EXPECT_EQ(9u, FieldGame.get_num_elems_on_proc());
@@ -886,8 +882,8 @@ TEST(HexGameofLifeClass, 1ProcOscillator)
         HexGameofLifeMesh PartMesh(comm, 3, 3, 4);
         HexGameofLifeMesh FieldMesh(comm, 3, 3, 4);
 
-        PartGameofLife PartGame(&PartMesh, partMeshName);
-        FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
+        PartGameofLife PartGame(PartMesh, partMeshName);
+        FieldGameofLife FieldGame(FieldMesh, fieldMeshName);
 
 
         EXPECT_EQ(36u, PartGame.get_num_elems_on_proc());
@@ -950,8 +946,8 @@ TEST(HexGameofLifeClass, 4ProcOscillator)
         HexGameofLifeMesh PartMesh(comm, 3, 3, 4);
         HexGameofLifeMesh FieldMesh(comm, 3, 3, 4);
 
-        PartGameofLife PartGame(&PartMesh, partMeshName);
-        FieldGameofLife FieldGame(&FieldMesh, fieldMeshName);
+        PartGameofLife PartGame(PartMesh, partMeshName);
+        FieldGameofLife FieldGame(FieldMesh, fieldMeshName);
 
         EXPECT_EQ(9u, PartGame.get_num_elems_on_proc());
         EXPECT_EQ(9u, FieldGame.get_num_elems_on_proc());
@@ -1096,15 +1092,6 @@ TEST(HexGameofLifeClass, 4ProcOscillator)
  *
  *
  */
-TEST(PNG, Borderless)
-{
-    std::string fileName = "P44guns.png";
-    PNGProcessor png(fileName);
-    png.commit_image_vector_to_pixel_vector();
-
-    EXPECT_EQ(476u, png.get_image_width());
-    EXPECT_EQ(172u, png.get_image_height());
-}
 TEST(PNG, Bordered)
 {
     std::string fileName = "Boss.png";
@@ -1156,7 +1143,7 @@ TEST(PNGGameofLife, 1ProcCompressionTest)
 
         QuadGameofLifeMesh Mesh(comm, width, height);
 
-        FieldGameofLife FieldGame(&Mesh, meshName);
+        FieldGameofLife FieldGame(Mesh, meshName);
         FieldGame.activate_these_ids(elemIds);
 
         stk::mesh::EntityIdVector exElemIds = {10, 11, 17, 14, 20,21};
@@ -1184,7 +1171,7 @@ TEST(PNGGameofLife, 4ProcCompressionTest)
         unsigned height = carrier.get_image_height();
 
         QuadGameofLifeMesh Mesh (comm, width, height);
-        PartGameofLife PartGame(&Mesh, meshName);
+        PartGameofLife PartGame(Mesh, meshName);
         PartGame.activate_these_ids(elemIds);
 
         stk::mesh::EntityIdVector exElemIds = {10, 11, 14, 17, 20, 21};
@@ -1233,8 +1220,8 @@ TEST(PNGGameofLife, 1ProcTiny)
         QuadGameofLifeMesh PartMesh(comm, width, height);
         QuadGameofLifeMesh FieldMesh(comm, width, height);
 
-        PartGameofLife PartGame(&PartMesh, meshName1);
-        FieldGameofLife FieldGame(&FieldMesh, meshName2);
+        PartGameofLife PartGame(PartMesh, meshName1);
+        FieldGameofLife FieldGame(FieldMesh, meshName2);
 
 
         stk::mesh::EntityIdVector elemIds;
@@ -1294,8 +1281,8 @@ TEST(PNGGameofLife, 4ProcTiny)
         QuadGameofLifeMesh PartMesh(comm, width, height);
         QuadGameofLifeMesh FieldMesh(comm, width, height);
 
-        PartGameofLife PartGame(&PartMesh, meshName1);
-        FieldGameofLife FieldGame(&FieldMesh, meshName1);
+        PartGameofLife PartGame(PartMesh, meshName1);
+        FieldGameofLife FieldGame(FieldMesh, meshName1);
 
         stk::mesh::EntityIdVector elemIds;
         PNG.fill_id_vector_with_active_pixels(elemIds);
@@ -1367,10 +1354,10 @@ TEST(NewNoGhostGame, 1ProcGeneralStuff)
     if (1 == numProcs)
     {
         HexGameofLifeMesh Mesh(comm, 1, 1, 1, stk::mesh::BulkData::NO_AUTO_AURA);
-        NoGhostGameofLife PacMan(&Mesh, "1ProcGeneralStuff");
+        NoGhostGameofLife PacMan(Mesh, "1ProcGeneralStuff");
 
         stk::mesh::EntityVector elements;
-        stk::mesh::get_entities(*PacMan.bulk_data(), stk::topology::ELEM_RANK, elements);
+        stk::mesh::get_entities(PacMan.bulk_data(), stk::topology::ELEM_RANK, elements);
         stk::mesh::Entity elem1 = PacMan.element_with_id(1);
 
         EXPECT_EQ(1u, elements.size());
@@ -1387,10 +1374,10 @@ TEST(NewNoGhostGame, 4ProcGeneralStuff)
     if (4 == numProcs)
     {
         HexGameofLifeMesh Mesh(comm, 1, 1, 4, stk::mesh::BulkData::NO_AUTO_AURA);
-        NoGhostGameofLife PacMan(&Mesh, "4ProcGeneralStuff");
+        NoGhostGameofLife PacMan(Mesh, "4ProcGeneralStuff");
 
         stk::mesh::EntityVector elements;
-        stk::mesh::get_entities(*PacMan.bulk_data(), stk::topology::ELEM_RANK, elements);
+        stk::mesh::get_entities(PacMan.bulk_data(), stk::topology::ELEM_RANK, elements);
 
         if (0 == procRank)
         {
@@ -1425,7 +1412,7 @@ TEST(NewNoGhostGame, 1ProcLessGeneralStuff)
     if (1 == numProcs)
     {
         HexGameofLifeMesh Mesh(comm, 2, 2, 2, stk::mesh::BulkData::NO_AUTO_AURA);
-        NoGhostGameofLife PacMan(&Mesh, "1ProcLessGeneralStuff");
+        NoGhostGameofLife PacMan(Mesh, "1ProcLessGeneralStuff");
 
         for (unsigned id = 1; id <= 8; id++)
         {
@@ -1449,7 +1436,7 @@ TEST(NewNoGhostGame, 4ProcLessGeneralStuff)
     if (4 == numProcs)
     {
         HexGameofLifeMesh Mesh(comm, 1, 1, 8, stk::mesh::BulkData::NO_AUTO_AURA);
-        NoGhostGameofLife PacMan(&Mesh, "4ProcLessGeneralStuff4");
+        NoGhostGameofLife PacMan(Mesh, "4ProcLessGeneralStuff4");
 
         if (0 == procRank)
         {
@@ -1495,7 +1482,7 @@ TEST(NewNoGhostGame, 1ProcNeighbors)
     if (1 == numProcs)
     {
         HexGameofLifeMesh Mesh(MPI_COMM_WORLD, 2, 2, 2);
-        NoGhostGameofLife Game(&Mesh, "1ProcNeighbors");
+        NoGhostGameofLife Game(Mesh, "1ProcNeighbors");
 
         stk::mesh::Entity elem1 = Game.element_with_id(1);
         stk::mesh::Entity elem8 = Game.element_with_id(8);
@@ -1521,7 +1508,7 @@ TEST(NewNoGhostGame, 4ProcNeighbors)
     if (4 == numProcs)
     {
         HexGameofLifeMesh Mesh(MPI_COMM_WORLD, 2, 2, 4, stk::mesh::BulkData::NO_AUTO_AURA);
-        NoGhostGameofLife Game(&Mesh, "4ProcNeighbors");
+        NoGhostGameofLife Game(Mesh, "4ProcNeighbors");
 
         stk::mesh::Entity elem;
         unsigned expectedNeighbors;
@@ -1562,7 +1549,7 @@ TEST(NewNoGhostGame, 1ProcRunGame)
     {
         HexGameofLifeMesh Mesh(comm, 2, 2, 2);
 
-        NoGhostGameofLife Game(&Mesh, "1ProcRunGame");
+        NoGhostGameofLife Game(Mesh, "1ProcRunGame");
 
         stk::mesh::EntityIdVector elemIds = {1, 2, 3, 4, 5};
         Game.activate_these_ids(elemIds);
@@ -1587,7 +1574,7 @@ TEST(NewNoGhostGame, 4ProcRunGame)
     {
         HexGameofLifeMesh Mesh(comm, 3, 3, 4, stk::mesh::BulkData::NO_AUTO_AURA);
 
-        NoGhostGameofLife Game(&Mesh, "4ProcRunGame");
+        NoGhostGameofLife Game(Mesh, "4ProcRunGame");
 
         stk::mesh::EntityIdVector elemIds = {10, 12, 13, 15, 17, 19, 21, 22, 24, 26};
         Game.activate_these_ids(elemIds);
@@ -1652,7 +1639,7 @@ TEST(NewNoGhostGame, 1ProcQuad)
     {
         QuadGameofLifeMesh Mesh(comm, 8, 8);
 
-        NoGhostGameofLife Game(&Mesh, "1ProcQuad");
+        NoGhostGameofLife Game(Mesh, "1ProcQuad");
         stk::mesh::EntityIdVector elemIds = {41, 42, 43, 51, 58};
         Game.activate_these_ids(elemIds);
 
@@ -1703,7 +1690,7 @@ TEST(NewNoGhostGame, 4ProcQuad)
     {
         QuadGameofLifeMesh Mesh(comm, 8, 8, stk::mesh::BulkData::NO_AUTO_AURA);
 
-        NoGhostGameofLife Game(&Mesh, "4ProcQuad");
+        NoGhostGameofLife Game(Mesh, "4ProcQuad");
         stk::mesh::EntityIdVector elemIds = {41, 42, 43, 51, 58};
         Game.activate_these_ids(elemIds);
 
@@ -1829,7 +1816,7 @@ TEST(NewNoGhostGame, 1ProcTri)
     {
        TriGameofLifeMesh Mesh(comm, 4, 4, stk::mesh::BulkData::NO_AUTO_AURA);
 
-       NoGhostGameofLife Game(&Mesh, "1ProcTri");
+       NoGhostGameofLife Game(Mesh, "1ProcTri");
        stk::mesh::EntityIdVector elemIds  = {1, 2, 3, 4, 5, 6, 7,
                                              8, 25, 26, 27, 28, 29, 30, 31, 32};
        Game.activate_these_ids(elemIds);
@@ -1884,7 +1871,7 @@ TEST(NewNoGhostGame, 4ProcTri)
     {
        TriGameofLifeMesh Mesh(comm, 4, 4, stk::mesh::BulkData::NO_AUTO_AURA);
 
-       NoGhostGameofLife Game(&Mesh, "4ProcTri");
+       NoGhostGameofLife Game(Mesh, "4ProcTri");
        stk::mesh::EntityIdVector elemIds  = {1, 2, 3, 4, 5, 6, 7, 8, 25, 26,
                                              27, 28, 29, 30, 31, 32};
        Game.activate_these_ids(elemIds);

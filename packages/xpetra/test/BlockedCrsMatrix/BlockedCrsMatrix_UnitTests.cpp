@@ -525,8 +525,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( BlockedCrsMatrix, EpetraApply, Scalar, LO, GO
 
 #define UNIT_TEST_GROUP_ORDINAL( SC, LO, GO, Node )                     \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraApply, SC, LO, GO, Node )
-    //TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult, SC, LO, GO, Node ) \
-    //TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult2x1, SC, LO, GO, Node )
+
+// TODO reactivate these tests after moving MM multiplication code to xpetra...
+//TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult, SC, LO, GO, Node )
+//TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( BlockedCrsMatrix, EpetraMatrixMatrixMult2x1, SC, LO, GO, Node )
 
 typedef KokkosClassic::DefaultNode::DefaultNodeType DefaultNodeType;
 

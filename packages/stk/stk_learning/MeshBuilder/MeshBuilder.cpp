@@ -7,7 +7,7 @@
 #include "MeshBuilder.hpp"
 
 // change for meshing big things
-unsigned zOffset = 1;
+const unsigned zOffset = 1;
 
 MeshBuilder::MeshBuilder(stk::ParallelMachine comm, std::string name, stk::topology::topology_t
                          elemType, int spacialDim)
@@ -60,6 +60,21 @@ void MeshBuilder::write_mesh()
 
     stkIo.begin_output_step(fh, m_time++);
     stkIo.end_output_step(fh);
+}
+
+//GoL!!!
+void MeshBuilder::create_life_and_neighbor_fields(ScalarIntField*& lifeField,
+                                                  ScalarIntField*& neighborField)
+{
+    ThrowRequire(!m_metaData.is_commit());
+
+    lifeField = &m_metaData.declare_field<ScalarIntField>(
+            stk::topology::ELEM_RANK, "lifeField");
+    neighborField = &m_metaData.declare_field<ScalarIntField>(
+            stk::topology::ELEM_RANK, "neighborField");
+    int val = 0;
+    stk::mesh::put_field(*lifeField, m_metaData.universal_part(), &val);
+    stk::mesh::put_field(*neighborField, m_metaData.universal_part(), &val);
 }
 
 //test
@@ -129,6 +144,14 @@ void QuadMeshBuilder::create_element(unsigned xCoord, unsigned yCoord, int chose
         label_node_coordinates(elemCoord);
 }
 void QuadMeshBuilder::fill_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper)
+{
+    int procCounter = 0;
+    for (unsigned x = xLower; x <= xUpper; x++)
+        for (unsigned y = yLower; y <= yUpper; y++)
+           create_element(x, y, procCounter++%num_procs());
+}
+void QuadMeshBuilder::fill_area_randomly(unsigned xLower, unsigned xUpper,
+                                         unsigned yLower, unsigned yUpper)
 {
     int procCounter = 0;
     for (unsigned x = xLower; x <= xUpper; x++)

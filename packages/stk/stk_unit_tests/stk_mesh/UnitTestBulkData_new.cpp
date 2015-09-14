@@ -452,7 +452,8 @@ TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRankSubset )
 
 TEST ( UnitTestBulkData_new , verifyCommonGhostingName )
 {
-
+#ifndef NDEBUG
+//the throw for inconsistent name only happens in debug mode.
   TestBoxFixture fixture;
   BulkData          &bulk = fixture.bulk_data ();
 
@@ -468,6 +469,7 @@ TEST ( UnitTestBulkData_new , verifyCommonGhostingName )
   {
     ASSERT_THROW ( bulk.create_ghosting ( "Name 2" ) , std::runtime_error );
   }
+#endif
 }
 
 

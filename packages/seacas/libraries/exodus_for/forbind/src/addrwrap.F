@@ -1206,16 +1206,18 @@ C
         POINTER (PINCNT4, INCNT4)
         INTEGER*4 IERR4         ! (W)
 
-        integer  nsess
-        integer  ndess
+        integer*4 nsess4
+        integer*4 ndess4
+        INTEGER   NINCNT
 
         IDEXO4 = IDEXO
-        CALL EXGSP4 (IDEXO4, IDESS, NSESS, NDESS, IERR4)
-        CALL I4ALLOC (nsess, PINCNT4)
+        CALL EXGSP4 (IDEXO4, IDESS, NSESS4, NDESS4, IERR4)
+        NINCNT = NSESS4
+        CALL I4ALLOC (NINCNT, PINCNT4)
 
         CALL EXGSSC4 (IDEXO4, IDESS, INCNT4, IERR4)
 
-        CALL I4I8 (nsess, PINCNT4, INCNT)
+        CALL I4I8 (NINCNT, PINCNT4, INCNT)
         IERR = IERR4
         END
 
@@ -2521,6 +2523,28 @@ C
         IERR = IERR4
         END
 
+        SUBROUTINE EXGNAM (IDEXO, ITYPE, ID, NAME, IERR)
+C
+C       READ OBJECT NAME
+C
+        IMPLICIT NONE
+        INCLUDE 'exodusII.inc'
+        INTEGER IDEXO           ! (R)
+        INTEGER ITYPE           ! (R)
+        INTEGER ID              ! (R)
+        CHARACTER*(*) NAME      ! (W)
+        INTEGER IERR            ! (W)
+
+        INTEGER*4 IDEXO4        ! (R)
+        INTEGER*4 ITYPE4        ! (R)
+        INTEGER*4 IERR4         ! (W)
+
+        IDEXO4 = IDEXO
+        ITYPE4 = ITYPE
+        CALL EXGNAM4 (IDEXO4, ITYPE4, ID, NAME, IERR4)
+        IERR = IERR4
+        END
+
         SUBROUTINE EXPNAMS (IDEXO, ITYPE, NVAR, NAMES, IERR)
 C
 C       WRITE OBJECT NAMES
@@ -2542,6 +2566,28 @@ C
         ITYPE4 = ITYPE
         NVAR4 = NVAR
         CALL EXPNAMS4 (IDEXO4, ITYPE4, NVAR4, NAMES, IERR4)
+        IERR = IERR4
+        END
+
+        SUBROUTINE EXPNAM (IDEXO, ITYPE, ID, NAME, IERR)
+C
+C       WRITE OBJECT NAME
+C
+        IMPLICIT NONE
+        INCLUDE 'exodusII.inc'
+        INTEGER IDEXO           ! (R)
+        INTEGER ITYPE           ! (R)
+        INTEGER ID              ! (R)
+        CHARACTER* (*) NAME     ! (R)
+        INTEGER IERR            ! (W)
+
+        INTEGER*4 IDEXO4        ! (R)
+        INTEGER*4 ITYPE4        ! (R)
+        INTEGER*4 IERR4         ! (W)
+
+        IDEXO4 = IDEXO
+        ITYPE4 = ITYPE
+        CALL EXPNAM4 (IDEXO4, ITYPE4, ID, NAME, IERR4)
         IERR = IERR4
         END
 

@@ -7,21 +7,21 @@
 #include "NoGhostGameofLife.hpp"
 
 //public
-NoGhostGameofLife::NoGhostGameofLife(GameofLifeMesh* Mesh, std::string name)
-: m_bulkData(Mesh->bulk_data()),
-  m_lifeField(Mesh->life_field()),
-  m_neighborField(Mesh->neighbor_field()),
-  m_name(name), m_stkIo(Mesh->comm())
+NoGhostGameofLife::NoGhostGameofLife(GameofLifeMesh& Mesh, std::string name)
+: m_bulkData(Mesh.bulk_data()),
+  m_lifeField(Mesh.life_field()),
+  m_neighborField(Mesh.neighbor_field()),
+  m_name(name), m_stkIo(Mesh.comm())
 {
     finish_construction();
 }
-NoGhostGameofLife::NoGhostGameofLife(stk::mesh::BulkData* bulkData,
-                                     ScalarIntField* lifeField,
-                                     ScalarIntField* neighborField,
+NoGhostGameofLife::NoGhostGameofLife(stk::mesh::BulkData& bulkData,
+                                     ScalarIntField& lifeField,
+                                     ScalarIntField& neighborField,
                                      std::string name)
-: m_bulkData(bulkData), m_numProcs(m_bulkData->parallel_size()),
+: m_bulkData(bulkData), m_numProcs(m_bulkData.parallel_size()),
   m_lifeField(lifeField), m_neighborField(neighborField), m_name(name),
-  m_stkIo(m_bulkData->parallel())
+  m_stkIo(m_bulkData.parallel())
 {
     finish_construction();
 }
@@ -42,11 +42,11 @@ void NoGhostGameofLife::run_game_of_life(int numSteps)
 //test functions
 stk::mesh::Entity NoGhostGameofLife::element_with_id(stk::mesh::EntityId elemId)
 {
-   return m_bulkData->get_entity(stk::topology::ELEM_RANK, elemId);
+   return m_bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
 }
 bool NoGhostGameofLife::is_valid_entity(stk::mesh::Entity entity)
 {
-    return m_bulkData->is_valid(entity);
+    return m_bulkData.is_valid(entity);
 }
 unsigned NoGhostGameofLife::num_neighbors(stk::mesh::Entity elem)
 {
@@ -73,7 +73,7 @@ unsigned NoGhostGameofLife::num_active_neighbors(stk::mesh::Entity elem)
     }
 
     //send the remote entity keys to their processors
-    stk::CommSparse send(m_bulkData->parallel());
+    stk::CommSparse send(m_bulkData.parallel());
     for (int phase = 0; phase < 2; phase++)
     {
        for (stk::mesh::EntityKey remoteElemKey : m_localElementToRemoteElementKeys[elem])
@@ -89,7 +89,7 @@ unsigned NoGhostGameofLife::num_active_neighbors(stk::mesh::Entity elem)
 
     //find if those remote (now local) elements are active and send that back
     unsigned numActiveNeighborsOnProc = 0;
-    stk::CommSparse recieve(m_bulkData->parallel());
+    stk::CommSparse recieve(m_bulkData.parallel());
 
     std::unordered_map<int, unsigned> procToValue;
 
@@ -100,7 +100,7 @@ unsigned NoGhostGameofLife::num_active_neighbors(stk::mesh::Entity elem)
         {
             stk::mesh::EntityKey localElemKey;
             sendBuf.unpack<stk::mesh::EntityKey>(localElemKey);
-            if (is_element_active(m_bulkData->get_entity(localElemKey)))
+            if (is_element_active(m_bulkData.get_entity(localElemKey)))
                 numActiveNeighborsOnProc++;
         }
         procToValue[procNum] = numActiveNeighborsOnProc;
@@ -133,19 +133,19 @@ unsigned NoGhostGameofLife::num_active_neighbors(stk::mesh::Entity elem)
 //private
 bool NoGhostGameofLife::is_element_active(stk::mesh::Entity elem)
 {
-    return *stk::mesh::field_data(*m_lifeField, elem); // field
+    return *stk::mesh::field_data(m_lifeField, elem); // field
 }
 void NoGhostGameofLife::activate_element(stk::mesh::Entity elem)
 {
-    *stk::mesh::field_data(*m_lifeField, elem) = 1;
+    *stk::mesh::field_data(m_lifeField, elem) = 1;
 }
 void NoGhostGameofLife::deactivate_element(stk::mesh::Entity elem)
 {
-    *stk::mesh::field_data(*m_lifeField, elem) = 0;
+    *stk::mesh::field_data(m_lifeField, elem) = 0;
 }
 void NoGhostGameofLife::finish_construction()
 {
-    m_numProcs = m_bulkData->parallel_size();
+    m_numProcs = m_bulkData.parallel_size();
     m_time = 0;
     get_elements();
     create_element_connectivity_maps();
@@ -153,7 +153,7 @@ void NoGhostGameofLife::finish_construction()
 }
 void NoGhostGameofLife::get_elements()
 {
-    stk::mesh::get_entities(*m_bulkData, stk::topology::ELEM_RANK, m_elements);
+    stk::mesh::get_entities(m_bulkData, stk::topology::ELEM_RANK, m_elements);
 }
 void NoGhostGameofLife::create_element_connectivity_maps()
 {
@@ -163,8 +163,8 @@ void NoGhostGameofLife::create_element_connectivity_maps()
 }
 void NoGhostGameofLife::activate_element_id(stk::mesh::EntityId elemId)
 {
-   stk::mesh::Entity elem = m_bulkData->get_entity(stk::topology::ELEM_RANK, elemId);
-   if (m_bulkData->is_valid(elem))
+   stk::mesh::Entity elem = m_bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
+   if (m_bulkData.is_valid(elem))
    {
        activate_element(elem);
        m_localActiveElements.push_back(elem);
@@ -177,16 +177,16 @@ void NoGhostGameofLife::create_local_element_to_local_element_map()
 }
 void NoGhostGameofLife::create_map_for_this_element(stk::mesh::Entity elem)
 {
-    const stk::mesh::Entity* localElemNodes = m_bulkData->begin_nodes(elem);
-    for (unsigned nodeIndex = 0, numNodes = m_bulkData->num_nodes(elem);
+    const stk::mesh::Entity* localElemNodes = m_bulkData.begin_nodes(elem);
+    for (unsigned nodeIndex = 0, numNodes = m_bulkData.num_nodes(elem);
             nodeIndex < numNodes; nodeIndex++)
         add_this_nodes_elements_to_this_elements_map(elem, localElemNodes[nodeIndex]);
 }
 void NoGhostGameofLife::add_this_nodes_elements_to_this_elements_map(stk::mesh::Entity elem,
                                                                      stk::mesh::Entity node)
 {
-    const stk::mesh::Entity* localElemNodeElems = m_bulkData->begin_elements(node);
-    for (unsigned elemIndex = 0, numElems = m_bulkData->num_elements(node);
+    const stk::mesh::Entity* localElemNodeElems = m_bulkData.begin_elements(node);
+    for (unsigned elemIndex = 0, numElems = m_bulkData.num_elements(node);
             elemIndex < numElems; elemIndex++)
         if (localElemNodeElems[elemIndex] != elem)
             m_localElementToLocalNeighborElements[elem].
@@ -194,7 +194,7 @@ void NoGhostGameofLife::add_this_nodes_elements_to_this_elements_map(stk::mesh::
 }
 void NoGhostGameofLife::create_remote_element_key_maps()
 {
-    stk::CommSparse buffer(m_bulkData->parallel());
+    stk::CommSparse buffer(m_bulkData.parallel());
     fill_buffer_with_local_element_keys_and_remote_node_keys(buffer);
     unpack_remote_elem_key_info_from_buffer(buffer);
     create_map_of_remote_elem_keys_to_local_elements();
@@ -225,13 +225,13 @@ void NoGhostGameofLife::fill_map_with_this_elements_nodes(stk::mesh::Entity elem
                                                           std::unordered_set<stk::mesh::EntityKey,
                                                           std::hash<stk::mesh::EntityKey>>>& map)
 {
-    unsigned numNodes = m_bulkData->num_nodes(elem);
-    const stk::mesh::Entity* nodeBegin = m_bulkData->begin_nodes(elem);
+    unsigned numNodes = m_bulkData.num_nodes(elem);
+    const stk::mesh::Entity* nodeBegin = m_bulkData.begin_nodes(elem);
     for (unsigned nodeIndex = 0; nodeIndex < numNodes; nodeIndex++)
     {
         std::vector<int> sharingProcs;
-        stk::mesh::EntityKey nodeKey = m_bulkData->entity_key(nodeBegin[nodeIndex]);
-        m_bulkData->comm_shared_procs(nodeKey, sharingProcs);
+        stk::mesh::EntityKey nodeKey = m_bulkData.entity_key(nodeBegin[nodeIndex]);
+        m_bulkData.comm_shared_procs(nodeKey, sharingProcs);
         for (int procNum : sharingProcs)
             map[procNum].insert(nodeKey);
     }
@@ -245,7 +245,7 @@ void NoGhostGameofLife::fill_buffer_with_map_info(stk::mesh::Entity elem, stk::C
             std::hash<stk::mesh::EntityKey>>>& pair : map)
     {
         int remoteProc = pair.first;
-        buffer.send_buffer(remoteProc).pack<stk::mesh::EntityKey>(m_bulkData->entity_key(elem));
+        buffer.send_buffer(remoteProc).pack<stk::mesh::EntityKey>(m_bulkData.entity_key(elem));
         buffer.send_buffer(remoteProc).pack<size_t>(pair.second.size());
         for (stk::mesh::EntityKey nodeKey : pair.second)
             buffer.send_buffer(remoteProc).pack<stk::mesh::EntityKey>(nodeKey);
@@ -282,15 +282,15 @@ void NoGhostGameofLife::map_this_remote_element_key_with_this_nodes_elements(stk
                                                                              stk::mesh::EntityKey
                                                                              nodeKey)
 {
-    stk::mesh::Entity node = m_bulkData->get_entity(nodeKey);
-    unsigned numElems = m_bulkData->num_elements(node);
-    const stk::mesh::Entity* nodeElem = m_bulkData->begin_elements(node);
+    stk::mesh::Entity node = m_bulkData.get_entity(nodeKey);
+    unsigned numElems = m_bulkData.num_elements(node);
+    const stk::mesh::Entity* nodeElem = m_bulkData.begin_elements(node);
     for (unsigned elemIndex = 0; elemIndex < numElems; elemIndex++)
         m_remoteElementKeyToLocalNeighborElements[remoteKey].insert(nodeElem[elemIndex]);
 }
 void NoGhostGameofLife::create_local_element_to_remote_element_key_map()
 {
-    stk::CommSparse buffer(m_bulkData->parallel());
+    stk::CommSparse buffer(m_bulkData.parallel());
     fill_buffer_with_local_neighbors_of_remote_keys(buffer);
     unpack_local_and_remote_key_info_from_each_processor(buffer);
 }
@@ -316,7 +316,7 @@ void NoGhostGameofLife::fill_buffer_with_local_neighbors_of_remote_element_key(s
     buffer.send_buffer(procNum).pack<stk::mesh::EntityKey>(remoteKey);
     buffer.send_buffer(procNum).pack<size_t>(numNeighbors);
     for (stk::mesh::Entity localElem : m_remoteElementKeyToLocalNeighborElements[remoteKey])
-        buffer.send_buffer(procNum).pack<stk::mesh::EntityKey>(m_bulkData->entity_key(localElem));
+        buffer.send_buffer(procNum).pack<stk::mesh::EntityKey>(m_bulkData.entity_key(localElem));
 }
 void NoGhostGameofLife::unpack_local_and_remote_key_info_from_each_processor(stk::CommSparse&
                                                                              buffer)
@@ -331,7 +331,7 @@ void NoGhostGameofLife::unpack_local_and_remote_key_info_from_each_processor(stk
 void NoGhostGameofLife::unpack_local_and_remote_keys_from_buffer(stk::CommBuffer& buf)
 {
     stk::mesh::EntityKey localElemKey = stk::unpack<stk::mesh::EntityKey>(buf);
-    stk::mesh::Entity localElem = m_bulkData->get_entity(localElemKey);
+    stk::mesh::Entity localElem = m_bulkData.get_entity(localElemKey);
     size_t numRemoteNeighbors = stk::unpack<size_t>(buf);
     for (unsigned neighborNum = 0; neighborNum < numRemoteNeighbors; neighborNum++)
         m_localElementToRemoteElementKeys[localElem].insert(stk::unpack<stk::mesh::EntityKey>(buf));
@@ -339,9 +339,9 @@ void NoGhostGameofLife::unpack_local_and_remote_keys_from_buffer(stk::CommBuffer
 void NoGhostGameofLife::write_output_mesh()
 {
     m_name += ".e";
-    m_stkIo.set_bulk_data(*m_bulkData);
+    m_stkIo.set_bulk_data(m_bulkData);
     m_fileHandler = m_stkIo.create_output_mesh(m_name, stk::io::WRITE_RESULTS);
-    m_stkIo.add_field(m_fileHandler, *m_lifeField);
+    m_stkIo.add_field(m_fileHandler, m_lifeField);
     m_stkIo.write_output_mesh(m_fileHandler);
 }
 void NoGhostGameofLife::write_output_step()
@@ -362,7 +362,7 @@ void NoGhostGameofLife::run_game_of_life_step()
 void NoGhostGameofLife::determine_elements_to_check()
 {
     refresh_element_maps();
-    stk::CommSparse buffer(m_bulkData->parallel());
+    stk::CommSparse buffer(m_bulkData.parallel());
     communicate_remote_element_keys_to_check(buffer);
     recieve_local_element_keys_to_check(buffer);
 }
@@ -402,7 +402,7 @@ void NoGhostGameofLife::recieve_local_element_keys_to_check(stk::CommSparse& buf
     {
         stk::CommBuffer& buf = buffer.recv_buffer(procNum);
         while (buf.remaining())
-            m_localElementsToVisit.insert(m_bulkData->
+            m_localElementsToVisit.insert(m_bulkData.
             get_entity(stk::unpack<stk::mesh::EntityKey>(buf)));
     }
 }
@@ -410,7 +410,7 @@ void NoGhostGameofLife::update_neighbor_values_with_local_elements()
 {
     for (stk::mesh::Entity localElem : m_localElementsToVisit)
     {
-        int* neighborVal = stk::mesh::field_data(*m_neighborField, localElem);
+        int* neighborVal = stk::mesh::field_data(m_neighborField, localElem);
         *neighborVal = 0;
         for (stk::mesh::Entity localElemElem : m_localElementToLocalNeighborElements[localElem])
             if (is_element_active(localElemElem))
@@ -419,7 +419,7 @@ void NoGhostGameofLife::update_neighbor_values_with_local_elements()
 }
 void NoGhostGameofLife::update_neighbor_values_with_remote_elements()
 {
-    stk::CommSparse buffer(m_bulkData->parallel());
+    stk::CommSparse buffer(m_bulkData.parallel());
     send_num_active_neighbors_of_remote_elem_keys(buffer);
     recieve_num_active_neighbors_of_local_elements(buffer);;
 }
@@ -474,16 +474,16 @@ void NoGhostGameofLife::recieve_num_active_neighbors_of_local_elements(stk::Comm
 void NoGhostGameofLife::update_local_element_with_remote_neighbor_data(stk::CommBuffer& buf)
 {
     stk::mesh::EntityKey localElemKey = stk::unpack<stk::mesh::EntityKey>(buf);
-    stk::mesh::Entity localElem = m_bulkData->get_entity(localElemKey);
+    stk::mesh::Entity localElem = m_bulkData.get_entity(localElemKey);
     int neighborVal = stk::unpack<int>(buf);
-    *stk::mesh::field_data(*m_neighborField, localElem) += neighborVal;
+    *stk::mesh::field_data(m_neighborField, localElem) += neighborVal;
 }
 void NoGhostGameofLife::update_element_membership()
 {
     m_localActiveElements.clear(); // field
     for (stk::mesh::Entity localElem : m_localElementsToVisit)
     {
-        switch (m_bulkData->bucket(localElem).topology())
+        switch (m_bulkData.bucket(localElem).topology())
         {
             case stk::topology::TRI_3_2D:
                 update_tri_membership(localElem);
@@ -503,7 +503,7 @@ void NoGhostGameofLife::update_element_membership()
 }
 void NoGhostGameofLife::update_tri_membership(stk::mesh::Entity elem)
 {
-    switch (*stk::mesh::field_data(*m_neighborField, elem))
+    switch (*stk::mesh::field_data(m_neighborField, elem))
     {
         case 2:
         case 7:
@@ -518,7 +518,34 @@ void NoGhostGameofLife::update_tri_membership(stk::mesh::Entity elem)
 }
 void NoGhostGameofLife::update_quad_membership(stk::mesh::Entity elem)
 {
-    switch (*stk::mesh::field_data(*m_neighborField, elem))
+//    if (*stk::mesh::field_data(m_lifeField, elem))
+//    {
+//    switch (*stk::mesh::field_data(m_neighborField, elem))
+//    {
+//        case 3:
+//            activate_element(elem);
+//            break;
+//        default:
+//            deactivate_element(elem);
+//    }
+//    }
+//    else
+//    {
+//    switch (*stk::mesh::field_data(m_neighborField, elem))
+//    {
+//        case 1:
+//        case 2:
+//        case 3:
+//        case 4:
+//        case 5:
+//            activate_element(elem);
+//            break;
+//        default:
+//            deactivate_element(elem);
+//    }
+//    }
+
+    switch (*stk::mesh::field_data(m_neighborField, elem))
     {
         case 2:
             break;
@@ -532,7 +559,7 @@ void NoGhostGameofLife::update_quad_membership(stk::mesh::Entity elem)
 }
 void NoGhostGameofLife::update_hex_membership(stk::mesh::Entity elem)
 {
-    switch (*stk::mesh::field_data(*m_neighborField, elem))
+    switch (*stk::mesh::field_data(m_neighborField, elem))
     {
         case 4:
             break;

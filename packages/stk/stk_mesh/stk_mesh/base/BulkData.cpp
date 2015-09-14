@@ -2778,6 +2778,7 @@ Ghosting & BulkData::internal_create_ghosting( const std::string & name )
 
     bc.communicate();
 
+#ifndef NDEBUG
     const char * const bc_name =
       reinterpret_cast<const char *>( bc.recv_buffer().buffer() );
 
@@ -2786,6 +2787,7 @@ Ghosting & BulkData::internal_create_ghosting( const std::string & name )
     all_reduce( parallel() , ReduceMax<1>( & error ) );
 
     ThrowErrorMsgIf( error, "Parallel name inconsistency");
+#endif
   }
 
   Ghosting * const g =
@@ -3908,7 +3910,7 @@ void BulkData::move_entities_to_proper_part_ownership( const std::vector<Entity>
         error_msg << "}\n";
     }
     all_reduce(parallel(), ReduceMax<1>(&error_flag));
-    ThrowErrorMsgIf( error_flag, error_msg.str());
+    ThrowErrorMsgIf(error_flag, error_msg.str());
 }
 
 

@@ -123,7 +123,7 @@ TEST(UnitTestDemangle, UnitTest)
   }
 
   {
-#if (__GNUC_MINOR__ > 5) || defined(__clang__)
+#if (__GNUC__ >= 5) || (__GNUC__ == 4 && __GNUC_MINOR__ > 5) || defined(__clang__)
     std::string linux_name("bool ()");
 #else
     std::string linux_name("bool ()()");

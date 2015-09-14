@@ -151,8 +151,8 @@ namespace Xpetra {
 
       // build range map extractor from Thyra::BlockedLinearOpBase object
       std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > subRangeMaps(numRangeBlocks);
-      for (size_t r=0; r<numRangeBlocks; ++r) {
-        for (size_t c=0; c<numDomainBlocks; ++c) {
+      for (size_t r=0; r<Teuchos::as<size_t>(numRangeBlocks); ++r) {
+        for (size_t c=0; c<Teuchos::as<size_t>(numDomainBlocks); ++c) {
           if (thyraOp->blockExists(r,c)) {
             // we only need at least one block in each block row to extract the range map
             Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > const_op = thyraOp->getBlock(r,c); // nonConst access is not allowed.
@@ -168,8 +168,8 @@ namespace Xpetra {
 
       // build domain map extractor from Thyra::BlockedLinearOpBase object
       std::vector<Teuchos::RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > > subDomainMaps(numDomainBlocks);
-      for (size_t c=0; c<numDomainBlocks; ++c) {
-        for (size_t r=0; r<numRangeBlocks; ++r) {
+      for (size_t c=0; c<Teuchos::as<size_t>(numDomainBlocks); ++c) {
+        for (size_t r=0; r<Teuchos::as<size_t>(numRangeBlocks); ++r) {
           if (thyraOp->blockExists(r,c)) {
             // we only need at least one block in each block row to extract the range map
             Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > const_op = thyraOp->getBlock(r,c); // nonConst access is not allowed.
