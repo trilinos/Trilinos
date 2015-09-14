@@ -1092,7 +1092,7 @@ TEST(HexGameofLifeClass, 4ProcOscillator)
  *
  *
  */
-TEST(PNG, Bordered)
+TEST(PNG, 1ProcBordered)
 {
     std::string fileName = "Boss.png";
     BorderedPNGProcessor png(fileName);
@@ -1102,7 +1102,7 @@ TEST(PNG, Bordered)
     EXPECT_EQ(16u, png.get_image_height());
 
 }
-TEST(PNG, PaddingImages)
+TEST(PNG, 1ProcPaddingImages)
 {
     std::string fileName = "Tiny.png";
     PNGProcessor png(fileName);

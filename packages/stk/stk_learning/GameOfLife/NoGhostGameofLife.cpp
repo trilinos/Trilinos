@@ -67,10 +67,8 @@ unsigned NoGhostGameofLife::num_active_neighbors(stk::mesh::Entity elem)
     unsigned numActiveNeighbors = 0;
     //local elements
     for (stk::mesh::Entity localElem : m_localElementToLocalNeighborElements[elem])
-    {
         if (is_element_active(localElem))
             numActiveNeighbors++;
-    }
 
     //send the remote entity keys to their processors
     stk::CommSparse send(m_bulkData.parallel());
@@ -518,6 +516,7 @@ void NoGhostGameofLife::update_tri_membership(stk::mesh::Entity elem)
 }
 void NoGhostGameofLife::update_quad_membership(stk::mesh::Entity elem)
 {
+//    maze rules
 //    if (*stk::mesh::field_data(m_lifeField, elem))
 //    {
 //    switch (*stk::mesh::field_data(m_neighborField, elem))
@@ -544,7 +543,6 @@ void NoGhostGameofLife::update_quad_membership(stk::mesh::Entity elem)
 //            deactivate_element(elem);
 //    }
 //    }
-
     switch (*stk::mesh::field_data(m_neighborField, elem))
     {
         case 2:
