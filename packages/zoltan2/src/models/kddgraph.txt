@@ -598,7 +598,8 @@ GraphModel<Adapter>::GraphModel(
       ia->get2ndAdjWeightsView(primaryEType, secondAdjEType,
                                ewgts, stride, w);
 
-      ArrayRCP<const scalar_t> wgtArray(ewgts, 0, adapterNumLocalEdges_, false);
+      ArrayRCP<const scalar_t> wgtArray(ewgts, 0, 
+                                        adapterNumLocalEdges_*stride, false);
       eWeights_[w] = input_t(wgtArray, stride);
     }
   }
