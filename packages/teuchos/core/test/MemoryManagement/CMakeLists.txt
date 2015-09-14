@@ -110,6 +110,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  RCPNodeTracer_UnitTests
+  SOURCES
+    RCPNodeTracer_UnitTests.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  NUM_MPI_PROCS 1
+  ARGS --teuchos-suppress-startup-banner
+  STANDARD_PASS_OUTPUT
+  )
+
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   MemoryManagement_UnitTests
   SOURCES
     RCP_UnitTests.cpp
@@ -248,6 +259,58 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 #  PASS_REGULAR_EXPRESSION
 #    "error: attempt to dereference a past-the-end iterator"
 #  )
+
+
+#
+# Test Teuchos::RCPNodeTracer::setPrintActiveRcpNodesOnExit()
+#
+# Writing a test case for this feature is hard because the only way to test it
+# is to run a full program.  Therefore, this is not really a unit test but it
+# is still an effective verification test.
+#
+
+FUNCTION(TEUCHOS_TEST_setPrintActiveRcpNodesOnExit)
+
+  # Need a function to create a private scope so we can turne these variables
+  # off.
+  SET(${PACKAGE_NAME}_ENABLE_CIRCULAR_REF_DETECTION_FAILURE OFF)
+  SET(${PROJECT_NAME}_ENABLE_CIRCULAR_REF_DETECTION_FAILURE OFF)
+
+  TRIBITS_ADD_EXECUTABLE(
+    testDisablePrintActiveRcpNodesOnExit
+    SOURCES testDisablePrintActiveRcpNodesOnExit.cpp TestClasses.cpp
+    )
+
+  TRIBITS_ADD_ADVANCED_TEST(
+    testDisablePrintActiveRcpNodesOnExit_print
+    TEST_0
+      EXEC testDisablePrintActiveRcpNodesOnExit 
+      NUM_MPI_PROCS 1
+      PASS_REGULAR_EXPRESSION_ALL
+        "End Result: TEST PASSED"
+        "The following Teuchos::RCPNode objects were created"
+    )
+  # ABOVE: If the you accidentally disable the printing of the active RCP
+  # nodes, the second regex will not match and the test will fail.  Try it for
+  # yourself!
+
+  TRIBITS_ADD_TEST(
+    testDisablePrintActiveRcpNodesOnExit
+    POSTFIX_AND_ARGS_0  noprint  --no-print-active-rcp-nodes-on-exit
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION
+      "End Result: TEST PASSED"
+    FAIL_REGULAR_EXPRESSION
+      "The following Teuchos::RCPNode objects were created"
+    )
+  # ABOVE: If you the above flag --no-print-active-rcp-nodes-on-exit does not
+  # set the bool to turn off the printing, then FAIL_REGULAR_EXRESSION clause
+  # will kick in and cause the test to fail.  Try it for yourself.
+
+ENDFUNCTION()
+
+
+TEUCHOS_TEST_setPrintActiveRcpNodesOnExit()
 
 
 #
