@@ -121,7 +121,7 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
-      timer_(), metricsRequested_(false), metrics_()
+      metricsRequested_(false), metrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -136,7 +136,7 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
-      levelNumberParts_(), hierarchical_(false), timer_(),
+      levelNumberParts_(), hierarchical_(false), 
       metricsRequested_(false), metrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
@@ -152,7 +152,7 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
-      levelNumberParts_(), hierarchical_(false), timer_(),
+      levelNumberParts_(), hierarchical_(false), 
       metricsRequested_(false), metrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
@@ -319,8 +319,6 @@ public:
   void resetParameters(ParameterList *params)
   {
     Problem<Adapter>::resetParameters(params);  // creates new environment
-    if (timer_.getRawPtr() != NULL)
-      this->env_->setTimer(timer_);
   }
 
   /*! \brief Get the current Environment.
@@ -373,10 +371,6 @@ private:
   
   ArrayRCP<int> levelNumberParts_;
   bool hierarchical_;
-
-  // Create a Timer if the user asked for timing stats.
-
-  RCP<TimerManager> timer_;
 
   // Did the user request metrics?
 
