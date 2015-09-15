@@ -185,7 +185,7 @@ ArrayRCP<T>::ArrayRCP(
 template<class T> inline
 ArrayRCP<const T>::
 ArrayRCP (const T* p, size_type lowerOffset_in, size_type size_in,
-	  bool has_ownership_in, const ERCPNodeLookup rcpNodeLookup)
+          bool has_ownership_in, const ERCPNodeLookup rcpNodeLookup)
   : ptr_(p),
 #ifndef TEUCHOS_DEBUG
     node_(ArrayRCP_createNewRCPNodeRawPtr(p, has_ownership_in)),
@@ -1755,13 +1755,24 @@ Embedded& Teuchos::getNonconstEmbeddedObj( const ArrayRCP<T>& p )
 template<class T>
 std::ostream& Teuchos::operator<<( std::ostream& out, const ArrayRCP<T>& p )
 {
+  // mfh 15 Sep 2015: Make sure that NULL pointers print consistently.
+  // Clang 3.5 likes to print an empty string in that case, while GCC
+  // prints 0.  Thus, we test if the pointer is NULL and print 0 in
+  // that case.  This is important for MueLu tests, which compare
+  // string print-outs.
   out
     << TypeNameTraits<ArrayRCP<T> >::name() << "{"
-    << "ptr="<<(const void*)(p.access_private_ptr())
+    << "ptr=";
+  if (p.access_private_ptr () == NULL) {
+    out << "0";
+  } else {
+    out << (const void*) (p.access_private_ptr ());
+  }
+  out
     <<",lowerOffset="<<p.lowerOffset()
     <<",upperOffset="<<p.upperOffset()
     <<",size="<<p.size()
-    <<",node="<<p.access_private_node()
+    <<",node=" << p.access_private_node ()
     <<",strong_count="<<p.strong_count()
     <<",weak_count="<<p.weak_count()
     <<"}";
