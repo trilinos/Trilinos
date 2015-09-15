@@ -44,27 +44,17 @@ public:
 
 
     // accessor funcitions for test functions and GameofLife
-    inline stk::mesh::BulkData* bulk_data();
+    inline stk::mesh::BulkData& bulk_data();
 
-    inline stk::mesh::MetaData* meta_data();
+    inline stk::mesh::MetaData& meta_data();
 
-    inline stk::mesh::Part* active_part();
+    inline stk::mesh::Part& active_part();
 
-    inline ScalarIntField* neighbor_field();
+    inline ScalarIntField& neighbor_field();
 
-    inline ScalarIntField* life_field() const;
-
-    inline stk::mesh::EntityVector* elements();
-
-    inline stk::mesh::EntityIdVector* element_ids();
+    inline ScalarIntField& life_field() const;
 
     inline stk::topology element_type() const;
-
-    inline unsigned num_elems_on_proc() const;
-
-    inline unsigned proc_rank() const;
-
-    inline unsigned num_procs() const;
 
     inline stk::ParallelMachine comm() const;
 
@@ -122,25 +112,25 @@ private:
     virtual void number_coordinate_field()=0;
 
 };
-inline stk::mesh::MetaData* GameofLifeMesh::meta_data()
+inline stk::mesh::MetaData& GameofLifeMesh::meta_data()
 {
-    return &m_metaData;
+    return m_metaData;
 }
-inline stk::mesh::BulkData* GameofLifeMesh::bulk_data()
+inline stk::mesh::BulkData& GameofLifeMesh::bulk_data()
 {
-    return &m_bulkData;
+    return m_bulkData;
 }
-inline ScalarIntField* GameofLifeMesh::neighbor_field()
+inline ScalarIntField& GameofLifeMesh::neighbor_field()
 {
-    return m_activeNeighborField;
+    return *m_activeNeighborField;
 }
-inline stk::mesh::Part* GameofLifeMesh::active_part()
+inline stk::mesh::Part& GameofLifeMesh::active_part()
 {
-    return m_activePart;
+    return *m_activePart;
 }
-inline ScalarIntField* GameofLifeMesh::life_field() const
+inline ScalarIntField& GameofLifeMesh::life_field() const
 {
-    return m_lifeField;
+    return *m_lifeField;
 }
 inline stk::topology GameofLifeMesh::element_type() const
 {

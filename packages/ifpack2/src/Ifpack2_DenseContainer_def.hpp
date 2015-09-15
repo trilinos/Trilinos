@@ -56,9 +56,8 @@
 
 namespace Ifpack2 {
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-DenseContainer<MatrixType, LocalScalarType>::
+DenseContainer<MatrixType, LocalScalarType, true>::
 DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                 const Teuchos::ArrayView<const local_ordinal_type>& localRows) :
   Container<MatrixType> (matrix, localRows),
@@ -111,43 +110,46 @@ DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   localMap_ = rcp (new map_type (numRows_, indexBase, localComm));
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-DenseContainer<MatrixType, LocalScalarType>::~DenseContainer()
+DenseContainer<MatrixType, LocalScalarType, false>::
+DenseContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+                const Teuchos::ArrayView<const local_ordinal_type>& localRows) :
+  Container<MatrixType> (matrix, localRows)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Ifpack2::DenseContainer: Not implemented for "
+     "LocalScalarType = " << Teuchos::TypeNameTraits<LocalScalarType>::name ()
+     << ".");
+}
+
+template<class MatrixType, class LocalScalarType>
+DenseContainer<MatrixType, LocalScalarType, true>::~DenseContainer()
 {}
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-size_t DenseContainer<MatrixType, LocalScalarType>::getNumRows () const
+DenseContainer<MatrixType, LocalScalarType, false>::~DenseContainer()
+{}
+
+
+template<class MatrixType, class LocalScalarType>
+void DenseContainer<MatrixType, LocalScalarType, true>::
+setParameters (const Teuchos::ParameterList& /* List */)
 {
-  return numRows_;
+  // the solver doesn't currently take any parameters
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-bool DenseContainer<MatrixType, LocalScalarType>::isInitialized () const
+void DenseContainer<MatrixType, LocalScalarType, false>::
+setParameters (const Teuchos::ParameterList& /* List */)
 {
-  return IsInitialized_;
+  // the solver doesn't currently take any parameters
 }
 
-//==============================================================================
-template<class MatrixType, class LocalScalarType>
-bool DenseContainer<MatrixType, LocalScalarType>::isComputed() const
-{
-  return IsComputed_;
-}
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType>::
-setParameters (const Teuchos::ParameterList& List)
-{
-  (void) List; // the solver doesn't currently take any parameters
-}
-
-//==============================================================================
-template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType>::initialize ()
+void
+DenseContainer<MatrixType, LocalScalarType, true>::
+initialize ()
 {
   using Teuchos::null;
   using Teuchos::rcp;
@@ -164,9 +166,16 @@ void DenseContainer<MatrixType, LocalScalarType>::initialize ()
   IsInitialized_ = true;
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType>::compute ()
+void
+DenseContainer<MatrixType, LocalScalarType, false>::
+initialize ()
+{}
+
+template<class MatrixType, class LocalScalarType>
+void
+DenseContainer<MatrixType, LocalScalarType, true>::
+compute ()
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     static_cast<size_t> (ipiv_.size ()) != numRows_, std::logic_error,
@@ -186,7 +195,15 @@ void DenseContainer<MatrixType, LocalScalarType>::compute ()
 }
 
 template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType>::factor ()
+void
+DenseContainer<MatrixType, LocalScalarType, false>::
+compute ()
+{}
+
+template<class MatrixType, class LocalScalarType>
+void
+DenseContainer<MatrixType, LocalScalarType, true>::
+factor ()
 {
   Teuchos::LAPACK<int, local_scalar_type> lapack;
   int INFO = 0;
@@ -210,9 +227,15 @@ void DenseContainer<MatrixType, LocalScalarType>::factor ()
     "matrix has a singular diagonal block.");
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType>::
+void
+DenseContainer<MatrixType, LocalScalarType, false>::
+factor ()
+{}
+
+template<class MatrixType, class LocalScalarType>
+void
+DenseContainer<MatrixType, LocalScalarType, true>::
 applyImpl (const local_mv_type& X,
            local_mv_type& Y,
            Teuchos::ETransp mode,
@@ -309,9 +332,19 @@ applyImpl (const local_mv_type& X,
   }
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType, LocalScalarType>::
+void
+DenseContainer<MatrixType, LocalScalarType, false>::
+applyImpl (const local_mv_type& /* X */,
+           local_mv_type& /* Y */,
+           Teuchos::ETransp /* mode */,
+           LocalScalarType /* alpha */,
+           LocalScalarType /* beta */) const
+{}
+
+template<class MatrixType, class LocalScalarType>
+void
+DenseContainer<MatrixType, LocalScalarType, true>::
 apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
        Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
        Teuchos::ETransp mode,
@@ -416,9 +449,18 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   mvgs.scatter (Y, *Y_local, localRows);
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType,LocalScalarType>::
+void
+DenseContainer<MatrixType, LocalScalarType, false>::
+apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& /* X */,
+       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& /* Y */,
+       Teuchos::ETransp /* mode */,
+       scalar_type /* alpha */,
+       scalar_type /* beta */) const
+{}
+
+template<class MatrixType, class LocalScalarType>
+void DenseContainer<MatrixType, LocalScalarType, true>::
 weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
                const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
@@ -571,9 +613,21 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   mvgs.scatter (Y, *Y_local, localRows);
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-std::ostream& DenseContainer<MatrixType,LocalScalarType>::
+void
+DenseContainer<MatrixType, LocalScalarType, false>::
+weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& /* X */,
+               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& /* Y */,
+               const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& /* D */,
+               Teuchos::ETransp /* mode */,
+               scalar_type /* alpha */,
+               scalar_type /* beta */ ) const
+{
+}
+
+template<class MatrixType, class LocalScalarType>
+std::ostream&
+DenseContainer<MatrixType, LocalScalarType, true>::
 print (std::ostream& os) const
 {
   Teuchos::FancyOStream fos (Teuchos::rcpFromRef (os));
@@ -582,9 +636,18 @@ print (std::ostream& os) const
   return os;
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-std::string DenseContainer<MatrixType,LocalScalarType>::description() const
+std::ostream&
+DenseContainer<MatrixType, LocalScalarType, false>::
+print (std::ostream& os) const
+{
+  return os;
+}
+
+template<class MatrixType, class LocalScalarType>
+std::string
+DenseContainer<MatrixType, LocalScalarType, true>::
+description () const
 {
   std::ostringstream oss;
   oss << Teuchos::Describable::description();
@@ -604,9 +667,19 @@ std::string DenseContainer<MatrixType,LocalScalarType>::description() const
   return oss.str();
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType,LocalScalarType>::describe(Teuchos::FancyOStream &os, const Teuchos::EVerbosityLevel verbLevel) const
+std::string
+DenseContainer<MatrixType, LocalScalarType, false>::
+description () const
+{
+  return "";
+}
+
+template<class MatrixType, class LocalScalarType>
+void
+DenseContainer<MatrixType, LocalScalarType, true>::
+describe (Teuchos::FancyOStream& os,
+          const Teuchos::EVerbosityLevel verbLevel) const
 {
   using std::endl;
   if(verbLevel==Teuchos::VERB_NONE) return;
@@ -619,9 +692,16 @@ void DenseContainer<MatrixType,LocalScalarType>::describe(Teuchos::FancyOStream 
   os << endl;
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-void DenseContainer<MatrixType,LocalScalarType>::
+void
+DenseContainer<MatrixType, LocalScalarType, false>::
+describe (Teuchos::FancyOStream& os,
+          const Teuchos::EVerbosityLevel verbLevel) const
+{}
+
+template<class MatrixType, class LocalScalarType>
+void
+DenseContainer<MatrixType, LocalScalarType, true>::
 extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
 {
   using Teuchos::Array;
@@ -768,6 +848,12 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
     }
   }
 }
+
+template<class MatrixType, class LocalScalarType>
+void
+DenseContainer<MatrixType, LocalScalarType, false>::
+extract (const Teuchos::RCP<const row_matrix_type>& /* globalMatrix */)
+{}
 
 } // namespace Ifpack2
 

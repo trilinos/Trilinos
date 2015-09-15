@@ -49,53 +49,13 @@
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Ifpack2_Details_LapackSupportsScalar.hpp"
 #include "Tpetra_RowMatrix.hpp"
 #include "Teuchos_SerialTriDiMatrix.hpp"
 #include <type_traits>
 
 namespace Ifpack2 {
 namespace Details {
-
-#ifndef IFPACK2_LAPACKSUPPORTSSCALAR
-#define IFPACK2_LAPACKSUPPORTSSCALAR
-
-/// \struct LapackSupportsScalar
-/// \brief Trait for whether LAPACK supports the given scalar type.
-/// \tparam ScalarType Scalar type to test.
-///
-/// This is an implementation detail of TriDiSolver.  It might be
-/// useful to promote this to a commonly used utility, but for now,
-/// I'll leave it here.
-
-template<class ScalarType>
-struct LapackSupportsScalar {
-  //! Whether LAPACK supports \c ScalarType.
-  static const bool value = false;
-};
-
-template<>
-struct LapackSupportsScalar<float> {
-  static const bool value = true;
-};
-
-template<>
-struct LapackSupportsScalar<double> {
-  static const bool value = true;
-};
-
-// FIXME (mfh 15 Nov 2013) Should we write IFPACK2_HAVE_COMPLEX ?
-#ifdef HAVE_TEUCHOS_COMPLEX
-template<>
-struct LapackSupportsScalar<std::complex<float> > {
-  static const bool value = true;
-};
-
-template<>
-struct LapackSupportsScalar<std::complex<double> > {
-  static const bool value = true;
-};
-#endif // HAVE_TEUCHOS_COMPLEX
-#endif // IFPACK2_LAPACKSUPPORTSSCALAR
 
 /// \class TriDiSolver
 /// \brief "Preconditioner" that uses LAPACK's tridi LU.

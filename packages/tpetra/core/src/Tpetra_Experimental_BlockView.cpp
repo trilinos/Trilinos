@@ -256,6 +256,17 @@ LASWP (const int N, __float128 A[], const int LDA, const int K1,
 
 void
 Lapack128::
+GETRI (const int /* N */, __float128 /* A */ [], const int /* LDA */,
+       int /* IPIV */ [], __float128 /* WORK */ [], const int /* LWORK */,
+       int* /* INFO */) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Lapack128::GETRI: Not implemented yet.");
+}
+
+
+void
+Lapack128::
 GETRS (const char TRANS, const int N, const int NRHS,
        const __float128 A[], const int LDA, const int IPIV[],
        __float128 B[], const int LDB, int* INFO) const

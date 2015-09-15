@@ -33,7 +33,7 @@
 
 ### Imakefile --- 
 
-ALTINC = -I../include -I../../exodus/cbind/include
+ALTINC = -I../include -I../../../exodus/cbind/include
 
 EXOIITEST = -L../.. -lexoIIv2for -L../../../exodus -lexodus
 LOCALEXO = ../../libexoIIv2for.a ../../../exodus/libexodus.a

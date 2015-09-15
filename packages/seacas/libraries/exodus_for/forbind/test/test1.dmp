@@ -203,13 +203,13 @@ data:
     0, 20, 6, 0, 0, 6, 2, 0 ;
 
  eb_names =
-  "",
-  "",
-  "",
-  "",
-  "",
-  "",
-  "" ;
+  "e_block_i",
+  "e_block_ii",
+  "e_block_iii",
+  "e_block_iv",
+  "e_block_v",
+  "e_block_vi",
+  "e_block_vii" ;
 
  ns_names =
   "",

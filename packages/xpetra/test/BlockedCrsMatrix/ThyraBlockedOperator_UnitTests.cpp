@@ -335,12 +335,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, ThyraBlockedOperator2Xp
 
   TEST_EQUALITY(productRange->numBlocks()  ,2);
   TEST_EQUALITY(productDomain->numBlocks() ,2);
-  TEST_EQUALITY(productRange->dim()  ,xfullmap->getGlobalNumElements());
-  TEST_EQUALITY(productDomain->dim() ,xfullmap->getGlobalNumElements());
-  TEST_EQUALITY(productRange->getBlock(0)->dim()  ,xvelmap->getGlobalNumElements());
-  TEST_EQUALITY(productDomain->getBlock(0)->dim() ,xvelmap->getGlobalNumElements());
-  TEST_EQUALITY(productRange->getBlock(1)->dim()  ,xpremap->getGlobalNumElements());
-  TEST_EQUALITY(productDomain->getBlock(1)->dim() ,xpremap->getGlobalNumElements());
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->dim()) ,xfullmap->getGlobalNumElements());
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->dim()) ,xfullmap->getGlobalNumElements());
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(0)->dim())  ,xvelmap->getGlobalNumElements());
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(0)->dim()) ,xvelmap->getGlobalNumElements());
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(1)->dim())  ,xpremap->getGlobalNumElements());
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(1)->dim()) ,xpremap->getGlobalNumElements());
 
 #endif // end HAVE_XPETRA_EPETRAEXT
 #endif // end HAVE_XPETRA_THYRA
@@ -444,12 +444,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ThyraBlockedOperator, XpetraBlockedCrsMatCons
 
   TEST_EQUALITY(productRange->numBlocks()  ,2);
   TEST_EQUALITY(productDomain->numBlocks() ,2);
-  TEST_EQUALITY(productRange->dim()  ,xfullmap->getGlobalNumElements());
-  TEST_EQUALITY(productDomain->dim() ,xfullmap->getGlobalNumElements());
-  TEST_EQUALITY(productRange->getBlock(0)->dim()  ,xvelmap->getGlobalNumElements());
-  TEST_EQUALITY(productDomain->getBlock(0)->dim() ,xvelmap->getGlobalNumElements());
-  TEST_EQUALITY(productRange->getBlock(1)->dim()  ,xpremap->getGlobalNumElements());
-  TEST_EQUALITY(productDomain->getBlock(1)->dim() ,xpremap->getGlobalNumElements());
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->dim())  ,xfullmap->getGlobalNumElements());
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->dim()) ,xfullmap->getGlobalNumElements());
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(0)->dim())  ,xvelmap->getGlobalNumElements());
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(0)->dim()) ,xvelmap->getGlobalNumElements());
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productRange->getBlock(1)->dim())  ,xpremap->getGlobalNumElements());
+  TEST_EQUALITY(Teuchos::as<Xpetra::global_size_t>(productDomain->getBlock(1)->dim()) ,xpremap->getGlobalNumElements());
 
   //construct a Xpetra::BlockedCrsMatrix object
   Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LO, GO, Node> > bOp2 =

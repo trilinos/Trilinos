@@ -71,9 +71,9 @@ namespace MueLu {
     Scalar norm1 = 0.0;
     Scalar maxVal = 0.0;
     for (size_t j = 0; j < Teuchos::as<size_t>(indices.size()); j++) {
-      norm1 += std::abs(vals[j]);
-      if(std::abs(vals[j]) > maxVal) {
-        maxVal = std::abs(vals[j]);
+      norm1 += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
+      if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]) > maxVal) {
+        maxVal = Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
         gMaxValIdx = A->getColMap()->getGlobalElement(indices[j]);
       }
     }
@@ -101,14 +101,14 @@ namespace MueLu {
     Scalar norm1 = 0.0;
     Scalar maxVal = 0.0;
     for (size_t j = 0; j < Teuchos::as<size_t>(indices.size()); j++) {
-      norm1 += std::abs(vals[j]);
-      if(std::abs(vals[j]) > maxVal) {
-        maxVal = std::abs(vals[j]);
+      norm1 += Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
+      if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]) > maxVal) {
+        maxVal = Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
         gMaxValIdx = A->getColMap()->getGlobalElement(indices[j]);
       }
     }
 
-    if(std::abs(maxVal) > 0.0) { // keep only max Entries \neq 0.0
+    if(Teuchos::ScalarTraits<Scalar>::magnitude(maxVal) > 0.0) { // keep only max Entries \neq 0.0
       permutedDiagCandidates.push_back(std::make_pair(grow,gMaxValIdx));
       Weights.push_back(maxVal/(norm1*Teuchos::as<Scalar>(nnz)));
     } else {
