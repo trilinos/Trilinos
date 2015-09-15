@@ -53,9 +53,9 @@
 #include "ml_ifpack_wrap.h"
 #ifdef ML_WITH_EPETRA
 #ifdef __cplusplus
-//extern "C" {
+/*extern "C" {*/
 #include "ml_epetra_utils.h"
-//}
+/*}*/
 #endif
 #endif
 
@@ -7369,7 +7369,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 #endif
 
    ML_Create(ml_subproblem,1);
-   //Replace the default MPI_COMM_WORLD inside ml_subproblem's communicator.
+   /*Replace the default MPI_COMM_WORLD inside ml_subproblem's communicator.*/
    ML_Comm *comm = (*ml_subproblem)->comm;
    comm->USR_comm = Amat->comm->USR_comm;
    comm->ML_mypid = Amat->comm->ML_mypid;
