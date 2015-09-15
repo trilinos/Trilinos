@@ -1026,12 +1026,8 @@ public:
 private:
 #endif
 
-  void communicate_entity_modification( const BulkData & mesh ,
-                                        const bool shared ,
-                                        std::vector<EntityParallelState > & data ); // Mod Mark
-  bool pack_entity_modification( const BulkData & mesh ,
-                                 const bool packShared ,
-                                 stk::CommSparse & comm );
+  void communicate_entity_modification( const bool shared , std::vector<EntityParallelState > & data ); // Mod Mark
+  bool pack_entity_modification( const bool packShared , stk::CommSparse & comm );
 
   virtual bool does_entity_need_orphan_protection(stk::mesh::Entity entity) const
   {

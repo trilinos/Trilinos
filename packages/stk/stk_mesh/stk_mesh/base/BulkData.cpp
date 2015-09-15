@@ -3492,21 +3492,19 @@ const EntityCommListInfo& find_entity(const BulkData& mesh,
 
 }
 
-bool BulkData::pack_entity_modification( const BulkData & mesh ,
-                               const bool packShared ,
-                               stk::CommSparse & comm )
+bool BulkData::pack_entity_modification( const bool packShared , stk::CommSparse & comm )
 {
   bool flag = false;
   bool packGhosted = packShared == false;
 
-  const EntityCommListInfoVector & entityCommList = mesh.internal_comm_list();
+  const EntityCommListInfoVector & entityCommList = this->internal_comm_list();
 
   for ( EntityCommListInfoVector::const_iterator
         i = entityCommList.begin() ; i != entityCommList.end() ; ++i ) {
 
     if (i->entity_comm != nullptr) {
       Entity entity = i->entity;
-      EntityState status = mesh.is_valid(entity) ? mesh.state(entity) : Deleted;
+      EntityState status = this->is_valid(entity) ? this->state(entity) : Deleted;
 
       if ( status == Modified || status == Deleted ) {
   
@@ -3528,19 +3526,17 @@ bool BulkData::pack_entity_modification( const BulkData & mesh ,
   return flag ;
 }
 
-void BulkData::communicate_entity_modification( const BulkData & mesh ,
-                                      const bool shared ,
-                                      std::vector<EntityParallelState > & data )
+void BulkData::communicate_entity_modification( const bool shared , std::vector<EntityParallelState > & data )
 {
-  stk::CommSparse comm( mesh.parallel() );
+  stk::CommSparse comm( this->parallel() );
   const int p_size = comm.parallel_size();
 
   // Sizing send buffers:
-  const bool local_mod = pack_entity_modification( mesh , shared , comm );
+  const bool local_mod = pack_entity_modification(shared , comm);
 
   int global_mod_int = 0;
   int local_mod_int = local_mod ? 1 : 0;
-  stk::all_reduce_max(mesh.parallel(), &local_mod_int, &global_mod_int, 1);
+  stk::all_reduce_max(this->parallel(), &local_mod_int, &global_mod_int, 1);
   const bool global_mod = global_mod_int == 1 ? true : false;
 
   // Allocation of send and receive buffers:
@@ -3549,11 +3545,11 @@ void BulkData::communicate_entity_modification( const BulkData & mesh ,
     comm.allocate_buffers();
 
     // Packing send buffers:
-    pack_entity_modification( mesh , shared , comm );
+    pack_entity_modification(shared , comm);
 
     comm.communicate();
 
-    const EntityCommListInfoVector & entityCommList = mesh.internal_comm_list();
+    const EntityCommListInfoVector & entityCommList = this->internal_comm_list();
     for ( int procNumber = 0 ; procNumber < p_size ; ++procNumber ) {
       CommBuffer & buf = comm.recv_buffer( procNumber );
       EntityKey key;
@@ -3566,8 +3562,8 @@ void BulkData::communicate_entity_modification( const BulkData & mesh ,
 
         // search through entity_comm, should only receive info on entities
         // that are communicated.
-        EntityCommListInfo info = find_entity(mesh, entityCommList, key);
-        EntityParallelState parallel_state = {procNumber, state, info, &mesh};
+        EntityCommListInfo info = find_entity(*this, entityCommList, key);
+        EntityParallelState parallel_state = {procNumber, state, info, this};
         data.push_back( parallel_state );
       }
     }
@@ -3681,7 +3677,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
   // Communicate entity modification state for ghost entities
   const bool communicate_shared = false ;
-  communicate_entity_modification( *this , communicate_shared , remotely_modified_ghosted_entities );
+  communicate_entity_modification( communicate_shared , remotely_modified_ghosted_entities );
 
   const size_t ghosting_count = m_ghosting.size();
   const size_t ghosting_count_minus_shared = ghosting_count - 1;
