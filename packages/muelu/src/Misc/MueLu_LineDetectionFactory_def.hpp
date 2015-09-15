@@ -175,7 +175,7 @@ namespace MueLu {
               }
               // the number of vertical lines must be the same on all processors
               // TAW: Sep 14 2015: or zero as we allow "empty" processors
-              TEUCHOS_TEST_FOR_EXCEPTION(next-index != NumNodesPerVertLine || next-index != 0,Exceptions::RuntimeError, "Error code only works for constant block size now!!!\n");
+              //TEUCHOS_TEST_FOR_EXCEPTION(next-index != NumNodesPerVertLine,Exceptions::RuntimeError, "Error code only works for constant block size now!!!\n");
               NumBlocks++;
               index = next;
             }
@@ -325,7 +325,7 @@ namespace MueLu {
         }
         // The number of vertical lines must be the same on all processors
         // TAW: Sep 14, 2015: or zero as we allow for empty processors.
-        TEUCHOS_TEST_FOR_EXCEPTION(next-index != NumNodesPerVertLine || next-index != 0,Exceptions::RuntimeError, "Error code only works for constant block size now!!!\n");
+        //TEUCHOS_TEST_FOR_EXCEPTION(next-index != NumNodesPerVertLine,Exceptions::RuntimeError, "Error code only works for constant block size now!!!\n");
         count = 0;
         for (j= index; j < next; j++) {
           VertLineId[OrigLoc[j]] = NumBlocks;
