@@ -150,13 +150,8 @@ Index const maximum_dimension = NPP_MAX_32U ;
 
         if (!(intact_cols & (1 << col))) continue;
 
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-        T
-        s = abs(S(row, col));
-#else
         T
         s = std::abs(S(row, col));
-#endif
         if (s > pivot) {
 
           pivot_row = row;
@@ -213,9 +208,7 @@ Index const maximum_dimension = NPP_MAX_32U ;
 // \return Subtensor with i-row and j-col deleted.
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, dimension_subtract<N, 1>::value >
 subtensor(Tensor<T, N, ES> const & A, Index const i, Index const j)
 {
@@ -247,9 +240,7 @@ subtensor(Tensor<T, N, ES> const & A, Index const i, Index const j)
 // Exponential map
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 exp(Tensor<T, N, ES> const & A)
 {
@@ -262,9 +253,7 @@ exp(Tensor<T, N, ES> const & A)
 // \return \f$ \exp A \f$
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 exp_taylor(Tensor<T, N, ES> const & A)
 {
@@ -306,9 +295,7 @@ namespace {
 // Scaling parameter theta for scaling and squaring exponential.
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 T
 scaling_squaring_theta(Index const order)
 {
@@ -328,9 +315,7 @@ scaling_squaring_theta(Index const order)
 // Polynomial coefficients for Padé approximants.
 //
 template<typename T>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 T
 polynomial_coefficient(Index const order, Index const index)
 {
@@ -412,6 +397,7 @@ polynomial_coefficient(Index const order, Index const index)
 // Padé approximant polynomial odd and even terms.
 //
 template<typename T, Index N, class ES>
+//KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
 pade_polynomial_terms(Tensor<T, N, ES> const & A, Index const order)
 {
@@ -455,9 +441,7 @@ pade_polynomial_terms(Tensor<T, N, ES> const & A, Index const order)
 // Compute a non-negative integer power of a tensor by binary manipulation.
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 binary_powering(Tensor<T, N, ES> const & A, Index const exponent)
 {
@@ -529,9 +513,7 @@ binary_powering(Tensor<T, N, ES> const & A, Index const exponent)
 // \return \f$ \exp A \f$
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 exp_pade(Tensor<T, N, ES> const & A)
 {
@@ -580,13 +562,8 @@ exp_pade(Tensor<T, N, ES> const & A)
       Real const
       theta_highest = scaling_squaring_theta<Real>(order);
 
-//#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-//     int const
-//      signed_power = static_cast<int>(ceil(log2(norm / theta_highest)));
-//#else
       int const
-      signed_power = static_cast<int>(std::ceil(log2(norm / theta_highest)));
-//#endif
+      signed_power = static_cast<int>(std::ceil(std::log2(norm / theta_highest)));
       Index const
       power_two = signed_power > 0 ? static_cast<Index>(signed_power) : 0;
 
@@ -655,9 +632,7 @@ exp_pade(Tensor<T, N, ES> const & A)
 // Logarithmic map by Taylor series.
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 log_taylor(Tensor<T, N, ES> const & A)
 {
@@ -706,9 +681,7 @@ log_taylor(Tensor<T, N, ES> const & A)
 // Logarithmic map.
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 log(Tensor<T, N, ES> const & A)
 {
@@ -719,9 +692,7 @@ log(Tensor<T, N, ES> const & A)
 // Logarithmic map by Gregory series.
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 log_gregory(Tensor<T, N, ES> const & A)
 {
@@ -778,9 +749,7 @@ log_gregory(Tensor<T, N, ES> const & A)
 // Logarithmic map for symmetric tensor.
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 log_sym(Tensor<T, N, ES> const & A)
 {
@@ -791,9 +760,7 @@ log_sym(Tensor<T, N, ES> const & A)
 // Logarithmic map for symmetric tensor using eigenvalue decomposition.
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 log_eig_sym(Tensor<T, N, ES> const & A)
 {
@@ -809,11 +776,7 @@ log_eig_sym(Tensor<T, N, ES> const & A)
   boost::tie(V, D) = eig_sym(A);
 
   for (Index i = 0; i < dimension; ++i) {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-    D(i, i) = log(D(i, i));
-#else
     D(i, i) = std::log(D(i, i));
-#endif
   }
 
   Tensor<T, N, ES> const
@@ -828,9 +791,7 @@ log_eig_sym(Tensor<T, N, ES> const & A)
 // \return \f$ r = \log R \f$ with \f$ r \in so(N) \f$
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 log_rotation(Tensor<T, N, ES> const & R)
 {
@@ -840,11 +801,7 @@ log_rotation(Tensor<T, N, ES> const & R)
   //firewalls, make sure R \in SO(N)
   assert(norm(dot_t(R,R) - eye<T, N, ES>(dimension)) <
       100.0 * machine_epsilon<T>());
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-  assert(abs(det(R) - 1.0) < 100.0 * machine_epsilon<T>());
-#else
   assert(std::abs(det(R) - 1.0) < 100.0 * machine_epsilon<T>());
-#endif
   // acos requires input between -1 and +1
   T
   cosine = 0.5 * (trace(R) - 1.0);
@@ -854,13 +811,8 @@ log_rotation(Tensor<T, N, ES> const & R)
   } else if(cosine > 1.0) {
     cosine = 1.0;
   }
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-  T
-  theta = acos(cosine);
-#else
   T
   theta = std::acos(cosine);
-#endif
 
   Tensor<T, N, ES>
   r(dimension);
@@ -877,22 +829,6 @@ log_rotation(Tensor<T, N, ES> const & R)
       break;
 
     case 3:
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-      if (theta == 0.0) {
-
-        r = zero<T, N, ES>(3);
-
-      } else if (abs(cosine + 1.0) < 10.0 * machine_epsilon<T>())  {
-
-        r = log_rotation_pi(R);
-
-      } else {
-
-        r = theta / sin(theta) * skew(R);
-
-      }
-
-#else
       if (theta == 0.0) {
 
         r = zero<T, N, ES>(3);
@@ -906,7 +842,6 @@ log_rotation(Tensor<T, N, ES> const & R)
         r = theta / std::sin(theta) * skew(R);
 
       }
-#endif
       break;
 
     case 2:
@@ -926,9 +861,7 @@ log_rotation(Tensor<T, N, ES> const & R)
 // \return \f$ r = \log R \f$ with \f$ r \in so(N) \f$
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 log_rotation_pi(Tensor<T, N, ES> const & R)
 {
@@ -938,11 +871,7 @@ log_rotation_pi(Tensor<T, N, ES> const & R)
   T
   cosine = 0.5*(trace(R) - 1.0);
   // set firewall to make sure the rotation is indeed 180 degrees
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-  assert(abs(cosine + 1.0) < 10.0 * machine_epsilon<T>());
-#else
   assert(std::abs(cosine + 1.0) < 10.0 * machine_epsilon<T>());
-#endif
 
   Tensor<T, N, ES>
   r(dimension);
@@ -967,25 +896,6 @@ log_rotation_pi(Tensor<T, N, ES> const & R)
       T const tol = 10.0 * machine_epsilon<T>();
 
       Vector<T, N, ES> normal(3);
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-if (std::abs(r(2,2)) < tol){
-        normal(2) = 1.0;
-      } else {
-        normal(2) = 0.0;
-      }
-
-      if (std::abs(r(1,1)) < tol){
-        normal(1) = 1.0;
-      } else {
-        normal(1) = -normal(2)*r(1,2)/r(1,1);
-      }
-
-      if (std::abs(r(0,0)) < tol){
-        normal(0) = 1.0;
-      } else {
-        normal(0) = -normal(1)*r(0,1) - normal(2)*r(0,2)/r(0,0);
-      }
-#else
       if (std::abs(r(2,2)) < tol){
         normal(2) = 1.0;
       } else {
@@ -1003,7 +913,6 @@ if (std::abs(r(2,2)) < tol){
       } else {
         normal(0) = -normal(1)*r(0,1) - normal(2)*r(0,2)/r(0,0);
       }
-#endif
       normal = normal / norm(normal);
 
       r.fill(ZEROS);
@@ -1013,22 +922,14 @@ if (std::abs(r(2,2)) < tol){
       r(1,2) = -normal(0);
       r(2,0) = -normal(1);
       r(2,1) =  normal(0);
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-      T const pi = acos(-1.0);
-#else
       T const pi = std::acos(-1.0);
-#endif
       r = pi * r;
     }
     break;
 
     case 2:
     {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-      T theta = acos(-1.0);
-#else
       T theta = std::acos(-1.0);
-#endif
       if (R(0,0) > 0.0) {
         theta = -theta;
       }
@@ -1050,9 +951,7 @@ if (std::abs(r(2,2)) < tol){
 // \return \f$ U \f$ where \f$ A = LU \f$
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 gaussian_elimination(Tensor<T, N, ES> const & A)
 {
@@ -1073,30 +972,18 @@ gaussian_elimination(Tensor<T, N, ES> const & A)
     // find pivot in column j, starting in row i
     i_max = i;
     for (Index k = i + 1; k < dimension; ++k) {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-      if (abs(U(k,j)) > abs(U(i_max,j))) {
-#else
       if (std::abs(U(k,j)) > std::abs(U(i_max,j))) {
-#endif
         i_max = k;
       }
     }
 
     // Check if A(i_max,j) equal to or very close to 0
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-    if (abs(U(i_max,j)) > tol){
-      // swap rows i and i_max and divide each entry in row i
-       for (Index k = 0; k < dimension; ++k) {
-         swap(U(i,k), U(i_max,k));
-      }
-#else
     if (std::abs(U(i_max,j)) > tol){
       // swap rows i and i_max and divide each entry in row i
       // by U(i,j)
       for (Index k = 0; k < dimension; ++k) {
         std::swap(U(i,k), U(i_max,k));
       }
-#endif
       for (Index k = 0; k < dimension; ++k) {
         U(i,k) = U(i,k) / U(i,j);
       }
@@ -1118,9 +1005,7 @@ gaussian_elimination(Tensor<T, N, ES> const & A)
 // Apply Givens-Jacobi rotation on the left in place.
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 void
 givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N, ES> & A)
 {
@@ -1140,9 +1025,7 @@ givens_left(T const & c, T const & s, Index i, Index k, Tensor<T, N, ES> & A)
 // Apply Givens-Jacobi rotation on the right in place.
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 void
 givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N, ES> & A)
 {
@@ -1162,9 +1045,7 @@ givens_right(T const & c, T const & s, Index i, Index k, Tensor<T, N, ES> & A)
 /// Apply rank-one update on the left in place
 ///
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 void
 rank_one_left(T const & beta, Vector<T, N, ES> const & v, Tensor<T, N, ES> & A)
 {
@@ -1176,9 +1057,7 @@ rank_one_left(T const & beta, Vector<T, N, ES> const & v, Tensor<T, N, ES> & A)
 /// Apply rank-one update on the right in place
 ///
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 void
 rank_one_right(T const & beta, Vector<T, N, ES> const & v, Tensor<T, N, ES> & A)
 {
@@ -1190,9 +1069,7 @@ rank_one_right(T const & beta, Vector<T, N, ES> const & v, Tensor<T, N, ES> & A)
 // R^N exponential map of a skew-symmetric tensor.
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 exp_skew_symmetric(Tensor<T, N, ES> const & r)
 {
@@ -1215,7 +1092,6 @@ exp_skew_symmetric(Tensor<T, N, ES> const & r)
       break;
 
     case 3:
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
       theta = sqrt(r(2,1)*r(2,1)+r(0,2)*r(0,2)+r(1,0)*r(1,0));
 
       //Check whether norm == 0. If so, return identity.
@@ -1223,32 +1099,15 @@ exp_skew_symmetric(Tensor<T, N, ES> const & r)
         R += sin(theta) / theta * r +
             (1.0 - cos(theta)) / (theta * theta) * r * r;
       }
-#else
-      theta = sqrt(r(2,1)*r(2,1)+r(0,2)*r(0,2)+r(1,0)*r(1,0));
-
-      //Check whether norm == 0. If so, return identity.
-      if (theta >= machine_epsilon<T>()) {
-        R += sin(theta) / theta * r +
-            (1.0 - cos(theta)) / (theta * theta) * r * r;
-      }
-#endif
       break;
 
     case 2:
       theta = r(1,0);
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-     T
-      c = cos(theta);
-
-      T
-      s = sin(theta);
-#else
       T
       c = std::cos(theta);
 
       T
       s = std::sin(theta);
-#endif
 
       R(0,0) = c;
       R(0,1) = -s;
@@ -1269,9 +1128,7 @@ exp_skew_symmetric(Tensor<T, N, ES> const & r)
 // \return \f$ \sqrt(\sum_i \sum_{j, j\neq i} a_{ij}^2) \f$
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 T
 norm_off_diagonal(Tensor<T, N, ES> const & A)
 {
@@ -1301,11 +1158,7 @@ norm_off_diagonal(Tensor<T, N, ES> const & A)
       break;
 
   }
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-  return sqrt(s);
-#else
   return std::sqrt(s);
-#endif
 }
 
 //
@@ -1315,6 +1168,7 @@ norm_off_diagonal(Tensor<T, N, ES> const & A)
 // \return \f$ (p,q) = arg max_{i,j} |a_{ij}| \f$
 //
 template<typename T, Index N, class ES>
+//KOKKOS_INLINE_FUNCTION
 std::pair<Index, Index>
 arg_max_abs(Tensor<T, N, ES> const & A)
 {
@@ -1348,6 +1202,7 @@ arg_max_abs(Tensor<T, N, ES> const & A)
 // \return \f$ (p,q) = arg max_{i \neq j} |a_{ij}| \f$
 //
 template<typename T, Index N, class ES>
+//KOKKOS_INLINE_FUNCTION
 std::pair<Index, Index>
 arg_max_off_diagonal(Tensor<T, N, ES> const & A)
 {
@@ -1383,21 +1238,12 @@ namespace {
 // \return \f$ A = USV^T\f$
 //
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
-KOKKOS_INLINE_FUNCTION
-#endif
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 svd_bidiagonal(T f, T g, T h)
 {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-  T fa = abs(f);
-  T ga = abs(g);
-  T ha = abs(h);
-#else
   T fa = std::abs(f);
   T ga = std::abs(g);
   T ha = std::abs(h);
-#endif
 
   T s0 = 0.0;
   T s1 = 0.0;
@@ -1410,13 +1256,8 @@ svd_bidiagonal(T f, T g, T h)
   bool swap_diag = (ha > fa);
 
   if (swap_diag) {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-    swap(fa, ha);
-    swap(f, h);
-#else
     std::swap(fa, ha);
     std::swap(f, h);
-#endif
   }
 
   if (ga == 0.0) {
@@ -1442,17 +1283,10 @@ svd_bidiagonal(T f, T g, T h)
     T t = 2.0 - l; // t \in [1,2]
     T mm = m * m;
     T tt = t * t;
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-    T s = sqrt(tt + mm); // s \in [1,1 + 1/macheps]
-    T r = l != 0.0 ?
-        T(sqrt(l * l + mm)) :
-        T(abs(m)); // r \in [0,1 + 1/macheps]
-#else
     T s = std::sqrt(tt + mm); // s \in [1,1 + 1/macheps]
     T r = l != 0.0 ?
         T(std::sqrt(l * l + mm)) :
         T(std::abs(m)); // r \in [0,1 + 1/macheps]
-#endif
     T a = 0.5 * (s + r); // a \in [1,1 + |m|]
     s1 = ha / a;
     s0 = fa * a;
@@ -1467,11 +1301,7 @@ svd_bidiagonal(T f, T g, T h)
           T(copysign(T(2.0), f) * copysign(T(1.0), g)) :
           T(g / copysign(d, f) + m / t);
     }
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-    T lv = sqrt(tau * tau + 4.0); 
-#else
     T lv = std::sqrt(tau * tau + 4.0); // second assignment to L in DLASV2
-#endif
     cv = 2.0 / lv;
     sv = tau / lv;
     cu = (cv + sv * m) / a;
@@ -1483,13 +1313,8 @@ svd_bidiagonal(T f, T g, T h)
   s1 = copysign(s1, h);
 
   if (swap_diag) {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-    swap(cu, sv);
-    swap(su, cv);
-#else
     std::swap(cu, sv);
     std::swap(su, cv);
-#endif
   }
 
   Tensor<T, N, ES> U(cu, -su, su, cu);
@@ -1497,7 +1322,6 @@ svd_bidiagonal(T f, T g, T h)
   Tensor<T, N, ES> S(s0, 0.0, 0.0, s1);
 
   Tensor<T, N, ES> V(cv, -sv, sv, cv);
-
   return boost::make_tuple(U, S, V);
 }
 
@@ -1507,9 +1331,6 @@ svd_bidiagonal(T f, T g, T h)
 // \return \f$ A = USV^T\f$
 //
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
-KOKKOS_INLINE_FUNCTION
-#endif
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 svd_2x2(Tensor<T, N, ES> const & A)
 {
@@ -1545,9 +1366,6 @@ svd_2x2(Tensor<T, N, ES> const & A)
 // \return \f$ A = USV^T\f$
 //
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
-KOKKOS_INLINE_FUNCTION
-#endif
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 svd_NxN(Tensor<T, N, ES> const & A)
 {
@@ -1587,11 +1405,7 @@ svd_NxN(Tensor<T, N, ES> const & A)
     boost::tie(p,q) = arg_max_off_diagonal(S);
 
     if (p > q) {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-     swap(p, q);
-#else
       std::swap(p, q);
-#endif
     }
 
     // Obtain left and right Givens rotations by using 2x2 SVD
@@ -1665,9 +1479,6 @@ svd_NxN(Tensor<T, N, ES> const & A)
 // \return \f$ A = USV^T\f$
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
-KOKKOS_INLINE_FUNCTION
-#endif
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 svd(Tensor<T, N, ES> const & A)
 {
@@ -1702,9 +1513,7 @@ svd(Tensor<T, N, ES> const & A)
 // the orthogonal component of the real polar decomposition
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
 KOKKOS_INLINE_FUNCTION
-#endif
 Tensor<T, N, ES>
 polar_rotation(Tensor<T, N, ES> const & A)
 {
@@ -1717,13 +1526,8 @@ polar_rotation(Tensor<T, N, ES> const & A)
   T const
   tol_scale = 0.01;
 
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-  T const
-  tol_conv = sqrt(dimension) * machine_epsilon<T>();
-#else
   T const
   tol_conv = std::sqrt(dimension) * machine_epsilon<T>();
-#endif
 
   Tensor<T, N, ES>
   X = A;
@@ -1747,11 +1551,7 @@ polar_rotation(Tensor<T, N, ES> const & A)
 
     if (scale == true) {
       mu = (norm_1(Y) * norm_infinity(Y)) / (norm_1(X) * norm_infinity(X));
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-      mu = sqrt(sqrt(mu));
-#else
       mu = std::sqrt(std::sqrt(mu));
-#endif
     }
 
     Tensor<T, N, ES>
@@ -1767,17 +1567,10 @@ polar_rotation(Tensor<T, N, ES> const & A)
       scale = false;
     }
 
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-    bool
-    end_iter =
-        norm(D) <= sqrt(tol_conv) ||
-        (delta > 0.5 * gamma && scale == false);
-#else
     bool
     end_iter =
         norm(D) <= std::sqrt(tol_conv) ||
         (delta > 0.5 * gamma && scale == false);
-#endif
 
     X = Z;
     gamma = delta;
@@ -1843,6 +1636,7 @@ polar_right(Tensor<T, N, ES> const & A)
 // \return \f$ VR = F \f$ with \f$ R \in SO(3) \f$ and V SPD(3)
 //
 template<typename T, Index N, class ES>
+//KOKKOS_INLINE_FUNCTION
 std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
 polar_left_eig(Tensor<T, N, ES> const & F)
 {
@@ -1869,7 +1663,6 @@ polar_left_eig(Tensor<T, N, ES> const & F)
 
   Tensor<T, N, ES>
   eVec(3);
-
   boost::tie(eVec, eVal) = eig_spd(b);
 
   // compute sqrt() and inv(sqrt()) of eigenvalues
@@ -1976,9 +1769,6 @@ polar_right_eig(Tensor<T, N, ES> const & F)
 // \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD(N), and log V
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
-KOKKOS_INLINE_FUNCTION
-#endif
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 polar_left_logV(Tensor<T, N, ES> const & F)
 {
@@ -2000,13 +1790,7 @@ polar_left_logV(Tensor<T, N, ES> const & F)
   s = S;
 
   for (Index i = 0; i < dimension; ++i) {
-#if defined (KOKKOS_HAVE_CUDA) && defined(HAVE_INTREPID_KOKKOSCORE)
-//IRINA D tofix
-  Kokkos::abort("ERROR: polar_left_logV: need to implement log() function for CUDS");
     s(i,i) = std::log(s(i,i));
-#else
-    s(i,i) = std::log(s(i,i));
-#endif
   }
 
   Tensor<T, N, ES>
@@ -2016,9 +1800,6 @@ polar_left_logV(Tensor<T, N, ES> const & F)
 }
 
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
-KOKKOS_INLINE_FUNCTION
-#endif
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 polar_left_logV_eig(Tensor<T, N, ES> const & F)
 {
@@ -2066,9 +1847,6 @@ polar_left_logV_eig(Tensor<T, N, ES> const & F)
 // \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD(N), and log V
 //
 template<typename T, Index N, class ES>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
-KOKKOS_INLINE_FUNCTION
-#endif
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 polar_left_logV_lame(Tensor<T, N, ES> const & F)
 {
@@ -2088,19 +1866,6 @@ polar_left_logV_lame(Tensor<T, N, ES> const & F)
 
   // compute sqrt() and inv(sqrt()) of eigenvalues
   Tensor<T, N, ES> x = zero<T, N, ES>(3);
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-  x(0,0) = sqrt(eVal(0,0));
-  x(1,1) = sqrt(eVal(1,1));
-  x(2,2) = sqrt(eVal(2,2));
-  Tensor<T, N, ES> xi = zero<T, N, ES>(3);
-  xi(0,0) = 1.0/x(0,0);
-  xi(1,1) = 1.0/x(1,1);
-  xi(2,2) = 1.0/x(2,2);
-  Tensor<T, N, ES> lnx = zero<T, N, ES>(3);
-  lnx(0,0) = log(x(0,0));
-  lnx(1,1) = log(x(1,1));
-  lnx(2,2) = log(x(2,2));
-#else
   x(0,0) = std::sqrt(eVal(0,0));
   x(1,1) = std::sqrt(eVal(1,1));
   x(2,2) = std::sqrt(eVal(2,2));
@@ -2112,7 +1877,6 @@ polar_left_logV_lame(Tensor<T, N, ES> const & F)
   lnx(0,0) = std::log(x(0,0));
   lnx(1,1) = std::log(x(1,1));
   lnx(2,2) = std::log(x(2,2));
-#endif
   // compute V, Vinv, log(V)=v, and R
   V    = eVec*x*transpose(eVec);
   Vinv = eVec*xi*transpose(eVec);

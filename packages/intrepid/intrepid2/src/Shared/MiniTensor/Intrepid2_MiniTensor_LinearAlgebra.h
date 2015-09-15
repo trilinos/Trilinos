@@ -414,9 +414,6 @@ sort_permutation(Vector<T, N, ES> const & u);
 /// \return \f$ A = USV^T\f$
 ///
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE)
-KOKKOS_INLINE_FUNCTION
-#endif
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N,ES>, Tensor<T, N,ES> >
 svd(Tensor<T, N, ES> const & A);
 
@@ -478,16 +475,10 @@ polar_right_eig(Tensor<T, N, ES> const & A);
 /// \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD, and log V
 ///
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
-KOKKOS_INLINE_FUNCTION
-#endif
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 polar_left_logV(Tensor<T, N, ES> const & F);
 
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
-KOKKOS_INLINE_FUNCTION
-#endif
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 polar_left_logV_eig(Tensor<T, N, ES> const & F);
 
@@ -497,9 +488,6 @@ polar_left_logV_eig(Tensor<T, N, ES> const & F);
 /// \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD, and log V
 ///
 template<typename T, Index N, class ES=NOKOKKOS>
-#if defined(HAVE_INTREPID_KOKKOSCORE) 
-KOKKOS_INLINE_FUNCTION
-#endif
 boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
 polar_left_logV_lame(Tensor<T, N, ES> const & F);
 
