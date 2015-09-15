@@ -322,7 +322,8 @@ private:
                                           // removal, or local graph.
 
   int nWeightsPerEdge_;
-  ArrayRCP<input_t> eWeights_;
+  ArrayRCP<input_t> adapterEWeights_;     // edge weights from adapter
+  ArrayRCP<input_t> eWeights_;            // edge weights in built graph
 
 };
 
@@ -373,7 +374,7 @@ GraphModel<Adapter>::GraphModel(
   gno_t const *vtxIds=NULL, *nborIds=NULL;
   lno_t const *offsets=NULL;
   try{
-    adapterNumLocalVertices_ = ia->getLocalNumIDs();
+    numLocalVertices_ = ia->getLocalNumIDs();
     ia->getIDsView(vtxIds);
   }
   Z2_FORWARD_EXCEPTIONS;
@@ -390,10 +391,10 @@ GraphModel<Adapter>::GraphModel(
   Z2_FORWARD_EXCEPTIONS;
 
   // Save the pointers from the input adapter
-  adapterNumLocalEdges_ = offsets[adapterNumLocalVertices_];
-  adapterVGids_ = arcp<const gno_t>(vtxIds, 0, adapterNumLocalVertices_, false);
-  adapterEGids_ = arcp<const gno_t>(nborIds, 0, adapterNumLocalEdges_, false);
-  adapterEOffsets_ = arcp<const lno_t>(offsets, 0, adapterNumLocalVertices_ + 1, false);
+  numLocalEdges_ = offsets[numLocalVertices_];
+  vGids_ = arcp<const gno_t>(vtxIds, 0, numLocalVertices_, false);
+  eGids_ = arcp<const gno_t>(nborIds, 0, numLocalEdges_, false);
+  eOffsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
 
   // Edge weights
   nWeightsPerEdge_ = 0;   // no edge weights from a matrix yet.
@@ -456,17 +457,17 @@ GraphModel<Adapter>::GraphModel(
   gno_t const *vtxIds=NULL, *nborIds=NULL;
   lno_t const *offsets=NULL;
   try{
-    adapterNumLocalVertices_ = ia->getLocalNumVertices();
+    numLocalVertices_ = ia->getLocalNumVertices();
     ia->getVertexIDsView(vtxIds);
     ia->getEdgesView(offsets, nborIds);
   }
   Z2_FORWARD_EXCEPTIONS;
 
   // Save the pointers from the input adapter
-  adapterNumLocalEdges_ = offsets[adapterNumLocalVertices_];
-  gids_ = arcp<const gno_t>(vtxIds, 0, adapterNumLocalVertices_, false);
-  edgeGids_ = arcp<const gno_t>(nborIds, 0, adapterNumLocalEdges_, false);
-  offsets_ = arcp<const lno_t>(offsets, 0, adapterNumLocalVertices_ + 1, false);
+  numLocalEdges_ = offsets[numLocalVertices_];
+  vGids_ = arcp<const gno_t>(vtxIds, 0, numLocalVertices_, false);
+  eGids_ = arcp<const gno_t>(nborIds, 0, numLocalEdges_, false);
+  eOffsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
 
   // Edge weights
   nWeightsPerEdge_ = ia->getNumWeightsPerEdge();
@@ -627,37 +628,23 @@ void GraphModel<Adapter>::shared_constructor(
   bool removeSelfEdges = modelFlags.test(REMOVE_SELF_EDGES);
   bool subsetGraph = modelFlags.test(GRAPH_IS_A_SUBSET_GRAPH);
 
-  if (!localGraph_ && !consecutiveIdsRequired && 
-      !removeSelfEdges && !subsetGraph) {
-    // If no reason to change graph from input adapter, just copy the pointers
+  // May modify the graph provided from input adapter; save pointers to 
+  // the input adapter's data.
+  size_t adapterNumLocalEdges = numLocalEdges;
+  ArrayRCP<gno_t> adapterVGids = vGids_;     // vertices of graph from adapter
+  ArrayRCP<gno_t> adapterEGids = eGids_;     // edges of graph from adapter
+  ArrayRCP<lno_t> adapterEOffsets = eOffsets_;    // edge offsets from adapter
+  ArrayRCP<input_t> adapterEWeights = eWeights_;  // edge weights from adapter
 
-    numLocalVertices_ = adapterNumLocalVertices_;
-    vGids_ = arcp_const_cast<gno_t> adapterVGids_;
-
-    numLocalEdges_ = adapterNumLocalEdges_;
-    eGids_ = arcp_const_cast<gno_t> adapterEGids_;
-    eOffsets_ = arcp_const_cast<gno_t> adapterEOffsets_;
-// TODO EDGE WEIGHTS
-
-    // TODO:  ARE THERE OTHERS??
-  }
-
-  else if (localGraph_) {
-    // Local graph is requrested.
+  if (localGraph_) {
+    // Local graph is requested.
     // Renumber vertices 0 to numLocalVertices_-1
     // Filter out off-process edges
     // Renumber edge neighbors to be in range [0,numLocalVertices_-1]
 
-    numLocalVertices_ = adapterNumLocalVertices_;  // keep all vertices
-
-    // Build map between global and local vertex numbers
-    std::unordered_map<gno_t, lno_t> globalToLocal(numLocalVertices_);
-    for (size_t i = 0; i < numLocalVertices_; i++)
-      globalToLocal[gids_[i]] = i;
-
     // Allocate new space for local graph info
-    // Note that eGids_ may be larger than needed; would have to pre-count 
-    // number of local edges otherwise
+    // Note that eGids_ and eWeights_[w] may be larger than needed; 
+    // we would have to pre-count the number of local edges to avoid overalloc
     vGids_ = arcp(new gno_t[numLocalVertices_],
                   0, numLocalVertices_, true);
     eGids_ = arcp(new gno_t[adapterNumLocalEdges_],
@@ -665,29 +652,49 @@ void GraphModel<Adapter>::shared_constructor(
     eOffsets_ = arcp(new lno_t[numLocalVertices_+1],
                      0, numLocalVertices_+1, true);
 
+    if (nWeightsPerEdge_ > 0){
+      eWeights_ = arcp(new input_t[nWeightsPerEdge_], 0,
+                       nWeightsPerEdge_, true);
+      for (int w = 0; w < nWeightsPerEdge_; w++) {
+        ArrayRCP<const scalar_t> wgtArray(new scalar_t[adapterNumLocalEdges_],
+                                          0, adapterNumLocalEdges_, true);
+        eWeights_[w] = input_t(wgtArray, 0);
+      }
+    }
+
+    // Build map between global and local vertex numbers
+    std::unordered_map<gno_t, lno_t> globalToLocal(numLocalVertices_);
+    for (size_t i = 0; i < numLocalVertices_; i++)
+      globalToLocal[gids_[i]] = i;
+
+    // Loop over edges; keep only those that are local (i.e., on-rank)
     eOffsets_[0] = 0;
     lno_t ecnt = 0;
     for (size_t i = 0; i < numLocalVertices_; i++) {
+      vGids_[i] = gno_t(i);
       for (lno_t j = adapterEOffsets[i]; j < adapterEOffsets[i+1]; j++) {
+
+        if (removeSelfEdges && (adapterEGids[j] == adapterVGids[i]))
+          continue;  // Skipping self edge
+
+        // Determine whether neighbor vertex is local
         if ((lno_t localidx = globalToLocal.find(adapterEGids[j])) != 
                               globalToLocal.end()) {
           // neighbor vertex is local
+          // Keep the edge and its weights
+          eGids_[ecnt] = localidx;
+          for (int w = 0; w < nWeightsPerEdge_; w++)
+            eWeights_[w][ecnt] = adapterEWeights[w][j];
 
-          if (removeSelfEdges && (localidx == i))  
-            continue;  // Skipping self edge
-
-          // Keep the edge
-          eGids_[ecnt] = localidx
-// TODO EDGE WEIGHTS
           ecnt++;
         }  
       }
       eOffsets_[i+1] = ecnt;
     }
     numLocalEdges_ = eOffsets_[numLocalVertices_];
-  }
+  }  // localGraph_
 
-  else { 
+  else  if (consecutiveIdsRequired || removeSelfEdges || subsetGraph) {
     // Build a Global graph
     // If we are here, we expect SOMETHING in the graph to change from input:
     // removing self edges, or converting to consecutive IDs, or subsetting
@@ -697,10 +704,7 @@ void GraphModel<Adapter>::shared_constructor(
     // Determine vertex GIDs for the global GraphModel
     Teuchos::ArrayRCP<size_t> vtxDist; // TODO keep vtxDist & add to interface?
 
-    numLocalVertices_ = adapterNumLocalVertices_;
-    if (!consecutiveIdsRequired) 
-      vGids_ = arcp_const_cast<gno_t>(adapterVGids_);
-    else  {
+    if (consecutiveIdsRequired) 
       // Allocate new memory for vertices for consecutiveIds
       vGids_ = arcp(new gno_t[numLocalVertices_], 0, numLocalVertices_, true);
 
@@ -719,14 +723,23 @@ void GraphModel<Adapter>::shared_constructor(
     eGids_ = arcp(new gno_t[adapterNumLocalEdges_],
                   0, adapterNumLocalEdges_, true);
 
-    if (!subsetGraph && !removeSelfEdges) 
-      // Not changing number of edges and, thus, the offsets
-      // Probably only relabeling to consecutive IDs
-      eOffsets_ = arcp_const_cast<lno_t>(adapterEOffsets);
-    else 
+    if (subsetGraph || removeSelfEdges) {
+      // May change number of edges and, thus, the offsets 
       eOffsets_ = arcp(new lno_t[numLocalVertices_+1],
                        0, numLocalVertices_+1, true);
+      eOffsets_[0] = 0;
 
+      // Need to copy weights if remove edges
+      if (nWeightsPerEdge_ > 0){
+        eWeights_ = arcp(new input_t[nWeightsPerEdge_], 0,
+                         nWeightsPerEdge_, true);
+        for (int w = 0; w < nWeightsPerEdge_; w++) {
+          ArrayRCP<const scalar_t> wgtArray(new scalar_t[adapterNumLocalEdges_],
+                                            0, adapterNumLocalEdges_, true);
+          eWeights_[w] = input_t(wgtArray, 0);
+        }
+      }
+    }
 
     // If needed, determine the owning ranks and its local index off-proc
     Teuchos::ArrayRCP<int> edgeRemoteRanks;
@@ -746,9 +759,9 @@ void GraphModel<Adapter>::shared_constructor(
     // Renumber and/or filter the edges
     lno_t ecnt = 0;
     for (size_t i = 0; i < numLocalVertices_; i++) {
-      for (size_t j = adapterEOffsets_[i]; j < adapterEOffsets_[i+1]; j++) {
+      for (size_t j = adapterEOffsets[i]; j < adapterEOffsets[i+1]; j++) {
 
-        if (removeSelfEdges && (adapterVGids_[i] == adapterEGids_[j]))
+        if (removeSelfEdges && (adapterVGids[i] == adapterEGids[j]))
           continue;  // Skipping self edge
 
         if (subsetGraph && (edgeRemoteRanks[j] == -1)) 
@@ -761,15 +774,20 @@ void GraphModel<Adapter>::shared_constructor(
           eGids_[ecnt] = edgeRemoteLids[j] + vtxDist[edgeRemoteRanks[j]];  
         else
           eGids_[ecnt] = adapterEGids_[j];
-// TODO EDGE WEIGHTS:  DON'T NEED TO COPY THEM IF ONLY RENUMBERING
+
+        if (subsetGraph || removeSelfEdges) {
+          // Need to copy weights only if number of edges might change
+          for (int w = 0; w < nWeightsPerEdge_; w++)
+            eWeights_[w][ecnt] = adapterEWeights[w][j];
+        }
+
         ecnt++;
       }
+      if (subsetGraph || removeSelfEdges)
+        eOffsets_[i+1] = ecnt;
     }
     numLocalEdges = ecnt;
   }
-
-  numGlobalVertices_= REDUCEALL(numLocalVertices_);
-  numGlobalEdges_ = REDUCEALL(numLocalEdges_);
 
   // Vertex weights
   numWeightsPerVertex_ = ia->getNumWeightsPerID();
