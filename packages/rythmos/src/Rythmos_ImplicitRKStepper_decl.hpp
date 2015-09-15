@@ -140,10 +140,6 @@ public:
   /** \brief . */
 
   Scalar takeStep(Scalar dt, StepSizeType flag);
-
-  Scalar takeVariableStep_(Scalar dt, StepSizeType flag);
-
-  Scalar takeFixedStep_(Scalar dt, StepSizeType flag);
   
   /** \brief . */
   const StepStatus<Scalar> getStepStatus() const;
@@ -277,6 +273,10 @@ private:
 
   void defaultInitializeAll_();
   void initialize_();
+
+  Scalar takeVariableStep_(Scalar dt, StepSizeType flag);
+
+  Scalar takeFixedStep_(Scalar dt, StepSizeType flag);
 
   
 
