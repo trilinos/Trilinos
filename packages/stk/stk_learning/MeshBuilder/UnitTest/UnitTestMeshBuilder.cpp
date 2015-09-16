@@ -23,6 +23,20 @@
 
 typedef stk::mesh::Field<int> ScalarIntField;
 
+bool element_ids_are_active(const stk::mesh::BulkData& bulkData, const
+                                     stk::mesh::EntityIdVector& elemIds)
+{
+    bool result = true;
+    stk::mesh::Entity elem;
+    for (stk::mesh::EntityId elemId : elemIds)
+    {
+        elem = bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
+        if (!bulkData.is_valid(elem))
+            result = false;
+    }
+    return result;
+}
+
 namespace
 {
 TEST(MeshBuilder, 1ProcQuadCreation)
@@ -197,27 +211,6 @@ TEST(MeshBuilder, 4ProcShareNodes)
        }
     }
 }
-//TEST(MeshBuilder, 4ProcOwnNodes)
-//{
-//    stk::ParallelMachine comm = MPI_COMM_WORLD;
-//    int procSize = stk::parallel_machine_size(comm);
-//    int procRank = stk::parallel_machine_rank(comm);
-//    if (4 == procSize)
-//    {
-//       QuadMeshBuilder Mesh(comm, "4ProcOwnNodes");
-//       Mesh.commit_meta();
-//
-//       Mesh.begin_modification();
-//       Mesh.create_element(1, 1);
-//       Mesh.create_element(2, 1);
-//       Mesh.create_element(1, 2);
-//       Mesh.create_element(2, 2);
-//       Mesh.end_modification();
-//
-//
-//
-//    }
-//}
 TEST(MeshBuilder, 1ProcHexCreation)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
@@ -450,22 +443,37 @@ TEST(MeshBuilder, 1ProcQuadFillArea)
     int numProcs = stk::parallel_machine_size(comm);
     if (1 == numProcs)
     {
-        QuadMeshBuilder Mesh(comm, "1ProcQuadFillArea");
-        Mesh.commit_meta();
+        QuadMeshBuilder Mesh1(comm, "1ProcQuadFillArea");
+        QuadMeshBuilder Mesh2(comm, "1ProcQuadFillAreaRandomly");
+        QuadMeshBuilder Mesh3(comm, "1ProcQuadFillAreaOnProc");
+        Mesh1.commit_meta();
+        Mesh2.commit_meta();
+        Mesh3.commit_meta();
 
-        EXPECT_EQ(0u, Mesh.num_elems());
+        EXPECT_EQ(0u, Mesh1.num_elems());
+        EXPECT_EQ(0u, Mesh2.num_elems());
+        EXPECT_EQ(0u, Mesh3.num_elems());
 
-        Mesh.begin_modification();
-        Mesh.fill_area(1, 2, 1, 2);
-        Mesh.end_modification();
+        Mesh1.begin_modification();
+        Mesh2.begin_modification();
+        Mesh3.begin_modification();
+        Mesh1.fill_area(1, 2, 1, 2);
+        Mesh2.fill_area_randomly(1,2,1,2);
+        Mesh3.fill_area_on_proc(1,2,1,2,0);
+        Mesh1.end_modification();
+        Mesh2.end_modification();
+        Mesh3.end_modification();
 
-        EXPECT_EQ(4u, Mesh.num_elems());
+        EXPECT_EQ(4u, Mesh1.num_elems());
+        EXPECT_EQ(4u, Mesh2.num_elems());
+        EXPECT_EQ(4u, Mesh3.num_elems());
     }
 }
 TEST(MeshBuilder, 4ProcQuadFillArea)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     int numProcs = stk::parallel_machine_size(comm);
+    int procRank = stk::parallel_machine_rank(comm);
     if (4 == numProcs)
     {
         QuadMeshBuilder Mesh(comm, "4ProcQuadFillArea");
@@ -474,10 +482,227 @@ TEST(MeshBuilder, 4ProcQuadFillArea)
         EXPECT_EQ(0u, Mesh.num_elems());
 
         Mesh.begin_modification();
-        Mesh.fill_area(1, 4, 1, 4);
+        Mesh.fill_area(1, 5, 1, 5);
+        Mesh.end_modification();
+
+        stk::mesh::EntityIdVector elemIds;
+
+        if (0 == procRank)
+        {
+            elemIds.push_back(1);
+            elemIds.push_back(2);
+            elemIds.push_back(4);
+            elemIds.push_back(7);
+            elemIds.push_back(11);
+            elemIds.push_back(3);
+            elemIds.push_back(5);
+            elemIds.push_back(8);
+            elemIds.push_back(12);
+            elemIds.push_back(17);
+        }
+        else if (1 == procRank)
+        {
+            elemIds.push_back(6);
+            elemIds.push_back(9);
+            elemIds.push_back(13);
+            elemIds.push_back(18);
+            elemIds.push_back(24);
+        }
+        else if (2 == procRank)
+        {
+            elemIds.push_back(10);
+            elemIds.push_back(14);
+            elemIds.push_back(19);
+            elemIds.push_back(25);
+            elemIds.push_back(32);
+        }
+        else if (3 == procRank)
+        {
+            elemIds.push_back(15);
+            elemIds.push_back(20);
+            elemIds.push_back(26);
+            elemIds.push_back(33);
+            elemIds.push_back(41);
+        }
+
+        EXPECT_TRUE(element_ids_are_active(Mesh.bulk_data(), elemIds));
+    }
+}
+TEST(MeshBuilder, 4ProcQuadFillAreaRandom)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(comm);
+    int procRank = stk::parallel_machine_rank(comm);
+    if (4 == numProcs)
+    {
+        QuadMeshBuilder Mesh(comm, "4ProcQuadFillAreaRandom");
+        Mesh.commit_meta();
+
+        EXPECT_EQ(0u, Mesh.num_elems());
+
+        Mesh.begin_modification();
+        Mesh.fill_area_randomly(1, 5, 1, 5);
+        Mesh.end_modification();
+
+        stk::mesh::EntityIdVector elemIds;
+
+        if (0 == procRank)
+        {
+            elemIds.push_back(1);
+            elemIds.push_back(11);
+            elemIds.push_back(12);
+            elemIds.push_back(13);
+            elemIds.push_back(14);
+            elemIds.push_back(15);
+            elemIds.push_back(41);
+        }
+        else if (1 == procRank)
+        {
+            elemIds.push_back(2);
+            elemIds.push_back(3);
+            elemIds.push_back(17);
+            elemIds.push_back(18);
+            elemIds.push_back(19);
+            elemIds.push_back(20);
+        }
+        else if (2 == procRank)
+        {
+            elemIds.push_back(4);
+            elemIds.push_back(5);
+            elemIds.push_back(6);
+            elemIds.push_back(24);
+            elemIds.push_back(25);
+            elemIds.push_back(26);
+        }
+        else if (3 == procRank)
+        {
+            elemIds.push_back(7);
+            elemIds.push_back(8);
+            elemIds.push_back(9);
+            elemIds.push_back(10);
+            elemIds.push_back(32);
+            elemIds.push_back(33);
+        }
+
+        EXPECT_TRUE(element_ids_are_active(Mesh.bulk_data(), elemIds));
+    }
+}
+TEST(MeshBuilder, 4ProcQuadFillAreaOnProc)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(comm);
+    int procRank = stk::parallel_machine_rank(comm);
+    if (4 == numProcs)
+    {
+        QuadMeshBuilder Mesh(comm,"4ProcQuadFillAreaOnProc");
+        Mesh.commit_meta();
+
+        Mesh.begin_modification();
+        Mesh.fill_area_on_proc(1, 2, 1, 2, 0);
+        Mesh.fill_area_on_proc(1, 2, 3, 4, 1);
+        Mesh.fill_area_on_proc(3, 4, 1, 2, 2);
+        Mesh.fill_area_on_proc(3, 4, 3, 4, 3);
         Mesh.end_modification();
 
         EXPECT_EQ(4u, Mesh.num_elems());
+
+        stk::mesh::EntityIdVector elemIds;
+
+        if (0 == procRank)
+        {
+            elemIds.push_back(1);
+            elemIds.push_back(2);
+            elemIds.push_back(3);
+            elemIds.push_back(5);
+        }
+        else if (1 == procRank)
+        {
+            elemIds.push_back(6);
+            elemIds.push_back(9);
+            elemIds.push_back(10);
+            elemIds.push_back(14);
+
+        }
+        else if (2 == procRank)
+        {
+            elemIds.push_back(4);
+            elemIds.push_back(7);
+            elemIds.push_back(8);
+            elemIds.push_back(12);
+
+        }
+
+        else if (3 == procRank)
+        {
+            elemIds.push_back(13);
+            elemIds.push_back(18);
+            elemIds.push_back(19);
+            elemIds.push_back(25);
+        }
+
+        EXPECT_TRUE(element_ids_are_active(Mesh.bulk_data(), elemIds));
+    }
+}
+TEST(MeshBuilder, 4ProcQuadFillAreaLayers)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(comm);
+    int procRank = stk::parallel_machine_rank(comm);
+    if (4 == numProcs)
+    {
+        QuadMeshBuilder Mesh(comm,"4ProcQuadFillAreaLayers");
+        Mesh.commit_meta();
+
+        Mesh.begin_modification();
+        Mesh.fill_area_with_layers(1, 4, 1, 6);
+        Mesh.end_modification();
+
+        if (0 == procRank || 1 == procRank)
+            EXPECT_EQ(8u, Mesh.num_elems());
+        else if (2 == procRank || 3 == procRank)
+            EXPECT_EQ(4u, Mesh.num_elems());
+
+        stk::mesh::EntityIdVector elemIds;
+
+        if (0 == procRank)
+        {
+            elemIds.push_back(1);
+            elemIds.push_back(2);
+            elemIds.push_back(4);
+            elemIds.push_back(7);
+            elemIds.push_back(15);
+            elemIds.push_back(20);
+            elemIds.push_back(26);
+            elemIds.push_back(33);
+        }
+        else if (1 == procRank)
+        {
+            elemIds.push_back(3);
+            elemIds.push_back(5);
+            elemIds.push_back(8);
+            elemIds.push_back(12);
+            elemIds.push_back(21);
+            elemIds.push_back(27);
+            elemIds.push_back(34);
+            elemIds.push_back(42);
+        }
+        else if (2 == procRank)
+        {
+            elemIds.push_back(6);
+            elemIds.push_back(9);
+            elemIds.push_back(13);
+            elemIds.push_back(18);
+
+        }
+        else if (3 == procRank)
+        {
+            elemIds.push_back(10);
+            elemIds.push_back(14);
+            elemIds.push_back(19);
+            elemIds.push_back(25);
+        }
+
+        EXPECT_TRUE(element_ids_are_active(Mesh.bulk_data(), elemIds));
     }
 }
 TEST(MeshBuilder, 1ProcHexFillArea)
@@ -486,34 +711,250 @@ TEST(MeshBuilder, 1ProcHexFillArea)
     int numProcs = stk::parallel_machine_size(comm);
     if (1 == numProcs)
     {
-        HexMeshBuilder Mesh(comm, "1ProcHexFillArea");
-        Mesh.commit_meta();
+        HexMeshBuilder Mesh1(comm, "1ProcHexFillArea");
+        HexMeshBuilder Mesh2(comm, "1ProcHexFillAreaOnProc");
+        HexMeshBuilder Mesh3(comm, "1ProcHexFillAreaRandom");
+        Mesh1.commit_meta();
+        Mesh2.commit_meta();
+        Mesh3.commit_meta();
 
-        EXPECT_EQ(0u, Mesh.num_elems());
+        EXPECT_EQ(0u, Mesh1.num_elems());
+        EXPECT_EQ(0u, Mesh2.num_elems());
+        EXPECT_EQ(0u, Mesh3.num_elems());
 
-        Mesh.begin_modification();
-        Mesh.fill_area(1, 2, 1, 2, 1, 2);
-        Mesh.end_modification();
+        Mesh1.begin_modification();
+        Mesh2.begin_modification();
+        Mesh3.begin_modification();
+        Mesh1.fill_area(1, 2, 1, 2, 1, 2);
+        Mesh2.fill_area_randomly(1, 2, 1, 2, 1, 2);
+        Mesh3.fill_area_on_proc(1, 2, 1, 2, 1, 2, 0);
+        Mesh1.end_modification();
+        Mesh2.end_modification();
+        Mesh3.end_modification();
 
-        EXPECT_EQ(8u, Mesh.num_elems());
+        EXPECT_EQ(8u, Mesh1.num_elems());
+        EXPECT_EQ(8u, Mesh2.num_elems());
+        EXPECT_EQ(8u, Mesh3.num_elems());
     }
 }
 TEST(MeshBuilder, 4ProcHexFillArea)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     int numProcs = stk::parallel_machine_size(comm);
+    int procRank = stk::parallel_machine_rank(comm);
     if (4 == numProcs)
     {
-        HexMeshBuilder Mesh(comm, "4ProcHexFillArea");
+        HexMeshBuilder Mesh(comm, "4ProcHexFillAream");
         Mesh.commit_meta();
 
         EXPECT_EQ(0u, Mesh.num_elems());
 
         Mesh.begin_modification();
-        Mesh.fill_area(1, 4, 1, 4, 1, 4);
+        Mesh.fill_area(1, 2, 1, 2, 1, 5);
         Mesh.end_modification();
 
-        EXPECT_EQ(16u, Mesh.num_elems());
+        stk::mesh::EntityIdVector elemIds;
+        if (0 == procRank)
+        {
+            elemIds.push_back(1);
+            elemIds.push_back(2);
+            elemIds.push_back(4);
+            elemIds.push_back(8);
+            elemIds.push_back(3);
+            elemIds.push_back(6);
+            elemIds.push_back(9);
+            elemIds.push_back(16);
+        }
+        else if (1 == procRank)
+        {
+            elemIds.push_back(10);
+            elemIds.push_back(18);
+            elemIds.push_back(19);
+            elemIds.push_back(31);
+        }
+        else if (2 == procRank)
+        {
+            elemIds.push_back(20);
+            elemIds.push_back(33);
+            elemIds.push_back(34);
+            elemIds.push_back(52);
+        }
+        else if (3 == procRank)
+        {
+            elemIds.push_back(35);
+            elemIds.push_back(54);
+            elemIds.push_back(55);
+            elemIds.push_back(80);
+        }
+
+        EXPECT_TRUE(element_ids_are_active(Mesh.bulk_data(), elemIds));
+    }
+}
+TEST(MeshBuilder, 4ProcHexFillAreaRandom)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(comm);
+    int procRank = stk::parallel_machine_rank(comm);
+    if (4 == numProcs)
+    {
+        HexMeshBuilder Mesh(comm, "4ProcHexFillAreaRandom");
+        Mesh.commit_meta();
+
+        EXPECT_EQ(0u, Mesh.num_elems());
+
+        Mesh.begin_modification();
+        Mesh.fill_area_randomly(1, 2, 1, 2, 1, 2);
+        Mesh.end_modification();
+
+        EXPECT_EQ(2u, Mesh.num_elems());
+
+        stk::mesh::EntityIdVector elemIds;
+        if (0 == procRank)
+        {
+            elemIds.push_back(1);
+            elemIds.push_back(2);
+        }
+        else if (1 == procRank)
+        {
+            elemIds.push_back(4);
+            elemIds.push_back(8);
+        }
+        else if (2 == procRank)
+        {
+            elemIds.push_back(3);
+            elemIds.push_back(6);
+        }
+        else if (3 == procRank)
+        {
+            elemIds.push_back(9);
+            elemIds.push_back(16);
+        }
+
+        EXPECT_TRUE(element_ids_are_active(Mesh.bulk_data(), elemIds));
+    }
+}
+TEST(MeshBuilder, 4ProcHexFillAreaOnProc)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(comm);
+    int procRank = stk::parallel_machine_rank(comm);
+    if (4 == numProcs)
+    {
+        HexMeshBuilder Mesh(comm, "4ProcHexFillAreaOnProc");
+        Mesh.commit_meta();
+
+        EXPECT_EQ(0u, Mesh.num_elems());
+
+        Mesh.begin_modification();
+        Mesh.fill_area_on_proc(1, 2, 1, 1, 1, 1, 0);
+        Mesh.fill_area_on_proc(1, 2, 2, 2, 1, 1, 1);
+        Mesh.fill_area_on_proc(1, 2, 1, 1, 2, 2, 2);
+        Mesh.fill_area_on_proc(1, 2, 2, 2, 2, 2, 3);
+        Mesh.end_modification();
+
+        EXPECT_EQ(2u, Mesh.num_elems());
+
+        stk::mesh::EntityIdVector elemIds;
+        if (0 == procRank)
+        {
+            elemIds.push_back(1);
+            elemIds.push_back(2);
+        }
+        else if (1 == procRank)
+        {
+            elemIds.push_back(3);
+            elemIds.push_back(6);
+        }
+        else if (2 == procRank)
+        {
+            elemIds.push_back(4);
+            elemIds.push_back(8);
+        }
+        else if (3 == procRank)
+        {
+            elemIds.push_back(9);
+            elemIds.push_back(16);
+        }
+
+        EXPECT_TRUE(element_ids_are_active(Mesh.bulk_data(), elemIds));
+    }
+}
+TEST(MeshBuilder, 4ProcHexFillAreaLayers)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    int numProcs = stk::parallel_machine_size(comm);
+    int procRank = stk::parallel_machine_rank(comm);
+    if (4 == numProcs)
+    {
+        HexMeshBuilder Mesh(comm, "4ProcHexFillAreaLayers");
+        Mesh.commit_meta();
+
+        EXPECT_EQ(0u, Mesh.num_elems());
+
+        Mesh.begin_modification();
+        Mesh.fill_area_with_layers(1, 2, 1, 3, 1, 6);
+        Mesh.end_modification();
+
+        if (0 == numProcs || 1 == numProcs)
+            EXPECT_EQ(12u, Mesh.num_elems());
+        else if (2 == numProcs || 3 == numProcs)
+            EXPECT_EQ(6u, Mesh.num_elems());
+
+        stk::mesh::EntityIdVector elemIds;
+        if (0 == procRank)
+        {
+            elemIds.push_back(1);
+            elemIds.push_back(2);
+            elemIds.push_back(3);
+            elemIds.push_back(6);
+            elemIds.push_back(7);
+            elemIds.push_back(13);
+
+            elemIds.push_back(35);
+            elemIds.push_back(54);
+            elemIds.push_back(55);
+            elemIds.push_back(80);
+            elemIds.push_back(81);
+            elemIds.push_back(113);
+
+        }
+        else if (1 == procRank)
+        {
+            elemIds.push_back(4);
+            elemIds.push_back(8);
+            elemIds.push_back(9);
+            elemIds.push_back(16);
+            elemIds.push_back(17);
+            elemIds.push_back(28);
+
+
+            elemIds.push_back(56);
+            elemIds.push_back(82);
+            elemIds.push_back(83);
+            elemIds.push_back(116);
+            elemIds.push_back(117);
+            elemIds.push_back(158);
+        }
+        else if (2 == procRank)
+        {
+            elemIds.push_back(10);
+            elemIds.push_back(18);
+            elemIds.push_back(19);
+            elemIds.push_back(31);
+            elemIds.push_back(32);
+            elemIds.push_back(49);
+        }
+        else if (3 == procRank)
+        {
+            elemIds.push_back(20);
+            elemIds.push_back(33);
+            elemIds.push_back(34);
+            elemIds.push_back(52);
+            elemIds.push_back(53);
+            elemIds.push_back(77);
+        }
+
+        EXPECT_TRUE(element_ids_are_active(Mesh.bulk_data(), elemIds));
     }
 }
 TEST(MeshBuilder, 1ProcQuadRemove)
@@ -549,7 +990,7 @@ TEST(MeshBuilder, 4ProcQuadRemove)
         Mesh.commit_meta();
 
         Mesh.begin_modification();
-        Mesh.fill_area(1, 4, 1, 4);
+        Mesh.fill_area_randomly(1, 4, 1, 4);
         Mesh.end_modification();
 
         EXPECT_EQ(4u, Mesh.num_elems());
@@ -643,7 +1084,7 @@ TEST(MeshBuilder, 1ProcQuadRemoveArea)
         Mesh.commit_meta();
 
         Mesh.begin_modification();
-        Mesh.fill_area(1, 5, 1, 5);
+        Mesh.fill_area_randomly(1, 5, 1, 5);
         Mesh.end_modification();
 
         EXPECT_EQ(25u, Mesh.num_elems());
@@ -666,7 +1107,7 @@ TEST(MeshBuilder, 4ProcQuadRemoveArea)
         Mesh.commit_meta();
 
         Mesh.begin_modification();
-        Mesh.fill_area(1, 4, 1, 4);
+        Mesh.fill_area_randomly(1, 4, 1, 4);
         Mesh.end_modification();
 
         EXPECT_EQ(4u, Mesh.num_elems());
@@ -788,7 +1229,7 @@ TEST(MeshSnake, 1ProcQuadSnakeBegin)
         Mesh.commit_meta();
 
         Mesh.begin_modification();
-        Mesh.fill_area(1, 5, 1, 5);
+        Mesh.fill_area_randomly(1, 5, 1, 5);
         Mesh.end_modification();
 
         QuadMeshSnake Snake(Mesh);
@@ -898,183 +1339,331 @@ TEST(MeshSnake, 1ProcHexSnakeBegin)
         EXPECT_NE(INVALID_DIR, Snake.dir());
     }
 }
-TEST(MeshSnake, 8ProcHexSnakeCrawl)
+TEST(Mesh3D, DISABLED_FullBodyPerformanceTest)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(comm);
-    if (8 == numProcs)
+    int procRank = stk::parallel_machine_rank(comm);
+
+    MultiImageReader reader("fullbody", 146);
+
     {
-        HexMeshBuilder Mesh(comm, "8ProcHexSnakeCrawl");
-        Mesh.commit_meta();
+        HexMeshBuilder meshRandom(comm, "RandomBody");
+        meshRandom.commit_meta();
+        meshRandom.begin_modification();
+        reader.create_randomly_decomposed_mesh(meshRandom);
+        double t1 = MPI_Wtime();
+        meshRandom.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t1 << std::endl;
+        meshRandom.write_mesh();
+    }
 
-        Mesh.begin_modification();
-        Mesh.fill_area(1, 25, 1, 25, 1, 25);
-        Mesh.end_modification();
+    {
+        HexMeshBuilder meshX(comm, "SingleXBody");
+        meshX.commit_meta();
+        meshX.begin_modification();
+        reader.create_x_layered_decomposed_mesh(meshX);
+        double t2 = MPI_Wtime();
+        meshX.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t2 << std::endl;
+        meshX.write_mesh();
+    }
 
-        HexMeshSnake Snake(Mesh);
-        Snake.set_x_bounds(1, 25);
-        Snake.set_y_bounds(1, 25);
-        Snake.set_z_bounds(1, 25);
+    {
+        HexMeshBuilder meshY(comm, "SingleYBody");
+        meshY.commit_meta();
+        meshY.begin_modification();
+        reader.create_y_layered_decomposed_mesh(meshY);
+        double t3 = MPI_Wtime();
+        meshY.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t3 << std::endl;
+        meshY.write_mesh();
+    }
 
-        Snake.begin_snake();
+    {
+        HexMeshBuilder meshZ(comm, "SingleZBody");
+        meshZ.commit_meta();
+        meshZ.begin_modification();
+        reader.create_z_layered_decomposed_mesh(meshZ);
+        double t4 = MPI_Wtime();
+        meshZ.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t4 << std::endl;
+        meshZ.write_mesh();
+    }
 
-        Snake.crawl(10000);
+    {
+        HexMeshBuilder MeshX(comm, "BlockXBody");
+        MeshX.commit_meta();
+        MeshX.begin_modification();
+        reader.create_x_blocked_decomposed_mesh(MeshX);
+        double t5 = MPI_Wtime();
+        MeshX.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t5 << std::endl;
+        MeshX.write_mesh();
+    }
+
+    {
+        HexMeshBuilder MeshY(comm, "BlockYBody");
+        MeshY.commit_meta();
+        MeshY.begin_modification();
+        reader.create_y_blocked_decomposed_mesh(MeshY);
+        double t6 = MPI_Wtime();
+        MeshY.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t6 << std::endl;
+        MeshY.write_mesh();
+    }
+
+    {
+        HexMeshBuilder MeshZ(comm, "BlockZBody");
+        MeshZ.commit_meta();
+        MeshZ.begin_modification();
+        reader.create_z_blocked_decomposed_mesh(MeshZ);
+        double t7 = MPI_Wtime();
+        MeshZ.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t7 << std::endl << std::endl;
+        MeshZ.write_mesh();
     }
 }
-//TEST(Mesh3D, MultiImage)
-//{
-//    MultiImageReader Image("melon", 90);
-//}
-
-TEST(Mesh3D, DISABLED_Body)
+TEST(Mesh3D, DISABLED_BroccoliPerformanceTest)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(comm);
-    if (8 == numProcs)
+    int procRank = stk::parallel_machine_rank(comm);
+
+    MultiImageReader reader("broccoli", 50);
+
     {
-        unsigned numFiles = 90;
+        HexMeshBuilder meshRandom(comm, "RandomBroccoli");
+        meshRandom.commit_meta();
+        meshRandom.begin_modification();
+        reader.create_randomly_decomposed_mesh(meshRandom);
+        double t1 = MPI_Wtime();
+        meshRandom.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t1 << std::endl;
+        meshRandom.write_mesh();
+    }
 
-        HexMeshBuilder Mesh(comm, "Melon");
+    {
+        HexMeshBuilder meshX(comm, "SingleXBroccoli");
+        meshX.commit_meta();
+        meshX.begin_modification();
+        reader.create_x_layered_decomposed_mesh(meshX);
+        double t2 = MPI_Wtime();
+        meshX.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t2 << std::endl;
+        meshX.write_mesh();
+    }
 
-        unsigned procCounter = 0;
-        std::vector<std::pair<unsigned, unsigned>> sliceCoordinates;
+    {
+        HexMeshBuilder meshY(comm, "SingleYBroccoli");
+        meshY.commit_meta();
+        meshY.begin_modification();
+        reader.create_y_layered_decomposed_mesh(meshY);
+        double t3 = MPI_Wtime();
+        meshY.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t3 << std::endl;
+        meshY.write_mesh();
+    }
 
-        Mesh.begin_modification();
-        for (unsigned index = 0; index < numFiles; index++)
-        {
-            sliceCoordinates.clear();
+    {
+        HexMeshBuilder meshZ(comm, "SingleZBroccoli");
+        meshZ.commit_meta();
+        meshZ.begin_modification();
+        reader.create_z_layered_decomposed_mesh(meshZ);
+        double t4 = MPI_Wtime();
+        meshZ.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t4 << std::endl;
+        meshZ.write_mesh();
+    }
 
-            std::string fileName = "melon"+std::to_string(index)+".png";
-            ColoredPNGProcessor image(fileName);
-            image.commit_image_vector_to_pixel_vector_with_greyscale();
+    {
+        HexMeshBuilder MeshX(comm, "BlockXBroccoli");
+        MeshX.commit_meta();
+        MeshX.begin_modification();
+        reader.create_x_blocked_decomposed_mesh(MeshX);
+        double t5 = MPI_Wtime();
+        MeshX.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t5 << std::endl;
+        MeshX.write_mesh();
+    }
 
-            image.get_coordinates_of_inactive_pixels(sliceCoordinates);
+    {
+        HexMeshBuilder MeshY(comm, "BlockYBroccoli");
+        MeshY.commit_meta();
+        MeshY.begin_modification();
+        reader.create_y_blocked_decomposed_mesh(MeshY);
+        double t6 = MPI_Wtime();
+        MeshY.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t6 << std::endl;
+        MeshY.write_mesh();
+    }
 
-            for (std::pair<unsigned, unsigned> xyCoord : sliceCoordinates)
-                Mesh.create_element(xyCoord.first, xyCoord.second, index+1, procCounter%numProcs);
-
-        Mesh.write_mesh();
-            std::cout << index << std::endl;
-            procCounter++;
-        }
-
-        std::cout << "done" << std::endl;
-
-        Mesh.end_modification();
+    {
+        HexMeshBuilder MeshZ(comm, "BlockZBroccoli");
+        MeshZ.commit_meta();
+        MeshZ.begin_modification();
+        reader.create_z_blocked_decomposed_mesh(MeshZ);
+        double t7 = MPI_Wtime();
+        MeshZ.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t7 << std::endl << std::endl;
+        MeshZ.write_mesh();
     }
 }
-TEST(MeshSnake, DISABLED_8ProcCrawl)
+TEST(Mesh3D, DISABLED_HeadPerformanceTest)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
-    int numProcs = stk::parallel_machine_size(comm);
-    if (8 == numProcs)
+    int procRank = stk::parallel_machine_rank(comm);
+
+    MultiImageReader reader("brain3", 80);
+
     {
-        QuadMeshBuilder Mesh(comm, "8ProcQuadSnakeCrawl");
-        Mesh.commit_meta();
+        HexMeshBuilder meshRandom(comm, "RandomHead");
+        meshRandom.commit_meta();
+        meshRandom.begin_modification();
+        reader.create_randomly_decomposed_mesh(meshRandom);
+        double t1 = MPI_Wtime();
+        meshRandom.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t1 << std::endl;
+        meshRandom.write_mesh();
+    }
 
-        Mesh.begin_modification();
-        Mesh.fill_area(1, 100, 1, 100);
-        Mesh.end_modification();
+    {
+        HexMeshBuilder meshX(comm, "SingleXHead");
+        meshX.commit_meta();
+        meshX.begin_modification();
+        reader.create_x_layered_decomposed_mesh(meshX);
+        double t2 = MPI_Wtime();
+        meshX.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t2 << std::endl;
+        meshX.write_mesh();
+    }
 
-        QuadMeshSnake Snake(Mesh);
-        Snake.set_x_bounds(1, 100);
-        Snake.set_y_bounds(1, 100);
-        Snake.set_x_pos(1);
-        Snake.set_y_pos(1);
-        Snake.begin_snake();
+    {
+        HexMeshBuilder meshY(comm, "SingleYHead");
+        meshY.commit_meta();
+        meshY.begin_modification();
+        reader.create_y_layered_decomposed_mesh(meshY);
+        double t3 = MPI_Wtime();
+        meshY.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t3 << std::endl;
+        meshY.write_mesh();
+    }
 
-        Snake.crawl(10000);
+    {
+        HexMeshBuilder meshZ(comm, "SingleZHead");
+        meshZ.commit_meta();
+        meshZ.begin_modification();
+        reader.create_z_layered_decomposed_mesh(meshZ);
+        double t4 = MPI_Wtime();
+        meshZ.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t4 << std::endl;
+        meshZ.write_mesh();
+    }
+
+    {
+        HexMeshBuilder MeshX(comm, "BlockXHead");
+        MeshX.commit_meta();
+        MeshX.begin_modification();
+        reader.create_x_blocked_decomposed_mesh(MeshX);
+        double t5 = MPI_Wtime();
+        MeshX.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t5 << std::endl;
+        MeshX.write_mesh();
+    }
+
+    {
+        HexMeshBuilder MeshY(comm, "BlockYHead");
+        MeshY.commit_meta();
+        MeshY.begin_modification();
+        reader.create_y_blocked_decomposed_mesh(MeshY);
+        double t6 = MPI_Wtime();
+        MeshY.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t6 << std::endl;
+        MeshY.write_mesh();
+    }
+
+    {
+        HexMeshBuilder MeshZ(comm, "BlockZHead");
+        MeshZ.commit_meta();
+        MeshZ.begin_modification();
+        reader.create_z_blocked_decomposed_mesh(MeshZ);
+        double t7 = MPI_Wtime();
+        MeshZ.end_modification();
+        if (0 == procRank)
+            std::cout << MPI_Wtime() - t7 << std::endl << std::endl;
+        MeshZ.write_mesh();
     }
 }
-TEST(JFF, DISABLED_GoL)
+TEST(JFF, DISABLED_GoLTuring)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     int numProcs = stk::parallel_machine_size(comm);
     if (8 == numProcs)
     {
         QuadMeshBuilder Mesh(comm, "8ProcRainbowGoL");
-
-        stk::mesh::Field<int>* lifeField = &Mesh.meta_data().declare_field<stk::mesh::Field<int>>(
-                stk::topology::ELEM_RANK, "lifeField");
-        stk::mesh::Field<int>* neighborField = &Mesh.meta_data().declare_field<stk::mesh::Field<int>>(
-                stk::topology::ELEM_RANK, "neighborField");
-        int val = 0;
-        stk::mesh::put_field(*lifeField, Mesh.meta_data().universal_part(), &val);
-        stk::mesh::put_field(*neighborField, Mesh.meta_data().universal_part(), &val);
-
+        stk::mesh::Field<int>* lifeField = nullptr;
+        stk::mesh::Field<int>* neighborField = nullptr;
+        Mesh.create_life_and_neighbor_fields(lifeField, neighborField);
         Mesh.commit_meta();
 
+        PNGProcessor PNG("turing.png");
+        PNG.commit_image_vector_to_pixel_vector();
+
         Mesh.begin_modification();
-        Mesh.fill_area(1,100, 1, 100);
+        unsigned width = PNG.get_image_width();
+        unsigned height = PNG.get_image_height();
+        Mesh.fill_area(1, width, 1, height);
         Mesh.end_modification();
 
-        NoGhostGameofLife Game(&Mesh.bulk_data(), lifeField, neighborField, "Rainbow");
+        NoGhostGameofLife Game(Mesh.bulk_data(), *lifeField, *neighborField, "RainbowTuring");
+
+        std::vector<std::pair<unsigned, unsigned>> coords;
+        PNG.get_coordinates_of_active_pixels(coords);
 
         stk::mesh::EntityIdVector elemIds;
-
-        for (unsigned x = 1; x <= 100; x++)
-            for (unsigned y = 1; y <= 100; y++)
-                if (!((100*x + y)%5) || !((100*x + y)%7))
-                    elemIds.push_back(generate_two_dim_elem_id(x, y));
+        for (std::pair<unsigned, unsigned>& pair : coords)
+            elemIds.push_back(generate_two_dim_elem_id(pair.first, pair.second));
 
         Game.activate_these_ids(elemIds);
-        Game.run_game_of_life(100);
+        Game.run_game_of_life(29);
     }
 }
-TEST(JFF, DISABLED_PNGPrint)
+TEST(JFF, DISABLED_Maze)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-    QuadMeshBuilder Mesh(comm, "RainbowOceanPrint");
+    QuadMeshBuilder Mesh(comm, "Maze");
+    stk::mesh::Field<int>* lifeField = nullptr;
+    stk::mesh::Field<int>* neighborField = nullptr;
+    Mesh.create_life_and_neighbor_fields(lifeField, neighborField);
     Mesh.commit_meta();
 
-    ColoredPNGProcessor PNG("ocean.png");
-    PNG.commit_image_vector_to_pixel_vector();
-    std::vector<std::pair<unsigned, unsigned>> activePoints;
-    PNG.get_coordinates_of_active_pixels(activePoints);
-
-    std::random_shuffle(activePoints.begin(), activePoints.end());
-
     Mesh.begin_modification();
-    for (unsigned index = 0, size = activePoints.size(); index < size; index++)
-    {
-        Mesh.create_element(activePoints[index].first, activePoints[index].second);
-        if (!(index%500))
-            Mesh.write_mesh();
-
-        std::cout << index << std::endl;
-    }
-    Mesh.end_modification();
-    Mesh.write_mesh();
-}
-TEST(JFF, DISABLED_PNGErase)
-{
-    stk::ParallelMachine comm = MPI_COMM_WORLD;
-
-    QuadMeshBuilder Mesh(comm, "RainbowSandiaErase");
-    Mesh.commit_meta();
-
-    ColoredPNGProcessor PNG("index.png");
-    PNG.commit_image_vector_to_pixel_vector();
-    std::vector<std::pair<unsigned, unsigned>> inactivePoints;
-    PNG.get_coordinates_of_inactive_pixels(inactivePoints);
-
-    std::random_shuffle(inactivePoints.begin(), inactivePoints.end());
-
-    Mesh.begin_modification();
-    Mesh.fill_area(1, PNG.get_image_width(), 1, PNG.get_image_height());
+    Mesh.fill_area(1, 201, 1, 201);
     Mesh.end_modification();
 
-    Mesh.begin_modification();
-    for (unsigned index = 0, size = inactivePoints.size(); index < size; index++)
-    {
-        Mesh.remove_element(inactivePoints[index].first, inactivePoints[index].second);
-        if (!(index%100))
-            Mesh.write_mesh();
+    stk::mesh::EntityIdVector elemIds = {generate_two_dim_elem_id(100, 100)};
 
-        std::cout << index << std::endl;
-    }
-    Mesh.end_modification();
-    Mesh.write_mesh();
+    NoGhostGameofLife Game(Mesh.bulk_data(), *lifeField, *neighborField, "Maze");
+    Game.activate_these_ids(elemIds);
+    Game.run_game_of_life(500);
 }
 }

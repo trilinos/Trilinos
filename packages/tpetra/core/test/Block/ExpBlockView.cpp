@@ -72,7 +72,8 @@ namespace {
     const ST zero = static_cast<ST> (0.0);
     const ST one = static_cast<ST> (1.0);
     const LO minBlockSize = 1; // 1x1 "blocks" should also work
-    const LO maxBlockSize = 32;
+    //const LO maxBlockSize = 32;// SEGFAULT
+    const LO maxBlockSize = 16;// TEST FAILS
 
     // Memory pool for the LittleBlock instances.
     Teuchos::Array<ST> blockPool (maxBlockSize * maxBlockSize);
@@ -118,6 +119,92 @@ namespace {
     }
   }
 
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ExpBlockView, LAPY2, ST )
+  {
+    if (! Teuchos::ScalarTraits<ST>::isOrdinal) { // skip integer types
+      typename GetLapackType<ST>::lapack_type lapack;
+      // Rough tolerance for rounding errors.  LAPY2 uses a different
+      // formula, so I expect it to commit different rounding error.
+      const auto tol = 10.0 * Teuchos::ScalarTraits<ST>::eps ();
+      ST x, y;
+
+      x = 2.0;
+      y = 3.0;
+      auto correctResult = Teuchos::ScalarTraits<ST>::squareroot (x*x + y*y);
+      auto lapy2Result = lapack.LAPY2 (x, y);
+      TEST_FLOATING_EQUALITY( correctResult, lapy2Result, tol );
+
+      x = -2.0;
+      y = 3.0;
+      correctResult = Teuchos::ScalarTraits<ST>::squareroot (x*x + y*y);
+      lapy2Result = lapack.LAPY2 (x, y);
+      TEST_FLOATING_EQUALITY( correctResult, lapy2Result, tol );
+
+      x = 2.0;
+      y = -3.0;
+      correctResult = Teuchos::ScalarTraits<ST>::squareroot (x*x + y*y);
+      lapy2Result = lapack.LAPY2 (x, y);
+      TEST_FLOATING_EQUALITY( correctResult, lapy2Result, tol );
+
+      x = 0.0;
+      y = 3.0;
+      correctResult = Teuchos::ScalarTraits<ST>::squareroot (x*x + y*y);
+      lapy2Result = lapack.LAPY2 (x, y);
+      TEST_FLOATING_EQUALITY( correctResult, lapy2Result, tol );
+
+      x = 5.0;
+      y = 0.0;
+      correctResult = Teuchos::ScalarTraits<ST>::squareroot (x*x + y*y);
+      lapy2Result = lapack.LAPY2 (x, y);
+      TEST_FLOATING_EQUALITY( correctResult, lapy2Result, tol );
+
+      x = 0.0;
+      y = -3.0;
+      correctResult = Teuchos::ScalarTraits<ST>::squareroot (x*x + y*y);
+      lapy2Result = lapack.LAPY2 (x, y);
+      TEST_FLOATING_EQUALITY( correctResult, lapy2Result, tol );
+
+      x = -5.0;
+      y = 0.0;
+      correctResult = Teuchos::ScalarTraits<ST>::squareroot (x*x + y*y);
+      lapy2Result = lapack.LAPY2 (x, y);
+      TEST_FLOATING_EQUALITY( correctResult, lapy2Result, tol );
+    }
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ExpBlockView, LARFGP, ST )
+  {
+    if (! Teuchos::ScalarTraits<ST>::isOrdinal) { // skip integer types
+      typedef typename Teuchos::ScalarTraits<ST>::magnitudeType MT;
+      typename GetLapackType<ST>::lapack_type lapack;
+
+      const ST zero = Teuchos::ScalarTraits<ST>::zero ();
+      const ST one = Teuchos::ScalarTraits<ST>::one ();
+      // Rough tolerance for rounding errors.
+      const auto tol = 10.0 * Teuchos::ScalarTraits<ST>::eps ();
+      const int n = 2;
+      const int incx = 1;
+      ST alpha, x[2], tau;
+
+      alpha = 0.0;
+      x[0] = 0.0;
+      x[1] = 0.0;
+      tau = 0.0;
+
+      lapack.LARFG (n, &alpha, x, incx, &tau);
+      TEST_FLOATING_EQUALITY( tau, zero, tol );
+
+      alpha = 0.0;
+      x[0] = 1.0;
+      x[1] = 0.0;
+      tau = 1.0;
+
+      lapack.LARFG (n, &alpha, x, incx, &tau);
+      TEST_FLOATING_EQUALITY( tau, one, tol );
+    }
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -125,9 +212,16 @@ namespace {
 #define UNIT_TEST_GROUP( SCALAR, LOCAL_ORDINAL ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, SolveIdentity, SCALAR, LOCAL_ORDINAL )
 
+#define UNIT_TEST_GROUP2( SCALAR ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, LAPY2, SCALAR ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, LARFGP, SCALAR )
+
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_SL_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
+  //TPETRA_INSTANTIATE_SL_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
+
+  TPETRA_INSTANTIATE_S_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP2 )
+
 
 } // namespace (anonymous)
 

@@ -854,7 +854,7 @@ GraphModel<Adapter>::GraphModel(
 
     ia->getEdgeWeightsView(ewgts, stride, w);
 
-    ArrayRCP<const scalar_t> wgtArray(ewgts, 0, numLocalEdges_, false);
+    ArrayRCP<const scalar_t> wgtArray(ewgts, 0, numLocalEdges_*stride, false);
     eWeights_[w] = input_t(wgtArray, stride);
   }
 
@@ -933,7 +933,7 @@ GraphModel<Adapter>::GraphModel(
 
     try {
       get2ndAdjsViewFromAdjs(ia, comm_, primaryEType, secondAdjEType, offsets,
-			     nborIds);
+                             nborIds);
     }
     Z2_FORWARD_EXCEPTIONS;
     /*throw std::logic_error("MeshAdapter must provide 2nd adjacencies for "
@@ -955,22 +955,27 @@ GraphModel<Adapter>::GraphModel(
   offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
 
   // Get edge weights
-  nWeightsPerEdge_ = ia->getNumWeightsPer2ndAdj(primaryEType, secondAdjEType);
+  // Cannot specify edge weights if Zoltan2 computes the second adjacencies;
+  // there's no way to know the correct order for the adjacencies and weights.
+  // InputAdapter must provide 2nd adjs in order for edge weights to be used.
+  if (ia->avail2ndAdjs(primaryEType, secondAdjEType)) {
+    nWeightsPerEdge_ = ia->getNumWeightsPer2ndAdj(primaryEType, secondAdjEType);
 
-  if (nWeightsPerEdge_ > 0){
-    input_t *wgts = new input_t [nWeightsPerEdge_];
-    eWeights_ = arcp(wgts, 0, nWeightsPerEdge_, true);
-  }
+    if (nWeightsPerEdge_ > 0){
+      input_t *wgts = new input_t [nWeightsPerEdge_];
+      eWeights_ = arcp(wgts, 0, nWeightsPerEdge_, true);
+    }
 
-  for (int w=0; w < nWeightsPerEdge_; w++){
-    const scalar_t *ewgts=NULL;
-    int stride=0;
+    for (int w=0; w < nWeightsPerEdge_; w++){
+      const scalar_t *ewgts=NULL;
+      int stride=0;
 
-    ia->get2ndAdjWeightsView(primaryEType, secondAdjEType,
-			     ewgts, stride, w);
+      ia->get2ndAdjWeightsView(primaryEType, secondAdjEType,
+                               ewgts, stride, w);
 
-    ArrayRCP<const scalar_t> wgtArray(ewgts, 0, numLocalEdges_, false);
-    eWeights_[w] = input_t(wgtArray, stride);
+      ArrayRCP<const scalar_t> wgtArray(ewgts, 0, numLocalEdges_, false);
+      eWeights_[w] = input_t(wgtArray, stride);
+    }
   }
 
   shared_constructor(ia, modelFlags);
@@ -979,7 +984,7 @@ GraphModel<Adapter>::GraphModel(
   shared_GetVertexCoords<adapterWithCoords_t>(&(*ia));
 
   env_->timerStop(MACRO_TIMERS, "GraphModel constructed from MeshAdapter");
-  print();
+  //print();
 }
 
 

@@ -324,6 +324,12 @@ public:
       // Make sure league size is permissable
       if(league_size_ >= int(Impl::cuda_internal_maximum_grid_count()))
         Impl::throw_runtime_exception( "Requested too large league_size for TeamPolicy on Cuda execution space.");
+
+      // Make sure total block size is permissable
+      if ( m_team_size * m_vector_length > 1024 ) {
+        Impl::throw_runtime_exception(std::string("Kokkos::TeamPolicy< Cuda > the team size is too large. Team size x vector length must be smaller than 1024."));
+      }
+
     }
 
   TeamPolicy( int league_size_ , int team_size_request , int vector_length_request = 1 )
@@ -342,6 +348,11 @@ public:
       // Make sure league size is permissable
       if(league_size_ >= int(Impl::cuda_internal_maximum_grid_count()))
         Impl::throw_runtime_exception( "Requested too large league_size for TeamPolicy on Cuda execution space.");
+
+      // Make sure total block size is permissable
+      if ( m_team_size * m_vector_length > 1024 ) {
+        Impl::throw_runtime_exception(std::string("Kokkos::TeamPolicy< Cuda > the team size is too large. Team size x vector length must be smaller than 1024."));
+      }
 
     }
 
@@ -794,6 +805,9 @@ public:
     // The global parallel_reduce does not support vector_length other than 1 at the moment
     if(policy.vector_length() > 1)
       Impl::throw_runtime_exception( "Kokkos::parallel_reduce with a TeamPolicy using a vector length of greater than 1 is not currently supported for CUDA.");
+
+    if(policy.team_size() < 32)
+      Impl::throw_runtime_exception( "Kokkos::parallel_reduce with a TeamPolicy using a team_size smaller than 32 is not currently supported with CUDA.");
 
     // Functor's reduce memory, team scan memory, and team shared memory depend upon team size.
 

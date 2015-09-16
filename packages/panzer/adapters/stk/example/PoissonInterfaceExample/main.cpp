@@ -126,7 +126,7 @@ assembleAndSolve(panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
   double bnorm;
   Teuchos::RCP<Epetra_Vector> x, dx;
   Teuchos::RCP<Epetra_CrsMatrix> A;
-  for (int it = 0; it < 500; ++it) {
+  for (int it = 0; it < 1500; ++it) {
     // assemble linear system
     // build linear algebra objects: Ghost is for parallel assembly, it contains
     //                               local element contributions summed, the global IDs
@@ -335,11 +335,12 @@ int main(int argc,char * argv[])
 
   Teuchos::ParameterList closure_models("Closure Models");
   {
-    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE1").set<double>("Value",1.0); // a constant source
-    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE2").set<double>("Value",1.0); // a constant source
+    // a constant source
+    //closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE1").set<double>("Value",10.0);
+    //closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE2").set<double>("Value",10.0);
     // SOURCE_TEMPERATURE field is required by the PoissonEquationSet
-    //closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE1").set<std::string>("Type","SIMPLE SOURCE");
-    //closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE2").set<std::string>("Type","SIMPLE SOURCE");
+    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE1").set<std::string>("Type","SIMPLE SOURCE");
+    closure_models.sublist("solid").sublist("SOURCE_TEMPERATURE2").set<std::string>("Type","SIMPLE SOURCE");
   }
 
   Teuchos::ParameterList user_data("User Data"); // user data can be empty here

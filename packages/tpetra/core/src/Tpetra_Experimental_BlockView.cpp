@@ -42,6 +42,8 @@
 #include "Tpetra_Experimental_BlockView.hpp"
 
 #ifdef HAVE_TPETRA_INST_FLOAT128
+#include "Kokkos_ArithTraits.hpp"
+
 namespace Tpetra {
 namespace Details {
 
@@ -256,6 +258,17 @@ LASWP (const int N, __float128 A[], const int LDA, const int K1,
 
 void
 Lapack128::
+GETRI (const int /* N */, __float128 /* A */ [], const int /* LDA */,
+       int /* IPIV */ [], __float128 /* WORK */ [], const int /* LWORK */,
+       int* /* INFO */) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Lapack128::GETRI: Not implemented yet.");
+}
+
+
+void
+Lapack128::
 GETRS (const char TRANS, const int N, const int NRHS,
        const __float128 A[], const int LDA, const int IPIV[],
        __float128 B[], const int LDB, int* INFO) const
@@ -332,6 +345,122 @@ GETRS (const char TRANS, const int N, const int NRHS,
   }
 
   //std::cerr << "DONE WITH GETRS" << std::endl;
+}
+
+__float128
+Lapack128::
+LAPY2 (const __float128& x, const __float128& y)
+{
+  const __float128 xabs = fabsq (x);
+  const __float128 yabs = fabsq (y);
+  const __float128 w = fmaxq (xabs, yabs);
+  const __float128 z = fminq (xabs, yabs);
+
+  if (z == 0.0) {
+    return w;
+  } else {
+    const __float128 one = 1.0;
+    const __float128 z_div_w = z / w;
+    return w * sqrtq (one + z_div_w * z_div_w);
+  }
+}
+
+void
+Lapack128::
+LARFG (const int N, __float128* const ALPHA,
+       __float128 X[], const int INCX, __float128* const TAU)
+{
+  // This is actually LARFGP.
+
+  typedef Kokkos::Details::ArithTraits<__float128> KAT;
+
+  const __float128 zero = 0.0;
+  const __float128 one = 1.0;
+  const __float128 two = 2.0;
+  Teuchos::BLAS<int, __float128> blas;
+
+  if (N <= 0) {
+    *TAU = zero;
+    return;
+  }
+  __float128 xnorm = blas.NRM2 (N-1, X, INCX);
+
+  if (xnorm == zero) {
+    // H  =  [+/-1, 0; I], sign chosen so *ALPHA >= 0
+    if (*ALPHA >= zero) {
+      // When TAU.eq.ZERO, the vector is special-cased to be all zeros
+      // in the application routines.  We do not need to clear it.
+      *TAU = zero;
+    } else {
+      // However, the application routines rely on explicit
+      // zero checks when TAU.ne.ZERO, and we must clear X.
+      *TAU = two;
+      for (int j = 0; j < N; ++j) {
+        X[j * INCX] = 0.0;
+      }
+      *ALPHA = -*ALPHA;
+    }
+  } else { // general case (norm of x is nonzero)
+    // This implements Fortran's two-argument SIGN intrinsic.
+    __float128 beta = copysignq (LAPY2 (*ALPHA, xnorm), *ALPHA);
+    const __float128 smlnum = KAT::sfmin () / KAT::eps ();
+    int knt = 0;
+
+    if (fabsq (beta) < smlnum) {
+      // XNORM, BETA may be inaccurate; scale X and recompute them
+
+      __float128 bignum = one / smlnum;
+      do {
+        knt = knt + 1;
+        blas.SCAL (N-1, bignum, X, INCX);
+        beta = beta*bignum;
+        *ALPHA = *ALPHA*bignum;
+      } while (fabsq(beta) < smlnum);
+
+      // New BETA is at most 1, at least SMLNUM
+      xnorm = blas.NRM2 (N-1, X, INCX);
+      beta = copysignq (LAPY2 (*ALPHA, xnorm), *ALPHA);
+    }
+
+    __float128 savealpha = *ALPHA;
+    *ALPHA = *ALPHA + beta;
+    if (beta < zero) {
+      beta = -beta;
+      *TAU = -*ALPHA / beta;
+    } else {
+      *ALPHA = xnorm * (xnorm / *ALPHA);
+      *TAU = *ALPHA / beta;
+      *ALPHA = -*ALPHA;
+    }
+
+    if (fabsq (*TAU) <= smlnum) {
+      // In the case where the computed TAU ends up being a
+      // denormalized number, it loses relative accuracy. This is a
+      // BIG problem. Solution: flush TAU to ZERO. This explains the
+      // next IF statement.
+      //
+      // (Bug report provided by Pat Quillen from MathWorks on Jul 29,
+      // 2009.)  (Thanks Pat. Thanks MathWorks.)
+
+      if (savealpha >= zero) {
+        *TAU = zero;
+      } else {
+        *TAU = two;
+        for (int j = 0; j < N; ++j) {
+          X[j*INCX] = 0.0;
+        }
+        beta = -savealpha;
+      }
+    }
+    else { // this is the general case
+      blas.SCAL (N-1, one / *ALPHA, X, INCX);
+    }
+    // If BETA is subnormal, it may lose relative accuracy
+    for (int j = 1; j <= knt; ++j) {
+      beta = beta*smlnum;
+    }
+    *ALPHA = beta;
+  }
 }
 
 } // namespace Details

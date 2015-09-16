@@ -47,6 +47,7 @@
 
 #include "Ifpack2_Container.hpp"
 #include "Ifpack2_Details_MultiVectorLocalGatherScatter.hpp"
+#include "Ifpack2_Details_LapackSupportsScalar.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_RowMatrix.hpp"
@@ -100,8 +101,18 @@ namespace Ifpack2 {
 /// to modify the extract() method, so that it translates explicitly
 /// between local row and column indices, instead of just assuming
 /// that they are the same.
-template<typename MatrixType, typename LocalScalarType>
-class BandedContainer : public Container<MatrixType> {
+template<class MatrixType,
+         class LocalScalarType,
+         const bool supportsLocalScalarType =
+         ::Ifpack2::Details::LapackSupportsScalar<LocalScalarType>::value >
+class BandedContainer {};
+
+/// \brief Partial specialization with the non-stub implementation,
+///   for LocalScalarType types that LAPACK supports.
+template<class MatrixType,
+         class LocalScalarType>
+class BandedContainer<MatrixType, LocalScalarType, true> :
+    public Container<MatrixType> {
 public:
   //! \name Public typedefs
   //@{
@@ -163,7 +174,7 @@ public:
   ///   <tt>number of superdiagonals. Note: Internally, we store a Teuchos::SerialBandedMatrix
   ///       with kl+ku superdiagonals, as we need the addtional storage for the LU decomposition.
   BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
-                  const Teuchos::ArrayView<const local_ordinal_type>& localRows);
+                   const Teuchos::ArrayView<const local_ordinal_type>& localRows);
 
   //! Destructor (declared virtual for memory safety of derived classes).
   virtual ~BandedContainer ();
@@ -176,16 +187,22 @@ public:
   ///
   /// Local matrices must be square.  Each process has exactly one
   /// matrix.  Those matrices may vary in dimensions.
-  virtual size_t getNumRows() const;
+  virtual size_t getNumRows() const {
+    return numRows_;
+  }
 
   //! Whether the container has been successfully initialized.
-  virtual bool isInitialized() const;
+  virtual bool isInitialized () const {
+    return IsInitialized_;
+  }
 
   //! Whether the container has been successfully computed.
-  virtual bool isComputed() const;
+  virtual bool isComputed () const {
+    return IsComputed_;
+  }
 
   //! Set all necessary parameters.
-  virtual void setParameters(const Teuchos::ParameterList& List);
+  virtual void setParameters (const Teuchos::ParameterList& List);
 
   //@}
   //! \name Mathematical functions
@@ -294,6 +311,212 @@ private:
   local_ordinal_type kl_; //< number of subdiagonals
   local_ordinal_type ku_; //< number of superdiagonals
 };
+
+/// \brief Partial specialization of BandedContainer with the stub
+///   implementation, for LocalScalarType types that LAPACK does NOT
+///   support.
+template<class MatrixType, class LocalScalarType>
+class BandedContainer<MatrixType, LocalScalarType, false> :
+    public Container<MatrixType> {
+public:
+  //! \name Public typedefs
+  //@{
+
+  /// \brief The first template parameter of this class.
+  ///
+  /// This must be either a Tpetra::RowMatrix specialization or a
+  /// Tpetra::CrsMatrix specialization.  It may have entirely
+  /// different template parameters (e.g., \c scalar_type) than
+  /// <tt>InverseType</tt>.
+  typedef MatrixType matrix_type;
+  //! The second template parameter of this class.
+  typedef LocalScalarType local_scalar_type;
+
+  //! The type of entries in the input (global) matrix.
+  typedef typename MatrixType::scalar_type scalar_type;
+  //! The type of local indices in the input (global) matrix.
+  typedef typename MatrixType::local_ordinal_type local_ordinal_type;
+  //! The type of global indices in the input (global) matrix.
+  typedef typename MatrixType::global_ordinal_type global_ordinal_type;
+  //! The Node type of the input (global) matrix.
+  typedef typename MatrixType::node_type node_type;
+
+  static_assert(std::is_same<MatrixType,
+                  Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                    typename MatrixType::local_ordinal_type,
+                    typename MatrixType::global_ordinal_type,
+                    typename MatrixType::node_type> >::value,
+                "Ifpack2::BandedContainer: Please use MatrixType = Tpetra::RowMatrix.");
+
+  /// \brief The (base class) type of the input matrix.
+  ///
+  /// The input matrix to the constructor may be either a
+  /// Tpetra::RowMatrix specialization or a Tpetra::CrsMatrix
+  /// specialization.  However, we want to make the constructor as
+  /// general as possible, so we always accept the matrix as a
+  /// Tpetra::RowMatrix.  This typedef is the appropriate
+  /// specialization of Tpetra::RowMatrix.
+  typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
+
+  //@}
+  //! \name Constructor and destructor
+  //@{
+
+  /// \brief Constructor.
+  ///
+  /// \brief matrix [in] The original input matrix.  This Container
+  ///   will construct a local diagonal block from the rows given by
+  ///   <tt>localRows</tt>.
+  ///
+  /// \param localRows [in] The set of (local) rows assigned to this
+  ///   container.  <tt>localRows[i] == j</tt>, where i (from 0 to
+  ///   <tt>getNumRows() - 1</tt>) indicates the SparseContainer's
+  ///   row, and j indicates the local row in the calling process.
+  ///   <tt>localRows.size()</tt> gives the number of rows in the
+  ///   local matrix on each process.  This may be different on
+  ///   different processes.
+  ///   <tt>number of subdiagonals
+  ///   <tt>number of superdiagonals. Note: Internally, we store a Teuchos::SerialBandedMatrix
+  ///       with kl+ku superdiagonals, as we need the addtional storage for the LU decomposition.
+  BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+                   const Teuchos::ArrayView<const local_ordinal_type>& localRows);
+
+  //! Destructor (declared virtual for memory safety of derived classes).
+  virtual ~BandedContainer ();
+
+  //@}
+  //! \name Get and set methods
+  //@{
+
+  /// \brief The number of rows in the local matrix on the calling process.
+  ///
+  /// Local matrices must be square.  Each process has exactly one
+  /// matrix.  Those matrices may vary in dimensions.
+  virtual size_t getNumRows() const {
+    return numRows_;
+  }
+
+  //! Whether the container has been successfully initialized.
+  virtual bool isInitialized () const {
+    return IsInitialized_;
+  }
+
+  //! Whether the container has been successfully computed.
+  virtual bool isComputed () const {
+    return IsComputed_;
+  }
+
+  //! Set all necessary parameters.
+  virtual void setParameters (const Teuchos::ParameterList& List);
+
+  //@}
+  //! \name Mathematical functions
+  //@{
+
+  //! Do all set-up operations that only require matrix structure.
+  virtual void initialize ();
+
+  //! Extract the local diagonal block and prepare the solver.
+  virtual void compute ();
+
+  //! Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
+  virtual void
+  apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+         Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+         Teuchos::ETransp mode=Teuchos::NO_TRANS,
+         scalar_type alpha=Teuchos::ScalarTraits<scalar_type>::one(),
+         scalar_type beta=Teuchos::ScalarTraits<scalar_type>::zero()) const;
+
+  //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
+  virtual void
+  weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+                 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+                 const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
+                 Teuchos::ETransp mode=Teuchos::NO_TRANS,
+                 scalar_type alpha=Teuchos::ScalarTraits<scalar_type>::one(),
+                 scalar_type beta=Teuchos::ScalarTraits<scalar_type>::zero()) const;
+
+  //@}
+  //! \name Miscellaneous methods
+  //@{
+
+  /// \brief Print information about this object to the given output stream.
+  ///
+  /// operator<< uses this method.
+  virtual std::ostream& print (std::ostream& os) const;
+
+  //@}
+  //! @name Implementation of Teuchos::Describable
+  //@{
+
+  //! A one-line description of this object.
+  virtual std::string description () const;
+
+  //! Print the object with some verbosity level to the given FancyOStream.
+  virtual void
+  describe (Teuchos::FancyOStream &out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const;
+
+  //@}
+private:
+  //! Copy constructor: Declared but not implemented, to forbid copy construction.
+  BandedContainer (const BandedContainer<MatrixType, LocalScalarType>& rhs);
+
+  //! Extract the submatrix identified by the local indices set by the constructor.
+  void extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix);
+
+  /// \brief Factor the extracted submatrix.
+  ///
+  /// Call this after calling extract().
+  void factor ();
+
+  typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type,
+                              global_ordinal_type, node_type> local_mv_type;
+
+  /// \brief Post-permutation, post-view version of apply().
+  ///
+  /// apply() first does any necessary subset permutation and view
+  /// creation (or copying data), then calls this method to solve the
+  /// linear system with the diagonal block.
+  ///
+  /// \param X [in] Subset permutation of the input X of apply().
+  /// \param Y [in] Subset permutation of the input/output Y of apply().
+  void
+  applyImpl (const local_mv_type& X,
+             local_mv_type& Y,
+             Teuchos::ETransp mode,
+             const local_scalar_type alpha,
+             const local_scalar_type beta) const;
+
+  //! Number of rows in the local matrix.
+  size_t numRows_;
+
+  //! The local diagonal block, which compute() extracts.
+  Teuchos::RCP<Teuchos::SerialBandDenseMatrix<int, local_scalar_type> > diagBlock_;
+
+  //! Permutation array from LAPACK (GETRF).
+  Teuchos::Array<int> ipiv_;
+
+  //! Map of the input and output Tpetra::MultiVector arguments of applyImpl().
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> > localMap_;
+
+  //! Solution vector.
+  mutable Teuchos::RCP<local_mv_type> Y_;
+
+  //! Input vector for local problems
+  mutable Teuchos::RCP<local_mv_type> X_;
+
+  //! If \c true, the container has been successfully initialized.
+  bool IsInitialized_;
+
+  //! If \c true, the container has been successfully computed.
+  bool IsComputed_;
+
+  local_ordinal_type kl_; //< number of subdiagonals
+  local_ordinal_type ku_; //< number of superdiagonals
+};
+
 
 }// namespace Ifpack2
 

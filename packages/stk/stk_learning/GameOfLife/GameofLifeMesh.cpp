@@ -88,15 +88,15 @@ TwoDimGameofLifeMesh::TwoDimGameofLifeMesh(stk::ParallelMachine comm,
         m_rowsPerProc(height/m_numProcs), m_nodesPerRow(m_width+1)
 {
     declare_coordinate_field();
-    meta_data()->commit();
+    meta_data().commit();
 }
 
 // private
 void TwoDimGameofLifeMesh::declare_coordinate_field()
 {
-    m_nodeCoords = &meta_data()->declare_field<stk::mesh::Field<double,stk::mesh::Cartesian2d>>(
+    m_nodeCoords = &meta_data().declare_field<stk::mesh::Field<double,stk::mesh::Cartesian2d>>(
             stk::topology::NODE_RANK, "coordinates");
-    stk::mesh::put_field(*m_nodeCoords, meta_data()->universal_part(), 2);
+    stk::mesh::put_field(*m_nodeCoords, meta_data().universal_part(), 2);
 }
 bool TwoDimGameofLifeMesh::only_one_active_proc()
 {
@@ -137,8 +137,8 @@ void TwoDimGameofLifeMesh::share_bottom_nodes()
 void TwoDimGameofLifeMesh::share_node_with_this_id_to_this_processor(unsigned nodeId,
                                                                           unsigned procNum)
 {
-    stk::mesh::Entity node = bulk_data()->get_entity(stk::topology::NODE_RANK, nodeId);
-    bulk_data()->add_node_sharing(node, procNum);
+    stk::mesh::Entity node = bulk_data().get_entity(stk::topology::NODE_RANK, nodeId);
+    bulk_data().add_node_sharing(node, procNum);
 }
 //*
 //*
@@ -258,15 +258,15 @@ ThreeDimGameofLifeMesh::ThreeDimGameofLifeMesh(stk::ParallelMachine comm,
  m_nodesPerSlice(m_nodeWidth*m_nodeHeight)
 {
     declare_coordinate_field();
-    meta_data()->commit();
+    meta_data().commit();
 }
 
 //private
 void ThreeDimGameofLifeMesh::declare_coordinate_field()
 {
-    m_nodeCoords = &meta_data()->declare_field<stk::mesh::Field<double,stk::mesh::Cartesian>>(
+    m_nodeCoords = &meta_data().declare_field<stk::mesh::Field<double,stk::mesh::Cartesian>>(
             stk::topology::NODE_RANK, "coordinates");
-    stk::mesh::put_field(*m_nodeCoords, meta_data()->universal_part(), 3);
+    stk::mesh::put_field(*m_nodeCoords, meta_data().universal_part(), 3);
 }
 bool ThreeDimGameofLifeMesh::only_one_active_proc()
 {
@@ -294,8 +294,8 @@ void ThreeDimGameofLifeMesh::share_nodes_in_front()
 void ThreeDimGameofLifeMesh::share_node_with_this_id_to_this_processor(unsigned nodeId,
                                                                             unsigned procNum)
 {
-    stk::mesh::Entity node = bulk_data()->get_entity(stk::topology::NODE_RANK, nodeId);
-    bulk_data()->add_node_sharing(node, procNum);
+    stk::mesh::Entity node = bulk_data().get_entity(stk::topology::NODE_RANK, nodeId);
+    bulk_data().add_node_sharing(node, procNum);
 }
 void ThreeDimGameofLifeMesh::number_coordinate_field()
 {

@@ -93,8 +93,8 @@ namespace MueLu {
         // find column entry with max absolute value
         Scalar maxVal = 0.0;
         for (size_t j = 0; j < Teuchos::as<size_t>(indices.size()); j++) {
-          if(std::abs(vals[j]) > maxVal) {
-            maxVal = std::abs(vals[j]);
+          if(Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]) > maxVal) {
+            maxVal = Teuchos::ScalarTraits<Scalar>::magnitude(vals[j]);
           }
         }
 
@@ -151,8 +151,8 @@ namespace MueLu {
       Scalar maxVal = 0.0;
       size_t maxPerformancePermutationIdx = 0;
       for (size_t j = 0; j < Teuchos::as<size_t>(performance_vector.size()); j++) {
-        if(std::abs(performance_vector[j]) > maxVal) {
-          maxVal = std::abs(performance_vector[j]);
+        if(Teuchos::ScalarTraits<Scalar>::magnitude(performance_vector[j]) > maxVal) {
+          maxVal = Teuchos::ScalarTraits<Scalar>::magnitude(performance_vector[j]);
           maxPerformancePermutationIdx = j;
         }
       }

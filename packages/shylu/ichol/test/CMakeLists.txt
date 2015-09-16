@@ -1,39 +1,57 @@
 IF(Kokkos_ENABLE_Serial)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     test_serial
+    NOEXEPREFIX
     SOURCES main_serial.cpp 
+    FAIL_REGULAR_EXPRESSION "FAILED"
     COMM serial mpi
     NUM_MPI_PROCS 1
-    FAIL_REGULAR_EXPRESSION "FAILED"
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     test_graphviz
+    NOEXEPREFIX
     SOURCES main_graphviz.cpp 
+    FAIL_REGULAR_EXPRESSION "FAILED"
     COMM serial mpi
     NUM_MPI_PROCS 1
-    FAIL_REGULAR_EXPRESSION "FAILED"
 )
 ENDIF()
 
 IF(Kokkos_ENABLE_Pthread)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     test_pthread
+    NOEXEPREFIX
     SOURCES main_pthread.cpp 
+    FAIL_REGULAR_EXPRESSION "FAILED"
     COMM serial mpi
     NUM_MPI_PROCS 1
-    FAIL_REGULAR_EXPRESSION "FAILED"
   )
 ENDIF()
 
 IF(Kokkos_ENABLE_QTHREAD)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     test_qthread
+    NOEXEPREFIX
     SOURCES main_qthread.cpp 
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    FAIL_REGULAR_EXPRESSION "FAILED"
   )
+  INCLUDE(ProcessorCount)
+  ProcessorCount(nthreads)
+  SET(nthreads 1)
+  SET(i 1)
+  MATH(EXPR nthreads "${nthreads}+1")
+  WHILE(i LESS nthreads)
+    TRIBITS_ADD_ADVANCED_TEST(
+      test_qthread_${i}
+      TEST_0 EXEC test_qthread
+             NOEXEPREFIX        
+             ARGS --nthreads=${i} --stack-size=8192
+      FAIL_REGULAR_EXPRESSION "FAILED"
+      COMM serial mpi
+      OVERALL_NUM_MPI_PROCS 1
+    )
+    MATH(EXPR i "${i}*2")
+  ENDWHILE()
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(${PACKAGE_NAME}_Test_Files

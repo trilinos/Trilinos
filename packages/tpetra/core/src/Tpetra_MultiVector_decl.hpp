@@ -1597,6 +1597,26 @@ namespace Tpetra {
 #include "Tpetra_KokkosRefactor_MultiVector_decl.hpp"
 #endif
 
+namespace Teuchos {
+  // Declare and define TypeNameTraits specialization, so that
+  // Teuchos::TypeNameTraits<MV> for MV = Tpetra::MultiVector.
+  template<class SC, class LO, class GO, class NT>
+  class TypeNameTraits<Tpetra::MultiVector<SC, LO, GO, NT> > {
+  public:
+    static std::string name () {
+      return std::string ("Tpetra::MultiVector<") +
+        TypeNameTraits<SC>::name () + "," +
+        TypeNameTraits<LO>::name () + "," +
+        TypeNameTraits<GO>::name () + "," +
+        TypeNameTraits<NT>::name () + ">";
+    }
+    static std::string
+    concreteName (const Tpetra::MultiVector<SC, LO, GO, NT>&) {
+      return name ();
+    }
+  };
+} // namespace Teuchos
+
 namespace Tpetra {
 
   // Implementation (declaration is above).
