@@ -187,7 +187,7 @@ namespace Rythmos {
     //* returns true if the objects verbosity level is equal to or greater than level in verbLevel */
     bool doOutput_(Teuchos::EVerbosityLevel verbLevel);
 
-  private:
+  protected:
 
     StepControlStrategyState stepControlState_;
     RCP<ErrWtVecCalcBase<Scalar> > errWtVecCalc_;
