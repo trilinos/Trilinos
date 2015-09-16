@@ -36,6 +36,9 @@ int main (int argc, char *argv[]) {
   clp.setOption("enable-team-interface", "disable-team-interface",
                 &team_interface, "Flag for team interface");
 
+  int stack_size = 8192;
+  clp.setOption("stack-size", &stack_size, "Stack size");
+
   bool verbose = false;
   clp.setOption("enable-verbose", "disable-verbose", &verbose, "Flag for verbose printing");
 
@@ -62,6 +65,7 @@ int main (int argc, char *argv[]) {
     setenv("QT_HWPAR",                    to_string(nthreads).c_str(),             overwrite);
     setenv("QT_NUM_SHEPHERDS",            to_string(nshepherds).c_str(),           overwrite);
     setenv("QT_NUM_WORKERS_PER_SHEPHERD", to_string(nworker_per_shepherd).c_str(), overwrite);
+    setenv("QT_STACK_SIZE",               to_string(stack_size).c_str(),           overwrite);
 
     exec_space::initialize(nthreads);
     exec_space::print_configuration(cout, true);
@@ -75,6 +79,7 @@ int main (int argc, char *argv[]) {
     unsetenv("QT_HWPAR");
     unsetenv("QT_NUM_SHEPHERDS");
     unsetenv("QT_NUM_WORKERS_PER_SHEPHERD");
+    unsetenv("QT_STACK_SIZE");
   }
 
   return r_val;

@@ -5,6 +5,8 @@
 #include <Kokkos_Qthread.hpp>
 #include <Qthread/Kokkos_Qthread_TaskPolicy.hpp>
 
+#include "Teuchos_CommandLineProcessor.hpp"
+
 #include "test_macrodef.hpp"
 #include "test_suite.hpp"
 
@@ -19,6 +21,27 @@ int g_funct_counter = 0;
 
 int main(int argc, char *argv[]) {
   int r_val = 0;
+
+  Teuchos::CommandLineProcessor clp;
+
+  int nthreads = 1;
+  clp.setOption("nthreads", &nthreads, "Number of threads");
+
+  int stack_size = 8192;
+  clp.setOption("stack-size", &stack_size, "Stack size");
+
+  clp.recogniseAllOptions(true);
+  clp.throwExceptions(false);
+
+  Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
+
+  if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) {
+    cout << "Testing Kokkos::Qthread:: Failed in parsing command line input" << endl;
+    return -1;
+  } 
+  if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
+    return 0;
+  }
 
   unsigned threads_count = 0;
   if (Kokkos::hwloc::available())  {
@@ -41,8 +64,14 @@ int main(int argc, char *argv[]) {
          << "Threads count    = " << threads_count << endl;
   }
 
-  for (unsigned i=1;i<(threads_count+1);i*=2) {
-    Kokkos::Qthread::initialize( i );
+  if (static_cast<unsigned int>(nthreads) > threads_count) {
+    ++r_val;
+    cout << "Testing Kokkos::Qthread:: Failed that the given nthreads is greater than the number of threads counted" << endl;
+  } else {
+    const bool overwrite = true;
+    setenv("QT_STACK_SIZE", to_string(stack_size).c_str(), overwrite);
+
+    Kokkos::Qthread::initialize( nthreads );
     Kokkos::Qthread::print_configuration( cout , true /* detailed */ );
     
     //__TestSuiteDoUnitTests__(float,int,unsigned int,Kokkos::Serial,void);
@@ -58,11 +87,13 @@ int main(int argc, char *argv[]) {
     // __TestSuiteDoUnitTests__(complex<double>,long,unsigned long,Kokkos::Serial,void);
     
     Kokkos::Qthread::finalize();
+
+    unsetenv("QT_STACK_SIZE");
   }
 
   string eval;
   __EVAL_STRING__(r_val, eval);
-  cout << "Testing Kokkos::Threads::" << eval << endl;
+  cout << "Testing Kokkos::Qthread::" << eval << endl;
 
   return r_val;
 }
