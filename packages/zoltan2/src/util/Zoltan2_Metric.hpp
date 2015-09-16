@@ -747,18 +747,18 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
  * globalWeightedCutsByPart() must be called by all processes in \c comm.
  */
 
-template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
+template <typename pnum_t, typename Adapter>
   void globalWeightedCutsByPart( 
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm, 
+    const RCP<const GraphModel<Adapter> > &graph,
     const ArrayView<const pnum_t> &part, 
     int vwgtDim,
-    const ArrayView<StridedData<lno_t, scalar_t> > &vwgts,
-
-    part_t &numParts, 
-    part_t &numNonemptyParts,
-    ArrayRCP<graphMetricValues<scalar_t> > &metrics,
-    ArrayRCP<scalar_t> &globalSums)
+    const ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t> > &vwgts,
+    typename Adapter::part_t &numParts, 
+    typename Adapter::part_t &numNonemptyParts,
+    ArrayRCP<graphMetricValues<typename Adapter::scalar_t> > &metrics,
+    ArrayRCP<typename Adapter::scalar_t> &globalSums)
 {
   env->debug(DETAILED_STATUS, "Entering globalWeightedCutsByPart");
   //////////////////////////////////////////////////////////
@@ -769,6 +769,9 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
   int numMetrics = 1;                       // "object count" or "weight 1"
   if (vwgtDim > 1) numMetrics = vwgtDim;   // "weight n"
 
+  typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::part_t part_t;
   typedef graphMetricValues<scalar_t> mv_t;
   mv_t *newMetrics = new mv_t [numMetrics];
   env->localMemoryAssertion(__FILE__, __LINE__, numMetrics, newMetrics); 
