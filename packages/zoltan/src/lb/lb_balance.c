@@ -709,7 +709,7 @@ struct OVIS_parameters ovisParameters;
           }
           else{
             all_export_procs[i] = zz->Proc;
-            // No change in all_export_to_part[i] so no assignment needed
+            /* No change in all_export_to_part[i] so no assignment needed */
           }
         }
   

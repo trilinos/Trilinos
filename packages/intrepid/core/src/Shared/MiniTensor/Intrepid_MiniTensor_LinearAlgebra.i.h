@@ -445,10 +445,10 @@ cond(Tensor<T, N> const & A)
   dimension = A.get_dimension();
 
   Tensor<T, N> const
-  S = svd(A).second;
+  S = boost::get<1>(svd(A));
 
   T const
-  k = S(dimension, dimension) / S(0, 0);
+  k = S(0, 0) / S(dimension - 1, dimension - 1);
 
   return k;
 }

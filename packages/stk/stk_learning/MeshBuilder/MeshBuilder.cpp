@@ -7,7 +7,7 @@
 #include "MeshBuilder.hpp"
 
 // change for meshing big things
-const unsigned zOffset = 1;
+const double zOffset = 1;
 
 MeshBuilder::MeshBuilder(stk::ParallelMachine comm, std::string name, stk::topology::topology_t
                          elemType, int spacialDim)
@@ -31,22 +31,6 @@ void MeshBuilder::end_modification()
 {
     m_bulkData.modification_end();
 }
-stk::mesh::Entity MeshBuilder::create_element(stk::mesh::EntityId elemId,
-                                              const stk::mesh::EntityIdVector& nodeIds,
-                                              int chosenProc)
-{
-    ThrowRequire(chosenProc < num_procs());
-    stk::mesh::Entity elem = stk::mesh::Entity();
-
-    if (m_procRank == chosenProc)
-        elem = generate_element(elemId, nodeIds);
-    else
-        share_shared_nodes(nodeIds, chosenProc);
-
-    m_usedElemIds.insert(elemId);
-    return elem;
-}
-
 void MeshBuilder::write_mesh()
 {
     std::string timeStep = std::to_string(m_time);
@@ -85,6 +69,32 @@ unsigned MeshBuilder::num_elems() const
     return elements.size();
 }
 
+//protected
+stk::mesh::Entity MeshBuilder::create_element(stk::mesh::EntityId elemId,
+                                              const stk::mesh::EntityIdVector& nodeIds,
+                                              int chosenProc)
+{
+    ThrowRequire(chosenProc < num_procs());
+    stk::mesh::Entity elem = stk::mesh::Entity();
+
+    if (elem_id_not_used(elemId))
+    {
+        if (m_procRank == chosenProc)
+            elem = generate_element(elemId, nodeIds);
+        else
+            share_shared_nodes(nodeIds, chosenProc);
+    }
+
+    m_usedElemIds.insert(elemId);
+    return elem;
+}
+void MeshBuilder::remove_element(stk::mesh::EntityId elemId)
+{
+    stk::mesh::Entity elem = m_bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
+    if (m_bulkData.is_valid(elem))
+        m_bulkData.destroy_entity(elem);
+}
+
 //private
 void MeshBuilder::update_node_to_processor_map(const stk::mesh::EntityIdVector& nodeIds, int proc)
 {
@@ -95,11 +105,8 @@ stk::mesh::Entity MeshBuilder::generate_element(stk::mesh::EntityId elemId,
                                                 const stk::mesh::EntityIdVector& nodeIds)
 {
     stk::mesh::Entity elem = stk::mesh::Entity();
-    if (elem_id_not_used(elemId))
-    {
-        elem = declare_element(m_bulkData, *m_elemPart, elemId, nodeIds);
-        share_nodes(nodeIds);
-    }
+    elem = declare_element(m_bulkData, *m_elemPart, elemId, nodeIds);
+    share_nodes(nodeIds);
     return elem;
 }
 bool MeshBuilder::elem_id_not_used(stk::mesh::EntityId elemId)
@@ -145,10 +152,19 @@ void QuadMeshBuilder::create_element(unsigned xCoord, unsigned yCoord, int chose
 }
 void QuadMeshBuilder::fill_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper)
 {
-    int procCounter = 0;
-    for (unsigned x = xLower; x <= xUpper; x++)
-        for (unsigned y = yLower; y <= yUpper; y++)
-           create_element(x, y, procCounter++%num_procs());
+    std::vector<unsigned> layersPerProc;
+    int layersCreated = yUpper-yLower + 1;
+    unsigned basePerRow = (layersCreated)/num_procs();
+    for (int procIndex = 0; procIndex < num_procs(); procIndex++)
+        layersPerProc.push_back(basePerRow+(layersCreated%num_procs() > procIndex));
+
+    unsigned bottomLayer = yLower;
+    for (int procIndex = 0; procIndex < num_procs(); procIndex++)
+    {
+        unsigned topLayer = bottomLayer + layersPerProc[procIndex] - 1;
+        fill_area_on_proc(xLower, xUpper, bottomLayer, topLayer, procIndex);
+        bottomLayer = topLayer + 1;
+    }
 }
 void QuadMeshBuilder::fill_area_randomly(unsigned xLower, unsigned xUpper,
                                          unsigned yLower, unsigned yUpper)
@@ -165,12 +181,18 @@ void QuadMeshBuilder::fill_area_on_proc(unsigned xLower, unsigned xUpper, unsign
         for (unsigned y = yLower; y <= yUpper; y++)
            create_element(x, y, chosenProc);
 }
+void QuadMeshBuilder::fill_area_with_layers(unsigned xLower, unsigned xUpper, unsigned yLower,
+                                            unsigned yUpper)
+{
+    int rowCounter = 0;
+    for (unsigned x = xLower; x <= xUpper; x++)
+        for (unsigned y = yLower; y <= yUpper; y++)
+            fill_area_on_proc(xLower, xUpper, y, y, rowCounter++%num_procs());
+}
 void QuadMeshBuilder::remove_element(unsigned xCoord, unsigned yCoord)
 {
     stk::mesh::EntityId elemId = generate_two_dim_elem_id(xCoord, yCoord);
-    stk::mesh::Entity elem = bulk_data().get_entity(stk::topology::ELEM_RANK, elemId);
-    if (bulk_data().is_valid(elem))
-       bulk_data().destroy_entity(elem);
+    MeshBuilder::remove_element(elemId);
 }
 void QuadMeshBuilder::remove_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper)
 {
@@ -240,18 +262,49 @@ void HexMeshBuilder::create_element(unsigned xCoord, unsigned yCoord, unsigned z
 void HexMeshBuilder::fill_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper,
                                unsigned zLower, unsigned zUpper)
 {
+    std::vector<unsigned> layersPerProc;
+    int layersCreated = zUpper-zLower + 1;
+    unsigned basePerRow = (layersCreated)/num_procs();
+    for (int procIndex = 0; procIndex < num_procs(); procIndex++)
+        layersPerProc.push_back(basePerRow+(layersCreated%num_procs() > procIndex));
+
+    unsigned bottomLayer = yLower;
+    for (int procIndex = 0; procIndex < num_procs(); procIndex++)
+    {
+        unsigned topLayer = bottomLayer + layersPerProc[procIndex] - 1;
+        fill_area_on_proc(xLower, xUpper, yLower, yUpper, bottomLayer, topLayer, procIndex);
+        bottomLayer = topLayer + 1;
+    }
+}
+void HexMeshBuilder::fill_area_randomly(unsigned xLower, unsigned xUpper, unsigned yLower,
+                                        unsigned yUpper, unsigned zLower, unsigned zUpper)
+{
     int currentProc = 0;
     for (unsigned x = xLower; x <= xUpper; x++)
         for (unsigned y = yLower; y <= yUpper; y++)
             for (unsigned z = zLower; z <= zUpper; z++)
                 create_element(x, y, z, currentProc++%num_procs());
 }
+void HexMeshBuilder::fill_area_on_proc(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned
+                                       yUpper, unsigned zLower, unsigned zUpper, int chosenProc)
+{
+    for (unsigned x = xLower; x <= xUpper; x++)
+        for (unsigned y = yLower; y <= yUpper; y++)
+            for (unsigned z = zLower; z <= zUpper; z++)
+                create_element(x, y, z, chosenProc);
+}
+void HexMeshBuilder::fill_area_with_layers(unsigned xLower, unsigned xUpper, unsigned yLower,
+                                           unsigned yUpper, unsigned zLower, unsigned zUpper)
+{
+    int layerCounter = 0;
+    for (unsigned z = zLower; z <= zUpper; z++)
+        fill_area_on_proc(xLower, xUpper, yLower, yUpper, z, z, layerCounter++%num_procs());
+
+}
 void HexMeshBuilder::remove_element(unsigned xCoord, unsigned yCoord, unsigned zCoord)
 {
     stk::mesh::EntityId elemId = generate_three_dim_elem_id(xCoord, yCoord, zCoord);
-    stk::mesh::Entity elem = bulk_data().get_entity(stk::topology::ELEM_RANK, elemId);
-    if (bulk_data().is_valid(elem))
-        bulk_data().destroy_entity(elem);
+    MeshBuilder::remove_element(elemId);
 }
 void HexMeshBuilder::remove_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper,
                                  unsigned zLower, unsigned zUpper)
@@ -261,6 +314,7 @@ void HexMeshBuilder::remove_area(unsigned xLower, unsigned xUpper, unsigned yLow
             for (unsigned z = zLower; z <= zUpper; z++)
                 remove_element(x, y, z);
 }
+
 //test function
 double HexMeshBuilder::node_x_coord(stk::mesh::Entity node) const
 {
@@ -277,6 +331,7 @@ double HexMeshBuilder::node_z_coord(stk::mesh::Entity node) const
     double* const coord = stk::mesh::field_data(*m_coordinates, node);
     return coord[2];
 }
+
 //private
 void HexMeshBuilder::declare_coordinates()
 {

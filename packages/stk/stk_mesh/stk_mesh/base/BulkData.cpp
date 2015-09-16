@@ -1859,6 +1859,10 @@ void BulkData::require_valid_relation( const char action[] ,
     msg << "Could not " << action << " relation from entity "
         << mesh.entity_key(e_from) << " to entity " << mesh.entity_key(e_to) << "\n";
 
+    if (error_nil_to || error_nil_from)
+      {
+        std::cerr << "error_nil_from=  " << error_nil_from << " error_nil_to= " << error_nil_to << std::endl;
+      }
     ThrowErrorMsgIf( error_nil_from  || error_nil_to,
                      msg.str() << ", entity was destroyed");
     ThrowErrorMsgIf( error_type, msg.str() <<

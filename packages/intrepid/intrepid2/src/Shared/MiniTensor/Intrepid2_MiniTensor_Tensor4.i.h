@@ -297,7 +297,7 @@ operator!=(Tensor4<T, N> const & A, Tensor4<T, N> const & B)
 //
 template<typename S, typename T, Index N>
 inline
-typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N> >::type
+typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N>>::type
 operator*(S const & s, Tensor4<T, N> const & A)
 {
   Tensor4<typename Promote<S, T>::type, N>
@@ -313,7 +313,7 @@ operator*(S const & s, Tensor4<T, N> const & A)
 //
 template<typename S, typename T, Index N>
 inline
-typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N> >::type
+typename lazy_disable_if< order_1234<S>, apply_tensor4< Promote<S,T>, N>>::type
 operator*(Tensor4<T, N> const & A, S const & s)
 {
   Tensor4<typename Promote<S, T>::type, N>

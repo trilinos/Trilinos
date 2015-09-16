@@ -170,7 +170,6 @@ the following classes:
     e.restore();
     SWIG_fail;
   }
-  SWIG_CATCH_STDEXCEPT
   catch (Swig::DirectorException & e)
   {
     SWIG_fail;
@@ -179,6 +178,7 @@ the following classes:
   {
     SWIG_fail;
   }
+  SWIG_CATCH_STDEXCEPT
   catch(...)
   {
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
