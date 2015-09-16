@@ -105,12 +105,32 @@ public:
   /// \brief Compute the hypotenuse \f$\sqrt{x^2 + y^2}\f$ in a way
   ///   that avoids unjustified overflow.
   __float128
-  LAPY2 (const __float128& x, const __float128& y);
+  LAPY2 (const __float128& x, const __float128& y) const;
 
   //! Compute the Householder reflector of [alpha; x].
   void
   LARFG (const int N, __float128* const ALPHA,
-         __float128 X[], const int INCX, __float128* const TAU);
+         __float128 X[], const int INCX, __float128* const TAU) const;
+
+  void
+  LARF (const char side,
+        const int m,
+        const int n,
+        const __float128 v[],
+        const int incv,
+        const __float128 tau,
+        __float128 C[],
+        const int ldc,
+        __float128 work[]) const;
+
+  //! BLAS 2 version of ORMQR; known workspace size.
+  void
+  ORM2R (const char side, const char trans,
+         const int m, const int n, const int k,
+         const __float128 A[], const int lda,
+         const __float128* const tau,
+         __float128 C[], const int ldc,
+         __float128 work[], int* const info) const;
 };
 
 } // namespace Details

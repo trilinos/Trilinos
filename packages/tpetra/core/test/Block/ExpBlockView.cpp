@@ -72,11 +72,7 @@ namespace {
     const ST zero = static_cast<ST> (0.0);
     const ST one = static_cast<ST> (1.0);
     const LO minBlockSize = 1; // 1x1 "blocks" should also work
-    //const LO maxBlockSize = 32;// SEGFAULT
-    //const LO maxBlockSize = 16;// TEST FAILS
-    //const LO maxBlockSize = 8; // TEST FAILS
-    //const LO maxBlockSize = 4; // TEST FAILS
-    const LO maxBlockSize = 2; // TEST FAILS
+    const LO maxBlockSize = 32;
 
     // Memory pool for the LittleBlock instances.
     Teuchos::Array<ST> blockPool (maxBlockSize * maxBlockSize);
@@ -248,9 +244,9 @@ namespace {
 
   // FIXME (mfh 16 Sep 2015) Segfaults for __float128!
   //
-  //TPETRA_INSTANTIATE_SL_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
+  TPETRA_INSTANTIATE_SL_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
 
-  TPETRA_INSTANTIATE_S_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP2 )
+  //TPETRA_INSTANTIATE_S_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP2 )
 
 
 } // namespace (anonymous)
