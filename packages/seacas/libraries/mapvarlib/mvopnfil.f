@@ -45,7 +45,7 @@ C     Called by MAPVAR
 C
 C     ******************************************************************
 C
-      CHARACTER*2048 fntpo, fntp2, fntp3, fntp4, filnam, option, errmsg
+      CHARACTER*2048 filnam, option, errmsg
       character*1   cdum
 C
       include 'exodusII.inc'
@@ -184,6 +184,14 @@ C     on this machine (as returned by previous call to exopen)
      &' error number ',i5,' tape number ',i5,' filename ',a20,/,
      &' ntp4ex = ',i5)
 C
+      write (*,*) 'MESH-A (MESH & SOLUTION):     ',
+     *  fntp2(:lenstr(fntp2))
+      write (*,*) 'MESH-B (MESH):                ',
+     *  fntp3(:lenstr(fntp3))
+      write (*,*) 'MESH-C (MESH & INTERPOLATED): ',
+     *  fntp4(:lenstr(fntp4))
+      write (*,*) 'Text Output:                  ',
+     *  fntpo(:lenstr(fntpo))
       call exmxnm(ntp2ex, namlen, ierr)
       call exmxnm(ntp3ex, namlen, ierr)
       call exmxnm(ntp4ex, namlen, ierr)

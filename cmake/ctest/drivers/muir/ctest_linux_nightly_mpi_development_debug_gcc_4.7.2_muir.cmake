@@ -69,7 +69,7 @@ SET(CTEST_TEST_TYPE Nightly)
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
-SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Optika PyTrilinos)
+SET(EXTRA_EXCLUDE_PACKAGES MOOCHO Optika PyTrilinos Didasko)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
@@ -88,6 +88,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DCMAKE_CXX_FLAGS:STRING=-Wall -ansi -pedantic -Werror -Wno-unknown-pragmas -Wno-narrowing -Wno-pragmas -Wno-delete-non-virtual-dtor"
   "-DTrilinos_ENABLE_MOOCHO=OFF"
   "-DTrilinos_ENABLE_Optika=OFF"
+  "-DTrilinos_ENABLE_Didasko=OFF"
   )
 
 #

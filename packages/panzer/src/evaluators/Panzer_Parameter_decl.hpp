@@ -51,6 +51,8 @@
 
 #include "Panzer_ParameterLibrary.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
     
   template <typename EvalT> class ScalarParameterEntry;
@@ -58,7 +60,7 @@ namespace panzer {
 //! Constant parameter from sacado parameter library
   template<typename EvalT, typename TRAITS>
   class Parameter : 
-    public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<EvalT, TRAITS> {
   
   public:

@@ -106,6 +106,7 @@
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
+#include "MueLu_SegregatedAFactory.hpp"
 #ifdef HAVE_MUELU_EXPERIMENTAL
 #include "MueLu_SchurComplementFactory.hpp"
 #include "MueLu_SimpleSmoother.hpp"
@@ -135,6 +136,8 @@
 #include "../matlab/MueLu_SingleLevelMatlabFactory_def.hpp"
 #include "../matlab/MueLu_TwoLevelMatlabFactory_decl.hpp"
 #include "../matlab/MueLu_TwoLevelMatlabFactory_def.hpp"
+#include "../matlab/MueLu_MatlabSmoother_decl.hpp"
+#include "../matlab/MueLu_MatlabSmoother_def.hpp"
 #endif
 
 namespace MueLu {
@@ -208,6 +211,7 @@ namespace MueLu {
       if (factoryName == "RAPFactory")                      return BuildRAPFactory<RAPFactory>           (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RebalanceAcFactory")              return Build2<RebalanceAcFactory>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "RebalanceTransferFactory")        return Build2<RebalanceTransferFactory>      (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SegregatedAFactory")              return Build2<SegregatedAFactory>            (paramList, factoryMapIn, factoryManagersIn);
 #ifdef HAVE_MUELU_EXPERIMENTAL
       if (factoryName == "SubBlockAFactory")                return Build2<SubBlockAFactory>              (paramList, factoryMapIn, factoryManagersIn);
 #endif
@@ -267,6 +271,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_MATLAB
       if (factoryName == "TwoLevelMatlabFactory")           return Build2<TwoLevelMatlabFactory>        (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SingleLevelMatlabFactory")        return Build2<SingleLevelMatlabFactory>     (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "MatlabSmoother")                  return BuildMatlabSmoother                  (paramList, factoryMapIn, factoryManagersIn);
 #endif
 
       // Use a user defined factories (in <Factories> node)
@@ -334,7 +339,6 @@ namespace MueLu {
           // Generate or get factory described by param
           RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn, factoryManagersIn);
           paramListWithFactories.set(pName, generatingFact);
-
         } else if (validParamList->isType<RCP<const ParameterList> >(pName)) {
           if (pName == "ParameterList") {
             // NOTE: we cannot use
@@ -616,6 +620,34 @@ namespace MueLu {
 
       return rcp(new SmootherFactory(trilSmoo));
     }
+
+#ifdef HAVE_MUELU_MATLAB
+    //! MatlabSmoother
+    // Parameter List Parsing:
+    //     <ParameterList name="smootherFact1">
+    //       <Parameter name="factory" type="string" value="MatlabSmoother"/>
+    //       <Parameter name="Setup Function" type="string" value="mySmootherSetup.m"/>
+    //       <Parameter name="Solve Function" type="string" value="mySmootherSolve.m"/>
+    //       <!--A is implicitly included in this list and nothing else is needed to get diagonal-->
+    //       <Parameter name="Needs" type="string" value=""/>
+    //       <!--A,x,b are also assumed inputs to the solver: only one additional arg then (diag)-->
+    //       <Parameter name="Number of Solver Args"               type="int" value="1"/>
+    //     </ParameterList>
+    RCP<FactoryBase> BuildMatlabSmoother(const Teuchos::ParameterList & paramList, const FactoryMap & factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+      if (paramList.begin() == paramList.end())
+        return rcp(new SmootherFactory(rcp(new MatlabSmoother())));
+
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "MatlabSmoother", Exceptions::RuntimeError, "");
+
+      // Read in factory information for smoothers (if available...)
+      // NOTE: only a selected number of factories can be used with the Trilinos smoother
+      //       smoothers usually work with the global data available (which is A and the transfers P and R)
+
+      Teuchos::RCP<MatlabSmoother> matSmoo = Teuchos::rcp(new MatlabSmoother(paramList));
+
+      return rcp(new SmootherFactory(matSmoo));
+    }
+#endif
 
     RCP<FactoryBase> BuildDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
       if (paramList.begin() == paramList.end())

@@ -54,12 +54,16 @@
 
 #include "Intrepid_FieldContainer.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
     
 //! Interpolates DOF coefficients on one basis to points on another basis.  This is used with nodal bases to map DOF coefficient values from one nodal basis to dof coefficients on another basis. 
 template <typename EvalT, typename TRAITST>
 class DOF_BasisToBasis 
-  : public PHX::EvaluatorWithBaseImpl<TRAITST>,
+  : public panzer::EvaluatorWithBaseImpl<TRAITST>,
     public PHX::EvaluatorDerived<EvalT, TRAITST> {
 public:
 

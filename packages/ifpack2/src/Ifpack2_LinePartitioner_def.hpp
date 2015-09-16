@@ -42,8 +42,8 @@
 
 #ifndef IFPACK2_LINE_PARTITIONER_DEF_HPP
 #define IFPACK2_LINE_PARTITIONER_DEF_HPP
-#include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_LinePartitioner_decl.hpp"
+
+#include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Util.hpp"
 
 namespace Ifpack2 {
@@ -72,10 +72,10 @@ LinePartitioner<GraphType,Scalar>::
 setPartitionParameters(Teuchos::ParameterList& List) {
   threshold_ = List.get("partitioner: line detection threshold",threshold_);
   TEUCHOS_TEST_FOR_EXCEPTION(threshold_ < Teuchos::ScalarTraits<MT>::zero() || threshold_ > Teuchos::ScalarTraits<MT>::one(),
-			     std::runtime_error,"Ifpack2::LinePartitioner: threshold not valid");  
+                             std::runtime_error,"Ifpack2::LinePartitioner: threshold not valid");
 
   NumEqns_   = List.get("partitioner: PDE equations",NumEqns_);
-  TEUCHOS_TEST_FOR_EXCEPTION(NumEqns_<1,std::runtime_error,"Ifpack2::LinePartitioner: NumEqns not valid");  
+  TEUCHOS_TEST_FOR_EXCEPTION(NumEqns_<1,std::runtime_error,"Ifpack2::LinePartitioner: NumEqns not valid");
 
   coord_   = List.get("partitioner: coordinates",coord_);
   TEUCHOS_TEST_FOR_EXCEPTION(coord_.is_null(),std::runtime_error,"Ifpack2::LinePartitioner: coordinates not defined");
@@ -97,9 +97,9 @@ void LinePartitioner<GraphType,Scalar>::computePartitions() {
   for(size_t i=0; i<this->Graph_->getNodeNumRows(); i++)
     this->Partition_[i] = invalid;
 
-  // Use the auto partitioner 
+  // Use the auto partitioner
   this->NumLocalParts_ = this->Compute_Blocks_AutoLine(this->Partition_());
-  
+
   // Resize Parts_
   this->Parts_.resize(this->NumLocalParts_);
 }
@@ -122,7 +122,7 @@ int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayVie
   MT tol                 = threshold_;
   size_t N               = this->Graph_->getNodeNumRows();
   size_t allocated_space = this->Graph_->getNodeMaxNumRowEntries();
-    
+
   Teuchos::Array<LO> cols(allocated_space);
   Teuchos::Array<LO> indices(allocated_space);
   Teuchos::Array<MT> dist(allocated_space);
@@ -155,7 +155,7 @@ int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayVie
       indices[neighbor_len]=cols[j];
       neighbor_len++;
     }
-    
+
     Teuchos::ArrayView<MT> dist_view = dist(0,neighbor_len);
     Tpetra::sort2(dist_view.begin(),dist_view.end(),indices.begin());
 
@@ -173,7 +173,7 @@ int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayVie
     }
 
     num_lines++;
-  }  
+  }
   return num_lines;
 }
 // ============================================================================
@@ -189,7 +189,7 @@ void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns,
   xvalsRCP = coord_->getData(0); xvals = xvalsRCP();
   if(coord_->getNumVectors() > 1) { yvalsRCP = coord_->getData(1); yvals = yvalsRCP(); }
   if(coord_->getNumVectors() > 2) { zvalsRCP = coord_->getData(2); zvals = zvalsRCP(); }
- 
+
   size_t N               = this->Graph_->getNodeNumRows();
   size_t allocated_space = this->Graph_->getNodeMaxNumRowEntries();
   Teuchos::ArrayView<LO> cols    = itemp();
@@ -224,10 +224,10 @@ void LinePartitioner<GraphType,Scalar>::local_automatic_line_search(int NumEqns,
     // can't be because I'd create a cycle
     if(neighbors_in_line > 1) break;
 
-    // Otherwise add me to the line 
-    for(LO k=0; k<NumEqns; k++) 
+    // Otherwise add me to the line
+    for(LO k=0; k<NumEqns; k++)
       blockIndices[next + k] = LineID;
-    
+
     // Try to find the next guy in the line (only check the closest two that aren't element 0 (diagonal))
     Teuchos::ArrayView<MT> dist_view = dist(0,neighbor_len);
     Tpetra::sort2(dist_view.begin(),dist_view.end(),indices.begin());

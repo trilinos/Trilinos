@@ -42,8 +42,9 @@
 
 #ifndef IFPACK2_LINEPARTITIONER_DECL_HPP
 #define IFPACK2_LINEPARTITIONER_DECL_HPP
+
 #include "Ifpack2_ConfigDefs.hpp"
-#include "Ifpack2_OverlappingPartitioner_decl.hpp"
+#include "Ifpack2_OverlappingPartitioner.hpp"
 #include "Tpetra_MultiVector.hpp"
 
 namespace Ifpack2 {
@@ -54,11 +55,11 @@ namespace Ifpack2 {
 These "line" partitions could then be used in to do block Gauss-Seidel smoothing, for instance.
 
 The current implementation uses a local line detection inspired by the work of Mavriplis
-for convection-diffusion (AIAA Journal, Vol 37(10), 1999).  
+for convection-diffusion (AIAA Journal, Vol 37(10), 1999).
 
 Here we use coordinate information to pick "close" points if they are sufficiently far away
 from the "far" points.  We also make sure the line can never double back on itself, so that
-the associated sub-matrix could (in theory) be handed off to a fast triangular solver.  This 
+the associated sub-matrix could (in theory) be handed off to a fast triangular solver.  This
 implementation doesn't actual do that, however.
 
 This implementation is deived from the related routine in ML.

@@ -46,6 +46,10 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
     
 /** Sums entries on a single data layout
@@ -59,7 +63,7 @@ namespace panzer {
     </ParameterList>
     \endverbatim
   */
-PHX_EVALUATOR_CLASS(Sum)
+PANZER_EVALUATOR_CLASS(Sum)
   
   PHX::MDField<ScalarT> sum;
   std::vector< PHX::MDField<const ScalarT> > values;
@@ -67,13 +71,13 @@ PHX_EVALUATOR_CLASS(Sum)
 
   std::size_t cell_data_size;
 
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 /** A template version of Sum that specializes on the
   * rank type. This must be done at run time.
   */ 
 template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1=void,typename Tag2=void>
-class SumStatic : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+class SumStatic : public panzer::EvaluatorWithBaseImpl<TRAITS>,
             public PHX::EvaluatorDerived<EvalT, TRAITS>  {
 public:
   SumStatic(const Teuchos::ParameterList& p);
@@ -85,7 +89,7 @@ private:
 };
 
 template<typename EvalT, typename TRAITS,typename Tag0>
-class SumStatic<EvalT,TRAITS,Tag0,void,void> : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+class SumStatic<EvalT,TRAITS,Tag0,void,void> : public panzer::EvaluatorWithBaseImpl<TRAITS>,
                                          public PHX::EvaluatorDerived<EvalT, TRAITS>  {
 public:
   SumStatic(const Teuchos::ParameterList& p);
@@ -100,7 +104,7 @@ private:
 };
 
 template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1>
-class SumStatic<EvalT,TRAITS,Tag0,Tag1,void> : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+class SumStatic<EvalT,TRAITS,Tag0,Tag1,void> : public panzer::EvaluatorWithBaseImpl<TRAITS>,
                                          public PHX::EvaluatorDerived<EvalT, TRAITS>  {
 public:
   SumStatic(const Teuchos::ParameterList& p);
@@ -136,7 +140,7 @@ private:
 
 /*
 template<typename EvalT, typename TRAITS,typename Tag0,typename Tag1,typename Tag2>
-class SumStatic<EvalT,TRAITS,Tag0,Tag1,Tag2> : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+class SumStatic<EvalT,TRAITS,Tag0,Tag1,Tag2> : public panzer::EvaluatorWithBaseImpl<TRAITS>,
                                          public PHX::EvaluatorDerived<EvalT, TRAITS>  {
 public:
   SumStatic(const Teuchos::ParameterList& p);

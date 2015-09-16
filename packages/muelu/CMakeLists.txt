@@ -17,6 +17,16 @@ IF (NOT ${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   MESSAGE(FATAL_ERROR "Neither Epetra nor Tpetra are enabled.  MueLu requires at least one of them to be enabled.")
 ENDIF()
 
+# JJH: pulled this logic from Tpetra.  Comments below about CUDA are from Tpetra developers.
+# This is redundant, since MueLu also requires Kokkos, and Kokkos requires C++11.
+# "I left a special case for CUDA because I'm not sure whether TriBITS
+# counts C++11 as enabled in that case; please feel free to revise if
+# you know better."
+ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
+ASSERT_DEFINED(TPL_ENABLE_CUDA)
+IF (NOT ${PROJECT_NAME}_ENABLE_CXX11 AND NOT TPL_ENABLE_CUDA)
+  MESSAGE(FATAL_ERROR "MueLu requires that C++11 support in Trilinos be enabled.  This should happen automatically if your compiler is C++11 compliant.")
+ENDIF ()
 
 # The following Tribits macro sets MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # to be true if Trilinos_ENABLE_EXPLICIT_INSTANTIATION is true.
@@ -94,6 +104,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Boost_for_real
   HAVE_${PACKAGE_NAME_UC}_BOOST_FOR_REAL
   "Enable Boost"
   OFF)
+
+# Define option to enable code that is refactored to use Kokkos
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor
+  HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
+  "Enable MueLu code refactored to use Kokkos."
+  NO)
 
 # Explicit instantiation options:
 # - MueLu_ENABLE_EXPLICIT_INSTANTIATION
@@ -183,6 +200,15 @@ ELSE()
   SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX OFF)
 ENDIF()
 
+# mfh 18 Aug 2015: Revise whether complex is enabled, based on
+# Tpetra's settings.  These are independent of whether ETI is enabled!
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Tpetra)
+IF(${PACKAGE_NAME}_ENABLE_Tpetra)
+  ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
+  IF(NOT Tpetra_INST_COMPLEX_DOUBLE)
+    SET(HAVE_${PACKAGE_NAME_UC}_COMPLEX OFF)
+  ENDIF()
+ENDIF()
 
 # ML's MMM
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ML_MMM

@@ -77,9 +77,9 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Triutils              packages/triutils                 PS
   Tpetra                packages/tpetra                   PS
   EpetraExt             packages/epetraext                PS
-  Xpetra                packages/xpetra                   PS
   Domi                  packages/domi                     EX
   Thyra                 packages/thyra                    PS
+  Xpetra                packages/xpetra                   PS
   OptiPack              packages/optipack                 PS
   Isorropia             packages/isorropia                PS
   Pliris                packages/pliris                   PS
@@ -102,7 +102,6 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Stratimikos           packages/stratimikos              PS
   FEI                   packages/fei                      PS
   Teko                  packages/teko                     SS
-  RBGen                 packages/rbgen                    PS
   TriKota               packages/TriKota                  SS
   Intrepid              packages/intrepid                 PS
   STK                   packages/stk                      SS # Depends on boost
@@ -137,7 +136,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   FEApp                 demos/FEApp                       SS # Capability demonstration package
   )
 
-# Allow builds even is some packages are missing
+# Allow builds even if some packages are missing
 
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCOREC)
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(SCORECgmi)

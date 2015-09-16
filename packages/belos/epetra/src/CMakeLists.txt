@@ -26,11 +26,13 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
   BelosEpetraAdapter.hpp
   BelosEpetraOperator.h
+  Belos_Details_Epetra_registerLinearSolverFactory.hpp
   )
 
 APPEND_SET(SOURCES
   BelosEpetraAdapter.cpp
   BelosEpetraOperator.cpp
+  Belos_Details_Epetra_registerLinearSolverFactory.cpp
   )
 
 #

@@ -161,7 +161,7 @@ evaluateFields(panzer::Traits::EvalData d)
   dgdx->getNonconstLocalData(ptrFromRef(local_dgdx));
   TEUCHOS_ASSERT(!local_dgdx.is_null());
 
-  scatterObj_->scatterDerivative(cellIntegral_,d,local_dgdx);
+  scatterObj_->scatterDerivative(cellIntegral_,d,this->wda,local_dgdx);
 }
 
 }

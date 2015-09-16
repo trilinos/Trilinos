@@ -27,7 +27,7 @@ int main (int argc, char *argv[]) {
   clp.setOption("nthreads", &nthreads, "Number of threads");
 
   int max_task_dependence = 10;
-  clp.setOption("max-task-depedence", &max_task_dependence, "Max number of task dependence");
+  clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
 
   int team_size = 1;
   clp.setOption("team-size", &team_size, "Team size");
@@ -55,6 +55,14 @@ int main (int argc, char *argv[]) {
   
   int r_val = 0;
   {
+    const bool overwrite = true;
+    const int nshepherds = (team_interface ? nthreads/team_size : nthreads);
+    const int nworker_per_shepherd = nthreads/nshepherds;
+
+    setenv("QT_HWPAR",                    to_string(nthreads).c_str(),             overwrite);
+    setenv("QT_NUM_SHEPHERDS",            to_string(nshepherds).c_str(),           overwrite);
+    setenv("QT_NUM_WORKERS_PER_SHEPHERD", to_string(nworker_per_shepherd).c_str(), overwrite);
+
     exec_space::initialize(nthreads);
     exec_space::print_configuration(cout, true);
     
@@ -63,6 +71,10 @@ int main (int argc, char *argv[]) {
     //   (file_input, niter, nthreads, max_task_dependence, team_size, team_interface, (nthreads != 1), verbose);
 
     exec_space::finalize();
+
+    unsetenv("QT_HWPAR");
+    unsetenv("QT_NUM_SHEPHERDS");
+    unsetenv("QT_NUM_WORKERS_PER_SHEPHERD");
   }
 
   return r_val;

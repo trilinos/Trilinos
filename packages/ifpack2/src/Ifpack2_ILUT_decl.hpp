@@ -55,7 +55,7 @@
 #include <sstream>
 #include <iostream>
 #include <cmath>
-
+#include <type_traits>
 
 namespace Teuchos {
   class ParameterList; // forward declaration
@@ -66,8 +66,7 @@ namespace Ifpack2 {
 /// \class ILUT
 /// \brief ILUT (incomplete LU factorization with threshold) of a
 ///   Tpetra sparse matrix
-/// \tparam Specialization of Tpetra::RowMatrix (preferred) or
-///   Tpetra::CrsMatrix
+/// \tparam A specialization of Tpetra::RowMatrix.
 ///
 /// This class computes a sparse ILUT (incomplete LU) factorization
 /// with specified fill and drop tolerance, of the local part of a
@@ -123,6 +122,8 @@ public:
                             local_ordinal_type,
                             global_ordinal_type,
                             node_type> row_matrix_type;
+
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::ILUT: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
   //! Type of the Tpetra::CrsMatrix specialization that this class uses for the L and U factors.
   typedef Tpetra::CrsMatrix<scalar_type,

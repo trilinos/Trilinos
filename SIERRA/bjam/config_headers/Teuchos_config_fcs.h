@@ -21,13 +21,27 @@
 /* Define to 1 if you have the <fpu_control.h> header file. */
 /* #undef HAVE_FPU_CONTROL_H */
 
-/* define if the compiler supports abi::__cxa_demangle(...) */
+/* Define if the compiler supports abi::__cxa_demangle(...) */
 #define HAVE_GCC_ABI_DEMANGLE
+
+/* Define if the C++ compiler knows how to compile __attribute__((constructor)) */
+#define HAVE_TEUCHOS_CXX_ATTRIBUTE_CONSTRUCTOR
+
+/* Define if the C++ compiler knows how to compile __attribute__((weak)), and
+   if a program can test weak functions and call them if they are not NULL. */
+#define HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK
+
+/* Define if the C++ compiler knows how to compile "#pragma weak", and
+   if a program can test weak functions and call them if they are not NULL. */
+/* #undef HAVE_TEUCHOS_CXX_PRAGMA_WEAK */
+
+/* Define if building dynamic shared libraries (instead of static libraries) */
+/* #undef HAVE_TEUCHOS_DYNAMIC_LIBS */
 
 /* Define if the (Windows) compiler has intrinsic datatype __int64 */
 /* #undef HAVE_TEUCHOS___INT64 */
 
-/* Not namespaced so should be depreciated. */
+/* Not namespaced so should be deprecated. */
 #define HAVE_MPI
 
 #define HAVE_TEUCHOS_MPI
@@ -73,7 +87,7 @@
 
 #define HAVE_TEUCHOS_COMPLEX
 
-/* #undef HAVE_TEUCHOS_LONG_LONG_INT */
+#define HAVE_TEUCHOS_LONG_LONG_INT
 
 /* #undef HAVE_TEUCHOS_DEBUG */
 

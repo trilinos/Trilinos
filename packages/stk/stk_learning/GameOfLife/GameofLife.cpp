@@ -10,11 +10,10 @@
  * GameofLife
  */
 //public
-GameofLife::GameofLife(MeshBuilder* Mesh, std::string meshName)
-:m_metaData(Mesh->meta_data()), m_bulkData(Mesh->bulk_data()),
-  m_lifeField(Mesh->life_field()), m_stkIo(Mesh->comm()), m_meshName(meshName), m_time(0),
- m_elemType(Mesh->element_type()),m_activeNeighborField(Mesh->neighbor_field()),
- m_mesh(Mesh)
+GameofLife::GameofLife(GameofLifeMesh& Mesh, std::string meshName)
+:m_metaData(Mesh.meta_data()), m_bulkData(Mesh.bulk_data()),
+  m_lifeField(Mesh.life_field()), m_stkIo(Mesh.comm()), m_meshName(meshName), m_time(0),
+ m_elemType(Mesh.element_type()),m_activeNeighborField(Mesh.neighbor_field())
 {
     get_elements();
     write_output_mesh();
@@ -55,7 +54,7 @@ bool GameofLife::element_is_local(stk::mesh::Entity elem) const
 {
     bool owned = false;
 
-    if (m_bulkData->is_valid(elem) && m_bulkData->bucket(elem).owned())
+    if (m_bulkData.is_valid(elem) && m_bulkData.bucket(elem).owned())
         owned = true;
 
     return owned;
@@ -78,7 +77,7 @@ bool GameofLife::are_these_ids_active(const stk::mesh::EntityIdVector& elemIds) 
     bool accountedFor = true;
     for (stk::mesh::EntityId elemId : elemIds)
     {
-        stk::mesh::Entity elem = m_bulkData->get_entity(stk::topology::ELEM_RANK, elemId);
+        stk::mesh::Entity elem = m_bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
         if (element_is_local(elem) && !element_is_active(elem))
             accountedFor = false;
     }
@@ -88,17 +87,17 @@ bool GameofLife::are_these_ids_active(const stk::mesh::EntityIdVector& elemIds) 
 //private
 void GameofLife::get_elements()
 {
-    stk::mesh::get_selected_entities(m_metaData->locally_owned_part(),
-                                     m_bulkData->buckets(stk::topology::ELEM_RANK),
+    stk::mesh::get_selected_entities(m_metaData.locally_owned_part(),
+                                     m_bulkData.buckets(stk::topology::ELEM_RANK),
                                      m_elements);
     m_elemsOnProc = m_elements.size();
 }
 void GameofLife::write_output_mesh()
 {
     m_meshName += ".e";
-    m_stkIo.set_bulk_data(*m_bulkData);
+    m_stkIo.set_bulk_data(m_bulkData);
     m_fileHandler = m_stkIo.create_output_mesh(m_meshName, stk::io::WRITE_RESULTS);
-    m_stkIo.add_field(m_fileHandler, *m_lifeField);
+    m_stkIo.add_field(m_fileHandler, m_lifeField);
     m_stkIo.write_output_mesh(m_fileHandler);
 }
 
@@ -110,8 +109,8 @@ void GameofLife::fill_neighbor_sets_of_elements()
 
 void GameofLife::fill_neighbor_set_of_this_element(stk::mesh::Entity elem)
 {
-    unsigned numNodes = m_bulkData->num_nodes(elem);
-    const stk::mesh::Entity* elemNodes = m_bulkData->begin_nodes(elem);
+    unsigned numNodes = m_bulkData.num_nodes(elem);
+    const stk::mesh::Entity* elemNodes = m_bulkData.begin_nodes(elem);
 
     for (unsigned nodeIndex = 0; nodeIndex < numNodes; nodeIndex++)
         add_this_nodes_elements_to_set(elemNodes[nodeIndex], elem);
@@ -119,8 +118,8 @@ void GameofLife::fill_neighbor_set_of_this_element(stk::mesh::Entity elem)
 
 void GameofLife::add_this_nodes_elements_to_set(stk::mesh::Entity node, stk::mesh::Entity elem)
 {
-    unsigned numElems = m_bulkData->num_elements(node);
-    const stk::mesh::Entity* nodeElems = m_bulkData->begin_elements(node);
+    unsigned numElems = m_bulkData.num_elements(node);
+    const stk::mesh::Entity* nodeElems = m_bulkData.begin_elements(node);
 
     for (unsigned nodeElemIndex = 0; nodeElemIndex < numElems; nodeElemIndex++)
         if (elem != nodeElems[nodeElemIndex])
@@ -143,7 +142,7 @@ void GameofLife::update_neighbor_fields()
 
 void GameofLife::update_neighbor_field_of_this_element(stk::mesh::Entity elem)
 {
-    int* neighborVal = stk::mesh::field_data(*m_activeNeighborField, elem);
+    int* neighborVal = stk::mesh::field_data(m_activeNeighborField, elem);
     *neighborVal = get_num_active_neighbors_of_this_element(elem);
 }
 
@@ -160,7 +159,7 @@ int GameofLife::get_num_active_neighbors_of_this_element(stk::mesh::Entity elem)
 
 void GameofLife::update_tri(stk::mesh::Entity elem)
 {
-    switch (*stk::mesh::field_data(*m_activeNeighborField, elem))
+    switch (*stk::mesh::field_data(m_activeNeighborField, elem))
     {
         case 2:
         case 7:
@@ -176,7 +175,7 @@ void GameofLife::update_tri(stk::mesh::Entity elem)
 
 void GameofLife::update_quad(stk::mesh::Entity elem)
 {
-    switch (*stk::mesh::field_data(*m_activeNeighborField, elem))
+    switch (*stk::mesh::field_data(m_activeNeighborField, elem))
     {
         case 2:
             break;
@@ -191,7 +190,7 @@ void GameofLife::update_quad(stk::mesh::Entity elem)
 
 void GameofLife::update_hex(stk::mesh::Entity elem)
 {
-    switch (*stk::mesh::field_data(*m_activeNeighborField, elem))
+    switch (*stk::mesh::field_data(m_activeNeighborField, elem))
     {
         case 4:
             break;
@@ -216,26 +215,26 @@ void GameofLife::write_output_step()
  * PartGameofLife
  */
 //public
-PartGameofLife::PartGameofLife(MeshBuilder* Mesh, std::string meshName)
-:GameofLife(Mesh, meshName), m_activePart(Mesh->active_part())
+PartGameofLife::PartGameofLife(GameofLifeMesh& Mesh, std::string meshName)
+:GameofLife(Mesh, meshName), m_activePart(Mesh.active_part())
 {
-    m_active.push_back(m_activePart);
+    m_active.push_back(&m_activePart);
 }
 
 //private
 void PartGameofLife::activate_each_element_id_in_vector(stk::mesh::EntityIdVector& elemIdsToActivate)
 {
-    m_bulkData->modification_begin();
+    m_bulkData.modification_begin();
 
     for (stk::mesh::EntityId elemId : elemIdsToActivate)
         activate_this_element_id(elemId);
 
-    m_bulkData->modification_end();
+    m_bulkData.modification_end();
 }
 
 void PartGameofLife::activate_this_element_id(stk::mesh::EntityId elemId)
 {
-    stk::mesh::Entity elem = m_bulkData->get_entity(stk::topology::ELEM_RANK, elemId);
+    stk::mesh::Entity elem = m_bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
 
     if (element_is_local(elem))
         activate_element(elem);
@@ -248,36 +247,36 @@ void PartGameofLife::communicate_data()
 
 bool PartGameofLife::element_is_active(stk::mesh::Entity elem) const
 {
-    return m_bulkData->bucket(elem).member(*m_activePart);
+    return m_bulkData.bucket(elem).member(m_activePart);
 }
 
 void PartGameofLife::update_each_element()
 {
-    m_bulkData->modification_begin();
+    m_bulkData.modification_begin();
 
     for (stk::mesh::Entity elem : m_elements)
         update_this_element(elem);
 
-    m_bulkData->modification_end();
+    m_bulkData.modification_end();
 }
 
 void PartGameofLife::activate_element(stk::mesh::Entity elem)
 {
-    *stk::mesh::field_data(*m_lifeField, elem) = 1;
-    m_bulkData->change_entity_parts(elem, m_active, m_empty);
+    *stk::mesh::field_data(m_lifeField, elem) = 1;
+    m_bulkData.change_entity_parts(elem, m_active, m_empty);
 }
 
 void PartGameofLife::deactivate_element(stk::mesh::Entity elem)
 {
-    *stk::mesh::field_data(*m_lifeField, elem) = 0;
-    m_bulkData->change_entity_parts(elem, m_empty, m_active);
+    *stk::mesh::field_data(m_lifeField, elem) = 0;
+    m_bulkData.change_entity_parts(elem, m_empty, m_active);
 }
 
 /*
  * FieldGameofLife
  */
 //public
-FieldGameofLife::FieldGameofLife(MeshBuilder* Mesh, std::string meshName)
+FieldGameofLife::FieldGameofLife(GameofLifeMesh& Mesh, std::string meshName)
 :GameofLife(Mesh, meshName)
 {
 }
@@ -291,7 +290,7 @@ void FieldGameofLife::activate_each_element_id_in_vector(stk::mesh::EntityIdVect
 
 void FieldGameofLife::activate_this_element_id(stk::mesh::EntityId elemId)
 {
-    stk::mesh::Entity elem = m_bulkData->get_entity(stk::topology::ELEM_RANK, elemId);
+    stk::mesh::Entity elem = m_bulkData.get_entity(stk::topology::ELEM_RANK, elemId);
 
     if (element_is_local(elem))
         activate_element(elem);
@@ -299,12 +298,12 @@ void FieldGameofLife::activate_this_element_id(stk::mesh::EntityId elemId)
 
 void FieldGameofLife::communicate_data()
 {
-    communicate_field_data(*m_bulkData, {m_lifeField});
+    communicate_field_data(m_bulkData, {&m_lifeField});
 }
 
 bool FieldGameofLife::element_is_active(stk::mesh::Entity elem) const
 {
-    return *stk::mesh::field_data(*m_lifeField, elem);
+    return *stk::mesh::field_data(m_lifeField, elem);
 }
 
 void FieldGameofLife::update_each_element()
@@ -315,10 +314,10 @@ void FieldGameofLife::update_each_element()
 
 void FieldGameofLife::activate_element(stk::mesh::Entity elem)
 {
-    *stk::mesh::field_data(*m_lifeField, elem) = 1;
+    *stk::mesh::field_data(m_lifeField, elem) = 1;
 }
 
 void FieldGameofLife::deactivate_element(stk::mesh::Entity elem)
 {
-    *stk::mesh::field_data(*m_lifeField, elem) = 0;
+    *stk::mesh::field_data(m_lifeField, elem) = 0;
 }

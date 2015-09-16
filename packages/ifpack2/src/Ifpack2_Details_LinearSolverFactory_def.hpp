@@ -1,3 +1,45 @@
+/*
+//@HEADER
+// ***********************************************************************
+//
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
+//                 Copyright (2009) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+//@HEADER
+*/
 
 /// \file   Ifpack2_Details_LinearSolverFactory_def.hpp
 /// \author Mark Hoemmen
@@ -6,8 +48,11 @@
 #ifndef IFPACK2_DETAILS_LINEARSOLVERFACTORY_DEF_HPP
 #define IFPACK2_DETAILS_LINEARSOLVERFACTORY_DEF_HPP
 
-#include <Ifpack2_Details_LinearSolver.hpp>
-#include <Trilinos_Details_LinearSolverFactory.hpp>
+#include "Trilinos_Details_LinearSolverFactory.hpp"
+#include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Ifpack2_Details_LinearSolver.hpp"
+#include "Ifpack2_Factory.hpp"
+#include "Tpetra_RowMatrix.hpp"
 #include <type_traits> // std::is_same
 
 namespace Ifpack2 {
@@ -18,12 +63,52 @@ Teuchos::RCP<typename LinearSolverFactory<SC, LO, GO, NT>::solver_type>
 LinearSolverFactory<SC, LO, GO, NT>::
 getLinearSolver (const std::string& solverName)
 {
-  return Teuchos::rcp (new Ifpack2::Details::LinearSolver<SC, LO, GO, NT> (solverName));
+  using Teuchos::null;
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::TypeNameTraits;
+  typedef Ifpack2::Preconditioner<SC, LO, GO, NT> prec_type;
+  typedef Tpetra::RowMatrix<SC, LO, GO, NT> ROW;
+  const char prefix[] = "Ifpack2::Details::LinearSolverFactory::getLinearSolver: ";
+
+  RCP<prec_type> solver;
+  try {
+    // The solver to create must be a subclass of
+    // Ifpack2::Details::CanChangeMatrix (see documentation of
+    // Ifpack2::Details::LinearSolver).  As a result, it should be
+    // possible to create the solver with a null matrix.
+    solver = Ifpack2::Factory::template create<ROW> (solverName, null);
+  }
+  catch (std::exception& e) {
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::invalid_argument, prefix << "Failed to create Ifpack2 "
+       "preconditioner named \"" << solverName << "\", for the following "
+       "template parameters: "
+       << "SC = " << TypeNameTraits<SC>::name ()
+       << ", LO = " << TypeNameTraits<LO>::name ()
+       << ", GO = " << TypeNameTraits<GO>::name ()
+       << ", NT = " << TypeNameTraits<NT>::name ()
+       << ".  Ifpack2::Factory::create threw an exception: " << e.what ());
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (solver.is_null (), std::invalid_argument, prefix << "Failed to create "
+     "Ifpack2 preconditioner named \"" << solverName << "\", for the "
+     "following template parameters: "
+     << "SC = " << TypeNameTraits<SC>::name ()
+     << ", LO = " << TypeNameTraits<LO>::name ()
+     << ", GO = " << TypeNameTraits<GO>::name ()
+     << ", NT = " << TypeNameTraits<NT>::name ()
+     << ".  Ifpack2::Factory::create returned null.");
+
+  typedef Ifpack2::Details::LinearSolver<SC, LO, GO, NT> impl_type;
+  return Teuchos::rcp (new impl_type (solver, solverName));
 }
 
 template<class SC, class LO, class GO, class NT>
-RegisterLinearSolverFactory<SC, LO, GO, NT>::
-RegisterLinearSolverFactory () {
+void
+LinearSolverFactory<SC, LO, GO, NT>::
+registerLinearSolverFactory ()
+{
   typedef Tpetra::MultiVector<SC, LO, GO, NT> MV;
   typedef Tpetra::Operator<SC, LO, GO, NT> OP;
   typedef typename MV::mag_type mag_type;
@@ -45,24 +130,29 @@ RegisterLinearSolverFactory () {
     (factoryBase.get () == NULL, std::logic_error, "Factory is null!  This "
      "should never happen!  Please report this bug to the Ifpack2 developers.");
 
-#ifdef HAVE_TEUCHOS_DEBUG
-  {
-    using std::cerr;
-    using std::endl;
-    using Teuchos::TypeNameTraits;
-    cerr << "Registering Ifpack2 LinearSolverFactory for"
-         << " SC = " << TypeNameTraits<SC>::name ()
-         << ", LO = " << TypeNameTraits<LO>::name ()
-         << ", GO = " << TypeNameTraits<GO>::name ()
-         << ", NT = " << TypeNameTraits<NT>::name ()
-         << ", and mag_type = " << TypeNameTraits<mag_type>::name ()
-         << endl;
-  }
-#endif // HAVE_TEUCHOS_DEBUG
+// #ifdef HAVE_TEUCHOS_DEBUG
+//   {
+//     using std::cerr;
+//     using std::endl;
+//     using Teuchos::TypeNameTraits;
+//     cerr << "Registering Ifpack2 LinearSolverFactory for"
+//          << " SC = " << TypeNameTraits<SC>::name ()
+//          << ", LO = " << TypeNameTraits<LO>::name ()
+//          << ", GO = " << TypeNameTraits<GO>::name ()
+//          << ", NT = " << TypeNameTraits<NT>::name ()
+//          << ", and mag_type = " << TypeNameTraits<mag_type>::name ()
+//          << endl;
+//   }
+// #endif // HAVE_TEUCHOS_DEBUG
   Trilinos::Details::registerLinearSolverFactory<MV, OP, mag_type> ("Ifpack2", factoryBase);
 }
 
 } // namespace Details
 } // namespace Ifpack2
+
+// Do explicit instantiation of Ifpack2::Details::LinearSolverFactory,
+// for Tpetra objects, with the given Tpetra template parameters.
+#define IFPACK2_DETAILS_LINEARSOLVERFACTORY_INSTANT( SC, LO, GO, NT ) \
+  template class Ifpack2::Details::LinearSolverFactory<SC, LO, GO, NT>;
 
 #endif // IFPACK2_DETAILS_LINEARSOLVERFACTORY_DEF_HPP

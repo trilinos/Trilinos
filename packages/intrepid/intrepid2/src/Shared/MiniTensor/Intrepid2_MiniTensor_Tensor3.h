@@ -213,7 +213,7 @@ operator!=(Tensor3<T, N> const & A, Tensor3<T, N> const & B);
 /// \return \f$ s A \f$
 ///
 template<typename S, typename T, Index N>
-typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N> >::type
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N>>::type
 operator*(S const & s, Tensor3<T, N> const & A);
 
 ///
@@ -223,7 +223,7 @@ operator*(S const & s, Tensor3<T, N> const & A);
 /// \return \f$ s A \f$
 ///
 template<typename S, typename T, Index N>
-typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N> >::type
+typename lazy_disable_if< order_1234<S>, apply_tensor3< Promote<S,T>, N>>::type
 operator*(Tensor3<T, N> const & A, S const & s);
 
 ///

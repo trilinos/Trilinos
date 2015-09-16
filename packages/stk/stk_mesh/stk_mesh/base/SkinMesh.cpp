@@ -182,7 +182,7 @@ size_t skin_mesh_find_elements_with_external_sides(BulkData & mesh,
                 const stk::mesh::PartVector &parts2 = mesh.bucket(potential_element).supersets();
                 for (size_t mm=0;mm<parts1.size();mm++)
                 {
-                    if ( !stk::mesh::is_auto_declared_part(*parts2[mm]) )
+                    if ( !stk::mesh::is_auto_declared_part(*parts1[mm]) )
                     {
                         user_parts_elem1.push_back(parts1[mm]);
                     }

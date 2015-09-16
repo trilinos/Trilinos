@@ -121,7 +121,7 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
-      timer_(), metricsRequested_(false), metrics_()
+      metricsRequested_(false), metrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -136,7 +136,7 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
-      levelNumberParts_(), hierarchical_(false), timer_(),
+      levelNumberParts_(), hierarchical_(false), 
       metricsRequested_(false), metrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
@@ -152,7 +152,7 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
-      levelNumberParts_(), hierarchical_(false), timer_(),
+      levelNumberParts_(), hierarchical_(false), 
       metricsRequested_(false), metrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
@@ -319,8 +319,6 @@ public:
   void resetParameters(ParameterList *params)
   {
     Problem<Adapter>::resetParameters(params);  // creates new environment
-    if (timer_.getRawPtr() != NULL)
-      this->env_->setTimer(timer_);
   }
 
   /*! \brief Get the current Environment.
@@ -373,10 +371,6 @@ private:
   
   ArrayRCP<int> levelNumberParts_;
   bool hierarchical_;
-
-  // Create a Timer if the user asked for timing stats.
-
-  RCP<TimerManager> timer_;
 
   // Did the user request metrics?
 
@@ -545,10 +539,10 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       this->algorithm_ = rcp(new AlgBlock<Adapter>(this->envConst_,
                                          problemComm_, this->identifierModel_));
     }
-    else if (algName_ == std::string("rcb")) {
-      this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_, problemComm_,
-                                                 this->coordinateModel_));
-    }
+    // else if (algName_ == std::string("rcb")) {
+    //  this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_,problemComm_,
+    //                                             this->coordinateModel_));
+    // }
     else {
       throw std::logic_error("partitioning algorithm not supported");
     }
@@ -740,8 +734,19 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     }
     else if (algorithm == std::string("rcb") ||
              algorithm == std::string("rib") ||
-             algorithm == std::string("multijagged") ||
              algorithm == std::string("hsfc"))
+    {
+      // rcb, rib, hsfc provided through Zoltan
+      Teuchos::ParameterList &zparams = pl.sublist("zoltan_parameters",false);
+      zparams.set("LB_METHOD", algorithm);
+      if (numberOfWeights_ > 0) {
+        char strval[10];
+        sprintf(strval, "%d", numberOfWeights_);
+        zparams.set("OBJ_WEIGHT_DIM", strval);
+      }
+      algName_ = std::string("zoltan");
+    }
+    else if (algorithm == std::string("multijagged"))
     {
       //modelType_ = CoordinateModelType;
       modelAvail_[CoordinateModelType]=true;
@@ -838,7 +843,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = CoordinateModelType;
       modelAvail_[CoordinateModelType]=true;
 
-      algName_ = std::string("rcb");
+      algName_ = std::string("multijagged");
     }
     else if (model == std::string("ids"))
     {
@@ -887,8 +892,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       //modelType_ = CoordinateModelType;
       modelAvail_[CoordinateModelType]=true;
 
-      if(algName_ != std::string("multijagged"))
-        algName_ = std::string("rcb");
+      algName_ = std::string("multijagged");
     }
     else if (inputType_ == IdentifierAdapterType)
     {

@@ -106,8 +106,8 @@ PHX_EVALUATE_FIELDS(ScatterCellAvgQuantity,workset)
    panzer::MDFieldArrayFactory af("",true);
 
    // for convenience pull out some objects from workset
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
-   std::string blockId = workset.block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
 
    for(std::size_t fieldIndex=0; fieldIndex<scatterFields_.size();fieldIndex++) {
       PHX::MDField<const ScalarT,panzer::Cell,panzer::Point> & field = scatterFields_[fieldIndex];

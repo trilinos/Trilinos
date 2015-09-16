@@ -555,6 +555,15 @@
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>use kokkos refactor</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Switch on the new Kokkos based version.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
   </misc>
 
   <multigrid>

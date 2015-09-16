@@ -101,6 +101,17 @@
 #endif
 
 
+#ifdef HAVE_TEUCHOSCORE_QUADMATH
+#  define TEUCHOS_MACRO_TEMPLATE_INSTANT_FLOAT128(INSTANT_MACRO)\
+      INSTANT_MACRO(__float128)
+#  define TEUCHOS_CLASS_TEMPLATE_INSTANT_FLOAT128(CLASSNAME)\
+     template class CLASSNAME<__float128>;
+#else
+#  define TEUCHOS_MACRO_TEMPLATE_INSTANT_FLOAT128(INSTANT_MACRO)
+#  define TEUCHOS_CLASS_TEMPLATE_INSTANT_FLOAT128(CLASSNAME)
+#endif // HAVE_TEUCHOSCORE_QUADMATH
+
+
 /** \brief Instantiate a macro template for the set of supported real scalar
  * types.
  */

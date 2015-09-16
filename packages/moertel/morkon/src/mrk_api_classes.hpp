@@ -79,12 +79,20 @@ class Interface : public InterfaceBase
 
 public:
 
+  typedef Interface_HostSideAdapter<DIM>           host_side_adapter_t;
+
+  virtual ~Interface();
+
   // For pulling data in from the host space.
   bool hsa_add_node(SideEnum which_side, global_idx_t gbl_node_id, const double coords[]);
   bool hsa_add_face(SideEnum which_side, global_idx_t gbl_face_id, int num_nodes, const global_idx_t gbl_node_id[]);
 
   // No more changes via public API after this.
   bool commited() const { return m_committed; }
+
+  const Interface_HostSideAdapter<DIM> *get_HostSideAdapter(SideEnum side) const {
+    return m_hs_adapters[side];
+  }
 
 private:
 
@@ -100,6 +108,7 @@ private:
 template <typename DeviceType, unsigned int DIM, MorkonFaceType FACE_TYPE >
 class Morkon_Manager
 {
+protected:
   typedef typename DeviceType::execution_space                              execution_space;
   typedef Interface<DeviceType, DIM, FACE_TYPE>                                 interface_t;
   typedef Teuchos::RCP<interface_t>                                           interface_ptr;
@@ -130,7 +139,8 @@ class Morkon_Manager
                            typename face_to_interface_and_side_t::array_layout,
                            typename face_to_interface_and_side_t::execution_space>  face_to_interface_and_side_dvt;
 
-  typedef Kokkos::View<local_idx_t *[2], execution_space>          contact_search_results_t;
+  typedef MorkonCommonlyUsed<DeviceType, DIM>                               morkon_common_t;
+  typedef typename morkon_common_t::coarse_search_results_t         coarse_search_results_t;
 
   // Need a DualView of this one
   typedef Kokkos::View<bool *, execution_space>                         on_boundary_table_t;
@@ -145,7 +155,8 @@ class Morkon_Manager
 
 public:
 
-  static Teuchos::RCP< Morkon_Manager<DeviceType, DIM, FACE_TYPE> > MakeInstance(MPI_Comm mpi_comm, int printlevel);
+  static Teuchos::RCP< Morkon_Manager<DeviceType, DIM, FACE_TYPE> >
+    MakeInstance(MPI_Comm mpi_comm, FaceProjectionMethod projection_method, int printlevel);
 
   bool set_problem_map(Tpetra::Map<> *gp_map);
 
@@ -166,8 +177,9 @@ public:
 protected:
 
   // Set in constructor.
-  MPI_Comm    m_mpi_comm;
-  int       m_printlevel;
+  MPI_Comm                       m_mpi_comm;
+  int                          m_printlevel;
+  FaceProjectionMethod  m_projection_method;
 
   // Input set/manipulated functions called from application, on the host side for now.
   Teuchos::RCP<Tpetra::Map<> >                 m_problem_map;
@@ -183,7 +195,7 @@ protected:
   on_boundary_table_t                 m_is_ifc_boundary_node;  // Is node_id on an interface boundary?
   node_support_sets_t                    m_node_support_sets;
 
-  Morkon_Manager(MPI_Comm mpi_comm, int printlevel);
+  Morkon_Manager(MPI_Comm mpi_comm, FaceProjectionMethod projection_type, int printlevel);
 
   // Consider changing the following into free functions in the file that contains
   // the implementation of Morkon_Manager::mortar_integrate().
@@ -199,20 +211,30 @@ protected:
                          points_dvt predicted_node_coords,
                          on_boundary_table_dvt is_node_on_boundary);
 
-  bool compute_face_and_node_normals();
+  bool compute_normals();
 
-  bool find_possible_contact_face_pairs(contact_search_results_t coarse_search_results);
+  coarse_search_results_t find_possible_contact_face_pairs();
 
-  bool compute_boundary_node_support_sets(contact_search_results_t coarse_search_results);
+  bool compute_boundary_node_support_sets(coarse_search_results_t coarse_search_results);
 
-  bool compute_contact_pallets(contact_search_results_t coarse_search_results,
-                               mortar_pallets_t &resulting_pallets);
+  mortar_pallets_t compute_contact_pallets(coarse_search_results_t coarse_search_results);
 
   // Note that the non-mortar-side integration points needed in computing D are also
   // needed to compute M.  Store and re-use, or re-compute?
   bool integrate_pallets_into_onrank_D(mortar_pallets_t pallets_to_integrate_on);
   bool integrate_pallets_into_onrank_M(mortar_pallets_t pallets_to_integrate_on);
 
+private:
+
+  void count_global_node_and_face_ids(size_t &num_global_node_ids, size_t &num_global_face_ids);
+  void copy_data_from_interfaces_to_dualview_hostsides(
+      const local_to_global_idx_dvt& node_to_global_id,
+      const points_dvt& node_coords, const points_dvt& predicted_node_coords,
+      const on_boundary_table_dvt& is_node_on_boundary,
+      const local_to_global_idx_dvt& face_to_global_id,
+      const face_to_interface_and_side_dvt& face_to_interface_and_side,
+      const face_to_num_nodes_dvt& face_to_num_nodes,
+      const face_to_nodes_dvt& face_to_nodes);
 };
 
 

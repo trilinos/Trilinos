@@ -192,6 +192,67 @@ scalar_t getAvgImbalance() const { return values_[evalAvgImbalance];}
 
 };  // end class
 
+/*! \brief A class containing the metrics for one measurable item.
+ */
+
+template <typename scalar_t>
+  class graphMetricValues{
+
+private:
+  void resetValues(){
+    scalar_t *tmp = new scalar_t [evalNumMetrics];
+    memset(tmp, 0, sizeof(scalar_t) * evalNumMetrics);
+    values_ = arcp(tmp, 0, evalNumMetrics, true);
+  }
+  ArrayRCP<scalar_t> values_;
+  std::string metricName_;
+
+public:
+
+/*! \brief  Enumerator for offsets into metric data.
+ */
+enum metricOffset{
+  evalGlobalSum,   /*!< the global total on all parts */
+  evalGlobalMax,   /*!< the maximum across all parts */
+  evalNumMetrics    /*!< the number of metric values_ */
+};
+
+/*! \brief Print a standard header
+ */
+static void printHeader(std::ostream &os);
+
+/*! \brief Print a standard line of data that fits under the header. */
+void printLine(std::ostream &os) const;
+
+/*! \brief Constructor */
+graphMetricValues(std::string mname) :
+  values_(), metricName_(mname) {
+  resetValues();}
+
+/*! \brief Constructor */
+graphMetricValues() : 
+  values_(), metricName_("unset") { 
+    resetValues();}
+
+/*! \brief Set or reset the name.  */
+void setName(std::string name) { metricName_ = name;}
+
+/*! \brief Set the global sum.  */
+void setGlobalSum(scalar_t x) { values_[evalGlobalSum] = x;}
+
+/*! \brief Set the global maximum across parts.  */
+void setGlobalMax(scalar_t x) { values_[evalGlobalMax] = x;}
+
+/*! \brief Get the name of the item measured. */
+const std::string &getName() const { return metricName_; }
+
+/*! \brief Get the global sum for all parts. */
+scalar_t getGlobalSum() const { return values_[evalGlobalSum];}
+
+/*! \brief Get the global maximum across all parts. */
+scalar_t getGlobalMax() const { return values_[evalGlobalMax];}
+
+};  // end class
 
 template <typename scalar_t>
   void MetricValues<scalar_t>::printLine(std::ostream &os) const
@@ -245,6 +306,29 @@ template <typename scalar_t>
   os << std::endl;
 }
 
+template <typename scalar_t>
+  void graphMetricValues<scalar_t>::printLine(std::ostream &os) const
+{
+  std::string label(metricName_);
+
+  os << std::setw(20) << label;
+  os << std::setw(12) << std::setprecision(4) << values_[evalGlobalSum];
+  os << std::setw(12) << std::setprecision(4) << values_[evalGlobalMax];
+  os << std::endl;
+}
+
+template <typename scalar_t>
+  void graphMetricValues<scalar_t>::printHeader(std::ostream &os)
+{
+  os << std::setw(20) << " ";
+  os << std::setw(24) << "----------SUM----------";
+  os << std::endl;
+
+  os << std::setw(20) << " ";
+  os << std::setw(12) << "sum" << std::setw(12) << "max";
+  os << std::endl;
+}
+
 ///////////////////////////////////////////////////////////////////
 // Namespace methods to compute metric values
 ///////////////////////////////////////////////////////////////////
@@ -268,6 +352,27 @@ template <typename scalar_t>
   for (int i=offset+stride; i < v.size(); i += stride){
     if (v[i] < min) min = v[i];
     else if (v[i] > max) max = v[i];
+    sum += v[i];
+  }
+}
+
+/*! \brief Find max and sum of graph metric values.
+ *   \param v  a list of values
+ *   \param stride  the value such that \c v[offset + stride*i]
+ *             will be included in the calculation for all possible i.
+ *   \param offset  the offset at which calculation will begin.
+ *   \param max  on return, max will hold the maximum of the values.
+ *   \param sum on return, sum will hold the sum of the values.
+ */
+template <typename scalar_t>
+ void getStridedStats(const ArrayView<scalar_t> &v, int stride, 
+   int offset, scalar_t &max, scalar_t &sum)
+{
+  if (v.size() < 1) return;
+  max = sum = v[offset];
+
+  for (int i=offset+stride; i < v.size(); i += stride){
+    if (v[i] > max) max = v[i];
     sum += v[i];
   }
 }
@@ -606,6 +711,204 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
     if (obj[p] == 0) numNonemptyParts--;
 
   env->debug(DETAILED_STATUS, "Exiting globalSumsByPart");
+}
+
+/*! \brief Given the local partitioning, compute the global weighted cuts in each part.
+ *
+ *   \param env   Environment for error handling
+ *   \param comm   communicator
+ *   \param part   \c part[i] is the part ID for local object \c i
+ *   \param vwgts  \c vwgts[w] is the StridedData object 
+ *       representing weight index \c w. The number of weights
+ *       (which must be at least one  TODO  WHY?) is taken to be \c vwgts.size().  
+ *   \param 
+ *   \param numParts  on return this is the global number of parts.
+ *   \param numNonemptyParts  on return this is the number of those
+ *          parts that are non-empty.
+ *   \param metrics on return points to a list of named graphMetricValues objects 
+ *     that each contains the global max and sum over parts of 
+ *     the item being measured. The list may contain "object count", or
+ *     "weight 1", "weight 2" and so on in that order.
+ *     If uniform weights were given, then only "object count" appears.
+ *     If one set of non-uniform weights were given, then
+ *     "weight 1" appear.  Finally, if multiple
+ *     weights were given, we have
+ *     the individual weights "weight 1", "weight 2", and so on.
+ *   \param globalSums If weights are uniform, the globalSums is the
+ *      \c numParts totals of global number of objects in each part.
+ *     Suppose the number of weights is \c W.  If
+ *     W is 1, then on return this is an array of length \c numParts .
+ *     The \c numParts entries are the total weight in each part.
+ *     If \c W is greater than one, then the length of this array is 
+ *     \c W*numParts .
+ *     The entries are the sum of the individual weights in each part,
+ *     by weight index by part number.  The array is allocated here.
+ *
+ * globalWeightedCutsByPart() must be called by all processes in \c comm.
+ */
+
+template <typename pnum_t, typename Adapter>
+  void globalWeightedCutsByPart( 
+    const RCP<const Environment> &env,
+    const RCP<const Comm<int> > &comm, 
+    const RCP<const GraphModel<Adapter> > &graph,
+    const ArrayView<const pnum_t> &part, 
+    int vwgtDim,
+    const ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t> > &vwgts,
+    typename Adapter::part_t &numParts, 
+    typename Adapter::part_t &numNonemptyParts,
+    ArrayRCP<graphMetricValues<typename Adapter::scalar_t> > &metrics,
+    ArrayRCP<typename Adapter::scalar_t> &globalSums)
+{
+  env->debug(DETAILED_STATUS, "Entering globalWeightedCutsByPart");
+  //////////////////////////////////////////////////////////
+  // Initialize return values
+
+  numParts = numNonemptyParts = 0;
+
+  int numMetrics = 1;                       // "object count" or "weight 1"
+  if (vwgtDim > 1) numMetrics = vwgtDim;   // "weight n"
+
+  typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::part_t part_t;
+  typedef graphMetricValues<scalar_t> mv_t;
+  mv_t *newMetrics = new mv_t [numMetrics];
+  env->localMemoryAssertion(__FILE__, __LINE__, numMetrics, newMetrics); 
+  ArrayRCP<mv_t> metricArray(newMetrics, 0, numMetrics, true);
+
+  metrics = metricArray;
+
+  //////////////////////////////////////////////////////////
+  // Figure out the global number of parts in use.
+  // Verify number of vertex weights is the same everywhere.
+
+  lno_t localNumObj = part.size();
+  part_t localNum[2], globalNum[2];
+  localNum[0] = static_cast<part_t>(vwgtDim);  
+  localNum[1] = 0;
+
+  for (lno_t i=0; i < localNumObj; i++)
+    if (part[i] > localNum[1]) localNum[1] = part[i];
+
+  try{
+    reduceAll<int, part_t>(*comm, Teuchos::REDUCE_MAX, 2, 
+      localNum, globalNum);
+  }
+  Z2_THROW_OUTSIDE_ERROR(*env)
+
+  env->globalBugAssertion(__FILE__,__LINE__,
+    "inconsistent number of vertex weights",
+    globalNum[0] == localNum[0], DEBUG_MODE_ASSERTION, comm);
+
+  part_t nparts = globalNum[1] + 1;
+
+  part_t globalSumSize = nparts * numMetrics;
+  scalar_t * sumBuf = new scalar_t [globalSumSize];
+  env->localMemoryAssertion(__FILE__, __LINE__, globalSumSize, sumBuf);
+  globalSums = arcp(sumBuf, 0, globalSumSize);
+
+  //////////////////////////////////////////////////////////
+  // Calculate the local totals by part.
+
+  scalar_t *localBuf = new scalar_t [globalSumSize];
+  env->localMemoryAssertion(__FILE__, __LINE__, globalSumSize, localBuf);
+  memset(localBuf, 0, sizeof(scalar_t) * globalSumSize);
+
+  scalar_t *obj = localBuf;              // # of objects
+
+  for (lno_t i=0; i < localNumObj; i++)
+    obj[part[i]]++;
+
+  // This code assumes the solution has the part ordered the
+  // same way as the user input.  (Bug 5891 is resolved.)
+  if (vwgtDim){
+    scalar_t *wgt = localBuf; // weight 1
+    for (int vdim = 0; vdim < vwgtDim; vdim++){
+      for (lno_t i=0; i < localNumObj; i++)
+	wgt[part[i]] += vwgts[vdim][i];
+      wgt += nparts;         // individual weights
+    }
+  }
+
+  // Metric: local sums on process
+
+  int next = 0;
+
+  metrics[next].setName("object count");
+  metrics[next].setLocalSum(localNumObj);
+
+  if (vwgtDim){
+    scalar_t *wgt = localBuf; // weight 1
+    scalar_t total;
+
+    for (int vdim = 0; vdim < vwgtDim; vdim++){
+      total = 0.0;
+      for (int p=0; p < nparts; p++){
+	total += wgt[p];
+      }
+
+      std::ostringstream oss;
+      oss << "weight " << vdim+1;
+
+      metrics[next].setName(oss.str());
+      metrics[next].setLocalSum(total);
+      next++;
+      wgt += nparts;
+    }
+  }
+
+  //////////////////////////////////////////////////////////
+  // Obtain global totals by part.
+
+  try{
+    reduceAll<int, scalar_t>(*comm, Teuchos::REDUCE_SUM, globalSumSize,
+      localBuf, sumBuf);
+  }
+  Z2_THROW_OUTSIDE_ERROR(*env);
+
+  delete [] localBuf;
+
+  //////////////////////////////////////////////////////////
+  // Global max and sum over all parts
+
+  obj = sumBuf;                     // # of objects
+  scalar_t max=0, sum=0;
+  next = 0;
+
+  ArrayView<scalar_t> objVec(obj, nparts);
+  getStridedStats<scalar_t>(objVec, 1, 0, max, sum);
+
+  metrics[next].setGlobalMax(max);
+  metrics[next].setGlobalSum(sum);
+  next++;
+
+  if (vwgtDim){
+    scalar_t *wgt = sumBuf;        // weight 1
+  
+    for (int vdim=0; vdim < vwgtDim; vdim++){
+      ArrayView<scalar_t> fromVec(wgt, nparts);
+      getStridedStats<scalar_t>(fromVec, 1, 0, max, sum);
+
+      metrics[next].setGlobalMax(max);
+      metrics[next].setGlobalSum(sum);
+      next++;
+      wgt += nparts;       // individual weights
+    }
+  }
+
+  //////////////////////////////////////////////////////////
+  // How many parts do we actually have.
+
+  numParts = nparts;
+  obj = sumBuf;               // # of objects
+
+  numNonemptyParts = numParts; 
+
+  for (part_t p=0; p < numParts; p++)
+    if (obj[p] == 0) numNonemptyParts--;
+
+  env->debug(DETAILED_STATUS, "Exiting globalWeightedCutsByPart");
 }
 
 /*! \brief Compute the imbalance

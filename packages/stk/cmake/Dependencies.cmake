@@ -4,10 +4,10 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Topology        stk_topology         SS  OPTIONAL
   Mesh            stk_mesh             SS  OPTIONAL
   IO              stk_io               SS  OPTIONAL
+  Unit_test_utils stk_unit_test_utils  SS  OPTIONAL
   Search          stk_search           SS  OPTIONAL
   SearchUtil      stk_search_util      SS  OPTIONAL
   Transfer        stk_transfer         SS  OPTIONAL
-  Unit_test_utils stk_unit_test_utils  SS  OPTIONAL
   Unit_tests      stk_unit_tests       SS  OPTIONAL
   Doc_tests       stk_doc_tests        SS  OPTIONAL
   Exp             stk_exp              EX  OPTIONAL

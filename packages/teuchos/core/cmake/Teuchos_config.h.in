@@ -25,13 +25,27 @@
 /* Define to 1 if you have the <fpu_control.h> header file. */
 #cmakedefine HAVE_FPU_CONTROL_H
 
-/* define if the compiler supports abi::__cxa_demangle(...) */
+/* Define if the compiler supports abi::__cxa_demangle(...) */
 #cmakedefine HAVE_GCC_ABI_DEMANGLE
+
+/* Define if the C++ compiler knows how to compile __attribute__((constructor)) */
+#cmakedefine HAVE_TEUCHOS_CXX_ATTRIBUTE_CONSTRUCTOR
+
+/* Define if the C++ compiler knows how to compile __attribute__((weak)), and
+   if a program can test weak functions and call them if they are not NULL. */
+#cmakedefine HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK
+
+/* Define if the C++ compiler knows how to compile "#pragma weak", and
+   if a program can test weak functions and call them if they are not NULL. */
+#cmakedefine HAVE_TEUCHOS_CXX_PRAGMA_WEAK
+
+/* Define if building dynamic shared libraries (instead of static libraries) */
+#cmakedefine HAVE_TEUCHOS_DYNAMIC_LIBS
 
 /* Define if the (Windows) compiler has intrinsic datatype __int64 */
 #cmakedefine HAVE_TEUCHOS___INT64
 
-/* Not namespaced so should be depreciated. */
+/* Not namespaced so should be deprecated. */
 #cmakedefine HAVE_MPI
 
 #cmakedefine HAVE_TEUCHOS_MPI

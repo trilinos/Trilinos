@@ -488,7 +488,7 @@ MACRO(TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
             REPOSITORY_AND_PACKAGE_DIR)
         ELSE()
           MESSAGE_WRAPPER(FATAL_ERROR
-            "Error: The pacakge '${TRIBITS_PACKAGE}' was given an absolute directory '${PACKAGE_ABS_DIR}' which is *not* under the project's soruce directory '${PROJECT_SOURCE_DIR}/'!")
+            "Error: The pacakge '${TRIBITS_PACKAGE}' was given an absolute directory '${PACKAGE_ABS_DIR}' which is *not* under the project's source directory '${PROJECT_SOURCE_DIR}/'!")
           SET(REPOSITORY_AND_PACKAGE_DIR "ERROR-BAD-PACKAGE-ABS-DIR")
           # ToDo: We could just put in a relative path but that requries
           # knowing the common path between the two directory paths but CMake

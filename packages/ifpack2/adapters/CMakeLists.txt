@@ -30,3 +30,8 @@ IF(NOT "${SOURCES}" STREQUAL "")
     DEPLIBS ifpack2
   )
 ENDIF(NOT "${SOURCES}" STREQUAL "")
+
+# If you add any .cpp files to this directory or its subdirectories
+# that you want to add to the library, be sure to make a trivial
+# change to this file.  This will ensure that CMake runs again.
+# Here is another such change.

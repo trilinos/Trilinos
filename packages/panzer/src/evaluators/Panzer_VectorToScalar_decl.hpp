@@ -49,14 +49,16 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_Field.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
     
-PHX_EVALUATOR_CLASS(VectorToScalar)
+PANZER_EVALUATOR_CLASS(VectorToScalar)
   
   std::vector< PHX::MDField<ScalarT,Cell,Point> > scalar_fields;
   PHX::MDField<ScalarT,Cell,Point,Dim> vector_field;
 
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 /** This is a function constructor for an evaluator
   * that builds scalars from a single vector field. The user specifies

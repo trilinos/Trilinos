@@ -102,7 +102,9 @@ C    or 'MULTIPLE_TOPOLOGIES' if not common topology.
 
       DIMENSION A(1)
       INTEGER IA(1)
+      LOGICAL LA(1)
       EQUIVALENCE (A(1), IA(1))
+      EQUIVALENCE (A(1), LA(1))
       CHARACTER*1 C(1)
       
 C     --A - the dynamic numeric memory base array
@@ -186,6 +188,7 @@ C     --Open the input database and read the initial variables
 
       call exinq(ndbin, EXDBMXUSNM, namlen, rdum, cdum, ierr)
       if (name_len .eq. 0) then
+        if (namlen < 32) namlen = 32
         if (namlen .gt. mxname) then
           namlen = mxname 
           maxnam = mxname
@@ -662,7 +665,7 @@ C     old array contents into new (Only needed if EXODUS)
             IF (NERR .GT. 0) GOTO 40
             CALL CPYINT (NELBLK0, IA(KNELB),  IA(KNELB0))
             CALL CPYINT (NELBLK0, IA(KIDELB), IA(KIDELB0))
-            CALL CPYINT (LIEVOK,  IA(KIEVOK), IA(KIEVOK0))
+            CALL CPYINT (LIEVOK,  LA(KIEVOK), LA(KIEVOK0))
 
 C     ... Map from new var to old for mapping variables.
             CALL MDRSRV ('MAPL', KMAPL, NUMEL0)
@@ -701,7 +704,7 @@ C     ... NUMEL changed in this block (if elements deleted)
 C     ... Fix up the truth table if the element block count changes... 
          if (exodus .and. nvarel .gt. 0 .and. nelblk .ne. nelblk0) then
             call muntt(nelblk0, nelblk, nvarel, 
-     $           ia(kievok0), ia(kievok), ia(kielbs))
+     $           la(kievok0), la(kievok), ia(kielbs))
          end if
 
          CALL MDDEL ('LINKO')
@@ -1107,7 +1110,7 @@ C     ... Truth Table.
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 40
         call dbott(ndbout, 'E', nelblk, nvarel, inod2el,
-     *    ia(kievok), ia(ktmp))
+     *    la(kievok), ia(ktmp))
         call mddel('itmp')
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 40
@@ -1117,7 +1120,7 @@ C     ... Truth Table.
         CALL MDRSRV ('ITMP', ktmp, NUMNPS * NVARNS)
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 40
-        call dbott(ndbout, 'M', numnps, nvarns, 0, ia(knsvok), ia(ktmp))
+        call dbott(ndbout, 'M', numnps, nvarns, 0, la(knsvok), ia(ktmp))
         call mddel('itmp')
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 40
@@ -1127,7 +1130,7 @@ C     ... Truth Table.
         CALL MDRSRV ('ITMP', ktmp, NUMESS * NVARSS)
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 40
-        call dbott(ndbout, 'S', numess, nvarss, 0, ia(kssvok), ia(ktmp))
+        call dbott(ndbout, 'S', numess, nvarss, 0, la(kssvok), ia(ktmp))
         call mddel('itmp')
         CALL MDSTAT (NERR, MEM)
         IF (NERR .GT. 0) GOTO 40
@@ -1138,7 +1141,7 @@ C     ... Truth Table.
         time = 0.0
         CALL DBOSTE (NDBOUT, ISTEP,
      &    NVARGL, NVARNP, NUMNP, NVAREL, 0, NELBLK,
-     &    IA(KNELB), IA(KIEVOK), IA(KIDELB),
+     &    IA(KNELB), LA(KIEVOK), IA(KIDELB),
      *    NVARNS, NUMNPS, IA(KNNNS), IA(KNSVOK), IA(KIDNS),
      *    NVARSS, NUMESS, IA(KNESS), IA(KSSVOK), IA(KIDSS),
      *    TIME, A(KVARGL), A(KVARNP), A(KCENT), A(KVARNS), A(KVARSS),
@@ -1176,7 +1179,7 @@ C           dimensioned as (NUMEL, NVAREL)
            CALL DBISTE (NDBIN, '*', istep,
      &      NVARGL,
      *      NVARNP, NUMNP0,
-     *      NVAREL, NELBLK0, IA(KNELB0), IA(KIEVOK0), IA(KIDELB0),
+     *      NVAREL, NELBLK0, IA(KNELB0), LA(KIEVOK0), IA(KIDELB0),
      *      NVARNS, NUMNPS0, IA(KNNNS0), IA(KNSVOK0), IA(KIDNS0),
      *      NVARSS, NUMESS0, IA(KNESS0), IA(KSSVOK0), IA(KIDSS0),
      &      TIME,
@@ -1226,7 +1229,7 @@ C     number element blocks, and truth table.
 
            CALL DBOSTE (NDBOUT, ISTEP,
      &          NVARGL, NVARNP, NUMNP, NVAREL, INOD2EL, NELBLK,
-     $          IA(KNELB), IA(KIEVOK), IA(KIDELB),
+     $          IA(KNELB), LA(KIEVOK), IA(KIDELB),
      $          NVARNS, NUMNPS0, IA(KNNNS0), IA(KNSVOK0), IA(KIDNS0),
      $          NVARSS, NUMESS0, IA(KNESS0), IA(KSSVOK0), IA(KIDSS0),
      $          TIME, 

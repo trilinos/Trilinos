@@ -28,9 +28,9 @@ solve (const sparse_mat_type& A,
   using Teuchos::rcpFromRef;
   using std::cout;
   using std::endl;
-  //typedef Ifpack2::RILUK<sparse_mat_type> inner_prec_type;
-  typedef Ifpack2::AdditiveSchwarz<sparse_mat_type> outer_prec_type;
-  //typedef Ifpack2::Preconditioner<scalar_type, LO, GO, node_type> prec_type;
+
+  typedef Tpetra::RowMatrix<scalar_type, LO, GO, node_type> row_matrix_type;
+  typedef Ifpack2::AdditiveSchwarz<row_matrix_type> outer_prec_type;
   typedef Tpetra::Operator<scalar_type, LO, GO, node_type> op_type;
 
   RCP<const Teuchos::Comm<int> > comm = A.getRowMap ()->getComm ();

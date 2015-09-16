@@ -709,7 +709,7 @@ struct OVIS_parameters ovisParameters;
           }
           else{
             all_export_procs[i] = zz->Proc;
-            // No change in all_export_to_part[i] so no assignment needed
+            /* No change in all_export_to_part[i] so no assignment needed */
           }
         }
   
@@ -734,7 +734,7 @@ struct OVIS_parameters ovisParameters;
         *num_export_objs = all_num_obj;
         for (i = 0; i < all_num_obj; i++) {
           (*export_global_ids)[i] = all_global_ids[i];
-          (*export_local_ids)[i] = all_local_ids[i];
+          if (zz->Num_LID) (*export_local_ids)[i] = all_local_ids[i];
           (*export_procs)[i] = all_export_procs[i];
           (*export_to_part)[i] = all_export_to_part[i];
         }

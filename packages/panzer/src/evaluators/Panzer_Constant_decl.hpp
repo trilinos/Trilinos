@@ -48,6 +48,8 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_Field.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
     
 /** Build a constant Phalanx field using a specified data layout
@@ -60,13 +62,13 @@ namespace panzer {
     </ParameterList>
     \endverbatim
   */
-PHX_EVALUATOR_CLASS(Constant)
+PANZER_EVALUATOR_CLASS(Constant)
   
   ScalarT value;
   
   PHX::MDField<ScalarT> constant;
   
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 }
 

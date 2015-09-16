@@ -71,6 +71,10 @@ private:
   Real c2_;
   Real c3_;
   Real eps_;
+  Real fmin_;         // smallest fval encountered
+  Real alphaMin_;     // Alpha that yields the smallest fval encountered
+  bool acceptMin_;    // Use smallest fval if sufficient decrease not satisfied
+  bool itcond_;       // true if maximum function evaluations reached
 
   Teuchos::RCP<Vector<Real> > xtst_; 
   Teuchos::RCP<Vector<Real> > d_;
@@ -78,6 +82,7 @@ private:
   Teuchos::RCP<const Vector<Real> > grad_;
 
 public:
+
 
   virtual ~LineSearch() {}
 
@@ -93,6 +98,11 @@ public:
     c3_        = parlist.get("Curvature Conditions Parameter: Generalized Wolfe", 0.6);
     alpha0_    = parlist.get("Initial Linesearch Parameter",1.0);
     useralpha_ = parlist.get("User Defined Linesearch Parameter",false);
+    acceptMin_ = parlist.get("Accept Linesearch Minimizer",false);
+
+    fmin_      = std::numeric_limits<Real>::max();
+    alphaMin_  = 0; 
+    itcond_    = false;
 
     if ( c1_ < 0.0 ) {
       c1_ = 1.e-4;
@@ -164,9 +174,9 @@ public:
     }
 
     // Check Maximum Iteration
-    bool itcond = false;
+    itcond_ = false;
     if ( ls_neval >= maxit_ ) { 
-      itcond = true;
+      itcond_ = true;
     }
 
     // Check Curvature Condition
@@ -210,16 +220,21 @@ public:
       }
     }
 
+    if(fnew<fmin_) {
+      fmin_ = fnew;
+      alphaMin_ = alpha;
+    }
+
     if (type == LINESEARCH_BACKTRACKING || type == LINESEARCH_CUBICINTERP) {
       if (edesc_ == DESCENT_NONLINEARCG) {
-        return ((armijo && curvcond) || itcond);
+        return ((armijo && curvcond) || itcond_);
       }
       else {
-        return (armijo || itcond);
+        return (armijo || itcond_);
       }
     }
     else {
-      return ((armijo && curvcond) || itcond);
+      return ((armijo && curvcond) || itcond_);
     }
   }
 
@@ -266,12 +281,39 @@ public:
 
   void updateIterate(Vector<Real> &xnew, const Vector<Real> &x, const Vector<Real> &s, Real alpha,
                      BoundConstraint<Real> &con ) {
+
     xnew.set(x);
     xnew.axpy(alpha,s);
+
     if ( con.isActivated() ) {
       con.project(xnew);
     }
   }
+
+  bool useLocalMinimizer() {
+    return itcond_ && acceptMin_;
+  }
+ 
+  bool takeNoStep() {
+    return itcond_ && !acceptMin_;
+  }
+
+  // use this function to modify alpha and fval if the maximum number of iterations
+  // are reached
+  void setMaxitUpdate(Real &alpha, Real &fnew, const Real &fold) {
+    // Use local minimizer
+    if( itcond_ && acceptMin_ ) {
+      alpha = alphaMin_;
+      fnew = fmin_;
+    }
+    // Take no step
+    else if(itcond_ && !acceptMin_) {
+      alpha = 0;
+      fnew = fold;
+    }
+  }
+ 
+
 };
 
 }

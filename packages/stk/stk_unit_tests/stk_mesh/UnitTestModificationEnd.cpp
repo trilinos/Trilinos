@@ -837,7 +837,7 @@ TEST(BulkDataModificationEnd, create_edges)
     }
 }
 
-TEST(BulkDataModificationEnd, create_edges_with_min_map)
+TEST(BulkDataModificationEnd, DISABLED_create_edges_with_min_map)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
     int numProcs = -1;

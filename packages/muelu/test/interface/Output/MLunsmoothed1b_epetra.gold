@@ -1,24 +1,3 @@
-ML ParameterList:
-aggregation: damping factor = 0.000000   [unused]
-ML output = 10   [unused]
-
-MueLu ParameterList:
-max levels = 10   [unused]
-cycle type = V   [unused]
-sa: damping factor = 0.000000   [unused]
-sa: eigenvalue estimate num iterations = 10   [unused]
-smoother: type = RELAXATION   [unused]
-smoother: pre or post = both   [unused]
-verbosity = test   [unused]
-coarse: type = klu   [unused]
-coarse: max size = 128   [unused]
-smoother: params ->
- relaxation: type = Symmetric Gauss-Seidel   [unused]
- relaxation: sweeps = 2   [unused]
- relaxation: damping factor = 1   [unused]
-coarse: params ->
- [empty list]
-
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = point relaxation stand-alone})
  relaxation: type = symmetric Gauss-Seidel   [unused]
@@ -54,6 +33,7 @@ Level 1
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
@@ -113,6 +93,7 @@ Level 2
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
@@ -172,6 +153,7 @@ Level 3
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
@@ -231,6 +213,7 @@ Level 4
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace

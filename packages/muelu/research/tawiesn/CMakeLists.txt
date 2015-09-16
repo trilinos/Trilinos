@@ -7,7 +7,7 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
-TRIBITS_COPY_FILES_TO_BINARY_DIR(Q2Q1_cp
-  SOURCE_FILES driver.xml
-  )
+#TRIBITS_COPY_FILES_TO_BINARY_DIR(tawiesn_cp
+#  SOURCE_FILES driver.xml
+#  )
 

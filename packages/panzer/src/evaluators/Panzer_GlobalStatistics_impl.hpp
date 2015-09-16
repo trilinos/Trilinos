@@ -114,7 +114,7 @@ PHX_POST_REGISTRATION_SETUP(GlobalStatistics,sd,fm)
        field != field_values.end(); ++field)
     this->utils.setFieldData(*field,fm);
 
-  ir_index = panzer::getIntegrationRuleIndex(ir_order,(*sd.worksets_)[0]);
+  ir_index = panzer::getIntegrationRuleIndex(ir_order,(*sd.worksets_)[0], this->wda);
 
   for (typename PHX::MDField<ScalarT,Cell,IP>::size_type cell = 0; cell < ones.dimension(0); ++cell)
     for (typename PHX::MDField<ScalarT,Cell,IP>::size_type ip = 0; ip < ones.dimension(1); ++ip)
@@ -128,7 +128,7 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
     return;
 
   Intrepid::FunctionSpaceTools::integrate<ScalarT>(volumes, ones, 
-                                                       (workset.int_rules[ir_index])->weighted_measure, 
+                                                       (this->wda(workset).int_rules[ir_index])->weighted_measure, 
                                                        Intrepid::COMP_BLAS);
 
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
@@ -139,7 +139,7 @@ PHX_EVALUATE_FIELDS(GlobalStatistics,workset)
        field != field_values.end(); ++field,++field_index) {
     
     Intrepid::FunctionSpaceTools::integrate<ScalarT>(tmp, *field, 
-                                                         (workset.int_rules[ir_index])->weighted_measure, 
+                                                         (this->wda(workset).int_rules[ir_index])->weighted_measure, 
                                                          Intrepid::COMP_BLAS);
     
     for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {

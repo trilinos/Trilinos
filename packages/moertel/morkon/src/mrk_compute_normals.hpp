@@ -72,7 +72,7 @@ struct compute_face_normals<DeviceType, 2,MRK_LINE2>
   points_mrat       m_node_coords;
   normals_t        m_face_normals;
 
-  compute_face_normals(mesh_t mesh, fields_t fields)
+  compute_face_normals(mesh_t &mesh, fields_t &fields)
     : m_face_nodes(mesh.m_face_data.m_face_to_nodes)
     , m_node_coords(fields.m_node_coords)
     , m_face_normals(fields.m_face_normals)
@@ -127,7 +127,7 @@ struct compute_face_normals<DeviceType, 3,MRK_TRI3>
   points_mrat             m_node_coords;
   normals_t              m_face_normals;
 
-  compute_face_normals(mesh_t mesh, fields_t fields)
+  compute_face_normals(mesh_t &mesh, fields_t &fields)
     : m_face_num_nodes(mesh.m_face_to_num_nodes)
     , m_face_nodes(mesh.m_face_to_nodes)
     , m_node_coords(fields.m_node_coords)
@@ -197,7 +197,7 @@ struct compute_face_normals<DeviceType, 3,MRK_QUAD4>
   points_mrat             m_node_coords;
   normals_t             m_face_normals;
 
-  compute_face_normals(mesh_t mesh, fields_t fields)
+  compute_face_normals(mesh_t &mesh, fields_t &fields)
     : m_face_num_nodes(mesh.m_face_to_num_nodes)
     , m_face_nodes(mesh.m_face_to_nodes)
     , m_node_coords(fields.m_node_coords)
@@ -265,7 +265,7 @@ struct compute_node_normals_from_faces
   normals_mrat      m_face_normals;
   normals_t         m_node_normals;
 
-  compute_node_normals_from_faces(mesh_t surface_mesh, fields_t fields)
+  compute_node_normals_from_faces(mesh_t surface_mesh, fields_t &fields)
     : m_node_to_faces(surface_mesh.m_node_to_faces)
     , m_face_normals(fields.m_face_normals)
     , m_node_normals(fields.m_node_normals)

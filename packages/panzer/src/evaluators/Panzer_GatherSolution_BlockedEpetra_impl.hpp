@@ -173,8 +173,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<ProductVectorBase<double> > x;
    if (useTimeDerivativeSolutionVector_)
@@ -318,8 +318,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<ProductVectorBase<double> > x;
    if (useTimeDerivativeSolutionVector_)
@@ -467,8 +467,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<int> LIDs;
 
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    double seed_value = 0.0;
    Teuchos::RCP<ProductVectorBase<double> > x;

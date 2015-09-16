@@ -50,32 +50,13 @@
 #ifndef IFPACK2_KRYLOV_DECL_HPP
 #define IFPACK2_KRYLOV_DECL_HPP
 
-#include "Ifpack2_ConfigDefs.hpp"
 #include "Ifpack2_Preconditioner.hpp"
-#include "Ifpack2_Heap.hpp"
-#include "Ifpack2_Parameters.hpp"
-#include "Ifpack2_Relaxation.hpp"
-#include "Ifpack2_ILUT.hpp"
-#include "Ifpack2_RILUK.hpp"
-#include "Ifpack2_Chebyshev.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 
-#include <BelosConfigDefs.hpp>
-#include <BelosSolverManager.hpp>
-#include <BelosTpetraAdapter.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
-#include <BelosBlockCGSolMgr.hpp>
-
-#include <Teuchos_Assert.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <cmath>
+#include "BelosSolverManager.hpp"
+#include "BelosTpetraAdapter.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include <type_traits>
 
 namespace Teuchos {
   class ParameterList; // forward declaration
@@ -100,6 +81,7 @@ namespace Ifpack2 {
 
   /// \class Krylov
   /// \brief Wrapper for iterative linear solvers (e.g., CG or GMRES).
+  /// \tparam MatrixType A specialization of Tpetra::RowMatrix.
   ///
   /// \warning This class has been DEPRECATED.  DO NOT USE THIS CLASS.
   ///   IT MAY GO AWAY AT ANY TIME.
@@ -147,6 +129,8 @@ namespace Ifpack2 {
                               local_ordinal_type,
                               global_ordinal_type,
                               node_type> row_matrix_type;
+
+    static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::Krylov: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
     //! Type of the Ifpack2::Preconditioner specialization from which this class inherits.
     typedef Ifpack2::Preconditioner<scalar_type,

@@ -83,7 +83,7 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
 {
   this->utils.setFieldData(basisCoordinates_,fm);
 
-  basisIndex_ = panzer::getPureBasisIndex(basisName_, (*sd.worksets_)[0]);
+  basisIndex_ = panzer::getPureBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);
 }
 
 // **********************************************************************
@@ -91,8 +91,8 @@ template<typename EvalT,typename TRAITS>
 void panzer::GatherBasisCoordinates<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  // const Intrepid::FieldContainer<double> & basisCoords = workset.bases[basisIndex_]->basis_coordinates;  
-  const Teuchos::RCP<const BasisValues2<double> > bv = workset.bases[basisIndex_];
+  // const Intrepid::FieldContainer<double> & basisCoords = this->wda(workset).bases[basisIndex_]->basis_coordinates;  
+  const Teuchos::RCP<const BasisValues2<double> > bv = this->wda(workset).bases[basisIndex_];
 
   // just copy the array
   for(int i=0;i<bv->basis_coordinates.dimension(0);i++)

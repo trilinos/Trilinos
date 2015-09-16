@@ -94,9 +94,9 @@ PHX_EVALUATE_FIELDS(SubcellSum,workset)
   // simply saving the indices and only updating if the subcell dimension
   // and index changes)
   if(evaluateOnClosure_)
-    fieldPattern_->getSubcellClosureIndices(workset.subcell_dim,workset.subcell_index,indices);
+    fieldPattern_->getSubcellClosureIndices(workset.subcell_dim,this->wda(workset).subcell_index,indices);
   else
-    indices = fieldPattern_->getSubcellIndices(workset.subcell_dim,workset.subcell_index);
+    indices = fieldPattern_->getSubcellIndices(workset.subcell_dim,this->wda(workset).subcell_index);
 
   for(std::size_t c=0;c<workset.num_cells;c++) {
     outField(c) = 0.0; // initialize field 

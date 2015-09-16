@@ -55,6 +55,8 @@
 
 #include <string>
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace Example {
     
   using panzer::Cell;
@@ -64,7 +66,7 @@ namespace Example {
 /** A source for the curl Laplacian that results in the solution
   */
 template<typename EvalT, typename Traits>
-class SineSource : public PHX::EvaluatorWithBaseImpl<Traits>,
+class SineSource : public panzer::EvaluatorWithBaseImpl<Traits>,
                         public PHX::EvaluatorDerived<EvalT, Traits>  {
 
 public:

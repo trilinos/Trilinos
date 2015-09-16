@@ -43,8 +43,10 @@
 #ifndef IFPACK2_BANDEDCONTAINER_DEF_HPP
 #define IFPACK2_BANDEDCONTAINER_DEF_HPP
 
-#include "Ifpack2_BandedContainer_decl.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include <iostream>
+#include <sstream>
 
 #ifdef HAVE_MPI
 #  include <mpi.h>
@@ -56,9 +58,8 @@
 
 namespace Ifpack2 {
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-BandedContainer<MatrixType, LocalScalarType>::
+BandedContainer<MatrixType, LocalScalarType, true>::
 BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
                  const Teuchos::ArrayView<const local_ordinal_type>& localRows) :
   Container<MatrixType> (matrix, localRows),
@@ -108,35 +109,31 @@ BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
   localMap_ = rcp (new map_type (numRows_, indexBase, localComm));
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-BandedContainer<MatrixType, LocalScalarType>::~BandedContainer()
+BandedContainer<MatrixType, LocalScalarType, false>::
+BandedContainer (const Teuchos::RCP<const row_matrix_type>& matrix,
+                 const Teuchos::ArrayView<const local_ordinal_type>& localRows) :
+  Container<MatrixType> (matrix, localRows)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Ifpack2::BandedContainer: Not implemented for "
+     "LocalScalarType = " << Teuchos::TypeNameTraits<LocalScalarType>::name ()
+     << ".");
+}
+
+
+template<class MatrixType, class LocalScalarType>
+BandedContainer<MatrixType, LocalScalarType, true>::
+~BandedContainer ()
 {}
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-size_t BandedContainer<MatrixType, LocalScalarType>::getNumRows () const
-{
-  return numRows_;
-}
+BandedContainer<MatrixType, LocalScalarType, false>::
+~BandedContainer ()
+{}
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-bool BandedContainer<MatrixType, LocalScalarType>::isInitialized () const
-{
-  return IsInitialized_;
-}
-
-//==============================================================================
-template<class MatrixType, class LocalScalarType>
-bool BandedContainer<MatrixType, LocalScalarType>::isComputed() const
-{
-  return IsComputed_;
-}
-
-//==============================================================================
-template<class MatrixType, class LocalScalarType>
-void BandedContainer<MatrixType, LocalScalarType>::
+void BandedContainer<MatrixType, LocalScalarType, true>::
 setParameters (const Teuchos::ParameterList& List)
 {
   typedef typename Teuchos::ArrayView<const local_ordinal_type>::size_type size_type;
@@ -199,19 +196,33 @@ setParameters (const Teuchos::ParameterList& List)
     }
   }
 
-  TEUCHOS_TEST_FOR_EXCEPTION(kl_==-1 || ku_==-1, std::invalid_argument,
-      "BandedContainer<T>::setParameters: the user must provide the number of sub- and superdiagonals in the 'kl' and 'ku' parameters.");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (kl_==-1 || ku_==-1, std::invalid_argument,
+     "Ifpack2::BandedContainer::setParameters: the user must provide the number"
+     " of sub- and superdiagonals in the 'kl' and 'ku' parameters.");
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-void BandedContainer<MatrixType, LocalScalarType>::initialize ()
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+setParameters (const Teuchos::ParameterList& /* List */)
+{
+  // Constructor of stub implementation throws, so no need to throw here.
+}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, true>::
+initialize ()
 {
   using Teuchos::null;
   using Teuchos::rcp;
 
-  TEUCHOS_TEST_FOR_EXCEPTION(kl_==-1 || ku_==-1, std::invalid_argument,
-                       "BandedContainer<T>::initialize: the user must provide the number of sub- and superdiagonals in the 'kl' and 'ku' parameters. Make sure that you call BandedContainer<T>::setParameters!");
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (kl_==-1 || ku_==-1, std::invalid_argument,
+     "Ifpack2::BandedContainer::initialize: the user must provide the number of"
+     " sub- and superdiagonals in the 'kl' and 'ku' parameters. Make sure that "
+     "you call BandedContainer<T>::setParameters!");
 
   //std::cout << "numRows_ = " << numRows_ << " kl_ = " << kl_ << " ku_ = " << ku_ << std::endl;
   diagBlock_ = Teuchos::rcp(new Teuchos::SerialBandDenseMatrix<int, local_scalar_type>(numRows_, numRows_, kl_ /* lower bandwith */, kl_+ku_ /* upper bandwith. Don't forget to store kl extra superdiagonals for LU decomposition! */));
@@ -228,9 +239,18 @@ void BandedContainer<MatrixType, LocalScalarType>::initialize ()
   IsInitialized_ = true;
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-void BandedContainer<MatrixType, LocalScalarType>::compute ()
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+initialize ()
+{
+  // Constructor of stub implementation throws, so no need to throw here.
+}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, true>::
+compute ()
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     static_cast<size_t> (ipiv_.size ()) != numRows_, std::logic_error,
@@ -250,7 +270,17 @@ void BandedContainer<MatrixType, LocalScalarType>::compute ()
 }
 
 template<class MatrixType, class LocalScalarType>
-void BandedContainer<MatrixType, LocalScalarType>::factor ()
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+compute ()
+{
+  // Constructor of stub implementation throws, so no need to throw here.
+}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, true>::
+factor ()
 {
   Teuchos::LAPACK<int, local_scalar_type> lapack;
   int INFO = 0;
@@ -287,9 +317,17 @@ void BandedContainer<MatrixType, LocalScalarType>::factor ()
     "matrix has a singular diagonal block.");
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-void BandedContainer<MatrixType, LocalScalarType>::
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+factor ()
+{
+  // Constructor of stub implementation throws, so no need to throw here.
+}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, true>::
 applyImpl (const local_mv_type& X,
            local_mv_type& Y,
            Teuchos::ETransp mode,
@@ -392,9 +430,21 @@ applyImpl (const local_mv_type& X,
   }
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-void BandedContainer<MatrixType, LocalScalarType>::
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+applyImpl (const local_mv_type& X,
+           local_mv_type& Y,
+           Teuchos::ETransp mode,
+           LocalScalarType alpha,
+           LocalScalarType beta) const
+{
+  // Constructor of stub implementation throws, so no need to throw here.
+}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, true>::
 apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
        Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
        Teuchos::ETransp mode,
@@ -498,9 +548,21 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   mvgs.scatter (Y, *Y_local, localRows);
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-void BandedContainer<MatrixType,LocalScalarType>::
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& /* X */,
+       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& /* Y */,
+       Teuchos::ETransp /* mode */,
+       scalar_type /* alpha */,
+       scalar_type /* beta */) const
+{
+  // Constructor of stub implementation throws, so no need to throw here.
+}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, true>::
 weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
                const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& D,
@@ -659,19 +721,43 @@ weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_o
   mvgs.scatter (Y, *Y_local, localRows);
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-std::ostream& BandedContainer<MatrixType,LocalScalarType>::print(std::ostream& os) const
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+weightedApply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& /* X */,
+               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& /* Y */,
+               const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& /* D */,
+               Teuchos::ETransp /* mode */,
+               scalar_type /* alpha */,
+               scalar_type /* beta */) const
 {
-  Teuchos::FancyOStream fos(Teuchos::rcp(&os,false));
-  fos.setOutputToRootOnly(0);
-  describe(fos);
-  return(os);
+  // Constructor of stub implementation throws, so no need to throw here.
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-std::string BandedContainer<MatrixType,LocalScalarType>::description() const
+std::ostream&
+BandedContainer<MatrixType, LocalScalarType, true>::
+print (std::ostream& os) const
+{
+  Teuchos::FancyOStream fos (Teuchos::rcpFromRef (os));
+  fos.setOutputToRootOnly (0);
+  describe (fos);
+  return os;
+}
+
+template<class MatrixType, class LocalScalarType>
+std::ostream&
+BandedContainer<MatrixType, LocalScalarType, false>::
+print (std::ostream& os) const
+{
+  return os;
+  // Constructor of stub implementation throws, so no need to throw here.
+}
+
+template<class MatrixType, class LocalScalarType>
+std::string
+BandedContainer<MatrixType, LocalScalarType, true>::
+description () const
 {
   std::ostringstream oss;
   oss << Teuchos::Describable::description();
@@ -691,9 +777,20 @@ std::string BandedContainer<MatrixType,LocalScalarType>::description() const
   return oss.str();
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-void BandedContainer<MatrixType,LocalScalarType>::describe(Teuchos::FancyOStream &os, const Teuchos::EVerbosityLevel verbLevel) const
+std::string
+BandedContainer<MatrixType, LocalScalarType, false>::
+description () const
+{
+  return "";
+  // Constructor of stub implementation throws, so no need to throw here.
+}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, true>::
+describe (Teuchos::FancyOStream& os,
+          const Teuchos::EVerbosityLevel verbLevel) const
 {
   if(verbLevel==Teuchos::VERB_NONE) return;
   os << "================================================================================" << std::endl;
@@ -707,9 +804,18 @@ void BandedContainer<MatrixType,LocalScalarType>::describe(Teuchos::FancyOStream
   os << std::endl;
 }
 
-//==============================================================================
 template<class MatrixType, class LocalScalarType>
-void BandedContainer<MatrixType,LocalScalarType>::
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+describe (Teuchos::FancyOStream& os,
+          const Teuchos::EVerbosityLevel verbLevel) const
+{
+  // Constructor of stub implementation throws, so no need to throw here.
+}
+
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, true>::
 extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
 {
   using Teuchos::Array;
@@ -857,10 +963,17 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
   }
 }
 
+template<class MatrixType, class LocalScalarType>
+void
+BandedContainer<MatrixType, LocalScalarType, false>::
+extract (const Teuchos::RCP<const row_matrix_type>& /* globalMatrix */)
+{
+  // Constructor of stub implementation throws, so no need to throw here.
+}
+
 } // namespace Ifpack2
 
 #define IFPACK2_BANDEDCONTAINER_INSTANT(S,LO,GO,N) \
-  template class Ifpack2::BandedContainer< Tpetra::CrsMatrix<S, LO, GO, N>, S >; \
   template class Ifpack2::BandedContainer< Tpetra::RowMatrix<S, LO, GO, N>, S >;
 
 #endif // IFPACK2_BANDEDCONTAINER_HPP

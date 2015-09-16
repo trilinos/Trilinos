@@ -238,11 +238,11 @@ import Epetra
   {
     SWIG_fail;
   }
-  SWIG_CATCH_STDEXCEPT
   catch(int ierr)
   {
     SWIG_exception(SWIG_RuntimeError, "ML exception thrown");
   }
+  SWIG_CATCH_STDEXCEPT
   catch(...)
   {
     SWIG_exception(SWIG_UnknownError, "Unkown C++ exception");

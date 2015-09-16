@@ -108,7 +108,7 @@ PHX_POST_REGISTRATION_SETUP(DOFGradient,sd,fm)
   this->utils.setFieldData(dof_value,fm);
   this->utils.setFieldData(dof_gradient,fm);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -119,9 +119,9 @@ PHX_EVALUATE_FIELDS(DOFGradient,workset)
   dof_gradient.deep_copy(ScalarT(0.0));
 
   if(workset.num_cells>0)
-    Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_gradient,dof_value,(workset.bases[basis_index])->grad_basis);
+    Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_gradient,dof_value,(this->wda(workset).bases[basis_index])->grad_basis);
 */
-  evaluateGrad_withSens(workset.num_cells,dof_gradient,dof_value,workset.bases[basis_index]->grad_basis);
+  evaluateGrad_withSens(workset.num_cells,dof_gradient,dof_value,this->wda(workset).bases[basis_index]->grad_basis);
 }
 
 //**********************************************************************

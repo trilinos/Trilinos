@@ -35,8 +35,8 @@
 
 #include <time.h>
 
-#include "MeshBuilder.hpp"
 #include "EntityKeyHash.hpp"
+#include "GameofLifeMesh.hpp"
 /*
  * How to use:
  * Basically the same as GameofLife, but make sure the MeshBuilder had no aura.
@@ -45,7 +45,10 @@ class NoGhostGameofLife
 {
 public:
     //basics
-    NoGhostGameofLife(MeshBuilder* Mesh, std::string name);
+    NoGhostGameofLife(GameofLifeMesh& Mesh, std::string name);
+
+    NoGhostGameofLife(stk::mesh::BulkData& bulkData, ScalarIntField& lifeField,
+                      ScalarIntField& neighborField, std::string name);
 
     ~NoGhostGameofLife(){}
 
@@ -65,7 +68,7 @@ public:
     unsigned num_active_neighbors(stk::mesh::Entity elem);
 
     //accessors
-    inline stk::mesh::BulkData* bulk_data();
+    inline stk::mesh::BulkData& bulk_data();
 
     inline unsigned num_procs() const;
 
@@ -74,15 +77,13 @@ public:
 
 private:
     //basic stuff
-    stk::mesh::BulkData* m_bulkData;
+    stk::mesh::BulkData& m_bulkData;
     int m_numProcs;
     stk::mesh::EntityVector m_elements;
-    stk::topology m_elemType;
 
     //game stuff
-    ScalarIntField* m_lifeField;
-    ScalarIntField* m_neighborField;
-    stk::mesh::Part* m_activePart;
+    ScalarIntField& m_lifeField;
+    ScalarIntField& m_neighborField;
 
     //io
     std::string m_name;
@@ -130,6 +131,8 @@ private:
     void deactivate_element(stk::mesh::Entity elem);
 
    //constructor
+    void finish_construction();
+
     void get_elements();
     void confirm_no_ghosting_ghosting();
     void create_element_connectivity_maps();
@@ -188,7 +191,7 @@ private:
 };
 
 //accessors
-inline stk::mesh::BulkData* NoGhostGameofLife::bulk_data()
+inline stk::mesh::BulkData& NoGhostGameofLife::bulk_data()
 {
     return m_bulkData;
 }

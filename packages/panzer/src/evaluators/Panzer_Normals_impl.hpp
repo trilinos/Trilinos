@@ -83,7 +83,7 @@ PHX_POST_REGISTRATION_SETUP(Normals,sd,fm)
   num_qp  = normals.dimension(1);
   num_dim = normals.dimension(2);
   
-  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0]);
+  quad_index =  panzer::getIntegrationRuleIndex(quad_order,(*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -93,8 +93,8 @@ PHX_EVALUATE_FIELDS(Normals,workset)
 
   if(workset.num_cells>0) {
     Intrepid::CellTools<ScalarT>::getPhysicalSideNormals(normals,
-                                                         workset.int_rules[quad_index]->jac,
-                                                         side_id, *workset.int_rules[quad_index]->int_rule->topology);
+                                                         this->wda(workset).int_rules[quad_index]->jac,
+                                                         side_id, *this->wda(workset).int_rules[quad_index]->int_rule->topology);
       
     if(normalize) {
       // normalize vector: getPhysicalSideNormals does not 

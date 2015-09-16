@@ -279,9 +279,253 @@ namespace Details {
     }
   };
 
+
+  /// \class LapackSupportsScalar
+  /// \brief Type traits class that says whether Teuchos::LAPACK
+  ///   has a valid implementation for the given ScalarType.
+  template<class ScalarType>
+  class LapackSupportsScalar {
+  public:
+    const static bool value = false;
+  };
+
+  template<>
+  class LapackSupportsScalar<float> {
+  public:
+    const static bool value = true;
+  };
+
+  template<>
+  class LapackSupportsScalar<double> {
+  public:
+    const static bool value = true;
+  };
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+  template<>
+  class LapackSupportsScalar<std::complex<float> > {
+  public:
+    const static bool value = true;
+  };
+
+  template<>
+  class LapackSupportsScalar<std::complex<double> > {
+  public:
+    const static bool value = true;
+  };
+#endif // HAVE_TEUCHOS_COMPLEX
+
+  /// \class SolverManagerRequiresLapack
+  /// \brief Base class for Belos::SolverManager subclasses which
+  ///   normally can only compile with ScalarType types for which
+  ///   Teuchos::LAPACK has a valid implementation.
+  template<class ScalarType,
+           class MV,
+           class OP,
+           const bool lapackSupportsScalarType =
+           Belos::Details::LapackSupportsScalar<ScalarType>::value>
+  class SolverManagerRequiresLapack;
+
+  /// \brief Specialization for ScalarType types for which
+  ///   Teuchos::LAPACK has a valid implementation.
+  ///
+  /// This specialization adds nothing to SolverManager.
+  template<class ScalarType, class MV, class OP>
+  class SolverManagerRequiresLapack<ScalarType, MV, OP, true> :
+    public SolverManager<ScalarType, MV, OP> {
+  public:
+    SolverManagerRequiresLapack () {}
+    virtual ~SolverManagerRequiresLapack () {}
+  };
+
+  /// \brief Specialization for ScalarType types for which
+  ///   Teuchos::LAPACK does NOT have a valid implementation.
+  ///
+  /// This is a stub specialization whose constructor always throws
+  /// std::logic_error.  Subclasses must always call the base class
+  /// constructor.
+  template<class ScalarType, class MV, class OP>
+  class SolverManagerRequiresLapack<ScalarType, MV, OP, false> :
+    public SolverManager<ScalarType, MV, OP> {
+  public:
+    SolverManagerRequiresLapack () {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for ScalarType"
+         " types for which Teuchos::LAPACK does not have a valid implementation.  "
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual ~SolverManagerRequiresLapack () {}
+
+    virtual const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for ScalarType"
+         " types for which Teuchos::LAPACK does not have a valid implementation.  "
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for ScalarType"
+         " types for which Teuchos::LAPACK does not have a valid implementation.  "
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for ScalarType"
+         " types for which Teuchos::LAPACK does not have a valid implementation.  "
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual int getNumIters() const {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for ScalarType"
+         " types for which Teuchos::LAPACK does not have a valid implementation.  "
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual bool isLOADetected() const {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for ScalarType"
+         " types for which Teuchos::LAPACK does not have a valid implementation.  "
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for ScalarType"
+         " types for which Teuchos::LAPACK does not have a valid implementation.  "
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual void setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for ScalarType"
+         " types for which Teuchos::LAPACK does not have a valid implementation.  "
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual void reset (const ResetType type) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for ScalarType"
+         " types for which Teuchos::LAPACK does not have a valid implementation.  "
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual ReturnType solve () {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for ScalarType"
+         " types for which Teuchos::LAPACK does not have a valid implementation.  "
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+  };
+
+  /// \class SolverManagerRequiresRealLapack
+  /// \brief Base class for Belos::SolverManager subclasses which
+  ///   normally can only compile with <i>real</i> ScalarType types
+  ///   for which Teuchos::LAPACK has a valid implementation.
+  template<class ScalarType,
+           class MV,
+           class OP,
+           const bool supportsScalarType =
+             Belos::Details::LapackSupportsScalar<ScalarType>::value &&
+             ! Teuchos::ScalarTraits<ScalarType>::isComplex>
+  class SolverManagerRequiresRealLapack;
+
+  /// \brief Non-stub specialization for real ScalarType types for
+  ///   which Teuchos::LAPACK has a valid implementation.
+  ///
+  /// This specialization adds nothing to SolverManager.  Thus, the
+  /// SolverManager subclass that has the actual specific solver
+  /// implementation gets to implement any virtual methods of
+  /// SolverManager.
+  template<class ScalarType, class MV, class OP>
+  class SolverManagerRequiresRealLapack<ScalarType, MV, OP, true> :
+    public SolverManager<ScalarType, MV, OP> {
+  public:
+    SolverManagerRequiresRealLapack () {}
+    virtual ~SolverManagerRequiresRealLapack () {}
+  };
+
+  /// \brief Stub specialization for ScalarType types which are NOT
+  ///   real, or for which Teuchos::LAPACK does NOT have a valid
+  ///   implementation.
+  ///
+  /// This is a stub specialization whose constructor always throws
+  /// std::logic_error.  Subclasses must always call the base class
+  /// constructor.
+  template<class ScalarType, class MV, class OP>
+  class SolverManagerRequiresRealLapack<ScalarType, MV, OP, false> :
+    public SolverManager<ScalarType, MV, OP> {
+  public:
+    SolverManagerRequiresRealLapack () {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for complex "
+         "ScalarType types, or for ScalarType types for which Teuchos::LAPACK "
+         "does not have a valid implementation."
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual ~SolverManagerRequiresRealLapack () {}
+
+    virtual const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for complex "
+         "ScalarType types, or for ScalarType types for which Teuchos::LAPACK "
+         "does not have a valid implementation."
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for complex "
+         "ScalarType types, or for ScalarType types for which Teuchos::LAPACK "
+         "does not have a valid implementation."
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for complex "
+         "ScalarType types, or for ScalarType types for which Teuchos::LAPACK "
+         "does not have a valid implementation."
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual int getNumIters() const {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for complex "
+         "ScalarType types, or for ScalarType types for which Teuchos::LAPACK "
+         "does not have a valid implementation."
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual bool isLOADetected() const {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for complex "
+         "ScalarType types, or for ScalarType types for which Teuchos::LAPACK "
+         "does not have a valid implementation."
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual void
+    setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& /* problem */) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for complex "
+         "ScalarType types, or for ScalarType types for which Teuchos::LAPACK "
+         "does not have a valid implementation."
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual void setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for complex "
+         "ScalarType types, or for ScalarType types for which Teuchos::LAPACK "
+         "does not have a valid implementation."
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual void reset (const ResetType type) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for complex "
+         "ScalarType types, or for ScalarType types for which Teuchos::LAPACK "
+         "does not have a valid implementation."
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+    virtual ReturnType solve () {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "This solver is not implemented for complex "
+         "ScalarType types, or for ScalarType types for which Teuchos::LAPACK "
+         "does not have a valid implementation."
+         "ScalarType = " << Teuchos::TypeNameTraits<ScalarType>::name () << ".");
+    }
+  };
+
 } // namespace Details
-
-
-} // End Belos namespace
+} // namespace Belos
 
 #endif /* BELOS_SOLVERMANAGER_HPP */

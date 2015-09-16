@@ -94,6 +94,9 @@ class CrsMatrixWrap :
 #endif
   typedef Xpetra::CrsMatrixFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node> CrsMatrixFactory;
   typedef Xpetra::MatrixView<LocalOrdinal, GlobalOrdinal, Node> MatrixView;
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    typedef typename CrsMatrix::local_matrix_type local_matrix_type;
+#endif
 
 public:
   //! @name Constructor/Destructor Methods
@@ -140,6 +143,19 @@ public:
     // Default view
     CreateDefaultView();
   }
+
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+  //! Constructor specifying fixed number of entries for each row and column map
+  CrsMatrixWrap(const RCP<const Map> &rowMap, const RCP<const Map>& colMap, const local_matrix_type& lclMatrix, const Teuchos::RCP<Teuchos::ParameterList>& params = null)
+    : finalDefaultView_(false)
+  {
+    // Set matrix data
+    matrixData_ = CrsMatrixFactory::Build(rowMap, colMap, lclMatrix, params);
+
+    // Default view
+    CreateDefaultView();
+  }
+#endif
 
   CrsMatrixWrap(RCP<CrsMatrix> matrix)
     : finalDefaultView_(matrix->isFillComplete())
@@ -559,6 +575,13 @@ public:
 
     // Teuchos::OSTab tab(out);
   }
+
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+  /// \brief Access the underlying local Kokkos::CrsMatrix object
+  local_matrix_type getLocalMatrix () const {
+    return matrixData_->getLocalMatrix();
+  }
+#endif
 
   // JG: Added:
 

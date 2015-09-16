@@ -81,7 +81,7 @@ namespace Xpetra {
     //@{
 
     //! Constructor specifying fixed number of entries for each row (not implemented)
-    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null) 
+    TpetraBlockCrsMatrix(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype=DynamicProfile, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null)
     {throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");}
 
     //! Constructor specifying (possibly different) number of entries in each row (not implemented)
@@ -188,7 +188,7 @@ namespace Xpetra {
 
 
     //!  Replaces the current domainMap and importer with the user-specified objects.
-    void replaceDomainMapAndImporter(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter) 
+    void replaceDomainMapAndImporter(const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >& newDomainMap, Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> >  & newImporter)
     {throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");}
 
     //! Expert static fill complete
@@ -211,7 +211,7 @@ namespace Xpetra {
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { XPETRA_MONITOR("TpetraBlockCrsMatrix::getColMap"); return toXpetra(mtx_->getColMap()); }
 
     //! Returns the CrsGraph associated with this matrix.
-    RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > getCrsGraph() const 
+    RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node> > getCrsGraph() const
     {throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");}
 
     //! Number of global elements in the row map of this matrix.
@@ -312,7 +312,7 @@ namespace Xpetra {
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {
       XPETRA_MONITOR("TpetraBlockCrsMatrix::getLocalDiagCopy");
       XPETRA_DYNAMIC_CAST(TpetraVectorClass, diag, tDiag, "Xpetra::TpetraBlockCrsMatrix.getLocalDiagCopy() only accept Xpetra::TpetraVector as input arguments.")
-      
+
       mtx_->getLocalDiagCopy(*tDiag.getTpetra_Vector());
     }
 
@@ -334,12 +334,12 @@ namespace Xpetra {
 
     //! Import.
     void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source,
-                  const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM) 
+                  const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM)
     {throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");}
 
     //! Export.
     void doExport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &dest,
-                  const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM) 
+                  const Import< LocalOrdinal, GlobalOrdinal, Node >& importer, CombineMode CM)
     {throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");}
 
     //! Import (using an Exporter).
@@ -349,10 +349,10 @@ namespace Xpetra {
 
     //! Export (using an Importer).
     void doExport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &dest,
-                  const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM) 
+                  const Export< LocalOrdinal, GlobalOrdinal, Node >& exporter, CombineMode CM)
     {throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");}
 
-    void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap) 
+    void removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap)
     {throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented");}
 
     // @}
@@ -377,6 +377,15 @@ namespace Xpetra {
     //! Get the underlying Tpetra matrix
     RCP<Tpetra::Experimental::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockCrsMatrixNonConst() const { return mtx_; } //TODO: remove
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
+
+    local_matrix_type getLocalMatrix () const {
+      throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix does not support getLocalMatrix due to missing Kokkos::CrsMatrix in Tpetra's experimental implementation");
+      local_matrix_type ret;
+      return ret; // make compiler happy
+    }
+#endif
    //@}
 
   private:

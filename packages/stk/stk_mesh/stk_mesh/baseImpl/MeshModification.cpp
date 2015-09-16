@@ -99,36 +99,7 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
         }
     }
 
-    // ------------------------------
-    // Now sort the bucket entities.
-    // This does not change the entities, relations, or field data.
-    // However, it insures that the ordering of entities and buckets
-    // is independent of the order in which a set of changes were
-    // performed.
-    //
-    //optimize_buckets combines multiple buckets in a bucket-family into
-    //a single larger bucket, and also does a sort.
-    //If optimize_buckets has not been requested, still do the sort.
-
-    if(opt == MOD_END_COMPRESS_AND_SORT)
-    {
-        m_bulkData.bucket_repository().optimize_buckets();
-    }
-    else
-    {
-        m_bulkData.bucket_repository().internal_sort_bucket_entities();
-    }
-
-    // ------------------------------
-
-    m_bulkData.bucket_repository().internal_modification_end();
-
-    m_bulkData.internal_update_fast_comm_maps();
-
-    this->set_sync_state_synchronized();
-    m_bulkData.reset_add_node_sharing();
-
-    m_bulkData.update_deleted_entities_container();
+    m_bulkData.internal_finish_modification_end(opt);
 
     return true;
 }

@@ -171,11 +171,11 @@ LOCA.Epetra.Interface supports the following classes:
     PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
     SWIG_fail;
   }
-  SWIG_CATCH_STDEXCEPT
   catch (Swig::DirectorException & e)
   {
     SWIG_fail;
   }
+  SWIG_CATCH_STDEXCEPT
   catch(...)
   {
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
