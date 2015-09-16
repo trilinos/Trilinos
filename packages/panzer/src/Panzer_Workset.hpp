@@ -139,6 +139,9 @@ namespace panzer {
     WorksetDetailsAccessor() : details_index_(0) {}
     //! An evaluator builder sets the details index.
     void setDetailsIndex(const int di) { details_index_ = di; }
+    //! Get the details index. Generally, only a gather evaluator needs to know
+    //! its details index.
+    int getDetailsIndex() const { return details_index_; }
     //! Workset wrapper to extract the correct details. Example: wda(workset).bases[i].
     WorksetDetails& operator()(Workset& workset) const {
       return workset(details_index_);
