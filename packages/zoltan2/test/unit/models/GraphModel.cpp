@@ -71,6 +71,7 @@
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_ArrayView.hpp>
 
+const int SMALL_NUMBER_OF_ROWS = 5;
 using namespace std;
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -104,42 +105,21 @@ void printGraph(zlno_t nrows, const zgno_t *v,
   int rank = comm->getRank();
   int nprocs = comm->getSize();
   comm->barrier();
-  if (rank == 0){
-    if (owner)
-      std::cout << "Global graph:" << std::endl;
-    else
-      std::cout << "Local graph:" << std::endl;
-  }
 
   for (int p=0; p < nprocs; p++){
     if (p == rank){
       std::cout << "Rank " << p << std::endl;
-      if (owner){
-        for (zlno_t i=0; i < nrows; i++){
-          std::cout << "  Vtx " << *v++ << ": ";
-          if (elid)
-            for (zlno_t j=idx[i]; j < idx[i+1]; j++)
-              std::cout << *elid++ << " (" << *owner++ << ") ";
-          else
-            for (zlno_t j=idx[i]; j < idx[i+1]; j++)
-              std::cout << *egid++ << " (" << *owner++ << ") ";
-          std::cout << std::endl;
-        }
-        std::cout.flush();
+      for (zlno_t i=0; i < nrows; i++){
+        std::cout << "  Vtx " << i << ": ";
+        if (elid)
+          for (zlno_t j=idx[i]; j < idx[i+1]; j++)
+            std::cout << *elid++ << " ";
+        else
+          for (zlno_t j=idx[i]; j < idx[i+1]; j++)
+            std::cout << *egid++ << " ";
+        std::cout << std::endl;
       }
-      else{
-        for (zlno_t i=0; i < nrows; i++){
-          std::cout << "  Vtx " << i << ": ";
-          if (elid)
-            for (zlno_t j=idx[i]; j < idx[i+1]; j++)
-              std::cout << *elid++ << " ";
-          else
-            for (zlno_t j=idx[i]; j < idx[i+1]; j++)
-              std::cout << *egid++ << " ";
-          std::cout << std::endl;
-        }
-        std::cout.flush();
-      }
+      std::cout.flush();
     }
     comm->barrier();
   }
@@ -154,7 +134,7 @@ void testAdapter(
     const RCP<const Comm<int> > &comm,
     bool idsAreConsecutive,
     int nVtxWeights, int nEdgeWeights, int nnzWgtIdx, int coordDim,
-    bool consecutiveIdsRequested, bool removeSelfEdges)
+    bool consecutiveIdsRequested, bool removeSelfEdges, bool buildLocalGraph)
 {
   typedef Zoltan2::StridedData<zlno_t, zscalar_t> input_t;
 
@@ -170,9 +150,11 @@ void testAdapter(
 
   std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags;
   if (consecutiveIdsRequested)
-    modelFlags.set(Zoltan2::IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+    modelFlags.set(Zoltan2::GENERATE_CONSECUTIVE_IDS);
   if (removeSelfEdges)
-    modelFlags.set(Zoltan2::SELF_EDGES_MUST_BE_REMOVED);
+    modelFlags.set(Zoltan2::REMOVE_SELF_EDGES);
+  if (buildLocalGraph)
+    modelFlags.set(Zoltan2::BUILD_LOCAL_GRAPH);
 
   // Set up some fake input
   zscalar_t **coords=NULL;
@@ -289,44 +271,47 @@ void testAdapter(
   // Test the GraphModel interface
 
   if (rank == 0) std::cout << "        Checking counts" << std::endl;
-  if (model->getLocalNumVertices() != size_t(nLocalRows))
-    fail = 1;
+  if (model->getLocalNumVertices() != size_t(nLocalRows)) fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumVertices", 1)
 
-  if (model->getGlobalNumVertices() != size_t(nGlobalRows))
-    fail = 1;
-  TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumVertices", 1)
+  if (buildLocalGraph) {
+    if (model->getLocalNumVertices() != size_t(nLocalRows)) fail = 1;
+    TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumVertices", 1)
 
-  size_t num = (removeSelfEdges ? (nLocalNZ-numLocalDiags) : nLocalNZ);
+    size_t num = (removeSelfEdges ? (totalLocalNbors - numLocalDiags)
+                                  : totalLocalNbors);
+    if (model->getLocalNumLocalEdges() != num) fail = 1;
+    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumLocalEdges", 1)
 
-  if (model->getLocalNumGlobalEdges() != num)
-    fail = 1;
-  TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumGlobalEdges", 1)
+    if (model->getLocalNumGlobalEdges() != num) fail = 1;
+    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumGlobalEdges", 1)
 
-  num = (removeSelfEdges ? (totalLocalNbors - numLocalDiags) : totalLocalNbors);
+    if (model->getGlobalNumEdges() != num) fail = 1;
+    TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumEdges", 1)
+  }
+  else {
+    if (model->getGlobalNumVertices() != size_t(nGlobalRows)) fail = 1;
+    TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumVertices", 1)
 
-  if (model->getLocalNumLocalEdges() != num)
-    fail = 1;
-  TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumLocalEdges", 1)
+    size_t num = (removeSelfEdges ? (nLocalNZ-numLocalDiags) : nLocalNZ);
+    if (model->getLocalNumGlobalEdges() != num) fail = 1;
+    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumGlobalEdges", 1)
 
-  num = (removeSelfEdges ? (nGlobalNZ-numGlobalDiags) : nGlobalNZ);
+    num = (removeSelfEdges ? (nGlobalNZ-numGlobalDiags) : nGlobalNZ);
+    if (model->getGlobalNumEdges() != num) fail = 1;
+    TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumEdges", 1)
+  }
 
-  if (model->getGlobalNumEdges() != num)
-    fail = 1;
-  TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumEdges", 1)
-
-  if (model->getNumWeightsPerVertex() != nVtxWeights)
-    fail = 1;
+  if (model->getNumWeightsPerVertex() != nVtxWeights) fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getNumWeightsPerVertex", 1)
 
-  if (model->getNumWeightsPerEdge() != 0)
-    fail = 1;
+  if (model->getNumWeightsPerEdge() != 0) fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getNumWeightsPerEdge", 1)
 
-  if (model->getCoordinateDim() != coordDim)
-    fail = 1;
+  if (model->getCoordinateDim() != coordDim) fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getCoordinateDim", 1)
 
+  ///////////
   if (rank == 0) std::cout << "        Checking vertices" << std::endl;
   ArrayView<const zgno_t> vertexGids;
   ArrayView<input_t> crds;
@@ -341,8 +326,7 @@ void testAdapter(
   }
   TEST_FAIL_AND_EXIT(*comm, !fail, "getVertexList", 1)
 
-  if (vertexGids.size() != nLocalRows)
-    fail = 1;
+  if (vertexGids.size() != nLocalRows) fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getVertexList size", 1)
 
   // We know model stores things in same order we gave it.
@@ -385,11 +369,10 @@ void testAdapter(
       }
     }
   }
-
   TEST_FAIL_AND_EXIT(*comm, !fail, "vertex gids", 1)
 
-  if ((crds.size() != coordDim) || (wgts.size() != nVtxWeights))
-    fail = 1;
+  ////////////////
+  if ((crds.size() != coordDim) || (wgts.size() != nVtxWeights)) fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "coord or weight array size", 1)
 
   for (int i=0; !fail && i < coordDim; i++){
@@ -426,102 +409,107 @@ void testAdapter(
 
   TEST_FAIL_AND_EXIT(*comm, !fail, "row weight values", 1)
   
+  ////////////////
   if (rank == 0) std::cout << "        Checking edges" << std::endl;
-  ArrayView<const zgno_t> edgeGids;
-  ArrayView<const int> procIds;
-  ArrayView<const zlno_t> offsets;
-  size_t numEdges=0;
 
-  try{
-    numEdges = model->getEdgeList(edgeGids, procIds, offsets, wgts);
-  }
-  catch(std::exception &e){
-    std::cerr << rank << ") Error " << e.what() << std::endl;
-    fail = 1;
-  }
-  TEST_FAIL_AND_EXIT(*comm, !fail, "getEdgeList", 1)
+  if (!buildLocalGraph) {
+    ArrayView<const zgno_t> edgeGids;
+    ArrayView<const int> procIds;
+    ArrayView<const zlno_t> offsets;
+    size_t numEdges=0;
 
-  TEST_FAIL_AND_EXIT(*comm, wgts.size() == 0, "edge weights present", 1)
-
-  num = 0;
-  for (ArrayView<const zlno_t>::size_type i=0; i < offsets.size()-1; i++){
-    size_t edgeListSize = offsets[i+1] - offsets[i];
-    num += edgeListSize;
-    size_t val = numNbors[i];
-    if (removeSelfEdges && haveDiag[i])
-      val--;
-    if (edgeListSize != val){
-      fail = 1;
-      break;
+    try{
+      numEdges = model->getEdgeList(edgeGids, procIds, offsets, wgts);
     }
-  }
-
-  TEST_FAIL_AND_EXIT(*comm, numEdges==num, "getEdgeList size", 1)
-
-  if (nGlobalRows < 200){
-    if (rank == 0)
-      std::cout << "Printing global graph now " << nGlobalRows << std::endl;
-    printGraph(nLocalRows, vertexGids.getRawPtr(), NULL,
-      edgeGids.getRawPtr(), procIds.getRawPtr(), offsets.getRawPtr(), comm);
-  }
-  else{
-    if (rank==0) 
-      std::cout << "    " << nGlobalRows << " total rows" << std::endl;
-  }
-
-  // Get graph restricted to this process
-
-  if (rank == 0) std::cout << "        Checking local edges" << std::endl;
-  ArrayView<const zlno_t> localEdges;
-  ArrayView<const zlno_t> localOffsets;
-  size_t numLocalNeighbors=0;
-
-  try{
-    numLocalNeighbors= model->getLocalEdgeList(localEdges, localOffsets, wgts);
-  }
-  catch(std::exception &e){
-    std::cout << rank << ") Error " << e.what() << std::endl;
-    std::cerr << rank << ") Error " << e.what() << std::endl;
-    fail = 1;
-  }
-  TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList", 1)
-  TEST_FAIL_AND_EXIT(*comm, ((localOffsets.size()-1) == nLocalRows),
-                     "getLocalEdgeList localOffsets.size", 1)
-
-  num = 0;
-  for (zlno_t i=0; i < nLocalRows; i++){
-    size_t edgeListSize = localOffsets[i+1] - localOffsets[i];
-    num += edgeListSize;
-    size_t val = numLocalNbors[i];
-    if (removeSelfEdges && haveDiag[i])
-      val--;
-    if (edgeListSize != val){
-        std::cout << rank << "vtx " << i << " of " << localOffsets.size()
-                  << " Number of local edges in model " << edgeListSize
-                  << " not equal to expected number of edges " << val 
-                  << std::endl;
+    catch(std::exception &e){
+      std::cerr << rank << ") Error " << e.what() << std::endl;
       fail = 1;
-      break;
     }
-  }
-  TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList list sizes", 1)
+    TEST_FAIL_AND_EXIT(*comm, !fail, "getEdgeList", 1)
 
-  TEST_FAIL_AND_EXIT(*comm, numLocalNeighbors==num,
-                     "getLocalEdgeList sum size", 1)
+    TEST_FAIL_AND_EXIT(*comm, wgts.size() == 0, "edge weights present", 1)
 
-  fail = ((removeSelfEdges ? size_t(totalLocalNbors-numLocalDiags)
-                           : size_t(totalLocalNbors))
-          != numLocalNeighbors);
-  TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList total size", 1)
+    size_t num = 0;
+    for (ArrayView<const zlno_t>::size_type i=0; i < offsets.size()-1; i++){
+      size_t edgeListSize = offsets[i+1] - offsets[i];
+      num += edgeListSize;
+      size_t val = numNbors[i];
+      if (removeSelfEdges && haveDiag[i])
+        val--;
+      if (edgeListSize != val){
+        fail = 1;
+        break;
+      }
+    }
 
-  if (nGlobalRows < 200){
-    if (totalLocalNbors == 0){
+    TEST_FAIL_AND_EXIT(*comm, numEdges==num, "getEdgeList size", 1)
+    if (nGlobalRows < SMALL_NUMBER_OF_ROWS){
       if (rank == 0)
-        std::cout << "  Graph of local edges is empty" << std::endl; 
+        std::cout << "Printing graph now " << nGlobalRows << std::endl;
+      printGraph(nLocalRows, vertexGids.getRawPtr(), NULL,
+        edgeGids.getRawPtr(), procIds.getRawPtr(), offsets.getRawPtr(), comm);
     }
     else{
-      printGraph(nLocalRows, vertexGids.getRawPtr(), 
-        localEdges.getRawPtr(), NULL, NULL, localOffsets.getRawPtr(), comm);
+      if (rank==0) 
+        std::cout << "    " << nGlobalRows << " total rows" << std::endl;
+    }
+  }
+
+  else { // buildLocalGraph
+    // Get graph restricted to this process
+
+    if (rank == 0) std::cout << "        Checking local edges" << std::endl;
+    ArrayView<const zlno_t> localEdges;
+    ArrayView<const zlno_t> localOffsets;
+    size_t numLocalNeighbors=0;
+
+    try{
+      numLocalNeighbors= model->getLocalEdgeList(localEdges, localOffsets, wgts);
+    }
+    catch(std::exception &e){
+      std::cout << rank << ") Error " << e.what() << std::endl;
+      std::cerr << rank << ") Error " << e.what() << std::endl;
+      fail = 1;
+    }
+    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList", 1)
+    TEST_FAIL_AND_EXIT(*comm, ((localOffsets.size()-1) == nLocalRows),
+                       "getLocalEdgeList localOffsets.size", 1)
+
+    size_t num = 0;
+    for (zlno_t i=0; i < nLocalRows; i++){
+      size_t edgeListSize = localOffsets[i+1] - localOffsets[i];
+      num += edgeListSize;
+      size_t val = numLocalNbors[i];
+      if (removeSelfEdges && haveDiag[i])
+        val--;
+      if (edgeListSize != val){
+          std::cout << rank << "vtx " << i << " of " << localOffsets.size()
+                    << " Number of local edges in model " << edgeListSize
+                    << " not equal to expected number of edges " << val 
+                    << std::endl;
+        fail = 1;
+        break;
+      }
+    }
+    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList list sizes", 1)
+  
+    TEST_FAIL_AND_EXIT(*comm, numLocalNeighbors==num,
+                       "getLocalEdgeList sum size", 1)
+
+    fail = ((removeSelfEdges ? size_t(totalLocalNbors-numLocalDiags)
+                             : size_t(totalLocalNbors))
+            != numLocalNeighbors);
+    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalEdgeList total size", 1)
+
+    if (nGlobalRows < SMALL_NUMBER_OF_ROWS){
+      if (totalLocalNbors == 0){
+        if (rank == 0)
+        std::cout << "  Graph of local edges is empty" << std::endl; 
+      }
+      else{
+        printGraph(nLocalRows, vertexGids.getRawPtr(), 
+          localEdges.getRawPtr(), NULL, NULL, localOffsets.getRawPtr(), comm);
+      }
     }
   }
 
@@ -559,7 +547,7 @@ void testAdapter(
 void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
     const RCP<const Comm<int> > &comm,
     int nVtxWeights, int nnzWgtIdx, int coordDim,
-    bool consecutiveIdsRequested, bool removeSelfEdges)
+    bool consecutiveIdsRequested, bool removeSelfEdges, bool buildLocalGraph)
 {
   int rank = comm->getRank();
 
@@ -599,11 +587,12 @@ void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
 
   RCP<const Tpetra::CrsGraph<zlno_t, zgno_t> > graph = Mconsec->getCrsGraph();
 
-  printTpetraGraph<zlno_t, zgno_t>(comm, *graph, cout, 100, 
-    "Graph with consecutive IDs");
+//  printTpetraGraph<zlno_t, zgno_t>(comm, *graph, cout, 100, 
+//    "Graph having consecutive IDs");
 
   if (rank == 0) 
-    std::cout << "   TEST MatrixAdapter with Consecutive IDs" << std::endl;
+    std::cout << "   TEST MatrixAdapter for graph having Consecutive IDs"
+              << std::endl;
   bool idsAreConsecutive = true;
 
   testAdapter<baseMAdapter_t,xMAdapter_t,tcrsMatrix_t>(Mconsec, graph, comm,
@@ -611,15 +600,19 @@ void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
                                                        nVtxWeights, 0, 
                                                        nnzWgtIdx, coordDim,
                                                        consecutiveIdsRequested,
-                                                       removeSelfEdges);
+                                                       removeSelfEdges,
+                                                       buildLocalGraph);
+
   if (rank == 0) 
-    std::cout << "   TEST GraphAdapter with Consecutive IDs" << std::endl;
+    std::cout << "   TEST GraphAdapter for graph having Consecutive IDs"
+              << std::endl;
   testAdapter<baseGAdapter_t,xGAdapter_t,tcrsGraph_t>(graph, graph, comm,
                                                       idsAreConsecutive,
                                                       nVtxWeights, 1, 
                                                       nnzWgtIdx, coordDim,
                                                       consecutiveIdsRequested,
-                                                      removeSelfEdges);
+                                                      removeSelfEdges,
+                                                      buildLocalGraph);
 
   // Do a round robin migration so that global IDs are not consecutive.
 
@@ -634,11 +627,12 @@ void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
 
   graph = Mnonconsec->getCrsGraph();
 
-  printTpetraGraph<zlno_t, zgno_t>(comm, *graph, cout, 100, 
-    "Graph with non-consecutive IDs");
+//  printTpetraGraph<zlno_t, zgno_t>(comm, *graph, cout, 100, 
+//    "Graph having non-consecutive (Round-Robin) IDs");
 
   if (rank == 0)
-    std::cout << "   TEST MatrixAdapter with Round-Robin IDs" << std::endl;
+    std::cout << "   TEST MatrixAdapter graph having Round-Robin IDs"
+              << std::endl;
   idsAreConsecutive = false;
 
   testAdapter<baseMAdapter_t,xMAdapter_t,tcrsMatrix_t>(Mnonconsec, graph, comm,
@@ -646,16 +640,19 @@ void testGraphModel(string fname, zgno_t xdim, zgno_t ydim, zgno_t zdim,
                                                        nVtxWeights, 0, 
                                                        nnzWgtIdx, coordDim,
                                                        consecutiveIdsRequested,
-                                                       removeSelfEdges);
+                                                       removeSelfEdges,
+                                                       buildLocalGraph);
 
   if (rank == 0)
-    std::cout << "   TEST GraphAdapter with Round-Robin IDs" << std::endl;
+    std::cout << "   TEST GraphAdapter graph having Round-Robin IDs"
+              << std::endl;
   testAdapter<baseGAdapter_t,xGAdapter_t,tcrsGraph_t>(graph, graph, comm,
                                                       idsAreConsecutive,
                                                       nVtxWeights, 0, 
                                                       nnzWgtIdx, coordDim,
                                                       consecutiveIdsRequested,
-                                                      removeSelfEdges);
+                                                      removeSelfEdges,
+                                                      buildLocalGraph);
 
   delete uinput;
 }
@@ -672,64 +669,116 @@ int main(int argc, char *argv[])
   int nVtxWeights=0;
   int nnzWgtIdx = -1; 
   int coordDim=0;
-  bool consecutiveIdsRequested=false, removeSelfEdges=false;
+  bool consecutiveIdsRequested = false; 
+  bool removeSelfEdges = false;
+  bool buildLocalGraph = false;
   string fname("simple");
 
   if (rank == 0)
-    std::cout << "TESTING base case" << std::endl;
+    std::cout << "TESTING base case (global)" << std::endl;
   testGraphModel(fname, 0, 0, 0, comm,
     nVtxWeights, nnzWgtIdx, coordDim,
-    consecutiveIdsRequested, removeSelfEdges);
+    consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
 
   if (rank == 0)
-    std::cout << "TESTING with row weights" << std::endl;
+    std::cout << "TESTING with row weights (global)" << std::endl;
   nVtxWeights = 1;
-
   testGraphModel(fname, 0, 0, 0, comm,
     nVtxWeights, nnzWgtIdx, coordDim,
-    consecutiveIdsRequested, removeSelfEdges);
+    consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
 
   if (rank == 0)
-    std::cout << "TESTING with weights = nnz" << std::endl;
+    std::cout << "TESTING with weights = nnz (global)" << std::endl;
   nnzWgtIdx = 1;
-
   testGraphModel(fname, 0, 0, 0, comm,
     nVtxWeights, nnzWgtIdx, coordDim,
-    consecutiveIdsRequested, removeSelfEdges);
+    consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
 
   if (rank == 0)
-    std::cout << "TESTING with multiple row weights and coords" << std::endl;
+    std::cout << "TESTING with multiple row weights and coords (global)"
+              << std::endl;
   nVtxWeights = 2;
   coordDim = 3;
-
   testGraphModel(fname, 0, 0, 0, comm,
     nVtxWeights, nnzWgtIdx, coordDim,
-    consecutiveIdsRequested, removeSelfEdges);
+    consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
 
   if (rank == 0)
-    std::cout << "TESTING with consecutiveIdsRequested" << std::endl;
+    std::cout << "TESTING with consecutiveIdsRequested (global)" << std::endl;
   consecutiveIdsRequested = true;
-
   testGraphModel(fname, 0, 0, 0, comm,
     nVtxWeights, nnzWgtIdx, coordDim,
-    consecutiveIdsRequested, removeSelfEdges);
+    consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
 
   if (rank == 0)
-    std::cout << "TESTING with removeSelfEdges" << std::endl;
+    std::cout << "TESTING with consecutiveIdsRequested and removeSelfEdges "
+              << "(global)" << std::endl;
   removeSelfEdges = true;
-
   testGraphModel(fname, 0, 0, 0, comm,
     nVtxWeights, nnzWgtIdx, coordDim,
-    consecutiveIdsRequested, removeSelfEdges);
+    consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
 
   if (rank == 0)
-    std::cout << "TESTING with consecutiveIdsRequested=false" << std::endl;
+    std::cout << "TESTING with removeSelfEdges (global)" << std::endl;
   consecutiveIdsRequested = false;
-
   testGraphModel(fname, 0, 0, 0, comm,
     nVtxWeights, nnzWgtIdx, coordDim,
-    consecutiveIdsRequested, removeSelfEdges);
+    consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
 
+  if (rank == 0)
+    std::cout << "TESTING base case (local)" << std::endl;
+  buildLocalGraph = true;
+  consecutiveIdsRequested = false;
+  removeSelfEdges = false;
+  testGraphModel(fname, 0, 0, 0, comm,
+    nVtxWeights, nnzWgtIdx, coordDim,
+    consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
+
+  if (rank == 0)
+    std::cout << "TESTING with row weights (local)" << std::endl;
+  nVtxWeights = 1;
+  testGraphModel(fname, 0, 0, 0, comm,
+    nVtxWeights, nnzWgtIdx, coordDim,
+    consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
+
+  if (rank == 0)
+    std::cout << "TESTING with weights = nnz (local)" << std::endl;
+  nnzWgtIdx = 1;
+  testGraphModel(fname, 0, 0, 0, comm,
+    nVtxWeights, nnzWgtIdx, coordDim,
+    consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
+
+  if (rank == 0)
+    std::cout << "TESTING with multiple row weights and coords (local)"
+              << std::endl;
+  nVtxWeights = 2;
+  coordDim = 3;
+  testGraphModel(fname, 0, 0, 0, comm,
+    nVtxWeights, nnzWgtIdx, coordDim,
+    consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
+
+  if (rank == 0)
+    std::cout << "TESTING with consecutiveIdsRequested (local)" << std::endl;
+  consecutiveIdsRequested = true;
+  testGraphModel(fname, 0, 0, 0, comm,
+    nVtxWeights, nnzWgtIdx, coordDim,
+    consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
+
+  if (rank == 0)
+    std::cout << "TESTING with consecutiveIdsRequested and removeSelfEdges"
+              << "(local)"
+              << std::endl;
+  removeSelfEdges = true;
+  testGraphModel(fname, 0, 0, 0, comm,
+    nVtxWeights, nnzWgtIdx, coordDim,
+    consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
+
+  if (rank == 0)
+    std::cout << "TESTING with removeSelfEdges (local)" << std::endl;
+  consecutiveIdsRequested = false;
+  testGraphModel(fname, 0, 0, 0, comm,
+    nVtxWeights, nnzWgtIdx, coordDim,
+    consecutiveIdsRequested, removeSelfEdges, buildLocalGraph);
   if (rank==0)
     cout << "PASS" << endl;
 

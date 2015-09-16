@@ -335,7 +335,8 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   switch (modelType) {
 
   case GraphModelType:
-    graphFlags.set(SELF_EDGES_MUST_BE_REMOVED);
+    graphFlags.set(REMOVE_SELF_EDGES);
+    graphFlags.set(BUILD_LOCAL_GRAPH);
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
       this->baseInputAdapter_, this->envConst_, problemCommConst_, graphFlags));
 
