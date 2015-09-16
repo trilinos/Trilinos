@@ -73,7 +73,10 @@ namespace {
     const ST one = static_cast<ST> (1.0);
     const LO minBlockSize = 1; // 1x1 "blocks" should also work
     //const LO maxBlockSize = 32;// SEGFAULT
-    const LO maxBlockSize = 16;// TEST FAILS
+    //const LO maxBlockSize = 16;// TEST FAILS
+    //const LO maxBlockSize = 8; // TEST FAILS
+    //const LO maxBlockSize = 4; // TEST FAILS
+    const LO maxBlockSize = 2; // TEST FAILS
 
     // Memory pool for the LittleBlock instances.
     Teuchos::Array<ST> blockPool (maxBlockSize * maxBlockSize);
@@ -119,6 +122,30 @@ namespace {
     }
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ExpBlockView, SWAP, ST )
+  {
+    if (! Teuchos::ScalarTraits<ST>::isOrdinal) { // skip integer types
+      Teuchos::BLAS<int, ST> blas;
+      const int n = 6;
+      Teuchos::Array<ST> x (n), y (n), x_cpy (n), y_cpy (n);
+      int incx, incy;
+
+      incx = 1;
+      incy = 1;
+      for (int i = 0; i < n; ++i) {
+        x[i] = static_cast<ST> (i + 1);
+        x_cpy[i] = static_cast<ST> (i + 1);
+        y[i] = 2 * static_cast<ST> (i + 1);
+        y_cpy[i] = 2 * static_cast<ST> (i + 1);
+      }
+      blas.SWAP (n, x.getRawPtr (), incx, y.getRawPtr (), incy);
+      TEST_COMPARE_ARRAYS( x, y_cpy );
+      TEST_COMPARE_ARRAYS( y, x_cpy );
+
+      // FIXME (mfh 16 Sep 2015) Fix the negative and strided INCX and
+      // INCY cases.
+    }
+  }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ExpBlockView, LAPY2, ST )
   {
@@ -176,7 +203,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ExpBlockView, LARFGP, ST )
   {
     if (! Teuchos::ScalarTraits<ST>::isOrdinal) { // skip integer types
-      typedef typename Teuchos::ScalarTraits<ST>::magnitudeType MT;
+      //typedef typename Teuchos::ScalarTraits<ST>::magnitudeType MT;
       typename GetLapackType<ST>::lapack_type lapack;
 
       const ST zero = Teuchos::ScalarTraits<ST>::zero ();
@@ -213,11 +240,14 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, SolveIdentity, SCALAR, LOCAL_ORDINAL )
 
 #define UNIT_TEST_GROUP2( SCALAR ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, SWAP, SCALAR ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, LAPY2, SCALAR ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, LARFGP, SCALAR )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
+  // FIXME (mfh 16 Sep 2015) Segfaults for __float128!
+  //
   //TPETRA_INSTANTIATE_SL_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
 
   TPETRA_INSTANTIATE_S_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP2 )

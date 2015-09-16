@@ -49,30 +49,6 @@ namespace Details {
 
 void
 Lapack128::
-SWAP (const int N, __float128* X, const int INCX, __float128* Y, const int INCY) const
-{
-  if (N <= 0) {
-    return;
-  }
-
-  int ix = 1;
-  int iy = 1;
-  if (INCX < 0) {
-    ix = (1-N) * INCX + 1;
-    iy = (1-N) * INCY + 1;
-  }
-
-  for (int i = 1; i <= N; ++i) {
-    __float128 temp = X[ix - 1];
-    X[ix - 1] = Y[iy - 1];
-    Y[iy - 1] = temp;
-    ix += INCX;
-    iy += INCY;
-  }
-}
-
-void
-Lapack128::
 GETRF (const int M, const int N, __float128 A[],
        const int LDA, int IPIV[], int* INFO) const
 {
@@ -112,34 +88,32 @@ GETRF (const int M, const int N, __float128 A[],
     //std::cerr << "  j = " << j << std::endl;
 
     // Find pivot and test for singularity.
-    const __float128* const A_jj = A + j*LDA + j;
+    __float128* const A_jj = A + (j-1)*LDA + (j-1);
 
     //std::cerr << "  CALLING IAMAX" << std::endl;
-    const int jp = j - 1 + blas.IAMAX (M - j + 1, A_jj, 1);
-    IPIV[j] = jp;
+    const int jp = (j - 1) + blas.IAMAX (M - j + 1, A_jj, 1);
+    IPIV[j - 1] = jp;
 
     const __float128* A_jp_j = A + jp + LDA*j;
     if (*A_jp_j != zero) {
       // Apply the interchange to columns 1:N.
-      __float128* const A_j1 = A + j + 1*LDA;
-      __float128* const A_jp_1 = A + jp + 1*LDA;
+      __float128* const A_j1 = A + (j - 1);
+      __float128* const A_jp_1 = A + (jp - 1);
 
       if (jp != j) {
-        // mfh 05 Sep 2015: Teuchos::BLAS doesn't implement SWAP
-        // (e.g., DSWAP), so I'll roll my own here.
-        SWAP (N, A_j1, LDA, A_jp_1, LDA);
+        blas.SWAP (N, A_j1, LDA, A_jp_1, LDA);
       }
 
       // Compute elements J+1:M of J-th column.
       if (j < M) {
-        __float128* const A_jj = A + j + j*LDA;
-        __float128* const A_j1_j = A + j*LDA + (j-1);
+            __float128* const A_j1_j = A + j + (j-1)*LDA;
 
         if (fabsq (*A_jj) >= sfmin) {
           blas.SCAL (M-j, one / *A_jj, A_j1_j, 1);
         } else {
           for (int i = 1; i <= M-j; ++i) {
-            A[j + i + j * LDA] /= *A_jj;
+            __float128* const A_jpi_j = A + (j+i-1) + (j-1)*LDA;
+            *A_jpi_j /= *A_jj;
           }
         }
       }
@@ -151,9 +125,9 @@ GETRF (const int M, const int N, __float128 A[],
       //std::cerr << "  UPDATE TRAILING SUBMATRIX" << std::endl;
 
       // Update trailing submatrix.
-      const __float128* A_j1_j = A + (j+1) + j*LDA;
-      const __float128* A_j_j1 = A + j + (j+1)*LDA;
-      __float128* A_j1_j1 = A + (j+1) + (j+1)*LDA;
+      const __float128* A_j1_j = A + j + (j-1)*LDA;
+      const __float128* A_j_j1 = A + (j-1) + j*LDA;
+      __float128* A_j1_j1 = A + j + j*LDA;
       blas.GER (M-j, N-j, -one, A_j1_j, 1, A_j_j1, LDA, A_j1_j1, LDA);
     }
   }

@@ -65,11 +65,6 @@ namespace Details {
 //! Partial implementation of Teuchos::LAPACK for Scalar = __float128.
 class Lapack128 {
 public:
-  //! Swap the entries of X with the entries of Y.
-  void
-  SWAP (const int N, __float128* X, const int INCX,
-        __float128* Y, const int INCY) const;
-
   /// \brief Compute the LU factorization with partial pivoting of
   ///   the matrix A.
   void
