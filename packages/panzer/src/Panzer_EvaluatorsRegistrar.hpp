@@ -58,8 +58,13 @@ class EvaluatorsRegistrar {
 public:
   //! Set the WorksetDetails index in all evaluators registered through
   //! EquationSetBase::registerEvaluator. The details index can be set multiple
-  //! times. The current value applies at registration.
-  void setDetailsIndex(const int details_index) { details_index_ = details_index; }
+  //! times. The current value applies at registration. Return the previous
+  //! value.
+  int setDetailsIndex(const int details_index) {
+    int old_di = details_index_;
+    details_index_ = details_index;
+    return old_di;
+  }
   //! Get the WorksetDetails index.
   int getDetailsIndex() const { return details_index_; }
 
@@ -85,7 +90,7 @@ registerEvaluator(PHX::FieldManager<panzer::Traits>& fm,
 {
   Teuchos::RCP< panzer::EvaluatorWithBaseImpl<panzer::Traits> >
     pop = Teuchos::rcp_dynamic_cast< panzer::EvaluatorWithBaseImpl<panzer::Traits> >(op);
-  // Temporarily allow casting failure so that Charon Charon continues to work.
+  // Temporarily allow casting failure so that Charon continues to work.
 #if 0
   TEUCHOS_TEST_FOR_EXCEPTION(pop.is_null(), std::runtime_error,
                              op->getName() + " does not inherit from panzer::EvaluatorWithBaseImpl.");

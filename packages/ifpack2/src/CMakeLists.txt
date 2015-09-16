@@ -29,24 +29,30 @@ ENDFUNCTION(IFPACK2_MANGLE_TEMPLATE_PARAMETER)
 # name (all caps, with no white space and no punctuation other than
 # underscore).
 FUNCTION(IFPACK2_SCALAR_MACRO_NAME NAME_OUT NAME_IN)
-  STRING(COMPARE EQUAL "${NAME_IN}" "std::complex<float>" IS_COMPLEX_FLOAT)
-  IF(IS_COMPLEX_FLOAT)
-    SET(${NAME_OUT} "COMPLEX_FLOAT" PARENT_SCOPE)
+  STRING(COMPARE EQUAL "${NAME_IN}" "__float128" IS_FLOAT128)
+  IF(IS_FLOAT128)
+    # __float128 is a special case; we remove the __ from the macro name.
+    SET(${NAME_OUT} "FLOAT128" PARENT_SCOPE)
   ELSE()
-    STRING(COMPARE EQUAL "${NAME_IN}" "std::complex<double>" IS_COMPLEX_DOUBLE)
-    IF(IS_COMPLEX_DOUBLE)
-      SET(${NAME_OUT} "COMPLEX_DOUBLE" PARENT_SCOPE)
+    STRING(COMPARE EQUAL "${NAME_IN}" "std::complex<float>" IS_COMPLEX_FLOAT)
+    IF(IS_COMPLEX_FLOAT)
+      SET(${NAME_OUT} "COMPLEX_FLOAT" PARENT_SCOPE)
     ELSE()
-      # Convert to upper case, convert double colons to underscores,
-      # and hope for the best.
-      #
-      # It would be nice if CMake were consistent about where output
-      # arguments go.  Alas, this is not to be.  TOUPPER puts the
-      # output argument last; REPLACE puts it after the search and
-      # substitute strings, before the input string.
-      STRING(TOUPPER "${NAME_IN}" TMP0)
-      STRING(REPLACE "::" "_" TMP1 "${TMP0}")
-      SET(${NAME_OUT} ${TMP1} PARENT_SCOPE)
+      STRING(COMPARE EQUAL "${NAME_IN}" "std::complex<double>" IS_COMPLEX_DOUBLE)
+      IF(IS_COMPLEX_DOUBLE)
+        SET(${NAME_OUT} "COMPLEX_DOUBLE" PARENT_SCOPE)
+      ELSE()
+        # Convert to upper case, convert double colons to underscores,
+        # and hope for the best.
+        #
+        # It would be nice if CMake were consistent about where output
+        # arguments go.  Alas, this is not to be.  TOUPPER puts the
+        # output argument last; REPLACE puts it after the search and
+        # substitute strings, before the input string.
+        STRING(TOUPPER "${NAME_IN}" TMP0)
+        STRING(REPLACE "::" "_" TMP1 "${TMP0}")
+        SET(${NAME_OUT} ${TMP1} PARENT_SCOPE)
+      ENDIF()
     ENDIF()
   ENDIF()
 ENDFUNCTION(IFPACK2_SCALAR_MACRO_NAME)

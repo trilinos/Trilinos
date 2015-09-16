@@ -52,6 +52,10 @@
 // Evaluators
 #include "Panzer_Integrator_BasisTimesScalar.hpp"
 #include "Panzer_Constant.hpp"
+#include "Panzer_DOF.hpp"
+#include "Panzer_Sum.hpp"
+#include "Panzer_DOFGradient.hpp"
+#include "Panzer_DotProduct.hpp"
 
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_DataLayout.hpp"
@@ -81,23 +85,41 @@ setup(const panzer::PhysicsBlock& side_pb,
 
   // obtain the dof name
   const string dof_name = di == 0 ? this->m_bc.equationSetName() : this->m_bc.equationSetName2();
+  other_dof_name = di == 1 ? this->m_bc.equationSetName() : this->m_bc.equationSetName2();
 
   // need the dof value to form the residual
   this->requireDOFGather(dof_name);
 
   // unique residual name
-  const string residual_name = "Residual_" + dof_name;
-  const string flux_name = std::string("Constant_Flux") + (di == 0 ? "" : "2");
+  const string residual_name = "Residual_" + this->m_bc.equationSetName();
+  const string diff_name = "Difference";
 
   const std::map<int,RCP< panzer::IntegrationRule > >& ir = side_pb.getIntegrationRules();
   TEUCHOS_ASSERT(ir.size() == 1); 
   
   const int integration_order = ir.begin()->second->order();
 
-  this->addResidualContribution(residual_name,dof_name,flux_name,integration_order,side_pb);
+  this->addResidualContribution(residual_name,dof_name,diff_name,integration_order,side_pb);
 }
 
 // ***********************************************************************
+static void
+setSumValues(Teuchos::ParameterList& p,
+             const std::string value_name1, const double scalar1,
+             const std::string value_name2, const double scalar2)
+{
+  std::vector<std::string> values_names(2);
+  values_names[0] = value_name1;
+  values_names[1] = value_name2;
+  p.set< Teuchos::RCP<std::vector<std::string> > >(
+    "Values Names", Teuchos::rcp(new std::vector<std::string>(values_names)));
+  std::vector<double> scalars(2);
+  scalars[0] = scalar1;
+  scalars[1] = scalar2;
+  p.set< Teuchos::RCP<const std::vector<double> > >(
+    "Scalars", Teuchos::rcp(new std::vector<double>(scalars)));
+}
+
 template <typename EvalT>
 void Example::BCStrategy_Interface_WeakDirichletMatch<EvalT>::
 buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
@@ -116,38 +138,105 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
   string residual_name = data[0].get<0>();
   string dof_name = data[0].get<1>();
-  string flux_name = data[0].get<2>();
+  string diff_name = data[0].get<2>();
 
   RCP<panzer::IntegrationRule> ir = data[0].get<5>();
   RCP<const panzer::FieldLayoutLibrary> fll = pb.getFieldLibrary()->buildFieldLayoutLibrary(*ir);
   RCP<panzer::BasisIRLayout> basis = fll->lookupLayout(dof_name);
 
-  // provide a constant flux target value to map into residual
-  {
-    ParameterList p("Constant Neumann BC");
-    p.set("Data Layout", ir->dl_scalar);
-    p.set("Name", flux_name);
-    p.set("Value", this->getDetailsIndex() == 0 ? 1.0 : -1.0); // bogus value for now
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Constant<EvalT,panzer::Traits>(p));
-    
-    this->template registerEvaluator<EvalT>(fm, op);
-  }
-
-  // add contribution to the residual 
-  {
-    ParameterList p("Constant Neumann Residual");
-    p.set("Residual Name", residual_name);
-    p.set("Value Name", flux_name);
-    p.set("Basis", basis);
-    p.set("IR", ir);
-    p.set("Multiplier", 1.0);
-    
-    RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
-    
-    this->template registerEvaluator<EvalT>(fm, op);
+  if (this->getDetailsIndex() == 0) {
+    const std::string
+      dof_grad_name = dof_name + "_gradient",
+      cancel_natural_name = dof_name + "_cancel",
+      my_normal_name = "My_Normal",
+      sum_contributions_name = "Sum_Contributions";
+    // Weak Dirichlet match.
+    {
+      { // Get values on my side.
+        ParameterList p("My DOF");
+        p.set("Name", dof_name);
+        p.set("Basis", basis); 
+        p.set("IR", ir);
+        const RCP< PHX::Evaluator<panzer::Traits> >
+          op = rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
+        this->template registerEvaluator<EvalT>(fm, op);
+      }
+      { // Other DOF - my DOF.
+        ParameterList p("other DOF - my DOF");
+        p.set("Sum Name", diff_name);
+        setSumValues(p, other_dof_name, 1, dof_name, -1);
+        p.set("Data Layout", ir->dl_scalar);
+        const RCP< PHX::Evaluator<panzer::Traits> >
+          op = rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
+        this->template registerEvaluator<EvalT>(fm, op);
+      }
+    }
+    // Cancel my natural (Neumann) BC.
+    {
+      { // Normal.
+        ParameterList p("My Side Normal");
+        p.set("Name", my_normal_name);
+        p.set("Side ID", pb.cellData().side());
+        p.set("IR", ir);
+        p.set("Normalize", true);
+        const RCP< PHX::Evaluator<panzer::Traits> >
+          op = rcp(new panzer::Normals<EvalT,panzer::Traits>(p));
+        this->template registerEvaluator<EvalT>(fm, op);
+      }
+      { // Gradient.
+        ParameterList p("My DOF gradient");
+        p.set("Name", dof_name);
+        p.set("Gradient Name", dof_grad_name);
+        p.set("Basis", basis); 
+        p.set("IR", ir);
+        const RCP< PHX::Evaluator<panzer::Traits> >
+          op = rcp(new panzer::DOFGradient<EvalT,panzer::Traits>(p));
+        this->template registerEvaluator<EvalT>(fm, op);
+      }
+      { // dot(DOF gradient, normal).
+        ParameterList p("dot(my DOF gradient, my normal)");
+        p.set("Result Name", cancel_natural_name);
+        p.set("Vector A Name", dof_grad_name);
+        p.set("Vector B Name", my_normal_name);
+        p.set("Point Rule", Teuchos::rcp_dynamic_cast<const panzer::PointRule>(ir));
+        const RCP< PHX::Evaluator<panzer::Traits> >
+          op = rcp(new panzer::DotProduct<EvalT,panzer::Traits>(p));
+        this->template registerEvaluator<EvalT>(fm, op);
+      }
+    }
+    // Add contributions to the residual.
+    {
+      { // Weak Dirichlet Match + Cancel Neumann
+        ParameterList p("Weak Dirichlet Match + Cancel Neumann");
+        p.set("Sum Name", sum_contributions_name);
+        setSumValues(p, diff_name, 1e3, cancel_natural_name, -1);
+        p.set("Data Layout", ir->dl_scalar);
+        const RCP< PHX::Evaluator<panzer::Traits> >
+          op = rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
+        this->template registerEvaluator<EvalT>(fm, op);
+      }
+      {
+        ParameterList p("Weak Dirichlet Match And Cancel Neumann Residual");
+        p.set("Residual Name", residual_name);
+        p.set("Value Name", sum_contributions_name);
+        p.set("Basis", basis);
+        p.set("IR", ir);
+        p.set("Multiplier", 1.0);
+        const RCP< PHX::Evaluator<panzer::Traits> >
+          op = rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
+        this->template registerEvaluator<EvalT>(fm, op);
+      }
+    }
+  } else {
+    { // Get values on other side.
+      ParameterList p("Other DOF");
+      p.set("Name", dof_name);
+      p.set("Basis", basis); 
+      p.set("IR", ir);
+      const RCP< PHX::Evaluator<panzer::Traits> >
+        op = rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
+      this->template registerEvaluator<EvalT>(fm, op);
+    }
   }
 }
 

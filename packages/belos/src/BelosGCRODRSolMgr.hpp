@@ -42,16 +42,15 @@
 #ifndef BELOS_GCRODR_SOLMGR_HPP
 #define BELOS_GCRODR_SOLMGR_HPP
 
-/*! \file BelosGCRODRSolMgr.hpp
- *  \brief The Belos::GCRODRSolMgr provides a solver manager for the GCRODR linear solver.
-*/
+/// \file BelosGCRODRSolMgr.hpp
+/// \brief Declaration and definition of Belos::GCRODRSolMgr, which
+///   implements the GCRODR (recycling GMRES) solver.
 
 #include "BelosConfigDefs.hpp"
-#include "BelosTypes.hpp"
 #include "BelosOrthoManagerFactory.hpp"
-
-#include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
+#include "BelosLinearProblem.hpp"
+#include "BelosTypes.hpp"
 
 #include "BelosGCRODRIter.hpp"
 #include "BelosBlockFGmresIter.hpp"
@@ -60,12 +59,15 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp"
+#include "Teuchos_BLAS.hpp" // includes Teuchos_ConfigDefs.hpp
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_as.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-#include "Teuchos_TimeMonitor.hpp"
+#  include "Teuchos_TimeMonitor.hpp"
 #endif // BELOS_TEUCHOS_TIME_MONITOR
+#if defined(HAVE_TEUCHOSCORE_CXX11)
+#  include <type_traits>
+#endif // defined(HAVE_TEUCHOSCORE_CXX11)
 
 /** \example GCRODR/GCRODREpetraExFile.cpp
     This is an example of how to use the Belos::GCRODRSolMgr solver manager.
@@ -149,11 +151,53 @@ Spandan Maiti.  "Recycling Krylov Subspaces for Sequences of Linear
 Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
 2006.*/
 
+  template<class ScalarType, class MV, class OP,
+           const bool lapackSupportsScalarType =
+           Belos::Details::LapackSupportsScalar<ScalarType>::value>
+  class GCRODRSolMgr :
+    public Details::SolverManagerRequiresLapack<ScalarType,MV,OP>
+  {
+    static const bool requiresLapack =
+      Belos::Details::LapackSupportsScalar<ScalarType>::value;
+    typedef Details::SolverManagerRequiresLapack<ScalarType, MV, OP,
+                                                 requiresLapack> base_type;
+
+  public:
+    GCRODRSolMgr () :
+      base_type ()
+    {}
+    GCRODRSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem,
+                  const Teuchos::RCP<Teuchos::ParameterList>& pl) :
+      base_type ()
+    {}
+    virtual ~GCRODRSolMgr () {}
+  };
+
+  /// \brief Partial specialization for ScalarType types for which
+  ///   Teuchos::LAPACK has a valid implementation.  This contains the
+  ///   actual working implementation of GCRODR.
   template<class ScalarType, class MV, class OP>
-  class GCRODRSolMgr : public SolverManager<ScalarType,MV,OP> {
+  class GCRODRSolMgr<ScalarType, MV, OP, true> :
+    public Details::SolverManagerRequiresLapack<ScalarType, MV, OP, true>
+  {
+#if defined(HAVE_TEUCHOSCORE_CXX11)
+#  if defined(HAVE_TEUCHOS_COMPLEX)
+    static_assert (std::is_same<ScalarType, std::complex<float> >::value ||
+                   std::is_same<ScalarType, std::complex<double> >::value ||
+                   std::is_same<ScalarType, float>::value ||
+                   std::is_same<ScalarType, double>::value,
+                   "Belos::GCRODRSolMgr: ScalarType must be one of the four "
+                   "types (S,D,C,Z) supported by LAPACK.");
+#  else
+    static_assert (std::is_same<ScalarType, float>::value ||
+                   std::is_same<ScalarType, double>::value,
+                   "Belos::GCRODRSolMgr: ScalarType must be float or double.  "
+                   "Complex arithmetic support is currently disabled.  To "
+                   "enable it, set Teuchos_ENABLE_COMPLEX=ON.");
+#  endif // defined(HAVE_TEUCHOS_COMPLEX)
+#endif // defined(HAVE_TEUCHOSCORE_CXX11)
 
   private:
-
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
@@ -478,57 +522,57 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
 
 // Default solver values.
 template<class ScalarType, class MV, class OP>
-const typename GCRODRSolMgr<ScalarType,MV,OP>::MagnitudeType
-GCRODRSolMgr<ScalarType,MV,OP>::convTol_default_ = 1e-8;
+const typename GCRODRSolMgr<ScalarType,MV,OP,true>::MagnitudeType
+GCRODRSolMgr<ScalarType,MV,OP,true>::convTol_default_ = 1e-8;
 
 template<class ScalarType, class MV, class OP>
-const typename GCRODRSolMgr<ScalarType,MV,OP>::MagnitudeType
-GCRODRSolMgr<ScalarType,MV,OP>::orthoKappa_default_ = 0.0;
+const typename GCRODRSolMgr<ScalarType,MV,OP,true>::MagnitudeType
+GCRODRSolMgr<ScalarType,MV,OP,true>::orthoKappa_default_ = 0.0;
 
 template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP>::maxRestarts_default_ = 100;
+const int GCRODRSolMgr<ScalarType,MV,OP,true>::maxRestarts_default_ = 100;
 
 template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP>::maxIters_default_ = 5000;
+const int GCRODRSolMgr<ScalarType,MV,OP,true>::maxIters_default_ = 5000;
 
 template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 50;
+const int GCRODRSolMgr<ScalarType,MV,OP,true>::numBlocks_default_ = 50;
 
 template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP>::blockSize_default_ = 1;
+const int GCRODRSolMgr<ScalarType,MV,OP,true>::blockSize_default_ = 1;
 
 template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP>::recycledBlocks_default_ = 5;
+const int GCRODRSolMgr<ScalarType,MV,OP,true>::recycledBlocks_default_ = 5;
 
 template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
+const int GCRODRSolMgr<ScalarType,MV,OP,true>::verbosity_default_ = Belos::Errors;
 
 template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP>::outputStyle_default_ = Belos::General;
+const int GCRODRSolMgr<ScalarType,MV,OP,true>::outputStyle_default_ = Belos::General;
 
 template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
+const int GCRODRSolMgr<ScalarType,MV,OP,true>::outputFreq_default_ = -1;
 
 template<class ScalarType, class MV, class OP>
-const std::string GCRODRSolMgr<ScalarType,MV,OP>::impResScale_default_ = "Norm of Preconditioned Initial Residual";
+const std::string GCRODRSolMgr<ScalarType,MV,OP,true>::impResScale_default_ = "Norm of Preconditioned Initial Residual";
 
 template<class ScalarType, class MV, class OP>
-const std::string GCRODRSolMgr<ScalarType,MV,OP>::expResScale_default_ = "Norm of Initial Residual";
+const std::string GCRODRSolMgr<ScalarType,MV,OP,true>::expResScale_default_ = "Norm of Initial Residual";
 
 template<class ScalarType, class MV, class OP>
-const std::string GCRODRSolMgr<ScalarType,MV,OP>::label_default_ = "Belos";
+const std::string GCRODRSolMgr<ScalarType,MV,OP,true>::label_default_ = "Belos";
 
 template<class ScalarType, class MV, class OP>
-const std::string GCRODRSolMgr<ScalarType,MV,OP>::orthoType_default_ = "DGKS";
+const std::string GCRODRSolMgr<ScalarType,MV,OP,true>::orthoType_default_ = "DGKS";
 
 template<class ScalarType, class MV, class OP>
 const Teuchos::RCP<std::ostream>
-GCRODRSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcpFromRef (std::cout);
+GCRODRSolMgr<ScalarType,MV,OP,true>::outputStream_default_ = Teuchos::rcpFromRef (std::cout);
 
 
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
-GCRODRSolMgr<ScalarType,MV,OP>::GCRODRSolMgr():
+GCRODRSolMgr<ScalarType,MV,OP,true>::GCRODRSolMgr():
   achievedTol_(0.0),
   numIters_(0)
 {
@@ -538,7 +582,7 @@ GCRODRSolMgr<ScalarType,MV,OP>::GCRODRSolMgr():
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
-GCRODRSolMgr<ScalarType,MV,OP>::
+GCRODRSolMgr<ScalarType,MV,OP,true>::
 GCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem,
              const Teuchos::RCP<Teuchos::ParameterList>& pl):
   achievedTol_(0.0),
@@ -567,7 +611,7 @@ GCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem,
 
 // Common instructions executed in all constructors
 template<class ScalarType, class MV, class OP>
-void GCRODRSolMgr<ScalarType,MV,OP>::init () {
+void GCRODRSolMgr<ScalarType,MV,OP,true>::init () {
   outputStream_ = outputStream_default_;
   convTol_ = convTol_default_;
   orthoKappa_ = orthoKappa_default_;
@@ -601,7 +645,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::init () {
 
 template<class ScalarType, class MV, class OP>
 void
-GCRODRSolMgr<ScalarType,MV,OP>::
+GCRODRSolMgr<ScalarType,MV,OP,true>::
 setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 {
   using Teuchos::isParameterType;
@@ -1100,7 +1144,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params)
 
 template<class ScalarType, class MV, class OP>
 Teuchos::RCP<const Teuchos::ParameterList>
-GCRODRSolMgr<ScalarType,MV,OP>::getValidParameters() const
+GCRODRSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
 {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
@@ -1170,7 +1214,7 @@ GCRODRSolMgr<ScalarType,MV,OP>::getValidParameters() const
 
 // initializeStateStorage
 template<class ScalarType, class MV, class OP>
-void GCRODRSolMgr<ScalarType,MV,OP>::initializeStateStorage() {
+void GCRODRSolMgr<ScalarType,MV,OP,true>::initializeStateStorage() {
 
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
@@ -1299,7 +1343,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::initializeStateStorage() {
 
 // solve()
 template<class ScalarType, class MV, class OP>
-ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
+ReturnType GCRODRSolMgr<ScalarType,MV,OP,true>::solve() {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -1867,7 +1911,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
 //  Given existing recycle space and Krylov space, build new recycle space
 template<class ScalarType, class MV, class OP>
-void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(Teuchos::RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_iter) {
+void GCRODRSolMgr<ScalarType,MV,OP,true>::buildRecycleSpace2(Teuchos::RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_iter) {
 
   MagnitudeType one = Teuchos::ScalarTraits<MagnitudeType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -2045,7 +2089,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(Teuchos::RCP<GCRODRIter<
 
 //  Compute the harmonic eigenpairs of the projected, dense system.
 template<class ScalarType, class MV, class OP>
-int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
+int GCRODRSolMgr<ScalarType,MV,OP,true>::getHarmonicVecs1(int m,
                                                      const Teuchos::SerialDenseMatrix<int,ScalarType>& HH,
                                                      Teuchos::SerialDenseMatrix<int,ScalarType>& PP) {
   int i, j;
@@ -2156,7 +2200,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
 
 //  Compute the harmonic eigenpairs of the projected, dense system.
 template<class ScalarType, class MV, class OP>
-int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keffloc, int m,
+int GCRODRSolMgr<ScalarType,MV,OP,true>::getHarmonicVecs2(int keffloc, int m,
                                                      const Teuchos::SerialDenseMatrix<int,ScalarType>& HH,
                                                      const Teuchos::RCP<const MV>& VV,
                                                      Teuchos::SerialDenseMatrix<int,ScalarType>& PP) {
@@ -2248,7 +2292,8 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keffloc, int m,
   // Construct magnitude of each harmonic Ritz value
   // NOTE : Forming alpha/beta *should* be okay here, given assumptions on construction of matrix pencil above
   for( i=0; i<ld; i++ ) {
-    w[i] = Teuchos::ScalarTraits<MagnitudeType>::squareroot( wr[i]*wr[i] + wi[i]*wi[i] ) / std::abs( beta[i] );
+    w[i] = Teuchos::ScalarTraits<MagnitudeType>::squareroot (wr[i]*wr[i] + wi[i]*wi[i]) /
+      Teuchos::ScalarTraits<ScalarType>::magnitude (beta[i]);
   }
 
   // Construct magnitude of each harmonic Ritz value
@@ -2305,7 +2350,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keffloc, int m,
 
 // This method sorts list of n floating-point numbers and return permutation vector
 template<class ScalarType, class MV, class OP>
-void GCRODRSolMgr<ScalarType,MV,OP>::sort(std::vector<MagnitudeType>& dlist, int n, std::vector<int>& iperm) {
+void GCRODRSolMgr<ScalarType,MV,OP,true>::sort(std::vector<MagnitudeType>& dlist, int n, std::vector<int>& iperm) {
   int l, r, j, i, flag;
   int    RR2;
   MagnitudeType dRR, dK;
@@ -2370,7 +2415,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::sort(std::vector<MagnitudeType>& dlist, int
 
 
 template<class ScalarType, class MV, class OP>
-std::string GCRODRSolMgr<ScalarType,MV,OP>::description () const {
+std::string GCRODRSolMgr<ScalarType,MV,OP,true>::description () const {
   std::ostringstream out;
   out << "Belos::GCRODRSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
   out << "{";

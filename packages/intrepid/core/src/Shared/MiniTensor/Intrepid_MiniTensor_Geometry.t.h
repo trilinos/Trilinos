@@ -187,11 +187,11 @@ volume(Vector<T, N> const & p0, Vector<T, N> const & p1,
 //
 template<typename T, Index N>
 Vector<T, N>
-centroid(std::vector<Vector<T, N> > const & points)
+centroid(std::vector<Vector<T, N>> const & points)
 {
   Vector<T, N> C(points[0].get_dimension());
   C.clear();
-  typedef typename std::vector<Vector<T, N> >::size_type sizeT;
+  typedef typename std::vector<Vector<T, N>>::size_type sizeT;
   sizeT const n = points.size();
 
   for (sizeT i = 0; i < n; ++i) {
@@ -256,7 +256,7 @@ in_normal_side(
 // \return vectors that define the bounding box
 //
 template<typename T, typename I, Index N>
-std::pair< Vector<T, N>, Vector<T, N> >
+std::pair< Vector<T, N>, Vector<T, N>>
 bounding_box(I start, I end)
 {
   I
@@ -290,7 +290,7 @@ bounding_box(I start, I end)
 }
 
 template<typename T, typename I>
-std::pair< Vector<T, DYNAMIC>, Vector<T, DYNAMIC> >
+std::pair< Vector<T, DYNAMIC>, Vector<T, DYNAMIC>>
 bounding_box(I start, I end)
 {
   return bounding_box<T, I, DYNAMIC>(start, end);
@@ -437,12 +437,12 @@ in_hexahedron(
 // \return index to closest point
 //
 template<typename T, Index N>
-typename std::vector< Vector<T, N> >::size_type
-closest_point(Vector<T, N> const & p, std::vector< Vector<T, N> > const & n)
+typename std::vector< Vector<T, N>>::size_type
+closest_point(Vector<T, N> const & p, std::vector< Vector<T, N>> const & n)
 {
   assert(n.size() > 0);
 
-  typename std::vector< Vector<T, N> >::size_type
+  typename std::vector< Vector<T, N>>::size_type
   index = 0;
 
   Vector<T, N> const
@@ -451,7 +451,7 @@ closest_point(Vector<T, N> const & p, std::vector< Vector<T, N> > const & n)
   T
   min = norm_square(v0);
 
-  for (typename std::vector< Vector<T, N> >::size_type i = 1;
+  for (typename std::vector< Vector<T, N>>::size_type i = 1;
       i < n.size();
       ++i) {
 
@@ -674,7 +674,7 @@ Vector<T, N>
 interpolate_element(
     ELEMENT::Type element_type,
     Vector<T, M> & xi,
-    std::vector< Vector<T, N> > const & v)
+    std::vector< Vector<T, N>> const & v)
 {
   Vector<T, N> p;
 
@@ -717,13 +717,13 @@ interpolate_element(
 // \return distance matrix
 //
 template<typename T, Index N>
-std::vector< std::vector<T> >
-distance_matrix(std::vector< Vector<T, N> > const & points)
+std::vector< std::vector<T>>
+distance_matrix(std::vector< Vector<T, N>> const & points)
 {
   Index const
   number_points = points.size();
 
-  std::vector< std::vector<T> >
+  std::vector< std::vector<T>>
   distances(number_points);
 
   for (Index i = 0; i < number_points; ++i) {
@@ -755,7 +755,7 @@ distance_matrix(std::vector< Vector<T, N> > const & points)
 //
 template<typename T>
 std::vector<T>
-minimum_distances(std::vector< std::vector<T> > const & distances)
+minimum_distances(std::vector< std::vector<T>> const & distances)
 {
   Index const
   number_points = distances.size();

@@ -408,6 +408,9 @@ arg_max_off_diagonal(Tensor<T, N, ES> const & A);
 template<typename T, Index N, class ES>
 std::pair<Vector<T, N, ES>, Tensor<T, N, ES> >
 sort_permutation(Vector<T, N, ES> const & u);
+template<typename T, Index N>
+std::pair<Vector<T, N>, Tensor<T, N>>
+sort_permutation(Vector<T, N> const & u);
 
 ///
 /// Singular value decomposition (SVD)
@@ -584,6 +587,12 @@ Matrix<T, N, P, ES>
 solve(Tensor<T, N, ES> const & A, Matrix<T, N, P, ES> const & B);
 
 } // namespace Intrepid
+///
+template<typename T, Index N, typename ES=NOKOKKOS>
+T
+cond(Tensor<T, N, ES> const & A);
+
+} // namespace Intrepid2
 
 #include "Intrepid2_MiniTensor_LinearAlgebra.i.h"
 #include "Intrepid2_MiniTensor_LinearAlgebra.t.h"

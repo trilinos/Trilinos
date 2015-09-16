@@ -95,12 +95,6 @@ using std::queue;
 if (rank==0){ cerr << "FAIL: " << msg << endl << e.what() << endl;}
 
 // temporary methods for debugging and leanring
-void readXML(const XMLObject &xml, const string &title);
-void readPList(const ParameterList &plist,
-               const string &title,
-               bool doc = false,
-               bool unused = false);
-
 typedef Zoltan2::MetricValues<zscalar_t> metric_t; // typedef metric_type
 
 void xmlToModelPList(const Teuchos::XMLObject &xml, Teuchos::ParameterList & plist)
@@ -284,8 +278,10 @@ void run(const UserInputForTests &uinput,
   zoltan2_parameters.set("num_global_parts", comm->getSize());
   
   if(rank == 0){
-    readPList(zoltan2_parameters, "Zoltan 2 Params:\n");
-    cout <<"\n\n"<<endl;}
+    cout << "\nZoltan 2 parameters:" << endl;
+    zoltan2_parameters.print(std::cout);
+    cout <<"\n"<<endl;
+  }
   
 #ifdef HAVE_ZOLTAN2_MPI
   
@@ -417,7 +413,7 @@ void run(const UserInputForTests &uinput,
   
   
   // write mesh solution
-//  auto sol = reinterpret_cast<basic_problem_t *>(problem)->getSolution();
+  auto sol = reinterpret_cast<basic_problem_t *>(problem)->getSolution();
 //  writePartionSolution(sol.getPartListView(), ia->getLocalNumIDs(), comm);
 
   ////////////////////////////////////////////////////////////
@@ -644,7 +640,7 @@ void getConnectivityGraph(const UserInputForTests &uinput,const RCP<const Teucho
   global_nodes = mesh->num_nodes_global;
   global_els = mesh->num_elems_global;
   
-  // make map with global elements assigned to this mesh
+  // make range map
   const zgno_t idxBase = 0;
   Teuchos::ArrayView<int> g_el_ids(mesh->global_element_numbers,local_els);
   for(auto && v : g_el_ids) v--; // shif to idx base 0
@@ -655,14 +651,14 @@ void getConnectivityGraph(const UserInputForTests &uinput,const RCP<const Teucho
   
   // make domain map
   Teuchos::ArrayView<int> g_node_ids(mesh->global_node_numbers,local_nodes);
-  for(auto && v : g_node_ids) v--; // shif to idx base
+  for(auto && v : g_node_ids) v--; // shify to idx base 0
   RCP<const map_type> domain_map = rcp(new map_type(static_cast<Tpetra::global_size_t>(global_nodes),
                                                     g_node_ids,
                                                     idxBase,
                                                     comm));
   
   
-  // make a connectivity matrix
+  // make the element-node adjacency matrix
   Teuchos::RCP<crs_matrix_type> C = rcp(new crs_matrix_type(range_map,domain_map,0));
   // write all nodes per el to matrix
   int blks = mesh->num_elem_blk;
@@ -700,6 +696,9 @@ void getConnectivityGraph(const UserInputForTests &uinput,const RCP<const Teucho
   RCP<crs_matrix_type> A = rcp(new crs_matrix_type(range_map,0));
   Tpetra::MatrixMatrix::Multiply(*C, false, *C, true, *A);
   if(rank == 0) cout << "Completed Multiply" << endl;
+  comm->barrier();
+  C->print(std::cout);
+  
 //  if(rank == 0)
 //  {
 //    cout << "C: \n" << endl;
@@ -726,7 +725,7 @@ void getConnectivityGraph(const UserInputForTests &uinput,const RCP<const Teucho
     for (size_t i = 0; i < numEntriesInRow; i++) {
 //      if (rowvals[i] >= 2*(mesh->num_dim-1))
 //      {
-      if (rowvals[i] >= mesh->num_dim-1)
+      if (rowvals[i] >= 1)
       {
         mod_rowvals.push_back(one);
         mod_rowinds.push_back(rowinds[i]);
@@ -765,6 +764,32 @@ void getConnectivityGraph(const UserInputForTests &uinput,const RCP<const Teucho
   }
   
   file.close();
+  
+  // print A to file
+  if(rank == 0) cout << "Wrtiting Matrix to file..." << endl;
+  comm->barrier();
+  // Write G to file
+  sprintf(title, "/transpose_matrix_%d", rank);
+  file.open(path + string(title));
+  
+  //what are we dealing with
+  ArrayView<const global_ordinal_type> agid = A->getRowMap()->getNodeElementList();
+  for(int i = 0; i < A->getNodeNumRows(); i++)
+  {
+    vector<local_ordinal_type> tmp;
+    ArrayView<const int> idxs;
+    ArrayView<const scalar_type> vals;
+    A->getLocalRowView(i, idxs, vals);
+    
+    size_t c = 0;
+    for(auto idx : idxs)
+    {
+      file << agid[i] << "\t" << agid[idx] << "\t" << vals[c++] <<"\n";
+    }
+  }
+  
+  file.close();
+  
 }
 
 int main(int argc, char *argv[])
@@ -816,8 +841,8 @@ int main(int argc, char *argv[])
     // (4) Perform all tests
     ////////////////////////////////////////////////////////////
     // pamgen debugging
-    //    writeMesh(uinput,comm);
-    //    getConnectivityGraph(uinput, comm);
+//        writeMesh(uinput,comm);
+//        getConnectivityGraph(uinput, comm);
     
     RCP<ComparisonHelper> comparison_manager = rcp(new ComparisonHelper);
     while (!problems.empty()) {
@@ -846,22 +871,3 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-// helper functions
-
-void readXML(const XMLObject &xml, const string &title)
-{
-  cout << "\nReading XML object " << title << " ...." << endl;
-  xml.print(cout , 5);
-}
-
-void readPList(const ParameterList &plist, const string &title, bool doc, bool unused)
-{  
-  cout << "\nReading parameter list: " << title << " ...." << endl;
-  plist.print(cout, ParameterList::PrintOptions().showDoc(doc).indent(3).showTypes(true));
-  
-  if(unused)
-  {
-    cout << "\nUnused fields: " << title << " ...." << endl;
-    plist.unused(cout);
-  }
-}

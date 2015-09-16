@@ -17,3 +17,15 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES ml_read_maxwell.cpp
   COMM serial mpi
   )
+
+TRIBITS_ADD_TEST(
+  ml_read_maxwell
+  ReitzingerSchoeberlAMG
+  ARGS "Ke.mat T.mat Kn.mat"
+  NUM_MPI_PROCS 4
+  COMM mpi
+  )
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(ReitzingerSchoeberl_cp
+  SOURCE_FILES Ke.mat Kn.mat T.mat
+  )            

@@ -53,6 +53,8 @@
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
+#include "Example_SimpleSource.hpp"
+
 // ********************************************************************
 // ********************************************************************
 template<typename EvalT>
@@ -123,6 +125,15 @@ buildClosureModels(const std::string& model_id,
       found = true;
     }
 
+    if (plist.isType<std::string>("Type")) {
+      const std::string type = plist.get<std::string>("Type");
+      if (type == "SIMPLE SOURCE") {
+	RCP< Evaluator<panzer::Traits> >
+	  e = rcp(new Example::SimpleSource<EvalT,panzer::Traits>(key, *ir));
+	evaluators->push_back(e);
+        found = true;
+      }
+    }
 
     if (!found) {
       std::stringstream msg;

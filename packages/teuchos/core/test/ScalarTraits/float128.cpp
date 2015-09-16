@@ -40,7 +40,7 @@
 // @HEADER
 
 #include "Teuchos_Array.hpp"
-#include "Teuchos_ScalarTraits.hpp" // operator<< for __float128
+#include "Teuchos_ScalarTraits.hpp" // operator<< and operator>> overloads
 #include "Teuchos_Tuple.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
@@ -127,6 +127,17 @@ TEUCHOS_UNIT_TEST( Float128, OutputStreamOp )
     "on its own, but just makes this line of code more like the line of code "
     "that doesn't compile.  arrayViewOfFloat128[0] = " << arrayViewOfFloat128[0]
       << " and tupleOfFloat128[0] = " << tupleOfFloat128[0] << "." << endl;
+
+  // Test that operator>> (std::istream&, __float128&) works.
+  {
+    // Use enough digits in the example to catch "cheats" that
+    // truncate to double.
+    const std::string z_str ("1.111112222233333444445555566666");
+    std::istringstream is (z_str);
+    __float128 z_copy = 0.0;
+    is >> z_copy;
+    TEST_EQUALITY_CONST( z, z_copy );
+  }
 
 #else
   out << "This test only makes sense to run with libquadmath enabled." << endl;

@@ -105,9 +105,37 @@ namespace Belos {
     PseudoBlockCGSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
 
-  template<class ScalarType, class MV, class OP>
-  class PseudoBlockCGSolMgr : public SolverManager<ScalarType,MV,OP> {
 
+  // Partial specialization for unsupported ScalarType types.
+  // This contains a stub implementation.
+  template<class ScalarType, class MV, class OP,
+           const bool supportsScalarType =
+             Belos::Details::LapackSupportsScalar<ScalarType>::value>
+  class PseudoBlockCGSolMgr :
+    public Details::SolverManagerRequiresLapack<ScalarType, MV, OP,
+                                                Belos::Details::LapackSupportsScalar<ScalarType>::value>
+  {
+    static const bool scalarTypeIsSupported =
+      Belos::Details::LapackSupportsScalar<ScalarType>::value;
+    typedef Details::SolverManagerRequiresLapack<ScalarType, MV, OP,
+                                                 scalarTypeIsSupported> base_type;
+
+  public:
+    PseudoBlockCGSolMgr () :
+      base_type ()
+    {}
+    PseudoBlockCGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+                         const Teuchos::RCP<Teuchos::ParameterList> &pl) :
+      base_type ()
+    {}
+    virtual ~PseudoBlockCGSolMgr () {}
+  };
+
+
+  template<class ScalarType, class MV, class OP>
+  class PseudoBlockCGSolMgr<ScalarType, MV, OP, true> :
+    public Details::SolverManagerRequiresLapack<ScalarType, MV, OP, true>
+  {
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
@@ -318,44 +346,44 @@ namespace Belos {
 
 // Default solver values.
 template<class ScalarType, class MV, class OP>
-const typename PseudoBlockCGSolMgr<ScalarType,MV,OP>::MagnitudeType PseudoBlockCGSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
+const typename PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::MagnitudeType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::convtol_default_ = 1e-8;
 
 template<class ScalarType, class MV, class OP>
-const int PseudoBlockCGSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
+const int PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::maxIters_default_ = 1000;
 
 template<class ScalarType, class MV, class OP>
-const bool PseudoBlockCGSolMgr<ScalarType,MV,OP>::assertPositiveDefiniteness_default_ = true;
+const bool PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::assertPositiveDefiniteness_default_ = true;
 
 template<class ScalarType, class MV, class OP>
-const bool PseudoBlockCGSolMgr<ScalarType,MV,OP>::showMaxResNormOnly_default_ = false;
+const bool PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::showMaxResNormOnly_default_ = false;
 
 template<class ScalarType, class MV, class OP>
-const int PseudoBlockCGSolMgr<ScalarType,MV,OP>::verbosity_default_ = Belos::Errors;
+const int PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::verbosity_default_ = Belos::Errors;
 
 template<class ScalarType, class MV, class OP>
-const int PseudoBlockCGSolMgr<ScalarType,MV,OP>::outputStyle_default_ = Belos::General;
+const int PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::outputStyle_default_ = Belos::General;
 
 template<class ScalarType, class MV, class OP>
-const int PseudoBlockCGSolMgr<ScalarType,MV,OP>::outputFreq_default_ = -1;
+const int PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::outputFreq_default_ = -1;
 
 template<class ScalarType, class MV, class OP>
-const int PseudoBlockCGSolMgr<ScalarType,MV,OP>::defQuorum_default_ = 1;
+const int PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::defQuorum_default_ = 1;
 
 template<class ScalarType, class MV, class OP>
-const std::string PseudoBlockCGSolMgr<ScalarType,MV,OP>::resScale_default_ = "Norm of Initial Residual";
+const std::string PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::resScale_default_ = "Norm of Initial Residual";
 
 template<class ScalarType, class MV, class OP>
-const std::string PseudoBlockCGSolMgr<ScalarType,MV,OP>::label_default_ = "Belos";
+const std::string PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::label_default_ = "Belos";
 
 template<class ScalarType, class MV, class OP>
-const Teuchos::RCP<std::ostream> PseudoBlockCGSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
+const Teuchos::RCP<std::ostream> PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::outputStream_default_ = Teuchos::rcp(&std::cout,false);
 
 template<class ScalarType, class MV, class OP>
-const bool PseudoBlockCGSolMgr<ScalarType,MV,OP>::genCondEst_default_ = false;
+const bool PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::genCondEst_default_ = false;
 
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
-PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr() :
+PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::PseudoBlockCGSolMgr() :
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   maxIters_(maxIters_default_),
@@ -375,7 +403,7 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr() :
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
-PseudoBlockCGSolMgr<ScalarType,MV,OP>::
+PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::
 PseudoBlockCGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                      const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
@@ -409,7 +437,7 @@ PseudoBlockCGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &probl
 
 template<class ScalarType, class MV, class OP>
 void
-PseudoBlockCGSolMgr<ScalarType,MV,OP>::
+PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::
 setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 {
   using Teuchos::ParameterList;
@@ -669,7 +697,7 @@ setParameters (const Teuchos::RCP<Teuchos::ParameterList>& params)
 
 template<class ScalarType, class MV, class OP>
 Teuchos::RCP<const Teuchos::ParameterList>
-PseudoBlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
+PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::getValidParameters() const
 {
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
@@ -728,7 +756,7 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
 
 // solve()
 template<class ScalarType, class MV, class OP>
-ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve ()
+ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::solve ()
 {
   const char prefix[] = "Belos::PseudoBlockCGSolMgr::solve: ";
 
@@ -962,7 +990,7 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve ()
 
 //  This method requires the solver manager to return a std::string that describes itself.
 template<class ScalarType, class MV, class OP>
-std::string PseudoBlockCGSolMgr<ScalarType,MV,OP>::description() const
+std::string PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::description() const
 {
   std::ostringstream oss;
   oss << "Belos::PseudoBlockCGSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
@@ -973,11 +1001,13 @@ std::string PseudoBlockCGSolMgr<ScalarType,MV,OP>::description() const
 
 
 template<class ScalarType, class MV, class OP>
-void PseudoBlockCGSolMgr<ScalarType,MV,OP>::compute_condnum_tridiag_sym(Teuchos::ArrayView<MagnitudeType> diag,
-                                                                        Teuchos::ArrayView<MagnitudeType> offdiag,
-                                                                        ScalarType & lambda_min,
-                                                                        ScalarType & lambda_max,
-                                                                        ScalarType & ConditionNumber )
+void
+PseudoBlockCGSolMgr<ScalarType,MV,OP,true>::
+compute_condnum_tridiag_sym (Teuchos::ArrayView<MagnitudeType> diag,
+                             Teuchos::ArrayView<MagnitudeType> offdiag,
+                             ScalarType & lambda_min,
+                             ScalarType & lambda_max,
+                             ScalarType & ConditionNumber )
 {
   typedef Teuchos::ScalarTraits<ScalarType> STS;
 

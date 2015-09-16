@@ -25,6 +25,7 @@ struct WorksetNeeds {
   CellData cellData;
   std::vector<Teuchos::RCP<const IntegrationRule> > int_rules;
   std::vector<Teuchos::RCP<const PureBasis> > bases;
+  std::vector<std::string> rep_field_name; // representative field name
 };
 
 } // end namespace panzer

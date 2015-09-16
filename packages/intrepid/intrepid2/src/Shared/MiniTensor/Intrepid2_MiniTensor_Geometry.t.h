@@ -734,8 +734,8 @@ template<typename T, Index M, Index N, class ES>
 Vector<T, N, ES>
 interpolate_element(
     ELEMENT::Type element_type,
-    Vector<T, M, ES> & xi,
-    std::vector< Vector<T, N, ES> > const & v)
+    Vector<T, M, ES> &xi,
+    std::vector<Vector<T, N, ES> > cinst &v
 {
   Vector<T, N, ES> p;
 
@@ -784,7 +784,7 @@ distance_matrix(std::vector< Vector<T, N, ES> > const & points)
   Index const
   number_points = points.size();
 
-  std::vector< std::vector<T> >
+  std::vector< std::vector<T>>
   distances(number_points);
 
   for (Index i = 0; i < number_points; ++i) {
@@ -816,7 +816,7 @@ distance_matrix(std::vector< Vector<T, N, ES> > const & points)
 //
 template<typename T>
 std::vector<T>
-minimum_distances(std::vector< std::vector<T> > const & distances)
+minimum_distances(std::vector< std::vector<T>> const & distances)
 {
   Index const
   number_points = distances.size();

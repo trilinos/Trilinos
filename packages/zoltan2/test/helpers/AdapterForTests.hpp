@@ -1062,8 +1062,14 @@ AdapterForTests::getPamgenMeshAdapterForInput(UserInputForTests *uinput,
   pamgen_adapter_t * ia = nullptr; // pointer for basic vector adapter
   if(uinput->hasPamgenMesh())
   {
-    if(comm->getRank() == 0) cout << "Have pamgen mesh, make adapter...." << endl;
-    ia = new pamgen_adapter_t(*comm.getRawPtr(), "region");
+
+    if(uinput->hasPamgenMesh())
+    {
+      if(comm->getRank() == 0) cout << "Have pamgen mesh, make adapter...." << endl;
+      ia = new pamgen_adapter_t(*(comm.get()), "region");
+      if(comm->getRank() == 0)
+        ia->print(0);
+    }
   }else{
     throw std::runtime_error("Pamgen mesh is not available for PamgenMeshAdapter!");
   }

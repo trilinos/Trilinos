@@ -82,6 +82,7 @@ private:
   std::vector<std::string> paramName; 
   double value; 
   double temp;
+  std::string other_dof_name;
 };
 
 }

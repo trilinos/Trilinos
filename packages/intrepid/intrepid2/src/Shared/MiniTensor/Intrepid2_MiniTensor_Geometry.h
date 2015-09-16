@@ -142,9 +142,15 @@ volume(Vector<T, N, ES> const & p0, Vector<T, N, ES> const & p1,
 /// For these we can just take the average of the vertices.
 /// WARNING: This is not the center of mass.
 ///
+<<<<<<< HEAD
 template<typename T, Index N, class ES=NOKOKKOS>
 Vector<T, N, ES>
 centroid(std::vector<Vector<T, N, ES> > const & points);
+=======
+template<typename T, Index N>
+Vector<T, N>
+centroid(std::vector<Vector<T, N>> const & points);
+>>>>>>> ffa4928cb3d005e1b2b568e722b18cd16734f4bb
 
 ///
 /// The surface normal of a face
@@ -184,12 +190,21 @@ in_normal_side(
 /// \param start end: define sequence of points
 /// \return vectors that define the bounding box
 ///
+<<<<<<< HEAD
 template<typename T, typename I, Index N, class ES=NOKOKKOS>
 std::pair< Vector<T, N, ES>, Vector<T, N, ES> >
 bounding_box(I start, I end);
 
 template<typename T, typename I, class ES=NOKOKKOS>
 std::pair< Vector<T, DYNAMIC,ES>, Vector<T, DYNAMIC,ES> >
+=======
+template<typename T, typename I, Index N>
+std::pair< Vector<T, N>, Vector<T, N>>
+bounding_box(I start, I end);
+
+template<typename T, typename I>
+std::pair< Vector<T, DYNAMIC>, Vector<T, DYNAMIC>>
+>>>>>>> ffa4928cb3d005e1b2b568e722b18cd16734f4bb
 bounding_box(I start, I end);
 
 ///
@@ -269,9 +284,15 @@ in_hexahedron(
 /// \param n vector of points to test
 /// \return index to closest point
 ///
+<<<<<<< HEAD
 template<typename T, Index N, class ES=NOKOKKOS>
 typename std::vector< Vector<T, N, ES> >::size_type
 closest_point(Vector<T, N, ES> const & p, std::vector< Vector<T, N, ES> > const & n);
+=======
+template<typename T, Index N>
+typename std::vector< Vector<T, N>>::size_type
+closest_point(Vector<T, N> const & p, std::vector< Vector<T, N>> const & n);
+>>>>>>> ffa4928cb3d005e1b2b568e722b18cd16734f4bb
 
 /// Median of a sequence defined by random
 /// access iterators. Undefined for empty set.
@@ -376,8 +397,13 @@ template<typename T, Index M, Index N, class ES=NOKOKKOS>
 Vector<T, N, ES>
 interpolate_element(
     ELEMENT::Type element_type,
+<<<<<<< HEAD
     Vector<T, M, ES> & xi,
     std::vector< Vector<T, N, ES> > const & v);
+=======
+    Vector<T, M> & xi,
+    std::vector< Vector<T, N>> const & v);
+>>>>>>> ffa4928cb3d005e1b2b568e722b18cd16734f4bb
 
 ///
 /// Given a vector of points, determine
@@ -385,9 +411,15 @@ interpolate_element(
 /// \param points vector of points
 /// \return distance matrix
 ///
+<<<<<<< HEAD
 template<typename T, Index N, class ES=NOKOKKOS>
 std::vector< std::vector<T> >
 distance_matrix(std::vector< Vector<T, N, ES> > const & points);
+=======
+template<typename T, Index N>
+std::vector< std::vector<T>>
+distance_matrix(std::vector< Vector<T, N>> const & points);
+>>>>>>> ffa4928cb3d005e1b2b568e722b18cd16734f4bb
 
 ///
 /// Given a distance matrix, determine the minimum
@@ -397,7 +429,7 @@ distance_matrix(std::vector< Vector<T, N, ES> > const & points);
 ///
 template<typename T, class ES=NOKOKKOS>
 std::vector<T>
-minimum_distances(std::vector< std::vector<T> > const & distances);
+minimum_distances(std::vector< std::vector<T>> const & distances);
 
 ///
 /// Given space dimension and number of (vertex) nodes,

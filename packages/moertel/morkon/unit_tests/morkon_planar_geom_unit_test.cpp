@@ -130,8 +130,8 @@ void complain_not_epsilon_equal(int vec_len,
                                 const ScalarType vecListA[][DIM], const ScalarType vecListB[][DIM])
 {
   std::cerr << "expected";
-  streamit(std::cerr, vec_len, vecListA) << " and ";
-  streamit(std::cerr, vec_len, vecListB) << " to be epsilon-equal" << std::endl;
+  morkon_exp::streamit(std::cerr, vec_len, vecListA) << " and ";
+  morkon_exp::streamit(std::cerr, vec_len, vecListB) << " to be epsilon-equal" << std::endl;
 }
 
 TEST(morkon_planar_geom, clip_convex_polygon_with_halfspace)
@@ -144,7 +144,7 @@ TEST(morkon_planar_geom, clip_convex_polygon_with_halfspace)
   const double nml_0[2]      = {0,-1};
   const double witness_0[2] = {3, 0.5};
 
-  int num_gon_out_verts = clip_convex_polygon(3, triangle_0, witness_0, nml_0, gon_out_buff);
+  int num_gon_out_verts = clip_convex_polygon_with_line(3, triangle_0, witness_0, nml_0, gon_out_buff);
   EXPECT_EQ(3, num_gon_out_verts);
   bool ok = are_lists_epsilon_equal(3, triangle_0, gon_out_buff);
   EXPECT_TRUE(ok);
@@ -152,7 +152,7 @@ TEST(morkon_planar_geom, clip_convex_polygon_with_halfspace)
     complain_not_epsilon_equal(3, triangle_0, gon_out_buff);
 
   const double witness_1[2] = {3, 1 - 1e-15};
-  num_gon_out_verts = clip_convex_polygon(3, triangle_0, witness_1, nml_0, gon_out_buff);
+  num_gon_out_verts = clip_convex_polygon_with_line(3, triangle_0, witness_1, nml_0, gon_out_buff);
   EXPECT_EQ(3, num_gon_out_verts);
   ok = are_lists_epsilon_equal(3, triangle_0, gon_out_buff);
   EXPECT_TRUE(ok);
@@ -160,7 +160,7 @@ TEST(morkon_planar_geom, clip_convex_polygon_with_halfspace)
     complain_not_epsilon_equal(3, triangle_0, gon_out_buff);
 
   const double witness_2[2] = {3, 1 + 1e-15};
-  num_gon_out_verts = clip_convex_polygon(3, triangle_0, witness_2, nml_0, gon_out_buff);
+  num_gon_out_verts = clip_convex_polygon_with_line(3, triangle_0, witness_2, nml_0, gon_out_buff);
   EXPECT_EQ(3, num_gon_out_verts);
   ok = are_lists_epsilon_equal(3, triangle_0, gon_out_buff);
   EXPECT_TRUE(ok);
@@ -169,7 +169,7 @@ TEST(morkon_planar_geom, clip_convex_polygon_with_halfspace)
 
   const double witness_3[2] = {3, 2};
   const double answer_3[3][2] =  { {4.5,2}, {3,5}, {1.5,2} };
-  num_gon_out_verts = clip_convex_polygon(3, triangle_0, witness_3, nml_0, gon_out_buff);
+  num_gon_out_verts = clip_convex_polygon_with_line(3, triangle_0, witness_3, nml_0, gon_out_buff);
   EXPECT_EQ(3, num_gon_out_verts);
   ok = are_lists_epsilon_equal(3, answer_3, gon_out_buff);
   EXPECT_TRUE(ok);
@@ -178,7 +178,7 @@ TEST(morkon_planar_geom, clip_convex_polygon_with_halfspace)
 
   const double witness_4[2] = {3, 1 + 1e-5};
   const double answer_4[3][2] =  { {4.99999,1.00001}, {3,5}, {1,1.00001} };
-  num_gon_out_verts = clip_convex_polygon(3, triangle_0, witness_4, nml_0, gon_out_buff);
+  num_gon_out_verts = clip_convex_polygon_with_line(3, triangle_0, witness_4, nml_0, gon_out_buff);
   EXPECT_EQ(3, num_gon_out_verts);
   ok = are_lists_epsilon_equal(3, answer_4, gon_out_buff, 0.00001);
   EXPECT_TRUE(ok);
@@ -188,7 +188,7 @@ TEST(morkon_planar_geom, clip_convex_polygon_with_halfspace)
   const double nml_1[2]       = {0,1};
   const double witness_5[2]   = {1,4};
   const double answer_5[4][2] = {{1,1}, {5,1}, {3.5,4}, {2.5,4}};
-  num_gon_out_verts = clip_convex_polygon(3, triangle_0, witness_5, nml_1, gon_out_buff);
+  num_gon_out_verts = clip_convex_polygon_with_line(3, triangle_0, witness_5, nml_1, gon_out_buff);
   EXPECT_EQ(4, num_gon_out_verts);
   ok = are_lists_epsilon_equal(4, answer_5, gon_out_buff);
   EXPECT_TRUE(ok);
@@ -200,7 +200,7 @@ TEST(morkon_planar_geom, clip_convex_polygon_with_halfspace)
   normalize(dir_3, nml_3);
   const double witness_6[2]   = {3,1};
   const double answer_6[4][2] = {{1,1}, {3,1}, {4,3}, {3,5}};
-  num_gon_out_verts = clip_convex_polygon(3, triangle_0, witness_6, nml_3, gon_out_buff);
+  num_gon_out_verts = clip_convex_polygon_with_line(3, triangle_0, witness_6, nml_3, gon_out_buff);
   EXPECT_EQ(4, num_gon_out_verts);
   ok = are_lists_epsilon_equal(4, answer_6, gon_out_buff);
   EXPECT_TRUE(ok);
@@ -212,7 +212,7 @@ TEST(morkon_planar_geom, clip_convex_polygon_with_halfspace)
   normalize(dir_4, nml_4);
   const double witness_7[2]   = {3,1};
   const double answer_7[4][2] = {{3,1}, {5,1}, {3,5}, {2,3}};
-  num_gon_out_verts = clip_convex_polygon(3, triangle_0, witness_7, nml_4, gon_out_buff);
+  num_gon_out_verts = clip_convex_polygon_with_line(3, triangle_0, witness_7, nml_4, gon_out_buff);
   EXPECT_EQ(4, num_gon_out_verts);
   ok = are_lists_epsilon_equal(4, answer_7, gon_out_buff);
   EXPECT_TRUE(ok);
@@ -224,7 +224,7 @@ TEST(morkon_planar_geom, clip_convex_polygon_with_halfspace)
   normalize(dir_5, nml_5);
   const double witness_8[2]   = {1,1};
   const double answer_8[3][2] = {{1,1}, {4,3}, {3,5}};
-  num_gon_out_verts = clip_convex_polygon(3, triangle_0, witness_8, nml_5, gon_out_buff);
+  num_gon_out_verts = clip_convex_polygon_with_line(3, triangle_0, witness_8, nml_5, gon_out_buff);
   EXPECT_EQ(3, num_gon_out_verts);
   ok = are_lists_epsilon_equal(3, answer_8, gon_out_buff);
   EXPECT_TRUE(ok);
@@ -234,7 +234,7 @@ TEST(morkon_planar_geom, clip_convex_polygon_with_halfspace)
   const double nml_6[2]       = {1, 0};
   const double witness_9[2]   = {3, 3};
   const double answer_9[3][2] = {{1,1}, {3,1}, {3,5}};
-  num_gon_out_verts = clip_convex_polygon(3, triangle_0, witness_9, nml_6, gon_out_buff);
+  num_gon_out_verts = clip_convex_polygon_with_line(3, triangle_0, witness_9, nml_6, gon_out_buff);
   EXPECT_EQ(3, num_gon_out_verts);
   ok = are_lists_epsilon_equal(3, answer_9, gon_out_buff);
   EXPECT_TRUE(ok);
@@ -243,4 +243,75 @@ TEST(morkon_planar_geom, clip_convex_polygon_with_halfspace)
 
 }
 
+
+TEST(morkon_planar_geom, clip_convex_polygon_with_convex_polygon)
+{
+  using namespace morkon_exp;
+
+  const int MaxGonVerts = 16;
+  double gon_out_buff[MaxGonVerts][2];
+  int num_gon_out_verts = 0;
+  bool ok = false;
+
+  const double triangle_0[3][2] = {{1,1}, {5,1}, {1,7}};
+
+  const double clip_gon_0[4][2] = {{0.5,0.5}, {6,0.5}, {6,8}, {0.5,10}};
+  num_gon_out_verts = clip_convex_polygon(3, triangle_0, 4, clip_gon_0, gon_out_buff);
+  const double answer_0[3][2] = {{1,1}, {5,1}, {1,7}};
+  EXPECT_EQ(3, num_gon_out_verts);
+  ok = are_lists_epsilon_equal(3, answer_0, gon_out_buff);
+  EXPECT_TRUE(ok);
+  if (!ok)
+    complain_not_epsilon_equal(3, answer_0, gon_out_buff);
+
+  const double clip_gon_1[4][2] = {{1,1}, {3,1}, {3,3}, {1,3}};
+  num_gon_out_verts = clip_convex_polygon(3, triangle_0, 4, clip_gon_1, gon_out_buff);
+  const double answer_1[4][2] = {{1,1}, {3,1}, {3,3}, {1,3}};
+  EXPECT_EQ(4, num_gon_out_verts);
+  ok = are_lists_epsilon_equal(4, answer_1, gon_out_buff);
+  EXPECT_TRUE(ok);
+  if (!ok)
+    complain_not_epsilon_equal(4, answer_1, gon_out_buff);
+
+  // Clip polygon is more obviously entirely inside the subject.
+  const double clip_gon_2[4][2] = {{1.5,1.5}, {3,1.5}, {3,2.5}, {1.5,2.5}};
+  num_gon_out_verts = clip_convex_polygon(3, triangle_0, 4, clip_gon_2, gon_out_buff);
+  const double answer_2[4][2] = {{1.5,1.5}, {3,1.5}, {3,2.5}, {1.5,2.5}};
+  EXPECT_EQ(4, num_gon_out_verts);
+  ok = are_lists_epsilon_equal(4, answer_2, gon_out_buff);
+  EXPECT_TRUE(ok);
+  if (!ok)
+    complain_not_epsilon_equal(4, answer_2, gon_out_buff);
+
+  // Degenerate: single point
+  const double clip_gon_3[3][2] = {{1,0}, {1,1}, {0,1}};
+  num_gon_out_verts = clip_convex_polygon(3, triangle_0, 4, clip_gon_3, gon_out_buff);
+  const double answer_3[1][2] = {{1,1}};
+  EXPECT_EQ(1, num_gon_out_verts);
+  ok = are_lists_epsilon_equal(1, answer_3, gon_out_buff);
+  EXPECT_TRUE(ok);
+  if (!ok)
+    complain_not_epsilon_equal(1, answer_3, gon_out_buff);
+
+#ifndef HIDE_MYSTERIOUS_MORKON_VALGRIND_FAILURE
+  // Degenerate: line segment
+  const double clip_gon_4[3][2] = {{2,0}, {2,1}, {0,1}};
+  num_gon_out_verts = clip_convex_polygon(3, triangle_0, 4, clip_gon_4, gon_out_buff);
+  const double answer_4[2][2] = {{1,1}, {2,1}};
+  EXPECT_EQ(2, num_gon_out_verts);
+  ok = are_lists_epsilon_equal(2, answer_4, gon_out_buff);
+  EXPECT_TRUE(ok);
+  if (!ok)
+    complain_not_epsilon_equal(2, answer_4, gon_out_buff);
+#endif
+
+  const double clip_gon_5[4][2] = {{2, 0.5}, {4,1.5}, {4,5}, {2,5}};
+  num_gon_out_verts = clip_convex_polygon(3, triangle_0, 4, clip_gon_5, gon_out_buff);
+  const double answer_5[6][2] = {{2,1}, {3,1}, {4,1.5}, {4,2.5}, {2.33333333333333333,5}, {2,5}};
+  EXPECT_EQ(6, num_gon_out_verts);
+  ok = are_lists_epsilon_equal(6, answer_5, gon_out_buff);
+  EXPECT_TRUE(ok);
+  if (!ok)
+    complain_not_epsilon_equal(6, answer_5, gon_out_buff);
+}
 

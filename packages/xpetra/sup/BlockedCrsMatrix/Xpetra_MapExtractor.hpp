@@ -86,12 +86,10 @@ namespace Xpetra {
     MapExtractor(const RCP<const Map>& fullmap, const std::vector<RCP<const Map> >& maps) {
       fullmap_ = fullmap;
       maps_ = maps;
-
       importers_.resize(maps_.size());
       for (unsigned i = 0; i < maps_.size(); ++i)
         if (maps[i] != null)
           importers_[i] = ImportFactory::Build(fullmap_, maps[i]);
-
       TEUCHOS_TEST_FOR_EXCEPTION(CheckConsistency() == false, std::logic_error,
                                  "logic error. full map and sub maps are inconsistently distributed over the processors.");
     }

@@ -27,6 +27,8 @@
 
 #include "../../../TPLs_src/Trilinos/packages/stk/stk_learning/MeshBuilder/CoordinateSets.hpp"
 
+typedef stk::mesh::Field<int> ScalarIntField;
+
 class MeshBuilder
 {
 public:
@@ -44,12 +46,17 @@ public:
 
     void write_mesh();
 
+    //gol
+    void create_life_and_neighbor_fields(ScalarIntField*& lifeField, ScalarIntField*& neighborField);
+
     //test functions
     inline stk::mesh::MetaData& meta_data();
 
     inline stk::mesh::BulkData& bulk_data();
 
     inline int num_procs() const;
+
+    inline int proc_rank() const;
 
     inline int spacial_dim() const;
 
@@ -59,6 +66,8 @@ protected:
     stk::mesh::Entity create_element(stk::mesh::EntityId elemId,
                                      const stk::mesh::EntityIdVector& nodeIds,
                                      int chosenProc);
+
+    void remove_element(stk::mesh::EntityId elemId);
 
 private:
    stk::mesh::MetaData m_metaData;
@@ -76,7 +85,7 @@ private:
 
    std::unordered_set<stk::mesh::EntityId> m_usedElemIds;
 
-   //cojknstructor
+   //constructor
    virtual void declare_coordinates() = 0;
 
    //create element
@@ -98,15 +107,17 @@ inline stk::mesh::MetaData& MeshBuilder::meta_data()
 {
     return m_metaData;
 }
-
 inline stk::mesh::BulkData& MeshBuilder::bulk_data()
 {
     return m_bulkData;
 }
-
 inline int MeshBuilder::num_procs() const
 {
     return m_numProcs;
+}
+inline int MeshBuilder::proc_rank() const
+{
+    return m_procRank;
 }
 inline int MeshBuilder::spacial_dim() const
 {
@@ -124,8 +135,12 @@ public:
 
     void fill_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper);
 
+    void fill_area_randomly(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper);
+
     void fill_area_on_proc(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper,
                            int chosenProc);
+
+    void fill_area_with_layers(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper);
 
     void remove_element(unsigned xCoord, unsigned yCoord);
 
@@ -159,10 +174,19 @@ public:
     void fill_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper, unsigned
                    zLower, unsigned zUpper);
 
+    void fill_area_randomly(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper,
+                            unsigned zLower, unsigned zUpper);
+
+    void fill_area_on_proc(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper,
+                           unsigned zLower, unsigned zUpper, int chosenProc);
+
+    void fill_area_with_layers(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper,
+                               unsigned zLower, unsigned zUpper);
+
     void remove_element(unsigned xCoord, unsigned yCoord, unsigned zCoord);
 
     void remove_area(unsigned xLower, unsigned xUpper, unsigned yLower, unsigned yUpper, unsigned
-                   zLower, unsigned zUpper);
+                     zLower, unsigned zUpper);
 
     //test functions
     double node_x_coord(stk::mesh::Entity node) const;

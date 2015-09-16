@@ -851,6 +851,10 @@ log_rotation(Tensor<T, N, ES> const & R)
       r(1,1) = 0.0;
       break;
 
+    case 1:
+      r(0,0) = 0.0;
+      break;
+
   }
 
   return r;
@@ -1103,20 +1107,27 @@ exp_skew_symmetric(Tensor<T, N, ES> const & r)
 
     case 2:
       theta = r(1,0);
-      T
-      c = std::cos(theta);
 
-      T
-      s = std::sin(theta);
+      {
+        T const
+        c = std::cos(theta);
 
-      R(0,0) = c;
-      R(0,1) = -s;
-      R(1,0) = s;
-      R(1,1) = c;
+        T const
+        s = std::sin(theta);
+
+        R(0,0) = c;
+        R(0,1) = -s;
+        R(1,0) = s;
+        R(1,1) = c;
+      }
 
       break;
 
-  }
+    case 1:
+      R(0,0) = 1.0;
+      break;
+
+ }
 
   return R;
 }
@@ -1155,6 +1166,10 @@ norm_off_diagonal(Tensor<T, N, ES> const & A)
 
     case 2:
       s = A(0,1)*A(0,1) + A(1,0)*A(1,0);
+      break;
+
+    case 1:
+      s = 0.0;
       break;
 
   }
@@ -1669,15 +1684,9 @@ polar_left_eig(Tensor<T, N, ES> const & F)
   Tensor<T, N, ES>
   x = zero<T, N, ES>(3);
 
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-  x(0,0) = sqrt(eVal(0,0));
-  x(1,1) = sqrt(eVal(1,1));
-  x(2,2) = sqrt(eVal(2,2));
-#else
   x(0,0) = std::sqrt(eVal(0,0));
   x(1,1) = std::sqrt(eVal(1,1));
   x(2,2) = std::sqrt(eVal(2,2));
-#endif
 
   Tensor<T, N, ES>
   xi = zero<T, N, ES>(3);
@@ -1799,9 +1808,9 @@ polar_left_logV(Tensor<T, N, ES> const & F)
   return boost::make_tuple(V, R, v);
 }
 
-template<typename T, Index N, class ES>
-boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES> >
-polar_left_logV_eig(Tensor<T, N, ES> const & F)
+template<typename T, Index N>
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
+polar_left_logV_eig(Tensor<T, N> const & F)
 {
   Index const
   dimension = F.get_dimension();
@@ -1818,15 +1827,9 @@ polar_left_logV_eig(Tensor<T, N, ES> const & F)
   DQ(dimension, ZEROS), DI(dimension, ZEROS), DL(dimension, ZEROS);
 
   for (Index i = 0; i < dimension; ++i) {
-#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CUDA)
-    DQ(i,i) = sqrt(D(i,i));
-    DI(i,i) = 1.0 / DQ(i,i);
-    DL(i,i) = log(DQ(i,i));
-#else
     DQ(i,i) = std::sqrt(D(i,i));
     DI(i,i) = 1.0 / DQ(i,i);
     DL(i,i) = std::log(DQ(i,i));
-#endif
   }
 
   Tensor<T, N, ES> const

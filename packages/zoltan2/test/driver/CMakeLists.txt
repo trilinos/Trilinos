@@ -22,13 +22,40 @@ TRIBITS_ADD_EXECUTABLE(
    COMM serial mpi
 )
 
-#TRIBITS_ADD_EXECUTABLE(
-#   test_crs
-#   SOURCES ${HEADERS} tpetra-crs-hello.cpp
-#   COMM serial mpi
-#)
 
-IF (${PACKAGE_NAME}_ENABLE_Experimental)
+TRIBITS_ADD_TEST(
+    test_driver
+    NAME geometricTest
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/geometricTest.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    test_driver
+    NAME geometricVwgtTest
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/geometricVwgtTest.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
+TRIBITS_ADD_TEST(
+    test_driver
+    NAME geometricVwgt2Test
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    ARGS
+    "./driverinputs/geometricVwgt2Test.xml"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+)
+
 # MultiJagged Tests
 TRIBITS_ADD_TEST(
     test_driver
@@ -51,8 +78,6 @@ TRIBITS_ADD_TEST(
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
 )
-
-ENDIF()
 
 TRIBITS_ADD_TEST(
     test_driver
