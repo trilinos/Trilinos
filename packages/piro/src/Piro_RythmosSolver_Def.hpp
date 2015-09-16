@@ -251,7 +251,23 @@ void Piro::RythmosSolver<Scalar>::initialize(
         rscs->setParameterList(p);
 
         scsa_stepper->setStepControlStrategy(rscs);
-      } else {
+      } 
+    else {
+       // first (before failing) check to see if the user has added step control factory
+       typename std::map<std::string,Teuchos::RCP<RythmosStepControlFactory<Scalar> > >::const_iterator
+           stepControlFactItr = stepControlFactories.find(step_control_strategy);
+      if (stepControlFactItr != stepControlFactories.end())
+         {
+       
+        const RCP<Rythmos::StepControlStrategyBase<Scalar> > rscs = stepControlFactItr->second->buildStepControl();
+
+        const RCP<ParameterList> p = parameterList(rythmosPL -> sublist("Rythmos Step Control Strategy"));
+
+        rscs->setParameterList(p);
+ 
+        scsa_stepper->setStepControlStrategy(rscs);
+        }
+        else {
         TEUCHOS_TEST_FOR_EXCEPTION(
             true, std::logic_error,
             "Error! Piro::RythmosSolver: Invalid step control strategy type: "
@@ -259,7 +275,7 @@ void Piro::RythmosSolver<Scalar>::initialize(
       }
     }
   }
-
+}
   {
     const RCP<Teuchos::ParameterList> integrationControlPL =
       Teuchos::sublist(rythmosPL, "Rythmos Integration Control", true);
@@ -672,7 +688,9 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
     //
 
     fwdStateStepper->setInitialCondition(state_ic);
+    
     fwdStateIntegrator->setStepper(fwdStateStepper, t_final, true);
+    *out << "T final : " << t_final << " \n";
 
     Teuchos::Array<RCP<const Thyra::VectorBase<Scalar> > > x_final_array;
     fwdStateIntegrator->getFwdPoints(
@@ -682,6 +700,7 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
     if (Teuchos::VERB_MEDIUM <= solnVerbLevel) {
       std::cout << "Final Solution\n" << *finalSolution << std::endl;
     }
+
   } else { // Computing sensitivities
     //
     *out << "\nE) Solve the forward problem with Sensitivities...\n";
@@ -959,6 +978,13 @@ addStepperFactory(const std::string & stepperName,const Teuchos::RCP<RythmosStep
   stepperFactories[stepperName] = factory;
 }
 
+template <typename Scalar>
+void Piro::RythmosSolver<Scalar>::
+addStepControlFactory(const std::string & stepControlName,
+                      const Teuchos::RCP<RythmosStepControlFactory<Scalar>> & step_control_strategy)
+{
+  stepControlFactories[stepControlName] = step_control_strategy;
+}
 
 template <typename Scalar>
 Teuchos::RCP<Piro::RythmosSolver<Scalar> >
