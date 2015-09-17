@@ -144,6 +144,30 @@ public:
          __float128 WORK[],
          const int LWORK,
          int* const INFO) const;
+
+  //! Assemble explicit Q factor from results of GEQRF (above).
+  void
+  ORGQR (const int M,
+         const int N,
+         const int K,
+         __float128 A[],
+         const int LDA,
+         const __float128 TAU[],
+         __float128 WORK[],
+         const int LWORK,
+         int* const INFO) const;
+
+  //! Assemble explicit Q factor from results of GEQRF (above).
+  void
+  UNGQR (const int M,
+         const int N,
+         const int K,
+         __float128 A[],
+         const int LDA,
+         const __float128 TAU[],
+         __float128 WORK[],
+         const int LWORK,
+         int* const INFO) const;
 };
 
 } // namespace Details

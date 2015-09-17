@@ -616,6 +616,38 @@ GEQRF (const int M,
   }
 }
 
+void
+Lapack128::
+ORGQR (const int /* M */,
+       const int /* N */,
+       const int /* K */,
+       __float128 /* A */ [],
+       const int /* LDA */,
+       const __float128 /* TAU */ [],
+       __float128 /* WORK */ [],
+       const int /* LWORK */,
+       int* const /* INFO */) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Lapack128::GEQR2: Not implemented yet.");
+}
+
+void
+Lapack128::
+UNGQR (const int /* M */,
+       const int /* N */,
+       const int /* K */,
+       __float128 /* A */ [],
+       const int /* LDA */,
+       const __float128 /* TAU */ [],
+       __float128 /* WORK */ [],
+       const int /* LWORK */,
+       int* const /* INFO */) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Lapack128::GEQR2: Not implemented yet.");
+}
+
 } // namespace Details
 } // namespace Tpetra
 #endif // HAVE_TPETRA_INST_FLOAT128
