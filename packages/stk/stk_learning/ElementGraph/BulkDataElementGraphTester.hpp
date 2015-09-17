@@ -1,5 +1,5 @@
-#ifndef bulkdatalementgraphtesterhpp
-#define bulkdatalementgraphtesterhpp
+#ifndef bulkdatalementgraphtester_hpp
+#define bulkdatalementgraphtester_hpp
 
 #include <vector>
 #include <algorithm>

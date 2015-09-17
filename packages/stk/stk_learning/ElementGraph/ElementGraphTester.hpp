@@ -1,5 +1,5 @@
-#ifndef elementgraphtesterhpp
-#define elementgraphtesterhpp
+#ifndef elementgraphtester_hpp
+#define elementgraphtester_hpp
 
 #include <vector>
 #include <algorithm>
