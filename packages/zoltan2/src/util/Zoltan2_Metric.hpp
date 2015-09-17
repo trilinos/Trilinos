@@ -717,11 +717,8 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
  *
  *   \param env   Environment for error handling
  *   \param comm   communicator
+ *   \param graph Graph model
  *   \param part   \c part[i] is the part ID for local object \c i
- *   \param vwgts  \c vwgts[w] is the StridedData object 
- *       representing weight index \c w. The number of weights
- *       (which must be at least one  TODO  WHY?) is taken to be \c vwgts.size().  
- *   \param 
  *   \param numParts  on return this is the global number of parts.
  *   \param numNonemptyParts  on return this is the number of those
  *          parts that are non-empty.
@@ -753,8 +750,6 @@ template <typename pnum_t, typename Adapter>
     const RCP<const Comm<int> > &comm, 
     const RCP<const GraphModel<Adapter> > &graph,
     const ArrayView<const pnum_t> &part, 
-    int vwgtDim,
-    const ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t> > &vwgts,
     typename Adapter::part_t &numParts, 
     typename Adapter::part_t &numNonemptyParts,
     ArrayRCP<graphMetricValues<typename Adapter::scalar_t> > &metrics,
@@ -766,12 +761,15 @@ template <typename pnum_t, typename Adapter>
 
   numParts = numNonemptyParts = 0;
 
+  int ewgtDim = graph->getNumWeightsPerEdge();
+
   int numMetrics = 1;                       // "object count" or "weight 1"
-  if (vwgtDim > 1) numMetrics = vwgtDim;   // "weight n"
+  if (ewgtDim > 1) numMetrics = ewgtDim;   // "weight n"
 
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
+  typedef StridedData<lno_t, scalar_t> input_t;
   typedef graphMetricValues<scalar_t> mv_t;
   mv_t *newMetrics = new mv_t [numMetrics];
   env->localMemoryAssertion(__FILE__, __LINE__, numMetrics, newMetrics); 
@@ -785,7 +783,7 @@ template <typename pnum_t, typename Adapter>
 
   lno_t localNumObj = part.size();
   part_t localNum[2], globalNum[2];
-  localNum[0] = static_cast<part_t>(vwgtDim);  
+  localNum[0] = static_cast<part_t>(ewgtDim);  
   localNum[1] = 0;
 
   for (lno_t i=0; i < localNumObj; i++)
@@ -817,44 +815,27 @@ template <typename pnum_t, typename Adapter>
 
   scalar_t *obj = localBuf;              // # of objects
 
-  for (lno_t i=0; i < localNumObj; i++)
-    obj[part[i]]++;
+  ArrayView<const lno_t> localEdgeIds, *localOffsets;
+  ArrayView<input_t> localWgts;
+  size_t localNumEdge = graph->getLocalEdgeList(localEdgeIds, localOffsets,
+						localWgts);
+
+  if (!ewgtDim) {
+    for (lno_t i=0; i < localNumObj; i++)
+      for (lno_t j=localOffsets[i]; j < localOffsets[i+1]; j++)
+	if (part[i] != part[localEdgeIds[j]])
+	  obj[part[i]]++;
 
   // This code assumes the solution has the part ordered the
   // same way as the user input.  (Bug 5891 is resolved.)
-  if (vwgtDim){
+  } else {
     scalar_t *wgt = localBuf; // weight 1
-    for (int vdim = 0; vdim < vwgtDim; vdim++){
+    for (int edim = 0; edim < ewgtDim; edim++){
       for (lno_t i=0; i < localNumObj; i++)
-	wgt[part[i]] += vwgts[vdim][i];
+	for (lno_t j=localOffsets[i]; j < localOffsets[i+1]; j++)
+	  if (part[i] != part[localEdgeIds[j]])
+	    wgt[part[i]] += localWgts[j];
       wgt += nparts;         // individual weights
-    }
-  }
-
-  // Metric: local sums on process
-
-  int next = 0;
-
-  metrics[next].setName("object count");
-  metrics[next].setLocalSum(localNumObj);
-
-  if (vwgtDim){
-    scalar_t *wgt = localBuf; // weight 1
-    scalar_t total;
-
-    for (int vdim = 0; vdim < vwgtDim; vdim++){
-      total = 0.0;
-      for (int p=0; p < nparts; p++){
-	total += wgt[p];
-      }
-
-      std::ostringstream oss;
-      oss << "weight " << vdim+1;
-
-      metrics[next].setName(oss.str());
-      metrics[next].setLocalSum(total);
-      next++;
-      wgt += nparts;
     }
   }
 
@@ -874,22 +855,26 @@ template <typename pnum_t, typename Adapter>
 
   obj = sumBuf;                     // # of objects
   scalar_t max=0, sum=0;
-  next = 0;
+  int next = 0;
 
   ArrayView<scalar_t> objVec(obj, nparts);
   getStridedStats<scalar_t>(objVec, 1, 0, max, sum);
 
+  metrics[next].setName("object count");
   metrics[next].setGlobalMax(max);
   metrics[next].setGlobalSum(sum);
-  next++;
 
-  if (vwgtDim){
+  if (ewgtDim){
     scalar_t *wgt = sumBuf;        // weight 1
   
-    for (int vdim=0; vdim < vwgtDim; vdim++){
+    for (int edim=0; edim < ewgtDim; edim++){
       ArrayView<scalar_t> fromVec(wgt, nparts);
       getStridedStats<scalar_t>(fromVec, 1, 0, max, sum);
 
+      std::ostringstream oss;
+      oss << "weight " << edim+1;
+
+      metrics[next].setName(oss.str());
       metrics[next].setGlobalMax(max);
       metrics[next].setGlobalSum(sum);
       next++;
