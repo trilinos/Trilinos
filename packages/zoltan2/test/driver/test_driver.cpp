@@ -50,7 +50,7 @@
 #include <Zoltan2_ComparisonHelper.hpp>
 
 #include <Zoltan2_PartitioningProblem.hpp>
-#include <Zoltan2_PartitioningSolutionQuality.hpp>
+//#include <Zoltan2_PartitioningSolutionQuality.hpp>
 #include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
