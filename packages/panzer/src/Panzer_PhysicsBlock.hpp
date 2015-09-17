@@ -138,8 +138,7 @@ namespace panzer {
 
     void buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                         const panzer::LinearObjFactory<panzer::Traits> & lof,
-                                                        const Teuchos::ParameterList& user_data,
-							const int workset_details_index = 0) const;
+                                                        const Teuchos::ParameterList& user_data) const;
 
     void buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                                       const Teuchos::Ptr<const panzer::LinearObjFactory<panzer::Traits> > & lof,
