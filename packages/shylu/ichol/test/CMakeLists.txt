@@ -37,7 +37,6 @@ IF(Kokkos_ENABLE_QTHREAD)
   )
   INCLUDE(ProcessorCount)
   ProcessorCount(nthreads)
-  SET(nthreads 1)
   SET(i 1)
   MATH(EXPR nthreads "${nthreads}+1")
   WHILE(i LESS nthreads)
@@ -55,7 +54,7 @@ IF(Kokkos_ENABLE_QTHREAD)
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(${PACKAGE_NAME}_Test_Files
-        SOURCE_FILES mm_crs_input.mtx mm_crs_ichol.mtx
+        SOURCE_FILES mm_crs_input.mtx mm_crs_chol.mtx
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
         DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )

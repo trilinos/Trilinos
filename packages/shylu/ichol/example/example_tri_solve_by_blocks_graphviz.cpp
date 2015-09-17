@@ -87,7 +87,7 @@ int main (int argc, char *argv[]) {
   string file_input = "test.mtx";
   clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
 
-  string file_output = "ichol.gv";
+  string file_output = "chol.gv";
   clp.setOption("file-output", &file_output, "Output file (dot file)");
 
   int nrhs = 1;

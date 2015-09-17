@@ -1,8 +1,8 @@
 #pragma once
-#ifndef __ICHOL_UNBLOCKED_HPP__
-#define __ICHOL_UNBLOCKED_HPP__
+#ifndef __CHOL_UNBLOCKED_HPP__
+#define __CHOL_UNBLOCKED_HPP__
 
-/// \file ichol_unblocked.hpp
+/// \file chol_unblocked.hpp
 /// \brief Unblocked incomplete Chloesky factorization.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -25,7 +25,7 @@ namespace Example {
            typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
-  IChol<Uplo::Upper,AlgoIChol::Unblocked>
+  Chol<Uplo::Upper,AlgoChol::Unblocked>
   ::invoke(typename CrsExecViewType::policy_type &policy,
            const typename CrsExecViewType::policy_type::member_type &member,
            CrsExecViewType &A) {

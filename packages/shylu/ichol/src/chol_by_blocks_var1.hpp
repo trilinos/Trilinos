@@ -1,8 +1,8 @@
 #pragma once
-#ifndef __ICHOL_BY_BLOCKS_VAR1_HPP__
-#define __ICHOL_BY_BLOCKS_VAR1_HPP__
+#ifndef __CHOL_BY_BLOCKS_VAR1_HPP__
+#define __CHOL_BY_BLOCKS_VAR1_HPP__
 
-/// \file ichol_by_blocks_var1.hpp
+/// \file chol_by_blocks_var1.hpp
 /// \brief Sparse incomplete Cholesky factorization by blocks.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 ///
@@ -15,7 +15,7 @@ namespace Example {
   template<typename ParallelForType,
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
-  int genScalarTask_ICholUpperByBlocks(typename CrsTaskViewType::policy_type &policy,
+  int genScalarTask_CholUpperByBlocks(typename CrsTaskViewType::policy_type &policy,
                                        CrsTaskViewType &A) {
     typedef typename CrsTaskViewType::value_type        value_type;
     typedef typename CrsTaskViewType::row_view_type     row_view_type;
@@ -28,7 +28,7 @@ namespace Example {
 
     // construct a task
     future_type f = task_factory_type::create(policy,
-                                              IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
+                                              Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>
                                               ::TaskFunctor<ParallelForType,value_type>(aa));
 
     // manage dependence
@@ -44,7 +44,7 @@ namespace Example {
   template<typename ParallelForType,
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
-  int genTrsmTasks_ICholUpperByBlocks(typename CrsTaskViewType::policy_type &policy,
+  int genTrsmTasks_CholUpperByBlocks(typename CrsTaskViewType::policy_type &policy,
                                       CrsTaskViewType &A,
                                       CrsTaskViewType &B) {
     typedef typename CrsTaskViewType::ordinal_type      ordinal_type;
@@ -86,7 +86,7 @@ namespace Example {
   template<typename ParallelForType,
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
-  int genHerkTasks_ICholUpperByBlocks(typename CrsTaskViewType::policy_type &policy,
+  int genHerkTasks_CholUpperByBlocks(typename CrsTaskViewType::policy_type &policy,
                                       CrsTaskViewType &A,
                                       CrsTaskViewType &C) {
     typedef typename CrsTaskViewType::ordinal_type      ordinal_type;

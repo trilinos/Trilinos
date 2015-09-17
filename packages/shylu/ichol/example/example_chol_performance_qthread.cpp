@@ -14,14 +14,14 @@ typedef int    size_type;
 typedef Kokkos::Qthread exec_space;
 
 #define __USE_FIXED_TEAM_SIZE__ 1
-#include "example_ichol_performance.hpp"
+#include "example_chol_performance.hpp"
 
 using namespace Example;
 
 int main (int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp;
-  clp.setDocString("This example program measure the performance of IChol algorithms on Kokkos::Threads execution space.\n");
+  clp.setDocString("This example program measure the performance of Chol algorithms on Kokkos::Threads execution space.\n");
 
   int nthreads = 1;
   clp.setOption("nthreads", &nthreads, "Number of threads");
@@ -70,7 +70,7 @@ int main (int argc, char *argv[]) {
     exec_space::initialize(nthreads);
     exec_space::print_configuration(cout, true);
     
-    // r_val = exampleICholPerformance
+    // r_val = exampleCholPerformance
     //   <value_type,ordinal_type,size_type,exec_space,void>
     //   (file_input, niter, nthreads, max_task_dependence, team_size, team_interface, (nthreads != 1), verbose);
 

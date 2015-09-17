@@ -25,7 +25,7 @@
 #include "task_factory.hpp"
 #include "task_team_factory.hpp"
 
-#include "ichol.hpp"
+#include "chol.hpp"
 
 using namespace std;
 
@@ -64,12 +64,12 @@ typedef TaskView<CrsHierViewType,TaskFactoryType> CrsHierTaskType;
 int main (int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp;
-  clp.setDocString("This example program demonstrates ICholByBlocks task dag visualization");
+  clp.setDocString("This example program demonstrates CholByBlocks task dag visualization");
 
   string file_input = "test.mtx";
   clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
 
-  string file_output = "ichol.gv";
+  string file_output = "chol.gv";
   clp.setOption("file-output", &file_output, "Output file (dot file)");
 
   int treecut = 10;
@@ -95,7 +95,7 @@ int main (int argc, char *argv[]) {
 
   // import a matrix
   // --------------------------------------
-  cout << "ICholByBlocks::graphviz:: import input file = " << file_input << endl;
+  cout << "CholByBlocks::graphviz:: import input file = " << file_input << endl;
   CrsMatrixBaseType AA("AA");
   {
     timer.reset();
@@ -110,11 +110,11 @@ int main (int argc, char *argv[]) {
 
     t = timer.seconds();
   }
-  cout << "ICholByBlocks::graphviz:: import input file::time = " << t << endl;
+  cout << "CholByBlocks::graphviz:: import input file::time = " << t << endl;
 
   // reorder a matrix using Scotch
   // --------------------------------------
-  cout << "ICholByBlocks::graphviz:: reorder the matrix" << endl;
+  cout << "CholByBlocks::graphviz:: reorder the matrix" << endl;
   CrsMatrixBaseType UU("UU");
   CrsHierBaseType HH("HH");
   {
@@ -123,7 +123,7 @@ int main (int argc, char *argv[]) {
     GraphHelperType S(AA);
     S.computeOrdering(treecut, minblksize);
 
-    cout << "ICholByBlocks::graphviz:: "
+    cout << "CholByBlocks::graphviz:: "
          << "# of rows = " << S.NumRows() << ", # of blocks " << S.NumBlocks()
          << endl;
 
@@ -137,41 +137,41 @@ int main (int argc, char *argv[]) {
                                S.RangeVector(),
                                S.TreeVector());
 
-    cout << "ICholByBlocks::graphviz:: "
+    cout << "CholByBlocks::graphviz:: "
          << "# of nnz in Hier = " << HH.NumNonZeros() 
          << endl;
 
     t = timer.seconds();
   }
-  cout << "ICholByBlocks::graphviz:: reorder the matrix::time = " << t << endl;
+  cout << "CholByBlocks::graphviz:: reorder the matrix::time = " << t << endl;
 
-  // run ichol by blocks
+  // run chol by blocks
   // --------------------------------------
   {
     typename TaskFactoryType::policy_type policy;
     TaskFactoryType::setPolicy(&policy);
 
-    cout << "ICholByBlocks::graphviz:: factorize the matrix" << endl;
+    cout << "CholByBlocks::graphviz:: factorize the matrix" << endl;
     timer.reset();
 
     int r_val = 0;
     CrsHierTaskType H(&HH);
-    IChol<Uplo::Upper,AlgoIChol::ByBlocks>::
+    Chol<Uplo::Upper,AlgoChol::ByBlocks>::
       TaskFunctor<ForType,CrsHierTaskType>(H).apply(r_val);
 
     ofstream out;
     out.open(file_output);
     if (!out.good()) {
-      cout << "Error in open the file: ichol.gv" << endl;
+      cout << "Error in open the file: chol.gv" << endl;
       return -1;
     }
 
     TaskFactoryType::Policy().graphviz(out);
-    cout << "ICholByBlocks::graphviz:: size of queue = " << TaskFactoryType::Policy().size() << endl;
+    cout << "CholByBlocks::graphviz:: size of queue = " << TaskFactoryType::Policy().size() << endl;
     TaskFactoryType::Policy().clear();
 
     t = timer.seconds();
-    cout << "ICholByBlocks::graphviz:: factorize the matrix::time = " << t << endl;
+    cout << "CholByBlocks::graphviz:: factorize the matrix::time = " << t << endl;
   }
 
   // finalization

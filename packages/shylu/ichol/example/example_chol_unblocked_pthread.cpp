@@ -13,14 +13,14 @@ typedef int    size_type;
 
 typedef Kokkos::Threads exec_space;
 
-#include "example_ichol_unblocked.hpp"
+#include "example_chol_unblocked.hpp"
 
 using namespace Example;
 
 int main (int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp;
-  clp.setDocString("This example program demonstrates ICholUnblocked algorithm on Kokkos::Threads execution space.\n");
+  clp.setDocString("This example program demonstrates CholUnblocked algorithm on Kokkos::Threads execution space.\n");
 
   int nthreads = 1;
   clp.setOption("nthreads", &nthreads, "Number of threads");
@@ -61,15 +61,15 @@ int main (int argc, char *argv[]) {
     
     int variant = 0;
     if      (algorithm == "UnblockedOpt1")
-      variant = AlgoIChol::UnblockedOpt1;
+      variant = AlgoChol::UnblockedOpt1;
     else if (algorithm == "UnblockedOpt2")
-      variant = AlgoIChol::UnblockedOpt2;
+      variant = AlgoChol::UnblockedOpt2;
     else if (algorithm == "Dummy")
-      variant = AlgoIChol::Dummy;
+      variant = AlgoChol::Dummy;
     else      
       ERROR(">> Not supported algorithm variant");
     
-    r_val = exampleICholUnblocked
+    r_val = exampleCholUnblocked
       <value_type,ordinal_type,size_type,exec_space,void>
       (file_input, max_task_dependence, team_size, variant, verbose);
     

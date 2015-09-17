@@ -1,8 +1,8 @@
 #pragma once
-#ifndef __ICHOL_UNBLOCKED_DUMMY_HPP__
-#define __ICHOL_UNBLOCKED_DUMMY_HPP__
+#ifndef __CHOL_UNBLOCKED_DUMMY_HPP__
+#define __CHOL_UNBLOCKED_DUMMY_HPP__
 
-/// \file ichol_unblocked_opt1.hpp
+/// \file chol_unblocked_opt1.hpp
 /// \brief Test code for data parallel interface
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -18,7 +18,7 @@ namespace Example {
            typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
-  IChol<Uplo::Upper,AlgoIChol::Dummy>
+  Chol<Uplo::Upper,AlgoChol::Dummy>
   ::invoke(typename CrsExecViewType::policy_type &policy,
            const typename CrsExecViewType::policy_type::member_type &member,
            CrsExecViewType &A) {

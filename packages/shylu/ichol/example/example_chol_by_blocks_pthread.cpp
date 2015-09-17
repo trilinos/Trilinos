@@ -1,7 +1,7 @@
 #include <Kokkos_Core.hpp>
 
-#include <Kokkos_TaskPolicy.hpp>
-#include <impl/Kokkos_Serial_TaskPolicy.hpp>
+#include <Kokkos_Threads.hpp>
+#include <Threads/Kokkos_Threads_TaskPolicy.hpp>
 
 #include "Teuchos_CommandLineProcessor.hpp"
 
@@ -11,17 +11,19 @@ typedef double value_type;
 typedef int    ordinal_type;
 typedef int    size_type;
 
-#define __USE_FIXED_TEAM_SIZE__ 1
-typedef Kokkos::Serial exec_space;
+typedef Kokkos::Threads exec_space;
 
-#include "example_ichol_by_blocks.hpp"
+#include "example_chol_by_blocks.hpp"
 
 using namespace Example;
 
 int main (int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp;
-  clp.setDocString("This example program demonstrates ICholByBlocks algorithm on Kokkos::Serial execution space.\n");
+  clp.setDocString("This example program demonstrates CholByBlocks algorithm on Kokkos::Threads execution space.\n");
+
+  int nthreads = 1;
+  clp.setOption("nthreads", &nthreads, "Number of threads");
 
   int max_task_dependence = 10;
   clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
@@ -45,13 +47,14 @@ int main (int argc, char *argv[]) {
   
   int r_val = 0;
   {
-    Kokkos::initialize();
+    exec_space::initialize(nthreads);
+    exec_space::print_configuration(cout, true);
     
-    r_val = exampleICholByBlocks
+    r_val = exampleCholByBlocks
       <value_type,ordinal_type,size_type,exec_space,void>
       (file_input, max_task_dependence, team_size, verbose);
-    
-    Kokkos::finalize();
+
+    exec_space::finalize();
   }
 
   return r_val;

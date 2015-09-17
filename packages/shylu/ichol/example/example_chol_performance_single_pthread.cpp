@@ -13,14 +13,14 @@ typedef int    size_type;
 
 typedef Kokkos::Threads exec_space;
 
-#include "example_ichol_performance_single.hpp"
+#include "example_chol_performance_single.hpp"
 
 using namespace Example;
 
 int main (int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp;
-  clp.setDocString("This example program measure the performance of IChol algorithms on Kokkos::Threads execution space.\n");
+  clp.setDocString("This example program measure the performance of Chol algorithms on Kokkos::Threads execution space.\n");
 
   int nthreads = 0;
   clp.setOption("nthreads", &nthreads, "Number of threads");
@@ -87,7 +87,7 @@ int main (int argc, char *argv[]) {
     exec_space::initialize(nthreads, numa, core_per_numa);
     exec_space::print_configuration(cout, true);
 
-    r_val = exampleICholPerformanceSingle
+    r_val = exampleCholPerformanceSingle
       <value_type,ordinal_type,size_type,exec_space,void>
       (file_input,
        treecut,

@@ -1,8 +1,8 @@
 #pragma once
-#ifndef __ICHOL_BY_BLOCKS_SERIAL_HPP__
-#define __ICHOL_BY_BLOCKS_SERIAL_HPP__
+#ifndef __CHOL_BY_BLOCKS_SERIAL_HPP__
+#define __CHOL_BY_BLOCKS_SERIAL_HPP__
 
-/// \file ichol_right_by_blocks_serial.hpp
+/// \file chol_right_by_blocks_serial.hpp
 /// \brief Sparse incomplete Cholesky factorization by blocks.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 ///
@@ -23,7 +23,7 @@ namespace Example {
     value_type &aa = a.Value(0);
 
     int r_val = 0;
-    IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
+    Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>
       ::TaskFunctor<value_type>(aa).apply(r_val);
 
     return 0;

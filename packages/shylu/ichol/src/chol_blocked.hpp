@@ -1,8 +1,8 @@
 #pragma once
-#ifndef __ICHOL_BLOCKED_HPP__
-#define __ICHOL_BLOCKED_HPP__
+#ifndef __CHOL_BLOCKED_HPP__
+#define __CHOL_BLOCKED_HPP__
 
-/// \file ichol_blocked.hpp
+/// \file chol_blocked.hpp
 /// \brief Blocked incomplete Chloesky factorization.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 ///
@@ -20,7 +20,7 @@ namespace Example {
            typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
-  IChol<Uplo::Upper,AlgoIChol::Blocked>
+  Chol<Uplo::Upper,AlgoChol::Blocked>
   ::invoke(typename CrsExecViewType::policy_type &policy,
            const typename CrsExecViewType::policy_type::member_type &member,
            CrsExecViewType &A) {
@@ -45,7 +45,7 @@ namespace Example {
       A12.fillRowViewArray();      
       A22.fillRowViewArray();      
 
-      int r_val = IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
+      int r_val = Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>
         ::invoke<ParallelForType,CrsExecViewType>(policy, member, A11);
 
       if (r_val)

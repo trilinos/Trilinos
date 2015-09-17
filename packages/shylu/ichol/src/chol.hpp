@@ -1,8 +1,8 @@
 #pragma once
-#ifndef __ICHOL_HPP__
-#define __ICHOL_HPP__
+#ifndef __CHOL_HPP__
+#define __CHOL_HPP__
 
-/// \file ichol.hpp
+/// \file chol.hpp
 /// \brief Incomplete Cholesky factorization front interface.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -11,7 +11,7 @@ namespace Example {
   using namespace std;
 
   template<int ArgUplo, int ArgAlgo>
-  class IChol {
+  class Chol {
   public:
     static int blocksize;
 
@@ -45,17 +45,17 @@ namespace Example {
           _policy(ExecViewType::task_factory_type::Policy())
       { } 
 
-      string Label() const { return "IChol"; }
+      string Label() const { return "Chol"; }
       
       // task execution
       void apply(value_type &r_val) {
-        r_val = IChol::invoke<ParallelForType>(_policy, _policy.member_single(), 
+        r_val = Chol::invoke<ParallelForType>(_policy, _policy.member_single(), 
                                                _A);
       }
 
       // task-data execution
       void apply(const member_type &member, value_type &r_val) {
-        r_val = IChol::invoke<ParallelForType>(_policy, member, 
+        r_val = Chol::invoke<ParallelForType>(_policy, member, 
                                                _A);
       }
 
@@ -63,7 +63,7 @@ namespace Example {
 
   };
 
-  template<int ArgUplo, int ArgAlgo> int IChol<ArgUplo,ArgAlgo>::blocksize = 32;
+  template<int ArgUplo, int ArgAlgo> int Chol<ArgUplo,ArgAlgo>::blocksize = 32;
 }
 
 // basic utils
@@ -79,11 +79,11 @@ namespace Example {
 #include "herk.hpp"
 
 // right looking algorithm with upper triangular
-#include "ichol_unblocked_dummy.hpp"
-//#include "ichol_unblocked.hpp"
-#include "ichol_unblocked_opt1.hpp"
-#include "ichol_unblocked_opt2.hpp"
-#include "ichol_blocked.hpp"
-#include "ichol_by_blocks.hpp"
+#include "chol_unblocked_dummy.hpp"
+//#include "chol_unblocked.hpp"
+#include "chol_unblocked_opt1.hpp"
+#include "chol_unblocked_opt2.hpp"
+#include "chol_blocked.hpp"
+#include "chol_by_blocks.hpp"
 
 #endif
