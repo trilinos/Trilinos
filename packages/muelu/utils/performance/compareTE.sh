@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# bash script to compare Epetra and Tpetra timings from MueLu_ScalingTest.exe side-by-side.
+# bash script to compare Epetra and Tpetra timings from MueLu_Driver.exe side-by-side.
 #
 # syntax:
 #    compareTE.sh [-hasl] file1 file2

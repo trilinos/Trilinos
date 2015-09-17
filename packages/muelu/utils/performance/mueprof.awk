@@ -14,7 +14,7 @@ BEGIN {
     whichBlockToAnalyze=blockNumber; #passed in from shell script
     foundTimerBlock=0;
     foundTimersToReport=0;
-    possibleTotalLabels[1] = "ScalingTest: 2 - MueLu Setup";
+    possibleTotalLabels[1] = "Driver: 2 - MueLu Setup";
     possibleTotalLabels[2] = "MueLu: Hierarchy: Setup [(]total[)]";
     possibleTotalLabels[3] = "nalu MueLu preconditioner setup";
     possibleTotalLabels[4] = "nalu MueLu/tpetra preconditioner setup";

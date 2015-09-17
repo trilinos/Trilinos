@@ -170,8 +170,8 @@ int main(int argc, char *argv[]) {
     // =========================================================================
     std::ostringstream galeriStream;
     comm->barrier();
-    RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
-    RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
+    RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: S - Global Time")));
+    RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 1 - Matrix Build")));
 
     RCP<Matrix>      A;
     RCP<const Map>   map;
@@ -363,33 +363,34 @@ int main(int argc, char *argv[]) {
         // Preconditioner construction
         // =========================================================================
         comm->barrier();
-        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
+        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 2 - MueLu Setup")));
         bool useAMGX = mueluList.isParameter("use external multigrid package") && (mueluList.get<std::string>("use external multigrid package") == "amgx");
         RCP<Hierarchy> H;
+
 #ifdef HAVE_MUELU_AMGX
-        RCP<MueLu::AMGXOperator<SC,LO,GO,NO>> aH;
+        RCP<MueLu::AMGXOperator<SC,LO,GO,NO> > aH;
 #endif
-        for(int i = 0; i <=numRebuilds; i++){
-          if(lib == Xpetra::UseTpetra){
+        for (int i = 0; i <= numRebuilds; i++) {
+          if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
-            RCP<Tpetra::CrsMatrix<SC, LO, GO, NO>> tA = Utils::Op2NonConstTpetraCrs(A);
-            RCP<MueLu::TpetraOperator<SC, LO, GO, NO>> tH = MueLu::CreateTpetraPreconditioner(tA, mueluList, Utils::MV2NonConstTpetraMV(coordinates));
-            if(useAMGX){
+            RCP<Tpetra::CrsMatrix<SC, LO, GO, NO> >     tA = Utils::Op2NonConstTpetraCrs(A);
+            RCP<MueLu::TpetraOperator<SC, LO, GO, NO> > tH = MueLu::CreateTpetraPreconditioner(tA, mueluList, Utils::MV2NonConstTpetraMV(coordinates));
+
+            if (useAMGX) {
 #ifdef HAVE_MUELU_AMGX
-              aH = Teuchos::rcp_dynamic_cast<MueLu::AMGXOperator<SC, LO, GO, NO>>(tH);
+              aH = Teuchos::rcp_dynamic_cast<MueLu::AMGXOperator<SC, LO, GO, NO> >(tH);
 #endif
-            }
-            else{
+            } else {
               H = tH->GetHierarchy();
             }
-#endif //have_tpetra  
-          }
-          else{
+#endif // HAVE_MUELU_TPETRA
+
+          } else {
 #ifdef HAVE_MUELU_EPETRA
             RCP<Epetra_CrsMatrix> eA = Utils::Op2NonConstEpetraCrs(A);
             RCP<MueLu::EpetraOperator> eH = MueLu::CreateEpetraPreconditioner(eA, mueluList, Utils::MV2NonConstEpetraMV(coordinates));
             H = eH->GetHierarchy();
-#endif //have_epetra
+#endif
           }
         }
         comm->barrier();
@@ -399,7 +400,7 @@ int main(int argc, char *argv[]) {
         // System solution (Ax = b)
         // =========================================================================
         comm->barrier();
-        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
+        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3 - LHS and RHS initialization")));
 
         RCP<Vector> X = VectorFactory::Build(map);
         RCP<Vector> B = VectorFactory::Build(map);
@@ -418,7 +419,7 @@ int main(int argc, char *argv[]) {
         tm = Teuchos::null;
 
         if (writeMatricesOPT > -2) {
-          tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3.5 - Matrix output")));
+          tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.5 - Matrix output")));
           H->Write(writeMatricesOPT, writeMatricesOPT);
           tm = Teuchos::null;
         }
@@ -428,21 +429,20 @@ int main(int argc, char *argv[]) {
           // Do not perform a solve
 
         } else if (solveType == "standalone") {
-          tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
+          tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 4 - Fixed Point Solve")));
 
-          if(useAMGX){
+          if (useAMGX) {
 #if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
             aH->apply(*(Utils::MV2TpetraMV(B)), *(Utils::MV2NonConstTpetraMV(X)));
 #endif
-          }
-          else{
+          } else {
             H->IsPreconditioner(false);
             H->Iterate(*B, *X, maxIts);
           }
 
         } else if (solveType == "cg" || solveType == "gmres") {
 #ifdef HAVE_MUELU_BELOS
-          tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Belos Solve")));
+          tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 5 - Belos Solve")));
 
           // Operator and Multivector type that will be used with Belos
           typedef MultiVector          MV;
@@ -451,18 +451,17 @@ int main(int argc, char *argv[]) {
           // Define Operator and Preconditioner
           Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
           Teuchos::RCP<OP> belosPrec; // Turns a MueLu::Hierarchy object into a Belos operator
-          if(useAMGX){
+          if (useAMGX) {
 #if defined (HAVE_MUELU_AMGX) and defined (HAVE_MUELU_TPETRA)
             belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(aH)); // Turns a MueLu::Hierarchy object into a Belos operator
 #endif
-          }
-          else{
+          } else {
             H->IsPreconditioner(true);
             belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
           }
 
           // Construct a Belos LinearProblem object
-          RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
+          RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
           belosProblem->setRightPrec(belosPrec);
 
           bool set = belosProblem->setProblem();

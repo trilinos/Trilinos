@@ -563,6 +563,15 @@ evaluateFields(typename TRAITS::EvalData workset)
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
    //       may be more expensive!
 
+   // Interface worksets handle DOFs from two element blocks. The derivative
+   // offset for the other element block must be shifted by the derivative side
+   // of my element block.
+   int dos = 0;
+   if (this->wda.getDetailsIndex() == 1) {
+     // Get the DOF count for my element block.
+     dos = globalIndexer_->getElementBlockGIDCount(workset.details(0).block_id);
+   }
+
    // loop over the fields to be gathered
    for(std::size_t fieldIndex=0;
        fieldIndex<gatherFields_.size();fieldIndex++) {
@@ -594,7 +603,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
              // set the value and seed the FAD object
              field(worksetCellIndex,basis).val() = x[lid];
-             field(worksetCellIndex,basis).fastAccessDx(offset) = seed_value;
+             field(worksetCellIndex,basis).fastAccessDx(dos + offset) = seed_value;
            }
          }
       }

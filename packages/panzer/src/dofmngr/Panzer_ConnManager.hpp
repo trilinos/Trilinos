@@ -109,6 +109,12 @@ public:
      * \returns Vector of local element IDs.
      */
    virtual const std::vector<LocalOrdinal> & getNeighborElementBlock(const std::string & blockID) const = 0;
+
+   /** If element <code>el</code> has a pair across an interface, set
+     * <code>el_other</code> to that element and return true; otherwise, return
+     * false and do not modify <code>el_other</code>.
+     */
+   virtual bool getElementAcrossInterface(const LocalOrdinal& el, LocalOrdinal& el_other) const { return false; }
 };
 
 /** Pure abstract base class templated on the

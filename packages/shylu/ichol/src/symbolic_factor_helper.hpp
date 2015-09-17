@@ -317,6 +317,11 @@ namespace Example {
       return 0;
     }
 
+    int createNonZeroPattern(const int uplo,
+                             CrsMatrixType &F) {
+      return createNonZeroPattern(-1, uplo, F);
+    }
+
     ostream& showMe(ostream &os) const {
       streamsize prec = os.precision();
       os.precision(15);
