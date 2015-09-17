@@ -2482,7 +2482,7 @@ template<typename T, Index N>
 Vector<T, N>
 solve(Tensor<T, N> const & A, Vector<T, N> const & b)
 {
-  return dot(inverse(A), b);
+  return dot(inverse_full_pivot(A), b);
 }
 
 template<typename T, Index N, Index P>
@@ -2490,7 +2490,7 @@ Matrix<T, N, P>
 solve(Tensor<T, N> const & A, Matrix<T, N, P> const & B)
 {
   auto const
-  I = inverse(A);
+  I = inverse_full_pivot(A);
 
   auto
   X = B;
