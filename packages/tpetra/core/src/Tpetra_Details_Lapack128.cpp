@@ -40,14 +40,9 @@
 // @HEADER
 
 #include "Tpetra_Details_Lapack128.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_LAPACK.hpp"
 #ifdef HAVE_TPETRA_INST_FLOAT128
 #  include "Teuchos_BLAS.hpp"
 #endif // HAVE_TPETRA_INST_FLOAT128
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-#  include "Kokkos_ArithTraits.hpp"
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 
 #ifdef HAVE_TPETRA_INST_FLOAT128
@@ -335,8 +330,7 @@ namespace { // (anonymous)
   int
   ILADLC (const KokkosViewType& A)
   {
-    typename KokkosViewType::const_value_type zero =
-      Kokkos::Details::ArithTraits<typename KokkosViewType::non_const_value_type>::zero ();
+    typename KokkosViewType::const_value_type zero = 0.0;
 
     const int m = A.dimension_0 ();
     const int n = A.dimension_1 ();
@@ -363,8 +357,7 @@ namespace { // (anonymous)
   int
   ILADLR (const KokkosViewType& A)
   {
-    typename KokkosViewType::const_value_type zero =
-      Kokkos::Details::ArithTraits<typename KokkosViewType::non_const_value_type>::zero ();
+    typename KokkosViewType::const_value_type zero = 0.0;
 
     const int m = A.dimension_0 ();
     const int n = A.dimension_1 ();
@@ -487,8 +480,6 @@ LARFG (const int N, __float128* const ALPHA,
 {
   // This is actually LARFGP.
 
-  typedef Kokkos::Details::ArithTraits<__float128> KAT;
-
   const __float128 zero = 0.0;
   const __float128 one = 1.0;
   const __float128 two = 2.0;
@@ -518,7 +509,7 @@ LARFG (const int N, __float128* const ALPHA,
   } else { // general case (norm of x is nonzero)
     // This implements Fortran's two-argument SIGN intrinsic.
     __float128 beta = copysignq (LAPY2 (*ALPHA, xnorm), *ALPHA);
-    const __float128 smlnum = KAT::sfmin () / KAT::eps ();
+    const __float128 smlnum = FLT128_MIN / FLT128_EPSILON;
     int knt = 0;
 
     if (fabsq (beta) < smlnum) {
