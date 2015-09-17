@@ -386,11 +386,10 @@ void RBILUK<MatrixType>::compute ()
     initialize (); // Don't count this in the compute() time
   }
 
-  typedef typename GetLapackType<impl_scalar_type>::lapack_scalar_type LST;
-  typedef typename GetLapackType<impl_scalar_type>::lapack_type lapack_type;
+  typedef typename Tpetra::Details::GetLapackType<impl_scalar_type>::lapack_scalar_type LST;
+  typedef typename Tpetra::Details::GetLapackType<impl_scalar_type>::lapack_type lapack_type;
 
   lapack_type lapack;
-
 
   Teuchos::Time timer ("RBILUK::compute");
   { // Start timing
