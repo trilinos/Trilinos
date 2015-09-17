@@ -44,6 +44,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_Experimental_BlockView.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_BLAS.hpp"
 
 namespace {
 
