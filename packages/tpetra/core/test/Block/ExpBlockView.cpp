@@ -146,7 +146,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ExpBlockView, LAPY2, ST )
   {
     if (! Teuchos::ScalarTraits<ST>::isOrdinal) { // skip integer types
-      typename GetLapackType<ST>::lapack_type lapack;
+      typename Tpetra::Details::GetLapackType<ST>::lapack_type lapack;
       // Rough tolerance for rounding errors.  LAPY2 uses a different
       // formula, so I expect it to commit different rounding error.
       const auto tol = 10.0 * Teuchos::ScalarTraits<ST>::eps ();
@@ -199,8 +199,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ExpBlockView, LARFGP, ST )
   {
     if (! Teuchos::ScalarTraits<ST>::isOrdinal) { // skip integer types
-      //typedef typename Teuchos::ScalarTraits<ST>::magnitudeType MT;
-      typename GetLapackType<ST>::lapack_type lapack;
+      typename Tpetra::Details::GetLapackType<ST>::lapack_type lapack;
 
       const ST zero = Teuchos::ScalarTraits<ST>::zero ();
       const ST one = Teuchos::ScalarTraits<ST>::one ();
@@ -244,9 +243,9 @@ namespace {
 
   // FIXME (mfh 16 Sep 2015) Segfaults for __float128!
   //
-  TPETRA_INSTANTIATE_SL_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
+  //TPETRA_INSTANTIATE_SL_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
 
-  //TPETRA_INSTANTIATE_S_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP2 )
+  TPETRA_INSTANTIATE_S_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP2 )
 
 
 } // namespace (anonymous)

@@ -39,11 +39,18 @@
 // ************************************************************************
 // @HEADER
 
-#include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_Details_Lapack128.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_LAPACK.hpp"
+#ifdef HAVE_TPETRA_INST_FLOAT128
+#  include "Teuchos_BLAS.hpp"
+#endif // HAVE_TPETRA_INST_FLOAT128
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+#  include "Kokkos_ArithTraits.hpp"
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
+
 
 #ifdef HAVE_TPETRA_INST_FLOAT128
-#include "Kokkos_ArithTraits.hpp"
-
 namespace Tpetra {
 namespace Details {
 
@@ -575,6 +582,4 @@ LARFG (const int N, __float128* const ALPHA,
 
 } // namespace Details
 } // namespace Tpetra
-
 #endif // HAVE_TPETRA_INST_FLOAT128
-
