@@ -62,5 +62,28 @@ TEUCHOS_UNIT_TEST( TimeMonitor, someFunction_timed )
   TEST_EQUALITY(rtn, 5);
 }
 
+TEUCHOS_UNIT_TEST( TimeMonitor, formatting)
+{
+    using namespace Teuchos;
+
+    // Zero out previous timers
+    TimeMonitor::zeroOutTimers();
+
+    std::ostringstream out1, out2;
+    const std::string filter = "";
+
+    // Check std::fixed formatting
+    out1 << std::fixed;
+    TimeMonitor::report(out1, filter);
+    bool test1 = (out1.str().find("someFunction1    0.0000 (0)") != std::string::npos);
+    TEST_EQUALITY(test1, true);
+
+    // Check std::scientific formatting
+    out2 << std::scientific;
+    TimeMonitor::report(out2, filter);
+    bool test2 = (out2.str().find("someFunction1    0.0000e+00 (0)") != std::string::npos);
+    TEST_EQUALITY(test2, true);
+}
+
 
 } // namespace

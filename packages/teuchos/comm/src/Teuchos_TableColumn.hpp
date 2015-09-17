@@ -50,6 +50,8 @@
 #include "Teuchos_TableEntry.hpp"
 #include "Teuchos_Array.hpp"
 
+#include <iomanip>
+
 namespace Teuchos
 {
   /**
@@ -66,11 +68,11 @@ namespace Teuchos
     TableColumn(const Array<std::string>& vals);
 
     /** \brief  Form a column of double entries */
-    TableColumn(const Array<double>& vals, int precision);
+    TableColumn(const Array<double>& vals, int precision, const std::ios_base::fmtflags& flags);
 
     /** \brief  Form a column of compound entries written as "first(second)" */
     TableColumn(const Array<double>& first, const Array<double>& second,
-                int precision,
+                int precision, const std::ios_base::fmtflags& flags,
                 bool spaceBeforeParentheses);
 
     /** */
