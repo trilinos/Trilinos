@@ -241,12 +241,27 @@ namespace {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  // FIXME (mfh 16 Sep 2015) Segfaults for __float128!
+  // FIXME (mfh 17 Sep 2015) Fails for __float128!
   //
   //TPETRA_INSTANTIATE_SL_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
 
-  TPETRA_INSTANTIATE_S_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP2 )
+  // FIXME (mfh 17 Sep 2015) Define ETI / test macros for real Scalar
+  // types only.  Note that in LAPACK, _LAPY2 only exists for _ = S, D
+  // -- thus, real-valued Scalar types.
 
+  //TPETRA_INSTANTIATE_S_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP2 )
+
+#ifdef TPETRA_INST_FLOAT
+  UNIT_TEST_GROUP2( float )
+#endif // TPETRA_INST_FLOAT
+
+#ifdef TPETRA_INST_DOUBLE
+  UNIT_TEST_GROUP2( double )
+#endif // TPETRA_INST_DOUBLE
+
+#ifdef TPETRA_INST_FLOAT128
+  UNIT_TEST_GROUP2( __float128 )
+#endif // TPETRA_INST_FLOAT128
 
 } // namespace (anonymous)
 
