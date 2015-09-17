@@ -2354,7 +2354,6 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData)
       // get dimension
       dimension = 2;
       std::string line;
-      std::cout << "Scanning file 1x:\n" << std::endl;
       while(std::getline(file,line))
       {
         if( line.find("nz") != std::string::npos ||
