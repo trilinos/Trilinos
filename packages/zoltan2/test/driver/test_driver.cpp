@@ -462,7 +462,7 @@ int main(int argc, char *argv[])
   }
   
   // get the user input for all tests
-  UserInputForTests uinput(inputParameters,comm,true,true);
+  UserInputForTests uinput(inputParameters,comm);
   problems.pop();
   comm->barrier();
   

@@ -207,8 +207,7 @@ public:
    * about problem types.
    */
   UserInputForTests(const ParameterList &pList,
-                    const RCP<const Comm<int> > &c, bool debugInfo=false,
-                    bool distributeInput=true);
+                    const RCP<const Comm<int> > &c);
   
   /*! \brief Generate lists of random scalars.
    */
@@ -449,19 +448,29 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
 }
 
 UserInputForTests::UserInputForTests(const ParameterList &pList,
-                                     const RCP<const Comm<int> > &c,
-                                     bool debugInfo,
-                                     bool distributeInput):
-verbose_(debugInfo), tcomm_(c), havePamgenMesh(false),
+                                     const RCP<const Comm<int> > &c):
+tcomm_(c), havePamgenMesh(false),
 M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_(),
 #ifdef HAVE_EPETRA_DATA_TYPES
 ecomm_(), eM_(), eG_(),
 #endif
 chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
 {
+  
+  // get options
+  bool distributeInput = true, debugInfo = true;
+  
+  if(pList.isParameter("distribute input"))
+    distributeInput = pList.get<bool>("distribute input");
+  
+  if(pList.isParameter("debug"))
+    debugInfo = pList.get<bool>("debug");
+  this->verbose_ = debugInfo;
+  
   if(pList.isParameter("input file"))
   {
-
+    
+    // get input path
     string path(".");
     if(pList.isParameter("input path"))
       path = pList.get<string>("input path");
@@ -527,7 +536,7 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
     buildCrsMatrix(x, y, z, problemType, distributeInput);
     
   }else{
-    throw std::runtime_error("user options insufficient");
+    std::cerr << "Input file block undefined!" << std::endl;
   }
   
 #ifdef HAVE_EPETRA_DATA_TYPES

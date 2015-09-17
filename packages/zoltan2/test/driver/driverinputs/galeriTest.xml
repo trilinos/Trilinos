@@ -42,6 +42,10 @@
 <!-- 1. INPUT BLOCK DEFINITION -->
 
     <ParameterList name="InputParameters">
+
+        <Parameter name="debug" type="bool" value="False" />
+        <Parameter name="distribure input" type="bool" value="False" />
+
         <Parameter name="x" type="int" value="40"/>
         <Parameter name="y" type="int" value="60"/>
         <Parameter name="z" type="int" value="20"/>

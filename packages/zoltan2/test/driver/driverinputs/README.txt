@@ -38,6 +38,7 @@ A Galari generated block should contain the following parameters (ex. 2):
 
 An input source block defining a Galari generated data source may define a problem in 1, 2, or 3D.  The dimension of the problem is inferred by which coordinate parameters (x,y,z) have been defined, e.g., if only the x parameter has been defined then the problem is assumed to be 1D.
 
+Both types of input blocks also support optional boolean parameters: distribute input and debug. Both parameters default to “True” when undefined.  Distribute input is only applicable for Chaco and MatrixMarket input formats.  Debug determines the verbosity of the UserInputForTests output stream.
  
 ========================================================================== Section 2: Zoltan2 problem definition (REQUIRED)
 ==========================================================================

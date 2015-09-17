@@ -75,9 +75,15 @@
    The dimension is infered by which coordinate parameters
    (x,y,z) are defined, e.g. if only the x parameter is
    defined then the problem is assumed to be 1D.
+   
+   ** parameters: distribute input and debug are optional.
+      If not defined they defualt to True.
    #####################################################-->
   
   <ParameterList name="InputParameters">
+    <Parameter name="debug" type="bool" value="True/False"/>
+    <Parameter name="distribute input" type="bool" value="True/False"/>
+    
     <Parameter name="input path" type="string" value="PATH/TO/INPUT/DIRECTORY"/>
     <Parameter name="input file" type="string" value="FILE NAME (NO EXTENSION)"/>
     <Parameter name="file type" type="string" value="INPUT FILE TYPE"/>
@@ -88,6 +94,9 @@
   <!--  GALERI GRIDS MAY BE 1,2, OR 3D.-->
   <!--  FOR A 1D PROBLEM EXCLUDE x AND y PARAMETERS, ETC.-->
   <ParameterList name="InputParameters">
+    <Parameter name="debug" type="bool" value="True/False"/>
+    <Parameter name="distribute input" type="bool" value="True/False"/>
+    
     <Parameter name="x" type="int" value="##"/>
     <Parameter name="y" type="int" value="##"/>
     <Parameter name="z" type="int" value="##"/>
