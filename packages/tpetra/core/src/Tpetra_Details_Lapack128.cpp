@@ -39,44 +39,27 @@
 // ************************************************************************
 // @HEADER
 
-#include "Tpetra_Experimental_BlockView.hpp"
+#include "Tpetra_Details_Lapack128.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_LAPACK.hpp"
+#ifdef HAVE_TPETRA_INST_FLOAT128
+#  include "Teuchos_BLAS.hpp"
+#endif // HAVE_TPETRA_INST_FLOAT128
+#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
+#  include "Kokkos_ArithTraits.hpp"
+#endif // TPETRA_HAVE_KOKKOS_REFACTOR
+
 
 #ifdef HAVE_TPETRA_INST_FLOAT128
-#include "Kokkos_ArithTraits.hpp"
-
 namespace Tpetra {
 namespace Details {
-
-void
-Lapack128::
-SWAP (const int N, __float128* X, const int INCX, __float128* Y, const int INCY) const
-{
-  if (N <= 0) {
-    return;
-  }
-
-  int ix = 1;
-  int iy = 1;
-  if (INCX < 0) {
-    ix = (1-N) * INCX + 1;
-    iy = (1-N) * INCY + 1;
-  }
-
-  for (int i = 1; i <= N; ++i) {
-    __float128 temp = X[ix - 1];
-    X[ix - 1] = Y[iy - 1];
-    Y[iy - 1] = temp;
-    ix += INCX;
-    iy += INCY;
-  }
-}
 
 void
 Lapack128::
 GETRF (const int M, const int N, __float128 A[],
        const int LDA, int IPIV[], int* INFO) const
 {
-  //std::cerr << "GETRF: N = " << N << std::endl;
+  std::cerr << "GETRF: N = " << N << std::endl;
 
   Teuchos::BLAS<int, __float128> blas;
 
@@ -109,37 +92,35 @@ GETRF (const int M, const int N, __float128 A[],
 
   const int j_upperBound = std::min (M, N);
   for (int j = 1; j <= j_upperBound; ++j) {
-    //std::cerr << "  j = " << j << std::endl;
+    std::cerr << "  j = " << j << std::endl;
 
     // Find pivot and test for singularity.
-    const __float128* const A_jj = A + j*LDA + j;
+    __float128* const A_jj = A + (j-1)*LDA + (j-1);
 
-    //std::cerr << "  CALLING IAMAX" << std::endl;
-    const int jp = j - 1 + blas.IAMAX (M - j + 1, A_jj, 1);
-    IPIV[j] = jp;
+    std::cerr << "  CALLING IAMAX" << std::endl;
+    const int jp = (j - 1) + blas.IAMAX (M - j + 1, A_jj, 1);
+    IPIV[j - 1] = jp;
 
     const __float128* A_jp_j = A + jp + LDA*j;
     if (*A_jp_j != zero) {
       // Apply the interchange to columns 1:N.
-      __float128* const A_j1 = A + j + 1*LDA;
-      __float128* const A_jp_1 = A + jp + 1*LDA;
+      __float128* const A_j1 = A + (j - 1);
+      __float128* const A_jp_1 = A + (jp - 1);
 
       if (jp != j) {
-        // mfh 05 Sep 2015: Teuchos::BLAS doesn't implement SWAP
-        // (e.g., DSWAP), so I'll roll my own here.
-        SWAP (N, A_j1, LDA, A_jp_1, LDA);
+        blas.SWAP (N, A_j1, LDA, A_jp_1, LDA);
       }
 
       // Compute elements J+1:M of J-th column.
       if (j < M) {
-        __float128* const A_jj = A + j + j*LDA;
-        __float128* const A_j1_j = A + j*LDA + (j-1);
+            __float128* const A_j1_j = A + j + (j-1)*LDA;
 
         if (fabsq (*A_jj) >= sfmin) {
           blas.SCAL (M-j, one / *A_jj, A_j1_j, 1);
         } else {
           for (int i = 1; i <= M-j; ++i) {
-            A[j + i + j * LDA] /= *A_jj;
+            __float128* const A_jpi_j = A + (j+i-1) + (j-1)*LDA;
+            *A_jpi_j /= *A_jj;
           }
         }
       }
@@ -148,12 +129,12 @@ GETRF (const int M, const int N, __float128 A[],
     }
 
     if (j < std::min (M, N)) {
-      //std::cerr << "  UPDATE TRAILING SUBMATRIX" << std::endl;
+      std::cerr << "  UPDATE TRAILING SUBMATRIX" << std::endl;
 
       // Update trailing submatrix.
-      const __float128* A_j1_j = A + (j+1) + j*LDA;
-      const __float128* A_j_j1 = A + j + (j+1)*LDA;
-      __float128* A_j1_j1 = A + (j+1) + (j+1)*LDA;
+      const __float128* A_j1_j = A + j + (j-1)*LDA;
+      const __float128* A_j_j1 = A + (j-1) + j*LDA;
+      __float128* A_j1_j1 = A + j + j*LDA;
       blas.GER (M-j, N-j, -one, A_j1_j, 1, A_j_j1, LDA, A_j1_j1, LDA);
     }
   }
@@ -166,6 +147,8 @@ LASWP (const int N, __float128 A[], const int LDA, const int K1,
 {
   int i, i1, i2, inc, ip, ix, ix0, j, k, n32;
   __float128 temp;
+
+  // Interchange row I with row IPIV(I) for each of rows K1 through K2.
 
   if (INCX > 0) {
     ix0 = K1;
@@ -192,12 +175,12 @@ LASWP (const int N, __float128 A[], const int LDA, const int K1,
       // which can iterate over a range in either direction
       // without particular fuss about the end condition.
       for (i = i1; (inc > 0) ? (i <= i2) : (i >= i2); i += inc) {
-        ip = IPIV[ix];
+        ip = IPIV[ix-1];
         if (ip != i) {
           for (k = j; k <= j+31; ++k) {
-            temp = A[i + k*LDA]; //  temp = a( i, k )
-            A[i + k*LDA] = A[ip + k*LDA]; // a( i, k ) = a( ip, k )
-            A[ip + k*LDA] = temp; // a( ip, k ) = temp
+            temp = A[(i-1) + (k-1)*LDA]; //  temp = a( i, k )
+            A[(i-1) + (k-1)*LDA] = A[(ip-1) + (k-1)*LDA]; // a( i, k ) = a( ip, k )
+            A[(ip-1) + (k-1)*LDA] = temp; // a( ip, k ) = temp
           }
         }
         ix = ix + INCX;
@@ -212,48 +195,17 @@ LASWP (const int N, __float128 A[], const int LDA, const int K1,
     // which can iterate over a range in either direction
     // without particular fuss about the end condition.
     for (i = i1; (inc > 0) ? (i <= i2) : (i >= i2); i += inc) {
-      ip = IPIV[ix];
+      ip = IPIV[ix-1];
       if (ip != i) {
         for (k = n32; k <= N; ++k) {
-          temp = A[i + k*LDA]; //  temp = a( i, k )
-          A[i + k*LDA] = A[ip + k*LDA]; // a( i, k ) = a( ip, k )
-          A[ip + k*LDA] = temp; // a( ip, k ) = temp
+          temp = A[(i-1) + (k-1)*LDA]; //  temp = a( i, k )
+          A[(i-1) + (k-1)*LDA] = A[(ip-1) + (k-1)*LDA]; // a( i, k ) = a( ip, k )
+          A[(ip-1) + (k-1)*LDA] = temp; // a( ip, k ) = temp
         }
       }
       ix = ix + INCX;
     }
   }
-
-#if 0
-  for (int j = 0; j < N; ++j) {
-    if (INCX > 0) {
-      int pivInd = K1 - 1;
-      for (int i = K1 - 1; i < K2; ++i, pivInd += INCX) {
-        const int ip = IPIV[pivInd];
-        if (ip != i+1) {
-          for (int k = 0; k < N; ++k) {
-            __float128* const A_ik = A + i + k*LDA;
-            __float128* const A_ip_k = A + ip + k*LDA;
-            std::swap (*A_ik, *A_ip_k);
-          }
-        }
-      }
-    }
-    else { // apply pivots in reverse order
-      int pivInd = (K2-1) * INCX;
-      for (int i = K2 - 1; i >= K1 - 1; --i, pivInd -= INCX) {
-        const int ip = IPIV[pivInd];
-        if (ip != i+1) {
-          for (int k = 0; k < N; ++k) {
-            __float128* const A_ik = A + i + k*LDA;
-            __float128* const A_ip_k = A + ip + k*LDA;
-            std::swap (*A_ik, *A_ip_k);
-          }
-        }
-      }
-    }
-  }
-#endif // 0
 }
 
 void
@@ -273,7 +225,7 @@ GETRS (const char TRANS, const int N, const int NRHS,
        const __float128 A[], const int LDA, const int IPIV[],
        __float128 B[], const int LDB, int* INFO) const
 {
-  //std::cerr << "GETRS: N = " << N << std::endl;
+  std::cerr << "GETRS: N = " << N << std::endl;
 
   Teuchos::BLAS<int, __float128> blas;
 
@@ -316,14 +268,14 @@ GETRS (const char TRANS, const int N, const int NRHS,
 
   if (notran) { // No transpose; solve AX=B
     // Apply row interchanges to the right-hand sides.
-    //std::cerr << "CALLING LASWP" << std::endl;
+    std::cerr << "CALLING LASWP" << std::endl;
     LASWP (NRHS, B, LDB, 1, N, IPIV, 1);
     // Solve L*X = B, overwriting B with X.
-    //std::cerr << "CALLING TRSM (1)" << std::endl;
+    std::cerr << "CALLING TRSM (1)" << std::endl;
     blas.TRSM (LEFT_SIDE, LOWER_TRI, NO_TRANS, UNIT_DIAG, N, NRHS,
                one, A, LDA, B, LDB);
     // Solve U*X = B, overwriting B with X.
-    //std::cerr << "CALLING TRSM (2)" << std::endl;
+    std::cerr << "CALLING TRSM (2)" << std::endl;
     blas.TRSM (LEFT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG, N, NRHS,
                one, A, LDA, B, LDB);
   }
@@ -332,24 +284,24 @@ GETRS (const char TRANS, const int N, const int NRHS,
       TRANS : CONJ_TRANS;
 
     // Solve U^{T,H}*X = B, overwriting B with X.
-    //std::cerr << "CALLING TRSM (1)" << std::endl;
+    std::cerr << "CALLING TRSM (1)" << std::endl;
     blas.TRSM (LEFT_SIDE, UPPER_TRI, transposeMode, NON_UNIT_DIAG, N, NRHS,
                one, A, LDA, B, LDB);
     // Solve L^{T,H}*X = B, overwriting B with X.
-    //std::cerr << "CALLING TRSM (2)" << std::endl;
+    std::cerr << "CALLING TRSM (2)" << std::endl;
     blas.TRSM (LEFT_SIDE, LOWER_TRI, transposeMode, UNIT_DIAG, N, NRHS,
                one, A, LDA, B, LDB);
-    //std::cerr << "CALLING LASWP" << std::endl;
+    std::cerr << "CALLING LASWP" << std::endl;
     // Apply row interchanges to the solution vectors.
     LASWP (NRHS, B, LDB, 1, N, IPIV, -1);
   }
 
-  //std::cerr << "DONE WITH GETRS" << std::endl;
+  std::cerr << "DONE WITH GETRS" << std::endl;
 }
 
 __float128
 Lapack128::
-LAPY2 (const __float128& x, const __float128& y)
+LAPY2 (const __float128& x, const __float128& y) const
 {
   const __float128 xabs = fabsq (x);
   const __float128 yabs = fabsq (y);
@@ -367,8 +319,173 @@ LAPY2 (const __float128& x, const __float128& y)
 
 void
 Lapack128::
+ORM2R (const char side, const char trans,
+       const int m, const int n, const int k,
+       const __float128 A[], const int lda,
+       const __float128* const tau,
+       __float128 C[], const int ldc,
+       __float128 work[], int* const info) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
+}
+
+namespace { // (anonymous)
+
+  template<class KokkosViewType>
+  int
+  ILADLC (const KokkosViewType& A)
+  {
+    typename KokkosViewType::const_value_type zero =
+      Kokkos::Details::ArithTraits<typename KokkosViewType::non_const_value_type>::zero ();
+
+    const int m = A.dimension_0 ();
+    const int n = A.dimension_1 ();
+
+    // Quick test for the common case where one corner is non-zero.
+    if (n == 0) {
+      return n;
+    } else if (A(0, n-1) != zero || A(m-1, n-1) != zero) {
+      return n;
+    } else {
+      // Now scan each column from the end, returning with the first non-zero.
+      for (int j = n; j > 0; --j) {
+        for (int i = 1; i <= m; ++i) {
+          if (A(i-1, j-1) != zero) {
+            return j;
+          }
+        }
+      }
+      return 0;
+    }
+  }
+
+  template<class KokkosViewType>
+  int
+  ILADLR (const KokkosViewType& A)
+  {
+    typename KokkosViewType::const_value_type zero =
+      Kokkos::Details::ArithTraits<typename KokkosViewType::non_const_value_type>::zero ();
+
+    const int m = A.dimension_0 ();
+    const int n = A.dimension_1 ();
+
+    // Quick test for the common case where one corner is non-zero.
+    if (m == 0) {
+      return m;
+    } else if (A(m-1, 0) != zero || A(m-1, n-1) != zero) {
+      return m;
+    } else {
+      // Scan up each column tracking the last zero row seen.
+      int lastZeroRow = 0;
+      for (int j = 1; j <= n; ++j) {
+        int i = m;
+        while (A(std::max (i, 1) - 1, j - 1) == zero && i >= 1) {
+          i--;
+        }
+        lastZeroRow = std::max (lastZeroRow, i);
+      }
+      return lastZeroRow;
+    }
+  }
+
+  int
+  ILADLC_C (const int m, const int n, const __float128 A[], const int lda)
+  {
+    Kokkos::View<const __float128**, Kokkos::Serial,
+                 Kokkos::MemoryUnmanaged> A_kokkos (A, lda, n);
+    auto A_mn = Kokkos::subview (A_kokkos, std::make_pair (0, m),
+                                 std::make_pair (0, n));
+    return ILADLC (A_mn);
+  }
+
+  int
+  ILADLR_C (const int m, const int n, const __float128 A[], const int lda)
+  {
+    Kokkos::View<const __float128**, Kokkos::Serial,
+                 Kokkos::MemoryUnmanaged> A_kokkos (A, lda, n);
+    auto A_mn = Kokkos::subview (A_kokkos, std::make_pair (0, m),
+                                 std::make_pair (0, n));
+    return ILADLR (A_mn);
+  }
+} // namespace (anonymous)
+
+void
+Lapack128::
+LARF (const char side,
+      const int m,
+      const int n,
+      const __float128 v[],
+      const int incv,
+      const __float128 tau,
+      __float128 C[],
+      const int ldc,
+      __float128 work[]) const
+{
+  const __float128 zero = 0.0;
+  const __float128 one = 1.0;
+  Teuchos::BLAS<int, __float128> blas;
+  const bool applyLeft = (side == 'L');
+  int lastv = 0;
+  int lastc = 0;
+  int i = 0;
+
+  if (tau != zero) {
+    // Set up variables for scanning V.  LASTV begins pointing to the end of V.
+    if (applyLeft) {
+      lastv = m;
+    } else {
+      lastv = n;
+    }
+    if (incv > 0) {
+      i = 1 + (lastv - 1) * incv;
+    } else {
+      i = 1;
+    }
+    // Look for the last non-zero row in V.
+    while (lastv > 0 && v[i-1] == zero) {
+      lastv = lastv - 1;
+      i = i - incv;
+    }
+    if (applyLeft) {
+      // Scan for the last non-zero column in C(1:lastv,:).
+      lastc = ILADLC_C (lastv, n, C, ldc);
+    } else {
+      // Scan for the last non-zero row in C(:,1:lastv).
+      lastc = ILADLR_C (m, lastv, C, ldc);
+    }
+  }
+
+  // Note that lastc == 0 renders the BLAS operations null; no special
+  // case is needed at this level.
+  if (applyLeft) {
+    // Form  H * C
+    if (lastv > 0) {
+      // w(1:lastc,1) := C(1:lastv,1:lastc)**T * v(1:lastv,1)
+      blas.GEMV (Teuchos::TRANS, lastv, lastc, one, C, ldc, v, incv,
+                 zero, work, 1);
+      // C(1:lastv,1:lastc) := C(...) - v(1:lastv,1) * w(1:lastc,1)**T
+      blas.GER (lastv, lastc, -tau, v, incv, work, 1, C, ldc);
+    }
+  }
+  else {
+    // Form  C * H
+    if (lastv > 0) {
+      // w(1:lastc,1) := C(1:lastc,1:lastv) * v(1:lastv,1)
+      blas.GEMV (Teuchos::NO_TRANS, lastc, lastv, one, C, ldc,
+                 v, incv, zero, work, 1);
+      // C(1:lastc,1:lastv) := C(...) - w(1:lastc,1) * v(1:lastv,1)**T
+      blas.GER (lastc, lastv, -tau, work, 1, v, incv, C, ldc);
+    }
+  }
+
+  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
+}
+
+
+void
+Lapack128::
 LARFG (const int N, __float128* const ALPHA,
-       __float128 X[], const int INCX, __float128* const TAU)
+       __float128 X[], const int INCX, __float128* const TAU) const
 {
   // This is actually LARFGP.
 
@@ -465,6 +582,4 @@ LARFG (const int N, __float128* const ALPHA,
 
 } // namespace Details
 } // namespace Tpetra
-
 #endif // HAVE_TPETRA_INST_FLOAT128
-

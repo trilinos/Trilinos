@@ -72,8 +72,7 @@ namespace {
     const ST zero = static_cast<ST> (0.0);
     const ST one = static_cast<ST> (1.0);
     const LO minBlockSize = 1; // 1x1 "blocks" should also work
-    //const LO maxBlockSize = 32;// SEGFAULT
-    const LO maxBlockSize = 16;// TEST FAILS
+    const LO maxBlockSize = 32;
 
     // Memory pool for the LittleBlock instances.
     Teuchos::Array<ST> blockPool (maxBlockSize * maxBlockSize);
@@ -119,11 +118,35 @@ namespace {
     }
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ExpBlockView, SWAP, ST )
+  {
+    if (! Teuchos::ScalarTraits<ST>::isOrdinal) { // skip integer types
+      Teuchos::BLAS<int, ST> blas;
+      const int n = 6;
+      Teuchos::Array<ST> x (n), y (n), x_cpy (n), y_cpy (n);
+      int incx, incy;
+
+      incx = 1;
+      incy = 1;
+      for (int i = 0; i < n; ++i) {
+        x[i] = static_cast<ST> (i + 1);
+        x_cpy[i] = static_cast<ST> (i + 1);
+        y[i] = 2 * static_cast<ST> (i + 1);
+        y_cpy[i] = 2 * static_cast<ST> (i + 1);
+      }
+      blas.SWAP (n, x.getRawPtr (), incx, y.getRawPtr (), incy);
+      TEST_COMPARE_ARRAYS( x, y_cpy );
+      TEST_COMPARE_ARRAYS( y, x_cpy );
+
+      // FIXME (mfh 16 Sep 2015) Fix the negative and strided INCX and
+      // INCY cases.
+    }
+  }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ExpBlockView, LAPY2, ST )
   {
     if (! Teuchos::ScalarTraits<ST>::isOrdinal) { // skip integer types
-      typename GetLapackType<ST>::lapack_type lapack;
+      typename Tpetra::Details::GetLapackType<ST>::lapack_type lapack;
       // Rough tolerance for rounding errors.  LAPY2 uses a different
       // formula, so I expect it to commit different rounding error.
       const auto tol = 10.0 * Teuchos::ScalarTraits<ST>::eps ();
@@ -176,8 +199,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ExpBlockView, LARFGP, ST )
   {
     if (! Teuchos::ScalarTraits<ST>::isOrdinal) { // skip integer types
-      typedef typename Teuchos::ScalarTraits<ST>::magnitudeType MT;
-      typename GetLapackType<ST>::lapack_type lapack;
+      typename Tpetra::Details::GetLapackType<ST>::lapack_type lapack;
 
       const ST zero = Teuchos::ScalarTraits<ST>::zero ();
       const ST one = Teuchos::ScalarTraits<ST>::one ();
@@ -213,15 +235,33 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ExpBlockView, SolveIdentity, SCALAR, LOCAL_ORDINAL )
 
 #define UNIT_TEST_GROUP2( SCALAR ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, SWAP, SCALAR ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, LAPY2, SCALAR ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ExpBlockView, LARFGP, SCALAR )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
+  // FIXME (mfh 17 Sep 2015) Fails for __float128!
+  //
   //TPETRA_INSTANTIATE_SL_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP )
 
-  TPETRA_INSTANTIATE_S_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP2 )
+  // FIXME (mfh 17 Sep 2015) Define ETI / test macros for real Scalar
+  // types only.  Note that in LAPACK, _LAPY2 only exists for _ = S, D
+  // -- thus, real-valued Scalar types.
 
+  //TPETRA_INSTANTIATE_S_NO_ORDINAL_SCALAR( UNIT_TEST_GROUP2 )
+
+#ifdef TPETRA_INST_FLOAT
+  UNIT_TEST_GROUP2( float )
+#endif // TPETRA_INST_FLOAT
+
+#ifdef TPETRA_INST_DOUBLE
+  UNIT_TEST_GROUP2( double )
+#endif // TPETRA_INST_DOUBLE
+
+#ifdef TPETRA_INST_FLOAT128
+  UNIT_TEST_GROUP2( __float128 )
+#endif // TPETRA_INST_FLOAT128
 
 } // namespace (anonymous)
 

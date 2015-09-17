@@ -207,8 +207,7 @@ public:
    * about problem types.
    */
   UserInputForTests(const ParameterList &pList,
-                    const RCP<const Comm<int> > &c, bool debugInfo=false,
-                    bool distributeInput=true);
+                    const RCP<const Comm<int> > &c);
   
   /*! \brief Generate lists of random scalars.
    */
@@ -381,7 +380,7 @@ private:
   
   
   // Read a pamgen mesh
-  void readPamgenMeshFile(string path, string testData, int dimension = 3);
+  void readPamgenMeshFile(string path, string testData);
   void setPamgenAdjacencyGraph();
   void setPamgenCoordinateMV();
 };
@@ -449,19 +448,29 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
 }
 
 UserInputForTests::UserInputForTests(const ParameterList &pList,
-                                     const RCP<const Comm<int> > &c,
-                                     bool debugInfo,
-                                     bool distributeInput):
-verbose_(debugInfo), tcomm_(c), havePamgenMesh(false),
+                                     const RCP<const Comm<int> > &c):
+tcomm_(c), havePamgenMesh(false),
 M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_(),
 #ifdef HAVE_EPETRA_DATA_TYPES
 ecomm_(), eM_(), eG_(),
 #endif
 chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
 {
+  
+  // get options
+  bool distributeInput = true, debugInfo = true;
+  
+  if(pList.isParameter("distribute input"))
+    distributeInput = pList.get<bool>("distribute input");
+  
+  if(pList.isParameter("debug"))
+    debugInfo = pList.get<bool>("debug");
+  this->verbose_ = debugInfo;
+  
   if(pList.isParameter("input file"))
   {
-
+    
+    // get input path
     string path(".");
     if(pList.isParameter("input path"))
       path = pList.get<string>("input path");
@@ -484,12 +493,7 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
     // read the input file
     switch (file_format) {
       case GEOMGEN: readGeometricGenTestData(path,testData); break;
-      case PAMGEN:
-      {
-        int dimension = 3;
-        if(pList.isParameter("dimension")) dimension = pList.get<int>("dimension");
-        readPamgenMeshFile(path,testData,dimension);
-      } break;
+      case PAMGEN: readPamgenMeshFile(path,testData); break;
       case CHACO: readZoltanTestData(path, testData, distributeInput); break;
       default: readMatrixMarketFile(path, testData); break;
     }
@@ -527,7 +531,7 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
     buildCrsMatrix(x, y, z, problemType, distributeInput);
     
   }else{
-    throw std::runtime_error("user options insufficient");
+    std::cerr << "Input file block undefined!" << std::endl;
   }
   
 #ifdef HAVE_EPETRA_DATA_TYPES
@@ -1230,6 +1234,10 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
   }
   
   if (verbose_ && tcomm_->getRank() == 0){
+    
+    std::cout << "Matrix is " << (distributeInput ? "" : "not");
+    std::cout << "distributed." << endl;
+    
     std::cout << "UserInputForTests, Create matrix with " << problemType;
     std::cout << " (and " << xdim;
     if (zdim > 0)
@@ -1240,6 +1248,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
       std::cout << "x 1 x 1";
     
     std::cout << " mesh)" << std::endl;
+    
   }
   
   try{
@@ -2309,7 +2318,7 @@ int UserInputForTests::chaco_input_geom(
 }
 
 // Pamgen Reader
-void UserInputForTests::readPamgenMeshFile(string path, string testData, int dimension)
+void UserInputForTests::readPamgenMeshFile(string path, string testData)
 {
   int rank = this->tcomm_->getRank();
   if (verbose_ && tcomm_->getRank() == 0)
@@ -2317,6 +2326,7 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData, int dim
   
   size_t len;
   std::fstream file;
+  int dimension;
   if (rank == 0){
     // set file name
     std::ostringstream meshFileName;
@@ -2340,10 +2350,27 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData, int dim
       file.seekg (0,file.end);
       len = file.tellg();
       file.seekg (0);
+      
+      // get dimension
+      dimension = 2;
+      std::string line;
+      while(std::getline(file,line))
+      {
+        if( line.find("nz") != std::string::npos ||
+           line.find("nphi") != std::string::npos)
+        {
+          dimension = 3;
+          break;
+        }
+      }
+      
+      file.clear();
+      file.seekg(0, ios::beg);
     }
   }
   
   // broadcast the file size
+  this->tcomm_->broadcast(0,sizeof(int), (char *)&dimension);
   this->tcomm_->broadcast(0,sizeof(size_t),(char *)&len);
   this->tcomm_->barrier();
   
@@ -2435,65 +2462,59 @@ void UserInputForTests::setPamgenCoordinateMV()
 
 void UserInputForTests::setPamgenAdjacencyGraph()
 {
-  int rank = this->tcomm_->getRank();
-  if(rank == 0) cout << "Making a graph from our pamgen mesh...." << endl;
+//  int rank = this->tcomm_->getRank();
+//  if(rank == 0) cout << "Making a graph from our pamgen mesh...." << endl;
   
-  typedef Tpetra::Vector<>::local_ordinal_type scalar_type;
-//  typedef Tpetra::Map<> map_type;
-  typedef Tpetra::Vector<>::local_ordinal_type local_ordinal_type;
-  typedef Tpetra::Vector<>::global_ordinal_type global_ordinal_type;
-  typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, znode_t> crs_matrix_type;
+  // Define Types
+  typedef zlno_t lno_t;
+  typedef zgno_t gno_t;
+  typedef zscalar_t scalar_t;
+  typedef  Tpetra::Map<zlno_t, zgno_t, znode_t> map_t;
   
-  typedef  Tpetra::Map<zlno_t, zgno_t, znode_t> map_type;
   // get info for setting up map
-  zlno_t local_nodes, local_els;
-  local_nodes = pamgen_mesh->num_nodes;
-  local_els = pamgen_mesh->num_elem;
+  size_t local_nodes = (size_t)this->pamgen_mesh->num_nodes;
+  size_t local_els = (size_t)this->pamgen_mesh->num_elem;
   
-  zgno_t global_nodes, global_els;
-  global_nodes = pamgen_mesh->num_nodes_global;
-  global_els = pamgen_mesh->num_elems_global;
-  
+  size_t global_els = (size_t)this->pamgen_mesh->num_elems_global; // global rows
+  size_t global_nodes = (size_t)this->pamgen_mesh->num_nodes_global; //global columns
   // make map with global elements assigned to this mesh
-  const zgno_t idxBase = 0;
+  // make range map
+//  if(rank == 0) cout << "Building Rowmap: " << endl;
+  RCP<const map_t> rowMap = rcp(new map_t(global_els,0,this->tcomm_));
+  RCP<const map_t> rangeMap = rowMap;
+  
+  // make domain map
+  RCP<const map_t> domainMap = rcp(new map_t(global_nodes,0,this->tcomm_));
+  
+  // make the element-node adjacency matrix
+  Teuchos::RCP<tcrsMatrix_t> C = rcp(new tcrsMatrix_t(rowMap,0));
+  
   
   Array<zgno_t> g_el_ids(local_els);
   for (Array<zgno_t>::size_type k = 0; k < local_els; ++k) {
     g_el_ids[k] = pamgen_mesh->global_element_numbers[k]-1;
   }
-  RCP<const map_type> range_map = rcp(new map_type(global_els,
-                                                   g_el_ids,
-                                                   idxBase,
-                                                   this->tcomm_));
   
-  // make domain map
   Array<zgno_t> g_node_ids(local_nodes);
   for (Array<zgno_t>::size_type k = 0; k < local_nodes; ++k) {
     g_node_ids[k] = pamgen_mesh->global_node_numbers[k]-1;
   }
-  RCP<const map_type> domain_map = rcp(new map_type(global_nodes,
-                                                    g_node_ids,
-                                                    idxBase,
-                                                    this->tcomm_));
   
-  // make a connectivity matrix
-  Teuchos::RCP<tcrsMatrix_t> C = rcp(new tcrsMatrix_t(range_map,domain_map,0));
+  int blks = this->pamgen_mesh->num_elem_blk;
   
-  
-  // write all nodes per el to matrix
-  int blks = pamgen_mesh->num_elem_blk;
   zlno_t el_no = 0;
   zscalar_t one = static_cast<zscalar_t>(1);
+  
+//  if(rank == 0) cout << "Writing C... " << endl;
   for(int i = 0; i < blks; i++)
   {
-    int el_per_block = pamgen_mesh->elements[i];
-    int nodes_per_el = pamgen_mesh->nodes_per_element[i];
-    int * connect = pamgen_mesh->elmt_node_linkage[i];
+    int el_per_block = this->pamgen_mesh->elements[i];
+    int nodes_per_el = this->pamgen_mesh->nodes_per_element[i];
+    int * connect = this->pamgen_mesh->elmt_node_linkage[i];
     
     for(int j = 0; j < el_per_block; j++)
     {
-      const zgno_t gid = g_el_ids[el_no];
-      //      const zgno_t gid = domain_map->getGlobalElement(el_no);
+      const zgno_t gid = static_cast<gno_t>(g_el_ids[el_no]);
       for(int k = 0; k < nodes_per_el; k++)
       {
         int g_node_i = g_node_ids[connect[j*nodes_per_el+k]-1];
@@ -2505,25 +2526,21 @@ void UserInputForTests::setPamgenAdjacencyGraph()
     }
   }
   
-  C->fillComplete(domain_map, range_map);
+  C->fillComplete(domainMap, rangeMap);
   
-  // Matrix multiply by Transpose to get El connectivity
-  RCP<tcrsMatrix_t> A = rcp(new tcrsMatrix_t(range_map,0));
+  
+  // Compute product C*C'
+//  if(rank == 0) cout << "Compute Multiplication C... " << endl;
+  RCP<tcrsMatrix_t> A = rcp(new tcrsMatrix_t(rowMap,0));
   Tpetra::MatrixMatrix::Multiply(*C, false, *C, true, *A);
-//  if(rank == 0) cout << "Completed Multiply" << endl;
-//  if(rank == 0)
-//  {
-//    cout << "C: \n" << endl;
-//    C->print(std::cout);
-//    
-//    cout <<"\nA:\n" << endl;
-//    A->print(std::cout);
-//  }
-  
+
   // remove entris not adjacent
-//  if(rank == 0) cout << "modify adjacency graph..." << endl;
-  this->M_ = rcp(new tcrsMatrix_t(range_map,0));
-  for(zgno_t gid : range_map->getNodeElementList())
+  // make graph
+//  if(rank == 0) cout << "Writing M_... " << endl;
+  this->M_ = rcp(new tcrsMatrix_t(rowMap,0));
+  
+//  if(rank == 0) cout << "\nSetting graph of connectivity..." << endl;
+  for(zgno_t gid : rowMap->getNodeElementList())
   {
     size_t numEntriesInRow = A->getNumEntriesInGlobalRow (gid);
     Array<zscalar_t> rowvals (numEntriesInRow);
@@ -2534,19 +2551,21 @@ void UserInputForTests::setPamgenAdjacencyGraph()
     Array<zgno_t> mod_rowinds;
     A->getGlobalRowCopy (gid, rowinds (), rowvals (), numEntriesInRow);
     for (size_t i = 0; i < numEntriesInRow; i++) {
-//      if (static_cast<int>(rowvals[i]) == 2*(pamgen_mesh->num_dim-1))
+//      if (rowvals[i] == 2*(this->pamgen_mesh->num_dim-1))
 //      {
-      if (static_cast<int>(rowvals[i]) >= 1)
+      if (rowvals[i] >= 1)
       {
-        mod_rowvals.push_back(1);
+        mod_rowvals.push_back(one);
         mod_rowinds.push_back(rowinds[i]);
       }
     }
-    this->M_->insertGlobalValues(gid, mod_rowinds, mod_rowvals);
+     this->M_->insertGlobalValues(gid, mod_rowinds, mod_rowvals);
   }
   
   this->M_->fillComplete();
-  
+  this->xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
+  //  if(rank == 0) cout << "Completed M... " << endl;
+
 }
 
 #endif

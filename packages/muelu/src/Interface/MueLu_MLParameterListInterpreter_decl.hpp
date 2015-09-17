@@ -134,12 +134,13 @@ namespace MueLu {
 
     //! Constructor.
     //! @param paramList: parameter list with ML parameters
+    //! @param[in] comm  (RCP<Teuchos::Comm<int> >): Optional RCP of a Teuchos communicator  (default: Teuchos::null)
     //! @param factoryList: vector with RCP of FactoryBase objects
     //!
     //! The factories in factoryList allow the user to add user-specific factories to the MueLu Hierarchy.
     //! The idea is to be able to add some factories that write out some debug information etc. which are not handled by the ML
     //! Parameter List itself. See information about the RAPFactory::AddTransferFactory method, too!
-    MLParameterListInterpreter(Teuchos::ParameterList & paramList,std::vector<RCP<FactoryBase> > factoryList = std::vector<RCP<FactoryBase> >(0));
+    MLParameterListInterpreter(Teuchos::ParameterList & paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::null, std::vector<RCP<FactoryBase> > factoryList = std::vector<RCP<FactoryBase> >(0));
 
     //! Constructor.
     //! @param xmlFileName: file name for XML file with ML parameters
@@ -200,6 +201,11 @@ namespace MueLu {
     //! nullspace can be embedded in the ML parameter list
     int     nullspaceDim_;
     double* nullspace_; //TODO: replace by Teuchos::ArrayRCP<>
+
+    //! coordinates can be embedded in the ML parameter list
+    double* xcoord_;
+    double* ycoord_;
+    double* zcoord_;
 
     //! list of user-defined transfer Factories
     //! We use this vector to add some special user-given factories to the Hierarchy (RAPFactory)
