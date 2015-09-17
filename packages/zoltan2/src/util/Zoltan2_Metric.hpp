@@ -742,7 +742,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
  * globalWeightedCutsByPart() must be called by all processes in \c comm.
  */
 
-template <typename pnum_t, typename Adapter>
+/*template <typename Adapter, typename pnum_t>
   void globalWeightedCutsByPart( 
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm, 
@@ -882,7 +882,7 @@ template <typename pnum_t, typename Adapter>
   numParts = nparts;
 
   env->debug(DETAILED_STATUS, "Exiting globalWeightedCutsByPart");
-}
+}*/
 
 /*! \brief Compute the imbalance
  *  \param numParts the number of parts supplied, which is the
