@@ -477,8 +477,6 @@ LARF (const char side,
       blas.GER (lastc, lastv, -tau, work, 1, v, incv, C, ldc);
     }
   }
-
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
 
@@ -577,6 +575,44 @@ LARFG (const int N, __float128* const ALPHA,
       beta = beta*smlnum;
     }
     *ALPHA = beta;
+  }
+}
+
+void
+Lapack128::
+GEQR2 (const int /* M */,
+       const int /* N */,
+       __float128 /* A */ [],
+       const int /* LDA */,
+       __float128 /* TAU */ [],
+       __float128 /* WORK */ [],
+       int* const /* INFO */ ) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Lapack128::GEQR2: Not implemented yet.");
+}
+
+void
+Lapack128::
+GEQRF (const int M,
+       const int N,
+       __float128 A[],
+       const int LDA,
+       __float128 TAU[],
+       __float128 WORK[],
+       const int LWORK,
+       int* const INFO) const
+{
+  // mfh 17 Sep 2015: We don't implement a BLAS 3 QR factorization for
+  // __float128.  Instead, we call the BLAS 2 QR factorization GEQR2,
+  // which has a fixed minimum WORK array length of N.  Thus, we have
+  // to roll our own LWORK query here.
+
+  if (LWORK == -1) {
+    WORK[0] = static_cast<__float128> (N);
+  }
+  else {
+    GEQR2 (M, N, A, LDA, TAU, WORK, INFO);
   }
 }
 

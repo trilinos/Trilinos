@@ -103,6 +103,7 @@ public:
   LARFG (const int N, __float128* const ALPHA,
          __float128 X[], const int INCX, __float128* const TAU) const;
 
+  //! Apply the Householder reflector [tau; v] to the matrix C.
   void
   LARF (const char side,
         const int m,
@@ -122,6 +123,27 @@ public:
          const __float128* const tau,
          __float128 C[], const int ldc,
          __float128 work[], int* const info) const;
+
+  //! BLAS 2 QR factorization of A.
+  void
+  GEQR2 (const int M,
+         const int N,
+         __float128 A[],
+         const int LDA,
+         __float128 TAU[],
+         __float128 WORK[],
+         int* const INFO) const;
+
+  //! QR factorization of A.
+  void
+  GEQRF (const int M,
+         const int N,
+         __float128 A[],
+         const int LDA,
+         __float128 TAU[],
+         __float128 WORK[],
+         const int LWORK,
+         int* const INFO) const;
 };
 
 } // namespace Details
