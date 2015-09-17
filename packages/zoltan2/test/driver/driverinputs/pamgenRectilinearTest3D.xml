@@ -43,7 +43,6 @@
             <Parameter name="input path" type="string" value="./driverinputs"/>
             <Parameter name="input file" type="string" value="Rectilinear"/>
             <Parameter name="file type" type="string" value="Pamgen"/>
-            <Parameter name="dimension" type="int" value="3"/>
         </ParameterList>
     
     <ParameterList name="problem 1">

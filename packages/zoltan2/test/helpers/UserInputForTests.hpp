@@ -380,7 +380,7 @@ private:
   
   
   // Read a pamgen mesh
-  void readPamgenMeshFile(string path, string testData, int dimension = 3);
+  void readPamgenMeshFile(string path, string testData);
   void setPamgenAdjacencyGraph();
   void setPamgenCoordinateMV();
 };
@@ -493,12 +493,7 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
     // read the input file
     switch (file_format) {
       case GEOMGEN: readGeometricGenTestData(path,testData); break;
-      case PAMGEN:
-      {
-        int dimension = 3;
-        if(pList.isParameter("dimension")) dimension = pList.get<int>("dimension");
-        readPamgenMeshFile(path,testData,dimension);
-      } break;
+      case PAMGEN: readPamgenMeshFile(path,testData); break;
       case CHACO: readZoltanTestData(path, testData, distributeInput); break;
       default: readMatrixMarketFile(path, testData); break;
     }
@@ -1239,6 +1234,10 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
   }
   
   if (verbose_ && tcomm_->getRank() == 0){
+    
+    std::cout << "Matrix is " << (distributeInput ? "" : "not");
+    std::cout << "distributed." << endl;
+    
     std::cout << "UserInputForTests, Create matrix with " << problemType;
     std::cout << " (and " << xdim;
     if (zdim > 0)
@@ -1249,6 +1248,7 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
       std::cout << "x 1 x 1";
     
     std::cout << " mesh)" << std::endl;
+    
   }
   
   try{
@@ -2318,7 +2318,7 @@ int UserInputForTests::chaco_input_geom(
 }
 
 // Pamgen Reader
-void UserInputForTests::readPamgenMeshFile(string path, string testData, int dimension)
+void UserInputForTests::readPamgenMeshFile(string path, string testData)
 {
   int rank = this->tcomm_->getRank();
   if (verbose_ && tcomm_->getRank() == 0)
@@ -2326,6 +2326,7 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData, int dim
   
   size_t len;
   std::fstream file;
+  int dimension;
   if (rank == 0){
     // set file name
     std::ostringstream meshFileName;
@@ -2349,10 +2350,28 @@ void UserInputForTests::readPamgenMeshFile(string path, string testData, int dim
       file.seekg (0,file.end);
       len = file.tellg();
       file.seekg (0);
+      
+      // get dimension
+      dimension = 2;
+      std::string line;
+      std::cout << "Scanning file 1x:\n" << std::endl;
+      while(std::getline(file,line))
+      {
+        if( line.find("nz") != std::string::npos ||
+           line.find("nphi") != std::string::npos)
+        {
+          dimension = 3;
+          break;
+        }
+      }
+      
+      file.clear();
+      file.seekg(0, ios::beg);
     }
   }
   
   // broadcast the file size
+  this->tcomm_->broadcast(0,sizeof(int), (char *)&dimension);
   this->tcomm_->broadcast(0,sizeof(size_t),(char *)&len);
   this->tcomm_->barrier();
   
@@ -2444,7 +2463,7 @@ void UserInputForTests::setPamgenCoordinateMV()
 
 void UserInputForTests::setPamgenAdjacencyGraph()
 {
-  int rank = this->tcomm_->getRank();
+//  int rank = this->tcomm_->getRank();
 //  if(rank == 0) cout << "Making a graph from our pamgen mesh...." << endl;
   
   // Define Types
@@ -2544,8 +2563,9 @@ void UserInputForTests::setPamgenAdjacencyGraph()
      this->M_->insertGlobalValues(gid, mod_rowinds, mod_rowvals);
   }
   
-   this->M_->fillComplete();
-//  if(rank == 0) cout << "Completed M... " << endl;
+  this->M_->fillComplete();
+  this->xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
+  //  if(rank == 0) cout << "Completed M... " << endl;
 
 }
 

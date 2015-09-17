@@ -3,6 +3,7 @@
 ==========================================================================
 
 This document details general formatting and requirements for Zoltan2 .xml input files used by the Zoltan2 test driver (/packages/zoltan2/test/driver/test_driver.exe).  A template for creating you own input files is included in this directory (input_template.xml).
+
 ==========================================================================
 
 
@@ -27,7 +28,6 @@ In the first section of your input file you should define the input data source 
 	* input file: the name of the source file — EXCLUDING extension.
 	* file type: Matrix Market, Pamgen, Chaco, or Geometric Generator
 
-If your input source is a pamgen mesh definition you are required to define an integer typed “dimension” parameter specifying the dimension of the mesh.
 
 A Galari generated block should contain the following parameters (ex. 2):
 	
@@ -160,8 +160,6 @@ Example 1: input from file
     <Parameter name="input path" type="string" value="PATH/TO/INPUT/DIRECTORY"/>
     <Parameter name="input file" type="string" value="FILE NAME (NO EXTENSION)"/>
     <Parameter name="file type" type="string" value="INPUT FILE TYPE"/>
-    <!--    PAMGEN MESHES REQUIRE THAT A DIMINSION PARAMTER BE SET-->
-    <!--    <Parameter name="dimension" type="int" value="##"/>-->
   </ParameterList>
 
 ////////////////////////////////////////////////////////

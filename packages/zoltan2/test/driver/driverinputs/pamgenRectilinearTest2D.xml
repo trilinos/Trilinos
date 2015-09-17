@@ -43,7 +43,6 @@
     <Parameter name="input path" type="string" value="./driverinputs"/>
     <Parameter name="input file" type="string" value="Rectilinear2D"/>
     <Parameter name="file type" type="string" value="Pamgen"/>
-    <Parameter name="dimension" type="int" value="2"/>
   </ParameterList>
   
   <ParameterList name="Problem 1">

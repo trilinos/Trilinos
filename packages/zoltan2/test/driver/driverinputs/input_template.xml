@@ -66,11 +66,7 @@
    use one of these blocks per input file!!!!
    
    The first is for a data source to be read
-   from file. If your data source is a pamgen mesh, then
-   you must define a dimension parameter specifying the
-   dimension of the mesh.
-   
-   The second is for galeri generate data on
+   from file. The second is for galeri generate data on
    a structured grid. Galeri grids can be 1, 2, or 3D.
    The dimension is infered by which coordinate parameters
    (x,y,z) are defined, e.g. if only the x parameter is
@@ -87,8 +83,6 @@
     <Parameter name="input path" type="string" value="PATH/TO/INPUT/DIRECTORY"/>
     <Parameter name="input file" type="string" value="FILE NAME (NO EXTENSION)"/>
     <Parameter name="file type" type="string" value="INPUT FILE TYPE"/>
-    <!--    PAMGEN MESHES REQUIRE THAT A DIMINSION PARAMTER BE SET-->
-    <!--    <Parameter name="dimension" type="int" value="##"/>-->
   </ParameterList>
   
   <!--  GALERI GRIDS MAY BE 1,2, OR 3D.-->
