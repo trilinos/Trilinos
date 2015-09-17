@@ -214,7 +214,7 @@ public:
              \f]
              where \f$v_{1} \in \mathcal{X}\f$, \f$v_{2} \in \mathcal{C}^*\f$,
              \f$b_{1} \in \mathcal{X}^*\f$, \f$b_{2} \in \mathcal{C}\f$,
-             \f$I : \mathcal{X} \rightarrow \mathcal{X}^*\f$ is an identity
+             \f$I : \mathcal{X} \rightarrow \mathcal{X}^*\f$ is an identity or Riesz
              operator, and \f$0 : \mathcal{C}^* \rightarrow \mathcal{C}\f$
              is a zero operator.
 
