@@ -1,25 +1,27 @@
-#include <gtest/gtest.h>
 
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <GameOfLife/NoGhostGameofLife.hpp>  // for NoGhostGameofLife
+#include <GameOfLife/PNGProcessor.hpp>  // for PNGProcessor
+#include <MeshBuilder/CoordinateSets.hpp>  // for generate_two_dim_elem_id
+#include <MeshBuilder/MeshBuilder.hpp>  // for HexMeshBuilder, etc
+#include <MeshBuilder/MeshSnake.hpp>    // for HexMeshSnake, QuadMeshSnake, etc
+#include <MeshBuilder/MultiImageReader.hpp>  // for MultiImageReader
 #include <iostream>
-#include <vector>
-#include <stdlib.h>
-#include <algorithm>
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/GetEntities.hpp>  // for get_entities
+#include <stk_topology/topology.hpp>    // for topology, etc
+#include <string>                       // for string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "mpi.h"                        // for MPI_Wtime, MPI_COMM_WORLD, etc
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/Types.hpp"      // for EntityIdVector, etc
+#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
 
-#include <stk_topology/topology.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/Field.hpp>
 
-#include <ctime>
 
-#include <GameOfLife/NoGhostGameofLife.hpp>
-#include <GameOfLife/PNGProcessor.hpp>
-#include <MeshBuilder/MeshBuilder.hpp>
-#include <MeshBuilder/MeshSnake.hpp>
-#include <MeshBuilder/CoordinateSets.hpp>
-#include <MeshBuilder/MultiImageReader.hpp>
 
 typedef stk::mesh::Field<int> ScalarIntField;
 

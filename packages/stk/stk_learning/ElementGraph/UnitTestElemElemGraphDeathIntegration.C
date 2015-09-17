@@ -1,21 +1,25 @@
-#include <gtest/gtest.h>
 
-#include <stk_topology/topology.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-
-#include <stk_mesh/base/ElemElemGraph.hpp>
-
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>
-
-#include "UnitTestElementDeathUtils.hpp"
-#include "stk_unit_test_utils/unittestMeshUtils.hpp"
-
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/ElemElemGraph.hpp>  // for process_killed_elements
+#include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities, etc
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_topology/topology.hpp>    // for topology, etc
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
+#include <vector>                       // for vector
 #include "BulkDataElementGraphTester.hpp"
-#include "ElementGraphTester.hpp"
+#include "ElementGraphTester.hpp"       // for ElemElemGraphTester
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_mesh/base/BulkDataInlinedMethods.hpp"
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/Types.hpp"      // for EntityVector, PartVector
+#include "stk_unit_test_utils/ioUtils.hpp"  // for fill_mesh_using_stk_io
+#include "stk_unit_test_utils/unittestMeshUtils.hpp"
+namespace stk { namespace mesh { class Part; } }
+
+
+
+
 
 namespace
 {
