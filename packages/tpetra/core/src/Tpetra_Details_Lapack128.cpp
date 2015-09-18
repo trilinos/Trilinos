@@ -326,25 +326,21 @@ ORM2R (const char side, const char trans,
 
 namespace { // (anonymous)
 
-  template<class KokkosViewType>
   int
-  ILADLC (const KokkosViewType& A)
+  ILADLC (const int m, const int n, const __float128 A[], const int lda)
   {
-    typename KokkosViewType::const_value_type zero = 0.0;
-
-    const int m = A.dimension_0 ();
-    const int n = A.dimension_1 ();
+    const __float128 zero = 0.0;
 
     // Quick test for the common case where one corner is non-zero.
     if (n == 0) {
       return n;
-    } else if (A(0, n-1) != zero || A(m-1, n-1) != zero) {
+    } else if (A[0 + (n-1)*lda] != zero || A[(m-1) + (n-1)*lda] != zero) {
       return n;
     } else {
       // Now scan each column from the end, returning with the first non-zero.
       for (int j = n; j > 0; --j) {
         for (int i = 1; i <= m; ++i) {
-          if (A(i-1, j-1) != zero) {
+          if (A[(i-1) + (j-1)*lda] != zero) {
             return j;
           }
         }
@@ -353,52 +349,28 @@ namespace { // (anonymous)
     }
   }
 
-  template<class KokkosViewType>
   int
-  ILADLR (const KokkosViewType& A)
+  ILADLR (const int m, const int n, const __float128 A[], const int lda)
   {
-    typename KokkosViewType::const_value_type zero = 0.0;
-
-    const int m = A.dimension_0 ();
-    const int n = A.dimension_1 ();
+    const __float128 zero = 0.0;
 
     // Quick test for the common case where one corner is non-zero.
     if (m == 0) {
       return m;
-    } else if (A(m-1, 0) != zero || A(m-1, n-1) != zero) {
+    } else if (A[(m-1) + 0*lda] != zero || A[(m-1) + (n-1)*lda] != zero) {
       return m;
     } else {
       // Scan up each column tracking the last zero row seen.
       int lastZeroRow = 0;
       for (int j = 1; j <= n; ++j) {
         int i = m;
-        while (A(std::max (i, 1) - 1, j - 1) == zero && i >= 1) {
+        while (A[(std::max (i, 1) - 1) + (j - 1)*lda] == zero && i >= 1) {
           i--;
         }
         lastZeroRow = std::max (lastZeroRow, i);
       }
       return lastZeroRow;
     }
-  }
-
-  int
-  ILADLC_C (const int m, const int n, const __float128 A[], const int lda)
-  {
-    Kokkos::View<const __float128**, Kokkos::Serial,
-                 Kokkos::MemoryUnmanaged> A_kokkos (A, lda, n);
-    auto A_mn = Kokkos::subview (A_kokkos, std::make_pair (0, m),
-                                 std::make_pair (0, n));
-    return ILADLC (A_mn);
-  }
-
-  int
-  ILADLR_C (const int m, const int n, const __float128 A[], const int lda)
-  {
-    Kokkos::View<const __float128**, Kokkos::Serial,
-                 Kokkos::MemoryUnmanaged> A_kokkos (A, lda, n);
-    auto A_mn = Kokkos::subview (A_kokkos, std::make_pair (0, m),
-                                 std::make_pair (0, n));
-    return ILADLR (A_mn);
   }
 } // namespace (anonymous)
 
@@ -441,10 +413,10 @@ LARF (const char side,
     }
     if (applyLeft) {
       // Scan for the last non-zero column in C(1:lastv,:).
-      lastc = ILADLC_C (lastv, n, C, ldc);
+      lastc = ILADLC (lastv, n, C, ldc);
     } else {
       // Scan for the last non-zero row in C(:,1:lastv).
-      lastc = ILADLR_C (m, lastv, C, ldc);
+      lastc = ILADLR (m, lastv, C, ldc);
     }
   }
 
