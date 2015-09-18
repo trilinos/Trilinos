@@ -1,11 +1,11 @@
 // @HEADER
 // ***********************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//                    Teuchos: Common Tools Package
+//                 Copyright (2004) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -36,21 +36,21 @@
 //
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ************************************************************************
+// ***********************************************************************
 // @HEADER
 
-#ifndef TPETRA_DETAILS_LAPACK128_HPP
-#define TPETRA_DETAILS_LAPACK128_HPP
+#ifndef TEUCHOS_DETAILS_LAPACK128_HPP
+#define TEUCHOS_DETAILS_LAPACK128_HPP
 
-/// \file Tpetra_Details_Lapack128.hpp
-/// \brief Declaration and definition of Tpetra::Details::Lapack128,
+/// \file Teuchos_Details_Lapack128.hpp
+/// \brief Declaration and definition of Teuchos::Details::Lapack128,
 ///   a partial implementation of Teuchos::LAPACK for __float128.
 
-#include "Tpetra_ConfigDefs.hpp"
+#include "Teuchos_ConfigDefs.hpp"
 
 
-#ifdef HAVE_TPETRA_INST_FLOAT128
-namespace Tpetra {
+#ifdef HAVE_TEUCHOSCORE_QUADMATH
+namespace Teuchos {
 namespace Details {
 
 //! Partial implementation of Teuchos::LAPACK for __float128.
@@ -171,7 +171,7 @@ public:
 };
 
 } // namespace Details
-} // namespace Tpetra
-#endif // HAVE_TPETRA_INST_FLOAT128
+} // namespace Teuchos
+#endif // HAVE_TEUCHOSCORE_QUADMATH
 
-#endif // TPETRA_DETAILS_LAPACK128_HPP
+#endif // TEUCHOS_DETAILS_LAPACK128_HPP

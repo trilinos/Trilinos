@@ -58,7 +58,7 @@
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
 #ifdef HAVE_TPETRA_INST_FLOAT128
-#  include "Tpetra_Details_Lapack128.hpp"
+#  include "Teuchos_Details_Lapack128.hpp"
 #endif // HAVE_TPETRA_INST_FLOAT128
 
 namespace Tpetra {
@@ -94,7 +94,7 @@ namespace Details {
     // Use the Lapack128 class we declared above to implement the
     // linear algebra operations needed for small dense blocks and
     // vectors.
-    typedef Tpetra::Details::Lapack128 lapack_type;
+    typedef Teuchos::Details::Lapack128 lapack_type;
   };
 #endif // HAVE_TPETRA_INST_FLOAT128
 
