@@ -1,7 +1,7 @@
 %Driver script, works as a unit test
 %Will force MATLAB to return with exit code depending on comparison
 %of solution vectors from matlab function and muelu
-addpath('../..')
+addpath('../../bin')
 
 try
   %Create a small problem with only one level

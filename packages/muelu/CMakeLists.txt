@@ -246,6 +246,7 @@ ADD_SUBDIRECTORY(src/Interface)
 ADD_SUBDIRECTORY(adapters)
 if(TPL_ENABLE_MATLAB)
   ADD_SUBDIRECTORY(matlab/bin)
+  ADD_SUBDIRECTORY(matlab/tests)
 ENDIF()
 
 #address bugzilla bug#6236

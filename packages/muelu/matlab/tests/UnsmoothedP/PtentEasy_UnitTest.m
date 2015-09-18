@@ -1,7 +1,7 @@
 %Driver script, works as a unit test
 %Will force MATLAB to return with exit code depending on comparison
 %of tentative prolongator from matlab function and muelu
-addpath('../..')
+addpath '../../bin' '../Common'
 
 try
   %Create a 2D laplacian problem (80x80 gets 2 MueLu levels)
@@ -10,7 +10,7 @@ try
   %Set up the problem normally in MueLu through MueMex
   mueluProblem = muelu('setup', A, 'xml parameter file', 'mueluParams.xml');
   %Set up the problem using a Matlab TwoLevelFactory for Ptent
-  matlabProblem = muelu('setup', A, 'xml parameter file', 'matlabParams.xml');
+  matlabProblem = muelu('setup', A, 'xml parameter file', 'matlabParamsEasy.xml');
   %Get the final, smoothed prolongators (just Ptent with a smoother applied)
   mueluP = muelu('get', mueluProblem, 1, 'P');
   matlabP = muelu('get', matlabProblem, 1, 'P');
