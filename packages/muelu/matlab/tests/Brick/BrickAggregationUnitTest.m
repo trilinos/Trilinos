@@ -1,4 +1,4 @@
-addpath('../..')
+addpath '../../bin' '../Common'
 
 try
   [A, coords] = laplacianfun([90, 90]);

@@ -1,4 +1,4 @@
-addpath('../..')
+addpath('../../bin')
 
 try
   A = laplacianfun([50, 50]);
