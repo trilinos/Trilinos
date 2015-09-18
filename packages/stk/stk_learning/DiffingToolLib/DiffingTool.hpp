@@ -2,14 +2,14 @@
 #ifndef DIFFINGTOOL_HPP_
 #define DIFFINGTOOL_HPP_
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/parallel/CommSparse.hpp>
-#include <stk_util/parallel/DebugTool.hpp>
-#include <stk_util/environment/EnvData.hpp>
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <string>                       // for string
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+namespace stk { class CommBuffer; }
+namespace stk { class CommSparse; }
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class Part; } }
+namespace stk { struct EnvData; }
 
 namespace stk {
 namespace diff {

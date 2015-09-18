@@ -7,36 +7,24 @@
 #ifndef GAMEOFLIFE_NOGHOSTGAMEOFLIFE_HPP_
 #define GAMEOFLIFE_NOGHOSTGAMEOFLIFE_HPP_
 
-#include <gtest/gtest.h>
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <string>                       // for string
+#include <unordered_map>                // for unordered_map
+#include <unordered_set>                // for unordered_set
+#include <vector>                       // for vector
+#include "EntityKeyHash.hpp"            // for hash
+#include "GameofLifeMesh.hpp"           // for ScalarIntField
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/Types.hpp"      // for EntityId, EntityVector, etc
+namespace stk { class CommBuffer; }
+namespace stk { class CommSparse; }
+namespace stk { namespace mesh { class BulkData; } }
 
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <algorithm>
-#include <set>
-#include <map>
-#include <unordered_map>
-#include <unordered_set>
-#include <stdlib.h>
 
-#include <stk_topology/topology.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
-#include <stk_util/stk_util/parallel/CommSparse.hpp>
-#include <stk_unit_test_utils/ioUtils.hpp>
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_io/IossBridge.hpp>
 
-#include <time.h>
 
-#include "EntityKeyHash.hpp"
-#include "GameofLifeMesh.hpp"
 /*
  * How to use:
  * Basically the same as GameofLife, but make sure the MeshBuilder had no aura.
