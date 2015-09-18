@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __TEST_ICHOL_TRI_SOLVE_BY_BLOCKS_HPP__
-#define __TEST_ICHOL_TRI_SOLVE_BY_BLOCKS_HPP__
+#ifndef __TEST_CHOL_TRI_SOLVE_BY_BLOCKS_HPP__
+#define __TEST_CHOL_TRI_SOLVE_BY_BLOCKS_HPP__
 
 #include "util.hpp"
 
@@ -37,7 +37,7 @@ namespace Example {
            typename SpaceType = void,
            typename MemoryTraits = void>
   KOKKOS_INLINE_FUNCTION
-  int testICholTriSolveByBlocks(const string file_input,
+  int testCholTriSolveByBlocks(const string file_input,
                                 const OrdinalType nb,
                                 const OrdinalType nrhs) {
     typedef ValueType   value_type;
@@ -75,7 +75,7 @@ namespace Example {
     int r_val = 0;
 
     __DOT_LINE__;
-    cout << "testICholTriSolveByBlocks:: input = " << file_input
+    cout << "testCholTriSolveByBlocks:: input = " << file_input
          << ", nb = " << nb 
          << ", nrhs = " << nrhs << endl;
     __DOT_LINE__;
@@ -121,7 +121,7 @@ namespace Example {
 
     TmgType tmg(AA.NumRows(), nrhs);
 
-    cout << "testICholTriSolveByBlocks::Begin - " << r_val << endl;
+    cout << "testCholTriSolveByBlocks::Begin - " << r_val << endl;
     typename TaskFactoryType::policy_type policy;
     TaskFactoryType::setPolicy(&policy);
 
@@ -134,7 +134,7 @@ namespace Example {
       r_val += tmg.fill(BB_ByBlocks);
       
       auto future_factor 
-        = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::ByBlocks>::
+        = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::ByBlocks>::
                              TaskFunctor<ForType,CrsHierTaskViewType>(TU), 0);
       TaskFactoryType::Policy().spawn(future_factor);
       
@@ -165,7 +165,7 @@ namespace Example {
       r_val += tmg.fill(BB_Unblocked);
       
       {
-        auto future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>::
+        auto future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>::
                                          TaskFunctor<ForType,CrsTaskViewType>(U), 0);
         TaskFactoryType::Policy().spawn(future);
         Kokkos::Experimental::wait(TaskFactoryType::Policy());
@@ -198,11 +198,11 @@ namespace Example {
         }
     }
 
-    cout << "testICholTriSolveByBlocks::End - " << r_val << endl;    
+    cout << "testCholTriSolveByBlocks::End - " << r_val << endl;    
 
     string eval;
     __EVAL_STRING__(r_val, eval);
-    cout << "testICholTriSolveByBlocks::Eval - " << eval << endl;
+    cout << "testCholTriSolveByBlocks::Eval - " << eval << endl;
     
     __DOT_LINE__;
 

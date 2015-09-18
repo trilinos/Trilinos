@@ -59,7 +59,7 @@ Lapack128::
 GETRF (const int M, const int N, __float128 A[],
        const int LDA, int IPIV[], int* INFO) const
 {
-  std::cerr << "GETRF: N = " << N << std::endl;
+  //std::cerr << "GETRF: N = " << N << std::endl;
 
   Teuchos::BLAS<int, __float128> blas;
 
@@ -92,12 +92,12 @@ GETRF (const int M, const int N, __float128 A[],
 
   const int j_upperBound = std::min (M, N);
   for (int j = 1; j <= j_upperBound; ++j) {
-    std::cerr << "  j = " << j << std::endl;
+    //std::cerr << "  j = " << j << std::endl;
 
     // Find pivot and test for singularity.
     __float128* const A_jj = A + (j-1)*LDA + (j-1);
 
-    std::cerr << "  CALLING IAMAX" << std::endl;
+    //std::cerr << "  CALLING IAMAX" << std::endl;
     const int jp = (j - 1) + blas.IAMAX (M - j + 1, A_jj, 1);
     IPIV[j - 1] = jp;
 
@@ -129,7 +129,7 @@ GETRF (const int M, const int N, __float128 A[],
     }
 
     if (j < std::min (M, N)) {
-      std::cerr << "  UPDATE TRAILING SUBMATRIX" << std::endl;
+      //std::cerr << "  UPDATE TRAILING SUBMATRIX" << std::endl;
 
       // Update trailing submatrix.
       const __float128* A_j1_j = A + j + (j-1)*LDA;
@@ -225,7 +225,7 @@ GETRS (const char TRANS, const int N, const int NRHS,
        const __float128 A[], const int LDA, const int IPIV[],
        __float128 B[], const int LDB, int* INFO) const
 {
-  std::cerr << "GETRS: N = " << N << std::endl;
+  //std::cerr << "GETRS: N = " << N << std::endl;
 
   Teuchos::BLAS<int, __float128> blas;
 
@@ -268,14 +268,14 @@ GETRS (const char TRANS, const int N, const int NRHS,
 
   if (notran) { // No transpose; solve AX=B
     // Apply row interchanges to the right-hand sides.
-    std::cerr << "CALLING LASWP" << std::endl;
+    //std::cerr << "CALLING LASWP" << std::endl;
     LASWP (NRHS, B, LDB, 1, N, IPIV, 1);
     // Solve L*X = B, overwriting B with X.
-    std::cerr << "CALLING TRSM (1)" << std::endl;
+    //std::cerr << "CALLING TRSM (1)" << std::endl;
     blas.TRSM (LEFT_SIDE, LOWER_TRI, NO_TRANS, UNIT_DIAG, N, NRHS,
                one, A, LDA, B, LDB);
     // Solve U*X = B, overwriting B with X.
-    std::cerr << "CALLING TRSM (2)" << std::endl;
+    //std::cerr << "CALLING TRSM (2)" << std::endl;
     blas.TRSM (LEFT_SIDE, UPPER_TRI, NO_TRANS, NON_UNIT_DIAG, N, NRHS,
                one, A, LDA, B, LDB);
   }
@@ -284,19 +284,19 @@ GETRS (const char TRANS, const int N, const int NRHS,
       TRANS : CONJ_TRANS;
 
     // Solve U^{T,H}*X = B, overwriting B with X.
-    std::cerr << "CALLING TRSM (1)" << std::endl;
+    //std::cerr << "CALLING TRSM (1)" << std::endl;
     blas.TRSM (LEFT_SIDE, UPPER_TRI, transposeMode, NON_UNIT_DIAG, N, NRHS,
                one, A, LDA, B, LDB);
     // Solve L^{T,H}*X = B, overwriting B with X.
-    std::cerr << "CALLING TRSM (2)" << std::endl;
+    //std::cerr << "CALLING TRSM (2)" << std::endl;
     blas.TRSM (LEFT_SIDE, LOWER_TRI, transposeMode, UNIT_DIAG, N, NRHS,
                one, A, LDA, B, LDB);
-    std::cerr << "CALLING LASWP" << std::endl;
+    //std::cerr << "CALLING LASWP" << std::endl;
     // Apply row interchanges to the solution vectors.
     LASWP (NRHS, B, LDB, 1, N, IPIV, -1);
   }
 
-  std::cerr << "DONE WITH GETRS" << std::endl;
+  //std::cerr << "DONE WITH GETRS" << std::endl;
 }
 
 __float128
@@ -477,8 +477,6 @@ LARF (const char side,
       blas.GER (lastc, lastv, -tau, work, 1, v, incv, C, ldc);
     }
   }
-
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
 }
 
 
@@ -578,6 +576,76 @@ LARFG (const int N, __float128* const ALPHA,
     }
     *ALPHA = beta;
   }
+}
+
+void
+Lapack128::
+GEQR2 (const int /* M */,
+       const int /* N */,
+       __float128 /* A */ [],
+       const int /* LDA */,
+       __float128 /* TAU */ [],
+       __float128 /* WORK */ [],
+       int* const /* INFO */ ) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Lapack128::GEQR2: Not implemented yet.");
+}
+
+void
+Lapack128::
+GEQRF (const int M,
+       const int N,
+       __float128 A[],
+       const int LDA,
+       __float128 TAU[],
+       __float128 WORK[],
+       const int LWORK,
+       int* const INFO) const
+{
+  // mfh 17 Sep 2015: We don't implement a BLAS 3 QR factorization for
+  // __float128.  Instead, we call the BLAS 2 QR factorization GEQR2,
+  // which has a fixed minimum WORK array length of N.  Thus, we have
+  // to roll our own LWORK query here.
+
+  if (LWORK == -1) {
+    WORK[0] = static_cast<__float128> (N);
+  }
+  else {
+    GEQR2 (M, N, A, LDA, TAU, WORK, INFO);
+  }
+}
+
+void
+Lapack128::
+ORGQR (const int /* M */,
+       const int /* N */,
+       const int /* K */,
+       __float128 /* A */ [],
+       const int /* LDA */,
+       const __float128 /* TAU */ [],
+       __float128 /* WORK */ [],
+       const int /* LWORK */,
+       int* const /* INFO */) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Lapack128::GEQR2: Not implemented yet.");
+}
+
+void
+Lapack128::
+UNGQR (const int /* M */,
+       const int /* N */,
+       const int /* K */,
+       __float128 /* A */ [],
+       const int /* LDA */,
+       const __float128 /* TAU */ [],
+       __float128 /* WORK */ [],
+       const int /* LWORK */,
+       int* const /* INFO */) const
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::logic_error, "Lapack128::GEQR2: Not implemented yet.");
 }
 
 } // namespace Details

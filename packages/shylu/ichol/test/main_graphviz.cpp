@@ -5,9 +5,9 @@
 
 #include "test_macrodef.hpp"
 
-#include "test_ichol_by_blocks_graphviz.hpp"
+#include "test_chol_by_blocks_graphviz.hpp"
 #include "test_tri_solve_by_blocks_graphviz.hpp"
-#include "test_ichol_tri_solve_by_blocks_graphviz.hpp"
+#include "test_chol_tri_solve_by_blocks_graphviz.hpp"
 
 /// \file test_serial.hpp
 /// \brief Test serial execution space
@@ -30,19 +30,19 @@ int main(int argc, char *argv[]) {
 
   Kokkos::initialize();
 
-  r_val += testICholByBlocksGraphviz
+  r_val += testCholByBlocksGraphviz
     <double,int,unsigned int,Kokkos::Serial,void>(file_input,
-                                                  "ichol_by_blocks.gv");
+                                                  "chol_by_blocks.gv");
 
   r_val += testTriSolveByBlocksGraphviz
     <double,int,unsigned int,Kokkos::Serial,void>(file_input,
                                                   1, nrhs,
                                                   "tri_solve_by_blocks.gv");
 
-  r_val += testICholTriSolveByBlocksGraphviz
+  r_val += testCholTriSolveByBlocksGraphviz
     <double,int,unsigned int,Kokkos::Serial,void>(file_input,
                                                   1, nrhs,
-                                                  "ichol_tri_solve_by_blocks.gv");
+                                                  "chol_tri_solve_by_blocks.gv");
 
   Kokkos::finalize();
 

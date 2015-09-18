@@ -1,8 +1,8 @@
 #pragma once
-#ifndef __ICHOL_BY_BLOCKS_HPP__
-#define __ICHOL_BY_BLOCKS_HPP__
+#ifndef __CHOL_BY_BLOCKS_HPP__
+#define __CHOL_BY_BLOCKS_HPP__
 
-/// \file ichol_by_blocks.hpp
+/// \file chol_by_blocks.hpp
 /// \brief Sparse incomplete Cholesky factorization by blocks.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -13,20 +13,20 @@ namespace Example {
   template<typename ParallelForType,
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
-  static int genScalarTask_ICholUpperByBlocks(typename CrsTaskViewType::policy_type &policy,
+  static int genScalarTask_CholUpperByBlocks(typename CrsTaskViewType::policy_type &policy,
                                               CrsTaskViewType &A);
 
   template<typename ParallelForType,
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
-  static int genTrsmTasks_ICholUpperByBlocks(typename CrsTaskViewType::policy_type &policy,
+  static int genTrsmTasks_CholUpperByBlocks(typename CrsTaskViewType::policy_type &policy,
                                              CrsTaskViewType &A,
                                              CrsTaskViewType &B);
 
   template<typename ParallelForType,
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
-  static int genHerkTasks_ICholUpperByBlocks(typename CrsTaskViewType::policy_type &policy,
+  static int genHerkTasks_CholUpperByBlocks(typename CrsTaskViewType::policy_type &policy,
                                              CrsTaskViewType &A,
                                              CrsTaskViewType &C);
 
@@ -35,7 +35,7 @@ namespace Example {
            typename CrsTaskViewType>
   KOKKOS_INLINE_FUNCTION
   int
-  IChol<Uplo::Upper,AlgoIChol::ByBlocks>
+  Chol<Uplo::Upper,AlgoChol::ByBlocks>
   ::invoke(typename CrsTaskViewType::policy_type &policy,
            const typename CrsTaskViewType::policy_type::member_type &member,
            CrsTaskViewType &A) {
@@ -58,13 +58,13 @@ namespace Example {
         // -----------------------------------------------------
 
         // A11 = chol(A11)
-        genScalarTask_ICholUpperByBlocks<ParallelForType>(policy, A11);
+        genScalarTask_CholUpperByBlocks<ParallelForType>(policy, A11);
 
         // A12 = inv(triu(A11)') * A12
-        genTrsmTasks_ICholUpperByBlocks<ParallelForType>(policy, A11, A12);
+        genTrsmTasks_CholUpperByBlocks<ParallelForType>(policy, A11, A12);
 
         // A22 = A22 - A12' * A12
-        genHerkTasks_ICholUpperByBlocks<ParallelForType>(policy, A12, A22);
+        genHerkTasks_CholUpperByBlocks<ParallelForType>(policy, A12, A22);
 
         // -----------------------------------------------------
         Merge_3x3_to_2x2(A00, A01, A02, /**/ ATL, ATR,
@@ -81,7 +81,7 @@ namespace Example {
 
 // select one of the following variants
 
-#include "ichol_by_blocks_var1.hpp"
-//#include "ichol_by_blocks_serial.hpp"
+#include "chol_by_blocks_var1.hpp"
+//#include "chol_by_blocks_serial.hpp"
 
 #endif

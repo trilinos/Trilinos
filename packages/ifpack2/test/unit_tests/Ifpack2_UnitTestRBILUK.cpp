@@ -525,8 +525,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
     TEST_FLOATING_EQUALITY(exactMatrix[k], cMatrix[k], 1e-14);
   }
 
-  typedef typename GetLapackType<Scalar>::lapack_scalar_type LST;
-  typedef typename GetLapackType<Scalar>::lapack_type lapack_type;
+  typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_scalar_type LST;
+  typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_type lapack_type;
 
   lapack_type lapack;
 

@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __EXAMPLE_ICHOL_UNBLOCKED_HPP__
-#define __EXAMPLE_ICHOL_UNBLOCKED_HPP__
+#ifndef __EXAMPLE_CHOL_UNBLOCKED_HPP__
+#define __EXAMPLE_CHOL_UNBLOCKED_HPP__
 
 #include <Kokkos_Core.hpp>
 #include <impl/Kokkos_Timer.hpp>
@@ -20,7 +20,7 @@
 #include "task_factory.hpp"
 #include "task_team_factory.hpp"
 
-#include "ichol.hpp"
+#include "chol.hpp"
 
 namespace Example {
 
@@ -32,7 +32,7 @@ namespace Example {
            typename SpaceType = void,
            typename MemoryTraits = void>
   KOKKOS_INLINE_FUNCTION
-  int exampleICholUnblocked(const string file_input,
+  int exampleCholUnblocked(const string file_input,
                             const int max_task_dependence,
                             const int team_size,
                             const int variant,
@@ -57,7 +57,7 @@ namespace Example {
     Kokkos::Impl::Timer timer;
     double t = 0.0;
 
-    cout << "ICholUnblocked:: import input file = " << file_input << endl;        
+    cout << "CholUnblocked:: import input file = " << file_input << endl;        
     CrsMatrixBaseType AA("AA"), UU("UU");    
     {
       timer.reset();
@@ -77,7 +77,7 @@ namespace Example {
       if (verbose)
         cout << UU << endl;
     }
-    cout << "ICholUnblocked:: import input file::time = " << t << endl;        
+    cout << "CholUnblocked:: import input file::time = " << t << endl;        
 
 #ifdef __USE_FIXED_TEAM_SIZE__
     typename TaskFactoryType::policy_type policy(max_task_dependence);
@@ -87,7 +87,7 @@ namespace Example {
     TaskFactoryType::setMaxTaskDependence(max_task_dependence);
     TaskFactoryType::setPolicy(&policy);
 
-    cout << "ICholUnblocked:: factorize the matrix" << endl;
+    cout << "CholUnblocked:: factorize the matrix" << endl;
     CrsTaskViewType U(&UU);
     U.fillRowViewArray();
     {
@@ -95,18 +95,18 @@ namespace Example {
     
       typename TaskFactoryType::future_type future;
       switch (variant) {
-      case AlgoIChol::UnblockedOpt1: {
-        future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
+      case AlgoChol::UnblockedOpt1: {
+        future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>
                                                        ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
         break;
       }
-      case AlgoIChol::UnblockedOpt2: {
-        future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt2>
+      case AlgoChol::UnblockedOpt2: {
+        future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt2>
                                                        ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
         break;
       }
-      case AlgoIChol::Dummy: {
-        future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::Dummy>
+      case AlgoChol::Dummy: {
+        future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::Dummy>
                                                        ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
         break;
       }
@@ -122,7 +122,7 @@ namespace Example {
       if (verbose)
         cout << UU << endl;
     }   
-    cout << "ICholUnblocked:: factorize the matrix::time = " << t << endl; 
+    cout << "CholUnblocked:: factorize the matrix::time = " << t << endl; 
     
     return r_val;
   }

@@ -129,7 +129,6 @@ namespace Example {
   };
 
   // aliasing name space
-  typedef AlgoChol AlgoIChol;
   typedef AlgoChol AlgoTriSolve;
 
   class AlgoGemm {

@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __TEST_ICHOL_BY_BLOCKS_HPP__
-#define __TEST_ICHOL_BY_BLOCKS_HPP__
+#ifndef __TEST_CHOL_BY_BLOCKS_GRAPHVIZ_HPP__
+#define __TEST_CHOL_BY_BLOCKS_GRAPHVIZ_HPP__
 
 #include "util.hpp"
 
@@ -14,13 +14,14 @@
 #include "team_view.hpp"
 #include "task_view.hpp"
 
-#include "parallel_for.hpp"
+#include "sequential_for.hpp"
+#include "task_policy_graphviz.hpp"
 
 #include "team_factory.hpp"
 #include "task_factory.hpp"
 #include "task_team_factory.hpp"
 
-#include "ichol.hpp"
+#include "chol.hpp"
 
 namespace Example {
 
@@ -32,15 +33,14 @@ namespace Example {
            typename SpaceType = void,
            typename MemoryTraits = void>
   KOKKOS_INLINE_FUNCTION
-  int testICholByBlocks(const string file_input) {
+  int testCholByBlocksGraphviz(const string file_input,
+                                const string file_output) {
     typedef ValueType   value_type;
     typedef OrdinalType ordinal_type;
     typedef SizeType    size_type;
 
-    typedef TaskTeamFactory<Kokkos::Experimental::TaskPolicy<SpaceType>,
-      Kokkos::Experimental::Future<int,SpaceType>,
-      Kokkos::Impl::TeamThreadRangeBoundariesStruct> TaskFactoryType;
-    typedef ParallelFor ForType;
+    typedef TaskTeamFactory<TaskPolicy,Future,TeamThreadLoopRegion> TaskFactoryType;
+    typedef SequentialFor ForType;
 
     typedef CrsMatrixBase<value_type,ordinal_type,size_type,SpaceType,MemoryTraits> CrsMatrixBaseType;
     typedef GraphHelper_Scotch<CrsMatrixBaseType> GraphHelperType;
@@ -56,7 +56,8 @@ namespace Example {
     int r_val = 0;
 
     __DOT_LINE__;
-    cout << "testICholByBlocks:: input = " << file_input << endl;        
+    cout << "testCholByBlocksGraphviz:: input = " << file_input 
+         << ", output = " << file_output << endl;        
     __DOT_LINE__;
 
     CrsMatrixBaseType AA("AA");
@@ -70,8 +71,7 @@ namespace Example {
       AA.importMatrixMarket(in);
     }
 
-
-    CrsMatrixBaseType UU_Unblocked("UU_Unblocked"), UU_ByBlocks("UU_ByBlocks");
+    CrsMatrixBaseType UU("UU");
     CrsHierMatrixBaseType HU("HU");
     {
       GraphHelperType S(AA);
@@ -80,55 +80,48 @@ namespace Example {
       CrsMatrixBaseType PA("Permuted AA");
       PA.copy(S.PermVector(), S.InvPermVector(), AA);
 
-      UU_Unblocked.copy(Uplo::Upper, PA);
-      UU_ByBlocks.copy(Uplo::Upper, PA);
+      UU.copy(Uplo::Upper, PA);
 
-      CrsMatrixHelper::flat2hier(Uplo::Upper, UU_ByBlocks, HU,
+      CrsMatrixHelper::flat2hier(Uplo::Upper, UU, HU,
                                  S.NumBlocks(),
                                  S.RangeVector(),
                                  S.TreeVector());
+
+      cout << S << endl;
+      cout << HU << endl;
     }
 
-    cout << "testICholByBlocks::Begin - " << r_val << endl;
+    cout << "testCholByBlocksGraphviz::Begin - " << r_val << endl;
     typename TaskFactoryType::policy_type policy;
     TaskFactoryType::setPolicy(&policy);
 
-    {
-      CrsTaskViewType U(&UU_Unblocked);
-      U.fillRowViewArray();
-    
-      auto future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
-                                                          ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
-      TaskFactoryType::Policy().spawn(future);
-      Kokkos::Experimental::wait(TaskFactoryType::Policy());
-    
-      cout << UU_Unblocked << endl;
-    }
     {
       CrsHierTaskViewType H(&HU);
       for (size_type k=0;k<HU.NumNonZeros();++k)
         HU.Value(k).fillRowViewArray();
 
-      auto future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::ByBlocks>::
-                                                          TaskFunctor<ForType,CrsHierTaskViewType>(H), 0);
-      TaskFactoryType::Policy().spawn(future);
-      Kokkos::Experimental::wait(TaskFactoryType::Policy());
+      int r_val_chol = 0;
 
-      cout << UU_ByBlocks << endl;
+      Chol<Uplo::Upper,AlgoChol::ByBlocks>::
+        TaskFunctor<ForType,CrsHierTaskViewType>(H).apply(r_val_chol);
     }  
     
     {
-      const auto epsilon = sqrt(NumericTraits<value_type>::epsilon());
-      for (size_type k=0;k<UU_Unblocked.NumNonZeros();++k) {
-        auto tmp = abs(UU_Unblocked.Value(k) - UU_ByBlocks.Value(k));
-        __ASSERT_TRUE__(tmp < epsilon);
+      ofstream out;
+      out.open(file_output);
+      if (!out.good()) {
+        cout << "Error in open the file: " << file_output << endl;
+        return -1;
       }
+      
+      TaskFactoryType::Policy().graphviz(out);
+      TaskFactoryType::Policy().clear();
     }
-    cout << "testICholByBlocks::End - " << r_val << endl;  
+    cout << "testCholByBlocksGraphviz::End - " << r_val << endl;  
 
     string eval;
     __EVAL_STRING__(r_val, eval);
-    cout << "testICholByBlocks::Eval - " << eval << endl;
+    cout << "testCholByBlocksGraphviz::Eval - " << eval << endl;
     
     __DOT_LINE__;
 

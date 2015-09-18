@@ -12,9 +12,9 @@ namespace Example {
 
   /// \brief Graphviz color mapping for the generated tasks.
   static map<string,string> g_graphviz_color = {
-    { "ichol/scalar", "indianred2"},
-    { "ichol/trsm",   "orange2"   },
-    { "ichol/gemm",   "lightblue2"} };
+    { "chol/scalar", "indianred2"},
+    { "chol/trsm",   "orange2"   },
+    { "chol/gemm",   "lightblue2"} };
 
   class SymbolicTaskQueue;
 

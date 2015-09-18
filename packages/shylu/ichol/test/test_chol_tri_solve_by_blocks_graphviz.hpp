@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __TEST_ICHOL_TRI_SOLVE_BY_BLOCKS_GRAPHVIZ_HPP__
-#define __TEST_ICHOL_TRI_SOLVE_BY_BLOCKS_GRAPHVIZ_HPP__
+#ifndef __TEST_CHOL_TRI_SOLVE_BY_BLOCKS_GRAPHVIZ_HPP__
+#define __TEST_CHOL_TRI_SOLVE_BY_BLOCKS_GRAPHVIZ_HPP__
 
 #include "util.hpp"
 
@@ -25,7 +25,7 @@
 #include "task_factory.hpp"
 #include "task_team_factory.hpp"
 
-#include "ichol.hpp"
+#include "chol.hpp"
 #include "tri_solve.hpp"
 
 namespace Example {
@@ -38,7 +38,7 @@ namespace Example {
            typename SpaceType = void,
            typename MemoryTraits = void>
   KOKKOS_INLINE_FUNCTION
-  int testICholTriSolveByBlocksGraphviz(const string file_input,
+  int testCholTriSolveByBlocksGraphviz(const string file_input,
                                         const OrdinalType nb,
                                         const OrdinalType nrhs,
                                         const string file_output) {
@@ -73,7 +73,7 @@ namespace Example {
     int r_val = 0;
 
     __DOT_LINE__;
-    cout << "testICholTriSolveByBlocksGraphviz:: input = " << file_input
+    cout << "testCholTriSolveByBlocksGraphviz:: input = " << file_input
          << ", nb = " << nb 
          << ", nrhs = " << nrhs 
          << ", output = " << file_output
@@ -116,7 +116,7 @@ namespace Example {
                                    nb);
     }
 
-    cout << "testICholTriSolveByBlocksGraphviz::Begin - " << r_val << endl;
+    cout << "testCholTriSolveByBlocksGraphviz::Begin - " << r_val << endl;
     typename TaskFactoryType::policy_type policy;
     TaskFactoryType::setPolicy(&policy);
 
@@ -130,7 +130,7 @@ namespace Example {
       int r_val_fuse = 0;
 
       TaskFactoryType::Policy().set_work_phase(1);
-      IChol<Uplo::Upper,AlgoIChol::ByBlocks>::
+      Chol<Uplo::Upper,AlgoChol::ByBlocks>::
         TaskFunctor<ForType,CrsHierTaskViewType>(TU).apply(r_val_fuse);
       r_val += abs(r_val_fuse); r_val_fuse = 0;
 
@@ -157,11 +157,11 @@ namespace Example {
       TaskFactoryType::Policy().graphviz(out);
       TaskFactoryType::Policy().clear();
     }
-    cout << "testICholTriSolveByBlocksGraphviz::End - " << r_val << endl;    
+    cout << "testCholTriSolveByBlocksGraphviz::End - " << r_val << endl;    
 
     string eval;
     __EVAL_STRING__(r_val, eval);
-    cout << "testICholTriSolveByBlocksGraphviz::Eval - " << eval << endl;
+    cout << "testCholTriSolveByBlocksGraphviz::Eval - " << eval << endl;
     
     __DOT_LINE__;
 

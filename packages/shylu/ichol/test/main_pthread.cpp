@@ -5,6 +5,8 @@
 #include <Kokkos_TaskPolicy.hpp>
 #include <Threads/Kokkos_Threads_TaskPolicy.hpp>
 
+#include "Teuchos_CommandLineProcessor.hpp"
+
 #include "test_macrodef.hpp"
 #include "test_suite.hpp"
 
@@ -19,6 +21,24 @@ int g_funct_counter = 0;
 
 int main(int argc, char *argv[]) {
   int r_val = 0;
+
+  Teuchos::CommandLineProcessor clp;
+
+  int nthreads = 1;
+  clp.setOption("nthreads", &nthreads, "Number of threads");
+
+  clp.recogniseAllOptions(true);
+  clp.throwExceptions(false);
+
+  Teuchos::CommandLineProcessor::EParseCommandLineReturn r_parse= clp.parse( argc, argv );
+
+  if (r_parse != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL  ) {
+    cout << "Testing Kokkos::Qthread:: Failed in parsing command line input" << endl;
+    return -1;
+  }
+  if (r_parse == Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED) {
+    return 0;
+  }
 
   unsigned threads_count = 0;
   if (Kokkos::hwloc::available())  {
@@ -41,8 +61,11 @@ int main(int argc, char *argv[]) {
          << "Threads count    = " << threads_count << endl;
   }
 
-  for (unsigned i=1;i<(threads_count+1);i*=2) {
-    Kokkos::Threads::initialize( i );
+  if (static_cast<unsigned int>(nthreads) > threads_count) {
+    ++r_val;
+    cout << "Testing Kokkos::Threads:: Failed that the given nthreads is greater than the number of threads counted" << endl;
+  } else {
+    Kokkos::Threads::initialize( nthreads );
     Kokkos::Threads::print_configuration( cout , true /* detailed */ );
     
     //__TestSuiteDoUnitTests__(float,int,unsigned int,Kokkos::Serial,void);

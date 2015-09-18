@@ -6,7 +6,7 @@ SET(SOURCES "")
 
 FILE(GLOB SOURCES *.cpp)
 
-SET(LIBRARIES shyluichol)
+SET(LIBRARIES shyluchol)
 
 # Symbolic Factorization
 # ======================
@@ -27,39 +27,39 @@ IF(Kokkos_ENABLE_Pthread)
   )
 ENDIF()
 
-# Sparse IChol
+# Sparse Chol
 # ============
 
 IF(Kokkos_ENABLE_Serial)
   TRIBITS_ADD_EXECUTABLE(
-    ichol_unblocked_serial
-    SOURCES example_ichol_unblocked_serial.cpp
+    chol_unblocked_serial
+    SOURCES example_chol_unblocked_serial.cpp
     COMM serial mpi
   )
 
   TRIBITS_ADD_EXECUTABLE(
-    ichol_by_blocks_graphviz
-    SOURCES example_ichol_by_blocks_graphviz.cpp
+    chol_by_blocks_graphviz
+    SOURCES example_chol_by_blocks_graphviz.cpp
     COMM serial mpi
   )
 
   TRIBITS_ADD_EXECUTABLE(
-    ichol_by_blocks_serial
-    SOURCES example_ichol_by_blocks_serial.cpp
+    chol_by_blocks_serial
+    SOURCES example_chol_by_blocks_serial.cpp
     COMM serial mpi
   )
 ENDIF()
 
 IF(Kokkos_ENABLE_Pthread)
   TRIBITS_ADD_EXECUTABLE(
-    ichol_unblocked_pthread
-    SOURCES example_ichol_unblocked_pthread.cpp
+    chol_unblocked_pthread
+    SOURCES example_chol_unblocked_pthread.cpp
     COMM serial mpi
   )
 
   TRIBITS_ADD_EXECUTABLE(
-    ichol_by_blocks_pthread
-    SOURCES example_ichol_by_blocks_pthread.cpp
+    chol_by_blocks_pthread
+    SOURCES example_chol_by_blocks_pthread.cpp
     COMM serial mpi
   )
 ENDIF()
@@ -114,14 +114,14 @@ ENDIF()
 
 IF(Kokkos_ENABLE_Pthread)
   TRIBITS_ADD_EXECUTABLE(
-    ichol_performance_pthread
-    SOURCES example_ichol_performance_pthread.cpp
+    chol_performance_pthread
+    SOURCES example_chol_performance_pthread.cpp
     COMM serial mpi
   )
 
   TRIBITS_ADD_EXECUTABLE(
-    ichol_performance_single_pthread
-    SOURCES example_ichol_performance_single_pthread.cpp
+    chol_performance_single_pthread
+    SOURCES example_chol_performance_single_pthread.cpp
     COMM serial mpi
   )
 
@@ -146,8 +146,8 @@ ENDIF()
 
 IF(Kokkos_ENABLE_QTHREAD)
   TRIBITS_ADD_EXECUTABLE(
-    ichol_performance_qthread
-    SOURCES example_ichol_performance_qthread.cpp
+    chol_performance_qthread
+    SOURCES example_chol_performance_qthread.cpp
     COMM serial mpi
   )
 

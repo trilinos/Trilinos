@@ -14,14 +14,14 @@ typedef int    size_type;
 #define __USE_FIXED_TEAM_SIZE__ 1
 typedef Kokkos::Serial exec_space;
 
-#include "example_ichol_unblocked.hpp"
+#include "example_chol_unblocked.hpp"
 
 using namespace Example;
 
 int main (int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp;
-  clp.setDocString("This example program demonstrates ICholUnblocked algorithm on Kokkos::Serial execution space.\n");
+  clp.setDocString("This example program demonstrates CholUnblocked algorithm on Kokkos::Serial execution space.\n");
 
   int max_task_dependence = 10;
   clp.setOption("max-task-dependence", &max_task_dependence, "Max number of task dependence");
@@ -47,9 +47,9 @@ int main (int argc, char *argv[]) {
   {
     Kokkos::initialize();
     
-    r_val = exampleICholUnblocked
+    r_val = exampleCholUnblocked
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, max_task_dependence, team_size, AlgoIChol::UnblockedOpt1, verbose);
+      (file_input, max_task_dependence, team_size, AlgoChol::UnblockedOpt1, verbose);
     
     Kokkos::finalize();
   }

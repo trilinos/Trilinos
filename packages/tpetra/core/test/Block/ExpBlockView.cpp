@@ -44,6 +44,7 @@
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_Experimental_BlockView.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_BLAS.hpp"
 
 namespace {
 
@@ -117,6 +118,83 @@ namespace {
       TEST_COMPARE_ARRAYS( x_view, b_view );
     }
   }
+
+
+  // Test small dense block QR factorization and solve, with an easy
+  // problem (the identity matrix).
+  //
+  // FIXME (mfh 17 Sep 2015) Right now, this only tests whether
+  // calling GEQRF compiles.
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( ExpBlockView, GEQRF, ST, LO )
+  {
+    using std::endl;
+    typedef Tpetra::Experimental::LittleBlock<ST, LO> block_type;
+    const ST zero = static_cast<ST> (0.0);
+    const ST one = static_cast<ST> (1.0);
+    const LO minBlockSize = 1; // 1x1 "blocks" should also work
+    const LO maxBlockSize = 32;
+
+    typename Tpetra::Details::GetLapackType<ST>::lapack_type lapack;
+
+    // Memory pool for the LittleBlock instances.
+    Teuchos::Array<ST> blockPool (maxBlockSize * maxBlockSize);
+    // Memory pool for LAPACK's temporary workspace.  It might need to
+    // be resized in the loop below, because LAPACK may want more
+    // workspace than just the minimum (the number of columns, which
+    // is what the BLAS 2 QR factorization GEQR2 requires).  This must
+    // have length at least one, for the workspace query.
+    Teuchos::Array<ST> workPool (std::max (1, maxBlockSize));
+    // Memory pool for the TAU output array.
+    Teuchos::Array<ST> tauPool (maxBlockSize);
+
+    for (LO blockSize = minBlockSize; blockSize <= maxBlockSize; ++blockSize) {
+      block_type A (blockPool (0, blockSize*blockSize).getRawPtr (),
+                    blockSize, 1, blockSize);
+
+      // Fill A with the identity matrix.
+      A.fill (zero);
+      for (LO i = 0; i < blockSize; ++i) {
+        A(i,i) = one;
+      }
+
+      Teuchos::ArrayView<ST> tauView = tauPool (0, blockSize);
+
+      // Workspace query.
+      Teuchos::ArrayView<ST> workView = workPool (0, std::max (1, blockSize));
+      int lda = blockSize;
+      int lwork = -1;
+      int info = 0;
+      out << "Workspace query" << endl;
+      lapack.GEQRF (blockSize, blockSize, A.getRawPtr (), lda,
+                    tauView.getRawPtr (),
+                    workView.getRawPtr (), lwork, &info);
+
+      TEST_EQUALITY_CONST( info, 0 );
+      if (info != 0) {
+        continue; // workspace query failed; skip the rest
+      }
+      lwork = static_cast<__float128> (workView[0]);
+      TEST_ASSERT( lwork >= 0 );
+      if (lwork < 0) {
+        continue; // workspace query failed; skip the rest
+      }
+
+      if (workPool.size () < static_cast< decltype (workPool.size ()) > (lwork)) {
+        workPool.resize (lwork);
+      }
+      workView = workPool (0, lwork);
+      out << "Workspace size: " << lwork << endl;
+
+      out << "Factor A for blockSize = " << blockSize << endl;
+      lapack.GEQRF (blockSize, blockSize, A.getRawPtr (), lda,
+                    tauView.getRawPtr (),
+                    workView.getRawPtr (), lwork, &info);
+      TEST_EQUALITY_CONST( info, 0 );
+
+      out << "Done with factoring A" << endl;
+    }
+  }
+
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ExpBlockView, SWAP, ST )
   {

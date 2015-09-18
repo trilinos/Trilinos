@@ -19,14 +19,27 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 ENDIF()
 
 IF(Kokkos_ENABLE_Pthread)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TRIBITS_ADD_EXECUTABLE(
     test_pthread
     NOEXEPREFIX
     SOURCES main_pthread.cpp 
-    FAIL_REGULAR_EXPRESSION "FAILED"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
   )
+  INCLUDE(ProcessorCount)
+  ProcessorCount(nthreads)
+  SET(i 1)
+  MATH(EXPR nthreads "${nthreads}+1")
+  WHILE(i LESS nthreads)
+    TRIBITS_ADD_ADVANCED_TEST(
+      test_pthread_${i}
+      TEST_0 EXEC test_pthread
+             NOEXEPREFIX        
+             ARGS --nthreads=${i} 
+      FAIL_REGULAR_EXPRESSION "FAILED"
+      COMM serial mpi
+      OVERALL_NUM_MPI_PROCS 1
+    )
+    MATH(EXPR i "${i}*2")
+  ENDWHILE()
 ENDIF()
 
 IF(Kokkos_ENABLE_QTHREAD)
@@ -37,7 +50,6 @@ IF(Kokkos_ENABLE_QTHREAD)
   )
   INCLUDE(ProcessorCount)
   ProcessorCount(nthreads)
-  SET(nthreads 1)
   SET(i 1)
   MATH(EXPR nthreads "${nthreads}+1")
   WHILE(i LESS nthreads)
@@ -55,7 +67,7 @@ IF(Kokkos_ENABLE_QTHREAD)
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(${PACKAGE_NAME}_Test_Files
-        SOURCE_FILES mm_crs_input.mtx mm_crs_ichol.mtx
+        SOURCE_FILES mm_crs_input.mtx mm_crs_chol.mtx
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
         DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
 )

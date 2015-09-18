@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __TEST_ICHOL_UNBLOCKED_HPP__
-#define __TEST_ICHOL_UNBLOCKED_HPP__
+#ifndef __TEST_CHOL_BLOCKED_HPP__
+#define __TEST_CHOL_BLOCKED_HPP__
 
 #include "util.hpp"
 
@@ -17,7 +17,7 @@
 #include "task_factory.hpp"
 #include "task_team_factory.hpp"
 
-#include "ichol.hpp"
+#include "chol.hpp"
 
 namespace Example {
 
@@ -29,8 +29,9 @@ namespace Example {
            typename SpaceType = void,
            typename MemoryTraits = void>
   KOKKOS_INLINE_FUNCTION
-  int testICholUnblocked(const string file_input, 
-                         const string file_factored) {
+  int testCholBlocked(const string file_input,
+                       const OrdinalType blocksize,
+                       const string file_factored) {
     typedef ValueType   value_type;
     typedef OrdinalType ordinal_type;
     typedef SizeType    size_type;
@@ -41,7 +42,7 @@ namespace Example {
     typedef TaskTeamFactory<Kokkos::Experimental::TaskPolicy<SpaceType>,
       Kokkos::Experimental::Future<int,SpaceType>,
       Kokkos::Impl::TeamThreadRangeBoundariesStruct> TaskFactoryType;
-
+  
     typedef ParallelFor ForType;
     
     typedef TaskView<CrsMatrixViewType,TaskFactoryType> CrsTaskViewType;
@@ -49,10 +50,13 @@ namespace Example {
     int r_val = 0;
 
     __DOT_LINE__;
-    cout << "testICholUnblocked:: input = " << file_input << ", factored = " << file_factored << endl;        
+    cout << "testCholBlocked:: input = " << file_input 
+         << ", blocksize = " << blocksize 
+         << ", factored = " << file_factored 
+         << endl;        
     __DOT_LINE__;
 
-    CrsMatrixBaseType AA("AA"), UU("UU");    
+    CrsMatrixBaseType AA("AA"), UU("UU");
     {
       ifstream in;
       in.open(file_input);
@@ -61,25 +65,24 @@ namespace Example {
         return ++r_val;
       }
       AA.importMatrixMarket(in);
-
-      UU.copy(Uplo::Upper, AA);
+      UU.copy(Uplo::Upper, AA);      
     }
 
-    cout << "testICholUnblocked::Begin - " << r_val << endl;
+    cout << "testCholBlocked::Begin - " << r_val << endl;
     typename TaskFactoryType::policy_type policy;
     TaskFactoryType::setPolicy(&policy);
-
+    
     CrsTaskViewType U(&UU);
     {
-      U.fillRowViewArray();
-    
-      auto future = TaskFactoryType::Policy().create_team(IChol<Uplo::Upper,AlgoIChol::UnblockedOpt1>
-                                       ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
-      TaskFactoryType::Policy().spawn(future);
-      Kokkos::Experimental::wait(TaskFactoryType::Policy());
-    
+      Chol<Uplo::Upper,AlgoChol::Blocked>::blocksize = blocksize;
+      
+      Chol<Uplo::Upper,AlgoChol::Blocked>
+        ::invoke<ForType>(TaskFactoryType::Policy(), 
+                          TaskFactoryType::Policy().member_single(),
+                          U);
+      
       cout << UU << endl;
-    }   
+    }
 
     CrsMatrixBaseType FF("FF");    
     {
@@ -100,11 +103,11 @@ namespace Example {
         __ASSERT_TRUE__(tmp < epsilon);
       }
     }
-    cout << "testICholUnblocked::End - " << r_val << endl; 
+    cout << "testCholBlocked::End - " << r_val << endl;    
 
     string eval;
     __EVAL_STRING__(r_val, eval);
-    cout << "testICholUnblocked::Eval - " << eval << endl;
+    cout << "testCholBlocked::Eval - " << eval << endl;
     
     __DOT_LINE__;
 
