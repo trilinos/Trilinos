@@ -53,6 +53,7 @@
 
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_GraphModel.hpp>
 
 #include <Epetra_SerialDenseVector.h>
 
@@ -742,7 +743,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
  * globalWeightedCutsByPart() must be called by all processes in \c comm.
  */
 
-/*template <typename Adapter, typename pnum_t>
+template <typename Adapter, typename pnum_t>
   void globalWeightedCutsByPart( 
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm, 
@@ -882,7 +883,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
   numParts = nparts;
 
   env->debug(DETAILED_STATUS, "Exiting globalWeightedCutsByPart");
-}*/
+}
 
 /*! \brief Compute the imbalance
  *  \param numParts the number of parts supplied, which is the
