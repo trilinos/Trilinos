@@ -371,6 +371,8 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("repartition: Zoltan dimensions",0,"Dimension of problem",PL,intParam);
   setIntParameter("repartition: start level",1,"Suppress repartitioning until this level",PL,intParam);
 
+  PL->set("initialize random seed",false);
+
   /* Analysis Options (Section 6.4.7) */
   PL->set("analyze memory",false);
   PL->set("viz: enable",false);
