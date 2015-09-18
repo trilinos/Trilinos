@@ -1903,6 +1903,45 @@ namespace Teuchos
 
 #endif // HAVE_TEUCHOS_COMPLEX
 
+#ifdef HAVE_TEUCHOSCORE_QUADMATH
+
+  // BEGIN int, __float128 SPECIALIZATION DECLARATION //
+
+  // mfh 18 Sep 2015: I had to write this specialization by hand,
+  // since LAPACK does not provide it, so it is not complete.
+  template<>
+  class TEUCHOSNUMERICS_LIB_DLL_EXPORT LAPACK<int, __float128>
+  {
+  public:
+    inline LAPACK(void) {}
+    inline LAPACK(const LAPACK<int, __float128>& lapack) {}
+    inline virtual ~LAPACK(void) {}
+
+    void GEQRF(const int m, const int n, __float128* A, const int lda, __float128* TAU, __float128* WORK, const int lwork, int* info) const;
+    void GEQR2(const int m, const int n, __float128 A[], const int lda, __float128 TAU[], __float128 WORK[], int* const info) const;
+
+    void GETRF(const int m, const int n, __float128* A, const int lda, int* IPIV, int* info) const;
+    void GETRS(const char TRANS, const int n, const int nrhs, const __float128* A, const int lda, const int* IPIV, __float128* B, const int ldb, int* info) const;
+    void GETRI(const int n, __float128* A, const int lda, const int* IPIV, __float128* WORK, const int lwork, int* info) const;
+
+    void LASWP (const int N, __float128 A[], const int LDA, const int K1, const int K2, const int IPIV[], const int INCX) const;
+
+    // Orthogonal matrix routines.
+    void ORM2R(const char SIDE, const char TRANS, const int m, const int n, const int k, const __float128 A[], const int lda, const __float128 TAU[], __float128 C[], const int ldc, __float128 WORK[], int* const info) const;
+    void ORGQR(const int m, const int n, const int k, __float128* A, const int lda, const __float128* TAU, __float128* WORK, const int lwork, int* info) const;
+    void UNGQR(const int m, const int n, const int k, __float128* A, const int lda, const __float128* TAU, __float128* WORK, const int lwork, int* info) const;
+
+    // Rotation/reflection generators
+    void LARFG( const int n, __float128* alpha, __float128* x, const int incx, __float128* tau ) const;
+
+    // Miscellaneous routines.
+    __float128 LAPY2 (const __float128 x, const __float128 y) const;
+  };
+
+  // END int, __float128 SPECIALIZATION DECLARATION //
+
+#endif // HAVE_TEUCHOSCORE_QUADMATH
+
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 } // namespace Teuchos
