@@ -1,11 +1,11 @@
 // @HEADER
 // ***********************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//                    Teuchos: Common Tools Package
+//                 Copyright (2004) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -36,17 +36,17 @@
 //
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ************************************************************************
+// ***********************************************************************
 // @HEADER
 
-#include "Tpetra_Details_Lapack128.hpp"
-#ifdef HAVE_TPETRA_INST_FLOAT128
+#include "Teuchos_Details_Lapack128.hpp"
+#ifdef HAVE_TEUCHOSCORE_QUADMATH
 #  include "Teuchos_BLAS.hpp"
-#endif // HAVE_TPETRA_INST_FLOAT128
+#endif // HAVE_TEUCHOSCORE_QUADMATH
 
 
-#ifdef HAVE_TPETRA_INST_FLOAT128
-namespace Tpetra {
+#ifdef HAVE_TEUCHOSCORE_QUADMATH
+namespace Teuchos {
 namespace Details {
 
 void
@@ -210,7 +210,7 @@ GETRI (const int /* N */, __float128 /* A */ [], const int /* LDA */,
        int* /* INFO */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "Lapack128::GETRI: Not implemented yet.");
+    (true, std::logic_error, "Teuchos::LAPACK<int, __float128>::GETRI: Not implemented yet.");
 }
 
 
@@ -552,7 +552,7 @@ GEQR2 (const int /* M */,
        int* const /* INFO */ ) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "Lapack128::GEQR2: Not implemented yet.");
+    (true, std::logic_error, "Teuchos::LAPACK<int, __float128>::GEQR2: Not implemented yet.");
 }
 
 void
@@ -592,7 +592,7 @@ ORGQR (const int /* M */,
        int* const /* INFO */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "Lapack128::GEQR2: Not implemented yet.");
+    (true, std::logic_error, "Teuchos::LAPACK<int, __float128>::GEQR2: Not implemented yet.");
 }
 
 void
@@ -608,9 +608,9 @@ UNGQR (const int /* M */,
        int* const /* INFO */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "Lapack128::GEQR2: Not implemented yet.");
+    (true, std::logic_error, "Teuchos::LAPACK<int, __float128>::GEQR2: Not implemented yet.");
 }
 
 } // namespace Details
-} // namespace Tpetra
-#endif // HAVE_TPETRA_INST_FLOAT128
+} // namespace Teuchos
+#endif // HAVE_TEUCHOSCORE_QUADMATH
