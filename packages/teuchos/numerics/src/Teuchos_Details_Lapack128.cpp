@@ -1,11 +1,11 @@
 // @HEADER
 // ***********************************************************************
 //
-//          Tpetra: Templated Linear Algebra Services Package
-//                 Copyright (2008) Sandia Corporation
+//                    Teuchos: Common Tools Package
+//                 Copyright (2004) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -36,22 +36,17 @@
 //
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ************************************************************************
+// ***********************************************************************
 // @HEADER
 
-#include "Tpetra_Details_Lapack128.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_LAPACK.hpp"
-#ifdef HAVE_TPETRA_INST_FLOAT128
+#include "Teuchos_Details_Lapack128.hpp"
+#ifdef HAVE_TEUCHOSCORE_QUADMATH
 #  include "Teuchos_BLAS.hpp"
-#endif // HAVE_TPETRA_INST_FLOAT128
-#ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-#  include "Kokkos_ArithTraits.hpp"
-#endif // TPETRA_HAVE_KOKKOS_REFACTOR
+#endif // HAVE_TEUCHOSCORE_QUADMATH
 
 
-#ifdef HAVE_TPETRA_INST_FLOAT128
-namespace Tpetra {
+#ifdef HAVE_TEUCHOSCORE_QUADMATH
+namespace Teuchos {
 namespace Details {
 
 void
@@ -215,7 +210,7 @@ GETRI (const int /* N */, __float128 /* A */ [], const int /* LDA */,
        int* /* INFO */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "Lapack128::GETRI: Not implemented yet.");
+    (true, std::logic_error, "Teuchos::LAPACK<int, __float128>::GETRI: Not implemented yet.");
 }
 
 
@@ -331,26 +326,21 @@ ORM2R (const char side, const char trans,
 
 namespace { // (anonymous)
 
-  template<class KokkosViewType>
   int
-  ILADLC (const KokkosViewType& A)
+  ILADLC (const int m, const int n, const __float128 A[], const int lda)
   {
-    typename KokkosViewType::const_value_type zero =
-      Kokkos::Details::ArithTraits<typename KokkosViewType::non_const_value_type>::zero ();
-
-    const int m = A.dimension_0 ();
-    const int n = A.dimension_1 ();
+    const __float128 zero = 0.0;
 
     // Quick test for the common case where one corner is non-zero.
     if (n == 0) {
       return n;
-    } else if (A(0, n-1) != zero || A(m-1, n-1) != zero) {
+    } else if (A[0 + (n-1)*lda] != zero || A[(m-1) + (n-1)*lda] != zero) {
       return n;
     } else {
       // Now scan each column from the end, returning with the first non-zero.
       for (int j = n; j > 0; --j) {
         for (int i = 1; i <= m; ++i) {
-          if (A(i-1, j-1) != zero) {
+          if (A[(i-1) + (j-1)*lda] != zero) {
             return j;
           }
         }
@@ -359,53 +349,28 @@ namespace { // (anonymous)
     }
   }
 
-  template<class KokkosViewType>
   int
-  ILADLR (const KokkosViewType& A)
+  ILADLR (const int m, const int n, const __float128 A[], const int lda)
   {
-    typename KokkosViewType::const_value_type zero =
-      Kokkos::Details::ArithTraits<typename KokkosViewType::non_const_value_type>::zero ();
-
-    const int m = A.dimension_0 ();
-    const int n = A.dimension_1 ();
+    const __float128 zero = 0.0;
 
     // Quick test for the common case where one corner is non-zero.
     if (m == 0) {
       return m;
-    } else if (A(m-1, 0) != zero || A(m-1, n-1) != zero) {
+    } else if (A[(m-1) + 0*lda] != zero || A[(m-1) + (n-1)*lda] != zero) {
       return m;
     } else {
       // Scan up each column tracking the last zero row seen.
       int lastZeroRow = 0;
       for (int j = 1; j <= n; ++j) {
         int i = m;
-        while (A(std::max (i, 1) - 1, j - 1) == zero && i >= 1) {
+        while (A[(std::max (i, 1) - 1) + (j - 1)*lda] == zero && i >= 1) {
           i--;
         }
         lastZeroRow = std::max (lastZeroRow, i);
       }
       return lastZeroRow;
     }
-  }
-
-  int
-  ILADLC_C (const int m, const int n, const __float128 A[], const int lda)
-  {
-    Kokkos::View<const __float128**, Kokkos::Serial,
-                 Kokkos::MemoryUnmanaged> A_kokkos (A, lda, n);
-    auto A_mn = Kokkos::subview (A_kokkos, std::make_pair (0, m),
-                                 std::make_pair (0, n));
-    return ILADLC (A_mn);
-  }
-
-  int
-  ILADLR_C (const int m, const int n, const __float128 A[], const int lda)
-  {
-    Kokkos::View<const __float128**, Kokkos::Serial,
-                 Kokkos::MemoryUnmanaged> A_kokkos (A, lda, n);
-    auto A_mn = Kokkos::subview (A_kokkos, std::make_pair (0, m),
-                                 std::make_pair (0, n));
-    return ILADLR (A_mn);
   }
 } // namespace (anonymous)
 
@@ -448,10 +413,10 @@ LARF (const char side,
     }
     if (applyLeft) {
       // Scan for the last non-zero column in C(1:lastv,:).
-      lastc = ILADLC_C (lastv, n, C, ldc);
+      lastc = ILADLC (lastv, n, C, ldc);
     } else {
       // Scan for the last non-zero row in C(:,1:lastv).
-      lastc = ILADLR_C (m, lastv, C, ldc);
+      lastc = ILADLR (m, lastv, C, ldc);
     }
   }
 
@@ -487,8 +452,6 @@ LARFG (const int N, __float128* const ALPHA,
 {
   // This is actually LARFGP.
 
-  typedef Kokkos::Details::ArithTraits<__float128> KAT;
-
   const __float128 zero = 0.0;
   const __float128 one = 1.0;
   const __float128 two = 2.0;
@@ -518,7 +481,7 @@ LARFG (const int N, __float128* const ALPHA,
   } else { // general case (norm of x is nonzero)
     // This implements Fortran's two-argument SIGN intrinsic.
     __float128 beta = copysignq (LAPY2 (*ALPHA, xnorm), *ALPHA);
-    const __float128 smlnum = KAT::sfmin () / KAT::eps ();
+    const __float128 smlnum = FLT128_MIN / FLT128_EPSILON;
     int knt = 0;
 
     if (fabsq (beta) < smlnum) {
@@ -589,7 +552,7 @@ GEQR2 (const int /* M */,
        int* const /* INFO */ ) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "Lapack128::GEQR2: Not implemented yet.");
+    (true, std::logic_error, "Teuchos::LAPACK<int, __float128>::GEQR2: Not implemented yet.");
 }
 
 void
@@ -629,7 +592,7 @@ ORGQR (const int /* M */,
        int* const /* INFO */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "Lapack128::GEQR2: Not implemented yet.");
+    (true, std::logic_error, "Teuchos::LAPACK<int, __float128>::GEQR2: Not implemented yet.");
 }
 
 void
@@ -645,9 +608,9 @@ UNGQR (const int /* M */,
        int* const /* INFO */) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION
-    (true, std::logic_error, "Lapack128::GEQR2: Not implemented yet.");
+    (true, std::logic_error, "Teuchos::LAPACK<int, __float128>::GEQR2: Not implemented yet.");
 }
 
 } // namespace Details
-} // namespace Tpetra
-#endif // HAVE_TPETRA_INST_FLOAT128
+} // namespace Teuchos
+#endif // HAVE_TEUCHOSCORE_QUADMATH
