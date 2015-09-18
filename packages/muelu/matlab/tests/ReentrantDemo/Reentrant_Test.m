@@ -2,7 +2,7 @@
 %Sets up a problem where for level 1, P is created by making a fresh hierarchy
 %from within MATLAB and modifying it.
 
-addpath('../..')
+addpath('../../bin')
 
 try
   A = laplacianfun([120, 120]);
