@@ -193,7 +193,7 @@ private:
   static std::map<const string, const double>
   timerDataToMap(const map<const std::string, RCP<Time> > &timers);
   
-  static std::queue<const ParameterList>
+  static std::queue<ParameterList>
   getMetricsToCompare(const ParameterList & pList);
 };
 
@@ -583,7 +583,7 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
 //  }
   
   // get all of the metrics to be tested
-  std::queue<const ParameterList> metrics = ComparisonHelper::getMetricsToCompare(metricsPlist);
+  std::queue<ParameterList> metrics = ComparisonHelper::getMetricsToCompare(metricsPlist);
   
   // run comparison
   bool all_tests_pass = true;
@@ -747,11 +747,11 @@ bool ComparisonHelper::timerComparisonTest(const double time,
   return pass;
 }
 
-std::queue<const ParameterList>
+std::queue<ParameterList>
 ComparisonHelper::getMetricsToCompare(const ParameterList &pList)
 {
   // extract all of the metrics to be testd
-  std::queue<const ParameterList> metrics;
+  std::queue<ParameterList> metrics;
   for(auto it = pList.begin(); it != pList.end(); ++it)
   {
     if(pList.isSublist(it->first))
