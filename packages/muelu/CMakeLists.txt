@@ -112,6 +112,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable MueLu code refactored to use Kokkos."
   NO)
 
+# Define HAVE_MUELU_STRATIMIKOS if Stratimikos package is enabled
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Stratimikos)
+GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_STRATIMIKOS ${${PACKAGE_NAME}_ENABLE_Stratimikos})
+
 # Explicit instantiation options:
 # - MueLu_ENABLE_EXPLICIT_INSTANTIATION
 # - Enabling/disabling of scalar/ordinal types is controlled by Tpetra

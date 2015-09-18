@@ -39,6 +39,7 @@
 //                    Jonathan Hu       (jhu@sandia.gov)
 //                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
+//                    Tobias Wiesner    (tawiesn@sandia.gov)
 //
 // ***********************************************************************
 //
@@ -48,7 +49,8 @@
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
-#include "Thyra_MueLuTpetraPreconditionerFactory.hpp"
+#include "Thyra_MueLuPreconditionerFactory.hpp"
+
 #if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)
 #include "Thyra_MueLuTpetraQ2Q1PreconditionerFactory.hpp"
 #endif
@@ -63,21 +65,21 @@
 namespace Stratimikos {
 
   // Dynamically register MueLu Tpetra adapters in Stratimikos
-  void enableMueLuTpetra(DefaultLinearSolverBuilder& builder, const std::string& stratName = "MueLu");
+  void enableMueLu(DefaultLinearSolverBuilder& builder, const std::string& stratName = "MueLu");
 
   // Dynamically register MueLu Tpetra adapters in Stratimikos
   // Note: No Scalar template argument is available because Stratimikos
   // does not support types beyond double
   template <typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-  void enableMueLuTpetra(DefaultLinearSolverBuilder& builder, const std::string& stratName = "MueLu")
+  void enableMueLu(DefaultLinearSolverBuilder& builder, const std::string& stratName = "MueLu")
   {
     const Teuchos::RCP<const Teuchos::ParameterList> precValidParams = Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
 
     TEUCHOS_TEST_FOR_EXCEPTION(precValidParams->isParameter(stratName), std::logic_error,
-                               "Stratimikos::enableMueLuTpetra cannot add \"" + stratName +"\" because it is already included in builder!");
+                               "Stratimikos::enableMueLu cannot add \"" + stratName +"\" because it is already included in builder!");
 
-    typedef Thyra::PreconditionerFactoryBase<double>                                          Base;
-    typedef Thyra::MueLuTpetraPreconditionerFactory<double, LocalOrdinal, GlobalOrdinal,Node> Impl;
+    typedef Thyra::PreconditionerFactoryBase<double>                                     Base;
+    typedef Thyra::MueLuPreconditionerFactory<double, LocalOrdinal, GlobalOrdinal, Node> Impl;
 
     builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), stratName);
   }

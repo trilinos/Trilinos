@@ -39,14 +39,15 @@
 //                    Jonathan Hu       (jhu@sandia.gov)
 //                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
+//                    Tobias Wiesner    (tawiesn@sandia.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
 
-#include "Stratimikos_MueluTpetraHelpers.hpp"
+#include "Stratimikos_MueLuHelpers.hpp"
 
-#include "Thyra_MueLuTpetraPreconditionerFactory.hpp"
+#include "Thyra_MueLuPreconditionerFactory.hpp"
 #if defined(HAVE_MUELU_EXPERIMENTAL) && defined(HAVE_MUELU_TEKO)
 #include "Thyra_MueLuTpetraQ2Q1PreconditionerFactory.hpp"
 #endif
@@ -56,18 +57,16 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_AbstractFactoryStd.hpp"
 
-#include <stdexcept>
-
 namespace Stratimikos {
 
-  void enableMueLuTpetra(DefaultLinearSolverBuilder &builder, const std::string &stratName) {
+  void enableMueLu(DefaultLinearSolverBuilder &builder, const std::string &stratName) {
     const Teuchos::RCP<const Teuchos::ParameterList> precValidParams = Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
 
     TEUCHOS_TEST_FOR_EXCEPTION(precValidParams->isParameter(stratName), std::logic_error,
-                               "Stratimikos::enableMueLuTpetra cannot add \"" + stratName +"\" because it is already included in builder!");
+                               "Stratimikos::enableMueLu cannot add \"" + stratName +"\" because it is already included in builder!");
 
     typedef Thyra::PreconditionerFactoryBase<double>                  Base;
-    typedef Thyra::MueLuTpetraPreconditionerFactory<double, int, int> Impl;
+    typedef Thyra::MueLuPreconditionerFactory<double, int, int> Impl;
 
     builder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), stratName);
   }
@@ -77,7 +76,7 @@ namespace Stratimikos {
     const Teuchos::RCP<const Teuchos::ParameterList> precValidParams = Teuchos::sublist(builder.getValidParameters(), "Preconditioner Types");
 
     TEUCHOS_TEST_FOR_EXCEPTION(precValidParams->isParameter(stratName), std::logic_error,
-                               "Stratimikos::enableMueLuTpetra cannot add \"" + stratName +"\" because it is already included in builder!");
+                               "Stratimikos::enableMueLuTpetraQ2Q1 cannot add \"" + stratName +"\" because it is already included in builder!");
 
     typedef Thyra::PreconditionerFactoryBase<double>                      Base;
     typedef Thyra::MueLuTpetraQ2Q1PreconditionerFactory<double, int, int> Impl;

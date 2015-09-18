@@ -39,32 +39,42 @@
 //                    Jonathan Hu       (jhu@sandia.gov)
 //                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
+//                    Tobias Wiesner    (tawiesn@sandia.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
-#ifndef THYRA_MUELU_TPETRA_PRECONDITIONER_FACTORY_DECL_HPP
-#define THYRA_MUELU_TPETRA_PRECONDITIONER_FACTORY_DECL_HPP
+#ifndef THYRA_MUELU_PRECONDITIONER_FACTORY_DECL_HPP
+#define THYRA_MUELU_PRECONDITIONER_FACTORY_DECL_HPP
+
+#include <MueLu_ConfigDefs.hpp>
+
+#ifdef HAVE_MUELU_STRATIMIKOS
+
+#include <MueLu_Hierarchy_fwd.hpp>
+#include <MueLu_Utilities.hpp>
 
 #include "Thyra_PreconditionerFactoryBase.hpp"
 
 #include "Kokkos_DefaultNode.hpp"
 
+
 namespace Thyra {
 
-  /** \brief Concrete preconditioner factory subclass based on MueLu.
+  /** \brief Concrete preconditioner factory subclass for Thyra based on MueLu.
    *
-   * ToDo: Finish documentation!
+   * Add support for MueLu preconditioners in Thyra. This class provides an interface both
+   * for Epetra and Tpetra
    */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class MueLuTpetraPreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
+  class MueLuPreconditionerFactory : public PreconditionerFactoryBase<Scalar> {
   public:
 
     /** @name Constructors/initializers/accessors */
     //@{
 
     /** \brief . */
-    MueLuTpetraPreconditionerFactory();
+    MueLuPreconditionerFactory();
     //@}
 
     /** @name Overridden from PreconditionerFactoryBase */
@@ -114,10 +124,14 @@ namespace Thyra {
 
   private:
 
+    Teuchos::RCP<MueLu::Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node> > CreateXpetraPreconditioner(Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > op, const Teuchos::ParameterList& paramList, Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > coords, Teuchos::RCP<Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > nullspace) const;
+
     Teuchos::RCP<Teuchos::ParameterList> paramList_;
 
   };
 
 } // namespace Thyra
 
-#endif // THYRA_MUELU_TPETRA_PRECONDITIONER_FACTORY_DECL_HPP
+#endif // #ifdef HAVE_MUELU_STRATIMIKOS
+
+#endif // THYRA_MUELU_PRECONDITIONER_FACTORY_DECL_HPP
