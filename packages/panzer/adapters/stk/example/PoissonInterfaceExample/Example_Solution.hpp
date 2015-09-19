@@ -40,58 +40,56 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __PoissonExample_EquationSet_Energy_hpp__
-#define __PoissonExample_EquationSet_Energy_hpp__
+#ifndef __Example_Solution_hpp__
+#define __Example_Solution_hpp__
 
-#include <vector>
-#include <string>
+#include "Panzer_config.hpp"
 
-#include "Teuchos_RCP.hpp"
-#include "Panzer_EquationSet_DefaultImpl.hpp"
-#include "Panzer_Traits.hpp"
+#include "Phalanx_ConfigDefs.hpp"
+#include "Phalanx_Evaluator_WithBaseImpl.hpp"
+#include "Phalanx_Evaluator_Derived.hpp"
 #include "Phalanx_FieldManager.hpp"
 
+#include "Panzer_Dimension.hpp"
+#include "Panzer_FieldLibrary.hpp"
+
+#include <string>
+
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace Example {
-
-/** The equation set serves two roles. The first is to let the panzer library
-  * know which fields this equation set defines and their names. It registers
-  * the evaluators required for a particular equation set. The level of the
-  * granularity is largely up to a user. For instance this could be the momentum
-  * or continuity equation in Navier-Stokes, or it could simply be the Navier-Stokes
-  * equations. 
-  *
-  * Generally, this inherits from the panzer::EquationSet_DefaultImpl which takes
-  * care of adding the gather (extract basis coefficients from solution vector) and 
-  * scatter (using element matrices and vectors distribute and sum their values
-  * to a global linear system) evaluators. These use data members that must be set by
-  * the user.
-  */
-template <typename EvalT>
-class PoissonEquationSet : public panzer::EquationSet_DefaultImpl<EvalT> {
-public:    
-
-   /** In the constructor you set all the fields provided by this
-     * equation set. 
-     */
-   PoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
-		      const int& default_integration_order,
-                      const panzer::CellData& cell_data,
-		      const Teuchos::RCP<panzer::GlobalData>& global_data,
-                      const bool build_transient_support);
     
-   /** The specific evaluators are registered with the field manager argument.
-     */
-   void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
-					      const panzer::FieldLibrary& field_library,
-                                              const Teuchos::ParameterList& user_data) const;
+using panzer::Cell;
+using panzer::Point;
+using panzer::Dim;
+
+/** The analytic solution to the Poisson equation for the sin*cos source with
+  * DBC on left and right.
+  */
+template<typename EvalT, typename Traits>
+class Solution : public panzer::EvaluatorWithBaseImpl<Traits>,
+                 public PHX::EvaluatorDerived<EvalT, Traits>  {
+
+public:
+  Solution(const std::string & name,
+           const panzer::IntegrationRule & ir);
+                                                                        
+  void postRegistrationSetup(typename Traits::SetupData d,           
+                             PHX::FieldManager<Traits>& fm);        
+                                                                     
+  void evaluateFields(typename Traits::EvalData d);               
+
 
 private:
-   std::string dof_name;
+  typedef typename EvalT::ScalarT ScalarT;
 
+  // Simulation solution
+  PHX::MDField<ScalarT,Cell,Point> solution;
+  int ir_degree, ir_index;
 };
 
 }
 
-#include "Example_PoissonEquationSet_impl.hpp"
+#include "Example_Solution_impl.hpp"
 
 #endif

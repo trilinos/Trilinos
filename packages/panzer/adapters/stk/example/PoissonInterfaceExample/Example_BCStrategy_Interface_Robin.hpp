@@ -40,8 +40,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_EXAMPLE_BCSTRATEGY_INTERFACE_WEAKDIRICHLETMATCH_HPP
-#define PANZER_EXAMPLE_BCSTRATEGY_INTERFACE_WEAKDIRICHLETMATCH_HPP
+#ifndef PANZER_EXAMPLE_BCSTRATEGY_INTERFACE_ROBIN_HPP
+#define PANZER_EXAMPLE_BCSTRATEGY_INTERFACE_ROBIN_HPP
 
 #include <vector>
 #include <string>
@@ -54,10 +54,36 @@
 
 namespace Example {
 
+/** Impose the interface condition
+  *     normal . grad f = a normal . grad phi + b f_me + c f_other,  (*)
+  * where phi is a smooth field across the interface (1 DOF per interface
+  * node), f is a field possibly discontinuous across the interface (2 DOF
+  * per interface node), and a,b,c are scalar coefficients.
+  *   Optionally modify the first term in the condition to
+  *     a f_me normal . grad phi,  (+)
+  * nonlinearly coupling phi and f_me.
+  *   ParameterList parameters are as follows:
+  *     "Type": "Interface"
+  *     "Strategy": "Robin Interface"
+  *     "Sideset ID": Name of the interface sideset.
+  *     "Element Block ID":  Name of the primary element block, often referred
+  *                          to in the code as 'me' or by a similar pronoun.
+  *     "Element Block ID2": Name of the element block on the other side of
+  *                          the interface, often referred to as 'other'.
+  *     "Equation Set Name":  Equation set associated for my element block,
+  *                           f_me in (*).
+  *     "Equation Set Name2": Equation set for the other's element block,
+  *                           f_other in (*).
+  *     "Data": The following ParameterList specific to this interface condition:
+  *        "Coupling DOF Name": The DOF name for the smooth field, phi in (*).
+  *        "a", "b", "c": The three coefficients in (*).
+  *        "Nonlinear": A boolean indicating whether to use the nonlinear form
+  *                     in (+).
+  */
 template <typename EvalT>
-class BCStrategy_Interface_WeakDirichletMatch : public panzer::BCStrategy_Interface_DefaultImpl<EvalT> {
+class BCStrategy_Interface_Robin : public panzer::BCStrategy_Interface_DefaultImpl<EvalT> {
 public:
-  BCStrategy_Interface_WeakDirichletMatch(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data);
+  BCStrategy_Interface_Robin(const panzer::BC& bc, const Teuchos::RCP<panzer::GlobalData>& global_data);
     
   void setup(const panzer::PhysicsBlock& side_pb,
              const Teuchos::ParameterList& user_data);
@@ -79,18 +105,19 @@ public:
   virtual void evaluateFields(typename panzer::Traits::EvalData d);
 
 private:
-  std::vector<std::string> paramName; 
-  double value; 
-  double temp;
-  std::string other_dof_name;
+  std::string dof_name_, other_dof_name_;
+  std::string coupling_dof_name_;
+  double coeffs_[3];
+  bool nonlinear_;
 
-  static void setSumValues(Teuchos::ParameterList& p,
-                           const std::string value_name1, const double scalar1,
-                           const std::string value_name2, const double scalar2);
+  static void setCombineValues(Teuchos::ParameterList& p,
+                               const std::string value_name1, const double scalar1,
+                               const std::string value_name2, const double scalar2,
+                               const std::string value_name3 = "", const double scalar3 = 0);
 };
 
 }
 
-#include "Example_BCStrategy_Interface_WeakDirichletMatch_impl.hpp"
+#include "Example_BCStrategy_Interface_Robin_impl.hpp"
 
 #endif

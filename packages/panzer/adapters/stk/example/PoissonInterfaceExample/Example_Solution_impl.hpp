@@ -8,11 +8,11 @@
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
-// Redistribution and use in source and binary forms, with or without
+// Redistribution and use in solution and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
 //
-// 1. Redistributions of source code must retain the above copyright
+// 1. Redistributions of solution code must retain the above copyright
 // notice, this list of conditions and the following disclaimer.
 //
 // 2. Redistributions in binary form must reproduce the above copyright
@@ -40,9 +40,6 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef EXAMPLE_SIMPLE_SOURCE_IMPL_HPP
-#define EXAMPLE_SIMPLE_SOURCE_IMPL_HPP
-
 #include <cmath>
 
 #include "Panzer_BasisIRLayout.hpp"
@@ -51,52 +48,41 @@
 
 namespace Example {
 
-//**********************************************************************
 template <typename EvalT,typename Traits>
-SimpleSource<EvalT,Traits>::SimpleSource(const std::string & name,
-                                         const panzer::IntegrationRule & ir)
+Solution<EvalT,Traits>::Solution(const std::string& name,
+                                 const panzer::IntegrationRule& ir)
 {
-  using Teuchos::RCP;
-
   Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_scalar;
   ir_degree = ir.cubature_degree;
 
-  source = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
+  solution = PHX::MDField<ScalarT,Cell,Point>(name, data_layout);
 
-  this->addEvaluatedField(source);
+  this->addEvaluatedField(solution);
   
-  std::string n = "Simple Source";
+  std::string n = "Solution";
   this->setName(n);
 }
 
-//**********************************************************************
 template <typename EvalT,typename Traits>
-void SimpleSource<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
-                                                       PHX::FieldManager<Traits>& fm)
+void Solution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd,           
+                                                   PHX::FieldManager<Traits>& fm)
 {
-
-  this->utils.setFieldData(source,fm);
+  this->utils.setFieldData(solution,fm);
 
   ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
 }
 
-//**********************************************************************
 template <typename EvalT,typename Traits>
-void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
+void Solution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
 { 
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
-    for (int point = 0; point < source.dimension(1); ++point) {
+    for (int point = 0; point < solution.dimension(1); ++point) {
+      const double& x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
+      const double& y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
 
-      const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
-      const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
-
-      //source(cell,point) = 2.0 + x - 10*y*y;
-      source(cell,point) = 4*M_PI*M_PI*sin(2*M_PI*x)*cos(2*M_PI*y);
+      solution(cell,point) = 0.5 - 0.8*x + 0.5*sin(2*M_PI*x)*cos(2*M_PI*y);
     }
   }
 }
 
-//**********************************************************************
 }
-
-#endif
