@@ -1,4 +1,4 @@
-# awk script to compare Epetra and Tpetra timings from MueLu_ScalingTest.exe side-by-side.
+# awk script to compare Epetra and Tpetra timings from MueLu_Driver.exe side-by-side.
 #
 # Don't run this script directly, instead use compareTE.sh.
 #
@@ -84,7 +84,7 @@ BEGIN {
     }
 
     # Pull out the reported total setup time.  This is printed as a sanity check.
-    if (startParsingTimers && match($0,"^ScalingTest: 2 - MueLu Setup")) {
+    if (startParsingTimers && match($0,"^Driver: 2 - MueLu Setup")) {
       match($0,regex);
       TotalSetup[linalg[FILENAME]] = substr($0,RSTART,RLENGTH);
     }

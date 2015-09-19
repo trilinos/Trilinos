@@ -20,7 +20,7 @@ using namespace Example;
 int main (int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor clp;
-  clp.setDocString("This example program measure the performance of IChol algorithms on Kokkos::Threads execution space.\n");
+  clp.setDocString("This example program measure the performance of Chol algorithms on Kokkos::Threads execution space.\n");
 
   int nthreads = 1;
   clp.setOption("nthreads", &nthreads, "Number of threads");

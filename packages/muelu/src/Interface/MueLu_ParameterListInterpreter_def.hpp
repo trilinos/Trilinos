@@ -97,12 +97,12 @@
 #endif
 
 #ifdef HAVE_MUELU_MATLAB
-#include "../matlab/MueLu_MatlabSmoother_decl.hpp"
-#include "../matlab/MueLu_MatlabSmoother_def.hpp"
-#include "../matlab/MueLu_TwoLevelMatlabFactory_decl.hpp"
-#include "../matlab/MueLu_TwoLevelMatlabFactory_def.hpp"
-#include "../matlab/MueLu_SingleLevelMatlabFactory_decl.hpp"
-#include "../matlab/MueLu_SingleLevelMatlabFactory_def.hpp"
+#include "../matlab/src/MueLu_MatlabSmoother_decl.hpp"
+#include "../matlab/src/MueLu_MatlabSmoother_def.hpp"
+#include "../matlab/src/MueLu_TwoLevelMatlabFactory_decl.hpp"
+#include "../matlab/src/MueLu_TwoLevelMatlabFactory_def.hpp"
+#include "../matlab/src/MueLu_SingleLevelMatlabFactory_decl.hpp"
+#include "../matlab/src/MueLu_SingleLevelMatlabFactory_def.hpp"
 #endif
 
 // These code chunks should only be enabled once Tpetra supports proper graph

@@ -1,0 +1,5 @@
+TRIBITS_COPY_FILES_TO_BINARY_DIR(Matlab_Common_cp
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+  SOURCE_FILES constructAggregates.m constructGraph.m
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+  )

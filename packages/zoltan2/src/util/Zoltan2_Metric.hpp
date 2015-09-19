@@ -53,6 +53,7 @@
 
 #include <Zoltan2_StridedData.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
+#include <Zoltan2_GraphModel.hpp>
 
 #include <Epetra_SerialDenseVector.h>
 
@@ -717,25 +718,20 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
  *
  *   \param env   Environment for error handling
  *   \param comm   communicator
+ *   \param graph Graph model
  *   \param part   \c part[i] is the part ID for local object \c i
- *   \param vwgts  \c vwgts[w] is the StridedData object 
- *       representing weight index \c w. The number of weights
- *       (which must be at least one  TODO  WHY?) is taken to be \c vwgts.size().  
- *   \param 
  *   \param numParts  on return this is the global number of parts.
- *   \param numNonemptyParts  on return this is the number of those
- *          parts that are non-empty.
- *   \param metrics on return points to a list of named graphMetricValues objects 
+ *   \param metrics on return points to a list of named graphMetricValues cuts 
  *     that each contains the global max and sum over parts of 
- *     the item being measured. The list may contain "object count", or
+ *     the item being measured. The list may contain "cut count", or
  *     "weight 1", "weight 2" and so on in that order.
- *     If uniform weights were given, then only "object count" appears.
+ *     If uniform weights were given, then only "cut count" appears.
  *     If one set of non-uniform weights were given, then
  *     "weight 1" appear.  Finally, if multiple
  *     weights were given, we have
  *     the individual weights "weight 1", "weight 2", and so on.
  *   \param globalSums If weights are uniform, the globalSums is the
- *      \c numParts totals of global number of objects in each part.
+ *      \c numParts totals of global number of cuts in each part.
  *     Suppose the number of weights is \c W.  If
  *     W is 1, then on return this is an array of length \c numParts .
  *     The \c numParts entries are the total weight in each part.
@@ -747,16 +743,13 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
  * globalWeightedCutsByPart() must be called by all processes in \c comm.
  */
 
-template <typename pnum_t, typename Adapter>
+template <typename Adapter, typename pnum_t>
   void globalWeightedCutsByPart( 
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm, 
     const RCP<const GraphModel<Adapter> > &graph,
     const ArrayView<const pnum_t> &part, 
-    int vwgtDim,
-    const ArrayView<StridedData<typename Adapter::lno_t, typename Adapter::scalar_t> > &vwgts,
     typename Adapter::part_t &numParts, 
-    typename Adapter::part_t &numNonemptyParts,
     ArrayRCP<graphMetricValues<typename Adapter::scalar_t> > &metrics,
     ArrayRCP<typename Adapter::scalar_t> &globalSums)
 {
@@ -764,14 +757,17 @@ template <typename pnum_t, typename Adapter>
   //////////////////////////////////////////////////////////
   // Initialize return values
 
-  numParts = numNonemptyParts = 0;
+  numParts = 0;
 
-  int numMetrics = 1;                       // "object count" or "weight 1"
-  if (vwgtDim > 1) numMetrics = vwgtDim;   // "weight n"
+  int ewgtDim = graph->getNumWeightsPerEdge();
+
+  int numMetrics = 1;                       // "cut count" or "weight 1"
+  if (ewgtDim > 1) numMetrics = ewgtDim;   // "weight n"
 
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
+  typedef StridedData<lno_t, scalar_t> input_t;
   typedef graphMetricValues<scalar_t> mv_t;
   mv_t *newMetrics = new mv_t [numMetrics];
   env->localMemoryAssertion(__FILE__, __LINE__, numMetrics, newMetrics); 
@@ -785,7 +781,7 @@ template <typename pnum_t, typename Adapter>
 
   lno_t localNumObj = part.size();
   part_t localNum[2], globalNum[2];
-  localNum[0] = static_cast<part_t>(vwgtDim);  
+  localNum[0] = static_cast<part_t>(ewgtDim);  
   localNum[1] = 0;
 
   for (lno_t i=0; i < localNumObj; i++)
@@ -798,7 +794,7 @@ template <typename pnum_t, typename Adapter>
   Z2_THROW_OUTSIDE_ERROR(*env)
 
   env->globalBugAssertion(__FILE__,__LINE__,
-    "inconsistent number of vertex weights",
+    "inconsistent number of edge weights",
     globalNum[0] == localNum[0], DEBUG_MODE_ASSERTION, comm);
 
   part_t nparts = globalNum[1] + 1;
@@ -815,46 +811,29 @@ template <typename pnum_t, typename Adapter>
   env->localMemoryAssertion(__FILE__, __LINE__, globalSumSize, localBuf);
   memset(localBuf, 0, sizeof(scalar_t) * globalSumSize);
 
-  scalar_t *obj = localBuf;              // # of objects
+  scalar_t *cut = localBuf;              // # of cuts
 
-  for (lno_t i=0; i < localNumObj; i++)
-    obj[part[i]]++;
+  ArrayView<const lno_t> localEdgeIds, *localOffsets;
+  ArrayView<input_t> localWgts;
+  size_t localNumEdge = graph->getLocalEdgeList(localEdgeIds, localOffsets,
+						localWgts);
+
+  if (!ewgtDim) {
+    for (lno_t i=0; i < localNumObj; i++)
+      for (lno_t j=localOffsets[i]; j < localOffsets[i+1]; j++)
+	if (part[i] != part[localEdgeIds[j]])
+	  cut[part[i]]++;
 
   // This code assumes the solution has the part ordered the
   // same way as the user input.  (Bug 5891 is resolved.)
-  if (vwgtDim){
+  } else {
     scalar_t *wgt = localBuf; // weight 1
-    for (int vdim = 0; vdim < vwgtDim; vdim++){
+    for (int edim = 0; edim < ewgtDim; edim++){
       for (lno_t i=0; i < localNumObj; i++)
-	wgt[part[i]] += vwgts[vdim][i];
+	for (lno_t j=localOffsets[i]; j < localOffsets[i+1]; j++)
+	  if (part[i] != part[localEdgeIds[j]])
+	    wgt[part[i]] += localWgts[j];
       wgt += nparts;         // individual weights
-    }
-  }
-
-  // Metric: local sums on process
-
-  int next = 0;
-
-  metrics[next].setName("object count");
-  metrics[next].setLocalSum(localNumObj);
-
-  if (vwgtDim){
-    scalar_t *wgt = localBuf; // weight 1
-    scalar_t total;
-
-    for (int vdim = 0; vdim < vwgtDim; vdim++){
-      total = 0.0;
-      for (int p=0; p < nparts; p++){
-	total += wgt[p];
-      }
-
-      std::ostringstream oss;
-      oss << "weight " << vdim+1;
-
-      metrics[next].setName(oss.str());
-      metrics[next].setLocalSum(total);
-      next++;
-      wgt += nparts;
     }
   }
 
@@ -872,24 +851,28 @@ template <typename pnum_t, typename Adapter>
   //////////////////////////////////////////////////////////
   // Global max and sum over all parts
 
-  obj = sumBuf;                     // # of objects
+  cut = sumBuf;                     // # of cuts
   scalar_t max=0, sum=0;
-  next = 0;
+  int next = 0;
 
-  ArrayView<scalar_t> objVec(obj, nparts);
-  getStridedStats<scalar_t>(objVec, 1, 0, max, sum);
+  ArrayView<scalar_t> cutVec(cut, nparts);
+  getStridedStats<scalar_t>(cutVec, 1, 0, max, sum);
 
+  metrics[next].setName("cut count");
   metrics[next].setGlobalMax(max);
   metrics[next].setGlobalSum(sum);
-  next++;
 
-  if (vwgtDim){
+  if (ewgtDim){
     scalar_t *wgt = sumBuf;        // weight 1
   
-    for (int vdim=0; vdim < vwgtDim; vdim++){
+    for (int edim=0; edim < ewgtDim; edim++){
       ArrayView<scalar_t> fromVec(wgt, nparts);
       getStridedStats<scalar_t>(fromVec, 1, 0, max, sum);
 
+      std::ostringstream oss;
+      oss << "weight " << edim+1;
+
+      metrics[next].setName(oss.str());
       metrics[next].setGlobalMax(max);
       metrics[next].setGlobalSum(sum);
       next++;
@@ -897,16 +880,7 @@ template <typename pnum_t, typename Adapter>
     }
   }
 
-  //////////////////////////////////////////////////////////
-  // How many parts do we actually have.
-
   numParts = nparts;
-  obj = sumBuf;               // # of objects
-
-  numNonemptyParts = numParts; 
-
-  for (part_t p=0; p < numParts; p++)
-    if (obj[p] == 0) numNonemptyParts--;
 
   env->debug(DETAILED_STATUS, "Exiting globalWeightedCutsByPart");
 }

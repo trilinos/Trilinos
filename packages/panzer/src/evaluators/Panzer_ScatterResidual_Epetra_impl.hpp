@@ -416,9 +416,9 @@ evaluateFields(typename TRAITS::EvalData workset)
 
       rLIDs = globalIndexer_->getElementLIDs(cellLocalId); 
       if(useColumnIndexer)
-        cLIDs = colGlobalIndexer_->getElementLIDs(cellLocalId); 
+        colGlobalIndexer_->getElementAndAssociatedLIDs(cellLocalId, cLIDs);
       else
-        cLIDs = rLIDs;
+        globalIndexer_->getElementAndAssociatedLIDs(cellLocalId, cLIDs);
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -449,11 +449,11 @@ evaluateFields(typename TRAITS::EvalData workset)
                }
             }
             else {
-               int err = Jac->SumIntoMyValues(row,
-                                              cLIDs.size(),
-                                              // scatterField.size(),
-                                              scatterField.dx(),
-                                              panzer::ptrFromStlVector(cLIDs));
+               int err = Jac->SumIntoMyValues(
+                 row,
+                 std::min(cLIDs.size(), static_cast<size_t>(scatterField.size())),
+                 scatterField.dx(),
+                 panzer::ptrFromStlVector(cLIDs));
                TEUCHOS_ASSERT_EQUALITY(err,0);
             }
          } // end rowBasisNum

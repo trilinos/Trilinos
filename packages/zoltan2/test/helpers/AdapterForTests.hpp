@@ -188,13 +188,16 @@ AdapterForTests::base_adapter_t * AdapterForTests::getAdapterForInput(UserInputF
                                                                       const ParameterList &pList,
                                                                       const RCP<const Comm<int> > &comm)
 {
+  AdapterForTests::base_adapter_t * ia = nullptr; // input adapter
   
   if(!pList.isParameter("input adapter"))
-    throw std::runtime_error("Input adapter not specified");
+  {
+    std::cerr << "Input adapter unspecified" << std::endl;
+    return ia;
+  }
   
   // pick method for chosen adapter
   string adapter_name = pList.get<string>("input adapter");
-  AdapterForTests::base_adapter_t * ia = nullptr; // input adapter
   if(adapter_name == "BasicIdentifier")
     ia = AdapterForTests::getBasicIdentiferAdapterForInput(uinput, pList, comm);
   else if(adapter_name == "XpetraMultiVector")
@@ -208,7 +211,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getAdapterForInput(UserInputF
   else if(adapter_name == "PamgenMesh")
     ia = getPamgenMeshAdapterForInput(uinput,pList, comm);
   else
-    throw std::runtime_error("Input adapter type not available, or misspelled.");
+    std::cerr << "Input adapter type: " + adapter_name + ", is unavailable, or misspelled." << std::endl;
   
   return ia;
 }
@@ -220,12 +223,18 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
 {
   
   if(!pList.isParameter("data type"))
-    throw std::runtime_error("Input data type not specified");
+  {
+    std::cerr << "Input data type unspecified" << std::endl;
+    return nullptr;
+  }
   
   string input_type = pList.get<string>("data type"); // get the input type
   
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type:" + input_type + ", not available or misspelled."); // bad type
+  {
+    std::cerr << "Input type:" + input_type + ", is unavailable or misspelled." << std::endl; // bad type
+    return nullptr;
+  }
   
   vector<const zscalar_t *> weights;
   std::vector<int> weightStrides;
@@ -338,15 +347,21 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(Us
                                                                               const ParameterList &pList,
                                                                               const RCP<const Comm<int> > &comm)
 {
-  
+  AdapterForTests::base_adapter_t * adapter = nullptr;
+
   if(!pList.isParameter("data type"))
-    throw std::runtime_error("Input data type not specified");
+  {
+    std::cerr << "Input data type unspecified" << std::endl;
+    return adapter;
+  }
   
   string input_type = pList.get<string>("data type");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type:" + input_type + ", not available or misspelled."); // bad type
+  {
+    std::cerr << "Input type:" + input_type + ", unavailable or misspelled." << std::endl; // bad type
+    return adapter;
+  }
   
-  AdapterForTests::base_adapter_t * adapter = nullptr;
   vector<const zscalar_t *> weights;
   std::vector<int> weightStrides;
   
@@ -411,8 +426,8 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraMVAdapterForInput(Us
 #endif
   
   if(adapter == nullptr)
-    throw std::runtime_error("Input data chosen not compatible with xpetra multi-vector adapter.");
-  else
+    std::cerr << "Input data chosen not compatible with xpetra multi-vector adapter." << std::endl;
+
     return adapter;
 }
 
@@ -421,15 +436,22 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
                                                                                     const ParameterList &pList,
                                                                                     const RCP<const Comm<int> > &comm)
 {
+  
+  AdapterForTests::base_adapter_t * adapter = nullptr;
+
   if(!pList.isParameter("data type"))
-    throw std::runtime_error("Input data type not specified");
+  {
+    std::cerr << "Input data type unspecified" << std::endl;
+    return adapter;
+  }
   
   string input_type = pList.get<string>("data type");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type:" + input_type + ", not available or misspelled."); // bad type
+  {
+    std::cerr << "Input type:" + input_type + ", unavailable or misspelled." << std::endl; // bad type
+    return adapter;
+  }
   
-  
-  AdapterForTests::base_adapter_t * adapter = nullptr;
   vector<const zscalar_t *> vtx_weights;
   vector<const zscalar_t *> edge_weights;
   vector<int> vtx_weightStride;
@@ -533,8 +555,10 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
 #endif
   
   if(adapter == nullptr)
-    throw std::runtime_error("Input data chosen not compatible with xpetra multi-vector adapter.");
-  else{
+  {
+    std::cerr << "Input data chosen not compatible with xpetra multi-vector adapter." << std::endl;
+    return adapter;
+  }else{
     // make the coordinate adapter
     // get an adapter for the coordinates
     // need to make a copy of the plist and change the vector type
@@ -545,7 +569,10 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsGraphAdapterForIn
     ca = getXpetraMVAdapterForInput(uinput,pCopy, comm);
     
     if(ca == nullptr)
-      throw std::runtime_error("Failed to create coordinate vector adapter for xpetra crs-matrix adapter.");
+    {
+      std::cerr << "Failed to create coordinate vector adapter for xpetra crs-matrix adapter." << std::endl;
+      return ca;
+    }
     
     // set the coordinate adapter
     reinterpret_cast<AdapterForTests::xcrsGraph_adapter *>(adapter)->setCoordinateInput(reinterpret_cast<AdapterForTests::xpetra_mv_adapter *>(ca));
@@ -559,14 +586,21 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
                                                                                      const ParameterList &pList,
                                                                                      const RCP<const Comm<int> > &comm)
 {
+  AdapterForTests::base_adapter_t * adapter = nullptr;
+
   if(!pList.isParameter("data type"))
-    throw std::runtime_error("Input data type not specified");
+  {
+    std::cerr << "Input data type unspecified" << std::endl;
+    return adapter;
+  }
   
   string input_type = pList.get<string>("data type");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type:" + input_type + ", not available or misspelled."); // bad type
+  {
+    std::cerr << "Input type:" + input_type + ", unavailable or misspelled." << std::endl; // bad type
+    return adapter;
+  }
   
-  AdapterForTests::base_adapter_t * adapter = nullptr;
   vector<const zscalar_t *> weights;
   vector<int> strides;
   
@@ -654,21 +688,24 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
 #endif
   
   if(adapter == nullptr)
-    throw std::runtime_error("Input data chosen not compatible with xpetra crs-matrix adapter.");
-  else{
+  {
+    std::cerr << "Input data chosen not compatible with xpetra crs-matrix adapter." << std::endl;
+    return adapter;
+  }else{
     
     // make the coordinate adapter
     // get an adapter for the coordinates
     // need to make a copy of the plist and change the vector type
     Teuchos::ParameterList pCopy(pList);
     pCopy = pCopy.set<std::string>("data type","coordinates");
-//    pCopy = pCopy.set<int>("vector_dimension", 1); // what is the proper value!?
     
     AdapterForTests::base_adapter_t * ca = nullptr;
     ca = getXpetraMVAdapterForInput(uinput,pCopy,comm);
     
-    if(ca == nullptr)
-      throw std::runtime_error("Failed to create coordinate vector adapter for xpetra crs-matrix adapter.");
+    if(ca == nullptr){
+      std::cerr << "Failed to create coordinate vector adapter for xpetra crs-matrix adapter." << std::endl;
+      return ca;
+    }
     
     // set the coordinate adapter
     reinterpret_cast<AdapterForTests::xcrsMatrix_adapter *>(adapter)->setCoordinateInput(reinterpret_cast<AdapterForTests::xpetra_mv_adapter *>(ca));
@@ -682,14 +719,21 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
                                                                                  const ParameterList &pList,
                                                                                  const RCP<const Comm<int> > &comm)
 {
+  
+  AdapterForTests::basic_vector_adapter * ia = nullptr; // pointer for basic vector adapter
+
   if(!pList.isParameter("data type"))
-    throw std::runtime_error("Input data type not specified");
+  {
+    std::cerr << "Input data type unspecified" << std::endl;
+    return nullptr;
+  }
   
   string input_type = pList.get<string>("data type");
   if (!uinput->hasInputDataType(input_type))
-    throw std::runtime_error("Input type:" + input_type + ", not available or misspelled."); // bad type
-  
-  AdapterForTests::basic_vector_adapter * ia = nullptr; // pointer for basic vector adapter
+  {
+    std::cerr << "Input type:" + input_type + ", unavailable or misspelled." << std::endl; // bad type
+    return nullptr;
+  }
   
   vector<const zscalar_t *> weights;
   std::vector<int> weightStrides;
@@ -729,7 +773,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     if(dim == 1) coords[1] = coords[2] = NULL;
     else if(dim == 2)
     {
-      if(comm->getRank() == 0) cout << "2D setting coords 2 to nullll" << endl;
+//      if(comm->getRank() == 0) cout << "2D setting coords 2 to nullll" << endl;
       coords[2] = NULL;
     }
     
@@ -1065,13 +1109,13 @@ AdapterForTests::getPamgenMeshAdapterForInput(UserInputForTests *uinput,
 
     if(uinput->hasPamgenMesh())
     {
-      if(comm->getRank() == 0) cout << "Have pamgen mesh, make adapter...." << endl;
+//      if(comm->getRank() == 0) cout << "Have pamgen mesh, constructing adapter...." << endl;
       ia = new pamgen_adapter_t(*(comm.get()), "region");
-      if(comm->getRank() == 0)
-        ia->print(0);
+//      if(comm->getRank() == 0)
+//        ia->print(0);
     }
   }else{
-    throw std::runtime_error("Pamgen mesh is not available for PamgenMeshAdapter!");
+    std::cerr << "Pamgen mesh is unavailable for PamgenMeshAdapter!" << std::endl;
   }
   
   return  reinterpret_cast<AdapterForTests::base_adapter_t *>(ia);

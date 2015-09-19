@@ -11,8 +11,8 @@
 #include "test_crs_matrix_view.hpp"
 #include "test_crs_row_view.hpp"
 
-#include "test_ichol_unblocked.hpp"
-#include "test_ichol_blocked.hpp"
+#include "test_chol_unblocked.hpp"
+#include "test_chol_blocked.hpp"
 
 #include "test_dense_matrix_base.hpp"
 #include "test_dense_matrix_view.hpp"
@@ -23,14 +23,14 @@
 #include "test_crs_hier_base.hpp"
 #include "test_crs_task_view.hpp"
 
-#include "test_ichol_by_blocks.hpp"
+#include "test_chol_by_blocks.hpp"
 
 #include "test_dense_hier_base.hpp"
 #include "test_dense_task_view.hpp"
 
 #include "test_tri_solve_by_blocks.hpp"
 
-#include "test_ichol_tri_solve_by_blocks.hpp"
+#include "test_chol_tri_solve_by_blocks.hpp"
 
 namespace Example { 
   
@@ -67,13 +67,13 @@ namespace Example {
         r_val += testCrsRowView<VT,OT,ST,SpT,MeT>(3,3, /**/  1,1,1,0);
         r_val += testCrsRowView<VT,OT,ST,SpT,MeT>(3,3, /**/  1,1,0,1);
         // ============================================================
-        r_val += testICholUnblocked<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
-                                                      "mm_crs_ichol.mtx");
+        r_val += testCholUnblocked<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
+                                                      "mm_crs_chol.mtx");
         // ============================================================
         for (OT i=0;i<blk_cnt;++i) 
-          r_val += testICholBlocked<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
+          r_val += testCholBlocked<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
                                                       blks[i],
-                                                      "mm_crs_ichol.mtx");
+                                                      "mm_crs_chol.mtx");
         // ============================================================
         r_val += testDenseMatrixBase<VT,OT,ST,SpT,MeT>(0,0);
         r_val += testDenseMatrixBase<VT,OT,ST,SpT,MeT>(3,3);
@@ -96,7 +96,7 @@ namespace Example {
         r_val += testCrsHierBase<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx");
         r_val += testCrsTaskView<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx");
         // ============================================================ 
-        r_val += testICholByBlocks<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx");
+        r_val += testCholByBlocks<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx");
         // ============================================================ 
         for (OT j=0;j<blk_cnt;++j) 
           for (OT i=0;i<nrhs_cnt;++i) 
@@ -114,7 +114,7 @@ namespace Example {
         // ============================================================ 
         for (OT j=0;j<blk_cnt;++j) 
           for (OT i=0;i<nrhs_cnt;++i) 
-            r_val += testICholTriSolveByBlocks<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
+            r_val += testCholTriSolveByBlocks<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
                                                                  blks[j], nrhs[i]);
         // ============================================================ 
       }

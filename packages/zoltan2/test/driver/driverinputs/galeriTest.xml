@@ -42,6 +42,10 @@
 <!-- 1. INPUT BLOCK DEFINITION -->
 
     <ParameterList name="InputParameters">
+
+        <Parameter name="debug" type="bool" value="False" />
+        <Parameter name="distribure input" type="bool" value="False" />
+
         <Parameter name="x" type="int" value="40"/>
         <Parameter name="y" type="int" value="60"/>
         <Parameter name="z" type="int" value="20"/>
@@ -60,7 +64,8 @@
         </ParameterList>
 
         <ParameterList name="Zoltan2Parameters">
-            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
             <Parameter name="rectilinear" type="string" value="yes"/>
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
@@ -84,8 +89,9 @@
         </ParameterList>
 
         <ParameterList name="Zoltan2Parameters">
-            <Parameter name="algorithm" type="string" value="multijagged"/>
-            <Parameter name="rectilinear" type="string" value="yes"/> 
+            <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
+            <Parameter name="rectilinear" type="string" value="yes"/>
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
         
@@ -106,10 +112,9 @@
             <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
         </ParameterList>
 
-
         <ParameterList name="Zoltan2Parameters">
-            <Parameter name="algorithm" type="string" value="multijagged"/>
-            <Parameter name="rectilinear" type="string" value="yes"/> 
+            <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+            <Parameter name="algorithm" type="string" value="rcb" />
             <Parameter name="compute_metrics" type="string" value="true"/> 
         </ParameterList>
     
@@ -148,7 +153,8 @@
     </ParameterList> -->
 
 <!-- 3. COMPARISON BLOCK DEFINITIONS -->
-    <ParameterList name="Comparison">
+    
+    <ParameterList name="Comparison"> <!-- compare solutions of problems A and B-->
         <Parameter name="A" type="string" value="Problem 1"/>
         <Parameter name="B" type="string" value="Problem 2"/>
     </ParameterList>
@@ -158,13 +164,30 @@
         <Parameter name="B" type="string" value="Problem 3"/>
     </ParameterList>
     
-    <ParameterList name="Comparison">
-        <Parameter name="A" type="string" value="Problem 2"/>
-        <Parameter name="B" type="string" value="Problem 3"/>
+    <ParameterList name="Comparison"> <!-- compare specified metrics of problem to a baseline reference-->
+        <Parameter name="Problem" type="string" value="Problem 3"/>
+        <Parameter name="Reference" type="string" value="Problem 2"/><!-- compare our test problem against this one-->
+        
+        <ParameterList name="object count">
+            <Parameter name="lower" type="double" value="1.0"/>
+            <Parameter name="upper" type="double" value="1.3"/>
+        </ParameterList>
+        
+        <ParameterList name="solve time">
+            <Parameter name="lower" type="double" value="0.1"/>
+            <Parameter name="upper" type="double" value="1.5"/>
+        </ParameterList>
+        
+        <ParameterList name="problem construction time"> <!-- problem construction time-->
+            <Parameter name="lower" type="double" value="0.1"/>
+            <Parameter name="upper" type="double" value="1.5"/>
+        </ParameterList>
+
+        <ParameterList name="apdapter construction time"> <!-- problem construction time-->
+            <Parameter name="lower" type="double" value="0.1"/>
+            <Parameter name="upper" type="double" value="1.5"/>
+        </ParameterList>
+        
     </ParameterList>
 
-    <ParameterList name="Comparison">
-        <Parameter name="A" type="string" value="Problem 2"/>
-        <Parameter name="B" type="string" value="Problem 2"/>
-    </ParameterList>
 </ParameterList>
