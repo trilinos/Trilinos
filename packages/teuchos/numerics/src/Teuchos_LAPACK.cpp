@@ -1871,6 +1871,32 @@ namespace Teuchos
     return lapack.LAPY2 (x, y);
   }
 
+  void LAPACK<int, __float128>::
+  GBTRF (const int m, const int n, const int kl, const int ku,
+         __float128* A, const int lda, int* IPIV, int* info) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    return lapack.GBTRF (m, n, kl, ku, A, lda, IPIV, info);
+  }
+
+  void LAPACK<int, __float128>::
+  GBTRS (const char TRANS, const int n, const int kl, const int ku,
+         const int nrhs, const __float128* A, const int lda, const int* IPIV,
+         __float128* B, const int ldb, int* info) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    return lapack.GBTRS (TRANS, n, kl, ku, nrhs, A, lda, IPIV, B, ldb, info);
+  }
+
+  void LAPACK<int, __float128>::
+  LASCL (const char TYPE, const int kl, const int ku, const __float128 cfrom,
+         const __float128 cto, const int m, const int n, __float128* A,
+         const int lda, int* info) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    return lapack.LASCL (TYPE, kl, ku, cfrom, cto, m, n, A, lda, info);
+  }
+
   // END int, __float128 SPECIALIZATION IMPLEMENTATION //
 
 #endif // HAVE_TEUCHOSCORE_QUADMATH
