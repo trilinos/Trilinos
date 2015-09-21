@@ -117,9 +117,6 @@ namespace MueLu {
       Hierarchy11_(Teuchos::null),
       Hierarchy22_(Teuchos::null),
       disable_addon_(true),
-      MaxCoarseSize_(1000),
-      MaxLevels_(5),
-      Cycles_(1),
       mode_("additive")
     {
     }
@@ -129,9 +126,6 @@ namespace MueLu {
       Hierarchy11_(H11),
       Hierarchy22_(H22),
       disable_addon_(false),
-      MaxCoarseSize_(1000),
-      MaxLevels_(5),
-      Cycles_(1),
       mode_("additive")
     {
     }
@@ -229,20 +223,7 @@ namespace MueLu {
     }
 
     //! Destructor.
-    virtual ~RefMaxwell() {
-      // clean up
-      Hierarchy11_=Teuchos::null;
-      Hierarchy22_=Teuchos::null;
-      SM_Matrix_=Teuchos::null;
-      D0_Matrix_=Teuchos::null;
-      M0inv_Matrix_=Teuchos::null;
-      M1_Matrix_=Teuchos::null;
-      Ms_Matrix_=Teuchos::null;
-      Nullspace_=Teuchos::null;
-      Coords_=Teuchos::null;
-      TMT_Matrix_=Teuchos::null;
-      TMT_Agg_Matrix_=Teuchos::null;
-    }
+    virtual ~RefMaxwell() {}
 
     //! Returns the Tpetra::Map object associated with the domain of this operator.
     Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
@@ -327,7 +308,6 @@ namespace MueLu {
     Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
     //! Some options
     bool disable_addon_;
-    int MaxCoarseSize_, MaxLevels_, Cycles_;
     std::string mode_;
 
   };

@@ -76,16 +76,13 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameters(Teuchos::ParameterList& list) {
 
   disable_addon_  =  list.get("refmaxwell: disable add-on",true);
-  MaxCoarseSize_  =  list.get("refmaxwell: max coarse size",1000);
-  MaxLevels_      =  list.get("refmaxwell: max levels",5);
-  Cycles_         =  list.get("refmaxwell: cycles",1);
   mode_           =  list.get("refmaxwell: mode","additive");
 
-  if(list.isSublist("refmaxwell: 11 list"))
-    precList11_     =  list.sublist("refmaxwell: 11 list");
+  if(list.isSublist("refmaxwell: 11list"))
+    precList11_     =  list.sublist("refmaxwell: 11list");
 
-  if(list.isSublist("refmaxwell: 22 list"))
-    precList22_     =  list.sublist("refmaxwell: 22 list");
+  if(list.isSublist("refmaxwell: 22list"))
+    precList22_     =  list.sublist("refmaxwell: 22list");
 
   std::string ref("smoother:");
   std::string replace("coarse:");
@@ -220,7 +217,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
   auxManager -> SetFactory("Smoother", Teuchos::null);
   auxManager -> SetFactory("CoarseSolver", Teuchos::null);
   auxHierarchy -> Keep("P", Pfact.get());
-  auxHierarchy -> SetMaxCoarseSize( MaxCoarseSize_ );
+  auxHierarchy -> SetMaxCoarseSize(1);
   auxHierarchy -> Setup(*auxManager, 0, 2);
 
   // pull out tentative P
@@ -361,8 +358,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseAdditive(co
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
 
   // block diagonal preconditioner on 2x2 (V-cycle for diagonal blocks)
-  Hierarchy11_->Iterate(*P11res, *P11x, Cycles_, true);
-  Hierarchy22_->Iterate(*D0res,  *D0x,  Cycles_, true);
+  Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
+  Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
 
   // update current solution
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
@@ -382,21 +379,21 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse121(const X
   // precondition (1,1)-block
   RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
-  Hierarchy11_->Iterate(*P11res, *P11x, Cycles_, true);
+  Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (2,2)-block
   residual  = Utils::Residual(*SM_Matrix_, X, RHS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
-  Hierarchy22_->Iterate(*D0res,  *D0x,  Cycles_, true);
+  Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
   D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (1,1)-block
   residual  = Utils::Residual(*SM_Matrix_, X, RHS);
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
-  Hierarchy11_->Iterate(*P11res, *P11x, Cycles_, true);
+  Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
@@ -413,21 +410,21 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse212(const X
   // precondition (2,2)-block
   RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
-  Hierarchy22_->Iterate(*D0res,  *D0x,  Cycles_, true);
+  Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
   D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (1,1)-block
   residual  = Utils::Residual(*SM_Matrix_, X, RHS);
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
-  Hierarchy11_->Iterate(*P11res, *P11x, Cycles_, true);
+  Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (2,2)-block
   residual  = Utils::Residual(*SM_Matrix_, X, RHS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
-  Hierarchy22_->Iterate(*D0res,  *D0x,  Cycles_, true);
+  Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
   D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
@@ -447,7 +444,6 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const Tpetra::Mul
 
     // apply pre-smoothing
     HierarchySmoother_->Iterate(tX,tY,1);
-    //    edgePreSmoother_->Apply(tY,tX);
 
     // do solve for the 2x2 block system
     if(mode_=="additive")
@@ -461,7 +457,6 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const Tpetra::Mul
 
     // apply post-smoothing
     HierarchySmoother_->Iterate(tX,tY,1);
-    //    edgePostSmoother_->Apply(tY,tX);
 
   } catch (std::exception& e) {
 
@@ -492,11 +487,9 @@ initialize(const Teuchos::RCP<TCRS> & D0_Matrix,
 
   Hierarchy11_ = Teuchos::null;
   Hierarchy22_ = Teuchos::null;
+  HierarchySmoother_ = Teuchos::null;
   parameterList_ = List;
   disable_addon_ = false;
-  MaxCoarseSize_ = 1000;
-  MaxLevels_ = 5;
-  Cycles_ = 1;
   mode_ = "additive";
 
   // set parameters
