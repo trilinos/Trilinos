@@ -753,16 +753,33 @@ void GraphModel<Adapter>::shared_constructor(
     // If needed, determine the owning ranks and its local index off-proc
     Teuchos::ArrayRCP<int> edgeRemoteRanks;
     Teuchos::ArrayRCP<lno_t> edgeRemoteLids;
+    std::unordered_map<gno_t, size_t> edgeRemoteUniqueMap;
 
     if (subsetGraph || consecutiveIdsRequired) {
       gno_t dummy = Teuchos::OrdinalTraits<gno_t>::invalid();
       Tpetra::Map<lno_t,gno_t> vtxMap(dummy, adapterVGids(), 0, comm_);
 
-      edgeRemoteRanks = arcp(new int[adapterNLocalEdges],
-                             0, adapterNLocalEdges, true);
-      edgeRemoteLids = arcp(new lno_t[adapterNLocalEdges],
-                            0, adapterNLocalEdges, true);
-      vtxMap.getRemoteIndexList(adapterEGids(),
+      // Need to filter requested edges to make a unique list,
+      // as Tpetra::Map does not return correct info for duplicated entries
+      // (See bug 6412)  
+      // The local filter may be more efficient anyway -- fewer communicated
+      // values in the Tpetra directory
+      Teuchos::ArrayRCP<gno_t> edgeRemoteUniqueGids = 
+               arcp(new gno_t[adapterNLocalEdges], 0, adapterNLocalEdges, true);
+
+      size_t nEdgeUnique = 0;
+      for (size_t i = 0; i < adapterNLocalEdges; i++) {
+        if (edgeRemoteUniqueMap.find(adapterEGids[i]) == 
+            edgeRemoteUniqueMap.end()) {
+          edgeRemoteUniqueGids[nEdgeUnique] = adapterEGids[i];
+          edgeRemoteUniqueMap[adapterEGids[i]] = nEdgeUnique;
+          nEdgeUnique++;
+        }
+      }
+
+      edgeRemoteRanks = arcp(new int[nEdgeUnique], 0, nEdgeUnique, true);
+      edgeRemoteLids = arcp(new lno_t[nEdgeUnique], 0, nEdgeUnique, true);
+      vtxMap.getRemoteIndexList(edgeRemoteUniqueGids(0, nEdgeUnique),
                                 edgeRemoteRanks(), edgeRemoteLids());
     }
 
@@ -779,14 +796,17 @@ void GraphModel<Adapter>::shared_constructor(
         if (removeSelfEdges && (adapterVGids[i] == adapterEGids[j]))
           continue;  // Skipping self edge
 
-        if (subsetGraph && (edgeRemoteRanks[j] == -1)) 
+        size_t remoteIdx = edgeRemoteUniqueMap[adapterEGids[j]];
+
+        if (subsetGraph && (edgeRemoteRanks[remoteIdx] == -1)) 
           continue;  // Skipping edge with neighbor vertex that was not found 
                      // in communicator
 
         if (consecutiveIdsRequired)
           // Renumber edge using local number on remote rank plus first 
           // vtx number for remote rank
-          eGids_[ecnt] = edgeRemoteLids[j] + vtxDist[edgeRemoteRanks[j]];  
+          eGids_[ecnt] = edgeRemoteLids[remoteIdx]
+                       + vtxDist[edgeRemoteRanks[remoteIdx]];  
         else
           eGids_[ecnt] = adapterEGids[j];
 
