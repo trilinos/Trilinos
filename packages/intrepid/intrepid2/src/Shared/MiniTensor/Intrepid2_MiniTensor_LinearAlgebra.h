@@ -408,9 +408,6 @@ arg_max_off_diagonal(Tensor<T, N, ES> const & A);
 template<typename T, Index N, class ES>
 std::pair<Vector<T, N, ES>, Tensor<T, N, ES> >
 sort_permutation(Vector<T, N, ES> const & u);
-template<typename T, Index N>
-std::pair<Vector<T, N>, Tensor<T, N>>
-sort_permutation(Vector<T, N> const & u);
 
 ///
 /// Singular value decomposition (SVD)
@@ -537,7 +534,7 @@ eig_sym(Tensor<T, N, ES> const & A);
 /// \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 ///
 template<typename T, Index N, class ES=NOKOKKOS>
-std::pair<Tensor<T, N, ES>, Tensor<T, N, ES> >
+std::pair< Tensor<T, N, ES>, Tensor<T, N, ES> >
 eig_spd(Tensor<T, N, ES> const & A);
 
 ///
@@ -586,7 +583,6 @@ KOKKOS_INLINE_FUNCTION
 Matrix<T, N, P, ES>
 solve(Tensor<T, N, ES> const & A, Matrix<T, N, P, ES> const & B);
 
-} // namespace Intrepid
 ///
 template<typename T, Index N, typename ES=NOKOKKOS>
 T

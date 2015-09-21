@@ -1808,9 +1808,9 @@ polar_left_logV(Tensor<T, N, ES> const & F)
   return boost::make_tuple(V, R, v);
 }
 
-template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
-polar_left_logV_eig(Tensor<T, N> const & F)
+template<typename T, Index N, class ES=NOKOKKOS>
+boost::tuple<Tensor<T, N, ES>, Tensor<T, N, ES>, Tensor<T, N, ES>>
+polar_left_logV_eig(Tensor<T, N, ES> const & F)
 {
   Index const
   dimension = F.get_dimension();

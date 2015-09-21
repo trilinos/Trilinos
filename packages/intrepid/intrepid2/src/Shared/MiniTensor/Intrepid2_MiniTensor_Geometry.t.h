@@ -735,7 +735,7 @@ Vector<T, N, ES>
 interpolate_element(
     ELEMENT::Type element_type,
     Vector<T, M, ES> &xi,
-    std::vector<Vector<T, N, ES> > cinst &v
+    std::vector<Vector<T, N, ES> > const &v)
 {
   Vector<T, N, ES> p;
 
