@@ -533,7 +533,7 @@ Scalar ImplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
         // and this is used by acceptStep method of the stepControl
 
         stepControl_->setCorrection(*this, (x_stage_bar_->getNonconstVectorBlock(stage)), (x_stage_bar_->getNonconstVectorBlock(stage)), rkNewtonConvergenceStatus_);
-        bool stepPass = stepControl_->acceptStep(*this, &LETvalue_);  // accept the stage solution
+        bool stepPass = stepControl_->acceptStep(*this, &LETvalue_);  
 
         if (!stepPass) { // stepPass = false
            stepLETStatus_ = STEP_LET_STATUS_FAILED;
