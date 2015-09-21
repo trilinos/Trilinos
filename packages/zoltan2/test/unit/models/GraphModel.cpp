@@ -329,42 +329,53 @@ void testAdapter(
   if (vertexGids.size() != nLocalRows) fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getVertexList size", 1)
 
-  // We know model stores things in same order we gave it.
-  if (idsAreConsecutive){
-    zgno_t minLocalGID = rowMap->getMinGlobalIndex();
-    for (zlno_t i=0; i < nLocalRows; i++){
-      if (vertexGids[i] != minLocalGID + i) {
+  if (buildLocalGraph) {
+    // For local graph, vertexGIDs are 0 to n-1, where n = nLocalRows
+    for (zlno_t i = 0; i < nLocalRows; i++) {
+      if (vertexGids[i] != i) {
         fail = 1;
         break;
       }
     }
   }
-  else{  // round robin ids
-    if (consecutiveIdsRequested) {
-      zgno_t myFirstRow;
-      zgno_t tnLocalRows = nLocalRows;
-      scan(*comm, Teuchos::REDUCE_SUM, 1, &tnLocalRows, &myFirstRow);
-      myFirstRow -= nLocalRows;
+  else {
+    // We know model stores things in same order we gave it.
+    if (idsAreConsecutive){
+      zgno_t minLocalGID = rowMap->getMinGlobalIndex();
       for (zlno_t i=0; i < nLocalRows; i++){
-        if (vertexGids[i] != myFirstRow+i){
-          std::cout << rank << " Row " << i << " of " << nLocalRows
-                    << " myFirstRow+i " << myFirstRow+i
-                    << " vertexGids " << vertexGids[i] 
-                    << std::endl;
+        if (vertexGids[i] != minLocalGID + i) {
           fail = 1;
           break;
         }
       }
     }
-    else {
-      zgno_t myGid = rank;
-      for (zlno_t i=0; i < nLocalRows; i++, myGid += nprocs){
-        if (vertexGids[i] != myGid){
-          std::cout << rank << " Row " << i << " of " << nLocalRows
-                    << " myGid " << myGid << " vertexGids " << vertexGids[i] 
-                    << std::endl;
-          fail = 1;
-          break;
+    else{  // round robin ids
+      if (consecutiveIdsRequested) {
+        zgno_t myFirstRow;
+        zgno_t tnLocalRows = nLocalRows;
+        scan(*comm, Teuchos::REDUCE_SUM, 1, &tnLocalRows, &myFirstRow);
+        myFirstRow -= nLocalRows;
+        for (zlno_t i=0; i < nLocalRows; i++){
+          if (vertexGids[i] != myFirstRow+i){
+            std::cout << rank << " Row " << i << " of " << nLocalRows
+                      << " myFirstRow+i " << myFirstRow+i
+                      << " vertexGids " << vertexGids[i] 
+                      << std::endl;
+            fail = 1;
+            break;
+          }
+        }
+      }
+      else {
+        zgno_t myGid = rank;
+        for (zlno_t i=0; i < nLocalRows; i++, myGid += nprocs){
+          if (vertexGids[i] != myGid){
+            std::cout << rank << " Row " << i << " of " << nLocalRows
+                      << " myGid " << myGid << " vertexGids " << vertexGids[i] 
+                      << std::endl;
+            fail = 1;
+            break;
+          }
         }
       }
     }
@@ -388,7 +399,7 @@ void testAdapter(
   for (int i=0; !fail && i < nVtxWeights; i++){
     if (nnzWgtIdx == i){
       for (zlno_t j=0; j < nLocalRows; j++){
-        zscalar_t val = numNbors[j];
+        zscalar_t val = (buildLocalGraph ? numLocalNbors[j] : numNbors[j]);
         if (removeSelfEdges && haveDiag[j])
           val -= 1;
         if (wgts[i][j] != val){
