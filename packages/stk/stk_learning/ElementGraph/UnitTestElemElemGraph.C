@@ -650,7 +650,7 @@ TEST(ElementGraph, HexAddShellSerial)
     meta.commit();
 
     std::vector<stk::mesh::EntityIdVector> hexNodeIDs {
-        { 1, 2, 3, 4, 5,  6,  7,  8 }
+        { 1, 2, 3, 4, 5, 6, 7, 8 }
     };
     stk::mesh::EntityId hexElemIDs[] = { 1 };
 
@@ -2533,7 +2533,7 @@ TEST(ElementGraph, test_parallel_graph_info_data_structure)
 
         const bool inActivePart = true;
         parallel_graph_info.insert(std::make_pair(std::make_pair(local_element, other_element), parallel_info(other_proc, other_side_ord, permutation,
-                chosen_face_id,inActivePart)));
+                chosen_face_id, stk::topology::INVALID_TOPOLOGY, inActivePart)));
 
         size_t num_elems_this_proc = elem_graph.size();
         EXPECT_EQ(2u, num_elems_this_proc);
@@ -7777,7 +7777,7 @@ TEST(ElementGraph, skin_part_3_blocks_2D)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-    if(stk::parallel_machine_size(comm) <= 2)
+    if(stk::parallel_machine_size(comm) <= 4)
     {
         const unsigned X = 4, Y = 1;
         bool auraOn = true;
@@ -7811,7 +7811,7 @@ TEST(ElementGraph, heterogeneous_mesh)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
 
-    if(stk::parallel_machine_size(comm) <= 2)
+    if(stk::parallel_machine_size(comm) <= 17)
     {
         std::string fileName("hetero.g");
         {
@@ -7831,14 +7831,72 @@ TEST(ElementGraph, heterogeneous_mesh)
             }
         }
         stk::mesh::MetaData meta_data(3);
-        stk::mesh::Part &skin = meta_data.declare_part("skin", meta_data.side_rank());
-        stk::io::put_io_part_attribute(skin);
+
+        for(int i=1;i<=17;i++)
+        {
+            std::ostringstream os;
+            os << "skin_" << i;
+            std::string part_name = os.str();
+            stk::mesh::Part &tmp = meta_data.declare_part(part_name, meta_data.side_rank());
+            stk::io::put_io_part_attribute(tmp);
+        }
+
+        stk::mesh::Part& skin = meta_data.declare_part("skin", meta_data.side_rank());
+
         stk::mesh::BulkData bulk_data( meta_data, comm, stk::mesh::BulkData::NO_AUTO_AURA );
         stk::unit_test_util::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
         EXPECT_NO_FATAL_FAILURE(ElementDeathUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
         std::vector<size_t> mesh_counts;
         stk::mesh::comm_mesh_counts(bulk_data, mesh_counts);
         EXPECT_EQ(23u, mesh_counts[meta_data.side_rank()]);
+
+        std::vector<std::pair<stk::mesh::EntityId, int>> id_and_num_faces = {
+                {7, 1},
+                {8, 1},
+                {9, 1},
+                {10, 2},
+                {11, 1},
+                {4, 2},
+                {5, 2},
+                {6, 2},
+                {1, 3},
+                {2, 2},
+                {3, 4},
+                {15, 0},
+                {16, 0},
+                {17, 1},
+                {12, 0},
+                {13, 0},
+                {14, 1}
+        };
+
+        bulk_data.modification_begin();
+
+        for(size_t i=0;i<id_and_num_faces.size();++i)
+        {
+            stk::mesh::EntityId id = id_and_num_faces[i].first;
+            int gold_num_faces = id_and_num_faces[i].second;
+            stk::mesh::Entity elem = bulk_data.get_entity(stk::topology::ELEM_RANK, id);
+            if(bulk_data.is_valid(elem))
+            {
+                int num_faces = bulk_data.num_sides(elem);
+                const stk::mesh::Entity *faces = bulk_data.begin_faces(elem);
+                for(int j=0;j<num_faces;++j)
+                {
+                    std::ostringstream os;
+                    os << "skin_" << bulk_data.identifier(elem);
+                    stk::mesh::PartVector add_parts;
+                    add_parts.push_back(meta_data.get_part(os.str()));
+                    bulk_data.change_entity_parts(faces[j], add_parts, {});
+
+                }
+                EXPECT_EQ(gold_num_faces, num_faces) << "element " << id << " has topology " << bulk_data.bucket(elem).topology() << " with num faces " << num_faces << " not same as gold value " << gold_num_faces << std::endl;
+            }
+        }
+
+        bulk_data.modification_begin();
+
+        //stk::unit_test_util::write_mesh_using_stk_io("heter.g", bulk_data, comm);
     }
 }
 
@@ -7874,6 +7932,245 @@ TEST(ElementGraph, degenerate_mesh)
         std::vector<size_t> mesh_counts;
         stk::mesh::comm_mesh_counts(bulk_data, mesh_counts);
         EXPECT_EQ(10u, mesh_counts[meta_data.side_rank()]);
+    }
+}
+
+TEST(ElementGraph, two_wedge_sandwich_with_quad_shell)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+
+    if(stk::parallel_machine_size(comm) <= 3)
+    {
+        std::string fileName("made_up.g");
+        {
+            stk::mesh::MetaData meta_data(3);
+            stk::mesh::fixtures::VectorFieldType & node_coord =
+                    meta_data.declare_field<stk::mesh::fixtures::VectorFieldType>(stk::topology::NODE_RANK, "coordinates");
+            stk::mesh::put_field(node_coord, meta_data.universal_part(), 3);
+
+            stk::io::put_io_part_attribute(meta_data.declare_part_with_topology("wedges", stk::topology::WEDGE_6));
+            stk::io::put_io_part_attribute(meta_data.declare_part_with_topology("quad_shells", stk::topology::SHELL_QUAD_4));
+
+            meta_data.commit();
+
+            stk::mesh::BulkData bulk_data(meta_data, MPI_COMM_SELF, stk::mesh::BulkData::NO_AUTO_AURA);
+
+            static const char method[] =
+                    "stk_mesh::fixtures::heterogenous_mesh_bulk_data";
+            ////////////////////////////////
+
+            bulk_data.modification_begin();
+
+            stk::mesh::Part & wedge_block = *meta_data.get_part("wedges", method);
+            stk::mesh::Part & quad_shell_block = *meta_data.get_part("quad_shells", method);
+
+            unsigned elem_id = 1;
+
+            unsigned number_wedge = 2;
+
+            stk::mesh::EntityIdVector wedge_node_ids[2] = {
+                    {1, 7, 3, 2, 8, 4},
+                    {7, 5, 3, 8, 6, 4}
+            };
+
+            for(unsigned i = 0; i < number_wedge; ++i, ++elem_id)
+            {
+                stk::mesh::declare_element(bulk_data, wedge_block, elem_id, wedge_node_ids[i]);
+            }
+
+            stk::mesh::EntityIdVector shell_quad_node_ids = {3, 4, 8, 7};
+
+            stk::mesh::declare_element(bulk_data, quad_shell_block, elem_id, shell_quad_node_ids);
+
+            const unsigned node_count = 8;
+            static const double node_coord_data[node_count][3] = {
+                    {0, 0, 0}, {0, 0, 1}, {1, 0, 0}, {1, 0, 1},
+                    {1, 1, 0}, {1, 1, 1}, {0, 1, 0}, {0, 1, 1}};
+
+            for(unsigned i = 0; i < node_count; ++i)
+            {
+                stk::mesh::Entity const node = bulk_data.get_entity(stk::topology::NODE_RANK, i + 1);
+
+                double * const coord = stk::mesh::field_data(node_coord, node);
+
+                coord[0] = node_coord_data[i][0];
+                coord[1] = node_coord_data[i][1];
+                coord[2] = node_coord_data[i][2];
+            }
+
+            bulk_data.modification_end();
+            ////////////////////////////////
+
+            if(stk::parallel_machine_rank(comm) == 0)
+            {
+                stk::unit_test_util::write_mesh_using_stk_io(fileName, bulk_data, comm);
+            }
+        }
+        stk::mesh::MetaData meta_data(3);
+        stk::mesh::Part &skin = meta_data.declare_part("skin", meta_data.side_rank());
+        stk::io::put_io_part_attribute(skin);
+        stk::mesh::BulkData bulk_data(meta_data, comm, stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::unit_test_util::read_from_serial_file_and_decompose(fileName, bulk_data, "RIB");
+        EXPECT_NO_FATAL_FAILURE(ElementDeathUtils::skin_boundary(bulk_data, meta_data.locally_owned_part(), {&skin}));
+        std::vector<size_t> mesh_counts;
+        stk::mesh::comm_mesh_counts(bulk_data, mesh_counts);
+        EXPECT_EQ(8u, mesh_counts[meta_data.side_rank()]);
+
+        std::vector<std::pair<stk::mesh::EntityId, int>> id_and_num_faces = {
+                {1, 4},
+                {2, 4},
+                {3, 0}
+        };
+
+        for(size_t i = 0; i < id_and_num_faces.size(); ++i)
+        {
+            stk::mesh::EntityId id = id_and_num_faces[i].first;
+            int gold_num_faces = id_and_num_faces[i].second;
+            stk::mesh::Entity elem = bulk_data.get_entity(stk::topology::ELEM_RANK, id);
+            if(bulk_data.is_valid(elem))
+            {
+                int num_faces = bulk_data.num_sides(elem);
+                EXPECT_EQ(gold_num_faces, num_faces)<< "element " << id << " has topology " << bulk_data.bucket(elem).topology() << " with num faces " << num_faces << " not same as gold value " << gold_num_faces << std::endl;
+            }
+        }
+    }
+}
+
+TEST(ElementGraph, RefinedQuad)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    if (stk::parallel_machine_size(comm) <= 2)
+    {
+        const int spatialDim = 2;
+        stk::mesh::MetaData meta(spatialDim);
+
+        stk::mesh::Part &quad_part = meta.declare_part_with_topology("Quads", stk::topology::QUADRILATERAL_4_2D);
+        stk::mesh::Part &skin = meta.declare_part_with_topology("Edges", stk::topology::LINE_2);
+        stk::io::put_io_part_attribute(skin);
+        stk::mesh::PartVector skin_parts = {&skin};
+        stk::mesh::Part &active = meta.declare_part("active");
+
+        stk::mesh::Field<double,stk::mesh::Cartesian> & node_coord = meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian>>(stk::topology::NODE_RANK, "coordinates");
+        stk::mesh::put_field(node_coord, meta.universal_part(), 3);
+        stk::io::put_io_part_attribute(quad_part);
+        meta.commit();
+
+        stk::mesh::BulkData mesh(meta, comm, stk::mesh::BulkData::NO_AUTO_AURA);
+
+        mesh.modification_begin();
+
+        std::vector<std::vector<stk::mesh::EntityId>> elem_this_proc = {
+                {1, 2, 3, 4, 5, 6},
+                {7}
+        };
+
+        std::vector<stk::mesh::EntityId> ids = {1, 2, 3, 4, 5, 6, 7};
+        std::vector<std::vector<stk::mesh::EntityId> > connectivity = {
+                {1, 2, 3, 4},
+                {1, 2, 6, 5},
+                {2, 3, 7, 6},
+                {8, 7, 3, 4},
+                {1, 5, 8, 4},
+                {5, 6, 7, 8},
+                {10, 1, 4, 9}
+        };
+
+        bool running_2_procs = mesh.parallel_size() > 1;
+
+        int my_proc_id = mesh.parallel_rank();
+        std::vector<stk::mesh::EntityId> elems_this_proc;
+        if(running_2_procs)
+        {
+            elems_this_proc = elem_this_proc[my_proc_id];
+        }
+        else
+        {
+            elems_this_proc = ids;
+        }
+
+        for(size_t i = 0; i < elems_this_proc.size(); ++i)
+        {
+            int index = static_cast<int>(elems_this_proc[i])-1;
+            stk::mesh::Entity element = stk::mesh::declare_element(mesh, quad_part, elems_this_proc[i], connectivity[index]);
+            if(ids[index]!=1)
+            {
+                mesh.change_entity_parts(element, {&active}, {});
+            }
+        }
+
+        std::vector<stk::mesh::EntityId> nodes = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+        std::vector<std::vector<stk::mesh::EntityId>> nodes_this_proc = {
+                {1, 2, 3, 4, 5, 6, 7, 8},
+                {1, 4, 9, 10}
+        };
+
+        std::vector<std::vector<double> > node_coords = {
+                {0, 0}, {3, 0}, {3, 3}, {0, 3}, {1, 1}, {2, 1}, {2, 2}, {1, 2}, {-3, 3}, {-3, 0}
+        };
+
+        std::vector<stk::mesh::EntityId> nodes_to_create;
+        if(running_2_procs)
+        {
+            nodes_to_create = nodes_this_proc[my_proc_id];
+        }
+        else
+        {
+            nodes_to_create = nodes;
+        }
+
+        for(unsigned i = 0; i < nodes_to_create.size(); ++i)
+        {
+            stk::mesh::Entity const node = mesh.get_entity(stk::topology::NODE_RANK, nodes_to_create[i]);
+            if(running_2_procs && (nodes_to_create[i]==1 || nodes_to_create[i]==4))
+            {
+                mesh.add_node_sharing(node,1-my_proc_id);
+            }
+
+            double * const coord = stk::mesh::field_data(node_coord, node);
+            int index = static_cast<int>(nodes_to_create[i])-1;
+
+            coord[0] = node_coords[index][0];
+            coord[1] = node_coords[index][1];
+        }
+
+        mesh.modification_end();
+
+        stk::mesh::Selector active_sel = active;
+        stk::mesh::Selector air = !active;
+
+        stk::mesh::ElemElemGraph elem_elem_graph(mesh, active_sel, &air);
+        elem_elem_graph.skin_mesh(skin_parts);
+
+        std::vector<size_t> mesh_counts;
+        stk::mesh::comm_mesh_counts(mesh, mesh_counts);
+        EXPECT_EQ(10u, mesh_counts[stk::topology::NODE_RANK]);
+        EXPECT_EQ(7u, mesh_counts[stk::topology::ELEM_RANK]);
+        EXPECT_EQ(6u, mesh_counts[meta.side_rank()]);
+
+        stk::unit_test_util::write_mesh_using_stk_io("refined.g", mesh, comm);
+
+        std::vector<std::pair<stk::mesh::EntityId, int>> id_and_num_faces = {
+                {1, 3},
+                {2, 1},
+                {3, 1},
+                {4, 1},
+                {5, 0},
+                {6, 0},
+                {7, 3}
+        };
+
+        for(size_t i = 0; i < id_and_num_faces.size(); ++i)
+        {
+            stk::mesh::EntityId id = id_and_num_faces[i].first;
+            int gold_num_faces = id_and_num_faces[i].second;
+            stk::mesh::Entity elem = mesh.get_entity(stk::topology::ELEM_RANK, id);
+            if(mesh.is_valid(elem))
+            {
+                int num_faces = mesh.num_sides(elem);
+                EXPECT_EQ(gold_num_faces, num_faces)<< "element " << id << " has topology " << mesh.bucket(elem).topology() << " with num faces " << num_faces << " not same as gold value " << gold_num_faces << std::endl;
+            }
+        }
     }
 }
 

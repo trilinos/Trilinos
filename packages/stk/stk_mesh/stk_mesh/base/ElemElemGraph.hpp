@@ -41,6 +41,8 @@ public:
 
     size_t get_num_connected_elems(stk::mesh::Entity localElement) const;
 
+    unsigned get_num_connected_elems(stk::mesh::Entity localElement, int side_id) const;
+
     bool is_connected_elem_locally_owned(stk::mesh::Entity localElement, size_t indexConnElement) const;
 
     stk::mesh::Entity get_connected_element(stk::mesh::Entity localElement, size_t indexConnElement) const;
@@ -98,6 +100,12 @@ protected:
                                                                     stk::mesh::impl::ConnectedElementDataVector & communicatedElementDataVector,
                                                                     const stk::mesh::EntityVector & elements_to_ignore,
                                                                     std::vector<impl::SharedEdgeInfo> &newlySharedEdges);
+
+    void delete_edge_from_graph(impl::LocalId local_elem_id, int offset);
+
+    stk::topology get_topology_of_connected_element(impl::LocalId local_elem_id, int offset);
+
+    stk::topology get_topology_of_remote_element(impl::LocalId local_elem_id, stk::mesh::EntityId other_element);
 
     void  break_local_volume_element_connections_across_shells(const std::set<stk::mesh::EntityId> & localElementsConnectedToRemoteShell);
 
@@ -206,6 +214,7 @@ private:
     impl::ElemSideToProcAndFaceId get_element_side_ids_to_communicate() const;
     void add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
     stk::mesh::Entity add_side_to_mesh(stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts, stk::mesh::EntityId id);
+    void write_graph() const;
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
