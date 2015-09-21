@@ -172,6 +172,8 @@ public:
   bool in_modifiable_state() const { return m_meshModification.in_modifiable_state(); }
   bool in_synchronized_state() const { return m_meshModification.in_synchronized_state(); }
 
+  bool is_automatic_aura_on() const { return m_autoAuraOption == AUTO_AURA; }
+
 
   /** \brief  Count of the number of times that the bulk data has been
    *          parallel synchronized.  This count gets updated with
@@ -969,8 +971,6 @@ protected: //functions
   inline void internal_mark_entity(Entity entity, entitySharing sharedType);
 
   void internal_change_entity_key(EntityKey old_key, EntityKey new_key, Entity entity); // Mod Mark
-
-  AutomaticAuraOption get_automatic_aura_option() const { return m_autoAuraOption; }
 
   void resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(EntityRank entity_rank, stk::mesh::Selector selectedToSkin);
 

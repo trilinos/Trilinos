@@ -4428,14 +4428,14 @@ bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, 
 
   if (parallel_size() > 1)
   {
-      if ( this->get_automatic_aura_option() == NO_AUTO_AURA)
+      if ( !this->is_automatic_aura_on())
       {
           find_and_delete_internal_faces(entity_rank, only_consider_second_element_from_this_selector);
       }
 
       this->internal_resolve_shared_membership();
 
-      if ( this->get_automatic_aura_option() == AUTO_AURA)
+      if ( this->is_automatic_aura_on())
       {
           this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(entity_rank, selectedToSkin);
       }
@@ -4498,7 +4498,7 @@ bool BulkData::internal_modification_end_for_entity_creation( const std::vector<
 
           internal_resolve_shared_membership();
 
-          if ( this->get_automatic_aura_option() == AUTO_AURA)
+          if ( this->is_automatic_aura_on())
           {
               this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(entity_rank, mesh_meta_data().universal_part());
           }
@@ -6651,7 +6651,7 @@ bool BulkData::make_mesh_parallel_consistent_after_element_death(const std::vect
         internal_resolve_shared_modify_delete();
         internal_resolve_shared_part_membership_for_element_death();
 
-        if(this->get_automatic_aura_option() == AUTO_AURA)
+        if(this->is_automatic_aura_on())
         {
             this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(mesh_meta_data().side_rank(), mesh_meta_data().universal_part());
         }

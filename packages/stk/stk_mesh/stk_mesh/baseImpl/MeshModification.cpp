@@ -79,7 +79,7 @@ bool MeshModification::internal_modification_end(modification_optimization opt)
         m_bulkData.internal_resolve_shared_membership();
 
         // Regenerate the ghosting aura around all shared mesh entities.
-        if(m_bulkData.get_automatic_aura_option() == stk::mesh::BulkData::AUTO_AURA)
+        if(m_bulkData.is_automatic_aura_on())
         {
             m_bulkData.internal_regenerate_aura();
         }
