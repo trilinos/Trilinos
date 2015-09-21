@@ -703,9 +703,9 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<Traits,LocalOrdinalT>
       // loop over the elemnts
       for(std::size_t i=0;i<elements.size();i++) {
 
-         gidProvider_->getElementGIDs(elements[i],gids);
+         gidProvider_->getElementAndAssociatedGIDs(elements[i],gids);
          if(hasColProvider_)
-           colGidProvider_->getElementGIDs(elements[i],col_gids);
+           colGidProvider_->getElementAndAssociatedGIDs(elements[i],col_gids);
          else
            col_gids = gids;
 

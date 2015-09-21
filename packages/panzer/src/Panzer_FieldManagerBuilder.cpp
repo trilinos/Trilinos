@@ -211,12 +211,7 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
            wkst != currentWkst->end(); ++wkst) {
         PHX::FieldManager<panzer::Traits>& fm = field_managers[wkst->first];
 
-        // Set up the field manager
-        Traits::SetupData setupData;
-        Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);
-        worksets->push_back(wkst->second);
-        setupData.worksets_ = worksets;
-
+        int gid_count = 0;
         for (int block_id_index = 0; block_id_index < 2; ++block_id_index) {
           const std::string element_block_id = block_id_index == 0 ? bc->elementBlockID() : bc->elementBlockID2();
 
@@ -251,10 +246,22 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
               bcs_type->buildAndRegisterScatterEvaluators(fm, *side_pb, lo_factory, user_data);
           }
 
-          // setup derivative information
-          //todo Move outside of loop? Sum values from each each block_id_index? Offset?
-          setKokkosExtendedDataTypeDimensions(element_block_id, *globalIndexer, fm);
+          gid_count += globalIndexer->getElementBlockGIDCount(element_block_id);
         }
+
+        { // Use gid_count to set up the derivative information.
+          std::vector<PHX::index_size_type> derivative_dimensions;
+          derivative_dimensions.push_back(gid_count);
+          fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Jacobian>(derivative_dimensions);
+          derivative_dimensions[0] = 1;
+          fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Tangent>(derivative_dimensions);
+        }
+
+        // Set up the field manager
+        Traits::SetupData setupData;
+        Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);
+        worksets->push_back(wkst->second);
+        setupData.worksets_ = worksets;
 
         fm.postRegistrationSetup(setupData);
       }

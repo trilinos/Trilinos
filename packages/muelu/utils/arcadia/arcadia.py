@@ -384,13 +384,13 @@ def build(nnodes, nx, binary, petra, matrix, datafiles, cmds, template, output, 
         shutil.copy(afile, dir)
 
     sched_args = ""
-    if PLATFORM == "hopper":
+    if PLATFORM == "hopper" or PLATFORM == "edison":
         sched_args  = "aprun"
         sched_args += " -ss"                                    # Demands strict memory containment per NUMA node
         sched_args += " -cc numa_node"                          # Controls how tasks are bound to cores and NUMA nodes
         sched_args += " -N " + str(cpn)                         # Number of tasks per node
         if cps != -1:
-            sched_args += " -S " + str(cps)                     # Number of tasks per NUMA node (note: hopper has 4 NUMA nodes)
+            sched_args += " -S " + str(cps)                     # Number of tasks per NUMA node (e.g., hopper has 4 NUMA nodes)
 
     elif PLATFORM == "shannon":
         # There some issues on Shannon with openmpi and srun, so we use mpirun instead
@@ -496,7 +496,37 @@ def main():
 
     # We double escape the \n, as it is later
     # passed to os.system
-    if PLATFORM == "hopper":
+    if PLATFORM == "hopper" or PLATFORM == "edison":
+        # Hopper
+        #   Processor
+        #     Physical        : 24 (2 sockets x 12-core AMD 'MagnyCours' @ 2.1-GHz)
+        #     Virtual         : 24 (no HyperThreading)
+        #   Core
+        #     Flops           : 8.4 Gflops
+        #     L1 cache        : owned, 64 KB (32 KB instruction cache, 32 KB data)
+        #     L2 cache        : owned, 512 KB
+        #     L3 cache        : shared (6 cores), 6 MB
+        #   Memory per node
+        #     Capacity        : 32 GB DDR3 1333-MHz memory per node [6,000 nodes]; 64 GB DDR3 1333-MHz memory per node [384 nodes]
+        #     Channels        : 4 x DDR3 1333-MHz memory channels per twelve-core 'MagnyCours' processor
+
+        # Edison
+        #   Processor
+        #     Physical        : 24 (2 sockets x 12-core Intel 'Ivy Bridge' @ 2.4 Ghz)
+        #     Virtual         : 48 (HyperThreading)
+        #   Core
+        #     Vector width    : 256 bit
+        #     Flops           : 19.2 Gflops
+        #     L1 cache        : owned, 64 KB (32 KB instruction cache, 32 KB data), 100 Gbytes/s bandwidth
+        #     L2 cache        : owned, 256 KB, 40 Gbytes/s bandwidth
+        #     L3 cache        : shared (socket), 30 MB, 23 Gbytes/s bandwidth
+        #  Memory per node
+        #     Capacity        : 64 GB DDR3 1866 MHz memory
+        #     Channels        : 4 x 8 GB DIMMs per socket
+        #  Stream TRIAD
+        #     Bandwidth/node  : 103 Gbytes/s
+        #  Interconnect       : Cray Aries with Dragonfly topology with 23.7 TB/s global bandwidth
+
         CPN          = 24
         SCHEDULER    = "pbs"
         SCHED_HEADER = ("#PBS -S /bin/bash\\n"

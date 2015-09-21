@@ -83,6 +83,10 @@ private:
   double value; 
   double temp;
   std::string other_dof_name;
+
+  static void setSumValues(Teuchos::ParameterList& p,
+                           const std::string value_name1, const double scalar1,
+                           const std::string value_name2, const double scalar2);
 };
 
 }

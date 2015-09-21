@@ -32,6 +32,11 @@
  5. BasicVector
  5. PamgenMesh
  
+ SUPPORTED TIMERS FOR COMPARSISON:
+ 1. adapter construction time
+ 2. problem construction time
+ 3. solve time
+ 
  ** REFER TO THE README FOR A MORE DETAILED EXPLANATION
  
  ////////////////////////////////////////////////////////////////////////////////
@@ -61,28 +66,31 @@
    use one of these blocks per input file!!!!
    
    The first is for a data source to be read
-   from file. If your data source is a pamgen mesh, then
-   you must define a dimension parameter specifying the 
-   dimension of the mesh.
-   
-   The second is for galeri generate data on
+   from file. The second is for galeri generate data on
    a structured grid. Galeri grids can be 1, 2, or 3D.
    The dimension is infered by which coordinate parameters
-   (x,y,z) are defined, e.g. if only the x parameter is 
+   (x,y,z) are defined, e.g. if only the x parameter is
    defined then the problem is assumed to be 1D.
+   
+   ** parameters: distribute input and debug are optional.
+      If not defined they defualt to True.
    #####################################################-->
   
   <ParameterList name="InputParameters">
+    <Parameter name="debug" type="bool" value="True/False"/>
+    <Parameter name="distribute input" type="bool" value="True/False"/>
+    
     <Parameter name="input path" type="string" value="PATH/TO/INPUT/DIRECTORY"/>
     <Parameter name="input file" type="string" value="FILE NAME (NO EXTENSION)"/>
     <Parameter name="file type" type="string" value="INPUT FILE TYPE"/>
-    <!--    PAMGEN MESHES REQUIRE THAT A DIMINSION PARAMTER BE SET-->
-    <!--    <Parameter name="dimension" type="int" value="##"/>-->
   </ParameterList>
   
   <!--  GALERI GRIDS MAY BE 1,2, OR 3D.-->
   <!--  FOR A 1D PROBLEM EXCLUDE x AND y PARAMETERS, ETC.-->
   <ParameterList name="InputParameters">
+    <Parameter name="debug" type="bool" value="True/False"/>
+    <Parameter name="distribute input" type="bool" value="True/False"/>
+    
     <Parameter name="x" type="int" value="##"/>
     <Parameter name="y" type="int" value="##"/>
     <Parameter name="z" type="int" value="##"/>
@@ -166,14 +174,15 @@
   <!--////////////////////////////////////////////////////////////////////////////
    ////////////////////////////////////////////////////////////////////////////////
    
-   3. (OPTIONA) COMPARISON BLOCK DEFINITION
+   3. (OPTIONAL) COMPARISON BLOCK DEFINITION
    
    ////////////////////////////////////////////////////////////////////////////////
    /////////////////////////////////////////////////////////////////////////////-->
   
   <!--####################################################
    Define comparison block to compare solutions of
-   problems A and B
+   problems A and B, or to compare metrics/timers
+   of a problem versus a reference problem
    * define problems to compare by block name
    as shown below
    #####################################################-->
@@ -186,6 +195,22 @@
   <ParameterList name="Comparison">
     <Parameter name="A" type="string" value="TEST/PROBLEM TITLE #1"/>
     <Parameter name="B" type="string" value="TEST/PROBLEM TITLE #3"/>
+  </ParameterList>
+  
+  <ParameterList name="Comparison"> <!-- compare specified metrics of problem to a baseline reference-->
+    <Parameter name="Problem" type="string" value="TEST/PROBLEM TITLE #1"/>
+    <Parameter name="Reference" type="string" value="TEST/PROBLEM TITLE #2"/><!-- compare our test problem against this one-->
+    
+    <ParameterList name="METRIC NAME">
+      <Parameter name="lower" type="double" value="##.####"/>
+      <Parameter name="upper" type="double" value="##.####"/>
+    </ParameterList>
+    
+    <ParameterList name="TIMER NAME">
+      <Parameter name="lower" type="double" value="##.####"/>
+      <Parameter name="upper" type="double" value="##.####"/>
+    </ParameterList>
+    
   </ParameterList>
   
 </ParameterList>

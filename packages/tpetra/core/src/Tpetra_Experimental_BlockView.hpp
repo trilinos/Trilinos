@@ -57,64 +57,12 @@
 #  include "Kokkos_Complex.hpp"
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
-
 #ifdef HAVE_TPETRA_INST_FLOAT128
-namespace Tpetra {
-namespace Details {
-
-//! Partial implementation of Teuchos::LAPACK for Scalar = __float128.
-class Lapack128 {
-public:
-  //! Swap the entries of X with the entries of Y.
-  void
-  SWAP (const int N, __float128* X, const int INCX,
-        __float128* Y, const int INCY) const;
-
-  /// \brief Compute the LU factorization with partial pivoting of
-  ///   the matrix A.
-  void
-  GETRF (const int M, const int N, __float128 A[],
-         const int LDA, int IPIV[], int* INFO) const;
-
-  /// \brief Perform a series of row interchanges on the matrix A.
-  ///
-  /// Do one row interchange for each of rows K1 through K2 of A.
-  ///
-  /// \param N [in] Number of columns of the matrix A.
-  /// \param A [in/out] 2-D column-major array of dimension (LDA,N).
-  ///   On entry, the matrix of column dimension N to which the row
-  ///   interchanges will be applied.  On exit, the permuted matrix.
-  /// \param LDA [in] The leading dimension (stride) of the 2-D
-  ///   column-major array A.
-  /// \param K1 [in] Start row interchanges with IPIV[K1-1].
-  /// \param K2 [in] Stop row interchanges with IPIV[K2-1].
-  /// \param INCX [in] Increment between successive entries of IPIV.
-  ///   If IPIV is negative, apply the pivots in reverse order.
-  void
-  LASWP (const int N, __float128 A[], const int LDA, const int K1,
-         const int K2, const int IPIV[], const int INCX) const;
-
-  /// \brief Solve the linear system(s) AX=B, using the result of
-  ///   the LU factorization computed by GETRF (above).
-  void
-  GETRS (const char TRANS, const int N, const int NRHS,
-         const __float128 A[], const int LDA, const int IPIV[],
-         __float128 B[], const int LDB, int* INFO) const;
-
-  /// \brief Compute the inverse in place of the matrix A, using the
-  ///   results of GETRF.
-  void
-  GETRI (const int N, __float128 A[], const int LDA, int IPIV[],
-         __float128 WORK[], const int LWORK, int* INFO) const;
-};
-
-} // namespace Details
-} // namespace Tpetra
+#  include "Teuchos_Details_Lapack128.hpp"
 #endif // HAVE_TPETRA_INST_FLOAT128
 
-
-
-namespace { // anonymous
+namespace Tpetra {
+namespace Details {
 
   /// \brief Return the Teuchos::LAPACK specialization corresponding
   ///   to the given Scalar type.
@@ -146,14 +94,13 @@ namespace { // anonymous
     // Use the Lapack128 class we declared above to implement the
     // linear algebra operations needed for small dense blocks and
     // vectors.
-    typedef Tpetra::Details::Lapack128 lapack_type;
+    typedef Teuchos::Details::Lapack128 lapack_type;
   };
 #endif // HAVE_TPETRA_INST_FLOAT128
 
-} // namespace (anonymous)
+} // namespace Details
+} // namespace Tpetra
 
-//#include "Teuchos_LAPACK_wrappers.hpp"
-//extern "C" {int DGETRF_F77(const int *, const int *, double *, const int*, int *, int*);}
 
 namespace Tpetra {
 
@@ -340,8 +287,8 @@ public:
 
   void factorize (int* ipiv, int & info)
   {
-    typedef typename GetLapackType<Scalar>::lapack_scalar_type LST;
-    typedef typename GetLapackType<Scalar>::lapack_type lapack_type;
+    typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_scalar_type LST;
+    typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_type lapack_type;
 
     LST* const A_raw = reinterpret_cast<LST*> (A_);
     lapack_type lapack;
@@ -354,8 +301,8 @@ public:
   template<class LittleVectorType>
   void solve (LittleVectorType & X, const int* ipiv) const
   {
-    typedef typename GetLapackType<Scalar>::lapack_scalar_type LST;
-    typedef typename GetLapackType<Scalar>::lapack_type lapack_type;
+    typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_scalar_type LST;
+    typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_type lapack_type;
 
     // FIXME (mfh 03 Jan 2015) Check using enable_if that Scalar can
     // be safely converted to LST.

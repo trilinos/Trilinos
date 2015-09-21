@@ -268,7 +268,7 @@ public:
      Kokkos::parallel_for(cellIds.dimension_0(),functor);
    }
 
-   /** \brief How any GIDs are associate with a particular element block
+   /** \brief How many GIDs are associate with a particular element block
      *
      * This is a per-element count. If you have a quad element with two
      * piecewise bi-linear fields this method returns 8.
@@ -281,6 +281,16 @@ public:
      * piecewise bi-linear fields this method returns 8.
      */
    virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const = 0;
+
+   /** Access the local IDs for an element, as well as any other local IDs
+     * associated with the element.
+     */
+   virtual void getElementAndAssociatedLIDs(LocalOrdinalT localElmtId, std::vector<LocalOrdinalT>& lids) const;
+
+   /** Access the gloal IDs for an element, as well as any other gloal IDs
+     * associated with the element.
+     */
+   virtual void getElementAndAssociatedGIDs(LocalOrdinalT localElmtId, std::vector<GlobalOrdinalT>& gids) const;
 
    class CopyCellLIDsFunctor {
    public:
@@ -392,6 +402,21 @@ buildLocalIdsFromOwnedElements(std::vector<std::vector<LocalOrdinalT> > & localI
         lids[g] = hashMap[gids[g]];
     }
   } 
+}
+
+// Default implementations for any DOF manager that doesn't want to support
+// associated elements.
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+inline void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
+getElementAndAssociatedLIDs(LocalOrdinalT localElmtId, std::vector<LocalOrdinalT>& lids) const
+{
+  lids = getElementLIDs(localElmtId);
+}
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+inline void UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::
+getElementAndAssociatedGIDs(LocalOrdinalT localElmtId, std::vector<GlobalOrdinalT>& gids) const
+{
+  getElementGIDs(localElmtId, gids);
 }
 
 }

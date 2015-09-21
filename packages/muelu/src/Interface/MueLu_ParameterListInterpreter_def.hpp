@@ -97,12 +97,12 @@
 #endif
 
 #ifdef HAVE_MUELU_MATLAB
-#include "../matlab/MueLu_MatlabSmoother_decl.hpp"
-#include "../matlab/MueLu_MatlabSmoother_def.hpp"
-#include "../matlab/MueLu_TwoLevelMatlabFactory_decl.hpp"
-#include "../matlab/MueLu_TwoLevelMatlabFactory_def.hpp"
-#include "../matlab/MueLu_SingleLevelMatlabFactory_decl.hpp"
-#include "../matlab/MueLu_SingleLevelMatlabFactory_def.hpp"
+#include "../matlab/src/MueLu_MatlabSmoother_decl.hpp"
+#include "../matlab/src/MueLu_MatlabSmoother_def.hpp"
+#include "../matlab/src/MueLu_TwoLevelMatlabFactory_decl.hpp"
+#include "../matlab/src/MueLu_TwoLevelMatlabFactory_def.hpp"
+#include "../matlab/src/MueLu_SingleLevelMatlabFactory_decl.hpp"
+#include "../matlab/src/MueLu_SingleLevelMatlabFactory_def.hpp"
 #endif
 
 // These code chunks should only be enabled once Tpetra supports proper graph
@@ -775,6 +775,11 @@ namespace MueLu {
       manager.SetFactory("P", P);
 
     } else if (multigridAlgo == "pg") {
+      TEUCHOS_TEST_FOR_EXCEPTION(this->implicitTranspose_, Exceptions::RuntimeError,
+            "Implicit transpose not supported with Petrov-Galerkin smoothed transfer operators: Set \"transpose: use implicit\" to false!\n" \
+            "Petrov-Galerkin transfer operator smoothing for non-symmetric problems requires a separate handling of the restriction operator which " \
+            "does not allow the usage of implicit transpose easily.");
+
       // Petrov-Galerkin
       RCP<PgPFactory> P = rcp(new PgPFactory());
       P->SetFactory("P", manager.GetFactory("Ptent"));
@@ -830,9 +835,15 @@ namespace MueLu {
     if (!this->implicitTranspose_) {
       MUELU_SET_VAR_2LIST(paramList, defaultList, "problem: symmetric", bool, isSymmetric);
       if (isSymmetric == false && (multigridAlgo == "unsmoothed" || multigridAlgo == "emin")) {
-        this->GetOStream(Warnings0) << "Switching to symmetric problem as multigrid algorithm \"" << multigridAlgo << "\" is restricted to symmetric case" << std::endl;
+        this->GetOStream(Warnings0) << "Switching \"problem: symmetric\" parameter to symmetric as multigrid algorithm. " << multigridAlgo << " is primarily supposed to be used for symmetric problems." << std::endl << std::endl;
+        this->GetOStream(Warnings0) << "Please note: if you are using \"unsmoothed\" transfer operators the \"problem: symmetric\" parameter has no real mathematical meaning, i.e. you can use it for non-symmetric" << std::endl;
+        this->GetOStream(Warnings0) << "problems, too. With \"problem: symmetric\"=\"symmetric\" you can use implicit transpose for building the restriction operators which may drastically reduce the amount of consumed memory." << std::endl;
         isSymmetric = true;
       }
+      TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pg" && isSymmetric == true, Exceptions::RuntimeError,
+            "Petrov-Galerkin smoothed transfer operators are only allowed for non-symmetric problems: Set \"problem: symmetric\" to false!\n" \
+            "While PG smoothed transfer operators generally would also work for symmetric problems this is an unusual use case. " \
+            "You can use the factory-based xml interface though if you need PG-AMG for symmetric problems.");
 
       if (have_userR) {
         manager.SetFactory("R", NoFactory::getRCP());
@@ -1084,7 +1095,7 @@ namespace MueLu {
     const ParameterList& validList = *MasterList::List();
     // Validate up to maxLevels level specific parameter sublists
     const int maxLevels = 100;
-    
+
     // Extract level specific list
     std::vector<ParameterList> paramLists;
     for (int levelID = 0; levelID < maxLevels; levelID++) {
@@ -1131,7 +1142,7 @@ namespace MueLu {
         size_t nameStart = eString.find_first_of('"') + 1;
         size_t nameEnd   = eString.find_first_of('"', nameStart);
         std::string name = eString.substr(nameStart, nameEnd - nameStart);
-  
+
         int bestScore = 100;
         std::string bestName  = "";
         for (ParameterList::ConstIterator it = validList.begin(); it != validList.end(); it++)
