@@ -1,12 +1,12 @@
 // @HEADER
 // ************************************************************************
-// 
+//
 //        Piro: Strategy package for embedded analysis capabilitites
 //                  Copyright (2010) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 //
 // Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
 // National Laboratories.
-// 
+//
 // ************************************************************************
 // @HEADER
 
@@ -59,7 +59,7 @@
 
 #ifdef Piro_ENABLE_MueLu
 #include <Thyra_MueLuPreconditionerFactory.hpp>
-#include "Stratimikos_MueluTpetraHelpers.hpp"
+#include "Stratimikos_MueLuHelpers.hpp"
 #endif
 
 
@@ -77,7 +77,7 @@ Piro::InvertMassMatrixDecorator<Scalar>::InvertMassMatrixDecorator(
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::ParameterList; 
+  using Teuchos::ParameterList;
 
   // Create x_dot vector, fill with 0.0 so implicit fill gives
   // correct results for explicit fill
@@ -85,8 +85,8 @@ Piro::InvertMassMatrixDecorator<Scalar>::InvertMassMatrixDecorator(
   Thyra::put_scalar<Scalar>(0.0, x_dot.ptr());
 
   // get allocated space for Mass Matrix
-  massMatrix = model->create_W_op(); 
-  if (lumpMassMatrix) invDiag = Thyra::createMember<Scalar>(model->get_x_space()); 
+  massMatrix = model->create_W_op();
+  if (lumpMassMatrix) invDiag = Thyra::createMember<Scalar>(model->get_x_space());
 
   Teuchos::RCP<Teuchos::FancyOStream> out
      = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -99,9 +99,9 @@ Piro::InvertMassMatrixDecorator<Scalar>::InvertMassMatrixDecorator(
   linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
 #endif
 #ifdef Piro_ENABLE_MueLu
-  Stratimikos::enableMueLuTpetra(linearSolverBuilder);
+  Stratimikos::enableMueLu(linearSolverBuilder);
 #endif
-  
+
    linearSolverBuilder.setParameterList(stratParams);
 
   // Create a linear solver factory given information read from the
@@ -119,21 +119,21 @@ Piro::InvertMassMatrixDecorator<Scalar>::~InvertMassMatrixDecorator()
 }
 
 template<typename Scalar>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > 
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::InvertMassMatrixDecorator<Scalar>::get_x_space() const
 {
   return model->get_x_space();
 }
 
 template<typename Scalar>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > 
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::InvertMassMatrixDecorator<Scalar>::get_f_space() const
 {
   return model->get_f_space();
 }
 
 template<typename Scalar>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > 
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::InvertMassMatrixDecorator<Scalar>::get_p_space(int l) const
 {
   return model->get_p_space(l);
@@ -147,14 +147,14 @@ Piro::InvertMassMatrixDecorator<Scalar>::get_p_names(int l) const
 }
 
 template<typename Scalar>
-Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > 
+Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
 Piro::InvertMassMatrixDecorator<Scalar>::get_g_space(int j) const
 {
   return model->get_g_space(j);
 }
 
 template<typename Scalar>
-Teuchos::ArrayView<const std::string> 
+Teuchos::ArrayView<const std::string>
 Piro::InvertMassMatrixDecorator<Scalar>::get_g_names(int j) const
 {
   return model->get_g_names(j);
@@ -164,16 +164,16 @@ template<typename Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar>
 Piro::InvertMassMatrixDecorator<Scalar>::getNominalValues() const
 {
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues = this->createInArgsImpl(); 
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues = this->createInArgsImpl();
   nominalValues.setArgs(
       model->getNominalValues(),
       /* ignoreUnsupported = */ true,
       /* cloneObjects = */ false);
-  return nominalValues; 
+  return nominalValues;
 }
 
 template<typename Scalar>
-Teuchos::RCP< Thyra::LinearOpBase< Scalar > > 
+Teuchos::RCP< Thyra::LinearOpBase< Scalar > >
 Piro::InvertMassMatrixDecorator<Scalar>::create_W_op () const
 {
   return model->create_W_op();
@@ -183,14 +183,14 @@ template<typename Scalar>
 Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> >
 Piro::InvertMassMatrixDecorator<Scalar>::get_W_factory() const
 {
-  return model->get_W_factory(); 
+  return model->get_W_factory();
 }
 
 template<typename Scalar>
 Teuchos::RCP<Thyra::PreconditionerBase<Scalar> >
 Piro::InvertMassMatrixDecorator<Scalar>::create_W_prec() const
 {
-  return model->create_W_prec(); 
+  return model->create_W_prec();
 }
 
 
@@ -236,10 +236,10 @@ Piro::InvertMassMatrixDecorator<Scalar>::createInArgsImpl() const
 }
 
 template<typename Scalar>
-Thyra::ModelEvaluatorBase::OutArgs<Scalar> 
-Piro::InvertMassMatrixDecorator<Scalar>::createOutArgsImpl() const 
+Thyra::ModelEvaluatorBase::OutArgs<Scalar>
+Piro::InvertMassMatrixDecorator<Scalar>::createOutArgsImpl() const
 {
-  return model->createOutArgs();  
+  return model->createOutArgs();
 }
 
 template<typename Scalar>
@@ -251,7 +251,7 @@ void Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
   using Teuchos::rcp;
 
   if (outArgs.Np()>0) {
-   if (outArgs.get_DfDp(0).getMultiVector() != Teuchos::null) 
+   if (outArgs.get_DfDp(0).getMultiVector() != Teuchos::null)
      std::cout << "InvertMassMatrixDecorator:: NOT IMPLEMENTED FOR dfdp!! " << std::endl;
   }
 
@@ -266,17 +266,17 @@ void Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
 
     if (!massMatrixIsCoeffOfSecondDeriv) {
       modelInArgs.set_x_dot(x_dot);
-      modelInArgs.set_alpha(-1.0); 
+      modelInArgs.set_alpha(-1.0);
       modelInArgs.set_beta(0.0);
     }
     //FIXME! this would not work in Thyra::ModelEvaluator!
     /*else {  // Mass Matrix is coeff of Second deriv
       modelInArgs.set_x_dotdot(x_dot);
-      modelInArgs.set_alpha(0.0); 
+      modelInArgs.set_alpha(0.0);
       modelInArgs.set_beta(0.0);
       modelInArgs.set_omega(-1.0);
     }*/
-    
+
     if (calcMassMatrix) {
       modelOutArgs.set_W_op(massMatrix);
     }
@@ -293,18 +293,18 @@ void Piro::InvertMassMatrixDecorator<Scalar>::evalModelImpl(
         lows = Thyra::linearOpWithSolve(*lowsFactory, A);
       }
 
-      // Solve the linear system for x, given b 
+      // Solve the linear system for x, given b
       ::Thyra::solve<double>(*lows, ::Thyra::NOTRANS, *modelOutArgs.get_f(), outArgs.get_f().ptr());
     }
     else { // Lump matrix into inverse of diagonal
-    
+
       if (calcMassMatrix) {
         Thyra::put_scalar<Scalar>(1.0, invDiag.ptr());
         Thyra::apply<Scalar>(*massMatrix, Thyra::NOTRANS, *invDiag, invDiag.ptr(), 1.0, 0.0);
         Thyra::reciprocal<Scalar>(*invDiag, invDiag.ptr());
       }
-      Teuchos::RCP<Thyra::VectorBase<Scalar> > f = outArgs.get_f(); 
-      Thyra::Vp_StVtV<Scalar>(f.ptr(), 1.0, *invDiag, *modelOutArgs.get_f()); 
+      Teuchos::RCP<Thyra::VectorBase<Scalar> > f = outArgs.get_f();
+      Thyra::Vp_StVtV<Scalar>(f.ptr(), 1.0, *invDiag, *modelOutArgs.get_f());
     }
 
     // Do not recompute mass matrix in future if it is a constant

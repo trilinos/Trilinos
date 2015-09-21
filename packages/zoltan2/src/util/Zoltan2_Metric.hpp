@@ -765,6 +765,7 @@ template <typename Adapter, typename pnum_t>
   if (ewgtDim > 1) numMetrics = ewgtDim;   // "weight n"
 
   typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
   typedef StridedData<lno_t, scalar_t> input_t;
@@ -812,6 +813,16 @@ template <typename Adapter, typename pnum_t>
   memset(localBuf, 0, sizeof(scalar_t) * globalSumSize);
 
   scalar_t *cut = localBuf;              // # of cuts
+
+  ArrayView<const gno_t> *Ids;
+  ArrayView<input_t> *xyz, *vwgts;
+  size_t nv = graph->getVertexList(Ids, xyz, vwgts);
+
+  ArrayView<const gno_t> *edgeIds;
+  ArrayView<const int> *procIds;
+  ArrayView<const lno_t> *offsets;
+  ArrayView<input_t> *wgts;
+  size_t numLocalEdges = getEdgeList(edgeIds, procIds, offsets, wgts);
 
   ArrayView<const lno_t> localEdgeIds, *localOffsets;
   ArrayView<input_t> localWgts;

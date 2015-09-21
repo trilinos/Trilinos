@@ -54,6 +54,7 @@
 #include "Teuchos_TypeNameTraits.hpp"
 
 #include "Example_SimpleSource.hpp"
+#include "Example_Solution.hpp"
 
 // ********************************************************************
 // ********************************************************************
@@ -128,14 +129,54 @@ buildClosureModels(const std::string& model_id,
     if (plist.isType<std::string>("Type")) {
       const std::string type = plist.get<std::string>("Type");
       if (type == "SIMPLE SOURCE") {
-	RCP< Evaluator<panzer::Traits> >
-	  e = rcp(new Example::SimpleSource<EvalT,panzer::Traits>(key, *ir));
+	RCP<Evaluator<panzer::Traits> > e = rcp(new Example::SimpleSource<EvalT,panzer::Traits>(key, *ir));
 	evaluators->push_back(e);
+        found = true;
+      } else if (type == "EXACT") {
+        RCP<Evaluator<panzer::Traits> > e = rcp(new Example::Solution<EvalT,panzer::Traits>(key, *ir));
+        evaluators->push_back(e);
+        found = true;
+      } else if (type == "EXACT nonlinear Robin") {
+        RCP<Evaluator<panzer::Traits> > e = rcp(new Example::Solution<EvalT,panzer::Traits>(key, *ir, false));
+        evaluators->push_back(e);
+        found = true;
+      } else if (type == "ERROR_CALC") {
+        {
+          std::vector<std::string> values(2);
+          values[0] = plist.get<std::string>("Field A");
+          values[1] = plist.get<std::string>("Field B");
+  
+          std::vector<double> scalars(2); 
+          scalars[0] = 1.0; 
+          scalars[1] = -1.0;
+  
+          Teuchos::ParameterList p;
+          p.set("Sum Name", key + "_DIFF");
+          p.set<RCP<std::vector<std::string> > >("Values Names", Teuchos::rcpFromRef(values));
+          p.set<RCP<const std::vector<double> > >("Scalars", Teuchos::rcpFromRef(scalars));
+          p.set("Data Layout", ir->dl_scalar);
+  
+          RCP<Evaluator<panzer::Traits> > e = rcp(new panzer::Sum<EvalT,panzer::Traits>(p));
+          evaluators->push_back(e);
+        }
+        {
+          std::vector<std::string> values(2);
+          values[0] = key + "_DIFF";
+          values[1] = key + "_DIFF";
+  
+          Teuchos::ParameterList p;
+          p.set("Product Name",key);
+          p.set<RCP<std::vector<std::string> > >("Values Names",Teuchos::rcpFromRef(values));
+          p.set("Data Layout",ir->dl_scalar);
+  
+          RCP<Evaluator<panzer::Traits> > e = rcp(new panzer::Product<EvalT,panzer::Traits>(p));
+          evaluators->push_back(e);
+        }
         found = true;
       }
     }
 
-    if (!found) {
+    if ( ! found) {
       std::stringstream msg;
       msg << "ClosureModelFactory failed to build evaluator for key \"" << key 
 	  << "\"\nin model \"" << model_id 

@@ -63,27 +63,21 @@ The source code is not MueLu specific and can be used with any Stratimikos strat
 #include <Teuchos_StandardCatchMacros.hpp>
 
 // Epetra includes
-#ifdef HAVE_MPI
-#include <mpi.h>
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
-#include <Epetra_CrsMatrix.h>
 #include <Epetra_Vector.h>
-#include <Epetra_LinearProblem.h>
-
-// // EpetraExt includes
-// #include <EpetraExt_CrsMatrixIn.h>
-// #include <EpetraExt_VectorIn.h>
 
 // Thyra includes
 #include <Thyra_LinearOpWithSolveBase.hpp>
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_SolveSupportTypes.hpp>
 
+// Stratimikos includes
+#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
+#include <Stratimikos_MueLuHelpers.hpp>
+
+// Xpetra include
+#include <Xpetra_Parameters.hpp>
+
 // MueLu includes
-#include <MueLu.hpp> // TODO Usefull?
 #include <Thyra_MueLuPreconditionerFactory.hpp>
 #include <MueLu_UseDefaultTypes.hpp>
 
@@ -91,8 +85,10 @@ The source code is not MueLu specific and can be used with any Stratimikos strat
 #include <Galeri_XpetraParameters.hpp>
 #include <Galeri_XpetraProblemFactory.hpp>
 
-int main(int argc,char * argv[]) {
+#include <MueLu_UseDefaultTypes.hpp>
 #include <MueLu_UseShortNames.hpp>
+
+int main(int argc,char * argv[]) {
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -108,13 +104,6 @@ int main(int argc,char * argv[]) {
   try {
     RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-    // build global communicator TODO: convert from Teuchos::Comm
-#ifdef HAVE_MPI
-    Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-    Epetra_SerialComm Comm;
-#endif
-
     //
     // Parameters
     //
@@ -122,8 +111,7 @@ int main(int argc,char * argv[]) {
     Teuchos::CommandLineProcessor clp(false);
 
     Galeri::Xpetra::Parameters<int> matrixParameters(clp, 256); // manage parameters of the test case
-    // Xpetra::Parameters              xpetraParameters(clp);   // manage parameters of xpetra
-    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra; // Epetra only for the moment
+    Xpetra::Parameters              xpetraParameters(clp);   // manage parameters of xpetra
 
     std::string xmlFileName = "stratimikos_ParameterList.xml"; clp.setOption("xml",   &xmlFileName, "read parameters from a file. Otherwise, this example uses by default 'stratimikos_ParameterList.xml'.");
 
@@ -134,52 +122,65 @@ int main(int argc,char * argv[]) {
       case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
     }
 
+    Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
+
     // Read in parameter list
     Teuchos::RCP<Teuchos::ParameterList> paramList = Teuchos::getParametersFromXmlFile(xmlFileName);
 
     //
     // Construct the problem
     //
-
-    //   // Read in the matrix, store pointer as an RCP
-    //   Epetra_CrsMatrix * ptrA = 0;
-    //   EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac_test.mm",Comm,ptrA);
-    //   RCP<Epetra_CrsMatrix> A = rcp(ptrA);
-    //
-    //   // read in the RHS vector
-    //   Epetra_Vector * ptrb = 0;
-    //   EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm",A->MatrixRangeMap(),ptrb);
-    //   RCP<const Epetra_Vector> b = rcp(ptrb);
-
     RCP<const Map> map = MapFactory::createUniformContigMap(lib, matrixParameters.GetNumGlobalElements(), comm);
-    RCP<Galeri::Xpetra::Problem<Map,Xpetra::EpetraCrsMatrix,MultiVector> > Pr =
-      Galeri::Xpetra::BuildProblem<double, int, int, Map,  Xpetra::EpetraCrsMatrix, MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
-    RCP<const Epetra_CrsMatrix> A = Pr->BuildMatrix()->getEpetra_CrsMatrix();
 
-    //
-    // Allocate vectors
-    //
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(matrixParameters.GetMatrixType(), map, matrixParameters.GetParameterList());
+    RCP<CrsMatrixWrap> A = Pr->BuildMatrix();
 
-    RCP<Epetra_Vector> X = rcp(new Epetra_Vector(A->DomainMap()));
-    X->PutScalar(0.0);
+    RCP<Vector> X = VectorFactory::Build(map);
+    RCP<Vector> B = VectorFactory::Build(map);
 
-    RCP<Epetra_Vector> B = rcp(new Epetra_Vector(A->DomainMap()));
-    B->SetSeed(846930886); B->Random();
+    {
+      // we set seed for reproducibility
+      Utils::SetRandomSeed(*comm);
+      X->randomize();
+      A->apply(*X, *B, Teuchos::NO_TRANS, Teuchos::ScalarTraits<Scalar>::one(), Teuchos::ScalarTraits<Scalar>::zero());
+
+      Teuchos::Array<Teuchos::ScalarTraits<Scalar>::magnitudeType> norms(1);
+      B->norm2(norms);
+      B->scale(Teuchos::ScalarTraits<Scalar>::one()/norms[0]);
+      X->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+    }
 
     //
     // Build Thyra linear algebra objects
     //
 
-    RCP<const Thyra::LinearOpBase<double> > thyraA = Thyra::epetraLinearOp(A);
-    RCP<const Thyra::VectorBase<double> >   thyraB = Thyra::create_Vector(B, thyraA->range());
-    RCP<Thyra::VectorBase<double> >         thyraX = Thyra::create_Vector(X, thyraA->domain());
+    RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(A->getCrsMatrix());
+
+    RCP<const Thyra::VectorBase<Scalar> > thyraB = Teuchos::null;
+    RCP<      Thyra::VectorBase<Scalar> > thyraX = Teuchos::null;
+#ifdef HAVE_XPETRA_TPETRA
+    if(lib==Xpetra::UseTpetra) {
+      thyraB = Thyra::createVector(Xpetra::toTpetra(*B), thyraA->range());
+      thyraX = Thyra::createVector(Xpetra::toTpetra(*X), thyraA->domain());
+    }
+#endif
+#ifdef HAVE_XPETRA_EPETRA
+    if(lib==Xpetra::UseEpetra) {
+      RCP<Epetra_Vector> epVecB = Teuchos::rcpFromRef<Epetra_Vector>(Xpetra::toEpetra(*B));
+      RCP<Epetra_Vector> epVecX = Teuchos::rcpFromRef<Epetra_Vector>(Xpetra::toEpetra(*X));
+      thyraB = Thyra::create_Vector(epVecB, thyraA->range());
+      thyraX = Thyra::create_Vector(epVecX, thyraA->domain());
+    }
+#endif
+
 
     //
     // Build Stratimikos solver
     //
 
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
-    Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder);     // Register MueLu as a Stratimikos preconditioner strategy.
+    Stratimikos::enableMueLu(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
     linearSolverBuilder.setParameterList(paramList);              // Setup solver parameters using a Stratimikos parameter list.
 
     // Build a new "solver factory" according to the previously specified parameter list.
@@ -201,5 +202,3 @@ int main(int argc,char * argv[]) {
 
   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
-
-// Thyra::assign(thyraX.ptr(), 0.0);

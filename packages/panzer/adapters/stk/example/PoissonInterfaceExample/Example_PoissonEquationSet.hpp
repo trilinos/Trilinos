@@ -86,7 +86,7 @@ public:
                                               const Teuchos::ParameterList& user_data) const;
 
 private:
-   std::string suffix;
+   std::string dof_name;
 
 };
 
