@@ -40,6 +40,11 @@ IF(Kokkos_ENABLE_Pthread)
     )
     MATH(EXPR i "${i}*2")
   ENDWHILE()
+  TRIBITS_ADD_EXECUTABLE(
+    test_debug_pthread
+    NOEXEPREFIX
+    SOURCES main_debug_pthread.cpp 
+  )
 ENDIF()
 
 IF(Kokkos_ENABLE_QTHREAD)
@@ -64,6 +69,11 @@ IF(Kokkos_ENABLE_QTHREAD)
     )
     MATH(EXPR i "${i}*2")
   ENDWHILE()
+  TRIBITS_ADD_EXECUTABLE(
+    test_debug_qthread
+    NOEXEPREFIX
+    SOURCES main_debug_qthread.cpp 
+  )
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(${PACKAGE_NAME}_Test_Files
