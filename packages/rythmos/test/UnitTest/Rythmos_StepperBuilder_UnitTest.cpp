@@ -41,8 +41,13 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, setParameterList ) {
   RCP<ParameterList> pl = Teuchos::parameterList();
   RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
   TEST_NOTHROW(builder->setParameterList(pl));
+
+  // NOTE (mfh 21 Sep 2015) It turns out that the problem with GCC
+  // 4.8.x mentioned below, is also a problem with GCC 5.2.  I changed
+  // the #if condition accordingly and now the test passes for me.
+
   // Test that StepperBuilder validates its parameter list
-#if !( (__GNUC__ == 4) && (__GNUC_MINOR__ == 8) )
+#if !( (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ == 8) )
   // For some reason, GCC 4.8.x has a problem with catching exeptions when you
   // set an RCP to null.  For for GCC 4.8 we will skip all of these tests
   // below.
@@ -50,13 +55,13 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, setParameterList ) {
   TEST_THROW(builder->setParameterList(pl), std::logic_error);
 #ifdef TEUCHOS_DEBUG
   // This throws because we changed the internal parameter list to an invalid one.
-  TEST_THROW(builder = Teuchos::null, std::logic_error);  
+  TEST_THROW(builder = Teuchos::null, std::logic_error);
 #else // TEUCHOS_DEBUG
   TEST_NOTHROW(builder = Teuchos::null );
 #endif // TEUCHOS_DEBUG
   builder = stepperBuilder<double>();
   pl = Teuchos::parameterList();
-  pl->set("Hello","World"); 
+  pl->set("Hello","World");
   TEST_THROW(builder->setParameterList(pl), std::logic_error); // invalid parameterlist
   TEST_NOTHROW(builder = Teuchos::null); // invalid parameter list not stored
 #endif // __GNUC__ version
@@ -238,7 +243,7 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createETPStepper ) {
 #endif // HAVE_THYRA_ME_POLYNOMIAL
 
 
-} // namespace Rythmos 
+} // namespace Rythmos
 
 
 
