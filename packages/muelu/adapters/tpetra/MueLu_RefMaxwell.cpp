@@ -39,10 +39,12 @@
 //                    Jonathan Hu       (jhu@sandia.gov)
 //                    Andrey Prokopenko (aprokop@sandia.gov)
 //                    Ray Tuminaro      (rstumin@sandia.gov)
+//                    Tobias Wiesner    (tawiesn@sandia.gov)
 //
 // ***********************************************************************
 //
 // @HEADER
+
 #include "MueLu_ConfigDefs.hpp"
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 #include "MueLu_ExplicitInstantiation.hpp"
