@@ -108,7 +108,7 @@ public:
 
             internal_resolve_shared_membership();
 
-            if ( this->get_automatic_aura_option() == AUTO_AURA)
+            if ( is_automatic_aura_on() )
             {
               this->resolve_incremental_ghosting_for_entity_creation_or_skin_mesh(mesh_meta_data().side_rank(), mesh_meta_data().universal_part());
             }
