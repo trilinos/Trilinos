@@ -720,7 +720,7 @@ void GraphModel<Adapter>::shared_constructor(
       int np = comm_->getSize();
       vtxDist = arcp(new size_t[np+1], 0, np+1, true);
       vtxDist[0] = 0;
-      Teuchos::gatherAll(*comm_, 1, &nLocalVertices_, 1, &vtxDist[1]);
+      Teuchos::gatherAll(*comm_, 1, &nLocalVertices_, np, &vtxDist[1]);
       for (int i = 0; i < np; i++)
         vtxDist[i+1] += vtxDist[i];
     }
