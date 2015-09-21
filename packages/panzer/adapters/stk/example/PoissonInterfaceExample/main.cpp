@@ -332,14 +332,17 @@ int main (int argc,char * argv[])
   ProblemOptions po;
   {
     // Set this problem up with two discontinuous (A, C) and one continuous (B)
-    // fields and test two things simultaneously:
-    //   1. [A_left, A_right] == B, up to the error from the weak enforcement
-    //      of matching values. This tests Interface_NeumannMatch and
-    //      Interface_WeakDirichletMatch.
-    //   2. The custom interface condition, which couples C to B at the
-    //      interface.
-    // The setup here with default inputs is such that A, B, and C should
-    // converge to the same solution with refinement.
+    // fields.
+    //   On fields A are imposed Neumann and weak Dirichlet matching interface conditions.
+    //   On fields C are imposed Robin interface conditions, with one-way
+    // coupling to field B.
+    //   If the Robin condition is linear, then the default setup is such that
+    // A, B, C all converge to the same solution for which the Solution
+    // evaluator provides the exact expression. A response function reports the
+    // error so a convergence test can be wrapped around multiple runs of this
+    // program.
+    //   If the Robin condition is nonlinear, then the source is 0 and the
+    // solution is two planes with a jump of 0.4 at the interface.
 
     Teuchos::CommandLineProcessor clp;
     po.nxelem = 10;
@@ -362,10 +365,11 @@ int main (int argc,char * argv[])
     po.dof_names.push_back("C");
     po.test_Jacobian = 2*po.nxelem*po.nyelem <= 100;
     po.outer_iteration = true;
-    po.check_error = ! po.nonlinear_Robin;
+    po.check_error = true;
 
     out << po << "\n";
   }
+  bool pass = true;
 
   // Can be overridden by the equation set
   const int default_integration_order = 2;
@@ -477,6 +481,7 @@ int main (int argc,char * argv[])
   ////////////////////////////////////////////////////////////////////////
   std::vector<std::string> names;
   std::vector<std::vector<std::string> > eblocks;
+  const int c_name_start = 3;
   {
     const char* ebs[] = {"eblock-0_0", "eblock-1_0"};
     for (int i = 1; i <= 2; ++i) {
@@ -499,7 +504,7 @@ int main (int argc,char * argv[])
   Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > errorResponseLibrary
     = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer, dofManager, linObjFactory));
   {
-    for (std::size_t i = 0; i < names.size(); ++i) {
+    for (std::size_t i = po.nonlinear_Robin ? c_name_start : 0; i < names.size(); ++i) {
       panzer::FunctionalResponse_Builder<int,int> builder;
       builder.comm = MPI_COMM_WORLD;
       builder.cubatureDegree = default_integration_order;
@@ -520,17 +525,21 @@ int main (int argc,char * argv[])
   Teuchos::ParameterList closure_models("Closure Models");
   {    
     Teuchos::ParameterList& s = closure_models.sublist("solid");
-    for (std::vector<std::string>::const_iterator it = names.begin(); it != names.end(); ++it)
-      s.sublist(std::string("SOURCE_") + *it).set<std::string>("Type", "SIMPLE SOURCE");
+    for (std::vector<std::string>::const_iterator it = names.begin(); it != names.end(); ++it) {
+      if (po.nonlinear_Robin)
+        s.sublist(std::string("SOURCE_") + *it).set<double>("Value", 0.0);
+      else
+        s.sublist(std::string("SOURCE_") + *it).set<std::string>("Type", "SIMPLE SOURCE");
+    }
     if (po.check_error)
-      for (std::size_t i = 0; i < names.size(); ++i) {
+      for (std::size_t i = po.nonlinear_Robin ? c_name_start : 0; i < names.size(); ++i) {
         const std::string err = names[i] + "_ERROR";
         s.sublist(err).set<std::string>("Type", "ERROR_CALC");
         s.sublist(err).set<std::string>("Field A", names[i]);
         s.sublist(err).set<std::string>("Field B", "EXACT");
       }
     if (po.check_error)
-      s.sublist("EXACT").set<std::string>("Type", "EXACT");
+      s.sublist("EXACT").set<std::string>("Type", po.nonlinear_Robin ? "EXACT nonlinear Robin" : "EXACT");
   }
 
   Teuchos::ParameterList user_data("User Data"); // user data can be empty here
@@ -558,7 +567,8 @@ int main (int argc,char * argv[])
   ae_tm.buildObjects(builder);
 
   user_data.set<int>("Workset Size", workset_size);
-  errorResponseLibrary->buildResponseEvaluators(physicsBlocks, cm_factory, closure_models, user_data);
+  if (po.check_error)
+    errorResponseLibrary->buildResponseEvaluators(physicsBlocks, cm_factory, closure_models, user_data);
 
   // assemble and solve
   /////////////////////////////////////////////////////////////
@@ -620,6 +630,7 @@ int main (int argc,char * argv[])
     if (po.test_Jacobian) {
       const double nwre = testJacobian(ae_tm, linObjFactory, ep_container->get_x());
       out << "TEST JACOBIAN " << nwre << "\n";
+      if (nwre < 0 || nwre > 1e-5) pass = false;
     }
   }
   
@@ -649,7 +660,7 @@ int main (int argc,char * argv[])
 
   if (po.check_error) {
     std::vector<Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > > rfs(names.size());
-    for (std::size_t i = 0; i < names.size(); ++i) {
+    for (std::size_t i = po.nonlinear_Robin ? c_name_start : 0; i < names.size(); ++i) {
       Teuchos::RCP<panzer::ResponseBase>
         resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>(names[i] + " L2 Error");
       rfs[i] = Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(resp);
@@ -663,12 +674,21 @@ int main (int argc,char * argv[])
     errorResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
     errorResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
 
-    for (std::size_t i = 0; i < names.size(); ++i)
-      out << names[i] << " ERROR = " << sqrt(rfs[i]->value) << "\n";
+    // Record a max error so we can use convergence_rate.py.
+    double max_err = -1;
+    for (std::size_t i = po.nonlinear_Robin ? c_name_start : 0; i < names.size(); ++i) {
+      const double err = sqrt(rfs[i]->value);
+      max_err = std::max(max_err, err);
+      out << names[i] << " ERROR = " << err << "\n";
+      if (err < 0 || err > (po.nonlinear_Robin ? 1e-10 : 0.03/(po.nxelem*po.nxelem/25.0)))
+        pass = false;
+    }
+    out << "Error = " << max_err << "\n";
   }
 
   // all done!
   /////////////////////////////////////////////////////////////
+  out << (pass ? "PASS" : "FAIL") << " BASICS\n";
 
   PHX::FinalizeKokkosDevice();
 
@@ -860,13 +880,22 @@ void testInitialization(const Teuchos::RCP<Teuchos::ParameterList>& ipb, std::ve
       p.set("Equation Set Name2", ibc == 0 ? t2_name : t1_name);
       p.set("Strategy", "Robin Interface");
       Teuchos::ParameterList d;
-      const double c[] = {1, -1, 1};
       d.set("Coupling DOF Name", po.dof_names[1]);
-      d.set("a", c[0]);
-      // Switch the two so that the same coefficients are applied to C_left and
-      // C_right. Switch sign since the normal has opposite direction.
-      d.set("b", (ibc == 0 ? c[1] : -c[2]));
-      d.set("c", (ibc == 0 ? c[2] : -c[1]));
+      if (po.nonlinear_Robin) {
+        // There's no real meaning to these cofficients; I just solved for them
+        // to get the solution I want.
+        const double c[] = {1.1, 0.1, 1.66};
+        d.set("a", c[0]);
+        d.set("b", c[1]);
+        d.set("c", c[2]);
+      } else {
+        const double c[] = {1, -1, 1};
+        d.set("a", c[0]);
+        // Switch the two so that the same coefficients are applied to C_left and
+        // C_right. Switch sign since the normal has opposite direction.
+        d.set("b", (ibc == 0 ? c[1] : -c[2]));
+        d.set("c", (ibc == 0 ? c[2] : -c[1]));
+      };
       d.set("Nonlinear", po.nonlinear_Robin);
       p.set("Data", d);
       bcs.push_back(panzer::BC(bc_id++, p));

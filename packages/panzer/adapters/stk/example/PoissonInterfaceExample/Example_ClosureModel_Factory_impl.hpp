@@ -136,6 +136,10 @@ buildClosureModels(const std::string& model_id,
         RCP<Evaluator<panzer::Traits> > e = rcp(new Example::Solution<EvalT,panzer::Traits>(key, *ir));
         evaluators->push_back(e);
         found = true;
+      } else if (type == "EXACT nonlinear Robin") {
+        RCP<Evaluator<panzer::Traits> > e = rcp(new Example::Solution<EvalT,panzer::Traits>(key, *ir, false));
+        evaluators->push_back(e);
+        found = true;
       } else if (type == "ERROR_CALC") {
         {
           std::vector<std::string> values(2);

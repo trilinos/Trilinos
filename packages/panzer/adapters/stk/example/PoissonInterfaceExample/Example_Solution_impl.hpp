@@ -50,7 +50,9 @@ namespace Example {
 
 template <typename EvalT,typename Traits>
 Solution<EvalT,Traits>::Solution(const std::string& name,
-                                 const panzer::IntegrationRule& ir)
+                                 const panzer::IntegrationRule& ir,
+                                 const bool linear_Robin)
+  : linear_Robin(linear_Robin)
 {
   Teuchos::RCP<PHX::DataLayout> data_layout = ir.dl_scalar;
   ir_degree = ir.cubature_degree;
@@ -74,13 +76,20 @@ void Solution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupData sd
 
 template <typename EvalT,typename Traits>
 void Solution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
-{ 
+{
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     for (int point = 0; point < solution.dimension(1); ++point) {
       const double& x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
       const double& y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
 
-      solution(cell,point) = 0.5 - 0.8*x + 0.5*sin(2*M_PI*x)*cos(2*M_PI*y);
+      if (linear_Robin)
+        solution(cell,point) = 0.5 - 0.8*x + 0.5*sin(2*M_PI*x)*cos(2*M_PI*y);
+      else {
+        if (workset.block_id == "eblock-0_0")
+          solution(cell,point) =  0.5 - 0.4*x;
+        else
+          solution(cell,point) = 0.1 - 0.4*x;
+      }
     }
   }
 }

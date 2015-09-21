@@ -72,7 +72,8 @@ class Solution : public panzer::EvaluatorWithBaseImpl<Traits>,
 
 public:
   Solution(const std::string & name,
-           const panzer::IntegrationRule & ir);
+           const panzer::IntegrationRule & ir,
+           const bool linear_Robin = true);
                                                                         
   void postRegistrationSetup(typename Traits::SetupData d,           
                              PHX::FieldManager<Traits>& fm);        
@@ -83,9 +84,9 @@ public:
 private:
   typedef typename EvalT::ScalarT ScalarT;
 
-  // Simulation solution
   PHX::MDField<ScalarT,Cell,Point> solution;
   int ir_degree, ir_index;
+  bool linear_Robin;
 };
 
 }
