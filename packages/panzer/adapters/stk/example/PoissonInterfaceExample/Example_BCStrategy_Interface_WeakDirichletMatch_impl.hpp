@@ -103,7 +103,8 @@ setup(const panzer::PhysicsBlock& side_pb,
 }
 
 // ***********************************************************************
-static void
+template <typename EvalT>
+void Example::BCStrategy_Interface_WeakDirichletMatch<EvalT>::
 setSumValues(Teuchos::ParameterList& p,
              const std::string value_name1, const double scalar1,
              const std::string value_name2, const double scalar2)
@@ -209,7 +210,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       { // Weak Dirichlet Match + Cancel Neumann
         ParameterList p("Weak Dirichlet Match + Cancel Neumann");
         p.set("Sum Name", sum_contributions_name);
-        setSumValues(p, diff_name, 1e3, cancel_natural_name, -1);
+        setSumValues(p, diff_name, 1e5, cancel_natural_name, -1);
         p.set("Data Layout", ir->dl_scalar);
         const RCP< PHX::Evaluator<panzer::Traits> >
           op = rcp(new panzer::Sum<EvalT,panzer::Traits>(p));

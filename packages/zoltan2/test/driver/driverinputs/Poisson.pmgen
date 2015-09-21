@@ -2,7 +2,7 @@ mesh
     rectilinear
      nx = 5
      ny = 5
-     nz = 2
+     nz = 1
      bx = 1
      by = 1
      bz = 1

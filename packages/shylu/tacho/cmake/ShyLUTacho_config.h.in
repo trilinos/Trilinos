@@ -1,0 +1,13 @@
+#ifndef SHYLUTACHO_CONFIG_H
+#define SHYLUTACHO_CONFIG_H
+
+/* Define if want to build with MKL enabled */
+#cmakedefine HAVE_SHYLUTACHO_MKL
+
+/* Define if want to build with HYPRE enabled */
+#cmakedefine HAVE_SHYLUTACHO_HYPRE
+
+/* Define if want to build with VTune enabled */
+#cmakedefine HAVE_SHYLUTACHO_VTUNE
+
+#endif

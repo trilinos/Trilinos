@@ -53,6 +53,8 @@
 #include "MueLu_RefMaxwell_decl.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
+#include "MueLu_MLParameterListInterpreter.hpp"
+#include "MueLu_ParameterListInterpreter.hpp"
 
 namespace MueLu {
 
@@ -74,32 +76,29 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameters(Teuchos::ParameterList& list) {
 
   disable_addon_  =  list.get("refmaxwell: disable add-on",true);
-  MaxCoarseSize_  =  list.get("refmaxwell: max coarse size",1000);
-  MaxLevels_      =  list.get("refmaxwell: max levels",5);
-  Cycles_         =  list.get("refmaxwell: cycles",1);
-  precType11_     =  list.get("refmaxwell: edge smoother","CHEBYSHEV");
-  precType22_     =  list.get("refmaxwell: node smoother","CHEBYSHEV");
   mode_           =  list.get("refmaxwell: mode","additive");
 
-  if(list.isSublist("refmaxwell: edge smoother list"))
-    precList11_     =  list.sublist("refmaxwell: edge smoother list");
+  if(list.isSublist("refmaxwell: 11list"))
+    precList11_     =  list.sublist("refmaxwell: 11list");
 
-  if(list.isSublist("refmaxwell: node smoother list"))
-    precList22_     =  list.sublist("refmaxwell: node smoother list");
+  if(list.isSublist("refmaxwell: 22list"))
+    precList22_     =  list.sublist("refmaxwell: 22list");
 
-  hiptmairPreList_.set("hiptmair: smoother type 1",precType11_);
-  hiptmairPreList_.set("hiptmair: smoother type 2",precType22_);
-  hiptmairPreList_.set("hiptmair: smoother list 1",precList11_);
-  hiptmairPreList_.set("hiptmair: smoother list 2",precList22_);
-  hiptmairPreList_.set("hiptmair: pre or post","both");
-  hiptmairPreList_.set("hiptmair: zero starting solution",true);
+  std::string ref("smoother:");
+  std::string replace("coarse:");
+  for(Teuchos::ParameterList::ConstIterator i=list.begin(); i !=list.end(); i++) {    
+    const std::string & pname = list.name(i);
+    if(pname.find(ref)!=std::string::npos) {
+      smootherList_.setEntry(pname,list.entry(i));
+      std::string coarsename(pname);
+      coarsename.replace((size_t)0,(size_t)ref.length(),replace);
+    }
+  }
+  if(list.isSublist("smoother: params")) {
+    smootherList_.set("coarse: params",list.sublist("smoother: params"));
+  }
+  smootherList_.set("max levels",1);
 
-  hiptmairPostList_.set("hiptmair: smoother type 1",precType11_);
-  hiptmairPostList_.set("hiptmair: smoother type 2",precType22_);
-  hiptmairPostList_.set("hiptmair: smoother list 1",precList11_);
-  hiptmairPostList_.set("hiptmair: smoother list 2",precList22_);
-  hiptmairPostList_.set("hiptmair: pre or post","both");
-  hiptmairPostList_.set("hiptmair: zero starting solution",false);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -157,57 +156,36 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   Utils::Remove_Zeroed_Rows(A22_,1.0e-16);
   A22_->SetFixedBlockSize(1);
 
-  // build stuff for hierarchies
-  Teuchos::RCP<FactoryManager> Manager11 = Teuchos::rcp( new FactoryManager );
-  Teuchos::RCP<FactoryManager> Manager22 = Teuchos::rcp( new FactoryManager );
-  Teuchos::RCP<SmootherPrototype> SmooProto11
-    = Teuchos::rcp( new Ifpack2Smoother(precType11_,precList11_) );
-  Teuchos::RCP<SmootherFactory> SmooFact11
-    = Teuchos::rcp( new SmootherFactory(SmooProto11) );
-  Teuchos::RCP<SmootherPrototype> SmooProto22
-    = Teuchos::rcp( new Ifpack2Smoother(precType22_,precList22_) );
-  Teuchos::RCP<SmootherFactory> SmooFact22
-    = Teuchos::rcp( new SmootherFactory(SmooProto22) );
-  Teuchos::RCP<CoalesceDropFactory> Dropfact11
-    = Teuchos::rcp( new CoalesceDropFactory() );
-  Teuchos::RCP<CoalesceDropFactory> Dropfact22
-    = Teuchos::rcp( new CoalesceDropFactory() );
-  Teuchos::RCP<UncoupledAggregationFactory> Aggfact11
-    = Teuchos::rcp( new UncoupledAggregationFactory() );
-  Teuchos::RCP<UncoupledAggregationFactory> Aggfact22
-    = Teuchos::rcp( new UncoupledAggregationFactory() );
-  Teuchos::ParameterList params;
-  params.set("aggregation: drop tol",1.0e-16);
-  params.set("aggregation: Dirichlet threshold",1.0e-16);
-  Dropfact11->SetParameterList(params);
-  Dropfact22->SetParameterList(params);
-  Manager11->SetFactory("Aggregates",Aggfact11);
-  Manager11->SetFactory("Smoother",SmooFact11);
-  Manager11->SetFactory("CoarseSolver",SmooFact11);
-  Manager11->SetFactory("Graph",Dropfact11);
-  Manager22->SetFactory("Aggregates",Aggfact22);
-  Manager22->SetFactory("Smoother",SmooFact22);
-  Manager22->SetFactory("CoarseSolver",SmooFact22);
-  Manager22->SetFactory("Graph",Dropfact22);
-  Hierarchy11_ = Teuchos::rcp( new Hierarchy(A11_) );
-  Hierarchy11_ -> SetMaxCoarseSize( MaxCoarseSize_ );
-  Hierarchy11_ -> Setup(*Manager11, 0, MaxLevels_ );
-  Hierarchy22_ = Teuchos::rcp( new Hierarchy(A22_) );
-  Hierarchy22_ -> SetMaxCoarseSize( MaxCoarseSize_ );
-  Hierarchy22_ -> Setup(*Manager22, 0, MaxLevels_ );
-
+  // Use HierarchyManagers to build 11 & 22 Hierarchies
+  typedef HierarchyManager<SC,LO,GO,NO>               HierarchyManager;
+  RCP<HierarchyManager> Manager11, Manager22, ManagerSmoother;
+  std::string syntaxStr = "parameterlist: syntax";
+  if (parameterList_.isParameter(syntaxStr) && parameterList_.get<std::string>(syntaxStr) == "ml") {
+    parameterList_.remove(syntaxStr);
+    Manager11 = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(precList11_));
+    Manager22 = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(precList22_));
+    ManagerSmoother = rcp(new MLParameterListInterpreter<SC,LO,GO,NO>(smootherList_));
+  } else {
+    Manager11 = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(precList11_,A11_->getDomainMap()->getComm()));
+    Manager22 = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(precList22_,A22_->getDomainMap()->getComm()));
+    ManagerSmoother = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(smootherList_,SM_Matrix_->getDomainMap()->getComm()));
+  }
+  
+  Hierarchy11_=Manager11->CreateHierarchy();
+  Hierarchy11_->setlib(Xpetra::UseTpetra);
+  Hierarchy11_->GetLevel(0)->Set("A", A11_);
+  Manager11->SetupHierarchy(*Hierarchy11_);
+  
+  Hierarchy22_=Manager22->CreateHierarchy();
+  Hierarchy22_->setlib(Xpetra::UseTpetra);
+  Hierarchy22_->GetLevel(0)->Set("A", A22_);
+  Manager22->SetupHierarchy(*Hierarchy22_);
+  
   // build ifpack2 preconditioners for pre and post smoothing
-  Teuchos::RCP<const TCRS> EdgeMatrix = Utils::Op2NonConstTpetraCrs(SM_Matrix_ );
-  Teuchos::RCP<const TCRS> NodeMatrix = Utils::Op2NonConstTpetraCrs(TMT_Matrix_);
-  Teuchos::RCP<const TCRS> PMatrix    = Utils::Op2NonConstTpetraCrs(D0_Matrix_);
-  edgePreSmoother_  = Teuchos::rcp( new Ifpack2::Hiptmair<TROW>(EdgeMatrix,NodeMatrix,PMatrix) );
-  edgePostSmoother_ = Teuchos::rcp( new Ifpack2::Hiptmair<TROW>(EdgeMatrix,NodeMatrix,PMatrix) );
-  edgePreSmoother_ -> setParameters(hiptmairPreList_);
-  edgePreSmoother_ -> initialize();
-  edgePreSmoother_ -> compute();
-  edgePostSmoother_ -> setParameters(hiptmairPostList_);
-  edgePostSmoother_ -> initialize();
-  edgePostSmoother_ -> compute();
+  HierarchySmoother_=ManagerSmoother->CreateHierarchy();
+  HierarchySmoother_->setlib(Xpetra::UseTpetra);
+  HierarchySmoother_->GetLevel(0)->Set("A", SM_Matrix_);
+  ManagerSmoother->SetupHierarchy(*HierarchySmoother_);
 
 }
 
@@ -239,7 +217,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::buildProlongator() {
   auxManager -> SetFactory("Smoother", Teuchos::null);
   auxManager -> SetFactory("CoarseSolver", Teuchos::null);
   auxHierarchy -> Keep("P", Pfact.get());
-  auxHierarchy -> SetMaxCoarseSize( MaxCoarseSize_ );
+  auxHierarchy -> SetMaxCoarseSize(1);
   auxHierarchy -> Setup(*auxManager, 0, 2);
 
   // pull out tentative P
@@ -380,8 +358,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverseAdditive(co
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
 
   // block diagonal preconditioner on 2x2 (V-cycle for diagonal blocks)
-  Hierarchy11_->Iterate(*P11res, *P11x, Cycles_, true);
-  Hierarchy22_->Iterate(*D0res,  *D0x,  Cycles_, true);
+  Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
+  Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
 
   // update current solution
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
@@ -401,21 +379,21 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse121(const X
   // precondition (1,1)-block
   RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
-  Hierarchy11_->Iterate(*P11res, *P11x, Cycles_, true);
+  Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (2,2)-block
   residual  = Utils::Residual(*SM_Matrix_, X, RHS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
-  Hierarchy22_->Iterate(*D0res,  *D0x,  Cycles_, true);
+  Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
   D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (1,1)-block
   residual  = Utils::Residual(*SM_Matrix_, X, RHS);
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
-  Hierarchy11_->Iterate(*P11res, *P11x, Cycles_, true);
+  Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
@@ -432,21 +410,21 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse212(const X
   // precondition (2,2)-block
   RCP<XMV> residual  = Utils::Residual(*SM_Matrix_, X, RHS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
-  Hierarchy22_->Iterate(*D0res,  *D0x,  Cycles_, true);
+  Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
   D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (1,1)-block
   residual  = Utils::Residual(*SM_Matrix_, X, RHS);
   P11_->apply(*residual,*P11res,Teuchos::TRANS);
-  Hierarchy11_->Iterate(*P11res, *P11x, Cycles_, true);
+  Hierarchy11_->Iterate(*P11res, *P11x, 1, true);
   P11_->apply(*P11x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
   // precondition (2,2)-block
   residual  = Utils::Residual(*SM_Matrix_, X, RHS);
   D0_Matrix_->apply(*residual,*D0res,Teuchos::TRANS);
-  Hierarchy22_->Iterate(*D0res,  *D0x,  Cycles_, true);
+  Hierarchy22_->Iterate(*D0res,  *D0x,  1, true);
   D0_Matrix_->apply(*D0x,*residual,Teuchos::NO_TRANS);
   X.update((Scalar) 1.0, *residual, (Scalar) 1.0);
 
@@ -456,6 +434,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                                                                            Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                                                                            Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
+
   try {
 
     TMV& temp_x = const_cast<TMV &>(X);
@@ -464,7 +443,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const Tpetra::Mul
     tY.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
 
     // apply pre-smoothing
-    edgePreSmoother_->apply(X,Y);
+    HierarchySmoother_->Iterate(tX,tY,1);
 
     // do solve for the 2x2 block system
     if(mode_=="additive")
@@ -477,7 +456,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const Tpetra::Mul
       applyInverseAdditive(tX,tY);
 
     // apply post-smoothing
-    edgePostSmoother_->apply(X,Y);
+    HierarchySmoother_->Iterate(tX,tY,1);
 
   } catch (std::exception& e) {
 
@@ -508,13 +487,9 @@ initialize(const Teuchos::RCP<TCRS> & D0_Matrix,
 
   Hierarchy11_ = Teuchos::null;
   Hierarchy22_ = Teuchos::null;
+  HierarchySmoother_ = Teuchos::null;
   parameterList_ = List;
   disable_addon_ = false;
-  MaxCoarseSize_ = 1000;
-  MaxLevels_ = 5;
-  Cycles_ = 1;
-  precType11_ = "CHEBYSHEV";
-  precType22_ = "CHEBYSHEV";
   mode_ = "additive";
 
   // set parameters

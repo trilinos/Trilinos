@@ -148,9 +148,6 @@ namespace Galeri {
 
     template <typename GlobalOrdinal>
     static void getSubdomainData(GlobalOrdinal n, GlobalOrdinal m, GlobalOrdinal i, GlobalOrdinal& start, GlobalOrdinal& end) {
-      using Teuchos::as;
-      typedef GlobalOrdinal GO;
-
       if (i >= m)
         throw Exception(__FILE__, __LINE__,
                         "Incorrect input parameter to getSubdomainData",
@@ -158,8 +155,8 @@ namespace Galeri {
 
       // If the number of points is not multiple of the number of subdomains, we assign
       // extra points to the first few subdomains
-      GO minWidth = as<GO>(floor(as<double>(n)/m));
-      GO numWides = n - m*minWidth;
+      GlobalOrdinal minWidth = Teuchos::as<GlobalOrdinal>(floor(Teuchos::as<double>(n)/m));
+      GlobalOrdinal numWides = n - m*minWidth;
 
       if   (i < numWides) { start = i       *(minWidth+1);                           end = start + minWidth+1;  }
       else                { start = numWides*(minWidth+1) + (i - numWides)*minWidth; end = start + minWidth;    }

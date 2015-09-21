@@ -57,10 +57,12 @@ class UniqueGlobalIndexerBase;
 
 struct SideId {
    SideId(const BC & bc)
-      : ss_id(bc.sidesetID()), eblk_id(bc.elementBlockID()) {}
+      : ss_id(bc.sidesetID()), eblk_id(bc.elementBlockID()),
+        is_interface(static_cast<int>(bc.bcType() == BCT_Interface)) {}
 
    std::string ss_id;
    std::string eblk_id;
+   int is_interface;
 };
 
 /** Required to distinguish between boundary conditions
@@ -69,8 +71,12 @@ struct SideId {
 struct LessSide {
    bool operator()(const SideId & left, 
                    const SideId  right) const
-   { return   (left.ss_id + "_" + left.eblk_id 
-            < right.ss_id + "_" + right.eblk_id); }
+   {
+     return ((left.is_interface <  right.is_interface) ||
+             (left.is_interface == right.is_interface &&
+              (left.ss_id + "_" + left.eblk_id  < right.ss_id + "_" + right.eblk_id)));
+     
+   }
 };
 
 /** \brief Class that provides access to worksets on

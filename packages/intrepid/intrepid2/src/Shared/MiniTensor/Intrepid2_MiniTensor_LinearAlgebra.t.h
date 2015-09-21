@@ -45,10 +45,26 @@
 namespace Intrepid2 {
 
 //
+// Inverse defaults to fast inverse for 2 and 3 dimensions, otherwise
+// use full piviting version
+//
+template<typename T, Index N>
+Tensor<T, N>
+inverse(Tensor<T, N> const & A)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  bool const
+  use_fast = dimension == 2 || dimension == 3;
+
+  return use_fast == true ? inverse_fast23(A) : inverse_full_pivot(A);
+}
+
+//
 // R^N 2nd-order tensor inverse
-// Gauss-Jordan elimination. Warning: full pivoting
-// for small tensors. Use Teuchos LAPACK interface for
-// more efficient and robust techniques.
+// Gauss-Jordan elimination. Warning: full pivoting for small tensors.
+// Use Teuchos LAPACK interface for more efficient and robust techniques.
 // \param A nonsingular tensor
 // \return \f$ A^{-1} \f$
 //
@@ -57,7 +73,7 @@ template<typename T, Index N, class ES>
 KOKKOS_INLINE_FUNCTION
 #endif
 Tensor<T, N, ES>
-inverse(Tensor<T, N, ES> const & A)
+inverse_full_pivot(Tensor<T, N, ES> const & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -82,37 +98,11 @@ Index const maximum_dimension = NPP_MAX_32U ;
 
   switch (dimension) {
 
-  case 3:
-    {
-      T const determinant = det(A);
-      assert(determinant != 0.0);
-      return Tensor<T, N, ES>(
-        -A(1,2)*A(2,1) + A(1,1)*A(2,2),
-         A(0,2)*A(2,1) - A(0,1)*A(2,2),
-        -A(0,2)*A(1,1) + A(0,1)*A(1,2),
-         A(1,2)*A(2,0) - A(1,0)*A(2,2),
-        -A(0,2)*A(2,0) + A(0,0)*A(2,2),
-         A(0,2)*A(1,0) - A(0,0)*A(1,2),
-        -A(1,1)*A(2,0) + A(1,0)*A(2,1),
-         A(0,1)*A(2,0) - A(0,0)*A(2,1),
-        -A(0,1)*A(1,0) + A(0,0)*A(1,1)
-        )/ determinant;
-    }
-    break;
-
-  case 2:
-    {
-      T const determinant = det(A);
-      assert(determinant != 0.0);
-      return Tensor<T, N, ES>(A(1,1), -A(0,1), -A(1,0), A(0,0)) / determinant;
-    }
-    break;
-
   case 1:
-    return Tensor<T, N>(ONES) / A(0,0);
+    return Tensor<T, N>(1, ONES) / A(0,0);
     break;
 
- default:
+  default:
     break;
   }
 
@@ -198,6 +188,58 @@ Index const maximum_dimension = NPP_MAX_32U ;
   X = t_dot(S, B);
 
   return X;
+}
+
+//
+// R^N 2nd-order tensor inverse
+// Fast analytic expressions for 2 and 3 dimensions
+// \param A nonsingular tensor
+// \return \f$ A^{-1} \f$
+//
+template<typename T, Index N, class ES>
+Tensor<T, N, ES>
+inverse_fast23(Tensor<T, N, ES> const & A)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  switch (dimension) {
+
+  case 3:
+    {
+      T const determinant = det(A);
+      assert(determinant != 0.0);
+      return Tensor<T, N, ES>(
+        -A(1,2)*A(2,1) + A(1,1)*A(2,2),
+         A(0,2)*A(2,1) - A(0,1)*A(2,2),
+        -A(0,2)*A(1,1) + A(0,1)*A(1,2),
+         A(1,2)*A(2,0) - A(1,0)*A(2,2),
+        -A(0,2)*A(2,0) + A(0,0)*A(2,2),
+         A(0,2)*A(1,0) - A(0,0)*A(1,2),
+        -A(1,1)*A(2,0) + A(1,0)*A(2,1),
+         A(0,1)*A(2,0) - A(0,0)*A(2,1),
+        -A(0,1)*A(1,0) + A(0,0)*A(1,1)
+        ) / determinant;
+    }
+    break;
+
+  case 2:
+    {
+      T const determinant = det(A);
+      assert(determinant != 0.0);
+      return Tensor<T, N, ES>(A(1,1), -A(0,1), -A(1,0), A(0,0)) / determinant;
+    }
+    break;
+
+  case 1:
+    return Tensor<T, N, ES>(1, ONES) / A(0,0);
+    break;
+
+  default:
+    break;
+  }
+
+  return inverse_full_pivot(A);
 }
 
 //
@@ -2501,7 +2543,7 @@ KOKKOS_INLINE_FUNCTION
 Vector<T, N, ES>
 solve(Tensor<T, N, ES> const & A, Vector<T, N, ES> const & b)
 {
-  return dot(inverse(A), b);
+  return dot(inverse_full_pivot(A), b);
 }
 
 template<typename T, Index N, Index P, class ES>
@@ -2512,7 +2554,7 @@ Matrix<T, N, P, ES>
 solve(Tensor<T, N, ES> const & A, Matrix<T, N, P, ES> const & B)
 {
   auto const
-  I = inverse(A);
+  I = inverse_full_pivot(A);
 
   auto
   X = B;

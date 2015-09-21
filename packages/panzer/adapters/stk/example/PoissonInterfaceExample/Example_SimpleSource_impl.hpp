@@ -90,7 +90,8 @@ void SimpleSource<EvalT,Traits>::evaluateFields(typename Traits::EvalData workse
       const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
       const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
 
-      source(cell,point) = 2.0 + x - 10*y*y;
+      //source(cell,point) = 2.0 + x - 10*y*y;
+      source(cell,point) = 4*M_PI*M_PI*sin(2*M_PI*x)*cos(2*M_PI*y);
     }
   }
 }

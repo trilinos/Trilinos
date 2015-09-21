@@ -92,6 +92,24 @@ Tensor<T, N,ES>
 inverse(Tensor<T, N, ES> const & A);
 
 ///
+/// 2nd-order tensor inverse using analitical expression for 2 and 3 dimensions
+/// \param A nonsingular tensor
+/// \return \f$ A^{-1} \f$
+///
+template<typename T, Index N>
+Tensor<T, N>
+inverse_fast23(Tensor<T, N> const & A);
+
+///
+/// 2nd-order tensor inverse using full pivoting, very accurate
+/// \param A nonsingular tensor
+/// \return \f$ A^{-1} \f$
+///
+template<typename T, Index N>
+Tensor<T, N>
+inverse_full_pivot(Tensor<T, N> const & A);
+
+///
 /// Subtensor
 /// \param i index
 /// \param j index

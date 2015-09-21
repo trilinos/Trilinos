@@ -46,7 +46,12 @@ namespace Rythmos {
 enum AttemptedStepStatusFlag { PREDICT_AGAIN, CONTINUE_ANYWAY, REP_ERR_FAIL, REP_CONV_FAIL };
 
 /** \brief . */
-enum StepControlStrategyState { UNINITIALIZED, BEFORE_FIRST_STEP, MID_STEP, AFTER_CORRECTION, READY_FOR_NEXT_STEP };
+enum StepControlStrategyState { UNINITIALIZED, BEFORE_FIRST_STEP, MID_STEP, AFTER_CORRECTION, READY_FOR_NEXT_STEP, BEFORE_FIRST_STAGE, MID_STAGE };
+/*
+ * 9/10/15- Sidafa
+ * added BEFORE_FIRST_STAGE and MID_STAGE for Multi-Stage (RK) step control state
+ *      - for the inter-stage control state
+ */
 
 /** \brief Convert StepControlStrategyState to string. */
 inline
@@ -63,6 +68,10 @@ const char* toString( const StepControlStrategyState stepControlStrategyState )
       return "AFTER_CORRECTION";
     case READY_FOR_NEXT_STEP:
       return "READY_FOR_NEXT_STEP";
+    case BEFORE_FIRST_STAGE:
+      return "BEFORE_FIRST_STAGE";
+    case MID_STAGE:
+      return "MID_STAGE";
 #ifdef HAVE_RYTHMOS_DEBUG
     default:
       TEUCHOS_TEST_FOR_EXCEPT("Invalid enum value!");
