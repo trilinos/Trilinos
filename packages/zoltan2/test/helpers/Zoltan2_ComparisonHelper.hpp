@@ -187,13 +187,13 @@ private:
                       const Teuchos::ParameterList & metricPlist,
                       ostringstream &msg);
   
-  static std::map<const string, const metric_t &>
+  static std::map<const string, const metric_t>
   metricArrayToMap(const ArrayRCP<const metric_t> &metrics);
   
   static std::map<const string, const double>
   timerDataToMap(const map<const std::string, RCP<Time> > &timers);
   
-  static std::queue<const ParameterList>
+  static std::queue<ParameterList>
   getMetricsToCompare(const ParameterList & pList);
 };
 
@@ -563,8 +563,8 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
   auto reference = sourceRef.get()->problem.get();
   
   // get metrics
-  std::map<const string, const metric_t &> prb_metrics = this->metricArrayToMap(problem->getMetrics());
-  std::map<const string, const metric_t &> ref_metrics = this->metricArrayToMap(reference->getMetrics());
+  std::map<const string, const metric_t> prb_metrics = this->metricArrayToMap(problem->getMetrics());
+  std::map<const string, const metric_t> ref_metrics = this->metricArrayToMap(reference->getMetrics());
 
   // get timing data
   std::map< const string, const double> prb_timers = this->timerDataToMap(sourcePrb->timers);
@@ -583,7 +583,7 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
 //  }
   
   // get all of the metrics to be tested
-  std::queue<const ParameterList> metrics = ComparisonHelper::getMetricsToCompare(metricsPlist);
+  std::queue<ParameterList> metrics = ComparisonHelper::getMetricsToCompare(metricsPlist);
   
   // run comparison
   bool all_tests_pass = true;
@@ -631,11 +631,11 @@ void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
   }
 }
 
-std::map<const string, const ComparisonHelper::metric_t &>
+std::map<const string, const ComparisonHelper::metric_t>
 ComparisonHelper::metricArrayToMap(const ArrayRCP<const ComparisonHelper::metric_t> &metrics)
 {
-  typedef std::pair<const string,const metric_t &> pair_t;
-  std::map<const string, const metric_t &> metric_map;
+  typedef std::pair<const string,const metric_t> pair_t;
+  std::map<const string, const metric_t> metric_map;
   
   for(size_t idx = 0; idx < metrics.size(); idx++)
   {
@@ -669,27 +669,28 @@ ComparisonHelper::metricComparisonTest(const Zoltan2::MetricValues<zscalar_t> & 
   // return an error message on failure
   bool pass = true;
   string test_name = metricPlist.name() + " test";
+  double ref_value = ref_metric.getMaxImbalance()/ref_metric.getAvgImbalance();
+  double value = metric.getMaxImbalance()/metric.getAvgImbalance();
+  
   if (metricPlist.isParameter("lower"))
   {
-    double min = metricPlist.get<double>("lower")*ref_metric.getMinImbalance();
+    double min = metricPlist.get<double>("lower")*ref_value;
     
-    if(metric.getMinImbalance() < min)
+    if(value < min)
     {
       msg << test_name << " FAILED: Minimum imbalance per part, "
-      << metric.getMinImbalance() <<
-      ", less than specified allowable minimum, " << min;
+      << value << ", less than specified allowable minimum, " << min;
       pass = false;
     }
   }
   
   if(metricPlist.isParameter("upper" ) && pass != false) {
     
-    double max = metricPlist.get<double>("upper") * ref_metric.getMaxImbalance();
-    if (metric.getMaxImbalance() > max)
+    double max = metricPlist.get<double>("upper") * ref_value;
+    if (value > max)
     {
       msg << test_name << " FAILED: Maximum imbalance per part, "
-      << metric.getMaxImbalance() <<
-      ", greater than specified allowable maximum, " << max;
+      << value << ", greater than specified allowable maximum, " << max;
       pass = false;
     }
     
@@ -746,11 +747,11 @@ bool ComparisonHelper::timerComparisonTest(const double time,
   return pass;
 }
 
-std::queue<const ParameterList>
+std::queue<ParameterList>
 ComparisonHelper::getMetricsToCompare(const ParameterList &pList)
 {
   // extract all of the metrics to be testd
-  std::queue<const ParameterList> metrics;
+  std::queue<ParameterList> metrics;
   for(auto it = pList.begin(); it != pList.end(); ++it)
   {
     if(pList.isSublist(it->first))

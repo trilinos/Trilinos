@@ -159,26 +159,26 @@ bool MetricBoundsTest(const metric_t & metric,
   // return an error message on failure
   bool pass = true;
   string test_name = metric.getName() + " test";
+  double value = metric.getMaxImbalance()/metric.getMinImbalance();
+  
   if (metricPlist.isParameter("lower"))
   {
     double min = metricPlist.get<double>("lower");
     
-    if(metric.getMinImbalance() < min)
+    if(value < min)
     {
       msg << test_name << " FAILED: Minimum imbalance per part, "
-      << metric.getMinImbalance() <<
-      ", less than specified allowable minimum, " << min;
+      << value << ", less than specified allowable minimum, " << min;
       pass = false;
     }
   }
   
   if(metricPlist.isParameter("upper" ) && pass != false) {
     double max = metricPlist.get<double>("upper");
-    if (metric.getMaxImbalance() > max)
+    if (value > max)
     {
       msg << test_name << " FAILED: Maximum imbalance per part, "
-      << metric.getMaxImbalance() <<
-      ", greater than specified allowable maximum, " << max;
+      << value << ", greater than specified allowable maximum, " << max;
       pass = false;
     }
     

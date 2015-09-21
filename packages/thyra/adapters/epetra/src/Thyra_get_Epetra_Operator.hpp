@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -43,10 +43,11 @@
 #define THYRA_GET_EPETRA_OPERATOR_HPP
 
 #include "Thyra_EpetraTypes.hpp"
-
+#include "Teuchos_TestForException.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
+#include <stdexcept> // std::invalid_argument
 
 namespace Thyra {
-
 
 /** \brief Get smart pointer to non-<tt>const</tt>
  * <tt>Epetra_Operator</tt> object from reference to a
@@ -74,9 +75,21 @@ namespace Thyra {
  *
  * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
+template<class Scalar>
+Teuchos::RCP<Epetra_Operator>
+get_Epetra_Operator (LinearOpBase<Scalar>& /* op */)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::invalid_argument, "Thyra::get_Epetra_Operator: This function "
+     "only works if Scalar=double, because for Epetra objects, the only Scalar"
+     " type is double.  Instead, Scalar = " <<
+     Teuchos::TypeNameTraits<Scalar>::name () << ".");
+}
+
+//! Full specialization for Scalar=double.
+template<>
 Teuchos::RCP<Epetra_Operator>
 get_Epetra_Operator( LinearOpBase<double> &op );
-
 
 /** \brief Get smart pointer to <tt>const</tt>
  * <tt>Epetra_Operator</tt> object from reference to a <tt>const</tt>
@@ -104,9 +117,21 @@ get_Epetra_Operator( LinearOpBase<double> &op );
  *
  * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
+template<class Scalar>
+Teuchos::RCP<const Epetra_Operator>
+get_Epetra_Operator( const LinearOpBase<Scalar> & /* op */ )
+{
+  TEUCHOS_TEST_FOR_EXCEPTION
+    (true, std::invalid_argument, "Thyra::get_Epetra_Operator: This function "
+     "only works if Scalar=double, because for Epetra objects, the only Scalar"
+     " type is double.  Instead, Scalar = " <<
+     Teuchos::TypeNameTraits<Scalar>::name () << ".");
+}
+
+//! Full specialization for Scalar=double.
+template<>
 Teuchos::RCP<const Epetra_Operator>
 get_Epetra_Operator( const LinearOpBase<double> &op );
-
 
 } // namespace Thyra
 

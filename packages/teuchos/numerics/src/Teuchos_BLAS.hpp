@@ -1394,7 +1394,7 @@ namespace Teuchos
 
     if (incx == 1 && incy == 1) {
       for (int i = 0; i < n; ++i) {
-        __float128 tmp = x[i];
+        ScalarType tmp = x[i];
         x[i] = y[i];
         y[i] = tmp;
       }
@@ -1411,7 +1411,7 @@ namespace Teuchos
     }
 
     for (int i = 1; i <= n; ++i) {
-      __float128 tmp = x[ix - 1];
+      ScalarType tmp = x[ix - 1];
       x[ix - 1] = y[iy - 1];
       y[iy - 1] = tmp;
       ix += incx;

@@ -53,6 +53,7 @@
 #include "Piro_ObserverBase.hpp"
 
 #include "Piro_RythmosStepperFactory.hpp"
+#include "Piro_RythmosStepControlFactory.hpp"
 
 #include <map>
 #include <string>
@@ -124,6 +125,9 @@ public:
   void addStepperFactory(const std::string & stepperName,
                          const Teuchos::RCP<RythmosStepperFactory<Scalar> > & stepperFactories);
 
+  void addStepControlFactory(const std::string & stepControlName,
+                             const Teuchos::RCP<RythmosStepControlFactory<Scalar> > & step_control_strategy);
+
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase. */
   //@{
@@ -161,6 +165,8 @@ private:
 
   // used for adding user defined steppers externally, this gives us "the open-close principal"
   std::map<std::string,Teuchos::RCP<RythmosStepperFactory<Scalar> > > stepperFactories;
+
+  std::map<std::string,Teuchos::RCP<RythmosStepControlFactory<Scalar> > > stepControlFactories;
 
   bool isInitialized;
 };

@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -43,18 +43,22 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Teuchos_dyn_cast.hpp"
 
+namespace Thyra {
 
+template<>
 Teuchos::RCP<Epetra_Operator>
-Thyra::get_Epetra_Operator( LinearOpBase<double> &op )
+get_Epetra_Operator( LinearOpBase<double> &op )
 {
   EpetraLinearOp &thyra_epetra_op = Teuchos::dyn_cast<EpetraLinearOp>(op);
   return thyra_epetra_op.epetra_op();
 }
 
-
+template<>
 Teuchos::RCP<const Epetra_Operator>
-Thyra::get_Epetra_Operator( const LinearOpBase<double> &op )
+get_Epetra_Operator( const LinearOpBase<double> &op )
 {
   const EpetraLinearOp &thyra_epetra_op = Teuchos::dyn_cast<const EpetraLinearOp>(op);
   return thyra_epetra_op.epetra_op();
 }
+
+} // namespace Thyra

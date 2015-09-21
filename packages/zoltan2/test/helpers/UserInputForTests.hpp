@@ -312,7 +312,7 @@ private:
   // If there are "Tim Davis" style coordinates
   // that go with the file,  read those into xyz_.
   
-  void readMatrixMarketFile(string path, string testData);
+  void readMatrixMarketFile(string path, string testData,bool distributeInput = true);
   
   // Build matrix M_ from a mesh and a problem type
   // with Galeri::Xpetra.
@@ -495,7 +495,7 @@ chaco_offset(0), chaco_break_pnt(CHACO_LINE_LENGTH)
       case GEOMGEN: readGeometricGenTestData(path,testData); break;
       case PAMGEN: readPamgenMeshFile(path,testData); break;
       case CHACO: readZoltanTestData(path, testData, distributeInput); break;
-      default: readMatrixMarketFile(path, testData); break;
+      default: readMatrixMarketFile(path, testData, distributeInput); break;
     }
 
   }else if(pList.isParameter("x") || pList.isParameter("y") || pList.isParameter("z")){
@@ -1027,7 +1027,7 @@ void UserInputForTests::readGeoGenParams(string paramFileName,
   }
 }
 
-void UserInputForTests::readMatrixMarketFile(string path, string testData)
+void UserInputForTests::readMatrixMarketFile(string path, string testData, bool distributeInput)
 {
   std::ostringstream fname;
   fname << path << "/" << testData << ".mtx";
@@ -1040,17 +1040,40 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
   // cannot be read.  Until the
   // reader is fixed, we'll have to get inputs that are consistent with
   // the reader. (Tpetra bug 5611 and 5624)
-
+  
+  RCP<tcrsMatrix_t> toMatrix;
+  RCP<tcrsMatrix_t> fromMatrix;
   bool aok = true;
   try{
-    M_ = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
+    RCP<tcrsMatrix_t> fromMatrix;
+    fromMatrix = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
                                                                     fname.str(), tcomm_, dnode, true, true, false);
-  }
-  catch (std::exception &e) {
+    if(!distributeInput)
+    {
+      if (verbose_ && tcomm_->getRank() == 0)
+        std::cout << "Constructing serial distribution of matrix" <<  std::endl;
+      // need to make a serial map and then import the data to redistribute it
+      RCP<const map_t> fromMap = fromMatrix->getRowMap();
+
+      size_t numGlobalCoords = fromMap->getGlobalNumElements();
+      size_t numLocalCoords = this->tcomm_->getRank() == 0 ? numGlobalCoords : 0;
+      RCP<const map_t> toMap = rcp(new map_t(numGlobalCoords,numLocalCoords, 0, tcomm_));
+
+      RCP<import_t> importer = rcp(new import_t(fromMap, toMap));
+      toMatrix = rcp(new tcrsMatrix_t(toMap,0));
+      toMatrix->doImport(*fromMatrix, *importer, Tpetra::INSERT);
+      toMatrix->fillComplete();
+
+    }else{
+      toMatrix = fromMatrix;
+    }
+  }catch (std::exception &e) {
     //TEST_FAIL_AND_THROW(*tcomm_, 1, e.what());
     aok = false;
   }
   
+  M_ = toMatrix;
+
   if (aok){
     xM_ = Zoltan2::XpetraTraits<tcrsMatrix_t>::convertToXpetra(M_);
   }
@@ -1167,8 +1190,23 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
     toMap = mapM;
   }
   else{
+    if (verbose_ && tcomm_->getRank() == 0)
+    {
+      std::cout << "Matrix was null. ";
+      std::cout << "Constructing distribution map for coordinate vector." <<  std::endl;
+    }
+    
     base = 0;
-    toMap = rcp(new map_t(numGlobalCoords, base, tcomm_));
+    if(!distributeInput)
+    {
+      if (verbose_ && tcomm_->getRank() == 0)
+        std::cout << "Constructing serial distribution map for coordinates." <<  std::endl;
+      
+      size_t numLocalCoords = this->tcomm_->getRank() == 0 ? numGlobalCoords : 0;
+      toMap = rcp(new map_t(numGlobalCoords,numLocalCoords, base, tcomm_));
+    }else{
+      toMap = rcp(new map_t(numGlobalCoords, base, tcomm_));
+    }
   }
   
   // Export coordinates to their owners
