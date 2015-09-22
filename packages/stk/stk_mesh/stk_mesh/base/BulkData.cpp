@@ -1435,11 +1435,6 @@ void BulkData::remove_entity_field_data_callback(EntityRank rank, unsigned bucke
 
 void BulkData::remove_entity_callback(EntityRank rank, unsigned bucket_id, Bucket::size_type bucket_ord)
 {
-  if (!m_keep_fields_updated) {
-    return;
-  }
-  const std::vector<FieldBase *> &fields = mesh_meta_data().get_fields();
-  m_field_data_manager->reinitialize_removed_entity_field_data(rank, bucket_id, bucket_ord, fields);
 }
 
 void BulkData::destroy_bucket_callback(EntityRank rank, Bucket const& dying_bucket, unsigned capacity)
@@ -1877,39 +1872,6 @@ bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
                                          Permutation permut)
 {
   m_modSummary.track_declare_relation(e_from, e_to, local_id, permut);
-
-  // should be in debug only or somewhere else
-//  if ((entity_rank(e_from) > entity_rank(e_to)) && (entity_rank(e_from) <= stk::topology::ELEMENT_RANK)
-//      && (entity_rank(e_to) > stk::topology::NODE_RANK))
-//  {
-//      stk::topology e_from_topo  = mesh_index(e_from).bucket->topology();
-//      stk::topology e_to_topo    = mesh_index(e_to).bucket->topology();
-//
-//      if ((e_from_topo == stk::topology::INVALID_TOPOLOGY) || (e_to_topo == stk::topology::INVALID_TOPOLOGY))
-//      {
-//          // nothing to do
-//      }
-//      else
-//      {
-//          Permutation just_permutation = static_cast<Permutation>(Relation::permutation(permut));
-//          bool ok = check_permutation(e_from, e_to, local_id, just_permutation);
-//
-//          if (!ok)
-//          {
-//              std::ostringstream msgBuff;
-//
-//              Entity const *e_from_nodes = begin_nodes(e_from);
-//              Entity const *e_to_nodes   = begin_nodes(e_to);
-//
-//              Permutation computed_perm  = find_permutation(e_from_topo, e_from_nodes, e_to_topo, e_to_nodes, local_id);
-//
-//              msgBuff << "P" << parallel_rank() << ": internal_declare_relation from " << entity_key(e_from)
-//                                      << " to " << entity_key(e_to) << " got incorrect permutation arg " << permut
-//                                      << "; find_permutation computed " << computed_perm << std::endl;
-//              ThrowRequireMsg(false,  msgBuff.str());
-//          }
-//      }
-//  }
 
   const MeshIndex& idx = mesh_index(e_from);
 
