@@ -218,7 +218,7 @@ namespace Iofx {
           for (int i=0; i < util().parallel_size(); i++) {
             if (status[i] < 0) {
 	      std::string proc_filename = Ioss::Utils::decode_filename(get_filename(),
-								 i, util().parallel_size());
+								       i, util().parallel_size());
               errmsg << "\t" << proc_filename << "\n";
             }
           }

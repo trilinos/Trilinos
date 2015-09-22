@@ -126,8 +126,8 @@ namespace {
       if ((int64_t)snd_cnt != sendcounts[i]) {
         std::ostringstream errmsg;
         errmsg << "ERROR: The number of items that must be communicated via MPI calls from\n"
-	       << "       processor " << my_processor << " to processor " << i << " is " << sendcounts[i]
-	       << "\n       which exceeds the storage capacity of the integers used by MPI functions.\n";
+               << "       processor " << my_processor << " to processor " << i << " is " << sendcounts[i]
+               << "\n       which exceeds the storage capacity of the integers used by MPI functions.\n";
         std::cerr << errmsg.str();
         exit(EXIT_FAILURE);
       }
@@ -156,8 +156,8 @@ namespace {
 
     // Take care of this processor's data movement...
     std::copy(&sendbuf[senddisp[my_processor]],
-	      &sendbuf[senddisp[my_processor]+sendcounts[my_processor]],
-	      &recvbuf[recvdisp[my_processor]]);
+              &sendbuf[senddisp[my_processor]+sendcounts[my_processor]],
+              &recvbuf[recvdisp[my_processor]]);
     return 0;
   }
 
@@ -185,7 +185,7 @@ namespace {
       std::vector<int> recv_cnt(recvcnts.begin(), recvcnts.end());
       std::vector<int> recv_dis(recvdisp.begin(), recvdisp.end());
       return MPI_Alltoallv(TOPTR(sendbuf), (int*)TOPTR(send_cnt), (int*)TOPTR(send_dis), mpi_type(T(0)),
-          TOPTR(recvbuf), (int*)TOPTR(recv_cnt), (int*)TOPTR(recv_dis), mpi_type(T(0)), comm);
+                           TOPTR(recvbuf), (int*)TOPTR(recv_cnt), (int*)TOPTR(recv_dis), mpi_type(T(0)), comm);
     }
     else {
       // Same as if each processor sent a message to every other process with:
@@ -206,7 +206,7 @@ namespace {
     assert(is_sorted(recvdisp));
 
     return MPI_Alltoallv(TOPTR(sendbuf), (int*)TOPTR(sendcnts), (int*)TOPTR(senddisp), mpi_type(T(0)),
-        TOPTR(recvbuf), (int*)TOPTR(recvcnts), (int*)TOPTR(recvdisp), mpi_type(T(0)), comm);
+                         TOPTR(recvbuf), (int*)TOPTR(recvcnts), (int*)TOPTR(recvdisp), mpi_type(T(0)), comm);
   }
 
   inline size_t min(size_t x, size_t y)
@@ -410,7 +410,9 @@ namespace {
     Ioss::ParallelUtils par_util(comm);
     common_nodes = par_util.global_minmax(common_nodes, Ioss::ParallelUtils::DO_MIN);
 
-    //    std::cerr << "Setting common_nodes to " << common_nodes << "\n";
+#if DEBUG_OUTPUT
+    std::cerr << "Setting common_nodes to " << common_nodes << "\n";
+#endif
     return common_nodes;
   }
 }
@@ -421,11 +423,11 @@ namespace Iopx {
 
   template <typename INT>
   DecompositionData<INT>::DecompositionData(const Ioss::PropertyManager &props, MPI_Comm communicator)
-  : DecompositionDataBase(communicator), properties(props)
-    {
+    : DecompositionDataBase(communicator), properties(props)
+  {
     MPI_Comm_rank(comm_, &myProcessor);
     MPI_Comm_size(comm_, &processorCount);
-    }
+  }
 
   template <typename INT>
   bool DecompositionData<INT>::i_own_node(size_t global_index) const
@@ -488,8 +490,9 @@ namespace Iopx {
     get_entity_dist(processorCount, myProcessor, info.num_nodes,
                     node_dist,    &nodeOffset,    &nodeCount);
 
-    //    std::cout << "Processor " << myProcessor << " has " << elementCount << " elements.\n";
-
+#if DEBUG_OUTPUT
+    std::cerr << "Processor " << myProcessor << " has " << elementCount << " elements.\n";
+#endif
     std::vector<INT> pointer; // Index into adjacency, processor list for each element...
     std::vector<INT> adjacency; // Size is sum of element connectivity sizes 
     generate_adjacency_list(exodusId, pointer, adjacency, info.num_elem_blk);
@@ -516,23 +519,23 @@ namespace Iopx {
         && method != "KWAY_GEOM"
         && method != "METIS_SFC"
 #endif
-      )
+        )
       {
-	if (myProcessor == 0) {
-	  std::ostringstream errmsg;
-	  errmsg << "ERROR: Invalid decomposition method specified: '" << method << "'\n"
-		 << "       Valid methods: LINEAR"
+        if (myProcessor == 0) {
+          std::ostringstream errmsg;
+          errmsg << "ERROR: Invalid decomposition method specified: '" << method << "'\n"
+                 << "       Valid methods: LINEAR"
 #if !defined(NO_ZOLTAN_SUPPORT)
-		 << ", BLOCK, CYCLIC, RANDOM, RCB, RIB, HSFC"
+                 << ", BLOCK, CYCLIC, RANDOM, RCB, RIB, HSFC"
 #endif
 #if !defined(NO_PARMETIS_SUPPORT)
-		 << ", KWAY, GEOM_KWAY, METIS_SFC"
+                 << ", KWAY, GEOM_KWAY, METIS_SFC"
 #endif
-		 << "\n";
-	  std::cerr << errmsg.str();
-	}
-      exit(EXIT_FAILURE);
-    }
+                 << "\n";
+          std::cerr << errmsg.str();
+        }
+        exit(EXIT_FAILURE);
+      }
 
     if (myProcessor == 0)
       std::cout << "\nUsing decomposition method '" << method << "' on " << processorCount << " processors.\n\n";
@@ -607,8 +610,8 @@ namespace Iopx {
 
   template <typename INT>
   void DecompositionData<INT>::simple_decompose(const std::string &method,
-      const std::vector<INT> &element_dist)
-      {
+                                                const std::vector<INT> &element_dist)
+  {
     if (method == "LINEAR") {
       // The "ioss_decomposition" is the same as the "file_decomposition"
       // Nothing is imported or exported, everything stays "local"
@@ -625,15 +628,15 @@ namespace Iopx {
       importElementCount.resize(processorCount+1);
       importElementIndex.resize(processorCount+1);
     }
-      }
+  }
 
 #if !defined(NO_PARMETIS_SUPPORT)
   template <typename INT>
   void DecompositionData<INT>::metis_decompose(const std::string &method,
-      const std::vector<INT> &element_dist,
-      const std::vector<INT> &pointer,
-      const std::vector<INT> &adjacency)
-      {
+                                               const std::vector<INT> &element_dist,
+                                               const std::vector<INT> &pointer,
+                                               const std::vector<INT> &adjacency)
+  {
     std::vector<idx_t> elem_partition(elementCount);
 
     // Determine whether sizeof(INT) matches sizeof(idx_t).
@@ -660,10 +663,10 @@ namespace Iopx {
         // Can't narrow...
         std::ostringstream errmsg;
         errmsg << "ERROR: The metis/parmetis libraries being used with this application only support\n"
-            << "       32-bit integers, but the mesh being decomposed requires 64-bit integers.\n"
-            << "       You must either choose a different, non-metis decomposition method, or\n"
-            << "       rebuild your metis/parmetis libraries with 64-bit integer support.\n"
-            << "       Contact gdsjaar@sandia.gov for more details.\n";
+               << "       32-bit integers, but the mesh being decomposed requires 64-bit integers.\n"
+               << "       You must either choose a different, non-metis decomposition method, or\n"
+               << "       rebuild your metis/parmetis libraries with 64-bit integer support.\n"
+               << "       Contact gdsjaar@sandia.gov for more details.\n";
         std::cerr << errmsg.str();
         exit(EXIT_FAILURE);
       } else {
@@ -726,18 +729,20 @@ namespace Iopx {
     MY_Alltoallv(exportElementMap, exportElementCount, exportElementIndex, 
                  importElementMap, importElementCount, importElementIndex, comm_);
 
-    //std::cout << "Processor " << myProcessor << ":\t"
-    //	      << elementCount-exp_size << " local, "
-    //	      << imp_size             << " imported and "
-    //	      << exp_size            << " exported elements\n";
-      }
+#if DEBUG_OUTPUT
+    std::cerr << "Processor " << myProcessor << ":\t"
+              << elementCount-exp_size << " local, "
+              << imp_size             << " imported and "
+              << exp_size            << " exported elements\n";
+#endif
+  }
 
   template <typename INT>
   void DecompositionData<INT>::internal_metis_decompose(const std::string &method,
-							idx_t *element_dist,
-							idx_t *pointer,
-							idx_t *adjacency,
-							idx_t *elem_partition)
+                                                        idx_t *element_dist,
+                                                        idx_t *pointer,
+                                                        idx_t *adjacency,
+                                                        idx_t *elem_partition)
   {
     idx_t wgt_flag = 0; // No weights
     idx_t *elm_wgt = NULL;
@@ -760,10 +765,12 @@ namespace Iopx {
 
     if (method == "KWAY") {
       int rc = ParMETIS_V3_PartMeshKway(element_dist, pointer, adjacency,
-          elm_wgt, &wgt_flag, &num_flag, &ncon, &common_nodes, &nparts,
-          TOPTR(tp_wgts), TOPTR(ub_vec), TOPTR(options), &edge_cuts, elem_partition,
-          &comm_);
-      //std::cout << "Edge Cuts = " << edge_cuts << "\n";
+                                        elm_wgt, &wgt_flag, &num_flag, &ncon, &common_nodes, &nparts,
+                                        TOPTR(tp_wgts), TOPTR(ub_vec), TOPTR(options), &edge_cuts, elem_partition,
+                                        &comm_);
+#if DEBUG_OUTPUT
+      std::cerr << "Edge Cuts = " << edge_cuts << "\n";
+#endif
       if (rc != METIS_OK) {
         std::ostringstream errmsg;
         errmsg << "ERROR: Problem during call to ParMETIS_V3_PartMeshKWay decomposition\n";
@@ -776,7 +783,7 @@ namespace Iopx {
       idx_t *dual_xadj = NULL;
       idx_t *dual_adjacency = NULL;
       int rc = ParMETIS_V3_Mesh2Dual(element_dist, pointer, adjacency,
-          &num_flag, &common_nodes, &dual_xadj, &dual_adjacency, &comm_);
+                                     &num_flag, &common_nodes, &dual_xadj, &dual_adjacency, &comm_);
 
       if (rc != METIS_OK) {
         std::ostringstream errmsg;
@@ -788,10 +795,12 @@ namespace Iopx {
       ct_assert(sizeof(double) == sizeof(real_t)); // centroids_ is double, make sure it matches real_t
 
       rc = ParMETIS_V3_PartGeomKway(element_dist, dual_xadj, dual_adjacency,
-          elm_wgt, elm_wgt, &wgt_flag, &num_flag, &ndims, (real_t*)TOPTR(centroids_), &ncon, &nparts,
-          TOPTR(tp_wgts), TOPTR(ub_vec), TOPTR(options), &edge_cuts, elem_partition, &comm_);
+                                    elm_wgt, elm_wgt, &wgt_flag, &num_flag, &ndims, (real_t*)TOPTR(centroids_), &ncon, &nparts,
+                                    TOPTR(tp_wgts), TOPTR(ub_vec), TOPTR(options), &edge_cuts, elem_partition, &comm_);
 
-      //std::cout << "Edge Cuts = " << edge_cuts << "\n";
+#if DEBUG_OUTPUT
+      std::cerr << "Edge Cuts = " << edge_cuts << "\n";
+#endif
       METIS_Free(dual_xadj);
       METIS_Free(dual_adjacency);
 
@@ -813,7 +822,7 @@ namespace Iopx {
         exit(EXIT_FAILURE);
       }
     }
-      }
+  }
 #endif
 
 #if !defined(NO_ZOLTAN_SUPPORT)
@@ -860,13 +869,15 @@ namespace Iopx {
 
     // TODO: Check return value for error.
     zz.LB_Partition(changes, num_global, num_local,
-        num_import, import_global_ids, import_local_ids, import_procs, import_to_part,
-        num_export, export_global_ids, export_local_ids, export_procs, export_to_part);
+                    num_import, import_global_ids, import_local_ids, import_procs, import_to_part,
+                    num_export, export_global_ids, export_local_ids, export_procs, export_to_part);
 
-    //std::cout << "Processor " << myProcessor << ":\t"
-    //	      << elementCount-num_export << " local, "
-    //	      << num_import                  << " imported and "
-    //	      << num_export                  << " exported elements\n";
+#if DEBUG_OUTPUT
+    std::cerr << "Processor " << myProcessor << ":\t"
+              << elementCount-num_export << " local, "
+              << num_import                  << " imported and "
+              << num_export                  << " exported elements\n";
+#endif
 
     // Don't need centroid data anymore... Free up space
     std::vector<double>().swap(centroids_);
@@ -956,9 +967,9 @@ namespace Iopx {
 
   template <typename INT>
   void DecompositionData<INT>::get_local_node_list(const std::vector<INT> &pointer,
-      const std::vector<INT> &adjacency,
-      const std::vector<INT> &node_dist)
-      {
+                                                   const std::vector<INT> &adjacency,
+                                                   const std::vector<INT> &node_dist)
+  {
     // Get the connectivity of all imported elements...
     // First, determine how many nodes the exporting processors are
     // going to send me and how many nodes my exported elements
@@ -1107,7 +1118,7 @@ namespace Iopx {
     for (size_t i=0; i < nodeGTL.size(); i++) {
       nodeGTL[i]++; // convert from 0-based index to 1-based index
     }
-      }
+  }
 
   template <typename INT>
   void DecompositionData<INT>::get_shared_node_list()
@@ -1259,10 +1270,10 @@ namespace Iopx {
 
   template <typename INT>
   void DecompositionData<INT>::generate_adjacency_list(int exodusId,
-      std::vector<INT> &pointer,
-      std::vector<INT> &adjacency,
-      size_t block_count)
-      {
+                                                       std::vector<INT> &pointer,
+                                                       std::vector<INT> &adjacency,
+                                                       size_t block_count)
+  {
     // Range of elements currently handled by this processor [)
     size_t p_start = elementOffset;
     size_t p_end   = p_start + elementCount;
@@ -1302,8 +1313,8 @@ namespace Iopx {
       fileBlockIndex[b+1] = fileBlockIndex[b] + ebs[b].num_entry;
       el_blocks[b].topologyType = ebs[b].topology;
       if (ebs[b].num_entry == 0 && (std::strcmp(ebs[b].topology, "NULL") == 0))
-	el_blocks[b].topologyType = "sphere";
-	
+        el_blocks[b].topologyType = "sphere";
+        
       el_blocks[b].nodesPerEntity = ebs[b].num_nodes_per_entry;
       el_blocks[b].attributeCount = ebs[b].num_attribute;
     }
@@ -1313,9 +1324,9 @@ namespace Iopx {
     if ((size_t)tmp_sum != sum) {
       std::ostringstream errmsg;
       errmsg << "ERROR: The decomposition of this mesh requires 64-bit integers, but is being\n"
-          << "       run with 32-bit integer code. Please rerun with the property INTEGER_SIZE_API\n"
-          << "       set to 8. The details of how to do this vary with the code that is being run.\n"
-          << "       Contact gdsjaar@sandia.gov for more details.\n";
+             << "       run with 32-bit integer code. Please rerun with the property INTEGER_SIZE_API\n"
+             << "       set to 8. The details of how to do this vary with the code that is being run.\n"
+             << "       Contact gdsjaar@sandia.gov for more details.\n";
       std::cerr << errmsg.str();
       exit(EXIT_FAILURE);
     }
@@ -1342,7 +1353,9 @@ namespace Iopx {
         // Get the connectivity (raw) for this portion of elements...
         std::vector<INT> connectivity(overlap*element_nodes);
         size_t blk_start = max(b_start, p_start) - b_start + 1;
-        //std::cout << "Processor " << myProcessor << " has " << overlap << " elements on element block " << id << "\n";
+#if DEBUG_OUTPUT
+        std::cerr << "Processor " << myProcessor << " has " << overlap << " elements on element block " << id << "\n";
+#endif
         ex_get_partial_conn(exodusId, EX_ELEM_BLOCK, id, blk_start, overlap, TOPTR(connectivity), NULL, NULL);
         size_t el = 0;
         for (size_t elem = 0; elem < overlap; elem++) {
@@ -1356,8 +1369,7 @@ namespace Iopx {
       }
     }
     pointer.push_back(adjacency.size());
-
-      }
+  }
 
   template <typename INT>
   void DecompositionData<INT>::get_nodeset_data(int exodusId, size_t set_count)
@@ -1460,8 +1472,7 @@ namespace Iopx {
       MPI_Bcast(TOPTR(nodelist), sizeof(INT)*nodelist.size(), MPI_BYTE, root, comm_);
 
       // Each processor now has a complete list of all nodes in all
-      // nodesets.
-      // Determine which of these are owned by the current
+      // nodesets.  Determine which of these are owned by the current
       // processor...
       size_t offset = 0;
       for (size_t i=0; i < set_count; i++) {
@@ -1765,10 +1776,10 @@ namespace Iopx {
 
   template <typename INT>
   void DecompositionData<INT>::calculate_element_centroids(int exodusId,
-      const std::vector<INT> &pointer,
-      const std::vector<INT> &adjacency,
-      const std::vector<INT> &node_dist)
-      {
+                                                           const std::vector<INT> &pointer,
+                                                           const std::vector<INT> &adjacency,
+                                                           const std::vector<INT> &node_dist)
+  {
     // recv_count is the number of nodes that I need to recv from the other processors
     // send_count is the number of nodes that I need to send to the other processors
     std::vector<INT> recv_count(processorCount);
@@ -1807,8 +1818,10 @@ namespace Iopx {
       sums += send_count[p];
     }
 
-    //std::cout << "Processor " << myProcessor << " communicates " << sumr << " nodes from and " << sums << " nodes to other processors\n";
-
+#if DEBUG_OUTPUT
+    std::cerr << "Processor " << myProcessor << " communicates "
+              << sumr << " nodes from and " << sums << " nodes to other processors\n";
+#endif
     // Build the list telling the other processors which of their nodes I will need data from...
     std::vector<INT> node_comm_recv(sumr);
     std::vector<INT> node_comm_send(sums);
@@ -1834,7 +1847,7 @@ namespace Iopx {
     //           nodeOffset..nodeOffset+nodeCount
     for (size_t i=0; i < node_comm_send.size(); i++) {
       assert((size_t)node_comm_send[i] >= nodeOffset &&
-          (size_t)node_comm_send[i] <  nodeOffset+nodeCount);
+             (size_t)node_comm_send[i] <  nodeOffset+nodeCount);
     }
 
     // Get my coordinate data using direct exodus calls
@@ -1849,18 +1862,20 @@ namespace Iopx {
     ex_get_partial_coord(exodusId, nodeOffset+1, nodeCount, TOPTR(x), TOPTR(y), TOPTR(z));
 
     // The total vector size I need to send data in is node_comm_send.size()*3
-    std::vector<double> coord_send(node_comm_send.size() * spatialDimension);
+    std::vector<double> coord_send;
+    coord_send.reserve(node_comm_send.size() * spatialDimension);
     std::vector<double> coord_recv(node_comm_recv.size() * spatialDimension);
     size_t j = 0;
     for (size_t i=0; i < node_comm_send.size(); i++) {
       size_t node = node_comm_send[i] - nodeOffset;
-      coord_send[j++] = x[node];
+      coord_send.push_back(x[node]);
       if (spatialDimension > 1)
-        coord_send[j++] = y[node];
+        coord_send.push_back(y[node]);
       if (spatialDimension > 2) 
-        coord_send[j++] = z[node];
+        coord_send.push_back(z[node]);
     }
-
+    assert(coord_send.size() == node_comm_send.size() * spatialDimension);
+    
     // Send the coordinate data back to the processors that requested it...
     for (int i=0; i < processorCount; i++) {
       send_count[i] *= spatialDimension;
@@ -1919,7 +1934,7 @@ namespace Iopx {
       if (spatialDimension > 2)
         centroids_.push_back(cz / nnpe);
     }
-      }
+  }
 
   template <typename INT>
   void DecompositionData<INT>::get_element_block_communication(size_t num_elem_block)
@@ -2197,21 +2212,21 @@ namespace Iopx {
     int ierr = 0;
     if (field.get_name() == "mesh_model_coordinates_x") {
       ierr = ex_get_partial_coord(exodusId, nodeOffset+1, nodeCount,
-          TOPTR(tmp), NULL, NULL);
+                                  TOPTR(tmp), NULL, NULL);
       if (ierr >= 0)
         communicate_node_data(TOPTR(tmp), ioss_data, 1);
     }
 
     else if (field.get_name() == "mesh_model_coordinates_y") {
       ierr = ex_get_partial_coord(exodusId, nodeOffset+1, nodeCount,
-          NULL, TOPTR(tmp), NULL);
+                                  NULL, TOPTR(tmp), NULL);
       if (ierr >= 0)
         communicate_node_data(TOPTR(tmp), ioss_data, 1);
     }
 
     else if (field.get_name() == "mesh_model_coordinates_z") {
       ierr = ex_get_partial_coord(exodusId, nodeOffset+1, nodeCount,
-          NULL, NULL, TOPTR(tmp));
+                                  NULL, NULL, TOPTR(tmp));
       if (ierr >= 0)
         communicate_node_data(TOPTR(tmp), ioss_data, 1);
     }
@@ -2241,7 +2256,7 @@ namespace Iopx {
         coord[0] = coord[1] = coord[2] = NULL;
         coord[d] = TOPTR(tmp);
         ierr = ex_get_partial_coord(exodusId, nodeOffset+1, nodeCount,
-            coord[0], coord[1], coord[2]);
+                                    coord[0], coord[1], coord[2]);
         if (ierr < 0)
           return ierr;
 
@@ -2367,18 +2382,18 @@ namespace Iopx {
   }
 
   template void DecompositionData<int64_t>::communicate_set_data(int64_t *file_data,   int64_t *ioss_data,
-      const SetDecompositionData &set, size_t comp_count) const;
+                                                                 const SetDecompositionData &set, size_t comp_count) const;
   template void DecompositionData<int>::communicate_set_data(int *file_data,    int *ioss_data,
-      const SetDecompositionData &set, size_t comp_count) const;
+                                                             const SetDecompositionData &set, size_t comp_count) const;
   template void DecompositionData<int64_t>::communicate_set_data(double *file_data, double *ioss_data,
-      const SetDecompositionData &set, size_t comp_count) const;
+                                                                 const SetDecompositionData &set, size_t comp_count) const;
   template void DecompositionData<int>::communicate_set_data(double *file_data, double *ioss_data,
-      const SetDecompositionData &set, size_t comp_count) const;
+                                                             const SetDecompositionData &set, size_t comp_count) const;
 
   template <typename INT> template <typename T>
   void DecompositionData<INT>::communicate_set_data(T *file_data, T *ioss_data,
-      const SetDecompositionData &set, size_t comp_count) const
-      {
+                                                    const SetDecompositionData &set, size_t comp_count) const
+  {
     MPI_Status  status;
 
     std::vector<T> recv_data;
@@ -2390,12 +2405,12 @@ namespace Iopx {
     if (myProcessor != set.root_ && set.hasEntities[myProcessor]) {
       recv_data.resize(size);
       result = MPI_Recv(TOPTR(recv_data), size, MPI_BYTE,
-          set.root_, 111, comm_, &status);
+                        set.root_, 111, comm_, &status);
 
       if (result != MPI_SUCCESS) {
         std::ostringstream errmsg;
         errmsg << "ERROR: MPI_Recv error on processor " << myProcessor
-            << " in Iopx::DecompositionData<INT>::communicate_set_data";
+               << " in Iopx::DecompositionData<INT>::communicate_set_data";
         std::cerr << errmsg.str();
       }
     }
@@ -2441,12 +2456,12 @@ namespace Iopx {
         }
       }
     }
-      }
+  }
 
   template <typename INT>
   int DecompositionData<INT>::get_var(int exodusId, int step, ex_entity_type type,
-      int var_index, ex_entity_id id, int64_t num_entity, std::vector<double> &data) const
-      {
+                                      int var_index, ex_entity_id id, int64_t num_entity, std::vector<double> &data) const
+  {
     if (type == EX_ELEM_BLOCK) {
       return get_elem_var(exodusId, step, var_index, id, num_entity, data);
     } else if (type == EX_NODAL) {
@@ -2457,7 +2472,7 @@ namespace Iopx {
       assert(1==0);
       return -1;
     }
-      }
+  }
 
   template <typename INT>
   int DecompositionData<INT>::get_attr(int exodusId, ex_entity_type obj_type, ex_entity_id id, size_t attr_count, double* attrib) const
@@ -2621,9 +2636,9 @@ namespace Iopx {
 
   template <typename INT>
   int DecompositionData<INT>::get_set_var(int exodusId, int step, int var_index,
-      ex_entity_type type, ex_entity_id id,
-      int64_t num_entity, std::vector<double> &ioss_data) const
-      {
+                                          ex_entity_type type, ex_entity_id id,
+                                          int64_t num_entity, std::vector<double> &ioss_data) const
+  {
     // Find set corresponding to the specified id...
     const SetDecompositionData &set = get_decomp_set(type, id);
 
@@ -2639,7 +2654,7 @@ namespace Iopx {
       communicate_set_data(TOPTR(file_data), TOPTR(ioss_data), set, 1);
 
     return ierr;
-      }
+  }
 
   template <typename INT>
   int DecompositionData<INT>::get_set_attr(int exodusId, ex_entity_type type, ex_entity_id id, size_t comp_count, double *ioss_data) const
@@ -2683,15 +2698,15 @@ namespace Iopx {
 
   template <typename INT>
   int DecompositionData<INT>::get_node_var(int exodusId, int step, int var_index, ex_entity_id id,
-      int64_t num_entity, std::vector<double> &ioss_data) const
-      {
+                                           int64_t num_entity, std::vector<double> &ioss_data) const
+  {
     std::vector<double> file_data(nodeCount);
     int ierr = ex_get_partial_var(exodusId, step, EX_NODAL, var_index, id, nodeOffset+1, nodeCount, TOPTR(file_data));
 
     if (ierr >= 0)
       communicate_node_data(TOPTR(file_data), TOPTR(ioss_data), 1);
     return ierr;
-      }
+  }
 
   template <typename INT>
   int DecompositionData<INT>::get_node_attr(int exodusId, ex_entity_id id, size_t comp_count, double *ioss_data) const
@@ -2717,8 +2732,8 @@ namespace Iopx {
 
   template <typename INT>
   int DecompositionData<INT>::get_elem_var(int exodusId, int step, int var_index, ex_entity_id id,
-      int64_t num_entity, std::vector<double> &ioss_data) const
-      {
+                                           int64_t num_entity, std::vector<double> &ioss_data) const
+  {
     // Find blk_seq corresponding to block the specified id...
     size_t blk_seq = get_block_seq(EX_ELEM_BLOCK, id);
     size_t count = get_block_element_count(blk_seq);
@@ -2731,7 +2746,7 @@ namespace Iopx {
       communicate_block_data(TOPTR(file_data), TOPTR(ioss_data), blk_seq, 1);
 
     return ierr;
-      }
+  }
 
   template <typename INT>
   int DecompositionData<INT>::get_elem_attr(int exodusId, ex_entity_id id, size_t comp_count, double *ioss_data) const 
@@ -2768,18 +2783,18 @@ namespace Iopx {
   }
 
   template int DecompositionData<int>::get_set_mesh_var(int exodusId, ex_entity_type type, ex_entity_id id,
-      const Ioss::Field& field, int* ioss_data) const;
+                                                        const Ioss::Field& field, int* ioss_data) const;
   template int DecompositionData<int64_t>::get_set_mesh_var(int exodusId, ex_entity_type type, ex_entity_id id,
-      const Ioss::Field& field, int64_t* ioss_data) const;
+                                                            const Ioss::Field& field, int64_t* ioss_data) const;
   template int DecompositionData<int>::get_set_mesh_var(int exodusId, ex_entity_type type, ex_entity_id id,
-      const Ioss::Field& field, double* ioss_data) const;
+                                                        const Ioss::Field& field, double* ioss_data) const;
   template int DecompositionData<int64_t>::get_set_mesh_var(int exodusId, ex_entity_type type, ex_entity_id id,
-      const Ioss::Field& field, double* ioss_data) const;
+                                                            const Ioss::Field& field, double* ioss_data) const;
 
   template <typename INT> template <typename T>
   int DecompositionData<INT>::get_set_mesh_var(int exodusId, ex_entity_type type, ex_entity_id id,
-      const Ioss::Field& field, T* ioss_data) const
-      {
+                                               const Ioss::Field& field, T* ioss_data) const
+  {
     // Sideset Distribution Factor data can be very complicated.
     // For some sanity, handle all requests for those in a separate routine...
     if (type == EX_SIDE_SET && field.get_name() == "distribution_factors") {
@@ -2900,7 +2915,7 @@ namespace Iopx {
       }
     }    
     return ierr;
-      }
+  }
 
   template <typename INT> template <typename T>
   int DecompositionData<INT>::handle_sset_df(int exodusId, ex_entity_id id, const Ioss::Field& field, T* ioss_data) const 
@@ -3004,12 +3019,12 @@ namespace Iopx {
     if (myProcessor != set.root_ && set.hasEntities[myProcessor]) {
       MPI_Status  status;
       int result = MPI_Recv(TOPTR(nodes_per_face), nodes_per_face.size(), MPI_INT,
-          set.root_, 222, comm_, &status);
+                            set.root_, 222, comm_, &status);
 
       if (result != MPI_SUCCESS) {
         std::ostringstream errmsg;
         errmsg << "ERROR: MPI_Recv error on processor " << myProcessor
-            << " receiving nodes_per_face sideset data";
+               << " receiving nodes_per_face sideset data";
         std::cerr << errmsg.str();
       }
       df_count = nodes_per_face[nodes_per_face.size()-1];
@@ -3046,12 +3061,12 @@ namespace Iopx {
       file_data.resize(df_count);
       MPI_Status  status;
       int result = MPI_Recv(TOPTR(file_data), file_data.size(), MPI_DOUBLE,
-          set.root_, 333, comm_, &status);
+                            set.root_, 333, comm_, &status);
 
       if (result != MPI_SUCCESS) {
         std::ostringstream errmsg;
         errmsg << "ERROR: MPI_Recv error on processor " << myProcessor
-            << " receiving nodes_per_face sideset data";
+               << " receiving nodes_per_face sideset data";
         std::cerr << errmsg.str();
       }
     }
@@ -3086,20 +3101,20 @@ namespace Iopx {
   }
 
   template void DecompositionData<int>::create_implicit_global_map(const std::vector<int> &owning_proc,
-      std::vector<int64_t> &global_implicit_map,
-      Ioss::Map &node_map, int64_t *locally_owned_count,
-      int64_t *processor_offset);
+                                                                   std::vector<int64_t> &global_implicit_map,
+                                                                   Ioss::Map &node_map, int64_t *locally_owned_count,
+                                                                   int64_t *processor_offset);
   template void DecompositionData<int64_t>::create_implicit_global_map(const std::vector<int> &owning_proc,
-      std::vector<int64_t> &global_implicit_map,
-      Ioss::Map &node_map, int64_t *locally_owned_count,
-      int64_t *processor_offset);
+                                                                       std::vector<int64_t> &global_implicit_map,
+                                                                       Ioss::Map &node_map, int64_t *locally_owned_count,
+                                                                       int64_t *processor_offset);
 
   template <typename INT>
   void DecompositionData<INT>::create_implicit_global_map(const std::vector<int> &owning_proc,
-      std::vector<int64_t> &global_implicit_map,
-      Ioss::Map &node_map, int64_t *locally_owned_count,
-      int64_t *processor_offset)
-      {
+                                                          std::vector<int64_t> &global_implicit_map,
+                                                          Ioss::Map &node_map, int64_t *locally_owned_count,
+                                                          int64_t *processor_offset)
+  {
     // If the node is locally owned, then its position is basically
     // determined by removing all shared nodes from the list and
     // then compressing the list. This location plus the proc_offset
@@ -3189,7 +3204,7 @@ namespace Iopx {
         global_implicit_map[i] = implicit;
       }
     }
-      }
+  }
 
 }
 
