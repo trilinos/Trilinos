@@ -5,6 +5,13 @@ SET(SOURCES "")
 # Package-specific configuration options
 #
 
+# access explicit instantiation
+SET(BDIR ${CMAKE_CURRENT_BINARY_DIR})
+IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+  INCLUDE_DIRECTORIES(${BDIR}/)
+  APPEND_GLOB(HEADERS ${BDIR}/MueLu_ExplicitInstantiation.hpp)
+ENDIF()
+
 #
 # Belos
 #
@@ -66,7 +73,10 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
 
    ENDIF()
 
-   APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+   # TODO: replace me by some smarter ETI handling
+   IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+     APPEND_GLOB(SOURCES ${DIR}/MueLu_RefMaxwell.cpp)
+   ENDIF()
 
    TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
@@ -78,10 +88,17 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
   SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stratimikos)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+
   APPEND_SET(SOURCES
     ${DIR}/Stratimikos_MueLuHelpers.cpp
-    ${DIR}/Thyra_MueLuPreconditionerFactory.cpp
     )
+
+  # TODO: replace me by some smarter handling of ETI
+  IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+    APPEND_SET(SOURCES
+      ${DIR}/Thyra_MueLuPreconditionerFactory.cpp
+      )
+  ENDIF()
   APPEND_SET(HEADERS
     ${DIR}/Stratimikos_MueLuHelpers.hpp
     ${DIR}/Thyra_MueLuPreconditionerFactory_decl.hpp
