@@ -11,6 +11,7 @@ using namespace Intrepid2;
  
  int main(){
 	 Teuchos::GlobalMPISession mpiSession();
+Kokkos::initialize();
 	typedef ArrayTools art; 
 	typedef RealSpaceTools<double> rst;
 	    const int c=50, p=90, f=70, d1=7, d2=13;
@@ -117,7 +118,7 @@ using namespace Intrepid2;
   
       art::scalarMultiplyDataData<double>(out_c_p_d, data_c_p, in_c_p_d, true);
       art::scalarMultiplyDataData<double>(outi_c_p_d, datainv_c_p, out_c_p_d, true);	 
-	 
-	 
+	 Kokkos::finalize();
+return 0;	 
 	 }
 

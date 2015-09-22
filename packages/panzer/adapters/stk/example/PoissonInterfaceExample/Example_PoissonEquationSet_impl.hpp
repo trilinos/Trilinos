@@ -81,7 +81,7 @@ PoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
     valid_parameters.set("Basis Type","HGrad","Type of Basis to use");
     valid_parameters.set("Basis Order",1,"Order of the basis");
     valid_parameters.set("Integration Order",-1,"Order of the integration rule");
-    valid_parameters.set("Suffix","","Suffix for degrees of freedom");
+    valid_parameters.set("DOF Name","DOF Name");
     
     params->validateParametersAndSetDefaults(valid_parameters);
   }
@@ -90,7 +90,7 @@ PoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
   int basis_order = params->get<int>("Basis Order");
   int integration_order = params->get<int>("Integration Order");
   std::string model_id = params->get<std::string>("Model ID");
-  suffix = params->get<std::string>("Suffix");
+  dof_name = params->get<std::string>("DOF Name");
 
    // ********************
    // Panzer uses strings to match fields. In this section we define the
@@ -116,10 +116,10 @@ PoissonEquationSet(const Teuchos::RCP<Teuchos::ParameterList>& params,
    // Assemble DOF names and Residual names
    // ********************
 
-   this->addDOF("TEMPERATURE"+suffix,basis_type,basis_order,integration_order);
-   this->addDOFGrad("TEMPERATURE"+suffix);
+   this->addDOF(dof_name,basis_type,basis_order,integration_order);
+   this->addDOFGrad(dof_name);
    if (this->buildTransientSupport())
-     this->addDOFTimeDerivative("TEMPERATURE"+suffix);
+     this->addDOFTimeDerivative(dof_name);
 
    // ********************
    // Build Basis Functions and Integration Rules
@@ -140,8 +140,6 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
-
-  std::string dof_name = "TEMPERATURE" + suffix;
   
   Teuchos::RCP<panzer::IntegrationRule> ir = this->getIntRuleForDOF(dof_name);
   Teuchos::RCP<panzer::BasisIRLayout> basis = this->getBasisIRLayoutForDOF(dof_name); 

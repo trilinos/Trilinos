@@ -2,6 +2,17 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 #
+# Package-specific configuration options
+#
+
+# access explicit instantiation
+SET(BDIR ${CMAKE_CURRENT_BINARY_DIR})
+IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+  INCLUDE_DIRECTORIES(${BDIR}/)
+  APPEND_GLOB(HEADERS ${BDIR}/MueLu_ExplicitInstantiation.hpp)
+ENDIF()
+
+#
 # Belos
 #
 IF (${PACKAGE_NAME}_ENABLE_Belos)
@@ -62,53 +73,58 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
 
    ENDIF()
 
-   APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+   # TODO: replace me by some smarter ETI handling
+   IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+     APPEND_GLOB(SOURCES ${DIR}/MueLu_RefMaxwell.cpp)
+   ENDIF()
 
    TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
-
-   IF (${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
-     SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stratimikos-tpetra)
-     APPEND_SET(SOURCES
-       ${DIR}/Stratimikos_MueluTpetraHelpers.cpp
-       )
-     APPEND_SET(HEADERS
-       ${DIR}/Stratimikos_MueluTpetraHelpers.hpp
-       ${DIR}/Thyra_MueLuTpetraPreconditionerFactory_decl.hpp
-       ${DIR}/Thyra_MueLuTpetraPreconditionerFactory_def.hpp
-       ${DIR}/Thyra_MueLuTpetraPreconditionerFactory.hpp
-       )
-     IF (${PACKAGE_NAME}_ENABLE_Teko AND ${PACKAGE_NAME}_ENABLE_Experimental)
-       APPEND_SET(HEADERS
-         ${DIR}/Thyra_MueLuTpetraQ2Q1PreconditionerFactory_decl.hpp
-         ${DIR}/Thyra_MueLuTpetraQ2Q1PreconditionerFactory_def.hpp
-         ${DIR}/Thyra_MueLuTpetraQ2Q1PreconditionerFactory.hpp
-         )
-     ENDIF()
-   ENDIF()
 
 ENDIF()
 
 #
 # Stratimikos
 #
-IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Stratimikos)
-
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/stratimikos)
-
-  APPEND_SET(HEADERS
-    stratimikos/Thyra_MueLuPreconditionerFactory.hpp
-    )
+IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
+  SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stratimikos)
+  TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
   APPEND_SET(SOURCES
-    stratimikos/Thyra_MueLuPreconditionerFactory.cpp
+    ${DIR}/Stratimikos_MueLuHelpers.cpp
     )
 
+  # TODO: replace me by some smarter handling of ETI
+  IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+    APPEND_SET(SOURCES
+      ${DIR}/Thyra_MueLuPreconditionerFactory.cpp
+      )
+  ENDIF()
+  APPEND_SET(HEADERS
+    ${DIR}/Stratimikos_MueLuHelpers.hpp
+    ${DIR}/Thyra_MueLuPreconditionerFactory_decl.hpp
+    ${DIR}/Thyra_MueLuPreconditionerFactory_def.hpp
+    ${DIR}/Thyra_MueLuPreconditionerFactory.hpp
+    )
+
+  # Tpetra specific extensions
+  IF (${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters)
+    SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/stratimikos)
+    IF (${PACKAGE_NAME}_ENABLE_Teko AND ${PACKAGE_NAME}_ENABLE_Experimental)
+      APPEND_SET(HEADERS
+        ${DIR}/Thyra_MueLuTpetraQ2Q1PreconditionerFactory_decl.hpp
+        ${DIR}/Thyra_MueLuTpetraQ2Q1PreconditionerFactory_def.hpp
+        ${DIR}/Thyra_MueLuTpetraQ2Q1PreconditionerFactory.hpp
+        )
+    ENDIF()
+  ENDIF()
 ENDIF()
+
+
 
 IF (${PACKAGE_NAME}_ENABLE_AmgX)
 
   SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/amgx)
-  
+
   APPEND_GLOB(HEADERS ${DIR}/*.hpp)
   APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 

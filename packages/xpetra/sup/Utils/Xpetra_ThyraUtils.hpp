@@ -89,6 +89,7 @@
 #include <Epetra_Vector.h>
 #include <Epetra_CrsMatrix.h>
 #include <Xpetra_EpetraMap.hpp>
+#include <Xpetra_EpetraCrsMatrix.hpp>
 #endif
 
 namespace Xpetra {
@@ -215,7 +216,10 @@ public:
       Teuchos::RCP<Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > xTpetraCrsMat =
           Teuchos::rcp(new Xpetra::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(TpetraNcnstCrsMat));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xTpetraCrsMat));
-      return xTpetraCrsMat;
+
+      Teuchos::RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > ret =
+          Teuchos::rcp_dynamic_cast<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xTpetraCrsMat);
+      return ret;
     }
 #endif
 
@@ -233,7 +237,11 @@ public:
       Teuchos::RCP<Xpetra::EpetraCrsMatrix > xEpetraCrsMat =
           Teuchos::rcp(new Xpetra::EpetraCrsMatrix(epetra_ncnstcrsmat));
       TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(xEpetraCrsMat));
-      return xEpetraCrsMat;
+
+      Teuchos::RCP<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > ret =
+          Teuchos::rcp_dynamic_cast<const Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(xEpetraCrsMat);
+      TEUCHOS_TEST_FOR_EXCEPT(Teuchos::is_null(ret));
+      return ret;
     }
 #endif
     return Teuchos::null;

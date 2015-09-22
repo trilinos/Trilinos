@@ -385,7 +385,13 @@ void STKConnManager<GO>::applyInterfaceConditions()
          si != sides.end(); ++si) {
       const stk_classic::mesh::Entity* const side = *si;
       const stk_classic::mesh::PairIterRelation relations = side->relations(stkMeshDB_->getElementRank());
-      if (relations.size() != 2) continue;
+      if (relations.size() != 2) {
+        // If relations.size() != 2 for one side in the sideset, then it's true
+        // for all, including the first.
+        TEUCHOS_ASSERT(si == sides.begin());
+        // This lets us move on to the next sideset immediately.
+        break;
+      }
       const std::size_t ea_id = getElementIdx(*elements_, relations[0].entity()),
         eb_id = getElementIdx(*elements_, relations[1].entity());
       elmtToInterfaceElmt_[ea_id] = eb_id;

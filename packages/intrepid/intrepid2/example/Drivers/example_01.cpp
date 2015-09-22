@@ -130,7 +130,7 @@ int evalCurlu(double & curlu0, double & curlu1, double & curlu2, double & x, dou
 int evalGradDivu(double & gradDivu0, double & gradDivu1, double & gradDivu2, double & x, double & y, double & z);
 
 int main(int argc, char *argv[]) {
-
+Kokkos::initialize();
    //Check number of arguments
    if (argc < 13) {
       std::cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
@@ -1082,7 +1082,7 @@ int main(int argc, char *argv[]) {
 
  // reset format state of std::cout
  std::cout.copyfmt(oldFormatState);
- 
+ Kokkos::finalize();
  return 0;
 }
 

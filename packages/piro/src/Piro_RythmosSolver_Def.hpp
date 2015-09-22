@@ -80,7 +80,7 @@
 
 #ifdef Piro_ENABLE_MueLu
 #include <Thyra_MueLuPreconditionerFactory.hpp>
-#include "Stratimikos_MueluTpetraHelpers.hpp"
+#include "Stratimikos_MueLuHelpers.hpp"
 #endif
 
 #ifdef Piro_ENABLE_NOX
@@ -296,7 +296,7 @@ void Piro::RythmosSolver<Scalar>::initialize(
     fwdStateIntegrator->setIntegrationObserver(observer);
   }
  }
- 
+
   else if (appParams->isSublist("Rythmos Solver")) {
     /** New parameter list format **/
      RCP<Teuchos::ParameterList> rythmosSolverPL = sublist(appParams, "Rythmos Solver", true);
@@ -331,11 +331,11 @@ void Piro::RythmosSolver<Scalar>::initialize(
      typedef Thyra::PreconditionerFactoryBase<double> Base;
      typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<double> > Impl;
      linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
-#endif  
-#ifdef Piro_ENABLE_MueLu
-     Stratimikos::enableMueLuTpetra(linearSolverBuilder);
 #endif
-  
+#ifdef Piro_ENABLE_MueLu
+     Stratimikos::enableMueLu(linearSolverBuilder);
+#endif
+
      linearSolverBuilder.setParameterList(sublist(rythmosSolverPL, "Stratimikos", true));
      rythmosSolverPL->validateParameters(*getValidRythmosSolverParameters(),0);
      RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
@@ -355,8 +355,8 @@ void Piro::RythmosSolver<Scalar>::initialize(
       }
      }
      // C.2) Create the Thyra-wrapped ModelEvaluator
-    
-      thyraModel = rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar>(model, lowsFactory)); 
+
+      thyraModel = rcp(new Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar>(model, lowsFactory));
 
     const RCP<const Thyra::VectorSpaceBase<double> > x_space =
       thyraModel->get_x_space();
@@ -365,7 +365,7 @@ void Piro::RythmosSolver<Scalar>::initialize(
     *out << "\nD) Create the stepper and integrator for the forward problem ...\n";
     //
     fwdTimeStepSolver = Rythmos::timeStepNonlinearSolver<double>();
-    
+
     if (rythmosSolverPL->getEntryPtr("NonLinear Solver")) {
       const RCP<Teuchos::ParameterList> nonlinePL =
                                  sublist(rythmosSolverPL, "NonLinear Solver", true);
@@ -382,7 +382,11 @@ void Piro::RythmosSolver<Scalar>::initialize(
     fwdStateIntegrator = Teuchos::rcp_dynamic_cast<Rythmos::DefaultIntegrator<double> >(integrator,true);
 
     fwdStateStepper = fwdStateIntegrator->getNonconstStepper();
-  } 
+
+    if (Teuchos::nonnull(observer)) 
+      fwdStateIntegrator->setIntegrationObserver(observer);
+   
+  }
 else {
     TEUCHOS_TEST_FOR_EXCEPTION(
         appParams->isSublist("Rythmos") || appParams->isSublist("Rythmos Solver"),
@@ -886,7 +890,7 @@ void Piro::RythmosSolver<Scalar>::evalModelImpl(
         modelInArgs.set_p(l+1, p_in2);
       }
       //Set time to be final time at which the solve occurs (< t_final in the case we don't make it to t_final).
-      modelInArgs.set_t(fwdStateStepper->getTimeRange().lower()); 
+      modelInArgs.set_t(fwdStateStepper->getTimeRange().lower());
     }
 
     Thyra::ModelEvaluatorBase::OutArgs<Scalar> modelOutArgs = model->createOutArgs();

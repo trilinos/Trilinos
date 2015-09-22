@@ -56,7 +56,7 @@ using namespace Intrepid2;
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
+Kokkos::initialize();
   std::cout \
   << "===============================================================================\n" \
   << "|                                                                             |\n" \
@@ -311,7 +311,7 @@ int main(int argc, char *argv[]) {
     << "===============================================================================\n"\
     << "| EXAMPLE 6: Specialized methods of FieldContainer                            |\n"\
     << "===============================================================================\n\n";
-  
+  Kokkos::finalize();
    return 0;
 }
 

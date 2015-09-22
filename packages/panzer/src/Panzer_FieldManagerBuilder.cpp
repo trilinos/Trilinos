@@ -211,12 +211,6 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
            wkst != currentWkst->end(); ++wkst) {
         PHX::FieldManager<panzer::Traits>& fm = field_managers[wkst->first];
 
-        // Set up the field manager
-        Traits::SetupData setupData;
-        Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);
-        worksets->push_back(wkst->second);
-        setupData.worksets_ = worksets;
-
         int gid_count = 0;
         for (int block_id_index = 0; block_id_index < 2; ++block_id_index) {
           const std::string element_block_id = block_id_index == 0 ? bc->elementBlockID() : bc->elementBlockID2();
@@ -262,6 +256,12 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
           derivative_dimensions[0] = 1;
           fm.setKokkosExtendedDataTypeDimensions<panzer::Traits::Tangent>(derivative_dimensions);
         }
+
+        // Set up the field manager
+        Traits::SetupData setupData;
+        Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>);
+        worksets->push_back(wkst->second);
+        setupData.worksets_ = worksets;
 
         fm.postRegistrationSetup(setupData);
       }

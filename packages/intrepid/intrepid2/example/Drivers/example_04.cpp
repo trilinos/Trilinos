@@ -99,7 +99,7 @@ using namespace std;
 using namespace Intrepid2;
 
 int main(int argc, char *argv[]) {
-
+Kokkos::initialize();
   //Check number of arguments
     if (argc < 2) {
        std::cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
    std::cout << "End Result: TEST PASSED\n";
 
   std::cout.copyfmt(oldFormatState);
-
+Kokkos::finalize();
 return 0;
 }
 
