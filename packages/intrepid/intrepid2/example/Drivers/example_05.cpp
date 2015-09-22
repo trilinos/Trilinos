@@ -118,7 +118,7 @@ int evalGradu(double & x, double & y, double & z, double & gradu1, double & grad
 double evalDivGradu(double & x, double & y, double & z);
 
 int main(int argc, char *argv[]) {
-
+Kokkos::initialize();
   //Check number of arguments
    if (argc < 4) {
       std::cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
@@ -442,7 +442,7 @@ int main(int argc, char *argv[]) {
 
    // reset format state of std::cout
    std::cout.copyfmt(oldFormatState);
-   
+   Kokkos::finalize();
    return 0;
 }
 

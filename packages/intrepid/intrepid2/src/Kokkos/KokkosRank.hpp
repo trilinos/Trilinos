@@ -5,6 +5,12 @@
 #include "Sacado.hpp"
 #endif
 
+namespace Intrepid2{
+
+typedef int index_type;
+
+}
+
 template<class A>
 struct CheckType{static const bool value = false; };
 
