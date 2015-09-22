@@ -767,9 +767,20 @@ template <typename Adapter, typename pnum_t>
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::node_t node_t;
   typedef typename Adapter::part_t part_t;
   typedef StridedData<lno_t, scalar_t> input_t;
+
   typedef graphMetricValues<scalar_t> mv_t;
+  typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
+  typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>  sparse_matrix_type;
+  typedef Tpetra::Vector<scalar_t,lno_t,gno_t,node_t>      vector_type;
+  typedef Tpetra::Map<lno_t, gno_t, node_t>                map_type;
+  typedef Tpetra::global_size_t GST;
+  const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+
+  using Teuchos::as;
+
   mv_t *newMetrics = new mv_t [numMetrics];
   env->localMemoryAssertion(__FILE__, __LINE__, numMetrics, newMetrics); 
   ArrayRCP<mv_t> metricArray(newMetrics, 0, numMetrics, true);
@@ -823,6 +834,62 @@ template <typename Adapter, typename pnum_t>
   ArrayView<const lno_t> *offsets;
   ArrayView<input_t> *wgts;
   size_t numLocalEdges = getEdgeList(edgeIds, procIds, offsets, wgts);
+  /**************************************************************************/
+  /*************************** BUILD MAP FOR ADJS ***************************/
+  /**************************************************************************/
+
+  Array<gno_t> vertexGIDs;
+  RCP<const map_type> vertexMapG;
+
+  // Build a list of the global vertex ids...
+  vertexGIDs.resize(localNumObj);
+  gno_t min;
+  min = as<gno_t> (Ids[0]);
+  for (size_t i = 0; i < localNumObj; ++i) {
+    vertexGIDs[i] = as<gno_t> (Ids[i]);
+
+    if (vertexGIDs[i] < min) {
+      min = vertexGIDs[i];
+    }
+  }
+
+  gno_t gmin;
+  Teuchos::reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_MIN, 1, min, gmin);
+
+  //Generate Map for vertex
+  vertexMapG = rcp(new map_type(INVALID, vertexGIDs(), gmin, comm));
+
+  /**************************************************************************/
+  /************************** BUILD GRAPH FOR ADJS **************************/
+  /**************************************************************************/
+
+  RCP<sparse_matrix_type> adjsMatrix;
+
+  // Construct Tpetra::CrsGraph objects.
+  adjsMatrix = rcp (new sparse_matrix_type (vertexMapG, 0));
+
+  nonzero_t justOne = 1;
+  ArrayView<nonzero_t> justOneAV = Teuchos::arrayView (&justOne, 1);
+
+  for (lno_t localElement=0; localElement<localNumObj; ++localElement){
+
+    //globalRow for Tpetra Graph
+    gno_t globalRowT = as<gno_t> (Ids[localElement]);
+
+    for (lno_t j=offsets[localElement]; j<offsets[localElement+1]; ++j){
+      gno_t globalCol = as<gno_t> (edgeIds[j]);
+      //create ArrayView globalCol object for Tpetra
+      ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
+
+      //Update Tpetra adjs Graph
+      adjsMatrix->insertGlobalValues(globalRowT,globalColAV,justOneAV);
+    }// *** vertex loop ***
+  }// *** edge loop ***
+
+  //Fill-complete adjs Graph
+  adjsMatrix->fillComplete (adjsMatrix->getRowMap());
+
+  RCP<vector_type> v;
 
   ArrayView<const lno_t> localEdgeIds, *localOffsets;
   ArrayView<input_t> localWgts;

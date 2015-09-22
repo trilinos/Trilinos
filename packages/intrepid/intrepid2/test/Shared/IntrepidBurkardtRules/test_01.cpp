@@ -148,7 +148,7 @@ Scalar chebyshev2(int power) {
 
 int main(int argc, char *argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
+ Kokkos::initialize();
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
@@ -445,7 +445,7 @@ int main(int argc, char *argv[]) {
 
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-
+ Kokkos::finalize();
   return errorFlag;
 }
 
