@@ -219,51 +219,6 @@ public:
     return nLocalEdges_;
   }
 
-  /*! \brief Sets pointers to this process' local-only edge (neighbor) LNOs,
-      using the same implied vertex LNOs returned in getVertexList.
-
-      Local only means the neighbor vertex is owned by this process.
-
-      \param edgeIds lists the only neighbors of the vertices in getVertexList
-        which are on this process.  The Id returned is not the neighbor's
-        global Id, but rather the index of the neighbor in the list
-        returned by getVertexList.
-      \param offsets offsets[i] is the offset into edgeIds to the start
-        of neighbors for ith vertex returned in getVertexList.
-      \param wgts If edge weights is available, \c wgts
-         will on return point to a StridedData object of weights.
-       \return The number of ids in the edgeIds list.
-
-       This method is not const, because a local edge list is not created
-       unless this method is called.
-
-       Note that if there are no local edges, the
-         \c edgeIds, \c offsets and \c wgts are returned
-         as empty arrays.
-   */
-
-  // TODO:  REMOVE THIS FUNCTION
-  // TODO:  WILL NEED TO CHANGE TYPE OF edgeIds in ORDERING/COLORING to gno_t
-  size_t getLocalEdgeList(
-    ArrayView<const lno_t> &edgeIds,
-    ArrayView<const lno_t> &offsets,
-    ArrayView<input_t> &wgts)
-  {
-    if (!localGraph_) {
-      throw std::runtime_error("do not use getLocalEdgeList with global graph");
-    }
-    if (nLocalEdges_ && localEGids_ == Teuchos::null) {
-      localEGids_ = arcp(new lno_t[nLocalEdges_], 0, nLocalEdges_, true);
-      for (size_t i = 0; i < nLocalEdges_; i++)
-        localEGids_[i] = lno_t(eGids_[i]);
-    }
-    // edgeIds = eGids_.view(0, nLocalEdges_);
-    edgeIds = localEGids_.view(0, nLocalEdges_);
-    offsets = eOffsets_.view(0, nLocalVertices_+1);
-    wgts = eWeights_.view(0, nWeightsPerEdge_);
-    return nLocalEdges_;
-  }
-
   ////////////////////////////////////////////////////
   // The Model interface.
   ////////////////////////////////////////////////////
@@ -314,8 +269,6 @@ private:
                                           // or may differ
                                           // due to renumbering, self-edge
                                           // removal, or local graph.
-  ArrayRCP<lno_t> localEGids_;   // TODO REMOVE:  edge GIDs with type lno_t 
-                                 // TODO REMOVE:  for local ordering/coloring
 
   int nWeightsPerEdge_;
   ArrayRCP<input_t> eWeights_;            // edge weights in built graph

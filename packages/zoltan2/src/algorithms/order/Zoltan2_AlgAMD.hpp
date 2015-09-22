@@ -132,12 +132,12 @@ class AlgAMD : public Algorithm<Adapter>
       const size_t nVtx = model->getLocalNumVertices();
 
       //cout << "Local num vertices" << nVtx << endl;
-      ArrayView<const lno_t> edgeIds;
+      ArrayView<const gno_t> edgeIds;
       ArrayView<const lno_t> offsets;
       ArrayView<StridedData<lno_t, scalar_t> > wgts;
 
       // wgts are ignored in AMD
-      model->getLocalEdgeList( edgeIds, offsets, wgts);
+      model->getEdgeList(edgeIds, offsets, wgts);
 
       AMDTraits<lno_t> AMDobj;
       double Control[AMD_CONTROL];

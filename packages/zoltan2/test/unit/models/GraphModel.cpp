@@ -98,7 +98,7 @@ using std::vector;
 
 /////////////////////////////////////////////////////////////////////////////
 void printGraph(zlno_t nrows, const zgno_t *v,
-    const zlno_t *elid, const zgno_t *egid,
+    const zgno_t *elid, const zgno_t *egid,
     const zlno_t *idx,
     const RCP<const Comm<int> > &comm)
 {
@@ -467,12 +467,12 @@ void testAdapter(
     // Get graph restricted to this process
 
     if (rank == 0) std::cout << "        Checking local edges" << std::endl;
-    ArrayView<const zlno_t> localEdges;
+    ArrayView<const zgno_t> localEdges;
     ArrayView<const zlno_t> localOffsets;
     size_t numLocalNeighbors=0;
 
     try{
-      numLocalNeighbors= model->getLocalEdgeList(localEdges, localOffsets, wgts);
+      numLocalNeighbors= model->getEdgeList(localEdges, localOffsets, wgts);
     }
     catch(std::exception &e){
       std::cout << rank << ") Error " << e.what() << std::endl;
