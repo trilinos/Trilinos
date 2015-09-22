@@ -73,11 +73,6 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
 
    ENDIF()
 
-   # TODO: replace me by some smarter ETI handling
-   IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-     APPEND_GLOB(SOURCES ${DIR}/MueLu_RefMaxwell.cpp)
-   ENDIF()
-
    TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
 ENDIF()
@@ -93,12 +88,6 @@ IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
     ${DIR}/Stratimikos_MueLuHelpers.cpp
     )
 
-  # TODO: replace me by some smarter handling of ETI
-  IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
-    APPEND_SET(SOURCES
-      ${DIR}/Thyra_MueLuPreconditionerFactory.cpp
-      )
-  ENDIF()
   APPEND_SET(HEADERS
     ${DIR}/Stratimikos_MueLuHelpers.hpp
     ${DIR}/Thyra_MueLuPreconditionerFactory_decl.hpp
@@ -131,6 +120,136 @@ IF (${PACKAGE_NAME}_ENABLE_AmgX)
   TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
 ENDIF()
+
+###################################################
+## TAW: 9/22/15
+## CMake-based ETI system inspired by Ifpack2 ETI
+## - no support for KokkosClassic
+## - ETI system for muelu-adapters only
+## - The ETI system of MueLu is not touched!
+###################################################
+
+# Function to generate ETI (explicit template instantiation) files
+# from a template and list of class names
+FUNCTION(MUELUADAPTERS_PROCESS_ETI_TEMPLATE ETI_CLASSES TEMPLATE_FILE TPETRA_TEMPLATE_TYPE TEMPLATE_NODE PROCESSED_FILE SOURCES_LIST)
+  SET(SRCS "")
+  FOREACH(CLASS ${ETI_CLASSES})
+    string(REPLACE "::" "_" CLASS_FILE_NAME "${CLASS}")
+    string(TOUPPER "${CLASS_FILE_NAME}" UPPER_CASE_CLASS)
+    string(REPLACE "CLASS_FILE_NAME" "${CLASS_FILE_NAME}" FINAL_FILE_NAME "${PROCESSED_FILE}")
+    CONFIGURE_FILE(${TEMPLATE_FILE} ${FINAL_FILE_NAME})
+    SET(SRCS ${SRCS} ${FINAL_FILE_NAME})
+  ENDFOREACH()
+  SET(${SOURCES_LIST} ${SRCS} PARENT_SCOPE)
+ENDFUNCTION(MUELUADAPTERS_PROCESS_ETI_TEMPLATE)
+
+SET(MUELUADAPTERS_ETI_CPP_SOURCES "")
+IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
+  # Set the list of classes in MueLu adapters that aretemplated
+  # on <Scalar, LO, GO, Node> for which we want to do ETI using this system.
+  GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
+    MueLu::RefMaxwell
+    )
+  IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
+    APPEND_GLOBAL_SET(MUELUADAPTERS_ETI_CLASSES
+      Thyra::MueLuPreconditionerFactory
+    )
+  ENDIF()
+
+
+  # Set the list of classes in MueLu adapters that are templated on <LO, GO, Node> for
+  # which we want to do ETI using this system.
+  GLOBAL_SET(MUELUADAPTERS_ETI_LO_GO_CLASSES
+  )
+
+  # ETI for the Kokkos::Serial device.
+  IF (Tpetra_INST_SERIAL)
+
+  ###  Kokkos_Compat_KokkosThreadsWrapperNode
+
+    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
+      "${MUELUADAPTERS_ETI_CLASSES}"
+      ExplicitInstantiation/MueLu_ETI_SC_LO_GO.tmpl
+      "HAVE_TPETRA_INST_SERIAL"
+      "Kokkos_Compat_KokkosSerialWrapperNode"
+      "ExplicitInstantiation/CLASS_FILE_NAME_Serial.cpp"
+      MueLuAdapters_SRCS)
+    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
+    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
+      "${MUELUADAPTERS_ETI_LO_GO_CLASSES}"
+      ExplicitInstantiation/MueLu_ETI_LO_GO.tmpl
+      "HAVE_TPETRA_INST_SERIAL"
+      "Kokkos_Compat_KokkosSerialWrapperNode"
+      "ExplicitInstantiation/CLASS_FILE_NAME_Serial.cpp"
+      MueLuAdapters_SRCS)
+    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
+  ENDIF()
+
+  # ETI for the Kokkos::Threads device.
+  IF (Tpetra_INST_PTHREAD)
+    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
+      "${MUELUADAPTERS_ETI_CLASSES}"
+      ExplicitInstantiation/MueLu_ETI_SC_LO_GO.tmpl
+      "HAVE_TPETRA_INST_PTHREAD"
+      "Kokkos_Compat_KokkosThreadsWrapperNode"
+      "ExplicitInstantiation/CLASS_FILE_NAME_Threads.cpp"
+      MueLuAdapters_SRCS)
+    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
+    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
+      "${MUELUADAPTERS_ETI_LO_GO_CLASSES}"
+      ExplicitInstantiation/MueLu_ETI_LO_GO.tmpl
+      "HAVE_TPETRA_INST_PTHREAD"
+      "Kokkos_Compat_KokkosThreadsWrapperNode"
+      "ExplicitInstantiation/CLASS_FILE_NAME_Threads.cpp"
+      MueLuAdapters_SRCS)
+    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
+  ENDIF()
+
+  # ETI for the Kokkos::OpenMP device.
+  IF (Tpetra_INST_OPENMP)
+    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
+      "${MUELUADAPTERS_ETI_CLASSES}"
+      ExplicitInstantiation/MueLu_ETI_SC_LO_GO.tmpl
+      "HAVE_TPETRA_INST_OPENMP"
+      "Kokkos_Compat_KokkosOpenMPWrapperNode"
+      "ExplicitInstantiation/CLASS_FILE_NAME_OpenMP.cpp"
+      MueLuAdapters_SRCS)
+    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
+    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
+      "${MUELUADAPTERS_ETI_LO_GO_CLASSES}"
+      ExplicitInstantiation/MueLu_ETI_LO_GO.tmpl
+      "HAVE_TPETRA_INST_OPENMP"
+      "Kokkos_Compat_KokkosOpenMPWrapperNode"
+      "ExplicitInstantiation/CLASS_FILE_NAME_OpenMP.cpp"
+      MueLuAdapters_SRCS)
+    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
+  ENDIF()
+
+  # ETI for the Kokkos::Cuda device.
+  IF (Tpetra_INST_CUDA)
+    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
+      "${MUELUADAPTERS_ETI_CLASSES}"
+      ExplicitInstantiation/MueLu_ETI_SC_LO_GO.tmpl
+      "HAVE_TPETRA_INST_CUDA"
+      "Kokkos_Compat_KokkosCudaWrapperNode"
+      "ExplicitInstantiation/CLASS_FILE_NAME_Cuda.cpp"
+      MueLuAdapters_SRCS)
+    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
+    MUELUADAPTERS_PROCESS_ETI_TEMPLATE(
+      "${MUELUADAPTERS_ETI_LO_GO_CLASSES}"
+      ExplicitInstantiation/MueLu_ETI_LO_GO.tmpl
+      "HAVE_TPETRA_INST_CUDA"
+      "Kokkos_Compat_KokkosCudaWrapperNode"
+      "ExplicitInstantiation/CLASS_FILE_NAME_Cuda.cpp"
+      MueLuAdapters_SRCS)
+    LIST(APPEND MUELUADAPTERS_ETI_CPP_SOURCES ${MueLuAdapters_SRCS})
+  ENDIF()
+
+  # add only automatically generated ETI cpp files
+  APPEND_SET(SOURCES ${MUELUADAPTERS_ETI_CPP_SOURCES})
+ENDIF()
+
+############################################
 
 # Must glob the binary dir last to get all of the auto-generated headers
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
