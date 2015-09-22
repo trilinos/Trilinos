@@ -45,8 +45,9 @@
 #ifndef ROL_PARAMETER_LIST_CONVERTERS_H
 #define ROL_PARAMETER_LIST_CONVERTERS_H
 
-#include "Teuchos_ParameterList.hpp"
 #include <map>
+#include "ROL_Types.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 
 namespace ROL {
@@ -138,6 +139,7 @@ void tierParameterList( Teuchos::ParameterList &outList,
   typedef std::map<Str,Vec>            Map;
   typedef ParameterList::ConstIterator IterPL;
   typedef typename Vec::iterator       IterVec;
+  typedef typename Map::iterator       IterMap;
   
   Map dict;
 
@@ -189,6 +191,15 @@ void tierParameterList( Teuchos::ParameterList &outList,
   dict["Value Update Forcing Sequence Update Frequency"]    = join("Step","Trust Region","Inexact","Value","Forcing Sequence Update Frequency");
   dict["Value Update Forcing Sequence Reduction Factor"]    = join("Step","Trust Region","Inexact","Value","Forcing Sequence Reduction Factor");
 
+
+  // Add duplicate entries with unformatted keys
+  for(IterMap itmap = dict.begin(); itmap != dict.end(); ++itmap) {
+    Str key = itmap->first;
+    Vec value = itmap->second;
+    dict[removeStringFormat(key)] = value;
+  }
+    
+
   // Iterate over parameter list
   for(IterPL itpl = inList.begin(); itpl != inList.end(); ++itpl) {
 
@@ -196,7 +207,7 @@ void tierParameterList( Teuchos::ParameterList &outList,
     Str key( inList.name(itpl) ); 
 
     // Look up location/name of new key
-    Vec location = dict[key];
+    Vec location = dict[removeStringFormat(key)];
     
     // Skip if not found in map
     if(location.size() == 0) {
