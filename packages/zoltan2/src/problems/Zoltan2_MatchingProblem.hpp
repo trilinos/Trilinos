@@ -278,7 +278,7 @@ void MatchingProblem<Adapter>::createMatchingProblem()
 
   case GraphModelType:
     graphFlags.set(REMOVE_SELF_EDGES);
-    graphFlags.set(GENERATE_CONSECUTIVE_IDS);
+    graphFlags.set(BUILD_LOCAL_GRAPH);
     this->graphModel_ = rcp(new GraphModel<base_adapter_t>(
       this->baseInputAdapter_, this->envConst_, problemCommConst_, graphFlags));
 
