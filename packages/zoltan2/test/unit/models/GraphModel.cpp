@@ -280,11 +280,8 @@ void testAdapter(
 
     size_t num = (removeSelfEdges ? (totalLocalNbors - numLocalDiags)
                                   : totalLocalNbors);
-    if (model->getLocalNumLocalEdges() != num) fail = 1;
-    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumLocalEdges", 1)
-
-    if (model->getLocalNumGlobalEdges() != num) fail = 1;
-    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumGlobalEdges", 1)
+    if (model->getLocalNumEdges() != num) fail = 1;
+    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumEdges", 1)
 
     if (model->getGlobalNumEdges() != num) fail = 1;
     TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumEdges", 1)
@@ -294,8 +291,8 @@ void testAdapter(
     TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumVertices", 1)
 
     size_t num = (removeSelfEdges ? (nLocalNZ-numLocalDiags) : nLocalNZ);
-    if (model->getLocalNumGlobalEdges() != num) fail = 1;
-    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumGlobalEdges", 1)
+    if (model->getLocalNumEdges() != num) fail = 1;
+    TEST_FAIL_AND_EXIT(*comm, !fail, "getLocalNumEdges", 1)
 
     num = (removeSelfEdges ? (nGlobalNZ-numGlobalDiags) : nGlobalNZ);
     if (model->getGlobalNumEdges() != num) fail = 1;

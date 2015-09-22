@@ -143,24 +143,13 @@ public:
    */
   size_t getGlobalNumVertices() const { return nGlobalVertices_; }
 
-  /*! \brief Returns the number of global edges on this process.
-   *  Includes remote edges.
-   *  TODO:  RENAME THIS FUNCTION; THIS NAME IS RIDICULOUS
+  /*! \brief Returns the number of edges on this process.
+   *  In global or subset graphs, includes off-process edges.
    */
-  size_t getLocalNumGlobalEdges() const { return nLocalEdges_; }
-
-  /*! \brief Returns the number of local edges on this process.
-   *  Does not include edges to off-process vertices.
-   *  TODO:  THIS FUNCTION SHOULD GO AWAY
-   */
-  size_t getLocalNumLocalEdges() const {
-    if (!localGraph_) { 
-      throw std::runtime_error("do not use getLocalNumLocalEdges with global graph");
-    }
-    return nLocalEdges_; 
-  }
+  size_t getLocalNumEdges() const { return nLocalEdges_; }
 
   /*! \brief Returns the global number edges.
+   *  For local graphs, the number of global edges is the number of local edges.
    */
   size_t getGlobalNumEdges() const { return nGlobalEdges_; }
 
