@@ -46,6 +46,8 @@
 #include "Teuchos_Assert.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
+#include "Intrepid_CubatureControlVolume.hpp"
+#include "Intrepid_CubatureControlVolumeSide.hpp"
 #include "Panzer_Dimension.hpp"
 #include "Panzer_CellData.hpp"
 
@@ -56,9 +58,17 @@ IntegrationRule(int in_cubature_degree, const panzer::CellData& cell_data)
   setup(in_cubature_degree,cell_data);
 }
 
+panzer::IntegrationRule::
+IntegrationRule(const panzer::CellData& cell_data, std::string in_cv_type)
+   : PointRule()
+{
+  setup_cv(cell_data,in_cv_type);
+}
+
 void panzer::IntegrationRule::setup(int in_cubature_degree, const panzer::CellData& cell_data)
 {
-  cubature_degree = in_cubature_degree ;
+  cubature_degree = in_cubature_degree;
+  cv_type = "none";
   int spatialDimension = cell_data.baseCellDimension();
 
   std::stringstream ss;
@@ -91,6 +101,42 @@ void panzer::IntegrationRule::setup(int in_cubature_degree, const panzer::CellDa
   }
 
   PointRule::setup(ss.str(),intrepid_cubature->getNumPoints(),cell_data);
+}
+
+void panzer::IntegrationRule::setup_cv(const panzer::CellData& cell_data, std::string in_cv_type)
+{
+  // set cubature degree to arbitrary constant for indexing
+  cubature_degree = 1;
+  cv_type = in_cv_type;
+  if (cv_type == "volume") {
+     cubature_degree = 75;
+  }
+  if (cv_type == "side") {
+     cubature_degree = 85;
+  }
+
+  //int spatialDimension = cell_data.baseCellDimension();
+
+  std::stringstream ss;
+  ss << "CubaturePoints ControlVol (Index=" << cubature_degree;
+
+  Teuchos::RCP<const shards::CellTopology> topo = cell_data.getCellTopology();
+
+  Teuchos::RCP<Intrepid::Cubature<double,Intrepid::FieldContainer<double>  > > intrepid_cubature;
+
+  int num_points;
+  if (cv_type == "volume") {
+    ss << ",volume)";
+    intrepid_cubature  = Teuchos::rcp(new Intrepid::CubatureControlVolume<double,Intrepid::FieldContainer<double>,Intrepid::FieldContainer<double> >(topo));
+    num_points = intrepid_cubature->getNumPoints();
+  }
+  else if (cv_type == "side") {
+    ss << ",side)";
+    intrepid_cubature  = Teuchos::rcp(new Intrepid::CubatureControlVolumeSide<double,Intrepid::FieldContainer<double>,Intrepid::FieldContainer<double> >(topo));
+    num_points = intrepid_cubature->getNumPoints();
+  }
+
+  PointRule::setup(ss.str(),num_points,cell_data);
 }
 
 int panzer::IntegrationRule::order() const

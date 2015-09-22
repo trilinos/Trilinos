@@ -382,6 +382,10 @@ void Piro::RythmosSolver<Scalar>::initialize(
     fwdStateIntegrator = Teuchos::rcp_dynamic_cast<Rythmos::DefaultIntegrator<double> >(integrator,true);
 
     fwdStateStepper = fwdStateIntegrator->getNonconstStepper();
+
+    if (Teuchos::nonnull(observer)) 
+      fwdStateIntegrator->setIntegrationObserver(observer);
+   
   }
 else {
     TEUCHOS_TEST_FOR_EXCEPTION(

@@ -51,6 +51,8 @@
 #include "Panzer_PointRule.hpp"
 
 #include "Intrepid_DefaultCubatureFactory.hpp"
+#include "Intrepid_CubatureControlVolume.hpp"
+#include "Intrepid_CubatureControlVolumeSide.hpp"
 #include "Intrepid_FieldContainer.hpp"
 
 namespace panzer {
@@ -68,12 +70,18 @@ namespace panzer {
     //! if side = -1 then we use the cell volume integration rule.
     IntegrationRule(int cubature_degree, const panzer::CellData& cell_data);
 
+    IntegrationRule(const panzer::CellData& cell_data, std::string cv_type);
+
     void setup(int cubature_degree, const panzer::CellData& cell_data);
+
+    void setup_cv(const panzer::CellData& cell_data, std::string cv_type);
   
     //! Returns the order of integration (cubature degree in intrepid lingo)
     int order() const;
 
     int cubature_degree;
+
+    std::string cv_type;
 
     //! print information about the integration rule
     virtual void print(std::ostream & os);
