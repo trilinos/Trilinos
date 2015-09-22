@@ -212,19 +212,21 @@ namespace Iofx {
       if (write_message || error_msg != NULL) {
         // See which processors could not open/create the file...
         std::string open_create = is_input() ? "open input" : "create output";
-        bool first = true;
         std::ostringstream errmsg;
-        errmsg << "ERROR: Unable to " << open_create << " database '" << get_filename() << "' of type 'exodusII'";
         if (isParallel) {
-          errmsg << "\n\ton processor(s): ";
+	  errmsg << "ERROR: Unable to " << open_create << " exodus decomposed database files:\n";
           for (int i=0; i < util().parallel_size(); i++) {
             if (status[i] < 0) {
-              if (!first) errmsg << ", ";
-              errmsg << i;
-              first = false;
+	      std::string proc_filename = Ioss::Utils::decode_filename(get_filename(),
+								 i, util().parallel_size());
+              errmsg << "\t" << proc_filename << "\n";
             }
           }
         }
+	else {
+	  errmsg << "ERROR: Unable to " << open_create
+		 << " database '" << get_filename() << "' of type 'exodusII'";
+	}
         if (error_msg != NULL) {
           *error_msg = errmsg.str();
         }
