@@ -897,6 +897,8 @@ template <typename Adapter, typename pnum_t>
   for(lno_t i=0; i < localNumObj; i++)
     v->replaceLocalValue (i, part[i]);
 
+  RCP<vector_type> w = rcp (new vector_type (vertexMapG));
+
   ArrayView<const lno_t> localEdgeIds, *localOffsets;
   ArrayView<input_t> localWgts;
   size_t localNumEdge = graph->getLocalEdgeList(localEdgeIds, localOffsets,
