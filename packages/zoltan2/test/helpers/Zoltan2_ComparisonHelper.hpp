@@ -117,7 +117,6 @@ public:
   std::map<const std::string, RCP<Time> > timers;
 };
 
-typedef std::pair<const string &, RCP<const ComparisonSource> > pair_t;
 
 class ComparisonHelper
 {
@@ -200,6 +199,7 @@ private:
 
 void ComparisonHelper::AddSource(const string &name, ComparisonSource * source)
 {
+  typedef std::pair<const string &, RCP<const ComparisonSource> > pair_t;
   this->sources.insert(pair_t(name, RCP<ComparisonSource>(source)));
 }
 
@@ -498,31 +498,31 @@ void ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA
     failed = true;
   }
   
-  if(!failed)
-  {
-    // have some solutions lets compare them
-    typedef Zoltan2::OrderingProblem<basic_id_t> ordering_problem_t;
-    // have some solutions lets compare them
-    if(ordering_problem_t * problem_a = reinterpret_cast<ordering_problem_t *>(sourceA->problem.getRawPtr()))
-    {
-      if(ordering_problem_t * problem_b = reinterpret_cast<ordering_problem_t *>(sourceB->problem.getRawPtr()))
-      {
-        
-      }else{
-        status << "Solution sets A and B are from different problem types. ";
-        status << "Solution comparison FAILED.";
-        failed = true;
-      }
-      
-      
-    }else{
-      if(rank == 0)
-      {
-        status << "Could not cast solution A to valid problem type. ";
-        status << "Solution comparison FAILED.";
-      }
-    }
-  }
+//  if(!failed) //BDD, finish implementation when ordering problem metrics defined
+//  {
+//    // have some solutions lets compare them
+//    typedef Zoltan2::OrderingProblem<basic_id_t> ordering_problem_t;
+//    // have some solutions lets compare them
+//    if(ordering_problem_t * problem_a = reinterpret_cast<ordering_problem_t *>(sourceA->problem.getRawPtr()))
+//    {
+//      if(ordering_problem_t * problem_b = reinterpret_cast<ordering_problem_t *>(sourceB->problem.getRawPtr()))
+//      {
+//        
+//      }else{
+//        status << "Solution sets A and B are from different problem types. ";
+//        status << "Solution comparison FAILED.";
+//        failed = true;
+//      }
+//      
+//      
+//    }else{
+//      if(rank == 0)
+//      {
+//        status << "Could not cast solution A to valid problem type. ";
+//        status << "Solution comparison FAILED.";
+//      }
+//    }
+//  }
   
   
   if(!failed)
@@ -636,8 +636,8 @@ ComparisonHelper::metricArrayToMap(const ArrayRCP<const ComparisonHelper::metric
 {
   typedef std::pair<const string,const metric_t> pair_t;
   std::map<const string, const metric_t> metric_map;
-  
-  for(size_t idx = 0; idx < metrics.size(); idx++)
+  ArrayRCP<const ComparisonHelper::metric_t>::size_type idx;
+  for(idx = 0; idx < metrics.size(); idx++)
   {
     metric_map.insert(pair_t(metrics[idx].getName(),metrics[idx]));
   }

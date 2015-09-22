@@ -1045,7 +1045,6 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData, bool 
   RCP<tcrsMatrix_t> fromMatrix;
   bool aok = true;
   try{
-    RCP<tcrsMatrix_t> fromMatrix;
     fromMatrix = Tpetra::MatrixMarket::Reader<tcrsMatrix_t>::readSparseFile(
                                                                     fname.str(), tcomm_, dnode, true, true, false);
     if(!distributeInput)
@@ -2529,12 +2528,12 @@ void UserInputForTests::setPamgenAdjacencyGraph()
   
   
   Array<zgno_t> g_el_ids(local_els);
-  for (Array<zgno_t>::size_type k = 0; k < local_els; ++k) {
+  for (size_t k = 0; k < local_els; ++k) {
     g_el_ids[k] = pamgen_mesh->global_element_numbers[k]-1;
   }
   
   Array<zgno_t> g_node_ids(local_nodes);
-  for (Array<zgno_t>::size_type k = 0; k < local_nodes; ++k) {
+  for (size_t k = 0; k < local_nodes; ++k) {
     g_node_ids[k] = pamgen_mesh->global_node_numbers[k]-1;
   }
   
