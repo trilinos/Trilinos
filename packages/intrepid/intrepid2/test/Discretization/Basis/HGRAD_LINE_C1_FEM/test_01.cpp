@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
     << "| TEST 1: Basis creation, exception testing                                   |\n"\
     << "===============================================================================\n";
 #endif
-  
+   Kokkos::initialize();
   // Define basis and error flag
   Basis_HGRAD_LINE_C1_FEM<double, FieldContainer<double> > lineBasis;
   int errorFlag = 0;
@@ -441,5 +441,6 @@ int main(int argc, char *argv[]) {
 
   // reset format state of std::cout
      std::cout.copyfmt(oldFormatState);
+ Kokkos::finalize();
   return errorFlag;
 }

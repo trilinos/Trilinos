@@ -94,11 +94,22 @@ Scalar& operator() (const size_t i0, const size_t i1, const size_t i2,
 Scalar& operator() (const size_t i0, const size_t i1, const size_t i2,
                           const size_t i3, const size_t i4, const size_t i5,
                           const size_t i6, const size_t i7)const;
-size_t rank(){return rankValue;}
+size_t rank()const{return rankValue;}
 
-size_t size(){return sizeValue;}
+size_t size()const{return sizeValue;}
+
 
 size_t dimension(size_t num)const{return dim[num];}
+
+void initialize(Scalar initValue){
+
+for(size_t i=0;i<sizeValue;i++){
+
+containerMemory[i]=initValue;
+
+}
+
+}
 
 size_t dimension_0(){return dim0;}
 size_t dimension_1(){return dim1;}
@@ -337,7 +348,18 @@ return containerMemory[((((((dim1*i0+i1)*dim2+i2)*dim3+i3)*dim4+i4)*dim5+i5)*dim
 
 }
 
+template<class Scalar>
+struct initFieldContKokkos{
+Scalar* a;
+Scalar initValue;
+initFieldContKokkos(Scalar initValue_, Scalar* a_): a(a_),initValue(initValue_)
+{}
+KOKKOS_INLINE_FUNCTION
+void operator()(const size_t i)const{
+a[i]=initValue;
+}
 
+};
 
 #include "Intrepid2_FieldContainer_Kokkos_CUDA_Left.hpp"
 #include "Intrepid2_FieldContainer_Kokkos_CUDA_Right.hpp"

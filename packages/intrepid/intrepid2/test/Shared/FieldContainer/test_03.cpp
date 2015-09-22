@@ -85,7 +85,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( Dim )
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-  
+   Kokkos::initialize();
   // This little trick lets us print to cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   
@@ -389,6 +389,6 @@ int main(int argc, char *argv[]) {
   
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-  
+  Kokkos::finalize(); 
   return errorFlag;
 }
