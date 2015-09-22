@@ -185,7 +185,7 @@ public:
   {
     for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp) 
       for (std::size_t d = 0; d < scratch.dimension_2(); ++d)
-        scratch(cell,qp,d) *= field(cell,qp)*scratch(cell,qp,d);  
+        scratch(cell,qp,d) *= field(cell,qp);
   }
 };
 
@@ -218,7 +218,7 @@ public:
   void operator()(const FieldMultipliers,const unsigned cell) const
   {
     for (std::size_t qp = 0; qp < scratch.dimension_1(); ++qp) 
-      scratch(cell,qp) *= field(cell,qp)*scratch(cell,qp);  
+      scratch(cell,qp) *= field(cell,qp);
   }
 };
 
