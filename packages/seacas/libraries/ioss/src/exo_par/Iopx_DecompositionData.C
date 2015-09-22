@@ -211,12 +211,12 @@ namespace {
 
   inline size_t min(size_t x, size_t y)
   {
-    return y ^ ((x^y) & -(x<y));
+    return x < y ? x : y;
   }
 
   inline size_t max(size_t x, size_t y)
   {
-    return y ^ ((x^y) & -(x>y));
+    return x > y ? x : y;
   }
 
   template <typename T>
@@ -385,7 +385,7 @@ namespace {
     // number of nodes per side for all element blocks...  Omit sphere
     // elements; ignore bars(?)...
 
-    int common_nodes = 999;
+    int common_nodes = INT_MAX;
 
     for (size_t i=0; i < el_blocks.size(); i++) {
       std::string type = Ioss::Utils::lowercase(el_blocks[i].topologyType);
