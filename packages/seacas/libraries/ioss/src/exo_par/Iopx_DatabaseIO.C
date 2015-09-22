@@ -100,16 +100,6 @@
 // Static internal helper functions
 // ========================================================================
 namespace {
-  inline size_t min(size_t x, size_t y)
-  {
-    return y ^ ((x^y) & -(x<y));
-  }
-
-  inline size_t max(size_t x, size_t y)
-  {
-    return y ^ ((x^y) & -(x>y));
-  }
-
   const size_t max_line_length   = MAX_LINE_LENGTH;
 
   const std::string SEP() {return std::string("@");} // Separator for attribute offset storage
