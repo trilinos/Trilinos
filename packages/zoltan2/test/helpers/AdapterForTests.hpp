@@ -612,7 +612,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getXpetraCrsMatrixAdapterForI
     
     // copy to weight
     int weightsPerRow = (int)vtx_weights->getNumVectors();
-    for (size_t i = 0; i< weightsPerRow; i++)
+    for (int i = 0; i< weightsPerRow; i++)
     {
       weights.push_back(vtx_weights->getData(i).getRawPtr());
       strides.push_back(1);
@@ -773,7 +773,6 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     if(dim == 1) coords[1] = coords[2] = NULL;
     else if(dim == 2)
     {
-//      if(comm->getRank() == 0) cout << "2D setting coords 2 to nullll" << endl;
       coords[2] = NULL;
     }
     
@@ -832,6 +831,13 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     vector<int> entry_strides;
     AdapterForTests::InitializeVectorData(data,coords,entry_strides,stride);
     
+    
+    if(nvec == 1) coords[1] = coords[2] = NULL;
+    else if(nvec == 2)
+    {
+      coords[2] = NULL;
+    }
+    
     ia = new AdapterForTests::basic_vector_adapter(localCount, globalIds,
                                                    coords, entry_strides,
                                                    weights,weightStrides);
@@ -872,6 +878,17 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     vector<const zscalar_t *> coords;
     vector<int> entry_strides;
     AdapterForTests::InitializeVectorData(data,coords,entry_strides,stride);
+    if(comm->getRank() == 0) cout << "size of entry strides: " << entry_strides.size() << endl;
+    if(comm->getRank() == 0) cout << "size of coords: " << coords.size() << endl;
+
+    if(nvec == 1)
+    {
+      coords[1] = coords[2] = NULL;
+    }
+    else if(nvec == 2)
+    {
+      coords[2] = NULL;
+    }
     
     // make vector!
     ia = new AdapterForTests::basic_vector_adapter(localCount, globalIds,
@@ -917,6 +934,12 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     vector<int> entry_strides;
     AdapterForTests::InitializeEpetraVectorData(data,coords,entry_strides,stride);
     
+    if(nvec == 1) coords[1] = coords[2] = NULL;
+    else if(nvec == 2)
+    {
+      coords[2] = NULL;
+    }
+    
     // make vector!
     ia = new AdapterForTests::basic_vector_adapter(localCount, globalIds,
                                                    coords, entry_strides,
@@ -941,9 +964,9 @@ void AdapterForTests::InitializeVectorData(const RCP<T> &data,
                                            int stride)
 {
   // set up adapter data
-  const zlno_t localCount = data->getLocalLength();
-  const zlno_t nvecs = data->getNumVectors();
-  const zlno_t vecsize = data->getNumVectors() * data->getLocalLength();
+  size_t localCount = data->getLocalLength();
+  size_t nvecs = data->getNumVectors();
+  size_t vecsize = data->getNumVectors() * data->getLocalLength();
 //    printf("Number of vectors by data: %zu\n", nvecs);
   //  printf("Size of data: %zu\n", vecsize);
   
@@ -965,20 +988,20 @@ void AdapterForTests::InitializeVectorData(const RCP<T> &data,
   //    printf("}\n");
   //  }
   
-  zlno_t idx = 0;
+  size_t idx = 0;
   zscalar_t *coordarr = new zscalar_t[vecsize];
   
-  if(stride == 1 || stride != nvecs)
+  if(stride == 1 || stride != (int)nvecs)
   {
-    for (zlno_t i = 0; i < nvecs; i++) {
-      for (zlno_t j = 0; j < localCount; j++) {
+    for (size_t i = 0; i < nvecs; i++) {
+      for (size_t j = 0; j < localCount; j++) {
         coordarr[idx++] = petravectors[i][j];
       }
     }
   }else
   {
-    for (zlno_t j = 0; j < localCount; j++) {
-      for (zlno_t i = 0; i < nvecs; i++) {
+    for (size_t j = 0; j < localCount; j++) {
+      for (size_t i = 0; i < nvecs; i++) {
         coordarr[idx++] = petravectors[i][j];
       }
     }
@@ -1027,9 +1050,9 @@ void AdapterForTests::InitializeEpetraVectorData(const RCP<T> &data,
                                                  vector<const zscalar_t *> &coords,
                                                  vector<int> & strides,
                                                  int stride){
-  const size_t localCount = data->MyLength();
-  const size_t nvecs = data->NumVectors();
-  const size_t vecsize = nvecs * localCount;
+  size_t localCount = data->MyLength();
+  size_t nvecs = data->NumVectors();
+  size_t vecsize = nvecs * localCount;
   
   //  printf("Number of vectors by data: %zu\n", nvecs);
   //  printf("Size of data: %zu\n", vecsize);
@@ -1044,20 +1067,20 @@ void AdapterForTests::InitializeEpetraVectorData(const RCP<T> &data,
     epetravectors[k] = arr[k];
   }
   
-  int idx = 0;
+  size_t idx = 0;
   basic_vector_adapter::scalar_t *coordarr = new basic_vector_adapter::scalar_t[vecsize];
   
-  if(stride == 1 || stride != nvecs)
+  if(stride == 1 || stride != (int)nvecs)
   {
-    for (zlno_t i = 0; i < nvecs; i++) {
-      for (zlno_t j = 0; j < localCount; j++) {
+    for (size_t i = 0; i < nvecs; i++) {
+      for (size_t j = 0; j < localCount; j++) {
         coordarr[idx++] = epetravectors[i][j];
       }
     }
   }else
   {
-    for (zlno_t j = 0; j < localCount; j++) {
-      for (zlno_t i = 0; i < nvecs; i++) {
+    for (size_t j = 0; j < localCount; j++) {
+      for (size_t i = 0; i < nvecs; i++) {
         coordarr[idx++] = epetravectors[i][j];
       }
     }

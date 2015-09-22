@@ -774,7 +774,7 @@ template <typename Adapter, typename pnum_t>
   typedef graphMetricValues<scalar_t> mv_t;
   typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
   typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>  sparse_matrix_type;
-  typedef Tpetra::Vector<scalar_t,lno_t,gno_t,node_t>      vector_type;
+  typedef Tpetra::Vector<pnum_t,lno_t,gno_t,node_t>        vector_type;
   typedef Tpetra::Map<lno_t, gno_t, node_t>                map_type;
   typedef Tpetra::global_size_t GST;
   const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
@@ -889,6 +889,12 @@ template <typename Adapter, typename pnum_t>
   adjsMatrix->fillComplete (adjsMatrix->getRowMap());
 
   RCP<vector_type> v;
+  //
+  v = rcp (new vector_type (vertexMapG, true));
+  v->putScalar (pnum_t::zero ());
+
+  for(lno_t i=0; i < localNumObj; i++)
+    v->replaceLocalValue (i, part[i]);
 
   ArrayView<const gno_t> localEdgeIds;
   ArrayView<const lno_t> localOffsets;
