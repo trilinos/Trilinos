@@ -202,8 +202,6 @@ public:
 
       \param edgeIds This is the list of global neighbor Ids corresponding
         to the vertices listed in getVertexList.
-      \param procIds lists the process owning each neighbor in the edgeIds
-         list.
       \param offsets offsets[i] is the offset into edgeIds to the start
         of neighbors for ith vertex.
       \param wgts If edge weights is available, \c wgts
@@ -215,11 +213,10 @@ public:
   // Vertex GNOs are returned as neighbors in edgeIds.
 
   size_t getEdgeList( ArrayView<const gno_t> &edgeIds,
-    ArrayView<const int> &procIds, ArrayView<const lno_t> &offsets,
+    ArrayView<const lno_t> &offsets,
     ArrayView<input_t> &wgts) const
   {
     edgeIds = eGids_.view(0, nLocalEdges_);
-    procIds = ArrayView<int>();  // TODO REMOVE procIds
     offsets = eOffsets_.view(0, nLocalVertices_+1);
     wgts = eWeights_.view(0, nWeightsPerEdge_);
     return nLocalEdges_;

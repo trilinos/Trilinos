@@ -207,11 +207,10 @@ void AlgPTScotch<Adapter>::partition(
 
   // Get edge info
   ArrayView<const gno_t> edgeIds;
-  ArrayView<const int>   procIds;
   ArrayView<const lno_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
 
-  size_t nEdge = model->getEdgeList(edgeIds, procIds, offsets, ewgts);
+  size_t nEdge = model->getEdgeList(edgeIds, offsets, ewgts);
 
   SCOTCH_Num edgelocnbr=0;
   TPL_Traits<SCOTCH_Num, size_t>::ASSIGN_TPL_T(edgelocnbr, nEdge, env);

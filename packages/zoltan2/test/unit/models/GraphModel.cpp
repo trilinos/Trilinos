@@ -99,7 +99,7 @@ using std::vector;
 /////////////////////////////////////////////////////////////////////////////
 void printGraph(zlno_t nrows, const zgno_t *v,
     const zlno_t *elid, const zgno_t *egid,
-    const int *owner, const zlno_t *idx,
+    const zlno_t *idx,
     const RCP<const Comm<int> > &comm)
 {
   int rank = comm->getRank();
@@ -425,12 +425,11 @@ void testAdapter(
 
   if (!buildLocalGraph) {
     ArrayView<const zgno_t> edgeGids;
-    ArrayView<const int> procIds;
     ArrayView<const zlno_t> offsets;
     size_t numEdges=0;
 
     try{
-      numEdges = model->getEdgeList(edgeGids, procIds, offsets, wgts);
+      numEdges = model->getEdgeList(edgeGids, offsets, wgts);
     }
     catch(std::exception &e){
       std::cerr << rank << ") Error " << e.what() << std::endl;
@@ -458,7 +457,7 @@ void testAdapter(
       if (rank == 0)
         std::cout << "Printing graph now " << nGlobalRows << std::endl;
       printGraph(nLocalRows, vertexGids.getRawPtr(), NULL,
-        edgeGids.getRawPtr(), procIds.getRawPtr(), offsets.getRawPtr(), comm);
+        edgeGids.getRawPtr(), offsets.getRawPtr(), comm);
     }
     else{
       if (rank==0) 
@@ -519,7 +518,7 @@ void testAdapter(
       }
       else{
         printGraph(nLocalRows, vertexGids.getRawPtr(), 
-          localEdges.getRawPtr(), NULL, NULL, localOffsets.getRawPtr(), comm);
+          localEdges.getRawPtr(), NULL, localOffsets.getRawPtr(), comm);
       }
     }
   }

@@ -183,11 +183,10 @@ void AlgParMETIS<Adapter>::partition(
 
   // Get edge info
   ArrayView<const gno_t> adjgnos;
-  ArrayView<const int>   procs;
   ArrayView<const lno_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
   int nEwgt = model->getNumWeightsPerEdge();
-  size_t nEdge = model->getEdgeList(adjgnos, procs, offsets, ewgts);
+  size_t nEdge = model->getEdgeList(adjgnos, offsets, ewgts);
 
   pm_idx_t *pm_ewgts = NULL;
   if (nEwgt) {
