@@ -318,7 +318,8 @@ void testAdapter(
   ArrayView<input_t> wgts;
 
   try{
-    model->getVertexList(vertexGids, crds, wgts);
+    model->getVertexList(vertexGids, wgts);
+    if (coordDim) model->getVertexCoords(crds);
   }
   catch (std::exception &e){
     std::cerr << rank << ") Error " << e.what() << std::endl;

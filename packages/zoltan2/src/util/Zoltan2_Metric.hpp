@@ -826,8 +826,8 @@ template <typename Adapter, typename pnum_t>
   scalar_t *cut = localBuf;              // # of cuts
 
   ArrayView<const gno_t> *Ids;
-  ArrayView<input_t> *xyz, *vwgts;
-  size_t nv = graph->getVertexList(Ids, xyz, vwgts);
+  ArrayView<input_t> *vwgts;
+  size_t nv = graph->getVertexList(Ids, vwgts);
 
   ArrayView<const gno_t> *edgeIds;
   ArrayView<const lno_t> *offsets;
