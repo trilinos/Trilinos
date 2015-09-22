@@ -83,8 +83,6 @@ namespace stk { class CommAll; }
 #include "SharedEntityType.hpp"
 #include "CommListUpdater.hpp"
 
-namespace sierra { namespace Fmwk { class EntityCreationOperationList; } }
-
 namespace stk {
 namespace mesh {
 
@@ -1191,7 +1189,6 @@ private:
   friend class stk::mesh::Bucket; // for field callback
   friend class Ghosting; // friend until Ghosting is refactored to be like Entity
   friend class ::stk::mesh::impl::MeshModification;
-  friend class ::sierra::Fmwk::EntityCreationOperationList;
   friend class ::stk::mesh::ElemElemGraph;
   friend class ::stk::mesh::EntityLess;
 

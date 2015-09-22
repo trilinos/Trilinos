@@ -63,6 +63,7 @@
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityRank, etc
+
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_mesh/baseImpl/MeshModification.hpp"
@@ -2045,7 +2046,7 @@ void BulkData::internal_declare_relation( Entity entity ,
 {
   require_ok_to_modify();
 
-  const unsigned erank = entity_rank(entity);
+  stk::mesh::EntityRank erank = entity_rank(entity);
 
   std::vector<Relation>::const_iterator i ;
   for ( i = rel.begin() ; i != rel.end() ; ++i ) {
@@ -5793,7 +5794,7 @@ void BulkData::unpack_not_owned_verify_report_errors(Entity entity,
   error_log << __FILE__ << ":" << __LINE__ << ": ";
   error_log << "P" << p_rank << ": " ;
   error_log << key;
-  error_log << " owner(" << parallel_owner_rank(entity) << ")" ;
+  error_log << " owner(" << parallel_owner_rank(entity) << ") shared: " << bucket(entity).shared() << " in aura: " << bucket(entity).in_aura() << " ";
 
   if ( bad_key || bad_own ) {
     error_log << " != received " ;
@@ -5868,6 +5869,14 @@ void BulkData::unpack_not_owned_verify_report_errors(Entity entity,
       Entity const *ir_end = entityBucket.end(bucketOrdinal, irank);
       for ( ; ir_itr != ir_end; ++ir_itr ) {
         error_log << " " << irank<<":"<<identifier(*ir_itr) ;
+        Entity const * nodes_begin = begin_nodes(*ir_itr);
+        Entity const * nodes_end   = end_nodes(*ir_itr);
+        error_log << " node-connectivity (";
+        for (Entity const* nodeId = nodes_begin; nodeId != nodes_end; ++nodeId)
+        {
+            error_log << identifier(*nodeId) << ", ";
+        }
+        error_log << ") ";
       }
     }
     error_log << " ) != received Relations(" ;
