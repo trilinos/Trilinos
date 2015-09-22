@@ -12,6 +12,7 @@ typedef int    ordinal_type;
 typedef int    size_type;
 
 typedef Kokkos::Threads exec_space;
+typedef double value_type;
 
 #include "example_kokkos_task_data.hpp"
 
@@ -56,7 +57,7 @@ int main (int argc, char *argv[]) {
     exec_space::initialize(nthreads, numa, core_per_numa);
     exec_space::print_configuration(cout, true);
 
-    r_val = exampleKokkosTaskData<exec_space>((ntasks > MAXTASKS ? MAXTASKS : ntasks), max_task_dependence, team_size, verbose);
+    r_val = exampleKokkosTaskData<exec_space,value_type>((ntasks > MAXTASKS ? MAXTASKS : ntasks), max_task_dependence, team_size, verbose);
 
     exec_space::finalize();
   }

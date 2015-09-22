@@ -155,6 +155,13 @@ IF(Kokkos_ENABLE_Pthread)
   )
 
   TRIBITS_ADD_EXECUTABLE(
+    kokkos_data_data_pthread
+    NOEXEPREFIX
+    SOURCES example_kokkos_data_data_pthread.cpp
+    COMM serial mpi
+  )
+
+  TRIBITS_ADD_EXECUTABLE(
     kokkos_team_barrier_pthread
     NOEXEPREFIX
     SOURCES example_kokkos_team_barrier_pthread.cpp
