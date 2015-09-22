@@ -206,17 +206,6 @@ void MatchingProblem<Adapter>::solve(bool newData)
   }
   Z2_FORWARD_EXCEPTIONS;
 
-#ifdef HAVE_ZOLTAN2_MPI
-
-  // The algorithm may have changed the communicator.  Change it back.
-  // EGB: This seems excessive. Algorithms should never change the comm?!
-
-  RCP<const mpiWrapper_t > wrappedComm = rcp(new mpiWrapper_t(mpiComm_));
-  problemComm_ = rcp(new Teuchos::MpiComm<int>(wrappedComm));
-  problemCommConst_ = rcp_const_cast<const Comm<int> > (problemComm_);
-
-#endif
-
 }
 
 ////////////////////////////////////////////////////////////////////////
