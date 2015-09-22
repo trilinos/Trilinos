@@ -44,7 +44,12 @@ Level 1
  Minimization norm = 2   [default]
  ReUseRowBasedOmegas = 0   [default]
 
- Transpose P (MueLu::TransPFactory)
+ Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
+  Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
+   PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
+  Minimization norm = 2   [default]
+  ReUseRowBasedOmegas = 0   [default]
+
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
@@ -99,7 +104,12 @@ Level 2
  Minimization norm = 2   [default]
  ReUseRowBasedOmegas = 0   [default]
 
- Transpose P (MueLu::TransPFactory)
+ Call prolongator factory for calculating restrictor (MueLu::GenericRFactory)
+  Prolongator smoothing (PG-AMG) (MueLu::PgPFactory)
+   PgPFactory::ComputeRowBasedOmega (MueLu::PgPFactory)
+  Minimization norm = 2   [default]
+  ReUseRowBasedOmegas = 0   [default]
+
  [empty list]
 
  Computing Ac (MueLu::RAPFactory)
