@@ -901,6 +901,8 @@ template <typename Adapter, typename pnum_t>
   // Create vector to store global part numbers
   RCP<vector_type> w = rcp (new vector_type (vertexMapG));
 
+  adjsMatrix->apply (v, w); // w:= adjsMatrix * v
+
   ArrayView<const lno_t> localEdgeIds, *localOffsets;
   ArrayView<input_t> localWgts;
   size_t localNumEdge = graph->getLocalEdgeList(localEdgeIds, localOffsets,
