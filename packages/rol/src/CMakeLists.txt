@@ -107,12 +107,16 @@ APPEND_SET(HEADERS
 #
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/sol)
 INCLUDE_DIRECTORIES(${DIR}/function
+                    ${DIR}/function/distribution
                     ${DIR}/vector
                     ${DIR}/sampler
+                    ${DIR}/sampler/SROM
                    )
 APPEND_GLOB(HEADERS ${DIR}/function/*.hpp 
+                    ${DIR}/function/distribution/*.hpp
                     ${DIR}/vector/*.hpp
                     ${DIR}/sampler/*.hpp
+                    ${DIR}/sampler/SROM/*.hpp
                    )
 
 #

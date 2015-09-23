@@ -1,0 +1,16 @@
+INCLUDE(TribitsAddExecutableAndTest)
+
+TRIBITS_ADD_EXECUTABLE(
+  ParameterCheck
+  SOURCES test_01.cpp
+  ADD_DIR_TO_NAME
+  )
+
+
+TRIBITS_COPY_FILES_TO_BINARY_DIR(
+  ParameterDataCopy
+  SOURCE_FILES
+    parameters.xml
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
+  DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+)

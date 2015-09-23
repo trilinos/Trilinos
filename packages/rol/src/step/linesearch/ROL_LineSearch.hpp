@@ -89,30 +89,24 @@ public:
   // Constructor
   LineSearch( Teuchos::ParameterList &parlist ) : eps_(0.0) {
     // Enumerations
-    edesc_ = StringToEDescent(parlist.get("Descent Type","Quasi-Newton Method"));
-    econd_ = StringToECurvatureCondition( parlist.get("Linesearch Curvature Condition","Strong Wolfe Conditions"));
+    edesc_ = StringToEDescent(parlist.sublist("Step").sublist("Line Search").sublist("Descent Method").get("Type","Quasi-Newton Method"));
+    econd_ = StringToECurvatureCondition(parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("Type","Strong Wolfe Conditions"));
     // Linesearc Parameters
-    maxit_     = parlist.get("Maximum Number of Function Evaluations",            20);
-    c1_        = parlist.get("Sufficient Decrease Parameter",                     1.e-4);
-    c2_        = parlist.get("Curvature Conditions Parameter",                    0.9);
-    c3_        = parlist.get("Curvature Conditions Parameter: Generalized Wolfe", 0.6);
-    alpha0_    = parlist.get("Initial Linesearch Parameter",1.0);
-    useralpha_ = parlist.get("User Defined Linesearch Parameter",false);
-    acceptMin_ = parlist.get("Accept Linesearch Minimizer",false);
+    alpha0_    = parlist.sublist("Step").sublist("Line Search").get("Initial Step Size",1.0);
+    useralpha_ = parlist.sublist("Step").sublist("Line Search").get("User Defined Initial Step Size",false);
+    acceptMin_ = parlist.sublist("Step").sublist("Line Search").get("Accept Linesearch Minimizer",false);
+    maxit_     = parlist.sublist("Step").sublist("Line Search").get("Function Evaluation Limit",20);
+    c1_        = parlist.sublist("Step").sublist("Line Search").get("Sufficient Decrease Tolerance",1.e-4);
+    c2_        = parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("General Parameter",0.9);
+    c3_        = parlist.sublist("Step").sublist("Line Search").sublist("Curvature Condition").get("Generalized Wolfe Parameter",0.6);
 
     fmin_      = std::numeric_limits<Real>::max();
     alphaMin_  = 0; 
     itcond_    = false;
 
-    if ( c1_ < 0.0 ) {
-      c1_ = 1.e-4;
-    }
-    if ( c2_ < 0.0 ) {
-      c2_ = 0.9;
-    }
-    if ( c3_ < 0.0 ) {
-      c3_ = 0.9;
-    }
+    c1_ = ((c1_ < 0.0) ? 1.e-4 : c1_);
+    c2_ = ((c2_ < 0.0) ? 0.9   : c2_);
+    c3_ = ((c3_ < 0.0) ? 0.9   : c3_);
     if ( c2_ <= c1_ ) {
       c1_ = 1.e-4;
       c2_ = 0.9;
@@ -318,12 +312,6 @@ public:
 
 }
 
-#include "ROL_IterationScaling.hpp"
-#include "ROL_PathBasedTargetLevel.hpp"
-#include "ROL_BackTracking.hpp"
-#include "ROL_CubicInterp.hpp"
-#include "ROL_Bisection.hpp"
-#include "ROL_GoldenSection.hpp"
-#include "ROL_Brents.hpp"
+#include "ROL_LineSearchFactory.hpp"
 
 #endif

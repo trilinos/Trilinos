@@ -76,7 +76,7 @@ public:
   CauchyPoint( Teuchos::ParameterList &parlist ) 
     : TrustRegion<Real>(parlist), pRed_(0.0), alpha_(-1.0), useCGTCP_(false) {
     // Unravel Parameter List
-    Real TRsafe = parlist.get("Trust-Region Safeguard",100.0);
+    Real TRsafe = parlist.sublist("Step").sublist("Trust Region").get("Safeguard Size",100.0);
     eps_        = TRsafe*ROL_EPSILON;
   }
 
