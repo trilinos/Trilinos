@@ -131,10 +131,12 @@ if __name__ == '__main__':
 
   #print bcolors.OKDARKGREEN + "Extract version number from git repository... " + bcolors.ENDC
   ## create version file
-  #cmd = "rm version.txt"
-  #runCommand(cmd)
+  cmd = "rm version.txt"
+  runCommand(cmd)
   #cmd = "git log --pretty=format:'%h' -n 1 > version.txt"
   #runCommand(cmd)
+  cmd = "echo 'unknown version' > version.txt"
+  runCommand(cmd)
 
   print bcolors.OKDARKGREEN + "Split source files in src folder for inclusion in pdf... " + bcolors.ENDC
   # split cpp file for first example
