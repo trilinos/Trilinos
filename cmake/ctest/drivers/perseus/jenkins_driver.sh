@@ -52,7 +52,6 @@ SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 module load intel/15.0.2/openmpi/1.8.7/cuda/6.5.14
 module load superlu/4.3/intel/15.0.2/base
 
-snapshot_kokkos_into_trilinos master
 $SCRIPT_DIR/../cron_driver.py
 
 snapshot_kokkos_into_trilinos develop
@@ -64,11 +63,13 @@ module unlaod superlu/4.3/intel/15.0.2/base
 module load gcc/4.8.4/openmpi/1.8.7/cuda/6.5.14
 module load superlu/4.3/gcc/4.8.4/base
 
-snapshot_kokkos_into_trilinos master
+cd $WORKSPACE/Trilinos && git reset --hard HEAD && cd -
 $SCRIPT_DIR/../cron_driver.py
 
 snapshot_kokkos_into_trilinos develop
 $SCRIPT_DIR/../cron_driver.py
+
+cd $WORKSPACE/Trilinos && git reset --hard HEAD && cd -
 
 echo
 echo "Ending nightly Trilinos development testing on typhon: `date`"
