@@ -4,6 +4,14 @@ echo
 echo "Starting nightly Trilinos development testing on typhon: `date`"
 echo
 
+# snapshot_kokkos_into_trilinos <KOKKOS-BRANCH>
+snapshot_kokkos_into_trilinos() {
+    cd $WORKSPACE/Trilinos && git reset --hard HEAD && cd -
+    cd $WORKSPACE/kokkos && git reset --hard origin/$1 && cd -
+    $WORKSPACE/kokkos/config/snapshot.py -n $WORKSPACE/kokkos $WORKSPACE/Trilinos/packages
+    export KOKKOS_BRANCH=$1
+}
+
 #
 # TrilinosDriver settings:
 #
@@ -44,16 +52,10 @@ SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 module load intel/15.0.2/openmpi/1.8.7/cuda/6.5.14
 module load superlu/4.3/intel/15.0.2/base
 
-cd $WORKSPACE/kokkos && git reset --hard origin/master && cd -
-$WORKSPACE/kokkos/config/snapshot.py --verbose $WORKSPACE/kokkos $WORKSPACE/Trilinos/packages
-export KOKKOS_BRANCH=master
-
+snapshot_kokkos_into_trilinos master
 $SCRIPT_DIR/../cron_driver.py
 
-cd $WORKSPACE/kokkos && git reset --hard origin/develop && cd -
-$WORKSPACE/kokkos/config/snapshot.py --verbose $WORKSPACE/kokkos $WORKSPACE/Trilinos/packages
-export KOKKOS_BRANCH=develop
-
+snapshot_kokkos_into_trilinos develop
 $SCRIPT_DIR/../cron_driver.py
 
 module unload intel/15.0.2/openmpi/1.8.7/cuda/6.5.14
@@ -62,16 +64,10 @@ module unlaod superlu/4.3/intel/15.0.2/base
 module load gcc/4.8.4/openmpi/1.8.7/cuda/6.5.14
 module load superlu/4.3/gcc/4.8.4/base
 
-cd $WORKSPACE/kokkos && git reset --hard origin/master && cd -
-$WORKSPACE/kokkos/config/snapshot.py --verbose $WORKSPACE/kokkos $WORKSPACE/Trilinos/packages
-export KOKKOS_BRANCH=master
-
+snapshot_kokkos_into_trilinos master
 $SCRIPT_DIR/../cron_driver.py
 
-cd $WORKSPACE/kokkos && git reset --hard origin/develop && cd -
-$WORKSPACE/kokkos/config/snapshot.py --verbose $WORKSPACE/kokkos $WORKSPACE/Trilinos/packages
-export KOKKOS_BRANCH=develop
-
+snapshot_kokkos_into_trilinos develop
 $SCRIPT_DIR/../cron_driver.py
 
 echo
