@@ -902,6 +902,8 @@ template <typename Adapter, typename pnum_t>
   ArrayView<const gno_t> localEdgeIds;
   ArrayView<const lno_t> localOffsets;
 
+  adjsMatrix->apply (v, w); // w:= adjsMatrix * v
+
   ArrayView<input_t> localWgts;
   size_t localNumEdge = graph->getEdgeList(localEdgeIds, localOffsets,
                                            localWgts);
