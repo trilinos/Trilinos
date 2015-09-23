@@ -64,9 +64,9 @@ public:
   Real evaluate(Real input, int deriv) {
     Real val = 0.0;
     switch(deriv) {
-      case 0: val = param_*dist_->intcdf(input/param_); break;
-      case 1: val = dist_->cdf(input/param_);           break;
-      case 2: val = dist_->pdf(input/param_)/param_;    break;
+      case 0: val = param_*dist_->integrateCDF(input/param_);   break;
+      case 1: val = dist_->evaluateCDF(input/param_);           break;
+      case 2: val = dist_->evaluatePDF(input/param_)/param_;    break;
     }
     return val;
   }

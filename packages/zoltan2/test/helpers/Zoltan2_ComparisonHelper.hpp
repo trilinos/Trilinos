@@ -328,7 +328,7 @@ void ComparisonHelper::ComparePartitionSolutions(const ComparisonSource * source
   
   if(!failed)
   {
-    typedef Zoltan2::PartitioningSolution<basic_id_t> partitioning_solution_t;
+//    typedef Zoltan2::PartitioningSolution<basic_id_t> partitioning_solution_t; // BDD unused
     // have some solutions lets compare them
     if(basic_problem_t * problem_a = reinterpret_cast<basic_problem_t *>(sourceA->problem.getRawPtr()))
     {
@@ -417,7 +417,7 @@ void ComparisonHelper::CompareColoringSolutions(const ComparisonSource * sourceA
   if(!failed)
   {
     // have some solutions lets compare them
-    typedef Zoltan2::ColoringProblem<basic_id_t> coloring_problem_t;
+    typedef Zoltan2::ColoringProblem<basic_id_t> coloring_problem_t; //BDD unused
     // have some solutions lets compare them
     if(coloring_problem_t * problem_a = reinterpret_cast<coloring_problem_t *>(sourceA->problem.getRawPtr()))
     {
@@ -540,9 +540,7 @@ void ComparisonHelper::CompareOrderingSolutions(const ComparisonSource * sourceA
 void ComparisonHelper::CompareMetrics(const ParameterList &metricsPlist,
                                       const RCP<const Comm<int> > &comm)
 {
-  
-  typedef std::pair<const string,double> pair_t;
-  
+    
   int rank = comm->getRank();
   
   //get sources for problema nd reference

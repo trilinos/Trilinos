@@ -213,7 +213,7 @@ void run(const UserInputForTests &uinput,
   typedef AdapterForTests::pamgen_adapter_t pamgen_t;
 
   typedef Zoltan2::Problem<base_t> problem_t;
-  typedef Zoltan2::PartitioningProblem<base_t> partioning_problem_t; // base abstract type
+//  typedef Zoltan2::PartitioningProblem<base_t> partioning_problem_t; // base abstract type // BDD unused
   typedef Zoltan2::PartitioningProblem<basic_id_t> basic_problem_t; // basic id problem type
   typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mv problem type
   typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_graph problem type

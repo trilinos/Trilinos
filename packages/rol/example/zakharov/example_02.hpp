@@ -54,6 +54,7 @@
 
 #include "ROL_Algorithm.hpp"
 #include "ROL_LineSearchStep.hpp"
+#include "ROL_StatusTest.hpp"
 #include "ROL_StdVector.hpp"
 
 #include "Teuchos_oblackholestream.hpp"

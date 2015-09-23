@@ -53,11 +53,9 @@
 // ROL_Types contains predefined constants and objects
 #include "ROL_Types.hpp"
 // ROL algorithmic information
-#include "ROL_StatusTest.hpp"
-#include "ROL_BundleStatusTest.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_BundleStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_StatusTestFactory.hpp"
+#include "ROL_StepFactory.hpp"
 // ROL vectors
 #include "ROL_StdVector.hpp"
 #include "ROL_CVaRVector.hpp"
@@ -70,6 +68,7 @@
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StdTeuchosBatchManager.hpp"
 // ROL CVaR definitions
+#include "ROL_DistributionFactory.hpp"
 #include "ROL_PlusFunction.hpp"
 #include "ROL_CVaR.hpp"
 
@@ -656,9 +655,9 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
     // Build ROL algorithm
-    double gtol = parlist->get("Gradient Tolerance",1.e-6);
-    double stol = parlist->get("Step Tolerance",1.e-12);
-    int maxit   = parlist->get("Maximum Number of Iterations",100);
+    parlist->sublist("Status Test").set("Gradient Tolerance",1.e-10);
+    parlist->sublist("Status Test").set("Step Tolerance",1.e-14);
+    parlist->sublist("Status Test").set("Iteration Limit",100);
     Teuchos::RCP<ROL::StatusTest<double> > status;
     Teuchos::RCP<ROL::Step<double> > step;
     Teuchos::RCP<ROL::DefaultAlgorithm<double> > algo;
@@ -730,9 +729,11 @@ int main(int argc, char* argv[]) {
     *outStream << "\nSOLVE SMOOTHED CONDITIONAL VALUE AT RISK WITH TRUST REGION\n";
     // Build CVaR objective function
     double prob = 0.99, coeff = 1.0, gamma = 1.e-2;
-    std::vector<double> data(2,0.0);
-    data[0] = -0.5; data[1] = 0.5;
-    dist = Teuchos::rcp( new ROL::Distribution<double>(ROL::DISTRIBUTION_PARABOLIC,data) );
+    Teuchos::ParameterList distlist;
+    distlist.sublist("SOL").sublist("Distribution").set("Name","Parabolic");
+    distlist.sublist("SOL").sublist("Distribution").sublist("Parabolic").set("Lower Bound",-0.5);
+    distlist.sublist("SOL").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 0.5);
+    dist = ROL::DistributionFactory<double>(distlist);
     pf   = Teuchos::rcp( new ROL::PlusFunction<double>(dist,gamma) );
     rm   = Teuchos::rcp( new ROL::CVaR<double>(prob,coeff,pf) );
     obj  = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
@@ -741,8 +742,8 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > x1p = Teuchos::rcp(&x1,false);
     ROL::CVaRVector<double> x1c(x1v,x1p);
     // Run ROL algorithm
-    status = Teuchos::rcp( new ROL::StatusTest<double>(gtol,stol,maxit) );
-    step   = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
+    status = ROL::StatusTestFactory<double>("Trust Region",*parlist);
+    step   = ROL::StepFactory<double>("Trust Region",*parlist);
     algo   = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,*status,false) );
     x1c.zero();
     clock_t start = clock();
@@ -762,8 +763,8 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > x2p = Teuchos::rcp(&x2,false);
     ROL::CVaRVector<double> x2c(x2v,x2p);
     // Run ROL algorithm
-    status = Teuchos::rcp( new ROL::StatusTest<double>(gtol,stol,maxit) );
-    step   = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
+    status = ROL::StatusTestFactory<double>("Trust Region",*parlist);
+    step   = ROL::StepFactory<double>("Trust Region",*parlist);
     algo   = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,*status,false) );
     x2c.set(x1c);
     start = clock();
@@ -783,8 +784,8 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > x3p = Teuchos::rcp(&x3,false);
     ROL::CVaRVector<double> x3c(x3v,x3p);
     // Run ROL algorithm
-    status = Teuchos::rcp( new ROL::StatusTest<double>(gtol,stol,maxit) );
-    step   = Teuchos::rcp( new ROL::TrustRegionStep<double>(*parlist) );
+    status = ROL::StatusTestFactory<double>("Trust Region",*parlist);
+    step   = ROL::StepFactory<double>("Trust Region",*parlist);
     algo   = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,*status,false) );
     x3c.set(x2c);
     start = clock();
@@ -795,7 +796,9 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     *outStream << "\nSOLVE NONSMOOTH CVAR PROBLEM WITH BUNDLE TRUST REGION\n";
     // Build CVaR objective function
-    dist = Teuchos::rcp( new ROL::Distribution<double>(ROL::DISTRIBUTION_DIRAC) );
+    distlist.sublist("SOL").sublist("Distribution").set("Name","Dirac");
+    distlist.sublist("SOL").sublist("Distribution").sublist("Dirac").set("Location",0.);
+    dist = ROL::DistributionFactory<double>(distlist);
     pf   = Teuchos::rcp( new ROL::PlusFunction<double>(dist,1.0) );
     rm   = Teuchos::rcp( new ROL::CVaR<double>(prob,coeff,pf) );
     obj  = Teuchos::rcp( new ROL::RiskAverseObjective<double>(pObj,rm,sampler,storage) );
@@ -804,9 +807,10 @@ int main(int argc, char* argv[]) {
     Teuchos::RCP<ROL::Vector<double> > zp = Teuchos::rcp(&z,false);
     ROL::CVaRVector<double> zc(zv,zp);
     // Run ROL algorithm
-    status = Teuchos::rcp( new ROL::BundleStatusTest<double>(gtol,100*maxit) );
-    parlist->set("Bundle Step: Epsilon Solution Tolerance",gtol);
-    step   = Teuchos::rcp( new ROL::BundleStep<double>(*parlist) );
+    parlist->sublist("Status Test").set("Iteration Limit",10000);
+    parlist->sublist("Step").sublist("Bundle").set("Epsilon Solution Tolerance",1.e-8);
+    status = ROL::StatusTestFactory<double>("Bundle",*parlist);
+    step   = ROL::StepFactory<double>("Bundle",*parlist);
     algo   = Teuchos::rcp( new ROL::DefaultAlgorithm<double>(*step,*status,false) );
     zc.set(x3c);
     start = clock();

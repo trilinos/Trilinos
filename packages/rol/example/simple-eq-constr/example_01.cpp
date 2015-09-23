@@ -47,9 +47,10 @@
 */
 
 #include "ROL_SimpleEqConstrained.hpp"
-#include "ROL_CompositeStepSQP.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_CompositeStepSQP.hpp"
+#include "ROL_StatusTestSQP.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 

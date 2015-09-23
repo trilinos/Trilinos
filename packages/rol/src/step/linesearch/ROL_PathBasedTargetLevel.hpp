@@ -72,8 +72,8 @@ public:
   PathBasedTargetLevel( Teuchos::ParameterList &parlist ) 
     : LineSearch<Real>(parlist), min_value_(ROL::ROL_OVERFLOW), rec_value_(ROL::ROL_OVERFLOW), 
       target_(0.0), sigma_(0.0) {
-    delta_ = parlist.get("Path-Based Target Level: Target Relaxation Parameter",0.1);
-    bound_ = parlist.get("Path-Based Target Level: Upper Bound on Path Length",1.0);
+    delta_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").sublist("Path-Based Target Level").get("Target Relaxation Parameter",0.1);
+    bound_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").sublist("Path-Based Target Level").get("Upper Bound on Path Length",1.0);
   }
 
   void initialize(const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g,
