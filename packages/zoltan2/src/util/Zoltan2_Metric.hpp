@@ -826,14 +826,13 @@ template <typename Adapter, typename pnum_t>
   scalar_t *cut = localBuf;              // # of cuts
 
   ArrayView<const gno_t> *Ids;
-  ArrayView<input_t> *xyz, *vwgts;
-  size_t nv = graph->getVertexList(Ids, xyz, vwgts);
+  ArrayView<input_t> *vwgts;
+  size_t nv = graph->getVertexList(Ids, vwgts);
 
   ArrayView<const gno_t> *edgeIds;
-  ArrayView<const int> *procIds;
   ArrayView<const lno_t> *offsets;
   ArrayView<input_t> *wgts;
-  size_t numLocalEdges = getEdgeList(edgeIds, procIds, offsets, wgts);
+  size_t numLocalEdges = getEdgeList(edgeIds, offsets, wgts);
   /**************************************************************************/
   /*************************** BUILD MAP FOR ADJS ***************************/
   /**************************************************************************/
@@ -900,9 +899,12 @@ template <typename Adapter, typename pnum_t>
 
   // Create vector to store global part numbers
   RCP<vector_type> w = rcp (new vector_type (vertexMapG));
+  ArrayView<const gno_t> localEdgeIds;
+  ArrayView<const lno_t> localOffsets;
 
   adjsMatrix->apply (v, w); // w:= adjsMatrix * v
 
+<<<<<<< HEAD
   /*ArrayView<const lno_t> localEdgeIds, *localOffsets;
   ArrayView<input_t> localWgts;
   size_t localNumEdge = graph->getLocalEdgeList(localEdgeIds, localOffsets,
@@ -913,6 +915,17 @@ template <typename Adapter, typename pnum_t>
       for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
 	if (part[i] != w[edgeIds[j]])
 	  cut[part[i]]++;
+=======
+  ArrayView<input_t> localWgts;
+  size_t localNumEdge = graph->getEdgeList(localEdgeIds, localOffsets,
+                                           localWgts);
+
+  if (!ewgtDim) {
+    for (lno_t i=0; i < localNumObj; i++)
+      for (lno_t j=localOffsets[i]; j < localOffsets[i+1]; j++)
+        if (part[i] != part[localEdgeIds[j]])
+          cut[part[i]]++;
+>>>>>>> 617495235c9e6073504dd28c22ae6b783f38cad1
 
   // This code assumes the solution has the part ordered the
   // same way as the user input.  (Bug 5891 is resolved.)
@@ -920,9 +933,15 @@ template <typename Adapter, typename pnum_t>
     scalar_t *wgt = localBuf; // weight 1
     for (int edim = 0; edim < ewgtDim; edim++){
       for (lno_t i=0; i < localNumObj; i++)
+<<<<<<< HEAD
 	for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
 	  if (part[i] != w[edgeIds[j]])
 	    wgt[part[i]] += wgts[j];
+=======
+        for (lno_t j=localOffsets[i]; j < localOffsets[i+1]; j++)
+          if (part[i] != part[localEdgeIds[j]])
+            wgt[part[i]] += localWgts[j];
+>>>>>>> 617495235c9e6073504dd28c22ae6b783f38cad1
       wgt += nparts;         // individual weights
     }
   }

@@ -273,7 +273,7 @@ void CoordinateModel<Adapter>::sharedConstructor(
     const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
 {
-  bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+  bool consecutiveIds = flags.test(GENERATE_CONSECUTIVE_IDS);
 
   size_t nLocalIds = ia->getLocalNumIDs();
 
@@ -375,7 +375,7 @@ void CoordinateModel<Adapter>::meshConstructor(
     const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
 {
-  bool consecutiveIds = flags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+  bool consecutiveIds = flags.test(GENERATE_CONSECUTIVE_IDS);
 
   size_t nLocalIds = ia->getLocalNumIDs();
 

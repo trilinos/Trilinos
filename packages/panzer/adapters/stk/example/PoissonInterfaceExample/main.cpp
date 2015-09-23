@@ -128,7 +128,7 @@ std::string strint (const std::string& str, const int i) {
   return ss.str();
 }
 
-void solve_Ax_eq_b (Epetra_CrsMatrix& A, Epetra_Vector& b, Epetra_Vector& x, const double rtol)
+bool solve_Ax_eq_b (Epetra_CrsMatrix& A, Epetra_Vector& b, Epetra_Vector& x, const double rtol)
 {
   // Setup the linear solve: notice A is used directly 
   Epetra_LinearProblem problem(&A, &x, &b);
@@ -142,7 +142,9 @@ void solve_Ax_eq_b (Epetra_CrsMatrix& A, Epetra_Vector& b, Epetra_Vector& x, con
   solver.SetAztecOption(AZ_precond,AZ_Jacobi);
 
   // solve the linear system
-  solver.Iterate(1000, rtol);
+  const int nits = 1000;
+  solver.Iterate(nits, rtol);
+  return solver.NumIters() < nits;
 }
 
 void assembleAndSolve (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
@@ -151,6 +153,10 @@ void assembleAndSolve (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& a
                        Teuchos::RCP<panzer::LinearObjContainer>& ghost_container,
                        const ProblemOptions& po)
 {
+  Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+  out.setOutputToRootOnly(0);
+  out.setShowProcRank(true);
+
   ghost_container = linObjFactory->buildGhostedLinearObjContainer();
   const Teuchos::RCP<panzer::LinearObjContainer> container = linObjFactory->buildLinearObjContainer();
   // Convert generic linear object container to epetra container.
@@ -163,7 +169,7 @@ void assembleAndSolve (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& a
   Teuchos::RCP<Epetra_Vector> x, dx;
   Teuchos::RCP<Epetra_CrsMatrix> A;
   // Newton iteration.
-  for (int it = 0; it < 500; ++it) {
+  for (int it = 0; it < 10; ++it) {
     linObjFactory->initializeContainer(panzer::LinearObjContainer::X |
                                        panzer::LinearObjContainer::F |
                                        panzer::LinearObjContainer::Mat, *container);
@@ -192,10 +198,11 @@ void assembleAndSolve (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& a
     if (it == 0) bnorm = rnorm;
     dx->Norm2(&dxnorm);
     const bool done = rnorm <= po.rtol*bnorm;
-    printf("it %3d rnorm %1.3e dxnorm %1.3e\n", it, rnorm, dxnorm);
+    out << "it " << it << " norm(r) " << rnorm << " norm(dx) " << dxnorm << "\n";
     if (done) break;
 
-    solve_Ax_eq_b(*A, *ep_container->get_f(), *dx, 1e-2*po.rtol);
+    if ( ! solve_Ax_eq_b(*A, *ep_container->get_f(), *dx, 1e-2*po.rtol))
+      out << "  Linear solver did not converge; continuing outer iteration.\n";
 
     x->Update(-1, *dx, 1);
   }
@@ -234,21 +241,25 @@ testJacobian (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
                                          panzer::LinearObjContainer::Mat, *con);
       ghost_con->initialize();
       con->initialize();
+      const Epetra_Map& row_map = ep_con->get_A()->RowMap(), col_map = ep_con->get_A()->ColMap();
       if (i == -1) {
         if (Teuchos::nonnull(x0))
           x = rcp(new Epetra_Vector(*x0));
         else
           x = rcp(new Epetra_Vector(ep_con->get_x()->Map()));
-        t.m = t.n = x->MyLength();
+        t.m = t.n = x->GlobalLength();
       }
       // For a linear problem, could make delta 1 to remove cancellation
       // error. But I want to look at a nonlinear Robin condition, so do a true
       // finite difference.
       const double delta = 1e-6;
-      double x_prev;
-      if (i >= 0) {
-        x_prev = (*x)[i];
-        (*x)[i] += delta;
+      const bool i_mine = row_map.MyGID(i);
+      double x_prev = 0;
+      int i_lid = 0;
+      if (i_mine && i >= 0) {
+        i_lid = col_map.LID(i);
+        x_prev = (*x)[i_lid];
+        (*x)[i_lid] += delta;
       }
       ep_con->set_x(x);
       panzer::AssemblyEngineInArgs input(ghost_con, ep_con);
@@ -258,12 +269,12 @@ testJacobian (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
       if (i == -1)
         f0 = ep_con->get_f();
       else {
-        (*x)[i] = x_prev;
         const Epetra_Vector& f = *ep_con->get_f();
+        if (i_mine) (*x)[i_lid] = x_prev;
         for (int k = 0; k < f.MyLength(); ++k) {
           const double d = f[k] - (*f0)[k];
           if (d == 0) continue;
-          t.i.push_back(k);
+          t.i.push_back(row_map.GID(k));
           t.j.push_back(i);
           t.v.push_back(d/delta);
         }
@@ -290,9 +301,10 @@ testJacobian (panzer::AssemblyEngine_TemplateManager<panzer::Traits>& ae_tm,
 
   RCP<Epetra_CrsMatrix> A_fd;
   {
-    A_fd = rcp(new Epetra_CrsMatrix(Copy, ep_con->get_A()->RowMap(), ep_con->get_A()->ColMap(), 40));
+    const Epetra_Map& row_map = ep_con->get_A()->RowMap(), col_map = ep_con->get_A()->ColMap();
+    A_fd = rcp(new Epetra_CrsMatrix(Copy, row_map, 40));
     for (int i = 0; i < static_cast<int>(t.v.size()); ++i)
-      A_fd->InsertMyValues(t.i[i], 1, &t.v[i], &t.j[i]);
+      A_fd->InsertGlobalValues(t.i[i], 1, &t.v[i], &t.j[i]);
     A_fd->FillComplete();
   }
   EpetraExt::RowMatrixToMatrixMarketFile("A_fd.mm", *A_fd);
@@ -426,7 +438,6 @@ int main (int argc,char * argv[])
                                false,
                                physicsBlocks);
   }
-
 
   // finish building mesh, set required field variables and mesh bulk data
   ////////////////////////////////////////////////////////////////////////
