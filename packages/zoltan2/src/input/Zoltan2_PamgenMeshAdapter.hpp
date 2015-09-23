@@ -249,11 +249,11 @@ public:
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
       offsets = elemOffsets_;
-      adjacencyIds = (zgid_t *)elemToNode_;
+      adjacencyIds = (gno_t *)elemToNode_;
     } else if ((MESH_REGION==target && MESH_VERTEX==source && 3==dimension_) ||
 	       (MESH_FACE==target && MESH_VERTEX==source && 2==dimension_)) {
       offsets = nodeOffsets_;
-      adjacencyIds = (zgid_t *)nodeToElem_;
+      adjacencyIds = (gno_t *)nodeToElem_;
     } else if (MESH_REGION == source && 2 == dimension_) {
       offsets = NULL;
       adjacencyIds = NULL;
@@ -326,7 +326,7 @@ private:
   int *nodeToElem_, telct_, *nodeOffsets_;
   double *coords_, *Acoords_;
   lno_t *eStart_, *nStart_;
-  zgid_t *eAdj_, *nAdj_;
+  gno_t *eAdj_, *nAdj_;
   size_t nEadj_, nNadj_;
   EntityTopologyType* nodeTopology;
   EntityTopologyType* elemTopology;
@@ -365,7 +365,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   error += im_ex_get_coord(exoid, coords_, coords_ + num_nodes_,
 			   coords_ + 2 * num_nodes_);
   
-  element_num_map_ = new zgid_t [num_elem_];
+  element_num_map_ = new gno_t [num_elem_];
   std::vector<int> tmp;
   tmp.resize(num_elem_);
   
@@ -374,18 +374,18 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   // This may be a case of calling the wrong method
   error += im_ex_get_elem_num_map(exoid, &tmp[0]);
   for(size_t i = 0; i < tmp.size(); i++)
-    element_num_map_[i] = static_cast<zgid_t>(tmp[i]);
+    element_num_map_[i] = static_cast<gno_t>(tmp[i]);
     
   tmp.clear();
   tmp.resize(num_nodes_);
-  node_num_map_ = new zgid_t [num_nodes_];
+  node_num_map_ = new gno_t [num_nodes_];
   
   // BDD cast to int did not always work!
   // error += im_ex_get_node_num_map(exoid, (int *)node_num_map_);
   // This may be a case of calling the wrong method
   error += im_ex_get_node_num_map(exoid, &tmp[0]);
   for(size_t i = 0; i < tmp.size(); i++)
-    node_num_map_[i] = static_cast<zgid_t>(tmp[i]);
+    node_num_map_[i] = static_cast<gno_t>(tmp[i]);
   
   nodeTopology = new enum EntityTopologyType[num_nodes_];
   for (int i=0;i<num_nodes_;i++)
@@ -579,7 +579,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   nodeOffsets_[num_nodes_] = telct_;
   nStart_[num_nodes_] = nNadj_;
 
-  nAdj_ = new zgid_t [nNadj_];
+  nAdj_ = new gno_t [nNadj_];
 
   for (size_t i=0; i < nNadj_; i++) {
     nAdj_[i] = nAdj[i];
@@ -848,7 +848,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   reconnect = NULL;
   eStart_[num_elem_] = nEadj_;
 
-  eAdj_ = new zgid_t [nEadj_];
+  eAdj_ = new gno_t [nEadj_];
 
   for (size_t i=0; i < nEadj_; i++) {
     eAdj_[i] = eAdj[i];

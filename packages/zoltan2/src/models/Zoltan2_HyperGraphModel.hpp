@@ -95,7 +95,6 @@ public:
   typedef typename Adapter::scalar_t    scalar_t;
   typedef typename Adapter::gno_t       gno_t;
   typedef typename Adapter::lno_t       lno_t;
-  typedef typename Adapter::zgid_t      zgid_t;
   typedef typename Adapter::node_t      node_t;
   typedef typename Adapter::user_t      user_t;
   typedef typename Adapter::userCoord_t userCoord_t;
@@ -409,7 +408,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
   Zoltan2::MeshEntityType adjacencyEType = ia->getAdjacencyEntityType();
 
   // Get the IDs of the primary entity type; these are hypergraph vertices
-  zgid_t const *vtxIds=NULL;
+  gno_t const *vtxIds=NULL;
   try {
     numLocalVertices_ = ia->getLocalNumOf(primaryEType);
     ia->getIDsViewOf(primaryEType, vtxIds);
@@ -451,7 +450,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     // Traditional: Get the IDs of the adjacency entity type; 
     //              these are hypergraph hyperedges
   
-    zgid_t const *edgeIds=NULL;
+    gno_t const *edgeIds=NULL;
     try {
       numLocalEdges_ = ia->getLocalNumOf(adjacencyEType);
       ia->getIDsViewOf(adjacencyEType, edgeIds);
@@ -480,7 +479,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
   }
   if (model_type=="traditional") {
     //Get the pins from using the traditional method of first adjacency
-    zgid_t const *nborIds=NULL;
+    gno_t const *nborIds=NULL;
     lno_t const *offsets=NULL;
     
     try {
@@ -527,7 +526,7 @@ HyperGraphModel<Adapter>::HyperGraphModel(
     }
     else {
       const lno_t* offsets;
-      const zgid_t* adjacencyIds;
+      const gno_t* adjacencyIds;
       ia->get2ndAdjsView(primaryPinType,adjacencyPinType,offsets,adjacencyIds);
       if (unique) {
         Tpetra::global_size_t numGlobalCoords = 

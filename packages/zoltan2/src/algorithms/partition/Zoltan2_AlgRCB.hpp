@@ -325,7 +325,7 @@ void AlgRCB<Adapter>::partition(
 
   int multiVectorDim = coordDim + nWeightsPerCoord;
 
-  gno_t localMinGno = std::numeric_limits<gno_t>.max();
+  gno_t localMinGno = std::numeric_limits<gno_t>::max();
   gno_t minGno;
   for (size_t i=0; i < numLocalCoords; i++) 
     if (gnos[i] < localMinGno) localMinGno = gnos[i];

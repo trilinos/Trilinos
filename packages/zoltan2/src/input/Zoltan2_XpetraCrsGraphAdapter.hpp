@@ -430,7 +430,7 @@ template <typename User, typename UserCoord>
 {
   // Get an import list (rows to be received)
   size_t numNewVtx;
-  ArrayRCP<zgid_t> importList;
+  ArrayRCP<gno_t> importList;
   try{
     numNewVtx = Zoltan2::getImportList<Adapter,
                                        XpetraCrsGraphAdapter<User,UserCoord> > 

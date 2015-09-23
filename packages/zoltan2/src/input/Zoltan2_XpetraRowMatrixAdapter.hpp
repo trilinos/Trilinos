@@ -376,7 +376,7 @@ template <typename User, typename UserCoord>
 { 
   // Get an import list (rows to be received)
   size_t numNewRows;
-  ArrayRCP<zgid_t> importList;
+  ArrayRCP<gno_t> importList;
   try{
     numNewRows = Zoltan2::getImportList<Adapter,
                                         XpetraRowMatrixAdapter<User,UserCoord> >
