@@ -18,9 +18,10 @@ typedef int gno_t;
 typedef Tpetra::Map<lno_t, gno_t> map_t;
 
 /////////////////////////////////////////////////////////////////////
-void searchIt(const map_t &myMap, const std::string &myName)
+int searchIt(const map_t &myMap, const std::string &myName)
 {
   int me = myMap.getComm()->getRank();
+  int nFail = 0;
 
   // Print the map elements
   std::cout << me << " " << myName << " MINE: ";
@@ -42,26 +43,32 @@ void searchIt(const map_t &myMap, const std::string &myName)
   myMap.getRemoteIndexList(searchGids(),
                            searchRemoteRanks(), searchRemoteLids());
 
-  for (size_t i = 0; i < nSearch; i++)
+  for (size_t i = 0; i < nSearch; i++) {
     std::cout << me << " " << myName 
                     << " NoDuplicates:  GID " << searchGids[i]
                     << " RANK " << searchRemoteRanks[i] 
                     << " LID " << searchRemoteLids[i]
                     << (searchRemoteRanks[i] == -1 ? "  BAD!" : " ")
                     << std::endl;
+    if (searchRemoteRanks[i] == -1) nFail++;
+  }
 
   // Search with duplicates
   for (size_t i = 0; i < nSearch; i++) searchGids[i] = i/2;
   myMap.getRemoteIndexList(searchGids(),
                            searchRemoteRanks(), searchRemoteLids());
 
-  for (size_t i = 0; i < nSearch; i++)
+  for (size_t i = 0; i < nSearch; i++) {
     std::cout << me << " " << myName 
                     << " WithDuplicates:  GID " << searchGids[i]
                     << " RANK " << searchRemoteRanks[i] 
                     << " LID " << searchRemoteLids[i]
                     << (searchRemoteRanks[i] == -1 ? "  BAD!" : " ")
                     << std::endl;
+    if (searchRemoteRanks[i] == -1) nFail++;
+  }
+
+  return nFail;
 }
 
 
@@ -75,13 +82,14 @@ int main(int narg, char **arg)
   comm = Teuchos::DefaultComm<int>::getComm();
   int me = comm->getRank();
   int np = comm->getSize();
+  int nFail = 0;
 
   gno_t nGlobal = 24;   // Global number of Gids
 
   // Create and search Default Tpetra Map
   const map_t defaultMap(nGlobal, 0, comm);
 
-  searchIt(defaultMap, "defaultMap");
+  nFail += searchIt(defaultMap, "defaultMap");
 
   // Create and seach customized map
   // Identify locally owned GIDs:  same as default map (if nGlobal%np == 0)
@@ -95,7 +103,10 @@ int main(int narg, char **arg)
   gno_t dummy = Teuchos::OrdinalTraits<gno_t>::invalid();
   const map_t customMap(dummy, myGids(), 0, comm);
 
-  searchIt(customMap, "customMap");
+  nFail += searchIt(customMap, "customMap");
+
+  if (nFail) std::cout << "FAIL" << std::endl;
+  else std::cout << "PASS" << std::endl;
 
   return 0;
 }
