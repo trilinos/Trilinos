@@ -485,16 +485,24 @@ For this tutorial again we can use the easy-to-use user interface. Run the \text
 Note that the default values from the file \texttt{xml/s2a.xml} do not lead to a convergent multigrid preconditioner.
 \begin{center}\includegraphics[width=10cm]{pics/tut1_13.png} \end{center}
 
-Choose the parameters from the \texttt{n1\_easy.xml} file instead. If you run the example you might find that the GMRES method did not converge within 50 iterations.
-
 The convergence of the used unsmoothed transfer operators (\texttt{multigrid algorithm = unsmoothed}) is not optimal. In case of symmetric problems one can reduce the number of iterations using smoothed aggregation algebraic multigrid methods. In context of non-symmetric problems, especially when arising from problems with (highly) convective phenomena, one should use a Petrov-Galerkin approach for smoothing the prolongation and restriction operators more carefully.
 
+In \muelu one can choose a Petrov-Galerkin approach for the transfer operators by setting \texttt{multigrid algorithm = pg}. Furthermore, one has to state that the system is non-symmetric by setting \texttt{problem: symmetric = false}. In addition you have to set \texttt{transpose: use implicit = false} to make sure that the prolongation and restriction are built separately. This is highly important for non-symmetric problems since $R=P^T$ is not a good choice for non-symmetric problems (see, e.g., \cite{sala2008,wiesner2013}).
 
-\begin{exercise}
-Use \texttt{multigrid algorithm = pg} and compare the results with \texttt{multigrid algorithm = unsmoothed}. What is the difference in the number of GMRES iterations? What is changing in the multigrid setup?
+The role of the \texttt{transpose: use implicit} and the \texttt{problem: symmetric} paramters are the following:
+\begin{description}
+\item[transpose: use implicit] Use $R=P^T$ for the restriction operator and do not explicitly build the operator $R$. This can save a lot of memory and might be very performant when building the multigrid Galerkin product. However, for non-symmetric problems this is not working and has to be turned off.
+\item[problem: symmetric] If \texttt{true}, use $R=P^T$ as restriction operator. Depending on the \texttt{transpose: use implicit} parameter the restriction operator is explicitly built. If \texttt{false} a Petrov-Galerkin approach as described in \cite{sala2008} is used to build the restriction operator separately. Note, that for the Galerkin approach it is necessary to build the restriction operator explicitly and store it.
+\end{description}
+
+\begin{mycomment}
+One can also use unsmoothed transfer operators (\texttt{multigrid algorithm = unsmoothed}) for non-symmetric problems. These might not give optimal results with respect to the iteration count, but they can be used with \texttt{transpose: use implicit = true} for non-symmetric problems, too, without disturbing the convergence. This way one can save a significant amount of memory compared to the smoothed aggregation method with Petrov-Galerkin for non-symmetric problems.
+\end{mycomment}
+
+\begin{exercise} Choose the parameters from the \texttt{n1\_easy.xml} file. If you run the example you might find that the GMRES method did not converge within 50 iterations. Use \texttt{multigrid algorithm = pg} and compare the results with \texttt{multigrid algorithm = unsmoothed}. Do not forget to set the other parameters correctly for Petrov-Galerkin methods as described before. What is the difference in the number of GMRES iterations? What is changing in the multigrid setup?
 \end{exercise}
 \begin{exercise}
-For slightly non-symmetric problems the \texttt{sa} method often performs satisfactorily. Change the verbosity to high (\texttt{verbosity = high}) and compare the results of the \texttt{multigrid algorithm = pg} option with the \texttt{multigrid algorithm = sa} option. Try different values between 0 and 1.5 for the damping parameter within the smoothed aggregation method (i.e., try values 0.0, 0.5, 1.0, 1.33 and 1.5 for \texttt{sa: damping factor}). What do you observe?
+For slightly non-symmetric problems the \texttt{sa} method often performs satisfactorily. Change the verbosity to high (\texttt{verbosity = high}) and compare the results of the \texttt{multigrid algorithm = pg} option with the \texttt{multigrid algorithm = sa} option. Check the role of the \texttt{transpose: use implicit} parameter. What is changed by the \texttt{problem: symmetric} parameter? Try different values between 0 and 1.5 for the damping parameter within the smoothed aggregation method (i.e., try values 0.0, 0.5, 1.0, 1.33 and 1.5 for \texttt{sa: damping factor}). What do you observe?
 \end{exercise}
 
 \chapter{Useful tools for analysis}
@@ -669,6 +677,7 @@ Change to a direct solver on the coarsest level. You can do this by using \textt
 \end{exercise}
 
 \section{Level smoothers}
+\label{sec:advLevelSmoothers}
 Next, we give some building blocks for different types of level smoothers that you can use. Note that all these xml blocks can be put into the \textit{Factories} block of the advanced \muelu XML file format. Then you can use them by adding the corresponding link into the \textit{Hierarchy} block using the name of the parameter block.
 
 \begin{itemize}
@@ -1413,7 +1422,7 @@ Assuming that you have a 3D problem which is based on an extruded 2D mesh, semi-
 The semi-coarsening is provided by the \texttt{SemiCoarsenPFactory} for generating the semi-coarsening transfer operators in combination with the \texttt{LineDetectionFactory} which performs the line detection, i.e. it searchs for the vertical node lines along the extrusion axis of the 2D mesh.
 Once all mesh layers are reduced to one by the \texttt{SemiCoarsenPFactory} we switch to the aggregation-based standard coarsening process. There is a \texttt{TogglePFactory} which allows to switch back and forth between two different transfer operator strategies (such as semi-coarsening and standard aggregation-based coarsening). In principle, any combination of two different transfer operator strategies is allowed. However, the current implementation only contains decision criteria to switch between semi-coarsening and aggregation-based types of coarsening.
 
-Figure \ref{fig:rebalancedtoggledesign} shows a typical factory layout for the combination of semi-coarsening with a standard (non-smoothed) aggregation-based coarsening with repartitioning enabled. First, one can see the \texttt{TogglePFactor} which has knowledge about the two different transfer operator branches and makes a decision which transfer operator is used and provided to the restriction operator factory and the \texttt{RAPFactory}. Depending on the line detection algorithm in \texttt{LineDetectionFactory} one might also need some information about the fine level mesh (such as the fine level coordinates). The user only has to provide the mesh on the finest level. On the coarser levels the \texttt{LineDetectionFactory} uses a standard ordering of the degrees of freedom which corresponds to a vertical node ordering.
+Figure \ref{fig:rebalancedtoggledesign} shows a typical factory layout for the combination of semi-coarsening with a standard (non-smoothed) aggregation-based coarsening with repartitioning enabled. First, one can see the \texttt{TogglePFactory} which has knowledge about the two different transfer operator branches and makes a decision which transfer operator is used and provided to the restriction operator factory and the \texttt{RAPFactory}. Depending on the line detection algorithm in \texttt{LineDetectionFactory} one might also need some information about the fine level mesh (such as the fine level coordinates). The user only has to provide the mesh on the finest level. On the coarser levels the \texttt{LineDetectionFactory} uses a standard ordering of the degrees of freedom which corresponds to a vertical node ordering.
 
 \begin{figure}
 \begin{center}
@@ -1573,7 +1582,11 @@ Note, that the \texttt{LineDetectionFactory} algorithm expects all nodes of a ve
 The following listing shows exemplary the content of the xml file to set up a factory hierarchy similar to the one shown in Figure \ref{fig:rebalancedtogglerebalancingdesign}.
 
 In the \verb|Factories| section, first the \verb|SemiCoarsenPFactory| and the line detection algorithm are defined representing the left transfer operator branch. Next, the smoothed aggregation coarsening branch is defined in Part II together with an instance of the \verb|TransferCoordinatesTransferFactory| for calculating the corresponding coarse coordinates.
-In Part III the \verb|TogglePFactory| is defined. It contains a \verb|TransferFactories| sublist where all different coarsening branches (i.e., the semi-coarsening and aggregation-based coarsening) are defined. The corresponding prolongation operators are listed using the variable name \verb|P| with a number between 1 and 9. In addition to the prolongation operator factories one has also to declare the factories providing the coarse level null space. In case of semi-coarsening this is the \verb|SemiCoarsenPFactory| and for the aggregation-based coarsening this is the \verb|TentativePFactory|. These factories are declared for generating the \verb|Nullspace| variable with a number between 1 and 9 corresponding to the associated transfer operator branch.
+In Part III the \verb|TogglePFactory| is defined. It contains a \verb|TransferFactories| sublist where all different coarsening branches (i.e., the semi-coarsening and aggregation-based coarsening) are defined. The corresponding prolongation operators are listed using the variable name \verb|P| with a number between 1 and 9. In addition to the prolongation operator factories one has also to declare the factories providing the coarse level null space and the \textit{tentative} prolongation operator. In case of semi-coarsening this is the \verb|SemiCoarsenPFactory| and for the aggregation-based coarsening this is the \verb|TentativePFactory|. These factories are declared for generating the \verb|Nullspace| variable with a number between 1 and 9 corresponding to the associated transfer operator branch. Similar for the \textit{tentative} prolongation operators denoted by the variable \verb|Ptent|.
+
+\begin{mycomment}
+\verb|SemiCoarsenPFactory| provides this information for compatibility reasons even though there is no tentative prolongation operator for the geometrically generated \verb|SemiCoarsenPFactory| operator. But the \verb|TogglePFactory| is designed to be more general and allows for combining different kinds of smoothed prolongation operators. These need information about the non-smoothed transfer operators in the variable \verb|Ptent|.
+\end{mycomment}
 
 Similarly, a \verb|ToggleCoordinatesTransferFactory| is declared with an internal list of all factories providing the coarse level coordinates. This is the previously defined \verb|CoordinatesTransferFactory| for the standard aggregation-based coarsening branch and the \verb|SemiCoarsenPFactory| for the semi-coarsening branch.
 
@@ -1634,6 +1647,8 @@ Finally, it is important to declare all necessary main factories in the \verb|Hi
       <ParameterList name="TransferFactories">
          <Parameter name="P1"                type="string" value="mySemiCoarsenPFact1"/>
          <Parameter name="P2"                type="string" value="mySaPFact2"/>
+         <Parameter name="Ptent1"            type="string" value="mySemiCoarsenPFact1"/>
+         <Parameter name="Ptent2"            type="string" value="myTentativePFact2"/>
          <Parameter name="Nullspace1"        type="string" value="mySemiCoarsenPFact1"/>
          <Parameter name="Nullspace2"        type="string" value="myTentativePFact2"/>
       </ParameterList>
@@ -1720,8 +1735,42 @@ Finally, it is important to declare all necessary main factories in the \verb|Hi
 \end{lstlisting}
 
 \section{Line-smoothing}
+\subsection{General idea}
+Semi-coarsening should be combined with line-smoothing as the complementary smoothing operation. Whereas semi-coarsening coarsens, e.g., along the z-axis trying to produce a 2D representation of a 3D problem, the line-smoothing operates orthogonal to the coarsening and smoothes in the x- and y-direction and interprets all vertical z-layers technically as nodes in a pseudo 2D problem.
 
+\subsection{Usage}
 
+The following listing shows how to choose a Jacobi line smoother. The reader might compare the xml code snippets with Section \ref{sec:advLevelSmoothers} for a detailed description of the different smoothers and parameters.
+
+\begin{lstlisting}
+<ParameterList name="MueLu">
+  <ParameterList name="Factories">
+  <ParameterList name="mySmoother1">
+    <Parameter name="factory"   type="string" value="TrilinosSmoother"/>
+    <Parameter name="type"      type="string" value="LINESMOOTHING_BANDEDRELAXATION"/>
+    <Parameter name="smoother: pre or post"        type="string" value="pre"/>
+    <ParameterList name="ParameterList">
+      <Parameter name="relaxation: type"           type="string" value="Jacobi"/>
+      <Parameter name="relaxation: sweeps"         type="int"    value="2"/>
+      <Parameter name="relaxation: damping factor" type="double" value="0.3"/>
+    </ParameterList>
+  </ParameterList>
+  <ParameterList name="Hierarchy">
+    <ParameterList name="All">
+      <Parameter name="Smoother"    type="string"   value="mySmoother1"/>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+\end{lstlisting}
+
+The parameters are standard except of \verb|type|. The standard choice would be \verb|RELAXATION| for relaxation based smoothers. To use line-smoothing instead one has the following options:
+
+\begin{description}
+\item [LINESMOOTHING\_BANDEDRELAXATION] Use banded containers to store the local block associated with one vertical line. This is the recommended variant as it saves memory and is usually faster.
+\item [LINESMOOTHING\_BLOCKEDRELAXATION] Use a dense matrix container to store the local block associated with one vertical line. This is the safe fallback variant. Use the \verb|LINESMOOTHING\_BANDEDRELAXATION| variant instead.
+\end{description}
+
+All the other parameters in the parameter sublist correspond to the usual parameters for relaxation based smoothers such as Jacobi, Gauss-Seidel or Symmetric Gauss-Seidel methods. Refer to Section \ref{sec:advLevelSmoothers} or the \muelu user guide \cite{Mue} for an overview of all available parameters.
 
 \chapter{Useful commands and debugging}
 
