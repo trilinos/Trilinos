@@ -47,14 +47,10 @@
   
   <ParameterList name="Problem 1">
     <Parameter name="kind" type="string" value="partitioning"/>
-    
-    <!--<ParameterList name="InputAdapterParameters">
-      <Parameter name="data type" type="string" value="coordinates"/>
-      <Parameter name="input adapter" type="string" value="BasicVector"/>
-    </ParameterList>-->
-
+  
     <ParameterList name="InputAdapterParameters">
-      <Parameter name="input adapter" type="string" value="PamgenMesh"/>
+      <Parameter name="data type" type="string" value="xpetra_crs_graph"/>
+      <Parameter name="input adapter" type="string" value="XpetraCrsGraph"/>
     </ParameterList>
     
     <ParameterList name="Zoltan2Parameters">
@@ -71,29 +67,30 @@
     </ParameterList>
     
   </ParameterList>
-  
-  <ParameterList name="Problem 2">
-    <Parameter name="kind" type="string" value="partitioning"/>
-    
-    <ParameterList name="InputAdapterParameters">
-      <Parameter name="data type" type="string" value="tpetra_crs_matrix"/>
-      <Parameter name="input adapter" type="string" value="XpetraCrsMatrix"/>
-    </ParameterList>
 
-    <ParameterList name="Zoltan2Parameters">
-      <Parameter name="timer_output_stream" type="string" value="std::cout"/>
-      <Parameter name="algorithm" type="string" value="parmetis"/>
-      <Parameter name="compute_metrics" type="string" value="true"/>
-    </ParameterList>
-    
-    <ParameterList name="Metrics">
-      <ParameterList name="object count">
-        <Parameter name="lower" type="double" value="0.99"/>
-        <Parameter name="upper" type="double" value="1.4"/>
-      </ParameterList>
-    </ParameterList>
-    
-  </ParameterList>
-  
+<!--  <ParameterList name="Problem 2">-->
+<!--    <Parameter name="kind" type="string" value="partitioning"/>-->
+<!--    -->
+<!--    <ParameterList name="InputAdapterParameters">-->
+<!--      <Parameter name="data type" type="string" value="coordinates"/>-->
+<!--      <Parameter name="input adapter" type="string" value="BasicVector"/>-->
+<!--    </ParameterList>-->
+<!---->
+<!--    <ParameterList name="Zoltan2Parameters">-->
+<!--      <Parameter name="timer_output_stream" type="string" value="std::cout"/>-->
+<!--      <Parameter name="algorithm" type="string" value="multijagged"/>-->
+<!--      <Parameter name="rectilinear" type="string" value="true"/>-->
+<!--      <Parameter name="compute_metrics" type="string" value="true"/>-->
+<!--    </ParameterList>-->
+<!--    -->
+<!--    <ParameterList name="Metrics">-->
+<!--      <ParameterList name="object count">-->
+<!--        <Parameter name="lower" type="double" value="0.99"/>-->
+<!--        <Parameter name="upper" type="double" value="1.4"/>-->
+<!--      </ParameterList>-->
+<!--    </ParameterList>-->
+<!--    -->
+<!--  </ParameterList>-->
+
   
 </ParameterList>
