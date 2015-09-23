@@ -66,8 +66,6 @@
 
 #include "json/json.h"                    // For JSON definitions
 #include "Teuchos_ParameterList.hpp"      // For Parameter List
-#include "ROL_LineSearchStep.hpp"
-#include "ROL_TrustRegionStep.hpp"
 #include <fstream>
 #include <string>
 

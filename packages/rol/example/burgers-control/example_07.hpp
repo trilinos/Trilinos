@@ -1044,25 +1044,6 @@ public:
                               const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     if ( useHessian_ ) {
       Teuchos::RCP<std::vector<Real> > ahwvp =
-        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualStateVector>(ahwv)).getVector());
-      Teuchos::RCP<const std::vector<Real> > wp =
-        (Teuchos::dyn_cast<DualConstraintVector>(const_cast<ROL::Vector<Real> &>(w))).getVector();
-      Teuchos::RCP<const std::vector<Real> > vp =
-        (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
-      Teuchos::RCP<const std::vector<Real> > up =
-        (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
-      Teuchos::RCP<const std::vector<Real> > zp =
-        (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
-      fem_->apply_adjoint_pde_control_hessian(*ahwvp,*wp,*vp,*up,*zp);
-    }
-    else {
-      ahwv.zero();
-    }
-  }
-  void applyAdjointHessian_21(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
-                              const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
-    if ( useHessian_ ) {
-      Teuchos::RCP<std::vector<Real> > ahwvp =
         Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualControlVector>(ahwv)).getVector());
       Teuchos::RCP<const std::vector<Real> > wp =
         (Teuchos::dyn_cast<DualConstraintVector>(const_cast<ROL::Vector<Real> &>(w))).getVector();
@@ -1073,6 +1054,25 @@ public:
       Teuchos::RCP<const std::vector<Real> > zp =
         (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
       fem_->apply_adjoint_control_pde_hessian(*ahwvp,*wp,*vp,*up,*zp);
+    }
+    else {
+      ahwv.zero();
+    }
+  }
+  void applyAdjointHessian_21(ROL::Vector<Real> &ahwv, const ROL::Vector<Real> &w, const ROL::Vector<Real> &v,
+                              const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
+    if ( useHessian_ ) {
+      Teuchos::RCP<std::vector<Real> > ahwvp =
+        Teuchos::rcp_const_cast<std::vector<Real> >((Teuchos::dyn_cast<DualStateVector>(ahwv)).getVector());
+      Teuchos::RCP<const std::vector<Real> > wp =
+        (Teuchos::dyn_cast<DualConstraintVector>(const_cast<ROL::Vector<Real> &>(w))).getVector();
+      Teuchos::RCP<const std::vector<Real> > vp =
+        (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(v))).getVector();
+      Teuchos::RCP<const std::vector<Real> > up =
+        (Teuchos::dyn_cast<PrimalStateVector>(const_cast<ROL::Vector<Real> &>(u))).getVector();
+      Teuchos::RCP<const std::vector<Real> > zp =
+        (Teuchos::dyn_cast<PrimalControlVector>(const_cast<ROL::Vector<Real> &>(z))).getVector();
+      fem_->apply_adjoint_pde_control_hessian(*ahwvp,*wp,*vp,*up,*zp);
     }
     else {
       ahwv.zero();

@@ -48,8 +48,9 @@
 #define USE_HESSVEC 0
 
 #include "ROL_TestObjectives.hpp"
-#include "ROL_LineSearchStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_LineSearchStep.hpp"
+#include "ROL_StatusTest.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -80,16 +81,13 @@ int main(int argc, char *argv[]) {
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
-    parlist->set("Use Inexact Hessian-Times-A-Vector",true);
+    parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",true);
 #if USE_HESSVEC
-    parlist->set("Use Inexact Hessian-Times-A-Vector",false);
+    parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",false);
 #endif
 
     // Define Status Test
-    RealT gtol = parlist->get("Gradient Tolerance",1.e-8);
-    RealT stol = parlist->get("Step Tolerance",1.e-12);
-    int maxit  = parlist->get("Maximum Number of Iterations",1000);
-    ROL::StatusTest<RealT> status(gtol,stol,maxit);
+    ROL::StatusTest<RealT> status(*parlist);
 
     *outStream << "\n\n" << ROL::ETestObjectivesToString(ROL::TESTOBJECTIVES_ROSENBROCK) << "\n\n";
 
@@ -108,7 +106,7 @@ int main(int argc, char *argv[]) {
     // Get Dimension of Problem
     int dim = Teuchos::rcp_const_cast<std::vector<RealT> >(
                 (Teuchos::dyn_cast<ROL::StdVector<RealT> >(x0)).getVector())->size();
-    parlist->set("Maximum Number of Krylov Iterations", 2*dim);
+    parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
 
     // Iteration Vector
     Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
@@ -121,11 +119,11 @@ int main(int argc, char *argv[]) {
     e.zero();
 
     for ( ROL::EDescent desc = ROL::DESCENT_STEEPEST; desc < ROL::DESCENT_LAST; desc++ ) {
-      parlist->set("Descent Type", ROL::EDescentToString(desc));
+      parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type", ROL::EDescentToString(desc));
       *outStream << "\n\n" << ROL::EDescentToString(desc) << "\n\n";
       for (ROL::ELineSearch ls = ROL::LINESEARCH_BACKTRACKING; ls < ROL::LINESEARCH_USERDEFINED; ls++) {
         // Define Step
-        parlist->set("Linesearch Type",ROL::ELineSearchToString(ls));
+        parlist->sublist("Step").sublist("Line Search").sublist("Line-Search Method").set("Type",ROL::ELineSearchToString(ls));
         ROL::LineSearchStep<RealT> step(*parlist);
       
         // Define Algorithm
