@@ -1,14 +1,14 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 // RTOp: Interfaces and Support Software for Vector Reduction Transformation
 //       Operations
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,8 +36,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 */
@@ -102,7 +102,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndexLessThanBound, nonunitStride, Scal
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndexLessThanBound, reduct, Scalar )
 {
   using Teuchos::dyn_cast;
-  typedef ScalarTraits<Scalar> ST;
+  // typedef ScalarTraits<Scalar> ST; // unused
 
   const Scalar two = as<Scalar>(2.0);
   const Scalar four = as<Scalar>(4.0);
@@ -113,7 +113,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndexLessThanBound, reduct, Scalar )
   RCP<ReductTarget> reduct2 = maxIndexLessThanBoundOp.reduct_obj_create();
 
   DefaultReductTarget<ScalarIndex<Scalar> > &scalarReduct1 =
-    dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1); 
+    dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1);
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 10));
   maxIndexLessThanBoundOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
@@ -131,7 +131,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndexLessThanBound, reduct, Scalar )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndexLessThanBound, reductTie_1, Scalar )
 {
   using Teuchos::dyn_cast;
-  typedef ScalarTraits<Scalar> ST;
+  // typedef ScalarTraits<Scalar> ST; // unused
 
   const Scalar two = as<Scalar>(2.0);
 
@@ -141,7 +141,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndexLessThanBound, reductTie_1, Scalar
   RCP<ReductTarget> reduct2 = maxIndexLessThanBoundOp.reduct_obj_create();
 
   DefaultReductTarget<ScalarIndex<Scalar> > &scalarReduct1 =
-    dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1); 
+    dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1);
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 4));
   maxIndexLessThanBoundOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
@@ -159,7 +159,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndexLessThanBound, reductTie_1, Scalar
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndexLessThanBound, reductTie_2, Scalar )
 {
   using Teuchos::dyn_cast;
-  typedef ScalarTraits<Scalar> ST;
+  // typedef ScalarTraits<Scalar> ST; // unused
 
   const Scalar two = as<Scalar>(2.0);
 
@@ -169,7 +169,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndexLessThanBound, reductTie_2, Scalar
   RCP<ReductTarget> reduct2 = maxIndexLessThanBoundOp.reduct_obj_create();
 
   DefaultReductTarget<ScalarIndex<Scalar> > &scalarReduct1 =
-    dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1); 
+    dyn_cast<DefaultReductTarget<ScalarIndex<Scalar> > >(*reduct1);
 
   scalarReduct1.set(ScalarIndex<Scalar>(two, 10));
   maxIndexLessThanBoundOp.reduce_reduct_objs( *reduct1, reduct2.ptr() );
