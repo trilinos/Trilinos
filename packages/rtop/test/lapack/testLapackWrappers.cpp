@@ -1,13 +1,13 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 // RTOp: Interfaces and Support Software for Vector Reduction Transformation
 //       Operations
 //                Copyright (2006) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -80,7 +80,7 @@ template<class Scalar>
 bool testLapackWrappers(
   const int n,
   const typename Teuchos::ScalarTraits<Scalar>::magnitudeType &tol,
-  Teuchos::FancyOStream &out 
+  Teuchos::FancyOStream &out
   )
 {
 
@@ -91,7 +91,7 @@ bool testLapackWrappers(
   using Teuchos::Array;
   using RTOpPack::SubMultiVectorView;
 
-  typedef Teuchos_Ordinal Ordinal;
+  //typedef Teuchos_Ordinal Ordinal; // unused
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   bool success = true;
@@ -118,10 +118,10 @@ bool testLapackWrappers(
   //
   out << "\nB) Create the factorization M = P * L * U ...\n\n";
   //
-  
+
   SubMultiVectorView<Scalar> LU(n, n);
   Array<int> ipiv(n);
-  
+
   {
 
     OSTab tab(out);
@@ -133,7 +133,7 @@ bool testLapackWrappers(
 
     // Note: The contents of ipiv and LU is technically an implementation
     // detail of LAPACK and you should not try to directly test its contents!
-    
+
     TEST_EQUALITY( rank, n );
 
   }
@@ -162,17 +162,17 @@ bool testLapackWrappers(
     {
 
       OSTab tab2(out);
-    
+
       for ( int i = 0; i < n; ++i ) {
         B(i,0) = 0.0;
         for ( int j = 0; j < n; ++j ) {
           B(i,0) += M(i,j) * X_known(j,0);
         }
       }
-    
+
       RTOpPack::assign_entries<Scalar>( outArg(X), B );
       RTOpPack::getrs<Scalar>( LU, ipiv, RTOpPack::NOTRANS, outArg(X) );
-      
+
       for ( int i = 0; i < n; ++i ) {
         TEST_MATRIX_ELE_FLOATING_EQUALITY( X, i, 0, X_known(i,0), tol );
       }
@@ -186,17 +186,17 @@ bool testLapackWrappers(
     {
 
       OSTab tab2(out);
-    
+
       for ( int i = 0; i < n; ++i ) {
         B(i,0) = 0.0;
         for ( int j = 0; j < n; ++j ) {
           B(i,0) += M(j,i) * X_known(j,0);
         }
       }
-    
+
       RTOpPack::assign_entries<Scalar>( outArg(X), B );
       RTOpPack::getrs<Scalar>( LU, ipiv, RTOpPack::TRANS, outArg(X) );
-      
+
       for ( int i = 0; i < n; ++i ) {
         TEST_MATRIX_ELE_FLOATING_EQUALITY( X, i, 0, X_known(i,0), tol );
       }
@@ -210,17 +210,17 @@ bool testLapackWrappers(
     {
 
       OSTab tab2(out);
-    
+
       for ( int i = 0; i < n; ++i ) {
         B(i,0) = 0.0;
         for ( int j = 0; j < n; ++j ) {
           B(i,0) += ST::conjugate(M(j,i)) * X_known(j,0);
         }
       }
-    
+
       RTOpPack::assign_entries<Scalar>( outArg(X), B );
       RTOpPack::getrs<Scalar>( LU, ipiv, RTOpPack::CONJTRANS, outArg(X) );
-      
+
       for ( int i = 0; i < n; ++i ) {
         TEST_MATRIX_ELE_FLOATING_EQUALITY( X, i, 0, X_known(i,0), tol );
       }
@@ -228,7 +228,7 @@ bool testLapackWrappers(
     }
 
   }
-    
+
   return success;
 
 }
@@ -250,7 +250,7 @@ int main(int argc, char* argv[])
 
   try {
 
-		CommandLineProcessor  clp;
+                CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
 
@@ -259,8 +259,8 @@ int main(int argc, char* argv[])
 
     double epsScale = 200.0;
     clp.setOption( "eps-scale", &epsScale, "Constant (greater than 1) to scale eps by in error tests." );
-    
-		CommandLineProcessor::EParseCommandLineReturn
+
+                CommandLineProcessor::EParseCommandLineReturn
       parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
       return parse_return;
@@ -281,13 +281,13 @@ int main(int argc, char* argv[])
       n, epsScale*ScalarTraits<std::complex<double> >::eps(), *out);
     if(!result) success = false;
 #endif
-    
+
     if(success)
       *out << "\nEnd Result: TEST PASSED\n";
-    
+
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
-    
+
   return ( success ? 0 : 1 );
-  
+
 }
