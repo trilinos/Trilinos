@@ -376,6 +376,7 @@ private:
 
   bool metricsRequested_;
   RCP<const PartitioningSolutionQuality<Adapter> > metrics_;
+  bool graphMetricsRequested_;
   RCP<const graphMetricValues<scalar_t> > graphMetrics_;
 };
 ////////////////////////////////////////////////////////////////////////
