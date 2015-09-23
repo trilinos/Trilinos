@@ -903,15 +903,15 @@ template <typename Adapter, typename pnum_t>
 
   adjsMatrix->apply (v, w); // w:= adjsMatrix * v
 
-  ArrayView<const lno_t> localEdgeIds, *localOffsets;
+  /*ArrayView<const lno_t> localEdgeIds, *localOffsets;
   ArrayView<input_t> localWgts;
   size_t localNumEdge = graph->getLocalEdgeList(localEdgeIds, localOffsets,
-						localWgts);
+  localWgts);*/
 
   if (!ewgtDim) {
     for (lno_t i=0; i < localNumObj; i++)
-      for (lno_t j=localOffsets[i]; j < localOffsets[i+1]; j++)
-	if (part[i] != part[localEdgeIds[j]])
+      for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
+	if (part[i] != w[edgeIds[j]])
 	  cut[part[i]]++;
 
   // This code assumes the solution has the part ordered the
@@ -920,9 +920,9 @@ template <typename Adapter, typename pnum_t>
     scalar_t *wgt = localBuf; // weight 1
     for (int edim = 0; edim < ewgtDim; edim++){
       for (lno_t i=0; i < localNumObj; i++)
-	for (lno_t j=localOffsets[i]; j < localOffsets[i+1]; j++)
-	  if (part[i] != part[localEdgeIds[j]])
-	    wgt[part[i]] += localWgts[j];
+	for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
+	  if (part[i] != w[edgeIds[j]])
+	    wgt[part[i]] += wgts[j];
       wgt += nparts;         // individual weights
     }
   }
