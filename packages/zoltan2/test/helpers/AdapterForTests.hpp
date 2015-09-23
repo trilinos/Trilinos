@@ -769,12 +769,17 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     vector<int> entry_strides;
     AdapterForTests::InitializeVectorData(data,coords,entry_strides,stride);
     
-    size_t dim = data->getNumVectors();
-    if(dim == 1) coords[1] = coords[2] = NULL;
-    else if(dim == 2)
-    {
-      coords[2] = NULL;
-    }
+//    size_t dim = data->getNumVectors(); //BDD probably not necessary
+//    if(comm->getRank() == 0)
+//    {
+//      std::cout << "Size of data: " << dim << std::endl;
+//      std::cout << "Size of coords: " << coords.size() << std::endl;
+//    }
+//    if(dim == 1) coords[1] = coords[2] = NULL;
+//    else if(dim == 2)
+//    {
+//      coords[2] = NULL;
+//    }
     
     if(weights.empty())
     {
@@ -831,13 +836,6 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     vector<int> entry_strides;
     AdapterForTests::InitializeVectorData(data,coords,entry_strides,stride);
     
-    
-    if(nvec == 1) coords[1] = coords[2] = NULL;
-    else if(nvec == 2)
-    {
-      coords[2] = NULL;
-    }
-    
     ia = new AdapterForTests::basic_vector_adapter(localCount, globalIds,
                                                    coords, entry_strides,
                                                    weights,weightStrides);
@@ -880,15 +878,6 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     AdapterForTests::InitializeVectorData(data,coords,entry_strides,stride);
     if(comm->getRank() == 0) cout << "size of entry strides: " << entry_strides.size() << endl;
     if(comm->getRank() == 0) cout << "size of coords: " << coords.size() << endl;
-
-    if(nvec == 1)
-    {
-      coords[1] = coords[2] = NULL;
-    }
-    else if(nvec == 2)
-    {
-      coords[2] = NULL;
-    }
     
     // make vector!
     ia = new AdapterForTests::basic_vector_adapter(localCount, globalIds,
@@ -933,12 +922,6 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     vector<const zscalar_t *> coords;
     vector<int> entry_strides;
     AdapterForTests::InitializeEpetraVectorData(data,coords,entry_strides,stride);
-    
-    if(nvec == 1) coords[1] = coords[2] = NULL;
-    else if(nvec == 2)
-    {
-      coords[2] = NULL;
-    }
     
     // make vector!
     ia = new AdapterForTests::basic_vector_adapter(localCount, globalIds,
@@ -1015,7 +998,7 @@ void AdapterForTests::InitializeVectorData(const RCP<T> &data,
   //  printf("}\n");
   
   // always build for dim 3
-  coords = std::vector<const zscalar_t *>(3);
+  coords = std::vector<const zscalar_t *>(nvecs);
   strides = std::vector<int>(nvecs);
   
   for (size_t i = 0; i < nvecs; i++) {
@@ -1093,7 +1076,7 @@ void AdapterForTests::InitializeEpetraVectorData(const RCP<T> &data,
 //  }
 //  printf("}\n");
   
-  coords = std::vector<const zscalar_t *>(3);
+  coords = std::vector<const zscalar_t *>(nvecs);
   strides = std::vector<int>(nvecs);
   
   for (size_t i = 0; i < nvecs; i++) {

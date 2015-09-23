@@ -95,11 +95,11 @@ int AlgSpectral(
   }
 
   // Get local graph.
-  ArrayView<const lno_t> edgeIds;
+  ArrayView<const gno_t> edgeIds;
   ArrayView<const lno_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > wgts;
 
-  model->getLocalEdgeList(edgeIds, offsets, wgts);
+  model->getEdgeList(edgeIds, offsets, wgts);
 
   //cout << "Debug: Local graph from getLocalEdgeList" << endl;
   //cout << "edgeIds: " << edgeIds << endl;

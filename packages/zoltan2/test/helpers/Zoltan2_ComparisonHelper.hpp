@@ -719,7 +719,7 @@ bool ComparisonHelper::timerComparisonTest(const double time,
     {
       msg << test_name << " FAILED: Minimum time, "
       << time <<
-      ", less than specified allowable minimum time, " << min;
+      "[s], less than specified allowable minimum time, " << min <<"[s]";
       pass = false;
     }
   }
@@ -731,7 +731,7 @@ bool ComparisonHelper::timerComparisonTest(const double time,
     {
       msg << test_name << " FAILED: Maximum time, "
       << time <<
-      ", greater than specified allowable maximum time, " << max;
+      "[s], greater than specified allowable maximum time, " << max <<"[s]";
       pass = false;
     }
     

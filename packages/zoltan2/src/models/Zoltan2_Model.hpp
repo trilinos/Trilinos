@@ -73,9 +73,10 @@ enum ModelType
  */ 
 enum ModelFlags{
   // General flags
-  IDS_MUST_BE_GLOBALLY_CONSECUTIVE, /*!< \brief algorithm requires consecutive ids */
+  GENERATE_CONSECUTIVE_IDS, /*!< \brief algorithm requires consecutive ids */
 
   // Graph model flags
+  BUILD_LOCAL_GRAPH, /*!< \brief model represents graph within only one rank*/ 
   SYMMETRIZE_INPUT_TRANSPOSE, /*!< \brief model must symmetrize input */ 
   SYMMETRIZE_INPUT_BIPARTITE, /*!< \brief model must symmetrize input */
   VERTICES_ARE_MATRIX_ROWS,   /*!< \brief use matrix rows as graph vertices */
@@ -83,8 +84,8 @@ enum ModelFlags{
   VERTICES_ARE_MATRIX_NONZEROS, /*!< \brief use nonzeros as graph vertices */
   VERTICES_ARE_MESH_NODES,    /*!< \brief use mesh nodes as vertices */
   VERTICES_ARE_MESH_ELEMENTS, /*!< \brief use mesh elements as vertices */
-  SELF_EDGES_MUST_BE_REMOVED, /*!< \brief algorithm requires no self edges */
-  GRAPH_IS_A_SUBSET_GRAPH,    /*!< \brief ignore invalid neighbors */
+  REMOVE_SELF_EDGES,     /*!< \brief algorithm requires no self edges */
+  BUILD_SUBSET_GRAPH,    /*!< \brief ignore invalid neighbors */
 
   NUM_MODEL_FLAGS
 };

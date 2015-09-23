@@ -966,15 +966,15 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       sgParameter = pe->getValue<int>(&sgParameter);
 
     if (sgParameter == 1)
-        graphFlags_.set(GRAPH_IS_A_SUBSET_GRAPH);
+        graphFlags_.set(BUILD_SUBSET_GRAPH);
 
     // Any special behaviors required by the algorithm?
     
     if (removeSelfEdges)
-      graphFlags_.set(SELF_EDGES_MUST_BE_REMOVED);
+      graphFlags_.set(REMOVE_SELF_EDGES);
 
     if (needConsecutiveGlobalIds)
-      graphFlags_.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+      graphFlags_.set(GENERATE_CONSECUTIVE_IDS);
 
     // How does user input map to vertices and edges?
 
@@ -1004,7 +1004,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     // Any special behaviors required by the algorithm?
     
     if (needConsecutiveGlobalIds)
-      idFlags_.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+      idFlags_.set(GENERATE_CONSECUTIVE_IDS);
   }
   //  else if (modelType_ == CoordinateModelType)
   if (modelAvail_[CoordinateModelType]==true)
@@ -1013,7 +1013,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     // Any special behaviors required by the algorithm?
     
     if (needConsecutiveGlobalIds)
-      coordFlags_.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+      coordFlags_.set(GENERATE_CONSECUTIVE_IDS);
   }
 
 

@@ -226,8 +226,7 @@ static void zoltanHGModelObjList(void *data, int nGidEnt, int nLidEnt,
   *ierr = ZOLTAN_OK;
   ArrayView<const gno_t> Ids;
   ArrayView<input_t> model_wgts;
-  ArrayView<input_t> xyz;
-  size_t num_verts = mdl->getVertexList(Ids,xyz,model_wgts);
+  size_t num_verts = mdl->getVertexList(Ids,model_wgts);
   ArrayView<bool> isOwner;
   mdl->getOwnedList(isOwner);
   int j=0;
