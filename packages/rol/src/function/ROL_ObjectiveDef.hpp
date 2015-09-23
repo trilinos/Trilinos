@@ -74,29 +74,34 @@ void Objective<Real>::gradient( Vector<Real> &g, const Vector<Real> &x, Real &to
 
 template <class Real>
 void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-  Real gtol = std::sqrt(ROL_EPSILON);
-
   // Get Step Length
-  Real h = std::max(1.0,x.norm()/v.norm())*tol;
-  //Real h = 2.0/(v.norm()*v.norm())*tol;
+  if ( v.norm() == 0. ) {
+    hv.zero();
+  }
+  else {
+    Real gtol = std::sqrt(ROL_EPSILON);
 
-  // Compute Gradient at x
-  Teuchos::RCP<Vector<Real> > g = hv.clone();
-  this->gradient(*g,x,gtol);
+    Real h = std::max(1.0,x.norm()/v.norm())*tol;
+    //Real h = 2.0/(v.norm()*v.norm())*tol;
 
-  // Compute New Step x + h*v
-  Teuchos::RCP<Vector<Real> > xnew = x.clone();
-  xnew->set(x);
-  xnew->axpy(h,v);  
-  this->update(*xnew);
+    // Compute Gradient at x
+    Teuchos::RCP<Vector<Real> > g = hv.clone();
+    this->gradient(*g,x,gtol);
 
-  // Compute Gradient at x + h*v
-  hv.zero();
-  this->gradient(hv,*xnew,gtol);
-  
-  // Compute Newton Quotient
-  hv.axpy(-1.0,*g);
-  hv.scale(1.0/h);
+    // Compute New Step x + h*v
+    Teuchos::RCP<Vector<Real> > xnew = x.clone();
+    xnew->set(x);
+    xnew->axpy(h,v);  
+    this->update(*xnew);
+
+    // Compute Gradient at x + h*v
+    hv.zero();
+    this->gradient(hv,*xnew,gtol);
+    
+    // Compute Newton Quotient
+    hv.axpy(-1.0,*g);
+    hv.scale(1.0/h);
+  }
 } 
 
 

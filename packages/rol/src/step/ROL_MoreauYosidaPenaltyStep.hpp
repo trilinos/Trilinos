@@ -51,7 +51,7 @@
 #include "ROL_EqualityConstraint.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_Algorithm.hpp"
-#include "ROL_StatusTest.hpp"
+#include "ROL_StatusTestSQP.hpp"
 #include "ROL_CompositeStepSQP.hpp"
 #include "Teuchos_ParameterList.hpp"
 

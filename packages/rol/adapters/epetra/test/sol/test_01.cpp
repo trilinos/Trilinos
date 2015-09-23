@@ -75,6 +75,7 @@
 #include "ROL_RiskAverseObjective.hpp"
 #include "ROL_RiskNeutralObjective.hpp"
 #include "ROL_StdEpetraBatchManager.hpp"
+#include "ROL_DistributionFactory.hpp"
 
 template<class Real> 
 class ParametrizedObjectiveEx1 : public ROL::ParametrizedObjective<Real> {
@@ -389,10 +390,11 @@ int main(int argc, char* argv[]) {
     *outStream << "\nMEAN PLUS SEMIDEVIATION\n";
     // Plus function approximation
     gamma = 1.e2;
-    std::vector<double> data2(2,0.0);
-    data2[0] = 0.0; data2[1] = 1.0;
-    Teuchos::RCP<ROL::Distribution<double> > dist2 =
-      Teuchos::rcp(new ROL::Distribution<double>(ROL::DISTRIBUTION_PARABOLIC,data2));
+    Teuchos::ParameterList distList;
+    distList.sublist("SOL").sublist("Distribution").set("Name","Parabolic");
+    distList.sublist("SOL").sublist("Distribution").sublist("Parabolic").set("Lower Bound",-0.5);
+    distList.sublist("SOL").sublist("Distribution").sublist("Parabolic").set("Upper Bound", 0.5);
+    Teuchos::RCP<ROL::Distribution<double> > dist2 = ROL::DistributionFactory<double>(distList);
     Teuchos::RCP<ROL::PlusFunction<double> > plusf =
       Teuchos::rcp(new ROL::PlusFunction<double>(dist2,1.0/gamma));
     pf = Teuchos::rcp(new ROL::PlusFunction<double>(dist2,1.0/gamma));
