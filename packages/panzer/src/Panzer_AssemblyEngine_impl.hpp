@@ -102,6 +102,11 @@ evaluate(const panzer::AssemblyEngineInArgs& in)
     this->evaluateNeumannBCs(in);
   }
 
+  {
+    PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_interfacebcs("+PHX::typeAsString<EvalT>()+")");
+    this->evaluateInterfaceBCs(in);
+  }
+
   // Dirchlet conditions require a global matrix
   {
     PANZER_FUNC_TIME_MONITOR("panzer::AssemblyEngine::evaluate_dirichletbcs("+PHX::typeAsString<EvalT>()+")");
@@ -206,6 +211,15 @@ void panzer::AssemblyEngine<EvalT>::
 evaluateNeumannBCs(const panzer::AssemblyEngineInArgs& in)
 {
   this->evaluateBCs(panzer::BCT_Neumann, in);
+}
+
+//===========================================================================
+//===========================================================================
+template <typename EvalT>
+void panzer::AssemblyEngine<EvalT>::
+evaluateInterfaceBCs(const panzer::AssemblyEngineInArgs& in)
+{
+  this->evaluateBCs(panzer::BCT_Interface, in);
 }
 
 //===========================================================================

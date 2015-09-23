@@ -347,7 +347,7 @@ int main(int argc, char *argv[]) {
 
       // USER GUIDE       // declare some factories (potentially overwrite default factories)
       RCP<SaPFactory> PFact = rcp(new SaPFactory());
-      PFact->SetDampingFactor(optSaDamping);
+      PFact->SetParameter("sa: damping factor", ParameterEntry(optSaDamping));
 
       RCP<Factory>    RFact = rcp(new TransPFactory());
 

@@ -55,7 +55,7 @@ using namespace Intrepid2;
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
+Kokkos::initialize();
   cout \
   << "===============================================================================\n" \
   << "|                                                                             |\n" \
@@ -222,6 +222,6 @@ int main(int argc, char *argv[]) {
   catch(std::logic_error err){
     cout << err.what() << endl;
   }
-  
+  Kokkos::finalize();
   return 0;
 }

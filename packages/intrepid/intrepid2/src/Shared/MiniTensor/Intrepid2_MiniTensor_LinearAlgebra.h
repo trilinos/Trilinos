@@ -80,6 +80,24 @@ Tensor<T, N>
 inverse(Tensor<T, N> const & A);
 
 ///
+/// 2nd-order tensor inverse using analitical expression for 2 and 3 dimensions
+/// \param A nonsingular tensor
+/// \return \f$ A^{-1} \f$
+///
+template<typename T, Index N>
+Tensor<T, N>
+inverse_fast23(Tensor<T, N> const & A);
+
+///
+/// 2nd-order tensor inverse using full pivoting, very accurate
+/// \param A nonsingular tensor
+/// \return \f$ A^{-1} \f$
+///
+template<typename T, Index N>
+Tensor<T, N>
+inverse_full_pivot(Tensor<T, N> const & A);
+
+///
 /// Subtensor
 /// \param i index
 /// \param j index
@@ -319,7 +337,7 @@ arg_max_off_diagonal(Tensor<T, N> const & A);
 /// \return v P sorted vector, permutation matrix such that v = P^T u
 ///
 template<typename T, Index N>
-std::pair<Vector<T, N>, Tensor<T, N> >
+std::pair<Vector<T, N>, Tensor<T, N>>
 sort_permutation(Vector<T, N> const & u);
 
 ///
@@ -327,7 +345,7 @@ sort_permutation(Vector<T, N> const & u);
 /// \return \f$ A = USV^T\f$
 ///
 template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
 svd(Tensor<T, N> const & A);
 
 ///
@@ -349,7 +367,7 @@ polar_rotation(Tensor<T, N> const & A);
 /// \return \f$ VR = A \f$ with \f$ R \in SO(N) \f$ and \f$ V \in SPD(N) \f$
 ///
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 polar_left(Tensor<T, N> const & A);
 
 ///
@@ -358,7 +376,7 @@ polar_left(Tensor<T, N> const & A);
 /// \return \f$ RU = A \f$ with \f$ R \in SO(N) \f$ and \f$ U \in SPD(N) \f$
 ///
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 polar_right(Tensor<T, N> const & A);
 
 ///
@@ -367,7 +385,7 @@ polar_right(Tensor<T, N> const & A);
 /// \return \f$ VR = A \f$ with \f$ R \in SO(N) \f$ and \f$ V \in SPD(N) \f$
 ///
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 polar_left_eig(Tensor<T, N> const & A);
 
 ///
@@ -376,7 +394,7 @@ polar_left_eig(Tensor<T, N> const & A);
 /// \return \f$ RU = F \f$ with \f$ R \in SO(N) \f$ and \f$ U \in SPD(N) \f$
 ///
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 polar_right_eig(Tensor<T, N> const & A);
 
 ///
@@ -385,11 +403,11 @@ polar_right_eig(Tensor<T, N> const & A);
 /// \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD, and log V
 ///
 template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
 polar_left_logV(Tensor<T, N> const & F);
 
 template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
 polar_left_logV_eig(Tensor<T, N> const & F);
 
 ///
@@ -398,7 +416,7 @@ polar_left_logV_eig(Tensor<T, N> const & F);
 /// \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD, and log V
 ///
 template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
 polar_left_logV_lame(Tensor<T, N> const & F);
 
 ///
@@ -433,7 +451,7 @@ givens(T const & a, T const & b);
 /// \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 ///
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 eig_sym(Tensor<T, N> const & A);
 
 ///
@@ -441,7 +459,7 @@ eig_sym(Tensor<T, N> const & A);
 /// \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 ///
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 eig_spd(Tensor<T, N> const & A);
 
 ///
@@ -451,7 +469,7 @@ eig_spd(Tensor<T, N> const & A);
 /// Scherzinger and Dohrmann, CMAME 197 (2008) 4007-4015
 ///
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 eig_spd_cos(Tensor<T, N> const & A);
 
 ///
@@ -483,6 +501,13 @@ solve(Tensor<T, N> const & A, Vector<T, N> const & b);
 template<typename T, Index N, Index P>
 Matrix<T, N, P>
 solve(Tensor<T, N> const & A, Matrix<T, N, P> const & B);
+
+///
+/// Condition number: ratio of largest to smallest singular values.
+///
+template<typename T, Index N>
+T
+cond(Tensor<T, N> const & A);
 
 } // namespace Intrepid2
 

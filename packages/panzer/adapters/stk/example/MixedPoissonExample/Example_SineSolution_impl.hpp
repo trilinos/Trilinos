@@ -77,7 +77,7 @@ void SineSolution<EvalT,Traits>::postRegistrationSetup(typename Traits::SetupDat
 
   this->utils.setFieldData(solution,fm);
 
-  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0]);
+  ir_index = panzer::getIntegrationRuleIndex(ir_degree,(*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -87,9 +87,9 @@ void SineSolution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workse
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell) {
     for (int point = 0; point < solution.dimension(1); ++point) {
 
-      const double & x = workset.int_rules[ir_index]->ip_coordinates(cell,point,0);
-      const double & y = workset.int_rules[ir_index]->ip_coordinates(cell,point,1);
-      const double & z = workset.int_rules[ir_index]->ip_coordinates(cell,point,2);
+      const double & x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
+      const double & y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
+      const double & z = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,2);
 
       solution(cell,point) = std::sin(2.0*M_PI*x)*std::sin(2*M_PI*y)*std::sin(2.0*M_PI*z);
     }

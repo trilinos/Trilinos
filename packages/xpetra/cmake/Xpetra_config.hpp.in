@@ -7,7 +7,11 @@
 
 #cmakedefine HAVE_XPETRA_EPETRA
 
+#cmakedefine HAVE_XPETRA_KOKKOS_REFACTOR
+
 #cmakedefine HAVE_XPETRA_KOKKOSCLASSIC
+
+#cmakedefine HAVE_XPETRA_THYRA
 
 #cmakedefine HAVE_XPETRA_EPETRAEXT
 

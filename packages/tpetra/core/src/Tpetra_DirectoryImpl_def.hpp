@@ -50,6 +50,7 @@
 #include <Tpetra_Details_FixedHashTable.hpp>
 #include <Tpetra_HashTable.hpp>
 
+#include <unordered_map>
 
 // FIXME (mfh 16 Apr 2013) GIANT HACK BELOW
 #ifdef HAVE_MPI
@@ -1110,37 +1111,62 @@ namespace Tpetra {
       }
 
       Array<global_size_t> imports (packetSize * distor.getTotalReceiveLength ());
-      // FIXME (mfh 20 Mar 2014) One could overlap the sort2() below
-      // with communication, by splitting this call into doPosts and
-      // doWaits.  The code is still correct in this form, however.
+
+      // FIXME (mfh 20 Mar 2014, 22 Sep 2015) One could overlap the
+      // work below with communication, by splitting this call into
+      // doPosts and doWaits.  The code is still correct in this form,
+      // however.
       distor.doPostsAndWaits (exports ().getConst (), packetSize, imports ());
 
-      Array<GO> sortedIDs (globalIDs); // deep copy (for later sorting)
-      Array<GO> offset (numEntries); // permutation array (sort2 output)
-      for (GO ii = 0; ii < static_cast<GO> (numEntries); ++ii) {
-        offset[ii] = ii;
-      }
-      sort2 (sortedIDs.begin(), sortedIDs.begin() + numEntries, offset.begin());
+      // mfh 22 Sep 2015 (Thanks to Karen Devine; see Bug 6412
+      // discussion): Does doPostsAndWaits return items in the same
+      // order they were requested?  If so, we could just copy from
+      // the imports array into the return argument arrays, without
+      // the need for other mechanisms.  If not, we can build a hash
+      // table of the imports, and then search it to fill our return
+      // arguments.
 
+      std::unordered_map<GO, std::pair<int, LO> > received (numRecv);
+
+      // Build a look-up table of received values
       size_t importsIndex = 0;
-      //typename Array<global_size_t>::iterator ptr = imports.begin();
-      typedef typename Array<GO>::iterator IT;
-
-      // we know these conversions are in range, because we loaded this data
-      for (size_t i = 0; i < numRecv; ++i) {
-        // Don't use as() here (see above note).
+      for (size_t i = 0; i < numRecv; i++) {
         const GO curGID = static_cast<GO> (imports[importsIndex++]);
-        std::pair<IT, IT> p1 = std::equal_range (sortedIDs.begin(), sortedIDs.end(), curGID);
-        if (p1.first != p1.second) {
-          const size_t j = p1.first - sortedIDs.begin();
-          // Don't use as() here (see above note).
-          nodeIDs[offset[j]] = static_cast<int> (imports[importsIndex++]);
+        const int curPID = static_cast<int> (imports[importsIndex++]);
+        std::pair<int, LO> curPair;
+        if (computeLIDs) {
+          const LO curLID = static_cast<LO> (imports[importsIndex++]);
+          curPair = std::make_pair (curPID, curLID);
+        }
+        else {
+          curPair = std::make_pair (curPID, LINVALID);
+        }
+        received[curGID] = curPair;
+      }
+
+      // Look up the received value for each entry requested
+      for (size_t i = 0; i < numEntries; ++i) {
+        const GO curGID = globalIDs[i];
+
+        auto tableIter = received.find (curGID);
+        if (tableIter == received.end ()) {
+          res = IDNotPresent;
+          nodeIDs[i] = -1;
           if (computeLIDs) {
-            // Don't use as() here (see above note).
-            localIDs[offset[j]] = static_cast<LO> (imports[importsIndex++]);
+            localIDs[i] = LINVALID;
           }
-          if (nodeIDs[offset[j]] == -1) {
+        }
+        else {
+          auto curPair = tableIter->second;
+          nodeIDs[i] = curPair.first;
+          if (nodeIDs[i] == -1) {
             res = IDNotPresent;
+            if (computeLIDs) {
+              localIDs[i] = LINVALID;
+            }
+          }
+          else if (computeLIDs) {
+            localIDs[i] = curPair.second;
           }
         }
       }

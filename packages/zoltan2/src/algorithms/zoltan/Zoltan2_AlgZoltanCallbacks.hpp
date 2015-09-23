@@ -67,8 +67,10 @@
 namespace Zoltan2 {
 
 /////////////////////////////////////////////////////////////////////////////
-// CALLBACKS SHARED BY ALL ADAPTERS
+// CALLBACKS SHARED BY MANY ADAPTERS
+/////////////////////////////////////////////////////////////////////////////
 
+////////////////////
 // ZOLTAN_NUM_OBJ_FN
 template <typename Adapter>
 static int zoltanNumObj(void *data, int *ierr) {
@@ -77,6 +79,7 @@ static int zoltanNumObj(void *data, int *ierr) {
   return int(adp->getLocalNumIDs());
 }
 
+/////////////////////
 // ZOLTAN_OBJ_LIST_FN
 template <typename Adapter>
 static void zoltanObjList(void *data, int nGidEnt, int nLidEnt, 
@@ -115,6 +118,7 @@ static void zoltanObjList(void *data, int nGidEnt, int nLidEnt,
   }
 }
 
+///////////////////////
 // ZOLTAN_PART_MULTI_FN
 template <typename Adapter>
 static void zoltanParts(void *data, int nGidEnt, int nLidEnt, int nObj,
@@ -130,6 +134,7 @@ static void zoltanParts(void *data, int nGidEnt, int nLidEnt, int nObj,
     parts[i] = int(myparts[lids[i]]);
 }
 
+/////////////////////
 // ZOLTAN_NUM_GEOM_FN
 template <typename Adapter>
 static int zoltanNumGeom(void *data, int *ierr) 
@@ -139,6 +144,7 @@ static int zoltanNumGeom(void *data, int *ierr)
   return adp->getDimension();
 }
 
+///////////////////////
 // ZOLTAN_GEOM_MULTI_FN
 template <typename Adapter>
 static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
@@ -158,9 +164,45 @@ static void zoltanGeom(void *data, int nGidEnt, int nLidEnt, int nObj,
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// MESH ADAPTER CALLBACKS
+// MATRIX ADAPTER CALLBACKS
+/////////////////////////////////////////////////////////////////////////////
+
+///////////////////////
+// ZOLTAN_HG_SIZE_CS_FN
+template <typename Adapter>
+static void zoltanHGSizeCSForMatrixAdapter(
+  void *data, int *nEdges, int *nPins,
+  int *format, int *ierr
+) 
+{
+  std::cout << "HELLO FROM HGSizeCS with MATRIX ADAPTER" << std::endl;
+  *ierr = ZOLTAN_FATAL;
+}
+
+//////////////////
+// ZOLTAN_HG_CS_FN
+template <typename Adapter>
+static void zoltanHGCSForMatrixAdapter(
+  void *data, int nGidEnt, int nEdges, int nPins,
+  int format, ZOLTAN_ID_PTR edgeIds, 
+  int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr
+)
+{
+  std::cout << "HELLO FROM HGCS with MATRIX ADAPTER" << std::endl;
+  *ierr = ZOLTAN_FATAL;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// TODO:  GRAPH ADAPTER CALLBACKS
+
+
+/////////////////////////////////////////////////////////////////////////////
+// HYPERGRAPH MODEL CALLBACKS
+/////////////////////////////////////////////////////////////////////////////
 
 #ifdef HAVE_ZOLTAN2_HYPERGRAPHMODEL
+////////////////////
+// ZOLTAN_NUM_OBJ_FN
 template <typename Adapter>
 static int zoltanHGModelNumObj(void *data, int *ierr) {
   const HyperGraphModel<Adapter>* mdl = static_cast<HyperGraphModel<Adapter>* >(data);
@@ -168,6 +210,7 @@ static int zoltanHGModelNumObj(void *data, int *ierr) {
   return int(mdl->getLocalNumOwnedVertices());
 }
 
+/////////////////////
 // ZOLTAN_OBJ_LIST_FN
 template <typename Adapter>
 static void zoltanHGModelObjList(void *data, int nGidEnt, int nLidEnt, 
@@ -218,8 +261,9 @@ static void zoltanHGModelObjList(void *data, int nGidEnt, int nLidEnt,
       }
     }
   }
-
 }
+
+///////////////////////
 // ZOLTAN_HG_SIZE_CS_FN
 template <typename Adapter>
 static void zoltanHGModelSizeCSForMeshAdapter(
@@ -235,14 +279,9 @@ static void zoltanHGModelSizeCSForMeshAdapter(
     *format = ZOLTAN_COMPRESSED_EDGE;
   else
     *format = ZOLTAN_COMPRESSED_VERTEX;
-  
-  // typedef typename Adapter::user_t user_t;
-  // const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>* >(data);
-  // *nEdges = madp->getLocalNumOf(madp->getAdjacencyEntityType());
-  // *nPins = madp->getLocalNumAdjs(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType());
-  // *format = ZOLTAN_COMPRESSED_EDGE;
 }
 
+//////////////////
 // ZOLTAN_HG_CS_FN
 template <typename Adapter>
 static void zoltanHGModelCSForMeshAdapter(
@@ -272,21 +311,13 @@ static void zoltanHGModelCSForMeshAdapter(
   
   for (int i=0;i<nPins;i++)
     pinIds[i] = pinIds_[i];
-  // typedef typename Adapter::user_t user_t;
-  // const MeshAdapter<user_t>* madp = static_cast<MeshAdapter<user_t>*>(data);
-  // const typename Adapter::zgid_t *Ids;
-  // madp->getIDsViewOf(madp->getAdjacencyEntityType(),Ids);
-  // const typename Adapter::lno_t* offsets;
-  // const typename Adapter::zgid_t* adjIds;
-  // madp->getAdjsView(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType(),offsets,adjIds);
-  // for (int i=0;i<nEdges;i++) {
-  //   edgeIds[i]=Ids[i];
-  //   edgeIdx[i]=offsets[i];
-  // }
-  // for (int i=0;i<nPins;i++)
-  //   pinIds[i] = adjIds[i];
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// MESH ADAPTER CALLBACKS
+/////////////////////////////////////////////////////////////////////////////
+
+///////////////////////
 // ZOLTAN_HG_SIZE_CS_FN
 template <typename Adapter>
 static void zoltanHGSizeCSForMeshAdapter(
@@ -302,6 +333,7 @@ static void zoltanHGSizeCSForMeshAdapter(
   *format = ZOLTAN_COMPRESSED_EDGE;
 }
 
+//////////////////
 // ZOLTAN_HG_CS_FN
 template <typename Adapter>
 static void zoltanHGCSForMeshAdapter(
@@ -319,7 +351,8 @@ static void zoltanHGCSForMeshAdapter(
   madp->getIDsViewOf(madp->getAdjacencyEntityType(),Ids);
   const lno_t* offsets;
   const zgid_t* adjIds;
-  madp->getAdjsView(madp->getAdjacencyEntityType(),madp->getPrimaryEntityType(),offsets,adjIds);
+  madp->getAdjsView(madp->getAdjacencyEntityType(), madp->getPrimaryEntityType(),
+                    offsets, adjIds);
   for (int i=0;i<nEdges;i++) {
     edgeIds[i]=Ids[i];
     edgeIdx[i]=offsets[i];
@@ -328,35 +361,6 @@ static void zoltanHGCSForMeshAdapter(
     pinIds[i] = adjIds[i];
 }
 #endif
-
-/////////////////////////////////////////////////////////////////////////////
-// MATRIX ADAPTER CALLBACKS
-
-// ZOLTAN_HG_SIZE_CS_FN
-template <typename Adapter>
-static void zoltanHGSizeCSForMatrixAdapter(
-  void *data, int *nEdges, int *nPins,
-  int *format, int *ierr
-) 
-{
-  std::cout << "HELLO FROM HGSizeCS with MATRIX ADAPTER" << std::endl;
-  *ierr = ZOLTAN_FATAL;
-}
-
-// ZOLTAN_HG_CS_FN
-template <typename Adapter>
-static void zoltanHGCSForMatrixAdapter(
-  void *data, int nGidEnt, int nEdges, int nPins,
-  int format, ZOLTAN_ID_PTR edgeIds, 
-  int *edgeIdx, ZOLTAN_ID_PTR pinIds, int *ierr
-)
-{
-  std::cout << "HELLO FROM HGCS with MATRIX ADAPTER" << std::endl;
-  *ierr = ZOLTAN_FATAL;
-}
-
-/////////////////////////////////////////////////////////////////////////////
-// TODO:  OTHER CALLBACKS
 
 }
 

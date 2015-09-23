@@ -16,6 +16,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # Abstract headers
 APPEND_SET(HEADERS
+  RBGen_ConfigDefs.h
   RBGen_FileIOFactory.hpp
   RBGen_FileIOHandler.hpp
   RBGen_Filter.hpp

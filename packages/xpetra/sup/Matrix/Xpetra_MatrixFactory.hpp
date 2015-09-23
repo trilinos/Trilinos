@@ -88,6 +88,18 @@ namespace Xpetra {
       return rcp(new CrsMatrixWrap(rowMap, colMap, NumEntriesPerRowToAlloc, pftype));
     }
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    //! Constructor providing a local Kokkos::CrsMatrix together with a row and column map
+    static RCP<Matrix> Build (
+        const Teuchos::RCP<const Map>& rowMap,
+        const Teuchos::RCP<const Map>& colMap,
+        const typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type& lclMatrix,
+        const Teuchos::RCP<Teuchos::ParameterList>& params = null)  {
+      XPETRA_MONITOR("MatrixFactory::Build");
+      return rcp(new CrsMatrixWrap(rowMap, colMap, lclMatrix, params));
+    }
+#endif
+
     //! Constructor specifying (possibly different) number of entries in each row.
     static RCP<Matrix> Build(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = Xpetra::DynamicProfile) {
       return rcp( new CrsMatrixWrap(rowMap, NumEntriesPerRowToAlloc, pftype) );

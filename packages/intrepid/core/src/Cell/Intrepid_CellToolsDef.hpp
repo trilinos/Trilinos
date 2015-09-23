@@ -1042,26 +1042,12 @@ if(getrank(jacobian)==3){
           // getValues requires rank-2 (P,D) input array, but points cannot be passed directly as argument because they are a user type
           FieldContainer<Scalar> tempPoints( static_cast<size_t>(points.dimension(0)), static_cast<size_t>(points.dimension(1)) );
           // Copy point set corresponding to this cell oridinal to the temp (P,D) array
- /*      if(CheckType<ArrayJac>::value==true){
-	#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CXX11)
-	      Kokkos::parallel_for (static_cast<size_t>(points.dimension(0)), [&] (int pt) {
-            for(int dm = 0; dm < static_cast<size_t>(points.dimension(1)) ; dm++){
-              tempPoints(pt, dm) = pointsWrap(pt, dm);
-            }//dm
-          });
-	    #endif
-	   }else{*/ 
 	      for(size_t pt = 0; pt < static_cast<size_t>(points.dimension(0)); pt++){
             for(size_t dm = 0; dm < static_cast<size_t>(points.dimension(1)) ; dm++){
               tempPoints(pt, dm) = pointsWrap(pt, dm);
             }//dm
           }//pt
-          for(size_t pt = 0; pt < static_cast<size_t>(points.dimension(0)); pt++){
-            for(size_t dm = 0; dm < static_cast<size_t>(points.dimension(1)) ; dm++){
-              tempPoints(pt, dm) = pointsWrap(pt, dm);
-            }//dm
-          }//pt
-         //}
+          
           HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
           
           // The outer loops select the multi-index of the Jacobian entry: cell, point, row, col
@@ -1069,23 +1055,6 @@ if(getrank(jacobian)==3){
           size_t cellLoop = (whichCell == -1) ? numCells : 1 ;
           
           if(whichCell == -1) {
- /*     if(CheckType<ArrayJac>::value==true){
-	#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CXX11)
-		Kokkos::parallel_for (cellLoop, [&] (int cellOrd) {  
-          for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
-             for(int row = 0; row < spaceDim; row++){
-                for(int col = 0; col < spaceDim; col++){
-                    
-                    // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same.
-                    for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
-                      jacobianWrap(cellOrd, pointOrd, row, col) += cellWorksetWrap(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
-                    } // bfOrd
-                  } // col
-                } // row
-              } // pointOrd
-            }); // cellOrd
-		#endif
-	   }else{*/	  
             for(size_t cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
               for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
                 for(int row = 0; row < spaceDim; row++){
@@ -1104,24 +1073,6 @@ if(getrank(jacobian)==3){
             
           }
           else {
-/*	  if(CheckType<ArrayJac>::value==true){
-	#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CXX11)
-	   		 Kokkos::parallel_for (cellLoop, [&] (int cellOrd) {		  
-              for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
-                for(int row = 0; row < spaceDim; row++){
-                  for(int col = 0; col < spaceDim; col++){
-                  
-                    // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same.
-                    for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
-                      jacobianWrap(pointOrd, row, col) += cellWorksetWrap(whichCell, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
-                    } // bfOrd
-                  } // col
-                } // row
-              } // pointOrd
-            }); // cellOrd
-	   
-	   #endif
-	   }else{		*/	  	  
             for(size_t cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
               for(size_t pointOrd = 0; pointOrd < numPoints; pointOrd++) {
                 for(int row = 0; row < spaceDim; row++){
@@ -1145,36 +1096,6 @@ if(getrank(jacobian)==3){
         {
           // getValues requires rank-2 (P,D) input array, refPoints cannot be used as argument: need temp (P,D) array
           FieldContainer<Scalar> tempPoints( static_cast<size_t>(points.dimension(1)), static_cast<size_t>(points.dimension(2)) );
- /*	  if(CheckType<ArrayJac>::value==true){
-	#if defined(HAVE_INTREPID_KOKKOSCORE) && defined(KOKKOS_HAVE_CXX11)
-	   	Kokkos::parallel_for (numCells, [&] (int cellOrd) {         
-        
-            
-            // Copy point set corresponding to this cell oridinal to the temp (P,D) array
-            for(int pt = 0; pt < static_cast<size_t>(points.dimension(1)); pt++){
-              for(int dm = 0; dm < static_cast<size_t>(points.dimension(2)) ; dm++){
-                tempPoints(pt, dm) = pointsWrap(cellOrd, pt, dm);
-              }//dm
-            }//pt
-            
-            // Compute gradients of basis functions at this set of ref. points
-            HGRAD_Basis -> getValues(basisGrads, tempPoints, OPERATOR_GRAD);
-            
-            // Compute jacobians for the point set corresponding to the current cellordinal
-            for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
-              for(int row = 0; row < spaceDim; row++){
-                for(int col = 0; col < spaceDim; col++){
-                  
-                  // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same
-                  for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
-                    jacobianWrap(cellOrd, pointOrd, row, col) += cellWorksetWrap(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
-                  } // bfOrd
-                } // col
-              } // row
-            } // pointOrd
-          });//cellOrd
-	   #endif      
-      }else{*/
           for(size_t cellOrd = 0; cellOrd < numCells; cellOrd++) {
             
             // Copy point set corresponding to this cell oridinal to the temp (P,D) array

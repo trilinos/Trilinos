@@ -522,7 +522,7 @@ operator!=(Vector<T, N> const & u, Vector<T, N> const & v)
 //
 template<typename S, typename T, Index N>
 inline typename
-lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N> >::type
+lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N>>::type
 operator*(S const & s, Vector<T, N> const & u)
 {
   Vector<typename Promote<S, T>::type, N>
@@ -538,7 +538,7 @@ operator*(S const & s, Vector<T, N> const & u)
 //
 template<typename S, typename T, Index N>
 inline typename
-lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N> >::type
+lazy_disable_if<order_1234<S>, apply_vector<Promote<S, T>, N>>::type
 operator*(Vector<T, N> const & u, S const & s)
 {
   Vector<typename Promote<S, T>::type, N>

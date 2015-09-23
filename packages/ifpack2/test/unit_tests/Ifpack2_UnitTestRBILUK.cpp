@@ -337,11 +337,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBandedBlockCrsMatrixWithDro
 {
   typedef Tpetra::Experimental::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> block_crs_matrix_type;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+  typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> row_matrix_type;
   //typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> crs_graph_type; // unused
   typedef Tpetra::Experimental::BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> BMV;
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
   //typedef Ifpack2::Experimental::RBILUK<block_crs_matrix_type> prec_type; // unused
-  typedef Ifpack2::RILUK<crs_matrix_type> prec_crs_type;
+  typedef Ifpack2::RILUK<row_matrix_type> prec_crs_type;
 
   out << "Ifpack2::Version(): " << Ifpack2::Version () << std::endl;
 
@@ -524,8 +525,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RBILUK, TestBlockMatrixOps, Scalar, Loc
     TEST_FLOATING_EQUALITY(exactMatrix[k], cMatrix[k], 1e-14);
   }
 
-  typedef typename GetLapackType<Scalar>::lapack_scalar_type LST;
-  typedef typename GetLapackType<Scalar>::lapack_type lapack_type;
+  typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_scalar_type LST;
+  typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_type lapack_type;
 
   lapack_type lapack;
 

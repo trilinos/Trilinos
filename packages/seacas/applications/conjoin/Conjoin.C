@@ -1678,72 +1678,87 @@ namespace {
       char **input_name_list = get_name_array(num_input_vars, ExodusFile::max_name_length());
       ex_get_variable_names(id, vars.type(), num_input_vars, input_name_list);
 
-      /// \todo Check for name collision on status variables.
-	if (vars.type() == EX_ELEM_BLOCK || vars.type() == EX_NODAL) {
-	  if (vars.type() == EX_ELEM_BLOCK) {
-	    std::string status = si.element_status_variable();
-	    if (status != "NONE")
-	      strcpy(input_name_list[num_input_vars-1], status.c_str());
-	  }
-	  else if (vars.type() == EX_NODAL) {
-	    std::string status = si.nodal_status_variable();
-	    if (status != "NONE")
-	      strcpy(input_name_list[num_input_vars-1], status.c_str());
+      std::string status;
+      if (vars.type() == EX_ELEM_BLOCK || vars.type() == EX_NODAL) {
+	if (vars.type() == EX_ELEM_BLOCK) {
+	  status = si.element_status_variable();
+	  if (status != "NONE")
+	    strcpy(input_name_list[num_input_vars-1], status.c_str());
+	}
+	else if (vars.type() == EX_NODAL) {
+	  status = si.nodal_status_variable();
+	  if (status != "NONE")
+	    strcpy(input_name_list[num_input_vars-1], status.c_str());
+	}
+      }
+
+      // Iterate through the 'var_index' and transfer
+      // Assume that the number of pointers is limited to
+      // the number of results variables
+      size_t maxlen = 0;
+      for (int i=0; i < num_input_vars; i++) {
+	if (vars.index_[i] > 0) {
+	  strcpy(output_name_list[vars.index_[i]-1], input_name_list[i]);
+	  if (strlen(input_name_list[i]) > maxlen) {
+	    maxlen = strlen(input_name_list[i]);
 	  }
 	}
+      }
 
-	// Iterate through the 'var_index' and transfer
-	// Assume that the number of pointers is limited to
-	// the number of results variables
-	size_t maxlen = 0;
-	for (int i=0; i < num_input_vars; i++) {
-	  if (vars.index_[i] > 0) {
-	    strcpy(output_name_list[vars.index_[i]-1], input_name_list[i]);
-	    if (strlen(input_name_list[i]) > maxlen) {
-	      maxlen = strlen(input_name_list[i]);
+      // See if any of the variable names conflict with the status variable name...
+      if (status != "NONE") {
+	for (size_t i=0; i < vars.count(OUT)-1; i++) {
+	  if (case_compare(output_name_list[i], status) == 0) {
+	    // Error -- duplicate element variable names on output database.
+	    std::cerr << "\nERROR: A " << vars.label()
+		      << " variable already exists on the input database with the "
+		      << "same name as the status variable '" << status
+		      << "'. This is not allowed.\n\n";
+	    exit(EXIT_FAILURE);
+	  }
+	}
+      }
+
+      maxlen += 2;
+      // Assume 8 characters for initial tab...
+      int width = si.screen_width();
+      int nfield = (width-8) / maxlen;
+      if (nfield < 1) nfield = 1;
+
+      std::cerr << "Found " << vars.count(OUT) << " " << vars.label() << " variables.\n";
+      {
+	int i = 0;
+	int ifld = 1;
+	std::cerr << "\t";
+	while (i < vars.count(OUT)) {
+	  std::cerr << std::setw(maxlen) << std::left << output_name_list[i++];
+	  if (++ifld > nfield && i < vars.count(OUT)) {
+	    std::cerr << "\n\t";
+	    ifld = 1;
+	  }
+	}
+	std::cerr << "\n\n";
+	std::cerr << std::right; // Reset back to what it was.
+      }
+
+      ex_put_variable_names(out, vars.type(), vars.count(OUT), output_name_list);
+
+      // KLUGE: Handle finding combined status index variable here since it is
+      // the only place we have the list of output variable names...
+      if (vars.type() == EX_ELEM_BLOCK && combined_status_variable_index) {
+	*combined_status_variable_index = 0;
+	std::string comb_stat = si.combined_mesh_status_variable();
+	if (!comb_stat.empty()) {
+	  for (int i=0; i <  vars.count(OUT); i++) {
+	    if (case_compare(comb_stat, output_name_list[i]) == 0) {
+	      *combined_status_variable_index = i+1;
+	      break;
 	    }
 	  }
 	}
-	maxlen += 2;
-	// Assume 8 characters for initial tab...
-	int width = si.screen_width();
-	int nfield = (width-8) / maxlen;
-	if (nfield < 1) nfield = 1;
-
-	std::cerr << "Found " << vars.count(OUT) << " " << vars.label() << " variables.\n";
-	{
-	  int i = 0;
-	  int ifld = 1;
-	  std::cerr << "\t";
-	  while (i < vars.count(OUT)) {
-	    std::cerr << std::setw(maxlen) << std::left << output_name_list[i++];
-	    if (++ifld > nfield && i < vars.count(OUT)) {
-	      std::cerr << "\n\t";
-	      ifld = 1;
-	    }
-	  }
-	  std::cerr << "\n\n";
-	  std::cerr << std::right; // Reset back to what it was.
-	}
-
-	ex_put_variable_names(out, vars.type(), vars.count(OUT), output_name_list);
-
-	// KLUGE: Handle finding combined status index variable here since it is
-	// the only place we have the list of output variable names...
-	if (vars.type() == EX_ELEM_BLOCK && combined_status_variable_index) {
-	  *combined_status_variable_index = 0;
-	  std::string comb_stat = si.combined_mesh_status_variable();
-	  if (!comb_stat.empty()) {
-	    for (int i=0; i <  vars.count(OUT); i++) {
-	      if (case_compare(comb_stat, output_name_list[i]) == 0) {
-		*combined_status_variable_index = i+1;
-		break;
-	      }
-	    }
-	  }
-	}
-	free_name_array(output_name_list, vars.count(OUT));
-	free_name_array(input_name_list, num_input_vars);
+      }
+      free_name_array(output_name_list, vars.count(OUT));
+      free_name_array(input_name_list, num_input_vars);
     }
   }
 

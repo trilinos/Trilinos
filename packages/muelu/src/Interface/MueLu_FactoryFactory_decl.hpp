@@ -132,12 +132,12 @@
 
 #ifdef HAVE_MUELU_MATLAB
 // This is distasteful, but (sadly) neccesary due to peculiarities in MueLu's build system.
-#include "../matlab/MueLu_SingleLevelMatlabFactory_decl.hpp"
-#include "../matlab/MueLu_SingleLevelMatlabFactory_def.hpp"
-#include "../matlab/MueLu_TwoLevelMatlabFactory_decl.hpp"
-#include "../matlab/MueLu_TwoLevelMatlabFactory_def.hpp"
-#include "../matlab/MueLu_MatlabSmoother_decl.hpp"
-#include "../matlab/MueLu_MatlabSmoother_def.hpp"
+#include "../matlab/src/MueLu_SingleLevelMatlabFactory_decl.hpp"
+#include "../matlab/src/MueLu_SingleLevelMatlabFactory_def.hpp"
+#include "../matlab/src/MueLu_TwoLevelMatlabFactory_decl.hpp"
+#include "../matlab/src/MueLu_TwoLevelMatlabFactory_def.hpp"
+#include "../matlab/src/MueLu_MatlabSmoother_decl.hpp"
+#include "../matlab/src/MueLu_MatlabSmoother_def.hpp"
 #endif
 
 namespace MueLu {
@@ -339,7 +339,6 @@ namespace MueLu {
           // Generate or get factory described by param
           RCP<const FactoryBase> generatingFact = BuildFactory(paramList.getEntry(pName), factoryMapIn, factoryManagersIn);
           paramListWithFactories.set(pName, generatingFact);
-
         } else if (validParamList->isType<RCP<const ParameterList> >(pName)) {
           if (pName == "ParameterList") {
             // NOTE: we cannot use

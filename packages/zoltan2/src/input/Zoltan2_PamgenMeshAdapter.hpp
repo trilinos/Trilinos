@@ -250,11 +250,11 @@ public:
     if ((MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_) ||
 	(MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_)) {
       offsets = elemOffsets_;
-      adjacencyIds = elemToNode_;
+      adjacencyIds = (zgid_t *)elemToNode_;
     } else if ((MESH_REGION==target && MESH_VERTEX==source && 3==dimension_) ||
 	       (MESH_FACE==target && MESH_VERTEX==source && 2==dimension_)) {
       offsets = nodeOffsets_;
-      adjacencyIds = nodeToElem_;
+      adjacencyIds = (zgid_t *)nodeToElem_;
     } else if (MESH_REGION == source && 2 == dimension_) {
       offsets = NULL;
       adjacencyIds = NULL;
@@ -365,13 +365,29 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 
   error += im_ex_get_coord(exoid, coords_, coords_ + num_nodes_,
 			   coords_ + 2 * num_nodes_);
-
-  element_num_map_ = new int [num_elem_];
-  error += im_ex_get_elem_num_map(exoid, element_num_map_);
-
-  node_num_map_ = new int [num_nodes_];
-  error += im_ex_get_node_num_map(exoid, node_num_map_);
-
+  
+  element_num_map_ = new zgid_t [num_elem_];
+  std::vector<int> tmp;
+  tmp.resize(num_elem_);
+  
+  // BDD cast to int did not always work!
+  // error += im_ex_get_elem_num_map(exoid, (int *)element_num_map_)
+  // This may be a case of calling the wrong method
+  error += im_ex_get_elem_num_map(exoid, &tmp[0]);
+  for(size_t i = 0; i < tmp.size(); i++)
+    element_num_map_[i] = static_cast<zgid_t>(tmp[i]);
+    
+  tmp.clear();
+  tmp.resize(num_nodes_);
+  node_num_map_ = new zgid_t [num_nodes_];
+  
+  // BDD cast to int did not always work!
+  // error += im_ex_get_node_num_map(exoid, (int *)node_num_map_);
+  // This may be a case of calling the wrong method
+  error += im_ex_get_node_num_map(exoid, &tmp[0]);
+  for(size_t i = 0; i < tmp.size(); i++)
+    node_num_map_[i] = static_cast<zgid_t>(tmp[i]);
+  
   nodeTopology = new enum EntityTopologyType[num_nodes_];
   for (int i=0;i<num_nodes_;i++)
     nodeTopology[i] = POINT;
@@ -536,6 +552,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
       nodeToElem_[telct_] = sur_elem[ncnt][i];
       ++telct_;
 
+#ifndef USE_MESH_ADAPTER
       for(int ecnt = 0; ecnt < num_elem_; ecnt++) {
 	if (element_num_map_[ecnt] == sur_elem[ncnt][i]) {
 	  for (int j = 0; j < nnodes_per_elem; j++) {
@@ -554,6 +571,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 	  break;
 	}
       }
+#endif
     }
 
     nAdjMap.clear();
@@ -799,6 +817,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
     delete[] rbuf;
     //}
 
+#ifndef USE_MESH_ADAPTER
   for(int ecnt=0; ecnt < num_elem_; ecnt++) {
     eStart_[ecnt] = nEadj_;
     MapType eAdjMap;
@@ -820,6 +839,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 
     eAdjMap.clear();
   }
+#endif
 
   for(int b = 0; b < num_elem_; b++) {
     delete[] reconnect[b];
@@ -847,7 +867,7 @@ void PamgenMeshAdapter<User>::print(int me)
   std::string fn(" PamgenMesh ");
   std::cout << me << fn
             << " dim = " << dimension_
-            << " nnodes = " << num_nodes_
+            << " nodes = " << num_nodes_
             << " nelems = " << num_elem_
             << std::endl;
 
@@ -860,6 +880,7 @@ void PamgenMeshAdapter<User>::print(int me)
     std::cout << std::endl;
   }
 
+#ifndef USE_MESH_ADAPTER
   for (int i = 0; i < num_elem_; i++) {
     std::cout << me << fn << i 
               << " Elem " << element_num_map_[i]
@@ -868,6 +889,7 @@ void PamgenMeshAdapter<User>::print(int me)
       std::cout << eAdj_[j] << " ";
     std::cout << std::endl;
   }
+#endif
 }
   
 }  //namespace Zoltan2

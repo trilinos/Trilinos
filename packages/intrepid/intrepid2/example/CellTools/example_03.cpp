@@ -58,7 +58,7 @@ using namespace Intrepid2;
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
-
+Kokkos::initialize();
   typedef CellTools<double>       CellTools;
   typedef shards::CellTopology    CellTopology;
 
@@ -801,6 +801,6 @@ int main(int argc, char *argv[]) {
     }    
     std::cout << "\n";      
   }//pCell
-  
+  Kokkos::finalize();
   return 0;
 }

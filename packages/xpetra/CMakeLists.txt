@@ -33,6 +33,9 @@ GLOBAL_SET(HAVE_XPETRA_EPETRA ${${PACKAGE_NAME}_ENABLE_Epetra})
 
 GLOBAL_SET(HAVE_XPETRA_EPETRAEXT ${${PACKAGE_NAME}_ENABLE_EpetraExt})
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Thyra)
+GLOBAL_SET(HAVE_XPETRA_THYRA ${${PACKAGE_NAME}_ENABLE_Thyra})
+
 # If Epetra is enabled, does it provide 64-bit global indices?
 IF(${PACKAGE_NAME}_ENABLE_Epetra)
 
@@ -116,6 +119,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(XPETRA_ENABLE_PROFILING
   HAVE_XPETRA_PROFILING
   "Enable detailed timing of Xpetra."
   OFF)
+
+# Define option to enable code that is refactored to use Kokkos
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor
+  HAVE_${PACKAGE_NAME_UC}_KOKKOS_REFACTOR
+  "Enable Xpetra code refactored to use Kokkos."
+  NO)
 
 #
 #

@@ -547,12 +547,6 @@ public:
         // Store objective function and iteration information
         fnew = ftmp;
         x.set(*xnew_);
-        if ( softUp_ ) {
-          obj.update(x,true,algo_state.iter);
-          fnew = pObj.value(x,tol);
-          algo_state.nfval++;
-        }
-        algo_state.value = fnew; 
       }
 
       // Store previous gradient for secant update
@@ -578,6 +572,15 @@ public:
       // Update algorithm state
       (algo_state.iterateVec)->set(x);
     }
+    else { // Step was rejected
+      if ( softUp_ ) {
+        obj.update(x,true,algo_state.iter);
+        fnew = pObj.value(x,tol);
+        algo_state.nfval++;
+        algo_state.value = fnew; 
+      }
+    }
+
   }
 
   /** \brief Print iterate header.

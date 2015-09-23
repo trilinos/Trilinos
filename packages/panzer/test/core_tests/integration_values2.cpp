@@ -118,4 +118,80 @@ namespace panzer {
 
   }
 
+  TEUCHOS_UNIT_TEST(integration_values, control_volume)
+  {
+    PHX::KokkosDeviceSession session;
+    
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
+    const int num_cells = 20;
+    const int base_cell_dimension = 2;
+    const panzer::CellData cell_data(num_cells,topo);
+
+    std::string cv_type = "volume";
+    RCP<IntegrationRule> int_rule_vol = 
+      rcp(new IntegrationRule(cell_data, cv_type));
+    
+    panzer::IntegrationValues2<double> int_values_vol("prefix_",true);
+    panzer::MDFieldArrayFactory af("prefix_",true);
+
+    int_values_vol.setupArrays(int_rule_vol);
+
+    cv_type = "side";
+    RCP<IntegrationRule> int_rule_side = 
+      rcp(new IntegrationRule(cell_data, cv_type));
+    
+    panzer::IntegrationValues2<double> int_values_side("prefix_",true);
+
+    int_values_side.setupArrays(int_rule_side);
+
+    const int num_vertices = int_rule_vol->topology->getNodeCount();
+    PHX::MDField<double,Cell,NODE,Dim> node_coordinates 
+        = af.buildStaticArray<double,Cell,NODE,Dim>("nc",num_cells, num_vertices, base_cell_dimension);
+
+    // Set up node coordinates.  Here we assume the following
+    // ordering.  This needs to be consistent with shards topology,
+    // otherwise we will get negative determinates
+
+    // 3(0,1)---2(1,1)
+    //   |    0  |
+    //   |       |
+    // 0(0,0)---1(1,0)
+
+    typedef panzer::ArrayTraits<double,PHX::MDField<double> >::size_type size_type;
+    const size_type x = 0;
+    const size_type y = 1;
+    for (size_type cell = 0; cell < node_coordinates.dimension(0); ++cell) {
+      node_coordinates(cell,0,x) = 0.0;
+      node_coordinates(cell,0,y) = 0.0;
+      node_coordinates(cell,1,x) = 1.0;
+      node_coordinates(cell,1,y) = 0.0;
+      node_coordinates(cell,2,x) = 1.0;
+      node_coordinates(cell,2,y) = 1.0;
+      node_coordinates(cell,3,x) = 0.0;
+      node_coordinates(cell,3,y) = 1.0;
+    }
+
+    int_values_vol.evaluateValues(node_coordinates);
+    int_values_side.evaluateValues(node_coordinates);
+    
+    TEST_EQUALITY(int_values_vol.ip_coordinates.dimension(1), 4);
+    TEST_EQUALITY(int_values_side.ip_coordinates.dimension(1), 4);
+    TEST_EQUALITY(int_values_side.weighted_normals.dimension(1), 4);
+    double realspace_x_coord_1 = 0.25;
+    double realspace_y_coord_1 = 0.25;
+    TEST_FLOATING_EQUALITY(int_values_vol.ip_coordinates(0,0,0), 
+                           realspace_x_coord_1, 1.0e-8);
+    TEST_FLOATING_EQUALITY(int_values_vol.ip_coordinates(0,0,1), 
+                           realspace_y_coord_1, 1.0e-8);
+    double realspace_x_coord_2 = 0.5;
+    double realspace_y_coord_2 = 0.25;
+    TEST_FLOATING_EQUALITY(int_values_side.ip_coordinates(0,0,0), 
+                           realspace_x_coord_2, 1.0e-8);
+    TEST_FLOATING_EQUALITY(int_values_side.ip_coordinates(0,0,1), 
+                           realspace_y_coord_2, 1.0e-8);
+
+  }
+
 }

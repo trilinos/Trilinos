@@ -92,13 +92,17 @@
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 
+#ifdef HAVE_MUELU_KOKKOS_REFACTOR
+#include "MueLu_SaPFactory_kokkos.hpp"
+#endif
+
 #ifdef HAVE_MUELU_MATLAB
-#include "../matlab/MueLu_MatlabSmoother_decl.hpp"
-#include "../matlab/MueLu_MatlabSmoother_def.hpp"
-#include "../matlab/MueLu_TwoLevelMatlabFactory_decl.hpp"
-#include "../matlab/MueLu_TwoLevelMatlabFactory_def.hpp"
-#include "../matlab/MueLu_SingleLevelMatlabFactory_decl.hpp"
-#include "../matlab/MueLu_SingleLevelMatlabFactory_def.hpp"
+#include "../matlab/src/MueLu_MatlabSmoother_decl.hpp"
+#include "../matlab/src/MueLu_MatlabSmoother_def.hpp"
+#include "../matlab/src/MueLu_TwoLevelMatlabFactory_decl.hpp"
+#include "../matlab/src/MueLu_TwoLevelMatlabFactory_def.hpp"
+#include "../matlab/src/MueLu_SingleLevelMatlabFactory_decl.hpp"
+#include "../matlab/src/MueLu_SingleLevelMatlabFactory_def.hpp"
 #endif
 
 // These code chunks should only be enabled once Tpetra supports proper graph
@@ -186,6 +190,16 @@ namespace MueLu {
                  paramList.isParameter(paramName)   ? paramList  .get<paramType>(paramName) : ( \
                                                                                                 defaultList.isParameter(paramName) ? defaultList.get<paramType>(paramName) : \
                                                                                                 MasterList::getDefault<paramType>(paramName) ) ) )
+
+#ifndef HAVE_MUELU_KOKKOS_REFACTOR
+#define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory) \
+  RCP<Factory> varName = rcp(new oldFactory());
+#else
+#define MUELU_KOKKOS_FACTORY(varName, oldFactory, newFactory) \
+  RCP<Factory> varName; \
+  if (!useKokkos) varName = rcp(new oldFactory()); \
+  else            varName = rcp(new newFactory());
+#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetEasyParameterList(const ParameterList& constParamList) {
@@ -373,7 +387,8 @@ namespace MueLu {
     // SetParameterList sets default values for non mentioned parameters, including factories
 
     // shortcut
-    if (paramList.numParams() == 0 && defaultList.numParams() > 0) paramList = Teuchos::ParameterList(defaultList);
+    if (paramList.numParams() == 0 && defaultList.numParams() > 0)
+      paramList = ParameterList(defaultList);
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "reuse: type", std::string, reuseType);
     TEUCHOS_TEST_FOR_EXCEPTION(reuseType != "none" && reuseType != "tP" && reuseType != "RP" && reuseType != "emin" && reuseType != "RAP" && reuseType != "full",
@@ -398,6 +413,9 @@ namespace MueLu {
       reuseType = "none";
       this->GetOStream(Warnings0) << "Ignoring \"emin\" reuse option it is only compatible with \"emin\" multigrid algorithm" << std::endl;
     }
+
+    MUELU_SET_VAR_2LIST(paramList, defaultList, "use kokkos refactor", bool, useKokkos);
+    (void) useKokkos;
 
     // == Non-serializable data ===
     // Check both the parameter and the type
@@ -694,7 +712,7 @@ namespace MueLu {
       manager.SetFactory("P", Ptent);
     } else if (multigridAlgo == "sa") {
       // Smoothed aggregation
-      RCP<SaPFactory> P = rcp(new SaPFactory());
+      MUELU_KOKKOS_FACTORY(P, SaPFactory, SaPFactory_kokkos);
       ParameterList Pparams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "sa: damping factor", double, Pparams);
 #if REUSE_MATRIX_GRAPHS
@@ -757,6 +775,11 @@ namespace MueLu {
       manager.SetFactory("P", P);
 
     } else if (multigridAlgo == "pg") {
+      TEUCHOS_TEST_FOR_EXCEPTION(this->implicitTranspose_, Exceptions::RuntimeError,
+            "Implicit transpose not supported with Petrov-Galerkin smoothed transfer operators: Set \"transpose: use implicit\" to false!\n" \
+            "Petrov-Galerkin transfer operator smoothing for non-symmetric problems requires a separate handling of the restriction operator which " \
+            "does not allow the usage of implicit transpose easily.");
+
       // Petrov-Galerkin
       RCP<PgPFactory> P = rcp(new PgPFactory());
       P->SetFactory("P", manager.GetFactory("Ptent"));
@@ -780,10 +803,10 @@ namespace MueLu {
       ParameterList togglePParams;
       ParameterList semicoarsenPParams;
       ParameterList linedetectionParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: number of levels", int, togglePParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: coarsen rate", int, semicoarsenPParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: orientation", std::string, linedetectionParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: num layers", int, linedetectionParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: number of levels", int,         togglePParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: coarsen rate",     int,         semicoarsenPParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: orientation",    std::string, linedetectionParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: num layers",     int,         linedetectionParams);
 
       semicoarsenFactory                             = rcp(new SemiCoarsenPFactory());
       RCP<LineDetectionFactory> linedetectionFactory = rcp(new LineDetectionFactory());
@@ -812,9 +835,15 @@ namespace MueLu {
     if (!this->implicitTranspose_) {
       MUELU_SET_VAR_2LIST(paramList, defaultList, "problem: symmetric", bool, isSymmetric);
       if (isSymmetric == false && (multigridAlgo == "unsmoothed" || multigridAlgo == "emin")) {
-        this->GetOStream(Warnings0) << "Switching to symmetric problem as multigrid algorithm \"" << multigridAlgo << "\" is restricted to symmetric case" << std::endl;
+        this->GetOStream(Warnings0) << "Switching \"problem: symmetric\" parameter to symmetric as multigrid algorithm. " << multigridAlgo << " is primarily supposed to be used for symmetric problems." << std::endl << std::endl;
+        this->GetOStream(Warnings0) << "Please note: if you are using \"unsmoothed\" transfer operators the \"problem: symmetric\" parameter has no real mathematical meaning, i.e. you can use it for non-symmetric" << std::endl;
+        this->GetOStream(Warnings0) << "problems, too. With \"problem: symmetric\"=\"symmetric\" you can use implicit transpose for building the restriction operators which may drastically reduce the amount of consumed memory." << std::endl;
         isSymmetric = true;
       }
+      TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "pg" && isSymmetric == true, Exceptions::RuntimeError,
+            "Petrov-Galerkin smoothed transfer operators are only allowed for non-symmetric problems: Set \"problem: symmetric\" to false!\n" \
+            "While PG smoothed transfer operators generally would also work for symmetric problems this is an unusual use case. " \
+            "You can use the factory-based xml interface though if you need PG-AMG for symmetric problems.");
 
       if (have_userR) {
         manager.SetFactory("R", NoFactory::getRCP());
@@ -1066,7 +1095,7 @@ namespace MueLu {
     const ParameterList& validList = *MasterList::List();
     // Validate up to maxLevels level specific parameter sublists
     const int maxLevels = 100;
-    
+
     // Extract level specific list
     std::vector<ParameterList> paramLists;
     for (int levelID = 0; levelID < maxLevels; levelID++) {
@@ -1113,7 +1142,7 @@ namespace MueLu {
         size_t nameStart = eString.find_first_of('"') + 1;
         size_t nameEnd   = eString.find_first_of('"', nameStart);
         std::string name = eString.substr(nameStart, nameEnd - nameStart);
-  
+
         int bestScore = 100;
         std::string bestName  = "";
         for (ParameterList::ConstIterator it = validList.begin(); it != validList.end(); it++)

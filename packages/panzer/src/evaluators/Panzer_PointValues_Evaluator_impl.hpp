@@ -138,7 +138,7 @@ PHX_POST_REGISTRATION_SETUP(PointValues_Evaluator,sd,fm)
   this->utils.setFieldData(pointValues.point_coords,fm);
 
   if(useBasisValuesRefArray) {
-    basis_index = panzer::getPureBasisIndex(basis->name(), (*sd.worksets_)[0]);
+    basis_index = panzer::getPureBasisIndex(basis->name(), (*sd.worksets_)[0], this->wda);
 
     // basis better have coordinates if you want to use them! Assertion to protect
     // a silent failure.
@@ -150,14 +150,14 @@ PHX_POST_REGISTRATION_SETUP(PointValues_Evaluator,sd,fm)
 PHX_EVALUATE_FIELDS(PointValues_Evaluator,workset)
 { 
   if(useBasisValuesRefArray) {
-    panzer::BasisValues2<double> & basisValues = *workset.bases[basis_index];
+    panzer::BasisValues2<double> & basisValues = *this->wda(workset).bases[basis_index];
 
     // evaluate the point values (construct jacobians etc...)
-    pointValues.evaluateValues(workset.cell_vertex_coordinates,basisValues.basis_coordinates_ref);
+    pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,basisValues.basis_coordinates_ref);
   }
   else {
     // evaluate the point values (construct jacobians etc...)
-    pointValues.evaluateValues(workset.cell_vertex_coordinates,refPointArray);
+    pointValues.evaluateValues(this->wda(workset).cell_vertex_coordinates,refPointArray);
   }
 }
 

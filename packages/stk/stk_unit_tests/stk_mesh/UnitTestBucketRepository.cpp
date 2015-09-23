@@ -46,6 +46,7 @@
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, OrdinalVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include <unit_tests/BulkDataTester.hpp>
 
 TEST(BucketRepositoryTest, createBuckets)
 {
@@ -60,12 +61,10 @@ TEST(BucketRepositoryTest, createBuckets)
     parts.push_back(stkMeshMetaData.declare_part("part2").mesh_meta_data_ordinal());
     stkMeshMetaData.commit();
 
-    stk::mesh::BulkData stkMeshBulkData(stkMeshMetaData, comm);
+    stk::mesh::unit_test::BulkDataTester stkMeshBulkData(stkMeshMetaData, comm);
     stk::mesh::impl::EntityRepository entityRepository(stkMeshBulkData);
 
-    stk::mesh::impl::BucketRepository &bucketRepository =
-      stk::mesh::impl::Partition::getRepository(stkMeshBulkData);
-
+    stk::mesh::impl::BucketRepository &bucketRepository = stkMeshBulkData.my_get_bucket_repository();
     stk::mesh::impl::Partition* partition = bucketRepository.get_or_create_partition(stk::topology::NODE_RANK, parts);
 
     size_t numNodes = 1024;

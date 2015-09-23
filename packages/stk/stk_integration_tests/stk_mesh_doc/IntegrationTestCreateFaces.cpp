@@ -39,7 +39,6 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
 #include <stk_mesh/fixtures/GearsFixture.hpp>  // for GearsFixture, etc
-#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
 #include <stk_mesh/fixtures/TetFixture.hpp>  // for TetFixture
 #include <stk_mesh/fixtures/degenerate_mesh.hpp>  // for VectorFieldType, etc
 #include <stk_mesh/fixtures/heterogeneous_mesh.hpp>

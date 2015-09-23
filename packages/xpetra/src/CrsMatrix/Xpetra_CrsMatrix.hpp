@@ -55,6 +55,11 @@
 #include "Xpetra_CrsGraph.hpp"
 #include "Xpetra_Vector.hpp"
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+#include <Kokkos_StaticCrsGraph.hpp>
+#include <Kokkos_CrsMatrix.hpp>
+#endif
+
 namespace Xpetra {
 
   template <class Scalar = double,
@@ -245,6 +250,29 @@ namespace Xpetra {
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
 
     //@}
+
+    //! @name Xpetra-specific routines
+    //@{
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    typedef typename Kokkos::Details::ArithTraits<Scalar>::val_type impl_scalar_type;
+    typedef typename node_type::execution_space execution_space;
+
+    // that is the local_graph_type in Tpetra::CrsGraph...
+    typedef Kokkos::StaticCrsGraph<LocalOrdinal,
+                                       Kokkos::LayoutLeft,
+                                       execution_space> local_graph_type;
+    /// \brief The specialization of Kokkos::CrsMatrix that represents
+    ///   the part of the sparse matrix on each MPI process.
+    ///  The same as for Tpetra
+    typedef Kokkos::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space,void,
+                              typename local_graph_type::size_type> local_matrix_type;
+
+    /// \brief Access the underlying local Kokkos::CrsMatrix object
+    virtual local_matrix_type getLocalMatrix () const = 0;
+#endif
+
+    //@}
+
     //  Adding these functions by hand, as they're in the skip list.
 
     //! Returns the number of matrix columns owned on the calling node.

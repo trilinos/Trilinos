@@ -2,6 +2,47 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
+Development version (12.3)
+--------------------------
+
+* 128-bit floating-point arithmetic through Scalar = __float128
+
+__float128 is a GCC language extension to C(++) that implements
+"double-double" 128-bit floating-point arithmetic.  It requires
+linking with libquadmath, which comes with GCC.
+
+You must use GCC in order to try this feature.  Also, set the
+following CMake variables:
+
+Tpetra_INST_FLOAT128:BOOL=ON
+CMAKE_CXX_FLAGS:STRING="-std=gnu++11 -fext-numeric-literals"
+TPL_ENABLE_quadmath:BOOL=ON
+
+You may also have to tell CMake where to find the libquadmath library
+and quadmath.h header file:
+
+quadmath_LIBRARY_DIRS:FILEPATH="${QUADMATH_LIB_DIR}"
+quadmath_INCLUDE_DIRS:FILEPATH="${QUADMATH_INC_DIR}"
+
+Here, ${QUADMATH_LIB_DIR} points to the directory containing the
+libquadmath library (usually your GCC library directory), and
+${QUADMATH_INC_DIR} points to the directory containing its header file
+(quadmath.h).  For example, if you use a GCC installed in
+$HOME/pkg/gcc-5.2.0, you might need to set those variables as follows:
+
+QUADMATH_LIB_DIR=$HOME/pkg/gcc-5.2.0/lib
+QUADMATH_INC_DIR=$HOME/pkg/gcc-5.2.0/lib/gcc/x86_64-unknown-linux-gnu/5.2.0/include
+
+Trilinos likes to set the "-pedantic" flag, which causes warnings for
+__float128 literals.  The build works regardless, but it would be more
+pleasing to your eyes if you could figure out how to shut off the
+warnings.
+
+I implemented this because the Kokkos refactor of Tpetra broke QD
+support (dd_real and qd_real -- "double-double" and "quad-double,"
+128- resp. 256-bit floating-point arithmetic).  Applications were
+asking for a work-around solution.
+
 Trilinos 12.2
 -------------
 

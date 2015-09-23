@@ -45,16 +45,24 @@
 /// \file Tpetra_Experimental_BlockView.hpp
 /// \brief Declaration and definition of LittleBlock and LittleVector
 
-#include <Tpetra_ConfigDefs.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_LAPACK.hpp>
+#include "Tpetra_ConfigDefs.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_LAPACK.hpp"
+#ifdef HAVE_TPETRA_INST_FLOAT128
+#  include "Teuchos_BLAS.hpp"
+#endif // HAVE_TPETRA_INST_FLOAT128
 
 #ifdef TPETRA_HAVE_KOKKOS_REFACTOR
-#  include <Kokkos_ArithTraits.hpp>
-#  include <Kokkos_Complex.hpp>
+#  include "Kokkos_ArithTraits.hpp"
+#  include "Kokkos_Complex.hpp"
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
-namespace { // anonymous
+#ifdef HAVE_TPETRA_INST_FLOAT128
+#  include "Teuchos_Details_Lapack128.hpp"
+#endif // HAVE_TPETRA_INST_FLOAT128
+
+namespace Tpetra {
+namespace Details {
 
   /// \brief Return the Teuchos::LAPACK specialization corresponding
   ///   to the given Scalar type.
@@ -79,10 +87,20 @@ namespace { // anonymous
   };
 #endif // TPETRA_HAVE_KOKKOS_REFACTOR
 
-} // namespace (anonymous)
+#ifdef HAVE_TPETRA_INST_FLOAT128
+  template<>
+  struct GetLapackType<__float128> {
+    typedef __float128 lapack_scalar_type;
+    // Use the Lapack128 class we declared above to implement the
+    // linear algebra operations needed for small dense blocks and
+    // vectors.
+    typedef Teuchos::Details::Lapack128 lapack_type;
+  };
+#endif // HAVE_TPETRA_INST_FLOAT128
 
-//#include "Teuchos_LAPACK_wrappers.hpp"
-//extern "C" {int DGETRF_F77(const int *, const int *, double *, const int*, int *, int*);}
+} // namespace Details
+} // namespace Tpetra
+
 
 namespace Tpetra {
 
@@ -269,8 +287,8 @@ public:
 
   void factorize (int* ipiv, int & info)
   {
-    typedef typename GetLapackType<Scalar>::lapack_scalar_type LST;
-    typedef typename GetLapackType<Scalar>::lapack_type lapack_type;
+    typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_scalar_type LST;
+    typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_type lapack_type;
 
     LST* const A_raw = reinterpret_cast<LST*> (A_);
     lapack_type lapack;
@@ -283,8 +301,8 @@ public:
   template<class LittleVectorType>
   void solve (LittleVectorType & X, const int* ipiv) const
   {
-    typedef typename GetLapackType<Scalar>::lapack_scalar_type LST;
-    typedef typename GetLapackType<Scalar>::lapack_type lapack_type;
+    typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_scalar_type LST;
+    typedef typename Tpetra::Details::GetLapackType<Scalar>::lapack_type lapack_type;
 
     // FIXME (mfh 03 Jan 2015) Check using enable_if that Scalar can
     // be safely converted to LST.

@@ -108,7 +108,7 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
   else
     this->utils.setFieldData(dof_ip_scalar,fm);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 //**********************************************************************
@@ -116,7 +116,7 @@ template<typename EvalT, typename TRAITS>
 void DOF<EvalT, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  panzer::BasisValues2<double> & basisValues = *workset.bases[basis_index];
+  panzer::BasisValues2<double> & basisValues = *this->wda(workset).bases[basis_index];
 
   if(is_vector_basis) {
     int spaceDim  = basisValues.basis_vector.dimension(3);
@@ -207,7 +207,7 @@ postRegistrationSetup(typename TRAITS::SetupData sd,
   else
     this->utils.setFieldData(dof_ip_scalar,fm);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 }
 
 // **********************************************************************
@@ -228,7 +228,7 @@ template<typename TRAITS>
 void DOF<typename TRAITS::Jacobian, TRAITS>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
-  panzer::BasisValues2<double> & basisValues = *workset.bases[basis_index];
+  panzer::BasisValues2<double> & basisValues = *this->wda(workset).bases[basis_index];
 
   if(is_vector_basis) {
     if(accelerate_jacobian) {

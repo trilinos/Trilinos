@@ -47,13 +47,11 @@
 #ifndef TPETRA_MAP_DEF_HPP
 #define TPETRA_MAP_DEF_HPP
 
-#include <Tpetra_Directory.hpp> // must include for implicit instantiation to work
-#include <Tpetra_Details_FixedHashTable.hpp>
-#include <Tpetra_Util.hpp>
-#include <Teuchos_as.hpp>
+#include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
+#include "Tpetra_Details_FixedHashTable.hpp"
+#include "Tpetra_Util.hpp"
+#include "Teuchos_as.hpp"
 #include <stdexcept>
-
-#include "Tpetra_Map_decl.hpp"
 
 namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -64,12 +62,12 @@ namespace Tpetra {
     indexBase_ (0),
     numGlobalElements_ (0),
     numLocalElements_ (0),
-    minMyGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
-    maxMyGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
-    minAllGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
-    maxAllGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
-    firstContiguousGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
-    lastContiguousGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    minMyGID_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    maxMyGID_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    minAllGID_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    maxAllGID_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    firstContiguousGID_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    lastContiguousGID_ (Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ()),
     uniform_ (false), // trivially
     contiguous_ (false),
     distributed_ (false), // no communicator yet
@@ -97,7 +95,7 @@ namespace Tpetra {
     using Teuchos::typeName;
     typedef GlobalOrdinal GO;
     typedef global_size_t GST;
-    const GST GSTI = Teuchos::OrdinalTraits<GST>::invalid ();
+    const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
 #ifdef HAVE_TPETRA_DEBUG
     // In debug mode only, check whether numGlobalElements and
@@ -250,7 +248,7 @@ namespace Tpetra {
     using Teuchos::scan;
     typedef GlobalOrdinal GO;
     typedef global_size_t GST;
-    const GST GSTI = Teuchos::OrdinalTraits<GST>::invalid ();
+    const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
 #ifdef HAVE_TPETRA_DEBUG
     // Keep this for later debug checks.
@@ -388,7 +386,7 @@ namespace Tpetra {
     typedef GlobalOrdinal GO;
     typedef global_size_t GST;
     typedef typename ArrayView<const GO>::size_type size_type;
-    const GST GSTI = Teuchos::OrdinalTraits<GST>::invalid ();
+    const GST GSTI = Tpetra::Details::OrdinalTraits<GST>::invalid ();
 
     // The user has specified the distribution of elements over the
     // processes, via entryList.  The distribution is not necessarily
@@ -566,7 +564,7 @@ namespace Tpetra {
     // are both indexBase_.  This is wrong, but fixing it would
     // require either a fancy sparse all-reduce, or a custom reduction
     // operator that ignores invalid values ("invalid" means
-    // Teuchos::OrdinalTraits<GO>::invalid()).
+    // Tpetra::Details::OrdinalTraits<GO>::invalid()).
     //
     // Also, while we're at it, use the same all-reduce to figure out
     // if the Map is distributed.  "Distributed" means that there is
@@ -649,8 +647,9 @@ namespace Tpetra {
   getLocalElement (GlobalOrdinal globalIndex) const
   {
     if (isContiguous ()) {
-      if (globalIndex < getMinGlobalIndex () || globalIndex > getMaxGlobalIndex ()) {
-        return Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
+      if (globalIndex < getMinGlobalIndex () ||
+          globalIndex > getMaxGlobalIndex ()) {
+        return Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid ();
       }
       return static_cast<LocalOrdinal> (globalIndex - getMinGlobalIndex ());
     }
@@ -659,8 +658,8 @@ namespace Tpetra {
       return static_cast<LocalOrdinal> (globalIndex - firstContiguousGID_);
     }
     else {
-      // This returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid()
-      // if the given global index is not in the table.
+      // If the given global index is not in the table, this returns
+      // the same value as OrdinalTraits<LocalOrdinal>::invalid().
       return glMap_.get (globalIndex);
     }
   }
@@ -671,7 +670,7 @@ namespace Tpetra {
   getGlobalElement (LocalOrdinal localIndex) const
   {
     if (localIndex < getMinLocalIndex () || localIndex > getMaxLocalIndex ()) {
-      return Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ();
+      return Tpetra::Details::OrdinalTraits<GlobalOrdinal>::invalid ();
     }
     if (isContiguous ()) {
       return getMinGlobalIndex () + localIndex;
@@ -698,16 +697,16 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   isNodeGlobalElement (GlobalOrdinal globalIndex) const {
     return this->getLocalElement (globalIndex) !=
-      Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
+      Tpetra::Details::OrdinalTraits<LocalOrdinal>::invalid ();
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isUniform() const {
+  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isUniform () const {
     return uniform_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isContiguous() const {
+  bool Map<LocalOrdinal,GlobalOrdinal,Node>::isContiguous () const {
     return contiguous_;
   }
 
@@ -1090,7 +1089,7 @@ namespace Tpetra {
   {
     using Teuchos::Comm;
     using Teuchos::null;
-    using Teuchos::OrdinalTraits;
+    using Tpetra::Details::OrdinalTraits;
     using Teuchos::outArg;
     using Teuchos::RCP;
     using Teuchos::rcp;
@@ -1250,6 +1249,9 @@ namespace Tpetra {
                       const Teuchos::ArrayView<int>& PIDs,
                       const Teuchos::ArrayView<LocalOrdinal>& LIDs) const
   {
+    using Tpetra::Details::OrdinalTraits;
+    typedef Teuchos::ArrayView<int>::size_type size_type;
+
     // Empty Maps (i.e., containing no indices on any processes in the
     // Map's communicator) are perfectly valid.  In that case, if the
     // input GID list is nonempty, we fill the output arrays with
@@ -1260,12 +1262,11 @@ namespace Tpetra {
       if (GIDs.size () == 0) {
         return AllIDsPresent; // trivially
       } else {
-        for (Teuchos::ArrayView<int>::size_type k = 0; k < PIDs.size (); ++k) {
-          PIDs[k] = Teuchos::OrdinalTraits<int>::invalid ();
+        for (size_type k = 0; k < PIDs.size (); ++k) {
+          PIDs[k] = OrdinalTraits<int>::invalid ();
         }
-        for (typename Teuchos::ArrayView<LocalOrdinal>::size_type k = 0;
-             k < LIDs.size (); ++k) {
-          LIDs[k] = Teuchos::OrdinalTraits<LocalOrdinal>::invalid ();
+        for (size_type k = 0; k < LIDs.size (); ++k) {
+          LIDs[k] = OrdinalTraits<LocalOrdinal>::invalid ();
         }
         return IDNotPresent;
       }
@@ -1290,7 +1291,7 @@ namespace Tpetra {
       } else {
         // The Map contains no indices, so all output PIDs are invalid.
         for (Teuchos::ArrayView<int>::size_type k = 0; k < PIDs.size (); ++k) {
-          PIDs[k] = Teuchos::OrdinalTraits<int>::invalid ();
+          PIDs[k] = Tpetra::Details::OrdinalTraits<int>::invalid ();
         }
         return IDNotPresent;
       }
@@ -1305,13 +1306,13 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const Teuchos::Comm<int> >
-  Map<LocalOrdinal,GlobalOrdinal,Node>::getComm() const {
+  Map<LocalOrdinal,GlobalOrdinal,Node>::getComm () const {
     return comm_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<Node>
-  Map<LocalOrdinal,GlobalOrdinal,Node>::getNode() const {
+  Map<LocalOrdinal,GlobalOrdinal,Node>::getNode () const {
     return node_;
   }
 
@@ -1380,31 +1381,36 @@ Tpetra::createUniformContigMapWithNode (global_size_t numElements,
 {
   using Teuchos::rcp;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
-  const GlobalOrdinal indexBase = Teuchos::OrdinalTraits<GlobalOrdinal>::zero ();
+  const GlobalOrdinal indexBase = static_cast<GlobalOrdinal> (0);
 
   return rcp (new map_type (numElements, indexBase, comm, GloballyDistributed, node));
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
+Tpetra::createLocalMapWithNode (size_t numElements,
+                                const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                                const Teuchos::RCP<Node>& node)
+{
   using Tpetra::global_size_t;
-  using Teuchos::as;
   using Teuchos::rcp;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
-  const GlobalOrdinal indexBase = Teuchos::OrdinalTraits<GlobalOrdinal>::zero ();
-  const global_size_t globalNumElts = as<global_size_t> (numElements);
+  const GlobalOrdinal indexBase = static_cast<GlobalOrdinal> (0);
+  const global_size_t globalNumElts = static_cast<global_size_t> (numElements);
 
   return rcp (new map_type (globalNumElts, indexBase, comm, LocallyReplicated, node));
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createContigMapWithNode(Tpetra::global_size_t numElements, size_t localNumElements,
-                                const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
+Tpetra::createContigMapWithNode (Tpetra::global_size_t numElements,
+                                 size_t localNumElements,
+                                 const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                                 const Teuchos::RCP<Node>& node)
+{
   using Teuchos::rcp;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
-  const GlobalOrdinal indexBase = Teuchos::OrdinalTraits<GlobalOrdinal>::zero ();
+  const GlobalOrdinal indexBase = static_cast<GlobalOrdinal> (0);
 
   return rcp (new map_type (numElements, localNumElements, indexBase, comm, node));
 }
@@ -1434,9 +1440,9 @@ Tpetra::createNonContigMapWithNode(const Teuchos::ArrayView<const GlobalOrdinal>
   using Teuchos::rcp;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
   typedef Tpetra::global_size_t GST;
-  return rcp (new map_type (Teuchos::OrdinalTraits<GST>::invalid (),
+  return rcp (new map_type (Tpetra::Details::OrdinalTraits<GST>::invalid (),
                             elementList,
-                            Teuchos::OrdinalTraits<GST>::zero (),
+                            static_cast<GST> (0),
                             comm,
                             node));
 }
@@ -1482,7 +1488,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& M)
   using Teuchos::rcp;
   typedef Tpetra::Map<LO, GO, NT> map_type;
   typedef global_size_t GST;
-  const GST GINV = Teuchos::OrdinalTraits<GST>::invalid ();
+  const GST GINV = Tpetra::Details::OrdinalTraits<GST>::invalid ();
   const int myRank = M->getComm ()->getRank ();
 
   // Bypasses for special cases where either M is known to be
@@ -1583,7 +1589,7 @@ Tpetra::createOneToOne (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,Global
   // FIXME (mfh 08 May 2014) The above Directory should be perfectly
   // valid for the new Map.  Why can't we reuse it?
   const global_size_t GINV =
-    Teuchos::OrdinalTraits<global_size_t>::invalid ();
+    Tpetra::Details::OrdinalTraits<global_size_t>::invalid ();
   return rcp (new map_type (GINV, myOwned_vec (), M->getIndexBase (),
                             M->getComm (), M->getNode ()));
 }

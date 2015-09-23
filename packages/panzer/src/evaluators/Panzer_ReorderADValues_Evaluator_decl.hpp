@@ -54,6 +54,8 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
 
 class UniqueGlobalIndexerBase;
@@ -66,7 +68,7 @@ class UniqueGlobalIndexerBase;
 */
 template<typename EvalT, typename TRAITS> 
 class ReorderADValues_Evaluator  
-  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+  : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<EvalT, TRAITS> {
 public:
   typedef typename EvalT::ScalarT ScalarT;
@@ -111,7 +113,7 @@ private:
 // **************************************************************
 template<typename TRAITS>
 class ReorderADValues_Evaluator<typename TRAITS::Jacobian,TRAITS>  
-  : public PHX::EvaluatorWithBaseImpl<TRAITS>,
+  : public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<typename TRAITS::Jacobian, TRAITS> {
   
 public:

@@ -46,6 +46,8 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_MDField.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
     
   /** \brief Evaluates cross product at a set of points
@@ -57,7 +59,7 @@ namespace panzer {
     <Parameter name="Vector A Name" type="string" value="<vector a name>"/>
     <Parameter name="Vector B Name" type="string" value="<vector b name>"/>
   */
-PHX_EVALUATOR_CLASS(CrossProduct)
+PANZER_EVALUATOR_CLASS(CrossProduct)
   
   PHX::MDField<ScalarT> vec_a_cross_vec_b;
   PHX::MDField<ScalarT> vec_a, vec_b;
@@ -67,7 +69,7 @@ PHX_EVALUATOR_CLASS(CrossProduct)
   int num_pts;
   int num_dim;
 
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 }
 

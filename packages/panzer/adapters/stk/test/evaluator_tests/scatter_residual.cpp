@@ -85,6 +85,8 @@ using Teuchos::rcp;
 #include <vector>
 #include <string>
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
   typedef Teuchos::ArrayRCP<const double>::size_type size_type;
 

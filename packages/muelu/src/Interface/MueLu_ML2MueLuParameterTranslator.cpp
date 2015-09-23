@@ -54,7 +54,7 @@
 
 namespace MueLu {
 
-  
+
   std::string ML2MueLuParameterTranslator::GetSmootherFactory(const Teuchos::ParameterList& paramList, Teuchos::ParameterList& adaptingParamList, const std::string& pname, const std::string& value) {
 
     TEUCHOS_TEST_FOR_EXCEPTION(pname != "coarse: type" && pname != "coarse: list" && pname != "smoother: type" && pname.find("smoother: list",0) != 0, Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): Only \"coarse: type\", \"smoother: type\" or \"smoother: list\" (\"coarse: list\") are supported as ML parameters for transformation of smoother/solver parameters to MueLu");
@@ -97,7 +97,7 @@ namespace MueLu {
        mueluss << "<Parameter name=" << my_name << " type=\"string\" value=\"CHEBYSHEV\"/>" << std::endl;
     } else if (valuestr.length() > strlen("amesos") && valuestr.substr(0, strlen("amesos")) == "amesos") {  /* catch Amesos-* */
       std::string solverType = valuestr.substr(strlen("amesos")+1);  /* ("amesos-klu" -> "klu") */
-   
+
       bool valid = false;
       const int  validatorSize = 5;
       std::string validator[validatorSize] = {"superlu", "superludist", "klu", "umfpack"};
@@ -126,7 +126,7 @@ namespace MueLu {
     } else {
       mueluss << "<ParameterList name=\"" << mode << " params\">" << std::endl;
     }
-    
+
     // relaxation based smoothers:
 
     if ( valuestr == "jacobi" || valuestr == "gauss-seidel" || valuestr == "symmetric gauss-seidel" ) {
@@ -162,11 +162,11 @@ namespace MueLu {
     if ( paramList.isParameter("smoother: max size") ) {
       mueluss << "<Parameter name=\"coarse: max size\" type=\"int\" value=\"" << paramList.get<int>("smoother: max size") << "\"/>" << std::endl; adaptingParamList.remove("smoother: max size",false);
     }
-    
+
     return mueluss.str();
   }
-  
-  
+
+
   std::string ML2MueLuParameterTranslator::SetParameterList(const Teuchos::ParameterList & paramList_in, const std::string& defaultVals) {
     Teuchos::ParameterList paramList = paramList_in;
 
@@ -192,7 +192,7 @@ namespace MueLu {
         *out << "Warning: MueLu_ENABLE_ML=OFF. No ML default values available." << std::endl;
     }
 #endif // HAVE_MUELU_ML
-  
+
     //
     // Move smoothers/aggregation/coarse parameters to sublists
     //
@@ -245,26 +245,34 @@ namespace MueLu {
       replaceAll(valuestr, "[unused]", "");
       replaceAll(valuestr, "[default]", "");
       valuestr = trim(valuestr);
-          
+
       // transform ML parameter to corresponding MueLu parameter and generate XML string
       std::string valueInterpreterStr = "\"" + valuestr + "\"";
       std::string ret = MasterList::interpretParameterName(MasterList::ML2MueLu(pname),valueInterpreterStr);
-      
+
       // add XML string
       if (ret != "") {
         mueluss << ret << std::endl;
-        
+
         // remove parameter from ML parameter list
         adaptingParamList.remove(pname,false);
       }
-      
+
+      // special handling for energy minimization
+      // TAW: this is not optimal for symmetric problems but at least works.
+      //      for symmetric problems the "energy minimization" parameter should not exist anyway...
+      if (pname == "energy minimization: enable") {
+        mueluss << "<Parameter name=\"problem: symmetric\"      type=\"bool\"     value=\"false\"/>" << std::endl;
+        mueluss << "<Parameter name=\"transpose: use implicit\" type=\"bool\"     value=\"false\"/>" << std::endl;
+      }
+
       // special handling for smoothers
       if (pname == "smoother: type") {
 
         mueluss << GetSmootherFactory(paramList, adaptingParamList, pname, valuestr);
 
       }
-      
+
       // special handling for level-specific smoothers
       if (pname.find("smoother: list (level",0) == 0) {
         // Scan pname (ex: pname="smoother: type (level 2)")
@@ -284,17 +292,17 @@ namespace MueLu {
                                         << "Error in creating level-specific sublists" << std::endl
                                         << "Offending parameter: " << pname << std::endl);
           }
-                   
+
           mueluss << "<ParameterList name=\"level " << levelID << "\">" << std::endl;
           mueluss << GetSmootherFactory(paramList.sublist(pname),adaptingParamList.sublist(pname), "smoother: type", paramList.sublist(pname).get<std::string>("smoother: type"));
           mueluss << "</ParameterList>" << std::endl;
         }
       }
-      
+
       // special handling for coarse level
       TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("coarse: type"), Exceptions::RuntimeError, "MueLu::MLParameterListInterpreter::Setup(): The parameter \"coarse: type\" should not exist but being stored in \"coarse: list\" instead.");
       if ( pname == "coarse: list" ) {
-        
+
         // interpret smoother/coarse solver data.
         // Note, that we inspect the "coarse: list" sublist to define the "coarse" smoother/solver
         // Be aware, that MueLu::CreateSublists renames the prefix of the parameters in the "coarse: list" from "coarse" to "smoother".
@@ -306,7 +314,7 @@ namespace MueLu {
       }
 
 
-      
+
     } // for
 
     mueluss << "</ParameterList>" << std::endl;
@@ -314,5 +322,5 @@ namespace MueLu {
     return mueluss.str();
   }
 
-  
+
 } // namespace MueLu

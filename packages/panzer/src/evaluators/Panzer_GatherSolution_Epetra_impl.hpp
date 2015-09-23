@@ -180,8 +180,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
 /*
    Teuchos::RCP<Epetra_Vector> x;
@@ -342,8 +342,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<int> LIDs;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    // NOTE: A reordering of these loops will likely improve performance
    //       The "getGIDFieldOffsets may be expensive.  However the
@@ -531,8 +531,8 @@ void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, TRAITS,LO,GO>::
 evaluateFields(typename TRAITS::EvalData workset)
 { 
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    double seed_value = 0.0;
    if(applySensitivities_) {
@@ -562,6 +562,15 @@ evaluateFields(typename TRAITS::EvalData workset)
    //       The "getGIDFieldOffsets may be expensive.  However the
    //       "getElementGIDs" can be cheaper. However the lookup for LIDs
    //       may be more expensive!
+
+   // Interface worksets handle DOFs from two element blocks. The derivative
+   // offset for the other element block must be shifted by the derivative side
+   // of my element block.
+   int dos = 0;
+   if (this->wda.getDetailsIndex() == 1) {
+     // Get the DOF count for my element block.
+     dos = globalIndexer_->getElementBlockGIDCount(workset.details(0).block_id);
+   }
 
    // loop over the fields to be gathered
    for(std::size_t fieldIndex=0;
@@ -594,7 +603,7 @@ evaluateFields(typename TRAITS::EvalData workset)
 
              // set the value and seed the FAD object
              field(worksetCellIndex,basis).val() = x[lid];
-             field(worksetCellIndex,basis).fastAccessDx(offset) = seed_value;
+             field(worksetCellIndex,basis).fastAccessDx(dos + offset) = seed_value;
            }
          }
       }

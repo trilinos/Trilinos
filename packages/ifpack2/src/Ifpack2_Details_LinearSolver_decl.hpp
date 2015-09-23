@@ -1,46 +1,130 @@
+/*@HEADER
+// ***********************************************************************
+//
+//       Ifpack2: Templated Object-Oriented Algebraic Preconditioner Package
+//                 Copyright (2009) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+//@HEADER
+*/
+
+/// \file Ifpack2_Details_LinearSolver_decl_hpp
+/// \brief Declaration of Ifpack2::Details::LinearSolver, an
+///   implementation detail of Ifpack2's LinearSolverFactory.
+
 #ifndef IFPACK2_DETAILS_LINEARSOLVER_DECL_HPP
 #define IFPACK2_DETAILS_LINEARSOLVER_DECL_HPP
 
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Trilinos_Details_LinearSolver.hpp>
-#include <Ifpack2_Preconditioner.hpp>
+#include "Ifpack2_ConfigDefs.hpp"
+#include "Trilinos_Details_LinearSolver.hpp"
+#include "Ifpack2_Preconditioner.hpp"
+#include "Teuchos_Describable.hpp"
 
 namespace Ifpack2 {
 namespace Details {
 
 /// \class LinearSolver
-/// \brief Ifpack2's implementation of Trilinos::Details::LinearSolver interface
+/// \brief Ifpack2's implementation of Trilinos::Details::LinearSolver
+///   interface
 ///
 /// \tparam SC Scalar type; 1st template parameter of Tpetra::Operator
 /// \tparam LO Local ordinal type; 2nd template parameter of Tpetra::Operator
 /// \tparam GO Global ordinal type; 3rd template parameter of Tpetra::Operator
 /// \tparam NT Node type; 4th template parameter of Tpetra::Operator
+///
+/// Note to Ifpack2 developers: The main choice when implementing
+/// Trilinos::Details::LinearSolver for a solver package, is whether
+/// the LinearSolver or the LinearSolverFactory should know how to
+/// create solvers from that package.  For Ifpack2, one would think
+/// that LinearSolver needs to know how to create solvers.  This is
+/// because not every Ifpack2::Preconditioner subclass knows how to
+/// change its matrix, which is necessary for implementing setMatrix.
+/// If solvers don't know how to change their matrix, then the
+/// LinearSolver subclass has to destroy and recreate the solver with
+/// the new matix.
+///
+/// Ifpack2 has a complication, though: Some Ifpack2 solvers have a
+/// choice, either to create an inner solver using
+/// Trilinos::Details::LinearSolverFactory, or to use an
+/// Ifpack2::Preconditioner provided by the user.  AdditiveSchwarz is
+/// the prototypical example.  For simplicity, we let AdditiveSchwarz
+/// wrap the user's Ifpack2::Preconditioner in this LinearSolver
+/// class.  However, that means that AdditiveSchwarz needs to include
+/// Ifpack2_Details_LinearSolver.hpp (since it needs to invoke the
+/// constructor).  When ETI (explicit template instantiation) is OFF,
+/// this means that AdditiveSchwarz pulls in both the declaration and
+/// definition of this LinearSolver class.  As a result, we cannnot
+/// use Ifpack2::Factory in this class, because that would reintroduce
+/// one of the circular dependencies that LinearSolverFactory is meant
+/// to avoid!
+///
+/// Thankfully, Ifpack2 gives us a way out.  AdditiveSchwarz already
+/// requires that its inner solver implement
+/// Ifpack2::Details::CanChangeMatrix, which has a setMatrix() method.
+/// This means we can restrict the set of Ifpack2 solvers that
+/// LinearSolver wraps, to those that implement CanChangeMatrix.  As a
+/// result, we can move use of Ifpack2::Factory to
+/// Ifpack2::Details::LinearSolverFactory.  This class thus takes an
+/// Ifpack2::Preconditioner, and a solver name.  If the solver name is
+/// "CUSTOM", we assume that the Ifpack2::Preconditioner comes from
+/// the user (via e.g., AdditiveSchwarz::setInnerPreconditioner), and
+/// that Ifpack2::Factory might not know how to create it.
 template<class SC, class LO, class GO, class NT>
 class LinearSolver :
     public Trilinos::Details::LinearSolver<Tpetra::MultiVector<SC, LO, GO, NT>,
                                            Tpetra::Operator<SC, LO, GO, NT>,
-                                           typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>
+                                           typename Tpetra::MultiVector<SC, LO, GO, NT>::mag_type>,
+    virtual public Teuchos::Describable
 {
 public:
   typedef Ifpack2::Preconditioner<SC, LO, GO, NT> prec_type;
   typedef Tpetra::Operator<SC, LO, GO, NT> OP;
-  typedef Tpetra::RowMatrix<SC, LO, GO, NT> row_matrix_type;
   typedef Tpetra::MultiVector<SC, LO, GO, NT> MV;
 
   /// \brief Constructor
   ///
-  /// \param solverName [in] Name of the solver to create.  Must be a
-  ///   name accepted by Ifpack2::Factory::create.
+  /// \param solver [in] The Ifpack2 solver to wrap.  It MUST
+  ///   implement Ifpack2::Details::CanChangeMatrix<row_matrix_type>.
   ///
-  /// \note To developers: The constructor takes a name rather than a
-  ///   solver, because Ifpack2 does not currently let us create a
-  ///   solver with a null matrix.  To get around this, we create a
-  ///   new solver whenever the matrix changes.  The unfortunate side
-  ///   effect is that, since Ifpack2 has no way of determining
-  ///   whether a solver supports a given set of template parameters
-  ///   without attempting to create the solver, we can't actually
-  ///   test in the constructor whether the solver exists.
-  LinearSolver (const std::string& solverName);
+  /// \param solverName [in] Name of the solver.  If the solver name
+  ///   is "CUSTOM", we assume that the solver comes from the user
+  ///   (via e.g., Ifpack2::AdditiveSchwarz::setInnerPreconditioner),
+  ///   and that Ifpack2::Factory might not know how to create it.
+  ///   Otherwise, the name needs to be that of a solver that
+  ///   Ifpack2::Factory::create knows how to create.
+  LinearSolver (const Teuchos::RCP<prec_type>& solver, const std::string& solverName);
 
   //! Destructor (virtual for memory safety).
   virtual ~LinearSolver () {}
@@ -66,15 +150,22 @@ public:
   //! Precompute for matrix values' changes.
   void numeric ();
 
+  //! Implementation of Teuchos::Describable::description.
+  std::string description () const;
+
+  //! Implementation of Teuchos::Describable::describe.
+  void
+  describe (Teuchos::FancyOStream& out,
+            const Teuchos::EVerbosityLevel verbLevel =
+            Teuchos::Describable::verbLevel_default) const;
+
 private:
-  //! Name of the Ifpack2 solver to wrap.
-  std::string solverName_;
   //! The Ifpack2 solver.
   Teuchos::RCP<prec_type> solver_;
+  //! Name of the Ifpack2 solver to wrap.
+  std::string solverName_;
   //! Matrix A in the linear system to solve.
   Teuchos::RCP<const OP> A_;
-  //! The solver's parameters.
-  Teuchos::RCP<Teuchos::ParameterList> params_;
 };
 
 } // namespace Details

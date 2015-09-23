@@ -28,7 +28,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 
 #include "EntityKeyHash.hpp"
-#include "MeshConstructor.hpp"
+#include "GameofLifeMesh.hpp"
 
 typedef stk::mesh::Field<int> ScalarIntField;
 
@@ -41,7 +41,7 @@ typedef stk::mesh::Field<int> ScalarIntField;
 class GameofLife
 {
 public:
-    GameofLife(MeshConstructor* Mesh, std::string meshName);
+    GameofLife(GameofLifeMesh& Mesh, std::string meshName);
 
     virtual ~GameofLife() {}
 
@@ -59,15 +59,15 @@ public:
 
 protected:
     //big stuff
-    stk::mesh::MetaData* m_metaData;
-    stk::mesh::BulkData* m_bulkData;
+    stk::mesh::MetaData& m_metaData;
+    stk::mesh::BulkData& m_bulkData;
     stk::mesh::EntityVector m_elements;
 
     // housekeeping
     unsigned m_elemsOnProc;
 
     // game of life
-    ScalarIntField* m_lifeField;
+    ScalarIntField& m_lifeField;
 
     //useful stuff
     void update_this_element(stk::mesh::Entity elem);
@@ -84,7 +84,7 @@ private:
     const stk::topology m_elemType;
 
     //neighbors
-    ScalarIntField* m_activeNeighborField;
+    ScalarIntField& m_activeNeighborField;
 
     std::unordered_map<stk::mesh::Entity, std::unordered_set<stk::mesh::Entity,
     std::hash<stk::mesh::Entity>>, std::hash<stk::mesh::Entity>>
@@ -130,11 +130,11 @@ inline unsigned GameofLife::get_num_elems_on_proc() const
 class PartGameofLife : public GameofLife
 {
 public:
-    PartGameofLife(MeshConstructor* Mesh, std::string meshName);
+    PartGameofLife(GameofLifeMesh& Mesh, std::string meshName);
     virtual ~PartGameofLife(){}
 private:
     //members
-    stk::mesh::Part* m_activePart;
+    stk::mesh::Part& m_activePart;
     stk::mesh::PartVector m_active;
     stk::mesh::PartVector m_empty;
 
@@ -154,7 +154,7 @@ private:
 class FieldGameofLife : public GameofLife
 {
 public:
-    FieldGameofLife(MeshConstructor* Mesh, std::string meshName);
+    FieldGameofLife(GameofLifeMesh& Mesh, std::string meshName);
     virtual ~FieldGameofLife(){}
 private:
     //activate element ids

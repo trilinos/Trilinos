@@ -51,7 +51,7 @@
 
 /* Define if Teuchos was compiled to support "long long".
  */
-/* #undef HAVE_ZOLTAN2_LONG_LONG */
+#define HAVE_ZOLTAN2_LONG_LONG
 
 /* Zoltan is included in the Trilinos build.  */
 #define HAVE_ZOLTAN2_ZOLTAN

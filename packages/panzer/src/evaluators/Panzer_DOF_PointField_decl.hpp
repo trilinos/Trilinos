@@ -54,12 +54,16 @@
 
 #include "Intrepid_Basis.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
     
 //! Interpolates basis DOF using reference coordinates defined by a field
 template <typename EvalT, typename TRAITST>
 class DOF_PointField 
-  : public PHX::EvaluatorWithBaseImpl<TRAITST>,
+  : public panzer::EvaluatorWithBaseImpl<TRAITST>,
     public PHX::EvaluatorDerived<EvalT, TRAITST> {
 public:
 

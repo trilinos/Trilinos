@@ -215,6 +215,11 @@ namespace Teuchos
     template <typename alpha_type, typename A_type, typename B_type, typename beta_type>
     void GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const alpha_type alpha, const A_type* A, const OrdinalType lda, const B_type* B, const OrdinalType ldb, const beta_type beta, ScalarType* C, const OrdinalType ldc) const;
 
+    //! Swap the entries of x and y.
+    void
+    SWAP (const OrdinalType n, ScalarType* const x, const OrdinalType incx,
+          ScalarType* const y, const OrdinalType incy) const;
+
     //! Performs the matrix-matrix operation: \c C \c <- \c alpha*A*B+beta*C or \c C \c <- \c alpha*B*A+beta*C where \c A is an \c m by \c m or \c n by \c n symmetric matrix and \c B is a general matrix.
     template <typename alpha_type, typename A_type, typename B_type, typename beta_type>
     void SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const alpha_type alpha, const A_type* A, const OrdinalType lda, const B_type* B, const OrdinalType ldb, const beta_type beta, ScalarType* C, const OrdinalType ldc) const;
@@ -1379,6 +1384,43 @@ namespace Teuchos
 
 
   template<typename OrdinalType, typename ScalarType>
+  void DefaultBLASImpl<OrdinalType, ScalarType>::
+  SWAP (const OrdinalType n, ScalarType* const x, const OrdinalType incx,
+        ScalarType* const y, const OrdinalType incy) const
+  {
+    if (n <= 0) {
+      return;
+    }
+
+    if (incx == 1 && incy == 1) {
+      for (int i = 0; i < n; ++i) {
+        ScalarType tmp = x[i];
+        x[i] = y[i];
+        y[i] = tmp;
+      }
+      return;
+    }
+
+    int ix = 1;
+    int iy = 1;
+    if (incx < 0) {
+      ix = (1-n) * incx + 1;
+    }
+    if (incy < 0) {
+      iy = (1-n) * incy + 1;
+    }
+
+    for (int i = 1; i <= n; ++i) {
+      ScalarType tmp = x[ix - 1];
+      x[ix - 1] = y[iy - 1];
+      y[iy - 1] = tmp;
+      ix += incx;
+      iy += incy;
+    }
+  }
+
+
+  template<typename OrdinalType, typename ScalarType>
   template <typename alpha_type, typename A_type, typename B_type, typename beta_type>
   void DefaultBLASImpl<OrdinalType, ScalarType>::SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const alpha_type alpha, const A_type* A, const OrdinalType lda, const B_type* B, const OrdinalType ldb, const beta_type beta, ScalarType* C, const OrdinalType ldc) const
   {
@@ -2229,6 +2271,7 @@ namespace Teuchos
     void TRMV(EUplo uplo, ETransp trans, EDiag diag, const int n, const float* A, const int lda, float* x, const int incx) const;
     void GER(const int m, const int n, const float alpha, const float* x, const int incx, const float* y, const int incy, float* A, const int lda) const;
     void GEMM(ETransp transa, ETransp transb, const int m, const int n, const int k, const float alpha, const float* A, const int lda, const float* B, const int ldb, const float beta, float* C, const int ldc) const;
+    void SWAP(const int n, float* const x, const int incx, float* const y, const int incy) const;
     void SYMM(ESide side, EUplo uplo, const int m, const int n, const float alpha, const float* A, const int lda, const float *B, const int ldb, const float beta, float *C, const int ldc) const;
     void SYRK(EUplo uplo, ETransp trans, const int n, const int k, const float alpha, const float* A, const int lda, const float beta, float* C, const int ldc) const;
     void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const float alpha, const float* A, const int lda, float* B, const int ldb) const;
@@ -2257,6 +2300,7 @@ namespace Teuchos
     void TRMV(EUplo uplo, ETransp trans, EDiag diag, const int n, const double* A, const int lda, double* x, const int incx) const;
     void GER(const int m, const int n, const double alpha, const double* x, const int incx, const double* y, const int incy, double* A, const int lda) const;
     void GEMM(ETransp transa, ETransp transb, const int m, const int n, const int k, const double alpha, const double* A, const int lda, const double* B, const int ldb, const double beta, double* C, const int ldc) const;
+    void SWAP(const int n, double* const x, const int incx, double* const y, const int incy) const;
     void SYMM(ESide side, EUplo uplo, const int m, const int n, const double alpha, const double* A, const int lda, const double *B, const int ldb, const double beta, double *C, const int ldc) const;
     void SYRK(EUplo uplo, ETransp trans, const int n, const int k, const double alpha, const double* A, const int lda, const double beta, double* C, const int ldc) const;
     void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const double alpha, const double* A, const int lda, double* B, const int ldb) const;
@@ -2285,6 +2329,7 @@ namespace Teuchos
     void TRMV(EUplo uplo, ETransp trans, EDiag diag, const int n, const std::complex<float>* A, const int lda, std::complex<float>* x, const int incx) const;
     void GER(const int m, const int n, const std::complex<float> alpha, const std::complex<float>* x, const int incx, const std::complex<float>* y, const int incy, std::complex<float>* A, const int lda) const;
     void GEMM(ETransp transa, ETransp transb, const int m, const int n, const int k, const std::complex<float> alpha, const std::complex<float>* A, const int lda, const std::complex<float>* B, const int ldb, const std::complex<float> beta, std::complex<float>* C, const int ldc) const;
+    void SWAP(const int n, std::complex<float>* const x, const int incx, std::complex<float>* const y, const int incy) const;
     void SYMM(ESide side, EUplo uplo, const int m, const int n, const std::complex<float> alpha, const std::complex<float>* A, const int lda, const std::complex<float> *B, const int ldb, const std::complex<float> beta, std::complex<float> *C, const int ldc) const;
     void SYRK(EUplo uplo, ETransp trans, const int n, const int k, const std::complex<float> alpha, const std::complex<float>* A, const int lda, const std::complex<float> beta, std::complex<float>* C, const int ldc) const;
     void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const std::complex<float> alpha, const std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb) const;
@@ -2313,6 +2358,7 @@ namespace Teuchos
     void TRMV(EUplo uplo, ETransp trans, EDiag diag, const int n, const std::complex<double>* A, const int lda, std::complex<double>* x, const int incx) const;
     void GER(const int m, const int n, const std::complex<double> alpha, const std::complex<double>* x, const int incx, const std::complex<double>* y, const int incy, std::complex<double>* A, const int lda) const;
     void GEMM(ETransp transa, ETransp transb, const int m, const int n, const int k, const std::complex<double> alpha, const std::complex<double>* A, const int lda, const std::complex<double>* B, const int ldb, const std::complex<double> beta, std::complex<double>* C, const int ldc) const;
+    void SWAP(const int n, std::complex<double>* const x, const int incx, std::complex<double>* const y, const int incy) const;
     void SYMM(ESide side, EUplo uplo, const int m, const int n, const std::complex<double> alpha, const std::complex<double>* A, const int lda, const std::complex<double> *B, const int ldb, const std::complex<double> beta, std::complex<double> *C, const int ldc) const;
     void SYRK(EUplo uplo, ETransp trans, const int n, const int k, const std::complex<double> alpha, const std::complex<double>* A, const int lda, const std::complex<double> beta, std::complex<double>* C, const int ldc) const;
     void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const std::complex<double> alpha, const std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb) const;

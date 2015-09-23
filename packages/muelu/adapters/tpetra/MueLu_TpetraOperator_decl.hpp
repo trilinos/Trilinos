@@ -54,12 +54,10 @@
 #include "MueLu_Level.hpp"
 #include "MueLu_Hierarchy_decl.hpp"
 
-/*! @class TpetraOperator
-    Wraps an existing MueLu::Hierarchy as a Tpetra::Operator.
-*/
-
 namespace MueLu {
 
+/*!  @brief Wraps an existing MueLu::Hierarchy as a Tpetra::Operator.
+*/
   template <class Scalar = Tpetra::Operator<>::scalar_type,
             class LocalOrdinal = typename Tpetra::Operator<Scalar>::local_ordinal_type,
             class GlobalOrdinal = typename Tpetra::Operator<Scalar, LocalOrdinal>::global_ordinal_type,

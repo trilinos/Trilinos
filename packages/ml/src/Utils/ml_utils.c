@@ -617,6 +617,8 @@ int ML_random_init()
    double stime;
    stime = GetClock();
 */
+  ml_random_start=1;
+
    return 0;
 }
 

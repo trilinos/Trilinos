@@ -43,6 +43,9 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_LAPACK_wrappers.hpp"
+#ifdef HAVE_TEUCHOSCORE_QUADMATH
+#  include "Teuchos_Details_Lapack128.hpp" // impl for __float128
+#endif // HAVE_TEUCHOSCORE_QUADMATH
 
 /* for INTEL_CXML, the second arg may need to be changed to 'one'.  If so
 the appropriate declaration of one will need to be added back into
@@ -1785,5 +1788,117 @@ namespace Teuchos
   // END INT, COMPLEX<DOUBLE> SPECIALIZATION IMPLEMENTATION //
 
 #endif // HAVE_TEUCHOS_COMPLEX
+
+
+#ifdef HAVE_TEUCHOSCORE_QUADMATH
+
+  // BEGIN int, __float128 SPECIALIZATION IMPLEMENTATION //
+
+  void LAPACK<int, __float128>::
+  GEQRF(const int m, const int n, __float128* A, const int lda, __float128* TAU, __float128* WORK, const int lwork, int* info) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    lapack.GEQRF (m, n, A, lda, TAU, WORK, lwork, info);
+  }
+
+  void LAPACK<int, __float128>::
+  GEQR2(const int m, const int n, __float128 A[], const int lda, __float128 TAU[], __float128 WORK[], int* const info) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    lapack.GEQR2 (m, n, A, lda, TAU, WORK, info);
+  }
+
+  void LAPACK<int, __float128>::
+  GETRF(const int m, const int n, __float128* A, const int lda, int* IPIV, int* info) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    lapack.GETRF (m, n, A, lda, IPIV, info);
+  }
+
+  void LAPACK<int, __float128>::
+  GETRS(const char TRANS, const int n, const int nrhs, const __float128* A, const int lda, const int* IPIV, __float128* B, const int ldb, int* info) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    lapack.GETRS (TRANS, n, nrhs, A, lda, IPIV, B, ldb, info);
+  }
+
+  void LAPACK<int, __float128>::
+  GETRI (const int n, __float128* A, const int lda, const int* IPIV, __float128* WORK, const int lwork, int* info) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    lapack.GETRI (n, A, lda, const_cast<int*> (IPIV), WORK, lwork, info);
+  }
+
+  void LAPACK<int, __float128>::
+  LASWP (const int N, __float128 A[], const int LDA, const int K1, const int K2, const int IPIV[], const int INCX) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    lapack.LASWP (N, A, LDA, K1, K2, IPIV, INCX);
+  }
+
+  void LAPACK<int, __float128>::
+  ORM2R(const char SIDE, const char TRANS, const int m, const int n, const int k, const __float128 A[], const int lda, const __float128 TAU[], __float128 C[], const int ldc, __float128 WORK[], int* const info) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    lapack.ORM2R (SIDE, TRANS, m, n, k, A, lda, TAU, C, ldc, WORK, info);
+  }
+
+  void LAPACK<int, __float128>::
+  ORGQR(const int m, const int n, const int k, __float128* A, const int lda, const __float128* TAU, __float128* WORK, const int lwork, int* info) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    lapack.ORGQR (m, n, k, A, lda, TAU, WORK, lwork, info);
+  }
+
+  void LAPACK<int, __float128>::
+  UNGQR(const int m, const int n, const int k, __float128* A, const int lda, const __float128* TAU, __float128* WORK, const int lwork, int* info) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    lapack.UNGQR (m, n, k, A, lda, TAU, WORK, lwork, info);
+  }
+
+  void LAPACK<int, __float128>::
+  LARFG( const int n, __float128* alpha, __float128* x, const int incx, __float128* tau ) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    lapack.LARFG (n, alpha, x, incx, tau);
+  }
+
+  __float128 LAPACK<int, __float128>::
+  LAPY2 (const __float128 x, const __float128 y) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    return lapack.LAPY2 (x, y);
+  }
+
+  void LAPACK<int, __float128>::
+  GBTRF (const int m, const int n, const int kl, const int ku,
+         __float128* A, const int lda, int* IPIV, int* info) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    return lapack.GBTRF (m, n, kl, ku, A, lda, IPIV, info);
+  }
+
+  void LAPACK<int, __float128>::
+  GBTRS (const char TRANS, const int n, const int kl, const int ku,
+         const int nrhs, const __float128* A, const int lda, const int* IPIV,
+         __float128* B, const int ldb, int* info) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    return lapack.GBTRS (TRANS, n, kl, ku, nrhs, A, lda, IPIV, B, ldb, info);
+  }
+
+  void LAPACK<int, __float128>::
+  LASCL (const char TYPE, const int kl, const int ku, const __float128 cfrom,
+         const __float128 cto, const int m, const int n, __float128* A,
+         const int lda, int* info) const
+  {
+    Teuchos::Details::Lapack128 lapack;
+    return lapack.LASCL (TYPE, kl, ku, cfrom, cto, m, n, A, lda, info);
+  }
+
+  // END int, __float128 SPECIALIZATION IMPLEMENTATION //
+
+#endif // HAVE_TEUCHOSCORE_QUADMATH
 
 } // namespace Teuchos

@@ -173,7 +173,9 @@ namespace MueLu {
               if (NumBlocks == 0) {
                 NumNodesPerVertLine = next-index;
               }
-              TEUCHOS_TEST_FOR_EXCEPTION(next-index != NumNodesPerVertLine,Exceptions::RuntimeError, "Error code only works for constant block size now!!!\n");
+              // the number of vertical lines must be the same on all processors
+              // TAW: Sep 14 2015: or zero as we allow "empty" processors
+              //TEUCHOS_TEST_FOR_EXCEPTION(next-index != NumNodesPerVertLine,Exceptions::RuntimeError, "Error code only works for constant block size now!!!\n");
               NumBlocks++;
               index = next;
             }
@@ -321,7 +323,9 @@ namespace MueLu {
         if (NumBlocks == 0) {
           NumNodesPerVertLine = next-index;
         }
-        TEUCHOS_TEST_FOR_EXCEPTION(next-index != NumNodesPerVertLine,Exceptions::RuntimeError, "Error code only works for constant block size now!!!\n");
+        // The number of vertical lines must be the same on all processors
+        // TAW: Sep 14, 2015: or zero as we allow for empty processors.
+        //TEUCHOS_TEST_FOR_EXCEPTION(next-index != NumNodesPerVertLine,Exceptions::RuntimeError, "Error code only works for constant block size now!!!\n");
         count = 0;
         for (j= index; j < next; j++) {
           VertLineId[OrigLoc[j]] = NumBlocks;
@@ -336,16 +340,18 @@ namespace MueLu {
 
     for (i = 0; i < Nnodes;  i++) {
       if (VertLineId[i] == -1) {
-        std::cout << "Warning: did not assign " << i << " to a vertical line?????\n" << std::endl;
+        GetOStream(Warnings1) << "Warning: did not assign " << i << " to a vertical line?????\n" << std::endl;
       }
       if (LayerId[i] == -1) {
-        std::cout << "Warning: did not assign " << i << " to a Layer?????\n" << std::endl;
+        GetOStream(Warnings1) << "Warning: did not assign " << i << " to a Layer?????\n" << std::endl;
       }
     }
-    MueLu_maxAll(&comm, NumNodesPerVertLine, i);
-    if (NumNodesPerVertLine == -1)  NumNodesPerVertLine = i;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(NumNodesPerVertLine != i,Exceptions::RuntimeError, "Different processors have different z direction line lengths?\n");
+    // TAW: Sep 14 2015: relax plausibility checks as we allow for empty processors
+    //MueLu_maxAll(&comm, NumNodesPerVertLine, i);
+    //if (NumNodesPerVertLine == -1)  NumNodesPerVertLine = i;
+    //TEUCHOS_TEST_FOR_EXCEPTION(NumNodesPerVertLine != i,Exceptions::RuntimeError, "Different processors have different z direction line lengths?\n");
+
     return NumNodesPerVertLine;
   }
 

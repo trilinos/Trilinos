@@ -46,6 +46,7 @@
 
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_XMLParameterListHelpers.hpp>
+#include <Galeri_XpetraUtils.hpp>
 
 #include "MueLu_TestHelpers.hpp"
 
@@ -53,6 +54,7 @@
 #include "MueLu_Exceptions.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
+
 
 namespace MueLuTests {
 
@@ -79,12 +81,21 @@ namespace MueLuTests {
 #endif
 
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::Build1DPoisson(99);
+    Teuchos::ParameterList galeriParameters;
+    galeriParameters.set("nx",99);
+    RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("1D", A->getRowMap(), galeriParameters);
 
     ArrayRCP<std::string> fileList = TestHelpers::GetFileList(std::string("ParameterList/MLParameterListInterpreter/"), std::string(".xml"));
 
     for(int i=0; i< fileList.size(); i++) {
       out << "Processing file: " << fileList[i] << std::endl;
-      MLParameterListInterpreter mueluFactory("ParameterList/MLParameterListInterpreter/" + fileList[i]);
+      Teuchos::ParameterList myList;
+      myList.set("xml parameter file","ParameterList/MLParameterListInterpreter/" + fileList[i]);
+
+      Teuchos::ArrayRCP<MultiVector::scalar_type> xcoord=coordinates->getDataNonConst(0);
+      myList.set("x-coordinates",xcoord.get());
+
+      MLParameterListInterpreter mueluFactory(myList,A->getRowMap()->getComm());
 
       RCP<Hierarchy> H = mueluFactory.CreateHierarchy();
       H->GetLevel(0)->Set<RCP<Matrix> >("A", A);

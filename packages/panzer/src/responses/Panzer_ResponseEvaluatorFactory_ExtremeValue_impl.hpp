@@ -50,7 +50,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
      Teuchos::RCP<PHX::Evaluator<panzer::Traits> > eval 
          = Teuchos::rcp(new CellExtreme<EvalT,panzer::Traits>(pl));
  
-     fm.template registerEvaluator<EvalT>(eval);
+     this->template registerEvaluator<EvalT>(fm, eval);
    }
 
 
@@ -68,7 +68,7 @@ buildAndRegisterEvaluators(const std::string & responseName,
                                                                                         useMax_,
                                                                                         scatterObj));
 
-     fm.template registerEvaluator<EvalT>(eval);
+     this->template registerEvaluator<EvalT>(fm, eval);
 
      // require last field
      fm.template requireField<EvalT>(*eval->evaluatedFields()[0]);

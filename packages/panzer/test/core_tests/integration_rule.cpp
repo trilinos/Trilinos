@@ -95,4 +95,40 @@ namespace panzer {
     TEST_ASSERT(int_rule.side == 1);
   }
 
+  TEUCHOS_UNIT_TEST(integration_rule, cv_vol)
+  {
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
+    const int num_cells = 20;
+    const int base_cell_dimension = 2;
+    const panzer::CellData cell_data(num_cells,topo);
+    std::string cv_type = "volume";
+    
+    panzer::IntegrationRule int_rule(cell_data,cv_type);
+    
+    TEST_ASSERT(num_cells == int_rule.workset_size);
+    TEST_ASSERT(int_rule.num_points == 4);
+    TEST_ASSERT(base_cell_dimension == int_rule.spatial_dimension);
+    TEST_ASSERT(cv_type == int_rule.cv_type);
+  }
+
+  TEUCHOS_UNIT_TEST(integration_rule, cv_side)
+  {
+    Teuchos::RCP<shards::CellTopology> topo = 
+       Teuchos::rcp(new shards::CellTopology(shards::getCellTopologyData< shards::Quadrilateral<4> >()));
+
+    const int num_cells = 20;
+    const int base_cell_dimension = 2;
+    const panzer::CellData cell_data(num_cells,topo);
+    std::string cv_type = "side";
+    
+    panzer::IntegrationRule int_rule(cell_data,cv_type);
+    
+    TEST_ASSERT(num_cells == int_rule.workset_size);
+    TEST_ASSERT(int_rule.num_points == 4);
+    TEST_ASSERT(base_cell_dimension == int_rule.spatial_dimension);
+    TEST_ASSERT(cv_type == int_rule.cv_type);
+  }
+
 }

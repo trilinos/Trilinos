@@ -23,3 +23,9 @@ TRIBITS_ADD_LIBRARY(
   SOURCES ${SOURCES}
   DEFINES -DTEUCHOSNUMERICS_LIB_EXPORTS_MODE
   )
+
+#
+# Make a trivial change to this comment if you add a file to this
+# directory.  That ensures that running "make" will also rerun CMake
+# in order to regenerate Makefiles.
+#

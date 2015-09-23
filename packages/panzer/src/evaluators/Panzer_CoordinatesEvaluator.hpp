@@ -48,15 +48,17 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_Field.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
     
-PHX_EVALUATOR_CLASS(CoordinatesEvaluator)
+PANZER_EVALUATOR_CLASS(CoordinatesEvaluator)
   
   int dimension;
   
   PHX::MDField<ScalarT,Cell,BASIS> coordinate;
   
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 }
 

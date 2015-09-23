@@ -82,6 +82,8 @@ using Teuchos::rcp;
 #include <vector>
 #include <string>
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
 
   Teuchos::RCP<panzer::PureBasis> buildBasis(const std::size_t& worksetSize,const std::string & basisName);

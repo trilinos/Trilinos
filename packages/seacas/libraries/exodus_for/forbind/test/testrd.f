@@ -71,6 +71,10 @@ c	09/07/93 V.R. Yarberry - Modified for API 2.00
       real vers, fdum
 
       character*(MXSTLN) coord_names(3), qa_record(4,2), var_names(3)
+      character*(MXSTLN) name
+      character*(MXSTLN) blk_names(5)
+      character*(MXSTLN) nset_names(2)
+      character*(MXSTLN) sset_names(5)
       character*(MXLNLN) inform(3), titl
       character typ*(MXSTLN), cdum*1
       character*(MXSTLN) prop_names(3)
@@ -179,12 +183,15 @@ c
      1                num_nodes_per_elem(i), num_attr(i), ierr)
          write (iout, '(/"after exgelb, error = ", i3)' ) ierr
 
+         call exgnam (exoid, EXEBLK, ids(i), name, ierr)
          write (iout, '("element block id = ", i2,/
      1                  "element type = ", a9,/
+     *                  "block name = ", a32,/
      2                  "num_elem_in_block = ", i2,/
      3                  "num_nodes_per_elem = ", i2,/
      4                  "num_attr = ", i2)')
-     5                  ids(i), typ, num_elem_in_block(i), 
+     5                  ids(i), typ, name,
+     *                  num_elem_in_block(i), 
      6                  num_nodes_per_elem(i), num_attr(i)
 
 40    continue
@@ -231,6 +238,16 @@ c
 
 60    continue
 
+c
+c read element block names
+c
+      call exgnams(exoid, EXEBLK, num_elem_blk, blk_names, ierr)
+      write (iout, '(/"after exgnams, error = ", i3)' ) ierr
+      do i=1, num_elem_blk
+        write (iout, '("element block ",i2," name: ",a)' )
+     2    i, blk_names(i)
+      end do
+      
 c
 c read element block attributes
 c
@@ -296,6 +313,17 @@ c
 	 endif
 
 100   continue
+
+c
+c read node set names
+c
+      call exgnams(exoid, EXNSET, num_node_sets, nset_names, ierr)
+      write (iout, '(/"after exgnams, error = ", i3)' ) ierr
+      do i=1, num_node_sets
+        write (iout, '("node set ",i2," name: ",a)' )
+     2    i, nset_names(i)
+      end do
+      
 
 c     read node set properties
 
@@ -437,6 +465,16 @@ c
          endif
 
 190   continue
+
+c
+c read side set names
+c
+      call exgnams(exoid, EXSSET, num_side_sets, sset_names, ierr)
+      write (iout, '(/"after exgnams, error = ", i3)' ) ierr
+      do i=1, num_side_sets
+        write (iout, '("side set ",i2," name: ",a)' )
+     2    i, sset_names(i)
+      end do
 
 c     read side set properties
 

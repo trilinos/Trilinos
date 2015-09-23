@@ -96,15 +96,15 @@ void ResponseScatterEvaluator_IPCoordinates<EvalT,Traits>::
 postRegistrationSetup(typename Traits::SetupData sd,
                       PHX::FieldManager<Traits>& fm)
 {
-  ir_index_ = panzer::getIntegrationRuleIndex(ir_order_,(*sd.worksets_)[0]);
+  ir_index_ = panzer::getIntegrationRuleIndex(ir_order_,(*sd.worksets_)[0], this->wda);
 }
 
 template<typename EvalT, typename Traits>
 void ResponseScatterEvaluator_IPCoordinates<EvalT,Traits>::
 evaluateFields(typename Traits::EvalData workset)
 {
-  // Intrepid::FieldContainer<double>& workset_coords = (workset.int_rules[ir_index_])->ip_coordinates;
-  IntegrationValues2<double> & iv = *workset.int_rules[ir_index_];
+  // Intrepid::FieldContainer<double>& workset_coords = (this->wda(workset).int_rules[ir_index_])->ip_coordinates;
+  IntegrationValues2<double> & iv = *this->wda(workset).int_rules[ir_index_];
 
   if (tmpCoords_.size() != Teuchos::as<std::size_t>(iv.ip_coordinates.dimension(2))) {
     tmpCoords_.resize(iv.ip_coordinates.dimension(2));

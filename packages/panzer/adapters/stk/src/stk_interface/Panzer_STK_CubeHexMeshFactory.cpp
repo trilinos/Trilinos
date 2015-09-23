@@ -167,6 +167,8 @@ void CubeHexMeshFactory::setParameterList(const Teuchos::RCP<Teuchos::ParameterL
    nYElems_ = paramList->get<int>("Y Elements");
    nZElems_ = paramList->get<int>("Z Elements");
 
+   buildInterfaceSidesets_ = paramList->get<bool>("Build Interface Sidesets");
+
    buildSubcells_ = paramList->get<bool>("Build Subcells");
 
    // read in periodic boundary conditions
@@ -201,6 +203,8 @@ Teuchos::RCP<const Teuchos::ParameterList> CubeHexMeshFactory::getValidParameter
       defaultParams->set<int>("X Elements",5);
       defaultParams->set<int>("Y Elements",5);
       defaultParams->set<int>("Z Elements",5);
+
+      defaultParams->set<bool>("Build Interface Sidesets",false);
 
       defaultParams->set<bool>("Build Subcells",true);
 
@@ -249,6 +253,25 @@ void CubeHexMeshFactory::buildMetaData(stk_classic::ParallelMachine parallelMach
    mesh.addSideset("front",side_ctd);
    mesh.addSideset("back",side_ctd);
 
+   if(buildInterfaceSidesets_) {
+     for(int bx=1;bx<xBlocks_;bx++) {
+       std::stringstream ss;
+       ss << "vertical_" << bx-1;
+       mesh.addSideset(ss.str(),side_ctd);
+     }
+     for(int by=1;by<yBlocks_;by++) {
+       std::stringstream ss;
+       ss << "horizontal_" << by-1;
+       mesh.addSideset(ss.str(),side_ctd);
+     }
+     for(int bz=1;bz<zBlocks_;bz++) {
+       std::stringstream ss;
+       ss << "transverse_" << bz-1;
+       mesh.addSideset(ss.str(),side_ctd);
+     }
+   }
+
+   // add nodesets
    mesh.addNodeset("origin");
 }
 
@@ -510,6 +533,28 @@ void CubeHexMeshFactory::addSideSets(STK_Interface & mesh) const
    stk_classic::mesh::Part * front = mesh.getSideset("front");
    stk_classic::mesh::Part * back = mesh.getSideset("back");
 
+   std::vector<stk_classic::mesh::Part*> vertical;
+   std::vector<stk_classic::mesh::Part*> horizontal;
+   std::vector<stk_classic::mesh::Part*> transverse;
+  
+   if(buildInterfaceSidesets_) {
+     for(int bx=1;bx<xBlocks_;bx++) {
+       std::stringstream ss;
+       ss << "vertical_" << bx-1;
+       vertical.push_back(mesh.getSideset(ss.str()));
+     }
+     for(int by=1;by<yBlocks_;by++) {
+       std::stringstream ss;
+       ss << "horizontal_" << by-1;
+       horizontal.push_back(mesh.getSideset(ss.str()));
+     }
+     for(int bz=1;bz<zBlocks_;bz++) {
+       std::stringstream ss;
+       ss << "transverse_" << bz-1;
+       transverse.push_back(mesh.getSideset(ss.str()));
+     }
+   }
+
    std::vector<stk_classic::mesh::Entity*> localElmts;
    mesh.getMyElements(localElmts);
 
@@ -528,49 +573,97 @@ void CubeHexMeshFactory::addSideSets(STK_Interface & mesh) const
       ny = gid / totalXElems;
       nx = gid-ny*totalXElems;
 
-      if(nz==0) {
+      if(nz % nZElems_==0) {
          stk_classic::mesh::Entity * side = getRelationByID(4,relations)->entity();
 
          // on the back
-         if(side->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*side,back);
+         if(side->owner_rank()==machRank_) {
+	   if(nz==0) {
+	     mesh.addEntityToSideset(*side,back);
+	   } else {
+	     if(buildInterfaceSidesets_) {
+	       int index = nz/nZElems_-1;
+	       mesh.addEntityToSideset(*side,transverse[index]);
+	     }
+	   }
+	 }
       }
-      if(nz+1==totalZElems) {
+      if((nz+1) % nZElems_==0) {
          stk_classic::mesh::Entity * side = getRelationByID(5,relations)->entity();
 
          // on the front
-         if(side->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*side,front);
+         if(side->owner_rank()==machRank_) {
+	   if(nz+1==totalZElems) {
+	     mesh.addEntityToSideset(*side,front);
+	   } else {
+	     if(buildInterfaceSidesets_) {
+	       int index = (nz+1)/nZElems_-1;
+	       mesh.addEntityToSideset(*side,transverse[index]);
+	     }
+	   }
+	 }
       }
 
-      if(ny==0) {
+      if(ny % nYElems_==0) {
          stk_classic::mesh::Entity * side = getRelationByID(0,relations)->entity();
 
          // on the bottom 
-         if(side->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*side,bottom);
+         if(side->owner_rank()==machRank_) {
+	   if(ny==0) {
+	     mesh.addEntityToSideset(*side,bottom);
+	   } else {
+	     if(buildInterfaceSidesets_) {
+	       int index = ny/nYElems_-1;
+	       mesh.addEntityToSideset(*side,horizontal[index]);
+	     }
+	   }
+	 }
       }
-      if(ny+1==totalYElems) {
+      if((ny+1) % nYElems_==0) {
          stk_classic::mesh::Entity * side = getRelationByID(2,relations)->entity();
 
          // on the top
-         if(side->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*side,top);
+         if(side->owner_rank()==machRank_) {
+	   if(ny+1==totalYElems) {
+	     mesh.addEntityToSideset(*side,top);
+	   } else {
+	     if(buildInterfaceSidesets_) {
+	       int index = (ny+1)/nYElems_-1;
+	       mesh.addEntityToSideset(*side,horizontal[index]);
+	     }
+	   }
+	 }
       }
 
-      if(nx==0) {
+      if(nx % nXElems_==0) {
          stk_classic::mesh::Entity * side = getRelationByID(3,relations)->entity();
 
          // on the left
-         if(side->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*side,left);
+         if(side->owner_rank()==machRank_) {
+	   if(nx==0) {
+	     mesh.addEntityToSideset(*side,left);
+	   } else {
+	     if(buildInterfaceSidesets_) {
+	       int index = nx/nXElems_-1;
+	       mesh.addEntityToSideset(*side,vertical[index]);
+	     }
+	   }
+	 }
       }
-      if(nx+1==totalXElems) {
+      if((nx+1) % nXElems_==0) {
          stk_classic::mesh::Entity * side = getRelationByID(1,relations)->entity();
 
          // on the right
-         if(side->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*side,right);
+         if(side->owner_rank()==machRank_) {
+	   if(nx+1==totalXElems) {
+	     mesh.addEntityToSideset(*side,right);
+	   } else {
+	     if(buildInterfaceSidesets_) {
+	       int index = (nx+1)/nXElems_-1;
+	       mesh.addEntityToSideset(*side,vertical[index]);
+	     }
+	   }
+	 }
       }
    }
 

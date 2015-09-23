@@ -45,16 +45,32 @@
 namespace Intrepid2 {
 
 //
+// Inverse defaults to fast inverse for 2 and 3 dimensions, otherwise
+// use full piviting version
+//
+template<typename T, Index N>
+Tensor<T, N>
+inverse(Tensor<T, N> const & A)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  bool const
+  use_fast = dimension == 2 || dimension == 3;
+
+  return use_fast == true ? inverse_fast23(A) : inverse_full_pivot(A);
+}
+
+//
 // R^N 2nd-order tensor inverse
-// Gauss-Jordan elimination. Warning: full pivoting
-// for small tensors. Use Teuchos LAPACK interface for
-// more efficient and robust techniques.
+// Gauss-Jordan elimination. Warning: full pivoting for small tensors.
+// Use Teuchos LAPACK interface for more efficient and robust techniques.
 // \param A nonsingular tensor
 // \return \f$ A^{-1} \f$
 //
 template<typename T, Index N>
 Tensor<T, N>
-inverse(Tensor<T, N> const & A)
+inverse_full_pivot(Tensor<T, N> const & A)
 {
   Index const
   dimension = A.get_dimension();
@@ -73,30 +89,8 @@ inverse(Tensor<T, N> const & A)
 
   switch (dimension) {
 
-  case 3:
-    {
-      T const determinant = det(A);
-      assert(determinant != 0.0);
-      return Tensor<T, N>(
-        -A(1,2)*A(2,1) + A(1,1)*A(2,2),
-         A(0,2)*A(2,1) - A(0,1)*A(2,2),
-        -A(0,2)*A(1,1) + A(0,1)*A(1,2),
-         A(1,2)*A(2,0) - A(1,0)*A(2,2),
-        -A(0,2)*A(2,0) + A(0,0)*A(2,2),
-         A(0,2)*A(1,0) - A(0,0)*A(1,2),
-        -A(1,1)*A(2,0) + A(1,0)*A(2,1),
-         A(0,1)*A(2,0) - A(0,0)*A(2,1),
-        -A(0,1)*A(1,0) + A(0,0)*A(1,1)
-        ) / determinant;
-    }
-    break;
-
-  case 2:
-    {
-      T const determinant = det(A);
-      assert(determinant != 0.0);
-      return Tensor<T, N>(A(1,1), -A(0,1), -A(1,0), A(0,0)) / determinant;
-    }
+  case 1:
+    return Tensor<T, N>(1, ONES) / A(0,0);
     break;
 
   default:
@@ -186,6 +180,58 @@ inverse(Tensor<T, N> const & A)
   X = t_dot(S, B);
 
   return X;
+}
+
+//
+// R^N 2nd-order tensor inverse
+// Fast analytic expressions for 2 and 3 dimensions
+// \param A nonsingular tensor
+// \return \f$ A^{-1} \f$
+//
+template<typename T, Index N>
+Tensor<T, N>
+inverse_fast23(Tensor<T, N> const & A)
+{
+  Index const
+  dimension = A.get_dimension();
+
+  switch (dimension) {
+
+  case 3:
+    {
+      T const determinant = det(A);
+      assert(determinant != 0.0);
+      return Tensor<T, N>(
+        -A(1,2)*A(2,1) + A(1,1)*A(2,2),
+         A(0,2)*A(2,1) - A(0,1)*A(2,2),
+        -A(0,2)*A(1,1) + A(0,1)*A(1,2),
+         A(1,2)*A(2,0) - A(1,0)*A(2,2),
+        -A(0,2)*A(2,0) + A(0,0)*A(2,2),
+         A(0,2)*A(1,0) - A(0,0)*A(1,2),
+        -A(1,1)*A(2,0) + A(1,0)*A(2,1),
+         A(0,1)*A(2,0) - A(0,0)*A(2,1),
+        -A(0,1)*A(1,0) + A(0,0)*A(1,1)
+        ) / determinant;
+    }
+    break;
+
+  case 2:
+    {
+      T const determinant = det(A);
+      assert(determinant != 0.0);
+      return Tensor<T, N>(A(1,1), -A(0,1), -A(1,0), A(0,0)) / determinant;
+    }
+    break;
+
+  case 1:
+    return Tensor<T, N>(1, ONES) / A(0,0);
+    break;
+
+  default:
+    break;
+  }
+
+  return inverse_full_pivot(A);
 }
 
 //
@@ -376,7 +422,7 @@ polynomial_coefficient(Index const order, Index const index)
 // Padé approximant polynomial odd and even terms.
 //
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 pade_polynomial_terms(Tensor<T, N> const & A, Index const order)
 {
   Index const
@@ -815,6 +861,10 @@ log_rotation(Tensor<T, N> const & R)
       r(1,1) = 0.0;
       break;
 
+    case 1:
+      r(0,0) = 0.0;
+      break;
+
   }
 
   return r;
@@ -1063,20 +1113,26 @@ exp_skew_symmetric(Tensor<T, N> const & r)
     case 2:
       theta = r(1,0);
 
-      T
-      c = std::cos(theta);
+      {
+        T const
+        c = std::cos(theta);
 
-      T
-      s = std::sin(theta);
+        T const
+        s = std::sin(theta);
 
-      R(0,0) = c;
-      R(0,1) = -s;
-      R(1,0) = s;
-      R(1,1) = c;
+        R(0,0) = c;
+        R(0,1) = -s;
+        R(1,0) = s;
+        R(1,1) = c;
+      }
 
       break;
 
-  }
+    case 1:
+      R(0,0) = 1.0;
+      break;
+
+ }
 
   return R;
 }
@@ -1114,6 +1170,10 @@ norm_off_diagonal(Tensor<T, N> const & A)
 
     case 2:
       s = A(0,1)*A(0,1) + A(1,0)*A(1,0);
+      break;
+
+    case 1:
+      s = 0.0;
       break;
 
   }
@@ -1195,7 +1255,7 @@ namespace {
 // \return \f$ A = USV^T\f$
 //
 template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
 svd_bidiagonal(T f, T g, T h)
 {
   T fa = std::abs(f);
@@ -1289,7 +1349,7 @@ svd_bidiagonal(T f, T g, T h)
 // \return \f$ A = USV^T\f$
 //
 template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
 svd_2x2(Tensor<T, N> const & A)
 {
   assert(A.get_dimension() == 2);
@@ -1324,7 +1384,7 @@ svd_2x2(Tensor<T, N> const & A)
 // \return \f$ A = USV^T\f$
 //
 template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
 svd_NxN(Tensor<T, N> const & A)
 {
   Tensor<T, N>
@@ -1433,7 +1493,7 @@ svd_NxN(Tensor<T, N> const & A)
 // \return \f$ A = USV^T\f$
 //
 template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
 svd(Tensor<T, N> const & A)
 {
   Index const
@@ -1549,7 +1609,7 @@ polar_rotation(Tensor<T, N> const & A)
 // \return \f$ VR = A \f$ with \f$ R \in SO(N) \f$ and \f$ V \in SPD(N) \f$
 //
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 polar_left(Tensor<T, N> const & A)
 {
   Tensor<T, N>
@@ -1567,7 +1627,7 @@ polar_left(Tensor<T, N> const & A)
 // \return \f$ RU = A \f$ with \f$ R \in SO(N) \f$ and \f$ U \in SPD(N) \f$
 //
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 polar_right(Tensor<T, N> const & A)
 {
   Tensor<T, N>
@@ -1585,7 +1645,7 @@ polar_right(Tensor<T, N> const & A)
 // \return \f$ VR = F \f$ with \f$ R \in SO(3) \f$ and V SPD(3)
 //
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 polar_left_eig(Tensor<T, N> const & F)
 {
   assert(F.get_dimension() == 3);
@@ -1643,7 +1703,7 @@ polar_left_eig(Tensor<T, N> const & F)
 // \return \f$ RU = F \f$ with \f$ R \in SO(3) \f$ and U SPD(3)
 //
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 polar_right_eig(Tensor<T, N> const & F)
 {
 
@@ -1704,7 +1764,7 @@ polar_right_eig(Tensor<T, N> const & F)
 // \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD(N), and log V
 //
 template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
 polar_left_logV(Tensor<T, N> const & F)
 {
   Index const
@@ -1735,7 +1795,7 @@ polar_left_logV(Tensor<T, N> const & F)
 }
 
 template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
 polar_left_logV_eig(Tensor<T, N> const & F)
 {
   Index const
@@ -1776,7 +1836,7 @@ polar_left_logV_eig(Tensor<T, N> const & F)
 // \return \f$ VR = F \f$ with \f$ R \in SO(N) \f$ and V SPD(N), and log V
 //
 template<typename T, Index N>
-boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N> >
+boost::tuple<Tensor<T, N>, Tensor<T, N>, Tensor<T, N>>
 polar_left_logV_lame(Tensor<T, N> const & F)
 {
   Index const
@@ -1905,7 +1965,7 @@ namespace {
 // See algorithm 8.4.2 in Matrix Computations, Golub & Van Loan 1996
 //
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 eig_sym_NxN(Tensor<T, N> const & A)
 {
   Tensor<T, N>
@@ -1987,7 +2047,7 @@ eig_sym_NxN(Tensor<T, N> const & A)
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 eig_sym_2x2(Tensor<T, N> const & A)
 {
   assert(A.get_dimension() == 2);
@@ -2070,7 +2130,7 @@ eig_sym_2x2(Tensor<T, N> const & A)
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 eig_sym(Tensor<T, N> const & A)
 {
   Index const
@@ -2100,7 +2160,7 @@ eig_sym(Tensor<T, N> const & A)
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 eig_spd(Tensor<T, N> const & A)
 {
   return eig_sym(A);
@@ -2112,7 +2172,7 @@ eig_spd(Tensor<T, N> const & A)
 // \return V eigenvectors, D eigenvalues in diagonal Matlab-style
 //
 template<typename T, Index N>
-std::pair<Tensor<T, N>, Tensor<T, N> >
+std::pair<Tensor<T, N>, Tensor<T, N>>
 eig_spd_cos(Tensor<T, N> const & A)
 {
   Index const
@@ -2368,7 +2428,7 @@ eig_spd_cos(Tensor<T, N> const & A)
 // \return completed (bool) algorithm ran to completion
 //
 template<typename T, Index N>
-std::pair<Tensor<T, N>, bool >
+std::pair<Tensor<T, N>, bool>
 cholesky(Tensor<T, N> const & A)
 {
   Tensor<T, N>
@@ -2422,7 +2482,7 @@ template<typename T, Index N>
 Vector<T, N>
 solve(Tensor<T, N> const & A, Vector<T, N> const & b)
 {
-  return dot(inverse(A), b);
+  return dot(inverse_full_pivot(A), b);
 }
 
 template<typename T, Index N, Index P>
@@ -2430,7 +2490,7 @@ Matrix<T, N, P>
 solve(Tensor<T, N> const & A, Matrix<T, N, P> const & B)
 {
   auto const
-  I = inverse(A);
+  I = inverse_full_pivot(A);
 
   auto
   X = B;

@@ -6,6 +6,7 @@
 #include <stk_topology/topology.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/Selector.hpp>
 
 #include "ElemElemGraphImpl.hpp"
 
@@ -34,7 +35,7 @@ class ElemElemGraph
 {
 public:
 
-    ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Part &part);
+    ElemElemGraph(stk::mesh::BulkData& bulkData, const stk::mesh::Selector &selector, const stk::mesh::Selector *air = nullptr);
 
     virtual ~ElemElemGraph();
 
@@ -77,6 +78,8 @@ public:
 
     impl::LocalId get_local_element_id(stk::mesh::Entity local_element, bool require_valid_id = true) const;
 
+    void skin_mesh(const stk::mesh::PartVector& skin_parts);
+
 protected:
     friend void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph,
                                     std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move,
@@ -87,7 +90,7 @@ protected:
 
     void fill_graph();
     void update_number_of_parallel_edges();
-    void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm, const stk::mesh::Part &part);
+    void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
 
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm, const stk::mesh::EntityVector & elements_to_ignore);
 
@@ -169,7 +172,8 @@ protected:
     void unpack_remote_edge_across_shell(stk::CommSparse &comm);
 
     stk::mesh::BulkData &m_bulk_data;
-    const stk::mesh::Part &m_part;
+    const stk::mesh::Selector m_skinned_selector;
+    const stk::mesh::Selector* m_air_selector;
     impl::ElementGraph m_elem_graph;
     impl::SidesForElementGraph m_via_sides;
     impl::ParallelGraphInfo m_parallel_graph_info;
@@ -201,10 +205,11 @@ private:
     stk::mesh::EntityVector filter_add_elements_arguments(const stk::mesh::EntityVector& allUnfilteredElementsNotAlreadyInGraph) const;
     impl::ElemSideToProcAndFaceId get_element_side_ids_to_communicate() const;
     void add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
+    stk::mesh::Entity add_side_to_mesh(stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts, stk::mesh::EntityId id);
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,
-        const stk::mesh::PartVector& boundary_mesh_parts);
+        const stk::mesh::PartVector& side_parts, const stk::mesh::PartVector* boundary_mesh_parts = nullptr);
 
 }} // end stk mesh namespaces
 

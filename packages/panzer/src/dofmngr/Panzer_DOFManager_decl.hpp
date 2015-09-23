@@ -238,6 +238,9 @@ public:
   virtual int getElementBlockGIDCount(const std::size_t & blockIndex) const
   { return elementBlockGIDCount_[blockIndex]; }
 
+  virtual void getElementAndAssociatedLIDs(LocalOrdinalT localElmtId, std::vector<LocalOrdinalT>& lids) const;
+  virtual void getElementAndAssociatedGIDs(LocalOrdinalT localElmtId, std::vector<GlobalOrdinalT>& gids) const;
+
   /** Prints to an output stream the information about
     * the aggregated field.
     */
@@ -312,6 +315,7 @@ protected:
                                 std::vector<std::vector< GO > > & elementGIDs,
                                 const Tpetra::Map<LO,GO,panzer::TpetraNodeType> & overlapmap,
                                 const Tpetra::MultiVector<GO,LO,GO,panzer::TpetraNodeType> & overlap_mv) const;
+  void fillAssociatedElements(const ElementBlockAccess& access);
   
   Teuchos::RCP<ConnManager<LO,GO> > connMngr_;
   Teuchos::RCP<Teuchos::Comm<int> > communicator_;
@@ -341,6 +345,8 @@ protected:
   // Mimics the functionality of the getElemenentBlockGIDCount in
   // the original DOFManager. Indexed according to blockOrder_.
   std::vector<int> elementBlockGIDCount_;
+
+  std::vector<std::vector<LO> > associatedElements_;
 
   int numFields_;
 

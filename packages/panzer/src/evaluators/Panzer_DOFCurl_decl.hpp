@@ -46,11 +46,13 @@
 #include "Phalanx_Evaluator_Macros.hpp"
 #include "Phalanx_Field.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF Curl values
 template<typename EvalT, typename TRAITS>                   
-class DOFCurl : public PHX::EvaluatorWithBaseImpl<TRAITS>,      
+class DOFCurl : public panzer::EvaluatorWithBaseImpl<TRAITS>,      
                 public PHX::EvaluatorDerived<EvalT, TRAITS>  {   
 public:
 
@@ -78,7 +80,7 @@ private:
 // Specitialization for the Jacobian
 template<typename TRAITS>                   
 class DOFCurl<typename TRAITS::Jacobian,TRAITS> : 
-                public PHX::EvaluatorWithBaseImpl<TRAITS>,      
+                public panzer::EvaluatorWithBaseImpl<TRAITS>,      
                 public PHX::EvaluatorDerived<typename TRAITS::Jacobian, TRAITS>  {   
 public:
 

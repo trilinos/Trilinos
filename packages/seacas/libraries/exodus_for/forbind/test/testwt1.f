@@ -73,6 +73,7 @@ c
       character*(MXLNLN) inform(3)
       character*(MXSTLN) prop_names(2)
       character*(MXSTLN) attrib_names(3)
+      character*(MXSTLN) blk_names(7)
 
       data iin /5/, iout /6/
 
@@ -333,40 +334,69 @@ c
       numattr(6) = 3
       numattr(7) = 3
 
+      blk_names(1) = "e_block_i"
+      blk_names(2) = "e_block_ii"
+      blk_names(3) = "e_block_iii"
+      blk_names(4) = "e_block_iv"
+      blk_names(5) = "e_block_v"
+      blk_names(6) = "e_block_vi"
+      blk_names(7) = "e_block_vii"
+      
       cname = "quad"
       call expelb (exoid,ebids(1),cname,num_elem_in_block(1),
      1		num_nodes_per_elem(1),numattr(1),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
+      call expnam (exoid,EXEBLK,ebids(1),blk_names(1), ierr)
+      write (iout, '("after expnam, error = ", i4)' ) ierr
+      
       call expelb (exoid,ebids(2),cname,num_elem_in_block(2),
      1		num_nodes_per_elem(2),numattr(2),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
+      call expnam (exoid,EXEBLK,ebids(2),blk_names(2), ierr)
+      write (iout, '("after expnam, error = ", i4)' ) ierr
+      
       cname = "hex"
       call expelb (exoid,ebids(3),cname,num_elem_in_block(3),
      1		num_nodes_per_elem(3),numattr(3),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
+      call expnam (exoid,EXEBLK,ebids(3),blk_names(3), ierr)
+      write (iout, '("after expnam, error = ", i4)' ) ierr
+      
       cname = "tetra"
       call expelb (exoid,ebids(4),cname,num_elem_in_block(4),
      1		num_nodes_per_elem(4),numattr(4),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
+      call expnam (exoid,EXEBLK,ebids(4),blk_names(4), ierr)
+      write (iout, '("after expnam, error = ", i4)' ) ierr
+      
       cname = "circle"
       call expelb (exoid,ebids(5),cname,num_elem_in_block(5),
      1		num_nodes_per_elem(5),numattr(5),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
+      call expnam (exoid,EXEBLK,ebids(5),blk_names(5), ierr)
+      write (iout, '("after expnam, error = ", i4)' ) ierr
+      
       cname = "sphere"
       call expelb (exoid,ebids(6),cname,num_elem_in_block(6),
      1		num_nodes_per_elem(6),numattr(6),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
+      call expnam (exoid,EXEBLK,ebids(6),blk_names(6), ierr)
+      write (iout, '("after expnam, error = ", i4)' ) ierr
+      
       cname = "wedge"
       call expelb (exoid,ebids(7),cname,num_elem_in_block(7),
      1		num_nodes_per_elem(7),numattr(7),ierr)
       write (iout, '("after expelb, error = ", i4)' ) ierr
 
+      call expnam (exoid,EXEBLK,ebids(7),blk_names(7), ierr)
+      write (iout, '("after expnam, error = ", i4)' ) ierr
+      
 c  write element block properties
 
       prop_names(1) = "MATL"

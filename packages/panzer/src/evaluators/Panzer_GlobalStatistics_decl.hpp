@@ -51,11 +51,13 @@
 #include "Intrepid_FieldContainer.hpp"
 #include "Teuchos_Comm.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer {
 
 struct GlobalData;
     
-PHX_EVALUATOR_CLASS_PP(GlobalStatistics)
+PANZER_EVALUATOR_CLASS_PP(GlobalStatistics)
   
   PHX::MDField<ScalarT,Cell> volumes;
     
@@ -86,7 +88,7 @@ PHX_EVALUATOR_CLASS_PP(GlobalStatistics)
 public:
   const PHX::FieldTag& getRequiredFieldTag();
 
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 }
 
