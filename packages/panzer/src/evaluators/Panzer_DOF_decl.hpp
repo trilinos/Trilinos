@@ -49,11 +49,15 @@
 
 #include "Panzer_config.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
     
 //! Interpolates basis DOF values to IP DOF values
 template<typename EvalT, typename TRAITS>                   
-class DOF : public PHX::EvaluatorWithBaseImpl<TRAITS>,      
+class DOF : public panzer::EvaluatorWithBaseImpl<TRAITS>,      
             public PHX::EvaluatorDerived<EvalT, TRAITS>  {   
 public:
 
@@ -85,7 +89,7 @@ private:
   */
 template<typename TRAITS>                   
 class DOF<typename TRAITS::Jacobian,TRAITS> : 
-            public PHX::EvaluatorWithBaseImpl<TRAITS>,      
+            public panzer::EvaluatorWithBaseImpl<TRAITS>,      
             public PHX::EvaluatorDerived<typename TRAITS::Jacobian, TRAITS>  {   
 public:
 

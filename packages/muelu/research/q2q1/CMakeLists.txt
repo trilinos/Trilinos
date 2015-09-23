@@ -6,7 +6,7 @@ IF (${PACKAGE_NAME}_ENABLE_ThyraTpetraAdapters AND ${PACKAGE_NAME}_ENABLE_Teko)
 
     TRIBITS_ADD_EXECUTABLE(
       Q2Q1
-      SOURCES Q2Q1.cpp MueLu_Q2Q1PFactory.hpp
+      SOURCES Q2Q1.cpp MueLu_Q2Q1PFactory.hpp MueLu_Q2Q1uPFactory.hpp
       COMM serial mpi
       )
 

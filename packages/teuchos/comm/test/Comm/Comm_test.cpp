@@ -352,63 +352,6 @@ bool testComm(
   if(!result) success = false;
 
   //
-  // reduceAllAndScatter(...)
-  //
-
-  *out << "\nReducing/summing sendBuff[] and scattering into recvBuff[] ...\n";
-
-  // there are count items in sendbuff the intermediate reduction operation
-  // will result in a vector of length count each process will recieve
-  // numItemsPerProcess == count/numProcs == numProcs*2/numProcs == 2 of this
-  // intermediate reduction
-  const Ordinal numItemsPerProcess = count/numProcs;
-  Teuchos::Array<Ordinal> recvCounts(numProcs);
-  // fill recvCounts with {2,...,2}
-  std::fill(recvCounts.begin(), recvCounts.end(), numItemsPerProcess);
-  // initialize recieve buffer to zero
-  std::fill(recvBuff.begin(),recvBuff.end(),as<Packet>(0));
-
-  reduceAllAndScatter(
-    comm, Teuchos::REDUCE_SUM,
-    count, &sendBuff[0], &recvCounts[0], &recvBuff[0]
-    );
-
-  /* on proc rank, sendBuff[i] == (rank+1)*i
-     after REDUCE_SUM,
-         sendBuff[i] == \sum_k (k+1)*i
-                     == i*\sum_k (k+1)
-                     == i*(1+2+...+numProcs)
-                     == i*numProcs*(numProcs+1)/2
-  */
-  *out << "\nChecking that recvBuff[i] == sum(k+1,k=0...numProcs-1) * (offset+i) ...";
-  result = true;
-  int sumProcRanks = (numProcs*(numProcs+1))/2;
-  for( int i = 0; i < numItemsPerProcess; ++i ) {
-    const int offset = procRank * numItemsPerProcess;
-    const Packet expected = Packet(sumProcRanks)*Packet(offset+i);
-    if( recvBuff[i] != expected ) {
-      result = false;
-      *out
-        << "\n  recvBuffer["<<i<<"]="<<recvBuff[i]
-        << " == sum(k+1,k=0...numProcs-1)*(offset+i)="<<sumProcRanks<<"*"<<(offset+i)<<"="<<expected<<" : failed";
-    }
-  }
-  for( int i = numItemsPerProcess; i < count; i++ ) {
-    // latter entries in recvBuff should be unchanged (i.e., still zero)
-    if ( recvBuff[i] != as<Packet>(0) ) result = false;
-  }
-  if(result) {
-    *out << " passed\n";
-  }
-  else {
-    *out << "\n";
-    success = false;
-  }
-
-  result = checkSumResult(comm,out,result);
-  if(!result) success = false;
-
-  //
   // The End!
   //
 

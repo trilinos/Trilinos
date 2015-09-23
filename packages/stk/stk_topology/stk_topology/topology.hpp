@@ -545,6 +545,10 @@ topology create_superelement_topology(int num_nodes)
 std::ostream & operator<<(std::ostream &out, topology::rank_t r);
 std::ostream & operator<<(std::ostream &out, topology t);
 void verbose_print_topology(std::ostream &out, topology t);
+bool isTriangle (topology topo);
+bool isQuadrilateral (topology topo);
+bool isTetrahedron (topology topo);
+bool isHexahedron (topology topo);
 
 
 } //namespace stk

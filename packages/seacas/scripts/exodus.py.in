@@ -1,6 +1,6 @@
 EXODUS_PY_COPYRIGHT_AND_LICENSE = """ 
 
-exodus.py v 1.02 (beta) is a python wrapper of some of the exodus II library
+exodus.py v 1.03 (beta) is a python wrapper of some of the exodus II library
 
 Copyright (c) 2013, 2014 Sandia Corporation. Under the terms of
 Contract DE-AC04-94AL85000 with Sandia Corporation, the
@@ -18,10 +18,10 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 """
 
-EXODUS_PY_VERSION = "1.02 (beta)"
+EXODUS_PY_VERSION = "1.03 (beta)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.02 (beta), a python wrapper of some of the exodus II library.
+You are using exodus.py v 1.03 (beta), a python wrapper of some of the exodus II library.
 Copyright (c) 2013,2014 Sandia Corporation. Under the terms of Contract DE-AC04-94AL85000
 with Sandia Corporation, the U.S. Government retains certain rights in this software.
 """
@@ -56,7 +56,7 @@ def getExodusVersion():
   Parse the exodusII.h header file and return the version number or 0 if not
   found.
   """
-  for line in open(getAccessPath() + '/inc/exodusII.h'):
+  for line in open(getAccessPath() + '/include/exodusII.h'):
     fields = line.split()
     if (len(fields) == 3 and
         fields[0] == '#define' and

@@ -53,10 +53,10 @@
 #include <Teuchos_ConfigDefs.hpp>
 //#include <memory> // Teuchos_ConfigDefs.hpp includes it
 //#include <iostream> // Teuchos_ConfigDefs.hpp includes it
+//#include <limits> // Ditto; for std::numeric_limits<size_type>::max()
 #ifdef HAVE_TEUCHOSCORE_CXX11
 #  include <type_traits>
 #endif // HAVE_TEUCHOSCORE_CXX11
-
 
 namespace Teuchos {
 namespace Details {
@@ -282,6 +282,14 @@ public:
   ///   the rebind struct is required.
   template<class U>
   struct rebind { typedef Allocator<U> other; };
+
+  /// \brief Upper bound (possibly loose) on maximum allocation size.
+  ///
+  /// Implementations of the Allocator concept should not NEED this
+  /// method, but it makes the Clang compiler happy.
+  size_type max_size() const {
+    return std::numeric_limits<size_type>::max();
+  }
 
   /// \brief Allocate an array of n instances of value_type.
   ///

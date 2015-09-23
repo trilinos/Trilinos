@@ -132,11 +132,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${ST_FOR_DEV_PT_FOR_RELEASE}
   )
 
+ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX11)
+SET(${PACKAGE_NAME}_ENABLE_LONG_LONG_INT_DEFAULT ${${PROJECT_NAME}_ENABLE_CXX11})
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT
   HAVE_TEUCHOS_LONG_LONG_INT
-  "Enable Teuchos features for long long data type."
-  OFF
+  "Enable Teuchos features for the 'long long' data type.  This is ON by default if and only if C++11 is enabled.  Please remember that 'long long' only entered the C++ language standard with C++11, even though many compilers supported it before."
+  ${${PACKAGE_NAME}_ENABLE_LONG_LONG_INT_DEFAULT}
   )
 
 IF(WIN32 AND NOT CYGWIN AND NOT ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT)
@@ -145,6 +147,27 @@ IF(WIN32 AND NOT CYGWIN AND NOT ${PACKAGE_NAME}_ENABLE_LONG_LONG_INT)
   INCLUDE(CheckFor__int64)
   CHECK_FOR___INT64(HAVE_TEUCHOS___INT64)
 ENDIF()
+
+# Check whether the C++ compiler can compile __attribute__((constructor)).
+INCLUDE(CheckCXXAttributeConstructorCompiles)
+CHECK_CXX_ATTRIBUTE_CONSTRUCTOR_COMPILES(HAVE_TEUCHOS_CXX_ATTRIBUTE_CONSTRUCTOR)
+# Check whether the C++ compiler can compile __attribute__((weak)).
+INCLUDE(CheckCXXAttributeWeakCompiles)
+CHECK_CXX_ATTRIBUTE_WEAK_COMPILES(HAVE_TEUCHOS_CXX_ATTRIBUTE_WEAK)
+# Some compilers don't implement __attribute__((weak)), but they might
+# implement "#pragma weak" instead.  Check this.
+INCLUDE(CheckCXXPragmaWeakCompiles)
+CHECK_CXX_PRAGMA_WEAK_COMPILES(HAVE_TEUCHOS_CXX_PRAGMA_WEAK)
+# Check whether building dynamic shared libraries or static libraries.
+# If building dynamic shared libraries, define a macro.  In that case,
+# fixing Bug 6392 doesn't need any of the three things above.
+GLOBAL_SET(HAVE_TEUCHOS_DYNAMIC_LIBS OFF) # to revise below
+IF (DEFINED BUILD_SHARED_LIBS)
+  # Don't check the value unless we know that it's defined.
+  IF (BUILD_SHARED_LIBS)
+    GLOBAL_SET(HAVE_TEUCHOS_DYNAMIC_LIBS ON)
+  ENDIF ()
+ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_ABC

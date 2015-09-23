@@ -88,6 +88,11 @@ namespace Xpetra {
     typedef TpetraImport<LocalOrdinal,GlobalOrdinal,Node> TpetraImportClass;
     typedef TpetraExport<LocalOrdinal,GlobalOrdinal,Node> TpetraExportClass;
 
+    // The following typedefs are used by the Kokkos interface
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    typedef typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type local_matrix_type;
+#endif
+
   public:
 
     //! @name Constructor/Destructor Methods
@@ -151,6 +156,34 @@ namespace Xpetra {
       mtx_=Tpetra::exportAndFillCompleteCrsMatrix<MyTpetraCrsMatrix>(tSourceMatrix.getTpetra_CrsMatrix(),toTpetra(exporter),myDomainMap,myRangeMap,params);
 
     }
+
+    /// \brief Constructor specifying column Map and a local matrix,
+    ///   which the resulting CrsMatrix views.
+    ///
+    /// Unlike most other CrsMatrix constructors, successful
+    /// completion of this constructor will result in a fill-complete
+    /// matrix.
+    ///
+    /// \param rowMap [in] Distribution of rows of the matrix.
+    ///
+    /// \param colMap [in] Distribution of columns of the matrix.
+    ///
+    /// \param lclMatrix [in] A local CrsMatrix containing all local
+    ///    matrix values as well as a local graph.  The graph's local
+    ///    row indices must come from the specified row Map, and its
+    ///    local column indices must come from the specified column
+    ///    Map.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    TpetraCrsMatrix (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+        const local_matrix_type& lclMatrix,
+        const Teuchos::RCP<Teuchos::ParameterList>& params = null)
+    : mtx_(Teuchos::rcp(new Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(toTpetra(rowMap), toTpetra(colMap), lclMatrix, params))) {  }
+#endif
 
     //! Destructor.
     virtual ~TpetraCrsMatrix() {  }
@@ -459,6 +492,16 @@ namespace Xpetra {
 
     //! Get the underlying Tpetra matrix
     RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_CrsMatrixNonConst() const { return mtx_; } //TODO: remove
+
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    /// \brief Access the local Kokkos::CrsMatrix data
+    local_matrix_type getLocalMatrix () const {
+      if(isFillComplete() == false)
+        throw std::runtime_error("Xpetra::EpetraCrsMatrix::getLocalMatrix: matrix must be filled and completed before you can access the data through the Kokkos interface!");
+
+      return getTpetra_CrsMatrixNonConst()->getLocalMatrix();
+    }
+#endif
 
    //@}
 

@@ -49,11 +49,17 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include <type_traits>
 #include <vector>
 
 
 namespace Ifpack2 {
-//! Ifpack2_SingletonFilter: Filter based on matrix entries.
+
+/// \class SingletonFilter
+/// \brief Filter based on matrix entries.
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
+///
+/// \warning This is an implementation detail of Ifpack2.
 template<class MatrixType>
 class SingletonFilter :
     virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
@@ -66,8 +72,10 @@ public:
   typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
   typedef typename MatrixType::node_type Node;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
+  typedef typename row_matrix_type::mag_type mag_type;
 
-  typedef typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::SingletonFilter: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.");
 
   //! \name Constructor & destructor methods
   //@{

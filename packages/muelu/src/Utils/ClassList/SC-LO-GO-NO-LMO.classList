@@ -14,6 +14,7 @@ BraessSarazinSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
 CGSolver
 CoalesceDropFactory
 CoarseMapFactory
+CoarseningVisualizationFactory
 Constraint
 ConstraintFactory
 CoordinatesTransferFactory
@@ -34,6 +35,7 @@ IndefBlockedDiagonalSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
 LineDetectionFactory
 LocalPermutationStrategy
 MapTransferFactory
+MatrixAnalysisFactory
 MergedBlockedMatrixFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 MergedSmoother
 MLParameterListInterpreter
@@ -56,11 +58,12 @@ RebalanceBlockAcFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 RebalanceBlockInterpolationFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 RebalanceBlockRestrictionFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 RebalanceTransferFactory
-RefMaxwell - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 RepartitionFactory - #ifdef HAVE_MPI
 RigidBodyModeFactory
 SaPFactory
+SaPFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 SchurComplementFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
+SegregatedAFactory
 ShiftedLaplacian - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2) && defined(HAVE_MUELU_BELOS)
 ShiftedLaplacianOperator - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_BELOS)
 SimpleSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
@@ -81,4 +84,5 @@ TrilinosSmoother
 UserPFactory
 SemiCoarsenPFactory
 UzawaSmoother - #ifdef HAVE_MUELU_EXPERIMENTAL
+VisualizationHelpers
 Zoltan2Interface - #if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)

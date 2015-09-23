@@ -35,6 +35,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ON
   )
 
+IF (NOT Tpetra_ENABLE_Kokkos_Refactor)
+  MESSAGE(WARNING "The 'classic' version of Tpetra has been DEPRECATED and is no longer supported.  If you don't want to see this message, please stop setting Tpetra_ENABLE_Kokkos_Refactor to OFF.  (It is ON by default; you do not have to set it explicitly.)")
+ENDIF ()
+
 ############################################################
 # Process subpackages
 ############################################################

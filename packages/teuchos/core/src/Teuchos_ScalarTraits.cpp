@@ -47,6 +47,8 @@
 //#define TEUCHOS_SCALAR_TRAITS_THROW_NAN_INF_ERR
 
 #ifdef HAVE_TEUCHOSCORE_QUADMATH
+namespace std {
+
 std::ostream&
 operator<< (std::ostream& out, const __float128& x)
 {
@@ -64,6 +66,19 @@ operator<< (std::ostream& out, const __float128& x)
   out << buf;
   return out;
 }
+
+istream&
+operator>> (std::istream& in, __float128& x)
+{
+  std::string tmpStr;
+  in >> tmpStr;
+  // FIXME (mfh 10 Sep 2015) I don't think this routine does any error
+  // checking.
+  x = strtoflt128 (tmpStr.c_str (), NULL);
+  return in;
+}
+
+} // namespace std
 #endif // HAVE_TEUCHOSCORE_QUADMATH
 
 namespace {

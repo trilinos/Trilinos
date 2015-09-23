@@ -32,7 +32,7 @@ struct CompPairs {
   std::vector<Scalar> vinternal_;
   bool operator()(LocalOrdinal a, LocalOrdinal b) {
     //return vinternal_[a] < vinternal_[b];
-    return std::abs(vinternal_[a]) > std::abs(vinternal_[b]);
+    return Teuchos::ScalarTraits<Scalar>::magnitude(vinternal_[a]) > Teuchos::ScalarTraits<Scalar>::magnitude(vinternal_[b]);
   }
 };
 

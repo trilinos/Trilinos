@@ -121,20 +121,18 @@ Teuchos::RCP<Belos::LinearProblem<
                Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > >
 build_problem (Teuchos::ParameterList& test_params,
                const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-               Teuchos::RCP<Node> node)
+               const Teuchos::RCP<Node>& node = Teuchos::null)
 {
   using Teuchos::ArrayView;
-  using Teuchos::as;
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
   using Teuchos::RCP;
+  using Teuchos::rcp;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  //typedef Tpetra::CrsGraph<LO, GO, Node>                crs_graph_type; // unused
   typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node>       crs_matrix_type;
   typedef Tpetra::Map<LO, GO, Node>                     map_type;
   typedef Tpetra::MultiVector<Scalar, LO, GO, Node>     TMV;
-  //typedef Tpetra::Operator<Scalar, LO, GO, Node>        TOP; // unused
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
   //typedef Belos::LinearProblem<Scalar, TMV, TOP>        BLinProb; // unused
 
@@ -165,7 +163,7 @@ build_problem (Teuchos::ParameterList& test_params,
       // fillCompleteParams->set ("Optimize Storage", false);
       fillCompleteParams->set ("Preserve Local Graph", true);
     }
-    A = reader_type::readSparseFile (mm_file, comm, node, constructorParams,
+    A = reader_type::readSparseFile (mm_file, comm, constructorParams,
                                      fillCompleteParams);
 
     RCP<const map_type> domainMap = A->getDomainMap ();
@@ -175,7 +173,9 @@ build_problem (Teuchos::ParameterList& test_params,
       if (comm->getRank() == 0) {
         std::cout << "Matrix Market file for right-hand-side(s) B: " << rhs_mm_file << std::endl;
       }
-      b = reader_type::readDenseFile (rhs_mm_file, comm, node, rangeMap);
+      b = reader_type::readDenseFile (rhs_mm_file, comm,
+                                      A->getRowMap ()->getNode (),
+                                      rangeMap);
     }
 
     if (nullMvec_mm_file != "not specified") {
@@ -185,7 +185,9 @@ build_problem (Teuchos::ParameterList& test_params,
       // mfh 31 Jan 2013: I'm not sure what a "null multivector" means
       // in this context, so I'm only guessing that it's a domain Map
       // multivector.
-      nullVec = reader_type::readDenseFile (nullMvec_mm_file, comm, node, domainMap);
+      nullVec = reader_type::readDenseFile (nullMvec_mm_file, comm,
+                                            A->getRowMap ()->getNode (),
+                                            domainMap);
     }
 
   }
@@ -193,7 +195,7 @@ build_problem (Teuchos::ParameterList& test_params,
     if (comm->getRank() == 0) {
       std::cout << "Harwell-Boeing file: " << hb_file << std::endl;
     }
-    A = read_matrix_hb<Scalar,LO,GO,Node>(hb_file, comm, node);
+    A = read_matrix_hb<Scalar,LO,GO,Node> (hb_file, comm, node);
   }
   else {
     throw std::runtime_error("No matrix file specified.");
@@ -210,7 +212,7 @@ build_problem (Teuchos::ParameterList& test_params,
     // Copy the values row by row from A into A_constGraph.
     ArrayView<const LO> ind;
     ArrayView<const Scalar> val;
-    const LO numLocalRows = as<LO> (A->getNodeNumRows ());
+    const LO numLocalRows = static_cast<LO> (A->getNodeNumRows ());
     for (LO localRow = 0; localRow < numLocalRows; ++localRow) {
       A->getLocalRowView (localRow, ind, val);
       A_constGraph->replaceLocalValues (localRow, ind, val);

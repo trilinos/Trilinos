@@ -51,6 +51,8 @@
 
 #include "Panzer_ParameterLibrary.hpp"
 
+#include "Panzer_Evaluator_WithBaseImpl.hpp"
+
 namespace panzer {
     
   template <typename EvalT> class ScalarParameterEntry;
@@ -58,12 +60,13 @@ namespace panzer {
 //! Constant parameter from sacado parameter library
   template<typename EvalT, typename TRAITS>
   class Parameter : 
-    public PHX::EvaluatorWithBaseImpl<TRAITS>,
+    public panzer::EvaluatorWithBaseImpl<TRAITS>,
     public PHX::EvaluatorDerived<EvalT, TRAITS> {
   
   public:
     
-    Parameter(const std::string name,
+    Parameter(const std::string parameter_name,
+	      const std::string field_name,
 	      const Teuchos::RCP<PHX::DataLayout>& data_layout,
 	      panzer::ParamLib& param_lib);
 
@@ -76,7 +79,8 @@ namespace panzer {
       * \param[in] expansion Expansion to use when constructing the stochastic scalar
       * \param[in] param_lib Parameter library to register the scalar parameter with
       */
-    Parameter(const std::string name,
+    Parameter(const std::string parameter_name,
+	      const std::string field_name,
 	      const Teuchos::RCP<PHX::DataLayout>& data_layout,
 	      const std::vector<double> & sg_initial_value,
               const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > & expansion,

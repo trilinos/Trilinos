@@ -44,6 +44,7 @@
 
 %{
 // PyTrilinos includes
+#include "PyTrilinos_config.h"
 #include "PyTrilinos_PythonException.hpp"
 #include "PyTrilinos_FILEstream.hpp"
 
@@ -107,11 +108,11 @@ import numpy
     PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
     SWIG_fail;
   }
-  SWIG_CATCH_STDEXCEPT
   catch (Swig::DirectorException & e)
   {
     SWIG_fail;
   }
+  SWIG_CATCH_STDEXCEPT
   catch(...)
   {
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
@@ -293,7 +294,8 @@ import numpy
 {
   Teuchos::RCP< ClassName > *smartresult = new Teuchos::RCP< ClassName >(*$1);
   PyObject * obj = SWIG_NewPointerObj(%as_voidptr(smartresult),
-				      $descriptor(Teuchos::RCP< ClassName >*), SWIG_POINTER_OWN);
+				      $descriptor(Teuchos::RCP< ClassName >*),
+                                      SWIG_POINTER_OWN);
   $result = SWIG_Python_AppendOutput($result,obj);
 }
 %enddef

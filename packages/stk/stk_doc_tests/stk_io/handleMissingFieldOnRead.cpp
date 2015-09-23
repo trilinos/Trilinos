@@ -71,8 +71,9 @@ namespace {
       stkIo.set_active_mesh(index); // Optional if only a single input database
       stkIo.create_input_mesh();
 
-      stk::mesh::Field<double> &temperature = stkIo.meta_data().
-	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK,"temperature",1);
+      stk::mesh::Field<double> &temperature =
+          stkIo.meta_data().declare_field<stk::mesh::Field<double> >(
+                                          stk::topology::NODE_RANK,"temperature",1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
       stkIo.populate_bulk_data();
 
@@ -88,17 +89,17 @@ namespace {
       // Add three steps to the database
       // For each step, the value of the field is the value 'time'
       for (size_t i=0; i < 3; i++) {
-	double time = i;
+	    double time = i;
 
-	for(size_t inode=0; inode<nodes.size(); inode++) {
-	  double *fieldDataForNode =
-	    stk::mesh::field_data(temperature, nodes[inode]);
-	  *fieldDataForNode = time;
-	}
+	    for(size_t inode=0; inode<nodes.size(); inode++) {
+	      double *fieldDataForNode =
+	              stk::mesh::field_data(temperature, nodes[inode]);
+	      *fieldDataForNode = time;
+	    }
 
-	stkIo.begin_output_step(fh, time);
-	stkIo.write_defined_output_fields(fh);
-	stkIo.end_output_step(fh);
+	    stkIo.begin_output_step(fh, time);
+	    stkIo.write_defined_output_fields(fh);
+	    stkIo.end_output_step(fh);
       }
     }
 
@@ -116,12 +117,14 @@ namespace {
       stkIo.set_active_mesh(index);
       stkIo.create_input_mesh();
 
-      stk::mesh::Field<double> &temperature = stkIo.meta_data().
-	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK,"temperature",1);
+      stk::mesh::Field<double> &temperature =
+          stkIo.meta_data().declare_field<stk::mesh::Field<double> >(
+                                              stk::topology::NODE_RANK,"temperature",1);
       stk::mesh::put_field(temperature, stkIo.meta_data().universal_part());
 
-      stk::mesh::Field<double> &displacement = stkIo.meta_data().
-	declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK,"displacement",1);
+      stk::mesh::Field<double> &displacement =
+          stkIo.meta_data().declare_field<stk::mesh::Field<double> >(
+                                             stk::topology::NODE_RANK,"displacement",3);
       stk::mesh::put_field(displacement, stkIo.meta_data().universal_part());
       stkIo.populate_bulk_data();
 
@@ -144,17 +147,20 @@ namespace {
       //+ VERIFICATION
       //+ The 'missing' vector should be of size 1 and contain
       //+ 'disp'
-      EXPECT_EQ(1u, missing_fields.size());
-      EXPECT_STREQ("disp", missing_fields[0].db_name().c_str());
+      EXPECT_EQ(2u, missing_fields.size());
+      EXPECT_EQ("disp", missing_fields[0].db_name());
+      EXPECT_EQ("displacement", missing_fields[0].field()->name());
+      EXPECT_EQ("disp", missing_fields[1].db_name());
+      EXPECT_EQ("displacement_STKFS_N", missing_fields[1].field()->name());
 		  
       // The value of the "temperature" field at all nodes should be 2.0
       std::vector<stk::mesh::Entity> nodes;
       stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK,
 			      nodes);
       for(size_t i=0; i<nodes.size(); i++) {
-	double *fieldDataForNode =
-	  stk::mesh::field_data(temperature, nodes[i]);
-	EXPECT_DOUBLE_EQ(2.0, *fieldDataForNode);
+        double *fieldDataForNode =
+                stk::mesh::field_data(temperature, nodes[i]);
+        EXPECT_DOUBLE_EQ(2.0, *fieldDataForNode);
       }
       //-END      
     }

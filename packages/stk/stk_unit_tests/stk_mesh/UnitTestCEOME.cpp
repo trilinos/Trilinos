@@ -43,7 +43,6 @@
 #include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
 #include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture
-#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture, etc
 #include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc

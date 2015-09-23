@@ -145,8 +145,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<LO> LIDs;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<typename LOC::VectorType> x;
    if (useTimeDerivativeSolutionVector_)
@@ -271,8 +271,8 @@ evaluateFields(typename TRAITS::EvalData workset)
    std::vector<LO> LIDs;
  
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
-   const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
+   std::string blockId = this->wda(workset).block_id;
+   const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
 
    Teuchos::RCP<typename LOC::VectorType> x;
    if (useTimeDerivativeSolutionVector_)
@@ -366,7 +366,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   fieldIds_.resize(gatherFields_.size());
 
   const Workset & workset_0 = (*d.worksets_)[0];
-  std::string blockId = workset_0.block_id;
+  std::string blockId = this->wda(workset_0).block_id;
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
@@ -429,7 +429,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    typedef TpetraLinearObjContainer<double,LO,GO,NodeT> LOC;
 
    // for convenience pull out some objects from workset
-   std::string blockId = workset.block_id;
+   std::string blockId = this->wda(workset).block_id;
 
    double seed_value = 0.0;
    if (useTimeDerivativeSolutionVector_) {
@@ -450,7 +450,7 @@ evaluateFields(typename TRAITS::EvalData workset)
    if(seed_value==0.0)
      use_seed = false;
 
-   globalIndexer_->getElementLIDs(workset.cell_local_ids_k,scratch_lids_);
+   globalIndexer_->getElementLIDs(this->wda(workset).cell_local_ids_k,scratch_lids_);
 
    // now setup the fuctor_data, and run the parallel_for loop
    //////////////////////////////////////////////////////////////////////////////////

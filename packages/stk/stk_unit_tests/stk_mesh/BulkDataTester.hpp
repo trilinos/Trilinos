@@ -344,6 +344,16 @@ public:
     {
         return internal_is_entity_marked(entity);
     }
+
+    void my_set_mesh_index(Entity entity, Bucket * in_bucket, Bucket::size_type ordinal)
+    {
+        set_mesh_index(entity, in_bucket, ordinal);
+    }
+
+    stk::mesh::impl::BucketRepository& my_get_bucket_repository()
+    {
+        return get_bucket_repository();
+    }
 };
 
 class BulkDataFaceSharingTester : public BulkDataTester

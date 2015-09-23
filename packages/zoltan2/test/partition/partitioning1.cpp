@@ -192,7 +192,8 @@ int main(int narg, char** arg)
   if (me == 0)
     cout << "NumRows     = " << origMatrix->getGlobalNumRows() << endl
          << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
-         << "NumProcs = " << comm->getSize() << endl;
+         << "NumProcs = " << comm->getSize() << endl
+         << "NumLocalRows (rank 0) = " << origMatrix->getNodeNumRows() << endl;
 
   ////// Create a vector to use with the matrix.
   RCP<Vector> origVector, origProd;

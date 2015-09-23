@@ -39,11 +39,13 @@
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket, raw_part_equal
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition, lower_bound
+#include <stk_mesh/baseImpl/ForEachEntityLoopAbstractions.hpp>
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/util/SortAndUnique.hpp"
 
 namespace stk {
 namespace mesh {
@@ -111,6 +113,11 @@ size_t BucketRepository::total_field_data_footprint(const FieldBase& f, EntityRa
   return retval;
 }
 
+void BucketRepository::set_needs_to_be_sorted(stk::mesh::Bucket &bucket, bool needsSorting)
+{
+    bucket.getPartition()->set_flag_needs_to_be_sorted(needsSorting);
+}
+
 void BucketRepository::internal_sort_bucket_entities()
 {
   for (std::vector<std::vector<Partition *> >::const_iterator
@@ -137,6 +144,32 @@ void BucketRepository::optimize_buckets()
       (*ip)->compress();
     }
   }
+}
+
+
+void BucketRepository::add_entity_with_part_memberships(const stk::mesh::Entity entity,
+                                                        const EntityRank arg_entity_rank,
+                                                        const OrdinalVector &parts)
+{
+    Partition *partition = get_or_create_partition(arg_entity_rank, parts);
+    partition->add(entity);
+}
+
+void BucketRepository::change_entity_part_membership(const MeshIndex &meshIndex, const OrdinalVector &parts)
+{
+    Bucket *bucket = meshIndex.bucket;
+    Partition *destinationPartition = get_or_create_partition(bucket->entity_rank(), parts);
+    Entity entity = get_entity(meshIndex);
+    Partition *sourcePartition = bucket->getPartition();
+    sourcePartition->move_to(entity, *destinationPartition);
+}
+
+void BucketRepository::remove_entity(const MeshIndex &meshIndex)
+{
+    Bucket *bucket = meshIndex.bucket;
+    Partition *partition = bucket->getPartition();
+    Entity entity = get_entity(meshIndex);
+    partition->remove(entity);
 }
 
 ////
@@ -376,6 +409,7 @@ Bucket *BucketRepository::allocate_bucket(EntityRank arg_entity_rank,
                                           const std::vector<unsigned> & arg_key,
                                           size_t arg_capacity )
 {
+  ThrowAssertMsg(stk::util::is_sorted_and_unique(std::vector<unsigned>(arg_key.begin()+1,arg_key.end()-1),std::less<unsigned>()),"bucket created with 'key' vector that's not sorted and unique");
   BucketVector &bucket_vec = m_buckets[arg_entity_rank];
   const unsigned bucket_id = bucket_vec.size();
 

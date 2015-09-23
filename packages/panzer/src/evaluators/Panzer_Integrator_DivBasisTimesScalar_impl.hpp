@@ -112,7 +112,7 @@ PHX_POST_REGISTRATION_SETUP(Integrator_DivBasisTimesScalar,sd,fm)
   num_nodes = residual.dimension(1);
   num_qp = scalar.dimension(1);
 
-  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
+  basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0], this->wda);
 
   tmp = Intrepid::FieldContainer<ScalarT>(scalar.dimension(0), num_qp); 
 }
@@ -136,8 +136,8 @@ PHX_EVALUATE_FIELDS(Integrator_DivBasisTimesScalar,workset)
   }
   
   {
-    // const Intrepid::FieldContainer<double> & weighted_div_basis = (workset.bases[basis_index])->weighted_div_basis;
-    const BasisValues2<double> & bv = *workset.bases[basis_index];
+    // const Intrepid::FieldContainer<double> & weighted_div_basis = (this->wda(workset).bases[basis_index])->weighted_div_basis;
+    const BasisValues2<double> & bv = *this->wda(workset).bases[basis_index];
 
     for (std::size_t cell = 0; cell < workset.num_cells; ++cell)
       for (std::size_t basis = 0; basis < num_nodes; ++basis) {
@@ -149,7 +149,7 @@ PHX_EVALUATE_FIELDS(Integrator_DivBasisTimesScalar,workset)
   if(workset.num_cells>0) {
      Intrepid::FunctionSpaceTools::
        integrate<ScalarT>(residual, tmp, 
-                       workset.bases[basis_index]->weighted_div_basis, 
+                       this->wda(workset).bases[basis_index]->weighted_div_basis, 
 		       Intrepid::COMP_BLAS);
   }
 */

@@ -84,14 +84,18 @@
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosSolverFactory.hpp>
+#include <BelosTpetraAdapter.hpp>
 
 namespace MueLu {
 
-  //! @brief Shifted Laplacian Helmholtz solver
   /*!
+    @brief Shifted Laplacian Helmholtz solver
+
     This class provides a black box solver for indefinite Helmholtz problems.
     An AMG-Shifted Laplacian is used as a preconditioner for Krylov iterative
     solvers in Belos.
+
+    @ingroup MueLuAdapters
   */
   template <class Scalar        = Xpetra::Matrix<>::scalar_type,
             class LocalOrdinal  = typename Xpetra::Matrix<Scalar>::local_ordinal_type,

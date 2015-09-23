@@ -60,6 +60,21 @@
 
 %}
 
+/////////////////////////////////////////////////////////
+// Teuchos::RCP<> support for all classes in this file //
+/////////////////////////////////////////////////////////
+%teuchos_rcp(Epetra_Operator      )
+%teuchos_rcp(Epetra_InvOperator   )
+%teuchos_rcp(Epetra_RowMatrix     )
+%teuchos_rcp(Epetra_BasicRowMatrix)
+%teuchos_rcp(Epetra_CrsMatrix     )
+%teuchos_rcp(Epetra_FECrsMatrix   )
+%teuchos_rcp(Epetra_VbrMatrix     )
+%teuchos_rcp(Epetra_FEVbrMatrix   )
+%teuchos_rcp(Epetra_JadMatrix     )
+%teuchos_rcp_epetra_argout(Epetra_CrsMatrix)
+%teuchos_rcp_epetra_argout(Epetra_VbrMatrix)
+
 ////////////////
 // Macro code //
 ////////////////
@@ -253,7 +268,6 @@
 /////////////////////////////
 // Epetra_Operator support //
 /////////////////////////////
-%teuchos_rcp(Epetra_Operator)
 %feature("docstring")
 Epetra_Operator
 "
@@ -373,7 +387,6 @@ Epetra_Operator::ApplyInverse;
 ////////////////////////////////
 // Epetra_InvOperator support //
 ////////////////////////////////
-%teuchos_rcp(Epetra_InvOperator)
 %warnfilter(473)     Epetra_InvOperator;
 %feature("director") Epetra_InvOperator;
 %rename(InvOperator) Epetra_InvOperator;
@@ -382,7 +395,6 @@ Epetra_Operator::ApplyInverse;
 //////////////////////////////
 // Epetra_RowMatrix support //
 //////////////////////////////
-%teuchos_rcp(Epetra_RowMatrix)
 %feature("autodoc",
 "NumMyRowEntries(int myRow, numpy.ndarray numEntries) -> int
 
@@ -492,7 +504,6 @@ Epetra_RowMatrix::RightScale;
 ///////////////////////////////////
 // Epetra_BasicRowMatrix support //
 ///////////////////////////////////
-%teuchos_rcp(Epetra_BasicRowMatrix)
 %warnfilter(473)        Epetra_BasicRowMatrix;
 %feature("director")    Epetra_BasicRowMatrix;
 %rename(BasicRowMatrix) Epetra_BasicRowMatrix;
@@ -522,8 +533,6 @@ Epetra_RowMatrix::RightScale;
 //////////////////////////////
 // Epetra_CrsMatrix support //
 //////////////////////////////
-%teuchos_rcp(Epetra_CrsMatrix)
-%teuchos_rcp_epetra_argout(Epetra_CrsMatrix)
 %feature("autodoc",
 "__init__(self, Epetra_DataAccess CV, Map rowMap, int numEntriesPerRow, 
     bool staticProfile=False) -> CrsMatrix
@@ -1141,6 +1150,20 @@ Epetra_CrsMatrix::__getitem__;
 %ignore Epetra_CrsMatrix::ExtractMyRowCopy;
 %ignore Epetra_CrsMatrix::ExtractMyRowView;
 %ignore Epetra_CrsMatrix::ExtractCrsDataPointers;
+// Note: the following three methods are ignored because there are
+// equivalent versions with Epetra_MultiVector arguments.  Having both
+// versions messes up my DAP typemaps, which look for a __distarray__
+// attribute and try to force an Epetra_MultiVector peg into an
+// Epetra_Vector hole.
+%ignore Epetra_CrsMatrix::Multiply(bool,
+                                   const Epetra_Vector &,
+                                   Epetra_Vector &) const;
+%ignore Epetra_CrsMatrix::Multiply1(bool,
+                                    const Epetra_Vector &,
+                                    Epetra_Vector &) const;
+%ignore Epetra_CrsMatrix::Solve(bool, bool, bool,
+                                const Epetra_Vector &,
+                                Epetra_Vector &) const;
 %include "Epetra_CrsMatrix.h"
 %clear (const int* NumEntriesPerRow, int NumRows   );
 %clear (double*    Values,           int NumValues );
@@ -1149,7 +1172,6 @@ Epetra_CrsMatrix::__getitem__;
 ////////////////////////////////
 // Epetra_FECrsMatrix support //
 ////////////////////////////////
-%teuchos_rcp(Epetra_FECrsMatrix)
 %rename(FECrsMatrix) Epetra_FECrsMatrix;
 %extend Epetra_FECrsMatrix
 {
@@ -1233,8 +1255,6 @@ Epetra_CrsMatrix::__getitem__;
 //////////////////////////////
 // Epetra_VbrMatrix support //
 //////////////////////////////
-%teuchos_rcp(Epetra_VbrMatrix)
-%teuchos_rcp_epetra_argout(Epetra_VbrMatrix)
 %feature("autodoc",
 "
 __init__(self, Epetra_DataAccess CV, BlockMap rowMap, int
@@ -1358,14 +1378,12 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix&);
 ////////////////////////////////
 // Epetra_FEVbrMatrix support //
 ////////////////////////////////
-%teuchos_rcp(Epetra_FEVbrMatrix)
 %rename(FEVbrMatrix) Epetra_FEVbrMatrix;
 %include "Epetra_FEVbrMatrix.h"
 
 //////////////////////////////
 // Epetra_JadMatrix support //
 //////////////////////////////
-%teuchos_rcp(Epetra_JadMatrix)
 %ignore Epetra_JadMatrix::ExtractMyEntryView(int,double*&,int&,int&);
 %rename(JadMatrix) Epetra_JadMatrix;
 %include "Epetra_JadMatrix.h"

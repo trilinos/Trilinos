@@ -48,34 +48,31 @@
 #include "Tpetra_RowMatrix.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-
+#include <type_traits>
 
 namespace Ifpack2 {
-//! Ifpack2::DropFilter: Filter based on matrix entries.
-/*!
-Ifpack2::DropFilter enables the dropping of all elements whose
-absolute value is below a specified threshold.
 
-A typical use is as follows:
-\code
-Teuchos::RCP<Tpetra::RowMatrix> A;
-// first localize the matrix
-Ifpack2::LocalFilter<Tpetra::RowMatrix> LocalA(A);
-// drop all elements below this value
-double DropTol = 1e-5;
-// now create the matrix, elements below DropTol are
-// not included in calls to getLocalRowCopy() and apply()
-// and Apply()
-Ifpack2::DropFilter<Tpetra::RowMatrix> DropA(LocalA,DropTol)
-\endcode
-
-<P>It is supposed that Ifpack2::DropFilter is used on localized matrices.
-
-
-\data Last modified: 2-Aug-12.
-
-*/
-
+/// \class DropFilter
+/// \brief Filter based on matrix entries
+/// \tparam MatrixType Tpetra::RowMatrix specialization
+///
+/// This class filters a matrix, by dropping all elements whose
+/// absolute value is below a specified threshold.  The matrix should
+/// be "localized," which means that it has no remote entries (e.g.,
+/// is a LocalFilter).
+///
+/// A typical use is as follows:
+/// \code
+/// Teuchos::RCP<Tpetra::RowMatrix<> > A;
+/// // first localize the matrix
+/// Ifpack2::LocalFilter<Tpetra::RowMatrix<> > LocalA(A);
+/// // drop all elements below this value
+/// double DropTol = 1e-5;
+/// // now create the matrix, elements below DropTol are
+/// // not included in calls to getLocalRowCopy() and apply()
+/// // and Apply()
+/// Ifpack2::DropFilter<Tpetra::RowMatrix<> > DropA(LocalA,DropTol)
+/// \endcode
 template<class MatrixType>
 class DropFilter :
     virtual public Tpetra::RowMatrix<typename MatrixType::scalar_type,
@@ -89,7 +86,9 @@ public:
   typedef typename MatrixType::node_type Node;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
-   typedef typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
+  typedef typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
+
+  static_assert(std::is_same<MatrixType, Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::value, "Ifpack2::DropFilter: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
   //! \name Constructor & destructor methods
   //@{
@@ -329,8 +328,8 @@ private:
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
   mutable Teuchos::Array<Scalar> Values_;
 
-};// class DropFilter
+};
 
-}// namespace Ifpack2
+} // namespace Ifpack2
 
 #endif /* IFPACK2_DROPFILTER_DECL_HPP */

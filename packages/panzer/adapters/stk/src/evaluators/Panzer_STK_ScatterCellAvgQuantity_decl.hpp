@@ -54,6 +54,8 @@
 
 #include "Panzer_STK_Interface.hpp"
 
+#include "Panzer_Evaluator_Macros.hpp"
+
 namespace panzer_stk_classic {
 
 /** This class is a scatter operation to the mesh. It
@@ -68,7 +70,7 @@ namespace panzer_stk_classic {
   * "IR" of type <code>Teuchos::RCP<panzer::IntegrationRule></code> and
   * "Mesh" of type <code>Teuchos::RCP<const panzer_stk_classic::STK_Interface></code>.
   */
-PHX_EVALUATOR_CLASS(ScatterCellAvgQuantity)
+PANZER_EVALUATOR_CLASS(ScatterCellAvgQuantity)
   typedef panzer_stk_classic::STK_Interface::SolutionFieldType VariableField; // this is weird, but the correct thing
 
   std::size_t numValues_;
@@ -78,7 +80,7 @@ PHX_EVALUATOR_CLASS(ScatterCellAvgQuantity)
 
   std::vector<VariableField*> stkFields_;
  
-PHX_EVALUATOR_CLASS_END
+PANZER_EVALUATOR_CLASS_END
 
 }
 

@@ -33,6 +33,7 @@ Level 1
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
@@ -92,6 +93,7 @@ Level 2
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
@@ -151,6 +153,7 @@ Level 3
    aggregation: preserve Dirichlet points = 0   [default]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
@@ -176,7 +179,7 @@ Level 3
  CheckMainDiagonal = 0   [default]
  RepairMainDiagonal = 0   [default]
 
- Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
+ Setup Smoother (MueLu::AmesosSmoother{type = Klu})
  presmoother ->
   [empty list]
 
@@ -187,11 +190,11 @@ Level 3
 Number of levels    = 4
 Operator complexity = 1.34
 
-matrix  rows    nnz  nnz/row procs
-A 0    10000  49600     4.96  1
-A 1     1700  14928     8.78  1
-A 2      192   1674     8.72  1
-A 3       24    190     7.92  1
+level   rows    nnz  nnz/row  c ratio  procs
+  0    10000  49600     4.96               1
+  1     1700  14928     8.78     5.88      1
+  2      192   1674     8.72     8.85      1
+  3       24    190     7.92     8.00      1
 
 Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
@@ -199,6 +202,6 @@ Smoother (level 1) both : MueLu::IfpackSmoother{type = point relaxation stand-al
 
 Smoother (level 2) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 
-Smoother (level 3) pre  : MueLu::AmesosSmoother{type = Superlu}
+Smoother (level 3) pre  : MueLu::AmesosSmoother{type = Klu}
 Smoother (level 3) post : no smoother
 

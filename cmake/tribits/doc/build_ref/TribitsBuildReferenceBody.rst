@@ -94,7 +94,7 @@ with::
   $ cd <SOME_BUILD_DIR>
 
 but it is generally recommended to create a build directory parallel from the
-soruce tree.
+source tree.
 
 NOTE: If you mistakenly try to configure for an in-source build (e.g. with
 'cmake .') you will get an error message and instructions on how to resolve
@@ -187,7 +187,7 @@ Selecting the list of packages to enable
 ----------------------------------------
 
 The <Project> project is broken up into a set of packages that can be enabled
-(or disbled).  For details and generic examples, see `Package Dependencies and
+(or disabled).  For details and generic examples, see `Package Dependencies and
 Enable/Disable Logic`_ and `TriBITS Dependency Handling Behaviors`_.
 
 See the following use cases:
@@ -508,6 +508,8 @@ d) Appending arbitrary libraries and link flags every executable:
   instead.  The TriBITS variable ``<Project>_EXTRA_LINK_FLAGS`` is badly named
   in this respect but the name remains due to backward compatibility
   requirements.
+
+.. _<TRIBITS_PACKAGE>_DISABLE_STRONG_WARNINGS:
 
 e) Turning off strong warnings for individual packages:
 
@@ -1530,14 +1532,16 @@ To turn off CMake configure-time development-mode checking, set::
 This turns off a number of CMake configure-time checks for the <Project>
 TriBITS/CMake files including checking the package dependencies.  These checks
 can be expensive and may also not be appropriate for a tarball release of the
-software.  For a release of <Project> this option is set OFF by default.
+software.  However, this also turns off strong compiler warnings so this is
+not recommended by default (see `<TRIBITS_PACKAGE>_DISABLE_STRONG_WARNINGS`_).
+For a release of <Project> this option is set OFF by default.
 
 One of the CMake configure-time debug-mode checks performed as part of
 ``<Project>_ENABLE_DEVELOPMENT_MODE=ON`` is to assert the existence of TriBITS
 package directories.  In development mode, the failure to find a package
 directory is usually a programming error (i.e. a miss-spelled package
 directory name).  But in a tarball release of the project, package directories
-may be purposefully missing (see `Creating a tarball of the source tree`) and
+may be purposefully missing (see `Creating a tarball of the source tree`_) and
 must be ignored.  When building from a reduced tarball created from the
 development sources, set::
 
@@ -1545,6 +1549,19 @@ development sources, set::
 
 Setting this off will cause the TriBITS CMake configure to simply ignore any
 missing packages and turn off all dependencies on these missing packages.
+
+Another type of checking is for optional inserted/external packages
+(e.g. packages who's source can optionally be included in and is flagged with
+``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()``).  Any of these package
+directories that are missing result in the packages being silently ignored by
+default.  However, notes on what missing packages are being ignored can
+printed by configuring with::
+
+  -D <Project>_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES=TRUE
+
+These warnings (starting with 'NOTE', not 'WARNING' that would otherwise
+trigger warnings in CDash) about missing inserted/external packages will print
+regardless of the setting for ``<Project>_ASSERT_MISSING_PACKAGES``.
 
 
 Building (Makefile generator)

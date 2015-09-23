@@ -110,8 +110,8 @@ PHX_EVALUATE_FIELDS(ScatterCellAvgVector,workset)
   panzer::MDFieldArrayFactory af("",true);
 
   // for convenience pull out some objects from workset
-  const std::vector<std::size_t> & localCellIds = workset.cell_local_ids;
-  std::string blockId = workset.block_id;
+  const std::vector<std::size_t> & localCellIds = this->wda(workset).cell_local_ids;
+  std::string blockId = this->wda(workset).block_id;
   std::string d_mod[3] = {"X","Y","Z"};
    
   // loop over the number of vector fields requested for exodus output

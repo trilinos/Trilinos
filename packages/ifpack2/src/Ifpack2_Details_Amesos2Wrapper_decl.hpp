@@ -51,24 +51,33 @@
 #ifndef IFPACK2_DETAILS_AMESOS2WRAPPER_DECL_HPP
 #define IFPACK2_DETAILS_AMESOS2WRAPPER_DECL_HPP
 
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Ifpack2_Preconditioner.hpp>
-#include <Ifpack2_Details_CanChangeMatrix.hpp>
+#include "Ifpack2_ConfigDefs.hpp"
 
 #ifdef HAVE_IFPACK2_AMESOS2
-#include <Amesos2_config.h>
-#include <Amesos2.hpp>
+
+#include "Ifpack2_Preconditioner.hpp"
+#include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include <type_traits>
 
 namespace Teuchos {
   // forward declaration
   class ParameterList;
 }
 
+namespace Trilinos {
+namespace Details {
+  template<class MV, class OP, class NormType>
+  class LinearSolver; // forward declaration
+} // namespace Details
+} // namespace Trilinos
+
+
 namespace Ifpack2 {
 namespace Details {
-/// @class Amesos2Wrapper
-/// @brief Wrapper class for direct solvers in Amesos2.
-/// \tparam MatrixType A specialization of Tpetra::CrsMatrix.
+/// \class Amesos2Wrapper
+/// \brief Wrapper class for direct solvers in Amesos2.
+/// \tparam MatrixType A specialization of Tpetra::RowMatrix.
 ///
 /// This class computes a sparse factorization of the input
 /// matrix A using Amesos2.  The apply() method solves linear
@@ -80,18 +89,15 @@ namespace Details {
 ///   must not rely on this class.  It may go away or its interface
 ///   may change at any time.
 ///
-/// \warning \c MatrixType <i>must</i> be a specialization of
-///   Tpetra::CrsMatrix.  It may <i>not</i> just be a specialization
-///   of Tpetra::RowMatrix.  This requirement comes from Amesos2's
-///   Tpetra adapter.
-///
-/// \warning This class creates a local filter.  In particular, if the matrix
-///   is not a true Tpetra::CrsMatrix, this class will perform a deep copy to produce
-///   a CrsMatrix.  This will happen, for example, if you are doing additive Schwarz
-///   with nonzero overlap, and apply Amesos2 as the subdomain solve.  This deep copy
-///   is required by Amesos2, and is in addition to any data copying that Amesos2 may
-///   do internally to satisfy TPL storage formats.
-///
+/// \warning This class creates a local filter.  In particular, if the
+///   matrix is not a Tpetra::CrsMatrix instance (this class will
+///   check this at run time using a dynamic cast), then this class
+///   will perform a deep copy to produce a CrsMatrix.  This will
+///   happen, for example, if you are doing additive Schwarz with
+///   nonzero overlap, and apply Amesos2 as the subdomain solve.  This
+///   deep copy is required by Amesos2, and is in addition to any data
+///   copying that Amesos2 may do internally to satisfy TPL storage
+///   formats.
 template<class MatrixType>
 class Amesos2Wrapper :
     virtual public Ifpack2::Preconditioner<typename MatrixType::scalar_type,
@@ -127,6 +133,9 @@ public:
                             local_ordinal_type,
                             global_ordinal_type,
                             node_type> row_matrix_type;
+
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value,
+                "Ifpack2::Details::Amesos2Wrapper: Please use MatrixType = Tpetra::RowMatrix.");
 
   //! Type of the Tpetra::Map specialization that this class uses.
   typedef Tpetra::Map<local_ordinal_type,
@@ -309,6 +318,8 @@ private:
 
   //! Type of the Tpetra::MultiVector specialization that this class uses.
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal_type, node_type> MV;
+  //! Type of the Tpetra::Operator specialization that this class uses.
+  typedef Tpetra::Operator<scalar_type, local_ordinal_type, global_ordinal_type, node_type> OP;
 
   //! Copy constructor (declared private and undefined; may not be used)
   Amesos2Wrapper (const Amesos2Wrapper<MatrixType>& RHS);
@@ -317,7 +328,7 @@ private:
   Amesos2Wrapper<MatrixType>& operator= (const Amesos2Wrapper<MatrixType>& RHS);
 
   //! Amesos2 solver; it contains the factorization of the matrix A_.
-  Teuchos::RCP<Amesos2::Solver<crs_matrix_type, MV> > amesos2solver_;
+  Teuchos::RCP<Trilinos::Details::LinearSolver<MV, OP, typename MV::mag_type> > solver_;
 
   /// \brief Return A, wrapped in a LocalFilter, if necessary.
   ///

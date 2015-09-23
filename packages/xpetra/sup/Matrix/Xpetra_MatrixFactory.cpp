@@ -60,7 +60,7 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
-	RCP<const EpetraCrsMatrixT<GlobalOrdinal> > oldECrsOp = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrixT<GlobalOrdinal> >(oldCrsOp);
+        RCP<const EpetraCrsMatrixT<GlobalOrdinal> > oldECrsOp = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrixT<GlobalOrdinal> >(oldCrsOp);
     if (oldECrsOp != Teuchos::null) {
       // Underlying matrix is Epetra
       RCP<CrsMatrix>     newECrsOp(new EpetraCrsMatrixT<GlobalOrdinal>(*oldECrsOp));
@@ -87,7 +87,7 @@ namespace Xpetra {
     return Teuchos::null;  // make compiler happy
   }
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_XPETRA_INT_LONG_LONG
 Teuchos::RCP<Xpetra::Matrix<double,int,long long> > MatrixFactory2<double,int,long long>::BuildCopy(const Teuchos::RCP<const Matrix> A) {
     RCP<const CrsMatrixWrap> oldOp = Teuchos::rcp_dynamic_cast<const CrsMatrixWrap>(A);
     if (oldOp == Teuchos::null)
@@ -97,7 +97,7 @@ Teuchos::RCP<Xpetra::Matrix<double,int,long long> > MatrixFactory2<double,int,lo
 
 #ifdef HAVE_XPETRA_EPETRA
 #ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
-	RCP<const EpetraCrsMatrixT<GlobalOrdinal> > oldECrsOp = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrixT<GlobalOrdinal> >(oldCrsOp);
+        RCP<const EpetraCrsMatrixT<GlobalOrdinal> > oldECrsOp = Teuchos::rcp_dynamic_cast<const EpetraCrsMatrixT<GlobalOrdinal> >(oldCrsOp);
     if (oldECrsOp != Teuchos::null) {
       // Underlying matrix is Epetra
       RCP<CrsMatrix>     newECrsOp(new EpetraCrsMatrixT<GlobalOrdinal>(*oldECrsOp));
@@ -124,7 +124,7 @@ Teuchos::RCP<Xpetra::Matrix<double,int,long long> > MatrixFactory2<double,int,lo
     return Teuchos::null;  // make compiler happy
   }
 
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
+#endif // HAVE_XPETRA_INT_LONG_LONG
 
 } // namespace Xpetra
 

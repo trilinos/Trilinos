@@ -87,19 +87,19 @@ namespace MueLu {
 
     // put in short cuts here!
 
-    if (name == "verbosity") { 
+    if (name == "verbosity") {
       std::string verb = "none";
       if (value == "\"0\"") verb = "none";
       if (value == "\"1\"" || value == "\"2\"" || value == "\"3\"") verb = "low";
       if (value == "\"4\"" || value == "\"5\"" || value == "\"6\"") verb = "medium";
       if (value == "\"7\"" || value == "\"8\"") verb = "high";
       if (value == "\"9\"") verb = "extreme";
-      if (value == "\"10\"") verb = "test";  
+      if (value == "\"10\"") verb = "test";
       verb = "\"" + verb + "\"";
-      ss << "<Parameter name=\"verbosity\" type=\"string\" value=" << verb << "/>"; 
-      return ss.str(); 
+      ss << "<Parameter name=\"verbosity\" type=\"string\" value=" << verb << "/>";
+      return ss.str();
     }
-    
+
     if (name == "cycle type") {
       std::stringstream temp1; temp1 << "\"" << "MGV" << "\"";
       std::stringstream temp2; temp2 << "\"" << "MGV" << "\"";
@@ -108,7 +108,7 @@ namespace MueLu {
       else TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MasterList::interpretParameterName, Line " << __LINE__ << ". "
                                            << "The parameter " << value << " is not supported by MueLu.");
       return ss.str();
-    }    
+    }
 
     // energy minimization is enabled
     if (name == "multigrid algorithm") {
@@ -123,7 +123,7 @@ namespace MueLu {
         *out << "WARNING: repartitioning in MueLu is different to ML's. Please refer to the MueLu user's Manual for more information." << std::endl;
       }
     }
-    
+
     // put in auto-generated code here
 ' > $code_file
 xsltproc gen_interpreter.xsl masterList.xml >> $code_file

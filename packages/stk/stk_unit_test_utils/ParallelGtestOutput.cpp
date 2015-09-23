@@ -53,8 +53,8 @@ void ColoredPrintf(GTestColor color, const char* fmt, ...)
 class MinimalistPrinter : public ::testing::EmptyTestEventListener
 {
 public:
-    MinimalistPrinter(int procId) :
-            mProcId(procId), mNumFails(0)
+    MinimalistPrinter(int procId, MPI_Comm comm) :
+            mProcId(procId), mNumFails(0), m_comm(comm)
     {
     }
 
@@ -62,6 +62,7 @@ private:
 
     int mProcId;
     int mNumFails;
+    MPI_Comm m_comm;
 
     virtual void OnTestStart(const ::testing::TestInfo& test_info)
     {
@@ -97,7 +98,7 @@ private:
         }
         int numTotalFailures = -1;
         int root = 0;
-        MPI_Reduce(&numFailuresThisProc, &numTotalFailures, 1, MPI_INT, MPI_SUM, root, MPI_COMM_WORLD);
+        MPI_Reduce(&numFailuresThisProc, &numTotalFailures, 1, MPI_INT, MPI_SUM, root, m_comm);
         if(mProcId == 0)
         {
             if(numTotalFailures == 0)
@@ -107,7 +108,7 @@ private:
             else
             {
                 int numProcs = -1;
-                MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+                MPI_Comm_size(m_comm, &numProcs);
                 ColoredPrintf(COLOR_RED, "[  FAILED  ] ");
                 printf("on %d of %d procs ", numTotalFailures, numProcs);
                 mNumFails++;
@@ -133,11 +134,17 @@ private:
     }
 };
 
+void create_parallel_output_with_comm(int procId, MPI_Comm comm)
+{
+    ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
+    listeners.Append(new MinimalistPrinter(procId, comm));
+    delete listeners.Release(listeners.default_result_printer());
+}
 
 void create_parallel_output(int procId)
 {
     ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
-    listeners.Append(new MinimalistPrinter(procId));
+    listeners.Append(new MinimalistPrinter(procId, MPI_COMM_WORLD));
     delete listeners.Release(listeners.default_result_printer());
 }
 

@@ -93,6 +93,9 @@ int main(int argc, char *argv[]) {
     Teuchos::CommandLineProcessor clp(false);
     ::Xpetra::Parameters xpetraParameters(clp);
 
+    bool runHeavyTests = false;
+    clp.setOption("heavytests", "noheavytests",  &runHeavyTests, "whether to exercise tests that take a long time to run");
+
     switch (clp.parse(argc,argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
@@ -114,8 +117,13 @@ int main(int argc, char *argv[]) {
     std::string outDir = "Output/";
 
     std::vector<std::string> dirList;
-    dirList.push_back("EasyParameterListInterpreter/");
-    dirList.push_back("FactoryParameterListInterpreter/");
+    if (runHeavyTests) {
+      dirList.push_back("EasyParameterListInterpreter-heavy/");
+      dirList.push_back("FactoryParameterListInterpreter-heavy/");
+    } else {
+      dirList.push_back("EasyParameterListInterpreter/");
+      dirList.push_back("FactoryParameterListInterpreter/");
+    }
 #if defined(HAVE_MPI) && defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_AMESOS2_KLU2)
     // The ML interpreter have internal ifdef, which means that the resulting
     // output would depend on configuration (reguarl interpreter does not have
@@ -128,10 +136,8 @@ int main(int argc, char *argv[]) {
 
     bool failed = false;
     Teuchos::Time timer("Interpreter timer");
-    double lastTime = timer.wallTime();
+    //double lastTime = timer.wallTime();
     for (int k = 0; k < numLists; k++) {
-      std::ios_base::fmtflags ff;
-      ff = std::cout.flags();
       Teuchos::ArrayRCP<std::string> fileList = MueLuTests::TestHelpers::GetFileList(dirList[k],
             (numProc == 1 ? std::string(".xml") : std::string("_np" + Teuchos::toString(numProc) + ".xml")));
 
@@ -175,10 +181,14 @@ int main(int argc, char *argv[]) {
         // first to include "test" verbosity
         Teuchos::ParameterList paramList;
         Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
-        if      (dirList[k] == "EasyParameterListInterpreter/")     paramList                     .set("verbosity", "test");
-        else if (dirList[k] == "FactoryParameterListInterpreter/")  paramList.sublist("Hierarchy").set("verbosity", "Test");
-        else if (dirList[k] == "MLParameterListInterpreter/")       paramList                     .set("ML output",     42);
-        else if (dirList[k] == "MLParameterListInterpreter2/")      paramList                     .set("ML output",     10);
+        if      (dirList[k] == "EasyParameterListInterpreter/" || dirList[k] == "EasyParameterListInterpreter-heavy/")
+          paramList.set("verbosity", "test");
+        else if (dirList[k] == "FactoryParameterListInterpreter/" || dirList[k] == "FactoryParameterListInterpreter-heavy/")
+          paramList.sublist("Hierarchy").set("verbosity", "Test");
+        else if (dirList[k] == "MLParameterListInterpreter/")
+          paramList.set("ML output",     42);
+        else if (dirList[k] == "MLParameterListInterpreter2/")
+          paramList.set("ML output",     10);
 
         try {
           timer.start();
@@ -188,19 +198,21 @@ int main(int argc, char *argv[]) {
           // here we have to distinguish between the general MueLu parameter list interpreter
           // and the ML parameter list interpreter. Note that the ML paramter interpreter also
           // works with Tpetra matrices.
-          if (dirList[k] == "EasyParameterListInterpreter/" ||
-              dirList[k] == "FactoryParameterListInterpreter/") {
+          if (dirList[k] == "EasyParameterListInterpreter/"         ||
+              dirList[k] == "EasyParameterListInterpreter-heavy/"   ||
+              dirList[k] == "FactoryParameterListInterpreter/"      ||
+              dirList[k] == "FactoryParameterListInterpreter-heavy/") {
             mueluFactory = Teuchos::rcp(new ParameterListInterpreter(paramList));
 
           } else if (dirList[k] == "MLParameterListInterpreter/") {
             mueluFactory = Teuchos::rcp(new MLParameterListInterpreter(paramList));
 
           } else if (dirList[k] == "MLParameterListInterpreter2/") {
-            std::cout << "ML ParameterList: " << std::endl;
-            std::cout << paramList << std::endl;
+            //std::cout << "ML ParameterList: " << std::endl;
+            //std::cout << paramList << std::endl;
             RCP<ParameterList> mueluParamList = Teuchos::getParametersFromXmlString(MueLu::ML2MueLuParameterTranslator::translate(paramList,"SA"));
-            std::cout << "MueLu ParameterList: " << std::endl;
-            std::cout << *mueluParamList << std::endl;
+            //std::cout << "MueLu ParameterList: " << std::endl;
+            //std::cout << *mueluParamList << std::endl;
             mueluFactory = Teuchos::rcp(new ParameterListInterpreter(*mueluParamList));
           }
 
@@ -304,14 +316,15 @@ int main(int argc, char *argv[]) {
           if (ret)
             failed = true;
 
-          std::streamsize oldPrecision = std::cout.precision(2);
-          std::cout << xmlFile << " (" << std::setiosflags(std::ios::fixed)
-                    << timer.wallTime() - lastTime << " sec.) : " << (ret ? "failed" : "passed") << std::endl;
-          std::cout.precision(oldPrecision);
-          lastTime = timer.wallTime();
+          //std::ios_base::fmtflags ff(std::cout.flags());
+          //std::cout.precision(2);
+          //std::cout << xmlFile << " (" << std::setiosflags(std::ios::fixed)
+          //          << timer.wallTime() - lastTime << " sec.) : " << (ret ? "failed" : "passed") << std::endl;
+          //lastTime = timer.wallTime();
+          //std::cout.flags(ff); // reset flags to whatever they were prior to printing time
+          std::cout << xmlFile << " : " << (ret ? "failed" : "passed") << std::endl;
         }
       }
-      std::cout.flags(ff); // reset flags to whatever they were at the beginning of this test
     }
 
     success = !failed;

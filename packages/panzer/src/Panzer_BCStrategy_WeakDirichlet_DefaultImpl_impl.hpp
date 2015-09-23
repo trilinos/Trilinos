@@ -137,7 +137,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       
       RCP< PHX::Evaluator<panzer::Traits> > op = rcp(new panzer::Normals<EvalT,panzer::Traits>(p));
       
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
     }
 
     // Neumann Residual evaluator: residual += phi n dot flux
@@ -153,7 +153,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       RCP< PHX::Evaluator<panzer::Traits> > op = 
 	rcp(new panzer::WeakDirichletResidual<EvalT,panzer::Traits>(p));
     
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
     }
 
   }
@@ -203,7 +203,7 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
       RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildScatter<EvalT>(p);
     
-      fm.template registerEvaluator<EvalT>(op);
+      this->template registerEvaluator<EvalT>(fm, op);
       
       // Require variables
       {

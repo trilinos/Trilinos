@@ -1,0 +1,74 @@
+<!--////////////////////////////////////////////////////////////////////////////
+ ////////////////////////////////////////////////////////////////////////////////
+ 
+ REQUIRED BLOCKS:
+ 1. Input parameters
+ 2. Problem parameters
+ 
+ OPTIONAL Blocks:
+ 3. Comparison
+ 
+ SUPPORTED INPUT FILE TYPES:
+ 1. Geometric Generator
+ 2. Pamgen
+ 3. Chaco
+ 4. Matrix Market
+ 
+ SUPPORTED PROBLEM TYPES:
+ 1. partitioning
+ 
+ SUPPORTED INPUT DATA TYPES:
+ 1. coordinates
+ 2. (x,t,e)petra_crs_matrix
+ 3. (x,t,e)petra_crs_graph
+ 4. (x,t,e)petra_vector
+ 5. (x,t,e)petra_multivector
+ 
+ SUPPORTED INPUT ADAPTERS:
+ 1. BasicIdentifier
+ 2. XpetraMultiVector
+ 3. XpetraCrsGraph
+ 4. XpetraCrsMatrix
+ 5. BasicVector
+ 5. PamgenMesh
+ 
+ ** REFER TO THE README FOR A MORE DETAILED EXPLANATION
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////-->
+
+<ParameterList name="mjTest">
+  
+  <ParameterList name="InputParameters">
+    <Parameter name="input path" type="string" value="./driverinputs"/>
+    <Parameter name="input file" type="string" value="GeomGenWeight"/>
+    <Parameter name="file type" type="string" value="Geometric Generator"/>
+  </ParameterList>
+  
+  <ParameterList name="test1">
+    <Parameter name="kind" type="string" value="partitioning"/>
+    <ParameterList name="InputAdapterParameters">
+      <Parameter name="data type" type="string" value="coordinates"/>
+      <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+    </ParameterList>
+    
+    <ParameterList name="Zoltan2Parameters">
+      <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+      <Parameter name="algorithm" type="string" value="multijagged"/>
+      <Parameter name="compute_metrics" type="string" value="true"/>
+    </ParameterList>
+    
+    <ParameterList name="Metrics">
+      <ParameterList name="object count">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
+      
+      <ParameterList name="weight 1">
+        <Parameter name="lower" type="double" value="0.99"/>
+        <Parameter name="upper" type="double" value="1.4"/>
+      </ParameterList>
+    </ParameterList>
+    
+  </ParameterList>
+</ParameterList>

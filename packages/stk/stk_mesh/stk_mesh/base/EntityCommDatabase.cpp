@@ -304,6 +304,13 @@ const EntityComm* EntityCommDatabase::entity_comm( const EntityKey & key ) const
   return &entity_comm;
 }
 
+EntityComm* EntityCommDatabase::entity_comm( const EntityKey & key )
+{
+  if (!cached_find(key)) return NULL;
+
+  return &(m_last_lookup->second);
+}
+
 
 PairIterEntityComm EntityCommDatabase::comm( const EntityKey & key, const Ghosting & sub ) const
 {
@@ -358,6 +365,9 @@ bool EntityCommDatabase::erase( const EntityKey & key, const EntityCommInfo & va
     comm_map.erase( i );
     if (comm_map.empty()) {
       m_last_lookup = m_comm_map.erase(m_last_lookup);
+      if (m_comm_map_change_listener != nullptr) {
+          m_comm_map_change_listener->removedKey(key);
+      }
     }
   }
 
@@ -386,6 +396,9 @@ bool EntityCommDatabase::erase( const EntityKey & key, const Ghosting & ghost )
     comm_map.erase( i , e );
     if (comm_map.empty()) {
       m_last_lookup = m_comm_map.erase(m_last_lookup);
+      if (m_comm_map_change_listener != nullptr) {
+          m_comm_map_change_listener->removedKey(key);
+      }
     }
   }
 
@@ -407,6 +420,9 @@ void EntityCommDatabase::comm_clear_ghosting(const EntityKey & key)
 
   if (comm_map.empty()) {
     m_last_lookup = m_comm_map.erase(m_last_lookup);
+      if (m_comm_map_change_listener != nullptr) {
+          m_comm_map_change_listener->removedKey(key);
+      }
   }
 }
 
@@ -416,6 +432,9 @@ void EntityCommDatabase::comm_clear(const EntityKey & key)
   if (!cached_find(key)) return;
 
   m_last_lookup = m_comm_map.erase(m_last_lookup);
+      if (m_comm_map_change_listener != nullptr) {
+          m_comm_map_change_listener->removedKey(key);
+      }
 }
 
 

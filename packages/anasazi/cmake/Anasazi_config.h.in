@@ -21,6 +21,9 @@
 /* Define if want to build anasazi-experimental */
 #cmakedefine HAVE_ANASAZI_EXPERIMENTAL
 
+/* Define if want to build with RBGen enabled */
+#cmakedefine HAVE_ANASAZI_RBGEN
+
 /* Define if want to build with tpetra enabled */
 #cmakedefine HAVE_ANASAZI_TPETRA
 

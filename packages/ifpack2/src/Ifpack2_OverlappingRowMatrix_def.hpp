@@ -893,6 +893,6 @@ OverlappingRowMatrix<MatrixType>::getUnderlyingMatrix() const
 } // namespace Ifpack2
 
 #define IFPACK2_OVERLAPPINGROWMATRIX_INSTANT(S,LO,GO,N)                 \
-  template class Ifpack2::OverlappingRowMatrix< Tpetra::CrsMatrix<S, LO, GO, N> >;
+  template class Ifpack2::OverlappingRowMatrix< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif // IFPACK2_OVERLAPPINGROWMATRIX_DEF_HPP

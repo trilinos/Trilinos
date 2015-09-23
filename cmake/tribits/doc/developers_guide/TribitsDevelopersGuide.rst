@@ -211,7 +211,7 @@ Because tutorials and detailed documentation for the CMake language already
 exists, this document will not even attempt to provide a first reference to
 CMake (which is a large topic in itself).  However, what we try to provide
 below is a short overview of the more quirky or surprising aspects of the
-CMake language that an programmer experienced in another language might get
+CMake language that a programmer experienced in another language might get
 tripped up or surprised by.  Some of the more unique features of the language
 are described in order to help avoid some of these common mistakes and provide
 greater understanding of how TriBITS works.
@@ -224,19 +224,19 @@ Project Dependencies`_) is a fairly simple programming language with fairly
 simple rules (for the most part).  However, compared to other programming
 languages, there are a few peculiar aspects to the CMake language like strange
 variable scoping rules, and how arguments are passed to macros and functions,
-that can make working with it difficult if you don't understand these.  Also,
-CMake has some interesting gotchas.  In order to effectively use TriBITS (or
-just raw CMake) to construct and maintain a project's CMake files, one must
-know the basic rules of CMake and be aware of these gotchas.
+that can make working with it difficult if you don't understand these rules.
+Also, CMake has some interesting gotchas.  In order to effectively use TriBITS
+(or just raw CMake) to construct and maintain a project's CMake files, one
+must know the basic rules of CMake and be aware of these gotchas.
 
 The first thing to understand about the CMake language is that nearly every
 line of CMake code is just a command taking a string (or an array of strings)
 and functions that operate on strings.  An array argument is just a single
 string literal with elements separated by semi-colons ``"<str0>;<str1>;..."``.
-CMake is a bit odd in how it deals with these arrays (which are just
-represented as a string with elements separated with semi-colons ``';'``).
-For example, all of the following are equivalent and pass in a CMake array
-with 3 elements [``A``], [``B``], and [``C``]::
+CMake is a bit odd in how it deals with these arrays, which are just
+represented as a string with elements separated with semi-colons ``';'``.  For
+example, all of the following are equivalent and pass in a CMake array with 3
+elements [``A``], [``B``], and [``C``]::
 
   SOME_FUNC(A B C)
   SOME_FUNC("A" "B" "C")
@@ -270,7 +270,7 @@ In CMake, the above is identical, in every way, to::
 
 The function ``SET()`` simply interprets the first argument to as the name of
 a variable to set in the local scope.  Many other built-in and user-defined
-CMake functions work the same way.  That is some of the string arguments are
+CMake functions work the same way.  That is, some of the string arguments are
 interpreted as the names of variables.  There is no special language feature
 that interprets them as variables (except in an ``IF()`` statement).
 
@@ -1497,17 +1497,20 @@ ${${PACKAGE_NAME}_SOURCE_DIR}``) are::
       Dependencies.cmake  # Always processed if its repo is processed
       <packageName>_config.h.in  # [Optional], name is not fixed
 
-**NOTE:** Before a TriBITS Package's files are described in more detail, it is
-important to note that all of the package's files that define its behavior and
-tests should strictly be contained under the package's base source directory
-``<packageDir>/`` if at all possible.  While this is not a requirement for the
-basic TriBITS build system, the approach for automatically detecting when a
-package has changed by looking at what files have changed (which is used in
-the `checkin-test.py`_ script and `TRIBITS_CTEST_DRIVER()`_) requires that the
-package's files be listed under ``<packageDir>/`` (see `Pre-push Testing using
-checkin-test.py`_).  Without this, the TriBITS development tools will not be
-able to automatically determine what needs to be rebuilt and retested which
-can lead to pushing broken software.
+There are a few simple rules for the location and the contents of the
+``<packageDir>/`` directory:
+
+* The directory ``<packageDir>/`` must not be a subdirectory of the package
+  directory of any other SE package (e.g. not ``pkga/pkgb``).
+* All of the source files, test files, etc. for the package should be included
+  under ``<packageDir>/``.
+
+The above rules are not needed for basic building and testing but are needed
+for extended features like automatically detecting when a package has changed
+by looking at what files have changed (see `Pre-push Testing using
+checkin-test.py`_) and for creating source tarballs correctly (see `Creating
+Source Distributions`_).  Therefore, it would be wise to abide by the above
+rules when defining packages.
 
 The following TriBITS Package files are documented in more detail below:
 
@@ -1905,6 +1908,23 @@ Core Files`_ and are::
 ``<spkgDir>`` is the subpackage directory listed in the
 `SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS`_ to
 `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_).
+
+There are a few simple rules for the location and the contents of the
+``<spkgDir>/`` directory:
+
+* The relative directory ``<spkgDir>/`` should be a strict subdirectory of
+  ``<packageDir>/`` (e.g. not ``../../somewhereelse``).
+* The directory ``<spkgDir>/`` must not be a subdirectory of the package
+  directory of any other subpackage (e.g. not ``spkga/spkgb``).
+* All of the source files, test files, etc. for the subpackage should be
+  included under ``<spkgDir>/``.
+
+The above rules are not needed for basic building and testing but are needed
+for extended features like automatically detecting when a package has changed
+by looking at what files have changed (see `Pre-push Testing using
+checkin-test.py`_) and for creating source tarballs correctly (see `Creating
+Source Distributions`_).  Therefore, it would be wise to abide by the above
+rules when defining subpackages.
 
 These TriBITS Subpackage files are documented in more detail below:
 
@@ -4847,17 +4867,17 @@ users (same name as the email list name) and sets up a mapping of Labels
 (which are used for TriBITS package names) to CDash user emails
 addresses. CDash is automatically set up to process this XML file and create
 and update CDash users. It is not, however, set up to remove labels from
-existing users.  Therefore, if you change a TriBITS package's CDash regression
-email address (using one of the methods described above), then you need to
-manually remove the associated labels from the old email address.  CDash will
-not remove them for you.
+existing users.  Therefore, if one changes a TriBITS package's CDash
+regression email address (using one of the methods described above), then one
+needs to manually remove the associated labels from the old email address.
+CDash will not remove them for you.
 
 Therefore, to change the mapping of CDash regression email addresses to
-TriBITS packages, you must perform the actions:
+TriBITS packages, one must perform the actions:
 
 1) Change the TriBITS CMake files as described above that will result in the
    desired email addresses in the ``CDashSubprojectDependencies.xml``
-   file. You can debug this by running the `checkin-test.py`_ script and
+   file. One can debug this by running the `checkin-test.py`_ script and
    seeing what gets written in the generated
    `<Project>PackageDependencies.xml`_ file in the ``CHECKIN`` directory.
 
@@ -4875,8 +4895,9 @@ TriBITS packages, you must perform the actions:
    ``CDashSubprojectDependencies.xml`` file).  Also, any new CDash users for
    new email addresses will be created.
 
-Hopefully that should be enough clues to manage the mapping of CDash
-regression email lists to TriBITS packages.
+Hopefully that should be enough information to manage the mapping of CDash
+regression email lists to TriBITS packages for single and multi-repository
+TriBITS projects.
 
 
 Multi-Repository Support
@@ -5547,17 +5568,21 @@ be missing.  This is demonstrated in `TribitsExampleProject`_ with the package
 .. include:: ../../examples/TribitsExampleProject/PackagesList.cmake
    :literal:
 
-In this example, the subpackage ``InsertedPkg`` has a required dependency on
-``SimpleCxx`` and ``WithSubpackagesB`` has an optional dependency on
+In this example, ``InsertedPkg`` has a required dependency on on ``SimpleCxx``
+and the SE package ``WithSubpackagesB`` has an optional dependency on
 ``InsertedPkg``.  Therefore, the inserted package ``InsertedPkg`` has upstream
-and downstream dependencies.
+and downstream dependencies on packages in the ``TribitsExampleProject`` repo.
 
-What the function ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`` does is to
-tell TriBITS to treat ``InsertedPkg`` the same as any other package if the
-directory ``TribitsExampleProject/InsertedPkg`` exists and to otherwise
-complete ignore the package ``InsertedPkg`` if the source for the package does
-not exist.  In addition, TriBITS will automatically disable of all downstream
-package dependencies for the missing package.
+The function ``TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`` tells TriBITS to
+treat ``InsertedPkg`` the same as any other package if the directory
+``TribitsExampleProject/InsertedPkg`` exists or to completely ignore the
+package ``InsertedPkg`` otherwise.  In addition, TriBITS will automatically
+disable of all downstream package dependencies for the missing package (and
+print a note about the disables).  NOTE: By default TriBITS will silently
+ignore missing inserted packages and disable optional support for the missing
+package.  To see what packages are missing and being ignored, configure with::
+
+  -D <Project>_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES=TRUE
 
 The way one would set up ``TribitsExampleProject`` to enable ``InsertedPkg``,
 if these were in separate VC (e.g. git) repos for example, would be to do::
@@ -5602,6 +5627,9 @@ one would perform the following steps:
 6) When configuring and building to get the package working, add
    ``-D<insertedPackageName>_ALLOW_MISSING_EXTERNAL_PACKAGE=FALSE`` so that
    TriBITS will catch mistakes in specifying the package directory.
+   Otherwise, to see notes about ignoring missing inserted/external packages,
+   set the variable ``-D<Project>_WARN_ABOUT_MISSING_EXTERNAL_PACKAGES=TRUE``
+   and TriBITS will print warnings about missing external packages.
 
 
 Additional Topics
@@ -5841,7 +5869,7 @@ The commands for creating a source distribution are described in `Creating a
 tarball of the source tree`_ using the built-in ``package_source`` build
 target. The value added by TriBITS is that TriBITS will automatically exclude
 the source for any defined packages that are not enabled and TriBITS provides
-a framework for systematically excluded files and directories from individual
+a framework for systematically excluding files and directories from individual
 repositories and packages.  In addition, the source for non-enabled
 subpackages can also be excluded depending on the value of
 `${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION`_.  All of
@@ -5906,6 +5934,20 @@ lack of understanding of this fact will cost someone hours of lost time
 debugging what happens when random files are missing when one tries to
 configure what is left.  Somethings, what is left will actually configure and
 might almost build!
+
+**NOTE:** As warned in `TriBITS Package Core Files`_ and `TriBITS Subpackage
+Core Files`_, SE Packages must have directories that are strictly independent
+of the directories of other SE packages.  If they don't, then the source
+directory for an enabled package will get excluded from the source
+distribution if its directory is under the directory of a package that is not
+enabled.  For example, if ``PackageA`` is enabled but its package directory
+``packageb/packagea/`` is under the package directory ``packageb/`` for the
+disabled package ``PackageB``, then every file and directory under
+``packageb/`` will be excluded from the source distribution (tarball),
+including everything under ``packageb/packagea/``!  It would be too expensive
+to put in an automated check for cases like this so package developers should
+just take care not to nest the directories of packages inside of each other to
+avoid problems like this.
 
 **NOTE:** Extra repositories that are sitting in the source tree but not
 processed by TriBITS for some reason (e.g. due to explicitly listing in the

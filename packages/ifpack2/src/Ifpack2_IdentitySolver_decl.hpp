@@ -43,9 +43,9 @@
 #ifndef IFPACK2_IDENTITY_SOLVER_DECL_HPP
 #define IFPACK2_IDENTITY_SOLVER_DECL_HPP
 
-#include <Ifpack2_Preconditioner.hpp>
-#include <Ifpack2_Details_CanChangeMatrix.hpp>
-
+#include "Ifpack2_Preconditioner.hpp"
+#include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include <type_traits>
 
 namespace Ifpack2 {
 
@@ -83,6 +83,8 @@ public:
   //! Specialization of Tpetra::RowMatrix used by this class.
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> row_matrix_type;
+
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::IdentitySolver: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 
   //! Constructor: Takes the matrix to precondition.
   IdentitySolver (const Teuchos::RCP<const row_matrix_type>& A);

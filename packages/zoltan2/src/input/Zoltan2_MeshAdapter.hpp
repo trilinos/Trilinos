@@ -153,9 +153,18 @@ public:
   ////////////////////////////////////////////////////////////////////////////
   // Methods to be defined in derived classes.
 
+  /*! \brief Provide a pointer to the entity topology types
+      \param Types will on return point to the list of entity topology types
+      for this process.
+  */
+  virtual bool areEntityIDsUnique(MeshEntityType etype) const
+  {
+    return etype==this->getPrimaryEntityType();
+  }
+  
   /*! \brief Returns the global number of mesh entities of MeshEntityType
    */
-  virtual size_t getGlobalNumOf(MeshEntityType etype) const = 0;
+  //virtual size_t getGlobalNumOf(MeshEntityType etype) const = 0;
 
   /*! \brief Returns the number of mesh entities on this process.
    */
@@ -175,7 +184,11 @@ public:
       for this process.
   */
   virtual void getTopologyViewOf(MeshEntityType etype, 
-				     enum EntityTopologyType const *&Types) const = 0;
+                                 enum EntityTopologyType const *&Types) const
+  {
+    Types = NULL;
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+  }
 
   /*! \brief Return the number of weights per entity.
    *  \return the count of weights, zero or more per entity.
@@ -268,36 +281,25 @@ public:
 
 
   /*! \brief Returns whether a second adjacency combination is available.
+   *   If combination is not available in the MeshAdapter, Zoltan2 will 
+   *   compute them, using A^T A, where A is matrix of first adjacencies.
    */
   virtual bool avail2ndAdjs(MeshEntityType sourcetarget,
-                            MeshEntityType through) const {
-    /*if (availAdjs(sourcetarget, through)) {
-      return true;
-      }*/
+                            MeshEntityType through) const
+  {
     return false;
   }
 
-  /*! \brief Returns the number of second adjacencies on this process.
-   *
-   *  Parameters will specify algorithm options:
-   *   balance_entity_type==MeshEntityType, adjacency_through==MeshEntityType
+  /*! \brief if avail2ndAdjs(), returns the number of second adjacencies 
+   *   on this process.
    */
   virtual size_t getLocalNum2ndAdjs(MeshEntityType sourcetarget,
-                                    MeshEntityType through) const {
-    //if (!availAdjs(sourcetarget, through))
-      return 0;
-      /*else {
-      lno_t const *offsets;
-      gno_t const *adjacencyIds;
-      size_t nadj = get2ndAdjsFromAdjs(sourcetarget, through, offsets,
-                                       adjacencyIds);
-      delete [] offsets;
-      delete [] adjacencyIds;
-      return nadj;
-      }*/
+                                    MeshEntityType through) const
+  {
+    return 0;
   }
 
-  /*! \brief Sets pointers to this process' mesh second adjacencies.
+  /*! \brief if avail2ndAdjs(), set pointers to this process' second adjacencies
       \param sourcetarget
       \param offsets is an array of size getLocalNumOf() + 1.
          The second adjacency Ids for Ids[i] (returned in
@@ -307,30 +309,25 @@ public:
       \param adjacencyIds on return will point to the global second adjacency
          Ids for each entity.
    */
-  // allow user to not implement second adjacencies and,
-  // if we want them, we compute A^T A, where A is matrix of first adjacencies.
   virtual void get2ndAdjsView(MeshEntityType sourcetarget,
                               MeshEntityType through,
                               const lno_t *&offsets,
                               const gno_t *&adjacencyIds) const
   {
-    //if (!availAdjs(sourcetarget, through)) {
-      offsets = NULL;
-      adjacencyIds = NULL;
-      Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
-	/*} else {
-      get2ndAdjsFromAdjs(sourcetarget, through, offsets, adjacencyIds);
-      }*/
+    offsets = NULL;
+    adjacencyIds = NULL;
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
-
   /*! \brief Returns the number (0 or greater) of weights per second adjacency.
+   *  Note:  second-adjacency weights may be used only if avail2ndAdjs().
    */
   virtual int getNumWeightsPer2ndAdj(MeshEntityType sourcetarget,
                                      MeshEntityType through) const { return 0;}
 
 
   /*! \brief  Provide a pointer to the second adjacency weights, if any.
+   *  Note:  second-adjacency weights may be used only if avail2ndAdjs().
 
       \param weights is the list of weights of the given number for
            the second adjacencies returned in get2ndAdjsView().
@@ -349,11 +346,6 @@ public:
     Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
   }
 
-// TODO:  If MeshAdapter computes second adjs, what (if anything) should be
-// TODO;  used for weights?
-//KDD What if we wanted to provide weights with respect to first adjacencies?
-//KDD Should we add functions for that?
-
   ////////////////////////////////////////////////////////////////////////////
   // Implementations of base-class methods
 
@@ -367,7 +359,6 @@ public:
    *  entities to be partitioned, ordered, colored, etc.
    *  That is, a primaryEntityType that contains an adjacencyEntityType are
    *  adjacent.
-   *  KDD:  Is Adjacency a poorly chosen name here?  Is it overloaded?
    */
   inline enum MeshEntityType getAdjacencyEntityType() const {
     return this->adjacencyEntityType;
@@ -387,7 +378,6 @@ public:
    *  application.  Also sets primaryEntityType, adjacencyEntityType, and
    *  secondAdjacencyEntityType to something reasonable:  primaryEntityType not
    *  adjacencyEntityType or secondAdjacencyEntityType.
-   *  KDD:  Is Adjacency a poorly chosen name here?  Is it overloaded?
    */
   void setEntityTypes(std::string ptypestr, std::string atypestr,
                       std::string satypestr) {

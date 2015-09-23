@@ -91,7 +91,8 @@ namespace panzer {
                  const std::string & elementBlock,
 		 const std::vector<std::size_t>& local_cell_ids,
 		 const std::vector<std::size_t>& local_side_ids,
-		 const ArrayT& vertex_coordinates);
+		 const ArrayT& vertex_coordinates,
+                 const bool populate_value_arrays = true);
 
   /** This routine supports construction of worksets that are
     * more DG like. The elements are assumed to shared an
@@ -151,6 +152,17 @@ namespace panzer {
                     const ArrayT& vertex_coordinates_b,
                     std::vector<Workset>::iterator beg);
 
+  template<typename ArrayT>
+  Teuchos::RCP<std::map<unsigned,Workset> >
+  buildBCWorkset(const panzer::PhysicsBlock& pb_a,
+                 const std::vector<std::size_t>& local_cell_ids_a,
+                 const std::vector<std::size_t>& local_side_ids_a,
+                 const ArrayT& vertex_coordinates_a,
+                 const panzer::PhysicsBlock& pb_b,
+                 const std::vector<std::size_t>& local_cell_ids_b,
+                 const std::vector<std::size_t>& local_side_ids_b,
+                 const ArrayT& vertex_coordinates_b);
+
   /** Populate basis values and integration values data structures in
     * the WorksetDetails object being passed in. Note that this works for
     * both edge data structures and for volumetric data structures. Note
@@ -170,11 +182,13 @@ namespace panzer {
   void populateValueArrays(std::size_t num_cells,
                            bool isSide,
                            const PhysicsBlock & pb,
-                           WorksetDetails & details);
+                           WorksetDetails & details,
+                           const Teuchos::RCP<WorksetDetails> other_details = Teuchos::null);
   void populateValueArrays(std::size_t num_cells,
                            bool isSide,
                            const WorksetNeeds & pb,
-                           WorksetDetails & details);
+                           WorksetDetails & details,
+                           const Teuchos::RCP<WorksetDetails> other_details = Teuchos::null);
 
 }
 

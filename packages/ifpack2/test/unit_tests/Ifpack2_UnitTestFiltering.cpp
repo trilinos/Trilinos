@@ -100,7 +100,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // ====================================== //
   Scalar alpha = 100.0;
   Scalar beta = 1.0;
-  Ifpack2::DiagonalFilter<CRS > DiagA(Matrix,alpha,beta);
+  Ifpack2::DiagonalFilter<ROW> DiagA(Matrix,alpha,beta);
 
   // Apply w/ Filter
   DiagA.apply(x,y);
@@ -149,7 +149,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // create a new matrix, dropping by value //
   // ====================================== //
   // drop all elements below 1.5. The matrix then becomes diagonal
-  Ifpack2::DropFilter<CRS> DropA(RCP<ROW >(&LocalA,false),1.5);
+  Ifpack2::DropFilter<ROW> DropA(RCP<ROW >(&LocalA,false),1.5);
 
   // Apply w/ filter
   DropA.apply(lx,ly);
@@ -166,7 +166,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // ========================================= //
   //
   // Mantain 3 off-diagonal elements & 3 bandwidth, which is pretty boring since this is a noop.
-  Ifpack2::SparsityFilter<CRS> SparsityA(RCP<ROW >(&LocalA,false),3,3);
+  Ifpack2::SparsityFilter<ROW> SparsityA(RCP<ROW >(&LocalA,false),3,3);
 
   // Apply w/ filter
   SparsityA.apply(lx,ly);
@@ -183,7 +183,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // ======================================== //
 
   // This matrix should be the same after the singleton filter since it doesn't have singletons.
-  Ifpack2::SingletonFilter<CRS> SingletonA(RCP<ROW >(&LocalA,false));
+  Ifpack2::SingletonFilter<ROW> SingletonA(RCP<ROW >(&LocalA,false));
 
   // Apply w/ filter
   SingletonA.apply(lx,ly);
@@ -219,8 +219,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   //
   // ReorderFilter has the opposite naming convention of Zoltan2, in
   // terms of which permutation is the inverse.
-  Ifpack2::ReorderFilter<CRS> Reorder1 (rcpFromRef (LocalA), l_invperm, l_perm);
-  Ifpack2::ReorderFilter<CRS> Reorder2 (rcpFromRef (Reorder1), l_invperm, l_perm);
+  Ifpack2::ReorderFilter<ROW> Reorder1 (rcpFromRef (LocalA), l_invperm, l_perm);
+  Ifpack2::ReorderFilter<ROW> Reorder2 (rcpFromRef (Reorder1), l_invperm, l_perm);
 
   // Apply w/ double-reversed reordering
   Reorder2.apply(lx,ly);

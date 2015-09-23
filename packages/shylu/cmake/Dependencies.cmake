@@ -2,8 +2,9 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   #SubPackageName       Directory         Class    Req/Opt
   #
   # New ShyLU subpackages:
-  IChol                 ichol             EX       OPTIONAL
+  Tacho                 tacho             EX       OPTIONAL
   Core                  core              SS       OPTIONAL
+  GTS                   gts               EX       OPTIONAL
   )
 
 SET(LIB_REQUIRED_DEP_PACKAGES)

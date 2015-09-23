@@ -64,6 +64,8 @@
         <Parameter name="P1"                type="string" value="myTentativePFact1"/>
         <Parameter name="P2"                type="string" value="myTentativePFact2"/>
         <Parameter name="Nullspace1"        type="string" value="myTentativePFact1"/>
+        <Parameter name="Ptent1"            type="string" value="myTentativePFact1"/>
+        <Parameter name="Ptent2"            type="string" value="myTentativePFact2"/>
       </ParameterList>
     </ParameterList>
 

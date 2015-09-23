@@ -179,6 +179,24 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build (
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+        const typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type& lclMatrix,
+        const Teuchos::RCP<Teuchos::ParameterList>& params = null)  {
+      XPETRA_MONITOR("CrsMatrixFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, lclMatrix, params));
+#endif
+
+      XPETRA_FACTORY_ERROR_IF_EPETRA(rowMap->lib());
+      XPETRA_FACTORY_END;
+    }
+#endif
+
   };
 
   template <>
@@ -328,9 +346,32 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build (
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+        const typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type& lclMatrix,
+        const Teuchos::RCP<Teuchos::ParameterList>& params = null)  {
+      XPETRA_MONITOR("CrsMatrixFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, lclMatrix, params));
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+      if (rowMap->lib() == UseEpetra)
+        return rcp( new EpetraCrsMatrixT<int>(rowMap, colMap, lclMatrix, params) );
+#endif
+#endif
+      XPETRA_FACTORY_END;
+    }
+#endif
+
   };
 
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifdef HAVE_XPETRA_INT_LONG_LONG
   template <>
   class CrsMatrixFactory<double, int, long long> {
     typedef double Scalar;
@@ -478,8 +519,31 @@ namespace Xpetra {
       XPETRA_FACTORY_END;
     }
 
+#ifdef HAVE_XPETRA_KOKKOS_REFACTOR
+    static RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Build (
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap,
+        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& colMap,
+        const typename Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type& lclMatrix,
+        const Teuchos::RCP<Teuchos::ParameterList>& params = null)  {
+      XPETRA_MONITOR("CrsMatrixFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+      if (rowMap->lib() == UseTpetra)
+        return rcp( new TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowMap, colMap, lclMatrix, params));
+#endif
+
+#ifdef HAVE_XPETRA_EPETRA
+#ifndef XPETRA_EPETRA_NO_32BIT_GLOBAL_INDICES
+      if (rowMap->lib() == UseEpetra)
+        return rcp( new EpetraCrsMatrixT<long long>(rowMap, colMap, lclMatrix, params) );
+#endif
+#endif
+      XPETRA_FACTORY_END;
+    }
+#endif
+
   };
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
+#endif // HAVE_XPETRA_INT_LONG_LONG
 
 }
 

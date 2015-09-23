@@ -429,7 +429,7 @@ c
      &    A31,A32,A33,F1,F2,F3)
         DETA = A11*(A22*A33 - A23*A32) - A12*(A21*A33 - A31*A23)
      &    + A13*(A21*A32 - A31*A22)
-        IF (ABS(DETA) .LT. 1.E-15)THEN
+        IF (ABS(DETA) .LT. 1.E-25)THEN
           CALL ERROR ('SRCHH',
      &      'ZERO JACOBIAN FOUND DURING NEWTON ITERATION',
      &      'MESH-A ELEMENT',IELT,
@@ -492,7 +492,7 @@ C
      &    A31,A32,A33,F1,F2,F3)
         DETA = A11*(A22*A33 - A23*A32) - A12*(A21*A33 - A31*A23)
      &    + A13*(A21*A32 - A31*A22)
-        IF (ABS(DETA) .LT. 1.E-15)THEN
+        IF (ABS(DETA) .LT. 1.E-25)THEN
           CALL ERROR ('SRCHH',
      &      'ZERO JACOBIAN FOUND DURING NEWTON ITERATION',
      &      'MESH-A ELEMENT',IELT,

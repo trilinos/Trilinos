@@ -136,27 +136,6 @@ namespace MueLu {
 
     //@}
 
-    //! @name Set methods.
-    //@{
-
-    //! Deprecated: Set prolongator smoother damping factor.
-    void SetDampingFactor(Scalar dampingFactor);
-
-    //! Deprecated: Change view of diagonal.
-    void SetDiagonalView(std::string const& diagView);
-    //@}
-
-    //! @name Get methods.
-    //@{
-
-    //! Deprecated: Returns prolongator smoother damping factor.
-    Scalar GetDampingFactor();
-
-    //! Deprecated: Returns current view of diagonal.
-    std::string GetDiagonalView();
-
-    //@}
-
   }; //class SaPFactory
 
 } //namespace MueLu

@@ -1174,6 +1174,47 @@ F2C(expnams,EXPNAMS) (int *idexo,
 }
 
 /*
+ * write single object names
+ */
+void
+F2C(expnam,EXPNAM) (int *idexo,
+		    int *type,
+		    int *id,
+		    char *name,
+		    int *ierr,
+		    int namelen)
+{
+  char           *sptr;         /* ptr to temp staging space for string */
+  int             slen;
+
+  *ierr = 0;                    /* default no errror */
+
+  slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);     /* max str size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
+  if (namelen < slen) {
+    slen = namelen;
+  }
+
+  /* Allocate staging space for the variable name */
+  if (!(sptr = malloc((slen + 1) * sizeof(char)))) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
+  /* Copy Fortran names to staging space */
+  ex_fstrncpy(sptr, name, slen);       /* copy string into buffer */
+
+  /* do ExodusII C call to write results variables names */
+  if (ex_put_name(*idexo, (ex_entity_type) *type, *id, sptr) == EX_FATAL) {
+    *ierr = EX_FATAL;
+  }
+  free(sptr);                   /* Free up string staging area */
+}
+
+/*
  * read object names
  */
 void
@@ -1231,6 +1272,48 @@ F2C(exgnams,EXGNAMS) (int *idexo,
 
   free(sptr);                   /* Free up string staging area */
   free(aptr);                   /* Free up string ptr array */
+}
+
+/*
+ * read single object name
+ */
+void
+F2C(exgnam,EXGNAM) (int *idexo,
+		    int *type,
+		    int *id,
+		    char *name,
+		    int *ierr,
+		    int namelen)
+{
+  char           *sptr;         /* ptr to temp staging space for string */
+  int             slen;
+  *ierr = 0;                    /* default no errror */
+
+  slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
+  if (namelen < slen) {
+    slen = namelen;
+  }
+  /* Allocate staging space for the object name */
+  if (!(sptr = malloc((slen + 1) * sizeof(char)))) {
+    *ierr = EX_MEMFAIL;
+    return;
+  }
+  /* do ExodusII C call to read object  name */
+  if (ex_get_name(*idexo, *type, *id, sptr) == EX_FATAL) {
+    *ierr = EX_FATAL;
+    free(sptr);                 /* free up allocated space */
+    return;
+  }
+  /* Copy Fortran variable names to staging space */
+  memset(name, 0, namelen);
+  ex_fcdcpy(name, slen, sptr);      /* copy string into Fortran buffer */
+
+  free(sptr);                   /* Free up string staging area */
 }
 
 /*
@@ -2578,7 +2661,7 @@ F2C(excn2s,EXCN2S) (int *idexo,
 void
 F2C(exgssn,EXGSSN) (int *idexo,
              entity_id *side_set_id,
-             void_int *side_set_node_cnt_list,
+             int *side_set_node_cnt_list,
              void_int *side_set_node_list,
              int *ierr)
 {
@@ -2853,7 +2936,7 @@ F2C(exgnnm,EXGNNM) (int *idexo,
 }
 
 /*
- * read results variables names
+ * read single results variables name
  */
 void
 F2C(exgvnm,EXGVNM) (int *idexo,

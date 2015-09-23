@@ -33,6 +33,7 @@ Level 1
    aggregation: preserve Dirichlet points = 0   [unused]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
@@ -84,6 +85,7 @@ Level 2
    aggregation: preserve Dirichlet points = 0   [unused]
    aggregation: allow user-specified singletons = 0   [default]
    OnePt aggregate map name =    [default]
+   OnePt aggregate map factory =    [default]
 
    Nullspace factory (MueLu::NullspaceFactory)
    Fine level nullspace = Nullspace
@@ -120,10 +122,10 @@ Level 2
 Number of levels    = 3
 Operator complexity = 1.44
 
-matrix rows    nnz  nnz/row procs
-A 0    9999  29995     3.00  1
-A 1    3333   9997     3.00  1
-A 2    1111   3331     3.00  1
+level  rows    nnz  nnz/row  c ratio  procs
+  0    9999  29995     3.00               1
+  1    3333   9997     3.00     3.00      1
+  2    1111   3331     3.00     3.00      1
 
 Smoother (level 0) both : MueLu::IfpackSmoother{type = point relaxation stand-alone}
 

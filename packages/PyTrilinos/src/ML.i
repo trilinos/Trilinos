@@ -105,6 +105,7 @@ example subdirectory of the PyTrilinos package:
 // Teuchos includes
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
@@ -140,6 +141,7 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_OffsetIndex.h"
+#include "PyTrilinos_Epetra_Util.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY
@@ -236,11 +238,11 @@ import Epetra
   {
     SWIG_fail;
   }
-  SWIG_CATCH_STDEXCEPT
   catch(int ierr)
   {
     SWIG_exception(SWIG_RuntimeError, "ML exception thrown");
   }
+  SWIG_CATCH_STDEXCEPT
   catch(...)
   {
     SWIG_exception(SWIG_UnknownError, "Unkown C++ exception");

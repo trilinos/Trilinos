@@ -166,22 +166,22 @@ data:
     6, 0, 0, 6, 2, 0 ;
 
  eb_names =
-  "",
-  "",
-  "",
-  "",
-  "" ;
+  "block_a",
+  "block_b",
+  "block_c",
+  "block_d",
+  "block_e" ;
 
  ns_names =
-  "",
-  "" ;
+  "nodeset_a1",
+  "nodeset_b2" ;
 
  ss_names =
-  "",
-  "",
-  "",
-  "",
-  "" ;
+  "surf_first",
+  "surf_second",
+  "surf_third",
+  "surf_fourth",
+  "surf_fifth" ;
 
  coor_names =
   "xcoor",

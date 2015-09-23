@@ -34,9 +34,11 @@
 /* #undef KOKKOS_HAVE_Winthread */
 /* #undef KOKKOS_HAVE_OPENMP */
 /* #undef KOKKOS_HAVE_HWLOC */
-/* #undef KOKKOS_EXPRESSION_CHECK */
+/* #undef KOKKOS_ENABLE_DEBUG_BOUNDS_CHECK */
 #define KOKKOS_HAVE_CXX11
 /* #undef KOKKOS_HAVE_CUSPARSE */
+/* #undef KOKKOS_ENABLE_PROFILING_COLLECT_KERNEL_DATA */
+/* #undef KOKKOS_ENABLE_PROFILING_AGGREGATE_MPI */
 
 // Don't forbid users from defining this macro on the command line,
 // but still make sure that CMake logic can control its definition.

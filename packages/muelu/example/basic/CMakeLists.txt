@@ -8,15 +8,13 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #Simple-LongInt
 #
 IF(${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-  IF(Teuchos_ENABLE_LONG_LONG_INT)
-
+  IF(Xpetra_INT_LONG_LONG)
       TRIBITS_ADD_EXECUTABLE_AND_TEST(
         Simple-LongInt
         SOURCES Simple-LongInt.cpp
         NUM_MPI_PROCS 4
         COMM serial mpi
         )
-
   ENDIF()
 ENDIF()
 

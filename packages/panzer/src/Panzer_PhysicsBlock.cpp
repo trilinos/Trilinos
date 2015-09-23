@@ -334,7 +334,9 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       // ir that the residual is integrated over.  Otherwise the
       // residual gets contributions from multiple integrations of the
       // same cell!  This ir is only known by equaiton set.
+      const int di = eval_type->setDetailsIndex(this->getDetailsIndex());
       eval_type->buildAndRegisterEquationSetEvaluators(fm, *m_field_lib, user_data);
+      eval_type->setDetailsIndex(di);
     }
   }
 }
@@ -343,7 +345,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 void panzer::PhysicsBlock::
 buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                           const LinearObjFactory<panzer::Traits> & lof,
-                                          const Teuchos::ParameterList& user_data) const
+					  const Teuchos::ParameterList& user_data) const
 {
   using namespace std;
   using namespace panzer;
@@ -359,7 +361,9 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
     EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
       eqstm.begin();
     for (; eval_type != eqstm.end(); ++eval_type) {
+      const int di = eval_type->setDetailsIndex(this->getDetailsIndex());
       eval_type->buildAndRegisterGatherAndOrientationEvaluators(fm, *m_field_lib, lof, user_data);
+      eval_type->setDetailsIndex(di);
     }
   }
 }
@@ -390,8 +394,10 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
           ir_iter != m_integration_rules.end(); ++ ir_iter) {
        
        Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
-       
+
+       const int di = eval_type->setDetailsIndex(this->getDetailsIndex());
        eval_type->buildAndRegisterDOFProjectionsToIPEvaluators(fm, *m_field_lib->buildFieldLayoutLibrary(*ir), ir, lof, user_data);
+       eval_type->setDetailsIndex(di);
       }
     }
   }
@@ -417,7 +423,9 @@ buildAndRegisterScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     EquationSet_TemplateManager<panzer::Traits>::iterator eval_type =
       eqstm.begin();
     for (; eval_type != eqstm.end(); ++eval_type) {
+      const int di = eval_type->setDetailsIndex(this->getDetailsIndex());
       eval_type->buildAndRegisterScatterEvaluators(fm, *m_field_lib, lof, user_data);
+      eval_type->setDetailsIndex(di);
     }
   }
 }
@@ -450,7 +458,9 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
        
        Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
        
+       const int di = eval_type->setDetailsIndex(this->getDetailsIndex());
        eval_type->buildAndRegisterClosureModelEvaluators(fm, *m_field_lib->buildFieldLayoutLibrary(*ir), ir, factory, models, user_data);
+       eval_type->setDetailsIndex(di);
       }
     }
   }
@@ -485,8 +495,9 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
           ir_iter != m_integration_rules.end(); ++ ir_iter) {
        
        Teuchos::RCP<panzer::IntegrationRule> ir = ir_iter->second;
-       
+       const int di = eval_type->setDetailsIndex(this->getDetailsIndex());
        eval_type->buildAndRegisterClosureModelEvaluators(fm, *m_field_lib->buildFieldLayoutLibrary(*ir), ir, factory, model_name, models, user_data);
+       eval_type->setDetailsIndex(di);
       }
     }
   }
@@ -516,7 +527,9 @@ buildAndRegisterClosureModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
                                         fm);
   
         // register the constructed evaluators
+        const int di = eval_type->setDetailsIndex(this->getDetailsIndex());
         eval_type->registerEvaluators(*evaluators,fm);
+        eval_type->setDetailsIndex(di);
       }
     }
   }

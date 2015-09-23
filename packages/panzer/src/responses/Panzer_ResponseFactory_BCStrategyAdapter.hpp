@@ -54,6 +54,7 @@
 #include "Panzer_BCStrategy_Factory.hpp"
 #include "Panzer_BCStrategy_TemplateManager.hpp"
 #include "Panzer_Traits.hpp"
+#include "Panzer_Normals.hpp"
 
 #include "Panzer_Traits.hpp"
 #include "Phalanx_Evaluator_WithBaseImpl.hpp"
@@ -100,7 +101,7 @@ namespace response_bc_adapters {
         Teuchos::RCP<const ResponseEvaluatorFactoryBase> respEvalFact = refVec_[i].second->template getAsBase<EvalT>();
 
         // only register evaluators if the type is supported
-        if(respEvalFact->typeSupported())
+        if(respEvalFact!=Teuchos::null && respEvalFact->typeSupported())
           respEvalFact->buildAndRegisterEvaluators(refVec_[i].first,fm,side_pb,user_data); 
       }
     }
@@ -116,8 +117,32 @@ namespace response_bc_adapters {
 					           const panzer::PhysicsBlock& side_pb,
 						   const LinearObjFactory<panzer::Traits> & lof,
 						   const Teuchos::ParameterList& user_data) const
-    { side_pb.buildAndRegisterGatherAndOrientationEvaluators(fm,lof,user_data); 
-      side_pb.buildAndRegisterDOFProjectionsToIPEvaluators(fm,Teuchos::ptrFromRef(lof),user_data); }
+    { 
+      using Teuchos::RCP;
+      using Teuchos::rcp;
+
+      side_pb.buildAndRegisterGatherAndOrientationEvaluators(fm,lof,user_data); 
+      side_pb.buildAndRegisterDOFProjectionsToIPEvaluators(fm,Teuchos::ptrFromRef(lof),user_data); 
+
+      // add in side normals
+      const std::map<int,Teuchos::RCP<panzer::IntegrationRule> > & int_rules = side_pb.getIntegrationRules();
+      for(std::map<int,Teuchos::RCP<panzer::IntegrationRule> >::const_iterator itr=int_rules.begin();
+          itr!=int_rules.end();++itr) {
+         
+        std::stringstream s;
+        s << "Side Normal:" << side_pb.cellData().side();
+        Teuchos::ParameterList p(s.str());
+        p.set<std::string>("Name","Side Normal");
+        p.set<int>("Side ID",side_pb.cellData().side());
+        p.set< Teuchos::RCP<panzer::IntegrationRule> >("IR", Teuchos::rcp_const_cast<panzer::IntegrationRule>(itr->second));
+        p.set<bool>("Normalize",true);
+
+        RCP< PHX::Evaluator<panzer::Traits> > op = rcp(new panzer::Normals<EvalT,panzer::Traits>(p));
+
+        fm.template registerEvaluator<EvalT>(op);
+      }
+
+    }
 
     //@}
 

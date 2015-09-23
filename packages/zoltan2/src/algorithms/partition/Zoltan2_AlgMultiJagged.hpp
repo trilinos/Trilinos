@@ -42,7 +42,6 @@
 // ***********************************************************************
 //
 // @HEADER
-
 /*! \file Zoltan2_AlgMultiJagged.hpp
   \brief Contains the Multi-jagged algorthm.
  */
@@ -103,8 +102,6 @@
         (Wachieved) / (wExpected) - 1
 
 
-
-using std::vector;
 
 namespace Teuchos{
 
@@ -1026,7 +1023,7 @@ private:
      * \param processor_ranks_for_subcomm is the vector that has the ranks of
      * the processors that will be in the same group.
      */
-    void create_sub_communicator(vector<mj_part_t> &processor_ranks_for_subcomm);
+    void create_sub_communicator(std::vector<mj_part_t> &processor_ranks_for_subcomm);
 
 
     /*! \brief Function writes the new permutation arrays after the migration.
@@ -6079,6 +6076,12 @@ private:
 
     ArrayRCP<mj_part_t> comXAdj_; //communication graph xadj
     ArrayRCP<mj_part_t> comAdj_; //communication graph adj.
+    
+
+    //when we have strided data, it returns a unstrided data in RCP form.
+    //we need to hold on to that data, during the execution of mj, so that the data is not released.
+    //coordinate_rcp_holder will hold that data, and release it when MJ is deleted.
+    ArrayRCP<const mj_scalar_t> * coordinate_ArrayRCP_holder;
 
     void set_up_partitioning_data(
       const RCP<PartitioningSolution<Adapter> >&solution);
@@ -6111,9 +6114,14 @@ public:
                         check_migrate_avoid_migration_option(0),
                         minimum_migration_imbalance(0.30),
                         mj_keep_part_boxes(0), num_threads(1), mj_run_as_rcb(0),
-                        comXAdj_(), comAdj_()
+                        comXAdj_(), comAdj_(), coordinate_ArrayRCP_holder (NULL)
     {}
-    ~Zoltan2_AlgMJ(){}
+    ~Zoltan2_AlgMJ(){
+      if (coordinate_ArrayRCP_holder != NULL){  
+        delete [] this->coordinate_ArrayRCP_holder;
+        this->coordinate_ArrayRCP_holder = NULL;
+      }
+    }
 
     /*! \brief Multi Jagged  coordinate partitioning algorithm.
      *
@@ -6281,6 +6289,9 @@ void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
         ArrayView<input_t> xyz;
         ArrayView<input_t> wgts;
 
+
+        this->coordinate_ArrayRCP_holder = new ArrayRCP<const mj_scalar_t> [this->coord_dim + this->num_weights_per_coord];
+
         this->mj_coords->getCoordinates(gnos, xyz, wgts);
         //obtain global ids.
         ArrayView<const mj_gno_t> mj_gnos = gnos;
@@ -6290,6 +6301,8 @@ void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
         for (int dim=0; dim < this->coord_dim; dim++){
                 ArrayRCP<const mj_scalar_t> ar;
                 xyz[dim].getInputArray(ar);
+                this->coordinate_ArrayRCP_holder[dim] = ar;
+
                 //multiJagged coordinate values assignment
                 this->mj_coordinates[dim] =  (mj_scalar_t *)ar.getRawPtr();
         }
@@ -6304,6 +6317,7 @@ void Zoltan2_AlgMJ<Adapter>::set_up_partitioning_data(
                 for (int wdim = 0; wdim < this->num_weights_per_coord; wdim++){
                         ArrayRCP<const mj_scalar_t> ar;
                         wgts[wdim].getInputArray(ar);
+                        this->coordinate_ArrayRCP_holder[this->coord_dim + wdim] = ar;
                         this->mj_uniform_weights[wdim] = false;
                         this->mj_weights[wdim] = (mj_scalar_t *) ar.getRawPtr();
                 }

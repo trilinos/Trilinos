@@ -52,7 +52,7 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
 	  ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/testutil.py.in)
 
-ADD_CUSTOM_TARGET(ex_testutil ALL
+ADD_CUSTOM_TARGET(PyTrilinos_Example_testutil ALL
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/testutil.py)
 
 ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/gre__115.rua
@@ -61,7 +61,7 @@ ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/gre__115.rua
 	  ${CMAKE_CURRENT_BINARY_DIR}/gre__115.rua
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gre__115.mx)
 
-ADD_CUSTOM_TARGET(gre__115 ALL
+ADD_CUSTOM_TARGET(PyTrilinos_gre__115 ALL
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/gre__115.rua)
 
 IF(PyTrilinos_ENABLE_Epetra)
@@ -77,6 +77,9 @@ IF(PyTrilinos_ENABLE_Epetra)
   PyTrilinos_MAKE_TEST(exEpetra_CrsMatrix_Efficient)
   PyTrilinos_MAKE_TEST(exEpetra_FECrsMatrix_Easy   )
   PyTrilinos_MAKE_TEST(exEpetra_ImportExport       )
+  IF(PyTrilinos_ENABLE_Domi)
+    PyTrilinos_MAKE_TEST(exEpetra_DAP)
+  ENDIF(PyTrilinos_ENABLE_Domi)
 ENDIF(PyTrilinos_ENABLE_Epetra)
 
 IF(PyTrilinos_ENABLE_TriUtils)

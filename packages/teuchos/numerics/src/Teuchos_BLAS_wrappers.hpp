@@ -85,6 +85,7 @@
 #define DGER_F77    F77_BLAS_MANGLE(dger,DGER)
 #define DTRMV_F77   F77_BLAS_MANGLE(dtrmv,DTRMV)
 #define DGEMM_F77   F77_BLAS_MANGLE(dgemm,DGEMM)
+#define DSWAP_F77   F77_BLAS_MANGLE(dswap,DSWAP)
 #define DSYMM_F77   F77_BLAS_MANGLE(dsymm,DSYMM)
 #define DSYRK_F77   F77_BLAS_MANGLE(dsyrk,DSYRK)
 #define DTRMM_F77   F77_BLAS_MANGLE(dtrmm,DTRMM)
@@ -105,6 +106,7 @@
 #define ZGER_F77    F77_BLAS_MANGLE(zgeru,ZGERU)
 #define ZTRMV_F77   F77_BLAS_MANGLE(ztrmv,ZTRMV)
 #define ZGEMM_F77   F77_BLAS_MANGLE(zgemm,ZGEMM)
+#define ZSWAP_F77   F77_BLAS_MANGLE(zswap,ZSWAP)
 #define ZSYMM_F77   F77_BLAS_MANGLE(zsymm,ZSYMM)
 #define ZSYRK_F77   F77_BLAS_MANGLE(zsyrk,ZSYRK)
 #define ZTRMM_F77   F77_BLAS_MANGLE(ztrmm,ZTRMM)
@@ -125,6 +127,7 @@
 #define SGER_F77    F77_BLAS_MANGLE(sger,SGER)
 #define STRMV_F77   F77_BLAS_MANGLE(strmv,STRMV)
 #define SGEMM_F77   F77_BLAS_MANGLE(sgemm,SGEMM)
+#define SSWAP_F77   F77_BLAS_MANGLE(sswap,SSWAP)
 #define SSYMM_F77   F77_BLAS_MANGLE(ssymm,SSYMM)
 #define SSYRK_F77   F77_BLAS_MANGLE(ssyrk,SSYRK)
 #define STRMM_F77   F77_BLAS_MANGLE(strmm,STRMM)
@@ -145,6 +148,7 @@
 #define CGER_F77    F77_BLAS_MANGLE(cgeru,CGERU)
 #define CTRMV_F77   F77_BLAS_MANGLE(ctrmv,CTRMV)
 #define CGEMM_F77   F77_BLAS_MANGLE(cgemm,CGEMM)
+#define CSWAP_F77   F77_BLAS_MANGLE(cswap,CSWAP)
 #define CSYMM_F77   F77_BLAS_MANGLE(csymm,CSYMM)
 #define CSYRK_F77   F77_BLAS_MANGLE(csyrk,CSYRK)
 #define CTRMM_F77   F77_BLAS_MANGLE(ctrmm,CTRMM)
@@ -169,6 +173,8 @@ void PREFIX DCOPY_F77(const int* n, const double *x, const int* incx, double *y,
 double PREFIX DDOT_F77(const int* n, const double x[], const int* incx, const double y[], const int* incy);
 double PREFIX DNRM2_F77(const int* n, const double x[], const int* incx);
 void PREFIX DSCAL_F77(const int* n, const double* alpha, double *x, const int* incx);
+void PREFIX DSWAP_F77(const int* const n, double* const x, const int* const incx,
+                      double* const y, const int* const incy);
 int PREFIX IDAMAX_F77(const int* n, const double *x, const int* incx);
 
 /* Double std::complex precision BLAS 1 */
@@ -197,6 +203,8 @@ void PREFIX ZROT_F77(const int* n, std::complex<double>* dx, const int* incx, st
 void PREFIX ZAXPY_F77(const int* n, const std::complex<double>* alpha, const std::complex<double> x[], const int* incx, std::complex<double> y[], const int* incy);
 void PREFIX ZCOPY_F77(const int* n, const std::complex<double> *x, const int* incx, std::complex<double> *y, const int* incy);
 void PREFIX ZSCAL_F77(const int* n, const std::complex<double>* alpha, std::complex<double> *x, const int* incx);
+void PREFIX ZSWAP_F77(const int* const n, std::complex<double>* const x, const int* const incx,
+                      std::complex<double>* const y, const int* const incy);
 int PREFIX IZAMAX_F77(const int* n, const std::complex<double> *x, const int* incx);
 
 #endif /* defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus) */
@@ -220,6 +228,8 @@ void PREFIX SROT_F77(const int* n, float* dx, const int* incx, float* dy, const 
 void PREFIX SAXPY_F77(const int* n, const float* alpha, const float x[], const int* incx, float y[], const int* incy);
 void PREFIX SCOPY_F77(const int* n, const float *x, const int* incx, float *y, const int* incy);
 void PREFIX SSCAL_F77(const int* n, const float* alpha, float *x, const int* incx);
+void PREFIX SSWAP_F77(const int* const n, float* const x, const int* const incx,
+                      float* const y, const int* const incy);
 int PREFIX ISAMAX_F77(const int* n, const float *x, const int* incx);
 
 /* Single std::complex precision BLAS 1 */
@@ -253,6 +263,8 @@ void PREFIX CROT_F77(const int* n, std::complex<float>* dx, const int* incx, std
 void PREFIX CAXPY_F77(const int* n, const std::complex<float>* alpha, const std::complex<float> x[], const int* incx, std::complex<float> y[], const int* incy);
 void PREFIX CCOPY_F77(const int* n, const std::complex<float> *x, const int* incx, std::complex<float> *y, const int* incy);
 void PREFIX CSCAL_F77(const int* n, const std::complex<float>* alpha, std::complex<float> *x, const int* incx);
+void PREFIX CSWAP_F77(const int* const n, std::complex<float>* const x, const int* const incx,
+                      std::complex<float>* const y, const int* const incy);
 int PREFIX ICAMAX_F77(const int* n, const std::complex<float> *x, const int* incx);
 
 #endif /* defined(HAVE_TEUCHOS_COMPLEX) && defined(__cplusplus) */

@@ -66,6 +66,7 @@
 #endif
 
 #include <Kokkos_Pair.hpp>
+#include <Kokkos_Array.hpp>
 #include <Kokkos_View.hpp>
 #include <Kokkos_Vectorization.hpp>
 #include <Kokkos_Atomic.hpp>
@@ -131,6 +132,7 @@ struct MallocHelper
  */
 template< class Arg = DefaultExecutionSpace>
 void* kokkos_malloc(const std::string label, size_t count) {
+  if(count == 0) return NULL;
   typedef typename Arg::memory_space MemorySpace;
   Impl::AllocationTracker tracker = MemorySpace::allocate_and_track(label,count);;
   Impl::MallocHelper::increment_ref_count( tracker );

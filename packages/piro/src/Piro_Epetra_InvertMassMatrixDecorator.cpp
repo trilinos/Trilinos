@@ -73,7 +73,8 @@ Piro::Epetra::InvertMassMatrixDecorator::InvertMassMatrixDecorator(
   x_dot->PutScalar(0.0);
 
   // get allocated space for Mass Matrix
-  massMatrix = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix> (model->create_W(), true);
+  //massMatrix = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix> (model->create_W(), true);
+  massMatrix = Teuchos::rcp_dynamic_cast<Epetra_Operator> (model->create_W(), true);
   if (lumpMassMatrix) invDiag = Teuchos::rcp(new Epetra_Vector(*(model->get_x_map())));
 
   Teuchos::RCP<Teuchos::FancyOStream> out
@@ -206,7 +207,8 @@ void Piro::Epetra::InvertMassMatrixDecorator::evalModel( const InArgs& inArgs,
     else { // Lump matrix into inverse of diagonal
       if (calcMassMatrix) {
         invDiag->PutScalar(1.0);
-        massMatrix->Multiply(false,*invDiag, *invDiag);
+        //massMatrix->Multiply(false,*invDiag, *invDiag);
+        massMatrix->Apply(*invDiag, *invDiag);
         invDiag->Reciprocal(*invDiag);
       }
       outArgs.get_f()->Multiply(1.0, *invDiag, *modelOutArgs.get_f(), 0.0);

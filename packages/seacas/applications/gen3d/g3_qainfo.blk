@@ -39,8 +39,8 @@ C     there are any changes to any routines, this routine should also
 C     be committed.  The assignment to QAINFO(I) strips off the 'Revision'
 C     and 'Date' strings from the CVS variables.  Kludgey but it might work.
       
-      CVSREV = '$Revision: 1.37 $'
-      CVSDAT = '$Date: 2009/04/23 04:30:14 $'
+      CVSREV = '$Revision: 1.38 $'
+      CVSDAT = '$Date: 2015/09/09 10:06:56 $'
 
       QAINFO(1) = 'Gen3DII '
       QAINFO(2) = '                                '
@@ -71,3 +71,4 @@ c.Increased maxint, maxfld at request of goodyear
 c.Increased max front/back side/nodesets
 c.Fixed getint
 c Allow tunnel for rotate
+c fix sideset df issue 

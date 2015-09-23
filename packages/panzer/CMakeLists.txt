@@ -95,6 +95,9 @@ COMBINED_OPTION( ${PACKAGE_NAME}_BUILD_PAPI_SUPPORT
     " support is enabled in Teuchos, otherwise defaults to OFF."
   )
 
+# use this to create compiler defines 
+SET(PANZER_HAVE_CAMAL ${${PACKAGE_NAME}_ENABLE_CAMAL} )
+
 # Explicit Template Instantiation
 
 # ALWAYS FORCE ETI ON FOR PANZER!  ETI in Panzer is for evaluation

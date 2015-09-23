@@ -70,6 +70,8 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/secant
                     ${DIR}/krylov
                     ${DIR}/bundle
+                    ${DIR}/augmentedlagrangian
+                    ${DIR}/moreauyosidapenalty
                    )
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/linesearch/*.hpp 
@@ -77,6 +79,8 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/secant/*.hpp
                     ${DIR}/krylov/*.hpp
                     ${DIR}/bundle/*.hpp
+                    ${DIR}/augmentedlagrangian/*.hpp
+                    ${DIR}/moreauyosidapenalty/*.hpp
                    )
 
 #
@@ -105,12 +109,10 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/sol)
 INCLUDE_DIRECTORIES(${DIR}/function
                     ${DIR}/vector
                     ${DIR}/sampler
-                    ${DIR}/sampler/sparse_grids
                    )
 APPEND_GLOB(HEADERS ${DIR}/function/*.hpp 
                     ${DIR}/vector/*.hpp
                     ${DIR}/sampler/*.hpp
-                    ${DIR}/sampler/sparse_grids/*.hpp
                    )
 
 #
@@ -143,6 +145,7 @@ APPEND_SET(HEADERS
   zoo/ROL_Minimax1.hpp
   zoo/ROL_Minimax2.hpp
   zoo/ROL_Minimax3.hpp
+  zoo/ROL_ParameterListConverters.hpp
   )
 
 

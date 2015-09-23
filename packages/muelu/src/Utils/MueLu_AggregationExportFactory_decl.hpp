@@ -58,6 +58,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_TwoLevelFactoryBase.hpp"
+#include "MueLu_VisualizationHelpers.hpp"
 #include "MueLu_AggregationExportFactory_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_Graph_fwd.hpp"
@@ -69,50 +70,42 @@
 namespace MueLu {
 
   class Level;
-  //Utility classes used in convex hull algorithm
 
   /*!
     @class AggregationExportFactory class.
-    @brief Factory for exporting aggregates data
+    @brief Factory to export aggregation info or visualize aggregates using VTK
 
+    Note, that some routines only work for 1 dof per node.
+
+    @ingroup MueLuVisualizationClasses
+
+    ## Input/output of AggregationExportFactory ##
+
+    ### User parameters of AggregationExportFactory ###
+    Parameter | type | default | master.xml | validated | requested | description
+    ----------|------|---------|:----------:|:---------:|:---------:|------------
+    | aggregation: output filename           | string  |   |  | * |   | filename for VTK-style visualization output |
+    | aggregation: output file: time step    | int     | 0 |  | * |   | time step (overwrites '%TIMESTEP' in output file name) |
+    | aggregation: output file: iter         | int     | 0 |  | * |   | nonlinear iteration (overwrites '%ITER' in output file name) |
+    | aggregation: output file: agg style    | string  | Point Cloud |   | * |  | style of aggregation visualization for VTK output. Can be either "Point Cloud", "Jacks", "Convex Hulls" or "Alpha Hulls" |
+    | aggregation: output file: fine graph edges | bool | false  |   | * |  | Draw fine node connections in VTK output (only works for 1 dofs per node!) |
+    | aggregation: output file: build colormap | bool | false  |   | * |  | Output a random color map for paraView in a separate xml file. |
+    | Output filename | string |   |    | * |  | Output file name for aggregation data export (outdated, do not use) |
+    | Output file: time step | int | 0  |   | * |  | time step variable for output filename (outdated, do not use) |
+    | Output file: iter      | int | 0  |   | * |  | nonlinear iteration variable for output filename (outdated, do not use) |
+    | A | Factory | Teuchos::null  |   | * | * | Factory for A |
+    | Coordinates | Factory | Teuchos::null  |   | * | * | Factory for Coordinates (only necessary for vtk output) |
+    | Graph | Factory | Teuchos::null  |   | * | * | Factory for Graph of A (only necessary for vtk output) |
+    | Aggregates | Factory | Teuchos::null  |   | * | * | Factory for Aggregates |
+    | UnAmalgamationInfo | Factory | Teuchos::null  |   | * | * | Factory for UnAmalgamationInfo |
+    | DofsPerNode | Factory | Teuchos::null  |   | * | * | Factory for DofsPerNode |
+
+    The * in the @c master.xml column denotes that the parameter is defined in the @c master.xml file.<br>
+    The * in the @c validated column means that the parameter is declared in the list of valid input parameters (see AggregationExportFactory::GetValidParameters).<br>
+    The * in the @c requested column states that the data is requested as input with all dependencies (see AggregationExportFactory::DeclareInput).
   */
-  class Triangle_
-  {
-    public:
-      Triangle_() : v1(0), v2(0), v3(0) {}
-      Triangle_(int v1in, int v2in, int v3in) : v1(v1in), v2(v2in), v3(v3in) {}
-      ~Triangle_() {}
-      bool operator==(const Triangle_& l)
-      {
-        if(l.v1 == v1 && l.v2 == v2 && l.v3 == v3)
-          return true;
-        return false;
-      }
-      int v1;
-      int v2;
-      int v3;
-  };
-  class vec3_
-  {
-    public:
-      vec3_() : x(0), y(0), z(0) {}
-      vec3_(double xin, double yin, double zin) : x(xin), y(yin), z(zin) {}
-      ~vec3_() {}
-      double x;
-      double y;
-      double z;
-  };
-  class vec2_
-  {
-    public:
-      vec2_() : x(0), y(0) {}
-      vec2_(double xin, double yin) : x(xin), y(yin) {}
-      ~vec2_() {}
-      double x;
-      double y;
-  };
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType>
-  class AggregationExportFactory : public TwoLevelFactoryBase {
+  class AggregationExportFactory : public TwoLevelFactoryBase, public VisualizationHelpers<Scalar, LocalOrdinal, GlobalOrdinal, Node> {
 #undef MUELU_AGGREGATIONEXPORTFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
 
@@ -145,42 +138,25 @@ namespace MueLu {
     //@}
 
   private:
-    std::string replaceAll(std::string result, const std::string& replaceWhat, const std::string& replaceWithWhat) const;
     //Break different viz styles into separate functions for organization:
-    void doPointCloud_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    void doJacks_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
     void doJacksPlus_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    void doConvexHulls_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    void doConvexHulls2D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
-    void doConvexHulls3D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
+    void doConvexHulls(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
     #ifdef HAVE_MUELU_CGAL
     void doAlphaHulls_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
     void doAlphaHulls2D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
     void doAlphaHulls3D_(std::vector<int>& vertices, std::vector<int>& geomSizes) const;
     #endif
-    void doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine) const; //add geometry to display node connections from a matrix. Connections in graph but not matrix have different color.
+    void doGraphEdges_(std::ofstream& fout, Teuchos::RCP<Matrix>& A, Teuchos::RCP<GraphBase>& G, bool fine, int dofs) const; //add geometry to display node connections from a matrix. Connections in graph but not matrix have different color.
+
+    // write VTK data
     void writeFile_(std::ofstream& fout, std::string styleName, std::vector<int>& vertices, std::vector<int>& geomSizes) const;
     void buildColormap_() const;
     void writePVTU_(std::ofstream& pvtu, std::string baseFname, int numProcs) const;
-    std::vector<int> giftWrap_(std::vector<vec2_>& points, std::vector<int>& nodes) const;
-    std::vector<Triangle_>  processTriangle_(std::list<Triangle_>& tris, Triangle_ tri, std::list<int>& pointsInFront, vec3_& barycenter) const;
-    std::vector<int> makeUnique_(std::vector<int>& vertices) const; //replaces node indices in vertices with compressed unique indices, and returns list of unique points
-    //Utility functions for convex hulls
-    static vec3_ crossProduct_(vec3_ v1, vec3_ v2);
-    static double dotProduct_(vec2_ v1, vec2_ v2);
-    static double dotProduct_(vec3_ v1, vec3_ v2);
-    static bool isInFront_(vec3_ point, vec3_ inPlane, vec3_ n);
-    static double magnitude_(vec3_ vec);
-    static double distance_(vec3_ p1, vec3_ p2);
-    static vec2_ vecSubtract_(vec2_ v1, vec2_ v2);
-    static vec3_ vecSubtract_(vec3_ v1, vec3_ v2);
-    static vec2_ getNorm_(vec2_ v);
-    static vec3_ getNorm_(vec3_ v1, vec3_ v2, vec3_ v3);
-    static double pointDistFromTri_(vec3_ point, vec3_ v1, vec3_ v2, vec3_ v3);
-    //Returns a list of the triangles that were removed and replaced
+
     static const int CONTRAST_1_ = -1;
     static const int CONTRAST_2_ = -2;
     static const int CONTRAST_3_ = -3;
+
     //Data that the different styles need to have available when building geometry
     mutable Teuchos::ArrayRCP<const double> xCoords_; //fine local coordinates
     mutable Teuchos::ArrayRCP<const double> yCoords_;

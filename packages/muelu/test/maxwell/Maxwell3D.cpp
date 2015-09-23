@@ -62,6 +62,7 @@
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
 #include <BelosSolverFactory.hpp>
+#include <BelosTpetraAdapter.hpp>
 
 int main(int argc, char *argv[]) {
 
@@ -199,12 +200,11 @@ int main(int argc, char *argv[]) {
     params.set("refmaxwell: disable add-on",false);
     params.set("refmaxwell: max coarse size",25);
     params.set("refmaxwell: max levels",4);
-    params.set("refmaxwell: edge smoother","CHEBYSHEV");
-    params.set("refmaxwell: node smoother","CHEBYSHEV");
-    params11.set("chebyshev: degree",3);
-    params22.set("chebyshev: degree",3);
-    params.set("refmaxwell: edge smoother list",params11);
-    params.set("refmaxwell: node smoother list",params22);
+    params.set("smoother: type","CHEBYSHEV");
+    //    params11.set("smoother: sweeps",3);
+    //    params22.set("smoother: sweeps",2);
+    params.set("refmaxwell: 11 list",params11);
+    params.set("refmaxwell: 22 list",params22);
     // construct preconditioner
     RCP<RefMaxwell> preconditioner
       = rcp( new RefMaxwell(SM_Matrix,D0_Matrix,M0inv_Matrix,

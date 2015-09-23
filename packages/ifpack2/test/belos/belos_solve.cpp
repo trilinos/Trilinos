@@ -46,13 +46,13 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
-#include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_Comm.hpp"
 
 #include "Ifpack2_Parameters.hpp"
 
 #include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Map.hpp"
 
 #include "build_problem.hpp"
 #include "build_solver.hpp"
@@ -79,8 +79,8 @@ int main(int argc, char*argv[])
     Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
 
     typedef double Scalar;
-    typedef int LO; //LocalOrdinal
-    typedef int GO; //GlobalOrdinal
+    typedef Tpetra::Map<>::local_ordinal_type LO;
+    typedef Tpetra::Map<>::global_ordinal_type GO;
     typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> TMV;
     typedef Tpetra::Operator<Scalar,LO,GO,Node>    TOP;
@@ -150,7 +150,7 @@ int main(int argc, char*argv[])
     timer.stop();
     *out << "proc 0 total program time: " << timer.totalElapsedTime()
          << std::endl;
-    
+
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success)
 

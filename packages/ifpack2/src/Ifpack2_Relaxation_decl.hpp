@@ -43,14 +43,14 @@
 #ifndef IFPACK2_RELAXATION_DECL_HPP
 #define IFPACK2_RELAXATION_DECL_HPP
 
-#include <Ifpack2_ConfigDefs.hpp>
-#include <Ifpack2_Preconditioner.hpp>
-#include <Ifpack2_Details_CanChangeMatrix.hpp>
-#include <Ifpack2_Parameters.hpp>
-#include <Tpetra_Vector.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <Tpetra_CrsMatrix_decl.hpp> // Don't need the definition here
-#include <Tpetra_Experimental_BlockCrsMatrix_decl.hpp>
+#include "Ifpack2_Preconditioner.hpp"
+#include "Ifpack2_Details_CanChangeMatrix.hpp"
+#include "Ifpack2_Parameters.hpp"
+#include "Tpetra_Vector.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Tpetra_CrsMatrix_decl.hpp" // Don't need the definition here
+#include "Tpetra_Experimental_BlockCrsMatrix_decl.hpp"
+#include <type_traits>
 
 namespace Teuchos {
   // forward declarations
@@ -63,8 +63,7 @@ namespace Ifpack2 {
 /** \class Relaxation
 \brief Relaxation preconditioners for Tpetra::RowMatrix and Tpetra::CrsMatrix sparse matrices.
 \author Michael A. Heroux (Sandia)
-\tparam MatrixType A specialization of Tpetra::CrsMatrix (better) or
-  Tpetra::RowMatrix (acceptable).
+\tparam MatrixType A specialization of Tpetra::RowMatrix.
 
 \section Ifpack_Relaxation_Summary Summary
 
@@ -109,12 +108,8 @@ thread-parallel Node type.
 Relaxation works with any Tpetra::RowMatrix input.  If your
 Tpetra::RowMatrix happens to be a Tpetra::CrsMatrix, the Gauss-Seidel
 and symmetric Gauss-Seidel relaxations may be able to exploit this for
-better performance.  You normally don't have to do anything to figure
-this out (we test via \c dynamic_cast), but it may help to use a
-Tpetra::CrsMatrix specialization as the \c MatrixType template
-parameter, rather than a Tpetra::RowMatrix specialization.  (This
-matters if you are using a nondefault value of the fifth template
-parameter of Tpetra::CrsMatrix.)
+better performance.  You don't have to do anything to figure this out
+(we test via \c dynamic_cast).
 
 \section Ifpack_Relaxation_Create Creating a Relaxation preconditioner
 
@@ -256,6 +251,9 @@ public:
   //! Tpetra::RowMatrix specialization used by this class.
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> row_matrix_type;
+
+  static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::Relaxation: Please use MatrixType = Tpetra::RowMatrix.  This saves build times, library sizes, and executable sizes.  Don't worry, this class still works with CrsMatrix and BlockCrsMatrix; those are both subclasses of RowMatrix.");
+
   //@}
   //! @name Constructors and destructors
   //@{

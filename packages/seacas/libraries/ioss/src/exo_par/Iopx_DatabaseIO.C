@@ -66,6 +66,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <limits>
 
 #include "Ioss_CoordinateFrame.h"
 #include "Ioss_CommSet.h"
@@ -2397,11 +2398,20 @@ namespace Iopx {
             Ioss::Field df_field("distribution_factor", Ioss::Field::REAL, "scalar", Ioss::Field::MESH, num_to_get);
             decomp->get_set_mesh_double(get_file_pointer(), EX_SIDE_SET, id, df_field, TOPTR(real_ids));
 
-            // Need to convert 'double' to 'int' for Sierra use...
-            int* ids = static_cast<int*>(data);
-            for (ssize_t i = 0; i < num_to_get; i++) {
-              ids[i] = static_cast<int>(real_ids[i]);
-            }
+	    if (field.get_type() == Ioss::Field::INTEGER) {
+	      // Need to convert 'double' to 'int' for Sierra use...
+	      int* ids = static_cast<int*>(data);
+	      for (ssize_t i = 0; i < num_to_get; i++) {
+		ids[i] = static_cast<int>(real_ids[i]);
+	      }
+	    }
+	    else {
+	      // Need to convert 'double' to 'int' for Sierra use...
+	      int64_t* ids = static_cast<int64_t*>(data);
+	      for (ssize_t i = 0; i < num_to_get; i++) {
+		ids[i] = static_cast<int64_t>(real_ids[i]);
+	      }
+	    }
           }
         }
 
@@ -2427,13 +2437,24 @@ namespace Iopx {
           // the global element ids and the sides...  Iterate
           // through to generate the ids...
           if (int_byte_size_api() == 4) {
-            int *ids = static_cast<int*>(data);
-            int *els = (int*)TOPTR(element_side);
-            size_t idx = 0;
-            for (ssize_t iel = 0; iel < 2*entity_count; iel+=2) {
-              int64_t new_id = 10*els[iel] + els[iel+1];
-              ids[idx++] = new_id;
-            }
+	      int64_t int_max = std::numeric_limits<int>::max();
+              int *ids = static_cast<int*>(data);
+              int *els = (int*)TOPTR(element_side);
+              size_t idx = 0;
+              for (ssize_t iel = 0; iel < 2*entity_count; iel+=2) {
+                int64_t new_id = (int64_t)10*els[iel] + els[iel+1];
+		if (new_id > int_max) {
+		  std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
+		      std::ostringstream errmsg;
+		      errmsg << "ERROR: accessing the sideset field 'ids'\n"
+			     << "\t\thas exceeded the integer bounds for entity " << els[iel]
+			     << ", local side id " << els[iel+1] << ".\n\t\tTry using 64-bit mode to read the file '"
+			     << decoded_filename << "'.\n";
+		      IOSS_ERROR(errmsg);
+		    }
+		
+                ids[idx++] = (int)new_id;
+              }
           } else {
             int64_t *ids = static_cast<int64_t*>(data);
             int64_t *els = (int64_t*)TOPTR(element_side);
@@ -4138,15 +4159,28 @@ namespace Iopx {
 
           // Need to convert 'ints' to 'double' for storage on mesh...
           // FIX 64
-          int* ids = static_cast<int*>(data);
-          std::vector<double> real_ids(num_to_get);
-          for (size_t i = 0; i < num_to_get; i++) {
-            real_ids[i] = static_cast<double>(ids[i]);
-          }
-          int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
+          if (field.get_type() == Ioss::Field::INTEGER) {
+	    int* ids = static_cast<int*>(data);
+	    std::vector<double> real_ids(num_to_get);
+	    for (size_t i = 0; i < num_to_get; i++) {
+	      real_ids[i] = static_cast<double>(ids[i]);
+	    }
+	    int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
 						  offset+1, entity_count, TOPTR(real_ids));
-          if (ierr < 0)
-            Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	    if (ierr < 0)
+	      Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  }
+	  else {
+	    int64_t* ids = static_cast<int64_t*>(data);
+	    std::vector<double> real_ids(num_to_get);
+	    for (size_t i = 0; i < num_to_get; i++) {
+	      real_ids[i] = static_cast<double>(ids[i]);
+	    }
+	    int ierr = ex_put_partial_set_dist_fact(get_file_pointer(),  EX_SIDE_SET, id,
+						  offset+1, entity_count, TOPTR(real_ids));
+	    if (ierr < 0)
+	      Ioex::exodus_error(get_file_pointer(), __LINE__, myProcessor);
+	  }
         }
 
         else if (field.get_name() == "side_ids") {

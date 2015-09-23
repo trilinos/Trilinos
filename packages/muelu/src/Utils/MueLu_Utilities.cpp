@@ -420,35 +420,37 @@ namespace MueLu {
     return maxLevel;
   }
 
-  void TokenizeStringAndStripWhiteSpace(const std::string & stream, std::vector<std::string> & tokenList, const char* token) {
-    //note: default string of delimiters is " ,;", so whitespace, commas and semicolons are stripped out
+  void TokenizeStringAndStripWhiteSpace(const std::string& stream, std::vector<std::string>& tokenList, const char* delimChars)
+  {
+    //note: default delimiter string is ","
     // Take a comma-separated list and tokenize it, stripping out leading & trailing whitespace.  Then add to tokenList
-    char * s = new char[stream.length()];
-    char * buffer = new char[stream.length()];
-    strcpy(s,stream.c_str());
-    char * p = strtok(s,token);
-    while (p != NULL) 
+    char* buf = (char*) malloc(stream.size() + 1);
+    strcpy(buf, stream.c_str());
+    char* token = strtok(buf, delimChars);
+    if(token == NULL)
     {
-	/*
-      // p now points to first token
-      // strip whitespace
-      // printf("Temp:-%s-\n",p);
-      int start=0, stop=strlen(p)-1;
-      while(start<=stop && p[start]==' ') ++start;
-      while(start<=stop && p[stop]==' ')  --stop;
-      //  printf("    : start = %d start = %d\n",start,stop);
-      // If somebody didn't use consecutive commas...
-      if(start<=stop) {
-	strncpy(buffer,&p[start],stop-start+1);	
-	tokenList.push_back(buffer);
-      }
-	*/
-      std::string newItem(p);
-      tokenList.push_back(newItem);
-      p = strtok(NULL, token);
+      free(buf);
+      return;
     }
-    delete [] s;
-    delete [] buffer;
+    while(token)
+    {
+      //token points to start of string to add to tokenList
+      //remove front whitespace...
+      char* tokStart = token;
+      char* tokEnd = token + strlen(token) - 1;
+      while(*tokStart == ' ' && tokStart < tokEnd)
+        tokStart++;
+      while(*tokEnd == ' ' && tokStart < tokEnd)
+        tokEnd--;
+      tokEnd++;
+      if(tokStart < tokEnd)
+      {
+        std::string finishedToken(tokStart, tokEnd - tokStart); //use the constructor that takes a certain # of chars
+        tokenList.push_back(finishedToken);
+      }
+      token = strtok(NULL, delimChars);
+    }
+    free(buf);
   }
 
   bool IsParamMuemexVariable(const std::string& name)
@@ -476,11 +478,13 @@ namespace MueLu {
     //See if the first word is one of the custom variable names
     if(strstr(firstWord, "matrix") ||
        strstr(firstWord, "multivector") ||
+       strstr(firstWord, "map") ||
        strstr(firstWord, "ordinalvector") ||
        strstr(firstWord, "int") ||
        strstr(firstWord, "scalar") ||
        strstr(firstWord, "double") ||
-       strstr(firstWord, "complex"))
+       strstr(firstWord, "complex") ||
+       strstr(firstWord, "string"))
       //Add name to list of keys to remove
     {
       free(str);

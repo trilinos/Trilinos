@@ -91,7 +91,7 @@ namespace panzer {
                                     PHX::FieldManager<panzer::Traits>& fm) const
     { 
       for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators.size(); ++i)
-        fm.template registerEvaluator<EvalT>(evaluators[i]);
+        this->template registerEvaluator<EvalT>(fm, evaluators[i]);
     }
 
   };

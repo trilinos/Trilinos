@@ -1,0 +1,193 @@
+<!--////////////////////////////////////////////////////////////////////////////
+ ////////////////////////////////////////////////////////////////////////////////
+ 
+ REQUIRED BLOCKS:
+ 1. Input parameters
+ 2. Problem parameters
+ 
+ OPTIONAL Blocks:
+ 3. Comparison
+ 
+ SUPPORTED INPUT FILE TYPES:
+ 1. Geometric Generator
+ 2. Pamgen
+ 3. Chaco
+ 4. Matrix Market
+ 
+ SUPPORTED PROBLEM TYPES:
+ 1. partitioning
+ 
+ SUPPORTED INPUT DATA TYPES:
+ 1. coordinates
+ 2. (x,t,e)petra_crs_matrix
+ 3. (x,t,e)petra_crs_graph
+ 4. (x,t,e)petra_vector
+ 5. (x,t,e)petra_multivector
+ 
+ SUPPORTED INPUT ADAPTERS:
+ 1. BasicIdentifier
+ 2. XpetraMultiVector
+ 3. XpetraCrsGraph
+ 4. XpetraCrsMatrix
+ 5. BasicVector
+ 5. PamgenMesh
+ 
+ ** REFER TO THE README FOR A MORE DETAILED EXPLANATION
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ /////////////////////////////////////////////////////////////////////////////-->
+
+<ParameterList name="testDriverExample">
+  
+<!-- 1. INPUT BLOCK DEFINITION -->
+
+    <ParameterList name="InputParameters">
+
+        <Parameter name="debug" type="bool" value="False" />
+        <Parameter name="distribure input" type="bool" value="False" />
+
+        <Parameter name="x" type="int" value="40"/>
+        <Parameter name="y" type="int" value="60"/>
+        <Parameter name="z" type="int" value="20"/>
+        <Parameter name="equation type" type="string" value="Laplace3D"/>
+    </ParameterList>
+        
+<!-- 2. PROBLEM BLOCK DEFINITIONS -->
+
+    <ParameterList name="Problem 1">
+        <Parameter name="kind" type="string" value="partitioning"/>
+     
+        <ParameterList name="InputAdapterParameters">
+            <!--<Parameter name="data type" type="string" value="tpetra_multivector"/>--> 
+            <Parameter name="data type" type="string" value="coordinates"/> 
+            <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
+            <Parameter name="rectilinear" type="string" value="yes"/>
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
+            </ParameterList>
+        </ParameterList>
+
+    </ParameterList>
+
+    <ParameterList name="Problem 2">
+        <Parameter name="kind" type="string" value="partitioning"/>
+     
+        <ParameterList name="InputAdapterParameters">
+            <Parameter name="data type" type="string" value="tpetra_multivector"/> 
+            <Parameter name="vector_dimension" type="int" value="3"/> 
+            <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+            <Parameter name="bisection_num_test_cuts" type="int" value="7" />
+            <Parameter name="rectilinear" type="string" value="yes"/>
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+        
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
+            </ParameterList>
+        </ParameterList>
+    </ParameterList>
+    
+    <ParameterList name="Problem 3">
+        <Parameter name="kind" type="string" value="partitioning"/>
+ 
+        <ParameterList name="InputAdapterParameters">
+            <Parameter name="data type" type="string" value="xpetra_multivector"/> 
+            <Parameter name="vector_dimension" type="int" value="3"/>
+            <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+        </ParameterList>
+
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="timer_output_stream" type="string" value="std::cout"/>
+            <Parameter name="algorithm" type="string" value="rcb" />
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+    
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
+            </ParameterList>
+        </ParameterList>
+
+    </ParameterList>
+
+
+<!--    <ParameterList name="Problem 4">
+        <Parameter name="kind" type="string" value="partitioning"/>
+     
+        <ParameterList name="InputAdapterParameters">
+            <Parameter name="data type" type="string" value="epetra_multivector"/> 
+            <Parameter name="vector_dimension" type="int" value="3"/>
+            <Parameter name="input adapter" type="string" value="XpetraMultiVector"/>
+        </ParameterList>
+
+
+        <ParameterList name="Zoltan2Parameters">
+            <Parameter name="algorithm" type="string" value="multijagged"/>
+            <Parameter name="rectilinear" type="string" value="yes"/> 
+            <Parameter name="compute_metrics" type="string" value="true"/> 
+        </ParameterList>
+    
+        <ParameterList name="Metrics">
+            <ParameterList name="object count">
+                <Parameter name="lower" type="double" value="0.99"/>
+                <Parameter name="upper" type="double" value="1.4"/>
+            </ParameterList>
+        </ParameterList>
+    </ParameterList> -->
+
+<!-- 3. COMPARISON BLOCK DEFINITIONS -->
+    
+    <ParameterList name="Comparison"> <!-- compare solutions of problems A and B-->
+        <Parameter name="A" type="string" value="Problem 1"/>
+        <Parameter name="B" type="string" value="Problem 2"/>
+    </ParameterList>
+
+    <ParameterList name="Comparison">
+        <Parameter name="A" type="string" value="Problem 1"/>
+        <Parameter name="B" type="string" value="Problem 3"/>
+    </ParameterList>
+    
+    <ParameterList name="Comparison"> <!-- compare specified metrics of problem to a baseline reference-->
+        <Parameter name="Problem" type="string" value="Problem 3"/>
+        <Parameter name="Reference" type="string" value="Problem 2"/><!-- compare our test problem against this one-->
+        
+        <ParameterList name="object count">
+            <Parameter name="lower" type="double" value="1.0"/>
+            <Parameter name="upper" type="double" value="1.3"/>
+        </ParameterList>
+        
+        <ParameterList name="solve time">
+            <Parameter name="lower" type="double" value="0.1"/>
+            <Parameter name="upper" type="double" value="1.5"/>
+        </ParameterList>
+        
+        <ParameterList name="problem construction time"> <!-- problem construction time-->
+            <Parameter name="lower" type="double" value="0.1"/>
+            <Parameter name="upper" type="double" value="1.5"/>
+        </ParameterList>
+
+        <ParameterList name="apdapter construction time"> <!-- problem construction time-->
+            <Parameter name="lower" type="double" value="0.1"/>
+            <Parameter name="upper" type="double" value="1.5"/>
+        </ParameterList>
+        
+    </ParameterList>
+
+</ParameterList>

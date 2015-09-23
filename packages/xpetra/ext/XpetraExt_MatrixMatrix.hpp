@@ -614,7 +614,7 @@ inline void Jacobi(
 }
 #endif
 
-#ifndef XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
+#ifdef HAVE_XPETRA_INT_LONG_LONG
 inline void Jacobi(
   double omega,
   const Xpetra::Vector<double,int,long long> & Dinv,
@@ -626,7 +626,7 @@ inline void Jacobi(
   const std::string & label) {
   JacobiT<long long>(omega, Dinv, A, B, C, call_FillComplete_on_result, doOptimizeStorage, label);
 }
-#endif
+#endif // HAVE_XPETRA_INT_LONG_LONG
 
 } // end namespace MatrixMatrix
 

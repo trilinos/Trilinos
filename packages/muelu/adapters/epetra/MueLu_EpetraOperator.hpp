@@ -46,11 +46,7 @@
 #ifndef MUELU_EPETRAOPERATOR_HPP
 #define MUELU_EPETRAOPERATOR_HPP
 
-// Turns a MueLu::Hierarchy into a Epetra_Operator.
-// It allows to use MueLu as a preconditionner for AztecOO (for instance).
-
-// TODO: Is MueLu::EpetraOperator a good name for this adapter? (
-//       For the MueLu/Belos adapter, the name of the class is Belos::MueLuOp)
+//! @file 
 
 #include <Epetra_Operator.h>
 #include "MueLu_Hierarchy.hpp"
@@ -58,6 +54,10 @@
 
 namespace MueLu {
 
+/*! @class EpetraOperator
+    @brief Turns a MueLu::Hierarchy into a Epetra_Operator.
+    It allows MueLu to be used as a preconditioner for AztecOO (for instance).
+*/
   class EpetraOperator : public Epetra_Operator {
     typedef double                                              SC;
     typedef int                                                 LO;

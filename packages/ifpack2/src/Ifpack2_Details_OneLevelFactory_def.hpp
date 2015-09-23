@@ -51,12 +51,10 @@
 #include "Ifpack2_Relaxation.hpp"
 #include "Ifpack2_RILUK.hpp"
 #include "Ifpack2_Experimental_RBILUK.hpp"
-#include "Ifpack2_Krylov.hpp"
 #include "Ifpack2_BlockRelaxation.hpp"
 #include "Ifpack2_BandedContainer.hpp"
 #include "Ifpack2_DenseContainer.hpp"
 #include "Ifpack2_TriDiContainer.hpp"
-#include "Ifpack2_Details_OneLevelFactory.hpp"
 
 #ifdef HAVE_IFPACK2_AMESOS2
 #  include "Ifpack2_Details_Amesos2Wrapper.hpp"
@@ -87,14 +85,14 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
   if (precTypeUpper == "CHEBYSHEV") {
     // We have to distinguish Ifpack2::Chebyshev from its
     // implementation class Ifpack2::Details::Chebyshev.
-    prec = rcp (new ::Ifpack2::Chebyshev<MatrixType> (matrix));
+    prec = rcp (new ::Ifpack2::Chebyshev<row_matrix_type> (matrix));
   }
   else if (precTypeUpper == "DENSE" || precTypeUpper == "LAPACK") {
-    prec = rcp (new Details::DenseSolver<MatrixType> (matrix));
+    prec = rcp (new Details::DenseSolver<row_matrix_type> (matrix));
   }
   else if (precTypeUpper == "AMESOS2") {
 #ifdef HAVE_IFPACK2_AMESOS2
-    prec = rcp (new Details::Amesos2Wrapper<MatrixType> (matrix));
+    prec = rcp (new Details::Amesos2Wrapper<row_matrix_type> (matrix));
 #else
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::invalid_argument, "Ifpack2::Details::OneLevelFactory: "
@@ -103,22 +101,25 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
 #endif // HAVE_IFPACK2_AMESOS2
   }
   else if (precTypeUpper == "DIAGONAL") {
-    prec = rcp (new Diagonal<MatrixType> (matrix));
+    prec = rcp (new Diagonal<row_matrix_type> (matrix));
   }
   else if (precTypeUpper == "ILUT") {
-    prec = rcp (new ILUT<MatrixType> (matrix));
+    prec = rcp (new ILUT<row_matrix_type> (matrix));
   }
   else if (precTypeUpper == "RELAXATION") {
-    prec = rcp (new Relaxation<MatrixType> (matrix));
+    prec = rcp (new Relaxation<row_matrix_type> (matrix));
   }
   else if (precTypeUpper == "RILUK") {
-    prec = rcp (new RILUK<MatrixType> (matrix));
+    prec = rcp (new RILUK<row_matrix_type> (matrix));
   }
   else if (precTypeUpper == "RBILUK") {
-    prec = rcp (new Experimental::RBILUK<MatrixType>(matrix));
+    prec = rcp (new Experimental::RBILUK<row_matrix_type>(matrix));
   }
   else if (precTypeUpper == "KRYLOV") {
-    prec = rcp (new Krylov<MatrixType> (matrix));
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (true, std::invalid_argument, "The \"KRYLOV\" preconditioner option has "
+       "been deprecated and removed.  If you want a Krylov solver, use the "
+       "Belos package.");
   }
   else if (precTypeUpper == "BLOCK_RELAXATION" ||
            precTypeUpper == "BLOCK RELAXATION" ||
@@ -128,8 +129,8 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
     // decision.  This will require refactoring BlockRelaxation so
     // that the "container type" is not a template parameter.  For
     // now, we default to use dense blocks.
-    typedef DenseContainer<MatrixType, scalar_type> container_type;
-    prec = rcp (new BlockRelaxation<MatrixType, container_type> (matrix));
+    typedef DenseContainer<row_matrix_type, scalar_type> container_type;
+    prec = rcp (new BlockRelaxation<row_matrix_type, container_type> (matrix));
   }
   else if (precTypeUpper == "TRIDI_RELAXATION" ||
            precTypeUpper == "TRIDI RELAXATION" ||
@@ -137,18 +138,18 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
            precTypeUpper == "TRIDIAGONAL_RELAXATION" ||
            precTypeUpper == "TRIDIAGONAL RELAXATION" ||
            precTypeUpper == "TRIDIAGONALRELAXATION") {
-    typedef TriDiContainer<MatrixType, scalar_type> container_type;
-    prec = rcp (new BlockRelaxation<MatrixType, container_type> (matrix));
+    typedef TriDiContainer<row_matrix_type, scalar_type> container_type;
+    prec = rcp (new BlockRelaxation<row_matrix_type, container_type> (matrix));
 
   }
   else if (precTypeUpper == "BANDED_RELAXATION" ||
            precTypeUpper == "BANDED RELAXATION" ||
            precTypeUpper == "BANDEDRELAXATION") {
-    typedef BandedContainer<MatrixType, scalar_type> container_type;
-    prec = rcp (new BlockRelaxation<MatrixType, container_type> (matrix));
+    typedef BandedContainer<row_matrix_type, scalar_type> container_type;
+    prec = rcp (new BlockRelaxation<row_matrix_type, container_type> (matrix));
   }
   else if (precTypeUpper == "IDENTITY" || precTypeUpper == "IDENTITY_SOLVER") {
-    prec = rcp (new IdentitySolver<MatrixType> (matrix));
+    prec = rcp (new IdentitySolver<row_matrix_type> (matrix));
   }
   else {
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -167,7 +168,6 @@ OneLevelFactory<MatrixType>::create (const std::string& precType,
 } // namespace Ifpack2
 
 #define IFPACK2_DETAILS_ONELEVELFACTORY_INSTANT(S,LO,GO,N)              \
-  template class Ifpack2::Details::OneLevelFactory< Tpetra::CrsMatrix<S, LO, GO, N> >; \
   template class Ifpack2::Details::OneLevelFactory< Tpetra::RowMatrix<S, LO, GO, N> >;
 
 #endif // IFPACK2_DETAILS_ONELEVELFACTORY_DEF_HPP

@@ -61,7 +61,7 @@
 
 #ifdef HAVE_MUELU_STRATIMIKOS
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
-#include <Stratimikos_MueluTpetraHelpers.hpp>
+#include <Stratimikos_MueLuHelpers.hpp>
 #endif
 
 #ifdef HAVE_MUELU_TEKO
@@ -93,6 +93,11 @@
 #include <Thyra_VectorBase.hpp>
 #include <Thyra_VectorStdOps.hpp>
 
+#include <BelosConfigDefs.hpp>
+#include <BelosLinearProblem.hpp>
+#include <BelosSolverFactory.hpp>
+#include <BelosTpetraAdapter.hpp>
+
 #include <Xpetra_MapFactory.hpp>
 
 #include "MueLu_UseDefaultTypes.hpp"
@@ -114,8 +119,6 @@ ReadBinary(const std::string& fileName, const Teuchos::RCP<const Teuchos::Comm<i
   ifs.read(reinterpret_cast<char*>(&m),   sizeof(m));
   ifs.read(reinterpret_cast<char*>(&n),   sizeof(n));
   ifs.read(reinterpret_cast<char*>(&nnz), sizeof(nnz));
-
-  int myRank = comm->getRank();
 
   typedef Tpetra::Map      <LO,GO,NO>       tMap;
   typedef Tpetra::CrsMatrix<SC,LO,GO,NO>    tCrsMatrix;
@@ -299,7 +302,8 @@ int main(int argc, char *argv[]) {
 
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
 
-    Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder);
+    //Thyra::addMueLuToStratimikosBuilder(linearSolverBuilder);
+    Stratimikos::enableMueLu(linearSolverBuilder);
     Stratimikos::enableMueLuTpetraQ2Q1<LO,GO,NO>(linearSolverBuilder, "MueLu-TpetraQ2Q1");
 
     linearSolverBuilder.setParameterList(stratimikosList);

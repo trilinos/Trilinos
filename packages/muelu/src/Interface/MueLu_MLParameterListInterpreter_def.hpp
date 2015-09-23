@@ -110,8 +110,22 @@
 namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MLParameterListInterpreter(Teuchos::ParameterList & paramList, std::vector<RCP<FactoryBase> > factoryList) : nullspace_(NULL), TransferFacts_(factoryList), blksize_(1) {
-    SetParameterList(paramList);
+  MLParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MLParameterListInterpreter(Teuchos::ParameterList & paramList, Teuchos::RCP<const Teuchos::Comm<int> > comm, std::vector<RCP<FactoryBase> > factoryList) : nullspace_(NULL), xcoord_(NULL), ycoord_(NULL), zcoord_(NULL),TransferFacts_(factoryList), blksize_(1) {
+
+    if(paramList.isParameter("xml parameter file")){
+      std::string filename = paramList.get("xml parameter file","");
+      if(filename.length()!=0) {
+        if(comm.is_null()) throw Exceptions::RuntimeError("xml parameter file requires a valid comm");
+        Teuchos::ParameterList paramList2 = paramList;
+        Teuchos::updateParametersFromXmlFileAndBroadcast(filename, Teuchos::Ptr<Teuchos::ParameterList>(&paramList2),*comm);
+	paramList2.remove("xml parameter file");
+        SetParameterList(paramList2);
+      }
+      else
+        SetParameterList(paramList);
+    }
+    else
+      SetParameterList(paramList);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -155,7 +169,10 @@ namespace MueLu {
 
     MUELU_READ_PARAM(paramList, "RAP: fix diagonal",                       bool,               false,       bFixDiagonal); // This is a MueLu specific extension that does not exist in ML
 
-
+    MUELU_READ_PARAM(paramList, "x-coordinates",                        double*,                NULL,       xcoord);
+    MUELU_READ_PARAM(paramList, "y-coordinates",                        double*,                NULL,       ycoord);
+    MUELU_READ_PARAM(paramList, "z-coordinates",                        double*,                NULL,       zcoord);
+    
 
     //
     // Move smoothers/aggregation/coarse parameters to sublists
@@ -268,7 +285,7 @@ namespace MueLu {
     } else if (agg_damping != 0.0 && bEnergyMinimization == false) {
       // smoothed aggregation (SA-AMG)
       RCP<SaPFactory> SaPFact =  rcp( new SaPFactory() );
-      SaPFact->SetDampingFactor(agg_damping);
+      SaPFact->SetParameter("sa: damping factor", ParameterEntry(agg_damping));
       PFact  = SaPFact;
       RFact  = rcp( new TransPFactory() );
     } else if (bEnergyMinimization == true) {
@@ -371,6 +388,14 @@ namespace MueLu {
 
     Teuchos::RCP<NullspaceFactory> nspFact = Teuchos::rcp(new NullspaceFactory("Nullspace"));
     nspFact->SetFactory("Nullspace", PtentFact);
+
+
+    // Stash coordinates
+    xcoord_ = xcoord;
+    ycoord_ = ycoord;
+    zcoord_ = zcoord;
+
+
 
     //
     // Hierarchy + FactoryManager
@@ -480,6 +505,41 @@ namespace MueLu {
         fineLevel->Set("Nullspace", nullspace);
       }
     }
+
+    // Do the same for coordinates
+    size_t num_coords = 0;
+    double * coordPTR[3];
+    if(xcoord_) {
+      coordPTR[0] = xcoord_; 
+      num_coords++;
+      if(ycoord_) {
+	coordPTR[1] = ycoord_; 
+	num_coords++;
+	if(zcoord_) {
+	  coordPTR[2] = zcoord_;
+	  num_coords++;
+	}
+      }
+    }
+    if(num_coords){
+      Teuchos::RCP<Level> fineLevel = H.GetLevel(0);
+      Teuchos::RCP<Operator> Op = fineLevel->Get<RCP<Operator> >("A");
+      Teuchos::RCP<Matrix>   A  = rcp_dynamic_cast<Matrix>(Op);
+      if (!A.is_null()) {
+        const Teuchos::RCP<const Map> rowMap = fineLevel->Get< RCP<Matrix> >("A")->getRowMap();
+        Teuchos::RCP<MultiVector> coordinates = MultiVectorFactory::Build(rowMap, num_coords, true);
+
+        for ( size_t i=0; i < num_coords; i++) {
+          Teuchos::ArrayRCP<Scalar> coordsi  = coordinates->getDataNonConst(i);
+          const size_t              myLength = coordinates->getLocalLength();
+          for (size_t j = 0; j < myLength; j++) {
+            coordsi[j] = coordPTR[0][j];
+          }
+        }
+        fineLevel->Set("Coordinates",coordinates);
+      }
+    }
+
     HierarchyManager::SetupHierarchy(H);
   }
 

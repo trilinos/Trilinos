@@ -49,6 +49,8 @@
 #include "Intrepid_RealSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
 #include "Intrepid_ArrayTools.hpp"
+#include "Intrepid_CubatureControlVolume.hpp"
+#include "Intrepid_CubatureControlVolumeSide.hpp"
 
 #include "Panzer_CommonArrayFactories.hpp"
 #include "Panzer_Traits.hpp"
@@ -81,7 +83,17 @@ namespace panzer {
       dyn_side_cub_points = af.template buildArray<double,IP,Dim>("side_cub_points",num_ip, ir->side_topology->getDimension());
       side_cub_points = af.template buildStaticArray<Scalar,IP,Dim>("side_cub_points",num_ip,ir->side_topology->getDimension());
     }
+
+    if (ir->cv_type != "none") {
+       dyn_phys_cub_points = af.template buildArray<double,Cell,IP,Dim>("phys_cub_points",num_cells, num_ip, num_space_dim);
+       dyn_phys_cub_weights = af.template buildArray<double,Cell,IP>("phys_cub_weights",num_cells, num_ip);
+       if (ir->cv_type == "side") {
+           dyn_phys_cub_norms = af.template buildArray<double,Cell,IP,Dim>("phys_cub_norms",num_cells, num_ip, num_space_dim);
+       }
+    }
     
+    dyn_node_coordinates = af.template buildArray<double,Cell,IP,Dim>("node_coordinates",num_cells, num_ip, num_space_dim);
+
     cub_weights = af.template buildStaticArray<Scalar,IP>("cub_weights",num_ip);
     
     node_coordinates = af.template buildStaticArray<Scalar,Cell,BASIS,Dim>("node_coordinates",num_cells, num_nodes, num_space_dim);
@@ -101,6 +113,11 @@ namespace panzer {
     norm_contravarient = af.template buildStaticArray<Scalar,Cell,IP>("norm_contravarient",num_cells, num_ip);
 
     ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>("ip_coordiantes",num_cells, num_ip,num_space_dim);
+
+    ref_ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>("ref_ip_coordinates",num_cells, num_ip,num_space_dim);
+
+    weighted_normals = af.template buildStaticArray<Scalar,Cell,IP,Dim>("weighted normal",num_cells, num_ip,num_space_dim);
+
   }
   
   template <typename Scalar>
@@ -124,12 +141,19 @@ namespace panzer {
     Intrepid::DefaultCubatureFactory<double,DblArrayDynamic>
       cubature_factory;
     
-    if (ir->isSide())
-      intrepid_cubature = cubature_factory.create(*(ir->side_topology), 
-						  ir->cubature_degree);
+    if (ir->cv_type == "side")
+       intrepid_cubature = Teuchos::rcp(new Intrepid::CubatureControlVolumeSide<double,DblArrayDynamic,DblArrayDynamic>(ir->topology));
+
+    else if (ir->cv_type == "volume")
+       intrepid_cubature = Teuchos::rcp(new Intrepid::CubatureControlVolume<double,DblArrayDynamic,DblArrayDynamic>(ir->topology));
+
+    else if (ir->cv_type == "none" && ir->isSide())
+       intrepid_cubature = cubature_factory.create(*(ir->side_topology),
+                                                  ir->cubature_degree);
     else
-      intrepid_cubature = cubature_factory.create(*(ir->topology), 
-						  ir->cubature_degree);
+       intrepid_cubature = cubature_factory.create(*(ir->topology),
+                                                   ir->cubature_degree);
+    
 
     int num_ip = intrepid_cubature->getNumPoints();
 
@@ -142,6 +166,16 @@ namespace panzer {
       dyn_side_cub_points = af.template buildArray<double,IP,Dim>("side_cub_points",num_ip, ir->side_topology->getDimension());
       side_cub_points = af.template buildStaticArray<Scalar,IP,Dim>("side_cub_points",num_ip,ir->side_topology->getDimension());
     }
+
+    if (ir->cv_type != "none") {
+       dyn_phys_cub_points = af.template buildArray<double,Cell,IP,Dim>("phys_cub_points",num_cells, num_ip, num_space_dim);
+       dyn_phys_cub_weights = af.template buildArray<double,Cell,IP>("phys_cub_weights",num_cells, num_ip);
+       if (ir->cv_type == "side") {
+           dyn_phys_cub_norms = af.template buildArray<double,Cell,IP,Dim>("phys_cub_norms",num_cells, num_ip, num_space_dim);
+       }
+    }
+
+    dyn_node_coordinates = af.template buildArray<double,Cell,IP,Dim>("node_coordinates",num_cells, num_ip, num_space_dim);
     
     cub_weights = af.template buildStaticArray<Scalar,IP>("cub_weights",num_ip);
     
@@ -162,15 +196,32 @@ namespace panzer {
     norm_contravarient = af.template buildStaticArray<Scalar,Cell,IP>("norm_contravarient",num_cells, num_ip);
 
     ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>("ip_coordiantes",num_cells, num_ip,num_space_dim);
+
+    ref_ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>("ref_ip_coordinates",num_cells, num_ip,num_space_dim);
+
+    weighted_normals = af.template buildStaticArray<Scalar,Cell,IP,Dim>("weighted_normal",num_cells,num_ip,num_space_dim);
+
   }
 
 // ***********************************************************
 // * Evaluation of values - NOT specialized
 // ***********************************************************
-
   template <typename Scalar>
   void IntegrationValues2<Scalar>::
   evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates)
+  {
+    if (int_rule->cv_type != "none") {
+       evaluateValuesCV(in_node_coordinates);
+    }
+    else {
+       getCubature(in_node_coordinates);
+       evaluateRemainingValues(in_node_coordinates);
+    }
+  }
+
+  template <typename Scalar>
+  void IntegrationValues2<Scalar>::
+  getCubature(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates)
   {
     int num_space_dim = int_rule->topology->getDimension();
     if (int_rule->isSide() && num_space_dim==1) {
@@ -193,6 +244,17 @@ namespace panzer {
 				       *(int_rule->topology));
     }
 
+    // IP coordinates
+    cell_tools.mapToPhysicalFrame(ip_coordinates, dyn_cub_points, in_node_coordinates, *(int_rule->topology));
+  }
+
+
+  template <typename Scalar>
+  void IntegrationValues2<Scalar>::
+  evaluateRemainingValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates)
+  {
+    Intrepid::CellTools<Scalar> cell_tools;
+
     // copy the dynamic data structures into the static data structures
     {
       size_type num_ip = dyn_cub_points.dimension(0);
@@ -205,7 +267,13 @@ namespace panzer {
       }
     }
 
-
+    if (int_rule->isSide()) {
+      const size_type num_ip = dyn_cub_points.dimension(0), num_side_dims = dyn_side_cub_points.dimension(1);
+      for (size_type ip = 0; ip < num_ip; ++ip)
+        for (size_type dim = 0; dim < num_side_dims; ++dim)
+          side_cub_points(ip,dim) = dyn_side_cub_points(ip,dim);
+    }
+    
     {
       size_type num_cells = in_node_coordinates.dimension(0);
       size_type num_nodes = in_node_coordinates.dimension(1);
@@ -258,9 +326,7 @@ namespace panzer {
 	      covarient(cell,ip,i,j) += jac(cell,ip,i,alpha) * jac(cell,ip,j,alpha);
 	    }
 	  }
-	}
-
-	
+	}	
 
       }
     }
@@ -279,13 +345,186 @@ namespace panzer {
 	norm_contravarient(cell,ip) = std::sqrt(norm_contravarient(cell,ip));
       }
     }
+  }
 
-    // IP coordinates
+  // Find the permutation that maps the set of points coords to other_coords. To
+  // avoid possible finite precision issues, == is not used, but rather
+  // min(norm(.)).
+  template <typename Scalar>
+  static void
+  permuteToOther(const PHX::MDField<Scalar,Cell,IP,Dim>& coords,
+                 const PHX::MDField<Scalar,Cell,IP,Dim>& other_coords,
+                 std::vector<typename ArrayTraits<Scalar,PHX::MDField<Scalar> >::size_type>& permutation)
+  {
+    typedef typename ArrayTraits<Scalar,PHX::MDField<Scalar> >::size_type size_type;
+    // We can safely assume: (1) The permutation is the same for every cell in
+    // the workset. (2) The first workset has valid data. Hence we operate only
+    // on cell 0.
+    const size_type cell = 0;
+    const size_type num_ip = coords.dimension(1), num_dim = coords.dimension(2);
+    permutation.resize(num_ip);
+    std::vector<char> taken(num_ip, 0);
+    for (size_type ip = 0; ip < num_ip; ++ip) {
+      // Find an other point to associate with ip.
+      size_type i_min = 0;
+      Scalar d_min = -1;
+      for (size_type other_ip = 0; other_ip < num_ip; ++other_ip) {
+        // For speed, skip other points that are already associated.
+        if (taken[other_ip]) continue;
+        // Compute the distance between the two points.
+        Scalar d(0);
+        for (size_type dim = 0; dim < num_dim; ++dim) {
+          const Scalar diff = coords(cell, ip, dim) - other_coords(cell, other_ip, dim);
+          d += diff*diff;
+        }
+        if (d_min < 0 || d < d_min) {
+          d_min = d;
+          i_min = other_ip;
+        }
+      }
+      // Record the match.
+      permutation[ip] = i_min;
+      // This point is now taken.
+      taken[i_min] = 1;
+    }
+  }
+
+  template <typename Scalar>
+  void IntegrationValues2<Scalar>::
+  evaluateValues(const PHX::MDField<Scalar,Cell,NODE,Dim>& in_node_coordinates,
+                 const PHX::MDField<Scalar,Cell,IP,Dim>& other_ip_coordinates)
+  {
+    getCubature(in_node_coordinates);
+
     {
-      cell_tools.mapToPhysicalFrame(ip_coordinates, cub_points, node_coordinates, *(int_rule->topology));
+      // Determine the permutation.
+      std::vector<size_type> permutation(other_ip_coordinates.dimension(1));
+      permuteToOther(ip_coordinates, other_ip_coordinates, permutation);
+      // Apply the permutation to the cubature arrays.
+      MDFieldArrayFactory af(prefix, alloc_arrays);
+      const size_type num_ip = dyn_cub_points.dimension(0);
+      {
+        const size_type num_dim = dyn_side_cub_points.dimension(1);
+        DblArrayDynamic old_dyn_side_cub_points = af.template buildArray<double,IP,Dim>(
+          "old_dyn_side_cub_points", num_ip, num_dim);
+        old_dyn_side_cub_points.deep_copy(dyn_side_cub_points);
+        for (size_type ip = 0; ip < num_ip; ++ip)
+          if (ip != permutation[ip])
+            for (size_type dim = 0; dim < num_dim; ++dim)
+              dyn_side_cub_points(ip, dim) = old_dyn_side_cub_points(permutation[ip], dim);
+      }
+      {
+        const size_type num_dim = dyn_cub_points.dimension(1);
+        DblArrayDynamic old_dyn_cub_points = af.template buildArray<double,IP,Dim>(
+          "old_dyn_cub_points", num_ip, num_dim);
+        old_dyn_cub_points.deep_copy(dyn_cub_points);
+        for (size_type ip = 0; ip < num_ip; ++ip)
+          if (ip != permutation[ip])
+            for (size_type dim = 0; dim < num_dim; ++dim)
+              dyn_cub_points(ip, dim) = old_dyn_cub_points(permutation[ip], dim);
+      }
+      {
+        DblArrayDynamic old_dyn_cub_weights = af.template buildArray<double,IP>(
+          "old_dyn_cub_weights", num_ip);
+        old_dyn_cub_weights.deep_copy(dyn_cub_weights);
+        for (size_type ip = 0; ip < dyn_cub_weights.dimension(0); ++ip)
+          if (ip != permutation[ip])
+            dyn_cub_weights(ip) = old_dyn_cub_weights(permutation[ip]);
+      }
+      {
+        const size_type num_cells = ip_coordinates.dimension(0), num_ip = ip_coordinates.dimension(1),
+          num_dim = ip_coordinates.dimension(2);
+        Array_CellIPDim old_ip_coordinates = af.template buildStaticArray<Scalar,Cell,IP,Dim>(
+          "old_ip_coordinates", num_cells, num_ip, num_dim);
+        Kokkos::deep_copy(old_ip_coordinates.get_kokkos_view(), ip_coordinates.get_kokkos_view());
+        for (size_type cell = 0; cell < num_cells; ++cell)
+          for (size_type ip = 0; ip < num_ip; ++ip)
+            if (ip != permutation[ip])
+              for (size_type dim = 0; dim < num_dim; ++dim)
+                ip_coordinates(cell, ip, dim) = old_ip_coordinates(cell, permutation[ip], dim);
+      }
+      // All subsequent calculations inherit the permutation.
     }
 
+    evaluateRemainingValues(in_node_coordinates);
   }
+
+  template <typename Scalar>
+  void IntegrationValues2<Scalar>::
+  evaluateValuesCV(const PHX::MDField<Scalar,Cell,NODE,Dim> & in_node_coordinates)
+  {
+  
+      Intrepid::CellTools<Scalar> cell_tools;
+
+     {
+      size_type num_cells = in_node_coordinates.dimension(0);
+      size_type num_nodes = in_node_coordinates.dimension(1);
+      size_type num_dims = in_node_coordinates.dimension(2);
+
+      for (size_type cell = 0; cell < num_cells;  ++cell) {
+        for (size_type node = 0; node < num_nodes; ++node) {
+          for (size_type dim = 0; dim < num_dims; ++dim) {
+            node_coordinates(cell,node,dim) =
+                in_node_coordinates(cell,node,dim);
+            dyn_node_coordinates(cell,node,dim) =
+                Sacado::ScalarValue<Scalar>::eval(in_node_coordinates(cell,node,dim));
+          }
+        }
+      }
+     }
+
+    if (int_rule->cv_type == "volume")
+      intrepid_cubature->getCubature(dyn_phys_cub_points,dyn_phys_cub_weights,dyn_node_coordinates);
+
+    else if (int_rule->cv_type == "side")
+      intrepid_cubature->getCubature(dyn_phys_cub_points,dyn_phys_cub_norms,dyn_node_coordinates);
+
+    if (int_rule->cv_type == "volume")
+    {
+        size_type num_cells = dyn_phys_cub_points.dimension(0);
+        size_type num_ip = dyn_phys_cub_points.dimension(1);
+        size_type num_dims = dyn_phys_cub_points.dimension(2);
+
+        for (size_type cell = 0; cell < num_cells;  ++cell) {
+          for (size_type ip = 0; ip < num_ip;  ++ip) {
+             weighted_measure(cell,ip) = dyn_phys_cub_weights(cell,ip);
+             for (size_type dim = 0; dim < num_dims; ++dim)
+               ip_coordinates(cell,ip,dim) = dyn_phys_cub_points(cell,ip,dim);
+           }
+        }
+        cell_tools.mapToReferenceFrame(ref_ip_coordinates, ip_coordinates, node_coordinates,
+                                    *(int_rule->topology),-1);
+
+        cell_tools.setJacobian(jac, ref_ip_coordinates, node_coordinates,
+                           *(int_rule->topology));
+
+    }
+    else if (int_rule->cv_type == "side")
+    {
+        size_type num_cells = dyn_phys_cub_points.dimension(0);
+        size_type num_ip = dyn_phys_cub_points.dimension(1);
+        size_type num_dims = dyn_phys_cub_points.dimension(2);
+
+        for (size_type cell = 0; cell < num_cells;  ++cell) {
+          for (size_type ip = 0; ip < num_ip;  ++ip) {
+             for (size_type dim = 0; dim < num_dims; ++dim) {
+               ip_coordinates(cell,ip,dim) = dyn_phys_cub_points(cell,ip,dim);
+               weighted_normals(cell,ip,dim) = dyn_phys_cub_norms(cell,ip,dim);
+             }
+           }
+        }
+
+        cell_tools.mapToReferenceFrame(ref_ip_coordinates, ip_coordinates, node_coordinates,
+                                       *(int_rule->topology),-1);
+        cell_tools.setJacobian(jac, ref_ip_coordinates, node_coordinates,
+                               *(int_rule->topology));
+     }
+
+     cell_tools.setJacobianInv(jac_inv, jac);
+ 
+     cell_tools.setJacobianDet(jac_det, jac);
+
+}
 
 #define INTEGRATION_VALUES2_INSTANTIATION(SCALAR) \
 template class IntegrationValues2<SCALAR>;

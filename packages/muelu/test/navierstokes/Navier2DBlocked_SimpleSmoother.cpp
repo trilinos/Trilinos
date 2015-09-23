@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
     Teuchos::Time myTime("global");
     Teuchos::TimeMonitor MM(myTime);
 
-#ifndef HAVE_TEUCHOS_LONG_LONG_INT
+#ifndef HAVE_XPETRA_INT_LONG_LONG
     *out << "Warning: scaling test was not compiled with long long int support" << std::endl;
 #endif
 
@@ -209,8 +209,8 @@ int main(int argc, char *argv[]) {
 
     *out << "Reading matrix market file" << std::endl;
 
-    EpetraExt::MatrixMarketFileToCrsMatrix("A5932_re1000.txt",*fullmap,*fullmap,*fullmap,ptrA);
-    EpetraExt::MatrixMarketFileToVector("b5932_re1000.txt",*fullmap,ptrf);
+    EpetraExt::MatrixMarketFileToCrsMatrix("A_re1000_5932.txt",*fullmap,*fullmap,*fullmap,ptrA);
+    EpetraExt::MatrixMarketFileToVector("b_re1000_5932.txt",*fullmap,ptrf);
 
     RCP<Epetra_CrsMatrix> epA = Teuchos::rcp(ptrA);
     RCP<Epetra_Vector> epv = Teuchos::rcp(ptrf);

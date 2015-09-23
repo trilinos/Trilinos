@@ -506,6 +506,14 @@
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>strength-of-connection: params</name>
+      <type>\parameterlist</type>
+      <visible>false</visible>
+      <description>Sublist of options for use by coalesce/drop.</description>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
 
   </aggregation>
 
@@ -545,6 +553,15 @@
       <MHD>true</MHD>
       <description>Use implicit transpose for the restriction operator.</description>
       <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>use kokkos refactor</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Switch on the new Kokkos based version.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
     </parameter>
 
   </misc>
@@ -858,6 +875,16 @@
        <visible>false</visible>
     </parameter>
   </external>
+
+  <amgx>
+    <parameter>
+      <name>amgx:params</name>
+      <type>\parameterlist</type>
+      <description>Sublist for listing AMGX configuration parameters</description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+  </amgx>
 
   <debug>
 

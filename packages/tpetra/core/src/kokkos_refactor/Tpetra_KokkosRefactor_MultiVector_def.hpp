@@ -53,6 +53,58 @@
 #include <Kokkos_Blas1_MV.hpp>
 #include <Kokkos_Random.hpp>
 
+#ifdef HAVE_TPETRA_INST_FLOAT128
+namespace Kokkos {
+  // FIXME (mfh 04 Sep 2015) Just a stub for now!
+  template<class Generator>
+  struct rand<Generator, __float128> {
+    static KOKKOS_INLINE_FUNCTION __float128 max ()
+    {
+      return static_cast<__float128> (1.0);
+    }
+    static KOKKOS_INLINE_FUNCTION __float128
+    draw (Generator& gen)
+    {
+      // Half the smallest normalized double, is the scaling factor of
+      // the lower-order term in the double-double representation.
+      const __float128 scalingFactor =
+        static_cast<__float128> (std::numeric_limits<double>::min ()) /
+        static_cast<__float128> (2.0);
+      const __float128 higherOrderTerm = static_cast<__float128> (gen.drand ());
+      const __float128 lowerOrderTerm =
+        static_cast<__float128> (gen.drand ()) * scalingFactor;
+      return higherOrderTerm + lowerOrderTerm;
+    }
+    static KOKKOS_INLINE_FUNCTION __float128
+    draw (Generator& gen, const __float128& range)
+    {
+      // FIXME (mfh 05 Sep 2015) Not sure if this is right.
+      const __float128 scalingFactor =
+        static_cast<__float128> (std::numeric_limits<double>::min ()) /
+        static_cast<__float128> (2.0);
+      const __float128 higherOrderTerm =
+        static_cast<__float128> (gen.drand (range));
+      const __float128 lowerOrderTerm =
+        static_cast<__float128> (gen.drand (range)) * scalingFactor;
+      return higherOrderTerm + lowerOrderTerm;
+    }
+    static KOKKOS_INLINE_FUNCTION __float128
+    draw (Generator& gen, const __float128& start, const __float128& end)
+    {
+      // FIXME (mfh 05 Sep 2015) Not sure if this is right.
+      const __float128 scalingFactor =
+        static_cast<__float128> (std::numeric_limits<double>::min ()) /
+        static_cast<__float128> (2.0);
+      const __float128 higherOrderTerm =
+        static_cast<__float128> (gen.drand (start, end));
+      const __float128 lowerOrderTerm =
+        static_cast<__float128> (gen.drand (start, end)) * scalingFactor;
+      return higherOrderTerm + lowerOrderTerm;
+    }
+  };
+} // namespace Kokkos
+#endif // HAVE_TPETRA_INST_FLOAT128
+
 namespace { // (anonymous)
 
   /// \brief Allocate and return a 2-D Kokkos::DualView for Tpetra::MultiVector.

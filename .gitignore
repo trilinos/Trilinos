@@ -106,6 +106,10 @@ packages/tpetra/doc/MatrixMatrixReport/tpetraDevData/*pdf
 packages/tpetra/doc/MatrixMatrixReport/allMatsData/*pdf
 packages/tpetra/doc/MatrixMatrixReport/atransData/*pdf
 
+packages/muelu/doc/UsersGuide/mueluguide.lof
+packages/muelu/doc/UsersGuide/mueluguide.lot
+packages/muelu/doc/UsersGuide/mueluguide.pdf
+
 rsync.*
 .project
 

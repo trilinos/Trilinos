@@ -172,6 +172,7 @@ exAmesos_Factory.py.
 // Local includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.hpp"
+#include "PyTrilinos_Epetra_Util.hpp"
 
 %}
 

@@ -58,11 +58,22 @@
 // PyTrilinos configuration
 %include "PyTrilinos_config.h"
 
+/////////////////////////////////////////////////////////
+// Teuchos::RCP<> support for all classes in this file //
+/////////////////////////////////////////////////////////
+%teuchos_rcp_dap(PyTrilinos::convertPythonToEpetraIntVector  , Epetra_IntVector  )
+%teuchos_rcp_dap(PyTrilinos::convertPythonToEpetraMultiVector, Epetra_MultiVector)
+%teuchos_rcp_dap(PyTrilinos::convertPythonToEpetraVector     , Epetra_Vector     )
+%teuchos_rcp(Epetra_FEVector   )
+%teuchos_rcp_epetra_argout(Epetra_IntVector  )
+%teuchos_rcp_epetra_argout(Epetra_MultiVector)
+%teuchos_rcp_epetra_argout(Epetra_Vector     )
+%teuchos_rcp_epetra_argout(Epetra_FEVector   )
+
 //////////////////////////////
 // Epetra_IntVector support //
 //////////////////////////////
 %rename(IntVector) Epetra_IntVector;
-%teuchos_rcp(Epetra_IntVector)
 %inline
 {
   PyObject *
@@ -118,6 +129,11 @@
     Py_DECREF(array);
     return result;
   }
+
+  PyObject * __distarray__()
+  {
+    return PyTrilinos::convertToDistArray(*self);
+  }
 }
 %ignore Epetra_IntVector::Values;
 %ignore Epetra_IntVector::Epetra_IntVector(Epetra_DataAccess,
@@ -125,7 +141,7 @@
                                            int*);
 %include "Epetra_IntVector.h"
 %pythoncode
-{
+%{
   def IntVector_getattr(self, name):
       if name == "array":
           a = _extractNumPyArrayFromEpetraIntVector(self)
@@ -151,18 +167,18 @@
   IntVector.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
   IntVector.__len__     = lambda self: self.array.__len__()
   IntVector.__str__     = lambda self: self.array.__str__()
+  IntVector.copy        = lambda self: IntVector(self)
   IntVector.ExtractCopy = lambda self: self.array.copy()
   IntVector.ExtractView = lambda self: self.array
   IntVector.Values      = lambda self: self.array
   class_array_add_math(IntVector)
   class_array_add_comp(IntVector)
-}
+%}
 
 ////////////////////////////////
 // Epetra_MultiVector support //
 ////////////////////////////////
 %rename(MultiVector) Epetra_MultiVector;
-%teuchos_rcp(Epetra_MultiVector)
 %inline
 {
   PyObject *
@@ -306,7 +322,7 @@
     return new Epetra_MultiVector(cv, source, 0, source.NumVectors());
   }
 
-  PyObject * Dot(const Epetra_MultiVector & a)
+  PyObject * Dot(const Epetra_MultiVector & a) const
   {
     npy_intp dims[1] = { self->NumVectors() };
     PyObject * result = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
@@ -315,7 +331,7 @@
     return result;
   }
 
-  PyObject * Norm1()
+  PyObject * Norm1() const
   {
     npy_intp dims[1] = { self->NumVectors() };
     PyObject * result = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
@@ -324,7 +340,7 @@
     return result;
   }
 
-  PyObject * Norm2()
+  PyObject * Norm2() const
   {
     npy_intp dims[1] = { self->NumVectors() };
     PyObject * result = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
@@ -333,7 +349,7 @@
     return result;
   }
 
-  PyObject * NormInf()
+  PyObject * NormInf() const
   {
     npy_intp dims[1] = { self->NumVectors() };
     PyObject * result = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
@@ -342,7 +358,7 @@
     return result;
   }
 
-  PyObject * NormWeighted(const Epetra_MultiVector & weights)
+  PyObject * NormWeighted(const Epetra_MultiVector & weights) const
   {
     npy_intp dims[1] = { self->NumVectors() };
     PyObject * result = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
@@ -351,7 +367,7 @@
     return result;
   }
 
-  PyObject * MinValue()
+  PyObject * MinValue() const
   {
     npy_intp dims[1] = { self->NumVectors() };
     PyObject * result = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
@@ -360,7 +376,7 @@
     return result;
   }
 
-  PyObject * MaxValue()
+  PyObject * MaxValue() const
   {
     npy_intp dims[1] = { self->NumVectors() };
     PyObject * result = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
@@ -369,13 +385,24 @@
     return result;
   }
 
-  PyObject * MeanValue()
+  PyObject * MeanValue() const
   {
     npy_intp dims[1] = { self->NumVectors() };
     PyObject * result = PyArray_SimpleNew(1, dims, NPY_DOUBLE);
     double * data = (double*)PyArray_DATA((PyArrayObject*)result);
     self->MeanValue(data);
     return result;
+  }
+
+  const Epetra_Vector & __call__(int i) const
+  {
+    const Epetra_Vector & result = *(self->operator()(i));
+    return result;
+  }
+
+  PyObject * __distarray__() const
+  {
+    return PyTrilinos::convertToDistArray(*self);
   }
 }
 %ignore Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess,
@@ -428,17 +455,17 @@
       else:
           self.__dict__[name] = value
   def MultiVector_getitem(self,i):
-      if isinstance(i,tuple):
-          return self.array.__getitem__(i)
+      if isinstance(i,int):
+          return self.__call__(i)
       else:
-        return Vector(View,self,i)
+          return self.array.__getitem__(i)
   MultiVector.__getattr__ = MultiVector_getattr
   MultiVector.__setattr__ = MultiVector_setattr
-  # MultiVector.__getitem__ = MultiVector_getitem
-  MultiVector.__getitem__ = lambda self, i: self.array.__getitem__(i)
+  MultiVector.__getitem__ = MultiVector_getitem
   MultiVector.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
   MultiVector.__len__     = lambda self: self.array.__len__()
   MultiVector.__str__     = lambda self: self.array.__str__()
+  MultiVector.copy        = lambda self: MultiVector(self)
   MultiVector.ExtractCopy = lambda self: self.array.copy()
   MultiVector.ExtractView = lambda self: self.array
   class_array_add_math(MultiVector)
@@ -449,7 +476,6 @@
 // Epetra_Vector support //
 ///////////////////////////
 %rename(Vector) Epetra_Vector;
-%teuchos_rcp(Epetra_Vector)
 %inline
 {
   PyObject *
@@ -817,6 +843,11 @@
     Py_DECREF(iArray);
     return result;
   }
+
+  PyObject * __distarray__() const
+  {
+    return PyTrilinos::convertToDistArray(*self);
+  }
 }
 %ignore Epetra_Vector::Epetra_Vector(Epetra_DataAccess,
                                      Epetra_BlockMap const &,
@@ -860,6 +891,7 @@
   Vector.__setitem__ = lambda self, i, v: self.array.__setitem__(i,v)
   Vector.__len__     = lambda self: self.array.__len__()
   Vector.__str__     = lambda self: self.array.__str__()
+  Vector.copy        = lambda self: Vector(self)
   Vector.ExtractCopy = lambda self: self.array.copy()
   Vector.ExtractView = lambda self: self.array
   class_array_add_math(Vector)
@@ -870,7 +902,6 @@
 // Epetra_FEVector support //
 /////////////////////////////
 %rename(FEVector) Epetra_FEVector;
-%teuchos_rcp(Epetra_FEVector)
 %inline
 {
   PyObject *
@@ -985,6 +1016,11 @@
     Py_XDECREF(val_array);
     return -1;
   }
+
+  PyObject * __distarray__() const
+  {
+    return PyTrilinos::convertToDistArray(*self);
+  }
 }
 %ignore Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess,
                                          const Epetra_BlockMap &,
@@ -1002,7 +1038,7 @@
 %ignore Epetra_FEVector::SumIntoGlobalValues(int,int*,double*);
 %include "Epetra_FEVector.h"
 %pythoncode
-{
+%{
   def FEVector_getattr(self, name):
       if name == "array":
           a = _extractNumPyArrayFromEpetraFEVector(self)
@@ -1028,8 +1064,9 @@
   FEVector.__setitem__ = lambda self, i, v: self.array.__setitem__(i, v)
   FEVector.__len__     = lambda self: self.array.__len__()
   FEVector.__str__     = lambda self: self.array.__str__()
+  FEVector.copy        = lambda self: Vector(self)
   FEVector.ExtractCopy = lambda self: self.array.copy()
   FEVector.ExtractView = lambda self: self.array
   class_array_add_math(FEVector)
   class_array_add_comp(FEVector)
-}
+%}

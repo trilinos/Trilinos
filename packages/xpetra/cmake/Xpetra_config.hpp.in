@@ -1,10 +1,17 @@
+#ifndef XPETRA_CONFIG_HPP
+#define XPETRA_CONFIG_HPP
+
 #cmakedefine HAVE_XPETRA_DEBUG
 
 #cmakedefine HAVE_XPETRA_TPETRA
 
 #cmakedefine HAVE_XPETRA_EPETRA
 
+#cmakedefine HAVE_XPETRA_KOKKOS_REFACTOR
+
 #cmakedefine HAVE_XPETRA_KOKKOSCLASSIC
+
+#cmakedefine HAVE_XPETRA_THYRA
 
 #cmakedefine HAVE_XPETRA_EPETRAEXT
 
@@ -16,3 +23,7 @@
 
 #cmakedefine XPETRA_EPETRA_NO_64BIT_GLOBAL_INDICES
 
+/* Whether Xpetra enables LocalOrdinal = int and GlobalOrdinal = long long */
+#cmakedefine HAVE_XPETRA_INT_LONG_LONG
+
+#endif // XPETRA_CONFIG_HPP

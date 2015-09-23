@@ -187,8 +187,6 @@ class EpetraVectorTestCase(unittest.TestCase):
         "Test Epetra.Vector (1D-list) constructor"
         list = [0, 1.0, 2, 3.14, 2.71, 1.5, 1, 0.5, 0.0]
         ev = Epetra.Vector(list)
-        print
-        print ev
         self.assertEquals(ev.NumVectors(),1)
         self.assertEquals(ev.MyLength(), len(list))
         self.assertEquals(ev.GlobalLength(), len(list))

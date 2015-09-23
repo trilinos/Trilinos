@@ -1,0 +1,11 @@
+mfh 11 Sep 2015: The *_float128.cpp files in this directory do
+explicit template instantiation (ETI) for Thyra classes.  Thyra uses
+the TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES macro (defined in
+teuchos/core/src/Teuchos_ExplicitInstantiationHelpers.hpp) for ETI.
+This macro only instantiates over (at most) Scalar = float, double,
+std::complex<float>, and std::complex<double>.  I could add __float128
+to that list, but not every Thyra class builds with Scalar =
+__float128 (for example, because Teuchos::LAPACK does not have a valid
+implementation for that type).  Thus, in this directory, I have added
+ETI for Scalar = __float128, for only the Thyra types that Ifpack2
+needs in order to build its adapter.

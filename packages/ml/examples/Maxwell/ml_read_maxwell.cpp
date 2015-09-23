@@ -14,10 +14,10 @@
 //#define CurlCurlAndMassAreSeparate
 
 /*
-   Sample driver for Maxwell equation AMG solver in the ML package. This
-   example reads in data from a file.  All data must be in the MatrixMarket
-   format.  (The EpetraExt documentation describes the format for maps.)  This
-   example can be compiled and used in two different ways:
+   Sample driver for Maxwell equation AMG solver (Reitzinger/Schoeberl version)
+   in the ML package. This example reads in data from a file.  All data must be in
+   the MatrixMarket format.  (The EpetraExt documentation describes the format for
+   maps.)  This example can be compiled and used in two different ways:
 
    -----------------------------------------------------------------------
    USAGE CASE 1 (default): curl,curl and mass are provided as one matrix
@@ -101,10 +101,9 @@ int MatrixMarketFileToCrsMatrix(const char *filename,
                                 const Epetra_Map & rowMap,
                                 const Epetra_Map& rangeMap,
                                 const Epetra_Map& domainMap,
-                                Epetra_CrsMatrix * & A)
+                                Epetra_CrsMatrix *& A)
 {
-  A = new Epetra_CrsMatrix(Copy, rowMap, 0);
-  return(EpetraExt::MatrixMarketFileToCrsMatrixHandle(filename, A->Comm(), A,
+  return(EpetraExt::MatrixMarketFileToCrsMatrixHandle(filename, rowMap.Comm(), A,
                                                       &rowMap,NULL,
                                                       &rangeMap, &domainMap));
 }
@@ -116,7 +115,28 @@ int main(int argc, char *argv[])
 
 #ifdef ML_MPI
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  // This next bit of code drops a middle rank out of the calculation. This tests
+  // that the Hiptmair smoother does not hang in its apply.  Hiptmair creates
+  // two separate ML objects, one for edge and one for nodes.  By default, the ML
+  // objects use MPI_COMM_WORLD, whereas the matrix that Hiptmair is being applied to
+  // may have an MPI subcommunicator.
+  int commWorldSize;
+  MPI_Comm_size(MPI_COMM_WORLD,&commWorldSize);
+  std::vector<int> splitKey;
+  int rankToDrop = 1;
+  for (int i=0; i<commWorldSize; ++i)
+    splitKey.push_back(0);
+  splitKey[rankToDrop] = MPI_UNDEFINED; //drop the last process from subcommunicator
+  int myrank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+  MPI_Comm subcomm;
+  MPI_Comm_split(MPI_COMM_WORLD, splitKey[myrank], myrank, &subcomm);
+  if (myrank == rankToDrop) goto droppedRankLabel;
+#endif
+
+{ //scoping to avoid compiler error about goto jumping over initialization
+#ifdef ML_MPI
+  Epetra_MpiComm Comm(subcomm);
 #else
   Epetra_SerialComm Comm;
 #endif
@@ -264,8 +284,9 @@ int main(int argc, char *argv[])
   double *params  = new double[AZ_PARAMS_SIZE];
   ML_Epetra::SetDefaults("maxwell", MLList, options, params);
 
+  MLList.set("ML output", 10);
   MLList.set("aggregation: type", "Uncoupled");
-  MLList.set("coarse: max size", 30);
+  MLList.set("coarse: max size", 15);
   MLList.set("aggregation: threshold", 0.0);
   //MLList.set("negative conductivity",true);
   //MLList.set("smoother: type", "Jacobi");
@@ -338,7 +359,7 @@ int main(int argc, char *argv[])
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 1);
 
-  solver.Iterate(75, 1e-12);
+  solver.Iterate(15, 1e-3);
 
   // =============== //
   // C L E A N   U P //
@@ -350,8 +371,14 @@ int main(int argc, char *argv[])
   delete Mass;
   delete T;
   delete Kn;
+  delete nodeMap;
+  delete edgeMap;
+  delete [] params;
+  delete [] options;
 
   ML_Comm_Destroy(&mlcomm);
+} //avoids compiler error about jumping over initialization
+  droppedRankLabel:
 #ifdef ML_MPI
   MPI_Finalize();
 #endif

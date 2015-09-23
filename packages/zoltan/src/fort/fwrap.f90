@@ -139,6 +139,10 @@ public :: &
    ZOLTAN_MEMERR
 
 public :: &
+   ZOLTAN_COMPRESSED_EDGE, &
+   ZOLTAN_COMPRESSED_VERTEX
+
+public :: &
    Zoltan_Initialize, &
    Zoltan_Create, &
    Zoltan_Copy, &
@@ -296,6 +300,10 @@ integer(Zoltan_INT), parameter :: &
    ZOLTAN_WARN   =  1_Zoltan_INT, &
    ZOLTAN_FATAL  = -1_Zoltan_INT, &
    ZOLTAN_MEMERR = -2_Zoltan_INT
+
+integer(Zoltan_INT), parameter :: &
+   ZOLTAN_COMPRESSED_EDGE   = 1_Zoltan_INT, &
+   ZOLTAN_COMPRESSED_VERTEX = 2_Zoltan_INT
 
 !--------------------------------------------------------------------------
 ! defined constants for internal use

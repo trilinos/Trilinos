@@ -112,15 +112,14 @@ preconditioners in Trilinos' Belos package of iterative solvers.
 You may either create an Ifpack2 operator directly, by using the class
 and options that you want, or by using Ifpack2::Factory.
 Ifpack2::Factory is templated on a specialization of
-Tpetra::CrsMatrix.  The Factory will use that template parameter to
+Tpetra::RowMatrix.  The Factory will use that template parameter to
 get all the information that it needs to make a preconditioner of the
-right type.  All the specific Ifpack2 operators are also templated on
-a specialization of Tpetra::CrsMatrix.  Some of them only accept a
-Tpetra::CrsMatrix instance as input, while others also may accept a
-Tpetra::RowMatrix (the base class of Tpetra::CrsMatrix).  Some Ifpack2
-methods prefer a Tpetra::CrsMatrix, because they can use faster
-computational kernels in that case.  Those methods may try to guess
-whether your Tpetra::RowMatrix is really a Tpetra::CrsMatrix.
+right type.  All the specific Ifpack2 preconditioners are also
+templated on a specialization of Tpetra::RowMatrix.  Some of them only
+accept a Tpetra::CrsMatrix instance as input, while others also may
+accept a Tpetra::RowMatrix (the base class of Tpetra::CrsMatrix).
+They will decide at run time whether the input Tpetra::RowMatrix is an
+instance of the right subclass.
 
 \section Ifpack2_examples Examples
 
@@ -135,4 +134,50 @@ iterative solver type to use.
 If you build Belos with examples enabled, the example will build as
 Ifpack2_tif_belos.exe and will be installed in the
 packages/ifpack2/test/belos directory.
+
+\section Ifpack2_AddPrec How do I add a preconditioner?
+
+\subsection Ifpack2_AddPrec_ClassName How do I name my new class?
+
+Use CamelCase, with the first character upper case.  Do <i>not</i>
+prefix with <tt>Ifpack2_</tt> or any other indication of the
+namespace.  That prefix exists in Epetra and IFPACK only because the
+compilers that those packages had to support did not implement
+namespaces.  Ifpack2 requires C++11, so there is no question that
+namespaces work.
+
+Suppose that you wanted to add a block symmetric \f$LDL^T\f$
+incomplete factorization to Ifpack2.  You might call the class
+\c BlockILDL or \c BlockIncompleteSymmetricIndefiniteFactorization.
+
+\subsection Ifpack2_AddPrec_FuncName Naming functions, methods, etc.
+
+Use camelCase, with the first character lower case.
+
+\subsection Ifpack2_AddPrec_TmplParams Template parameters
+
+There is some debate over the correct template parameters for Ifpack2
+preconditioners.  I would prefer that they use the same four template
+parameters as Ifpack2::Preconditioner, but unfortunately they don't.
+Templating on \c MatrixType confuses users and complicates Ifpack2's
+implementation of explicit template instantiation (ETI), but it's the
+convention.  Regardless, \c MatrixType <i>MUST</i> be a specialization
+of Tpetra::RowMatrix.  If the preconditioner only works for
+Tpetra::CrsMatrix, accept the matrix as a Tpetra::RowMatrix and check
+at run time with a \c dynamic_cast whether it is a Tpetra::CrsMatrix.
+
+\subsection Ifpack2_AddPrec_InitFini Initialization and finalization
+
+Life is easier when Ifpack2 preconditioners implement the
+Ifpack2::Details::CanChangeMatrix interface (see
+<tt>ifpack2/src/Ifpack2_Details_CanChangeMatrix.hpp</tt>).  Changing
+the matrix undoes all initialization.  My convention is that changing
+the matrix to null makes the preconditioner release all
+matrix-specific allocated state.
+
+This implies that the preconditioner's constructor shouldn't actually
+do anything, other than set the matrix.  Any initialization that
+depends on the graph structure or communication patterns (Maps,
+Import/Export, etc.) should happen in \c initialize().
+
 */

@@ -89,6 +89,7 @@ example subdirectory of the PyTrilinos package:
 
 // Trilinos includes
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_DefaultComm.hpp"
 
 // Epetra includes
 #ifdef HAVE_EPETRA
@@ -117,6 +118,7 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_Time.h"
 #include "Epetra_MapColoring.h"
+#include "PyTrilinos_Epetra_Util.hpp"
 
 // NumPy include
 #define NO_IMPORT_ARRAY
