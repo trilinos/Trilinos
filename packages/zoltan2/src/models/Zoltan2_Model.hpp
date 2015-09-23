@@ -51,7 +51,6 @@
 #define _ZOLTAN2_MODEL_HPP_
 
 #include <Zoltan2_Standards.hpp>
-#include <Zoltan2_IdentifierMap.hpp>
 #include <bitset>
 
 namespace Zoltan2 {
