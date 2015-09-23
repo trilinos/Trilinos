@@ -47,9 +47,10 @@
 */
 
 #include "ROL_Algorithm.hpp"
-#include "ROL_CompositeStepSQP.hpp"
-#include "ROL_TrustRegionStep.hpp"
 #include "ROL_StatusTest.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_StatusTestSQP.hpp"
+#include "ROL_CompositeStepSQP.hpp"
 #include "ROL_Types.hpp"
 
 #include "ROL_StdVector.hpp"
@@ -1021,15 +1022,15 @@ int main(int argc, char *argv[]) {
     robj.checkHessVec(z,z,yz,true,*outStream);
     // Optimization 
     std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist_tr = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist_tr) );
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
 
     // Trust Region Newton.
-    RealT gtol  = 1e-14;  // norm of gradient tolerance
-    RealT stol  = 1e-16;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
-    ROL::StatusTest<RealT> status_tr(gtol, stol, maxit);    
-    ROL::TrustRegionStep<RealT> step_tr(*parlist_tr);
+    parlist->sublist("Status Test").set("Gradient Tolerance",1.e-14);
+    parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
+    parlist->sublist("Status Test").set("Iteration Limit",100);
+    ROL::StatusTest<RealT> status_tr(*parlist);    
+    ROL::TrustRegionStep<RealT> step_tr(*parlist);
     ROL::DefaultAlgorithm<RealT> algo_tr(step_tr,status_tr,false);
     z.zero();
     std::clock_t timer_tr = std::clock();
@@ -1038,9 +1039,9 @@ int main(int argc, char *argv[]) {
                << " seconds.\n";
 
     // SQP.
-    RealT ctol = 1.e-14;
-    ROL::StatusTestSQP<RealT> status_sqp(gtol,ctol,stol,maxit);
-    ROL::CompositeStepSQP<RealT> step_sqp(*parlist_tr);
+    parlist->sublist("Status Test").set("Constraint Tolerance",1.e-14);
+    ROL::StatusTestSQP<RealT> status_sqp(*parlist);
+    ROL::CompositeStepSQP<RealT> step_sqp(*parlist);
     ROL::DefaultAlgorithm<RealT> algo_sqp(step_sqp,status_sqp,false);
     x.zero();
     std::clock_t timer_sqp = std::clock();

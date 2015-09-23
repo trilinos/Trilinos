@@ -48,6 +48,7 @@
     \brief Provides interface for and implements limited-memory secant operators.
 */
 
+#include "Teuchos_ParameterList.hpp"
 #include "ROL_Types.hpp"
 
 namespace ROL {
@@ -158,22 +159,6 @@ public:
 
 }
 
-#include "ROL_lBFGS.hpp"
-#include "ROL_lDFP.hpp"
-#include "ROL_lSR1.hpp"
-#include "ROL_BarzilaiBorwein.hpp"
-
-namespace ROL {
-  template<class Real>
-  inline Teuchos::RCP<Secant<Real> > getSecant( ESecant esec = SECANT_LBFGS, int L = 10, int BBtype = 1 ) {
-    switch (esec) {
-      case SECANT_LBFGS:           return Teuchos::rcp( new lBFGS<Real>(L) );
-      case SECANT_LDFP:            return Teuchos::rcp( new lDFP<Real>(L) );
-      case SECANT_LSR1:            return Teuchos::rcp( new lSR1<Real>(L) );
-      case SECANT_BARZILAIBORWEIN: return Teuchos::rcp( new BarzilaiBorwein<Real>(BBtype) );
-      default:                     return Teuchos::null; 
-    }
-  }
-}
+#include "ROL_SecantFactory.hpp"
 
 #endif

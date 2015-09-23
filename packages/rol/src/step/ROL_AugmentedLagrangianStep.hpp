@@ -52,6 +52,7 @@
 #include "ROL_Types.hpp"
 #include "ROL_Algorithm.hpp"
 #include "ROL_StatusTest.hpp"
+#include "ROL_Step.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -94,27 +95,37 @@ private:
 
   int maxit_;
   int subproblemIter_;
+  int useTR_;
 
 public:
   ~AugmentedLagrangianStep() {}
 
   AugmentedLagrangianStep(Teuchos::ParameterList &parlist)
-    : Step<Real>(), augLag_(Teuchos::null), subproblemIter_(0) {
-    Step<Real>::getState()->searchSize = parlist.get("Augmented Lagrangian: Initial Penalty Parameter",10.0);
-    tau_    = parlist.get("Augmented Lagrangian: Penalty Parameter Growth Factor",100.0);
-    alpha1_ = parlist.get("Augmented Lagrangian: Optimality Tolerance Update Exponent",1.0);
-    alpha2_ = parlist.get("Augmented Lagrangian: Feasibility Tolerance Update Exponent",0.1);
-    beta1_  = parlist.get("Augmented Lagrangian: Optimality Tolerance Decrease Exponent",1.0);
-    beta2_  = parlist.get("Augmented Lagrangian: Feasibility Tolerance Decrease Exponent",0.9);
-    eta0_   = parlist.get("Augmented Lagrangian: Initial Optimality Tolerance",1.0);
-    omega0_ = parlist.get("Augmented Lagrangian: Initial Feasibility Tolerance",1.0);
-    eta1_   = parlist.get("Augmented Lagrangian: Optimality Tolerance",1.e-8);
-    omega1_ = parlist.get("Augmented Lagrangian: Feasibility Tolerance",1.e-8);
-    gamma1_ = parlist.get("Augmented Lagrangian: Minimum Penalty Parameter Reciprocal",0.1);
-    print_  = parlist.get("Augmented Lagrangian: Print Intermediate Optimization History",false);
-    // Initialize subproblem step type
+    : Step<Real>(), augLag_(Teuchos::null),
+      step_(Teuchos::null), status_(Teuchos::null), algo_(Teuchos::null),
+      x_(Teuchos::null), parlist_(Teuchos::null),
+      tau_(1.e2), alpha1_(1.), alpha2_(0.1), beta1_(1.), beta2_(0.9),
+      eta0_(1.), eta1_(1.e-8), omega0_(1.), omega1_(1.e-8), gamma1_(0.1),
+      print_(false), eta_(0.), omega_(0.), gamma_(0.),
+      maxit_(1000), subproblemIter_(0), useTR_(0) {
+    Teuchos::ParameterList& sublist = parlist.sublist("Step").sublist("Augmented Lagrangian");
+    Step<Real>::getState()->searchSize = sublist.get("Initial Penalty Parameter",1.e1);
+    tau_    = sublist.get("Penalty Parameter Growth Factor",         1.e2);
+    alpha1_ = sublist.get("Optimality Tolerance Update Exponent",    1.0);
+    alpha2_ = sublist.get("Feasibility Tolerance Update Exponent",   0.1);
+    beta1_  = sublist.get("Optimality Tolerance Decrease Exponent",  1.0);
+    beta2_  = sublist.get("Feasibility Tolerance Decrease Exponent", 0.9);
+    eta0_   = sublist.get("Initial Optimality Tolerance",            1.0);
+    omega0_ = sublist.get("Initial Feasibility Tolerance",           1.0);
+    gamma1_ = sublist.get("Minimum Penalty Parameter Reciprocal",    0.1);
+    print_  = sublist.get("Print Intermediate Optimization History", false);
+    maxit_  = sublist.get("Subproblem Iteration Limit",              1000);
+    useTR_  = sublist.get("Subproblem Step Type",                    0);
+
+    eta1_   = parlist.sublist("Status Test").get("Gradient Tolerance",   1.e-8);
+    omega1_ = sublist.sublist("Status Test").get("Constraint Tolerance", 1.e-8);
+
     parlist_ = Teuchos::rcp(&parlist,false);
-    maxit_ = parlist.get("Augmented Lagrangian: Subproblem Iteration Limit",10000);
   }
 
   /** \brief Initialize step with equality constraint.
@@ -176,8 +187,7 @@ public:
                 BoundConstraint<Real> &bnd, 
                 AlgorithmState<Real> &algo_state ) {
     Real tol = std::max(omega_,omega1_);
-    int useTR = parlist_->get("Augmented Lagrangian: Subproblem Step Type",0);
-    if ( useTR == 0 ) {
+    if ( useTR_ == 0 ) {
       step_ = Teuchos::rcp(new TrustRegionStep<Real>(*parlist_));
     }
     else {
@@ -200,8 +210,12 @@ public:
     Teuchos::RCP<StepState<Real> > state = Step<Real>::getState();
     state->gradientVec->set(*((step_->getStepState())->gradientVec));
     augLag_->getConstraintVec(*(state->constraintVec),x);
-
+    
     x.plus(s);
+    algo_state.iter++;
+    augLag_->update(x,true,algo_state.iter);
+    bnd.update(x,true,algo_state.iter);
+
     if (bnd.isActivated()) {
       x_->set(x);
       x_->axpy(-1.0,(state->gradientVec)->dual());
@@ -237,7 +251,6 @@ public:
     }
     algo_state.lagmultVec->set(l);
     augLag_->updateMultipliers(l,state->searchSize);
-    algo_state.iter++;
   }
 
   /** \brief Print iterate header.

@@ -74,6 +74,7 @@ public:
 
   void initialize( const Vector<Real> &x, const Vector<Real> &s, const Vector<Real> &g) {
     TrustRegion<Real>::initialize(x,s,g);
+    cpt_->initialize(x,s,g);
     s_  = s.clone();
     Hp_ = g.clone();
   }
@@ -105,7 +106,7 @@ public:
         iflag = 0;
       }
       else {                      // quasi-Newton step is outside of trust region
-        pObj.reducedHessVec(*Hp_,grad,x,grad,x,tol);
+        pObj.reducedHessVec(*Hp_,grad.dual(),x,grad,x,tol);
         Real alpha  = 0.0;
         Real beta   = 0.0;
         Real gnorm2 = gnorm*gnorm;

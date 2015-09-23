@@ -47,8 +47,8 @@
 */
 
 #include "ROL_Algorithm.hpp"
+#include "ROL_StatusTestSQP.hpp"
 #include "ROL_MoreauYosidaPenaltyStep.hpp"
-#include "ROL_StatusTest.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
 #include "ROL_Vector_SimOpt.hpp"
 
@@ -214,11 +214,7 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename,
       Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
     // DEFINE STATUS TEST
-    RealT gtol  = parlist->get("Gradient Tolerance",1e-10);
-    RealT ctol  = parlist->get("Constraint Tolerance",1e-10);
-    RealT stol  = parlist->get("Step Tolerance",1.e-4*gtol);
-    int   maxit = parlist->get("Maximum Number of Iterations",1000);
-    ROL::StatusTestSQP<RealT> status(gtol, ctol, stol, maxit);    
+    ROL::StatusTestSQP<RealT> status(*parlist);
     // DEFINE STEP
     ROL::MoreauYosidaPenaltyStep<RealT> step(*parlist);
     // DEFINE ALGORITHM

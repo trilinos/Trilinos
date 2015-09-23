@@ -45,9 +45,9 @@
     \brief Shows how to solve a finite minimax problem.
 */
 
+#include "ROL_Algorithm.hpp"
 #include "ROL_BundleStep.hpp"
 #include "ROL_BundleStatusTest.hpp"
-#include "ROL_Algorithm.hpp"
 #include "ROL_Types.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Minimax1.hpp"

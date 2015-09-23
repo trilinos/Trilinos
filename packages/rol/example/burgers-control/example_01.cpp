@@ -46,9 +46,9 @@
            steady Burgers' equation with bound constraints.
 */
 
-#include "ROL_PrimalDualActiveSetStep.hpp"
-#include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_StatusTestFactory.hpp"
+#include "ROL_StepFactory.hpp"
 #include "ROL_Types.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -598,29 +598,35 @@ int main(int argc, char *argv[]) {
     // Initialize Constraints
     BoundConstraint_BurgersControl<RealT> icon(nx+2);
 
+    // ROL components.
+    Teuchos::RCP<ROL::Step<RealT> > step;
+    Teuchos::RCP<ROL::StatusTest<RealT> > status;
+    Teuchos::RCP<ROL::DefaultAlgorithm<RealT> > algo;
+
     // Primal dual active set.
-    Teuchos::ParameterList parlist;
+    std::string filename = "input.xml";
+    Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
+    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
     // Krylov parameters.
-    parlist.set("Absolute Krylov Tolerance",              1.e-8);
-    parlist.set("Relative Krylov Tolerance",              1.e-4);
-    parlist.set("Maximum Number of Krylov Iterations",    50);
+    parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-8);
+    parlist->sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-4);
+    parlist->sublist("General").sublist("Krylov").set("Iteration Limit",50);
     // PDAS parameters.
-    parlist.set("PDAS Relative Step Tolerance",           1.e-10);
-    parlist.set("PDAS Relative Gradient Tolerance",       1.e-8);
-    parlist.set("PDAS Maximum Number of Iterations",      10);
-    parlist.set("PDAS Dual Scaling",                      (alpha>0.0) ? alpha : 1.e-4 );      
-    // Define step.
-    ROL::PrimalDualActiveSetStep<RealT> step_pdas(parlist);
-    // Define status test.
-    RealT gtol  = 1e-12;  // norm of gradient tolerance
-    RealT stol  = 1e-16;  // norm of step tolerance
-    int   maxit = 100;    // maximum number of iterations
-    ROL::StatusTest<RealT> status(gtol, stol, maxit);    
+    parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Step Tolerance",1.e-10);
+    parlist->sublist("Step").sublist("Primal Dual Active Set").set("Relative Gradient Tolerance",1.e-8);
+    parlist->sublist("Step").sublist("Primal Dual Active Set").set("Iteration Limit", 10);
+    parlist->sublist("Step").sublist("Primal Dual Active Set").set("Dual Scaling",(alpha>0.0)?alpha:1.e-4);
+    // Status test parameters.
+    parlist->sublist("Status Test").set("Gradient Tolerance",1.e-12);
+    parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
+    parlist->sublist("Status Test").set("Iteration Limit",100);
     // Define algorithm.
-    ROL::DefaultAlgorithm<RealT> algo_pdas(step_pdas,status,false);
+    step   = ROL::StepFactory<RealT>("Primal Dual Active Set",*parlist);
+    status = ROL::StatusTestFactory<RealT>("Primal Dual Active Set",*parlist);
+    algo   = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>(*step,*status,false));
     // Run algorithm.
     x.zero();
-    algo_pdas.run(x, obj, icon, true, *outStream);
+    algo->run(x, obj, icon, true, *outStream);
     // Output control to file.
     std::ofstream file_pdas;
     file_pdas.open("control_PDAS.txt");
@@ -630,16 +636,16 @@ int main(int argc, char *argv[]) {
     file_pdas.close();
 
     // Projected Newtion.
-    std::string filename = "input.xml";
-    Teuchos::RCP<Teuchos::ParameterList> parlist_tr = Teuchos::rcp( new Teuchos::ParameterList() );
-    Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist_tr) );
-    // Define step.
-    ROL::TrustRegionStep<RealT> step_tr(*parlist_tr);
+    parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-4);
+    parlist->sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-2);
+    parlist->sublist("General").sublist("Krylov").set("Iteration Limit",50);
     // Define algorithm.
-    ROL::DefaultAlgorithm<RealT> algo_tr(step_tr,status,false);
+    step   = ROL::StepFactory<RealT>("Trust Region",*parlist);
+    status = ROL::StatusTestFactory<RealT>("Trust Region",*parlist);
+    algo   = Teuchos::rcp(new ROL::DefaultAlgorithm<RealT>(*step,*status,false));
     // Run Algorithm
     y.zero();
-    algo_tr.run(y,obj,icon,true,*outStream);
+    algo->run(y,obj,icon,true,*outStream);
     // Output control to file.
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");

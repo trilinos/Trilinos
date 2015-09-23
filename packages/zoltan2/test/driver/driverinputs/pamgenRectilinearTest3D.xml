@@ -56,7 +56,6 @@
 
         <ParameterList name="InputAdapterParameters">
             <Parameter name="input adapter" type="string" value="PamgenMesh"/>
-            <Parameter name="stride" type="int" value="3"/>
         </ParameterList>
         
         <ParameterList name="Zoltan2Parameters">

@@ -48,8 +48,9 @@
 #define USE_HESSVEC 1
 
 #include "ROL_TestObjectives.hpp"
-#include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
+#include "ROL_TrustRegionStep.hpp"
+#include "ROL_StatusTest.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -82,10 +83,7 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
 
     // Define Status Test
-    RealT gtol = parlist->get("Gradient Tolerance",1.e-6);
-    RealT stol = parlist->get("Step Tolerance",1.e-12);
-    int maxit  = parlist->get("Maximum Number of Iterations",100);
-    ROL::StatusTest<RealT> status(gtol,stol,maxit);    
+    ROL::StatusTest<RealT> status(*parlist);
 
     // Loop Through Test Objectives
     for ( ROL::ETestObjectives objFunc = ROL::TESTOBJECTIVES_ROSENBROCK; objFunc < ROL::TESTOBJECTIVES_LAST; objFunc++ ) {
@@ -106,7 +104,7 @@ int main(int argc, char *argv[]) {
       // Get Dimension of Problem
       int dim = 
         Teuchos::rcp_const_cast<std::vector<RealT> >((Teuchos::dyn_cast<ROL::StdVector<RealT> >(x0)).getVector())->size();
-      parlist->set("Maximum Number of Krylov Iterations", 2*dim);
+      parlist->sublist("General").sublist("Krylov").set("Iteration Limit", 2*dim);
 
       // Iteration Vector
       Teuchos::RCP<std::vector<RealT> > x_rcp = Teuchos::rcp( new std::vector<RealT> (dim, 0.0) );
@@ -120,12 +118,12 @@ int main(int argc, char *argv[]) {
 
       for ( ROL::ETrustRegion tr = ROL::TRUSTREGION_CAUCHYPOINT; tr < ROL::TRUSTREGION_LAST; tr++ ) {
         *outStream << "\n\n" << ROL::ETrustRegionToString(tr) << "\n\n";
-        parlist->set("Trust-Region Subproblem Solver Type", ETrustRegionToString(tr));
+        parlist->sublist("Step").sublist("Trust Region").set("Subproblem Solver", ETrustRegionToString(tr));
         if ( tr == ROL::TRUSTREGION_DOGLEG || tr == ROL::TRUSTREGION_DOUBLEDOGLEG ) {
-          parlist->set("Use Secant Hessian-Times-A-Vector", true);
+          parlist->sublist("General").sublist("Secant").set("Secant Hessian-Times-A-Vector", true);
         } 
         else {
-          parlist->set("Use Secant Hessian-Times-A-Vector", false);
+          parlist->sublist("General").sublist("Secant").set("Secant Hessian-Times-A-Vector", false);
         }
 
         // Define Step

@@ -67,6 +67,7 @@ private:
   Teuchos::RCP<Objective<Real> > obj_;
   Teuchos::RCP<BoundConstraint<Real> > con_;
 
+  Teuchos::RCP<Vector<Real> > g_;
   Teuchos::RCP<Vector<Real> > l_;
   Teuchos::RCP<Vector<Real> > u_;
   Teuchos::RCP<Vector<Real> > l1_;
@@ -144,6 +145,7 @@ public:
     obj_ = Teuchos::rcp(&obj, false);
     con_ = Teuchos::rcp(&con, false);
 
+    g_    = x.dual().clone();
     l_    = x.clone();
     l1_   = x.clone();
     dl1_  = x.dual().clone();
@@ -177,10 +179,16 @@ public:
 
     nfval_ = 0;
     ngval_ = 0;
+
+    isConEvaluated_ = false;
   }
 
   Real getObjectiveValue(void) const {
     return fval_;
+  }
+
+  Teuchos::RCP<Vector<Real> > getGradient(void) const {
+    return g_;
   }
 
   int getNumberFunctionEvaluations(void) {
@@ -229,8 +237,9 @@ public:
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
     computePenalty(x);
     // Compute gradient of objective function
-    obj_->gradient(g,x,tol);
+    obj_->gradient(*g_,x,tol);
     ngval_++;
+    g.set(*g_);
     // Add gradient of the Moreau-Yosida penalty
     g.axpy(-mu_,*dl1_);
     g.axpy(mu_,*du1_);

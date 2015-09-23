@@ -2503,9 +2503,8 @@ void UserInputForTests::setPamgenAdjacencyGraph()
 //  if(rank == 0) cout << "Making a graph from our pamgen mesh...." << endl;
   
   // Define Types
-  typedef zlno_t lno_t;
-  typedef zgno_t gno_t;
-  typedef zscalar_t scalar_t;
+//  typedef zlno_t lno_t;
+//  typedef zgno_t gno_t;
   typedef  Tpetra::Map<zlno_t, zgno_t, znode_t> map_t;
   
   // get info for setting up map
@@ -2551,7 +2550,7 @@ void UserInputForTests::setPamgenAdjacencyGraph()
     
     for(int j = 0; j < el_per_block; j++)
     {
-      const zgno_t gid = static_cast<gno_t>(g_el_ids[el_no]);
+      const zgno_t gid = static_cast<zgno_t>(g_el_ids[el_no]);
       for(int k = 0; k < nodes_per_el; k++)
       {
         int g_node_i = g_node_ids[connect[j*nodes_per_el+k]-1];
