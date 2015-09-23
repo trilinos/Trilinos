@@ -890,13 +890,15 @@ template <typename Adapter, typename pnum_t>
   adjsMatrix->fillComplete (adjsMatrix->getRowMap());
 
   RCP<vector_type> v;
-  //
+  // v: Vector for local part numbers
   v = rcp (new vector_type (vertexMapG, true));
   v->putScalar (pnum_t::zero ());
 
   for(lno_t i=0; i < localNumObj; i++)
+    // set local part number
     v->replaceLocalValue (i, part[i]);
 
+  // Create vector to store global part numbers
   RCP<vector_type> w = rcp (new vector_type (vertexMapG));
 
   ArrayView<const lno_t> localEdgeIds, *localOffsets;
