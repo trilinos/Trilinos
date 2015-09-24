@@ -168,7 +168,7 @@ void tierParameterList( Teuchos::ParameterList &outList,
 
   dict["Accept Last Alpha"]                                 = join("Step","Line Search","Accept Last Alpha");
   dict["Accept Linesearch Minimizer"]                       = join("Step","Line Search","Accept Linesearch Minimizer");
- dict["Maximum Number of Function Evaluations"]            = join("Step","Line Search","Function Evaluation Limit");
+  dict["Maximum Number of Function Evaluations"]            = join("Step","Line Search","Function Evaluation Limit");
   dict["Initial Linesearch Parameter"]                      = join("Step","Line Search","Initial Step Size");
   dict["Sufficient Decrease Parameter"]                     = join("Step","Line Search","Sufficient Decrease Tolerance");
   dict["User Defined Linesearch Parameter"]                 = join("Step","Line Search","User Defined Initial Step Size");
@@ -184,8 +184,6 @@ void tierParameterList( Teuchos::ParameterList &outList,
   dict["Bracketing Tolerance"]                              = join("Step","Line Search","Line Search Method","Bracketing Tolerance");
   dict["Linesearch Type"]                                   = join("Step","Line Search","Line Search Method","Type");
 
-  dict["Gradient Update Relative Tolerance"]                = join("Step","Trust Region","Gradient Update Relative Tolerance");
-  dict["Gradient Update Tolerance Scaling"]                 = join("Step","Trust Region","Gradient Update Tolerance Scaling");
   dict["Initial Trust-Region Radius"]                       = join("Step","Trust Region","Initial Radius");
   dict["Maximum Trust-Region Radius"]                       = join("Step","Trust Region","Maximum Radius");
   dict["Radius Growing Threshold"]                          = join("Step","Trust Region","Radius Growing Threshold");
@@ -195,6 +193,8 @@ void tierParameterList( Teuchos::ParameterList &outList,
   dict["Trust-Region Subproblem Solver Type"]               = join("Step","Trust Region","Subproblem Solver");
   dict["Step Acceptance Parameter"]                         = join("Step","Trust Region","Step Acceptance Threshold");
 
+  dict["Gradient Update Relative Tolerance"]                = join("Step","Trust Region","Gradient","Relative Tolerance");
+  dict["Gradient Update Tolerance Scaling"]                 = join("Step","Trust Region","Gradient","Tolerance Scaling");
   dict["Value Update Exponent"]                             = join("Step","Trust Region","Inexact","Value","Exponent");
   dict["Value Update Forcing Sequence Initial Value"]       = join("Step","Trust Region","Inexact","Value","Forcing Sequence Initial Value");
   dict["Value Update Forcing Sequence Reduction Factor"]    = join("Step","Trust Region","Inexact","Value","Forcing Sequence Reduction Factor");
