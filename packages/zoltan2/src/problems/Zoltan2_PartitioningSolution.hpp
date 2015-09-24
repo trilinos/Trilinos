@@ -1246,8 +1246,8 @@ template <typename Adapter>
     if (partList[i] < lMin) lMin = partList[i];
     if (partList[i] > lMax) lMax = partList[i];
   }
-  Teuchos::reduceAll<int, part_t>(*comm_, Teuchos::REDUCE_MIN, 1, *lMin, *gMin);
-  Teuchos::reduceAll<int, part_t>(*comm_, Teuchos::REDUCE_MAX, 1, *lMax, *gMax);
+  Teuchos::reduceAll<int, part_t>(*comm_, Teuchos::REDUCE_MIN, 1, &lMin, &gMin);
+  Teuchos::reduceAll<int, part_t>(*comm_, Teuchos::REDUCE_MAX, 1, &lMax, &gMax);
 
   nGlobalPartsSolution_ = gMax - gMin + 1;
   parts_ = partList;

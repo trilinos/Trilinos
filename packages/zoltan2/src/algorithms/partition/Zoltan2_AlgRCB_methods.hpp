@@ -50,6 +50,7 @@
 #ifndef _ZOLTAN2_ALGRCB_METHODS_HPP_
 #define _ZOLTAN2_ALGRCB_METHODS_HPP_
 
+#include <Zoltan2_AlltoAll.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_Metric.hpp>

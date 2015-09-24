@@ -73,7 +73,7 @@ int main(int narg, char **arg)
 
   zgno_t myBaseId = zgno_t(numGlobalIdentifiers * rank);
 
-  zzgid_t *myIds = new zzgid_t[numMyIdentifiers];
+  zgno_t *myIds = new zgno_t[numMyIdentifiers];
   zscalar_t *myWeights = new zscalar_t[numMyIdentifiers];
 
   if (!myIds || !myWeights){

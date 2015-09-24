@@ -199,12 +199,12 @@ void testAdapter(
       tmi.setWeights(rowWeights[i], 1, i);
   }
 
-  zzgid_t *gids = NULL;
+  zgno_t *gids = NULL;
 
   simpleVAdapter_t *via = NULL;
 
   if (coordDim > 0) {
-    gids = new zzgid_t[nLocalRows];
+    gids = new zgno_t[nLocalRows];
     for (zlno_t i = 0; i < nLocalRows; i++)
       gids[i] = M->getRowMap()->getGlobalElement(i);
     via = new simpleVAdapter_t(nLocalRows, gids, coords[0],

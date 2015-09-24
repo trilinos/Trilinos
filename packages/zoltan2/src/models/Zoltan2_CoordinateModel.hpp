@@ -262,8 +262,6 @@ void CoordinateModel<Adapter>::sharedConstructor(
     const RCP<const Comm<int> > &comm,
     modelFlag_t &flags)
 {
-  bool consecutiveIds = flags.test(GENERATE_CONSECUTIVE_IDS);
-
   size_t nLocalIds = ia->getLocalNumIDs();
 
   // Get coordinates and weights (if any)

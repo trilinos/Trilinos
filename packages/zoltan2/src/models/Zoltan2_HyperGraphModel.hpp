@@ -99,7 +99,6 @@ public:
   typedef typename Adapter::user_t      user_t;
   typedef typename Adapter::userCoord_t userCoord_t;
   typedef Tpetra::Map<lno_t, gno_t>     map_t;
-  typedef IdentifierMap<user_t>         idmap_t;
   typedef StridedData<lno_t, scalar_t>  input_t;
 #endif
 
