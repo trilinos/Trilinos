@@ -827,12 +827,12 @@ template <typename Adapter, typename pnum_t>
 
   ArrayView<const gno_t> *Ids;
   ArrayView<input_t> *vwgts;
-  size_t nv = graph->getVertexList(Ids, vwgts);
+  /*size_t nv =*/ graph->getVertexList(Ids, vwgts);
 
   ArrayView<const gno_t> *edgeIds;
   ArrayView<const lno_t> *offsets;
   ArrayView<input_t> *wgts;
-  size_t numLocalEdges = getEdgeList(edgeIds, offsets, wgts);
+  /*size_t numLocalEdges =*/ getEdgeList(edgeIds, offsets, wgts);
   /**************************************************************************/
   /*************************** BUILD MAP FOR ADJS ***************************/
   /**************************************************************************/
