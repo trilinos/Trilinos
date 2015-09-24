@@ -157,16 +157,13 @@ void tierParameterList( Teuchos::ParameterList &outList,
 
   dict["Barzilai-Borwein Type"]                             = join("General","Secant","Barzilai-Borwein Type");
   dict["Maximum Secant Storage"]                            = join("General","Secant","Maximum Storage");
+  dict["Secant Type"]                                       = join("General","Secant","Type");
   dict["Use Secant Hessian-Times-A-Vector"]                 = join("General","Secant","Use as Hessian");
   dict["Use Secant Preconditioning"]                        = join("General","Secant","Use as Preconditioner");
-  dict["Secant Type"]                                       = join("General","Secant","Type");
 
   dict["Gradient Tolerance"]                                = join("Status Test","Gradient Tolerance");
   dict["Maximum Number of Iterations"]                      = join("Status Test","Iteration Limit");
   dict["Step Tolerance"]                                    = join("Status Test","Step Tolerance");
-
-  dict["Descent Type"]                                      = join("Step","Descent Method","Type");
-  dict["Nonlinear CG Type"]                                 = join("Step","Descent Method","Nonlinear CG Type");
 
   dict["Accept Last Alpha"]                                 = join("Step","Line Search","Accept Last Alpha");
   dict["Accept Linesearch Minimizer"]                       = join("Step","Line Search","Accept Linesearch Minimizer");
@@ -176,11 +173,15 @@ void tierParameterList( Teuchos::ParameterList &outList,
   dict["Initial Linesearch Parameter"]                      = join("Step","Line Search","Initial Step Size");
   dict["Sufficient Decrease Parameter"]                     = join("Step","Line Search","Sufficient Decrease Tolerance");
   dict["User Defined Linesearch Parameter"]                 = join("Step","Line Search","User Defined Initial Step Size");
-  dict["Linesearch Type"]                                   = join("Step","Line Search","Type");
 
   dict["Curvature Conditions Parameter"]                    = join("Step","Line Search","Curvature Condition","General Parameter");
   dict["Curvature Conditions Parameter: Generalized Wolfe"] = join("Step","Line Search","Curvature Condition","Generalized Wolfe Parameter");
   dict["Linesearch Curvature Condition"]                    = join("Step","Line Search","Curvature Condition","Type");
+
+  dict["Descent Type"]                                      = join("Step","Line Search","Descent Method","Type");
+  dict["Nonlinear CG Type"]                                 = join("Step","Line Search","Descent Method","Nonlinear CG Type");
+
+  dict["Linesearch Type"]                                   = join("Step","Line Search","Line Search Method","Type");
 
   dict["Gradient Update Relative Tolerance"]                = join("Step","Trust Region","Gradient Update Relative Tolerance");
   dict["Gradient Update Tolerance Scaling"]                 = join("Step","Trust Region","Gradient Update Tolerance Scaling");
