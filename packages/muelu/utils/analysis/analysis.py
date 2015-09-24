@@ -141,6 +141,38 @@ def nonlinear_history_residual(yaml_data, mode, ax = None):
         ax.set_xlabel('Linear iterations index (cumulative)')
         ax.set_ylabel('Relative residual')
 
+def nonlinear_history_solve(yaml_data, mode, ax = None):
+    """Show solve time per nonlinear step across the whole simulation (setup time is ignored)"""
+    ticks = []
+
+    offset = 0
+    mx     = 0
+    for step in sorted(yaml_data['Steps']):
+        c_step = yaml_data['Steps'][step]
+
+        solves = []
+        for nlstep in sorted(c_step):
+            if nlstep == 'nl_its':
+                continue
+            ticks.append(str(len(solves)))
+            solves.append(c_step[nlstep]['solve_time'])
+
+        if mode == 'display':
+            ax.plot(range(offset, offset + len(solves)), solves, '-o', color='blue')
+
+            offset += len(solves)
+            mx = max(max(solves), mx)
+        else:
+            print(step, ':', solves)
+
+    if mode == 'display':
+        ax.set_xlim([-1, len(ticks)])
+        ax.set_ylim([0, mx]);
+        ax.set_xticks(range(len(ticks)))
+        ax.set_xticklabels(ticks);
+        ax.set_xlabel('Nonlinear iterations index')
+        ax.set_ylabel('Solve time (s)')
+
 
 if __name__ == '__main__':
     p = optparse.OptionParser()
@@ -173,5 +205,7 @@ if __name__ == '__main__':
         nonlinear_history_iterations(yaml_data, mode=display, ax=ax)
     elif analysis == 'mode4':
         nonlinear_history_residual(yaml_data, mode=display, ax=ax)
+    elif analysis == 'mode5':
+        nonlinear_history_solve(yaml_data, mode=display, ax=ax)
 
     plt.savefig(options.output_file, bbox_inches='tight')
