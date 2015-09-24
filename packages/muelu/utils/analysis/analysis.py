@@ -96,6 +96,7 @@ def solve_per_level(yaml_data, mode, ax = None):
             try:
                 time = timer_data.loc[timer_name]['maxT']
             except KeyError:
+                # If one uses continue here, it messes up legend colors (due to skipping ax.bar call)
                 time = 0
 
             if mode == 'display':

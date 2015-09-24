@@ -35,20 +35,24 @@ def log2yaml(filename, pmode):
     mode['c_step']   = False
     mode['nl_step']  = False
     mode['timing']   = False
+    mode['stepper']  = False
 
-    start_c_step   = '(?<=Start of Continuation Step )\d*'
-    end_c_step     = '(?<=Step Converged in )\d*(?= Nonlinear Solver Iterations)'
-    start_nl_step  = '(?<=Nonlinear Solver Step )\d*'
-    end_nl_step    = '\(Converged!\)'
-    start_residual = '\*\*\*\*\* Belos Iterative Solver: '
-    mid_residual   = 'Iter.*, \[.*\] :\s*.*'
-    if   pmode == 'albany':
-        end_residual = '(?<=returned a solve status of "SOLVE_STATUS_CONVERGED" in )\d*'
-    elif pmode == 'muelu':
-        end_residual = '(?<=Number of iterations performed for this solve: )\d*'
-    start_timers   = '(?<=TimeMonitor results over )\d*'
-    end_timers     = '==========='
-    mid_timers     = '.* \(.*\)\s*$'
+    start_stepper                   = 'Beginning Continuation Run'
+    end_stepper                     = 'Continuation run stopping'
+    start_c_step                    = '(?<=Start of Continuation Step )\d*'
+    end_c_step                      = '(?<=Step Converged in )\d*(?= Nonlinear Solver Iterations)'
+    start_nl_step                   = '(?<=Nonlinear Solver Step )\d*'
+    end_nl_step                     = '\(Converged!\)'
+    start_residual_aztecoo          = '\*\*\*\*\* Problem: '
+    start_residual_belos            = '\*\*\*\*\* Belos Iterative Solver: '
+    mid_residual                    = 'Iter.*, \[.*\] :\s*.*'
+    end_residual_albany_belos       = '(?<=returned a solve status of "SOLVE_STATUS_CONVERGED" in )\d*'
+    end_residual_albany_aztecoo     = '(?<=Solution time: ).*(?= \(sec.\))'
+    end_residual_albany_aztecoo1    = '(?<=total iterations: )\d*'
+    end_residual_muelu_belos        = '(?<=Number of iterations performed for this solve: )\d*'
+    start_timers                    = '(?<=TimeMonitor results over )\d*'
+    end_timers                      = '==========='
+    mid_timers                      = '.* \(.*\)\s*$'
 
     timer_names  = []
     timer_times  = {}
@@ -61,8 +65,25 @@ def log2yaml(filename, pmode):
         yaml_string = '{"scheme":"muelu","Steps":{"c_step_0":{"nl_step_0":{'
     with open(filename) as f:
         for line in f:
-            if   re.search(start_c_step, line) != None:
-                assert(timer_serial     == None)
+            if   re.search(start_stepper, line) != None:
+                assert(mode['stepper']  == False)
+                assert(mode['c_step']   == False)
+                assert(mode['residual'] == False)
+                assert(mode['nl_step']  == False)
+                assert(mode['timing']   == False)
+                mode['stepper'] = True
+
+            elif re.search(end_stepper, line) != None:
+                # There could be multiple lines (from different processors)
+                # assert(mode['stepper']  == True)
+                assert(mode['c_step']   == False)
+                assert(mode['residual'] == False)
+                assert(mode['nl_step']  == False)
+                assert(mode['timing']   == False)
+                mode['stepper'] = False
+
+            elif re.search(start_c_step, line) != None:
+                assert(mode['stepper']  == True)
                 assert(mode['c_step']   == False)
                 assert(mode['residual'] == False)
                 assert(mode['nl_step']  == False)
@@ -76,7 +97,7 @@ def log2yaml(filename, pmode):
                 yaml_string += '"c_step_' + c_step + '":{'
 
             elif re.search(end_c_step, line) != None:
-                assert(timer_serial     == None)
+                assert(mode['stepper']  == True)
                 assert(mode['c_step']   == True)
                 assert(mode['residual'] == False)
                 assert(mode['nl_step']  == False)
@@ -88,7 +109,7 @@ def log2yaml(filename, pmode):
                 yaml_string += ', "nl_its":' + nl_its + '}'
 
             elif re.search(start_nl_step, line) != None:
-                assert(timer_serial     == None)
+                assert(mode['stepper']  == True)
                 assert(mode['c_step']   == True)
                 assert(mode['nl_step']  == False)
                 assert(mode['residual'] == False)
@@ -102,7 +123,7 @@ def log2yaml(filename, pmode):
                 yaml_string += '"nl_step_' + nl_step + '":{'
 
             elif re.search(end_nl_step, line) != None:
-                assert(timer_serial     == None)
+                assert(mode['stepper']  == True)
                 assert(mode['c_step']   == True)
                 assert(mode['nl_step']  == True)
                 assert(mode['residual'] == False)
@@ -115,43 +136,79 @@ def log2yaml(filename, pmode):
                      i += 1
                 yaml_string = yaml_string[:-i]
 
-            elif re.search(start_residual, line) != None:
+            elif re.search(start_residual_belos, line) != None or re.search(start_residual_aztecoo, line) != None:
                 assert(timer_serial     == None)
-                if pmode == 'albany':
+                if mode['stepper'] == True:
                     assert(mode['c_step']   == True)
                     assert(mode['nl_step']  == True)
+                elif pmode == 'albany':
+                    continue
                 assert(mode['residual'] == False)
                 assert(mode['timing']   == False)
                 mode['residual'] = True
 
+                if yaml_string[-1] != '{':
+                    yaml_string += ','
                 yaml_string += '"res_hist":['
 
-            elif re.search(end_residual, line) != None:
-                assert(timer_serial     == None)
-                if pmode == 'albany':
-                    assert(mode['c_step']   == True)
-                    assert(mode['nl_step']  == True)
+            elif re.search(end_residual_albany_belos, line) != None:
+                assert(mode['stepper']  == True)
+                assert(mode['c_step']   == True)
+                assert(mode['nl_step']  == True)
                 assert(mode['residual'] == True)
                 assert(mode['timing']   == False)
                 mode['residual'] = False
                 mode['nl_step']  = False
 
-                m = re.search(end_residual, line)
+                m = re.search(end_residual_albany_belos, line)
                 its = m.group()
                 yaml_string += '], "its":' + its
 
-                if   pmode == 'albany':
-                    m = re.search('(?<=with total CPU time of ).*(?=\ sec)', line)
-                    belos_time = m.group()
-                    yaml_string += ', "solve_time":' + belos_time
-                elif pmode == 'muelu':
-                    yaml_string += '}'
+                m = re.search('(?<=with total CPU time of ).*(?=\ sec)', line)
+                belos_time = m.group()
+                yaml_string += ', "solve_time":' + belos_time + '}'
 
-                yaml_string += '}'
+            elif re.search(end_residual_albany_aztecoo, line) != None:
+                if mode['stepper']  == True:
+                    assert(mode['c_step']   == True)
+                    assert(mode['nl_step']  == True)
+                elif pmode == 'albany':
+                    continue
+                assert(mode['residual'] == True)
+                assert(mode['timing']   == False)
+
+                m = re.search(end_residual_albany_aztecoo, line)
+                belos_time = m.group()
+                yaml_string += '], "solve_time":' + belos_time
+
+            elif re.search(end_residual_albany_aztecoo1, line) != None:
+                if mode['stepper']  == True:
+                    assert(mode['c_step']   == True)
+                    assert(mode['nl_step']  == True)
+                elif pmode == 'albany':
+                    continue
+                assert(mode['residual'] == True)
+                assert(mode['timing']   == False)
+                mode['residual'] = False
+                mode['nl_step']  = False
+
+                m = re.search(end_residual_albany_aztecoo1, line)
+                its = m.group()
+                yaml_string += ', "its":' + its + '}'
+
+            elif re.search(end_residual_muelu_belos, line) != None:
+                assert(mode['stepper']  == False)
+                assert(mode['residual'] == True)
+                assert(mode['timing']   == False)
+                mode['residual'] = False
+                mode['nl_step']  = False
+
+                m = re.search(end_residual_muelu_belos, line)
+                its = m.group()
+                yaml_string += '], "its":' + its + '}}'
 
             elif re.search(mid_residual, line) != None:
-                assert(timer_serial     == None)
-                if pmode == 'albany':
+                if mode['stepper'] == True:
                     assert(mode['c_step']   == True)
                     assert(mode['nl_step']  == True)
                 assert(mode['residual'] == True)
@@ -164,7 +221,7 @@ def log2yaml(filename, pmode):
                 yaml_string += res
 
             elif re.search(start_timers, line) != None:
-                assert(timer_serial     == None)
+                assert(mode['stepper']  == False)
                 assert(mode['c_step']   == False)
                 assert(mode['nl_step']  == False)
                 assert(mode['residual'] == False)
@@ -192,6 +249,7 @@ def log2yaml(filename, pmode):
                     # there could be other ======== lines
                     continue
 
+                assert(mode['stepper']  == False)
                 assert(mode['c_step']   == False)
                 assert(mode['nl_step']  == False)
                 assert(mode['residual'] == False)
@@ -237,6 +295,7 @@ def log2yaml(filename, pmode):
                 if mode['timing'] == False:
                     # there could be other matching lines
                     continue
+                assert(mode['stepper']  == False)
                 assert(mode['c_step']   == False)
                 assert(mode['nl_step']  == False)
                 assert(mode['residual'] == False)
@@ -279,14 +338,18 @@ def log2yaml(filename, pmode):
         # We did not encounter any timers
         yaml_string += '}}'
 
+    assert(mode['stepper']  == False)
     assert(mode['c_step']   == False)
     assert(mode['nl_step']  == False)
     assert(mode['residual'] == False)
     assert(mode['timing']   == False)
 
-    # print(yaml_string)
+    try:
+        yaml_data = yaml.load(yaml_string)
+    except yaml.parser.ParserError:
+        raise RuntimeError('Could not parse YAML out. Did you select the right mode?')
 
-    return yaml.load(yaml_string)
+    return yaml_data
 
 if __name__ == '__main__':
     p = optparse.OptionParser()
