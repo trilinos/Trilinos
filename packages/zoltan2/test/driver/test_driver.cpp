@@ -270,7 +270,6 @@ void run(const UserInputForTests &uinput,
   string adapter_name = adapterPlist.get<string>("input adapter"); // If we are here we have an input adapter, no need to check for one.
   // get Zoltan2 partion parameters
   ParameterList zoltan2_parameters = const_cast<ParameterList &>(problem_parameters.sublist("Zoltan2Parameters"));
-  zoltan2_parameters.set("num_global_parts", comm->getSize());
   
 //  if(rank == 0){
 //    cout << "\nZoltan 2 parameters:" << endl;
