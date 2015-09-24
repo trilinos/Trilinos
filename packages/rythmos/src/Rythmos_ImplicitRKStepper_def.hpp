@@ -335,10 +335,9 @@ Scalar ImplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
   Scalar stepSizeTaken;
   using Teuchos::as;
   using Teuchos::incrVerbLevel;
-  typedef ScalarTraits<Scalar> ST;
   typedef Thyra::NonlinearSolverBase<Scalar> NSB;
   typedef Teuchos::VerboseObjectTempState<NSB> VOTSNSB;
-   
+
   RCP<FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"takeStep");
@@ -358,7 +357,6 @@ Scalar ImplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
     initialize_();
   }
   if (stepSizeType == STEP_TYPE_FIXED) {
-    Scalar stepSizeTaken;
     stepSizeTaken = takeFixedStep_(dt , stepSizeType);
     return stepSizeTaken;
   }  else {
@@ -533,14 +531,14 @@ Scalar ImplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
         // and this is used by acceptStep method of the stepControl
 
         stepControl_->setCorrection(*this, (x_stage_bar_->getNonconstVectorBlock(stage)), (x_stage_bar_->getNonconstVectorBlock(stage)), rkNewtonConvergenceStatus_);
-        bool stepPass = stepControl_->acceptStep(*this, &LETvalue_);  
+        bool stepPass = stepControl_->acceptStep(*this, &LETvalue_);
 
         if (!stepPass) { // stepPass = false
            stepLETStatus_ = STEP_LET_STATUS_FAILED;
            rkNewtonConvergenceStatus_ = -1; // just making sure here
            break;  // leave the for loop
         } else { // stepPass = true
-           stepLETStatus_ = STEP_LET_STATUS_PASSED; 
+           stepLETStatus_ = STEP_LET_STATUS_PASSED;
            dirkModel_->setStageSolution( stage, *(x_stage_bar_->getVectorBlock(stage)) );
            rkNewtonConvergenceStatus_ = 0; // just making sure here
         }
@@ -557,7 +555,7 @@ Scalar ImplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
      */
 
      // C) Complete the step ...
-     
+
      // Combine the stage derivatives with the Butcher tableau "b" vector to obtain the solution at the final time.
      // x_{k+1} = x_k + dt*sum_{i}^{p}(b_i*x_stage_bar_[i])
 
@@ -571,15 +569,16 @@ Scalar ImplicitRKStepper<Scalar>::takeVariableStep_(Scalar dt, StepSizeType step
 
      // completeStep only if the none of the stage solution's failed to converged
      stepControl_->completeStep(*this);
-     
+
      dt_to_return = current_dt;
 
      } else {
      rkNewtonConvergenceStatus_ = -1;
      status = stepControl_-> rejectStep(*this); // reject the stage value
+     (void) status; // avoid "set but not used" build warning
      dt_to_return = dt_old;
   }
-    
+
      return dt_to_return;
 
 }
@@ -795,7 +794,7 @@ void ImplicitRKStepper<Scalar>::initialize_()
     "Rythmos::ImplicitRKStepper::initialize_(...)",
     *x_->space(), *model_->get_x_space() );
 #endif
-  
+
   if (isVariableStep_ ) {
   // Initialize StepControl
   if (stepControl_ == Teuchos::null) {
