@@ -772,9 +772,7 @@ template <typename Adapter, typename pnum_t>
   typedef StridedData<lno_t, scalar_t> input_t;
 
   typedef graphMetricValues<scalar_t> mv_t;
-  typedef int nonzero_t;  // adjacency matrix doesn't need scalar_t
-  typedef Tpetra::CrsMatrix<nonzero_t,lno_t,gno_t,node_t>  sparse_matrix_type;
-  typedef Tpetra::Vector<pnum_t,lno_t,gno_t,node_t>        vector_type;
+  typedef Tpetra::CrsMatrix<pnum_t,lno_t,gno_t,node_t>  sparse_matrix_type;
   typedef Tpetra::Map<lno_t, gno_t, node_t>                map_type;
   typedef Tpetra::global_size_t GST;
   const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
@@ -867,8 +865,8 @@ template <typename Adapter, typename pnum_t>
   // Construct Tpetra::CrsGraph objects.
   adjsMatrix = rcp (new sparse_matrix_type (vertexMapG, 0));
 
-  nonzero_t justOne = 1;
-  ArrayView<nonzero_t> justOneAV = Teuchos::arrayView (&justOne, 1);
+  pnum_t justOne = 1;
+  ArrayView<pnum_t> justOneAV = Teuchos::arrayView (&justOne, 1);
 
   for (lno_t localElement=0; localElement<localNumObj; ++localElement){
 
@@ -882,37 +880,49 @@ template <typename Adapter, typename pnum_t>
 
       //Update Tpetra adjs Graph
       adjsMatrix->insertGlobalValues(globalRowT,globalColAV,justOneAV);
-    }// *** vertex loop ***
-  }// *** edge loop ***
+    }// *** edge loop ***
+  }// *** vertex loop ***
 
   //Fill-complete adjs Graph
   adjsMatrix->fillComplete (adjsMatrix->getRowMap());
 
-  RCP<vector_type> v;
-  // v: Vector for local part numbers
-  v = rcp (new vector_type (vertexMapG, true));
-  v->putScalar (pnum_t::zero ());
+  /**************************************************************************/
+  /************************ BUILD IDENTITY FOR PARTS ************************/
+  /**************************************************************************/
 
-  for(lno_t i=0; i < localNumObj; i++)
-    // set local part number
-    v->replaceLocalValue (i, part[i]);
+  RCP<sparse_matrix_type> Ipart;
 
-  // Create vector to store global part numbers
-  RCP<vector_type> w = rcp (new vector_type (vertexMapG));
-  ArrayView<const gno_t> localEdgeIds;
-  ArrayView<const lno_t> localOffsets;
+  // Ipart: Identity matrix for part numbers
+  Ipart = rcp (new sparse_matrix_type (vertexMapG, 0));
 
-  adjsMatrix->apply (v, w); // w:= adjsMatrix * v
+  for (lno_t localElement=0; localElement<localNumObj; ++localElement) {
+    pnum_t justPart = part[localElement];
+    ArrayView<pnum_t> justPartAV = Teuchos::arrayView (&justPart, 1);
 
-  /*ArrayView<const lno_t> localEdgeIds, *localOffsets;
-  ArrayView<input_t> localWgts;
-  size_t localNumEdge = graph->getLocalEdgeList(localEdgeIds, localOffsets,
-  localWgts);*/
+    // globalRow for Tpetra Matrix
+    gno_t globalRowT = as<gno_t> (Ids[localElement]);
+
+    gno_t globalCol = as<gno_t> (Ids[localElement]);
+    //create ArrayView globalCol object for Tpetra
+    ArrayView<gno_t> globalColAV = Teuchos::arrayView (&globalCol,1);
+
+    //Update Tpetra Ipart matrix
+    Ipart->insertGlobalValues(globalRowT,globalColAV,justPartAV);
+  }// *** vertex loop ***
+
+  //Fill-complete parts Matrix
+  Ipart->fillComplete (Ipart->getRowMap());
+
+  // Create matrix to store adjs part
+  RCP<sparse_matrix_type> adjsPart = 
+    rcp (new sparse_matrix_type(adjsMatrix->getRowMap(),0));
+  Tpetra::MatrixMatrix::Multiply(*adjsMatrix,false,*Ipart,false,
+				 *adjsPart); // adjsPart:= adjsMatrix * Ipart
 
   if (!ewgtDim) {
     for (lno_t i=0; i < localNumObj; i++)
       for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
-	if (part[i] != w[edgeIds[j]])
+	if (part[i] != adjsPart[Ids[i]][edgeIds[j]])
 	  cut[part[i]]++;
 
   // This code assumes the solution has the part ordered the
@@ -922,7 +932,7 @@ template <typename Adapter, typename pnum_t>
     for (int edim = 0; edim < ewgtDim; edim++){
       for (lno_t i=0; i < localNumObj; i++)
 	for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
-	  if (part[i] != w[edgeIds[j]])
+	  if (part[i] != adjsPart[Ids[i]][edgeIds[j]])
 	    wgt[part[i]] += wgts[j];
       wgt += nparts;         // individual weights
     }
