@@ -32,6 +32,8 @@ SET(${PACKAGE_NAME}_TESTSUITE_SOURCES ${${PACKAGE_NAME}_TESTSUITE_SOURCES}
   FadUnitTests.hpp
   FadUnitTests2.hpp
   FadUnitTests.cpp
+  NestedFadUnitTests.hpp
+  NestedFadUnitTests.cpp
   RealFadUnitTests.cpp
   ComplexFadUnitTests.cpp
   ELRFadUnitTests.cpp
