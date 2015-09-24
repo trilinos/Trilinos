@@ -77,7 +77,7 @@ private:
 
 template <typename GO>
 STKConnManager<GO>::STKConnManager(const Teuchos::RCP<STK_Interface> & stkMeshDB)
-   : stkMeshDB_(stkMeshDB), ownedElementCount_(0)
+   : stkMeshDB_(stkMeshDB), ownedElementCount_(0), hasElementsAcrossInterface_(false)
 {
 }
 
@@ -380,11 +380,12 @@ void STKConnManager<GO>::applyInterfaceConditions()
   for (std::vector<std::string>::const_iterator ssni = sideset_names.begin();
        ssni != sideset_names.end(); ++ssni) {
     std::vector<stk_classic::mesh::Entity*> sides;
-    stkMeshDB_->getMySides(*ssni, sides);
+    stkMeshDB_->getAllSides(*ssni, sides);
     for (std::vector<stk_classic::mesh::Entity*>::const_iterator si = sides.begin();
          si != sides.end(); ++si) {
       const stk_classic::mesh::Entity* const side = *si;
-      const stk_classic::mesh::PairIterRelation relations = side->relations(stkMeshDB_->getElementRank());
+      const stk_classic::mesh::PairIterRelation
+        relations = side->relations(stkMeshDB_->getElementRank());
       if (relations.size() != 2) {
         // If relations.size() != 2 for one side in the sideset, then it's true
         // for all, including the first.
@@ -396,6 +397,7 @@ void STKConnManager<GO>::applyInterfaceConditions()
         eb_id = getElementIdx(*elements_, relations[1].entity());
       elmtToInterfaceElmt_[ea_id] = eb_id;
       elmtToInterfaceElmt_[eb_id] = ea_id;
+      hasElementsAcrossInterface_ = true;
     }
   }
 }

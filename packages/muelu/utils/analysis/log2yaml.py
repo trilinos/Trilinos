@@ -3,6 +3,30 @@ import optparse
 import re
 import yaml
 
+# YAML scheme structure
+#
+# Steps:
+#     c_step_1:
+#         nl_its:           <int>               # number of nonlinear iterations
+#         nl_step_1:
+#             its:          <int>               # number of linear iterations
+#             res_hist:     <double list>       # residual history
+#             setup_time:   <double>            # setup time in s
+#             solve_time:   <double>            # solve time in s
+#         nl_step_2:
+#             its:          <int>
+#             res_hist:     <double list>
+#             setup_time:   <double>            # setup time in s
+#             solve_time:   <double>            # solve time in s
+# Timer names:              <string list>
+# Total times:
+#    <timer_name>:          {MaxOverProcs: <double>, MeanOverCallCounts: <double>, MeanOverProcs: <double>, MinOverProcs: <double>}
+# Call counts:
+#    <timer_name>:          {MaxOverProcs: <double>, MeanOverCallCounts: <double>, MeanOverProcs: <double>, MinOverProcs: <double>}
+# Number of processes:      1
+# Statistics collected:     [MinOverProcs, MeanOverProcs, MaxOverProcs, MeanOverCallCounts]
+# Time unit:                's'
+
 def log2yaml(filename):
     # construct the YAML string
     mode = {}
@@ -105,7 +129,11 @@ def log2yaml(filename):
 
                 m = re.search(end_residual, line)
                 its = m.group()
-                yaml_string += '], "its":' + its + '}'
+                yaml_string += '], "its":' + its
+
+                m = re.search('(?<=with total CPU time of ).*(?=\ sec)', line)
+                belos_time = m.group()
+                yaml_string += ', "solve_time":' + belos_time + '}'
 
 
             elif re.search(mid_residual, line) != None:
@@ -262,7 +290,8 @@ if __name__ == '__main__':
     yaml_data = log2yaml(filename)
 
     # dump the data
-    if options.output_file == None:
+    output_file = options.output_file
+    if output_file == None:
       output_file = filename + '.yaml'
 
     f = open(output_file, 'w')

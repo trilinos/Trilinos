@@ -202,13 +202,13 @@ setupBCFieldManagers(const std::vector<panzer::BC> & bcs,
     BCType bc_type = bc->bcType();
 
     if (bc_type == BCT_Interface) {
-      // Build one FieldManager for each local side workset for each dirichlet bc
-      std::map<unsigned,PHX::FieldManager<panzer::Traits> >& field_managers = 
-        bc_field_managers_[*bc];
-
       // Loop over local face indices and setup each field manager
       for (std::map<unsigned,panzer::Workset>::const_iterator wkst = currentWkst->begin();
            wkst != currentWkst->end(); ++wkst) {
+        // Build one FieldManager for each local side workset for each bc
+        std::map<unsigned,PHX::FieldManager<panzer::Traits> >& field_managers = 
+          bc_field_managers_[*bc];
+
         PHX::FieldManager<panzer::Traits>& fm = field_managers[wkst->first];
 
         int gid_count = 0;

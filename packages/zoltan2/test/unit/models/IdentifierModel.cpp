@@ -76,7 +76,7 @@ void testIdentifierModel(std::string fname, zgno_t xdim, zgno_t ydim, zgno_t zdi
 
   std::bitset<Zoltan2::NUM_MODEL_FLAGS> modelFlags = 0;
   if (consecutiveIds)
-    modelFlags.set(Zoltan2::IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+    modelFlags.set(Zoltan2::GENERATE_CONSECUTIVE_IDS);
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 

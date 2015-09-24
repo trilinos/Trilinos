@@ -11,6 +11,12 @@ IF (${PROJECT_NAME}_ENABLE_Zoltan)
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  mapRemotes
+  SOURCES mapRemotes.cpp
+  COMM mpi
+)
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   teuchosCommTest
   SOURCES teuchosCommTest.cpp
   ARGS
