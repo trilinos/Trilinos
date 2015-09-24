@@ -115,6 +115,10 @@ public:
      * false and do not modify <code>el_other</code>.
      */
    virtual bool getElementAcrossInterface(const LocalOrdinal& el, LocalOrdinal& el_other) const { return false; }
+
+   /** Return whether getElementAcrossInterface will ever return true.
+     */
+   virtual bool hasElementsAcrossInterface() const { return false; }
 };
 
 /** Pure abstract base class templated on the

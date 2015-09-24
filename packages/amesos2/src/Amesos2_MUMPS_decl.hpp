@@ -65,6 +65,13 @@ namespace Amesos2 {
  * See the \ref MUMPS_parameters "summary of MUMPS parameters"
  * supported by this MUMPS interface.
  *
+ * Currently, special care is needed to build Trilinos with MUMPS
+ * This is due to how Tribits deals with scalapack/blacs (outdated)
+ * Therefore, the linking of blacs and scalapack needs to be done in the Trilinos_EXTRA_LINK_FILES CMake directive, e.g.,
+ * -DTrilinos_EXTRA_LINK_FLAGS="-I/local/openmpi/mpif.h -lmpi -lmpiblacs -L/local/scalapack -lblas -llapack -lscalapack"
+ * Additionally, ETI is best if ON, since MUMPS has limited supported types
+ *
+ *
  * \ingroup amesos2_solver_interfaces
  */
 template <class Matrix,class Vector>

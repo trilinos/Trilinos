@@ -55,6 +55,7 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_MLParameterListInterpreter.hpp"
 #include "MueLu_ParameterListInterpreter.hpp"
+#include "MueLu_HierarchyManager.hpp"
 
 namespace MueLu {
 
@@ -86,7 +87,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::setParameters(Teuchos::
 
   std::string ref("smoother:");
   std::string replace("coarse:");
-  for(Teuchos::ParameterList::ConstIterator i=list.begin(); i !=list.end(); i++) {    
+  for(Teuchos::ParameterList::ConstIterator i=list.begin(); i !=list.end(); i++) {
     const std::string & pname = list.name(i);
     if(pname.find(ref)!=std::string::npos) {
       smootherList_.setEntry(pname,list.entry(i));
@@ -157,7 +158,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
   A22_->SetFixedBlockSize(1);
 
   // Use HierarchyManagers to build 11 & 22 Hierarchies
-  typedef HierarchyManager<SC,LO,GO,NO>               HierarchyManager;
+  typedef MueLu::HierarchyManager<SC,LO,GO,NO>               HierarchyManager;
   RCP<HierarchyManager> Manager11, Manager22, ManagerSmoother;
   std::string syntaxStr = "parameterlist: syntax";
   if (parameterList_.isParameter(syntaxStr) && parameterList_.get<std::string>(syntaxStr) == "ml") {
@@ -170,17 +171,17 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::compute() {
     Manager22 = rcp(new ParameterListInterpreter  <SC,LO,GO,NO>(precList22_,A22_->getDomainMap()->getComm()));
     ManagerSmoother = rcp(new ParameterListInterpreter<SC,LO,GO,NO>(smootherList_,SM_Matrix_->getDomainMap()->getComm()));
   }
-  
+
   Hierarchy11_=Manager11->CreateHierarchy();
   Hierarchy11_->setlib(Xpetra::UseTpetra);
   Hierarchy11_->GetLevel(0)->Set("A", A11_);
   Manager11->SetupHierarchy(*Hierarchy11_);
-  
+
   Hierarchy22_=Manager22->CreateHierarchy();
   Hierarchy22_->setlib(Xpetra::UseTpetra);
   Hierarchy22_->GetLevel(0)->Set("A", A22_);
   Manager22->SetupHierarchy(*Hierarchy22_);
-  
+
   // build ifpack2 preconditioners for pre and post smoothing
   HierarchySmoother_=ManagerSmoother->CreateHierarchy();
   HierarchySmoother_->setlib(Xpetra::UseTpetra);

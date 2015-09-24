@@ -827,12 +827,12 @@ template <typename Adapter, typename pnum_t>
 
   ArrayView<const gno_t> *Ids;
   ArrayView<input_t> *vwgts;
-  size_t nv = graph->getVertexList(Ids, vwgts);
+  /*size_t nv =*/ graph->getVertexList(Ids, vwgts);
 
   ArrayView<const gno_t> *edgeIds;
   ArrayView<const lno_t> *offsets;
   ArrayView<input_t> *wgts;
-  size_t numLocalEdges = getEdgeList(edgeIds, offsets, wgts);
+  /*size_t numLocalEdges =*/ getEdgeList(edgeIds, offsets, wgts);
   /**************************************************************************/
   /*************************** BUILD MAP FOR ADJS ***************************/
   /**************************************************************************/
@@ -904,15 +904,16 @@ template <typename Adapter, typename pnum_t>
 
   adjsMatrix->apply (v, w); // w:= adjsMatrix * v
 
+  /*ArrayView<const lno_t> localEdgeIds, *localOffsets;
   ArrayView<input_t> localWgts;
-  size_t localNumEdge = graph->getEdgeList(localEdgeIds, localOffsets,
-                                           localWgts);
+  size_t localNumEdge = graph->getLocalEdgeList(localEdgeIds, localOffsets,
+  localWgts);*/
 
   if (!ewgtDim) {
     for (lno_t i=0; i < localNumObj; i++)
-      for (lno_t j=localOffsets[i]; j < localOffsets[i+1]; j++)
-        if (part[i] != part[localEdgeIds[j]])
-          cut[part[i]]++;
+      for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
+	if (part[i] != w[edgeIds[j]])
+	  cut[part[i]]++;
 
   // This code assumes the solution has the part ordered the
   // same way as the user input.  (Bug 5891 is resolved.)
@@ -920,9 +921,9 @@ template <typename Adapter, typename pnum_t>
     scalar_t *wgt = localBuf; // weight 1
     for (int edim = 0; edim < ewgtDim; edim++){
       for (lno_t i=0; i < localNumObj; i++)
-        for (lno_t j=localOffsets[i]; j < localOffsets[i+1]; j++)
-          if (part[i] != part[localEdgeIds[j]])
-            wgt[part[i]] += localWgts[j];
+	for (lno_t j=offsets[i]; j < offsets[i+1]; j++)
+	  if (part[i] != w[edgeIds[j]])
+	    wgt[part[i]] += wgts[j];
       wgt += nparts;         // individual weights
     }
   }

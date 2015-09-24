@@ -1467,10 +1467,10 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
     return false;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type ) {
     return false;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
@@ -1494,7 +1494,7 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type ) {
     return 0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
@@ -1578,10 +1578,10 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
     return false;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type ) {
     return false;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
@@ -1602,7 +1602,7 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type ) {
     return 0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
@@ -1664,10 +1664,10 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
     return false;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type ) {
     return false;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
@@ -1688,7 +1688,7 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type ) {
     return 0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
@@ -1754,10 +1754,10 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
     return false;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type ) {
     return false;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
@@ -1786,7 +1786,7 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type ) {
     return 0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
@@ -1857,10 +1857,10 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
     return false;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type ) {
     return false;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
@@ -1881,7 +1881,7 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type ) {
     return 0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
@@ -1952,10 +1952,10 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
     return false;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type ) {
     return false;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
@@ -1984,7 +1984,7 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type ) {
     return 0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
@@ -2055,10 +2055,10 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
     return false;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type ) {
     return false;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
@@ -2079,7 +2079,7 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type ) {
     return 0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
@@ -2150,10 +2150,10 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
     return false;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type ) {
     return false;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
@@ -2174,7 +2174,7 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type ) {
     return 0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
@@ -2246,10 +2246,10 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
     return false;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type ) {
     return false;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
@@ -2270,7 +2270,7 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type ) {
     return 0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
@@ -2341,10 +2341,10 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
     return false;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type ) {
     return false;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
@@ -2365,7 +2365,7 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type ) {
     return 0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
@@ -2451,10 +2451,10 @@ public:
   static const bool is_exact = true;
   static const bool is_complex = false;
 
-  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type ) {
     return false;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type ) {
     return false;
   }
   static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
@@ -2475,7 +2475,7 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
     return x;
   }
-  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type x) {
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type ) {
     return 0;
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {

@@ -315,6 +315,11 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
   aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern(fieldPatterns_));
 
   connMngr_->buildConnectivity(*aggFieldPattern);
+  {
+    int heai, my_heai = connMngr_->hasElementsAcrossInterface() ? 1 : 0;
+    Teuchos::reduceAll(*this->getComm(), Teuchos::REDUCE_MAX, 1, &my_heai, &heai);
+    if (heai > 0) this->enableGhosting(true);
+  }
 
   // using new geometric pattern, build global unknowns
   buildGlobalUnknowns(aggFieldPattern);
@@ -669,9 +674,11 @@ void DOFManager<LO,GO>::buildGlobalUnknowns(const Teuchos::RCP<const FieldPatter
     buildUnknownsOrientation();
 
   // allocate the local IDs
-  this->buildLocalIds();
+  if (buildGhosted_)
+    this->buildLocalIdsFromOwnedAndSharedElements();
+  else
+    this->buildLocalIds();
 }
-
 
 template <typename LO, typename GO>
 int DOFManager<LO,GO>::getFieldNum(const std::string & string) const
@@ -1070,7 +1077,7 @@ getElementAndAssociatedLIDs(LO localElmtId, std::vector<LO>& lids) const
       const LO lid = *aei;
       //todo-ic Figure out parallel case.
       if (lid >= elementGIDs_.size()) continue;
-      const std::vector<LO>& aelids = this->getElementLIDs(*aei);
+      const std::vector<LO>& aelids = this->getElementLIDs(lid);
       lids.insert(lids.end(), aelids.begin(), aelids.end());
     }
   }
@@ -1092,6 +1099,30 @@ getElementAndAssociatedGIDs(LO localElmtId, std::vector<GO>& gids) const
       gids.insert(gids.end(), aegids.begin(), aegids.end());
     }
   }
+}
+
+template <typename LO, typename GO>
+void DOFManager<LO,GO>::buildLocalIdsFromOwnedAndSharedElements()
+{
+  std::vector<std::vector<LO> > elementLIDs(elementGIDs_.size());
+
+  std::vector<GO> ownedAndShared;
+  this->getOwnedAndSharedIndices(ownedAndShared);
+   
+  // build global to local hash map (temporary and used only once)
+  boost::unordered_map<GO,LO> hashMap;
+  for(std::size_t i = 0; i < ownedAndShared.size(); ++i)
+    hashMap[ownedAndShared[i]] = i;
+
+  for (std::size_t i = 0; i < elementGIDs_.size(); ++i) {
+    const std::vector<GO>& gids = elementGIDs_[i];
+    std::vector<LO>& lids = elementLIDs[i];
+    lids.resize(gids.size());
+    for (std::size_t g = 0; g < gids.size(); ++g)
+      lids[g] = hashMap[gids[g]];
+  }
+    
+  this->setLocalIds(elementLIDs);
 }
 
 /*

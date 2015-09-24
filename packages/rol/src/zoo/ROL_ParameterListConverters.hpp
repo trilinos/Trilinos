@@ -144,52 +144,62 @@ void tierParameterList( Teuchos::ParameterList &outList,
   Map dict;
 
   // Original flat list name                                  heirarchical list name 
-  dict["Descent Type"]                                      = join("Step","Descent Method","Type");
-  dict["Nonlinear CG Type"]                                 = join("Step","Descent Method","Nonlinear CG Type");
-  dict["Secant Type"]                                       = join("General","Secant","Type");
-  dict["Linesearch Type"]                                   = join("Step","Line Search","Type");
-  dict["Linesearch Curvature Condition"]                    = join("Step","Line Search","Curvature Condition","Type");
-  dict["Trust-Region Subproblem Solver Type"]               = join("Step","Trust Region","Subproblem Solver");
-  dict["Use Secant Preconditioning"]                        = join("General","Secant","Use as Preconditioner");
-  dict["Use Secant Hessian-Times-A-Vector"]                 = join("General","Secant","Use as Hessian");
-  dict["Maximum Secant Storage"]                            = join("General","Secant","Maximum Storage");
-  dict["Barzilai-Borwein Type"]                             = join("General","Secant","Barzilai-Borwein Type");
-  dict["Use Inexact Objective Function"]                    = join("General","Inexact Objective Function");
   dict["Use Inexact Gradient"]                              = join("General","Inexact Gradient");
+  dict["Use Inexact Objective Function"]                    = join("General","Inexact Objective Function");
   dict["Use Inexact Hessian-Times-A-Vector"]                = join("General","Inexact Hessian-Times-A-Vector");
-  dict["Maximum Number of Function Evaluations"]            = join("Step","Line Search","Function Evaluation Limit");
-  dict["Sufficient Decrease Parameter"]                     = join("Step","Line Search","Sufficient Decrease Tolerance");
-  dict["Curvature Conditions Parameter"]                    = join("Step","Line Search","Curvature Condition","General Parameter");
-  dict["Curvature Conditions Parameter: Generalized Wolfe"] = join("Step","Line Search","Curvature Condition","Generalized Wolfe Parameter");
-  dict["Bracketing Tolerance"]                              = join("Step","Line Search","Bracketing Tolerance");
-  dict["Backtracking Rate"]                                 = join("Step","Line Search","Backtracking Rate");
-  dict["Initial Linesearch Parameter"]                      = join("Step","Line Search","Initial Step Size");
-  dict["User Defined Linesearch Parameter"]                 = join("Step","Line Search","User Defined Initial Step Size");
-  dict["Accept Linesearch Minimizer"]                       = join("Step","Line Search","Accept Linesearch Minimizer");
-  dict["Accept Last Alpha"]                                 = join("Step","Line Search","Accept Last Alpha");
+  dict["Use Projected Gradient Criticality Measure"]        = join("General","Projected Gradient Criticality Measure");
+  dict["Scale for Epsilon Active Sets"]                     = join("General","Scale for Epsilon Active Sets");
+  dict["Variable Objective Function"]                       = join("General","Variable Objective Function");
+
   dict["Absolute Krylov Tolerance"]                         = join("General","Krylov","Absolute Tolerance");
   dict["Relative Krylov Tolerance"]                         = join("General","Krylov","Relative Tolerance");
   dict["Maximum Number of Krylov Iterations"]               = join("General","Krylov","Iteration Limit");
+  dict["Krylov Type"]                                       = join("General","Krylov","Type");
+
+  dict["Barzilai-Borwein Type"]                             = join("General","Secant","Barzilai-Borwein Type");
+  dict["Maximum Secant Storage"]                            = join("General","Secant","Maximum Storage");
+  dict["Secant Type"]                                       = join("General","Secant","Type");
+  dict["Use Secant Hessian-Times-A-Vector"]                 = join("General","Secant","Use as Hessian");
+  dict["Use Secant Preconditioning"]                        = join("General","Secant","Use as Preconditioner");
+
+  dict["Gradient Tolerance"]                                = join("Status Test","Gradient Tolerance");
+  dict["Maximum Number of Iterations"]                      = join("Status Test","Iteration Limit");
+  dict["Step Tolerance"]                                    = join("Status Test","Step Tolerance");
+
+  dict["Accept Last Alpha"]                                 = join("Step","Line Search","Accept Last Alpha");
+  dict["Accept Linesearch Minimizer"]                       = join("Step","Line Search","Accept Linesearch Minimizer");
+  dict["Backtracking Rate"]                                 = join("Step","Line Search","Backtracking Rate");
+  dict["Bracketing Tolerance"]                              = join("Step","Line Search","Bracketing Tolerance");
+  dict["Maximum Number of Function Evaluations"]            = join("Step","Line Search","Function Evaluation Limit");
+  dict["Initial Linesearch Parameter"]                      = join("Step","Line Search","Initial Step Size");
+  dict["Sufficient Decrease Parameter"]                     = join("Step","Line Search","Sufficient Decrease Tolerance");
+  dict["User Defined Linesearch Parameter"]                 = join("Step","Line Search","User Defined Initial Step Size");
+
+  dict["Curvature Conditions Parameter"]                    = join("Step","Line Search","Curvature Condition","General Parameter");
+  dict["Curvature Conditions Parameter: Generalized Wolfe"] = join("Step","Line Search","Curvature Condition","Generalized Wolfe Parameter");
+  dict["Linesearch Curvature Condition"]                    = join("Step","Line Search","Curvature Condition","Type");
+
+  dict["Nonlinear CG Type"]                                 = join("Step","Line Search","Descent Method","Nonlinear CG Type");
+  dict["Descent Type"]                                      = join("Step","Line Search","Descent Method","Type");
+
+  dict["Linesearch Type"]                                   = join("Step","Line Search","Line Search Method","Type");
+
+  dict["Gradient Update Relative Tolerance"]                = join("Step","Trust Region","Gradient Update Relative Tolerance");
+  dict["Gradient Update Tolerance Scaling"]                 = join("Step","Trust Region","Gradient Update Tolerance Scaling");
   dict["Initial Trust-Region Radius"]                       = join("Step","Trust Region","Initial Radius");
   dict["Maximum Trust-Region Radius"]                       = join("Step","Trust Region","Maximum Radius");
-  dict["Step Acceptance Parameter"]                         = join("Step","Trust Region","Step Acceptance Threshold");
-  dict["Radius Shrinking Threshold"]                        = join("Step","Trust Region","Radius Shrinking Threshold");
   dict["Radius Growing Threshold"]                          = join("Step","Trust Region","Radius Growing Threshold");
   dict["Radius Growing Rate"]                               = join("Step","Trust Region","Radius Growing Rate");
+  dict["Radius Shrinking Threshold"]                        = join("Step","Trust Region","Radius Shrinking Threshold");
   dict["Trust-Region Safeguard"]                            = join("Step","Trust Region","Safeguard Size");
-  dict["Gradient Update Tolerance Scaling"]                 = join("Step","Trust Region","Gradient Update Tolerance Scaling");
-  dict["Gradient Update Relative Tolerance"]                = join("Step","Trust Region","Gradient Update Relative Tolerance");
-  dict["Use Projected Gradient Criticality Measure"]        = join("General","Projected Gradient Criticality Measure");
-  dict["Gradient Tolerance"]                                = join("Status Test","Gradient Tolerance");
-  dict["Step Tolerance"]                                    = join("Status Test","Step Tolerance");
-  dict["Maximum Number of Iterations"]                      = join("Status Test","Iteration Limit");
-  dict["Variable Objective Function"]                       = join("General","Variable Objective Function");
-  dict["Scale for Epsilon Active Sets"]                     = join("General","Scale for Epsilon Active Sets");
-  dict["Value Update Tolerance Scaling"]                    = join("Step","Trust Region","Inexact","Value","Tolerance Scaling");
+  dict["Trust-Region Subproblem Solver Type"]               = join("Step","Trust Region","Subproblem Solver");
+  dict["Step Acceptance Parameter"]                         = join("Step","Trust Region","Step Acceptance Threshold");
+
   dict["Value Update Exponent"]                             = join("Step","Trust Region","Inexact","Value","Exponent");
   dict["Value Update Forcing Sequence Initial Value"]       = join("Step","Trust Region","Inexact","Value","Forcing Sequence Initial Value");
-  dict["Value Update Forcing Sequence Update Frequency"]    = join("Step","Trust Region","Inexact","Value","Forcing Sequence Update Frequency");
   dict["Value Update Forcing Sequence Reduction Factor"]    = join("Step","Trust Region","Inexact","Value","Forcing Sequence Reduction Factor");
+  dict["Value Update Forcing Sequence Update Frequency"]    = join("Step","Trust Region","Inexact","Value","Forcing Sequence Update Frequency");
+  dict["Value Update Tolerance Scaling"]                    = join("Step","Trust Region","Inexact","Value","Tolerance Scaling");
 
 
   // Add duplicate entries with unformatted keys

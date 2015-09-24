@@ -138,6 +138,9 @@ namespace Tacho {
 
     // B and C are dense matrices and used for solve phase
     static const int ForTriSolveBlocked = 2011;
+
+    // use an external BLAS library
+    static const int ExternalBLAS = 2021;
   };
 
   class AlgoTrsm : public AlgoGemm {
