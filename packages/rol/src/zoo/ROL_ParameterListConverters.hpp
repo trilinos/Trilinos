@@ -168,9 +168,7 @@ void tierParameterList( Teuchos::ParameterList &outList,
 
   dict["Accept Last Alpha"]                                 = join("Step","Line Search","Accept Last Alpha");
   dict["Accept Linesearch Minimizer"]                       = join("Step","Line Search","Accept Linesearch Minimizer");
-  dict["Backtracking Rate"]                                 = join("Step","Line Search","Backtracking Rate");
-  dict["Bracketing Tolerance"]                              = join("Step","Line Search","Bracketing Tolerance");
-  dict["Maximum Number of Function Evaluations"]            = join("Step","Line Search","Function Evaluation Limit");
+ dict["Maximum Number of Function Evaluations"]            = join("Step","Line Search","Function Evaluation Limit");
   dict["Initial Linesearch Parameter"]                      = join("Step","Line Search","Initial Step Size");
   dict["Sufficient Decrease Parameter"]                     = join("Step","Line Search","Sufficient Decrease Tolerance");
   dict["User Defined Linesearch Parameter"]                 = join("Step","Line Search","User Defined Initial Step Size");
@@ -182,6 +180,8 @@ void tierParameterList( Teuchos::ParameterList &outList,
   dict["Nonlinear CG Type"]                                 = join("Step","Line Search","Descent Method","Nonlinear CG Type");
   dict["Descent Type"]                                      = join("Step","Line Search","Descent Method","Type");
 
+  dict["Backtracking Rate"]                                 = join("Step","Line Search","Line Search Method","Backtracking Rate");
+  dict["Bracketing Tolerance"]                              = join("Step","Line Search","Line Search Method","Bracketing Tolerance");
   dict["Linesearch Type"]                                   = join("Step","Line Search","Line Search Method","Type");
 
   dict["Gradient Update Relative Tolerance"]                = join("Step","Trust Region","Gradient Update Relative Tolerance");
