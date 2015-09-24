@@ -154,6 +154,7 @@ void tierParameterList( Teuchos::ParameterList &outList,
   dict["Absolute Krylov Tolerance"]                         = join("General","Krylov","Absolute Tolerance");
   dict["Relative Krylov Tolerance"]                         = join("General","Krylov","Relative Tolerance");
   dict["Maximum Number of Krylov Iterations"]               = join("General","Krylov","Iteration Limit");
+  dict["Krylov Type"]                                       = join("General","Krylov","Type");
 
   dict["Barzilai-Borwein Type"]                             = join("General","Secant","Barzilai-Borwein Type");
   dict["Maximum Secant Storage"]                            = join("General","Secant","Maximum Storage");
@@ -178,8 +179,8 @@ void tierParameterList( Teuchos::ParameterList &outList,
   dict["Curvature Conditions Parameter: Generalized Wolfe"] = join("Step","Line Search","Curvature Condition","Generalized Wolfe Parameter");
   dict["Linesearch Curvature Condition"]                    = join("Step","Line Search","Curvature Condition","Type");
 
-  dict["Descent Type"]                                      = join("Step","Line Search","Descent Method","Type");
   dict["Nonlinear CG Type"]                                 = join("Step","Line Search","Descent Method","Nonlinear CG Type");
+  dict["Descent Type"]                                      = join("Step","Line Search","Descent Method","Type");
 
   dict["Linesearch Type"]                                   = join("Step","Line Search","Line Search Method","Type");
 
