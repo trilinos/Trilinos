@@ -43,6 +43,11 @@
 //
 // @HEADER
 
+/* \file test_driver.cpp
+ * \brief Test driver for Zoltan2. Facillitates generation of test problem via
+ * a simple .xml input interface
+ */
+
 // taking headers from existing driver template
 // will keep or remove as needed
 #include <UserInputForTests.hpp>
@@ -50,7 +55,6 @@
 #include <Zoltan2_ComparisonHelper.hpp>
 
 #include <Zoltan2_PartitioningProblem.hpp>
-//#include <Zoltan2_PartitioningSolutionQuality.hpp>
 #include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_XpetraCrsGraphAdapter.hpp>
 #include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
@@ -440,7 +444,18 @@ int main(int argc, char *argv[])
   string inputFileName("driver.xml"); // assumes a default input file exists
   if(argc > 1)
     inputFileName = argv[1]; // user has provided an input file
-  
+  else{
+    if(rank == 0){
+      std::cout << "\nFAILED to specify xml input file!" << std::endl;
+      ostringstream msg;
+      msg << "\nStandard use of test_driver.cpp:\n";
+      msg << "mpiexec -n <procs> ./Zoltan2_test_driver.exe <input_file.xml>\n";
+      std::cout << msg.str() << std::endl;
+    }
+    
+    return 1;
+  }
+
   ////////////////////////////////////////////////////////////
   // (2) Get All Input Parameter Lists
   ////////////////////////////////////////////////////////////
@@ -457,7 +472,7 @@ int main(int argc, char *argv[])
   if(inputParameters.name() != "InputParameters")
   {
     if(rank == 0)
-      cout << "InputParameters not defined" << endl;
+      cout << "InputParameters not defined. Testing FAILED." << endl;
     return 1;
   }
   
