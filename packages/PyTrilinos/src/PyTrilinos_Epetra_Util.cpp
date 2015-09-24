@@ -137,7 +137,8 @@ convertEpetraVectorToPython(const Teuchos::RCP< const Epetra_Vector > *cev)
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::RCP< Epetra_IntVector > *
-convertPythonToEpetraIntVector(PyObject * pyobj)
+convertPythonToEpetraIntVector(PyObject * pyobj,
+                               int * newmem)
 {
   // SWIG initialization
   static swig_type_info * swig_EIV_ptr =
@@ -156,10 +157,10 @@ convertPythonToEpetraIntVector(PyObject * pyobj)
 #ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector<int> > dmdv_rcp;
 #endif
-  int newmem = 0;
+  *newmem = 0;
   //
   // Check if the Python object is a wrapped Epetra_IntVector
-  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_EIV_ptr, 0, &newmem);
+  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_EIV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     result =
@@ -170,8 +171,8 @@ convertPythonToEpetraIntVector(PyObject * pyobj)
 #ifdef HAVE_DOMI
   //
   // Check if the Python object is a wrapped Domi::MDVector<int>
-  newmem = 0;
-  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, &newmem);
+  *newmem = 0;
+  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     dmdv_rcp =
@@ -196,9 +197,10 @@ convertPythonToEpetraIntVector(PyObject * pyobj)
       return NULL;
     }
     result = new Teuchos::RCP< Epetra_IntVector >(smartresult);
-    if (newmem & SWIG_CAST_NEW_MEMORY)
+    if (*newmem & SWIG_CAST_NEW_MEMORY)
     {
       delete reinterpret_cast< Teuchos::RCP< Domi::MDVector<int> > * >(argp);
+      *newmem = 0;
     }
     return result;
   }
@@ -271,7 +273,8 @@ convertPythonToEpetraIntVector(PyObject * pyobj)
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::RCP< Epetra_MultiVector > *
-convertPythonToEpetraMultiVector(PyObject * pyobj)
+convertPythonToEpetraMultiVector(PyObject * pyobj,
+                                 int * newmem)
 {
   // SWIG initialization
   static swig_type_info * swig_EMV_ptr =
@@ -290,10 +293,10 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
 #ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector<double> > dmdv_rcp;
 #endif
-  int newmem = 0;
+  *newmem = 0;
   //
   // Check if the Python object is a wrapped Epetra_MultiVector
-  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_EMV_ptr, 0, &newmem);
+  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_EMV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     result =
@@ -304,8 +307,8 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
 #ifdef HAVE_DOMI
   //
   // Check if the Python object is a wrapped Domi::MDVector<double>
-  newmem = 0;
-  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, &newmem);
+  *newmem = 0;
+  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     dmdv_rcp =
@@ -330,9 +333,10 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
       return NULL;
     }
     result = new Teuchos::RCP< Epetra_MultiVector >(smartresult);
-    if (newmem & SWIG_CAST_NEW_MEMORY)
+    if (*newmem & SWIG_CAST_NEW_MEMORY)
     {
       delete reinterpret_cast< Teuchos::RCP< Domi::MDVector<double> > * >(argp);
+      *newmem = 0;
     }
     return result;
   }
@@ -418,7 +422,8 @@ convertPythonToEpetraMultiVector(PyObject * pyobj)
 ////////////////////////////////////////////////////////////////////////
 
 Teuchos::RCP< Epetra_Vector > *
-convertPythonToEpetraVector(PyObject * pyobj)
+convertPythonToEpetraVector(PyObject * pyobj,
+                            int * newmem)
 {
   // SWIG initialization
   static swig_type_info * swig_EV_ptr =
@@ -437,10 +442,10 @@ convertPythonToEpetraVector(PyObject * pyobj)
 #ifdef HAVE_DOMI
   Teuchos::RCP< Domi::MDVector<double> > dmdv_rcp;
 #endif
-  int newmem = 0;
+  *newmem = 0;
   //
   // Check if the Python object is a wrapped Epetra_Vector
-  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_EV_ptr, 0, &newmem);
+  int res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_EV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     result =
@@ -451,8 +456,8 @@ convertPythonToEpetraVector(PyObject * pyobj)
 #ifdef HAVE_DOMI
   //
   // Check if the Python object is a wrapped Domi::MDVector<double>
-  newmem = 0;
-  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, &newmem);
+  *newmem = 0;
+  res = SWIG_ConvertPtrAndOwn(pyobj, &argp, swig_DMDV_ptr, 0, newmem);
   if (SWIG_IsOK(res))
   {
     dmdv_rcp =
@@ -477,9 +482,10 @@ convertPythonToEpetraVector(PyObject * pyobj)
       return NULL;
     }
     result = new Teuchos::RCP< Epetra_Vector >(smartresult);
-    if (newmem & SWIG_CAST_NEW_MEMORY)
+    if (*newmem & SWIG_CAST_NEW_MEMORY)
     {
       delete reinterpret_cast< Teuchos::RCP< Domi::MDVector<double> > * >(argp);
+      *newmem = 0;
     }
     return result;
   }
