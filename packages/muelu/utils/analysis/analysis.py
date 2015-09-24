@@ -6,6 +6,7 @@ import numpy             as np
 import pandas            as pd
 import optparse
 import re
+from   tableau import *
 import yaml
 
 def construct_dataframe(yaml_data):
@@ -28,7 +29,7 @@ def construct_dataframe(yaml_data):
     return pd.DataFrame(data, index=timers,
         columns=['minT', 'minC', 'meanT', 'meanC', 'maxT', 'maxC', 'meanCT', 'meanCC'])
 
-def setup_timers(yaml_data, mode, ax = None):
+def setup_timers(yaml_data, mode, ax = None, top=10):
     """Show all setup level specific timers ordered by size"""
     timer_data = construct_dataframe(yaml_data)
 
@@ -42,8 +43,15 @@ def setup_timers(yaml_data, mode, ax = None):
     dfs.sort(columns='maxT', ascending=True, inplace=True)
     timers_f = dfs.index
 
+    # Top few
+    top = min(top, len(timers_f))
+    timers_f = dfs.index[-top:]
+    dfs = dfs.loc[timers_f]
+
     if mode == 'display':
-        ax.barh(np.arange(len(timers_f)), width=dfs['maxT'])
+        colors = tableau20()
+
+        ax.barh(np.arange(len(timers_f)), width=dfs['maxT'], color=colors[0])
         ax.set_yticks(np.arange(len(timers_f))+0.4)
         ax.set_yticklabels(timers_f)
         ax.set_xlabel('Time (s)')
@@ -54,10 +62,29 @@ def solve_per_level(yaml_data, mode, ax = None):
     """Show solve timers per level"""
     timer_data = construct_dataframe(yaml_data)
 
-    colors = ['red', 'orange', 'blue', 'green', 'black']
+    t20 = tableau20()
+
     labels = ['smoothing', 'residual calculation', 'restriction', 'prolongation', 'coarse']
-    levels = [0, 1, 2]
+    colors = {}
+    for i in range(len(labels)):
+      colors[labels[i]] = t20[i]
+
+    levels = [0, 1, 2, 3, 4, 5, 6]
     for level in levels:
+        # check if level exists at all
+        level_exists = False
+        for op in labels:
+            timer_name = 'MueLu: Hierarchy: Solve : ' + op + ' (level=' + str(level) + ')'
+            try:
+                time = timer_data.loc[timer_name]['maxT']
+                level_exists = True
+            except KeyError:
+                continue
+
+        if not level_exists:
+            levels = levels[:level]
+            break
+
         if mode != 'display':
             print('Level ', level)
 
@@ -69,10 +96,10 @@ def solve_per_level(yaml_data, mode, ax = None):
             try:
                 time = timer_data.loc[timer_name]['maxT']
             except KeyError:
-                continue
+                time = 0
 
             if mode == 'display':
-                ax.bar(level-0.4, time, bottom=height, label=op, color=colors[i], edgecolor='black');
+                ax.bar(level-0.4, time, bottom=height, label=op, color=colors[op], edgecolor='black');
                 height = height + time
             else:
                 print('  %-20s : %.5f' % (op, time))
@@ -88,8 +115,11 @@ def nonlinear_history_iterations(yaml_data, mode, ax = None):
     """Show number of linear iterations per nonlinear step across the whole simulation"""
     ticks = []
 
+    colors = tableau20()
+
     offset = 0
     mx     = 0
+    i      = 0
     for step in sorted(yaml_data['Steps']):
         c_step = yaml_data['Steps'][step]
 
@@ -101,12 +131,14 @@ def nonlinear_history_iterations(yaml_data, mode, ax = None):
             its.append(c_step[nlstep]['its'])
 
         if mode == 'display':
-            ax.plot(range(offset, offset + len(its)), its, '-o', color='blue')
+            ax.plot(range(offset, offset + len(its)), its, '-o', color=colors[i % 20])
 
             offset += len(its)
             mx = max(max(its), mx)
         else:
             print(step, ':', its)
+
+        i += 1
 
     if mode == 'display':
         ax.set_xlim([-1, len(ticks)])
@@ -118,7 +150,11 @@ def nonlinear_history_iterations(yaml_data, mode, ax = None):
 
 def nonlinear_history_residual(yaml_data, mode, ax = None):
     """Show the residual histories for all nonliner steps across the whole simulation"""
+
+    colors = tableau20()
+
     offset = 0
+    i = 0
     for step in sorted(yaml_data['Steps']):
         c_step = yaml_data['Steps'][step]
 
@@ -130,10 +166,12 @@ def nonlinear_history_residual(yaml_data, mode, ax = None):
             res_hist = c_step[nlstep]['res_hist']
 
             if mode == 'display':
-                ax.plot(range(offset, offset+len(res_hist)), res_hist, '-v', markersize=2)
+                ax.plot(range(offset, offset+len(res_hist)), res_hist, '-v', markersize=2, color=colors[i % 20])
                 offset += len(res_hist)
             else:
                 print(nlstep, ':', res_hist)
+
+            i += 1
 
     if mode == 'display':
         ax.set_xlim([0, offset+1])
@@ -145,8 +183,14 @@ def nonlinear_history_solve(yaml_data, mode, ax = None):
     """Show solve time per nonlinear step across the whole simulation (setup time is ignored)"""
     ticks = []
 
+    if yaml_data['scheme'] != 'albany':
+      raise RuntimeError('This mode is for Albany only!')
+
+    colors = tableau20()
+
     offset = 0
     mx     = 0
+    i      = 0
     for step in sorted(yaml_data['Steps']):
         c_step = yaml_data['Steps'][step]
 
@@ -158,12 +202,14 @@ def nonlinear_history_solve(yaml_data, mode, ax = None):
             solves.append(c_step[nlstep]['solve_time'])
 
         if mode == 'display':
-            ax.plot(range(offset, offset + len(solves)), solves, '-o', color='blue')
+            ax.plot(range(offset, offset + len(solves)), solves, '-o', color=colors[i % 20])
 
             offset += len(solves)
             mx = max(max(solves), mx)
         else:
             print(step, ':', solves)
+
+        i += 1
 
     if mode == 'display':
         ax.set_xlim([-1, len(ticks)])

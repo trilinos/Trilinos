@@ -68,6 +68,9 @@ namespace Tacho {
     value_type Value(const ordinal_type i,
                      const ordinal_type j) const { return _base->Value(_offm+i, _offn+j); }
 
+    KOKKOS_INLINE_FUNCTION
+    value_type* ValuePtr() const { return &_base->Value(_offm, _offn); }
+
     DenseMatrixView()
       : _base(NULL),
         _offm(0),

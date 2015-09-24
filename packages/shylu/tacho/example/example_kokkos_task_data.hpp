@@ -196,6 +196,19 @@ namespace Tacho {
         diff += abs(a[i]-c[i]);
       cout << "KokkosTaskData:: " << ntasks << " team tasks are spawned :: time = " << t << "  diff = " << diff << endl;
     }
+    {
+      try {
+        // For Carter
+        for (int i=0;i<ntasks;++i) {
+          future_type f = policy.create(simple_task_type(a,b,i), max_task_dependence);
+          policy.spawn(f);
+        }
+        Kokkos::Experimental::wait( policy );
+      } catch (exception &e) {
+        cout << "Exception is caught " << endl << e.what() << endl;
+      }
+    }
+
     return 0;
   }
 }
