@@ -74,10 +74,11 @@ using std::map;
 using std::pair;
 using std::ostringstream;
 
-
-
+/*! \brief A class used to save problem solutions and timers.
+ */
 class ComparisonSource
 {
+  
 public:
   
   typedef AdapterForTests::base_adapter_t base_t;
@@ -96,6 +97,8 @@ public:
   typedef Zoltan2::PartitioningProblem<basic_vector_t> basicVector_problem_t; // xpetra_mb problem type
   
 
+  /*! \brief Destructor.
+   */
   ~ComparisonSource()
   {
     if(adapter_kind == "XpetraCrsGraph")
@@ -103,7 +106,9 @@ public:
     if(adapter_kind == "XpetraCrsMatrix")
     delete reinterpret_cast<xcrsMatrix_t *>(adapter.getRawPtr())->getCoordinateInput();
   }
-  
+  /* \brief Add a timer by name to the comparison sources timers map.
+   * \param name is the name of the timer to be defined
+   */
   void addTimer(const std::string &name)
   {
     timers.insert(std::pair<const std::string &, RCP<Time> >(name,rcp(new Time(name))));
@@ -117,9 +122,11 @@ public:
   std::map<const std::string, RCP<Time> > timers;
 };
 
-
+/*! \brief A class for comparing solutions, metrics, and timing data of Zoltan2 problems.
+ */
 class ComparisonHelper
 {
+
 public:
   
   typedef AdapterForTests::base_adapter_t base_t;
@@ -132,17 +139,27 @@ public:
   typedef Zoltan2::Problem<base_t> problem_t;
   typedef Zoltan2::PartitioningProblem<base_t> partioning_problem_t; // base abstract type
   typedef Zoltan2::PartitioningProblem<basic_id_t> basic_problem_t; // basic id problem type
-  typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mb problem type
-  typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_mb problem type
-  typedef Zoltan2::PartitioningProblem<xcrsMatrix_t> xcrsMatrix_problem_t; // xpetra_mb problem type
-  typedef Zoltan2::PartitioningProblem<basic_vector_t> basicVector_problem_t; // xpetra_mb problem type
+  typedef Zoltan2::PartitioningProblem<xpetra_mv_t> xpetra_mv_problem_t; // xpetra_mv problem type
+  typedef Zoltan2::PartitioningProblem<xcrsGraph_t> xcrsGraph_problem_t; // xpetra_mv problem type
+  typedef Zoltan2::PartitioningProblem<xcrsMatrix_t> xcrsMatrix_problem_t; // xpetra_mv problem type
+  typedef Zoltan2::PartitioningProblem<basic_vector_t> basicVector_problem_t; // xpetra_mv problem type
   
   typedef const Zoltan2::MetricValues<zscalar_t> metric_t;
   
+  /* \brief Compare the solutions, metrics or timers of two Zoltan2 solutions.
+   * \param pList is a parameter list defining the comparison
+   * \param comm is the process communicator
+   */
   void Compare(const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
+  /* \brief Add a new source by name to the comparison source map.
+   * \param name is the name of the new source
+   * \param source a problem source that to be used for comparison to another source
+   */
   void AddSource(const string &name, ComparisonSource * source);
   
+  /* \brief Return the total number of saved sources.
+   */
   size_t getNumberOfSources() const
   {
     return this->sources.size();
@@ -152,46 +169,99 @@ private:
   map<const string,RCP<const ComparisonSource> > sources;
   
   
-  // Solution comparisons
+  /* \brief Method called to compare two solutions
+   * \param p1 is the name of problem 1
+   * \param p2 is the name of problem 2
+   * \param comm is the process communicator
+   */
   void CompareSolutions(const string &p1,
                         const string &p2,
                         const RCP<const Comm<int> > &comm);
   
-  
+  /* \brief Method called to compare two paritioning solutions
+   * \param sourceA is a ptr to problem A's comparison source
+   * \param sourceB is a ptr to problem B's comparison source
+   * \param comm is the process communicator
+   */
   void ComparePartitionSolutions(const ComparisonSource * sourceA,
                                  const ComparisonSource * sourceB,
                                  const RCP<const Comm<int> > &comm);
   
+  /* \brief Method called to compare two coloring solutions
+   * \param sourceA is a ptr to problem A's comparison source
+   * \param sourceB is a ptr to problem B's comparison source
+   * \param comm is the process communicator
+   */
   void CompareColoringSolutions(const ComparisonSource * sourceA,
                                 const ComparisonSource * sourceB,
                                 const RCP<const Comm<int> > &comm);
   
+  /* \brief Method called to compare two ordering solutions
+   * \param sourceA is a ptr to problem A's comparison source
+   * \param sourceB is a ptr to problem B's comparison source
+   * \param comm is the process communicator
+   */
   void CompareOrderingSolutions(const ComparisonSource * sourceA,
                                 const ComparisonSource * sourceB,
                                 const RCP<const Comm<int> > &comm);
   
-  // metric comparisons
+  /* \brief Method called to compare the metrics/timers of two problems.
+   * \param metricsPlist is a parameter list defining the comparison
+   * \param comm is the process communicator
+   */
   void CompareMetrics(const ParameterList &metricsPlist,
                       const RCP<const Comm<int> > &comm);
   
+  /* \brief Method that compares two metrics and returns a pass/fail message.
+   * \param[in] metric is the metric to be compared to a reference metric
+   * \param[in] ref_metric is the reference metric for comparison
+   * \param[in] metricPlist is the parameter list defining the metric tolerances
+   * \param[out] msg is a returned pass/fail message
+   *
+   * \return boolean value indicated pass/fail status
+   */
   static bool
   metricComparisonTest(const metric_t & metric,
                        const metric_t &ref_metric,
                        const Teuchos::ParameterList & metricPlist,
                        ostringstream &msg);
   
+  /* \brief Method that compares two timers and returns a pass/fail message.
+   * \param[in] time is the timer data to be compared to a reference metric
+   * \param[in] ref_time is the reference timer for comparison
+   * \param[in] metricPlist is the parameter list defining the timer tolerances
+   * \param[out] msg is a returned pass/fail message
+   *
+   * \return boolean value indicated pass/fail status
+   */
   static bool
   timerComparisonTest(const double time,
                       const double ref_time,
                       const Teuchos::ParameterList & metricPlist,
                       ostringstream &msg);
   
+  /* \brief Method for inserting an array of metrics into a map
+   * param[in] metrics an array of metric objects
+   *
+   * \return a map with metrics assigned to keys assigned by name
+   */
   static std::map<const string, const metric_t>
   metricArrayToMap(const ArrayRCP<const metric_t> &metrics);
   
+  /* \brief Method for inserting data from all timers to a map of clocked times
+   * param[in] timers a map of timers
+   *
+   * \return a map with clocked times from timers
+   */
   static std::map<const string, const double>
   timerDataToMap(const map<const std::string, RCP<Time> > &timers);
   
+  
+  /* \brief Method for extracting all methods to compare from a parameter list
+   * param[in] plist a parameter list defining 1 or more metric/timer comparisons
+   *
+   * \return a queue of metric comparison definitions
+   */
   static std::queue<ParameterList>
   getMetricsToCompare(const ParameterList & pList);
 };
@@ -701,7 +771,9 @@ ComparisonHelper::metricComparisonTest(const Zoltan2::MetricValues<zscalar_t> & 
   
   return pass;
 }
-
+// BDD, to do: print metrics even for pass
+//             reduce max metric to process 0
+//             print only on process 0 --- duh.
 bool ComparisonHelper::timerComparisonTest(const double time,
                                            const double ref_time,
                                            const Teuchos::ParameterList & metricPlist,

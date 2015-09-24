@@ -441,7 +441,7 @@ int main(int argc, char *argv[])
   // (1) Get and read the input file
   // the input file defines tests to be run
   ////////////////////////////////////////////////////////////
-  string inputFileName("driver.xml"); // assumes a default input file exists
+  string inputFileName(""); 
   if(argc > 1)
     inputFileName = argv[1]; // user has provided an input file
   else{
