@@ -769,17 +769,10 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     vector<int> entry_strides;
     AdapterForTests::InitializeVectorData(data,coords,entry_strides,stride);
     
-//    size_t dim = data->getNumVectors(); //BDD probably not necessary
-//    if(comm->getRank() == 0)
-//    {
-//      std::cout << "Size of data: " << dim << std::endl;
-//      std::cout << "Size of coords: " << coords.size() << std::endl;
-//    }
-//    if(dim == 1) coords[1] = coords[2] = NULL;
-//    else if(dim == 2)
-//    {
-//      coords[2] = NULL;
-//    }
+    size_t dim = coords.size(); //BDD may need to add NULL for constructor call
+    size_t push_null = 3-dim;
+    for (size_t i = 0; i < push_null; i ++)
+      coords.push_back(NULL);
     
     if(weights.empty())
     {
