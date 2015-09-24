@@ -67,7 +67,7 @@ namespace Amesos2 {
   AMESOS2_SOLVER_TPETRA_INST(MUMPS,std::complex<double>,int,int);
 #endif
 #ifdef HAVE_TPETRA_INST_INT_LONG_LONG
-  //AMESOS2_SOLVER_TPETRA_INST(MUMPS,double,int,long long);
+  AMESOS2_SOLVER_TPETRA_INST(MUMPS, double, int, long long);
 #endif
 
 }
@@ -82,7 +82,7 @@ namespace Amesos2 {
   template class Amesos2::MUMPS<Tpetra::CrsMatrix<S, LO, GO, N>,      \
                                   Tpetra::MultiVector<S, LO, GO,  N> >;
 
-TPETRA_ETI_MANGLING_TYPEDEFS()
+//TPETRA_ETI_MANGLING_TYPEDEFS()
 
 #if defined(HAVE_TPETRA_INST_SERIAL) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE) && defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #define NODETYPE Kokkos_Compat_KokkosSerialWrapperNode
