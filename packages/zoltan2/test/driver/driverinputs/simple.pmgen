@@ -1,0 +1,10 @@
+mesh
+    rectilinear
+     nx = 5
+     ny = 5
+     bx = 1
+     by = 1
+     gmin = 0 0 
+     gmax = 5 5
+    end
+end
