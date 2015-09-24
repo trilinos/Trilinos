@@ -15,6 +15,8 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityVector, PartVector
 #include "stk_unit_test_utils/ioUtils.hpp"  // for fill_mesh_using_stk_io
 #include "stk_unit_test_utils/unittestMeshUtils.hpp"
+#include <stk_mesh/base/ModificationObserver.hpp>
+
 namespace stk { namespace mesh { class Part; } }
 
 
@@ -31,98 +33,314 @@ unsigned count_elements(const stk::mesh::BulkData &bulk, stk::mesh::Part &active
     return countsPerEntityType[stk::topology::ELEMENT_RANK];
 }
 
-void deactivateElement(stk::mesh::BulkData &bulk, stk::mesh::Entity elementToDeactivate, stk::mesh::Part *activePart)
+unsigned get_gold_num_elements_by_proc(int procRank, int procRankToKillElementsOn)
 {
-    bulk.change_entity_parts(elementToDeactivate, {}, {activePart});
-}
-
-void deactivateElements(stk::mesh::BulkData &bulk, stk::mesh::EntityVector elementsToDeactivate, stk::mesh::Part *activePart)
-{
-    for(stk::mesh::Entity element : elementsToDeactivate)
+    unsigned goldNumElements = 2u;
+    if (procRank == procRankToKillElementsOn)
     {
-        deactivateElement(bulk, element, activePart);
+        goldNumElements = 1u;
     }
+    return goldNumElements;
 }
 
 // Test cases: (all cases must involve a "element death" starter)
 //  * create neighbor then deactivate => "refinement"
 //  * move processor boundary (change_entity_owner) => rebalance
+//  ? framework change global id ?
 
-TEST(ElemElemGraph, killAnElementAndUpdateGraphThenKillAnotherElement)
+class ElementDeathMock
+{
+public:
+    ElementDeathMock(BulkDataElementGraphTester &bulk_, stk::mesh::Part &activePart_, stk::mesh::Part &boundaryPart_) :
+            bulk(bulk_),
+            activePart(activePart_),
+            boundaryPart(boundaryPart_),
+            elemGraph(bulk, activePart),
+            observer(bulk, elemGraph)
+    {
+        bulk.register_observer(&observer);
+    }
+
+    void kill_elements(stk::mesh::EntityVector &elementsToKill)
+    {
+        deactivate_elements(elementsToKill);
+
+        stk::mesh::PartVector newlyCreatedBoundaryFacesGetAddedToTheseParts = {&boundaryPart};
+        stk::mesh::PartVector exposedButExistingBoundaryFacesGetAddedToTheseParts = {&boundaryPart};
+        process_killed_elements(bulk,
+                                elemGraph,
+                                elementsToKill,
+                                activePart,
+                                newlyCreatedBoundaryFacesGetAddedToTheseParts,
+                                &exposedButExistingBoundaryFacesGetAddedToTheseParts);
+    }
+private:
+    void deactivate_elements(stk::mesh::EntityVector elementsToDeactivate)
+    {
+        bulk.modification_begin();
+        for(stk::mesh::Entity element : elementsToDeactivate)
+        {
+            deactivate_element(element);
+        }
+        bulk.modification_end();
+    }
+
+    void deactivate_element(stk::mesh::Entity elementToDeactivate)
+    {
+        bulk.change_entity_parts(elementToDeactivate, {}, {&activePart});
+    }
+private:
+    BulkDataElementGraphTester &bulk;
+    stk::mesh::Part &activePart;
+    stk::mesh::Part &boundaryPart;
+    stk::mesh::ElemElemGraph elemGraph;
+    ElemElemGraphUpdater observer;
+};
+
+class MeshRefinementMock
+{
+public:
+    MeshRefinementMock(stk::mesh::BulkData &bulk_, stk::mesh::Part &activePart_)
+    : bulk(bulk_), activePart(activePart_)
+    {
+    }
+
+    void create_element()
+    {
+        stk::mesh::EntityId newElementId = 5;
+        stk::mesh::EntityIdVector nodesForNewElement = {17, 18, 20, 19, 21, 22, 24, 23};
+        stk::mesh::Part *block1Part = bulk.mesh_meta_data().get_part("block_1");
+        stk::mesh::PartVector elementParts = {block1Part, &activePart};
+        stk::mesh::declare_element(bulk, elementParts, newElementId, nodesForNewElement);
+    }
+
+    void create_element_on_proc1()
+    {
+        bulk.modification_begin();
+        if(bulk.parallel_rank() == 1)
+        {
+            create_element();
+        }
+        bulk.modification_end();
+    }
+
+private:
+    stk::mesh::BulkData &bulk;
+    stk::mesh::Part &activePart;
+};
+
+class UpdateElemElemGraphTest : public ::testing::Test
+{
+public:
+    UpdateElemElemGraphTest() :
+        meta(),
+        bulk(meta, MPI_COMM_WORLD, stk::mesh::BulkData::NO_AUTO_AURA),
+        activePart(meta.declare_part("active")),
+        boundaryPart(meta.declare_part("boundary"))
+    {
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulk, bulk.parallel());
+
+        stk::unit_test_util::put_mesh_into_part(bulk, activePart);
+    }
+
+    void add_element_to_deactivate_on_proc(int elementId, int procRankToKillElementsOn, stk::mesh::EntityVector &elementsDeactivated)
+    {
+        int myProcRank = stk::parallel_machine_rank(bulk.parallel());
+        if(myProcRank == procRankToKillElementsOn)
+        {
+            stk::mesh::Entity element = bulk.get_entity(stk::topology::ELEM_RANK, elementId);
+            elementsDeactivated.push_back(element);
+        }
+    }
+
+    void kill_element_1_on_proc_0(ElementDeathMock &elementKiller)
+    {
+        stk::mesh::EntityVector elementsDeactivated;
+        int element1Id = 1;
+        int procRankToKillElementsOn = 0;
+        add_element_to_deactivate_on_proc(element1Id, procRankToKillElementsOn, elementsDeactivated);
+
+        elementKiller.kill_elements(elementsDeactivated);
+
+        unsigned goldNumElements = get_gold_num_elements_by_proc(bulk.parallel_rank(), procRankToKillElementsOn);
+        EXPECT_EQ(goldNumElements, count_elements(bulk, activePart));
+    }
+
+    void kill_element_4_on_proc_1(ElementDeathMock &elementKiller)
+    {
+        stk::mesh::EntityVector elementsDeactivated;
+        int element4Id = 4;
+        int procRankToKillElementsOn = 1;
+        add_element_to_deactivate_on_proc(element4Id, procRankToKillElementsOn, elementsDeactivated);
+
+        elementKiller.kill_elements(elementsDeactivated);
+    }
+
+    void move_element_3_to_proc_0()
+    {
+        stk::mesh::EntityProcVec entityProcs;
+        if(bulk.parallel_rank() == 1)
+        {
+            stk::mesh::Entity element3 = bulk.get_entity(stk::topology::ELEMENT_RANK, 3);
+            entityProcs.push_back(stk::mesh::EntityProc(element3, 0));
+        }
+        bulk.change_entity_owner(entityProcs);
+    }
+
+    void delete_element_3_on_proc_1()
+    {
+        bulk.modification_begin();
+        if(bulk.parallel_rank() == 1)
+        {
+            stk::mesh::Entity element3 = bulk.get_entity(stk::topology::ELEMENT_RANK, 3);
+            bulk.destroy_entity(element3);
+        }
+        bulk.modification_end();
+    }
+
+protected:
+    stk::mesh::MetaData meta;
+    BulkDataElementGraphTester bulk;
+    stk::mesh::Part &activePart;
+    stk::mesh::Part &boundaryPart;
+};
+
+TEST_F(UpdateElemElemGraphTest, killRefineUpdateGraphKill)
 {
     stk::ParallelMachine comm = MPI_COMM_WORLD;
     if(stk::parallel_machine_size(comm) == 2)
     {
-        stk::mesh::MetaData meta(3);
-        stk::mesh::Part &activePart = meta.declare_part("active");
-        stk::mesh::Part &boundaryPart = meta.declare_part("boundary");
-        BulkDataElementGraphTester bulk(meta, comm, stk::mesh::BulkData::NO_AUTO_AURA);
-        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulk, comm);
+        ElementDeathMock elementKiller(bulk, activePart, boundaryPart);
+        kill_element_1_on_proc_0(elementKiller);
 
-        stk::unit_test_util::put_mesh_into_part(bulk, activePart);
+        MeshRefinementMock meshRefinement(bulk, activePart);
+        meshRefinement.create_element_on_proc1();
 
-        ElemElemGraphTester elemGraph(bulk);
-
-        stk::mesh::EntityVector elementsDeactivated;
-        int procRankToKillElementsOn = 0;
-        int procRank = stk::parallel_machine_rank(comm);
-        if(procRank == procRankToKillElementsOn)
-        {
-            int element1Id = 1;
-            stk::mesh::Entity element1 = bulk.get_entity(stk::topology::ELEM_RANK, element1Id);
-            elementsDeactivated.push_back(element1);
-        }
-
-        bulk.modification_begin();
-        deactivateElements(bulk, elementsDeactivated, &activePart);
-        bulk.modification_end();
-
-        //doh! so painful... bulk.update_exposed_boundary({element1}, activePart);
-        stk::mesh::PartVector newlyCreatedBoundaryFacesGetAddedToTheseParts = { &boundaryPart };
-        stk::mesh::PartVector exposedButExistingBoundaryFacesGetAddedToTheseParts = { &boundaryPart };
-        process_killed_elements(bulk,
-                                elemGraph,
-                                elementsDeactivated,
-                                activePart,
-                                newlyCreatedBoundaryFacesGetAddedToTheseParts,
-                                &exposedButExistingBoundaryFacesGetAddedToTheseParts);
-
-        unsigned goldNumElements = 2u;
-        if(procRank == procRankToKillElementsOn)
-        {
-            goldNumElements = 1u;
-        }
-        EXPECT_EQ(goldNumElements, count_elements(bulk, activePart));
-
-//        add_new_element();
-//        update_graph();
-
-        elementsDeactivated.clear();
-
-        if(procRank != procRankToKillElementsOn)
-        {
-            int element4Id = 4;
-            stk::mesh::Entity element4 = bulk.get_entity(stk::topology::ELEM_RANK, element4Id);
-            elementsDeactivated.push_back(element4);
-        }
-
-        bulk.modification_begin();
-        deactivateElements(bulk, elementsDeactivated, &activePart);
-        bulk.modification_end();
-
-        process_killed_elements(bulk,
-                                elemGraph,
-                                elementsDeactivated,
-                                activePart,
-                                newlyCreatedBoundaryFacesGetAddedToTheseParts,
-                                &exposedButExistingBoundaryFacesGetAddedToTheseParts);
-
-        unsigned numElements = stk::mesh::count_selected_entities(activePart, bulk.buckets(stk::topology::ELEM_RANK));
-        EXPECT_EQ(1u, numElements);
+        kill_element_4_on_proc_1(elementKiller);
 
         unsigned goldNumFaces = 1;
+        unsigned goldNumElems = 1;
+        if(bulk.parallel_rank() == 1)
+        {
+            goldNumFaces = 2;
+            goldNumElems = 2;
+        }
         EXPECT_EQ(goldNumFaces, stk::mesh::count_selected_entities(activePart, bulk.buckets(stk::topology::FACE_RANK)));
+        EXPECT_EQ(goldNumElems, stk::mesh::count_selected_entities(activePart, bulk.buckets(stk::topology::ELEM_RANK)));
     }
+}
+
+TEST_F(UpdateElemElemGraphTest, killChangeOwnerUpdateGraphKill)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    if(stk::parallel_machine_size(comm) == 2)
+    {
+        ElementDeathMock elementKiller(bulk, activePart, boundaryPart);
+        kill_element_1_on_proc_0(elementKiller);
+
+        move_element_3_to_proc_0();
+
+        kill_element_4_on_proc_1(elementKiller);
+
+        unsigned goldNumFaces = 2;
+        unsigned goldNumElems = 2;
+        if(bulk.parallel_rank() == 1)
+        {
+            goldNumFaces = 1;
+            goldNumElems = 0;
+        }
+        EXPECT_EQ(goldNumFaces, stk::mesh::count_selected_entities(activePart, bulk.buckets(stk::topology::FACE_RANK)));
+        EXPECT_EQ(goldNumElems, stk::mesh::count_selected_entities(activePart, bulk.buckets(stk::topology::ELEM_RANK)));
+    }
+}
+
+TEST_F(UpdateElemElemGraphTest, killDeleteUpdateGraphKill)
+{
+    stk::ParallelMachine comm = MPI_COMM_WORLD;
+    if(stk::parallel_machine_size(comm) == 2)
+    {
+        ElementDeathMock elementKiller(bulk, activePart, boundaryPart);
+        kill_element_1_on_proc_0(elementKiller);
+
+        delete_element_3_on_proc_1();
+
+        kill_element_4_on_proc_1(elementKiller);
+
+        unsigned goldNumFaces = 1;
+        unsigned goldNumElems = 1;
+        if(bulk.parallel_rank() == 1)
+        {
+            goldNumFaces = 0;
+            goldNumElems = 0;
+        }
+        EXPECT_EQ(goldNumFaces, stk::mesh::count_selected_entities(activePart, bulk.buckets(stk::topology::FACE_RANK)));
+        EXPECT_EQ(goldNumElems, stk::mesh::count_selected_entities(activePart, bulk.buckets(stk::topology::ELEM_RANK)));
+    }
+}
+
+
+class ElemElemGraphUpdaterMock : public stk::mesh::ModificationObserver
+{
+public:
+    ElemElemGraphUpdaterMock() : numAdded(0) {}
+
+    virtual void entity_added(stk::mesh::Entity entity)
+    {
+        numAdded++;
+    }
+
+    int get_num_entities_added()
+    {
+        return numAdded;
+    }
+private:
+    int numAdded;
+};
+
+TEST_F(UpdateElemElemGraphTest, NewEntityNotification)
+{
+    if(bulk.parallel_size() == 2)
+    {
+        ElemElemGraphUpdaterMock observer;
+        bulk.register_observer(&observer);
+
+        MeshRefinementMock meshRefinement(bulk, activePart);
+        meshRefinement.create_element_on_proc1();
+
+        if(bulk.parallel_rank() == 1)
+        {
+            EXPECT_EQ(5, observer.get_num_entities_added());
+        }
+    }
+}
+
+TEST_F(UpdateElemElemGraphTest, MultipleObservers)
+{
+    if(bulk.parallel_size() == 2)
+    {
+        ElemElemGraphUpdaterMock observer1;
+        bulk.register_observer(&observer1);
+        ElemElemGraphUpdaterMock observer2;
+        bulk.register_observer(&observer2);
+
+        MeshRefinementMock meshRefinement(bulk, activePart);
+        meshRefinement.create_element_on_proc1();
+
+        if(bulk.parallel_rank() == 1)
+        {
+            EXPECT_EQ(5, observer1.get_num_entities_added());
+            EXPECT_EQ(5, observer2.get_num_entities_added());
+        }
+    }
+}
+
+TEST(Observer, NewEntityNotification)
+{
+    ElemElemGraphUpdaterMock observer;
+    stk::mesh::Entity goldNewEntity(2);
+    observer.entity_added(goldNewEntity);
+
+    EXPECT_EQ(1, observer.get_num_entities_added());
 }
 
 } // namespace

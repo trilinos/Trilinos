@@ -820,6 +820,8 @@ Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id 
 
   m_check_invalid_rels = true;
 
+  notifier.entity_added(declared_entity);
+
   return declared_entity ;
 }
 
@@ -870,12 +872,18 @@ void BulkData::internal_change_entity_key( EntityKey old_key, EntityKey new_key,
 
 //----------------------------------------------------------------------
 
-bool BulkData::destroy_entity( Entity entity, bool was_ghost )
+bool BulkData::destroy_entity(Entity entity, bool wasGhost)
 {
-    return internal_destroy_entity(entity, was_ghost);
+    return internal_destroy_entity_with_notification(entity, wasGhost);
 }
 
-bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
+bool BulkData::internal_destroy_entity_with_notification(Entity entity, bool wasGhost)
+{
+    notifier.entity_deleted(entity);
+    return internal_destroy_entity(entity, wasGhost);
+}
+
+bool BulkData::internal_destroy_entity(Entity entity, bool wasGhost)
 {
   require_ok_to_modify();
   m_modSummary.track_destroy_entity(entity);
@@ -891,7 +899,7 @@ bool BulkData::internal_destroy_entity( Entity entity, bool was_ghost )
     return false;
   }
 
-  const bool ghost = was_ghost || in_receive_ghost(key);
+  const bool ghost = wasGhost || in_receive_ghost(key);
   const stk::mesh::EntityRank erank = entity_rank(entity);
 
   const stk::mesh::EntityRank end_rank = static_cast<stk::mesh::EntityRank>(m_mesh_meta_data.entity_rank_count());
@@ -1319,6 +1327,11 @@ void BulkData::allocate_field_data()
       const std::vector<Bucket*>& buckets = this->buckets(rank);
       m_field_data_manager->allocate_field_data(rank, buckets, field_set);
   }
+}
+
+void BulkData::register_observer(ModificationObserver *observer)
+{
+    notifier.register_observer(observer);
 }
 
 void BulkData::new_bucket_caching(EntityRank rank, Bucket* new_bucket)
@@ -2821,7 +2834,7 @@ void BulkData::destroy_all_ghosting()
 
     if ( in_receive_ghost( i->key ) ) {
         entity_comm_map_clear( i->key );
-        internal_destroy_entity( i->entity );
+        internal_destroy_entity_with_notification( i->entity );
       i->key = EntityKey();
       i->entity_comm = NULL;
     }
@@ -3322,7 +3335,7 @@ void BulkData::internal_change_ghosting(
         removed = true ;
         i->key = EntityKey(); // No longer communicated
         if ( remove_recv ) {
-          ThrowRequireMsg( internal_destroy_entity( i->entity, remove_recv ),
+          ThrowRequireMsg( internal_destroy_entity_with_notification( i->entity, remove_recv ),
                            "P[" << this->parallel_rank() << "]: FAILED attempt to destroy entity: "
                            << entity_key(i->entity) );
         }
@@ -3710,7 +3723,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
           if ( shouldDestroyGhost )
           {
               const bool was_ghost = true;
-              internal_destroy_entity(entity, was_ghost);
+              internal_destroy_entity_with_notification(entity, was_ghost);
           }
       }
     }
@@ -4001,6 +4014,8 @@ void print_bucket_data(const stk::mesh::BulkData& mesh)
 
 bool BulkData::modification_end_for_entity_creation( const std::vector<EntityRank> & entity_rank_vector, impl::MeshModification::modification_optimization opt)
 {
+  notifier.notify_started_modification_end();
+
   bool return_value = internal_modification_end_for_entity_creation( entity_rank_vector, opt );
 
 #ifdef STK_VERBOSE_OUTPUT
@@ -4379,6 +4394,7 @@ void BulkData::internal_finish_modification_end(impl::MeshModification::modifica
 
     update_deleted_entities_container();
 
+    notifier.notify_finished_modification_end();
 }
 
 bool BulkData::internal_modification_end_for_skin_mesh( EntityRank entity_rank, impl::MeshModification::modification_optimization opt, stk::mesh::Selector selectedToSkin,

@@ -42,11 +42,68 @@
 #include <stk_mesh/fixtures/heterogeneous_mesh.hpp>
 #include <stk_mesh/fixtures/degenerate_mesh.hpp>
 
+#include <stk_mesh/baseImpl/DeletedElementInfo.hpp>
+#include <stk_mesh/base/ModificationObserver.hpp>
+
+
+
+class ElemElemGraphUpdater : public stk::mesh::ModificationObserver
+{
+public:
+    ElemElemGraphUpdater(stk::mesh::BulkData &bulk, stk::mesh::ElemElemGraph &elemGraph_)
+    : bulkData(bulk), elemGraph(elemGraph_)
+    {
+    }
+
+    virtual void entity_added(stk::mesh::Entity entity)
+    {
+        if(bulkData.entity_rank(entity) == stk::topology::ELEM_RANK)
+        {
+            elementsAdded.push_back(entity);
+        }
+    }
+
+    virtual void entity_deleted(stk::mesh::Entity entity)
+    {
+        if(bulkData.entity_rank(entity) == stk::topology::ELEM_RANK && bulkData.bucket(entity).owned())
+        {
+            elementsDeleted.push_back({entity, bulkData.identifier(entity), bulkData.bucket(entity).topology().is_shell()});
+        }
+    }
+
+    void finished_modification_end_notification()
+    {
+        elemGraph.add_elements(elementsAdded);
+        elementsAdded.clear();
+    }
+
+    void started_modification_end_notification()
+    {
+        elemGraph.delete_elements(elementsDeleted);
+        elementsDeleted.clear();
+    }
+
+    void elements_about_to_move_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+    {
+        elemGraph.create_parallel_graph_info_needed_once_entities_are_moved(elemProcPairsToMove, newParallelGraphEntries);
+    }
+
+    void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+    {
+        elemGraph.change_entity_owner(elemProcPairsToMove, newParallelGraphEntries);
+        newParallelGraphEntries.clear();
+    }
+private:
+    stk::mesh::BulkData &bulkData;
+    stk::mesh::ElemElemGraph &elemGraph;
+    stk::mesh::impl::ParallelGraphInfo newParallelGraphEntries;
+    stk::mesh::EntityVector elementsAdded;
+    stk::mesh::impl::DeletedElementInfoVector elementsDeleted;
+};
+
 class BulkDataElementGraphTester : public stk::mesh::BulkData
 {
-
 public:
-
     BulkDataElementGraphTester(stk::mesh::MetaData &mesh_meta_data, MPI_Comm comm)
     : stk::mesh::BulkData(mesh_meta_data, comm)
     {

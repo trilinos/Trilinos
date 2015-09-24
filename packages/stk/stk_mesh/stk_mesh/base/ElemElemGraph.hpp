@@ -7,6 +7,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Selector.hpp>
+#include <stk_mesh/baseImpl/DeletedElementInfo.hpp>
 
 #include "ElemElemGraphImpl.hpp"
 
@@ -65,14 +66,11 @@ public:
 
     size_t num_parallel_edges() const { return m_num_parallel_edges; }
 
-    std::vector<stk::mesh::EntityId> get_suggested_side_ids() const;
-
-    void set_num_side_ids_used(size_t num_used);
-
+    stk::mesh::EntityId get_available_side_id();
 
     void add_elements(const stk::mesh::EntityVector &elements);
 
-    void delete_elements(const stk::mesh::EntityVector &elements);
+    void delete_elements(const stk::mesh::impl::DeletedElementInfoVector &elements_to_delete);
 
     bool is_valid_graph_element(stk::mesh::Entity local_element) const;
 
@@ -82,14 +80,16 @@ public:
 
     void skin_mesh(const stk::mesh::PartVector& skin_parts);
 
-protected:
     friend void change_entity_owner(stk::mesh::BulkData &bulkData, stk::mesh::ElemElemGraph &elem_graph,
                                     std::vector< std::pair< stk::mesh::Entity, int > > &elem_proc_pairs_to_move,
                                     stk::mesh::Part *active_part);
 
     //this member method is not the public API for change-entity-owner. see the free-standing function above
     void change_entity_owner(const stk::mesh::EntityProcVec &elem_proc_pairs_to_move, impl::ParallelGraphInfo &parallel_graph_info, stk::mesh::Part *active_part=NULL);
+    void create_parallel_graph_info_needed_once_entities_are_moved(const stk::mesh::EntityProcVec &elemProcPairsToMove,
+                                         impl::ParallelGraphInfo &new_parallel_graph_entries);
 
+protected:
     void fill_graph();
     void update_number_of_parallel_edges();
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId& elem_side_comm);
@@ -137,7 +137,8 @@ protected:
                                                      stk::mesh::EntityId suggested_face_id,
                                                      stk::mesh::Part *active_part);
 
-    void pack_shell_connectivity(stk::CommSparse & comm, const std::vector<impl::ShellConnectivityData> & shellConnectivityList);
+    void pack_shell_connectivity(stk::CommSparse & comm, const std::vector<impl::ShellConnectivityData> & shellConnectivityList,
+                                 const stk::mesh::EntityVector &deletedShells);
 
     void pack_remote_edge_across_shell(stk::CommSparse &comm, stk::mesh::EntityVector &addedShells, int phase);
 
@@ -155,23 +156,24 @@ protected:
 
     void generate_additional_ids_collective(size_t num_additional_ids_needed);
 
-    void collect_local_shell_connectivity_data(const stk::mesh::EntityVector& elements_to_delete,
-                                               std::vector<impl::ShellConnectivityData>& shellConnectivityList);
+    void collect_local_shell_connectivity_data(const stk::mesh::impl::DeletedElementInfoVector &elements_to_delete,
+                                               std::vector<impl::ShellConnectivityData>& shellConnectivityList,
+                                               stk::mesh::EntityVector &deletedShells);
 
-    void communicate_shell_connectivity(std::vector<impl::ShellConnectivityData>& shellConnectivityList);
+    void communicate_shell_connectivity(std::vector<impl::ShellConnectivityData>& shellConnectivityList,
+                                        const stk::mesh::EntityVector &deletedShells);
 
-    void delete_local_connections_and_collect_remote(const stk::mesh::EntityVector& elements_to_delete,
+    void delete_local_connections_and_collect_remote(const stk::mesh::impl::DeletedElementInfoVector &elements_to_delete,
                                                      std::vector<impl::DeletedElementData>& local_elem_and_remote_connected_elem);
 
     void communicate_remote_connections_to_delete(const std::vector<impl::DeletedElementData>& local_elem_and_remote_connected_elem,
                                                   std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> >& remote_edges);
 
-    void clear_deleted_element_connections(const stk::mesh::EntityVector& elements_to_delete);
+    void clear_deleted_element_connections(const stk::mesh::impl::DeletedElementInfoVector &elements_to_delete);
 
     void delete_remote_connections(const std::vector<std::pair<stk::mesh::EntityId, stk::mesh::EntityId> >& remote_edges);
 
-    void reconnect_volume_elements_across_deleted_shells(std::vector<impl::ShellConnectivityData> & shellConnectivityList,
-                                                         const stk::mesh::EntityVector& elements_to_delete);
+    void reconnect_volume_elements_across_deleted_shells(std::vector<impl::ShellConnectivityData> & shellConnectivityList);
 
     void break_remote_shell_connectivity_and_pack(stk::CommSparse& comm, impl::LocalId leftId, impl::LocalId rightId, int phase);
 
@@ -201,7 +203,7 @@ protected:
 
 private:
     int get_side_of_element1_that_is_connected_to_element2(impl::LocalId elem1, impl::LocalId elem2,
-                                                               const std::vector<impl::LocalId>& connElements) const;
+                                                           const std::vector<impl::LocalId>& connElements) const;
     impl::LocalId convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const;
     int get_side_id_to_connected_local_id(impl::LocalId localElementId, size_t indexConnElement) const;
     void make_space_for_new_elements(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
@@ -214,7 +216,25 @@ private:
     impl::ElemSideToProcAndFaceId get_element_side_ids_to_communicate() const;
     void add_elements_locally(const stk::mesh::EntityVector& allElementsNotAlreadyInGraph);
     stk::mesh::Entity add_side_to_mesh(stk::mesh::impl::ElementSidePair& side_pair, const stk::mesh::PartVector& skin_parts, stk::mesh::EntityId id);
+
     void write_graph() const;
+
+    void update_all_local_neighbors(const stk::mesh::Entity elemToSend,
+                                    const int destination_proc,
+                                    impl::ParallelGraphInfo &newParallelGraphEntries);
+
+    impl::parallel_info create_parallel_info(stk::mesh::Entity connected_element,
+                                                            const stk::mesh::Entity elemToSend,
+                                                            int side_id,
+                                                            const int destination_proc);
+
+    stk::mesh::Permutation get_permutation_given_neighbors_node_ordering(stk::mesh::Entity connected_element,
+                                                                                        const stk::mesh::Entity elemToSend,
+                                                                                        int side_id);
+
+    size_t pack_shared_side_nodes_of_elements(stk::CommSparse &comm, impl::ElemSideToProcAndFaceId& elements_to_communicate);
+
+    void reset_suggested_side_id_iter(size_t numIdsNotReallyUsed);
 };
 
 bool process_killed_elements(stk::mesh::BulkData& bulkData, ElemElemGraph& elementGraph, const stk::mesh::EntityVector& killedElements, stk::mesh::Part& active,

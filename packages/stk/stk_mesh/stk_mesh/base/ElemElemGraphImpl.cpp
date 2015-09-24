@@ -114,61 +114,6 @@ ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::Bulk
     return elem_side_comm;
 }
 
-size_t pack_shared_side_nodes_of_elements(stk::CommSparse& comm,
-                                        const stk::mesh::BulkData& bulkData,
-                                        ElemSideToProcAndFaceId &elements_to_communicate,
-                                        const std::vector<stk::mesh::EntityId>& suggested_side_ids,
-                                        const stk::mesh::Selector &sel, const stk::mesh::Selector* air)
-{
-    ElemSideToProcAndFaceId::iterator iter = elements_to_communicate.begin();
-    ElemSideToProcAndFaceId::const_iterator end = elements_to_communicate.end();
-    size_t counter = 0;
-
-    for(; iter!= end; ++iter)
-    {
-        stk::mesh::Entity elem = iter->first.entity;
-        unsigned side_index    = iter->first.side_id;
-        int sharing_proc       = iter->second.proc;
-        stk::mesh::EntityId element_id     = bulkData.identifier(elem);
-        stk::mesh::EntityId suggested_side_id = suggested_side_ids[counter];
-        ++counter;
-        iter->second.side_id = suggested_side_id;
-
-        stk::topology topology = bulkData.bucket(elem).topology();
-        const bool isSelected = sel(bulkData.bucket(elem));
-        const stk::mesh::Entity* elem_nodes = bulkData.begin_nodes(elem);
-
-        unsigned num_nodes_this_side = topology.side_topology(side_index).num_nodes();
-        stk::mesh::EntityVector side_nodes(num_nodes_this_side);
-        topology.side_nodes(elem_nodes, side_index, side_nodes.begin());
-
-        std::vector<stk::mesh::EntityKey> side_node_entity_keys(num_nodes_this_side);
-        for(size_t i=0; i<num_nodes_this_side; ++i)
-        {
-            side_node_entity_keys[i] = bulkData.entity_key(side_nodes[i]);
-        }
-
-        comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(element_id);
-        comm.send_buffer(sharing_proc).pack<stk::topology>(topology);
-        comm.send_buffer(sharing_proc).pack<unsigned>(side_index);
-        comm.send_buffer(sharing_proc).pack<stk::mesh::EntityId>(suggested_side_id);
-        comm.send_buffer(sharing_proc).pack<bool>(isSelected);
-        if(air!=nullptr)
-        {
-            bool is_in_air = (*air)(bulkData.bucket(elem));
-            comm.send_buffer(sharing_proc).pack<bool>(is_in_air);
-        }
-
-        comm.send_buffer(sharing_proc).pack<unsigned>(num_nodes_this_side);
-        for(size_t i=0; i<num_nodes_this_side; ++i)
-        {
-            comm.send_buffer(sharing_proc).pack<stk::mesh::EntityKey>(side_node_entity_keys[i]);
-        }
-    }
-    return counter;
-}
-
-
 bool does_element_have_side(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
 {
     unsigned dimension_of_element = bulkData.bucket(element).topology().dimension();

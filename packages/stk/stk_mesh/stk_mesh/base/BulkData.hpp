@@ -64,6 +64,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_mesh/base/ModificationSummary.hpp"
+#include <stk_mesh/base/ModificationNotifier.hpp>
 #include "stk_mesh/baseImpl/MeshModification.hpp"
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
@@ -77,6 +78,7 @@ namespace stk { namespace mesh { namespace impl { class EntityRepository; } } }
 namespace stk { namespace mesh { class ElemElemGraph; } }
 namespace stk { class CommSparse; }
 namespace stk { class CommAll; }
+namespace stk { namespace mesh { class ModificationObserver; } }
 
 #include "EntityCommListInfo.hpp"
 #include "EntityLess.hpp"
@@ -229,6 +231,7 @@ public:
 
   bool modification_end()
   {
+      notifier.notify_started_modification_end();
       return m_meshModification.modification_end();
   }
 
@@ -251,7 +254,9 @@ public:
    */
   void change_entity_owner( const EntityProcVec & arg_change)
   {
+      notifier.notify_elements_about_to_move_procs(arg_change);
       m_meshModification.change_entity_owner(arg_change);
+      notifier.notify_elements_moved_procs(arg_change);
   }
 
   /** \brief  Rotate the field data of multistate fields.
@@ -711,6 +716,8 @@ public:
    */
   void allocate_field_data();
 
+  void register_observer(stk::mesh::ModificationObserver *observer);
+
 protected: //functions
 
   bool make_mesh_parallel_consistent_after_element_death(const std::vector<sharing_info>& shared_modified,
@@ -797,7 +804,8 @@ protected: //functions
                                      const std::vector<Part*> & add_parts ,
                                      const std::vector<Part*> & remove_parts); // Mod Mark
 
-  virtual bool internal_destroy_entity( Entity entity, bool was_ghost = false ); // Mod Mark
+  bool internal_destroy_entity_with_notification(Entity entity, bool wasGhost = false); // Mod Mark
+  virtual bool internal_destroy_entity(Entity entity, bool wasGhost = false);
 
   void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
@@ -1311,6 +1319,7 @@ private: // data
   mutable SelectorBucketMap m_selector_to_buckets_map;
   impl::BucketRepository m_bucket_repository; // needs to be destructed first!
   bool m_use_identifiers_for_resolving_sharing;
+  ModificationNotifier notifier;
   stk::EmptyModificationSummary m_modSummary;
   // If needing debug info for modifications, comment out above line and uncomment line below
   // stk::ModificationSummary m_modSummary;

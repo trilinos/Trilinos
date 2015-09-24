@@ -376,7 +376,7 @@ void test_delete_elements_from_graph(ElemElemGraphTester &elem_graph, std::vecto
     std::set<stk::mesh::EntityId> currentElements = {1,2,3,4};
     stk::mesh::BulkData &bulkData = elem_graph.get_bulk_data();
 
-    stk::mesh::EntityVector elements_to_delete;
+    stk::mesh::impl::DeletedElementInfoVector elements_to_delete;
     for (size_t i = 0; i < ids_to_delete.size(); ++i)
     {
         stk::mesh::EntityId id = ids_to_delete[i];
@@ -384,21 +384,20 @@ void test_delete_elements_from_graph(ElemElemGraphTester &elem_graph, std::vecto
         stk::mesh::Entity elem = bulkData.get_entity(stk::topology::ELEM_RANK, id);
         if (bulkData.is_valid(elem) && bulkData.bucket(elem).owned())
         {
-            elements_to_delete.push_back(elem);
+            elements_to_delete.push_back({elem, id, bulkData.bucket(elem).topology().is_shell()});
         }
     }
 
-    elem_graph.delete_elements(elements_to_delete);
-
     bulkData.modification_begin();
-    for (stk::mesh::Entity elem : elements_to_delete)
+    for (stk::mesh::impl::DeletedElementInfo elem : elements_to_delete)
     {
-        stk::mesh::EntityId id = bulkData.identifier(elem);
-        bulkData.destroy_entity(elem);
-        elem = bulkData.get_entity(stk::topology::ELEM_RANK, id);
-        EXPECT_FALSE(bulkData.is_valid(elem));
+        bulkData.destroy_entity(elem.entity);
+        stk::mesh::Entity elemCheck = bulkData.get_entity(stk::topology::ELEM_RANK, elem.identifier);
+        EXPECT_FALSE(bulkData.is_valid(elemCheck));
     }
     bulkData.modification_end();
+
+    elem_graph.delete_elements(elements_to_delete);
 
     std::vector<unsigned> counts;
     stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
@@ -552,9 +551,9 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         EXPECT_EQ(-1, elem_graph.check_local_connectivity(elem1, elem3));
         EXPECT_EQ(-1, elem_graph.check_local_connectivity(elem2, elem4));
 
-        std::vector <stk::mesh::Entity> elems_to_delete;
-        elems_to_delete.push_back(elem2);
-        elems_to_delete.push_back(elem3);
+        stk::mesh::impl::DeletedElementInfoVector elems_to_delete;
+        elems_to_delete.push_back({elem2, 2, false});
+        elems_to_delete.push_back({elem3, 3, false});
 
         elem_graph.delete_elements(elems_to_delete);
 
@@ -591,10 +590,10 @@ TEST(ElementGraph, add_and_delete_elements_from_graph_serial)
         EXPECT_EQ(-1, elem_graph.check_local_connectivity(elem2, elem4));
 
         elems_to_delete.clear();
-        elems_to_delete.push_back(elem4);
-        elems_to_delete.push_back(elem2);
-        elems_to_delete.push_back(elem1);
-        elems_to_delete.push_back(elem3);
+        elems_to_delete.push_back({elem4, 4, false});
+        elems_to_delete.push_back({elem2, 2, false});
+        elems_to_delete.push_back({elem1, 1, false});
+        elems_to_delete.push_back({elem3, 3, false});
 
         elem_graph.delete_elements(elems_to_delete);
 
@@ -762,8 +761,8 @@ TEST( ElementGraph, HexDelShellSerial )
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
 
-    EntityVector elements_to_delete;
-    elements_to_delete.push_back(shell2);
+    stk::mesh::impl::DeletedElementInfoVector elements_to_delete;
+    elements_to_delete.push_back({shell2, 2, mesh.bucket(shell2).topology().is_shell()});
 
     elemElemGraph.delete_elements(elements_to_delete);
 
@@ -840,8 +839,8 @@ TEST( ElementGraph, HexDelShellHexSerial )
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
     const Entity shell3 = mesh.get_entity(stk::topology::ELEM_RANK, 3);
 
-    EntityVector elements_to_delete;
-    elements_to_delete.push_back(shell3);
+    stk::mesh::impl::DeletedElementInfoVector elements_to_delete;
+    elements_to_delete.push_back({shell3, 3, mesh.bucket(shell3).topology().is_shell()});
 
     elemElemGraph.delete_elements(elements_to_delete);
 
@@ -1798,6 +1797,137 @@ TEST(ElementGraph, skin_mesh_using_element_graph_serial)
     }
 }
 
+void expect_connected_to_local_elem_id(stk::mesh::BulkData &bulkData,
+                                       ElemElemGraphTester &elem_graph,
+                                       stk::mesh::Entity elem,
+                                       size_t connectedIndex,
+                                       stk::mesh::EntityId connectedId)
+{
+    stk::mesh::EntityId elemId = bulkData.identifier(elem);
+    ASSERT_TRUE(elem_graph.is_connected_elem_locally_owned(elem, connectedIndex))
+            << "elem " << elemId
+            << " expected local elem " << connectedId;
+    EXPECT_EQ(connectedId, bulkData.identifier(elem_graph.get_connected_element(elem, connectedIndex)))
+            << "elem " << elemId;
+}
+
+void expect_connected_to_remote_elem_id(stk::mesh::BulkData &bulkData,
+                                       ElemElemGraphTester &elem_graph,
+                                       stk::mesh::Entity elem,
+                                       size_t connectedIndex,
+                                       stk::mesh::EntityId connectedId)
+{
+    stk::mesh::EntityId elemId = bulkData.identifier(elem);
+    ASSERT_TRUE(!elem_graph.is_connected_elem_locally_owned(elem, connectedIndex))
+            << "elem " << elemId
+            << " expected remote elem " << connectedId;
+    EXPECT_EQ(connectedId, elem_graph.get_entity_id_of_remote_element(elem, connectedIndex))
+            << "elem " << elemId;
+}
+
+void change_entity_owner_hex_test_2_procs_move_from_1_to_0(bool aura_on)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int proc = stk::parallel_machine_rank(comm);
+
+    if(stk::parallel_machine_size(comm) == 2)
+    {
+        stk::mesh::MetaData meta;
+        stk::mesh::BulkData::AutomaticAuraOption aura_option = stk::mesh::BulkData::AUTO_AURA;
+        if (!aura_on)
+        {
+            aura_option = stk::mesh::BulkData::NO_AUTO_AURA;
+        }
+        stk::mesh::BulkData bulkData(meta, comm, aura_option);
+
+        stk::unit_test_util::fill_mesh_using_stk_io("generated:1x1x4", bulkData, comm);
+
+        std::vector<unsigned> counts;
+        stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
+        int numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
+        EXPECT_EQ(2, numLocallyOwnedElems);
+
+        ElemElemGraphTester elemGraph(bulkData);
+
+        std::vector< std::pair< stk::mesh::Entity, int > > elem_proc_pairs_to_move;
+
+        if (proc == 0)
+        {
+            stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
+            ASSERT_EQ(2u, elemGraph.get_num_connected_elems(elem2));
+            expect_connected_to_local_elem_id(bulkData, elemGraph, elem2, 0, 1);
+            expect_connected_to_remote_elem_id(bulkData, elemGraph, elem2, 1, 3);
+            EXPECT_EQ(5, elemGraph.get_side_from_element1_to_remote_element2(elem2, 3));
+
+            const impl::parallel_info &parInfo = elemGraph.get_parallel_edge_info(elem2, 3);
+            EXPECT_EQ(1, parInfo.m_other_proc);
+            EXPECT_EQ(4, parInfo.m_other_side_ord);
+            EXPECT_EQ(4, parInfo.m_permutation);
+            EXPECT_TRUE(parInfo.m_in_body_to_be_skinned);
+            EXPECT_FALSE(parInfo.m_is_air);
+            EXPECT_EQ(1u, parInfo.m_chosen_side_id);
+        }
+        else
+        {
+            stk::mesh::Entity elem3 = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
+            ASSERT_EQ(2u, elemGraph.get_num_connected_elems(elem3));
+            expect_connected_to_local_elem_id(bulkData, elemGraph, elem3, 0, 4);
+            expect_connected_to_remote_elem_id(bulkData, elemGraph, elem3, 1, 2);
+            EXPECT_EQ(4, elemGraph.get_side_from_element1_to_remote_element2(elem3, 2));
+
+            const impl::parallel_info &parInfo = elemGraph.get_parallel_edge_info(elem3, 2);
+            EXPECT_EQ(0, parInfo.m_other_proc);
+            EXPECT_EQ(5, parInfo.m_other_side_ord);
+            EXPECT_EQ(4, parInfo.m_permutation);
+            EXPECT_TRUE(parInfo.m_in_body_to_be_skinned);
+            EXPECT_FALSE(parInfo.m_is_air);
+            EXPECT_EQ(1u, parInfo.m_chosen_side_id);
+
+            int other_proc = 0;
+            elem_proc_pairs_to_move.push_back(std::make_pair(elem3, other_proc));
+        }
+
+        change_entity_owner(bulkData, elemGraph, elem_proc_pairs_to_move);
+
+        if (proc == 0)
+        {
+            stk::mesh::Entity elem2 = bulkData.get_entity(stk::topology::ELEM_RANK, 2);
+            ASSERT_EQ(2u, elemGraph.get_num_connected_elems(elem2));
+            expect_connected_to_local_elem_id(bulkData, elemGraph, elem2, 0, 1);
+            expect_connected_to_local_elem_id(bulkData, elemGraph, elem2, 1, 3);
+
+            stk::mesh::Entity elem3 = bulkData.get_entity(stk::topology::ELEM_RANK, 3);
+            ASSERT_EQ(2u, elemGraph.get_num_connected_elems(elem3));
+            expect_connected_to_remote_elem_id(bulkData, elemGraph, elem3, 0, 4);
+            EXPECT_EQ(5, elemGraph.get_side_from_element1_to_remote_element2(elem3, 4));
+            expect_connected_to_local_elem_id(bulkData, elemGraph, elem3, 1, 2);
+
+            const impl::parallel_info &parInfo = elemGraph.get_parallel_edge_info(elem3, 4);
+            EXPECT_EQ(1, parInfo.m_other_proc);
+            EXPECT_EQ(4, parInfo.m_other_side_ord);
+            EXPECT_EQ(4, parInfo.m_permutation);
+            EXPECT_TRUE(parInfo.m_in_body_to_be_skinned);
+            EXPECT_FALSE(parInfo.m_is_air);
+            EXPECT_EQ(17u, parInfo.m_chosen_side_id);
+        }
+        else
+        {
+            stk::mesh::Entity elem4 = bulkData.get_entity(stk::topology::ELEM_RANK, 4);
+            ASSERT_EQ(1u, elemGraph.get_num_connected_elems(elem4));
+            expect_connected_to_remote_elem_id(bulkData, elemGraph, elem4, 0, 3);
+            EXPECT_EQ(4, elemGraph.get_side_from_element1_to_remote_element2(elem4, 3));
+
+            const impl::parallel_info &parInfo = elemGraph.get_parallel_edge_info(elem4, 3);
+            EXPECT_EQ(0, parInfo.m_other_proc);
+            EXPECT_EQ(5, parInfo.m_other_side_ord);
+            EXPECT_EQ(4, parInfo.m_permutation);
+            EXPECT_TRUE(parInfo.m_in_body_to_be_skinned);
+            EXPECT_FALSE(parInfo.m_is_air);
+            EXPECT_EQ(17u, parInfo.m_chosen_side_id);
+        }
+    }
+}
+
 void change_entity_owner_hex_test_2_procs(bool aura_on)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
@@ -1844,7 +1974,7 @@ void change_entity_owner_hex_test_2_procs(bool aura_on)
             {
                 EXPECT_TRUE(bulkData.is_valid(elems_to_move[i]));
                 EXPECT_EQ(0, bulkData.parallel_owner_rank(elems_to_move[i]));
-            	elem_proc_pairs_to_move.push_back(std::make_pair(elems_to_move[i], other_proc));
+                elem_proc_pairs_to_move.push_back(std::make_pair(elems_to_move[i], other_proc));
             }
         }
 
@@ -1899,6 +2029,7 @@ void change_entity_owner_hex_test_2_procs(bool aura_on)
     }
 }
 
+
 TEST(ElementGraph, test_change_entity_owner_2_procs_hex_mesh_with_aura)
 {
     bool aura_on = true;
@@ -1909,6 +2040,19 @@ TEST(ElementGraph, test_change_entity_owner_2_procs_hex_mesh_without_aura)
 {
     bool aura_on = false;
     change_entity_owner_hex_test_2_procs(aura_on);
+}
+
+
+TEST(ElementGraph, test_change_entity_owner_2_procs_move_from_1_to_0_hex_mesh_with_aura)
+{
+    bool aura_on = true;
+    change_entity_owner_hex_test_2_procs_move_from_1_to_0(aura_on);
+}
+
+TEST(ElementGraph, test_change_entity_owner_2_procs_move_from_1_to_0_hex_mesh_without_aura)
+{
+    bool aura_on = false;
+    change_entity_owner_hex_test_2_procs_move_from_1_to_0(aura_on);
 }
 
 void change_entity_owner_then_death_hex_test_2_procs(bool aura_on)
@@ -4509,9 +4653,9 @@ TEST( ElementGraph, Hex0DelShell1Parallel )
     const Entity hex1   = mesh.get_entity(stk::topology::ELEM_RANK, 1);
     const Entity shell2 = mesh.get_entity(stk::topology::ELEM_RANK, 2);
 
-    stk::mesh::EntityVector elements_to_delete;
+    stk::mesh::impl::DeletedElementInfoVector elements_to_delete;
     if (p_rank == 1) {
-        elements_to_delete.push_back(shell2);
+        elements_to_delete.push_back({shell2, 2, mesh.bucket(shell2).topology().is_shell()});
     }
 
     elemElemGraph.delete_elements( elements_to_delete );
@@ -5674,18 +5818,18 @@ TEST( ElementGraph, Hex0DelShell0Hex1Parallel )
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
     const Entity shell3 = mesh.get_entity(stk::topology::ELEM_RANK, 3);
 
-    stk::mesh::EntityVector elements_to_delete;
+    stk::mesh::impl::DeletedElementInfoVector elements_to_delete;
     if (p_rank == 0) {
-        elements_to_delete.push_back(shell3);
+        elements_to_delete.push_back({shell3, 3, mesh.bucket(shell3).topology().is_shell()});
     }
-
-    elemElemGraph.delete_elements( elements_to_delete );
 
     mesh.modification_begin();
     if (p_rank == 0) {
         mesh.destroy_entity(shell3);
     }
     mesh.modification_end();
+
+    elemElemGraph.delete_elements( elements_to_delete );
 
     if (p_rank == 0) {
         // Connectivity for Hex Element 1
@@ -5806,9 +5950,9 @@ TEST( ElementGraph, Hex0DelShell1Hex2Parallel )
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
     const Entity shell3 = mesh.get_entity(stk::topology::ELEM_RANK, 3);
 
-    stk::mesh::EntityVector elements_to_delete;
+    stk::mesh::impl::DeletedElementInfoVector elements_to_delete;
     if (p_rank == 1) {
-        elements_to_delete.push_back(shell3);
+        elements_to_delete.push_back({shell3, 3, mesh.bucket(shell3).topology().is_shell()});
     }
 
     elemElemGraph.delete_elements( elements_to_delete );
@@ -6312,9 +6456,9 @@ TEST( ElementGraph, Hex0DelShell1Hex0Parallel )
     const Entity hex2   = mesh.get_entity(stk::topology::ELEM_RANK, 2);
     const Entity shell3 = mesh.get_entity(stk::topology::ELEM_RANK, 3);
 
-    stk::mesh::EntityVector elements_to_delete;
+    stk::mesh::impl::DeletedElementInfoVector elements_to_delete;
     if (p_rank == 1) {
-        elements_to_delete.push_back(shell3);
+        elements_to_delete.push_back({shell3, 3, mesh.bucket(shell3).topology().is_shell()});
     }
 
     elemElemGraph.delete_elements( elements_to_delete );
