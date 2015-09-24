@@ -74,65 +74,65 @@ Domi    = fromPyTrilinosImport('Domi'   , options.testharness)
 import numpy
 
 def main(iAmRoot):
-  # Initialize the communicators
-  eComm  = Epetra.PyComm()
-  tComm  = Teuchos.DefaultComm.getComm()
-  mdComm = Domi.MDComm((-1,))
+    # Initialize the communicators
+    eComm  = Epetra.PyComm()
+    tComm  = Teuchos.DefaultComm.getComm()
+    mdComm = Domi.MDComm((-1,))
   
-  # Intitialize the maps
-  size  = 10
-  eMap  = Epetra.Map(size, 0, eComm)
-  mdMap = Domi.MDMap(mdComm, (size,))
+    # Intitialize the maps
+    size  = 10
+    eMap  = Epetra.Map(size, 0, eComm)
+    mdMap = Domi.MDMap(mdComm, (size,))
 
-  # Construct a CRS matrix
-  matrix = Epetra.CrsMatrix(Epetra.Copy, eMap, 3)
+    # Construct a CRS matrix
+    matrix = Epetra.CrsMatrix(Epetra.Copy, eMap, 3)
 
-  # Initialize the error count
-  errors = 0
+    # Initialize the error count
+    errors = 0
 
-  # We are going to demonstrate the DAP typemaps by constructing
-  # Epetra>LinearProblem objects.  In C++, these constructors take two
-  # Epetra::MultiVectors.  The DAP typemaps allow us to provide any object that
-  # supports the DistArray Protocol as substitute arguments.  They also allow
-  # NumPy arrays when the environment is serial.
+    # We are going to demonstrate the DAP typemaps by constructing
+    # Epetra>LinearProblem objects.  In C++, these constructors take two
+    # Epetra::MultiVectors.  The DAP typemaps allow us to provide any object
+    # that supports the DistArray Protocol as substitute arguments.  They also
+    # allow NumPy arrays when the environment is serial.
 
-  # For the serial case, we will create two NumPy arrays and provide them to the
-  # Epetra.LinearProblem constructor
-  if tComm.getSize() == 1:
-      x1  = numpy.zeros((size,), dtype='d')
-      b1  = numpy.ones((size,), dtype='d')
-      lp1 = Epetra.LinearProblem(matrix, x1, b1)
-      if iAmRoot:
-          print "Successfully built Epetra.LinearProblem with NumPy arrays"
-      if not (lp1.GetLHS() == 0.0).all():
-          if iAmRoot:
-              print "Error with serial NumPy LHS vector"
-          errors += 1
-      if not (lp1.GetRHS() == 1.0).all():
-          if iAmRoot:
-              print "Error with serial NumPy RHS vector"
-          errors += 1
+    # For the serial case, we will create two NumPy arrays and provide them to
+    # the Epetra.LinearProblem constructor
+    if tComm.getSize() == 1:
+        x1  = numpy.zeros((size,), dtype='d')
+        b1  = numpy.ones((size,), dtype='d')
+        lp1 = Epetra.LinearProblem(matrix, x1, b1)
+        if iAmRoot:
+            print "Successfully built Epetra.LinearProblem with NumPy arrays"
+        if not (lp1.GetLHS() == 0.0).all():
+            if iAmRoot:
+                print "Error with serial NumPy LHS vector"
+            errors += 1
+        if not (lp1.GetRHS() == 1.0).all():
+            if iAmRoot:
+                print "Error with serial NumPy RHS vector"
+            errors += 1
 
-  # Now we will construct two Domi.MDVectors and provide them as arguments to
-  # the Epetra.LinearProblem constructor
-  x2 = Domi.MDVector(mdMap, dtype='d')
-  x2.getData()[:] = 0.0
-  b2 = Domi.MDVector(mdMap, dtype='d')
-  b2.getData()[:] = 1.0
-  lp2 = Epetra.LinearProblem(matrix, x2, b2)
-  if iAmRoot:
-      print "Successfully built Epetra.LinearProblem with Domi MDVectors"
-  if not (lp2.GetLHS() == 0.0).all():
-      if iAmRoot:
-          print "Error with MDVector LHS vector"
-      errors += 1
-  if not (lp2.GetRHS() == 1.0).all():
-      if iAmRoot:
-          print "Error with MDVector RHS vector"
-      errors += 1
+    # Now we will construct two Domi.MDVectors and provide them as arguments to
+    # the Epetra.LinearProblem constructor
+    x2 = Domi.MDVector(mdMap, dtype='d')
+    x2.getData()[:] = 0.0
+    b2 = Domi.MDVector(mdMap, dtype='d')
+    b2.getData()[:] = 1.0
+    lp2 = Epetra.LinearProblem(matrix, x2, b2)
+    if iAmRoot:
+        print "Successfully built Epetra.LinearProblem with Domi MDVectors"
+    if not (lp2.GetLHS() == 0.0).all():
+        if iAmRoot:
+            print "Error with MDVector LHS vector"
+        errors += 1
+    if not (lp2.GetRHS() == 1.0).all():
+        if iAmRoot:
+            print "Error with MDVector RHS vector"
+        errors += 1
 
-  # Return the number of errors
-  return errors
+    # Return the number of errors
+    return errors
 
 ################################################################################
 
