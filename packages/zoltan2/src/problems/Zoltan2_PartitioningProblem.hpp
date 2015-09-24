@@ -121,7 +121,8 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), metrics_()
+      metricsRequested_(false), metrics_(),
+      graphMetricsRequested_(false), graphMetrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -137,7 +138,8 @@ public:
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), metrics_()
+      metricsRequested_(false), metrics_(),
+      graphMetricsRequested_(false), graphMetrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -153,7 +155,8 @@ public:
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), metrics_()
+      metricsRequested_(false), metrics_(),
+      graphMetricsRequested_(false), graphMetrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -376,6 +379,8 @@ private:
 
   bool metricsRequested_;
   RCP<const PartitioningSolutionQuality<Adapter> > metrics_;
+  bool graphMetricsRequested_;
+  RCP<const graphMetricValues<scalar_t> > graphMetrics_;
 };
 ////////////////////////////////////////////////////////////////////////
 
@@ -969,15 +974,15 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       sgParameter = pe->getValue<int>(&sgParameter);
 
     if (sgParameter == 1)
-        graphFlags_.set(GRAPH_IS_A_SUBSET_GRAPH);
+        graphFlags_.set(BUILD_SUBSET_GRAPH);
 
     // Any special behaviors required by the algorithm?
     
     if (removeSelfEdges)
-      graphFlags_.set(SELF_EDGES_MUST_BE_REMOVED);
+      graphFlags_.set(REMOVE_SELF_EDGES);
 
     if (needConsecutiveGlobalIds)
-      graphFlags_.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+      graphFlags_.set(GENERATE_CONSECUTIVE_IDS);
 
     // How does user input map to vertices and edges?
 
@@ -1007,7 +1012,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     // Any special behaviors required by the algorithm?
     
     if (needConsecutiveGlobalIds)
-      idFlags_.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+      idFlags_.set(GENERATE_CONSECUTIVE_IDS);
   }
   //  else if (modelType_ == CoordinateModelType)
   if (modelAvail_[CoordinateModelType]==true)
@@ -1016,7 +1021,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     // Any special behaviors required by the algorithm?
     
     if (needConsecutiveGlobalIds)
-      coordFlags_.set(IDS_MUST_BE_GLOBALLY_CONSECUTIVE);
+      coordFlags_.set(GENERATE_CONSECUTIVE_IDS);
   }
 
 

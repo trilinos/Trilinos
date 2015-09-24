@@ -79,7 +79,7 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   ICNTL[3]  = -1;  // Turn off global information messages   6=on, -1=off
   ICNTL[4]  = -1;  // 3 = most msgs; -1= none  
 
-#ifdef MUMPS_4_9
+#if defined(MUMPS_4_9) || defined(MUMPS_5_0)
 
   ICNTL[5]  = 0;   // Matrix is given in assembled (i.e. triplet) from
   ICNTL[6]  = 7;   // Choose column permutation automatically

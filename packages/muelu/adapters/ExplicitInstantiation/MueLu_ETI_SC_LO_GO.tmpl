@@ -45,18 +45,29 @@
 //
 // @HEADER
 
+#include "MueLu_ConfigDefs.hpp"
 
-#include "MueLu_ExplicitInstantiation.hpp"
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
 
-#include "Thyra_MueLuPreconditionerFactory.hpp"
-
+#include "@CLASS_FILE_NAME@_decl.hpp"
+#include "@CLASS_FILE_NAME@_def.hpp"
 #include "TpetraCore_ETIHelperMacros.h"
 
-#define MUELU_LOCAL_INSTANT(S,LO,GO,N) \
-        template class Thyra::MueLuPreconditionerFactory<S,LO,GO,N>;
+#if defined(@TPETRA_TEMPLATE_TYPE@)
+
+// Need this for the mangling of the Node typedef.
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+#define MUELU_LOCAL_INSTANT(S,LO,GO) \
+        template class @CLASS@<S,LO,GO,@TEMPLATE_NODE@>;
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
-TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
+TPETRA_INSTANTIATE_SLG_NO_ORDINAL_SCALAR(MUELU_LOCAL_INSTANT)
 
+#else
+#warning "We don't have the @TEMPLATE_NODE@."
 
+#endif
+
+#endif // HAVE_MUELU_EXPLICIT_INSTANTIATION

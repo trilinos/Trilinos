@@ -168,10 +168,9 @@ void AlgParMETIS<Adapter>::partition(
 
   // Get vertex info
   ArrayView<const gno_t> vtxgnos;
-  ArrayView<StridedData<lno_t, scalar_t> > xyz;
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
   int nVwgt = model->getNumWeightsPerVertex();
-  size_t nVtx = model->getVertexList(vtxgnos, xyz, vwgts);
+  size_t nVtx = model->getVertexList(vtxgnos, vwgts);
   pm_idx_t pm_nVtx;
   TPL_Traits<pm_idx_t,size_t>::ASSIGN_TPL_T(pm_nVtx, nVtx, env);
 
@@ -183,11 +182,10 @@ void AlgParMETIS<Adapter>::partition(
 
   // Get edge info
   ArrayView<const gno_t> adjgnos;
-  ArrayView<const int>   procs;
   ArrayView<const lno_t> offsets;
   ArrayView<StridedData<lno_t, scalar_t> > ewgts;
   int nEwgt = model->getNumWeightsPerEdge();
-  size_t nEdge = model->getEdgeList(adjgnos, procs, offsets, ewgts);
+  size_t nEdge = model->getEdgeList(adjgnos, offsets, ewgts);
 
   pm_idx_t *pm_ewgts = NULL;
   if (nEwgt) {

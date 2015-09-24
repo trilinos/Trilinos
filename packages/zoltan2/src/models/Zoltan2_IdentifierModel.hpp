@@ -206,7 +206,7 @@ template <typename Adapter>
   // TODO:  Currently is useful only if zgid_t is not Teuchos::Ordinal
   RCP<const idmap_t> idMap;
   try{
-    if (modelFlags.test(IDS_MUST_BE_GLOBALLY_CONSECUTIVE))
+    if (modelFlags.test(GENERATE_CONSECUTIVE_IDS))
       idMap = rcp(new idmap_t(env_, comm_, gids_, true));
     else
       idMap = rcp(new idmap_t(env_, comm_, gids_, false));

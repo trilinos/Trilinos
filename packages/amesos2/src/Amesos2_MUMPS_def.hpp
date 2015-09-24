@@ -417,8 +417,8 @@ namespace Amesos2
     mumps_par.n =  this->globalNumCols_;
     mumps_par.nz = this->globalNumNonZeros_;
     mumps_par.a = (magnitude_type*)malloc(mumps_par.nz * sizeof(magnitude_type));
-    mumps_par.irn = (global_ordinal_type*)malloc(mumps_par.nz *sizeof(global_ordinal_type));
-    mumps_par.jcn = (global_ordinal_type*)malloc(mumps_par.nz * sizeof(global_ordinal_type));
+    mumps_par.irn = (local_ordinal_type*)malloc(mumps_par.nz *sizeof(local_ordinal_type));
+    mumps_par.jcn = (local_ordinal_type*)malloc(mumps_par.nz * sizeof(local_ordinal_type));
 
     if((mumps_par.a == NULL) || (mumps_par.irn == NULL) 
        || (mumps_par.jcn == NULL))
@@ -427,15 +427,15 @@ namespace Amesos2
       }
     /* Going from full CSC to full Triplet */
     /* Will have to add support for symmetric case*/
-    global_ordinal_type tri_count = 0;
-    global_ordinal_type i,j;
+    local_ordinal_type tri_count = 0;
+    local_ordinal_type i,j;
     
-    for(i = 0; i < (global_ordinal_type)this->globalNumCols_; i++)
+    for(i = 0; i < (local_ordinal_type)this->globalNumCols_; i++)
       {
         for( j = colptr_[i]; j < colptr_[i+1]; j++)
           {
-            mumps_par.jcn[tri_count] = i+1; //Fortran index
-            mumps_par.irn[tri_count] = rowind_[j]+1; //Fortran index
+            mumps_par.jcn[tri_count] = (local_ordinal_type)i+1; //Fortran index
+            mumps_par.irn[tri_count] = (local_ordinal_type)rowind_[j]+1; //Fortran index
             mumps_par.a[tri_count] = nzvals_[j];
             tri_count++;
           }

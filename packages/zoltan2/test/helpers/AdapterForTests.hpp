@@ -87,7 +87,7 @@ using Teuchos::rcp_const_cast;
 using Teuchos::ParameterList;
 using std::string;
 
-
+/* \brief A class for constructing Zoltan2 input adapters */
 class AdapterForTests{
 public:
   
@@ -110,63 +110,92 @@ public:
   typedef Zoltan2::BasicVectorAdapter<tMVector_t> basic_vector_adapter;
   typedef Zoltan2::PamgenMeshAdapter<tMVector_t> pamgen_adapter_t;
   
+  /*! \brief A class method for constructing an input adapter
+   *   defind in a parameter list.
+   *   \param[in] uinput is the data source for adapter
+   *   \param[in] pList is the paramter list defining the data type to be used and
+   *                 adapter type to be costructed
+   *   \param[in] comm is the process communicator
+   *
+   * \return Ptr to the constructed adapter cast to the base class
+   */
   static base_adapter_t* getAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
 private:
   /*! \brief Method to choose and call the correct constructor
-   *      for a BasicIdentifierAdapter from a UserInputForTests input file.
-   *   \param uinput is the UserInputForTestsInputForTestObject
-   *   \param  pList is the teuchos input parameter list
-   *   \param  adapter is a reference to the input adapter to be constructed.
+   *   for a BasicIdentifierAdapter from a UserInputForTests input file.
+   *   \param[in] uinput is the data source for adapter
+   *   \param[in] pList is the teuchos input parameter list
+   *   \param[in] comm is the process communicator
+   *
+   * \return Ptr to the constructed adapter cast to the base class
    */
   static base_adapter_t*
   getBasicIdentiferAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
   /*! \brief Method to choose and call the correct constructor
-   *      for a XpetraMultiVectorAdapter from a UserInputForTests input file.
-   *   \param uinput is the UserInputForTestsInputForTestObject
-   *   \param  pList is the teuchos input parameter list
-   *   \param  adapter is a reference to the input adapter to be constructed.
+   *   for an Xpetra multi-vector adapter.
+   *   \param[in] uinput is the data source for adapter
+   *   \param[in] pList is the teuchos input parameter list
+   *   \param[in] comm is the process communicator
+   *
+   * \return Ptr to the constructed adapter cast to the base class
    */
   static base_adapter_t*
   getXpetraMVAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
   /*! \brief Method to choose and call the correct constructor
-   *      for a XpetraMultiVectorAdapter from a UserInputForTests input file.
-   *   \param uinput is the UserInputForTestsInputForTestObject
-   *   \param  pList is the teuchos input parameter list
-   *   \param  adapter is a reference to the input adapter to be constructed.
+   *   for an Xpetra crs graph adapter.
+   *   \param[in] uinput is the data source for adapter
+   *   \param[in] pList is the teuchos input parameter list
+   *   \param[in] comm is the process communicator
+   *
+   * \return Ptr to the constructed adapter cast to the base class
    */
   static base_adapter_t*
   getXpetraCrsGraphAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
   /*! \brief Method to choose and call the correct constructor
-   *      for a XpetraMultiVectorAdapter from a UserInputForTests input file.
-   *   \param uinput is the UserInputForTestsInputForTestObject
-   *   \param  pList is the teuchos input parameter list
-   *   \param  adapter is a reference to the input adapter to be constructed.
+   *   for an Xpetra Crs matrix adapter.
+   *   \param[in] uinput is the data source for adapter
+   *   \param[in] pList is the teuchos input parameter list
+   *   \param[in] comm is the process communicator
+   *
+   * \return Ptr to the constructed adapter cast to the base class
    */
   static base_adapter_t*
   getXpetraCrsMatrixAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
   /*! \brief Method to choose and call the correct constructor
-   *      for a BasicVectorAdapter from a UserInputForTests input file.
-   *   \param uinput is the UserInputForTestsInputForTestObject
-   *   \param  pList is the teuchos input parameter list
-   *   \param  adapter is a reference to the input adapter to be constructed.
+   *   for a basic vector adapter.
+   *   \param[in] uinput is the data source for adapter
+   *   \param[in] pList is the teuchos input parameter list
+   *   \param[in] comm is the process communicator
+   *
+   * \return Ptr to the constructed adapter cast to the base class
    */
   static base_adapter_t*
   getBasicVectorAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
   
-  
+  /*! \brief Method to choose and call the correct constructor
+   *   for a Pamgen mesh adapter.
+   *   \param[in] uinput is the data source for adapter
+   *   \param[in] pList is the teuchos input parameter list
+   *   \param[in] comm is the process communicator
+   *
+   * \return Ptr to the constructed adapter cast to the base class
+   */
   static base_adapter_t*
   getPamgenMeshAdapterForInput(UserInputForTests *uinput, const ParameterList &pList, const RCP<const Comm<int> > &comm);
-  /*! \brief Method to set up strided vector data from a Multivector
-   *  \param data is the Multivector
-   *  \param coords is the vector of strided data
-   *  \param strides is the vector of stride info
-   *  \param stride is stride to apply to data set
-   * \param epetra tells the method whether an epetra vector is being passed
+  
+  
+  /*! \brief Method to set up strided vector data from a multi-vector
+   *  \param[in] data is the multi-vector
+   *  \param[out] coords is the vector of strided coordinate data
+   *  \param[out] strides is the vector of strides
+   *  \param[in] stride is the stride to apply to data set
+   *
+   * \return
    */
   template <typename T>
   static void InitializeVectorData(const RCP<T> &data,
@@ -175,6 +204,14 @@ private:
                                    int stride);
   
 #ifdef HAVE_EPETRA_DATA_TYPES
+  /*! \brief Method to set up strided vector data from a multi-vector
+   *  \param[in] data is the epetra multi-vector
+   *  \param[out] coords is the vector of strided coordinate data
+   *  \param[out] strides is the vector of strides
+   *  \param[in] stride is the stride to apply to data set
+   *
+   * \return
+   */
   template <typename T>
   static void InitializeEpetraVectorData(const RCP<T> &data,
                                          vector<const zscalar_t *> &coords,
@@ -769,12 +806,10 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     vector<int> entry_strides;
     AdapterForTests::InitializeVectorData(data,coords,entry_strides,stride);
     
-    size_t dim = data->getNumVectors();
-    if(dim == 1) coords[1] = coords[2] = NULL;
-    else if(dim == 2)
-    {
-      coords[2] = NULL;
-    }
+    size_t dim = coords.size(); //BDD may need to add NULL for constructor call
+    size_t push_null = 3-dim;
+    for (size_t i = 0; i < push_null; i ++)
+      coords.push_back(NULL);
     
     if(weights.empty())
     {
@@ -831,13 +866,6 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     vector<int> entry_strides;
     AdapterForTests::InitializeVectorData(data,coords,entry_strides,stride);
     
-    
-    if(nvec == 1) coords[1] = coords[2] = NULL;
-    else if(nvec == 2)
-    {
-      coords[2] = NULL;
-    }
-    
     ia = new AdapterForTests::basic_vector_adapter(localCount, globalIds,
                                                    coords, entry_strides,
                                                    weights,weightStrides);
@@ -880,15 +908,6 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     AdapterForTests::InitializeVectorData(data,coords,entry_strides,stride);
     if(comm->getRank() == 0) cout << "size of entry strides: " << entry_strides.size() << endl;
     if(comm->getRank() == 0) cout << "size of coords: " << coords.size() << endl;
-
-    if(nvec == 1)
-    {
-      coords[1] = coords[2] = NULL;
-    }
-    else if(nvec == 2)
-    {
-      coords[2] = NULL;
-    }
     
     // make vector!
     ia = new AdapterForTests::basic_vector_adapter(localCount, globalIds,
@@ -933,12 +952,6 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicVectorAdapterForInput
     vector<const zscalar_t *> coords;
     vector<int> entry_strides;
     AdapterForTests::InitializeEpetraVectorData(data,coords,entry_strides,stride);
-    
-    if(nvec == 1) coords[1] = coords[2] = NULL;
-    else if(nvec == 2)
-    {
-      coords[2] = NULL;
-    }
     
     // make vector!
     ia = new AdapterForTests::basic_vector_adapter(localCount, globalIds,
@@ -1015,7 +1028,7 @@ void AdapterForTests::InitializeVectorData(const RCP<T> &data,
   //  printf("}\n");
   
   // always build for dim 3
-  coords = std::vector<const zscalar_t *>(3);
+  coords = std::vector<const zscalar_t *>(nvecs);
   strides = std::vector<int>(nvecs);
   
   for (size_t i = 0; i < nvecs; i++) {
@@ -1093,7 +1106,7 @@ void AdapterForTests::InitializeEpetraVectorData(const RCP<T> &data,
 //  }
 //  printf("}\n");
   
-  coords = std::vector<const zscalar_t *>(3);
+  coords = std::vector<const zscalar_t *>(nvecs);
   strides = std::vector<int>(nvecs);
   
   for (size_t i = 0; i < nvecs; i++) {

@@ -281,13 +281,12 @@ void AlgND<Adapter>::getBoundLayerSep(int levelIndx, const std::vector<part_t> &
   //Teuchos ArrayView
   ArrayView< const lno_t > eIDs;
   ArrayView< const lno_t > vOffsets;
-  ArrayView< const lno_t > procIDs;
   ArrayView< input_t > wgts;
 
   // For some reason getLocalEdgeList seems to be returning empty eIDs
   //size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getLocalEdgeList(eIDs, vOffsets, wgts);
 
-  size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, procIDs, vOffsets, wgts);
+  size_t numEdges = ( (GraphModel<typename Adapter::base_adapter_t>)  *mGraphModel).getEdgeList(eIDs, vOffsets, wgts);
 
 //   size_t Zoltan2::GraphModel< Adapter >::getEdgeList(ArrayView< const gno_t > & edgeIds,
 // 						     ArrayView< const int > & procIds,

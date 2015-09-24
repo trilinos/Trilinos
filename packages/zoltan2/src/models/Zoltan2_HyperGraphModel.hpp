@@ -205,20 +205,28 @@ public:
 
       \param Ids will on return point to the list of the global Ids for
         each vertex on this process.
-      \param xyz If vertex coordinate data is available, \c xyz
-         will on return point to a StridedData object of coordinates.
       \param wgts If vertex weights is available, \c wgts
          will on return point to a StridedData object of weights.
    */
   size_t getVertexList(
     ArrayView<const gno_t> &Ids,
-    ArrayView<input_t> &xyz,
     ArrayView<input_t> &wgts) const
   {
     size_t nv = gids_.size();
     Ids = gids_(0, nv);
-    xyz = vCoords_.view(0, vCoordDim_);
     wgts = vWeights_.view(0, numWeightsPerVertex_);
+    return nv;
+  }
+
+  /*! \brief Sets pointers to this process' vertex coordinates, if available
+
+      \param xyz If vertex coordinate data is available, \c xyz
+         will on return point to a StridedData object of coordinates.
+   */
+  size_t getVertexCoords(ArrayView<input_t> &xyz) const
+  {
+    size_t nv = gids_.size();
+    xyz = vCoords_.view(0, vCoordDim_);
     return nv;
   }
 

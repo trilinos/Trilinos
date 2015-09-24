@@ -1,3 +1,10 @@
+September 23, 2015
+
+CMake has been updated to now use mumps 5.0.0+. This is the defualt.  
+The MACRO for -DMUMPS_4_9 or -DMUMPS_5_0 is needed.
+This is be made default in future.
+
+
 August 26, 2008
 
 These cmake scripts worked on octopi.sandia.gov to build the Trilinos
