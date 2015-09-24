@@ -436,7 +436,6 @@ int TestOneMatrix( const std::vector<bool> AmesosClassesInstalled,
   //  These tests are all disabled in TestAllClasses.cpp
   //
   int RangemapMax = 4; // bug should be four:  ( no change, serial, bizarre dist, replicated )
-  int DomainmapMax = 4; // bug should be four:  ( no change, serial, bizarre dist, replicated )  IRRELEVANT see ThisDomainMax
 
   //
   //  DiagonalOpts controls whether diagonal elements are left alone,
@@ -454,11 +453,9 @@ int TestOneMatrix( const std::vector<bool> AmesosClassesInstalled,
   if ( Comm.NumProc() == 1 ) {
     iterDistMax = 1 ;
     RangemapMax = 1 ;
-    DomainmapMax = 1 ;
   }
   else{
     RangemapMax = 4;
-    DomainmapMax = 4;
   }
 
 
