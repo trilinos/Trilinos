@@ -155,7 +155,8 @@ public:
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), metrics_()
+      metricsRequested_(false), metrics_(),
+      graphMetricsRequested_(false), graphMetrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
