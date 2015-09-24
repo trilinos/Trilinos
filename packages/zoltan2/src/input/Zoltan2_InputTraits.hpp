@@ -121,13 +121,11 @@ typedef Tpetra::Map<>::node_type default_node_t;
  * In particular, the BasicUserTypes template parameters are:
 
     \li \c scalar is the data type for element values, weights and coordinates.
-    \li \c gid (global id) is the data type used by the application for global Ids.  If the application's global Id data type is a Teuchos Ordinal, then \c gid and \c gno can the same.  Otherwise, the application global Ids will be mapped to Teuchos Ordinals for use by Zoltan2 internally.  (Teuchos Ordinals are those data types for which traits are defined in Teuchos_OrdinalTraits.hpp.)
     \li \c lno (local number) is the integral data type used by the application and by Zoltan2 for local indices and local counts.
-    \li \c gno (global number) is the integral data type used by Zoltan2 to represent global indices and global counts.
+    \li \c gno (global number) is the integral data type used by the application and Zoltan2 to represent global identifiers and global counts.
  */
 
-template <typename scalar=double, typename gid=int,
-          typename lno=int, typename gno=int>
+template <typename scalar=double, typename lno=int, typename gno=int>
 class BasicUserTypes{
 };
 
@@ -199,10 +197,9 @@ struct InputTraits {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 template <typename Scalar,
-          typename GID,
           typename LNO,
           typename GNO>
-struct InputTraits<BasicUserTypes<Scalar, GID, LNO, GNO> >
+struct InputTraits<BasicUserTypes<Scalar, LNO, GNO> >
 {
   typedef Scalar        scalar_t;
   typedef LNO lno_t;

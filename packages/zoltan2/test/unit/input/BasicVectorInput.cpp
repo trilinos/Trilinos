@@ -57,7 +57,7 @@ using Teuchos::RCP;
 using Teuchos::Comm;
 using Teuchos::DefaultComm;
 
-typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> userTypes_t;
+typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
 
 int checkBasicVector(
   Zoltan2::BasicVectorAdapter<userTypes_t> *ia, int len, int glen,

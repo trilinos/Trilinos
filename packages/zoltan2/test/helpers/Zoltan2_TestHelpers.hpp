@@ -102,7 +102,6 @@ typedef Tpetra::Map<>::node_type znode_t;
 #include <TpetraCore_config.h>
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-  typedef unsigned long zzgid_t;
 
 # ifdef HAVE_TPETRA_DOUBLE
     typedef double zscalar_t;
@@ -133,12 +132,10 @@ typedef Tpetra::Map<>::node_type znode_t;
 #else  // !HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
 # if defined TEST_STK_DATA_TYPES
-    typedef size_t  zzgid_t;
     typedef double  zscalar_t;
     typedef ssize_t zlno_t;
     typedef size_t  zgno_t;
 # else  // !TEST_STK_DATA_TYPES
-    typedef unsigned long zzgid_t;
     typedef double zscalar_t;
     typedef int zlno_t;
     typedef int zgno_t;

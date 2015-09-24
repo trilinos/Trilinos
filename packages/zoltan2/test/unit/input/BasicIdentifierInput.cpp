@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
   // Create a Zoltan2::BasicIdentifierAdapter object
   // and verify that it is correct
 
-  typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> userTypes_t;
+  typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
   std::vector<const zscalar_t *> weightValues;
   std::vector<int> strides;
 

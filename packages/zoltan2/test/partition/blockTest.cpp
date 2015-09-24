@@ -120,7 +120,7 @@ int main(int narg, char **arg)
   std::vector<int> weightStrides;   // default is one
   weightValues.push_back(const_cast<const zscalar_t *>(myWeights));
 
-  typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> mydata_t;
+  typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> mydata_t;
   typedef Zoltan2::BasicIdentifierAdapter<mydata_t> adapter_t;
   typedef adapter_t::part_t part_t;
 

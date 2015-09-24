@@ -61,7 +61,7 @@ using Teuchos::Array;
 
 typedef Teuchos::SerialDenseVector<zlno_t, zscalar_t> tvec_t;
 
-typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> userTypes_t;
+typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
 
 int checkBasicCoordinate(
   Zoltan2::BasicVectorAdapter<userTypes_t> *ia, 

@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
   // Create a Zoltan2 input adapter with no weights
 
   // TODO explain
-  typedef Zoltan2::BasicUserTypes<scalar_t, globalId_t, localId_t, globalId_t> myTypes;
+  typedef Zoltan2::BasicUserTypes<scalar_t, localId_t, globalId_t> myTypes;
 
   // TODO explain
   typedef Zoltan2::BasicIdentifierAdapter<myTypes> inputAdapter_t;

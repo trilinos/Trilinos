@@ -101,7 +101,7 @@ public:
   typedef UserInputForTests::xVector_t xVector_t;
   typedef UserInputForTests::xMVector_t xMVector_t;
   
-  typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> userTypes_t;
+  typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
   typedef Zoltan2::BaseAdapter<userTypes_t> base_adapter_t;
   typedef Zoltan2::BasicIdentifierAdapter<userTypes_t> basic_id_t;
   typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> xpetra_mv_adapter;

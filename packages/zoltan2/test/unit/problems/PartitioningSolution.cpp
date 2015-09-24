@@ -54,7 +54,7 @@
 #include <Zoltan2_BasicIdentifierAdapter.hpp>
 #include <Zoltan2_TestHelpers.hpp>
 
-typedef Zoltan2::BasicUserTypes<zscalar_t, zgno_t, zlno_t, zgno_t> zzuser_t;
+typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> zzuser_t;
 typedef Zoltan2::BasicIdentifierAdapter<zzuser_t> idInput_t;
 typedef idInput_t::part_t zzpart_t;
 
