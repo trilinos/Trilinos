@@ -742,10 +742,10 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
   map = new Epetra_BlockMap((long long)-1, numMyElements, ptMap.MyGlobalElements64(), elementSizes.Values(),
 			    ptMap.IndexBase64(), ptMap.Comm());
 
-  int profile = 0; if (StaticProfile) profile = numPoints;
 
 // FIXME: Won't compile until Epetra_VbrMatrix is modified.
 #if 0
+  int profile = 0; if (StaticProfile) profile = numPoints;
   int j;
   long long numGlobalEquations = ptMap.NumGlobalElements64();
 
