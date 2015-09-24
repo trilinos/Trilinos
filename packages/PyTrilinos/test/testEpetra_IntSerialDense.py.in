@@ -339,8 +339,8 @@ class EpetraIntSerialDenseMatrixTestCase(unittest.TestCase):
         isdm.Print(f)
         f.close()
         self.assertEqual(open(filename, "r").read(),
-                         "Data access mode: View\n"
-                         "A_Copied: no\n"
+                         "Data access mode: Copy\n"
+                         "A_Copied: yes\n"
                          "Rows(M): 3\n"
                          "Columns(N): 4\n"
                          "LDA: 3\n"
