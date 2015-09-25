@@ -92,8 +92,8 @@ exchange_pivots(int *permutations)
 
 
 
-  int colcnt;        /* number of columns stored for BLAS 3 ops */
-  int col_len;
+  //int colcnt;        /* number of columns stored for BLAS 3 ops */
+  //int col_len;
 
 
 
@@ -102,8 +102,8 @@ exchange_pivots(int *permutations)
 
   int i,rank_row,k_row,pivot_col;
 
-  colcnt = 0;           /* number of column's currently saved for update */
-  col_len = my_rows;    /* length of column in remaining local matrix */
+  //colcnt = 0;           /* number of column's currently saved for update */
+  //col_len = my_rows;    /* length of column in remaining local matrix */
 
 /*  First gather the permutation vector to processor 0 in row_comm   */
 

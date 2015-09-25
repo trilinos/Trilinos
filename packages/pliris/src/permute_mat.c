@@ -93,7 +93,7 @@ void
 permute_mat(DATA_TYPE *mat, int *permutations)
 { int j,k;                        /* loop counter */
 
-  int col_len,row_len;
+  //int col_len,row_len;
 
   int J;			/* global column index */
 
@@ -104,11 +104,11 @@ permute_mat(DATA_TYPE *mat, int *permutations)
   DATA_TYPE tmpv;
 
 
-  col_len = my_rows;    /* length of column in remaining local matrix */
+  //col_len = my_rows;    /* length of column in remaining local matrix */
 
 
-  row_len = my_cols + my_rhs;  /* length of row in local matrix including
-			          rhs's*/
+  //row_len = my_cols + my_rhs;  /* length of row in local matrix including
+  //			          rhs's*/
 
 
   /* BJD starts here */

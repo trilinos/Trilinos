@@ -84,7 +84,7 @@ permute_rhs(DATA_TYPE *rhs, int *permutations)
 { int k;                        /* loop counter */
 
 
-  int col_len,row_len;
+  //int col_len,row_len;
 
 
   MPI_Status msgstatus;
@@ -96,11 +96,11 @@ permute_rhs(DATA_TYPE *rhs, int *permutations)
   int rhs_col,k_row;
 
 
-  col_len = my_rows;    /* length of column in remaining local matrix */
+  //col_len = my_rows;    /* length of column in remaining local matrix */
 
 
-  row_len = my_cols + my_rhs;  /* length of row in local matrix including
-			          rhs's*/
+  //row_len = my_cols + my_rhs;  /* length of row in local matrix including
+  //			          rhs's*/
 
   rhs_col = 0;
   for (k=0; k<=nrows_matrix-2; k++)

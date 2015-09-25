@@ -85,7 +85,7 @@ extern int nprocs_row;
 void  X_SOLVE_ (DATA_TYPE *mat, int *permutations,
         DATA_TYPE *rhs,int *num_rhs)
 {
-  int begin_rhs;
+  //int begin_rhs;
 
   int my_first_col;
 
@@ -105,7 +105,7 @@ void  X_SOLVE_ (DATA_TYPE *mat, int *permutations,
   my_rhs = nrhs / nprocs_row;
   if (my_first_col < nrhs % nprocs_row) ++my_rhs;
 
-  begin_rhs = my_cols*my_rows;
+  //begin_rhs = my_cols*my_rows;
 
 
 

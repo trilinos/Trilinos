@@ -249,11 +249,11 @@ void perm1_(DATA_TYPE *vec, int *num_my_rhs)
   int ncols_proc1, ncols_proc2, nprocs_row1;
   int nrows_proc1, nrows_proc2, nprocs_col1;
 
-  int change_count;
+  //int change_count;
   int change_nosend;
   int change_send;
   int next, next_s;
-  int num;
+  //int num;
   int inc;
 
   MPI_Request msgrequest;
@@ -311,12 +311,12 @@ void perm1_(DATA_TYPE *vec, int *num_my_rhs)
     col_offset = nrows_proc1 * nprocs_col1;
 
     ptr1 = vec;
-    change_count = 0;
+    //change_count = 0;
     change_nosend = 0;
     next = 0;
     change_send = 0;
     next_s = 0;
-    num = my_rhs*my_rows;
+    //num = my_rhs*my_rows;
 
     /* XCOPY(num,(vec),one,rhs_temp,one);  */
     for (i=0; i<my_rows; i++) {

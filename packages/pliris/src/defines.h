@@ -135,7 +135,7 @@
 #define ABS_VAL(X) (fabs(X))
 #define INVERSE(X,W,Z) (Z)=CONST_ONE/(X)
 #define MULTIPLY(X,Y,Z) (Z)=(X)*(Y)
-#define DIVIDE(X,Y,W,Z) (Z)=(X)/(Y)
+#define DIVIDE(X,Y,Z) (Z)=(X)/(Y)
 
 #endif
 
@@ -148,7 +148,7 @@
 #define ABS_VAL(X) (fabs(X))
 #define INVERSE(X,W,Z) (Z)=CONST_ONE/(X)
 #define MULTIPLY(X,Y,Z) (Z)=(X)*(Y)
-#define DIVIDE(X,Y,W,Z) (Z)=(X)/(Y)
+#define DIVIDE(X,Y,Z) (Z)=(X)/(Y)
 
 #endif
 

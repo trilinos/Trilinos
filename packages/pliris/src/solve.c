@@ -116,7 +116,10 @@ back_solve6(DATA_TYPE *fseg, DATA_TYPE *rhs)
 
   int j1,j2;
 
+// Only need for complex division
+#if defined(ZCPLX) || defined(SCPLX)
   double diag_mag;              /* magnitude of matrix diagonal */
+#endif
 
   int n_rhs_this;               /* num rhs that I currently own */
 
@@ -197,11 +200,19 @@ back_solve6(DATA_TYPE *fseg, DATA_TYPE *rhs)
         root = row_owner(global_col);
 
         if (me == root) {
+// Only need for complex division
+#if defined(ZCPLX) || defined(SCPLX)
           diag_mag = ABS_VAL(*(ptr2+end_row-1));
+#endif
           for (j1=0; j1<n_rhs_this; j1++) {
             ptr3 = rhs + j1*my_rows + end_row - 1;
             ptr4 = row1 + j1;
+// Separate out real and complex division
+#if defined(ZCPLX) || defined(SCPLX)
             DIVIDE(*ptr3,*(ptr2+end_row-1),diag_mag,*ptr4);
+#else
+            DIVIDE(*ptr3,*(ptr2+end_row-1),*ptr4);
+#endif
             *ptr3 = *ptr4;
           }
           end_row--;

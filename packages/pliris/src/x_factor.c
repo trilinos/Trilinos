@@ -78,7 +78,7 @@ void X_FACTOR_ (DATA_TYPE *matrix,int *matrixsize,
 {
 
   DATA_TYPE *mat;
-  int *permutations;
+  //int *permutations;
   double run_secs;              /* time (in secs) during which the prog ran */
   double seconds();             /* function to generate timings */
   double tsecs;                 /* intermediate storage of timing info */
@@ -91,7 +91,7 @@ void X_FACTOR_ (DATA_TYPE *matrix,int *matrixsize,
   MPI_Comm_size(MPI_COMM_WORLD,&nprocs_cube);
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
-  permutations = permute;
+  //permutations = permute;
   mat = matrix;
 
   matrix_size =  *matrixsize;

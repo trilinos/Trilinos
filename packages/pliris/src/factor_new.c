@@ -117,10 +117,12 @@ factor(DATA_TYPE *seg)
   DATA_TYPE *sav_col_ptr,*sav_row_ptr,*sav_piv_row_ptr;
   DATA_TYPE *cur_col1_row_ptr,*piv_col1_row_ptr;
   DATA_TYPE *temp_row_ptr;
-  DATA_TYPE *act_col_ptr,*act_row_ptr,*act_cur_row_ptr,*act_piv_row_ptr;
+  DATA_TYPE *act_col_ptr,*act_row_ptr,*act_piv_row_ptr;
+  //DATA_TYPE *act_cur_row_ptr
   int gpivot_row; /* make sure that this is well aligned */
 
-  int dest,ringdist,rdist;
+  //int dest
+  int ringdist,rdist;
   long type,bytes;
 
 
@@ -380,7 +382,9 @@ factor(DATA_TYPE *seg)
 #ifdef TIMING0
       t1 = MPI_Wtime();
 #endif
-      bytes = 0; dest = -1; type = LUPIVROWTYPE+j;
+      bytes = 0;
+      //dest = -1;
+      type = LUPIVROWTYPE+j;
       bytes=4;
       bytes = sizeof(gpivot_row);
       MPI_Recv(&gpivot_row,bytes,MPI_BYTE,MPI_ANY_SOURCE,type,MPI_COMM_WORLD,&msgstatus);
@@ -427,7 +431,8 @@ factor(DATA_TYPE *seg)
       }
     }
     pivot_owner = row_owner(gpivot_row); lpivot_row = grow_to_lrow(gpivot_row);
-    act_cur_row_ptr = col1 + rows_used;  act_piv_row_ptr = col1 + lpivot_row;
+    //act_cur_row_ptr = col1 + rows_used;
+    act_piv_row_ptr = col1 + lpivot_row;
     piv_row_ptr = cur_col_ptr + (lpivot_row - rows_used);
     piv_col1_row_ptr = act_col_ptr + (lpivot_row - rows_used);
     row_size = (row_len + colcnt)*sizeof(DATA_TYPE);

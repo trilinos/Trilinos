@@ -91,8 +91,6 @@ int main(int argc, char *argv[])
 
   int mlen;   // Message length for input data
 
-  int ierror;
-
   int num_global_length;
 
   unsigned int seed= 10;
@@ -271,9 +269,9 @@ int main(int argc, char *argv[])
               std::cout << " ****   Setting Random Matrix    ****" << std::endl;
 
 
-     ierror = A.SetSeed(seed+comm.MyPID() );
+     A.SetSeed(seed+comm.MyPID() );
 
-     ierror = A.Random();
+     A.Random();
 
 
      // Now Create the RHS
@@ -413,13 +411,13 @@ int main(int argc, char *argv[])
      // Reset the matrix Random values
 
 
-     ierror = A.SetSeed(seed + comm.MyPID() );
+     A.SetSeed(seed + comm.MyPID() );
 
 
-     ierror = A.Random();
+     A.Random();
 
 
-     ierror = A.NormInf(&ainf);
+     A.NormInf(&ainf);
 
     // perform the Matrix vector product
 
