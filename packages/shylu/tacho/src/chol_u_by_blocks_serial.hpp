@@ -1,8 +1,8 @@
 #pragma once
-#ifndef __CHOL_BY_BLOCKS_SERIAL_HPP__
-#define __CHOL_BY_BLOCKS_SERIAL_HPP__
+#ifndef __CHOL_U_BY_BLOCKS_SERIAL_HPP__
+#define __CHOL_U_BY_BLOCKS_SERIAL_HPP__
 
-/// \file chol_right_by_blocks_serial.hpp
+/// \file chol_u_right_by_blocks_serial.hpp
 /// \brief Sparse incomplete Cholesky factorization by blocks.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 ///

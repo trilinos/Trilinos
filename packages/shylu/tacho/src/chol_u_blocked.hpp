@@ -1,8 +1,8 @@
 #pragma once
-#ifndef __CHOL_BLOCKED_HPP__
-#define __CHOL_BLOCKED_HPP__
+#ifndef __CHOL_U_BLOCKED_HPP__
+#define __CHOL_U_BLOCKED_HPP__
 
-/// \file chol_blocked.hpp
+/// \file chol_u_blocked.hpp
 /// \brief Blocked incomplete Chloesky factorization.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 ///

@@ -111,7 +111,6 @@ public:
    *  \param values on return is the array of values.
    */
   ArrayRCP<const graphMetricValues<scalar_t> > getGraphMetrics() const{
-    //BDD return graphMetricsConst_;
       if(graphMetricsConst_.is_null()) return graphMetrics_;
       return graphMetricsConst_;
   }
@@ -150,6 +149,21 @@ public:
     else                       // no weights, return object count imbalance
       imbalance = metrics_[0].getMaxImbalance();
   }  
+
+  /*! \brief Return the max cut for the requested weight.
+   *  \param cut on return is the requested value.
+   *  \param idx is the weight index reqested, ranging from zero
+   *     to one less than the number of weights provided in the input.
+   *  If there were no weights, this is the cut count.
+   */
+  void getWeightCut(scalar_t &cut, int idx=0) const{
+    if (graphMetrics_.size() < idx)  // idx too high
+      cut = graphMetrics_[graphMetrics_.size()-1].getGlobalMax();
+    else if (idx < 0)   //  idx too low
+      cut = graphMetrics_[0].getGlobalMax();
+    else                       // idx weight
+      cut = graphMetrics_[idx].getGlobalMax();
+  }
 
   /*! \brief Print all the metrics
    */

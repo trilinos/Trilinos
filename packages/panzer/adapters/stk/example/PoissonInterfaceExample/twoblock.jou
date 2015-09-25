@@ -1,0 +1,48 @@
+## /home/sdbond/software/Cubit-14.1/bin/clarox
+## Cubit Version 14.1
+## Cubit Build 393673
+## Revised 2014-08-11 09:13:47 -0600 (Mon, 11 Aug 2014)
+## Running 09/25/2015 01:18:01 PM
+## Command Options:
+## -warning = On
+## -information = On
+undo on
+set geometry engine acis
+set default element hex
+brick x 0.5 y 1 z 1
+brick x 0.5 y 1 z 1
+move volume 2 x 0.5 include_merged
+merge all
+surface 6 size 0.2
+surface 6 size 0.1
+surface 6 size 0.2
+surface 6 size 0.25
+surface 6 size 0.1
+mesh surface 6
+mesh volume 1 2
+sideset 1 surface 4 forward
+sideset 2 surface 12 forward
+sideset 3 surface 3 9 forward
+sideset 4 surface 5 11 forward
+sideset 5 surface 2 8 forward
+sideset 6 surface 1 7 forward
+sideset 7 surface 6 forward
+sideset 1 name "left"
+sideset 2 name "right"
+sideset 3 name "bottom"
+sideset 4 name "top"
+sideset 5 name "back"
+sideset 6 name "front"
+sideset 7 name "vertical_0"
+create block 1
+set duplicate block elements off
+block 1 volume 1
+set duplicate block elements off
+block 2 volume 2
+block 1 name "eblock-0_0_0"
+block 2 name "eblock-1_0_0"
+save as "/home/sdbond/trilinos/Trilinos/packages/panzer/adapters/stk/example/PoissonInterfaceExample/twoblock.cub" overwrite
+undo group begin
+set large exodus file off
+export mesh "/home/sdbond/trilinos/Trilinos/packages/panzer/adapters/stk/example/PoissonInterfaceExample/twoblock.exo" dimension 3 overwrite
+undo group end
