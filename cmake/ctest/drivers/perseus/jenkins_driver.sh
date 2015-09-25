@@ -60,7 +60,7 @@ snapshot_kokkos_into_trilinos develop
 $SCRIPT_DIR/../cron_driver.py
 
 module unload intel/15.0.2/openmpi/1.8.7/cuda/6.5.14
-module unlaod superlu/4.3/intel/15.0.2/base
+module unload superlu/4.3/intel/15.0.2/base
 
 module load gcc/4.8.4/openmpi/1.8.7/cuda/6.5.14
 module load superlu/4.3/gcc/4.8.4/base
