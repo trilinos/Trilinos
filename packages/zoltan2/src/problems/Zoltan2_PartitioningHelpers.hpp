@@ -85,7 +85,6 @@ size_t getImportList(
 {
   typedef typename PartitioningSolution<SolutionAdapter>::part_t part_t;
   typedef typename PartitioningSolution<SolutionAdapter>::gno_t gno_t;
-  typedef typename DataAdapter::gno_t gno_t;
 
   size_t numParts = solution.getActualGlobalNumberOfParts();
   int numProcs = solution.getCommunicator()->getSize();
@@ -99,7 +98,7 @@ size_t getImportList(
   }
 
   size_t localNumIds = data->getLocalNumIDs();
-  const gno_t *gids = NULL;
+  const typename DataAdapter::gno_t *gids = NULL;
   data->getIDsView(gids);
 
   const part_t *parts = solution.getPartListView();
@@ -123,7 +122,7 @@ size_t getImportList(
 
   Array<int> recvCounts(numProcs, 0);
   try {
-    AlltoAllv<gno_t>(*(solution.getCommunicator()),
+    AlltoAllv<typename DataAdapter::gno_t>(*(solution.getCommunicator()),
                       *(solution.getEnvironment()),
                       gidList(), counts(), imports, recvCounts());
   }
