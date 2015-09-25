@@ -78,6 +78,9 @@ namespace Tacho {
 #include "trsm.hpp"
 #include "herk.hpp"
 
+// cholesky
+//#include "chol_u.hpp"
+
 // right looking algorithm with upper triangular
 #include "chol_unblocked_dummy.hpp"
 //#include "chol_unblocked.hpp"
@@ -85,5 +88,7 @@ namespace Tacho {
 #include "chol_unblocked_opt2.hpp"
 #include "chol_blocked.hpp"
 #include "chol_by_blocks.hpp"
+
+#include "chol_external_lapack.hpp"
 
 #endif
