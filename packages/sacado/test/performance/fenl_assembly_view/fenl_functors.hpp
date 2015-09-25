@@ -811,7 +811,8 @@ public:
 
   typedef Sacado::Fad::SFad<scalar_type,FunctionCount> fad_scalar_type;
 
-  typedef Kokkos::View<fad_scalar_type[FunctionCount],Kokkos::LayoutRight,execution_space,Kokkos::MemoryUnmanaged> elem_vec_type;
+  //typedef Kokkos::View<fad_scalar_type[FunctionCount],Kokkos::LayoutRight,execution_space,Kokkos::MemoryUnmanaged> elem_vec_type;
+  typedef Kokkos::View<fad_scalar_type*,Kokkos::LayoutRight,execution_space,Kokkos::MemoryUnmanaged> elem_vec_type; // possibly fix warning and internal compiler error with gcc 4.7.2????
 
   ElementComputation(const ElementComputation& rhs) : base_type(rhs) {}
 
