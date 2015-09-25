@@ -124,7 +124,6 @@ private:
   typedef typename Adapter::part_t part_t;
   typedef typename Adapter::user_t user_t;
   typedef typename Adapter::userCoord_t userCoord_t;
-  typedef typename Adapter::zgid_t zgid_t;
 
   const RCP<const Environment> env;
   const RCP<const Comm<int> > problemComm;
@@ -133,7 +132,7 @@ private:
   apf::Mesh2* m;
   apf::Numbering* gids;
   apf::Numbering* origin_part_ids;
-  std::map<zgid_t, lno_t> mapping_elm_gids_index;
+  std::map<gno_t, lno_t> mapping_elm_gids_index;
 
   MPI_Comm mpicomm;
   bool pcu_outside;
@@ -217,7 +216,7 @@ private:
 
 
   //APF Mesh construction helper functions modified and placed here to support arbitrary entity types
-  void constructElements(const zgid_t* conn, lno_t nelem, const lno_t* offsets, 
+  void constructElements(const gno_t* conn, lno_t nelem, const lno_t* offsets, 
                          const EntityTopologyType* tops, apf::GlobalToVert& globalToVert)
   {
     apf::ModelEntity* interior = m->findModelEntity(m->getDimension(), 0);
@@ -417,7 +416,7 @@ public:
     Z2_FORWARD_EXCEPTIONS
     
     //Get element global ids and part ids
-    const zgid_t* element_gids;
+    const gno_t* element_gids;
     const part_t* part_ids;
     adapter->getIDsViewOf(primary_type,element_gids);
     adapter->getPartsView(part_ids);
@@ -425,7 +424,7 @@ public:
       mapping_elm_gids_index[element_gids[i]] = i;
     
     //get vertex global ids
-    const zgid_t* vertex_gids;
+    const gno_t* vertex_gids;
     adapter->getIDsViewOf(MESH_VERTEX,vertex_gids);
     
     //Get vertex coordinates
@@ -439,7 +438,7 @@ public:
     if (!adapter->availAdjs(primary_type,MESH_VERTEX))
       throw "APF needs adjacency information from elements to vertices";
     const lno_t* offsets;
-    const zgid_t* adjacent_vertex_gids;
+    const gno_t* adjacent_vertex_gids;
     adapter->getAdjsView(primary_type, MESH_VERTEX,offsets,adjacent_vertex_gids);
     
     //build the apf mesh
@@ -600,7 +599,7 @@ void AlgParMA<Adapter>::partition(
   while ((ent=m->iterate(itr))) {
     if (m->isOwned(ent)) {
       part_t target_part_id = apf::getNumber(origin_part_ids,ent,0,0);
-      zgid_t element_gid = apf::getNumber(gids,ent,0,0);
+      gno_t element_gid = apf::getNumber(gids,ent,0,0);
       PCU_COMM_PACK(target_part_id,element_gid);
     }
   }
@@ -611,7 +610,7 @@ void AlgParMA<Adapter>::partition(
 
   //Unpack information and set new part ids
   while (PCU_Comm_Receive()) {
-    zgid_t global_id;
+    gno_t global_id;
     PCU_COMM_UNPACK(global_id);
     lno_t local_id = mapping_elm_gids_index[global_id];
     part_t new_part_id = PCU_Comm_Sender();

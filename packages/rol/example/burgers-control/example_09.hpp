@@ -924,6 +924,8 @@ private:
   typedef H1VectorDual<Real> PrimalConstraintVector;
   typedef H1VectorPrimal<Real> DualConstraintVector;
 
+  typedef typename std::vector<Real>::size_type uint;
+
   Teuchos::RCP<BurgersFEM<Real> > fem_;
   bool useHessian_;
 
@@ -1207,7 +1209,7 @@ public:
     Real val = 0.5*((((Real)indices_[0]+1.)*(fem_->mesh_spacing())-x_)
                     *(x_+(2.-((Real)indices_[0]+1.))*(fem_->mesh_spacing()))/(fem_->mesh_spacing())
                     +(fem_->mesh_spacing())) * (*up)[indices_[0]];
-    for (int i = 1; i < indices_.size(); i++) {
+    for (uint i = 1; i < indices_.size(); i++) {
       val += (fem_->mesh_spacing())*(*up)[indices_[i]];
     }
     return -val;
@@ -1231,7 +1233,9 @@ public:
     (*gp)[indices_[0]] = -0.5*((((Real)indices_[0]+1.)*(fem_->mesh_spacing())-x_)
                     *(x_+(2.-((Real)indices_[0]+1.))*(fem_->mesh_spacing()))/(fem_->mesh_spacing())
                     +(fem_->mesh_spacing()));
-    for (int i = 1; i < indices_.size(); i++) {
+
+
+    for (uint i = 1; i < indices_.size(); i++) {
       (*gp)[indices_[i]] = -(fem_->mesh_spacing());
     }
   }

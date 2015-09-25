@@ -116,7 +116,7 @@ int main(int narg, char *arg[]) {
   //Contruct the MeshAdapter
   typedef Zoltan2::APFMeshAdapter<apf::Mesh2*> Adapter;
   typedef Adapter::lno_t lno_t;
-  typedef Adapter::zgid_t zgid_t;
+  typedef Adapter::gno_t gno_t;
   typedef Adapter::scalar_t scalar_t;
 
   std::string pri = "face";
@@ -166,7 +166,7 @@ int main(int narg, char *arg[]) {
   for (int i=0;i<=dim;i++) {
     if (!has[i])
       continue;
-    const zgid_t* gids;
+    const gno_t* gids;
     const Zoltan2::EntityTopologyType* topTypes;
     const scalar_t* x_coords;
     const scalar_t* y_coords;
@@ -175,7 +175,7 @@ int main(int narg, char *arg[]) {
     int y_stride;
     int z_stride;
     const lno_t** offsets = new const lno_t*[dim];
-    const zgid_t** adj_gids = new const zgid_t*[dim];
+    const gno_t** adj_gids = new const gno_t*[dim];
 
     ia.getIDsViewOf(ents[i],gids);
     ia.getTopologyViewOf(ents[i],topTypes);

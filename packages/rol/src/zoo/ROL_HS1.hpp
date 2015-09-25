@@ -133,10 +133,29 @@ namespace ZOO {
     xp->resize(n);
     // Instantiate Objective Function
     obj = Teuchos::rcp( new Objective_HS1<Real> );
+
     // Instantiate BoundConstraint
-    std::vector<Real> l(n,0.0); l[0] = -ROL_OVERFLOW; l[1] = -1.5;
-    std::vector<Real> u(n,0.0); u[0] = ROL_OVERFLOW;  u[1] = ROL_OVERFLOW;
+    Teuchos::RCP<std::vector<Real> > l_rcp = Teuchos::rcp(new std::vector<Real>(n,0.0)); 
+ 
+    (*l_rcp)[0] = -ROL_OVERFLOW; 
+    (*l_rcp)[1] = -1.5;
+
+    Teuchos::RCP<std::vector<Real> > u_rcp = Teuchos::rcp(new std::vector<Real>(n,0.0)); 
+  
+    (*u_rcp)[0] = ROL_OVERFLOW;  
+    (*u_rcp)[1] = ROL_OVERFLOW;
+    
+    Teuchos::RCP<Vector<Real> > l = Teuchos::rcp(new StdVector<Real>(l_rcp));
+    Teuchos::RCP<Vector<Real> > u = Teuchos::rcp(new StdVector<Real>(u_rcp));
+
+    con = Teuchos::rcp( new BoundConstraint<Real>(l,u) );
+/*   
+    std::vector<Real> l(n,0.0);  l[0] = -ROL_OVERFLOW; l[1] = -1.5;
+    std::vector<Real> u(n,0.0);  u[0] = ROL_OVERFLOW;  u[1] = ROL_OVERFLOW;
+    
     con = Teuchos::rcp( new StdBoundConstraint<Real>(l,u) );
+*/      
+
     // Get Initial Guess
     (*x0p)[0] =  -2.0;
     (*x0p)[1] =  1.0;

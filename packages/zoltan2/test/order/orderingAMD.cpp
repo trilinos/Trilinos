@@ -213,7 +213,7 @@ int main(int narg, char** arg)
   Zoltan2::OrderingProblem<SparseMatrixAdapter> problem(&adapter, &params);
   problem.solve();
 
-  Zoltan2::OrderingSolution<z2TestGO, z2TestLO> *soln = problem.getSolution();
+  Zoltan2::OrderingSolution<z2TestLO, z2TestGO> *soln = problem.getSolution();
 
   // Check that the solution is really a permutation
   checkLength = soln->getPermutationSize();

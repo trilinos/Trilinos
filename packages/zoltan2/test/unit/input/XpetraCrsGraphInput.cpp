@@ -167,11 +167,8 @@ int main(int argc, char *argv[])
   tG = uinput->getUITpetraCrsGraph();
   size_t nvtx = tG->getNodeNumRows();
 
-  // To test migration in the input adapter we need a Solution
-  // object.  The Solution needs an IdentifierMap.
+  // To test migration in the input adapter we need a Solution object.  
   // Our solution just assigns all objects to part zero.
-
-  typedef Zoltan2::IdentifierMap<tgraph_t> idmap_t;
 
   RCP<const Zoltan2::Environment> env = rcp(new Zoltan2::Environment);
 

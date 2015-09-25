@@ -103,7 +103,6 @@ class PartitioningProblem : public Problem<Adapter>
 public:
 
   typedef typename Adapter::scalar_t scalar_t;
-  typedef typename Adapter::zgid_t zgid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::part_t part_t;
@@ -503,10 +502,8 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   // TODO: If hierarchical_
 
   // Create the solution. The algorithm will query the Solution
-  //   for part and weight information. The algorithm will
-  //   update the solution with part assignments and quality
-  //   metrics.  The Solution object itself will convert our internal
-  //   global numbers back to application global Ids if needed.
+  // for part and weight information. The algorithm will
+  // update the solution with part assignments and quality metrics. 
 
   // Create the algorithm
   try {
@@ -725,7 +722,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       modelAvail_[IdentifierModelType] = true;
 
       algName_ = algorithm;
-      needConsecutiveGlobalIds = true;
     }
     else if (algorithm == std::string("zoltan") ||
 	     algorithm == std::string("parma"))
@@ -778,7 +774,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
         modelAvail_[HypergraphModelType]=true;
       }
       algName_ = algorithm;
-      needConsecutiveGlobalIds = true;
     }
 #ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL_WOLF
     else if (algorithm == std::string("nd"))
@@ -806,7 +801,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
         algName_ = std::string("phg"); 
       else
         algName_ = std::string("patoh"); 
-      needConsecutiveGlobalIds = true;
     }
     else if (model == std::string("graph"))
     {
@@ -833,8 +827,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
         algName_ = std::string("phg"); 
       else
         algName_ = std::string("patoh"); 
-      removeSelfEdges = true;
-      needConsecutiveGlobalIds = true;
 #endif
 #endif
     }
@@ -851,7 +843,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       modelAvail_[IdentifierModelType]=true;
 
       algName_ = std::string("block");
-      needConsecutiveGlobalIds = true;
     }
     else
     {
@@ -1006,8 +997,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
     // Any special behaviors required by the algorithm?
     
-    if (needConsecutiveGlobalIds)
-      idFlags_.set(GENERATE_CONSECUTIVE_IDS);
   }
   //  else if (modelType_ == CoordinateModelType)
   if (modelAvail_[CoordinateModelType]==true)
@@ -1015,8 +1004,6 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
     // Any special behaviors required by the algorithm?
     
-    if (needConsecutiveGlobalIds)
-      coordFlags_.set(GENERATE_CONSECUTIVE_IDS);
   }
 
 

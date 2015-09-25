@@ -99,11 +99,7 @@ enum EntityTopologyType {
     \li \c scalar_t entity and adjacency weights
     \li \c lno_t    local indices and local counts
     \li \c gno_t    global indices and global counts
-    \li \c zgid_t    application global Ids
     \li \c node_t is a sub class of KokkosClassic::StandardNodeMemoryModel
-
-    See IdentifierTraits to understand why the user's global ID type
-    (\c zgid_t) may differ from that used by Zoltan2 (\c gno_t).
 
     The Kokkos node type can be safely ignored.
 
@@ -133,7 +129,6 @@ public:
   typedef typename InputTraits<User>::scalar_t              scalar_t;
   typedef typename InputTraits<User>::lno_t                 lno_t;
   typedef typename InputTraits<User>::gno_t                 gno_t;
-  typedef typename InputTraits<User>::zgid_t                zgid_t;
   typedef typename InputTraits<User>::part_t                part_t;
   typedef typename InputTraits<User>::node_t                node_t;
   typedef User                                              user_t;
@@ -181,7 +176,7 @@ public:
        process.
   */
   virtual void getIDsViewOf(MeshEntityType etype,
-                            zgid_t const *&Ids) const = 0;
+                            gno_t const *&Ids) const = 0;
 
 
   /*! \brief Provide a pointer to the entity topology types
@@ -277,7 +272,7 @@ public:
          Ids for each entity.
   */
   virtual void getAdjsView(MeshEntityType source, MeshEntityType target,
-     const lno_t *&offsets, const zgid_t *& adjacencyIds) const
+     const lno_t *&offsets, const gno_t *& adjacencyIds) const
   {
     offsets = NULL;
     adjacencyIds = NULL;
@@ -294,7 +289,6 @@ public:
   {
     return false;
   }
-
 
   /*! \brief if avail2ndAdjs(), returns the number of second adjacencies 
    *   on this process.
@@ -318,7 +312,7 @@ public:
   virtual void get2ndAdjsView(MeshEntityType sourcetarget,
                               MeshEntityType through,
                               const lno_t *&offsets,
-                              const zgid_t *&adjacencyIds) const
+                              const gno_t *&adjacencyIds) const
   {
     offsets = NULL;
     adjacencyIds = NULL;
@@ -462,7 +456,7 @@ public:
     return getLocalNumOf(getPrimaryEntityType());
   }
 
-  void getIDsView(const zgid_t *&Ids) const {
+  void getIDsView(const gno_t *&Ids) const {
     getIDsViewOf(getPrimaryEntityType(), Ids);
   }
 

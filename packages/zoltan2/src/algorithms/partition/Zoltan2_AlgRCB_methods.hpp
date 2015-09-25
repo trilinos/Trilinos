@@ -50,6 +50,7 @@
 #ifndef _ZOLTAN2_ALGRCB_METHODS_HPP_
 #define _ZOLTAN2_ALGRCB_METHODS_HPP_
 
+#include <Zoltan2_AlltoAll.hpp>
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_XpetraTraits.hpp>
 #include <Zoltan2_Metric.hpp>
@@ -293,10 +294,14 @@ template <typename mvector_t>
   else{
     for (int dim=0; dim < coordDim; dim++){
       const scalar_t *val = vectors->getData(dim).getRawPtr();
-      std::pair<scalar_t, scalar_t> minMax = 
-        z2LocalMinMax<scalar_t>(val, numLocalCoords);
-      spans[next++] = minMax.first;
-      spans[next++] = minMax.second * -1.0;
+      scalar_t mmin = std::numeric_limits<scalar_t>::max();
+      scalar_t mmax = std::numeric_limits<scalar_t>::min();
+      for (lno_t i=1; i < numLocalCoords; i++) {
+        if (val[i] < mmin) mmin = val[i];
+        if (val[i] > mmax) mmax = val[i];
+      }
+      spans[next++] = mmin;
+      spans[next++] = mmax * -1.0;
     }
   }
 

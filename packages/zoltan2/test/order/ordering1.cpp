@@ -262,7 +262,7 @@ int main(int narg, char** arg)
   ////// Basic metric checking of the ordering solution
   size_t checkLength;
   z2TestLO *checkPerm;
-  Zoltan2::OrderingSolution<z2TestGO, z2TestLO> *soln = problem.getSolution();
+  Zoltan2::OrderingSolution<z2TestLO, z2TestGO> *soln = problem.getSolution();
 
   cout << "Going to get results" << endl;
   // Check that the solution is really a permutation

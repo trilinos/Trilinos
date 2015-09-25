@@ -101,7 +101,7 @@ public:
   typedef UserInputForTests::xVector_t xVector_t;
   typedef UserInputForTests::xMVector_t xMVector_t;
   
-  typedef Zoltan2::BasicUserTypes<zscalar_t, zzgid_t, zlno_t, zgno_t> userTypes_t;
+  typedef Zoltan2::BasicUserTypes<zscalar_t, zlno_t, zgno_t> userTypes_t;
   typedef Zoltan2::BaseAdapter<userTypes_t> base_adapter_t;
   typedef Zoltan2::BasicIdentifierAdapter<userTypes_t> basic_id_t;
   typedef Zoltan2::XpetraMultiVectorAdapter<tMVector_t> xpetra_mv_adapter;
@@ -275,7 +275,7 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
   
   vector<const zscalar_t *> weights;
   std::vector<int> weightStrides;
-  const zzgid_t * globalIds;
+  const zgno_t * globalIds;
   size_t localCount = 0;
   
   // get weights if any
@@ -294,83 +294,83 @@ AdapterForTests::base_adapter_t * AdapterForTests::getBasicIdentiferAdapterForIn
   if(input_type == "coordinates")
   {
     RCP<tMVector_t> data = uinput->getUICoordinates();
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getLocalLength();
   }
   else if(input_type == "tpetra_vector")
   {
     RCP<tVector_t> data = uinput->getUITpetraVector();
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getLocalLength();
   }
   else if(input_type == "tpetra_multivector")
   {
     int nvec = pList.get<int>("vector_dimension");
     RCP<tMVector_t> data = uinput->getUITpetraMultiVector(nvec);
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getLocalLength();
   }
   else if(input_type == "tpetra_crs_graph")
   {
     RCP<tcrsGraph_t> data = uinput->getUITpetraCrsGraph();
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getNodeNumCols();
   }
   else if(input_type == "tpetra_crs_matrix")
   {
     RCP<tcrsMatrix_t> data = uinput->getUITpetraCrsMatrix();
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getNodeNumCols();
   }
   else if(input_type == "xpetra_vector")
   {
     RCP<xVector_t> data = uinput->getUIXpetraVector();
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getLocalLength();
   }
   else if(input_type == "xpetra_multivector")
   {
     int nvec = pList.get<int>("vector_dimension");
     RCP<xMVector_t> data = uinput->getUIXpetraMultiVector(nvec);
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getLocalLength();
   }
   else if(input_type == "xpetra_crs_graph")
   {
     RCP<xcrsGraph_t> data = uinput->getUIXpetraCrsGraph();
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getNodeNumCols();
   }
   else if(input_type == "xpetra_crs_matrix")
   {
     RCP<xcrsMatrix_t> data = uinput->getUIXpetraCrsMatrix();
-    globalIds = (zzgid_t *)data->getMap()->getNodeElementList().getRawPtr();
+    globalIds = (zgno_t *)data->getMap()->getNodeElementList().getRawPtr();
     localCount = data->getNodeNumCols();
   }
 #ifdef HAVE_EPETRA_DATA_TYPES
   else if(input_type == "epetra_vector")
   {
     RCP<Epetra_Vector> data = uinput->getUIEpetraVector();
-    globalIds = (zzgid_t *)data->Map().MyGlobalElements();
+    globalIds = (zgno_t *)data->Map().MyGlobalElements();
     localCount = data->MyLength();
   }
   else if(input_type == "epetra_multivector")
   {
     int nvec = pList.get<int>("vector_dimension");
     RCP<Epetra_MultiVector> data = uinput->getUIEpetraMultiVector(nvec);
-    globalIds = (zzgid_t *)data->Map().MyGlobalElements();
+    globalIds = (zgno_t *)data->Map().MyGlobalElements();
     localCount = data->MyLength();
   }
   else if(input_type == "epetra_crs_graph")
   {
     RCP<Epetra_CrsGraph> data = uinput->getUIEpetraCrsGraph();
-    globalIds = (zzgid_t *)data->Map().MyGlobalElements();
+    globalIds = (zgno_t *)data->Map().MyGlobalElements();
     localCount = data->NumMyCols();
   }
   else if(input_type == "epetra_crs_matrix")
   {
     RCP<Epetra_CrsMatrix> data = uinput->getUIEpetraCrsMatrix();
-    globalIds = (zzgid_t *)data->Map().MyGlobalElements();
+    globalIds = (zgno_t *)data->Map().MyGlobalElements();
     localCount = data->NumMyCols();
   }
 #endif
