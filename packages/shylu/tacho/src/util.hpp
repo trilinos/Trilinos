@@ -143,6 +143,8 @@ namespace Tacho {
 
     // use an external BLAS library
     static const int ExternalBlas = 2021;
+
+    static const int DenseMatrixByBlocks = 2031;
   };
 
   class AlgoTrsm : public AlgoGemm {
