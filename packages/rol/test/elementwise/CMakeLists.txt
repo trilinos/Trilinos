@@ -1,7 +1,7 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  StdVectorInterface
+  StdVector
   SOURCES test_01.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
@@ -9,17 +9,20 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CArrayVectorInterface
-  SOURCES test_02.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  )
+IF(${PROJECT_NAME}_ENABLE_Tpetra)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_SOURCE_DIR}/adapters/tpetra/src/vector)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    TpetraMultiVector
+    SOURCES test_02.cpp
+    ARGS PrintItAll
+    COMM serial mpi  
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+    )
+ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  MultiVectorInterface
+  BoundConstraint
   SOURCES test_03.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1
@@ -27,12 +30,9 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  PartitionedVectorInterface
+TRIBITS_ADD_EXECUTABLE(
+  Performance
   SOURCES test_04.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
   ADD_DIR_TO_NAME
   )
 
