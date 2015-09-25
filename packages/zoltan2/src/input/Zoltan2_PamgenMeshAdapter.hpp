@@ -120,21 +120,6 @@ public:
     return etype==MESH_REGION;
   }
 
-  /*size_t getGlobalNumOf(MeshEntityType etype) const
-  {
-
-    if ((MESH_REGION == etype && 3 == dimension_) ||
-	(MESH_FACE == etype && 2 == dimension_)) {
-      return num_elems_global_;
-    }
-
-    if (MESH_VERTEX == etype) {
-      return Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()
-    }
-
-    return 0;
-    }*/
-
   size_t getLocalNumOf(MeshEntityType etype) const
   {
     if ((MESH_REGION == etype && 3 == dimension_) ||
@@ -342,16 +327,6 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
 					   std::string typestr):
   dimension_(0)
 {
-  if (typestr.compare("region") == 0) {
-    this->setEntityTypes(typestr, "vertex", "vertex");
-  }
-  else if (typestr.compare("vertex") == 0) {
-    this->setEntityTypes(typestr, "region", "region");
-  }
-  else {
-    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
-  }
-
   int error = 0;
   char title[100];
   int exoid = 0;
@@ -359,6 +334,23 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   error += im_ex_get_init(exoid, title, &dimension_,
 			  &num_nodes_, &num_elem_, &num_elem_blk,
 			  &num_node_sets, &num_side_sets);
+
+  if (typestr.compare("region") == 0) {
+    if (dimension_ == 3)
+      this->setEntityTypes(typestr, "vertex", "vertex");
+    else
+      // automatically downgrade primary entity if problem is only 2D
+      this->setEntityTypes("face", "vertex", "vertex");
+  }
+  else if (typestr.compare("vertex") == 0) {
+    if (dimension_ == 3)
+      this->setEntityTypes(typestr, "region", "region");
+    else 
+      this->setEntityTypes(typestr, "face", "face");
+  }
+  else {
+    Z2_THROW_NOT_IMPLEMENTED_IN_ADAPTER
+  }
 
   coords_ = new double [num_nodes_ * dimension_];
 
@@ -530,7 +522,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(const Comm<int> &comm,
   nNadj_ = 0;
   for(int ncnt=0; ncnt < num_nodes_; ncnt++) {
     if(sur_elem[ncnt].empty()) {
-      printf("WARNING: Node = %d has no elements\n", ncnt+1);
+      std::cout << "WARNING: Node = " << ncnt+1 << " has no elements"
+                << std::endl;
     } else {
       size_t nsur = sur_elem[ncnt].size();
       if (nsur > max_nsur)
