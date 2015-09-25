@@ -262,8 +262,8 @@ public:
     useInexact_.push_back(parlist.sublist("General").get("Inexact Gradient", false));
     useInexact_.push_back(parlist.sublist("General").get("Inexact Hessian-Times-A-Vector", false));
     // Trust-Region Inexactness Parameters
-    scale0_ = parlist.sublist("Step").sublist("Trust Region").get("Gradient Update Tolerance Scaling",1.e-1);
-    scale1_ = parlist.sublist("Step").sublist("Trust Region").get("Gradient Update Relative Tolerance",2.0); 
+    scale0_ = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Gradient").get("Tolerance Scaling",1.e-1);
+    scale1_ = parlist.sublist("Step").sublist("Trust Region").sublist("Inexact").sublist("Gradient").get("Relative Tolerance",2.0); 
     // Initialize Trust Region Subproblem Solver Object
     etr_  = StringToETrustRegion(parlist.sublist("Step").sublist("Trust Region").get("Subproblem Solver","Dogleg"));  
     useProjectedGrad_ = parlist.sublist("General").get("Projected Gradient Criticality Measure", false);

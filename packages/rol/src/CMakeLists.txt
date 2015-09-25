@@ -35,6 +35,7 @@ APPEND_SET(HEADERS
   vector/ROL_Vector.hpp
   vector/ROL_Vector_SimOpt.hpp
   vector/ROL_StdVector.hpp
+  vector/ROL_PartitionedVector.hpp
   )
 
 #
@@ -58,6 +59,7 @@ APPEND_SET(HEADERS
   function/ROL_ProjectedPreconditioner.hpp
   function/ROL_PrimalDualHessian.hpp
   function/ROL_PrimalDualPreconditioner.hpp
+  function/ROL_LogBarrierObjective.hpp
 )
 
 #
@@ -72,6 +74,7 @@ INCLUDE_DIRECTORIES(${DIR}
                     ${DIR}/bundle
                     ${DIR}/augmentedlagrangian
                     ${DIR}/moreauyosidapenalty
+                    ${DIR}/interiorpoint
                    )
 APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/linesearch/*.hpp 
@@ -120,6 +123,16 @@ APPEND_GLOB(HEADERS ${DIR}/function/*.hpp
                    )
 
 #
+# elementwise function headers
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/elementwise)
+APPEND_SET(HEADERS
+  elementwise/ROL_Elementwise_Function.hpp
+  elementwise/ROL_Elementwise_Reduce.hpp
+  )
+
+#
 # zoo headers
 #
 
@@ -142,6 +155,8 @@ APPEND_SET(HEADERS
   zoo/ROL_HS4.hpp
   zoo/ROL_HS5.hpp
   zoo/ROL_HS25.hpp
+  zoo/ROL_HS29.hpp
+  zoo/ROL_HS32.hpp
   zoo/ROL_HS38.hpp
   zoo/ROL_HS45.hpp
   zoo/ROL_BVP.hpp

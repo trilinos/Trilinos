@@ -45,6 +45,8 @@
 #ifndef ROL_VECTOR_H
 #define ROL_VECTOR_H
 
+#include "ROL_Elementwise_Function.hpp"
+
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
@@ -210,6 +212,21 @@ public:
   */
   virtual const Vector & dual() const {
     return *this;
+  }
+
+  virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
+    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+      "The method applyUnary is called but not implemented" << std::endl); 
+  }
+
+  virtual void applyBinary( const Elementwise::BinaryFunction<Real> &f, const Vector &x ) {
+    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+      "The method applyBinary is called but not implemented" << std::endl); 
+  }
+
+  virtual Real reduce( const Elementwise::ReductionOp<Real> &r ) const {
+    TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+      "The method reduce is called but not implemented" << std::endl); 
   }
 
   /** \brief Verify vector-space methods.

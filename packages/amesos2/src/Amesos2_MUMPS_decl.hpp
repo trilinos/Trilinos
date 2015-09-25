@@ -218,6 +218,127 @@ private:
 };                              // End class MUMPS
 
 
+template <class Matrix,class Vector>
+class MUMPSNS : public SolverCore<Amesos2::MUMPS, Matrix, Vector>
+{
+  friend class SolverCore<Amesos2::MUMPS,Matrix,Vector>; // Give our base access
+                                                          // to our private
+                                                          // implementation funcs
+public:
+
+
+  MUMPSNS(Teuchos::RCP<const Matrix> A,
+          Teuchos::RCP<Vector>       X,
+                     Teuchos::RCP<const Vector> B);
+  /*
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "This solver is not support for these types.");
+
+  }
+
+  */
+   ~MUMPSNS( )
+  {}
+
+
+private:
+
+  int preOrdering_impl()
+  {
+      
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "This solver is not support for these types.");
+
+  }
+
+  int symbolicFactorization_impl()
+  {
+
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "This solver is not support for these types.");
+
+  }
+
+  int numericFactorization_impl()
+ {
+
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "This solver is not support for these types.");
+
+  }
+
+  int solve_impl(const Teuchos::Ptr<MultiVecAdapter<Vector> >       X,
+                 const Teuchos::Ptr<const MultiVecAdapter<Vector> > B) const
+ {
+
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "This solver is not support for these types.");
+
+  }
+
+  bool matrixShapeOK_impl() const
+ {
+
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "This solver is not support for these types.");
+
+  }
+
+  void setParameters_impl(
+    const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
+ {
+
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "This solver is not support for these types.");
+
+  }
+
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters_impl() const
+ {
+
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "This solver is not support for these types.");
+
+  }
+
+
+  bool loadA_impl(EPhase current_phase)
+ {
+
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "This solver is not support for these types.");
+
+  }
+
+
+  int ConvertToTriplet()
+ {
+
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "This solver is not support for these types.");
+
+  }
+
+
+  void MUMPS_ERROR() const
+ {
+
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+                               "This solver is not support for these types.");
+
+  }
+
+
+#ifdef HAVE_MPI
+  MPI_Comm MUMPSComm;
+#endif
+
+
+};
+
+
+
 // Specialize solver_traits struct for MUMPS
 // TODO
 template <>
