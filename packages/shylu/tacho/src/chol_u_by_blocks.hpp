@@ -1,8 +1,8 @@
 #pragma once
-#ifndef __CHOL_BY_BLOCKS_HPP__
-#define __CHOL_BY_BLOCKS_HPP__
+#ifndef __CHOL_U_BY_BLOCKS_HPP__
+#define __CHOL_U_BY_BLOCKS_HPP__
 
-/// \file chol_by_blocks.hpp
+/// \file chol_u_by_blocks.hpp
 /// \brief Sparse incomplete Cholesky factorization by blocks.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
@@ -81,7 +81,7 @@ namespace Tacho {
 
 // select one of the following variants
 
-#include "chol_by_blocks_var1.hpp"
-//#include "chol_by_blocks_serial.hpp"
+#include "chol_u_by_blocks_var1.hpp"
+//#include "chol_u_by_blocks_serial.hpp"
 
 #endif

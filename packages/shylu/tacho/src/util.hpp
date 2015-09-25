@@ -119,13 +119,15 @@ namespace Tacho {
   class AlgoChol {
   public:
     // One side factorization on flat matrices
-    static const int Dummy         = 1000;
-    static const int Unblocked     = 1001;
-    static const int UnblockedOpt1 = 1002;
-    static const int UnblockedOpt2 = 1003;
-    static const int Blocked       = 1101; // testing only
+    static const int Dummy          = 1000;
+    static const int Unblocked      = 1001;
+    static const int UnblockedOpt1  = 1002;
+    static const int UnblockedOpt2  = 1003;
+    static const int Blocked        = 1101; // testing only
 
-    static const int ByBlocks      = 1201;
+    static const int ByBlocks       = 1201;
+
+    static const int ExternalLapack = 1211;
   };
 
   // aliasing name space
@@ -140,7 +142,7 @@ namespace Tacho {
     static const int ForTriSolveBlocked = 2011;
 
     // use an external BLAS library
-    static const int ExternalBLAS = 2021;
+    static const int ExternalBlas = 2021;
   };
 
   class AlgoTrsm : public AlgoGemm {

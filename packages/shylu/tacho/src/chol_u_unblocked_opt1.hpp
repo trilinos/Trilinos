@@ -1,9 +1,9 @@
 #pragma once
-#ifndef __CHOL_UNBLOCKED_OPT2_HPP__
-#define __CHOL_UNBLOCKED_OPT2_HPP__
+#ifndef __CHOL_U_UNBLOCKED_OPT1_HPP__
+#define __CHOL_U_UNBLOCKED_OPT1_HPP__
 
-/// \file chol_unblocked_opt2.hpp
-/// \brief Unblocked incomplete Chloesky factorization; version for data parallel sharing L1 cache.
+/// \file chol_u_unblocked_opt1.hpp
+/// \brief Unblocked incomplete Chloesky factorization.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "util.hpp"
@@ -18,7 +18,7 @@ namespace Tacho {
            typename CrsExecViewType>
   KOKKOS_INLINE_FUNCTION
   int
-  Chol<Uplo::Upper,AlgoChol::UnblockedOpt2>
+  Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>
   ::invoke(typename CrsExecViewType::policy_type &policy,
            const typename CrsExecViewType::policy_type::member_type &member,
            CrsExecViewType &A) {
@@ -61,27 +61,25 @@ namespace Tacho {
         member.team_barrier();
 
         // hermitian rank update
-        for (ordinal_type i=1;i<nnz_r1t;++i) {
-          const ordinal_type row_at_i = r1t.Col(i);
-          const value_type   val_at_i = conj(r1t.Value(i));
+        ParallelForType(team_factory_type::createThreadLoopRegion(member, 1, nnz_r1t),
+                        [&](const ordinal_type i) {
+                          const ordinal_type row_at_i = r1t.Col(i);
+                          const value_type   val_at_i = conj(r1t.Value(i));
 
-          //r2t.setView(A, row_at_i);
-          row_view_type &r2t = A.RowView(row_at_i);
+                          //r2t.setView(A, row_at_i);
+                          row_view_type &r2t = A.RowView(row_at_i);
+                          ordinal_type idx = 0;
 
-          ordinal_type idx_team[MAX_TEAM_SIZE] = {};
-          ParallelForType(team_factory_type::createThreadLoopRegion(member, i, nnz_r1t),
-                          [&](const ordinal_type j) {
-                            ordinal_type &idx = idx_team[member.team_rank()];
-                            if (idx > -2) {
-                              const ordinal_type col_at_j = r1t.Col(j);
-                              idx = r2t.Index(col_at_j, idx);
-                              if (idx >= 0) {
-                                const value_type   val_at_j = r1t.Value(j);
-                                r2t.Value(idx) -= val_at_i*val_at_j;
-                              }
+                          for (ordinal_type j=i;j<nnz_r1t && (idx > -2);++j) {
+                            const ordinal_type col_at_j = r1t.Col(j);
+                            idx = r2t.Index(col_at_j, idx);
+
+                            if (idx >= 0) {
+                              const value_type val_at_j = r1t.Value(j);
+                              r2t.Value(idx) -= val_at_i*val_at_j;
                             }
-                          });
-        }
+                          }
+                        });
       }
     }
     return 0;

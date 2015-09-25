@@ -1,8 +1,8 @@
 #pragma once
-#ifndef __CHOL_UNBLOCKED_DUMMY_HPP__
-#define __CHOL_UNBLOCKED_DUMMY_HPP__
+#ifndef __CHOL_U_UNBLOCKED_DUMMY_HPP__
+#define __CHOL_U_UNBLOCKED_DUMMY_HPP__
 
-/// \file chol_unblocked_opt1.hpp
+/// \file chol_u_unblocked_opt1.hpp
 /// \brief Test code for data parallel interface
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
