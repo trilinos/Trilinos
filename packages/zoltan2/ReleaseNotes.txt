@@ -2,8 +2,11 @@ Release notes for Trilinos v12.4
 
 -  Template argument for arbitrary global identifiers (zgid_t) has been
    removed for greater efficiency in the code as well as greater conformity
-   with Trilinos.  BasicUserTypes now has only three template parameters;
-   the zgid_t template argument has been removed.
+   with Trilinos.  
+   +  BasicUserTypes now has only three template parameters;
+      the zgid_t template argument has been removed.
+   +  OrderingSolution now has two different template parameters:
+      <lno_t, gno_t> for <local ordinal type, global ordinal type>
    
 -  A new test driver capability has been added to Zoltan2 for more robust
    testing and experimentation.
