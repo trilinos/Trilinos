@@ -1,9 +1,9 @@
 #pragma once
-#ifndef __GEMM_CT_NT_EXTERNAL_BLAS_HPP__
-#define __GEMM_CT_NT_EXTERNAL_BLAS_HPP__
+#ifndef __HERK_U_CT_EXTERNAL_BLAS_HPP__
+#define __HERK_U_CT_EXTERNAL_BLAS_HPP__
 
-/// \file gemm_ct_nt_external_blas.hpp
-/// \brief BLAS matrix-matrix multiplication 
+/// \file herk_u_ct_external_blas.hpp
+/// \brief BLAS hermitian rank one update
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 #include "Teuchos_BLAS.hpp"
@@ -12,38 +12,35 @@ namespace Tacho {
 
   using namespace std;
 
-  // BLAS Gemm interface
-  // ===================
+  // BLAS Herk
+  // =========
   template<>
   template<typename ParallelForType,
            typename ScalarType,
            typename DenseExecViewTypeA,
-           typename DenseExecViewTypeB,
            typename DenseExecViewTypeC>
   KOKKOS_INLINE_FUNCTION
   int
-  Gemm<Trans::ConjTranspose,Trans::NoTranspose,
-       AlgoGemm::ExternalBlas>
+  Herk<Uplo::Upper,Trans::ConjTranspose,
+       AlgoHerk::ExternalBlas>
   ::invoke(typename DenseExecViewTypeA::policy_type &policy,
            const typename DenseExecViewTypeA::policy_type::member_type &member,
            const ScalarType alpha,
            DenseExecViewTypeA &A,
-           DenseExecViewTypeB &B,
            const ScalarType beta,
            DenseExecViewTypeC &C) {
-    typedef typename DenseExecViewTypeA::ordinal_type ordinal_type;
-    typedef typename DenseExecViewTypeA::value_type   value_type;
+    typedef typename DenseExecViewTypeA::ordinal_type      ordinal_type;
+    typedef typename DenseExecViewTypeA::value_type        value_type;
 
     if (member.team_rank() == 0) {
-      const ordinal_type m = C.NumRows();
-      const ordinal_type n = C.NumCols();
-      const ordinal_type k = B.NumRows();
+      // should be square
+      const ordinal_type n = C.NumRows();
+      const ordinal_type k = A.NumRows();
 
-      Teuchos::BLAS<ordinal_type,value_type>::GEMM(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS,
-                                                   m, n, k,
+      Teuchos::BLAS<ordinal_type,value_type>::HERK(Teuchos::UPPER_TRI, Teuchos::CONJ_TRANS,
+                                                   n, k,
                                                    alpha,
                                                    A.ValuePtr(), A.BaseObject->ColStride(),
-                                                   B.ValuePtr(), B.BaseObject->ColStride(),
                                                    beta,
                                                    C.ValuePtr(), C.BaseObject->ColStride());
     }
