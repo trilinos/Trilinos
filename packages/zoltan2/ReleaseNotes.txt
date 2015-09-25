@@ -1,3 +1,32 @@
+Release notes for Trilinos v12.4
+
+-  Template argument for arbitrary global identifiers (zgid_t) has been
+   removed for greater efficiency in the code as well as greater conformity
+   with Trilinos.  BasicUserTypes now has only three template parameters;
+   the zgid_t template argument has been removed.
+   
+-  A new test driver capability has been added to Zoltan2 for more robust
+   testing and experimentation.
+
+-  An interface to the Zoltan partitioners has been added to Zoltan2.
+   Parameter "algorithm" == "zoltan" invokes Zoltan partitioners; parameters
+   needed by Zoltan are provided through a parameter sublist called
+   "zoltan_parameters".  Zoltan's geometric and hypergraph methods are
+   available.
+
+-  A new interface to third-party library ParMA (from Rensselaer Polytechnic
+   Institute) is available.  ParMA provides mesh partition improvement to
+   balance both primary and secondary entities.
+   It assumes the number of processors is equal to the number of requested
+   parts, and that the input mesh distribution corresponds to the input part 
+   assignments.  RPI's SCOREC repository is needed to use ParMA.  
+
+-  A new hypergraph mesh partitioning model is available in Zoltan2
+   through the MeshAdapter.
+
+-  Parameters to third-party libraries Scotch and ParMETIS are provided 
+   through parameter sublists "scotch_parameters" and 
+   "parmetis_parameters", respectively.
 
 Release notes for Trilinos v11.14 
 
