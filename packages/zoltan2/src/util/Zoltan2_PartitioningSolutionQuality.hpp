@@ -78,7 +78,9 @@ private:
   part_t numNonEmpty_;              // of actual
 
   ArrayRCP<MetricValues<scalar_t> > metrics_;
+  ArrayRCP<graphMetricValues<scalar_t> > graphMetrics_;
   ArrayRCP<const MetricValues<scalar_t> > metricsConst_;
+  ArrayRCP<const graphMetricValues<scalar_t> > graphMetricsConst_;
 
 public:
 
@@ -103,6 +105,15 @@ public:
     //BDD return metricsConst_;
       if(metricsConst_.is_null()) return metrics_;
       return metricsConst_;
+  }
+
+  /*! \brief Return the graph metric values.
+   *  \param values on return is the array of values.
+   */
+  ArrayRCP<const graphMetricValues<scalar_t> > getGraphMetrics() const{
+    //BDD return graphMetricsConst_;
+      if(graphMetricsConst_.is_null()) return graphMetrics_;
+      return graphMetricsConst_;
   }
 
   /*! \brief Return the object count imbalance.
