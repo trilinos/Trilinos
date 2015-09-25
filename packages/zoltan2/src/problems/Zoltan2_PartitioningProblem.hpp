@@ -536,6 +536,11 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
       this->algorithm_ = rcp(new AlgBlock<Adapter>(this->envConst_,
                                          problemComm_, this->identifierModel_));
     }
+    else if (algName_ == std::string("forTestingOnly")) {
+      this->algorithm_ = rcp(new AlgForTestingOnly<Adapter>(this->envConst_,
+                                           problemComm_,
+                                           this->baseInputAdapter_));
+    }
     // else if (algName_ == std::string("rcb")) {
     //  this->algorithm_ = rcp(new AlgRCB<Adapter>(this->envConst_,problemComm_,
     //                                             this->coordinateModel_));
@@ -724,7 +729,8 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
       algName_ = algorithm;
     }
     else if (algorithm == std::string("zoltan") ||
-	     algorithm == std::string("parma"))
+	     algorithm == std::string("parma") ||
+	     algorithm == std::string("forTestingOnly"))
     {
       algName_ = algorithm;
     }
