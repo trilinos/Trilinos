@@ -121,8 +121,7 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), metrics_(),
-      graphMetricsRequested_(false), graphMetrics_()
+      metricsRequested_(false), metrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -138,8 +137,7 @@ public:
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), metrics_(),
-      graphMetricsRequested_(false), graphMetrics_()
+      metricsRequested_(false), metrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -155,8 +153,7 @@ public:
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), metrics_(),
-      graphMetricsRequested_(false), graphMetrics_()
+      metricsRequested_(false), metrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -379,8 +376,6 @@ private:
 
   bool metricsRequested_;
   RCP<const PartitioningSolutionQuality<Adapter> > metrics_;
-  bool graphMetricsRequested_;
-  RCP<const graphMetricValues<scalar_t> > graphMetrics_;
 };
 ////////////////////////////////////////////////////////////////////////
 
