@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 echo
 echo "Starting nightly Trilinos development testing on typhon: `date`"
@@ -23,6 +23,7 @@ export TDD_PARALLEL_LEVEL=2
 
 # Submission mode for the *TrilinosDriver* dashboard
 export TDD_CTEST_TEST_TYPE=Nightly
+export TRIBITS_TDD_USE_SYSTEM_CTEST=1
 
 #export CTEST_DO_SUBMIT=FALSE
 #export CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
@@ -35,6 +36,7 @@ source /projects/modulefiles/utils/kokkos-modules-init.sh
 
 module load python/2.7.9
 module load cuda/6.5.14
+module load cmake/2.8.11
 
 export FROM_JENKINS=1
 export TDD_HTTP_PROXY="http://sonproxy.sandia.gov:80"
