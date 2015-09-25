@@ -3,7 +3,7 @@
 #define __CHOL_U_HPP__
 
 /// \file chol_u.hpp
-/// \brief Upper Cholesky factorization front interface.
+/// \brief Upper Cholesky factorization variations
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 // right looking algorithm with upper triangular

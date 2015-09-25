@@ -1,8 +1,8 @@
 #pragma once
-#ifndef __CHOL_EXTERNAL_LAPACK_HPP__
-#define __CHOL_EXTERNAL_LAPACK_HPP__
+#ifndef __CHOL_U_EXTERNAL_LAPACK_HPP__
+#define __CHOL_U_EXTERNAL_LAPACK_HPP__
 
-/// \file chol_external_lapack.hpp
+/// \file chol_u_external_lapack.hpp
 /// \brief BLAS Chloesky factorization.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
