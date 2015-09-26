@@ -58,8 +58,11 @@ specific unit test suites.
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_UnitTestRepository.hpp>
+#include <Teuchos_VerboseObject.hpp>
 
 #include "MueLu_TestHelpers_kokkos.hpp"
+
+#include "MueLu_VerboseObject.hpp"
 
 int main(int argc, char* argv[]) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
@@ -98,6 +101,9 @@ int main(int argc, char* argv[]) {
     }
     comm->barrier();
 #endif
+
+    // Comment this line to get rid of MueLu output
+    MueLu::VerboseObject::SetDefaultVerbLevel(MueLu::High);
 
     ierr = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
