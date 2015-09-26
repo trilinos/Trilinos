@@ -11,7 +11,7 @@ echo >> MueLu_UseShortNamesOrdinal.hpp
 echo "#include <Xpetra_UseShortNamesOrdinal.hpp>" >> MueLu_UseShortNamesOrdinal.hpp
 echo >> MueLu_UseShortNamesOrdinal.hpp
 
-for i in LO-GO-NO-LMO Non-Templated
+for i in LO-GO-NO Non-Templated
   do
 
   classList=$classListDir/$i.classList
@@ -33,7 +33,7 @@ echo >> MueLu_UseShortNamesScalar.hpp
 echo "#include <Xpetra_UseShortNamesScalar.hpp>" >> MueLu_UseShortNamesScalar.hpp
 echo >> MueLu_UseShortNamesScalar.hpp
 
-i=SC-LO-GO-NO-LMO
+i=SC-LO-GO-NO
 classList=$classListDir/$i.classList
 tmpl=$i.tmpl
 
