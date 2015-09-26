@@ -191,6 +191,10 @@ namespace MueLu {
     mutable
       RCP<SmootherPrototype> s_;
 
+    // Records for the case if something goes wrong
+    bool        triedEpetra_, triedTpetra_;
+    std::string errorEpetra_, errorTpetra_;
+
   }; // class TrilinosSmoother
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

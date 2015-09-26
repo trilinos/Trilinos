@@ -76,15 +76,15 @@ namespace MueLu {
 
     // We want DirectSolver to be able to work with both Epetra and Tpetra objects, therefore we try to construct both
     // Amesos and Amesos2 solver prototypes. The construction really depends on configuration options.
-    bool triedEpetra = false, triedTpetra = false;
+    triedEpetra_ = triedTpetra_ = false;
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
     try {
       sTpetra_ = rcp(new Amesos2Smoother(type_, paramList));
       TEUCHOS_TEST_FOR_EXCEPTION(sTpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos2 direct solver");
     } catch (Exceptions::RuntimeError& e) {
-      this->GetOStream(Debug) << "Skipping Amesos2Smoother construction due to an error: \n" << e.what() << std::endl;
+      errorTpetra_ = e.what();
     }
-    triedTpetra = true;
+    triedTpetra_ = true;
 #endif
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_AMESOS)
     try {
@@ -93,14 +93,14 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null(), Exceptions::RuntimeError, "Unable to construct Amesos direct solver");
     } catch (Exceptions::RuntimeError& e) {
       // AmesosSmoother throws if Scalar != double, LocalOrdinal != int, GlobalOrdinal != int
-      this->GetOStream(Debug) << "Skipping AmesosSmoother construction due to an error: \n" << e.what() << std::endl;
+      errorEpetra_ = e.what();
     }
-    triedEpetra = true;
+    triedEpetra_ = true;
 #endif
 
     // Check if we were able to construct at least one solver. In many cases that's all we need, for instance if a user
     // simply wants to use Tpetra only stack, never enables Amesos, and always runs Tpetra objects.
-    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra && !triedTpetra, Exceptions::RuntimeError, "Unable to construct any direct solver."
+    TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra_ && !triedTpetra_, Exceptions::RuntimeError, "Unable to construct any direct solver."
                                "Plase enable (TPETRA and AMESOS2) or (EPETRA and AMESOS)");
 
     this->SetParameterList(paramList);
@@ -131,8 +131,11 @@ namespace MueLu {
             "  - Amesos2 is enabled (Trilinos_ENABLE_Amesos2=ON),\n"
             "  - Amesos2 is available for MueLu to use (MueLu_ENABLE_Amesos2=ON)\n");
 #else
+        if (triedTpetra_)
+          this->GetOStream(Errors) << "Tpetra mode was disabled due to an error:\n" << errorTpetra_ << std::endl;
 #endif
-      } else {
+      }
+      if (!useTpetra) {
 #if not defined(HAVE_MUELU_AMESOS)
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
             "Error: running in Epetra mode, but MueLu with Amesos was disabled during the configure stage.\n"
@@ -140,6 +143,8 @@ namespace MueLu {
             "  - Amesos is enabled (you can do that with Trilinos_ENABLE_Amesos=ON),\n"
             "  - Amesos is available for MueLu to use (MueLu_ENABLE_Amesos=ON)\n");
 #else
+        if (triedEpetra_)
+          this->GetOStream(Errors) << "Epetra mode was disabled due to an error:\n" << errorEpetra_ << std::endl;
 #endif
       }
       TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError,
