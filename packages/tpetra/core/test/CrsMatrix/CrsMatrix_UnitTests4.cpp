@@ -284,63 +284,6 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     }
   }
 
-
-  // mfh 08 Mar 2013: This test wasn't being instantiated, so I
-  // disabled it to save compilation time.
-#if 0
-  ////
-  TEUCHOS_UNIT_TEST( CrsMatrix, Convert )
-  {
-    typedef Tpetra::Details::DefaultTypes::node_type Node;
-    RCP<Node> node = getNode<Node>();
-    typedef ScalarTraits<double> ST;
-    typedef OrdinalTraits<int> LOT;
-    typedef CrsMatrix<double,int,int,Node> DMat;
-    typedef CrsMatrix<   int,int,int,Node> IMat;
-    // get a comm
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const int numProcs = comm->getSize();
-
-    global_size_t numGlobal = 2*numProcs;
-    RCP<const Map<int,int,Node> > map = createUniformContigMapWithNode<int,int>(numGlobal,comm,node);
-
-    RCP<DMat> dmatrix = createCrsMatrix<double>(map, 3);
-
-    const int maxglobalrow = map->getMaxAllGlobalIndex();
-    for(int r = map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r)
-    {
-      if (r==0) {
-        dmatrix->insertGlobalValues( r, tuple<int>(0,1), tuple<double>(1,1) );
-      }
-      else if( r == maxglobalrow ) {
-        dmatrix->insertGlobalValues( r, tuple<int>(maxglobalrow-1,maxglobalrow), tuple<double>(1,1) );
-      }
-      else{
-        dmatrix->insertGlobalValues( r, tuple<int>(r-1,r,r+1), tuple<double>(1,1,1) );
-      }
-    }
-
-    RCP<ParameterList> params = parameterList();
-    params->set("Preserve Local Graph",true);
-    dmatrix->fillComplete(params);
-
-    RCP<IMat> imatrix = dmatrix->convert<int>();
-
-    // check graphs
-    TEST_EQUALITY( dmatrix->getGraph(),    imatrix->getGraph() );
-    TEST_EQUALITY( dmatrix->getCrsGraph(), imatrix->getCrsGraph() );
-    // check entries
-    for (int i=map->getMinLocalIndex(); i <= map->getMaxLocalIndex(); ++i) {
-      ArrayView<const int> indsd, indsi, valsi;
-      ArrayView<const double> valsd;
-      dmatrix->getLocalRowView(i, indsd, valsd);
-      imatrix->getLocalRowView(i, indsi, valsi);
-      TEST_COMPARE_ARRAYS(indsd,indsi);
-      TEST_COMPARE_ARRAYS(valsd,valsi);
-    }
-  }
-#endif // 0
-
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, AlphaBetaMultiply, LO, GO, Scalar, Node )
   {

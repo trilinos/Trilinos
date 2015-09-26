@@ -7,10 +7,6 @@ IF (SITE STREQUAL "gabriel.sandia.gov")
     "${ARGS} --not-unit-test=CrsMatrix_int_ComplexFloat_FullMatrixComplex_UnitTest")
 ENDIF()
 
-JOIN(allnodes   "|" FALSE ${TpetraCore_ETI_NODES}  )
-TRIBITS_ETI_TYPE_EXPANSION(conversions "SOUT=int" "SIN=double" "LO=int" "GO=int" "N=${allnodes}")
-TRIBITS_ADD_ETI_INSTANTIATIONS(TpetraCore ${conversions})
-
 #
 # We break up CrsMatrix's unit tests into several files, to reduce
 # compilation time for each file and improve build parallelism.
