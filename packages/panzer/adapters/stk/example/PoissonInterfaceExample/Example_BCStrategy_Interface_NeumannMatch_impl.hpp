@@ -131,7 +131,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       p.set("Value Name", flux_name);
       p.set("Basis", basis);
       p.set("IR", ir);
-      p.set("Multiplier", -1.0);
+      p.set("Multiplier", 1.0);
       const RCP< PHX::Evaluator<panzer::Traits> >
         op = rcp(new panzer::Integrator_BasisTimesScalar<EvalT,panzer::Traits>(p));
       this->template registerEvaluator<EvalT>(fm, op);

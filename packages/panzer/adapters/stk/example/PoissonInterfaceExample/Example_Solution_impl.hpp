@@ -82,10 +82,15 @@ void Solution<EvalT,Traits>::evaluateFields(typename Traits::EvalData workset)
       const double& x = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,0);
       const double& y = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,1);
 
-      if (linear_Robin)
-        solution(cell,point) = 0.5 - 0.8*x + 0.5*sin(2*M_PI*x)*cos(2*M_PI*y);
-      else {
-        if (workset.block_id == "eblock-0_0")
+      if (linear_Robin) {
+        if (this->wda(workset).int_rules[ir_index]->ip_coordinates.dimension(2) == 2) {
+          solution(cell,point) = 0.5 - 0.8*x + 0.5*sin(2*M_PI*x)*cos(2*M_PI*y);
+        } else {
+          const double & z = this->wda(workset).int_rules[ir_index]->ip_coordinates(cell,point,2);
+          solution(cell,point) = 0.5 - 0.8*x + sin(2*M_PI*x)*cos(2*M_PI*y)*cos(2*M_PI*z)/3.0;
+        }
+      } else {
+        if (workset.block_id[7] == '0')
           solution(cell,point) =  0.5 - 0.4*x;
         else
           solution(cell,point) = 0.1 - 0.4*x;
