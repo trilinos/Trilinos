@@ -43,8 +43,8 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifndef MUELU_UTILITIESK_DEF_HPP
-#define MUELU_UTILITIESK_DEF_HPP
+#ifndef MUELU_UTILITIES_KOKKOS_DEF_HPP
+#define MUELU_UTILITIES_KOKKOS_DEF_HPP
 
 #include <Teuchos_DefaultComm.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -269,7 +269,7 @@ namespace MueLu {
 
       case Xpetra::UseEpetra:
         // FIXME?
-        // Utils2K<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Epetra(Op, sv, doFillComplete, doOptimizeStorage);
+        // Utils2_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::MyOldScaleMatrix_Epetra(Op, sv, doFillComplete, doOptimizeStorage);
         throw std::runtime_error("FIXME");
         break;
 
@@ -511,5 +511,5 @@ namespace MueLu {
 
 } //namespace MueLu
 
-#define MUELU_UTILITIESK_SHORT
-#endif // MUELU_UTILITIESK_DEF_HPP
+#define MUELU_UTILITIES_KOKKOS_SHORT
+#endif // MUELU_UTILITIES_KOKKOS_DEF_HPP

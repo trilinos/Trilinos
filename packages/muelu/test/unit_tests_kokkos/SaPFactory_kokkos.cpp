@@ -81,7 +81,9 @@ namespace MueLuTests {
     level.Set("Graph", filteredGraph);
 
     RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
-    SC damping = 1.1;
+    ParameterList Pparams;
+    Pparams.set("sa: damping factory", 0.5);
+    sapFactory->SetParameterList(Pparams);
   }
 #endif
 

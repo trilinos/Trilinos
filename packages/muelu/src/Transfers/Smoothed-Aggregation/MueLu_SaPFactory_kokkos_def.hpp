@@ -73,8 +73,8 @@ namespace MueLu {
     SET_VALID_ENTRY("sa: eigenvalue estimate num iterations");
 #undef  SET_VALID_ENTRY
 
-    validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
-    validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Tentative prolongator factory");
+    validParamList->set< RCP<const FactoryBase> >("A", Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
+    validParamList->set< RCP<const FactoryBase> >("P", Teuchos::null, "Tentative prolongator factory");
 
     return validParamList;
   }
@@ -87,22 +87,20 @@ namespace MueLu {
     // Getting it that way ensure that the same factory instance will be used for both SaPFactory_kokkos and NullspaceFactory.
     RCP<const FactoryBase> initialPFact = GetFactory("P");
     if (initialPFact == Teuchos::null) { initialPFact = coarseLevel.GetFactoryManager()->GetFactory("Ptent"); }
-    coarseLevel.DeclareInput("P", initialPFact.get(), this); // --
+    coarseLevel.DeclareInput("P", initialPFact.get(), this);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level &coarseLevel) const {
+  void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level& fineLevel, Level& coarseLevel) const {
     return BuildP(fineLevel, coarseLevel);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level &fineLevel, Level &coarseLevel) const {
+  void SaPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildP(Level& fineLevel, Level& coarseLevel) const {
     FactoryMonitor m(*this, "Prolongator smoothing", coarseLevel);
-    std::ostringstream levelstr;
-    levelstr << coarseLevel.GetLevelID();
 
     // Add debugging information
-    // Node::execution_space::print_configuration(GetOStream(Runtime1));
+    Node::execution_space::print_configuration(GetOStream(Runtime1));
 
     typedef typename Teuchos::ScalarTraits<SC>::magnitudeType Magnitude;
 
@@ -152,7 +150,7 @@ namespace MueLu {
         SC omega = dampingFactor / lambdaMax;
 
         // finalP = Ptent + (I - \omega D^{-1}A) Ptent
-        finalP = MueLu::Utils_kokkos<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2),std::string("MueLu::SaP-")+levelstr.str());
+        finalP = Utils_kokkos::Jacobi(omega, *invDiag, *A, *Ptent, finalP, GetOStream(Statistics2), std::string("MueLu::SaP-") + toString(coarseLevel.GetLevelID()));
       }
 
     } else {

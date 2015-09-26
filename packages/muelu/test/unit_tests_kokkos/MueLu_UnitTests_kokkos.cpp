@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
         gethostname(hostname, sizeof(hostname));
         int pid = getpid();
         sprintf(buf, "Host: %s\tMPI rank: %d,\tPID: %d\n\tattach %d\n\tcontinue\n",
-            hostname, mypid, pid, pid);
+                hostname, mypid, pid, pid);
         printf("%s\n",buf);
         fflush(stdout);
         sleep(1);

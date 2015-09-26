@@ -127,7 +127,6 @@ namespace MueLuTests {
       }
     };
 
-#if 0
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     class TestFactory {
 #include "MueLu_UseShortNames.hpp"
@@ -137,14 +136,10 @@ namespace MueLuTests {
 
     public:
 
-      //
-      // Method that creates a map containing a specified number of local elements per process.
-      //
+      // Create a map containing a specified number of local elements per process.
       static const RCP<const Map> BuildMap(LO numElementsPerProc) {
-
-        RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
-
-        const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
+        RCP<const Teuchos::Comm<int> > comm   = TestHelpers_kokkos::Parameters::getDefaultComm();
+        const global_size_t           INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
 
         return MapFactory::Build(TestHelpers_kokkos::Parameters::getLib(), INVALID, numElementsPerProc, 0, comm);
 
@@ -157,13 +152,13 @@ namespace MueLuTests {
         if (lib == Xpetra::NotSpecified)
           lib = TestHelpers_kokkos::Parameters::getLib();
 
-        int nx,ny,nz; //global_size_t
+        int nx, ny, nz; //global_size_t
         nx = ny = nz = 5;
-        nx = matrixList.get("nx",nx);
-        ny = matrixList.get("ny",ny);
-        nz = matrixList.get("nz",nz);
+        nx = matrixList.get("nx", nx);
+        ny = matrixList.get("ny", ny);
+        nz = matrixList.get("nz", nz);
 
-        std::string matrixType = matrixList.get("matrixType","Laplace1D");
+        std::string matrixType = matrixList.get("matrixType", "Laplace1D");
         GO numGlobalElements; //global_size_t
         if (matrixType == "Laplace1D")
           numGlobalElements = nx;
@@ -182,8 +177,9 @@ namespace MueLuTests {
         RCP<Matrix> Op = Pr->BuildMatrix();
 
         return Op;
-      } // BuildMatrix()
+      }
 
+#if 0
       // Create a tridiagonal matrix (stencil = [b,a,c]) with the specified number of rows
       // dofMap: row map of matrix
       static RCP<Matrix> BuildTridiag(RCP<const Map> dofMap, Scalar a, Scalar b, Scalar c, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
@@ -413,14 +409,14 @@ namespace MueLuTests {
       }
 #endif
 
+#endif
     }; // class Factory
 
 
 
     //! Return the list of files in the directory. Only files that are matching '*filter*' are returned.
-    ArrayRCP<std::string> GetFileList(const std::string & dirPath, const std::string & filter);
+    ArrayRCP<std::string> GetFileList(const std::string& dirPath, const std::string & filter);
 
-#endif
   } // namespace TestHelpers_kokkos
 
 } // namespace MueLu
