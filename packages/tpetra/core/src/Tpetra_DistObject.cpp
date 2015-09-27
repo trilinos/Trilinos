@@ -57,6 +57,19 @@ namespace Tpetra {
  // The "SLGN" stuff above doesn't work for Packet=char, which is the base class for Tpetra::CrsMatrix
  TPETRA_INSTANTIATE_LGN(TPETRA_DISTOBJECT_INSTANT_CHAR)
 
+ // Tpetra uses Scalar = int for MultiVector and Vector in
+ // communication routines.  This means that it needs to instantiate
+ // DistObject with Packet = int.  If GO = int is disabled, the above
+ // instantiations won't take care of this case, so we have to do it
+ // here.
+#ifndef HAVE_TPETRA_INST_INT_INT
+#  define TPETRA_DISTOBJECT_INSTANT_INT( LO, GO, NT ) \
+  TPETRA_DISTOBJECT_INSTANT( int, LO, GO, NT )
+
+ TPETRA_INSTANTIATE_LGN(TPETRA_DISTOBJECT_INSTANT_INT)
+
+#endif // HAVE_TPETRA_INST_INT_INT
+
 } // namespace Tpetra
 
 #endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
