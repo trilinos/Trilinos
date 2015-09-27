@@ -60,6 +60,17 @@ namespace Tpetra {
 
   TPETRA_INSTANTIATE_SL(TPETRA_MULTIVECTOR_UNSIGNED_LONG_KOKKOSSERIALWRAPPERNODE_INSTANT)
 
+  // mfh 26 Sep 2015: Some of Tpetra's communication routines want
+  // Scalar = int.  The above covers that case only if GO = int is
+  // enabled.  If not, we have to instantiate that case specially.
+#ifndef HAVE_TPETRA_INST_INT_INT
+#  define TPETRA_MULTIVECTOR_UNSIGNED_LONG_KOKKOSSERIALWRAPPERNODE_INSTANT_INT( LO ) \
+  TPETRA_MULTIVECTOR_INSTANT( int, LO, unsignedlong, Kokkos::Compat::KokkosSerialWrapperNode )
+
+  TPETRA_INSTANTIATE_L(TPETRA_MULTIVECTOR_UNSIGNED_LONG_KOKKOSSERIALWRAPPERNODE_INSTANT_INT)
+
+#endif // HAVE_TPETRA_INST_INT_INT
+
 } // namespace Tpetra
 
 #endif
