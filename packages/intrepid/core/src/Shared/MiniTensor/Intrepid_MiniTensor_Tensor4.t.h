@@ -1087,7 +1087,7 @@ operator<<(std::ostream & os, Tensor4<T, N> const & A)
     return os;
   }
 
-  os << std::scientific << std::setw(24) << std::setprecision(16);
+  os << std::scientific << std::setprecision(16);
 
   for (Index i = 0; i < dimension; ++i) {
 
@@ -1095,7 +1095,7 @@ operator<<(std::ostream & os, Tensor4<T, N> const & A)
 
       for (Index k = 0; k < dimension; ++k) {
 
-        os << A(i,j,k,0);
+        os << std::setw(24) << A(i,j,k,0);
 
         for (Index l = 1; l < dimension; ++l) {
 
