@@ -420,8 +420,8 @@ main (int argc, char *argv[])
   using std::endl;
 
   typedef double scalar_type;
-  typedef int local_ordinal_type;
-  typedef int global_ordinal_type;
+  typedef Tpetra::Map<>::local_ordinal_type local_ordinal_type;
+  typedef Tpetra::Map<>::global_ordinal_type global_ordinal_type;
   typedef Tpetra::Details::DefaultTypes::node_type node_type;
 
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &cout);
