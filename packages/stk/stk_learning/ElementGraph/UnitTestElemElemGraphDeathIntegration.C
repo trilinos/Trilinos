@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/ElemElemGraph.hpp>  // for process_killed_elements
+#include <stk_mesh/base/ElemElemGraphUpdater.hpp>
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_topology/topology.hpp>    // for topology, etc
@@ -94,7 +95,7 @@ private:
     stk::mesh::Part &activePart;
     stk::mesh::Part &boundaryPart;
     stk::mesh::ElemElemGraph elemGraph;
-    ElemElemGraphUpdater observer;
+    stk::mesh::ElemElemGraphUpdater observer;
 };
 
 class MeshRefinementMock
