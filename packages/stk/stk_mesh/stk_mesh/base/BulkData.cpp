@@ -820,7 +820,7 @@ Entity BulkData::internal_declare_entity( EntityRank ent_rank , EntityId ent_id 
 
   m_check_invalid_rels = true;
 
-  notifier.entity_added(declared_entity);
+  notifier.notify_entity_added(declared_entity);
 
   return declared_entity ;
 }
@@ -879,7 +879,7 @@ bool BulkData::destroy_entity(Entity entity, bool wasGhost)
 
 bool BulkData::internal_destroy_entity_with_notification(Entity entity, bool wasGhost)
 {
-    notifier.entity_deleted(entity);
+    notifier.notify_entity_deleted(entity);
     return internal_destroy_entity(entity, wasGhost);
 }
 
@@ -976,6 +976,8 @@ bool BulkData::internal_destroy_entity(Entity entity, bool wasGhost)
   set_mesh_index(entity, 0, 0);
 
   m_entity_repo.destroy_entity(key, entity );
+  notifier.notify_local_entities_created_or_deleted(key.rank());
+  notifier.notify_local_buckets_changed(key.rank());
   m_meshModification.mark_entity_as_deleted(entity.local_offset());
   m_mark_entity[entity.local_offset()] = NOT_MARKED;
   m_closure_count[entity.local_offset()] = static_cast<uint16_t>(0u);
@@ -1088,7 +1090,14 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
 std::pair<Entity, bool> BulkData::internal_create_entity(EntityKey key, size_t preferred_offset)
 {
     m_modSummary.track_declare_entity(key.rank(), key.id(), stk::mesh::PartVector());
-    return m_entity_repo.internal_create_entity(key, preferred_offset);
+    std::pair<Entity ,bool> entityBoolPair = m_entity_repo.internal_create_entity(key, preferred_offset);
+
+    if(entityBoolPair.second)
+    {
+        notifier.notify_local_entities_created_or_deleted(key.rank());
+        notifier.notify_local_buckets_changed(key.rank());
+    }
+    return entityBoolPair;
 }
 
 void BulkData::addMeshEntities(stk::topology::rank_t rank, const std::vector<stk::mesh::EntityId> new_ids,
@@ -5218,6 +5227,8 @@ void BulkData::internal_move_entity_to_new_bucket(stk::mesh::Entity entity, cons
         EntityRank rank = entity_rank(entity);
         m_bucket_repository.add_entity_with_part_memberships(entity, rank, newBucketPartList);
     }
+
+    notifier.notify_local_buckets_changed(entity_rank(entity));
 
     mark_entity_and_upward_related_entities_as_modified(entity);
 }

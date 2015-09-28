@@ -2,8 +2,7 @@
 #define ModificationObserver_hpp
 
 #include <stk_mesh/base/Types.hpp>
-
-namespace stk { namespace mesh { class Entity; } }
+#include <stk_mesh/base/Entity.hpp>
 
 namespace stk
 {
@@ -38,6 +37,19 @@ public:
     }
 
     virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+    {
+    }
+
+
+    virtual void local_entities_created_or_deleted_notification(stk::mesh::EntityRank rank)
+    {
+    }
+
+    virtual void local_entity_comm_info_changed_notification(stk::mesh::EntityRank rank)
+    {
+    }
+
+    virtual void local_buckets_changed_notification(stk::mesh::EntityRank rank)
     {
     }
 };

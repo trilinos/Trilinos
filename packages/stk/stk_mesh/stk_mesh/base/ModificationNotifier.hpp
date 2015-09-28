@@ -3,8 +3,7 @@
 
 #include <stk_mesh/base/ModificationObserver.hpp>
 #include <stk_mesh/base/Types.hpp>
-
-namespace stk { namespace mesh { class Entity; } }
+#include <stk_mesh/base/Entity.hpp>
 
 namespace stk
 {
@@ -23,7 +22,7 @@ public:
         observers.push_back(observer);
     }
 
-    void entity_added(stk::mesh::Entity entity)
+    void notify_entity_added(stk::mesh::Entity entity)
     {
         for(ModificationObserver *observer : observers)
         {
@@ -31,7 +30,7 @@ public:
         }
     }
 
-    void entity_deleted(stk::mesh::Entity entity)
+    void notify_entity_deleted(stk::mesh::Entity entity)
     {
         for(ModificationObserver *observer : observers)
         {
@@ -70,6 +69,31 @@ public:
             observer->elements_moved_procs_notification(elemProcPairsToMove);
         }
     }
+
+    void notify_local_entities_created_or_deleted(stk::mesh::EntityRank rank)
+    {
+        for(ModificationObserver *observer : observers)
+        {
+            observer->local_entities_created_or_deleted_notification(rank);
+        }
+    }
+
+    void notify_local_entity_comm_info_changed(stk::mesh::EntityRank rank)
+    {
+        for(ModificationObserver *observer : observers)
+        {
+            observer->local_entity_comm_info_changed_notification(rank);
+        }
+    }
+
+    void notify_local_buckets_changed(stk::mesh::EntityRank rank)
+    {
+        for(ModificationObserver *observer : observers)
+        {
+            observer->local_buckets_changed_notification(rank);
+        }
+    }
+
 private:
     std::vector<ModificationObserver *> observers;
 };

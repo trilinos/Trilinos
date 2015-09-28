@@ -71,24 +71,24 @@ public:
         }
     }
 
-    void finished_modification_end_notification()
+    virtual void finished_modification_end_notification()
     {
         elemGraph.add_elements(elementsAdded);
         elementsAdded.clear();
     }
 
-    void started_modification_end_notification()
+    virtual void started_modification_end_notification()
     {
         elemGraph.delete_elements(elementsDeleted);
         elementsDeleted.clear();
     }
 
-    void elements_about_to_move_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+    virtual void elements_about_to_move_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
     {
         elemGraph.create_parallel_graph_info_needed_once_entities_are_moved(elemProcPairsToMove, newParallelGraphEntries);
     }
 
-    void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
+    virtual void elements_moved_procs_notification(const stk::mesh::EntityProcVec &elemProcPairsToMove)
     {
         elemGraph.change_entity_owner(elemProcPairsToMove, newParallelGraphEntries);
         newParallelGraphEntries.clear();
