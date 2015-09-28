@@ -93,6 +93,7 @@ C   --   "User's Manual for GEN3D"
 C      --NAMECO - the coordinate names
 
       CHARACTER CDUM
+      logical l64bit
 
       INTEGER CMPSIZ, IOWS
 
@@ -122,16 +123,31 @@ C      --A - the dynamic numeric memory base array
       IF (NERR .GT. 0) GOTO 40
 
 C .. Get filename from command line.  If not specified, emit error message
+      l64bit = .false.
       NARG = argument_count()
+      iarg = 1
+
       if (narg .lt. 2) then
         CALL PRTERR ('FATAL', 'Filenames not specified.')
         CALL PRTERR ('FATAL',
-     *    'Syntax is: "gen3d 2dfilename 3dfilename"')
+     *    'Syntax is: "gen3d [-64] 2dfilename 3dfilename"')
         GOTO 60
-      else if (narg .gt. 2) then
+      else if (narg .eq. 3) then
+        CALL get_argument(iarg,FILIN, LNAM)
+        if (filin(:lnam) .eq. '-64') then
+          l64bit = .true.
+        else
+          SCRATCH = 'Unrecognized command option "'//FILIN(:LNAM)//'"'
+          CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
+          CALL PRTERR ('FATAL',
+     *      'Syntax is: "gen3d [-64] 2dfilename 3dfilename"')
+          GOTO 60
+        end if
+        iarg = 2;
+      else if (narg .gt. 3) then
         CALL PRTERR ('FATAL', 'Too many arguments specified.')
         CALL PRTERR ('FATAL',
-     *    'Syntax is: "gen3d 2dfilename 3dfilename"')
+     *      'Syntax is: "gen3d [-64] 2dfilename 3dfilename"')
         GOTO 60
       end if
 
@@ -144,7 +160,7 @@ C   --Open the input database and read the initial variables
       IOWS   = 0
 
       FILIN = ' '
-      CALL get_argument(1,FILIN, LNAM)
+      CALL get_argument(iarg,FILIN, LNAM)
       NDBIN = exopen(filin(:lnam), EXREAD, CMPSIZ, IOWS, vers, IERR)
       IF (IERR .NE. 0) THEN
         SCRATCH = 'Database "'//FILIN(:LNAM)//'" does not exist.'
@@ -193,8 +209,6 @@ C   --Reserve memory for the 2D information
       CALL MCRSRV ('NAMELB', KNMLB, MXSTLN*NELBLK)
       CALL MCRSRV ('BLKTYP', KBKTYP, NELBLK)
 
-      CALL MDRSRV ('MAPEL', KMAPEL, NUMEL)
-
       CALL MDRSRV ('LINK', KLINK, 4 * NUMEL)
       CALL MDRSRV ('IDNPS',  KIDNS, NUMNPS)
       CALL MDRSRV ('NNNPS',  KNNNS, NUMNPS)
@@ -226,7 +240,6 @@ C   --Read 2D information from the database and close file
 
 C ... Don't warn about no map stored in file
       call exopts (0, ierr)
-      call exgmap (ndbin, ia(kmapel), ierr)
       call exopts (EXVRBS, ierr)
 
       CALL INISTR (NDIM, ' ', NAMECO)
@@ -420,10 +433,14 @@ C   --Get the side sets, and the front and back side sets
 C   --Open the output database
 
       FILOUT = ' '
-      CALL get_argument(2,FILOUT, LFIL)
+      CALL get_argument(iarg+1,FILOUT, LFIL)
       CMPSIZ = 0
       IOWS   = iowdsz()
-      ndbout = excre(filout(:lfil), EXCLOB, CMPSIZ, IOWS, IERR)
+      MODE = EXCLOB
+      if (l64bit) then
+        MODE = MODE + EX_ALL_INT64_DB + EX_ALL_INT64_API
+      end if
+      ndbout = excre(filout(:lfil), MODE, CMPSIZ, IOWS, IERR)
       if (ierr .lt. 0) then
          call exopts (EXVRBS, ierr)
          call exerr('grepos', 'Error from excre', ierr)
@@ -488,25 +505,6 @@ C   --Write the coordinates
       CALL MDDEL ('XN3')
       CALL MDDEL ('YN3')
       CALL MDDEL ('ZN3')
-      CALL MDSTAT (NERR, MEM)
-      IF (NERR .GT. 0) GOTO 40
-
-C   --Write the element order map
-
-      CALL MDRSRV ('MAPEL3', KMAPE3, NUMEL3)
-      CALL MDSTAT (NERR, MEM)
-      IF (NERR .GT. 0) GOTO 40
-
-      CALL NEWMAP (IA(KMAPEL), IA(KMAPE3),
-     &   IA(KIXEL), IA(KINCEL), IA(KNREL), IA(KIECOL))
-      call expmap (ndbout, ia(kmape3), ierr)
-      if (ierr .lt. 0) then
-         call exerr('gen3d2', 'Error from expmap', exlmsg)
-         go to 40
-      endif
-
-      CALL MDDEL ('MAPEL')
-      CALL MDDEL ('MAPEL3')
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 40
 
