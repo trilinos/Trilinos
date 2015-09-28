@@ -87,7 +87,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
 #  "-DTPL_ENABLE_CppUnit:BOOL=ON"
   "-DSTK_stk_mesh_unit_tests_MPI_4_DISABLE=ON"
   "-DSTK_util_parallel_UnitTest_MPI_4_DISABLE=ON"
-  "Amesos2_ENABLE_KLU2=ON"
+  "-DAmesos2_ENABLE_KLU2=ON"
   "-DTrilinos_TRACE_ADD_TEST=ON"
   )
 
