@@ -125,7 +125,8 @@ namespace Tacho {
     static const int UnblockedOpt2  = 1003;
     static const int Blocked        = 1101; // testing only
 
-    static const int ByBlocks       = 1201;
+    static const int ByBlocksVar1   = 1201;
+    static const int ByBlocks       = ByBlocksVar1;
 
     static const int ExternalLapack = 1211;
   };
