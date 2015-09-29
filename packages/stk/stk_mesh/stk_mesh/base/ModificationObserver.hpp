@@ -40,7 +40,6 @@ public:
     {
     }
 
-
     virtual void local_entities_created_or_deleted_notification(stk::mesh::EntityRank rank)
     {
     }

@@ -868,30 +868,48 @@ protected: //functions
 
   void add_comm_list_entries_for_entities(const std::vector<stk::mesh::Entity>& shared_modified);
 
-  bool entity_comm_map_insert(Entity entity, const EntityCommInfo & val)
+  bool entity_comm_map_insert(Entity entity, const EntityCommInfo &val)
   {
       m_modSummary.track_comm_map_insert(entity, val);
-      return m_entity_comm_map.insert(entity_key(entity), val, parallel_owner_rank(entity));
+      EntityKey key = entity_key(entity);
+      bool didInsert = m_entity_comm_map.insert(key, val, parallel_owner_rank(entity));
+      if(didInsert)
+      {
+          notifier.notify_local_entity_comm_info_changed(key.rank());
+      }
+      return didInsert;
   }
-  bool entity_comm_map_erase(  const EntityKey & key, const EntityCommInfo & val)
+  bool entity_comm_map_erase(const EntityKey &key, const EntityCommInfo &val)
   {
       m_modSummary.track_comm_map_erase(key, val);
-      return m_entity_comm_map.erase(key,val);
+      bool didErase = m_entity_comm_map.erase(key, val);
+      if(didErase)
+      {
+          notifier.notify_local_entity_comm_info_changed(key.rank());
+      }
+      return didErase;
   }
-  bool entity_comm_map_erase(  const EntityKey & key, const Ghosting & ghost)
+  bool entity_comm_map_erase(const EntityKey &key, const Ghosting &ghost)
   {
       m_modSummary.track_comm_map_erase(key, ghost);
-      return m_entity_comm_map.erase(key,ghost);
+      bool didErase = m_entity_comm_map.erase(key, ghost);
+      if(didErase)
+      {
+          notifier.notify_local_entity_comm_info_changed(key.rank());
+      }
+      return didErase;
   }
-  void entity_comm_map_clear_ghosting(const EntityKey & key )
+  void entity_comm_map_clear_ghosting(const EntityKey & key)
   {
       m_modSummary.track_comm_map_clear_ghosting(key);
       m_entity_comm_map.comm_clear_ghosting(key);
+      notifier.notify_local_entity_comm_info_changed(key.rank());
   }
   void entity_comm_map_clear(const EntityKey & key)
   {
       m_modSummary.track_comm_map_clear(key);
       m_entity_comm_map.comm_clear(key);
+      notifier.notify_local_entity_comm_info_changed(key.rank());
   }
 
   /** \brief  Regenerate the shared-entity aura,
