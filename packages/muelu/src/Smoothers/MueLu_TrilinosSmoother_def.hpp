@@ -107,6 +107,13 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra_ && !triedTpetra_, Exceptions::RuntimeError, "Unable to construct any smoother."
                                "Plase enable (TPETRA and IFPACK2) or (EPETRA and IFPACK)");
 
+    TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null() && sTpetra_.is_null(), Exceptions::RuntimeError,
+        "Could not enable any smoother:\n"
+        << (triedEpetra_ ? "Epetra mode was disabled due to an error:\n" : "")
+        << (triedEpetra_ ? errorEpetra_ : "")
+        << (triedTpetra_ ? "Tpetra mode was disabled due to an error:\n" : "")
+        << (triedTpetra_ ? errorTpetra_ : ""));
+
     this->SetParameterList(paramList);
   }
 

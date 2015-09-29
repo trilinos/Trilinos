@@ -103,6 +103,13 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(!triedEpetra_ && !triedTpetra_, Exceptions::RuntimeError, "Unable to construct any direct solver."
                                "Plase enable (TPETRA and AMESOS2) or (EPETRA and AMESOS)");
 
+    TEUCHOS_TEST_FOR_EXCEPTION(sEpetra_.is_null() && sTpetra_.is_null(), Exceptions::RuntimeError,
+        "Could not enable any direct solver:\n"
+        << (triedEpetra_ ? "Epetra mode was disabled due to an error:\n" : "")
+        << (triedEpetra_ ? errorEpetra_ : "")
+        << (triedTpetra_ ? "Tpetra mode was disabled due to an error:\n" : "")
+        << (triedTpetra_ ? errorTpetra_ : ""));
+
     this->SetParameterList(paramList);
   }
 
