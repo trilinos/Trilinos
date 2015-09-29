@@ -51,7 +51,6 @@ extern void *srealloc_ret(void *ptr, size_t n);
 /* Safe version of free. */
 extern void sfree(void *ptr);
 
-void smalloc_stats(void);
 
 
 
