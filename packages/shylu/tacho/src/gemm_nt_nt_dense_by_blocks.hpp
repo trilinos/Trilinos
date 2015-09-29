@@ -38,10 +38,10 @@ namespace Tacho {
     if (member.team_rank() == 0) {
       for (ordinal_type p=0;p<A.NumCols();++p) {
         const ScalarType beta_select = (p > 0 ? 1.0 : beta);
-        for (ordinal_type k2=0;k2<C.NumCols();++k2)
+        for (ordinal_type k2=0;k2<C.NumCols();++k2) {
+          value_type &bb = B.Value( p, k2);
           for (ordinal_type k1=0;k1<C.NumRows();++k1) {
             value_type &aa = A.Value(k1,  p);
-            value_type &bb = B.Value( p, k2);
             value_type &cc = C.Value(k1, k2);
 
             future_type f = task_factory_type::create(policy,
@@ -63,6 +63,7 @@ namespace Tacho {
             // spawn a task
             task_factory_type::spawn(policy, f);
           }
+        }
       }
     }
 
