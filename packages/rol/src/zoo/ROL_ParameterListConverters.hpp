@@ -55,8 +55,8 @@ namespace ROL {
 namespace StringList {
 
 /// Helper function for making vectors of strings
-std::vector<std::string> join( const std::string &s1,
-                               const std::string &s2 ) {
+inline std::vector<std::string> join( const std::string &s1,
+                                      const std::string &s2 ) {
   std::vector<std::string> v; 
   v.push_back(s1);
   v.push_back(s2);
@@ -65,9 +65,9 @@ std::vector<std::string> join( const std::string &s1,
 }
 
 /// Helper function for making vectors of strings
-std::vector<std::string> join( const std::string &s1,
-                               const std::string &s2,
-                               const std::string &s3 ) {
+inline std::vector<std::string> join( const std::string &s1,
+                                      const std::string &s2,
+                                      const std::string &s3 ) {
   std::vector<std::string> v; 
   v.push_back(s1);
   v.push_back(s2);
@@ -77,10 +77,10 @@ std::vector<std::string> join( const std::string &s1,
 }
 
 /// Helper function for making vectors of strings
-std::vector<std::string> join( const std::string &s1,
-                               const std::string &s2,
-                               const std::string &s3,
-                               const std::string &s4 ) {
+inline std::vector<std::string> join( const std::string &s1,
+                                      const std::string &s2,
+                                      const std::string &s3,
+                                      const std::string &s4 ) {
   std::vector<std::string> v; 
   v.push_back(s1);
   v.push_back(s2);
@@ -91,11 +91,11 @@ std::vector<std::string> join( const std::string &s1,
 }
 
 /// Helper function for making vectors of strings
-std::vector<std::string> join( const std::string &s1,
-                               const std::string &s2,
-                               const std::string &s3,
-                               const std::string &s4,
-                               const std::string &s5 ) {
+inline std::vector<std::string> join( const std::string &s1,
+                                      const std::string &s2,
+                                      const std::string &s3,
+                                      const std::string &s4,
+                                      const std::string &s5 ) {
   std::vector<std::string> v; 
   v.push_back(s1);
   v.push_back(s2);
@@ -128,8 +128,8 @@ void setParameter( Teuchos::ParameterList &parlist,
 
 
 /// Produce a heirarchical parameter list using the new names from a flat list of the old names
-void tierParameterList( Teuchos::ParameterList &outList, 
-                        const Teuchos::ParameterList &inList ) {
+inline void tierParameterList( Teuchos::ParameterList &outList, 
+                               const Teuchos::ParameterList &inList ) {
 
   using namespace Teuchos;
   using StringList::join;
