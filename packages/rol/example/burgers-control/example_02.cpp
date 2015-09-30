@@ -41,12 +41,13 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_03.cpp
+/*! \file  example_02.cpp
     \brief Shows how to solve a steady Burgers' optimal control problem using
-           full-space methods.
+	   the SimOpt interface.  We solve the control problem using Composite
+           Step SQP and trust regions.
 */
 
-#include "example_03.hpp"
+#include "example_02.hpp"
 
 typedef double RealT;
 

@@ -41,9 +41,9 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_03.cpp
-    \brief Shows how to solve a steady Burgers' optimal control problem using
-           full-space methods.
+/*! \file  example_02.hpp
+    \brief Provides definitions of equality constraint and objective for
+           example_02.
 */
 
 #include "ROL_DefaultAlgorithmFactory.hpp"
