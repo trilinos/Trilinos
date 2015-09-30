@@ -41,16 +41,12 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  example_04.cpp
-    \brief Shows how to solve an optimal control problem constrained by 
-           Burgers' equation with the SimOpt interface.
+/*! \file  example_04.hpp
+    \brief Provides definitions of equality constraint and objective for
+           example_04.
 */
 
-#include "ROL_Algorithm.hpp"
-#include "ROL_StatusTest.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_StatusTestSQP.hpp"
-#include "ROL_CompositeStepSQP.hpp"
+#include "ROL_DefaultAlgorithmFactory.hpp"
 #include "ROL_Types.hpp"
 
 #include "ROL_StdVector.hpp"

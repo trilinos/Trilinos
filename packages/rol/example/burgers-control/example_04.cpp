@@ -138,56 +138,61 @@ int main(int argc, char *argv[]) {
     // Check derivatives.
     robj.checkGradient(z,z,yz,true,*outStream);
     robj.checkHessVec(z,z,yz,true,*outStream);
-    // Optimization 
+    // Get input parameter list.
     std::string filename = "input.xml";
     Teuchos::RCP<Teuchos::ParameterList> parlist = Teuchos::rcp( new Teuchos::ParameterList() );
     Teuchos::updateParametersFromXmlFile( filename, Teuchos::Ptr<Teuchos::ParameterList>(&*parlist) );
-
-    // Trust Region Newton.
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-14);
+    parlist->sublist("Status Test").set("Constraint Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",100);
-    ROL::StatusTest<RealT> status_tr(*parlist);    
-    ROL::TrustRegionStep<RealT> step_tr(*parlist);
-    ROL::DefaultAlgorithm<RealT> algo_tr(step_tr,status_tr,false);
+    // Build DefualtAlgorithmFactory.
+    Teuchos::RCP<ROL::DefaultAlgorithmFactory<RealT> > algoFactory;
+
+    // Solve using trust regions.
+    algoFactory = Teuchos::rcp(new ROL::DefaultAlgorithmFactory<RealT>("Trust Region",*parlist));
     z.zero();
     std::clock_t timer_tr = std::clock();
-    algo_tr.run(z,robj,true,*outStream);
+    algoFactory->get()->run(z,robj,true,*outStream);
     *outStream << "Trust-Region Newton required " << (std::clock()-timer_tr)/(RealT)CLOCKS_PER_SEC
                << " seconds.\n";
+    Teuchos::RCP<ROL::Vector<RealT> > zTR = z.clone();
+    zTR->set(z);
 
-    // SQP.
-    parlist->sublist("Status Test").set("Constraint Tolerance",1.e-14);
-    ROL::StatusTestSQP<RealT> status_sqp(*parlist);
-    ROL::CompositeStepSQP<RealT> step_sqp(*parlist);
-    ROL::DefaultAlgorithm<RealT> algo_sqp(step_sqp,status_sqp,false);
+    // Solve using composite step SQP.
+    algoFactory = Teuchos::rcp(new ROL::DefaultAlgorithmFactory<RealT>("Composite Step SQP",*parlist));
     x.zero();
     std::clock_t timer_sqp = std::clock();
-    algo_sqp.run(x,g,l,c,obj,con,true,*outStream);
+    algoFactory->get()->run(x,g,l,c,obj,con,true,*outStream);
     *outStream << "Composite-Step SQP required " << (std::clock()-timer_sqp)/(RealT)CLOCKS_PER_SEC
                << " seconds.\n";
- 
-    std::ofstream control;
-    control.open("control.txt");
-    for (int t = 0; t < nt+1; t++) {
-      for (int n = 0; n < nx+2; n++) {
-        control << (RealT)t/(RealT)nt       << "  " 
-                << (RealT)n/((RealT)(nx+1)) << "  " 
-                << (*z_rcp)[t*(nx+2)+n]     << "\n";
-      }
-    } 
-    control.close();
 
-    std::ofstream state;
-    state.open("state.txt");
-    for (int t = 0; t < nt; t++) {
-      for (int n = 0; n < nx; n++) {
-        state << (RealT)(t+1)/(RealT)nt       << "  " 
-              << (RealT)(n+1)/((RealT)(nx+1)) << "  " 
-              << (*u_rcp)[t*nx+n]             << "\n";
-      }
-    } 
-    state.close();
+    // Compute error between solutions
+    Teuchos::RCP<ROL::Vector<RealT> > err = z.clone();
+    err->set(*zTR); err->axpy(-1.,z);
+    errorFlag += (err->norm() > 1.e-8) ? 1 : 0;
+
+//    std::ofstream control;
+//    control.open("control.txt");
+//    for (int t = 0; t < nt+1; t++) {
+//      for (int n = 0; n < nx+2; n++) {
+//        control << (RealT)t/(RealT)nt       << "  " 
+//                << (RealT)n/((RealT)(nx+1)) << "  " 
+//                << (*z_rcp)[t*(nx+2)+n]     << "\n";
+//      }
+//    } 
+//    control.close();
+//
+//    std::ofstream state;
+//    state.open("state.txt");
+//    for (int t = 0; t < nt; t++) {
+//      for (int n = 0; n < nx; n++) {
+//        state << (RealT)(t+1)/(RealT)nt       << "  " 
+//              << (RealT)(n+1)/((RealT)(nx+1)) << "  " 
+//              << (*u_rcp)[t*nx+n]             << "\n";
+//      }
+//    } 
+//    state.close();
   }
   catch (std::logic_error err) {
     *outStream << err.what() << "\n";
