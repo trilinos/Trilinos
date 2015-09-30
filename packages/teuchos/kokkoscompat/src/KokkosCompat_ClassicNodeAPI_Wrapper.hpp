@@ -31,6 +31,7 @@ class KokkosDeviceWrapperNode {
 public:
   typedef ExecutionSpace execution_space;
   typedef MemorySpace memory_space;
+  typedef Kokkos::Device<execution_space, memory_space> device_type;
 
   /// \brief This is NOT a "classic" Node type.
   ///
