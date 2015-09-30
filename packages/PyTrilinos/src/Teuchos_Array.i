@@ -92,7 +92,9 @@ using Teuchos::ArrayView;
 {
   npArray = obj_to_array_contiguous_allow_conversion($input, TYPECODE, &is_new);
   if (!npArray) SWIG_fail;
-  $1 = Teuchos::arrayView( (TYPE*) array_data(npArray), array_size(npArray, 0));
+  $1 = Teuchos::ArrayView< const TYPE >((TYPE*) array_data(npArray),
+                                        array_size(npArray, 0),
+                                        Teuchos::RCP_DISABLE_NODE_LOOKUP);
 }
 
 %typemap(freearg) Teuchos::ArrayView< const TYPE >
@@ -124,7 +126,9 @@ using Teuchos::ArrayView;
 {
   npArray = obj_to_array_contiguous_allow_conversion($input, TYPECODE, &is_new);
   if (!npArray) SWIG_fail;
-  temp = Teuchos::arrayView( (TYPE*) array_data(npArray), array_size(npArray, 0));
+  temp = Teuchos::ArrayView< const TYPE >((TYPE*) array_data(npArray),
+                                          array_size(npArray, 0),
+                                          Teuchos::RCP_DISABLE_NODE_LOOKUP);
   $1 = &temp;
 }
 
@@ -152,7 +156,9 @@ using Teuchos::ArrayView;
 {
   PyArrayObject * npArray = obj_to_array_no_conversion($input, TYPECODE);
   if (!npArray) SWIG_fail;
-  $1 = Teuchos::arrayView( (TYPE*) array_data(npArray), array_size(npArray, 0));
+  $1 = Teuchos::ArrayView< TYPE >((TYPE*) array_data(npArray),
+                                  array_size(npArray, 0),
+                                  Teuchos::RCP_DISABLE_NODE_LOOKUP);
 }
 
 %typemap(out) Teuchos::ArrayView< TYPE >
@@ -177,7 +183,9 @@ using Teuchos::ArrayView;
 {
   PyArrayObject * npArray = obj_to_array_no_conversion($input, TYPECODE);
   if (!npArray) SWIG_fail;
-  temp = Teuchos::arrayView( (TYPE*) array_data(npArray), array_size(npArray, 0));
+  temp = Teuchos::ArrayView< TYPE >((TYPE*) array_data(npArray),
+                                    array_size(npArray, 0),
+                                    Teuchos::RCP_DISABLE_NODE_LOOKUP);
   $1 = &temp;
 }
 
