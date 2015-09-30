@@ -25,11 +25,9 @@ APPEND_SET(HEADERS
     Kokkos_NodeAPIConfigDefs.hpp
     Kokkos_NodeAPIVersion.hpp
     Kokkos_NodeTrace.hpp
-    Kokkos_SerialNode.hpp
     Kokkos_StandardNodeMemoryModel.hpp
   )
 APPEND_SET(SOURCES
-    Kokkos_SerialNode.cpp
     Kokkos_DefaultNode.cpp
     Kokkos_NodeAPIVersion.cpp
   )
@@ -38,9 +36,7 @@ SET(kokkos_enabled_nodes "")
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_SerialNode)
 IF (${PACKAGE_NAME}_ENABLE_SerialNode)
-  LIST(APPEND kokkos_enabled_nodes "KokkosClassic::DoNotUse::SerialNode")
-  MESSAGE(STATUS "Enabling Node: KokkosClassic::DoNotUse::SerialNode (DEPRECATED)")  
-  set(kokkos_defaultnode_default "KokkosClassic::DoNotUse::SerialNode")
+  MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::SerialNode class was deprecated long ago and is no longer supported.")
 ENDIF()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TPINode)
@@ -55,64 +51,19 @@ ENDIF()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TBBNode)
 IF (${PACKAGE_NAME}_ENABLE_TBBNode)
-  LIST(APPEND kokkos_enabled_nodes "KokkosClassic::DoNotUse::TBBNode")
-  MESSAGE(STATUS "Enabling Node: KokkosClassic::DoNotUse::TBBNode (DEPRECATED)")
-  APPEND_SET(HEADERS ${TBB_HEADERS})
-  APPEND_SET(SOURCES ${TBB_SOURCES})
+  MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::TBBNode class was deprecated long ago and has since been removed.")
 ENDIF()
 
-# Check whether to add the new Kokkos wrapper Nodes to the list.
-# These Nodes live in the TeuchosKokkosCompat subpackage.
-#
-# FIXME (mfh 17 Dec 2014) The relative path to
-# KokkosCompat_ClassicNodeAPI_Wrapper.hpp is a hack.  Come up with a
-# more generalized way to point to that file.
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TeuchosKokkosCompat)
-ASSERT_DEFINED(Tpetra_ENABLE_Kokkos_Refactor)
-IF (NOT ${PACKAGE_NAME}_ENABLE_TeuchosKokkosCompat AND Tpetra_ENABLE_Kokkos_Refactor)
-  MESSAGE(ERROR "${PACKAGE_NAME}_ENABLE_TeuchosKokkosCompat is OFF, but Tpetra_ENABLE_Kokkos_Refactor is ON.  In order to build the Kokkos refactor version of Tpetra, the TeuchosKokkosCompat subpackage of Teuchos must be enabled.")
-ENDIF ()
-
-IF (${PACKAGE_NAME}_ENABLE_TeuchosKokkosCompat)
-  ASSERT_DEFINED(Kokkos_ENABLE_OpenMP)
-  IF (Kokkos_ENABLE_OpenMP AND Tpetra_ENABLE_Kokkos_Refactor)
-    #LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosOpenMPWrapperNode")
-    #MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosOpenMPWrapperNode")
-    #APPEND_SET(HEADERS ../../../teuchos/compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
-  ENDIF()
-  
-  ASSERT_DEFINED(Kokkos_ENABLE_Pthread)
-  IF (Kokkos_ENABLE_Pthread AND Tpetra_ENABLE_Kokkos_Refactor)
-    #LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosThreadsWrapperNode")
-    #MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosThreadsWrapperNode")
-    #APPEND_SET(HEADERS ../../../teuchos/compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
-  ENDIF()
-  
-  ASSERT_DEFINED(Kokkos_ENABLE_Cuda)
-  IF (Kokkos_ENABLE_Cuda AND Tpetra_ENABLE_Kokkos_Refactor)
-    #LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosCudaWrapperNode")
-    #MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosCudaWrapperNode")
-    #APPEND_SET(HEADERS ../../../teuchos/compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
-  ENDIF()
-  
-  ASSERT_DEFINED(Kokkos_ENABLE_Serial)
-  IF (Kokkos_ENABLE_Serial AND Tpetra_ENABLE_Kokkos_Refactor)
-    #LIST(APPEND kokkos_enabled_nodes "Kokkos::Compat::KokkosSerialWrapperNode")
-    #MESSAGE(STATUS "Enabling Node: Kokkos::Compat::KokkosSerialWrapperNode")
-    #APPEND_SET(HEADERS ../../../teuchos/compat/src/KokkosCompat_ClassicNodeAPI_Wrapper.hpp)
-  ENDIF()
-ENDIF() # ${PACKAGE_NAME}_ENABLE_TeuchosKokkosCompat
-
+ASSERT_DEFINED(Kokkos_ENABLE_OpenMP)
+ASSERT_DEFINED(Kokkos_ENABLE_Pthread)
+ASSERT_DEFINED(Kokkos_ENABLE_Cuda)
+ASSERT_DEFINED(Kokkos_ENABLE_Serial)
 
 IF(NOT DEFINED KokkosClassic_DefaultNode)
   SET(KokkosClassic_DefaultNode ${kokkos_defaultnode_default})
 ENDIF()
 MESSAGE(STATUS "Default node: ${KokkosClassic_DefaultNode}")
-IF ((KokkosClassic_DefaultNode STREQUAL "KokkosClassic::DoNotUse::TBBNode" OR KokkosClassic_DefaultNode STREQUAL "KokkosClassic::TBBNode") AND ${PACKAGE_NAME}_ENABLE_TBBNode)
-  SET (HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE ON CACHE BOOL "")
-ELSEIF ((KokkosClassic_DefaultNode STREQUAL "KokkosClassic::DoNotUse::SerialNode" OR KokkosClassic_DefaultNode STREQUAL "KokkosClassic::SerialNode") AND ${PACKAGE_NAME}_ENABLE_SerialNode)
-  SET (HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE ON CACHE BOOL "")
-ELSEIF (KokkosClassic_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF (KokkosClassic_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
   SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE ON CACHE BOOL "")
 ELSEIF (KokkosClassic_DefaultNode STREQUAL "Kokkos::Compat::KokkosOpenMPWrapperNode")
   SET (HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE ON CACHE BOOL "")
@@ -121,40 +72,36 @@ ELSEIF (KokkosClassic_DefaultNode STREQUAL "Kokkos::Compat::KokkosThreadsWrapper
 ELSEIF (KokkosClassic_DefaultNode STREQUAL "Kokkos::Compat::KokkosSerialWrapperNode")
   SET (HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE ON CACHE BOOL "")
 ELSE()
-  IF (Tpetra_INST_CUDA AND Tpetra_ENABLE_Kokkos_Refactor)
+  IF (Tpetra_INST_CUDA)
     MESSAGE(STATUS "Setting default Node to Kokkos::Compat::KokkosCudaWrapperNode.")
     SET(KokkosClassic_DefaultNode "Kokkos::Compat::KokkosCudaWrapperNode")
     SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE ON CACHE BOOL "")  
-  ELSEIF (Tpetra_INST_OPENMP AND Tpetra_ENABLE_Kokkos_Refactor)
+  ELSEIF (Tpetra_INST_OPENMP)
     MESSAGE(STATUS "Setting default Node to Kokkos::Compat::KokkosOpenMPWrapperNode.")
     SET(KokkosClassic_DefaultNode "Kokkos::Compat::KokkosOpenMPWrapperNode")
     SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE ON CACHE BOOL "")  
-  ELSEIF (Tpetra_INST_PTHREAD AND Tpetra_ENABLE_Kokkos_Refactor)
+  ELSEIF (Tpetra_INST_PTHREAD)
     MESSAGE(STATUS "Setting default Node to Kokkos::Compat::KokkosThreadsWrapperNode.")
     SET(KokkosClassic_DefaultNode "Kokkos::Compat::KokkosThreadsWrapperNode")
     SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE ON CACHE BOOL "")  
-  ELSEIF (Kokkos_ENABLE_Cuda AND Tpetra_ENABLE_Kokkos_Refactor)
+  ELSEIF (Kokkos_ENABLE_Cuda)
     MESSAGE(STATUS "Setting default Node to Kokkos::Compat::KokkosCudaWrapperNode.")
     SET(KokkosClassic_DefaultNode "Kokkos::Compat::KokkosCudaWrapperNode")
     SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE ON CACHE BOOL "")
-  ELSEIF (Kokkos_ENABLE_OpenMP AND Tpetra_ENABLE_Kokkos_Refactor)
+  ELSEIF (Kokkos_ENABLE_OpenMP)
     MESSAGE(STATUS "Setting default Node to Kokkos::Compat::KokkosOpenMPWrapperNode.")
     SET(KokkosClassic_DefaultNode "Kokkos::Compat::KokkosOpenMPWrapperNode")
     SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE ON CACHE BOOL "")
-  ELSEIF (Kokkos_ENABLE_Serial AND Tpetra_ENABLE_Kokkos_Refactor)
+  ELSEIF (Kokkos_ENABLE_Serial)
     MESSAGE(STATUS "Setting default Node to Kokkos::Compat::KokkosSerialWrapperNode.")
     SET(KokkosClassic_DefaultNode "Kokkos::Compat::KokkosSerialWrapperNode")
     SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALWRAPPERNODE ON CACHE BOOL "")
-  ELSEIF (Kokkos_ENABLE_Pthread AND Tpetra_ENABLE_Kokkos_Refactor)
+  ELSEIF (Kokkos_ENABLE_Pthread)
     MESSAGE(STATUS "Setting default Node to Kokkos::Compat::KokkosThreadsWrapperNode.")
     SET(KokkosClassic_DefaultNode "Kokkos::Compat::KokkosThreadsWrapperNode")
     SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE ON CACHE BOOL "")
-  ELSEIF (${PACKAGE_NAME}_ENABLE_SerialNode)
-    MESSAGE(STATUS "Setting default Node to KokkosClassic::DoNotUse::SerialNode.")
-    SET(KokkosClassic_DefaultNode "KokkosClassic::DoNotUse::SerialNode")
-    SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE ON CACHE BOOL "")
   ELSE ()
-    MESSAGE(ERROR "Unrecognized or disabled Node type \"${KokkosClassic_DefaultNode}\".  None of the possibilities Kokkos::Compat::KokkosSerialWrapperNode, Kokkos::Compat::KokkosOpenMPWrapperNode, Kokkos::Compat::KokkosThreadsWrapperNode, or KokkosClassic::DoNotUse::SerialNode are enabled, so we do not know what default Node type to pick.")
+    MESSAGE(ERROR "Unrecognized or disabled Node type \"${KokkosClassic_DefaultNode}\".  None of the possibilities Kokkos::Compat::KokkosSerialWrapperNode, Kokkos::Compat::KokkosOpenMPWrapperNode, Kokkos::Compat::KokkosThreadsWrapperNode, or Kokkos::Compat::KokkosCudaWrapperNode are enabled, so we do not know what default Node type to pick.")
   ENDIF ()
 ENDIF()
 SET(KokkosClassic_DefaultNode "${KokkosClassic_DefaultNode}" CACHE STRING "" FORCE)

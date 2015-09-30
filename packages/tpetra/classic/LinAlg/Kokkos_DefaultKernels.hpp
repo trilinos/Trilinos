@@ -87,21 +87,6 @@ namespace KokkosClassic {
     typedef DefaultRelaxation<Scalar, Ordinal, Node> Relaxations;
   };
 
-#if defined(HAVE_TPETRACLASSIC_SERIAL)
-  /// \brief Partial specialization for Node=DoNotUse::SerialNode.
-  ///
-  /// AltSparseOps doesn't use KokkosClassic's parallel programming
-  /// programming model, doesn't do deep copies for first touch, and
-  /// doesn't rely so heavily on inlining.  Thus, it's a reasonable
-  /// choice when not using threads.
-  template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar, Ordinal, DoNotUse::SerialNode> {
-    typedef AltSparseOps<void, Ordinal, DoNotUse::SerialNode,
-                         details::AltSparseOpsDefaultAllocator<Ordinal, DoNotUse::SerialNode> > SparseOps;
-    typedef DefaultRelaxation<Scalar, Ordinal, DoNotUse::SerialNode> Relaxations;
-  };
-#endif // defined(HAVE_TPETRACLASSIC_SERIAL)
-
 } // namespace KokkosClassic
 
 #endif // KOKKOS_DEFAULT_KERNELS_HPP

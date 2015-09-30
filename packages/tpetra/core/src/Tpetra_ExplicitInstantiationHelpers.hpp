@@ -45,6 +45,8 @@
 /*! \file Tpetra_ExplicitInstantiationHelpers.hpp
 
 \brief Macros for helping to explicitly instantiate templated objects.
+
+\warning DO NOT USE ANYTHING IN THIS FILE.  ALL CONTENTS HAVE BEEN DEPRECATED.
 */
 
 
@@ -60,17 +62,7 @@
 // only used once in the entire mostly empty file.
 //
 
-/** \brief Instantiate a macro template for the KokkosClassic::DoNotUse::SerialNode */
-#ifdef HAVE_KOKKOSCLASSIC_SERIAL
-#  include <Kokkos_SerialNode.hpp>
-#  define TPETRA_MACRO_TEMPLATE_INSTANT_SERIALNODE(SCALAR,LO,GO,INSTANT_MACRO)\
-  INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::DoNotUse::SerialNode)
-#else
-#  define TPETRA_MACRO_TEMPLATE_INSTANT_SERIALNODE(SCALAR,LO,GO,INSTANT_MACRO)
-#endif // HAVE_KOKKOSCLASSIC_SERIAL
-
-#define TPETRA_MACRO_TEMPLATE_INSTANT_ALL_CPUNODE(SCALAR,LO,GO,MACRO)\
-  TPETRA_MACRO_TEMPLATE_INSTANT_SERIALNODE(SCALAR,LO,GO,MACRO)
+#define TPETRA_MACRO_TEMPLATE_INSTANT_ALL_CPUNODE(SCALAR,LO,GO,MACRO)
 
 #ifdef HAVE_TPETRA_INST_FLOAT
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_FLOAT_ALL_CPUNODE(LO,GO,MACRO)\

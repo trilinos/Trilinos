@@ -9,9 +9,10 @@ TRIBITS_SUBPACKAGE(Classic)
 
 TRIBITS_ADD_DEBUG_OPTION()
 
-# If the "Kokkos refactor" version of Tpetra is enabled,
-# disable ALL the "classic" Node types by default.
 ASSERT_DEFINED(Tpetra_ENABLE_Kokkos_Refactor)
+IF (NOT Tpetra_ENABLE_Kokkos_Refactor)
+  MESSAGE(FATAL_ERROR "Tpetra_ENABLE_Kokkos_Refactor MUST be set to ON, if you set it at all.  You don't need to set this variable any more!")
+ENDIF()
 
 #
 # Decide whether to enable KokkosClassic::DoNotUse::OpenMPNode (which
@@ -29,24 +30,14 @@ IF (${PACKAGE_NAME}_ENABLE_OpenMPNode)
   MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::OpenMPNode class was deprecated long ago and has since been removed.  If you want to use OpenMP with Tpetra, just set Trilinos_ENABLE_OpenMP:BOOL=ON and Tpetra will do the rest.")
 ENDIF ()
 
-#
-# Decide whether to enable KokkosClassic::DoNotUseSerialNode.  It is
-# DEPRECATED and will go away ANY TIME.  It will also be disabled by
-# default if the Kokkos refactor version of Tpetra is enabled.
-#
-IF(NOT Tpetra_ENABLE_Kokkos_Refactor)
-  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_SerialNode_DEFAULT ON)
-ELSE()
-  GLOBAL_SET(${PACKAGE_NAME}_ENABLE_SerialNode_DEFAULT OFF)
-ENDIF()
 TRIBITS_ADD_OPTION_AND_DEFINE( 
   ${PACKAGE_NAME}_ENABLE_SerialNode
   HAVE_TPETRACLASSIC_SERIAL
   "Add KokkosClassic::DoNotUse::SerialNode to the list of enabled Node types.  (DO NOT USE THIS!)"
-  ${${PACKAGE_NAME}_ENABLE_SerialNode_DEFAULT}
+  OFF
   )
-IF (NOT DEFINED ${PACKAGE_NAME}_ENABLE_SerialNode)
-  MESSAGE(ERROR "${PACKAGE_NAME}_ENABLE_SerialNode is not DEFINED.  This should never happen.  Please report this bug to the Tpetra developers.")
+IF (${PACKAGE_NAME}_ENABLE_SerialNode)
+  MESSAGE(FATAL_ERROR "${PACKAGE_NAME}_ENABLE_SerialNode is no longer available.  Please use Kokkos::Compat::KokkosSerialWrapperNode instead.")
 ENDIF ()
 
 TRIBITS_ADD_OPTION_AND_DEFINE( 
@@ -56,7 +47,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 IF (${PACKAGE_NAME}_ENABLE_TPINode)
-  MESSAGE(FATAL_ERROR "KokkosClassic::DoNotUse::TPINode was deprecated long ago and has been removed.")
+  MESSAGE(FATAL_ERROR "KokkosClassic::DoNotUse::TPINode was deprecated long ago and has since been removed.")
 ENDIF()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TBB)
@@ -66,16 +57,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   "Enable KokkosClassic::DoNotUse::TBBNode in ${PACKAGE_NAME}.  This Node type and this CMake option has been DEPRECATED."
   OFF
   )
-#IF (${PACKAGE_NAME}_ENABLE_TBBNode)
-#  MESSAGE(FATAL_ERROR "KokkosClassic::DoNotUse::TBBNode was deprecated long ago and has been removed.")
-#ENDIF()
-
-TRIBITS_ADD_OPTION_AND_DEFINE(
-  KokkosClassic_TREAT_SERIALNODE_AS_DEVICE
-  HAVE_KOKKOSCLASSIC_TREAT_SERIALNODE_AS_DEVICE
-  "Treat KokkosClassic::DoNotUse::SerialNode as a device node instead of a host node, for kernels where there is a difference."
-  ${${PACKAGE_NAME}_ENABLE_DEBUG}
-  )
+IF (${PACKAGE_NAME}_ENABLE_TBBNode)
+  MESSAGE(FATAL_ERROR "KokkosClassic::DoNotUse::TBBNode was deprecated long ago and has since been removed.")
+ENDIF()
 
 #
 # Add libraries, tests, and examples
