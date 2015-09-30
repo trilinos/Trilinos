@@ -120,7 +120,8 @@ public:
       graphFlags_(), idFlags_(), coordFlags_(), algName_(),
       numberOfWeights_(), partIds_(), partSizes_(), 
       numberOfCriteria_(), levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), metrics_()
+      metricsRequested_(false), graphMetricsRequested_(false), metrics_(),
+      graphMetrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -136,7 +137,8 @@ public:
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), metrics_()
+      metricsRequested_(false), graphMetricsRequested_(false), metrics_(),
+      graphMetrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -152,7 +154,8 @@ public:
       numberOfWeights_(), 
       partIds_(), partSizes_(), numberOfCriteria_(), 
       levelNumberParts_(), hierarchical_(false), 
-      metricsRequested_(false), metrics_()
+      metricsRequested_(false), graphMetricsRequested_(false), metrics_(),
+      graphMetrics_()
   {
     for(int i=0;i<MAX_NUM_MODEL_TYPES;i++) modelAvail_[i]=false;
     initializeProblem();
@@ -216,6 +219,19 @@ public:
     }
     else
       return metrics_->getMetrics();
+  }
+
+  /*! \brief Get the array of graphMetrics
+   *   Graph metrics were only computed if user requested
+   *   graph metrics with a parameter.
+   */
+  ArrayRCP<const graphMetricValues<scalar_t> > getGraphMetrics() const {
+   if (graphMetrics_.is_null()){
+      ArrayRCP<const graphMetricValues<scalar_t> > emptyMetrics;
+      return emptyMetrics;
+    }
+    else
+      return graphMetrics_->getGraphMetrics();
   }
 
   /*! \brief Print the array of metrics
@@ -374,7 +390,9 @@ private:
   // Did the user request metrics?
 
   bool metricsRequested_;
+  bool graphMetricsRequested_;
   RCP<const PartitioningSolutionQuality<Adapter> > metrics_;
+  RCP<const PartitioningSolutionQuality<Adapter> > graphMetrics_;
 };
 ////////////////////////////////////////////////////////////////////////
 
