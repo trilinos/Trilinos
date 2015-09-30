@@ -51,7 +51,6 @@
 #include "Kokkos_DualView.hpp"
 #include "Kokkos_StaticCrsGraph.hpp"
 
-#include "Teuchos_CompileTimeAssert.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
@@ -1217,8 +1216,9 @@ namespace Tpetra {
     size_t filterIndices (const SLocalGlobalNCViews& inds) const
     {
       using Teuchos::ArrayView;
-      Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg;
-      (void)cta_lg;
+      static_assert (lg == GlobalIndices || lg == LocalIndices,
+                     "Tpetra::CrsGraph::filterIndices: The template parameter "
+                     "lg must be either GlobalIndices or LocalIndicies.");
 
       const map_type& cmap = *colMap_;
       size_t numFiltered = 0;

@@ -1369,15 +1369,18 @@ namespace Tpetra {
     // Assumption: sizeof(GlobalOrdinal) >= sizeof(LocalOrdinal):
     //     This is so that we can store local indices in the memory
     //     formerly occupied by global indices.
-    Teuchos::CompileTimeAssert< sizeof(GO) < sizeof(LO) > cta_size1;
-    (void) cta_size1;
+    static_assert (sizeof (GlobalOrdinal) >= sizeof (LocalOrdinal),
+                   "Tpetra::CrsGraph: sizeof(GlobalOrdinal) must be >= sizeof(LocalOrdinal).");
+    // Assumption: max(size_t) >= max(LocalOrdinal)
+    //     This is so that we can represent any LocalOrdinal as a size_t.
+    static_assert (sizeof (size_t) >= sizeof (LocalOrdinal),
+                   "Tpetra::CrsGraph: sizeof(size_t) must be >= sizeof(LocalOrdinal).");
+    static_assert (sizeof(GST) >= sizeof(size_t),
+                   "Tpetra::CrsGraph: sizeof(Tpetra::global_size_t) must be >= sizeof(size_t).");
 
-    // Assumption: max(GlobalOrdinal) >= max(LocalOrdinal) and
-    //   max(size_t) >= max(LocalOrdinal)
-    //     This is so that we can represent any LocalOrdinal as a
-    //     size_t, and any LocalOrdinal as a GlobalOrdinal
-    Teuchos::CompileTimeAssert< sizeof(GST) < sizeof(size_t) > cta_size2;
-    (void) cta_size2;
+    // FIXME (mfh 30 Sep 2015) We're not using
+    // Teuchos::CompileTimeAssert any more.  Can we do these checks
+    // with static_assert?
 
     // can't call max() with CompileTimeAssert, because it isn't a
     // constant expression; will need to make this a runtime check
