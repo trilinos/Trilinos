@@ -57,8 +57,9 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  typedef std::vector<RealT>    vector;
-  typedef ROL::StdVector<RealT> StdVector;
+  typedef std::vector<RealT>                vector;
+  typedef ROL::StdVector<RealT>             StdVector;
+  typedef Teuchos::RCP<ROL::Vector<RealT> > PVector;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -85,24 +86,72 @@ int main(int argc, char *argv[]) {
   try {
 
     int dim = 1;
-    RCP<vector> x_rcp = rcp( new vector(dim,0.0) );
-    RCP<vector> v_rcp = rcp( new vector(dim,0.0) );
-    RCP<vector> d_rcp = rcp( new vector(dim,0.0) );
-    
+    RCP<vector>  x_rcp = rcp( new vector(dim,0.0) );
+    RCP<vector>  y_rcp = rcp( new vector(dim,0.0) );
+    RCP<vector>  v_rcp = rcp( new vector(dim,0.0) );
+    RCP<vector>  d_rcp = rcp( new vector(dim,0.0) );
+    RCP<vector> gx_rcp = rcp( new vector(dim,0.0) );    
+    RCP<vector> gy_rcp = rcp( new vector(dim,0.0) );
+    RCP<vector> hv_rcp = rcp( new vector(dim,0.0) );
+
     for( int i=0; i<dim; ++i ) {
       (*x_rcp)[i] = 2+( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       (*d_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
       (*v_rcp)[i] = ( (RealT)rand() / (RealT)RAND_MAX ) * (right - left) + left;
     }
 
-    StdVector x(x_rcp);
-    StdVector v(v_rcp);
-    StdVector d(d_rcp);
+    StdVector  x( x_rcp);
+    StdVector  y( y_rcp);
+    StdVector  v( v_rcp);
+    StdVector  d( d_rcp);
+    StdVector gx(gx_rcp);
+    StdVector gy(gy_rcp); 
+    StdVector hv(hv_rcp);
+
+    // Fixed difference step size
+    RealT delta = 1.e-7; 
+
+    y.set(x);         // y = x
+    y.axpy(delta,d);  // y = x+delta*d
 
     ROL::LogBarrierObjective<RealT> obj;
  
+    // Do step size sweep
     obj.checkGradient(x, d, true, *outStream);                             *outStream << "\n"; 
     obj.checkHessVec(x, v, true, *outStream);                              *outStream << "\n";
+
+
+
+    RealT tol = 0;
+
+    // Compute objective at x and y
+    RealT fx = obj.value(x,tol);
+    RealT fy = obj.value(y,tol);
+    
+    // Compute gradient at x and y
+    obj.gradient(gx,x,tol);
+    obj.gradient(gy,y,tol);
+
+    // Compute action of Hessian on v at x
+    obj.hessVec(hv,v,x,tol);
+
+    // FD gradient error 
+    RealT graderr = (fy - fx)/delta - gx.dot(d);
+
+    // FD Hessian error
+    PVector dg = gx.clone();
+    dg->set(gy);
+    dg->axpy(-1.0,gx);
+    
+    RealT hesserr = ( dg->dot(v) )/delta - hv.dot(d);
+
+    if( std::abs(graderr) > 1e-8 ) {
+      ++errorFlag;
+    }
+
+    if( std::abs(hesserr) > 1e-8 ) {
+      ++errorFlag;
+    }
 
   }   
   catch (std::logic_error err) {
