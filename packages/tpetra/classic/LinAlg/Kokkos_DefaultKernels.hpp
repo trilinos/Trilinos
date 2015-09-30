@@ -102,45 +102,6 @@ namespace KokkosClassic {
   };
 #endif // defined(HAVE_TPETRACLASSIC_SERIAL)
 
-#if defined(HAVE_TPETRACLASSIC_TBB)
-  namespace DoNotUse {
-    class TBBNode;
-  } // namespace DoNotUse
-
-  //! Partial specialization for TBBNode, using first-touch allocation.
-  template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar, Ordinal, DoNotUse::TBBNode> {
-    typedef DefaultHostSparseOps<void, Ordinal, DoNotUse::TBBNode, details::FirstTouchCRSAllocator> SparseOps;
-    typedef DefaultRelaxation<Scalar, Ordinal, DoNotUse::TBBNode> Relaxations;
-  };
-#endif // HAVE_TPETRACLASSIC_TBB
-
-#if defined(HAVE_TPETRACLASSIC_TPI)
-  namespace DoNotUse {
-    class TPINode;
-  } // namespace DoNotUse
-
-  //! Partial specialization for TPINode, using first-touch allocation.
-  template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar, Ordinal, DoNotUse::TPINode> {
-    typedef DefaultHostSparseOps<void, Ordinal, DoNotUse::TPINode, details::FirstTouchCRSAllocator> SparseOps;
-    typedef DefaultRelaxation<Scalar, Ordinal, DoNotUse::TPINode> Relaxations;
-  };
-#endif // HAVE_TPETRACLASSIC_TPI
-
-#if defined(HAVE_TPETRACLASSIC_OPENMP)
-  namespace DoNotUse {
-    class OpenMPNode;
-  } // namespace DoNotUse
-
-  //! Partial specialization for OpenMPNode, using first-touch allocation.
-  template <class Scalar, class Ordinal>
-  struct DefaultKernels<Scalar, Ordinal, DoNotUse::OpenMPNode> {
-    typedef DefaultHostSparseOps<void, Ordinal, DoNotUse::OpenMPNode, details::FirstTouchCRSAllocator> SparseOps;
-    typedef DefaultRelaxation<Scalar, Ordinal, DoNotUse::OpenMPNode> Relaxations;
-  };
-#endif // HAVE_TPETRACLASSIC_OPENMP
-
 } // namespace KokkosClassic
 
 #endif // KOKKOS_DEFAULT_KERNELS_HPP

@@ -106,63 +106,6 @@ namespace KokkosClassic {
 
 #endif // HAVE_TPETRACLASSIC_SERIAL
 
-#ifdef HAVE_TPETRACLASSIC_TBB
-  template <typename Scalar>
-  struct NodeGEMM<Scalar,TBBNode> {
-    public:
-      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,TBBNode> &A, const MultiVector<Scalar,TBBNode> &B, Scalar beta, MultiVector<Scalar,TBBNode> &C) {
-        Teuchos::BLAS<int,Scalar> blas;
-        const int m = Teuchos::as<int>(C.getNumRows()),
-                  n = Teuchos::as<int>(C.getNumCols()),
-                  k = (transA == Teuchos::NO_TRANS ? A.getNumCols() : A.getNumRows()),
-                  lda = Teuchos::as<int>(A.getStride()),
-                  ldb = Teuchos::as<int>(B.getStride()),
-                  ldc = Teuchos::as<int>(C.getStride());
-        blas.GEMM(transA, transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
-      }
-  };
-#endif
-
-#ifdef HAVE_TPETRACLASSIC_THREADPOOL
-  template <typename Scalar>
-  struct NodeGEMM<Scalar,TPINode> {
-    public:
-      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,TPINode> &A, const MultiVector<Scalar,TPINode> &B, Scalar beta, MultiVector<Scalar,TPINode> &C) {
-#ifndef KOKKOS_DONT_BLOCK_TPI_GEMM
-        TPI_Block();
-#endif
-        Teuchos::BLAS<int,Scalar> blas;
-        const int m = Teuchos::as<int>(C.getNumRows()),
-                  n = Teuchos::as<int>(C.getNumCols()),
-                  k = (transA == Teuchos::NO_TRANS ? A.getNumCols() : A.getNumRows()),
-                  lda = Teuchos::as<int>(A.getStride()),
-                  ldb = Teuchos::as<int>(B.getStride()),
-                  ldc = Teuchos::as<int>(C.getStride());
-        blas.GEMM(transA, transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
-#ifndef KOKKOS_DONT_BLOCK_TPI_GEMM
-        TPI_Unblock();
-#endif
-      }
-  };
-#endif
-
-#ifdef HAVE_TPETRACLASSIC_OPENMP
-  template <typename Scalar>
-  struct NodeGEMM<Scalar,OpenMPNode> {
-    public:
-      static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,OpenMPNode> &A, const MultiVector<Scalar,OpenMPNode> &B, Scalar beta, MultiVector<Scalar,OpenMPNode> &C) {
-        Teuchos::BLAS<int,Scalar> blas;
-        const int m = Teuchos::as<int>(C.getNumRows()),
-                  n = Teuchos::as<int>(C.getNumCols()),
-                  k = (transA == Teuchos::NO_TRANS ? A.getNumCols() : A.getNumRows()),
-                  lda = Teuchos::as<int>(A.getStride()),
-                  ldb = Teuchos::as<int>(B.getStride()),
-                  ldc = Teuchos::as<int>(C.getStride());
-        blas.GEMM(transA, transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
-      }
-  };
-#endif
-
   /// \class DefaultArithmeticBase
   /// \brief Base class for DefaultArithmetic; not for users of the latter.
   ///

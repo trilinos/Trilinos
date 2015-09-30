@@ -17,35 +17,6 @@ SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-# mfh 08 Jan 2015: Any header (.hpp) or source (.cpp) file that
-# relates to a specific Node type, should have its entire contents
-# protected by the macro that controls whether that Node type is
-# enabled.  This makes it a bit easier to manage the build system.
-
-# TBB-specific source and headers
-APPEND_SET(TBB_HEADERS
-    Kokkos_TBBNode.hpp
-)
-APPEND_SET(TBB_SOURCES
-    Kokkos_TBBNode.cpp
-)
-
-# TPI-specific source and headers
-APPEND_SET(TPI_HEADERS
-    Kokkos_TPINode.hpp
-)
-APPEND_SET(TPI_SOURCES
-    Kokkos_TPINode.cpp
-)
-
-# OpenMP-specific source and headers
-APPEND_SET(OMP_HEADERS
-    Kokkos_OpenMPNode.hpp
-)
-APPEND_SET(OMP_SOURCES
-    Kokkos_OpenMPNode.cpp
-)
-
 # general headers, sources
 APPEND_SET(HEADERS
     Kokkos_BufferMacros.hpp
@@ -74,18 +45,12 @@ ENDIF()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TPINode)
 IF (${PACKAGE_NAME}_ENABLE_TPINode)
-  LIST(APPEND kokkos_enabled_nodes "KokkosClassic::DoNotUse::TPINode")
-  MESSAGE(STATUS "Enabling Node: KokkosClassic::DoNotUse::TPINode (DEPRECATED)")
-  APPEND_SET(HEADERS ${TPI_HEADERS})
-  APPEND_SET(SOURCES ${TPI_SOURCES})
+  MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::TPINode class was deprecated long ago and has since been removed.")
 ENDIF()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_OpenMPNode)
 IF (${PACKAGE_NAME}_ENABLE_OpenMPNode)
-  LIST(APPEND kokkos_enabled_nodes "KokkosClassic::DoNotUse::OpenMPNode")
-  MESSAGE(STATUS "Enabling Node: KokkosClassic::DoNotUse::OpenMPNode (DEPRECATED)")
-  APPEND_SET(HEADERS ${OMP_HEADERS})
-  APPEND_SET(SOURCES ${OMP_SOURCES})
+  MESSAGE(FATAL_ERROR "The KokkosClassic::DoNotUse::OpenMPNode class was deprecated long ago and has since been removed.  If you want to use OpenMP with Tpetra, just set Trilinos_ENABLE_OpenMP:BOOL=ON and Tpetra will do the rest.")
 ENDIF()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TBBNode)
@@ -143,12 +108,8 @@ IF(NOT DEFINED KokkosClassic_DefaultNode)
   SET(KokkosClassic_DefaultNode ${kokkos_defaultnode_default})
 ENDIF()
 MESSAGE(STATUS "Default node: ${KokkosClassic_DefaultNode}")
-IF ((KokkosClassic_DefaultNode STREQUAL "KokkosClassic::DoNotUse::TPINode" OR KokkosClassic_DefaultNode STREQUAL "KokkosClassic::TPINode") AND ${PACKAGE_NAME}_ENABLE_TPINode)
-  SET(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE ON CACHE BOOL "")
-ELSEIF ((KokkosClassic_DefaultNode STREQUAL "KokkosClassic::DoNotUse::TBBNode" OR KokkosClassic_DefaultNode STREQUAL "KokkosClassic::TBBNode") AND ${PACKAGE_NAME}_ENABLE_TBBNode)
+IF ((KokkosClassic_DefaultNode STREQUAL "KokkosClassic::DoNotUse::TBBNode" OR KokkosClassic_DefaultNode STREQUAL "KokkosClassic::TBBNode") AND ${PACKAGE_NAME}_ENABLE_TBBNode)
   SET (HAVE_KOKKOSCLASSIC_DEFAULTNODE_TBBNODE ON CACHE BOOL "")
-ELSEIF ((KokkosClassic_DefaultNode STREQUAL "KokkosClassic::DoNotUse::OpenMPNode" OR KokkosClassic_DefaultNode STREQUAL "KokkosClassic::OpenMPNode") AND ${PACKAGE_NAME}_ENABLE_OpenMPNode)
-  SET (HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPNODE ON CACHE BOOL "")
 ELSEIF ((KokkosClassic_DefaultNode STREQUAL "KokkosClassic::DoNotUse::SerialNode" OR KokkosClassic_DefaultNode STREQUAL "KokkosClassic::SerialNode") AND ${PACKAGE_NAME}_ENABLE_SerialNode)
   SET (HAVE_KOKKOSCLASSIC_DEFAULTNODE_SERIALNODE ON CACHE BOOL "")
 ELSEIF (KokkosClassic_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")

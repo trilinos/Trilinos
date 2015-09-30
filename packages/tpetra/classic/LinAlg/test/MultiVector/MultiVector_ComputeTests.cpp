@@ -132,27 +132,9 @@ namespace {
 #define UNIT_TEST_SERIALNODE( SCALAR )
 #endif // HAVE_KOKKOSCLASSIC_SERIAL
 
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  typedef KokkosClassic::DoNotUse::TBBNode KokkosClassic_TBBNode;
-#define UNIT_TEST_TBBNODE(SCALAR) \
-  ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, KokkosClassic_TBBNode )
-#else
-#define UNIT_TEST_TBBNODE(SCALAR)
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  typedef KokkosClassic::DoNotUse::TPINode KokkosClassic_TPINode;
-#define UNIT_TEST_TPINODE(SCALAR) \
-  ALL_UNIT_TESTS_SCALAR_NODE( SCALAR, KokkosClassic_TPINode )
-#else
-#define UNIT_TEST_TPINODE(SCALAR)
-#endif
-
 
 #define UNIT_TEST_GROUP_SCALAR( SCALAR ) \
-        UNIT_TEST_SERIALNODE( SCALAR ) \
-        UNIT_TEST_TBBNODE( SCALAR ) \
-        UNIT_TEST_TPINODE( SCALAR )
+        UNIT_TEST_SERIALNODE( SCALAR )
 
   UNIT_TEST_GROUP_SCALAR( float )
 

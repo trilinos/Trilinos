@@ -60,24 +60,6 @@
 // only used once in the entire mostly empty file.
 //
 
-/** \brief Instantiate a macro template for the KokkosClassic::DoNotUse::TBBNode */
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-#  include <Kokkos_TBBNode.hpp>
-#  define TPETRA_MACRO_TEMPLATE_INSTANT_TBBNODE(SCALAR,LO,GO,INSTANT_MACRO)\
-    INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::DoNotUse::TBBNode)
-#else
-#  define TPETRA_MACRO_TEMPLATE_INSTANT_TBBNODE(SCALAR,LO,GO,INSTANT_MACRO)
-#endif
-
-/** \brief Instantiate a macro template for the KokkosClassic::DoNotUse::TPINode */
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-#  include <Kokkos_TPINode.hpp>
-#  define TPETRA_MACRO_TEMPLATE_INSTANT_TPINODE(SCALAR,LO,GO,INSTANT_MACRO)\
-  INSTANT_MACRO(SCALAR,LO,GO,KokkosClassic::DoNotUse::TPINode)
-#else
-#  define TPETRA_MACRO_TEMPLATE_INSTANT_TPINODE(SCALAR,LO,GO,INSTANT_MACRO)
-#endif
-
 /** \brief Instantiate a macro template for the KokkosClassic::DoNotUse::SerialNode */
 #ifdef HAVE_KOKKOSCLASSIC_SERIAL
 #  include <Kokkos_SerialNode.hpp>
@@ -88,9 +70,7 @@
 #endif // HAVE_KOKKOSCLASSIC_SERIAL
 
 #define TPETRA_MACRO_TEMPLATE_INSTANT_ALL_CPUNODE(SCALAR,LO,GO,MACRO)\
-  TPETRA_MACRO_TEMPLATE_INSTANT_SERIALNODE(SCALAR,LO,GO,MACRO)\
-  TPETRA_MACRO_TEMPLATE_INSTANT_TPINODE(SCALAR,LO,GO,MACRO)\
-  TPETRA_MACRO_TEMPLATE_INSTANT_TBBNODE(SCALAR,LO,GO,MACRO)
+  TPETRA_MACRO_TEMPLATE_INSTANT_SERIALNODE(SCALAR,LO,GO,MACRO)
 
 #ifdef HAVE_TPETRA_INST_FLOAT
 #  define TPETRA_MACRO_TEMPLATE_INSTANT_FLOAT_ALL_CPUNODE(LO,GO,MACRO)\
