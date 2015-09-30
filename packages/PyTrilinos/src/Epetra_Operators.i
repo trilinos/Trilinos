@@ -72,6 +72,8 @@
 %teuchos_rcp(Epetra_VbrMatrix     )
 %teuchos_rcp(Epetra_FEVbrMatrix   )
 %teuchos_rcp(Epetra_JadMatrix     )
+// %teuchos_rcp(Epetra_LinearProblem )
+// %teuchos_rcp(LinearProblem        )
 %teuchos_rcp_epetra_argout(Epetra_CrsMatrix)
 %teuchos_rcp_epetra_argout(Epetra_VbrMatrix)
 
@@ -1391,8 +1393,99 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix&);
 //////////////////////////////////
 // Epetra_LinearProblem support //
 //////////////////////////////////
-%rename(LinearProblem) Epetra_LinearProblem;
+// %rename(LinearProblem) Epetra_LinearProblem;
 %include "Epetra_LinearProblem.h"
+%inline
+{
+  class LinearProblem : public Epetra_LinearProblem
+  {
+  private:
+    Teuchos::RCP< Epetra_RowMatrix   > _matrix;
+    Teuchos::RCP< Epetra_Operator    > _operator;
+    Teuchos::RCP< Epetra_MultiVector > _x;
+    Teuchos::RCP< Epetra_MultiVector > _b;
+  public:
+    LinearProblem()
+    {
+    }
+    LinearProblem(const Teuchos::RCP< Epetra_RowMatrix > matrix,
+                  const Teuchos::RCP< Epetra_MultiVector > x,
+                  const Teuchos::RCP< Epetra_MultiVector > b) :
+      Epetra_LinearProblem(matrix.get(), x.get(), b.get()),
+      _matrix(matrix),
+      _x(x),
+      _b(b)
+    {
+      _operator = Teuchos::rcp_dynamic_cast< Epetra_Operator >(_matrix);
+    }
+    LinearProblem(const Teuchos::RCP< Epetra_Operator > op,
+                  const Teuchos::RCP< Epetra_MultiVector > x,
+                  const Teuchos::RCP< Epetra_MultiVector > b) :
+      Epetra_LinearProblem(op.get(), x.get(), b.get()),
+      _operator(op),
+      _x(x),
+      _b(b)
+    {
+      _matrix = Teuchos::rcp_dynamic_cast< Epetra_RowMatrix >(op, false);
+    }
+    LinearProblem(const LinearProblem & source) :
+      Epetra_LinearProblem(source),
+      _matrix(  source._matrix  ),
+      _operator(source._operator),
+      _x(       source._x       ),
+      _b(       source._b       )
+    {
+    }
+    virtual ~LinearProblem()
+    {
+    }
+    using Epetra_LinearProblem::CheckInput;
+    using Epetra_LinearProblem::AssertSymmetric;
+    using Epetra_LinearProblem::SetPDL;
+    void SetOperator(Teuchos::RCP< Epetra_RowMatrix > & matrix)
+    {
+      _matrix   = matrix;
+      _operator = Teuchos::rcp_dynamic_cast< Epetra_Operator >(matrix);
+      Epetra_LinearProblem::SetOperator(matrix.get());
+    }
+    void SetOperator(Teuchos::RCP< Epetra_Operator > & op)
+    {
+      _matrix   = Teuchos::rcp_dynamic_cast< Epetra_RowMatrix >(op, false);
+      _operator = op;
+      Epetra_LinearProblem::SetOperator(op.get());
+    }
+    void SetLHS(Teuchos::RCP< Epetra_MultiVector > & x)
+    {
+      _x = x;
+      Epetra_LinearProblem::SetLHS(x.get());
+    }
+    void SetRHS(Teuchos::RCP< Epetra_MultiVector > & b)
+    {
+      _b = b;
+      Epetra_LinearProblem::SetRHS(b.get());
+    }
+    using Epetra_LinearProblem::LeftScale;
+    using Epetra_LinearProblem::RightScale;
+    Teuchos::RCP< Epetra_RowMatrix > GetMatrix() const
+    {
+      return _matrix;
+    }
+    Teuchos::RCP< Epetra_Operator > GetOperator() const
+    {
+      return _operator;
+    }
+    Teuchos::RCP< Epetra_MultiVector > GetLHS() const
+    {
+      return _x;
+    }
+    Teuchos::RCP< Epetra_MultiVector > GetRHS() const
+    {
+      return _b;
+    }
+    using Epetra_LinearProblem::GetPDL;
+    using Epetra_LinearProblem::IsOperatorSymmetric;
+  };
+}
 
 /////////////////////////
 // Epetra_Util support //
