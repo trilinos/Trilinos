@@ -48,13 +48,11 @@ class SystemInterface
   bool parse_options(int argc, char **argv);
   
   int debug() const {return debugLevel_;}
-  int screen_width() const {return screenWidth_;}
       
   double tolerance() const {return tolerance_;}
   bool match_node_ids() const {return matchNodeIds_;}
   bool match_node_xyz() const {return matchNodeXYZ_;}
   bool match_elem_ids() const {return matchElemIds_;}
-  bool match_elem_xyz() const {return matchElemXYZ_;}
   bool omit_nodesets() const {return omitNodesets_;}
   bool omit_sidesets() const {return omitSidesets_;}
   bool convert_nodes_to_nodesets(int part_number) const;
@@ -66,7 +64,6 @@ class SystemInterface
   int step_interval() const {return stepInterval_;}
 
   vector3d offset() const {return offset_;}
-  const std::vector<int>& node_nodeset_conversions() const {return nodesetConvertParts_;}
   const std::vector<int>& information_record_parts() const {return infoRecordParts_;}
   const StringIdVector& global_var_names() const {return globalVarNames_;}
   const StringIdVector& node_var_names() const {return nodeVarNames_;}
@@ -78,11 +75,8 @@ class SystemInterface
   const Omissions &nset_omissions() const {return nsetOmissions_;}
   const Omissions &sset_omissions() const {return ssetOmissions_;}
   
-  const std::string &element_status_variable() const {return elementStatusVariable_;}
-  const std::string &nodal_status_variable()   const {return nodalStatusVariable_;}
 
   //! Dumps representation of data in this class to cerr
-  void dump(std::ostream &str) const;
   
   static void show_version();
   
@@ -92,8 +86,6 @@ class SystemInterface
 
  private:
   void enroll_options();
-  bool decompose_filename(const std::string &cs);
-  void parse_exclude(const char *list);
 
   /*! The defined formats for the count attribute are:<br>
     - <missing> -- default -- 1 <= count <= oo  (all steps)

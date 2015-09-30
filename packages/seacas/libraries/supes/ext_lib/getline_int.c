@@ -241,17 +241,6 @@ gl_cleanup (void)
     gl_init_done = 0;
 }
 
-void
-gl_setwidth(int w)
-{
-    if (w > 20) {
-	gl_termw = w;
-	gl_scroll = w / 3;
-    } else {
-	gl_error("\n*** Error: minimum screen width is 21\n");
-    }
-}
-
 char *getline_int(char *prompt)
 {
     int             c, loc, tmp;

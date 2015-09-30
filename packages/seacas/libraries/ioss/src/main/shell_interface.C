@@ -386,12 +386,3 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   return true;
 }
 
-void IOShell::Interface::dump(std::ostream &) const
-{
-}
-
-void IOShell::Interface::show_version()
-{
-  std::cout << "\tExodusII Information Program\n";
-}
-
