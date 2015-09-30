@@ -27,28 +27,28 @@ TRILINOS_DRIVER_SETUP()
 if (DEFINED ENV{FROM_JENKINS})
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_Downstream_KokkosRefactor_ETI_OPENMP_HWLOC_GCC
+  MPI_Downstream_KokkosRefactor_ETI_OPENMP_HWLOC_GCC_WITH_KOKKOS_$ENV{KOKKOS_BRANCH}
   ctest_linux_nightly_mpi_release_downstream_kokkosrefactor_ETI_openmp_hwloc_gcc_perseus_jenkins.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
   TIMEOUT_MINUTES 180
 )
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_Downstream_KokkosRefactor_ETI_THREADS_INTEL
-  ctest_linux_nightly_mpi_release_downstream_kokkosrefactor_ETI_threads_hwloc_intel_perseus_jenkins.cmake
-  CTEST_INSTALLER_TYPE release
-  RUN_SERIAL
-  TIMEOUT_MINUTES 180
-)
+# TRILINOS_DRIVER_ADD_DASHBOARD(
+#   MPI_Downstream_KokkosRefactor_ETI_THREADS_INTEL
+#   ctest_linux_nightly_mpi_release_downstream_kokkosrefactor_ETI_threads_hwloc_intel_perseus_jenkins.cmake
+#   CTEST_INSTALLER_TYPE release
+#   RUN_SERIAL
+#   TIMEOUT_MINUTES 180
+# )
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_Downstream_KokkosRefactor_ETI_SERIAL_GCC
-  ctest_linux_nightly_mpi_debug_muelu_extratypes_ei_negima_jenkins.cmake
-  CTEST_INSTALLER_TYPE release
-  RUN_SERIAL
-  TIMEOUT_MINUTES 180
-)
+# TRILINOS_DRIVER_ADD_DASHBOARD(
+#   MPI_Downstream_KokkosRefactor_ETI_SERIAL_GCC
+#   ctest_linux_nightly_mpi_debug_muelu_extratypes_ei_negima_jenkins.cmake
+#   CTEST_INSTALLER_TYPE release
+#   RUN_SERIAL
+#   TIMEOUT_MINUTES 180
+# )
 
 else ()
 

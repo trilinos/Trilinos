@@ -1,0 +1,12 @@
+mesh
+    rectilinear
+     nx = 3
+     ny = 3
+     nz = 3
+     bx = 1
+     by = 1
+     bz = 1
+     gmin = 0 0 0 
+     gmax = 3 3 3
+    end
+end

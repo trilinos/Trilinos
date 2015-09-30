@@ -109,10 +109,13 @@ namespace {
   //
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NodeConversion, SCALAR, LO, GO, N2 )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsMatrix, NodeConversion, N2 )
   {
-    typedef typename Tpetra::Details::DefaultTypes::node_type N1;
-    typedef Map<LO,GO,N1>              Map1;
+    typedef Tpetra::Map<> Map1;
+    typedef Tpetra::CrsMatrix<>::scalar_type SCALAR;
+    typedef Map1::local_ordinal_type LO;
+    typedef Map1::global_ordinal_type GO;
+    typedef Map1::node_type N1;
     typedef CrsMatrix<SCALAR,LO,GO,N1> Mat1;
     typedef CrsMatrix<SCALAR,LO,GO,N2> Mat2;
     // create a comm
@@ -197,12 +200,12 @@ namespace {
 // INSTANTIATIONS
 //
 
-#define NC_TESTS(D,LO,GO,N2) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, NodeConversion, double, int, int, N2 )
+#define NC_TESTS(N2) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsMatrix, NodeConversion, N2 )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  TPETRA_INSTANTIATE_DOUBLE_INT_INT_N(NC_TESTS)
+  TPETRA_INSTANTIATE_N(NC_TESTS)
 }
 
 

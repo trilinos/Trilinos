@@ -132,7 +132,7 @@ void getParameterLists(const string &inputFileName,
   // return a parameter list of problem definitions
   // and a parameter list for solution comparisons
   Teuchos::FileInputSource inputSource(inputFileName);
-  cout << "input file source: " << inputFileName << endl;
+  if(rank == 0) cout << "input file source: " << inputFileName << endl;
   XMLObject xmlInput;
   
   // Try to get xmlObject from inputfile
@@ -155,16 +155,25 @@ void getParameterLists(const string &inputFileName,
   
 }
 
-bool MetricBoundsTest(const metric_t & metric,
-                const Teuchos::ParameterList & metricPlist,
-                ostringstream &msg)
+bool MetricBoundsTest(const RCP<const Comm<int>> &comm,
+                      const metric_t & metric,
+                      const Teuchos::ParameterList & metricPlist,
+                      ostringstream &msg)
 {
   // run a comparison of min and max agains a given metric
   // return an error message on failure
   bool pass = true;
   string test_name = metric.getName() + " test";
-  double value = metric.getMaxImbalance()/metric.getMinImbalance();
+  double local_value = metric.getMaxImbalance()/metric.getMinImbalance();
   
+  
+  // reduce problem metric to processor 0
+  double value;
+  Teuchos::Ptr<double> global(&value);
+  comm->barrier();
+  reduceAll<int, double>(*comm.get(),Teuchos::EReductionType::REDUCE_MAX,local_value,global);
+  
+  // Perfom tests
   if (metricPlist.isParameter("lower"))
   {
     double min = metricPlist.get<double>("lower");
@@ -172,8 +181,11 @@ bool MetricBoundsTest(const metric_t & metric,
     if(value < min)
     {
       msg << test_name << " FAILED: Minimum imbalance per part, "
-      << value << ", less than specified allowable minimum, " << min;
+      << value << ", less than specified allowable minimum, " << min << ".\n";
       pass = false;
+    }else{
+      msg << test_name << " PASSED: Minimum imbalance per part, "
+      << value << ", greater than specified allowable minimum, " << min << ".\n";
     }
   }
   
@@ -182,15 +194,13 @@ bool MetricBoundsTest(const metric_t & metric,
     if (value > max)
     {
       msg << test_name << " FAILED: Maximum imbalance per part, "
-      << value << ", greater than specified allowable maximum, " << max;
+      << value << ", greater than specified allowable maximum, " << max << ".\n";
       pass = false;
+    }else{
+      msg << test_name << " PASSED: Maximum imbalance per part, "
+      << value << ", less than specified allowable maximum, " << max << ".\n";
     }
     
-  }
-  
-  if(pass){
-    msg << test_name << " PASSED.";
-    pass = true;
   }
   
   return pass;
@@ -241,12 +251,12 @@ void run(const UserInputForTests &uinput,
   ////////////////////////////////////////////////////////////
   if(!problem_parameters.isParameter("InputAdapterParameters"))
   {
-    std::cerr << "Input adapter parameters not provided" << std::endl;
+    if(rank == 0) std::cerr << "Input adapter parameters not provided" << std::endl;
     return;
   }
   if(!problem_parameters.isParameter("Zoltan2Parameters"))
   {
-    std::cerr  << "Zoltan2 probnlem parameters not provided" << std::endl;
+    if(rank == 0) std::cerr << "Zoltan2 probnlem parameters not provided" << std::endl;
     return;
   }
   
@@ -312,7 +322,7 @@ void run(const UserInputForTests &uinput,
   }
   else
   {
-    std::cerr << "Input adapter type: " + adapter_name + ", is unvailable, or misspelled." << std::endl;
+    if(rank == 0) std::cerr << "Input adapter type: " + adapter_name + ", is unvailable, or misspelled." << std::endl;
     return;
   }
   
@@ -344,7 +354,7 @@ void run(const UserInputForTests &uinput,
   }
   else
   {
-    std::cerr << "Input adapter type: " + adapter_name + ", is unvailable, or misspelled." << std::endl;
+    if(rank == 0) std::cerr << "Input adapter type: " + adapter_name + ", is unvailable, or misspelled." << std::endl;
     return;
   }
 #endif
@@ -365,39 +375,47 @@ void run(const UserInputForTests &uinput,
   // 4. Print problem metrics
   ////////////////////////////////////////////////////////////
   
-  if (comm->getRank() == 0)
+  // calculate pass fail based on imbalance
+  if(rank == 0) cout << "Comparing metrics...\n" << endl;
+  if(problem_parameters.isParameter("Metrics"))
   {
-    // calculate pass fail based on imbalance
-    if(rank == 0) cout << "analyzing metrics...\n" << endl;
-    if(problem_parameters.isParameter("Metrics"))
-    {
+    if(rank == 0)
       reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
-      ArrayRCP<const metric_t> metrics
-      = reinterpret_cast<basic_problem_t *>(problem)->getMetrics();
-      
-      // get metric plist
-      const ParameterList &metricsPlist = problem_parameters.sublist("Metrics");
-      
-      string test_name;
-      bool all_tests_pass = true;
-      for(int i = 0; i < metrics.size(); i++)
+    
+    ArrayRCP<const metric_t> metrics
+    = reinterpret_cast<basic_problem_t *>(problem)->getMetrics();
+    
+    // get metric plist
+    const ParameterList &metricsPlist = problem_parameters.sublist("Metrics");
+    
+    string test_name;
+    bool all_tests_pass = true;
+    for(int i = 0; i < metrics.size(); i++)
+    {
+      // print their names...
+      ostringstream msg;
+      test_name = metrics[i].getName();
+      if(metricsPlist.isSublist(test_name))
       {
-        // print their names...
-        ostringstream msg;
-        test_name = metrics[i].getName();
-        if(metricsPlist.isSublist(test_name))
-        {
-          if(!MetricBoundsTest(metrics[i], metricsPlist.sublist(test_name), msg))
-            all_tests_pass = false;
-          cout << msg.str() << endl;
-          
-        }
+        if(!MetricBoundsTest(comm, metrics[i], metricsPlist.sublist(test_name), msg))
+          all_tests_pass = false;
+        
+        if(rank == 0) cout << msg.str() << endl;
       }
-      
-      if(all_tests_pass) cout << "All tests PASSED." << endl;
-      else cout << "Testing FAILED." << endl;
-      
-    }else{
+    }
+    
+    if(all_tests_pass)
+    {
+      if(rank == 0) cout << "All tests PASSED." << endl;
+    }
+    else
+    {
+      if(rank == 0) cout << "Testing FAILED." << endl;
+    }
+    
+  }else{
+    if(rank == 0)
+    {
       cout << "No test metrics provided." << endl;
       reinterpret_cast<basic_problem_t *>(problem)->printMetrics(cout);
     }

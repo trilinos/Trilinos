@@ -1518,8 +1518,8 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
     // Now create the reordered matrix & mark it as active
     {
       typedef ReorderFilter<row_matrix_type> reorder_filter_type;
-      typedef Zoltan2::OrderingSolution<global_ordinal_type,
-        local_ordinal_type> ordering_solution_type;
+      typedef Zoltan2::OrderingSolution<local_ordinal_type,
+        global_ordinal_type> ordering_solution_type;
 
       ordering_solution_type sol (*MyOrderingProblem.getSolution ());
 

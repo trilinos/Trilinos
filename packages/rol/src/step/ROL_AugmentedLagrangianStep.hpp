@@ -123,7 +123,7 @@ public:
     useTR_  = sublist.get("Subproblem Step Type",                    0);
 
     eta1_   = parlist.sublist("Status Test").get("Gradient Tolerance",   1.e-8);
-    omega1_ = sublist.sublist("Status Test").get("Constraint Tolerance", 1.e-8);
+    omega1_ = parlist.sublist("Status Test").get("Constraint Tolerance", 1.e-8);
 
     parlist_ = Teuchos::rcp(&parlist,false);
   }

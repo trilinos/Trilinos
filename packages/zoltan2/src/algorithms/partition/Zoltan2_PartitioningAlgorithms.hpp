@@ -53,5 +53,6 @@
 #include <Zoltan2_AlgRCB.hpp>
 #include <Zoltan2_AlgMultiJagged.hpp>
 #include <Zoltan2_AlgZoltan.hpp>
+#include <Zoltan2_AlgForTestingOnly.hpp>
 
 #endif

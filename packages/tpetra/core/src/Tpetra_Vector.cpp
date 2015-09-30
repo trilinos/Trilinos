@@ -54,6 +54,17 @@ namespace Tpetra {
 
   TPETRA_INSTANTIATE_VECTOR(TPETRA_VECTOR_INSTANT)
 
+  // mfh 26 Sep 2015: Some of Tpetra's communication routines want
+  // Scalar = int.  The above covers that case only if GO = int is
+  // enabled.  If not, we have to instantiate that case specially.
+#ifndef HAVE_TPETRA_INST_INT_INT
+#  define TPETRA_VECTOR_INSTANT_INT( LO, GO, NT ) \
+  TPETRA_VECTOR_INSTANT( int, LO, GO, NT )
+
+  TPETRA_INSTANTIATE_LGN(TPETRA_VECTOR_INSTANT_INT)
+
+#endif // HAVE_TPETRA_INST_INT_INT
+
 } // namespace Tpetra
 
 #endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION

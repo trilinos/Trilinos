@@ -6,23 +6,51 @@
 /// \brief Incomplete Cholesky factorization front interface.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+// basic utils
+#include "util.hpp"
+#include "control.hpp"
+#include "partition.hpp"
+
 namespace Tacho { 
 
   using namespace std;
 
-  template<int ArgUplo, int ArgAlgo>
+  // polymophic function body accordingto different algorithms and control trees
+  // ===========================================================================
+  template<int ArgUplo, int ArgAlgo, 
+           template<int> class ControlType,
+           typename ParallelForType,
+           typename ExecViewType>
+  class FunctionChol {
+  public:
+    KOKKOS_INLINE_FUNCTION
+    int getReturnValue() const { return -1; } 
+
+    KOKKOS_INLINE_FUNCTION
+    FunctionChol(typename ExecViewType::policy_type &policy, 
+                 const typename ExecViewType::policy_type::member_type &member, 
+                 ExecViewType &A) { 
+      // specialized versions over-ride this
+      ERROR(MSG_INVALID_TEMPLATE_ARGS);
+    }
+  };    
+
+  template<int ArgUplo, int ArgAlgo, template<int> class ControlType = Control>
   class Chol {
   public:
-    static int blocksize;
 
-    // data-parallel interface
-    // =======================
+    // function interface
+    // ==================
     template<typename ParallelForType,
              typename ExecViewType>
     KOKKOS_INLINE_FUNCTION
     static int invoke(typename ExecViewType::policy_type &policy, 
                       const typename ExecViewType::policy_type::member_type &member, 
-                      ExecViewType &A);
+                      ExecViewType &A) {
+      return FunctionChol
+        <ArgUplo,ArgAlgo,ControlType,ParallelForType,ExecViewType>
+        (policy, member, A).getReturnValue();
+    }
 
     // task-data parallel interface
     // ============================
@@ -62,13 +90,8 @@ namespace Tacho {
     };
 
   };
-
-  template<int ArgUplo, int ArgAlgo> int Chol<ArgUplo,ArgAlgo>::blocksize = 32;
 }
 
-// basic utils
-#include "util.hpp"
-#include "partition.hpp"
 
 // unblocked version blas operations
 #include "scale.hpp"

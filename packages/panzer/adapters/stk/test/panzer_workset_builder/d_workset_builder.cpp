@@ -332,7 +332,7 @@ namespace panzer {
           for (std::size_t dim = 0; dim < num_dim; ++dim)
             TED01(int_rules[iri]->ip_coordinates(cell, ip, dim));
     }
-#undef TEST_EQUALITY
+#undef TED01
   }
 
 }

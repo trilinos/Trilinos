@@ -87,7 +87,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
 #  "-DTPL_ENABLE_CppUnit:BOOL=ON"
   "-DSTK_stk_mesh_unit_tests_MPI_4_DISABLE=ON"
   "-DSTK_util_parallel_UnitTest_MPI_4_DISABLE=ON"
-  "Amesos2_ENABLE_KLU2=ON"
+  "-DAmesos2_ENABLE_KLU2=ON"
   "-DTrilinos_TRACE_ADD_TEST=ON"
   )
 
@@ -130,13 +130,13 @@ if(NOT EXISTS ${_timestamp_file})
 else()
   file(READ ${_timestamp_file} _last_time)
   math(EXPR _difference "${_current_time} - ${_last_time}") 
-  if(${_difference} GREATER 57600) # 16 hours
-    VISIBLE_MESSAGE("Timestamp is more than 16 hours old, performing a clean build.")
+  if(${_difference} GREATER 72000) # 20 hours
+    VISIBLE_MESSAGE("Timestamp is more than 20 hours old, performing a clean build.")
     SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY ON)
     SET(CTEST_ENABLE_MODIFIED_PACKAGES_ONLY OFF)
     file(WRITE ${_timestamp_file} ${_current_time}) 
   else()
-    VISIBLE_MESSAGE("Timestamp is less than 16 hours old, performing an incremental build.")
+    VISIBLE_MESSAGE("Timestamp is less than 20 hours old, performing an incremental build.")
     SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY OFF)
     SET(CTEST_ENABLE_MODIFIED_PACKAGES_ONLY ON)
   endif()

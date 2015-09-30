@@ -395,7 +395,7 @@ namespace MueLu {
   }; // class Utils
 
   /*!
-    @class Utils2
+    @class Utils2_kokkos
     @brief MueLu utility class.
 
     Separate class for utilities that need a specialization for Epetra.
@@ -459,7 +459,7 @@ namespace MueLu {
       return Utils2::ReadMap(fileName, lib, comm);
     }
 
-  }; // class Utils2_kokkos
+  };
 
 } //namespace MueLu
 

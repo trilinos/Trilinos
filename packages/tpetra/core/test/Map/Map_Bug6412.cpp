@@ -16,7 +16,6 @@ using Teuchos::arcp;
 typedef Tpetra::Map<> map_type;
 typedef map_type::local_ordinal_type LO;
 typedef map_type::global_ordinal_type GO;
-typedef Tpetra::Map<LO, GO> map_type;
 
 void
 searchIt (bool& success, std::ostream& out, const map_type& myMap, const std::string& myName)

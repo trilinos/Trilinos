@@ -12,13 +12,13 @@
 #include "test_crs_row_view.hpp"
 
 #include "test_chol_unblocked.hpp"
-#include "test_chol_blocked.hpp"
+//#include "test_chol_blocked.hpp"
 
 #include "test_dense_matrix_base.hpp"
 #include "test_dense_matrix_view.hpp"
 
 #include "test_tri_solve_unblocked.hpp"
-#include "test_tri_solve_blocked.hpp"
+//#include "test_tri_solve_blocked.hpp"
 
 #include "test_crs_hier_base.hpp"
 #include "test_crs_task_view.hpp"
@@ -70,10 +70,10 @@ namespace Tacho {
         r_val += testCholUnblocked<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
                                                       "mm_crs_chol.mtx");
         // ============================================================
-        for (OT i=0;i<blk_cnt;++i) 
-          r_val += testCholBlocked<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
-                                                      blks[i],
-                                                      "mm_crs_chol.mtx");
+        // for (OT i=0;i<blk_cnt;++i) 
+        //   r_val += testCholBlocked<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
+        //                                               blks[i],
+        //                                               "mm_crs_chol.mtx");
         // ============================================================
         r_val += testDenseMatrixBase<VT,OT,ST,SpT,MeT>(0,0);
         r_val += testDenseMatrixBase<VT,OT,ST,SpT,MeT>(3,3);
@@ -88,10 +88,10 @@ namespace Tacho {
           r_val += testTriSolveUnblocked<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
                                                            nrhs[i]);
         // ============================================================      
-        for (OT j=0;j<blk_cnt;++j) 
-          for (OT i=0;i<nrhs_cnt;++i) 
-            r_val += testTriSolveBlocked<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
-                                                           blks[j], nrhs[i]);
+        // for (OT j=0;j<blk_cnt;++j) 
+        //   for (OT i=0;i<nrhs_cnt;++i) 
+        //     r_val += testTriSolveBlocked<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx",
+        //                                                    blks[j], nrhs[i]);
         // ============================================================ 
         r_val += testCrsHierBase<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx");
         r_val += testCrsTaskView<VT,OT,ST,SpT,MeT>("mm_crs_input.mtx");

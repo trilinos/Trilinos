@@ -61,6 +61,17 @@ namespace Tpetra {
 
   TPETRA_INSTANTIATE_SLG(TPETRA_MULTIVECTOR_KOKKOSOPENMPWRAPPERNODE_INSTANT)
 
+  // mfh 26 Sep 2015: Some of Tpetra's communication routines want
+  // Scalar = int.  The above covers that case only if GO = int is
+  // enabled.  If not, we have to instantiate that case specially.
+#ifndef HAVE_TPETRA_INST_INT_INT
+#  define TPETRA_MULTIVECTOR_KOKKOSOPENMPWRAPPERNODE_INSTANT_INT( LO, GO ) \
+  TPETRA_MULTIVECTOR_INSTANT( int, LO, GO, Kokkos::Compat::KokkosOpenMPWrapperNode )
+
+  TPETRA_INSTANTIATE_LG(TPETRA_MULTIVECTOR_KOKKOSOPENMPWRAPPERNODE_INSTANT_INT)
+
+#endif // HAVE_TPETRA_INST_INT_INT
+
 } // namespace Tpetra
 
 #endif // defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRACORE_TEUCHOSKOKKOSCOMPAT) && defined(HAVE_TPETRA_INST_OPENMP)

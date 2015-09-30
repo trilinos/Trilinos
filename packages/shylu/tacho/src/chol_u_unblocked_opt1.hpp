@@ -13,78 +13,91 @@ namespace Tacho {
 
   using namespace std;
 
-  template<>
-  template<typename ParallelForType,
+  template<template<int> class ControlType,
+           typename ParallelForType,
            typename CrsExecViewType>
-  KOKKOS_INLINE_FUNCTION
-  int
-  Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>
-  ::invoke(typename CrsExecViewType::policy_type &policy,
-           const typename CrsExecViewType::policy_type::member_type &member,
-           CrsExecViewType &A) {
+  class FunctionChol<Uplo::Upper,AlgoChol::UnblockedOpt1,
+                     ControlType,
+                     ParallelForType,
+                     CrsExecViewType> {
+  private:
+    int _r_val;
 
-    typedef typename CrsExecViewType::value_type        value_type;
-    typedef typename CrsExecViewType::ordinal_type      ordinal_type;
-    typedef typename CrsExecViewType::row_view_type     row_view_type;
-    typedef typename CrsExecViewType::team_factory_type team_factory_type;
+  public:
+    KOKKOS_INLINE_FUNCTION
+    int getReturnValue() const {
+      return _r_val;
+    }
 
-    // row_view_type r1t, r2t;
+    KOKKOS_INLINE_FUNCTION
+    FunctionChol(typename CrsExecViewType::policy_type &policy,
+                 const typename CrsExecViewType::policy_type::member_type &member,
+                 CrsExecViewType &A) {    
+      typedef typename CrsExecViewType::value_type        value_type;
+      typedef typename CrsExecViewType::ordinal_type      ordinal_type;
+      typedef typename CrsExecViewType::row_view_type     row_view_type;
+      typedef typename CrsExecViewType::team_factory_type team_factory_type;
 
-    for (ordinal_type k=0;k<A.NumRows();++k) {
-      //r1t.setView(A, k);
-      row_view_type &r1t = A.RowView(k);
+      // row_view_type r1t, r2t;
 
-      // extract diagonal from alpha11
-      value_type &alpha = r1t.Value(0);
+      for (ordinal_type k=0;k<A.NumRows();++k) {
+        //r1t.setView(A, k);
+        row_view_type &r1t = A.RowView(k);
 
-      if (member.team_rank() == 0) {
-        // if encounter null diag or wrong index, return -(row + 1)
-        if (abs(alpha) == 0.0 || r1t.Col(0) != k)
-          return -(k + 1);
+        // extract diagonal from alpha11
+        value_type &alpha = r1t.Value(0);
 
-        // error handling should be more carefully designed
+        if (member.team_rank() == 0) {
+          // if encounter null diag or wrong index, return -(row + 1)
+          if (abs(alpha) == 0.0 || r1t.Col(0) != k) {
+            _r_val = -(k+1);
+            return;
+          }
 
-        // sqrt on diag
-        alpha = sqrt(real(alpha));
-      }
-      member.team_barrier();
+          // error handling should be more carefully designed
 
-      const ordinal_type nnz_r1t = r1t.NumNonZeros();
-
-      if (nnz_r1t) {
-        // inverse scale
-        ParallelForType(team_factory_type::createThreadLoopRegion(member, 1, nnz_r1t),
-                        [&](const ordinal_type j) {
-                          r1t.Value(j) /= alpha;
-                        });
-
+          // sqrt on diag
+          alpha = sqrt(real(alpha));
+        }
         member.team_barrier();
 
-        // hermitian rank update
-        ParallelForType(team_factory_type::createThreadLoopRegion(member, 1, nnz_r1t),
-                        [&](const ordinal_type i) {
-                          const ordinal_type row_at_i = r1t.Col(i);
-                          const value_type   val_at_i = conj(r1t.Value(i));
+        const ordinal_type nnz_r1t = r1t.NumNonZeros();
 
-                          //r2t.setView(A, row_at_i);
-                          row_view_type &r2t = A.RowView(row_at_i);
-                          ordinal_type idx = 0;
+        if (nnz_r1t) {
+          // inverse scale
+          ParallelForType(team_factory_type::createThreadLoopRegion(member, 1, nnz_r1t),
+                          [&](const ordinal_type j) {
+                            r1t.Value(j) /= alpha;
+                          });
 
-                          for (ordinal_type j=i;j<nnz_r1t && (idx > -2);++j) {
-                            const ordinal_type col_at_j = r1t.Col(j);
-                            idx = r2t.Index(col_at_j, idx);
+          member.team_barrier();
 
-                            if (idx >= 0) {
-                              const value_type val_at_j = r1t.Value(j);
-                              r2t.Value(idx) -= val_at_i*val_at_j;
+          // hermitian rank update
+          ParallelForType(team_factory_type::createThreadLoopRegion(member, 1, nnz_r1t),
+                          [&](const ordinal_type i) {
+                            const ordinal_type row_at_i = r1t.Col(i);
+                            const value_type   val_at_i = conj(r1t.Value(i));
+
+                            //r2t.setView(A, row_at_i);
+                            row_view_type &r2t = A.RowView(row_at_i);
+                            ordinal_type idx = 0;
+
+                            for (ordinal_type j=i;j<nnz_r1t && (idx > -2);++j) {
+                              const ordinal_type col_at_j = r1t.Col(j);
+                              idx = r2t.Index(col_at_j, idx);
+
+                              if (idx >= 0) {
+                                const value_type val_at_j = r1t.Value(j);
+                                r2t.Value(idx) -= val_at_i*val_at_j;
+                              }
                             }
-                          }
-                        });
+                          });
+        }
       }
-    }
-    return 0;
-  }
 
+      _r_val = 0;
+    }
+  };
 }
 
 #endif

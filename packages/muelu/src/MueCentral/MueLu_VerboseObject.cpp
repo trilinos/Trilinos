@@ -140,6 +140,15 @@ namespace MueLu {
     return globalVerbLevel_;
   }
 
+  void VerboseObject::SetDefaultOStream(const Teuchos::RCP<Teuchos::FancyOStream>& defaultOStream) {
+    defaultOStream->setOutputToRootOnly(-1);
+    setDefaultOStream(defaultOStream);
+  }
+
+  Teuchos::RCP<Teuchos::FancyOStream> VerboseObject::GetDefaultOStream() {
+    return getDefaultOStream();
+  }
+
   VerbLevel VerboseObject::globalVerbLevel_ = High; // Default global verbose level.
 
   RCP<Teuchos::FancyOStream> VerboseObject::blackHole_ = Teuchos::getFancyOStream(rcp(new Teuchos::oblackholestream()));

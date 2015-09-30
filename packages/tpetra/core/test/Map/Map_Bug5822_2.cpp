@@ -41,26 +41,13 @@
 // @HEADER
 */
 
-// Some Macro Magic to ensure that if CUDA and KokkosCompat is enabled
-// only the .cu version of this file is actually compiled
 #include <Tpetra_ConfigDefs.hpp>
-
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_Tuple.hpp>
+#include <Tpetra_Map.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_DefaultComm.hpp>
-#include <Tpetra_Map.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-
-#ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
-#  include "Tpetra_Map_def.hpp"
-#  include "Tpetra_Directory_def.hpp"
-#  ifdef HAVE_TPETRA_FIXED_HASH_TABLE
-#    include "Tpetra_Details_FixedHashTable_def.hpp"
-#  else
-#    include "Tpetra_HashTable_def.hpp"
-#  endif // HAVE_TPETRA_FIXED_HASH_TABLE
-#endif
+#include <Teuchos_Tuple.hpp>
+#include <Teuchos_UnitTestHarness.hpp>
 
 using Tpetra::global_size_t;
 using Teuchos::Array;

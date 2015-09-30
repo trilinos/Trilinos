@@ -127,7 +127,6 @@ namespace MueLuTests {
       }
     };
 
-#if 0
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     class TestFactory {
 #include "MueLu_UseShortNames.hpp"
@@ -137,33 +136,29 @@ namespace MueLuTests {
 
     public:
 
-      //
-      // Method that creates a map containing a specified number of local elements per process.
-      //
+      // Create a map containing a specified number of local elements per process.
       static const RCP<const Map> BuildMap(LO numElementsPerProc) {
-
-        RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
-
-        const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
+        RCP<const Teuchos::Comm<int> > comm   = TestHelpers_kokkos::Parameters::getDefaultComm();
+        const global_size_t           INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
 
         return MapFactory::Build(TestHelpers_kokkos::Parameters::getLib(), INVALID, numElementsPerProc, 0, comm);
 
       } // BuildMap()
 
       // Create a matrix as specified by parameter list options
-      static RCP<Matrix> BuildMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) {
+      static RCP<Matrix> BuildMatrix(ParameterList& matrixList, Xpetra::UnderlyingLib lib) {
         RCP<const Teuchos::Comm<int> > comm = TestHelpers_kokkos::Parameters::getDefaultComm();
 
         if (lib == Xpetra::NotSpecified)
           lib = TestHelpers_kokkos::Parameters::getLib();
 
-        int nx,ny,nz; //global_size_t
+        int nx, ny, nz; //global_size_t
         nx = ny = nz = 5;
-        nx = matrixList.get("nx",nx);
-        ny = matrixList.get("ny",ny);
-        nz = matrixList.get("nz",nz);
+        nx = matrixList.get("nx", nx);
+        ny = matrixList.get("ny", ny);
+        nz = matrixList.get("nz", nz);
 
-        std::string matrixType = matrixList.get("matrixType","Laplace1D");
+        std::string matrixType = matrixList.get("matrixType", "Laplace1D");
         GO numGlobalElements; //global_size_t
         if (matrixType == "Laplace1D")
           numGlobalElements = nx;
@@ -182,8 +177,32 @@ namespace MueLuTests {
         RCP<Matrix> Op = Pr->BuildMatrix();
 
         return Op;
-      } // BuildMatrix()
+      }
 
+      // Create a 1D Poisson matrix with the specified number of rows
+      // nx: global number of rows
+      static RCP<Matrix> Build1DPoisson(int nx, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified) { //global_size_t
+        ParameterList matrixList;
+        matrixList.set("nx",            nx);
+        matrixList.set("matrixType",    "Laplace1D");
+        return BuildMatrix(matrixList,lib);
+      }
+
+      // Create a 2D Poisson matrix with the specified number of rows
+      // nx: global number of rows
+      // ny: global number of rows
+      static RCP<Matrix> Build2DPoisson(int nx, int ny = -1, Xpetra::UnderlyingLib lib = Xpetra::NotSpecified) { //global_size_t
+        if (ny == -1) ny = nx;
+
+        ParameterList matrixList;
+        matrixList.set("nx",            nx);
+        matrixList.set("ny",            ny);
+        matrixList.set("matrixType",    "Laplace2D");
+
+        return BuildMatrix(matrixList,lib);
+      }
+
+#if 0
       // Create a tridiagonal matrix (stencil = [b,a,c]) with the specified number of rows
       // dofMap: row map of matrix
       static RCP<Matrix> BuildTridiag(RCP<const Map> dofMap, Scalar a, Scalar b, Scalar c, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
@@ -299,29 +318,7 @@ namespace MueLuTests {
 
         return mtx;
       } // BuildTridiag()
-
-      // Create a 1D Poisson matrix with the specified number of rows
-      // nx: global number of rows
-      static RCP<Matrix> Build1DPoisson(int nx, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
-        Teuchos::ParameterList matrixList;
-        matrixList.set("nx", nx);
-        matrixList.set("matrixType","Laplace1D");
-        RCP<Matrix> A = BuildMatrix(matrixList,lib);
-        return A;
-      } // Build1DPoisson()
-
-      // Create a 2D Poisson matrix with the specified number of rows
-      // nx: global number of rows
-      // ny: global number of rows
-      static RCP<Matrix> Build2DPoisson(int nx, int ny=-1, Xpetra::UnderlyingLib lib=Xpetra::NotSpecified) { //global_size_t
-        Teuchos::ParameterList matrixList;
-        if (ny==-1) ny=nx;
-        matrixList.set("nx", nx);
-        matrixList.set("ny", ny);
-        matrixList.set("matrixType","Laplace2D");
-        RCP<Matrix> A = BuildMatrix(matrixList,lib);
-        return A;
-      } // Build2DPoisson()
+#endif
 
 
      // Create a matrix as specified by parameter list options
@@ -371,7 +368,7 @@ namespace MueLuTests {
         Op = rcp(new Xpetra::CrsMatrixWrap<SC,LO,GO,NO>(temp));
 #endif
         return Op;
-     } // BuildMatrix()
+     } // BuildBlockMatrix()
 
 
       // Needed to initialize correctly a level used for testing SingleLevel factory Build() methods.
@@ -390,19 +387,20 @@ namespace MueLuTests {
       // This method initializes LevelID and linked list of level
       static void createTwoLevelHierarchy(Level& fineLevel, Level& coarseLevel) {
         RCP<MueLu::FactoryManagerBase> factoryHandler = rcp(new FactoryManager());
-        fineLevel.SetFactoryManager(factoryHandler);
+        fineLevel  .SetFactoryManager(factoryHandler);
         coarseLevel.SetFactoryManager(factoryHandler);
 
         coarseLevel.SetPreviousLevel(rcpFromRef(fineLevel));
 
-        fineLevel.SetLevelID(0);
+        fineLevel  .SetLevelID(0);
         coarseLevel.SetLevelID(1);
 #ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
-        fineLevel.SetComm(TestHelpers_kokkos::Parameters::getDefaultComm());
+        fineLevel  .SetComm(TestHelpers_kokkos::Parameters::getDefaultComm());
         coarseLevel.SetComm(TestHelpers_kokkos::Parameters::getDefaultComm());
 #endif
       }
 
+#if 0
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK)
       static RCP<SmootherPrototype> createSmootherPrototype(const std::string& type="Gauss-Seidel", LO sweeps=1) {
         Teuchos::ParameterList  ifpackList;
@@ -412,15 +410,13 @@ namespace MueLuTests {
         return rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
       }
 #endif
-
-    }; // class Factory
-
+#endif
+    }; // class TestFactory
 
 
     //! Return the list of files in the directory. Only files that are matching '*filter*' are returned.
-    ArrayRCP<std::string> GetFileList(const std::string & dirPath, const std::string & filter);
+    ArrayRCP<std::string> GetFileList(const std::string& dirPath, const std::string & filter);
 
-#endif
   } // namespace TestHelpers_kokkos
 
 } // namespace MueLu

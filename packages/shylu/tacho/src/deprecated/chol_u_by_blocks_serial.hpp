@@ -6,7 +6,7 @@
 /// \brief Sparse incomplete Cholesky factorization by blocks.
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 ///
-/// This naively generates tasks without any merging of task blocks.
+/// for testing only, not used anymore.
 
 namespace Tacho { 
 

@@ -52,18 +52,10 @@ namespace Tpetra {
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
-  // FIXME (mfh 30 Jul 2014) We might like to use Teuchos::LAPACK in
-  // the implementation of BlockCrsMatrix, so it wouldn't make sense
-  // to do explicit instantiation for Scalar types that
-  // Teuchos::LAPACK doesn't support.  It seems that the *_TESTMV
-  // macro does whaat we want, but it would make sense to have a macro
-  // like TPETRA_INSTANTIATE_FLOATINGPOINT or
-  // TPETRA_INSTANTIATE_LAPACK_TYPES.
-  //
-  // NOTE (mfh 30 Jul 2014) The BlockCrsMatrix tests must also use
-  // this macro, so that they are instantiated over the same set of
-  // types.  I have also put a note there that points here.
-  TPETRA_INSTANTIATE_TESTMV(TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_INSTANT)
+  // NOTE (mfh 24 Sep 2015) It only makes sense to instantiate over
+  // Scalar types which have a Teuchos::LAPACK implementation.
+
+  TPETRA_INSTANTIATE_SLGN_NO_ORDINAL_SCALAR(TPETRA_EXPERIMENTAL_BLOCKCRSMATRIX_INSTANT)
 
 } // namespace Tpetra
 
