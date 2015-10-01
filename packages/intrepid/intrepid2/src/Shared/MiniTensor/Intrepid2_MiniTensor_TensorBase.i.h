@@ -50,14 +50,14 @@ namespace Intrepid2
 //
 template<typename T, typename ST>
 inline
-TensorBase<T, ST>::TensorBase() :
-    dimension_(0)
+TensorBase<T, ST>::TensorBase()
 {
-  if (ST::IS_DYNAMIC == true) {
-    set_number_components(0);
-  } else {
-    fill(NANS);
-  }
+  Index const
+  static_size = ST::static_size();
+
+  set_number_components(static_size);
+  fill(NANS);
+
   return;
 }
 
@@ -66,8 +66,7 @@ TensorBase<T, ST>::TensorBase() :
 //
 template<typename T, typename ST>
 inline
-TensorBase<T, ST>::TensorBase(Index const dimension, Index const order) :
-    dimension_(0)
+TensorBase<T, ST>::TensorBase(Index const dimension, Index const order)
 {
   set_dimension(dimension, order);
   fill(NANS);
@@ -82,8 +81,7 @@ inline
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
-    ComponentValue const value) :
-    dimension_(0)
+    ComponentValue const value)
 {
   set_dimension(dimension, order);
   fill(value);
@@ -98,8 +96,7 @@ inline
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
-    T const & s) :
-    dimension_(0)
+    T const & s)
 {
   set_dimension(dimension, order);
   fill(s);
@@ -116,8 +113,7 @@ TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
     ArrayT & data,
-    iType index1) :
-    dimension_(0)
+    iType index1)
 {
   set_dimension(dimension, order);
   fill(data, index1);
@@ -132,8 +128,7 @@ TensorBase<T, ST>::TensorBase(
     Index const order,
     ArrayT & data,
     iType index1,
-    iType index2) :
-    dimension_(0)
+    iType index2)
 {
   set_dimension(dimension, order);
   fill(data, index1, index2);
@@ -149,8 +144,7 @@ TensorBase<T, ST>::TensorBase(
     ArrayT & data,
     iType index1,
     iType index2,
-    iType index3) :
-    dimension_(0)
+    iType index3)
 {
   set_dimension(dimension, order);
   fill(data, index1, index2, index3);
@@ -167,8 +161,7 @@ TensorBase<T, ST>::TensorBase(
     iType index1,
     iType index2,
     iType index3,
-    iType index4) :
-    dimension_(0)
+    iType index4)
 {
   set_dimension(dimension, order);
   fill(data, index1, index2, index3, index4);
@@ -186,8 +179,7 @@ TensorBase<T, ST>::TensorBase(
     iType index2,
     iType index3,
     iType index4,
-    iType index5) :
-    dimension_(0)
+    iType index5)
 {
   set_dimension(dimension, order);
   fill(data, index1, index2, index3, index4, index5);
@@ -206,8 +198,7 @@ TensorBase<T, ST>::TensorBase(
     iType index3,
     iType index4,
     iType index5,
-    iType index6) :
-    dimension_(0)
+    iType index6)
 {
   set_dimension(dimension, order);
   fill(data, index1, index2, index3, index4, index5, index6);
@@ -219,13 +210,13 @@ inline
 TensorBase<T, ST>::TensorBase(
     Index const dimension,
     Index const order,
-    T const * data_ptr) :
-    dimension_(0)
+    T const * data_ptr)
 {
   set_dimension(dimension, order);
   fill(data_ptr);
   return;
 }
+
 //
 // Copy constructor
 //
@@ -286,7 +277,6 @@ template<typename T, typename ST>
 inline Index
 TensorBase<T, ST>::get_dimension() const
 {
-  assert(ST::IS_DYNAMIC == true);
   return dimension_;
 }
 
@@ -298,9 +288,7 @@ inline
 void
 TensorBase<T, ST>::set_dimension(Index const dimension, Index const order)
 {
-  if (ST::IS_STATIC == true) return;
-
-  dimension_ = dimension;
+  dimension_ = dimension == DYNAMIC ? 0 : dimension;
 
   Index const
   number_components = integer_power(dimension, order);

@@ -56,43 +56,39 @@
 namespace Intrepid2 {
 
 template<typename T, Index M, Index N>
-struct matrix_store
-{
-  typedef Storage<T, dimension_product<M, N>::value> type;
-};
+using matrix_store = Storage<T, dimension_product<M, N>::value>;
 
 ///
 /// General rectangular matrix.
 ///
 template<typename T, Index M = DYNAMIC, Index N = DYNAMIC>
-class Matrix: public TensorBase<T, typename matrix_store<T, M, N>::type>
+class Matrix: public TensorBase<T, matrix_store<T, M, N>>
 {
 public:
 
   ///
   /// Order
   ///
-  static
-  Index const
-  ORDER = 2;
+  static constexpr
+  Index
+  ORDER = 1;
 
   ///
   /// Static or dynamic
   ///
-  static
-  bool const
+  static constexpr
+  bool
   IS_DYNAMIC = (M == DYNAMIC || N == DYNAMIC);
 
   ///
   /// Storage type
   ///
-  typedef typename matrix_store<T, M, N>::type
-  Store;
+  using Store = matrix_store<T, M, N>;
 
   ///
   /// Matrix order
   ///
-  static
+  static constexpr
   Index
   get_order()
   {
@@ -341,10 +337,10 @@ public:
 private:
 
   Index
-  rows_;
+  rows_{M};
 
   Index
-  cols_;
+  cols_{N};
 
 };
 
