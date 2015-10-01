@@ -72,7 +72,9 @@ $SCRIPT_DIR/../cron_driver.py
 # snapshot_kokkos_into_trilinos develop
 # $SCRIPT_DIR/../cron_driver.py
 
-# cd $WORKSPACE/Trilinos && git reset --hard HEAD && cd -
+git status
+
+cd $WORKSPACE/Trilinos && git reset --hard HEAD && cd -
 
 echo
 echo "Ending nightly Trilinos development testing on typhon: `date`"
