@@ -55,8 +55,8 @@ namespace ROL {
 namespace StringList {
 
 /// Helper function for making vectors of strings
-std::vector<std::string> join( const std::string &s1,
-                               const std::string &s2 ) {
+inline std::vector<std::string> join( const std::string &s1,
+                                      const std::string &s2 ) {
   std::vector<std::string> v; 
   v.push_back(s1);
   v.push_back(s2);
@@ -65,9 +65,9 @@ std::vector<std::string> join( const std::string &s1,
 }
 
 /// Helper function for making vectors of strings
-std::vector<std::string> join( const std::string &s1,
-                               const std::string &s2,
-                               const std::string &s3 ) {
+inline std::vector<std::string> join( const std::string &s1,
+                                      const std::string &s2,
+                                      const std::string &s3 ) {
   std::vector<std::string> v; 
   v.push_back(s1);
   v.push_back(s2);
@@ -77,10 +77,10 @@ std::vector<std::string> join( const std::string &s1,
 }
 
 /// Helper function for making vectors of strings
-std::vector<std::string> join( const std::string &s1,
-                               const std::string &s2,
-                               const std::string &s3,
-                               const std::string &s4 ) {
+inline std::vector<std::string> join( const std::string &s1,
+                                      const std::string &s2,
+                                      const std::string &s3,
+                                      const std::string &s4 ) {
   std::vector<std::string> v; 
   v.push_back(s1);
   v.push_back(s2);
@@ -91,11 +91,11 @@ std::vector<std::string> join( const std::string &s1,
 }
 
 /// Helper function for making vectors of strings
-std::vector<std::string> join( const std::string &s1,
-                               const std::string &s2,
-                               const std::string &s3,
-                               const std::string &s4,
-                               const std::string &s5 ) {
+inline std::vector<std::string> join( const std::string &s1,
+                                      const std::string &s2,
+                                      const std::string &s3,
+                                      const std::string &s4,
+                                      const std::string &s5 ) {
   std::vector<std::string> v; 
   v.push_back(s1);
   v.push_back(s2);
@@ -121,15 +121,15 @@ void setParameter( Teuchos::ParameterList &parlist,
     Teuchos::ParameterList &sublist = parlist.sublist(*iter);
     setParameter(sublist,location,iter+1,value);
   }
-
+ 
 
 }
 
 
 
 /// Produce a heirarchical parameter list using the new names from a flat list of the old names
-void tierParameterList( Teuchos::ParameterList &outList, 
-                        const Teuchos::ParameterList &inList ) {
+inline void tierParameterList( Teuchos::ParameterList &outList, 
+                               const Teuchos::ParameterList &inList ) {
 
   using namespace Teuchos;
   using StringList::join;
@@ -220,33 +220,31 @@ void tierParameterList( Teuchos::ParameterList &outList,
     Vec location = dict[removeStringFormat(key)];
     
     // Skip if not found in map
-    if(location.size() == 0) {
-      break;
-    }
+    if(location.size() != 0) {
 
-    IterVec itvec = location.begin();
+      IterVec itvec = location.begin();
 
-    if( inList.isType<bool>(key) ) {
-      bool value = inList.get<bool>( key );
-      setParameter( outList, location, itvec, value );
-    }
-    else if( inList.isType<int>(key) ) {
-      int value = inList.get<int>( key );
-      setParameter( outList, location, itvec, value );
-    }
-    else if( inList.isType<double>(key) ) {
-      double value = inList.get<double>( key );
-      setParameter( outList, location, itvec, value );
-    }
-    else if( inList.isType<std::string>(key) ) {
-      std::string value = inList.get<std::string>( key );
-      setParameter( outList, location, itvec, value );
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
-                                  ">>>Error: Unhandled parameter type." );  
-    }
- 
+      if( inList.isType<bool>(key) ) {
+        bool value = inList.get<bool>( key );
+        setParameter( outList, location, itvec, value );
+      }
+      else if( inList.isType<int>(key) ) {
+        int value = inList.get<int>( key );
+        setParameter( outList, location, itvec, value );
+      }
+      else if( inList.isType<double>(key) ) {
+        double value = inList.get<double>( key );
+        setParameter( outList, location, itvec, value );
+      }
+      else if( inList.isType<std::string>(key) ) {
+        std::string value = inList.get<std::string>( key );
+        setParameter( outList, location, itvec, value );
+      }
+      else {
+        TEUCHOS_TEST_FOR_EXCEPTION( true, std::invalid_argument,
+                                    ">>>Error: Unhandled parameter type." );  
+      }
+    } 
    
   }
 }

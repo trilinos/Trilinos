@@ -80,6 +80,7 @@
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
 
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include <locale> // std::toupper
 
 

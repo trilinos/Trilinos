@@ -18,8 +18,9 @@
 #include "chol_u_unblocked_opt2.hpp"
 
 // partitioned block algorithms: see control.hpp
-#include "chol_u_by_blocks_var1.hpp"
+#include "chol_u_by_blocks.hpp"
 
+// tools for supernodal algorithms
 //#include "chol_u_external_lapack.hpp"
 
 #endif

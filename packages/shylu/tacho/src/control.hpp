@@ -13,29 +13,35 @@ using namespace std;
 namespace Tacho {
 
   // forward declaration for control tree
-  template<int ArgAlgo>
+  template<int ArgAlgo, int ArgVariant>
   struct Control {
-    static const int Self = ArgAlgo;
+    static constexpr int Self[2] = { ArgAlgo, ArgVariant };
   };
 
-  // -- level based incomplete CholByBlocks
+  // - Level based incomplete CholByBlocks
   // * sparse block partitioned matrix
   // * a block is sparse
   // * dependence is made using the right look algorithm
-  template<> struct Control<AlgoChol::ByBlocksVar1> {
-    static const int Chol = AlgoChol::UnblockedOpt1;
-    static const int Trsm = AlgoTrsm::ForFactorBlocked;
-    static const int Herk = AlgoHerk::ForFactorBlocked;
-    static const int Gemm = AlgoGemm::ForFactorBlocked;
+  template<> struct Control<AlgoChol::ByBlocks,Variant::One> {
+    static constexpr int Chol[2] = { AlgoChol::UnblockedOpt,     Variant::One };
+    static constexpr int Trsm[2] = { AlgoTrsm::ForFactorBlocked, Variant::One };
+    static constexpr int Herk[2] = { AlgoHerk::ForFactorBlocked, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::ForFactorBlocked, Variant::One };
   };
 
-  // // -- complte CholByBlocks
-  // // * sparse block partitioned matrix
-  // // * a block has one-level nested sparse blocks
-  // // * dependence is made using the right look algorithm
-  // template<> struct Control<AlgoChol::ByBlocksVar2> {
-    
-  // };
+  // - Complete CholByBlocks
+  // * sparse block partitioned matrix
+  // * a block has one-level nested sparse blocks
+  // * a block is sparse
+  // * dependence is made using the right look algorithm
+  template<> struct Control<AlgoChol::ByBlocks,Variant::Two> {
+    static constexpr int Chol[2] = { AlgoChol::ByBlocks,         Variant::One }; // respawn algorithm
+
+    // for testing here we use blocked version
+    static constexpr int Trsm[2] = { AlgoTrsm::ForFactorBlocked, Variant::One };
+    static constexpr int Herk[2] = { AlgoHerk::ForFactorBlocked, Variant::One };
+    static constexpr int Gemm[2] = { AlgoGemm::ForFactorBlocked, Variant::One };
+  };
 
 }
 

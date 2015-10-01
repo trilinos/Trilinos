@@ -73,8 +73,8 @@ namespace Tacho {
     {
       U.fillRowViewArray();
     
-      auto future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>
-                                       ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
+      auto future = TaskFactoryType::Policy().create_team(Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::One>
+                                                          ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
       TaskFactoryType::Policy().spawn(future);
       Kokkos::Experimental::wait(TaskFactoryType::Policy());
     

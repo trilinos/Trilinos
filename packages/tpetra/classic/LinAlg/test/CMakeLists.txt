@@ -1,6 +1,3 @@
-ADD_SUBDIRECTORY(MultiVector)
-ADD_SUBDIRECTORY(CrsMatrix)
-# ADD_SUBDIRECTORY(Relaxation)
 
 
 

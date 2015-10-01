@@ -241,13 +241,13 @@ namespace Tacho {
           UU.copy(RR);
           timer.reset();          
           // {
-          //   auto future = TaskFactoryType::Policy().create(Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>
+          //   auto future = TaskFactoryType::Policy().create(Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::One>
           //                                                  ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
           //   TaskFactoryType::Policy().spawn(future);
           //   Kokkos::Experimental::wait(TaskFactoryType::Policy());
           // }
           {
-            Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>
+            Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::One>
               ::invoke<ForType>(TaskFactoryType::Policy(),
                                 TaskFactoryType::Policy().member_single(),
                                 U);
@@ -277,7 +277,7 @@ namespace Tacho {
 //       {
 //         timer.reset();
         
-//         auto future = TaskFactoryType::Policy().create(Chol<Uplo::Upper,AlgoChol::UnblockedOpt1>
+//         auto future = TaskFactoryType::Policy().create(Chol<Uplo::Upper,AlgoChol::UnblockedOpt,Variant::One>
 //                                                        ::TaskFunctor<ForType,CrsTaskViewType>(U), 0);
 //         TaskFactoryType::Policy().spawn(future);
 //         Kokkos::Experimental::wait(TaskFactoryType::Policy());

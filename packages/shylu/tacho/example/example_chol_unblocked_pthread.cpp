@@ -43,8 +43,11 @@ int main (int argc, char *argv[]) {
   string file_input = "test.mtx";
   clp.setOption("file-input", &file_input, "Input file (MatrixMarket SPD matrix)");
 
-  string algorithm = "UnblockedOpt1";
-  clp.setOption("algorithm-variant", &algorithm, "Algorithm variant (Dummy, UnblockedOpt1, UnblockedOpt2)");
+  string algorithm = "UnblockedOpt";
+  clp.setOption("algorithm", &algorithm, "Algorithm (Dummy, Unblocked)");
+
+  int variant = 1;
+  clp.setOption("variant", &variant, "Algorithm variant ID");
 
   clp.recogniseAllOptions(true);
   clp.throwExceptions(false);
@@ -59,19 +62,17 @@ int main (int argc, char *argv[]) {
     exec_space::initialize(nthreads, numa, core_per_numa);
     exec_space::print_configuration(cout, true);
     
-    int variant = 0;
-    if      (algorithm == "UnblockedOpt1")
-      variant = AlgoChol::UnblockedOpt1;
-    else if (algorithm == "UnblockedOpt2")
-      variant = AlgoChol::UnblockedOpt2;
+    int algo = 0;
+    if      (algorithm == "UnblockedOpt")
+      algo = AlgoChol::UnblockedOpt;
     else if (algorithm == "Dummy")
-      variant = AlgoChol::Dummy;
+      algo = AlgoChol::Dummy;
     else      
       ERROR(">> Not supported algorithm variant");
     
     r_val = exampleCholUnblocked
       <value_type,ordinal_type,size_type,exec_space,void>
-      (file_input, max_task_dependence, team_size, variant, verbose);
+      (file_input, max_task_dependence, team_size, algo, variant, verbose);
     
     exec_space::finalize();
   }
