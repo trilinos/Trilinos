@@ -197,7 +197,7 @@ scalar_t getAvgImbalance() const { return values_[evalAvgImbalance];}
  */
 
 template <typename scalar_t>
-  class graphMetricValues{
+  class GraphMetricValues{
 
 private:
   void resetValues(){
@@ -226,12 +226,12 @@ static void printHeader(std::ostream &os);
 void printLine(std::ostream &os) const;
 
 /*! \brief Constructor */
-graphMetricValues(std::string mname) :
+GraphMetricValues(std::string mname) :
   values_(), metricName_(mname) {
   resetValues();}
 
 /*! \brief Constructor */
-graphMetricValues() : 
+GraphMetricValues() : 
   values_(), metricName_("unset") { 
     resetValues();}
 
@@ -308,7 +308,7 @@ template <typename scalar_t>
 }
 
 template <typename scalar_t>
-  void graphMetricValues<scalar_t>::printLine(std::ostream &os) const
+  void GraphMetricValues<scalar_t>::printLine(std::ostream &os) const
 {
   std::string label(metricName_);
 
@@ -319,7 +319,7 @@ template <typename scalar_t>
 }
 
 template <typename scalar_t>
-  void graphMetricValues<scalar_t>::printHeader(std::ostream &os)
+  void GraphMetricValues<scalar_t>::printHeader(std::ostream &os)
 {
   os << std::setw(20) << " ";
   os << std::setw(24) << "----------SUM----------";
@@ -721,7 +721,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t, typename part_t>
  *   \param graph Graph model
  *   \param part   \c part[i] is the part ID for local object \c i
  *   \param numParts  on return this is the global number of parts.
- *   \param metrics on return points to a list of named graphMetricValues cuts 
+ *   \param metrics on return points to a list of named GraphMetricValues cuts 
  *     that each contains the global max and sum over parts of 
  *     the item being measured. The list may contain "cut count", or
  *     "weight 1", "weight 2" and so on in that order.
@@ -750,7 +750,7 @@ template <typename Adapter, typename pnum_t>
     const RCP<const GraphModel<Adapter> > &graph,
     const ArrayView<const pnum_t> &part, 
     typename Adapter::part_t &numParts, 
-    ArrayRCP<graphMetricValues<typename Adapter::scalar_t> > &metrics,
+    ArrayRCP<GraphMetricValues<typename Adapter::scalar_t> > &metrics,
     ArrayRCP<typename Adapter::scalar_t> &globalSums)
 {
   env->debug(DETAILED_STATUS, "Entering globalWeightedCutsByPart");
@@ -771,7 +771,7 @@ template <typename Adapter, typename pnum_t>
   typedef typename Adapter::part_t part_t;
   typedef StridedData<lno_t, scalar_t> input_t;
 
-  typedef graphMetricValues<scalar_t> mv_t;
+  typedef GraphMetricValues<scalar_t> mv_t;
   typedef Tpetra::CrsMatrix<pnum_t,lno_t,gno_t,node_t>  sparse_matrix_type;
   typedef Tpetra::Map<lno_t, gno_t, node_t>                map_type;
   typedef Tpetra::global_size_t GST;
@@ -780,7 +780,7 @@ template <typename Adapter, typename pnum_t>
   using Teuchos::as;
 
   mv_t *newMetrics = new mv_t [numMetrics];
-  env->localMemoryAssertion(__FILE__, __LINE__, numMetrics, newMetrics); 
+  env->localMemoryAssertion(__FILE__,__LINE__,numMetrics,newMetrics); 
   ArrayRCP<mv_t> metricArray(newMetrics, 0, numMetrics, true);
 
   metrics = metricArray;
@@ -818,7 +818,7 @@ template <typename Adapter, typename pnum_t>
   // Calculate the local totals by part.
 
   scalar_t *localBuf = new scalar_t [globalSumSize];
-  env->localMemoryAssertion(__FILE__, __LINE__, globalSumSize, localBuf);
+  env->localMemoryAssertion(__FILE__,__LINE__,globalSumSize,localBuf);
   memset(localBuf, 0, sizeof(scalar_t) * globalSumSize);
 
   scalar_t *cut = localBuf;              // # of cuts
@@ -851,7 +851,7 @@ template <typename Adapter, typename pnum_t>
   }
 
   gno_t gmin;
-  Teuchos::reduceAll<int, gno_t>(*comm, Teuchos::REDUCE_MIN, 1, min, gmin);
+  Teuchos::reduceAll<int, gno_t>(*comm,Teuchos::REDUCE_MIN,1,min,gmin);
 
   //Generate Map for vertex
   vertexMapG = rcp(new map_type(INVALID, vertexGIDs(), gmin, comm));

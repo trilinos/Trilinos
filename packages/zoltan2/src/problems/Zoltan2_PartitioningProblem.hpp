@@ -225,9 +225,9 @@ public:
    *   Graph metrics were only computed if user requested
    *   graph metrics with a parameter.
    */
-  ArrayRCP<const graphMetricValues<scalar_t> > getGraphMetrics() const {
+  ArrayRCP<const GraphMetricValues<scalar_t> > getGraphMetrics() const {
    if (graphMetrics_.is_null()){
-      ArrayRCP<const graphMetricValues<scalar_t> > emptyMetrics;
+      ArrayRCP<const GraphMetricValues<scalar_t> > emptyMetrics;
       return emptyMetrics;
     }
     else
@@ -392,7 +392,7 @@ private:
   bool metricsRequested_;
   bool graphMetricsRequested_;
   RCP<const PartitioningSolutionQuality<Adapter> > metrics_;
-  RCP<const PartitioningSolutionQuality<Adapter> > graphMetrics_;
+  RCP<const GraphPartitioningSolutionQuality<Adapter> > graphMetrics_;
 };
 ////////////////////////////////////////////////////////////////////////
 
@@ -637,6 +637,23 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
     metrics_ = rcp(quality);
   }
+
+  /*if (graphMetricsRequested_){
+    typedef PartitioningSolution<Adapter> ps_t;
+    typedef GraphPartitioningSolutionQuality<Adapter> gpsq_t;
+
+    gpsq_t *quality = NULL;
+    RCP<const ps_t> solutionConst = rcp_const_cast<const ps_t>(solution_);
+
+    try{
+      quality = new gpsq_t(this->envConst_, problemCommConst_,
+                          this->graphModel_, this->inputAdapter_,
+                          solutionConst);
+    }
+    Z2_FORWARD_EXCEPTIONS
+
+    graphMetrics_ = rcp(quality);
+    }*/
 
   this->env_->debug(DETAILED_STATUS, "Exiting solve");
 }

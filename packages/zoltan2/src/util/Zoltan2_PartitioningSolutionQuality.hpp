@@ -78,9 +78,7 @@ private:
   part_t numNonEmpty_;              // of actual
 
   ArrayRCP<MetricValues<scalar_t> > metrics_;
-  ArrayRCP<graphMetricValues<scalar_t> > graphMetrics_;
   ArrayRCP<const MetricValues<scalar_t> > metricsConst_;
-  ArrayRCP<const graphMetricValues<scalar_t> > graphMetricsConst_;
 
 public:
 
@@ -105,14 +103,6 @@ public:
     //BDD return metricsConst_;
       if(metricsConst_.is_null()) return metrics_;
       return metricsConst_;
-  }
-
-  /*! \brief Return the graph metric values.
-   *  \param values on return is the array of values.
-   */
-  ArrayRCP<const graphMetricValues<scalar_t> > getGraphMetrics() const{
-      if(graphMetricsConst_.is_null()) return graphMetrics_;
-      return graphMetricsConst_;
   }
 
   /*! \brief Return the object count imbalance.
@@ -150,6 +140,57 @@ public:
       imbalance = metrics_[0].getMaxImbalance();
   }  
 
+  /*! \brief Print all the metrics
+   */
+  void printMetrics(std::ostream &os) const {
+    Zoltan2::printMetrics<scalar_t, part_t>(os, 
+      targetGlobalParts_, numGlobalParts_, numNonEmpty_, 
+      metrics_.view(0, metrics_.size()));
+  }
+};
+
+template <typename Adapter>
+  class GraphPartitioningSolutionQuality {
+
+private:
+
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::part_t part_t;
+  typedef typename Adapter::scalar_t scalar_t;
+
+  const RCP<const Environment> env_;
+
+  part_t numGlobalParts_;           // desired
+  part_t targetGlobalParts_;        // actual
+
+  ArrayRCP<GraphMetricValues<scalar_t> > metrics_;
+  ArrayRCP<const GraphMetricValues<scalar_t> > metricsConst_;
+
+public:
+
+  /*! \brief Constructor
+      \param env   the problem environment
+      \param problemComm  the problem communicator
+      \param ia the problem input adapter
+      \param soln  the solution
+
+      The constructor does global communication to compute the metrics.
+      The rest of the  methods are local.
+   */
+  GraphPartitioningSolutionQuality(const RCP<const Environment> &env,
+    const RCP<const Comm<int> > &problemComm,
+    const RCP<const GraphModel<Adapter> > &graph,
+    const RCP<const Adapter> &ia, 
+    const RCP<const PartitioningSolution<Adapter> > &soln);
+
+  /*! \brief Return the graph metric values.
+   *  \param values on return is the array of values.
+   */
+  ArrayRCP<const GraphMetricValues<scalar_t> > getGraphMetrics() const{
+      if(metricsConst_.is_null()) return metrics_;
+      return metricsConst_;
+  }
+
   /*! \brief Return the max cut for the requested weight.
    *  \param cut on return is the requested value.
    *  \param idx is the weight index reqested, ranging from zero
@@ -157,20 +198,12 @@ public:
    *  If there were no weights, this is the cut count.
    */
   void getWeightCut(scalar_t &cut, int idx=0) const{
-    if (graphMetrics_.size() < idx)  // idx too high
-      cut = graphMetrics_[graphMetrics_.size()-1].getGlobalMax();
+    if (metrics_.size() < idx)  // idx too high
+      cut = metrics_[metrics_.size()-1].getGlobalMax();
     else if (idx < 0)   //  idx too low
-      cut = graphMetrics_[0].getGlobalMax();
+      cut = metrics_[0].getGlobalMax();
     else                       // idx weight
-      cut = graphMetrics_[idx].getGlobalMax();
-  }
-
-  /*! \brief Print all the metrics
-   */
-  void printMetrics(std::ostream &os) const {
-    Zoltan2::printMetrics<scalar_t, part_t>(os, 
-      targetGlobalParts_, numGlobalParts_, numNonEmpty_, 
-      metrics_.view(0, metrics_.size()));
+      cut = metrics_[idx].getGlobalMax();
   }
 };
 
@@ -214,6 +247,52 @@ template <typename Adapter>
 
   env->timerStop(MACRO_TIMERS, "Computing metrics");
   env->debug(DETAILED_STATUS, std::string("Exiting PartitioningSolutionQuality"));
+}
+
+template <typename Adapter>
+  GraphPartitioningSolutionQuality<Adapter>::GraphPartitioningSolutionQuality(
+  const RCP<const Environment> &env,
+  const RCP<const Comm<int> > &problemComm,
+  const RCP<const GraphModel<Adapter> > &graph,
+  const RCP<const Adapter> &ia, 
+  const RCP<const PartitioningSolution<Adapter> > &soln):
+    env_(env), numGlobalParts_(0), targetGlobalParts_(0),
+    metrics_(),  metricsConst_()
+{
+
+  env->debug(DETAILED_STATUS,
+	     std::string("Entering GraphPartitioningSolutionQuality"));
+  env->timerStart(MACRO_TIMERS, "Computing graph metrics");
+  // When we add parameters for which weights to use, we
+  // should check those here.  For now we compute graph metrics
+  // using all weights.
+
+  typedef typename Adapter::part_t part_t;
+
+  // Local number of objects.
+
+  size_t numLocalObjects = ia->getLocalNumIDs();
+
+  // Parts to which objects are assigned.
+
+  const part_t *parts = soln->getPartListView();
+  env->localInputAssertion(__FILE__, __LINE__, "parts not set",
+			   ((numLocalObjects == 0) || parts), BASIC_ASSERTION);
+  ArrayView<const part_t> partArray(parts, numLocalObjects);
+
+  ArrayRCP<scalar_t> globalSums;
+
+  try{
+    globalWeightedCutsByPart<Adapter, typename Adapter::part_t>(env,
+      problemComm, graph, partArray, numGlobalParts_, metrics_, globalSums);
+  }
+  Z2_FORWARD_EXCEPTIONS;
+
+  targetGlobalParts_ = soln->getTargetGlobalNumberOfParts();
+
+  env->timerStop(MACRO_TIMERS, "Computing graph metrics");
+  env->debug(DETAILED_STATUS,
+	     std::string("Exiting GraphPartitioningSolutionQuality"));
 }
 
 }   // namespace Zoltan2
