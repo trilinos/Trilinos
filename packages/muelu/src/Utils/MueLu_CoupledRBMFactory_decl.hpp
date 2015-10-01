@@ -59,12 +59,13 @@
 namespace MueLu {
 
   /*!
-    @class CoupledRBMFactory class.
-    @brief Nullspace Factory for coupled acoustic-elastic problems.
-           Combines standard nullspace with rigid body modes.
-           Assumes that acoustic pressure DOFs are padded with 2 extra DOFs
-           (so that there are 3 DOFs at each mesh grid point)
+    @class CoupledRBMFactory
     @ingroup MueLuTransferClasses
+    @brief Nullspace Factory for coupled acoustic-elastic problems.
+
+     Combines standard nullspace with rigid body modes.
+     Assumes that acoustic pressure DOFs are padded with 2 extra DOFs
+     (so that there are 3 DOFs at each mesh grid point)
   */
   template <class Scalar = double,
             class LocalOrdinal = int,

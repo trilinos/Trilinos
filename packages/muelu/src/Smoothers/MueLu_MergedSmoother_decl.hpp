@@ -50,6 +50,10 @@
 #include "MueLu_MergedSmoother_fwd.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 
+/*! @class MergedSmoother
+    @ingroup MueLuSmootherClasses 
+*/
+
 namespace MueLu {
 
   class Level;
